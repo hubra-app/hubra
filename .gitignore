@@ -13,6 +13,7 @@ env/
 .mypy_cache/
 .ruff_cache/
 *.egg-info/
+.coverage
 
 # OS
 .DS_Store
@@ -65,11 +66,11 @@ tmp/
 .gsd-worktrees/
 
 app/frontend/playwright-report/
+app/frontend/test-results/
 
 # ── GSD baseline (auto-generated) ──
 .vscode/
 *.pyc
-`
 app/backend/instance/
 docs/prompts/**
 .playwright-mcp/
