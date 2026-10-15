@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from sqlalchemy import select
 
 from vollbuild.core.errors import raise_error
@@ -30,6 +32,23 @@ def notify_all_active(
 def notify_member(member_id: int, kind: str, title: str, msg: str) -> None:
     """Create a notification for a single member."""
     db.session.add(Notification(member_id=member_id, kind=kind, title=title, msg=msg))
+
+
+def create_notification(
+    member_id: int, kind: str = "info", title: str = "", msg: str = ""
+) -> Notification:
+    """Create, flush and return an unread notification for one member."""
+    notif = Notification(
+        member_id=member_id,
+        kind=kind,
+        title=title,
+        msg=msg,
+        time=datetime.now(timezone.utc),
+        read=False,
+    )
+    db.session.add(notif)
+    db.session.flush()
+    return notif
 
 
 class NotificationService:

@@ -11,7 +11,7 @@ from typing import Any
 
 from sqlalchemy import select
 
-from vollbuild.api.settings.service import SettingsService
+from vollbuild.api.settings.services import SettingService
 from vollbuild.api.utils import log_audit
 from vollbuild.core.errors import raise_error
 from vollbuild.core.extensions import db
@@ -274,7 +274,7 @@ class MailboxesService:
     ) -> dict:
         """Create a new WildDuck mailbox. Returns the created mailbox data."""
         wd = _wd_required()
-        club_domain = SettingsService().get("mail.domain") or ""
+        club_domain = SettingService.get("mail.domain") or ""
         address = f"{username}@{club_domain}" if "@" not in username else username
         pwd = password or secrets.token_urlsafe(16)
 
@@ -368,7 +368,7 @@ class MailboxesService:
             "forwarding_enabled", filtered.get("forward_enabled")
         )
         if fwd_requested is True:
-            club_domain = SettingsService().get("mail.domain") or ""
+            club_domain = SettingService.get("mail.domain") or ""
             private_domain = (
                 (member.email or "").split("@")[-1]
                 if "@" in (member.email or "")
@@ -608,7 +608,7 @@ class AliasesService:
         from vollbuild.core.models.managed_mail import ManagedMailAddress
 
         wd = _wd_required()
-        club_domain = SettingsService().get("mail.domain") or ""
+        club_domain = SettingService.get("mail.domain") or ""
 
         if "@" not in address and club_domain:
             address = f"{address}@{club_domain}"
@@ -690,7 +690,7 @@ class MailService:
     @staticmethod
     def send_test(from_addr: str, to_addr: str, subject: str) -> dict:
         """Send a test email via configured SMTP."""
-        ss = SettingsService()
+        ss = SettingService
         smtp_host = ss.get("mail.smtp_host") or ""
         smtp_port = int(ss.get("mail.smtp_port") or 587)
 

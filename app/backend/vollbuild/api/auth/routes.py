@@ -54,7 +54,7 @@ from vollbuild.core.schemas.group import GroupSchema
 from vollbuild.core.schemas.member import MemberSchema
 from vollbuild.core.services import email as email_svc
 from vollbuild.core.services.email import _get_sso_base_url
-from vollbuild.api.notifications.service import create_notification
+from vollbuild.api.notifications.services import create_notification
 from vollbuild.core.tenant.context import current_tenant
 
 _log = logging.getLogger(__name__)

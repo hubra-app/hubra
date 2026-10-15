@@ -18,6 +18,7 @@ from vollbuild.core.models.group import Group
 from vollbuild.core.models.managed_mail import ManagedMailAddress
 from vollbuild.core.models.member import Member
 from vollbuild.core.models.user import User
+from tests.helpers import patch_mail_domain
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -87,9 +88,7 @@ def test_create_group_mail_success(client, db, seeded_db, auth_headers):
     """POST /mail/groups/<id> creates a managed mail address for the group."""
     group = _make_group(db, name="CreateMMAGroup")
 
-    with patch(
-        "vollbuild.api.settings.service.SettingsService.get", return_value="club.ch"
-    ):
+    with patch_mail_domain("club.ch"):
         resp = client.post(
             f"/api/v1/mail/groups/{group.id}",
             json={"prefix": "vorstand"},
@@ -120,9 +119,7 @@ def test_create_group_mail_auto_derives_prefix(client, db, seeded_db, auth_heade
     """POST /mail/groups/<id> auto-derives prefix from group name when not provided."""
     group = _make_group(db, name="AutoPrefixGroup")
 
-    with patch(
-        "vollbuild.api.settings.service.SettingsService.get", return_value="club.ch"
-    ):
+    with patch_mail_domain("club.ch"):
         resp = client.post(
             f"/api/v1/mail/groups/{group.id}",
             json={},
@@ -137,9 +134,7 @@ def test_create_group_mail_auto_derives_prefix(client, db, seeded_db, auth_heade
 
 def test_create_group_mail_group_not_found(client, db, seeded_db, auth_headers):
     """POST /mail/groups/9999 returns 404 for non-existent group."""
-    with patch(
-        "vollbuild.api.settings.service.SettingsService.get", return_value="club.ch"
-    ):
+    with patch_mail_domain("club.ch"):
         resp = client.post(
             "/api/v1/mail/groups/9999",
             json={"prefix": "test"},
@@ -162,9 +157,7 @@ def test_create_group_mail_duplicate_returns_409(client, db, seeded_db, auth_hea
     db.session.add(addr)
     db.session.commit()
 
-    with patch(
-        "vollbuild.api.settings.service.SettingsService.get", return_value="club.ch"
-    ):
+    with patch_mail_domain("club.ch"):
         resp = client.post(
             f"/api/v1/mail/groups/{group.id}",
             json={"prefix": "newprefix"},

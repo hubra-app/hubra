@@ -13,7 +13,7 @@ from sqlalchemy import delete, func, insert, select
 from sqlalchemy.orm import selectinload
 
 from vollbuild.api.mail.services import MailboxService
-from vollbuild.api.settings.service import SettingsService
+from vollbuild.api.settings.services import SettingService
 from vollbuild.api.utils import escape_like, log_audit
 from vollbuild.core.errors import raise_error
 from vollbuild.core.extensions import db
@@ -941,7 +941,7 @@ class MembersService:
                     f"Invalid role IDs: {sorted(invalid_roles)}",
                 )
 
-        club_domain = SettingsService().get("mail.domain") or ""
+        club_domain = SettingService.get("mail.domain") or ""
         _es = db.session.scalar(
             select(Setting).where(Setting.key == "club.email_schema")  # type: ignore[arg-type]
         )
@@ -1050,7 +1050,7 @@ class MembersService:
 
         # Mail flag loop detection
         if validated.get("forwarding_enabled") is True:
-            club_domain = SettingsService().get("mail.domain") or ""
+            club_domain = SettingService.get("mail.domain") or ""
             private_email = member.email or ""
             private_domain = (
                 private_email.split("@")[-1] if "@" in private_email else ""
@@ -1137,7 +1137,7 @@ class MembersService:
 
         # Recompute public_email whenever name or username changes
         if any(f in validated for f in ("first_name", "last_name", "club_username")):
-            domain = SettingsService().get("mail.domain") or ""
+            domain = SettingService.get("mail.domain") or ""
             if domain:
                 if member.club_username:
                     member.public_email = f"{member.club_username}@{domain}"
@@ -1457,7 +1457,7 @@ class MembersService:
             role = db.session.scalar(select(Role).order_by(Role.id))
 
         temp_password = secrets.token_urlsafe(12)
-        club_domain = SettingsService().get("mail.domain") or ""
+        club_domain = SettingService.get("mail.domain") or ""
         _es = db.session.scalar(
             select(Setting).where(Setting.key == "club.email_schema")  # type: ignore[arg-type]
         )

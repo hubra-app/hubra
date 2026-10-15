@@ -34,7 +34,7 @@ def retention_cleanup(self) -> dict:
 
     from sqlalchemy import select
 
-    from vollbuild.api.settings.service import SettingsService
+    from vollbuild.api.settings.services import SettingService
     from vollbuild.core.extensions import db
     from vollbuild.core.models.managed_mail import ManagedMailAddress
     from vollbuild.core.models.member import Member
@@ -73,7 +73,7 @@ def retention_cleanup(self) -> dict:
             # default is explicitly configured.
             if addr.kind == "member" and addr.retention is None:
                 continue
-            default_setting = SettingsService().get("mail.retention_default_days")
+            default_setting = SettingService.get("mail.retention_default_days")
             if default_setting is not None:
                 try:
                     retention_ms = int(default_setting.value) * 86400000

@@ -232,8 +232,8 @@ def test_retention_cleanup_skips_member_with_no_retention(app, db, seeded_db):
 
     with patch("vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd):
         with patch(
-            "vollbuild.api.settings.service.SettingsService",
-            return_value=mock_setting_svc,
+            "vollbuild.api.settings.services.SettingService.get",
+            mock_setting_svc.get,
         ):
             result = retention_cleanup.run()
 

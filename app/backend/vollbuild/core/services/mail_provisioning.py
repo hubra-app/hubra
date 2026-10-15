@@ -51,9 +51,9 @@ def _effective_quota(mma: ManagedMailAddress) -> int:
         return mma.quota_bytes
     # Check system-level default quota setting (admin-configurable).
     try:
-        from vollbuild.api.settings.service import SettingsService
+        from vollbuild.api.settings.services import SettingService
 
-        raw = SettingsService().get("mail.quota_default_bytes")
+        raw = SettingService.get("mail.quota_default_bytes")
         if raw is not None:
             return int(raw)
     except (ValueError, TypeError):

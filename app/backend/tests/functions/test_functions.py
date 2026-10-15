@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 from vollbuild.core.extensions import db
 from vollbuild.core.models.function import Function, FunctionHolder
 from vollbuild.core.models.managed_mail import ManagedMailAddress
+from tests.helpers import patch_mail_domain
 
 
 # ── CRUD ──────────────────────────────────────────────────────────────────────
@@ -120,13 +121,13 @@ def test_delete_function(client, seeded_db, auth_headers):
 
 def test_delete_function_with_protected_mma(client, seeded_db, auth_headers):
     """Function with a protected MMA can be deleted — MMA is cleaned up automatically."""
-    from vollbuild.api.settings.service import SettingsService
+    from vollbuild.api.settings.services import SettingService
 
     fn = Function(name="ProtectedFn")
     db.session.add(fn)
     db.session.flush()
 
-    domain = SettingsService().get("mail.domain") or "test.ch"
+    domain = SettingService.get("mail.domain") or "test.ch"
     addr = ManagedMailAddress(
         address=f"protectedfn@{domain}",
         address_type="alias",
@@ -242,9 +243,9 @@ def test_assign_holder_triggers_mail_sync(client, seeded_db, auth_headers):
     db.session.add(fn)
     db.session.flush()
 
-    from vollbuild.api.settings.service import SettingsService
+    from vollbuild.api.settings.services import SettingService
 
-    domain = SettingsService().get("mail.domain") or "test.ch"
+    domain = SettingService.get("mail.domain") or "test.ch"
     addr = ManagedMailAddress(
         address=f"kassier@{domain}",
         address_type="mailbox",
@@ -306,13 +307,13 @@ def test_create_function_mail(client, seeded_db, auth_headers):
 
 
 def test_list_function_mail(client, seeded_db, auth_headers):
-    from vollbuild.api.settings.service import SettingsService
+    from vollbuild.api.settings.services import SettingService
 
     fn = Function(name="ListFn")
     db.session.add(fn)
     db.session.flush()
 
-    domain = SettingsService().get("mail.domain") or "test.ch"
+    domain = SettingService.get("mail.domain") or "test.ch"
     addr = ManagedMailAddress(
         address=f"listfn@{domain}",
         address_type="mailbox",
@@ -333,13 +334,13 @@ def test_list_function_mail(client, seeded_db, auth_headers):
 
 def test_delete_function_mail_blocked(client, seeded_db, auth_headers):
     """DELETE /mail/functions/<id> returns 409 while the function exists."""
-    from vollbuild.api.settings.service import SettingsService
+    from vollbuild.api.settings.services import SettingService
 
     fn = Function(name="DelFn")
     db.session.add(fn)
     db.session.flush()
 
-    domain = SettingsService().get("mail.domain") or "test.ch"
+    domain = SettingService.get("mail.domain") or "test.ch"
     addr = ManagedMailAddress(
         address=f"delfn@{domain}",
         address_type="mailbox",
@@ -377,9 +378,9 @@ def test_delete_group_with_protected_mma(client, seeded_db, auth_headers):
     db.session.add(group)
     db.session.flush()
 
-    from vollbuild.api.settings.service import SettingsService
+    from vollbuild.api.settings.services import SettingService
 
-    domain = SettingsService().get("mail.domain") or "test.ch"
+    domain = SettingService.get("mail.domain") or "test.ch"
     addr = ManagedMailAddress(
         address=f"protectedgroup@{domain}",
         address_type="alias",
@@ -420,9 +421,9 @@ def test_seed_creates_managed_mail_addresses(db):
 
     run_seeds(db)
 
-    from vollbuild.api.settings.service import SettingsService
+    from vollbuild.api.settings.services import SettingService
 
-    domain = SettingsService().get("mail.domain") or "vollbuild.ch"
+    domain = SettingService.get("mail.domain") or "vollbuild.ch"
 
     for prefix in (
         "noreply",
@@ -475,9 +476,9 @@ def test_resolve_alias_targets_group_members(db, seeded_db):
         {"mid": member.id, "gid": group.id},
     )
 
-    from vollbuild.api.settings.service import SettingsService
+    from vollbuild.api.settings.services import SettingService
 
-    domain = SettingsService().get("mail.domain") or "test.ch"
+    domain = SettingService.get("mail.domain") or "test.ch"
     addr = ManagedMailAddress(
         address=f"testgroup@{domain}",
         address_type="alias",
@@ -736,10 +737,7 @@ def test_function_prefix_edit_moves_address(client, db, seeded_db, auth_headers)
         mock_wd.create_user.return_value = {"id": "wd-user-002"}
         mock_wd.list_user_addresses.return_value = {"results": []}
         mock_tgc.return_value = mock_wd
-        with patch(
-            "vollbuild.api.settings.service.SettingsService.get",
-            return_value="club.ch",
-        ):
+        with patch_mail_domain("club.ch"):
             resp = client.patch(
                 f"/api/v1/mail/functions/{fn.id}/prefix",
                 json={"prefix": "newprefix"},

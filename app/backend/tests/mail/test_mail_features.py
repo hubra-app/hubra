@@ -9,6 +9,7 @@ from sqlalchemy import select
 
 from vollbuild.core.models.group import Group
 from vollbuild.core.models.managed_mail import ManagedMailAddress
+from tests.helpers import patch_mail_domain
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -181,10 +182,7 @@ def test_change_group_mail_prefix(client, db, seeded_db, auth_headers):
             "vollbuild.core.services.mail_provisioning._resolve_group_member_targets",
             return_value=["target@example.ch"],
         ):
-            with patch(
-                "vollbuild.api.settings.service.SettingsService.get",
-                return_value="club.ch",
-            ):
+            with patch_mail_domain("club.ch"):
                 resp = client.patch(
                     f"/api/v1/mail/groups/{group.id}/prefix",
                     json={"prefix": "newprefix"},
@@ -221,10 +219,7 @@ def test_change_group_mail_prefix_normalizes(client, db, seeded_db, auth_headers
     mock_wd.safe_get_user.return_value = None
     mock_wd.create_user.return_value = {"id": "wd-normalized"}
     mock_wd.list_user_addresses.return_value = {"results": []}
-    with patch(
-        "vollbuild.api.settings.service.SettingsService.get",
-        return_value="club.ch",
-    ):
+    with patch_mail_domain("club.ch"):
         with patch(
             "vollbuild.core.services.mail_provisioning.try_get_client",
             return_value=mock_wd,
@@ -243,8 +238,15 @@ def test_change_group_mail_prefix_normalizes(client, db, seeded_db, auth_headers
     assert body["address"] == "invalid.upper@club.ch"
 
 
-def test_change_group_mail_prefix_duplicate(client, db, seeded_db, auth_headers):
-    """PATCH /mail/groups/<id>/prefix returns 400 when address already exists."""
+def test_change_group_mail_prefix_taken_gets_suffix(
+    client, db, seeded_db, auth_headers
+):
+    """A taken prefix gets the next free suffix (resolve_local_part), not an error.
+
+    This used to assert 400, which only held because the old settings patch
+    did not reach resolve_local_part; with mail.domain set, as in production,
+    the address is suffixed.
+    """
     group = _make_group(db, name="DupPrefixGroup")
     _make_mma(
         db,
@@ -258,16 +260,14 @@ def test_change_group_mail_prefix_duplicate(client, db, seeded_db, auth_headers)
     )
     _make_mma(db, address="taken@club.ch", local_part="taken", domain="club.ch")
 
-    with patch(
-        "vollbuild.api.settings.service.SettingsService.get",
-        return_value="club.ch",
-    ):
+    with patch_mail_domain("club.ch"):
         resp = client.patch(
             f"/api/v1/mail/groups/{group.id}/prefix",
             json={"prefix": "taken"},
             headers=auth_headers,
         )
-    assert resp.status_code == 400
+    assert resp.status_code == 200
+    assert resp.get_json()["address"] == "taken2@club.ch"
 
 
 # ── Additional group alias CRUD (MMA-based) ────────────────────────────────────
@@ -285,10 +285,7 @@ def test_create_group_alias(client, db, seeded_db, auth_headers):
         kind="group",
     )
 
-    with patch(
-        "vollbuild.api.settings.service.SettingsService.get",
-        return_value="club.ch",
-    ):
+    with patch_mail_domain("club.ch"):
         with patch(
             "vollbuild.core.services.wildduck.try_get_client", return_value=MagicMock()
         ):
@@ -460,10 +457,7 @@ def test_create_system_address(client, db, seeded_db, auth_headers):
     mock_wd = MagicMock()
     mock_wd.create_forwarding_alias.return_value = {"id": "wd-sys-001"}
     with patch("vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd):
-        with patch(
-            "vollbuild.api.settings.service.SettingsService.get",
-            return_value="club.ch",
-        ):
+        with patch_mail_domain("club.ch"):
             resp = client.post(
                 "/api/v1/mail/system-addresses",
                 json={
@@ -638,10 +632,7 @@ def test_create_function_alias(client, db, seeded_db, auth_headers):
     with patch(
         "vollbuild.core.services.mail_provisioning.try_get_client", return_value=mock_wd
     ):
-        with patch(
-            "vollbuild.api.settings.service.SettingsService.get",
-            return_value="club.ch",
-        ):
+        with patch_mail_domain("club.ch"):
             resp = client.post(
                 f"/api/v1/mail/functions/{fn.id}/aliases",
                 json={"prefix": "fnextra"},

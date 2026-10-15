@@ -18,7 +18,7 @@ from vollbuild.api.mail.services import (
 )
 from vollbuild.core.extensions import db
 from vollbuild.api.permissions import permission_required
-from vollbuild.api.settings.service import SettingsService
+from vollbuild.api.settings.services import SettingService
 from vollbuild.api.utils import log_audit
 from vollbuild.core.errors import api_error, raise_error
 from vollbuild.core.models.group import Group
@@ -347,7 +347,7 @@ def create_member_mail_mma(member_id: int):
             else member.name.lower().replace(" ", ".")
         )
 
-    club_domain = SettingsService().get("mail.domain") or ""
+    club_domain = SettingService.get("mail.domain") or ""
     if not club_domain:
         return api_error(
             "VALIDATION_ERROR", "mail.domain setting is not configured", 400
@@ -507,7 +507,7 @@ def create_group_mail(group_id: int):
     if not prefix:
         prefix = mma_service.normalize_prefix_from_name(group.name)
 
-    club_domain = SettingsService().get("mail.domain") or ""
+    club_domain = SettingService.get("mail.domain") or ""
     if not club_domain:
         return api_error(
             "VALIDATION_ERROR", "mail.domain setting is not configured", 400
@@ -626,7 +626,7 @@ def create_function_mail(function_id: int):
     if not prefix:
         prefix = mma_service.normalize_prefix_from_name(fn.name)
 
-    club_domain = SettingsService().get("mail.domain") or ""
+    club_domain = SettingService.get("mail.domain") or ""
     if not club_domain:
         return api_error(
             "VALIDATION_ERROR", "mail.domain setting is not configured", 400
@@ -741,7 +741,7 @@ def change_group_mail_prefix(group_id: int):
     if not prefix:
         return api_error("VALIDATION_ERROR", "'prefix' is required", 400)
 
-    club_domain = SettingsService().get("mail.domain") or ""
+    club_domain = SettingService.get("mail.domain") or ""
     if not club_domain:
         return api_error(
             "VALIDATION_ERROR", "mail.domain setting is not configured", 400
@@ -825,7 +825,7 @@ def create_group_alias(group_id: int):
     if not prefix:
         return api_error("VALIDATION_ERROR", "'prefix' is required", 400)
 
-    club_domain = SettingsService().get("mail.domain") or ""
+    club_domain = SettingService.get("mail.domain") or ""
     if not club_domain:
         return api_error(
             "VALIDATION_ERROR", "mail.domain setting is not configured", 400
@@ -1004,7 +1004,7 @@ def change_function_mail_prefix(function_id: int):
     if not prefix:
         return api_error("VALIDATION_ERROR", "'prefix' is required", 400)
 
-    club_domain = SettingsService().get("mail.domain") or ""
+    club_domain = SettingService.get("mail.domain") or ""
     if not club_domain:
         return api_error(
             "VALIDATION_ERROR", "mail.domain setting is not configured", 400
@@ -1070,7 +1070,7 @@ def create_function_alias(function_id: int):
     if not prefix:
         return api_error("VALIDATION_ERROR", "'prefix' is required", 400)
 
-    club_domain = SettingsService().get("mail.domain") or ""
+    club_domain = SettingService.get("mail.domain") or ""
     if not club_domain:
         return api_error(
             "VALIDATION_ERROR", "mail.domain setting is not configured", 400
@@ -1301,7 +1301,7 @@ def change_address_prefix_route(address_id: int):
     prefix = (body.get("prefix") or "").strip()
     if not prefix:
         return api_error("VALIDATION_ERROR", "'prefix' is required", 400)
-    club_domain = SettingsService().get("mail.domain") or ""
+    club_domain = SettingService.get("mail.domain") or ""
     if not club_domain:
         return api_error(
             "VALIDATION_ERROR", "mail.domain setting is not configured", 400
@@ -1336,7 +1336,7 @@ def create_alias_route(address_id: int):
     prefix = (body.get("prefix") or "").strip()
     if not prefix:
         return api_error("VALIDATION_ERROR", "'prefix' is required", 400)
-    club_domain = SettingsService().get("mail.domain") or ""
+    club_domain = SettingService.get("mail.domain") or ""
     if not club_domain:
         return api_error(
             "VALIDATION_ERROR", "mail.domain setting is not configured", 400
@@ -1511,7 +1511,7 @@ def create_system_address():
             "VALIDATION_ERROR", "'addressType' must be 'mailbox' or 'alias'", 400
         )
 
-    club_domain = SettingsService().get("mail.domain") or ""
+    club_domain = SettingService.get("mail.domain") or ""
     if not club_domain and "@" not in address:
         return api_error(
             "VALIDATION_ERROR", "mail.domain setting is not configured", 400
@@ -1637,7 +1637,7 @@ def create_system_alias(address_id: int):
     if not prefix:
         return api_error("VALIDATION_ERROR", "'prefix' is required", 400)
 
-    club_domain = SettingsService().get("mail.domain") or ""
+    club_domain = SettingService.get("mail.domain") or ""
     if not club_domain:
         return api_error(
             "VALIDATION_ERROR", "mail.domain setting is not configured", 400
@@ -1983,7 +1983,7 @@ def send_test_email():
     if not _email_re.match(to_addr):
         return api_error("VALIDATION_ERROR", "Invalid 'to' email address", 400)
 
-    configured_sender = SettingsService().get("club.notification_sender_email") or ""
+    configured_sender = SettingService.get("club.notification_sender_email") or ""
     if configured_sender and from_addr != configured_sender:
         return api_error(
             "VALIDATION_ERROR",
