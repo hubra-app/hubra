@@ -1,152 +1,5 @@
 import { apiFetch } from '@vollbuild/api-client';
-import type { Mailbox, Alias, MailMember, MemberMailResponse } from "@/types";
-
-// ── Mailboxes ──────────────────────────────────────────────────────────────
-
-interface BackendMailbox {
-  id: string;
-  address: string;
-  displayName: string;
-  messageCount: number;
-  quotaUsed: number;
-  quotaTotal: number;
-  sendOnly: boolean;
-  memberId: number | null;
-  memberName: string | null;
-  isProvisioned: boolean;
-}
-
-function adaptMailbox(b: BackendMailbox): Mailbox {
-  return {
-    id: String(b.id),
-    address: b.address,
-    displayName: b.displayName,
-    messageCount: b.messageCount,
-    quotaUsed: b.quotaUsed,
-    quotaTotal: b.quotaTotal,
-    sendOnly: b.sendOnly,
-    memberId: b.memberId,
-    memberName: b.memberName,
-    isProvisioned: b.isProvisioned,
-  };
-}
-
-export async function listMailboxes(): Promise<Mailbox[]> {
-  const resp = await apiFetch<{ data: BackendMailbox[] }>("/mail/mailboxes");
-  return resp.data.map(adaptMailbox);
-}
-
-export async function createMailbox(input: {
-  address: string;
-  displayName: string;
-}): Promise<Mailbox> {
-  const b = await apiFetch<BackendMailbox>("/mail/mailboxes", {
-    method: "POST",
-    body: JSON.stringify({
-      address: input.address,
-      display_name: input.displayName,
-    }),
-  });
-  return adaptMailbox(b);
-}
-
-export async function updateMailbox(
-  id: string,
-  input: { displayName?: string },
-): Promise<Mailbox> {
-  const b = await apiFetch<BackendMailbox>(`/mail/mailboxes/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify({ display_name: input.displayName }),
-  });
-  return adaptMailbox(b);
-}
-
-export async function deleteMailbox(id: string): Promise<void> {
-  await apiFetch(`/mail/mailboxes/${id}`, { method: "DELETE" });
-}
-
-// ── Aliases ────────────────────────────────────────────────────────────────
-
-interface BackendAlias {
-  id: string;
-  address: string;
-  type: "Alias" | "Forward" | "Distribution";
-  deliversTo: string[];
-  enabled: boolean;
-  groupId: number | null;
-  groupName: string | null;
-  isMainAlias?: boolean;
-}
-
-function adaptAlias(b: BackendAlias): Alias {
-  return {
-    id: String(b.id),
-    address: b.address,
-    type: b.type,
-    deliversTo: b.deliversTo,
-    enabled: b.enabled,
-    groupId: b.groupId ?? null,
-    groupName: b.groupName ?? null,
-    isMainAlias: b.isMainAlias ?? false,
-  };
-}
-
-export async function listAliases(groupId?: number): Promise<Alias[]> {
-  const query = groupId !== undefined ? `?groupId=${groupId}` : "";
-  const resp = await apiFetch<{ data: BackendAlias[] }>(
-    `/mail/aliases${query}`,
-  );
-  return resp.data.map(adaptAlias);
-}
-
-export async function createAlias(input: {
-  address: string;
-  type: string;
-  deliversTo: string[];
-  groupId?: number | null;
-}): Promise<Alias> {
-  const b = await apiFetch<BackendAlias>("/mail/aliases", {
-    method: "POST",
-    body: JSON.stringify({
-      address: input.address,
-      type: input.type,
-      delivers_to: input.deliversTo,
-      groupId: input.groupId ?? null,
-    }),
-  });
-  return adaptAlias(b);
-}
-
-export async function updateAlias(
-  id: string,
-  input: { enabled?: boolean; deliversTo?: string[] },
-): Promise<Alias> {
-  const body: Record<string, unknown> = {};
-  if (input.enabled !== undefined) body.enabled = input.enabled;
-  if (input.deliversTo !== undefined) body.delivers_to = input.deliversTo;
-  const b = await apiFetch<BackendAlias>(`/mail/aliases/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify(body),
-  });
-  return adaptAlias(b);
-}
-
-export async function deleteAlias(id: string): Promise<void> {
-  await apiFetch(`/mail/aliases/${id}`, { method: "DELETE" });
-}
-
-export async function sendTestEmail(to: string): Promise<void> {
-  await apiFetch("/mail/test", {
-    method: "POST",
-    body: JSON.stringify({ to }),
-  });
-}
-
-// ── Member Mail ────────────────────────────────────────────────────────────
-
-export async function getMemberMail(): Promise<MemberMailResponse> {
-  return apiFetch<MemberMailResponse>("/members/me/mail");
-}
+import type { MailMember } from "@/types";
 
 // ── Admin: Member Mail ─────────────────────────────────────────────────────
 
@@ -174,11 +27,6 @@ function adaptMailMember(b: BackendMailMember): MailMember {
   };
 }
 
-export async function listMailMembers(): Promise<MailMember[]> {
-  const resp = await apiFetch<{ data: BackendMailMember[] }>("/mail/members");
-  return resp.data.map(adaptMailMember);
-}
-
 export async function updateMailMember(
   id: string,
   input: {
@@ -198,12 +46,6 @@ export async function updateMailMember(
     body: JSON.stringify(body),
   });
   return adaptMailMember(b);
-}
-
-export async function provisionMemberMail(id: string): Promise<void> {
-  await apiFetch<{ ok: boolean }>(`/members/${id}/provision`, {
-    method: "POST",
-  });
 }
 
 export async function verifyMemberEmail(id: string): Promise<void> {
@@ -292,96 +134,6 @@ export async function listAllAddresses(params?: {
   return resp.data;
 }
 
-export async function listSelectableAddresses(): Promise<
-  { id: number; address: string; ownerType: string }[]
-> {
-  return apiFetch(`/mail/addresses/selectable`);
-}
-
-export async function getAddress(
-  id: number,
-): Promise<ManagedMailAddressInfo> {
-  return apiFetch<ManagedMailAddressInfo>(`/mail/addresses/${id}`);
-}
-
-export async function toggleAddress(
-  id: number,
-  enabled: boolean,
-): Promise<ManagedMailAddressInfo> {
-  return apiFetch<ManagedMailAddressInfo>(
-    `/mail/addresses/${id}/toggle`,
-    { method: "PATCH", body: JSON.stringify({ enabled }) },
-  );
-}
-
-export async function changeAddressPrefix(
-  id: number,
-  prefix: string,
-): Promise<ManagedMailAddressInfo> {
-  return apiFetch<ManagedMailAddressInfo>(
-    `/mail/addresses/${id}/prefix`,
-    { method: "PATCH", body: JSON.stringify({ prefix }) },
-  );
-}
-
-export async function updateAddress(
-  id: number,
-  fields: {
-    forwardingEnabled?: boolean;
-    retentionMs?: number | null;
-    quotaBytes?: number;
-  },
-): Promise<ManagedMailAddressInfo> {
-  const body: Record<string, unknown> = {};
-  if (fields.forwardingEnabled !== undefined)
-    body.forwardingEnabled = fields.forwardingEnabled;
-  if (fields.retentionMs !== undefined) body.retentionMs = fields.retentionMs;
-  if (fields.quotaBytes !== undefined) body.quotaBytes = fields.quotaBytes;
-  return apiFetch<ManagedMailAddressInfo>(`/mail/addresses/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify(body),
-  });
-}
-
-export async function listAddressAliases(
-  id: number,
-): Promise<ManagedMailAddressInfo[]> {
-  const resp = await apiFetch<{ data: ManagedMailAddressInfo[] }>(
-    `/mail/addresses/${id}/aliases`,
-  );
-  return resp.data;
-}
-
-export async function createAddressAlias(
-  id: number,
-  prefix: string,
-): Promise<ManagedMailAddressInfo> {
-  return apiFetch<ManagedMailAddressInfo>(
-    `/mail/addresses/${id}/aliases`,
-    { method: "POST", body: JSON.stringify({ prefix }) },
-  );
-}
-
-export async function deleteAddressAlias(
-  id: number,
-  aliasId: number,
-): Promise<void> {
-  await apiFetch(`/mail/addresses/${id}/aliases/${aliasId}`, {
-    method: "DELETE",
-  });
-}
-
-export async function toggleAddressAlias(
-  id: number,
-  aliasId: number,
-  enabled: boolean,
-): Promise<ManagedMailAddressInfo> {
-  return apiFetch<ManagedMailAddressInfo>(
-    `/mail/addresses/${id}/aliases/${aliasId}/toggle`,
-    { method: "PATCH", body: JSON.stringify({ enabled }) },
-  );
-}
-
 export interface MailAliasInfo {
   id: number;
   primaryMmaId: number | null;
@@ -391,67 +143,12 @@ export interface MailAliasInfo {
   createdById: number | null;
 }
 
-export async function listGroupMail(): Promise<ManagedMailAddressInfo[]> {
-  const resp = await apiFetch<{ data: ManagedMailAddressInfo[] }>(
-    "/mail/groups",
-  );
-  return resp.data;
-}
-
-export async function createGroupMail(
-  groupId: number,
-  prefix: string,
-): Promise<ManagedMailAddressInfo> {
-  return apiFetch<ManagedMailAddressInfo>(`/mail/groups/${groupId}`, {
-    method: "POST",
-    body: JSON.stringify({ prefix }),
-  });
-}
-
 export async function deleteGroupMail(groupId: number): Promise<void> {
   await apiFetch(`/mail/groups/${groupId}`, { method: "DELETE" });
 }
 
-// ── Function Mail (ManagedMailAddress) ──────────────────────────────────────
-
-export async function listFunctionMail(): Promise<ManagedMailAddressInfo[]> {
-  const resp = await apiFetch<{ data: ManagedMailAddressInfo[] }>(
-    "/mail/functions",
-  );
-  return resp.data;
-}
-
-export async function createFunctionMail(
-  functionId: number,
-  prefix: string,
-): Promise<ManagedMailAddressInfo> {
-  return apiFetch<ManagedMailAddressInfo>(`/mail/functions/${functionId}`, {
-    method: "POST",
-    body: JSON.stringify({ prefix }),
-  });
-}
-
 export async function deleteFunctionMail(functionId: number): Promise<void> {
   await apiFetch(`/mail/functions/${functionId}`, { method: "DELETE" });
-}
-
-// ── Member Mail (ManagedMailAddress) ──────────────────────────────────────────
-
-export async function listMemberMailMma(): Promise<ManagedMailAddressInfo[]> {
-  const resp = await apiFetch<{ data: ManagedMailAddressInfo[] }>(
-    "/mail/members-mail",
-  );
-  return resp.data;
-}
-
-export async function createMemberMail(
-  memberId: number,
-  prefix: string,
-): Promise<ManagedMailAddressInfo> {
-  return apiFetch<ManagedMailAddressInfo>(`/mail/members-mail/${memberId}`, {
-    method: "POST",
-    body: JSON.stringify({ prefix }),
-  });
 }
 
 export async function deleteMemberMail(memberId: number): Promise<void> {
@@ -659,17 +356,6 @@ export async function resetSystemAddressPassword(
     },
   );
   return resp.password;
-}
-
-// ── System address forwarding targets ──────────────────────────────────────
-
-export async function getSystemForwarding(
-  addressId: number,
-): Promise<string[]> {
-  const resp = await apiFetch<{ targets: string[] }>(
-    `/mail/system-addresses/${addressId}/forwarding`,
-  );
-  return resp.targets;
 }
 
 export async function updateSystemForwarding(

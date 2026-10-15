@@ -45,11 +45,6 @@ export async function listGroups(): Promise<Group[]> {
   return data.map(adapt);
 }
 
-export async function getGroup(id: string): Promise<Group> {
-  const b = await apiFetch<BackendGroup>(`/groups/${id}`);
-  return adapt(b);
-}
-
 export interface GroupCreate {
   name: string;
   description?: string;
@@ -137,24 +132,4 @@ export async function removeGroupMember(
   await apiFetch(`/groups/${groupId}/members/${memberId}`, {
     method: "DELETE",
   });
-}
-
-export async function updateGroupMemberRole(
-  groupId: string,
-  memberId: string,
-  role: string,
-  notes?: string,
-): Promise<{ id: number; role: string; notes: string | null }> {
-  const body: Record<string, unknown> = { role };
-  if (notes !== undefined) body.notes = notes;
-  return apiFetch(`/groups/${groupId}/members/${memberId}`, {
-    method: "PATCH",
-    body: JSON.stringify(body),
-  });
-}
-
-export async function getGroupMailingList(
-  groupId: string,
-): Promise<{ data: { email: string; name: string; public_email: string | null }[]; count: number }> {
-  return apiFetch(`/groups/${groupId}/mailing-list`);
 }

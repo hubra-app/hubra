@@ -109,12 +109,6 @@ export async function reportMissingKeys(
   });
 }
 
-export async function fetchFlaggedTranslations(
-  locale: string,
-): Promise<TranslationEntry[]> {
-  return apiFetch(`/i18n/${locale}/flagged`);
-}
-
 export interface TranslationEntry {
   id: number;
   locale: string;

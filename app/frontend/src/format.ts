@@ -8,23 +8,12 @@ const chfCompactFormatter = new Intl.NumberFormat("de-CH", {
   maximumFractionDigits: 1,
 });
 
-const dateFormatter = new Intl.DateTimeFormat("de-CH", {
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-});
-
 const dateTimeFormatter = new Intl.DateTimeFormat("de-CH", {
   day: "2-digit",
   month: "2-digit",
   year: "numeric",
   hour: "2-digit",
   minute: "2-digit",
-});
-
-const monthYearFormatter = new Intl.DateTimeFormat("de-CH", {
-  month: "short",
-  year: "numeric",
 });
 
 const relativeFormatter = new Intl.RelativeTimeFormat("de-CH", {
@@ -39,16 +28,8 @@ export function formatCHFCompact(amount: number): string {
   return chfCompactFormatter.format(amount);
 }
 
-export function formatDate(iso: string | Date): string {
-  return dateFormatter.format(new Date(iso));
-}
-
 export function formatDateTime(iso: string | Date): string {
   return dateTimeFormatter.format(new Date(iso));
-}
-
-export function formatMonthYear(iso: string | Date): string {
-  return monthYearFormatter.format(new Date(iso));
 }
 
 export function formatRelative(iso: string | Date): string {

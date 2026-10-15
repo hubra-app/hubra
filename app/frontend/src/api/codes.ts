@@ -32,11 +32,6 @@ export async function listCodes(): Promise<Code[]> {
   return data.map(adapt);
 }
 
-export async function getCode(id: string): Promise<Code> {
-  const b = await apiFetch<BackendCode>(`/codes/${id}`);
-  return adapt(b);
-}
-
 export interface CodeCreate {
   name: string;
   code: string;

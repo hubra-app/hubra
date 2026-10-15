@@ -202,53 +202,6 @@ export interface Invoice {
   reminderSentAt?: string[];
 }
 
-export interface Mailbox {
-  id: string;
-  address: string;
-  displayName: string;
-  messageCount: number;
-  quotaUsed: number;
-  quotaTotal: number;
-  sendOnly?: boolean;
-  memberId?: number | null;
-  memberName?: string | null;
-  isProvisioned?: boolean;
-}
-
-export interface Alias {
-  id: string;
-  address: string;
-  type: "Alias" | "Forward" | "Distribution";
-  deliversTo: string[];
-  enabled: boolean;
-  groupId: number | null;
-  groupName: string | null;
-  isMainAlias?: boolean;
-}
-
-export interface MemberMailbox {
-  address: string;
-  displayName: string;
-  quotaUsed: number;
-  quotaTotal: number;
-  messageCount: number;
-  inboxCount: number;
-  unreadCount: number;
-  targets: string[];
-}
-
-export interface MemberMailAddress {
-  id: string;
-  address: string;
-  main: boolean;
-}
-
-export interface MemberMailResponse {
-  status: "provisioned" | "not_provisioned" | "service_unavailable";
-  mailbox: MemberMailbox | null;
-  aliases: MemberMailAddress[];
-}
-
 export interface Application {
   id: string;
   name: string;

@@ -327,31 +327,3 @@ export async function exportMembersCSV(fields?: string[]): Promise<void> {
   a.click();
   URL.revokeObjectURL(url);
 }
-
-export async function importMembersCSV(
-  file: File,
-  options?: { mapping?: Record<string, string>; dryRun?: boolean },
-): Promise<{
-  created?: number;
-  skipped?: number;
-  errors?: { row: number; error: string }[];
-  row_count?: number;
-  columns?: string[];
-  preview?: Record<string, string>[];
-}> {
-  const formData = new FormData();
-  formData.append("file", file);
-  if (options?.mapping)
-    formData.append("mapping", JSON.stringify(options.mapping));
-  if (options?.dryRun) formData.append("dry_run", "true");
-
-  const res = await apiFetchRaw('/members/import', {
-    method: "POST",
-    body: formData,
-  });
-  return res.json();
-}
-
-export async function softDeleteMember(id: string): Promise<void> {
-  await apiFetch(`/members/${id}/soft`, { method: "DELETE" });
-}

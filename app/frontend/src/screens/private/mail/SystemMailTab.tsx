@@ -5,7 +5,7 @@ import { IconRefresh, IconPlus, IconLoader2 } from '@tabler/icons-react'
 import { TextInput, Select, Group, Button } from '@mantine/core'
 import { useToast, useAuth } from '@/context/AppContext'
 import { Modal, usePagination, DataTable } from '@/components/ui'
-import { useMailColumns } from '@/screens/private/mail/MailAddressRow'
+import { useMailColumns } from '@/screens/private/mail/useMailColumns'
 import { MailSettingsModal } from '@/screens/private/mail/MailSettingsModal'
 import {
   listSystemAddresses,

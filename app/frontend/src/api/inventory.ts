@@ -85,11 +85,6 @@ export async function listInventory(
   return data.map(adapt);
 }
 
-export async function getInventoryItem(id: string): Promise<InventoryItem> {
-  const b = await apiFetch<BackendInventoryItem>(`/inventory/${id}`);
-  return adapt(b);
-}
-
 export interface InventoryItemCreate {
   name: string;
   category: InventoryCategory;
@@ -189,63 +184,4 @@ export interface InventoryCheckout {
   expectedReturnAt: string | null;
   returnedAt: string | null;
   conditionNotes: string | null;
-}
-
-export async function checkoutItem(
-  itemId: string,
-  memberId: number,
-  options?: { expectedReturnAt?: string; conditionNotes?: string },
-): Promise<InventoryCheckout> {
-  const body: Record<string, unknown> = { member_id: memberId };
-  if (options?.expectedReturnAt !== undefined)
-    body.expected_return_at = options.expectedReturnAt;
-  if (options?.conditionNotes !== undefined)
-    body.condition_notes = options.conditionNotes;
-  const b = await apiFetch<BackendCheckout>(`/inventory/${itemId}/checkout`, {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
-  return adaptCheckout(b);
-}
-
-export async function checkinItem(
-  itemId: string,
-  conditionNotes?: string,
-): Promise<InventoryCheckout> {
-  const body: Record<string, unknown> = {};
-  if (conditionNotes !== undefined) body.condition_notes = conditionNotes;
-  const b = await apiFetch<BackendCheckout>(`/inventory/${itemId}/checkin`, {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
-  return adaptCheckout(b);
-}
-
-export async function listOverdueItems(): Promise<InventoryCheckout[]> {
-  const data = await apiFetch<BackendCheckout[]>("/inventory/overdue");
-  return data.map(adaptCheckout);
-}
-
-interface BackendCheckout {
-  id: number;
-  item_id: number;
-  member_id: number;
-  member_name: string | null;
-  checked_out_at: string;
-  expected_return_at: string | null;
-  returned_at: string | null;
-  condition_notes: string | null;
-}
-
-function adaptCheckout(b: BackendCheckout): InventoryCheckout {
-  return {
-    id: b.id,
-    itemId: b.item_id,
-    memberId: b.member_id,
-    memberName: b.member_name,
-    checkedOutAt: b.checked_out_at,
-    expectedReturnAt: b.expected_return_at,
-    returnedAt: b.returned_at,
-    conditionNotes: b.condition_notes,
-  };
 }

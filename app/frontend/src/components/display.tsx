@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import {
   Avatar as MantineAvatar,
   Badge,
-  Progress,
   Text,
   Group,
   Box,
@@ -152,28 +151,6 @@ export function StatusBadge({ status }: { status: string }) {
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </Text>
     </Group>
-  )
-}
-
-export function Bar({
-  value,
-  max,
-  color,
-}: {
-  value: number
-  max: number
-  color?: string
-}) {
-  const pct = Math.min(100, (value / max) * 100)
-  const fill = pct >= 85 ? '#ff4d3d' : color || '#fece2b'
-  return (
-    <Progress
-      value={pct}
-      size="sm"
-      radius="xl"
-      styles={{ section: { backgroundColor: fill } }}
-      style={{ minWidth: 80 }}
-    />
   )
 }
 

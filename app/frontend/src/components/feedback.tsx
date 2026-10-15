@@ -286,21 +286,6 @@ export function EmptyState({
   )
 }
 
-export function PageLoading({ message }: { message?: string }) {
-  return (
-    <Center mih="60vh">
-      <Stack align="center" gap="sm">
-        <Loader size="lg" />
-        {message && (
-          <Text size="sm" c="dimmed">
-            {message}
-          </Text>
-        )}
-      </Stack>
-    </Center>
-  )
-}
-
 export function Toasts() {
   return null
 }

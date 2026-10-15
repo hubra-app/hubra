@@ -26,10 +26,6 @@ export async function listNotifications(): Promise<Notification[]> {
   return data.map(adapt);
 }
 
-export async function markNotificationRead(id: string): Promise<void> {
-  await apiFetch(`/notifications/${id}/read`, { method: "PATCH" });
-}
-
 export async function markAllNotificationsRead(): Promise<void> {
   await apiFetch("/notifications/read-all", { method: "POST" });
 }

@@ -1,3 +1,6 @@
+// Hook module: SyncBadge and QuotaBar are private cell renderers, not exported
+// components, so Fast Refresh boundaries do not apply here.
+/* eslint-disable react-refresh/only-export-components */
 import { Badge } from '@mantine/core'
 import { useT } from '@/locales/i18n'
 import {
@@ -119,103 +122,6 @@ function QuotaBar({
   )
 }
 
-export function MailAddressRow({
-  entry,
-  ownerName,
-  onEdit,
-}: {
-  entry: ManagedMailAddressInfo
-  ownerName?: string | null
-  onEdit: () => void
-}) {
-  const { t } = useT()
-  const isMailbox = entry.addressType === 'mailbox'
-  const forwardTargets = entry.cachedForwardTargets || entry.fixedForwardTargets
-  const targetCount = forwardTargets?.length ?? 0
-
-  return (
-    <tr
-      onClick={onEdit}
-      style={{ cursor: 'pointer', transition: 'background .1s' }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = '#f4f8f5')}
-      onMouseLeave={(e) => (e.currentTarget.style.background = '')}
-    >
-      <td style={{ fontWeight: 600, color: '#181818' }}>
-        {ownerName || entry.displayName || entry.address}
-      </td>
-      <td style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#2596be' }}>
-        {entry.address}
-      </td>
-      <td>
-        <Badge
-          variant="light"
-          radius="xl"
-          styles={{
-            root: {
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 3,
-              background: isMailbox ? '#e8f5e9' : '#e3f2fd',
-              color: isMailbox ? '#1f9d57' : '#2596be',
-            },
-          }}
-        >
-          {isMailbox ? (
-            <IconMail size={10} />
-          ) : (
-            <IconArrowForwardUp size={10} />
-          )}
-          {isMailbox
-            ? t('mail.admin.mailbox', 'Mailbox')
-            : t('mail.admin.alias', 'Alias')}
-        </Badge>
-      </td>
-      <td>
-        {isMailbox ? (
-          <QuotaBar
-            used={entry.quotaUsed ?? null}
-            total={entry.quotaTotal ?? null}
-          />
-        ) : (
-          '—'
-        )}
-      </td>
-      <td style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#6b7480' }}>
-        {entry.retention != null
-          ? `${Math.round(entry.retention / 86400000)}d`
-          : t('mail.admin.retentionOff', 'OFF')}
-      </td>
-      <td style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#6b7480' }}>
-        {targetCount > 0 ? (
-          <span
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}
-          >
-            <IconArrowForwardUp size={10} />
-            {targetCount} {t('mail.admin.targets', 'Targets')}
-          </span>
-        ) : (
-          '—'
-        )}
-      </td>
-      <td>
-        {entry.isEnabled ? (
-          <Badge variant="light" color="green" radius="xl">
-            {t('mail.enabled', 'Aktiviert')}
-          </Badge>
-        ) : (
-          <Badge variant="light" color="red" radius="xl">
-            {t('mail.disabled', 'Deaktiviert')}
-          </Badge>
-        )}
-      </td>
-      <td>
-        <SyncBadge state={entry.syncState} error={entry.syncError} />
-      </td>
-    </tr>
-  )
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
 export function useMailColumns(
   getOwnerName: (entry: ManagedMailAddressInfo) => string | null | undefined,
 ): DataColumn<ManagedMailAddressInfo>[] {

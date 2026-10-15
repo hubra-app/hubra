@@ -1,4 +1,4 @@
-import { apiFetch, apiFetchRaw } from '@vollbuild/api-client';
+import { apiFetch } from '@vollbuild/api-client';
 import type { ClubEvent } from "@/types";
 
 interface BackendEvent {
@@ -165,78 +165,4 @@ export interface EventRegistration {
   attendedAt: string | null;
   notes: string | null;
   guests: number;
-}
-
-export async function registerForEvent(
-  eventId: string,
-  options?: { notes?: string; guests?: number },
-): Promise<EventRegistration> {
-  const body: Record<string, unknown> = {};
-  if (options?.notes !== undefined) body.notes = options.notes;
-  if (options?.guests !== undefined) body.guests = options.guests;
-  const b = await apiFetch<BackendRegistration>(`/events/${eventId}/register`, {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
-  return adaptRegistration(b);
-}
-
-export async function cancelRegistration(
-  eventId: string,
-): Promise<EventRegistration> {
-  const b = await apiFetch<BackendRegistration>(
-    `/events/${eventId}/cancel-registration`,
-    { method: "POST" },
-  );
-  return adaptRegistration(b);
-}
-
-export async function markAttendance(
-  eventId: string,
-  memberId: string,
-): Promise<EventRegistration> {
-  const b = await apiFetch<BackendRegistration>(
-    `/events/${eventId}/attend/${memberId}`,
-    { method: "POST" },
-  );
-  return adaptRegistration(b);
-}
-
-export async function exportCalendar(): Promise<void> {
-  const res = await apiFetchRaw('/events/calendar');
-  const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "events.ics";
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-interface BackendRegistration {
-  id: number;
-  event_id: number;
-  member_id: number;
-  member_name: string | null;
-  status: string;
-  registered_at: string;
-  cancelled_at: string | null;
-  attended_at: string | null;
-  notes: string | null;
-  guests: number;
-}
-
-function adaptRegistration(b: BackendRegistration): EventRegistration {
-  return {
-    id: b.id,
-    eventId: b.event_id,
-    memberId: b.member_id,
-    memberName: b.member_name,
-    status: b.status,
-    registeredAt: b.registered_at,
-    cancelledAt: b.cancelled_at,
-    attendedAt: b.attended_at,
-    notes: b.notes,
-    guests: b.guests,
-  };
 }

@@ -46,41 +46,6 @@ function adaptMember(raw: RawMember): Member {
   };
 }
 
-interface RawAuthResponse {
-  mustChangePassword?: boolean;
-  member: RawMember;
-}
-
-interface AuthResponse {
-  mustChangePassword?: boolean;
-  member: Member;
-}
-
-export async function login(
-  email: string,
-  password: string,
-  keepSignedIn: boolean = true,
-): Promise<AuthResponse> {
-  const data = await apiFetch<RawAuthResponse>("/auth/login", {
-    method: "POST",
-    body: JSON.stringify({ email, password, keepSignedIn }),
-  });
-  return { ...data, member: adaptMember(data.member) };
-}
-
-export async function bootstrap(payload: {
-  clubName?: string;
-  adminName: string;
-  adminEmail: string;
-  adminPassword: string;
-}): Promise<AuthResponse> {
-  const data = await apiFetch<RawAuthResponse>("/auth/bootstrap", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-  return { ...data, member: adaptMember(data.member) };
-}
-
 export async function logout(): Promise<void> {
   await apiFetch("/auth/logout", { method: "POST" }).catch(() => {});
 }
@@ -145,23 +110,6 @@ export async function switchTenant(
   });
 }
 
-export async function forgotPassword(email: string): Promise<void> {
-  await apiFetch("/auth/forgot-password", {
-    method: "POST",
-    body: JSON.stringify({ email }),
-  });
-}
-
-export async function resetPassword(
-  token: string,
-  password: string,
-): Promise<void> {
-  await apiFetch("/auth/reset-password", {
-    method: "POST",
-    body: JSON.stringify({ token, password }),
-  });
-}
-
 export async function changePassword(
   currentPassword: string,
   newPassword: string,
@@ -215,15 +163,6 @@ export async function getMyGroups(): Promise<{ id: string; name: string }[]> {
   const data =
     await apiFetch<{ id: string; name: string }[]>("/account/groups");
   return data;
-}
-
-export async function verifyEmail(
-  token: string,
-): Promise<{ ok: boolean; verified: boolean }> {
-  return apiFetch(`/account/verify-email`, {
-    method: "POST",
-    body: JSON.stringify({ token }),
-  });
 }
 
 export interface SessionInfo {

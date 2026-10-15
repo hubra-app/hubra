@@ -47,10 +47,6 @@ export async function deleteSetting(key: string): Promise<void> {
   await apiFetch(`/settings/${key}`, { method: "DELETE" });
 }
 
-export async function revertSetting(key: string): Promise<SettingEntry> {
-  return apiFetch<SettingEntry>(`/settings/${key}/revert`, { method: "POST" });
-}
-
 // ── Roles ──────────────────────────────────────────────────────────────────
 
 export interface Role {

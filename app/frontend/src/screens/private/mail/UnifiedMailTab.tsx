@@ -4,7 +4,7 @@ import { IconRefresh } from '@tabler/icons-react'
 import { Button } from '@mantine/core'
 import { useAuth } from '@/context/AppContext'
 import { DataTable } from '@/components/ui'
-import { useMailColumns } from '@/screens/private/mail/MailAddressRow'
+import { useMailColumns } from '@/screens/private/mail/useMailColumns'
 import { MailSettingsModal } from '@/screens/private/mail/MailSettingsModal'
 import { listAddresses, type ManagedMailAddressInfo } from '@/api/mail'
 
