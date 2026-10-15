@@ -133,9 +133,6 @@ class BaseConfig:
     #   python -c "import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())"
     FERNET_KEY: str = os.environ.get("FERNET_KEY", "")
 
-    # ── Brevo transactional email ───────────────────────────────────────────
-    BREVO_API_KEY: str = os.environ.get("BREVO_API_KEY", "")
-
     # ── ZoneMTA SMTP fallback (independent of member IMAP/SMTP) ────────────
     # When set, these override SMTP_HOST/SMTP_PORT for transactional email.
     ZONEMTA_SMTP_HOST: str = os.environ.get("ZONEMTA_SMTP_HOST", "")
@@ -258,7 +255,6 @@ class TestingConfig(BaseConfig):
     MAIL_DOMAIN: str = ""
     WILDDUCK_API_URL: str = ""
     WILDDUCK_API_TOKEN: str = ""
-    BREVO_API_KEY: str = ""
     REDIS_URL: str = ""
     BACKUP_S3_ENDPOINT: str = ""
     BACKUP_S3_BUCKET: str = ""

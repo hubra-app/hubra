@@ -20,9 +20,6 @@ flask-cors>=4.0
 python-dotenv>=1.0
 pydantic-settings[yaml]>=2.2
 
-# Transactional email
-brevo-python>=3.0
-
 # Production WSGI server
 gunicorn>=21.0
 

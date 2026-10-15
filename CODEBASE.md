@@ -307,7 +307,6 @@ club-management-suite/
 | pydantic-settings[yaml] | ≥2.2               | Settings loader (settings.yaml + env vars) |
 | weasyprint              | ≥62.0              | PDF generation (invoices, QR-bills)        |
 | qrbill                  | ≥1.2               | Swiss QR-bill PDF generation               |
-| brevo-python            | ≥3.0               | Transactional email (Brevo/SendinBlue)     |
 | boto3                   | ≥1.34              | S3-compatible backup storage (Contabo)     |
 | cryptography            | ≥41.0              | Symmetric encryption (codes at rest)       |
 | nh3                     | ≥0.2               | SVG sanitisation                           |
@@ -494,7 +493,6 @@ cd app/frontend && npm run lint && npx tsc --noEmit
 | `CORS_ORIGINS`       | Allowed CORS origins              | Dev        |
 | `REDIS_URL`          | Redis connection                  | Opt        |
 | `WILDDUCK_API_TOKEN` | WildDuck API access token         | Mail       |
-| `BREVO_API_KEY`      | Brevo transactional email API key | Opt        |
 | `BACKUP_S3_*`        | S3 backup credentials + GPG key   | Opt        |
 
 Configuration classes (`DevelopmentConfig`, `ProductionConfig`, `TestingConfig`) in `vollbuild/core/config.py` inherit from `BaseConfig`. Environment variables take precedence over defaults. Production requires explicit validation via `ProductionConfig.validate()`.

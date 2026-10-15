@@ -178,7 +178,6 @@ backend:
     REDIS_URL: redis://redis:6379/0
 
     JWT_SECRET_KEY: ci-test-secret
-    BREVO_API_KEY: ""
 
   cache:
     key:

@@ -21,7 +21,6 @@ not using mail, leave the mail variables blank.
 | Domain      | `MAIL_HOST`, `MAIL_FROM`, `MAIL_DOMAIN`                                    | Always (mail vars only when mail enabled)                |
 | Features    | Toggled in `settings.yaml` (`features.mail`, `features.polls`, etc.)       | Always                                                   |
 | SMTP/IMAP   | `SMTP_HOST`, `SMTP_PORT`, `IMAP_HOST`, `IMAP_PORT`                         | Mail feature enabled (Infomaniak SMTP/IMAP)              |
-| Brevo       | `BREVO_API_KEY`                                                            | Alternative transactional email when mail disabled       |
 | Backups     | `BACKUP_S3_*`, `BACKUP_ENCRYPTION_KEY`                                     | Backups enabled                                          |
 
 ### Cross-origin auth variables
