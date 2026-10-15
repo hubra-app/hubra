@@ -1,21 +1,14 @@
 import { useState } from 'react'
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { IconRefresh } from '@tabler/icons-react'
 import { Button } from '@mantine/core'
-import { useAuth, useToast } from '@/context/AppContext'
-import { DataTable, ConfirmModal } from '@/components/ui'
+import { useAuth } from '@/context/AppContext'
+import { DataTable } from '@/components/ui'
 import { useMailColumns } from '@/screens/private/mail/useMailColumns'
 import { MailSettingsModal } from '@/screens/private/mail/MailSettingsModal'
-import { listAllAddresses, type ManagedMailAddressInfo } from '@/api/mail'
-import { apiFetch } from '@vollbuild/api-client'
+import { listAddresses, listAllAddresses, type ManagedMailAddressInfo } from '@/api/mail'
 
-type OwnerFilter =
-  | 'all'
-  | 'member'
-  | 'group'
-  | 'function'
-  | 'system'
-  | 'mail_address'
+type OwnerFilter = 'all' | 'member' | 'group' | 'function' | 'system' | 'mail_address'
 type EnabledFilter = 'all' | 'true' | 'false'
 type SyncFilter = 'all' | 'ok' | 'pending' | 'drift' | 'error'
 
@@ -25,25 +18,34 @@ const OWNER_LABELS: Record<string, string> = {
   function: 'Function',
   mail_address: 'Alias',
   system: 'System',
-  unknown: 'Other',
 }
 
-export function AllAddressesTab() {
+const OWNER_COLORS: Record<string, string> = {
+  member: '#1f9d57',
+  group: '#2596be',
+  function: '#7c4dcc',
+  mail_address: '#c2870f',
+  system: '#e65100',
+}
+
+/**
+ * Mail address table. ``owned`` lists addresses of members, groups and
+ * functions; ``all`` also includes system addresses and aliases.
+ */
+export function AddressesTab({ scope }: { scope: 'owned' | 'all' }) {
+  const isAll = scope === 'all'
+  const queryKey = isAll ? 'mail-all-addresses' : 'mail-addresses'
   const { hasPermission } = useAuth()
-  const { notify } = useToast()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [ownerFilter, setOwnerFilter] = useState<OwnerFilter>('all')
   const [enabledFilter, setEnabledFilter] = useState<EnabledFilter>('all')
   const [syncFilter, setSyncFilter] = useState<SyncFilter>('all')
-  const [editEntry, setEditEntry] = useState<ManagedMailAddressInfo | null>(
-    null,
-  )
-  const [deleteTarget, setDeleteTarget] =
-    useState<ManagedMailAddressInfo | null>(null)
+  const [editEntry, setEditEntry] = useState<ManagedMailAddressInfo | null>(null)
 
   const canManage =
-    hasPermission('mail.aliases.delete') || hasPermission('mail.aliases.update')
+    hasPermission('mail.aliases.update') ||
+    hasPermission(isAll ? 'mail.aliases.delete' : 'mail.aliases.create')
 
   const {
     data,
@@ -51,15 +53,9 @@ export function AllAddressesTab() {
     isFetching,
     refetch,
   } = useQuery({
-    queryKey: [
-      'mail-all-addresses',
-      ownerFilter,
-      enabledFilter,
-      syncFilter,
-      search,
-    ],
+    queryKey: [queryKey, ownerFilter, enabledFilter, syncFilter, search],
     queryFn: () =>
-      listAllAddresses({
+      (isAll ? listAllAddresses : listAddresses)({
         ownerType: ownerFilter === 'all' ? undefined : ownerFilter,
         enabled: enabledFilter === 'all' ? undefined : enabledFilter === 'true',
         syncState: syncFilter === 'all' ? undefined : syncFilter,
@@ -69,14 +65,6 @@ export function AllAddressesTab() {
   const entries = data ?? []
 
   const baseColumns = useMailColumns((entry) => entry.ownerName)
-
-  const OWNER_COLORS: Record<string, string> = {
-    member: '#1f9d57',
-    group: '#2596be',
-    function: '#7c4dcc',
-    mail_address: '#c2870f',
-    system: '#e65100',
-  }
 
   const ownerTypeColumn = {
     key: 'ownerType',
@@ -147,30 +135,6 @@ export function AllAddressesTab() {
     },
   ]
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) =>
-      apiFetch(`/mail/addresses/${id}`, { method: 'DELETE' }),
-    onSuccess: (_data, id) => {
-      queryClient.invalidateQueries({ queryKey: ['mail-all-addresses'] })
-      queryClient.invalidateQueries({ queryKey: ['mail-addresses'] })
-      const target = deleteTarget
-      setDeleteTarget(null)
-      notify('success', 'Deleted', `${target?.address ?? id} removed.`)
-    },
-    onError: (err: unknown) => {
-      notify(
-        'error',
-        'Delete failed',
-        err instanceof Error ? err.message : 'Unknown error',
-      )
-    },
-  })
-
-  const handleDelete = () => {
-    if (!deleteTarget) return
-    deleteMutation.mutate(deleteTarget.id)
-  }
-
   return (
     <div>
       <DataTable
@@ -194,8 +158,12 @@ export function AllAddressesTab() {
               { value: 'member', label: 'Member' },
               { value: 'group', label: 'Group' },
               { value: 'function', label: 'Function' },
-              { value: 'system', label: 'System' },
-              { value: 'mail_address', label: 'Alias' },
+              ...(isAll
+                ? [
+                    { value: 'system', label: 'System' },
+                    { value: 'mail_address', label: 'Alias' },
+                  ]
+                : []),
             ],
             onSelectChange: (v) => setOwnerFilter(v as OwnerFilter),
           },
@@ -247,24 +215,13 @@ export function AllAddressesTab() {
           open={editEntry !== null}
           onClose={() => setEditEntry(null)}
           onSaved={() => {
+            queryClient.invalidateQueries({ queryKey: ['mail-addresses'] })
             queryClient.invalidateQueries({ queryKey: ['mail-all-addresses'] })
             setEditEntry(null)
           }}
           canManage={canManage}
         />
       )}
-
-      <ConfirmModal
-        open={deleteTarget !== null}
-        title="Delete address"
-        body={
-          deleteTarget
-            ? `Delete "${deleteTarget.address}"? This cannot be undone.`
-            : ''
-        }
-        onConfirm={handleDelete}
-        onClose={() => setDeleteTarget(null)}
-      />
     </div>
   )
 }

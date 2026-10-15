@@ -78,7 +78,7 @@ export function SystemMailTab() {
         t('mail.system.address.created', 'System-Mail erstellt'),
         t(
           'mail.system.address.created.msg',
-          'System-Adr�sse {{address}} erstellt.',
+          'System-Adrässe {{address}} erstellt.',
           { address: created.address },
         ),
       )
@@ -88,7 +88,7 @@ export function SystemMailTab() {
           ? e.message
           : t(
               'mail.could.not.create.system.address',
-              'System-Adr�sse chonnt n�d erstellt w�rde.',
+              'System-Adrässe chonnt nöd erstellt wärde.',
             )
       notify('error', t('common.createFailed', 'Erstelle fehlgeschlage'), msg)
     } finally {
@@ -123,7 +123,7 @@ export function SystemMailTab() {
         emptyMessage={t('common.noResults', 'Keini Resultat')}
         searchValue={search}
         onSearchChange={setSearch}
-        searchPlaceholder={t('common.search', 'Sueche�')}
+        searchPlaceholder={t('common.search', 'Sueche…')}
         page={pg.page}
         perPage={pg.perPage}
         total={pg.total}
@@ -174,7 +174,7 @@ export function SystemMailTab() {
         <Modal
           open={createOpen}
           onClose={() => setCreateOpen(false)}
-          title={t('mail.create.system.address', 'System-Adr�sse erstellen')}
+          title={t('mail.create.system.address', 'System-Adrässe erstellen')}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
@@ -187,7 +187,7 @@ export function SystemMailTab() {
                   display: 'block',
                 }}
               >
-                {t('mail.address', 'Adr�sse')}
+                {t('mail.address', 'Adrässe')}
               </label>
               <TextInput
                 placeholder="noreply@example.org"
@@ -244,7 +244,7 @@ export function SystemMailTab() {
               style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}
             >
               <Button variant="default" onClick={() => setCreateOpen(false)}>
-                {t('common.cancel', 'Abbr�che')}
+                {t('common.cancel', 'Abbräche')}
               </Button>
               <Button
                 variant="filled"

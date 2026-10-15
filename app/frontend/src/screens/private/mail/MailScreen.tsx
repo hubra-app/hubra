@@ -1,16 +1,18 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useT } from '@/locales/i18n'
 import { PageHead, Tabs } from '@/components/ui'
-import { UnifiedMailTab } from '@/screens/private/mail/UnifiedMailTab'
+import { AddressesTab } from '@/screens/private/mail/AddressesTab'
 import { SystemMailTab } from '@/screens/private/mail/SystemMailTab'
-import { AllAddressesTab } from '@/screens/private/mail/AllAddressesTab'
 import { WildDuckLiveTab } from '@/screens/private/mail/WildDuckLiveTab'
+
+const OwnedAddressesTab = () => <AddressesTab scope="owned" />
+const AllAddressesTab = () => <AddressesTab scope="all" />
 
 const TABS = [
   {
     key: 'addresses',
     labelKey: 'mail.admin.tabAddresses',
-    Component: UnifiedMailTab,
+    Component: OwnedAddressesTab,
   },
   { key: 'system', labelKey: 'mail.admin.tabSystem', Component: SystemMailTab },
   {
@@ -29,11 +31,9 @@ export function MailScreen() {
   const { t } = useT()
   const location = useLocation()
   const navigate = useNavigate()
-  const activeTab =
-    location.pathname.replace('/app/mail', '').replace('/', '') || 'addresses'
+  const activeTab = location.pathname.replace('/app/mail', '').replace('/', '') || 'addresses'
 
-  const ActiveComponent =
-    TABS.find((tab) => tab.key === activeTab)?.Component ?? UnifiedMailTab
+  const ActiveComponent = TABS.find((tab) => tab.key === activeTab)?.Component ?? OwnedAddressesTab
 
   return (
     <div>
@@ -41,9 +41,7 @@ export function MailScreen() {
       <Tabs
         tabs={TABS.map((tab) => ({ id: tab.key, label: t(tab.labelKey) }))}
         activeTab={activeTab}
-        onTabChange={(id) =>
-          navigate(`/app/mail${id === 'addresses' ? '' : '/' + id}`)
-        }
+        onTabChange={(id) => navigate(`/app/mail${id === 'addresses' ? '' : '/' + id}`)}
       />
       <ActiveComponent />
     </div>

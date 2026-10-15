@@ -168,7 +168,7 @@ export function WildDuckLiveTab() {
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th>{t('mail.admin.type', 'Typ')}</Table.Th>
-                  <Table.Th>{t('mail.address', 'Adr??�sse')}</Table.Th>
+                  <Table.Th>{t('mail.address', 'Adrässe')}</Table.Th>
                   <Table.Th>{t('mail.admin.managed', 'Verwaltet')}</Table.Th>
                   <Table.Th>{t('mail.admin.category', 'Kategorie')}</Table.Th>
                   <Table.Th>{t('mail.admin.owner', 'Besitzer')}</Table.Th>
@@ -198,7 +198,7 @@ export function WildDuckLiveTab() {
                       </Badge>
                     </Table.Td>
                     <Table.Td
-                      data-label={t('mail.address', 'Adr??sse')}
+                      data-label={t('mail.address', 'Adrässe')}
                       style={{
                         fontSize: 'var(--mantine-font-size-sm)',
                         color: '#181818',

@@ -96,12 +96,17 @@ export interface ManagedMailAddressInfo {
 
 // ── Unified address management ───────────────────────────────────────────────
 
-export async function listAddresses(params?: {
+interface AddressFilters {
   ownerType?: string;
   enabled?: boolean;
   syncState?: string;
   search?: string;
-}): Promise<ManagedMailAddressInfo[]> {
+}
+
+async function fetchAddresses(
+  path: string,
+  params?: AddressFilters,
+): Promise<ManagedMailAddressInfo[]> {
   const qs = new URLSearchParams();
   if (params?.ownerType) qs.set("owner_type", params.ownerType);
   if (params?.enabled !== undefined)
@@ -110,28 +115,21 @@ export async function listAddresses(params?: {
   if (params?.search) qs.set("search", params.search);
   const query = qs.toString() ? `?${qs.toString()}` : "";
   const resp = await apiFetch<{ data: ManagedMailAddressInfo[] }>(
-    `/mail/addresses${query}`,
+    `${path}${query}`,
   );
   return resp.data;
 }
 
-export async function listAllAddresses(params?: {
-  ownerType?: string;
-  enabled?: boolean;
-  syncState?: string;
-  search?: string;
-}): Promise<ManagedMailAddressInfo[]> {
-  const qs = new URLSearchParams();
-  if (params?.ownerType) qs.set("owner_type", params.ownerType);
-  if (params?.enabled !== undefined)
-    qs.set("enabled", String(params.enabled));
-  if (params?.syncState) qs.set("sync_state", params.syncState);
-  if (params?.search) qs.set("search", params.search);
-  const query = qs.toString() ? `?${qs.toString()}` : "";
-  const resp = await apiFetch<{ data: ManagedMailAddressInfo[] }>(
-    `/mail/addresses/all${query}`,
-  );
-  return resp.data;
+export async function listAddresses(
+  params?: AddressFilters,
+): Promise<ManagedMailAddressInfo[]> {
+  return fetchAddresses("/mail/addresses", params);
+}
+
+export async function listAllAddresses(
+  params?: AddressFilters,
+): Promise<ManagedMailAddressInfo[]> {
+  return fetchAddresses("/mail/addresses/all", params);
 }
 
 export interface MailAliasInfo {
