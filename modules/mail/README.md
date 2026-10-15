@@ -126,12 +126,13 @@ Group alias ────────►│  Club mailbox │──► IMAP (memb
 | `sync_group_alias`                 | Group membership added/removed           | Rebuilds alias target list                     |
 | `grant_send_as` / `revoke_send_as` | (Stubbed)                                | Manages send-as ACL                            |
 
-### Periodic tasks in `tasks/mail_tasks.py`
+### Periodic tasks in `vollbuild/core/tasks/mail_tasks.py`
 
-| Task                | Schedule        | Purpose                                                 |
-| ------------------- | --------------- | ------------------------------------------------------- |
-| `retention_cleanup` | Daily 02:00 UTC | Deletes messages older than per-member retention period |
-| `mail_reconcile`    | Every 5 minutes | Provisions any unprovisioned mailboxes or aliases       |
+| Task                  | Schedule         | Purpose                                                          |
+| --------------------- | ---------------- | ---------------------------------------------------------------- |
+| `retention_cleanup`   | Daily 02:00 UTC  | Deletes messages older than per-member retention period          |
+| `reconcile_mail`      | Every 15 minutes | Creates missing addresses, syncs every address to WildDuck       |
+| `check_mailbox_quota` | Hourly           | Alerts owner and postmaster when a mailbox is 90% full           |
 
 ## TLS
 
