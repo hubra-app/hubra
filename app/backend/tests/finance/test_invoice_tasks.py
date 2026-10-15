@@ -13,7 +13,7 @@ def test_generate_invoices_creates_for_billable_member(app, billable_tier_db):
     """Task creates an Open invoice for an active member with a monthly billable tier."""
     from vollbuild.core.tasks.finance_tasks import generate_invoices_task
     from vollbuild.core.models.finance import Invoice
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
 
     with app.app_context():
         with patch("vollbuild.core.tasks.email_tasks.send_email_task.delay"):
@@ -36,7 +36,7 @@ def test_generate_invoices_creates_pending_transaction(app, billable_tier_db):
     """Task creates a Pending income transaction linked to the invoice."""
     from vollbuild.core.tasks.finance_tasks import generate_invoices_task
     from vollbuild.core.models.finance import Invoice, Transaction, TransactionCategory
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
 
     with app.app_context():
         cat = TransactionCategory(name="Membership", color="#00aaff")
@@ -69,7 +69,7 @@ def test_generate_invoices_skips_member_without_tier(app, billable_tier_db):
     """Task skips member with no tier."""
     from vollbuild.core.tasks.finance_tasks import generate_invoices_task
     from vollbuild.core.models.finance import Invoice
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
 
     with app.app_context():
         with patch("vollbuild.core.tasks.email_tasks.send_email_task.delay"):
@@ -86,7 +86,7 @@ def test_generate_invoices_is_idempotent(app, billable_tier_db):
     """Running the task twice does not create duplicate invoices for the same period."""
     from vollbuild.core.tasks.finance_tasks import generate_invoices_task
     from vollbuild.core.models.finance import Invoice
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
 
     with app.app_context():
         with patch("vollbuild.core.tasks.email_tasks.send_email_task.delay"):

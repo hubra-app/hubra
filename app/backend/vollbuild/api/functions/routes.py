@@ -8,7 +8,7 @@ from vollbuild.api.auth.helpers import get_current_member
 from vollbuild.api.functions.services import FunctionService
 from vollbuild.api.permissions import permission_required
 from vollbuild.api.utils import log_audit
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 
 functions_bp = Blueprint("functions_bp", __name__)
 

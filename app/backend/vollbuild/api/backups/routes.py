@@ -10,7 +10,7 @@ from vollbuild.api.auth.helpers import get_current_member
 
 from vollbuild.api.permissions import require_admin
 from vollbuild.api.utils import log_audit
-from vollbuild.errors import api_error
+from vollbuild.core.errors import api_error
 from vollbuild.core.schemas.backup import BackupRecordSchema, BackupConfigSchema
 from vollbuild.api.backups.services import BackupsService, BackupServiceAPI
 

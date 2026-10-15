@@ -322,7 +322,7 @@ def run_seeds(db):
 
     _settings_seed_path = (
         _pathlib.Path(__file__).resolve().parent
-        / "seeds"
+        / "seed_data"
         / "settings"
         / "settings.json"
     )
@@ -485,7 +485,7 @@ def run_seeds(db):
     # issues).  This step explicitly creates any missing MMAs so the mail tabs
     # always show seeded groups and functions.
 
-    from vollbuild.services import managed_mail as mma_service
+    from vollbuild.core.services import managed_mail as mma_service
 
     for group in session.scalars(select(Group)).all():
         existing = session.scalar(
@@ -626,7 +626,7 @@ def run_seeds(db):
 
     from vollbuild.api.i18n import services as i18n_services
 
-    _seeds_dir = _pathlib.Path(__file__).resolve().parent / "seeds" / "translations"
+    _seeds_dir = _pathlib.Path(__file__).resolve().parent / "seed_data" / "translations"
     for locale in ("en-GB", "de-CH"):
         path = _seeds_dir / f"{locale}.json"
         if not path.exists():

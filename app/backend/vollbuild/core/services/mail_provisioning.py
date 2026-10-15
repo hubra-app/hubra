@@ -17,7 +17,7 @@ from typing import Any
 
 from sqlalchemy import select
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.core.models.managed_mail import ManagedMailAddress
 from vollbuild.core.services.wildduck import (
     WildDuckError,
@@ -667,7 +667,7 @@ def set_system_mailbox_password(mma: ManagedMailAddress, password: str) -> None:
     so the binding key is populated even before provisioning, and a later
     sync can push it to WildDuck.
     """
-    from vollbuild.crypto import encrypt_code
+    from vollbuild.core.crypto import encrypt_code
 
     mma.mailbox_password_encrypted = encrypt_code(password)
 

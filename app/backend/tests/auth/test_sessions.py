@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta, timezone
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.core.models.device_session import Device, Session
 
 
@@ -519,18 +519,18 @@ def test_update_last_seen_task_swallows_errors(app):
     from unittest.mock import patch
     from vollbuild.core.tasks.session_tasks import update_last_seen
 
-    with patch("vollbuild.extensions.db.session.commit", side_effect=Exception("boom")):
+    with patch("vollbuild.core.extensions.db.session.commit", side_effect=Exception("boom")):
         update_last_seen.run(99999)
 
 
 def test_after_request_dispatches_last_seen_task(client, auth_headers):
     from unittest.mock import patch
 
-    import vollbuild
+    from vollbuild.core import app as app_module
     from vollbuild.core.tasks.session_tasks import update_last_seen
 
     with patch.object(update_last_seen, "run") as mock_run:
-        vollbuild._last_seen_cache.clear()
+        app_module._last_seen_cache.clear()
         client.get("/api/v1/account/", headers=auth_headers)
         mock_run.assert_called_once()
 
@@ -538,16 +538,16 @@ def test_after_request_dispatches_last_seen_task(client, auth_headers):
 def test_after_request_throttles_last_seen(client, auth_headers):
     from unittest.mock import patch
 
-    import vollbuild
+    from vollbuild.core import app as app_module
     from vollbuild.core.tasks.session_tasks import update_last_seen
 
     with patch.object(update_last_seen, "run") as mock_run:
-        vollbuild._last_seen_cache.clear()
+        app_module._last_seen_cache.clear()
         client.get("/api/v1/account/", headers=auth_headers)
         client.get("/api/v1/account/", headers=auth_headers)
         mock_run.assert_called_once()
 
-    vollbuild._last_seen_cache.clear()
+    app_module._last_seen_cache.clear()
 
 
 def test_refresh_dispatches_session_activity_task(client, seeded_db):

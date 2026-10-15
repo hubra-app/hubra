@@ -165,7 +165,7 @@ def make_celery(app: Flask) -> Celery:
 def _bootstrap_celery() -> Celery:
     """Bootstrap Celery with a default Flask app for worker process startup.
 
-    Called once at module import time so ``celery -A vollbuild.tasks`` works.
+    Called once at module import time so ``celery -A vollbuild.core.tasks`` works.
     """
     from vollbuild import create_app  # noqa: PLC0415 -- deferred to avoid circular
 

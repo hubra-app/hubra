@@ -21,8 +21,8 @@ from vollbuild.api.permissions import (
     filter_updatable_fields,
 )
 from vollbuild.api.utils import log_audit
-from vollbuild.errors import api_error, raise_error
-from vollbuild.extensions import db
+from vollbuild.core.errors import api_error, raise_error
+from vollbuild.core.extensions import db
 from vollbuild.core.schemas.member import (
     MemberCreateSchema,
     MemberSchema,
@@ -339,7 +339,7 @@ def archive_member(member_id: int):
 
         provision_member_mail.delay(member_id)
 
-    from vollbuild.services import email as email_svc
+    from vollbuild.core.services import email as email_svc
 
     email_svc.send_account_deleted(
         archived_email,

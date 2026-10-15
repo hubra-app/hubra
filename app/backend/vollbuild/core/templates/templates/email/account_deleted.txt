@@ -1,5 +1,0 @@
-{{ t('mail.email.account_deleted.body', club_name=club_name) }}
-
-{% if support_url %}{{ t('mail.email.account_deleted.contact_note', support_url=support_url) }}
-{% else %}{{ t('mail.email.account_deleted.contact_note_no_url') }}
-{% endif %}

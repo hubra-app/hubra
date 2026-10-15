@@ -13,8 +13,8 @@ from vollbuild.api.permissions import (
     permission_required,
     can_update,
 )
-from vollbuild.errors import api_error
-from vollbuild.extensions import db
+from vollbuild.core.errors import api_error
+from vollbuild.core.extensions import db
 from vollbuild.core.schemas.role import RoleCreateSchema, RoleSchema
 from vollbuild.api.roles.services import RoleService, RolesService
 

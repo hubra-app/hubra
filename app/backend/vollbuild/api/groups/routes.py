@@ -14,8 +14,8 @@ from vollbuild.api.permissions import (
     can_update,
     filter_updatable_fields,
 )
-from vollbuild.errors import api_error, raise_error
-from vollbuild.extensions import db
+from vollbuild.core.errors import api_error, raise_error
+from vollbuild.core.extensions import db
 from vollbuild.core.models.group import Group
 from vollbuild.core.models.member import Member, member_groups
 from vollbuild.core.schemas.group import (

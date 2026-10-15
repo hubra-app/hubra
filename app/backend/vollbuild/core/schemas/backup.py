@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from marshmallow import fields
 
-from vollbuild.extensions import ma
+from vollbuild.core.extensions import ma
 
 
 class BackupRecordSchema(ma.Schema):

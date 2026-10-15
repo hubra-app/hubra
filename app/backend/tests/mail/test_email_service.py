@@ -16,7 +16,7 @@ from unittest.mock import patch
 import pytest
 
 from vollbuild import create_app
-from vollbuild.extensions import db as _db
+from vollbuild.core.extensions import db as _db
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -87,7 +87,7 @@ def test_missing_sender_skips(email_ctx, caplog):
     import logging
 
     from vollbuild.core.models.setting import Setting
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
 
     setting = db.session.get(Setting, "club.notification_sender_email")
     old = setting.value

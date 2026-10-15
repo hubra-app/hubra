@@ -1,6 +1,0 @@
-{{ t('mail.email.verify_email.body', club_name=club_name) }}
-
-{{ t('mail.email.verify_email.cta_note') }}
-{{ verify_url }}
-
-{{ t('mail.email.verify_email.ignore') }}

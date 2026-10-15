@@ -12,8 +12,8 @@ from urllib.parse import unquote
 
 from sqlalchemy import select
 
-from vollbuild.errors import raise_error
-from vollbuild.extensions import db
+from vollbuild.core.errors import raise_error
+from vollbuild.core.extensions import db
 from vollbuild.core.models.audit import AuditEntry
 from vollbuild.core.models.finance import Invoice
 from vollbuild.core.models.member import Member

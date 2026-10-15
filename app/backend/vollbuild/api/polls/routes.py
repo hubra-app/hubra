@@ -7,8 +7,8 @@ from vollbuild.api.auth.helpers import get_current_member
 
 from vollbuild.api.permissions import permission_required
 from marshmallow import ValidationError
-from vollbuild.errors import api_error
-from vollbuild.extensions import db
+from vollbuild.core.errors import api_error
+from vollbuild.core.extensions import db
 from vollbuild.core.schemas.poll import (
     PollCreateSchema,
     PollSchema,

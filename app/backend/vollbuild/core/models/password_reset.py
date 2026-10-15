@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from sqlalchemy import DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 
 
 class PasswordResetToken(db.Model):

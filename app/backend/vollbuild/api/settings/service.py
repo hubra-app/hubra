@@ -13,7 +13,7 @@ class SettingsService:
 
     def delete(self, key):
         SettingService.delete(key)
-        from vollbuild.extensions import db
+        from vollbuild.core.extensions import db
 
         db.session.commit()
 
@@ -28,6 +28,6 @@ class SettingsService:
             "description": None,
         }
         SettingService.upsert(key, data)
-        from vollbuild.extensions import db
+        from vollbuild.core.extensions import db
 
         db.session.commit()

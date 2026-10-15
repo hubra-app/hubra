@@ -8,9 +8,9 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.core.tasks import celery_app
-from vollbuild.pricing import (
+from vollbuild.core.pricing import (
     calculate_invoice_amount,
     period_window,
     total_deducted_annual_for_tiers,

@@ -12,8 +12,8 @@ from flask_jwt_extended import current_user, jwt_required
 from marshmallow import Schema, fields, validate
 
 from vollbuild.api.permissions import permission_required
-from vollbuild.errors import api_error
-from vollbuild.extensions import db
+from vollbuild.core.errors import api_error
+from vollbuild.core.extensions import db
 from vollbuild.api.i18n.services import (
     bulk_upsert,
     compute_is_stale,

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 
 
 class BackupRecord(db.Model):

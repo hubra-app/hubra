@@ -3,7 +3,7 @@
 from marshmallow import EXCLUDE, RAISE, fields, validate
 from sqlalchemy import select, func
 
-from vollbuild.extensions import ma, db
+from vollbuild.core.extensions import ma, db
 from vollbuild.core.models.poll import Poll, PollOption, PollVote
 
 

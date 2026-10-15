@@ -7,7 +7,7 @@ from functools import wraps
 from flask import g, jsonify
 from sqlalchemy import text
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.core.models.tenant import Tenant
 
 

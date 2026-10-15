@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.core.models.notification import Notification
 
 

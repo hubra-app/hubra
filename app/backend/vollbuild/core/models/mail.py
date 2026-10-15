@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import DateTime, ForeignKey, UniqueConstraint, func, select
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 
 if TYPE_CHECKING:
     from vollbuild.core.models.member import Member

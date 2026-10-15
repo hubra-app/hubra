@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import func, select
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.core.models.device_session import Device, Session
 
 _log = logging.getLogger(__name__)

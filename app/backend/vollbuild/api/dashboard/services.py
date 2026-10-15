@@ -9,7 +9,7 @@ from sqlalchemy import func, select
 
 from sqlalchemy.orm import selectinload
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.core.models.event import ClubEvent
 from vollbuild.core.models.finance import Invoice, Transaction
 from vollbuild.core.models.member import Member

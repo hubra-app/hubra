@@ -527,7 +527,7 @@ def test_put_updates_metadata_in_place(client, db, auth_headers):
 
 def _make_role_and_member(db, tier, *, name, is_admin=False, permission_keys=None):
     """Create a role + member, optionally granting permission keys. Returns auth headers."""
-    from vollbuild.extensions import db as _db
+    from vollbuild.core.extensions import db as _db
     from vollbuild.core.models.member import Member
     from vollbuild.core.models.role import Role, RolePermission, Permission
     from vollbuild.core.models.user import User
@@ -592,7 +592,7 @@ def ns_perm_headers(request, client, seeded_db, app, db):
 
     Must sync permissions first so base Permission rows exist.
     """
-    from vollbuild.extensions import db as _db
+    from vollbuild.core.extensions import db as _db
 
     app.test_cli_runner().invoke(args=["sync-permissions"])
     keys = getattr(request, "param", None) or []
@@ -605,7 +605,7 @@ def ns_perm_headers(request, client, seeded_db, app, db):
 @pytest.fixture
 def ns_read_headers(client, seeded_db, app, db):
     """Non-admin with only settings.custom.read."""
-    from vollbuild.extensions import db as _db
+    from vollbuild.core.extensions import db as _db
 
     app.test_cli_runner().invoke(args=["sync-permissions"])
     _make_role_and_member(
@@ -620,7 +620,7 @@ def ns_read_headers(client, seeded_db, app, db):
 @pytest.fixture
 def wildcard_read_headers(client, seeded_db, app, db):
     """Non-admin with settings.settings.read (wildcard)."""
-    from vollbuild.extensions import db as _db
+    from vollbuild.core.extensions import db as _db
 
     app.test_cli_runner().invoke(args=["sync-permissions"])
     _make_role_and_member(
@@ -635,7 +635,7 @@ def wildcard_read_headers(client, seeded_db, app, db):
 @pytest.fixture
 def ns_write_headers(client, seeded_db, app, db):
     """Non-admin with settings.custom.write."""
-    from vollbuild.extensions import db as _db
+    from vollbuild.core.extensions import db as _db
 
     app.test_cli_runner().invoke(args=["sync-permissions"])
     _make_role_and_member(
@@ -650,7 +650,7 @@ def ns_write_headers(client, seeded_db, app, db):
 @pytest.fixture
 def ns_delete_headers(client, seeded_db, app, db):
     """Non-admin with settings.custom.delete."""
-    from vollbuild.extensions import db as _db
+    from vollbuild.core.extensions import db as _db
 
     app.test_cli_runner().invoke(args=["sync-permissions"])
     _make_role_and_member(
@@ -766,7 +766,7 @@ def test_non_admin_with_key_write_can_put_specific_key(
     app,
 ):
     """Non-admin with settings.custom.my.key.write can PUT that key but not another."""
-    from vollbuild.extensions import db as _db
+    from vollbuild.core.extensions import db as _db
 
     app.test_cli_runner().invoke(args=["sync-permissions"])
     _make_role_and_member(
@@ -835,7 +835,7 @@ def test_non_admin_read_key_level_only_sees_that_key(
     app,
 ):
     """Non-admin with per-key read permission sees only that key's setting."""
-    from vollbuild.extensions import db as _db
+    from vollbuild.core.extensions import db as _db
     from vollbuild.core.models.setting import Setting
 
     db.session.add(Setting(key="custom.my.visible", value="1", namespace="custom"))

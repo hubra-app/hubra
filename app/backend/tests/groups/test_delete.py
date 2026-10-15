@@ -2,7 +2,7 @@
 
 import pytest
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.core.models.group import Group
 from vollbuild.core.models.managed_mail import ManagedMailAddress
 from vollbuild.core.models.member import Member, member_groups

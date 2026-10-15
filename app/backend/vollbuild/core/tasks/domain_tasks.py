@@ -11,7 +11,7 @@ import logging
 from datetime import datetime, timezone
 
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.core.models.domain import Domain
 from vollbuild.core.services.dns_verification import verify_domain
 

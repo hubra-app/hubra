@@ -4,7 +4,7 @@ Application configuration classes.
 All values are read from environment variables (or .env via python-dotenv).
 Use config_map to look up a class by name:
 
-    from vollbuild.config import config_map
+    from vollbuild.core.config import config_map
     cfg = config_map[os.environ.get("FLASK_ENV", "development")]
 """
 

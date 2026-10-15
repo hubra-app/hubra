@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from marshmallow import EXCLUDE, RAISE, Schema, fields, validate
 
-from vollbuild.extensions import ma
+from vollbuild.core.extensions import ma
 from vollbuild.core.models.code import Code
 
 

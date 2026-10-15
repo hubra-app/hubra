@@ -14,7 +14,7 @@ from __future__ import annotations
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 
 
 class GlobalPermission(db.Model):

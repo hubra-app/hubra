@@ -12,7 +12,7 @@ from marshmallow import ValidationError
 from sqlalchemy import select
 
 from vollbuild.api.permissions import require_admin
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.core.models.domain import Domain
 from vollbuild.core.models.tenant import GlobalAuditEntry
 from vollbuild.core.schemas.club_settings import ClubSettingsSchema

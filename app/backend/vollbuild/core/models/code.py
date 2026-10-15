@@ -5,8 +5,8 @@ from datetime import datetime, timezone
 from sqlalchemy import Boolean, DateTime, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from vollbuild.crypto import decrypt_code
-from vollbuild.extensions import db
+from vollbuild.core.crypto import decrypt_code
+from vollbuild.core.extensions import db
 
 
 class Code(db.Model):

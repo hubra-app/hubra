@@ -98,7 +98,7 @@ class HealthService:
         ok = False
         error = None
         try:
-            from vollbuild.extensions import db
+            from vollbuild.core.extensions import db
 
             db.session.execute(db.text("SELECT 1"))
             ok = True

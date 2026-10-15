@@ -8,7 +8,7 @@ from decimal import Decimal
 from sqlalchemy import Date, DateTime, ForeignKey, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 
 
 class TransactionCategory(db.Model):

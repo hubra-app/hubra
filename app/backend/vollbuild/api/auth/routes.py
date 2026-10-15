@@ -41,8 +41,8 @@ from vollbuild.api.permissions import (
     _get_member_permission_keys,
     member_is_admin,
 )
-from vollbuild.errors import api_error, raise_error
-from vollbuild.extensions import db, limiter
+from vollbuild.core.errors import api_error, raise_error
+from vollbuild.core.extensions import db, limiter
 
 from vollbuild.core.models.token import TokenBlocklist
 from vollbuild.core.models.device_session import Session
@@ -52,7 +52,7 @@ from vollbuild.core.models.user_tenant import UserTenant
 from vollbuild.core.schemas.finance import InvoiceSchema
 from vollbuild.core.schemas.group import GroupSchema
 from vollbuild.core.schemas.member import MemberSchema
-from vollbuild.services import email as email_svc
+from vollbuild.core.services import email as email_svc
 from vollbuild.core.services.email import _get_sso_base_url
 from vollbuild.api.notifications.service import create_notification
 from vollbuild.core.tenant.context import current_tenant

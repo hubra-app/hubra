@@ -8,8 +8,8 @@ from vollbuild.api.auth.helpers import get_current_member
 
 from vollbuild.api.permissions import permission_required, require_member
 from marshmallow import ValidationError
-from vollbuild.errors import api_error
-from vollbuild.extensions import db
+from vollbuild.core.errors import api_error
+from vollbuild.core.extensions import db
 from vollbuild.core.schemas.finance import (
     InvoiceCreateSchema,
     InvoiceSchema,
@@ -407,13 +407,13 @@ def download_invoice_pdf(id: int):
     if invoice.member_id is not None:
         is_owner = invoice.member_id == member.id
         if not is_owner and not is_admin:
-            from vollbuild.errors import raise_error as _raise
+            from vollbuild.core.errors import raise_error as _raise
 
             _raise(403, "FORBIDDEN", "You do not have access to this invoice")
     else:
         # External-party invoice — admin only.
         if not is_admin:
-            from vollbuild.errors import raise_error as _raise
+            from vollbuild.core.errors import raise_error as _raise
 
             _raise(403, "FORBIDDEN", "Only admins can download external-party invoices")
 

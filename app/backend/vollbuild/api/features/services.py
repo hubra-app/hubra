@@ -9,8 +9,8 @@ from __future__ import annotations
 
 from sqlalchemy import select
 
-from vollbuild.errors import raise_error
-from vollbuild.extensions import db
+from vollbuild.core.errors import raise_error
+from vollbuild.core.extensions import db
 from vollbuild.core.models.feature_flag import FeatureFlag
 from vollbuild.core.models.feature import Feature, TenantFeature
 

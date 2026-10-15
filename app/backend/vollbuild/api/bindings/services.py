@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from sqlalchemy import select
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.core.models.binding import Binding
 from vollbuild.core.models.internal_key import InternalKey
 from vollbuild.core.services.binding_registry import (
@@ -19,7 +19,7 @@ from vollbuild.core.services.binding_registry import (
     WRITE_ONLY_ATTRIBUTES,
 )
 from vollbuild.core.services.key_service import KeyService
-from vollbuild.validators import VALIDATORS
+from vollbuild.core.validators import VALIDATORS
 
 _MASK = "\u2022" * 8
 

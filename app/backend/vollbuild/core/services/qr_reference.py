@@ -21,7 +21,7 @@ from datetime import date
 
 from sqlalchemy.exc import IntegrityError
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.core.models.qrr_reference import QrrReference
 
 

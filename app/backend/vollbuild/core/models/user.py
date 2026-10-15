@@ -16,7 +16,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import JSON
 from sqlalchemy.orm import Mapped, mapped_column
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 
 _ph = PasswordHasher()
 

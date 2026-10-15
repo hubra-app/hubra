@@ -15,8 +15,8 @@ from sqlalchemy.orm import selectinload
 from vollbuild.api.mail.services import MailboxService
 from vollbuild.api.settings.service import SettingsService
 from vollbuild.api.utils import escape_like, log_audit
-from vollbuild.errors import raise_error
-from vollbuild.extensions import db
+from vollbuild.core.errors import raise_error
+from vollbuild.core.extensions import db
 from vollbuild.core.models.group import Group
 from vollbuild.core.models.member import (
     Member,
@@ -27,7 +27,7 @@ from vollbuild.core.models.member import (
 from vollbuild.core.models.user import User
 from vollbuild.core.models.role import Role
 from vollbuild.core.models.setting import Setting
-from vollbuild.services import email as email_svc
+from vollbuild.core.services import email as email_svc
 from vollbuild.core.services.wildduck import (
     WildDuckError,
     apply_email_schema,

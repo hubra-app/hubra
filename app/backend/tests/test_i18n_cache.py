@@ -3,7 +3,7 @@
 from unittest.mock import patch
 
 from vollbuild.api.i18n import services as i18n_services
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.core.models.translation import Translation
 
 

@@ -696,7 +696,7 @@ def test_serialize_includes_new_fields():
 def test_seed_creates_system_addresses(db):
     """Seed function creates system addresses: noreply, postmaster, info, abuse."""
     from vollbuild.core.models.setting import Setting
-    from vollbuild.seeds import run_seeds
+    from vollbuild.core.seeds import run_seeds
 
     db.session.add(Setting(key="mail.domain", value="club.ch"))
     db.session.commit()
@@ -744,7 +744,7 @@ def test_seed_creates_system_addresses(db):
 def test_seed_system_aliases_forward_to_postmaster(db):
     """Seed creates info@, abuse@, *@ aliases that forward to postmaster@."""
     from vollbuild.core.models.setting import Setting
-    from vollbuild.seeds import run_seeds
+    from vollbuild.core.seeds import run_seeds
 
     db.session.add(Setting(key="mail.domain", value="club.ch"))
     db.session.commit()

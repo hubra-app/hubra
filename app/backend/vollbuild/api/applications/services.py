@@ -8,8 +8,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from vollbuild.api.utils import log_audit
-from vollbuild.errors import raise_error
-from vollbuild.extensions import db
+from vollbuild.core.errors import raise_error
+from vollbuild.core.extensions import db
 from vollbuild.core.models.application import Application
 from vollbuild.core.models.member import Member
 
@@ -75,7 +75,7 @@ class ApplicationService:
                 pass
 
         # Welcome email — non-blocking
-        from vollbuild.services import email as email_svc
+        from vollbuild.core.services import email as email_svc
 
         login_email = member.public_email or member.email
         email_svc.send_welcome(

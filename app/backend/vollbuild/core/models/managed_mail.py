@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from sqlalchemy import DateTime, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 
 
 class ManagedMailAddress(db.Model):

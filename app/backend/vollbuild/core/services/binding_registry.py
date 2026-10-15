@@ -25,7 +25,7 @@ import re
 
 from sqlalchemy import select
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 
 _log = logging.getLogger(__name__)
 
@@ -170,10 +170,10 @@ _VIRTUAL_ATTRIBUTES: dict[str, dict[str, str]] = {
 
 # Schema class path per binding type (lazy-imported to avoid circular imports).
 _SCHEMA_MAP: dict[str, str] = {
-    "member": "vollbuild.schemas.member.MemberSchema",
-    "group": "vollbuild.schemas.group.GroupSchema",
-    "function": "vollbuild.schemas.function.FunctionSchema",
-    "mail_address": "vollbuild.schemas.managed_mail.ManagedMailAddressSchema",
+    "member": "vollbuild.core.schemas.member.MemberSchema",
+    "group": "vollbuild.core.schemas.group.GroupSchema",
+    "function": "vollbuild.core.schemas.function.FunctionSchema",
+    "mail_address": "vollbuild.core.schemas.managed_mail.ManagedMailAddressSchema",
 }
 
 # Field types from marshmallow that represent simple scalar values suitable
@@ -477,7 +477,7 @@ def _resolve_mma_attribute(
 
 def _resolve_mailbox_password(mma) -> str | None:
     """Decrypt and return the stored mailbox password, or None."""
-    from vollbuild.crypto import decrypt_code
+    from vollbuild.core.crypto import decrypt_code
 
     if not mma.mailbox_password_encrypted:
         return None

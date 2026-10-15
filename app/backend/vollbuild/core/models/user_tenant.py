@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 
 
 class UserTenant(db.Model):

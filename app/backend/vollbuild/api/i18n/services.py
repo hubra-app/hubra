@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 
 from vollbuild.api.settings.services import SettingService
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.core.models.translation import Translation
 
 _log = logging.getLogger(__name__)

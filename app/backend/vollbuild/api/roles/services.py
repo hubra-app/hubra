@@ -6,8 +6,8 @@ from sqlalchemy import select
 
 from vollbuild.api.permissions import invalidate_role_permissions
 from vollbuild.api.utils import log_audit
-from vollbuild.errors import raise_error
-from vollbuild.extensions import db
+from vollbuild.core.errors import raise_error
+from vollbuild.core.extensions import db
 from vollbuild.core.models.role import Role, RolePermission, Permission
 
 

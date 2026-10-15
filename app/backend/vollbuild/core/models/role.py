@@ -6,7 +6,7 @@ import sqlalchemy as sa
 from sqlalchemy import Boolean, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 
 
 class Permission(db.Model):

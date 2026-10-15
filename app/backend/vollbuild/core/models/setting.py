@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 
 
 class Setting(db.Model):

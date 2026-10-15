@@ -6,7 +6,7 @@ import logging
 
 from sqlalchemy import text
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 
 _log = logging.getLogger(__name__)
 

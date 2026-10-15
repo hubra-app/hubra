@@ -5,7 +5,7 @@ from __future__ import annotations
 from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required
 from vollbuild.api.auth.helpers import get_current_member
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.core.schemas.notification import NotificationSchema
 from vollbuild.api.notifications.services import (
     NotificationService,

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.core.tasks import celery_app
 
 _log = logging.getLogger(__name__)

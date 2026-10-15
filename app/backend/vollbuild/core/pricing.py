@@ -19,7 +19,7 @@ def _get_yearly_expenses() -> Decimal:
     """
     try:
         from sqlalchemy import select
-        from vollbuild.extensions import db
+        from vollbuild.core.extensions import db
         from vollbuild.core.models.setting import Setting
 
         s = db.session.scalar(
@@ -70,7 +70,7 @@ def annual_fee_for_member(member, tier) -> Decimal:
 def calculate_invoice_amount(member, tier, deducted_annual_fees: Decimal) -> Decimal:
     """Return the invoice amount for one billing period for the given member."""
     from sqlalchemy import select, func
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
     from vollbuild.core.models.member import Member
 
     periods = periods_per_year(tier.billing_cycle)

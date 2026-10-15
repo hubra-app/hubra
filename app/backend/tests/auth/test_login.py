@@ -72,7 +72,7 @@ def test_logout_then_token_blocked(client, seeded_db):
 
 
 def test_login_creates_audit_entry(client, seeded_db):
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
     from vollbuild.core.models.audit import AuditEntry
 
     client.post(

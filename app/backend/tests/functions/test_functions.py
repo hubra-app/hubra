@@ -3,7 +3,7 @@
 from unittest import mock
 from unittest.mock import MagicMock, patch
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.core.models.function import Function, FunctionHolder
 from vollbuild.core.models.managed_mail import ManagedMailAddress
 
@@ -398,7 +398,7 @@ def test_delete_group_with_protected_mma(client, seeded_db, auth_headers):
 
 
 def test_seed_creates_vorstand_and_functions(db):
-    from vollbuild.seeds import run_seeds
+    from vollbuild.core.seeds import run_seeds
 
     run_seeds(db)
 
@@ -416,7 +416,7 @@ def test_seed_creates_vorstand_and_functions(db):
 
 
 def test_seed_creates_managed_mail_addresses(db):
-    from vollbuild.seeds import run_seeds
+    from vollbuild.core.seeds import run_seeds
 
     run_seeds(db)
 
@@ -442,7 +442,7 @@ def test_seed_creates_managed_mail_addresses(db):
 
 
 def test_seed_is_idempotent(db):
-    from vollbuild.seeds import run_seeds
+    from vollbuild.core.seeds import run_seeds
 
     run_seeds(db)
     count_before = db.session.scalar(

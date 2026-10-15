@@ -3,7 +3,7 @@
 from marshmallow import EXCLUDE, RAISE, fields, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
-from vollbuild.extensions import ma
+from vollbuild.core.extensions import ma
 from vollbuild.core.models.external_party import ExternalParty
 from vollbuild.core.models.finance import Invoice, Transaction, TransactionCategory
 

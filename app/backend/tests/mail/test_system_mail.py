@@ -661,7 +661,8 @@ def test_translations_contain_system_mail_keys():
     seeds_dir = (
         pathlib.Path(__file__).resolve().parents[2]
         / "vollbuild"
-        / "seeds"
+        / "core"
+        / "seed_data"
         / "translations"
     )
 
@@ -689,7 +690,7 @@ def test_translations_contain_system_mail_keys():
 
 def test_seed_creates_noreply_mma_with_password(app, db):
     """run_seeds creates a noreply system MMA with an encrypted password."""
-    from vollbuild.seeds import run_seeds
+    from vollbuild.core.seeds import run_seeds
     from vollbuild.core.models.managed_mail import ManagedMailAddress
     from sqlalchemy import select
 

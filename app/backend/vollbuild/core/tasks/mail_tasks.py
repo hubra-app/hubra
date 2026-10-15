@@ -35,7 +35,7 @@ def retention_cleanup(self) -> dict:
     from sqlalchemy import select
 
     from vollbuild.api.settings.service import SettingsService
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
     from vollbuild.core.models.managed_mail import ManagedMailAddress
     from vollbuild.core.models.member import Member
     from vollbuild.core.services.wildduck import WildDuckError, try_get_client
@@ -162,7 +162,7 @@ def cleanup_token_blocklist(self) -> dict:
     """
     from sqlalchemy import delete
 
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
     from vollbuild.core.models.token import TokenBlocklist
 
     cutoff = datetime.now(timezone.utc) - timedelta(days=30)
@@ -197,7 +197,7 @@ def mail_reconcile(self) -> dict:
 
     from sqlalchemy import select
 
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
     from vollbuild.core.models.audit import AuditEntry
     from vollbuild.core.services.wildduck import try_get_client
 
@@ -255,7 +255,7 @@ def verify_protected_mail_addresses(self) -> dict:
     from sqlalchemy import select
 
     from vollbuild.api.utils import log_audit
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
     from vollbuild.core.models.managed_mail import ManagedMailAddress
     from vollbuild.core.services.wildduck import WildDuckError, try_get_client
     from vollbuild.core.tasks.wildduck import (
@@ -377,7 +377,7 @@ def reconcile_mail(self) -> dict:
 
     from sqlalchemy import select
 
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
     from vollbuild.core.models.managed_mail import ManagedMailAddress
     from vollbuild.core.services.managed_mail import (
         auto_create_mma_for_function,
@@ -629,7 +629,7 @@ def reconcile_entity_forwarding_task(self, entity_type: str, entity_id: int) -> 
         )
         return
 
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
     from vollbuild.core.services.mail_provisioning import reconcile_entity_forwarding
 
     try:
@@ -667,7 +667,7 @@ def check_mailbox_quota(self) -> dict:
     from sqlalchemy import select
 
     from vollbuild.api.utils import log_audit
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
     from vollbuild.core.models.managed_mail import ManagedMailAddress
     from vollbuild.core.models.member import Member
     from vollbuild.core.services.wildduck import WildDuckError, try_get_client
@@ -789,7 +789,7 @@ def ensure_mmas_for_all_entities(self) -> dict:
 
     from sqlalchemy import select
 
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
     from vollbuild.core.models.function import Function
     from vollbuild.core.models.group import Group
     from vollbuild.core.models.managed_mail import ManagedMailAddress

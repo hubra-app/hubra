@@ -31,7 +31,7 @@ from flask import g, jsonify, request
 from flask_jwt_extended import current_user, verify_jwt_in_request
 from sqlalchemy import select
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 
 
 def _current_member():

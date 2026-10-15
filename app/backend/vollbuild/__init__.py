@@ -1,12 +1,9 @@
-"""
-vollbuild — application factory re-export.
+"""vollbuild: Club Management Suite backend.
 
-The actual implementation lives in vollbuild.core.app.
-This module exists for backwards compatibility so that
-``from vollbuild import create_app`` keeps working.
+The application factory lives in :mod:`vollbuild.core.app`; it is exported
+here so ``from vollbuild import create_app`` and ``wsgi:app`` keep working.
 """
 
-from vollbuild.core.app import create_app  # noqa: F401
-from vollbuild.core.app import _last_seen_cache  # noqa: F401
+from vollbuild.core.app import create_app
 
 __all__ = ["create_app"]

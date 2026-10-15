@@ -16,14 +16,14 @@ from vollbuild.api.mail.services import (
     MailboxService,
     MailboxesService,
 )
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.api.permissions import permission_required
 from vollbuild.api.settings.service import SettingsService
 from vollbuild.api.utils import log_audit
-from vollbuild.errors import api_error, raise_error
+from vollbuild.core.errors import api_error, raise_error
 from vollbuild.core.models.group import Group
 from vollbuild.core.models.managed_mail import ManagedMailAddress
-from vollbuild.services import managed_mail as mma_service
+from vollbuild.core.services import managed_mail as mma_service
 
 mail_bp = Blueprint("mail_bp", __name__)
 

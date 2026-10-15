@@ -7,13 +7,13 @@ python_version = "3.12"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = "vollbuild.extensions"
+module = "vollbuild.core.extensions"
 disable_error_code = ["name-defined"]
 
 [[tool.mypy.overrides]]
 module = [
-    "vollbuild.models.*",
-    "vollbuild.schemas.*",
+    "vollbuild.core.models.*",
+    "vollbuild.core.schemas.*",
 ]
 disable_error_code = ["name-defined"]
 
@@ -27,20 +27,3 @@ filterwarnings = [
     # producing a ResourceWarning that is harmless in tests.
     "ignore::ResourceWarning",
 ]
-
-[tool.ruff.lint.per-file-ignores]
-# Re-export stubs: imports are intentionally unused (they're re-exported)
-"vollbuild/models/*" = ["F401"]
-"vollbuild/schemas/*" = ["F401"]
-"vollbuild/services/*" = ["F401"]
-"vollbuild/tasks/*" = ["F401"]
-"vollbuild/tenant/*" = ["F401"]
-"vollbuild/config.py" = ["F401"]
-"vollbuild/crypto.py" = ["F401"]
-"vollbuild/errors.py" = ["F401"]
-"vollbuild/extensions.py" = ["F401"]
-"vollbuild/logging_config.py" = ["F401"]
-"vollbuild/pricing.py" = ["F401"]
-"vollbuild/seeds.py" = ["F401"]
-"vollbuild/settings_loader.py" = ["F401"]
-"vollbuild/validators.py" = ["F401"]

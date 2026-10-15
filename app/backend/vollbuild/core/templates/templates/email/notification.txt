@@ -1,4 +1,0 @@
-{{ message }}
-{% if portal_url %}
-{{ t('mail.email.notification.view_link') }}: {{ portal_url }}
-{% endif %}

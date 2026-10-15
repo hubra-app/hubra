@@ -9,8 +9,8 @@ from marshmallow import ValidationError
 from vollbuild.api.features.services import FeatureFlagService
 from vollbuild.api.permissions import permission_required, require_global_permission
 from vollbuild.api.utils import log_audit
-from vollbuild.errors import api_error
-from vollbuild.extensions import db
+from vollbuild.core.errors import api_error
+from vollbuild.core.extensions import db
 from vollbuild.core.schemas.feature_flag import (
     FeatureFlagSchema,
     FeatureFlagWriteSchema,

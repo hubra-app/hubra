@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from sqlalchemy import DateTime, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 
 
 class QrrReference(db.Model):

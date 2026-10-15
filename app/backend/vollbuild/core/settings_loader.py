@@ -5,7 +5,7 @@ Club identity (name, domain, sender address) lives in the database.
 Secrets (API keys, passwords) live in .env.
 
 Usage:
-    from vollbuild.settings_loader import load_settings
+    from vollbuild.core.settings_loader import load_settings
     load_settings(app)   # stores AppSettings at app.config['SETTINGS']
 
 Environment variable overrides use double-underscore as the nested delimiter:
@@ -27,7 +27,16 @@ from pydantic_settings import (
     YamlConfigSettingsSource,
 )
 
-_DEFAULT_SETTINGS_FILE = Path(__file__).parent.parent.parent.parent / "settings.yaml"
+# Nearest settings.yaml above this file (the repo root in a checkout).
+# Containers set SETTINGS_FILE explicitly.
+_DEFAULT_SETTINGS_FILE = next(
+    (
+        p / "settings.yaml"
+        for p in Path(__file__).resolve().parents
+        if (p / "settings.yaml").is_file()
+    ),
+    Path("settings.yaml"),
+)
 
 
 class AdminSettings(BaseModel):

@@ -444,49 +444,49 @@ def test_mail_reconcile_skips_provisioned_member(app, db, seeded_db):
 
 def test_beat_schedule_contains_retention_cleanup():
     """celery_app beat_schedule includes retention-cleanup-daily."""
-    from vollbuild.tasks import celery_app
+    from vollbuild.core.tasks import celery_app
 
     assert "retention-cleanup-daily" in celery_app.conf.beat_schedule
 
 
 def test_beat_schedule_contains_mail_reconcile():
     """celery_app beat_schedule includes mail-reconcile-5min."""
-    from vollbuild.tasks import celery_app
+    from vollbuild.core.tasks import celery_app
 
     assert "mail-reconcile-5min" in celery_app.conf.beat_schedule
 
 
 def test_beat_schedule_contains_token_blocklist_cleanup():
     """celery_app beat_schedule includes cleanup-token-blocklist-daily."""
-    from vollbuild.tasks import celery_app
+    from vollbuild.core.tasks import celery_app
 
     assert "cleanup-token-blocklist-daily" in celery_app.conf.beat_schedule
 
 
 def test_beat_schedule_contains_reconcile_mail():
     """celery_app beat_schedule includes mail-reconcile-v2-15min."""
-    from vollbuild.tasks import celery_app
+    from vollbuild.core.tasks import celery_app
 
     assert "mail-reconcile-v2-15min" in celery_app.conf.beat_schedule
 
 
 def test_beat_schedule_contains_check_mailbox_quota():
     """celery_app beat_schedule includes check-mailbox-quota-hourly."""
-    from vollbuild.tasks import celery_app
+    from vollbuild.core.tasks import celery_app
 
     assert "check-mailbox-quota-hourly" in celery_app.conf.beat_schedule
 
 
 def test_beat_schedule_no_ensure_mmas_15min():
     """ensure-mmas-15min removed (redundant — reconcile_mail covers auto-creation)."""
-    from vollbuild.tasks import celery_app
+    from vollbuild.core.tasks import celery_app
 
     assert "ensure-mmas-15min" not in celery_app.conf.beat_schedule
 
 
 def test_beat_schedule_no_ensure_mmas_hourly():
     """Old hourly entry must be removed."""
-    from vollbuild.tasks import celery_app
+    from vollbuild.core.tasks import celery_app
 
     assert "ensure-mmas-hourly" not in celery_app.conf.beat_schedule
 

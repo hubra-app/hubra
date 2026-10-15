@@ -10,7 +10,7 @@ from vollbuild.api.health.cache import HealthCache
 from vollbuild.api.health.services import HealthService
 from vollbuild.api.permissions import require_admin
 from vollbuild.api.version.service import VersionService
-from vollbuild.extensions import limiter
+from vollbuild.core.extensions import limiter
 
 health_bp = Blueprint("health", __name__)
 

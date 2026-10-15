@@ -340,16 +340,10 @@ def _register_cli(app: Flask) -> None:
             db_upgrade()
             click.echo("Migrations complete.")
 
-        try:
-            from vollbuild.core.seeds import run_seeds
+        from vollbuild.core.seeds import run_seeds
 
-            run_seeds(db)
-            click.echo("Seed data inserted.")
-        except ModuleNotFoundError:
-            click.echo(
-                "No seeds module found (vollbuild/seeds.py).  "
-                "Create it and expose run_seeds(db) to populate the database."
-            )
+        run_seeds(db)
+        click.echo("Seed data inserted.")
 
     @app.cli.command("create-tables")
     def create_tables():

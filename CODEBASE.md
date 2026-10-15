@@ -142,87 +142,33 @@ club-management-suite/
 │
 ├── app/                         # Application source code
 │   ├── backend/                 # Flask + Celery backend (Python)
-│   │   ├── vollbuild/           # Application package (app factory, blueprints, models)
-│   │   │   ├── api/             # Blueprint modules (32 domains)
-│   │   │   │   ├── auth/        # Authentication & account management
-│   │   │   │   ├── members/     # Member CRUD, archive, provisioning
-│   │   │   │   ├── groups/      # Group management
-│   │   │   │   ├── finance/     # Invoices, transactions, QR-bills
-│   │   │   │   ├── mail/        # Mailboxes, aliases, provisioning
-│   │   │   │   ├── events/      # Events & attendance
-│   │   │   │   ├── polls/       # Polls & voting
-│   │   │   │   ├── posts/       # Announcements & comments
-│   │   │   │   ├── inventory/   # Item tracking
-│   │   │   │   ├── settings/    # Key-value settings
-│   │   │   │   ├── audit/       # Audit log
-│   │   │   │   ├── backups/     # S3 backup management
-│   │   │   │   ├── applications/# Membership applications
-│   │   │   │   ├── dashboard/   # Aggregated dashboard data
-│   │   │   │   ├── bindings/    # Discord/SSO bindings
-│   │   │   │   ├── codes/       # Access codes
-│   │   │   │   ├── functions/   # Club function roles (Kassier, Präsidium, etc.)
-│   │   │   │   ├── i18n/        # Internationalisation
-│   │   │   │   ├── notifications/ # Member notifications
-│   │   │   │   ├── roles/       # Role-based permissions
-│   │   │   │   ├── tiers/       # Membership tiers
-│   │   │   │   ├── setup/       # Initial setup wizard
-│   │   │   │   ├── health/      # Health check endpoint
-│   │   │   │   ├── system/      # System info & version
-│   │   │   │   ├── stream/      # Server-sent events
-│   │   │   │   ├── version/     # Version endpoint
-│   │   │   │   ├── features/    # Feature flag overrides
+│   │   ├── vollbuild/           # Application package (`create_app` re-exported here)
+│   │   │   ├── api/             # Flask blueprints, one package per domain
+│   │   │   │   ├── admin/ applications/ audit/ auth/ backups/ bindings/ codes/
+│   │   │   │   ├── dashboard/ events/ features/ finance/ functions/ groups/ health/
+│   │   │   │   ├── i18n/ inventory/ mail/ members/ notifications/ polls/ posts/
+│   │   │   │   ├── roles/ settings/ system/ tenant/ tiers/ version/
 │   │   │   │   ├── fields.py    # Field-level permission definitions
 │   │   │   │   ├── permissions.py # Permission decorators
 │   │   │   │   └── utils.py     # API utilities
-│   │   │   ├── models/          # SQLAlchemy models (28 files)
-│   │   │   │   ├── member.py    # Member model
-│   │   │   │   ├── group.py     # Group model
-│   │   │   │   ├── finance.py   # TransactionCategory, Transaction, Invoice
-│   │   │   │   ├── event.py     # Event model
-│   │   │   │   ├── poll.py      # Poll/Vote models
-│   │   │   │   ├── post.py      # Post/Comment/Like models
-│   │   │   │   ├── mail.py      # MailLog
-│   │   │   │   ├── managed_mail.py # ManagedMailAddress
-│   │   │   │   ├── role.py      # Role, Permission, RolePermission
-│   │   │   │   ├── inventory.py # InventoryItem, Category
-│   │   │   │   ├── setting.py   # Setting (key-value)
-│   │   │   │   ├── audit.py     # AuditLog
-│   │   │   │   ├── application.py # MemberApplication
-│   │   │   │   ├── notification.py # Notification
-│   │   │   │   ├── translation.py # Translation
-│   │   │   │   ├── backup.py    # Backup record
-│   │   │   │   └── ...          # (28 files total)
-│   │   │   ├── schemas/         # Marshmallow serialisation schemas (19 files)
-│   │   │   ├── services/        # Business logic services
-│   │   │   │   ├── wildduck.py  # WildDuck API client
-│   │   │   │   ├── mail_provisioning.py # Mailbox provisioning logic
-│   │   │   │   ├── managed_mail.py # Managed mail address service
-│   │   │   │   ├── backup.py    # Backup orchestration
-│   │   │   │   ├── binding_engine.py / binding_registry.py # SSO bindings
-│   │   │   │   ├── email.py     # Transactional email (Brevo/SMTP)
-│   │   │   │   ├── qr_bill.py / qr_reference.py # Swiss QR-bill PDF
-│   │   │   │   └── key_service.py # Key rotation
-│   │   │   ├── tasks/           # Celery tasks
-│   │   │   │   ├── wildduck.py  # Mail provisioning tasks
-│   │   │   │   ├── mail_sync.py # IMAP mailbox sync
-│   │   │   │   ├── mail_tasks.py # Periodic tasks (retention, reconciliation)
-│   │   │   │   ├── email_tasks.py # Async email sending
-│   │   │   │   ├── finance_tasks.py # Invoice reminders
-│   │   │   │   ├── backup_tasks.py # S3 backup tasks
-│   │   │   │   ├── health_tasks.py # Health check tasks
-│   │   │   │   ├── i18n_tasks.py # Translation cache refresh
-│   │   │   │   ├── session_tasks.py # Last-seen updates
-│   │   │   │   └── smoke.py     # Celery smoke test
-│   │   │   ├── seeds/           # Seed data (settings, translations)
-│   │   │   ├── templates/       # Jinja2 email templates
-│   │   │   ├── seeds.py         # Main seed runner
-│   │   │   ├── config.py        # Configuration classes (dev/prod/test)
-│   │   │   ├── extensions.py    # Flask extension singletons
-│   │   │   ├── errors.py        # Error handlers
-│   │   │   ├── settings_loader.py # pydantic-settings loader
-│   │   │   ├── logging_config.py # Structured JSON logging
-│   │   │   ├── validators.py    # Custom validators
-│   │   │   └── crypto.py        # Encryption utilities
+│   │   │   ├── apps/            # /api/v2 plane registration (global, manager, tenants)
+│   │   │   ├── core/            # Everything that is not a blueprint
+│   │   │   │   ├── app.py       # Application factory
+│   │   │   │   ├── models/      # SQLAlchemy models
+│   │   │   │   ├── schemas/     # Marshmallow schemas
+│   │   │   │   ├── services/    # Business logic (WildDuck, mail, backup, QR-bill, ...)
+│   │   │   │   ├── tasks/       # Celery app (`vollbuild.core.tasks.celery_app`) and tasks
+│   │   │   │   ├── tenant/      # Tenant context, middleware, schema manager
+│   │   │   │   ├── seed_data/   # Seed JSON (settings, translations)
+│   │   │   │   ├── seeds.py     # Seed runner (`flask init-db`)
+│   │   │   │   ├── config.py    # Configuration classes (dev/prod/test)
+│   │   │   │   ├── extensions.py # Flask extension singletons
+│   │   │   │   ├── errors.py    # Error handlers
+│   │   │   │   ├── settings_loader.py # settings.yaml loader (pydantic-settings)
+│   │   │   │   ├── logging_config.py # Structured JSON logging
+│   │   │   │   ├── validators.py # Setting validators
+│   │   │   │   └── crypto.py    # Encryption utilities
+│   │   │   └── templates/       # Jinja2 email and invoice templates
 │   │   ├── tests/               # Backend test suite
 │   │   │   ├── conftest.py      # Fixtures
 │   │   │   └── ...              # Tests per domain (28 test modules)
@@ -551,7 +497,7 @@ cd app/frontend && npm run lint && npx tsc --noEmit
 | `BREVO_API_KEY`      | Brevo transactional email API key | Opt        |
 | `BACKUP_S3_*`        | S3 backup credentials + GPG key   | Opt        |
 
-Configuration classes (`DevelopmentConfig`, `ProductionConfig`, `TestingConfig`) in `vollbuild/config.py` inherit from `BaseConfig`. Environment variables take precedence over defaults. Production requires explicit validation via `ProductionConfig.validate()`.
+Configuration classes (`DevelopmentConfig`, `ProductionConfig`, `TestingConfig`) in `vollbuild/core/config.py` inherit from `BaseConfig`. Environment variables take precedence over defaults. Production requires explicit validation via `ProductionConfig.validate()`.
 
 ### Feature flags
 

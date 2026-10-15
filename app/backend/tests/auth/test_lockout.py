@@ -57,7 +57,7 @@ def test_disabled_account_login_rejected(client, seeded_db):
     """
     member = seeded_db["admin"]
     member.user.is_disabled = True
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
 
     db.session.commit()
 

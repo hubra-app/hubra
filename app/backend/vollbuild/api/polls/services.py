@@ -10,8 +10,8 @@ from vollbuild.api.notifications.services import (
     notify_member,
 )
 from vollbuild.api.utils import log_audit
-from vollbuild.errors import raise_error
-from vollbuild.extensions import db
+from vollbuild.core.errors import raise_error
+from vollbuild.core.extensions import db
 from vollbuild.core.models.function import Function
 from vollbuild.core.models.group import Group
 from vollbuild.core.models.member import Member

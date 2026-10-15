@@ -12,7 +12,7 @@ import re
 
 from sqlalchemy import select
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.core.models.managed_mail import ManagedMailAddress
 
 _log = logging.getLogger(__name__)

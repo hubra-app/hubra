@@ -33,7 +33,7 @@ def get_mail_translator(locale: str):
     a single lookup dict where higher-priority locales overwrite lower ones.
     """
     from sqlalchemy import select
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
     from vollbuild.core.models.translation import Translation
 
     chain = _FALLBACK_CHAIN.get(locale, ["de-CH", "en-GB"])
@@ -71,7 +71,7 @@ def _touch_last_used(locale: str, keys: set[str]) -> None:
     if not keys:
         return
     from sqlalchemy import select
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
     from vollbuild.core.models.translation import Translation
 
     now = datetime.now(timezone.utc)

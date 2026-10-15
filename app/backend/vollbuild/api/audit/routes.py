@@ -5,7 +5,7 @@ from __future__ import annotations
 from flask import Blueprint, jsonify, request
 from vollbuild.api.permissions import permission_required
 
-from vollbuild.errors import api_error
+from vollbuild.core.errors import api_error
 from vollbuild.core.schemas.audit import AuditEntrySchema
 from vollbuild.api.audit.services import AuditService, AuditsService
 

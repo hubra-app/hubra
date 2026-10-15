@@ -9,7 +9,7 @@ shape stays compatible with the frontend.
 import marshmallow
 from marshmallow import EXCLUDE, RAISE, fields, validate
 
-from vollbuild.extensions import ma
+from vollbuild.core.extensions import ma
 from vollbuild.core.models.member import Member, MembershipTier
 
 

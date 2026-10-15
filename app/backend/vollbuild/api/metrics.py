@@ -173,7 +173,7 @@ def get_metrics_summary() -> dict:
     Returns a dict with total calls, error count, error rate, and
     per-tenant breakdown for the current month.
     """
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
     from vollbuild.core.models.tenant import Tenant
     from sqlalchemy import select as _select
 

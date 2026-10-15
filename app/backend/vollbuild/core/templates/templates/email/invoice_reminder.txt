@@ -1,7 +1,0 @@
-{{ t('mail.email.invoice_reminder.body', invoice_id=invoice_id, amount=amount_formatted, due_date=due_date) }}
-
-{% if portal_url %}{{ t('mail.email.invoice_reminder.cta_note', portal_url=portal_url) }}
-{% else %}{{ t('mail.email.invoice_reminder.cta_note_no_url') }}
-{% endif %}
-
-{{ t('mail.email.invoice_reminder.paid_note') }}

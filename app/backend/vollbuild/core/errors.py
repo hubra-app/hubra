@@ -5,11 +5,11 @@ All API errors are returned as:
     { "error": "ERROR_CODE", "message": "Human-readable description" }
 
 Usage inside a route:
-    from vollbuild.errors import raise_error
+    from vollbuild.core.errors import raise_error
     raise_error(404, "NOT_FOUND", "Member M-099 does not exist")
 
 Or build a response manually:
-    from vollbuild.errors import api_error
+    from vollbuild.core.errors import api_error
     return api_error("CONFLICT", "Email already registered", 409)
 """
 

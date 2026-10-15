@@ -91,7 +91,7 @@ def test_mark_invoice_paid(client, auth_headers, seeded_db):
 def test_mark_invoice_paid_from_db_record(client, seeded_db, auth_headers):
     """PATCH /invoices/:id with status=Paid via DB-created invoice."""
     from vollbuild.core.models.finance import Invoice
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
 
     today = date.today()
     invoice = Invoice(
@@ -120,7 +120,7 @@ def test_mark_invoice_paid_from_db_record(client, seeded_db, auth_headers):
 def test_remind_invoice_dispatches_email(client, seeded_db, auth_headers):
     """POST /invoices/:id/remind returns 200 and dispatches send_email_task.delay."""
     from vollbuild.core.models.finance import Invoice
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
 
     today = date.today()
     invoice = Invoice(
@@ -159,7 +159,7 @@ def test_list_my_invoices_returns_own_invoices(
 ):
     """GET /invoices/mine returns only the authenticated member's invoices."""
     from vollbuild.core.models.finance import Invoice
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
 
     today = date.today()
     invoice = Invoice(

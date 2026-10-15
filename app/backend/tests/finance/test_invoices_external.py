@@ -121,7 +121,7 @@ def test_create_member_invoice_purpose_other_with_category(
     client, auth_headers, seeded_db
 ):
     from vollbuild.core.models.finance import TransactionCategory
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
 
     cat = TransactionCategory(name="Events", color="#27ae60")
     db.session.add(cat)
@@ -152,7 +152,7 @@ def test_create_member_invoice_purpose_membership_default_category(
     client, auth_headers, seeded_db
 ):
     from vollbuild.core.models.finance import TransactionCategory
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
 
     cat = TransactionCategory(name="Membership", color="#2596be")
     db.session.add(cat)
@@ -178,7 +178,7 @@ def test_create_external_invoice_linked_tx_has_payee_name(
     client, auth_headers, seeded_db
 ):
     from vollbuild.core.models.finance import TransactionCategory
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
 
     cat = TransactionCategory(name="Membership", color="#2596be")
     db.session.add(cat)

@@ -8,8 +8,8 @@ from flask import Blueprint, jsonify, request
 from vollbuild.api.auth.helpers import get_current_member
 
 from vollbuild.api.permissions import permission_required
-from vollbuild.errors import api_error
-from vollbuild.extensions import db, limiter
+from vollbuild.core.errors import api_error
+from vollbuild.core.extensions import db, limiter
 from vollbuild.core.schemas.application import ApplicationSchema
 from vollbuild.core.schemas.member import MemberSchema
 from vollbuild.api.applications.services import ApplicationService, ApplicationsService

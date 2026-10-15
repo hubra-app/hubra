@@ -9,7 +9,7 @@ from sqlalchemy import Column, Date, DateTime, ForeignKey, JSON, Table, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 
 
 # ── Association table ─────────────────────────────────────────────────────────

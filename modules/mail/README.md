@@ -110,9 +110,9 @@ Group alias ────────►│  Club mailbox │──► IMAP (memb
 
 | File                                         | Purpose                                                                                                                |
 | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `app/backend/vollbuild/services/wildduck.py` | HTTP client for WildDuck REST API (users, addresses, forwarding aliases, messages)                                     |
-| `app/backend/vollbuild/tasks/wildduck.py`    | Celery tasks for async provisioning (user creation, password sync, mailbox enable/disable, group aliases, send-as ACL) |
-| `app/backend/vollbuild/tasks/mail_tasks.py`  | Periodic Celery tasks (retention cleanup daily, mailbox reconciliation every 5 min)                                    |
+| `app/backend/vollbuild/core/services/wildduck.py`| HTTP client for WildDuck REST API (users, addresses, forwarding aliases, messages)                                     |
+| `app/backend/vollbuild/core/tasks/wildduck.py`| Celery tasks for async provisioning (user creation, password sync, mailbox enable/disable, group aliases, send-as ACL) |
+| `app/backend/vollbuild/core/tasks/mail_tasks.py`| Periodic Celery tasks (retention cleanup daily, mailbox reconciliation every 5 min)                                    |
 | `app/backend/vollbuild/api/mail/routes.py`   | REST endpoints: mailboxes CRUD, aliases CRUD, member mail provisioning, test email                                     |
 
 ### Celery tasks in `tasks/wildduck.py`

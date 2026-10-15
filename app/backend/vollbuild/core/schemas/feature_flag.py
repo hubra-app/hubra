@@ -2,7 +2,7 @@
 
 from marshmallow import RAISE, fields
 
-from vollbuild.extensions import ma
+from vollbuild.core.extensions import ma
 
 
 class FeatureFlagSchema(ma.Schema):

@@ -3,8 +3,8 @@ protected bindings, validation, write-only attributes, delete guards."""
 
 import pytest
 
-from vollbuild.crypto import decrypt_code
-from vollbuild.extensions import db
+from vollbuild.core.crypto import decrypt_code
+from vollbuild.core.extensions import db
 from vollbuild.core.models.binding import Binding
 from vollbuild.core.models.internal_key import InternalKey
 from vollbuild.core.models.member import Member
@@ -122,7 +122,7 @@ def test_scalar_rejects_second_enabled(db):
         type="member", source_id=str(m1.id), source_attribute="name", key_id=ik.id
     )
     db.session.flush()
-    from vollbuild.errors import ApiError
+    from vollbuild.core.errors import ApiError
 
     with pytest.raises(ApiError) as exc_info:
         create_binding(
@@ -236,7 +236,7 @@ def test_protected_cannot_delete(db):
         is_protected=True,
     )
     db.session.flush()
-    from vollbuild.errors import ApiError
+    from vollbuild.core.errors import ApiError
 
     with pytest.raises(ApiError) as exc_info:
         delete_binding(b.id)
@@ -255,7 +255,7 @@ def test_protected_cannot_toggle(db):
         is_protected=True,
     )
     db.session.flush()
-    from vollbuild.errors import ApiError
+    from vollbuild.core.errors import ApiError
 
     with pytest.raises(ApiError) as exc_info:
         toggle_binding(b.id, False)
@@ -275,7 +275,7 @@ def test_protected_cannot_change_key(db):
         is_protected=True,
     )
     db.session.flush()
-    from vollbuild.errors import ApiError
+    from vollbuild.core.errors import ApiError
 
     with pytest.raises(ApiError) as exc_info:
         update_binding(b.id, key_id=ik2.id)
@@ -369,7 +369,7 @@ def test_enabled_binding_blocks_source_delete(db):
     blocked = check_source_delete_blocked("member", str(m.id))
     assert len(blocked) == 1
 
-    from vollbuild.errors import ApiError
+    from vollbuild.core.errors import ApiError
 
     with pytest.raises(ApiError) as exc_info:
         assert_source_deletable("member", str(m.id))
@@ -442,7 +442,7 @@ def test_duplicate_binding_rejected(db):
         type="member", source_id=str(m.id), source_attribute="name", key_id=ik.id
     )
     db.session.flush()
-    from vollbuild.errors import ApiError
+    from vollbuild.core.errors import ApiError
 
     with pytest.raises(ApiError) as exc_info:
         create_binding(

@@ -27,8 +27,8 @@ from vollbuild.api.permissions import (
     check_impersonation_restriction,
     require_global_permission,
 )
-from vollbuild.errors import raise_error
-from vollbuild.extensions import db
+from vollbuild.core.errors import raise_error
+from vollbuild.core.extensions import db
 from vollbuild.core.models.member import Member
 from vollbuild.core.models.tenant import GlobalAuditEntry, Tenant
 from vollbuild.core.models.tenant_request import TenantRequest

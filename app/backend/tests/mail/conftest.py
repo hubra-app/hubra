@@ -12,7 +12,7 @@ def _enable_mail_feature(app):
     the disabled state override this by setting the flag to False after
     the fixture runs.
     """
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
     from vollbuild.core.models.feature_flag import FeatureFlag
 
     with app.app_context():

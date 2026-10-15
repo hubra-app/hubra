@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from vollbuild.pricing import (
+from vollbuild.core.pricing import (
     annual_fee_for_member,
     calculate_preview_cost,
 )

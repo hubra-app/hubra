@@ -12,8 +12,8 @@ import logging
 
 from sqlalchemy import select
 
-from vollbuild.crypto import decrypt_code, encrypt_code
-from vollbuild.extensions import db
+from vollbuild.core.crypto import decrypt_code, encrypt_code
+from vollbuild.core.extensions import db
 from vollbuild.core.models.internal_key import InternalKey
 
 _log = logging.getLogger(__name__)

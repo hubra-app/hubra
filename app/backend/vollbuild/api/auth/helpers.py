@@ -44,8 +44,8 @@ def get_current_member() -> Member:
     """
     from flask_jwt_extended import get_jwt_identity
 
-    from vollbuild.errors import raise_error
-    from vollbuild.extensions import db
+    from vollbuild.core.errors import raise_error
+    from vollbuild.core.extensions import db
     from vollbuild.core.models.member import Member
     from sqlalchemy import select
 
@@ -79,7 +79,7 @@ def get_current_user_id() -> int:
     """
     from flask_jwt_extended import get_jwt_identity
 
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
     from vollbuild.core.models.member import Member
 
     identity = get_jwt_identity()

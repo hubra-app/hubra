@@ -21,7 +21,7 @@ class _FakeRow:
 
 def _patch_translations(monkeypatch, rows):
     """Patch db.session.scalars to return *rows* for Translation queries."""
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
 
     class _FakeScalars:
         def __init__(self, items):
@@ -150,7 +150,8 @@ def _load_seed_keys(locale: str) -> set[str]:
     seed_path = (
         Path(__file__).resolve().parent.parent.parent
         / "vollbuild"
-        / "seeds"
+        / "core"
+        / "seed_data"
         / "translations"
         / f"{locale}.json"
     )

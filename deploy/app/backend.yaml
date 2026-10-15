@@ -66,7 +66,7 @@ spec:
       containers:
         - name: celery-worker
           image: club/backend
-          command: ["celery", "-A", "vollbuild.tasks.celery_app", "worker", "--loglevel=info"]
+          command: ["celery", "-A", "vollbuild.core.tasks.celery_app", "worker", "--loglevel=info"]
           envFrom: [{ secretRef: { name: club-env } }]
           env: [{ name: SETTINGS_FILE, value: /etc/club/settings.yaml }]
           volumeMounts: [{ name: settings, mountPath: /etc/club }]
@@ -105,7 +105,7 @@ spec:
       containers:
         - name: celery-beat
           image: club/backend
-          command: ["celery", "-A", "vollbuild.tasks.celery_app", "beat", "--loglevel=info", "--schedule", "/celerybeat/celerybeat-schedule"]
+          command: ["celery", "-A", "vollbuild.core.tasks.celery_app", "beat", "--loglevel=info", "--schedule", "/celerybeat/celerybeat-schedule"]
           envFrom: [{ secretRef: { name: club-env } }]
           env: [{ name: SETTINGS_FILE, value: /etc/club/settings.yaml }]
           volumeMounts:

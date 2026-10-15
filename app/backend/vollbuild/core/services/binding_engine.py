@@ -12,8 +12,8 @@ import logging
 
 from sqlalchemy import select
 
-from vollbuild.errors import raise_error
-from vollbuild.extensions import db
+from vollbuild.core.errors import raise_error
+from vollbuild.core.extensions import db
 from vollbuild.core.models.binding import Binding
 from vollbuild.core.models.internal_key import InternalKey
 from vollbuild.core.services.binding_registry import (
@@ -23,7 +23,7 @@ from vollbuild.core.services.binding_registry import (
     resolve_source_value,
 )
 from vollbuild.core.services.key_service import KeyService
-from vollbuild.validators import validate_value
+from vollbuild.core.validators import validate_value
 
 _log = logging.getLogger(__name__)
 

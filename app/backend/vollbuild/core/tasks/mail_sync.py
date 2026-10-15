@@ -37,7 +37,7 @@ def sync_wildduck_message_counts(self) -> dict:
     from sqlalchemy import select
 
     from vollbuild.api.mail.services import MailboxService
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
     from vollbuild.core.models.managed_mail import ManagedMailAddress
     from vollbuild.core.services.wildduck import WildDuckError, try_get_client
 
@@ -117,7 +117,7 @@ def sync_wildduck_quota(self) -> dict:
 
     from sqlalchemy import select
 
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
     from vollbuild.core.models.managed_mail import ManagedMailAddress
     from vollbuild.core.services.wildduck import WildDuckError, try_get_client
 

@@ -29,7 +29,7 @@ def create_wildduck_user(self, member_id: int, temp_password: str = "") -> None:
     """
     from sqlalchemy import select
 
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
     from vollbuild.core.models.member import Member
     from vollbuild.core.services.mail_provisioning import resolve_local_part
     from vollbuild.core.services.managed_mail import get_or_create_for_member
@@ -128,7 +128,7 @@ def sync_wildduck_password(self, member_id: int, new_password: str = "") -> None
     """
     from sqlalchemy import select
 
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
     from vollbuild.core.models.managed_mail import ManagedMailAddress
     from vollbuild.core.models.member import Member
     from vollbuild.core.services.mail_provisioning import (
@@ -256,7 +256,7 @@ def provision_member_mail(self, member_id: int) -> None:
     from sqlalchemy import select
 
     from vollbuild.api.utils import log_audit
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
     from vollbuild.core.models.managed_mail import ManagedMailAddress
     from vollbuild.core.models.member import Member
     from vollbuild.core.services.mail_provisioning import (
@@ -346,7 +346,7 @@ def sync_managed_address(self, address_id: int) -> None:
     Retries up to 3 times with exponential backoff on WildDuckError.
     """
 
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
     from vollbuild.core.models.managed_mail import ManagedMailAddress
     from vollbuild.core.services.managed_mail import sync_alias, sync_mailbox_forward
     from vollbuild.core.services.wildduck import WildDuckError
@@ -436,7 +436,7 @@ def sync_sender_from_whitelist(self) -> None:
     """
     from sqlalchemy import select as _select
 
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
     from vollbuild.core.models.managed_mail import ManagedMailAddress
     from vollbuild.core.services.mail_provisioning import sync_from_whitelist_for_mma
     from vollbuild.core.services.wildduck import WildDuckError, try_get_client

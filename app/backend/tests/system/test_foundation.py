@@ -49,7 +49,7 @@ def test_require_admin_blocks_non_admin(client):
 
 def test_base_config_generates_random_secret_key_when_env_missing():
     """BaseConfig._dev_secret generates a non-static value when env var is absent."""
-    from vollbuild.config import _dev_secret
+    from vollbuild.core.config import _dev_secret
 
     # Ensure env var is absent
     os.environ.pop("SECRET_KEY", None)
@@ -61,7 +61,7 @@ def test_base_config_generates_random_secret_key_when_env_missing():
 
 def test_base_config_generates_random_jwt_secret_when_env_missing():
     """BaseConfig._dev_secret generates a non-static value when env var is absent."""
-    from vollbuild.config import _dev_secret
+    from vollbuild.core.config import _dev_secret
 
     os.environ.pop("JWT_SECRET_KEY", None)
     # Call the helper directly to test its behavior

@@ -76,7 +76,7 @@ def test_create_mailbox_without_wildduck_config(client, app, auth_headers, seede
 
 def test_list_mailboxes_db_only(client, app, auth_headers, seeded_db):
     from vollbuild.core.models.managed_mail import ManagedMailAddress
-    from vollbuild.extensions import db
+    from vollbuild.core.extensions import db
 
     addr = ManagedMailAddress(
         address="alice@test.ch",

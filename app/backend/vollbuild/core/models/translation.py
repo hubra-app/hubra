@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 
 
 class Translation(db.Model):

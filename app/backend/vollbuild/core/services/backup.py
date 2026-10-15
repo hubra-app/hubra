@@ -29,7 +29,7 @@ from urllib.parse import urlparse
 from flask import current_app
 from sqlalchemy import select
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.core.models.backup import BackupRecord
 
 logger = logging.getLogger(__name__)

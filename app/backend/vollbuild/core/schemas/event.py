@@ -2,7 +2,7 @@
 
 from marshmallow import EXCLUDE, RAISE, fields, validate
 
-from vollbuild.extensions import ma
+from vollbuild.core.extensions import ma
 from vollbuild.core.models.event import ClubEvent
 
 _EVENT_TYPES = ["Workshop", "Social", "Certification", "Meeting"]
@@ -59,7 +59,7 @@ class ClubEventSchema(ma.SQLAlchemyAutoSchema):
         )
 
 
-from vollbuild.extensions import db  # noqa: E402 — needed by get_registration_count
+from vollbuild.core.extensions import db  # noqa: E402 — needed by get_registration_count
 
 
 class ClubEventCreateSchema(ma.Schema):

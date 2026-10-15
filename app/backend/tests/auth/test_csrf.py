@@ -286,7 +286,7 @@ def test_csrf_refresh_cookie_set_on_login(app, client, seeded_db):
 
 def test_production_config_has_csrf_enabled():
     """ProductionConfig must have JWT_COOKIE_CSRF_PROTECT=True."""
-    from vollbuild.config import ProductionConfig
+    from vollbuild.core.config import ProductionConfig
 
     assert ProductionConfig.JWT_COOKIE_CSRF_PROTECT is True
 
@@ -312,7 +312,7 @@ def test_production_config_has_secure_cookies():
 
 def test_base_config_csrf_methods_explicit():
     """BaseConfig explicitly defines JWT_CSRF_METHODS for state-changing verbs."""
-    from vollbuild.config import BaseConfig
+    from vollbuild.core.config import BaseConfig
 
     methods = BaseConfig.JWT_CSRF_METHODS
     assert "POST" in methods
@@ -326,14 +326,14 @@ def test_base_config_csrf_methods_explicit():
 
 def test_base_config_csrf_check_refresh_true():
     """BaseConfig enables CSRF validation on refresh-token endpoints."""
-    from vollbuild.config import BaseConfig
+    from vollbuild.core.config import BaseConfig
 
     assert BaseConfig.JWT_CSRF_CHECK_REFRESH is True
 
 
 def test_base_config_has_csrf_exempt_paths():
     """BaseConfig defines CSRF_EXEMPT_PATHS (empty list by default)."""
-    from vollbuild.config import BaseConfig
+    from vollbuild.core.config import BaseConfig
 
     assert hasattr(BaseConfig, "CSRF_EXEMPT_PATHS")
     assert isinstance(BaseConfig.CSRF_EXEMPT_PATHS, list)

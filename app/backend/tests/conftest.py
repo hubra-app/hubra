@@ -8,8 +8,8 @@ import pytest
 from argon2 import PasswordHasher
 
 from vollbuild import create_app
-from vollbuild.extensions import db as _db
-from vollbuild.models import *  # noqa: F401,F403 — import all models so SA knows them
+from vollbuild.core.extensions import db as _db
+from vollbuild.core.models import *  # noqa: F401,F403 — import all models so SA knows them
 
 _NOT_CONFIGURED = {"ok": False, "latency_ms": 0, "error": "not configured"}
 
@@ -42,7 +42,7 @@ def _mock_health_checks():
 @pytest.fixture(autouse=True)
 def _fast_argon2():
     """Use low-cost argon2 parameters in tests for faster password hashing."""
-    from vollbuild.models import user as user_module
+    from vollbuild.core.models import user as user_module
 
     fast_ph = PasswordHasher(time_cost=1, memory_cost=1024, parallelism=1)
     with patch.object(user_module, "_ph", fast_ph):

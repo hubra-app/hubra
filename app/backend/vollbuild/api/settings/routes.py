@@ -15,8 +15,8 @@ from vollbuild.api.permissions import (
     member_is_admin,
 )
 from vollbuild.api.utils import log_audit
-from vollbuild.errors import api_error
-from vollbuild.extensions import db
+from vollbuild.core.errors import api_error
+from vollbuild.core.extensions import db
 from vollbuild.core.schemas.settings import SettingSchema, SettingWriteSchema
 from vollbuild.api.settings.services import SettingService, SettingsService
 

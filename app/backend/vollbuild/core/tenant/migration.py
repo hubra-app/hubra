@@ -6,7 +6,7 @@ import logging
 
 from sqlalchemy import select, text
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.core.models.tenant import Tenant
 
 from .context import set_search_path

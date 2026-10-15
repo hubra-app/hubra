@@ -104,7 +104,7 @@ def test_run_health_checks_includes_checked_at(app):
 
 def test_beat_schedule_contains_health_check():
     """celery_app beat_schedule includes health-check-20s."""
-    from vollbuild.tasks import celery_app
+    from vollbuild.core.tasks import celery_app
 
     assert "health-check-20s" in celery_app.conf.beat_schedule
     entry = celery_app.conf.beat_schedule["health-check-20s"]

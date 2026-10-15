@@ -20,7 +20,7 @@ from flask_jwt_extended import (
 )
 from unittest.mock import patch
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.core.models.token import TokenBlocklist
 
 

@@ -29,8 +29,8 @@ from vollbuild.api.bindings.services import (
 )
 from vollbuild.api.permissions import permission_required
 from vollbuild.api.utils import log_audit
-from vollbuild.errors import api_error, raise_error
-from vollbuild.extensions import db
+from vollbuild.core.errors import api_error, raise_error
+from vollbuild.core.extensions import db
 from vollbuild.core.models.internal_key import InternalKey
 from vollbuild.core.services.binding_engine import (
     create_binding,
@@ -42,7 +42,7 @@ from vollbuild.core.services.binding_registry import (
     build_attribute_registry,
     is_valid_attribute,
 )
-from vollbuild.validators import validate_value
+from vollbuild.core.validators import validate_value
 
 logger = logging.getLogger(__name__)
 

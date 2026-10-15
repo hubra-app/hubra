@@ -7,7 +7,7 @@ mail service's ``serialize`` function.
 
 from marshmallow import EXCLUDE, fields
 
-from vollbuild.extensions import ma
+from vollbuild.core.extensions import ma
 from vollbuild.core.models.managed_mail import ManagedMailAddress
 
 

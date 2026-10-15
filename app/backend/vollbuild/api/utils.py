@@ -6,7 +6,7 @@ import math
 
 from flask import jsonify
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.core.models.audit import AuditEntry
 
 

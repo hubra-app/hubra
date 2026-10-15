@@ -13,7 +13,7 @@ from unittest.mock import patch, MagicMock
 import pytest
 from sqlalchemy import select
 
-from vollbuild.extensions import db as _db
+from vollbuild.core.extensions import db as _db
 from vollbuild.core.models.member import Member
 from vollbuild.core.models.role import Role, RolePermission, Permission
 from vollbuild.core.models.user import User

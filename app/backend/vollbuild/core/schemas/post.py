@@ -5,7 +5,7 @@ from __future__ import annotations
 from marshmallow import EXCLUDE, RAISE, fields, validate
 from sqlalchemy import func, select
 
-from vollbuild.extensions import db, ma
+from vollbuild.core.extensions import db, ma
 from vollbuild.core.models.post import Post, PostComment
 
 

@@ -7,7 +7,7 @@ import logging
 import os
 import time
 
-from vollbuild.extensions import db
+from vollbuild.core.extensions import db
 from vollbuild.core.services.alerts import alert_error, alert_resolved
 from vollbuild.core.tasks import celery_app
 

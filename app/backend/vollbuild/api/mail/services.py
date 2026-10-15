@@ -13,8 +13,8 @@ from sqlalchemy import select
 
 from vollbuild.api.settings.service import SettingsService
 from vollbuild.api.utils import log_audit
-from vollbuild.errors import raise_error
-from vollbuild.extensions import db
+from vollbuild.core.errors import raise_error
+from vollbuild.core.extensions import db
 from vollbuild.core.models.group import Group
 from vollbuild.core.models.mail import MailboxFolder
 from vollbuild.core.models.member import Member
