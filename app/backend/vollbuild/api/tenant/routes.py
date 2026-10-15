@@ -4,8 +4,8 @@ These routes live at ``/api/v1/system/tenants`` and are NOT tenant-scoped —
 they are used by the platform administrator (SystemUser with is_superadmin)
 to manage the multi-tenant lifecycle.
 
-All routes require the ``@require_system_admin`` decorator, which checks
-``User.is_superadmin`` via the ``user_id`` JWT claim.
+Routes are guarded by ``@require_global_permission``, which checks the
+caller's global roles (``user_id`` JWT claim).
 """
 
 from __future__ import annotations

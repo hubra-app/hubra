@@ -337,59 +337,6 @@ def filter_updatable_fields(data: dict) -> dict:
     return {k: v for k, v in data.items() if k in allowed}
 
 
-def require_permission(perm: str):
-    """Legacy decorator — kept for backward compatibility during migration.
-
-    New code should use @permission_required(resource, action, display_name).
-    """
-
-    def decorator(fn):
-        @wraps(fn)
-        def wrapper(*args, **kwargs):
-            try:
-                verify_jwt_in_request()
-            except Exception:
-                return jsonify(
-                    {"error": "UNAUTHORIZED", "message": "Token invalid or expired"}
-                ), 401
-
-            member = _current_member()
-            if member is None:
-                return jsonify(
-                    {"error": "UNAUTHORIZED", "message": "Token invalid or expired"}
-                ), 401
-
-            if member_is_admin(member):
-                return fn(*args, **kwargs)
-
-            roles = getattr(member, "roles", None)
-            if not roles:
-                return jsonify(
-                    {"error": "FORBIDDEN", "message": "Insufficient permissions"}
-                ), 403
-
-            from vollbuild.core.models.role import RolePermission
-
-            role_ids = [r.id for r in roles]
-            has_perm = db.session.scalar(
-                select(RolePermission.id)
-                .where(RolePermission.role_id.in_(role_ids))
-                .where(RolePermission.permission == perm)
-                .limit(1)
-            )
-            if has_perm is None:
-                return jsonify(
-                    {"error": "FORBIDDEN", "message": "Insufficient permissions"}
-                ), 403
-
-            return fn(*args, **kwargs)
-
-        wrapper._permission = perm
-        return wrapper
-
-    return decorator
-
-
 def require_admin(fn):
     """Decorator: verifies JWT and checks that the member has an admin role."""
 
@@ -436,47 +383,6 @@ def require_member(fn):
                 {"error": "UNAUTHORIZED", "message": "Token invalid or expired"}
             ), 401
 
-        return fn(*args, **kwargs)
-
-    return wrapper
-
-
-def require_system_admin(fn):
-    """Decorator: verifies JWT and checks that the user is a system super-admin.
-
-    Unlike ``require_admin`` (which checks a tenant-scoped Member's admin role),
-    this checks the **global** ``User.is_superadmin`` flag via the ``user_id``
-    JWT claim.  Use on cross-tenant platform-administration routes (tenant CRUD,
-    impersonation, global audit).
-    """
-
-    @wraps(fn)
-    def wrapper(*args, **kwargs):
-        try:
-            verify_jwt_in_request()
-        except Exception:
-            return jsonify(
-                {"error": "UNAUTHORIZED", "message": "Token invalid or expired"}
-            ), 401
-
-        from flask_jwt_extended import get_jwt
-
-        claims = get_jwt()
-        user_id = claims.get("user_id")
-        if user_id is None:
-            return jsonify(
-                {"error": "FORBIDDEN", "message": "System admin access required"}
-            ), 403
-
-        from vollbuild.core.models.user import User
-
-        user = db.session.get(User, int(user_id))
-        if user is None or not user.is_superadmin:
-            return jsonify(
-                {"error": "FORBIDDEN", "message": "System admin access required"}
-            ), 403
-
-        g.system_user = user
         return fn(*args, **kwargs)
 
     return wrapper

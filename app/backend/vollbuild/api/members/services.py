@@ -104,16 +104,6 @@ def _clear_member_all_associations(member_id: int) -> set[int]:
     return group_ids
 
 
-def _remove_member_from_group(member_id: int, group_id: int) -> None:
-    """Remove a member from a single group."""
-    db.session.execute(
-        delete(member_groups).where(
-            member_groups.c.member_id == member_id,
-            member_groups.c.group_id == group_id,
-        )
-    )
-
-
 # ── Helpers (not HTTP-specific, shared across service methods) ─────────────────
 
 
@@ -296,17 +286,6 @@ class MemberService:
         return member  # type: ignore[return-value]
 
     # ── Association management ────────────────────────────────────────────────
-
-    @staticmethod
-    def set_groups(member_id: int, group_ids: list[int]) -> set[int]:
-        """Replace group memberships. Returns old group IDs for alias sync."""
-        old_ids = _clear_member_groups(member_id)
-        if group_ids:
-            db.session.execute(
-                insert(member_groups),
-                [{"member_id": member_id, "group_id": gid} for gid in group_ids],
-            )
-        return old_ids
 
     # ── Lifecycle ─────────────────────────────────────────────────────────────
 

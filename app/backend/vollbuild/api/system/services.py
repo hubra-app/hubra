@@ -41,22 +41,5 @@ class SystemService:
                             "blueprint": bp_name or "",
                         }
                     )
-                continue
 
-            # Legacy @require_permission metadata
-            perm = getattr(fn, "_permission", None)
-            if perm is not None:
-                methods = rule.methods or set()
-                for method in sorted(methods - {"HEAD", "OPTIONS"}):
-                    entries.append(
-                        {
-                            "method": method,
-                            "path": rule.rule,
-                            "key": perm,
-                            "display_name": perm,
-                            "resource": "",
-                            "action": "",
-                            "blueprint": "",
-                        }
-                    )
         return sorted(entries, key=lambda e: (e["path"], e["method"]))

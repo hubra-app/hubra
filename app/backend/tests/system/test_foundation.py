@@ -20,24 +20,13 @@ def test_api_envelope_success(app):
         assert status == 200
 
 
-def test_api_envelope_paginated(app):
-    """paginated_response includes meta.total from the supplied count."""
-    with app.test_request_context("/"):
-        from vollbuild.api.utils import paginated_response
-
-        response, status = paginated_response([1, 2], 10, 1, 5)
-        data = response.get_json()
-        assert data["meta"]["total"] == 10
-        assert data["meta"]["pages"] == 2
-
-
 # ── RBAC decorators ───────────────────────────────────────────────────────────
 
 
 def test_require_admin_blocks_non_admin(client):
     """Unauthenticated request to a permission-gated route returns 401.
 
-    GET /api/v1/applications/ uses @require_permission which calls
+    GET /api/v1/applications/ uses @permission_required which calls
     verify_jwt_in_request() and returns 401 when no bearer token is present.
     """
     resp = client.get("/api/v1/applications/")

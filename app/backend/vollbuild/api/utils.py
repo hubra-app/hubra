@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import math
 
 from flask import jsonify
 
@@ -18,15 +17,6 @@ def escape_like(value: str) -> str:
 def success_response(data, meta=None, status=200):
     """Return a standardized JSON envelope: {"data": ..., "meta": ...}."""
     return jsonify({"data": data, "meta": meta or {}}), status
-
-
-def paginated_response(items, total, page, per_page):
-    """Return a success_response with pagination meta."""
-    pages = math.ceil(total / per_page) if per_page else 1
-    return success_response(
-        data=items,
-        meta={"total": total, "page": page, "per_page": per_page, "pages": pages},
-    )
 
 
 def log_audit(actor_id, action, target_type, target_id, target_label, color=None):
