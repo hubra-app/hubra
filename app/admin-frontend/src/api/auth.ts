@@ -22,17 +22,6 @@ export async function getMyPermissions(
   return apiFetch<PermissionsResponse>('/account/permissions', { signal })
 }
 
-export async function login(
-  email: string,
-  password: string,
-  keepSignedIn = true,
-): Promise<{ mustChangePassword?: boolean }> {
-  return apiFetch<{ mustChangePassword?: boolean }>('/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ email, password, keepSignedIn }),
-  })
-}
-
 export async function logout(): Promise<void> {
   await apiFetch('/auth/logout', { method: 'POST' }).catch(() => {})
 }

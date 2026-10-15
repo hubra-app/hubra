@@ -26,8 +26,7 @@ const SsoContext = createContext<SsoState | null>(null)
 const DEFAULT_COS_URL = import.meta.env.VITE_COS_URL ?? 'https://cos.vollbuild.ch'
 const DEFAULT_MANAGE_URL = import.meta.env.VITE_MANAGE_URL ?? 'https://manage.vollbuild.ch'
 
-// eslint-disable-next-line react-refresh/only-export-components
-export function validateRedirect(raw: string | null): string {
+function validateRedirect(raw: string | null): string {
   if (!raw) return DEFAULT_COS_URL
   try {
     const url = new URL(raw)

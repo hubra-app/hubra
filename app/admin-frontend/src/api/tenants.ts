@@ -80,16 +80,6 @@ export async function createTenant(data: {
   })
 }
 
-export async function updateTenant(
-  id: number,
-  patch: { name?: string; plan?: string; settings?: Record<string, unknown> },
-): Promise<{ tenant: Tenant }> {
-  return apiFetch(`/system/tenants/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(patch),
-  })
-}
-
 export async function deleteTenant(
   id: number,
   force = false,
@@ -111,18 +101,6 @@ export async function archiveTenant(id: number): Promise<{ tenant: Tenant }> {
   return apiFetch(`/system/tenants/${id}/archive`, { method: 'POST' })
 }
 
-export async function getTenantStats(
-  id: number,
-): Promise<{ stats: TenantUsage }> {
-  return apiFetch(`/system/tenants/${id}/stats`)
-}
-
-export async function getProvisioningStatus(
-  id: number,
-): Promise<{ tenant_id: number; status: string; slug: string }> {
-  return apiFetch(`/system/tenants/${id}/provisioning-status`)
-}
-
 export async function impersonateTenant(
   id: number,
   body: { reason: string; user_id?: number },
@@ -136,13 +114,6 @@ export async function impersonateTenant(
     method: 'POST',
     body: JSON.stringify(body),
   })
-}
-
-export async function stopImpersonation(): Promise<{
-  impersonating: boolean
-  member_id: number
-}> {
-  return apiFetch('/system/impersonation/stop', { method: 'POST' })
 }
 
 export interface GlobalAuditEntry {

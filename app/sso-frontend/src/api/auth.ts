@@ -65,10 +65,6 @@ export async function switchTenant(
   })
 }
 
-export async function logout(): Promise<void> {
-  await apiFetch('/auth/logout', { method: 'POST' }).catch(() => {})
-}
-
 export async function getMyPermissions(
   signal?: AbortSignal,
 ): Promise<PermissionsResponse> {
