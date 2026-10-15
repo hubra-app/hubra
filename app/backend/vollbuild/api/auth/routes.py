@@ -422,7 +422,7 @@ def logout():
             decoded = decode_token(refresh_token)
             AuthService.block_token(decoded["jti"], "refresh")
         except Exception:
-            pass
+            _log.debug("Logout: refresh token not revocable", exc_info=True)
 
     db.session.commit()
     response = make_response("", 204)

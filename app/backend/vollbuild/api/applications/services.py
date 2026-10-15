@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import random
 
+from flask import current_app
+
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
@@ -72,7 +74,9 @@ class ApplicationService:
 
                 create_wildduck_user.delay(member.id)
             except Exception:
-                pass
+                current_app.logger.exception(
+                    "Could not queue WildDuck mailbox for member %s", member.id
+                )
 
         # Welcome email — non-blocking
         from vollbuild.core.services import email as email_svc

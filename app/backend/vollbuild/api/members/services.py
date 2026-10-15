@@ -1173,7 +1173,12 @@ class MembersService:
                     try:
                         change_mail_prefix(mma, new_local, domain)
                     except Exception:
-                        pass
+                        current_app.logger.exception(
+                            "Could not rename mail address %s to %s@%s",
+                            mma.address,
+                            new_local,
+                            domain,
+                        )
 
         # Replace group associations
         old_group_ids: set[int] = set()

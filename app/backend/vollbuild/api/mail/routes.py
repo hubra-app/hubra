@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re as _re
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import get_jwt_identity
 from vollbuild.api.auth.helpers import get_current_member
 
@@ -1884,7 +1884,9 @@ def get_from_whitelist(address_id: int):
             user = wd.get_user(addr.wildduck_id)
             live = user.get("fromWhitelist", [])
         except Exception:
-            pass
+            current_app.logger.warning(
+                "WildDuck lookup failed for %s", addr.address, exc_info=True
+            )
 
     return jsonify({"curated": curated, "effective": effective, "live": live}), 200
 
@@ -1948,7 +1950,10 @@ def update_from_whitelist(address_id: int):
 
         sync_from_whitelist_for_mma(addr)
     except Exception:
-        pass
+        current_app.logger.exception(
+            "Saved from-whitelist for %s but could not sync it to WildDuck",
+            addr.address,
+        )
 
     return jsonify({"whitelist": cleaned}), 200
 
