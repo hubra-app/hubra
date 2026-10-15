@@ -791,3 +791,19 @@ def test_seed_system_aliases_forward_to_postmaster(db):
     fixed = _json.loads(info_mma.fixed_forward_targets)
     assert "postmaster@club.ch" in fixed
     assert "hub" not in fixed
+
+
+def test_mail_health_not_gated_by_mail_feature(client, db, seeded_db, auth_headers):
+    """/mail/health stays reachable for signed-in users when mail is disabled."""
+    with (
+        patch(
+            "vollbuild.api.features.services.FeatureFlagService.is_enabled",
+            return_value=False,
+        ),
+        patch("vollbuild.core.services.wildduck.try_get_client", return_value=None),
+    ):
+        resp = client.get("/api/v1/mail/health", headers=auth_headers)
+        gated = client.get("/api/v1/mail/system-addresses", headers=auth_headers)
+
+    assert resp.status_code == 200
+    assert gated.status_code == 409

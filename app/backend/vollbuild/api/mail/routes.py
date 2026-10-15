@@ -37,7 +37,8 @@ def _gate_mail_feature():
     from vollbuild.api.features.services import FeatureFlagService
 
     # Health check is always accessible — no auth, no feature gate.
-    if request.path.rstrip("/") == "/health":
+    # (request.path is the full /api/.../mail/health, so match the endpoint.)
+    if (request.endpoint or "").endswith(".mail_health"):
         return None
 
     try:
