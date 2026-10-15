@@ -320,11 +320,6 @@ def reconcile_mail(self) -> dict:
 
     from vollbuild.core.extensions import db
     from vollbuild.core.models.managed_mail import ManagedMailAddress
-    from vollbuild.core.services.managed_mail import (
-        auto_create_mma_for_function,
-        auto_create_mma_for_group,
-        auto_create_mma_for_member,
-    )
     from vollbuild.core.services.mail_provisioning import (
         _resolve_function_holder_targets,
         _resolve_group_member_targets,
@@ -341,48 +336,13 @@ def reconcile_mail(self) -> dict:
     wd = try_get_client()
 
     # ── Step 0: Auto-create missing MMAs for groups, functions, members ────
+    created = _create_missing_mmas()
+
+    # ── Step 0.5: Remove orphaned MMAs (owner deleted) ─────────────────────
     from vollbuild.core.models.function import Function
     from vollbuild.core.models.group import Group
     from vollbuild.core.models.member import Member
 
-    created = 0
-
-    for group in db.session.scalars(select(Group)).all():
-        existing = db.session.scalar(
-            select(ManagedMailAddress).where(
-                ManagedMailAddress.owner_type == "group",
-                ManagedMailAddress.owner_id == group.id,
-            )
-        )
-        if existing is None:
-            auto_create_mma_for_group(group.id)
-            created += 1
-
-    for fn in db.session.scalars(select(Function)).all():
-        existing = db.session.scalar(
-            select(ManagedMailAddress).where(
-                ManagedMailAddress.owner_type == "function",
-                ManagedMailAddress.owner_id == fn.id,
-            )
-        )
-        if existing is None:
-            auto_create_mma_for_function(fn.id)
-            created += 1
-
-    for member in db.session.scalars(
-        select(Member).where(Member.archived_at.is_(None))
-    ).all():
-        existing = db.session.scalar(
-            select(ManagedMailAddress).where(
-                ManagedMailAddress.owner_type == "member",
-                ManagedMailAddress.owner_id == member.id,
-            )
-        )
-        if existing is None:
-            auto_create_mma_for_member(member.id)
-            created += 1
-
-    # ── Step 0.5: Remove orphaned MMAs (owner deleted) ─────────────────────
     addrs = list(
         db.session.scalars(
             select(ManagedMailAddress).order_by(ManagedMailAddress.id)
@@ -714,20 +674,9 @@ def check_mailbox_quota(self) -> dict:
     return {"checked": checked, "alerts_sent": alerts_sent, "errors": errors}
 
 
-@celery_app.task(bind=True, max_retries=0, acks_late=True, reject_on_worker_lost=True)
-def ensure_mmas_for_all_entities(self) -> dict:
-    """Ensure every group, function, and active member has a ManagedMailAddress.
-
-    Calls ``auto_create_mma_for_group`` / ``auto_create_mma_for_function`` /
-    ``auto_create_mma_for_member`` for any entity that is missing an MMA.
-    Runs hourly via Celery beat.
-    """
-    from vollbuild.api.features.services import FeatureFlagService
-
-    if not FeatureFlagService.is_enabled_sync("mail"):
-        logger.debug("ensure_mmas_for_all_entities: mail feature disabled, skipping")
-        return {"skipped": "mail disabled"}
-
+def _create_missing_mmas() -> int:
+    """Create a ManagedMailAddress for every group, function and active
+    member that has none. Returns how many were created."""
     from sqlalchemy import select
 
     from vollbuild.core.extensions import db
@@ -741,44 +690,24 @@ def ensure_mmas_for_all_entities(self) -> dict:
         auto_create_mma_for_member,
     )
 
+    existing = set(
+        db.session.execute(
+            select(ManagedMailAddress.owner_type, ManagedMailAddress.owner_id)
+        ).all()
+    )
+    owners = [
+        ("group", select(Group.id), auto_create_mma_for_group),
+        ("function", select(Function.id), auto_create_mma_for_function),
+        (
+            "member",
+            select(Member.id).where(Member.archived_at.is_(None)),
+            auto_create_mma_for_member,
+        ),
+    ]
     created = 0
-
-    for group in db.session.scalars(select(Group)).all():
-        existing = db.session.scalar(
-            select(ManagedMailAddress).where(
-                ManagedMailAddress.owner_type == "group",
-                ManagedMailAddress.owner_id == group.id,
-            )
-        )
-        if existing is None:
-            auto_create_mma_for_group(group.id)
-            created += 1
-
-    for fn in db.session.scalars(select(Function)).all():
-        existing = db.session.scalar(
-            select(ManagedMailAddress).where(
-                ManagedMailAddress.owner_type == "function",
-                ManagedMailAddress.owner_id == fn.id,
-            )
-        )
-        if existing is None:
-            auto_create_mma_for_function(fn.id)
-            created += 1
-
-    for member in db.session.scalars(
-        select(Member).where(Member.archived_at.is_(None))
-    ).all():
-        existing = db.session.scalar(
-            select(ManagedMailAddress).where(
-                ManagedMailAddress.owner_type == "member",
-                ManagedMailAddress.owner_id == member.id,
-            )
-        )
-        if existing is None:
-            auto_create_mma_for_member(member.id)
-            created += 1
-
-    if created:
-        db.session.commit()
-        logger.info("ensure_mmas_for_all_entities: created %d missing MMAs", created)
-    return {"created": created}
+    for owner_type, ids_query, create in owners:
+        for owner_id in db.session.scalars(ids_query).all():
+            if (owner_type, owner_id) not in existing:
+                create(owner_id)
+                created += 1
+    return created
