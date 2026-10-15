@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify
 
-from vollbuild.api.version.service import VersionService
+from vollbuild.api.version.services import VersionService
 
 version_bp = Blueprint("version_bp", __name__)
 

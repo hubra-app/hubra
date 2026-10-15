@@ -2,7 +2,7 @@
 Tests for VersionService and GET /api/v1/version, /api/v1/version/changelog
 """
 
-from vollbuild.api.version.service import VersionService
+from vollbuild.api.version.services import VersionService
 
 
 def test_get_version_reads_pyproject_toml():
@@ -28,8 +28,8 @@ def test_changelog_parses_sample_file(tmp_path, monkeypatch):
         "- Something fixed\n",
         encoding="utf-8",
     )
-    monkeypatch.setattr("vollbuild.api.version.service._CHANGELOG_PATH", sample)
-    monkeypatch.setattr("vollbuild.api.version.service._changelog_cache", None)
+    monkeypatch.setattr("vollbuild.api.version.services._CHANGELOG_PATH", sample)
+    monkeypatch.setattr("vollbuild.api.version.services._changelog_cache", None)
 
     entries = VersionService.get_changelog()
 
@@ -52,7 +52,7 @@ def test_changelog_parses_sample_file(tmp_path, monkeypatch):
 
 
 def test_changelog_reads_real_file_when_uncached(monkeypatch):
-    monkeypatch.setattr("vollbuild.api.version.service._changelog_cache", None)
+    monkeypatch.setattr("vollbuild.api.version.services._changelog_cache", None)
     entries = VersionService.get_changelog()
     assert any(e["version"] == "0.1.0" for e in entries)
 
