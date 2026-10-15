@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import secrets
 from datetime import datetime, timezone
 from typing import Any
 
@@ -403,7 +404,9 @@ def ensure_mailbox(
                 mma.wildduck_id = None
 
         if mma.wildduck_id is None:
-            pwd = password_hash or "changeme123456"
+            # No member password to mirror: use an unguessable random one so
+            # the mailbox cannot be logged into until a password is set.
+            pwd = password_hash or secrets.token_urlsafe(32)
             hashed = bool(password_hash)
             result = wd.create_user(
                 username=username,

@@ -484,6 +484,26 @@ def test_create_system_address(client, db, seeded_db, auth_headers):
     assert body["isProtected"] is False
 
 
+def test_system_mailbox_gets_random_wildduck_password(app, db, seeded_db):
+    """A system mailbox with forwarding never gets a fixed, guessable password."""
+    from vollbuild.core.services.managed_mail import create_system_address
+
+    mock_wd = MagicMock()
+    mock_wd.create_user.return_value = {"id": "wd-sys-mbx"}
+    mock_wd.create_forward_filter.return_value = {"id": "f-1"}
+    with patch("vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd):
+        create_system_address(
+            "sysbox@club.ch", "mailbox", forward_targets=["t@example.ch"]
+        )
+        create_system_address(
+            "sysbox2@club.ch", "mailbox", forward_targets=["t@example.ch"]
+        )
+
+    first, second = (c.kwargs["password"] for c in mock_wd.create_user.call_args_list)
+    assert len(first) >= 32
+    assert first != second
+
+
 def test_delete_protected_system_address_returns_403(
     client, db, seeded_db, auth_headers
 ):

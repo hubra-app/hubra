@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import secrets
 
 from sqlalchemy import select
 
@@ -658,7 +659,7 @@ def create_system_address(
                 result = wd.create_user(
                     username=prefix,
                     name=display_name or prefix,
-                    password="changeme123456",
+                    password=secrets.token_urlsafe(32),
                     quota_mb=512,
                 )
                 addr.wildduck_user_id = result.get("id")
