@@ -41,14 +41,14 @@ export function InvoiceDetailScreen() {
       <div>
         <PageHead
           eyebrow={t('finance.title', 'Finanze')}
-          title={t('finance.invoice.notFound', 'R?chnig n?d gfunde')}
+          title={t('finance.invoice.notFound', 'Rächnig nöd gfunde')}
           actions={
             <Button
               variant="subtle"
               onClick={() => go('/app/finance/invoices')}
             >
               <IconArrowLeft size={16} />
-              {t('finance.backToInvoices', 'Zrugg zue R?chnige')}
+              {t('finance.backToInvoices', 'Zrugg zue Rächnige')}
             </Button>
           }
         />
@@ -72,12 +72,12 @@ export function InvoiceDetailScreen() {
             },
           )})`,
         )
-      : t('finance.invoice.defaultDescription', 'R?chnig'))
+      : t('finance.invoice.defaultDescription', 'Rächnig'))
 
   return (
     <div>
       <PageHead
-        eyebrow={t('finance.invoicesBreadcrumb', 'Finanze › R?chnige')}
+        eyebrow={t('finance.invoicesBreadcrumb', 'Finanze › Rächnige')}
         title={inv.id}
         actions={
           <div style={{ display: 'flex', gap: 8 }}>
@@ -86,11 +86,11 @@ export function InvoiceDetailScreen() {
               onClick={() => go('/app/finance/invoices')}
             >
               <IconArrowLeft size={16} />
-              {t('finance.allInvoices', 'Alli R?chnige')}
+              {t('finance.allInvoices', 'Alli Rächnige')}
             </Button>
             <Button variant="subtle" onClick={() => downloadInvoicePdf(inv.id)}>
               <IconFileDownload size={16} />
-              {t('finance.downloadQrBill', 'QR-R?chnig')}
+              {t('finance.downloadQrBill', 'QR-Rächnig')}
             </Button>
             {!isPaid && (
               <Button
@@ -301,7 +301,7 @@ export function InvoiceDetailScreen() {
                   : t('finance.purpose.other', 'Anderers'),
             },
             {
-              label: t('finance.invoice.number', 'R?chnigs-Nr.'),
+              label: t('finance.invoice.number', 'Rächnigs-Nr.'),
               value: inv.id,
             },
             {
@@ -309,7 +309,7 @@ export function InvoiceDetailScreen() {
               value: inv.issued,
             },
             {
-              label: t('finance.invoice.due', 'F?lligkeitsdatum'),
+              label: t('finance.invoice.due', 'Fälligkeitsdatum'),
               value: inv.due,
             },
             {

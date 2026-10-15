@@ -59,7 +59,7 @@ const tabs: {
   {
     id: 'devices',
     labelKey: 'account.devicesTab',
-    labelDefault: 'Ger?te',
+    labelDefault: 'Geräte',
     icon: <IconDeviceDesktop size={16} />,
   },
   {

@@ -48,7 +48,7 @@ export function AccountSettingsMembershipTab() {
               value: currentUser?.roles?.join(', ') ?? '?',
             },
             {
-              label: t('account.toolHours', 'W?rchzeug-Stunde'),
+              label: t('account.toolHours', 'Wärchzeug-Stunde'),
               value: `${currentUser?.toolHours ?? 0} h`,
             },
             {
@@ -178,7 +178,7 @@ export function AccountSettingsMembershipTab() {
       >
         {t(
           'account.contactAdminToChange',
-          'Wen dini Stuf, Gruppe oder Kategorie wetsch ?ndere, kontaktier en Administrator.',
+          'Wen dini Stuf, Gruppe oder Kategorie wetsch ändere, kontaktier en Administrator.',
         )}
       </div>
     </>

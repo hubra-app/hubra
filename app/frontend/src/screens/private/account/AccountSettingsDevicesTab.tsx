@@ -43,7 +43,7 @@ export function AccountSettingsDevicesTab() {
             style={{ color: 'var(--mantine-color-ink-4)' }}
           />
           <Text fw={700} fz="md">
-            {t('account.devices', 'Ger?te')}
+            {t('account.devices', 'Geräte')}
           </Text>
         </Group>
         <div style={{ padding: '4px 0' }}>
@@ -55,7 +55,7 @@ export function AccountSettingsDevicesTab() {
                 color: 'var(--mantine-color-ink-3)',
               }}
             >
-              {t('account.loadingDevices', 'Ger?te werde glade?')}
+              {t('account.loadingDevices', 'Geräte werde glade?')}
             </div>
           )}
           {!devicesLoading && devices.length === 0 && (
@@ -66,7 +66,7 @@ export function AccountSettingsDevicesTab() {
                 color: 'var(--mantine-color-ink-3)',
               }}
             >
-              {t('account.noDevices', 'Keini Ger?te gfunde.')}
+              {t('account.noDevices', 'Keini Geräte gfunde.')}
             </div>
           )}
           {devicesPg.paged.map((d: DeviceInfo) => (
@@ -124,7 +124,7 @@ export function AccountSettingsDevicesTab() {
                       disabled={savingDeviceNameId === d.id}
                       placeholder={t(
                         'account.sessions.namePlaceholder',
-                        'Mis Gr?t',
+                        'Mis Grät',
                       )}
                       style={{
                         height: 28,
@@ -154,7 +154,7 @@ export function AccountSettingsDevicesTab() {
                     >
                       {d.name ||
                         `${d.browserFamily} on ${d.platform}` ||
-                        t('account.unknownDevice', 'Unbekannts Gr?t')}
+                        t('account.unknownDevice', 'Unbekannts Grät')}
                     </span>
                   )}
                   {editingDeviceId !== d.id && (

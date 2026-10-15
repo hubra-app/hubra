@@ -45,7 +45,7 @@ export function HealthTab() {
   const loading = healthQuery.isLoading || changelogQuery.isLoading
 
   if (loading) {
-    return <LoadingSpinner compact message="Loading health�" />
+    return <LoadingSpinner compact message="Loading health…" />
   }
 
   const overallStatus = health?.status ?? (backendOnline ? 'ok' : 'error')

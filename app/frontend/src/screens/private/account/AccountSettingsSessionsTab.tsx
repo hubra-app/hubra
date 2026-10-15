@@ -54,7 +54,7 @@ export function AccountSettingsSessionsTab() {
           ? err.message
           : t(
               'account.couldNotRevokeSession',
-              'Sitzung chunt n?d beendet w?rde.',
+              'Sitzung chunt nöd beendet wärde.',
             ),
       )
     } finally {
@@ -72,12 +72,12 @@ export function AccountSettingsSessionsTab() {
       notify(
         'success',
         t('account.sessions.renamed', 'Sitzig umbenennt'),
-        name ?? t('account.nameCleared', 'Name gl?scht'),
+        name ?? t('account.nameCleared', 'Name glöscht'),
       )
     } catch (err: unknown) {
       notify(
         'error',
-        t('account.renameFailed', 'Umbenenne f?hlgschlage'),
+        t('account.renameFailed', 'Umbenenne fählgschlage'),
         err instanceof Error ? err.message : 'Unknown error',
       )
     } finally {
@@ -106,7 +106,7 @@ export function AccountSettingsSessionsTab() {
           ? err.message
           : t(
               'account.couldNotRevokeAll',
-              'Sitzungen chented n?d beendet w?rde.',
+              'Sitzungen chented nöd beendet wärde.',
             ),
       )
     } finally {
@@ -204,7 +204,7 @@ export function AccountSettingsSessionsTab() {
                       disabled={savingNameId === s.id}
                       placeholder={t(
                         'account.sessions.namePlaceholder',
-                        'Mis Gr?t',
+                        'Mis Grät',
                       )}
                       style={{
                         height: 28,
@@ -235,7 +235,7 @@ export function AccountSettingsSessionsTab() {
                       {s.deviceName ||
                         `${s.browserFamily} on ${s.platform}` ||
                         s.userAgent ||
-                        t('account.unknownDevice', 'Unbekannts Gr?t')}
+                        t('account.unknownDevice', 'Unbekannts Grät')}
                     </span>
                   )}
                   {editingSessionId !== s.id && (
@@ -287,7 +287,7 @@ export function AccountSettingsSessionsTab() {
                       }}
                     >
                       {s.createReason === 'new_device'
-                        ? t('account.reasonNewDevice', 'Neus Gr?t')
+                        ? t('account.reasonNewDevice', 'Neus Grät')
                         : s.createReason === 'new_ip'
                           ? t('account.reasonNewIp', 'Neui IP')
                           : s.createReason === 'new_ua'
@@ -392,7 +392,7 @@ export function AccountSettingsSessionsTab() {
       >
         {t(
           'account.sessionsInfo',
-          'Verwalte dini aktive Sitzige. Wemmer e Sitzig beendet, wird die sofort ung?ltig.',
+          'Verwalte dini aktive Sitzige. Wemmer e Sitzig beendet, wird die sofort ungültig.',
         )}
       </div>
 

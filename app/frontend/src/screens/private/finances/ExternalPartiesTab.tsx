@@ -395,7 +395,7 @@ export function ExternalPartiesTab() {
         })}
         body={t(
           'finance.externalParty.deleteBody',
-          'R?chnige, wo die Partei bruched, wärded nöd mitgösche.',
+          'Rächnige, wo die Partei bruched, wärded nöd mitgösche.',
         )}
         onConfirm={confirmDelete}
       />

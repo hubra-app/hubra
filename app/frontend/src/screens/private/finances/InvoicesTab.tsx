@@ -189,7 +189,7 @@ export function InvoicesTab() {
       setBulkOpen(false)
       notify(
         'success',
-        t('finance.invoicesCreated', 'R?chnige erstellt'),
+        t('finance.invoicesCreated', 'Rächnige erstellt'),
         t(
           'finance.invoicesCreatedMsg',
           `${result.created} invoice${result.created !== 1 ? 's' : ''} issued.`,
@@ -241,8 +241,8 @@ export function InvoicesTab() {
       setAddOpen(false)
       notify(
         'success',
-        t('finance.invoice.created', 'R?chnig erstellt'),
-        t('finance.invoice.createdMsg', 'Neui R?chnig isch usgstellt worde.'),
+        t('finance.invoice.created', 'Rächnig erstellt'),
+        t('finance.invoice.createdMsg', 'Neui Rächnig isch usgstellt worde.'),
       )
     } catch (err: unknown) {
       notify(
@@ -331,7 +331,7 @@ export function InvoicesTab() {
         columns={[
           {
             key: 'id',
-            header: t('finance.invoice.number', 'R�chnigs-Nr.'),
+            header: t('finance.invoice.number', 'Rächnigs-Nr.'),
             render: (inv) => (
               <span
                 className="num"
@@ -397,7 +397,7 @@ export function InvoicesTab() {
           },
           {
             key: 'due',
-            header: t('finance.invoice.due', 'F�llig'),
+            header: t('finance.invoice.due', 'Fällig'),
             render: (inv) => (
               <span
                 className="num"
@@ -474,7 +474,7 @@ export function InvoicesTab() {
           },
         ]}
         data={pg.paged}
-        emptyMessage={t('finance.noInvoices', 'Cheni R�chnige.')}
+        emptyMessage={t('finance.noInvoices', 'Cheni Rächnige.')}
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder={t('finance.searchInvoices', 'Sueche?')}
@@ -532,16 +532,16 @@ export function InvoicesTab() {
       <ConfirmModal
         open={!!deleteTargetId}
         onClose={() => setDeleteTargetId(null)}
-        title={t('finance.deleteInvoiceTitle', 'R?chnig {{id}} l?sche?', {
+        title={t('finance.deleteInvoiceTitle', 'Rächnig {{id}} lösche?', {
           id: deleteTarget?.id ?? '',
         })}
         body={t(
           'finance.deleteInvoiceBody',
-          `Die R?chnig wirde permanent entfernt.${
+          `Die Rächnig wirde permanent entfernt.${
             deleteTarget?.transactionId
               ? t(
                   'finance.linkedTransactionAlsoDeleted',
-                  ' Di verlinkti Transaktion wird au gl?scht.',
+                  ' Di verlinkti Transaktion wird au glöscht.',
                 )
               : ''
           }`,
@@ -551,8 +551,8 @@ export function InvoicesTab() {
             deleteInvoiceMutation.mutate(deleteTargetId)
             notify(
               'info',
-              t('finance.invoice.deleted', 'R?chnig gl?scht'),
-              t('finance.invoice.deletedMsg', 'R?chnig isch entfernt worde.'),
+              t('finance.invoice.deleted', 'Rächnig glöscht'),
+              t('finance.invoice.deletedMsg', 'Rächnig isch entfernt worde.'),
             )
           }
         }}
@@ -561,7 +561,7 @@ export function InvoicesTab() {
       <Modal
         open={bulkOpen}
         onClose={() => setBulkOpen(false)}
-        title={t('finance.bulk.createTitle', 'Massenerstellig vo R?chnige')}
+        title={t('finance.bulk.createTitle', 'Massenerstellig vo Rächnige')}
         footer={
           <>
             <Button variant="default" onClick={() => setBulkOpen(false)}>
@@ -574,7 +574,7 @@ export function InvoicesTab() {
             >
               {bulkSaving
                 ? t('finance.creating', 'Wird erstellt…')
-                : t('finance.createInvoices', 'R?chnige erstelle')}
+                : t('finance.createInvoices', 'Rächnige erstelle')}
             </Button>
           </>
         }
@@ -584,7 +584,7 @@ export function InvoicesTab() {
             label={t('members.tier', 'Stufe')}
             hint={t(
               'finance.tierHint',
-              "Leer lasse f?r alli aktive Mitglider R?chnige z'erstelle",
+              "Leer lasse für alli aktive Mitglider Rächnige z'erstelle",
             )}
           >
             <Select
@@ -610,7 +610,7 @@ export function InvoicesTab() {
             label={t('common.description', 'Beschribig')}
             hint={t(
               'finance.descriptionHint',
-              'Optional ? wird uf jeder R?chnig azeigt',
+              'Optional ? wird uf jeder Rächnig azeigt',
             )}
           >
             <TextInput
@@ -621,7 +621,7 @@ export function InvoicesTab() {
               {...bulkForm.getInputProps('description')}
             />
           </Field>
-          <Field label={t('finance.invoice.due', 'F?lligkeitsdatum')}>
+          <Field label={t('finance.invoice.due', 'Fälligkeitsdatum')}>
             <TextInput type="date" {...bulkForm.getInputProps('due')} />
           </Field>
           <div
@@ -635,7 +635,7 @@ export function InvoicesTab() {
           >
             {t(
               'finance.bulk.note',
-              'Pro Mitglid wird e R?chnig mit sym Stufepreis erstellt. Mitglider ohni Preis in ihrer Stufe werde ?bersprunge.',
+              'Pro Mitglid wird e Rächnig mit sym Stufepreis erstellt. Mitglider ohni Preis in ihrer Stufe werde übersprunge.',
             )}
           </div>
         </div>
@@ -644,7 +644,7 @@ export function InvoicesTab() {
       <Modal
         open={addOpen}
         onClose={() => setAddOpen(false)}
-        title={t('finance.issueInvoice', 'Neui R?chnig')}
+        title={t('finance.issueInvoice', 'Neui Rächnig')}
         footer={
           <>
             <Button variant="default" onClick={() => setAddOpen(false)}>
@@ -657,7 +657,7 @@ export function InvoicesTab() {
             >
               {saving
                 ? t('finance.creating', 'Wird erstellt…')
-                : t('finance.createInvoice', 'R?chnig erstelle')}
+                : t('finance.createInvoice', 'Rächnig erstelle')}
             </Button>
           </>
         }
@@ -800,7 +800,7 @@ export function InvoicesTab() {
                 {...singleForm.getInputProps('amount')}
               />
             </Field>
-            <Field label={t('finance.invoice.due', 'F?lligkeitsdatum')}>
+            <Field label={t('finance.invoice.due', 'Fälligkeitsdatum')}>
               <TextInput type="date" {...singleForm.getInputProps('due')} />
             </Field>
           </div>

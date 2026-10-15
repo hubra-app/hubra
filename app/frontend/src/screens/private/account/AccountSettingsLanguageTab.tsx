@@ -45,7 +45,7 @@ export function AccountSettingsLanguageTab() {
           >
             {t(
               'account.language.description',
-              'W?hl dii bevorzugti Spraach f?r d Oberfl?chi.',
+              'Wähl dii bevorzugti Spraach für d Oberflächi.',
             )}
           </p>
           {[
@@ -53,7 +53,7 @@ export function AccountSettingsLanguageTab() {
             {
               code: 'de-CH',
               label: 'Swiss German',
-              nativeLabel: 'Schwiizerd??tsch',
+              nativeLabel: 'Schwiizerdütsch',
             },
           ].map((lang) => (
             <label
@@ -80,10 +80,10 @@ export function AccountSettingsLanguageTab() {
                 setLanguage(lang.code)
                 notify(
                   'success',
-                  t('account.language.changed', 'Spraach g?ndert'),
+                  t('account.language.changed', 'Spraach gändert'),
                   t(
                     'account.language.changedMsg',
-                    `Oberfl?chi isch jetzt uf ${lang.nativeLabel}.`,
+                    `Oberflächi isch jetzt uf ${lang.nativeLabel}.`,
                   ),
                 )
                 try {

@@ -468,7 +468,7 @@ export function AuditLogScreen() {
         onRowClick={(entry) => setSelectedEntryId(entry.id)}
         searchValue={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search audit log�"
+        searchPlaceholder="Search audit log…"
         page={page}
         perPage={pageSize}
         total={total}

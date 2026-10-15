@@ -70,7 +70,7 @@ export function ApplyScreen() {
           ? err.message
           : t(
               'apply.submissionFailed',
-              'Ingab fehlgeschlage. Bitte n?chstmol versueche.',
+              'Ingab fehlgeschlage. Bitte nöchstmol versueche.',
             ),
       )
     } finally {
@@ -133,7 +133,7 @@ export function ApplyScreen() {
                 margin: '0 0 6px',
               }}
             >
-              {t('apply.applyForMembership', 'F?r Mitgliedschaft bew?rbe')}
+              {t('apply.applyForMembership', 'Für Mitgliedschaft bewärbe')}
             </h2>
             <p
               style={{
@@ -144,7 +144,7 @@ export function ApplyScreen() {
             >
               {t(
                 'apply.fillInDetails',
-                'F?ll dini Date i ond mir ?berpr?fed di Bewerbig.',
+                'Füll dini Date i ond mir überprüfed di Bewerbig.',
               )}
             </p>
 
@@ -283,7 +283,7 @@ export function ApplyScreen() {
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder={t(
                     'apply.messagePlaceholder',
-                    'Erz?hl e bitzeli ?ber di selber ond was du g?rn mached…',
+                    'Erzähl e bitzeli über di selber ond was du gärn mached…',
                   )}
                 />
               </div>
@@ -309,7 +309,7 @@ export function ApplyScreen() {
                 onClick={() => navigate('/login')}
               >
                 <IconArrowLeft size={16} />{' '}
-                {t('common.backToLogin', 'Zrugg zue Aam?ldig')}
+                {t('common.backToLogin', 'Zrugg zue Aamäldig')}
               </Button>
             </div>
           </>
@@ -351,7 +351,7 @@ export function ApplyScreen() {
               <strong>
                 {firstName} {lastName}
               </strong>
-              . Mir ?berpr?fed di Bewerbig ond melded us bi{' '}
+              . Mir überprüfed di Bewerbig ond melded us bi{' '}
               <strong>{email}</strong>.
             </p>
             <p
@@ -363,7 +363,7 @@ export function ApplyScreen() {
             >
               {t(
                 'apply.usuallyTakesTime',
-                'Das daueret normalerwis 1–3 Wercht?g.',
+                'Das daueret normalerwis 1–3 Werchtäg.',
               )}
             </p>
             <Button
@@ -372,7 +372,7 @@ export function ApplyScreen() {
               onClick={() => navigate('/login')}
             >
               <IconArrowLeft size={16} />{' '}
-              {t('common.backToLogin', 'Zrugg zue Aam?ldig')}
+              {t('common.backToLogin', 'Zrugg zue Aamäldig')}
             </Button>
           </div>
         )}

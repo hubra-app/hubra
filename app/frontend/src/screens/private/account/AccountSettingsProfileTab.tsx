@@ -96,7 +96,7 @@ export function AccountSettingsProfileTab() {
           ? err.message
           : t(
               'account.couldNotUpdateProfile',
-              'Profil chonnt n?d aktualisiert w?rde.',
+              'Profil chonnt nöd aktualisiert wärde.',
             ),
       )
     } finally {
@@ -122,7 +122,7 @@ export function AccountSettingsProfileTab() {
         t('common.error', 'Fehler'),
         t(
           'account.couldNotUpdateMailSettings',
-          'Mail-Iistellige chonnt n?d aktualisiert w?rde.',
+          'Mail-Iistellige chonnt nöd aktualisiert wärde.',
         ),
       )
     }
@@ -135,7 +135,7 @@ export function AccountSettingsProfileTab() {
       notify(
         'success',
         t('account.verificationEmailSent', 'Verifikations-E-Mail gsendet'),
-        t('account.checkInbox', '?berpr?ch din private E-Mail-Inbox.'),
+        t('account.checkInbox', 'Überprüch din private E-Mail-Inbox.'),
       )
     } catch (err: unknown) {
       notify(
@@ -145,7 +145,7 @@ export function AccountSettingsProfileTab() {
           ? err.message
           : t(
               'account.couldNotSendVerification',
-              'Verifikations-E-Mail chonnt n?d gsendet w?rde.',
+              'Verifikations-E-Mail chonnt nöd gsendet wärde.',
             ),
       )
     } finally {
@@ -220,7 +220,7 @@ export function AccountSettingsProfileTab() {
             label={t('account.privateEmail', 'Private E-Mail')}
             hint={t(
               'account.privateEmailHint',
-              'Dini pers?nlichi E-Mail - wird mit andere Mitglider n?d teilt',
+              'Dini persönlichi E-Mail - wird mit andere Mitglider nöd teilt',
             )}
           >
             <TextInput type="email" {...profileForm.getInputProps('email')} />
@@ -229,7 +229,7 @@ export function AccountSettingsProfileTab() {
             label={t('account.clubEmail', 'Club E-Mail')}
             hint={t(
               'account.clubEmailHint',
-              'Automatisch generiert - kontaktier en Administrator zum ?ndere',
+              'Automatisch generiert - kontaktier en Administrator zum ändere',
             )}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

@@ -94,7 +94,7 @@ const STATUS_CONFIG: Record<
   { label: string; color: string; icon: React.ReactNode }
 > = {
   available: {
-    label: 'Verf?egbar',
+    label: 'Verfüegbar',
     color: '#1f9d57',
     icon: <IconCircleCheck size={12} />,
   },
@@ -251,7 +251,7 @@ function ItemDetailPanel({
       notify(
         'info',
         t('inventory.instruction.removed', 'Instruktion entfernt'),
-        t('inventory.recordCleared', 'Datensatz gel?scht.'),
+        t('inventory.recordCleared', 'Datensatz gelöscht.'),
       )
     } catch (err: unknown) {
       notify(
@@ -285,7 +285,7 @@ function ItemDetailPanel({
         t('inventory.recorded', 'Erfasst'),
         t(
           'inventory.selfInstructedMsg',
-          'Du bisch jetzt als instruiert markiert f?r das Item.',
+          'Du bisch jetzt als instruiert markiert für das Item.',
         ),
       )
     } catch (err: unknown) {
@@ -602,7 +602,7 @@ function ItemDetailPanel({
                   <IconCircleCheck size={16} />
                   {t(
                     'inventory.youAreInstructed',
-                    'Du bisch instruiert f?r das Item',
+                    'Du bisch instruiert für das Item',
                   )}
                 </div>
               )}
@@ -753,7 +753,7 @@ function ItemDetailPanel({
               <IconInfoCircle size={16} />
               {t(
                 'inventory.noInstructionRequired',
-                'F?r das Item isch cheni Instruktion erforderlich.',
+                'Für das Item isch cheni Instruktion erforderlich.',
               )}
             </div>
           )}
@@ -993,14 +993,14 @@ export function InventoryScreen() {
       notify(
         'info',
         t('inventory.item.removed', 'Item entfernt'),
-        t('inventory.item.removedMsg', '{{name}} isch gl?scht worde.', {
+        t('inventory.item.removedMsg', '{{name}} isch glöscht worde.', {
           name: deleteTarget.name,
         }),
       )
     } catch (err: unknown) {
       notify(
         'error',
-        t('common.deleteFailed', 'L?sche fehlgeschlage'),
+        t('common.deleteFailed', 'Lösche fehlgeschlage'),
         err instanceof Error
           ? err.message
           : t('common.unknownError', 'Unbekannte Fehler'),
@@ -1021,7 +1021,7 @@ export function InventoryScreen() {
         <TextInput
           value={fName}
           onChange={(e) => setFName(e.target.value)}
-          placeholder={t('common.namePlaceholder', 'z.B. MIG Schweissg?r?t')}
+          placeholder={t('common.namePlaceholder', 'z.B. MIG Schweissgerät')}
         />
       </Field>
       <div
@@ -1159,7 +1159,7 @@ export function InventoryScreen() {
       <PageHead
         eyebrow={t('shell.sections.workspace', 'Werkplatz')}
         title={t('inventory.title', 'Inventar')}
-        desc={t('inventory.desc', 'W?rchzeug, Items und Material verfolge.')}
+        desc={t('inventory.desc', 'Wärchzeug, Items und Material verfolge.')}
         actions={
           canCreate && (
             <Button variant="filled" onClick={openAdd}>
@@ -1599,12 +1599,12 @@ export function InventoryScreen() {
       <ConfirmModal
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        title={t('inventory.deleteItemTitle', '"{{name}}" l?sche?', {
+        title={t('inventory.deleteItemTitle', '"{{name}}" lösche?', {
           name: deleteTarget?.name ?? '',
         })}
         body={t(
           'inventory.deleteItemBody',
-          'Das Item und alli Instruktions-Datens?tz w?rded permanent entfernt.',
+          'Das Item und alli Instruktions-Datensätz wärded permanent entfernt.',
         )}
         onConfirm={confirmDelete}
       />

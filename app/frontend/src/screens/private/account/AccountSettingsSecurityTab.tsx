@@ -39,7 +39,7 @@ export function AccountSettingsSecurityTab() {
       passwordForm.reset()
       notify(
         'success',
-        t('account.password.changed', 'Passwort g?ndert'),
+        t('account.password.changed', 'Passwort gändert'),
         t(
           'account.password.updatedMsg',
           'Din Passwort isch aktualisiert worde.',
@@ -51,12 +51,12 @@ export function AccountSettingsSecurityTab() {
           ? err.message
           : t(
               'account.failedToChangePassword',
-              'Passwort?nderig fehlgeschlage.',
+              'Passwortänderig fehlgeschlage.',
             )
       passwordForm.setFieldError('root', msg)
       notify(
         'error',
-        t('account.password.changeFailed', 'Passwort?nderig fehlgeschlage'),
+        t('account.password.changeFailed', 'Passwortänderig fehlgeschlage'),
         msg,
       )
     } finally {
@@ -76,7 +76,7 @@ export function AccountSettingsSecurityTab() {
         >
           <IconLock size={16} style={{ color: 'var(--mantine-color-ink-4)' }} />
           <Text fw={700} fz="md">
-            {t('account.changePassword', 'Passwort ?ndere')}
+            {t('account.changePassword', 'Passwort ändere')}
           </Text>
         </Group>
         <div
@@ -108,7 +108,7 @@ export function AccountSettingsSecurityTab() {
             <PasswordInput {...passwordForm.getInputProps('newPw')} />
           </Field>
           <Field
-            label={t('account.confirmNewPassword', 'Neus Passwort best?tige')}
+            label={t('account.confirmNewPassword', 'Neus Passwort bestätige')}
           >
             <PasswordInput {...passwordForm.getInputProps('confirmPw')} />
           </Field>
