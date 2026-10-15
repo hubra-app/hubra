@@ -14,6 +14,8 @@ import logging
 import time
 from typing import Any
 
+from vollbuild.core.redis_client import get_redis_client
+
 _logger = logging.getLogger(__name__)
 
 _CACHE_KEY = "health:status"
@@ -25,18 +27,7 @@ _mem_store: dict[str, tuple[dict, float]] = {}
 
 
 def _get_redis_client():
-    """Return a Redis client if available, else None."""
-    try:
-        from flask import current_app
-
-        url = current_app.config.get("REDIS_URL", "")
-        if not url or url == "memory://":
-            return None
-        import redis as redis_lib
-
-        return redis_lib.from_url(url, socket_connect_timeout=1, socket_timeout=1)
-    except Exception:
-        return None
+    return get_redis_client(timeout=1)
 
 
 class HealthCache:

@@ -12,6 +12,7 @@ from sqlalchemy import select
 from vollbuild.api.settings.services import SettingService
 from vollbuild.core.extensions import db
 from vollbuild.core.models.translation import Translation
+from vollbuild.core.redis_client import get_redis_client
 
 _log = logging.getLogger(__name__)
 
@@ -25,18 +26,7 @@ _mem_translations: dict[str, tuple[dict, float]] = {}
 
 
 def _get_redis_client():
-    """Return a Redis client if available, else None."""
-    try:
-        from flask import current_app
-
-        url = current_app.config.get("REDIS_URL", "")
-        if not url or url == "memory://":
-            return None
-        import redis as redis_lib
-
-        return redis_lib.from_url(url, socket_connect_timeout=1, socket_timeout=1)
-    except Exception:
-        return None
+    return get_redis_client(timeout=1)
 
 
 def _invalidate_locales_cache() -> None:
@@ -76,33 +66,26 @@ def _etag_version_key(locale: str) -> str:
 
 def _bump_etag(locale: str) -> None:
     """Increment the Redis ETag version counter for *locale*."""
+    client = _get_redis_client()
+    if client is None:
+        return
     try:
-        import redis as redis_lib
-
-        from flask import current_app
-
-        url = current_app.config.get("REDIS_URL", "redis://localhost:6379/0")
-        r = redis_lib.from_url(url)
-        r.incr(_etag_version_key(locale))
+        client.incr(_etag_version_key(locale))
     except Exception:
-        pass
+        _log.debug("i18n etag bump failed for %s", locale)
 
 
 def get_etag(locale: str) -> str | None:
     """Return the current ETag string for *locale*, or None if not set."""
+    client = _get_redis_client()
+    if client is None:
+        return None
     try:
-        import redis as redis_lib
-
-        from flask import current_app
-
-        url = current_app.config.get("REDIS_URL", "redis://localhost:6379/0")
-        r = redis_lib.from_url(url)
-        ver = r.get(_etag_version_key(locale))
-        if ver is not None:
-            return f'"{ver.decode()}"'
+        ver = client.get(_etag_version_key(locale))
     except Exception:
-        pass
-    return None
+        _log.debug("i18n etag lookup failed for %s", locale)
+        return None
+    return f'"{ver.decode()}"' if ver is not None else None
 
 
 def get_translations(locale: str) -> list[Translation]:

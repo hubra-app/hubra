@@ -49,6 +49,16 @@ def _fast_argon2():
         yield
 
 
+@pytest.fixture(autouse=True)
+def _reset_redis_breaker():
+    """Keep one test's simulated Redis outage from leaking into the next."""
+    from vollbuild.core.redis_client import reset_redis_down
+
+    reset_redis_down()
+    yield
+    reset_redis_down()
+
+
 @pytest.fixture(scope="session")
 def app():
     app = create_app("testing")

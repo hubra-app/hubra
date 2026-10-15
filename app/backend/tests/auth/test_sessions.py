@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 from vollbuild.core.extensions import db
 from vollbuild.core.models.device_session import Device, Session
+from vollbuild.core.redis_client import reset_redis_down
 
 
 # ── Login creates Device + Session ───────────────────────────────────────────
@@ -459,7 +460,7 @@ def test_is_session_revoked_skips_redis_when_down(app, db, seeded_db):
     db.session.add(session)
     db.session.commit()
 
-    session_service._redis_down_until = 0.0
+    reset_redis_down()
 
     mock_client = MagicMock()
     mock_client.get.side_effect = Exception("connection refused")
@@ -473,7 +474,7 @@ def test_is_session_revoked_skips_redis_when_down(app, db, seeded_db):
         mock_client.setex.assert_not_called()
         mock_mark.assert_called_once()
 
-    session_service._redis_down_until = 0.0
+    reset_redis_down()
 
 
 # ── Async last_seen / session activity tasks ─────────────────────────────────

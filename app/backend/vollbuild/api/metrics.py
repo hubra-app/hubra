@@ -14,7 +14,9 @@ import time
 import logging
 from datetime import datetime, timezone
 
-from flask import Flask, g, request, current_app
+from flask import Flask, g, request
+from vollbuild.core.redis_client import get_redis_client as _get_redis_client
+from vollbuild.core.redis_client import mark_redis_down as _mark_redis_down
 
 _log = logging.getLogger(__name__)
 
@@ -26,32 +28,6 @@ _SKIP_METHODS = {"OPTIONS", "HEAD"}
 _KEY_PREFIX = "api:calls:"
 _ERROR_KEY_PREFIX = "api:errors:"
 _KEY_TTL_SECONDS = 45 * 24 * 60 * 60
-
-# Redis negative-cache — avoid hammering Redis when it's down
-_REDIS_DOWN_WINDOW = 5.0
-_redis_down_until: float = 0.0
-
-
-def _get_redis_client():
-    """Return a Redis client or None if Redis is unavailable."""
-    global _redis_down_until
-    if time.monotonic() < _redis_down_until:
-        return None
-    try:
-        url = current_app.config.get("REDIS_URL", "")
-        if not url or url == "memory://":
-            return None
-        import redis as redis_lib
-
-        return redis_lib.from_url(url, socket_connect_timeout=0.3, socket_timeout=0.3)
-    except Exception:
-        _mark_redis_down()
-        return None
-
-
-def _mark_redis_down() -> None:
-    global _redis_down_until
-    _redis_down_until = time.monotonic() + _REDIS_DOWN_WINDOW
 
 
 def _redis_key(tenant_id: int, dt: datetime) -> str:

@@ -3,50 +3,18 @@
 from __future__ import annotations
 
 import logging
-import time
 from datetime import datetime, timezone
 
 from sqlalchemy import func, select
 
 from vollbuild.core.extensions import db
 from vollbuild.core.models.device_session import Device, Session
+from vollbuild.core.redis_client import get_redis_client as _get_redis_client
+from vollbuild.core.redis_client import mark_redis_down as _mark_redis_down
 
 _log = logging.getLogger(__name__)
 
 _SESSION_CACHE_TTL = 60  # seconds
-
-# Negative-cache window: when Redis is unreachable, skip all Redis operations
-# for this duration to avoid stacking per-request timeouts on every JWT call.
-_REDIS_DOWN_WINDOW = 5.0  # seconds
-_redis_down_until: float = 0.0  # monotonic timestamp; 0 = not down
-
-
-def _get_redis_client():
-    """Return a Redis client if available, else None.
-
-    Returns None when ``REDIS_URL`` is unset, when Redis is in a negative-cache
-    cooldown (recently failed), or when client creation fails.
-    """
-    global _redis_down_until
-    if time.monotonic() < _redis_down_until:
-        return None
-    try:
-        from flask import current_app
-
-        url = current_app.config.get("REDIS_URL", "")
-        if not url or url == "memory://":
-            return None
-        import redis as redis_lib
-
-        return redis_lib.from_url(url, socket_connect_timeout=0.3, socket_timeout=0.3)
-    except Exception:
-        return None
-
-
-def _mark_redis_down() -> None:
-    """Record that Redis is unreachable, suppressing further attempts briefly."""
-    global _redis_down_until
-    _redis_down_until = time.monotonic() + _REDIS_DOWN_WINDOW
 
 
 def _invalidate_session_cache(session_id: int) -> None:

@@ -24,7 +24,6 @@ the current tenant (future multi-tenant path).
 from __future__ import annotations
 
 import logging
-import time
 from functools import wraps
 
 from flask import g, jsonify, request
@@ -32,6 +31,8 @@ from flask_jwt_extended import current_user, verify_jwt_in_request
 from sqlalchemy import select
 
 from vollbuild.core.extensions import db
+from vollbuild.core.redis_client import get_redis_client as _get_redis_client
+from vollbuild.core.redis_client import mark_redis_down as _mark_redis_down
 
 
 def _current_member():
@@ -74,11 +75,6 @@ logger = logging.getLogger(__name__)
 
 _PERM_CACHE_TTL = 300  # 5 minutes
 
-# Negative-cache window: when Redis is unreachable, skip all Redis operations
-# for this duration to avoid stacking per-request timeouts.
-_REDIS_DOWN_WINDOW = 5.0  # seconds
-_redis_down_until: float = 0.0  # monotonic timestamp; 0 = not down
-
 
 def _derive_perm_key(blueprint_name: str | None, resource: str, action: str) -> str:
     """Build a structured permission key from blueprint + resource + action."""
@@ -86,34 +82,6 @@ def _derive_perm_key(blueprint_name: str | None, resource: str, action: str) -> 
     if blueprint_name:
         prefix = blueprint_name.removesuffix("_bp")
     return f"{prefix}.{resource}.{action}"
-
-
-def _get_redis_client():
-    """Return a Redis client if available, else None.
-
-    Returns None when ``REDIS_URL`` is unset, when Redis is in a negative-cache
-    cooldown (recently failed), or when client creation fails.
-    """
-    global _redis_down_until
-    if time.monotonic() < _redis_down_until:
-        return None
-    try:
-        from flask import current_app
-
-        url = current_app.config.get("REDIS_URL", "")
-        if not url or url == "memory://":
-            return None
-        import redis as redis_lib
-
-        return redis_lib.from_url(url, socket_connect_timeout=0.3, socket_timeout=0.3)
-    except Exception:
-        return None
-
-
-def _mark_redis_down() -> None:
-    """Record that Redis is unreachable, suppressing further attempts briefly."""
-    global _redis_down_until
-    _redis_down_until = time.monotonic() + _REDIS_DOWN_WINDOW
 
 
 def _get_role_permission_keys(role_id: int) -> set[str]:
