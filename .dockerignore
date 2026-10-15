@@ -17,6 +17,6 @@
 .vscode/
 graphify-out/
 docs/
-mail/
+modules/
 scripts/
 .worktrees/

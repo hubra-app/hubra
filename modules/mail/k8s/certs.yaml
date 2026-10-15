@@ -1,0 +1,180 @@
+# Mail TLS: certbot (DNS-01 via Cloudflare) writes to a shared `letsencrypt`
+# volume at the same /etc/letsencrypt/live/<MAIL_HOST>/ paths the Haraka,
+# ZoneMTA and WildDuck configs already use, so no mail config changes.
+#
+# cert-watcher + docker-socket-proxy are replaced by `mail-cert-reload`: an
+# hourly CronJob that rolls the mail Deployments when the cert file changes.
+#
+# Needs Secret `cloudflare-credentials` (key cloudflare.ini), created by
+# deploy/create-secrets.sh from modules/mail/certbot/cloudflare.ini.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: letsencrypt
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: certbot-init
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: certbot
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: certbot
+          image: certbot/dns-cloudflare:latest@sha256:2d4509d3643716775242d77acf61082c384f9b74aa9696146e2a35a39ffa2e02
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -e
+              DOMAIN_ARGS=""
+              for d in $(echo "$MAIL_CERT_DOMAINS" | tr ',' ' '); do
+                DOMAIN_ARGS="$DOMAIN_ARGS --domain $d"
+              done
+              certbot certonly \
+                --dns-cloudflare \
+                --dns-cloudflare-credentials /cloudflare/cloudflare.ini \
+                --dns-cloudflare-propagation-seconds 30 \
+                --non-interactive \
+                --agree-tos \
+                --expand \
+                --email "$ACME_EMAIL" \
+                $DOMAIN_ARGS \
+                --keep-until-expiring
+          env:
+            - name: MAIL_CERT_DOMAINS
+              valueFrom: { secretKeyRef: { name: club-env, key: MAIL_CERT_DOMAINS } }
+            - name: ACME_EMAIL
+              valueFrom: { secretKeyRef: { name: club-env, key: ACME_EMAIL } }
+          volumeMounts:
+            - name: letsencrypt
+              mountPath: /etc/letsencrypt
+            - name: cloudflare
+              mountPath: /cloudflare
+              readOnly: true
+      volumes:
+        - name: letsencrypt
+          persistentVolumeClaim:
+            claimName: letsencrypt
+        - name: cloudflare
+          secret:
+            secretName: cloudflare-credentials
+            defaultMode: 0600
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: certbot-renew
+spec:
+  schedule: "17 */12 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: certbot
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: certbot
+              image: certbot/dns-cloudflare:latest@sha256:2d4509d3643716775242d77acf61082c384f9b74aa9696146e2a35a39ffa2e02
+              args: ["renew", "--quiet"]
+              volumeMounts:
+                - name: letsencrypt
+                  mountPath: /etc/letsencrypt
+                - name: cloudflare
+                  mountPath: /cloudflare
+                  readOnly: true
+          volumes:
+            - name: letsencrypt
+              persistentVolumeClaim:
+                claimName: letsencrypt
+            - name: cloudflare
+              secret:
+                secretName: cloudflare-credentials
+                defaultMode: 0600
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mail-cert-reload
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: mail-cert-reload
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["mailserver", "haraka", "zonemta"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: mail-cert-reload
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: mail-cert-reload
+subjects:
+  - kind: ServiceAccount
+    name: mail-cert-reload
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mail-cert-reload
+spec:
+  schedule: "47 * * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          serviceAccountName: mail-cert-reload
+          restartPolicy: Never
+          containers:
+            - name: reload
+              image: alpine/k8s:1.31.4
+              command: ["sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  cert="/etc/letsencrypt/live/$MAIL_HOST/fullchain.pem"
+                  [ -e "$cert" ] || { echo "no cert yet at $cert"; exit 0; }
+                  stamp="$(stat -L -c %Y "$cert")"
+                  key='club.vollbuild.ch/cert-stamp'
+                  for d in mailserver haraka zonemta; do
+                    cur="$(kubectl get deploy "$d" -o jsonpath="{.spec.template.metadata.annotations.club\.vollbuild\.ch/cert-stamp}")"
+                    if [ "$cur" = "$stamp" ]; then
+                      echo "$d: cert unchanged"
+                      continue
+                    fi
+                    # The very first run also rolls once, to record the stamp.
+                    kubectl patch deploy "$d" -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"$key\":\"$stamp\"}}}}}"
+                    echo "$d: cert changed, rolled"
+                  done
+              env:
+                - name: MAIL_HOST
+                  valueFrom: { secretKeyRef: { name: club-env, key: MAIL_HOST } }
+              volumeMounts:
+                - name: letsencrypt
+                  mountPath: /etc/letsencrypt
+                  readOnly: true
+          volumes:
+            - name: letsencrypt
+              persistentVolumeClaim:
+                claimName: letsencrypt

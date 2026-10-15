@@ -29,7 +29,7 @@ cross-origin auth setup (CORS, CSRF, cookie attributes, ProxyFix).
 | **Background** | Celery 5 + Redis                                                    |
 | **Mail**       | WildDuck (IMAP), Haraka (inbound SMTP), ZoneMTA (outbound SMTP)     |
 | **Edge**       | External Traefik (TLS, routing, CrowdSec) + Caddy 2 (frontend only) |
-| **Deployment** | Docker Compose (8 app services + 8 optional mail services)          |
+| **Deployment** | Docker Compose, or k3s + Flux (see docs/k3s.md)                     |
 
 ## Quick Start
 
@@ -44,10 +44,12 @@ The self-hosted mail stack (WildDuck, Haraka, ZoneMTA) is opt-in. To run it
 alongside the app:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.mail.yml up -d
+docker compose -f docker-compose.yml -f modules/mail/docker-compose.mail.yml up -d
 ```
 
-See [docs/mail-stack.md](docs/mail-stack.md) for mail prerequisites.
+See [modules/mail/README.md](modules/mail/README.md) for mail prerequisites.
+
+To run on k3s with Flux instead of Compose, see [docs/k3s.md](docs/k3s.md).
 
 **Development mode:** See [docs/frontend.md](docs/frontend.md) and
 [app/backend/API.md](app/backend/API.md).
@@ -80,7 +82,8 @@ npx playwright test
 | Architecture & request flow            | [docs/architecture.md](docs/architecture.md)             |
 | API endpoints, auth, permissions       | [docs/api-overview.md](docs/api-overview.md)             |
 | Full API reference                     | [app/backend/API.md](app/backend/API.md)                 |
-| Mail stack (WildDuck, Haraka, ZoneMTA) | [docs/mail-stack.md](docs/mail-stack.md)                 |
+| Mail stack (WildDuck, Haraka, ZoneMTA) | [modules/mail/README.md](modules/mail/README.md)         |
+| Running on k3s with Flux               | [docs/k3s.md](docs/k3s.md)                               |
 | Frontend stack & structure             | [docs/frontend.md](docs/frontend.md)                     |
 | Environment & settings config          | [docs/configuration.md](docs/configuration.md)           |
 | Subdomain migration (CORS, cookies)    | [docs/SUBDOMAIN_MIGRATION.md](docs/SUBDOMAIN_MIGRATION.md) |
@@ -93,9 +96,9 @@ npx playwright test
 
 ```
 ├── docker-compose.yml             # App stack (default)
-├── docker-compose.mail.yml        # Optional mail stack (opt-in via -f)
 ├── docker-compose.override.yaml   # Production routing + env overrides
 ├── settings.yaml                  # Deployment-time feature flags & limits
+├── deploy/                        # k3s manifests + Flux sync (docs/k3s.md)
 ├── .env.example                   # Environment variable template
 ├── AGENTS.md                      # AI agent instructions
 ├── app/
@@ -117,11 +120,15 @@ npx playwright test
 │   │   └── e2e/                   # Playwright E2E tests
 │   └── deploy/
 │       └── Caddyfile              # Frontend proxy + security headers
-├── mail/                          # Mail infra (used by docker-compose.mail.yml)
-│   ├── haraka/                    # Inbound SMTP
-│   ├── zonemta/                   # Outbound SMTP
-│   ├── certbot/                   # TLS certificates
-│   └── cert-watcher/              # Hot-reload on renewal
+├── modules/
+│   └── mail/                      # Opt-in self-hosted mail stack, self-contained
+│       ├── docker-compose.mail.yml  # Compose add-on (opt-in via -f)
+│       ├── k8s/                   # k3s manifests (Flux Kustomization `mail`)
+│       ├── haraka/                # Inbound SMTP
+│       ├── zonemta/               # Outbound SMTP
+│       ├── certbot/               # TLS certificates
+│       ├── cert-watcher/          # Hot-reload on renewal (Compose only)
+│       └── scripts/               # validate-mail-config.py
 ├── docs/                          # All documentation
-└── scripts/                       # Utility scripts (sync, validate-mail)
+└── scripts/                       # Utility scripts (sync)
 ```

@@ -8,7 +8,7 @@ import sys
 def check_toml():
     import toml
 
-    for f in sorted(glob.glob("mail/**/*.toml", recursive=True)):
+    for f in sorted(glob.glob("modules/mail/**/*.toml", recursive=True)):
         try:
             toml.load(f)
             print(f"OK toml {f}")
@@ -20,9 +20,9 @@ def check_toml():
 def check_yaml():
     import yaml
 
-    for f in sorted(glob.glob("mail/**/*.yaml", recursive=True)):
+    for f in sorted(glob.glob("modules/mail/**/*.yaml", recursive=True)):
         try:
-            yaml.safe_load(open(f))
+            list(yaml.safe_load_all(open(f)))  # k8s/ files hold several documents
             print(f"OK yaml {f}")
         except Exception as e:
             print(f"FAIL yaml {f}: {e}")
@@ -30,7 +30,7 @@ def check_yaml():
 
 
 def check_ini():
-    for f in sorted(glob.glob("mail/haraka/**/*.ini", recursive=True)):
+    for f in sorted(glob.glob("modules/mail/haraka/**/*.ini", recursive=True)):
         try:
             configparser.ConfigParser().read(f)
             print(f"OK ini {f}")

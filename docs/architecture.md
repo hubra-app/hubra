@@ -50,7 +50,7 @@
 
 > The lower half of the diagram (MongoDB, Haraka, WildDuck, ZoneMTA) only
 > applies when the optional mail stack is running. See
-> [mail-stack.md](mail-stack.md) for how to enable it.
+> [modules/mail/README.md](../modules/mail/README.md) for how to enable it.
 
 ## Request flow
 

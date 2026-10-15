@@ -94,17 +94,17 @@ The project is deployed via Docker Compose and uses a React SPA frontend with a 
 | `postgres`      | `postgres:16-alpine`       | Primary app database                       |
 | `redis`         | `redis:7-alpine`           | Queue broker, rate-limit storage           |
 
-#### Mail stack (`docker-compose.mail.yml` — opt-in)
+#### Mail stack (`modules/mail/docker-compose.mail.yml` — opt-in)
 
 | Container       | Image                           | Role                                   |
 | --------------- | ------------------------------- | -------------------------------------- |
 | `mongo`         | `mongo:7`                       | Mail data for WildDuck                 |
 | `mailserver`    | `ghcr.io/zone-eu/wildduck`      | IMAP mail server                       |
-| `haraka`        | Build from `mail/haraka/`       | Inbound SMTP                           |
-| `zonemta`       | Build from `mail/zonemta/`      | Outbound SMTP                          |
+| `haraka`        | Build from `modules/mail/haraka/`       | Inbound SMTP                           |
+| `zonemta`       | Build from `modules/mail/zonemta/`      | Outbound SMTP                          |
 | `certbot-init`  | `certbot/dns-cloudflare`        | One-shot TLS certificate issuance      |
 | `certbot-renew` | `certbot/dns-cloudflare`        | Cert renewal every 12h                 |
-| `cert-watcher`  | Build from `mail/cert-watcher/` | Restarts mail services on cert change  |
+| `cert-watcher`  | Build from `modules/mail/cert-watcher/` | Restarts mail services on cert change  |
 | `socket-proxy`  | `tecnativa/docker-socket-proxy` | Secured Docker socket for cert-watcher |
 
 ### Network topology
@@ -288,18 +288,19 @@ club-management-suite/
 │   ├── architecture.md          # System architecture & request flow
 │   ├── api-overview.md          # API endpoints & permissions
 │   ├── frontend.md              # Frontend stack & structure
-│   ├── mail-stack.md            # Mail stack architecture & tasks
 │   ├── configuration.md         # Environment & settings
 │   ├── project-management.md    # Milestones & project management
 │   ├── disaster-recovery.md     # Backup & restore procedures
 │   ├── frontend_issues.md       # Known frontend issues
 │   └── SUBDOMAIN_MIGRATION.md   # Subdomain migration notes
 │
-├── mail/                        # Mail stack build contexts
+├── modules/mail/                # Opt-in mail stack (Compose add-on + k8s + build contexts)
+│   ├── docker-compose.mail.yml
+│   ├── k8s/                     # k3s manifests
 │   ├── haraka/                  # Inbound SMTP (custom config)
 │   ├── zonemta/                 # Outbound SMTP (custom config)
 │   ├── certbot/                 # TLS certificate automation
-│   └── cert-watcher/            # Hot-reload on cert renewal
+│   └── cert-watcher/            # Hot-reload on cert renewal (Compose only)
 │
 ├── scripts/                     # Utility scripts
 │   ├── sync.py                  # Development sync utility
@@ -423,7 +424,7 @@ cp .env.example .env         # Edit secrets
 docker compose up -d
 
 # Start app + mail stack (adds WildDuck, Haraka, ZoneMTA)
-docker compose -f docker-compose.yml -f docker-compose.mail.yml up -d
+docker compose -f docker-compose.yml -f modules/mail/docker-compose.mail.yml up -d
 
 # Rebuild after code changes
 docker compose up -d --build frontend
@@ -576,7 +577,7 @@ docker compose -f docker-compose.yml -f docker-compose.override.yaml up -d
 
 # With mail stack
 docker compose -f docker-compose.yml -f docker-compose.override.yaml \
-               -f docker-compose.mail.yml up -d
+               -f modules/mail/docker-compose.mail.yml up -d
 ```
 
 The `docker-compose.override.yaml` adds Traefik labels (`cos.vollbuild.ch` / `api.vollbuild.ch`), sets `JWT_COOKIE_DOMAIN=.vollbuild.ch`, mounts live code volumes, and switches `VITE_API_BASE` to the production API URL. This file is **not** committed broadly — it lives in `.gitignore` and is maintained per-deployment.

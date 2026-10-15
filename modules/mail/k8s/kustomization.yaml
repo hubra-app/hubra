@@ -1,0 +1,26 @@
+# Opt-in mail stack on k3s, the counterpart of docker-compose.mail.yml.
+# Flux applies it through deploy/flux/mail.yaml (suspended until you enable it).
+# Shares the app's namespace, Secret `club-env` and Redis.
+#
+# Mail needs real host ports 25/465/587/993; they are published through k3s
+# ServiceLB, so stop the Compose mail stack on the node first. Assumes a
+# single-node cluster: the `letsencrypt` local-path volume is shared by several pods.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: club
+
+resources:
+  - mongo.yaml
+  - certs.yaml
+  - wildduck.yaml
+  - haraka.yaml
+  - zonemta.yaml
+
+images:
+  - name: club/haraka
+    newName: registry.gitlab.com/CHANGE-ME/club-operations-suite/haraka
+    newTag: latest
+  - name: club/zonemta
+    newName: registry.gitlab.com/CHANGE-ME/club-operations-suite/zonemta
+    newTag: latest

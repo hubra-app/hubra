@@ -39,7 +39,6 @@ configuration; the `.agents/` directory holds project-local skills.
 docs/
 ├── architecture.md            # System architecture & request flow
 ├── api-overview.md            # API endpoints, auth, permissions
-├── mail-stack.md              # Mail system documentation
 ├── frontend.md                # Frontend stack and structure
 ├── configuration.md           # Environment and settings
 ├── disaster-recovery.md       # Backup & restore runbook

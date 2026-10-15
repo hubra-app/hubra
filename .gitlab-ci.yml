@@ -56,11 +56,11 @@ mail:validate:
     - pip install --cache-dir $PIP_CACHE_DIR toml pyyaml
 
   script:
-    - python3 scripts/validate-mail-config.py
-    - shellcheck mail/*/entrypoint.sh mail/certbot/*.sh mail/cert-watcher/*.sh
-    - node --check mail/zonemta/plugins/self-forward-rewrite.js
+    - python3 modules/mail/scripts/validate-mail-config.py
+    - shellcheck modules/mail/*/entrypoint.sh modules/mail/certbot/*.sh modules/mail/cert-watcher/*.sh
+    - node --check modules/mail/zonemta/plugins/self-forward-rewrite.js
     - |
-      for f in mail/*/Dockerfile; do
+      for f in modules/mail/*/Dockerfile; do
         grep -q '^FROM' "$f" &&
           echo "OK $f" ||
           (echo "FAIL $f" && exit 1)
@@ -68,7 +68,7 @@ mail:validate:
 
   rules:
     - changes:
-        - mail/**/*
+        - modules/mail/**/*
 
 # ------------------------------------------------------------
 # CI YAML validation
@@ -101,6 +101,35 @@ hadolint:
     - changes:
         - "**/Dockerfile*"
         - "**/.dockerignore"
+
+# ------------------------------------------------------------
+# k3s manifests
+# ------------------------------------------------------------
+
+k8s:validate:
+  stage: validate
+  image:
+    name: alpine/k8s:1.31.4
+    entrypoint: [""]
+
+  # Same build flags as Flux; Flux CRDs are checked against the datree catalog.
+  script:
+    - |
+      set -e
+      kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/app > /tmp/app.yaml
+      kubectl kustomize --load-restrictor LoadRestrictionsNone modules/mail/k8s > /tmp/mail.yaml
+      kubeconform -strict -summary -kubernetes-version 1.31.0 \
+        -schema-location default \
+        -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+        /tmp/app.yaml /tmp/mail.yaml deploy/infrastructure deploy/flux
+    - command -v shellcheck >/dev/null || apk add --no-cache shellcheck
+    - shellcheck deploy/create-secrets.sh
+
+  rules:
+    - changes:
+        - deploy/**/*
+        - modules/mail/k8s/**/*
+        - settings.yaml
 
 # ------------------------------------------------------------
 # Frontend
@@ -194,8 +223,12 @@ backend:
     - |
       docker pull "$CI_REGISTRY_IMAGE/$IMAGE_NAME:latest" || true
 
+      # BUILD_ARGS is intentionally unquoted: it holds zero or more --build-arg flags.
       docker build \
         --cache-from "$CI_REGISTRY_IMAGE/$IMAGE_NAME:latest" \
+        -f "${DOCKERFILE:-$CONTEXT/Dockerfile}" \
+        ${DOCKER_TARGET:+--target "$DOCKER_TARGET"} \
+        $BUILD_ARGS \
         -t "$CI_REGISTRY_IMAGE/$IMAGE_NAME:$DOCKER_IMAGE_TAG" \
         "$CONTEXT"
 
@@ -217,21 +250,52 @@ backend:
     - docker logout $CI_REGISTRY
 
 # ------------------------------------------------------------
-# Frontend image
+# Frontend images (cos, manage, sso)
 # ------------------------------------------------------------
+# The Dockerfiles copy packages/api-client from the repo root, so the build
+# context is the repo root (same as docker-compose.yml). VITE_API_BASE is baked
+# into the bundle at build time; set it as a CI/CD variable
+# (production: https://api.vollbuild.ch/api).
 
-frontend:docker:
+.frontend-docker:
   extends: .docker-build
   variables:
+    CONTEXT: "."
+    DOCKER_TARGET: production
+    BUILD_ARGS: "--build-arg VITE_API_BASE=$VITE_API_BASE"
+
+frontend:docker:
+  extends: .frontend-docker
+  variables:
     IMAGE_NAME: frontend
-    CONTEXT: app/frontend
+    DOCKERFILE: app/frontend/Dockerfile
   rules:
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH || $CI_COMMIT_TAG'
       changes:
         - app/frontend/**/*
-    - if: '$CI_COMMIT_TAG'
+        - packages/**/*
+
+admin-frontend:docker:
+  extends: .frontend-docker
+  variables:
+    IMAGE_NAME: admin-frontend
+    DOCKERFILE: app/admin-frontend/Dockerfile
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH || $CI_COMMIT_TAG'
       changes:
-        - app/frontend/**/*
+        - app/admin-frontend/**/*
+        - packages/**/*
+
+sso-frontend:docker:
+  extends: .frontend-docker
+  variables:
+    IMAGE_NAME: sso-frontend
+    DOCKERFILE: app/sso-frontend/Dockerfile
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH || $CI_COMMIT_TAG'
+      changes:
+        - app/sso-frontend/**/*
+        - packages/**/*
 
 # ------------------------------------------------------------
 # Backend image
@@ -258,14 +322,14 @@ haraka:docker:
   extends: .docker-build
   variables:
     IMAGE_NAME: haraka
-    CONTEXT: mail/haraka
+    CONTEXT: modules/mail/haraka
   rules:
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
       changes:
-        - mail/haraka/**/*
+        - modules/mail/haraka/**/*
     - if: '$CI_COMMIT_TAG'
       changes:
-        - mail/haraka/**/*
+        - modules/mail/haraka/**/*
 
 # ------------------------------------------------------------
 # ZoneMTA image
@@ -275,14 +339,14 @@ zonemta:docker:
   extends: .docker-build
   variables:
     IMAGE_NAME: zonemta
-    CONTEXT: mail/zonemta
+    CONTEXT: modules/mail/zonemta
   rules:
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
       changes:
-        - mail/zonemta/**/*
+        - modules/mail/zonemta/**/*
     - if: '$CI_COMMIT_TAG'
       changes:
-        - mail/zonemta/**/*
+        - modules/mail/zonemta/**/*
 
 # ------------------------------------------------------------
 # Cert watcher image
@@ -292,11 +356,11 @@ cert-watcher:docker:
   extends: .docker-build
   variables:
     IMAGE_NAME: cert-watcher
-    CONTEXT: mail/cert-watcher
+    CONTEXT: modules/mail/cert-watcher
   rules:
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
       changes:
-        - mail/cert-watcher/**/*
+        - modules/mail/cert-watcher/**/*
     - if: '$CI_COMMIT_TAG'
       changes:
-        - mail/cert-watcher/**/*
+        - modules/mail/cert-watcher/**/*

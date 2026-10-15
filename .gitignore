@@ -1,7 +1,7 @@
 # Secrets & environment
 .env
 .env.local
-mail/certbot/cloudflare.ini
+modules/mail/certbot/cloudflare.ini
 
 # Python
 __pycache__/
@@ -19,9 +19,9 @@ env/
 Thumbs.db
 
 # Generated mail configs (produced by entrypoint envsubst — templates are *.template)
-mail/haraka/config/wildduck.yaml
-mail/zonemta/config/plugins/wildduck.toml
-mail/zonemta/config/dbs-production.toml
+modules/mail/haraka/config/wildduck.yaml
+modules/mail/zonemta/config/plugins/wildduck.toml
+modules/mail/zonemta/config/dbs-production.toml
 
 
 .mcp.json

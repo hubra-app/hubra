@@ -6,13 +6,13 @@
 # This file is opt-in. The default deployment runs only the app stack defined
 # in docker-compose.yml. To start the mail stack alongside the app:
 #
-#   docker compose -f docker-compose.yml -f docker-compose.mail.yml up -d
+#   docker compose -f docker-compose.yml -f modules/mail/docker-compose.mail.yml up -d
 #
 # Prerequisites:
 #   - features.mail: true in settings.yaml
 #   - Mail-related env vars set in .env (WILDDUCK_API_TOKEN, LOOP_SECRET,
 #     SRS_SECRET, REWRITE_DOMAIN, ACME_EMAIL, MAIL_HOST, etc.)
-#   - ./mail/certbot/cloudflare.ini present with Cloudflare API credentials
+#   - ./modules/mail/certbot/cloudflare.ini present with Cloudflare API credentials
 #
 # Networks `edge` and `internal` are redeclared here so this file is
 # self-documenting; Compose merges them with the same-named networks in
@@ -41,7 +41,7 @@ services:
       - .env
     volumes:
       - letsencrypt:/etc/letsencrypt
-      - ./mail/certbot/cloudflare.ini:/cloudflare.ini:ro
+      - ./modules/mail/certbot/cloudflare.ini:/cloudflare.ini:ro
     entrypoint: ["sh", "-c"]
     command:
       - |
@@ -70,7 +70,7 @@ services:
     restart: unless-stopped
     volumes:
       - letsencrypt:/etc/letsencrypt
-      - ./mail/certbot/cloudflare.ini:/cloudflare.ini:ro
+      - ./modules/mail/certbot/cloudflare.ini:/cloudflare.ini:ro
     entrypoint: >
       sh -c "trap exit TERM;
              while :; do
@@ -123,7 +123,7 @@ services:
 
   haraka:
     build:
-      context: ./mail/haraka
+      context: ./modules/mail/haraka
     image: community-haraka:local
     restart: unless-stopped
     ports:
@@ -152,7 +152,7 @@ services:
 
   zonemta:
     build:
-      context: ./mail/zonemta
+      context: ./modules/mail/zonemta
     restart: unless-stopped
     ports:
       - "465:465"
@@ -197,7 +197,7 @@ services:
       - no-new-privileges:true
 
   cert-watcher:
-    build: ./mail/cert-watcher
+    build: ./modules/mail/cert-watcher
     restart: unless-stopped
     environment:
       ALLOWED_CONTAINERS: ${CERT_WATCHER_ALLOWED_CONTAINERS}

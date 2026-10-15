@@ -4,7 +4,7 @@ Fully self-hosted mail stack using [WildDuck](https://github.com/nodemailer/wild
 
 ## Deployment
 
-The mail stack is **opt-in** and lives in `docker-compose.mail.yml`. The default
+The mail stack is **opt-in** and lives in `modules/mail/docker-compose.mail.yml`. The default
 `docker compose up -d` runs only the app stack.
 
 ```bash
@@ -12,7 +12,7 @@ The mail stack is **opt-in** and lives in `docker-compose.mail.yml`. The default
 docker compose up -d
 
 # App + mail stack
-docker compose -f docker-compose.yml -f docker-compose.mail.yml up -d
+docker compose -f docker-compose.yml -f modules/mail/docker-compose.mail.yml up -d
 ```
 
 Prerequisites:
@@ -24,7 +24,7 @@ Prerequisites:
 
 All 8 mail services (`mongo`, `mailserver`, `haraka`, `zonemta`, `certbot-init`,
 `certbot-renew`, `cert-watcher`, `socket-proxy`) are defined in
-`docker-compose.mail.yml`. The `mail/` directory contains their build contexts
+`docker-compose.mail.yml`. The `modules/mail/` directory contains their build contexts
 and config templates.
 
 ## Architecture
@@ -63,11 +63,11 @@ Forwarding:      member@club.ch  → mike@gmail.com (optional, per-user)
 | Service           | Container                     | Ports                               | Role                                                          |
 | ----------------- | ----------------------------- | ----------------------------------- | ------------------------------------------------------------- |
 | **WildDuck**      | `ghcr.io/zone-eu/wildduck`    | 143 (IMAP), 993 (IMAPS), 8080 (API) | Mail storage, IMAP access, REST API for user/alias management |
-| **Haraka**        | Custom (`mail/haraka/`)       | 25 (SMTP)                           | Inbound SMTP, SRS rewriting, passes to WildDuck for delivery  |
-| **ZoneMTA**       | Custom (`mail/zonemta/`)      | 465 (SMTPS), 587 (STARTTLS)         | Outbound SMTP, DKIM-ready, relay to external providers        |
+| **Haraka**        | Custom (`modules/mail/haraka/`)       | 25 (SMTP)                           | Inbound SMTP, SRS rewriting, passes to WildDuck for delivery  |
+| **ZoneMTA**       | Custom (`modules/mail/zonemta/`)      | 465 (SMTPS), 587 (STARTTLS)         | Outbound SMTP, DKIM-ready, relay to external providers        |
 | **certbot-init**  | `certbot/dns-cloudflare`      | —                                   | One-shot TLS cert issuance via DNS-01                         |
 | **certbot-renew** | `certbot/dns-cloudflare`      | —                                   | Renews certs every 12 hours                                   |
-| **cert-watcher**  | Custom (`mail/cert-watcher/`) | —                                   | Monitors cert files, restarts mail services on renewal        |
+| **cert-watcher**  | Custom (`modules/mail/cert-watcher/`) | —                                   | Monitors cert files, restarts mail services on renewal        |
 
 ## Mail flow
 
@@ -147,3 +147,33 @@ Group alias ────────►│  Club mailbox │──► IMAP (memb
 - Certificates obtained via certbot DNS-01 challenge (Cloudflare)
 - Auto-renewed every 12 hours
 - `cert-watcher` monitors `/etc/letsencrypt/live` and restarts services on renewal
+
+## Running on k3s
+
+The module ships its own manifests in `modules/mail/k8s/`, which Flux applies
+through `deploy/flux/mail.yaml`. They're off by default. To turn them on, set
+`suspend: false` in that file and push. Prerequisites are the same as for
+Compose, plus the general setup in [docs/k3s.md](../../docs/k3s.md).
+
+- **Host ports.** IMAPS 993, SMTP 25 and submission 465/587 are `LoadBalancer`
+  Services. k3s ServiceLB binds them on the node with
+  `externalTrafficPolicy: Local`, so Haraka sees real sender IPs. Stop the
+  Compose mail containers first, or the ports collide.
+- **Certificates.** certbot still writes `/etc/letsencrypt/live/$MAIL_HOST/*` to a
+  shared volume, so the Haraka, ZoneMTA and WildDuck config is unchanged.
+  `create-secrets.sh` turns `certbot/cloudflare.ini` into Secret
+  `cloudflare-credentials`. Mail pods wait until the cert exists.
+- **Reload on renewal.** cert-watcher and socket-proxy are Compose-only. On k3s
+  the `mail-cert-reload` CronJob checks hourly and restarts `mailserver`,
+  `haraka` and `zonemta` when `fullchain.pem` changes. Its first run restarts
+  them once.
+- **Single node.** The `letsencrypt` volume is shared by several pods, which
+  works because they all run on the same node.
+- **Data from Compose.** Copy Mongo with `mongodump --archive` /
+  `mongorestore --archive` (via `kubectl exec -i mongo-0`). Copy the `mail_data`
+  and `letsencrypt` Docker volumes into the `mail-data` and `letsencrypt` PVCs,
+  which live under `/var/lib/rancher/k3s/storage/` on the node.
+
+Known issue, unchanged by the move: Haraka's `wildduck.yaml` and ZoneMTA's
+Mongo/Redis URLs carry no credentials, while Mongo runs with root auth and Redis
+with `requirepass`.

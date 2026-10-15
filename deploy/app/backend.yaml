@@ -1,0 +1,120 @@
+# Everything that runs the backend image: API, Celery worker, Celery beat.
+# The Compose `flask-init` service is the API's initContainer, so migrations run
+# before a new API pod takes traffic. Keep the API at 1 replica so two pods never
+# run `flask db upgrade` at once.
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+spec:
+  selector:
+    app.kubernetes.io/name: backend
+  ports:
+    - name: http
+      port: 5000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: backend
+    spec:
+      initContainers:
+        - name: flask-init
+          image: club/backend
+          command: ["sh", "-c", "flask db upgrade && flask sync-permissions && flask seed --skip-migrate"]
+          envFrom: [{ secretRef: { name: club-env } }]
+          env: [{ name: SETTINGS_FILE, value: /etc/club/settings.yaml }]
+          volumeMounts: [{ name: settings, mountPath: /etc/club }]
+      containers:
+        - name: backend
+          image: club/backend
+          ports: [{ name: http, containerPort: 5000 }]
+          envFrom: [{ secretRef: { name: club-env } }]
+          env: [{ name: SETTINGS_FILE, value: /etc/club/settings.yaml }]
+          volumeMounts: [{ name: settings, mountPath: /etc/club }]
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+          resources:
+            limits: { cpu: "1", memory: 512Mi }
+      volumes:
+        - name: settings
+          configMap: { name: club-settings }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: celery-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: celery-worker
+    spec:
+      containers:
+        - name: celery-worker
+          image: club/backend
+          command: ["celery", "-A", "vollbuild.tasks.celery_app", "worker", "--loglevel=info"]
+          envFrom: [{ secretRef: { name: club-env } }]
+          env: [{ name: SETTINGS_FILE, value: /etc/club/settings.yaml }]
+          volumeMounts: [{ name: settings, mountPath: /etc/club }]
+          resources:
+            limits: { cpu: "1", memory: 512Mi }
+      volumes:
+        - name: settings
+          configMap: { name: club-settings }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: celerybeat
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-beat
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # never two schedulers
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: celery-beat
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: celery-beat
+    spec:
+      containers:
+        - name: celery-beat
+          image: club/backend
+          command: ["celery", "-A", "vollbuild.tasks.celery_app", "beat", "--loglevel=info", "--schedule", "/celerybeat/celerybeat-schedule"]
+          envFrom: [{ secretRef: { name: club-env } }]
+          env: [{ name: SETTINGS_FILE, value: /etc/club/settings.yaml }]
+          volumeMounts:
+            - { name: settings, mountPath: /etc/club }
+            - { name: schedule, mountPath: /celerybeat }
+          resources:
+            limits: { cpu: 500m, memory: 256Mi }
+      volumes:
+        - name: settings
+          configMap: { name: club-settings }
+        - name: schedule
+          persistentVolumeClaim: { claimName: celerybeat }

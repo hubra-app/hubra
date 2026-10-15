@@ -1,0 +1,16 @@
+# The app stack (deploy/app).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: app
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: infra-config
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./deploy/app
+  prune: true
+  timeout: 5m
