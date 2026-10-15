@@ -190,6 +190,21 @@ def create_app(config_name: str | None = None) -> Flask:
         return response
 
     # ── CORS ──────────────────────────────────────────────────────────────
+    # after_request hooks run in reverse order, so this must be registered
+    # before flask-cors to see the Access-Control-Allow-Origin it sets.
+    @app.after_request
+    def _ensure_vary_origin(response):
+        acao = response.headers.get("Access-Control-Allow-Origin")
+        if acao and acao != "*":
+            existing = response.headers.get("Vary")
+            if existing:
+                parts = [p.strip() for p in existing.split(",") if p.strip()]
+                if "Origin" not in parts and "origin" not in parts:
+                    response.headers["Vary"] = ", ".join([*parts, "Origin"])
+            else:
+                response.headers["Vary"] = "Origin"
+        return response
+
     cors.init_app(
         app,
         resources={r"/api/*": {"origins": app.config["CORS_ORIGINS"]}},
@@ -206,19 +221,6 @@ def create_app(config_name: str | None = None) -> Flask:
         max_age=600,
     )
     app.logger.info("CORS origins: %s", app.config["CORS_ORIGINS"])
-
-    @app.after_request
-    def _ensure_vary_origin(response):
-        acao = response.headers.get("Access-Control-Allow-Origin")
-        if acao and acao != "*":
-            existing = response.headers.get("Vary")
-            if existing:
-                parts = [p.strip() for p in existing.split(",") if p.strip()]
-                if "Origin" not in parts and "origin" not in parts:
-                    response.headers["Vary"] = ", ".join([*parts, "Origin"])
-            else:
-                response.headers["Vary"] = "Origin"
-        return response
 
     # ── Register blueprints ───────────────────────────────────────────────────
     _register_blueprints(app)
