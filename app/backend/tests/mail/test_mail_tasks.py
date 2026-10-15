@@ -1,4 +1,4 @@
-"""Integration tests for retention_cleanup and mail_reconcile Celery tasks.
+"""Integration tests for retention_cleanup and reconcile_mail Celery tasks.
 
 Imports inside mail_tasks.py are deferred (inside function bodies), so patches
 must target the source modules (e.g. vollbuild.core.services.wildduck.try_get_client),
@@ -359,24 +359,6 @@ def test_cleanup_token_blocklist_no_old_tokens(app, db):
     assert result["deleted"] == 0
 
 
-# ── mail_reconcile tests ──────────────────────────────────────────────────────
-
-
-def test_mail_reconcile_does_not_dispatch_members(app, db, seeded_db):
-    """mail_reconcile no longer handles member MMAs — members_dispatched not in result."""
-    from vollbuild.core.tasks.mail_tasks import mail_reconcile
-
-    member = _make_member(db, seeded_db, email="unprov@example.com")
-    _make_member_mma(db, member, wildduck_user_id=None)
-
-    with patch("vollbuild.core.tasks.wildduck.provision_member_mail") as mock_prov:
-        with patch("vollbuild.api.utils.log_audit"):
-            result = mail_reconcile.run()
-
-    mock_prov.delay.assert_not_called()
-    assert "members_dispatched" not in result
-
-
 def test_reconcile_mail_provisions_unprovisioned_group_mma(app, db, seeded_db):
     """Group MMA with kind=group, address_type=mailbox → reconcile_mail provisions it."""
     from vollbuild.core.models.managed_mail import ManagedMailAddress
@@ -420,21 +402,6 @@ def test_reconcile_mail_provisions_unprovisioned_group_mma(app, db, seeded_db):
     assert addr.wildduck_id == "wd-group-001"
 
 
-def test_mail_reconcile_skips_provisioned_member(app, db, seeded_db):
-    """mail_reconcile does not dispatch member provisioning even for provisioned members."""
-    from vollbuild.core.tasks.mail_tasks import mail_reconcile
-
-    member = _make_member(db, seeded_db, email="provisioned@example.com")
-    _make_member_mma(db, member, wildduck_user_id="wd-already")
-
-    with patch("vollbuild.core.tasks.wildduck.provision_member_mail") as mock_prov:
-        with patch("vollbuild.api.utils.log_audit"):
-            result = mail_reconcile.run()
-
-    mock_prov.delay.assert_not_called()
-    assert result.get("aliases_dispatched", 0) == 0
-
-
 # Member reconciliation (stale-ID, drift detection, transient errors) is now
 # handled by the 15-minute reconcile_mail task via ensure_mailbox primitives.
 
@@ -449,11 +416,11 @@ def test_beat_schedule_contains_retention_cleanup():
     assert "retention-cleanup-daily" in celery_app.conf.beat_schedule
 
 
-def test_beat_schedule_contains_mail_reconcile():
-    """celery_app beat_schedule includes mail-reconcile-5min."""
+def test_beat_schedule_no_legacy_mail_reconcile():
+    """The no-op 5-minute mail_reconcile was removed; reconcile_mail covers it."""
     from vollbuild.core.tasks import celery_app
 
-    assert "mail-reconcile-5min" in celery_app.conf.beat_schedule
+    assert "mail-reconcile-5min" not in celery_app.conf.beat_schedule
 
 
 def test_beat_schedule_contains_token_blocklist_cleanup():

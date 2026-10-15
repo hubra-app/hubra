@@ -62,14 +62,3 @@ class MailboxFolder(db.Model):
             )
             or 0
         )
-
-    @staticmethod
-    def total_unread_count(member_id: int) -> int:
-        return (
-            db.session.scalar(
-                select(func.coalesce(func.sum(MailboxFolder.unread_count), 0)).where(
-                    MailboxFolder.member_id == member_id
-                )
-            )
-            or 0
-        )

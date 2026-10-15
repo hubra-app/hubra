@@ -729,33 +729,6 @@ class MailAdminService:
     """Service for the unified Mail Administration screen."""
 
     @staticmethod
-    def batch_user_quota() -> dict[str, dict]:
-        """Fetch all WildDuck users and return a lookup dict by user ID.
-
-        Returns ``{wildduck_id: {quotaUsed, quotaTotal, disabled, targets, address, name}}``.
-        Returns an empty dict if WildDuck is unavailable (graceful fallback).
-        """
-        wd = try_get_client()
-        if wd is None:
-            return {}
-        try:
-            result = wd.list_users(limit=250)
-        except WildDuckError:
-            return {}
-        lookup: dict[str, dict] = {}
-        for u in result.get("results", []):
-            quota = u.get("quota") or {}
-            lookup[u["id"]] = {
-                "quotaUsed": quota.get("used", 0),
-                "quotaTotal": quota.get("allowed", 0),
-                "disabled": u.get("disabled", False),
-                "targets": u.get("targets") or [],
-                "address": u.get("address", ""),
-                "name": u.get("name", ""),
-            }
-        return lookup
-
-    @staticmethod
     def resolve_local_part(prefix: str) -> str:
         """Resolve a prefix to a unique local part (server-side preview)."""
         from vollbuild.core.services.mail_provisioning import resolve_local_part as _rlp

@@ -38,23 +38,6 @@ _OS_RE = re.compile(
 )
 
 
-def _normalize_ua(ua: str) -> str:
-    """Extract a stable fingerprint component from a raw User-Agent string.
-
-    Returns e.g. 'Chrome 149 on Windows NT 10.0'. Falls back to the
-    truncated raw UA if parsing fails.
-    """
-    if not ua:
-        return ""
-    browser = _UA_RE.search(ua)
-    os_match = _OS_RE.search(ua)
-    if browser and os_match:
-        return f"{browser.group(1)} {browser.group(2)} on {os_match.group(1)}"
-    if browser:
-        return f"{browser.group(1)} {browser.group(2)}"
-    return ua[:200]
-
-
 def _extract_browser_family(headers) -> str:
     """Extract stable browser family (Chrome/Firefox/Safari/Edge/Opera)."""
     sec_ch_ua = headers.get("Sec-CH-UA", "") or ""

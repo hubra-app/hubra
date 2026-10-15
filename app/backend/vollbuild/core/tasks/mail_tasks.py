@@ -176,65 +176,6 @@ def cleanup_token_blocklist(self) -> dict:
 
 
 @celery_app.task(bind=True, max_retries=0, acks_late=True, reject_on_worker_lost=True)
-def mail_reconcile(self) -> dict:
-    """Find unprovisioned mailboxes/aliases and dispatch provisioning tasks.
-
-    Runs every 5 minutes (wired by Celery Beat). Logs AuditEntry rows for
-    each detected drift object.
-
-    Two kinds of drift are detected:
-    - Never provisioned: wildduck_id is NULL but mail is enabled.
-    - Ghost ID: wildduck_id is set but the object no longer exists in WildDuck
-      (e.g. manually deleted). Ghost IDs are cleared and re-provisioned.
-
-    Returns a summary dict: {members_dispatched, groups_dispatched}.
-    """
-    from vollbuild.api.features.services import FeatureFlagService
-
-    if not FeatureFlagService.is_enabled_sync("mail"):
-        logger.debug("mail_reconcile: mail feature disabled, skipping")
-        return {"skipped": "mail disabled"}
-
-    from sqlalchemy import select
-
-    from vollbuild.core.extensions import db
-    from vollbuild.core.models.audit import AuditEntry
-    from vollbuild.core.services.wildduck import try_get_client
-
-    try_get_client()
-
-    def _has_recent_drift(
-        target_type: str, target_id: int, within_minutes: int = 60
-    ) -> bool:
-        """Check if a mail_drift_detected audit entry exists for the same target within N minutes."""
-        cutoff = datetime.now(timezone.utc) - timedelta(minutes=within_minutes)
-        return (
-            db.session.scalar(
-                select(AuditEntry.id)
-                .where(AuditEntry.action == "mail_drift_detected")
-                .where(AuditEntry.target_type == target_type)
-                .where(AuditEntry.target_id == target_id)
-                .where(AuditEntry.time >= cutoff)
-            )
-            is not None
-        )
-
-    # Member mail reconciliation is now handled by the 15-minute reconcile_mail
-    # task which uses the new-generation primitives (ensure_mailbox, etc.).
-
-    # Alias MMAs needing provisioning are handled by reconcile_mail's
-    # MMA sweep — no separate MailAlias provisioning needed.
-
-    try:
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        raise
-
-    return {}
-
-
-@celery_app.task(bind=True, max_retries=0, acks_late=True, reject_on_worker_lost=True)
 def verify_protected_mail_addresses(self) -> dict:
     """Verify that protected ManagedMailAddress rows are still provisioned in WildDuck.
 

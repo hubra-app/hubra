@@ -10,7 +10,6 @@ Debtor details are read from the Member's structured address fields.
 from __future__ import annotations
 
 import logging
-from decimal import Decimal
 from io import StringIO
 
 
@@ -31,13 +30,6 @@ def _get_setting(key: str, default: str = "") -> str:
         return SettingService.get(key, default=default) or default
     except Exception as exc:
         logger.warning("Could not load setting %r: %s", key, exc)
-        return default
-
-
-def _get_decimal(key: str, default: Decimal = Decimal("0")) -> Decimal:
-    try:
-        return Decimal(_get_setting(key, str(default)))
-    except Exception:
         return default
 
 

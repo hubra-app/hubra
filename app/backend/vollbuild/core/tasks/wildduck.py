@@ -400,26 +400,6 @@ def _get_club_domain_safe() -> str:
     return SettingService.get("mail.domain", default="") or ""
 
 
-def _find_smtp_user_id(wd) -> str | None:
-    """Find the WildDuck user ID for the system SMTP (noreply) user."""
-    from vollbuild.core.services.key_service import KeyService
-    from vollbuild.core.services.wildduck import WildDuckError
-
-    smtp_user = KeyService.get("mail.smtp.user")
-    if not smtp_user:
-        return None
-    smtp_user = str(smtp_user)
-    try:
-        resp = wd.list_users(query=smtp_user)
-        users = resp.get("results", [])
-        for u in users:
-            if u.get("username") == smtp_user:
-                return u.get("id")
-    except WildDuckError:
-        pass
-    return None
-
-
 @celery_app.task(
     bind=True,
     max_retries=3,

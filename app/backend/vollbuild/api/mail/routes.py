@@ -561,8 +561,6 @@ def delete_group_mail(group_id: int):
         409,
     )
 
-    return "", 204
-
 
 # ── Function mail (ManagedMailAddress) ────────────────────────────────────────
 
@@ -683,8 +681,6 @@ def delete_function_mail(function_id: int):
         "Delete the function first — the MMA is cleaned up automatically.",
         409,
     )
-
-    return "", 204
 
 
 # ── Group mail: toggle / prefix / aliases ─────────────────────────────────────

@@ -519,7 +519,9 @@ def test_update_last_seen_task_swallows_errors(app):
     from unittest.mock import patch
     from vollbuild.core.tasks.session_tasks import update_last_seen
 
-    with patch("vollbuild.core.extensions.db.session.commit", side_effect=Exception("boom")):
+    with patch(
+        "vollbuild.core.extensions.db.session.commit", side_effect=Exception("boom")
+    ):
         update_last_seen.run(99999)
 
 

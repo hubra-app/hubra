@@ -642,8 +642,6 @@ def require_tenant_feature(feature_key: str):
 
     return decorator
 
-    return decorator
-
 
 _IMPERSONATION_RESTRICTED_ACTIONS = {"delete_tenant", "change_plan"}
 

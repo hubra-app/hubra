@@ -109,11 +109,6 @@ class FunctionService:
         cascade_delete_disabled("function", str(function_id))
 
     @staticmethod
-    def list_holders(function_id: int) -> list[FunctionHolder]:
-        fn = FunctionService.get_by_id(function_id)
-        return list(fn.holders)
-
-    @staticmethod
     def assign_holder(function_id: int, member_id: int) -> FunctionHolder:
         from vollbuild.core.models.member import Member
 

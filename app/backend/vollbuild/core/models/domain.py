@@ -42,10 +42,5 @@ class Domain(db.Model):
         nullable=False,
     )
 
-    @property
-    def txt_record_name(self) -> str:
-        """The TXT record name the domain owner should add."""
-        return _VERIFICATION_PREFIX + (self.verification_token or "")
-
     def __repr__(self) -> str:
         return f"<Domain id={self.id} domain={self.domain!r} verified={self.verified}>"

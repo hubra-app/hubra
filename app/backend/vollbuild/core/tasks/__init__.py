@@ -88,10 +88,6 @@ def make_celery(app: Flask) -> Celery:
                 "task": "vollbuild.core.tasks.mail_tasks.cleanup_token_blocklist",
                 "schedule": crontab(hour=3, minute=0),
             },
-            "mail-reconcile-5min": {
-                "task": "vollbuild.core.tasks.mail_tasks.mail_reconcile",
-                "schedule": crontab(minute="*/5"),
-            },
             "sync-wildduck-message-counts": {
                 "task": "vollbuild.core.tasks.mail_sync.sync_wildduck_message_counts",
                 "schedule": 60.0,

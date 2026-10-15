@@ -298,18 +298,6 @@ class MemberService:
     # ── Association management ────────────────────────────────────────────────
 
     @staticmethod
-    def clear_member_groups(member_id: int) -> set[int]:
-        return _clear_member_groups(member_id)
-
-    @staticmethod
-    def clear_all_associations(member_id: int) -> set[int]:
-        return _clear_member_all_associations(member_id)
-
-    @staticmethod
-    def remove_from_group(member_id: int, group_id: int) -> None:
-        _remove_member_from_group(member_id, group_id)
-
-    @staticmethod
     def set_groups(member_id: int, group_ids: list[int]) -> set[int]:
         """Replace group memberships. Returns old group IDs for alias sync."""
         old_ids = _clear_member_groups(member_id)
@@ -676,38 +664,6 @@ class MembersService:
     _members_schema = None
     _create_schema = None
     _update_schema = None
-
-    @classmethod
-    def _get_member_schema(cls):
-        if cls._member_schema is None:
-            from vollbuild.core.schemas.member import MemberSchema
-
-            cls._member_schema = MemberSchema()
-        return cls._member_schema
-
-    @classmethod
-    def _get_members_schema(cls):
-        if cls._members_schema is None:
-            from vollbuild.core.schemas.member import MemberSchema
-
-            cls._members_schema = MemberSchema(many=True)
-        return cls._members_schema
-
-    @classmethod
-    def _get_create_schema(cls):
-        if cls._create_schema is None:
-            from vollbuild.core.schemas.member import MemberCreateSchema
-
-            cls._create_schema = MemberCreateSchema()
-        return cls._create_schema
-
-    @classmethod
-    def _get_update_schema(cls):
-        if cls._update_schema is None:
-            from vollbuild.core.schemas.member import MemberUpdateSchema
-
-            cls._update_schema = MemberUpdateSchema()
-        return cls._update_schema
 
     @staticmethod
     def count() -> dict:

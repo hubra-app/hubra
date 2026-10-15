@@ -32,11 +32,3 @@ class TenantFeatureSchema(ma.Schema):
     feature_code = fields.Str()
     enabled = fields.Bool()
     config = fields.Dict(allow_none=True)
-
-
-class TenantFeatureWriteSchema(ma.Schema):
-    class Meta:
-        unknown = RAISE
-
-    enabled = fields.Bool(required=True)
-    config = fields.Dict(allow_none=True)

@@ -978,39 +978,6 @@ def _delete_aliases_for_mma(addr: ManagedMailAddress) -> None:
         db.session.delete(child)
 
 
-def is_group_protected(group_id: int) -> bool:
-    """Check if a group has a protected managed mail address."""
-    addr = db.session.scalar(
-        select(ManagedMailAddress)
-        .where(ManagedMailAddress.owner_type == "group")
-        .where(ManagedMailAddress.owner_id == group_id)
-        .where(ManagedMailAddress.is_protected.is_(True))
-    )
-    return addr is not None
-
-
-def is_function_protected(function_id: int) -> bool:
-    """Check if a function has a protected managed mail address."""
-    addr = db.session.scalar(
-        select(ManagedMailAddress)
-        .where(ManagedMailAddress.owner_type == "function")
-        .where(ManagedMailAddress.owner_id == function_id)
-        .where(ManagedMailAddress.is_protected.is_(True))
-    )
-    return addr is not None
-
-
-def is_member_protected(member_id: int) -> bool:
-    """Check if a member has a protected managed mail address."""
-    addr = db.session.scalar(
-        select(ManagedMailAddress)
-        .where(ManagedMailAddress.owner_type == "member")
-        .where(ManagedMailAddress.owner_id == member_id)
-        .where(ManagedMailAddress.is_protected.is_(True))
-    )
-    return addr is not None
-
-
 def get_or_create_for_member(
     member_id: int, prefix: str, domain: str
 ) -> ManagedMailAddress:

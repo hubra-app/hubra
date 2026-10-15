@@ -6,19 +6,6 @@ import json
 from sqlalchemy import select
 
 
-def _get_or_create(session, model, lookup_kwargs, create_kwargs=None):
-    stmt = select(model)
-    for attr, val in lookup_kwargs.items():
-        stmt = stmt.where(getattr(model, attr) == val)
-    obj = session.scalar(stmt)
-    if obj is None:
-        kwargs = {**lookup_kwargs, **(create_kwargs or {})}
-        obj = model(**kwargs)
-        session.add(obj)
-        session.flush()
-    return obj
-
-
 def run_seeds(db):
     from vollbuild.core.models.setting import Setting
     from vollbuild.core.models.translation import Translation

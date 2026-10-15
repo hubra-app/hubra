@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, ForeignKey, UniqueConstraint, func, select
+from sqlalchemy import DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from vollbuild.core.extensions import db
@@ -95,15 +95,3 @@ class Session(db.Model):
 
     def __repr__(self) -> str:
         return f"<Session id={self.id} device_id={self.device_id} jti={self.jti!r}>"
-
-    @staticmethod
-    def active_session_count(device_id: int) -> int:
-        return (
-            db.session.scalar(
-                select(func.count(Session.id)).where(
-                    Session.device_id == device_id,
-                    Session.revoked_at.is_(None),
-                )
-            )
-            or 0
-        )

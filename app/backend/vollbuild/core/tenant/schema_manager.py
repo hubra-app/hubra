@@ -106,20 +106,6 @@ def drop_tenant_schema(tenant_id: int) -> None:
     db.session.commit()
 
 
-def schema_exists(tenant_id: int) -> bool:
-    """Check whether the tenant schema already exists in PostgreSQL."""
-    schema_name = f"tenant_{tenant_id}"
-    result = db.session.execute(
-        text(
-            "SELECT EXISTS("
-            "SELECT 1 FROM information_schema.schemata "
-            "WHERE schema_name = :schema)"
-        ),
-        {"schema": schema_name},
-    )
-    return result.scalar() or False
-
-
 # ── Internal helpers ───────────────────────────────────────────────────────
 
 

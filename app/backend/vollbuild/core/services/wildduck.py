@@ -392,10 +392,6 @@ class WildDuckClient:
             },
         )
 
-    def list_filters(self, user_id: str) -> dict:
-        """Return all filters for a WildDuck user."""
-        return self._req("GET", f"/users/{user_id}/filters")
-
     def delete_forward_filter(self, user_id: str, filter_id: str) -> dict:
         """Remove a filter by its ID."""
         return self._req("DELETE", f"/users/{user_id}/filters/{filter_id}")
