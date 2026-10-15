@@ -20,6 +20,7 @@ SMTP host/port are read from the Setting KV store:
 
 from __future__ import annotations
 
+import base64
 import logging
 import smtplib
 import ssl
@@ -115,7 +116,10 @@ def _send_via_smtp(
         alt.attach(MIMEText(body_html, "html"))
         msg.attach(alt)
         for att in attachments:
-            part = MIMEApplication(att["content"], _subtype="octet-stream")
+            content = att["content"]
+            if isinstance(content, str):  # base64, as sent through Celery
+                content = base64.b64decode(content)
+            part = MIMEApplication(content, _subtype="octet-stream")
             part.add_header("Content-Disposition", "attachment", filename=att["name"])
             msg.attach(part)
     else:

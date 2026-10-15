@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import logging
 from datetime import date, timedelta
 from decimal import Decimal
@@ -267,9 +268,10 @@ def generate_invoices_task(self) -> dict:
         try:
             from vollbuild.core.services.qr_bill import generate_invoice_pdf
 
-            pdf_bytes = generate_invoice_pdf(invoice)
+            # Celery serialises task args as JSON, so ship the PDF as base64.
+            pdf_b64 = base64.b64encode(generate_invoice_pdf(invoice)).decode("ascii")
             pdf_attachments = [
-                {"name": f"invoice-{invoice.id}.pdf", "content": pdf_bytes}
+                {"name": f"invoice-{invoice.id}.pdf", "content": pdf_b64}
             ]
         except Exception:
             logger.warning("Failed to generate QR-bill PDF for invoice %s", invoice.id)

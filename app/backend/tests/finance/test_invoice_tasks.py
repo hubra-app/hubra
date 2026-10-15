@@ -102,3 +102,25 @@ def test_generate_invoices_is_idempotent(app, billable_tier_db):
             ).all()
         )
         assert count == 1
+
+
+def test_generate_invoices_email_args_are_json_serialisable(app, billable_tier_db):
+    """The QR-bill PDF travels through Celery's JSON serializer as base64."""
+    import base64
+    import json
+
+    from vollbuild.core.tasks.finance_tasks import generate_invoices_task
+
+    with app.app_context():
+        with (
+            patch(
+                "vollbuild.core.services.qr_bill.generate_invoice_pdf",
+                return_value=b"%PDF-1.7 test",
+            ),
+            patch("vollbuild.core.tasks.email_tasks.send_email_task.delay") as delay,
+        ):
+            generate_invoices_task.run()
+
+        kwargs = delay.call_args.kwargs
+        json.dumps(kwargs)
+        assert base64.b64decode(kwargs["attachments"][0]["content"]) == b"%PDF-1.7 test"
