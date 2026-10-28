@@ -56,7 +56,8 @@
       "codes": "Codes",
       "bindings": "Bindings",
       "keys": "Keys",
-      "budgets": "Budgets"
+      "budgets": "Budgets",
+      "bankImport": "Bank import"
     },
     "sections": {
       "workspace": "Workspace",
@@ -1017,6 +1018,31 @@
       "for": "For {{name}}",
       "option": "Option",
       "vote": "Vote"
+    }
+  },
+  "bank": {
+    "booked": "{{count}} invoices marked paid",
+    "importTitle": "Import bank file",
+    "importHint": "Download the camt.054 file (credit notification) from your e-banking. QR-bill payments are matched to invoices by their reference. You see the result before anything is booked.",
+    "pickFile": "camt.054 file (.xml)",
+    "check": "Check file",
+    "alreadyImported": "Already imported",
+    "book": "Book payments",
+    "date": "Date",
+    "from": "From",
+    "amount": "Amount",
+    "statusLabel": "Result",
+    "invoice": "Invoice",
+    "toCheck": "Payments to check",
+    "toCheckHint": "These payments had no matching invoice or a different amount. Assign them to an invoice to mark it paid.",
+    "pickInvoice": "Invoice",
+    "assign": "Mark paid",
+    "status": {
+      "matched": "Matched",
+      "assigned": "Assigned",
+      "unmatched": "No invoice",
+      "mismatch": "Amount differs",
+      "duplicate_payment": "Already paid"
     }
   }
 }

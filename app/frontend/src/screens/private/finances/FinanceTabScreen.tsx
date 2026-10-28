@@ -8,6 +8,7 @@ import { InvoicesTab } from '@/screens/private/finances/InvoicesTab'
 import { TransactionCategoriesTab } from '@/screens/private/finances/TransactionCategoriesTab'
 import { ExternalPartiesTab } from '@/screens/private/finances/ExternalPartiesTab'
 import { BudgetsTab } from '@/screens/private/finances/BudgetsTab'
+import { BankImportTab } from '@/screens/private/finances/BankImportTab'
 import { useModules } from '@/modules/useModules'
 
 export function FinanceTabScreen() {
@@ -30,6 +31,7 @@ export function FinanceTabScreen() {
       label: t('shell.nav.externalParties', 'Externi'),
     },
     { id: 'budgets', label: t('shell.nav.budgets', 'Budgets') },
+    { id: 'bank', label: t('shell.nav.bankImport', 'Bank import') },
   ].filter(
     (tb) =>
       tb.id === 'overview' ||
@@ -42,7 +44,10 @@ export function FinanceTabScreen() {
         hasPermission('finance.external_parties.read')) ||
       (tb.id === 'budgets' &&
         modules.has('finance.budgets') &&
-        hasPermission('budgets.budgets.read')),
+        hasPermission('budgets.budgets.read')) ||
+      (tb.id === 'bank' &&
+        modules.has('finance.bank') &&
+        hasPermission('bank.payments.read')),
   )
 
   return (
@@ -61,6 +66,7 @@ export function FinanceTabScreen() {
       {tab === 'categories' && <TransactionCategoriesTab />}
       {tab === 'external-parties' && <ExternalPartiesTab />}
       {tab === 'budgets' && modules.has('finance.budgets') && <BudgetsTab />}
+      {tab === 'bank' && modules.has('finance.bank') && <BankImportTab />}
     </div>
   )
 }

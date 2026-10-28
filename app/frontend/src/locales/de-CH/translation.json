@@ -56,7 +56,8 @@
       "codes": "Codes",
       "bindings": "Bindings",
       "keys": "Schlüssel",
-      "budgets": "Budget"
+      "budgets": "Budget",
+      "bankImport": "Bankimport"
     },
     "sections": {
       "workspace": "Arbeitsbereich",
@@ -1268,6 +1269,31 @@
         "quarterly": "pro Quartal",
         "monthly": "pro Monet"
       }
+    }
+  },
+  "bank": {
+    "booked": "{{count}} Rächnige als zahlt markiert",
+    "importTitle": "Bankdatei importiere",
+    "importHint": "Lad d camt.054-Datei (Gutschriftsaazeig) im E-Banking abe. QR-Rächnige wärded über d Referenz de Rächnig zuegordnet. Du gsehsch s Resultat, bevor öppis verbuecht wird.",
+    "pickFile": "camt.054-Datei (.xml)",
+    "check": "Datei prüefe",
+    "alreadyImported": "Scho importiert",
+    "book": "Zahlige verbueche",
+    "date": "Datum",
+    "from": "Vo",
+    "amount": "Betrag",
+    "statusLabel": "Resultat",
+    "invoice": "Rächnig",
+    "toCheck": "Zahlige zum Prüefe",
+    "toCheckHint": "Für die Zahlige hätts kei passendi Rächnig oder en andere Betrag. Ordne si ere Rächnig zue, dänn wird die als zahlt markiert.",
+    "pickInvoice": "Rächnig",
+    "assign": "Als zahlt markiere",
+    "status": {
+      "matched": "Zuegordnet",
+      "assigned": "Vo Hand zuegordnet",
+      "unmatched": "Kei Rächnig",
+      "mismatch": "Betrag anders",
+      "duplicate_payment": "Scho zahlt"
     }
   }
 }
