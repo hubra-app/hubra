@@ -2,6 +2,7 @@
 # image ghcr.io/hubra-app/hubra/plugins (nginx with the signed index.json and
 # the plugin archives). The Contabo cluster serves it at
 #   https://plugins.hubra.club/index.json
+# Tags: latest, sha-<commit> and main-<timestamp>-<commit>.
 # (keys/official/index.url points there; deploy/clusters/contabo/plugins.yaml).
 #
 # The marketplace so far comes out of the latest image, and only plugin
@@ -43,6 +44,8 @@ jobs:
         run: |
           echo "image=ghcr.io/${GITHUB_REPOSITORY,,}/plugins" >> "$GITHUB_OUTPUT"
           echo "sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          # Sortable tag for Flux image automation, as in images.yml.
+          echo "ts=$(date -u +%Y%m%d%H%M%S)" >> "$GITHUB_OUTPUT"
 
       - uses: docker/login-action@v3
         with:
@@ -144,3 +147,4 @@ jobs:
           tags: |
             ${{ steps.name.outputs.image }}:latest
             ${{ steps.name.outputs.image }}:sha-${{ steps.name.outputs.sha }}
+            ${{ steps.name.outputs.image }}:main-${{ steps.name.outputs.ts }}-${{ steps.name.outputs.sha }}
