@@ -76,3 +76,17 @@ configMapGenerator:
       - VITE_TENANT_APP_URL=https://app.hubra.club
       - VITE_MANAGE_URL=https://manage.hubra.club
       - VITE_ADMIN_PORTAL_URL=https://manage.hubra.club
+
+# Pinned images, never `latest`: Flux only rolls out what this file names.
+# To upgrade, set the tag of a newer build (sha-<commit> from main, or a
+# release 1.2.3), or paste the digest block from the GitLab Release notes.
+# The names are what ../../app already renamed the images to.
+images:
+  - name: ghcr.io/hubra-app/hubra/backend
+    newTag: sha-66d4e53
+  - name: ghcr.io/hubra-app/hubra/frontend
+    newTag: sha-66d4e53
+  - name: ghcr.io/hubra-app/hubra/admin-frontend
+    newTag: sha-66d4e53
+  - name: ghcr.io/hubra-app/hubra/sso-frontend
+    newTag: sha-66d4e53
