@@ -56,7 +56,7 @@ export function TenantsTab() {
                 left: 11,
                 top: '50%',
                 transform: 'translateY(-50%)',
-                color: '#99a2ac',
+                color: '#8c86a0',
               }}
             />
             <TextInput
@@ -172,7 +172,7 @@ export function TenantsTab() {
                       {t.status}
                     </Badge>
                   </Table.Td>
-                  <Table.Td style={{ color: '#6b7480', fontSize: 14 }}>
+                  <Table.Td style={{ color: '#5e5873', fontSize: 14 }}>
                     {t.created_at ? formatDate(t.created_at) : '-'}
                   </Table.Td>
                 </Table.Tr>

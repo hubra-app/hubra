@@ -28,7 +28,7 @@ function adapt(b: BackendGroup): Group {
     name: b.name,
     lead: b.lead_name ?? "",
     description: b.description ?? "",
-    color: b.color ?? "#6366f1",
+    color: b.color ?? "#7441e0",
     iconName: b.icon_name ?? "Zap",
     members: b.member_count,
     sessions: b.sessions ?? "",

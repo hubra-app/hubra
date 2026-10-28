@@ -38,7 +38,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       padding={0}
       styles={{
         main: {
-          background: '#eef3f0',
+          background: '#f7f6fb',
           backgroundImage:
             'linear-gradient(rgba(24,24,24,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(24,24,24,.08) 1px, transparent 1px), linear-gradient(rgba(24,24,24,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(24,24,24,.05) 1px, transparent 1px)',
           backgroundSize: '132px 132px, 132px 132px, 22px 22px, 22px 22px',

@@ -52,7 +52,7 @@ function AuditEntryDetailPanel({
         <div
           style={{
             padding: '20px 20px 14px',
-            borderBottom: '1px solid #d3ddd7',
+            borderBottom: '1px solid #d6d2e3',
             display: 'flex',
             alignItems: 'center',
             gap: 12,
@@ -63,7 +63,7 @@ function AuditEntryDetailPanel({
               style={{
                 fontSize: 'var(--mantine-font-size-md)',
                 fontWeight: 700,
-                color: '#181818',
+                color: '#1a1625',
               }}
             >
               Audit entry #{entryId}
@@ -71,7 +71,7 @@ function AuditEntryDetailPanel({
             <div
               style={{
                 fontSize: 'var(--mantine-font-size-xs)',
-                color: '#6b7480',
+                color: '#5e5873',
               }}
             >
               Full event details
@@ -86,7 +86,7 @@ function AuditEntryDetailPanel({
           {loading && (
             <div
               style={{
-                color: '#99a2ac',
+                color: '#8c86a0',
                 fontSize: 'var(--mantine-font-size-sm)',
               }}
             >
@@ -111,7 +111,7 @@ function AuditEntryDetailPanel({
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
                     fontWeight: 600,
-                    color: '#99a2ac',
+                    color: '#8c86a0',
                     textTransform: 'uppercase',
                     letterSpacing: '0.06em',
                     marginBottom: 6,
@@ -138,7 +138,7 @@ function AuditEntryDetailPanel({
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
                     fontWeight: 600,
-                    color: '#99a2ac',
+                    color: '#8c86a0',
                     textTransform: 'uppercase',
                     letterSpacing: '0.06em',
                     marginBottom: 6,
@@ -150,7 +150,7 @@ function AuditEntryDetailPanel({
                   className="num"
                   style={{
                     fontSize: 'var(--mantine-font-size-sm)',
-                    color: '#3a4048',
+                    color: '#2e2940',
                   }}
                 >
                   {formatTime(detail.time)}
@@ -163,7 +163,7 @@ function AuditEntryDetailPanel({
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
                     fontWeight: 600,
-                    color: '#99a2ac',
+                    color: '#8c86a0',
                     textTransform: 'uppercase',
                     letterSpacing: '0.06em',
                     marginBottom: 8,
@@ -185,7 +185,7 @@ function AuditEntryDetailPanel({
                         style={{
                           fontSize: 'var(--mantine-font-size-sm)',
                           fontWeight: 600,
-                          color: '#181818',
+                          color: '#1a1625',
                         }}
                       >
                         {detail.actorName}
@@ -194,7 +194,7 @@ function AuditEntryDetailPanel({
                         <div
                           style={{
                             fontSize: 'var(--mantine-font-size-xs)',
-                            color: '#99a2ac',
+                            color: '#8c86a0',
                           }}
                         >
                           Member ID {detail.actorId}
@@ -206,7 +206,7 @@ function AuditEntryDetailPanel({
                   <div
                     style={{
                       fontSize: 'var(--mantine-font-size-sm)',
-                      color: '#6b7480',
+                      color: '#5e5873',
                       fontStyle: 'italic',
                     }}
                   >
@@ -222,7 +222,7 @@ function AuditEntryDetailPanel({
                     style={{
                       fontSize: 'var(--mantine-font-size-xs)',
                       fontWeight: 600,
-                      color: '#99a2ac',
+                      color: '#8c86a0',
                       textTransform: 'uppercase',
                       letterSpacing: '0.06em',
                       marginBottom: 8,
@@ -232,7 +232,7 @@ function AuditEntryDetailPanel({
                   </div>
                   <div
                     style={{
-                      background: '#f4f8f5',
+                      background: '#f4f2f9',
                       borderRadius: 9,
                       padding: '12px 14px',
                       display: 'flex',
@@ -250,7 +250,7 @@ function AuditEntryDetailPanel({
                         <span
                           style={{
                             fontSize: 'var(--mantine-font-size-xs)',
-                            color: '#99a2ac',
+                            color: '#8c86a0',
                           }}
                         >
                           Type
@@ -269,7 +269,7 @@ function AuditEntryDetailPanel({
                         <span
                           style={{
                             fontSize: 'var(--mantine-font-size-xs)',
-                            color: '#99a2ac',
+                            color: '#8c86a0',
                           }}
                         >
                           Label
@@ -278,7 +278,7 @@ function AuditEntryDetailPanel({
                           style={{
                             fontSize: 'var(--mantine-font-size-sm)',
                             fontWeight: 600,
-                            color: '#181818',
+                            color: '#1a1625',
                           }}
                         >
                           {detail.targetLabel}
@@ -296,7 +296,7 @@ function AuditEntryDetailPanel({
                         <span
                           style={{
                             fontSize: 'var(--mantine-font-size-xs)',
-                            color: '#99a2ac',
+                            color: '#8c86a0',
                           }}
                         >
                           ID
@@ -305,7 +305,7 @@ function AuditEntryDetailPanel({
                           className="num"
                           style={{
                             fontSize: 'var(--mantine-font-size-xs)',
-                            color: '#6b7480',
+                            color: '#5e5873',
                           }}
                         >
                           {detail.targetId}
@@ -317,12 +317,12 @@ function AuditEntryDetailPanel({
               )}
 
               {/* Entry ID */}
-              <div style={{ borderTop: '1px solid #e3eae6', paddingTop: 16 }}>
+              <div style={{ borderTop: '1px solid #e6e3ef', paddingTop: 16 }}>
                 <div
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
                     fontWeight: 600,
-                    color: '#99a2ac',
+                    color: '#8c86a0',
                     textTransform: 'uppercase',
                     letterSpacing: '0.06em',
                     marginBottom: 4,
@@ -334,7 +334,7 @@ function AuditEntryDetailPanel({
                   className="num"
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
-                    color: '#99a2ac',
+                    color: '#8c86a0',
                   }}
                 >
                   #{detail.id}
@@ -409,7 +409,7 @@ export function AuditLogScreen() {
                 className="num"
                 style={{
                   fontSize: 'var(--mantine-font-size-xs)',
-                  color: '#6b7480',
+                  color: '#5e5873',
                 }}
               >
                 {entry.time}
@@ -453,7 +453,7 @@ export function AuditLogScreen() {
             render: (entry) => (
               <span
                 style={{
-                  color: '#6b7480',
+                  color: '#5e5873',
                   fontSize: 'var(--mantine-font-size-sm)',
                 }}
               >

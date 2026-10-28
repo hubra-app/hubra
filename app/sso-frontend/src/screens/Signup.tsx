@@ -71,8 +71,8 @@ export function SignupScreen() {
           <Group gap={10} mb={32}>
             <div className="logo-mark" />
             <Box>
-              <Text fz="md" fw={700}>Hubra</Text>
-              <Text fz="xs" c="#8a6a00" ff="'JetBrains Mono', monospace" style={{ letterSpacing: '0.06em' }}>
+              <Text fz={20} className="wordmark">hubra</Text>
+              <Text fz="xs" c="#6131c4" ff="'JetBrains Mono', monospace" style={{ letterSpacing: '0.06em' }}>
                 Makerspace · Schwyz
               </Text>
             </Box>
@@ -134,7 +134,7 @@ export function SignupScreen() {
 
             <Text size="sm" c="dimmed" ta="center">
               Already have an account?{' '}
-              <Anchor size="sm" c="#8a6a00" onClick={(e) => { e.preventDefault(); navigate('/login') }}>
+              <Anchor size="sm" c="#6131c4" onClick={(e) => { e.preventDefault(); navigate('/login') }}>
                 Sign in
               </Anchor>
             </Text>
@@ -151,7 +151,7 @@ export function SignupScreen() {
           <Text fz="xs" c="dimmed" ff="'JetBrains Mono', monospace" mb={20} style={{ alignSelf: 'flex-end' }}>
             v2.4 · Signup
           </Text>
-          <blockquote style={{ margin: 0, fontSize: 'var(--mantine-font-size-lg)', lineHeight: 1.6, color: '#3a4048', maxWidth: 340 }}>
+          <blockquote style={{ margin: 0, fontSize: 'var(--mantine-font-size-lg)', lineHeight: 1.6, color: '#2e2940', maxWidth: 340 }}>
             "New here?{' '}
             <span className="hi">Request a space</span>{' '}
             and our team will get you set up — or{' '}

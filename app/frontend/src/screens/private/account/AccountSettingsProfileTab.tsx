@@ -33,7 +33,7 @@ export function AccountSettingsProfileTab() {
       displayName: currentUser?.name ?? '',
       email: currentUser?.email ?? '',
       profileNote: currentUser?.profileNote ?? '',
-      avatarColor: currentUser?.avatarColor ?? '#6366f1',
+      avatarColor: currentUser?.avatarColor ?? '#7441e0',
     },
   })
 
@@ -208,7 +208,7 @@ export function AccountSettingsProfileTab() {
                   padding: '2px 4px',
                   cursor: 'pointer',
                   borderRadius: 6,
-                  border: '1px solid #d3ddd7',
+                  border: '1px solid #d6d2e3',
                 }}
               />
             </div>
@@ -315,7 +315,7 @@ export function AccountSettingsProfileTab() {
                 gap: 16,
                 padding: '12px 16px',
                 background: 'var(--mantine-color-acc-0)',
-                border: '1px solid #fece2b88',
+                border: '1px solid #7441e088',
                 borderRadius: 8,
               }}
             >

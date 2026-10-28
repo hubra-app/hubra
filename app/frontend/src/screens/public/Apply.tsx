@@ -105,7 +105,7 @@ export function ApplyScreen() {
               style={{
                 fontSize: 'var(--mantine-font-size-md)',
                 fontWeight: 700,
-                color: '#181818',
+                color: '#1a1625',
               }}
             >
               VollBuild
@@ -113,7 +113,7 @@ export function ApplyScreen() {
             <div
               style={{
                 fontSize: 'var(--mantine-font-size-xs)',
-                color: '#8a6a00',
+                color: '#6131c4',
                 fontFamily: '"JetBrains Mono"',
                 letterSpacing: '0.06em',
               }}
@@ -129,7 +129,7 @@ export function ApplyScreen() {
               style={{
                 fontSize: 'var(--mantine-font-size-xl)',
                 fontWeight: 700,
-                color: '#181818',
+                color: '#1a1625',
                 margin: '0 0 6px',
               }}
             >
@@ -138,7 +138,7 @@ export function ApplyScreen() {
             <p
               style={{
                 fontSize: 'var(--mantine-font-size-sm)',
-                color: '#6b7480',
+                color: '#5e5873',
                 margin: '0 0 28px',
               }}
             >
@@ -221,13 +221,13 @@ export function ApplyScreen() {
                           gap: 12,
                           padding: '10px 14px',
                           border: `1.5px solid ${
-                            tier === t.name ? '#fece2b' : '#d3ddd7'
+                            tier === t.name ? '#7441e0' : '#d6d2e3'
                           }`,
                           borderRadius: 9,
                           cursor: 'pointer',
                           background:
                             tier === t.name
-                              ? 'rgba(254,206,43,.08)'
+                              ? 'rgba(116,65,224,.08)'
                               : 'transparent',
                           transition: 'all .12s',
                         }}
@@ -239,10 +239,10 @@ export function ApplyScreen() {
                             borderRadius: '50%',
                             flexShrink: 0,
                             border: `2px solid ${
-                              tier === t.name ? '#fece2b' : '#d3ddd7'
+                              tier === t.name ? '#7441e0' : '#d6d2e3'
                             }`,
                             background:
-                              tier === t.name ? '#fece2b' : 'transparent',
+                              tier === t.name ? '#7441e0' : 'transparent',
                           }}
                         />
                         <div>
@@ -250,7 +250,7 @@ export function ApplyScreen() {
                             style={{
                               fontSize: 'var(--mantine-font-size-sm)',
                               fontWeight: 600,
-                              color: '#181818',
+                              color: '#1a1625',
                             }}
                           >
                             {t.name}
@@ -258,7 +258,7 @@ export function ApplyScreen() {
                           <div
                             style={{
                               fontSize: 'var(--mantine-font-size-xs)',
-                              color: '#6b7480',
+                              color: '#5e5873',
                             }}
                           >
                             {TIER_DESCRIPTIONS[t.name] ?? ''}
@@ -273,7 +273,7 @@ export function ApplyScreen() {
               <div>
                 <Text component="label" size="sm" fw={600} c="dimmed">
                   {t('apply.message', 'Nachricht')}{' '}
-                  <span style={{ color: '#99a2ac', fontWeight: 400 }}>
+                  <span style={{ color: '#8c86a0', fontWeight: 400 }}>
                     ({t('common.optional', 'optional')})
                   </span>
                 </Text>
@@ -333,7 +333,7 @@ export function ApplyScreen() {
               style={{
                 fontSize: 'var(--mantine-font-size-xl)',
                 fontWeight: 700,
-                color: '#181818',
+                color: '#1a1625',
                 margin: '0 0 8px',
               }}
             >
@@ -342,7 +342,7 @@ export function ApplyScreen() {
             <p
               style={{
                 fontSize: 'var(--mantine-font-size-sm)',
-                color: '#6b7480',
+                color: '#5e5873',
                 margin: '0 0 6px',
                 lineHeight: 1.6,
               }}
@@ -357,7 +357,7 @@ export function ApplyScreen() {
             <p
               style={{
                 fontSize: 'var(--mantine-font-size-sm)',
-                color: '#99a2ac',
+                color: '#8c86a0',
                 margin: '0 0 28px',
               }}
             >

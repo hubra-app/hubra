@@ -25,9 +25,9 @@ html {
 
 body {
   margin: 0;
-  background: #eef3f0;
+  background: #f7f6fb;
   font-family: 'Hanken Grotesk', system-ui, sans-serif;
-  color: #3a4048;
+  color: #2e2940;
 }
 
 #root {
@@ -39,12 +39,12 @@ body {
   font-size: var(--mantine-font-size-xs);
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: #8a6a00;
+  color: #6131c4;
 }
 
 .eyebrow::before {
   content: '// ';
-  color: #fe64ac;
+  color: #8758f0;
 }
 
 .num {
@@ -56,27 +56,19 @@ body {
 .logo-mark {
   width: 28px;
   height: 28px;
-  border-radius: 6px;
-  background: #fece2b;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   flex-shrink: 0;
-  position: relative;
+  background: url("/hubra-mark.svg") center / contain no-repeat;
 }
 
-.logo-mark::after {
-  content: '';
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  border: 1.5px solid #181818;
-  transform: rotate(45deg);
-  border-radius: 2px;
+.wordmark {
+  font-family: "Bricolage Grotesque", "Hanken Grotesk", system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
 }
 
 .graph-bg {
-  background-color: #eef3f0;
+  background-color: #f7f6fb;
   background-image: linear-gradient(rgba(24, 24, 24, 0.08) 1px, transparent 1px),
     linear-gradient(90deg, rgba(24, 24, 24, 0.08) 1px, transparent 1px),
     linear-gradient(rgba(24, 24, 24, 0.05) 1px, transparent 1px),
@@ -106,20 +98,20 @@ body {
   top: 0;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: #eef3f0;
+  background: #f7f6fb;
   padding: 0 12px;
   font-family: 'JetBrains Mono', monospace;
   font-size: var(--mantine-font-size-xs);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #6b7480;
+  color: #5e5873;
 }
 
 .blueprint-plate .hi {
-  background: linear-gradient(120deg, #fece2b 0%, #fec50f 100%);
+  background: #fece2b;
   padding: 2px 6px;
   border-radius: 4px;
-  color: #181818;
+  color: #1a1625;
   font-weight: 600;
 }
 

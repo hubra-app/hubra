@@ -424,7 +424,7 @@ export function GroupsScreen() {
         <div
           style={{
             padding: '14px 16px',
-            borderBottom: '1px solid #d3ddd7',
+            borderBottom: '1px solid #d6d2e3',
             display: 'flex',
             gap: 10,
             flexWrap: 'wrap',
@@ -439,7 +439,7 @@ export function GroupsScreen() {
                 left: 11,
                 top: '50%',
                 transform: 'translateY(-50%)',
-                color: '#99a2ac',
+                color: '#8c86a0',
               }}
             />
             <TextInput
@@ -496,7 +496,7 @@ export function GroupsScreen() {
                       style={{
                         fontSize: 'var(--mantine-font-size-md)',
                         fontWeight: 700,
-                        color: '#181818',
+                        color: '#1a1625',
                       }}
                     >
                       {g.name}
@@ -505,7 +505,7 @@ export function GroupsScreen() {
                       <div
                         style={{
                           fontSize: 'var(--mantine-font-size-sm)',
-                          color: '#6b7480',
+                          color: '#5e5873',
                         }}
                       >
                         {t('groups.ledBy', 'Gmacht vo')} {g.lead}
@@ -516,7 +516,7 @@ export function GroupsScreen() {
                 <p
                   style={{
                     fontSize: 'var(--mantine-font-size-sm)',
-                    color: '#6b7480',
+                    color: '#5e5873',
                     margin: '0 0 14px',
                     lineHeight: 1.5,
                   }}
@@ -561,7 +561,7 @@ export function GroupsScreen() {
                   <Button
                     size="sm"
                     variant="subtle"
-                    style={{ color: '#8a6a00' }}
+                    style={{ color: '#6131c4' }}
                     onClick={() => setDetailGroup(g)}
                   >
                     {t('groups.members', 'Mitglider')} →
@@ -581,16 +581,16 @@ export function GroupsScreen() {
               justifyContent: 'center',
               padding: 28,
               cursor: 'pointer',
-              border: '1.5px dashed #d3ddd7',
+              border: '1.5px dashed #d6d2e3',
               background: 'transparent',
             }}
             onClick={openAdd}
           >
-            <IconPlus size={22} style={{ color: '#b3c1ba', marginBottom: 8 }} />
+            <IconPlus size={22} style={{ color: '#b7b0c9', marginBottom: 8 }} />
             <span
               style={{
                 fontSize: 'var(--mantine-font-size-sm)',
-                color: '#99a2ac',
+                color: '#8c86a0',
               }}
             >
               {t('groups.addGroup')}

@@ -25,9 +25,9 @@ html {
 
 body {
   margin: 0;
-  background: #eef3f0;
+  background: #f7f6fb;
   font-family: 'Hanken Grotesk', system-ui, sans-serif;
-  color: #3a4048;
+  color: #2e2940;
 }
 
 #root {
@@ -39,12 +39,12 @@ body {
   font-size: var(--mantine-font-size-xs);
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: #8a6a00;
+  color: #6131c4;
 }
 
 .eyebrow::before {
   content: '// ';
-  color: #fe64ac;
+  color: #8758f0;
 }
 
 .num {
@@ -56,23 +56,15 @@ body {
 .logo-mark {
   width: 28px;
   height: 28px;
-  border-radius: 6px;
-  background: #fece2b;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   flex-shrink: 0;
-  position: relative;
+  background: url("/hubra-mark.svg") center / contain no-repeat;
 }
 
-.logo-mark::after {
-  content: '';
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  border: 1.5px solid #181818;
-  transform: rotate(45deg);
-  border-radius: 2px;
+.wordmark {
+  font-family: "Bricolage Grotesque", "Hanken Grotesk", system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
 }
 
 .chip {
@@ -81,9 +73,9 @@ body {
   gap: 6px;
   padding: 5px 12px;
   border-radius: 8px;
-  border: 1px solid #d3ddd7;
+  border: 1px solid #d6d2e3;
   background: transparent;
-  color: #6b7480;
+  color: #5e5873;
   font-size: var(--mantine-font-size-sm);
   font-weight: 500;
   cursor: pointer;
@@ -92,12 +84,12 @@ body {
 }
 
 .chip:hover {
-  border-color: #b3c1ba;
-  background: #f4f8f5;
+  border-color: #b7b0c9;
+  background: #f4f2f9;
 }
 
 .chip.on {
-  border-color: rgba(212, 160, 0, 0.5);
-  background: rgba(254, 206, 43, 0.2);
-  color: #8a6a00;
+  border-color: rgba(97, 49, 196, 0.5);
+  background: rgba(116, 65, 224, 0.2);
+  color: #6131c4;
 }

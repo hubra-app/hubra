@@ -50,7 +50,7 @@ function SyncBadge({
     )
   }
   const Icon = SYNC_ICONS[state] || IconAlertTriangle
-  const color = SYNC_COLORS[state] || '#6b7480'
+  const color = SYNC_COLORS[state] || '#5e5873'
   const labels: Record<string, string> = {
     pending: t('mail.admin.syncPending', 'Ausstehend'),
     drift: t('mail.admin.syncDrift', 'Abwichig'),
@@ -85,7 +85,7 @@ function QuotaBar({
   total: number | null
 }) {
   if (used == null || total == null || total === 0)
-    return <span style={{ color: '#99a2ac' }}>—</span>
+    return <span style={{ color: '#8c86a0' }}>—</span>
   const pct = Math.min(100, (used / total) * 100)
   const color = pct > 90 ? '#ff4d3d' : pct > 70 ? '#c2870f' : '#1f9d57'
   const usedMB = (used / 1048576).toFixed(0)
@@ -95,7 +95,7 @@ function QuotaBar({
       <div
         style={{
           fontSize: 'var(--mantine-font-size-xs)',
-          color: '#6b7480',
+          color: '#5e5873',
           marginBottom: 2,
         }}
       >
@@ -104,7 +104,7 @@ function QuotaBar({
       <div
         style={{
           height: 6,
-          background: '#e3eae6',
+          background: '#e6e3ef',
           borderRadius: 3,
           overflow: 'hidden',
         }}
@@ -131,7 +131,7 @@ export function useMailColumns(
       key: 'name',
       header: t('common.name', 'Name'),
       render: (entry) => (
-        <span style={{ fontWeight: 600, color: '#181818' }}>
+        <span style={{ fontWeight: 600, color: '#1a1625' }}>
           {getOwnerName(entry) || entry.displayName || entry.address}
         </span>
       ),
@@ -193,7 +193,7 @@ export function useMailColumns(
             total={entry.quotaTotal ?? null}
           />
         ) : (
-          <span style={{ color: '#99a2ac' }}>{'\u2014'}</span>
+          <span style={{ color: '#8c86a0' }}>{'\u2014'}</span>
         )
       },
     },
@@ -205,12 +205,12 @@ export function useMailColumns(
           entry.ownerType === 'mail_address' ||
           (entry.isSystem && entry.addressType === 'alias')
         )
-          return <span style={{ color: '#99a2ac' }}>{'\u2014'}</span>
+          return <span style={{ color: '#8c86a0' }}>{'\u2014'}</span>
         return (
           <span
             style={{
               fontSize: 'var(--mantine-font-size-xs)',
-              color: '#6b7480',
+              color: '#5e5873',
             }}
           >
             {entry.retention != null
@@ -237,14 +237,14 @@ export function useMailColumns(
               alignItems: 'center',
               gap: 3,
               fontSize: 'var(--mantine-font-size-xs)',
-              color: '#6b7480',
+              color: '#5e5873',
             }}
           >
             <IconArrowForwardUp size={10} />
             {targetCount} {t('mail.admin.targets', 'Targets')}
           </span>
         ) : (
-          <span style={{ color: '#99a2ac' }}>{'\u2014'}</span>
+          <span style={{ color: '#8c86a0' }}>{'\u2014'}</span>
         )
       },
     },

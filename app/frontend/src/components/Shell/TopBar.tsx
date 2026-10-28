@@ -80,8 +80,8 @@ export function TopBar() {
 
       <Group gap={8} wrap="nowrap" style={{ flexShrink: 0 }}>
         <div className="logo-mark" />
-        <Text fz="md" fw={700} className="mantine-visible-from-xs">
-          Hubra
+        <Text fz={22} className="wordmark mantine-visible-from-xs">
+          hubra
         </Text>
       </Group>
 
@@ -151,7 +151,7 @@ export function TopBar() {
               {latestEntries.length > 0 ? (
                 latestEntries.map((entry) => (
                   <div key={entry.version}>
-                    <Text fz="xs" fw={600} c="#181818">
+                    <Text fz="xs" fw={600} c="#1a1625">
                       v{entry.version}
                       {entry.date && (
                         <Text component="span" fz="xs" c="dimmed" ml={6}>
@@ -162,14 +162,14 @@ export function TopBar() {
                     {Object.entries(entry.sections).map(([section, items]) =>
                       items.length > 0 ? (
                         <div key={section}>
-                          <Text fz="xs" fw={500} c="#6b7480" mt={4}>
+                          <Text fz="xs" fw={500} c="#5e5873" mt={4}>
                             {section}
                           </Text>
                           {items.map((item, i) => (
                             <Text
                               key={section + '-' + i}
                               fz="xs"
-                              c="#6b7480"
+                              c="#5e5873"
                               ml={8}
                             >
                               {item}
@@ -241,10 +241,10 @@ export function TopBar() {
                 width: 34,
                 height: 34,
                 borderRadius: '50%',
-                background: currentUser?.avatarColor ?? '#e7eeea',
+                background: currentUser?.avatarColor ?? '#ebe8f2',
                 fontSize: 'var(--mantine-font-size-xs)',
                 fontWeight: 700,
-                color: contrastColor(currentUser?.avatarColor ?? '#e7eeea'),
+                color: contrastColor(currentUser?.avatarColor ?? '#ebe8f2'),
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

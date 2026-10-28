@@ -53,7 +53,7 @@ const dropdownItemStyle: React.CSSProperties = {
   background: 'transparent',
   cursor: 'pointer',
   fontSize: 'var(--mantine-font-size-sm)',
-  color: '#181818',
+  color: '#1a1625',
   textAlign: 'left',
 }
 
@@ -394,7 +394,7 @@ export function TranslationsScreen() {
                     right: 0,
                     marginTop: 4,
                     background: '#fff',
-                    border: '1px solid #e3eae6',
+                    border: '1px solid #e6e3ef',
                     borderRadius: 8,
                     boxShadow: '0 4px 12px rgba(0,0,0,.08)',
                     zIndex: 100,
@@ -435,7 +435,7 @@ export function TranslationsScreen() {
                     right: 0,
                     marginTop: 4,
                     background: '#fff',
-                    border: '1px solid #e3eae6',
+                    border: '1px solid #e6e3ef',
                     borderRadius: 8,
                     boxShadow: '0 4px 12px rgba(0,0,0,.08)',
                     zIndex: 100,
@@ -536,7 +536,7 @@ export function TranslationsScreen() {
                 left: 0,
                 marginTop: 4,
                 background: '#fff',
-                border: '1px solid #e3eae6',
+                border: '1px solid #e6e3ef',
                 borderRadius: 8,
                 boxShadow: '0 4px 12px rgba(0,0,0,.08)',
                 zIndex: 100,
@@ -557,7 +557,7 @@ export function TranslationsScreen() {
                     background: 'transparent',
                     cursor: 'pointer',
                     fontSize: 'var(--mantine-font-size-sm)',
-                    color: '#181818',
+                    color: '#1a1625',
                   }}
                   onClick={() => {
                     setActiveLocale(lang)
@@ -638,7 +638,7 @@ export function TranslationsScreen() {
               <span
                 style={{
                   fontSize: 'var(--mantine-font-size-xs)',
-                  color: '#6b7480',
+                  color: '#5e5873',
                   whiteSpace: 'nowrap',
                   marginLeft: 4,
                 }}
@@ -656,14 +656,14 @@ export function TranslationsScreen() {
           saving={saving}
           renderKeyPrefix={(entry) =>
             entry.alias_for ? (
-              <IconLink size={11} style={{ color: '#8a6a00' }} />
+              <IconLink size={11} style={{ color: '#6131c4' }} />
             ) : null
           }
           renderKeyBelow={(entry) => (
             <span
               style={{
                 fontSize: 'var(--mantine-font-size-xs)',
-                color: entry.is_stale ? '#bbb' : '#99a2ac',
+                color: entry.is_stale ? '#bbb' : '#8c86a0',
                 fontStyle: entry.is_stale ? 'italic' : 'normal',
                 whiteSpace: 'nowrap',
               }}
@@ -686,7 +686,7 @@ export function TranslationsScreen() {
                     marginLeft: 6,
                     fontSize: 'var(--mantine-font-size-xs)',
                     fontWeight: 500,
-                    color: '#8a6a00',
+                    color: '#6131c4',
                     background: '#fef9ef',
                     borderRadius: 4,
                     padding: '1px 4px',
@@ -737,7 +737,7 @@ export function TranslationsScreen() {
               <span
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
-                  color: '#99a2ac',
+                  color: '#8c86a0',
                   fontStyle: 'italic',
                 }}
               >
@@ -747,7 +747,7 @@ export function TranslationsScreen() {
               <span
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
-                  color: entry.value ? '#3a4048' : '#bbb',
+                  color: entry.value ? '#2e2940' : '#bbb',
                 }}
               >
                 {entry.value || (
@@ -766,7 +766,7 @@ export function TranslationsScreen() {
                 <span
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
-                    color: '#99a2ac',
+                    color: '#8c86a0',
                     display: 'block',
                     maxWidth: 200,
                     overflow: 'hidden',
@@ -797,7 +797,7 @@ export function TranslationsScreen() {
                 <Button
                   size="sm"
                   variant="subtle"
-                  style={{ color: '#8a6a00' }}
+                  style={{ color: '#6131c4' }}
                   onClick={() => {
                     if (entry.alias_for) {
                       handleRemoveAlias(entry)
@@ -1061,7 +1061,7 @@ function DuplicateLocaleModal({
           gap: 8,
           cursor: 'pointer',
           fontSize: 'var(--mantine-font-size-sm)',
-          color: '#181818',
+          color: '#1a1625',
         }}
       >
         <input
@@ -1074,7 +1074,7 @@ function DuplicateLocaleModal({
       <p
         style={{
           fontSize: 'var(--mantine-font-size-xs)',
-          color: '#6b7480',
+          color: '#5e5873',
           margin: '8px 0 0',
         }}
       >

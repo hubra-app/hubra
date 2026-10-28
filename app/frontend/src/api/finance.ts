@@ -27,7 +27,7 @@ function adaptTxCat(b: BackendTxCategory): TransactionCategory {
   return {
     id: String(b.id),
     name: b.name,
-    color: b.color ?? "#6366f1",
+    color: b.color ?? "#7441e0",
     isDefault: b.is_default,
   };
 }

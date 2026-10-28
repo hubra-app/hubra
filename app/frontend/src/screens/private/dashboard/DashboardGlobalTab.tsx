@@ -79,7 +79,7 @@ export function GlobalOverviewScreen() {
           style={{
             marginBottom: 16,
             border: "1.5px solid var(--mantine-color-acc-4)",
-            background: "rgba(254, 206, 43, 0.08)",
+            background: "rgba(116, 65, 224, 0.08)",
           }}
         >
           <Card.Header style={{ background: "transparent" }}>
@@ -114,7 +114,7 @@ export function GlobalOverviewScreen() {
                   alignItems: "center",
                   justifyContent: "space-between",
                   padding: "10px 16px",
-                  borderTop: "1px solid rgba(254, 206, 43, 0.25)",
+                  borderTop: "1px solid rgba(116, 65, 224, 0.25)",
                   gap: 12,
                 }}
               >
@@ -195,7 +195,7 @@ export function GlobalOverviewScreen() {
                 })
               : t("dashboard.allPaid")
           }
-          accent="#8a6a00"
+          accent="#6131c4"
           onClick={() => go("/app/finance/invoices")}
         />
         <StatTile

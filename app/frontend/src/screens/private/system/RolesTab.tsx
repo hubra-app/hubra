@@ -72,7 +72,7 @@ function SectionToggle({
       style={{
         width: 14,
         height: 14,
-        accentColor: role.isAdmin ? '#6366f1' : '#fece2b',
+        accentColor: role.isAdmin ? '#3a1e78' : '#7441e0',
         cursor: disabled ? 'default' : 'pointer',
       }}
     />
@@ -111,7 +111,7 @@ function PermCheckbox({
         height: size,
         flexShrink: 0,
         marginTop: 2,
-        accentColor: role.isAdmin ? '#6366f1' : '#fece2b',
+        accentColor: role.isAdmin ? '#3a1e78' : '#7441e0',
         cursor: disabled ? 'default' : 'pointer',
       }}
     />
@@ -156,15 +156,15 @@ function MobilePermissionList({
               px={16}
               py={10}
               style={{
-                borderBottom: '1px solid #e3eae6',
-                background: '#f8faf9',
+                borderBottom: '1px solid #e6e3ef',
+                background: '#f9f8fc',
                 alignItems: 'center',
               }}
             >
               <Text
                 fz="xs"
                 fw={700}
-                c="#8e97a7"
+                c="#857f99"
                 tt="uppercase"
                 style={{ letterSpacing: '0.06em' }}
               >
@@ -201,12 +201,12 @@ function MobilePermissionList({
                         px={16}
                         py={7}
                         style={{
-                          background: '#fcfdfc',
-                          borderBottom: '1px solid #e3eae6',
+                          background: '#fdfcfe',
+                          borderBottom: '1px solid #e6e3ef',
                           alignItems: 'center',
                         }}
                       >
-                        <Text fz="xs" fw={600} c="#99a2ac">
+                        <Text fz="xs" fw={600} c="#8c86a0">
                           {ns}
                         </Text>
                         <SectionToggle
@@ -224,7 +224,7 @@ function MobilePermissionList({
                           px={16}
                           py={10}
                           style={{
-                            borderBottom: '1px solid #f0f4f1',
+                            borderBottom: '1px solid #f1eff7',
                             alignItems: 'flex-start',
                           }}
                         >
@@ -247,7 +247,7 @@ function MobilePermissionList({
                             <div
                               style={{
                                 fontSize: 'var(--mantine-font-size-xs)',
-                                color: '#99a2ac',
+                                color: '#8c86a0',
                                 fontFamily: "'JetBrains Mono', monospace",
                               }}
                             >
@@ -265,7 +265,7 @@ function MobilePermissionList({
                               px={16}
                               py={8}
                               style={{
-                                borderBottom: '1px solid #f0f4f1',
+                                borderBottom: '1px solid #f1eff7',
                                 alignItems: 'flex-start',
                                 paddingLeft: 32,
                               }}
@@ -290,7 +290,7 @@ function MobilePermissionList({
                                 <div
                                   style={{
                                     fontSize: 'var(--mantine-font-size-xs)',
-                                    color: '#99a2ac',
+                                    color: '#8c86a0',
                                     fontFamily: "'JetBrains Mono', monospace",
                                   }}
                                 >
@@ -324,7 +324,7 @@ function MobilePermissionList({
                           px={16}
                           py={10}
                           style={{
-                            borderBottom: '1px solid #f0f4f1',
+                            borderBottom: '1px solid #f1eff7',
                             alignItems: 'flex-start',
                           }}
                         >
@@ -338,7 +338,7 @@ function MobilePermissionList({
                                 padding: 0,
                                 display: 'flex',
                                 alignItems: 'center',
-                                color: '#6b7480',
+                                color: '#5e5873',
                                 flexShrink: 0,
                                 marginTop: 2,
                               }}
@@ -378,7 +378,7 @@ function MobilePermissionList({
                             <div
                               style={{
                                 fontSize: 'var(--mantine-font-size-xs)',
-                                color: '#99a2ac',
+                                color: '#8c86a0',
                                 fontFamily: "'JetBrains Mono', monospace",
                               }}
                             >
@@ -395,10 +395,10 @@ function MobilePermissionList({
                             px={16}
                             py={8}
                             style={{
-                              borderBottom: '1px solid #f0f4f1',
+                              borderBottom: '1px solid #f1eff7',
                               alignItems: 'flex-start',
                               paddingLeft: 40,
-                              background: '#fcfdfc',
+                              background: '#fdfcfe',
                             }}
                           >
                             <PermCheckbox
@@ -421,7 +421,7 @@ function MobilePermissionList({
                               <div
                                 style={{
                                   fontSize: 'var(--mantine-font-size-xs)',
-                                  color: '#99a2ac',
+                                  color: '#8c86a0',
                                   fontFamily: "'JetBrains Mono', monospace",
                                 }}
                               >
@@ -1026,10 +1026,10 @@ export function RolesTab() {
                             size={16}
                             style={{
                               color: role.isAdmin
-                                ? '#6366f1'
+                                ? '#3a1e78'
                                 : role.isDefault
-                                  ? '#fece2b'
-                                  : '#6b7480',
+                                  ? '#7441e0'
+                                  : '#5e5873',
                             }}
                           />
                           {role.name}
@@ -1038,7 +1038,7 @@ export function RolesTab() {
                               style={{
                                 fontSize: 'var(--mantine-font-size-xs)',
                                 fontWeight: 600,
-                                color: '#6366f1',
+                                color: '#3a1e78',
                                 background: '#eef2ff',
                                 borderRadius: 4,
                                 padding: '1px 6px',
@@ -1048,7 +1048,7 @@ export function RolesTab() {
                             </span>
                           )}
                           {role.isAdmin && (
-                            <IconLock size={11} style={{ color: '#6366f1' }} />
+                            <IconLock size={11} style={{ color: '#3a1e78' }} />
                           )}
                           {canUpdate && !role.isAdmin && (
                             <button
@@ -1057,7 +1057,7 @@ export function RolesTab() {
                                 background: 'none',
                                 border: 'none',
                                 cursor: 'pointer',
-                                color: '#99a2ac',
+                                color: '#8c86a0',
                                 padding: 0,
                                 lineHeight: 1,
                               }}
@@ -1097,7 +1097,7 @@ export function RolesTab() {
                               background: 'none',
                               border: 'none',
                               cursor: 'pointer',
-                              color: '#6b7480',
+                              color: '#5e5873',
                               textDecoration: 'underline',
                               fontSize: 'var(--mantine-font-size-xs)',
                               padding: 0,
@@ -1122,12 +1122,12 @@ export function RolesTab() {
                     const isSettings = bp === 'settings_bp' || bp === 'settings'
                     return (
                       <Fragment key={bp}>
-                        <Table.Tr style={{ background: '#f8faf9' }}>
+                        <Table.Tr style={{ background: '#f9f8fc' }}>
                           <Table.Td
                             style={{
                               fontWeight: 700,
                               fontSize: 'var(--mantine-font-size-xs)',
-                              color: '#8e97a7',
+                              color: '#857f99',
                               textTransform: 'uppercase',
                               letterSpacing: '0.06em',
                               padding: '10px 16px',
@@ -1153,14 +1153,14 @@ export function RolesTab() {
                         {isSettings && settingsNsGroups.length > 0
                           ? settingsNsGroups.map(([ns, nsPerms]) => (
                               <Fragment key={ns}>
-                                <Table.Tr style={{ background: '#fcfdfc' }}>
+                                <Table.Tr style={{ background: '#fdfcfe' }}>
                                   <Table.Td
                                     style={{
                                       fontWeight: 600,
                                       fontSize: 'var(--mantine-font-size-xs)',
-                                      color: '#99a2ac',
+                                      color: '#8c86a0',
                                       padding: '6px 16px 6px 36px',
-                                      borderBottom: '1px solid #e3eae6',
+                                      borderBottom: '1px solid #e6e3ef',
                                     }}
                                   >
                                     <span>-- {ns} --</span>
@@ -1170,7 +1170,7 @@ export function RolesTab() {
                                       key={role.id}
                                       style={{
                                         textAlign: 'center',
-                                        borderBottom: '1px solid #e3eae6',
+                                        borderBottom: '1px solid #e6e3ef',
                                       }}
                                     >
                                       <SectionToggle
@@ -1207,7 +1207,7 @@ export function RolesTab() {
                                           <Table.Td
                                             style={{
                                               paddingLeft: 48,
-                                              color: '#3a4048',
+                                              color: '#2e2940',
                                             }}
                                           >
                                             <div style={{ fontWeight: 600 }}>
@@ -1217,7 +1217,7 @@ export function RolesTab() {
                                               style={{
                                                 fontSize:
                                                   'var(--mantine-font-size-xs)',
-                                                color: '#99a2ac',
+                                                color: '#8c86a0',
                                                 fontFamily:
                                                   "'JetBrains Mono', monospace",
                                               }}
@@ -1250,8 +1250,8 @@ export function RolesTab() {
                                                   width: 16,
                                                   height: 16,
                                                   accentColor: role.isAdmin
-                                                    ? '#6366f1'
-                                                    : '#fece2b',
+                                                    ? '#3a1e78'
+                                                    : '#7441e0',
                                                   cursor: role.isAdmin
                                                     ? 'default'
                                                     : 'pointer',
@@ -1269,7 +1269,7 @@ export function RolesTab() {
                                                 <Table.Td
                                                   style={{
                                                     paddingLeft: 64,
-                                                    color: '#3a4048',
+                                                    color: '#2e2940',
                                                   }}
                                                 >
                                                   <div
@@ -1281,7 +1281,7 @@ export function RolesTab() {
                                                     style={{
                                                       fontSize:
                                                         'var(--mantine-font-size-xs)',
-                                                      color: '#99a2ac',
+                                                      color: '#8c86a0',
                                                       fontFamily:
                                                         "'JetBrains Mono', monospace",
                                                     }}
@@ -1317,8 +1317,8 @@ export function RolesTab() {
                                                         height: 16,
                                                         accentColor:
                                                           role.isAdmin
-                                                            ? '#6366f1'
-                                                            : '#fece2b',
+                                                            ? '#3a1e78'
+                                                            : '#7441e0',
                                                         cursor: role.isAdmin
                                                           ? 'default'
                                                           : 'pointer',
@@ -1355,7 +1355,7 @@ export function RolesTab() {
                                       <Table.Td
                                         style={{
                                           paddingLeft: 28,
-                                          color: '#3a4048',
+                                          color: '#2e2940',
                                         }}
                                       >
                                         <div
@@ -1380,7 +1380,7 @@ export function RolesTab() {
                                                   padding: 0,
                                                   display: 'flex',
                                                   alignItems: 'center',
-                                                  color: '#6b7480',
+                                                  color: '#5e5873',
                                                 }}
                                                 title={
                                                   isExpanded
@@ -1408,7 +1408,7 @@ export function RolesTab() {
                                               style={{
                                                 fontSize:
                                                   'var(--mantine-font-size-xs)',
-                                                color: '#99a2ac',
+                                                color: '#8c86a0',
                                                 fontFamily:
                                                   "'JetBrains Mono', monospace",
                                               }}
@@ -1442,8 +1442,8 @@ export function RolesTab() {
                                               width: 16,
                                               height: 16,
                                               accentColor: role.isAdmin
-                                                ? '#6366f1'
-                                                : '#fece2b',
+                                                ? '#3a1e78'
+                                                : '#7441e0',
                                               cursor: role.isAdmin
                                                 ? 'default'
                                                 : 'pointer',
@@ -1457,12 +1457,12 @@ export function RolesTab() {
                                     fieldItems.map((perm) => (
                                       <Table.Tr
                                         key={perm.key}
-                                        style={{ background: '#fcfdfc' }}
+                                        style={{ background: '#fdfcfe' }}
                                       >
                                         <Table.Td
                                           style={{
                                             paddingLeft: 56,
-                                            color: '#3a4048',
+                                            color: '#2e2940',
                                           }}
                                         >
                                           <div
@@ -1478,7 +1478,7 @@ export function RolesTab() {
                                             style={{
                                               fontSize:
                                                 'var(--mantine-font-size-xs)',
-                                              color: '#99a2ac',
+                                              color: '#8c86a0',
                                               fontFamily:
                                                 "'JetBrains Mono', monospace",
                                             }}
@@ -1511,8 +1511,8 @@ export function RolesTab() {
                                                 width: 14,
                                                 height: 14,
                                                 accentColor: role.isAdmin
-                                                  ? '#6366f1'
-                                                  : '#fece2b',
+                                                  ? '#3a1e78'
+                                                  : '#7441e0',
                                                 cursor: role.isAdmin
                                                   ? 'default'
                                                   : 'pointer',
@@ -1551,10 +1551,10 @@ export function RolesTab() {
                         size={14}
                         style={{
                           color: role.isAdmin
-                            ? '#6366f1'
+                            ? '#3a1e78'
                             : role.isDefault
-                              ? '#fece2b'
-                              : '#6b7480',
+                              ? '#7441e0'
+                              : '#5e5873',
                         }}
                       />
                       <Text size="sm" fw={600}>
@@ -1577,12 +1577,12 @@ export function RolesTab() {
                 )
                 return (
                   <Fragment key={entry.key}>
-                    <Table.Tr style={{ background: '#f8faf9' }}>
+                    <Table.Tr style={{ background: '#f9f8fc' }}>
                       <Table.Td
                         style={{
                           fontWeight: 700,
                           fontSize: 'var(--mantine-font-size-xs)',
-                          color: '#8e97a7',
+                          color: '#857f99',
                           textTransform: 'uppercase',
                           letterSpacing: '0.06em',
                           padding: '10px 16px',
@@ -1607,7 +1607,7 @@ export function RolesTab() {
                         <Table.Td
                           style={{
                             paddingLeft: 28,
-                            color: '#3a4048',
+                            color: '#2e2940',
                           }}
                         >
                           <div
@@ -1623,7 +1623,7 @@ export function RolesTab() {
                           <div
                             style={{
                               fontSize: 'var(--mantine-font-size-xs)',
-                              color: '#99a2ac',
+                              color: '#8c86a0',
                               fontFamily: "'JetBrains Mono', monospace",
                             }}
                           >
@@ -1647,8 +1647,8 @@ export function RolesTab() {
                                 width: 16,
                                 height: 16,
                                 accentColor: role.isAdmin
-                                  ? '#6366f1'
-                                  : '#fece2b',
+                                  ? '#3a1e78'
+                                  : '#7441e0',
                                 cursor: role.isAdmin ? 'default' : 'pointer',
                               }}
                             />
@@ -1709,12 +1709,12 @@ export function RolesTab() {
               type="checkbox"
               checked={newRoleIsAdmin}
               onChange={(e) => setNewRoleIsAdmin(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: '#6366f1' }}
+              style={{ width: 16, height: 16, accentColor: '#3a1e78' }}
             />
             <span style={{ fontWeight: 600 }}>Admin role</span>
             <span
               style={{
-                color: '#6b7480',
+                color: '#5e5873',
                 fontSize: 'var(--mantine-font-size-xs)',
               }}
             >
@@ -1766,12 +1766,12 @@ export function RolesTab() {
               type="checkbox"
               checked={editIsAdmin}
               onChange={(e) => setEditIsAdmin(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: '#6366f1' }}
+              style={{ width: 16, height: 16, accentColor: '#3a1e78' }}
             />
             <span style={{ fontWeight: 600 }}>Admin role</span>
             <span
               style={{
-                color: '#6b7480',
+                color: '#5e5873',
                 fontSize: 'var(--mantine-font-size-xs)',
               }}
             >
@@ -1870,7 +1870,7 @@ export function RolesTab() {
                       justify="space-between"
                       p="xs"
                       style={{
-                        borderBottom: '1px solid #f0f4f1',
+                        borderBottom: '1px solid #f1eff7',
                       }}
                     >
                       <Group gap={10}>
@@ -1879,7 +1879,7 @@ export function RolesTab() {
                             width: 32,
                             height: 32,
                             borderRadius: '50%',
-                            background: member.avatarColor || '#6366f1',
+                            background: member.avatarColor || '#3a1e78',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -1899,7 +1899,7 @@ export function RolesTab() {
                           <div
                             style={{
                               fontSize: 'var(--mantine-font-size-xs)',
-                              color: '#99a2ac',
+                              color: '#8c86a0',
                             }}
                           >
                             {member.email}

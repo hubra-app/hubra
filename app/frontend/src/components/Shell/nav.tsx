@@ -69,7 +69,7 @@ export function contrastColor(hex: string): string {
   const g = parseInt(h.substring(2, 4), 16)
   const b = parseInt(h.substring(4, 6), 16)
   const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b
-  return lum > 140 ? '#181818' : '#ffffff'
+  return lum > 140 ? '#1a1625' : '#ffffff'
 }
 
 const NAV_ICONS: Record<string, ReactNode> = {

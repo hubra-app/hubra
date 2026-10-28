@@ -536,7 +536,7 @@ export function MailSettingsModal({
                     key={target}
                     style={{
                       fontSize: 'var(--mantine-font-size-sm)',
-                      color: '#6b7480',
+                      color: '#5e5873',
                       fontFamily: 'monospace',
                     }}
                   >
@@ -548,7 +548,7 @@ export function MailSettingsModal({
                   <span
                     style={{
                       fontSize: 'var(--mantine-font-size-sm)',
-                      color: '#99a2ac',
+                      color: '#8c86a0',
                       fontStyle: 'italic',
                     }}
                   >
@@ -603,7 +603,7 @@ export function MailSettingsModal({
                 <div
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
-                    color: '#99a2ac',
+                    color: '#8c86a0',
                     marginTop: 6,
                   }}
                 >
@@ -620,7 +620,7 @@ export function MailSettingsModal({
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
                   fontWeight: 600,
-                  color: '#3a4048',
+                  color: '#2e2940',
                   marginBottom: 8,
                 }}
               >
@@ -630,7 +630,7 @@ export function MailSettingsModal({
                 <div
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
-                    color: '#99a2ac',
+                    color: '#8c86a0',
                   }}
                 >
                   {t('mail.admin.noAliases', 'Keini zuesätzliche Aliasse.')}
@@ -647,7 +647,7 @@ export function MailSettingsModal({
                         alignItems: 'center',
                         gap: 8,
                         padding: '6px 10px',
-                        background: '#f4f8f5',
+                        background: '#f4f2f9',
                         borderRadius: 6,
                       }}
                     >

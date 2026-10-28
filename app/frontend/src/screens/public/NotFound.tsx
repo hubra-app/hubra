@@ -22,12 +22,12 @@ export function NotFoundScreen() {
       }}
       className="graph-bg"
     >
-      <div style={{ fontSize: 64, fontWeight: 800, color: '#181818' }}>404</div>
+      <div style={{ fontSize: 64, fontWeight: 800, color: '#1a1625' }}>404</div>
       <div
         style={{
           fontSize: 'var(--mantine-font-size-lg)',
           fontWeight: 600,
-          color: '#3a4048',
+          color: '#2e2940',
         }}
       >
         {t('common.pageNotFound', 'Page not found')}
@@ -35,7 +35,7 @@ export function NotFoundScreen() {
       <div
         style={{
           fontSize: 'var(--mantine-font-size-sm)',
-          color: '#6b7480',
+          color: '#5e5873',
           textAlign: 'center',
           maxWidth: 360,
         }}

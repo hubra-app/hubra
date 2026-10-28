@@ -202,13 +202,13 @@ export function FunctionsTab() {
                     width: 40,
                     height: 40,
                     borderRadius: 10,
-                    background: '#f4f8f5',
+                    background: '#f4f2f9',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <IconUserCog size={18} color="#6b7480" />
+                  <IconUserCog size={18} color="#5e5873" />
                 </div>
               }
               title={fn.name}
@@ -264,8 +264,8 @@ export function FunctionsTab() {
                         alignItems: 'center',
                         gap: 4,
                         fontSize: 'var(--mantine-font-size-xs)',
-                        color: '#3a4048',
-                        background: '#f4f8f5',
+                        color: '#2e2940',
+                        background: '#f4f2f9',
                         borderRadius: 6,
                         padding: '3px 8px',
                       }}
@@ -278,7 +278,7 @@ export function FunctionsTab() {
                 <div
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
-                    color: '#99a2ac',
+                    color: '#8c86a0',
                   }}
                 >
                   {t('functions.noHolder', 'Kein Inhaber')}
@@ -366,7 +366,7 @@ function HolderPanel({
   const { t } = useT()
   const [searchQuery, setSearchQuery] = useState('')
   const [holders, setHolders] = useState<HolderEntry[]>(() =>
-    fn.holders.map((h) => ({ ...h, memberColor: '#6b7480' })),
+    fn.holders.map((h) => ({ ...h, memberColor: '#5e5873' })),
   )
 
   const { data: searchData } = useQuery({
@@ -459,13 +459,13 @@ function HolderPanel({
             width: 32,
             height: 32,
             borderRadius: 8,
-            background: '#f4f8f5',
+            background: '#f4f2f9',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <IconUserCog size={16} color="#6b7480" />
+          <IconUserCog size={16} color="#5e5873" />
         </div>
       }
       members={slideMembers}
@@ -484,7 +484,7 @@ function HolderPanel({
           <div
             style={{
               padding: '12px 0',
-              borderTop: '1px solid #e3eae6',
+              borderTop: '1px solid #e6e3ef',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -497,7 +497,7 @@ function HolderPanel({
                 gap: 6,
                 fontSize: 'var(--mantine-font-size-xs)',
                 fontWeight: 600,
-                color: '#6b7480',
+                color: '#5e5873',
               }}
             >
               <MailIcon size={13} />

@@ -336,7 +336,7 @@ export function InvoicesTab() {
               <span
                 className="num"
                 style={{
-                  color: '#6b7480',
+                  color: '#5e5873',
                   fontSize: 'var(--mantine-font-size-xs)',
                 }}
               >
@@ -355,7 +355,7 @@ export function InvoicesTab() {
                     style={{
                       display: 'block',
                       fontSize: 'var(--mantine-font-size-xs)',
-                      color: '#99a2ac',
+                      color: '#8c86a0',
                     }}
                   >
                     {t('finance.recipientType.external', 'Extern')}
@@ -371,7 +371,7 @@ export function InvoicesTab() {
               <span
                 style={{
                   fontSize: 'var(--mantine-font-size-xs)',
-                  color: inv.purpose === 'membership' ? '#2596be' : '#6b7480',
+                  color: inv.purpose === 'membership' ? '#2596be' : '#5e5873',
                 }}
               >
                 {inv.purpose === 'membership'
@@ -387,7 +387,7 @@ export function InvoicesTab() {
               <span
                 className="num"
                 style={{
-                  color: '#6b7480',
+                  color: '#5e5873',
                   fontSize: 'var(--mantine-font-size-sm)',
                 }}
               >
@@ -402,7 +402,7 @@ export function InvoicesTab() {
               <span
                 className="num"
                 style={{
-                  color: inv.status === 'Overdue' ? '#ff4d3d' : '#6b7480',
+                  color: inv.status === 'Overdue' ? '#ff4d3d' : '#5e5873',
                   fontSize: 'var(--mantine-font-size-sm)',
                 }}
               >
@@ -627,8 +627,8 @@ export function InvoicesTab() {
           <div
             style={{
               fontSize: 'var(--mantine-font-size-sm)',
-              color: '#6b7480',
-              background: '#f4f8f5',
+              color: '#5e5873',
+              background: '#f4f2f9',
               borderRadius: 8,
               padding: '10px 14px',
             }}

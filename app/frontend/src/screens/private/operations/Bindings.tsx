@@ -194,7 +194,7 @@ function KeysTab() {
         }
         renderValue={(entry) =>
           entry.has_value ? (
-            <span style={{ fontFamily: 'monospace', color: '#6b7480' }}>
+            <span style={{ fontFamily: 'monospace', color: '#5e5873' }}>
               {entry.masked_value}
             </span>
           ) : (
@@ -208,7 +208,7 @@ function KeysTab() {
             width: 180,
             render: (entry) =>
               entry.label ? (
-                <span style={{ color: '#6b7480' }}>{entry.label}</span>
+                <span style={{ color: '#5e5873' }}>{entry.label}</span>
               ) : (
                 <em style={{ color: '#bbb' }}>{'\u2014'}</em>
               ),
@@ -267,7 +267,7 @@ function KeysTab() {
               entry.updated_at ? (
                 <span
                   style={{
-                    color: '#99a2ac',
+                    color: '#8c86a0',
                     fontSize: 'var(--mantine-font-size-xs)',
                   }}
                 >
@@ -371,12 +371,12 @@ function KeysTab() {
               type="checkbox"
               checked={newAllowMultiple}
               onChange={(e) => setNewAllowMultiple(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: '#fece2b' }}
+              style={{ width: 16, height: 16, accentColor: '#7441e0' }}
             />
             <span style={{ fontWeight: 600 }}>Array key</span>
             <span
               style={{
-                color: '#6b7480',
+                color: '#5e5873',
                 fontSize: 'var(--mantine-font-size-xs)',
               }}
             >
@@ -396,12 +396,12 @@ function KeysTab() {
               type="checkbox"
               checked={newIsProtected}
               onChange={(e) => setNewIsProtected(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: '#fece2b' }}
+              style={{ width: 16, height: 16, accentColor: '#7441e0' }}
             />
             <span style={{ fontWeight: 600 }}>Protected</span>
             <span
               style={{
-                color: '#6b7480',
+                color: '#5e5873',
                 fontSize: 'var(--mantine-font-size-xs)',
               }}
             >
@@ -458,12 +458,12 @@ function KeysTab() {
               checked={editAllowMultiple}
               onChange={(e) => setEditAllowMultiple(e.target.checked)}
               disabled={editIsProtected}
-              style={{ width: 16, height: 16, accentColor: '#fece2b' }}
+              style={{ width: 16, height: 16, accentColor: '#7441e0' }}
             />
             <span style={{ fontWeight: 600 }}>Array key</span>
             <span
               style={{
-                color: '#6b7480',
+                color: '#5e5873',
                 fontSize: 'var(--mantine-font-size-xs)',
               }}
             >
@@ -485,12 +485,12 @@ function KeysTab() {
               type="checkbox"
               checked={editIsProtected}
               onChange={(e) => setEditIsProtected(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: '#fece2b' }}
+              style={{ width: 16, height: 16, accentColor: '#7441e0' }}
             />
             <span style={{ fontWeight: 600 }}>Protected</span>
             <span
               style={{
-                color: '#6b7480',
+                color: '#5e5873',
                 fontSize: 'var(--mantine-font-size-xs)',
               }}
             >
@@ -778,7 +778,7 @@ function BindingsTab() {
         renderKeyPrefix={(entry) => (
           <span
             style={{
-              color: '#99a2ac',
+              color: '#8c86a0',
               fontSize: 'var(--mantine-font-size-xs)',
               flexShrink: 0,
             }}
@@ -795,7 +795,7 @@ function BindingsTab() {
           <span
             style={{
               fontSize: 'var(--mantine-font-size-xs)',
-              color: '#99a2ac',
+              color: '#8c86a0',
               textTransform: 'capitalize',
             }}
           >
@@ -822,7 +822,7 @@ function BindingsTab() {
                   <span
                     style={{
                       fontFamily: 'monospace',
-                      color: '#3a4048',
+                      color: '#2e2940',
                       fontSize: 'var(--mantine-font-size-xs)',
                     }}
                   >
@@ -917,7 +917,7 @@ function BindingsTab() {
                 style={{
                   padding: '3px 8px',
                   fontSize: 'var(--mantine-font-size-xs)',
-                  color: entry.enabled ? '#27ae60' : '#99a2ac',
+                  color: entry.enabled ? '#27ae60' : '#8c86a0',
                   cursor: entry.is_protected ? 'not-allowed' : 'pointer',
                 }}
                 title={
@@ -941,7 +941,7 @@ function BindingsTab() {
               entry.updated_at ? (
                 <span
                   style={{
-                    color: '#99a2ac',
+                    color: '#8c86a0',
                     fontSize: 'var(--mantine-font-size-xs)',
                   }}
                 >
@@ -1024,7 +1024,7 @@ function BindingsTab() {
             {sourcesLoading ? (
               <div
                 style={{
-                  color: '#99a2ac',
+                  color: '#8c86a0',
                   fontSize: 'var(--mantine-font-size-sm)',
                   padding: '8px 0',
                 }}
@@ -1034,7 +1034,7 @@ function BindingsTab() {
             ) : sources.length === 0 ? (
               <div
                 style={{
-                  color: '#99a2ac',
+                  color: '#8c86a0',
                   fontSize: 'var(--mantine-font-size-sm)',
                   padding: '8px 0',
                 }}
@@ -1060,8 +1060,8 @@ function BindingsTab() {
           {selectedSource && (
             <div
               style={{
-                background: '#f4f8f5',
-                border: '1px solid #d3ddd7',
+                background: '#f4f2f9',
+                border: '1px solid #d6d2e3',
                 borderRadius: 8,
                 padding: '12px 14px',
                 display: 'grid',
@@ -1074,10 +1074,10 @@ function BindingsTab() {
                 .filter(([k]) => !/password|secret|token|credential/i.test(k))
                 .map(([k, v]) => (
                   <div key={k} style={{ display: 'contents' }}>
-                    <span style={{ color: '#6b7480', fontWeight: 500 }}>
+                    <span style={{ color: '#5e5873', fontWeight: 500 }}>
                       {k}
                     </span>
-                    <span style={{ color: '#3a4048' }}>
+                    <span style={{ color: '#2e2940' }}>
                       {v === null || v === undefined ? '\u2014' : String(v)}
                     </span>
                   </div>
@@ -1101,14 +1101,14 @@ function BindingsTab() {
           {newSourceId && newAttribute && (
             <div
               style={{
-                background: '#f4f8f5',
-                border: '1px solid #d3ddd7',
+                background: '#f4f2f9',
+                border: '1px solid #d6d2e3',
                 borderRadius: 8,
                 padding: '10px 14px',
                 fontSize: 'var(--mantine-font-size-sm)',
               }}
             >
-              <span style={{ color: '#6b7480', fontWeight: 500 }}>
+              <span style={{ color: '#5e5873', fontWeight: 500 }}>
                 Current value:{' '}
               </span>
               {newPreview?.masked ? (
@@ -1116,7 +1116,7 @@ function BindingsTab() {
                   {'\u2022\u2022\u2022\u2022\u2022 (hidden)'}
                 </span>
               ) : newPreview?.value ? (
-                <span style={{ color: '#3a4048' }}>{newPreview.value}</span>
+                <span style={{ color: '#2e2940' }}>{newPreview.value}</span>
               ) : (
                 <em style={{ color: '#bbb' }}>{'\u2014 (empty)'}</em>
               )}
@@ -1187,7 +1187,7 @@ function BindingsTab() {
             {editSourcesLoading ? (
               <div
                 style={{
-                  color: '#99a2ac',
+                  color: '#8c86a0',
                   fontSize: 'var(--mantine-font-size-sm)',
                   padding: '8px 0',
                 }}
@@ -1197,7 +1197,7 @@ function BindingsTab() {
             ) : editSources.length === 0 ? (
               <div
                 style={{
-                  color: '#99a2ac',
+                  color: '#8c86a0',
                   fontSize: 'var(--mantine-font-size-sm)',
                   padding: '8px 0',
                 }}
@@ -1223,8 +1223,8 @@ function BindingsTab() {
           {effectiveEditSource && (
             <div
               style={{
-                background: '#f4f8f5',
-                border: '1px solid #d3ddd7',
+                background: '#f4f2f9',
+                border: '1px solid #d6d2e3',
                 borderRadius: 8,
                 padding: '12px 14px',
                 display: 'grid',
@@ -1237,10 +1237,10 @@ function BindingsTab() {
                 .filter(([k]) => !/password|secret|token|credential/i.test(k))
                 .map(([k, v]) => (
                   <div key={k} style={{ display: 'contents' }}>
-                    <span style={{ color: '#6b7480', fontWeight: 500 }}>
+                    <span style={{ color: '#5e5873', fontWeight: 500 }}>
                       {k}
                     </span>
-                    <span style={{ color: '#3a4048' }}>
+                    <span style={{ color: '#2e2940' }}>
                       {v === null || v === undefined ? '\u2014' : String(v)}
                     </span>
                   </div>
@@ -1264,14 +1264,14 @@ function BindingsTab() {
           {editSourceId && editAttribute && (
             <div
               style={{
-                background: '#f4f8f5',
-                border: '1px solid #d3ddd7',
+                background: '#f4f2f9',
+                border: '1px solid #d6d2e3',
                 borderRadius: 8,
                 padding: '10px 14px',
                 fontSize: 'var(--mantine-font-size-sm)',
               }}
             >
-              <span style={{ color: '#6b7480', fontWeight: 500 }}>
+              <span style={{ color: '#5e5873', fontWeight: 500 }}>
                 Current value:{' '}
               </span>
               {editPreview?.masked ? (
@@ -1279,7 +1279,7 @@ function BindingsTab() {
                   {'\u2022\u2022\u2022\u2022\u2022 (hidden)'}
                 </span>
               ) : editPreview?.value ? (
-                <span style={{ color: '#3a4048' }}>{editPreview.value}</span>
+                <span style={{ color: '#2e2940' }}>{editPreview.value}</span>
               ) : (
                 <em style={{ color: '#bbb' }}>{'\u2014 (empty)'}</em>
               )}
@@ -1319,12 +1319,12 @@ function BindingsTab() {
               type="checkbox"
               checked={editProtected}
               onChange={(e) => setEditProtected(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: '#fece2b' }}
+              style={{ width: 16, height: 16, accentColor: '#7441e0' }}
             />
             <span style={{ fontWeight: 600 }}>Protected</span>
             <span
               style={{
-                color: '#6b7480',
+                color: '#5e5873',
                 fontSize: 'var(--mantine-font-size-xs)',
               }}
             >

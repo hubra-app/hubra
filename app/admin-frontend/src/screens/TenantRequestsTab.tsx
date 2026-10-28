@@ -173,7 +173,7 @@ export function TenantRequestsTab() {
                       {r.status}
                     </Badge>
                   </Table.Td>
-                  <Table.Td style={{ color: '#6b7480', fontSize: 14 }}>
+                  <Table.Td style={{ color: '#5e5873', fontSize: 14 }}>
                     {r.created_at ? new Date(r.created_at).toLocaleDateString() : '-'}
                   </Table.Td>
                   {isSuperadmin && (

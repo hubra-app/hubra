@@ -19,7 +19,7 @@ function adapt(b: BackendTier): MembershipTier {
   return {
     id: String(b.id),
     name: b.name,
-    color: b.color ?? "#6366f1",
+    color: b.color ?? "#7441e0",
     priceChf: b.price_chf,
     billingCycle: b.billing_cycle,
     priceType: b.price_type,
