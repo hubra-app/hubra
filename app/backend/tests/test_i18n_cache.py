@@ -2,9 +2,9 @@
 
 from unittest.mock import patch
 
-from vollbuild.api.i18n import services as i18n_services
-from vollbuild.core.extensions import db
-from vollbuild.core.models.translation import Translation
+from hubra.api.i18n import services as i18n_services
+from hubra.core.extensions import db
+from hubra.core.models.translation import Translation
 
 
 def _seed_translation(locale: str, key: str, value: str = "test") -> None:
@@ -40,7 +40,7 @@ def test_duplicate_locale_invalidates_locales_cache(app, db):
     locales1 = i18n_services.get_available_locales()
     assert "fr-FR" not in locales1
 
-    from vollbuild.api.i18n.services import duplicate_locale
+    from hubra.api.i18n.services import duplicate_locale
 
     duplicate_locale("de-CH", "fr-FR", copy_values=True)
     db.session.commit()
@@ -79,7 +79,7 @@ def test_get_translations_dict_invalidated_on_write(app, db):
     # Without Redis, the in-memory cache uses _no_etag key both times.
     # The cache should still serve stale data (acceptable — Redis is down).
     # With Redis up, _bump_etag increments version → new cache key → DB query.
-    from vollbuild.api.i18n.services import upsert_translation
+    from hubra.api.i18n.services import upsert_translation
 
     upsert_translation("de-CH", "test.key1", "Wert 2")
     db.session.commit()
@@ -102,7 +102,7 @@ def test_report_keys_dispatches_async_task(client, auth_headers):
         side_effect=lambda key, default=None: False if key == "TESTING" else None,
     ):
         with patch(
-            "vollbuild.core.tasks.i18n_tasks.report_missing_keys_task.delay"
+            "hubra.core.tasks.i18n_tasks.report_missing_keys_task.delay"
         ) as mock_delay:
             resp = client.post(
                 "/api/v1/i18n/de-CH/report",

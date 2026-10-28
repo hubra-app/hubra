@@ -9,9 +9,9 @@ from decimal import Decimal
 import pytest
 
 from tests.helpers import set_modules
-from vollbuild.core.models.finance import Invoice, Transaction, TransactionCategory
-from vollbuild.core.services.qr_reference import generate_qrr_reference
-from vollbuild.modules.finance_bank.camt import CamtError, parse
+from hubra.core.models.finance import Invoice, Transaction, TransactionCategory
+from hubra.core.services.qr_reference import generate_qrr_reference
+from hubra.modules.finance_bank.camt import CamtError, parse
 
 NS = "urn:iso:std:iso:20022:tech:xsd:camt.054.001.08"
 

@@ -4,7 +4,7 @@ The list comes from the module manifests (``tables=``), so a new model
 whose table no module claims fails here.
 """
 
-from vollbuild.core.tenant.schema_manager import tables_to_clone
+from hubra.core.tenant.schema_manager import tables_to_clone
 
 # Tables that live in the public schema only and must NOT be cloned.
 _GLOBAL_ONLY_TABLES = frozenset(

@@ -1,4 +1,4 @@
-import { apiFetch, apiFetchRaw } from '@vollbuild/api-client'
+import { apiFetch, apiFetchRaw } from '@hubra/api-client'
 
 export type PaymentStatus = 'matched' | 'unmatched' | 'mismatch' | 'duplicate_payment' | 'assigned'
 

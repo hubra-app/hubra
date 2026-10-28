@@ -69,8 +69,8 @@ def test_admin_can_create_member(client, seeded_db, auth_headers):
 
 def test_admin_can_delete_member(client, seeded_db, auth_headers, db):
     """Admin can delete a member (must be archived first per service logic)."""
-    from vollbuild.core.models.member import Member
-    from vollbuild.core.models.user import User
+    from hubra.core.models.member import Member
+    from hubra.core.models.user import User
 
     # Create a separate member to delete (can't self-delete)
     target_user = User(

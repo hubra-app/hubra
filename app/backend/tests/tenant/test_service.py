@@ -10,8 +10,8 @@ from unittest.mock import patch
 import pytest
 from sqlalchemy import select
 
-from vollbuild.core.models.tenant import Tenant, GlobalAuditEntry
-from vollbuild.core.tenant.service import (
+from hubra.core.models.tenant import Tenant, GlobalAuditEntry
+from hubra.core.tenant.service import (
     TenantService,
     TenantProvisioningError,
     _validate_slug,
@@ -135,10 +135,10 @@ def test_get_by_id_not_found(db):
 # ── Provisioning (with mocked schema operations) ─────────────────────────────
 
 
-@patch("vollbuild.core.tenant.service.create_tenant_schema")
-@patch("vollbuild.core.tenant.service.drop_tenant_schema")
-@patch("vollbuild.core.tenant.service.set_search_path", create=True)
-@patch("vollbuild.core.tenant.service._seed_tenant")
+@patch("hubra.core.tenant.service.create_tenant_schema")
+@patch("hubra.core.tenant.service.drop_tenant_schema")
+@patch("hubra.core.tenant.service.set_search_path", create=True)
+@patch("hubra.core.tenant.service._seed_tenant")
 def test_provision_tenant_basic(mock_seed, mock_set_sp, mock_drop, mock_create, db):
     """Provisioning creates Tenant record and calls schema creation + seeding."""
     tenant = TenantService.provision_tenant(name="Acme", slug="acme", plan="growth")
@@ -158,8 +158,8 @@ def test_provision_tenant_basic(mock_seed, mock_set_sp, mock_drop, mock_create, 
     assert entry.details["slug"] == "acme"
 
 
-@patch("vollbuild.core.tenant.service.create_tenant_schema")
-@patch("vollbuild.core.tenant.service._seed_tenant")
+@patch("hubra.core.tenant.service.create_tenant_schema")
+@patch("hubra.core.tenant.service._seed_tenant")
 def test_provision_tenant_duplicate_slug(mock_seed, mock_create, db):
     """Provisioning rejects a duplicate slug."""
     db.session.add(Tenant(name="Existing", slug="acme"))
@@ -169,11 +169,9 @@ def test_provision_tenant_duplicate_slug(mock_seed, mock_create, db):
         TenantService.provision_tenant(name="New", slug="acme")
 
 
-@patch("vollbuild.core.tenant.service.create_tenant_schema")
-@patch("vollbuild.core.tenant.service.drop_tenant_schema")
-@patch(
-    "vollbuild.core.tenant.service._seed_tenant", side_effect=RuntimeError("seed fail")
-)
+@patch("hubra.core.tenant.service.create_tenant_schema")
+@patch("hubra.core.tenant.service.drop_tenant_schema")
+@patch("hubra.core.tenant.service._seed_tenant", side_effect=RuntimeError("seed fail"))
 def test_provision_tenant_seed_failure_cleans_up(mock_seed, mock_drop, mock_create, db):
     """When seeding fails, schema is dropped and error is raised."""
     with pytest.raises(TenantProvisioningError, match="Failed to seed"):
@@ -184,7 +182,7 @@ def test_provision_tenant_seed_failure_cleans_up(mock_seed, mock_drop, mock_crea
 
 
 @patch(
-    "vollbuild.core.tenant.service.create_tenant_schema",
+    "hubra.core.tenant.service.create_tenant_schema",
     side_effect=RuntimeError("no db"),
 )
 def test_provision_tenant_schema_failure(mock_create, db):
@@ -196,7 +194,7 @@ def test_provision_tenant_schema_failure(mock_create, db):
 # ── Delete (with mocked schema operations) ───────────────────────────────────
 
 
-@patch("vollbuild.core.tenant.service.drop_tenant_schema")
+@patch("hubra.core.tenant.service.drop_tenant_schema")
 def test_delete_tenant_force(mock_drop, db):
     """Force delete permanently removes the tenant and drops the schema."""
     tenant = Tenant(name="Doomed", slug="doomed")
@@ -239,7 +237,7 @@ def test_delete_tenant_soft_delete(db):
     assert entry is not None
 
 
-@patch("vollbuild.core.tenant.service.drop_tenant_schema")
+@patch("hubra.core.tenant.service.drop_tenant_schema")
 def test_delete_tenant_not_found(mock_drop, db):
     result = TenantService.delete_tenant(99999)
     assert result is False

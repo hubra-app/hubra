@@ -10,7 +10,7 @@ permissioned_member_factory to create members with specific permission sets.
 from __future__ import annotations
 
 
-from vollbuild.core.models.role import Role
+from hubra.core.models.role import Role
 
 # ── Members endpoints ─────────────────────────────────────────────────────────
 

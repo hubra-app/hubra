@@ -1,7 +1,7 @@
 """Tests for S02: club_username uniqueness guard and admin set-password endpoint."""
 
-from vollbuild.core.models.member import Member
-from vollbuild.core.models.user import User
+from hubra.core.models.member import Member
+from hubra.core.models.user import User
 
 
 def _make_member(

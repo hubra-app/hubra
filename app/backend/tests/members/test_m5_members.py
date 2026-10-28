@@ -257,7 +257,7 @@ def test_soft_delete_self_prevented(client, auth_headers, seeded_db):
 
 
 def test_soft_delete_preserves_data(client, auth_headers, seeded_db, db):
-    from vollbuild.core.models.member import Member
+    from hubra.core.models.member import Member
 
     created = _create_member(client, auth_headers, email="preserve@test.ch")
     member_id = created.get_json()["id"]

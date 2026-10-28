@@ -8,7 +8,7 @@ import { ApplyScreen } from '@/screens/public/Apply'
 import { NotFoundScreen } from '@/screens/public/NotFound'
 import { Toasts } from '@/components/ui'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
-import { SSO_URL } from '@vollbuild/api-client'
+import { SSO_URL } from '@hubra/api-client'
 import { IconAlertTriangle, IconRefresh } from '@tabler/icons-react'
 import { Loader, Center, Overlay, Paper, Text, Button, Stack } from '@mantine/core'
 

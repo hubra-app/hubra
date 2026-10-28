@@ -2,14 +2,14 @@
 
 from sqlalchemy import select
 
-from vollbuild.core.models.global_role import (
+from hubra.core.models.global_role import (
     GlobalPermission,
     GlobalRole,
     GlobalRolePermission,
     UserGlobalRole,
 )
-from vollbuild.core.models.user import User
-from vollbuild.api.global_rbac_seed import seed_global_rbac
+from hubra.core.models.user import User
+from hubra.api.global_rbac_seed import seed_global_rbac
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -123,7 +123,7 @@ def test_manager_role_can_read_tenants(client, seeded_db, db):
     assert resp.status_code == 200
 
     # Manager should NOT be able to delete tenants
-    from vollbuild.core.models.tenant import Tenant
+    from hubra.core.models.tenant import Tenant
 
     tenant = Tenant(name="Test", slug="test-manager", plan="starter")
     db.session.add(tenant)

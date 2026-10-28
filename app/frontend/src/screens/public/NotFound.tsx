@@ -2,7 +2,7 @@ import { Button } from '@mantine/core'
 import { useNavigate } from 'react-router-dom'
 import { useT } from '@/locales/i18n'
 import { IconHome } from '@tabler/icons-react'
-import { hasTokens } from '@vollbuild/api-client'
+import { hasTokens } from '@hubra/api-client'
 
 export function NotFoundScreen() {
   const { t } = useT()

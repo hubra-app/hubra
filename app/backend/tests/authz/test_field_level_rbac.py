@@ -13,10 +13,10 @@ Tests that:
 
 from __future__ import annotations
 
-from vollbuild.core.models.member import Member
-from vollbuild.core.models.role import Role, Permission, RolePermission
-from vollbuild.core.models.user import User
-from vollbuild.api.permissions import filter_updatable_fields
+from hubra.core.models.member import Member
+from hubra.core.models.role import Role, Permission, RolePermission
+from hubra.core.models.user import User
+from hubra.api.permissions import filter_updatable_fields
 
 
 # ── filter_updatable_fields unit tests ────────────────────────────────────────
@@ -247,7 +247,7 @@ class TestCanUpdateFieldLevel:
 
 class TestCanUpdateGroups:
     def test_admin_can_update_group(self, client, seeded_db, auth_headers, db):
-        from vollbuild.core.models.group import Group
+        from hubra.core.models.group import Group
 
         group = Group(name="TestGroup", description="Test")
         db.session.add(group)
@@ -262,7 +262,7 @@ class TestCanUpdateGroups:
 
     def test_field_level_group_update(self, client, seeded_db, db):
         """Member with groups.groups.update.name can only update name, not description."""
-        from vollbuild.core.models.group import Group
+        from hubra.core.models.group import Group
 
         group = Group(name="GroupA", description="Original desc")
         db.session.add(group)

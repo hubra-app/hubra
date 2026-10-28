@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from vollbuild.api.health.cache import HealthCache
+from hubra.api.health.cache import HealthCache
 
 
 # ── Weak password rejected on reset ───────────────────────────────────────────
@@ -20,8 +20,8 @@ from vollbuild.api.health.cache import HealthCache
 def test_weak_password_rejected_on_reset(client, seeded_db):
     """reset-password rejects a weak password (zxcvbn score < 3 or < 12 chars)."""
     # First create a valid reset token
-    from vollbuild.api.auth.services import AuthService
-    from vollbuild.core.extensions import db
+    from hubra.api.auth.services import AuthService
+    from hubra.core.extensions import db
 
     raw_token, member = AuthService.create_password_reset("admin@test.ch")
     db.session.commit()
@@ -216,7 +216,7 @@ def test_account_endpoint_returns_no_tenant_for_user_only(client, seeded_db, db)
     This was the root cause of the cos↔sso redirect loop: the User object
     lacks must_change_password, causing a 500 in require_password_changed.
     """
-    from vollbuild.core.models.user import User
+    from hubra.core.models.user import User
 
     user = User(email="user-only@test.ch", first_name="User", last_name="Only")
     user.set_password("password123")
@@ -242,7 +242,7 @@ def test_require_password_changed_passes_for_user_object(client, seeded_db, db):
     must_change_password attribute. The decorator must pass through
     instead of raising AttributeError → 500.
     """
-    from vollbuild.core.models.user import User
+    from hubra.core.models.user import User
 
     user = User(email="no-tenant@test.ch", first_name="No", last_name="Tenant")
     user.set_password("password123")
@@ -262,7 +262,7 @@ def test_require_password_changed_passes_for_user_object(client, seeded_db, db):
 
 def test_permissions_endpoint_for_user_only(client, seeded_db, db):
     """GET /account/permissions works for a User without a Member profile."""
-    from vollbuild.core.models.user import User
+    from hubra.core.models.user import User
 
     user = User(email="perm-user@test.ch", first_name="Perm", last_name="User")
     user.set_password("password123")

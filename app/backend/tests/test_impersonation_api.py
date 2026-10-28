@@ -9,10 +9,10 @@ from unittest.mock import patch
 import pytest
 from sqlalchemy import select
 
-from vollbuild.core.models.member import Member
-from vollbuild.core.models.tenant import Tenant, GlobalAuditEntry
-from vollbuild.core.models.user import User
-from vollbuild.core.models.user_tenant import UserTenant
+from hubra.core.models.member import Member
+from hubra.core.models.tenant import Tenant, GlobalAuditEntry
+from hubra.core.models.user import User
+from hubra.core.models.user_tenant import UserTenant
 
 
 # ── Fixtures ────────────────────────────────────────────────────────────────
@@ -79,8 +79,8 @@ def target_tenant(db, seeded_db):
 def test_impersonate_requires_reason(client, superadmin_headers, target_tenant):
     """Impersonation without a reason returns 422."""
     with (
-        patch("vollbuild.core.tenant.context.set_search_path"),
-        patch("vollbuild.api.tenant.routes.set_search_path", create=True),
+        patch("hubra.core.tenant.context.set_search_path"),
+        patch("hubra.api.tenant.routes.set_search_path", create=True),
     ):
         resp = client.post(
             f"/api/v1/system/tenants/{target_tenant['tenant'].id}/impersonate",
@@ -103,8 +103,8 @@ def test_impersonate_tenant_not_found(client, superadmin_headers):
 def test_impersonate_creates_audit_entry(client, superadmin_headers, target_tenant, db):
     """Starting impersonation creates a GlobalAuditEntry."""
     with (
-        patch("vollbuild.core.tenant.context.set_search_path"),
-        patch("vollbuild.api.tenant.routes.set_search_path", create=True),
+        patch("hubra.core.tenant.context.set_search_path"),
+        patch("hubra.api.tenant.routes.set_search_path", create=True),
     ):
         resp = client.post(
             f"/api/v1/system/tenants/{target_tenant['tenant'].id}/impersonate",
@@ -159,7 +159,7 @@ def test_delete_tenant_blocked_during_impersonation(
     client, superadmin_headers, target_tenant, db
 ):
     """DELETE tenant is blocked when impersonating."""
-    from vollbuild.api.permissions import check_impersonation_restriction
+    from hubra.api.permissions import check_impersonation_restriction
 
     with patch("flask_jwt_extended.get_jwt") as mock_jwt:
         mock_jwt.return_value = {"impersonator_id": 1}
@@ -170,7 +170,7 @@ def test_delete_tenant_blocked_during_impersonation(
 
 def test_change_plan_blocked_during_impersonation():
     """Changing plan is blocked during impersonation."""
-    from vollbuild.api.permissions import check_impersonation_restriction
+    from hubra.api.permissions import check_impersonation_restriction
 
     with patch("flask_jwt_extended.get_jwt") as mock_jwt:
         mock_jwt.return_value = {"impersonator_id": 1}
@@ -181,7 +181,7 @@ def test_change_plan_blocked_during_impersonation():
 
 def test_normal_actions_not_blocked_during_impersonation():
     """Non-restricted actions are allowed during impersonation."""
-    from vollbuild.api.permissions import check_impersonation_restriction
+    from hubra.api.permissions import check_impersonation_restriction
 
     with patch("flask_jwt_extended.get_jwt") as mock_jwt:
         mock_jwt.return_value = {"impersonator_id": 1}
@@ -191,7 +191,7 @@ def test_normal_actions_not_blocked_during_impersonation():
 
 def test_actions_not_blocked_when_not_impersonating():
     """Actions are allowed when not impersonating."""
-    from vollbuild.api.permissions import check_impersonation_restriction
+    from hubra.api.permissions import check_impersonation_restriction
 
     with patch("flask_jwt_extended.get_jwt") as mock_jwt:
         mock_jwt.return_value = {}

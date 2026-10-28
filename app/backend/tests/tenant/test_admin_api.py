@@ -9,7 +9,7 @@ from unittest.mock import patch
 import pytest
 from sqlalchemy import select
 
-from vollbuild.core.models.tenant import Tenant, GlobalAuditEntry
+from hubra.core.models.tenant import Tenant, GlobalAuditEntry
 
 
 # ── Fixtures ────────────────────────────────────────────────────────────────
@@ -90,8 +90,8 @@ def test_list_tenants_superadmin(client, superadmin_headers):
 def test_create_tenant_success(client, superadmin_headers, db):
     """Create a new tenant via the API."""
     with (
-        patch("vollbuild.core.tenant.service.create_tenant_schema"),
-        patch("vollbuild.core.tenant.service._seed_tenant"),
+        patch("hubra.core.tenant.service.create_tenant_schema"),
+        patch("hubra.core.tenant.service._seed_tenant"),
     ):
         resp = client.post(
             "/api/v1/system/tenants",
@@ -245,7 +245,7 @@ def test_include_deleted_param(client, superadmin_headers, sample_tenants):
     assert body["total"] == 3
 
 
-@patch("vollbuild.core.tenant.service.drop_tenant_schema")
+@patch("hubra.core.tenant.service.drop_tenant_schema")
 def test_force_delete_tenant(mock_drop, client, superadmin_headers, sample_tenants, db):
     """DELETE with force=true permanently deletes the tenant."""
     tid = sample_tenants[0].id

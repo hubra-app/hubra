@@ -7,8 +7,8 @@ from datetime import date, timedelta
 import pytest
 
 from tests.helpers import set_modules
-from vollbuild.api.events.services import EventService, _fold
-from vollbuild.core.models.event import ClubEvent
+from hubra.api.events.services import EventService, _fold
+from hubra.core.models.event import ClubEvent
 
 
 @pytest.fixture

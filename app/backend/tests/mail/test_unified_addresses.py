@@ -5,11 +5,11 @@ from __future__ import annotations
 import json
 from unittest.mock import MagicMock, patch
 
-from vollbuild.core.models.group import Group
-from vollbuild.core.models.managed_mail import ManagedMailAddress
-from vollbuild.core.models.member import Member
-from vollbuild.core.models.setting import Setting
-from vollbuild.core.models.user import User
+from hubra.core.models.group import Group
+from hubra.core.models.managed_mail import ManagedMailAddress
+from hubra.core.models.member import Member
+from hubra.core.models.setting import Setting
+from hubra.core.models.user import User
 
 
 def _make_mma(db, *, address: str, **overrides) -> ManagedMailAddress:
@@ -172,7 +172,7 @@ def test_create_alias(client, db, seeded_db, auth_headers):
     mock_wd = MagicMock()
     mock_wd.create_forwarding_alias.return_value = {"id": "wd-001"}
     with patch(
-        "vollbuild.core.services.mail_provisioning.try_get_client", return_value=mock_wd
+        "hubra.core.services.mail_provisioning.try_get_client", return_value=mock_wd
     ):
         resp = client.post(
             f"/api/v1/mail/addresses/{parent.id}/aliases",
@@ -195,7 +195,7 @@ def test_create_alias_for_member(client, db, seeded_db, auth_headers):
     mock_wd = MagicMock()
     mock_wd.create_forwarding_alias.return_value = {"id": "wd-002"}
     with patch(
-        "vollbuild.core.services.mail_provisioning.try_get_client", return_value=mock_wd
+        "hubra.core.services.mail_provisioning.try_get_client", return_value=mock_wd
     ):
         resp = client.post(
             f"/api/v1/mail/addresses/{parent.id}/aliases",
@@ -221,7 +221,7 @@ def test_delete_alias(client, db, seeded_db, auth_headers):
     )
     mock_wd = MagicMock()
     with patch(
-        "vollbuild.core.services.mail_provisioning.try_get_client", return_value=mock_wd
+        "hubra.core.services.mail_provisioning.try_get_client", return_value=mock_wd
     ):
         resp = client.delete(
             f"/api/v1/mail/addresses/{parent.id}/aliases/{alias.id}",
@@ -286,7 +286,7 @@ def test_delete_alias_address_allowed(client, db, seeded_db, auth_headers):
     )
     mock_wd = MagicMock()
     with patch(
-        "vollbuild.core.services.mail_provisioning.try_get_client", return_value=mock_wd
+        "hubra.core.services.mail_provisioning.try_get_client", return_value=mock_wd
     ):
         resp = client.delete(f"/api/v1/mail/addresses/{alias.id}", headers=auth_headers)
     assert resp.status_code == 204
@@ -322,7 +322,7 @@ def test_create_system_alias(client, db, seeded_db, auth_headers):
     mock_wd = MagicMock()
     mock_wd.create_forwarding_alias.return_value = {"id": "wd-sys-001"}
     with patch(
-        "vollbuild.core.services.mail_provisioning.try_get_client", return_value=mock_wd
+        "hubra.core.services.mail_provisioning.try_get_client", return_value=mock_wd
     ):
         resp = client.post(
             f"/api/v1/mail/system-addresses/{parent.id}/aliases",
@@ -358,7 +358,7 @@ def test_delete_system_alias(client, db, seeded_db, auth_headers):
     )
     mock_wd = MagicMock()
     with patch(
-        "vollbuild.core.services.mail_provisioning.try_get_client", return_value=mock_wd
+        "hubra.core.services.mail_provisioning.try_get_client", return_value=mock_wd
     ):
         resp = client.delete(
             f"/api/v1/mail/system-addresses/{parent.id}/aliases/{alias.id}",

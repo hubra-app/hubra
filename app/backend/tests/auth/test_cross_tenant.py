@@ -10,8 +10,8 @@ Covers issue #131 — Security Tests for Authentication, cross-tenant section:
 
 from __future__ import annotations
 
-from vollbuild.core.models.tenant import Tenant
-from vollbuild.api.auth.services import AuthService
+from hubra.core.models.tenant import Tenant
+from hubra.api.auth.services import AuthService
 
 
 # ── switch-tenant ─────────────────────────────────────────────────────────────

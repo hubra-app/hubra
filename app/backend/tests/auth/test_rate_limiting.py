@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import pytest
-from vollbuild import create_app
-from vollbuild.core.extensions import db as _db
+from hubra import create_app
+from hubra.core.extensions import db as _db
 
 
 # ── Fixture: rate-limited client ──────────────────────────────────────────────
@@ -29,8 +29,8 @@ def rate_limit_client():
     though RATELIMIT_ENABLED=False.  ``limiter.reset()`` alone only clears the
     counters — it does not remove the storage — so the null assignment is required.
     """
-    from vollbuild.core import config as cfg_module
-    from vollbuild.core.extensions import limiter
+    from hubra.core import config as cfg_module
+    from hubra.core.extensions import limiter
 
     cfg_module.TestingConfig.RATELIMIT_ENABLED = True
     app = create_app("testing")

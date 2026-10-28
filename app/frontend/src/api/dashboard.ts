@@ -1,4 +1,4 @@
-import { apiFetch } from '@vollbuild/api-client';
+import { apiFetch } from '@hubra/api-client';
 
 export interface SerializedPost {
   id: number;

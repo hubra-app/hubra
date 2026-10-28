@@ -180,7 +180,7 @@ def test_checkin_not_checked_out(client, auth_headers, seeded_db):
 def test_overdue_returns_late_items(client, auth_headers, seeded_db, db):
     from datetime import datetime, timedelta, timezone
 
-    from vollbuild.core.models.inventory import InventoryCheckout, InventoryItem
+    from hubra.core.models.inventory import InventoryCheckout, InventoryItem
 
     item = _create_item(client, auth_headers, name="Overdue Item")
     item_id = item.get_json()["id"]

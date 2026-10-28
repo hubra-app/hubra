@@ -59,7 +59,7 @@ python -m pytest tests/finance/
 python -m pytest tests/auth/test_login.py
 
 # With coverage
-python -m pytest tests/ --ignore=tests/test_s11_backend_gaps.py --cov=vollbuild
+python -m pytest tests/ --ignore=tests/test_s11_backend_gaps.py --cov=hubra
 ```
 
 > `test_s11_backend_gaps.py` requires a running Redis instance and will hang

@@ -10,9 +10,9 @@ from unittest.mock import patch
 import pytest
 from sqlalchemy import select
 
-from vollbuild.core.models.finance import Invoice
-from vollbuild.core.models.payment_plan import PaymentPlan
-from vollbuild.core.pricing import apply_plan, billing_cycle_for, period_window
+from hubra.core.models.finance import Invoice
+from hubra.core.models.payment_plan import PaymentPlan
+from hubra.core.pricing import apply_plan, billing_cycle_for, period_window
 
 
 def _tier(price="120", cycle="yearly", tid=1):
@@ -109,7 +109,7 @@ def test_plan_crud_and_member_choice(client, db, auth_headers, tier, seeded_db):
 
 
 def test_invoice_generation_uses_plan(app, db, tier, seeded_db):
-    from vollbuild.core.tasks.finance_tasks import _generate_invoices
+    from hubra.core.tasks.finance_tasks import _generate_invoices
 
     plan = PaymentPlan(tier_id=tier.id, name="Q", interval="quarterly")
     db.session.add(plan)
@@ -119,7 +119,7 @@ def test_invoice_generation_uses_plan(app, db, tier, seeded_db):
     member.payment_plan_id = plan.id
     db.session.commit()
 
-    with patch("vollbuild.core.tasks.email_tasks.send_email_task.delay"):
+    with patch("hubra.core.tasks.email_tasks.send_email_task.delay"):
         first = _generate_invoices()
         again = _generate_invoices()
     assert first["created"] == 1 and again["created"] == 0

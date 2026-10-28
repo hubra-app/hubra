@@ -21,7 +21,7 @@ import { z } from 'zod'
 import { IconShield } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
-import { getRememberedEmail } from '@vollbuild/api-client'
+import { getRememberedEmail } from '@hubra/api-client'
 import * as authApi from '@/api/auth'
 import { determineDefaultRedirect } from '@/context/SsoContext'
 

@@ -13,10 +13,10 @@ from unittest.mock import patch, MagicMock
 import pytest
 from sqlalchemy import select
 
-from vollbuild.core.extensions import db as _db
-from vollbuild.core.models.member import Member
-from vollbuild.core.models.role import Role, RolePermission, Permission
-from vollbuild.core.models.user import User
+from hubra.core.extensions import db as _db
+from hubra.core.models.member import Member
+from hubra.core.models.role import Role, RolePermission, Permission
+from hubra.core.models.user import User
 
 SETTINGS_URL = "/api/v1/settings/"
 MEMBERS_URL = "/api/v1/members/"
@@ -218,10 +218,10 @@ def test_admin_no_perms_can_create_roles(client, seeded_db, admin_no_perms_heade
 
 def test_invalidate_role_permissions_calls_redis_delete(app, db):
     """invalidate_role_permissions() deletes the cache key when Redis is available."""
-    from vollbuild.api.permissions import invalidate_role_permissions
+    from hubra.api.permissions import invalidate_role_permissions
 
     mock_redis = MagicMock()
-    with patch("vollbuild.api.permissions._get_redis_client", return_value=mock_redis):
+    with patch("hubra.api.permissions._get_redis_client", return_value=mock_redis):
         invalidate_role_permissions(42)
 
     mock_redis.delete.assert_called_once_with("perms:42")
@@ -229,8 +229,8 @@ def test_invalidate_role_permissions_calls_redis_delete(app, db):
 
 def test_invalidate_role_permissions_noop_without_redis(app, db):
     """invalidate_role_permissions() is a no-op when Redis is unavailable (no exception)."""
-    from vollbuild.api.permissions import invalidate_role_permissions
+    from hubra.api.permissions import invalidate_role_permissions
 
-    with patch("vollbuild.api.permissions._get_redis_client", return_value=None):
+    with patch("hubra.api.permissions._get_redis_client", return_value=None):
         # Should not raise
         invalidate_role_permissions(99)

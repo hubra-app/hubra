@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from vollbuild.core.models.group import Group
+from hubra.core.models.group import Group
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def test_joinable_lists_only_self_join_groups(client, auth_headers, groups):
 
 def test_join_and_leave(client, auth_headers, groups):
     open_group, _ = groups
-    with patch("vollbuild.api.groups.services.emit") as emit:
+    with patch("hubra.api.groups.services.emit") as emit:
         assert client.post(f"/api/v1/groups/{open_group.id}/join").status_code == 204
         emit.assert_called_once()
         assert emit.call_args.kwargs["action"] == "joined"

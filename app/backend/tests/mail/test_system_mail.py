@@ -5,8 +5,8 @@ from __future__ import annotations
 import json
 from unittest.mock import MagicMock, patch
 
-from vollbuild.core.models.managed_mail import ManagedMailAddress
-from vollbuild.core.models.setting import Setting
+from hubra.core.models.managed_mail import ManagedMailAddress
+from hubra.core.models.setting import Setting
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -66,7 +66,7 @@ def _ensure_settings(db, domain: str = "vollbuild.ch"):
 
 def test_get_hub_address_default(app, db):
     """_get_hub_address returns postmaster@domain by default."""
-    from vollbuild.core.services.mail_provisioning import _get_hub_address
+    from hubra.core.services.mail_provisioning import _get_hub_address
 
     _ensure_settings(db)
     assert _get_hub_address() == "postmaster@vollbuild.ch"
@@ -77,7 +77,7 @@ def test_get_hub_address_default(app, db):
 
 def test_resolve_system_alias_targets_hub_marker(app, db):
     """_resolve_system_alias_targets replaces 'hub' with the hub address."""
-    from vollbuild.core.services.mail_provisioning import _resolve_system_alias_targets
+    from hubra.core.services.mail_provisioning import _resolve_system_alias_targets
 
     _ensure_settings(db)
     mma = _make_system_mma(
@@ -89,7 +89,7 @@ def test_resolve_system_alias_targets_hub_marker(app, db):
 
 def test_resolve_system_alias_targets_passthrough(app, db):
     """_resolve_system_alias_targets passes through non-hub targets."""
-    from vollbuild.core.services.mail_provisioning import _resolve_system_alias_targets
+    from hubra.core.services.mail_provisioning import _resolve_system_alias_targets
 
     _ensure_settings(db)
     mma = _make_system_mma(
@@ -104,7 +104,7 @@ def test_resolve_system_alias_targets_passthrough(app, db):
 
 def test_resolve_system_alias_targets_no_fixed_falls_back_to_hub(app, db):
     """_resolve_system_alias_targets falls back to hub when no fixed targets."""
-    from vollbuild.core.services.mail_provisioning import _resolve_system_alias_targets
+    from hubra.core.services.mail_provisioning import _resolve_system_alias_targets
 
     _ensure_settings(db)
     mma = _make_system_mma(db, local_part="info", is_mailbox=False)
@@ -117,7 +117,7 @@ def test_resolve_system_alias_targets_no_fixed_falls_back_to_hub(app, db):
 
 def test_resolve_system_forward_targets_with_fixed(app, db):
     """_resolve_system_forward_targets resolves 'hub' markers in fixed targets."""
-    from vollbuild.core.services.mail_provisioning import (
+    from hubra.core.services.mail_provisioning import (
         _resolve_system_forward_targets,
     )
 
@@ -134,7 +134,7 @@ def test_resolve_system_forward_targets_with_fixed(app, db):
 
 def test_resolve_system_forward_targets_empty_when_no_fixed_no_group(app, db):
     """_resolve_system_forward_targets returns empty list when no fixed targets and no group."""
-    from vollbuild.core.services.mail_provisioning import (
+    from hubra.core.services.mail_provisioning import (
         _resolve_system_forward_targets,
     )
 
@@ -149,10 +149,10 @@ def test_resolve_system_forward_targets_empty_when_no_fixed_no_group(app, db):
 # ── ensure_catchall tests ─────────────────────────────────────────────────────
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
 def test_ensure_catchall_adds_wildcard_to_hub(mock_tgc, app, db):
     """ensure_catchall adds *@domain to hub user with allowWildcard=True."""
-    from vollbuild.core.services.mail_provisioning import ensure_catchall
+    from hubra.core.services.mail_provisioning import ensure_catchall
 
     _ensure_settings(db)
     _make_system_mma(
@@ -180,10 +180,10 @@ def test_ensure_catchall_adds_wildcard_to_hub(mock_tgc, app, db):
     assert catchall_mma.sync_state == "ok"
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
 def test_ensure_catchall_skips_when_hub_not_provisioned(mock_tgc, app, db):
     """ensure_catchall marks error when hub is not yet provisioned."""
-    from vollbuild.core.services.mail_provisioning import ensure_catchall
+    from hubra.core.services.mail_provisioning import ensure_catchall
 
     _ensure_settings(db)
     _make_system_mma(db, local_part="postmaster", is_mailbox=True, wildduck_id=None)
@@ -200,10 +200,10 @@ def test_ensure_catchall_skips_when_hub_not_provisioned(mock_tgc, app, db):
     assert catchall_mma.sync_state == "error"
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
 def test_ensure_catchall_noop_when_already_present(mock_tgc, app, db):
     """ensure_catchall is a no-op when *@domain already exists on hub user."""
-    from vollbuild.core.services.mail_provisioning import ensure_catchall
+    from hubra.core.services.mail_provisioning import ensure_catchall
 
     _ensure_settings(db)
     _make_system_mma(db, local_part="postmaster", is_mailbox=True, wildduck_id="wd-hub")
@@ -226,10 +226,10 @@ def test_ensure_catchall_noop_when_already_present(mock_tgc, app, db):
 # ── set_system_mailbox_password tests ─────────────────────────────────────────
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
 def test_set_system_mailbox_password_pushes_plaintext(mock_tgc, app, db):
     """set_system_mailbox_password pushes plaintext password to WildDuck."""
-    from vollbuild.core.services.mail_provisioning import set_system_mailbox_password
+    from hubra.core.services.mail_provisioning import set_system_mailbox_password
 
     mma = _make_system_mma(
         db, local_part="postmaster", is_mailbox=True, wildduck_id="wd-pm"
@@ -244,10 +244,10 @@ def test_set_system_mailbox_password_pushes_plaintext(mock_tgc, app, db):
     assert mma.sync_state == "ok"
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
 def test_set_system_mailbox_password_no_wildduck_id(mock_tgc, app, db):
     """set_system_mailbox_password marks error when no wildduck_id."""
-    from vollbuild.core.services.mail_provisioning import set_system_mailbox_password
+    from hubra.core.services.mail_provisioning import set_system_mailbox_password
 
     mma = _make_system_mma(
         db, local_part="postmaster", is_mailbox=True, wildduck_id=None
@@ -265,10 +265,10 @@ def test_set_system_mailbox_password_no_wildduck_id(mock_tgc, app, db):
 # ── ensure_alias for system aliases tests ─────────────────────────────────────
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
 def test_ensure_alias_system_resolves_hub_targets(mock_tgc, app, db):
     """ensure_alias for a system alias resolves 'hub' marker to hub address."""
-    from vollbuild.core.services.mail_provisioning import ensure_alias
+    from hubra.core.services.mail_provisioning import ensure_alias
 
     _ensure_settings(db)
     mma = _make_system_mma(
@@ -294,10 +294,10 @@ def test_ensure_alias_system_resolves_hub_targets(mock_tgc, app, db):
     assert mma.wildduck_id == "wd-alias-abuse"
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
 def test_ensure_alias_system_updates_targets_when_different(mock_tgc, app, db):
     """ensure_alias updates forwarding alias targets when they differ."""
-    from vollbuild.core.services.mail_provisioning import ensure_alias
+    from hubra.core.services.mail_provisioning import ensure_alias
 
     _ensure_settings(db)
     mma = _make_system_mma(
@@ -327,10 +327,10 @@ def test_ensure_alias_system_updates_targets_when_different(mock_tgc, app, db):
 # ── ensure_forwarding for alias MMAs tests ────────────────────────────────────
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
 def test_ensure_forwarding_alias_updates_targets(mock_tgc, app, db):
     """ensure_forwarding on an alias MMA calls update_forwarding_alias."""
-    from vollbuild.core.services.mail_provisioning import ensure_forwarding
+    from hubra.core.services.mail_provisioning import ensure_forwarding
 
     mma = _make_system_mma(
         db,
@@ -352,11 +352,11 @@ def test_ensure_forwarding_alias_updates_targets(mock_tgc, app, db):
 # ── reconcile_mail system tests ───────────────────────────────────────────────
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
-@patch("vollbuild.core.services.wildduck.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.wildduck.try_get_client")
 def test_reconcile_mail_catchall(mock_wd_tgc, mock_mp_tgc, app, db):
     """reconcile_mail calls ensure_catchall for local_part='*' rows."""
-    from vollbuild.core.tasks.mail_tasks import reconcile_mail
+    from hubra.core.tasks.mail_tasks import reconcile_mail
 
     _ensure_settings(db)
     _make_system_mma(
@@ -382,11 +382,11 @@ def test_reconcile_mail_catchall(mock_wd_tgc, mock_mp_tgc, app, db):
     )
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
-@patch("vollbuild.core.services.wildduck.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.wildduck.try_get_client")
 def test_reconcile_mail_system_mailbox_forwarding(mock_wd_tgc, mock_mp_tgc, app, db):
     """reconcile_mail reconciles forwarding targets for system mailboxes."""
-    from vollbuild.core.tasks.mail_tasks import reconcile_mail
+    from hubra.core.tasks.mail_tasks import reconcile_mail
 
     _ensure_settings(db)
     _make_system_mma(
@@ -411,13 +411,13 @@ def test_reconcile_mail_system_mailbox_forwarding(mock_wd_tgc, mock_mp_tgc, app,
     )
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
-@patch("vollbuild.core.services.wildduck.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.wildduck.try_get_client")
 def test_reconcile_mail_system_alias_with_hub_targets(
     mock_wd_tgc, mock_mp_tgc, app, db
 ):
     """reconcile_mail provisions system alias and resolves hub targets."""
-    from vollbuild.core.tasks.mail_tasks import reconcile_mail
+    from hubra.core.tasks.mail_tasks import reconcile_mail
 
     _ensure_settings(db)
     _make_system_mma(
@@ -444,13 +444,13 @@ def test_reconcile_mail_system_alias_with_hub_targets(
     )
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
-@patch("vollbuild.core.services.wildduck.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.wildduck.try_get_client")
 def test_reconcile_mail_recreates_postmaster_if_removed(
     mock_wd_tgc, mock_mp_tgc, app, db
 ):
     """reconcile_mail recreates postmaster mailbox if removed in WildDuck."""
-    from vollbuild.core.tasks.mail_tasks import reconcile_mail
+    from hubra.core.tasks.mail_tasks import reconcile_mail
 
     _ensure_settings(db)
     mma = _make_system_mma(
@@ -531,7 +531,7 @@ def test_api_reset_password_user_supplied_returns_200(
         display_name="Postmaster",
     )
 
-    with patch("vollbuild.core.services.mail_provisioning.set_system_mailbox_password"):
+    with patch("hubra.core.services.mail_provisioning.set_system_mailbox_password"):
         resp = client.post(
             f"/api/v1/mail/system-addresses/{mma.id}/reset-password",
             json={"password": "userpass123"},
@@ -554,7 +554,7 @@ def test_api_reset_password_auto_generated_returns_password(
         display_name="Postmaster",
     )
 
-    with patch("vollbuild.core.services.mail_provisioning.set_system_mailbox_password"):
+    with patch("hubra.core.services.mail_provisioning.set_system_mailbox_password"):
         resp = client.post(
             f"/api/v1/mail/system-addresses/{mma.id}/reset-password",
             json={},
@@ -595,7 +595,7 @@ def test_api_update_forwarding(client, app, db, seeded_db, auth_headers):
         display_name="Postmaster",
     )
 
-    with patch("vollbuild.core.services.mail_provisioning.ensure_forwarding"):
+    with patch("hubra.core.services.mail_provisioning.ensure_forwarding"):
         resp = client.put(
             f"/api/v1/mail/system-addresses/{mma.id}/forwarding",
             json={"targets": ["admin@example.com", "user@example.com"]},
@@ -660,7 +660,7 @@ def test_translations_contain_system_mail_keys():
 
     seeds_dir = (
         pathlib.Path(__file__).resolve().parents[2]
-        / "vollbuild"
+        / "hubra"
         / "core"
         / "seed_data"
         / "translations"
@@ -690,8 +690,8 @@ def test_translations_contain_system_mail_keys():
 
 def test_seed_creates_noreply_mma_with_password(app, db):
     """run_seeds creates a noreply system MMA with an encrypted password."""
-    from vollbuild.core.seeds import run_seeds
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.seeds import run_seeds
+    from hubra.core.models.managed_mail import ManagedMailAddress
     from sqlalchemy import select
 
     run_seeds(db)

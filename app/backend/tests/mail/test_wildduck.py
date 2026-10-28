@@ -31,7 +31,7 @@ def test_create_mailbox_calls_wildduck(client, app, auth_headers, seeded_db):
 
     try:
         with patch(
-            "vollbuild.core.services.wildduck.WildDuckClient", return_value=mock_client
+            "hubra.core.services.wildduck.WildDuckClient", return_value=mock_client
         ):
             resp = client.post(
                 "/api/v1/mail/mailboxes",
@@ -75,8 +75,8 @@ def test_create_mailbox_without_wildduck_config(client, app, auth_headers, seede
 
 
 def test_list_mailboxes_db_only(client, app, auth_headers, seeded_db):
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
-    from vollbuild.core.extensions import db
+    from hubra.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.extensions import db
 
     addr = ManagedMailAddress(
         address="alice@test.ch",
@@ -120,7 +120,7 @@ def test_create_alias_calls_wildduck(client, app, auth_headers, seeded_db):
 
     try:
         with patch(
-            "vollbuild.core.services.wildduck.WildDuckClient", return_value=mock_client
+            "hubra.core.services.wildduck.WildDuckClient", return_value=mock_client
         ):
             resp = client.post(
                 "/api/v1/mail/aliases",
@@ -149,7 +149,7 @@ def test_create_group_creates_wildduck_alias(client, app, auth_headers, seeded_d
 
     try:
         with patch(
-            "vollbuild.core.services.wildduck.WildDuckClient", return_value=mock_client
+            "hubra.core.services.wildduck.WildDuckClient", return_value=mock_client
         ):
             resp = client.post(
                 "/api/v1/groups/",
@@ -171,7 +171,7 @@ def test_create_group_creates_wildduck_alias(client, app, auth_headers, seeded_d
 def test_password_change_dispatches_celery_task(
     client, app, auth_headers, seeded_db, db
 ):
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     admin = seeded_db["admin"]
     addr = ManagedMailAddress(
@@ -194,9 +194,9 @@ def test_password_change_dispatches_celery_task(
     # Inject a fake wildduck task module so the lazy import in the route succeeds
     mock_task = MagicMock()
     mock_task.delay = MagicMock()
-    fake_mod = types.ModuleType("vollbuild.core.tasks.wildduck")
+    fake_mod = types.ModuleType("hubra.core.tasks.wildduck")
     fake_mod.sync_wildduck_password = mock_task
-    sys.modules["vollbuild.core.tasks.wildduck"] = fake_mod
+    sys.modules["hubra.core.tasks.wildduck"] = fake_mod
     try:
         resp = client.post(
             "/api/v1/account/change-password",
@@ -207,7 +207,7 @@ def test_password_change_dispatches_celery_task(
             headers=auth_headers,
         )
     finally:
-        sys.modules.pop("vollbuild.core.tasks.wildduck", None)
+        sys.modules.pop("hubra.core.tasks.wildduck", None)
 
     assert resp.status_code == 200
     mock_task.delay.assert_called_once_with(admin.id)
@@ -219,7 +219,7 @@ def test_password_change_dispatches_celery_task(
 def test_account_patch_password_dispatches_celery_task(
     client, app, auth_headers, seeded_db, db
 ):
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     admin = seeded_db["admin"]
     addr = ManagedMailAddress(
@@ -242,9 +242,9 @@ def test_account_patch_password_dispatches_celery_task(
     # Inject a fake wildduck task module so the lazy import in the route succeeds
     mock_task = MagicMock()
     mock_task.delay = MagicMock()
-    fake_mod = types.ModuleType("vollbuild.core.tasks.wildduck")
+    fake_mod = types.ModuleType("hubra.core.tasks.wildduck")
     fake_mod.sync_wildduck_password = mock_task
-    sys.modules["vollbuild.core.tasks.wildduck"] = fake_mod
+    sys.modules["hubra.core.tasks.wildduck"] = fake_mod
     try:
         resp = client.patch(
             "/api/v1/account/",
@@ -252,7 +252,7 @@ def test_account_patch_password_dispatches_celery_task(
             headers=auth_headers,
         )
     finally:
-        sys.modules.pop("vollbuild.core.tasks.wildduck", None)
+        sys.modules.pop("hubra.core.tasks.wildduck", None)
 
     assert resp.status_code == 200
     mock_task.delay.assert_called_once_with(admin.id)
@@ -267,7 +267,7 @@ def test_wildduck_error_does_not_fail_group_creation(
     _wd_config(app)
     app.config["MAIL_DOMAIN"] = "test.ch"
 
-    from vollbuild.core.services.wildduck import WildDuckError
+    from hubra.core.services.wildduck import WildDuckError
 
     mock_client = MagicMock()
     mock_client.create_forwarding_alias.side_effect = WildDuckError(
@@ -276,7 +276,7 @@ def test_wildduck_error_does_not_fail_group_creation(
 
     try:
         with patch(
-            "vollbuild.core.services.wildduck.WildDuckClient", return_value=mock_client
+            "hubra.core.services.wildduck.WildDuckClient", return_value=mock_client
         ):
             resp = client.post(
                 "/api/v1/groups/",
@@ -299,10 +299,10 @@ def test_add_allowed_from_stub_logs_warning(app, caplog):
     """WildDuckClient.add_allowed_from stub logs a WARNING and does not raise."""
     import logging
 
-    from vollbuild.core.services.wildduck import WildDuckClient
+    from hubra.core.services.wildduck import WildDuckClient
 
     client = WildDuckClient("http://wd.test", "token")
-    with caplog.at_level(logging.WARNING, logger="vollbuild.core.services.wildduck"):
+    with caplog.at_level(logging.WARNING, logger="hubra.core.services.wildduck"):
         client.add_allowed_from("user-123", "mygroup@test.ch")
 
     assert any("send-as ACL not supported" in r.message for r in caplog.records)
@@ -315,10 +315,10 @@ def test_remove_allowed_from_stub_logs_warning(app, caplog):
     """WildDuckClient.remove_allowed_from stub logs a WARNING and does not raise."""
     import logging
 
-    from vollbuild.core.services.wildduck import WildDuckClient
+    from hubra.core.services.wildduck import WildDuckClient
 
     client = WildDuckClient("http://wd.test", "token")
-    with caplog.at_level(logging.WARNING, logger="vollbuild.core.services.wildduck"):
+    with caplog.at_level(logging.WARNING, logger="hubra.core.services.wildduck"):
         client.remove_allowed_from("user-456", "mygroup@test.ch")
 
     assert any("send-as ACL not supported" in r.message for r in caplog.records)

@@ -39,7 +39,7 @@ class TestBackupRecordModel:
     """BackupRecord model CRUD and status transitions."""
 
     def test_create_record(self, db):
-        from vollbuild.core.models.backup import BackupRecord
+        from hubra.core.models.backup import BackupRecord
 
         record = BackupRecord(type="manual", status="pending", triggered_by="test")
         db.session.add(record)
@@ -54,7 +54,7 @@ class TestBackupRecordModel:
         assert record.verified_ok is None
 
     def test_record_repr(self, db):
-        from vollbuild.core.models.backup import BackupRecord
+        from hubra.core.models.backup import BackupRecord
 
         record = BackupRecord(type="manual", status="pending")
         assert "BackupRecord" in repr(record)
@@ -65,7 +65,7 @@ class TestBackupService:
     """BackupService with mocked subprocess and boto3."""
 
     def test_get_config_status_unconfigured(self, app, db):
-        from vollbuild.core.services.backup import BackupService
+        from hubra.core.services.backup import BackupService
 
         app.config["BACKUP_S3_ENDPOINT"] = ""
         app.config["BACKUP_S3_BUCKET"] = ""
@@ -79,7 +79,7 @@ class TestBackupService:
         assert status["s3_reachable"] is False
 
     def test_get_config_status_configured(self, app, db, mock_s3_client):
-        from vollbuild.core.services.backup import BackupService
+        from hubra.core.services.backup import BackupService
 
         app.config["BACKUP_S3_ENDPOINT"] = "https://s3.test.example.com"
         app.config["BACKUP_S3_BUCKET"] = "test-bucket"
@@ -88,7 +88,7 @@ class TestBackupService:
         app.config["BACKUP_ENCRYPTION_KEY"] = "test-enc-key"
 
         with patch(
-            "vollbuild.core.services.backup._get_s3_client", return_value=mock_s3_client
+            "hubra.core.services.backup._get_s3_client", return_value=mock_s3_client
         ):
             status = BackupService.get_config_status()
         assert status["s3_configured"] is True
@@ -96,7 +96,7 @@ class TestBackupService:
         assert status["s3_reachable"] is True
 
     def test_create_backup_success(self, app, db, backup_config, mock_s3_client):
-        from vollbuild.core.services.backup import BackupService
+        from hubra.core.services.backup import BackupService
 
         def fake_run(cmd, env=None, capture_output=True, timeout=None, input=None):
             if cmd[0] == "pg_dump":
@@ -113,11 +113,9 @@ class TestBackupService:
             return MagicMock(returncode=0, stdout=b"", stderr=b"")
 
         with (
+            patch("hubra.core.services.backup.subprocess.run", side_effect=fake_run),
             patch(
-                "vollbuild.core.services.backup.subprocess.run", side_effect=fake_run
-            ),
-            patch(
-                "vollbuild.core.services.backup._get_s3_client",
+                "hubra.core.services.backup._get_s3_client",
                 return_value=mock_s3_client,
             ),
         ):
@@ -138,7 +136,7 @@ class TestBackupService:
         mock_s3_client.upload_file.assert_called_once()
 
     def test_create_backup_no_encryption_key(self, app, db):
-        from vollbuild.core.services.backup import BackupService
+        from hubra.core.services.backup import BackupService
 
         app.config["BACKUP_ENCRYPTION_KEY"] = ""
         app.config["BACKUP_S3_ENDPOINT"] = "https://s3.test.example.com"
@@ -151,7 +149,7 @@ class TestBackupService:
         assert "BACKUP_ENCRYPTION_KEY" in (record.error_message or "")
 
     def test_create_backup_no_s3_config(self, app, db):
-        from vollbuild.core.services.backup import BackupService
+        from hubra.core.services.backup import BackupService
 
         app.config["BACKUP_ENCRYPTION_KEY"] = "test-key"
         app.config["BACKUP_S3_ENDPOINT"] = ""
@@ -163,7 +161,7 @@ class TestBackupService:
         assert "S3" in (record.error_message or "")
 
     def test_create_backup_pg_dump_fails(self, app, db, backup_config, mock_s3_client):
-        from vollbuild.core.services.backup import BackupService
+        from hubra.core.services.backup import BackupService
 
         def fake_run(cmd, env=None, capture_output=True, timeout=None, input=None):
             if cmd[0] == "pg_dump":
@@ -171,11 +169,9 @@ class TestBackupService:
             return MagicMock(returncode=0, stdout=b"", stderr=b"")
 
         with (
+            patch("hubra.core.services.backup.subprocess.run", side_effect=fake_run),
             patch(
-                "vollbuild.core.services.backup.subprocess.run", side_effect=fake_run
-            ),
-            patch(
-                "vollbuild.core.services.backup._get_s3_client",
+                "hubra.core.services.backup._get_s3_client",
                 return_value=mock_s3_client,
             ),
         ):
@@ -185,8 +181,8 @@ class TestBackupService:
         assert "pg_dump" in (record.error_message or "")
 
     def test_verify_backup_success(self, app, db, backup_config, mock_s3_client):
-        from vollbuild.core.services.backup import BackupService
-        from vollbuild.core.models.backup import BackupRecord
+        from hubra.core.services.backup import BackupService
+        from hubra.core.models.backup import BackupRecord
 
         record = BackupRecord(
             type="manual",
@@ -216,11 +212,9 @@ class TestBackupService:
         mock_s3_client.download_file = MagicMock(side_effect=fake_download)
 
         with (
+            patch("hubra.core.services.backup.subprocess.run", side_effect=fake_run),
             patch(
-                "vollbuild.core.services.backup.subprocess.run", side_effect=fake_run
-            ),
-            patch(
-                "vollbuild.core.services.backup._get_s3_client",
+                "hubra.core.services.backup._get_s3_client",
                 return_value=mock_s3_client,
             ),
         ):
@@ -232,14 +226,14 @@ class TestBackupService:
         assert result.verify_error is None
 
     def test_verify_backup_not_found(self, app, db):
-        from vollbuild.core.services.backup import BackupService
+        from hubra.core.services.backup import BackupService
 
         with pytest.raises(ValueError, match="not found"):
             BackupService.verify_backup(9999)
 
     def test_verify_backup_not_completed(self, app, db):
-        from vollbuild.core.services.backup import BackupService
-        from vollbuild.core.models.backup import BackupRecord
+        from hubra.core.services.backup import BackupService
+        from hubra.core.models.backup import BackupRecord
 
         record = BackupRecord(type="manual", status="pending")
         db.session.add(record)
@@ -249,8 +243,8 @@ class TestBackupService:
             BackupService.verify_backup(record.id)
 
     def test_list_backups(self, app, db):
-        from vollbuild.core.services.backup import BackupService
-        from vollbuild.core.models.backup import BackupRecord
+        from hubra.core.services.backup import BackupService
+        from hubra.core.models.backup import BackupRecord
 
         r1 = BackupRecord(type="manual", status="completed")
         r2 = BackupRecord(type="scheduled_daily", status="completed")
@@ -261,8 +255,8 @@ class TestBackupService:
         assert len(records) == 2
 
     def test_delete_backup(self, app, db, backup_config, mock_s3_client):
-        from vollbuild.core.services.backup import BackupService
-        from vollbuild.core.models.backup import BackupRecord
+        from hubra.core.services.backup import BackupService
+        from hubra.core.models.backup import BackupRecord
 
         record = BackupRecord(
             type="manual",
@@ -274,7 +268,7 @@ class TestBackupService:
         record_id = record.id
 
         with patch(
-            "vollbuild.core.services.backup._get_s3_client", return_value=mock_s3_client
+            "hubra.core.services.backup._get_s3_client", return_value=mock_s3_client
         ):
             BackupService.delete_backup(record_id)
 
@@ -282,14 +276,14 @@ class TestBackupService:
         mock_s3_client.delete_object.assert_called_once()
 
     def test_delete_backup_not_found(self, app, db):
-        from vollbuild.core.services.backup import BackupService
+        from hubra.core.services.backup import BackupService
 
         with pytest.raises(ValueError, match="not found"):
             BackupService.delete_backup(9999)
 
     def test_retention_cleanup(self, app, db, backup_config, mock_s3_client):
-        from vollbuild.core.services.backup import BackupService
-        from vollbuild.core.models.backup import BackupRecord
+        from hubra.core.services.backup import BackupService
+        from hubra.core.models.backup import BackupRecord
 
         for i in range(10):
             db.session.add(
@@ -307,7 +301,7 @@ class TestBackupService:
         db.session.commit()
 
         with patch(
-            "vollbuild.core.services.backup._get_s3_client", return_value=mock_s3_client
+            "hubra.core.services.backup._get_s3_client", return_value=mock_s3_client
         ):
             deleted = BackupService.run_retention_cleanup()
 
@@ -362,11 +356,9 @@ class TestBackupAPI:
             return MagicMock(returncode=0, stdout=b"", stderr=b"")
 
         with (
+            patch("hubra.core.services.backup.subprocess.run", side_effect=fake_run),
             patch(
-                "vollbuild.core.services.backup.subprocess.run", side_effect=fake_run
-            ),
-            patch(
-                "vollbuild.core.services.backup._get_s3_client",
+                "hubra.core.services.backup._get_s3_client",
                 return_value=mock_s3_client,
             ),
         ):
@@ -378,7 +370,7 @@ class TestBackupAPI:
         assert data["s3_key"] is not None
 
     def test_get_single_backup(self, client, seeded_db, auth_headers, db):
-        from vollbuild.core.models.backup import BackupRecord
+        from hubra.core.models.backup import BackupRecord
 
         record = BackupRecord(
             type="manual", status="completed", s3_key="backups/test.dump.gpg"
@@ -399,7 +391,7 @@ class TestBackupAPI:
     def test_delete_backup_api(
         self, client, seeded_db, auth_headers, db, app, backup_config, mock_s3_client
     ):
-        from vollbuild.core.models.backup import BackupRecord
+        from hubra.core.models.backup import BackupRecord
 
         record = BackupRecord(
             type="manual", status="completed", s3_key="backups/test.dump.gpg"
@@ -409,7 +401,7 @@ class TestBackupAPI:
         record_id = record.id
 
         with patch(
-            "vollbuild.core.services.backup._get_s3_client", return_value=mock_s3_client
+            "hubra.core.services.backup._get_s3_client", return_value=mock_s3_client
         ):
             resp = client.delete(f"/api/v1/backups/{record_id}", headers=auth_headers)
 
@@ -422,7 +414,7 @@ class TestBackupAPI:
     def test_verify_backup_api_testing_mode(
         self, client, seeded_db, auth_headers, db, app, backup_config, mock_s3_client
     ):
-        from vollbuild.core.models.backup import BackupRecord
+        from hubra.core.models.backup import BackupRecord
 
         record = BackupRecord(
             type="manual",
@@ -453,11 +445,9 @@ class TestBackupAPI:
         mock_s3_client.download_file = MagicMock(side_effect=fake_download)
 
         with (
+            patch("hubra.core.services.backup.subprocess.run", side_effect=fake_run),
             patch(
-                "vollbuild.core.services.backup.subprocess.run", side_effect=fake_run
-            ),
-            patch(
-                "vollbuild.core.services.backup._get_s3_client",
+                "hubra.core.services.backup._get_s3_client",
                 return_value=mock_s3_client,
             ),
         ):
@@ -471,7 +461,7 @@ class TestBackupAPI:
         assert data["table_count"] == 2
 
     def test_verify_backup_not_completed(self, client, seeded_db, auth_headers, db):
-        from vollbuild.core.models.backup import BackupRecord
+        from hubra.core.models.backup import BackupRecord
 
         record = BackupRecord(type="manual", status="pending")
         db.session.add(record)

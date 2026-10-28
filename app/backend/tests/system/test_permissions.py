@@ -10,10 +10,10 @@ Verifies:
 import pytest
 from sqlalchemy import select
 
-from vollbuild.core.extensions import db as _db
-from vollbuild.core.models.member import Member
-from vollbuild.core.models.role import Role, RolePermission, Permission
-from vollbuild.core.models.user import User
+from hubra.core.extensions import db as _db
+from hubra.core.models.member import Member
+from hubra.core.models.role import Role, RolePermission, Permission
+from hubra.core.models.user import User
 
 SYSTEM_PERMISSIONS = "/api/v1/system/permissions"
 INVENTORY = "/api/v1/inventory/"

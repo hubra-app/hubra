@@ -7,7 +7,7 @@ test_m003_s03_transactions.py (PATCH status, overview balance filter).
 from datetime import date
 
 import pytest
-from vollbuild.core.models.finance import Transaction, TransactionCategory
+from hubra.core.models.finance import Transaction, TransactionCategory
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

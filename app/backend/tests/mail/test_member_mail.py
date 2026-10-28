@@ -11,9 +11,9 @@ from __future__ import annotations
 from unittest.mock import patch
 
 
-from vollbuild.core.models.member import Member
-from vollbuild.core.models.managed_mail import ManagedMailAddress
-from vollbuild.core.models.user import User
+from hubra.core.models.member import Member
+from hubra.core.models.managed_mail import ManagedMailAddress
+from hubra.core.models.user import User
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -128,7 +128,7 @@ def test_patch_member_mail_update_flags(client, db, seeded_db, auth_headers):
     """PATCH /members/<id> with retention_days updates member and dispatches provisioning."""
     member = _make_member(db, seeded_db, email="flagtest@example.com")
 
-    with patch("vollbuild.core.tasks.wildduck.provision_member_mail") as mock_task:
+    with patch("hubra.core.tasks.wildduck.provision_member_mail") as mock_task:
         mock_task.delay.return_value = None
         resp = client.patch(
             f"/api/v1/members/{member.id}",
@@ -153,7 +153,7 @@ def test_patch_member_mail_no_loop_when_domain_differs(client, db, seeded_db, ap
     )
     headers = {}
 
-    with patch("vollbuild.core.tasks.wildduck.provision_member_mail") as mock_task:
+    with patch("hubra.core.tasks.wildduck.provision_member_mail") as mock_task:
         mock_task.delay.return_value = None
         with patch.dict(app.config, {"MAIL_DOMAIN": "club.ch"}):
             resp = client.patch(
@@ -186,12 +186,12 @@ def test_patch_member_mail_no_loop_when_domain_differs(client, db, seeded_db, ap
 
 def test_provision_member_dispatches(client, db, seeded_db, auth_headers):
     """POST /members/<id>/provision returns 202 and writes audit entry."""
-    from vollbuild.core.models.audit import AuditEntry
+    from hubra.core.models.audit import AuditEntry
     from sqlalchemy import select
 
     member = _make_member(db, seeded_db, email="provision@example.com")
 
-    with patch("vollbuild.core.tasks.wildduck.provision_member_mail") as mock_task:
+    with patch("hubra.core.tasks.wildduck.provision_member_mail") as mock_task:
         mock_task.delay.return_value = None
         resp = client.post(
             f"/api/v1/members/{member.id}/provision",
@@ -226,7 +226,7 @@ def test_provision_member_mail_uses_targets_array(app, db, seeded_db):
     """provision_member_mail calls update_user_attributes with targets when forwarding_enabled=True."""
     from unittest.mock import MagicMock, patch
 
-    from vollbuild.core.tasks.wildduck import provision_member_mail
+    from hubra.core.tasks.wildduck import provision_member_mail
 
     member = _make_member(db, seeded_db, email="external@gmail.com")
     member.public_email = "alice@club.org"
@@ -240,13 +240,11 @@ def test_provision_member_mail_uses_targets_array(app, db, seeded_db):
     mock_wd.list_user_addresses.return_value = {"results": []}
 
     with patch(
-        "vollbuild.core.services.mail_provisioning.try_get_client", return_value=mock_wd
+        "hubra.core.services.mail_provisioning.try_get_client", return_value=mock_wd
     ):
-        with patch(
-            "vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd
-        ):
+        with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
             with patch(
-                "vollbuild.core.services.mail_provisioning._get_club_domain",
+                "hubra.core.services.mail_provisioning._get_club_domain",
                 return_value="club.ch",
             ):
                 provision_member_mail.run(member.id)
@@ -265,7 +263,7 @@ def test_provision_member_mail_ensure_absent_on_remove(app, db, seeded_db):
     """remove_for_member uses ensure_absent to delete the WildDuck user."""
     from unittest.mock import MagicMock, patch
 
-    from vollbuild.core.services.managed_mail import remove_for_member
+    from hubra.core.services.managed_mail import remove_for_member
 
     member = _make_member(db, seeded_db, email="external@gmail.com")
     addr = _make_member_mma(
@@ -276,7 +274,7 @@ def test_provision_member_mail_ensure_absent_on_remove(app, db, seeded_db):
     mock_wd.safe_delete_user.return_value = True
 
     with patch(
-        "vollbuild.core.services.mail_provisioning.try_get_client", return_value=mock_wd
+        "hubra.core.services.mail_provisioning.try_get_client", return_value=mock_wd
     ):
         remove_for_member(member.id)
 
@@ -297,7 +295,7 @@ def test_provision_member_mail_loop_detection_skips_forwarding(app, db, seeded_d
     """provision_member_mail skips forwarding when private email is on club domain."""
     from unittest.mock import MagicMock, patch
 
-    from vollbuild.core.tasks.wildduck import provision_member_mail
+    from hubra.core.tasks.wildduck import provision_member_mail
 
     member = _make_member(db, seeded_db, email="alice@club.ch")
     _make_member_mma(
@@ -309,13 +307,11 @@ def test_provision_member_mail_loop_detection_skips_forwarding(app, db, seeded_d
     mock_wd.list_user_addresses.return_value = {"results": []}
 
     with patch(
-        "vollbuild.core.services.mail_provisioning.try_get_client", return_value=mock_wd
+        "hubra.core.services.mail_provisioning.try_get_client", return_value=mock_wd
     ):
-        with patch(
-            "vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd
-        ):
+        with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
             with patch(
-                "vollbuild.core.services.mail_provisioning._get_club_domain",
+                "hubra.core.services.mail_provisioning._get_club_domain",
                 return_value="club.ch",
             ):
                 provision_member_mail.run(member.id)
@@ -329,7 +325,7 @@ def test_provision_member_mail_creates_mailbox_when_enabled(app, db, seeded_db):
     """provision_member_mail creates mailbox when MMA exists but no wildduck_user_id."""
     from unittest.mock import MagicMock, patch
 
-    from vollbuild.core.tasks.wildduck import provision_member_mail
+    from hubra.core.tasks.wildduck import provision_member_mail
 
     member = _make_member(db, seeded_db, email="newmember@gmail.com")
     member.public_email = "new@club.org"
@@ -342,13 +338,11 @@ def test_provision_member_mail_creates_mailbox_when_enabled(app, db, seeded_db):
     mock_wd.list_user_addresses.return_value = {"results": []}
 
     with patch(
-        "vollbuild.core.services.mail_provisioning.try_get_client", return_value=mock_wd
+        "hubra.core.services.mail_provisioning.try_get_client", return_value=mock_wd
     ):
-        with patch(
-            "vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd
-        ):
+        with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
             with patch(
-                "vollbuild.core.services.mail_provisioning._get_club_domain",
+                "hubra.core.services.mail_provisioning._get_club_domain",
                 return_value="club.org",
             ):
                 provision_member_mail.run(member.id)

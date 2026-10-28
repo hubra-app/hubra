@@ -8,7 +8,7 @@ from decimal import Decimal
 import pytest
 
 from tests.helpers import set_modules
-from vollbuild.core.models.finance import Transaction, TransactionCategory
+from hubra.core.models.finance import Transaction, TransactionCategory
 
 
 @pytest.fixture

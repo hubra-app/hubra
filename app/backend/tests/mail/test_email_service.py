@@ -15,8 +15,8 @@ from unittest.mock import patch
 
 import pytest
 
-from vollbuild import create_app
-from vollbuild.core.extensions import db as _db
+from hubra import create_app
+from hubra.core.extensions import db as _db
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -28,7 +28,7 @@ def email_app():
     app = create_app("testing")
     with app.app_context():
         _db.create_all()
-        from vollbuild.core.models.setting import Setting
+        from hubra.core.models.setting import Setting
 
         for key, value in [
             ("club.name", "Test Club"),
@@ -53,7 +53,7 @@ def email_ctx(email_app):
 
 def _call_send(app):
     """Call _send() with fixed test arguments inside the current app context."""
-    from vollbuild.core.services.email import _send
+    from hubra.core.services.email import _send
 
     _send(
         to_email="member@example.com",
@@ -73,10 +73,10 @@ def test_smtp_sends_on_success(email_ctx, caplog):
 
     with (
         patch(
-            "vollbuild.core.services.email._send_via_smtp", return_value=True
+            "hubra.core.services.email._send_via_smtp", return_value=True
         ) as mock_smtp_fn,
     ):
-        with caplog.at_level(logging.INFO, logger="vollbuild.core.services.email"):
+        with caplog.at_level(logging.INFO, logger="hubra.core.services.email"):
             _call_send(email_ctx)
 
         mock_smtp_fn.assert_called_once()
@@ -86,8 +86,8 @@ def test_missing_sender_skips(email_ctx, caplog):
     """Missing club.notification_sender_email skips sending with a warning."""
     import logging
 
-    from vollbuild.core.models.setting import Setting
-    from vollbuild.core.extensions import db
+    from hubra.core.models.setting import Setting
+    from hubra.core.extensions import db
 
     setting = db.session.get(Setting, "club.notification_sender_email")
     old = setting.value
@@ -95,9 +95,9 @@ def test_missing_sender_skips(email_ctx, caplog):
     db.session.commit()
 
     with (
-        patch("vollbuild.core.services.email._send_via_smtp") as mock_smtp_fn,
+        patch("hubra.core.services.email._send_via_smtp") as mock_smtp_fn,
     ):
-        with caplog.at_level(logging.WARNING, logger="vollbuild.core.services.email"):
+        with caplog.at_level(logging.WARNING, logger="hubra.core.services.email"):
             _call_send(email_ctx)
 
         mock_smtp_fn.assert_not_called()
@@ -109,8 +109,8 @@ def test_missing_sender_skips(email_ctx, caplog):
 
 def test_celery_task_executes(email_ctx):
     """send_email_task.apply() calls _send with the correct arguments."""
-    with patch("vollbuild.core.services.email._send") as mock_send:
-        from vollbuild.core.tasks.email_tasks import send_email_task
+    with patch("hubra.core.services.email._send") as mock_send:
+        from hubra.core.tasks.email_tasks import send_email_task
 
         result = send_email_task.apply(
             kwargs={
@@ -139,7 +139,7 @@ def test_smtp_failure_logs_error_and_does_not_raise(email_ctx, caplog):
     with patch(
         "smtplib.SMTP", side_effect=ConnectionRefusedError("Connection refused")
     ):
-        with caplog.at_level(logging.ERROR, logger="vollbuild.core.services.email"):
+        with caplog.at_level(logging.ERROR, logger="hubra.core.services.email"):
             _call_send(email_ctx)
 
         assert "smtp_fallback_error" in caplog.text

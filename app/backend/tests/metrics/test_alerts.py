@@ -12,7 +12,7 @@ Covers:
 from unittest.mock import patch, MagicMock
 
 
-from vollbuild.core.services.alerts import (
+from hubra.core.services.alerts import (
     send_alert,
     alert_error,
     alert_warning,
@@ -26,8 +26,8 @@ from vollbuild.core.services.alerts import (
 class TestSendAlert:
     """Tests for the core send_alert function."""
 
-    @patch("vollbuild.core.services.alerts._get_webhook_url")
-    @patch("vollbuild.core.services.alerts.urllib.request.urlopen")
+    @patch("hubra.core.services.alerts._get_webhook_url")
+    @patch("hubra.core.services.alerts.urllib.request.urlopen")
     def test_send_alert_success(self, mock_urlopen, mock_get_url):
         """Successful alert returns True."""
         mock_get_url.return_value = "https://discord.com/api/webhooks/test"
@@ -40,15 +40,15 @@ class TestSendAlert:
         result = send_alert("Test Alert", "Something happened")
         assert result is True
 
-    @patch("vollbuild.core.services.alerts._get_webhook_url")
+    @patch("hubra.core.services.alerts._get_webhook_url")
     def test_webhook_not_configured(self, mock_get_url):
         """Missing webhook URL returns False silently."""
         mock_get_url.return_value = ""
         result = send_alert("Test", "msg")
         assert result is False
 
-    @patch("vollbuild.core.services.alerts._get_webhook_url")
-    @patch("vollbuild.core.services.alerts.urllib.request.urlopen")
+    @patch("hubra.core.services.alerts._get_webhook_url")
+    @patch("hubra.core.services.alerts.urllib.request.urlopen")
     def test_http_error_doesnt_propagate(self, mock_urlopen, mock_get_url):
         """HTTP errors are caught and return False."""
         mock_get_url.return_value = "https://discord.com/api/webhooks/test"
@@ -57,8 +57,8 @@ class TestSendAlert:
         result = send_alert("Test", "msg")
         assert result is False
 
-    @patch("vollbuild.core.services.alerts._get_webhook_url")
-    @patch("vollbuild.core.services.alerts.urllib.request.urlopen")
+    @patch("hubra.core.services.alerts._get_webhook_url")
+    @patch("hubra.core.services.alerts.urllib.request.urlopen")
     def test_sends_correct_payload(self, mock_urlopen, mock_get_url):
         """Payload contains correct JSON structure."""
         mock_get_url.return_value = "https://discord.com/api/webhooks/test"
@@ -81,8 +81,8 @@ class TestSendAlert:
         assert payload["embeds"][0]["description"] == "My Desc"
         assert payload["embeds"][0]["color"] == COLOR_ORANGE
 
-    @patch("vollbuild.core.services.alerts._get_webhook_url")
-    @patch("vollbuild.core.services.alerts.urllib.request.urlopen")
+    @patch("hubra.core.services.alerts._get_webhook_url")
+    @patch("hubra.core.services.alerts.urllib.request.urlopen")
     def test_fields_included(self, mock_urlopen, mock_get_url):
         """Fields are included in the embed when provided."""
         mock_get_url.return_value = "https://discord.com/api/webhooks/test"
@@ -106,13 +106,13 @@ class TestSendAlert:
 class TestAlertHelpers:
     """Tests for convenience functions."""
 
-    @patch("vollbuild.core.services.alerts.send_alert")
+    @patch("hubra.core.services.alerts.send_alert")
     def test_alert_error_uses_red(self, mock_send):
         mock_send.return_value = True
         alert_error("Err", "desc")
         mock_send.assert_called_once_with("Err", "desc", color=COLOR_RED, fields=None)
 
-    @patch("vollbuild.core.services.alerts.send_alert")
+    @patch("hubra.core.services.alerts.send_alert")
     def test_alert_warning_uses_orange(self, mock_send):
         mock_send.return_value = True
         alert_warning("Warn", "desc")
@@ -120,7 +120,7 @@ class TestAlertHelpers:
             "Warn", "desc", color=COLOR_ORANGE, fields=None
         )
 
-    @patch("vollbuild.core.services.alerts.send_alert")
+    @patch("hubra.core.services.alerts.send_alert")
     def test_alert_resolved_uses_green(self, mock_send):
         mock_send.return_value = True
         alert_resolved("Fixed", "desc")
@@ -132,11 +132,11 @@ class TestAlertHelpers:
 class TestGetWebhookUrl:
     """Tests for _get_webhook_url."""
 
-    @patch("vollbuild.core.services.alerts.os.environ")
+    @patch("hubra.core.services.alerts.os.environ")
     def test_falls_back_to_env(self, mock_environ):
         """Returns empty string when no Flask app and env var not set."""
         mock_environ.get.return_value = ""
-        from vollbuild.core.services.alerts import _get_webhook_url
+        from hubra.core.services.alerts import _get_webhook_url
 
         # Force the RuntimeError path (no Flask app context)
         result = _get_webhook_url()

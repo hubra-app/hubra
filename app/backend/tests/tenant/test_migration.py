@@ -7,7 +7,7 @@ tenant schemas, so it is tested via integration tests or Docker.
 
 import pytest
 
-from vollbuild.core.tenant.migration import (
+from hubra.core.tenant.migration import (
     apply_migrations_to_all_tenants,
     apply_migrations_to_tenant,
     ensure_tenant_has_alembic,

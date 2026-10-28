@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from vollbuild.core.pricing import (
+from hubra.core.pricing import (
     annual_fee_for_member,
     calculate_preview_cost,
 )
@@ -12,7 +12,7 @@ from vollbuild.core.pricing import (
 
 @pytest.fixture
 def yearly_expenses_setting(db):
-    from vollbuild.core.models.setting import Setting
+    from hubra.core.models.setting import Setting
 
     db.session.add(
         Setting(
@@ -27,7 +27,7 @@ def yearly_expenses_setting(db):
 
 @pytest.fixture
 def percentage_tier(db):
-    from vollbuild.core.models.member import MembershipTier
+    from hubra.core.models.member import MembershipTier
 
     tier = MembershipTier(
         name="Pct",
@@ -44,7 +44,7 @@ def percentage_tier(db):
 
 @pytest.fixture
 def formula_tier(db):
-    from vollbuild.core.models.member import MembershipTier
+    from hubra.core.models.member import MembershipTier
 
     tier = MembershipTier(
         name="Formula",

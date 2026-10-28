@@ -8,7 +8,7 @@ from sqlalchemy import select
 
 def test_login_user_without_member_returns_no_tenant(client, db):
     """A User with valid credentials but no Member gets a JWT with noTenant=true."""
-    from vollbuild.core.models.user import User
+    from hubra.core.models.user import User
 
     user = User(email="lonely@test.ch", first_name="Lonely", last_name="User")
     user.set_password("StrongPassword123!")
@@ -28,7 +28,7 @@ def test_login_user_without_member_returns_no_tenant(client, db):
 
 def test_login_user_without_member_permissions_endpoint_works(client, db):
     """A user logged in via the noTenant path can call /account/permissions."""
-    from vollbuild.core.models.user import User
+    from hubra.core.models.user import User
 
     user = User(email="perm@test.ch", first_name="Perm", last_name="User")
     user.set_password("StrongPassword123!")
@@ -66,7 +66,7 @@ def test_signup_creates_user_and_returns_jwt(client, db):
     assert body["user"]["email"] == "newuser@test.ch"
     assert "access_token_cookie" in resp.headers.get("Set-Cookie", "")
 
-    from vollbuild.core.models.user import User
+    from hubra.core.models.user import User
 
     user = db.session.scalar(select(User).where(User.email == "newuser@test.ch"))
     assert user is not None
@@ -75,7 +75,7 @@ def test_signup_creates_user_and_returns_jwt(client, db):
 
 def test_signup_duplicate_email_returns_409(client, db):
     """Duplicate email on signup returns 409, not 500."""
-    from vollbuild.core.models.user import User
+    from hubra.core.models.user import User
 
     user = User(email="existing@test.ch", first_name="Existing", last_name="User")
     user.set_password("VeryStrongPass123!")
@@ -161,7 +161,7 @@ def test_submit_tenant_request_unauthenticated_rejected(client, db):
 
 def test_submit_tenant_request_duplicate_slug_with_existing_tenant(client, db):
     """Slug conflicting with an existing tenant returns 409."""
-    from vollbuild.core.models.tenant import Tenant
+    from hubra.core.models.tenant import Tenant
 
     tenant = Tenant(
         name="Existing", slug="existing-club", plan="starter", status="active"
@@ -251,9 +251,9 @@ def test_approve_tenant_request_links_requester(client, db):
     UserTenant for the requester. Now admin_user_id=req.user_id is
     passed so the existing User is linked as the tenant admin.
     """
-    from vollbuild.core.models.user import User
-    from vollbuild.core.models.user_tenant import UserTenant
-    from vollbuild.core.models.tenant import Tenant
+    from hubra.core.models.user import User
+    from hubra.core.models.user_tenant import UserTenant
+    from hubra.core.models.tenant import Tenant
 
     # 1. Signup a regular user (no tenant)
     _signup_and_get_client(client, db, email="requester2@test.ch")
@@ -289,9 +289,9 @@ def test_approve_tenant_request_links_requester(client, db):
     from unittest.mock import patch
 
     with (
-        patch("vollbuild.core.tenant.service.create_tenant_schema"),
-        patch("vollbuild.core.tenant.context.set_search_path"),
-        patch("vollbuild.core.tenant.context.reset_search_path"),
+        patch("hubra.core.tenant.service.create_tenant_schema"),
+        patch("hubra.core.tenant.context.set_search_path"),
+        patch("hubra.core.tenant.context.reset_search_path"),
     ):
         resp = client.post(f"/api/v1/system/tenant-requests/{req_id}/approve")
     assert resp.status_code == 200
@@ -309,7 +309,7 @@ def test_approve_tenant_request_links_requester(client, db):
     assert link is not None, "Requesting user should be linked to the new tenant"
 
     # 6. Verify find_user_tenants returns the new tenant
-    from vollbuild.api.auth.services import AuthService
+    from hubra.api.auth.services import AuthService
 
     tenants = AuthService.find_user_tenants(requester.id)
     assert any(t["tenant_slug"] == "link-me" for t in tenants)
@@ -322,19 +322,19 @@ def test_add_user_to_tenant_success(client, db):
     """A superadmin can add an existing User to a tenant via POST /tenants/<id>/members."""
     from unittest.mock import patch
 
-    from vollbuild.core.models.user import User
-    from vollbuild.core.models.user_tenant import UserTenant
-    from vollbuild.core.models.tenant import Tenant
+    from hubra.core.models.user import User
+    from hubra.core.models.user_tenant import UserTenant
+    from hubra.core.models.tenant import Tenant
 
     # Create a tenant with mocked schema ops
     tenant = Tenant(name="Test Club", slug="test-club-add", plan="starter")
     db.session.add(tenant)
     db.session.flush()
     with (
-        patch("vollbuild.core.tenant.context.set_search_path"),
-        patch("vollbuild.core.tenant.context.reset_search_path"),
+        patch("hubra.core.tenant.context.set_search_path"),
+        patch("hubra.core.tenant.context.reset_search_path"),
     ):
-        from vollbuild.core.tenant.service import _seed_tenant
+        from hubra.core.tenant.service import _seed_tenant
 
         _seed_tenant(tenant.id, None, None)
     db.session.commit()
@@ -362,8 +362,8 @@ def test_add_user_to_tenant_success(client, db):
 
     # Add the user to the tenant
     with (
-        patch("vollbuild.core.tenant.context.set_search_path"),
-        patch("vollbuild.core.tenant.context.reset_search_path"),
+        patch("hubra.core.tenant.context.set_search_path"),
+        patch("hubra.core.tenant.context.reset_search_path"),
     ):
         resp = client.post(
             f"/api/v1/system/tenants/{tenant.id}/members",
@@ -386,9 +386,9 @@ def test_add_user_to_tenant_success(client, db):
 def test_add_user_to_tenant_duplicate_returns_409(client, db):
     """Adding a user who is already a member returns 409."""
 
-    from vollbuild.core.models.user import User
-    from vollbuild.core.models.user_tenant import UserTenant
-    from vollbuild.core.models.tenant import Tenant
+    from hubra.core.models.user import User
+    from hubra.core.models.user_tenant import UserTenant
+    from hubra.core.models.tenant import Tenant
 
     # Create a tenant + user + existing UserTenant
     tenant = Tenant(name="Dup Club", slug="dup-club", plan="starter")
@@ -426,8 +426,8 @@ def test_add_user_to_tenant_duplicate_returns_409(client, db):
 
 def test_add_user_to_tenant_user_not_found(client, db):
     """Adding a non-existent user returns 404."""
-    from vollbuild.core.models.user import User
-    from vollbuild.core.models.tenant import Tenant
+    from hubra.core.models.user import User
+    from hubra.core.models.tenant import Tenant
 
     tenant = Tenant(name="NF Club", slug="nf-club", plan="starter")
     db.session.add(tenant)
@@ -459,8 +459,8 @@ def test_add_user_to_tenant_user_not_found(client, db):
 
 def test_my_tenants_returns_user_tenants(client, seeded_db, db):
     """GET /account/my-tenants returns the user's tenant memberships."""
-    from vollbuild.core.models.user_tenant import UserTenant
-    from vollbuild.core.models.tenant import Tenant
+    from hubra.core.models.user_tenant import UserTenant
+    from hubra.core.models.tenant import Tenant
 
     # Use the existing seeded admin user
     user = seeded_db["user"]
@@ -516,7 +516,7 @@ def test_refresh_token_for_no_tenant_user(client, db):
     Regression test: check_locked did int(identity) which raised ValueError
     for 'user:1' identities, crashing /auth/refresh with a 500.
     """
-    from vollbuild.core.models.user import User
+    from hubra.core.models.user import User
 
     user = User(email="refresh@test.ch", first_name="Refresh", last_name="User")
     user.set_password("StrongPassword123!")

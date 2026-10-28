@@ -26,7 +26,7 @@ def test_forgot_password_always_200(client, seeded_db):
 def test_forgot_password_creates_token(client, seeded_db, db):
     """A known member's forgot-password request creates a PasswordResetToken."""
     from sqlalchemy import select
-    from vollbuild.core.models.password_reset import PasswordResetToken
+    from hubra.core.models.password_reset import PasswordResetToken
 
     resp = client.post(
         "/api/v1/auth/forgot-password",
@@ -64,7 +64,7 @@ def test_reset_password_with_invalid_token(client, seeded_db):
 
 def test_reset_password_flow(client, seeded_db, db):
     """Create a PasswordResetToken in the DB, call reset-password, assert success."""
-    from vollbuild.core.models.password_reset import PasswordResetToken
+    from hubra.core.models.password_reset import PasswordResetToken
 
     admin = seeded_db["admin"]
     raw_token = secrets.token_urlsafe(32)

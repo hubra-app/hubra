@@ -2,11 +2,11 @@
 
 import pytest
 
-from vollbuild.core.extensions import db
-from vollbuild.core.models.group import Group
-from vollbuild.core.models.managed_mail import ManagedMailAddress
-from vollbuild.core.models.member import Member, member_groups
-from vollbuild.core.models.user import User
+from hubra.core.extensions import db
+from hubra.core.models.group import Group
+from hubra.core.models.managed_mail import ManagedMailAddress
+from hubra.core.models.member import Member, member_groups
+from hubra.core.models.user import User
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────

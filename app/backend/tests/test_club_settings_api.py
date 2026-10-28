@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import pytest
 
-from vollbuild.core.models.tenant import Tenant
+from hubra.core.models.tenant import Tenant
 
 
 # ── Fixtures ────────────────────────────────────────────────────────────────
@@ -23,10 +23,10 @@ def tenant_ctx(db, seeded_db):
 
     with (
         patch(
-            "vollbuild.api.admin.routes.current_tenant",
+            "hubra.api.admin.routes.current_tenant",
             return_value=tenant,
         ),
-        patch("vollbuild.core.tenant.context.set_search_path"),
+        patch("hubra.core.tenant.context.set_search_path"),
     ):
         yield tenant
 
@@ -181,7 +181,7 @@ def test_update_club_settings_merges(tenant_ctx, client, auth_headers):
 def test_update_club_settings_creates_audit_entry(tenant_ctx, client, auth_headers, db):
     from sqlalchemy import select
 
-    from vollbuild.core.models.tenant import GlobalAuditEntry
+    from hubra.core.models.tenant import GlobalAuditEntry
 
     client.patch(
         "/api/v1/admin/club-settings",

@@ -66,7 +66,7 @@ spec:
       containers:
         - name: celery-worker
           image: hubra/backend
-          command: ["celery", "-A", "vollbuild.core.tasks.celery_app", "worker", "--loglevel=info"]
+          command: ["celery", "-A", "hubra.core.tasks.celery_app", "worker", "--loglevel=info"]
           envFrom: [{ secretRef: { name: hubra-env } }]
           env: [{ name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }]
           volumeMounts: [{ name: settings, mountPath: /etc/hubra }]
@@ -105,7 +105,7 @@ spec:
       containers:
         - name: celery-beat
           image: hubra/backend
-          command: ["celery", "-A", "vollbuild.core.tasks.celery_app", "beat", "--loglevel=info", "--schedule", "/celerybeat/celerybeat-schedule"]
+          command: ["celery", "-A", "hubra.core.tasks.celery_app", "beat", "--loglevel=info", "--schedule", "/celerybeat/celerybeat-schedule"]
           envFrom: [{ secretRef: { name: hubra-env } }]
           env: [{ name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }]
           volumeMounts:

@@ -9,8 +9,8 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from vollbuild.core.models.domain import Domain
-from vollbuild.core.models.tenant import Tenant
+from hubra.core.models.domain import Domain
+from hubra.core.models.tenant import Tenant
 
 
 # ── Fixtures ────────────────────────────────────────────────────────────────
@@ -30,10 +30,10 @@ def tenant_ctx(db, seeded_db):
 
     with (
         patch(
-            "vollbuild.api.admin.routes.current_tenant",
+            "hubra.api.admin.routes.current_tenant",
             return_value=tenant,
         ),
-        patch("vollbuild.core.tenant.context.set_search_path"),
+        patch("hubra.core.tenant.context.set_search_path"),
     ):
         yield tenant
 

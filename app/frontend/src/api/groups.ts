@@ -1,4 +1,4 @@
-import { apiFetch } from '@vollbuild/api-client';
+import { apiFetch } from '@hubra/api-client';
 import { clearLookups } from "./lookups";
 import type { Group } from "../types";
 

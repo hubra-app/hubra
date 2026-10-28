@@ -108,7 +108,7 @@ npx playwright test
 ├── AGENTS.md                      # AI agent instructions
 ├── app/
 │   ├── backend/                   # Flask + Celery
-│   │   ├── vollbuild/             # Application code
+│   │   ├── hubra/             # Application code
 │   │   ├── tests/                 # 756 tests (blueprint-organized)
 │   │   ├── migrations/            # Alembic migrations (flask db migrate)
 │   │   ├── API.md                 # Full API reference

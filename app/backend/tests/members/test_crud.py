@@ -106,11 +106,11 @@ def test_permanent_delete_cleans_up_fk_dependants(client, auth_headers, seeded_d
     transactions, audit entries (nullable FK) are nulled out so
     financial/audit records survive per Swiss OR Art. 957.
     """
-    from vollbuild.core.models.audit import AuditEntry
-    from vollbuild.core.models.finance import Invoice
-    from vollbuild.core.models.mail import MailboxFolder
-    from vollbuild.core.models.member import Member
-    from vollbuild.core.models.notification import Notification
+    from hubra.core.models.audit import AuditEntry
+    from hubra.core.models.finance import Invoice
+    from hubra.core.models.mail import MailboxFolder
+    from hubra.core.models.member import Member
+    from hubra.core.models.notification import Notification
 
     created = _create_member(client, auth_headers, email="permadelete@test.ch")
     member_id = created.get_json()["id"]

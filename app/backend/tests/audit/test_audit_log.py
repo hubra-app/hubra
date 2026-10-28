@@ -1,6 +1,6 @@
 """Tests for audit log denormalization and action filter (M003/S05)."""
 
-from vollbuild.api.utils import log_audit
+from hubra.api.utils import log_audit
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -13,8 +13,8 @@ def _get_audit(client, auth_headers, **params):
 
 
 def _make_member(db, seeded_db, first="Alice", last="Test", email="alice@test.ch"):
-    from vollbuild.core.models.member import Member
-    from vollbuild.core.models.user import User
+    from hubra.core.models.member import Member
+    from hubra.core.models.user import User
 
     user = User(
         email=email,

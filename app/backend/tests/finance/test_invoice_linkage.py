@@ -3,7 +3,7 @@
 import pytest
 from datetime import date
 
-from vollbuild.core.models.finance import Transaction, TransactionCategory
+from hubra.core.models.finance import Transaction, TransactionCategory
 
 
 @pytest.fixture

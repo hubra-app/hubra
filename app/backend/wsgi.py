@@ -9,7 +9,7 @@ And by flask CLI in development:
 """
 
 from werkzeug.middleware.proxy_fix import ProxyFix
-from vollbuild import create_app
+from hubra import create_app
 
 app = create_app()
 # One proxy hop for the API: external Traefik (edge) -> Flask.

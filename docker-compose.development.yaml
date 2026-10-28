@@ -22,7 +22,7 @@ services:
       - "5000:5000"
     volumes:
       - ./app/backend/migrations:/app/migrations
-      - ./app/backend/vollbuild:/app/vollbuild
+      - ./app/backend/hubra:/app/hubra
       - ./app/backend/seeds:/app/seeds
       - ./app/backend/scripts:/app/scripts
 
@@ -31,7 +31,7 @@ services:
       - hubra_internal
     volumes:
       - ./app/backend/migrations:/app/migrations
-      - ./app/backend/vollbuild:/app/vollbuild
+      - ./app/backend/hubra:/app/hubra
       - ./app/backend/seeds:/app/seeds
       - ./app/backend/scripts:/app/scripts
 

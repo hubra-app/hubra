@@ -118,7 +118,7 @@ services:
   celery-worker:
     <<: *backend-app
     restart: unless-stopped
-    command: celery -A vollbuild.core.tasks.celery_app worker --loglevel=info
+    command: celery -A hubra.core.tasks.celery_app worker --loglevel=info
     depends_on:
       flask-init:
         condition: service_completed_successfully
@@ -142,7 +142,7 @@ services:
   celery-beat:
     <<: *backend-app
     restart: unless-stopped
-    command: celery -A vollbuild.core.tasks.celery_app beat --loglevel=info --schedule /celerybeat/celerybeat-schedule
+    command: celery -A hubra.core.tasks.celery_app beat --loglevel=info --schedule /celerybeat/celerybeat-schedule
     volumes:
       - celerybeat_data:/celerybeat
     depends_on:

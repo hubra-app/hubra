@@ -16,7 +16,7 @@ from __future__ import annotations
 from unittest.mock import patch, MagicMock
 
 
-from vollbuild.api.permissions import (
+from hubra.api.permissions import (
     _get_role_permission_keys,
     _get_member_permission_keys,
     invalidate_role_permissions,
@@ -24,9 +24,9 @@ from vollbuild.api.permissions import (
     _get_redis_client,
     _mark_redis_down,
 )
-from vollbuild.core.models.member import Member
-from vollbuild.core.models.role import Role, Permission, RolePermission
-from vollbuild.core.models.user import User
+from hubra.core.models.member import Member
+from hubra.core.models.role import Role, Permission, RolePermission
+from hubra.core.models.user import User
 
 
 def _seed_perm(db, key: str) -> Permission:
@@ -67,7 +67,7 @@ class TestDBFallback:
         )
 
         # Force Redis to be unavailable
-        with patch("vollbuild.api.permissions._get_redis_client", return_value=None):
+        with patch("hubra.api.permissions._get_redis_client", return_value=None):
             keys = _get_role_permission_keys(role.id)
         assert keys == {"members.members.read", "groups.groups.read"}
 
@@ -96,7 +96,7 @@ class TestDBFallback:
         db.session.add(member)
         db.session.commit()
 
-        with patch("vollbuild.api.permissions._get_redis_client", return_value=None):
+        with patch("hubra.api.permissions._get_redis_client", return_value=None):
             keys = _get_member_permission_keys(member)
         assert keys == {"members.members.read", "events.events.create"}
 
@@ -106,7 +106,7 @@ class TestDBFallback:
         db.session.add(role)
         db.session.commit()
 
-        with patch("vollbuild.api.permissions._get_redis_client", return_value=None):
+        with patch("hubra.api.permissions._get_redis_client", return_value=None):
             keys = _get_role_permission_keys(role.id)
         assert keys == set()
 
@@ -127,9 +127,7 @@ class TestCacheHit:
             b"groups.groups.read",
         }
 
-        with patch(
-            "vollbuild.api.permissions._get_redis_client", return_value=mock_client
-        ):
+        with patch("hubra.api.permissions._get_redis_client", return_value=mock_client):
             keys = _get_role_permission_keys(role.id)
 
         assert keys == {"members.members.read", "groups.groups.read"}
@@ -159,9 +157,7 @@ class TestCacheHit:
         mock_client = MagicMock()
         mock_client.smembers.return_value = {b"members.members.read"}
 
-        with patch(
-            "vollbuild.api.permissions._get_redis_client", return_value=mock_client
-        ):
+        with patch("hubra.api.permissions._get_redis_client", return_value=mock_client):
             keys = _get_member_permission_keys(member)
 
         assert keys == {"members.members.read"}
@@ -178,9 +174,7 @@ class TestCacheInvalidation:
         role = _create_role_with_perms(db, ["members.members.read"])
 
         mock_client = MagicMock()
-        with patch(
-            "vollbuild.api.permissions._get_redis_client", return_value=mock_client
-        ):
+        with patch("hubra.api.permissions._get_redis_client", return_value=mock_client):
             invalidate_role_permissions(role.id)
 
         mock_client.delete.assert_any_call(f"perms:{role.id}")
@@ -188,9 +182,7 @@ class TestCacheInvalidation:
     def test_invalidate_member_permissions_deletes_key(self, db, seeded_db):
         """invalidate_member_permissions deletes the member cache key."""
         mock_client = MagicMock()
-        with patch(
-            "vollbuild.api.permissions._get_redis_client", return_value=mock_client
-        ):
+        with patch("hubra.api.permissions._get_redis_client", return_value=mock_client):
             invalidate_member_permissions(42)
 
         mock_client.delete.assert_called_once_with("perms:member:42")
@@ -218,9 +210,7 @@ class TestCacheInvalidation:
         db.session.commit()
 
         mock_client = MagicMock()
-        with patch(
-            "vollbuild.api.permissions._get_redis_client", return_value=mock_client
-        ):
+        with patch("hubra.api.permissions._get_redis_client", return_value=mock_client):
             invalidate_role_permissions(role.id)
 
         # Verify both role and member caches were deleted
@@ -234,7 +224,7 @@ class TestCacheInvalidation:
 
     def test_invalidate_with_no_redis_is_silent(self, db, seeded_db):
         """Cache invalidation doesn't raise when Redis is unavailable."""
-        with patch("vollbuild.api.permissions._get_redis_client", return_value=None):
+        with patch("hubra.api.permissions._get_redis_client", return_value=None):
             # Should not raise
             invalidate_role_permissions(999)
             invalidate_member_permissions(999)

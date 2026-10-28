@@ -1,6 +1,6 @@
 """Integration tests for GET/PUT /api/v1/roles and /api/v1/roles/{id}/permissions."""
 
-from vollbuild.core.models.role import Permission, Role
+from hubra.core.models.role import Permission, Role
 
 BASE = "/api/v1/roles"
 

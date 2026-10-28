@@ -12,8 +12,8 @@ def _create_item(client, auth_headers, **kwargs):
 
 
 def _make_member(db, seeded_db, first="Alice", last="Smith", email="alice@inv.ch"):
-    from vollbuild.core.models.member import Member
-    from vollbuild.core.models.user import User
+    from hubra.core.models.member import Member
+    from hubra.core.models.user import User
 
     user = User(email=email, first_name=first, last_name=last)
     user.set_password("pw")

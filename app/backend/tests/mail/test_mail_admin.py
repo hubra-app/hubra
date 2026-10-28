@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-from vollbuild.core.models.group import Group
-from vollbuild.core.models.managed_mail import ManagedMailAddress
-from vollbuild.core.models.setting import Setting
+from hubra.core.models.group import Group
+from hubra.core.models.managed_mail import ManagedMailAddress
+from hubra.core.models.setting import Setting
 
 
 def _ensure_mail_domain(db, domain: str = "club.ch"):
@@ -154,7 +154,7 @@ def test_resolve_local_part_collision_suffixes(client, db, seeded_db, auth_heade
 
 
 def test_serialize_includes_sync_error(client, db, seeded_db, auth_headers):
-    from vollbuild.core.services.managed_mail import serialize
+    from hubra.core.services.managed_mail import serialize
 
     addr = ManagedMailAddress(
         address="test@club.ch",
@@ -184,8 +184,8 @@ def test_wildduck_live_lists_managed_and_orphan(client, db, seeded_db, auth_head
     _make_member_mma(db, seeded_db["admin"].id, wildduck_id="5f8d0b1a2c3e4f5a6b7c8d9e")
     mock_wd = _mock_wd()
 
-    with patch("vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd):
-        with patch("vollbuild.api.mail.services.try_get_client", return_value=mock_wd):
+    with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
+        with patch("hubra.api.mail.services.try_get_client", return_value=mock_wd):
             resp = client.get("/api/v1/mail/wildduck-live", headers=auth_headers)
 
     assert resp.status_code == 200
@@ -207,8 +207,8 @@ def test_delete_orphan_mailbox(client, db, seeded_db, auth_headers):
     _ensure_mail_domain(db)
     mock_wd = _mock_wd()
 
-    with patch("vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd):
-        with patch("vollbuild.api.mail.services.try_get_client", return_value=mock_wd):
+    with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
+        with patch("hubra.api.mail.services.try_get_client", return_value=mock_wd):
             resp = client.delete(
                 "/api/v1/mail/wildduck-live/mailbox/aabbccddee11223344556677",
                 headers=auth_headers,
@@ -224,8 +224,8 @@ def test_delete_orphan_rejects_managed(client, db, seeded_db, auth_headers):
     _make_member_mma(db, seeded_db["admin"].id, wildduck_id="5f8d0b1a2c3e4f5a6b7c8d9e")
     mock_wd = _mock_wd()
 
-    with patch("vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd):
-        with patch("vollbuild.api.mail.services.try_get_client", return_value=mock_wd):
+    with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
+        with patch("hubra.api.mail.services.try_get_client", return_value=mock_wd):
             resp = client.delete(
                 "/api/v1/mail/wildduck-live/mailbox/5f8d0b1a2c3e4f5a6b7c8d9e",
                 headers=auth_headers,
@@ -239,8 +239,8 @@ def test_delete_orphan_alias(client, db, seeded_db, auth_headers):
     _ensure_mail_domain(db)
     mock_wd = _mock_wd()
 
-    with patch("vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd):
-        with patch("vollbuild.api.mail.services.try_get_client", return_value=mock_wd):
+    with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
+        with patch("hubra.api.mail.services.try_get_client", return_value=mock_wd):
             resp = client.delete(
                 "/api/v1/mail/wildduck-live/alias/aabbccddeeff001122334455",
                 headers=auth_headers,
@@ -265,7 +265,7 @@ def test_delete_orphan_invalid_type(client, db, seeded_db, auth_headers):
 
 
 def test_trigger_reconcile(client, db, seeded_db, auth_headers):
-    with patch("vollbuild.core.tasks.mail_tasks.reconcile_mail") as mock_task:
+    with patch("hubra.core.tasks.mail_tasks.reconcile_mail") as mock_task:
         mock_task.delay.return_value = None
         resp = client.post("/api/v1/mail/reconcile", headers=auth_headers)
 

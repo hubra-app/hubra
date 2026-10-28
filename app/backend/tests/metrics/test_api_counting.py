@@ -34,7 +34,7 @@ def _make_redis_mock():
 class TestApiCallCounting:
     """Tests for the API call counting middleware."""
 
-    @patch("vollbuild.api.metrics._get_redis_client")
+    @patch("hubra.api.metrics._get_redis_client")
     def test_request_increments_counter(self, mock_get_redis, client, db):
         """A successful API request increments the Redis counter."""
         mock_redis = _make_redis_mock()
@@ -47,7 +47,7 @@ class TestApiCallCounting:
         # In test mode there's no tenant, so counter shouldn't be incremented
         # (no tenant resolved = no counting). This is expected behavior.
 
-    @patch("vollbuild.api.metrics._get_redis_client")
+    @patch("hubra.api.metrics._get_redis_client")
     def test_options_not_counted(self, mock_get_redis, client, db):
         """OPTIONS requests are not counted."""
         mock_redis = _make_redis_mock()
@@ -60,7 +60,7 @@ class TestApiCallCounting:
         # Redis should not have been called at all
         mock_redis.pipeline.assert_not_called()
 
-    @patch("vollbuild.api.metrics._get_redis_client")
+    @patch("hubra.api.metrics._get_redis_client")
     def test_health_endpoint_not_counted(self, mock_get_redis, client, db):
         """Health endpoints are excluded from counting."""
         mock_redis = _make_redis_mock()
@@ -72,7 +72,7 @@ class TestApiCallCounting:
         # Health endpoints should not be counted
         mock_redis.pipeline.assert_not_called()
 
-    @patch("vollbuild.api.metrics._get_redis_client")
+    @patch("hubra.api.metrics._get_redis_client")
     def test_root_health_not_counted(self, mock_get_redis, client, db):
         """Root /health endpoint is excluded from counting."""
         mock_redis = _make_redis_mock()
@@ -83,7 +83,7 @@ class TestApiCallCounting:
 
         mock_redis.pipeline.assert_not_called()
 
-    @patch("vollbuild.api.metrics._get_redis_client")
+    @patch("hubra.api.metrics._get_redis_client")
     def test_error_response_not_counted_for_tenant(self, mock_get_redis, client, db):
         """Error responses are not counted in tenant-specific call counters.
 
@@ -101,7 +101,7 @@ class TestApiCallCounting:
             tenant_keys = [c for c in calls if "api:calls:" in c]
             assert len(tenant_keys) == 0
 
-    @patch("vollbuild.api.metrics._get_redis_client")
+    @patch("hubra.api.metrics._get_redis_client")
     def test_redis_unavailable_doesnt_break_request(self, mock_get_redis, client, db):
         """When Redis is unavailable, requests still succeed."""
         mock_get_redis.return_value = None
@@ -109,7 +109,7 @@ class TestApiCallCounting:
         resp = client.get("/api/v1/health")
         assert resp.status_code in (200, 503)
 
-    @patch("vollbuild.api.metrics._get_redis_client")
+    @patch("hubra.api.metrics._get_redis_client")
     def test_redis_exception_doesnt_break_request(self, mock_get_redis, client, db):
         """When Redis raises an exception, requests still succeed."""
         mock_redis = _make_redis_mock()
@@ -126,19 +126,19 @@ class TestApiCallCounting:
 class TestGetApiCalls30d:
     """Tests for the get_api_calls_30d helper function."""
 
-    @patch("vollbuild.api.metrics._get_redis_client")
+    @patch("hubra.api.metrics._get_redis_client")
     def test_returns_zero_when_redis_unavailable(self, mock_get_redis):
         """Returns 0 when Redis is unavailable."""
-        from vollbuild.api.metrics import get_api_calls_30d
+        from hubra.api.metrics import get_api_calls_30d
 
         mock_get_redis.return_value = None
         result = get_api_calls_30d(tenant_id=1)
         assert result == 0
 
-    @patch("vollbuild.api.metrics._get_redis_client")
+    @patch("hubra.api.metrics._get_redis_client")
     def test_sums_across_months(self, mock_get_redis):
         """Sums counters across current and previous months."""
-        from vollbuild.api.metrics import get_api_calls_30d
+        from hubra.api.metrics import get_api_calls_30d
 
         mock_redis = MagicMock()
         mock_get_redis.return_value = mock_redis
@@ -158,10 +158,10 @@ class TestGetApiCalls30d:
         # Should be at least 100 (current month) + 50 (prev months)
         assert result >= 150
 
-    @patch("vollbuild.api.metrics._get_redis_client")
+    @patch("hubra.api.metrics._get_redis_client")
     def test_handles_redis_exception(self, mock_get_redis):
         """Returns 0 when Redis raises an exception."""
-        from vollbuild.api.metrics import get_api_calls_30d
+        from hubra.api.metrics import get_api_calls_30d
 
         mock_redis = MagicMock()
         mock_redis.get.side_effect = Exception("Redis error")
@@ -179,7 +179,7 @@ class TestRedisKeyFormat:
 
     def test_redis_key_format(self):
         """Redis key follows api:calls:{tenant_id}:{YYYY-MM} format."""
-        from vollbuild.api.metrics import _redis_key
+        from hubra.api.metrics import _redis_key
 
         dt = datetime(2026, 7, 15, tzinfo=timezone.utc)
         key = _redis_key(tenant_id=42, dt=dt)
@@ -187,7 +187,7 @@ class TestRedisKeyFormat:
 
     def test_redis_key_tenant_isolation(self):
         """Different tenant IDs produce different keys."""
-        from vollbuild.api.metrics import _redis_key
+        from hubra.api.metrics import _redis_key
 
         dt = datetime(2026, 7, 15, tzinfo=timezone.utc)
         key1 = _redis_key(tenant_id=1, dt=dt)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from vollbuild.core.services.qr_reference import (
+from hubra.core.services.qr_reference import (
     _mod10recursive,
     generate_qrr_reference,
     parse_qrr_reference,

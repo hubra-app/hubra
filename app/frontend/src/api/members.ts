@@ -1,4 +1,4 @@
-import { apiFetch, apiFetchRaw } from '@vollbuild/api-client';
+import { apiFetch, apiFetchRaw } from '@hubra/api-client';
 import { getLookups } from "@/api/lookups";
 import type { Member } from "@/types";
 

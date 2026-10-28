@@ -1,8 +1,8 @@
 """Integration tests for retention_cleanup and reconcile_mail Celery tasks.
 
 Imports inside mail_tasks.py are deferred (inside function bodies), so patches
-must target the source modules (e.g. vollbuild.core.services.wildduck.try_get_client),
-not vollbuild.core.tasks.mail_tasks.*
+must target the source modules (e.g. hubra.core.services.wildduck.try_get_client),
+not hubra.core.tasks.mail_tasks.*
 """
 
 from __future__ import annotations
@@ -11,10 +11,10 @@ from datetime import datetime, timezone, timedelta
 from unittest.mock import MagicMock, patch
 
 
-from vollbuild.core.models.member import Member
-from vollbuild.core.models.group import Group
-from vollbuild.core.models.managed_mail import ManagedMailAddress
-from vollbuild.core.models.user import User
+from hubra.core.models.member import Member
+from hubra.core.models.group import Group
+from hubra.core.models.managed_mail import ManagedMailAddress
+from hubra.core.models.user import User
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -102,7 +102,7 @@ def _mock_wd_with_folders(folders: list[dict], messages_by_folder: dict) -> Magi
 
 def test_retention_cleanup_deletes_old_messages(app, db, seeded_db):
     """Member with retention_days=30; message 40 days old in INBOX → deleted."""
-    from vollbuild.core.tasks.mail_tasks import retention_cleanup
+    from hubra.core.tasks.mail_tasks import retention_cleanup
 
     now = datetime.now(timezone.utc)
     member = _make_member(
@@ -120,7 +120,7 @@ def test_retention_cleanup_deletes_old_messages(app, db, seeded_db):
         },
     )
 
-    with patch("vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd):
+    with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
         result = retention_cleanup.run()
 
     mock_wd.delete_user_message.assert_called_once_with("wd1", "inbox-id", "msg1")
@@ -130,7 +130,7 @@ def test_retention_cleanup_deletes_old_messages(app, db, seeded_db):
 
 def test_retention_cleanup_deletes_across_all_folders(app, db, seeded_db):
     """Old messages in both INBOX and Sent are deleted."""
-    from vollbuild.core.tasks.mail_tasks import retention_cleanup
+    from hubra.core.tasks.mail_tasks import retention_cleanup
 
     now = datetime.now(timezone.utc)
     member = _make_member(
@@ -152,7 +152,7 @@ def test_retention_cleanup_deletes_across_all_folders(app, db, seeded_db):
         },
     )
 
-    with patch("vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd):
+    with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
         result = retention_cleanup.run()
 
     assert result["deleted"] == 2
@@ -163,7 +163,7 @@ def test_retention_cleanup_deletes_across_all_folders(app, db, seeded_db):
 
 def test_retention_cleanup_skips_fresh_messages(app, db, seeded_db):
     """Member with retention_days=30; message 10 days old → not deleted."""
-    from vollbuild.core.tasks.mail_tasks import retention_cleanup
+    from hubra.core.tasks.mail_tasks import retention_cleanup
 
     now = datetime.now(timezone.utc)
     member = _make_member(
@@ -181,7 +181,7 @@ def test_retention_cleanup_skips_fresh_messages(app, db, seeded_db):
         },
     )
 
-    with patch("vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd):
+    with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
         result = retention_cleanup.run()
 
     mock_wd.delete_user_message.assert_not_called()
@@ -190,7 +190,7 @@ def test_retention_cleanup_skips_fresh_messages(app, db, seeded_db):
 
 def test_retention_cleanup_skips_no_wildduck_id(app, db, seeded_db):
     """Member MMA with no wildduck_user_id → filtered at DB query level."""
-    from vollbuild.core.tasks.mail_tasks import retention_cleanup
+    from hubra.core.tasks.mail_tasks import retention_cleanup
 
     member = _make_member(
         db,
@@ -201,7 +201,7 @@ def test_retention_cleanup_skips_no_wildduck_id(app, db, seeded_db):
     _make_member_mma(db, member, wildduck_user_id=None)
 
     mock_wd = MagicMock()
-    with patch("vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd):
+    with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
         result = retention_cleanup.run()
 
     mock_wd.list_mailboxes.assert_not_called()
@@ -210,7 +210,7 @@ def test_retention_cleanup_skips_no_wildduck_id(app, db, seeded_db):
 
 def test_retention_cleanup_skips_member_with_no_retention(app, db, seeded_db):
     """Member with retention_days=None on MMA and kind=member → skipped (retention OFF by default)."""
-    from vollbuild.core.tasks.mail_tasks import retention_cleanup
+    from hubra.core.tasks.mail_tasks import retention_cleanup
 
     now = datetime.now(timezone.utc)
     member = _make_member(
@@ -230,9 +230,9 @@ def test_retention_cleanup_skips_member_with_no_retention(app, db, seeded_db):
     mock_setting_svc = MagicMock()
     mock_setting_svc.get.return_value = None
 
-    with patch("vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd):
+    with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
         with patch(
-            "vollbuild.api.settings.services.SettingService.get",
+            "hubra.api.settings.services.SettingService.get",
             mock_setting_svc.get,
         ):
             result = retention_cleanup.run()
@@ -244,7 +244,7 @@ def test_retention_cleanup_skips_member_with_no_retention(app, db, seeded_db):
 
 def test_retention_cleanup_uses_mma_retention_days(app, db, seeded_db):
     """Member with retention_days=60 on MMA → messages older than 60 days deleted."""
-    from vollbuild.core.tasks.mail_tasks import retention_cleanup
+    from hubra.core.tasks.mail_tasks import retention_cleanup
 
     now = datetime.now(timezone.utc)
     member = _make_member(
@@ -262,7 +262,7 @@ def test_retention_cleanup_uses_mma_retention_days(app, db, seeded_db):
         },
     )
 
-    with patch("vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd):
+    with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
         result = retention_cleanup.run()
 
     mock_wd.delete_user_message.assert_called_once_with("wd1", "inbox-id", "msg1")
@@ -272,8 +272,8 @@ def test_retention_cleanup_uses_mma_retention_days(app, db, seeded_db):
 
 def test_retention_cleanup_wildduck_error_continues(app, db, seeded_db):
     """Two members; first raises WildDuckError; second succeeds → task completes."""
-    from vollbuild.core.services.wildduck import WildDuckError
-    from vollbuild.core.tasks.mail_tasks import retention_cleanup
+    from hubra.core.services.wildduck import WildDuckError
+    from hubra.core.tasks.mail_tasks import retention_cleanup
 
     now = datetime.now(timezone.utc)
     m1 = _make_member(
@@ -307,7 +307,7 @@ def test_retention_cleanup_wildduck_error_continues(app, db, seeded_db):
     mock_wd.list_mailboxes.side_effect = list_mailboxes_side
     mock_wd.list_user_messages.side_effect = list_messages_side
 
-    with patch("vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd):
+    with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
         result = retention_cleanup.run()
 
     assert result["errors"] == 1
@@ -320,8 +320,8 @@ def test_retention_cleanup_wildduck_error_continues(app, db, seeded_db):
 
 def test_cleanup_token_blocklist_deletes_old_tokens(app, db):
     """Tokens older than 30 days are removed; recent ones are kept."""
-    from vollbuild.core.models.token import TokenBlocklist
-    from vollbuild.core.tasks.mail_tasks import cleanup_token_blocklist
+    from hubra.core.models.token import TokenBlocklist
+    from hubra.core.tasks.mail_tasks import cleanup_token_blocklist
 
     old_token = TokenBlocklist(
         jti="old-jti",
@@ -353,7 +353,7 @@ def test_cleanup_token_blocklist_deletes_old_tokens(app, db):
 
 def test_cleanup_token_blocklist_no_old_tokens(app, db):
     """No tokens older than 30 days → deleted=0."""
-    from vollbuild.core.tasks.mail_tasks import cleanup_token_blocklist
+    from hubra.core.tasks.mail_tasks import cleanup_token_blocklist
 
     result = cleanup_token_blocklist.run()
     assert result["deleted"] == 0
@@ -361,8 +361,8 @@ def test_cleanup_token_blocklist_no_old_tokens(app, db):
 
 def test_reconcile_mail_provisions_unprovisioned_group_mma(app, db, seeded_db):
     """Group MMA with kind=group, address_type=mailbox → reconcile_mail provisions it."""
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
-    from vollbuild.core.tasks.mail_tasks import reconcile_mail
+    from hubra.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.tasks.mail_tasks import reconcile_mail
 
     group = _make_group(db, name="Unprov MMA Group")
     addr = ManagedMailAddress(
@@ -384,13 +384,13 @@ def test_reconcile_mail_provisions_unprovisioned_group_mma(app, db, seeded_db):
     mock_wd.list_user_addresses.return_value = {"results": []}
     mock_wd.add_address_to_user.return_value = {"id": "addr-001"}
 
-    with patch("vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd):
+    with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
         with patch(
-            "vollbuild.core.services.mail_provisioning.try_get_client",
+            "hubra.core.services.mail_provisioning.try_get_client",
             return_value=mock_wd,
         ):
             with patch(
-                "vollbuild.core.services.mail_provisioning._resolve_group_member_targets",
+                "hubra.core.services.mail_provisioning._resolve_group_member_targets",
                 return_value=["member@example.ch"],
             ):
                 result = reconcile_mail.run()
@@ -411,49 +411,49 @@ def test_reconcile_mail_provisions_unprovisioned_group_mma(app, db, seeded_db):
 
 def test_beat_schedule_contains_retention_cleanup():
     """celery_app beat_schedule includes retention-cleanup-daily."""
-    from vollbuild.core.tasks import celery_app
+    from hubra.core.tasks import celery_app
 
     assert "retention-cleanup-daily" in celery_app.conf.beat_schedule
 
 
 def test_beat_schedule_no_legacy_mail_reconcile():
     """The no-op 5-minute mail_reconcile was removed; reconcile_mail covers it."""
-    from vollbuild.core.tasks import celery_app
+    from hubra.core.tasks import celery_app
 
     assert "mail-reconcile-5min" not in celery_app.conf.beat_schedule
 
 
 def test_beat_schedule_contains_token_blocklist_cleanup():
     """celery_app beat_schedule includes cleanup-token-blocklist-daily."""
-    from vollbuild.core.tasks import celery_app
+    from hubra.core.tasks import celery_app
 
     assert "cleanup-token-blocklist-daily" in celery_app.conf.beat_schedule
 
 
 def test_beat_schedule_contains_reconcile_mail():
     """celery_app beat_schedule includes mail-reconcile-v2-15min."""
-    from vollbuild.core.tasks import celery_app
+    from hubra.core.tasks import celery_app
 
     assert "mail-reconcile-v2-15min" in celery_app.conf.beat_schedule
 
 
 def test_beat_schedule_contains_check_mailbox_quota():
     """celery_app beat_schedule includes check-mailbox-quota-hourly."""
-    from vollbuild.core.tasks import celery_app
+    from hubra.core.tasks import celery_app
 
     assert "check-mailbox-quota-hourly" in celery_app.conf.beat_schedule
 
 
 def test_beat_schedule_no_ensure_mmas_15min():
     """ensure-mmas-15min removed (redundant — reconcile_mail covers auto-creation)."""
-    from vollbuild.core.tasks import celery_app
+    from hubra.core.tasks import celery_app
 
     assert "ensure-mmas-15min" not in celery_app.conf.beat_schedule
 
 
 def test_beat_schedule_no_ensure_mmas_hourly():
     """Old hourly entry must be removed."""
-    from vollbuild.core.tasks import celery_app
+    from hubra.core.tasks import celery_app
 
     assert "ensure-mmas-hourly" not in celery_app.conf.beat_schedule
 
@@ -463,7 +463,7 @@ def test_beat_schedule_no_ensure_mmas_hourly():
 
 def test_resolve_local_part_normalizes(app, db):
     """resolve_local_part lowercases, replaces umlauts, collapses special chars."""
-    from vollbuild.core.services.mail_provisioning import resolve_local_part
+    from hubra.core.services.mail_provisioning import resolve_local_part
 
     assert resolve_local_part("Müller") == "mueller"
     assert resolve_local_part("MÖLLER") == "moeller"
@@ -475,7 +475,7 @@ def test_resolve_local_part_normalizes(app, db):
 
 def test_resolve_local_part_truncates(app, db):
     """Local part longer than 64 chars is truncated."""
-    from vollbuild.core.services.mail_provisioning import resolve_local_part
+    from hubra.core.services.mail_provisioning import resolve_local_part
 
     long_name = "a" * 100
     result = resolve_local_part(long_name)
@@ -485,7 +485,7 @@ def test_resolve_local_part_truncates(app, db):
 
 def test_resolve_local_part_empty_falls_back(app, db):
     """Empty or all-symbol local part falls back to 'mail'."""
-    from vollbuild.core.services.mail_provisioning import resolve_local_part
+    from hubra.core.services.mail_provisioning import resolve_local_part
 
     assert resolve_local_part("") == "mail"
     assert resolve_local_part("...") == "mail"
@@ -494,14 +494,14 @@ def test_resolve_local_part_empty_falls_back(app, db):
 
 def test_resolve_local_part_collision_suffixes(app, db):
     """When the local part is taken, appends smallest free integer."""
-    from vollbuild.core.models.setting import Setting
-    from vollbuild.core.services.mail_provisioning import resolve_local_part
+    from hubra.core.models.setting import Setting
+    from hubra.core.services.mail_provisioning import resolve_local_part
 
     Setting.__table__.create(db.session.get_bind(), checkfirst=True)
     db.session.add(Setting(key="mail.domain", value="vollbuild.ch"))
     db.session.commit()
 
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     mma = ManagedMailAddress(
         address="vorstand@vollbuild.ch",
@@ -531,7 +531,7 @@ def test_resolve_local_part_collision_suffixes(app, db):
 
 def test_resolve_local_part_free_when_not_taken(app, db):
     """Free local part returns as-is (after normalization)."""
-    from vollbuild.core.services.mail_provisioning import resolve_local_part
+    from hubra.core.services.mail_provisioning import resolve_local_part
 
     assert resolve_local_part("free-name") == "free-name"
 
@@ -539,11 +539,11 @@ def test_resolve_local_part_free_when_not_taken(app, db):
 # ── Provisioning primitive tests ──────────────────────────────────────────────
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
 def test_ensure_mailbox_creates(mock_tgc, app, db):
     """ensure_mailbox creates a new WildDuck user when wildduck_id is None."""
-    from vollbuild.core.services.mail_provisioning import ensure_mailbox
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.services.mail_provisioning import ensure_mailbox
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     mock_wd = MagicMock()
     mock_wd.create_user.return_value = {"id": "wd-new"}
@@ -567,11 +567,11 @@ def test_ensure_mailbox_creates(mock_tgc, app, db):
     assert mma.sync_state == "ok"
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
 def test_ensure_mailbox_updates(mock_tgc, app, db):
     """ensure_mailbox updates an existing WildDuck user when wildduck_id is set."""
-    from vollbuild.core.services.mail_provisioning import ensure_mailbox
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.services.mail_provisioning import ensure_mailbox
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     mock_wd = MagicMock()
     mock_wd.safe_get_user.return_value = {"id": "wd-existing"}
@@ -595,11 +595,11 @@ def test_ensure_mailbox_updates(mock_tgc, app, db):
     )
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
 def test_ensure_mailbox_recreates_when_not_found(mock_tgc, app, db):
     """Ensure_mailbox re-creates a user when wildduck_id returns 404."""
-    from vollbuild.core.services.mail_provisioning import ensure_mailbox
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.services.mail_provisioning import ensure_mailbox
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     mock_wd = MagicMock()
     mock_wd.safe_get_user.return_value = None  # user not found
@@ -623,11 +623,11 @@ def test_ensure_mailbox_recreates_when_not_found(mock_tgc, app, db):
     mock_wd.create_user.assert_called_once()
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
 def test_ensure_mailbox_skips_when_not_configured(mock_tgc, app, db):
     """ensure_mailbox is a no-op when WildDuck is not configured."""
-    from vollbuild.core.services.mail_provisioning import ensure_mailbox
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.services.mail_provisioning import ensure_mailbox
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     mock_tgc.return_value = None
 
@@ -645,11 +645,11 @@ def test_ensure_mailbox_skips_when_not_configured(mock_tgc, app, db):
     assert mma.wildduck_id is None
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
 def test_ensure_alias_for_mailbox(mock_tgc, app, db):
     """ensure_alias adds address to user when address_type is mailbox."""
-    from vollbuild.core.services.mail_provisioning import ensure_alias
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.services.mail_provisioning import ensure_alias
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     mock_wd = MagicMock()
     mock_wd.list_user_addresses.return_value = {"results": []}
@@ -674,11 +674,11 @@ def test_ensure_alias_for_mailbox(mock_tgc, app, db):
     assert mma.sync_state == "ok"
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
 def test_ensure_alias_forwarding(mock_tgc, app, db):
     """ensure_alias creates a forwarding alias when address_type is alias."""
-    from vollbuild.core.services.mail_provisioning import ensure_alias
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.services.mail_provisioning import ensure_alias
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     mock_wd = MagicMock()
     mock_wd.safe_get_address.return_value = None
@@ -705,11 +705,11 @@ def test_ensure_alias_forwarding(mock_tgc, app, db):
     assert mma.sync_state == "ok"
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
 def test_ensure_forwarding_sets_targets(mock_tgc, app, db):
     """ensure_forwarding updates user targets to the given list."""
-    from vollbuild.core.services.mail_provisioning import ensure_forwarding
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.services.mail_provisioning import ensure_forwarding
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     mock_wd = MagicMock()
     mock_tgc.return_value = mock_wd
@@ -733,11 +733,11 @@ def test_ensure_forwarding_sets_targets(mock_tgc, app, db):
     assert mma.sync_state == "ok"
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
 def test_ensure_absent_removes(mock_tgc, app, db):
     """ensure_absent removes WildDuck user/alias and clears wildduck_id."""
-    from vollbuild.core.services.mail_provisioning import ensure_absent
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.services.mail_provisioning import ensure_absent
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     mock_wd = MagicMock()
     mock_tgc.return_value = mock_wd
@@ -763,12 +763,12 @@ def test_ensure_absent_removes(mock_tgc, app, db):
 # ── reconcile_mail tests ────────────────────────────────────────────────────
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
-@patch("vollbuild.core.services.wildduck.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.wildduck.try_get_client")
 def test_reconcile_mail_provisions_mailbox(mock_wd_tgc, mock_mp_tgc, app, db):
     """reconcile_mail calls ensure_mailbox for mailbox-backed MMA."""
-    from vollbuild.core.tasks.mail_tasks import reconcile_mail
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.tasks.mail_tasks import reconcile_mail
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     mock_wd = MagicMock()
     mock_wd.create_user.return_value = {"id": "wd-created"}
@@ -792,12 +792,12 @@ def test_reconcile_mail_provisions_mailbox(mock_wd_tgc, mock_mp_tgc, app, db):
     mock_wd.create_user.assert_called_once()
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
-@patch("vollbuild.core.services.wildduck.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.wildduck.try_get_client")
 def test_reconcile_mail_removes_orphans(mock_wd_tgc, mock_mp_tgc, app, db):
     """reconcile_mail sweeps WildDuck users not backed by any MMA."""
-    from vollbuild.core.tasks.mail_tasks import reconcile_mail
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.tasks.mail_tasks import reconcile_mail
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     mock_wd = MagicMock()
     mock_wd.list_users.return_value = {
@@ -823,13 +823,13 @@ def test_reconcile_mail_removes_orphans(mock_wd_tgc, mock_mp_tgc, app, db):
     assert result["orphans_removed"] == 1
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
-@patch("vollbuild.core.services.wildduck.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.wildduck.try_get_client")
 def test_reconcile_mail_continues_on_error(mock_wd_tgc, mock_mp_tgc, app, db):
     """reconcile_mail increments error count and continues on WildDuckError."""
-    from vollbuild.core.services.wildduck import WildDuckError
-    from vollbuild.core.tasks.mail_tasks import reconcile_mail
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.services.wildduck import WildDuckError
+    from hubra.core.tasks.mail_tasks import reconcile_mail
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     mock_wd = MagicMock()
     mock_wd.create_user.side_effect = WildDuckError(503, "down")
@@ -851,13 +851,13 @@ def test_reconcile_mail_continues_on_error(mock_wd_tgc, mock_mp_tgc, app, db):
     assert result["errors"] == 1
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
-@patch("vollbuild.core.services.wildduck.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.wildduck.try_get_client")
 def test_reconcile_mail_provisions_active_member(
     mock_wd_tgc, mock_mp_tgc, app, db, seeded_db
 ):
     """reconcile_mail provisions mailbox for active member with kind=member."""
-    from vollbuild.core.tasks.mail_tasks import reconcile_mail
+    from hubra.core.tasks.mail_tasks import reconcile_mail
 
     mock_wd = MagicMock()
     mock_wd.create_user.return_value = {"id": "wd-member-001"}
@@ -876,15 +876,15 @@ def test_reconcile_mail_provisions_active_member(
     assert result["errors"] == 0
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
-@patch("vollbuild.core.services.wildduck.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.wildduck.try_get_client")
 def test_reconcile_mail_disables_archived_member(
     mock_wd_tgc, mock_mp_tgc, app, db, seeded_db
 ):
     """reconcile_mail sets disabled=True on WildDuck user for archived member."""
     from datetime import datetime, timezone
 
-    from vollbuild.core.tasks.mail_tasks import reconcile_mail
+    from hubra.core.tasks.mail_tasks import reconcile_mail
 
     mock_wd = MagicMock()
     mock_wd.list_users.return_value = {"results": []}
@@ -902,13 +902,13 @@ def test_reconcile_mail_disables_archived_member(
     assert result["errors"] == 0
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
-@patch("vollbuild.core.services.wildduck.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.wildduck.try_get_client")
 def test_reconcile_mail_disables_disabled_member(
     mock_wd_tgc, mock_mp_tgc, app, db, seeded_db
 ):
     """reconcile_mail sets disabled=True on WildDuck user for is_disabled member."""
-    from vollbuild.core.tasks.mail_tasks import reconcile_mail
+    from hubra.core.tasks.mail_tasks import reconcile_mail
 
     mock_wd = MagicMock()
     mock_wd.list_users.return_value = {"results": []}
@@ -924,13 +924,13 @@ def test_reconcile_mail_disables_disabled_member(
     assert result["errors"] == 0
 
 
-@patch("vollbuild.core.services.mail_provisioning.try_get_client")
-@patch("vollbuild.core.services.wildduck.try_get_client")
+@patch("hubra.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.wildduck.try_get_client")
 def test_reconcile_mail_skips_member_mma_enabled_false(
     mock_wd_tgc, mock_mp_tgc, app, db, seeded_db
 ):
     """reconcile_mail skips member MMA with enabled=False (continue, no provisioning)."""
-    from vollbuild.core.tasks.mail_tasks import reconcile_mail
+    from hubra.core.tasks.mail_tasks import reconcile_mail
 
     mock_wd = MagicMock()
     mock_wd.list_users.return_value = {"results": []}
@@ -947,12 +947,12 @@ def test_reconcile_mail_skips_member_mma_enabled_false(
     mock_wd.create_user.assert_not_called()
 
 
-@patch("vollbuild.core.services.email._send")
-@patch("vollbuild.core.services.wildduck.try_get_client")
+@patch("hubra.core.services.email._send")
+@patch("hubra.core.services.wildduck.try_get_client")
 def test_check_mailbox_quota_sends_alert(mock_tgc, mock_send, app, db):
     """check_mailbox_quota sends alert when mailbox is at/above 90%."""
-    from vollbuild.core.tasks.mail_tasks import check_mailbox_quota
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.tasks.mail_tasks import check_mailbox_quota
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     mock_wd = MagicMock()
     mock_wd.get_user_quota.return_value = {"allowed": 1000000, "used": 950000}
@@ -975,11 +975,11 @@ def test_check_mailbox_quota_sends_alert(mock_tgc, mock_send, app, db):
     assert mma.last_quota_alert_at is not None
 
 
-@patch("vollbuild.core.services.wildduck.try_get_client")
+@patch("hubra.core.services.wildduck.try_get_client")
 def test_check_mailbox_quota_skips_under_90(mock_tgc, app, db):
     """check_mailbox_quota does not alert when usage is under 90%."""
-    from vollbuild.core.tasks.mail_tasks import check_mailbox_quota
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.tasks.mail_tasks import check_mailbox_quota
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     mock_wd = MagicMock()
     mock_wd.get_user_quota.return_value = {"allowed": 1000000, "used": 500000}
@@ -1001,12 +1001,12 @@ def test_check_mailbox_quota_skips_under_90(mock_tgc, app, db):
     assert result["alerts_sent"] == 0
 
 
-@patch("vollbuild.core.services.wildduck.try_get_client")
+@patch("hubra.core.services.wildduck.try_get_client")
 def test_check_mailbox_quota_respects_cooldown(mock_tgc, app, db):
     """check_mailbox_quota does not re-alert within 24h cooldown."""
     from datetime import datetime, timedelta, timezone
-    from vollbuild.core.tasks.mail_tasks import check_mailbox_quota
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.tasks.mail_tasks import check_mailbox_quota
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     mock_wd = MagicMock()
     mock_wd.get_user_quota.return_value = {"allowed": 1000000, "used": 950000}
@@ -1030,10 +1030,10 @@ def test_check_mailbox_quota_respects_cooldown(mock_tgc, app, db):
     assert result["alerts_sent"] == 0
 
 
-@patch("vollbuild.core.services.wildduck.try_get_client")
+@patch("hubra.core.services.wildduck.try_get_client")
 def test_check_mailbox_quota_skips_no_client(mock_tgc, app, db):
     """check_mailbox_quota returns zeros when WildDuck is not configured."""
-    from vollbuild.core.tasks.mail_tasks import check_mailbox_quota
+    from hubra.core.tasks.mail_tasks import check_mailbox_quota
 
     mock_tgc.return_value = None
 

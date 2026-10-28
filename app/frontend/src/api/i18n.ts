@@ -1,4 +1,4 @@
-import { apiFetch, apiFetchRaw } from '@vollbuild/api-client';
+import { apiFetch, apiFetchRaw } from '@hubra/api-client';
 
 export async function fetchTranslations(
   locale: string,

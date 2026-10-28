@@ -11,12 +11,12 @@ Verifies new columns and defaults on:
 
 from datetime import date
 
-from vollbuild.core.models.function import Function, FunctionHolder
-from vollbuild.core.models.role import Role
-from vollbuild.core.models.tenant import Tenant
-from vollbuild.core.models.tenant_request import TenantRequest
-from vollbuild.core.models.user import User
-from vollbuild.core.models.user_tenant import UserTenant
+from hubra.core.models.function import Function, FunctionHolder
+from hubra.core.models.role import Role
+from hubra.core.models.tenant import Tenant
+from hubra.core.models.tenant_request import TenantRequest
+from hubra.core.models.user import User
+from hubra.core.models.user_tenant import UserTenant
 
 
 # ── UserTenant ────────────────────────────────────────────────────────────────

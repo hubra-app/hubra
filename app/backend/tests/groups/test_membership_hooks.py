@@ -9,10 +9,10 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-from vollbuild.core.models.group import Group
-from vollbuild.core.models.managed_mail import ManagedMailAddress
-from vollbuild.core.models.member import Member
-from vollbuild.core.models.user import User
+from hubra.core.models.group import Group
+from hubra.core.models.managed_mail import ManagedMailAddress
+from hubra.core.models.member import Member
+from hubra.core.models.user import User
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -49,7 +49,7 @@ def _make_member(db, seeded_db, *, email: str, **overrides) -> Member:
 
 def _add_member_to_group(db, member: Member, group: Group) -> None:
     from sqlalchemy import insert
-    from vollbuild.core.models.member import member_groups
+    from hubra.core.models.member import member_groups
 
     db.session.execute(
         insert(member_groups).values(member_id=member.id, group_id=group.id)
@@ -85,7 +85,7 @@ def test_add_member_triggers_managed_mail_sync(client, db, seeded_db, auth_heade
     member = _make_member(db, seeded_db, email="sync_add@test.ch")
 
     with patch(
-        "vollbuild.core.tasks.mail_tasks.reconcile_entity_forwarding_task"
+        "hubra.core.tasks.mail_tasks.reconcile_entity_forwarding_task"
     ) as mock_task:
         mock_task.delay = MagicMock()
         resp = client.post(
@@ -105,7 +105,7 @@ def test_remove_member_triggers_managed_mail_sync(client, db, seeded_db, auth_he
     _add_member_to_group(db, member, group)
 
     with patch(
-        "vollbuild.core.tasks.mail_tasks.reconcile_entity_forwarding_task"
+        "hubra.core.tasks.mail_tasks.reconcile_entity_forwarding_task"
     ) as mock_task:
         mock_task.delay = MagicMock()
         resp = client.delete(
@@ -123,7 +123,7 @@ def test_add_member_no_dispatch_when_no_mma(client, db, seeded_db, auth_headers)
     member = _make_member(db, seeded_db, email="no_mma@test.ch")
 
     with patch(
-        "vollbuild.core.tasks.mail_tasks.reconcile_entity_forwarding_task"
+        "hubra.core.tasks.mail_tasks.reconcile_entity_forwarding_task"
     ) as mock_task:
         mock_task.delay = MagicMock()
         resp = client.post(

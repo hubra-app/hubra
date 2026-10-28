@@ -10,7 +10,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 import { notifications as mantineNotifications } from '@mantine/notifications'
 import { getMyPermissions, logout as apiLogout, type PermissionsResponse } from '@/api/auth'
-import { hasTokens, setAuthFailureHandler, SSO_URL } from '@vollbuild/api-client'
+import { hasTokens, setAuthFailureHandler, SSO_URL } from '@hubra/api-client'
 
 export type AuthStatus = 'loading' | 'authed' | 'anon'
 

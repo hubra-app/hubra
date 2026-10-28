@@ -2,9 +2,9 @@
 
 from datetime import datetime, timedelta, timezone
 
-from vollbuild.core.extensions import db
-from vollbuild.core.models.device_session import Device, Session
-from vollbuild.core.redis_client import reset_redis_down
+from hubra.core.extensions import db
+from hubra.core.models.device_session import Device, Session
+from hubra.core.redis_client import reset_redis_down
 
 
 # ── Login creates Device + Session ───────────────────────────────────────────
@@ -66,7 +66,7 @@ def test_list_sessions_requires_auth(client, seeded_db):
 
 def test_list_sessions_excludes_revoked_by_default(client, seeded_db, db):
     """Revoked sessions are hidden by default but shown with include_revoked=1."""
-    from vollbuild.api.auth.services import AuthService
+    from hubra.api.auth.services import AuthService
 
     member = seeded_db["admin"]
     _, sid = AuthService.record_login(member, "192.168.1.1", "Mozilla/Chrome")
@@ -203,7 +203,7 @@ def test_logout_revokes_session(client, seeded_db):
 
 
 def test_new_device_detection_first_login(client, seeded_db):
-    from vollbuild.api.auth.services import AuthService
+    from hubra.api.auth.services import AuthService
 
     member = seeded_db["admin"]
     new_device, sid = AuthService.record_login(member, "192.168.1.1", "Mozilla/Chrome")
@@ -212,7 +212,7 @@ def test_new_device_detection_first_login(client, seeded_db):
 
 
 def test_same_fingerprint_not_new_device(client, seeded_db):
-    from vollbuild.api.auth.services import AuthService
+    from hubra.api.auth.services import AuthService
 
     member = seeded_db["admin"]
     AuthService.record_login(member, "192.168.1.1", "Mozilla/Chrome")
@@ -223,7 +223,7 @@ def test_same_fingerprint_not_new_device(client, seeded_db):
 
 
 def test_different_fingerprint_is_new_device(client, seeded_db):
-    from vollbuild.api.auth.services import AuthService, compute_fingerprint
+    from hubra.api.auth.services import AuthService, compute_fingerprint
 
     member = seeded_db["admin"]
     fp1 = compute_fingerprint({"User-Agent": "Mozilla/5.0 Chrome/149.0.0.0"})
@@ -241,7 +241,7 @@ def test_different_fingerprint_is_new_device(client, seeded_db):
 
 
 def test_record_login_reuses_active_session(client, seeded_db, db):
-    from vollbuild.api.auth.services import AuthService
+    from hubra.api.auth.services import AuthService
 
     member = seeded_db["admin"]
     _, sid1 = AuthService.record_login(member, "192.168.1.1", "Mozilla/Chrome")
@@ -261,7 +261,7 @@ def test_record_login_reuses_active_session(client, seeded_db, db):
 
 
 def test_record_login_creates_new_after_revoke(client, seeded_db, db):
-    from vollbuild.api.auth.services import AuthService
+    from hubra.api.auth.services import AuthService
 
     member = seeded_db["admin"]
     _, sid1 = AuthService.record_login(member, "192.168.1.1", "Mozilla/Chrome")
@@ -288,7 +288,7 @@ def test_record_login_creates_new_after_revoke(client, seeded_db, db):
 
 
 def test_compute_fingerprint_stable_across_version_changes():
-    from vollbuild.api.auth.services import compute_fingerprint
+    from hubra.api.auth.services import compute_fingerprint
 
     base = {
         "User-Agent": "Mozilla/5.0 Chrome/149.0.0.0 Safari/537.36",
@@ -305,7 +305,7 @@ def test_compute_fingerprint_stable_across_version_changes():
 
 
 def test_compute_fingerprint_stable_without_high_entropy():
-    from vollbuild.api.auth.services import compute_fingerprint
+    from hubra.api.auth.services import compute_fingerprint
 
     firefox = {
         "User-Agent": "Mozilla/5.0 Firefox/139.0",
@@ -317,7 +317,7 @@ def test_compute_fingerprint_stable_without_high_entropy():
 
 
 def test_compute_fingerprint_differs_on_browser():
-    from vollbuild.api.auth.services import compute_fingerprint
+    from hubra.api.auth.services import compute_fingerprint
 
     chrome = {"User-Agent": "Mozilla/5.0 Chrome/149.0.0.0", "Sec-CH-UA": '"Chromium"'}
     firefox = {"User-Agent": "Mozilla/5.0 Firefox/139.0"}
@@ -325,7 +325,7 @@ def test_compute_fingerprint_differs_on_browser():
 
 
 def test_compute_fingerprint_differs_on_platform():
-    from vollbuild.api.auth.services import compute_fingerprint
+    from hubra.api.auth.services import compute_fingerprint
 
     windows = {
         "User-Agent": "Mozilla/5.0 Chrome/149.0.0.0",
@@ -340,7 +340,7 @@ def test_compute_fingerprint_differs_on_platform():
 
 def test_accept_ch_not_on_api_responses(client):
     """Accept-CH is set by Caddy on frontend HTML, not on API JSON responses."""
-    from vollbuild.api.health.cache import HealthCache
+    from hubra.api.health.cache import HealthCache
 
     HealthCache.set({"status": "ok", "services": {}, "checked_at": 0})
     resp = client.get("/api/v1/health")
@@ -348,7 +348,7 @@ def test_accept_ch_not_on_api_responses(client):
 
 
 def test_new_device_notification_fires_on_new_fingerprint(client, seeded_db, db):
-    from vollbuild.api.auth.services import AuthService, compute_fingerprint
+    from hubra.api.auth.services import AuthService, compute_fingerprint
 
     member = seeded_db["admin"]
     fp1 = compute_fingerprint({"User-Agent": "Mozilla/5.0 Chrome/149.0.0.0"})
@@ -388,7 +388,7 @@ def test_admin_revoke_member_sessions(client, seeded_db, auth_headers):
 
 
 def test_cleanup_revoked_sessions(client, seeded_db, db):
-    from vollbuild.core.tasks.session_tasks import cleanup_revoked_sessions
+    from hubra.core.tasks.session_tasks import cleanup_revoked_sessions
 
     member = seeded_db["admin"]
     device = Device(
@@ -441,7 +441,7 @@ def test_cleanup_revoked_sessions(client, seeded_db, db):
 def test_is_session_revoked_skips_redis_when_down(app, db, seeded_db):
     from unittest.mock import patch, MagicMock
 
-    from vollbuild.api.auth import session_service
+    from hubra.api.auth import session_service
 
     member = seeded_db["admin"]
     device = Device(
@@ -481,7 +481,7 @@ def test_is_session_revoked_skips_redis_when_down(app, db, seeded_db):
 
 
 def test_update_last_seen_task_updates_member(app, db, seeded_db):
-    from vollbuild.core.tasks.session_tasks import update_last_seen
+    from hubra.core.tasks.session_tasks import update_last_seen
 
     member = seeded_db["admin"]
     assert member.last_seen is None
@@ -492,7 +492,7 @@ def test_update_last_seen_task_updates_member(app, db, seeded_db):
 
 
 def test_update_session_activity_task_updates_session(app, db, seeded_db):
-    from vollbuild.core.tasks.session_tasks import update_session_activity
+    from hubra.core.tasks.session_tasks import update_session_activity
 
     member = seeded_db["admin"]
     device = Device(
@@ -518,10 +518,10 @@ def test_update_session_activity_task_updates_session(app, db, seeded_db):
 
 def test_update_last_seen_task_swallows_errors(app):
     from unittest.mock import patch
-    from vollbuild.core.tasks.session_tasks import update_last_seen
+    from hubra.core.tasks.session_tasks import update_last_seen
 
     with patch(
-        "vollbuild.core.extensions.db.session.commit", side_effect=Exception("boom")
+        "hubra.core.extensions.db.session.commit", side_effect=Exception("boom")
     ):
         update_last_seen.run(99999)
 
@@ -529,8 +529,8 @@ def test_update_last_seen_task_swallows_errors(app):
 def test_after_request_dispatches_last_seen_task(client, auth_headers):
     from unittest.mock import patch
 
-    from vollbuild.core import app as app_module
-    from vollbuild.core.tasks.session_tasks import update_last_seen
+    from hubra.core import app as app_module
+    from hubra.core.tasks.session_tasks import update_last_seen
 
     with patch.object(update_last_seen, "run") as mock_run:
         app_module._last_seen_cache.clear()
@@ -541,8 +541,8 @@ def test_after_request_dispatches_last_seen_task(client, auth_headers):
 def test_after_request_throttles_last_seen(client, auth_headers):
     from unittest.mock import patch
 
-    from vollbuild.core import app as app_module
-    from vollbuild.core.tasks.session_tasks import update_last_seen
+    from hubra.core import app as app_module
+    from hubra.core.tasks.session_tasks import update_last_seen
 
     with patch.object(update_last_seen, "run") as mock_run:
         app_module._last_seen_cache.clear()
@@ -562,7 +562,7 @@ def test_refresh_dispatches_session_activity_task(client, seeded_db):
     )
 
     with patch(
-        "vollbuild.core.tasks.session_tasks.update_session_activity.run"
+        "hubra.core.tasks.session_tasks.update_session_activity.run"
     ) as mock_run:
         client.post("/api/v1/auth/refresh")
         mock_run.assert_called_once()

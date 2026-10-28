@@ -10,9 +10,9 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 
-from vollbuild.core.models.member import Member
-from vollbuild.core.models.managed_mail import ManagedMailAddress
-from vollbuild.core.models.user import User
+from hubra.core.models.member import Member
+from hubra.core.models.managed_mail import ManagedMailAddress
+from hubra.core.models.user import User
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -77,7 +77,7 @@ def test_patch_member_mail_flags(client, db, seeded_db, auth_headers):
     member = _make_member(db, seeded_db, email="flags@example.com")
     _make_member_mma(db, member, forwarding_enabled=False)
 
-    with patch("vollbuild.core.tasks.wildduck.provision_member_mail") as mock_task:
+    with patch("hubra.core.tasks.wildduck.provision_member_mail") as mock_task:
         mock_task.delay.return_value = None
         resp = client.patch(
             f"/api/v1/members/{member.id}",
@@ -149,11 +149,11 @@ def test_provision_endpoint_via_members(client, db, seeded_db, auth_headers):
     """POST /members/<id>/provision returns 202, writes audit entry, dispatches task."""
     from sqlalchemy import select
 
-    from vollbuild.core.models.audit import AuditEntry
+    from hubra.core.models.audit import AuditEntry
 
     member = _make_member(db, seeded_db, email="provision@example.com")
 
-    with patch("vollbuild.core.tasks.wildduck.provision_member_mail") as mock_task:
+    with patch("hubra.core.tasks.wildduck.provision_member_mail") as mock_task:
         mock_task.delay.return_value = None
         resp = client.post(
             f"/api/v1/members/{member.id}/provision",
@@ -179,7 +179,7 @@ def test_provision_endpoint_via_members(client, db, seeded_db, auth_headers):
 
 def test_provision_mail_creates_user_with_targets(app, db, seeded_db):
     """provision_member_mail creates mailbox and sets targets array for forwarding."""
-    from vollbuild.core.tasks.wildduck import provision_member_mail
+    from hubra.core.tasks.wildduck import provision_member_mail
 
     member = _make_member(db, seeded_db, email="forward@gmail.com")
     member.public_email = "alice@club.org"
@@ -195,14 +195,14 @@ def test_provision_mail_creates_user_with_targets(app, db, seeded_db):
 
     with patch.dict(app.config, {"MAIL_DOMAIN": "club.org"}):
         with patch(
-            "vollbuild.core.services.mail_provisioning.try_get_client",
+            "hubra.core.services.mail_provisioning.try_get_client",
             return_value=mock_wd,
         ):
             with patch(
-                "vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd
+                "hubra.core.services.wildduck.try_get_client", return_value=mock_wd
             ):
                 with patch(
-                    "vollbuild.core.services.mail_provisioning._get_club_domain",
+                    "hubra.core.services.mail_provisioning._get_club_domain",
                     return_value="club.org",
                 ):
                     provision_member_mail.run(member.id)
@@ -219,7 +219,7 @@ def test_provision_mail_creates_user_with_targets(app, db, seeded_db):
 
 def test_remove_for_member_ensure_absent(app, db, seeded_db):
     """remove_for_member uses ensure_absent to delete WildDuck user and MMA."""
-    from vollbuild.core.services.managed_mail import remove_for_member
+    from hubra.core.services.managed_mail import remove_for_member
 
     member = _make_member(db, seeded_db, email="disabled@gmail.com")
     addr = _make_member_mma(
@@ -230,7 +230,7 @@ def test_remove_for_member_ensure_absent(app, db, seeded_db):
     mock_wd.safe_delete_user.return_value = True
 
     with patch(
-        "vollbuild.core.services.mail_provisioning.try_get_client", return_value=mock_wd
+        "hubra.core.services.mail_provisioning.try_get_client", return_value=mock_wd
     ):
         remove_for_member(member.id)
 
@@ -249,7 +249,7 @@ def test_remove_for_member_ensure_absent(app, db, seeded_db):
 
 def test_provision_forwarding_loop_guard(app, db, seeded_db):
     """provision_member_mail skips forwarding when private email domain matches club domain."""
-    from vollbuild.core.tasks.wildduck import provision_member_mail
+    from hubra.core.tasks.wildduck import provision_member_mail
 
     member = _make_member(db, seeded_db, email="member@club.org")
     _make_member_mma(
@@ -262,14 +262,14 @@ def test_provision_forwarding_loop_guard(app, db, seeded_db):
 
     with patch.dict(app.config, {"MAIL_DOMAIN": "club.org"}):
         with patch(
-            "vollbuild.core.services.mail_provisioning.try_get_client",
+            "hubra.core.services.mail_provisioning.try_get_client",
             return_value=mock_wd,
         ):
             with patch(
-                "vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd
+                "hubra.core.services.wildduck.try_get_client", return_value=mock_wd
             ):
                 with patch(
-                    "vollbuild.core.services.mail_provisioning._get_club_domain",
+                    "hubra.core.services.mail_provisioning._get_club_domain",
                     return_value="club.org",
                 ):
                     provision_member_mail.run(member.id)
@@ -281,7 +281,7 @@ def test_provision_forwarding_loop_guard(app, db, seeded_db):
 
 def test_provision_no_forwarding_when_disabled(app, db, seeded_db):
     """provision_member_mail clears targets when forwarding_enabled=False."""
-    from vollbuild.core.tasks.wildduck import provision_member_mail
+    from hubra.core.tasks.wildduck import provision_member_mail
 
     member = _make_member(db, seeded_db, email="clearfwd@gmail.com")
     _make_member_mma(
@@ -296,13 +296,11 @@ def test_provision_no_forwarding_when_disabled(app, db, seeded_db):
     mock_wd.list_user_addresses.return_value = {"results": []}
 
     with patch(
-        "vollbuild.core.services.mail_provisioning.try_get_client", return_value=mock_wd
+        "hubra.core.services.mail_provisioning.try_get_client", return_value=mock_wd
     ):
-        with patch(
-            "vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd
-        ):
+        with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
             with patch(
-                "vollbuild.core.services.mail_provisioning._get_club_domain",
+                "hubra.core.services.mail_provisioning._get_club_domain",
                 return_value="club.ch",
             ):
                 provision_member_mail.run(member.id)
@@ -313,7 +311,7 @@ def test_provision_no_forwarding_when_disabled(app, db, seeded_db):
 
 def test_no_separate_forwarding_alias_created(app, db, seeded_db):
     """provision_member_mail uses targets array, not create_forwarding_alias."""
-    from vollbuild.core.tasks.wildduck import provision_member_mail
+    from hubra.core.tasks.wildduck import provision_member_mail
 
     member = _make_member(db, seeded_db, email="noalias@gmail.com")
     member.public_email = "noalias@club.org"
@@ -327,13 +325,11 @@ def test_no_separate_forwarding_alias_created(app, db, seeded_db):
     mock_wd.list_user_addresses.return_value = {"results": []}
 
     with patch(
-        "vollbuild.core.services.mail_provisioning.try_get_client", return_value=mock_wd
+        "hubra.core.services.mail_provisioning.try_get_client", return_value=mock_wd
     ):
-        with patch(
-            "vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd
-        ):
+        with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
             with patch(
-                "vollbuild.core.services.mail_provisioning._get_club_domain",
+                "hubra.core.services.mail_provisioning._get_club_domain",
                 return_value="other.org",
             ):
                 provision_member_mail.run(member.id)
@@ -352,8 +348,8 @@ def test_patch_member_group_add_dispatches_managed_mail_sync(
     client, db, seeded_db, auth_headers
 ):
     """PATCH /members/<id> with new group_ids dispatches reconcile_entity_forwarding for group MMA."""
-    from vollbuild.core.models.group import Group
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.models.group import Group
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     group = Group(name="MMASyncGroup")
     db.session.add(group)
@@ -371,7 +367,7 @@ def test_patch_member_group_add_dispatches_managed_mail_sync(
     member = _make_member(db, seeded_db, email="mma_sync@example.com")
 
     with patch(
-        "vollbuild.core.tasks.mail_tasks.reconcile_entity_forwarding_task"
+        "hubra.core.tasks.mail_tasks.reconcile_entity_forwarding_task"
     ) as mock_task:
         mock_task.delay = MagicMock()
         resp = client.patch(
@@ -388,7 +384,7 @@ def test_patch_member_no_sync_dispatch_for_group_without_mma(
     client, db, seeded_db, auth_headers
 ):
     """PATCH /members/<id> does NOT dispatch reconcile_entity_forwarding when group has no MMA."""
-    from vollbuild.core.models.group import Group
+    from hubra.core.models.group import Group
 
     group = Group(name="NoMMASyncGroup")
     db.session.add(group)
@@ -397,7 +393,7 @@ def test_patch_member_no_sync_dispatch_for_group_without_mma(
     member = _make_member(db, seeded_db, email="no_mma_sync@example.com")
 
     with patch(
-        "vollbuild.core.tasks.mail_tasks.reconcile_entity_forwarding_task"
+        "hubra.core.tasks.mail_tasks.reconcile_entity_forwarding_task"
     ) as mock_task:
         mock_task.delay = MagicMock()
         resp = client.patch(
@@ -413,12 +409,12 @@ def test_patch_member_no_sync_dispatch_for_group_without_mma(
 # ── GET /members/me/mail — mailbox status (from S04 mail wiring) ──────────────
 
 
-from vollbuild.core.services.wildduck import WildDuckError  # noqa: E402
+from hubra.core.services.wildduck import WildDuckError  # noqa: E402
 
 
 def _create_member_with_wildduck(db, **overrides):
     """Helper: Create a member with a WildDuck mailbox via MMA."""
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     data = {
         "first_name": "John",
@@ -472,7 +468,7 @@ def test_get_member_mail_provisioned(client, db, seeded_db):
     )
     headers = {}
 
-    with patch("vollbuild.api.members.services.try_get_client") as mock_try_get:
+    with patch("hubra.api.members.services.try_get_client") as mock_try_get:
         mock_wd = MagicMock()
         mock_try_get.return_value = mock_wd
 
@@ -518,7 +514,7 @@ def test_get_member_mail_service_unavailable(client, db, seeded_db):
     )
     headers = {}
 
-    with patch("vollbuild.api.members.services.try_get_client") as mock_try_get:
+    with patch("hubra.api.members.services.try_get_client") as mock_try_get:
         mock_wd = MagicMock()
         mock_try_get.return_value = mock_wd
 
@@ -542,7 +538,7 @@ def test_get_member_mail_no_client_configured(client, db, seeded_db):
     )
     headers = {}
 
-    with patch("vollbuild.api.members.services.try_get_client") as mock_try_get:
+    with patch("hubra.api.members.services.try_get_client") as mock_try_get:
         mock_try_get.return_value = None
 
         resp = client.get("/api/v1/members/me/mail", headers=headers)
@@ -569,7 +565,7 @@ def test_get_member_mail_with_quota_conversion(client, db, seeded_db):
     )
     headers = {}
 
-    with patch("vollbuild.api.members.services.try_get_client") as mock_try_get:
+    with patch("hubra.api.members.services.try_get_client") as mock_try_get:
         mock_wd = MagicMock()
         mock_try_get.return_value = mock_wd
 

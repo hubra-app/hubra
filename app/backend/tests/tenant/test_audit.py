@@ -2,8 +2,8 @@
 
 from sqlalchemy import select
 
-from vollbuild.core.models.tenant import Tenant, GlobalAuditEntry
-from vollbuild.core.tenant.service import TenantService
+from hubra.core.models.tenant import Tenant, GlobalAuditEntry
+from hubra.core.tenant.service import TenantService
 
 
 def test_global_audit_entry_model(db):
@@ -47,8 +47,8 @@ def test_provision_creates_audit_entry(db):
     from unittest.mock import patch
 
     with (
-        patch("vollbuild.core.tenant.service.create_tenant_schema"),
-        patch("vollbuild.core.tenant.service._seed_tenant"),
+        patch("hubra.core.tenant.service.create_tenant_schema"),
+        patch("hubra.core.tenant.service._seed_tenant"),
     ):
         tenant = TenantService.provision_tenant(name="Audited", slug="audited")
 

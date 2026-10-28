@@ -12,14 +12,14 @@ Build the backend for **VollBuild**, an admin panel for a hobby makerspace / clu
 - **JWT auth** via flask-jwt-extended (access + refresh tokens).
 - **Flask-CORS** enabled for the frontend origin.
 - DB: **SQLite** for dev, **PostgreSQL** for prod (driven by `DATABASE_URL`). No raw SQL — ORM only.
-- App runs via `flask run`; production via `gunicorn "vollbuild:create_app()"`.
+- App runs via `flask run`; production via `gunicorn "hubra:create_app()"`.
 - **Pytest** test suite (factory + in-memory SQLite fixtures), **Black** + **Ruff** formatting.
 - Config from env vars (`python-dotenv`): `SECRET_KEY`, `JWT_SECRET_KEY`, `DATABASE_URL`, `CORS_ORIGINS`, `ACCESS_TOKEN_MINUTES`, etc. Provide `.env.example`.
 
 ### Suggested layout
 
 ```
-vollbuild/
+hubra/
   __init__.py            # create_app, extension init, blueprint registration
   config.py              # Dev/Prod/Test configs
   extensions.py          # db, migrate, jwt, ma, cors singletons

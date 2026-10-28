@@ -11,7 +11,7 @@ Covers:
 from unittest.mock import patch, MagicMock
 
 
-from vollbuild.core.tasks.monitoring import (
+from hubra.core.tasks.monitoring import (
     task_failure_alert,
     check_api_error_rate,
     _failure_counts,
@@ -27,7 +27,7 @@ class TestTaskFailureAlert:
         _failure_counts.clear()
         _alert_cooldowns.clear()
 
-    @patch("vollbuild.core.tasks.monitoring.alert_error")
+    @patch("hubra.core.tasks.monitoring.alert_error")
     def test_sends_alert_on_failure(self, mock_alert):
         """Failure triggers a Discord alert."""
         sender = MagicMock()
@@ -44,7 +44,7 @@ class TestTaskFailureAlert:
         call_kwargs = mock_alert.call_args[1]
         assert "test_task" in call_kwargs["title"]
 
-    @patch("vollbuild.core.tasks.monitoring.alert_error")
+    @patch("hubra.core.tasks.monitoring.alert_error")
     def test_cooldown_prevents_repeated_alerts(self, mock_alert):
         """Second failure within cooldown window doesn't trigger another alert."""
         sender = MagicMock()
@@ -73,7 +73,7 @@ class TestTaskFailureAlert:
         # Should still be 1 (cooldown)
         assert mock_alert.call_count == 1
 
-    @patch("vollbuild.core.tasks.monitoring.alert_error")
+    @patch("hubra.core.tasks.monitoring.alert_error")
     def test_failure_count_tracked(self, mock_alert):
         """Failure count is tracked correctly."""
         sender = MagicMock()
@@ -96,7 +96,7 @@ class TestTaskFailureAlert:
 class TestCheckApiErrorRate:
     """Tests for API error rate checking."""
 
-    @patch("vollbuild.api.metrics._get_redis_client")
+    @patch("hubra.api.metrics._get_redis_client")
     def test_returns_ok_when_rate_low(self, mock_get_redis):
         """Returns ok when error rate is below threshold."""
         mock_redis = MagicMock()
@@ -107,8 +107,8 @@ class TestCheckApiErrorRate:
         assert result["status"] == "ok"
         assert result["rate"] == 0.05
 
-    @patch("vollbuild.core.tasks.monitoring.alert_error")
-    @patch("vollbuild.api.metrics._get_redis_client")
+    @patch("hubra.core.tasks.monitoring.alert_error")
+    @patch("hubra.api.metrics._get_redis_client")
     def test_alerts_when_rate_high(self, mock_get_redis, mock_alert):
         """Alerts when error rate exceeds threshold."""
         mock_redis = MagicMock()
@@ -120,14 +120,14 @@ class TestCheckApiErrorRate:
         assert result["rate"] == 0.5
         mock_alert.assert_called_once()
 
-    @patch("vollbuild.api.metrics._get_redis_client")
+    @patch("hubra.api.metrics._get_redis_client")
     def test_returns_skipped_when_redis_unavailable(self, mock_get_redis):
         """Returns skipped when Redis is unavailable."""
         mock_get_redis.return_value = None
         result = check_api_error_rate()
         assert result["status"] == "skipped"
 
-    @patch("vollbuild.api.metrics._get_redis_client")
+    @patch("hubra.api.metrics._get_redis_client")
     def test_returns_ok_when_no_traffic(self, mock_get_redis):
         """Returns ok when there's no traffic."""
         mock_redis = MagicMock()

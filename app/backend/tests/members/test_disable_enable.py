@@ -18,9 +18,9 @@ def test_self_delete_returns_403(client, seeded_db, auth_headers):
 def test_disabled_member_login_blocked(client, seeded_db, auth_headers):
     """Disable member then login returns 403 account_disabled."""
     # Create a regular member (no role)
-    from vollbuild.core.models.member import Member
-    from vollbuild.core.models.user import User
-    from vollbuild.core.extensions import db
+    from hubra.core.models.member import Member
+    from hubra.core.models.user import User
+    from hubra.core.extensions import db
 
     regular_user = User(
         email="regular@test.ch",
@@ -63,9 +63,9 @@ def test_disabled_member_login_blocked(client, seeded_db, auth_headers):
 
 def test_enable_restores_login(client, seeded_db, auth_headers):
     """Disable then enable then login succeeds."""
-    from vollbuild.core.models.member import Member
-    from vollbuild.core.models.user import User
-    from vollbuild.core.extensions import db
+    from hubra.core.models.member import Member
+    from hubra.core.models.user import User
+    from hubra.core.extensions import db
 
     regular_user = User(
         email="regular@test.ch",
@@ -126,9 +126,9 @@ def test_enable_restores_login(client, seeded_db, auth_headers):
 
 def test_disable_requires_permission(client, seeded_db):
     """Non-admin cannot disable returns 403."""
-    from vollbuild.core.models.member import Member
-    from vollbuild.core.models.user import User
-    from vollbuild.core.extensions import db
+    from hubra.core.models.member import Member
+    from hubra.core.models.user import User
+    from hubra.core.extensions import db
 
     # Create a non-admin member (no role)
     regular_user = User(
@@ -179,9 +179,9 @@ def test_cannot_disable_self(client, seeded_db, auth_headers):
 
 def test_cannot_disable_admin_role(client, seeded_db, auth_headers):
     """Cannot disable an Admin role member returns 409."""
-    from vollbuild.core.models.member import Member
-    from vollbuild.core.models.user import User
-    from vollbuild.core.extensions import db
+    from hubra.core.models.member import Member
+    from hubra.core.models.user import User
+    from hubra.core.extensions import db
 
     # Create another admin member
     admin2_user = User(
@@ -214,9 +214,9 @@ def test_cannot_disable_admin_role(client, seeded_db, auth_headers):
 
 def test_disable_member_returns_json(client, seeded_db, auth_headers):
     """POST /members/<id>/disable returns member JSON with is_disabled=true."""
-    from vollbuild.core.models.member import Member
-    from vollbuild.core.models.user import User
-    from vollbuild.core.extensions import db
+    from hubra.core.models.member import Member
+    from hubra.core.models.user import User
+    from hubra.core.extensions import db
 
     regular_user = User(
         email="regular@test.ch",
@@ -249,9 +249,9 @@ def test_disable_member_returns_json(client, seeded_db, auth_headers):
 
 def test_enable_member_returns_json(client, seeded_db, auth_headers):
     """POST /members/<id>/enable returns member JSON with is_disabled=false."""
-    from vollbuild.core.models.member import Member
-    from vollbuild.core.models.user import User
-    from vollbuild.core.extensions import db
+    from hubra.core.models.member import Member
+    from hubra.core.models.user import User
+    from hubra.core.extensions import db
 
     regular_user = User(
         email="regular@test.ch",
@@ -290,9 +290,9 @@ def test_disable_calls_disable_member_mail(client, seeded_db, auth_headers):
     """POST /members/<id>/disable calls disable_member_mail."""
     from unittest.mock import patch
 
-    from vollbuild.core.models.member import Member
-    from vollbuild.core.models.user import User
-    from vollbuild.core.extensions import db
+    from hubra.core.models.member import Member
+    from hubra.core.models.user import User
+    from hubra.core.extensions import db
 
     regular_user = User(
         email="mailhook@test.ch",
@@ -311,9 +311,7 @@ def test_disable_calls_disable_member_mail(client, seeded_db, auth_headers):
     db.session.add(regular)
     db.session.commit()
 
-    with patch(
-        "vollbuild.core.services.managed_mail.disable_member_mail"
-    ) as mock_disable:
+    with patch("hubra.core.services.managed_mail.disable_member_mail") as mock_disable:
         resp = client.post(
             f"/api/v1/members/{regular.id}/disable",
             headers=auth_headers,
@@ -327,9 +325,9 @@ def test_enable_calls_enable_member_mail(client, seeded_db, auth_headers):
     """POST /members/<id>/enable calls enable_member_mail."""
     from unittest.mock import patch
 
-    from vollbuild.core.models.member import Member
-    from vollbuild.core.models.user import User
-    from vollbuild.core.extensions import db
+    from hubra.core.models.member import Member
+    from hubra.core.models.user import User
+    from hubra.core.extensions import db
 
     regular_user = User(
         email="mailhook2@test.ch",
@@ -349,9 +347,7 @@ def test_enable_calls_enable_member_mail(client, seeded_db, auth_headers):
     db.session.add(regular)
     db.session.commit()
 
-    with patch(
-        "vollbuild.core.services.managed_mail.enable_member_mail"
-    ) as mock_enable:
+    with patch("hubra.core.services.managed_mail.enable_member_mail") as mock_enable:
         resp = client.post(
             f"/api/v1/members/{regular.id}/enable",
             headers=auth_headers,

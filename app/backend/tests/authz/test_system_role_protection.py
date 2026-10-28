@@ -1,7 +1,7 @@
 """Tests for system role protection — is_system roles cannot be modified or deleted."""
 
-from vollbuild.core.extensions import db
-from vollbuild.core.models.role import Role
+from hubra.core.extensions import db
+from hubra.core.models.role import Role
 
 
 def test_cannot_delete_system_role(client, seeded_db, auth_headers):

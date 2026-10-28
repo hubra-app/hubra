@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, patch
 
 from sqlalchemy import select
 
-from vollbuild.core.models.group import Group
-from vollbuild.core.models.managed_mail import ManagedMailAddress
+from hubra.core.models.group import Group
+from hubra.core.models.managed_mail import ManagedMailAddress
 from tests.helpers import patch_mail_domain
 
 
@@ -57,7 +57,7 @@ def test_toggle_group_mail_disable(client, db, seeded_db, auth_headers):
     mock_wd = MagicMock()
     mock_wd.safe_get_user.return_value = {"id": "wd-user-001"}
     with patch(
-        "vollbuild.core.services.mail_provisioning.try_get_client", return_value=mock_wd
+        "hubra.core.services.mail_provisioning.try_get_client", return_value=mock_wd
     ):
         resp = client.patch(
             f"/api/v1/mail/groups/{group.id}/toggle",
@@ -96,10 +96,10 @@ def test_toggle_group_mail_enable(client, db, seeded_db, auth_headers):
     mock_wd.list_user_addresses.return_value = {"results": []}
     mock_wd.add_address_to_user.return_value = {"id": "addr-001"}
     with patch(
-        "vollbuild.core.services.mail_provisioning.try_get_client", return_value=mock_wd
+        "hubra.core.services.mail_provisioning.try_get_client", return_value=mock_wd
     ):
         with patch(
-            "vollbuild.core.services.mail_provisioning._resolve_group_member_targets",
+            "hubra.core.services.mail_provisioning._resolve_group_member_targets",
             return_value=["member@example.ch"],
         ):
             resp = client.patch(
@@ -176,10 +176,10 @@ def test_change_group_mail_prefix(client, db, seeded_db, auth_headers):
     mock_wd.list_user_addresses.return_value = {"results": []}
     mock_wd.add_address_to_user.return_value = {"id": "addr-new"}
     with patch(
-        "vollbuild.core.services.mail_provisioning.try_get_client", return_value=mock_wd
+        "hubra.core.services.mail_provisioning.try_get_client", return_value=mock_wd
     ):
         with patch(
-            "vollbuild.core.services.mail_provisioning._resolve_group_member_targets",
+            "hubra.core.services.mail_provisioning._resolve_group_member_targets",
             return_value=["target@example.ch"],
         ):
             with patch_mail_domain("club.ch"):
@@ -221,11 +221,11 @@ def test_change_group_mail_prefix_normalizes(client, db, seeded_db, auth_headers
     mock_wd.list_user_addresses.return_value = {"results": []}
     with patch_mail_domain("club.ch"):
         with patch(
-            "vollbuild.core.services.mail_provisioning.try_get_client",
+            "hubra.core.services.mail_provisioning.try_get_client",
             return_value=mock_wd,
         ):
             with patch(
-                "vollbuild.core.services.mail_provisioning._resolve_group_member_targets",
+                "hubra.core.services.mail_provisioning._resolve_group_member_targets",
                 return_value=[],
             ):
                 resp = client.patch(
@@ -287,7 +287,7 @@ def test_create_group_alias(client, db, seeded_db, auth_headers):
 
     with patch_mail_domain("club.ch"):
         with patch(
-            "vollbuild.core.services.wildduck.try_get_client", return_value=MagicMock()
+            "hubra.core.services.wildduck.try_get_client", return_value=MagicMock()
         ):
             resp = client.post(
                 f"/api/v1/mail/groups/{group.id}/aliases",
@@ -377,7 +377,7 @@ def test_delete_group_alias(client, db, seeded_db, auth_headers):
 
     mock_wd = MagicMock()
     with patch(
-        "vollbuild.core.services.mail_provisioning.try_get_client", return_value=mock_wd
+        "hubra.core.services.mail_provisioning.try_get_client", return_value=mock_wd
     ):
         resp = client.delete(
             f"/api/v1/mail/groups/{group.id}/aliases/{alias.id}",
@@ -413,7 +413,7 @@ def test_delete_group_alias_of_protected_parent(client, db, seeded_db, auth_head
 
     mock_wd = MagicMock()
     with patch(
-        "vollbuild.core.services.mail_provisioning.try_get_client", return_value=mock_wd
+        "hubra.core.services.mail_provisioning.try_get_client", return_value=mock_wd
     ):
         resp = client.delete(
             f"/api/v1/mail/groups/{group.id}/aliases/{alias.id}",
@@ -456,7 +456,7 @@ def test_create_system_address(client, db, seeded_db, auth_headers):
     """POST /mail/system-addresses creates a new system address."""
     mock_wd = MagicMock()
     mock_wd.create_forwarding_alias.return_value = {"id": "wd-sys-001"}
-    with patch("vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd):
+    with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
         with patch_mail_domain("club.ch"):
             resp = client.post(
                 "/api/v1/mail/system-addresses",
@@ -480,12 +480,12 @@ def test_create_system_address(client, db, seeded_db, auth_headers):
 
 def test_system_mailbox_gets_random_wildduck_password(app, db, seeded_db):
     """A system mailbox with forwarding never gets a fixed, guessable password."""
-    from vollbuild.core.services.managed_mail import create_system_address
+    from hubra.core.services.managed_mail import create_system_address
 
     mock_wd = MagicMock()
     mock_wd.create_user.return_value = {"id": "wd-sys-mbx"}
     mock_wd.create_forward_filter.return_value = {"id": "f-1"}
-    with patch("vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd):
+    with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
         create_system_address(
             "sysbox@club.ch", "mailbox", forward_targets=["t@example.ch"]
         )
@@ -529,7 +529,7 @@ def test_delete_unprotected_system_address(client, db, seeded_db, auth_headers):
     addr_id = addr.id
 
     mock_wd = MagicMock()
-    with patch("vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd):
+    with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
         resp = client.delete(
             f"/api/v1/mail/system-addresses/{addr_id}",
             headers=auth_headers,
@@ -553,9 +553,9 @@ def test_toggle_system_address(client, db, seeded_db, auth_headers):
     )
 
     mock_wd = MagicMock()
-    with patch("vollbuild.core.services.wildduck.try_get_client", return_value=mock_wd):
+    with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
         with patch(
-            "vollbuild.core.services.managed_mail.resolve_alias_targets",
+            "hubra.core.services.managed_mail.resolve_alias_targets",
             return_value=["target@example.ch"],
         ):
             resp = client.patch(
@@ -574,7 +574,7 @@ def test_toggle_system_address(client, db, seeded_db, auth_headers):
 
 def test_toggle_function_mail(client, db, seeded_db, auth_headers):
     """PATCH /mail/functions/<id>/toggle toggles function mail."""
-    from vollbuild.core.models.function import Function
+    from hubra.core.models.function import Function
 
     fn = Function(name="TestToggleFn")
     db.session.add(fn)
@@ -595,7 +595,7 @@ def test_toggle_function_mail(client, db, seeded_db, auth_headers):
 
     mock_wd = MagicMock()
     with patch(
-        "vollbuild.core.services.mail_provisioning.try_get_client", return_value=mock_wd
+        "hubra.core.services.mail_provisioning.try_get_client", return_value=mock_wd
     ):
         resp = client.patch(
             f"/api/v1/mail/functions/{fn.id}/toggle",
@@ -611,7 +611,7 @@ def test_toggle_function_mail(client, db, seeded_db, auth_headers):
 
 def test_create_function_alias(client, db, seeded_db, auth_headers):
     """POST /mail/functions/<id>/aliases creates an additional MMA alias."""
-    from vollbuild.core.models.function import Function
+    from hubra.core.models.function import Function
 
     fn = Function(name="TestAliasFn")
     db.session.add(fn)
@@ -630,7 +630,7 @@ def test_create_function_alias(client, db, seeded_db, auth_headers):
     mock_wd = MagicMock()
     mock_wd.create_forwarding_alias.return_value = {"id": "wd-fn-alias-001"}
     with patch(
-        "vollbuild.core.services.mail_provisioning.try_get_client", return_value=mock_wd
+        "hubra.core.services.mail_provisioning.try_get_client", return_value=mock_wd
     ):
         with patch_mail_domain("club.ch"):
             resp = client.post(
@@ -650,7 +650,7 @@ def test_create_function_alias(client, db, seeded_db, auth_headers):
 
 
 def test_validate_mail_prefix_valid():
-    from vollbuild.core.services.managed_mail import validate_mail_prefix
+    from hubra.core.services.managed_mail import validate_mail_prefix
 
     assert validate_mail_prefix("vorstand") == "vorstand"
     assert validate_mail_prefix("  Info  ") == "info"
@@ -659,7 +659,7 @@ def test_validate_mail_prefix_valid():
 
 
 def test_validate_mail_prefix_invalid():
-    from vollbuild.core.services.managed_mail import validate_mail_prefix
+    from hubra.core.services.managed_mail import validate_mail_prefix
 
     import pytest as _pytest
 
@@ -669,7 +669,7 @@ def test_validate_mail_prefix_invalid():
 
 
 def test_normalize_prefix_from_name():
-    from vollbuild.core.services.managed_mail import normalize_prefix_from_name
+    from hubra.core.services.managed_mail import normalize_prefix_from_name
 
     assert normalize_prefix_from_name("Vorstand") == "vorstand"
     assert normalize_prefix_from_name("IT & Technik") == "ittechnik"
@@ -678,7 +678,7 @@ def test_normalize_prefix_from_name():
 
 
 def test_serialize_includes_new_fields():
-    from vollbuild.core.services.managed_mail import serialize
+    from hubra.core.services.managed_mail import serialize
 
     addr = ManagedMailAddress(
         address="test@club.ch",
@@ -706,8 +706,8 @@ def test_serialize_includes_new_fields():
 
 def test_seed_creates_system_addresses(db):
     """Seed function creates system addresses: noreply, postmaster, info, abuse."""
-    from vollbuild.core.models.setting import Setting
-    from vollbuild.core.seeds import run_seeds
+    from hubra.core.models.setting import Setting
+    from hubra.core.seeds import run_seeds
 
     db.session.add(Setting(key="mail.domain", value="club.ch"))
     db.session.commit()
@@ -754,8 +754,8 @@ def test_seed_creates_system_addresses(db):
 
 def test_seed_system_aliases_forward_to_postmaster(db):
     """Seed creates info@, abuse@, *@ aliases that forward to postmaster@."""
-    from vollbuild.core.models.setting import Setting
-    from vollbuild.core.seeds import run_seeds
+    from hubra.core.models.setting import Setting
+    from hubra.core.seeds import run_seeds
 
     db.session.add(Setting(key="mail.domain", value="club.ch"))
     db.session.commit()
@@ -789,7 +789,7 @@ def test_mail_health_not_gated_by_mail_feature(client, db, seeded_db, auth_heade
     from tests.helpers import set_modules
 
     set_modules(False, "mail")
-    with patch("vollbuild.core.services.wildduck.try_get_client", return_value=None):
+    with patch("hubra.core.services.wildduck.try_get_client", return_value=None):
         resp = client.get("/api/v1/mail/health", headers=auth_headers)
         gated = client.get("/api/v1/mail/system-addresses", headers=auth_headers)
 

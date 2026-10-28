@@ -62,7 +62,7 @@ via environment variables using double-underscore as a nested delimiter:
 
 Which modules (events, finance, mail, ...) a club uses is not set here: club
 admins switch them under Settings > Modules, and platform managers can block
-a module per club. See `app/backend/vollbuild/modules/README.md`.
+a module per club. See `app/backend/hubra/modules/README.md`.
 
 ```yaml
 limits:

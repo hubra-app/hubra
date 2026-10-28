@@ -120,8 +120,8 @@ def test_create_membership_invoice_without_member_returns_400(
 def test_create_member_invoice_purpose_other_with_category(
     client, auth_headers, seeded_db
 ):
-    from vollbuild.core.models.finance import TransactionCategory
-    from vollbuild.core.extensions import db
+    from hubra.core.models.finance import TransactionCategory
+    from hubra.core.extensions import db
 
     cat = TransactionCategory(name="Events", color="#27ae60")
     db.session.add(cat)
@@ -138,7 +138,7 @@ def test_create_member_invoice_purpose_other_with_category(
     body = resp.get_json()
     assert body["purpose"] == "other"
 
-    from vollbuild.core.models.finance import Invoice
+    from hubra.core.models.finance import Invoice
 
     inv = db.session.get(Invoice, body["id"])
     db.session.get(
@@ -151,8 +151,8 @@ def test_create_member_invoice_purpose_other_with_category(
 def test_create_member_invoice_purpose_membership_default_category(
     client, auth_headers, seeded_db
 ):
-    from vollbuild.core.models.finance import TransactionCategory
-    from vollbuild.core.extensions import db
+    from hubra.core.models.finance import TransactionCategory
+    from hubra.core.extensions import db
 
     cat = TransactionCategory(name="Membership", color="#2596be")
     db.session.add(cat)
@@ -167,7 +167,7 @@ def test_create_member_invoice_purpose_membership_default_category(
     body = resp.get_json()
     assert body["purpose"] == "membership"
 
-    from vollbuild.core.models.finance import Invoice
+    from hubra.core.models.finance import Invoice
 
     inv = db.session.get(Invoice, body["id"])
     assert inv.transaction is not None
@@ -177,8 +177,8 @@ def test_create_member_invoice_purpose_membership_default_category(
 def test_create_external_invoice_linked_tx_has_payee_name(
     client, auth_headers, seeded_db
 ):
-    from vollbuild.core.models.finance import TransactionCategory
-    from vollbuild.core.extensions import db
+    from hubra.core.models.finance import TransactionCategory
+    from hubra.core.extensions import db
 
     cat = TransactionCategory(name="Membership", color="#2596be")
     db.session.add(cat)
@@ -193,7 +193,7 @@ def test_create_external_invoice_linked_tx_has_payee_name(
     assert resp.status_code == 201
     inv_id = resp.get_json()["id"]
 
-    from vollbuild.core.models.finance import Invoice
+    from hubra.core.models.finance import Invoice
 
     inv = db.session.get(Invoice, inv_id)
     assert inv.transaction is not None
@@ -282,7 +282,7 @@ def test_remind_external_invoice_dispatches_email(client, auth_headers, seeded_d
     )
     inv_id = created.get_json()["id"]
 
-    with patch("vollbuild.core.tasks.email_tasks.send_email_task.delay") as mock_delay:
+    with patch("hubra.core.tasks.email_tasks.send_email_task.delay") as mock_delay:
         resp = client.post(
             f"/api/v1/finance/invoices/{inv_id}/remind", headers=auth_headers
         )
@@ -303,7 +303,7 @@ def test_remind_external_invoice_no_email(client, auth_headers, seeded_db):
     )
     inv_id = created.get_json()["id"]
 
-    with patch("vollbuild.core.tasks.email_tasks.send_email_task.delay") as mock_delay:
+    with patch("hubra.core.tasks.email_tasks.send_email_task.delay") as mock_delay:
         resp = client.post(
             f"/api/v1/finance/invoices/{inv_id}/remind", headers=auth_headers
         )

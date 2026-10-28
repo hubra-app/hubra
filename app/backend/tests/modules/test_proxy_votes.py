@@ -5,11 +5,11 @@ from __future__ import annotations
 import pytest
 from sqlalchemy import select
 
-from vollbuild.api.polls.services import PollService, ProxyService
-from vollbuild.core.errors import ApiError
-from vollbuild.core.models.member import Member
-from vollbuild.core.models.poll import Poll, PollOption, PollVote
-from vollbuild.core.models.user import User
+from hubra.api.polls.services import PollService, ProxyService
+from hubra.core.errors import ApiError
+from hubra.core.models.member import Member
+from hubra.core.models.poll import Poll, PollOption, PollVote
+from hubra.core.models.user import User
 
 
 def _member(db, seeded_db, email):

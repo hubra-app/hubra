@@ -20,7 +20,7 @@ from unittest.mock import MagicMock, patch
 
 def _seed_application(db):
     """Create a pending application and return it."""
-    from vollbuild.core.models.application import Application
+    from hubra.core.models.application import Application
 
     app = Application(name="New Member", email="newmember@test.ch")
     db.session.add(app)
@@ -31,8 +31,8 @@ def _seed_application(db):
 def _seed_admin_role_and_tier(db):
     """Ensure a 'Member' role and default tier exist for approve_application."""
     from sqlalchemy import select
-    from vollbuild.core.models.member import MembershipTier
-    from vollbuild.core.models.role import Role
+    from hubra.core.models.member import MembershipTier
+    from hubra.core.models.role import Role
 
     role = db.session.scalar(select(Role).where(Role.name == "Member"))
     if role is None:
@@ -59,8 +59,8 @@ def test_approve_creates_member_with_must_change_password(
 
     # Mock WildDuck and email so approve_application doesn't blow up
     with (
-        patch("vollbuild.core.services.wildduck.try_get_client", return_value=None),
-        patch("vollbuild.core.services.email._send"),
+        patch("hubra.core.services.wildduck.try_get_client", return_value=None),
+        patch("hubra.core.services.email._send"),
     ):
         resp = client.post(
             f"/api/v1/applications/{application.id}/approve",
@@ -85,19 +85,19 @@ def test_approve_dispatches_wildduck_task(client, app, auth_headers, seeded_db, 
     # Mock the Celery task module via sys.modules injection
     mock_create_task = MagicMock()
     mock_create_task.delay = MagicMock()
-    fake_wildduck_tasks = types.ModuleType("vollbuild.core.tasks.wildduck")
+    fake_wildduck_tasks = types.ModuleType("hubra.core.tasks.wildduck")
     fake_wildduck_tasks.sync_wildduck_password = MagicMock()
     fake_wildduck_tasks.create_wildduck_user = mock_create_task
-    sys.modules["vollbuild.core.tasks.wildduck"] = fake_wildduck_tasks
+    sys.modules["hubra.core.tasks.wildduck"] = fake_wildduck_tasks
 
     try:
-        with patch("vollbuild.core.services.email._send"):
+        with patch("hubra.core.services.email._send"):
             resp = client.post(
                 f"/api/v1/applications/{application.id}/approve",
                 headers=auth_headers,
             )
     finally:
-        sys.modules.pop("vollbuild.core.tasks.wildduck", None)
+        sys.modules.pop("hubra.core.tasks.wildduck", None)
         app.config["MAIL_DOMAIN"] = ""
         app.config["WILDDUCK_API_URL"] = ""
         app.config["WILDDUCK_API_TOKEN"] = ""
@@ -119,14 +119,14 @@ def test_approve_dispatches_welcome_email(client, app, auth_headers, seeded_db, 
     # Mock the email Celery task module
     mock_email_task = MagicMock()
     mock_email_task.delay = MagicMock()
-    fake_email_tasks = types.ModuleType("vollbuild.core.tasks.email_tasks")
+    fake_email_tasks = types.ModuleType("hubra.core.tasks.email_tasks")
     fake_email_tasks.send_email_task = mock_email_task
-    sys.modules["vollbuild.core.tasks.email_tasks"] = fake_email_tasks
+    sys.modules["hubra.core.tasks.email_tasks"] = fake_email_tasks
 
     try:
         with (
-            patch("vollbuild.core.services.wildduck.try_get_client", return_value=None),
-            patch("vollbuild.core.services.email._send") as mock_send,
+            patch("hubra.core.services.wildduck.try_get_client", return_value=None),
+            patch("hubra.core.services.email._send") as mock_send,
         ):
             resp = client.post(
                 f"/api/v1/applications/{application.id}/approve",
@@ -135,7 +135,7 @@ def test_approve_dispatches_welcome_email(client, app, auth_headers, seeded_db, 
             # Email service should be called (either directly or via task)
             email_sent = mock_send.called or mock_email_task.delay.called
     finally:
-        sys.modules.pop("vollbuild.core.tasks.email_tasks", None)
+        sys.modules.pop("hubra.core.tasks.email_tasks", None)
 
     assert resp.status_code == 201
     assert email_sent, "Welcome email must be sent (via _send or send_email_task.delay)"
@@ -221,7 +221,7 @@ def test_change_password_clears_flag(client, app, seeded_db, db):
     headers = {}
 
     # Change password — must NOT be blocked by the gate
-    with patch("vollbuild.core.services.email._send"):
+    with patch("hubra.core.services.email._send"):
         resp = client.post(
             "/api/v1/account/change-password",
             json={"currentPassword": "password123", "newPassword": "newsecurepass1"},
@@ -257,7 +257,7 @@ def test_login_succeeds_after_password_change(client, app, seeded_db, db):
     headers = {}
 
     # Change password (escape hatch — must work despite gate)
-    with patch("vollbuild.core.services.email._send"):
+    with patch("hubra.core.services.email._send"):
         change_resp = client.post(
             "/api/v1/account/change-password",
             json={"currentPassword": "password123", "newPassword": "newsecurepass1"},

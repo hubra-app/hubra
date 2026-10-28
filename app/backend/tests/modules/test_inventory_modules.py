@@ -8,15 +8,15 @@ from decimal import Decimal
 import pytest
 
 from tests.helpers import set_modules
-from vollbuild.core.models.inventory import InventoryItem
-from vollbuild.core.models.member import Member
-from vollbuild.core.models.notification import Notification
-from vollbuild.modules.inventory_keys.models import Key
+from hubra.core.models.inventory import InventoryItem
+from hubra.core.models.member import Member
+from hubra.core.models.notification import Notification
+from hubra.modules.inventory_keys.models import Key
 
 
 @pytest.fixture
 def other_member(db, seeded_db):
-    from vollbuild.core.models.user import User
+    from hubra.core.models.user import User
 
     user = User(email="holder@test.ch", first_name="Hanna", last_name="Holder")
     user.set_password("password123")
@@ -108,7 +108,7 @@ def test_keys_need_inventory(client, db, auth_headers):
 
 
 def test_overdue_invoice_notifies_key_managers(db, seeded_db, key, other_member):
-    from vollbuild.core.modules import emit
+    from hubra.core.modules import emit
 
     key.status = "issued"
     key.holder_id = other_member.id
@@ -165,8 +165,8 @@ def test_item_api_does_not_leak_guide(client, auth_headers, item, db):
 
 
 def test_checkout_requires_induction(db, seeded_db, item, other_member):
-    from vollbuild.api.inventory.services import InventoryService
-    from vollbuild.core.errors import ApiError
+    from hubra.api.inventory.services import InventoryService
+    from hubra.core.errors import ApiError
 
     item.instruction_required = True
     db.session.commit()
@@ -182,11 +182,11 @@ def test_checkout_requires_induction(db, seeded_db, item, other_member):
 
 
 def test_checkout_blocked_when_overdue_if_configured(db, seeded_db, item, other_member):
-    from vollbuild.api.inventory.services import InventoryService
-    from vollbuild.core.errors import ApiError
-    from vollbuild.core.models.feature import Feature
-    from vollbuild.core.models.finance import Invoice
-    from vollbuild.core.modules.state import invalidate
+    from hubra.api.inventory.services import InventoryService
+    from hubra.core.errors import ApiError
+    from hubra.core.models.feature import Feature
+    from hubra.core.models.finance import Invoice
+    from hubra.core.modules.state import invalidate
 
     db.session.add(
         Invoice(
@@ -207,7 +207,7 @@ def test_checkout_blocked_when_overdue_if_configured(db, seeded_db, item, other_
     from unittest.mock import patch
 
     with patch(
-        "vollbuild.core.modules.get_config",
+        "hubra.core.modules.get_config",
         return_value={"block_when_overdue": True, "require_induction": True},
     ):
         with pytest.raises(ApiError) as exc:

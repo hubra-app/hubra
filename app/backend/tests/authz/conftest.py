@@ -11,10 +11,10 @@ from __future__ import annotations
 
 import pytest
 
-from vollbuild.core.extensions import db as _db
-from vollbuild.core.models.member import Member
-from vollbuild.core.models.role import Permission, Role, RolePermission
-from vollbuild.core.models.user import User
+from hubra.core.extensions import db as _db
+from hubra.core.models.member import Member
+from hubra.core.models.role import Permission, Role, RolePermission
+from hubra.core.models.user import User
 
 
 def _seed_permissions(keys: list[str]) -> dict[str, Permission]:

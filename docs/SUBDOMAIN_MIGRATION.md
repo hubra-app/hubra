@@ -29,7 +29,7 @@ tracking, not for auth.)
 
 ## 1. Cookie SameSite + Domain + path
 
-**Applied in `app/backend/vollbuild/config.py`:**
+**Applied in `app/backend/hubra/config.py`:**
 
 ```python
 JWT_TOKEN_LOCATION: list = ["cookies"]
@@ -96,7 +96,7 @@ state-changing request (`app/frontend/src/api/client.ts`).
 `CORS_ORIGINS` (plural) is a comma-separated allowlist read by `config.py`.
 The singular `CORS_ORIGIN` is still accepted as a fallback. **No wildcards.**
 
-**`app/backend/vollbuild/__init__.py`:**
+**`app/backend/hubra/__init__.py`:**
 
 ```python
 cors.init_app(
@@ -273,7 +273,7 @@ CSP `connect-src`, logout `unset_jwt_cookies`, cookie `SameSite=Lax` /
 
 | Item                             | File                             | Action                                                                                                                    |
 | -------------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| HSTS `preload` flag              | `vollbuild/__init__.py`          | Add `; preload` to the HSTS value when domain is submitted to the preload list                                            |
-| WildDuck API HTTPS               | `vollbuild/config.py`            | Assert `WILDDUCK_API_URL.startswith("https://")` in production startup check                                              |
+| HSTS `preload` flag              | `hubra/__init__.py`          | Add `; preload` to the HSTS value when domain is submitted to the preload list                                            |
+| WildDuck API HTTPS               | `hubra/config.py`            | Assert `WILDDUCK_API_URL.startswith("https://")` in production startup check                                              |
 | Frontend `apiFetch` content-type | `app/frontend/src/api/client.ts` | Check `Content-Type: application/json` before calling `.json()` to avoid confusing errors when a proxy returns HTML       |
 | Old domain redirect              | `docker-compose.override.yaml`   | `cos.public.reyki.net` → `cos.vollbuild.ch` redirect is configured; remove the redirect labels once migration is complete |

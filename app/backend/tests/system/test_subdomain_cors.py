@@ -14,7 +14,7 @@ Covers the acceptance criteria from the subdomain migration:
 
 from unittest.mock import patch
 
-from vollbuild.api.health.cache import HealthCache
+from hubra.api.health.cache import HealthCache
 
 _ALLOWED_ORIGIN = "http://localhost:5173"  # present in TestingConfig CORS_ORIGINS
 
@@ -198,7 +198,7 @@ def test_logout_clears_remembered_email_with_matching_domain(app):
     """
     from flask import make_response
 
-    from vollbuild.api.auth.routes import _clear_remembered_email_cookie
+    from hubra.api.auth.routes import _clear_remembered_email_cookie
 
     with patch.dict(app.config, {"JWT_COOKIE_DOMAIN": ".vollbuild.ch"}):
         with app.test_request_context("/"):
@@ -257,7 +257,7 @@ def test_password_reset_link_uses_frontend_base_url(
         captured["url"] = url
 
     with patch(
-        "vollbuild.api.auth.routes.email_svc.send_password_reset", side_effect=_capture
+        "hubra.api.auth.routes.email_svc.send_password_reset", side_effect=_capture
     ):
         resp = client.post(
             "/api/v1/auth/forgot-password", json={"email": "admin@test.ch"}

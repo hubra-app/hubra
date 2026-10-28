@@ -16,8 +16,8 @@ isolation.
 
 from __future__ import annotations
 
-from vollbuild.core.models.tenant import Tenant
-from vollbuild.core.models.role import Permission, RolePermission
+from hubra.core.models.tenant import Tenant
+from hubra.core.models.role import Permission, RolePermission
 
 
 def _seed_perm(db, key: str) -> Permission:
@@ -132,7 +132,7 @@ class TestFindUserTenants:
     """AuthService.find_user_tenants returns only authorized tenants."""
 
     def test_returns_all_authorized_tenants(self, tenant_pair):
-        from vollbuild.api.auth.services import AuthService
+        from hubra.api.auth.services import AuthService
 
         user = tenant_pair["user"]
         tenants = AuthService.find_user_tenants(user.id)
@@ -142,7 +142,7 @@ class TestFindUserTenants:
         assert len(tenants) == 2
 
     def test_excludes_unauthorized_tenants(self, tenant_pair, db):
-        from vollbuild.api.auth.services import AuthService
+        from hubra.api.auth.services import AuthService
 
         tenant_c = Tenant(
             name="Tenant C", slug="tenant-c", plan="starter", status="active"
@@ -185,12 +185,12 @@ class TestCrossTenantPermissionScoping:
         db.session.commit()
 
         # member_a (with role_a) should have the permission
-        from vollbuild.api.permissions import _get_member_permission_keys
+        from hubra.api.permissions import _get_member_permission_keys
 
         # Force DB fallback (no Redis in tests)
         from unittest.mock import patch
 
-        with patch("vollbuild.api.permissions._get_redis_client", return_value=None):
+        with patch("hubra.api.permissions._get_redis_client", return_value=None):
             perms_a = _get_member_permission_keys(tenant_pair["member_a"])
             perms_b = _get_member_permission_keys(tenant_pair["member_b"])
 

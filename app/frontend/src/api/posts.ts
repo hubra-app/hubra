@@ -1,4 +1,4 @@
-import { apiFetch } from '@vollbuild/api-client';
+import { apiFetch } from '@hubra/api-client';
 import { formatRelative } from "@/format";
 import type { Post, PostComment } from "@/types";
 

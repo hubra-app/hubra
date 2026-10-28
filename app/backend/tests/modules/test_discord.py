@@ -9,7 +9,7 @@ from unittest.mock import patch
 import pytest
 
 from tests.helpers import set_modules
-from vollbuild.modules.discord.webhook import (
+from hubra.modules.discord.webhook import (
     WebhookError,
     is_webhook_url,
     payload,
@@ -52,8 +52,8 @@ def test_mentions_only_when_configured():
 def discord_on(db, seeded_db):
     set_modules(True, "discord")
     with (
-        patch("vollbuild.modules.discord.hooks.get_config", return_value=CONFIG),
-        patch("vollbuild.modules.discord.tasks.post_to_discord.delay") as delay,
+        patch("hubra.modules.discord.hooks.get_config", return_value=CONFIG),
+        patch("hubra.modules.discord.tasks.post_to_discord.delay") as delay,
     ):
         yield delay
 
@@ -131,7 +131,7 @@ def test_test_endpoint_needs_config(client, auth_headers, seeded_db):
 
 
 def test_worker_loads_discord_tasks():
-    from vollbuild.core.modules import registry
+    from hubra.core.modules import registry
 
     registry.load()
-    assert "vollbuild.modules.discord.tasks" in registry.task_modules()
+    assert "hubra.modules.discord.tasks" in registry.task_modules()

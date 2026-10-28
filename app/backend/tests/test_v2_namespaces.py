@@ -4,7 +4,7 @@ Verifies that v2 blueprints are registered alongside v1 and that
 tenant middleware resolves slugs from v2 tenant paths.
 """
 
-from vollbuild.core.tenant.middleware import _extract_slug_from_path, _rewrite_path
+from hubra.core.tenant.middleware import _extract_slug_from_path, _rewrite_path
 
 
 # ── Middleware slug extraction ────────────────────────────────────────────────

@@ -7,9 +7,9 @@ from unittest.mock import patch
 import pytest
 from argon2 import PasswordHasher
 
-from vollbuild import create_app
-from vollbuild.core.extensions import db as _db
-from vollbuild.core.models import *  # noqa: F401,F403 — import all models so SA knows them
+from hubra import create_app
+from hubra.core.extensions import db as _db
+from hubra.core.models import *  # noqa: F401,F403 — import all models so SA knows them
 
 _NOT_CONFIGURED = {"ok": False, "latency_ms": 0, "error": "not configured"}
 
@@ -29,7 +29,7 @@ def _mock_health_checks():
     check_db is left real — SQLite in-memory is instant.  Tests that need
     specific mock values provide their own patches which override these.
     """
-    from vollbuild.api.health.services import HealthService
+    from hubra.api.health.services import HealthService
 
     with (
         patch.object(HealthService, "check_redis", return_value=_NOT_CONFIGURED),
@@ -42,7 +42,7 @@ def _mock_health_checks():
 @pytest.fixture(autouse=True)
 def _fast_argon2():
     """Use low-cost argon2 parameters in tests for faster password hashing."""
-    from vollbuild.core.models import user as user_module
+    from hubra.core.models import user as user_module
 
     fast_ph = PasswordHasher(time_cost=1, memory_cost=1024, parallelism=1)
     with patch.object(user_module, "_ph", fast_ph):
@@ -52,7 +52,7 @@ def _fast_argon2():
 @pytest.fixture(autouse=True)
 def _reset_redis_breaker():
     """Keep one test's simulated Redis outage from leaking into the next."""
-    from vollbuild.core.redis_client import reset_redis_down
+    from hubra.core.redis_client import reset_redis_down
 
     reset_redis_down()
     yield
@@ -90,9 +90,9 @@ def db(app):
 @pytest.fixture
 def seeded_db(db):
     """Create minimal seed data: 1 role, 1 tier, 1 admin User + Member."""
-    from vollbuild.core.models.role import Role
-    from vollbuild.core.models.member import Member, MembershipTier
-    from vollbuild.core.models.user import User
+    from hubra.core.models.role import Role
+    from hubra.core.models.member import Member, MembershipTier
+    from hubra.core.models.user import User
 
     role = Role(name="Admin", is_default=True, is_admin=True, is_system=True)
     owner_role = Role(name="Owner", is_admin=True, is_system=True, is_owner=True)
@@ -195,11 +195,11 @@ def tenant_pair(db, seeded_db):
       - Tenant A (slug: tenant-a): Member admin-a@test.ch
       - Tenant B (slug: tenant-b): Member admin-b@test.ch
     """
-    from vollbuild.core.models.tenant import Tenant
-    from vollbuild.core.models.user import User
-    from vollbuild.core.models.user_tenant import UserTenant
-    from vollbuild.core.models.member import Member
-    from vollbuild.core.models.role import Role
+    from hubra.core.models.tenant import Tenant
+    from hubra.core.models.user import User
+    from hubra.core.models.user_tenant import UserTenant
+    from hubra.core.models.member import Member
+    from hubra.core.models.role import Role
 
     tenant_a = Tenant(name="Tenant A", slug="tenant-a", plan="starter", status="active")
     tenant_b = Tenant(name="Tenant B", slug="tenant-b", plan="starter", status="active")

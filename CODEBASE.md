@@ -142,7 +142,7 @@ club-management-suite/
 │
 ├── app/                         # Application source code
 │   ├── backend/                 # Flask + Celery backend (Python)
-│   │   ├── vollbuild/           # Application package (`create_app` re-exported here)
+│   │   ├── hubra/           # Application package (`create_app` re-exported here)
 │   │   │   ├── api/             # Flask blueprints, one package per domain
 │   │   │   │   ├── admin/ applications/ audit/ auth/ backups/ bindings/ codes/
 │   │   │   │   ├── dashboard/ events/ features/ finance/ functions/ groups/ health/
@@ -157,7 +157,7 @@ club-management-suite/
 │   │   │   │   ├── models/      # SQLAlchemy models
 │   │   │   │   ├── schemas/     # Marshmallow schemas
 │   │   │   │   ├── services/    # Business logic (WildDuck, mail, backup, QR-bill, ...)
-│   │   │   │   ├── tasks/       # Celery app (`vollbuild.core.tasks.celery_app`) and tasks
+│   │   │   │   ├── tasks/       # Celery app (`hubra.core.tasks.celery_app`) and tasks
 │   │   │   │   ├── tenant/      # Tenant context, middleware, schema manager
 │   │   │   │   ├── seed_data/   # Seed JSON (settings, translations)
 │   │   │   │   ├── seeds.py     # Seed runner (`flask init-db`)
@@ -495,14 +495,14 @@ cd app/frontend && npm run lint && npx tsc --noEmit
 | `WILDDUCK_API_TOKEN` | WildDuck API access token         | Mail       |
 | `BACKUP_S3_*`        | S3 backup credentials + GPG key   | Opt        |
 
-Configuration classes (`DevelopmentConfig`, `ProductionConfig`, `TestingConfig`) in `vollbuild/core/config.py` inherit from `BaseConfig`. Environment variables take precedence over defaults. Production requires explicit validation via `ProductionConfig.validate()`.
+Configuration classes (`DevelopmentConfig`, `ProductionConfig`, `TestingConfig`) in `hubra/core/config.py` inherit from `BaseConfig`. Environment variables take precedence over defaults. Production requires explicit validation via `ProductionConfig.validate()`.
 
 ### Modules
 
 Each section of the suite (members, finance, inventory, ...) is a module with
-a manifest in `app/backend/vollbuild/modules/`. Club admins switch modules on
+a manifest in `app/backend/hubra/modules/`. Club admins switch modules on
 or off per club under Settings > Modules; platform managers can block a module
-for a club. See `app/backend/vollbuild/modules/README.md`.
+for a club. See `app/backend/hubra/modules/README.md`.
 
 ### Deployment
 

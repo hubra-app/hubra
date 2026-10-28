@@ -3,9 +3,9 @@
 from unittest import mock
 from unittest.mock import MagicMock, patch
 
-from vollbuild.core.extensions import db
-from vollbuild.core.models.function import Function, FunctionHolder
-from vollbuild.core.models.managed_mail import ManagedMailAddress
+from hubra.core.extensions import db
+from hubra.core.models.function import Function, FunctionHolder
+from hubra.core.models.managed_mail import ManagedMailAddress
 from tests.helpers import patch_mail_domain
 
 
@@ -64,8 +64,8 @@ def test_update_function(client, seeded_db, auth_headers):
 
 
 def test_update_function_max_holders_below_current(client, seeded_db, auth_headers):
-    from vollbuild.core.models.member import Member
-    from vollbuild.core.models.user import User
+    from hubra.core.models.member import Member
+    from hubra.core.models.user import User
 
     create_resp = client.post(
         "/api/v1/functions/",
@@ -121,7 +121,7 @@ def test_delete_function(client, seeded_db, auth_headers):
 
 def test_delete_function_with_protected_mma(client, seeded_db, auth_headers):
     """Function with a protected MMA can be deleted — MMA is cleaned up automatically."""
-    from vollbuild.api.settings.services import SettingService
+    from hubra.api.settings.services import SettingService
 
     fn = Function(name="ProtectedFn")
     db.session.add(fn)
@@ -167,8 +167,8 @@ def test_assign_holder(client, seeded_db, auth_headers):
 
 
 def test_assign_holder_exceeds_max(client, seeded_db, auth_headers):
-    from vollbuild.core.models.member import Member
-    from vollbuild.core.models.user import User
+    from hubra.core.models.member import Member
+    from hubra.core.models.user import User
 
     tier = seeded_db["tier"]
     fn = Function(name="SingleOffice", max_holders=1)
@@ -243,7 +243,7 @@ def test_assign_holder_triggers_mail_sync(client, seeded_db, auth_headers):
     db.session.add(fn)
     db.session.flush()
 
-    from vollbuild.api.settings.services import SettingService
+    from hubra.api.settings.services import SettingService
 
     domain = SettingService.get("mail.domain") or "test.ch"
     addr = ManagedMailAddress(
@@ -259,7 +259,7 @@ def test_assign_holder_triggers_mail_sync(client, seeded_db, auth_headers):
     db.session.commit()
 
     with mock.patch(
-        "vollbuild.core.tasks.mail_tasks.reconcile_entity_forwarding_task"
+        "hubra.core.tasks.mail_tasks.reconcile_entity_forwarding_task"
     ) as mock_task:
         mock_task.delay = mock.MagicMock()
         resp = client.post(
@@ -275,7 +275,7 @@ def test_assign_holder_triggers_mail_sync(client, seeded_db, auth_headers):
 
 
 def test_create_function_mail(client, seeded_db, auth_headers):
-    from vollbuild.core.models.setting import Setting
+    from hubra.core.models.setting import Setting
 
     db.session.add(Setting(key="mail.domain", value="test.ch"))
     db.session.commit()
@@ -307,7 +307,7 @@ def test_create_function_mail(client, seeded_db, auth_headers):
 
 
 def test_list_function_mail(client, seeded_db, auth_headers):
-    from vollbuild.api.settings.services import SettingService
+    from hubra.api.settings.services import SettingService
 
     fn = Function(name="ListFn")
     db.session.add(fn)
@@ -334,7 +334,7 @@ def test_list_function_mail(client, seeded_db, auth_headers):
 
 def test_delete_function_mail_blocked(client, seeded_db, auth_headers):
     """DELETE /mail/functions/<id> returns 409 while the function exists."""
-    from vollbuild.api.settings.services import SettingService
+    from hubra.api.settings.services import SettingService
 
     fn = Function(name="DelFn")
     db.session.add(fn)
@@ -372,13 +372,13 @@ def test_delete_function_mail_blocked(client, seeded_db, auth_headers):
 
 def test_delete_group_with_protected_mma(client, seeded_db, auth_headers):
     """Group with a protected MMA can be deleted — MMA is cleaned up automatically."""
-    from vollbuild.core.models.group import Group
+    from hubra.core.models.group import Group
 
     group = Group(name="ProtectedGroup")
     db.session.add(group)
     db.session.flush()
 
-    from vollbuild.api.settings.services import SettingService
+    from hubra.api.settings.services import SettingService
 
     domain = SettingService.get("mail.domain") or "test.ch"
     addr = ManagedMailAddress(
@@ -399,12 +399,12 @@ def test_delete_group_with_protected_mma(client, seeded_db, auth_headers):
 
 
 def test_seed_creates_vorstand_and_functions(db):
-    from vollbuild.core.seeds import run_seeds
+    from hubra.core.seeds import run_seeds
 
     run_seeds(db)
 
-    from vollbuild.core.models.group import Group
-    from vollbuild.core.models.function import Function
+    from hubra.core.models.group import Group
+    from hubra.core.models.function import Function
 
     vorstand = db.session.scalar(db.select(Group).where(Group.name == "Vorstand"))
     assert vorstand is not None
@@ -417,11 +417,11 @@ def test_seed_creates_vorstand_and_functions(db):
 
 
 def test_seed_creates_managed_mail_addresses(db):
-    from vollbuild.core.seeds import run_seeds
+    from hubra.core.seeds import run_seeds
 
     run_seeds(db)
 
-    from vollbuild.api.settings.services import SettingService
+    from hubra.api.settings.services import SettingService
 
     domain = SettingService.get("mail.domain") or "vollbuild.ch"
 
@@ -443,7 +443,7 @@ def test_seed_creates_managed_mail_addresses(db):
 
 
 def test_seed_is_idempotent(db):
-    from vollbuild.core.seeds import run_seeds
+    from hubra.core.seeds import run_seeds
 
     run_seeds(db)
     count_before = db.session.scalar(
@@ -462,8 +462,8 @@ def test_seed_is_idempotent(db):
 
 
 def test_resolve_alias_targets_group_members(db, seeded_db):
-    from vollbuild.core.services.managed_mail import resolve_alias_targets
-    from vollbuild.core.models.group import Group
+    from hubra.core.services.managed_mail import resolve_alias_targets
+    from hubra.core.models.group import Group
 
     group = Group(name="TestGroup")
     db.session.add(group)
@@ -476,7 +476,7 @@ def test_resolve_alias_targets_group_members(db, seeded_db):
         {"mid": member.id, "gid": group.id},
     )
 
-    from vollbuild.api.settings.services import SettingService
+    from hubra.api.settings.services import SettingService
 
     domain = SettingService.get("mail.domain") or "test.ch"
     addr = ManagedMailAddress(
@@ -493,8 +493,8 @@ def test_resolve_alias_targets_group_members(db, seeded_db):
 
 
 def test_resolve_alias_targets_empty_falls_back_to_postmaster(db, seeded_db):
-    from vollbuild.core.services.managed_mail import resolve_alias_targets
-    from vollbuild.core.models.setting import Setting
+    from hubra.core.services.managed_mail import resolve_alias_targets
+    from hubra.core.models.setting import Setting
 
     db.session.add(Setting(key="mail.domain", value="test.ch"))
     db.session.commit()
@@ -541,8 +541,8 @@ def _make_function_mma(db, fn, *, domain="club.ch", **overrides):
 
 def test_reassign_holder_repoints_forwarding(app, db, seeded_db):
     """reconcile_entity_forwarding for function calls ensure_forwarding with new holder's email."""
-    from vollbuild.core.models.member import Member
-    from vollbuild.core.models.user import User
+    from hubra.core.models.member import Member
+    from hubra.core.models.user import User
 
     fn = Function(name="ReassignFn", max_holders=1)
     db.session.add(fn)
@@ -558,12 +558,12 @@ def test_reassign_holder_repoints_forwarding(app, db, seeded_db):
     _make_function_mma(db, fn)
     db.session.commit()
 
-    from vollbuild.core.services.mail_provisioning import reconcile_entity_forwarding
+    from hubra.core.services.mail_provisioning import reconcile_entity_forwarding
 
-    with patch("vollbuild.core.services.mail_provisioning.try_get_client") as mock_tgc:
+    with patch("hubra.core.services.mail_provisioning.try_get_client") as mock_tgc:
         mock_tgc.return_value = MagicMock()
         with patch(
-            "vollbuild.core.services.mail_provisioning.ensure_forwarding"
+            "hubra.core.services.mail_provisioning.ensure_forwarding"
         ) as mock_fwd:
             reconcile_entity_forwarding("function", fn.id)
             called_targets = mock_fwd.call_args[0][1]
@@ -591,10 +591,10 @@ def test_reassign_holder_repoints_forwarding(app, db, seeded_db):
     db.session.add(holder_b)
     db.session.commit()
 
-    with patch("vollbuild.core.services.mail_provisioning.try_get_client") as mock_tgc:
+    with patch("hubra.core.services.mail_provisioning.try_get_client") as mock_tgc:
         mock_tgc.return_value = MagicMock()
         with patch(
-            "vollbuild.core.services.mail_provisioning.ensure_forwarding"
+            "hubra.core.services.mail_provisioning.ensure_forwarding"
         ) as mock_fwd:
             reconcile_entity_forwarding("function", fn.id)
             called_targets = mock_fwd.call_args[0][1]
@@ -604,8 +604,8 @@ def test_reassign_holder_repoints_forwarding(app, db, seeded_db):
 
 def test_function_two_holders_both_forward(app, db, seeded_db):
     """Function with max_holders=2 and two holders forwards to both."""
-    from vollbuild.core.models.member import Member
-    from vollbuild.core.models.user import User
+    from hubra.core.models.member import Member
+    from hubra.core.models.user import User
 
     fn = Function(name="DualFn", max_holders=2)
     db.session.add(fn)
@@ -639,12 +639,12 @@ def test_function_two_holders_both_forward(app, db, seeded_db):
     _make_function_mma(db, fn)
     db.session.commit()
 
-    from vollbuild.core.services.mail_provisioning import reconcile_entity_forwarding
+    from hubra.core.services.mail_provisioning import reconcile_entity_forwarding
 
-    with patch("vollbuild.core.services.mail_provisioning.try_get_client") as mock_tgc:
+    with patch("hubra.core.services.mail_provisioning.try_get_client") as mock_tgc:
         mock_tgc.return_value = MagicMock()
         with patch(
-            "vollbuild.core.services.mail_provisioning.ensure_forwarding"
+            "hubra.core.services.mail_provisioning.ensure_forwarding"
         ) as mock_fwd:
             reconcile_entity_forwarding("function", fn.id)
             called_targets = mock_fwd.call_args[0][1]
@@ -675,7 +675,7 @@ def test_additional_function_alias_forwards_to_primary(app, db, seeded_db):
     db.session.add(extra)
     db.session.commit()
 
-    from vollbuild.core.services.mail_provisioning import (
+    from hubra.core.services.mail_provisioning import (
         _resolve_function_alias_targets,
     )
 
@@ -699,7 +699,7 @@ def test_disable_function_mail_ensure_absent(client, db, seeded_db, auth_headers
     )
     db.session.commit()
 
-    with patch("vollbuild.core.services.mail_provisioning.try_get_client") as mock_tgc:
+    with patch("hubra.core.services.mail_provisioning.try_get_client") as mock_tgc:
         mock_wd = MagicMock()
         mock_tgc.return_value = mock_wd
         resp = client.patch(
@@ -731,7 +731,7 @@ def test_function_prefix_edit_moves_address(client, db, seeded_db, auth_headers)
     )
     db.session.commit()
 
-    with patch("vollbuild.core.services.mail_provisioning.try_get_client") as mock_tgc:
+    with patch("hubra.core.services.mail_provisioning.try_get_client") as mock_tgc:
         mock_wd = MagicMock()
         mock_wd.safe_get_user.return_value = {"id": "wd-user-001"}
         mock_wd.create_user.return_value = {"id": "wd-user-002"}
@@ -766,10 +766,10 @@ def test_function_prefix_collision_auto_suffix(app, db, seeded_db):
     db.session.flush()
     db.session.commit()
 
-    from vollbuild.core.services.managed_mail import get_or_create_for_function
+    from hubra.core.services.managed_mail import get_or_create_for_function
 
     with patch(
-        "vollbuild.core.services.mail_provisioning._get_club_domain",
+        "hubra.core.services.mail_provisioning._get_club_domain",
         return_value="club.ch",
     ):
         addr = get_or_create_for_function(fn2.id, "collidefn", "club.ch")
@@ -792,15 +792,15 @@ def test_reconcile_mail_provisions_unprovisioned_function_mma(app, db, seeded_db
     )
     db.session.commit()
 
-    from vollbuild.core.tasks.mail_tasks import reconcile_mail
+    from hubra.core.tasks.mail_tasks import reconcile_mail
 
-    with patch("vollbuild.core.services.mail_provisioning.try_get_client") as mock_tgc:
+    with patch("hubra.core.services.mail_provisioning.try_get_client") as mock_tgc:
         mock_wd = MagicMock()
         mock_wd.create_user.return_value = {"id": "wd-new-001"}
         mock_wd.list_user_addresses.return_value = {"results": []}
         mock_tgc.return_value = mock_wd
         with patch(
-            "vollbuild.core.services.mail_provisioning._resolve_function_holder_targets",
+            "hubra.core.services.mail_provisioning._resolve_function_holder_targets",
             return_value=["target@example.ch"],
         ):
             reconcile_mail.run()
@@ -826,9 +826,9 @@ def test_reconcile_mail_skips_disabled_function_mma(app, db, seeded_db):
     )
     db.session.commit()
 
-    from vollbuild.core.tasks.mail_tasks import reconcile_mail
+    from hubra.core.tasks.mail_tasks import reconcile_mail
 
-    with patch("vollbuild.core.services.mail_provisioning.try_get_client") as mock_tgc:
+    with patch("hubra.core.services.mail_provisioning.try_get_client") as mock_tgc:
         mock_wd = MagicMock()
         mock_tgc.return_value = mock_wd
         reconcile_mail.run()
@@ -840,9 +840,9 @@ def test_reconcile_mail_skips_disabled_function_mma(app, db, seeded_db):
 
 def test_reconcile_mail_auto_creates_missing_mma(app, db, seeded_db):
     """reconcile_mail auto-creates a disabled MMA for a group/function with no MMA."""
-    from vollbuild.core.models.group import Group
-    from vollbuild.core.models.setting import Setting
-    from vollbuild.core.tasks.mail_tasks import reconcile_mail
+    from hubra.core.models.group import Group
+    from hubra.core.models.setting import Setting
+    from hubra.core.tasks.mail_tasks import reconcile_mail
 
     db.session.add(Setting(key="mail.domain", value="test.ch"))
     db.session.commit()
@@ -861,7 +861,7 @@ def test_reconcile_mail_auto_creates_missing_mma(app, db, seeded_db):
     )
     assert existing is None
 
-    with patch("vollbuild.core.services.mail_provisioning.try_get_client") as mock_tgc:
+    with patch("hubra.core.services.mail_provisioning.try_get_client") as mock_tgc:
         mock_tgc.return_value = None
         result = reconcile_mail.run()
 
@@ -880,8 +880,8 @@ def test_reconcile_mail_auto_creates_missing_mma(app, db, seeded_db):
 
 def test_reconcile_mail_removes_orphaned_mma(app, db, seeded_db):
     """reconcile_mail removes an MMA whose owner no longer exists."""
-    from vollbuild.core.models.setting import Setting
-    from vollbuild.core.tasks.mail_tasks import reconcile_mail
+    from hubra.core.models.setting import Setting
+    from hubra.core.tasks.mail_tasks import reconcile_mail
 
     db.session.add(Setting(key="mail.domain", value="test.ch"))
     db.session.commit()
@@ -903,9 +903,9 @@ def test_reconcile_mail_removes_orphaned_mma(app, db, seeded_db):
     db.session.commit()
     orphan_id = orphan.id
 
-    with patch("vollbuild.core.services.mail_provisioning.try_get_client") as mock_tgc:
+    with patch("hubra.core.services.mail_provisioning.try_get_client") as mock_tgc:
         mock_tgc.return_value = None
-        with patch("vollbuild.core.services.mail_provisioning.ensure_absent"):
+        with patch("hubra.core.services.mail_provisioning.ensure_absent"):
             result = reconcile_mail.run()
 
     deleted = db.session.get(ManagedMailAddress, orphan_id)
@@ -915,8 +915,8 @@ def test_reconcile_mail_removes_orphaned_mma(app, db, seeded_db):
 
 def test_group_service_create_auto_creates_disabled_mma(app, db, seeded_db):
     """GroupsService.create auto-creates a disabled MMA for the new group."""
-    from vollbuild.core.models.setting import Setting
-    from vollbuild.api.groups.services import GroupsService
+    from hubra.core.models.setting import Setting
+    from hubra.api.groups.services import GroupsService
 
     db.session.add(Setting(key="mail.domain", value="test.ch"))
     db.session.commit()
@@ -937,8 +937,8 @@ def test_group_service_create_auto_creates_disabled_mma(app, db, seeded_db):
 
 def test_function_service_create_auto_creates_disabled_mma(app, db, seeded_db):
     """FunctionService.create auto-creates a disabled MMA for the new function."""
-    from vollbuild.core.models.setting import Setting
-    from vollbuild.api.functions.services import FunctionService
+    from hubra.core.models.setting import Setting
+    from hubra.api.functions.services import FunctionService
 
     db.session.add(Setting(key="mail.domain", value="test.ch"))
     db.session.commit()

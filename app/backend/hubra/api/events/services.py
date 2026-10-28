@@ -1,0 +1,452 @@
+"""Event service — business logic for club events, attendees, and registrations."""
+
+from __future__ import annotations
+
+import re
+from datetime import date, datetime, time, timedelta, timezone
+
+from sqlalchemy import delete, func, insert, select
+from sqlalchemy.orm import selectinload
+
+from hubra.api.notifications.services import notify_all_active
+from hubra.api.utils import log_audit
+from hubra.core.errors import raise_error
+from hubra.core.extensions import db
+from hubra.core.models.event import ClubEvent, EventRegistration, event_attendees
+from hubra.core.models.member import Member
+from hubra.core.modules import emit
+from hubra.core.modules.events import EVENT_PUBLISHED
+
+
+class EventService:
+    """Operations on a single event."""
+
+    @staticmethod
+    def get(event_id: int) -> ClubEvent:
+        """Return an event with attendees eager-loaded, or raise 404."""
+        event = db.session.scalar(
+            select(ClubEvent)
+            .where(ClubEvent.id == event_id)
+            .options(
+                selectinload(ClubEvent.attendees),
+                selectinload(ClubEvent.registrations),
+            )
+        )
+        if event is None:
+            raise_error(404, "NOT_FOUND", f"Event {event_id} not found")
+        return event  # type: ignore[return-value]
+
+    @staticmethod
+    def update(event: ClubEvent, data: dict, actor_id: int) -> ClubEvent:
+        """Update allowed fields on an event."""
+        for field in (
+            "title",
+            "date",
+            "time",
+            "location",
+            "type",
+            "description",
+            "meeting_url",
+            "end_date",
+            "all_day",
+            "category",
+            "max_attendees",
+            "registration_deadline",
+            "cancellation_deadline",
+            "requires_approval",
+            "is_public",
+            "cover_image_url",
+            "color",
+        ):
+            if field in data:
+                setattr(event, field, data[field])
+
+        log_audit(
+            actor_id=actor_id,
+            action="update_event",
+            target_type="Event",
+            target_id=event.id,
+            target_label=event.title,
+        )
+        return event
+
+    @staticmethod
+    def delete(event_id: int, actor_id: int) -> None:
+        """Delete an event."""
+        event = EventService.get(event_id)
+
+        log_audit(
+            actor_id=actor_id,
+            action="delete_event",
+            target_type="Event",
+            target_id=event.id,
+            target_label=event.title,
+        )
+        db.session.delete(event)
+
+    @staticmethod
+    def add_attendee(event_id: int, member: Member) -> None:
+        """Add a member as an event attendee. Raises 409 if already attending."""
+        already = db.session.scalar(
+            select(func.count())
+            .select_from(event_attendees)
+            .where(
+                event_attendees.c.event_id == event_id,
+                event_attendees.c.member_id == member.id,
+            )
+        )
+        if already:
+            raise_error(
+                409,
+                "CONFLICT",
+                f"Member {member.id} is already attending event {event_id}",
+            )
+
+        db.session.execute(
+            insert(event_attendees).values(event_id=event_id, member_id=member.id)
+        )
+
+    @staticmethod
+    def remove_attendee(event_id: int, member_id: int) -> None:
+        """Remove a member from event attendees. Raises 404 if not attending."""
+        attending = db.session.scalar(
+            select(func.count())
+            .select_from(event_attendees)
+            .where(
+                event_attendees.c.event_id == event_id,
+                event_attendees.c.member_id == member_id,
+            )
+        )
+        if not attending:
+            raise_error(
+                404,
+                "NOT_FOUND",
+                f"Member {member_id} is not attending event {event_id}",
+            )
+
+        db.session.execute(
+            delete(event_attendees).where(
+                event_attendees.c.event_id == event_id,
+                event_attendees.c.member_id == member_id,
+            )
+        )
+
+    # ── Registration workflow ─────────────────────────────────────────────────
+
+    @staticmethod
+    def register(
+        event_id: int,
+        member_id: int,
+        notes: str | None = None,
+        guests: int = 0,
+    ) -> EventRegistration:
+        """Register a member for an event. Handles waitlist when full."""
+        event = EventService.get(event_id)
+
+        member = db.session.get(Member, member_id)
+        if member is None or member.archived_at is not None:
+            raise_error(404, "NOT_FOUND", f"Member {member_id} not found")
+
+        # Check if already registered
+        existing = db.session.scalar(
+            select(EventRegistration).where(
+                EventRegistration.event_id == event_id,
+                EventRegistration.member_id == member_id,
+                EventRegistration.status.in_(["registered", "approved", "waitlisted"]),
+            )
+        )
+        if existing is not None:
+            raise_error(409, "CONFLICT", "Already registered for this event")
+
+        # Check max attendees
+        status = "registered"
+        if event.requires_approval:
+            status = "registered"  # needs admin approval
+
+        if event.max_attendees is not None and event.max_attendees > 0:
+            active_count = (
+                db.session.scalar(
+                    select(func.count())
+                    .select_from(EventRegistration)
+                    .where(
+                        EventRegistration.event_id == event_id,
+                        EventRegistration.status.in_(
+                            ["registered", "approved", "attended"]
+                        ),
+                    )
+                )
+                or 0
+            )
+            if active_count >= event.max_attendees:
+                status = "waitlisted"
+
+        registration = EventRegistration(
+            event_id=event_id,
+            member_id=member_id,
+            status=status,
+            notes=notes,
+            guests=guests,
+        )
+        db.session.add(registration)
+
+        # Also add to attendees for backward compat
+        try:
+            EventService.add_attendee(event_id, member)
+        except Exception:
+            pass  # Already in attendees table
+
+        return registration
+
+    @staticmethod
+    def cancel_registration(event_id: int, member_id: int) -> EventRegistration:
+        """Cancel a member's registration for an event."""
+        registration = db.session.scalar(
+            select(EventRegistration).where(
+                EventRegistration.event_id == event_id,
+                EventRegistration.member_id == member_id,
+                EventRegistration.status.in_(["registered", "approved", "waitlisted"]),
+            )
+        )
+        if registration is None:
+            raise_error(404, "NOT_FOUND", "No active registration found")
+
+        registration.status = "cancelled"
+        registration.cancelled_at = datetime.now(timezone.utc)
+
+        # Remove from attendees for backward compat
+        try:
+            EventService.remove_attendee(event_id, member_id)
+        except Exception:
+            pass
+
+        return registration
+
+    @staticmethod
+    def mark_attendance(event_id: int, member_id: int) -> EventRegistration:
+        """Mark a member as attended for an event."""
+        registration = db.session.scalar(
+            select(EventRegistration).where(
+                EventRegistration.event_id == event_id,
+                EventRegistration.member_id == member_id,
+            )
+        )
+        if registration is None:
+            raise_error(404, "NOT_FOUND", "No registration found for this member")
+
+        registration.status = "attended"
+        registration.attended_at = datetime.now(timezone.utc)
+
+        return registration
+
+    @staticmethod
+    def generate_ical(events: list[ClubEvent], name: str | None = None) -> str:
+        """Generate an iCalendar (RFC 5545) feed for a list of events.
+
+        Events with a ``time`` like "14:00-18:00" get local start and end
+        times (Europe/Zurich); others are all-day.
+        """
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        lines = [
+            "BEGIN:VCALENDAR",
+            "VERSION:2.0",
+            "PRODID:-//Hubra//Event Calendar//EN",
+            "CALSCALE:GREGORIAN",
+            "METHOD:PUBLISH",
+        ]
+        if name:
+            lines.append(f"X-WR-CALNAME:{_ical_text(name)}")
+        lines.append("X-WR-TIMEZONE:Europe/Zurich")
+        lines += _ZURICH_VTIMEZONE
+
+        for event in events:
+            lines += [
+                "BEGIN:VEVENT",
+                f"UID:event-{event.id}@club-management-suite",
+                f"DTSTAMP:{stamp}",
+                f"SUMMARY:{_ical_text(event.title)}",
+            ]
+            start, end = _event_times(event)
+            if start is None:
+                last = event.end_date or event.date
+                lines.append(f"DTSTART;VALUE=DATE:{event.date:%Y%m%d}")
+                # DTEND of an all-day event is exclusive.
+                lines.append(f"DTEND;VALUE=DATE:{last + timedelta(days=1):%Y%m%d}")
+            else:
+                lines.append(f"DTSTART;TZID=Europe/Zurich:{start:%Y%m%dT%H%M%S}")
+                lines.append(f"DTEND;TZID=Europe/Zurich:{end:%Y%m%dT%H%M%S}")
+            if event.location:
+                lines.append(f"LOCATION:{_ical_text(event.location)}")
+            description = event.description or ""
+            if event.meeting_url:
+                description = f"{description}\n\n{event.meeting_url}".strip()
+                lines.append(f"URL:{event.meeting_url}")
+            if description:
+                lines.append(f"DESCRIPTION:{_ical_text(description)}")
+            lines += [f"CATEGORIES:{_ical_text(event.type)}", "END:VEVENT"]
+
+        lines.append("END:VCALENDAR")
+        return "\r\n".join(_fold(line) for line in lines) + "\r\n"
+
+
+_ZURICH_VTIMEZONE = [
+    "BEGIN:VTIMEZONE",
+    "TZID:Europe/Zurich",
+    "BEGIN:DAYLIGHT",
+    "TZOFFSETFROM:+0100",
+    "TZOFFSETTO:+0200",
+    "TZNAME:CEST",
+    "DTSTART:19700329T020000",
+    "RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU",
+    "END:DAYLIGHT",
+    "BEGIN:STANDARD",
+    "TZOFFSETFROM:+0200",
+    "TZOFFSETTO:+0100",
+    "TZNAME:CET",
+    "DTSTART:19701025T030000",
+    "RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU",
+    "END:STANDARD",
+    "END:VTIMEZONE",
+]
+
+
+def _ical_text(value: str) -> str:
+    """Escape a TEXT value (RFC 5545 3.3.11)."""
+    return (
+        value.replace("\\", "\\\\")
+        .replace(";", "\\;")
+        .replace(",", "\\,")
+        .replace("\r\n", "\\n")
+        .replace("\n", "\\n")
+    )
+
+
+def _fold(line: str) -> str:
+    """Fold lines longer than 75 octets (RFC 5545 3.1)."""
+    data = line.encode("utf-8")
+    if len(data) <= 75:
+        return line
+    parts, chunk = [], b""
+    for ch in line:
+        enc = ch.encode("utf-8")
+        if len(chunk) + len(enc) > (75 if not parts else 74):
+            parts.append(chunk.decode("utf-8"))
+            chunk = b""
+        chunk += enc
+    parts.append(chunk.decode("utf-8"))
+    return "\r\n ".join(parts)
+
+
+_TIME_RANGE = re.compile(r"^\s*(\d{1,2})[:.](\d{2})\s*(?:-\s*(\d{1,2})[:.](\d{2}))?")
+
+
+def _event_times(event: ClubEvent):
+    """Local start and end datetimes, or (None, None) for all-day events."""
+    if event.all_day or not event.time:
+        return None, None
+    m = _TIME_RANGE.match(event.time)
+    if not m:
+        return None, None
+    try:
+        start = datetime.combine(event.date, time(int(m[1]), int(m[2])))
+        if m[3]:
+            end = datetime.combine(
+                event.end_date or event.date, time(int(m[3]), int(m[4]))
+            )
+        else:
+            end = start + timedelta(hours=1)
+    except ValueError:
+        return None, None
+    if end <= start:
+        end = start + timedelta(hours=1)
+    return start, end
+
+
+class EventsService:
+    """Operations on the event collection."""
+
+    @staticmethod
+    def list(
+        from_str: str = "",
+        to_str: str = "",
+        type_filter: str = "",
+        category: str = "",
+    ) -> list[ClubEvent]:
+        """Return events with optional date range, type, and category filtering."""
+        query = (
+            select(ClubEvent)
+            .options(
+                selectinload(ClubEvent.attendees),
+                selectinload(ClubEvent.registrations),
+            )
+            .order_by(ClubEvent.date)
+        )
+
+        if from_str:
+            try:
+                from_date = date.fromisoformat(from_str)
+                query = query.where(ClubEvent.date >= from_date)
+            except ValueError:
+                raise_error(
+                    400,
+                    "VALIDATION_ERROR",
+                    "Invalid 'from' date format. Use ISO 8601 (YYYY-MM-DD).",
+                )
+
+        if to_str:
+            try:
+                to_date = date.fromisoformat(to_str)
+                query = query.where(ClubEvent.date <= to_date)
+            except ValueError:
+                raise_error(
+                    400,
+                    "VALIDATION_ERROR",
+                    "Invalid 'to' date format. Use ISO 8601 (YYYY-MM-DD).",
+                )
+
+        if type_filter:
+            query = query.where(ClubEvent.type == type_filter)
+
+        if category:
+            query = query.where(ClubEvent.category == category)
+
+        return db.session.scalars(query).all()  # type: ignore[return-value]
+
+    @staticmethod
+    def create(data: dict, actor_id: int) -> ClubEvent:
+        """Create a new event."""
+        event = ClubEvent(
+            title=data["title"],
+            date=data["date"],
+            time=data.get("time"),
+            location=data.get("location"),
+            type=data["type"],
+            description=data.get("description"),
+            meeting_url=data.get("meeting_url"),
+            end_date=data.get("end_date"),
+            all_day=data.get("all_day", False),
+            category=data.get("category", "general"),
+            max_attendees=data.get("max_attendees"),
+            registration_deadline=data.get("registration_deadline"),
+            cancellation_deadline=data.get("cancellation_deadline"),
+            requires_approval=data.get("requires_approval", False),
+            is_public=data.get("is_public", False),
+            cover_image_url=data.get("cover_image_url"),
+            color=data.get("color"),
+            created_by=actor_id,
+        )
+        db.session.add(event)
+        db.session.flush()
+
+        notify_all_active("info", "New event", event.title, skip_member_id=actor_id)
+        emit(EVENT_PUBLISHED, event_id=event.id)
+
+        log_audit(
+            actor_id=actor_id,
+            action="create_event",
+            target_type="Event",
+            target_id=event.id,
+            target_label=event.title,
+        )
+
+        db.session.refresh(event)
+        return EventService.get(event.id)

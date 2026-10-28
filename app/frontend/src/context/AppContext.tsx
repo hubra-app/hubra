@@ -21,7 +21,7 @@ import {
   setTenantSlug,
   apiFetch,
   SSO_URL,
-} from '@vollbuild/api-client'
+} from '@hubra/api-client'
 import {
   getAccount,
   logout as apiLogout,

@@ -677,7 +677,7 @@ Could db.session be bound to a different sessionmaker / engine than the one that
 owns the translation table?
 Are there Flask‑SQLAlchemy event hooks (before_commit, after_commit) registered
 that could interfere?
-Could the vollbuild/extensions.py db object be initialised with engine options
+Could the hubra/extensions.py db object be initialised with engine options
 that route commit through a different connection than raw create_engine()?
 
 

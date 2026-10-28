@@ -1,8 +1,8 @@
 """Tests for the Bindings API — key CRUD, binding CRUD, toggle, registry, validators."""
 
-from vollbuild.core.models.internal_key import InternalKey
-from vollbuild.core.models.member import Member
-from vollbuild.core.models.user import User
+from hubra.core.models.internal_key import InternalKey
+from hubra.core.models.member import Member
+from hubra.core.models.user import User
 
 
 def _make_member(db, name="Test Member", email="test@example.ch"):
@@ -384,7 +384,7 @@ def test_preview_non_sensitive(client, seeded_db, auth_headers):
 
 def test_preview_sensitive_setting(client, seeded_db, auth_headers, db):
     """Sensitive setting value → masked."""
-    from vollbuild.core.models.setting import Setting
+    from hubra.core.models.setting import Setting
 
     db.session.add(Setting(key="test.secret", value="my-secret-value", sensitive=True))
     db.session.commit()
@@ -401,7 +401,7 @@ def test_preview_sensitive_setting(client, seeded_db, auth_headers, db):
 
 def test_preview_non_sensitive_setting(client, seeded_db, auth_headers, db):
     """Non-sensitive setting value → plain text."""
-    from vollbuild.core.models.setting import Setting
+    from hubra.core.models.setting import Setting
 
     db.session.add(Setting(key="test.public", value="hello-world", sensitive=False))
     db.session.commit()
@@ -483,7 +483,7 @@ def test_binding_resolved_value_non_sensitive(client, seeded_db, auth_headers, d
 
 def test_binding_resolved_value_sensitive_setting(client, seeded_db, auth_headers, db):
     """Binding with sensitive setting → resolved_value is masked."""
-    from vollbuild.core.models.setting import Setting
+    from hubra.core.models.setting import Setting
 
     db.session.add(
         Setting(key="test.binding_secret", value="hidden-val", sensitive=True)
@@ -534,7 +534,7 @@ def test_key_value_non_sensitive(client, seeded_db, auth_headers, db):
 
 def test_key_value_sensitive(client, seeded_db, auth_headers, db):
     """Key with sensitive enabled binding → masked_value is _MASK."""
-    from vollbuild.core.models.setting import Setting
+    from hubra.core.models.setting import Setting
 
     db.session.add(Setting(key="test.key_secret", value="secret-data", sensitive=True))
     ik = _make_key(db, "test.key_masked")
@@ -575,8 +575,8 @@ def test_key_value_no_bindings_masked(client, seeded_db, auth_headers, db):
 
 def test_preview_group_primary_alias_no_mma(client, seeded_db, auth_headers, db):
     """Group without MMA → projected address from name."""
-    from vollbuild.core.models.group import Group
-    from vollbuild.core.models.setting import Setting
+    from hubra.core.models.group import Group
+    from hubra.core.models.setting import Setting
 
     db.session.add(Setting(key="mail.domain", value="test.ch"))
     g = Group(name="TestGroup")
@@ -595,8 +595,8 @@ def test_preview_group_primary_alias_no_mma(client, seeded_db, auth_headers, db)
 
 def test_preview_function_mma_local_part_no_mma(client, seeded_db, auth_headers, db):
     """Function without MMA → projected local_part."""
-    from vollbuild.core.models.function import Function
-    from vollbuild.core.models.setting import Setting
+    from hubra.core.models.function import Function
+    from hubra.core.models.setting import Setting
 
     db.session.add(Setting(key="mail.domain", value="test.ch"))
     fn = Function(name="Kassier")

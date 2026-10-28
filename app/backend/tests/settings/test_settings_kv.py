@@ -2,7 +2,7 @@
 
 import pytest
 
-from vollbuild.core.models.setting import Setting
+from hubra.core.models.setting import Setting
 
 
 def test_get_settings_returns_list(client, db, auth_headers):
@@ -346,7 +346,7 @@ def test_put_setting_rejects_qr_iban_bad_checksum(client, db, auth_headers):
 
 def test_put_creates_namespace_permissions(client, db, auth_headers):
     """PUT with a namespace creates settings.{ns}.{read,write,delete} Permission rows."""
-    from vollbuild.core.models.role import Permission
+    from hubra.core.models.role import Permission
     from sqlalchemy import select
 
     resp = client.put(
@@ -369,7 +369,7 @@ def test_put_creates_namespace_permissions(client, db, auth_headers):
 
 def test_put_creates_key_permissions(client, db, auth_headers):
     """PUT creates per-key settings.{ns}.{key}.{read,write,delete} Permission rows."""
-    from vollbuild.core.models.role import Permission
+    from hubra.core.models.role import Permission
     from sqlalchemy import select
 
     resp = client.put(
@@ -393,7 +393,7 @@ def test_put_creates_key_permissions(client, db, auth_headers):
 
 def test_put_does_not_duplicate_namespace_permissions(client, db, auth_headers):
     """PUT twice with the same namespace does not create duplicate Permission rows."""
-    from vollbuild.core.models.role import Permission
+    from hubra.core.models.role import Permission
     from sqlalchemy import select
 
     client.put(
@@ -473,7 +473,7 @@ def test_put_with_sensitive_masks_value(client, db, auth_headers):
     assert resp.get_json()["value"] == "****"
 
     # Verify real value is stored
-    from vollbuild.core.models.setting import Setting
+    from hubra.core.models.setting import Setting
 
     setting = db.session.get(Setting, "meta.secret")
     assert setting is not None
@@ -527,10 +527,10 @@ def test_put_updates_metadata_in_place(client, db, auth_headers):
 
 def _make_role_and_member(db, tier, *, name, is_admin=False, permission_keys=None):
     """Create a role + member, optionally granting permission keys. Returns auth headers."""
-    from vollbuild.core.extensions import db as _db
-    from vollbuild.core.models.member import Member
-    from vollbuild.core.models.role import Role, RolePermission, Permission
-    from vollbuild.core.models.user import User
+    from hubra.core.extensions import db as _db
+    from hubra.core.models.member import Member
+    from hubra.core.models.role import Role, RolePermission, Permission
+    from hubra.core.models.user import User
     from sqlalchemy import select
 
     role = Role(name=name, is_default=False, is_admin=is_admin)
@@ -592,7 +592,7 @@ def ns_perm_headers(request, client, seeded_db, app, db):
 
     Must sync permissions first so base Permission rows exist.
     """
-    from vollbuild.core.extensions import db as _db
+    from hubra.core.extensions import db as _db
 
     app.test_cli_runner().invoke(args=["sync-permissions"])
     keys = getattr(request, "param", None) or []
@@ -605,7 +605,7 @@ def ns_perm_headers(request, client, seeded_db, app, db):
 @pytest.fixture
 def ns_read_headers(client, seeded_db, app, db):
     """Non-admin with only settings.custom.read."""
-    from vollbuild.core.extensions import db as _db
+    from hubra.core.extensions import db as _db
 
     app.test_cli_runner().invoke(args=["sync-permissions"])
     _make_role_and_member(
@@ -620,7 +620,7 @@ def ns_read_headers(client, seeded_db, app, db):
 @pytest.fixture
 def wildcard_read_headers(client, seeded_db, app, db):
     """Non-admin with settings.settings.read (wildcard)."""
-    from vollbuild.core.extensions import db as _db
+    from hubra.core.extensions import db as _db
 
     app.test_cli_runner().invoke(args=["sync-permissions"])
     _make_role_and_member(
@@ -635,7 +635,7 @@ def wildcard_read_headers(client, seeded_db, app, db):
 @pytest.fixture
 def ns_write_headers(client, seeded_db, app, db):
     """Non-admin with settings.custom.write."""
-    from vollbuild.core.extensions import db as _db
+    from hubra.core.extensions import db as _db
 
     app.test_cli_runner().invoke(args=["sync-permissions"])
     _make_role_and_member(
@@ -650,7 +650,7 @@ def ns_write_headers(client, seeded_db, app, db):
 @pytest.fixture
 def ns_delete_headers(client, seeded_db, app, db):
     """Non-admin with settings.custom.delete."""
-    from vollbuild.core.extensions import db as _db
+    from hubra.core.extensions import db as _db
 
     app.test_cli_runner().invoke(args=["sync-permissions"])
     _make_role_and_member(
@@ -669,7 +669,7 @@ def test_non_admin_with_namespace_read_sees_only_that_namespace(
     ns_read_headers,
 ):
     """Non-admin with settings.custom.read sees only custom-namepace settings in GET."""
-    from vollbuild.core.models.setting import Setting
+    from hubra.core.models.setting import Setting
 
     db.session.add(Setting(key="general.a", value="1", namespace="general"))
     db.session.add(Setting(key="custom.a", value="2", namespace="custom"))
@@ -691,7 +691,7 @@ def test_non_admin_with_wildcard_read_sees_all(
     wildcard_read_headers,
 ):
     """Non-admin with settings.settings.read sees all settings regardless of namespace."""
-    from vollbuild.core.models.setting import Setting
+    from hubra.core.models.setting import Setting
 
     db.session.add(Setting(key="general.a", value="1", namespace="general"))
     db.session.add(Setting(key="custom.b", value="2", namespace="custom"))
@@ -766,7 +766,7 @@ def test_non_admin_with_key_write_can_put_specific_key(
     app,
 ):
     """Non-admin with settings.custom.my.key.write can PUT that key but not another."""
-    from vollbuild.core.extensions import db as _db
+    from hubra.core.extensions import db as _db
 
     app.test_cli_runner().invoke(args=["sync-permissions"])
     _make_role_and_member(
@@ -799,7 +799,7 @@ def test_non_admin_without_delete_gets_403_on_delete(
     ns_read_headers,
 ):
     """Non-admin without delete permission gets 403 on DELETE."""
-    from vollbuild.core.models.setting import Setting
+    from hubra.core.models.setting import Setting
 
     db.session.add(
         Setting(key="custom.todelete", value="x", namespace="custom", required=False)
@@ -817,7 +817,7 @@ def test_non_admin_with_namespace_delete_can_delete(
     ns_delete_headers,
 ):
     """Non-admin with settings.custom.delete can delete a custom setting."""
-    from vollbuild.core.models.setting import Setting
+    from hubra.core.models.setting import Setting
 
     db.session.add(
         Setting(key="custom.todelete", value="x", namespace="custom", required=False)
@@ -835,8 +835,8 @@ def test_non_admin_read_key_level_only_sees_that_key(
     app,
 ):
     """Non-admin with per-key read permission sees only that key's setting."""
-    from vollbuild.core.extensions import db as _db
-    from vollbuild.core.models.setting import Setting
+    from hubra.core.extensions import db as _db
+    from hubra.core.models.setting import Setting
 
     db.session.add(Setting(key="custom.my.visible", value="1", namespace="custom"))
     db.session.add(Setting(key="custom.my.hidden", value="2", namespace="custom"))

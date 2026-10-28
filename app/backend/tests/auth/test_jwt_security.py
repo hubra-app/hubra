@@ -20,8 +20,8 @@ from flask_jwt_extended import (
 )
 from unittest.mock import patch
 
-from vollbuild.core.extensions import db
-from vollbuild.core.models.token import TokenBlocklist
+from hubra.core.extensions import db
+from hubra.core.models.token import TokenBlocklist
 
 
 # ── Missing token on protected endpoint ───────────────────────────────────────

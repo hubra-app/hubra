@@ -8,10 +8,10 @@ Tests that:
   - Can remove Owner role when there are multiple Owners
 """
 
-from vollbuild.core.extensions import db
-from vollbuild.core.models.member import Member
-from vollbuild.core.models.role import Role
-from vollbuild.core.models.user import User
+from hubra.core.extensions import db
+from hubra.core.models.member import Member
+from hubra.core.models.role import Role
+from hubra.core.models.user import User
 
 
 def _create_member(db, tier, roles=None, email="test@example.com"):

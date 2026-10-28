@@ -5,13 +5,13 @@ from __future__ import annotations
 import pytest
 
 from tests.helpers import set_modules
-from vollbuild.core import modules
-from vollbuild.core.errors import ApiError
-from vollbuild.core.models.feature import Feature, TenantFeature
-from vollbuild.core.models.tenant import Tenant
-from vollbuild.core.modules import Module, ModuleRegistryError, SettingField
-from vollbuild.core.modules.registry import ModuleRegistry
-from vollbuild.core.modules.state import invalidate
+from hubra.core import modules
+from hubra.core.errors import ApiError
+from hubra.core.models.feature import Feature, TenantFeature
+from hubra.core.models.tenant import Tenant
+from hubra.core.modules import Module, ModuleRegistryError, SettingField
+from hubra.core.modules.registry import ModuleRegistry
+from hubra.core.modules.state import invalidate
 
 
 @pytest.fixture
@@ -68,7 +68,7 @@ def test_registry_rejects_cycles():
 
 
 def test_v2_blueprints_share_v1_permission_keys():
-    from vollbuild.api.permissions import _derive_perm_key
+    from hubra.api.permissions import _derive_perm_key
 
     assert (
         _derive_perm_key("members_bp_v2", "members", "read") == "members.members.read"
@@ -217,14 +217,14 @@ def test_per_tenant_job_without_tenants_returns_body_result(db, seeded_db):
 def test_provisioning_writes_a_switch_per_optional_module(db):
     from unittest.mock import patch
 
-    from vollbuild.core.tenant.service import _seed_tenant
+    from hubra.core.tenant.service import _seed_tenant
 
     new = Tenant(name="New", slug="new-club", plan="starter")
     db.session.add(new)
     db.session.flush()
     with (
-        patch("vollbuild.core.tenant.context.set_search_path"),
-        patch("vollbuild.core.tenant.context.reset_search_path"),
+        patch("hubra.core.tenant.context.set_search_path"),
+        patch("hubra.core.tenant.context.reset_search_path"),
     ):
         _seed_tenant(new.id, None, None)
     db.session.commit()
@@ -344,8 +344,8 @@ def test_update_module_settings_rejects_bad_values(client, db, auth_headers, ten
 def test_checkout_uses_module_setting_for_due_date(db, seeded_db):
     from datetime import datetime, timezone
 
-    from vollbuild.api.inventory.services import InventoryService
-    from vollbuild.core.models.inventory import InventoryItem
+    from hubra.api.inventory.services import InventoryService
+    from hubra.core.models.inventory import InventoryItem
 
     item = InventoryItem(name="Drill", category="Tool", status="available")
     db.session.add(item)
@@ -446,7 +446,7 @@ def test_task_queued_in_a_club_carries_the_club(app, db, tenant):
     from celery import Task
     from flask import g
 
-    from vollbuild.core.tasks.session_tasks import update_last_seen
+    from hubra.core.tasks.session_tasks import update_last_seen
 
     with patch.object(Task, "apply_async") as parent:
         with app.test_request_context("/"):

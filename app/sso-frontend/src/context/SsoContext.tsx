@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react'
 import { notifications } from '@mantine/notifications'
-import { hasTokens, setAuthFailureHandler } from '@vollbuild/api-client'
+import { hasTokens, setAuthFailureHandler } from '@hubra/api-client'
 import { getMyPermissions, type PermissionsResponse } from '@/api/auth'
 
 export type AuthStatus = 'loading' | 'authed' | 'anon'

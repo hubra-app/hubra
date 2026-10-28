@@ -11,12 +11,12 @@ from sqlalchemy import select
 
 def test_generate_invoices_creates_for_billable_member(app, billable_tier_db):
     """Task creates an Open invoice for an active member with a monthly billable tier."""
-    from vollbuild.core.tasks.finance_tasks import generate_invoices_task
-    from vollbuild.core.models.finance import Invoice
-    from vollbuild.core.extensions import db
+    from hubra.core.tasks.finance_tasks import generate_invoices_task
+    from hubra.core.models.finance import Invoice
+    from hubra.core.extensions import db
 
     with app.app_context():
-        with patch("vollbuild.core.tasks.email_tasks.send_email_task.delay"):
+        with patch("hubra.core.tasks.email_tasks.send_email_task.delay"):
             result = generate_invoices_task.run()
         assert result["created"] >= 1
 
@@ -34,16 +34,16 @@ def test_generate_invoices_creates_for_billable_member(app, billable_tier_db):
 
 def test_generate_invoices_creates_pending_transaction(app, billable_tier_db):
     """Task creates a Pending income transaction linked to the invoice."""
-    from vollbuild.core.tasks.finance_tasks import generate_invoices_task
-    from vollbuild.core.models.finance import Invoice, Transaction, TransactionCategory
-    from vollbuild.core.extensions import db
+    from hubra.core.tasks.finance_tasks import generate_invoices_task
+    from hubra.core.models.finance import Invoice, Transaction, TransactionCategory
+    from hubra.core.extensions import db
 
     with app.app_context():
         cat = TransactionCategory(name="Membership", color="#00aaff")
         db.session.add(cat)
         db.session.commit()
 
-        with patch("vollbuild.core.tasks.email_tasks.send_email_task.delay"):
+        with patch("hubra.core.tasks.email_tasks.send_email_task.delay"):
             result = generate_invoices_task.run()
         assert result["created"] >= 1
 
@@ -67,12 +67,12 @@ def test_generate_invoices_creates_pending_transaction(app, billable_tier_db):
 
 def test_generate_invoices_skips_member_without_tier(app, billable_tier_db):
     """Task skips member with no tier."""
-    from vollbuild.core.tasks.finance_tasks import generate_invoices_task
-    from vollbuild.core.models.finance import Invoice
-    from vollbuild.core.extensions import db
+    from hubra.core.tasks.finance_tasks import generate_invoices_task
+    from hubra.core.models.finance import Invoice
+    from hubra.core.extensions import db
 
     with app.app_context():
-        with patch("vollbuild.core.tasks.email_tasks.send_email_task.delay"):
+        with patch("hubra.core.tasks.email_tasks.send_email_task.delay"):
             generate_invoices_task.run()
         invoices = db.session.scalars(
             select(Invoice).where(
@@ -84,12 +84,12 @@ def test_generate_invoices_skips_member_without_tier(app, billable_tier_db):
 
 def test_generate_invoices_is_idempotent(app, billable_tier_db):
     """Running the task twice does not create duplicate invoices for the same period."""
-    from vollbuild.core.tasks.finance_tasks import generate_invoices_task
-    from vollbuild.core.models.finance import Invoice
-    from vollbuild.core.extensions import db
+    from hubra.core.tasks.finance_tasks import generate_invoices_task
+    from hubra.core.models.finance import Invoice
+    from hubra.core.extensions import db
 
     with app.app_context():
-        with patch("vollbuild.core.tasks.email_tasks.send_email_task.delay"):
+        with patch("hubra.core.tasks.email_tasks.send_email_task.delay"):
             generate_invoices_task.run()
             result2 = generate_invoices_task.run()
         assert result2["created"] == 0
@@ -109,15 +109,15 @@ def test_generate_invoices_email_args_are_json_serialisable(app, billable_tier_d
     import base64
     import json
 
-    from vollbuild.core.tasks.finance_tasks import generate_invoices_task
+    from hubra.core.tasks.finance_tasks import generate_invoices_task
 
     with app.app_context():
         with (
             patch(
-                "vollbuild.core.services.qr_bill.generate_invoice_pdf",
+                "hubra.core.services.qr_bill.generate_invoice_pdf",
                 return_value=b"%PDF-1.7 test",
             ),
-            patch("vollbuild.core.tasks.email_tasks.send_email_task.delay") as delay,
+            patch("hubra.core.tasks.email_tasks.send_email_task.delay") as delay,
         ):
             generate_invoices_task.run()
 

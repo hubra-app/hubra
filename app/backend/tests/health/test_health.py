@@ -11,9 +11,9 @@ Covers:
 
 from unittest.mock import patch
 
-from vollbuild.api.health.cache import HealthCache
+from hubra.api.health.cache import HealthCache
 
-_SVC = "vollbuild.api.health.services.HealthService"
+_SVC = "hubra.api.health.services.HealthService"
 
 
 def _all_ok_patches():
@@ -129,7 +129,7 @@ def test_health_detailed_latency_ms_present(client, auth_headers):
 
 def test_health_detailed_includes_version(client, auth_headers):
     """Detailed health payload includes the backend version."""
-    from vollbuild.api.version.services import VersionService
+    from hubra.api.version.services import VersionService
 
     resp = client.get("/api/v1/health/detailed", headers=auth_headers)
     data = resp.get_json()

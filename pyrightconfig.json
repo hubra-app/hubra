@@ -1,5 +1,5 @@
 {
-  "include": ["app/backend/vollbuild"],
+  "include": ["app/backend/hubra"],
   "exclude": ["**/__pycache__", "**/htmlcov"],
   "typeCheckingMode": "basic",
   "reportCallIssue": "none",

@@ -90,8 +90,8 @@ def test_mark_invoice_paid(client, auth_headers, seeded_db):
 
 def test_mark_invoice_paid_from_db_record(client, seeded_db, auth_headers):
     """PATCH /invoices/:id with status=Paid via DB-created invoice."""
-    from vollbuild.core.models.finance import Invoice
-    from vollbuild.core.extensions import db
+    from hubra.core.models.finance import Invoice
+    from hubra.core.extensions import db
 
     today = date.today()
     invoice = Invoice(
@@ -119,8 +119,8 @@ def test_mark_invoice_paid_from_db_record(client, seeded_db, auth_headers):
 
 def test_remind_invoice_dispatches_email(client, seeded_db, auth_headers):
     """POST /invoices/:id/remind returns 200 and dispatches send_email_task.delay."""
-    from vollbuild.core.models.finance import Invoice
-    from vollbuild.core.extensions import db
+    from hubra.core.models.finance import Invoice
+    from hubra.core.extensions import db
 
     today = date.today()
     invoice = Invoice(
@@ -134,7 +134,7 @@ def test_remind_invoice_dispatches_email(client, seeded_db, auth_headers):
     db.session.commit()
     invoice_id = invoice.id
 
-    with patch("vollbuild.core.tasks.email_tasks.send_email_task.delay") as mock_delay:
+    with patch("hubra.core.tasks.email_tasks.send_email_task.delay") as mock_delay:
         resp = client.post(
             f"/api/v1/finance/invoices/{invoice_id}/remind", headers=auth_headers
         )
@@ -158,8 +158,8 @@ def test_list_my_invoices_returns_own_invoices(
     client, billable_tier_db, billed_auth_headers
 ):
     """GET /invoices/mine returns only the authenticated member's invoices."""
-    from vollbuild.core.models.finance import Invoice
-    from vollbuild.core.extensions import db
+    from hubra.core.models.finance import Invoice
+    from hubra.core.extensions import db
 
     today = date.today()
     invoice = Invoice(

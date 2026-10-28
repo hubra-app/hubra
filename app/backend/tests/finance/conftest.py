@@ -7,9 +7,9 @@ from decimal import Decimal
 @pytest.fixture
 def billable_tier_db(db):
     """Create seed data with a billable tier and two members."""
-    from vollbuild.core.models.role import Role
-    from vollbuild.core.models.member import Member, MembershipTier
-    from vollbuild.core.models.user import User
+    from hubra.core.models.role import Role
+    from hubra.core.models.member import Member, MembershipTier
+    from hubra.core.models.user import User
 
     role = Role(name="Admin", is_default=True)
     billable_tier = MembershipTier(

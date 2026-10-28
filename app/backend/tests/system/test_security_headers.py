@@ -4,7 +4,7 @@ CSP, Permissions-Policy, and Accept-CH are set by Caddy on frontend HTML,
 not on API JSON responses.
 """
 
-from vollbuild.api.health.cache import HealthCache
+from hubra.api.health.cache import HealthCache
 
 
 # ── Security header tests ─────────────────────────────────────────────────────

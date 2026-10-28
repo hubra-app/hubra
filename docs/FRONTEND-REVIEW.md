@@ -60,7 +60,7 @@ packages/
     client.ts    # apiFetch, refreshAccess, getCookie, hasTokens, setAuthFailureHandler
     index.ts     # public exports
 ```
-Each app imports from `@vollbuild/api-client`. This is a low-risk refactor since the code is functionally identical — the main work is import path updates.
+Each app imports from `@hubra/api-client`. This is a low-risk refactor since the code is functionally identical — the main work is import path updates.
 
 ---
 

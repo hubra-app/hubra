@@ -252,7 +252,7 @@ repos:
 
       - id: backend-mypy
         name: backend mypy
-        entry: bash -c "cd app/backend && python -m mypy vollbuild || true"
+        entry: bash -c "cd app/backend && python -m mypy hubra || true"
         language: system
         files: ^app/backend/
         pass_filenames: false

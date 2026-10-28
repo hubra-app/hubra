@@ -6,9 +6,9 @@ and user management endpoints accessible via v2 manager namespace.
 
 import pytest
 
-from vollbuild.core.extensions import db
-from vollbuild.core.models.feature import TenantFeature
-from vollbuild.core.models.tenant import GlobalAuditEntry, Tenant
+from hubra.core.extensions import db
+from hubra.core.models.feature import TenantFeature
+from hubra.core.models.tenant import GlobalAuditEntry, Tenant
 
 
 @pytest.fixture
@@ -21,7 +21,7 @@ def superadmin_headers(client, seeded_db):
 
     # Login — since admin is also a member, we need to use the
     # no-tenant login path. Delete the member to force user: JWT.
-    from vollbuild.core.models.member import Member
+    from hubra.core.models.member import Member
 
     member = db.session.get(Member, seeded_db["admin"].id)
     if member:

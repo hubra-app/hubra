@@ -3,7 +3,7 @@
 
 def test_no_slug_passes_through():
     """/api/v1/auth/bootstrap-status is not rewritten (single-tenant mode)."""
-    from vollbuild.core.tenant.middleware import _extract_slug_from_path
+    from hubra.core.tenant.middleware import _extract_slug_from_path
 
     environ = {"PATH_INFO": "/api/v1/auth/bootstrap-status"}
     assert _extract_slug_from_path(environ) is None
@@ -11,7 +11,7 @@ def test_no_slug_passes_through():
 
 def test_v1_not_treated_as_slug():
     """/api/v1/members does not treat 'v1' as a slug."""
-    from vollbuild.core.tenant.middleware import _extract_slug_from_path
+    from hubra.core.tenant.middleware import _extract_slug_from_path
 
     environ = {"PATH_INFO": "/api/v1/members"}
     assert _extract_slug_from_path(environ) is None
@@ -19,7 +19,7 @@ def test_v1_not_treated_as_slug():
 
 def test_slug_extracted_correctly():
     """/api/acmecanoe/v1/members extracts slug 'acmecanoe'."""
-    from vollbuild.core.tenant.middleware import _extract_slug_from_path
+    from hubra.core.tenant.middleware import _extract_slug_from_path
 
     environ = {"PATH_INFO": "/api/acmecanoe/v1/members"}
     assert _extract_slug_from_path(environ) == "acmecanoe"
@@ -27,7 +27,7 @@ def test_slug_extracted_correctly():
 
 def test_slug_path_rewritten():
     """/api/acmecanoe/v1/members is rewritten to /api/v1/members."""
-    from vollbuild.core.tenant.middleware import _rewrite_path
+    from hubra.core.tenant.middleware import _rewrite_path
 
     environ = {"PATH_INFO": "/api/acmecanoe/v1/members"}
     _rewrite_path(environ)
@@ -36,7 +36,7 @@ def test_slug_path_rewritten():
 
 def test_no_slug_path_not_rewritten():
     """/api/v1/members is not rewritten."""
-    from vollbuild.core.tenant.middleware import _rewrite_path
+    from hubra.core.tenant.middleware import _rewrite_path
 
     environ = {"PATH_INFO": "/api/v1/members"}
     _rewrite_path(environ)
@@ -45,7 +45,7 @@ def test_no_slug_path_not_rewritten():
 
 def test_health_not_rewritten():
     """/api/v1/health is not rewritten."""
-    from vollbuild.core.tenant.middleware import _rewrite_path
+    from hubra.core.tenant.middleware import _rewrite_path
 
     environ = {"PATH_INFO": "/api/v1/health"}
     _rewrite_path(environ)
@@ -54,7 +54,7 @@ def test_health_not_rewritten():
 
 def test_root_health_not_rewritten():
     """/health is not touched by the middleware."""
-    from vollbuild.core.tenant.middleware import _extract_slug_from_path, _rewrite_path
+    from hubra.core.tenant.middleware import _extract_slug_from_path, _rewrite_path
 
     environ = {"PATH_INFO": "/health"}
     assert _extract_slug_from_path(environ) is None
@@ -64,7 +64,7 @@ def test_root_health_not_rewritten():
 
 def test_tenant_scoped_health_rewritten():
     """/api/acmecanoe/v1/health is rewritten to /api/v1/health."""
-    from vollbuild.core.tenant.middleware import _extract_slug_from_path, _rewrite_path
+    from hubra.core.tenant.middleware import _extract_slug_from_path, _rewrite_path
 
     environ = {"PATH_INFO": "/api/acmecanoe/v1/health"}
     assert _extract_slug_from_path(environ) == "acmecanoe"
@@ -74,7 +74,7 @@ def test_tenant_scoped_health_rewritten():
 
 def test_deep_path_rewritten():
     """/api/acmecanoe/v1/members/42/invoices is rewritten correctly."""
-    from vollbuild.core.tenant.middleware import _rewrite_path
+    from hubra.core.tenant.middleware import _rewrite_path
 
     environ = {"PATH_INFO": "/api/acmecanoe/v1/members/42/invoices"}
     _rewrite_path(environ)
@@ -98,7 +98,7 @@ def test_resolve_tenant_single_tenant_mode(client):
 def test_resolve_tenant_no_slug_sets_none(app):
     """resolve_tenant sets g.tenant=None when no slug source is available."""
     from flask import g
-    from vollbuild.core.tenant.middleware import resolve_tenant
+    from hubra.core.tenant.middleware import resolve_tenant
 
     with app.test_request_context("/api/v1/members"):
         resolve_tenant()

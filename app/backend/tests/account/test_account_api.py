@@ -96,13 +96,13 @@ def test_get_invoices_returns_list(client, db, member_headers, seeded_db):
 
 def test_get_invoices_returns_own_invoices_only(client, db, member_headers, seeded_db):
     """GET /account/invoices returns only the authenticated member's invoices."""
-    from vollbuild.core.models.finance import Invoice
-    from vollbuild.core.models.member import Member
+    from hubra.core.models.finance import Invoice
+    from hubra.core.models.member import Member
 
     # Create a second member
     role = seeded_db["role"]
     tier = seeded_db["tier"]
-    from vollbuild.core.models.user import User
+    from hubra.core.models.user import User
 
     other_user = User(
         email="other@test.ch",
@@ -169,7 +169,7 @@ def test_get_groups_returns_list(client, db, member_headers, seeded_db):
 
 def test_get_groups_returns_member_groups(client, db, member_headers, seeded_db):
     """GET /account/groups returns groups the member belongs to."""
-    from vollbuild.core.models.group import Group
+    from hubra.core.models.group import Group
 
     admin = seeded_db["admin"]
     grp = Group(name="Laser Crew", color="#ff0000")
@@ -187,7 +187,7 @@ def test_get_groups_returns_member_groups(client, db, member_headers, seeded_db)
 
 def test_get_groups_excludes_non_member_groups(client, db, member_headers, seeded_db):
     """GET /account/groups does not return groups the member is not in."""
-    from vollbuild.core.models.group import Group
+    from hubra.core.models.group import Group
 
     other_grp = Group(name="Secret Group", color="#000000")
     db.session.add(other_grp)
@@ -263,7 +263,7 @@ def test_get_mail_settings_returns_private_email_verified(
 
 def test_patch_mail_settings(client, db, seeded_db, member_headers):
     """Primary PATCH test: returns 202 with updated settings and dispatches task."""
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     admin = seeded_db["admin"]
     admin.user.private_email_verified = True
@@ -279,9 +279,7 @@ def test_patch_mail_settings(client, db, seeded_db, member_headers):
     db.session.add(addr)
     db.session.commit()
 
-    with patch(
-        "vollbuild.core.tasks.wildduck.provision_member_mail.delay"
-    ) as mock_task:
+    with patch("hubra.core.tasks.wildduck.provision_member_mail.delay") as mock_task:
         resp = client.patch(
             "/api/v1/account/mail-settings",
             json={"forwarding_enabled": True},
@@ -296,7 +294,7 @@ def test_patch_mail_settings(client, db, seeded_db, member_headers):
 
 def test_patch_mail_settings_forwarding(client, db, seeded_db, member_headers):
     """PATCH /account/mail-settings with forwarding_enabled=True returns 202."""
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     admin = seeded_db["admin"]
     admin.user.private_email_verified = True
@@ -312,9 +310,7 @@ def test_patch_mail_settings_forwarding(client, db, seeded_db, member_headers):
     db.session.add(addr)
     db.session.commit()
 
-    with patch(
-        "vollbuild.core.tasks.wildduck.provision_member_mail.delay"
-    ) as mock_task:
+    with patch("hubra.core.tasks.wildduck.provision_member_mail.delay") as mock_task:
         resp = client.patch(
             "/api/v1/account/mail-settings",
             json={"forwarding_enabled": True},
@@ -328,7 +324,7 @@ def test_patch_mail_settings_forwarding(client, db, seeded_db, member_headers):
 
 def test_patch_mail_settings_multiple_fields(client, db, seeded_db, member_headers):
     """PATCH /account/mail-settings accepts forwarding_enabled."""
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     admin = seeded_db["admin"]
     admin.user.private_email_verified = True
@@ -344,7 +340,7 @@ def test_patch_mail_settings_multiple_fields(client, db, seeded_db, member_heade
     db.session.add(addr)
     db.session.commit()
 
-    with patch("vollbuild.core.tasks.wildduck.provision_member_mail.delay"):
+    with patch("hubra.core.tasks.wildduck.provision_member_mail.delay"):
         resp = client.patch(
             "/api/v1/account/mail-settings",
             json={"forwarding_enabled": True},
@@ -357,7 +353,7 @@ def test_patch_mail_settings_multiple_fields(client, db, seeded_db, member_heade
 
 def test_patch_mail_settings_persists(client, db, seeded_db, member_headers):
     """Values updated via PATCH are reflected in the subsequent GET."""
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     admin = seeded_db["admin"]
     admin.user.private_email_verified = True
@@ -373,7 +369,7 @@ def test_patch_mail_settings_persists(client, db, seeded_db, member_headers):
     db.session.add(addr)
     db.session.commit()
 
-    with patch("vollbuild.core.tasks.wildduck.provision_member_mail.delay"):
+    with patch("hubra.core.tasks.wildduck.provision_member_mail.delay"):
         client.patch(
             "/api/v1/account/mail-settings",
             json={"forwarding_enabled": True},
@@ -447,7 +443,7 @@ def test_patch_mail_settings_dispatches_celery_task(
     client, db, seeded_db, member_headers
 ):
     """provision_member_mail.delay is called with the correct member_id."""
-    from vollbuild.core.models.managed_mail import ManagedMailAddress
+    from hubra.core.models.managed_mail import ManagedMailAddress
 
     admin = seeded_db["admin"]
     addr = ManagedMailAddress(
@@ -460,9 +456,7 @@ def test_patch_mail_settings_dispatches_celery_task(
     )
     db.session.add(addr)
     db.session.commit()
-    with patch(
-        "vollbuild.core.tasks.wildduck.provision_member_mail.delay"
-    ) as mock_task:
+    with patch("hubra.core.tasks.wildduck.provision_member_mail.delay") as mock_task:
         resp = client.patch(
             "/api/v1/account/mail-settings",
             json={"forwarding_enabled": False},
@@ -479,9 +473,7 @@ def test_patch_mail_settings_dispatches_celery_task(
 
 def test_request_email_verification_returns_202(client, db, seeded_db, member_headers):
     """POST /account/request-email-verification returns 202 and sends email."""
-    with patch(
-        "vollbuild.api.auth.routes.email_svc.send_email_verification"
-    ) as mock_send:
+    with patch("hubra.api.auth.routes.email_svc.send_email_verification") as mock_send:
         resp = client.post(
             "/api/v1/account/request-email-verification",
             headers=member_headers,
@@ -501,7 +493,7 @@ def test_request_email_verification_invalidates_prior_tokens(
     client, db, seeded_db, member_headers
 ):
     """A second verification request invalidates the first token."""
-    from vollbuild.core.models.email_verification import EmailVerificationToken
+    from hubra.core.models.email_verification import EmailVerificationToken
     import hashlib
     import secrets
     from datetime import timedelta
@@ -517,7 +509,7 @@ def test_request_email_verification_invalidates_prior_tokens(
     db.session.add(prior)
     db.session.commit()
 
-    with patch("vollbuild.api.auth.routes.email_svc.send_email_verification"):
+    with patch("hubra.api.auth.routes.email_svc.send_email_verification"):
         client.post(
             "/api/v1/account/request-email-verification", headers=member_headers
         )
@@ -531,7 +523,7 @@ def test_request_email_verification_invalidates_prior_tokens(
 
 def test_verify_email_valid_token(client, db, seeded_db, member_headers):
     """POST /account/verify-email sets private_email_verified=True and returns 200."""
-    from vollbuild.core.models.email_verification import EmailVerificationToken
+    from hubra.core.models.email_verification import EmailVerificationToken
     import hashlib
     import secrets
     from datetime import timedelta
@@ -573,7 +565,7 @@ def test_verify_email_invalid_token_returns_400(client, seeded_db):
 
 def test_verify_email_used_token_returns_400(client, db, seeded_db):
     """POST /account/verify-email with used token returns 400 with INVALID_TOKEN."""
-    from vollbuild.core.models.email_verification import EmailVerificationToken
+    from hubra.core.models.email_verification import EmailVerificationToken
     import hashlib
     import secrets
     from datetime import timedelta
@@ -599,7 +591,7 @@ def test_verify_email_used_token_returns_400(client, db, seeded_db):
 
 def test_verify_email_expired_token_returns_400(client, db, seeded_db):
     """POST /account/verify-email with expired token returns 400 with INVALID_TOKEN."""
-    from vollbuild.core.models.email_verification import EmailVerificationToken
+    from hubra.core.models.email_verification import EmailVerificationToken
     import hashlib
     import secrets
     from datetime import timedelta

@@ -2,7 +2,7 @@
 
 from unittest.mock import patch
 
-from vollbuild.api.settings.services import SettingService
+from hubra.api.settings.services import SettingService
 
 
 def patch_mail_domain(domain: str):
@@ -12,9 +12,7 @@ def patch_mail_domain(domain: str):
     def fake_get(key, default=None):
         return domain if key == "mail.domain" else real_get(key, default)
 
-    return patch(
-        "vollbuild.api.settings.services.SettingService.get", side_effect=fake_get
-    )
+    return patch("hubra.api.settings.services.SettingService.get", side_effect=fake_get)
 
 
 def set_modules(enabled: bool = True, *codes: str) -> None:
@@ -23,10 +21,10 @@ def set_modules(enabled: bool = True, *codes: str) -> None:
     With no *codes*, applies to every registered module.  Writes the
     catalog rows directly, so dependency checks are skipped on purpose.
     """
-    from vollbuild.core.extensions import db
-    from vollbuild.core.models.feature import Feature
-    from vollbuild.core.modules import registry
-    from vollbuild.core.modules.state import invalidate
+    from hubra.core.extensions import db
+    from hubra.core.models.feature import Feature
+    from hubra.core.modules import registry
+    from hubra.core.modules.state import invalidate
 
     registry.load()
     for code in codes or [m.code for m in registry.all()]:

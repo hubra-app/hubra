@@ -17,7 +17,7 @@
     "noFallthroughCasesInSwitch": true,
     "paths": {
       "@/*": ["./src/*"],
-      "@vollbuild/api-client": ["../../packages/api-client/src/index.ts"]
+      "@hubra/api-client": ["../../packages/api-client/src/index.ts"]
     }
   },
   "include": ["src", "../../packages/api-client/src"]

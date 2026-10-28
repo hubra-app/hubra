@@ -1,7 +1,7 @@
 """Tests for Phase 4 Feature catalog and TenantFeature models."""
 
-from vollbuild.core.models.feature import Feature, TenantFeature
-from vollbuild.core.models.tenant import Tenant
+from hubra.core.models.feature import Feature, TenantFeature
+from hubra.core.models.tenant import Tenant
 
 
 def test_feature_code_is_primary_key(db):

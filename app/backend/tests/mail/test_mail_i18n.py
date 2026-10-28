@@ -6,7 +6,7 @@ from pathlib import Path
 
 from markupsafe import Markup
 
-from vollbuild.core.services.mail_i18n import get_mail_translator, render_mail_template
+from hubra.core.services.mail_i18n import get_mail_translator, render_mail_template
 
 
 class _FakeRow:
@@ -21,7 +21,7 @@ class _FakeRow:
 
 def _patch_translations(monkeypatch, rows):
     """Patch db.session.scalars to return *rows* for Translation queries."""
-    from vollbuild.core.extensions import db
+    from hubra.core.extensions import db
 
     class _FakeScalars:
         def __init__(self, items):
@@ -132,10 +132,7 @@ _T_KEY_RE = re.compile(r"""t\(\s*['"]([^'"]+)['"]""")
 def _extract_template_keys() -> set[str]:
     """Scan all email templates for t('key') calls and return the set of keys."""
     template_dir = (
-        Path(__file__).resolve().parent.parent.parent
-        / "vollbuild"
-        / "templates"
-        / "email"
+        Path(__file__).resolve().parent.parent.parent / "hubra" / "templates" / "email"
     )
     keys: set[str] = set()
     for pattern in ("*.html", "*.txt", "*.j2"):
@@ -149,7 +146,7 @@ def _load_seed_keys(locale: str) -> set[str]:
     """Load translation keys from a seed JSON file."""
     seed_path = (
         Path(__file__).resolve().parent.parent.parent
-        / "vollbuild"
+        / "hubra"
         / "core"
         / "seed_data"
         / "translations"

@@ -11,7 +11,7 @@ Covers:
 from unittest.mock import patch, MagicMock
 
 
-from vollbuild.core.services.storage_metrics import (
+from hubra.core.services.storage_metrics import (
     get_storage_bytes,
     get_storage_breakdown,
     _get_pg_schema_size,
@@ -22,8 +22,8 @@ from vollbuild.core.services.storage_metrics import (
 class TestGetStorageBytes:
     """Tests for storage byte aggregation."""
 
-    @patch("vollbuild.core.services.storage_metrics._get_pg_schema_size")
-    @patch("vollbuild.core.services.storage_metrics._get_mail_quota_total")
+    @patch("hubra.core.services.storage_metrics._get_pg_schema_size")
+    @patch("hubra.core.services.storage_metrics._get_mail_quota_total")
     def test_sums_pg_and_mail(self, mock_mail, mock_pg):
         """Total = PG schema + mail quota."""
         mock_pg.return_value = 1024
@@ -31,8 +31,8 @@ class TestGetStorageBytes:
         result = get_storage_bytes(tenant_id=1)
         assert result == 1536
 
-    @patch("vollbuild.core.services.storage_metrics._get_pg_schema_size")
-    @patch("vollbuild.core.services.storage_metrics._get_mail_quota_total")
+    @patch("hubra.core.services.storage_metrics._get_pg_schema_size")
+    @patch("hubra.core.services.storage_metrics._get_mail_quota_total")
     def test_returns_zero_when_both_fail(self, mock_mail, mock_pg):
         """Returns 0 when both sources fail."""
         mock_pg.return_value = 0
@@ -44,14 +44,14 @@ class TestGetStorageBytes:
 class TestPgSchemaSize:
     """Tests for PostgreSQL schema size query."""
 
-    @patch("vollbuild.core.services.storage_metrics.db")
+    @patch("hubra.core.services.storage_metrics.db")
     def test_returns_schema_size(self, mock_db):
         """Returns the schema size in bytes."""
         mock_db.session.scalar.return_value = 2048
         result = _get_pg_schema_size(tenant_id=1)
         assert result == 2048
 
-    @patch("vollbuild.core.services.storage_metrics.db")
+    @patch("hubra.core.services.storage_metrics.db")
     def test_returns_zero_on_error(self, mock_db):
         """Returns 0 on database errors."""
         mock_db.session.scalar.side_effect = Exception("DB error")
@@ -90,9 +90,9 @@ class TestMailQuota:
 class TestStorageBreakdown:
     """Tests for detailed storage breakdown."""
 
-    @patch("vollbuild.core.services.storage_metrics.get_storage_bytes")
-    @patch("vollbuild.core.services.storage_metrics._get_mail_quota_total")
-    @patch("vollbuild.core.services.storage_metrics._get_pg_schema_size")
+    @patch("hubra.core.services.storage_metrics.get_storage_bytes")
+    @patch("hubra.core.services.storage_metrics._get_mail_quota_total")
+    @patch("hubra.core.services.storage_metrics._get_pg_schema_size")
     def test_breakdown_structure(self, mock_pg, mock_mail, mock_total):
         """Returns correct breakdown structure."""
         mock_pg.return_value = 1000
