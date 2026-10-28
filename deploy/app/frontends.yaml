@@ -27,9 +27,13 @@ spec:
       labels:
         app.kubernetes.io/name: frontend
     spec:
+      securityContext:
+        seccompProfile: { type: RuntimeDefault }
       containers:
         - name: nginx
           image: hubra/frontend
+          securityContext:
+            allowPrivilegeEscalation: false
           envFrom:
             - configMapRef:
                 name: hubra-frontend
@@ -68,9 +72,13 @@ spec:
       labels:
         app.kubernetes.io/name: admin-frontend
     spec:
+      securityContext:
+        seccompProfile: { type: RuntimeDefault }
       containers:
         - name: nginx
           image: hubra/admin-frontend
+          securityContext:
+            allowPrivilegeEscalation: false
           envFrom:
             - configMapRef:
                 name: hubra-frontend
@@ -109,9 +117,13 @@ spec:
       labels:
         app.kubernetes.io/name: sso-frontend
     spec:
+      securityContext:
+        seccompProfile: { type: RuntimeDefault }
       containers:
         - name: nginx
           image: hubra/sso-frontend
+          securityContext:
+            allowPrivilegeEscalation: false
           envFrom:
             - configMapRef:
                 name: hubra-frontend

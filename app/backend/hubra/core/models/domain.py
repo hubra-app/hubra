@@ -9,7 +9,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from hubra.core.extensions import db
 
-_VERIFICATION_PREFIX = "verevia-verify="
 
 
 class Domain(db.Model):

@@ -1,0 +1,15 @@
+# Opt-in: only the listed pods accept connections (networkpolicy.yaml). Add it
+# to an install that runs the plain stack from deploy/app with k3s' bundled
+# Traefik in kube-system:
+#
+#   components:
+#     - ../components/network-policy
+#
+# Not for clusters with more in the namespace than deploy/app (the Contabo
+# overlay runs CloudNativePG and its own Traefik there): their traffic would
+# be cut off until matching rules are added.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+resources:
+  - networkpolicy.yaml

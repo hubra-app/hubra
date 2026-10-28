@@ -7,6 +7,8 @@ admin role).
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
 from flask import Blueprint, jsonify, request
 from marshmallow import ValidationError
 from sqlalchemy import select
@@ -17,10 +19,14 @@ from hubra.core.models.domain import Domain
 from hubra.core.models.tenant import GlobalAuditEntry
 from hubra.core.schemas.club_settings import ClubSettingsSchema
 from hubra.core.services.dns_verification import (
+    _VERIFICATION_PREFIX,
     generate_verification_token,
     verify_domain,
 )
 from hubra.core.tenant.context import current_tenant
+
+# How long a club's unproven claim on a domain keeps others from claiming it.
+PENDING_CLAIM_HOLD = timedelta(hours=72)
 
 admin_bp = Blueprint("admin_bp", __name__)
 
@@ -69,9 +75,18 @@ def add_domain():
 
     existing = db.session.scalar(select(Domain).where(Domain.domain == domain_name))
     if existing is not None:
-        return jsonify(
-            {"error": "CONFLICT", "message": "Domain already registered"}
-        ), 409
+        # A claim nobody proved is only held for a while: after that another
+        # club may claim it, so no club can sit on someone else's domain.
+        created = existing.created_at
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=timezone.utc)
+        stale = datetime.now(timezone.utc) - created > PENDING_CLAIM_HOLD
+        if existing.verified or existing.tenant_id == tenant.id or not stale:
+            return jsonify(
+                {"error": "CONFLICT", "message": "Domain already registered"}
+            ), 409
+        db.session.delete(existing)
+        db.session.flush()
 
     token = generate_verification_token()
     is_first = (
@@ -99,8 +114,8 @@ def add_domain():
                 "domain": _domain_to_dict(domain),
                 "txt_record": {
                     "name": domain_name,
-                    "value": f"verevia-verify={token}",
-                    "instructions": f"Add a TXT record with value 'verevia-verify={token}' to your DNS configuration for {domain_name}.",
+                    "value": f"{_VERIFICATION_PREFIX}{token}",
+                    "instructions": f"Add a TXT record with value '{_VERIFICATION_PREFIX}{token}' to your DNS configuration for {domain_name}.",
                 },
             }
         ),

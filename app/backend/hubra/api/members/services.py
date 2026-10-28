@@ -12,6 +12,7 @@ from sqlalchemy import delete, func, insert, select
 from sqlalchemy.orm import selectinload
 
 from hubra.api.mail.services import MailboxService
+from hubra.api.permissions import check_grant
 from hubra.api.settings.services import SettingService
 from hubra.api.utils import csv_safe, escape_like, log_audit
 from hubra.core.errors import raise_error
@@ -196,6 +197,30 @@ def _paginate_query(query, page: int, page_size: int, schema):
         "pageSize": page_size,
         "totalPages": ceil(total / page_size) if total else 0,
     }
+
+
+def _default_role() -> Role | None:
+    """The role new members get: the club's default, never an admin role.
+
+    Falls back to a role named "Member"; with neither, no role at all (the
+    old fallback, the first role by id, could be Admin or Owner).
+    """
+    role = db.session.scalar(
+        select(Role)
+        .where(Role.is_default.is_(True))
+        .where(Role.is_admin.is_(False), Role.is_owner.is_(False))
+        .order_by(Role.id)
+        .limit(1)
+    )
+    if role is None:
+        role = db.session.scalar(
+            select(Role).where(
+                Role.name == "Member",
+                Role.is_admin.is_(False),
+                Role.is_owner.is_(False),
+            )
+        )
+    return role
 
 
 def _active_member_with_email(email: str) -> bool:
@@ -862,9 +887,7 @@ class MembersService:
         commit to the caller.
         """
         data = member_data or {}
-        default_role = db.session.scalar(
-            select(Role).where(Role.is_default.is_(True)).limit(1)
-        ) or db.session.scalar(select(Role).where(Role.name == "Member"))
+        default_role = _default_role()
 
         former = db.session.scalar(select(Member).where(Member.user_id == user.id))
         if former is not None:
@@ -1157,9 +1180,16 @@ class MembersService:
                 roles = db.session.scalars(
                     select(Role).where(Role.id.in_(role_ids))
                 ).all()
-                member.roles = list(roles)
             else:
-                member.roles = []
+                roles = []
+            before = {r.id: r for r in (member.roles or [])}
+            after = {r.id: r for r in roles}
+            check_grant(
+                db.session.get(Member, actor_id) if actor_id else None,
+                given=[r for rid, r in after.items() if rid not in before],
+                taken=[r for rid, r in before.items() if rid not in after],
+            )
+            member.roles = list(roles)
             from hubra.api.permissions import invalidate_member_permissions
 
             invalidate_member_permissions(member_id)
@@ -1317,7 +1347,7 @@ class MembersService:
                 former.archived_at = None
                 former.leave_requested_at = None
                 # Back as an ordinary member, whatever roles they had before.
-                role = db.session.scalar(select(Role).where(Role.name == "Member"))
+                role = _default_role()
                 former.roles = [role] if role is not None else []
                 link_user_to_tenant(existing_user.id)
                 return former  # type: ignore[return-value]
@@ -1340,9 +1370,7 @@ class MembersService:
         if tier is None:
             tier = db.session.scalar(select(MembershipTier).order_by(MembershipTier.id))
 
-        role = db.session.scalar(select(Role).where(Role.name == "Member"))
-        if role is None:
-            role = db.session.scalar(select(Role).order_by(Role.id))
+        role = _default_role()
 
         club_domain = SettingService.get("mail.domain") or ""
         _es = db.session.scalar(

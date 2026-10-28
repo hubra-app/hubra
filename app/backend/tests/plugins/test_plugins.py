@@ -250,6 +250,32 @@ def test_repository_index_is_signed_and_pinned(tmp_path, key, db, monkeypatch):
     assert db.session.get(PluginRepository, repo.id).error
 
 
+def test_an_older_index_than_seen_is_refused(tmp_path, key, db, monkeypatch):
+    """L7: a mirror can't roll the index back to an older signed one."""
+    pem, _pub = key
+    src = tmp_path / "src"
+    src.mkdir()
+    make_plugin(src)
+    out = tmp_path / "public"
+    doc = publish.build_repository(src, out, pem, "Test plugins")
+    monkeypatch.setattr(
+        installer,
+        "http_get",
+        lambda url, timeout=30, limit=0: (out / url.rsplit("/", 1)[-1]).read_bytes(),
+    )
+    url = "https://plugins.example/index.json"
+    repo = installer.add_repository(url, installer.preview_repository(url)["keyId"])
+    installer._index_cache.clear()
+    installer.fetch_repository(repo, force=True)
+    assert repo.index_generated == doc["generated"]
+
+    # As if a newer index had been seen: the one served now is older.
+    repo.index_generated = "2099-01-01T00:00:00+00:00"
+    db.session.commit()
+    with pytest.raises(InstallError, match="older"):
+        installer.fetch_repository(repo, force=True)
+
+
 def test_install_from_repository_then_update_and_rollback(
     tmp_path, key, db, seeded_db, plugin_dir, monkeypatch
 ):
@@ -534,3 +560,25 @@ def test_downloads_only_go_to_public_https_hosts(url, monkeypatch):
     monkeypatch.delenv("HUBRA_PLUGINS_ALLOW_PRIVATE", raising=False)
     with pytest.raises(InstallError):
         installer.http_get(url)
+
+
+def test_a_plugin_cannot_shadow_another_package(tmp_path):
+    """M3: a plugin's directory comes last on sys.path, and its package must be its own."""
+    import sys
+
+    import yaml
+
+    src = make_plugin(tmp_path / "src")
+    (src / "hubra_hello").rename(src / "json")
+    manifest = yaml.safe_load((src / "plugin.yaml").read_text())
+    manifest["package"] = "json"
+    (src / "plugin.yaml").write_text(yaml.safe_dump(manifest))
+    spec = scan(tmp_path / "src", bundled=False)[0]
+    try:
+        with pytest.raises(ValueError, match="not the plugin's own"):
+            loader._import(spec)
+        assert sys.path[0] != str(spec.path)
+        assert json.__file__ and str(spec.path) not in json.__file__
+    finally:
+        if str(spec.path) in sys.path:
+            sys.path.remove(str(spec.path))

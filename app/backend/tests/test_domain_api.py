@@ -74,7 +74,7 @@ def test_add_domain_success(tenant_ctx, client, auth_headers, db):
     assert body["domain"]["is_primary"] is True
     assert body["domain"]["verification_token"] is not None
     assert "txt_record" in body
-    assert body["txt_record"]["value"].startswith("verevia-verify=")
+    assert body["txt_record"]["value"].startswith("hubra-verify=")
 
 
 def test_add_domain_validation_error(tenant_ctx, client, auth_headers):
@@ -104,6 +104,41 @@ def test_add_domain_duplicate(tenant_ctx, client, auth_headers, db):
         headers=auth_headers,
     )
     assert resp.status_code == 409
+
+
+@pytest.mark.parametrize(
+    "age_hours,verified,status",
+    [(1, False, 409), (100, False, 201), (100, True, 409)],
+)
+def test_another_clubs_claim_is_held_only_while_fresh(
+    tenant_ctx, client, auth_headers, db, age_hours, verified, status
+):
+    """An unproven claim by another club blocks others for 72 hours, then lapses."""
+    from datetime import datetime, timedelta, timezone
+
+    other = Tenant(name="Other", slug="other-club", plan="starter")
+    db.session.add(other)
+    db.session.flush()
+    db.session.add(
+        Domain(
+            tenant_id=other.id,
+            domain="claimed.example",
+            verification_token="theirs",
+            verified=verified,
+            created_at=datetime.now(timezone.utc) - timedelta(hours=age_hours),
+        )
+    )
+    db.session.commit()
+
+    resp = client.post(
+        "/api/v1/admin/domains",
+        json={"domain": "claimed.example"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == status
+    if status == 201:
+        row = db.session.query(Domain).filter_by(domain="claimed.example").one()
+        assert row.tenant_id == tenant_ctx.id
 
 
 def test_add_domain_second_not_primary(tenant_ctx, client, auth_headers, db):

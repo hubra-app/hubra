@@ -21,6 +21,7 @@ import dataclasses
 import fcntl
 import hashlib
 import importlib
+import importlib.util
 import logging
 import os
 import shutil
@@ -268,8 +269,20 @@ def _import(spec: Spec) -> list:
         # Only the signed sources may run: drop any bytecode next to them.
         for cache in spec.path.rglob("__pycache__"):
             shutil.rmtree(cache, ignore_errors=True)
+    # Appended, never first: a plugin can't shadow Hubra or a library by
+    # shipping a module with its name, and its own package must come from
+    # its own directory.
     if path not in sys.path:
-        sys.path.insert(0, path)
+        sys.path.append(path)
+    found = importlib.util.find_spec(pkg)
+    places = list(found.submodule_search_locations or []) if found else []
+    if found is not None and found.origin and not places:
+        places = [found.origin]
+    if not places or not all(
+        os.path.realpath(p).startswith(os.path.realpath(path) + os.sep)
+        for p in places
+    ):
+        raise ValueError(f"package {pkg!r} is not the plugin's own (name taken)")
     mod = importlib.import_module(pkg)
     modules = []
     for attr in ("module", "modules"):

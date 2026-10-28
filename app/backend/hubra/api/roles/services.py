@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from sqlalchemy import select
 
-from hubra.api.permissions import invalidate_role_permissions
+from hubra.api.permissions import check_grant, invalidate_role_permissions
 from hubra.api.utils import log_audit
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
@@ -121,6 +121,14 @@ class RoleService:
                 )
 
         keys = [k for k in permission_keys if isinstance(k, str) and k.strip()]
+        if not _internal:
+            from hubra.core.models.member import Member
+
+            had = set(RoleService.get_permissions(role.id))
+            check_grant(
+                db.session.get(Member, actor_id) if actor_id else None,
+                keys=[k for k in keys if k not in had],
+            )
 
         db.session.query(RolePermission).filter_by(role_id=role.id).delete()
 

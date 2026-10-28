@@ -30,7 +30,8 @@ test('redirects stay on Hubra hosts', () => {
   assert.equal(validateRedirect('https://evil.example/', urls), null)
   assert.equal(validateRedirect('http://app.hubra.club/demo/app', urls), null)
   assert.equal(validateRedirect('https://manage.hubra.club/app/tenants', urls), 'https://manage.hubra.club/app/tenants')
-  assert.equal(validateRedirect('https://docs.hubra.club/x', urls), 'https://docs.hubra.club/x')
+  // Other subdomains are not trusted.
+  assert.equal(validateRedirect('https://docs.hubra.club/x', urls), null)
 })
 
 test('localhost on any port only while developing', () => {
