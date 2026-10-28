@@ -70,10 +70,11 @@ python -m pytest tests/ --ignore=tests/test_s11_backend_gaps.py --cov=hubra
 
 The suite uses in-memory SQLite by default. SQLite enforces no foreign keys
 here and drops time zones, so some bugs only show on Postgres. Point
-`TEST_DATABASE_URL` at an empty database the tests may wipe:
+`TEST_DATABASE_URL` at a fresh, empty database (the tests create the tables
+and leave them behind, so drop and create it before each run):
 
 ```bash
-createdb hubra_test
+dropdb --if-exists hubra_test && createdb hubra_test
 TEST_DATABASE_URL=postgresql://postgres@127.0.0.1/hubra_test pytest -q \
   --ignore=tests/auth/test_rate_limiting.py --ignore=tests/mail/test_email_service.py
 ```

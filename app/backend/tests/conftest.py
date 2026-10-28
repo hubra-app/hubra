@@ -63,14 +63,12 @@ def _reset_redis_breaker():
 def app():
     app = create_app("testing")
     with app.app_context():
-        postgres = _db.engine.dialect.name == "postgresql"
-        if postgres:
-            # Start clean; dropping at the end would wait on connections a
-            # test left open in a transaction.
-            _db.drop_all()
         _db.create_all()
         yield app
-        if not postgres:
+        # Not on Postgres: DROP waits on connections a test left open in a
+        # transaction (and the plugins' tests make a second app). Use a
+        # fresh database for each run instead.
+        if _db.engine.dialect.name != "postgresql":
             _db.drop_all()
 
 
