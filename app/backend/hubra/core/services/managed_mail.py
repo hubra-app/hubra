@@ -11,7 +11,7 @@ import logging
 import re
 import secrets
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from hubra.core.extensions import db
 from hubra.core.models.managed_mail import ManagedMailAddress
@@ -166,6 +166,41 @@ def _get_club_domain() -> str:
     from hubra.api.settings.services import SettingService
 
     return SettingService.get("mail.domain", default="") or ""
+
+
+def owns_mail_address(address: str) -> bool:
+    """Whether *address* belongs to this club.
+
+    Every club's mailboxes and aliases live on one shared mail server, so a
+    club may only see or change addresses in its own mail domain, and not
+    in a domain another club has verified.
+    """
+    from hubra.core.models.domain import Domain
+    from hubra.core.tenant.context import current_tenant
+
+    domain = _get_club_domain().strip().lower()
+    _local, at, addr_domain = (address or "").strip().lower().rpartition("@")
+    if not domain or not at or addr_domain != domain:
+        return False
+    tenant = current_tenant()
+    claimed = db.session.scalar(
+        select(Domain.tenant_id).where(
+            func.lower(Domain.domain) == domain, Domain.verified.is_(True)
+        )
+    )
+    return claimed is None or (tenant is not None and claimed == tenant.id)
+
+
+def require_own_mail_address(address: str) -> None:
+    """Refuse an address outside this club's mail domain (see owns_mail_address)."""
+    from hubra.core.errors import raise_error
+
+    if not owns_mail_address(address):
+        raise_error(
+            400,
+            "VALIDATION_ERROR",
+            f"{address} is not in this club's mail domain",
+        )
 
 
 def sync_alias(addr: ManagedMailAddress) -> None:
@@ -613,6 +648,9 @@ def create_system_address(
         address = f"{prefix}@{domain}"
     elif "@" not in address and domain:
         address = f"{address}@{domain}"
+
+    if not owns_mail_address(address):
+        raise ValueError(f"{address} is not in this club's mail domain")
 
     existing = db.session.scalar(
         select(ManagedMailAddress).where(ManagedMailAddress.address == address)

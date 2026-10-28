@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import sys
 import types
+from tests.helpers import patch_mail_domain
 from unittest.mock import MagicMock, patch
 
 
@@ -30,8 +31,11 @@ def test_create_mailbox_calls_wildduck(client, app, auth_headers, seeded_db):
     mock_client.create_user.return_value = {"id": "wd-user-001"}
 
     try:
-        with patch(
-            "hubra.core.services.wildduck.WildDuckClient", return_value=mock_client
+        with (
+            patch(
+                "hubra.core.services.wildduck.WildDuckClient", return_value=mock_client
+            ),
+            patch_mail_domain("test.ch"),
         ):
             resp = client.post(
                 "/api/v1/mail/mailboxes",
@@ -119,8 +123,11 @@ def test_create_alias_calls_wildduck(client, app, auth_headers, seeded_db):
     mock_client.create_forwarding_alias.return_value = {"id": "addr-001"}
 
     try:
-        with patch(
-            "hubra.core.services.wildduck.WildDuckClient", return_value=mock_client
+        with (
+            patch(
+                "hubra.core.services.wildduck.WildDuckClient", return_value=mock_client
+            ),
+            patch_mail_domain("test.ch"),
         ):
             resp = client.post(
                 "/api/v1/mail/aliases",
