@@ -138,6 +138,9 @@ class ModuleRegistry:
     def subscribers(self, event: str) -> list[tuple[Module, str]]:
         return [(m, m.events[event]) for m in self.all() if event in m.events]
 
+    def task_modules(self) -> list[str]:
+        return [t for m in self.all() for t in m.tasks]
+
     def tenant_tables(self) -> list[str]:
         tables: list[str] = []
         for m in self.all():

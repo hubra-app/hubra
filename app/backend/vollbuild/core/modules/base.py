@@ -116,6 +116,7 @@ class Module:
     ``events`` maps an event name to a dotted ``module.path:function``
     that is called when the event is emitted for a tenant that has this
     module enabled.
+    ``tasks`` lists Python modules with Celery tasks for the worker to load.
     """
 
     code: str
@@ -130,6 +131,7 @@ class Module:
     events: dict[str, str] = field(default_factory=dict)
     public_endpoints: tuple[str, ...] = ()
     tables: tuple[str, ...] = ()
+    tasks: tuple[str, ...] = ()
 
     def setting(self, key: str) -> SettingField | None:
         return next((s for s in self.settings if s.key == key), None)

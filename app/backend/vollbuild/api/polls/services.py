@@ -16,6 +16,8 @@ from vollbuild.core.models.function import Function
 from vollbuild.core.models.group import Group
 from vollbuild.core.models.member import Member
 from vollbuild.core.models.poll import Poll, PollOption, PollProxy, PollVote
+from vollbuild.core.modules import emit
+from vollbuild.core.modules.events import POLL_PUBLISHED
 
 
 class PollService:
@@ -253,6 +255,7 @@ class PollsService:
             db.session.add(PollOption(poll_id=poll.id, label=opt["label"]))
 
         notify_all_active("info", "New poll", poll.question, skip_member_id=actor_id)
+        emit(POLL_PUBLISHED, poll_id=poll.id)
 
         log_audit(
             actor_id=actor_id,

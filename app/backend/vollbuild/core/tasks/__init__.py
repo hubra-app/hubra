@@ -103,6 +103,7 @@ def make_celery(app: Flask) -> Celery:
             "vollbuild.core.tasks.domain_tasks",
             "vollbuild.core.tasks.monitoring",
             "vollbuild.core.tasks.infra_checks",
+            *_module_task_imports(),
         ],
     )
     conf: dict = dict(
@@ -196,6 +197,14 @@ def make_celery(app: Flask) -> Celery:
     instance.set_default()
     app.extensions["celery"] = instance
     return instance
+
+
+def _module_task_imports() -> list[str]:
+    """Celery task modules declared by module manifests (``tasks=``)."""
+    from vollbuild.core.modules import registry
+
+    registry.load()
+    return registry.task_modules()
 
 
 def _bootstrap_celery() -> Celery:

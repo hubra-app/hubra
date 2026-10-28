@@ -103,7 +103,8 @@ others. Event names live in `vollbuild/core/modules/events.py`.
 
 ## Background jobs
 
-Tasks queued during a request carry the club in a `tenant_id` header and run
-in that club's schema. Periodic jobs that work on club data use
+List a module's Celery task modules in `tasks=` so the worker loads them
+(see `discord/`). Tasks queued during a request carry the club in a
+`tenant_id` header and run in that club's schema. Periodic jobs that work on club data use
 `@per_tenant_job("<code>")`, which runs the body once per active club that has
 the module on.

@@ -10,6 +10,8 @@ from vollbuild.api.utils import log_audit
 from vollbuild.core.errors import raise_error
 from vollbuild.core.extensions import db
 from vollbuild.core.models.post import Post, PostComment, PostLike
+from vollbuild.core.modules import emit
+from vollbuild.core.modules.events import POST_PUBLISHED
 
 
 class PostService:
@@ -180,6 +182,7 @@ class PostsService:
         db.session.flush()
 
         notify_all_active("info", "New post", post.title, skip_member_id=author_id)
+        emit(POST_PUBLISHED, post_id=post.id)
 
         log_audit(
             actor_id=author_id,

@@ -27,6 +27,7 @@ INVOICE_OVERDUE = "invoice.overdue"
 INVOICE_PAID = "invoice.paid"
 EVENT_PUBLISHED = "event.published"
 POST_PUBLISHED = "post.published"
+POLL_PUBLISHED = "poll.published"
 GROUP_MEMBERSHIP_CHANGED = "group.membership_changed"
 
 

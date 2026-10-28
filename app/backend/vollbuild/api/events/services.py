@@ -14,6 +14,8 @@ from vollbuild.core.errors import raise_error
 from vollbuild.core.extensions import db
 from vollbuild.core.models.event import ClubEvent, EventRegistration, event_attendees
 from vollbuild.core.models.member import Member
+from vollbuild.core.modules import emit
+from vollbuild.core.modules.events import EVENT_PUBLISHED
 
 
 class EventService:
@@ -436,6 +438,7 @@ class EventsService:
         db.session.flush()
 
         notify_all_active("info", "New event", event.title, skip_member_id=actor_id)
+        emit(EVENT_PUBLISHED, event_id=event.id)
 
         log_audit(
             actor_id=actor_id,

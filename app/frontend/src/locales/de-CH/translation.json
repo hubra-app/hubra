@@ -860,7 +860,9 @@
       "configure": "Iistellige",
       "alwaysOn": "Immer aa: {{names}}",
       "saved": "Iistellige gspeicheret",
-      "secretKept": "Leer la, um de gspeicheret Wert z bhalte"
+      "secretKept": "Leer la, um de gspeicheret Wert z bhalte",
+      "discordTest": "Testnachricht schicke",
+      "discordTestSent": "Testnachricht gschickt"
     }
   },
   "bootstrap": {

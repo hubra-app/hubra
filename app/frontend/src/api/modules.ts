@@ -59,3 +59,6 @@ export async function saveModuleSettings(
     body: JSON.stringify({ config }),
   })
 }
+
+/** Discord module: post a test message to the configured webhook. */
+export const sendDiscordTest = () => apiFetch<{ ok: boolean }>('/discord/test', { method: 'POST' })
