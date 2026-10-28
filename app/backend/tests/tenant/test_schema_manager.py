@@ -29,6 +29,7 @@ _GLOBAL_ONLY_TABLES = frozenset(
         "platform_settings",
         "plugin_trusted_keys",
         "email_verifications",
+        "club_invites",
         "backup_record",
         # The permission catalog: a club copy would hide it inside the club.
         "permissions",

@@ -111,6 +111,17 @@ def register_jwt_callbacks(jwt_manager) -> None:
 
     @jwt_manager.token_in_blocklist_loader
     def check_if_token_revoked(jwt_header, jwt_payload):
+        # Impersonation ends at its deadline, whatever the token's own expiry.
+        until = jwt_payload.get("impersonation_expires_at")
+        if until is not None:
+            try:
+                deadline = datetime.fromisoformat(str(until))
+            except ValueError:
+                return True
+            if deadline.tzinfo is None:
+                deadline = deadline.replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) >= deadline:
+                return True
         # Check Session by session ID (Redis-cached, covers access tokens)
         sid = jwt_payload.get("sid")
         if sid is not None:
@@ -129,13 +140,21 @@ def register_jwt_callbacks(jwt_manager) -> None:
     def user_lookup_callback(_jwt_header, jwt_data):
         identity = jwt_data["sub"]
         if isinstance(identity, str) and identity.startswith("user:"):
-            return db.session.get(User, int(identity[5:]))
+            user = db.session.get(User, int(identity[5:]))
+            return user if _token_still_valid(user, jwt_data) else None
         # A member id only means something in the club that issued the
         # token: refuse it in any other club (None -> 401 below).
         tenant = current_tenant()
         if (tenant.slug if tenant else None) != jwt_data.get("tenant_slug"):
             return None
-        return db.session.get(Member, int(identity))
+        member = db.session.get(Member, int(identity))
+        # Removed or switched off in this club: the session ends now, not
+        # when the refresh token runs out.
+        if member is None or member.archived_at is not None or member.is_disabled:
+            return None
+        if member.user is None:  # members from before accounts existed
+            return member
+        return member if _token_still_valid(member.user, jwt_data) else None
 
     @jwt_manager.user_lookup_error_loader
     def user_lookup_error_callback(_jwt_header, jwt_data):
@@ -147,6 +166,22 @@ def register_jwt_callbacks(jwt_manager) -> None:
         )
         unset_jwt_cookies(response)
         return response
+
+
+def _token_still_valid(user: User | None, jwt_data: dict) -> bool:
+    """False for a disabled account, or a token issued before the account
+    ended all its sessions (password reset, password set by an admin)."""
+    if user is None:
+        return False
+    if user.is_disabled:
+        return False
+    cutoff = user.tokens_valid_after
+    if cutoff is None:
+        return True
+    if cutoff.tzinfo is None:
+        cutoff = cutoff.replace(tzinfo=timezone.utc)
+    issued = datetime.fromtimestamp(int(jwt_data.get("iat", 0)), timezone.utc)
+    return issued >= cutoff.replace(microsecond=0)
 
 
 # ── POST /auth/login ──────────────────────────────────────────────────────────
@@ -166,7 +201,7 @@ def login():
         user = AuthService.authenticate_user(email, password)
         member = AuthService.resolve_member(user.id)
 
-        if user.is_disabled:
+        if user.is_disabled or (member is not None and member.is_disabled):
             raise_error(
                 403,
                 "ACCOUNT_DISABLED",
@@ -445,7 +480,10 @@ def logout():
         AuthService.block_token(access_jti, "access")
 
     data = request.get_json(silent=True) or {}
-    refresh_token = data.get("refreshToken")
+    # The SPAs keep the refresh token in its cookie, never in the body.
+    refresh_token = data.get("refreshToken") or request.cookies.get(
+        current_app.config["JWT_REFRESH_COOKIE_NAME"]
+    )
     if refresh_token:
         try:
             from flask_jwt_extended import decode_token
@@ -522,8 +560,22 @@ def switch_tenant():
     )
     if member is None:
         return api_error("FORBIDDEN", "No member profile in this tenant", 403)
+    if member.is_disabled:
+        return api_error(
+            "ACCOUNT_DISABLED", "Your membership in this club is switched off", 403
+        )
 
-    sid = claims.get("sid")
+    # A session in the club, so "sign out everywhere" and an admin's
+    # "revoke sessions" reach this sign-in too.
+    _new_device, sid = AuthService.record_login(
+        member,
+        request.remote_addr or "",
+        request.headers.get("User-Agent", "")[:512],
+        fingerprint=compute_fingerprint(request.headers),
+        browser_family=_extract_browser_family(request.headers),
+        platform=_extract_platform(request.headers),
+    )
+    db.session.commit()
     additional_claims = {"user_id": user_id, "tenant_slug": target_slug}
     if sid is not None:
         additional_claims["sid"] = sid

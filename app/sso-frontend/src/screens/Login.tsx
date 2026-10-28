@@ -133,7 +133,7 @@ export function LoginScreen() {
       <Divider label={tr('oder', 'or')} labelPosition="center" my="lg" />
 
       <Stack gap="xs">
-        <Button variant="default" size="md" fullWidth onClick={() => navigate('/signup')}>
+        <Button variant="default" size="md" fullWidth onClick={() => navigate(`/signup${window.location.search}`)}>
           {tr('Konto erstellen', 'Create account')}
         </Button>
       </Stack>

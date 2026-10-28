@@ -762,6 +762,9 @@ class AuthService:
         member.set_password(new_password)
         member.must_change_password = False
         reset_token.used = True
+        # Whoever knew the old password is signed out everywhere.
+        if member.user is not None:
+            member.user.end_sessions()
 
         db.session.add(
             AuditEntry(

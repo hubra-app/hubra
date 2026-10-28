@@ -48,11 +48,6 @@ export async function updateMailMember(
   return adaptMailMember(b);
 }
 
-export async function verifyMemberEmail(id: string): Promise<void> {
-  await apiFetch<{ ok: boolean }>(`/members/${id}/verify-email`, {
-    method: "POST",
-  });
-}
 
 // ── Group Mail (ManagedMailAddress) ───────────────────────────────────────
 

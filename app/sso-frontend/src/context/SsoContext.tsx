@@ -40,7 +40,7 @@ const URLS: AppUrls = {
 }
 
 /** Pages a signed-in visitor stays on instead of being sent on. */
-const SIGNED_IN_PAGES = ['/clubs', '/start', '/account', '/verify', '/verify-email']
+const SIGNED_IN_PAGES = ['/clubs', '/start', '/account', '/verify', '/verify-email', '/invite']
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function isManager(perms: PermissionsResponse | null): boolean {
@@ -123,7 +123,12 @@ export function SsoProvider({ children }: { children: ReactNode }) {
             const verification = await getVerificationStatus(ctrl.signal)
             if (cancelled) return
             if (verification.required) {
-              navigate(`/verify${window.location.search}`, { replace: true })
+              // An invite link keeps its token in the hash: come back to it.
+              const back =
+                path === '/invite'
+                  ? `?redirect=${encodeURIComponent(window.location.href)}`
+                  : window.location.search
+              navigate(`/verify${back}`, { replace: true })
             }
           }
           setAuthStatus('authed')

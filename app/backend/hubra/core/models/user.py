@@ -38,6 +38,11 @@ class User(db.Model):
         db.Boolean, default=False, nullable=False
     )
     is_disabled: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
+    # Tokens issued before this moment are refused (password reset, password
+    # set by an admin, account disabled): every session everywhere ends.
+    tokens_valid_after: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     must_change_password: Mapped[bool] = mapped_column(
         db.Boolean, default=False, nullable=False
     )
@@ -99,6 +104,10 @@ class User(db.Model):
         parts = value.strip().split(None, 1)
         self.first_name = parts[0] if parts else ""
         self.last_name = parts[1] if len(parts) > 1 else ""
+
+    def end_sessions(self) -> None:
+        """Refuse every token issued so far, in every club and portal."""
+        self.tokens_valid_after = datetime.now(timezone.utc)
 
     def set_password(self, plain: str) -> None:
         self.password_hash = _ph.hash(plain)

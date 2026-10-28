@@ -275,3 +275,29 @@ export async function revokeSession(clubSlug: string, id: number): Promise<void>
 export async function revokeOtherSessions(): Promise<{ revoked: number }> {
   return apiFetch('/account/all-sessions/revoke-all', { method: 'POST' })
 }
+
+/** A club's invite, as the signed-in person sees it before accepting. */
+export interface ClubInvite {
+  club: { slug: string; name: string }
+  /** The address the invite was sent to; only that account can accept. */
+  email: string
+  invitedBy: string
+  emailMatches: boolean
+  membership: 'member' | 'pending' | null
+}
+
+export async function lookupInvite(token: string): Promise<ClubInvite> {
+  return apiFetch('/system/invites/lookup', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  })
+}
+
+export async function acceptInvite(
+  token: string,
+): Promise<{ status: 'joined'; club: { slug: string; name: string } }> {
+  return apiFetch('/system/invites/accept', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  })
+}

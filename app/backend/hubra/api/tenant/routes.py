@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from flask import Blueprint, jsonify, make_response, request
+from flask import Blueprint, current_app, jsonify, make_response, request
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
@@ -347,24 +347,34 @@ def impersonate_tenant_user(tenant_id: int):
             {"error": "NOT_FOUND", "message": "No members found in this tenant"}
         ), 404
 
-    # Check if target user is a superadmin
+    # Platform staff can't be impersonated: their token would carry their
+    # platform rights (superadmin flag or any global role).
     if target_member.user_id:
+        from hubra.core.models.global_role import UserGlobalRole
+
         target_user = db.session.get(User, target_member.user_id)
-        if target_user and target_user.is_superadmin:
+        has_global_role = db.session.scalar(
+            select(UserGlobalRole.id)
+            .where(UserGlobalRole.user_id == target_member.user_id)
+            .limit(1)
+        )
+        if (target_user and target_user.is_superadmin) or has_global_role:
             return jsonify(
                 {
                     "error": "FORBIDDEN",
-                    "message": "Cannot impersonate another system admin",
+                    "message": "Cannot impersonate platform staff",
                 }
             ), 403
 
     target_member_id = target_member.id
     target_user_id = target_member.user_id
 
-    expires_at = datetime.now(timezone.utc) + timedelta(
-        minutes=_IMPERSONATION_TIMEOUT_MINUTES
-    )
+    timeout = timedelta(minutes=_IMPERSONATION_TIMEOUT_MINUTES)
+    expires_at = datetime.now(timezone.utc) + timeout
 
+    # The member in this one club, nothing more: no user_id, so no other
+    # club, no club switch and none of the person's platform rights. The
+    # deadline is checked on every request (auth check_if_token_revoked).
     additional_claims = {
         "impersonator_id": admin_member_id,
         "impersonator_user_id": admin_user_id,
@@ -372,19 +382,15 @@ def impersonate_tenant_user(tenant_id: int):
         "impersonation_expires_at": expires_at.isoformat(),
         "tenant_slug": tenant.slug,
     }
-    if target_user_id:
-        additional_claims["user_id"] = int(target_user_id)
-
-    impersonation_identity = (
-        f"user:{target_user_id}" if target_user_id else str(target_member_id)
-    )
     access_token = create_access_token(
-        identity=impersonation_identity,
+        identity=str(target_member_id),
         additional_claims=additional_claims,
+        expires_delta=min(timeout, current_app.config["JWT_ACCESS_TOKEN_EXPIRES"]),
     )
     refresh_token = create_refresh_token(
-        identity=impersonation_identity,
+        identity=str(target_member_id),
         additional_claims=additional_claims,
+        expires_delta=timeout,
     )
 
     db.session.add(
@@ -422,18 +428,19 @@ def impersonate_tenant_user(tenant_id: int):
 
 
 @tenant_admin_bp.route("/impersonation/stop", methods=["POST"])
-@require_global_permission("impersonate")
+@jwt_required()
 def stop_impersonation():
-    """Stop impersonating and restore the original admin's JWT.
+    """Stop impersonating and give the platform user back their own session.
 
-    Reads ``impersonator_id`` and ``impersonator_user_id`` from the
-    current JWT claims to re-issue tokens for the original admin.
+    The impersonation token holds only the club member, so the permission
+    check runs on ``impersonator_user_id``: that user must still be allowed
+    to impersonate.
     """
     claims = get_jwt()
     impersonator_member_id = claims.get("impersonator_id")
     impersonator_user_id = claims.get("impersonator_user_id")
 
-    if impersonator_member_id is None:
+    if impersonator_member_id is None or not impersonator_user_id:
         return jsonify(
             {
                 "error": "NOT_IMPERSONATING",
@@ -441,18 +448,20 @@ def stop_impersonation():
             }
         ), 400
 
-    admin_member = db.session.get(Member, int(impersonator_member_id))
-    if admin_member is None:
+    admin_user = db.session.get(User, int(impersonator_user_id))
+    if admin_user is None or admin_user.is_disabled:
         return jsonify(
-            {"error": "NOT_FOUND", "message": "Original admin member not found"}
-        ), 404
+            {"error": "UNAUTHORIZED", "message": "Original user not found"}
+        ), 401
+    perms = get_user_global_permissions(admin_user.id)
+    if not admin_user.is_superadmin and not ({"impersonate", "*"} & perms):
+        return jsonify(
+            {"error": "FORBIDDEN", "message": "Permission 'impersonate' required"}
+        ), 403
 
     tenant = TenantService.get_by_slug(claims.get("tenant_slug", ""))
-    additional_claims = {}
-    restore_identity = str(impersonator_member_id)
-    if impersonator_user_id:
-        additional_claims["user_id"] = int(impersonator_user_id)
-        restore_identity = f"user:{int(impersonator_user_id)}"
+    additional_claims = {"user_id": admin_user.id}
+    restore_identity = f"user:{admin_user.id}"
 
     access_token = create_access_token(
         identity=restore_identity,
@@ -851,9 +860,7 @@ def club_directory():
     if len(search) < 2 and not can_join:
         return jsonify({"clubs": [], "canJoinDirectly": False})
 
-    query = select(Tenant).where(
-        Tenant.status == "active", Tenant.deleted_at.is_(None)
-    )
+    query = select(Tenant).where(Tenant.status == "active", Tenant.deleted_at.is_(None))
     if search:
         like = f"%{escape_like(search)}%"
         query = query.where(
@@ -993,6 +1000,73 @@ def join_club(slug: str):
     return jsonify({"status": "requested", "club": club}), 201
 
 
+# ── Club invites (a club adds people only by invite) ─────────────────────────
+
+
+def _invite_from_body():
+    from hubra.core.tenant.invites import open_invite
+
+    token = str((request.get_json(silent=True) or {}).get("token") or "")
+    invite = open_invite(token)
+    if invite is None:
+        raise_error(404, "INVITE_NOT_FOUND", "This invite is invalid or has expired")
+    tenant = db.session.get(Tenant, invite.tenant_id)  # type: ignore[union-attr]
+    if tenant is None or tenant.status != "active" or tenant.deleted_at is not None:
+        raise_error(404, "INVITE_NOT_FOUND", "This invite is invalid or has expired")
+    return invite, tenant
+
+
+@tenant_admin_bp.route("/invites/lookup", methods=["POST"])
+@jwt_required()
+def lookup_invite():
+    """The club and address behind an invite link, for the SSO accept page."""
+    user = _calling_user()
+    invite, tenant = _invite_from_body()
+    return jsonify(
+        {
+            "club": {"slug": tenant.slug, "name": tenant.name},
+            "email": invite.email,
+            "invitedBy": invite.invited_by,
+            "emailMatches": user.email.lower() == invite.email,
+            "membership": _membership_in(tenant.id, user),
+        }
+    )
+
+
+@tenant_admin_bp.route("/invites/accept", methods=["POST"])
+@jwt_required()
+def accept_invite():
+    """Accept an invite: the signed-in account with the invited address joins."""
+    from hubra.api.members.services import MembersService
+    from hubra.core.tenant.context import in_club
+
+    user = _calling_user()
+    invite, tenant = _invite_from_body()
+    if user.email.lower() != invite.email:
+        raise_error(
+            403,
+            "INVITE_EMAIL_MISMATCH",
+            "This invite was sent to another email address",
+        )
+    club = {"slug": tenant.slug, "name": tenant.name}
+
+    if _membership_in(tenant.id, user) != "member":
+        with in_club(tenant):
+            MembersService.add_account(user, invite.member_data)
+    invite.accepted_at = datetime.now(timezone.utc)
+    db.session.add(
+        GlobalAuditEntry(
+            tenant_id=tenant.id,
+            action="tenant.invite_accepted",
+            target_type="User",
+            target_id=str(user.id),
+            details={"email": user.email, "invited_by": invite.invited_by},
+        )
+    )
+    db.session.commit()
+    return jsonify({"status": "joined", "club": club}), 200
+
+
 # ── Club admins (the club's own admins, and platform managers) ────────────────
 #
 # A club's admins are the members holding its Admin or Owner role. Those
@@ -1118,6 +1192,15 @@ def add_club_admin(tenant_id: int):
         raise_error(403, "FORBIDDEN", "Only an owner can name another owner")
 
     user = db.session.scalar(select(User).where(User.email == email))
+    is_member = user is not None and _membership_in(tenant.id, user) == "member"
+    if not is_member and access != "platform":
+        # A club's own admins name admins among its members: they can't pull
+        # any account into the club, nor learn which emails have one.
+        raise_error(
+            404,
+            "NOT_FOUND",
+            f"{email} is not a member of this club; they join it first",
+        )
     if user is None:
         raise_error(
             404,
@@ -1127,7 +1210,7 @@ def add_club_admin(tenant_id: int):
 
     from hubra.core.tenant.membership import link_user_to_tenant
 
-    if _membership_in(tenant.id, user) != "member":
+    if not is_member:
         _add_user_to_tenant(tenant, user)  # type: ignore[arg-type]
     link_user_to_tenant(user.id, tenant.id)  # type: ignore[union-attr]
 

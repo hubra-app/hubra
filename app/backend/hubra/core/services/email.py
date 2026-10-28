@@ -272,6 +272,28 @@ def send_welcome(
     _send(to_address, name, subject, body_html, body_text)
 
 
+def send_club_invite(
+    to_address: str,
+    name: str,
+    invite_url: str,
+    invited_by: str,
+    *,
+    lang: str = DEFAULT_LANG,
+) -> None:
+    """Send a personal link to join the club. Valid for 14 days."""
+    club_name = _get_setting("club.name", "Your Club")
+
+    body_html, body_text, subject = render_mail_template(
+        "club_invite",
+        locale=lang,
+        name=name,
+        club_name=club_name,
+        invited_by=invited_by,
+        invite_url=invite_url,
+    )
+    _send(to_address, name, subject, body_html, body_text)
+
+
 def send_password_reset(
     to_address: str,
     name: str,

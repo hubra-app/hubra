@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import csv
 import io
-import secrets
 from datetime import date, datetime, timezone
 from math import ceil
 
@@ -27,7 +26,6 @@ from hubra.core.models.member import (
 from hubra.core.models.user import User
 from hubra.core.models.role import Role
 from hubra.core.models.setting import Setting
-from hubra.core.services import email as email_svc
 from hubra.core.tenant.membership import link_user_to_tenant
 from hubra.core.services.wildduck import (
     WildDuckError,
@@ -198,6 +196,19 @@ def _paginate_query(query, page: int, page_size: int, schema):
         "pageSize": page_size,
         "totalPages": ceil(total / page_size) if total else 0,
     }
+
+
+def _active_member_with_email(email: str) -> bool:
+    """Whether the account with ``email`` is a member of the current club."""
+    return (
+        db.session.scalar(
+            select(Member.id)
+            .join(User, Member.user_id == User.id)
+            .where(func.lower(User.email) == email.strip().lower())
+            .where(Member.archived_at.is_(None))
+        )
+        is not None
+    )
 
 
 # ── Helper for creating WildDuck mailbox for a new member ──────────────────────
@@ -460,8 +471,9 @@ class MemberService:
         from hubra.core.services.managed_mail import disable_member_mail
 
         disable_member_mail(member_id)
-        if member.user:
-            member.user.is_disabled = True
+        # This club only: the account and the person's other clubs stay as
+        # they are.
+        member.disabled_at = datetime.now(timezone.utc)
         return member  # type: ignore[return-value]
 
     @staticmethod
@@ -482,70 +494,15 @@ class MemberService:
             enable_member_mail(
                 member_id, member.user.password_hash if member.user else ""
             )
-        if member.user:
-            member.user.is_disabled = False
+        member.disabled_at = None
+        # Clubs used to switch off the whole account; undo that only where
+        # the account is this club's alone (a platform manager's block stays).
+        if member.user and member.user.is_disabled:
+            from hubra.core.tenant.membership import club_manages_account
+
+            if club_manages_account(member.user):
+                member.user.is_disabled = False
         return member  # type: ignore[return-value]
-
-    @staticmethod
-    def set_password(
-        member_id: int, password: str, generate: bool = False, must_change: bool = False
-    ) -> tuple[str, str]:
-        """Set a member's password. Returns (password, action).
-
-        If *generate* is True, a random password is created.
-        Returns (password, 'generated') or (password, 'manual').
-        """
-        member = db.session.scalar(
-            select(Member)
-            .where(Member.id == member_id)
-            .where(Member.archived_at.is_(None))
-        )
-        if member is None:
-            raise_error(404, "NOT_FOUND", f"Member {member_id} not found")
-
-        if not generate:
-            from hubra.api.auth.services import _enforce_password_strength
-
-            _enforce_password_strength(password)
-        pwd = secrets.token_urlsafe(12) if generate else password
-        if member.user:
-            member.user.set_password(pwd)
-            member.user.must_change_password = True if generate else must_change
-
-        # Non-blocking WildDuck password sync (sends hashed password via async task)
-        if current_app.config.get("WILDDUCK_API_URL"):
-            from hubra.core.tasks.wildduck import sync_wildduck_password
-
-            sync_wildduck_password.delay(member_id)
-
-        action = "generated" if generate else "manual"
-        if generate:
-            login_email = member.public_email or (
-                member.user.email if member.user else ""
-            )
-            email_svc.send_welcome(
-                member.user.email if member.user else "",
-                member.name,
-                login_email,
-                pwd,
-                lang=(member.user.language if member.user else "de-CH") or "de-CH",
-            )
-
-        return pwd, action
-
-    @staticmethod
-    def verify_email(member_id: int) -> bool:
-        """Mark a member's private email as verified. Returns True if newly verified."""
-        member = db.session.get(Member, member_id)
-        if member is None:
-            raise_error(404, "NOT_FOUND", f"Member {member_id} not found")
-
-        if member.private_email_verified:
-            return False
-
-        if member.user:
-            member.user.private_email_verified = True
-        return True
 
     @staticmethod
     def provision(member_id: int, actor_id: int) -> Member:
@@ -832,121 +789,102 @@ class MembersService:
         return output.getvalue(), truncated
 
     @staticmethod
-    def create(
-        data: dict,
-        actor_id: int | None = None,
-        *,
-        password: str | None = None,
-        must_change_password: bool = True,
-    ) -> Member:
-        """Create a new member. Returns the Member object.
+    def invite(data: dict, actor_id: int | None = None) -> dict:
+        """Invite someone to the club by email. Returns ``{"invited", "email"}``.
 
-        If user_id is provided, links the Member to that User.
-        If email is provided (without user_id), looks up or creates a User.
+        A club never creates or changes an account (password, email, name and
+        contact details are the person's own): the person gets a personal
+        link, signs in or signs up with that address and accepts, and the
+        member is made then (``add_account``). Personal details sent along
+        only greet them in the mail; roles are given after they join.
         """
+        from marshmallow import ValidationError
+
         from hubra.core.schemas.member import MemberCreateSchema
-        from hubra.core.models.user import User
+        from hubra.core.tenant.context import current_tenant
+        from hubra.core.tenant.invites import send_invite
 
-        schema = MemberCreateSchema()
         try:
-            validated = schema.load(data)
-        except Exception as exc:
-            from marshmallow import ValidationError
+            validated = MemberCreateSchema().load(data)
+        except ValidationError as exc:
+            raise_error(400, "VALIDATION_ERROR", str(exc.messages))
+        email = (validated.get("email") or "").strip().lower()
+        if not email:
+            raise_error(400, "VALIDATION_ERROR", "email is required")
+        tenant = current_tenant()
+        if tenant is None:
+            raise_error(400, "NO_TENANT", "No club selected")
+        if _active_member_with_email(email):
+            raise_error(409, "CONFLICT", f"{email} is already a member of this club")
 
-            if isinstance(exc, ValidationError):
-                raise_error(400, "VALIDATION_ERROR", str(exc.messages))
-            raise
-
-        # Resolve or create the User
-        user_id = validated.get("user_id")
-        email = validated.get("email")
-        first_name = validated.get("first_name", "")
-        last_name = validated.get("last_name", "")
-        temp_password = (
-            password or validated.get("password") or secrets.token_urlsafe(12)
-        )
-
-        new_user = False
-        if user_id:
-            user = db.session.get(User, user_id)
-            if user is None:
-                raise_error(404, "NOT_FOUND", f"User {user_id} not found")
-        elif email:
-            # Check if a User with this email already exists
-            user = db.session.scalar(select(User).where(User.email == email))
-            if user is None:
-                # Create a new User
-                if not first_name or not last_name:
-                    name_parts = email.split("@")[0].split(".", 1)
-                    first_name = (
-                        first_name or name_parts[0].capitalize()
-                        if name_parts
-                        else "Member"
-                    )
-                    last_name = last_name or (
-                        name_parts[1].capitalize() if len(name_parts) > 1 else ""
-                    )
-                user = User(
-                    email=email,
-                    first_name=first_name,
-                    last_name=last_name,
-                )
-                user.set_password(temp_password)
-                user.must_change_password = must_change_password
-                # Apply User-level identity fields from the validated data
-                for fld in (
-                    "phone",
-                    "mobile",
-                    "birthday",
-                    "address_street",
-                    "address_house_no",
-                    "address_postal_code",
-                    "address_city",
-                    "address_country",
-                    "emergency_contact",
-                ):
-                    val = validated.get(fld)
-                    if val is not None:
-                        setattr(user, fld, val)
-                db.session.add(user)
-                db.session.flush()
-                new_user = True
-        else:
-            raise_error(400, "VALIDATION_ERROR", "user_id or email is required")
-
-        # Check if this user is already a member in this tenant
-        existing = db.session.scalar(select(Member).where(Member.user_id == user.id))
-        if existing is not None:
-            raise_error(409, "CONFLICT", "User is already a member of this tenant")
-
-        group_ids = validated.pop("group_ids", [])
-        role_ids = validated.pop("role_ids", []) or []
-
+        group_ids = validated.get("group_ids") or []
         if group_ids:
-            valid_group_ids = set(
-                db.session.scalars(
-                    select(Group.id).where(Group.id.in_(group_ids))
-                ).all()
+            valid = set(
+                db.session.scalars(select(Group.id).where(Group.id.in_(group_ids)))
             )
-            invalid = set(group_ids) - valid_group_ids
+            invalid = set(group_ids) - valid
             if invalid:
                 raise_error(
-                    400,
-                    "VALIDATION_ERROR",
-                    f"Invalid group IDs: {sorted(invalid)}",
+                    400, "VALIDATION_ERROR", f"Invalid group IDs: {sorted(invalid)}"
                 )
 
-        if role_ids:
-            valid_role_ids = set(
-                db.session.scalars(select(Role.id).where(Role.id.in_(role_ids))).all()
+        actor = db.session.get(Member, actor_id) if actor_id else None
+        name = " ".join(
+            filter(None, (validated.get("first_name"), validated.get("last_name")))
+        )
+        invite = send_invite(
+            tenant,  # type: ignore[arg-type]
+            email,
+            actor.name if actor else tenant.name,  # type: ignore[union-attr]
+            name=name,
+            member_data={
+                "tier_id": validated.get("tier_id"),
+                "group_ids": group_ids,
+                "status": validated.get("status"),
+                "membership_type": validated.get("membership_type"),
+                "notes": validated.get("notes"),
+            },
+        )
+        log_audit(
+            actor_id=actor_id,
+            action="invite_member",
+            target_type="ClubInvite",
+            target_id=invite.id,
+            target_label=email,
+        )
+        return {"invited": True, "email": email}
+
+    @staticmethod
+    def add_account(user: User, member_data: dict | None = None) -> Member:
+        """Make ``user`` a member of the current club (they accepted an invite).
+
+        Someone who left comes back as the member they were. Leaves the
+        commit to the caller.
+        """
+        data = member_data or {}
+        default_role = db.session.scalar(
+            select(Role).where(Role.is_default.is_(True)).limit(1)
+        ) or db.session.scalar(select(Role).where(Role.name == "Member"))
+
+        former = db.session.scalar(select(Member).where(Member.user_id == user.id))
+        if former is not None:
+            if former.archived_at is None:
+                raise_error(409, "CONFLICT", "You are already a member of this club")
+            former.archived_at = None
+            former.leave_requested_at = None
+            # Back as an ordinary member, whatever roles they had before.
+            former.roles = [default_role] if default_role else []
+            link_user_to_tenant(user.id)
+            return former  # type: ignore[return-value]
+
+        tier_id = data.get("tier_id")
+        if tier_id is not None and db.session.get(MembershipTier, tier_id) is None:
+            tier_id = None
+        group_ids = list(
+            db.session.scalars(
+                select(Group.id).where(Group.id.in_(data.get("group_ids") or []))
             )
-            invalid_roles = set(role_ids) - valid_role_ids
-            if invalid_roles:
-                raise_error(
-                    400,
-                    "VALIDATION_ERROR",
-                    f"Invalid role IDs: {sorted(invalid_roles)}",
-                )
+        )
 
         club_domain = SettingService.get("mail.domain") or ""
         _es = db.session.scalar(
@@ -965,28 +903,21 @@ class MembersService:
             public_email.split("@")[0] if public_email else make_username(full_name)
         )
 
-        joined = date.today()
-
         member = Member(
             user_id=user.id,
             public_email=public_email,
             club_username=username,
-            tier_id=validated.get("tier_id"),
-            status=validated.get("status", "trial"),
-            notes=validated.get("notes"),
-            joined=joined,
-            membership_type=validated.get("membership_type", "regular"),
-            membership_until=validated.get("membership_until"),
-            custom_fields=validated.get("custom_fields"),
+            tier_id=tier_id,
+            status=data.get("status") or "active",
+            notes=data.get("notes"),
+            joined=date.today(),
+            membership_type=data.get("membership_type") or "regular",
         )
-
+        if default_role:
+            member.roles = [default_role]
         db.session.add(member)
         db.session.flush()
         link_user_to_tenant(user.id)
-
-        if role_ids:
-            roles = db.session.scalars(select(Role).where(Role.id.in_(role_ids))).all()
-            member.roles = list(roles)
 
         if group_ids:
             db.session.execute(
@@ -995,8 +926,8 @@ class MembersService:
             )
 
         log_audit(
-            actor_id=actor_id,
-            action="create_member",
+            actor_id=member.id,
+            action="accept_invite",
             target_type="Member",
             target_id=member.id,
             target_label=member.name,
@@ -1004,18 +935,6 @@ class MembersService:
 
         # WildDuck mailbox creation — non-blocking
         _provision_member_mailbox(member, club_domain)
-
-        # Welcome email with the temporary password — non-blocking. A user who
-        # already had an account keeps their own password.
-        if new_user:
-            login_email = member.email or public_email or ""
-            email_svc.send_welcome(
-                member.email,
-                member.name,
-                login_email,
-                temp_password,
-                lang=getattr(member, "language", "de-CH") or "de-CH",
-            )
 
         db.session.refresh(member)
 
@@ -1084,12 +1003,6 @@ class MembersService:
             "birthday",
             "emergency_contact",
         ]
-        if member.user:
-            for field in identity_fields:
-                if field in validated:
-                    setattr(member.user, field, validated[field])
-
-        # Address fields — proxy to User
         address_fields = [
             "address_street",
             "address_house_no",
@@ -1097,10 +1010,18 @@ class MembersService:
             "address_city",
             "address_country",
         ]
-        if member.user:
-            for field in address_fields:
-                if field in validated:
-                    setattr(member.user, field, validated[field])
+        # These live on the person's account, shared with their other clubs:
+        # the club reads them, and only the person changes them.
+        if member.user and any(
+            field in validated and validated[field] != getattr(member.user, field)
+            for field in (*identity_fields, *address_fields)
+        ):
+            raise_error(
+                403,
+                "ACCOUNT_FIELDS_READ_ONLY",
+                "Name, email and contact details belong to the member's own "
+                "account; they change them themselves",
+            )
 
         # Tenant-specific scalar fields — set directly on Member
         tenant_fields = [
@@ -1307,7 +1228,7 @@ class MembersService:
         mapping: dict[str, str] | None = None,
         actor_id: int | None = None,
     ) -> dict:
-        """Import members from a list of CSV row dicts.
+        """Invite the people in a list of CSV row dicts (see ``invite``).
 
         Args:
             rows: List of dicts (from csv.DictReader).
@@ -1316,12 +1237,14 @@ class MembersService:
             actor_id: The ID of the admin performing the import.
 
         Returns:
-            dict with keys: created, skipped, errors.
+            dict with keys: invited, skipped (already members), errors.
         """
+        from marshmallow import ValidationError
+
         from hubra.core.schemas.member import MemberCreateSchema
 
         schema = MemberCreateSchema()
-        created = 0
+        invited = 0
         skipped = 0
         errors: list[dict] = []
 
@@ -1343,16 +1266,9 @@ class MembersService:
                         "first_name",
                         "last_name",
                         "email",
-                        "phone",
-                        "mobile",
                         "status",
                         "membership_type",
                         "notes",
-                        "address_street",
-                        "address_house_no",
-                        "address_postal_code",
-                        "address_city",
-                        "address_country",
                     ):
                         data.setdefault(col, val)
 
@@ -1360,90 +1276,36 @@ class MembersService:
                 errors.append({"row": i, "error": "Missing required field: email"})
                 continue
 
-            if "first_name" not in data or not data["first_name"]:
-                errors.append({"row": i, "error": "Missing required field: first_name"})
-                continue
-
-            if "last_name" not in data or not data["last_name"]:
-                errors.append({"row": i, "error": "Missing required field: last_name"})
-                continue
-
-            # Check email uniqueness — against User table (global) and existing Member
-            existing_user = db.session.scalar(
-                select(User).where(User.email == data["email"])
-            )
-            if existing_user:
-                existing_member = db.session.scalar(
-                    select(Member).where(Member.user_id == existing_user.id)
-                )
-                if existing_member is not None:
-                    skipped += 1
-                    continue
-
             try:
-                validated = schema.load(data)
-            except Exception as exc:
-                from marshmallow import ValidationError
-
-                if isinstance(exc, ValidationError):
-                    errors.append({"row": i, "error": str(exc.messages)})
-                else:
-                    errors.append({"row": i, "error": str(exc)})
+                schema.load(data)
+            except ValidationError as exc:
+                errors.append({"row": i, "error": str(exc.messages)})
                 continue
 
-            temp_password = secrets.token_urlsafe(12)
+            if _active_member_with_email(data["email"]):
+                skipped += 1
+                continue
 
-            # Create or reuse User
-            if existing_user:
-                user = existing_user
-            else:
-                user = User(
-                    email=validated["email"],
-                    first_name=validated["first_name"],
-                    last_name=validated["last_name"],
-                )
-                user.set_password(temp_password)
-                user.must_change_password = True
-                if validated.get("phone"):
-                    user.phone = validated["phone"]
-                if validated.get("mobile"):
-                    user.mobile = validated["mobile"]
-                db.session.add(user)
-                db.session.flush()
+            MembersService.invite(data, actor_id)
+            invited += 1
 
-            member = Member(
-                user_id=user.id,
-                tier_id=validated.get("tier_id"),
-                status=validated.get("status", "trial"),
-                membership_type=validated.get("membership_type", "regular"),
-                joined=date.today(),
-            )
-            db.session.add(member)
-            db.session.flush()
-            link_user_to_tenant(user.id)
-
-            log_audit(
-                actor_id=actor_id,
-                action="import_member",
-                target_type="Member",
-                target_id=member.id,
-                target_label=member.name,
-            )
-            created += 1
-
-        return {"created": created, "skipped": skipped, "errors": errors}
+        return {"invited": invited, "skipped": skipped, "errors": errors}
 
     @staticmethod
-    def create_from_application(application: object) -> tuple[Member, str | None]:
-        """Create a Member from an Application object.
+    def create_from_application(application: object) -> Member:
+        """Create a Member from the application of someone with an account.
 
-        Does NOT flush or commit — caller is responsible.
-        Returns (member, temp_password); temp_password is None when the
-        applicant already had an account (a signed-in join request).
+        A club never makes an account (see ``invite``); the caller invites
+        applicants without one. Does NOT flush or commit — caller is
+        responsible.
         """
         existing_user = db.session.scalar(
-            select(User).where(User.email == application.email)  # type: ignore[attr-defined]
+            select(User).where(
+                func.lower(User.email) == application.email.lower()  # type: ignore[attr-defined]
+            )
         )
+        if existing_user is None:
+            raise_error(409, "NO_ACCOUNT", "The applicant has no account yet")
         if existing_user:
             # Someone who left comes back as the member they were.
             former = db.session.scalar(
@@ -1458,7 +1320,7 @@ class MembersService:
                 role = db.session.scalar(select(Role).where(Role.name == "Member"))
                 former.roles = [role] if role is not None else []
                 link_user_to_tenant(existing_user.id)
-                return former, None
+                return former  # type: ignore[return-value]
             existing = db.session.scalar(
                 select(Member.id).where(Member.user_id == existing_user.id)
             )
@@ -1482,7 +1344,6 @@ class MembersService:
         if role is None:
             role = db.session.scalar(select(Role).order_by(Role.id))
 
-        temp_password = secrets.token_urlsafe(12)
         club_domain = SettingService.get("mail.domain") or ""
         _es = db.session.scalar(
             select(Setting).where(Setting.key == "club.email_schema")  # type: ignore[arg-type]
@@ -1497,25 +1358,9 @@ class MembersService:
             else None
         )
 
-        parts = application.name.split(" ", 1)  # type: ignore[attr-defined]
         username = public_email.split("@")[0] if public_email else None
 
-        # Create or reuse User. A user who already has an account keeps their
-        # password, so there is no temporary one to send.
         user = existing_user
-        if user is None:
-            user = User(
-                email=application.email,  # type: ignore[attr-defined]
-                first_name=parts[0],
-                last_name=parts[1] if len(parts) > 1 else "",
-                avatar_color=application.avatar_color or "#6366f1",  # type: ignore[attr-defined]
-            )
-            user.set_password(temp_password)
-            user.must_change_password = True
-            db.session.add(user)
-            db.session.flush()
-        else:
-            temp_password = None
 
         member = Member(
             user_id=user.id,
@@ -1529,4 +1374,4 @@ class MembersService:
             member.roles = [role]
         db.session.add(member)
         link_user_to_tenant(user.id)
-        return member, temp_password
+        return member  # type: ignore[return-value]

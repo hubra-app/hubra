@@ -2350,5 +2350,19 @@
   "roles.system.Member": "Mitglied",
   "shell.search.pollOpen": "Offen",
   "shell.search.pollClosed": "Geschlossen",
-  "shell.search.invoice": "Rechnung {{id}} – {{member}}"
+  "shell.search.invoice": "Rechnung {{id}} – {{member}}",
+  "mail.email.subject.club_invite": "[{{club_name}}] Einladung zum Beitritt",
+  "mail.email.club_invite.intro": "{{invited_by}} hat dich eingeladen, <strong>{{club_name}}</strong> auf Hubra beizutreten.",
+  "mail.email.club_invite.cta": "<a href=\"{{invite_url}}\">Einladung annehmen</a> – melde dich mit dieser E-Mail-Adresse an oder erstelle damit ein Konto. Der Link ist 14 Tage gültig.",
+  "mail.email.club_invite.cta_text": "Öffne den Link unten, melde dich mit dieser E-Mail-Adresse an oder erstelle damit ein Konto, und nimm an (14 Tage gültig):",
+  "mail.email.club_invite.ignore": "Falls du nicht beitreten willst, ignoriere diese E-Mail. Der Verein sieht nichts von deinem Konto, bis du annimmst.",
+  "members.invite.title": "Mitglied einladen",
+  "members.invite.subtitle": "Die Person erhält einen persönlichen Link, meldet sich mit dieser Adresse an oder erstellt ein Konto und nimmt an. Name, E-Mail und Kontaktangaben bleiben ihre eigenen.",
+  "members.invite.send": "Einladung senden",
+  "members.invite.sentTitle": "Einladung gesendet",
+  "members.invite.sent": "{{email}} erhält einen Link zum Beitreten.",
+  "members.invite.failed": "Einladen fehlgeschlagen",
+  "members.invite.nameHint": "Nur für die Anrede in der E-Mail",
+  "members.accountFieldsHint": "Aus dem eigenen Konto des Mitglieds. Nur es selbst kann das ändern.",
+  "members.import.invitedMsg": "{{count}} Einladungen gesendet, {{skipped}} schon Mitglied."
 }

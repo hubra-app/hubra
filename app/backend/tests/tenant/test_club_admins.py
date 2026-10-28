@@ -36,6 +36,15 @@ def _account(client, db, email: str) -> User:
     return db.session.scalar(select(User).where(User.email == email))
 
 
+def _club_member(client, db, club: Tenant, email: str) -> User:
+    """An account that has joined ``club`` (owners name admins among members)."""
+    user = _account(client, db, email)
+    db.session.add(Member(user_id=user.id, status="active"))
+    db.session.add(UserTenant(user_id=user.id, tenant_id=club.id))
+    db.session.commit()
+    return user
+
+
 def _owner(client) -> None:
     _login(client, "admin@test.ch", "password123")
 
@@ -67,7 +76,7 @@ def test_people_who_are_not_admins_are_refused(client, seeded_db, db):
 
 def test_owner_makes_an_account_an_admin(client, seeded_db, db):
     club = _club(db, "rowers-add")
-    user = _account(client, db, "helper@test.ch")
+    user = _club_member(client, db, club, "helper@test.ch")
     _owner(client)
 
     resp = client.post(_url(club), json={"email": "Helper@test.ch"})
@@ -93,10 +102,22 @@ def test_unknown_email_is_404(client, seeded_db, db):
     assert resp.status_code == 404
 
 
+def test_owners_cannot_pull_in_accounts_that_are_not_members(client, seeded_db, db):
+    club = _club(db, "rowers-outsider")
+    _account(client, db, "outsider@test.ch")
+    _owner(client)
+    # Same answer as for an unknown email: no account pulled in, no account
+    # existence revealed.
+    known = client.post(_url(club), json={"email": "outsider@test.ch"})
+    unknown = client.post(_url(club), json={"email": "nobody@test.ch"})
+    assert known.status_code == unknown.status_code == 404
+    assert known.get_json()["message"].endswith("they join it first")
+
+
 def test_an_admin_cannot_name_or_remove_owners(client, seeded_db, db):
     club = _club(db, "rowers-levels")
-    _account(client, db, "second@test.ch")
-    _account(client, db, "third@test.ch")
+    _club_member(client, db, club, "second@test.ch")
+    _club_member(client, db, club, "third@test.ch")
     _owner(client)
     assert client.post(_url(club), json={"email": "second@test.ch"}).status_code == 201
 
@@ -114,7 +135,7 @@ def test_an_admin_cannot_name_or_remove_owners(client, seeded_db, db):
 
 def test_removing_keeps_the_member_and_the_last_owner(client, seeded_db, db):
     club = _club(db, "rowers-remove")
-    user = _account(client, db, "temp@test.ch")
+    user = _club_member(client, db, club, "temp@test.ch")
     _owner(client)
     client.post(_url(club), json={"email": "temp@test.ch"})
 
@@ -145,7 +166,7 @@ def test_platform_managers_manage_any_club(client, seeded_db, db):
 
 def test_my_clubs_say_where_i_am_admin(client, seeded_db, db):
     club = _club(db, "rowers-mine")
-    _account(client, db, "mine@test.ch")
+    _club_member(client, db, club, "mine@test.ch")
     _owner(client)
     client.post(_url(club), json={"email": "mine@test.ch"})
 

@@ -146,12 +146,11 @@ def test_approving_links_the_existing_account(app, db):
 
     with app.test_request_context():
         g.tenant = tenant
-        member, temp_password = MembersService.create_from_application(application)
+        member = MembersService.create_from_application(application)
         db.session.commit()
 
     assert member.user_id == user.id
-    # The account keeps its own password: nothing temporary to mail out.
-    assert temp_password is None
+    # The account keeps its own password.
     assert user.check_password(PASSWORD)
     assert db.session.scalar(
         select(UserTenant).where(

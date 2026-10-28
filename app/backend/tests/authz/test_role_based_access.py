@@ -66,7 +66,8 @@ def test_admin_can_create_member(client, seeded_db, auth_headers):
         },
         headers=auth_headers,
     )
-    assert resp.status_code == 201
+    # Allowed through to the invite, which needs a club (none here).
+    assert resp.get_json()["error"] == "NO_TENANT"
 
 
 def test_admin_can_delete_member(client, seeded_db, auth_headers, db):

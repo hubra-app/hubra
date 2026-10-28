@@ -814,8 +814,7 @@ export function MembersTab() {
         open={addOpen}
         onClose={() => setAddOpen(false)}
         onSaved={() => {
-          queryClient.invalidateQueries({ queryKey: ['members'] })
-          setMemberCount((prev) => prev + 1)
+          // An invite: the member appears once the person accepts.
           setAddOpen(false)
         }}
       />

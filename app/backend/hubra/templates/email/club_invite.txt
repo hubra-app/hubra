@@ -1,0 +1,6 @@
+{{ t('mail.email.club_invite.intro', club_name=club_name, invited_by=invited_by) }}
+
+{{ t('mail.email.club_invite.cta_text') }}
+{{ invite_url }}
+
+{{ t('mail.email.club_invite.ignore') }}

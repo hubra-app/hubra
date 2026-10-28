@@ -15,7 +15,6 @@ import {
 } from '@/components/ui'
 import type { Member } from '@/types'
 import { getMember, disableMember, enableMember } from '@/api/members'
-import { verifyMemberEmail } from '@/api/mail'
 import { MemberEditModal } from '@/components/MemberEditModal'
 import { roleLabels } from '@/roles'
 
@@ -34,7 +33,6 @@ export function MemberDetailScreen({
   const canUpdate = hasPermission('members.members.update')
   const canDisable = hasPermission('members.members.disable')
   const canEnable = hasPermission('members.members.enable')
-  const canVerifyEmail = hasPermission('members.members.verify_email')
   const [tab, setTab] = useState('overview')
   const { data: member } = useQuery({
     queryKey: ['member', id],
@@ -44,29 +42,6 @@ export function MemberDetailScreen({
   })
   const [editOpen, setEditOpen] = useState(false)
   const [togglingDisable, setTogglingDisable] = useState(false)
-  const [verifying, setVerifying] = useState(false)
-
-  const handleVerifyEmail = async () => {
-    if (!member) return
-    setVerifying(true)
-    try {
-      await verifyMemberEmail(member.id)
-      queryClient.invalidateQueries({ queryKey: ['member', id] })
-      notify(
-        'success',
-        t('members.emailVerified', 'E-Mail bestätigt'),
-        `${member.name}'s email has been marked as verified.`,
-      )
-    } catch (err: unknown) {
-      notify(
-        'error',
-        t('members.verifyFailed', 'Bestätigung fehlgeschlagen'),
-        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
-      )
-    } finally {
-      setVerifying(false)
-    }
-  }
 
   const m = member
   if (!m) return <LoadingSpinner message={t('common.loading', 'Wird geladen …')} />
@@ -287,19 +262,6 @@ export function MemberDetailScreen({
                   >
                     {t('common.no')}
                   </span>
-                  {canVerifyEmail && (
-                    <Button
-                      variant="default"
-                      style={{
-                        fontSize: 'var(--mantine-font-size-xs)',
-                        padding: '2px 8px',
-                      }}
-                      onClick={handleVerifyEmail}
-                      disabled={verifying}
-                    >
-                      {verifying ? '…' : t('members.markVerified')}
-                    </Button>
-                  )}
                 </span>
               )}
             </DetailRow>

@@ -56,6 +56,7 @@ from hubra.core.models.binding import Binding
 from hubra.core.models.backup import BackupRecord
 from hubra.core.models.qrr_reference import QrrReference
 from hubra.core.models.payment_plan import PaymentPlan
+from hubra.core.models.club_invite import ClubInvite
 from hubra.core.models.plugin import (
     InstalledPlugin,
     PluginArchive,
@@ -131,4 +132,5 @@ __all__ = [
     "BackupRecord",
     "QrrReference",
     "PaymentPlan",
+    "ClubInvite",
 ]

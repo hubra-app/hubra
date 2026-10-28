@@ -56,6 +56,9 @@ def approve_application(application_id: int):
         db.session.rollback()
         raise
 
+    if member is None:
+        # No account yet: the applicant got an invite to sign up and accept.
+        return jsonify({"invited": True}), 202
     return jsonify(_member_schema.dump(member)), 201
 
 
