@@ -33,6 +33,7 @@ from dataclasses import dataclass
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formataddr
 
 from flask import current_app
 
@@ -173,8 +174,10 @@ def _send_via_smtp(
         msg.attach(MIMEText(body_text, "plain"))
         msg.attach(MIMEText(body_html, "html"))
     msg["Subject"] = subject
-    msg["From"] = f"{sender_name} <{sender_email}>"
-    msg["To"] = f"{to_name} <{to_email}>"
+    # formataddr quotes and encodes names, so "Müller & Co." or a name
+    # with <, > or a comma stays one display name.
+    msg["From"] = formataddr((sender_name, sender_email))
+    msg["To"] = formataddr((to_name, to_email))
     if reply_to:
         msg["Reply-To"] = reply_to
 

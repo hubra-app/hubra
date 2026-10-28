@@ -87,3 +87,46 @@ def test_a_new_club_mails_in_the_platform_texts(app, db):
         "Eigen",
         "Platform C",
     )
+
+
+def test_names_with_special_characters_stay_one_address(app, db):
+    from email import message_from_string, policy
+    from unittest.mock import patch
+
+    from hubra.core.services import email
+
+    sent = {}
+
+    class FakeSMTP:
+        def __init__(self, *a):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def ehlo(self):
+            pass
+
+        def sendmail(self, sender, rcpts, raw):
+            sent["raw"] = raw
+
+    route = email._Route("relay", 25, None, None)
+    with patch.object(email.smtplib, "SMTP", FakeSMTP):
+        email._send_via_smtp(
+            "dora@example.com",
+            "Dora <img src=x>, Müller",
+            "noreply@example.com",
+            "Verein Grün & Co.",
+            "Hallo",
+            "<p>x</p>",
+            "x",
+            route=route,
+        )
+    msg = message_from_string(sent["raw"], policy=policy.default)
+    to = [(a.display_name, a.addr_spec) for a in msg["To"].addresses]
+    sender = [(a.display_name, a.addr_spec) for a in msg["From"].addresses]
+    assert to == [("Dora <img src=x>, Müller", "dora@example.com")]
+    assert sender == [("Verein Grün & Co.", "noreply@example.com")]
