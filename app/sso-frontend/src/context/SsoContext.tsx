@@ -37,7 +37,7 @@ const URLS: AppUrls = {
 }
 
 /** Pages a signed-in visitor stays on instead of being sent on. */
-const SIGNED_IN_PAGES = ['/clubs']
+const SIGNED_IN_PAGES = ['/clubs', '/start']
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function isManager(perms: PermissionsResponse | null): boolean {

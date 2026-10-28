@@ -24,6 +24,8 @@ export interface TenantChoice {
   tenant_slug: string
   tenant_name: string
   member_id: number | null
+  /** 'owner' or 'admin' where the user runs the club, else null. */
+  admin_level?: 'owner' | 'admin' | null
 }
 
 interface RawAuthResponse {
@@ -134,4 +136,31 @@ export async function joinClub(
   slug: string,
 ): Promise<{ status: 'joined' | 'requested'; club: { slug: string; name: string } }> {
   return apiFetch(`/system/clubs/${encodeURIComponent(slug)}/join`, { method: 'POST' })
+}
+
+export interface ClubRequest {
+  id: number
+  name: string
+  slug: string
+  plan: string
+  /** 'pending', 'approved' or 'rejected'. */
+  status: string
+  admin_note: string | null
+  created_at: string | null
+}
+
+/** The new clubs the signed-in user asked for, newest first. */
+export async function getMyClubRequests(): Promise<{ requests: ClubRequest[] }> {
+  return apiFetch('/system/tenant-requests/mine')
+}
+
+/** Ask the platform for a new club; staff review it. */
+export async function requestClub(data: {
+  name: string
+  slug: string
+}): Promise<{ request: ClubRequest }> {
+  return apiFetch('/system/tenant-requests', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
 }

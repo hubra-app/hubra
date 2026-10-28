@@ -9,15 +9,12 @@ import {
   Text,
   Modal,
   TextInput,
-  Select,
   Stack,
-  Alert,
+  Anchor,
 } from '@mantine/core'
-import { IconPlus } from '@tabler/icons-react'
+import { SSO_URL } from '@hubra/api-client'
 import {
   listTenantRequests,
-  listMyTenantRequests,
-  createTenantRequest,
   approveTenantRequest,
   rejectTenantRequest,
   type TenantRequest,
@@ -30,48 +27,20 @@ const STATUS_COLORS: Record<string, string> = {
   rejected: 'red',
 }
 
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-{2,}/g, '-')
-}
-
+/**
+ * New clubs people asked for, for platform staff to review. People ask for
+ * a club on the SSO site (/start), not here.
+ */
 export function TenantRequestsTab() {
-  const { isSuperadmin, notify } = useAdmin()
+  const { hasGlobalPermission, notify } = useAdmin()
   const queryClient = useQueryClient()
-  const [createOpen, setCreateOpen] = useState(false)
   const [rejectTarget, setRejectTarget] = useState<TenantRequest | null>(null)
   const [rejectNote, setRejectNote] = useState('')
-  const [name, setName] = useState('')
-  const [slug, setSlug] = useState('')
-  const [slugEdited, setSlugEdited] = useState(false)
-  const [plan, setPlan] = useState('starter')
-  const [formError, setFormError] = useState('')
+  const canReview = hasGlobalPermission('requests.approve')
 
   const { data, isLoading } = useQuery({
-    queryKey: ['tenant-requests', isSuperadmin],
-    queryFn: () =>
-      isSuperadmin
-        ? listTenantRequests()
-        : listMyTenantRequests(),
-  })
-
-  const createMutation = useMutation({
-    mutationFn: createTenantRequest,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tenant-requests'] })
-      notify('success', 'Request submitted', 'Your tenant request has been submitted for review.')
-      setCreateOpen(false)
-      setName('')
-      setSlug('')
-      setSlugEdited(false)
-      setFormError('')
-    },
-    onError: (err: Error) => {
-      setFormError(err.message)
-    },
+    queryKey: ['tenant-requests'],
+    queryFn: () => listTenantRequests(),
   })
 
   const approveMutation = useMutation({
@@ -100,35 +69,17 @@ export function TenantRequestsTab() {
     },
   })
 
-  const handleNameChange = (val: string) => {
-    setName(val)
-    if (!slugEdited) setSlug(slugify(val))
-  }
-
-  const handleCreate = () => {
-    if (!name || !slug) {
-      setFormError('Name and slug are required')
-      return
-    }
-    createMutation.mutate({ name, slug, plan })
-  }
-
   const requests = data?.requests ?? []
 
   return (
     <div>
       <Group justify="space-between" mb={16}>
         <Text fw={600} size="lg">
-          {isSuperadmin ? 'All Tenant Requests' : 'My Tenant Requests'}
+          Club Requests
         </Text>
-        {!isSuperadmin && (
-          <Button
-            leftSection={<IconPlus size={16} />}
-            onClick={() => setCreateOpen(true)}
-          >
-            Request New Tenant
-          </Button>
-        )}
+        <Anchor href={`${SSO_URL}/start`} size="sm" target="_blank" rel="noreferrer">
+          Request page
+        </Anchor>
       </Group>
 
       <Paper withBorder shadow="sm" radius="lg">
@@ -153,7 +104,7 @@ export function TenantRequestsTab() {
                 <Table.Th>Plan</Table.Th>
                 <Table.Th>Status</Table.Th>
                 <Table.Th>Created</Table.Th>
-                {isSuperadmin && <Table.Th>Actions</Table.Th>}
+                {canReview && <Table.Th>Actions</Table.Th>}
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -176,7 +127,7 @@ export function TenantRequestsTab() {
                   <Table.Td style={{ color: '#5e5873', fontSize: 14 }}>
                     {r.created_at ? new Date(r.created_at).toLocaleDateString() : '-'}
                   </Table.Td>
-                  {isSuperadmin && (
+                  {canReview && (
                     <Table.Td>
                       {r.status === 'pending' && (
                         <Group gap="xs">
@@ -207,52 +158,6 @@ export function TenantRequestsTab() {
           </Table>
         )}
       </Paper>
-
-      <Modal opened={createOpen} onClose={() => setCreateOpen(false)} title="Request New Tenant" size="md">
-        <Stack gap={16}>
-          {formError && (
-            <Alert color="red" variant="light">
-              {formError}
-            </Alert>
-          )}
-          <TextInput
-            label="Tenant Name"
-            required
-            value={name}
-            onChange={(e) => handleNameChange(e.target.value)}
-            placeholder="Acme Canoe Club"
-          />
-          <TextInput
-            label="Slug"
-            required
-            value={slug}
-            onChange={(e) => {
-              setSlug(e.target.value)
-              setSlugEdited(true)
-            }}
-            placeholder="acme-canoe-club"
-            description="URL-safe identifier (3-64 chars, lowercase, hyphens)"
-          />
-          <Select
-            label="Plan"
-            value={plan}
-            onChange={(v) => v && setPlan(v)}
-            data={[
-              { value: 'starter', label: 'Starter' },
-              { value: 'growth', label: 'Growth' },
-              { value: 'enterprise', label: 'Enterprise' },
-            ]}
-          />
-          <Group justify="flex-end" mt={8}>
-            <Button variant="default" onClick={() => setCreateOpen(false)}>
-              Cancel
-            </Button>
-            <Button loading={createMutation.isPending} onClick={handleCreate}>
-              Submit Request
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
 
       <Modal
         opened={!!rejectTarget}
