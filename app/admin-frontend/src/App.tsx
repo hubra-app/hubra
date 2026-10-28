@@ -71,6 +71,27 @@ function RequireGlobalPermission({ perm, children }: { perm: string; children: R
   return <>{children}</>
 }
 
+// Club requests used to be asked for here; people now do that on SSO
+// (/start), and only staff review them here.
+function ClubRequestsRoute() {
+  const { hasGlobalPermission } = useAdmin()
+  const staff = hasGlobalPermission('requests.read.all')
+  useEffect(() => {
+    if (!staff) window.location.assign(`${SSO_URL}/start`)
+  }, [staff])
+  if (!staff)
+    return (
+      <Center h="100vh">
+        <Loader />
+      </Center>
+    )
+  return (
+    <Shell>
+      <AdminPortal />
+    </Shell>
+  )
+}
+
 function SsoLoginRedirect() {
   useEffect(() => {
     window.location.assign(`${SSO_URL}/login`)
@@ -156,9 +177,7 @@ function AppRoutes() {
           path="/app/requests"
           element={
             <RequireAuth>
-              <Shell>
-                <AdminPortal />
-              </Shell>
+              <ClubRequestsRoute />
             </RequireAuth>
           }
         />

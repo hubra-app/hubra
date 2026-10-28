@@ -29,7 +29,9 @@ export function AdminPortal() {
   const tabs = [
     { id: 'my-tenants', label: 'My Clubs' },
     ...(hasGlobalPermission('tenants.read') ? [{ id: 'tenants', label: 'All Clubs' }] : []),
-    { id: 'requests', label: 'My Requests' },
+    ...(hasGlobalPermission('requests.read.all')
+      ? [{ id: 'requests', label: 'Club Requests' }]
+      : []),
     ...(hasGlobalPermission('audit.read') ? [{ id: 'audit', label: 'Audit Log' }] : []),
     ...(hasGlobalPermission('roles.manage') ? [{ id: 'roles', label: 'Roles' }] : []),
     ...(hasGlobalPermission('plugins.manage') ? [{ id: 'plugins', label: 'Plugins' }] : []),
@@ -62,7 +64,7 @@ export function AdminPortal() {
       />
       {tab === 'my-tenants' && <MyTenantsTab />}
       {tab === 'tenants' && hasGlobalPermission('tenants.read') && <TenantsTab />}
-      {tab === 'requests' && <TenantRequestsTab />}
+      {tab === 'requests' && hasGlobalPermission('requests.read.all') && <TenantRequestsTab />}
       {tab === 'audit' && hasGlobalPermission('audit.read') && <GlobalAuditTab />}
       {tab === 'roles' && hasGlobalPermission('roles.manage') && <RolesTab />}
       {tab === 'plugins' && hasGlobalPermission('plugins.manage') && <MarketplaceTab />}

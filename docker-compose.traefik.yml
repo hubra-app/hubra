@@ -4,8 +4,9 @@
 # Set the production URLs in .env (see .env.example). The SPAs call the API on
 # its own host, so VITE_API_BASE=https://api.hubra.club/api there.
 #
-# Host names default to app/manage/sso/api.hubra.club. Another domain sets
-# HUBRA_APP_HOST, HUBRA_MANAGE_HOST, HUBRA_SSO_HOST and HUBRA_API_HOST in .env
+# Host names default to app/manage/sso/join/api.hubra.club. Another domain sets
+# HUBRA_APP_HOST, HUBRA_MANAGE_HOST, HUBRA_SSO_HOST, HUBRA_JOIN_HOST and
+# HUBRA_API_HOST in .env
 # (the vollbuild.ch server: see .env.example).
 #
 # This file used to be docker-compose.override.yaml, which Compose loads
@@ -50,6 +51,13 @@ services:
       - "traefik.http.routers.sso-secure.tls.certresolver=letencrypt"
       - "traefik.http.services.sso-secure.loadbalancer.server.port=80"
       - "traefik.http.routers.sso-secure.middlewares=crowdsec@file,error-pages-middleware"
+      # join.hubra.club: the same frontend for starting and joining clubs. Its
+      # own router, so its certificate can't hold up the SSO one.
+      - "traefik.http.routers.join-secure.rule=Host(`${HUBRA_JOIN_HOST:-join.hubra.club}`)"
+      - "traefik.http.routers.join-secure.entrypoints=websecure"
+      - "traefik.http.routers.join-secure.tls.certresolver=letencrypt"
+      - "traefik.http.routers.join-secure.service=sso-secure"
+      - "traefik.http.routers.join-secure.middlewares=crowdsec@file,error-pages-middleware"
 
   backend:
     networks:

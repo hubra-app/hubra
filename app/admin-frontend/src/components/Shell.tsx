@@ -13,6 +13,7 @@ import {
   IconKey,
   IconPuzzle,
   IconMail,
+  IconPlus,
 } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
 
@@ -119,7 +120,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       title: 'My clubs',
       items: [
         { path: '/app/my-tenants', label: 'My Clubs', icon: <IconHome size={22} /> },
-        { path: '/app/requests', label: 'My Requests', icon: <IconClipboardList size={22} /> },
+        { href: `${SSO_URL}/start`, label: 'Start a Club', icon: <IconPlus size={22} /> },
         { href: `${SSO_URL}/clubs`, label: 'Find a Club', icon: <IconSearch size={22} /> },
       ],
     },
@@ -128,6 +129,15 @@ export function Shell({ children }: { children: React.ReactNode }) {
       items: [
         ...(hasGlobalPermission('tenants.read')
           ? [{ path: '/app/tenants', label: 'All Clubs', icon: <IconBuildingCog size={22} /> }]
+          : []),
+        ...(hasGlobalPermission('requests.read.all')
+          ? [
+              {
+                path: '/app/requests',
+                label: 'Club Requests',
+                icon: <IconClipboardList size={22} />,
+              },
+            ]
           : []),
         ...(hasGlobalPermission('platform.settings')
           ? [{ path: '/app/platform/mail', label: 'Mail Relay', icon: <IconMail size={22} /> }]
