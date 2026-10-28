@@ -42,7 +42,7 @@ export function ForgotPassword() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
           <div className="logo-mark" />
           <div>
-            <div style={{ fontSize: 'var(--mantine-font-size-md)', fontWeight: 700, color: '#181818' }}>VollBuild</div>
+            <div style={{ fontSize: 'var(--mantine-font-size-md)', fontWeight: 700, color: '#181818' }}>Hubra</div>
             <div style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#8a6a00', fontFamily: '"JetBrains Mono"', letterSpacing: '0.06em' }}>
               Makerspace · Schwyz
             </div>

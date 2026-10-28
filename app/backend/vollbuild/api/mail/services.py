@@ -703,7 +703,7 @@ class MailService:
         msg["To"] = to_addr
         msg.attach(
             MIMEText(
-                f"Test email sent from VollBuild Club Management Suite.\n\n"
+                f"Test email sent from Hubra.\n\n"
                 f"From: {from_addr}",
                 "plain",
             )

@@ -18,7 +18,7 @@ export function AccessDenied() {
         <Group gap={10} mb={32} justify="center">
           <div className="logo-mark" />
           <Box>
-            <Text fz="md" fw={700}>VollBuild</Text>
+            <Text fz="md" fw={700}>Hubra</Text>
             <Text fz="xs" c="#8a6a00" ff="'JetBrains Mono', monospace" style={{ letterSpacing: '0.06em' }}>
               Makerspace · Schwyz
             </Text>

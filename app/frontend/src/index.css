@@ -718,22 +718,22 @@ table[style*="min-width"] td::before {
   }
 }
 
-.vollbuild-tabs .mantine-Tabs-tab {
+.hubra-tabs .mantine-Tabs-tab {
   color: var(--mantine-color-dimmed);
   font-weight: 400;
 }
 
-.vollbuild-tabs .mantine-Tabs-tab[data-active] {
+.hubra-tabs .mantine-Tabs-tab[data-active] {
   color: #181818;
   font-weight: 700;
 }
 
-.vollbuild-slideover .mantine-Drawer-content {
+.hubra-slideover .mantine-Drawer-content {
   display: flex;
   flex-direction: column;
 }
 
-.vollbuild-slideover .mantine-Drawer-body {
+.hubra-slideover .mantine-Drawer-body {
   flex: 1;
   display: flex;
   flex-direction: column;

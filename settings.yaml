@@ -1,4 +1,4 @@
-# Club Management Suite — deployment-time settings
+# Hubra — deployment-time settings
 #
 # This file holds operator-controlled config that is fixed at deploy time.
 # Club identity (name, domain, sender address) lives in the database and is

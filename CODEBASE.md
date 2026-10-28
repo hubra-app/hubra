@@ -1,4 +1,4 @@
-# Club Management Suite — Codebase Reference
+# Hubra — Codebase Reference
 
 > Generated: 2026-07-09
 > Source: [github.com/pixe-pine/club-management-suite](https://github.com/pixe-pine/club-management-suite)
@@ -7,7 +7,7 @@
 
 ## 1. Project Overview
 
-**Club Management Suite** (codename _VollBuild_) is a self-hosted club management platform for makerspaces, associations, and similar member-based organisations. It provides member management, finance tracking, group communication, events, polls, an inventory system, and an integrated self-hosted mail stack (IMAP/SMTP).
+**Hubra** (formerly VollBuild COS, the Club Operations Suite) is a self-hosted club management platform for makerspaces, associations, and similar member-based organisations. It provides member management, finance tracking, group communication, events, polls, an inventory system, and an integrated self-hosted mail stack (IMAP/SMTP).
 
 The project is deployed via Docker Compose and uses a React SPA frontend with a Flask API backend. The optional mail stack adds WildDuck IMAP, Haraka inbound SMTP, and ZoneMTA outbound SMTP.
 

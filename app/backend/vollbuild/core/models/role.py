@@ -1,4 +1,4 @@
-"""Role and Permission models — RBAC for Club Management Suite."""
+"""Role and Permission models — RBAC for Hubra."""
 
 from __future__ import annotations
 

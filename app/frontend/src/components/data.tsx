@@ -70,7 +70,7 @@ export function Tabs({
           mb={24}
           variant="underline"
           color="dark"
-          className="vollbuild-tabs"
+          className="hubra-tabs"
           styles={{
             tab: {
               paddingTop: '0.875rem',

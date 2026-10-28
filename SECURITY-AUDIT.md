@@ -1,4 +1,4 @@
-# Security Audit Report — Club Management Suite
+# Security Audit Report — Hubra
 
 **Date:** 2026-07-09
 **Scope:** Flask/Python backend, Celery tasks, React frontend, in-repo

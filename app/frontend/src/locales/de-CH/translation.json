@@ -868,7 +868,7 @@
   },
   "bootstrap": {
     "title": "Club iirichte",
-    "welcome": "Wilkomme zue VollBuild!",
+    "welcome": "Wilkomme zue Hubra!",
     "clubName": "Club-Name",
     "clubNamePlaceholder": "z.B. Makerspace Zürich",
     "adminEmail": "Admin E-Mail",
@@ -906,7 +906,7 @@
     "back": "Zrugg",
     "finish": "Abschliesse",
     "continue": "Witer",
-    "vollbuildSetup": "VollBuild-Yrichtig",
+    "hubraSetup": "Hubra-Yrichtig",
     "spaceReady": "Din Berich isch ready.",
     "setupFailed": "Yrichtig fehlgeschlage",
     "bootstrapFailed": "Bootstrap fehlgeschlage"

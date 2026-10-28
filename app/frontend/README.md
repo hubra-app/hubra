@@ -1,4 +1,4 @@
-# Club Management Suite — Frontend
+# Hubra — Frontend
 
 React SPA for club management (members, finance, events, polls, mail, and more).
 

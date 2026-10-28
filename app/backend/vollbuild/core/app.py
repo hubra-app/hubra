@@ -1,5 +1,5 @@
 """
-Application factory for the Club Management Suite backend.
+Application factory for the Hubra backend.
 
 Usage:
     from vollbuild import create_app

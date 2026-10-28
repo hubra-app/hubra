@@ -249,7 +249,7 @@ class EventService:
         lines = [
             "BEGIN:VCALENDAR",
             "VERSION:2.0",
-            "PRODID:-//Club Management Suite//Event Calendar//EN",
+            "PRODID:-//Hubra//Event Calendar//EN",
             "CALSCALE:GREGORIAN",
             "METHOD:PUBLISH",
         ]

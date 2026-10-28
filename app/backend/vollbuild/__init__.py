@@ -1,4 +1,4 @@
-"""vollbuild: Club Management Suite backend.
+"""vollbuild: Hubra backend.
 
 The application factory lives in :mod:`vollbuild.core.app`; it is exported
 here so ``from vollbuild import create_app`` and ``wsgi:app`` keep working.

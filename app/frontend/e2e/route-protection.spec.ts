@@ -37,7 +37,7 @@ async function mockAuth(
   await page.addInitScript(() => {
     document.cookie = 'csrf_access_token=mock; path=/'
     document.cookie = 'csrf_refresh_token=mock; path=/'
-    sessionStorage.setItem('vollbuild_phase', 'app')
+    sessionStorage.setItem('hubra_phase', 'app')
   })
 
   await page.route('**/api/v1/bootstrap-status', (r) =>
@@ -95,7 +95,7 @@ test.describe('Route protection — frontend authorization guards', () => {
   test.describe('Unauthenticated user', () => {
     test('redirected to /login from protected routes', async ({ page }) => {
       await page.addInitScript(() => {
-        sessionStorage.setItem('vollbuild_phase', 'login')
+        sessionStorage.setItem('hubra_phase', 'login')
       })
       await page.route('**/api/v1/bootstrap-status', (r) =>
         r.fulfill({

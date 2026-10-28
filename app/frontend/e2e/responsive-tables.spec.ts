@@ -25,7 +25,7 @@ async function seedAuth(page: import('@playwright/test').Page) {
   await page.addInitScript(() => {
     document.cookie = 'csrf_access_token=mock; path=/'
     document.cookie = 'csrf_refresh_token=mock; path=/'
-    sessionStorage.setItem('vollbuild_phase', 'app')
+    sessionStorage.setItem('hubra_phase', 'app')
   })
   // Catch-all FIRST (lowest priority — must be registered before specific routes)
   await page.route('**/api/v1/**', r =>

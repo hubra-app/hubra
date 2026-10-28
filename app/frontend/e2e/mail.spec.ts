@@ -110,7 +110,7 @@ async function seedAuth(page: import('@playwright/test').Page) {
   await page.addInitScript(() => {
     document.cookie = 'csrf_access_token=mock; path=/'
     document.cookie = 'csrf_refresh_token=mock; path=/'
-    sessionStorage.setItem('vollbuild_phase', 'app')
+    sessionStorage.setItem('hubra_phase', 'app')
   })
   // Exact path /account/ (not **/account/**) — trailing ** doesn't match empty segment
   await page.route('**/api/v1/account/', r =>

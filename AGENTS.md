@@ -1,4 +1,4 @@
-Agent Configuration for Club Management Suite
+Agent Configuration for Hubra
 
 General Rules
 

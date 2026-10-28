@@ -81,7 +81,7 @@ export function TopBar() {
       <Group gap={8} wrap="nowrap" style={{ flexShrink: 0 }}>
         <div className="logo-mark" />
         <Text fz="md" fw={700} className="mantine-visible-from-xs">
-          VollBuild
+          Hubra
         </Text>
       </Group>
 

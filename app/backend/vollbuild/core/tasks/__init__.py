@@ -1,5 +1,5 @@
 """
-Celery task infrastructure for Club Management Suite.
+Celery task infrastructure for Hubra.
 
 make_celery(app) -- configure a Celery instance bound to a Flask app.
 celery_app      -- module-level instance for worker startup.

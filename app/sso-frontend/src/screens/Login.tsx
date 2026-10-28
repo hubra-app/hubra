@@ -110,7 +110,7 @@ export function LoginScreen() {
             <div className="logo-mark" />
             <Box>
               <Text fz="md" fw={700}>
-                VollBuild
+                Hubra
               </Text>
               <Text
                 fz="xs"
@@ -177,7 +177,7 @@ export function LoginScreen() {
             <div className="logo-mark" />
             <Box>
               <Text fz="md" fw={700}>
-                VollBuild
+                Hubra
               </Text>
               <Text
                 fz="xs"
@@ -194,7 +194,7 @@ export function LoginScreen() {
             Welcome back
           </Title>
           <Text size="sm" c="dimmed" mb={28}>
-            Sign in to your VollBuild account
+            Sign in to your Hubra account
           </Text>
 
           {error && (

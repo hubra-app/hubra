@@ -1,4 +1,4 @@
-# VollBuild Club Management Suite — Backend API
+# Hubra — Backend API
 
 Base URL: `https://api.vollbuild.ch/api/v1` (production)
 Auth: JWT cookies (`HttpOnly`, `Domain=.vollbuild.ch`, `SameSite=Lax`)

@@ -69,7 +69,7 @@ export function MobileDrawer() {
         <Group gap={10} wrap="nowrap">
           <div className="logo-mark" />
           <Text fz="md" fw={700}>
-            VollBuild
+            Hubra
           </Text>
         </Group>
         <ActionIcon

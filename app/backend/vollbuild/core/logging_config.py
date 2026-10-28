@@ -1,5 +1,5 @@
 """
-Structured JSON logging for the Club Management Suite backend.
+Structured JSON logging for the Hubra backend.
 
 Installs a pythonjsonlogger.JsonFormatter on the root logger and registers
 Flask before/after request hooks to emit per-request log lines with fields:

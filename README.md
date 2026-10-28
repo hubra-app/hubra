@@ -1,7 +1,12 @@
-# Club Management Suite
+# Hubra
 
 A self-hosted club management platform with member management, finance, group
 communication, events, polls, and an integrated self-hosted mail stack.
+
+Hubra was previously called VollBuild COS (Club Operations Suite). VollBuild
+is now only the name of the first club running it, which is why the default
+deployment uses the `vollbuild.ch` hosts and seeds "VollBuild Makerspace" as
+the club name.
 
 ## Architecture
 
