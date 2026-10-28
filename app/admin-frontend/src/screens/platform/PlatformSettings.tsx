@@ -121,7 +121,6 @@ export function PlatformSettings() {
       </Group>
     )
     const common = {
-      key,
       label,
       description: de ? tr(de[1], s.description) : s.description,
       value: draft[key] ?? s.value,
@@ -129,9 +128,9 @@ export function PlatformSettings() {
         setDraft((d) => ({ ...d, [key]: e.currentTarget.value })),
     }
     return s.secret ? (
-      <PasswordInput {...common} placeholder={s.isSet ? tr('•••••••• (unverändert)', '•••••••• (unchanged)') : ''} />
+      <PasswordInput key={key} {...common} placeholder={s.isSet ? tr('•••••••• (unverändert)', '•••••••• (unchanged)') : ''} />
     ) : (
-      <TextInput {...common} />
+      <TextInput key={key} {...common} />
     )
   }
 
