@@ -75,9 +75,9 @@ _group_schema = GroupSchema()
 def _set_remembered_email_cookie(response, email: str) -> None:
     """Set the remembered_email cookie so the frontend can prefill the login form.
 
-    Cross-subdomain correctness: the frontend SPA (cos.vollbuild.ch) reads this
+    Cross-subdomain correctness: the frontend SPA (app.hubra.club) reads this
     via document.cookie, so it must (a) be scoped to the shared registrable
-    domain (.vollbuild.ch) — host-only would never reach the frontend, and
+    domain (.hubra.club) — host-only would never reach the frontend, and
     (b) be HttpOnly=False so JS can read it. SameSite=Lax is safe (same-site
     subdomain navigation) and Secure mirrors the JWT cookies (HTTPS upstream).
     """

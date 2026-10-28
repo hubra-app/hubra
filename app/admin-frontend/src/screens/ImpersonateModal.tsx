@@ -7,7 +7,7 @@ import { IconReplaceUser } from '@tabler/icons-react'
 import { impersonateTenant } from '@/api/tenants'
 import { useAdmin } from '@/context/AdminContext'
 
-const TENANT_APP_URL = import.meta.env.VITE_TENANT_APP_URL ?? 'https://cos.vollbuild.ch'
+const TENANT_APP_URL = import.meta.env.VITE_TENANT_APP_URL ?? 'https://app.hubra.club'
 
 const schema = z.object({
   reason: z.string().min(1, 'Reason is required'),

@@ -18,33 +18,33 @@ spec:
   tls:
     - secretName: hubra-tls
       hosts:
-        - api.vollbuild.ch
-        - cos.vollbuild.ch
-        - manage.vollbuild.ch
-        - sso.vollbuild.ch
+        - api.hubra.club
+        - app.hubra.club
+        - manage.hubra.club
+        - sso.hubra.club
   rules:
-    - host: api.vollbuild.ch
+    - host: api.hubra.club
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service: { name: backend, port: { name: http } }
-    - host: cos.vollbuild.ch
+    - host: app.hubra.club
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service: { name: frontend, port: { name: http } }
-    - host: manage.vollbuild.ch
+    - host: manage.hubra.club
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service: { name: admin-frontend, port: { name: http } }
-    - host: sso.vollbuild.ch
+    - host: sso.hubra.club
       http:
         paths:
           - path: /

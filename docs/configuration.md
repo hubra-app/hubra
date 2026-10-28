@@ -28,15 +28,15 @@ not using mail, leave the mail variables blank.
 ### Cross-origin auth variables
 
 These are critical when the API and frontend are on different subdomains
-(`api.vollbuild.ch` vs `cos.vollbuild.ch`). See
+(`api.hubra.club` vs `app.hubra.club`). See
 [SUBDOMAIN_MIGRATION.md](SUBDOMAIN_MIGRATION.md) for the full rationale.
 
 ```
-CORS_ORIGINS=https://vollbuild.ch,https://cos.vollbuild.ch,http://localhost:5173
-JWT_COOKIE_DOMAIN=.vollbuild.ch
+CORS_ORIGINS=https://hubra.club,https://app.hubra.club,http://localhost:5173
+JWT_COOKIE_DOMAIN=.hubra.club
 JWT_COOKIE_SAMESITE=Lax
 JWT_COOKIE_SECURE=true
-FRONTEND_BASE_URL=https://cos.vollbuild.ch
+FRONTEND_BASE_URL=https://app.hubra.club
 ```
 
 ## Settings (database)

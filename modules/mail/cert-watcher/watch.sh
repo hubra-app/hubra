@@ -3,12 +3,12 @@ set -eu
 
 # Testing notes:
 # To manually test without waiting for certbot:
-#   docker exec community-cert-watcher touch /etc/letsencrypt/live/mail.vollbuild.ch/fullchain.pem
+#   docker exec community-cert-watcher touch /etc/letsencrypt/live/mail.hubra.club/fullchain.pem
 #   # should trigger restart of community-mailserver, community-haraka, community-zonemta
 #
 # To simulate symlink recreation (closer to what certbot does):
 #   docker exec community-cert-watcher sh -c '
-#     cd /etc/letsencrypt/live/mail.vollbuild.ch &&
+#     cd /etc/letsencrypt/live/mail.hubra.club &&
 #     ln -sf "$(readlink fullchain.pem)" fullchain.pem.tmp &&
 #     mv fullchain.pem.tmp fullchain.pem'
 #

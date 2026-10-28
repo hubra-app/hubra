@@ -4,7 +4,8 @@
 #
 # Secrets are not in git: Secret `hubra-env` (from .env) and `ghcr-pull` are
 # created once with deploy/create-secrets.sh. Host names: ingress.yaml and the
-# hubra-frontend ConfigMap below.
+# hubra-frontend ConfigMap below (deploy/vollbuild-ch keeps the old vollbuild.ch
+# hosts).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
@@ -35,12 +36,12 @@ configMapGenerator:
 # Keep the host names in step with ingress.yaml.
   - name: hubra-frontend
     literals:
-      - VITE_API_BASE=https://api.vollbuild.ch/api
-      - VITE_SSO_URL=https://sso.vollbuild.ch
-      - VITE_COS_URL=https://cos.vollbuild.ch
-      - VITE_TENANT_APP_URL=https://cos.vollbuild.ch
-      - VITE_MANAGE_URL=https://manage.vollbuild.ch
-      - VITE_ADMIN_PORTAL_URL=https://manage.vollbuild.ch
+      - VITE_API_BASE=https://api.hubra.club/api
+      - VITE_SSO_URL=https://sso.hubra.club
+      - VITE_COS_URL=https://app.hubra.club
+      - VITE_TENANT_APP_URL=https://app.hubra.club
+      - VITE_MANAGE_URL=https://manage.hubra.club
+      - VITE_ADMIN_PORTAL_URL=https://manage.hubra.club
       # k3s pod network: trust X-Forwarded-For from Traefik.
       - REAL_IP_FROM=10.42.0.0/16
 

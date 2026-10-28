@@ -423,7 +423,7 @@ def test_seed_creates_managed_mail_addresses(db):
 
     from hubra.api.settings.services import SettingService
 
-    domain = SettingService.get("mail.domain") or "vollbuild.ch"
+    domain = SettingService.get("mail.domain") or "hubra.club"
 
     for prefix in (
         "noreply",
@@ -470,7 +470,7 @@ def test_resolve_alias_targets_group_members(db, seeded_db):
     db.session.flush()
 
     member = seeded_db["admin"]
-    member.public_email = "admin@vollbuild.ch"
+    member.public_email = "admin@hubra.club"
     db.session.execute(
         db.text("INSERT INTO member_groups (member_id, group_id) VALUES (:mid, :gid)"),
         {"mid": member.id, "gid": group.id},
@@ -489,7 +489,7 @@ def test_resolve_alias_targets_group_members(db, seeded_db):
     db.session.commit()
 
     targets = resolve_alias_targets(addr)
-    assert "admin@vollbuild.ch" in targets
+    assert "admin@hubra.club" in targets
 
 
 def test_resolve_alias_targets_empty_falls_back_to_postmaster(db, seeded_db):

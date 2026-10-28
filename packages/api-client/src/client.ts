@@ -1,9 +1,9 @@
-// In production: VITE_API_BASE points to https://api.vollbuild.ch/api (Traefik → backend)
+// In production: VITE_API_BASE points to https://api.hubra.club/api (Traefik → backend)
 // In local dev: VITE_API_BASE points to http://localhost:5000/api (direct to Flask)
 // VITE_API_BASE can fall back to relative "/api" (Vite proxy or Caddy proxy)
 export const BASE = (import.meta.env.VITE_API_BASE ?? "/api") + "/v1";
 
-export const SSO_URL = import.meta.env.VITE_SSO_URL ?? "https://sso.vollbuild.ch";
+export const SSO_URL = import.meta.env.VITE_SSO_URL ?? "https://sso.hubra.club";
 
 /** How this install is set up, from GET /instance (public, no auth). */
 export interface InstanceInfo {
@@ -48,9 +48,13 @@ export function getRememberedEmail(): string {
  * server-side by the /auth/logout call.
  */
 export function clearTokens(): void {
+  // JWT_COOKIE_DOMAIN is the parent of the app hosts (.hubra.club for
+  // app.hubra.club), so expire the cookies there as well.
+  const labels = window.location.hostname.split(".");
+  const parentDomain = labels.length > 2 ? labels.slice(1).join(".") : "";
   for (const name of ["csrf_access_token", "csrf_refresh_token"]) {
     document.cookie = `${name}=; Max-Age=0; path=/`;
-    document.cookie = `${name}=; Max-Age=0; path=/; domain=.vollbuild.ch`;
+    if (parentDomain) document.cookie = `${name}=; Max-Age=0; path=/; domain=.${parentDomain}`;
   }
   fetch(`${BASE}/auth/logout`, {
     method: "POST",

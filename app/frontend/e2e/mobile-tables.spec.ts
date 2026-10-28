@@ -6,7 +6,7 @@ const MOCK_USER = {
   last_name: 'User',
   name: 'Test User',
   email: 'test@example.com',
-  public_email: 'test@vollbuild.ch',
+  public_email: 'test@hubra.club',
   tier: { name: 'Standard' },
   roles: [{ name: 'Admin' }],
   status: 'active',
@@ -36,8 +36,8 @@ const MOCK_ROLES = [
 ]
 
 const MOCK_MEMBERS = [
-  { id: 1, first_name: 'Anna', last_name: 'Huber', name: 'Anna Huber', email: 'anna@example.com', public_email: 'anna@vollbuild.ch', tier: { name: 'Maker' }, roles: [{ name: 'Member' }], status: 'active', tool_hours: 12, notes: '', avatar_color: '#fece2b', avatar: null, profile_note: '', joined: '2024-01-15', last_seen: '2024-07-01', private_email_verified: true, groups: [{ id: 1, name: 'Werkstatt' }] },
-  { id: 2, first_name: 'Marc', last_name: 'Keller', name: 'Marc Keller', email: 'marc@example.com', public_email: 'marc@vollbuild.ch', tier: { name: 'Pro' }, roles: [{ name: 'Admin' }], status: 'active', tool_hours: 45, notes: '', avatar_color: '#6366f1', avatar: null, profile_note: '', joined: '2024-02-01', last_seen: '2024-07-02', private_email_verified: true, groups: [{ id: 1, name: 'Werkstatt' }] },
+  { id: 1, first_name: 'Anna', last_name: 'Huber', name: 'Anna Huber', email: 'anna@example.com', public_email: 'anna@hubra.club', tier: { name: 'Maker' }, roles: [{ name: 'Member' }], status: 'active', tool_hours: 12, notes: '', avatar_color: '#fece2b', avatar: null, profile_note: '', joined: '2024-01-15', last_seen: '2024-07-01', private_email_verified: true, groups: [{ id: 1, name: 'Werkstatt' }] },
+  { id: 2, first_name: 'Marc', last_name: 'Keller', name: 'Marc Keller', email: 'marc@example.com', public_email: 'marc@hubra.club', tier: { name: 'Pro' }, roles: [{ name: 'Admin' }], status: 'active', tool_hours: 45, notes: '', avatar_color: '#6366f1', avatar: null, profile_note: '', joined: '2024-02-01', last_seen: '2024-07-02', private_email_verified: true, groups: [{ id: 1, name: 'Werkstatt' }] },
 ]
 
 const MOCK_PERMISSIONS = [
@@ -111,8 +111,8 @@ const MOCK_ITEM = {
 
 const MOCK_ALIAS = {
   id: 1,
-  address: 'info@vollbuild.ch',
-  targets: ['marc@vollbuild.ch'],
+  address: 'info@hubra.club',
+  targets: ['marc@hubra.club'],
   description: 'Info alias',
   is_disabled: false,
   created_at: '2024-01-01',
@@ -120,7 +120,7 @@ const MOCK_ALIAS = {
 
 const MOCK_MAILBOX = {
   id: 1,
-  address: 'marc@vollbuild.ch',
+  address: 'marc@hubra.club',
   name: 'Marc Keller',
   is_disabled: false,
   quota: 1024,
@@ -211,7 +211,7 @@ async function seedAuth(page: Page) {
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([MOCK_MAILBOX]) })
   )
   await page.route('**/api/v1/mail/members*', r =>
-    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ id: 1, name: 'Marc Keller', email: 'marc@vollbuild.ch', wildduck_id: null, mailbox_enabled: false, mail_disabled: false }]) })
+    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ id: 1, name: 'Marc Keller', email: 'marc@hubra.club', wildduck_id: null, mailbox_enabled: false, mail_disabled: false }]) })
   )
   await page.route('**/api/v1/external-parties*', r =>
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MOCK_EXTERNAL_PARTIES) })

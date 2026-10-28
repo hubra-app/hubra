@@ -549,7 +549,8 @@ Redirect Validation
 Validate redirect URLs against an allowlist before redirecting. The
 SSO frontend's validateRedirect() function (sso-frontend/src/context/
 SsoContext.tsx:34-48) is the correct pattern — only allow
-*.vollbuild.ch or localhost. Never redirect to an arbitrary user-
+subdomains of the club app's domain (*.hubra.club
+by default) or localhost. Never redirect to an arbitrary user-
 supplied URL (open redirect vulnerability).
 
 Input Sanitization
