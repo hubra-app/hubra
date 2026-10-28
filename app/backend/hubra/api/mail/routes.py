@@ -16,7 +16,7 @@ from hubra.api.mail.services import (
     MailboxesService,
 )
 from hubra.core.extensions import db
-from hubra.api.permissions import permission_required, require_global_permission
+from hubra.api.permissions import permission_required
 from hubra.api.settings.services import SettingService
 from hubra.api.utils import log_audit
 from hubra.core.errors import api_error, raise_error
@@ -1987,33 +1987,6 @@ def resolve_local_part():
         return jsonify({"localPart": ""}), 200
     resolved = MailAdminService.resolve_local_part(prefix)
     return jsonify({"localPart": resolved}), 200
-
-
-# WildDuck is one server for every club: its live list holds other clubs'
-# mailboxes, which look like orphans from here. Platform staff only.
-@mail_bp.get("/wildduck-live")
-@permission_required("wildduck", "read", "View WildDuck live state")
-@require_global_permission("platform.settings")
-def list_wildduck_live():
-    data = MailAdminService.list_wildduck_live()
-    return jsonify({"data": data}), 200
-
-
-@mail_bp.delete("/wildduck-live/<string:entry_type>/<string:entry_id>")
-@permission_required("wildduck", "delete", "Delete orphan WildDuck entries")
-@require_global_permission("platform.settings")
-def delete_wildduck_orphan(entry_type: str, entry_id: str):
-    if entry_type not in ("mailbox", "alias"):
-        return api_error("VALIDATION_ERROR", "Type must be 'mailbox' or 'alias'", 400)
-    if not _OBJECTID_RE.match(entry_id):
-        return api_error("VALIDATION_ERROR", f"Invalid ID format: {entry_id!r}", 400)
-
-    result = MailAdminService.delete_orphan(
-        entry_type=entry_type,
-        entry_id=entry_id,
-        actor_id=get_current_member().id,
-    )
-    return jsonify(result), 200
 
 
 @mail_bp.post("/reconcile")

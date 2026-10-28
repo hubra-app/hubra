@@ -6,7 +6,7 @@ Covers:
   - Cache miss returns degraded with HTTP 200
   - HTTP 503 returned when cached status is "error"
   - HTTP 200 returned for ok/degraded (load-balancer requirement)
-  - /health/detailed runs concurrent checks, includes version + stale flag
+  - /manager/platform/health runs concurrent checks, includes version + stale flag
 """
 
 from unittest.mock import patch
@@ -99,46 +99,46 @@ def test_health_public_does_not_include_version(client):
     assert "version" not in data
 
 
-# ── /health/detailed (live concurrent checks, admin-only) ─────────────────────
+# ── Platform health (live concurrent checks, platform staff only) ─────────────────────
 
 
-def test_health_detailed_services_structure(client, auth_headers):
+def test_health_detailed_services_structure(client, staff_headers):
     """Detailed breakdown (admin-only) includes all expected service sub-keys."""
-    resp = client.get("/api/v1/health/detailed", headers=auth_headers)
-    assert resp.status_code in (200, 503)
+    resp = client.get("/api/v1/manager/platform/health", headers=staff_headers)
+    assert resp.status_code == 200
     data = resp.get_json()
     services = data["services"]
     for key in ("db", "redis", "smtp", "imap"):
         assert key in services, f"'{key}' missing from services"
 
 
-def test_health_detailed_db_ok_field_is_bool(client, auth_headers):
+def test_health_detailed_db_ok_field_is_bool(client, staff_headers):
     """Detailed: db.ok must be a boolean."""
-    resp = client.get("/api/v1/health/detailed", headers=auth_headers)
+    resp = client.get("/api/v1/manager/platform/health", headers=staff_headers)
     data = resp.get_json()
     assert isinstance(data["services"]["db"]["ok"], bool)
 
 
-def test_health_detailed_latency_ms_present(client, auth_headers):
+def test_health_detailed_latency_ms_present(client, staff_headers):
     """Detailed: each service entry must include latency_ms."""
-    resp = client.get("/api/v1/health/detailed", headers=auth_headers)
+    resp = client.get("/api/v1/manager/platform/health", headers=staff_headers)
     data = resp.get_json()
     for svc in ("db", "redis", "smtp"):
         assert "latency_ms" in data["services"][svc], f"latency_ms missing for {svc}"
 
 
-def test_health_detailed_includes_version(client, auth_headers):
+def test_health_detailed_includes_version(client, staff_headers):
     """Detailed health payload includes the backend version."""
     from hubra.api.version.services import VersionService
 
-    resp = client.get("/api/v1/health/detailed", headers=auth_headers)
+    resp = client.get("/api/v1/manager/platform/health", headers=staff_headers)
     data = resp.get_json()
     assert data["version"] == VersionService.get_version()
 
 
-def test_health_detailed_includes_stale_flag(client, auth_headers):
+def test_health_detailed_includes_stale_flag(client, staff_headers):
     """Detailed health payload includes a 'stale' boolean flag."""
-    resp = client.get("/api/v1/health/detailed", headers=auth_headers)
+    resp = client.get("/api/v1/manager/platform/health", headers=staff_headers)
     data = resp.get_json()
     assert "stale" in data
     assert isinstance(data["stale"], bool)
@@ -151,15 +151,15 @@ def test_health_endpoint_returns_200(client):
     """GET /api/v1/health returns 200 or 503 with only a 'status' key."""
     _seed_cache("ok")
     resp = client.get("/api/v1/health")
-    assert resp.status_code in (200, 503)
+    assert resp.status_code == 200
     data = resp.get_json()
     assert data is not None
     assert "status" in data
     assert "services" not in data
 
 
-def test_health_db_checked(client, auth_headers):
+def test_health_db_checked(client, staff_headers):
     """Detailed health shows db.ok is True — SQLite in-memory DB is always reachable in tests."""
-    resp = client.get("/api/v1/health/detailed", headers=auth_headers)
+    resp = client.get("/api/v1/manager/platform/health", headers=staff_headers)
     data = resp.get_json()
     assert data["services"]["db"]["ok"] is True

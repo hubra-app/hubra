@@ -18,10 +18,10 @@ import {
   Title,
 } from '@mantine/core'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { IconArrowLeft } from '@tabler/icons-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import { SignedInFrame } from '@/components/SignedInFrame'
+import { setLang } from '@/lang'
 import * as authApi from '@/api/auth'
 
 const TABS = [
@@ -67,23 +67,11 @@ export function AccountScreen() {
     )
 
   return (
-    <SignedInFrame
-      width={640}
-      actions={
-        <Button
-          variant="subtle"
-          size="xs"
-          leftSection={<IconArrowLeft size={16} />}
-          onClick={() => navigate('/clubs')}
-        >
-          Meine Vereine
-        </Button>
-      }
-    >
-      <Title order={2} mb={4}>
+    <SignedInFrame width={640}>
+      <Title order={1} fz={30} mb={6}>
         Mein Konto
       </Title>
-      <Text size="sm" c="dimmed" mb="lg">
+      <Text c="dimmed" mb="lg">
         Gilt für alle deine Vereine. Mitgliedschaft und Vereins-Mail findest du im jeweiligen
         Verein.
       </Text>
@@ -372,7 +360,11 @@ function SettingsTab({ profile }: { profile: authApi.Profile }) {
           data={LANGUAGES}
           value={profile.language}
           disabled={save.isPending}
-          onChange={(language) => save.mutate({ language })}
+          onChange={(language) => {
+            // The portal itself follows the account language straight away.
+            setLang(language.startsWith('en') ? 'en' : 'de')
+            save.mutate({ language })
+          }}
         />
       </Stack>
     </Paper>

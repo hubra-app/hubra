@@ -825,6 +825,29 @@ def test_reconcile_mail_removes_orphans(mock_wd_tgc, mock_mp_tgc, app, db):
 
 @patch("hubra.core.services.mail_provisioning.try_get_client")
 @patch("hubra.core.services.wildduck.try_get_client")
+def test_reconcile_keeps_mailboxes_of_other_clubs(mock_wd_tgc, mock_mp_tgc, app, db):
+    """One club's orphan sweep must not delete another club's mailboxes."""
+    from hubra.core.tasks.mail_tasks import reconcile_mail
+
+    wd = MagicMock()
+    wd.list_users.return_value = {
+        "results": [{"id": "wd-other-club"}, {"id": "wd-orphan"}]
+    }
+    mock_wd_tgc.return_value = wd
+    mock_mp_tgc.return_value = wd
+
+    with patch(
+        "hubra.core.services.mail_server.managed_index",
+        return_value={"wd-other-club": {"club": {"slug": "club-b"}}},
+    ):
+        result = reconcile_mail.run()
+
+    wd.safe_delete_user.assert_called_once_with("wd-orphan")
+    assert result["orphans_removed"] == 1
+
+
+@patch("hubra.core.services.mail_provisioning.try_get_client")
+@patch("hubra.core.services.wildduck.try_get_client")
 def test_reconcile_mail_continues_on_error(mock_wd_tgc, mock_mp_tgc, app, db):
     """reconcile_mail increments error count and continues on WildDuckError."""
     from hubra.core.services.wildduck import WildDuckError

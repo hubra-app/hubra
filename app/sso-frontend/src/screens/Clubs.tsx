@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   Alert,
-  Anchor,
+  Avatar,
   Badge,
   Box,
   Button,
@@ -16,13 +16,13 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { IconArrowRight, IconSearch, IconUserCircle } from '@tabler/icons-react'
+import { IconArrowRight, IconBuildingCommunity, IconPlus, IconSearch } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import { clubAppUrl } from '@/redirect'
 import * as authApi from '@/api/auth'
 import { SignedInFrame } from '@/components/SignedInFrame'
-import { tr, useLang } from '@/lang'
+import { useLang } from '@/lang'
 
 /**
  * The club picker: where everyone lands after signing in. Lists their clubs
@@ -30,9 +30,9 @@ import { tr, useLang } from '@/lang'
  * club and ask to join it (platform managers join straight away).
  */
 export function ClubsScreen() {
-  useLang()
   const { authStatus, isManager, urls, notify } = useSso()
   const navigate = useNavigate()
+  const { tr } = useLang()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [debounced] = useDebouncedValue(search.trim(), 250)
@@ -55,12 +55,12 @@ export function ClubsScreen() {
   })
 
   const join = useMutation({
-    mutationFn: authApi.joinClub,
+    mutationFn: (slug: string) => authApi.joinClub(slug),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['clubs'] })
       queryClient.invalidateQueries({ queryKey: ['my-tenants'] })
       if (res.status === 'joined') {
-        notify('success', tr(`Du bist ${res.club.name} beigetreten`, `You joined ${res.club.name}`))
+        notify('success', tr(`Du bist jetzt bei ${res.club.name}`, `You joined ${res.club.name}`))
       } else {
         notify(
           'success',
@@ -72,7 +72,7 @@ export function ClubsScreen() {
         )
       }
     },
-    onError: (err: Error) => notify('error', tr('Beitritt nicht möglich', 'Could not join'), err.message),
+    onError: (err: Error) => notify('error', tr('Beitreten fehlgeschlagen', 'Could not join'), err.message),
   })
 
   const openClub = async (slug: string) => {
@@ -88,7 +88,7 @@ export function ClubsScreen() {
       }
       notify(
         'error',
-        tr('Verein lässt sich nicht öffnen', 'Could not open the club'),
+        tr('Der Verein konnte nicht geöffnet werden', 'Could not open the club'),
         err instanceof Error ? err.message : undefined,
       )
     }
@@ -108,69 +108,81 @@ export function ClubsScreen() {
   const canJoinDirectly = found.data?.canJoinDirectly ?? false
 
   return (
-    <SignedInFrame
-      actions={
-        <Button
-          variant="subtle"
-          size="xs"
-          leftSection={<IconUserCircle size={16} />}
-          onClick={() => navigate('/account')}
-        >
-          {tr('Mein Konto', 'My account')}
-        </Button>
-      }
-    >
-
-        {(isManager || runsAClub) && (
-          <Paper withBorder radius="md" p="md" mb="xl">
-            <Group justify="space-between" wrap="nowrap">
-              <Box style={{ minWidth: 0 }}>
-                <Text fw={600}>{tr('Verwaltung', 'Manager portal')}</Text>
-                <Text fz="xs" c="dimmed">
-                  {isManager
-                    ? tr(
-                        'Vereine, Anfragen, Rollen und Plugins der Plattform',
-                        'Clubs, requests, roles and plugins of this platform',
-                      )
-                    : tr('Admins und Einstellungen deiner Vereine', 'Admins and settings of the clubs you run')}
-                </Text>
-              </Box>
-              <Button
-                component="a"
-                href={urls.manage}
-                variant="light"
-                style={{ flexShrink: 0 }}
-                rightSection={<IconArrowRight size={16} />}
-              >
-                {tr('Öffnen', 'Open')}
-              </Button>
-            </Group>
-          </Paper>
-        )}
-
-        <Title order={2} mb={6}>
-          {tr('Deine Vereine', 'Your clubs')}
-        </Title>
-        {mine.isLoading ? (
-          <Loader size="sm" my="md" />
-        ) : myClubs.length === 0 ? (
-          <Text size="sm" c="dimmed" mb="xl">
-            {tr(
-              'Du bist noch in keinem Verein. Such deinen Verein unten und bitte um Aufnahme.',
-              'You are not a member of a club yet. Find yours below and ask to join.',
-            )}
+    <SignedInFrame width={640}>
+      <Group justify="space-between" align="flex-end" mb="lg" gap="sm">
+        <div>
+          <Title order={1} fz={30} mb={6}>
+            {tr('Meine Vereine', 'My clubs')}
+          </Title>
+          <Text c="dimmed">
+            {tr('Wähle einen Verein oder tritt einem neuen bei.', 'Pick a club or join a new one.')}
           </Text>
-        ) : (
-          <Stack gap="sm" mb="xl" mt="md">
-            {myClubs.map((t) => (
-              <Paper key={t.tenant_slug} withBorder radius="md" p="md">
-                <Group justify="space-between" wrap="nowrap">
+        </div>
+        <Button
+          variant="default"
+          leftSection={<IconPlus size={16} />}
+          onClick={() => navigate('/start')}
+        >
+          {tr('Verein gründen', 'Start a club')}
+        </Button>
+      </Group>
+
+      {(isManager || runsAClub) && (
+        <Paper withBorder p="md" mb="lg" style={{ background: '#f5f1ff', borderColor: '#d6c7ff' }}>
+          <Group justify="space-between" wrap="nowrap">
+            <Box style={{ minWidth: 0 }}>
+              <Text fw={700}>{tr('Verwaltung', 'Manager portal')}</Text>
+              <Text fz="sm" c="dimmed">
+                {isManager
+                  ? tr(
+                      'Vereine, Anfragen, Rollen und Plugins dieser Plattform',
+                      'Clubs, requests, roles and plugins of this platform',
+                    )
+                  : tr('Admins und Einstellungen deiner Vereine', 'Admins and settings of the clubs you run')}
+              </Text>
+            </Box>
+            <Button
+              component="a"
+              href={urls.manage}
+              style={{ flexShrink: 0 }}
+              rightSection={<IconArrowRight size={16} />}
+            >
+              {tr('Öffnen', 'Open')}
+            </Button>
+          </Group>
+        </Paper>
+      )}
+
+      {mine.isLoading ? (
+        <Loader size="sm" my="md" />
+      ) : myClubs.length === 0 ? (
+        <Paper withBorder p="xl" mb="xl">
+          <Stack align="center" gap="xs" ta="center">
+            <IconBuildingCommunity size={32} color="#7441e0" />
+            <Text fw={700}>{tr('Noch kein Verein', 'No club yet')}</Text>
+            <Text size="sm" c="dimmed" maw={380}>
+              {tr(
+                'Such deinen Verein unten und frag an, ob du beitreten darfst.',
+                'Find your club below and ask to join.',
+              )}
+            </Text>
+          </Stack>
+        </Paper>
+      ) : (
+        <Stack gap="sm" mb="xl">
+          {myClubs.map((t) => (
+            <Paper key={t.tenant_slug} withBorder p="md">
+              <Group justify="space-between" wrap="nowrap">
+                <Group gap="md" wrap="nowrap" style={{ minWidth: 0 }}>
+                  <Avatar radius="md" size={44} color="acc" variant="light">
+                    {(t.tenant_name ?? t.tenant_slug).slice(0, 2).toUpperCase()}
+                  </Avatar>
                   <Box style={{ minWidth: 0 }}>
-                    <Text fw={600} truncate>
+                    <Text fw={700} truncate>
                       {t.tenant_name}
                     </Text>
                     <Group gap={6} wrap="nowrap">
-                      <Text fz="xs" c="dimmed">
+                      <Text fz="sm" c="dimmed" truncate>
                         {t.tenant_slug}
                       </Text>
                       {t.admin_level && (
@@ -180,94 +192,84 @@ export function ClubsScreen() {
                       )}
                     </Group>
                   </Box>
-                  <Button
-                    variant="light"
-                    rightSection={<IconArrowRight size={16} />}
-                    loading={opening === t.tenant_slug}
-                    onClick={() => openClub(t.tenant_slug)}
-                  >
-                    {tr('Öffnen', 'Open')}
-                  </Button>
                 </Group>
-              </Paper>
-            ))}
-          </Stack>
-        )}
-
-        <Title order={3} mb={6}>
-          {tr('Verein finden', 'Find a club')}
-        </Title>
-        <TextInput
-          placeholder={tr('Name des Vereins', 'Club name')}
-          leftSection={<IconSearch size={16} />}
-          value={search}
-          onChange={(e) => setSearch(e.currentTarget.value)}
-          mb="md"
-          aria-label={tr('Vereine suchen', 'Search clubs')}
-        />
-
-        {found.isFetching && <Loader size="sm" />}
-        {found.isError && (
-          <Alert color="red" variant="light">
-            {(found.error as Error).message}
-          </Alert>
-        )}
-        {!found.isFetching && debounced.length >= 2 && results.length === 0 && (
-          <Text size="sm" c="dimmed">
-            {tr(`Kein Verein passt zu «${debounced}».`, `No club matches “${debounced}”.`)}
-          </Text>
-        )}
-        <Stack gap="sm">
-          {results.map((c) => (
-            <Paper key={c.slug} withBorder radius="md" p="md">
-              <Group justify="space-between" wrap="nowrap">
-                <Box style={{ minWidth: 0 }}>
-                  <Text fw={600} truncate>
-                    {c.name}
-                  </Text>
-                  <Text fz="xs" c="dimmed">
-                    {c.slug}
-                  </Text>
-                </Box>
-                {c.membership === 'member' ? (
-                  <Button
-                    variant="light"
-                    loading={opening === c.slug}
-                    onClick={() => openClub(c.slug)}
-                  >
-                    {tr('Öffnen', 'Open')}
-                  </Button>
-                ) : c.membership === 'pending' ? (
-                  <Badge variant="light" color="gray">
-                    {tr('Anfrage gesendet', 'Request sent')}
-                  </Badge>
-                ) : (
-                  <Button
-                    loading={join.isPending && join.variables === c.slug}
-                    onClick={() => join.mutate(c.slug)}
-                  >
-                    {canJoinDirectly ? tr('Beitreten', 'Join') : tr('Um Aufnahme bitten', 'Ask to join')}
-                  </Button>
-                )}
+                <Button
+                  variant="light"
+                  style={{ flexShrink: 0 }}
+                  rightSection={<IconArrowRight size={16} />}
+                  loading={opening === t.tenant_slug}
+                  onClick={() => openClub(t.tenant_slug)}
+                >
+                  {tr('Öffnen', 'Open')}
+                </Button>
               </Group>
             </Paper>
           ))}
         </Stack>
+      )}
 
-        <Stack gap={4} mt={40}>
-          <Text size="sm" c="dimmed">
-            {tr('Du gründest einen neuen Verein?', 'Starting a new club?')}{' '}
-            <Anchor
-              href="/start"
-              onClick={(e) => {
-                e.preventDefault()
-                navigate('/start')
-              }}
-            >
-              {tr('Verein beantragen', 'Request one')}
-            </Anchor>
-          </Text>
-        </Stack>
+      <Title order={2} fz={20} mb="sm">
+        {tr('Verein finden', 'Find a club')}
+      </Title>
+      <TextInput
+        size="md"
+        placeholder={tr('Name des Vereins', 'Club name')}
+        leftSection={<IconSearch size={18} />}
+        value={search}
+        onChange={(e) => setSearch(e.currentTarget.value)}
+        mb="md"
+        aria-label={tr('Vereine suchen', 'Search clubs')}
+      />
+
+      {found.isFetching && <Loader size="sm" />}
+      {found.isError && (
+        <Alert color="red" variant="light">
+          {(found.error as Error).message}
+        </Alert>
+      )}
+      {!found.isFetching && debounced.length >= 2 && results.length === 0 && (
+        <Text size="sm" c="dimmed">
+          {tr(`Kein Verein passt zu «${debounced}».`, `No club matches “${debounced}”.`)}
+        </Text>
+      )}
+      <Stack gap="sm">
+        {results.map((c) => (
+          <Paper key={c.slug} withBorder p="md">
+            <Group justify="space-between" wrap="nowrap">
+              <Box style={{ minWidth: 0 }}>
+                <Text fw={700} truncate>
+                  {c.name}
+                </Text>
+                <Text fz="sm" c="dimmed">
+                  {c.slug}
+                </Text>
+              </Box>
+              {c.membership === 'member' ? (
+                <Button
+                  variant="light"
+                  style={{ flexShrink: 0 }}
+                  loading={opening === c.slug}
+                  onClick={() => openClub(c.slug)}
+                >
+                  {tr('Öffnen', 'Open')}
+                </Button>
+              ) : c.membership === 'pending' ? (
+                <Badge variant="light" color="gray" style={{ flexShrink: 0 }}>
+                  {tr('Anfrage gesendet', 'Request sent')}
+                </Badge>
+              ) : (
+                <Button
+                  style={{ flexShrink: 0 }}
+                  loading={join.isPending && join.variables === c.slug}
+                  onClick={() => join.mutate(c.slug)}
+                >
+                  {canJoinDirectly ? tr('Beitreten', 'Join') : tr('Beitritt anfragen', 'Ask to join')}
+                </Button>
+              )}
+            </Group>
+          </Paper>
+        ))}
+      </Stack>
     </SignedInFrame>
   )
 }

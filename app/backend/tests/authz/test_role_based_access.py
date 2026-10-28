@@ -26,6 +26,8 @@ import pytest
         ("GET", "/api/v1/audit/"),
         ("GET", "/api/v1/roles/"),
         ("GET", "/api/v1/system/permissions"),
+        ("GET", "/api/v1/manager/platform/permissions"),
+        ("GET", "/api/v1/manager/platform/health"),
         ("GET", "/api/v1/settings/"),
     ],
 )
@@ -121,20 +123,32 @@ def test_admin_can_create_role(client, auth_headers):
     assert resp.status_code == 201
 
 
-def test_admin_can_access_health_detailed(client, auth_headers):
-    """Admin can access the health/detailed endpoint (not 403).
-
-    The HTTP status may be 200 or 503 depending on whether mock services
-    report as healthy — the authz test only verifies no 401/403.
-    """
-    resp = client.get("/api/v1/health/detailed", headers=auth_headers)
-    assert resp.status_code in (200, 503)
-
-
-def test_plain_member_cannot_access_health_detailed(client, plain_member_token):
-    """Non-admin gets 403 on health/detailed (require_admin decorator)."""
-    resp = client.get("/api/v1/health/detailed", headers=plain_member_token)
+def test_club_admin_cannot_access_platform_health(client, auth_headers):
+    """System health names infrastructure hosts: platform staff only."""
+    resp = client.get("/api/v1/manager/platform/health", headers=auth_headers)
     assert resp.status_code == 403
+
+
+def test_platform_staff_can_access_platform_health(client, staff_headers):
+    resp = client.get("/api/v1/manager/platform/health", headers=staff_headers)
+    assert resp.status_code == 200
+
+
+def test_plain_member_cannot_access_platform_health(client, plain_member_token):
+    resp = client.get("/api/v1/manager/platform/health", headers=plain_member_token)
+    assert resp.status_code == 403
+
+
+def test_club_admin_cannot_read_platform_permissions(client, auth_headers):
+    """The role editor uses /system/permissions; the manage table is staff only."""
+    resp = client.get("/api/v1/manager/platform/permissions", headers=auth_headers)
+    assert resp.status_code == 403
+
+
+def test_platform_staff_can_read_platform_permissions(client, staff_headers):
+    resp = client.get("/api/v1/manager/platform/permissions", headers=staff_headers)
+    assert resp.status_code == 200
+    assert any(e["key"] == "members.members.read" for e in resp.get_json())
 
 
 # ── Plain member (no permissions) ─────────────────────────────────────────────

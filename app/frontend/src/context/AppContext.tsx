@@ -44,7 +44,7 @@ import { useInstance } from '@/context/InstanceContext'
 
 export type AuthStatus = 'loading' | 'authed' | 'anon'
 
-// Club pages need a session; sign-in, password reset and /apply do not.
+// Club pages need a session; the redirects to the SSO portal do not.
 const PRIVATE_PATH = /^(\/[^/]+)?\/app(\/|$)/
 
 /* ── Split context types ─────────────────────── */

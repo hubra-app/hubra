@@ -1,6 +1,6 @@
 import i18n from 'i18next'
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { ErrorBoundary as RouteErrorBoundary } from 'react-error-boundary'
 import { useT } from '@/locales/i18n'
 import { AppProvider, useApp } from '@/context/AppContext'
@@ -8,7 +8,6 @@ import { URL_CLUB } from '@/clubBase'
 import { InstanceProvider, useInstance } from '@/context/InstanceContext'
 import { RequireModule } from '@/modules/RequireModule'
 import { usePluginLoader, usePluginRoutes } from '@/plugins'
-import { ApplyScreen } from '@/screens/public/Apply'
 import { NotFoundScreen } from '@/screens/public/NotFound'
 import { Toasts } from '@/components/ui'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
@@ -152,6 +151,11 @@ function SsoRedirect({ path }: { path: string }) {
     window.location.assign(`${ssoUrl}/${path}${window.location.search}${window.location.hash}`)
   }, [ssoUrl, path])
   return <FullPageLoader />
+}
+
+function ClubApplyRedirect() {
+  const { club = '' } = useParams()
+  return <SsoRedirect path={`clubs/${encodeURIComponent(club)}`} />
 }
 
 /** /app/*: the club's pages, or the SSO portal when the URL names no club. */
@@ -362,11 +366,7 @@ function PrivateRoutes() {
                   />
                   <Route
                     path="mail/wildduck"
-                    element={
-                      <RequireModule code="mail">
-                        <MailScreen />
-                      </RequireModule>
-                    }
+                    element={<Navigate to="/app/mail" replace />}
                   />
                   <Route
                     path="operations/codes"
@@ -470,11 +470,7 @@ function PrivateRoutes() {
                   />
                   <Route
                     path="system/health"
-                    element={
-                      <RequirePermission permKey="roles.roles.create">
-                        <SystemScreen />
-                      </RequirePermission>
-                    }
+                    element={<Navigate to="/app/system" replace />}
                   />
                   <Route
                     path="audit-log"
@@ -540,8 +536,10 @@ function AppInner() {
         <Route key={path} path={`/${path}`} element={<SsoRedirect path={path} />} />
       ))}
 
-      {/* Public — tenant-specific */}
-      <Route path="/apply" element={<ApplyScreen />} />
+      {/* Asking to join happens on the SSO portal, signed in: /<club>/apply
+          opens that club's page there, /apply the club search. */}
+      <Route path="/apply" element={<SsoRedirect path="clubs" />} />
+      <Route path="/:club/apply" element={<ClubApplyRedirect />} />
 
       {/* / and /app/* → into the club; club pages run below /<club> (clubBase.ts) */}
       <Route path="/" element={<HomeRedirect />} />

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
   Alert,
-  Anchor,
   Badge,
   Box,
   Button,
@@ -20,7 +19,7 @@ import { useNavigate } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import * as authApi from '@/api/auth'
 import { SignedInFrame } from '@/components/SignedInFrame'
-import { tr, useLang } from '@/lang'
+import { useLang } from '@/lang'
 
 const STATUS_COLORS: Record<string, string> = {
   pending: 'yellow',
@@ -28,11 +27,11 @@ const STATUS_COLORS: Record<string, string> = {
   rejected: 'red',
 }
 
-const statusLabels = (): Record<string, string> => ({
-  pending: tr('Wird geprüft', 'Waiting for review'),
-  approved: tr('Angenommen', 'Approved'),
-  rejected: tr('Abgelehnt', 'Declined'),
-})
+const STATUS_LABELS: Record<string, [string, string]> = {
+  pending: ['Wird geprüft', 'Waiting for review'],
+  approved: ['Freigegeben', 'Approved'],
+  rejected: ['Abgelehnt', 'Declined'],
+}
 
 // Same rules as the backend: lowercase letters, digits and dashes.
 function slugify(name: string): string {
@@ -49,9 +48,9 @@ function slugify(name: string): string {
  * the club picker.
  */
 export function StartClubScreen() {
-  useLang()
   const { authStatus, notify } = useSso()
   const navigate = useNavigate()
+  const { tr } = useLang()
   const queryClient = useQueryClient()
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
@@ -81,7 +80,7 @@ export function StartClubScreen() {
         'success',
         tr('Anfrage gesendet', 'Request sent'),
         tr(
-          `Wir prüfen ${res.request.name} und melden uns.`,
+          `Wir prüfen ${res.request.name} und melden uns bei dir.`,
           `We will review ${res.request.name} and let you know.`,
         ),
       )
@@ -113,41 +112,40 @@ export function StartClubScreen() {
   const requests = mine.data?.requests ?? []
 
   return (
-    <SignedInFrame>
-
-        <Anchor
-          size="sm"
-          mb="md"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
-          onClick={(e) => {
-            e.preventDefault()
-            navigate('/clubs')
-          }}
-          href="/clubs"
+    <SignedInFrame
+      actions={
+        <Button
+          variant="subtle"
+          size="xs"
+          leftSection={<IconArrowLeft size={16} />}
+          onClick={() => navigate('/clubs')}
         >
-          <IconArrowLeft size={14} /> {tr('Deine Vereine', 'Your clubs')}
-        </Anchor>
-
-        <Title order={2} mb={6}>
-          {tr('Verein gründen', 'Start a club')}
-        </Title>
-        <Text size="sm" c="dimmed" mb="lg">
-          {tr(
-            'Sag uns, wie dein Verein heisst. Wir prüfen jeden neuen Verein; sobald er angenommen ist, bist du sein Inhaber und findest ihn unter deinen Vereinen.',
-            'Tell us what your club is called. We review every new club; once it is approved you are its owner and find it under your clubs.',
-          )}
-        </Text>
-
-        {error && (
-          <Alert color="red" variant="light" mb="md">
-            {error}
-          </Alert>
+          {tr('Meine Vereine', 'My clubs')}
+        </Button>
+      }
+    >
+      <Title order={1} fz={30} mb={6}>
+        {tr('Verein gründen', 'Start a club')}
+      </Title>
+      <Text c="dimmed" mb="lg">
+        {tr(
+          'Sag uns, wie dein Verein heisst. Wir prüfen jeden neuen Verein. Sobald er freigegeben ist, bist du Inhaberin oder Inhaber und findest ihn unter «Meine Vereine».',
+          'Tell us what your club is called. We review every new club; once it is approved you are its owner and find it under your clubs.',
         )}
+      </Text>
 
-        <Stack gap="md" mb={40}>
+      {error && (
+        <Alert color="red" variant="light" mb="md">
+          {error}
+        </Alert>
+      )}
+
+      <Paper withBorder p="lg" mb={40}>
+        <Stack gap="md">
           <TextInput
             label={tr('Name des Vereins', 'Club name')}
             placeholder={tr('Ruderclub Zug', 'Rowing Club Zug')}
+            size="md"
             value={name}
             onChange={(e) => {
               const value = e.currentTarget.value
@@ -161,7 +159,8 @@ export function StartClubScreen() {
               'Steht in den Links deines Vereins. Kleinbuchstaben, Ziffern und Bindestriche.',
               "Used in your club's links. Lowercase letters, digits and dashes.",
             )}
-            placeholder={tr('ruderclub-zug', 'rowing-zug')}
+            placeholder="ruderclub-zug"
+            size="md"
             value={slug}
             onChange={(e) => {
               setSlug(e.currentTarget.value)
@@ -169,47 +168,48 @@ export function StartClubScreen() {
             }}
             onKeyDown={(e) => e.key === 'Enter' && send()}
           />
-          <Button onClick={send} loading={submit.isPending}>
+          <Button size="md" onClick={send} loading={submit.isPending}>
             {tr('Anfrage senden', 'Send request')}
           </Button>
         </Stack>
+      </Paper>
 
-        <Title order={3} mb="sm">
-          {tr('Deine Anfragen', 'Your requests')}
-        </Title>
-        {mine.isLoading ? (
-          <Loader size="sm" />
-        ) : requests.length === 0 ? (
-          <Text size="sm" c="dimmed">
-            {tr('Du hast noch keinen Verein beantragt.', 'You have not asked for a club yet.')}
-          </Text>
-        ) : (
-          <Stack gap="sm">
-            {requests.map((r) => (
-              <Paper key={r.id} withBorder radius="md" p="md">
-                <Group justify="space-between" wrap="nowrap" align="flex-start">
-                  <Box style={{ minWidth: 0 }}>
-                    <Text fw={600} truncate>
-                      {r.name}
+      <Title order={2} fz={20} mb="sm">
+        {tr('Deine Anfragen', 'Your requests')}
+      </Title>
+      {mine.isLoading ? (
+        <Loader size="sm" />
+      ) : requests.length === 0 ? (
+        <Text size="sm" c="dimmed">
+          {tr('Du hast noch keinen Verein beantragt.', 'You have not asked for a club yet.')}
+        </Text>
+      ) : (
+        <Stack gap="sm">
+          {requests.map((r) => (
+            <Paper key={r.id} withBorder p="md">
+              <Group justify="space-between" wrap="nowrap" align="flex-start">
+                <Box style={{ minWidth: 0 }}>
+                  <Text fw={700} truncate>
+                    {r.name}
+                  </Text>
+                  <Text fz="sm" c="dimmed">
+                    {r.slug}
+                    {r.created_at ? ` · ${new Date(r.created_at).toLocaleDateString('de-CH')}` : ''}
+                  </Text>
+                  {r.admin_note && (
+                    <Text fz="sm" mt={4}>
+                      {r.admin_note}
                     </Text>
-                    <Text fz="xs" c="dimmed">
-                      {r.slug}
-                      {r.created_at ? ` · ${new Date(r.created_at).toLocaleDateString('de-CH')}` : ''}
-                    </Text>
-                    {r.admin_note && (
-                      <Text fz="xs" mt={4}>
-                        {r.admin_note}
-                      </Text>
-                    )}
-                  </Box>
-                  <Badge variant="light" color={STATUS_COLORS[r.status] ?? 'gray'} style={{ flexShrink: 0 }}>
-                    {statusLabels()[r.status] ?? r.status}
-                  </Badge>
-                </Group>
-              </Paper>
-            ))}
-          </Stack>
-        )}
+                  )}
+                </Box>
+                <Badge variant="light" color={STATUS_COLORS[r.status] ?? 'gray'} style={{ flexShrink: 0 }}>
+                  {STATUS_LABELS[r.status] ? tr(...STATUS_LABELS[r.status]) : r.status}
+                </Badge>
+              </Group>
+            </Paper>
+          ))}
+        </Stack>
+      )}
     </SignedInFrame>
   )
 }

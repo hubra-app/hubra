@@ -144,6 +144,17 @@ def auth_headers(client, seeded_db):
     return {}
 
 
+@pytest.fixture
+def staff_headers(client, seeded_db, db):
+    """Like ``auth_headers``, with admin@test.ch also a platform superadmin."""
+    seeded_db["user"].is_superadmin = True
+    db.session.commit()
+    client.post(
+        "/api/v1/auth/login", json={"email": "admin@test.ch", "password": "password123"}
+    )
+    return {}
+
+
 # ── CSRF-enabled fixtures ─────────────────────────────────────────────────────
 
 

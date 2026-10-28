@@ -33,26 +33,6 @@ export async function getChangelog(): Promise<ChangelogResponse> {
 
 // ── Health ──────────────────────────────────────────────────────────
 
-export interface ServiceStatus {
-  ok: boolean;
-  latency_ms: number;
-  error?: string;
-}
-
-export interface HealthDetail {
-  status: string;
-  version: string;
-  services: Record<string, ServiceStatus>;
-}
-
-export async function getHealthDetailed(): Promise<HealthDetail> {
-  return apiFetch<HealthDetail>("/health/detailed");
-}
-
-export async function getVersion(): Promise<{ version: string }> {
-  return apiFetch<{ version: string }>("/version");
-}
-
 export async function ping(init?: RequestInit): Promise<{ status: string }> {
   return apiFetch<{ status: string }>("/health", init);
 }

@@ -457,11 +457,12 @@ def _reconcile_mail() -> dict:
     # ── Step 2: Orphan sweep (only when WildDuck is reachable) ─────────────
     orphans_removed = 0
     if wd is not None:
-        known_user_ids = {
-            a.wildduck_id
-            for a in addrs
-            if a.wildduck_id and a.address_type == "mailbox"
-        }
+        from hubra.core.services.mail_server import managed_index
+
+        # WildDuck is shared by every club: a mailbox is an orphan only when
+        # no club manages it, not just this one.
+        db.session.flush()
+        known_user_ids = set(managed_index())
         # Walk WildDuck users and remove unmanaged ones
         try:
             page = 1
@@ -473,17 +474,9 @@ def _reconcile_mail() -> dict:
                 for user in users:
                     uid = user.get("id")
                     if uid and uid not in known_user_ids:
-                        is_managed = bool(
-                            db.session.scalar(
-                                select(ManagedMailAddress.id).where(
-                                    ManagedMailAddress.wildduck_id == uid
-                                )
-                            )
-                        )
-                        if not is_managed:
-                            wd.safe_delete_user(uid)
-                            orphans_removed += 1
-                            logger.info("reconcile_mail: removed orphan user %s", uid)
+                        wd.safe_delete_user(uid)
+                        orphans_removed += 1
+                        logger.info("reconcile_mail: removed orphan user %s", uid)
                 page += 1
                 if len(users) < 250:
                     break

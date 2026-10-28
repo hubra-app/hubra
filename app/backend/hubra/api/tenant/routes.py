@@ -877,6 +877,38 @@ def club_directory():
     return jsonify({"clubs": clubs, "canJoinDirectly": can_join})
 
 
+def _club_tiers(tenant_id: int) -> list[dict]:
+    """The membership tiers a person can ask for, read in the club."""
+    from hubra.core.models.member import MembershipTier
+    from hubra.core.tenant.context import reset_search_path, set_search_path
+
+    try:
+        set_search_path(tenant_id)
+        tiers = db.session.scalars(
+            select(MembershipTier).order_by(MembershipTier.name)
+        ).all()
+        return [{"id": t.id, "name": t.name} for t in tiers]
+    finally:
+        reset_search_path()
+
+
+@tenant_admin_bp.route("/clubs/<slug>", methods=["GET"])
+@jwt_required()
+def club_page(slug: str):
+    """One club for its join page on SSO: name, your status, the tiers."""
+    user = _calling_user()
+    tenant = _active_club(slug)
+    return jsonify(
+        {
+            "slug": tenant.slug,
+            "name": tenant.name,
+            "membership": _membership_in(tenant.id, user),
+            "tiers": _club_tiers(tenant.id),
+            "canJoinDirectly": _can_add_members(user),
+        }
+    )
+
+
 @tenant_admin_bp.route("/clubs/<slug>/join", methods=["POST"])
 @jwt_required()
 def join_club(slug: str):
@@ -884,8 +916,9 @@ def join_club(slug: str):
 
     Platform managers (superadmins, ``tenants.members.write``) become a
     member straight away. Everyone else files a membership application in
-    the club, which its admins approve under Members → Applications;
-    approving links the existing account, password unchanged.
+    the club, optionally for a tier (``{"wantsTierId": 3}``), which its
+    admins approve under Members → Applications; approving links the
+    existing account, password unchanged.
     """
     from hubra.api.applications.services import ApplicationsService
     from hubra.core.tenant.context import reset_search_path, set_search_path
@@ -910,12 +943,19 @@ def join_club(slug: str):
     if status == "pending":
         raise_error(409, "REQUEST_PENDING", "Your request to join this club is pending")
 
+    wants_tier_id = (request.get_json(silent=True) or {}).get("wantsTierId")
+    if wants_tier_id is not None and wants_tier_id not in {
+        t["id"] for t in _club_tiers(tenant.id)
+    }:
+        raise_error(400, "VALIDATION_ERROR", "Unknown membership tier")
+
     try:
         set_search_path(tenant.id)
         ApplicationsService.submit(
             user.first_name or user.email.split("@")[0],
             user.last_name or "",
             user.email,
+            wants_tier_id,
         )
         db.session.commit()
     finally:

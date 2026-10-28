@@ -8,10 +8,13 @@ import { SignupScreen } from '@/screens/Signup'
 import { ForgotPassword } from '@/screens/ForgotPassword'
 import { ResetPassword } from '@/screens/ResetPassword'
 import { VerifyEmail } from '@/screens/VerifyEmail'
+import { AccessDenied } from '@/screens/AccessDenied'
 import { ClubsScreen } from '@/screens/Clubs'
+import { JoinClubScreen } from '@/screens/JoinClub'
 import { StartClubScreen } from '@/screens/StartClub'
 import { VerifyScreen } from '@/screens/Verify'
 import { AccountScreen } from '@/screens/Account'
+import { tr } from '@/lang'
 
 function RequireAnon({ children }: { children: React.ReactNode }) {
   const { authStatus } = useSso()
@@ -34,12 +37,15 @@ function AppRoutes() {
             <Stack gap="sm" align="center">
               <IconAlertTriangle size={40} color="#dc2626" />
               <Text fz={18} fw={700} c="red">
-                Something went wrong
+                {tr('Etwas ist schiefgelaufen', 'Something went wrong')}
               </Text>
               <Text size="sm" c="dimmed" ta="center">
-                An unexpected error occurred. Please try again.
+                {tr(
+                  'Ein unerwarteter Fehler ist aufgetreten. Versuch es bitte nochmals.',
+                  'An unexpected error occurred. Please try again.',
+                )}
               </Text>
-              <Button onClick={() => resetErrorBoundary()}>Retry</Button>
+              <Button onClick={() => resetErrorBoundary()}>{tr('Nochmals versuchen', 'Retry')}</Button>
             </Stack>
           </Paper>
         </Center>
@@ -72,7 +78,9 @@ function AppRoutes() {
         />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/access-denied" element={<AccessDenied />} />
         <Route path="/clubs" element={<ClubsScreen />} />
+        <Route path="/clubs/:slug" element={<JoinClubScreen />} />
         <Route path="/start" element={<StartClubScreen />} />
         <Route path="/" element={<Navigate to="/clubs" replace />} />
         <Route path="/verify" element={<VerifyScreen />} />
