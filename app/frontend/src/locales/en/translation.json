@@ -480,7 +480,7 @@
     "houseNo": "No.",
     "import": "Import",
     "lastName": "Last name",
-    "loading": "Loading?",
+    "loading": "Loading …",
     "member": "Member",
     "members": "Members",
     "method": "Method",
@@ -2598,7 +2598,9 @@
       "Admin": "Admin",
       "Treasurer": "Treasurer",
       "Member": "Member"
-    }
+    },
+    "assignTo": "Give members the role {{role}}",
+    "searchMembers": "Search members …"
   },
   "modules": {
     "functions": {

@@ -2598,7 +2598,9 @@
       "Admin": "Administration",
       "Treasurer": "Kassier/in",
       "Member": "Mitglied"
-    }
+    },
+    "assignTo": "Mitgliedern die Rolle {{role}} geben",
+    "searchMembers": "Mitglied suchen …"
   },
   "modules": {
     "backups": {

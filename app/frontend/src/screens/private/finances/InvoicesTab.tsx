@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import i18n from 'i18next'
 import { useForm } from '@mantine/form'
 import { zodResolver } from 'mantine-form-zod-resolver'
@@ -27,7 +27,7 @@ import {
   listExternalParties,
   listTxCategories,
 } from '@/api/finance'
-import { listMembers } from '@/api/members'
+import { MemberPicker } from '@/components/MemberPicker'
 import { listTiers, calculateTierCost } from '@/api/tiers'
 import { formatCHF } from '@/format'
 import {
@@ -132,19 +132,8 @@ export function InvoicesTab() {
     validate: zodResolver(bulkSchema),
     initialValues: { tierId: '', due: '', description: '' },
   })
-  const { data: membersData } = useQuery({
-    queryKey: ['members'],
-    queryFn: () => listMembers({ pageSize: 500 }),
-  })
-  const memberOptions = useMemo(
-    () =>
-      (membersData?.members ?? []).map((m) => ({
-        id: m.id,
-        name: m.name,
-        tierName: m.tier,
-      })),
-    [membersData],
-  )
+  // The chosen member's tier sets the amount of a membership invoice.
+  const [memberTier, setMemberTier] = useState<string | null>(null)
   const { data: tierOptions = [] } = useQuery({
     queryKey: ['tiers'],
     queryFn: () => listTiers(),
@@ -218,7 +207,7 @@ export function InvoicesTab() {
     singleForm.initialize({
       recipientType: 'member',
       purpose: 'membership',
-      memberId: memberOptions[0]?.id ?? '',
+      memberId: '',
       externalPartyId: externalParties[0]?.id ?? '',
       amount: '',
       due: '',
@@ -272,9 +261,8 @@ export function InvoicesTab() {
       tierOptions.length === 0
     )
       return
-    const m = memberOptions.find((o) => o.id === watchedMemberId)
-    if (!m) return
-    const tier = tierOptions.find((tp) => tp.name === m.tierName)
+    if (!memberTier) return
+    const tier = tierOptions.find((tp) => tp.name === memberTier)
     if (!tier) return
     let cancelled = false
     const timer = setTimeout(() => {
@@ -311,7 +299,7 @@ export function InvoicesTab() {
     watchedPurpose,
     watchedMemberId,
     tierOptions,
-    memberOptions,
+    memberTier,
     singleForm,
     notify,
     t,
@@ -690,25 +678,12 @@ export function InvoicesTab() {
           {watchedRecipientType === 'member' ? (
             <>
               <Field label={t('finance.recipientType.member', 'Mitglied')}>
-                <Select
-                  data={
-                    memberOptions.length === 0
-                      ? [
-                          {
-                            value: '',
-                            label: t(
-                              'finance.loadingMembers',
-                              'Mitglieder werden geladen …',
-                            ),
-                          },
-                        ]
-                      : memberOptions.map((m) => ({
-                          value: m.id,
-                          label: m.name,
-                        }))
-                  }
-                  searchable
+                <MemberPicker
                   {...singleForm.getInputProps('memberId')}
+                  onChange={(id, m) => {
+                    singleForm.setFieldValue('memberId', id ?? '')
+                    setMemberTier(m?.tier ?? null)
+                  }}
                 />
               </Field>
               <Field label={t('finance.purposeLabel', 'Zweck')}>
@@ -787,15 +762,11 @@ export function InvoicesTab() {
               hint={
                 watchedRecipientType === 'member' &&
                 watchedPurpose === 'membership'
-                  ? (() => {
-                      const m = memberOptions.find(
-                        (o) => o.id === watchedMemberId,
-                      )
-                      if (!m) return undefined
-                      return t('finance.basedOnTier', 'Gemäss Stufe {{tier}}', {
-                        tier: m.tierName,
+                  ? memberTier && watchedMemberId
+                    ? t('finance.basedOnTier', 'Gemäss Stufe {{tier}}', {
+                        tier: memberTier,
                       })
-                    })()
+                    : undefined
                   : undefined
               }
             >

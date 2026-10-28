@@ -33,8 +33,8 @@ import {
   assignHolder,
   removeHolder,
 } from '@/api/functions'
-import { listMembers } from '@/api/members'
 import { withBase } from '@/clubBase'
+import { useMemberSearch } from '@/data/members'
 
 const functionSchema = z.object({
   name: z.string().min(1, zmsg('common.nameRequired', 'Name ist erforderlich')),
@@ -372,11 +372,7 @@ function HolderPanel({
     fn.holders.map((h) => ({ ...h, memberColor: '#5e5873' })),
   )
 
-  const { data: searchData } = useQuery({
-    queryKey: ['members-search', searchQuery],
-    queryFn: () => listMembers({ search: searchQuery, pageSize: 10 }),
-    enabled: searchQuery.length >= 2,
-  })
+  const { data: searchData } = useMemberSearch(searchQuery, { enabled: searchQuery.length >= 2 })
 
   const slideMembers: SlideOverMember[] = useMemo(
     () =>

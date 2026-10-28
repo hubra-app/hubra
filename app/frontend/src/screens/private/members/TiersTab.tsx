@@ -23,8 +23,9 @@ import {
   deleteTier,
   calculateTierCost,
 } from '@/api/tiers'
-import { listTierMembers, listMembers, updateMember } from '@/api/members'
+import { listTierMembers, updateMember } from '@/api/members'
 import { PaymentPlansEditor } from './PaymentPlansEditor'
+import { useMemberSearch } from '@/data/members'
 
 type Translate = ReturnType<typeof useT>['t']
 
@@ -59,11 +60,7 @@ function TierDetailPanel({
     queryKey: ['tier-members', tier.id],
     queryFn: () => listTierMembers(tier.id),
   })
-  const { data: searchData } = useQuery({
-    queryKey: ['members-search', searchQuery],
-    queryFn: () => listMembers({ search: searchQuery, pageSize: 10 }),
-    enabled: searchQuery.length >= 2,
-  })
+  const { data: searchData } = useMemberSearch(searchQuery, { enabled: searchQuery.length >= 2 })
 
   const slideMembers: SlideOverMember[] = useMemo(
     () =>

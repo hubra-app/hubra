@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react'
 import {
   Badge,
   Button,
-  Select,
   Switch,
   Paper,
   Textarea,
@@ -41,7 +40,9 @@ import {
   addGroupMember,
   removeGroupMember,
 } from '@/api/groups'
-import { listMembers, listGroupMembers } from '@/api/members'
+import { listGroupMembers } from '@/api/members'
+import { MemberPicker } from '@/components/MemberPicker'
+import { useMemberSearch } from '@/data/members'
 
 /* ── Group Detail Panel ──────────────────────── */
 function GroupDetailPanel({
@@ -59,11 +60,7 @@ function GroupDetailPanel({
     queryFn: () => listGroupMembers(group.id),
   })
   const [searchQuery, setSearchQuery] = useState('')
-  const { data: searchData } = useQuery({
-    queryKey: ['members-search', searchQuery],
-    queryFn: () => listMembers({ search: searchQuery, pageSize: 10 }),
-    enabled: searchQuery.length >= 2,
-  })
+  const { data: searchData } = useMemberSearch(searchQuery, { enabled: searchQuery.length >= 2 })
 
   const slideMembers: SlideOverMember[] = useMemo(
     () =>
@@ -189,14 +186,6 @@ export function GroupsScreen() {
     queryKey: ['groups'],
     queryFn: () => listGroups(),
   })
-  const { data: membersData } = useQuery({
-    queryKey: ['members'],
-    queryFn: () => listMembers({ pageSize: 500 }),
-  })
-  const members = useMemo(
-    () => (membersData?.members ?? []).map((m) => ({ id: m.id, name: m.name })),
-    [membersData],
-  )
   const [addOpen, setAddOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Group | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Group | null>(null)
@@ -360,13 +349,10 @@ export function GroupsScreen() {
         />
       </Field>
       <Field label={t('groups.lead', 'Gruppenleitung')}>
-        <Select
-          data={[
-            { value: '', label: t('groups.noLead', 'Keine Leitung') },
-            ...members.map((m) => ({ value: m.id, label: m.name })),
-          ]}
-          searchable
+        <MemberPicker
+          noneLabel={t('groups.noLead', 'Keine Leitung')}
           {...form.getInputProps('leadId')}
+          onChange={(id) => form.setFieldValue('leadId', id ?? '')}
         />
       </Field>
       <div

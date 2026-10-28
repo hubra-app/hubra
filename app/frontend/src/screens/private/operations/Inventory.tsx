@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import {
   Button,
   TextInput,
@@ -64,7 +64,8 @@ import {
   removeInstruction,
   addSelfInstruction,
 } from '@/api/inventory'
-import { listMembers } from '@/api/members'
+import { MemberPicker } from '@/components/MemberPicker'
+import { useMemberSearch } from '@/data/members'
 import { PluginSlot } from '@/plugins'
 
 // -- Constants --------------------------------------------------------------
@@ -162,44 +163,14 @@ function ItemDetailPanel({
 }: DetailPanelProps) {
   const { t } = useT()
   const { notify } = useToast()
-  const { data: membersData } = useQuery({
-    queryKey: ['members'],
-    queryFn: () => listMembers({ pageSize: 500 }),
-  })
-  const members = useMemo(
-    () =>
-      (membersData?.members ?? []).map((m) => ({
-        id: m.id,
-        name: m.name,
-        avatarColor: m.avatarColor,
-      })),
-    [membersData],
-  )
   const [addSearch, setAddSearch] = useState('')
-  const [addResults, setAddResults] = useState<
-    { id: string; name: string; avatarColor: string }[]
-  >([])
+  const { data: searchData } = useMemberSearch(addSearch, { enabled: addSearch.trim().length >= 2 })
+  const addResults = useMemo(() => {
+    if (addSearch.trim().length < 2 || !searchData) return []
+    const instructed = new Set(item.instructedMemberIds.map(String))
+    return searchData.members.filter((m) => !instructed.has(m.id)).slice(0, 6)
+  }, [addSearch, searchData, item.instructedMemberIds])
   const [loading, setLoading] = useState(false)
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (addSearch.length < 2) {
-        setAddResults([])
-        return
-      }
-      const lower = addSearch.toLowerCase()
-      const instructedSet = new Set(item.instructedMemberIds.map(String))
-      setAddResults(
-        members
-          .filter(
-            (m) =>
-              m.name.toLowerCase().includes(lower) && !instructedSet.has(m.id),
-          )
-          .slice(0, 6),
-      )
-    }, 200)
-    return () => clearTimeout(timer)
-  }, [addSearch, members, item.instructedMemberIds])
 
   const isSelfInstructed =
     currentUserId !== null && item.instructedMemberIds.includes(currentUserId)
@@ -215,7 +186,6 @@ function ItemDetailPanel({
         instructedMemberNames: [...item.instructedMemberNames, memberName],
       })
       setAddSearch('')
-      setAddResults([])
       notify(
         'success',
         t('inventory.instruction.recorded', 'Einweisung erfasst'),
@@ -848,14 +818,6 @@ export function InventoryScreen() {
     queryKey: ['inventory'],
     queryFn: () => listInventory(),
   })
-  const { data: membersData } = useQuery({
-    queryKey: ['members'],
-    queryFn: () => listMembers({ pageSize: 500 }),
-  })
-  const members = useMemo(
-    () => (membersData?.members ?? []).map((m) => ({ id: m.id, name: m.name })),
-    [membersData],
-  )
   const [catFilter, setCatFilter] = useState<InventoryCategory | 'All'>('All')
   const [statusFilter, setStatusFilter] = useState<InventoryStatus | 'All'>(
     'All',
@@ -1068,36 +1030,17 @@ export function InventoryScreen() {
         style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}
       >
         <Field label={t('inventory.owner', 'Eigentümer:in')}>
-          <Select
-            data={[
-              { value: '', label: t('inventory.noOwner', 'Keine Eigentümer:in') },
-              ...members.map((m) => ({
-                value: String(m.id),
-                label: m.name,
-              })),
-            ]}
-            value={fOwner != null ? String(fOwner) : ''}
-            onChange={(v) => setFOwner(v && v !== '' ? Number(v) : undefined)}
-            searchable
+          <MemberPicker
+            noneLabel={t('inventory.noOwner', 'Keine Eigentümer:in')}
+            value={fOwner}
+            onChange={(v) => setFOwner(v ? Number(v) : undefined)}
           />
         </Field>
         <Field label={t('inventory.responsible', 'Verantwortlich')}>
-          <Select
-            data={[
-              {
-                value: '',
-                label: t('inventory.noOneAssigned', 'Niemand zugewiesen'),
-              },
-              ...members.map((m) => ({
-                value: String(m.id),
-                label: m.name,
-              })),
-            ]}
-            value={fResponsible != null ? String(fResponsible) : ''}
-            onChange={(v) =>
-              setFResponsible(v && v !== '' ? Number(v) : undefined)
-            }
-            searchable
+          <MemberPicker
+            noneLabel={t('inventory.noOneAssigned', 'Niemand zugewiesen')}
+            value={fResponsible}
+            onChange={(v) => setFResponsible(v ? Number(v) : undefined)}
           />
         </Field>
       </div>

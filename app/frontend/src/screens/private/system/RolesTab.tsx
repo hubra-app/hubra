@@ -11,6 +11,7 @@ import {
   IconUsers,
   IconGridDots,
   IconList,
+  IconSearch,
 } from '@tabler/icons-react'
 import {
   Table,
@@ -41,7 +42,9 @@ import {
 } from '@/api/settings'
 import type { Role } from '@/api/settings'
 import { getSystemPermissions, type PermissionEntry } from '@/api/system'
-import { listMembers, updateMember } from '@/api/members'
+import { updateMember } from '@/api/members'
+import { useMemberSearch } from '@/data/members'
+import { qk } from '@/data/keys'
 import type { Member } from '@/types'
 import { ROLE_TEMPLATES, type RoleTemplate } from '@/data/roleTemplates'
 import { roleLabel } from '@/roles'
@@ -505,15 +508,9 @@ export function RolesTab() {
     return merged
   }, [data?.rolePerms, localPerms])
 
-  const { data: membersData } = useQuery({
-    queryKey: ['role-members-all'],
-    queryFn: async () => {
-      const result = await listMembers({ pageSize: 1000 })
-      return result.members
-    },
-    enabled: !!roleMembersOpen,
-    staleTime: 30_000,
-  })
+  const [roleMemberSearch, setRoleMemberSearch] = useState('')
+  const { data: memberPage } = useMemberSearch(roleMemberSearch, { enabled: !!roleMembersOpen })
+  const membersData = memberPage?.members
 
   const groupedPerms = useMemo(() => {
     const seen = new Map<string, PermissionEntry>()
@@ -691,7 +688,7 @@ export function RolesTab() {
       : currentRoles.filter((r) => r !== role.name)
     try {
       await updateMember(member.id, { roleNames: newRoles })
-      queryClient.invalidateQueries({ queryKey: ['role-members-all'] })
+      queryClient.invalidateQueries({ queryKey: qk.members.all })
     } catch (err: unknown) {
       notify(
         'error',
@@ -1843,7 +1840,9 @@ export function RolesTab() {
         title={t('roles.members', 'Rollenmitglieder')}
         subtitle={
           roleMembersOpen
-            ? `Assign roles to members — ${roleMembersOpen.name}`
+            ? t('roles.assignTo', 'Mitgliedern die Rolle {{role}} geben', {
+                role: roleLabel(roleMembersOpen.name),
+              })
             : ''
         }
         wide
@@ -1862,6 +1861,16 @@ export function RolesTab() {
                 if (role) setRoleMembersOpen(role)
               }}
               size="sm"
+            />
+          )}
+          {roleMembersOpen && (
+            <TextInput
+              size="sm"
+              leftSection={<IconSearch size={14} />}
+              placeholder={t('roles.searchMembers', 'Mitglied suchen …')}
+              aria-label={t('roles.searchMembers', 'Mitglied suchen …')}
+              value={roleMemberSearch}
+              onChange={(e) => setRoleMemberSearch(e.currentTarget.value)}
             />
           )}
           {roleMembersOpen && (
