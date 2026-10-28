@@ -81,11 +81,8 @@ def _get_sso_base_url() -> str:
     Password-reset and email-verification links should point to the SSO portal
     (sso.hubra.club) so users land on the centralized login experience.
     Falls back to _get_base_url() for backward compatibility when SSO_BASE_URL
-    is not configured. A single-club install has no SSO portal, so its links
-    always open the club app.
+    is not configured.
     """
-    if current_app.config.get("SINGLE_CLUB"):
-        return _get_base_url()
     sso_base = current_app.config.get("SSO_BASE_URL", "")
     if sso_base:
         return str(sso_base).rstrip("/")

@@ -1,4 +1,4 @@
-import { apiFetch, BASE } from '@hubra/api-client';
+import { apiFetch } from '@hubra/api-client';
 import type { Member } from "../types";
 
 interface RawMember {
@@ -248,46 +248,4 @@ export async function revokeDeviceSessions(
     `/account/devices/${deviceId}`,
     { method: "DELETE" },
   );
-}
-
-/* ── Signed-out pages (single-club installs sign in here, not on the SSO portal) ── */
-
-// Plain fetch, not apiFetch: a 401 for a wrong password must reach the form
-// instead of triggering the token refresh and the signed-out redirect.
-async function publicPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const message = data.message ?? data.error ?? `HTTP ${res.status}`;
-    throw Object.assign(new Error(message), { status: res.status, code: data.error });
-  }
-  return data as T;
-}
-
-export interface LoginResult {
-  mustChangePassword?: boolean;
-  tenant_slug?: string | null;
-  requiresTenantSelection?: boolean;
-  noTenant?: boolean;
-}
-
-export function login(email: string, password: string, keepSignedIn: boolean): Promise<LoginResult> {
-  return publicPost<LoginResult>("/auth/login", { email, password, keepSignedIn });
-}
-
-export async function forgotPassword(email: string): Promise<void> {
-  await publicPost("/auth/forgot-password", { email });
-}
-
-export async function resetPassword(token: string, password: string): Promise<void> {
-  await publicPost("/auth/reset-password", { token, password });
-}
-
-export async function verifyEmail(token: string): Promise<void> {
-  await publicPost("/account/verify-email", { token });
 }
