@@ -520,7 +520,7 @@ function PrivateRoutes() {
                   path="*"
                   element={
                     pluginsReady ? (
-                      <Navigate to="dashboard" replace />
+                      <Navigate to="/app/dashboard" replace />
                     ) : (
                       <Center h="50vh">
                         <Loader />
