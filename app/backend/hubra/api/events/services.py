@@ -10,12 +10,16 @@ from sqlalchemy.orm import selectinload
 
 from hubra.api.notifications.services import notify_all_active
 from hubra.api.utils import log_audit
-from hubra.core.errors import raise_error
+from hubra.core.errors import ApiError, raise_error
 from hubra.core.extensions import db
 from hubra.core.models.event import ClubEvent, EventRegistration, event_attendees
 from hubra.core.models.member import Member
 from hubra.core.modules import emit
 from hubra.core.modules.events import EVENT_PUBLISHED
+
+
+# Registration states that take one of the event's places.
+_HOLDS_A_PLACE = ("registered", "approved", "attended")
 
 
 class EventService:
@@ -140,66 +144,72 @@ class EventService:
         notes: str | None = None,
         guests: int = 0,
     ) -> EventRegistration:
-        """Register a member for an event. Handles waitlist when full."""
+        """Register a member for an event. Handles waitlist when full.
+
+        A member has one registration row per event: signing up again after
+        cancelling brings the cancelled row back. Waitlisted members are not
+        attendees until they get a place.
+        """
         event = EventService.get(event_id)
 
         member = db.session.get(Member, member_id)
         if member is None or member.archived_at is not None:
             raise_error(404, "NOT_FOUND", f"Member {member_id} not found")
 
-        # Check if already registered
-        existing = db.session.scalar(
+        registration = db.session.scalar(
             select(EventRegistration).where(
                 EventRegistration.event_id == event_id,
                 EventRegistration.member_id == member_id,
-                EventRegistration.status.in_(["registered", "approved", "waitlisted"]),
             )
         )
-        if existing is not None:
+        if registration is not None and registration.status != "cancelled":
             raise_error(409, "CONFLICT", "Already registered for this event")
 
-        # Check max attendees
-        status = "registered"
-        if event.requires_approval:
-            status = "registered"  # needs admin approval
+        # Events that need approval still start as "registered".
+        status = "waitlisted" if EventService._is_full(event) else "registered"
 
-        if event.max_attendees is not None and event.max_attendees > 0:
-            active_count = (
-                db.session.scalar(
-                    select(func.count())
-                    .select_from(EventRegistration)
-                    .where(
-                        EventRegistration.event_id == event_id,
-                        EventRegistration.status.in_(
-                            ["registered", "approved", "attended"]
-                        ),
-                    )
-                )
-                or 0
-            )
-            if active_count >= event.max_attendees:
-                status = "waitlisted"
+        if registration is None:
+            registration = EventRegistration(event_id=event_id, member_id=member_id)
+            db.session.add(registration)
+        registration.status = status
+        registration.notes = notes
+        registration.guests = guests
+        registration.registered_at = datetime.now(timezone.utc)
+        registration.cancelled_at = None
 
-        registration = EventRegistration(
-            event_id=event_id,
-            member_id=member_id,
-            status=status,
-            notes=notes,
-            guests=guests,
-        )
-        db.session.add(registration)
-
-        # Also add to attendees for backward compat
-        try:
-            EventService.add_attendee(event_id, member)
-        except Exception:
-            pass  # Already in attendees table
+        if status != "waitlisted":
+            EventService._ensure_attendee(event_id, member)
 
         return registration
 
     @staticmethod
+    def _is_full(event: ClubEvent) -> bool:
+        if not event.max_attendees or event.max_attendees <= 0:
+            return False
+        active_count = (
+            db.session.scalar(
+                select(func.count())
+                .select_from(EventRegistration)
+                .where(
+                    EventRegistration.event_id == event.id,
+                    EventRegistration.status.in_(_HOLDS_A_PLACE),
+                )
+            )
+            or 0
+        )
+        return active_count >= event.max_attendees
+
+    @staticmethod
+    def _ensure_attendee(event_id: int, member: Member) -> None:
+        """Attendees table, kept for older screens and the calendar."""
+        try:
+            EventService.add_attendee(event_id, member)
+        except ApiError:
+            pass  # already in the attendees table
+
+    @staticmethod
     def cancel_registration(event_id: int, member_id: int) -> EventRegistration:
-        """Cancel a member's registration for an event."""
+        """Cancel a member's registration; the first on the waitlist moves up."""
         registration = db.session.scalar(
             select(EventRegistration).where(
                 EventRegistration.event_id == event_id,
@@ -210,16 +220,42 @@ class EventService:
         if registration is None:
             raise_error(404, "NOT_FOUND", "No active registration found")
 
+        freed_a_place = registration.status in _HOLDS_A_PLACE
         registration.status = "cancelled"
         registration.cancelled_at = datetime.now(timezone.utc)
 
         # Remove from attendees for backward compat
         try:
             EventService.remove_attendee(event_id, member_id)
-        except Exception:
+        except ApiError:
             pass
 
+        if freed_a_place:
+            db.session.flush()
+            EventService._promote_waitlist(EventService.get(event_id))
+
         return registration
+
+    @staticmethod
+    def _promote_waitlist(event: ClubEvent) -> None:
+        """Give free places to the waitlist, first come first served."""
+        while not EventService._is_full(event):
+            nxt = db.session.scalar(
+                select(EventRegistration)
+                .where(
+                    EventRegistration.event_id == event.id,
+                    EventRegistration.status == "waitlisted",
+                )
+                .order_by(EventRegistration.registered_at, EventRegistration.id)
+                .limit(1)
+            )
+            if nxt is None:
+                return
+            nxt.status = "registered"
+            db.session.flush()
+            member = db.session.get(Member, nxt.member_id)
+            if member is not None:
+                EventService._ensure_attendee(event.id, member)
 
     @staticmethod
     def mark_attendance(event_id: int, member_id: int) -> EventRegistration:
