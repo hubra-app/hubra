@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
+from decimal import Decimal
 from math import ceil
 
 from sqlalchemy import delete, func, select
@@ -288,6 +289,12 @@ class TransactionService:
         ):
             if field in data:
                 setattr(transaction, field, data[field])
+
+        # The API takes amounts as positive numbers and stores expenses
+        # negative (as create does); keep that when amount or type change.
+        if "amount" in data or "type" in data:
+            amount = abs(Decimal(str(transaction.amount)))
+            transaction.amount = -amount if transaction.type == "expense" else amount
 
         log_audit(
             actor_id=actor_id,
