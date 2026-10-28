@@ -1,5 +1,16 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, Table, Paper, Badge, Modal, Group, Text, Anchor } from '@mantine/core'
+import {
+  Button,
+  Table,
+  Paper,
+  Badge,
+  Modal,
+  Group,
+  Text,
+  Anchor,
+  Select,
+  TextInput,
+} from '@mantine/core'
 import { Link } from 'react-router-dom'
 import {
   IconRefresh,
@@ -9,6 +20,8 @@ import {
   IconClock,
   IconCloudUpload,
   IconAlertTriangle,
+  IconRestore,
+  IconWorld,
 } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
 import { PageHead } from '@/components/ui'
@@ -20,8 +33,10 @@ import {
   getBackupConfig,
   verifyBackup,
   deleteBackup,
+  restoreBackup,
   type BackupRecord,
 } from '@/api/backups'
+import { listTenants } from '@/api/tenants'
 
 const TYPE_LABELS: Record<string, [string, string]> = {
   manual: ['Manuell', 'Manual'],
@@ -76,9 +91,20 @@ function formatDate(iso: string | null): string {
   })
 }
 
+const GLOBAL = 'global'
+const ALL = 'all'
+
+/** What a restore watch waits for: the record's restore fields to change. */
+type RestoreWatch = { id: string; seen: string }
+
+const restoreState = (b: BackupRecord | undefined) =>
+  `${b?.restored_at ?? ''}|${b?.restore_error ?? ''}`
+
 /**
- * Backups of the whole database (every club), for platform staff. Where
- * they go is set under Platform Settings; the passphrase stays in env.
+ * Backups for platform staff: one global backup (the public schema with
+ * accounts, clubs and platform settings) and one per club, so a single club
+ * can be restored without touching the others. Where they go is set under
+ * Platform Settings; the passphrase stays in env.
  */
 export function Backups() {
   const { notify } = useAdmin()
@@ -87,6 +113,17 @@ export function Backups() {
   const [deleteTarget, setDeleteTarget] = useState<BackupRecord | null>(null)
   const [creating, setCreating] = useState(false)
   const [verifyingId, setVerifyingId] = useState<string | null>(null)
+  const [target, setTarget] = useState<string>(GLOBAL)
+  const [filter, setFilter] = useState<string>(ALL)
+  const [restoreTarget, setRestoreTarget] = useState<BackupRecord | null>(null)
+  const [confirmSlug, setConfirmSlug] = useState('')
+  const [restoring, setRestoring] = useState(false)
+  const [watch, setWatch] = useState<RestoreWatch | null>(null)
+
+  const clubsQuery = useQuery({
+    queryKey: ['backup-clubs'],
+    queryFn: () => listTenants({ status: 'active', sort_by: 'name', per_page: 100 }),
+  })
 
   const configQuery = useQuery({
     queryKey: ['backup-config'],
@@ -99,16 +136,47 @@ export function Backups() {
   const backupsQuery = useQuery({
     queryKey: ['backups'],
     queryFn: () => listBackups(),
-    refetchInterval: (query) => (hasPending(query.state.data) ? 5000 : false),
+    refetchInterval: (query) => {
+      const data = query.state.data
+      if (hasPending(data)) return 5000
+      if (watch && restoreState(data?.find((b) => b.id === watch.id)) === watch.seen) return 5000
+      return false
+    },
   })
 
   const config = configQuery.data ?? null
-  const backups = backupsQuery.data ?? []
+  const allBackups = backupsQuery.data ?? []
+  const clubs = clubsQuery.data?.tenants ?? []
+
+  const targetOptions = [
+    { value: GLOBAL, label: tr('Global (Konten, Vereine, Plattform)', 'Global (accounts, clubs, platform)') },
+    ...clubs.map((c) => ({ value: String(c.id), label: `${c.name} · ${c.slug}` })),
+  ]
+
+  // Clubs seen in the list too, so backups of a deleted club can be found.
+  const filterOptions = (() => {
+    const slugs = new Map<string, string>()
+    for (const c of clubs) slugs.set(String(c.id), c.slug)
+    for (const b of allBackups)
+      if (b.scope === 'club' && b.tenant_id !== null && !slugs.has(String(b.tenant_id)))
+        slugs.set(String(b.tenant_id), b.tenant_slug ?? `#${b.tenant_id}`)
+    return [
+      { value: ALL, label: tr('Alle Backups', 'All backups') },
+      { value: GLOBAL, label: tr('Nur global', 'Global only') },
+      ...[...slugs.entries()]
+        .sort((a, b) => a[1].localeCompare(b[1]))
+        .map(([value, slug]) => ({ value, label: slug })),
+    ]
+  })()
+
+  const backups = allBackups.filter((b) =>
+    filter === ALL ? true : filter === GLOBAL ? b.scope !== 'club' : String(b.tenant_id) === filter,
+  )
 
   const handleCreate = async () => {
     setCreating(true)
     try {
-      await createBackup()
+      await createBackup(target === GLOBAL ? undefined : Number(target))
       queryClient.invalidateQueries({ queryKey: ['backups'] })
       notify('success', tr('Backup gestartet', 'Backup started'), tr('Ein neues Backup wird erstellt.', 'A new backup is being created.'))
     } catch (err: unknown) {
@@ -142,6 +210,33 @@ export function Backups() {
     }
   }
 
+  const closeRestore = () => {
+    setRestoreTarget(null)
+    setConfirmSlug('')
+  }
+
+  const handleRestore = async (record: BackupRecord) => {
+    setRestoring(true)
+    try {
+      await restoreBackup(record.id, confirmSlug.trim())
+      setWatch({ id: record.id, seen: restoreState(record) })
+      queryClient.invalidateQueries({ queryKey: ['backups'] })
+      closeRestore()
+      notify(
+        'success',
+        tr('Wiederherstellung gestartet', 'Restore started'),
+        tr(
+          `${record.tenant_slug} wird auf den Stand vom ${formatDate(record.created_at)} zurückgesetzt.`,
+          `${record.tenant_slug} is being put back to ${formatDate(record.created_at)}.`,
+        ),
+      )
+    } catch (err: unknown) {
+      notify('error', tr('Wiederherstellung fehlgeschlagen', 'Restore failed'), err instanceof Error ? err.message : tr('Unbekannter Fehler', 'Unknown error'))
+    } finally {
+      setRestoring(false)
+    }
+  }
+
   const configReady = config?.s3_configured && config?.encryption_configured
   const configPartial = config?.s3_configured && !config?.encryption_configured
 
@@ -158,8 +253,8 @@ export function Backups() {
         desc={
           <>
             {tr(
-              'Jedes Backup enthält die ganze Datenbank mit allen Vereinen, verschlüsselt mit BACKUP_ENCRYPTION_KEY aus der Umgebung. Tägliche, wöchentliche und monatliche Backups laufen von selbst; den Speicherort legst du unter ',
-              'Each backup holds the whole database, every club included, encrypted with BACKUP_ENCRYPTION_KEY from env. Daily, weekly and monthly backups run on their own; the storage is set under ',
+              'Das globale Backup enthält Konten, Vereine und Plattform-Einstellungen; jeder Verein hat eigene Backups und lässt sich einzeln wiederherstellen. Alles ist mit BACKUP_ENCRYPTION_KEY aus der Umgebung verschlüsselt. Täglich, wöchentlich und monatlich laufen ein globales Backup und eines pro Verein von selbst; den Speicherort legst du unter ',
+              'The global backup holds accounts, clubs and platform settings; each club has its own backups and can be restored on its own. Everything is encrypted with BACKUP_ENCRYPTION_KEY from env. Daily, weekly and monthly, one global backup and one per club run on their own; the storage is set under ',
             )}
             <Anchor component={Link} to="/app/platform/settings" size="sm">
               {tr('Plattform-Einstellungen', 'Platform settings')}
@@ -296,7 +391,7 @@ export function Backups() {
               </span>
             )}
 
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <Button
                 variant="subtle"
                 size="sm"
@@ -309,6 +404,16 @@ export function Backups() {
               >
                 {tr('Aktualisieren', 'Refresh')}
               </Button>
+              <Select
+                size="sm"
+                w={260}
+                searchable
+                allowDeselect={false}
+                aria-label={tr('Was sichern', 'What to back up')}
+                data={targetOptions}
+                value={target}
+                onChange={(v) => setTarget(v ?? GLOBAL)}
+              />
               <Button
                 variant="filled"
                 size="sm"
@@ -353,24 +458,37 @@ export function Backups() {
       )}
 
       {/* ── Backups table ────────────────────────────────────────────── */}
+      <Group justify="space-between" wrap="wrap">
+        <Select
+          size="sm"
+          w={260}
+          searchable
+          allowDeselect={false}
+          aria-label={tr('Backups filtern', 'Filter backups')}
+          data={filterOptions}
+          value={filter}
+          onChange={(v) => setFilter(v ?? ALL)}
+        />
+      </Group>
       <Paper withBorder shadow="sm" radius="lg">
         <Table highlightOnHover className="responsive-table">
           <Table.Thead>
             <Table.Tr>
               <Table.Th>#</Table.Th>
               <Table.Th>{tr('Datum', 'Date')}</Table.Th>
+              <Table.Th>{tr('Bereich', 'Scope')}</Table.Th>
               <Table.Th>{tr('Art', 'Type')}</Table.Th>
               <Table.Th>{tr('Status', 'Status')}</Table.Th>
               <Table.Th>{tr('Grösse', 'Size')}</Table.Th>
               <Table.Th>{tr('Geprüft', 'Verified')}</Table.Th>
               <Table.Th>{tr('Tabellen', 'Tables')}</Table.Th>
-              <Table.Th style={{ width: 100 }}>{tr('Aktionen', 'Actions')}</Table.Th>
+              <Table.Th style={{ width: 130 }}>{tr('Aktionen', 'Actions')}</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
             {backups.length === 0 && !backupsQuery.isLoading && (
               <Table.Tr>
-                <Table.Td colSpan={8}>
+                <Table.Td colSpan={9}>
                   <div
                     style={{
                       padding: '32px 16px',
@@ -391,6 +509,41 @@ export function Backups() {
                   {b.id}
                 </Table.Td>
                 <Table.Td data-label="Date">{formatDate(b.created_at)}</Table.Td>
+                <Table.Td data-label="Scope">
+                  {b.scope === 'club' ? (
+                    <span style={{ fontWeight: 600 }}>{b.tenant_slug ?? `#${b.tenant_id}`}</span>
+                  ) : (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#5e5873' }}>
+                      <IconWorld size={13} /> {tr('Global', 'Global')}
+                    </span>
+                  )}
+                  {b.scope === 'club' && b.tenant_id === null && (
+                    <div style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#8c86a0' }}>
+                      {tr('Verein gelöscht', 'Club deleted')}
+                    </div>
+                  )}
+                  {b.restored_at && (
+                    <div
+                      style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#1a7d43', marginTop: 2 }}
+                      title={b.safety_schema ? tr(`Vorheriger Stand: ${b.safety_schema}`, `Previous data: ${b.safety_schema}`) : ''}
+                    >
+                      {tr('Wiederhergestellt', 'Restored')} {formatDate(b.restored_at)}
+                    </div>
+                  )}
+                  {b.restore_error && (
+                    <div
+                      style={{
+                        fontSize: 'var(--mantine-font-size-xs)',
+                        color: '#c0392b',
+                        marginTop: 2,
+                        fontFamily: "'JetBrains Mono', monospace",
+                      }}
+                    >
+                      {tr('Wiederherstellung fehlgeschlagen: ', 'Restore failed: ')}
+                      {b.restore_error}
+                    </div>
+                  )}
+                </Table.Td>
                 <Table.Td data-label="Type">
                   <span
                     style={{
@@ -483,6 +636,17 @@ export function Backups() {
                         {tr('Prüfen', 'Verify')}
                       </Button>
                     )}
+                    {b.status === 'completed' && b.scope === 'club' && b.tenant_id !== null && (
+                      <Button
+                        variant="subtle"
+                        size="compact-sm"
+                        onClick={() => setRestoreTarget(b)}
+                        style={{ padding: '2px 6px' }}
+                        title={tr('Verein aus diesem Backup wiederherstellen', 'Restore the club from this backup')}
+                      >
+                        <IconRestore size={14} />
+                      </Button>
+                    )}
                     <Button
                       variant="subtle"
                       size="compact-sm"
@@ -499,6 +663,52 @@ export function Backups() {
           </Table.Tbody>
         </Table>
       </Paper>
+
+      <Modal
+        opened={restoreTarget !== null}
+        onClose={closeRestore}
+        title={tr('Verein wiederherstellen', 'Restore club')}
+      >
+        {restoreTarget && (
+          <>
+            <Text size="sm" mb="sm">
+              {tr(
+                `${restoreTarget.tenant_slug} wird auf den Stand vom ${formatDate(restoreTarget.created_at)} zurückgesetzt. Alles, was der Verein seither geändert hat, ist danach nicht mehr in der App. Andere Vereine und die Konten bleiben, wie sie sind.`,
+                `${restoreTarget.tenant_slug} goes back to ${formatDate(restoreTarget.created_at)}. Everything the club changed since then is gone from the app. Other clubs and the accounts stay as they are.`,
+              )}
+            </Text>
+            <Text size="sm" mb="md" c="dimmed">
+              {tr(
+                'Der jetzige Stand wird vorher als Sicherheitskopie in der Datenbank behalten. Schlägt die Wiederherstellung fehl, bleibt der Verein unverändert.',
+                'The current data is kept as a safety copy in the database first. If the restore fails, the club stays as it is.',
+              )}
+            </Text>
+            <TextInput
+              label={tr(
+                `Zum Bestätigen die Adresse des Vereins eintippen: ${restoreTarget.tenant_slug}`,
+                `Type the club's address to confirm: ${restoreTarget.tenant_slug}`,
+              )}
+              value={confirmSlug}
+              onChange={(e) => setConfirmSlug(e.currentTarget.value)}
+              autoComplete="off"
+              mb="lg"
+            />
+            <Group justify="flex-end">
+              <Button variant="default" onClick={closeRestore}>
+                {tr('Abbrechen', 'Cancel')}
+              </Button>
+              <Button
+                color="red"
+                loading={restoring}
+                disabled={confirmSlug.trim() !== restoreTarget.tenant_slug}
+                onClick={() => handleRestore(restoreTarget)}
+              >
+                {tr('Wiederherstellen', 'Restore')}
+              </Button>
+            </Group>
+          </>
+        )}
+      </Modal>
 
       <Modal
         opened={deleteTarget !== null}

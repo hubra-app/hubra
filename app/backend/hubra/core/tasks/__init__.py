@@ -155,7 +155,7 @@ def make_celery(app: Flask) -> Celery:
                 "schedule": 20.0,
             },
             "backup-daily": {
-                "task": "hubra.core.tasks.backup_tasks.create_backup",
+                "task": "hubra.core.tasks.backup_tasks.create_scheduled_backups",
                 "schedule": crontab(hour=3, minute=0),
                 "kwargs": {
                     "backup_type": "scheduled_daily",
@@ -163,7 +163,7 @@ def make_celery(app: Flask) -> Celery:
                 },
             },
             "backup-weekly": {
-                "task": "hubra.core.tasks.backup_tasks.create_backup",
+                "task": "hubra.core.tasks.backup_tasks.create_scheduled_backups",
                 "schedule": crontab(hour=3, minute=15, day_of_week=0),
                 "kwargs": {
                     "backup_type": "scheduled_weekly",
@@ -171,7 +171,7 @@ def make_celery(app: Flask) -> Celery:
                 },
             },
             "backup-monthly": {
-                "task": "hubra.core.tasks.backup_tasks.create_backup",
+                "task": "hubra.core.tasks.backup_tasks.create_scheduled_backups",
                 "schedule": crontab(hour=3, minute=30, day_of_month=1),
                 "kwargs": {
                     "backup_type": "scheduled_monthly",

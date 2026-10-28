@@ -1,4 +1,4 @@
-"""Celery tasks for database backups."""
+"""Celery tasks for backups: the global one, per club, and club restores."""
 
 from __future__ import annotations
 
@@ -14,18 +14,22 @@ logger = logging.getLogger(__name__)
     name="hubra.core.tasks.backup_tasks.create_backup",
 )
 def create_backup_task(
-    self, backup_type: str = "manual", triggered_by: str | None = None
+    self,
+    backup_type: str = "manual",
+    triggered_by: str | None = None,
+    tenant_id: int | None = None,
 ) -> dict:
-    """Create a database backup (pg_dump → GPG → S3).
+    """Back up one schema (pg_dump → GPG → S3).
 
     Args:
         backup_type: 'manual', 'scheduled_daily', 'scheduled_weekly', 'scheduled_monthly'.
         triggered_by: Member name or 'schedule'.
+        tenant_id: The club to back up; None backs up the global public schema.
     """
     from hubra.core.services.backup import BackupService
 
     record = BackupService.create_backup(
-        backup_type=backup_type, triggered_by=triggered_by
+        backup_type=backup_type, triggered_by=triggered_by, tenant_id=tenant_id
     )
     return {
         "id": record.id,
@@ -49,3 +53,35 @@ def verify_backup_task(self, record_id: int) -> dict:
         "table_count": record.table_count,
         "verify_error": record.verify_error,
     }
+
+
+@celery_app.task(
+    bind=True,
+    name="hubra.core.tasks.backup_tasks.create_scheduled_backups",
+)
+def create_scheduled_backups_task(
+    self, backup_type: str, triggered_by: str = "schedule"
+) -> dict:
+    """The scheduled run: one global backup plus one per active club."""
+    from hubra.core.services.backup import BackupService
+
+    records = BackupService.create_scheduled_backups(backup_type, triggered_by)
+    failed = [r.tenant_slug or "global" for r in records if r.status != "completed"]
+    if failed:
+        logger.error("Scheduled %s backups failed for: %s", backup_type, failed)
+    return {"count": len(records), "failed": failed}
+
+
+@celery_app.task(
+    bind=True,
+    name="hubra.core.tasks.backup_tasks.restore_club_backup",
+)
+def restore_club_backup_task(self, record_id: int) -> dict:
+    """Restore one club from a club backup, keeping its current data aside."""
+    from hubra.core.services.backup import BackupService, RestoreError
+
+    try:
+        record = BackupService.restore_club(record_id)
+    except RestoreError as exc:
+        return {"id": record_id, "ok": False, "error": str(exc)}
+    return {"id": record.id, "ok": True, "safety_schema": record.safety_schema}

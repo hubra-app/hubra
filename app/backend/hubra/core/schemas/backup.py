@@ -23,6 +23,12 @@ class BackupRecordSchema(ma.Schema):
     error_message = fields.Str(allow_none=True)
     triggered_by = fields.Str(allow_none=True)
     table_count = fields.Int(allow_none=True)
+    scope = fields.Str()
+    tenant_id = fields.Int(allow_none=True)
+    tenant_slug = fields.Str(allow_none=True)
+    restored_at = fields.DateTime(allow_none=True)
+    restore_error = fields.Str(allow_none=True)
+    safety_schema = fields.Str(allow_none=True)
 
 
 class BackupConfigSchema(ma.Schema):
