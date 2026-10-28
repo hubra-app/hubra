@@ -5,7 +5,7 @@ from __future__ import annotations
 from flask import Blueprint, jsonify, request
 from vollbuild.api.auth.helpers import get_current_member
 
-from vollbuild.api.permissions import permission_required
+from vollbuild.api.permissions import permission_required, require_member
 from vollbuild.api.utils import log_audit
 from marshmallow import ValidationError
 from vollbuild.core.errors import api_error
@@ -16,7 +16,9 @@ from vollbuild.core.schemas.member import (
     MembershipTierCreateSchema,
     MembershipTierSchema,
 )
+from vollbuild.api.tiers.plans import PaymentPlanService, plan_to_dict
 from vollbuild.api.tiers.services import TierService, TiersService
+from vollbuild.core.models.member import Member
 
 tiers_bp = Blueprint("tiers_bp", __name__)
 
@@ -117,3 +119,70 @@ def list_tier_members(tier_id: int):
     search = request.args.get("search", "").strip()
     members = TierService.list_members(tier_id, search)
     return jsonify({"data": _members_schema.dump(members)}), 200
+
+
+# ── Payment plans ─────────────────────────────────────────────────────────────
+
+
+def _body() -> dict:
+    return request.get_json(silent=True) or {}
+
+
+@tiers_bp.get("/<int:tier_id>/plans")
+@permission_required("tiers", "read", "View tiers")
+def list_plans(tier_id: int):
+    tier = TierService.get(tier_id)
+    return jsonify([plan_to_dict(p) for p in tier.payment_plans]), 200
+
+
+@tiers_bp.post("/<int:tier_id>/plans")
+@permission_required("tiers", "update", "Update tiers")
+def create_plan(tier_id: int):
+    tier = TierService.get(tier_id)
+    plan = PaymentPlanService.create(tier, _body(), get_current_member().id)
+    db.session.commit()
+    return jsonify(plan_to_dict(plan)), 201
+
+
+@tiers_bp.patch("/plans/<int:plan_id>")
+@permission_required("tiers", "update", "Update tiers")
+def update_plan(plan_id: int):
+    plan = PaymentPlanService.update(plan_id, _body(), get_current_member().id)
+    db.session.commit()
+    return jsonify(plan_to_dict(plan)), 200
+
+
+@tiers_bp.delete("/plans/<int:plan_id>")
+@permission_required("tiers", "update", "Update tiers")
+def delete_plan(plan_id: int):
+    PaymentPlanService.delete(plan_id, get_current_member().id)
+    db.session.commit()
+    return "", 204
+
+
+@tiers_bp.put("/members/<int:member_id>/plan")
+@permission_required("tiers", "update", "Update tiers")
+def set_member_plan(member_id: int):
+    member = db.session.get(Member, member_id)
+    if member is None:
+        return api_error("NOT_FOUND", "Member not found", 404)
+    PaymentPlanService.assign(
+        member, _body().get("plan_id"), get_current_member().id, own=False
+    )
+    db.session.commit()
+    return jsonify(PaymentPlanService.options_for(member)), 200
+
+
+@tiers_bp.get("/my-plan")
+@require_member
+def my_plan_options():
+    return jsonify(PaymentPlanService.options_for(get_current_member())), 200
+
+
+@tiers_bp.put("/my-plan")
+@require_member
+def choose_my_plan():
+    member = get_current_member()
+    PaymentPlanService.assign(member, _body().get("plan_id"), member.id, own=True)
+    db.session.commit()
+    return jsonify(PaymentPlanService.options_for(member)), 200

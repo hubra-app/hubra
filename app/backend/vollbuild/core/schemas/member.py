@@ -29,6 +29,12 @@ class MembershipTierSchema(ma.SQLAlchemyAutoSchema):
     coefficient = fields.Float(allow_none=True, dump_default=None)
     round_to = fields.Int(allow_none=True, dump_default=None)
     deduct_tier_ids = fields.List(fields.Int(), allow_none=True, dump_default=None)
+    payment_plans = fields.Method("get_payment_plans", dump_only=True)
+
+    def get_payment_plans(self, obj):
+        from vollbuild.api.tiers.plans import plan_to_dict
+
+        return [plan_to_dict(p) for p in obj.payment_plans]
 
     def dump(self, obj, *, many=None):
         result = super().dump(obj, many=many)

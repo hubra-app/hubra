@@ -5,6 +5,7 @@ import * as authApi from '@/api/auth'
 import { useAuth } from '@/context/AppContext'
 import { LastSeenBadge } from '@/components/ui'
 import { useT } from '@/locales/i18n'
+import { PaymentPlanCard } from './PaymentPlanCard'
 
 export function AccountSettingsMembershipTab() {
   const { t } = useT()
@@ -166,6 +167,8 @@ export function AccountSettingsMembershipTab() {
           </div>
         </div>
       </Paper>
+
+      <PaymentPlanCard />
 
       <div
         style={{

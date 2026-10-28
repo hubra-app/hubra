@@ -22,6 +22,7 @@ import {
   calculateTierCost,
 } from '@/api/tiers'
 import { listTierMembers, listMembers, updateMember } from '@/api/members'
+import { PaymentPlansEditor } from './PaymentPlansEditor'
 
 /* -- Tier Detail Panel ------------------------- */
 function TierDetailPanel({
@@ -773,6 +774,7 @@ export function TiersTab() {
         }
       >
         {tierForm}
+        {editTarget && <PaymentPlansEditor tierId={editTarget.id} />}
       </Modal>
       <ConfirmModal
         open={!!deleteTarget}

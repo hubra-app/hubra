@@ -777,7 +777,13 @@
     "leaveGroup": "Leave",
     "joinGroup": "Join",
     "myKeys": "My keys",
-    "keyDeposit": "Deposit CHF {{amount}}"
+    "keyDeposit": "Deposit CHF {{amount}}",
+    "plan": {
+      "title": "How you pay",
+      "standard": "Standard",
+      "saved": "Payment plan saved",
+      "hint": "Applies from your next invoice. Invoices already sent stay as they are."
+    }
   },
   "system": {
     "title": "System",
@@ -966,5 +972,28 @@
     "name": "Name",
     "year": "Year",
     "addLine": "Add line"
+  },
+  "tiers": {
+    "plans": {
+      "title": "Payment plans",
+      "hint": "Let members pay this tier in instalments. Without a plan they are billed on the tier cycle.",
+      "name": "Name",
+      "namePlaceholder": "Quarterly",
+      "surcharge": "Surcharge",
+      "visible": "Members can pick",
+      "add": "Add payment plan",
+      "intervals": {
+        "yearly": "Yearly",
+        "half_yearly": "Half-yearly",
+        "quarterly": "Quarterly",
+        "monthly": "Monthly"
+      },
+      "per": {
+        "yearly": "per year",
+        "half_yearly": "per half-year",
+        "quarterly": "per quarter",
+        "monthly": "per month"
+      }
+    }
   }
 }

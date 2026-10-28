@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 from datetime import date, timedelta
-from decimal import Decimal, ROUND_UP
+from decimal import Decimal, ROUND_HALF_UP, ROUND_UP
 
 logger = logging.getLogger(__name__)
 
@@ -32,20 +32,37 @@ def _get_yearly_expenses() -> Decimal:
     return Decimal(0)
 
 
+_PERIODS = {"monthly": 12, "quarterly": 4, "half_yearly": 2, "yearly": 1}
+
+
 def periods_per_year(billing_cycle: str | None) -> int:
-    return 12 if billing_cycle == "monthly" else 1
+    return _PERIODS.get(billing_cycle or "yearly", 1)
 
 
 def period_window(today: date, billing_cycle: str | None):
-    if billing_cycle == "monthly":
-        start = today.replace(day=1)
-        end = (start.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(
-            days=1
-        )
-    else:
-        start = today.replace(month=1, day=1)
-        end = today.replace(month=12, day=31)
+    """First and last day of the billing period that contains ``today``."""
+    months = 12 // periods_per_year(billing_cycle)
+    first_month = (today.month - 1) // months * months + 1
+    start = today.replace(month=first_month, day=1)
+    last_month = first_month + months - 1
+    end = (start.replace(month=last_month, day=28) + timedelta(days=4)).replace(
+        day=1
+    ) - timedelta(days=1)
     return start, end
+
+
+def _plan_for(member, tier):
+    """The member's payment plan, if it belongs to their current tier."""
+    plan = getattr(member, "payment_plan", None)
+    if plan is None or tier is None or plan.tier_id != tier.id:
+        return None
+    return plan
+
+
+def billing_cycle_for(member, tier) -> str | None:
+    """How often the member is billed: their plan's interval, else the tier's."""
+    plan = _plan_for(member, tier)
+    return plan.interval if plan else tier.billing_cycle
 
 
 def annual_fee_for_member(member, tier) -> Decimal:
@@ -68,7 +85,27 @@ def annual_fee_for_member(member, tier) -> Decimal:
 
 
 def calculate_invoice_amount(member, tier, deducted_annual_fees: Decimal) -> Decimal:
-    """Return the invoice amount for one billing period for the given member."""
+    """Return the invoice amount for one billing period for the given member.
+
+    With a payment plan, the tier's yearly fee is split into the plan's
+    periods, plus the plan's surcharge, rounded to 5 Rappen.
+    """
+    amount = tier_period_amount(member, tier, deducted_annual_fees)
+    return apply_plan(amount, tier, _plan_for(member, tier))
+
+
+def apply_plan(tier_amount: Decimal, tier, plan) -> Decimal:
+    """Turn one tier-period amount into one plan-period amount."""
+    if plan is None or tier_amount <= 0:
+        return tier_amount
+    annual = tier_amount * periods_per_year(tier.billing_cycle)
+    surcharge = Decimal(1) + Decimal(str(plan.surcharge_pct or 0)) / Decimal(100)
+    per_period = annual * surcharge / periods_per_year(plan.interval)
+    return (per_period * 20).quantize(Decimal(1), rounding=ROUND_HALF_UP) / 20
+
+
+def tier_period_amount(member, tier, deducted_annual_fees: Decimal) -> Decimal:
+    """Invoice amount for one period of the tier's own billing cycle."""
     from sqlalchemy import select, func
     from vollbuild.core.extensions import db
     from vollbuild.core.models.member import Member

@@ -89,6 +89,12 @@ class MembershipTier(db.Model):
     applications: Mapped[list["Application"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "Application", back_populates="wants_tier"
     )
+    payment_plans: Mapped[list["PaymentPlan"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        "PaymentPlan",
+        back_populates="tier",
+        cascade="all, delete-orphan",
+        order_by="PaymentPlan.id",
+    )
 
     def __repr__(self) -> str:
         return f"<MembershipTier id={self.id} name={self.name!r}>"
@@ -121,6 +127,10 @@ class Member(db.Model):
 
     tier_id: Mapped[int | None] = mapped_column(
         db.Integer, ForeignKey("membership_tiers.id"), nullable=True
+    )
+    # How the tier is paid; None means the tier's own billing cycle.
+    payment_plan_id: Mapped[int | None] = mapped_column(
+        db.Integer, ForeignKey("payment_plans.id", ondelete="SET NULL"), nullable=True
     )
 
     joined: Mapped[date | None] = mapped_column(Date, nullable=True)
@@ -166,6 +176,9 @@ class Member(db.Model):
     user: Mapped["User | None"] = relationship("User")  # type: ignore[name-defined]  # noqa: F821
     tier: Mapped[MembershipTier | None] = relationship(
         "MembershipTier", back_populates="members"
+    )
+    payment_plan: Mapped["PaymentPlan | None"] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        "PaymentPlan"
     )
     roles: Mapped[list["Role"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "Role",

@@ -1022,7 +1022,13 @@
     "leaveGroup": "Ustrete",
     "joinGroup": "Biiträte",
     "myKeys": "Mini Schlüssel",
-    "keyDeposit": "Depot CHF {{amount}}"
+    "keyDeposit": "Depot CHF {{amount}}",
+    "plan": {
+      "title": "Wie du zahlsch",
+      "standard": "Standard",
+      "saved": "Zahligsplan gspeicheret",
+      "hint": "Gilt ab de nächste Rächnig. Scho verschickti Rächnige bliibed wie si sind."
+    }
   },
   "system": {
     "title": "Endpunkt-Berechtigunge",
@@ -1219,5 +1225,28 @@
     "name": "Name",
     "year": "Jahr",
     "addLine": "Poste hinzuefüege"
+  },
+  "tiers": {
+    "plans": {
+      "title": "Zahligsplän",
+      "hint": "Mitglieder chönd die Stuf in Rate zahle. Ohni Plan wird im Rhythmus vo de Stuf verrechnet.",
+      "name": "Name",
+      "namePlaceholder": "Quartalswiis",
+      "surcharge": "Zueschlag",
+      "visible": "Mitglieder chönd uswähle",
+      "add": "Zahligsplan hinzuefüege",
+      "intervals": {
+        "yearly": "Jährlich",
+        "half_yearly": "Halbjährlich",
+        "quarterly": "Quartalswiis",
+        "monthly": "Monetlich"
+      },
+      "per": {
+        "yearly": "pro Jahr",
+        "half_yearly": "pro Halbjahr",
+        "quarterly": "pro Quartal",
+        "monthly": "pro Monet"
+      }
+    }
   }
 }

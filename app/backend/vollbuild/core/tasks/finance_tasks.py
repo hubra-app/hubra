@@ -14,6 +14,7 @@ from vollbuild.core.modules import emit, per_tenant_job
 from vollbuild.core.modules.events import INVOICE_OVERDUE
 from vollbuild.core.tasks import celery_app
 from vollbuild.core.pricing import (
+    billing_cycle_for,
     calculate_invoice_amount,
     period_window,
     total_deducted_annual_for_tiers,
@@ -216,7 +217,8 @@ def _generate_invoices() -> dict:
             skipped += 1
             continue
 
-        period_start, period_end = period_window(today, tier.billing_cycle)
+        cycle = billing_cycle_for(member, tier)
+        period_start, period_end = period_window(today, cycle)
 
         existing = db.session.scalar(
             select(Invoice.id)
@@ -266,7 +268,7 @@ def _generate_invoices() -> dict:
             tier.name,
             tier.price_type,
             amount,
-            tier.billing_cycle,
+            cycle,
             invoice.id,
         )
         created += 1

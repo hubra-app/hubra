@@ -47,6 +47,7 @@ module = Module(
         "member_groups",
         "member_roles",
         "membership_tiers",
+        "payment_plans",
         "applications",
     ),
 )
