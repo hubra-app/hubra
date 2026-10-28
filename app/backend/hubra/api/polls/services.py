@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
@@ -18,6 +20,18 @@ from hubra.core.models.member import Member
 from hubra.core.models.poll import Poll, PollOption, PollProxy, PollVote
 from hubra.core.modules import emit
 from hubra.core.modules.events import POLL_PUBLISHED
+
+
+def is_closed(poll: Poll) -> bool:
+    """Closed by hand, or its closing time has passed."""
+    if poll.status == "closed":
+        return True
+    closes_at = poll.closes_at
+    if closes_at is None:
+        return False
+    if closes_at.tzinfo is None:  # SQLite hands back naive datetimes
+        closes_at = closes_at.replace(tzinfo=timezone.utc)
+    return closes_at <= datetime.now(timezone.utc)
 
 
 class PollService:
@@ -44,7 +58,7 @@ class PollService:
 
         With ``on_behalf_of`` the caller votes as that member's proxy holder.
         """
-        if poll.status == "closed":
+        if is_closed(poll):
             raise_error(409, "CONFLICT", "This poll is closed")
         cast_by_id = None
         if on_behalf_of is not None and on_behalf_of != member_id:
@@ -308,7 +322,7 @@ class ProxyService:
     def grant(poll: Poll, grantor_id: int, holder_id: int) -> PollProxy:
         if not poll.allow_proxy:
             raise_error(409, "PROXY_NOT_ALLOWED", "This poll does not allow proxies")
-        if poll.status == "closed":
+        if is_closed(poll):
             raise_error(409, "CONFLICT", "This poll is closed")
         if holder_id == grantor_id:
             raise_error(400, "VALIDATION_ERROR", "You cannot be your own proxy")
@@ -352,7 +366,7 @@ class ProxyService:
     def revoke(poll: Poll, grantor_id: int) -> None:
         """Take a proxy back. A vote the holder already cast for the grantor
         is withdrawn too, so the grantor can vote themselves."""
-        if poll.status == "closed":
+        if is_closed(poll):
             raise_error(409, "CONFLICT", "This poll is closed")
         proxy = ProxyService.given(poll.id, grantor_id)
         if proxy is None:
