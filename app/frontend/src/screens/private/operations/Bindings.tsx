@@ -10,6 +10,7 @@ import {
   IconPower,
 } from '@tabler/icons-react'
 import { useToast, useAuth } from '@/context/AppContext'
+import { useT } from '@/locales/i18n'
 import {
   Modal,
   Field,
@@ -44,16 +45,17 @@ import type {
 type Tab = 'keys' | 'bindings'
 
 export function BindingsScreen() {
+  const { t } = useT()
   const location = useLocation()
   const navigate = useNavigate()
   const tab: Tab = location.pathname.includes('/list') ? 'bindings' : 'keys'
   return (
     <div>
-      <PageHead eyebrow="Operations" title="Bindings" actions={null} />
+      <PageHead title={t('bindings.title', 'Verknüpfungen')} actions={null} />
       <Tabs
         tabs={[
-          { id: 'keys', label: 'Internal Keys' },
-          { id: 'bindings', label: 'Bindings' },
+          { id: 'keys', label: t('bindings.internalKeys', 'Interne Schlüssel') },
+          { id: 'bindings', label: t('bindings.tab', 'Verknüpfungen') },
         ]}
         activeTab={tab}
         onTabChange={(id) =>
@@ -70,6 +72,7 @@ export function BindingsScreen() {
 
 function KeysTab() {
   const { notify } = useToast()
+  const { t } = useT()
   const { hasPermission } = useAuth()
   const queryClient = useQueryClient()
   const canCreate = hasPermission('keys.keys.write')
@@ -119,12 +122,12 @@ function KeysTab() {
       setNewLabel('')
       setNewAllowMultiple(false)
       setNewIsProtected(false)
-      notify('success', 'Created', `${ik.key} added.`)
+      notify('success', t('common.created', 'Erstellt'), t('kv.addedMsg', '{{key}} wurde hinzugefügt.', { key: ik.key }))
     } catch (err: unknown) {
       notify(
         'error',
-        'Create failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('common.createFailed', 'Erstellen fehlgeschlagen'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setAddSaving(false)
@@ -136,12 +139,12 @@ function KeysTab() {
       await deleteKey(ik.id)
       queryClient.invalidateQueries({ queryKey: ['keys'] })
       setDeleteTarget(null)
-      notify('success', 'Deleted', `${ik.key} removed.`)
+      notify('success', t('common.deleted', 'Gelöscht'), t('kv.removedMsg', '{{key}} wurde entfernt.', { key: ik.key }))
     } catch (err: unknown) {
       notify(
         'error',
-        'Delete failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('common.deleteFailed', 'Löschen fehlgeschlagen'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -157,12 +160,12 @@ function KeysTab() {
       })
       queryClient.invalidateQueries({ queryKey: ['keys'] })
       setEditTarget(null)
-      notify('success', 'Saved', `${updated.key} updated.`)
+      notify('success', t('common.saved', 'Gespeichert'), t('kv.updatedMsg', '{{key}} wurde gespeichert.', { key: updated.key }))
     } catch (err: unknown) {
       notify(
         'error',
-        'Save failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('common.saveFailed', 'Speichern fehlgeschlagen'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setEditSaving(false)
@@ -177,9 +180,9 @@ function KeysTab() {
         getNamespace={(e) => e.key.split('.').slice(0, 2).join('.') || 'other'}
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder={'Filter by key or label\u2026'}
-        emptyMessage="No internal keys yet."
-        loadingMessage={'Loading\u2026'}
+        searchPlaceholder={t('bindings.filterKeys', 'Nach Schlüssel oder Bezeichnung filtern …')}
+        emptyMessage={t('bindings.noKeys', 'Noch keine internen Schlüssel.')}
+        loadingMessage={t('common.loading', 'Wird geladen …')}
         editingKey={null}
         editValue=""
         onEditValueChange={() => {}}
@@ -198,13 +201,13 @@ function KeysTab() {
               {entry.masked_value}
             </span>
           ) : (
-            <em style={{ color: '#bbb' }}>empty</em>
+            <em style={{ color: '#bbb' }}>{t('bindings.empty', 'leer')}</em>
           )
         }
         extraColumns={[
           {
             key: 'label',
-            header: 'Label',
+            header: t('bindings.label', 'Bezeichnung'),
             width: 180,
             render: (entry) =>
               entry.label ? (
@@ -215,7 +218,7 @@ function KeysTab() {
           },
           {
             key: 'type',
-            header: 'Type',
+            header: t('common.type', 'Typ'),
             width: 80,
             render: (entry) => (
               <Badge
@@ -236,7 +239,7 @@ function KeysTab() {
           },
           {
             key: 'flags',
-            header: 'Flags',
+            header: t('bindings.flags', 'Eigenschaften'),
             width: 100,
             render: (entry) =>
               entry.is_protected ? (
@@ -261,7 +264,7 @@ function KeysTab() {
           },
           {
             key: 'updated',
-            header: 'Last updated',
+            header: t('bindings.lastUpdated', 'Zuletzt geändert'),
             width: 110,
             render: (entry) =>
               entry.updated_at ? (
@@ -290,7 +293,7 @@ function KeysTab() {
                   setEditIsProtected(entry.is_protected)
                 }}
                 style={{ padding: '4px 7px' }}
-                title="Edit label and flags"
+                title={t('bindings.editLabelFlags', 'Bezeichnung und Eigenschaften bearbeiten')}
               >
                 <IconPencil size={16} />
               </Button>
@@ -307,7 +310,7 @@ function KeysTab() {
                     setEditIsProtected(entry.is_protected)
                   }}
                   style={{ padding: '4px 7px' }}
-                  title="Edit label, type and flags"
+                  title={t('bindings.editLabelTypeFlags', 'Bezeichnung, Typ und Eigenschaften bearbeiten')}
                 >
                   <IconPencil size={16} />
                 </Button>
@@ -317,7 +320,7 @@ function KeysTab() {
                   variant="subtle"
                   onClick={() => setDeleteTarget(entry)}
                   style={{ padding: '4px 7px', color: '#c0392b' }}
-                  title="Delete"
+                  title={t('common.delete', 'Löschen')}
                 >
                   <IconTrash size={16} />
                 </Button>
@@ -340,22 +343,22 @@ function KeysTab() {
 
       <Modal
         open={showAdd}
-        title="Add internal key"
+        title={t('bindings.addKey', 'Internen Schlüssel hinzufügen')}
         onClose={() => setShowAdd(false)}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <Field label="Key" hint="e.g. internal.mail.sender.invoice">
+          <Field label={t('data.key', 'Schlüssel')} hint={t('bindings.keyHint', 'z. B. internal.mail.sender.invoice')}>
             <TextInput
               value={newKey}
               onChange={(e) => setNewKey(e.target.value)}
               placeholder="namespace.key"
             />
           </Field>
-          <Field label="Label" hint="Optional display name">
+          <Field label={t('bindings.label', 'Bezeichnung')} hint={t('bindings.labelHint', 'Optionaler Anzeigename')}>
             <TextInput
               value={NewLabel}
               onChange={(e) => setNewLabel(e.target.value)}
-              placeholder="e.g. Invoice sender email"
+              placeholder={t('bindings.labelPlaceholder', 'z. B. Absender für Rechnungen')}
             />
           </Field>
           <label
@@ -373,14 +376,14 @@ function KeysTab() {
               onChange={(e) => setNewAllowMultiple(e.target.checked)}
               style={{ width: 16, height: 16, accentColor: '#7441e0' }}
             />
-            <span style={{ fontWeight: 600 }}>Array key</span>
+            <span style={{ fontWeight: 600 }}>{t('bindings.arrayKey', 'Listen-Schlüssel')}</span>
             <span
               style={{
                 color: '#5e5873',
                 fontSize: 'var(--mantine-font-size-xs)',
               }}
             >
-              Allows multiple bindings to contribute values
+              {t('bindings.arrayKeyHint', 'Mehrere Verknüpfungen können Werte beisteuern')}
             </span>
           </label>
           <label
@@ -398,14 +401,14 @@ function KeysTab() {
               onChange={(e) => setNewIsProtected(e.target.checked)}
               style={{ width: 16, height: 16, accentColor: '#7441e0' }}
             />
-            <span style={{ fontWeight: 600 }}>Protected</span>
+            <span style={{ fontWeight: 600 }}>{t('bindings.protected', 'Geschützt')}</span>
             <span
               style={{
                 color: '#5e5873',
                 fontSize: 'var(--mantine-font-size-xs)',
               }}
             >
-              Prevents deletion and type changes
+              {t('bindings.protectedHint', 'Verhindert Löschen und Typänderungen')}
             </span>
           </label>
           <div
@@ -417,14 +420,14 @@ function KeysTab() {
             }}
           >
             <Button variant="subtle" onClick={() => setShowAdd(false)}>
-              Cancel
+              {t('common.cancel', 'Abbrechen')}
             </Button>
             <Button
               variant="filled"
               onClick={handleAdd}
               disabled={addSaving || !newKey.trim()}
             >
-              {addSaving ? 'Saving...' : 'Save'}
+              {addSaving ? t('common.saving', 'Wird gespeichert …') : t('common.save', 'Speichern')}
             </Button>
           </div>
         </div>
@@ -432,15 +435,15 @@ function KeysTab() {
 
       <Modal
         open={editTarget !== null}
-        title={`Edit: ${editTarget?.key ?? ''}`}
+        title={t('bindings.editKeyTitle', 'Bearbeiten: {{key}}', { key: editTarget?.key ?? '' })}
         onClose={() => setEditTarget(null)}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <Field label="Label">
+          <Field label={t('bindings.label', 'Bezeichnung')}>
             <TextInput
               value={editLabel}
               onChange={(e) => setEditLabel(e.target.value)}
-              placeholder="Display name"
+              placeholder={t('common.displayName', 'Anzeigename')}
             />
           </Field>
           <label
@@ -460,7 +463,7 @@ function KeysTab() {
               disabled={editIsProtected}
               style={{ width: 16, height: 16, accentColor: '#7441e0' }}
             />
-            <span style={{ fontWeight: 600 }}>Array key</span>
+            <span style={{ fontWeight: 600 }}>{t('bindings.arrayKey', 'Listen-Schlüssel')}</span>
             <span
               style={{
                 color: '#5e5873',
@@ -468,8 +471,8 @@ function KeysTab() {
               }}
             >
               {editIsProtected
-                ? 'Unprotect to change type'
-                : 'Allows multiple bindings to contribute values'}
+                ? t('bindings.unprotectHint', 'Schutz aufheben, um den Typ zu ändern')
+                : t('bindings.arrayKeyHint', 'Mehrere Verknüpfungen können Werte beisteuern')}
             </span>
           </label>
           <label
@@ -487,14 +490,14 @@ function KeysTab() {
               onChange={(e) => setEditIsProtected(e.target.checked)}
               style={{ width: 16, height: 16, accentColor: '#7441e0' }}
             />
-            <span style={{ fontWeight: 600 }}>Protected</span>
+            <span style={{ fontWeight: 600 }}>{t('bindings.protected', 'Geschützt')}</span>
             <span
               style={{
                 color: '#5e5873',
                 fontSize: 'var(--mantine-font-size-xs)',
               }}
             >
-              Prevents deletion and type changes
+              {t('bindings.protectedHint', 'Verhindert Löschen und Typänderungen')}
             </span>
           </label>
           <div
@@ -506,10 +509,10 @@ function KeysTab() {
             }}
           >
             <Button variant="subtle" onClick={() => setEditTarget(null)}>
-              Cancel
+              {t('common.cancel', 'Abbrechen')}
             </Button>
             <Button variant="filled" onClick={handleEdit} disabled={editSaving}>
-              {editSaving ? 'Saving...' : 'Save'}
+              {editSaving ? t('common.saving', 'Wird gespeichert …') : t('common.save', 'Speichern')}
             </Button>
           </div>
         </div>
@@ -517,10 +520,10 @@ function KeysTab() {
 
       <ConfirmModal
         open={deleteTarget !== null}
-        title="Delete key"
+        title={t('bindings.deleteKey', 'Schlüssel löschen')}
         body={
           deleteTarget
-            ? `Delete "${deleteTarget.key}"? All bindings must be removed first.`
+            ? t('bindings.deleteKeyBody', '«{{key}}» löschen? Alle Verknüpfungen müssen vorher entfernt werden.', { key: deleteTarget.key })
             : ''
         }
         onConfirm={() => {
@@ -536,6 +539,7 @@ type BindingRow = Binding & { key: string }
 
 function BindingsTab() {
   const { notify } = useToast()
+  const { t } = useT()
   const { hasPermission } = useAuth()
   const queryClient = useQueryClient()
   const canCreate = hasPermission('bindings.bindings.write')
@@ -670,12 +674,12 @@ function BindingsTab() {
       setNewKeyId('')
       setNewValidator('none')
       setSelectedSource(null)
-      notify('success', 'Created', `Binding #${b.id} created.`)
+      notify('success', t('common.created', 'Erstellt'), t('bindings.createdMsg', 'Verknüpfung #{{id}} erstellt.', { id: b.id }))
     } catch (err: unknown) {
       notify(
         'error',
-        'Create failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('common.createFailed', 'Erstellen fehlgeschlagen'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setAddSaving(false)
@@ -687,12 +691,12 @@ function BindingsTab() {
       await deleteBinding(b.id)
       queryClient.invalidateQueries({ queryKey: ['bindings'] })
       setDeleteTarget(null)
-      notify('success', 'Deleted', `Binding #${b.id} removed.`)
+      notify('success', t('common.deleted', 'Gelöscht'), t('bindings.removedMsg', 'Verknüpfung #{{id}} entfernt.', { id: b.id }))
     } catch (err: unknown) {
       notify(
         'error',
-        'Delete failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('common.deleteFailed', 'Löschen fehlgeschlagen'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -703,14 +707,16 @@ function BindingsTab() {
       queryClient.invalidateQueries({ queryKey: ['bindings'] })
       notify(
         'success',
-        updated.enabled ? 'Enabled' : 'Disabled',
-        `Binding #${b.id} ${updated.enabled ? 'enabled' : 'disabled'}.`,
+        updated.enabled ? t('common.enabled', 'Aktiviert') : t('common.disabled', 'Deaktiviert'),
+        updated.enabled
+          ? t('bindings.enabledMsg', 'Verknüpfung #{{id}} aktiviert.', { id: b.id })
+          : t('bindings.disabledMsg', 'Verknüpfung #{{id}} deaktiviert.', { id: b.id }),
       )
     } catch (err: unknown) {
       notify(
         'error',
-        'Toggle failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('common.updateFailed', 'Aktualisieren fehlgeschlagen'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -745,12 +751,12 @@ function BindingsTab() {
       const updated = await updateBinding(editTarget.id, data)
       queryClient.invalidateQueries({ queryKey: ['bindings'] })
       setEditTarget(null)
-      notify('success', 'Saved', `Binding #${updated.id} updated.`)
+      notify('success', t('common.saved', 'Gespeichert'), t('bindings.updatedMsg', 'Verknüpfung #{{id}} gespeichert.', { id: updated.id }))
     } catch (err: unknown) {
       notify(
         'error',
-        'Save failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('common.saveFailed', 'Speichern fehlgeschlagen'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setEditSaving(false)
@@ -765,9 +771,9 @@ function BindingsTab() {
         getNamespace={() => 'bindings'}
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder={'Filter by key, source, or attribute\u2026'}
-        emptyMessage="No bindings yet."
-        loadingMessage={'Loading\u2026'}
+        searchPlaceholder={t('bindings.filterBindings', 'Nach Schlüssel, Quelle oder Attribut filtern …')}
+        emptyMessage={t('bindings.noBindings', 'Noch keine Verknüpfungen.')}
+        loadingMessage={t('common.loading', 'Wird geladen …')}
         editingKey={null}
         editValue=""
         onEditValueChange={() => {}}
@@ -810,7 +816,7 @@ function BindingsTab() {
         extraColumns={[
           {
             key: 'value',
-            header: 'Value',
+            header: t('data.value', 'Wert'),
             width: 180,
             render: (entry) =>
               entry.resolved_value ? (
@@ -835,7 +841,7 @@ function BindingsTab() {
           },
           {
             key: 'validator',
-            header: 'Validator',
+            header: t('bindings.validator', 'Prüfung'),
             width: 100,
             render: (entry) => (
               <Badge
@@ -856,7 +862,7 @@ function BindingsTab() {
           },
           {
             key: 'flags',
-            header: 'Flags',
+            header: t('bindings.flags', 'Eigenschaften'),
             width: 100,
             render: (entry) =>
               entry.is_protected ? (
@@ -881,7 +887,7 @@ function BindingsTab() {
           },
           {
             key: 'status',
-            header: 'Status',
+            header: t('common.status', 'Status'),
             width: 70,
             render: (entry) =>
               entry.validation_status === 'ok' ? (
@@ -907,7 +913,7 @@ function BindingsTab() {
           },
           {
             key: 'enabled',
-            header: 'Enabled',
+            header: t('common.enabled', 'Aktiviert'),
             width: 80,
             render: (entry) => (
               <Button
@@ -922,10 +928,10 @@ function BindingsTab() {
                 }}
                 title={
                   entry.is_protected
-                    ? 'Protected \u2014 cannot toggle'
+                    ? t('bindings.protectedToggle', 'Geschützt: kann nicht umgeschaltet werden')
                     : entry.enabled
-                      ? 'Click to disable'
-                      : 'Click to enable'
+                      ? t('bindings.clickDisable', 'Zum Deaktivieren klicken')
+                      : t('bindings.clickEnable', 'Zum Aktivieren klicken')
                 }
               >
                 <IconPower size={16} style={{ verticalAlign: 'middle' }} />
@@ -935,7 +941,7 @@ function BindingsTab() {
           },
           {
             key: 'updated',
-            header: 'Last updated',
+            header: t('bindings.lastUpdated', 'Zuletzt geändert'),
             width: 110,
             render: (entry) =>
               entry.updated_at ? (
@@ -959,7 +965,7 @@ function BindingsTab() {
                 variant="subtle"
                 onClick={() => openEdit(entry)}
                 style={{ padding: '4px 7px' }}
-                title="Edit source, destination, and validator"
+                title={t('bindings.editBinding', 'Quelle, Ziel und Prüfung bearbeiten')}
               >
                 <IconPencil size={16} />
               </Button>
@@ -971,7 +977,7 @@ function BindingsTab() {
                   variant="subtle"
                   onClick={() => openEdit(entry)}
                   style={{ padding: '4px 7px' }}
-                  title="Edit source, destination, and validator"
+                  title={t('bindings.editBinding', 'Quelle, Ziel und Prüfung bearbeiten')}
                 >
                   <IconPencil size={16} />
                 </Button>
@@ -981,7 +987,7 @@ function BindingsTab() {
                   variant="subtle"
                   onClick={() => setDeleteTarget(entry)}
                   style={{ padding: '4px 7px', color: '#c0392b' }}
-                  title="Delete"
+                  title={t('common.delete', 'Löschen')}
                 >
                   <IconTrash size={16} />
                 </Button>
@@ -1004,11 +1010,11 @@ function BindingsTab() {
 
       <Modal
         open={showAdd}
-        title="Add binding"
+        title={t('bindings.add', 'Verknüpfung hinzufügen')}
         onClose={() => setShowAdd(false)}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <Field label="Source type">
+          <Field label={t('bindings.sourceType', 'Quelltyp')}>
             <Select
               data={registry.map((r) => ({ value: r.type, label: r.type }))}
               value={newType}
@@ -1020,7 +1026,7 @@ function BindingsTab() {
               }}
             />
           </Field>
-          <Field label="Source" hint="Select a source record">
+          <Field label={t('bindings.source', 'Quelle')} hint={t('bindings.sourceHint', 'Wähle einen Quelldatensatz')}>
             {sourcesLoading ? (
               <div
                 style={{
@@ -1029,7 +1035,7 @@ function BindingsTab() {
                   padding: '8px 0',
                 }}
               >
-                Loading sources...
+                {t('bindings.loadingSources', 'Quellen werden geladen …')}
               </div>
             ) : sources.length === 0 ? (
               <div
@@ -1084,10 +1090,10 @@ function BindingsTab() {
                 ))}
             </div>
           )}
-          <Field label="Attribute">
+          <Field label={t('bindings.attribute', 'Attribut')}>
             <Select
               data={[
-                { value: '', label: 'Select attribute...' },
+                { value: '', label: t('bindings.selectAttribute', 'Attribut wählen …') },
                 ...allAttributes.map((a) => ({
                   value: a.name,
                   label: `${a.label} (${a.name})`,
@@ -1122,10 +1128,10 @@ function BindingsTab() {
               )}
             </div>
           )}
-          <Field label="Target key">
+          <Field label={t('bindings.targetKey', 'Zielschlüssel')}>
             <Select
               data={[
-                { value: '', label: 'Select key...' },
+                { value: '', label: t('bindings.selectKey', 'Schlüssel wählen …') },
                 ...keys.map((k) => ({
                   value: String(k.id),
                   label: `${k.key}${k.label ? ` — ${k.label}` : ''}`,
@@ -1136,7 +1142,7 @@ function BindingsTab() {
               searchable
             />
           </Field>
-          <Field label="Validator">
+          <Field label={t('bindings.validator', 'Prüfung')}>
             <Select
               data={validators.map((v) => ({ value: v, label: v }))}
               value={newValidator}
@@ -1152,14 +1158,14 @@ function BindingsTab() {
             }}
           >
             <Button variant="subtle" onClick={() => setShowAdd(false)}>
-              Cancel
+              {t('common.cancel', 'Abbrechen')}
             </Button>
             <Button
               variant="filled"
               onClick={handleAdd}
               disabled={addSaving || !newSourceId || !newAttribute || !newKeyId}
             >
-              {addSaving ? 'Saving...' : 'Save'}
+              {addSaving ? t('common.saving', 'Wird gespeichert …') : t('common.save', 'Speichern')}
             </Button>
           </div>
         </div>
@@ -1167,11 +1173,11 @@ function BindingsTab() {
 
       <Modal
         open={editTarget !== null}
-        title={`Edit binding #${editTarget?.id ?? ''}`}
+        title={t('bindings.editTitle', 'Verknüpfung #{{id}} bearbeiten', { id: editTarget?.id ?? '' })}
         onClose={() => setEditTarget(null)}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <Field label="Source type">
+          <Field label={t('bindings.sourceType', 'Quelltyp')}>
             <Select
               data={registry.map((r) => ({ value: r.type, label: r.type }))}
               value={editType}
@@ -1183,7 +1189,7 @@ function BindingsTab() {
               }}
             />
           </Field>
-          <Field label="Source" hint="Select a source record">
+          <Field label={t('bindings.source', 'Quelle')} hint={t('bindings.sourceHint', 'Wähle einen Quelldatensatz')}>
             {editSourcesLoading ? (
               <div
                 style={{
@@ -1192,7 +1198,7 @@ function BindingsTab() {
                   padding: '8px 0',
                 }}
               >
-                Loading sources...
+                {t('bindings.loadingSources', 'Quellen werden geladen …')}
               </div>
             ) : editSources.length === 0 ? (
               <div
@@ -1247,10 +1253,10 @@ function BindingsTab() {
                 ))}
             </div>
           )}
-          <Field label="Attribute">
+          <Field label={t('bindings.attribute', 'Attribut')}>
             <Select
               data={[
-                { value: '', label: 'Select attribute...' },
+                { value: '', label: t('bindings.selectAttribute', 'Attribut wählen …') },
                 ...editAllAttributes.map((a) => ({
                   value: a.name,
                   label: `${a.label} (${a.name})`,
@@ -1285,10 +1291,10 @@ function BindingsTab() {
               )}
             </div>
           )}
-          <Field label="Target key">
+          <Field label={t('bindings.targetKey', 'Zielschlüssel')}>
             <Select
               data={[
-                { value: '', label: 'Select key...' },
+                { value: '', label: t('bindings.selectKey', 'Schlüssel wählen …') },
                 ...keys.map((k) => ({
                   value: String(k.id),
                   label: `${k.key}${k.label ? ` — ${k.label}` : ''}`,
@@ -1299,7 +1305,7 @@ function BindingsTab() {
               searchable
             />
           </Field>
-          <Field label="Validator">
+          <Field label={t('bindings.validator', 'Prüfung')}>
             <Select
               data={validators.map((v) => ({ value: v, label: v }))}
               value={editValidator}
@@ -1321,7 +1327,7 @@ function BindingsTab() {
               onChange={(e) => setEditProtected(e.target.checked)}
               style={{ width: 16, height: 16, accentColor: '#7441e0' }}
             />
-            <span style={{ fontWeight: 600 }}>Protected</span>
+            <span style={{ fontWeight: 600 }}>{t('bindings.protected', 'Geschützt')}</span>
             <span
               style={{
                 color: '#5e5873',
@@ -1340,10 +1346,10 @@ function BindingsTab() {
             }}
           >
             <Button variant="subtle" onClick={() => setEditTarget(null)}>
-              Cancel
+              {t('common.cancel', 'Abbrechen')}
             </Button>
             <Button variant="filled" onClick={handleEdit} disabled={editSaving}>
-              {editSaving ? 'Saving...' : 'Save'}
+              {editSaving ? t('common.saving', 'Wird gespeichert …') : t('common.save', 'Speichern')}
             </Button>
           </div>
         </div>
@@ -1351,10 +1357,10 @@ function BindingsTab() {
 
       <ConfirmModal
         open={deleteTarget !== null}
-        title="Delete binding"
+        title={t('bindings.deleteBinding', 'Verknüpfung löschen')}
         body={
           deleteTarget
-            ? `Delete binding #${deleteTarget.id} (${deleteTarget.type}.${deleteTarget.source_attribute} -> ${deleteTarget.key_name})?`
+            ? t('bindings.deleteBody', 'Verknüpfung #{{id}} ({{source}} → {{key}}) löschen?', { id: deleteTarget.id, source: `${deleteTarget.type}.${deleteTarget.source_attribute}`, key: deleteTarget.key_name })
             : ''
         }
         onConfirm={() => {

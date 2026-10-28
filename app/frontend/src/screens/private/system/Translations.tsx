@@ -334,11 +334,11 @@ export function TranslationsScreen() {
       })
       notify(
         'success',
-        t('translations.copyDefaults.done', 'Defaults copied'),
+        t('translations.copyDefaults.done', 'Standardwerte übernommen'),
         `${result.filled} ${t('translations.entries')}`,
       )
     } catch {
-      notify('error', t('translations.copyDefaults.failed', 'Copy failed'))
+      notify('error', t('translations.copyDefaults.failed', 'Übernehmen fehlgeschlagen'))
     }
   }
 
@@ -372,7 +372,6 @@ export function TranslationsScreen() {
   return (
     <div>
       <PageHead
-        eyebrow={t('shell.sections.system')}
         title={t('translations.title')}
         desc={t('translations.description')}
         actions={
@@ -477,7 +476,7 @@ export function TranslationsScreen() {
             {canWrite && (
               <Button variant="default" onClick={() => setShowDupModal(true)}>
                 <IconCopy size={16} />
-                {t('translations.addLanguage')}
+                {t('translations.addLanguageLabel')}
               </Button>
             )}
             {canWrite && (
@@ -486,17 +485,17 @@ export function TranslationsScreen() {
                 onClick={handleCopyDefaults}
                 title={t(
                   'translations.copyDefaults.hint',
-                  'Fill empty values from defaults',
+                  'Leere Werte mit den Standardwerten füllen',
                 )}
               >
                 <IconArrowBackUp size={16} />
-                {t('translations.copyDefaults', 'Copy defaults')}
+                {t('translations.copyDefaultsLabel', 'Standardwerte übernehmen')}
               </Button>
             )}
             {canWrite && (
               <Button variant="filled" onClick={() => setShowAddModal(true)}>
                 <IconPlus size={16} />
-                {t('translations.addKey')}
+                {t('translations.addKeyLabel')}
               </Button>
             )}
           </div>
@@ -509,7 +508,7 @@ export function TranslationsScreen() {
           compact
           message={t(
             'translations.loadingLanguages',
-            'Sprache werden geladen…',
+            'Sprachen werden geladen …',
           )}
         />
       ) : (
@@ -576,7 +575,7 @@ export function TranslationsScreen() {
       {activeLocale && loading && entries.length === 0 ? (
         <LoadingSpinner
           compact
-          message={t('translations.loading', 'Übersetzungen werden geladen…')}
+          message={t('translations.loading', 'Übersetzungen werden geladen …')}
         />
       ) : (
         <KVTable<TranslationEntry>
@@ -760,7 +759,7 @@ export function TranslationsScreen() {
           extraColumns={[
             {
               key: 'default',
-              header: t('translations.default', 'Default'),
+              header: t('translations.default', 'Standard'),
               width: 200,
               render: (entry) => (
                 <span
@@ -904,9 +903,10 @@ export function TranslationsScreen() {
           deleteTarget?.aliasCount
             ? t(
                 'translations.deleteCascade.warning',
-                `${deleteTarget.aliasCount} alias(es) will also be deleted.`,
+                '{{count}} Verknüpfungen werden ebenfalls gelöscht.',
+                { count: deleteTarget.aliasCount },
               )
-            : t('translations.deleteConfirm', 'Delete this translation?')
+            : t('translations.deleteConfirm', 'Diese Übersetzung löschen?')
         }
         onConfirm={confirmDelete}
       />
@@ -936,7 +936,7 @@ function AddKeyModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={t('translations.addKey')}
+      title={t('translations.addKeyLabel')}
       subtitle={t('translations.addKey.desc')}
       footer={
         <>
@@ -1008,7 +1008,7 @@ function DuplicateLocaleModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={t('translations.addLanguage')}
+      title={t('translations.addLanguageLabel')}
       subtitle={t('translations.addLanguage.desc')}
       footer={
         <>
@@ -1069,7 +1069,7 @@ function DuplicateLocaleModal({
           checked={copyValues}
           onChange={(e) => setCopyValues(e.target.checked)}
         />
-        {t('translations.copyValues')}
+        {t('translations.copyValuesLabel')}
       </label>
       <p
         style={{

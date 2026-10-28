@@ -6,11 +6,12 @@ import { z } from 'zod'
 import { IconReplaceUser } from '@tabler/icons-react'
 import { impersonateTenant } from '@/api/tenants'
 import { useAdmin } from '@/context/AdminContext'
+import { tr } from '@/lang'
 
 const TENANT_APP_URL = import.meta.env.VITE_TENANT_APP_URL ?? 'https://app.hubra.club'
 
 const schema = z.object({
-  reason: z.string().min(1, 'Reason is required'),
+  reason: z.string().min(1, tr('Bitte gib einen Grund an', 'Reason is required')),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -38,17 +39,17 @@ export function ImpersonateModal({
     setLoading(true)
     try {
       await impersonateTenant(tenantId, { reason: values.reason.trim() })
-      notify('success', 'Impersonation started', `Redirecting to tenant app...`)
+      notify('success', tr('Stellvertretung gestartet', 'Impersonation started'), tr('Du wirst zum Verein weitergeleitet …', 'Redirecting to the club…'))
       window.location.assign(`${TENANT_APP_URL}/app/dashboard`)
     } catch (err) {
-      notify('error', 'Impersonation failed', err instanceof Error ? err.message : undefined)
+      notify('error', tr('Stellvertretung fehlgeschlagen', 'Impersonation failed'), err instanceof Error ? err.message : undefined)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Modal opened={opened} onClose={onClose} title="Impersonate Tenant User" size="md">
+    <Modal opened={opened} onClose={onClose} title={tr('Verein als Admin öffnen', 'Open the club as admin')} size="md">
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack gap={16}>
           <Alert
@@ -56,25 +57,30 @@ export function ImpersonateModal({
             color="orange"
             variant="light"
           >
-            You will be redirected to the tenant app at <strong>{tenantName}</strong> acting as the tenant admin.
-            All actions will be logged with your impersonation context.
+            {tr(
+              `Du öffnest «${tenantName}» mit Admin-Rechten. Alles, was du dort tust, wird mit deinem Namen protokolliert.`,
+              `You open "${tenantName}" with admin rights. Everything you do there is logged under your name.`,
+            )}
           </Alert>
           <TextInput
-            label="Reason / Justification"
+            label={tr('Grund', 'Reason')}
             required
             {...form.getInputProps('reason')}
-            placeholder="Support ticket #12345"
-            description="Required for audit trail. This is logged permanently."
+            placeholder={tr('Support-Ticket #12345', 'Support ticket #12345')}
+            description={tr('Pflichtfeld für das Audit-Log. Wird dauerhaft gespeichert.', 'Required for the audit log. It is stored permanently.')}
           />
           <Text size="xs" c="dimmed">
-            Session timeout: 30 minutes. Restricted actions (delete tenant, change plan) are blocked during impersonation.
+            {tr(
+              'Die Sitzung endet nach 30 Minuten. Verein löschen und Plan ändern sind währenddessen gesperrt.',
+              'The session ends after 30 minutes. Deleting the club and changing the plan are blocked meanwhile.',
+            )}
           </Text>
           <Group justify="flex-end">
             <Button variant="default" onClick={onClose}>
-              Cancel
+              {tr('Abbrechen', 'Cancel')}
             </Button>
             <Button type="submit" loading={loading}>
-              Start Impersonation
+              {tr('Als Admin öffnen', 'Open as admin')}
             </Button>
           </Group>
         </Stack>

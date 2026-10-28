@@ -48,13 +48,14 @@ import {
   type StagedPlugin,
   type UpdateMode,
 } from '@/api/plugins'
+import { tr } from '@/lang'
 
-const TRUST: Record<string, { color: string; label: string }> = {
-  bundled: { color: 'green', label: 'Shipped with Hubra' },
-  official: { color: 'green', label: 'Official' },
-  community: { color: 'blue', label: 'Community' },
-  unsigned: { color: 'orange', label: 'Unsigned' },
-  invalid: { color: 'red', label: 'Invalid signature' },
+const TRUST: Record<string, { color: string; label: () => string }> = {
+  bundled: { color: 'green', label: () => tr('Mit Hubra geliefert', 'Shipped with Hubra') },
+  official: { color: 'green', label: () => tr('Offiziell', 'Official') },
+  community: { color: 'acc', label: () => tr('Community', 'Community') },
+  unsigned: { color: 'orange', label: () => tr('Nicht signiert', 'Unsigned') },
+  invalid: { color: 'red', label: () => tr('Ungültige Signatur', 'Invalid signature') },
 }
 
 function TrustBadge({ status }: { status: string }) {
@@ -62,7 +63,7 @@ function TrustBadge({ status }: { status: string }) {
   if (!t) return null
   return (
     <Badge size="xs" variant="light" color={t.color}>
-      {t.label}
+      {t.label()}
     </Badge>
   )
 }
@@ -83,9 +84,9 @@ export function MarketplaceTab() {
         value={view}
         onChange={setView}
         data={[
-          { value: 'plugins', label: 'Plugins' },
-          { value: 'repositories', label: 'Repositories' },
-          { value: 'keys', label: 'Signing keys' },
+          { value: 'plugins', label: tr('Plugins', 'Plugins') },
+          { value: 'repositories', label: tr('Quellen', 'Repositories') },
+          { value: 'keys', label: tr('Signaturschlüssel', 'Signing keys') },
         ]}
       />
       {view === 'plugins' && <PluginsView />}
@@ -121,7 +122,7 @@ function PluginsView() {
       const status = await getPluginStatus()
       if (waitFor !== null && status.generation >= waitFor) {
         setWaitFor(null)
-        notify('success', 'Plugins reloaded', 'The change is live.')
+        notify('success', tr('Plugins neu geladen', 'Plugins reloaded'), tr('Die Änderung ist aktiv.', 'The change is live.'))
         queryClient.invalidateQueries({ queryKey: ['marketplace'] })
       }
       return status
@@ -141,7 +142,7 @@ function PluginsView() {
     try {
       await fn()
     } catch (err) {
-      notify('error', 'Plugins', errorText(err))
+      notify('error', tr('Plugins', 'Plugins'), errorText(err))
     } finally {
       setBusy(null)
     }
@@ -153,7 +154,7 @@ function PluginsView() {
         version,
         repositoryId: version || !p.bundled ? p.repositoryId : undefined,
       })
-      if (out.installed) changed(out.installed, 'Installed')
+      if (out.installed) changed(out.installed, tr('Installiert', 'Installed'))
       if (out.staged) setStaged(out.staged)
     })
 
@@ -174,7 +175,7 @@ function PluginsView() {
     <Stack gap="md">
       {waitFor !== null && (
         <Alert color="blue" variant="light">
-          Servers are loading the change. This takes up to a minute.
+          {tr('Die Server laden die Änderung. Das dauert bis zu einer Minute.', 'Servers are loading the change. This takes up to a minute.')}
         </Alert>
       )}
       {data?.errors.map((e) => (
@@ -185,7 +186,7 @@ function PluginsView() {
       <Group justify="space-between" wrap="wrap">
         <Group gap="sm">
           <TextInput
-            placeholder="Search"
+            placeholder={tr('Suchen …', 'Search…')}
             value={search}
             onChange={(e) => setSearch(e.currentTarget.value)}
           />
@@ -193,16 +194,16 @@ function PluginsView() {
             value={filter}
             onChange={setFilter}
             data={[
-              { value: 'all', label: 'All' },
-              { value: 'installed', label: 'Installed' },
-              { value: 'updates', label: 'Updates' },
+              { value: 'all', label: tr('Alle', 'All') },
+              { value: 'installed', label: tr('Installiert', 'Installed') },
+              { value: 'updates', label: tr('Updates', 'Updates') },
             ]}
           />
         </Group>
         <Group gap="sm">
           <Select
             w={210}
-            aria-label="Updates"
+            aria-label={tr('Updates', 'Updates')}
             value={data?.updateMode ?? 'notify'}
             onChange={(v) =>
               v &&
@@ -212,9 +213,9 @@ function PluginsView() {
               })
             }
             data={[
-              { value: 'notify', label: 'Updates: tell me' },
-              { value: 'official', label: 'Updates: install official' },
-              { value: 'off', label: 'Updates: don’t check' },
+              { value: 'notify', label: tr('Updates: nur melden', 'Updates: tell me') },
+              { value: 'official', label: tr('Updates: offizielle installieren', 'Updates: install official') },
+              { value: 'off', label: tr('Updates: nicht prüfen', 'Updates: don’t check') },
             ]}
           />
           <Button
@@ -228,22 +229,22 @@ function PluginsView() {
               })
             }
           >
-            Check for updates
+            {tr('Nach Updates suchen', 'Check for updates')}
           </Button>
           <FileButton onChange={upload} accept=".zip,application/zip">
             {(props) => (
               <Button {...props} leftSection={<IconUpload size={16} />} loading={busy === 'upload'}>
-                Upload plugin
+                {tr('Plugin hochladen', 'Upload plugin')}
               </Button>
             )}
           </FileButton>
         </Group>
       </Group>
 
-      <Paper withBorder radius="lg">
+      <Paper withBorder style={{ overflow: 'hidden' }}>
         {isLoading ? (
           <Text p="lg" size="sm" c="dimmed">
-            Loading…
+            {tr('Wird geladen …', 'Loading…')}
           </Text>
         ) : error ? (
           <Text p="lg" size="sm" c="red">
@@ -251,7 +252,7 @@ function PluginsView() {
           </Text>
         ) : plugins.length === 0 ? (
           <Text p="lg" size="sm" c="dimmed">
-            No plugins match.
+            {tr('Keine passenden Plugins.', 'No plugins match.')}
           </Text>
         ) : (
           <Table verticalSpacing="sm" horizontalSpacing="md">
@@ -264,7 +265,7 @@ function PluginsView() {
                   onDetails={() => setDetails(p)}
                   onInstall={() => install(p)}
                   onRollback={() =>
-                    run(p.id, async () => changed(await rollbackPlugin(p.id), 'Rolled back'))
+                    run(p.id, async () => changed(await rollbackPlugin(p.id), tr('Zurückgesetzt', 'Rolled back')))
                   }
                   onHold={(version) =>
                     run(p.id, async () => {
@@ -296,7 +297,7 @@ function PluginsView() {
           onClose={() => setStaged(null)}
           onInstalled={(out) => {
             setStaged(null)
-            changed(out, 'Installed')
+            changed(out, tr('Installiert', 'Installed'))
           }}
         />
       )}
@@ -306,7 +307,7 @@ function PluginsView() {
           onClose={() => setRemoving(null)}
           onRemoved={(out) => {
             setRemoving(null)
-            changed(out, 'Removed')
+            changed(out, tr('Entfernt', 'Removed'))
           }}
         />
       )}
@@ -345,22 +346,22 @@ function PluginRow({
           <TrustBadge status={p.trust?.status || (p.officialSigned ? 'official' : '')} />
           {p.installed && !p.error && (
             <Badge size="xs" variant="light" color="gray">
-              Installed
+              {tr('Installiert', 'Installed')}
             </Badge>
           )}
           {p.update && (
-            <Badge size="xs" color="yellow">
-              Update {p.repoVersion}
+            <Badge size="xs" color="gold" c="#1a1625">
+              {tr('Update', 'Update')} {p.repoVersion}
             </Badge>
           )}
           {p.held && (
             <Badge size="xs" variant="outline" color="gray">
-              Held at {p.held}
+              {tr('Gehalten bei', 'Held at')} {p.held}
             </Badge>
           )}
           {p.withdrawn && (
             <Badge size="xs" color="red">
-              Withdrawn
+              {tr('Zurückgezogen', 'Withdrawn')}
             </Badge>
           )}
         </Group>
@@ -370,17 +371,17 @@ function PluginRow({
         </Text>
         {p.withdrawn && (
           <Text size="xs" c="red">
-            The publisher withdrew this version: {p.withdrawn}
+            {tr('Der Herausgeber hat diese Version zurückgezogen', 'The publisher withdrew this version')}: {p.withdrawn}
           </Text>
         )}
         {p.error && p.installed && (
           <Text size="xs" c="red">
-            Not loaded: {p.error}
+            {tr('Nicht geladen', 'Not loaded')}: {p.error}
           </Text>
         )}
         {!p.compatible && !p.installed && (
           <Text size="xs" c="orange">
-            {p.incompatibleReason || 'Needs another Hubra version'}
+            {p.incompatibleReason || tr('Braucht eine andere Hubra-Version', 'Needs another Hubra version')}
           </Text>
         )}
       </Table.Td>
@@ -388,37 +389,37 @@ function PluginRow({
         <Group gap={6} wrap="nowrap" justify="flex-end">
           {!p.installed && (
             <Button size="xs" loading={busy} disabled={!p.compatible} onClick={onInstall}>
-              Install
+              {tr('Installieren', 'Install')}
             </Button>
           )}
           {p.update && (
             <Button size="xs" loading={busy} onClick={onInstall}>
-              Update
+              {tr('Aktualisieren', 'Update')}
             </Button>
           )}
           {p.installed && (
             <Menu position="bottom-end" withinPortal>
               <Menu.Target>
-                <Button size="xs" variant="subtle" px={6} aria-label={`More for ${p.name}`}>
+                <Button size="xs" variant="subtle" px={6} aria-label={tr(`Mehr zu ${p.name}`, `More for ${p.name}`)}>
                   <IconDots size={16} />
                 </Button>
               </Menu.Target>
               <Menu.Dropdown>
-                <Menu.Item onClick={onDetails}>Details and versions</Menu.Item>
+                <Menu.Item onClick={onDetails}>{tr('Details und Versionen', 'Details and versions')}</Menu.Item>
                 {p.previous && (
-                  <Menu.Item onClick={onRollback}>Roll back to {p.previous}</Menu.Item>
+                  <Menu.Item onClick={onRollback}>{tr('Zurück auf', 'Roll back to')} {p.previous}</Menu.Item>
                 )}
                 {p.repositoryId !== null &&
                   (p.held ? (
-                    <Menu.Item onClick={() => onHold(null)}>Allow updates again</Menu.Item>
+                    <Menu.Item onClick={() => onHold(null)}>{tr('Updates wieder erlauben', 'Allow updates again')}</Menu.Item>
                   ) : (
                     <Menu.Item onClick={() => onHold(p.installedVersion)}>
-                      Hold at {p.installedVersion}
+                      {tr(`Bei ${p.installedVersion} halten`, `Hold at ${p.installedVersion}`)}
                     </Menu.Item>
                   ))}
                 <Menu.Divider />
                 <Menu.Item color="red" onClick={onRemove} disabled={p.autoinstalled}>
-                  {p.autoinstalled ? 'Installed by the server’s settings' : 'Uninstall'}
+                  {p.autoinstalled ? tr('Von den Server-Einstellungen installiert', 'Installed by the server’s settings') : tr('Deinstallieren', 'Uninstall')}
                 </Menu.Item>
               </Menu.Dropdown>
             </Menu>
@@ -452,17 +453,17 @@ function DetailsModal({
         </Group>
         <Table fz="sm" withRowBorders={false} verticalSpacing={2}>
           <Table.Tbody>
-            <Row label="Id" value={<Code>{p.id}</Code>} />
-            <Row label="Author" value={p.author} />
+            <Row label={tr('ID', 'Id')} value={<Code>{p.id}</Code>} />
+            <Row label={tr('Autor', 'Author')} value={p.author} />
             {p.trust?.signer && (
-              <Row label="Signed by" value={`${p.trust.signer} (${p.trust.key_id})`} />
+              <Row label={tr('Signiert von', 'Signed by')} value={`${p.trust.signer} (${p.trust.key_id})`} />
             )}
-            {p.trust?.detail && <Row label="Signature" value={p.trust.detail} />}
-            <Row label="Source" value={p.repository || p.source} />
-            {p.license && <Row label="License" value={p.license} />}
+            {p.trust?.detail && <Row label={tr('Signatur', 'Signature')} value={p.trust.detail} />}
+            <Row label={tr('Quelle', 'Source')} value={p.repository || p.source} />
+            {p.license && <Row label={tr('Lizenz', 'License')} value={p.license} />}
             {p.homepage && (
               <Row
-                label="Homepage"
+                label={tr('Website', 'Homepage')}
                 value={
                   <Anchor href={p.homepage} target="_blank" rel="noopener noreferrer" size="sm">
                     {p.homepage}
@@ -470,14 +471,14 @@ function DetailsModal({
                 }
               />
             )}
-            {p.modules.length > 0 && <Row label="Modules" value={p.modules.join(', ')} />}
-            {p.requires.length > 0 && <Row label="Needs" value={p.requires.join(', ')} />}
+            {p.modules.length > 0 && <Row label={tr('Module', 'Modules')} value={p.modules.join(', ')} />}
+            {p.requires.length > 0 && <Row label={tr('Braucht', 'Needs')} value={p.requires.join(', ')} />}
           </Table.Tbody>
         </Table>
         {p.changes && (
           <>
             <Text fw={600} size="sm">
-              {p.installed ? 'Changes since your version' : 'Changes'}
+              {p.installed ? tr('Änderungen seit deiner Version', 'Changes since your version') : tr('Änderungen', 'Changes')}
             </Text>
             <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
               {p.changes}
@@ -487,7 +488,7 @@ function DetailsModal({
         {p.versions.length > 0 && (
           <>
             <Text fw={600} size="sm">
-              Versions
+              {tr('Versionen', 'Versions')}
             </Text>
             <Table fz="sm" verticalSpacing={4}>
               <Table.Tbody>
@@ -497,17 +498,17 @@ function DetailsModal({
                       {v.version}
                       {v.version === p.installedVersion && (
                         <Badge ml={6} size="xs" variant="light" color="gray">
-                          Installed
+                          {tr('Installiert', 'Installed')}
                         </Badge>
                       )}
                     </Table.Td>
                     <Table.Td c="dimmed">{v.date}</Table.Td>
                     <Table.Td c={v.yanked ? 'red' : 'dimmed'}>
                       {v.yanked
-                        ? `Withdrawn: ${v.yanked}`
+                        ? `${tr('Zurückgezogen', 'Withdrawn')}: ${v.yanked}`
                         : v.compatible
                           ? ''
-                          : `Needs Hubra ${v.hubra}`}
+                          : `${tr('Braucht Hubra', 'Needs Hubra')} ${v.hubra}`}
                     </Table.Td>
                     <Table.Td w={1}>
                       {v.version !== p.installedVersion && !v.yanked && v.compatible && (
@@ -516,7 +517,7 @@ function DetailsModal({
                           variant="default"
                           onClick={() => onInstall(v.version)}
                         >
-                          Install
+                          {tr('Installieren', 'Install')}
                         </Button>
                       )}
                     </Table.Td>
@@ -571,14 +572,14 @@ function StagedModal({
   }
 
   return (
-    <Modal opened onClose={cancel} title={`Install ${s.name} ${s.version}?`} centered>
+    <Modal opened onClose={cancel} title={tr(`${s.name} ${s.version} installieren?`, `Install ${s.name} ${s.version}?`)} centered>
       <Stack gap="sm">
         <Text size="sm">{s.description}</Text>
         <Group gap={6}>
           <TrustBadge status={s.trust.status} />
           {s.installedVersion && (
             <Badge size="xs" variant="light" color="gray">
-              Replaces {s.installedVersion}
+              {tr('Ersetzt', 'Replaces')} {s.installedVersion}
             </Badge>
           )}
         </Group>
@@ -587,25 +588,31 @@ function StagedModal({
         </Text>
         {s.migrations && (
           <Text size="sm">
-            It adds tables to the database of every club. Uninstalling keeps them unless you choose
-            otherwise.
+            {tr(
+              'Das Plugin legt Tabellen in der Datenbank jedes Vereins an. Beim Deinstallieren bleiben sie erhalten, ausser du wählst etwas anderes.',
+              'It adds tables to the database of every club. Uninstalling keeps them unless you choose otherwise.',
+            )}
           </Text>
         )}
         {s.trust.status === 'invalid' && (
           <Alert color="red" variant="light">
-            The signature doesn’t match the files. Someone may have changed this archive; it can’t
-            be installed.
+            {tr(
+              'Die Signatur passt nicht zu den Dateien. Jemand hat das Archiv vielleicht verändert, es kann nicht installiert werden.',
+              'The signature doesn’t match the files. Someone may have changed this archive; it can’t be installed.',
+            )}
           </Alert>
         )}
         {s.needsConfirmation && (
           <Alert color="orange" variant="light">
             <Stack gap="xs">
               <Text size="sm">
-                Nobody you trust signed this plugin. It will run with full access to every club’s
-                data. Only install it if you know where it came from.
+                {tr(
+                  'Niemand, dem du vertraust, hat dieses Plugin signiert. Es läuft mit vollem Zugriff auf die Daten aller Vereine. Installiere es nur, wenn du weisst, woher es kommt.',
+                  'Nobody you trust signed this plugin. It will run with full access to every club’s data. Only install it if you know where it came from.',
+                )}
               </Text>
               <Checkbox
-                label="I trust this code"
+                label={tr('Ich vertraue diesem Code', 'I trust this code')}
                 checked={accept}
                 onChange={(e) => setAccept(e.currentTarget.checked)}
               />
@@ -614,14 +621,14 @@ function StagedModal({
         )}
         <Group justify="flex-end">
           <Button variant="default" onClick={cancel}>
-            Cancel
+            {tr('Abbrechen', 'Cancel')}
           </Button>
           <Button
             onClick={confirm}
             loading={busy}
             disabled={!s.installable || (s.needsConfirmation && !accept)}
           >
-            Install
+            {tr('Installieren', 'Install')}
           </Button>
         </Group>
       </Stack>
@@ -652,23 +659,26 @@ function UninstallModal({
     }
   }
   return (
-    <Modal opened onClose={onClose} title={`Uninstall ${p.name}?`} centered>
+    <Modal opened onClose={onClose} title={tr(`${p.name} deinstallieren?`, `Uninstall ${p.name}?`)} centered>
       <Stack gap="sm">
         <Text size="sm">
-          Every club loses {p.name}. Its data stays, so installing it again brings everything back.
+          {tr(
+            `Alle Vereine verlieren ${p.name}. Die Daten bleiben erhalten, eine neue Installation bringt alles zurück.`,
+            `Every club loses ${p.name}. Its data stays, so installing it again brings everything back.`,
+          )}
         </Text>
         <Checkbox
           color="red"
-          label="Also delete its data in every club (can’t be undone)"
+          label={tr('Auch die Daten in allen Vereinen löschen (kann nicht rückgängig gemacht werden)', 'Also delete its data in every club (can’t be undone)')}
           checked={deleteData}
           onChange={(e) => setDeleteData(e.currentTarget.checked)}
         />
         <Group justify="flex-end">
           <Button variant="default" onClick={onClose}>
-            Cancel
+            {tr('Abbrechen', 'Cancel')}
           </Button>
           <Button color="red" onClick={remove} loading={busy}>
-            Uninstall
+            {tr('Deinstallieren', 'Uninstall')}
           </Button>
         </Group>
       </Stack>
@@ -696,7 +706,7 @@ function RepositoriesView() {
     try {
       await fn()
     } catch (err) {
-      notify('error', 'Repositories', errorText(err))
+      notify('error', tr('Quellen', 'Repositories'), errorText(err))
     } finally {
       setBusy(false)
     }
@@ -704,13 +714,15 @@ function RepositoriesView() {
 
   return (
     <Stack gap="md">
-      <Paper withBorder radius="lg" p="lg">
+      <Paper withBorder p="lg">
         <Text fw={600} size="sm" mb={4}>
-          Add a repository
+          {tr('Quelle hinzufügen', 'Add a repository')}
         </Text>
         <Text size="xs" c="dimmed" mb="sm">
-          The address of a signed index.json. Its signing key is pinned when you add it, so a
-          changed key is refused later.
+          {tr(
+            'Die Adresse einer signierten index.json. Ihr Schlüssel wird beim Hinzufügen festgehalten, ein geänderter Schlüssel wird später abgelehnt.',
+            'The address of a signed index.json. Its signing key is pinned when you add it, so a changed key is refused later.',
+          )}
         </Text>
         <Group align="flex-end" gap="sm">
           <TextInput
@@ -727,18 +739,18 @@ function RepositoriesView() {
             loading={busy && !preview}
             onClick={() => act(async () => setPreview(await previewRepository(url.trim())))}
           >
-            Look up
+            {tr('Prüfen', 'Look up')}
           </Button>
         </Group>
         {preview && (
           <Stack gap="xs" mt="md">
             <Text size="sm">
-              <b>{preview.name}</b>: {preview.plugins} plugin(s), signed with key{' '}
+              <b>{preview.name}</b>: {preview.plugins} {tr('Plugin(s), signiert mit Schlüssel', 'plugin(s), signed with key')}{' '}
               <Code>{preview.keyId}</Code>
             </Text>
             <TextInput
-              label="Type the key id the publisher gave you"
-              description="This is how you know the index really comes from them."
+              label={tr('Gib die Schlüssel-ID ein, die du vom Herausgeber erhalten hast', 'Type the key id the publisher gave you')}
+              description={tr('So weisst du, dass die Liste wirklich von ihm stammt.', 'This is how you know the index really comes from them.')}
               value={keyId}
               onChange={(e) => setKeyId(e.currentTarget.value)}
             />
@@ -756,19 +768,19 @@ function RepositoriesView() {
                   })
                 }
               >
-                Add repository
+                {tr('Quelle hinzufügen', 'Add repository')}
               </Button>
             </Group>
           </Stack>
         )}
       </Paper>
-      <Paper withBorder radius="lg">
+      <Paper withBorder style={{ overflow: 'hidden' }}>
         <Table verticalSpacing="sm" horizontalSpacing="md">
           <Table.Tbody>
             {repos.length === 0 && (
               <Table.Tr>
                 <Table.Td c="dimmed" fz="sm">
-                  No repositories yet.
+                  {tr('Noch keine Quellen.', 'No repositories yet.')}
                 </Table.Td>
               </Table.Tr>
             )}
@@ -781,12 +793,12 @@ function RepositoriesView() {
                     </Text>
                     {r.official && (
                       <Badge size="xs" variant="light" color="green">
-                        Official
+                        {tr('Offiziell', 'Official')}
                       </Badge>
                     )}
                   </Group>
                   <Text size="xs" c="dimmed">
-                    {r.url} · key {r.keyId}
+                    {r.url} · {tr('Schlüssel', 'key')} {r.keyId}
                   </Text>
                   {r.error && (
                     <Text size="xs" c="red">
@@ -799,7 +811,7 @@ function RepositoriesView() {
                     <Switch
                       size="sm"
                       checked={r.enabled}
-                      aria-label={`Use ${r.name}`}
+                      aria-label={tr(`${r.name} verwenden`, `Use ${r.name}`)}
                       onChange={(e) => {
                         const on = e.currentTarget.checked
                         act(async () => {
@@ -819,7 +831,7 @@ function RepositoriesView() {
                         })
                       }
                     >
-                      Remove
+                      {tr('Entfernen', 'Remove')}
                     </Button>
                   </Group>
                 </Table.Td>
@@ -848,7 +860,7 @@ function KeysView() {
       await fn()
       await queryClient.invalidateQueries({ queryKey: ['plugin-keys'] })
     } catch (err) {
-      notify('error', 'Signing keys', errorText(err))
+      notify('error', tr('Signaturschlüssel', 'Signing keys'), errorText(err))
     } finally {
       setBusy(false)
     }
@@ -856,18 +868,22 @@ function KeysView() {
 
   return (
     <Stack gap="md">
-      <Paper withBorder radius="lg" p="lg">
+      <Paper withBorder p="lg">
         <Text fw={600} size="sm" mb={4}>
-          Trust an author
+          {tr('Einem Autor vertrauen', 'Trust an author')}
         </Text>
         <Text size="xs" c="dimmed" mb="sm">
-          Plugins uploaded with a signature from a key here install as Community. Authors create a
-          key with <Code>flask plugins keygen</Code> and send you the .pub file.
+          {tr(
+            'Plugins mit einer Signatur von einem dieser Schlüssel werden als Community installiert. Autoren erstellen einen Schlüssel mit',
+            'Plugins uploaded with a signature from a key here install as Community. Authors create a key with',
+          )}{' '}
+          <Code>flask plugins keygen</Code>{' '}
+          {tr('und schicken dir die .pub-Datei.', 'and send you the .pub file.')}
         </Text>
         <Stack gap="sm">
-          <TextInput label="Name" value={name} onChange={(e) => setName(e.currentTarget.value)} />
+          <TextInput label={tr('Name', 'Name')} value={name} onChange={(e) => setName(e.currentTarget.value)} />
           <Textarea
-            label="Public key"
+            label={tr('Öffentlicher Schlüssel', 'Public key')}
             placeholder="-----BEGIN PUBLIC KEY-----"
             autosize
             minRows={3}
@@ -887,12 +903,12 @@ function KeysView() {
                 })
               }
             >
-              Trust key
+              {tr('Schlüssel vertrauen', 'Trust key')}
             </Button>
           </Group>
         </Stack>
       </Paper>
-      <Paper withBorder radius="lg">
+      <Paper withBorder style={{ overflow: 'hidden' }}>
         <Table verticalSpacing="sm" horizontalSpacing="md">
           <Table.Tbody>
             {keys.map((k) => (
@@ -904,13 +920,13 @@ function KeysView() {
                     </Text>
                     {k.official && (
                       <Badge size="xs" variant="light" color="green">
-                        Official
+                        {tr('Offiziell', 'Official')}
                       </Badge>
                     )}
                   </Group>
                   <Text size="xs" c="dimmed">
                     {k.keyId}
-                    {k.addedBy ? ` · added by ${k.addedBy}` : ''}
+                    {k.addedBy ? ` · ${tr('hinzugefügt von', 'added by')} ${k.addedBy}` : ''}
                   </Text>
                 </Table.Td>
                 <Table.Td w={1}>
@@ -921,7 +937,7 @@ function KeysView() {
                       color="red"
                       onClick={() => act(() => deleteTrustedKey(k.id!))}
                     >
-                      Remove
+                      {tr('Entfernen', 'Remove')}
                     </Button>
                   )}
                 </Table.Td>

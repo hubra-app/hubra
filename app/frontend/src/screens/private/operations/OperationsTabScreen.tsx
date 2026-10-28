@@ -24,7 +24,7 @@ export function OperationsTabScreen() {
 
   return (
     <div>
-      <PageHead title={t('shell.nav.operations', 'Operations')} />
+      <PageHead title={t('shell.nav.operations', 'Vereinsleben')} />
       <Tabs
         tabs={tabs}
         activeTab={tab}

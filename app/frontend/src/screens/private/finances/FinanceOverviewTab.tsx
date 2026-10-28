@@ -4,13 +4,13 @@ import { useT } from '@/locales/i18n'
 import { useNav, useData } from '@/context/AppContext'
 import { StatTile } from '@/components/ui'
 import { getFinanceOverview, listTransactions } from '@/api/finance'
-import { formatCHF } from '@/format'
+import { formatCHF, formatCHFWhole } from '@/format'
 
 /* ── Finance Overview ────────────────────────── */
 export function FinanceOverviewTab() {
   const { go } = useNav()
   const { invoices } = useData()
-  const { t } = useT()
+  const { t, i18n } = useT()
   const { data: overview } = useQuery({
     queryKey: ['finance-overview'],
     queryFn: () => getFinanceOverview(),
@@ -39,46 +39,38 @@ export function FinanceOverviewTab() {
         <StatTile
           label={t('finance.balance', 'Saldo')}
           value={
-            overview
-              ? `CHF ${overview.balance.toLocaleString('de-CH', {
-                  minimumFractionDigits: 0,
-                })}`
-              : '—'
+            overview ? formatCHFWhole(overview.balance) : '—'
           }
-          sub={t('finance.asOfToday', 'Hit')}
+          sub={t('finance.asOfToday', 'Stand heute')}
         />
         <StatTile
-          label={t('finance.incomeMtd', 'Ihname dä Mont')}
+          label={t('finance.incomeMtd', 'Einnahmen diesen Monat')}
           value={
-            overview ? `+CHF ${(overview.incomeMTD / 1000).toFixed(1)}k` : '—'
+            overview ? formatCHFWhole(overview.incomeMTD, true) : '—'
           }
-          sub={t('dashboard.thisMonth', 'Dä Mont')}
+          sub={t('dashboard.thisMonth', 'Diesen Monat')}
           accent="#1f9d57"
         />
         <StatTile
-          label={t('finance.expensesMtd', 'Usgaabe dä Mont')}
+          label={t('finance.expensesMtd', 'Ausgaben diesen Monat')}
           value={
-            overview ? `−CHF ${(overview.expensesMTD / 1000).toFixed(1)}k` : '—'
+            overview ? formatCHFWhole(-Math.abs(overview.expensesMTD)) : '—'
           }
-          sub={t('dashboard.thisMonth', 'Dä Mont')}
+          sub={t('dashboard.thisMonth', 'Diesen Monat')}
           accent="#ff4d3d"
         />
         <StatTile
           label={t('finance.net', 'Netto')}
           value={
-            overview
-              ? `${overview.netMTD >= 0 ? '+' : ''}CHF ${(
-                  overview.netMTD / 1000
-                ).toFixed(1)}k`
-              : '—'
+            overview ? formatCHFWhole(overview.netMTD, true) : '—'
           }
-          sub={t('finance.incomeMinusExpenses', 'Ihname – Usgaabe')}
+          sub={t('finance.incomeMinusExpenses', 'Einnahmen minus Ausgaben')}
           accent="#6131c4"
         />
         <StatTile
-          label={t('common.openInvoices', 'Offeni Rächnige')}
+          label={t('common.openInvoices', 'Offene Rechnungen')}
           value={String(openInvoiceCount)}
-          sub={t('finance.awaitingPayment', ' Wartet uf Zaalig')}
+          sub={t('finance.awaitingPayment', 'Zahlung ausstehend')}
           accent={openInvoiceCount > 0 ? '#ff4d3d' : '#1f9d57'}
           onClick={() => go('/app/finance/invoices')}
         />
@@ -93,7 +85,7 @@ export function FinanceOverviewTab() {
             style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}
           >
             <Text fw={700} fz="md">
-              {t('finance.overview12month', '12-Monet-Übersicht')}
+              {t('finance.overview12month', 'Letzte 12 Monate')}
             </Text>
           </Group>
           <div style={{ padding: '20px 20px 16px' }}>
@@ -152,14 +144,17 @@ export function FinanceOverviewTab() {
                     </div>
                     <div
                       style={{
-                        fontSize: 9,
+                        fontSize: 10,
                         color: '#8c86a0',
-                        fontFamily: '"JetBrains Mono"',
-                        letterSpacing: '0.04em',
                         marginTop: 4,
                       }}
                     >
-                      {m.m.toUpperCase()}
+                      {m.month
+                        ? new Date(m.year ?? 2000, m.month - 1, 1).toLocaleString(
+                            i18n.language,
+                            { month: 'short' },
+                          )
+                        : m.m}
                     </div>
                   </div>
                 )
@@ -181,7 +176,7 @@ export function FinanceOverviewTab() {
                     color: '#5e5873',
                   }}
                 >
-                  {t('finance.income', 'Ihname')}
+                  {t('finance.income', 'Einnahmen')}
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -199,7 +194,7 @@ export function FinanceOverviewTab() {
                     color: '#5e5873',
                   }}
                 >
-                  {t('finance.expenses', 'Usgaabe')}
+                  {t('finance.expenses', 'Ausgaben')}
                 </span>
               </div>
             </div>
@@ -214,7 +209,7 @@ export function FinanceOverviewTab() {
             style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}
           >
             <Text fw={700} fz="md">
-              {t('finance.recentTransactions', 'Letzti Transaktione')}
+              {t('finance.recentTransactions', 'Letzte Buchungen')}
             </Text>
             <Button
               size="sm"
@@ -222,14 +217,14 @@ export function FinanceOverviewTab() {
               style={{ marginLeft: 'auto', color: '#6131c4' }}
               onClick={() => go('/app/finance/transactions')}
             >
-              {t('finance.viewAll', 'Alli ahluege')}
+              {t('finance.viewAll', 'Alle ansehen')}
             </Button>
           </Group>
           <div style={{ overflowX: 'auto' }}>
             <Table highlightOnHover className="responsive-table">
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th>{t('common.description', 'Beschribig')}</Table.Th>
+                  <Table.Th>{t('common.description', 'Beschreibung')}</Table.Th>
                   <Table.Th>{t('finance.amount', 'Betrag')}</Table.Th>
                   <Table.Th>{t('common.date', 'Datum')}</Table.Th>
                 </Table.Tr>
@@ -246,7 +241,7 @@ export function FinanceOverviewTab() {
                         fontSize: 'var(--mantine-font-size-sm)',
                       }}
                     >
-                      {t('finance.noTransactions', 'Cheni Transaktione.')}
+                      {t('finance.noTransactions', 'Keine Buchungen gefunden.')}
                     </Table.Td>
                   </Table.Tr>
                 ) : (

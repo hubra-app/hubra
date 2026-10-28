@@ -11,43 +11,40 @@ import {
   Pagination as MantinePagination,
 } from '@mantine/core'
 import type { ReactNode } from 'react'
+import { useT } from '@/locales/i18n'
 
 export function PageHead({
-  eyebrow,
   title,
   desc,
   actions,
+  back,
 }: {
-  eyebrow?: string
-  title: string
-  desc?: string
+  title: ReactNode
+  desc?: ReactNode
   actions?: ReactNode
+  back?: ReactNode
 }) {
   return (
-    <Group
-      justify="space-between"
-      align="flex-start"
-      gap={16}
-      mb={24}
-      wrap="wrap"
-    >
-      <Stack gap={4}>
-        {eyebrow && <div className="eyebrow">{eyebrow}</div>}
-        <Title order={1} style={{ margin: 0 }}>
-          {title}
-        </Title>
-        {desc && (
-          <Text size="sm" c="dimmed" mt={4}>
-            {desc}
-          </Text>
+    <Box mb={24}>
+      {back && <Box mb={12}>{back}</Box>}
+      <Group justify="space-between" align="flex-end" gap={16} wrap="wrap">
+        <Stack gap={6} style={{ minWidth: 0, flex: '1 1 320px' }}>
+          <Title order={1} style={{ margin: 0, overflowWrap: 'anywhere' }}>
+            {title}
+          </Title>
+          {desc && (
+            <Text size="md" c="dimmed" maw={720}>
+              {desc}
+            </Text>
+          )}
+        </Stack>
+        {actions && (
+          <Group gap="xs" wrap="wrap" align="center">
+            {actions}
+          </Group>
         )}
-      </Stack>
-      {actions && (
-        <Group gap="xs" wrap="wrap" align="center">
-          {actions}
-        </Group>
-      )}
-    </Group>
+      </Group>
+    </Box>
   )
 }
 
@@ -56,42 +53,44 @@ export function StatTile({
   value,
   sub,
   accent,
+  icon,
   onClick,
 }: {
   label: string
   value: string | number
   sub?: string
   accent?: string
+  icon?: ReactNode
   onClick?: () => void
 }) {
-  return (
-    <UnstyledButton onClick={onClick} style={{ display: 'block' }}>
-      <Paper
-        withBorder
-        shadow="sm"
-        radius="lg"
-        p="lg"
-        style={{ width: '100%' }}
-      >
-        <Text size="sm" fw={600} c="dimmed" mb={8}>
+  const body = (
+    <Paper withBorder p="lg" style={{ width: '100%', height: '100%' }}>
+      <Group justify="space-between" align="flex-start" wrap="nowrap" mb={10}>
+        <Text size="sm" fw={600} c="dimmed">
           {label}
         </Text>
-        <Text
-          className="num"
-          fz={26}
-          fw={700}
-          lh={1}
-          mb={4}
-          c={accent || undefined}
-        >
-          {value}
+        {icon && <Box c="acc.6" style={{ lineHeight: 0 }}>{icon}</Box>}
+      </Group>
+      <Text
+        className="stat-value"
+        fz={28}
+        fw={700}
+        lh={1.1}
+        c={accent || 'var(--mantine-color-black)'}
+      >
+        {value}
+      </Text>
+      {sub && (
+        <Text size="sm" c="dimmed" mt={6}>
+          {sub}
         </Text>
-        {sub && (
-          <Text size="sm" c="dimmed">
-            {sub}
-          </Text>
-        )}
-      </Paper>
+      )}
+    </Paper>
+  )
+  if (!onClick) return body
+  return (
+    <UnstyledButton onClick={onClick} style={{ display: 'block', height: '100%' }}>
+      {body}
     </UnstyledButton>
   )
 }
@@ -106,7 +105,7 @@ export function Card({
   style?: React.CSSProperties
 }) {
   return (
-    <Paper withBorder shadow="sm" radius="lg" style={style}>
+    <Paper withBorder style={{ overflow: 'hidden', ...style }}>
       {children}
     </Paper>
   )
@@ -126,14 +125,16 @@ function CardHeader({
       justify="space-between"
       align="center"
       gap="sm"
-      p="md"
+      px="lg"
+      py="md"
+      wrap="wrap"
       style={{
         borderBottom: '1px solid var(--mantine-color-gray-3)',
         ...style,
       }}
     >
       {title && (
-        <Text fw={700} fz="md">
+        <Text fw={700} fz="md" ff="heading">
           {title}
         </Text>
       )}
@@ -203,8 +204,6 @@ export function CardItem({
   return (
     <Paper
       withBorder
-      shadow="sm"
-      radius="lg"
       style={{ overflow: 'hidden', cursor: onClick ? 'pointer' : undefined }}
       onClick={onClick}
     >
@@ -262,6 +261,7 @@ export function Pagination({
   setPerPage: (n: number) => void
   top?: boolean
 }) {
+  const { t } = useT()
   if (total === 0) return null
   const start = (page - 1) * perPage + 1
   const end = Math.min(page * perPage, total)
@@ -288,7 +288,7 @@ export function Pagination({
         style={{ width: 80 }}
       />
       <Text size="sm" c="dimmed" flex={1}>
-        {start}–{end} of {total}
+        {t('common.rangeOf', '{{start}}–{{end}} von {{total}}', { start, end, total })}
       </Text>
       <MantinePagination
         value={page}

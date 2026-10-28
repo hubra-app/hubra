@@ -58,12 +58,12 @@ export function PaymentPlansEditor({ tierId }: { tierId: string }) {
   return (
     <div style={{ marginTop: 20 }}>
       <Text fw={600} fz="sm">
-        {t('tiers.plans.title', 'Payment plans')}
+        {t('tiers.plans.title', 'Zahlungspläne')}
       </Text>
       <Text fz="xs" c="dimmed" mb="xs">
         {t(
           'tiers.plans.hint',
-          'Let members pay this tier in instalments. Without a plan they are billed on the tier cycle.',
+          'Mitglieder können diese Stufe in Raten bezahlen. Ohne Plan wird im Rhythmus der Stufe abgerechnet.',
         )}
       </Text>
       {plans.map((p: PaymentPlan) => (
@@ -90,7 +90,7 @@ export function PaymentPlansEditor({ tierId }: { tierId: string }) {
             suffix=" %"
             min={0}
             max={100}
-            aria-label={t('tiers.plans.surcharge', 'Surcharge')}
+            aria-label={t('tiers.plans.surcharge', 'Zuschlag')}
             onBlur={(e) => {
               const v = parseFloat(e.currentTarget.value) || 0
               if (v !== p.surcharge_pct) run(() => updatePlan(p.id, { surcharge_pct: v }))
@@ -98,7 +98,7 @@ export function PaymentPlansEditor({ tierId }: { tierId: string }) {
           />
           <Switch
             checked={p.visible}
-            label={t('tiers.plans.visible', 'Members can pick')}
+            label={t('tiers.plans.visible', 'Mitglieder können wählen')}
             onChange={(e) => run(() => updatePlan(p.id, { visible: e.currentTarget.checked }))}
           />
           <ActionIcon
@@ -115,7 +115,7 @@ export function PaymentPlansEditor({ tierId }: { tierId: string }) {
         <Group gap="xs" wrap="nowrap" align="center">
           <TextInput
             style={{ flex: 2 }}
-            placeholder={t('tiers.plans.namePlaceholder', 'Quarterly')}
+            placeholder={t('tiers.plans.namePlaceholder', 'Vierteljährlich')}
             value={draft.name ?? ''}
             onChange={(e) => setDraft({ ...draft, name: e.currentTarget.value })}
           />
@@ -154,7 +154,7 @@ export function PaymentPlansEditor({ tierId }: { tierId: string }) {
           onClick={() => setDraft({ name: '', interval: 'quarterly', surcharge_pct: 0 })}
         >
           <IconPlus size={14} />
-          {t('tiers.plans.add', 'Add payment plan')}
+          {t('tiers.plans.add', 'Zahlungsplan hinzufügen')}
         </Button>
       )}
     </div>

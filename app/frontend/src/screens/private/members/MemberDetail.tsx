@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { Button, Paper } from '@mantine/core'
+import { Button, Paper, Title } from '@mantine/core'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT } from '@/locales/i18n'
 import { useParams } from 'react-router-dom'
-import { IconPencil, IconLock, IconCircleCheck } from '@tabler/icons-react'
+import { IconArrowLeft, IconPencil, IconLock, IconCircleCheck } from '@tabler/icons-react'
 import { useNav, useToast, useAuth } from '@/context/AppContext'
 import {
   Avatar,
@@ -53,14 +53,14 @@ export function MemberDetailScreen({
       queryClient.invalidateQueries({ queryKey: ['member', id] })
       notify(
         'success',
-        'Email verified',
+        t('members.emailVerified', 'E-Mail bestätigt'),
         `${member.name}'s email has been marked as verified.`,
       )
     } catch (err: unknown) {
       notify(
         'error',
-        'Verification failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('members.verifyFailed', 'Bestätigung fehlgeschlagen'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setVerifying(false)
@@ -68,7 +68,7 @@ export function MemberDetailScreen({
   }
 
   const m = member
-  if (!m) return <LoadingSpinner message={t('common.loading', 'Wird glade…')} />
+  if (!m) return <LoadingSpinner message={t('common.loading', 'Wird geladen …')} />
 
   const toggleDisable = async () => {
     if (!member) return
@@ -80,7 +80,7 @@ export function MemberDetailScreen({
       queryClient.invalidateQueries({ queryKey: ['member', id] })
       notify(
         'success',
-        updated.isDisabled ? 'Member disabled' : 'Member enabled',
+        updated.isDisabled ? t('members.disabled', 'Mitglied deaktiviert') : t('members.enabled', 'Mitglied aktiviert'),
         `${updated.name} has been ${
           updated.isDisabled ? 'disabled' : 'enabled'
         }.`,
@@ -88,8 +88,8 @@ export function MemberDetailScreen({
     } catch (err: unknown) {
       notify(
         'error',
-        'Toggle failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('common.updateFailed', 'Aktualisieren fehlgeschlagen'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setTogglingDisable(false)
@@ -102,8 +102,10 @@ export function MemberDetailScreen({
         <Button
           size="sm"
           variant="subtle"
+          px={6}
+          leftSection={<IconArrowLeft size={16} />}
           onClick={() => go('/app/members')}
-          style={{ marginBottom: 12 }}
+          style={{ marginBottom: 12, marginLeft: -6 }}
         >
           {t('members.detail.backToMembers')}
         </Button>
@@ -115,16 +117,9 @@ export function MemberDetailScreen({
             flexWrap: 'wrap',
           }}
         >
-          <h1
-            style={{
-              margin: 0,
-              fontSize: 'var(--mantine-font-size-xl)',
-              fontWeight: 700,
-              color: '#1a1625',
-            }}
-          >
+          <Title order={1} fz={{ base: 26, sm: 32 }}>
             {m.name}
-          </h1>
+          </Title>
           <span
             className="num"
             style={{
@@ -168,12 +163,7 @@ export function MemberDetailScreen({
       </div>
 
       <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '320px 1fr',
-          gap: 16,
-          alignItems: 'start',
-        }}
+        className="detail-grid"
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <Paper
@@ -315,7 +305,7 @@ export function MemberDetailScreen({
             <DetailRow label={t('members.clubUsername')} mono>
               {m.clubUsername || <Empty />}
             </DetailRow>
-            <DetailRow label={t('common.roles', 'Roles')}>
+            <DetailRow label={t('common.roles', 'Rollen')}>
               {m.roles.join(', ')}
             </DetailRow>
             <DetailRow label={t('members.joined')} mono>
@@ -447,9 +437,9 @@ export function MemberDetailScreen({
                         {label}
                       </div>
                       <div
-                        className="num"
+                        className="stat-value"
                         style={{
-                          fontSize: 'var(--mantine-font-size-xl)',
+                          fontSize: 22,
                           fontWeight: 700,
                           color: '#1a1625',
                         }}
@@ -467,7 +457,7 @@ export function MemberDetailScreen({
                     marginBottom: 8,
                   }}
                 >
-                  Notes
+                  {t('members.detail.notes', 'Notizen')}
                 </div>
                 <div
                   style={{
@@ -479,7 +469,7 @@ export function MemberDetailScreen({
                     lineHeight: 1.6,
                   }}
                 >
-                  {m.notes || t('members.noNotesYet', 'No kei Notize.')}
+                  {m.notes || t('members.noNotesYet', 'Noch keine Notizen')}
                 </div>
               </div>
             )}
@@ -492,7 +482,7 @@ export function MemberDetailScreen({
                   textAlign: 'center',
                 }}
               >
-                Member invoice history coming soon.
+                {t('members.invoicesSoon', 'Die Rechnungsübersicht pro Mitglied folgt bald.')}
               </div>
             )}
             {tab === 'activity' && (
@@ -504,7 +494,7 @@ export function MemberDetailScreen({
                   textAlign: 'center',
                 }}
               >
-                Activity log coming soon.
+                {t('members.activitySoon', 'Das Aktivitätsprotokoll folgt bald.')}
               </div>
             )}
           </div>

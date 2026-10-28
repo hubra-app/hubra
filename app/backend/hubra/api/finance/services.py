@@ -1005,6 +1005,8 @@ class FinanceOverviewService:
             months_data.append(
                 {
                     "m": month_names[month_offset - 1],
+                    "year": int(year_offset),
+                    "month": int(month_offset),
                     "inc": round(float(inc) / 1000, 2),
                     "exp": round(abs(float(exp)) / 1000, 2),
                 }

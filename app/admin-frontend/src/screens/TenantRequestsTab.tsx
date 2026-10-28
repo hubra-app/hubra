@@ -20,11 +20,24 @@ import {
   type TenantRequest,
 } from '@/api/tenants'
 import { useAdmin } from '@/context/AdminContext'
+import { tr } from '@/lang'
+import { formatDate } from '@/format'
+import { planLabel } from '@/labels'
 
 const STATUS_COLORS: Record<string, string> = {
   pending: 'yellow',
   approved: 'green',
   rejected: 'red',
+}
+
+function requestStatus(status: string) {
+  const labels: Record<string, [string, string]> = {
+    pending: ['Offen', 'Pending'],
+    approved: ['Angenommen', 'Approved'],
+    rejected: ['Abgelehnt', 'Rejected'],
+  }
+  const l = labels[status]
+  return l ? tr(l[0], l[1]) : status
 }
 
 /**
@@ -48,10 +61,10 @@ export function TenantRequestsTab() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-requests'] })
       queryClient.invalidateQueries({ queryKey: ['tenants'] })
-      notify('success', 'Request approved', 'Tenant has been provisioned.')
+      notify('success', tr('Anfrage angenommen', 'Request approved'), tr('Der Verein ist eingerichtet.', 'The club has been set up.'))
     },
     onError: (err: Error) => {
-      notify('error', 'Approval failed', err.message)
+      notify('error', tr('Annehmen fehlgeschlagen', 'Approval failed'), err.message)
     },
   })
 
@@ -60,12 +73,12 @@ export function TenantRequestsTab() {
       rejectTenantRequest(id, note),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-requests'] })
-      notify('success', 'Request rejected', 'The tenant request has been rejected.')
+      notify('success', tr('Anfrage abgelehnt', 'Request rejected'), tr('Die Anfrage wurde abgelehnt.', 'The request has been rejected.'))
       setRejectTarget(null)
       setRejectNote('')
     },
     onError: (err: Error) => {
-      notify('error', 'Reject failed', err.message)
+      notify('error', tr('Ablehnen fehlgeschlagen', 'Reject failed'), err.message)
     },
   })
 
@@ -73,59 +86,57 @@ export function TenantRequestsTab() {
 
   return (
     <div>
-      <Group justify="space-between" mb={16}>
-        <Text fw={600} size="lg">
-          Club Requests
-        </Text>
+      <Group justify="flex-end" mb="md">
         <Anchor href={`${SSO_URL}/start`} size="sm" target="_blank" rel="noreferrer">
-          Request page
+          {tr('Seite für neue Vereine', 'Request page')}
         </Anchor>
       </Group>
 
-      <Paper withBorder shadow="sm" radius="lg">
+      <Paper withBorder style={{ overflow: 'hidden' }}>
         {isLoading && (
           <Text p={40} ta="center" c="dimmed">
-            Loading requests...
+            {tr('Anfragen werden geladen …', 'Loading requests…')}
           </Text>
         )}
 
         {!isLoading && requests.length === 0 && (
           <Text p={40} ta="center" c="dimmed">
-            No tenant requests.
+            {tr('Noch keine Anfragen.', 'No requests yet.')}
           </Text>
         )}
 
         {requests.length > 0 && (
+          <Table.ScrollContainer minWidth={640}>
           <Table highlightOnHover>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>Name</Table.Th>
-                <Table.Th>Slug</Table.Th>
-                <Table.Th>Plan</Table.Th>
-                <Table.Th>Status</Table.Th>
-                <Table.Th>Created</Table.Th>
-                {canReview && <Table.Th>Actions</Table.Th>}
+                <Table.Th>{tr('Name', 'Name')}</Table.Th>
+                <Table.Th>{tr('Kürzel', 'Slug')}</Table.Th>
+                <Table.Th>{tr('Plan', 'Plan')}</Table.Th>
+                <Table.Th>{tr('Status', 'Status')}</Table.Th>
+                <Table.Th>{tr('Erstellt', 'Created')}</Table.Th>
+                {canReview && <Table.Th>{tr('Aktionen', 'Actions')}</Table.Th>}
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
               {requests.map((r: TenantRequest) => (
                 <Table.Tr key={r.id}>
                   <Table.Td fw={600}>{r.name}</Table.Td>
-                  <Table.Td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14 }}>
+                  <Table.Td className="num" fz="sm" c="dimmed">
                     {r.slug}
                   </Table.Td>
                   <Table.Td>
-                    <Badge variant="light" color="blue" size="sm">
-                      {r.plan}
+                    <Badge variant="light" color="acc" size="sm">
+                      {planLabel(r.plan, tr)}
                     </Badge>
                   </Table.Td>
                   <Table.Td>
                     <Badge variant="light" color={STATUS_COLORS[r.status] ?? 'gray'} size="sm">
-                      {r.status}
+                      {requestStatus(r.status)}
                     </Badge>
                   </Table.Td>
-                  <Table.Td style={{ color: '#5e5873', fontSize: 14 }}>
-                    {r.created_at ? new Date(r.created_at).toLocaleDateString() : '-'}
+                  <Table.Td fz="sm" c="dimmed">
+                    {r.created_at ? formatDate(r.created_at) : '–'}
                   </Table.Td>
                   {canReview && (
                     <Table.Td>
@@ -138,7 +149,7 @@ export function TenantRequestsTab() {
                             loading={approveMutation.isPending}
                             onClick={() => approveMutation.mutate(r.id)}
                           >
-                            Approve
+                            {tr('Annehmen', 'Approve')}
                           </Button>
                           <Button
                             size="xs"
@@ -146,7 +157,7 @@ export function TenantRequestsTab() {
                             variant="light"
                             onClick={() => setRejectTarget(r)}
                           >
-                            Reject
+                            {tr('Ablehnen', 'Reject')}
                           </Button>
                         </Group>
                       )}
@@ -156,36 +167,39 @@ export function TenantRequestsTab() {
               ))}
             </Table.Tbody>
           </Table>
+          </Table.ScrollContainer>
         )}
       </Paper>
 
       <Modal
         opened={!!rejectTarget}
         onClose={() => { setRejectTarget(null); setRejectNote('') }}
-        title="Reject Tenant Request"
+        title={tr('Anfrage ablehnen', 'Reject request')}
         size="md"
       >
         <Stack gap={16}>
           <Text size="sm" c="dimmed">
-            Rejecting <strong>{rejectTarget?.name}</strong> ({rejectTarget?.slug}).
-            The requester will be able to submit a new request with a different slug.
+            {tr(
+              `Du lehnst «${rejectTarget?.name}» (${rejectTarget?.slug}) ab. Die Person kann danach eine neue Anfrage mit einem anderen Kürzel stellen.`,
+              `You are rejecting "${rejectTarget?.name}" (${rejectTarget?.slug}). The requester can then send a new request with a different slug.`,
+            )}
           </Text>
           <TextInput
-            label="Note (optional)"
+            label={tr('Notiz (optional)', 'Note (optional)')}
             value={rejectNote}
             onChange={(e) => setRejectNote(e.target.value)}
-            placeholder="Reason for rejection"
+            placeholder={tr('Grund für die Ablehnung', 'Reason for rejection')}
           />
           <Group justify="flex-end" mt={8}>
             <Button variant="default" onClick={() => { setRejectTarget(null); setRejectNote('') }}>
-              Cancel
+              {tr('Abbrechen', 'Cancel')}
             </Button>
             <Button
               color="red"
               loading={rejectMutation.isPending}
               onClick={() => rejectTarget && rejectMutation.mutate({ id: rejectTarget.id, note: rejectNote || undefined })}
             >
-              Reject Request
+              {tr('Anfrage ablehnen', 'Reject request')}
             </Button>
           </Group>
         </Stack>

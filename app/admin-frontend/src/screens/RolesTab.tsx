@@ -12,6 +12,7 @@ import {
   Stack,
   Alert,
   Checkbox,
+  Select,
 } from '@mantine/core'
 import { IconPlus, IconUserPlus } from '@tabler/icons-react'
 import {
@@ -27,6 +28,7 @@ import {
   type UserSearchResult,
 } from '@/api/globalRbac'
 import { useAdmin } from '@/context/AdminContext'
+import { tr } from '@/lang'
 
 export function RolesTab() {
   const { notify } = useAdmin()
@@ -58,7 +60,7 @@ export function RolesTab() {
     mutationFn: () => createGlobalRole({ name, description, permissions: selectedPerms }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['global-roles'] })
-      notify('success', 'Role created', name)
+      notify('success', tr('Rolle erstellt', 'Role created'), name)
       setCreateOpen(false)
       setName('')
       setDescription('')
@@ -72,7 +74,7 @@ export function RolesTab() {
     mutationFn: (role: GlobalRole) => updateGlobalRole(role.id, { permissions: selectedPerms }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['global-roles'] })
-      notify('success', 'Role updated', editRole?.name)
+      notify('success', tr('Rolle gespeichert', 'Role updated'), editRole?.name)
       setEditRole(null)
       setSelectedPerms([])
     },
@@ -81,7 +83,7 @@ export function RolesTab() {
 
   const assignMutation = useMutation({
     mutationFn: () => {
-      if (!selectedUser || !assignRoleId) throw new Error('Missing user or role')
+      if (!selectedUser || !assignRoleId) throw new Error(tr('Person oder Rolle fehlt', 'Missing user or role'))
       return assignUserRole(selectedUser.id, assignRoleId)
     },
     onSuccess: async () => {
@@ -90,10 +92,10 @@ export function RolesTab() {
         const data = await getUserRoles(selectedUser.id)
         setUserRoles(data.roles)
       }
-      notify('success', 'Role assigned')
+      notify('success', tr('Rolle zugewiesen', 'Role assigned'))
       setAssignRoleId(null)
     },
-    onError: (err: Error) => notify('error', 'Assign failed', err.message),
+    onError: (err: Error) => notify('error', tr('Zuweisen fehlgeschlagen', 'Assign failed'), err.message),
   })
 
   const removeMutation = useMutation({
@@ -105,9 +107,9 @@ export function RolesTab() {
         const data = await getUserRoles(selectedUser.id)
         setUserRoles(data.roles)
       }
-      notify('success', 'Role removed')
+      notify('success', tr('Rolle entfernt', 'Role removed'))
     },
-    onError: (err: Error) => notify('error', 'Remove failed', err.message),
+    onError: (err: Error) => notify('error', tr('Entfernen fehlgeschlagen', 'Remove failed'), err.message),
   })
 
   const roles = rolesData?.roles ?? []
@@ -139,14 +141,10 @@ export function RolesTab() {
 
   return (
     <div>
-      <Group justify="space-between" mb={16}>
-        <Text fw={600} size="lg">
-          Global Roles & Permissions
-        </Text>
+      <Group justify="flex-end" mb="md">
         <Group gap={8}>
           <Button
-            size="xs"
-            variant="light"
+            variant="default"
             leftSection={<IconUserPlus size={16} />}
             onClick={() => {
               setAssignOpen(true)
@@ -156,10 +154,9 @@ export function RolesTab() {
               setUserRoles([])
             }}
           >
-            Assign Role
+            {tr('Rolle zuweisen', 'Assign role')}
           </Button>
           <Button
-            size="xs"
             leftSection={<IconPlus size={16} />}
             onClick={() => {
               setCreateOpen(true)
@@ -169,35 +166,43 @@ export function RolesTab() {
               setFormError('')
             }}
           >
-            Create Role
+            {tr('Rolle erstellen', 'Create role')}
           </Button>
         </Group>
       </Group>
 
-      <Paper withBorder shadow="sm" radius="lg">
+      <Paper withBorder style={{ overflow: 'hidden' }}>
+        <Table.ScrollContainer minWidth={680}>
         <Table highlightOnHover>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th>Role</Table.Th>
-              <Table.Th>Description</Table.Th>
-              <Table.Th>Permissions</Table.Th>
-              <Table.Th>Actions</Table.Th>
+              <Table.Th>{tr('Rolle', 'Role')}</Table.Th>
+              <Table.Th>{tr('Beschreibung', 'Description')}</Table.Th>
+              <Table.Th>{tr('Berechtigungen', 'Permissions')}</Table.Th>
+              <Table.Th />
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
+            {roles.length === 0 && (
+              <Table.Tr>
+                <Table.Td colSpan={4} ta="center" c="dimmed" py="xl">
+                  {tr('Noch keine Plattform-Rollen.', 'No platform roles yet.')}
+                </Table.Td>
+              </Table.Tr>
+            )}
             {roles.map((role) => (
               <Table.Tr key={role.id}>
                 <Table.Td fw={600}>
                   {role.name}
                   {role.is_system && (
-                    <Badge variant="light" color="blue" size="sm" ml={6}>
-                      system
+                    <Badge variant="light" color="gray" size="sm" ml={6}>
+                      {tr('System', 'System')}
                     </Badge>
                   )}
                 </Table.Td>
                 <Table.Td>
                   <Text size="sm" c="dimmed">
-                    {role.description ?? '-'}
+                    {role.description ?? '–'}
                   </Text>
                 </Table.Td>
                 <Table.Td>
@@ -209,26 +214,27 @@ export function RolesTab() {
                     ))}
                     {role.permissions.length > 4 && (
                       <Text size="xs" c="dimmed">
-                        +{role.permissions.length - 4} more
+                        {tr(`+${role.permissions.length - 4} weitere`, `+${role.permissions.length - 4} more`)}
                       </Text>
                     )}
                   </Group>
                 </Table.Td>
                 <Table.Td>
                   <Button size="xs" variant="default" onClick={() => openEdit(role)}>
-                    Edit
+                    {tr('Bearbeiten', 'Edit')}
                   </Button>
                 </Table.Td>
               </Table.Tr>
             ))}
           </Table.Tbody>
         </Table>
+        </Table.ScrollContainer>
       </Paper>
 
       <Modal
         opened={createOpen}
         onClose={() => setCreateOpen(false)}
-        title="Create Global Role"
+        title={tr('Plattform-Rolle erstellen', 'Create platform role')}
         size="lg"
       >
         <Stack gap={16}>
@@ -238,20 +244,20 @@ export function RolesTab() {
             </Alert>
           )}
           <TextInput
-            label="Role Name"
+            label={tr('Name der Rolle', 'Role name')}
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Support Agent"
+            placeholder={tr('z. B. Support', 'e.g. Support agent')}
           />
           <TextInput
-            label="Description"
+            label={tr('Beschreibung', 'Description')}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Optional description"
+            placeholder={tr('Optional', 'Optional')}
           />
           <Text fw={600} size="sm">
-            Permissions
+            {tr('Berechtigungen', 'Permissions')}
           </Text>
           <Stack gap={6}>
             {permissions.map((p) => (
@@ -266,10 +272,10 @@ export function RolesTab() {
           </Stack>
           <Group justify="flex-end">
             <Button variant="default" onClick={() => setCreateOpen(false)}>
-              Cancel
+              {tr('Abbrechen', 'Cancel')}
             </Button>
             <Button loading={createMutation.isPending} onClick={() => createMutation.mutate()}>
-              Create
+              {tr('Erstellen', 'Create')}
             </Button>
           </Group>
         </Stack>
@@ -281,7 +287,7 @@ export function RolesTab() {
           setEditRole(null)
           setSelectedPerms([])
         }}
-        title={`Edit: ${editRole?.name}`}
+        title={tr(`Rolle bearbeiten: ${editRole?.name}`, `Edit role: ${editRole?.name}`)}
         size="lg"
       >
         <Stack gap={16}>
@@ -291,7 +297,7 @@ export function RolesTab() {
             </Alert>
           )}
           <Text fw={600} size="sm">
-            Permissions
+            {tr('Berechtigungen', 'Permissions')}
           </Text>
           <Stack gap={6}>
             {permissions.map((p) => (
@@ -313,13 +319,13 @@ export function RolesTab() {
                 setSelectedPerms([])
               }}
             >
-              Cancel
+              {tr('Abbrechen', 'Cancel')}
             </Button>
             <Button
               loading={updateMutation.isPending}
               onClick={() => editRole && updateMutation.mutate(editRole)}
             >
-              Save
+              {tr('Speichern', 'Save')}
             </Button>
           </Group>
         </Stack>
@@ -328,20 +334,20 @@ export function RolesTab() {
       <Modal
         opened={assignOpen}
         onClose={() => setAssignOpen(false)}
-        title="Assign Role to User"
+        title={tr('Rolle einer Person zuweisen', 'Assign a role to a person')}
         size="md"
       >
         <Stack gap={16}>
           <Group gap={8}>
             <TextInput
-              placeholder="Search by email..."
+              placeholder={tr('Nach E-Mail suchen …', 'Search by email…')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               style={{ flex: 1 }}
             />
             <Button variant="default" onClick={handleSearch}>
-              Search
+              {tr('Suchen', 'Search')}
             </Button>
           </Group>
 
@@ -378,17 +384,17 @@ export function RolesTab() {
               </Paper>
 
               <Text fw={600} size="sm">
-                Current Roles
+                {tr('Aktuelle Rollen', 'Current roles')}
               </Text>
               <Stack gap={4}>
                 {userRoles.length === 0 && (
                   <Text size="sm" c="dimmed">
-                    No roles assigned.
+                    {tr('Keine Rollen zugewiesen.', 'No roles assigned.')}
                   </Text>
                 )}
                 {userRoles.map((r) => (
                   <Group key={r.id} justify="space-between">
-                    <Badge variant="light" color="blue" size="sm">
+                    <Badge variant="light" color="acc" size="sm">
                       {r.name}
                     </Badge>
                     <Button
@@ -399,36 +405,26 @@ export function RolesTab() {
                         removeMutation.mutate({ userId: selectedUser.id, roleId: r.id })
                       }
                     >
-                      Remove
+                      {tr('Entfernen', 'Remove')}
                     </Button>
                   </Group>
                 ))}
               </Stack>
 
               <Group gap={8}>
-                <select
-                  value={assignRoleId ?? ''}
-                  onChange={(e) => setAssignRoleId(Number(e.target.value) || null)}
-                  style={{
-                    flex: 1,
-                    padding: '8px',
-                    borderRadius: 6,
-                    border: '1px solid var(--mantine-color-gray-4)',
-                  }}
-                >
-                  <option value="">Select a role...</option>
-                  {roles.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  placeholder={tr('Rolle wählen …', 'Select a role…')}
+                  value={assignRoleId ? String(assignRoleId) : null}
+                  onChange={(v) => setAssignRoleId(v ? Number(v) : null)}
+                  data={roles.map((r) => ({ value: String(r.id), label: r.name }))}
+                  style={{ flex: 1 }}
+                />
                 <Button
                   loading={assignMutation.isPending}
                   disabled={!assignRoleId}
                   onClick={() => assignMutation.mutate()}
                 >
-                  Assign
+                  {tr('Zuweisen', 'Assign')}
                 </Button>
               </Group>
             </>

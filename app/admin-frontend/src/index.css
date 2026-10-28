@@ -27,7 +27,11 @@ body {
   margin: 0;
   background: #f7f6fb;
   font-family: 'Hanken Grotesk', system-ui, sans-serif;
-  color: #2e2940;
+  color: #1a1625;
+}
+
+::selection {
+  background: #d6c7ff;
 }
 
 #root {
@@ -35,16 +39,11 @@ body {
 }
 
 .eyebrow {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: var(--mantine-font-size-xs);
+  font-size: 12px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   color: #6131c4;
-}
-
-.eyebrow::before {
-  content: '// ';
-  color: #8758f0;
 }
 
 .num {
@@ -89,7 +88,38 @@ body {
 }
 
 .chip.on {
-  border-color: rgba(97, 49, 196, 0.5);
-  background: rgba(116, 65, 224, 0.2);
-  color: #6131c4;
+  border-color: #7441e0;
+  background: #f5f1ff;
+  color: #4d27a0;
+  font-weight: 600;
+}
+
+.page-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 32px 32px 64px;
+}
+
+@media (max-width: 48em) {
+  .page-container {
+    padding: 20px 16px 48px;
+  }
+}
+
+.hubra-tabs {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.hubra-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.manage-nav-row {
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.manage-nav-row:not([aria-current='page']):hover {
+  background: #f4f2f9 !important;
+  color: #1a1625 !important;
 }

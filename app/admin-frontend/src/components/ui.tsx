@@ -1,23 +1,31 @@
 import type { ReactNode } from 'react'
 import { Title, Text, Group, Stack, SimpleGrid, Paper, UnstyledButton } from '@mantine/core'
 import { Select, Pagination as MantinePagination } from '@mantine/core'
+import { tr } from '@/lang'
 
 export function PageHead({
   eyebrow,
   title,
+  desc,
   actions,
 }: {
   eyebrow?: string
-  title: string
+  title: ReactNode
+  desc?: ReactNode
   actions?: ReactNode
 }) {
   return (
-    <Group justify="space-between" align="flex-start" gap={16} mb={24} wrap="wrap">
-      <Stack gap={4}>
+    <Group justify="space-between" align="flex-end" gap={16} mb={28} wrap="wrap">
+      <Stack gap={6}>
         {eyebrow && <div className="eyebrow">{eyebrow}</div>}
         <Title order={1} style={{ margin: 0 }}>
           {title}
         </Title>
+        {desc && (
+          <Text size="md" c="dimmed" maw={720}>
+            {desc}
+          </Text>
+        )}
       </Stack>
       {actions && (
         <Group gap="xs" wrap="wrap" align="center">
@@ -38,11 +46,11 @@ export function StatTile({
   sub?: string
 }) {
   return (
-    <Paper withBorder shadow="sm" radius="lg" p="lg">
+    <Paper withBorder p="lg">
       <Text size="sm" fw={600} c="dimmed" mb={8}>
         {label}
       </Text>
-      <Text className="num" fz={26} fw={700} lh={1} mb={4}>
+      <Text className="num" fz={28} fw={600} lh={1} mb={4}>
         {value}
       </Text>
       {sub && <Text size="sm" c="dimmed">{sub}</Text>}
@@ -58,7 +66,7 @@ export function StatGrid({
   columns?: number
 }) {
   return (
-    <SimpleGrid cols={{ base: 1, xs: 2, md: columns }} spacing="md" mb={24}>
+    <SimpleGrid cols={{ base: 2, md: columns }} spacing="md" mb={24}>
       {children}
     </SimpleGrid>
   )
@@ -130,7 +138,7 @@ export function Pagination({
         style={{ width: 80 }}
       />
       <Text size="sm" c="dimmed" flex={1}>
-        {start}-{end} of {total}
+        {start}–{end} {tr('von', 'of')} {total}
       </Text>
       <MantinePagination
         value={page}

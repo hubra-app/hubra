@@ -56,7 +56,7 @@ export function UserMenu() {
         <>
           <Box px="md" pt="sm" pb={4}>
             <Text fz="xs" fw={600} c="dimmed" tt="uppercase" lh={1}>
-              Spaces
+              {t('shell.userMenu.clubs', 'Vereine')}
             </Text>
           </Box>
           <ScrollArea.Autosize mah={160} offsetScrollbars>

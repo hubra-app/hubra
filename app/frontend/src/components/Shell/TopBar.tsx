@@ -61,8 +61,7 @@ export function TopBar() {
       gap="xs"
       px="md"
       style={{
-        background: 'rgba(255,255,255,.72)',
-        backdropFilter: 'blur(8px)',
+        background: 'var(--mantine-color-white)',
         borderBottom: '1px solid var(--mantine-color-gray-3)',
         flexWrap: 'nowrap',
       }}
@@ -73,7 +72,7 @@ export function TopBar() {
         size="lg"
         className="mantine-hidden-from-sm"
         onClick={() => setMobileDrawerOpen(true)}
-        aria-label="Menu"
+        aria-label={t('shell.a11y.menu', 'Menü')}
       >
         <IconMenu2 size={20} />
       </ActionIcon>
@@ -86,11 +85,11 @@ export function TopBar() {
       </Group>
 
       <ActionIcon
-        variant="default"
+        variant="subtle"
         size="lg"
         className="mantine-visible-from-sm"
         onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-        aria-label="Toggle sidebar"
+        aria-label={t('shell.a11y.toggleSidebar', 'Seitenleiste ein- oder ausblenden')}
       >
         <IconLayoutSidebarLeftCollapse size={20} />
       </ActionIcon>
@@ -138,7 +137,7 @@ export function TopBar() {
               variant="subtle"
               size="lg"
               className="mantine-visible-from-sm"
-              aria-label="What's new"
+              aria-label={t('shell.whatsNew.title')}
             >
               <IconBolt size={18} />
             </ActionIcon>
@@ -192,7 +191,7 @@ export function TopBar() {
         <ActionIcon
           variant="subtle"
           size="lg"
-          aria-label="Notifications"
+          aria-label={t('shell.a11y.notifications', 'Benachrichtigungen')}
           style={{ position: 'relative' }}
           onClick={() => setNotifPanelOpen(!notifPanelOpen)}
         >
@@ -222,7 +221,7 @@ export function TopBar() {
         <ActionIcon
           variant="subtle"
           size="lg"
-          aria-label="Sign out"
+          aria-label={t('shell.a11y.signOut', 'Abmelden')}
           onClick={() => setPhase('login')}
         >
           <IconLogout size={18} />
@@ -234,7 +233,7 @@ export function TopBar() {
         >
           <UnstyledButton
             onClick={() => setUserMenuOpen(!userMenuOpen)}
-            aria-label="User menu"
+            aria-label={t('shell.a11y.userMenu', 'Benutzermenü')}
           >
             <Box
               style={{

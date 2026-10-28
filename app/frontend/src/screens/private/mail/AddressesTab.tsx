@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { IconRefresh } from '@tabler/icons-react'
 import { Button } from '@mantine/core'
 import { useAuth } from '@/context/AppContext'
+import { useT } from '@/locales/i18n'
 import { DataTable } from '@/components/ui'
 import { useMailColumns } from '@/screens/private/mail/useMailColumns'
 import { MailSettingsModal } from '@/screens/private/mail/MailSettingsModal'
@@ -12,12 +13,12 @@ type OwnerFilter = 'all' | 'member' | 'group' | 'function' | 'system' | 'mail_ad
 type EnabledFilter = 'all' | 'true' | 'false'
 type SyncFilter = 'all' | 'ok' | 'pending' | 'drift' | 'error'
 
-const OWNER_LABELS: Record<string, string> = {
-  member: 'Member',
-  group: 'Group',
-  function: 'Function',
-  mail_address: 'Alias',
-  system: 'System',
+const OWNER_LABELS: Record<string, [string, string]> = {
+  member: ['mail.owner.member', 'Mitglied'],
+  group: ['mail.owner.group', 'Gruppe'],
+  function: ['mail.owner.function', 'Funktion'],
+  mail_address: ['mail.owner.alias', 'Alias'],
+  system: ['mail.owner.system', 'System'],
 }
 
 const OWNER_COLORS: Record<string, string> = {
@@ -33,6 +34,11 @@ const OWNER_COLORS: Record<string, string> = {
  * functions; ``all`` also includes system addresses and aliases.
  */
 export function AddressesTab({ scope }: { scope: 'owned' | 'all' }) {
+  const { t } = useT()
+  const ownerLabel = (type: string) => {
+    const l = OWNER_LABELS[type]
+    return l ? t(l[0], l[1]) : type
+  }
   const isAll = scope === 'all'
   const queryKey = isAll ? 'mail-all-addresses' : 'mail-addresses'
   const { hasPermission } = useAuth()
@@ -68,21 +74,21 @@ export function AddressesTab({ scope }: { scope: 'owned' | 'all' }) {
 
   const ownerTypeColumn = {
     key: 'ownerType',
-    header: 'Type',
+    header: t('common.type', 'Typ'),
     render: (entry: ManagedMailAddressInfo) => {
       let label: string
       let color: string
       if (entry.isSystem) {
-        label = 'System'
+        label = ownerLabel('system')
         color = OWNER_COLORS.system
       } else if (entry.ownerType === 'mail_address') {
-        label = 'Alias'
+        label = ownerLabel('mail_address')
         color = OWNER_COLORS.mail_address
       } else if (entry.ownerType && OWNER_LABELS[entry.ownerType]) {
-        label = OWNER_LABELS[entry.ownerType]
+        label = ownerLabel(entry.ownerType)
         color = OWNER_COLORS[entry.ownerType] ?? '#5e5873'
       } else {
-        label = entry.kind ?? 'Other'
+        label = entry.kind ?? t('mail.owner.other', 'Andere')
         color = '#5e5873'
       }
       return (
@@ -104,31 +110,31 @@ export function AddressesTab({ scope }: { scope: 'owned' | 'all' }) {
 
   const syncFilters = [
     {
-      label: 'All sync',
+      label: t('mail.sync.all', 'Alle'),
       value: 'all',
       active: syncFilter === 'all',
       onClick: () => setSyncFilter('all'),
     },
     {
-      label: 'OK',
+      label: t('mail.sync.ok', 'OK'),
       value: 'ok',
       active: syncFilter === 'ok',
       onClick: () => setSyncFilter('ok'),
     },
     {
-      label: 'Pending',
+      label: t('mail.sync.pending', 'Ausstehend'),
       value: 'pending',
       active: syncFilter === 'pending',
       onClick: () => setSyncFilter('pending'),
     },
     {
-      label: 'Drift',
+      label: t('mail.sync.drift', 'Abweichung'),
       value: 'drift',
       active: syncFilter === 'drift',
       onClick: () => setSyncFilter('drift'),
     },
     {
-      label: 'Error',
+      label: t('mail.sync.error', 'Fehler'),
       value: 'error',
       active: syncFilter === 'error',
       onClick: () => setSyncFilter('error'),
@@ -142,51 +148,51 @@ export function AddressesTab({ scope }: { scope: 'owned' | 'all' }) {
         columns={[ownerTypeColumn, ...baseColumns]}
         data={entries}
         loading={loading}
-        emptyMessage="No mail addresses found."
+        emptyMessage={t('mail.noAddresses', 'Keine Mail-Adressen gefunden.')}
         onRowClick={(entry) => setEditEntry(entry)}
         getRowKey={(entry) => entry.id}
         searchValue={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search address…"
+        searchPlaceholder={t('mail.searchAddress', 'Adresse suchen …')}
         filterSlots={[
           {
-            label: 'Type',
+            label: t('common.type', 'Typ'),
             type: 'select',
             selectValue: ownerFilter,
             selectOptions: [
-              { value: 'all', label: 'All types' },
-              { value: 'member', label: 'Member' },
-              { value: 'group', label: 'Group' },
-              { value: 'function', label: 'Function' },
+              { value: 'all', label: t('mail.allTypes', 'Alle Typen') },
+              { value: 'member', label: ownerLabel('member') },
+              { value: 'group', label: ownerLabel('group') },
+              { value: 'function', label: ownerLabel('function') },
               ...(isAll
                 ? [
-                    { value: 'system', label: 'System' },
-                    { value: 'mail_address', label: 'Alias' },
+                    { value: 'system', label: ownerLabel('system') },
+                    { value: 'mail_address', label: ownerLabel('mail_address') },
                   ]
                 : []),
             ],
             onSelectChange: (v) => setOwnerFilter(v as OwnerFilter),
           },
           {
-            label: 'State',
+            label: t('mail.state', 'Zustand'),
             type: 'select',
             selectValue: enabledFilter,
             selectOptions: [
-              { value: 'all', label: 'All states' },
-              { value: 'true', label: 'Enabled' },
-              { value: 'false', label: 'Disabled' },
+              { value: 'all', label: t('mail.allStates', 'Alle') },
+              { value: 'true', label: t('common.enabled', 'Aktiviert') },
+              { value: 'false', label: t('common.disabled', 'Deaktiviert') },
             ],
             onSelectChange: (v) => setEnabledFilter(v as EnabledFilter),
           },
           {
-            label: 'Sync',
+            label: t('mail.syncLabel', 'Abgleich'),
             type: 'chips',
             filters: syncFilters,
           },
         ]}
         groupBy={{
           getGroup: (entry) => entry.ownerType ?? 'unknown',
-          label: (g) => OWNER_LABELS[g] ?? g,
+          label: (g) => ownerLabel(g),
         }}
         toolbar={
           <Button

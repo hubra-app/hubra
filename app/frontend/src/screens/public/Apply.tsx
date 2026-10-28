@@ -1,18 +1,24 @@
 import { useState, useEffect, useMemo } from 'react'
-import { TextInput, Textarea, Button, Alert, Text } from '@mantine/core'
+import {
+  TextInput,
+  Textarea,
+  Button,
+  Alert,
+  Text,
+  Title,
+  Stack,
+  Group,
+  Radio,
+  SimpleGrid,
+  ThemeIcon,
+} from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useT } from '@/locales/i18n'
 import { IconCheck, IconArrowLeft } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { submitApplication } from '@/api/applications'
 import { getLookups } from '@/api/lookups'
-
-const TIER_DESCRIPTIONS: Record<string, string> = {
-  Maker: 'Voller Zuegriff uf alli Wärchzeug un Rüüm.',
-  Pro: 'Unlimitierte Zuegriff + Prioritäts-Buchig.',
-  Student: 'Reduzierti Rate für Studierende.',
-  Workshop: 'Eidögige Workshop-Zuegriff.',
-}
+import { PublicFrame } from './PublicFrame'
 
 export function ApplyScreen() {
   const { t } = useT()
@@ -68,315 +74,152 @@ export function ApplyScreen() {
       setError(
         err instanceof Error
           ? err.message
-          : t(
-              'apply.submissionFailed',
-              'Ingab fehlgeschlage. Bitte nöchstmol versueche.',
-            ),
+          : t('apply.submissionFailed', 'Senden fehlgeschlagen. Bitte versuche es nochmals.'),
       )
     } finally {
       setLoading(false)
     }
   }
 
-  return (
-    <div
-      className="graph-bg"
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 32,
-      }}
-    >
-      <div style={{ width: '100%', maxWidth: 460 }}>
-        {/* Brand */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            marginBottom: 32,
-          }}
-        >
-          <div className="logo-mark" />
-          <div>
-            <div
-              style={{
-                fontSize: 'var(--mantine-font-size-md)',
-                fontWeight: 700,
-                color: '#1a1625',
-              }}
-            >
-              VollBuild
-            </div>
-            <div
-              style={{
-                fontSize: 'var(--mantine-font-size-xs)',
-                color: '#6131c4',
-                fontFamily: '"JetBrains Mono"',
-                letterSpacing: '0.06em',
-              }}
-            >
-              Club management
-            </div>
-          </div>
-        </div>
-
-        {!done ? (
-          <>
-            <h2
-              style={{
-                fontSize: 'var(--mantine-font-size-xl)',
-                fontWeight: 700,
-                color: '#1a1625',
-                margin: '0 0 6px',
-              }}
-            >
-              {t('apply.applyForMembership', 'Für Mitgliedschaft bewärbe')}
-            </h2>
-            <p
-              style={{
-                fontSize: 'var(--mantine-font-size-sm)',
-                color: '#5e5873',
-                margin: '0 0 28px',
-              }}
-            >
-              {t(
-                'apply.fillInDetails',
-                'Füll dini Date i ond mir überprüfed di Bewerbig.',
-              )}
-            </p>
-
-            {error && (
-              <Alert color="red" variant="light" mb={16}>
-                {error}
-              </Alert>
+  if (done)
+    return (
+      <PublicFrame>
+        <Stack align="center" ta="center" gap="xs">
+          <ThemeIcon size={56} radius="xl" color="green" variant="light" mb="sm">
+            <IconCheck size={28} />
+          </ThemeIcon>
+          <Title order={2}>{t('apply.applicationReceived', 'Antrag erhalten')}</Title>
+          <Text size="sm" c="dimmed">
+            {t(
+              'apply.thanksText',
+              'Danke, {{name}}. Wir prüfen deinen Antrag und melden uns unter {{email}}.',
+              { name: `${firstName} ${lastName}`.trim(), email },
             )}
+          </Text>
+          <Text size="sm" c="dimmed" mb="md">
+            {t('apply.usuallyTakesTime', 'Das dauert normalerweise 1–3 Arbeitstage.')}
+          </Text>
+          <Button
+            variant="subtle"
+            leftSection={<IconArrowLeft size={16} />}
+            onClick={() => navigate('/login')}
+          >
+            {t('common.backToLogin', 'Zurück zur Anmeldung')}
+          </Button>
+        </Stack>
+      </PublicFrame>
+    )
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div
-                className="grid-2"
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: 12,
-                }}
-              >
-                <div>
-                  <Text component="label" size="sm" fw={600} c="dimmed">
-                    {t('common.firstName', 'Vorname')}
-                  </Text>
-                  <TextInput
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    placeholder={t('apply.firstNamePlaceholder', 'Anna')}
-                    autoFocus
-                  />
-                </div>
-                <div>
-                  <Text component="label" size="sm" fw={600} c="dimmed">
-                    {t('common.lastName', 'Nachname')}
-                  </Text>
-                  <TextInput
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    placeholder={t('apply.lastNamePlaceholder', 'Zimmermann')}
-                  />
-                </div>
-              </div>
+  return (
+    <PublicFrame wide>
+      <Title order={1} fz={28} mb={6}>
+        {t('apply.applyForMembership', 'Mitgliedschaft beantragen')}
+      </Title>
+      <Text size="md" c="dimmed" mb={32}>
+        {t('apply.fillInDetails', 'Fülle deine Angaben aus. Der Verein prüft deinen Antrag.')}
+      </Text>
 
-              <div>
-                <Text component="label" size="sm" fw={600} c="dimmed">
-                  {t('common.email', 'E-Mail')}
-                </Text>
-                <TextInput
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={t('apply.emailPlaceholder', 'anna@beispiel.ch')}
-                />
-              </div>
+      {error && (
+        <Alert color="red" variant="light" mb="md">
+          {error}
+        </Alert>
+      )}
 
-              {tiers.length > 0 && (
-                <div>
-                  <Text component="label" size="sm" fw={600} c="dimmed">
-                    {t('apply.membershipTier', 'Mitgliedschaft-Stuf')}
-                  </Text>
-                  <div
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          handleSubmit()
+        }}
+      >
+        <Stack gap="md">
+          <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="sm">
+            <TextInput
+              label={t('common.firstName', 'Vorname')}
+              size="md"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              autoComplete="given-name"
+              required
+              autoFocus
+            />
+            <TextInput
+              label={t('common.lastName', 'Nachname')}
+              size="md"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              autoComplete="family-name"
+              required
+            />
+          </SimpleGrid>
+
+          <TextInput
+            label={t('common.email', 'E-Mail')}
+            type="email"
+            size="md"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={t('apply.emailPlaceholder', 'anna@beispiel.ch')}
+            autoComplete="email"
+            required
+          />
+
+          {tiers.length > 0 && (
+            <Radio.Group
+              label={t('apply.membershipTier', 'Mitgliedschaftsstufe')}
+              value={tier}
+              onChange={setTier}
+            >
+              <Stack gap={8} mt={4}>
+                {tiers.map((tr) => (
+                  <Radio.Card
+                    key={tr.name}
+                    value={tr.name}
+                    radius="md"
+                    p="sm"
                     style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 8,
-                      marginTop: 8,
+                      borderColor: tier === tr.name ? 'var(--mantine-color-acc-6)' : undefined,
+                      background: tier === tr.name ? 'var(--mantine-color-acc-0)' : undefined,
                     }}
                   >
-                    {tiers.map((t) => (
-                      <label
-                        key={t.name}
-                        onClick={() => setTier(t.name)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 12,
-                          padding: '10px 14px',
-                          border: `1.5px solid ${
-                            tier === t.name ? '#7441e0' : '#d6d2e3'
-                          }`,
-                          borderRadius: 9,
-                          cursor: 'pointer',
-                          background:
-                            tier === t.name
-                              ? 'rgba(116,65,224,.08)'
-                              : 'transparent',
-                          transition: 'all .12s',
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 16,
-                            height: 16,
-                            borderRadius: '50%',
-                            flexShrink: 0,
-                            border: `2px solid ${
-                              tier === t.name ? '#7441e0' : '#d6d2e3'
-                            }`,
-                            background:
-                              tier === t.name ? '#7441e0' : 'transparent',
-                          }}
-                        />
-                        <div>
-                          <div
-                            style={{
-                              fontSize: 'var(--mantine-font-size-sm)',
-                              fontWeight: 600,
-                              color: '#1a1625',
-                            }}
-                          >
-                            {t.name}
-                          </div>
-                          <div
-                            style={{
-                              fontSize: 'var(--mantine-font-size-xs)',
-                              color: '#5e5873',
-                            }}
-                          >
-                            {TIER_DESCRIPTIONS[t.name] ?? ''}
-                          </div>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    <Group gap="sm" wrap="nowrap">
+                      <Radio.Indicator />
+                      <Text fw={600} size="sm">
+                        {tr.name}
+                      </Text>
+                    </Group>
+                  </Radio.Card>
+                ))}
+              </Stack>
+            </Radio.Group>
+          )}
 
-              <div>
-                <Text component="label" size="sm" fw={600} c="dimmed">
-                  {t('apply.message', 'Nachricht')}{' '}
-                  <span style={{ color: '#8c86a0', fontWeight: 400 }}>
-                    ({t('common.optional', 'optional')})
-                  </span>
-                </Text>
-                <Textarea
-                  rows={3}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder={t(
-                    'apply.messagePlaceholder',
-                    'Erzähl e bitzeli über di selber ond was du gärn mached…',
-                  )}
-                />
-              </div>
+          <Textarea
+            label={t('apply.message', 'Nachricht')}
+            description={t('common.optional', 'optional')}
+            size="md"
+            autosize
+            minRows={3}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder={t(
+              'apply.messagePlaceholder',
+              'Erzähl uns kurz etwas über dich und was dich am Verein interessiert.',
+            )}
+          />
 
-              <Button
-                variant="filled"
-                style={{
-                  height: 44,
-                  fontSize: 'var(--mantine-font-size-md)',
-                  marginTop: 4,
-                }}
-                onClick={handleSubmit}
-                disabled={loading || !valid}
-              >
-                {loading
-                  ? t('apply.submitting', 'Wird iglah…')
-                  : t('apply.submitApplication', 'Bewerbig iireiche')}
-              </Button>
+          <Button type="submit" size="md" fullWidth mt={4} loading={loading} disabled={!valid}>
+            {t('apply.submitApplication', 'Antrag senden')}
+          </Button>
 
-              <Button
-                variant="subtle"
-                style={{ gap: 8 }}
-                onClick={() => navigate('/login')}
-              >
-                <IconArrowLeft size={16} />{' '}
-                {t('common.backToLogin', 'Zrugg zue Aamäldig')}
-              </Button>
-            </div>
-          </>
-        ) : (
-          <div style={{ textAlign: 'center' }}>
-            <div
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: '50%',
-                background: 'rgba(31,157,87,.12)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 20px',
-              }}
-            >
-              <IconCheck size={28} color="#1f9d57" />
-            </div>
-            <h2
-              style={{
-                fontSize: 'var(--mantine-font-size-xl)',
-                fontWeight: 700,
-                color: '#1a1625',
-                margin: '0 0 8px',
-              }}
-            >
-              {t('apply.applicationReceived', 'Bewerbig erhalte!')}
-            </h2>
-            <p
-              style={{
-                fontSize: 'var(--mantine-font-size-sm)',
-                color: '#5e5873',
-                margin: '0 0 6px',
-                lineHeight: 1.6,
-              }}
-            >
-              {t('apply.thanksMsg', 'Danke, ')}{' '}
-              <strong>
-                {firstName} {lastName}
-              </strong>
-              . Mir überprüfed di Bewerbig ond melded us bi{' '}
-              <strong>{email}</strong>.
-            </p>
-            <p
-              style={{
-                fontSize: 'var(--mantine-font-size-sm)',
-                color: '#8c86a0',
-                margin: '0 0 28px',
-              }}
-            >
-              {t(
-                'apply.usuallyTakesTime',
-                'Das daueret normalerwis 1–3 Werchtäg.',
-              )}
-            </p>
-            <Button
-              variant="subtle"
-              style={{ gap: 8 }}
-              onClick={() => navigate('/login')}
-            >
-              <IconArrowLeft size={16} />{' '}
-              {t('common.backToLogin', 'Zrugg zue Aamäldig')}
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
+          <Button
+            variant="subtle"
+            leftSection={<IconArrowLeft size={16} />}
+            onClick={() => navigate('/login')}
+          >
+            {t('common.backToLogin', 'Zurück zur Anmeldung')}
+          </Button>
+        </Stack>
+      </form>
+    </PublicFrame>
   )
 }

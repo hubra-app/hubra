@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { IconPlus, IconPencil, IconTrash } from '@tabler/icons-react'
 import { useToast, useAuth } from '@/context/AppContext'
+import { useT } from '@/locales/i18n'
 import {
   Modal,
   Field,
@@ -14,6 +15,7 @@ import {
   type SlideOverMember,
 } from '@/components/ui'
 import type { MembershipTier } from '@/types'
+import type { TierCostPreview } from '@/api/tiers'
 import {
   listTiers,
   createTier,
@@ -23,6 +25,19 @@ import {
 } from '@/api/tiers'
 import { listTierMembers, listMembers, updateMember } from '@/api/members'
 import { PaymentPlansEditor } from './PaymentPlansEditor'
+
+type Translate = ReturnType<typeof useT>['t']
+
+/** Builds the price line locally so the billing period is translated. */
+function costSummary(
+  t: Translate,
+  cost: Pick<TierCostPreview, 'amount' | 'period'> | undefined,
+): string | undefined {
+  if (!cost) return undefined
+  if (!(cost.amount > 0)) return '—'
+  const period = t(`tiers.per.${cost.period ?? 'period'}`, cost.period ?? 'Periode')
+  return `CHF ${cost.amount.toFixed(2)} / ${period}`
+}
 
 /* -- Tier Detail Panel ------------------------- */
 function TierDetailPanel({
@@ -37,6 +52,7 @@ function TierDetailPanel({
   costSummary?: string
 }) {
   const { notify } = useToast()
+  const { t } = useT()
   const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState('')
   const { data: members = [], isLoading: loading } = useQuery({
@@ -79,14 +95,14 @@ function TierDetailPanel({
     updateMember(m.id, { tierName: tier.name })
       .then(() => {
         queryClient.invalidateQueries({ queryKey: ['tier-members', tier.id] })
-        notify('success', 'Tier updated', `${m.name} moved to ${tier.name}.`)
+        notify('success', t('tiers.updated', 'Stufe aktualisiert'), t('tiers.memberMoved', '{{member}} ist jetzt in {{tier}}.', { member: m.name, tier: tier.name }))
         onMemberMoved?.()
       })
       .catch((err: unknown) =>
         notify(
           'error',
-          'Update failed',
-          err instanceof Error ? err.message : 'Unknown error',
+          t('common.updateFailed', 'Aktualisieren fehlgeschlagen'),
+          err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
         ),
       )
   }
@@ -94,7 +110,7 @@ function TierDetailPanel({
   return (
     <MemberSlideOver
       title={tier.name}
-      subtitle={`${costSummary ?? '—'} · ${tier.billingCycle ?? ''}`}
+      subtitle={costSummary ?? '—'}
       icon={
         <div
           style={{
@@ -107,8 +123,8 @@ function TierDetailPanel({
       }
       members={slideMembers}
       loading={loading}
-      addLabel="MOVE MEMBER TO THIS TIER"
-      addPlaceholder="Search members…"
+      addLabel={t('tiers.moveMember', 'Mitglied in diese Stufe verschieben')}
+      addPlaceholder={t('tiers.searchMembers', 'Mitglieder suchen …')}
       searchResults={searchResults}
       onAdd={handleAdd}
       onAddSearch={setSearchQuery}
@@ -118,8 +134,8 @@ function TierDetailPanel({
 }
 
 /* -- Membership tiers -------------------------- */
-const tierSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+const makeTierSchema = (t: Translate) => z.object({
+  name: z.string().min(1, t('common.nameRequired', 'Name ist erforderlich')),
   color: z.string(),
   priceType: z.enum(['fixed', 'percentage', 'formula']),
   billingCycle: z.string(),
@@ -129,10 +145,11 @@ const tierSchema = z.object({
   roundTo: z.string(),
   deductIds: z.array(z.number()),
 })
-type TierForm = z.infer<typeof tierSchema>
+type TierForm = z.infer<ReturnType<typeof makeTierSchema>>
 
 export function TiersTab() {
   const { notify } = useToast()
+  const { t } = useT()
   const { hasPermission } = useAuth()
   const queryClient = useQueryClient()
   const canCreate = hasPermission('tiers.tiers.create')
@@ -150,19 +167,19 @@ export function TiersTab() {
   const { data: tierCosts = {} } = useQuery({
     queryKey: ['tier-costs', tiers],
     queryFn: async () => {
-      const costs: Record<string, { summary: string }> = {}
+      const costs: Record<string, TierCostPreview> = {}
       await Promise.all(
-        tiers.map(async (t) => {
+        tiers.map(async (tier) => {
           try {
-            costs[t.id] = await calculateTierCost({
-              priceType: t.priceType,
-              billingCycle: t.billingCycle,
-              priceChf: t.priceChf,
-              percentageValue: t.percentageValue,
-              coefficient: t.coefficient,
-              roundTo: t.roundTo,
-              deductTierIds: t.deductTierIds,
-              tierId: Number(t.id),
+            costs[tier.id] = await calculateTierCost({
+              priceType: tier.priceType,
+              billingCycle: tier.billingCycle,
+              priceChf: tier.priceChf,
+              percentageValue: tier.percentageValue,
+              coefficient: tier.coefficient,
+              roundTo: tier.roundTo,
+              deductTierIds: tier.deductTierIds,
+              tierId: Number(tier.id),
             })
           } catch {
             /* ignore */
@@ -175,7 +192,7 @@ export function TiersTab() {
   })
 
   const form = useForm<TierForm>({
-    validate: zodResolver(tierSchema),
+    validate: zodResolver(makeTierSchema(t)),
     initialValues: {
       name: '',
       color: '#7441e0',
@@ -197,10 +214,7 @@ export function TiersTab() {
   const watchedRoundTo = form.values.roundTo
   const watchedDeductIds = form.values.deductIds
 
-  const [costPreview, setCostPreview] = useState<{
-    summary: string
-    members: number
-  } | null>(null)
+  const [costPreview, setCostPreview] = useState<TierCostPreview | null>(null)
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -252,18 +266,18 @@ export function TiersTab() {
     setCostPreview(null)
     setAddOpen(true)
   }
-  const openEdit = (t: MembershipTier) => {
-    setEditTarget(t)
+  const openEdit = (tier: MembershipTier) => {
+    setEditTarget(tier)
     form.setValues({
-      name: t.name,
-      color: t.color,
-      priceType: t.priceType,
-      billingCycle: t.billingCycle ?? '',
-      price: t.priceChf != null ? String(t.priceChf) : '',
-      percentageVal: t.percentageValue != null ? String(t.percentageValue) : '',
-      coefficient: t.coefficient != null ? String(t.coefficient) : '',
-      roundTo: t.roundTo != null ? String(t.roundTo) : '',
-      deductIds: t.deductTierIds ?? [],
+      name: tier.name,
+      color: tier.color,
+      priceType: tier.priceType,
+      billingCycle: tier.billingCycle ?? '',
+      price: tier.priceChf != null ? String(tier.priceChf) : '',
+      percentageVal: tier.percentageValue != null ? String(tier.percentageValue) : '',
+      coefficient: tier.coefficient != null ? String(tier.coefficient) : '',
+      roundTo: tier.roundTo != null ? String(tier.roundTo) : '',
+      deductIds: tier.deductTierIds ?? [],
     })
   }
 
@@ -289,14 +303,14 @@ export function TiersTab() {
       setAddOpen(false)
       notify(
         'success',
-        'Tier created',
-        `${data.name} membership tier is active.`,
+        t('tiers.created', 'Stufe erstellt'),
+        t('tiers.createdMsg', 'Die Stufe {{name}} ist aktiv.', { name: data.name }),
       )
     } catch (err: unknown) {
       notify(
         'error',
-        'Create failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('common.createFailed', 'Erstellen fehlgeschlagen'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setSaving(false)
@@ -324,12 +338,12 @@ export function TiersTab() {
       queryClient.invalidateQueries({ queryKey: ['tiers'] })
       queryClient.invalidateQueries({ queryKey: ['lookups'] })
       setEditTarget(null)
-      notify('success', 'Tier updated', `${data.name} has been updated.`)
+      notify('success', t('tiers.updated', 'Stufe aktualisiert'), t('tiers.updatedMsg', '{{name}} wurde gespeichert.', { name: data.name }))
     } catch (err: unknown) {
       notify(
         'error',
-        'Update failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('common.updateFailed', 'Aktualisieren fehlgeschlagen'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setSaving(false)
@@ -342,12 +356,12 @@ export function TiersTab() {
       await deleteTier(deleteTarget.id)
       queryClient.invalidateQueries({ queryKey: ['tiers'] })
       queryClient.invalidateQueries({ queryKey: ['lookups'] })
-      notify('info', 'Tier deleted', `${deleteTarget.name} has been removed.`)
+      notify('info', t('tiers.deleted', 'Stufe gelöscht'), t('tiers.deletedMsg', '{{name}} wurde entfernt.', { name: deleteTarget.name }))
     } catch (err: unknown) {
       notify(
         'error',
-        'Delete failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('common.deleteFailed', 'Löschen fehlgeschlagen'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -359,13 +373,13 @@ export function TiersTab() {
       <div
         style={{ display: 'grid', gridTemplateColumns: '1fr 72px', gap: 12 }}
       >
-        <Field label="Tier name">
+        <Field label={t('tiers.form.name', 'Name der Stufe')}>
           <TextInput
             {...form.getInputProps('name')}
-            placeholder="e.g. Full Access"
+            placeholder={t('tiers.form.namePlaceholder', 'z. B. Vollzugang')}
           />
         </Field>
-        <Field label="Color">
+        <Field label={t('common.color', 'Farbe')}>
           <TextInput
             type="color"
             {...form.getInputProps('color')}
@@ -374,23 +388,23 @@ export function TiersTab() {
         </Field>
       </div>
 
-      <Field label="Price type">
+      <Field label={t('tiers.form.priceType', 'Preisart')}>
         <Select
           data={[
-            { value: 'fixed', label: 'Fixed' },
-            { value: 'percentage', label: 'Percentage' },
-            { value: 'formula', label: 'Formula' },
+            { value: 'fixed', label: t('tiers.type.fixed', 'Fester Betrag') },
+            { value: 'percentage', label: t('tiers.type.percentage', 'Prozentual') },
+            { value: 'formula', label: t('tiers.type.formula', 'Formel') },
           ]}
           {...form.getInputProps('priceType')}
         />
       </Field>
 
-      <Field label="Billing cycle">
+      <Field label={t('tiers.form.billingCycle', 'Abrechnung')}>
         <Select
           data={[
-            { value: '', label: 'None (manual)' },
-            { value: 'monthly', label: 'Monthly' },
-            { value: 'yearly', label: 'Yearly' },
+            { value: '', label: t('tiers.cycle.none', 'Keine (manuell)') },
+            { value: 'monthly', label: t('tiers.cycle.monthly', 'Monatlich') },
+            { value: 'yearly', label: t('tiers.cycle.yearly', 'Jährlich') },
           ]}
           {...form.getInputProps('billingCycle')}
         />
@@ -398,8 +412,8 @@ export function TiersTab() {
 
       {watchedPriceType === 'fixed' && (
         <Field
-          label="Price (CHF)"
-          hint={`Per ${watchedBillingCycle || 'period'}`}
+          label={t('tiers.form.price', 'Preis (CHF)')}
+          hint={t('tiers.form.perPeriod', 'Pro {{period}}', { period: t(`tiers.per.${watchedBillingCycle || 'period'}`, watchedBillingCycle || 'Periode') })}
         >
           <TextInput
             type="number"
@@ -413,8 +427,8 @@ export function TiersTab() {
       {watchedPriceType === 'percentage' && (
         <>
           <Field
-            label="Percentage value (%)"
-            hint="e.g. 2.5 means 2.5% of yearly expenses per member per year"
+            label={t('tiers.form.percentage', 'Prozentsatz (%)')}
+            hint={t('tiers.form.percentageHint', 'z. B. 2.5 heisst 2.5 % der jährlichen Ausgaben pro Mitglied und Jahr')}
           >
             <TextInput
               type="number"
@@ -430,8 +444,8 @@ export function TiersTab() {
       {watchedPriceType === 'formula' && (
         <>
           <Field
-            label="Coefficient"
-            hint="e.g. 0.70 to deduct 70% of other tier fees"
+            label={t('tiers.form.coefficient', 'Koeffizient')}
+            hint={t('tiers.form.coefficientHint', 'z. B. 0.70, um 70 % der Beiträge anderer Stufen abzuziehen')}
           >
             <TextInput
               type="number"
@@ -443,8 +457,8 @@ export function TiersTab() {
             />
           </Field>
           <Field
-            label="Round to"
-            hint="Round up to nearest (e.g. 5 ? next 5 CHF)"
+            label={t('tiers.form.roundTo', 'Runden auf')}
+            hint={t('tiers.form.roundHint', 'Aufrunden auf (z. B. 5 → nächste 5 CHF)')}
           >
             <TextInput
               type="number"
@@ -454,8 +468,8 @@ export function TiersTab() {
             />
           </Field>
           <Field
-            label="Deduct tier fees from"
-            hint="Select tiers to deduct in formula"
+            label={t('tiers.form.deduct', 'Beiträge abziehen von')}
+            hint={t('tiers.form.deductHint', 'Stufen, deren Beiträge in der Formel abgezogen werden')}
           >
             <div
               style={{
@@ -503,7 +517,7 @@ export function TiersTab() {
                     fontSize: 'var(--mantine-font-size-xs)',
                   }}
                 >
-                  No other tiers available
+                  {t('tiers.form.noOtherTiers', 'Keine anderen Stufen vorhanden')}
                 </span>
               )}
             </div>
@@ -522,11 +536,10 @@ export function TiersTab() {
             color: '#1a1625',
           }}
         >
-          {costPreview.summary}
+          {costSummary(t, costPreview)}
           {costPreview.members > 1 && (
             <span style={{ fontWeight: 400, color: '#5e5873', marginLeft: 8 }}>
-              · {costPreview.members} member
-              {costPreview.members !== 1 ? 's' : ''}
+              · {t('tiers.memberCount', '{{count}} Mitglieder', { count: costPreview.members })}
             </span>
           )}
         </div>
@@ -537,10 +550,10 @@ export function TiersTab() {
   return (
     <div>
       {canCreate && (
-        <Group justify="flex-end" mb={16}>
+        <Group justify="flex-end" mb={16} className="page-actions">
           <Button variant="filled" onClick={openAdd}>
             <IconPlus size={16} />
-            New tier
+            {t('tiers.new', 'Neue Stufe')}
           </Button>
         </Group>
       )}
@@ -555,8 +568,6 @@ export function TiersTab() {
           <Paper
             key={tier.id}
             withBorder
-            shadow="sm"
-            radius="lg"
             style={{ overflow: 'hidden' }}
           >
             <div style={{ height: 4, background: tier.color }} />
@@ -608,7 +619,7 @@ export function TiersTab() {
                     color: '#5e5873',
                   }}
                 >
-                  Price
+                  {t('tiers.price', 'Preis')}
                 </span>
                 <span
                   className="num"
@@ -618,9 +629,9 @@ export function TiersTab() {
                     color: '#1a1625',
                   }}
                 >
-                  {tierCosts[tier.id]?.summary ??
+                  {costSummary(t, tierCosts[tier.id]) ??
                     (tier.priceType === 'formula'
-                      ? 'Formula'
+                      ? t('tiers.type.formula', 'Formel')
                       : tier.priceType === 'percentage'
                         ? `${tier.percentageValue ?? '?'}%`
                         : tier.priceChf != null
@@ -646,7 +657,7 @@ export function TiersTab() {
                     padding: '2px 8px',
                   }}
                 >
-                  {tier.priceType ?? 'no type'}
+                  {tier.priceType ? t(`tiers.type.${tier.priceType}`, tier.priceType) : t('tiers.noType', 'Kein Typ')}
                 </span>
                 {tier.billingCycle && (
                   <span
@@ -659,7 +670,7 @@ export function TiersTab() {
                       padding: '2px 8px',
                     }}
                   >
-                    {tier.billingCycle}
+                    {t(`tiers.cycle.${tier.billingCycle}`, tier.billingCycle)}
                   </span>
                 )}
               </div>
@@ -672,7 +683,7 @@ export function TiersTab() {
                     onClick={() => openEdit(tier)}
                   >
                     <IconPencil size={16} />
-                    Edit
+                    {t('common.edit', 'Bearbeiten')}
                   </Button>
                 )}
                 <Button
@@ -680,7 +691,7 @@ export function TiersTab() {
                   color="acc"
                   onClick={() => setDetailTier(tier)}
                 >
-                  Members ?
+                  {t('tiers.members', 'Mitglieder')}
                 </Button>
                 {canDelete && (
                   <Button
@@ -697,8 +708,6 @@ export function TiersTab() {
         ))}
         <Paper
           withBorder
-          shadow="sm"
-          radius="lg"
           style={{
             display: 'flex',
             flexDirection: 'column',
@@ -719,7 +728,7 @@ export function TiersTab() {
               color: '#8c86a0',
             }}
           >
-            New tier
+            {t('tiers.new', 'Neue Stufe')}
           </span>
         </Paper>
       </div>
@@ -735,18 +744,18 @@ export function TiersTab() {
       <Modal
         open={addOpen}
         onClose={() => setAddOpen(false)}
-        title="New membership tier"
+        title={t('tiers.newTitle', 'Neue Mitgliedschaftsstufe')}
         footer={
           <>
             <Button variant="default" onClick={() => setAddOpen(false)}>
-              Cancel
+              {t('common.cancel', 'Abbrechen')}
             </Button>
             <Button
               variant="filled"
               onClick={() => form.onSubmit(saveAdd)()}
               disabled={saving}
             >
-              Create tier
+              {t('tiers.create', 'Stufe erstellen')}
             </Button>
           </>
         }
@@ -756,19 +765,19 @@ export function TiersTab() {
       <Modal
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
-        title="Edit tier"
+        title={t('tiers.editTitle', 'Stufe bearbeiten')}
         subtitle={editTarget?.name}
         footer={
           <>
             <Button variant="default" onClick={() => setEditTarget(null)}>
-              Cancel
+              {t('common.cancel', 'Abbrechen')}
             </Button>
             <Button
               variant="filled"
               onClick={() => form.onSubmit(saveEdit)()}
               disabled={saving}
             >
-              Save changes
+              {t('common.saveChanges', 'Änderungen speichern')}
             </Button>
           </>
         }
@@ -779,8 +788,8 @@ export function TiersTab() {
       <ConfirmModal
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        title={`Delete "${deleteTarget?.name}" tier?`}
-        body="Members assigned to this tier will need to be reassigned. This cannot be undone."
+        title={t('tiers.deleteTitle', 'Stufe «{{name}}» löschen?', { name: deleteTarget?.name ?? '' })}
+        body={t('tiers.deleteBody', 'Mitglieder in dieser Stufe müssen einer anderen Stufe zugewiesen werden. Das kann nicht rückgängig gemacht werden.')}
         onConfirm={confirmDelete}
       />
     </div>

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Badge, Button, Group, Paper, Progress, Text } from "@mantine/core";
+import { Badge, Button, Group, Paper, Progress, Text, ThemeIcon } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
 import { useT } from "@/locales/i18n";
 import {
@@ -49,13 +49,13 @@ export function AccountDashboardScreen() {
       {/* pending payments banner */}
       {invoicesError && (
         <Paper withBorder shadow="sm" radius="lg" p="md" mb="md" c="red">
-          <Text size="sm">{t("common.error", "Error loading invoices")}</Text>
+          <Text size="sm">{t("common.error", 'Fehler')}</Text>
         </Paper>
       )}
       {invoicesLoading && (
         <Paper withBorder shadow="sm" radius="lg" p="md" mb="md">
           <Text size="sm" c="dimmed">
-            {t("common.loading", "Loading…")}
+            {t("common.loading", 'Wird geladen …')}
           </Text>
         </Paper>
       )}
@@ -87,7 +87,7 @@ export function AccountDashboardScreen() {
               fz="md"
               style={{ color: "var(--mantine-color-red-7)" }}
             >
-              {t("account.pendingPayment", "Outstanding payment")}
+              {t("account.pendingPayment", 'Offene Zahlung')}
               {myInvoices.length !== 1 ? "" : ""}
             </Text>
             <span
@@ -97,7 +97,7 @@ export function AccountDashboardScreen() {
                 color: "var(--mantine-color-red-7)",
               }}
             >
-              {myInvoices.length} {t("account.invoice", "invoice")}
+              {myInvoices.length} {t("account.invoice", 'Rechnung')}
               {myInvoices.length !== 1 ? "s" : ""}
             </span>
           </Group>
@@ -130,7 +130,7 @@ export function AccountDashboardScreen() {
                       color: "var(--mantine-color-ink-4)",
                     }}
                   >
-                    {t("account.due", "Due")} {inv.due} · CHF{" "}
+                    {t("account.due", 'Fällig')} {inv.due} · CHF{" "}
                     {formatCHF(inv.amount)}
                   </div>
                 </div>
@@ -141,14 +141,14 @@ export function AccountDashboardScreen() {
                     variant="subtle"
                     onClick={() => downloadInvoicePdf(inv.id)}
                   >
-                    {t("finance.downloadQrBill", "QR-bill")}
+                    {t("finance.downloadQrBill", 'QR-Rechnung herunterladen')}
                   </Button>
                   <Button
                     size="sm"
                     variant="default"
                     onClick={() => goInvoice(inv)}
                   >
-                    {t("account.view", "View")}
+                    {t("account.view", 'Ansehen')}
                   </Button>
                 </div>
               </div>
@@ -168,55 +168,40 @@ export function AccountDashboardScreen() {
       >
         {[
           {
-            label: t("account.eventsJoined", "Events joined"),
+            label: t("account.eventsJoined", 'Angemeldete Anlässe'),
             value: myEvents.length,
-            icon: <IconCalendar size={18} style={{ color: "#2596be" }} />,
+            icon: <IconCalendar size={20} />,
+            color: "blue",
           },
           {
-            label: t("account.pollsVoted", "Polls voted"),
+            label: t("account.pollsVoted", 'Abstimmungen'),
             value: Object.keys(myVotes).length,
-            icon: <IconChartBar size={18} style={{ color: "#1f9d57" }} />,
+            icon: <IconChartBar size={20} />,
+            color: "green",
           },
           {
-            label: t("account.postsLiked", "Posts liked"),
+            label: t("account.postsLiked", 'Beiträge mit Like'),
             value: 0,
-            icon: <IconHeart size={18} style={{ color: "#fe64ac" }} />,
+            icon: <IconHeart size={20} />,
+            color: "pink",
           },
         ].map((s) => (
           <Paper
             key={s.label}
             withBorder
-            shadow="sm"
-            radius="lg"
-            style={{
-              padding: "14px 16px",
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-            }}
+            p="md"
+            style={{ display: "flex", alignItems: "center", gap: 14 }}
           >
-            {s.icon}
-            <div>
-              <div
-                className="num"
-                style={{
-                  fontSize: "var(--mantine-font-size-xl)",
-                  fontWeight: 700,
-                  color: "var(--mantine-color-ink-8)",
-                  lineHeight: 1,
-                }}
-              >
+            <ThemeIcon size={44} radius="md" variant="light" color={s.color}>
+              {s.icon}
+            </ThemeIcon>
+            <div style={{ minWidth: 0 }}>
+              <Text className="stat-value" fz={26} fw={700} lh={1.1}>
                 {s.value}
-              </div>
-              <div
-                style={{
-                  fontSize: "var(--mantine-font-size-xs)",
-                  color: "var(--mantine-color-ink-4)",
-                  marginTop: 2,
-                }}
-              >
+              </Text>
+              <Text fz="sm" c="dimmed" mt={2}>
                 {s.label}
-              </div>
+              </Text>
             </div>
           </Paper>
         ))}
@@ -235,7 +220,7 @@ export function AccountDashboardScreen() {
               style={{ color: "var(--mantine-color-ink-4)" }}
             />
             <Text fw={700} fz="md">
-              {t("common.myEvents", "My Events")}
+              {t("common.myEvents", 'Meine Anlässe')}
             </Text>
             <Button
               size="sm"
@@ -243,7 +228,7 @@ export function AccountDashboardScreen() {
               style={{ marginLeft: "auto" }}
               onClick={() => go("/app/operations/events")}
             >
-              {t("account.browseEvents", "Browse events")}
+              {t("account.browseEvents", 'Anlässe ansehen')}
             </Button>
           </Group>
           {myEvents.length === 0 ? (
@@ -257,7 +242,7 @@ export function AccountDashboardScreen() {
             >
               {t(
                 "account.noEventsJoined",
-                "You haven't joined any events yet.",
+                'Du hast dich noch für keinen Anlass angemeldet.',
               )}
             </div>
           ) : (
@@ -329,7 +314,7 @@ export function AccountDashboardScreen() {
                     </div>
                   </div>
                   <Badge variant="light" color="green" radius="xl" size="sm">
-                    {t("account.attending", "Attending")}
+                    {t("account.attending", 'Teilnehmende')}
                   </Badge>
                   <Button
                     size="sm"
@@ -343,7 +328,7 @@ export function AccountDashboardScreen() {
                     }
                   >
                     <Leave size={16} />
-                    {t("account.leave", "Leave")}
+                    {t("account.leave", 'Verlassen')}
                   </Button>
                 </div>
               );
@@ -363,7 +348,7 @@ export function AccountDashboardScreen() {
               style={{ color: "var(--mantine-color-ink-4)" }}
             />
             <Text fw={700} fz="md">
-              {t("account.myVotes", "My votes")}
+              {t("account.myVotes", 'Meine Abstimmungen')}
             </Text>
             <Button
               size="sm"
@@ -371,7 +356,7 @@ export function AccountDashboardScreen() {
               style={{ marginLeft: "auto" }}
               onClick={() => go("/app/operations/polls")}
             >
-              {t("account.allPolls", "All polls")}
+              {t("account.allPolls", 'Alle Umfragen')}
             </Button>
           </Group>
           {votedPolls.length === 0 ? (
@@ -383,7 +368,7 @@ export function AccountDashboardScreen() {
                 fontSize: "var(--mantine-font-size-sm)",
               }}
             >
-              {t("account.noPollsVoted", "You haven't voted in any polls yet.")}
+              {t("account.noPollsVoted", 'Du hast noch an keiner Umfrage teilgenommen.')}
             </div>
           ) : (
             votedPolls.map((poll) => {
@@ -419,7 +404,7 @@ export function AccountDashboardScreen() {
                       {poll.question}
                     </div>
                     <Badge variant="light" color="green" radius="xl" size="sm">
-                      {t("account.voted", "Voted")}
+                      {t("account.voted", 'Abgestimmt')}
                     </Badge>
                   </div>
                   <div
@@ -521,7 +506,7 @@ export function AccountDashboardScreen() {
           >
             <IconHeart size={16} style={{ color: "#5e5873" }} />
             <Text fw={700} fz="md">
-              {t("account.likedPosts", "Liked posts")}
+              {t("account.likedPosts", 'Beiträge, die dir gefallen')}
             </Text>
           </Group>
           <div
@@ -532,7 +517,7 @@ export function AccountDashboardScreen() {
               fontSize: "var(--mantine-font-size-sm)",
             }}
           >
-            {t("account.postsComingSoon", "Posts coming soon.")}
+            {t("account.postsComingSoon", 'Beiträge folgen bald.')}
           </div>
         </Paper>
       </div>

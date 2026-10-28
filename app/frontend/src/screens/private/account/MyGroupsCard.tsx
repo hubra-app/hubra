@@ -39,7 +39,7 @@ export function MyGroupsCard() {
       <Group p="md" gap="sm" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}>
         <IconUsersGroup size={16} style={{ color: '#5e5873' }} />
         <Text fw={700} fz="md">
-          {t('account.interestGroups', 'Interest groups')}
+          {t('account.interestGroups', 'Interessengruppen')}
         </Text>
       </Group>
       {groups.map((g) => (
@@ -67,7 +67,7 @@ export function MyGroupsCard() {
             </Text>
             <Text fz="xs" c="dimmed" lineClamp={2}>
               {g.description ||
-                t('account.groupMembers', '{{count}} members', {
+                t('account.groupMembers', '{{count}} Mitglieder', {
                   count: g.memberCount,
                 })}
             </Text>
@@ -78,7 +78,7 @@ export function MyGroupsCard() {
             loading={busy === g.id}
             onClick={() => toggle(g.id, g.joined)}
           >
-            {g.joined ? t('account.leaveGroup', 'Leave') : t('account.joinGroup', 'Join')}
+            {g.joined ? t('account.leaveGroup', 'Austreten') : t('account.joinGroup', 'Beitreten')}
           </Button>
         </Group>
       ))}

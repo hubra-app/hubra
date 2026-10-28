@@ -63,7 +63,7 @@ export function ApplicationsTab() {
       setApproveTarget(null)
       notify(
         'success',
-        t('members.applications.applicationApproved', 'Aatrag approvesiert'),
+        t('members.applications.applicationApproved', 'Antrag angenommen'),
         t('members.applications.applicationApprovedMsg', {
           name: approveTarget.name,
         }),
@@ -74,7 +74,7 @@ export function ApplicationsTab() {
         t('common.error'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekanni Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setApproving(false)
@@ -88,7 +88,7 @@ export function ApplicationsTab() {
       setPendingApplicationCount()
       notify(
         'info',
-        t('members.applications.applicationDeclined', 'Aatrag abglehnt'),
+        t('members.applications.applicationDeclined', 'Antrag abgelehnt'),
         t('members.applications.applicationDeclinedMsg', { name }),
       )
     } catch (err: unknown) {
@@ -97,7 +97,7 @@ export function ApplicationsTab() {
         t('common.error'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekanni Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -116,7 +116,7 @@ export function ApplicationsTab() {
             >
               {t(
                 'members.applications.noPendingApplications',
-                'Cheni usständigi Aaträg',
+                'Keine offenen Anträge',
               )}
             </div>
           </div>
@@ -149,7 +149,7 @@ export function ApplicationsTab() {
                     color: '#5e5873',
                   }}
                 >
-                  {app.email} · {t('members.applications.wants', 'wünscht')}{' '}
+                  {app.email} · {t('members.applications.wants', 'möchte')}{' '}
                   <strong>{app.wantsTier}</strong>
                 </div>
               </div>
@@ -168,7 +168,7 @@ export function ApplicationsTab() {
                   variant="default"
                   onClick={() => decline(app.id, app.name)}
                 >
-                  {t('members.applications.decline', 'Ablehne')}
+                  {t('members.applications.decline', 'Ablehnen')}
                 </Button>
               )}
               {canApprove && (
@@ -177,7 +177,7 @@ export function ApplicationsTab() {
                   variant="filled"
                   onClick={() => openApprove(app)}
                 >
-                  {t('members.applications.approve', 'Approvesiere')}
+                  {t('members.applications.approve', 'Annehmen')}
                 </Button>
               )}
             </div>
@@ -188,7 +188,7 @@ export function ApplicationsTab() {
       <Modal
         open={!!approveTarget}
         onClose={() => setApproveTarget(null)}
-        title={t('members.applications.approveTitle', 'Aatrag approvesiere')}
+        title={t('members.applications.approveTitle', 'Antrag annehmen')}
         subtitle={approveTarget?.name}
         footer={
           <>
@@ -201,10 +201,10 @@ export function ApplicationsTab() {
               disabled={approving || !approveTier}
             >
               {approving
-                ? t('members.applications.approving', 'Wird approvesiert…')
+                ? t('members.applications.approving', 'Wird angenommen …')
                 : t(
                     'members.applications.approveAndCreate',
-                    'Approvesiere & Mitglid erstelle',
+                    'Annehmen und Mitglied erstellen',
                   )}
             </Button>
           </>
@@ -222,7 +222,7 @@ export function ApplicationsTab() {
               searchable
             />
           </Field>
-          <Field label={t('common.roles', 'Rolle')}>
+          <Field label={t('common.roles', 'Rollen')}>
             <Select
               data={allRoles.map((r) => ({ value: r, label: r }))}
               value={approveRole}

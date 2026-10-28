@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import i18n from 'i18next'
 import {
   Table as MantineTable,
   ScrollArea,
@@ -7,7 +8,6 @@ import {
   Badge,
   Accordion,
   ActionIcon,
-  Box,
   Group,
   Stack,
   Paper,
@@ -21,7 +21,6 @@ import {
   IconPencil,
   IconTrash,
   IconInbox,
-  IconChevronDown,
 } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 import { LoadingSpinner, EmptyState } from './feedback'
@@ -43,58 +42,33 @@ export function Tabs({
   onTabChange: (id: string) => void
 }) {
   return (
-    <>
-      <Box hiddenFrom="nav" mb={16}>
-        <Select
-          label="Section"
-          data={tabs.map((t) => ({ value: t.id, label: t.label }))}
-          value={activeTab}
-          onChange={(v) => v && onTabChange(v)}
-          size="md"
-          radius="md"
-          checkIconPosition="right"
-          rightSection={<IconChevronDown size={20} />}
-          styles={{
-            input: {
-              fontWeight: 600,
-              fontSize: 'var(--mantine-font-size-md)',
-              borderColor: 'var(--mantine-color-gray-4)',
-            },
-          }}
-        />
-      </Box>
-      <Box visibleFrom="nav">
-        <MantineTabs
-          value={activeTab}
-          onChange={(v) => v && onTabChange(v)}
-          mb={24}
-          variant="underline"
-          color="dark"
-          className="hubra-tabs"
-          styles={{
-            tab: {
-              paddingTop: '0.875rem',
-              paddingBottom: '0.875rem',
-              paddingLeft: '1rem',
-              paddingRight: '1rem',
-              fontSize: 'var(--mantine-font-size-lg)',
-            },
-            list: {
-              borderBottom: '1px solid var(--mantine-color-gray-3)',
-              gap: '0.25rem',
-            },
-          }}
-        >
-          <MantineTabs.List>
-            {tabs.map((t) => (
-              <MantineTabs.Tab key={t.id} value={t.id} leftSection={t.icon}>
-                {t.label}
-              </MantineTabs.Tab>
-            ))}
-          </MantineTabs.List>
-        </MantineTabs>
-      </Box>
-    </>
+    <MantineTabs
+      value={activeTab}
+      onChange={(v) => v && onTabChange(v)}
+      mb={24}
+      variant="default"
+      className="hubra-tabs"
+      styles={{
+        tab: {
+          paddingTop: 12,
+          paddingBottom: 12,
+          paddingLeft: 14,
+          paddingRight: 14,
+          fontSize: 'var(--mantine-font-size-sm)',
+        },
+        list: {
+          gap: 4,
+        },
+      }}
+    >
+      <MantineTabs.List>
+        {tabs.map((t) => (
+          <MantineTabs.Tab key={t.id} value={t.id} leftSection={t.icon}>
+            {t.label}
+          </MantineTabs.Tab>
+        ))}
+      </MantineTabs.List>
+    </MantineTabs>
   )
 }
 
@@ -116,7 +90,7 @@ export function KVTable<T extends { key: string }>({
   getNamespace,
   search,
   onSearchChange,
-  searchPlaceholder = 'Filter by key or value…',
+  searchPlaceholder = i18n.t('data.filterKeyValue', 'Nach Schlüssel oder Wert filtern …'),
   extraFilters,
   toolbar,
   editingKey,
@@ -133,8 +107,8 @@ export function KVTable<T extends { key: string }>({
   isValueClickable = () => true,
   extraColumns,
   renderActions,
-  emptyMessage = 'Nothing here.',
-  loadingMessage = 'Loading…',
+  emptyMessage = i18n.t('data.nothingHere', 'Hier ist noch nichts.'),
+  loadingMessage = i18n.t('common.loading', 'Wird geladen …'),
   keyWidth = '36%',
   getInputType,
 }: {
@@ -246,9 +220,9 @@ export function KVTable<T extends { key: string }>({
                           <MantineTable.Th
                             style={{ width: keyWidth, whiteSpace: 'nowrap' }}
                           >
-                            Key
+                            {i18n.t('data.key', 'Schlüssel')}
                           </MantineTable.Th>
-                          <MantineTable.Th>Value</MantineTable.Th>
+                          <MantineTable.Th>{i18n.t('data.value', 'Wert')}</MantineTable.Th>
                           {extraColumns?.map((col) => (
                             <MantineTable.Th
                               key={col.key}
@@ -271,7 +245,7 @@ export function KVTable<T extends { key: string }>({
                           .sort((a, b) => a.key.localeCompare(b.key))
                           .map((entry) => (
                             <MantineTable.Tr key={entry.key}>
-                              <MantineTable.Td data-label="Key">
+                              <MantineTable.Td data-label={i18n.t('data.key', 'Schlüssel')}>
                                 <Stack gap={0}>
                                   <Group gap={6} align="center">
                                     {renderKeyPrefix?.(entry)}
@@ -284,7 +258,7 @@ export function KVTable<T extends { key: string }>({
                                 </Stack>
                               </MantineTable.Td>
                               <MantineTable.Td
-                                data-label="Value"
+                                data-label={i18n.t('data.value', 'Wert')}
                                 onClick={() => {
                                   if (
                                     isValueClickable(entry) &&
@@ -394,7 +368,7 @@ export function ActionButtons({
           variant="subtle"
           size="md"
           onClick={onEdit}
-          title={editTitle ?? 'Edit'}
+          title={editTitle ?? i18n.t('common.edit', 'Bearbeiten')}
         >
           <IconPencil size={18} />
         </ActionIcon>
@@ -405,7 +379,7 @@ export function ActionButtons({
           size="md"
           color="red"
           onClick={onDelete}
-          title={deleteTitle ?? 'Delete'}
+          title={deleteTitle ?? i18n.t('common.delete', 'Löschen')}
         >
           <IconTrash size={18} />
         </ActionIcon>
@@ -556,25 +530,14 @@ export function DataTable<T>({
           }}
         >
           {hasSearch && (
-            <div style={{ position: 'relative', flex: '1 1 220px' }}>
-              <IconSearch
-                size={16}
-                style={{
-                  position: 'absolute',
-                  left: 11,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: 'var(--mantine-color-gray-5)',
-                }}
-              />
-              <TextInput
-                size="sm"
-                style={{ paddingLeft: 34 }}
-                placeholder={searchPlaceholder ?? 'Search…'}
-                value={searchValue ?? ''}
-                onChange={(e) => onSearchChange!(e.target.value)}
-              />
-            </div>
+            <TextInput
+              size="sm"
+              style={{ flex: '1 1 220px' }}
+              leftSection={<IconSearch size={16} />}
+              placeholder={searchPlaceholder ?? i18n.t('common.searchPlaceholder', 'Suchen …')}
+              value={searchValue ?? ''}
+              onChange={(e) => onSearchChange!(e.target.value)}
+            />
           )}
           {hasFlatFilters && (
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -671,11 +634,11 @@ export function DataTable<T>({
         )}
 
       {loading ? (
-        <LoadingSpinner compact message="Loading…" />
+        <LoadingSpinner compact message={i18n.t('common.loading', 'Wird geladen …')} />
       ) : data.length === 0 ? (
         <EmptyState
           icon={<IconInbox size={36} />}
-          title={typeof emptyMessage === 'string' ? emptyMessage : 'No data'}
+          title={typeof emptyMessage === 'string' ? emptyMessage : i18n.t('data.noData', 'Keine Daten')}
         />
       ) : grouped ? (
         <Accordion

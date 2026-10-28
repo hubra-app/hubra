@@ -224,20 +224,21 @@ export function getBreadcrumb(
     '/app/inventory': t('shell.breadcrumbs.inventory'),
     '/app/audit-log': t('shell.breadcrumbs.auditLog'),
     '/app/system': t('shell.breadcrumbs.system'),
+    '/app/system/roles': t('shell.breadcrumbs.roles'),
+    '/app/system/health': t('shell.breadcrumbs.health'),
     '/app/translations': t('shell.breadcrumbs.translations'),
   }
   if (map[pathname]) return map[pathname]
   if (/^\/app\/members\/[^/]+$/.test(pathname))
-    return `${t('shell.breadcrumbs.members')} > ${t(
-      'shell.breadcrumbs.memberDetail',
-    )}`
+    return t('shell.breadcrumbs.memberDetail')
   if (/^\/app\/finance\/invoices\/[^/]+$/.test(pathname))
-    return `${t('shell.breadcrumbs.finance')} > ${t(
-      'shell.breadcrumbs.invoiceDetail',
-    )}`
+    return t('shell.breadcrumbs.invoiceDetail')
   if (/^\/app\/inventory\/[^/]+$/.test(pathname))
-    return `${t('shell.breadcrumbs.inventory')} > ${t(
-      'shell.breadcrumbs.inventoryItemDetail',
-    )}`
-  return ''
+    return t('shell.breadcrumbs.inventoryItemDetail')
+  // Sub-pages without their own entry (settings tabs, system tabs, …) show
+  // the closest parent instead of nothing.
+  const parent = Object.keys(map)
+    .filter((p) => pathname.startsWith(p + '/'))
+    .sort((a, b) => b.length - a.length)[0]
+  return parent ? map[parent] : ''
 }

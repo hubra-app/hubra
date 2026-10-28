@@ -53,7 +53,7 @@ function SyncBadge({
   const color = SYNC_COLORS[state] || '#5e5873'
   const labels: Record<string, string> = {
     pending: t('mail.admin.syncPending', 'Ausstehend'),
-    drift: t('mail.admin.syncDrift', 'Abwichig'),
+    drift: t('mail.admin.syncDrift', 'Abweichung'),
     error: t('mail.admin.syncError', 'Fehler'),
   }
   return (
@@ -138,7 +138,7 @@ export function useMailColumns(
     },
     {
       key: 'address',
-      header: t('mail.address', 'Adrasse'),
+      header: t('mail.address', 'Adresse'),
       render: (entry) => (
         <span
           style={{
@@ -175,7 +175,7 @@ export function useMailColumns(
               <IconArrowForwardUp size={10} />
             )}
             {isMailbox
-              ? t('mail.admin.mailbox', 'Mailbox')
+              ? t('mail.admin.mailbox', 'Postfach')
               : t('mail.admin.alias', 'Alias')}
           </Badge>
         )
@@ -183,7 +183,7 @@ export function useMailColumns(
     },
     {
       key: 'quota',
-      header: t('mail.admin.quota', 'Quota'),
+      header: t('mail.admin.quota', 'Speicherplatz'),
       render: (entry) => {
         const isMailbox =
           entry.addressType === 'mailbox' && entry.ownerType !== 'mail_address'
@@ -199,7 +199,7 @@ export function useMailColumns(
     },
     {
       key: 'retention',
-      header: t('mail.admin.retention', 'Retention'),
+      header: t('mail.admin.retention', 'Aufbewahrung'),
       render: (entry) => {
         if (
           entry.ownerType === 'mail_address' ||
@@ -215,14 +215,14 @@ export function useMailColumns(
           >
             {entry.retention != null
               ? `${Math.round(entry.retention / 86400000)}d`
-              : t('mail.admin.retentionOff', 'OFF')}
+              : t('mail.admin.retentionOff', 'Unbegrenzt')}
           </span>
         )
       },
     },
     {
       key: 'targets',
-      header: t('mail.admin.targets', 'Targets'),
+      header: t('mail.admin.targets', 'Ziele'),
       render: (entry) => {
         const forwardTargets =
           entry.forwardTargets ||
@@ -241,7 +241,7 @@ export function useMailColumns(
             }}
           >
             <IconArrowForwardUp size={10} />
-            {targetCount} {t('mail.admin.targets', 'Targets')}
+            {targetCount} {t('mail.admin.targets', 'Ziele')}
           </span>
         ) : (
           <span style={{ color: '#8c86a0' }}>{'\u2014'}</span>
@@ -254,17 +254,17 @@ export function useMailColumns(
       render: (entry) =>
         entry.isEnabled ? (
           <Badge variant="light" color="green" radius="xl">
-            {t('mail.enabled', 'Aktiviert')}
+            {t('mail.enabled', 'Eingeschaltet')}
           </Badge>
         ) : (
           <Badge variant="light" color="red" radius="xl">
-            {t('mail.disabled', 'Deaktiviert')}
+            {t('mail.disabled', 'Ausgeschaltet')}
           </Badge>
         ),
     },
     {
       key: 'sync',
-      header: t('mail.admin.sync', 'Sync'),
+      header: t('mail.admin.sync', 'Abgleich'),
       render: (entry) => (
         <SyncBadge state={entry.syncState} error={entry.syncError} />
       ),

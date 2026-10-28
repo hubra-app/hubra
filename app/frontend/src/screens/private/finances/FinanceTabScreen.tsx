@@ -27,7 +27,7 @@ export function FinanceTabScreen() {
     { id: 'categories', label: t('shell.nav.txCategories') },
     {
       id: 'external-parties',
-      label: t('shell.nav.externalParties', 'Externi'),
+      label: t('shell.nav.externalParties', 'Extern'),
     },
   ].filter(
     (tb) =>
@@ -45,7 +45,7 @@ export function FinanceTabScreen() {
 
   return (
     <div>
-      <PageHead title={t('shell.nav.finance', 'Finance')} />
+      <PageHead title={t('shell.nav.finance', 'Finanzen')} />
       <Tabs
         tabs={tabs}
         activeTab={tab}

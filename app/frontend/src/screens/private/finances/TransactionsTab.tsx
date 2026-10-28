@@ -90,11 +90,10 @@ export function TransactionsTab() {
       setEditTarget(null)
       notify(
         'success',
-        t('finance.transaction.saved', 'Transaktion gspeichert.'),
-        t(
-          'finance.transaction.updatedMsg',
-          `Status zue ${editStatus} gändert.`,
-        ),
+        t('finance.transaction.saved', 'Buchung gespeichert.'),
+        t('finance.transaction.updatedMsg', 'Status auf «{{status}}» geändert.', {
+          status: editStatus,
+        }),
       )
     } catch (err: unknown) {
       notify(
@@ -102,7 +101,7 @@ export function TransactionsTab() {
         t('common.error'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekanni Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -114,8 +113,8 @@ export function TransactionsTab() {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       notify(
         'info',
-        t('finance.transaction.deleted', 'Transaktion glöscht.'),
-        t('finance.transaction.deletedMsg', 'Datensatz entfernt.'),
+        t('finance.transaction.deleted', 'Buchung gelöscht.'),
+        t('finance.transaction.deletedMsg', 'Die Buchung wurde gelöscht.'),
       )
     } catch (err: unknown) {
       notify(
@@ -123,7 +122,7 @@ export function TransactionsTab() {
         t('common.error'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekanni Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -162,8 +161,8 @@ export function TransactionsTab() {
       setAddOpen(false)
       notify(
         'success',
-        t('finance.transaction.saved', 'Transaktion erfasse'),
-        t('finance.transaction.createdMsg', 'Transaktion erstellt.'),
+        t('finance.transaction.saved', 'Buchung gespeichert.'),
+        t('finance.transaction.createdMsg', 'Buchung erfasst.'),
       )
     } catch (err: unknown) {
       notify(
@@ -171,7 +170,7 @@ export function TransactionsTab() {
         t('common.error'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekanni Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setAddSaving(false)
@@ -194,10 +193,10 @@ export function TransactionsTab() {
   return (
     <div>
       {canCreate && (
-        <Group justify="flex-end" mb={16}>
+        <Group justify="flex-end" mb={16} className="page-actions">
           <Button variant="filled" onClick={openAdd}>
             <IconPlus size={16} />
-            {t('finance.addTransaction', 'Transaktion erfasse')}
+            {t('finance.addTransaction', 'Buchung erfassen')}
           </Button>
         </Group>
       )}
@@ -206,7 +205,7 @@ export function TransactionsTab() {
           message={
             fetchError instanceof Error
               ? fetchError.message
-              : 'Failed to load transactions'
+              : t('finance.loadTransactionsFailed', 'Buchungen konnten nicht geladen werden')
           }
           onRetry={() => refetch()}
         />
@@ -246,7 +245,7 @@ export function TransactionsTab() {
           },
           {
             key: 'description',
-            header: t('common.description', 'Beschribig'),
+            header: t('common.description', 'Beschreibung'),
             render: (tx) => (
               <div
                 style={{
@@ -262,12 +261,12 @@ export function TransactionsTab() {
           },
           {
             key: 'category',
-            header: t('finance.category', 'Kategorie'),
+            header: t('finance.categoryLabel', 'Kategorie'),
             render: (tx) => <Badge variant="light">{tx.category}</Badge>,
           },
           {
             key: 'member',
-            header: t('common.member', 'Mitglid'),
+            header: t('common.member', 'Mitglied'),
             render: (tx) => (
               <span style={{ color: '#5e5873' }}>{tx.member}</span>
             ),
@@ -321,7 +320,7 @@ export function TransactionsTab() {
                       variant="subtle"
                       size="md"
                       onClick={(e) => goToInvoice(tx.invoiceId!, e)}
-                      title={t('finance.viewInvoice', 'Rächnig ahluege')}
+                      title={t('finance.viewInvoice', 'Rechnung ansehen')}
                     >
                       <IconExternalLink
                         size={18}
@@ -338,20 +337,20 @@ export function TransactionsTab() {
         ]}
         data={pg.paged}
         loading={loading}
-        emptyMessage={t('finance.noTransactions', 'Cheni Transaktione.')}
+        emptyMessage={t('finance.noTransactions', 'Keine Buchungen gefunden.')}
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder={t(
           'finance.searchTransactions',
-          'Transaktione sueche…',
+          'Buchungen suchen …',
         )}
         filters={['All', 'In', 'Out'].map((f) => ({
           label:
             f === 'All'
-              ? t('common.all', 'Alli')
+              ? t('common.all', 'Alle')
               : f === 'In'
-                ? t('finance.in', 'I')
-                : t('finance.out', 'Us'),
+                ? t('finance.in', 'Ein')
+                : t('finance.out', 'Aus'),
           value: f.toLowerCase(),
           active: typeFilter === f,
           onClick: () => setTypeFilter(f),
@@ -367,11 +366,11 @@ export function TransactionsTab() {
           <Select
             size="sm"
             data={[
-              { value: 'All', label: t('common.all', 'Alli') },
-              { value: 'Pending', label: t('finance.pending', 'Uständig') },
+              { value: 'All', label: t('common.all', 'Alle') },
+              { value: 'Pending', label: t('finance.pending', 'Offen') },
               {
                 value: 'Completed',
-                label: t('finance.completed', 'Abgschlosse'),
+                label: t('finance.completed', 'Abgeschlossen'),
               },
             ]}
             value={statusFilter}
@@ -384,7 +383,7 @@ export function TransactionsTab() {
       <ConfirmModal
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        title={t('finance.deleteTransactionTitle', 'Transaktion lösche?')}
+        title={t('finance.deleteTransactionTitle', 'Buchung löschen?')}
         body={
           deleteTarget
             ? `"${deleteTarget.description}" (${
@@ -395,7 +394,7 @@ export function TransactionsTab() {
                 deleteTarget.invoiceId
                   ? t(
                       'finance.linkedInvoiceAlsoDeleted',
-                      ' Di verlinkti Rächnig wird au glöscht.',
+                      'Die verknüpfte Rechnung wird ebenfalls gelöscht.',
                     )
                   : ''
               }`
@@ -408,7 +407,7 @@ export function TransactionsTab() {
       <Modal
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
-        title={t('finance.editTransaction', 'Transaktion bearbeite')}
+        title={t('finance.editTransaction', 'Buchung bearbeiten')}
         subtitle={editTarget?.description}
         footer={
           <>
@@ -425,10 +424,10 @@ export function TransactionsTab() {
           <Field label={t('common.status', 'Status')}>
             <Select
               data={[
-                { value: 'Pending', label: t('finance.pending', 'Uständig') },
+                { value: 'Pending', label: t('finance.pending', 'Offen') },
                 {
                   value: 'Completed',
-                  label: t('finance.completed', 'Abgschlosse'),
+                  label: t('finance.completed', 'Abgeschlossen'),
                 },
               ]}
               value={editStatus}
@@ -460,7 +459,7 @@ export function TransactionsTab() {
               </div>
               {editTarget.invoiceId && (
                 <div>
-                  {t('finance.invoice', 'Rächnig')}:{' '}
+                  {t('finance.invoiceLabel', 'Rechnung')}:{' '}
                   <strong>#{editTarget.invoiceId}</strong>
                 </div>
               )}
@@ -472,7 +471,7 @@ export function TransactionsTab() {
       <Modal
         open={addOpen}
         onClose={() => setAddOpen(false)}
-        title={t('finance.addTransaction', 'Transaktion erfasse')}
+        title={t('finance.addTransaction', 'Buchung erfassen')}
         footer={
           <>
             <Button variant="default" onClick={() => setAddOpen(false)}>
@@ -483,24 +482,24 @@ export function TransactionsTab() {
               onClick={handleAdd}
               disabled={addSaving || !addDesc.trim() || !addAmount.trim()}
             >
-              {addSaving ? t('common.saving', 'Speichere…') : t('common.save')}
+              {addSaving ? t('common.saving', 'Wird gespeichert …') : t('common.save')}
             </Button>
           </>
         }
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Field label={t('common.description', 'Beschribig')}>
+          <Field label={t('common.description', 'Beschreibung')}>
             <TextInput
               value={addDesc}
               onChange={(e) => setAddDesc(e.target.value)}
               placeholder={t(
                 'finance.transactionDescription',
-                'z.B. Härzblutere Iizahlig',
+                'z. B. Spende Sommerfest',
               )}
             />
           </Field>
           <div style={{ display: 'flex', gap: 12 }}>
-            <Field label={t('finance.amount', 'Betrag (CHF)')}>
+            <Field label={t('finance.amount', 'Betrag')}>
               <TextInput
                 type="number"
                 step="0.05"
@@ -512,8 +511,8 @@ export function TransactionsTab() {
             <Field label={t('common.type', 'Typ')}>
               <Select
                 data={[
-                  { value: 'expense', label: t('finance.expense', 'Usgab') },
-                  { value: 'income', label: t('finance.income', 'Iiname') },
+                  { value: 'expense', label: t('finance.expense', 'Ausgabe') },
+                  { value: 'income', label: t('finance.income', 'Einnahmen') },
                 ]}
                 value={addType}
                 onChange={(v) =>
@@ -533,11 +532,11 @@ export function TransactionsTab() {
             <Field label={t('common.method', 'Methode')}>
               <Select
                 data={[
-                  { value: 'cash', label: 'Cash' },
-                  { value: 'bank', label: 'Bank' },
-                  { value: 'card', label: 'Card' },
+                  { value: 'cash', label: t('finance.methods.cash', 'Bar') },
+                  { value: 'bank', label: t('finance.methods.bank', 'Bank') },
+                  { value: 'card', label: t('finance.methods.card', 'Karte') },
                   { value: 'twint', label: 'TWINT' },
-                  { value: 'other', label: 'Other' },
+                  { value: 'other', label: t('finance.methods.other', 'Andere') },
                 ]}
                 value={addMethod}
                 onChange={(v) => setAddMethod(v ?? 'cash')}

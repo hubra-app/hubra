@@ -8,7 +8,7 @@
 #   FRONTEND_BASE_URL=https://app.hubra.club
 #   MANAGE_BASE_URL=https://manage.hubra.club
 #   SSO_BASE_URL=https://sso.hubra.club
-#   CORS_ORIGINS=https://app.hubra.club,https://manage.hubra.club,https://sso.hubra.club
+#   CORS_ORIGINS=https://app.hubra.club,https://manage.hubra.club,https://sso.hubra.club,https://join.hubra.club
 #   JWT_COOKIE_DOMAIN=.hubra.club
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization

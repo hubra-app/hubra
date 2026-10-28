@@ -4,7 +4,8 @@ import { Button, Group, TextInput, Select, Badge } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zodResolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
-import { useT } from '@/locales/i18n'
+import { useT, zmsg } from '@/locales/i18n'
+import i18n from 'i18next'
 import {
   IconPlus,
   IconUserCheck,
@@ -27,13 +28,29 @@ import { CalendarSubscribeButton } from './CalendarSubscribeButton'
 
 /* ── Events ─────────────────────────────────── */
 const eventSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  date: z.string().min(1, 'Date is required'),
+  title: z.string().min(1, zmsg('validation.titleRequired', 'Titel ist erforderlich')),
+  date: z.string().min(1, zmsg('validation.dateRequired', 'Datum ist erforderlich')),
   time: z.string(),
   location: z.string(),
   type: z.string(),
 })
 type EventForm = z.infer<typeof eventSchema>
+
+
+const EVENT_TYPES = ['Workshop', 'Social', 'Certification', 'Meeting']
+
+/** Stored event types are English keys; show them in the user's language. */
+function eventTypeLabel(type: string) {
+  const defaults: Record<string, string> = {
+    Workshop: 'Workshop',
+    Social: 'Geselliges',
+    Certification: 'Einführung',
+    Meeting: 'Sitzung',
+  }
+  return defaults[type]
+    ? i18n.t(`events.types.${type.toLowerCase()}`, defaults[type])
+    : type
+}
 
 export function EventsTab() {
   const { notify } = useToast()
@@ -60,7 +77,7 @@ export function EventsTab() {
     },
   })
 
-  const types = ['All', 'Workshop', 'Social', 'Certification', 'Meeting']
+  const types = ['All', ...EVENT_TYPES]
   const filtered = events.filter((e) => {
     const matchType = typeFilter === 'All' || e.type === typeFilter
     const q = search.toLowerCase()
@@ -115,7 +132,7 @@ export function EventsTab() {
         t('common.error'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekanni Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -143,7 +160,7 @@ export function EventsTab() {
         t('common.error'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekanni Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -164,7 +181,7 @@ export function EventsTab() {
         t('common.error'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekanni Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -176,7 +193,7 @@ export function EventsTab() {
           {...form.getInputProps('title')}
           placeholder={t(
             'events.event.titlePlaceholder',
-            'z.B. Holzwerkstatt-Grundlag',
+            'z. B. Einführung Holzwerkstatt',
           )}
         />
       </Field>
@@ -187,7 +204,7 @@ export function EventsTab() {
         <Field label={t('common.date', 'Datum')}>
           <TextInput type="date" {...form.getInputProps('date')} />
         </Field>
-        <Field label={t('events.time', 'Zyt') + ' (optional)'}>
+        <Field label={t('events.time', 'Zeit') + ' (optional)'}>
           <TextInput
             {...form.getInputProps('time')}
             placeholder="14:00–18:00"
@@ -197,17 +214,15 @@ export function EventsTab() {
       <Field label={t('events.location', 'Ort') + ' (optional)'}>
         <TextInput
           {...form.getInputProps('location')}
-          placeholder={t('events.locationPlaceholder', 'z.B. Holzwerkstatt')}
+          placeholder={t('events.locationPlaceholder', 'z. B. Holzwerkstatt')}
         />
       </Field>
       <Field label={t('common.type', 'Typ')}>
         <Select
-          data={['Workshop', 'Social', 'Certification', 'Meeting'].map(
-            (tp) => ({
-              value: tp,
-              label: tp,
-            }),
-          )}
+          data={EVENT_TYPES.map((tp) => ({
+            value: tp,
+            label: eventTypeLabel(tp),
+          }))}
           {...form.getInputProps('type')}
         />
       </Field>
@@ -216,7 +231,7 @@ export function EventsTab() {
 
   return (
     <div>
-      <Group justify="flex-end" mb={16} gap="xs">
+      <Group justify="flex-end" mb={16} gap="xs" className="page-actions">
         <CalendarSubscribeButton />
         {canCreate && (
           <Button variant="filled" onClick={openAdd}>
@@ -288,7 +303,7 @@ export function EventsTab() {
           },
           {
             key: 'timeLocation',
-            header: t('events.time', 'Zyt'),
+            header: t('events.time', 'Zeit'),
             render: (ev) => (
               <span
                 style={{
@@ -303,7 +318,7 @@ export function EventsTab() {
           },
           {
             key: 'attendees',
-            header: t('events.attendees', 'Teilnähmer'),
+            header: t('events.attendees', 'Teilnehmende'),
             width: 80,
             render: (ev) => (
               <div
@@ -339,7 +354,7 @@ export function EventsTab() {
                   background: EVENT_TYPE_COLORS[ev.type] + '1a',
                 }}
               >
-                {ev.type}
+                {eventTypeLabel(ev.type)}
               </Badge>
             ),
           },
@@ -371,12 +386,12 @@ export function EventsTab() {
                     {joined ? (
                       <>
                         <Leave size={16} />
-                        {t('events.leave', 'Verlah')}
+                        {t('events.leave', 'Abmelden')}
                       </>
                     ) : (
                       <>
                         <IconLogin size={16} />
-                        {t('events.join', 'Mitmache')}
+                        {t('events.join', 'Teilnehmen')}
                       </>
                     )}
                   </Button>
@@ -390,12 +405,12 @@ export function EventsTab() {
           },
         ]}
         data={pg.paged}
-        emptyMessage={t('events.noEvents', 'Kei Aaläss gfunde.')}
+        emptyMessage={t('events.noEvents', 'Keine Anlässe gefunden.')}
         searchValue={search}
         onSearchChange={setSearch}
-        searchPlaceholder={t('events.search', 'Sueche…')}
+        searchPlaceholder={t('events.search', 'Suchen …')}
         filters={types.map((typeItem) => ({
-          label: typeItem === 'All' ? t('common.all', 'Alli') : typeItem,
+          label: typeItem === 'All' ? t('common.all', 'Alle') : eventTypeLabel(typeItem),
           value: typeItem.toLowerCase(),
           active: typeFilter === typeItem,
           onClick: () => setTypeFilter(typeItem),
@@ -418,7 +433,7 @@ export function EventsTab() {
               {t('common.cancel')}
             </Button>
             <Button variant="filled" onClick={() => form.onSubmit(saveAdd)()}>
-              {t('events.createEvent', 'Aalass erstelle')}
+              {t('events.createEvent', 'Anlass erstellen')}
             </Button>
           </>
         }
@@ -446,10 +461,12 @@ export function EventsTab() {
       <ConfirmModal
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        title={t('events.deleteEventTitle', `"${deleteTarget?.title}" lösche?`)}
+        title={t('events.deleteEventTitle', '{{title}} löschen?', {
+          title: deleteTarget?.title ?? '',
+        })}
         body={t(
           'events.deleteEventBody',
-          'Die Aalass und ihri Däilnähmer-Liste wirde permanent entfernt.',
+          'Der Anlass und seine Teilnehmerliste werden endgültig gelöscht.',
         )}
         onConfirm={confirmDelete}
       />

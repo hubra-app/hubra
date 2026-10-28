@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Table, TextInput, Paper, Badge, Button, Group, Text, Chip } from '@mantine/core'
+import { Table, TextInput, Paper, Badge, Button, Group, Text, Select } from '@mantine/core'
 import { IconSearch, IconPlus } from '@tabler/icons-react'
 import { formatDate } from '@/format'
 import { listTenants, type Tenant } from '@/api/tenants'
 import { Pagination } from '@/components/ui'
 import { CreateTenantModal } from '@/screens/CreateTenantModal'
 import { useAdmin } from '@/context/AdminContext'
+import { useLang } from '@/lang'
+import { planLabel, statusLabel } from '@/labels'
 
 const STATUS_COLORS: Record<string, string> = {
   active: 'green',
@@ -15,12 +17,10 @@ const STATUS_COLORS: Record<string, string> = {
   archived: 'gray',
 }
 
-const PLAN_FILTERS = ['all', 'starter', 'growth', 'enterprise'] as const
-const STATUS_FILTERS = ['all', 'active', 'suspended', 'archived'] as const
-
 export function TenantsTab() {
   const navigate = useNavigate()
   const { isSuperadmin } = useAdmin()
+  const { tr } = useLang()
   const [search, setSearch] = useState('')
   const [planFilter, setPlanFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -46,139 +46,113 @@ export function TenantsTab() {
 
   return (
     <div>
-      <Group justify="space-between" mb={16}>
-        <Group gap={10} wrap="wrap">
-          <div style={{ position: 'relative', width: 260 }}>
-            <IconSearch
-              size={16}
-              style={{
-                position: 'absolute',
-                left: 11,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#8c86a0',
-              }}
-            />
-            <TextInput
-              style={{ paddingLeft: 34 }}
-              placeholder="Search tenants..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value)
-                setPage(1)
-              }}
-            />
-          </div>
-          <Group gap={6}>
-            {PLAN_FILTERS.map((p) => (
-              <Chip
-                key={p}
-                size="sm"
-                variant={planFilter === p ? 'filled' : 'light'}
-                checked={planFilter === p}
-                onClick={() => {
-                  setPlanFilter(p)
-                  setPage(1)
-                }}
-              >
-                {p === 'all' ? 'All Plans' : p.charAt(0).toUpperCase() + p.slice(1)}
-              </Chip>
-            ))}
-          </Group>
-          <Group gap={6}>
-            {STATUS_FILTERS.map((s) => (
-              <Chip
-                key={s}
-                size="sm"
-                variant={statusFilter === s ? 'filled' : 'light'}
-                checked={statusFilter === s}
-                onClick={() => {
-                  setStatusFilter(s)
-                  setPage(1)
-                }}
-              >
-                {s === 'all' ? 'All Status' : s.charAt(0).toUpperCase() + s.slice(1)}
-              </Chip>
-            ))}
-          </Group>
+      <Group justify="space-between" mb="md" gap="sm" wrap="wrap">
+        <Group gap="sm" wrap="wrap" style={{ flex: 1 }}>
+          <TextInput
+            leftSection={<IconSearch size={16} />}
+            placeholder={tr('Vereine suchen …', 'Search clubs…')}
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setPage(1)
+            }}
+            style={{ flex: '1 1 220px', maxWidth: 320 }}
+          />
+          <Select
+            aria-label={tr('Plan', 'Plan')}
+            value={planFilter}
+            onChange={(v) => {
+              setPlanFilter(v ?? 'all')
+              setPage(1)
+            }}
+            allowDeselect={false}
+            data={[
+              { value: 'all', label: tr('Alle Pläne', 'All plans') },
+              ...['starter', 'growth', 'enterprise'].map((p) => ({ value: p, label: planLabel(p, tr) })),
+            ]}
+            w={160}
+          />
+          <Select
+            aria-label={tr('Status', 'Status')}
+            value={statusFilter}
+            onChange={(v) => {
+              setStatusFilter(v ?? 'all')
+              setPage(1)
+            }}
+            allowDeselect={false}
+            data={[
+              { value: 'all', label: tr('Alle Status', 'All statuses') },
+              ...['active', 'suspended', 'archived'].map((st) => ({ value: st, label: statusLabel(st, tr) })),
+            ]}
+            w={160}
+          />
         </Group>
-        <Group gap="xs">
-          {isSuperadmin ? (
-            <Button leftSection={<IconPlus size={16} />} onClick={() => setCreateOpen(true)}>
-              Create Tenant
-            </Button>
-          ) : (
-            <Button leftSection={<IconPlus size={16} />} onClick={() => navigate('/requests')}>
-              Request Tenant
-            </Button>
-          )}
-        </Group>
+        {isSuperadmin ? (
+          <Button leftSection={<IconPlus size={16} />} onClick={() => setCreateOpen(true)}>
+            {tr('Verein erstellen', 'Create club')}
+          </Button>
+        ) : (
+          <Button leftSection={<IconPlus size={16} />} onClick={() => navigate('/app/requests')}>
+            {tr('Verein beantragen', 'Request a club')}
+          </Button>
+        )}
       </Group>
 
-      <Paper withBorder shadow="sm" radius="lg">
-        <Pagination
-          page={page}
-          perPage={perPage}
-          total={total}
-          totalPages={totalPages}
-          goPage={setPage}
-          setPerPage={(n) => {
-            setPerPage(n)
-            setPage(1)
-          }}
-        />
+      <Paper withBorder style={{ overflow: 'hidden' }}>
 
         {isLoading && (
           <Text p={40} ta="center" c="dimmed">
-            Loading tenants...
+            {tr('Vereine werden geladen …', 'Loading clubs…')}
           </Text>
         )}
 
         {!isLoading && tenants.length === 0 && (
           <Text p={40} ta="center" c="dimmed">
-            No tenants found.
+            {tr('Keine Vereine gefunden.', 'No clubs found.')}
           </Text>
         )}
 
         {tenants.length > 0 && (
+          <Table.ScrollContainer minWidth={640}>
           <Table highlightOnHover>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>Name</Table.Th>
-                <Table.Th>Slug</Table.Th>
-                <Table.Th>Plan</Table.Th>
-                <Table.Th>Status</Table.Th>
-                <Table.Th>Created</Table.Th>
+                <Table.Th>{tr('Name', 'Name')}</Table.Th>
+                <Table.Th>{tr('Kürzel', 'Slug')}</Table.Th>
+                <Table.Th>{tr('Plan', 'Plan')}</Table.Th>
+                <Table.Th>{tr('Status', 'Status')}</Table.Th>
+                <Table.Th>{tr('Erstellt', 'Created')}</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
               {tenants.map((t: Tenant) => (
                 <Table.Tr
                   key={t.id}
-                  onClick={() => navigate(`/tenants/${t.id}`)}
+                  onClick={() => navigate(`/app/tenants/${t.id}`)}
                   style={{ cursor: 'pointer' }}
                 >
                   <Table.Td fw={600}>{t.name}</Table.Td>
-                  <Table.Td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14 }}>
+                  <Table.Td className="num" fz="sm" c="dimmed">
                     {t.slug}
                   </Table.Td>
                   <Table.Td>
-                    <Badge variant="light" color="blue" size="sm">
-                      {t.plan}
+                    <Badge variant="light" color="acc" size="sm">
+                      {planLabel(t.plan, tr)}
                     </Badge>
                   </Table.Td>
                   <Table.Td>
                     <Badge variant="light" color={STATUS_COLORS[t.status] ?? 'gray'} size="sm">
-                      {t.status}
+                      {statusLabel(t.status, tr)}
                     </Badge>
                   </Table.Td>
-                  <Table.Td style={{ color: '#5e5873', fontSize: 14 }}>
-                    {t.created_at ? formatDate(t.created_at) : '-'}
+                  <Table.Td fz="sm" c="dimmed">
+                    {t.created_at ? formatDate(t.created_at) : '–'}
                   </Table.Td>
                 </Table.Tr>
               ))}
             </Table.Tbody>
           </Table>
+          </Table.ScrollContainer>
         )}
 
         <Pagination

@@ -4,6 +4,7 @@ import { Table, Paper, Text, Badge } from '@mantine/core'
 import { listGlobalAudit, type GlobalAuditEntry } from '@/api/tenants'
 import { Pagination } from '@/components/ui'
 import { formatDateTime } from '@/format'
+import { tr } from '@/lang'
 
 export function GlobalAuditTab() {
   const [page, setPage] = useState(1)
@@ -27,46 +28,36 @@ export function GlobalAuditTab() {
   }
 
   return (
-    <Paper withBorder shadow="sm" radius="lg">
-      <Pagination
-        page={page}
-        perPage={perPage}
-        total={total}
-        totalPages={totalPages}
-        goPage={setPage}
-        setPerPage={(n) => {
-          setPerPage(n)
-          setPage(1)
-        }}
-      />
+    <Paper withBorder style={{ overflow: 'hidden' }}>
 
       {isLoading && (
         <Text p={40} ta="center" c="dimmed">
-          Loading audit log...
+          {tr('Audit-Log wird geladen …', 'Loading audit log…')}
         </Text>
       )}
 
       {!isLoading && entries.length === 0 && (
         <Text p={40} ta="center" c="dimmed">
-          No audit entries found.
+          {tr('Keine Einträge gefunden.', 'No entries found.')}
         </Text>
       )}
 
       {entries.length > 0 && (
+        <Table.ScrollContainer minWidth={680}>
         <Table highlightOnHover>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th>Time</Table.Th>
-              <Table.Th>Action</Table.Th>
-              <Table.Th>Tenant</Table.Th>
-              <Table.Th>Actor</Table.Th>
-              <Table.Th>Target</Table.Th>
+              <Table.Th>{tr('Zeit', 'Time')}</Table.Th>
+              <Table.Th>{tr('Aktion', 'Action')}</Table.Th>
+              <Table.Th>{tr('Verein', 'Club')}</Table.Th>
+              <Table.Th>{tr('Person', 'Actor')}</Table.Th>
+              <Table.Th>{tr('Ziel', 'Target')}</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
             {entries.map((entry: GlobalAuditEntry) => (
               <Table.Tr key={entry.id}>
-                <Table.Td style={{ fontSize: 14, color: '#5e5873' }}>
+                <Table.Td fz="sm" c="dimmed">
                   {formatDateTime(entry.time)}
                 </Table.Td>
                 <Table.Td>
@@ -74,19 +65,20 @@ export function GlobalAuditTab() {
                     {entry.action}
                   </Badge>
                 </Table.Td>
-                <Table.Td className="num" style={{ fontSize: 14 }}>
-                  {entry.tenant_id ?? '-'}
+                <Table.Td className="num" fz="sm">
+                  {entry.tenant_id ?? '–'}
                 </Table.Td>
-                <Table.Td style={{ fontSize: 14 }}>
-                  {entry.actor_id ?? 'system'}
+                <Table.Td fz="sm">
+                  {entry.actor_id ?? tr('System', 'System')}
                 </Table.Td>
-                <Table.Td style={{ fontSize: 14, color: '#5e5873' }}>
-                  {entry.target_type ? `${entry.target_type}:${entry.target_id ?? ''}` : '-'}
+                <Table.Td fz="sm" c="dimmed">
+                  {entry.target_type ? `${entry.target_type}:${entry.target_id ?? ''}` : '–'}
                 </Table.Td>
               </Table.Tr>
             ))}
           </Table.Tbody>
         </Table>
+        </Table.ScrollContainer>
       )}
 
       <Pagination

@@ -417,7 +417,7 @@ export interface FinanceOverview {
   incomeMTD: number;
   expensesMTD: number;
   netMTD: number;
-  months: { m: string; inc: number; exp: number }[];
+  months: { m: string; year?: number; month?: number; inc: number; exp: number }[];
   openInvoices: { count: number; amount: number };
 }
 

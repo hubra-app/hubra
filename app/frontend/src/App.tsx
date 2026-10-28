@@ -1,3 +1,4 @@
+import i18n from 'i18next'
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { ErrorBoundary as RouteErrorBoundary } from 'react-error-boundary'
@@ -203,12 +204,14 @@ function PrivateRoutes() {
                   <Stack gap="sm" align="center">
                     <IconAlertTriangle size={40} color="#dc2626" />
                     <Text fz={18} fw={700} c="red">
-                      Something went wrong
+                      {i18n.t('app.errorTitle', 'Etwas ist schiefgelaufen')}
                     </Text>
                     <Text size="sm" c="dimmed" lh={1.6} ta="center">
-                      An unexpected error occurred while loading this page.
+                      {i18n.t('app.errorText', 'Beim Laden dieser Seite ist ein unerwarteter Fehler aufgetreten.')}
                     </Text>
-                    <Button onClick={() => resetErrorBoundary()}>Retry</Button>
+                    <Button onClick={() => resetErrorBoundary()}>
+                      {i18n.t('app.retry', 'Nochmals versuchen')}
+                    </Button>
                   </Stack>
                 </Paper>
               </Center>
@@ -440,6 +443,14 @@ function PrivateRoutes() {
                   />
                   <Route
                     path="settings/domains"
+                    element={
+                      <RequirePermission permKey="settings.settings.read">
+                        <SettingsScreen />
+                      </RequirePermission>
+                    }
+                  />
+                  <Route
+                    path="settings/advanced"
                     element={
                       <RequirePermission permKey="settings.settings.read">
                         <SettingsScreen />

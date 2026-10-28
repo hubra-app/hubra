@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import i18n from 'i18next'
 import {
   Avatar as MantineAvatar,
   Badge,
@@ -148,7 +149,7 @@ export function StatusBadge({ status }: { status: string }) {
         }}
       />
       <Text size="sm" fw={600} c={c}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {i18n.t(`status.${status}`, status.charAt(0).toUpperCase() + status.slice(1))}
       </Text>
     </Group>
   )
@@ -159,7 +160,7 @@ export function InvoicePill({ status }: { status: string }) {
     status === 'Paid' ? 'green' : status === 'Overdue' ? 'red' : 'yellow'
   return (
     <Badge variant="light" color={color} radius="xl" size="md">
-      {status}
+      {i18n.t(`status.${status}`, status)}
     </Badge>
   )
 }
@@ -180,10 +181,10 @@ export function LastSeenBadge({ lastSeen }: { lastSeen: string }) {
   const min = Math.floor(diff / 60000)
 
   let label: string
-  if (min < 1) label = 'Just now'
-  else if (min < 60) label = `${min}m ago`
-  else if (min < 1440) label = `${Math.floor(min / 60)}h ago`
-  else label = `${Math.floor(min / 1440)}d ago`
+  if (min < 1) label = i18n.t('time.justNow', 'Gerade eben')
+  else if (min < 60) label = i18n.t('time.minutesAgo', 'vor {{n}} Min.', { n: min })
+  else if (min < 1440) label = i18n.t('time.hoursAgo', 'vor {{n}} Std.', { n: Math.floor(min / 60) })
+  else label = i18n.t('time.daysAgo', 'vor {{n}} Tagen', { n: Math.floor(min / 1440) })
 
   return (
     <Text size="sm" c="dimmed">
@@ -267,7 +268,7 @@ export function MemberSlideOver({
             <TextInput
               size="sm"
               style={{ paddingLeft: 32 }}
-              placeholder={addPlaceholder ?? t('common.search', 'Suchen…')}
+              placeholder={addPlaceholder ?? t('common.search', 'Suchen')}
               value={addSearch}
               onChange={(e) => setAddSearch(e.target.value)}
             />
@@ -341,13 +342,13 @@ export function MemberSlideOver({
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {loading ? (
-          <LoadingSpinner message={t('common.loading', 'Laden…')} />
+          <LoadingSpinner message={t('common.loading', 'Wird geladen …')} />
         ) : members.length === 0 ? (
           <EmptyState
             title={
               search
-                ? t('common.noResults', 'Kei Resultat.')
-                : t('common.empty', 'Nöd verfügbar.')
+                ? t('common.noResults', 'Keine Ergebnisse.')
+                : t('common.empty', 'Nicht verfügbar.')
             }
           />
         ) : (
@@ -406,7 +407,7 @@ export function MemberSlideOver({
           <TextInput
             size="sm"
             style={{ paddingLeft: 32 }}
-            placeholder={t('common.filter', 'Filtere…')}
+            placeholder={t('common.filter', 'Filter')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -438,7 +439,7 @@ export function MemberSlideOver({
             color: 'var(--mantine-color-ink-3)',
           }}
         >
-          {members.length} {t('common.members', 'Mitglider')}
+          {members.length} {t('common.members', 'Mitglieder')}
         </div>
       </div>
 

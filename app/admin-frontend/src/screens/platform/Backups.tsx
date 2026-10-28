@@ -12,6 +12,7 @@ import {
 } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
 import { PageHead } from '@/components/ui'
+import { useLang, tr } from '@/lang'
 import { useState } from 'react'
 import {
   listBackups,
@@ -22,11 +23,23 @@ import {
   type BackupRecord,
 } from '@/api/backups'
 
-const TYPE_LABELS: Record<string, string> = {
-  manual: 'Manual',
-  scheduled_daily: 'Daily',
-  scheduled_weekly: 'Weekly',
-  scheduled_monthly: 'Monthly',
+const TYPE_LABELS: Record<string, [string, string]> = {
+  manual: ['Manuell', 'Manual'],
+  scheduled_daily: ['Täglich', 'Daily'],
+  scheduled_weekly: ['Wöchentlich', 'Weekly'],
+  scheduled_monthly: ['Monatlich', 'Monthly'],
+}
+
+const STATUS_LABELS: Record<string, [string, string]> = {
+  pending: ['Wartet', 'Pending'],
+  running: ['Läuft', 'Running'],
+  completed: ['Fertig', 'Completed'],
+  failed: ['Fehlgeschlagen', 'Failed'],
+}
+
+function label(map: Record<string, [string, string]>, key: string): string {
+  const l = map[key]
+  return l ? tr(l[0], l[1]) : key
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -54,7 +67,7 @@ function formatSize(bytes: number | null): string {
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
   const d = new Date(iso)
-  return d.toLocaleString(undefined, {
+  return d.toLocaleString('de-CH', {
     year: 'numeric',
     month: 'short',
     day: '2-digit',
@@ -69,6 +82,7 @@ function formatDate(iso: string | null): string {
  */
 export function Backups() {
   const { notify } = useAdmin()
+  const { tr } = useLang()
   const queryClient = useQueryClient()
   const [deleteTarget, setDeleteTarget] = useState<BackupRecord | null>(null)
   const [creating, setCreating] = useState(false)
@@ -96,9 +110,9 @@ export function Backups() {
     try {
       await createBackup()
       queryClient.invalidateQueries({ queryKey: ['backups'] })
-      notify('success', 'Backup started', 'A new backup is being created.')
+      notify('success', tr('Backup gestartet', 'Backup started'), tr('Ein neues Backup wird erstellt.', 'A new backup is being created.'))
     } catch (err: unknown) {
-      notify('error', 'Backup failed', err instanceof Error ? err.message : 'Unknown error')
+      notify('error', tr('Backup fehlgeschlagen', 'Backup failed'), err instanceof Error ? err.message : tr('Unbekannter Fehler', 'Unknown error'))
     } finally {
       setCreating(false)
     }
@@ -109,9 +123,9 @@ export function Backups() {
     try {
       await verifyBackup(id)
       queryClient.invalidateQueries({ queryKey: ['backups'] })
-      notify('success', 'Verification started', 'Backup verification is running.')
+      notify('success', tr('Prüfung gestartet', 'Verification started'), tr('Das Backup wird geprüft.', 'Backup verification is running.'))
     } catch (err: unknown) {
-      notify('error', 'Verify failed', err instanceof Error ? err.message : 'Unknown error')
+      notify('error', tr('Prüfung fehlgeschlagen', 'Verify failed'), err instanceof Error ? err.message : tr('Unbekannter Fehler', 'Unknown error'))
     } finally {
       setVerifyingId(null)
     }
@@ -122,9 +136,9 @@ export function Backups() {
       await deleteBackup(record.id)
       queryClient.invalidateQueries({ queryKey: ['backups'] })
       setDeleteTarget(null)
-      notify('success', 'Deleted', `Backup #${record.id} removed.`)
+      notify('success', tr('Gelöscht', 'Deleted'), tr(`Backup #${record.id} wurde gelöscht.`, `Backup #${record.id} removed.`))
     } catch (err: unknown) {
-      notify('error', 'Delete failed', err instanceof Error ? err.message : 'Unknown error')
+      notify('error', tr('Löschen fehlgeschlagen', 'Delete failed'), err instanceof Error ? err.message : tr('Unbekannter Fehler', 'Unknown error'))
     }
   }
 
@@ -139,22 +153,25 @@ export function Backups() {
         gap: 16,
       }}
     >
-      <div>
-        <PageHead eyebrow="Platform" title="Backups" />
-        <Text size="sm" c="dimmed" maw={720}>
-          Each backup holds the whole database, every club included, encrypted with
-          BACKUP_ENCRYPTION_KEY from env. Daily, weekly and monthly backups run on their own; the
-          storage is set under{' '}
-          <Anchor component={Link} to="/app/platform/settings" size="sm">
-            Platform Settings
-          </Anchor>
-          .
-        </Text>
-      </div>
+      <PageHead
+        title={tr('Backups', 'Backups')}
+        desc={
+          <>
+            {tr(
+              'Jedes Backup enthält die ganze Datenbank mit allen Vereinen, verschlüsselt mit BACKUP_ENCRYPTION_KEY aus der Umgebung. Tägliche, wöchentliche und monatliche Backups laufen von selbst; den Speicherort legst du unter ',
+              'Each backup holds the whole database, every club included, encrypted with BACKUP_ENCRYPTION_KEY from env. Daily, weekly and monthly backups run on their own; the storage is set under ',
+            )}
+            <Anchor component={Link} to="/app/platform/settings" size="sm">
+              {tr('Plattform-Einstellungen', 'Platform settings')}
+            </Anchor>
+            {tr(' fest.', '.')}
+          </>
+        }
+      />
       {/* ── Config status banner ─────────────────────────────────────── */}
       {configQuery.isLoading && (
         <div style={{ color: '#8c86a0', fontSize: 'var(--mantine-font-size-sm)' }}>
-          Loading backup configuration…
+          {tr('Backup-Einstellungen werden geladen …', 'Loading backup configuration…')}
         </div>
       )}
 
@@ -187,7 +204,7 @@ export function Backups() {
                     gap: 5,
                   }}
                 >
-                  <IconCheck size={12} /> Backup configured
+                  <IconCheck size={12} /> {tr('Backup eingerichtet', 'Backup configured')}
                 </span>
               </Badge>
             ) : configPartial ? (
@@ -209,7 +226,7 @@ export function Backups() {
                     gap: 5,
                   }}
                 >
-                  <IconAlertTriangle size={12} /> Encryption key missing
+                  <IconAlertTriangle size={12} /> {tr('Schlüssel fehlt', 'Encryption key missing')}
                 </span>
               </Badge>
             ) : (
@@ -231,7 +248,7 @@ export function Backups() {
                     gap: 5,
                   }}
                 >
-                  <IconAlertTriangle size={12} /> S3 not configured
+                  <IconAlertTriangle size={12} /> {tr('S3 nicht eingerichtet', 'S3 not configured')}
                 </span>
               </Badge>
             )}
@@ -248,7 +265,7 @@ export function Backups() {
                   },
                 }}
               >
-                S3 reachable
+                {tr('S3 erreichbar', 'S3 reachable')}
               </Badge>
             )}
             {config.s3_configured && !config.s3_reachable && (
@@ -263,7 +280,7 @@ export function Backups() {
                   },
                 }}
               >
-                S3 unreachable
+                {tr('S3 nicht erreichbar', 'S3 unreachable')}
               </Badge>
             )}
 
@@ -290,7 +307,7 @@ export function Backups() {
                 }}
                 loading={configQuery.isFetching || backupsQuery.isFetching}
               >
-                Refresh
+                {tr('Aktualisieren', 'Refresh')}
               </Button>
               <Button
                 variant="filled"
@@ -300,7 +317,7 @@ export function Backups() {
                 loading={creating}
                 disabled={!configReady}
               >
-                Create backup now
+                {tr('Jetzt sichern', 'Create backup now')}
               </Button>
             </div>
           </div>
@@ -326,8 +343,10 @@ export function Backups() {
                 color: '#5e5873',
               }}
             >
-              Configure S3 settings in the Settings tab (backup namespace) and set
-              BACKUP_ENCRYPTION_KEY in .env to enable backups.
+              {tr(
+                'Lege den Speicher unter Plattform-Einstellungen fest und setze BACKUP_ENCRYPTION_KEY in der .env, um Backups einzuschalten.',
+                'Set the storage under Platform settings and BACKUP_ENCRYPTION_KEY in .env to enable backups.',
+              )}
             </div>
           )}
         </Paper>
@@ -339,13 +358,13 @@ export function Backups() {
           <Table.Thead>
             <Table.Tr>
               <Table.Th>#</Table.Th>
-              <Table.Th>Date</Table.Th>
-              <Table.Th>Type</Table.Th>
-              <Table.Th>Status</Table.Th>
-              <Table.Th>Size</Table.Th>
-              <Table.Th>Verified</Table.Th>
-              <Table.Th>Tables</Table.Th>
-              <Table.Th style={{ width: 100 }}>Actions</Table.Th>
+              <Table.Th>{tr('Datum', 'Date')}</Table.Th>
+              <Table.Th>{tr('Art', 'Type')}</Table.Th>
+              <Table.Th>{tr('Status', 'Status')}</Table.Th>
+              <Table.Th>{tr('Grösse', 'Size')}</Table.Th>
+              <Table.Th>{tr('Geprüft', 'Verified')}</Table.Th>
+              <Table.Th>{tr('Tabellen', 'Tables')}</Table.Th>
+              <Table.Th style={{ width: 100 }}>{tr('Aktionen', 'Actions')}</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -360,7 +379,7 @@ export function Backups() {
                       fontSize: 'var(--mantine-font-size-sm)',
                     }}
                   >
-                    No backups yet. Click "Create backup now" to start.
+                    {tr('Noch keine Backups. Mit «Jetzt sichern» legst du das erste an.', 'No backups yet. Click "Create backup now" to start.')}
                   </div>
                 </Table.Td>
               </Table.Tr>
@@ -384,7 +403,7 @@ export function Backups() {
                       display: 'inline-block',
                     }}
                   >
-                    {TYPE_LABELS[b.type] ?? b.type}
+                    {label(TYPE_LABELS, b.type)}
                   </span>
                 </Table.Td>
                 <Table.Td data-label="Status">
@@ -401,7 +420,7 @@ export function Backups() {
                     {b.status === 'pending' || b.status === 'running' ? (
                       <IconClock size={13} />
                     ) : null}
-                    {b.status.charAt(0).toUpperCase() + b.status.slice(1)}
+                    {label(STATUS_LABELS, b.status)}
                   </span>
                   {b.error_message && (
                     <div
@@ -442,7 +461,7 @@ export function Backups() {
                       }}
                       title={b.verify_error ?? ''}
                     >
-                      <IconX size={14} /> Failed
+                      <IconX size={14} /> {tr('Fehlgeschlagen', 'Failed')}
                     </span>
                   )}
                   {b.verified_ok === null && <span style={{ color: '#bbb' }}>—</span>}
@@ -459,9 +478,9 @@ export function Backups() {
                         onClick={() => handleVerify(b.id)}
                         loading={verifyingId === b.id}
                         style={{ padding: '2px 6px' }}
-                        title="Verify backup"
+                        title={tr('Backup prüfen', 'Verify backup')}
                       >
-                        Verify
+                        {tr('Prüfen', 'Verify')}
                       </Button>
                     )}
                     <Button
@@ -469,7 +488,7 @@ export function Backups() {
                       size="compact-sm"
                       onClick={() => setDeleteTarget(b)}
                       style={{ padding: '2px 6px', color: '#c0392b' }}
-                      title="Delete backup"
+                      title={tr('Backup löschen', 'Delete backup')}
                     >
                       <IconTrash size={14} />
                     </Button>
@@ -484,18 +503,19 @@ export function Backups() {
       <Modal
         opened={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}
-        title="Delete backup"
+        title={tr('Backup löschen', 'Delete backup')}
       >
         <Text size="sm" mb="lg">
           {deleteTarget
-            ? `Delete backup #${deleteTarget.id} from ${formatDate(
-                deleteTarget.created_at,
-              )}? This removes the S3 object and cannot be undone.`
+            ? tr(
+                `Backup #${deleteTarget.id} vom ${formatDate(deleteTarget.created_at)} löschen? Die Datei im S3-Speicher wird entfernt, das lässt sich nicht rückgängig machen.`,
+                `Delete backup #${deleteTarget.id} from ${formatDate(deleteTarget.created_at)}? This removes the S3 object and cannot be undone.`,
+              )
             : ''}
         </Text>
         <Group justify="flex-end">
           <Button variant="default" onClick={() => setDeleteTarget(null)}>
-            Cancel
+            {tr('Abbrechen', 'Cancel')}
           </Button>
           <Button
             color="red"
@@ -503,7 +523,7 @@ export function Backups() {
               if (deleteTarget) handleDelete(deleteTarget)
             }}
           >
-            Delete
+            {tr('Löschen', 'Delete')}
           </Button>
         </Group>
       </Modal>

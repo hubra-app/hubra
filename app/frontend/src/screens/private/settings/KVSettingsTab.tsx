@@ -9,24 +9,30 @@ import {
   IconAdjustmentsHorizontal,
 } from '@tabler/icons-react'
 import { useToast, useAuth } from '@/context/AppContext'
+import { useT } from '@/locales/i18n'
 import { KVTable, Modal, Field, ConfirmModal } from '@/components/ui'
 import { listSettings, upsertSetting, deleteSetting } from '@/api/settings'
 import type { SettingEntry } from '@/api/settings'
 
-const VALIDATION_TYPES = [
-  { value: '', label: 'None' },
-  { value: 'text', label: 'Text' },
-  { value: 'email', label: 'Email' },
-  { value: 'url', label: 'URL' },
-  { value: 'domain', label: 'Domain' },
-  { value: 'host', label: 'Host' },
-  { value: 'port', label: 'Port' },
-  { value: 'number', label: 'Number' },
+const VALIDATION_TYPES: [string, string][] = [
+  ['', 'Keine'],
+  ['text', 'Text'],
+  ['email', 'E-Mail'],
+  ['url', 'URL'],
+  ['domain', 'Domain'],
+  ['host', 'Host'],
+  ['port', 'Port'],
+  ['number', 'Zahl'],
 ]
 
 export function KVSettingsTab() {
   const queryClient = useQueryClient()
   const { notify } = useToast()
+  const { t } = useT()
+  const validationTypes = VALIDATION_TYPES.map(([value, label]) => ({
+    value,
+    label: t(`kv.validation.${value || 'none'}`, label),
+  }))
   const { hasPermission } = useAuth()
   const canWrite = hasPermission('settings.settings.write')
   const canDelete = hasPermission('settings.settings.delete')
@@ -74,7 +80,7 @@ export function KVSettingsTab() {
   const saveEdit = async (key: string) => {
     const entry = entries.find((e) => e.key === key)
     if (entry?.required && !editValue.trim()) {
-      notify('error', 'Required', `"${key}" is required and cannot be empty.`)
+      notify('error', t('kv.required', 'Pflichtfeld'), t('kv.requiredMsg', '«{{key}}» ist ein Pflichtfeld und darf nicht leer sein.', { key }))
       return
     }
     setSaving(true)
@@ -82,12 +88,12 @@ export function KVSettingsTab() {
       await upsertSetting(key, editValue)
       queryClient.invalidateQueries({ queryKey: ['kv-settings'] })
       setEditingKey(null)
-      notify('success', 'Saved', `${key} updated.`)
+      notify('success', t('common.saved', 'Gespeichert'), t('kv.updatedMsg', '{{key}} wurde gespeichert.', { key }))
     } catch (err: unknown) {
       notify(
         'error',
-        'Save failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('common.saveFailed', 'Speichern fehlgeschlagen'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setSaving(false)
@@ -110,12 +116,12 @@ export function KVSettingsTab() {
       setNewNamespace('general')
       setNewDesc('')
       setNewValidationType('')
-      notify('success', 'Created', `${newKey.trim()} added.`)
+      notify('success', t('common.created', 'Erstellt'), t('kv.addedMsg', '{{key}} wurde hinzugefügt.', { key: newKey.trim() }))
     } catch (err: unknown) {
       notify(
         'error',
-        'Create failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('common.createFailed', 'Erstellen fehlgeschlagen'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setAddSaving(false)
@@ -127,12 +133,12 @@ export function KVSettingsTab() {
       await deleteSetting(entry.key)
       queryClient.invalidateQueries({ queryKey: ['kv-settings'] })
       setDeleteTarget(null)
-      notify('success', 'Deleted', `${entry.key} removed.`)
+      notify('success', t('common.deleted', 'Gelöscht'), t('kv.removedMsg', '{{key}} wurde entfernt.', { key: entry.key }))
     } catch (err: unknown) {
       notify(
         'error',
-        'Delete failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('common.deleteFailed', 'Löschen fehlgeschlagen'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -163,7 +169,7 @@ export function KVSettingsTab() {
             className={`chip${typeFilter === f ? ' on' : ''}`}
             onClick={() => setTypeFilter(f)}
           >
-            {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
+            {t(`kv.filter.${f}`, f)}
           </button>
         ))}
       </div>
@@ -179,7 +185,7 @@ export function KVSettingsTab() {
             onClick={() => setShowAdd(true)}
             style={{ display: 'flex', alignItems: 'center', gap: 6 }}
           >
-            <IconPlus size={16} /> Add entry
+            <IconPlus size={16} /> {t('settings.kv.addEntry', 'Eintrag hinzufügen')}
           </Button>
         }
         editingKey={editingKey}
@@ -273,10 +279,10 @@ export function KVSettingsTab() {
               entry.value ? (
                 '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'
               ) : (
-                <em style={{ color: '#bbb' }}>not set</em>
+                <em style={{ color: '#b7b0c9' }}>{t('kv.notSet', 'nicht gesetzt')}</em>
               )
             ) : (
-              entry.value ?? <em style={{ color: '#bbb' }}>not set</em>
+              entry.value ?? <em style={{ color: '#b7b0c9' }}>{t('kv.notSet', 'nicht gesetzt')}</em>
             )}
           </span>
         )}
@@ -288,7 +294,7 @@ export function KVSettingsTab() {
                 variant="subtle"
                 onClick={() => startEdit(entry)}
                 style={{ padding: '4px 7px' }}
-                title="Edit value"
+                title={t('kv.editValue', 'Wert bearbeiten')}
               >
                 <IconPencil size={16} />
               </Button>
@@ -307,7 +313,7 @@ export function KVSettingsTab() {
                   setMetaRestricted(entry.restricted)
                 }}
                 style={{ padding: '4px 7px' }}
-                title="Edit metadata"
+                title={t('kv.editMeta', 'Eigenschaften bearbeiten')}
               >
                 <IconAdjustmentsHorizontal size={16} />
               </Button>
@@ -317,36 +323,36 @@ export function KVSettingsTab() {
                 variant="subtle"
                 onClick={() => setDeleteTarget(entry)}
                 style={{ padding: '4px 7px', color: '#c0392b' }}
-                title="Delete"
+                title={t('common.delete', 'Löschen')}
               >
                 <IconTrash size={16} />
               </Button>
             )}
           </>
         )}
-        emptyMessage="No settings found."
+        emptyMessage={t('kv.empty', 'Keine Einstellungen gefunden.')}
       />
 
       <Modal
         open={showAdd}
-        title="Add KV entry"
+        title={t('kv.addTitle', 'Einstellung hinzufügen')}
         onClose={() => setShowAdd(false)}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <Field label="Key" hint="e.g. club.website">
+          <Field label={t('data.key', 'Schlüssel')} hint={t('kv.keyHint', 'z. B. club.website')}>
             <TextInput
               value={newKey}
               onChange={(e) => setNewKey(e.target.value)}
               placeholder="namespace.key"
             />
           </Field>
-          <Field label="Value">
+          <Field label={t('data.value', 'Wert')}>
             <TextInput
               value={newValue}
               onChange={(e) => setNewValue(e.target.value)}
             />
           </Field>
-          <Field label="Namespace" hint="Group this setting belongs to">
+          <Field label={t('kv.namespace', 'Bereich')} hint={t('kv.namespaceHint', 'Gruppe, zu der diese Einstellung gehört')}>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               <Select
                 value={
@@ -367,7 +373,7 @@ export function KVSettingsTab() {
                   ...[...new Set(entries.map((e) => e.namespace))]
                     .sort()
                     .map((ns) => ({ value: ns, label: ns })),
-                  { value: '__custom__', label: 'Add custom…' },
+                  { value: '__custom__', label: t('kv.addCustom', 'Eigenen hinzufügen …') },
                 ]}
                 style={{ flex: 1 }}
               />
@@ -377,25 +383,25 @@ export function KVSettingsTab() {
                 <TextInput
                   value={newNamespace}
                   onChange={(e) => setNewNamespace(e.target.value)}
-                  placeholder="new namespace"
+                  placeholder={t('kv.newNamespace', 'neuer Bereich')}
                   style={{ flex: 1, fontSize: 'var(--mantine-font-size-sm)' }}
                   autoFocus
                 />
               )}
             </div>
           </Field>
-          <Field label="Description" hint="Optional">
+          <Field label={t('common.description', 'Beschreibung')} hint={t('common.optional', 'Optional')}>
             <TextInput
               value={newDesc}
               onChange={(e) => setNewDesc(e.target.value)}
             />
           </Field>
           <Field
-            label="Validation type"
-            hint="Optional \u2014 how the value is validated"
+            label={t('kv.validationType', 'Prüfung')}
+            hint={t('kv.validationHint', 'Optional: wie der Wert geprüft wird')}
           >
             <Select
-              data={VALIDATION_TYPES}
+              data={validationTypes}
               value={newValidationType}
               onChange={(v) => setNewValidationType(v ?? '')}
             />
@@ -409,14 +415,14 @@ export function KVSettingsTab() {
             }}
           >
             <Button variant="subtle" onClick={() => setShowAdd(false)}>
-              Cancel
+              {t('common.cancel', 'Abbrechen')}
             </Button>
             <Button
               variant="filled"
               onClick={handleAdd}
               disabled={addSaving || !newKey.trim()}
             >
-              {addSaving ? 'Saving\u2026' : 'Save'}
+              {addSaving ? t('common.saving', 'Wird gespeichert …') : t('common.save', 'Speichern')}
             </Button>
           </div>
         </div>
@@ -424,10 +430,10 @@ export function KVSettingsTab() {
 
       <ConfirmModal
         open={deleteTarget !== null}
-        title="Delete setting"
+        title={t('kv.deleteTitle', 'Einstellung löschen')}
         body={
           deleteTarget
-            ? `Delete "${deleteTarget.key}"? This cannot be undone.`
+            ? t('kv.deleteBody', '«{{key}}» löschen? Das kann nicht rückgängig gemacht werden.', { key: deleteTarget.key })
             : ''
         }
         onConfirm={() => {
@@ -442,14 +448,14 @@ export function KVSettingsTab() {
         onClose={() => setEditingMeta(null)}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <Field label="Label" hint="Display name for this setting">
+          <Field label={t('kv.label', 'Bezeichnung')} hint={t('kv.labelHint', 'Anzeigename dieser Einstellung')}>
             <TextInput
               value={metaLabel}
               onChange={(e) => setMetaLabel(e.target.value)}
-              placeholder="e.g. Club Name"
+              placeholder={t('kv.labelPlaceholder', 'z. B. Vereinsname')}
             />
           </Field>
-          <Field label="Namespace">
+          <Field label={t('kv.namespace', 'Bereich')}>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               <Select
                 value={
@@ -470,7 +476,7 @@ export function KVSettingsTab() {
                   ...[...new Set(entries.map((e) => e.namespace))]
                     .sort()
                     .map((ns) => ({ value: ns, label: ns })),
-                  { value: '__custom__', label: 'Add custom…' },
+                  { value: '__custom__', label: t('kv.addCustom', 'Eigenen hinzufügen …') },
                 ]}
                 style={{ flex: 1 }}
               />
@@ -480,21 +486,21 @@ export function KVSettingsTab() {
                 <TextInput
                   value={metaNamespace}
                   onChange={(e) => setMetaNamespace(e.target.value)}
-                  placeholder="new namespace"
+                  placeholder={t('kv.newNamespace', 'neuer Bereich')}
                   style={{ flex: 1, fontSize: 'var(--mantine-font-size-sm)' }}
                   autoFocus
                 />
               )}
             </div>
           </Field>
-          <Field label="Validation type">
+          <Field label={t('kv.validationType', 'Prüfung')}>
             <Select
-              data={VALIDATION_TYPES}
+              data={validationTypes}
               value={metaValidationType}
               onChange={(v) => setMetaValidationType(v ?? '')}
             />
           </Field>
-          <Field label="Description" hint="Help text shown in settings UI">
+          <Field label={t('common.description', 'Beschreibung')} hint={t('kv.descHint', 'Hilfetext in den Einstellungen')}>
             <TextInput
               value={metaDescription}
               onChange={(e) => setMetaDescription(e.target.value)}
@@ -516,14 +522,14 @@ export function KVSettingsTab() {
                 onChange={(e) => setMetaSensitive(e.target.checked)}
                 style={{ width: 16, height: 16, accentColor: '#7441e0' }}
               />
-              <span style={{ fontWeight: 600 }}>Sensitive</span>
+              <span style={{ fontWeight: 600 }}>{t('kv.sensitive', 'Vertraulich')}</span>
               <span
                 style={{
                   color: '#5e5873',
                   fontSize: 'var(--mantine-font-size-xs)',
                 }}
               >
-                Masks value in API responses
+                {t('kv.sensitiveHint', 'Wert wird in API-Antworten verborgen')}
               </span>
             </label>
             <label
@@ -541,14 +547,14 @@ export function KVSettingsTab() {
                 onChange={(e) => setMetaRequired(e.target.checked)}
                 style={{ width: 16, height: 16, accentColor: '#7441e0' }}
               />
-              <span style={{ fontWeight: 600 }}>Required</span>
+              <span style={{ fontWeight: 600 }}>{t('kv.required', 'Pflichtfeld')}</span>
               <span
                 style={{
                   color: '#5e5873',
                   fontSize: 'var(--mantine-font-size-xs)',
                 }}
               >
-                Prevents deletion
+                {t('kv.requiredHint', 'Kann nicht gelöscht werden')}
               </span>
             </label>
             <label
@@ -566,14 +572,14 @@ export function KVSettingsTab() {
                 onChange={(e) => setMetaRestricted(e.target.checked)}
                 style={{ width: 16, height: 16, accentColor: '#7441e0' }}
               />
-              <span style={{ fontWeight: 600 }}>Restricted</span>
+              <span style={{ fontWeight: 600 }}>{t('kv.restricted', 'Gesperrt')}</span>
               <span
                 style={{
                   color: '#5e5873',
                   fontSize: 'var(--mantine-font-size-xs)',
                 }}
               >
-                Prevents modification
+                {t('kv.restrictedHint', 'Kann nicht geändert werden')}
               </span>
             </label>
           </div>
@@ -586,7 +592,7 @@ export function KVSettingsTab() {
             }}
           >
             <Button variant="subtle" onClick={() => setEditingMeta(null)}>
-              Cancel
+              {t('common.cancel', 'Abbrechen')}
             </Button>
             <Button
               variant="filled"
@@ -611,14 +617,14 @@ export function KVSettingsTab() {
                   setEditingMeta(null)
                   notify(
                     'success',
-                    'Metadata saved',
-                    `${editingMeta.key} updated.`,
+                    t('kv.metaSaved', 'Eigenschaften gespeichert'),
+                    t('kv.updatedMsg', '{{key}} wurde gespeichert.', { key: editingMeta.key }),
                   )
                 } catch (err: unknown) {
                   notify(
                     'error',
-                    'Save failed',
-                    err instanceof Error ? err.message : 'Unknown error',
+                    t('common.saveFailed', 'Speichern fehlgeschlagen'),
+                    err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
                   )
                 } finally {
                   setMetaSaving(false)
@@ -626,7 +632,7 @@ export function KVSettingsTab() {
               }}
               disabled={metaSaving}
             >
-              {metaSaving ? 'Saving\u2026' : 'Save'}
+              {metaSaving ? t('common.saving', 'Wird gespeichert …') : t('common.save', 'Speichern')}
             </Button>
           </div>
         </div>

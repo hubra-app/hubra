@@ -9,14 +9,17 @@ import {
   Button,
   Stack,
   Group,
+  SimpleGrid,
   Paper,
   Text,
   Title,
   Divider,
 } from '@mantine/core'
 import { getClubSettings, updateClubSettings, type ClubSettings } from '@/api/admin'
+import { useT } from '@/locales/i18n'
 
 function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
+  const { t } = useT()
   const queryClient = useQueryClient()
   const [form, setForm] = useState<ClubSettings>(initialData)
   const [saving, setSaving] = useState(false)
@@ -37,16 +40,16 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
 
   return (
     <Stack gap={20}>
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
-        <Title order={3} mb={16}>Club Identity</Title>
+      <Paper withBorder p="lg">
+        <Title order={3} mb="md">{t('clubSettings.identity', 'Vereinsprofil')}</Title>
         <Stack gap={14}>
           <TextInput
-            label="Club Name"
+            label={t('clubSettings.clubName', 'Vereinsname')}
             value={form.club_name ?? ''}
             onChange={(e) => update('club_name', e.target.value)}
           />
           <Textarea
-            label="Description"
+            label={t('clubSettings.description', 'Beschreibung')}
             value={form.club_description ?? ''}
             onChange={(e) => update('club_description', e.target.value)}
             rows={3}
@@ -54,34 +57,34 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
         </Stack>
       </Paper>
 
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
-        <Title order={3} mb={16}>Branding</Title>
+      <Paper withBorder p="lg">
+        <Title order={3} mb="md">{t('clubSettings.branding', 'Erscheinungsbild')}</Title>
         <Stack gap={14}>
-          <Group gap={14} grow>
+          <SimpleGrid cols={{ base: 1, xs: 3 }} spacing={14}>
             <ColorInput
-              label="Primary Color"
+              label={t('clubSettings.primaryColor', 'Primärfarbe')}
               value={form.primary_color ?? '#7441e0'}
               onChange={(v) => update('primary_color', v)}
             />
             <ColorInput
-              label="Secondary Color"
+              label={t('clubSettings.secondaryColor', 'Sekundärfarbe')}
               value={form.secondary_color ?? '#2596be'}
               onChange={(v) => update('secondary_color', v)}
             />
             <ColorInput
-              label="Accent Color"
+              label={t('clubSettings.accentColor', 'Akzentfarbe')}
               value={form.accent_color ?? '#f59e0b'}
               onChange={(v) => update('accent_color', v)}
             />
-          </Group>
+          </SimpleGrid>
         </Stack>
       </Paper>
 
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
-        <Title order={3} mb={16}>Localization</Title>
-        <Group gap={14} grow>
+      <Paper withBorder p="lg">
+        <Title order={3} mb="md">{t('clubSettings.localization', 'Region und Sprache')}</Title>
+        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing={14}>
           <Select
-            label="Timezone"
+            label={t('clubSettings.timezone', 'Zeitzone')}
             value={form.timezone ?? 'Europe/Zurich'}
             onChange={(v) => v && update('timezone', v)}
             data={[
@@ -94,49 +97,55 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
             ]}
           />
           <Select
-            label="Locale"
+            label={t('clubSettings.locale', 'Sprache')}
             value={form.locale ?? 'de-CH'}
             onChange={(v) => v && update('locale', v)}
-            data={['de-CH', 'en-GB', 'de-DE', 'fr-FR', 'it-IT']}
+            data={[
+              { value: 'de-CH', label: 'Deutsch (Schweiz)' },
+              { value: 'en-GB', label: 'English' },
+              { value: 'de-DE', label: 'Deutsch (Deutschland)' },
+              { value: 'fr-FR', label: 'Français' },
+              { value: 'it-IT', label: 'Italiano' },
+            ]}
           />
           <Select
-            label="Date Format"
+            label={t('clubSettings.dateFormat', 'Datumsformat')}
             value={form.date_format ?? 'DD.MM.YYYY'}
             onChange={(v) => v && update('date_format', v)}
             data={['DD.MM.YYYY', 'YYYY-MM-DD', 'DD/MM/YYYY', 'MM/DD/YYYY']}
           />
-        </Group>
+        </SimpleGrid>
       </Paper>
 
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
-        <Title order={3} mb={16}>Privacy</Title>
+      <Paper withBorder p="lg">
+        <Title order={3} mb="md">{t('clubSettings.privacy', 'Privatsphäre')}</Title>
         <Stack gap={14}>
           <Switch
-            label="Member directory visible to all members"
+            label={t('clubSettings.directoryVisible', 'Mitgliederverzeichnis für alle Mitglieder sichtbar')}
             checked={form.member_directory_visible ?? false}
             onChange={(e) => update('member_directory_visible', e.currentTarget.checked)}
           />
           <Switch
-            label="Public group listing"
+            label={t('clubSettings.publicGroups', 'Gruppen öffentlich auflisten')}
             checked={form.public_group_listing ?? false}
             onChange={(e) => update('public_group_listing', e.currentTarget.checked)}
           />
         </Stack>
       </Paper>
 
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
-        <Title order={3} mb={16}>Announcement Banner</Title>
+      <Paper withBorder p="lg">
+        <Title order={3} mb="md">{t('clubSettings.banner', 'Ankündigungsbanner')}</Title>
         <Stack gap={14}>
           <Switch
-            label="Show banner"
+            label={t('clubSettings.showBanner', 'Banner anzeigen')}
             checked={form.announcement_banner_active ?? false}
             onChange={(e) => update('announcement_banner_active', e.currentTarget.checked)}
           />
           <TextInput
-            label="Banner Text"
+            label={t('clubSettings.bannerText', 'Bannertext')}
             value={form.announcement_banner_text ?? ''}
             onChange={(e) => update('announcement_banner_text', e.target.value)}
-            placeholder="Annual meeting on Friday!"
+            placeholder={t('clubSettings.bannerPlaceholder', 'Generalversammlung am Freitag!')}
           />
         </Stack>
       </Paper>
@@ -144,7 +153,7 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
       <Divider />
       <Group justify="flex-end">
         <Button loading={saving} onClick={handleSave}>
-          Save Settings
+          {t('clubSettings.save', 'Einstellungen speichern')}
         </Button>
       </Group>
     </Stack>
@@ -152,13 +161,14 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
 }
 
 export function ClubSettingsTab() {
+  const { t } = useT()
   const { data, isLoading } = useQuery({
     queryKey: ['club-settings'],
     queryFn: getClubSettings,
   })
 
   if (isLoading) {
-    return <Text p={20} c="dimmed">Loading settings...</Text>
+    return <Text p={20} c="dimmed">{t('clubSettings.loading', 'Einstellungen werden geladen …')}</Text>
   }
 
   return <ClubSettingsForm initialData={data ?? {}} />

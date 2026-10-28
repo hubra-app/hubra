@@ -12,7 +12,7 @@ import { useForm } from '@mantine/form'
 import { zodResolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useT } from '@/locales/i18n'
+import { useT, zmsg } from '@/locales/i18n'
 import {
   IconPlus,
   IconClock,
@@ -154,7 +154,7 @@ function GroupDetailPanel({
       members={slideMembers}
       loading={loading}
       addLabel={t('groups.addMember', 'Mitglied hinzufügen')}
-      addPlaceholder={t('groups.searchMembersToAdd', 'Mitglieder suchen…')}
+      addPlaceholder={t('groups.searchMembersToAdd', 'Mitglieder suchen …')}
       searchResults={searchResults}
       onAdd={handleAdd}
       onAddSearch={setSearchQuery}
@@ -167,7 +167,7 @@ function GroupDetailPanel({
 
 /* ── Groups ─────────────────────────────────── */
 const groupSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+  name: z.string().min(1, zmsg('common.nameRequired', 'Name ist erforderlich')),
   description: z.string(),
   color: z.string(),
   sessions: z.string(),
@@ -278,7 +278,7 @@ export function GroupsScreen() {
         t('common.error'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekanni Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -309,7 +309,7 @@ export function GroupsScreen() {
         t('common.error'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekanni Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -332,40 +332,40 @@ export function GroupsScreen() {
         t('common.error'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekanni Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
 
   const groupForm = (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <Field label={t('groups.group.name', 'Gruppename')}>
+      <Field label={t('groups.group.name', 'Name der Gruppe')}>
         <TextInput
           {...form.getInputProps('name')}
-          placeholder={t('groups.group.namePlaceholder', 'z.B. Keramik')}
+          placeholder={t('groups.group.namePlaceholder', 'z. B. Keramik')}
         />
       </Field>
-      <Field label={t('common.description', 'Beschribig')}>
+      <Field label={t('common.description', 'Beschreibung')}>
         <Textarea
           rows={3}
           {...form.getInputProps('description')}
           placeholder={t(
             'common.descriptionPlaceholder',
-            'Churzi Beschribig vo der Gruppe…',
+            'Kurze Beschreibung …',
           )}
         />
       </Field>
-      <Field label={t('common.color', 'Farb')}>
+      <Field label={t('common.color', 'Farbe')}>
         <TextInput
           type="color"
           {...form.getInputProps('color')}
           style={{ height: 38, padding: '2px 6px', cursor: 'pointer' }}
         />
       </Field>
-      <Field label={t('groups.lead', 'Gruppenleiter')}>
+      <Field label={t('groups.lead', 'Gruppenleitung')}>
         <Select
           data={[
-            { value: '', label: t('groups.noLead', 'Kein Lead') },
+            { value: '', label: t('groups.noLead', 'Keine Leitung') },
             ...members.map((m) => ({ value: m.id, label: m.name })),
           ]}
           searchable
@@ -377,15 +377,15 @@ export function GroupsScreen() {
         style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}
       >
         <Field
-          label={t('groups.sessions', 'Sitzige')}
-          hint={t('groups.sessionsHint', 'z.B. 2x/Wuch')}
+          label={t('groups.sessions', 'Treffen')}
+          hint={t('groups.sessionsHint', 'z. B. 2× pro Woche')}
         >
           <TextInput
             {...form.getInputProps('sessions')}
-            placeholder={t('groups.sessionsPlaceholder', '3x/Wuch')}
+            placeholder={t('groups.sessionsPlaceholder', '3× pro Woche')}
           />
         </Field>
-        <Field label={t('groups.tools', 'Wärchzüüg')}>
+        <Field label={t('groups.tools', 'Werkzeuge')}>
           <TextInput
             type="number"
             min={0}
@@ -395,10 +395,10 @@ export function GroupsScreen() {
         </Field>
       </div>
       <Switch
-        label={t('groups.selfJoin', 'Members can join and leave on their own')}
+        label={t('groups.selfJoin', 'Mitglieder können selbst beitreten und austreten')}
         description={t(
           'groups.selfJoinHint',
-          'For interest groups. Members find it under My account.',
+          'Für Interessengruppen. Mitglieder finden sie unter «Mein Konto».',
         )}
         {...form.getInputProps('selfJoin', { type: 'checkbox' })}
       />
@@ -408,7 +408,6 @@ export function GroupsScreen() {
   return (
     <div>
       <PageHead
-        eyebrow={t('shell.sections.workspace')}
         title={t('groups.title')}
         desc={t('groups.count', '{{count}} Gruppen', { count: groups.length })}
         actions={
@@ -431,24 +430,13 @@ export function GroupsScreen() {
             alignItems: 'center',
           }}
         >
-          <div style={{ position: 'relative', flex: '1 1 220px' }}>
-            <IconSearch
-              size={16}
-              style={{
-                position: 'absolute',
-                left: 11,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#8c86a0',
-              }}
-            />
-            <TextInput
-              style={{ height: 36, paddingLeft: 34 }}
-              placeholder={t('groups.search', 'Gruppe sueche…')}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+          <TextInput
+            style={{ flex: '1 1 220px' }}
+            leftSection={<IconSearch size={16} />}
+            placeholder={t('groups.search', 'Gruppen suchen …')}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
         <Pagination {...pg} top />
         <div
@@ -508,7 +496,7 @@ export function GroupsScreen() {
                           color: '#5e5873',
                         }}
                       >
-                        {t('groups.ledBy', 'Gmacht vo')} {g.lead}
+                        {t('groups.ledBy', 'Geleitet von')} {g.lead}
                       </div>
                     )}
                   </div>
@@ -522,7 +510,7 @@ export function GroupsScreen() {
                   }}
                 >
                   {g.description ||
-                    t('groups.noDescription', 'Cheni Beschribig.')}
+                    t('groups.noDescription', 'Keine Beschreibung.')}
                 </p>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
                   {g.sessions && (
@@ -534,7 +522,7 @@ export function GroupsScreen() {
                   {g.tools > 0 && (
                     <Badge variant="light">
                       <IconBolt size={12} />
-                      {g.tools} {t('groups.tools', 'Wärchzüüg')}
+                      {g.tools} {t('groups.tools', 'Werkzeuge')}
                     </Badge>
                   )}
                 </div>
@@ -564,7 +552,7 @@ export function GroupsScreen() {
                     style={{ color: '#6131c4' }}
                     onClick={() => setDetailGroup(g)}
                   >
-                    {t('groups.members', 'Mitglider')} →
+                    {t('groups.members', 'Mitglieder')} →
                   </Button>
                 </div>
               </div>
@@ -616,7 +604,7 @@ export function GroupsScreen() {
               {t('common.cancel')}
             </Button>
             <Button variant="filled" onClick={() => form.onSubmit(saveAdd)()}>
-              {t('groups.createGroup', 'Gruppe erstelle')}
+              {t('groups.createGroup', 'Gruppe erstellen')}
             </Button>
           </>
         }
@@ -644,13 +632,12 @@ export function GroupsScreen() {
       <ConfirmModal
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        title={t(
-          'groups.confirmDelete.title',
-          ` "${deleteTarget?.name}" lösche?`,
-        )}
+        title={t('groups.confirmDelete.title', '«{{name}}» löschen?', {
+          name: deleteTarget?.name ?? '',
+        })}
         body={t(
           'groups.confirmDelete.body',
-          'Mitglider wirde nöd glöscht — sie verlah die Gruppe nume.',
+          'Die Mitglieder bleiben erhalten, sie werden nur aus der Gruppe entfernt.',
         )}
         onConfirm={confirmDelete}
       />

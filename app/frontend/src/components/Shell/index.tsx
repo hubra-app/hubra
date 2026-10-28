@@ -23,9 +23,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
       styles={{
         main: {
           background: '#f7f6fb',
-          backgroundImage:
-            'linear-gradient(rgba(24,24,24,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(24,24,24,.08) 1px, transparent 1px), linear-gradient(rgba(24,24,24,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(24,24,24,.05) 1px, transparent 1px)',
-          backgroundSize: '132px 132px, 132px 132px, 22px 22px, 22px 22px',
           height: 'calc(100vh - 64px)',
           minHeight: 'calc(100vh - 64px)',
           overflowY: 'auto',
@@ -44,7 +41,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <MobileDrawer />
 
       <AppShell.Main>
-        <div style={{ padding: 'var(--mantine-spacing-xl)' }}>{children}</div>
+        <div className="page-container">{children}</div>
       </AppShell.Main>
 
       <NotificationPanel />

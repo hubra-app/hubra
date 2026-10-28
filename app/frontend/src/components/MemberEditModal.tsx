@@ -124,7 +124,7 @@ export function MemberEditModal({
       .catch((err: unknown) => {
         notify(
           'error',
-          t('common.error', 'Error'),
+          t('common.error', 'Fehler'),
           err instanceof Error ? err.message : 'Could not load lookups',
         )
       })
@@ -179,10 +179,10 @@ export function MemberEditModal({
       const msg =
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekanni Fehler')
+          : t('common.unknownError', 'Unbekannter Fehler')
       if (msg.includes('already taken') || msg.includes('CONFLICT')) {
         setUsernameError(
-          t('members.usernameTaken', 'Benutzername scho vergeben'),
+          t('members.usernameTaken', 'Dieser Benutzername ist schon vergeben'),
         )
       } else {
         notify(
@@ -209,10 +209,10 @@ export function MemberEditModal({
       setNewPassword('')
       notify(
         'success',
-        t('members.password.updated', 'Passwort aktualisiert'),
+        t('members.password.updated', 'Passwort geändert'),
         t(
           'members.password.updatedMsg',
-          'Mitglider-Passwort isch g\u00e4ndert worde.',
+          'Das Passwort des Mitglieds wurde geändert.',
         ),
       )
     } catch (err: unknown) {
@@ -221,7 +221,7 @@ export function MemberEditModal({
         t('members.password.updateFailed'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekanni Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setPwSaving(false)
@@ -285,7 +285,7 @@ export function MemberEditModal({
             placeholder="anna@example.com"
           />
         </Field>
-        <Field label={t('members.avatarColor', 'Avatar-Farb')}>
+        <Field label={t('members.avatarColor', 'Avatar-Farbe')}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <input
               type="color"
@@ -325,12 +325,12 @@ export function MemberEditModal({
             {...form.getInputProps('tier')}
           />
         </Field>
-        <Field label={t('common.roles', 'Roles')}>
+        <Field label={t('common.roles', 'Rollen')}>
           <MultiSelect
             data={allRoles}
             value={watchedRoles}
             onChange={(v) => form.setFieldValue('roles', v)}
-            placeholder={t('members.noRolesSelected', 'Select roles…')}
+            placeholder={t('members.noRolesSelected', 'Rollen wählen …')}
             searchable
             clearable
             hidePickedOptions

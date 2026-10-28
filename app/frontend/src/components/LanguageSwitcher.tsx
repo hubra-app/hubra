@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Menu, Button } from '@mantine/core'
-import { IconGlobe, IconCheck } from '@tabler/icons-react'
+import { IconWorld, IconCheck } from '@tabler/icons-react'
 import { useQuery } from '@tanstack/react-query'
 import { setLanguage, getCurrentLanguage, useT } from '@/locales/i18n'
 import { fetchLanguages } from '@/api/i18n'
@@ -8,8 +8,13 @@ import { fetchLanguages } from '@/api/i18n'
 const FALLBACK_LANGUAGES = ['de-CH', 'en-GB']
 
 const LANGUAGE_LABELS: Record<string, string> = {
-  'de-CH': 'Deutsch (CH)',
+  'de-CH': 'Deutsch',
   'en-GB': 'English',
+}
+
+const LANGUAGE_SHORT: Record<string, string> = {
+  'de-CH': 'DE',
+  'en-GB': 'EN',
 }
 
 export function LanguageSwitcher() {
@@ -31,11 +36,14 @@ export function LanguageSwitcher() {
     <Menu shadow="md" width={160} position="bottom-end">
       <Menu.Target>
         <Button
-          variant="default"
+          variant="subtle"
+          color="gray"
           size="sm"
-          leftSection={<IconGlobe size={15} />}
+          px={10}
+          leftSection={<IconWorld size={17} />}
+          aria-label={LANGUAGE_LABELS[current] || current}
         >
-          {LANGUAGE_LABELS[current] || current}
+          {LANGUAGE_SHORT[current] || current}
         </Button>
       </Menu.Target>
       <Menu.Dropdown>

@@ -1,22 +1,35 @@
 import { useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { AppShell, Text, Group, UnstyledButton, Badge, Burger, Drawer, Stack } from '@mantine/core'
+import {
+  AppShell,
+  Badge,
+  Box,
+  Burger,
+  Button,
+  Drawer,
+  Group,
+  SegmentedControl,
+  Stack,
+  Text,
+} from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { SSO_URL } from '@hubra/api-client'
 import {
-  IconBuildingCog,
+  IconArrowUpRight,
+  IconBuildingCommunity,
+  IconClipboardList,
   IconHome,
+  IconKey,
+  IconLogout,
+  IconPlus,
+  IconSettings,
+  IconPuzzle,
   IconSearch,
   IconShieldCheck,
-  IconLogout,
-  IconClipboardList,
-  IconKey,
-  IconPuzzle,
-  IconSettings,
   IconDatabase,
-  IconPlus,
 } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
+import { useLang, type Lang } from '@/lang'
 
 interface NavItem {
   label: string
@@ -27,7 +40,13 @@ interface NavItem {
   href?: string
 }
 
+interface NavSection {
+  label: string
+  items: NavItem[]
+}
+
 function Brand() {
+  const { tr } = useLang()
   return (
     <Group gap={10} wrap="nowrap">
       <div className="logo-mark" />
@@ -35,76 +54,112 @@ function Brand() {
         <Text fz={20} className="wordmark">
           hubra
         </Text>
-        <Text fz="xs" c="dimmed">
-          Admin Portal
+        <Text fz={11} fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.08em' }}>
+          {tr('Verwaltung', 'Manage')}
         </Text>
       </div>
     </Group>
   )
 }
 
-interface NavSection {
-  title: string
-  items: NavItem[]
+function NavRow({ item }: { item: NavItem }) {
+  const location = useLocation()
+  const active = !!item.path && location.pathname.startsWith(item.path)
+  const style: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    minHeight: 40,
+    padding: '8px 12px',
+    borderRadius: 10,
+    textDecoration: 'none',
+    fontSize: 'var(--mantine-font-size-sm)',
+    fontWeight: active ? 700 : 500,
+    color: active ? '#4d27a0' : '#4a4560',
+    background: active ? '#ebe3ff' : 'transparent',
+  }
+  const body = (
+    <>
+      <Box component="span" style={{ display: 'flex', color: active ? '#7441e0' : '#5e5873' }}>
+        {item.icon}
+      </Box>
+      <span style={{ flex: 1 }}>{item.label}</span>
+      {item.href && <IconArrowUpRight size={14} color="#b7b0c9" />}
+    </>
+  )
+  return item.path ? (
+    <NavLink
+      to={item.path}
+      style={style}
+      className="manage-nav-row"
+      aria-current={active ? 'page' : undefined}
+    >
+      {body}
+    </NavLink>
+  ) : (
+    <a href={item.href} style={style} className="manage-nav-row">
+      {body}
+    </a>
+  )
 }
 
 function NavSections({ sections }: { sections: NavSection[] }) {
   return (
-    <>
-      {sections
-        .filter((section) => section.items.length > 0)
-        .map((section, i) => (
-          <div key={section.title} style={{ marginTop: i === 0 ? 0 : 18 }}>
-            <Text fz={11} fw={700} tt="uppercase" c="dimmed" px={12} mb={6} lts={0.6}>
-              {section.title}
-            </Text>
-            <NavLinks items={section.items} />
-          </div>
-        ))}
-    </>
+    <Stack gap={20}>
+      {sections.map((section) => (
+        <Stack key={section.label} gap={2}>
+          <Text
+            fz={11}
+            fw={700}
+            c="gray.6"
+            tt="uppercase"
+            px={12}
+            mb={4}
+            style={{ letterSpacing: '0.08em' }}
+          >
+            {section.label}
+          </Text>
+          {section.items.map((item) => (
+            <NavRow key={item.label} item={item} />
+          ))}
+        </Stack>
+      ))}
+    </Stack>
   )
 }
 
-function NavLinks({ items }: { items: NavItem[] }) {
-  const location = useLocation()
+function SidebarFooter() {
+  const { logout } = useAdmin()
+  const { lang, setLang, tr } = useLang()
   return (
-    <>
-      {items.map((item) => {
-        const active = !!item.path && location.pathname.startsWith(item.path)
-        const style = {
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          padding: '10px 12px',
-          borderRadius: 8,
-          textDecoration: 'none',
-          fontWeight: active ? 700 : 500,
-          color: active ? '#1a1625' : '#5e5873',
-          background: active ? 'rgba(116,65,224,0.12)' : 'transparent',
-          marginBottom: 4,
-        }
-        const body = (
-          <>
-            {item.icon}
-            <Text fz="sm">{item.label}</Text>
-          </>
-        )
-        return item.path ? (
-          <NavLink key={item.label} to={item.path} style={style}>
-            {body}
-          </NavLink>
-        ) : (
-          <a key={item.label} href={item.href} style={style}>
-            {body}
-          </a>
-        )
-      })}
-    </>
+    <Stack gap={10} pt="md" style={{ borderTop: '1px solid #ebe8f2' }}>
+      <SegmentedControl
+        size="xs"
+        radius="md"
+        value={lang}
+        onChange={(v) => setLang(v as Lang)}
+        data={[
+          { value: 'de', label: 'Deutsch' },
+          { value: 'en', label: 'English' },
+        ]}
+        aria-label={tr('Sprache', 'Language')}
+      />
+      <Button
+        variant="subtle"
+        color="gray"
+        justify="flex-start"
+        leftSection={<IconLogout size={18} />}
+        onClick={logout}
+      >
+        {tr('Abmelden', 'Sign out')}
+      </Button>
+    </Stack>
   )
 }
 
 export function Shell({ children }: { children: React.ReactNode }) {
-  const { logout, impersonation, hasGlobalPermission } = useAdmin()
+  const { impersonation, hasGlobalPermission } = useAdmin()
+  const { tr } = useLang()
   const location = useLocation()
   // Phones: the sidebar is hidden behind a menu button and opens as a side
   // drawer over a dimmed page (a tap beside it, Esc or a link closes it).
@@ -114,77 +169,54 @@ export function Shell({ children }: { children: React.ReactNode }) {
     closeMenu()
   }, [location.pathname, closeMenu])
 
-  // Two views of one portal: what a club's own admins do, and the platform
-  // itself (global permissions only).
-  const sections: NavSection[] = [
-    {
-      title: 'My clubs',
-      items: [
-        { path: '/app/my-tenants', label: 'My Clubs', icon: <IconHome size={22} /> },
-        { href: `${SSO_URL}/start`, label: 'Start a Club', icon: <IconPlus size={22} /> },
-        { href: `${SSO_URL}/clubs`, label: 'Find a Club', icon: <IconSearch size={22} /> },
-      ],
-    },
-    {
-      title: 'Platform',
-      items: [
-        ...(hasGlobalPermission('tenants.read')
-          ? [{ path: '/app/tenants', label: 'All Clubs', icon: <IconBuildingCog size={22} /> }]
-          : []),
-        ...(hasGlobalPermission('requests.read.all')
-          ? [
-              {
-                path: '/app/requests',
-                label: 'Club Requests',
-                icon: <IconClipboardList size={22} />,
-              },
-            ]
-          : []),
-        ...(hasGlobalPermission('platform.settings')
-          ? [
-              {
-                path: '/app/platform/settings',
-                label: 'Platform Settings',
-                icon: <IconSettings size={22} />,
-              },
-            ]
-          : []),
-        ...(hasGlobalPermission('backups.manage')
-          ? [{ path: '/app/platform/backups', label: 'Backups', icon: <IconDatabase size={22} /> }]
-          : []),
-        ...(hasGlobalPermission('plugins.manage')
-          ? [{ path: '/app/plugins', label: 'Plugins', icon: <IconPuzzle size={22} /> }]
-          : []),
-        ...(hasGlobalPermission('roles.manage')
-          ? [{ path: '/app/roles', label: 'Roles', icon: <IconKey size={22} /> }]
-          : []),
-        ...(hasGlobalPermission('audit.read')
-          ? [{ path: '/app/audit', label: 'Audit Log', icon: <IconShieldCheck size={22} /> }]
-          : []),
-      ],
-    },
+  const platformItems: NavItem[] = [
+    ...(hasGlobalPermission('tenants.read')
+      ? [{ path: '/app/tenants', label: tr('Alle Vereine', 'All clubs'), icon: <IconBuildingCommunity size={20} /> }]
+      : []),
+    ...(hasGlobalPermission('requests.read.all')
+      ? [{ path: '/app/requests', label: tr('Vereinsanfragen', 'Club requests'), icon: <IconClipboardList size={20} /> }]
+      : []),
+    ...(hasGlobalPermission('platform.settings')
+      ? [{ path: '/app/platform/settings', label: tr('Plattform-Einstellungen', 'Platform settings'), icon: <IconSettings size={20} /> }]
+      : []),
+    ...(hasGlobalPermission('backups.manage')
+      ? [{ path: '/app/platform/backups', label: tr('Backups', 'Backups'), icon: <IconDatabase size={20} /> }]
+      : []),
+    ...(hasGlobalPermission('plugins.manage')
+      ? [{ path: '/app/plugins', label: tr('Plugin-Katalog', 'Plugin catalogue'), icon: <IconPuzzle size={20} /> }]
+      : []),
+    ...(hasGlobalPermission('roles.manage')
+      ? [{ path: '/app/roles', label: tr('Rollen', 'Roles'), icon: <IconKey size={20} /> }]
+      : []),
+    ...(hasGlobalPermission('audit.read')
+      ? [{ path: '/app/audit', label: tr('Audit-Log', 'Audit log'), icon: <IconShieldCheck size={20} /> }]
+      : []),
   ]
 
-  const logoutButton = (
-    <UnstyledButton
-      onClick={logout}
-      style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#5e5873' }}
-    >
-      <IconLogout size={18} />
-      <Text fz="sm">Logout</Text>
-    </UnstyledButton>
-  )
+  const sections: NavSection[] = [
+    {
+      label: tr('Persönlich', 'Personal'),
+      items: [
+        { path: '/app/my-tenants', label: tr('Meine Vereine', 'My clubs'), icon: <IconHome size={20} /> },
+        { href: `${SSO_URL}/start`, label: tr('Verein gründen', 'Start a club'), icon: <IconPlus size={20} /> },
+        { href: `${SSO_URL}/clubs`, label: tr('Verein finden', 'Find a club'), icon: <IconSearch size={20} /> },
+      ],
+    },
+    ...(platformItems.length > 0
+      ? [{ label: tr('Plattform', 'Platform'), items: platformItems }]
+      : []),
+  ]
 
   return (
     <AppShell
       // The header is for phones only; from sm up the sidebar has the brand.
       header={{ height: { base: 56, sm: 0 } }}
       navbar={{
-        width: 220,
+        width: 248,
         breakpoint: 'sm',
         collapsed: { mobile: true },
       }}
-      padding={{ base: 'md', sm: 'xl' }}
+      padding={0}
     >
       <AppShell.Header hiddenFrom="sm" px="md" style={{ display: 'flex', alignItems: 'center' }}>
         <Group gap={12} wrap="nowrap">
@@ -192,7 +224,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             opened={menuOpen}
             onClick={toggleMenu}
             size="sm"
-            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-label={menuOpen ? tr('Menü schliessen', 'Close menu') : tr('Menü öffnen', 'Open menu')}
           />
           <div className="logo-mark" />
           <Text fz={20} className="wordmark">
@@ -201,59 +233,60 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar p="md" style={{ background: '#fff' }}>
-        <Group mb={30} px="sm">
+      <AppShell.Navbar p="md" style={{ background: '#fff', borderRight: '1px solid #ebe8f2' }}>
+        <Box px={12} pt={6} mb={28}>
           <Brand />
-        </Group>
-        <NavSections sections={sections} />
-        <Group mt="auto" px="sm" style={{ marginTop: 'auto' }}>
-          {logoutButton}
-        </Group>
+        </Box>
+        <AppShell.Section grow style={{ overflowY: 'auto' }}>
+          <NavSections sections={sections} />
+        </AppShell.Section>
+        <AppShell.Section>
+          <SidebarFooter />
+        </AppShell.Section>
       </AppShell.Navbar>
 
       <Drawer
         opened={menuOpen}
         onClose={closeMenu}
-        size="min(280px, 85vw)"
+        position="left"
+        size="min(300px, 85vw)"
         padding="md"
         hiddenFrom="sm"
         title={<Brand />}
+        styles={{ body: { display: 'flex', flexDirection: 'column', minHeight: 'calc(100% - 72px)' } }}
       >
-        <Stack gap={0}>
+        <Box style={{ flex: 1 }}>
           <NavSections sections={sections} />
-          <Group mt="lg" px="sm">
-            {logoutButton}
-          </Group>
-        </Stack>
+        </Box>
+        <Box mt="xl">
+          <SidebarFooter />
+        </Box>
       </Drawer>
 
-      {impersonation?.is_impersonating && (
-        <div
-          style={{
-            background: '#fef3c7',
-            borderBottom: '1px solid #f59e0b',
-            padding: '8px 16px',
-            fontSize: 14,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <Badge color="orange" variant="filled" size="sm">
-            Impersonating
-          </Badge>
-          <Text fz="sm" fw={600}>
-            Acting in tenant: {impersonation.tenant_slug}
-          </Text>
-          {impersonation.reason && (
-            <Text fz="xs" c="dimmed">
-              Reason: {impersonation.reason}
+      <AppShell.Main style={{ background: '#f7f6fb' }}>
+        {impersonation?.is_impersonating && (
+          <Group
+            gap={10}
+            px="md"
+            py={8}
+            wrap="wrap"
+            style={{ background: '#fffbeb', borderBottom: '1px solid #fce588' }}
+          >
+            <Badge color="gold" c="#1a1625" variant="filled" size="sm">
+              {tr('Stellvertretung', 'Impersonating')}
+            </Badge>
+            <Text fz="sm" fw={600}>
+              {tr('Aktiv im Verein', 'Acting in club')}: {impersonation.tenant_slug}
             </Text>
-          )}
-        </div>
-      )}
-
-      <AppShell.Main>{children}</AppShell.Main>
+            {impersonation.reason && (
+              <Text fz="xs" c="dimmed">
+                {tr('Grund', 'Reason')}: {impersonation.reason}
+              </Text>
+            )}
+          </Group>
+        )}
+        <div className="page-container">{children}</div>
+      </AppShell.Main>
     </AppShell>
   )
 }
