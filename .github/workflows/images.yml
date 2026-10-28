@@ -4,7 +4,13 @@
 #   ghcr.io/<owner>/<repo>/<image>:main-<timestamp>-<commit>
 #                                                 same build, sortable (Flux image automation)
 #   ghcr.io/<owner>/<repo>/<image>:1.2.3         tags v1.2.3
-# Pull requests build the images without pushing them.
+#
+# To save Actions minutes, pull requests build no images (CI's compose-smoke
+# job already builds them), and a push to main rebuilds only the images whose
+# files changed. The others get the new sha-/main- tags on their newest
+# build (:latest), so every image still has a sha-<commit> tag for every
+# commit on main (a docs-only commit builds nothing, it is only tagged).
+# Tags and manual runs build everything.
 #
 # The frontend images carry no host names; they are set at container start
 # (app/deploy/nginx/40-hubra-runtime.sh), so one image fits every install.
@@ -14,7 +20,6 @@ on:
   push:
     branches: [main]
     tags: ["v*"]
-  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -26,36 +31,75 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Which images to build, and which only get new tags.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.pick.outputs.build }}
+      retag: ${{ steps.pick.outputs.retag }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - id: pick
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          # image  context  dockerfile  target  paths that go into it
+          images='[
+            {"image": "backend", "context": ".", "dockerfile": "app/backend/Dockerfile",
+             "paths": ["app/backend/", "app/frontend/", "packages/api-client/", "plugins/"]},
+            {"image": "frontend", "context": ".", "dockerfile": "app/frontend/Dockerfile", "target": "production",
+             "paths": ["app/frontend/", "packages/api-client/", "app/deploy/nginx/"]},
+            {"image": "admin-frontend", "context": ".", "dockerfile": "app/admin-frontend/Dockerfile", "target": "production",
+             "paths": ["app/admin-frontend/", "packages/api-client/", "app/deploy/nginx/"]},
+            {"image": "sso-frontend", "context": ".", "dockerfile": "app/sso-frontend/Dockerfile", "target": "production",
+             "paths": ["app/sso-frontend/", "packages/api-client/", "app/deploy/nginx/"]},
+            {"image": "haraka", "context": "modules/mail/haraka", "dockerfile": "modules/mail/haraka/Dockerfile",
+             "paths": ["modules/mail/haraka/"]},
+            {"image": "zonemta", "context": "modules/mail/zonemta", "dockerfile": "modules/mail/zonemta/Dockerfile",
+             "paths": ["modules/mail/zonemta/"]},
+            {"image": "cert-watcher", "context": "modules/mail/cert-watcher", "dockerfile": "modules/mail/cert-watcher/Dockerfile",
+             "paths": ["modules/mail/cert-watcher/"]}
+          ]'
+          # Everything on tags, manual runs, a new branch, or when the base
+          # commit is unknown (force push) or this workflow changed.
+          all=false
+          if [ "$GITHUB_REF_TYPE" != branch ] || [ "$GITHUB_EVENT_NAME" != push ] ||
+             ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+            all=true
+            changed=""
+          else
+            changed="$(git diff --name-only "$BEFORE" "$GITHUB_SHA")"
+            if printf '%s\n' "$changed" | grep -qx '.github/workflows/images.yml'; then
+              all=true
+            fi
+          fi
+          echo "Changed files:"
+          printf '%s\n' "$changed"
+          printf '%s\n' "$changed" > changed.txt
+          pick() {
+            jq -c --argjson all "$all" --rawfile changed changed.txt "
+              (\$changed | split(\"\\n\") | map(select(. != \"\"))) as \$files
+              | [ .[] | select(
+                  (\$all or ([.paths[] as \$p | \$files[] | startswith(\$p)] | any)) == $1
+                ) | del(.paths) ]" <<< "$images"
+          }
+          build="$(pick true)"
+          retag="$(pick false | jq -c 'map(.image)')"
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+          echo "retag=$retag" >> "$GITHUB_OUTPUT"
+          echo "Build: $build"
+          echo "Retag: $retag"
+
   build:
+    needs: changes
+    if: needs.changes.outputs.build != '[]'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - image: backend
-            context: .
-            dockerfile: app/backend/Dockerfile
-          - image: frontend
-            context: .
-            dockerfile: app/frontend/Dockerfile
-            target: production
-          - image: admin-frontend
-            context: .
-            dockerfile: app/admin-frontend/Dockerfile
-            target: production
-          - image: sso-frontend
-            context: .
-            dockerfile: app/sso-frontend/Dockerfile
-            target: production
-          - image: haraka
-            context: modules/mail/haraka
-            dockerfile: modules/mail/haraka/Dockerfile
-          - image: zonemta
-            context: modules/mail/zonemta
-            dockerfile: modules/mail/zonemta/Dockerfile
-          - image: cert-watcher
-            context: modules/mail/cert-watcher
-            dockerfile: modules/mail/cert-watcher/Dockerfile
+        include: ${{ fromJSON(needs.changes.outputs.build) }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
@@ -66,7 +110,6 @@ jobs:
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
       - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
-        if: github.event_name != 'pull_request'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -82,7 +125,6 @@ jobs:
             type=raw,value=main-{{date 'YYYYMMDDHHmmss'}}-{{sha}},enable={{is_default_branch}}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=ref,event=pr
 
       # Add linux/arm64 to platforms for Raspberry Pi / Ampere clusters
       # (slower: builds under QEMU).
@@ -93,8 +135,7 @@ jobs:
           file: ${{ matrix.dockerfile }}
           target: ${{ matrix.target }}
           platforms: linux/amd64
-          push: ${{ github.event_name != 'pull_request' }}
-          load: ${{ github.event_name == 'pull_request' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.image }}
@@ -104,7 +145,7 @@ jobs:
       # set TRIVY_EXIT_CODE=1 once the images are clean to fail the build.
       - name: Scan the image (Trivy)
         env:
-          REF: ${{ github.event_name == 'pull_request' && steps.build.outputs.imageid || format('{0}@{1}', steps.name.outputs.image, steps.build.outputs.digest) }}
+          REF: ${{ steps.name.outputs.image }}@${{ steps.build.outputs.digest }}
           TRIVY_EXIT_CODE: "0"
         run: |
           docker run --rm \
@@ -120,3 +161,29 @@ jobs:
             cat trivy.txt
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # Images that did not change: their newest build gets this commit's tags.
+  retag:
+    needs: changes
+    if: needs.changes.outputs.retag != '[]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - env:
+          IMAGES: ${{ needs.changes.outputs.retag }}
+        run: |
+          set -eu
+          base="ghcr.io/${GITHUB_REPOSITORY,,}"
+          sha="${GITHUB_SHA::7}"
+          ts="$(date -u +%Y%m%d%H%M%S)"
+          for image in $(jq -r '.[]' <<< "$IMAGES"); do
+            echo "$base/$image:latest -> sha-$sha, main-$ts-$sha"
+            docker buildx imagetools create \
+              -t "$base/$image:sha-$sha" \
+              -t "$base/$image:main-$ts-$sha" \
+              "$base/$image:latest"
+          done
