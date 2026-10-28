@@ -211,3 +211,22 @@ def test_get_club_settings_after_update(tenant_ctx, client, auth_headers):
     body = resp.get_json()
     assert body["settings"]["club_name"] == "Persisted Club"
     assert body["settings"]["primary_color"] == "#ff0000"
+
+
+def test_membership_rules_persist_and_are_checked(tenant_ctx, client, auth_headers):
+    """Invite-only and invite validity are club settings; validity is 1-60 days."""
+    resp = client.patch(
+        "/api/v1/admin/club-settings",
+        json={"join_requests_open": False, "invite_valid_days": 30},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+    assert resp.get_json()["settings"]["join_requests_open"] is False
+    assert resp.get_json()["settings"]["invite_valid_days"] == 30
+
+    resp = client.patch(
+        "/api/v1/admin/club-settings",
+        json={"invite_valid_days": 0},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 422
