@@ -1,0 +1,46 @@
+[project]
+name = "vollbuild"
+version = "0.1.0"
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "vollbuild.extensions"
+disable_error_code = ["name-defined"]
+
+[[tool.mypy.overrides]]
+module = [
+    "vollbuild.models.*",
+    "vollbuild.schemas.*",
+]
+disable_error_code = ["name-defined"]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    # Third-party: pythonjsonlogger moved its module path in a newer version.
+    # Suppress the deprecation warning until the library is updated.
+    "ignore::DeprecationWarning",
+    # SQLite in-memory + StaticPool keeps a single connection alive for the
+    # session lifetime.  GC may collect it before the engine is disposed,
+    # producing a ResourceWarning that is harmless in tests.
+    "ignore::ResourceWarning",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Re-export stubs: imports are intentionally unused (they're re-exported)
+"vollbuild/models/*" = ["F401"]
+"vollbuild/schemas/*" = ["F401"]
+"vollbuild/services/*" = ["F401"]
+"vollbuild/tasks/*" = ["F401"]
+"vollbuild/tenant/*" = ["F401"]
+"vollbuild/config.py" = ["F401"]
+"vollbuild/crypto.py" = ["F401"]
+"vollbuild/errors.py" = ["F401"]
+"vollbuild/extensions.py" = ["F401"]
+"vollbuild/logging_config.py" = ["F401"]
+"vollbuild/pricing.py" = ["F401"]
+"vollbuild/seeds.py" = ["F401"]
+"vollbuild/settings_loader.py" = ["F401"]
+"vollbuild/validators.py" = ["F401"]

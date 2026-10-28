@@ -1,0 +1,139 @@
+import { useMemo } from "react";
+import i18n from "i18next";
+import { initReactI18next, useTranslation } from "react-i18next";
+import en from "./en/translation.json";
+import deCH from "./de-CH/translation.json";
+import {
+  fetchTranslations,
+  fetchLanguages,
+  reportMissingKeys,
+} from "@/api/i18n";
+
+const STORAGE_KEY = "cms_language";
+
+export const resources = {
+  "en-GB": { translation: en },
+  "de-CH": { translation: deCH },
+} as const;
+
+const KNOWN_LANGUAGES = ["de-CH", "en-GB"];
+
+const savedLang = localStorage.getItem(STORAGE_KEY) ?? "de-CH";
+
+i18n.use(initReactI18next).init({
+  resources,
+  lng: savedLang,
+  fallbackLng: "en-GB",
+  interpolation: { escapeValue: true },
+  returnNull: false,
+  returnEmptyString: false,
+});
+
+// ── Missing key tracking ──────────────────────────────────────────────────
+const accessedKeys = new Map<string, string | undefined>();
+let reportTimer: ReturnType<typeof setTimeout> | null = null;
+const REPORT_DEBOUNCE_MS = 30_000;
+
+function recordKey(key: string, defaultValue?: string) {
+  if (!key) return;
+  if (!accessedKeys.has(key) || (defaultValue && !accessedKeys.get(key))) {
+    accessedKeys.set(key, defaultValue ?? accessedKeys.get(key));
+  }
+  if (!reportTimer) {
+    reportTimer = setTimeout(flushAccessedKeys, REPORT_DEBOUNCE_MS);
+  }
+}
+
+async function flushAccessedKeys() {
+  if (reportTimer) {
+    clearTimeout(reportTimer);
+    reportTimer = null;
+  }
+  if (accessedKeys.size === 0) return;
+  const keys = [...accessedKeys.entries()].map(([key, dv]) => ({
+    key,
+    default_value: dv ?? null,
+  }));
+  accessedKeys.clear();
+  let locales = KNOWN_LANGUAGES;
+  try {
+    const apiLocales = await fetchLanguages();
+    if (apiLocales.length > 0) locales = apiLocales;
+  } catch {
+    // API unavailable — skip reporting
+  }
+  for (const locale of locales) {
+    // Fire-and-forget — don't block the UI
+    reportMissingKeys(locale, keys).catch(() => {});
+  }
+}
+
+i18n.on("missingKey", (_lngs: string[], _ns: string, key: string) => {
+  recordKey(key);
+});
+
+window.addEventListener("beforeunload", () => {
+  flushAccessedKeys();
+});
+
+export async function loadAllTranslationsFromApi() {
+  let locales = KNOWN_LANGUAGES;
+  try {
+    const apiLocales = await fetchLanguages();
+    if (apiLocales.length > 0) locales = apiLocales;
+  } catch {
+    // API unavailable — use static fallbacks only
+  }
+  await Promise.all(locales.map((loc) => loadTranslationsFromApi(loc)));
+  flushAccessedKeys();
+}
+
+export async function loadTranslationsFromApi(locale: string) {
+  try {
+    const data = await fetchTranslations(locale);
+    for (const [key, value] of Object.entries(data)) {
+      i18n.addResource(locale, "translation", key, value, { silent: true });
+    }
+  } catch {
+    // API unavailable — keep static fallback
+  }
+}
+
+export function setLanguage(lang: string) {
+  flushAccessedKeys();
+  localStorage.setItem(STORAGE_KEY, lang);
+  i18n.changeLanguage(lang);
+}
+
+export function getCurrentLanguage(): string {
+  return i18n.language;
+}
+
+export function useT() {
+  const { t, i18n: i18nInstance, ready } = useTranslation();
+  const wrappedT = useMemo(
+    () =>
+      ((...args: Parameters<typeof t>) => {
+        const key =
+          typeof args[0] === "string" ? args[0] : (args[0] as string[])?.[0];
+        let defaultValue: string | undefined;
+        if (args.length >= 2 && typeof args[1] === "string") {
+          defaultValue = args[1];
+        } else if (
+          args.length >= 2 &&
+          typeof args[1] === "object" &&
+          args[1] !== null &&
+          "defaultValue" in args[1]
+        ) {
+          const dv = (args[1] as { defaultValue?: unknown }).defaultValue;
+          if (typeof dv === "string") defaultValue = dv;
+        }
+        if (key) recordKey(key, defaultValue);
+        return t(...args);
+      }) as typeof t,
+    [t],
+  );
+  return { t: wrappedT, i18n: i18nInstance, ready };
+}
+
+export default i18n;

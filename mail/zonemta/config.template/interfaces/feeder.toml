@@ -1,0 +1,10 @@
+[feeder]
+enabled = true
+host = "0.0.0.0"
+port = 587
+hostname = "${MAIL_HOST}"
+authentication = true
+starttls = true
+secure = false
+key = "/etc/letsencrypt/live/${MAIL_HOST}/privkey.pem"
+cert = "/etc/letsencrypt/live/${MAIL_HOST}/fullchain.pem"

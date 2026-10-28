@@ -1,0 +1,5 @@
+{% extends "email/base.html" %}
+{% block content %}
+<p>{{ message }}</p>
+{% if portal_url %}<p><a href="{{ portal_url }}">{{ t('mail.email.notification.view_link') }}</a></p>{% endif %}
+{% endblock %}

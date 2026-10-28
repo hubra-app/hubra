@@ -1,0 +1,1 @@
+{"nodes": [{"id": "model_club_event", "name": "ClubEvent", "file_type": "concept", "definition": "Calendar event with title, date, time, location, type (Workshop/Social/Certification/Meeting), M:N attendees via event_attendees", "source_file": "app/backend/htmlcov/z_819d6647f72bcf98_event_py.html"}], "edges": [], "hyperedges": []}

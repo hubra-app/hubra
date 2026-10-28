@@ -1,0 +1,144 @@
+- generic [ref=f1e5] [box=0,0,400,736]:
+  - banner [ref=f1e6] [box=0,0,400,64]:
+    - generic [ref=f1e7] [box=0,0,400,64]:
+      - button "Menu" [ref=f1e8] [cursor=pointer] [box=16,15,34,34]:
+        - img [ref=f1e10] [box=23,22,20,20]
+      - paragraph [ref=f1e15] [box=98,21,94,22]: Konto-Iistellige
+      - generic [ref=f1e16] [box=312,15,72,34]:
+        - button "Notifications" [ref=f1e17] [cursor=pointer] [box=312,15,34,34]:
+          - img [ref=f1e19] [box=320,23,18,18]
+        - button "Sign out" [ref=f1e22] [cursor=pointer] [box=350,15,34,34]:
+          - img [ref=f1e24] [box=358,23,18,18]
+  - navigation [ref=f1e28] [box=-400,64,400,736]:
+    - generic [ref=f1e29] [box=-400,64,399,736]:
+      - generic [ref=f1e33] [box=-400,64,387,860]:
+        - generic [ref=f1e34] [box=-390,74,367,274]:
+          - paragraph [ref=f1e35] [box=-390,74,367,19]: Arbeitsbereich
+          - generic [ref=f1e36] [box=-390,97,367,251]:
+            - button "Dashboard" [ref=f1e38] [cursor=pointer] [box=-390,97,367,49]:
+              - img [ref=f1e40] [box=-379,106,24,24]
+              - generic [ref=f1e45] [box=-343,110,309,22]: Dashboard
+            - button "Mitglieder 1" [ref=f1e47] [cursor=pointer] [box=-390,147,367,49]:
+              - img [ref=f1e49] [box=-379,156,24,24]
+              - generic [ref=f1e54] [box=-343,161,277,22]: Mitglieder
+              - generic [ref=f1e56] [box=-47,165,6,14]: "1"
+            - button "Gruppe 1" [ref=f1e58] [cursor=pointer] [box=-390,198,367,49]:
+              - img [ref=f1e60] [box=-379,207,24,24]
+              - generic [ref=f1e64] [box=-343,211,277,22]: Gruppe
+              - generic [ref=f1e66] [box=-47,215,6,14]: "1"
+            - button "Inventar" [ref=f1e68] [cursor=pointer] [box=-390,249,367,49]:
+              - img [ref=f1e70] [box=-379,258,24,24]
+              - generic [ref=f1e75] [box=-343,262,309,22]: Inventar
+            - button "Verwaltig" [ref=f1e77] [cursor=pointer] [box=-390,299,367,49]:
+              - img [ref=f1e79] [box=-379,308,24,24]
+              - generic [ref=f1e82] [box=-343,313,309,22]: Verwaltig
+        - generic [ref=f1e83] [box=-390,364,367,223]:
+          - paragraph [ref=f1e84] [box=-390,364,367,19]: Betrieb
+          - generic [ref=f1e85] [box=-390,387,367,201]:
+            - button "Finanze" [ref=f1e87] [cursor=pointer] [box=-390,387,367,49]:
+              - img [ref=f1e89] [box=-379,396,24,24]
+              - generic [ref=f1e92] [box=-343,400,309,22]: Finanze
+            - button "Mail" [ref=f1e94] [cursor=pointer] [box=-390,437,367,49]:
+              - img [ref=f1e96] [box=-379,446,24,24]
+              - generic [ref=f1e99] [box=-343,451,309,22]: Mail
+            - button "shell.nav.codes" [ref=f1e101] [cursor=pointer] [box=-390,488,367,49]:
+              - img [ref=f1e103] [box=-379,497,24,24]
+              - generic [ref=f1e105] [box=-343,502,309,22]: shell.nav.codes
+            - button "shell.nav.bindings" [ref=f1e107] [cursor=pointer] [box=-390,539,367,49]:
+              - img [ref=f1e109] [box=-379,548,24,24]
+              - generic [ref=f1e113] [box=-343,552,309,22]: shell.nav.bindings
+        - generic [ref=f1e114] [box=-390,603,367,223]:
+          - paragraph [ref=f1e115] [box=-390,603,367,19]: System
+          - generic [ref=f1e116] [box=-390,626,367,201]:
+            - button "Iistellige" [ref=f1e118] [cursor=pointer] [box=-390,626,367,49]:
+              - img [ref=f1e120] [box=-379,635,24,24]
+              - generic [ref=f1e123] [box=-343,639,309,22]: Iistellige
+            - button "Audit-Log" [ref=f1e125] [cursor=pointer] [box=-390,677,367,49]:
+              - img [ref=f1e127] [box=-379,686,24,24]
+              - generic [ref=f1e129] [box=-343,690,309,22]: Audit-Log
+            - button "Berächtigunge" [ref=f1e131] [cursor=pointer] [box=-390,727,367,49]:
+              - img [ref=f1e133] [box=-379,736,24,24]
+              - generic [ref=f1e141] [box=-343,741,309,22]: Berächtigunge
+            - button "Übersetzige" [ref=f1e143] [cursor=pointer] [box=-390,778,367,49]:
+              - img [ref=f1e145] [box=-379,787,24,24]
+              - generic [ref=f1e148] [box=-343,792,309,22]: Übersetzige
+        - generic [ref=f1e149] [box=-390,843,367,71]:
+          - paragraph [ref=f1e150] [box=-390,843,367,19]: Ich
+          - button "Konto-Iistellige" [ref=f1e153] [cursor=pointer] [box=-390,865,367,49]:
+            - img [ref=f1e155] [box=-379,874,24,24]
+            - generic [ref=f1e158] [box=-343,879,309,22]: Konto-Iistellige
+      - button "TU Test User Admin" [ref=f1e162] [cursor=pointer] [box=-390,748,379,42]:
+        - generic [ref=f1e163] [box=-380,752,34,34]: TU
+        - generic [ref=f1e164] [box=-336,751,289,35]:
+          - paragraph [ref=f1e165] [box=-336,751,289,17]: Test User
+          - paragraph [ref=f1e166] [box=-336,768,289,19]: Admin
+        - img [ref=f1e167] [box=-37,761,16,16]
+  - main [ref=f1e171] [box=0,0,400,736]:
+    - generic [ref=f1e173] [box=32,96,321,977]:
+      - generic [ref=f1e174] [box=32,96,321,53]:
+        - generic [ref=f1e175] [box=32,96,169,53]:
+          - generic [ref=f1e176] [box=32,96,169,19]: // Test User
+          - heading "Konto-Iistellige" [level=1] [ref=f1e177] [box=32,119,169,30]
+        - button "← Mis Konto" [ref=f1e179] [cursor=pointer] [box=236,96,117,36]:
+          - generic [ref=f1e181] [box=255,97,79,34]: ← Mis Konto
+      - generic [ref=f1e182] [box=32,173,321,901]:
+        - tablist [ref=f1e185] [box=32,173,145,297]:
+          - tab "Profil" [selected] [ref=f1e186] [cursor=pointer] [box=32,173,75,46]:
+            - generic [ref=f1e187] [box=48,187,43,18]: Profil
+          - tab "Mitgliedschaft" [ref=f1e188] [cursor=pointer] [box=32,223,145,46]:
+            - generic [ref=f1e189] [box=48,237,113,18]: Mitgliedschaft
+          - tab "Sicherheit" [ref=f1e190] [cursor=pointer] [box=32,273,112,46]:
+            - generic [ref=f1e191] [box=48,287,80,18]: Sicherheit
+          - tab "Sitzunge" [ref=f1e192] [cursor=pointer] [box=32,323,99,46]:
+            - generic [ref=f1e193] [box=48,337,67,18]: Sitzunge
+          - tab "Ger?te" [ref=f1e194] [cursor=pointer] [box=32,373,87,46]:
+            - generic [ref=f1e195] [box=48,387,55,18]: Ger?te
+          - tab "Sprooch" [ref=f1e196] [cursor=pointer] [box=32,423,99,46]:
+            - generic [ref=f1e197] [box=48,437,67,18]: Sprooch
+        - generic [ref=f1e198] [box=201,173,349,901]:
+          - generic [ref=f1e199] [box=201,173,349,659]:
+            - generic [ref=f1e200] [box=202,174,347,58]:
+              - img [ref=f1e201] [box=218,194,16,16]
+              - paragraph [ref=f1e204] [box=246,190,38,25]: Profil
+            - generic [ref=f1e205] [box=202,231,347,599]:
+              - generic [ref=f1e206] [box=226,251,299,61]:
+                - generic [ref=f1e208] [box=226,254,56,56]: TU
+                - generic [ref=f1e209] [box=298,251,66,61]:
+                  - generic [ref=f1e210] [box=298,251,66,19]: Avatar color
+                  - textbox [ref=f1e211] [cursor=pointer] [box=298,276,48,36]: "#fece2b"
+              - generic [ref=f1e212] [box=226,333,299,67]:
+                - text: Display name
+                - textbox [ref=f1e215] [box=226,358,299,42]: Test User
+              - generic [ref=f1e216] [box=226,416,299,88]:
+                - text: Private email
+                - textbox [ref=f1e219] [box=226,440,299,42]: test@example.com
+                - paragraph [ref=f1e220] [box=226,486,299,17]: Private email hint
+              - generic [ref=f1e221] [box=226,519,299,88]:
+                - text: Club email
+                - generic [ref=f1e222] [box=226,544,299,42]:
+                  - textbox [ref=f1e225] [box=226,544,223,42]: test@vollbuild.ch
+                  - generic [ref=f1e226] [box=459,556,53,19]: Read only
+                - paragraph [ref=f1e227] [box=226,590,299,17]: Club email hint
+              - generic [ref=f1e228] [box=226,623,299,136]:
+                - text: Profile note
+                - textbox [ref=f1e231] [box=226,648,299,90]
+                - paragraph [ref=f1e232] [box=226,742,299,17]: Profile note hint
+              - button "Save profile" [ref=f1e234] [cursor=pointer] [box=397,775,128,36]:
+                - generic [ref=f1e236] [box=416,776,90,34]:
+                  - img [ref=f1e237] [box=416,785,16,16]
+                  - text: Save profile
+          - generic [ref=f1e239] [box=201,848,349,225]:
+            - generic [ref=f1e240] [box=202,849,347,58]:
+              - img [ref=f1e241] [box=218,869,16,16]
+              - paragraph [ref=f1e244] [box=246,865,92,25]: Mail settings
+            - generic [ref=f1e245] [box=202,907,347,166]:
+              - generic [ref=f1e246] [box=226,927,299,69]:
+                - generic [ref=f1e247] [box=243,940,125,43]: Verify email to enable forwarding
+                - button "Send verification email" [ref=f1e248] [cursor=pointer] [box=384,943,124,36]:
+                  - generic [ref=f1e250] [box=403,944,86,34]: Send verification email
+              - generic [ref=f1e251] [box=226,1010,299,42]:
+                - generic [ref=f1e252] [box=226,1010,199,42]:
+                  - generic [ref=f1e253] [box=226,1010,199,22]: Forward to private email
+                  - generic [ref=f1e254] [box=226,1034,199,19]: (E-Mail oben verifiziere zum aktiviere)
+                - generic [ref=f1e256] [box=480,1019,46,24]:
+                  - switch [disabled] [box=480,1019,0,0]

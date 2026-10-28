@@ -1,0 +1,9 @@
+# perl-base (Debian 13 Trixie) — fix_deferred / affected, no upstream patch.
+CVE-2026-42496
+CVE-2026-8376
+
+# zlib1g — Debian marked will_not_fix; only affects minizip API not used by this app.
+CVE-2023-45853
+
+# libsqlite3-0 — affected, no fixed version; app uses PostgreSQL, not SQLite.
+CVE-2025-7458

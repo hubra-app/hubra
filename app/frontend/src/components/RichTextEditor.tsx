@@ -1,0 +1,93 @@
+import { useEffect } from 'react'
+import { useEditor } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import Underline from '@tiptap/extension-underline'
+import Placeholder from '@tiptap/extension-placeholder'
+import { Link, RichTextEditor as MantineRichTextEditor } from '@mantine/tiptap'
+import { Markdown } from 'tiptap-markdown'
+
+interface RichTextEditorProps {
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+  minHeight?: number
+}
+
+export function RichTextEditor({
+  value,
+  onChange,
+  placeholder,
+  minHeight = 200,
+}: RichTextEditorProps) {
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: { levels: [2, 3, 4] },
+      }),
+      Underline,
+      Link,
+      Placeholder.configure({
+        placeholder: placeholder ?? '',
+      }),
+      Markdown.configure({
+        html: false,
+        breaks: true,
+        transformPastedText: true,
+        transformCopiedText: true,
+      }),
+    ],
+    content: value,
+    onUpdate: ({ editor }) => {
+      onChange(editor.storage.markdown.getMarkdown())
+    },
+  })
+
+  useEffect(() => {
+    if (!editor) return
+    const current = editor.storage.markdown.getMarkdown()
+    if (value !== current) {
+      editor.commands.setContent(value || '')
+    }
+  }, [value, editor])
+
+  if (!editor) return null
+
+  return (
+    <MantineRichTextEditor editor={editor}>
+      <MantineRichTextEditor.Toolbar sticky>
+        <MantineRichTextEditor.ControlsGroup>
+          <MantineRichTextEditor.Bold />
+          <MantineRichTextEditor.Italic />
+          <MantineRichTextEditor.Underline />
+          <MantineRichTextEditor.Strikethrough />
+          <MantineRichTextEditor.ClearFormatting />
+        </MantineRichTextEditor.ControlsGroup>
+
+        <MantineRichTextEditor.ControlsGroup>
+          <MantineRichTextEditor.H2 />
+          <MantineRichTextEditor.H3 />
+          <MantineRichTextEditor.H4 />
+        </MantineRichTextEditor.ControlsGroup>
+
+        <MantineRichTextEditor.ControlsGroup>
+          <MantineRichTextEditor.BulletList />
+          <MantineRichTextEditor.OrderedList />
+          <MantineRichTextEditor.Blockquote />
+          <MantineRichTextEditor.Hr />
+        </MantineRichTextEditor.ControlsGroup>
+
+        <MantineRichTextEditor.ControlsGroup>
+          <MantineRichTextEditor.Link />
+          <MantineRichTextEditor.Unlink />
+        </MantineRichTextEditor.ControlsGroup>
+
+        <MantineRichTextEditor.ControlsGroup>
+          <MantineRichTextEditor.Undo />
+          <MantineRichTextEditor.Redo />
+        </MantineRichTextEditor.ControlsGroup>
+      </MantineRichTextEditor.Toolbar>
+
+      <MantineRichTextEditor.Content style={{ minHeight }} />
+    </MantineRichTextEditor>
+  )
+}

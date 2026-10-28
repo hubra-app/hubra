@@ -1,0 +1,33 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":separateMajorMinor",
+    ":combinePatchMinorUpdates"
+  ],
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "all non-major dependencies",
+      "groupSlug": "all-minor-patch"
+    }
+  ],
+  "docker": {
+    "pinDigests": true
+  },
+  "npm": {
+    "extends": ["npm:unpublishSafe"]
+  },
+  "pip_requirements": {
+    "enabled": true
+  },
+  "regexManagers": [
+    {
+      "description": "Update base images in Dockerfiles",
+      "fileMatch": ["Dockerfile$"],
+      "matchStrings": ["FROM\\s+(?<depName>\\S+):(?<currentValue>\\S+)"],
+      "datasourceTemplate": "docker"
+    }
+  ]
+}

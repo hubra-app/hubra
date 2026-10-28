@@ -1,0 +1,26 @@
+"""Backwards-compatible re-export from vollbuild.core.tenant.service."""
+
+from vollbuild.core.tenant.service import (
+    annotations,
+    datetime,
+    timezone,
+    Decimal,
+    Any,
+    delete,
+    select,
+    text,
+    db,
+    Tenant,
+    GlobalAuditEntry,
+    create_tenant_schema,
+    drop_tenant_schema,
+    _log,
+    _SLUG_RE,
+    _VALID_SORT_FIELDS,
+    TenantProvisioningError,
+    TenantService,
+    _get_api_calls_30d,
+    _get_storage_bytes,
+    _validate_slug,
+    _seed_tenant,
+)

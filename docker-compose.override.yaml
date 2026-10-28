@@ -1,0 +1,105 @@
+services:
+  frontend:
+    build:
+      args:
+        VITE_API_BASE: ${VITE_API_BASE}
+    networks:
+      - cos_internal
+      - frontend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=frontend"
+      - "traefik.http.routers.cos-secure.rule=Host(`cos.vollbuild.ch`)"
+      - "traefik.http.routers.cos-secure.entrypoints=websecure"
+      - "traefik.http.routers.cos-secure.tls.certresolver=letencrypt"
+      - "traefik.http.services.cos-secure.loadbalancer.server.port=80"
+      - "traefik.http.routers.cos-secure.middlewares=crowdsec@file,error-pages-middleware"
+
+  admin-frontend:
+    build:
+      args:
+        VITE_API_BASE: ${VITE_API_BASE}
+    networks:
+      - cos_internal
+      - frontend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=frontend"
+      - "traefik.http.routers.manage-secure.rule=Host(`manage.vollbuild.ch`)"
+      - "traefik.http.routers.manage-secure.entrypoints=websecure"
+      - "traefik.http.routers.manage-secure.tls.certresolver=letencrypt"
+      - "traefik.http.services.manage-secure.loadbalancer.server.port=80"
+      - "traefik.http.routers.manage-secure.middlewares=crowdsec@file,error-pages-middleware"
+
+  sso-frontend:
+    build:
+      args:
+        VITE_API_BASE: ${VITE_API_BASE}
+    networks:
+      - cos_internal
+      - frontend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=frontend"
+      - "traefik.http.routers.sso-secure.rule=Host(`sso.vollbuild.ch`)"
+      - "traefik.http.routers.sso-secure.entrypoints=websecure"
+      - "traefik.http.routers.sso-secure.tls.certresolver=letencrypt"
+      - "traefik.http.services.sso-secure.loadbalancer.server.port=80"
+      - "traefik.http.routers.sso-secure.middlewares=crowdsec@file,error-pages-middleware"
+
+  backend:
+    networks:
+      - cos_internal
+      - frontend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=frontend"
+      - "traefik.http.routers.cos-api-secure.rule=Host(`api.vollbuild.ch`)"
+      - "traefik.http.routers.cos-api-secure.entrypoints=websecure"
+      # TLS terminates in the external Traefik; this only REFERENCES its
+      # pre-defined certresolver. No ACME/certresolver/TLS-store config lives
+      # in this repo — do not add any here.
+      - "traefik.http.routers.cos-api-secure.tls.certresolver=letencrypt"
+      - "traefik.http.services.cos-api-secure.loadbalancer.server.port=5000"
+      # OPERATOR NOTE: do NOT add CORS headers for api.vollbuild.ch in Traefik.
+      # The Flask app owns CORS (single source of truth). A duplicate
+      # Access-Control-Allow-Origin makes browsers reject every response.
+      # Ensure crowdsec@file and error-pages-middleware pass OPTIONS preflight
+      # through unchanged (200/204, not rewritten to HTML error pages).
+      - "traefik.http.routers.cos-api-secure.middlewares=crowdsec@file,error-pages-middleware"
+    volumes:
+      - ./app/backend/migrations:/app/migrations
+      - ./app/backend/vollbuild:/app/vollbuild
+      - ./app/backend/seeds:/app/seeds
+      - ./app/backend/scripts:/app/scripts
+
+  flask-init:
+    networks:
+      - cos_internal
+    volumes:
+      - ./app/backend/migrations:/app/migrations
+      - ./app/backend/vollbuild:/app/vollbuild
+      - ./app/backend/seeds:/app/seeds
+      - ./app/backend/scripts:/app/scripts
+
+  celery-worker:
+    networks:
+      - cos_internal
+
+  celery-beat:
+    networks:
+      - cos_internal
+
+  postgres:
+    networks:
+      - cos_internal
+
+  redis:
+    networks:
+      - cos_internal
+
+networks:
+  edge:
+  frontend:
+    external: true
+  cos_internal:

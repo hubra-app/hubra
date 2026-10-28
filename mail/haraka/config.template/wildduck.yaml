@@ -1,0 +1,39 @@
+redis:
+  host: redis
+  port: 6379
+  db: 3
+
+mongo:
+  url: mongodb://mongo:27017/wildduck
+  sender: zone-mta
+
+sender:
+  enabled: true
+  zone: default
+  gfs: mail
+  collection: zone-queue
+
+srs:
+  secret: ${SRS_SECRET}
+
+loopSecret: ${LOOP_SECRET}
+
+attachments:
+  type: gridstore
+  bucket: attachments
+  decodeBase64: true
+
+rspamd:
+  forwardSkip: 10
+  blacklist:
+    - DMARC_POLICY_REJECT
+  softlist:
+    - RBL_ZONE
+  responses:
+    DMARC_POLICY_REJECT: "Unauthenticated email from {host} is not accepted"
+    RBL_ZONE: "[{host}] was found from Zone RBL"
+
+auth:
+  dns:
+    maxLookups: 50
+    minBitLength: 1024

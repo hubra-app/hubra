@@ -1,0 +1,1 @@
+{"nodes": [{"id": "vollbuild_api_version", "name": "vollbuild.api.version", "file_type": "code", "definition": "Version info API blueprint \u2014 returns backend version and health", "source_file": "app/backend/htmlcov/z_75188e4dcb50cc8c___init___py.html"}], "edges": [], "hyperedges": []}

@@ -1,0 +1,66 @@
+- generic [ref=e2] [box=0,0,858,1105]:
+  - generic [ref=e17] [box=251,454,356,198]:
+    - img [ref=e18] [box=409,454,40,40]
+    - paragraph [ref=e20] [box=339,510,180,28]: Server nöd erreichbar
+    - paragraph [ref=e21] [box=251,553,356,42]: De Server antwortet nöd. Überprüef, ob er lauft, und versuech's neu.
+    - button "Neu versueche" [ref=e22] [cursor=pointer] [box=353,615,152,36]:
+      - generic [ref=e23] [box=366,616,120,34]:
+        - img [ref=e25] [box=366,625,16,16]
+        - generic [ref=e28] [box=392,616,94,34]: Neu versueche
+  - generic [ref=e29] [box=0,0,858,1105]:
+    - generic [ref=e31] [box=42,249,380,607]:
+      - button "Deutsch (CH)" [ref=e33] [cursor=pointer] [box=283,249,139,36]:
+        - generic [ref=e34] [box=296,250,107,34]:
+          - img [ref=e36] [box=296,259,15,15]
+          - generic [ref=e39] [box=321,250,82,34]: Deutsch (CH)
+      - generic [ref=e42] [box=80,301,150,43]:
+        - paragraph [ref=e43] [box=80,301,150,25]: VollBuild
+        - paragraph [ref=e44] [box=80,326,150,19]: Makerspace · Schwyz
+      - heading "Wilkomme zrugg" [level=2] [ref=e45] [box=42,376,380,28]
+      - paragraph [ref=e46] [box=42,410,380,20]: auth.loginAdmin
+      - generic [ref=e47] [box=42,458,380,330]:
+        - generic [ref=e48] [box=42,458,380,67]:
+          - generic [ref=e49] [box=42,458,105,25]: common.email
+          - textbox "common.email" [ref=e51] [box=42,483,380,42]
+        - generic [ref=e52] [box=42,541,380,68]:
+          - generic [ref=e53] [box=42,541,380,20]:
+            - generic [ref=e54] [box=42,541,119,20]: common.password
+            - generic [ref=e55] [cursor=pointer] [box=328,541,94,20]: auth.forgot.link
+          - generic [ref=e57] [box=42,567,380,42]:
+            - textbox [ref=e59] [box=43,568,378,40]
+            - button [ref=e61] [cursor=pointer] [box=387,574,28,28]:
+              - img [ref=e63] [box=392,580,17,17]
+        - generic [ref=e66] [box=42,625,380,20]:
+          - generic [ref=e67] [box=42,625,20,20]:
+            - checkbox "Mich agmäldet la" [checked] [ref=e68] [box=42,625,20,20]
+            - img [box=46,631,12,8]
+          - generic [ref=e70] [box=62,625,119,20]: Mich agmäldet la
+        - button "Login" [ref=e71] [cursor=pointer] [box=42,665,380,36]:
+          - generic [ref=e73] [box=215,666,33,34]: Login
+        - separator [ref=e74] [box=42,717,380,19]:
+          - generic [ref=e75] [box=42,717,380,19]: oder
+        - button "auth.continueWithSso" [ref=e76] [cursor=pointer] [box=42,752,380,36]:
+          - generic [ref=e77] [box=55,753,348,34]:
+            - img [ref=e79] [box=146,762,16,16]
+            - generic [ref=e81] [box=172,753,139,34]: auth.continueWithSso
+      - paragraph [ref=e82] [box=42,808,380,20]:
+        - text: Wetsch au biträtte?
+        - link "Als Mitglied bewärbe →" [ref=e83] [cursor=pointer] [box=220,809,148,18]:
+          - /url: /apply
+      - paragraph [ref=e84] [box=42,836,380,20]:
+        - text: Neue Club?
+        - generic [ref=e85] [cursor=pointer] [box=209,837,121,18]: auth.setupSpace →
+    - generic [ref=e87] [box=487,24,347,1105]:
+      - generic [ref=e88] [box=515,16,290,19]: SCHNITT Nr. 001 · MASSSTAB 1:1
+      - paragraph [ref=e89] [box=691,462,94,19]: v2.4 · Spaces
+      - blockquote [ref=e90] [box=536,500,249,86]: "\"The space where we manage our members, dues, tools and mailing list — all in one place.\""
+      - generic [ref=e91] [box=546,619,230,72]:
+        - generic [ref=e92] [box=546,619,76,72]:
+          - paragraph [ref=e93] [box=559,632,50,28]: "342"
+          - paragraph [ref=e94] [box=559,660,50,19]: Members
+        - generic [ref=e95] [box=634,619,66,72]:
+          - paragraph [ref=e96] [box=647,632,40,28]: "7"
+          - paragraph [ref=e97] [box=647,660,40,19]: Groups
+        - generic [ref=e98] [box=711,619,64,72]:
+          - paragraph [ref=e99] [box=724,632,38,28]: 98%
+          - paragraph [ref=e100] [box=724,660,38,19]: Uptime

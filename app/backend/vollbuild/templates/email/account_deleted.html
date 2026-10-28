@@ -1,0 +1,8 @@
+{% extends "email/base.html" %}
+{% block content %}
+<p>{{ t('mail.email.account_deleted.body', club_name=club_name) }}</p>
+<p>
+  {{ t('mail.email.account_deleted.contact_prefix') }}
+  {% if support_url %}<a href="{{ support_url }}">{{ t('mail.email.account_deleted.contact_link') }}</a>{% else %}{{ t('mail.email.account_deleted.contact_link') }}{% endif %}.
+</p>
+{% endblock %}

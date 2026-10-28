@@ -1,0 +1,62 @@
+services:
+  caddy:
+    networks:
+      - frontend
+      - cos_internal
+    # ports: !reset []
+
+  frontend:
+    build:
+      args:
+        VITE_API_BASE: ${VITE_API_BASE}
+    networks:
+      - cos_internal
+    ports:
+      - "8080:80"
+
+  backend:
+    networks:
+      - cos_internal
+      - frontend
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./app/backend/migrations:/app/migrations
+      - ./app/backend/vollbuild:/app/vollbuild
+      - ./app/backend/seeds:/app/seeds
+      - ./app/backend/scripts:/app/scripts
+
+  flask-init:
+    networks:
+      - cos_internal
+    volumes:
+      - ./app/backend/migrations:/app/migrations
+      - ./app/backend/vollbuild:/app/vollbuild
+      - ./app/backend/seeds:/app/seeds
+      - ./app/backend/scripts:/app/scripts
+
+  celery-worker:
+    networks:
+      - cos_internal
+
+  celery-beat:
+    networks:
+      - cos_internal
+
+  postgres:
+    ports:
+      - "5432:5432"
+    networks:
+      - cos_internal
+
+  redis:
+    ports:
+      - "6379:6379"
+    networks:
+      - cos_internal
+
+networks:
+  edge:
+  frontend:
+    external: true
+  cos_internal:

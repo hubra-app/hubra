@@ -1,0 +1,402 @@
+{
+    "$schema": "https://opencode.ai/config.json",
+    "instructions": [
+        "~/.ai/best-practices.md",
+        "~/.ai/MEMORY.md",
+        "~/AGENTS.md"
+    ],
+    "default_agent": "plan",
+    "model": "opencode/big-pickle",
+    "lsp": true,
+    "mcp": {
+        "context7": {
+            "type": "remote",
+            "url": "https://mcp.context7.com/mcp",
+            "enabled": true
+        },
+        "qmd": {
+            "type": "local",
+            "command": [
+                "qmd",
+                "mcp"
+            ],
+            "enabled": true
+        },
+        "fff": {
+            "type": "local",
+            "command": [
+                "fff-mcp"
+            ],
+            "enabled": true
+        },
+        "sequential-thinking": {
+            "type": "local",
+            "command": [
+                "npx",
+                "-y",
+                "@modelcontextprotocol/server-sequential-thinking"
+            ],
+            "enabled": true
+        },
+        "react-grab-mcp": {
+            "type": "local",
+            "command": [
+                "npx",
+                "-y",
+                "@react-grab/mcp",
+                "--stdio"
+            ],
+            "enabled": true
+        },
+        "logpilot": {
+            "type": "local",
+            "command": [
+                "logpilot",
+                "mcp-server"
+            ],
+            "enabled": false
+        },
+        "agentmemory": {
+            "type": "local",
+            "command": [
+                "npx",
+                "-y",
+                "@agentmemory/mcp"
+            ],
+            "enabled": true,
+            "environment": {
+                "AGENTMEMORY_SECRET": "${AGENTMEMORY_SECRET:-}",
+                "AGENTMEMORY_TOOLS": "${AGENTMEMORY_TOOLS:-all}",
+                "AGENTMEMORY_URL": "${AGENTMEMORY_URL:-http://localhost:3111}"
+            }
+        },
+        "mantine": {
+            "type": "local",
+            "command": [
+                "npx",
+                "-y",
+                "@mantine/mcp-server"
+            ],
+            "enabled": true
+        },
+        "playwright": {
+            "type": "local",
+            "command": [
+                "npx",
+                "-y",
+                "@playwright/mcp@latest",
+                "--output-dir=./.playwright-mcp/output/"
+            ],
+            "enabled": true
+        },
+        "sem": {
+            "type": "local",
+            "command": [
+                "sem-mcp"
+            ],
+            "enabled": true
+        },
+        "postgres": {
+            "type": "local",
+            "command": [
+                "npx",
+                "-y",
+                "@anthropic/mcp-server-postgresql",
+                "{env:DATABASE_URL}"
+            ],
+            "enabled": true
+        },
+        "redis": {
+            "type": "local",
+            "command": [
+                "npx",
+                "-y",
+                "@modelcontextprotocol/server-redis",
+                "redis://localhost:6379"
+            ],
+            "enabled": true
+        },
+        "sqlite": {
+            "type": "local",
+            "command": [
+                "npx",
+                "-y",
+                "@modelcontextprotocol/server-sqlite",
+                "app/backend/test.db"
+            ],
+            "enabled": false
+        },
+        "github": {
+            "type": "local",
+            "command": [
+                "npx",
+                "-y",
+                "@modelcontextprotocol/server-github"
+            ],
+            "enabled": false,
+            "environment": {
+                "GITHUB_TOKEN": "{env:GITHUB_TOKEN}"
+            }
+        },
+        "docker": {
+            "type": "local",
+            "command": [
+                "npx",
+                "-y",
+                "docker-mcp"
+            ],
+            "enabled": true
+        },
+        "exa-search": {
+            "type": "local",
+            "command": [
+                "npx",
+                "-y",
+                "@exa-labs/exa-mcp-server"
+            ],
+            "enabled": false,
+            "environment": {
+                "EXA_API_KEY": "{env:EXA_API_KEY}"
+            }
+        },
+        "gitlab": {
+            "type": "local",
+            "command": [
+                "npx",
+                "-y",
+                "@zereight/mcp-gitlab"
+            ],
+            "enabled": true,
+            "environment": {
+                "GITLAB_USE_OAUTH": "true",
+                "GITLAB_OAUTH_CLIENT_ID": "{file:./.secrets/GITLAB_OAUTH_CLIENT_ID.env}",
+                "GITLAB_OAUTH_REDIRECT_URI": "http://127.0.0.1:8888/callback",
+                "GITLAB_API_URL": "https://gitlab.com/api/v4"
+            }
+        }
+    },
+    "agent": {
+        "build": {
+            "permission": {
+                "bash": {
+                    "git push": "ask",
+                    "qmd": "allow",
+                    "qmd query": "allow",
+                    "qmd get": "allow",
+                    "qmd search": "allow",
+                    "$HOME/.config/opencode/skill/qmd-knowledge/scripts/record.sh": "allow",
+                    "$HOME/.claude/skills/qmd-knowledge/scripts/record.sh": "allow"
+                }
+            }
+        },
+        "ai-slop-remover": {
+            "description": "Use this agent when you need to clean up AI-generated code that doesn't match the codebase's style and conventions. This includes removing unnecessary comments, excessive defensive checks, type casts to `any`, and other patterns that are inconsistent with how a human developer would write code in that file.",
+            "mode": "subagent",
+            "temperature": 0.1
+        },
+        "docs-writer": {
+            "description": "Writes and maintains project documentation",
+            "mode": "subagent",
+            "tools": {
+                "bash": false
+            }
+        },
+        "flask-backend-review": {
+            "description": "Reviews Flask/Python backend code for best-practice violations, security issues, and correctness",
+            "mode": "subagent",
+            "temperature": 0.1,
+            "tools": {
+                "write": false,
+                "edit": false,
+                "bash": false
+            }
+        },
+        "react-frontend-review": {
+            "description": "Reviews React/TypeScript frontend code for best-practice violations across all three frontends",
+            "mode": "subagent",
+            "temperature": 0.1,
+            "tools": {
+                "write": false,
+                "edit": false,
+                "bash": false
+            }
+        },
+        "review": {
+            "description": "Reviews code for quality and best practices",
+            "mode": "subagent",
+            "temperature": 0.1,
+            "tools": {
+                "write": false,
+                "edit": false,
+                "bash": false
+            }
+        },
+        "security-audit": {
+            "description": "Performs security audits and identifies vulnerabilities",
+            "mode": "subagent",
+            "tools": {
+                "write": false,
+                "edit": false
+            }
+        },
+        "security-review": {
+            "description": "Performs security audits across frontend and backend, identifying vulnerabilities and configuration issues",
+            "mode": "subagent",
+            "temperature": 0.1,
+            "tools": {
+                "write": false,
+                "edit": false,
+                "bash": false
+            }
+        }
+    },
+    "plugin": [
+        "@plannotator/opencode@latest",
+        "opencode-chrome-annotation@latest",
+        ".opencode/plugins/graphify.js",
+        "opencode-wakatime",
+        "@opencode/smart-title"
+    ],
+    "formatter": {
+        "biome": {
+            "command": [
+                "biome",
+                "check",
+                "--write",
+                "$FILE"
+            ],
+            "extensions": [
+                ".ts",
+                ".tsx",
+                ".js",
+                ".jsx"
+            ]
+        },
+        "gofmt": {
+            "command": [
+                "gofmt",
+                "-w",
+                "$FILE"
+            ],
+            "extensions": [
+                ".go"
+            ]
+        },
+        "prettier": {
+            "command": [
+                "npx",
+                "prettier",
+                "--write",
+                "$FILE"
+            ],
+            "extensions": [
+                ".md",
+                ".mdx"
+            ]
+        },
+        "ruff": {
+            "command": [
+                "ruff",
+                "format",
+                "$FILE"
+            ],
+            "extensions": [
+                ".py"
+            ]
+        },
+        "rustfmt": {
+            "command": [
+                "rustfmt",
+                "$FILE"
+            ],
+            "extensions": [
+                ".rs"
+            ]
+        },
+        "shfmt": {
+            "command": [
+                "shfmt",
+                "-w",
+                "$FILE"
+            ],
+            "extensions": [
+                ".sh"
+            ]
+        },
+        "stylua": {
+            "command": [
+                "stylua",
+                "$FILE"
+            ],
+            "extensions": [
+                ".lua"
+            ]
+        }
+    },
+    "provider": {
+        "cursorapi": {
+            "models": {
+                "composer-2.5": {
+                    "cost": {
+                        "input": 0.5,
+                        "output": 2.5
+                    },
+                    "limit": {
+                        "context": 200000,
+                        "output": 65536
+                    },
+                    "name": "Composer 2.5"
+                },
+                "composer-2.5-fast": {
+                    "cost": {
+                        "input": 3,
+                        "output": 15
+                    },
+                    "limit": {
+                        "context": 200000,
+                        "output": 65536
+                    },
+                    "name": "Composer 2.5 Fast"
+                }
+            },
+            "name": "API for Cursor",
+            "npm": "@ai-sdk/openai-compatible",
+            "options": {
+                "apiKey": "cursor-local",
+                "baseURL": "http://127.0.0.1:8788/v1"
+            }
+        },
+        "llama.cpp": {
+            "models": {
+                "glm": {
+                    "limit": {
+                        "context": 32768,
+                        "output": 16384
+                    },
+                    "name": "GLM-4.7-Flash (local)"
+                }
+            },
+            "name": "llama-server (local)",
+            "npm": "@ai-sdk/openai-compatible",
+            "options": {
+                "baseURL": "http://192.168.1.11:8000/v1"
+            }
+        },
+        "ollama": {
+            "models": {
+                "minimax-m2.5:cloud": {
+                    "limit": {
+                        "context": 204800,
+                        "output": 128000
+                    },
+                    "name": "minimax-m2.5:cloud"
+                }
+            },
+            "name": "Ollama (local)",
+            "npm": "@ai-sdk/openai-compatible",
+            "options": {
+                "baseURL": "http://127.0.0.1:11434/v1"
+            }
+        }
+    }
+}

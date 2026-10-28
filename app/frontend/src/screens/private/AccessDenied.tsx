@@ -1,0 +1,36 @@
+import { useT } from '@/locales/i18n'
+import { Button } from '@mantine/core'
+import { IconShieldCheckFilled } from '@tabler/icons-react'
+import { useNavigate } from 'react-router-dom'
+
+export function AccessDeniedScreen() {
+  const { t } = useT()
+  const navigate = useNavigate()
+
+  return (
+    <div style={{ padding: 48, textAlign: 'center' }}>
+      <IconShieldCheckFilled
+        size={40}
+        style={{ color: '#ff4d3d', marginBottom: 16 }}
+      />
+      <div
+        style={{
+          fontSize: 'var(--mantine-font-size-lg)',
+          fontWeight: 700,
+          marginBottom: 8,
+        }}
+      >
+        {t('shell.accessDenied', 'Access denied')}
+      </div>
+      <div style={{ color: '#6b7480', marginBottom: 24 }}>
+        {t(
+          'shell.noPermission',
+          'You do not have permission to access this page.',
+        )}
+      </div>
+      <Button variant="filled" onClick={() => navigate('/app/dashboard')}>
+        {t('shell.goToDashboard', 'Go to dashboard')}
+      </Button>
+    </div>
+  )
+}

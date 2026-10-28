@@ -1,0 +1,32 @@
+# Club Management Suite — deployment-time settings
+#
+# This file holds operator-controlled config that is fixed at deploy time.
+# Club identity (name, domain, sender address) lives in the database and is
+# managed by admins through the settings UI.
+#
+# Secrets (API keys, passwords, database URIs) must stay in .env.
+#
+# Override any value at runtime via environment variables using double-underscore
+# as a nested delimiter:
+#   FEATURES__MAIL=false   disables the member mail feature
+#   LIMITS__MAX_MEMBERS=50 caps membership at 50
+
+admin:
+  # First admin account created by `flask seed`. Only used if the account
+  # does not yet exist. Change these before the first `flask seed` run.
+  first_name: "Mike"
+  last_name: "Keller"
+  email: "mikekeller98@gmail.com"
+
+features:
+  # Toggle entire modules. Disabling a feature hides it from the API and UI.
+  polls: true
+  events: true
+  finance: true
+  # Member-facing IMAP inbox — requires the self-hosted mail stack (WildDuck).
+  mail: true
+
+limits:
+  # 0 = unlimited
+  max_members: 0
+  max_events_per_month: 0

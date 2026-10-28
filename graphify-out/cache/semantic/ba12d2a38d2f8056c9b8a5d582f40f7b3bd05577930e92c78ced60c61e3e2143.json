@@ -1,0 +1,1 @@
+{"nodes": [{"id": "model_setting", "name": "Setting", "file_type": "concept", "definition": "Key-value settings with namespace, sensitivity, validation type, defaults, restricted flag", "source_file": "app/backend/htmlcov/z_819d6647f72bcf98_setting_py.html"}], "edges": [], "hyperedges": []}

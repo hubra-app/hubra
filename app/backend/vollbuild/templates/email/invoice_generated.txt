@@ -1,0 +1,7 @@
+{{ t('mail.email.invoice_generated.body', club_name=club_name) }}
+
+{{ t('mail.email.invoice_generated.invoice_id') }} #{{ invoice_id }} {{ t('mail.email.invoice_generated.for_amount', amount=amount_formatted) }} {{ t('mail.email.invoice_generated.due_date', due_date=due_date) }}.
+
+{% if portal_url %}{{ t('mail.email.invoice_generated.cta_note', portal_url=portal_url) }}
+{% else %}{{ t('mail.email.invoice_generated.cta_note_no_url') }}
+{% endif %}

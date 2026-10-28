@@ -1,0 +1,11 @@
+{% extends "email/base.html" %}
+{% block content %}
+<p>
+  {{ t('mail.email.invoice_reminder.body', invoice_id=invoice_id, amount=amount_formatted, due_date=due_date) }}
+</p>
+<p>
+  {{ t('mail.email.invoice_reminder.cta_prefix') }}
+  {% if portal_url %}<a href="{{ portal_url }}">{{ t('mail.email.invoice_reminder.cta_link') }}</a>{% else %}{{ t('mail.email.invoice_reminder.cta_link') }}{% endif %}.
+</p>
+<p>{{ t('mail.email.invoice_reminder.paid_note') }}</p>
+{% endblock %}

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="{{ locale }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ subject }}</title>
+</head>
+<body style="font-family: sans-serif; font-size: 15px; color: #222; margin: 0; padding: 24px;">
+  <p>{{ t('mail.email.greeting', name=name) }}</p>
+  {% block content %}{% endblock %}
+  <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 24px 0;" />
+  <p style="font-size: 12px; color: #888;">
+    {{ t('mail.email.footer', club_name=club_name) }}
+  </p>
+</body>
+</html>

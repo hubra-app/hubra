@@ -1,0 +1,62 @@
+# Web framework
+flask>=3.0
+
+# Database
+flask-sqlalchemy>=3.0
+flask-migrate>=4.0
+psycopg2-binary>=2.9
+
+# Authentication
+flask-jwt-extended>=4.6
+
+# Serialization
+flask-marshmallow>=1.0
+marshmallow-sqlalchemy>=1.0
+
+# CORS
+flask-cors>=4.0
+
+# Environment / config
+python-dotenv>=1.0
+pydantic-settings[yaml]>=2.2
+
+# Transactional email
+brevo-python>=3.0
+
+# Production WSGI server
+gunicorn>=21.0
+
+# Rate limiting
+flask-limiter[redis]>=3.5
+
+# Background tasks
+celery[redis]>=5.3
+
+# Structured logging
+python-json-logger>=2.0
+
+# Redis client (rate limiter storage + health check)
+redis>=5.0
+
+# Password hashing (argon2id — also used by WildDuck hashedPassword)
+argon2-cffi>=23.0
+# Password strength estimation (entropy-based, rejects dictionary words / keyboard walks)
+zxcvbn>=4.4
+
+# SVG sanitization (strips XSS vectors from user-uploaded SVG avatars)
+nh3>=0.2
+
+# Swiss QR-bill PDF generation
+qrbill>=1.2
+
+# PDF generation (HTML+CSS → PDF, requires GTK on Windows — use Docker for local dev)
+weasyprint>=62.0
+
+# Symmetric encryption (codes at rest)
+cryptography>=42.0.4
+
+# S3-compatible object storage (Contabo S3 backups)
+boto3>=1.34
+
+# DNS verification (TXT record lookups for custom domain verification)
+dnspython>=2.6

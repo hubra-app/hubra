@@ -1,0 +1,1 @@
+{"nodes": [{"id": "vollbuild_tasks", "name": "vollbuild.tasks", "file_type": "code", "definition": "Background task package \u2014 mail sync, session maintenance, smoke tests, WildDuck integration", "source_file": "app/backend/htmlcov/z_7460131b7296a09a_wildduck_py.html"}], "edges": [], "hyperedges": []}

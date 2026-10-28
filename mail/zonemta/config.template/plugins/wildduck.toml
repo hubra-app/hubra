@@ -1,0 +1,13 @@
+["modules/@zone-eu/zonemta-wildduck"]
+enabled = ["receiver", "sender"]
+mongo = "mongodb://mongo:27017/wildduck"
+users = "wildduck"
+gridfs = "wildduck"
+redis = "redis://redis:6379/3"
+hostname = "${MAIL_HOST}"
+secret = "${SRS_SECRET}"
+loopSecret = "${LOOP_SECRET}"
+rewriteDomain = "${REWRITE_DOMAIN}"
+mxPort = 24
+
+srs = { enabled = true, secret = "${SRS_SECRET}", rewriteDomain = "${REWRITE_DOMAIN}" }

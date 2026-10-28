@@ -1,0 +1,6 @@
+{% extends "email/base.html" %}
+{% block content %}
+<p>{{ t('mail.email.verify_email.body', club_name=club_name) }}</p>
+<p>{{ t('mail.email.verify_email.cta', verify_url=verify_url) }}</p>
+<p>{{ t('mail.email.verify_email.ignore') }}</p>
+{% endblock %}

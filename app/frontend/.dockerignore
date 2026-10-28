@@ -1,0 +1,10 @@
+node_modules/
+dist/
+dist-ssr/
+.env
+.env.*
+!.env.example
+.git
+*.md
+e2e/
+test-results/

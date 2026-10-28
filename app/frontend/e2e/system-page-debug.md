@@ -1,0 +1,8 @@
+- generic [ref=f5e3] [box=0,0,1440,900]:
+  - generic [ref=f5e4] [box=666,319,108,99]: "404"
+  - generic [ref=f5e5] [box=659,434,121,28]: Page not found
+  - generic [ref=f5e6] [box=540,478,360,43]: The page you are looking for does not exist or has been moved.
+  - button "Go home" [ref=f5e7] [cursor=pointer] [box=664,545,111,36]:
+    - generic [ref=f5e9] [box=683,546,73,34]:
+      - img [ref=f5e10] [box=683,555,16,16]
+      - text: Go home

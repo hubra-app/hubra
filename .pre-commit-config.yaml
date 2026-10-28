@@ -1,0 +1,261 @@
+default_install_hook_types:
+  - pre-commit
+  - pre-push
+  - commit-msg
+
+repos:
+  # ------------------------------------------------------------
+  # Generic repository checks
+  # ------------------------------------------------------------
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        stages:
+          - pre-commit
+      - id: end-of-file-fixer
+        stages:
+          - pre-commit
+      - id: check-toml
+        stages:
+          - pre-commit
+      - id: check-yaml
+        stages:
+          - pre-commit
+      - id: check-json
+        stages:
+          - pre-commit
+      - id: check-merge-conflict
+        stages:
+          - pre-commit
+      - id: check-case-conflict
+        stages:
+          - pre-commit
+      - id: check-added-large-files
+        exclude: ^graphify-out/
+        args:
+          - --maxkb=500
+        stages:
+          - pre-commit
+      - id: detect-private-key
+        stages:
+          - pre-commit
+      - id: mixed-line-ending
+        stages:
+          - pre-commit
+      - id: check-executables-have-shebangs
+        stages:
+          - pre-commit
+
+  # ------------------------------------------------------------
+  # Python formatting and linting
+  # ------------------------------------------------------------
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.17
+    hooks:
+      - id: ruff
+        args:
+          - --fix
+        types_or:
+          - python
+        stages:
+          - pre-commit
+      - id: ruff-format
+        types_or:
+          - python
+        stages:
+          - pre-commit
+
+  # ------------------------------------------------------------
+  # Frontend formatting
+  # Uses project npm dependencies
+  # ------------------------------------------------------------
+
+  - repo: local
+    hooks:
+      - id: frontend-prettier
+        name: frontend prettier
+        entry: bash -c 'cd app/frontend && npm exec prettier -- --write "${@#app/frontend/}"' _
+        language: system
+        files: ^app/frontend/
+        types_or:
+          - javascript
+          - jsx
+          - tsx
+          - css
+          - json
+          - yaml
+        stages:
+          - pre-commit
+
+      - id: frontend-admin-prettier
+        name: frontend admin prettier
+        entry: bash -c 'cd app/admin-frontend && npm exec prettier -- --write "${@#app/admin-frontend/}"' _
+        language: system
+        files: ^app/admin-frontend/
+        types_or:
+          - javascript
+          - jsx
+          - tsx
+          - css
+          - json
+          - yaml
+        stages:
+          - pre-commit
+
+      - id: frontend-sso-prettier
+        name: frontend sso prettier
+        entry: bash -c 'cd app/sso-frontend && npm exec prettier -- --write "${@#app/sso-frontend/}"' _
+        language: system
+        files: ^app/sso-frontend/
+        types_or:
+          - javascript
+          - jsx
+          - tsx
+          - css
+          - json
+          - yaml
+        stages:
+          - pre-commit
+
+  # ------------------------------------------------------------
+  # Secret scanning
+  # ------------------------------------------------------------
+
+  # - repo: https://github.com/Yelp/detect-secrets
+  #   rev: v1.5.0
+  #   hooks:
+  #     - id: detect-secrets
+
+  # ------------------------------------------------------------
+  # Commit message validation
+  # ------------------------------------------------------------
+
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.6.0
+    hooks:
+      - id: conventional-pre-commit
+        stages:
+          - commit-msg
+
+  # ------------------------------------------------------------
+  # Local project checks
+  # ------------------------------------------------------------
+
+  - repo: local
+    hooks:
+      # -------------------------
+      # Frontend lint
+      # -------------------------
+
+      - id: frontend-lint
+        name: frontend eslint
+        entry: bash -c "cd app/frontend && npm run lint"
+        language: system
+        files: ^app/frontend/
+        pass_filenames: false
+        types_or:
+          - javascript
+          - jsx
+          - tsx
+          - css
+          - json
+          - yaml
+        stages:
+          - pre-commit
+
+      - id: frontend-admin-lint
+        name: frontend eslint
+        entry: bash -c "cd app/admin-frontend && npm run lint"
+        language: system
+        files: ^app/admin-frontend/
+        pass_filenames: false
+        types_or:
+          - javascript
+          - jsx
+          - tsx
+          - css
+          - json
+          - yaml
+        stages:
+          - pre-commit
+
+      - id: frontend-sso-lint
+        name: frontend eslint
+        entry: bash -c "cd app/sso-frontend && npm run lint"
+        language: system
+        files: ^app/sso-frontend/
+        pass_filenames: false
+        types_or:
+          - javascript
+          - jsx
+          - tsx
+          - css
+          - json
+          - yaml
+        stages:
+          - pre-commit
+
+      # -------------------------
+      # Frontend build
+      # Runs only before push
+      # -------------------------
+
+      - id: frontend-build
+        name: frontend build (tsc + vite)
+        entry: bash -c "cd app/frontend && npm run build"
+        language: system
+        files: ^app/frontend/
+        pass_filenames: false
+        stages:
+          - pre-push
+
+      - id: frontend-admin-build
+        name: frontend build (tsc + vite)
+        entry: bash -c "cd app/admin-frontend && npm run build"
+        language: system
+        files: ^app/admin-frontend/
+        pass_filenames: false
+        stages:
+          - pre-push
+
+      - id: frontend-sso-build
+        name: frontend build (tsc + vite)
+        entry: bash -c "cd app/sso-frontend && npm run build"
+        language: system
+        files: ^app/sso-frontend/
+        pass_filenames: false
+        stages:
+          - pre-push
+
+      # -------------------------
+      # Backend pytest
+      # Runs only before push
+      # -------------------------
+
+      - id: backend-pytest
+        name: backend pytest
+        entry: bash -c "cd app/backend && python -m pytest -q"
+        language: system
+        files: ^app/backend/
+        pass_filenames: false
+        require_serial: true
+        stages:
+          - pre-push
+
+      # -------------------------
+      # Backend mypy
+      # Non-blocking until cleanup
+      # -------------------------
+
+      - id: backend-mypy
+        name: backend mypy
+        entry: bash -c "cd app/backend && python -m mypy vollbuild || true"
+        language: system
+        files: ^app/backend/
+        pass_filenames: false
+        require_serial: true
+        stages:
+          - pre-push

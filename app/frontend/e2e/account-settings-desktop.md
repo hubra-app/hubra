@@ -1,0 +1,162 @@
+- generic [ref=f2e5] [box=0,0,1440,836]:
+  - banner [ref=f2e6] [box=0,0,1440,64]:
+    - generic [ref=f2e7] [box=0,0,1440,64]:
+      - paragraph [ref=f2e249] [box=52,19,64,25]: VollBuild
+      - button "Toggle sidebar" [ref=f2e250] [cursor=pointer] [box=126,15,34,34]:
+        - img [ref=f2e252] [box=133,22,20,20]
+      - paragraph [ref=f2e15] [box=170,21,94,22]: Konto-Iistellige
+      - generic [ref=f2e257] [box=837,13,280,38]:
+        - img [ref=f2e259] [box=847,24,16,16]
+        - textbox "Mitglieder, Rächnige, Inventar suche…" [ref=f2e262] [box=837,13,280,38]
+      - button "Deutsch (CH)" [ref=f2e264] [cursor=pointer] [box=1127,14,139,36]:
+        - generic [ref=f2e265] [box=1140,15,107,34]:
+          - img [ref=f2e267] [box=1140,24,15,15]
+          - generic [ref=f2e270] [box=1165,15,82,34]: Deutsch (CH)
+      - generic [ref=f2e16] [box=1276,15,148,34]:
+        - button "What's new" [ref=f2e271] [cursor=pointer] [box=1276,15,34,34]:
+          - img [ref=f2e273] [box=1284,23,18,18]
+        - button "Notifications" [ref=f2e17] [cursor=pointer] [box=1314,15,34,34]:
+          - img [ref=f2e19] [box=1322,23,18,18]
+        - button "Sign out" [ref=f2e22] [cursor=pointer] [box=1352,15,34,34]:
+          - img [ref=f2e24] [box=1360,23,18,18]
+        - button "User menu" [ref=f2e276] [cursor=pointer] [box=1390,15,34,34]:
+          - generic [ref=f2e277] [box=1390,15,34,34]: TU
+  - navigation [ref=f2e28] [box=0,64,244,836]:
+    - generic [ref=f2e29] [box=0,64,243,836]:
+      - generic [ref=f2e33] [box=0,64,231,860]:
+        - generic [ref=f2e34] [box=10,74,211,274]:
+          - paragraph [ref=f2e35] [box=10,74,211,19]: Arbeitsbereich
+          - generic [ref=f2e36] [box=10,97,211,251]:
+            - button "Dashboard" [ref=f2e38] [cursor=pointer] [box=10,97,211,49]:
+              - img [ref=f2e40] [box=21,106,24,24]
+              - generic [ref=f2e45] [box=57,110,153,22]: Dashboard
+            - button "Mitglieder 1" [ref=f2e47] [cursor=pointer] [box=10,147,211,49]:
+              - img [ref=f2e49] [box=21,156,24,24]
+              - generic [ref=f2e54] [box=57,161,121,22]: Mitglieder
+              - generic [ref=f2e56] [box=197,165,6,14]: "1"
+            - button "Gruppe 1" [ref=f2e58] [cursor=pointer] [box=10,198,211,49]:
+              - img [ref=f2e60] [box=21,207,24,24]
+              - generic [ref=f2e64] [box=57,211,121,22]: Gruppe
+              - generic [ref=f2e66] [box=197,215,6,14]: "1"
+            - button "Inventar" [ref=f2e68] [cursor=pointer] [box=10,249,211,49]:
+              - img [ref=f2e70] [box=21,258,24,24]
+              - generic [ref=f2e75] [box=57,262,153,22]: Inventar
+            - button "Verwaltig" [ref=f2e77] [cursor=pointer] [box=10,299,211,49]:
+              - img [ref=f2e79] [box=21,308,24,24]
+              - generic [ref=f2e82] [box=57,313,153,22]: Verwaltig
+        - generic [ref=f2e83] [box=10,364,211,223]:
+          - paragraph [ref=f2e84] [box=10,364,211,19]: Betrieb
+          - generic [ref=f2e85] [box=10,387,211,201]:
+            - button "Finanze" [ref=f2e87] [cursor=pointer] [box=10,387,211,49]:
+              - img [ref=f2e89] [box=21,396,24,24]
+              - generic [ref=f2e92] [box=57,400,153,22]: Finanze
+            - button "Mail" [ref=f2e94] [cursor=pointer] [box=10,437,211,49]:
+              - img [ref=f2e96] [box=21,446,24,24]
+              - generic [ref=f2e99] [box=57,451,153,22]: Mail
+            - button "shell.nav.codes" [ref=f2e101] [cursor=pointer] [box=10,488,211,49]:
+              - img [ref=f2e103] [box=21,497,24,24]
+              - generic [ref=f2e105] [box=57,502,153,22]: shell.nav.codes
+            - button "shell.nav.bindings" [ref=f2e107] [cursor=pointer] [box=10,539,211,49]:
+              - img [ref=f2e109] [box=21,548,24,24]
+              - generic [ref=f2e113] [box=57,552,153,22]: shell.nav.bindings
+        - generic [ref=f2e114] [box=10,603,211,223]:
+          - paragraph [ref=f2e115] [box=10,603,211,19]: System
+          - generic [ref=f2e116] [box=10,626,211,201]:
+            - button "Iistellige" [ref=f2e118] [cursor=pointer] [box=10,626,211,49]:
+              - img [ref=f2e120] [box=21,635,24,24]
+              - generic [ref=f2e123] [box=57,639,153,22]: Iistellige
+            - button "Audit-Log" [ref=f2e125] [cursor=pointer] [box=10,677,211,49]:
+              - img [ref=f2e127] [box=21,686,24,24]
+              - generic [ref=f2e129] [box=57,690,153,22]: Audit-Log
+            - button "Berächtigunge" [ref=f2e131] [cursor=pointer] [box=10,727,211,49]:
+              - img [ref=f2e133] [box=21,736,24,24]
+              - generic [ref=f2e141] [box=57,741,153,22]: Berächtigunge
+            - button "Übersetzige" [ref=f2e143] [cursor=pointer] [box=10,778,211,49]:
+              - img [ref=f2e145] [box=21,787,24,24]
+              - generic [ref=f2e148] [box=57,792,153,22]: Übersetzige
+        - generic [ref=f2e149] [box=10,843,211,71]:
+          - paragraph [ref=f2e150] [box=10,843,211,19]: Ich
+          - button "Konto-Iistellige" [ref=f2e153] [cursor=pointer] [box=10,865,211,49]:
+            - img [ref=f2e155] [box=21,874,24,24]
+            - generic [ref=f2e158] [box=57,879,153,22]: Konto-Iistellige
+      - button "TU Test User Admin" [ref=f2e162] [cursor=pointer] [box=10,848,223,42]:
+        - generic [ref=f2e163] [box=20,852,34,34]: TU
+        - generic [ref=f2e164] [box=64,851,133,35]:
+          - paragraph [ref=f2e165] [box=64,851,133,17]: Test User
+          - paragraph [ref=f2e166] [box=64,868,133,19]: Admin
+        - img [ref=f2e167] [box=207,861,16,16]
+  - main [ref=f2e171] [box=0,0,1440,836]:
+    - generic [ref=f2e173] [box=276,96,1117,970]:
+      - generic [ref=f2e174] [box=276,96,1117,53]:
+        - generic [ref=f2e175] [box=276,96,169,53]:
+          - generic [ref=f2e176] [box=276,96,169,19]: // Test User
+          - heading "Konto-Iistellige" [level=1] [ref=f2e177] [box=276,119,169,30]
+        - button "← Mis Konto" [ref=f2e179] [cursor=pointer] [box=1276,96,117,36]:
+          - generic [ref=f2e181] [box=1295,97,79,34]: ← Mis Konto
+      - generic [ref=f2e186] [box=276,173,1117,893]:
+        - generic [ref=f2e279] [box=276,173,200,270]:
+          - button "Profil" [ref=f2e280] [cursor=pointer] [box=276,173,200,42]:
+            - img [ref=f2e281] [box=288,185,16,16]
+            - text: Profil
+          - button "Mitgliedschaft" [ref=f2e284] [cursor=pointer] [box=276,218,200,42]:
+            - img [ref=f2e285] [box=288,231,16,16]
+            - text: Mitgliedschaft
+          - button "Sicherheit" [ref=f2e287] [cursor=pointer] [box=276,264,200,42]:
+            - img [ref=f2e288] [box=288,277,16,16]
+            - text: Sicherheit
+          - button "Sitzunge" [ref=f2e290] [cursor=pointer] [box=276,310,200,42]:
+            - img [ref=f2e291] [box=288,323,16,16]
+            - text: Sitzunge
+          - button "Ger?te" [ref=f2e293] [cursor=pointer] [box=276,355,200,42]:
+            - img [ref=f2e294] [box=288,368,16,16]
+            - text: Ger?te
+          - button "Sprooch" [ref=f2e296] [cursor=pointer] [box=276,401,200,42]:
+            - img [ref=f2e297] [box=288,414,16,16]
+            - text: Sprooch
+        - generic [ref=f2e187] [box=500,173,640,893]:
+          - generic [ref=f2e188] [box=500,173,640,659]:
+            - generic [ref=f2e189] [box=501,174,638,58]:
+              - img [ref=f2e190] [box=517,194,16,16]
+              - paragraph [ref=f2e193] [box=545,190,38,25]: Profil
+            - generic [ref=f2e194] [box=501,231,638,599]:
+              - generic [ref=f2e195] [box=525,251,590,61]:
+                - generic [ref=f2e197] [box=525,254,56,56]: TU
+                - generic [ref=f2e198] [box=597,251,66,61]:
+                  - generic [ref=f2e199] [box=597,251,66,19]: Avatar color
+                  - textbox [ref=f2e200] [cursor=pointer] [box=597,276,48,36]: "#fece2b"
+              - generic [ref=f2e201] [box=525,333,590,67]:
+                - text: Display name
+                - textbox [ref=f2e204] [box=525,358,590,42]: Test User
+              - generic [ref=f2e205] [box=525,416,590,88]:
+                - text: Private email
+                - textbox [ref=f2e208] [box=525,440,590,42]: test@example.com
+                - paragraph [ref=f2e209] [box=525,486,590,17]: Private email hint
+              - generic [ref=f2e210] [box=525,519,590,88]:
+                - text: Club email
+                - generic [ref=f2e211] [box=525,544,590,42]:
+                  - textbox [ref=f2e214] [box=525,544,223,42]: test@vollbuild.ch
+                  - generic [ref=f2e215] [box=758,556,53,19]: Read only
+                - paragraph [ref=f2e216] [box=525,590,590,17]: Club email hint
+              - generic [ref=f2e217] [box=525,623,590,136]:
+                - text: Profile note
+                - textbox [ref=f2e220] [box=525,648,590,90]
+                - paragraph [ref=f2e221] [box=525,742,590,17]: Profile note hint
+              - button "Save profile" [ref=f2e223] [cursor=pointer] [box=987,775,128,36]:
+                - generic [ref=f2e225] [box=1006,776,90,34]:
+                  - img [ref=f2e226] [box=1006,785,16,16]
+                  - text: Save profile
+          - generic [ref=f2e228] [box=500,848,640,218]:
+            - generic [ref=f2e229] [box=501,849,638,58]:
+              - img [ref=f2e230] [box=517,869,16,16]
+              - paragraph [ref=f2e233] [box=545,865,92,25]: Mail settings
+            - generic [ref=f2e234] [box=501,907,638,158]:
+              - generic [ref=f2e235] [box=525,927,590,62]:
+                - generic [ref=f2e236] [box=542,947,207,22]: Verify email to enable forwarding
+                - button "Send verification email" [ref=f2e237] [cursor=pointer] [box=916,940,182,36]:
+                  - generic [ref=f2e239] [box=935,941,144,34]: Send verification email
+              - generic [ref=f2e240] [box=525,1003,590,42]:
+                - generic [ref=f2e241] [box=525,1003,199,42]:
+                  - generic [ref=f2e242] [box=525,1003,199,22]: Forward to private email
+                  - generic [ref=f2e243] [box=525,1026,199,19]: (E-Mail oben verifiziere zum aktiviere)
+                - generic [ref=f2e245] [box=1069,1012,46,24]:
+                  - switch [disabled] [box=1069,1012,0,0]

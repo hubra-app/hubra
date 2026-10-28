@@ -1,0 +1,3 @@
+[self-forward-rewrite]
+path = "plugins/self-forward-rewrite"
+enabled = true

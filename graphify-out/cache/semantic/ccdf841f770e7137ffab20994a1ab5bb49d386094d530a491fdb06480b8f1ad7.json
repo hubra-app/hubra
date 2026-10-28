@@ -1,0 +1,1 @@
+{"nodes": [{"id": "model_application", "name": "Application", "file_type": "concept", "definition": "Prospective member application with name, email, desired tier FK", "source_file": "app/backend/htmlcov/z_819d6647f72bcf98_application_py.html"}], "edges": [], "hyperedges": []}

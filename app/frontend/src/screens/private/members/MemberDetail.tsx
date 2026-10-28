@@ -1,0 +1,575 @@
+import { useState } from 'react'
+import { Button, Paper } from '@mantine/core'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useT } from '@/locales/i18n'
+import { useParams } from 'react-router-dom'
+import { IconPencil, IconLock, IconCircleCheck } from '@tabler/icons-react'
+import { useNav, useToast, useAuth } from '@/context/AppContext'
+import {
+  Avatar,
+  TierTag,
+  StatusBadge,
+  Tag,
+  LastSeenBadge,
+  LoadingSpinner,
+} from '@/components/ui'
+import type { Member } from '@/types'
+import { getMember, disableMember, enableMember } from '@/api/members'
+import { verifyMemberEmail } from '@/api/mail'
+import { MemberEditModal } from '@/components/MemberEditModal'
+
+/* ── Member Detail ──────────────────────────── */
+export function MemberDetailScreen({
+  member: propMember,
+}: {
+  member?: Member | null
+}) {
+  const { t } = useT()
+  const { id } = useParams<{ id: string }>()
+  const { go } = useNav()
+  const { notify } = useToast()
+  const { hasPermission } = useAuth()
+  const queryClient = useQueryClient()
+  const canUpdate = hasPermission('members.members.update')
+  const canDisable = hasPermission('members.members.disable')
+  const canEnable = hasPermission('members.members.enable')
+  const canVerifyEmail = hasPermission('members.members.verify_email')
+  const [tab, setTab] = useState('overview')
+  const { data: member } = useQuery({
+    queryKey: ['member', id],
+    queryFn: () => getMember(id!),
+    enabled: !!id,
+    initialData: propMember ?? undefined,
+  })
+  const [editOpen, setEditOpen] = useState(false)
+  const [togglingDisable, setTogglingDisable] = useState(false)
+  const [verifying, setVerifying] = useState(false)
+
+  const handleVerifyEmail = async () => {
+    if (!member) return
+    setVerifying(true)
+    try {
+      await verifyMemberEmail(member.id)
+      queryClient.invalidateQueries({ queryKey: ['member', id] })
+      notify(
+        'success',
+        'Email verified',
+        `${member.name}'s email has been marked as verified.`,
+      )
+    } catch (err: unknown) {
+      notify(
+        'error',
+        'Verification failed',
+        err instanceof Error ? err.message : 'Unknown error',
+      )
+    } finally {
+      setVerifying(false)
+    }
+  }
+
+  const m = member
+  if (!m) return <LoadingSpinner message={t('common.loading', 'Wird glade…')} />
+
+  const toggleDisable = async () => {
+    if (!member) return
+    setTogglingDisable(true)
+    try {
+      const updated = member.isDisabled
+        ? await enableMember(member.id)
+        : await disableMember(member.id)
+      queryClient.invalidateQueries({ queryKey: ['member', id] })
+      notify(
+        'success',
+        updated.isDisabled ? 'Member disabled' : 'Member enabled',
+        `${updated.name} has been ${
+          updated.isDisabled ? 'disabled' : 'enabled'
+        }.`,
+      )
+    } catch (err: unknown) {
+      notify(
+        'error',
+        'Toggle failed',
+        err instanceof Error ? err.message : 'Unknown error',
+      )
+    } finally {
+      setTogglingDisable(false)
+    }
+  }
+
+  return (
+    <div>
+      <div style={{ marginBottom: 20 }}>
+        <Button
+          size="sm"
+          variant="subtle"
+          onClick={() => go('/app/members')}
+          style={{ marginBottom: 12 }}
+        >
+          {t('members.detail.backToMembers')}
+        </Button>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}
+        >
+          <h1
+            style={{
+              margin: 0,
+              fontSize: 'var(--mantine-font-size-xl)',
+              fontWeight: 700,
+              color: '#181818',
+            }}
+          >
+            {m.name}
+          </h1>
+          <span
+            className="num"
+            style={{
+              fontSize: 'var(--mantine-font-size-xs)',
+              color: '#99a2ac',
+              background: '#e7eeea',
+              borderRadius: 6,
+              padding: '2px 8px',
+            }}
+          >
+            {m.id}
+          </span>
+          <div
+            style={{
+              marginLeft: 'auto',
+              display: 'flex',
+              gap: 8,
+            }}
+          >
+            {canUpdate && (
+              <Button variant="default" onClick={() => setEditOpen(true)}>
+                <IconPencil size={16} /> {t('common.edit')}
+              </Button>
+            )}
+            {((m.isDisabled && canEnable) || (!m.isDisabled && canDisable)) && (
+              <Button
+                variant="default"
+                style={{ color: m.isDisabled ? '#1f9d57' : '#b91c1c' }}
+                onClick={toggleDisable}
+                disabled={togglingDisable}
+              >
+                {togglingDisable
+                  ? '…'
+                  : m.isDisabled
+                    ? t('members.detail.enable')
+                    : t('members.detail.disable')}
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '320px 1fr',
+          gap: 16,
+          alignItems: 'start',
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Paper
+            withBorder
+            shadow="sm"
+            radius="lg"
+            style={{ padding: 20, textAlign: 'center' }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                marginBottom: 14,
+              }}
+            >
+              <Avatar
+                name={m.name}
+                color={m.avatarColor}
+                size={72}
+                lastSeen={m.lastSeen}
+              />
+            </div>
+            <div
+              style={{
+                fontSize: 'var(--mantine-font-size-md)',
+                fontWeight: 700,
+                color: '#181818',
+                marginBottom: 4,
+              }}
+            >
+              {m.name}
+            </div>
+            <div
+              style={{
+                fontSize: 'var(--mantine-font-size-sm)',
+                color: '#6b7480',
+                marginBottom: 4,
+              }}
+            >
+              {m.email}
+            </div>
+            <div
+              style={{
+                fontSize: 'var(--mantine-font-size-xs)',
+                color: '#8a6a00',
+                fontFamily: '"JetBrains Mono"',
+                marginBottom: 12,
+              }}
+            >
+              {m.publicEmail}
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                gap: 8,
+                justifyContent: 'center',
+                flexWrap: 'wrap',
+                marginBottom: 16,
+              }}
+            >
+              <StatusBadge status={m.status} />
+              <TierTag tier={m.tier} />
+              {m.isDisabled && (
+                <span
+                  style={{
+                    background: 'rgba(239,68,68,.15)',
+                    border: '1px solid rgba(239,68,68,.3)',
+                    borderRadius: 6,
+                    padding: '4px 8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    fontSize: 'var(--mantine-font-size-xs)',
+                    color: '#b91c1c',
+                  }}
+                >
+                  <IconLock size={12} />
+                  {t('common.disabled')}
+                </span>
+              )}
+            </div>
+            <Button
+              variant="default"
+              style={{ width: '100%' }}
+              onClick={() =>
+                notify(
+                  'info',
+                  t('members.detail.message'),
+                  `Opening message to ${m.name}`,
+                )
+              }
+            >
+              {t('members.detail.message')}
+            </Button>
+          </Paper>
+
+          <Paper withBorder shadow="sm" radius="lg" style={{ padding: 0 }}>
+            <DetailRow label={t('members.emailVerified')}>
+              {m.privateEmailVerified ? (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <IconCircleCheck size={14} color="#1f9d57" />
+                  <span
+                    style={{
+                      fontSize: 'var(--mantine-font-size-sm)',
+                      color: '#1f9d57',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {t('common.yes')}
+                  </span>
+                </span>
+              ) : (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span
+                    style={{
+                      fontSize: 'var(--mantine-font-size-sm)',
+                      color: '#b91c1c',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {t('common.no')}
+                  </span>
+                  {canVerifyEmail && (
+                    <Button
+                      variant="default"
+                      style={{
+                        fontSize: 'var(--mantine-font-size-xs)',
+                        padding: '2px 8px',
+                      }}
+                      onClick={handleVerifyEmail}
+                      disabled={verifying}
+                    >
+                      {verifying ? '…' : t('members.markVerified')}
+                    </Button>
+                  )}
+                </span>
+              )}
+            </DetailRow>
+            <DetailRow label={t('members.clubUsername')} mono>
+              {m.clubUsername || <Empty />}
+            </DetailRow>
+            <DetailRow label={t('common.roles', 'Roles')}>
+              {m.roles.join(', ')}
+            </DetailRow>
+            <DetailRow label={t('members.joined')} mono>
+              {m.joined || <Empty />}
+            </DetailRow>
+            <DetailRow label={t('members.lastSeen')}>
+              <LastSeenBadge lastSeen={m.lastSeen} />
+            </DetailRow>
+            <DetailRow label={t('members.detail.toolHours')} mono>
+              {m.toolHours}h
+            </DetailRow>
+            <DetailRow
+              label={t('common.password')}
+              borderless={!m.mustChangePassword}
+            >
+              {m.mustChangePassword ? (
+                <span
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    color: '#b91c1c',
+                    fontSize: 'var(--mantine-font-size-sm)',
+                    fontWeight: 500,
+                  }}
+                >
+                  <IconLock size={13} /> {t('members.detail.mustChange')}
+                </span>
+              ) : (
+                <Empty />
+              )}
+            </DetailRow>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '10px 16px',
+                borderTop: '1px solid #e3eae6',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 'var(--mantine-font-size-xs)',
+                  color: '#6b7480',
+                }}
+              >
+                {t('members.detail.groups')}
+              </span>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 4,
+                  flexWrap: 'wrap',
+                  justifyContent: 'flex-end',
+                }}
+              >
+                {m.groups.map((g) => (
+                  <Tag key={g}>{g}</Tag>
+                ))}
+              </div>
+            </div>
+          </Paper>
+        </div>
+
+        <Paper withBorder shadow="sm" radius="lg">
+          <div
+            style={{
+              borderBottom: '1px solid #d3ddd7',
+              display: 'flex',
+              gap: 0,
+            }}
+          >
+            {['overview', 'payments', 'activity'].map((tabKey) => (
+              <button
+                key={tabKey}
+                onClick={() => setTab(tabKey)}
+                style={{
+                  padding: '14px 20px',
+                  fontSize: 'var(--mantine-font-size-sm)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  border: 'none',
+                  background: 'transparent',
+                  color: tab === tabKey ? '#8a6a00' : '#6b7480',
+                  borderBottom:
+                    tab === tabKey
+                      ? '2px solid #8a6a00'
+                      : '2px solid transparent',
+                  transition: 'all .15s',
+                }}
+              >
+                {t(`members.detail.${tabKey}`)}
+              </button>
+            ))}
+          </div>
+          <div style={{ padding: 20 }}>
+            {tab === 'overview' && (
+              <div>
+                <div
+                  className="grid-3"
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: 12,
+                    marginBottom: 20,
+                  }}
+                >
+                  {[
+                    [t('members.detail.toolHours'), m.toolHours],
+                    [t('members.detail.monthsActive'), '—'],
+                    [t('members.detail.eventsAttended'), '—'],
+                  ].map(([label, val]) => (
+                    <div
+                      key={String(label)}
+                      style={{
+                        background: '#f4f8f5',
+                        borderRadius: 10,
+                        padding: '14px 16px',
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 'var(--mantine-font-size-xs)',
+                          color: '#6b7480',
+                          marginBottom: 4,
+                        }}
+                      >
+                        {label}
+                      </div>
+                      <div
+                        className="num"
+                        style={{
+                          fontSize: 'var(--mantine-font-size-xl)',
+                          fontWeight: 700,
+                          color: '#181818',
+                        }}
+                      >
+                        {val}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div
+                  style={{
+                    fontSize: 'var(--mantine-font-size-sm)',
+                    fontWeight: 600,
+                    color: '#6b7480',
+                    marginBottom: 8,
+                  }}
+                >
+                  Notes
+                </div>
+                <div
+                  style={{
+                    fontSize: 'var(--mantine-font-size-sm)',
+                    color: '#3a4048',
+                    background: '#f4f8f5',
+                    borderRadius: 9,
+                    padding: '12px 14px',
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {m.notes || t('members.noNotesYet', 'No kei Notize.')}
+                </div>
+              </div>
+            )}
+            {tab === 'payments' && (
+              <div
+                style={{
+                  color: '#99a2ac',
+                  fontSize: 'var(--mantine-font-size-sm)',
+                  padding: '20px 0',
+                  textAlign: 'center',
+                }}
+              >
+                Member invoice history coming soon.
+              </div>
+            )}
+            {tab === 'activity' && (
+              <div
+                style={{
+                  color: '#99a2ac',
+                  fontSize: 'var(--mantine-font-size-sm)',
+                  padding: '20px 0',
+                  textAlign: 'center',
+                }}
+              >
+                Activity log coming soon.
+              </div>
+            )}
+          </div>
+        </Paper>
+      </div>
+
+      <MemberEditModal
+        member={m}
+        mode="edit"
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onSaved={() => {
+          queryClient.invalidateQueries({ queryKey: ['member', id] })
+          setEditOpen(false)
+        }}
+      />
+    </div>
+  )
+}
+
+/* ── Detail helpers ───────────────────────────── */
+function Empty() {
+  return (
+    <span style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#bcc5cd' }}>
+      —
+    </span>
+  )
+}
+
+function DetailRow({
+  label,
+  mono,
+  borderless,
+  children,
+}: {
+  label: string
+  mono?: boolean
+  borderless?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '10px 16px',
+        borderBottom: borderless ? 'none' : '1px solid #e3eae6',
+      }}
+    >
+      <span
+        style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#6b7480' }}
+      >
+        {label}
+      </span>
+      <span
+        className={mono ? 'num' : ''}
+        style={{
+          fontSize: 'var(--mantine-font-size-sm)',
+          color: '#181818',
+          fontWeight: 500,
+        }}
+      >
+        {children}
+      </span>
+    </div>
+  )
+}

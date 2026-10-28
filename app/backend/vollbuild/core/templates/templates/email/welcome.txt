@@ -1,0 +1,8 @@
+{{ t('mail.email.welcome.intro', club_name=club_name) }}
+
+  {{ t('mail.email.welcome.login_email') }}:    {{ login_email }}
+  {{ t('mail.email.welcome.login_password') }}:  {{ temp_password }}
+
+{{ t('mail.email.welcome.cta', login_url=login_url) }}
+
+{{ t('mail.email.welcome.closing') }}

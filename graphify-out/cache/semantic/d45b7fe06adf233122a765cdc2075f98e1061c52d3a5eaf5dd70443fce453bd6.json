@@ -1,0 +1,1 @@
+{"nodes": [{"id": "model_role", "name": "Role / Permission / RolePermission", "file_type": "concept", "definition": "RBAC: Permission master list auto-synced from route decorators; Role with is_admin/is_default; RolePermission join with dual unique constraints", "source_file": "app/backend/htmlcov/z_819d6647f72bcf98_role_py.html"}], "edges": [], "hyperedges": []}

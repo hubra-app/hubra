@@ -1,0 +1,26 @@
+"""Backwards-compatible re-export from vollbuild.core.models.inventory."""
+
+from vollbuild.core.models.inventory import (
+    annotations,
+    date,
+    datetime,
+    timezone,
+    Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    JSON,
+    Table,
+    Text,
+    JSONB,
+    Mapped,
+    mapped_column,
+    relationship,
+    db,
+    item_instructions,
+    _CATEGORIES,
+    _STATUSES,
+    _VISIBILITIES,
+    InventoryItem,
+    InventoryCheckout,
+)

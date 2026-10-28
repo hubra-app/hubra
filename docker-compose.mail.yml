@@ -1,0 +1,233 @@
+# ── Optional Mail Stack ────────────────────────────────────────────────────────
+#
+# Self-hosted mail: WildDuck (IMAP), Haraka (inbound SMTP), ZoneMTA (outbound
+# SMTP), plus certbot (DNS-01 Cloudflare) and a cert-watcher for hot-reload.
+#
+# This file is opt-in. The default deployment runs only the app stack defined
+# in docker-compose.yml. To start the mail stack alongside the app:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.mail.yml up -d
+#
+# Prerequisites:
+#   - features.mail: true in settings.yaml
+#   - Mail-related env vars set in .env (WILDDUCK_API_TOKEN, LOOP_SECRET,
+#     SRS_SECRET, REWRITE_DOMAIN, ACME_EMAIL, MAIL_HOST, etc.)
+#   - ./mail/certbot/cloudflare.ini present with Cloudflare API credentials
+#
+# Networks `edge` and `internal` are redeclared here so this file is
+# self-documenting; Compose merges them with the same-named networks in
+# docker-compose.yml when both files are passed with -f.
+
+services:
+  mongo:
+    image: mongo:7@sha256:d5b3ca8c3f3cdce78d44870dc0871b76d5235e9b2ad4ea6bea5d1fbff8027703
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+    volumes:
+      - mongo_data:/data/db
+    expose:
+      - "27017"
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+
+  certbot-init:
+    image: certbot/dns-cloudflare:latest@sha256:2d4509d3643716775242d77acf61082c384f9b74aa9696146e2a35a39ffa2e02
+    restart: "no"
+    env_file:
+      - .env
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      - ./mail/certbot/cloudflare.ini:/cloudflare.ini:ro
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        set -e
+        DOMAIN_ARGS=""
+        for d in $$(echo "$$MAIL_CERT_DOMAINS" | tr ',' ' '); do
+          DOMAIN_ARGS="$$DOMAIN_ARGS --domain $$d"
+        done
+        certbot certonly \
+          --dns-cloudflare \
+          --dns-cloudflare-credentials /cloudflare.ini \
+          --dns-cloudflare-propagation-seconds 30 \
+          --non-interactive \
+          --agree-tos \
+          --expand \
+          --email "$$ACME_EMAIL" \
+          $$DOMAIN_ARGS \
+          --keep-until-expiring
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+
+  certbot-renew:
+    image: certbot/dns-cloudflare:latest@sha256:2d4509d3643716775242d77acf61082c384f9b74aa9696146e2a35a39ffa2e02
+    restart: unless-stopped
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      - ./mail/certbot/cloudflare.ini:/cloudflare.ini:ro
+    entrypoint: >
+      sh -c "trap exit TERM;
+             while :; do
+               certbot renew --quiet;
+               sleep 43200;
+             done"
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+
+  mailserver:
+    image: ghcr.io/zone-eu/wildduck:latest@sha256:d37c43ccda33ef69d11b5afdc888623434fdbc20080d653aa901dc7df83f5000
+    restart: unless-stopped
+    environment:
+      APPCONF_dbs_mongo: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27017/wildduck?authSource=admin
+      APPCONF_dbs_redis: redis://:${REDIS_PASSWORD}@redis:6379/3
+      APPCONF_dbs_sender: ${APPCONF_dbs_sender}
+      APPCONF_api_host: ${APPCONF_api_host}
+      APPCONF_api_port: ${APPCONF_api_port}
+      APPCONF_api_accessToken: ${WILDDUCK_API_TOKEN}
+      APPCONF_imap_setup_hostname: ${MAIL_HOST}
+      APPCONF_imap_setup_key: /etc/letsencrypt/live/${MAIL_HOST}/privkey.pem
+      APPCONF_imap_setup_cert: /etc/letsencrypt/live/${MAIL_HOST}/fullchain.pem
+      APPCONF_imap_tls_key: /etc/letsencrypt/live/${MAIL_HOST}/privkey.pem
+      APPCONF_imap_tls_cert: /etc/letsencrypt/live/${MAIL_HOST}/fullchain.pem
+      APPCONF_emailDomain: ${MAIL_DOMAIN}
+      APPCONF_sender_loopSecret: ${LOOP_SECRET}
+      APPCONF_webhooks_enabled: ${APPCONF_webhooks_enabled}
+      APPCONF_webhooks_redis: redis://:${REDIS_PASSWORD}@redis:6379/3
+    ports:
+      - "993:9993"
+    expose:
+      - "24"
+      - "8080"
+    volumes:
+      - mail_data:/var/lib/wildduck
+      - letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      mongo:
+        condition: service_started
+      redis:
+        condition: service_started
+      certbot-init:
+        condition: service_completed_successfully
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+
+  haraka:
+    build:
+      context: ./mail/haraka
+    image: community-haraka:local
+    restart: unless-stopped
+    ports:
+      - "25:25"
+    environment:
+      - SRS_SECRET=${SRS_SECRET}
+      - LOOP_SECRET=${LOOP_SECRET}
+      - REWRITE_DOMAIN=${REWRITE_DOMAIN}
+      - MAIL_HOST=${MAIL_HOST}
+    volumes:
+      - letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      mongo:
+        condition: service_started
+      redis:
+        condition: service_started
+      mailserver:
+        condition: service_started
+      certbot-init:
+        condition: service_completed_successfully
+    networks:
+      - internal
+      - edge
+    security_opt:
+      - no-new-privileges:true
+
+  zonemta:
+    build:
+      context: ./mail/zonemta
+    restart: unless-stopped
+    ports:
+      - "465:465"
+      - "587:587"
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      SRS_SECRET: ${SRS_SECRET}
+      LOOP_SECRET: ${LOOP_SECRET}
+      MAIL_HOST: ${MAIL_HOST}
+      REWRITE_DOMAIN: ${REWRITE_DOMAIN}
+    volumes:
+      - letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      mongo:
+        condition: service_started
+      redis:
+        condition: service_started
+      mailserver:
+        condition: service_started
+      certbot-init:
+        condition: service_completed_successfully
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy:latest@sha256:1f3a6f303320723d199d2316a3e82b2e2685d86c275d5e3deeaf182573b47476
+    restart: unless-stopped
+    environment:
+      CONTAINERS: ${SOCKET_PROXY_CONTAINERS}
+      RESTART: ${SOCKET_PROXY_RESTART}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+
+  cert-watcher:
+    build: ./mail/cert-watcher
+    restart: unless-stopped
+    environment:
+      ALLOWED_CONTAINERS: ${CERT_WATCHER_ALLOWED_CONTAINERS}
+      RESTART_CONTAINERS: ${CERT_WATCHER_RESTART_CONTAINERS}
+      DOCKER_HOST: ${CERT_WATCHER_DOCKER_HOST}
+      MAIL_HOST: ${MAIL_HOST}
+      WATCH_DIR: ${CERT_WATCHER_WATCH_DIR}
+      SETTLE_SECONDS: ${CERT_WATCHER_SETTLE_SECONDS}
+      POLL_INTERVAL: ${CERT_WATCHER_POLL_INTERVAL}
+    volumes:
+      - letsencrypt:/etc/letsencrypt:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
+    networks:
+      - internal
+    depends_on:
+      socket-proxy:
+        condition: service_started
+      certbot-init:
+        condition: service_completed_successfully
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  edge:
+  internal:
+
+volumes:
+  mongo_data:
+  mail_data:
+  letsencrypt:

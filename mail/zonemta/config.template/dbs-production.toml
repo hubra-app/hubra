@@ -1,0 +1,4 @@
+mongo = "mongodb://mongo:27017/zone-mta"
+redis = "redis://redis:6379/4"
+users = "mongodb://mongo:27017/wildduck"
+gridfs = "mongodb://mongo:27017/wildduck"

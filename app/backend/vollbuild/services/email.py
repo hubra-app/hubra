@@ -1,0 +1,27 @@
+"""Backwards-compatible re-export from vollbuild.core.services.email."""
+
+from vollbuild.core.services.email import (
+    annotations,
+    MIMEApplication,
+    MIMEMultipart,
+    MIMEText,
+    current_app,
+    render_mail_template,
+    logger,
+    DEFAULT_LANG,
+    EmailDeliveryError,
+    _get_setting,
+    _get_base_url,
+    _get_sso_base_url,
+    _send_via_smtp,
+    _send,
+    send_welcome,
+    send_password_reset,
+    send_email_verification,
+    send_password_changed,
+    send_new_device_login,
+    send_account_deleted,
+    send_invoice_generated,
+    send_invoice_reminder,
+    send_notification,
+)

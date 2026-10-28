@@ -1,0 +1,82 @@
+# Secrets & environment
+.env
+.env.local
+mail/certbot/cloudflare.ini
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated mail configs (produced by entrypoint envsubst — templates are *.template)
+mail/haraka/config/wildduck.yaml
+mail/zonemta/config/plugins/wildduck.toml
+mail/zonemta/config/dbs-production.toml
+
+
+.mcp.json
+.gitlab.env
+
+# GSD
+.gsd/
+.gsd-id
+.bg-shell/
+nul
+nul.*
+con
+con.*
+prn
+prn.*
+aux
+aux.*
+com[1-9]
+com[1-9].*
+lpt[1-9]
+lpt[1-9].*
+*.swp
+*.swo
+*~
+.idea/
+*.code-workspace
+.env.*
+!.env.example
+node_modules/
+.next/
+dist/
+build/
+target/
+vendor/
+*.log
+coverage/
+.cache/
+tmp/
+
+# ── GSD baseline (auto-generated) ──
+.gsd-worktrees/
+
+app/frontend/playwright-report/
+
+# ── GSD baseline (auto-generated) ──
+.vscode/
+*.pyc
+`
+app/backend/instance/
+docs/prompts/**
+.playwright-mcp/
+
+docs/deps/**
+.agents/skills/**
+
+# Git worktrees
+.worktrees/
+.secrets/

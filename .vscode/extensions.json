@@ -1,0 +1,23 @@
+{
+  "unwantedRecommendations": [
+    "bmewburn.vscode-intelephense-client",
+    "shopify.ruby-lsp",
+    "redhat.ansible",
+    "dhoeric.ansible-vault",
+    "wolfmah.ansible-vault-inline",
+    "marlon407.code-groovy",
+    "nicolasvuillamy.vscode-groovy-lint",
+    "ms-mssql.data-workspace-vscode",
+    "ms-mssql.mssql",
+    "ms-mssql.sql-bindings-vscode",
+    "ms-mssql.sql-database-projects-vscode",
+    "ms-dotnettools.vscode-dotnet-runtime",
+    "opentofu.vscode-opentofu",
+    "tomoki1207.pdf",
+    "mbehr1.vsc-webshark",
+    "cschlosser.doxdocgen",
+    "sonarsource.sonarlint-vscode",
+    "continue.continue",
+    "eamodio.gitlens"
+  ]
+}

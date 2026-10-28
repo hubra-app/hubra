@@ -1,0 +1,165 @@
+- generic [ref=e2] [box=0,0,858,1105]:
+  - generic [ref=e6] [box=251,454,356,198]:
+    - img [ref=e7] [box=409,454,40,40]
+    - paragraph [ref=e9] [box=339,510,180,28]: Server nöd erreichbar
+    - paragraph [ref=e10] [box=251,553,356,42]: De Server antwortet nöd. Überprüef, ob er lauft, und versuech's neu.
+    - button "Neu versueche" [ref=e11] [cursor=pointer] [box=353,615,152,36]:
+      - generic [ref=e12] [box=366,616,120,34]:
+        - img [ref=e14] [box=366,625,16,16]
+        - generic [ref=e17] [box=392,616,94,34]: Neu versueche
+  - generic [ref=e18] [box=0,0,858,1041]:
+    - banner [ref=e19] [box=0,0,858,64]:
+      - generic [ref=e20] [box=0,0,858,64]:
+        - paragraph [ref=e23] [box=52,19,64,25]: VollBuild
+        - button "Toggle sidebar" [ref=e24] [cursor=pointer] [box=126,15,34,34]:
+          - img [ref=e26] [box=133,22,20,20]
+        - paragraph [ref=e31] [box=170,21,147,22]: System › Berächtigunge
+        - generic [ref=e34] [box=255,13,280,38]:
+          - img [ref=e36] [box=265,24,16,16]
+          - textbox "shell.search.placeholder" [ref=e39] [box=255,13,280,38]
+        - button "Deutsch (CH)" [ref=e41] [cursor=pointer] [box=545,14,139,36]:
+          - generic [ref=e42] [box=558,15,107,34]:
+            - img [ref=e44] [box=558,24,15,15]
+            - generic [ref=e47] [box=583,15,82,34]: Deutsch (CH)
+        - generic [ref=e48] [box=694,15,148,34]:
+          - button "What's new" [ref=e49] [cursor=pointer] [box=694,15,34,34]:
+            - img [ref=e51] [box=702,23,18,18]
+          - button "Notifications" [ref=e53] [cursor=pointer] [box=732,15,34,34]:
+            - img [ref=e55] [box=740,23,18,18]
+          - button "Sign out" [ref=e58] [cursor=pointer] [box=770,15,34,34]:
+            - img [ref=e60] [box=778,23,18,18]
+          - button "User menu" [ref=e65] [cursor=pointer] [box=808,15,34,34]:
+            - generic [ref=e66] [box=808,15,34,34]: TU
+    - navigation [ref=e67] [box=0,64,244,1041]:
+      - generic [ref=e68] [box=0,64,243,1041]:
+        - generic [ref=e72] [box=0,64,231,860]:
+          - generic [ref=e73] [box=10,74,211,274]:
+            - paragraph [ref=e74] [box=10,74,211,19]: Arbeitsbereich
+            - generic [ref=e75] [box=10,97,211,251]:
+              - button "Dashboard" [ref=e77] [cursor=pointer] [box=10,97,211,49]:
+                - img [ref=e79] [box=21,106,24,24]
+                - generic [ref=e84] [box=57,110,153,22]: Dashboard
+              - button "Mitglieder" [ref=e86] [cursor=pointer] [box=10,147,211,49]:
+                - img [ref=e88] [box=21,156,24,24]
+                - generic [ref=e93] [box=57,161,153,22]: Mitglieder
+              - button "Gruppe" [ref=e95] [cursor=pointer] [box=10,198,211,49]:
+                - img [ref=e97] [box=21,207,24,24]
+                - generic [ref=e101] [box=57,211,153,22]: Gruppe
+              - button "Inventar" [ref=e103] [cursor=pointer] [box=10,249,211,49]:
+                - img [ref=e105] [box=21,258,24,24]
+                - generic [ref=e110] [box=57,262,153,22]: Inventar
+              - button "Verwaltig" [ref=e112] [cursor=pointer] [box=10,299,211,49]:
+                - img [ref=e114] [box=21,308,24,24]
+                - generic [ref=e117] [box=57,313,153,22]: Verwaltig
+          - generic [ref=e118] [box=10,364,211,223]:
+            - paragraph [ref=e119] [box=10,364,211,19]: Betrieb
+            - generic [ref=e120] [box=10,387,211,201]:
+              - button "Finanze" [ref=e122] [cursor=pointer] [box=10,387,211,49]:
+                - img [ref=e124] [box=21,396,24,24]
+                - generic [ref=e127] [box=57,400,153,22]: Finanze
+              - button "Mail-Verwaldig" [ref=e129] [cursor=pointer] [box=10,437,211,49]:
+                - img [ref=e131] [box=21,446,24,24]
+                - generic [ref=e134] [box=57,451,153,22]: Mail-Verwaldig
+              - button "Codes" [ref=e136] [cursor=pointer] [box=10,488,211,49]:
+                - img [ref=e138] [box=21,497,24,24]
+                - generic [ref=e140] [box=57,502,153,22]: Codes
+              - button "Bindings" [ref=e142] [cursor=pointer] [box=10,539,211,49]:
+                - img [ref=e144] [box=21,548,24,24]
+                - generic [ref=e148] [box=57,552,153,22]: Bindings
+          - generic [ref=e149] [box=10,603,211,223]:
+            - paragraph [ref=e150] [box=10,603,211,19]: System
+            - generic [ref=e151] [box=10,626,211,201]:
+              - button "Iistellige" [ref=e153] [cursor=pointer] [box=10,626,211,49]:
+                - img [ref=e155] [box=21,635,24,24]
+                - generic [ref=e158] [box=57,639,153,22]: Iistellige
+              - button "Audit-Log" [ref=e160] [cursor=pointer] [box=10,677,211,49]:
+                - img [ref=e162] [box=21,686,24,24]
+                - generic [ref=e164] [box=57,690,153,22]: Audit-Log
+              - button "Berächtigunge" [ref=e166] [cursor=pointer] [box=10,727,211,49]:
+                - img [ref=e168] [box=21,736,24,24]
+                - generic [ref=e176] [box=57,741,153,22]: Berächtigunge
+              - button "shell.nav.translations" [ref=e178] [cursor=pointer] [box=10,778,211,49]:
+                - img [ref=e180] [box=21,787,24,24]
+                - generic [ref=e183] [box=57,792,153,22]: shell.nav.translations
+          - generic [ref=e184] [box=10,843,211,71]:
+            - paragraph [ref=e185] [box=10,843,211,19]: Ich
+            - button "Konto-Iistellige" [ref=e188] [cursor=pointer] [box=10,865,211,49]:
+              - img [ref=e190] [box=21,874,24,24]
+              - generic [ref=e193] [box=57,879,153,22]: Konto-Iistellige
+        - button "TU Test User Admin" [ref=e195] [cursor=pointer] [box=10,1053,223,42]:
+          - generic [ref=e196] [box=20,1057,34,34]: TU
+          - generic [ref=e197] [box=64,1056,133,35]:
+            - paragraph [ref=e198] [box=64,1056,133,17]: Test User
+            - paragraph [ref=e199] [box=64,1073,133,19]: Admin
+          - img [ref=e200] [box=207,1066,16,16]
+    - main [ref=e204] [box=0,0,858,1041]:
+      - generic [ref=e206] [box=276,96,550,547]:
+        - generic [ref=e208] [box=276,96,279,53]:
+          - generic [ref=e209] [box=276,96,279,19]: // System
+          - heading "Endpunkt-Berechtigunge" [level=1] [ref=e210] [box=276,119,279,30]
+        - tablist [ref=e212] [box=276,173,550,47]:
+          - tab "Permissions" [selected] [ref=e213] [cursor=pointer] [box=276,173,129,46]:
+            - generic [ref=e214] [box=292,187,97,18]: Permissions
+          - tab "Roles" [ref=e215] [cursor=pointer] [box=409,173,76,46]:
+            - generic [ref=e216] [box=425,187,44,18]: Roles
+          - tab "System-Gsundheit" [ref=e217] [cursor=pointer] [box=489,173,178,46]:
+            - generic [ref=e218] [box=505,187,146,18]: System-Gsundheit
+        - generic [ref=e219] [box=276,244,550,367]:
+          - generic [ref=e220] [box=277,245,548,140]:
+            - generic [ref=e221] [box=293,259,516,36]:
+              - img [ref=e222] [box=304,269,16,16]
+              - textbox "Noch Pfad oder Berechtigung suche…" [ref=e227] [box=327,259,482,42]
+            - generic [ref=e228] [box=293,305,450,34]:
+              - button "Alli Methoden" [ref=e229] [cursor=pointer] [box=293,305,113,34]
+              - button "GET" [ref=e230] [cursor=pointer] [box=412,305,53,34]
+              - button "POST" [ref=e231] [cursor=pointer] [box=471,305,60,34]
+              - button "PATCH" [ref=e232] [cursor=pointer] [box=537,305,68,34]
+              - button "PUT" [ref=e233] [cursor=pointer] [box=610,305,51,34]
+              - button "DELETE" [ref=e234] [cursor=pointer] [box=668,305,75,34]
+            - generic [ref=e235] [box=738,348,71,22]: 1 Endpunkt
+          - generic [ref=e236] [box=277,385,548,57]:
+            - generic [ref=e238] [box=293,395,80,36]:
+              - textbox [ref=e239] [cursor=pointer] [box=293,395,80,36]: "25"
+              - generic [box=338,396,34,34]:
+                - img [box=346,404,18,18]
+            - paragraph [ref=e240] [box=383,403,254,20]: 1–1 of 1
+            - generic [ref=e242] [box=647,400,162,26]:
+              - button [disabled] [ref=e243] [box=647,400,26,26]:
+                - img [ref=e244] [box=653,406,14,14]
+              - button [disabled] [ref=e246] [box=681,400,26,26]:
+                - img [ref=e247] [box=687,406,14,14]
+              - button "1" [ref=e249] [cursor=pointer] [box=715,400,26,26]
+              - button [disabled] [ref=e250] [box=749,400,26,26]:
+                - img [ref=e251] [box=755,406,14,14]
+              - button [disabled] [ref=e253] [box=783,400,26,26]:
+                - img [ref=e254] [box=789,406,14,14]
+          - table [ref=e257] [box=277,442,548,111]:
+            - rowgroup [ref=e258] [box=277,442,548,46]:
+              - row "Methode Pfad Berechtigung" [ref=e259] [box=277,442,548,46]:
+                - columnheader "Methode" [ref=e260] [box=277,442,90,46]
+                - columnheader "Pfad" [ref=e261] [box=367,442,263,46]
+                - columnheader "Berechtigung" [ref=e262] [box=630,442,195,46]
+            - rowgroup [ref=e263] [box=277,488,548,65]:
+              - row "GET /api/v1/members List Members member:list" [ref=e264] [box=277,488,548,65]:
+                - cell "GET" [ref=e265] [box=277,488,90,65]:
+                  - generic [ref=e266] [box=293,510,39,23]: GET
+                - cell "/api/v1/members" [ref=e267] [box=367,488,263,65]
+                - cell "List Members member:list" [ref=e268] [box=630,488,195,65]:
+                  - generic [ref=e269] [box=646,501,163,22]: List Members
+                  - generic [ref=e270] [box=646,522,163,19]: member:list
+          - generic [ref=e271] [box=277,553,548,57]:
+            - generic [ref=e273] [box=293,564,80,36]:
+              - textbox [ref=e274] [cursor=pointer] [box=293,564,80,36]: "25"
+              - generic [box=338,565,34,34]:
+                - img [box=346,573,18,18]
+            - paragraph [ref=e275] [box=383,572,254,20]: 1–1 of 1
+            - generic [ref=e277] [box=647,569,162,26]:
+              - button [disabled] [ref=e278] [box=647,569,26,26]:
+                - img [ref=e279] [box=653,575,14,14]
+              - button [disabled] [ref=e281] [box=681,569,26,26]:
+                - img [ref=e282] [box=687,575,14,14]
+              - button "1" [ref=e284] [cursor=pointer] [box=715,569,26,26]
+              - button [disabled] [ref=e285] [box=749,569,26,26]:
+                - img [ref=e286] [box=755,575,14,14]
+              - button [disabled] [ref=e288] [box=783,569,26,26]:
+                - img [ref=e289] [box=789,575,14,14]

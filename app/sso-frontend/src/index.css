@@ -1,0 +1,132 @@
+html {
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+body {
+  margin: 0;
+  background: #eef3f0;
+  font-family: 'Hanken Grotesk', system-ui, sans-serif;
+  color: #3a4048;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.eyebrow {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: var(--mantine-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #8a6a00;
+}
+
+.eyebrow::before {
+  content: '// ';
+  color: #fe64ac;
+}
+
+.num {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.logo-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: #fece2b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.logo-mark::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid #181818;
+  transform: rotate(45deg);
+  border-radius: 2px;
+}
+
+.graph-bg {
+  background-color: #eef3f0;
+  background-image: linear-gradient(rgba(24, 24, 24, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(24, 24, 24, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(24, 24, 24, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(24, 24, 24, 0.05) 1px, transparent 1px);
+  background-size:
+    132px 132px,
+    132px 132px,
+    22px 22px,
+    22px 22px;
+}
+
+.blueprint-plate {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  border: 1.5px dashed rgba(24, 24, 24, 0.2);
+  margin: 24px;
+  border-radius: 12px;
+}
+
+.blueprint-label {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #eef3f0;
+  padding: 0 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--mantine-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6b7480;
+}
+
+.blueprint-plate .hi {
+  background: linear-gradient(120deg, #fece2b 0%, #fec50f 100%);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #181818;
+  font-weight: 600;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}

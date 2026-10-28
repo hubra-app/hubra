@@ -1,0 +1,6 @@
+- generic [ref=e5] [box=231,453,396,198]:
+  - paragraph [ref=e6] [box=231,453,396,28]: Something went wrong
+  - paragraph [ref=e7] [box=231,493,396,45]: An unexpected error occurred. Please refresh the page to try again.
+  - generic [ref=e8] [box=231,550,396,54]: Cannot read properties of undefined (reading 'activeMembers')
+  - button "Reload page" [ref=e9] [cursor=pointer] [box=231,616,396,36]:
+    - generic [ref=e11] [box=390,617,77,34]: Reload page
