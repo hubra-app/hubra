@@ -1,5 +1,5 @@
 # Opt-in mail stack on k3s, the counterpart of docker-compose.mail.yml.
-# Flux applies it through deploy/flux/mail.yaml (suspended until you enable it).
+# Off unless you deploy it next to deploy/app.
 # Shares the app's namespace, Secret `hubra-env` and Redis.
 #
 # Mail needs real host ports 25/465/587/993; they are published through k3s

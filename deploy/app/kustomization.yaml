@@ -1,5 +1,5 @@
 # App stack: the k3s equivalent of docker-compose.yml + docker-compose.override.yaml.
-# Flux applies this directory (deploy/flux/app.yaml). By hand:
+# Apply it with your own GitOps tool (Flux, Argo CD) or by hand:
 #   kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/app | kubectl apply -f -
 #
 # Secrets are not in git: Secret `hubra-env` (from .env) and `ghcr-pull` are
@@ -46,19 +46,17 @@ configMapGenerator:
       - REAL_IP_FROM=10.42.0.0/16
 
 # Images built by .github/workflows/images.yml. `latest` follows main; pin
-# newTag to a release (1.2.3) or a build tag to stay on one version. The
-# $imagepolicy markers let Flux image automation bump the tags
-# (deploy/flux-image-automation, optional).
+# newTag to a release (1.2.3) or a build tag to stay on one version.
 images:
   - name: hubra/backend
     newName: ghcr.io/hubra-app/hubra/backend
-    newTag: latest # {"$imagepolicy": "flux-system:hubra-backend:tag"}
+    newTag: latest
   - name: hubra/frontend
     newName: ghcr.io/hubra-app/hubra/frontend
-    newTag: latest # {"$imagepolicy": "flux-system:hubra-frontend:tag"}
+    newTag: latest
   - name: hubra/admin-frontend
     newName: ghcr.io/hubra-app/hubra/admin-frontend
-    newTag: latest # {"$imagepolicy": "flux-system:hubra-admin-frontend:tag"}
+    newTag: latest
   - name: hubra/sso-frontend
     newName: ghcr.io/hubra-app/hubra/sso-frontend
-    newTag: latest # {"$imagepolicy": "flux-system:hubra-sso-frontend:tag"}
+    newTag: latest

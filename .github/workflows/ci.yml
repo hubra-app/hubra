@@ -70,14 +70,12 @@ jobs:
         run: |
           set -e
           curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz kubeconform
-
-          for dir in deploy/app deploy/single-club deploy/vollbuild-ch modules/mail/k8s; do
-
+          for dir in deploy/app deploy/single-club deploy/vollbuild-ch deploy/clusters/contabo modules/mail/k8s; do
             kubectl kustomize --load-restrictor LoadRestrictionsNone "$dir" > "/tmp/$(basename "$dir").yaml"
           done
           ./kubeconform -strict -summary -kubernetes-version 1.31.0 \
             -schema-location default \
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
-            /tmp/app.yaml /tmp/single-club.yaml /tmp/vollbuild-ch.yaml /tmp/k8s.yaml deploy/infrastructure deploy/flux
+            /tmp/app.yaml /tmp/single-club.yaml /tmp/vollbuild-ch.yaml /tmp/contabo.yaml /tmp/k8s.yaml
       - name: Shell scripts
         run: shellcheck deploy/create-secrets.sh scripts/init-env.sh app/deploy/nginx/40-hubra-runtime.sh

@@ -1,0 +1,39 @@
+# Postgres as a CloudNativePG cluster: three instances kept in step by Postgres
+# streaming replication, each on its own node's local-path volume (not
+# Longhorn). The operator promotes a replica if the primary's node fails. The
+# app connects through the postgres-rw Service, which follows the primary.
+#
+# The owner's password comes from Secret hubra-postgres
+# (POSTGRES_HOST=postgres-rw deploy/create-secrets.sh). database and owner
+# below must match POSTGRES_DB and POSTGRES_USER in .env.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres
+spec:
+  instances: 3
+  imageName: ghcr.io/cloudnative-pg/postgresql:16
+  primaryUpdateStrategy: unsupervised
+  bootstrap:
+    initdb:
+      database: hubra
+      owner: hubra
+      secret:
+        name: hubra-postgres
+  storage:
+    storageClass: local-path
+    size: 10Gi
+  affinity:
+    # One instance per node, preferably on the core nodes.
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+    podAntiAffinityType: required
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+              - { key: node-role.kubernetes.io/core, operator: Exists }
+  resources:
+    requests: { cpu: 250m, memory: 512Mi }
+    limits: { memory: 1Gi }
