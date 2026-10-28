@@ -38,14 +38,6 @@ body {
   min-height: 100vh;
 }
 
-.eyebrow {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #6131c4;
-}
-
 .num {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
@@ -104,15 +96,6 @@ body {
   .page-container {
     padding: 20px 16px 48px;
   }
-}
-
-.hubra-tabs {
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.hubra-tabs::-webkit-scrollbar {
-  display: none;
 }
 
 .manage-nav-row {

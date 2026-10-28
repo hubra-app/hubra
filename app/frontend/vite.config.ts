@@ -6,9 +6,12 @@ import { resolve } from 'path'
 export default defineConfig({
   plugins: [react()],
   resolve: {
+    // packages/ui imports these; take them from this app's node_modules.
+    dedupe: ['react', 'react-dom', '@mantine/core'],
     alias: {
       '@': resolve(__dirname, 'src'),
       '@hubra/api-client': resolve(__dirname, '../../packages/api-client/src'),
+      '@hubra/ui': resolve(__dirname, '../../packages/ui/src'),
     },
   },
   server: {

@@ -1,110 +1,13 @@
-import {
-  Text,
-  Title,
-  Group,
-  Stack,
-  Box,
-  Paper,
-  SimpleGrid,
-  UnstyledButton,
-  Select,
-  Pagination as MantinePagination,
-} from '@mantine/core'
-import type { ReactNode } from 'react'
+import { Text, Group, Box, Paper, SimpleGrid } from '@mantine/core'
+import type { ComponentProps, ReactNode } from 'react'
+import { Pagination as SharedPagination } from '@hubra/ui'
 import { useT } from '@/locales/i18n'
 import { clickableProps } from './hooks'
-
-export function PageHead({
-  title,
-  desc,
-  actions,
-  back,
-}: {
-  title: ReactNode
-  desc?: ReactNode
-  actions?: ReactNode
-  back?: ReactNode
-}) {
-  return (
-    <Box mb={24}>
-      {back && <Box mb={12}>{back}</Box>}
-      <Group justify="space-between" align="flex-end" gap={16} wrap="wrap">
-        <Stack gap={6} style={{ minWidth: 0, flex: '1 1 320px' }}>
-          <Title order={1} style={{ margin: 0, overflowWrap: 'anywhere' }}>
-            {title}
-          </Title>
-          {desc && (
-            <Text size="md" c="dimmed" maw={720}>
-              {desc}
-            </Text>
-          )}
-        </Stack>
-        {actions && (
-          <Group gap="xs" wrap="wrap" align="center">
-            {actions}
-          </Group>
-        )}
-      </Group>
-    </Box>
-  )
-}
-
-export function StatTile({
-  label,
-  value,
-  sub,
-  accent,
-  icon,
-  onClick,
-}: {
-  label: string
-  value: string | number
-  sub?: string
-  accent?: string
-  icon?: ReactNode
-  onClick?: () => void
-}) {
-  const body = (
-    <Paper withBorder p="lg" style={{ width: '100%', height: '100%' }}>
-      <Group justify="space-between" align="flex-start" wrap="nowrap" mb={10}>
-        <Text size="sm" fw={600} c="dimmed">
-          {label}
-        </Text>
-        {icon && <Box c="acc.6" style={{ lineHeight: 0 }}>{icon}</Box>}
-      </Group>
-      <Text
-        className="stat-value"
-        fz={28}
-        fw={700}
-        lh={1.1}
-        c={accent || 'var(--mantine-color-black)'}
-      >
-        {value}
-      </Text>
-      {sub && (
-        <Text size="sm" c="dimmed" mt={6}>
-          {sub}
-        </Text>
-      )}
-    </Paper>
-  )
-  if (!onClick) return body
-  return (
-    <UnstyledButton onClick={onClick} style={{ display: 'block', height: '100%' }}>
-      {body}
-    </UnstyledButton>
-  )
-}
+export { PageHead, StatGrid, StatTile } from '@hubra/ui'
 
 /* ── Card ───────────────────────────────────── */
 
-export function Card({
-  children,
-  style,
-}: {
-  children: ReactNode
-  style?: React.CSSProperties
-}) {
+export function Card({ children, style }: { children: ReactNode; style?: React.CSSProperties }) {
   return (
     <Paper withBorder style={{ overflow: 'hidden', ...style }}>
       {children}
@@ -146,38 +49,9 @@ function CardHeader({
 
 Card.Header = CardHeader
 
-/* ── StatGrid ───────────────────────────────── */
-
-export function StatGrid({
-  children,
-  columns = 4,
-  style,
-}: {
-  children: ReactNode
-  columns?: number
-  style?: React.CSSProperties
-}) {
-  return (
-    <SimpleGrid
-      cols={{ base: 1, xs: 2, md: columns }}
-      spacing="md"
-      mb={24}
-      style={style}
-    >
-      {children}
-    </SimpleGrid>
-  )
-}
-
 /* ── CardGrid + CardItem ─────────────────────── */
 
-export function CardGrid({
-  children,
-  columns = 3,
-}: {
-  children: ReactNode
-  columns?: number
-}) {
+export function CardGrid({ children, columns = 3 }: { children: ReactNode; columns?: number }) {
   return (
     <SimpleGrid cols={{ base: 1, xs: 2, md: columns }} spacing="md">
       {children}
@@ -243,62 +117,15 @@ export function CardItem({
 }
 
 /* ── Pagination ──────────────────────────────── */
-const PER_PAGE_OPTS = [10, 25, 50, 100]
 
-export function Pagination({
-  page,
-  perPage,
-  total,
-  totalPages,
-  goPage,
-  setPerPage,
-  top,
-}: {
-  page: number
-  perPage: number
-  total: number
-  totalPages: number
-  goPage: (p: number) => void
-  setPerPage: (n: number) => void
-  top?: boolean
-}) {
+export function Pagination(props: ComponentProps<typeof SharedPagination>) {
   const { t } = useT()
-  if (total === 0) return null
-  const start = (page - 1) * perPage + 1
-  const end = Math.min(page * perPage, total)
-
   return (
-    <Group
-      gap="xs"
-      px="md"
-      py="xs"
-      style={{
-        borderTop: top ? 'none' : '1px solid var(--mantine-color-gray-3)',
-        borderBottom: top ? '1px solid var(--mantine-color-gray-3)' : 'none',
-        flexWrap: 'wrap',
-      }}
-    >
-      <Select
-        size="sm"
-        value={String(perPage)}
-        onChange={(v) => setPerPage(Number(v))}
-        data={PER_PAGE_OPTS.map((n) => ({
-          value: String(n),
-          label: String(n),
-        }))}
-        style={{ width: 80 }}
-      />
-      <Text size="sm" c="dimmed" flex={1}>
-        {t('common.rangeOf', '{{start}}–{{end}} von {{total}}', { start, end, total })}
-      </Text>
-      <MantinePagination
-        value={page}
-        onChange={goPage}
-        total={totalPages}
-        size="sm"
-        withEdges
-        boundaries={1}
-      />
-    </Group>
+    <SharedPagination
+      rangeLabel={(start, end, total) =>
+        t('common.rangeOf', '{{start}}–{{end}} von {{total}}', { start, end, total })
+      }
+      {...props}
+    />
   )
 }

@@ -3,7 +3,7 @@ import { render } from '@testing-library/react'
 import { MantineProvider } from '@mantine/core'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { theme } from '@/theme/theme'
+import { theme } from '@hubra/ui'
 import '@/locales/i18n'
 
 /** Renders `ui` inside the providers the app puts around every screen. */
