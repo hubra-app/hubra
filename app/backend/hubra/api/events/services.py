@@ -281,7 +281,13 @@ class EventService:
         Events with a ``time`` like "14:00-18:00" get local start and end
         times (Europe/Zurich); others are all-day.
         """
+        from hubra.core.tenant.context import current_tenant
+
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        # Event ids repeat across clubs (one schema each): the club's slug
+        # keeps the UIDs apart for someone who subscribes to two clubs.
+        tenant = current_tenant()
+        uid_host = f"{tenant.slug}.hubra" if tenant else "hubra"
         lines = [
             "BEGIN:VCALENDAR",
             "VERSION:2.0",
@@ -297,7 +303,7 @@ class EventService:
         for event in events:
             lines += [
                 "BEGIN:VEVENT",
-                f"UID:event-{event.id}@club-management-suite",
+                f"UID:event-{event.id}@{uid_host}",
                 f"DTSTAMP:{stamp}",
                 f"SUMMARY:{_ical_text(event.title)}",
             ]
