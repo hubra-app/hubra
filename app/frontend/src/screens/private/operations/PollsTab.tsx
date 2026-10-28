@@ -167,8 +167,8 @@ export function PollsTab() {
   };
 
   const savePoll = async () => {
+    if (form.validate().hasErrors) return;
     const question = form.values.question.trim();
-    if (!question) return;
     const validOptions = options.filter(Boolean);
     if (validOptions.length < 2) {
       notify("error", t("polls.validation", "Eingabe prüfen"), t("polls.minOptions", "Es braucht mindestens 2 Optionen."));
