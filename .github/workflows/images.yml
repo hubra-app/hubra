@@ -1,0 +1,99 @@
+# Builds the container images and pushes them to GitHub Container Registry:
+#   ghcr.io/<owner>/<repo>/<image>:latest        newest build of main
+#   ghcr.io/<owner>/<repo>/<image>:sha-<commit>  every build of main
+#   ghcr.io/<owner>/<repo>/<image>:main-<timestamp>-<commit>
+#                                                 same build, sortable (Flux image automation)
+#   ghcr.io/<owner>/<repo>/<image>:1.2.3         tags v1.2.3
+# Pull requests build the images without pushing them.
+#
+# The frontend images carry no host names; they are set at container start
+# (app/deploy/nginx/40-hubra-runtime.sh), so one image fits every install.
+name: Images
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: images-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: backend
+            context: app/backend
+            dockerfile: app/backend/Dockerfile
+          - image: frontend
+            context: .
+            dockerfile: app/frontend/Dockerfile
+            target: production
+          - image: admin-frontend
+            context: .
+            dockerfile: app/admin-frontend/Dockerfile
+            target: production
+          - image: sso-frontend
+            context: .
+            dockerfile: app/sso-frontend/Dockerfile
+            target: production
+          - image: haraka
+            context: modules/mail/haraka
+            dockerfile: modules/mail/haraka/Dockerfile
+          - image: zonemta
+            context: modules/mail/zonemta
+            dockerfile: modules/mail/zonemta/Dockerfile
+          - image: cert-watcher
+            context: modules/mail/cert-watcher
+            dockerfile: modules/mail/cert-watcher/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Image name
+        id: name
+        run: echo "image=ghcr.io/${GITHUB_REPOSITORY,,}/${{ matrix.image }}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        if: github.event_name != 'pull_request'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.name.outputs.image }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=short,enable={{is_default_branch}}
+            type=raw,value=main-{{date 'YYYYMMDDHHmmss'}}-{{sha}},enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=ref,event=pr
+
+      # Add linux/arm64 to platforms for Raspberry Pi / Ampere clusters
+      # (slower: builds under QEMU).
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          target: ${{ matrix.target }}
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
