@@ -1,4 +1,4 @@
-import { apiFetch, apiFetchRaw } from '@hubra/api-client'
+import { apiFetch, apiFetchRaw } from '@hubra/plugin-sdk'
 
 export type PaymentStatus = 'matched' | 'unmatched' | 'mismatch' | 'duplicate_payment' | 'assigned'
 

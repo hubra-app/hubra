@@ -14,10 +14,10 @@ import {
 } from '@mantine/core'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { IconPlus, IconTrash } from '@tabler/icons-react'
-import { useT } from '@/locales/i18n'
-import { useAuth, useToast } from '@/context/AppContext'
-import { ConfirmModal, Field, Modal } from '@/components/ui'
-import { listTxCategories } from '@/api/finance'
+import { useT } from '@hubra/plugin-sdk'
+import { useAuth, useToast } from '@hubra/plugin-sdk'
+import { ConfirmModal, Field, Modal } from '@hubra/plugin-sdk'
+import { listTxCategories } from '@hubra/plugin-sdk'
 import {
   copyBudget,
   createBudget,
@@ -28,7 +28,7 @@ import {
   updateBudget,
   type Budget,
   type BudgetKind,
-} from '@/api/budgets'
+} from './api'
 
 interface DraftLine {
   categoryId: string | null

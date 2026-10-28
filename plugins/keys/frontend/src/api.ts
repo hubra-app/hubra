@@ -1,4 +1,4 @@
-import { apiFetch } from '@hubra/api-client'
+import { apiFetch } from '@hubra/plugin-sdk'
 
 export type KeyKind = 'key' | 'card' | 'fob'
 export type KeyStatus = 'available' | 'issued' | 'lost' | 'retired'

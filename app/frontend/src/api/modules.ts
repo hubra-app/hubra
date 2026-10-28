@@ -37,6 +37,19 @@ export interface ModuleInfo {
   settings: ModuleSettingField[]
   config: Record<string, string | number | boolean | null>
   configured: boolean
+  /** Set when the module comes from a plugin. */
+  plugin?: ModulePlugin
+}
+
+export interface ModulePlugin {
+  id: string
+  name: string
+  version: string
+  author: string
+  /** official, community, unsigned, invalid or bundled */
+  trust: string
+  /** Cache tag of the plugin's built frontend; null when it has none. */
+  frontend: string | null
 }
 
 export async function getModules(): Promise<ModuleInfo[]> {
@@ -59,6 +72,3 @@ export async function saveModuleSettings(
     body: JSON.stringify({ config }),
   })
 }
-
-/** Discord module: post a test message to the configured webhook. */
-export const sendDiscordTest = () => apiFetch<{ ok: boolean }>('/discord/test', { method: 'POST' })

@@ -54,10 +54,7 @@
       "systemMail": "System-Mail",
       "permissions": "Berächtigunge",
       "codes": "Codes",
-      "bindings": "Bindings",
-      "keys": "Schlüssel",
-      "budgets": "Budget",
-      "bankImport": "Bankimport"
+      "bindings": "Bindings"
     },
     "sections": {
       "workspace": "Arbeitsbereich",
@@ -811,15 +808,7 @@
     "itemSaved": "Item gspeicheret.",
     "itemDeleted": "Item glöscht.",
     "confirmDelete": "Wetsch des Item würkli lösche?",
-    "detail": "Item-Detail",
-    "guide": {
-      "title": "Aaleitig",
-      "add": "Aaleitig erfasse",
-      "saved": "Aaleitig gspeicheret",
-      "placeholder": "Schritt, Sicherheitsregle, was mer nach em Bruuch prüeft. Markdown gaht.",
-      "link": "Link zur Aaleitig oder zum Video",
-      "openLink": "Aaleitig öffne"
-    }
+    "detail": "Item-Detail"
   },
   "settings": {
     "title": "Iistellige",
@@ -861,9 +850,7 @@
       "configure": "Iistellige",
       "alwaysOn": "Immer aa: {{names}}",
       "saved": "Iistellige gspeicheret",
-      "secretKept": "Leer la, um de gspeicheret Wert z bhalte",
-      "discordTest": "Testnachricht schicke",
-      "discordTestSent": "Testnachricht gschickt"
+      "secretKept": "Leer la, um de gspeicheret Wert z bhalte"
     }
   },
   "bootstrap": {
@@ -1043,8 +1030,6 @@
     "groupMembers": "{{count}} Mitglieder",
     "leaveGroup": "Ustrete",
     "joinGroup": "Biiträte",
-    "myKeys": "Mini Schlüssel",
-    "keyDeposit": "Depot CHF {{amount}}",
     "plan": {
       "title": "Wie du zahlsch",
       "standard": "Standard",
@@ -1174,80 +1159,6 @@
     "warning": "Warnig",
     "error": "Fehler"
   },
-  "keys": {
-    "title": "Schlüssel",
-    "count": "{{count}} Schlüssel",
-    "add": "Schlüssel erfasse",
-    "edit": "Schlüssel bearbeite",
-    "saved": "Schlüssel gspeicheret",
-    "empty": "No kei Schlüssel erfasst.",
-    "search": "Bezeichnig, Nummer, Inhaber sueche…",
-    "label": "Bezeichnig",
-    "labelPlaceholder": "Haupttüür",
-    "number": "Nummer",
-    "kind": "Art",
-    "opens": "Passt für",
-    "opensPlaceholder": "Haupiigang, Werkstatt",
-    "statusLabel": "Status",
-    "holder": "Inhaber",
-    "deposit": "Depot",
-    "notes": "Notize",
-    "note": "Notiz",
-    "member": "Mitglied",
-    "pickMember": "Mitglied sueche…",
-    "issue": "Usgäh",
-    "issueTitle": "{{name}} usgäh",
-    "return": "Zruggnäh",
-    "markLost": "Als verlore markiere",
-    "markFound": "Widr gfunde",
-    "retire": "Usmuschtere",
-    "delete": "Schlüssel lösche",
-    "deleteConfirm": "{{name}} und de Verlauf lösche?",
-    "noHistory": "No kei Übergab.",
-    "status": {
-      "available": "Verfüegbar",
-      "issued": "Usgäh",
-      "lost": "Verlore",
-      "retired": "Usgmuschteret"
-    },
-    "kinds": {
-      "key": "Schlüssel",
-      "card": "Charte",
-      "fob": "Badge"
-    },
-    "actions": {
-      "issue": "Usgäh",
-      "return": "Zruggnoh",
-      "lost": "Verlore",
-      "found": "Gfunde",
-      "retire": "Usgmuschteret"
-    }
-  },
-  "budgets": {
-    "pick": "Budget uswähle",
-    "editLines": "Poste bearbeite",
-    "unapprove": "Widr ufmache",
-    "approve": "Als gnehmigt markiere",
-    "copy": "Uf {{year}} kopiere",
-    "new": "Neus Budget",
-    "empty": "No kei Budget. Leg eis für das Jahr aa.",
-    "delete": "Budget lösche",
-    "deleteConfirm": "{{name}} {{year}} lösche?",
-    "plannedResult": "Budgetierts Ergebnis",
-    "actualResult": "Ergebnis bis jetzt",
-    "approved": "Gnehmigt",
-    "income": "Iinahme",
-    "expense": "Usgabe",
-    "category": "Kategorie",
-    "planned": "Budget",
-    "actual": "Ist",
-    "unplanned": "nöd budgetiert",
-    "total": "Total",
-    "defaultName": "Jahresbudget",
-    "name": "Name",
-    "year": "Jahr",
-    "addLine": "Poste hinzuefüege"
-  },
   "tiers": {
     "plans": {
       "title": "Zahligsplän",
@@ -1269,31 +1180,6 @@
         "quarterly": "pro Quartal",
         "monthly": "pro Monet"
       }
-    }
-  },
-  "bank": {
-    "booked": "{{count}} Rächnige als zahlt markiert",
-    "importTitle": "Bankdatei importiere",
-    "importHint": "Lad d camt.054-Datei (Gutschriftsaazeig) im E-Banking abe. QR-Rächnige wärded über d Referenz de Rächnig zuegordnet. Du gsehsch s Resultat, bevor öppis verbuecht wird.",
-    "pickFile": "camt.054-Datei (.xml)",
-    "check": "Datei prüefe",
-    "alreadyImported": "Scho importiert",
-    "book": "Zahlige verbueche",
-    "date": "Datum",
-    "from": "Vo",
-    "amount": "Betrag",
-    "statusLabel": "Resultat",
-    "invoice": "Rächnig",
-    "toCheck": "Zahlige zum Prüefe",
-    "toCheckHint": "Für die Zahlige hätts kei passendi Rächnig oder en andere Betrag. Ordne si ere Rächnig zue, dänn wird die als zahlt markiert.",
-    "pickInvoice": "Rächnig",
-    "assign": "Als zahlt markiere",
-    "status": {
-      "matched": "Zuegordnet",
-      "assigned": "Vo Hand zuegordnet",
-      "unmatched": "Kei Rächnig",
-      "mismatch": "Betrag anders",
-      "duplicate_payment": "Scho zahlt"
     }
   }
 }

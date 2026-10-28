@@ -16,7 +16,7 @@ import { formatCHF } from "@/format";
 import { useToggleJoinEvent } from "@/screens/private/operations/useEventActions";
 import { useModules } from "@/modules/useModules";
 import { MyGroupsCard } from "./MyGroupsCard";
-import { MyKeysCard } from "./MyKeysCard";
+import { PluginSlot } from "@/plugins";
 
 /* -- Account Dashboard ------------------------ */
 export function AccountDashboardScreen() {
@@ -510,7 +510,7 @@ export function AccountDashboardScreen() {
         </Paper>
 
         {modules.has("groups") && <MyGroupsCard />}
-        {modules.has("inventory.keys") && <MyKeysCard />}
+        <PluginSlot name="account.cards" />
 
         {/* My likes ? coming soon */}
         <Paper withBorder shadow="sm" radius="lg">

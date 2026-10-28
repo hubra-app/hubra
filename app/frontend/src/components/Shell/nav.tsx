@@ -17,6 +17,7 @@ import {
 } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 import type { ModuleInfo } from '@/api/modules'
+import { pluginIcon } from '@/plugins'
 
 export type NavItem = {
   path: string
@@ -89,6 +90,12 @@ const NAV_ICONS: Record<string, ReactNode> = {
   user: <IconUser size={24} />,
 }
 
+/** An icon a plugin brought along, or a box. */
+function navIcon(name: string): ReactNode {
+  const Icon = pluginIcon(name)
+  return Icon ? <Icon size={24} /> : <IconBox size={24} />
+}
+
 const SECTION_ORDER = ['workspace', 'operations', 'system', 'me']
 
 /** Sidebar entries come from the modules that are on for the active club. */
@@ -117,7 +124,7 @@ export function buildNav(
     list.push({
       path: item.path,
       label: t(item.labelKey),
-      icon: NAV_ICONS[item.icon] ?? <IconBox size={24} />,
+      icon: NAV_ICONS[item.icon] ?? navIcon(item.icon),
       count: counts[item.path] || undefined,
       permKeys: item.perms.length ? item.perms : undefined,
     })

@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { Badge, Button, FileInput, Group, Paper, Select, Stack, Table, Text } from '@mantine/core'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { IconFileUpload } from '@tabler/icons-react'
-import { useT } from '@/locales/i18n'
-import { useAuth, useToast } from '@/context/AppContext'
-import { formatCHF } from '@/format'
-import { listInvoices } from '@/api/finance'
+import { useT } from '@hubra/plugin-sdk'
+import { useAuth, useToast } from '@hubra/plugin-sdk'
+import { formatCHF } from '@hubra/plugin-sdk'
+import { listInvoices } from '@hubra/plugin-sdk'
 import {
   assignBankPayment,
   importCamt054,
@@ -13,7 +13,7 @@ import {
   type BankPayment,
   type ImportResult,
   type PaymentStatus,
-} from '@/api/bank'
+} from './api'
 
 const STATUS_COLOR: Record<PaymentStatus, string> = {
   matched: 'green',

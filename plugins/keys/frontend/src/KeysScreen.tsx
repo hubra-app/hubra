@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react'
 import { Button, Menu, NumberInput, Select, Textarea, TextInput, ActionIcon } from '@mantine/core'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { IconDots, IconPlus } from '@tabler/icons-react'
-import { useT } from '@/locales/i18n'
-import { useAuth, useToast } from '@/context/AppContext'
-import { ConfirmModal, DataTable, Field, Modal, PageHead } from '@/components/ui'
-import { listMembers } from '@/api/members'
+import { useT } from '@hubra/plugin-sdk'
+import { useAuth, useToast } from '@hubra/plugin-sdk'
+import { ConfirmModal, DataTable, Field, Modal, PageHead } from '@hubra/plugin-sdk'
+import { listMembers } from '@hubra/plugin-sdk'
 import {
   createKey,
   deleteKey,
@@ -19,7 +19,7 @@ import {
   type KeyInput,
   type KeyKind,
   type KeyStatus,
-} from '@/api/keys'
+} from './api'
 
 const STATUS_COLORS: Record<KeyStatus, string> = {
   available: '#1f9d57',

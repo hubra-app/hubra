@@ -1,8 +1,8 @@
 import { Group, Paper, Text } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { IconKey } from '@tabler/icons-react'
-import { useT } from '@/locales/i18n'
-import { listMyKeys } from '@/api/keys'
+import { useT } from '@hubra/plugin-sdk'
+import { listMyKeys } from './api'
 
 /** Keys the member currently holds (inventory.keys module). */
 export function MyKeysCard() {

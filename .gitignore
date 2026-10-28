@@ -81,3 +81,6 @@ docs/deps/**
 # Git worktrees
 .worktrees/
 .secrets/
+
+# Built plugin frontends (npm run build:plugin in app/frontend)
+plugins/*/frontend/dist/

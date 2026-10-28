@@ -1,4 +1,4 @@
-import { apiFetch } from '@hubra/api-client'
+import { apiFetch } from '@hubra/plugin-sdk'
 
 export type BudgetKind = 'income' | 'expense'
 

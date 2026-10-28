@@ -5,6 +5,7 @@ import { useLocation } from 'react-router-dom'
 import { useNav, useAuth, useData } from '@/context/AppContext'
 import { NavItemRow } from './NavItemRow'
 import { UserMenu } from './UserMenu'
+import { usePlugins } from '@/plugins/store'
 import { buildNav, filterNav, initials, contrastColor } from './nav'
 
 export function Sidebar() {
@@ -21,6 +22,7 @@ export function Sidebar() {
     moduleList,
   } = useData()
   const openPolls = polls.filter((p) => p.status === 'open').length
+  usePlugins() // plugin icons arrive after the first render
   const nav = filterNav(
     buildNav(
       {

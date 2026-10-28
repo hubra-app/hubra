@@ -14,6 +14,7 @@ import { useNav, useAuth, useData } from '@/context/AppContext'
 import { NavItemRow } from './NavItemRow'
 import { UserMenu } from './UserMenu'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { usePlugins } from '@/plugins/store'
 import { buildNav, filterNav } from './nav'
 
 export function MobileDrawer() {
@@ -30,6 +31,7 @@ export function MobileDrawer() {
     moduleList,
   } = useData()
   const openPolls = polls.filter((p) => p.status === 'open').length
+  usePlugins() // plugin icons arrive after the first render
   const nav = filterNav(
     buildNav(
       {

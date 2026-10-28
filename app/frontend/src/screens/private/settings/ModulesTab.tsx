@@ -16,10 +16,10 @@ import {
 } from '@mantine/core'
 import { useT } from '@/locales/i18n'
 import { useAuth, useToast } from '@/context/AppContext'
+import { PluginSlot } from '@/plugins'
 import {
   getModules,
   saveModuleSettings,
-  sendDiscordTest,
   setModuleEnabled,
   type ModuleInfo,
   type ModuleSettingField,
@@ -206,22 +206,10 @@ function ModuleSettingsModal({
           />
         ))}
         <Group justify="flex-end">
-          {module.code === 'discord' && module.configured && (
-            <Button
-              variant="subtle"
-              mr="auto"
-              onClick={async () => {
-                try {
-                  await sendDiscordTest()
-                  notify('success', t('settings.modules.discordTestSent', 'Test message sent'))
-                } catch (err) {
-                  notify('error', module.name, (err as Error).message)
-                }
-              }}
-            >
-              {t('settings.modules.discordTest', 'Send test message')}
-            </Button>
-          )}
+          <PluginSlot
+            name="settings.module.actions"
+            props={{ code: module.code, configured: module.configured, name: module.name }}
+          />
           <Button variant="default" onClick={onClose}>
             {t('common.cancel', 'Cancel')}
           </Button>

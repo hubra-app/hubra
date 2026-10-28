@@ -1,0 +1,122 @@
+{
+  "en-GB": {
+    "keys": {
+      "title": "Keys",
+      "count": "{{count}} keys",
+      "add": "Add key",
+      "edit": "Edit key",
+      "saved": "Key saved",
+      "empty": "No keys yet.",
+      "search": "Search label, number, holder…",
+      "label": "Label",
+      "labelPlaceholder": "Front door",
+      "number": "Number",
+      "kind": "Type",
+      "opens": "Opens",
+      "opensPlaceholder": "Main entrance, workshop",
+      "statusLabel": "Status",
+      "holder": "Holder",
+      "deposit": "Deposit",
+      "notes": "Notes",
+      "note": "Note",
+      "member": "Member",
+      "pickMember": "Search member…",
+      "issue": "Hand out",
+      "issueTitle": "Hand out {{name}}",
+      "return": "Take back",
+      "markLost": "Mark as lost",
+      "markFound": "Found again",
+      "retire": "Retire",
+      "delete": "Delete key",
+      "deleteConfirm": "Delete {{name}} and its history?",
+      "noHistory": "No handovers yet.",
+      "status": {
+        "available": "Available",
+        "issued": "Handed out",
+        "lost": "Lost",
+        "retired": "Retired"
+      },
+      "kinds": {
+        "key": "Key",
+        "card": "Card",
+        "fob": "Fob"
+      },
+      "actions": {
+        "issue": "Handed out",
+        "return": "Taken back",
+        "lost": "Lost",
+        "found": "Found",
+        "retire": "Retired"
+      }
+    },
+    "shell": {
+      "nav": {
+        "keys": "Keys"
+      }
+    },
+    "account": {
+      "myKeys": "My keys",
+      "keyDeposit": "Deposit CHF {{amount}}"
+    }
+  },
+  "de-CH": {
+    "keys": {
+      "title": "Schlüssel",
+      "count": "{{count}} Schlüssel",
+      "add": "Schlüssel erfasse",
+      "edit": "Schlüssel bearbeite",
+      "saved": "Schlüssel gspeicheret",
+      "empty": "No kei Schlüssel erfasst.",
+      "search": "Bezeichnig, Nummer, Inhaber sueche…",
+      "label": "Bezeichnig",
+      "labelPlaceholder": "Haupttüür",
+      "number": "Nummer",
+      "kind": "Art",
+      "opens": "Passt für",
+      "opensPlaceholder": "Haupiigang, Werkstatt",
+      "statusLabel": "Status",
+      "holder": "Inhaber",
+      "deposit": "Depot",
+      "notes": "Notize",
+      "note": "Notiz",
+      "member": "Mitglied",
+      "pickMember": "Mitglied sueche…",
+      "issue": "Usgäh",
+      "issueTitle": "{{name}} usgäh",
+      "return": "Zruggnäh",
+      "markLost": "Als verlore markiere",
+      "markFound": "Widr gfunde",
+      "retire": "Usmuschtere",
+      "delete": "Schlüssel lösche",
+      "deleteConfirm": "{{name}} und de Verlauf lösche?",
+      "noHistory": "No kei Übergab.",
+      "status": {
+        "available": "Verfüegbar",
+        "issued": "Usgäh",
+        "lost": "Verlore",
+        "retired": "Usgmuschteret"
+      },
+      "kinds": {
+        "key": "Schlüssel",
+        "card": "Charte",
+        "fob": "Badge"
+      },
+      "actions": {
+        "issue": "Usgäh",
+        "return": "Zruggnoh",
+        "lost": "Verlore",
+        "found": "Gfunde",
+        "retire": "Usgmuschteret"
+      }
+    },
+    "shell": {
+      "nav": {
+        "keys": "Schlüssel"
+      }
+    },
+    "account": {
+      "myKeys": "Mini Schlüssel",
+      "keyDeposit": "Depot CHF {{amount}}"
+    }
+  }
+}

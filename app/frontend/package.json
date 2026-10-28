@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "build:plugin": "node scripts/build-plugin.mjs",
+    "typecheck:plugins": "tsc -p ../../plugins/tsconfig.json"
   },
   "dependencies": {
     "@mantine/core": "^7.17.8",
