@@ -130,7 +130,7 @@ Two options:
 
 `scripts/smoke-test.sh` checks a running stack end to end: the apps answer,
 they send their security headers, a club admin can sign in and the Celery
-processes run. CI runs it on every pull request.
+processes run. CI runs it on every pull request that is ready for review.
 
 ```sh
 docker compose build && docker compose up -d
