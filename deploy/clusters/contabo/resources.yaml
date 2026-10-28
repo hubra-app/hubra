@@ -1,0 +1,99 @@
+# Requests sized for real use. Without them Kubernetes reserves the full
+# limit, which is about 5.5 vCPU for this stack.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  template:
+    spec:
+      containers:
+        - name: postgres
+          resources:
+            requests: { cpu: 250m, memory: 512Mi }
+            limits: { memory: 1Gi }
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+spec:
+  template:
+    spec:
+      containers:
+        - name: redis
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  template:
+    spec:
+      containers:
+        - name: backend
+          resources:
+            requests: { cpu: 200m, memory: 384Mi }
+            limits: { memory: 768Mi }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-worker
+spec:
+  template:
+    spec:
+      containers:
+        - name: celery-worker
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-beat
+spec:
+  template:
+    spec:
+      containers:
+        - name: celery-beat
+          resources:
+            requests: { cpu: 20m, memory: 96Mi }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  template:
+    spec:
+      containers:
+        - name: nginx
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-frontend
+spec:
+  template:
+    spec:
+      containers:
+        - name: nginx
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sso-frontend
+spec:
+  template:
+    spec:
+      containers:
+        - name: nginx
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }

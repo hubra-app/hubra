@@ -70,7 +70,9 @@ jobs:
         run: |
           set -e
           curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz kubeconform
+
           for dir in deploy/app deploy/single-club deploy/vollbuild-ch modules/mail/k8s; do
+
             kubectl kustomize --load-restrictor LoadRestrictionsNone "$dir" > "/tmp/$(basename "$dir").yaml"
           done
           ./kubeconform -strict -summary -kubernetes-version 1.31.0 \

@@ -88,6 +88,63 @@ old hosts (`path: ./deploy/vollbuild-ch` in `deploy/flux/app.yaml`).
 Traefik listens. Stop the external Traefik at cutover, because k3s's Traefik
 replaces it.
 
+## Existing cluster
+
+On a cluster that Flux already manages from another repo, don't run
+`flux bootstrap` against this repo: it would take over `flux-system`. Add
+Hubra as one more source in the cluster repo instead, and leave out
+`deploy/flux` and `deploy/infrastructure` (bring your own ingress
+controller, cert-manager and ClusterIssuer).
+
+1. Give Flux a read-only deploy key and add the printed public key to the
+   repo under **Settings > Deploy keys**:
+   ```sh
+   flux create secret git hubra-auth --url=ssh://git@github.com/hubra-app/hubra
+   ```
+2. Commit this to the cluster repo. Don't put it behind other
+   Kustomizations with `dependsOn` unless Hubra needs them: it only needs
+   the ingress controller, cert-manager and the storage class.
+   ```yaml
+   apiVersion: source.toolkit.fluxcd.io/v1
+   kind: GitRepository
+   metadata:
+     name: hubra
+     namespace: flux-system
+   spec:
+     interval: 5m
+     url: ssh://git@github.com/hubra-app/hubra
+     ref: { branch: main }
+     secretRef: { name: hubra-auth }
+   ---
+   apiVersion: kustomize.toolkit.fluxcd.io/v1
+   kind: Kustomization
+   metadata:
+     name: hubra
+     namespace: flux-system
+   spec:
+     interval: 10m
+     sourceRef: { kind: GitRepository, name: hubra }
+     path: ./deploy/clusters/contabo   # or your own overlay of deploy/app
+     prune: true
+     wait: true
+     timeout: 10m
+   ```
+3. Secrets and the first admin are the same as steps 3 and 5 above.
+
+`deploy/clusters/contabo` is an example overlay: hubra.club host names, the
+`traefik-public` ingress class, the `letsencrypt-prod` issuer, Longhorn
+volumes, resource requests and Cloudflare in front.
+
+**Behind Cloudflare.** Cloudflare -> Traefik -> backend is two
+`X-Forwarded-For` hops, so the overlay sets `PROXY_FIX_X_FOR=2`. That is
+only safe when Traefik trusts exactly Cloudflare's ranges on its HTTPS
+entrypoint (`entryPoints.websecure.forwardedHeaders.trustedIPs`, list at
+https://www.cloudflare.com/ips/). Otherwise Traefik drops the header,
+every request looks like it came from Traefik, and all users share one
+rate limit. Create the DNS records as DNS-only first, wait for the
+certificate (`kubectl -n hubra get certificate`), then turn the proxy on
+with SSL mode **Full (strict)**.
+
 ## Day to day
 
 - **Deploy a new build:** `latest` follows `main`, but Kubernetes doesn't
