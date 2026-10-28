@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react'
-import { Button, Group, TextInput, Paper } from '@mantine/core'
+import { lazy, Suspense, useState, useCallback } from 'react'
+import { Button, Group, Loader, TextInput, Paper } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zodResolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
@@ -22,7 +22,6 @@ import {
   ConfirmModal,
   ActionButtons,
 } from '@/components/ui'
-import { RichTextEditor } from '@/components/RichTextEditor'
 import { MarkdownRenderer } from '@/components/MarkdownRenderer'
 import type { Post, PostComment } from '@/types'
 import {
@@ -36,6 +35,11 @@ import {
   addComment,
   deleteComment,
 } from '@/api/posts'
+
+// The editor is large and only needed while writing a post.
+const RichTextEditor = lazy(() =>
+  import('@/components/RichTextEditor').then((m) => ({ default: m.RichTextEditor })),
+)
 
 const postSchema = z.object({
   title: z.string().min(1, zmsg('validation.titleRequired', 'Titel ist erforderlich')),
@@ -305,14 +309,16 @@ export function PostsTab() {
         />
       </Field>
       <Field label={t('posts.content.label', 'Inhalt')}>
-        <RichTextEditor
-          value={form.values.body}
-          onChange={(val) => form.setFieldValue('body', val)}
-          placeholder={t(
-            'posts.content.placeholder',
-            'Teile eine Neuigkeit mit dem Verein …',
-          )}
-        />
+        <Suspense fallback={<Loader size="sm" />}>
+          <RichTextEditor
+            value={form.values.body}
+            onChange={(val) => form.setFieldValue('body', val)}
+            placeholder={t(
+              'posts.content.placeholder',
+              'Teile eine Neuigkeit mit dem Verein …',
+            )}
+          />
+        </Suspense>
       </Field>
     </div>
   )

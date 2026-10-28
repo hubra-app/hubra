@@ -22,22 +22,11 @@ export default defineConfig({
       },
     },
   },
+  // No manualChunks: forcing a library into one chunk makes every page load
+  // all of it (the rich text editor came along with Mantine that way).  The
+  // default splitting keeps what only some screens use in their chunks.
   build: {
     modulePreload: false,
     sourcemap: false,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('react-router-dom')) return 'react-vendor'
-            if (id.includes('/react/') || id.includes('/react-dom/')) return 'react-vendor'
-            if (id.includes('@mantine')) return 'mantine'
-            if (id.includes('@tabler/icons-react')) return 'icons'
-            if (id.includes('@tanstack/react-query')) return 'query'
-            if (id.includes('i18next') || id.includes('react-i18next')) return 'i18n'
-          }
-        },
-      },
-    },
   },
 })
