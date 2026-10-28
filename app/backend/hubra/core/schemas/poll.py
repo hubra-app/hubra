@@ -107,7 +107,8 @@ class PollUpdateSchema(ma.Schema):
         unknown = RAISE
 
     question = fields.Str(validate=validate.Length(min=1, max=255))
-    closes_at = fields.DateTime(allow_none=True, load_default=None)
+    # No load_default: a PATCH without closes_at keeps the deadline.
+    closes_at = fields.DateTime(allow_none=True)
     options = fields.List(
         fields.Nested(_PollOptionInputSchema),
         validate=validate.Length(min=2),
