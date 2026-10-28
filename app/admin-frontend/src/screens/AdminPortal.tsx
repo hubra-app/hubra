@@ -1,71 +1,73 @@
-import { useLocation, useNavigate } from 'react-router-dom'
-import { PageHead, Tabs } from '@/components/ui'
+import { useLocation } from 'react-router-dom'
+import { PageHead } from '@/components/ui'
 import { TenantsTab } from '@/screens/TenantsTab'
-import { MyTenantsTab } from '@/screens/MyTenantsTab'
 import { TenantRequestsTab } from '@/screens/TenantRequestsTab'
 import { GlobalAuditTab } from '@/screens/GlobalAuditTab'
 import { RolesTab } from '@/screens/RolesTab'
 import { MarketplaceTab } from '@/screens/MarketplaceTab'
 import { useAdmin } from '@/context/AdminContext'
+import { useLang } from '@/lang'
 
+/** One page per sidebar entry; the sidebar is the only navigation. */
 export function AdminPortal() {
   const location = useLocation()
-  const navigate = useNavigate()
   const { hasGlobalPermission } = useAdmin()
+  const { tr } = useLang()
+  const path = location.pathname
 
-  const tab =
-    location.pathname === '/app/audit'
-      ? 'audit'
-      : location.pathname === '/app/requests'
-        ? 'requests'
-        : location.pathname === '/app/roles'
-          ? 'roles'
-          : location.pathname === '/app/plugins'
-            ? 'plugins'
-            : location.pathname === '/app/my-tenants'
-              ? 'my-tenants'
-              : 'tenants'
-
-  const tabs = [
-    { id: 'my-tenants', label: 'My Clubs' },
-    ...(hasGlobalPermission('tenants.read') ? [{ id: 'tenants', label: 'All Tenants' }] : []),
-    { id: 'requests', label: 'My Requests' },
-    ...(hasGlobalPermission('audit.read') ? [{ id: 'audit', label: 'Audit Log' }] : []),
-    ...(hasGlobalPermission('roles.manage') ? [{ id: 'roles', label: 'Roles' }] : []),
-    ...(hasGlobalPermission('plugins.manage') ? [{ id: 'plugins', label: 'Plugins' }] : []),
-  ]
-
+  if (path === '/app/requests')
+    return (
+      <>
+        <PageHead
+          title={tr('Meine Anfragen', 'My requests')}
+          desc={tr(
+            'Beantrage einen neuen Verein auf Hubra und verfolge den Stand deiner Anfragen.',
+            'Request a new club on Hubra and follow the status of your requests.',
+          )}
+        />
+        <TenantRequestsTab />
+      </>
+    )
+  if (path === '/app/audit' && hasGlobalPermission('audit.read'))
+    return (
+      <>
+        <PageHead
+          title={tr('Audit-Log', 'Audit log')}
+          desc={tr('Alle Änderungen auf der Plattform, neueste zuerst.', 'Every change on the platform, newest first.')}
+        />
+        <GlobalAuditTab />
+      </>
+    )
+  if (path === '/app/roles' && hasGlobalPermission('roles.manage'))
+    return (
+      <>
+        <PageHead
+          title={tr('Rollen', 'Roles')}
+          desc={tr('Wer auf der Plattform was verwalten darf.', 'Who may manage what on the platform.')}
+        />
+        <RolesTab />
+      </>
+    )
+  if (path === '/app/plugins' && hasGlobalPermission('plugins.manage'))
+    return (
+      <>
+        <PageHead
+          title={tr('Plugins', 'Plugins')}
+          desc={tr(
+            'Plugins aus dem Marktplatz installieren und für Vereine freischalten.',
+            'Install plugins from the marketplace and enable them for clubs.',
+          )}
+        />
+        <MarketplaceTab />
+      </>
+    )
   return (
-    <div>
+    <>
       <PageHead
-        eyebrow="Platform"
-        title={hasGlobalPermission('tenants.read') ? 'Admin Portal' : 'My Portal'}
+        title={tr('Alle Vereine', 'All clubs')}
+        desc={tr('Alle Vereine auf dieser Hubra-Plattform.', 'Every club on this Hubra platform.')}
       />
-      <Tabs
-        tabs={tabs}
-        activeTab={tab}
-        onTabChange={(id) =>
-          navigate(
-            id === 'tenants'
-              ? '/app/tenants'
-              : id === 'requests'
-                ? '/app/requests'
-                : id === 'audit'
-                  ? '/app/audit'
-                  : id === 'roles'
-                    ? '/app/roles'
-                    : id === 'plugins'
-                      ? '/app/plugins'
-                      : '/app/my-tenants',
-          )
-        }
-      />
-      {tab === 'my-tenants' && <MyTenantsTab />}
-      {tab === 'tenants' && hasGlobalPermission('tenants.read') && <TenantsTab />}
-      {tab === 'requests' && <TenantRequestsTab />}
-      {tab === 'audit' && hasGlobalPermission('audit.read') && <GlobalAuditTab />}
-      {tab === 'roles' && hasGlobalPermission('roles.manage') && <RolesTab />}
-      {tab === 'plugins' && hasGlobalPermission('plugins.manage') && <MarketplaceTab />}
-    </div>
+      <TenantsTab />
+    </>
   )
 }

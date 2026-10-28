@@ -1,6 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { formatDateTime } from '@/format'
+import { tr } from '@/lang'
+import { planLabel, statusLabel } from '@/labels'
 import {
   Paper,
   Badge,
@@ -44,6 +46,12 @@ const STATUS_COLORS: Record<string, string> = {
   archived: 'gray',
 }
 
+const ACTION_DONE: Record<'disable' | 'enable' | 'archive', () => string> = {
+  disable: () => tr('Verein gesperrt', 'Club suspended'),
+  enable: () => tr('Verein aktiviert', 'Club enabled'),
+  archive: () => tr('Verein archiviert', 'Club archived'),
+}
+
 export function TenantDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -73,7 +81,7 @@ export function TenantDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-members', tenantId] })
       queryClient.invalidateQueries({ queryKey: ['tenant', tenantId] })
-      notify('success', 'Member added', memberEmail)
+      notify('success', tr('Person hinzugefügt', 'Member added'), memberEmail)
       setAddMemberOpen(false)
       setMemberEmail('')
       setMemberError('')
@@ -95,27 +103,27 @@ export function TenantDetail() {
   ) => {
     try {
       await fn(tenantId)
-      notify('success', `Tenant ${action}d`, tenant?.name)
+      notify('success', ACTION_DONE[action](), tenant?.name)
       refresh()
     } catch (err) {
-      notify('error', 'Action failed', err instanceof Error ? err.message : undefined)
+      notify('error', tr('Aktion fehlgeschlagen', 'Action failed'), err instanceof Error ? err.message : undefined)
     }
   }
 
   const handleDelete = async (force: boolean) => {
     try {
       await deleteTenant(tenantId, force)
-      notify('success', 'Tenant deleted', tenant?.name)
+      notify('success', tr('Verein gelöscht', 'Club deleted'), tenant?.name)
       navigate('/app/tenants')
     } catch (err) {
-      notify('error', 'Delete failed', err instanceof Error ? err.message : undefined)
+      notify('error', tr('Löschen fehlgeschlagen', 'Delete failed'), err instanceof Error ? err.message : undefined)
     }
   }
 
   if (isLoading) {
     return (
       <Text p={40} ta="center" c="dimmed">
-        Loading tenant...
+        {tr('Verein wird geladen …', 'Loading club…')}
       </Text>
     )
   }
@@ -123,9 +131,9 @@ export function TenantDetail() {
   if (error || !tenant) {
     return (
       <Stack p={40} align="center">
-        <Text c="red">Failed to load tenant</Text>
+        <Text c="red">{tr('Verein konnte nicht geladen werden', 'Could not load the club')}</Text>
         <Button variant="default" onClick={() => navigate('/app/tenants')}>
-          Back to Tenants
+          {tr('Zurück zu allen Vereinen', 'Back to all clubs')}
         </Button>
       </Stack>
     )
@@ -133,25 +141,40 @@ export function TenantDetail() {
 
   return (
     <div>
-      <Group justify="space-between" mb={20}>
-        <Group gap={12}>
-          <Button
-            variant="subtle"
-            leftSection={<IconArrowLeft size={16} />}
-            onClick={() => navigate('/app/tenants')}
-          >
-            Back
-          </Button>
-          <div className="eyebrow">Tenant</div>
-        </Group>
-        <Group gap={8}>
+      <Button
+        variant="subtle"
+        color="gray"
+        size="xs"
+        ml={-8}
+        mb="sm"
+        leftSection={<IconArrowLeft size={14} />}
+        onClick={() => navigate('/app/tenants')}
+      >
+        {tr('Alle Vereine', 'All clubs')}
+      </Button>
+      <Group justify="space-between" align="flex-end" gap="md" mb={28} wrap="wrap">
+        <Stack gap={8}>
+          <Title order={1}>{tenant.name}</Title>
+          <Group gap={8}>
+            <Text fz="sm" className="num" c="dimmed">
+              {tenant.slug}
+            </Text>
+            <Badge variant="light" color={STATUS_COLORS[tenant.status] ?? 'gray'}>
+              {statusLabel(tenant.status, tr)}
+            </Badge>
+            <Badge variant="light" color="acc">
+              {planLabel(tenant.plan, tr)}
+            </Badge>
+          </Group>
+        </Stack>
+        <Group gap={8} wrap="wrap">
           {tenant.status === 'active' ? (
             <Button
               variant="default"
               leftSection={<IconBan size={16} />}
               onClick={() => handleAction('disable', disableTenant)}
             >
-              Disable
+              {tr('Sperren', 'Suspend')}
             </Button>
           ) : (
             <Button
@@ -159,7 +182,7 @@ export function TenantDetail() {
               leftSection={<IconCheck size={16} />}
               onClick={() => handleAction('enable', enableTenant)}
             >
-              Enable
+              {tr('Aktivieren', 'Enable')}
             </Button>
           )}
           <Button
@@ -167,7 +190,7 @@ export function TenantDetail() {
             leftSection={<IconArchive size={16} />}
             onClick={() => handleAction('archive', archiveTenant)}
           >
-            Archive
+            {tr('Archivieren', 'Archive')}
           </Button>
           <Button
             color="red"
@@ -175,45 +198,30 @@ export function TenantDetail() {
             leftSection={<IconTrash size={16} />}
             onClick={() => setDeleteOpen(true)}
           >
-            Delete
+            {tr('Löschen', 'Delete')}
           </Button>
           <Button
             variant="filled"
             leftSection={<IconReplaceUser size={16} />}
             onClick={() => setImpersonateOpen(true)}
           >
-            Impersonate
+            {tr('Als Admin öffnen', 'Impersonate')}
           </Button>
         </Group>
       </Group>
 
-      <Title order={1} mb={4}>
-        {tenant.name}
-      </Title>
-      <Group gap={12} mb={24}>
-        <Text fz="sm" style={{ fontFamily: "'JetBrains Mono', monospace" }} c="dimmed">
-          {tenant.slug}
-        </Text>
-        <Badge variant="light" color={STATUS_COLORS[tenant.status] ?? 'gray'}>
-          {tenant.status}
-        </Badge>
-        <Badge variant="light" color="blue">
-          {tenant.plan}
-        </Badge>
-      </Group>
-
       {usage && (
         <StatGrid columns={4}>
-          <StatTile label="Members" value={usage.member_count} />
-          <StatTile label="Domains" value={usage.domain_count} />
-          <StatTile label="Users" value={usage.user_count} />
-          <StatTile label="Audit Entries" value={usage.audit_entry_count} />
+          <StatTile label={tr('Mitglieder', 'Members')} value={usage.member_count} />
+          <StatTile label={tr('Domains', 'Domains')} value={usage.domain_count} />
+          <StatTile label={tr('Benutzerkonten', 'Users')} value={usage.user_count} />
+          <StatTile label={tr('Audit-Einträge', 'Audit entries')} value={usage.audit_entry_count} />
         </StatGrid>
       )}
 
-      <Paper withBorder shadow="sm" radius="lg" p="lg" mb={20}>
+      <Paper withBorder p="lg" mb={20}>
         <Title order={3} mb={12}>
-          Tenant Details
+          {tr('Details', 'Details')}
         </Title>
         <Stack gap={8}>
           <Group justify="space-between">
@@ -226,20 +234,20 @@ export function TenantDetail() {
           </Group>
           <Group justify="space-between">
             <Text size="sm" c="dimmed">
-              Created
+              {tr('Erstellt', 'Created')}
             </Text>
-            <Text fw={600}>{tenant.created_at ? formatDateTime(tenant.created_at) : '-'}</Text>
+            <Text fw={600}>{tenant.created_at ? formatDateTime(tenant.created_at) : '–'}</Text>
           </Group>
           <Group justify="space-between">
             <Text size="sm" c="dimmed">
-              Updated
+              {tr('Geändert', 'Updated')}
             </Text>
-            <Text fw={600}>{tenant.updated_at ? formatDateTime(tenant.updated_at) : '-'}</Text>
+            <Text fw={600}>{tenant.updated_at ? formatDateTime(tenant.updated_at) : '–'}</Text>
           </Group>
           {tenant.deleted_at && (
             <Group justify="space-between">
               <Text size="sm" c="dimmed">
-                Deleted
+                {tr('Gelöscht', 'Deleted')}
               </Text>
               <Text fw={600} c="red">
                 {formatDateTime(tenant.deleted_at)}
@@ -251,30 +259,31 @@ export function TenantDetail() {
 
       <TenantModules tenantId={tenant.id} />
 
-      <Paper withBorder shadow="sm" radius="lg" p="lg" mb={20}>
+      <Paper withBorder p="lg" mb={20}>
         <Group justify="space-between" mb={12}>
-          <Title order={3}>Members</Title>
+          <Title order={3}>{tr('Mitglieder', 'Members')}</Title>
           <Button
             size="xs"
             variant="light"
             leftSection={<IconUserPlus size={16} />}
             onClick={() => setAddMemberOpen(true)}
           >
-            Add User
+            {tr('Person hinzufügen', 'Add person')}
           </Button>
         </Group>
         {members.length === 0 ? (
           <Text p={20} ta="center" c="dimmed">
-            No members found.
+            {tr('Noch keine Mitglieder.', 'No members yet.')}
           </Text>
         ) : (
+          <Table.ScrollContainer minWidth={560}>
           <Table highlightOnHover>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>Name</Table.Th>
-                <Table.Th>Email</Table.Th>
-                <Table.Th>Roles</Table.Th>
-                <Table.Th>Status</Table.Th>
+                <Table.Th>{tr('Name', 'Name')}</Table.Th>
+                <Table.Th>{tr('E-Mail', 'Email')}</Table.Th>
+                <Table.Th>{tr('Rollen', 'Roles')}</Table.Th>
+                <Table.Th>{tr('Status', 'Status')}</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -284,7 +293,7 @@ export function TenantDetail() {
                   <Table.Td>{m.email}</Table.Td>
                   <Table.Td>
                     {m.roles.map((r) => (
-                      <Badge key={r} variant="light" color="blue" size="sm" mr={4}>
+                      <Badge key={r} variant="light" color="acc" size="sm" mr={4}>
                         {r}
                       </Badge>
                     ))}
@@ -295,34 +304,39 @@ export function TenantDetail() {
                       color={m.status === 'active' ? 'green' : 'gray'}
                       size="sm"
                     >
-                      {m.status}
+                      {m.status === 'active' ? tr('Aktiv', 'Active') : m.status}
                     </Badge>
                   </Table.Td>
                 </Table.Tr>
               ))}
             </Table.Tbody>
           </Table>
+          </Table.ScrollContainer>
         )}
       </Paper>
 
       <Modal
         opened={deleteOpen}
         onClose={() => setDeleteOpen(false)}
-        title="Delete Tenant"
+        title={tr('Verein löschen', 'Delete club')}
         size="md"
       >
         <Stack gap={16}>
           <Alert color="red" variant="light" icon={<IconTrash size={16} />}>
-            This will soft-delete "{tenant.name}". The tenant will be archived and excluded from
-            default lists. Data is preserved.
+            {tr(
+              `«${tenant.name}» wird archiviert und aus den Listen ausgeblendet. Die Daten bleiben erhalten.`,
+              `"${tenant.name}" will be archived and hidden from the lists. Its data is kept.`,
+            )}
           </Alert>
           <Text size="sm" c="dimmed">
-            To permanently delete (drop schema + remove record), use the force option below. This
-            cannot be undone.
+            {tr(
+              'Endgültig löschen entfernt den Verein mit allen Daten. Das kann nicht rückgängig gemacht werden.',
+              'Delete permanently removes the club with all its data. This cannot be undone.',
+            )}
           </Text>
           <Group justify="flex-end" gap={8}>
             <Button variant="default" onClick={() => setDeleteOpen(false)}>
-              Cancel
+              {tr('Abbrechen', 'Cancel')}
             </Button>
             <Button
               variant="light"
@@ -331,7 +345,7 @@ export function TenantDetail() {
                 handleDelete(false)
               }}
             >
-              Soft Delete
+              {tr('Archivieren', 'Archive')}
             </Button>
             <Button
               color="red"
@@ -340,7 +354,7 @@ export function TenantDetail() {
                 handleDelete(true)
               }}
             >
-              Force Delete
+              {tr('Endgültig löschen', 'Delete permanently')}
             </Button>
           </Group>
         </Stack>
@@ -360,7 +374,7 @@ export function TenantDetail() {
           setMemberError('')
           setMemberEmail('')
         }}
-        title="Add User to Tenant"
+        title={tr('Person zum Verein hinzufügen', 'Add a person to the club')}
         size="md"
       >
         <Stack gap={16}>
@@ -370,12 +384,12 @@ export function TenantDetail() {
             </Alert>
           )}
           <TextInput
-            label="User Email"
+            label={tr('E-Mail-Adresse', 'Email address')}
             required
             value={memberEmail}
             onChange={(e) => setMemberEmail(e.target.value)}
-            placeholder="user@example.ch"
-            description="The user must already have an account. They will be added as a member with the default role."
+            placeholder="name@example.ch"
+            description={tr('Die Person braucht bereits ein Hubra-Konto. Sie wird als Mitglied mit der Standardrolle hinzugefügt.', 'The person needs a Hubra account already. They are added as a member with the default role.')}
           />
           <Group justify="flex-end">
             <Button
@@ -386,19 +400,19 @@ export function TenantDetail() {
                 setMemberEmail('')
               }}
             >
-              Cancel
+              {tr('Abbrechen', 'Cancel')}
             </Button>
             <Button
               loading={addMemberMutation.isPending}
               onClick={() => {
                 if (!memberEmail.trim()) {
-                  setMemberError('Email is required')
+                  setMemberError(tr('E-Mail-Adresse ist erforderlich', 'Email is required'))
                   return
                 }
                 addMemberMutation.mutate()
               }}
             >
-              Add Member
+              {tr('Hinzufügen', 'Add')}
             </Button>
           </Group>
         </Stack>

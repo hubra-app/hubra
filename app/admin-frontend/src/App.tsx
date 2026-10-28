@@ -9,6 +9,7 @@ import { AdminPortal } from '@/screens/AdminPortal'
 import { MyTenantsTab } from '@/screens/MyTenantsTab'
 import { TenantDetail } from '@/screens/TenantDetail'
 import { SSO_URL } from '@hubra/api-client'
+import { useLang } from '@/lang'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { authStatus } = useAdmin()
@@ -33,6 +34,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 
 function RequireGlobalPermission({ perm, children }: { perm: string; children: React.ReactNode }) {
   const { authStatus, hasGlobalPermission } = useAdmin()
+  const { tr } = useLang()
 
   useEffect(() => {
     if (authStatus === 'anon') {
@@ -56,10 +58,10 @@ function RequireGlobalPermission({ perm, children }: { perm: string; children: R
           <Stack gap="sm" align="center" ta="center">
             <IconAlertTriangle size={40} color="#dc2626" />
             <Text fw={700} c="red">
-              Access Denied
+              {tr('Kein Zugriff', 'Access denied')}
             </Text>
             <Text size="sm" c="dimmed">
-              You do not have permission to access this page.
+              {tr('Du hast keine Berechtigung für diese Seite.', 'You do not have permission to access this page.')}
             </Text>
           </Stack>
         </Paper>
@@ -98,6 +100,7 @@ function DefaultRoute() {
 }
 
 function AppRoutes() {
+  const { tr } = useLang()
   return (
     <RouteErrorBoundary
       onReset={() => window.location.reload()}
@@ -107,12 +110,12 @@ function AppRoutes() {
             <Stack gap="sm" align="center">
               <IconAlertTriangle size={40} color="#dc2626" />
               <Text fz={18} fw={700} c="red">
-                Something went wrong
+                {tr('Etwas ist schiefgelaufen', 'Something went wrong')}
               </Text>
               <Text size="sm" c="dimmed" ta="center">
-                An unexpected error occurred. Please try again.
+                {tr('Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es nochmals.', 'An unexpected error occurred. Please try again.')}
               </Text>
-              <Button onClick={() => resetErrorBoundary()}>Retry</Button>
+              <Button onClick={() => resetErrorBoundary()}>{tr('Nochmals versuchen', 'Try again')}</Button>
             </Stack>
           </Paper>
         </Center>
@@ -198,9 +201,11 @@ function AppRoutes() {
 }
 
 export default function App() {
+  // Remount on a language switch so every screen picks up the new texts.
+  const { lang } = useLang()
   return (
     <AdminProvider>
-      <AppRoutes />
+      <AppRoutes key={lang} />
     </AdminProvider>
   )
 }

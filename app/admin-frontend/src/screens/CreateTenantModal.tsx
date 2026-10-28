@@ -14,16 +14,21 @@ import { z } from 'zod'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { createTenant } from '@/api/tenants'
 import { useAdmin } from '@/context/AdminContext'
+import { tr } from '@/lang'
 
-const schema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  slug: z.string().min(3, 'Slug must be at least 3 chars').max(64, 'Slug must be at most 64 chars'),
-  plan: z.string(),
-  adminEmail: z.string().email('Invalid email').or(z.literal('')),
-  adminPassword: z.string(),
-})
+const makeSchema = () =>
+  z.object({
+    name: z.string().min(1, tr('Name ist erforderlich', 'Name is required')),
+    slug: z
+      .string()
+      .min(3, tr('Mindestens 3 Zeichen', 'At least 3 characters'))
+      .max(64, tr('Höchstens 64 Zeichen', 'At most 64 characters')),
+    plan: z.string(),
+    adminEmail: z.string().email(tr('Ungültige E-Mail-Adresse', 'Invalid email')).or(z.literal('')),
+    adminPassword: z.string(),
+  })
 
-type FormValues = z.infer<typeof schema>
+type FormValues = z.infer<ReturnType<typeof makeSchema>>
 
 function slugify(name: string): string {
   return name
@@ -46,7 +51,7 @@ export function CreateTenantModal({
   const [slugEdited, setSlugEdited] = useState(false)
 
   const form = useForm<FormValues>({
-    validate: zodResolver(schema),
+    validate: zodResolver(makeSchema()),
     initialValues: {
       name: '',
       slug: '',
@@ -80,19 +85,19 @@ export function CreateTenantModal({
         admin_email: values.adminEmail || undefined,
         admin_password: values.adminPassword || undefined,
       })
-      notify('success', 'Tenant created', `${values.name} has been provisioned.`)
+      notify('success', tr('Verein erstellt', 'Club created'), tr(`${values.name} ist eingerichtet.`, `${values.name} has been set up.`))
       onClose()
       form.reset()
       setSlugEdited(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create tenant')
+      setError(err instanceof Error ? err.message : tr('Verein konnte nicht erstellt werden', 'Could not create the club'))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Modal opened={opened} onClose={onClose} title="Create New Tenant" size="md">
+    <Modal opened={opened} onClose={onClose} title={tr('Neuen Verein erstellen', 'Create a new club')} size="md">
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack gap={16}>
           {error && (
@@ -101,22 +106,22 @@ export function CreateTenantModal({
             </Alert>
           )}
           <TextInput
-            label="Tenant Name"
+            label={tr('Vereinsname', 'Club name')}
             required
             {...form.getInputProps('name')}
             onChange={handleNameChange}
-            placeholder="Acme Canoe Club"
+            placeholder={tr('Kanuclub Seeblick', 'Lakeside Canoe Club')}
           />
           <TextInput
-            label="Slug"
+            label={tr('Kürzel', 'Slug')}
             required
             {...form.getInputProps('slug')}
             onChange={handleSlugChange}
-            placeholder="acme-canoe-club"
-            description="URL-safe identifier (3-64 chars, lowercase, hyphens)"
+            placeholder="kanuclub-seeblick"
+            description={tr('Erscheint in der Adresse: 3–64 Zeichen, Kleinbuchstaben und Bindestriche', 'Used in the address: 3–64 characters, lowercase letters and hyphens')}
           />
           <Select
-            label="Plan"
+            label={tr('Plan', 'Plan')}
             {...form.getInputProps('plan')}
             onChange={(v) => v && form.setFieldValue('plan', v)}
             data={[
@@ -126,24 +131,24 @@ export function CreateTenantModal({
             ]}
           />
           <TextInput
-            label="Admin Email (optional)"
+            label={tr('E-Mail der Admin-Person', 'Admin email')}
             type="email"
             {...form.getInputProps('adminEmail')}
-            placeholder="admin@acmecanoe.ch"
-            description="Initial admin user email"
+            placeholder="praesidium@kanuclub-seeblick.ch"
+            description={tr('Optional. Mit E-Mail und Passwort wird gleich ein Admin-Konto angelegt.', 'Optional. With an email and a password an admin account is created right away.')}
           />
           <TextInput
-            label="Admin Password (optional)"
+            label={tr('Passwort der Admin-Person', 'Admin password')}
             type="password"
             {...form.getInputProps('adminPassword')}
-            description="Initial admin password"
+            description={tr('Nur zusammen mit der E-Mail-Adresse.', 'Only together with the email address.')}
           />
           <Group justify="flex-end" mt={8}>
             <Button variant="default" onClick={onClose}>
-              Cancel
+              {tr('Abbrechen', 'Cancel')}
             </Button>
             <Button type="submit" loading={loading}>
-              Create Tenant
+              {tr('Verein erstellen', 'Create club')}
             </Button>
           </Group>
         </Stack>
