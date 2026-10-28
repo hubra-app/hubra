@@ -572,7 +572,7 @@ def _check_mailbox_quota() -> dict:
         return {"checked": 0, "alerts_sent": 0, "errors": 0}
 
     cooldown = timedelta(hours=24)
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = datetime.now(timezone.utc)
     ninety_pct = 0.9
 
     addrs = list(
@@ -598,7 +598,11 @@ def _check_mailbox_quota() -> dict:
                 continue
 
             # Cooldown check
-            if mma.last_quota_alert_at and (now - mma.last_quota_alert_at) < cooldown:
+            # Postgres gives an aware datetime back, SQLite a naive UTC one.
+            last_alert = mma.last_quota_alert_at
+            if last_alert is not None and last_alert.tzinfo is None:
+                last_alert = last_alert.replace(tzinfo=timezone.utc)
+            if last_alert and (now - last_alert) < cooldown:
                 continue
 
             # Determine recipient(s)

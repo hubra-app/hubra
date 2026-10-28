@@ -449,9 +449,12 @@ class MemberService:
         from sqlalchemy import update as sql_update
 
         from hubra.core.models.audit import AuditEntry
+        from hubra.core.models.code import Code
         from hubra.core.models.finance import Invoice, Transaction
         from hubra.core.models.mail import MailboxFolder
         from hubra.core.models.notification import Notification
+        from hubra.core.models.poll import Poll, PollVote
+        from hubra.core.models.translation import Translation
 
         # Delete child rows whose FK is NOT NULL (cannot be nulled out).
         db.session.execute(
@@ -477,6 +480,21 @@ class MemberService:
             .where(AuditEntry.actor_id == member_id)
             .values(actor_id=None)
         )
+        # Authorship and leadership references: the row stays, unattributed.
+        for column in (
+            Code.created_by_id,
+            Code.updated_by_id,
+            Group.lead_id,
+            Poll.created_by_id,
+            Translation.updated_by_id,
+        ):
+            db.session.execute(
+                sql_update(column.class_)
+                .where(column == member_id)
+                .values({column.key: None})
+            )
+        # A vote belongs to its member (member_id is NOT NULL): it goes with them.
+        db.session.execute(delete(PollVote).where(PollVote.member_id == member_id))
         # Remove WildDuck mailbox and MMA row (permanent deletion).
         from hubra.core.services.managed_mail import remove_for_member
 
