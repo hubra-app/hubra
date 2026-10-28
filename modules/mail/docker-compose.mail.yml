@@ -9,7 +9,7 @@
 #   docker compose -f docker-compose.yml -f modules/mail/docker-compose.mail.yml up -d
 #
 # Prerequisites:
-#   - features.mail: true in settings.yaml
+#   - the mail module switched on: docker compose exec backend flask modules enable mail
 #   - Mail-related env vars set in .env (WILDDUCK_API_TOKEN, LOOP_SECRET,
 #     SRS_SECRET, REWRITE_DOMAIN, ACME_EMAIL, MAIL_HOST, etc.)
 #   - ./modules/mail/certbot/cloudflare.ini present with Cloudflare API credentials
@@ -122,9 +122,9 @@ services:
       - no-new-privileges:true
 
   haraka:
+    image: ${HUBRA_IMAGE_PREFIX:-ghcr.io/hubra-app/hubra}/haraka:${HUBRA_VERSION:-latest}
     build:
       context: ./modules/mail/haraka
-    image: community-haraka:local
     restart: unless-stopped
     ports:
       - "25:25"
@@ -151,6 +151,7 @@ services:
       - no-new-privileges:true
 
   zonemta:
+    image: ${HUBRA_IMAGE_PREFIX:-ghcr.io/hubra-app/hubra}/zonemta:${HUBRA_VERSION:-latest}
     build:
       context: ./modules/mail/zonemta
     restart: unless-stopped
@@ -197,6 +198,7 @@ services:
       - no-new-privileges:true
 
   cert-watcher:
+    image: ${HUBRA_IMAGE_PREFIX:-ghcr.io/hubra-app/hubra}/cert-watcher:${HUBRA_VERSION:-latest}
     build: ./modules/mail/cert-watcher
     restart: unless-stopped
     environment:

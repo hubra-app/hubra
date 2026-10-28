@@ -1,4 +1,22 @@
+# Hubra: app stack.
+#
+#   cp .env.example .env    # then fill in the secrets (see docs/run-with-docker.md)
+#   docker compose pull     # prebuilt images from GHCR, or: docker compose build
+#   docker compose up -d
+#
+# Out of the box this publishes three ports on 127.0.0.1:
+#   8080  club app       (frontend)
+#   8081  manager portal (admin-frontend)
+#   8082  login / SSO    (sso-frontend)
+# Each frontend proxies /api/ to the backend, so every app talks to the API on
+# its own origin. Behind a reverse proxy with real host names, add
+# docker-compose.traefik.yml (see that file) or point your own proxy at the
+# published ports.
+#
+# Optional mail stack: add -f modules/mail/docker-compose.mail.yml.
+
 x-backend-app: &backend-app
+  image: ${HUBRA_IMAGE_PREFIX:-ghcr.io/hubra-app/hubra}/backend:${HUBRA_VERSION:-latest}
   build:
     context: ./app/backend
   env_file: .env
@@ -9,15 +27,31 @@ x-backend-app: &backend-app
   networks:
     - internal
 
+# Runtime settings for the three SPA images (app/deploy/nginx/40-hubra-runtime.sh).
+# Defaults fit the local ports above; set the URLs in .env for real host names.
+x-frontend-env: &frontend-env
+  API_UPSTREAM: http://backend:5000
+  VITE_API_BASE: ${VITE_API_BASE:-/api}
+  VITE_SSO_URL: ${SSO_BASE_URL:-http://localhost:8082}
+  VITE_COS_URL: ${FRONTEND_BASE_URL:-http://localhost:8080}
+  VITE_TENANT_APP_URL: ${FRONTEND_BASE_URL:-http://localhost:8080}
+  VITE_MANAGE_URL: ${MANAGE_BASE_URL:-http://localhost:8081}
+  VITE_ADMIN_PORTAL_URL: ${MANAGE_BASE_URL:-http://localhost:8081}
+  REAL_IP_FROM: ${REAL_IP_FROM:-}
+
 services:
   frontend:
+    image: ${HUBRA_IMAGE_PREFIX:-ghcr.io/hubra-app/hubra}/frontend:${HUBRA_VERSION:-latest}
     build:
       context: .
       dockerfile: app/frontend/Dockerfile
       target: production
     restart: unless-stopped
-    expose:
-      - "80"
+    environment: *frontend-env
+    ports:
+      - "${HUBRA_BIND:-127.0.0.1}:${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      - backend
     networks:
       - internal
     security_opt:
@@ -34,13 +68,17 @@ services:
           cpus: "0.5"
 
   admin-frontend:
+    image: ${HUBRA_IMAGE_PREFIX:-ghcr.io/hubra-app/hubra}/admin-frontend:${HUBRA_VERSION:-latest}
     build:
       context: .
       dockerfile: app/admin-frontend/Dockerfile
       target: production
     restart: unless-stopped
-    expose:
-      - "80"
+    environment: *frontend-env
+    ports:
+      - "${HUBRA_BIND:-127.0.0.1}:${ADMIN_FRONTEND_PORT:-8081}:80"
+    depends_on:
+      - backend
     networks:
       - internal
     security_opt:
@@ -57,13 +95,17 @@ services:
           cpus: "0.5"
 
   sso-frontend:
+    image: ${HUBRA_IMAGE_PREFIX:-ghcr.io/hubra-app/hubra}/sso-frontend:${HUBRA_VERSION:-latest}
     build:
       context: .
       dockerfile: app/sso-frontend/Dockerfile
       target: production
     restart: unless-stopped
-    expose:
-      - "80"
+    environment: *frontend-env
+    ports:
+      - "${HUBRA_BIND:-127.0.0.1}:${SSO_FRONTEND_PORT:-8082}:80"
+    depends_on:
+      - backend
     networks:
       - internal
     security_opt:
@@ -222,6 +264,4 @@ networks:
 volumes:
   pg_data:
   redis_data:
-  caddy_data:
-  caddy_config:
   celerybeat_data:
