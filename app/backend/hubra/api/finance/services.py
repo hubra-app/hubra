@@ -335,7 +335,7 @@ class TransactionsService:
             select(Transaction)
             .options(
                 selectinload(Transaction.category),
-                selectinload(Transaction.member),
+                selectinload(Transaction.member).selectinload(Member.user),
                 selectinload(Transaction.invoice),
             )
             .order_by(Transaction.date.desc(), Transaction.id.desc())
@@ -723,7 +723,7 @@ class InvoicesService:
         query = (
             select(Invoice)
             .options(
-                selectinload(Invoice.member),
+                selectinload(Invoice.member).selectinload(Member.user),
                 selectinload(Invoice.external_party),
             )
             .order_by(Invoice.due.desc(), Invoice.id.desc())

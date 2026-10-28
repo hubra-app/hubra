@@ -374,10 +374,7 @@ class EventsService:
         """Return events with optional date range, type, and category filtering."""
         query = (
             select(ClubEvent)
-            .options(
-                selectinload(ClubEvent.attendees),
-                selectinload(ClubEvent.registrations),
-            )
+            .options(selectinload(ClubEvent.attendees))
             .order_by(ClubEvent.date)
         )
 
