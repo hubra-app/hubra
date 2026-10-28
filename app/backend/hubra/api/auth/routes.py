@@ -406,6 +406,22 @@ _SESSION_CLAIMS = (
 )
 
 
+def _renew_this_session(response) -> None:
+    """New tokens for this browser after the account ended all its sessions
+    (password change, sign out everywhere): same identity and claims."""
+    claims = get_jwt()
+    kept = {k: claims[k] for k in _SESSION_CLAIMS if claims.get(k) is not None}
+    identity = get_jwt_identity()
+    set_access_cookies(
+        response, create_access_token(identity=identity, additional_claims=kept)
+    )
+    set_refresh_cookies(
+        response,
+        create_refresh_token(identity=identity, additional_claims=kept),
+        max_age=30 * 24 * 3600,
+    )
+
+
 @auth_bp.post("/refresh")
 @jwt_required(refresh=True)
 @limiter.limit("20 per minute")
@@ -627,7 +643,7 @@ def forgot_password():
             pass
         return jsonify({"ok": True}), 200
 
-    raw_token, member = result
+    raw_token, user = result
 
     try:
         db.session.commit()
@@ -637,10 +653,7 @@ def forgot_password():
 
     reset_url = f"{_get_sso_base_url()}/reset-password#token={raw_token}"
     email_svc.send_password_reset(
-        member.email,
-        member.name,
-        reset_url,
-        lang=getattr(member, "language", "de-CH") or "de-CH",
+        user.email, user.name, reset_url, lang=user.language or "de-CH"
     )
 
     return jsonify({"ok": True}), 200
@@ -656,7 +669,7 @@ def reset_password():
     raw_token = body.get("token", "").strip()
     new_password = body.get("password", "")
 
-    member = AuthService.reset_password(raw_token, new_password)
+    user = AuthService.reset_password(raw_token, new_password)
 
     try:
         db.session.commit()
@@ -664,10 +677,12 @@ def reset_password():
         db.session.rollback()
         raise
 
-    if member.private_email_verified:
-        email_svc.send_password_changed(member.email, member.name)
+    if user.private_email_verified:
+        email_svc.send_password_changed(
+            user.email, user.name, lang=user.language or "de-CH"
+        )
     else:
-        _log.info("skip_password_changed member_id=%s — email not verified", member.id)
+        _log.info("skip_password_changed user_id=%s — email not verified", user.id)
 
     return jsonify({"ok": True}), 200
 
@@ -809,14 +824,22 @@ def get_my_tenants():
 @account_bp.patch("/")
 @jwt_required()
 def update_account():
+    _not_while_impersonating()
     body = request.get_json(silent=True) or {}
+    # The login address and the password change only with the current
+    # password: PATCH /account/email and POST /account/password.
+    if "email" in body or "password" in body:
+        raise_error(
+            400,
+            "VALIDATION_ERROR",
+            "Change email and password on your account page; "
+            "they need your current password",
+        )
 
     allowed = {
         "name",
         "first_name",
         "last_name",
-        "email",
-        "password",
         "avatar",
         "avatar_color",
         "profile_note",
@@ -824,27 +847,13 @@ def update_account():
     }
     updates = {k: v for k, v in body.items() if k in allowed}
 
-    member = current_user  # type: Member
-    member, new_password = AccountService.update_account(member, updates)
+    member = AccountService.update_account(current_user, updates)
 
     try:
         db.session.commit()
     except Exception:
         db.session.rollback()
         raise
-
-    if new_password:
-        from sqlalchemy import select as _sel
-
-        from hubra.core.models.managed_mail import ManagedMailAddress as _MMA
-
-        _addr = db.session.scalar(
-            _sel(_MMA).where(_MMA.owner_type == "member", _MMA.owner_id == member.id)
-        )
-        if _addr and _addr.wildduck_user_id:
-            from hubra.core.tasks.wildduck import sync_wildduck_password
-
-            sync_wildduck_password.delay(member.id)
 
     return jsonify(_member_schema.dump(member)), 200
 
@@ -856,6 +865,7 @@ def update_account():
 @jwt_required()
 @limiter.limit("10 per minute")
 def change_password():
+    _not_while_impersonating()
     body = request.get_json(silent=True) or {}
     current_password = body.get("currentPassword", "")
     new_password = body.get("newPassword", "")
@@ -890,7 +900,9 @@ def change_password():
     else:
         _log.info("skip_password_changed member_id=%s — email not verified", member.id)
 
-    return jsonify({"ok": True}), 200
+    response = make_response(jsonify({"ok": True}), 200)
+    _renew_this_session(response)
+    return response
 
 
 # ── GET /account/invoices ────────────────────────────────────────────────────
@@ -1001,6 +1013,15 @@ def _signed_in_user() -> User:
     return user
 
 
+def _not_while_impersonating() -> None:
+    """403 when platform support is looking at a club as this member."""
+    from hubra.api.permissions import check_impersonation_restriction
+
+    restriction = check_impersonation_restriction("change_account")
+    if restriction is not None:
+        raise_error(403, *restriction)
+
+
 @account_bp.get("/email-verification")
 @jwt_required()
 def get_email_verification():
@@ -1042,6 +1063,7 @@ def verify_email():
 @limiter.limit("10 per hour")
 def change_account_email():
     """Change the address (login and private mail); a new link goes out."""
+    _not_while_impersonating()
     body = request.get_json(silent=True) or {}
     user = _signed_in_user()
     old_email = user.email
@@ -1200,6 +1222,7 @@ def get_account_profile():
 @account_bp.patch("/profile")
 @jwt_required()
 def update_account_profile():
+    _not_while_impersonating()
     body = request.get_json(silent=True) or {}
     allowed = {
         "name",
@@ -1220,6 +1243,7 @@ def update_account_profile():
 @limiter.limit("10 per minute")
 def change_account_password():
     """Change the password of the account, for every club at once."""
+    _not_while_impersonating()
     body = request.get_json(silent=True) or {}
     user = _signed_in_user()
     account_svc.change_password(
@@ -1254,7 +1278,9 @@ def change_account_password():
         email_svc.send_password_changed(
             user.email, user.name, lang=user.language or "de-CH"
         )
-    return jsonify({"ok": True}), 200
+    response = make_response(jsonify({"ok": True}), 200)
+    _renew_this_session(response)
+    return response
 
 
 def _current_session_key() -> tuple[str | None, str | None]:
@@ -1310,4 +1336,9 @@ def revoke_sessions_everywhere():
         else:
             count += session_service.revoke_all_including_current(member.id)
         db.session.commit()
-    return jsonify({"ok": True, "revoked": count}), 200
+    # Also the sign-ins without a session row (the SSO portal's own).
+    user.end_sessions()
+    db.session.commit()
+    response = make_response(jsonify({"ok": True, "revoked": count}), 200)
+    _renew_this_session(response)
+    return response

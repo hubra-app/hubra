@@ -15,7 +15,7 @@ from hubra.api.mail.services import (
     MailboxService,
     MailboxesService,
 )
-from hubra.core.extensions import db
+from hubra.core.extensions import db, limiter
 from hubra.api.permissions import permission_required
 from hubra.api.settings.services import SettingService
 from hubra.api.utils import log_audit
@@ -1940,39 +1940,25 @@ def update_from_whitelist(address_id: int):
 
 @mail_bp.post("/test")
 @permission_required("test_email", "send", "Send test email")
+@limiter.limit("5 per hour")
 def send_test_email():
+    """Send a test mail the way the club's mail goes out: from the platform
+    sender (or the club's own mailbox), never from an address the caller
+    picks. ``from`` in the body is ignored."""
     body = request.get_json(silent=True) or {}
-    from_addr = (body.get("from") or "").strip()
     to_addr = (body.get("to") or "").strip()
     subject = (body.get("subject") or "").strip()
 
-    if not from_addr or not to_addr or not subject:
+    if not to_addr or not subject:
         return api_error(
-            "VALIDATION_ERROR",
-            "Fields 'from', 'to', and 'subject' are required",
-            400,
+            "VALIDATION_ERROR", "Fields 'to' and 'subject' are required", 400
         )
-
-    _email_re = _re.compile(r"[^@]+@[^@]+\.[^@]+")
-    if not _email_re.match(from_addr):
-        return api_error("VALIDATION_ERROR", "Invalid 'from' email address", 400)
-    if not _email_re.match(to_addr):
+    if not _re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", to_addr):
         return api_error("VALIDATION_ERROR", "Invalid 'to' email address", 400)
 
-    configured_sender = SettingService.get("club.notification_sender_email") or ""
-    if configured_sender and from_addr != configured_sender:
-        return api_error(
-            "VALIDATION_ERROR",
-            f"'from' must match the club sender address ({configured_sender})",
-            400,
-        )
-
-    result = MailService.send_test(
-        from_addr=from_addr,
-        to_addr=to_addr,
-        subject=subject,
-    )
-
+    result = MailService.send_test(to_addr=to_addr, subject=subject[:200])
+    log_audit(get_current_member().id, "send_test_mail", "Mail", None, to_addr)
+    db.session.commit()
     return jsonify(result), 200
 
 
