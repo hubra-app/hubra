@@ -6,6 +6,7 @@ import { Select, ActionIcon, Badge } from '@mantine/core'
 import { PageHead, Avatar, Tag, DataTable } from '@/components/ui'
 import { listAuditLog, getAuditEntry } from '@/api/settings'
 import { useT } from '@/locales/i18n'
+import { formatDateTime } from '@/format'
 
 /* -- Audit entry detail panel ------------------ */
 function AuditEntryDetailPanel({
@@ -414,7 +415,7 @@ export function AuditLogScreen() {
                   color: '#5e5873',
                 }}
               >
-                {entry.time}
+                {formatDateTime(entry.time)}
               </span>
             ),
           },
@@ -444,7 +445,7 @@ export function AuditLogScreen() {
                         : 'gray'
               return (
                 <Badge variant="light" color={color} radius="xl">
-                  {entry.action}
+                  {t(`audit.actions.${entry.action.replace(/ /g, '_')}`, entry.action)}
                 </Badge>
               )
             },

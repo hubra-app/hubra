@@ -558,6 +558,7 @@ export function GroupsScreen() {
               </div>
             </Paper>
           ))}
+          {canCreate && (
           <Paper
             withBorder
             shadow="sm"
@@ -584,6 +585,7 @@ export function GroupsScreen() {
               {t('groups.addGroup')}
             </span>
           </Paper>
+          )}
         </div>
         <Pagination {...pg} />
       </Paper>

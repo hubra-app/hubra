@@ -16,7 +16,7 @@ export function GlobalSearch() {
   const { go } = useNav()
   const { events, polls, invoices } = useData()
   // A switched-off module answers 403: only search what is on.
-  const { modules } = useApp()
+  const { modules, hasPermission } = useApp()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [dropOpen, setDropOpen] = useState(false)
@@ -37,7 +37,7 @@ export function GlobalSearch() {
   })
   const { data: txList = [] } = useQuery({
     queryKey: ['search-transactions'],
-    enabled: modules.finance === true,
+    enabled: modules.finance === true && hasPermission('finance.transactions.read'),
     queryFn: () => listTransactions(),
     staleTime: 60_000,
   })
@@ -49,6 +49,7 @@ export function GlobalSearch() {
   })
   const { data: auditPage } = useQuery({
     queryKey: ['search-audit'],
+    enabled: hasPermission('audit.audit.read'),
     queryFn: () => listAuditLog({ pageSize: 200 }),
     staleTime: 60_000,
   })

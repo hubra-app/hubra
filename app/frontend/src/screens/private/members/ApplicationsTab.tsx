@@ -11,6 +11,7 @@ import {
   declineApplication,
 } from '@/api/applications'
 import { getLookups } from '@/api/lookups'
+import { formatDateTime } from '@/format'
 
 /* ── Applications ───────────────────────────── */
 export function ApplicationsTab() {
@@ -149,8 +150,13 @@ export function ApplicationsTab() {
                     color: '#5e5873',
                   }}
                 >
-                  {app.email} · {t('members.applications.wants', 'möchte')}{' '}
-                  <strong>{app.wantsTier}</strong>
+                  {app.email}
+                  {app.wantsTier && (
+                    <>
+                      {' · '}
+                      {t('members.applications.wants', 'möchte')} <strong>{app.wantsTier}</strong>
+                    </>
+                  )}
                 </div>
               </div>
               <span
@@ -160,7 +166,7 @@ export function ApplicationsTab() {
                   color: '#8c86a0',
                 }}
               >
-                {app.appliedAt}
+                {formatDateTime(app.appliedAt)}
               </span>
               {canDecline && (
                 <Button

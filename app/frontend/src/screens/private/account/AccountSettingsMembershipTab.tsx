@@ -5,6 +5,7 @@ import * as authApi from '@/api/auth'
 import { useAuth } from '@/context/AppContext'
 import { LastSeenBadge } from '@/components/ui'
 import { useT } from '@/locales/i18n'
+import { formatDate } from '@/format'
 import { PaymentPlanCard } from './PaymentPlanCard'
 
 export function AccountSettingsMembershipTab() {
@@ -42,7 +43,7 @@ export function AccountSettingsMembershipTab() {
             },
             {
               label: t('account.memberSince', 'Mitglied seit'),
-              value: currentUser?.joined ?? '?',
+              value: currentUser?.joined ? formatDate(currentUser.joined) : '?',
             },
             {
               label: t('common.roles', 'Rollen'),
@@ -54,7 +55,7 @@ export function AccountSettingsMembershipTab() {
             },
             {
               label: t('common.status', 'Status'),
-              value: currentUser?.status ?? '?',
+              value: currentUser?.status ? t(`status.${currentUser.status}`, currentUser.status) : '?',
             },
           ].map(({ label, value }) => (
             <div
