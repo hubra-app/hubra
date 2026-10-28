@@ -49,6 +49,7 @@ export function JoinClubScreen() {
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['club', slug] })
       queryClient.invalidateQueries({ queryKey: ['my-tenants'] })
+      queryClient.invalidateQueries({ queryKey: ['join-requests'] })
       notify(
         'success',
         res.status === 'joined' ? `Du bist jetzt bei ${res.club.name}` : 'Anfrage gesendet',

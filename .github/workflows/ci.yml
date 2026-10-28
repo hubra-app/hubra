@@ -1,11 +1,19 @@
-# Tests and checks on every pull request and on main.
+# Tests and checks on pull requests and on main.
 # Container images are built by images.yml.
+#
+# To save Actions minutes: draft pull requests run nothing (the checks start
+# when the PR is marked ready for review), changes that only touch docs run
+# nothing, and the small checks share one job, since every job is billed
+# rounded up to a full minute.
 name: CI
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths-ignore: ["docs/**", "**/*.md"]
   push:
     branches: [main]
+    paths-ignore: ["docs/**", "**/*.md"]
 
 permissions:
   contents: read
@@ -16,6 +24,7 @@ concurrency:
 
 jobs:
   backend:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -35,43 +44,63 @@ jobs:
       # Tests run on in-memory SQLite (TestingConfig); no services needed.
       - run: pytest -q
 
+  # The three frontends and the deploy config, one after the other. Every
+  # step runs even when an earlier one failed, so one run shows all failures.
   frontends:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        app: [frontend, admin-frontend, sso-frontend]
-    defaults:
-      run:
-        working-directory: app/${{ matrix.app }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: app/${{ matrix.app }}/package-lock.json
-      - run: npm ci
-      - name: Known vulnerabilities (runtime dependencies, high and critical)
-        run: npm audit --omit=dev --audit-level=high
-      - run: npm run lint
-      - run: npm test --if-present
-      - run: npm run build
-      - if: matrix.app == 'frontend'
-        name: Plugin frontends
-        run: npm run typecheck:plugins && npm run build:plugin
-
-  deploy-config:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+          cache-dependency-path: |
+            app/frontend/package-lock.json
+            app/admin-frontend/package-lock.json
+            app/sso-frontend/package-lock.json
+      - name: "frontend"
+        if: ${{ !cancelled() }}
+        working-directory: app/frontend
+        run: |
+          npm ci
+          # Known vulnerabilities (runtime dependencies, high and critical)
+          npm audit --omit=dev --audit-level=high
+          npm run lint
+          npm test --if-present
+          npm run build
+          # Plugin frontends
+          npm run typecheck:plugins
+          npm run build:plugin
+      - name: "admin-frontend"
+        if: ${{ !cancelled() }}
+        working-directory: app/admin-frontend
+        run: |
+          npm ci
+          # Known vulnerabilities (runtime dependencies, high and critical)
+          npm audit --omit=dev --audit-level=high
+          npm run lint
+          npm test --if-present
+          npm run build
+      - name: "sso-frontend"
+        if: ${{ !cancelled() }}
+        working-directory: app/sso-frontend
+        run: |
+          npm ci
+          # Known vulnerabilities (runtime dependencies, high and critical)
+          npm audit --omit=dev --audit-level=high
+          npm run lint
+          npm test --if-present
+          npm run build
       - name: Compose files
+        if: ${{ !cancelled() }}
         run: |
           scripts/init-env.sh
           docker compose config -q
           docker compose -f docker-compose.yml -f docker-compose.traefik.yml config -q
           docker compose -f docker-compose.yml -f modules/mail/docker-compose.mail.yml config -q
       - name: Kustomize and kubeconform
+        if: ${{ !cancelled() }}
         run: |
           set -e
           curl -sSL -o kubeconform.tar.gz https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
@@ -86,10 +115,12 @@ jobs:
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             /tmp/app.yaml /tmp/vollbuild-ch.yaml /tmp/contabo.yaml /tmp/k8s.yaml
       - name: Shell scripts
+        if: ${{ !cancelled() }}
         run: shellcheck deploy/create-secrets.sh scripts/init-env.sh scripts/smoke-test.sh app/deploy/nginx/40-hubra-runtime.sh
 
   # Builds the images and runs both Compose stacks end to end.
   compose-smoke:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4

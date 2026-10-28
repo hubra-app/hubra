@@ -1,20 +1,21 @@
-# Builds the container images and pushes them to GitHub Container Registry:
-#   ghcr.io/<owner>/<repo>/<image>:latest        newest build of main
-#   ghcr.io/<owner>/<repo>/<image>:sha-<commit>  every build of main
-#   ghcr.io/<owner>/<repo>/<image>:main-<timestamp>-<commit>
-#                                                 same build, sortable (Flux image automation)
-#   ghcr.io/<owner>/<repo>/<image>:1.2.3         tags v1.2.3
-# Pull requests build the images without pushing them.
+# Builds the container images and pushes them to GitHub Container Registry.
+# To save Actions minutes it runs only when a GitHub release is published,
+# or by hand (Actions > Images > Run workflow):
+#   ghcr.io/<owner>/<repo>/<image>:1.2.3         release v1.2.3
+#   ghcr.io/<owner>/<repo>/<image>:1.2           release v1.2.3 (not pre-releases)
+#   ghcr.io/<owner>/<repo>/<image>:latest        newest release (not pre-releases)
+#   ghcr.io/<owner>/<repo>/<image>:sha-<commit>  every build, releases and manual runs
+#
+# Publishing a release on GitHub also creates its v* tag, which the GitLab
+# mirror turns into a GitLab Release (docs/gitlab.md).
 #
 # The frontend images carry no host names; they are set at container start
 # (app/deploy/nginx/40-hubra-runtime.sh), so one image fits every install.
 name: Images
 
 on:
-  push:
-    branches: [main]
-    tags: ["v*"]
-  pull_request:
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -66,7 +67,6 @@ jobs:
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
       - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
-        if: github.event_name != 'pull_request'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -76,13 +76,12 @@ jobs:
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         with:
           images: ${{ steps.name.outputs.image }}
+          # latest comes with the semver tags of a release that is not a
+          # pre-release (flavor latest=auto).
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,format=short,enable={{is_default_branch}}
-            type=raw,value=main-{{date 'YYYYMMDDHHmmss'}}-{{sha}},enable={{is_default_branch}}
+            type=sha,format=short
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=ref,event=pr
 
       # Add linux/arm64 to platforms for Raspberry Pi / Ampere clusters
       # (slower: builds under QEMU).
@@ -93,8 +92,7 @@ jobs:
           file: ${{ matrix.dockerfile }}
           target: ${{ matrix.target }}
           platforms: linux/amd64
-          push: ${{ github.event_name != 'pull_request' }}
-          load: ${{ github.event_name == 'pull_request' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.image }}
@@ -104,7 +102,7 @@ jobs:
       # set TRIVY_EXIT_CODE=1 once the images are clean to fail the build.
       - name: Scan the image (Trivy)
         env:
-          REF: ${{ github.event_name == 'pull_request' && steps.build.outputs.imageid || format('{0}@{1}', steps.name.outputs.image, steps.build.outputs.digest) }}
+          REF: ${{ steps.name.outputs.image }}@${{ steps.build.outputs.digest }}
           TRIVY_EXIT_CODE: "0"
         run: |
           docker run --rm \

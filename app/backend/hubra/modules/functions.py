@@ -13,7 +13,6 @@ module = Module(
             "hubra.api.functions.routes",
             "functions_bp",
             "/api/v1/functions",
-            v2=(("/api/v2/tenants/functions", "functions_bp_v2"),),
         ),
     ),
     # Shown as a tab of the Members screen.

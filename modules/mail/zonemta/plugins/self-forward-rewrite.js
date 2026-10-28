@@ -3,13 +3,13 @@
 /**
  * SelfForwardRewrite plugin for ZoneMTA
  *
- * Problem: When mikekeller98@gmail.com sends to mke@vollbuild.ch,
- * which forwards back to mikekeller98@gmail.com, Gmail silently drops
+ * Problem: When someone@gmail.com sends to member@club.ch,
+ * which forwards back to someone@gmail.com, Gmail silently drops
  * the message as a self-loop even though SRS envelope rewriting is correct.
  *
  * Solution: Before delivery, check if the SRS-decoded original sender
  * matches the delivery recipient. If so, rewrite the From: header to
- * the internal @vollbuild.ch address, breaking the self-loop detection.
+ * the internal club address, breaking the self-loop detection.
  *
  * Runs in ZoneMTA sender process, after SRS rewriting has already occurred.
  */
@@ -27,7 +27,7 @@ module.exports.init = (app, done) => {
         if (!envelopeFrom || !recipient) return next();
 
         // Decode SRS to get the original sender
-        // SRS0=xxxx=TT=gmail.com=user@vollbuild.ch → user@gmail.com
+        // SRS0=xxxx=TT=gmail.com=user@club.ch → user@gmail.com
         let originalSender = envelopeFrom;
         const srsMatch = envelopeFrom.match(/SRS\d+=[^=]+=\w+=([^=]+)=([^@]+)@/i);
         if (srsMatch) {

@@ -41,7 +41,7 @@ def superadmin_headers(client, seeded_db):
 
 
 def test_list_global_audit(client, seeded_db, superadmin_headers):
-    """GET /api/v2/manager/tenants/audit returns 200 with pagination."""
+    """GET /api/v1/system/audit returns 200 with pagination."""
     # Create an audit entry
     db.session.add(
         GlobalAuditEntry(
@@ -54,7 +54,7 @@ def test_list_global_audit(client, seeded_db, superadmin_headers):
     )
     db.session.commit()
 
-    resp = client.get("/api/v2/manager/tenants/audit", headers=superadmin_headers)
+    resp = client.get("/api/v1/system/audit", headers=superadmin_headers)
     assert resp.status_code == 200
     data = resp.get_json()
     assert "entries" in data
@@ -63,7 +63,7 @@ def test_list_global_audit(client, seeded_db, superadmin_headers):
 
 
 def test_list_global_audit_filters_by_action(client, seeded_db, superadmin_headers):
-    """GET /api/v2/manager/tenants/audit?action=provision filters entries."""
+    """GET /api/v1/system/audit?action=provision filters entries."""
     db.session.add(
         GlobalAuditEntry(actor_id=1, action="tenant.provision", target_type="Tenant")
     )
@@ -73,7 +73,7 @@ def test_list_global_audit_filters_by_action(client, seeded_db, superadmin_heade
     db.session.commit()
 
     resp = client.get(
-        "/api/v2/manager/tenants/audit?action=provision", headers=superadmin_headers
+        "/api/v1/system/audit?action=provision", headers=superadmin_headers
     )
     assert resp.status_code == 200
     data = resp.get_json()
@@ -85,8 +85,8 @@ def test_list_global_audit_filters_by_action(client, seeded_db, superadmin_heade
 
 
 def test_list_feature_catalog(client, seeded_db, superadmin_headers):
-    """GET /api/v2/manager/features/catalog returns 200."""
-    resp = client.get("/api/v2/manager/features/catalog", headers=superadmin_headers)
+    """GET /api/v1/features/catalog returns 200."""
+    resp = client.get("/api/v1/features/catalog", headers=superadmin_headers)
     assert resp.status_code == 200
     data = resp.get_json()
     assert isinstance(data, list)
@@ -95,7 +95,7 @@ def test_list_feature_catalog(client, seeded_db, superadmin_headers):
 
 
 def test_list_tenant_features(client, seeded_db, superadmin_headers):
-    """GET /api/v2/manager/features/tenants/{id} returns 200."""
+    """GET /api/v1/features/tenants/{id} returns 200."""
     tenant = Tenant(name="Test", slug="test-feat-tenant")
     db.session.add(tenant)
     db.session.flush()
@@ -105,7 +105,7 @@ def test_list_tenant_features(client, seeded_db, superadmin_headers):
     db.session.commit()
 
     resp = client.get(
-        f"/api/v2/manager/features/tenants/{tenant.id}", headers=superadmin_headers
+        f"/api/v1/features/tenants/{tenant.id}", headers=superadmin_headers
     )
     assert resp.status_code == 200
     data = resp.get_json()
@@ -114,13 +114,13 @@ def test_list_tenant_features(client, seeded_db, superadmin_headers):
 
 
 def test_set_tenant_feature(client, seeded_db, superadmin_headers):
-    """PUT /api/v2/manager/features/tenants/{id}/{code} creates grant."""
+    """PUT /api/v1/features/tenants/{id}/{code} creates grant."""
     tenant = Tenant(name="Test2", slug="test-set-feature")
     db.session.add(tenant)
     db.session.commit()
 
     resp = client.put(
-        f"/api/v2/manager/features/tenants/{tenant.id}/inventory",
+        f"/api/v1/features/tenants/{tenant.id}/inventory",
         json={"enabled": True},
         headers=superadmin_headers,
     )
@@ -134,8 +134,8 @@ def test_set_tenant_feature(client, seeded_db, superadmin_headers):
 
 
 def test_platform_metrics(client, seeded_db, superadmin_headers):
-    """GET /api/v2/manager/tenants/metrics returns 200."""
-    resp = client.get("/api/v2/manager/tenants/metrics", headers=superadmin_headers)
+    """GET /api/v1/system/metrics returns 200."""
+    resp = client.get("/api/v1/system/metrics", headers=superadmin_headers)
     assert resp.status_code == 200
     data = resp.get_json()
     assert "total_calls" in data
@@ -148,8 +148,8 @@ def test_platform_metrics(client, seeded_db, superadmin_headers):
 
 
 def test_list_users(client, seeded_db, superadmin_headers):
-    """GET /api/v2/manager/tenants/users returns 200 with pagination."""
-    resp = client.get("/api/v2/manager/tenants/users", headers=superadmin_headers)
+    """GET /api/v1/system/users returns 200 with pagination."""
+    resp = client.get("/api/v1/system/users", headers=superadmin_headers)
     assert resp.status_code == 200
     data = resp.get_json()
     assert "users" in data
@@ -158,9 +158,9 @@ def test_list_users(client, seeded_db, superadmin_headers):
 
 
 def test_list_users_search(client, seeded_db, superadmin_headers):
-    """GET /api/v2/manager/tenants/users?search=admin returns filtered results."""
+    """GET /api/v1/system/users?search=admin returns filtered results."""
     resp = client.get(
-        "/api/v2/manager/tenants/users?search=admin", headers=superadmin_headers
+        "/api/v1/system/users?search=admin", headers=superadmin_headers
     )
     assert resp.status_code == 200
     data = resp.get_json()
@@ -169,11 +169,11 @@ def test_list_users_search(client, seeded_db, superadmin_headers):
 
 
 def test_get_user_detail(client, seeded_db, superadmin_headers):
-    """GET /api/v2/manager/tenants/users/{id} returns user with tenants."""
+    """GET /api/v1/system/users/{id} returns user with tenants."""
     user = seeded_db["user"]
 
     resp = client.get(
-        f"/api/v2/manager/tenants/users/{user.id}", headers=superadmin_headers
+        f"/api/v1/system/users/{user.id}", headers=superadmin_headers
     )
     assert resp.status_code == 200
     data = resp.get_json()
@@ -183,8 +183,8 @@ def test_get_user_detail(client, seeded_db, superadmin_headers):
 
 
 def test_get_user_detail_not_found(client, seeded_db, superadmin_headers):
-    """GET /api/v2/manager/tenants/users/99999 returns 404."""
-    resp = client.get("/api/v2/manager/tenants/users/99999", headers=superadmin_headers)
+    """GET /api/v1/system/users/99999 returns 404."""
+    resp = client.get("/api/v1/system/users/99999", headers=superadmin_headers)
     assert resp.status_code == 404
 
 
@@ -193,11 +193,11 @@ def test_get_user_detail_not_found(client, seeded_db, superadmin_headers):
 
 def test_audit_requires_auth(client, seeded_db):
     """Platform audit endpoint requires authentication."""
-    resp = client.get("/api/v2/manager/tenants/audit")
+    resp = client.get("/api/v1/system/audit")
     assert resp.status_code == 401
 
 
 def test_feature_catalog_requires_auth(client, seeded_db):
     """Feature catalog endpoint requires authentication."""
-    resp = client.get("/api/v2/manager/features/catalog")
+    resp = client.get("/api/v1/features/catalog")
     assert resp.status_code == 401

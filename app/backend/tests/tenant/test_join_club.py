@@ -82,6 +82,19 @@ def test_join_request_files_an_application(client, db):
     assert body["clubs"][0]["membership"] == "pending"
 
 
+def test_my_join_requests_lists_open_requests(client, db):
+    _club(db, "choir-bern", "Choir Bern")
+    _signup(client, "waiting@test.ch")
+    assert client.get("/api/v1/system/join-requests/mine").get_json() == {
+        "requests": []
+    }
+
+    client.post("/api/v1/system/clubs/choir-bern/join")
+    assert client.get("/api/v1/system/join-requests/mine").get_json() == {
+        "requests": [{"slug": "choir-bern", "name": "Choir Bern"}]
+    }
+
+
 def test_join_unknown_or_inactive_club_is_404(client, db):
     _club(db, "gone-club", "Gone Club", status="archived")
     _signup(client, "lost@test.ch")

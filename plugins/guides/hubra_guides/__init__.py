@@ -13,7 +13,6 @@ module = Module(
             "hubra_guides.routes",
             "guides_bp",
             "/api/v1/guides",
-            v2=(("/api/v2/tenants/guides", "guides_bp_v2"),),
         ),
     ),
     # Shown in the inventory item panel; no nav entry.

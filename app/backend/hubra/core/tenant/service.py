@@ -550,7 +550,7 @@ def _seed_tenant(
                 )
 
         tier = MembershipTier(
-            name="Maker",
+            name="Standard",
             price_chf=Decimal(0),
             color="#6366f1",
         )

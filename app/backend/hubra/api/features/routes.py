@@ -3,7 +3,7 @@
 ``modules_bp`` (club admins, ``/api/v1/modules``): list the modules with
 their state, switch them on or off, and edit their settings.
 
-``features_bp`` (platform managers, ``/api/v2/manager/features``): the
+``features_bp`` (platform managers, ``/api/v1/features``): the
 module catalog and per-club grants, including blocking a module for a club.
 """
 

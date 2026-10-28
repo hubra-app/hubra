@@ -15,6 +15,7 @@ import { Modal, Field } from '@/components/ui'
 import type { Member } from '@/types'
 import { inviteMember, updateMember } from '@/api/members'
 import { getLookups } from '@/api/lookups'
+import { roleLabel } from '@/roles'
 
 const STATIC_STATUS = ['active', 'trial', 'inactive', 'suspended'] as const
 
@@ -283,7 +284,7 @@ export function MemberEditModal({
         {mode === 'edit' && (
         <Field label={t('common.roles', 'Rollen')}>
           <MultiSelect
-            data={allRoles}
+            data={allRoles.map((r) => ({ value: r, label: roleLabel(r) }))}
             value={watchedRoles}
             onChange={(v) => form.setFieldValue('roles', v)}
             placeholder={t('members.noRolesSelected', 'Rollen wählen …')}

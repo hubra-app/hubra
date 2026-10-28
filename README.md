@@ -133,3 +133,11 @@ npx playwright test
 ├── docs/                          # All documentation
 └── scripts/                       # Utility scripts (sync)
 ```
+
+## License
+
+Copyright (c) 2026 Mike Keller. All rights reserved.
+
+The source is public so it can be read, but Hubra is not open source.
+Running, self-hosting, modifying or redistributing it needs written
+permission; see [LICENSE](LICENSE).

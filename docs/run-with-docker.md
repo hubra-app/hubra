@@ -1,8 +1,8 @@
 # Running Hubra with Docker Compose
 
 One machine with Docker (Compose v2) is enough. The images come prebuilt from
-GitHub Container Registry, built by `.github/workflows/images.yml` on every
-push to `main`.
+GitHub Container Registry, built by `.github/workflows/images.yml` for every
+GitHub release.
 
 ## 1. Get the code and log in to GHCR
 
@@ -76,8 +76,9 @@ docker compose pull
 docker compose up -d
 ```
 
-Pin a version with `HUBRA_VERSION` in `.env`: `latest` follows `main`,
-`sha-<commit>` is one exact build, and release tags (`v1.2.3`) give `1.2.3`.
+Pin a version with `HUBRA_VERSION` in `.env`: `latest` is the newest
+release, release tags (`v1.2.3`) give `1.2.3`, and `sha-<commit>` is one exact
+build.
 
 ## Real host names (production)
 
@@ -130,7 +131,7 @@ Two options:
 
 `scripts/smoke-test.sh` checks a running stack end to end: the apps answer,
 they send their security headers, a club admin can sign in and the Celery
-processes run. CI runs it on every pull request.
+processes run. CI runs it on every pull request that is ready for review.
 
 ```sh
 docker compose build && docker compose up -d

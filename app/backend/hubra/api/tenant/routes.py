@@ -884,6 +884,35 @@ def club_directory():
     return jsonify({"clubs": clubs, "canJoinDirectly": can_join})
 
 
+@tenant_admin_bp.route("/join-requests/mine", methods=["GET"])
+@jwt_required()
+def my_join_requests():
+    """The clubs the signed-in user asked to join that have not answered yet.
+
+    Join requests are applications inside each club, so this looks in every
+    active club the user is not linked to.
+    """
+    from hubra.core.models.user_tenant import UserTenant
+
+    user = _calling_user()
+    linked = set(
+        db.session.scalars(
+            select(UserTenant.tenant_id).where(UserTenant.user_id == user.id)
+        ).all()
+    )
+    tenants = db.session.scalars(
+        select(Tenant)
+        .where(Tenant.status == "active", Tenant.deleted_at.is_(None))
+        .order_by(Tenant.name)
+    ).all()
+    requests = [
+        {"slug": t.slug, "name": t.name}
+        for t in tenants
+        if t.id not in linked and _membership_in(t.id, user) == "pending"
+    ]
+    return jsonify({"requests": requests})
+
+
 def _club_tiers(tenant_id: int) -> list[dict]:
     """The membership tiers a person can ask for, read in the club."""
     from hubra.core.models.member import MembershipTier

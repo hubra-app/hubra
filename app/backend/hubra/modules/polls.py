@@ -13,7 +13,6 @@ module = Module(
             "hubra.api.polls.routes",
             "polls_bp",
             "/api/v1/polls",
-            v2=(("/api/v2/tenants/polls", "polls_bp_v2"),),
         ),
     ),
     nav=(

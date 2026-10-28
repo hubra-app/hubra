@@ -1,7 +1,6 @@
 """Platform settings for the manager portal.
 
-``platform_bp`` (``/api/v1/manager/platform``, also at
-``/api/v2/manager/platform``): instance-wide settings such as the outbound
+``platform_bp`` (``/api/v1/manager/platform``): instance-wide settings such as the outbound
 mail relay, which need the global permission ``platform.settings``, and the
 diagnostics of the whole instance (system health, the shared mail server,
 the API permission table), which need ``platform.diagnostics`` to look at

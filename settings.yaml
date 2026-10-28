@@ -14,9 +14,9 @@
 admin:
   # First admin account created by `flask seed`. Only used if the account
   # does not yet exist. Change these before the first `flask seed` run.
-  first_name: "Mike"
-  last_name: "Keller"
-  email: "mikekeller98@gmail.com"
+  first_name: "Club"
+  last_name: "Admin"
+  email: "admin@example.com"
 
 limits:
   # 0 = unlimited

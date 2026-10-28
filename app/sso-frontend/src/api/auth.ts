@@ -127,6 +127,11 @@ export async function findClubs(
   return apiFetch(`/system/clubs${qs}`)
 }
 
+/** Clubs the signed-in user asked to join that have not answered yet. */
+export async function getMyJoinRequests(): Promise<{ requests: { slug: string; name: string }[] }> {
+  return apiFetch('/system/join-requests/mine')
+}
+
 export interface ClubPage extends ClubListing {
   /** The membership tiers a person can ask for. */
   tiers: { id: number; name: string }[]

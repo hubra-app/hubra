@@ -151,7 +151,6 @@ club-management-suite/
 │   │   │   │   ├── fields.py    # Field-level permission definitions
 │   │   │   │   ├── permissions.py # Permission decorators
 │   │   │   │   └── utils.py     # API utilities
-│   │   │   ├── apps/            # /api/v2 plane registration (global, manager, tenants)
 │   │   │   ├── core/            # Everything that is not a blueprint
 │   │   │   │   ├── app.py       # Application factory
 │   │   │   │   ├── models/      # SQLAlchemy models

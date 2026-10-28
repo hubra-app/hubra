@@ -13,7 +13,6 @@ module = Module(
             "hubra.api.bindings.routes",
             "bindings_bp",
             "/api/v1/bindings",
-            v2=(("/api/v2/tenants/bindings", "bindings_bp_v2"),),
         ),
     ),
     nav=(
