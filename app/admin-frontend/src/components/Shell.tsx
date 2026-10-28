@@ -12,6 +12,7 @@ import {
   IconClipboardList,
   IconKey,
   IconPuzzle,
+  IconMail,
 } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
 
@@ -37,6 +38,28 @@ function Brand() {
         </Text>
       </div>
     </Group>
+  )
+}
+
+interface NavSection {
+  title: string
+  items: NavItem[]
+}
+
+function NavSections({ sections }: { sections: NavSection[] }) {
+  return (
+    <>
+      {sections
+        .filter((section) => section.items.length > 0)
+        .map((section, i) => (
+          <div key={section.title} style={{ marginTop: i === 0 ? 0 : 18 }}>
+            <Text fz={11} fw={700} tt="uppercase" c="dimmed" px={12} mb={6} lts={0.6}>
+              {section.title}
+            </Text>
+            <NavLinks items={section.items} />
+          </div>
+        ))}
+    </>
   )
 }
 
@@ -89,22 +112,37 @@ export function Shell({ children }: { children: React.ReactNode }) {
     closeMenu()
   }, [location.pathname, closeMenu])
 
-  const navItems: NavItem[] = [
-    { path: '/app/my-tenants', label: 'My Clubs', icon: <IconHome size={22} /> },
-    ...(hasGlobalPermission('tenants.read')
-      ? [{ path: '/app/tenants', label: 'Tenants', icon: <IconBuildingCog size={22} /> }]
-      : []),
-    { path: '/app/requests', label: 'My Requests', icon: <IconClipboardList size={22} /> },
-    { href: `${SSO_URL}/clubs`, label: 'Find a Club', icon: <IconSearch size={22} /> },
-    ...(hasGlobalPermission('audit.read')
-      ? [{ path: '/app/audit', label: 'Audit Log', icon: <IconShieldCheck size={22} /> }]
-      : []),
-    ...(hasGlobalPermission('roles.manage')
-      ? [{ path: '/app/roles', label: 'Roles', icon: <IconKey size={22} /> }]
-      : []),
-    ...(hasGlobalPermission('plugins.manage')
-      ? [{ path: '/app/plugins', label: 'Plugins', icon: <IconPuzzle size={22} /> }]
-      : []),
+  // Two views of one portal: what a club's own admins do, and the platform
+  // itself (global permissions only).
+  const sections: NavSection[] = [
+    {
+      title: 'My clubs',
+      items: [
+        { path: '/app/my-tenants', label: 'My Clubs', icon: <IconHome size={22} /> },
+        { path: '/app/requests', label: 'My Requests', icon: <IconClipboardList size={22} /> },
+        { href: `${SSO_URL}/clubs`, label: 'Find a Club', icon: <IconSearch size={22} /> },
+      ],
+    },
+    {
+      title: 'Platform',
+      items: [
+        ...(hasGlobalPermission('tenants.read')
+          ? [{ path: '/app/tenants', label: 'All Clubs', icon: <IconBuildingCog size={22} /> }]
+          : []),
+        ...(hasGlobalPermission('platform.settings')
+          ? [{ path: '/app/platform/mail', label: 'Mail Relay', icon: <IconMail size={22} /> }]
+          : []),
+        ...(hasGlobalPermission('plugins.manage')
+          ? [{ path: '/app/plugins', label: 'Plugins', icon: <IconPuzzle size={22} /> }]
+          : []),
+        ...(hasGlobalPermission('roles.manage')
+          ? [{ path: '/app/roles', label: 'Roles', icon: <IconKey size={22} /> }]
+          : []),
+        ...(hasGlobalPermission('audit.read')
+          ? [{ path: '/app/audit', label: 'Audit Log', icon: <IconShieldCheck size={22} /> }]
+          : []),
+      ],
+    },
   ]
 
   const logoutButton = (
@@ -147,7 +185,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <Group mb={30} px="sm">
           <Brand />
         </Group>
-        <NavLinks items={navItems} />
+        <NavSections sections={sections} />
         <Group mt="auto" px="sm" style={{ marginTop: 'auto' }}>
           {logoutButton}
         </Group>
@@ -162,7 +200,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         title={<Brand />}
       >
         <Stack gap={0}>
-          <NavLinks items={navItems} />
+          <NavSections sections={sections} />
           <Group mt="lg" px="sm">
             {logoutButton}
           </Group>
