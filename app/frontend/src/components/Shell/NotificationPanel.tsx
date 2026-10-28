@@ -90,7 +90,11 @@ export function NotificationPanel() {
           <Button variant="subtle" size="sm" onClick={markNotifsRead}>
             {t('shell.notif.markAllRead')}
           </Button>
-          <ActionIcon variant="subtle" onClick={() => setNotifPanelOpen(false)}>
+          <ActionIcon
+            variant="subtle"
+            onClick={() => setNotifPanelOpen(false)}
+            aria-label={t('common.close')}
+          >
             <IconX size={16} />
           </ActionIcon>
         </Group>

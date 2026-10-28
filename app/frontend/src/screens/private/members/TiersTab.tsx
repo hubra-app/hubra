@@ -742,6 +742,7 @@ export function TiersTab() {
       )}
 
       <Modal
+        onSubmit={form.onSubmit(saveAdd)}
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={t('tiers.newTitle', 'Neue Mitgliedschaftsstufe')}
@@ -752,7 +753,7 @@ export function TiersTab() {
             </Button>
             <Button
               variant="filled"
-              onClick={() => form.onSubmit(saveAdd)()}
+              type="submit"
               disabled={saving}
             >
               {t('tiers.create', 'Stufe erstellen')}
@@ -763,6 +764,7 @@ export function TiersTab() {
         {tierForm}
       </Modal>
       <Modal
+        onSubmit={form.onSubmit(saveEdit)}
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
         title={t('tiers.editTitle', 'Stufe bearbeiten')}
@@ -774,7 +776,7 @@ export function TiersTab() {
             </Button>
             <Button
               variant="filled"
-              onClick={() => form.onSubmit(saveEdit)()}
+              type="submit"
               disabled={saving}
             >
               {t('common.saveChanges', 'Änderungen speichern')}

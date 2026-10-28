@@ -157,6 +157,7 @@ export function DomainsTab() {
                         color="red"
                         variant="subtle"
                         onClick={() => setDeleteTarget(d)}
+                        aria-label={t('common.delete')}
                       >
                         <IconTrash size={16} />
                       </ActionIcon>
@@ -181,7 +182,11 @@ export function DomainsTab() {
                   </Text>
                   <CopyButton value={txtInstructions} timeout={2000}>
                     {({ copied, copy }) => (
-                      <ActionIcon color={copied ? 'teal' : 'gray'} onClick={copy}>
+                      <ActionIcon
+                        color={copied ? 'teal' : 'gray'}
+                        onClick={copy}
+                        aria-label={copied ? t('common.copied') : t('common.copy')}
+                      >
                         {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
                       </ActionIcon>
                     )}

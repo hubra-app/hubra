@@ -80,7 +80,7 @@ function AuditEntryDetailPanel({
               {t('audit.fullDetails', 'Alle Details zum Ereignis')}
             </div>
           </div>
-          <ActionIcon variant="subtle" onClick={onClose}>
+          <ActionIcon variant="subtle" onClick={onClose} aria-label={t('common.close')}>
             <IconX size={16} />
           </ActionIcon>
         </div>

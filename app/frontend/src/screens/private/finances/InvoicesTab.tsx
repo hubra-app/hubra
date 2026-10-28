@@ -558,6 +558,7 @@ export function InvoicesTab() {
       />
 
       <Modal
+        onSubmit={bulkForm.onSubmit(handleBulk)}
         open={bulkOpen}
         onClose={() => setBulkOpen(false)}
         title={t('finance.bulk.createTitle', 'Rechnungen für mehrere Mitglieder erstellen')}
@@ -568,7 +569,7 @@ export function InvoicesTab() {
             </Button>
             <Button
               variant="filled"
-              onClick={() => bulkForm.onSubmit(handleBulk)()}
+              type="submit"
               disabled={bulkSaving}
             >
               {bulkSaving
@@ -641,6 +642,7 @@ export function InvoicesTab() {
       </Modal>
 
       <Modal
+        onSubmit={singleForm.onSubmit(handleCreate)}
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={t('finance.issueInvoice', 'Rechnung ausstellen')}
@@ -651,7 +653,7 @@ export function InvoicesTab() {
             </Button>
             <Button
               variant="filled"
-              onClick={() => singleForm.onSubmit(handleCreate)()}
+              type="submit"
               disabled={saving}
             >
               {saving

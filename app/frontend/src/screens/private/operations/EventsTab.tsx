@@ -424,6 +424,7 @@ export function EventsTab() {
         getRowKey={(ev) => ev.id}
       />
       <Modal
+        onSubmit={form.onSubmit(saveAdd)}
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={t('events.addEvent')}
@@ -432,7 +433,7 @@ export function EventsTab() {
             <Button variant="default" onClick={() => setAddOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="filled" onClick={() => form.onSubmit(saveAdd)()}>
+            <Button variant="filled" type="submit">
               {t('events.createEvent', 'Anlass erstellen')}
             </Button>
           </>
@@ -441,6 +442,7 @@ export function EventsTab() {
         {eventForm}
       </Modal>
       <Modal
+        onSubmit={form.onSubmit(saveEdit)}
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
         title={t('events.editEvent')}
@@ -450,7 +452,7 @@ export function EventsTab() {
             <Button variant="default" onClick={() => setEditTarget(null)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="filled" onClick={() => form.onSubmit(saveEdit)()}>
+            <Button variant="filled" type="submit">
               {t('common.save')}
             </Button>
           </>

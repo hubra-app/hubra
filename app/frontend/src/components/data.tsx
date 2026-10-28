@@ -25,6 +25,7 @@ import {
 import type { ReactNode } from 'react'
 import { LoadingSpinner, EmptyState } from './feedback'
 import { Pagination } from './layout'
+import { clickableProps } from './hooks'
 
 export interface TabDef {
   id: string
@@ -296,6 +297,7 @@ export function KVTable<T extends { key: string }>({
                                       size="sm"
                                       onClick={() => onEditSave(entry)}
                                       loading={saving}
+                                      aria-label={i18n.t('common.save')}
                                     >
                                       <IconCheck size={12} />
                                     </ActionIcon>
@@ -303,6 +305,7 @@ export function KVTable<T extends { key: string }>({
                                       variant="subtle"
                                       size="sm"
                                       onClick={onEditCancel}
+                                      aria-label={i18n.t('common.cancel')}
                                     >
                                       <IconX size={12} />
                                     </ActionIcon>
@@ -498,7 +501,7 @@ export function DataTable<T>({
   const renderTableRow = (item: T, i: number) => (
     <MantineTable.Tr
       key={getRowKey ? getRowKey(item, i) : i}
-      onClick={onRowClick ? () => onRowClick(item) : undefined}
+      {...clickableProps(onRowClick ? () => onRowClick(item) : undefined)}
       style={{ cursor: onRowClick ? 'pointer' : undefined }}
     >
       {columns.map((col) => {

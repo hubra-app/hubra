@@ -291,6 +291,7 @@ export function CodesScreen() {
 
       {/* Add Modal */}
       <Modal
+        onSubmit={form.onSubmit(saveAdd)}
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={t('codes.add')}
@@ -299,7 +300,7 @@ export function CodesScreen() {
             <Button variant="subtle" onClick={() => setAddOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="default" onClick={() => form.onSubmit(saveAdd)()}>
+            <Button variant="default" type="submit">
               {t('common.save')}
             </Button>
           </>
@@ -347,6 +348,7 @@ export function CodesScreen() {
 
       {/* Edit Modal */}
       <Modal
+        onSubmit={form.onSubmit(saveEdit)}
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
         title={t('codes.edit')}
@@ -355,7 +357,7 @@ export function CodesScreen() {
             <Button variant="subtle" onClick={() => setEditTarget(null)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="default" onClick={() => form.onSubmit(saveEdit)()}>
+            <Button variant="default" type="submit">
               {t('common.save')}
             </Button>
           </>

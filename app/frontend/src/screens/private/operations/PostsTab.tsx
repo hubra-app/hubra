@@ -631,6 +631,7 @@ export function PostsTab() {
       </Paper>
 
       <Modal
+        onSubmit={form.onSubmit(saveAdd)}
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={t('posts.newPost', 'Neuer Beitrag')}
@@ -639,7 +640,7 @@ export function PostsTab() {
             <Button variant="default" onClick={() => setAddOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="filled" onClick={() => form.onSubmit(saveAdd)()}>
+            <Button variant="filled" type="submit">
               {t('posts.publish', 'Veröffentlichen')}
             </Button>
           </>
@@ -648,6 +649,7 @@ export function PostsTab() {
         {postForm}
       </Modal>
       <Modal
+        onSubmit={form.onSubmit(saveEdit)}
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
         title={t('posts.editPost', 'Beitrag bearbeiten')}
@@ -657,7 +659,7 @@ export function PostsTab() {
             <Button variant="default" onClick={() => setEditTarget(null)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="filled" onClick={() => form.onSubmit(saveEdit)()}>
+            <Button variant="filled" type="submit">
               {t('common.save')}
             </Button>
           </>

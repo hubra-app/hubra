@@ -12,6 +12,7 @@ import {
 } from '@mantine/core'
 import type { ReactNode } from 'react'
 import { useT } from '@/locales/i18n'
+import { clickableProps } from './hooks'
 
 export function PageHead({
   title,
@@ -205,7 +206,7 @@ export function CardItem({
     <Paper
       withBorder
       style={{ overflow: 'hidden', cursor: onClick ? 'pointer' : undefined }}
-      onClick={onClick}
+      {...clickableProps(onClick)}
     >
       {colorBar && <div style={{ height: 4, background: colorBar }} />}
       <div style={{ padding: '18px 20px' }}>

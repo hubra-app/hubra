@@ -291,6 +291,7 @@ export function FunctionsTab() {
       )}
 
       <Modal
+        onSubmit={form.onSubmit(saveAdd)}
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={t('common.add', 'Hinzufügen')}
@@ -299,7 +300,7 @@ export function FunctionsTab() {
             <Button variant="default" onClick={() => setAddOpen(false)}>
               {t('common.cancel', 'Abbrechen')}
             </Button>
-            <Button variant="filled" onClick={() => form.onSubmit(saveAdd)()}>
+            <Button variant="filled" type="submit">
               {t('common.create', 'Erstellen')}
             </Button>
           </>
@@ -308,6 +309,7 @@ export function FunctionsTab() {
         {functionForm}
       </Modal>
       <Modal
+        onSubmit={form.onSubmit(saveEdit)}
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
         title={t('common.edit', 'Bearbeiten')}
@@ -317,7 +319,7 @@ export function FunctionsTab() {
             <Button variant="default" onClick={() => setEditTarget(null)}>
               {t('common.cancel', 'Abbrechen')}
             </Button>
-            <Button variant="filled" onClick={() => form.onSubmit(saveEdit)()}>
+            <Button variant="filled" type="submit">
               {t('common.save', 'Speichern')}
             </Button>
           </>

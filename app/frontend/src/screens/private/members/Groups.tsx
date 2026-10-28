@@ -597,6 +597,7 @@ export function GroupsScreen() {
       )}
 
       <Modal
+        onSubmit={form.onSubmit(saveAdd)}
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={t('groups.addGroup')}
@@ -605,7 +606,7 @@ export function GroupsScreen() {
             <Button variant="default" onClick={() => setAddOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="filled" onClick={() => form.onSubmit(saveAdd)()}>
+            <Button variant="filled" type="submit">
               {t('groups.createGroup', 'Gruppe erstellen')}
             </Button>
           </>
@@ -614,6 +615,7 @@ export function GroupsScreen() {
         {groupForm}
       </Modal>
       <Modal
+        onSubmit={form.onSubmit(saveEdit)}
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
         title={t('groups.editGroup')}
@@ -623,7 +625,7 @@ export function GroupsScreen() {
             <Button variant="default" onClick={() => setEditTarget(null)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="filled" onClick={() => form.onSubmit(saveEdit)()}>
+            <Button variant="filled" type="submit">
               {t('common.save')}
             </Button>
           </>

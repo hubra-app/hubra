@@ -373,7 +373,7 @@ function ItemDetailPanel({
               <Button size="sm" variant="subtle" onClick={onEdit}>
                 <IconPencil size={16} />
               </Button>
-              <ActionIcon variant="subtle" onClick={onClose}>
+              <ActionIcon variant="subtle" onClick={onClose} aria-label={t('common.close')}>
                 <IconX size={16} />
               </ActionIcon>
             </div>
