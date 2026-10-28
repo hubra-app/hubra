@@ -1949,7 +1949,10 @@
     },
     "search": {
       "noResults": "No results for \"{{query}}\"",
-      "placeholder": "Search members, invoices, inventory…"
+      "placeholder": "Search members, invoices, inventory…",
+      "pollOpen": "Open",
+      "pollClosed": "Closed",
+      "invoice": "Invoice {{id}} – {{member}}"
     },
     "searchKind": {
       "audit": "Audit",

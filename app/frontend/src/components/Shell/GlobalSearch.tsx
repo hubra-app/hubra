@@ -20,36 +20,38 @@ export function GlobalSearch() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [dropOpen, setDropOpen] = useState(false)
+  // Load what the search looks through only once someone uses it.
+  const [used, setUsed] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { data: memberResp } = useQuery({
     queryKey: ['search-members'],
-    enabled: modules.members === true,
+    enabled: used && modules.members === true,
     queryFn: () => listMembers({ pageSize: 200 }),
     staleTime: 60_000,
   })
   const { data: groupList = [] } = useQuery({
     queryKey: ['search-groups'],
-    enabled: modules.groups === true,
+    enabled: used && modules.groups === true,
     queryFn: () => listGroups(),
     staleTime: 60_000,
   })
   const { data: txList = [] } = useQuery({
     queryKey: ['search-transactions'],
-    enabled: modules.finance === true && hasPermission('finance.transactions.read'),
-    queryFn: () => listTransactions(),
+    enabled: used && modules.finance === true && hasPermission('finance.transactions.read'),
+    queryFn: () => listTransactions({ pageSize: 200 }),
     staleTime: 60_000,
   })
   const { data: inventoryList = [] } = useQuery({
     queryKey: ['search-inventory'],
-    enabled: modules.inventory === true,
+    enabled: used && modules.inventory === true,
     queryFn: () => listInventory(),
     staleTime: 60_000,
   })
   const { data: auditPage } = useQuery({
     queryKey: ['search-audit'],
-    enabled: hasPermission('audit.audit.read'),
+    enabled: used && hasPermission('audit.audit.read'),
     queryFn: () => listAuditLog({ pageSize: 200 }),
     staleTime: 60_000,
   })
@@ -79,7 +81,7 @@ export function GlobalSearch() {
         kind: 'poll',
         id: p.id,
         label: p.question,
-        sub: p.status === 'open' ? 'Open' : 'Closed',
+        sub: p.status === 'open' ? t('shell.search.pollOpen', 'Offen') : t('shell.search.pollClosed', 'Geschlossen'),
         path: '/app/operations/polls',
       }))
     const invoiceResults: SearchResult[] = invoices
@@ -93,8 +95,8 @@ export function GlobalSearch() {
       .map((inv) => ({
         kind: 'invoice',
         id: inv.id,
-        label: `Invoice #${inv.id} - ${inv.member}`,
-        sub: `${inv.status} · CHF ${inv.amount}`,
+        label: t('shell.search.invoice', 'Rechnung {{id}} – {{member}}', { id: inv.id, member: inv.member }),
+        sub: `${t(`status.${inv.status}`, inv.status)} · CHF ${inv.amount}`,
         path: '/app/finance/invoices',
       }))
 
@@ -245,6 +247,7 @@ export function GlobalSearch() {
         value={query}
         onChange={handleQueryChange}
         onFocus={() => {
+          setUsed(true)
           if (results.length > 0) setDropOpen(true)
         }}
         onKeyDown={(e) => {

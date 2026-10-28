@@ -1949,7 +1949,10 @@
     },
     "search": {
       "noResults": "Keine Ergebnisse für «{{query}}»",
-      "placeholder": "Mitglieder, Rechnungen, Inventar suchen …"
+      "placeholder": "Mitglieder, Rechnungen, Inventar suchen …",
+      "pollOpen": "Offen",
+      "pollClosed": "Geschlossen",
+      "invoice": "Rechnung {{id}} – {{member}}"
     },
     "searchKind": {
       "audit": "Protokoll",

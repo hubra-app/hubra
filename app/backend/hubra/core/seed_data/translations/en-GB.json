@@ -2347,5 +2347,8 @@
   "roles.system.Owner": "Owner",
   "roles.system.Admin": "Admin",
   "roles.system.Treasurer": "Treasurer",
-  "roles.system.Member": "Member"
+  "roles.system.Member": "Member",
+  "shell.search.pollOpen": "Open",
+  "shell.search.pollClosed": "Closed",
+  "shell.search.invoice": "Invoice {{id}} – {{member}}"
 }
