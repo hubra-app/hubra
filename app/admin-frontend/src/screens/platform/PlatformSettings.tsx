@@ -13,6 +13,7 @@ import {
 } from '@mantine/core'
 import { PageHead } from '@/components/ui'
 import { useAdmin } from '@/context/AdminContext'
+import { useLang, tr } from '@/lang'
 import {
   getPlatformSettings,
   sendPlatformTestMail,
@@ -33,11 +34,11 @@ const BACKUP = [
 function SourceBadge({ s }: { s: PlatformSetting }) {
   return s.source === 'platform' ? (
     <Badge size="xs" variant="light">
-      Set here
+      {tr('Hier gesetzt', 'Set here')}
     </Badge>
   ) : (
     <Badge size="xs" variant="outline" color="gray">
-      From env
+      {tr('Aus der Umgebung', 'From env')}
     </Badge>
   )
 }
@@ -50,6 +51,7 @@ function SourceBadge({ s }: { s: PlatformSetting }) {
  */
 export function PlatformSettings() {
   const { notify } = useAdmin()
+  const { tr } = useLang()
   const queryClient = useQueryClient()
   const { data: settings = [], isLoading } = useQuery({
     queryKey: ['platform-settings'],
@@ -73,9 +75,9 @@ export function PlatformSettings() {
       const fresh = await updatePlatformSettings(values)
       queryClient.setQueryData(['platform-settings'], fresh)
       setDraft({})
-      notify('success', 'Platform settings saved')
+      notify('success', tr('Plattform-Einstellungen gespeichert', 'Platform settings saved'))
     } catch (err) {
-      notify('error', 'Could not save', err instanceof Error ? err.message : undefined)
+      notify('error', tr('Speichern fehlgeschlagen', 'Could not save'), err instanceof Error ? err.message : undefined)
     } finally {
       setSaving(false)
     }
@@ -85,9 +87,9 @@ export function PlatformSettings() {
     setTesting(true)
     try {
       await sendPlatformTestMail(testTo.trim())
-      notify('success', 'Test mail sent', testTo.trim())
+      notify('success', tr('Testmail gesendet', 'Test mail sent'), testTo.trim())
     } catch (err) {
-      notify('error', 'Test mail failed', err instanceof Error ? err.message : undefined)
+      notify('error', tr('Testmail fehlgeschlagen', 'Test mail failed'), err instanceof Error ? err.message : undefined)
     } finally {
       setTesting(false)
     }
@@ -111,7 +113,7 @@ export function PlatformSettings() {
         setDraft((d) => ({ ...d, [key]: e.currentTarget.value })),
     }
     return s.secret ? (
-      <PasswordInput {...common} placeholder={s.isSet ? '•••••••• (unchanged)' : ''} />
+      <PasswordInput {...common} placeholder={s.isSet ? tr('•••••••• (unverändert)', '•••••••• (unchanged)') : ''} />
     ) : (
       <TextInput {...common} />
     )
@@ -132,28 +134,29 @@ export function PlatformSettings() {
           )
         }
       >
-        Reset to env
+        {tr('Auf Umgebung zurücksetzen', 'Reset to env')}
       </Button>
     )
 
   return (
     <div>
-      <PageHead eyebrow="Platform" title="Platform settings" />
-      <Text size="sm" c="dimmed" mb={20} maw={720}>
-        These apply to every club. Every mail Hubra sends goes through this relay. Sign-in, SSO and
-        platform notices come from the system sender. Club mail comes from the system sender too,
-        with the club&apos;s address as Reply-To, unless the club has its own sender mailbox.
-      </Text>
+      <PageHead
+        title={tr('Plattform-Einstellungen', 'Platform settings')}
+        desc={tr(
+          'Gilt für alle Vereine. Jede Mail von Hubra geht über dieses Relay. Anmeldung, SSO und Plattform-Hinweise kommen vom Systemabsender. Vereinsmails kommen ebenfalls vom Systemabsender, mit der Vereinsadresse als Antwortadresse, ausser der Verein hat ein eigenes Absender-Postfach.',
+          "These apply to every club. Every mail Hubra sends goes through this relay. Sign-in, SSO and platform notices come from the system sender. Club mail comes from the system sender too, with the club's address as Reply-To, unless the club has its own sender mailbox.",
+        )}
+      />
 
       {isLoading ? (
         <Text size="sm" c="dimmed">
-          Loading…
+          {tr('Wird geladen …', 'Loading…')}
         </Text>
       ) : (
         <Stack gap={20} maw={720}>
           <Paper withBorder shadow="sm" radius="lg" p="lg">
             <Group justify="space-between" mb={12}>
-              <Title order={3}>Relay</Title>
+              <Title order={3}>{tr('Mail-Relay', 'Relay')}</Title>
               {resetButton(RELAY)}
             </Group>
             <Stack gap="sm">{RELAY.map(field)}</Stack>
@@ -161,7 +164,7 @@ export function PlatformSettings() {
 
           <Paper withBorder shadow="sm" radius="lg" p="lg">
             <Group justify="space-between" mb={12}>
-              <Title order={3}>System sender</Title>
+              <Title order={3}>{tr('Systemabsender', 'System sender')}</Title>
               {resetButton(SENDER)}
             </Group>
             <Stack gap="sm">{SENDER.map(field)}</Stack>
@@ -169,11 +172,14 @@ export function PlatformSettings() {
 
           <Paper withBorder shadow="sm" radius="lg" p="lg">
             <Group justify="space-between" mb={4}>
-              <Title order={3}>Backup storage</Title>
+              <Title order={3}>{tr('Backup-Speicher', 'Backup storage')}</Title>
               {resetButton(BACKUP)}
             </Group>
             <Text size="xs" c="dimmed" mb={12}>
-              Backups hold the whole database, encrypted with BACKUP_ENCRYPTION_KEY from env.
+              {tr(
+                'Backups enthalten die ganze Datenbank, verschlüsselt mit BACKUP_ENCRYPTION_KEY aus der Umgebung.',
+                'Backups hold the whole database, encrypted with BACKUP_ENCRYPTION_KEY from env.',
+              )}
             </Text>
             <Stack gap="sm">{BACKUP.map(field)}</Stack>
           </Paper>
@@ -184,18 +190,18 @@ export function PlatformSettings() {
               disabled={changed.length === 0}
               onClick={() => save(Object.fromEntries(changed.map((s) => [s.key, draft[s.key]])))}
             >
-              Save
+              {tr('Speichern', 'Save')}
             </Button>
           </Group>
 
           <Paper withBorder shadow="sm" radius="lg" p="lg">
             <Title order={3} mb={12}>
-              Test mail
+              {tr('Testmail', 'Test mail')}
             </Title>
             <Group align="flex-end">
               <TextInput
-                label="Send to"
-                placeholder="you@example.com"
+                label={tr('Senden an', 'Send to')}
+                placeholder={tr('du@beispiel.ch', 'you@example.com')}
                 value={testTo}
                 onChange={(e) => setTestTo(e.currentTarget.value)}
                 style={{ flex: 1, minWidth: 220 }}
@@ -206,12 +212,15 @@ export function PlatformSettings() {
                 disabled={!testTo.includes('@') || changed.length > 0}
                 onClick={sendTest}
               >
-                Send test
+                {tr('Test senden', 'Send test')}
               </Button>
             </Group>
             {changed.length > 0 && (
               <Text size="xs" c="dimmed" mt={6}>
-                Save your changes first; the test uses the saved settings.
+                {tr(
+                  'Speichere zuerst deine Änderungen; der Test nutzt die gespeicherten Einstellungen.',
+                  'Save your changes first; the test uses the saved settings.',
+                )}
               </Text>
             )}
           </Paper>

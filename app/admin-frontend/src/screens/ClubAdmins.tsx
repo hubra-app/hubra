@@ -18,6 +18,7 @@ import {
 import { IconArrowLeft, IconUserMinus, IconUserPlus } from '@tabler/icons-react'
 import { PageHead } from '@/components/ui'
 import { useAdmin } from '@/context/AdminContext'
+import { useLang } from '@/lang'
 import { addClubAdmin, getClubAdmins, removeClubAdmin, type ClubAdmin } from '@/api/tenants'
 
 /**
@@ -27,6 +28,7 @@ import { addClubAdmin, getClubAdmins, removeClubAdmin, type ClubAdmin } from '@/
  */
 export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
   const { notify } = useAdmin()
+  const { tr } = useLang()
   const queryClient = useQueryClient()
   const { data, isLoading, error } = useQuery({
     queryKey: ['club-admins', tenantId],
@@ -42,11 +44,11 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
     setBusy(true)
     try {
       await addClubAdmin(tenantId, email.trim(), level)
-      notify('success', level === 'owner' ? 'Owner added' : 'Admin added', email.trim())
+      notify('success', level === 'owner' ? tr('Inhaber hinzugefügt', 'Owner added') : tr('Admin hinzugefügt', 'Admin added'), email.trim())
       setEmail('')
       await refresh()
     } catch (err) {
-      notify('error', 'Could not add', err instanceof Error ? err.message : undefined)
+      notify('error', tr('Hinzufügen fehlgeschlagen', 'Could not add'), err instanceof Error ? err.message : undefined)
     } finally {
       setBusy(false)
     }
@@ -55,10 +57,10 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
   const remove = async (a: ClubAdmin) => {
     try {
       await removeClubAdmin(tenantId, a.user_id)
-      notify('success', 'Removed', `${a.email} stays a member of the club.`)
+      notify('success', tr('Entfernt', 'Removed'), tr(`${a.email} bleibt Mitglied im Verein.`, `${a.email} stays a member of the club.`))
       await refresh()
     } catch (err) {
-      notify('error', 'Could not remove', err instanceof Error ? err.message : undefined)
+      notify('error', tr('Entfernen fehlgeschlagen', 'Could not remove'), err instanceof Error ? err.message : undefined)
     }
   }
 
@@ -67,20 +69,22 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
   return (
     <Paper withBorder shadow="sm" radius="lg" p="lg" mb={20}>
       <Stack gap={4} mb={12}>
-        <Title order={3}>Admins</Title>
+        <Title order={3}>{tr('Admins', 'Admins')}</Title>
         <Text size="sm" c="dimmed">
-          Admins run the club. Owners can also name and remove other owners; a club always keeps at
-          least one owner. Removing someone here keeps them as a member.
+          {tr(
+            'Admins führen den Verein. Inhaber können zudem weitere Inhaber ernennen und entfernen; ein Verein behält immer mindestens einen. Wer hier entfernt wird, bleibt Mitglied.',
+            'Admins run the club. Owners can also name and remove other owners; a club always keeps at least one owner. Removing someone here keeps them as a member.',
+          )}
         </Text>
       </Stack>
 
       {isLoading ? (
         <Text size="sm" c="dimmed">
-          Loading…
+          {tr('Wird geladen …', 'Loading…')}
         </Text>
       ) : error || !data ? (
         <Text size="sm" c="red">
-          {error instanceof Error ? error.message : 'Could not load the admins.'}
+          {error instanceof Error ? error.message : tr('Die Admins konnten nicht geladen werden.', 'Could not load the admins.')}
         </Text>
       ) : (
         <>
@@ -104,7 +108,7 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
                         variant={a.level === 'owner' ? 'filled' : 'light'}
                         color="violet"
                       >
-                        {a.level === 'owner' ? 'Owner' : 'Admin'}
+                        {a.level === 'owner' ? tr('Inhaber', 'Owner') : tr('Admin', 'Admin')}
                       </Badge>
                     </Table.Td>
                     <Table.Td style={{ textAlign: 'right' }}>
@@ -117,13 +121,13 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
                         title={
                           locked
                             ? owners <= 1
-                              ? 'A club needs at least one owner'
-                              : 'Only an owner can remove an owner'
+                              ? tr('Ein Verein braucht mindestens einen Inhaber', 'A club needs at least one owner')
+                              : tr('Nur Inhaber können Inhaber entfernen', 'Only an owner can remove an owner')
                             : undefined
                         }
                         onClick={() => remove(a)}
                       >
-                        Remove
+                        {tr('Entfernen', 'Remove')}
                       </Button>
                     </Table.Td>
                   </Table.Tr>
@@ -134,9 +138,9 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
 
           <Group align="flex-end" wrap="wrap">
             <TextInput
-              label="Add by email"
-              description="They need a Hubra account. If they are not a member yet, they become one."
-              placeholder="name@example.com"
+              label={tr('Per E-Mail hinzufügen', 'Add by email')}
+              description={tr('Die Person braucht ein Hubra-Konto. Ist sie noch nicht Mitglied, wird sie es.', 'They need a Hubra account. If they are not a member yet, they become one.')}
+              placeholder={tr('name@beispiel.ch', 'name@example.com')}
               value={email}
               onChange={(e) => setEmail(e.currentTarget.value)}
               style={{ flex: 1, minWidth: 240 }}
@@ -146,8 +150,8 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
                 value={level}
                 onChange={(v) => setLevel(v as 'admin' | 'owner')}
                 data={[
-                  { value: 'admin', label: 'Admin' },
-                  { value: 'owner', label: 'Owner' },
+                  { value: 'admin', label: tr('Admin', 'Admin') },
+                  { value: 'owner', label: tr('Inhaber', 'Owner') },
                 ]}
               />
             )}
@@ -157,7 +161,7 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
               disabled={!email.includes('@')}
               onClick={add}
             >
-              Add
+              {tr('Hinzufügen', 'Add')}
             </Button>
           </Group>
         </>
@@ -170,6 +174,7 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
 export function ClubAdmins() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { tr } = useLang()
   const tenantId = Number(id)
   const { data, isLoading } = useQuery({
     queryKey: ['club-admins', tenantId],
@@ -193,9 +198,9 @@ export function ClubAdmins() {
         onClick={() => navigate('/app/my-tenants')}
         mb={8}
       >
-        My Clubs
+        {tr('Meine Vereine', 'My clubs')}
       </Button>
-      <PageHead eyebrow="Club admin" title={data?.club.name ?? 'Club'} />
+      <PageHead eyebrow={tr('Vereinsadmins', 'Club admins')} title={data?.club.name ?? tr('Verein', 'Club')} />
       <ClubAdminsPanel tenantId={tenantId} />
     </div>
   )
