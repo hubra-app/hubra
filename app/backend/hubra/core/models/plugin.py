@@ -54,6 +54,12 @@ class PluginRepository(db.Model):
         DateTime(timezone=True), nullable=True
     )
     error: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    # ``generated`` of the newest index seen: an older one is refused, so a
+    # mirror can't serve a stale (still validly signed) index with old,
+    # vulnerable versions.
+    index_generated: Mapped[str] = mapped_column(
+        String(40), default="", server_default="", nullable=False
+    )
 
 
 class TrustedKey(db.Model):

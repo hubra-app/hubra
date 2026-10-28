@@ -24,21 +24,30 @@ set +u -a
 # shellcheck disable=SC1090
 . "$ENV_FILE"
 set -u +a
-env_out="$(mktemp)"
-trap 'rm -f "$env_out"' EXIT INT TERM
+# Secret values go through files only readable by us, never as command-line
+# arguments (other users on the host could read those in `ps`).
+umask 077
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT INT TERM
+env_out="$tmp/env"
 sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' "$ENV_FILE" | sort -u | grep -vx DATABASE_URL |
   while read -r key; do printf '%s=%s\n' "$key" "$(printenv "$key" || true)"; done > "$env_out"
 echo "DATABASE_URL=postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/$POSTGRES_DB" >> "$env_out"
 apply create secret generic hubra-env --from-env-file="$env_out"
 
 if [ -n "${POSTGRES_HOST:-}" ]; then
+  printf '%s' "$POSTGRES_USER" > "$tmp/username"
+  printf '%s' "$POSTGRES_PASSWORD" > "$tmp/password"
   apply create secret generic hubra-postgres --type=kubernetes.io/basic-auth \
-    --from-literal=username="$POSTGRES_USER" --from-literal=password="$POSTGRES_PASSWORD"
+    --from-file=username="$tmp/username" --from-file=password="$tmp/password"
 fi
 
 if [ -n "${GHCR_USER:-}" ]; then
-  apply create secret docker-registry ghcr-pull --docker-server=ghcr.io \
-    --docker-username="$GHCR_USER" --docker-password="$GHCR_TOKEN"
+  auth="$(printf '%s:%s' "$GHCR_USER" "$GHCR_TOKEN" | base64 | tr -d '\n')"
+  printf '{"auths":{"ghcr.io":{"username":"%s","auth":"%s"}}}' "$GHCR_USER" "$auth" \
+    > "$tmp/dockerconfig"
+  apply create secret generic ghcr-pull --type=kubernetes.io/dockerconfigjson \
+    --from-file=.dockerconfigjson="$tmp/dockerconfig"
 fi
 
 if [ -f "$ROOT/modules/mail/certbot/cloudflare.ini" ]; then

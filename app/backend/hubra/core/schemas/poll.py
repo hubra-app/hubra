@@ -5,6 +5,9 @@ from sqlalchemy import select, func
 
 from hubra.core.extensions import ma, db
 from hubra.core.models.poll import Poll, PollOption, PollVote
+from hubra.core.schemas.counts import cached_count, clear_counts, prime_counts
+
+_VOTE_COUNT = "_vote_count"
 
 
 class PollOptionSchema(ma.SQLAlchemyAutoSchema):
@@ -17,9 +20,12 @@ class PollOptionSchema(ma.SQLAlchemyAutoSchema):
     vote_count = fields.Method("get_vote_count", dump_only=True)
 
     def get_vote_count(self, obj):
-        return (
-            db.session.scalar(select(func.count()).where(PollVote.option_id == obj.id))
-            or 0
+        return cached_count(
+            obj,
+            _VOTE_COUNT,
+            lambda: db.session.scalar(
+                select(func.count()).where(PollVote.option_id == obj.id)
+            ),
         )
 
 
@@ -42,10 +48,26 @@ class PollSchema(ma.SQLAlchemyAutoSchema):
         fields.Integer(), dump_only=True, allow_none=True
     )
 
+    def dump(self, obj, *, many=None):
+        if not (self.many if many is None else many):
+            return super().dump(obj, many=many)
+        polls = list(obj)
+        options = [option for poll in polls for option in poll.options]
+        prime_counts(polls, _VOTE_COUNT, PollVote.poll_id)
+        prime_counts(options, _VOTE_COUNT, PollVote.option_id)
+        try:
+            return super().dump(polls, many=many)
+        finally:
+            clear_counts(polls, _VOTE_COUNT)
+            clear_counts(options, _VOTE_COUNT)
+
     def get_total_votes(self, obj):
-        return (
-            db.session.scalar(select(func.count()).where(PollVote.poll_id == obj.id))
-            or 0
+        return cached_count(
+            obj,
+            _VOTE_COUNT,
+            lambda: db.session.scalar(
+                select(func.count()).where(PollVote.poll_id == obj.id)
+            ),
         )
 
 

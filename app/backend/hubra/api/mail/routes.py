@@ -2013,7 +2013,8 @@ def mail_health():
     try:
         wd.list_users(limit=1)
         return jsonify({"status": "ok", "wildduck": "reachable"}), 200
-    except WildDuckError as exc:
-        return jsonify(
-            {"status": "degraded", "wildduck": "unreachable", "error": str(exc)}
-        ), 200
+    except WildDuckError:
+        # Public endpoint: the error text (host names, API messages) only
+        # goes to the log.
+        current_app.logger.warning("WildDuck health check failed", exc_info=True)
+        return jsonify({"status": "degraded", "wildduck": "unreachable"}), 200

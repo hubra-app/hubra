@@ -3,10 +3,14 @@
 from marshmallow import EXCLUDE, RAISE, fields, validate
 
 from hubra.core.extensions import ma
-from hubra.core.models.event import ClubEvent
+from hubra.core.models.event import ClubEvent, EventRegistration
+from hubra.core.schemas.counts import cached_count, clear_counts, prime_counts
 
 _EVENT_TYPES = ["Workshop", "Social", "Certification", "Meeting"]
 _EVENT_CATEGORIES = ["general", "training", "social", "meeting", "competition"]
+# Registrations that hold a place.
+_ACTIVE_REGISTRATION = ["registered", "approved", "attended"]
+_REGISTRATION_COUNT = "_registration_count"
 
 
 class ClubEventSchema(ma.SQLAlchemyAutoSchema):
@@ -37,25 +41,38 @@ class ClubEventSchema(ma.SQLAlchemyAutoSchema):
     # Registration count
     registration_count = fields.Method("get_registration_count", dump_only=True)
 
+    def dump(self, obj, *, many=None):
+        if not (self.many if many is None else many):
+            return super().dump(obj, many=many)
+        events = list(obj)
+        prime_counts(
+            events,
+            _REGISTRATION_COUNT,
+            EventRegistration.event_id,
+            EventRegistration.status.in_(_ACTIVE_REGISTRATION),
+        )
+        try:
+            return super().dump(events, many=many)
+        finally:
+            clear_counts(events, _REGISTRATION_COUNT)
+
     def get_attendee_ids(self, obj):
         return [m.id for m in (obj.attendees or [])]
 
     def get_registration_count(self, obj):
         from sqlalchemy import func, select
-        from hubra.core.models.event import EventRegistration
 
-        return (
-            db.session.scalar(
+        return cached_count(
+            obj,
+            _REGISTRATION_COUNT,
+            lambda: db.session.scalar(
                 select(func.count())
                 .select_from(EventRegistration)
                 .where(
                     EventRegistration.event_id == obj.id,
-                    EventRegistration.status.in_(
-                        ["registered", "approved", "attended"]
-                    ),
+                    EventRegistration.status.in_(_ACTIVE_REGISTRATION),
                 )
-            )
-            or 0
+            ),
         )
 
 

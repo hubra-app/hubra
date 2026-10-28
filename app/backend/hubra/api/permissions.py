@@ -30,6 +30,7 @@ from flask import g, jsonify, request
 from flask_jwt_extended import current_user, verify_jwt_in_request
 from sqlalchemy import select
 
+from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 from hubra.core.redis_client import get_redis_client as _get_redis_client
 from hubra.core.redis_client import mark_redis_down as _mark_redis_down
@@ -173,6 +174,40 @@ def invalidate_member_permissions(member_id: int) -> None:
 def member_is_admin(member) -> bool:
     """Return True if any of the member's roles has ``is_admin=True``."""
     return any(r.is_admin for r in (getattr(member, "roles", None) or []))
+
+
+def check_grant(actor, *, given=(), taken=(), keys=()) -> None:
+    """403 unless *actor* may give the roles *given* (and permission *keys*)
+    and take the roles *taken*.
+
+    Only an owner gives or takes the Owner role, only an admin an admin role,
+    and anyone else gives only permissions they hold themselves, so a
+    ``members.update`` or ``roles.set_permissions`` holder can't climb.
+    ``actor`` None is the system itself.
+    """
+    if actor is None:
+        return
+    held = getattr(actor, "roles", None) or []
+    is_owner = any(r.is_owner for r in held)
+    is_admin = member_is_admin(actor)
+    for role in (*given, *taken):
+        if role.is_owner and not is_owner:
+            raise_error(403, "OWNER_ONLY", "Only an owner can give or take the Owner role")
+        if role.is_admin and not is_admin:
+            raise_error(403, "ADMIN_ONLY", "Only an admin can give or take an admin role")
+    if is_admin:
+        return
+    wanted = set(keys)
+    for role in given:
+        wanted |= _get_role_permission_keys(role.id)
+    missing = wanted - _get_member_permission_keys(actor)
+    if missing:
+        raise_error(
+            403,
+            "BEYOND_OWN_PERMISSIONS",
+            "You can only give permissions you have yourself: "
+            + ", ".join(sorted(missing)[:5]),
+        )
 
 
 def invalidate_role_permissions(role_id: int) -> None:

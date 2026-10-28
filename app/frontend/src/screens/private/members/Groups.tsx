@@ -190,16 +190,18 @@ export function GroupsScreen() {
     queryKey: ['groups'],
     queryFn: () => listGroups(),
   })
+  const [addOpen, setAddOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState<Group | null>(null)
+  // Only the lead picker in the group form lists all members.
   const { data: membersData } = useQuery({
     queryKey: ['members'],
     queryFn: () => listMembers({ pageSize: 500 }),
+    enabled: addOpen || editTarget !== null,
   })
   const members = useMemo(
     () => (membersData?.members ?? []).map((m) => ({ id: m.id, name: m.name })),
     [membersData],
   )
-  const [addOpen, setAddOpen] = useState(false)
-  const [editTarget, setEditTarget] = useState<Group | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Group | null>(null)
   const [detailGroup, setDetailGroup] = useState<Group | null>(null)
 

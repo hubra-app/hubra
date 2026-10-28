@@ -1,0 +1,49 @@
+# Nothing reaches a pod in this namespace unless a policy below lets it in
+# (k3s enforces NetworkPolicy out of the box). Traefik (kube-system) reaches
+# the web pods; only the backend image reaches Postgres and Redis. Outgoing
+# traffic stays open: the backend sends mail, fetches plugins and calls
+# WildDuck. See kustomization.yaml for when to use it.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: web-from-ingress
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        # plugins: the marketplace some clusters add (clusters/contabo).
+        values: [backend, frontend, admin-frontend, sso-frontend, plugins]
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: data-from-backend
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values: [postgres, redis]
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values: [backend, celery-worker, celery-beat]

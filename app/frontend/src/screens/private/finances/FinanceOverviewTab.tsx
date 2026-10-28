@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Table, Paper, Group, Text, Button, SimpleGrid } from '@mantine/core'
 import { useT } from '@/locales/i18n'
-import { useNav, useData } from '@/context/AppContext'
+import { useNav, useLoadData } from '@/context/AppContext'
 import { StatTile } from '@/components/ui'
 import { getFinanceOverview, listTransactions } from '@/api/finance'
 import { formatCHF, formatCHFWhole } from '@/format'
@@ -9,7 +9,7 @@ import { formatCHF, formatCHFWhole } from '@/format'
 /* ── Finance Overview ────────────────────────── */
 export function FinanceOverviewTab() {
   const { go } = useNav()
-  const { invoices } = useData()
+  const { invoices } = useLoadData('invoices')
   const { t, i18n } = useT()
   const { data: overview } = useQuery({
     queryKey: ['finance-overview'],

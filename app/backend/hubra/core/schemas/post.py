@@ -7,6 +7,9 @@ from sqlalchemy import func, select
 
 from hubra.core.extensions import db, ma
 from hubra.core.models.post import Post, PostComment
+from hubra.core.schemas.counts import cached_count, clear_counts, prime_counts
+
+_COMMENT_COUNT = "_comment_count"
 
 
 class PostCommentSchema(ma.SQLAlchemyAutoSchema):
@@ -41,6 +44,16 @@ class PostSchema(ma.SQLAlchemyAutoSchema):
     author_name = fields.Method("get_author_name", dump_only=True)
     author_avatar_color = fields.Method("get_author_avatar_color", dump_only=True)
 
+    def dump(self, obj, *, many=None):
+        if not (self.many if many is None else many):
+            return super().dump(obj, many=many)
+        posts = list(obj)
+        prime_counts(posts, _COMMENT_COUNT, PostComment.post_id)
+        try:
+            return super().dump(posts, many=many)
+        finally:
+            clear_counts(posts, _COMMENT_COUNT)
+
     def get_like_count(self, obj):
         return len(obj.likes)
 
@@ -48,9 +61,12 @@ class PostSchema(ma.SQLAlchemyAutoSchema):
         return [like.member_id for like in obj.likes]
 
     def get_comment_count(self, obj):
-        return (
-            db.session.scalar(select(func.count()).where(PostComment.post_id == obj.id))
-            or 0
+        return cached_count(
+            obj,
+            _COMMENT_COUNT,
+            lambda: db.session.scalar(
+                select(func.count()).where(PostComment.post_id == obj.id)
+            ),
         )
 
     def get_author_name(self, obj):

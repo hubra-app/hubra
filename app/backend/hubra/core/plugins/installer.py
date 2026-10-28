@@ -702,6 +702,12 @@ def add_repository(url: str, key_id: str) -> object:
     return repo
 
 
+def _index_time(value) -> datetime:
+    """``generated`` of a signed index (ISO 8601, UTC)."""
+    when = datetime.fromisoformat(str(value))
+    return when if when.tzinfo else when.replace(tzinfo=timezone.utc)
+
+
 def fetch_repository(repo, force: bool = False) -> dict:
     """The repository's index, verified with the key pinned when it was added."""
     from .trust import verify_index
@@ -712,10 +718,17 @@ def fetch_repository(repo, force: bool = False) -> dict:
     try:
         doc = _get_index(repo.url)
         verify_index(doc, load_public(repo.public_key))
+        generated = _index_time(doc.get("generated"))
+        if repo.index_generated and generated < _index_time(repo.index_generated):
+            raise InstallError(
+                f"the index is older ({doc.get('generated')}) than one seen "
+                f"before ({repo.index_generated}); refusing a rollback"
+            )
     except (InstallError, ValueError, TypeError) as exc:
         repo.error, repo.fetched_at = str(exc)[:500], _now()
         db.session.commit()
         raise InstallError(f"{repo.name}: {exc}") from exc
+    repo.index_generated = str(doc.get("generated"))
     repo.error, repo.fetched_at = "", _now()
     db.session.commit()
     _index_cache[repo.url] = (time.time(), doc, repo.key_id)

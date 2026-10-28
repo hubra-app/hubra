@@ -74,23 +74,26 @@ class DashboardService:
             or 0
         )
 
-        growth: list[int] = []
+        month_ends: list[date] = []
         for offset in range(11, -1, -1):
             month_num = today.month - offset
             year_num = today.year
             while month_num <= 0:
                 month_num += 12
                 year_num -= 1
-            last_day = _last_day_of_month(year_num, month_num)
-            count = (
-                db.session.scalar(
-                    select(func.count(Member.id))
-                    .where(Member.joined <= last_day)
-                    .where(Member.archived_at.is_(None))
-                )
-                or 0
-            )
-            growth.append(count)
+            month_ends.append(_last_day_of_month(year_num, month_num))
+        # Members per month end, all twelve months in one query.
+        growth: list[int] = [
+            count or 0
+            for count in db.session.execute(
+                select(
+                    *(
+                        func.count(Member.id).filter(Member.joined <= last_day)
+                        for last_day in month_ends
+                    )
+                ).where(Member.archived_at.is_(None))
+            ).one()
+        ]
 
         return {
             "stats": {

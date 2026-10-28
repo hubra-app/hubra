@@ -59,39 +59,46 @@ def get_languages():
 
 @i18n_bp.get("/<string:locale>")
 def get_i18n(locale: str):
-    as_list = request.args.get("list", "0")
+    if request.args.get("list", "0") == "1":
+        # The editor's view (defaults, usage, flags) is for translators only;
+        # the plain dictionary below stays public for the sign-in pages.
+        return _translation_rows(locale)
 
     etag = get_etag(locale)
     if_none_match = request.headers.get("If-None-Match")
     if etag and if_none_match and etag == if_none_match:
         return Response(status=304)
 
-    if as_list == "1":
-        rows = get_translations(locale)
-        threshold = _get_stale_threshold_seconds()
-        data = [
-            {
-                "id": r.id,
-                "locale": r.locale,
-                "key": r.key,
-                "value": r.value,
-                "default_value": r.default_value,
-                "needs_attention": r.needs_attention,
-                "is_missing": r.is_missing,
-                "is_stale": compute_is_stale(r.last_used_at, threshold),
-                "last_used_at": r.last_used_at.isoformat() if r.last_used_at else None,
-                "updated_at": r.updated_at.isoformat() if r.updated_at else None,
-                "alias_for": r.alias_for,
-            }
-            for r in rows
-        ]
-    else:
-        data = get_translations_dict(locale)  # type: ignore[no-redef, assignment]
+    data = get_translations_dict(locale)
 
     resp = jsonify(data)
     if etag:
         resp.headers["ETag"] = etag
     return resp, 200
+
+
+@jwt_required()
+@permission_required("i18n", "write", "Write translations")
+def _translation_rows(locale: str):
+    rows = get_translations(locale)
+    threshold = _get_stale_threshold_seconds()
+    data = [
+        {
+            "id": r.id,
+            "locale": r.locale,
+            "key": r.key,
+            "value": r.value,
+            "default_value": r.default_value,
+            "needs_attention": r.needs_attention,
+            "is_missing": r.is_missing,
+            "is_stale": compute_is_stale(r.last_used_at, threshold),
+            "last_used_at": r.last_used_at.isoformat() if r.last_used_at else None,
+            "updated_at": r.updated_at.isoformat() if r.updated_at else None,
+            "alias_for": r.alias_for,
+        }
+        for r in rows
+    ]
+    return jsonify(data), 200
 
 
 # ── PATCH /i18n/<locale> ────────────────────────────────────────────────────
@@ -278,6 +285,8 @@ _export_query_schema = ExportQuerySchema()
 
 
 @i18n_bp.get("/<string:locale>/export")
+@jwt_required()
+@permission_required("i18n", "write", "Write translations")
 def export_i18n(locale: str):
     try:
         query = _export_query_schema.load(request.args)

@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { TextInput, Button, Group, Badge, Select, ActionIcon } from '@mantine/core'
 import { useT } from '@/locales/i18n'
 import { IconExternalLink, IconPlus } from '@tabler/icons-react'
-import { useToast, useNav, useData, useAuth } from '@/context/AppContext'
+import { useToast, useNav, useLoadData, useAuth } from '@/context/AppContext'
 import {
   Modal,
   Field,
@@ -27,7 +27,7 @@ import { formatCHF } from '@/format'
 export function TransactionsTab() {
   const { notify } = useToast()
   const { go, goInvoice } = useNav()
-  const { invoices } = useData()
+  const { invoices } = useLoadData('invoices')
   const { hasPermission } = useAuth()
   const { t } = useT()
   const queryClient = useQueryClient()
