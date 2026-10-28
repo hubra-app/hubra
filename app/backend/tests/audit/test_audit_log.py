@@ -134,3 +134,15 @@ def test_pagination(client, db, auth_headers, seeded_db):
     assert body["totalPages"] == 2
     assert body["page"] == 1
     assert body["pageSize"] == 2
+
+
+def test_long_label_is_shortened_to_fit(db, seeded_db):
+    """A label built from many addresses can outgrow the column; Postgres
+    would refuse the entry and fail the change it records."""
+    from hubra.core.models.audit import AuditEntry
+
+    log_audit(seeded_db["admin"].id, "set_forwarding", "Mail", 1, "a@x.ch → " + "b" * 400)
+    db.session.commit()
+
+    entry = db.session.query(AuditEntry).filter_by(action="set_forwarding").one()
+    assert len(entry.target_label) == 255 and entry.target_label.endswith("…")
