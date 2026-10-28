@@ -860,6 +860,7 @@
     "searchInvoices": "Rechnungen suchen …",
     "searchTransactions": "Buchungen suchen …",
     "selectCategory": "Kategorie wählen …",
+    "noCategoriesHint": "Lege zuerst unter Finanzen → Kategorien eine Kategorie an.",
     "sendReminder": "Erinnerung senden",
     "status": "Status",
     "tierHint": "Leer lassen, um allen aktiven Mitgliedern eine Rechnung zu stellen",

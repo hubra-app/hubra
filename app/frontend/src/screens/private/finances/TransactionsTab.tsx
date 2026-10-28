@@ -19,6 +19,7 @@ import {
   createTransaction,
   updateTransaction,
   deleteTransaction,
+  listTxCategories,
 } from '@/api/finance'
 import { formatCHF } from '@/format'
 
@@ -42,6 +43,11 @@ export function TransactionsTab() {
     queryKey: ['transactions'],
     queryFn: () => listTransactions(),
   })
+  const { data: categories = [] } = useQuery({
+    queryKey: ['transaction-categories'],
+    queryFn: () => listTxCategories(),
+    enabled: canCreate,
+  })
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('All')
   const [statusFilter, setStatusFilter] = useState('All')
@@ -55,7 +61,8 @@ export function TransactionsTab() {
   const [addAmount, setAddAmount] = useState('')
   const [addType, setAddType] = useState<'income' | 'expense'>('expense')
   const [addDate, setAddDate] = useState(new Date().toISOString().slice(0, 10))
-  const [addMethod, setAddMethod] = useState('cash')
+  const [addMethod, setAddMethod] = useState('Cash')
+  const [addCategory, setAddCategory] = useState<string | null>(null)
   const [addSaving, setAddSaving] = useState(false)
 
   const filtered = transactions.filter((t) => {
@@ -139,21 +146,28 @@ export function TransactionsTab() {
     setAddAmount('')
     setAddType('expense')
     setAddDate(new Date().toISOString().slice(0, 10))
-    setAddMethod('cash')
+    setAddMethod('Cash')
+    setAddCategory(categories.find((c) => c.isDefault)?.id ?? null)
     setAddOpen(true)
   }
 
+  // The backend takes a positive amount; the type says whether it is in or out.
+  const addAmountValue = Math.abs(Number(addAmount))
+  const addValid =
+    !!addDesc.trim() &&
+    Number.isFinite(addAmountValue) &&
+    addAmountValue > 0 &&
+    !!addCategory
+
   const handleAdd = async () => {
-    if (!addDesc.trim() || !addAmount.trim()) return
+    if (!addValid || !addCategory) return
     setAddSaving(true)
     try {
       await createTransaction({
         date: addDate,
         description: addDesc.trim(),
-        amount:
-          addType === 'expense'
-            ? -Math.abs(Number(addAmount))
-            : Math.abs(Number(addAmount)),
+        categoryId: addCategory,
+        amount: addAmountValue,
         method: addMethod,
         type: addType,
       })
@@ -480,7 +494,7 @@ export function TransactionsTab() {
             <Button
               variant="filled"
               onClick={handleAdd}
-              disabled={addSaving || !addDesc.trim() || !addAmount.trim()}
+              disabled={addSaving || !addValid}
             >
               {addSaving ? t('common.saving', 'Wird gespeichert …') : t('common.save')}
             </Button>
@@ -503,6 +517,7 @@ export function TransactionsTab() {
               <TextInput
                 type="number"
                 step="0.05"
+                min="0"
                 value={addAmount}
                 onChange={(e) => setAddAmount(e.target.value)}
                 placeholder="50.00"
@@ -532,17 +547,35 @@ export function TransactionsTab() {
             <Field label={t('common.method', 'Methode')}>
               <Select
                 data={[
-                  { value: 'cash', label: t('finance.methods.cash', 'Bar') },
-                  { value: 'bank', label: t('finance.methods.bank', 'Bank') },
-                  { value: 'card', label: t('finance.methods.card', 'Karte') },
-                  { value: 'twint', label: 'TWINT' },
-                  { value: 'other', label: t('finance.methods.other', 'Andere') },
+                  { value: 'Cash', label: t('finance.methods.cash', 'Bar') },
+                  { value: 'IBAN', label: t('finance.methods.bank', 'Bank') },
+                  { value: 'Card', label: t('finance.methods.card', 'Karte') },
+                  { value: 'Twint', label: 'TWINT' },
                 ]}
                 value={addMethod}
-                onChange={(v) => setAddMethod(v ?? 'cash')}
+                onChange={(v) => setAddMethod(v ?? 'Cash')}
               />
             </Field>
           </div>
+          <Field
+            label={t('finance.categoryLabel', 'Kategorie')}
+            hint={
+              categories.length === 0
+                ? t(
+                    'finance.noCategoriesHint',
+                    'Lege zuerst unter Finanzen → Kategorien eine Kategorie an.',
+                  )
+                : undefined
+            }
+          >
+            <Select
+              data={categories.map((c) => ({ value: c.id, label: c.name }))}
+              value={addCategory}
+              onChange={setAddCategory}
+              placeholder={t('finance.selectCategory', 'Kategorie wählen …')}
+              searchable
+            />
+          </Field>
         </div>
       </Modal>
     </div>
