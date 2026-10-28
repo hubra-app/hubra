@@ -49,6 +49,7 @@ import {
   type UpdateMode,
 } from '@/api/plugins'
 import { tr } from '@/lang'
+import { PLUGIN_DE } from '@/moduleLabels'
 
 const TRUST: Record<string, { color: string; label: () => string }> = {
   bundled: { color: 'green', label: () => tr('Mit Hubra geliefert', 'Shipped with Hubra') },
@@ -164,12 +165,17 @@ function PluginsView() {
       setStaged(await uploadPlugin(file))
     })
 
-  const plugins = (data?.plugins ?? []).filter((p) => {
-    if (filter === 'installed' && !p.installed) return false
-    if (filter === 'updates' && !p.update && !p.withdrawn) return false
-    const q = search.trim().toLowerCase()
-    return !q || `${p.name} ${p.id} ${p.description} ${p.tags.join(' ')}`.toLowerCase().includes(q)
-  })
+  const plugins = (data?.plugins ?? [])
+    .map((p) => {
+      const de = PLUGIN_DE[p.id]
+      return de ? { ...p, name: tr(de[0], p.name), description: tr(de[1], p.description) } : p
+    })
+    .filter((p) => {
+      if (filter === 'installed' && !p.installed) return false
+      if (filter === 'updates' && !p.update && !p.withdrawn) return false
+      const q = search.trim().toLowerCase()
+      return !q || `${p.name} ${p.id} ${p.description} ${p.tags.join(' ')}`.toLowerCase().includes(q)
+    })
 
   return (
     <Stack gap="md">
