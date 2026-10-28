@@ -6,6 +6,8 @@ export interface PermissionsResponse {
   permissions: string[]
   global_permissions?: string[]
   global_roles?: string[]
+  /** Club the session is scoped to (set after login or switch-tenant). */
+  tenant_slug?: string | null
   impersonation: {
     is_impersonating: boolean
     impersonator_id: number
@@ -16,11 +18,12 @@ export interface PermissionsResponse {
   } | null
 }
 
+// Shape of AuthService.find_user_tenants on the backend.
 export interface TenantChoice {
-  slug: string
-  name: string
-  plan: string
-  status: string
+  tenant_id: number
+  tenant_slug: string
+  tenant_name: string
+  member_id: number | null
 }
 
 interface RawAuthResponse {

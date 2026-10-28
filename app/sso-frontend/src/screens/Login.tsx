@@ -23,7 +23,7 @@ import { useNavigate } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import { getRememberedEmail } from '@hubra/api-client'
 import * as authApi from '@/api/auth'
-import { determineDefaultRedirect } from '@/context/SsoContext'
+import { clubAppUrl, determineDefaultRedirect } from '@/context/SsoContext'
 
 const schema = z.object({
   email: z.string().email('Invalid email'),
@@ -67,7 +67,9 @@ export function LoginScreen() {
         window.location.assign(target)
         return
       }
-      const target = redirectTarget || determineDefaultRedirect(isSuperadmin)
+      const target =
+        redirectTarget ||
+        (res.tenant_slug ? clubAppUrl(res.tenant_slug) : determineDefaultRedirect(isSuperadmin))
       window.location.assign(target)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Login failed'
@@ -83,7 +85,7 @@ export function LoginScreen() {
     setError('')
     try {
       await authApi.switchTenant(slug)
-      window.location.assign(redirectTarget || determineDefaultRedirect(isSuperadmin))
+      window.location.assign(redirectTarget || clubAppUrl(slug))
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Tenant switch failed'
       setError(msg)
@@ -139,23 +141,20 @@ export function LoginScreen() {
           <Stack gap="sm">
             {tenants.map((t) => (
               <Paper
-                key={t.slug}
+                key={t.tenant_slug}
                 withBorder
                 radius="md"
                 p="md"
-                onClick={() => handleSelectTenant(t.slug)}
+                onClick={() => handleSelectTenant(t.tenant_slug)}
                 style={{ cursor: 'pointer' }}
               >
                 <Group justify="space-between">
                   <Box>
-                    <Text fw={600}>{t.name}</Text>
+                    <Text fw={600}>{t.tenant_name}</Text>
                     <Text fz="xs" c="dimmed">
-                      {t.slug} · {t.plan}
+                      {t.tenant_slug}
                     </Text>
                   </Box>
-                  <Text fz="xs" c="dimmed">
-                    {t.status}
-                  </Text>
                 </Group>
               </Paper>
             ))}

@@ -153,3 +153,59 @@ def test_switch_tenant_without_auth_returns_401(client, tenant_pair):
         json={"tenantSlug": "tenant-a"},
     )
     assert resp.status_code == 401
+
+
+def test_login_with_tenant_choice_can_switch_tenant(client, tenant_pair, db):
+    """A user whose memberships live only in club schemas gets the tenant
+    picker, and the session that comes with it lets switch-tenant run.
+
+    In PostgreSQL the Member rows sit in each club's schema, so login finds no
+    member in the public schema; SQLite tests model that with a user that has
+    UserTenant links but no Member row.
+    """
+    from hubra.core.models.user import User
+    from hubra.core.models.user_tenant import UserTenant
+
+    user = User(
+        email="picker@test.ch",
+        first_name="Pick",
+        last_name="Er",
+        private_email_verified=True,
+    )
+    user.set_password("password123")
+    db.session.add(user)
+    db.session.flush()
+    db.session.add(UserTenant(user_id=user.id, tenant_id=tenant_pair["tenant_b"].id))
+    db.session.commit()
+
+    resp = client.post(
+        "/api/v1/auth/login",
+        json={"email": "picker@test.ch", "password": "password123"},
+    )
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["requiresTenantSelection"] is True
+    assert [t["tenant_slug"] for t in data["tenants"]] == ["tenant-b"]
+
+    resp = client.post(
+        "/api/v1/auth/switch-tenant",
+        json={"tenantSlug": "tenant-b"},
+    )
+    assert resp.status_code != 401
+
+
+def test_tenant_resolved_from_jwt_claim_without_header(client, tenant_pair):
+    """After switch-tenant the token's tenant_slug picks the club; the SPAs
+    send no X-Tenant-Slug header."""
+    from flask import g
+
+    client.post(
+        "/api/v1/auth/login",
+        json={"email": "user@test.ch", "password": "password123"},
+    )
+    client.post("/api/v1/auth/switch-tenant", json={"tenantSlug": "tenant-b"})
+
+    with client:
+        client.get("/api/v1/account/permissions")
+        assert g.tenant is not None
+        assert g.tenant.slug == "tenant-b"

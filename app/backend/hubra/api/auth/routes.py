@@ -192,10 +192,9 @@ def login():
                 "NO_MEMBERSHIP",
                 "This account is not a member of this club",
             )
+        # A user-level session in both cases: the tenant picker then calls
+        # /auth/switch-tenant, which needs this token to know the user.
         tenants = AuthService.find_user_tenants(user.id)
-        if tenants:
-            return jsonify({"requiresTenantSelection": True, "tenants": tenants}), 200
-
         additional_claims = {"user_id": user.id}
         access_token = create_access_token(
             identity=f"user:{user.id}",
@@ -205,13 +204,12 @@ def login():
             identity=f"user:{user.id}",
             additional_claims=additional_claims,
         )
-        response = make_response(
-            jsonify(
-                noTenant=True,
-                user={"email": user.email, "name": user.name},
-            ),
-            200,
-        )
+        if tenants:
+            body = {"requiresTenantSelection": True, "tenants": tenants}
+        else:
+            body = {"noTenant": True}
+        body["user"] = {"email": user.email, "name": user.name}
+        response = make_response(jsonify(body), 200)
         set_access_cookies(response, access_token)
         refresh_max_age = 30 * 24 * 3600 if keep_signed_in else 24 * 3600
         set_refresh_cookies(response, refresh_token, max_age=refresh_max_age)
@@ -670,6 +668,7 @@ def get_my_permissions():
                 "impersonation": impersonation,
                 "global_permissions": global_perms,
                 "global_roles": global_roles,
+                "tenant_slug": claims.get("tenant_slug"),
             }
         ), 200
     roles = getattr(member, "roles", None)
@@ -682,6 +681,7 @@ def get_my_permissions():
                 "impersonation": impersonation,
                 "global_permissions": global_perms,
                 "global_roles": global_roles,
+                "tenant_slug": claims.get("tenant_slug"),
             }
         ), 200
     keys = _get_member_permission_keys(member)
@@ -693,6 +693,7 @@ def get_my_permissions():
             "impersonation": impersonation,
             "global_permissions": global_perms,
             "global_roles": global_roles,
+            "tenant_slug": claims.get("tenant_slug"),
         }
     ), 200
 

@@ -36,6 +36,9 @@ function validateRedirect(raw: string | null): string {
     if (url.protocol === 'https:') {
       if (url.hostname.endsWith('.vollbuild.ch')) return raw
     }
+    // The configured app origins (set at container start for other domains).
+    const allowed = [DEFAULT_COS_URL, DEFAULT_MANAGE_URL].map((u) => new URL(u).origin)
+    if (allowed.includes(url.origin)) return raw
   } catch {
     /* fall through */
   }
@@ -45,6 +48,12 @@ function validateRedirect(raw: string | null): string {
 // eslint-disable-next-line react-refresh/only-export-components
 export function determineDefaultRedirect(isSuperadmin: boolean): string {
   return isSuperadmin ? DEFAULT_MANAGE_URL : DEFAULT_COS_URL
+}
+
+/** Dashboard of one club in the club app (routes are /:tenantSlug/app/*). */
+// eslint-disable-next-line react-refresh/only-export-components
+export function clubAppUrl(tenantSlug: string): string {
+  return `${DEFAULT_COS_URL}/${encodeURIComponent(tenantSlug)}/app/dashboard`
 }
 
 export function SsoProvider({ children }: { children: ReactNode }) {
@@ -95,7 +104,11 @@ export function SsoProvider({ children }: { children: ReactNode }) {
           return
         }
 
-        window.location.assign(redirectTarget)
+        window.location.assign(
+          !hasExplicitRedirect && permData.tenant_slug
+            ? clubAppUrl(permData.tenant_slug)
+            : redirectTarget,
+        )
       } catch {
         if (cancelled) return
         setAuthStatus('anon')

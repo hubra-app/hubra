@@ -148,13 +148,7 @@ def resolve_tenant() -> None:
 
     # 2. JWT claim (authenticated requests)
     if not tenant_slug:
-        try:
-            from flask_jwt_extended import get_jwt
-
-            claims = get_jwt()
-            tenant_slug = claims.get("tenant_slug")
-        except Exception:
-            pass
+        tenant_slug = _slug_from_jwt()
 
     # 3. X-Tenant-Slug header
     if not tenant_slug:
@@ -176,6 +170,32 @@ def resolve_tenant() -> None:
 
     g.tenant = tenant
     set_search_path(tenant.id)
+
+
+def _slug_from_jwt() -> str | None:
+    """Return the tenant_slug claim of the request's token, if any.
+
+    This runs before the route's JWT decorator, so get_jwt() has nothing to
+    read yet, and verify_jwt_in_request() would load the Member before the
+    search_path points at the club's schema. Decode the token directly
+    instead; the route still does the full verification afterwards.
+    """
+    from flask import current_app
+    from flask_jwt_extended import decode_token
+
+    refresh = request.path.endswith("/auth/refresh")
+    cookie = "JWT_REFRESH_COOKIE_NAME" if refresh else "JWT_ACCESS_COOKIE_NAME"
+    token = request.cookies.get(current_app.config[cookie])
+    if not token:
+        auth = request.headers.get("Authorization", "")
+        if auth.startswith("Bearer "):
+            token = auth[7:]
+    if not token:
+        return None
+    try:
+        return decode_token(token).get("tenant_slug")
+    except Exception:
+        return None
 
 
 def _lookup_tenant(slug: str) -> Tenant | None:
