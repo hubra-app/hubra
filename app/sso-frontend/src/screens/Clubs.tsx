@@ -16,7 +16,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { IconArrowRight, IconLogout, IconSearch } from '@tabler/icons-react'
+import { IconArrowRight, IconLogout, IconSearch, IconUserCircle } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { clearTokens } from '@hubra/api-client'
 import { useSso } from '@/context/SsoContext'
@@ -77,6 +77,10 @@ export function ClubsScreen() {
       window.location.assign(clubAppUrl(urls, slug))
     } catch (err: unknown) {
       setOpening(null)
+      if ((err as { code?: string }).code === 'EMAIL_NOT_VERIFIED') {
+        navigate('/verify')
+        return
+      }
       notify('error', 'Could not open the club', err instanceof Error ? err.message : undefined)
     }
   }
@@ -110,14 +114,24 @@ export function ClubsScreen() {
               hubra
             </Text>
           </Group>
-          <Button
-            variant="subtle"
-            size="xs"
-            leftSection={<IconLogout size={16} />}
-            onClick={signOut}
-          >
-            Sign out
-          </Button>
+          <Group gap={4} wrap="nowrap">
+            <Button
+              variant="subtle"
+              size="xs"
+              leftSection={<IconUserCircle size={16} />}
+              onClick={() => navigate('/account')}
+            >
+              Mein Konto
+            </Button>
+            <Button
+              variant="subtle"
+              size="xs"
+              leftSection={<IconLogout size={16} />}
+              onClick={signOut}
+            >
+              Sign out
+            </Button>
+          </Group>
         </Group>
 
         {(isManager || runsAClub) && (

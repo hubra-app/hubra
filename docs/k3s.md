@@ -9,7 +9,6 @@ no cluster add-ons. Secrets stay out of git and are created once with
 ```
 deploy/
 ├── app/                      # the app stack (base)
-├── single-club/              # overlay: one club, one host
 ├── vollbuild-ch/             # overlay: the old vollbuild.ch hosts
 ├── clusters/contabo/         # overlay: hubra.club behind Cloudflare, CloudNativePG
 └── create-secrets.sh         # .env -> Secret hubra-env (+ GHCR pull secret, Cloudflare)
@@ -42,10 +41,6 @@ Service names match the Compose names (`postgres`, `redis`, `backend`), so
 hostnames in `.env` keep working.
 
 ## Setup
-
-For one club without the manager and SSO portals, use the overlay
-`deploy/single-club` instead of `deploy/app` (see
-[single-club.md](single-club.md)). The steps below are the same.
 
 `deploy/app` serves `app`, `manage`, `sso` and `api.hubra.club`. Another
 domain changes the hosts in `deploy/app/ingress.yaml` and the `hubra-frontend`

@@ -17,7 +17,6 @@ from hubra.core.extensions import db
 from hubra.core.models.audit import AuditEntry
 from hubra.core.models.finance import Invoice
 from hubra.core.models.member import Member
-from hubra.core.models.email_verification import EmailVerificationToken
 from hubra.core.models.password_reset import PasswordResetToken
 from hubra.core.models.token import TokenBlocklist
 from hubra.core.models.user import User
@@ -968,48 +967,3 @@ class AccountService:
             )
 
         return changed
-
-    @staticmethod
-    def create_email_verification_token(member: Member) -> str:
-        """Create an email verification token. Returns the raw token."""
-        existing = db.session.scalars(
-            select(EmailVerificationToken)
-            .where(EmailVerificationToken.user_id == member.user_id)
-            .where(EmailVerificationToken.used.is_(False))
-        ).all()
-        for t in existing:
-            t.used = True
-
-        raw_token = secrets.token_urlsafe(32)
-        token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-        expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
-
-        db.session.add(
-            EmailVerificationToken(
-                user_id=member.user_id,
-                token_hash=token_hash,
-                expires_at=expires_at,
-            )
-        )
-        return raw_token
-
-    @staticmethod
-    def verify_email(raw_token: str) -> Member:
-        """Verify an email verification token. Returns the member."""
-        token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-        evt = db.session.scalar(
-            select(EmailVerificationToken).where(
-                EmailVerificationToken.token_hash == token_hash
-            )
-        )
-
-        if evt is None or not evt.is_valid:
-            raise_error(
-                400, "INVALID_TOKEN", "Verification link is invalid or has expired"
-            )
-
-        member = db.session.scalar(select(Member).where(Member.user_id == evt.user_id))
-        assert member is not None, f"Member for user {evt.user_id} not found"
-        member.private_email_verified = True
-        evt.used = True
-        return member

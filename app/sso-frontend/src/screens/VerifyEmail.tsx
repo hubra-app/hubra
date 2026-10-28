@@ -1,129 +1,88 @@
-import { useEffect, useState } from 'react'
-import { Button } from '@mantine/core'
+import { useEffect, useRef, useState } from 'react'
+import { Button, Center, Loader, Paper, Stack, Text, ThemeIcon, Title } from '@mantine/core'
 import { useNavigate } from 'react-router-dom'
-import { IconCheck, IconCircleX, IconLoader2 } from '@tabler/icons-react'
+import { IconCheck, IconCircleX } from '@tabler/icons-react'
+import { useSso } from '@/context/SsoContext'
 import * as authApi from '@/api/auth'
 
 type State = 'verifying' | 'success' | 'error'
 
+/** Opened from the verification mail: /verify-email#token=… */
 export function VerifyEmail() {
+  const { authStatus, continueSignedIn } = useSso()
   const navigate = useNavigate()
-  const hashParams = new URLSearchParams(
-    typeof window !== 'undefined' ? window.location.hash.replace(/^#/, '') : '',
-  )
-  const token = hashParams.get('token')
-
+  const token = new URLSearchParams(window.location.hash.replace(/^#/, '')).get('token')
   const [state, setState] = useState<State>(token ? 'verifying' : 'error')
-  const [message, setMessage] = useState(
-    token ? '' : 'Verification token is missing.',
-  )
+  const [message, setMessage] = useState(token ? '' : 'Der Link ist unvollständig.')
+  // Tokens are single-use: StrictMode's double effect must not spend it twice.
+  const sent = useRef(false)
 
   useEffect(() => {
-    if (!token) return
-    const ctrl = new AbortController()
-    let cancelled = false
+    if (!token || sent.current) return
+    sent.current = true
     authApi
-      .verifyEmail(token, ctrl.signal)
-      .then(() => {
-        if (!cancelled) setState('success')
-      })
-      .catch((err) => {
-        if (cancelled) return
+      .verifyEmail(token)
+      .then(() => setState('success'))
+      .catch((err: unknown) => {
         setState('error')
-        const msg = err instanceof Error ? err.message : 'Verification failed.'
-        setMessage(msg)
+        setMessage(
+          err instanceof Error && err.message
+            ? err.message
+            : 'Der Link ist ungültig oder abgelaufen.',
+        )
       })
-    return () => {
-      cancelled = true
-      ctrl.abort()
-    }
   }, [token])
 
+  const signedIn = authStatus === 'authed'
+
   return (
-    <div
-      style={{
-        minHeight: '100vh', display: 'flex', alignItems: 'center',
-        justifyContent: 'center', background: '#f5f6f8', padding: 24,
-      }}
-    >
-      <div
-        style={{
-          background: '#fff', borderRadius: 16, padding: '48px 40px',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.06)', textAlign: 'center',
-          maxWidth: 420, width: '100%',
-        }}
-      >
-        {state === 'verifying' && (
-          <>
-            <div
-              style={{
-                width: 56, height: 56, borderRadius: '50%', background: 'rgba(99,102,241,.12)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px',
-              }}
-            >
-              <IconLoader2 size={28} color="#7441e0" className="spin" />
-            </div>
-            <h2 style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 700, color: '#1a1625', margin: '0 0 8px' }}>
-              Verifying email…
-            </h2>
-            <p style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#5e5873', margin: 0 }}>
-              Please wait while we confirm your email address.
-            </p>
-          </>
-        )}
-
-        {state === 'success' && (
-          <>
-            <div
-              style={{
-                width: 56, height: 56, borderRadius: '50%', background: 'rgba(31,157,87,.12)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px',
-              }}
-            >
-              <IconCheck size={28} color="#1f9d57" />
-            </div>
-            <h2 style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 700, color: '#1a1625', margin: '0 0 8px' }}>
-              Email verified
-            </h2>
-            <p style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#5e5873', margin: '0 0 28px' }}>
-              Your email has been confirmed. You can now sign in.
-            </p>
-            <Button
-              variant="filled"
-              style={{ height: 44, fontSize: 'var(--mantine-font-size-md)', width: '100%' }}
-              onClick={() => navigate('/login')}
-            >
-              Sign in →
-            </Button>
-          </>
-        )}
-
-        {state === 'error' && (
-          <>
-            <div
-              style={{
-                width: 56, height: 56, borderRadius: '50%', background: 'rgba(220,38,38,.12)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px',
-              }}
-            >
-              <IconCircleX size={28} color="#dc2626" />
-            </div>
-            <h2 style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 700, color: '#1a1625', margin: '0 0 8px' }}>
-              Verification failed
-            </h2>
-            <p style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#5e5873', margin: '0 0 28px' }}>
-              {message}
-            </p>
-            <Button
-              variant="filled"
-              style={{ height: 44, fontSize: 'var(--mantine-font-size-md)', width: '100%' }}
-              onClick={() => navigate('/login')}
-            >
-              Back to login
-            </Button>
-          </>
-        )}
-      </div>
+    <div className="graph-bg" style={{ minHeight: '100vh', display: 'flex' }}>
+      <Center flex={1} p={24}>
+        <Paper withBorder radius="md" p="xl" maw={420} w="100%">
+          <Stack align="center" ta="center" gap="xs">
+            {state === 'verifying' && (
+              <>
+                <Loader />
+                <Title order={2}>E-Mail wird bestätigt…</Title>
+              </>
+            )}
+            {state === 'success' && (
+              <>
+                <ThemeIcon size={56} radius="xl" color="green" variant="light">
+                  <IconCheck size={28} />
+                </ThemeIcon>
+                <Title order={2}>E-Mail bestätigt</Title>
+                <Text size="sm" c="dimmed" mb="md">
+                  Danke, deine Adresse ist bestätigt.
+                </Text>
+              </>
+            )}
+            {state === 'error' && (
+              <>
+                <ThemeIcon size={56} radius="xl" color="red" variant="light">
+                  <IconCircleX size={28} />
+                </ThemeIcon>
+                <Title order={2}>Bestätigung fehlgeschlagen</Title>
+                <Text size="sm" c="dimmed" mb="md">
+                  {message} Melde dich an, um einen neuen Link zu erhalten.
+                </Text>
+              </>
+            )}
+            {state !== 'verifying' &&
+              (authStatus === 'loading' ? (
+                <Loader size="sm" />
+              ) : signedIn ? (
+                <Button fullWidth onClick={continueSignedIn}>
+                  Weiter
+                </Button>
+              ) : (
+                <Button fullWidth onClick={() => navigate('/login')}>
+                  Zur Anmeldung
+                </Button>
+              ))}
+          </Stack>
+        </Paper>
+      </Center>
     </div>
   )
 }
