@@ -31,6 +31,7 @@ _create_schema = RoleCreateSchema()
 @roles_bp.get("/")
 @jwt_required()
 def list_roles():
+    get_current_member()  # members of this club only
     return jsonify(_many_schema.dump(RolesService.list())), 200
 
 
@@ -121,6 +122,7 @@ def delete_role(role_id: int):
 @roles_bp.get("/<int:role_id>/permissions")
 @jwt_required()
 def get_role_permissions(role_id: int):
+    get_current_member()  # members of this club only
     perms = RoleService.get_permissions(role_id)
     return jsonify({"role_id": role_id, "permissions": perms}), 200
 

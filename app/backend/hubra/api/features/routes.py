@@ -49,7 +49,9 @@ def list_modules():
         member_is_admin,
     )
 
-    member = _current_member()
+    from hubra.api.auth.helpers import get_current_member
+
+    member = get_current_member()  # members of this club only
     can_write = member is not None and (
         member_is_admin(member)
         or (
