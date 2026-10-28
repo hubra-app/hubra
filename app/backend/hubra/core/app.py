@@ -652,7 +652,6 @@ def _register_cli(app: Flask) -> None:
             "Edit members": [
                 "members.members.create",
                 "members.members.update",
-                "members.members.verify_email",
                 "members.members.provision",
                 "mail.member_mail.update",
             ],
@@ -664,7 +663,6 @@ def _register_cli(app: Flask) -> None:
             "Manage members": [
                 "members.members.disable",
                 "members.members.enable",
-                "members.members.set_password",
             ],
             "Export data": [
                 "members.members.export",

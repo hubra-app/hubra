@@ -1,16 +1,19 @@
 """Tests for M5 Members module — new fields, search/filter/sort, import, soft delete."""
 
+from tests.helpers import add_member
+
 import io
 
 
 def _create_member(client, auth_headers, **overrides):
+    """Helper: a member with sensible defaults (they accepted an invite)."""
     payload = {
         "first_name": "Test",
         "last_name": "Member",
         "email": "member@test.ch",
     }
     payload.update(overrides)
-    return client.post("/api/v1/members/", json=payload, headers=auth_headers)
+    return add_member(client, auth_headers, **payload)
 
 
 # ── New fields ───────────────────────────────────────────────────────────────
@@ -33,7 +36,7 @@ def test_create_member_with_new_fields(client, auth_headers, seeded_db):
         },
         custom_fields={"club_specific": "value"},
     )
-    assert resp.status_code == 201
+    assert resp.status_code == 200
     body = resp.get_json()
     assert body["phone"] == "+41 79 123 45 67"
     assert body["mobile"] == "+41 78 000 00 00"
@@ -51,9 +54,7 @@ def test_update_member_new_fields(client, auth_headers, seeded_db):
     resp = client.patch(
         f"/api/v1/members/{member_id}",
         json={
-            "phone": "+41 79 111 22 33",
             "membership_type": "honorary",
-            "birthday": "1985-03-20",
             "custom_fields": {"key1": "val1"},
             "tool_hours": 0,
         },
@@ -61,25 +62,30 @@ def test_update_member_new_fields(client, auth_headers, seeded_db):
     )
     assert resp.status_code == 200
     body = resp.get_json()
-    assert body["phone"] == "+41 79 111 22 33"
     assert body["membership_type"] == "honorary"
-    assert body["birthday"] == "1985-03-20"
     assert body["custom_fields"]["key1"] == "val1"
+
+    # Phone and birthday are on the person's account: read-only here.
+    resp = client.patch(
+        f"/api/v1/members/{member_id}",
+        json={"phone": "+41 79 111 22 33", "birthday": "1985-03-20", "tool_hours": 0},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 403
 
 
 def test_create_member_membership_type_validation(client, auth_headers, seeded_db):
-    resp = _create_member(
-        client,
-        auth_headers,
-        email="badtype@test.ch",
-        membership_type="invalid_type",
+    resp = client.post(
+        "/api/v1/members/",
+        json={"email": "badtype@test.ch", "membership_type": "invalid_type"},
+        headers=auth_headers,
     )
     assert resp.status_code == 400
 
 
 def test_membership_type_defaults_to_regular(client, auth_headers, seeded_db):
     resp = _create_member(client, auth_headers, email="defaults@test.ch")
-    assert resp.status_code == 201
+    assert resp.status_code == 200
     assert resp.get_json()["membership_type"] == "regular"
 
 
@@ -288,76 +294,6 @@ def test_import_csv_dry_run(client, auth_headers, seeded_db):
     body = resp.get_json()
     assert body["row_count"] == 1
     assert "first_name" in body["columns"]
-
-
-def test_import_csv_creates_members(client, auth_headers, seeded_db):
-    csv_data = (
-        "first_name,last_name,email,phone,membership_type\n"
-        "Alice,Smith,alice-import@test.ch,+41 79 111 22 33,regular\n"
-        "Bob,Jones,bob-import@test.ch,+41 79 444 55 66,honorary\n"
-    )
-    resp = client.post(
-        "/api/v1/members/import",
-        data={
-            "file": (io.BytesIO(csv_data.encode("utf-8")), "test.csv"),
-        },
-        content_type="multipart/form-data",
-        headers=auth_headers,
-    )
-    assert resp.status_code == 200
-    body = resp.get_json()
-    assert body["created"] == 2
-    assert body["skipped"] == 0
-    assert len(body["errors"]) == 0
-
-
-def test_import_csv_skips_duplicate_emails(client, auth_headers, seeded_db):
-    _create_member(
-        client,
-        auth_headers,
-        email="existing@test.ch",
-        first_name="Existing",
-        last_name="User",
-    )
-
-    csv_data = (
-        "first_name,last_name,email\n"
-        "Alice,Smith,existing@test.ch\n"
-        "Bob,Jones,new-import@test.ch\n"
-    )
-    resp = client.post(
-        "/api/v1/members/import",
-        data={
-            "file": (io.BytesIO(csv_data.encode("utf-8")), "test.csv"),
-        },
-        content_type="multipart/form-data",
-        headers=auth_headers,
-    )
-    assert resp.status_code == 200
-    body = resp.get_json()
-    assert body["created"] == 1
-    assert body["skipped"] == 1
-
-
-def test_import_csv_reports_errors(client, auth_headers, seeded_db):
-    csv_data = (
-        "first_name,last_name,email\n"
-        "Alice,,alice-no-last@test.ch\n"
-        ",NoFirst,nofirst@test.ch\n"
-        "Bob,Jones,\n"
-    )
-    resp = client.post(
-        "/api/v1/members/import",
-        data={
-            "file": (io.BytesIO(csv_data.encode("utf-8")), "test.csv"),
-        },
-        content_type="multipart/form-data",
-        headers=auth_headers,
-    )
-    assert resp.status_code == 200
-    body = resp.get_json()
-    assert body["created"] == 0
-    assert len(body["errors"]) == 3
 
 
 def test_import_csv_requires_file(client, auth_headers, seeded_db):

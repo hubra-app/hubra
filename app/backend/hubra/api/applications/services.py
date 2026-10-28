@@ -6,7 +6,7 @@ import random
 
 from flask import current_app
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from hubra.api.utils import log_audit
@@ -45,16 +45,34 @@ class ApplicationService:
         return application  # type: ignore[return-value]
 
     @staticmethod
-    def approve(application_id: int, actor_id: int) -> Member:
+    def approve(application_id: int, actor_id: int) -> Member | None:
         """Approve an application, create a member, and dispatch side-effects.
 
-        Returns the created member (committed).
+        Returns the created member. An applicant without an account gets an
+        invite instead (a club never makes accounts), and None is returned.
         """
         from hubra.api.members.services import MembersService
+        from hubra.core.models.user import User
 
         application = ApplicationService.get(application_id)
 
-        member, temp_password = MembersService.create_from_application(application)
+        has_account = db.session.scalar(
+            select(User.id).where(func.lower(User.email) == application.email.lower())
+        )
+        if has_account is None:
+            first, _, last = (application.name or "").partition(" ")
+            data = {"email": application.email}
+            if first:
+                data["first_name"] = first
+            if last:
+                data["last_name"] = last
+            if application.wants_tier_id is not None:
+                data["tier_id"] = application.wants_tier_id
+            MembersService.invite(data, actor_id)
+            db.session.delete(application)
+            return None
+
+        member = MembersService.create_from_application(application)
         db.session.flush()
 
         log_audit(
@@ -77,20 +95,6 @@ class ApplicationService:
                 current_app.logger.exception(
                     "Could not queue WildDuck mailbox for member %s", member.id
                 )
-
-        # Welcome email with the temporary password — non-blocking. Skipped
-        # for applicants who already had an account (signed-in join requests).
-        if temp_password:
-            from hubra.core.services import email as email_svc
-
-            login_email = member.public_email or member.email
-            email_svc.send_welcome(
-                member.email,
-                member.name,
-                login_email,
-                temp_password,
-                lang=getattr(member, "language", "de-CH") or "de-CH",
-            )
 
         db.session.refresh(member)
         return member  # type: ignore[return-value]

@@ -13,6 +13,7 @@ import { JoinClubScreen } from '@/screens/JoinClub'
 import { StartClubScreen } from '@/screens/StartClub'
 import { VerifyScreen } from '@/screens/Verify'
 import { AccountScreen } from '@/screens/Account'
+import { InviteScreen } from '@/screens/Invite'
 import { tr } from '@/lang'
 
 function RequireAnon({ children }: { children: React.ReactNode }) {
@@ -79,6 +80,7 @@ function AppRoutes() {
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/clubs" element={<ClubsScreen />} />
         <Route path="/clubs/:slug" element={<JoinClubScreen />} />
+        <Route path="/invite" element={<InviteScreen />} />
         <Route path="/start" element={<StartClubScreen />} />
         <Route path="/" element={<Navigate to="/clubs" replace />} />
         <Route path="/verify" element={<VerifyScreen />} />

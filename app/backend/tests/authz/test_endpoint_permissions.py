@@ -52,7 +52,8 @@ class TestMembersPermissions:
             },
             headers=headers,
         )
-        assert resp.status_code == 201
+        # Allowed through to the invite, which needs a club (none here).
+        assert resp.get_json()["error"] == "NO_TENANT"
 
     def test_members_create_without_permission(
         self, client, seeded_db, plain_member_token

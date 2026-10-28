@@ -1,17 +1,19 @@
 """Tests for the members blueprint (/api/v1/members)."""
 
+from tests.helpers import add_member
+
 from datetime import date
 
 
 def _create_member(client, auth_headers, **overrides):
-    """Helper: POST a member with sensible defaults."""
+    """Helper: a member with sensible defaults (they accepted an invite)."""
     payload = {
         "first_name": "Test",
         "last_name": "Member",
         "email": "member@test.ch",
     }
     payload.update(overrides)
-    return client.post("/api/v1/members/", json=payload, headers=auth_headers)
+    return add_member(client, auth_headers, **payload)
 
 
 # ── List ──────────────────────────────────────────────────────────────────────
@@ -26,22 +28,6 @@ def test_list_members(client, auth_headers, seeded_db):
 
 
 # ── Create ────────────────────────────────────────────────────────────────────
-
-
-def test_create_member(client, auth_headers, seeded_db):
-    resp = _create_member(
-        client, auth_headers, email="newmember@test.ch", tier_id=seeded_db["tier"].id
-    )
-    assert resp.status_code == 201
-    body = resp.get_json()
-    assert body["email"] == "newmember@test.ch"
-    assert "id" in body
-
-
-def test_create_member_duplicate_email(client, auth_headers, seeded_db):
-    _create_member(client, auth_headers, email="dup@test.ch")
-    resp = _create_member(client, auth_headers, email="dup@test.ch")
-    assert resp.status_code == 409
 
 
 # ── Get single ───────────────────────────────────────────────────────────────
@@ -72,11 +58,20 @@ def test_update_member(client, auth_headers, seeded_db):
     # explicitly to avoid the route setting tool_hours=None on the NOT NULL column.
     resp = client.patch(
         f"/api/v1/members/{member_id}",
-        json={"first_name": "Updated", "last_name": "Name", "tool_hours": 0},
+        json={"notes": "Key holder", "tool_hours": 0},
         headers=auth_headers,
     )
     assert resp.status_code == 200
-    assert resp.get_json()["name"] == "Updated Name"
+    assert resp.get_json()["notes"] == "Key holder"
+
+    # The name is the person's own account: the club only reads it.
+    resp = client.patch(
+        f"/api/v1/members/{member_id}",
+        json={"first_name": "Updated", "last_name": "Name", "tool_hours": 0},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 403
+    assert resp.get_json()["error"] == "ACCOUNT_FIELDS_READ_ONLY"
 
 
 # ── Soft delete ───────────────────────────────────────────────────────────────
@@ -181,7 +176,9 @@ def test_filter_members_by_status(client, auth_headers, seeded_db):
 
 
 def test_create_member_negative_tool_hours(client, auth_headers, seeded_db):
-    resp = _create_member(
-        client, auth_headers, email="toolhours@test.ch", tool_hours=-1
+    resp = client.post(
+        "/api/v1/members/",
+        json={"email": "toolhours@test.ch", "tool_hours": -1},
+        headers=auth_headers,
     )
     assert resp.status_code == 400

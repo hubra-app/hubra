@@ -122,78 +122,55 @@ export async function getMember(id: string): Promise<Member> {
   return adapt(b, lookups.groups);
 }
 
-export interface MemberCreate {
-  firstName: string;
-  lastName: string;
+/**
+ * Inviting someone: the club never creates or changes an account. The person
+ * gets a personal link, signs in or signs up with this address and accepts;
+ * the name only greets them in the mail.
+ */
+export interface MemberInvite {
   email: string;
+  firstName?: string;
+  lastName?: string;
   tierName?: string;
-  roleNames?: string[];
   groupNames?: string[];
   status?: string;
-  notes?: string;
-  avatarColor?: string;
-  phone?: string;
-  mobile?: string;
-  birthday?: string;
   membershipType?: string;
-  membershipUntil?: string;
-  emergencyContact?: { name?: string; phone?: string; relation?: string } | null;
-  customFields?: Record<string, unknown> | null;
+  notes?: string;
 }
 
-export async function createMember(input: MemberCreate): Promise<Member> {
+export async function inviteMember(
+  input: MemberInvite,
+): Promise<{ invited: true; email: string }> {
   const lookups = await getLookups();
   const body: Record<string, unknown> = {
-    first_name: input.firstName,
-    last_name: input.lastName,
     email: input.email,
     status: input.status ?? "trial",
   };
+  if (input.firstName) body.first_name = input.firstName;
+  if (input.lastName) body.last_name = input.lastName;
   if (input.tierName) body.tier_id = lookups.tiersByName.get(input.tierName);
-  if (input.roleNames?.length)
-    body.role_ids = input.roleNames
-      .map((n) => lookups.rolesByName.get(n))
-      .filter(Boolean) as number[];
   if (input.groupNames?.length)
     body.group_ids = input.groupNames
       .map((n) => lookups.groupsByName.get(n))
       .filter(Boolean);
-  if (input.notes) body.notes = input.notes;
-  if (input.avatarColor) body.avatar_color = input.avatarColor;
-  if (input.phone) body.phone = input.phone;
-  if (input.mobile) body.mobile = input.mobile;
-  if (input.birthday) body.birthday = input.birthday;
   if (input.membershipType) body.membership_type = input.membershipType;
-  if (input.membershipUntil) body.membership_until = input.membershipUntil;
-  if (input.emergencyContact !== undefined)
-    body.emergency_contact = input.emergencyContact;
-  if (input.customFields !== undefined) body.custom_fields = input.customFields;
-
-  const b = await apiFetch<BackendMember>("/members/", {
+  if (input.notes) body.notes = input.notes;
+  return apiFetch<{ invited: true; email: string }>("/members/", {
     method: "POST",
     body: JSON.stringify(body),
   });
-  return adapt(b, lookups.groups);
 }
 
+/** What a club can change: its own data about the member, never the account. */
 export interface MemberUpdate {
-  firstName?: string;
-  lastName?: string;
   status?: string;
   tierName?: string;
   roleNames?: string[];
   groupNames?: string[];
-  email?: string;
   notes?: string;
   clubUsername?: string | null;
-  mustChangePassword?: boolean;
-  avatarColor?: string;
-  phone?: string;
-  mobile?: string;
-  birthday?: string;
   membershipType?: string;
   membershipUntil?: string;
-  emergencyContact?: { name?: string; phone?: string; relation?: string } | null;
   customFields?: Record<string, unknown> | null;
 }
 
@@ -203,8 +180,6 @@ export async function updateMember(
 ): Promise<Member> {
   const lookups = await getLookups();
   const body: Record<string, unknown> = {};
-  if (input.firstName !== undefined) body.first_name = input.firstName;
-  if (input.lastName !== undefined) body.last_name = input.lastName;
   if (input.status) body.status = input.status;
   if (input.tierName !== undefined)
     body.tier_id = lookups.tiersByName.get(input.tierName) ?? null;
@@ -216,21 +191,12 @@ export async function updateMember(
     body.group_ids = input.groupNames
       .map((n) => lookups.groupsByName.get(n))
       .filter(Boolean);
-  if (input.email !== undefined) body.email = input.email;
   if (input.notes !== undefined) body.notes = input.notes;
   if (input.clubUsername !== undefined) body.club_username = input.clubUsername;
-  if (input.mustChangePassword !== undefined)
-    body.must_change_password = input.mustChangePassword;
-  if (input.avatarColor !== undefined) body.avatar_color = input.avatarColor;
-  if (input.phone !== undefined) body.phone = input.phone;
-  if (input.mobile !== undefined) body.mobile = input.mobile;
-  if (input.birthday !== undefined) body.birthday = input.birthday;
   if (input.membershipType !== undefined)
     body.membership_type = input.membershipType;
   if (input.membershipUntil !== undefined)
     body.membership_until = input.membershipUntil;
-  if (input.emergencyContact !== undefined)
-    body.emergency_contact = input.emergencyContact;
   if (input.customFields !== undefined) body.custom_fields = input.customFields;
 
   const b = await apiFetch<BackendMember>(`/members/${id}`, {
@@ -238,22 +204,6 @@ export async function updateMember(
     body: JSON.stringify(body),
   });
   return adapt(b, lookups.groups);
-}
-
-export async function setMemberPassword(
-  id: string,
-  opts: { password?: string; generate?: boolean; mustChangePassword?: boolean },
-): Promise<{ success: boolean; generatedPassword?: string }> {
-  const body: Record<string, unknown> = {};
-  if (opts.generate) body.generate = true;
-  if (opts.password) body.password = opts.password;
-  if (opts.mustChangePassword !== undefined)
-    body.must_change_password = opts.mustChangePassword;
-  const res = await apiFetch<{ success: boolean; generated_password?: string }>(
-    `/members/${id}/set-password`,
-    { method: "POST", body: JSON.stringify(body) },
-  );
-  return { success: res.success, generatedPassword: res.generated_password };
 }
 
 export async function archiveMember(id: string): Promise<void> {

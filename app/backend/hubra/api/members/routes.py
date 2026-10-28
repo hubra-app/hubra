@@ -200,7 +200,8 @@ def create_member():
     except ValidationError as exc:
         return api_error("VALIDATION_ERROR", str(exc.messages), 400)
 
-    result = MembersService.create(
+    # A club invites; the person joins when they accept (see invite).
+    result = MembersService.invite(
         data=data,
         actor_id=get_current_member().id,
     )
@@ -211,7 +212,7 @@ def create_member():
         db.session.rollback()
         raise
 
-    return jsonify(_member_schema.dump(result)), 201
+    return jsonify(result), 202
 
 
 # ── PATCH /members/<id> ───────────────────────────────────────────────────────
@@ -242,33 +243,6 @@ def update_member(member_id: int):
 
     db.session.refresh(member)
     return jsonify(_member_schema.dump(member)), 200
-
-
-# ── POST /members/<id>/verify-email ────────────────────────────────────────────
-
-
-@members_bp.post("/<int:member_id>/verify-email")
-@permission_required("members", "verify_email", "Verify member email")
-def verify_member_email(member_id: int):
-    verified = MemberService.verify_email(member_id)
-
-    if not verified:
-        return jsonify({"ok": True, "verified": True}), 200
-
-    log_audit(
-        actor_id=get_current_member().id,
-        action="verify_member_email",
-        target_type="Member",
-        target_id=member_id,
-        target_label="",
-    )
-    try:
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        raise
-
-    return jsonify({"ok": True, "verified": True}), 200
 
 
 # ── POST /members/<id>/provision ──────────────────────────────────────────────
@@ -619,44 +593,6 @@ def enable_member(member_id: int):
 
     db.session.refresh(member)
     return jsonify(_member_schema.dump(member)), 200
-
-
-# ── POST /members/<id>/set-password ──────────────────────────────────────────
-
-
-@members_bp.post("/<int:member_id>/set-password")
-@permission_required("members", "set_password", "Set member password")
-def set_member_password(member_id: int):
-    body = request.get_json(silent=True) or {}
-    generate = bool(body.get("generate", False))
-    must_change = bool(body.get("must_change_password", False))
-    password = body.get("password", "")
-
-    if not generate and not password:
-        return api_error("VALIDATION_ERROR", "password is required", 400)
-
-    MemberService.set_password(
-        member_id=member_id,
-        password=password,
-        generate=generate,
-        must_change=must_change,
-    )
-
-    log_audit(
-        actor_id=get_current_member().id,
-        action="set_member_password",
-        target_type="Member",
-        target_id=member_id,
-        target_label="",
-    )
-
-    try:
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        raise
-
-    return jsonify({"success": True}), 200
 
 
 # ── DELETE /members/<id>/sessions ────────────────────────────────────────────

@@ -1,5 +1,7 @@
 """Tests for M5 Groups module — new fields, member roles, mailing list, nested groups."""
 
+from tests.helpers import add_member
+
 
 def _create_group(client, auth_headers, **overrides):
     payload = {
@@ -12,13 +14,14 @@ def _create_group(client, auth_headers, **overrides):
 
 
 def _create_member(client, auth_headers, **overrides):
+    """Helper: a member with sensible defaults (they accepted an invite)."""
     payload = {
         "first_name": "Test",
         "last_name": "Member",
         "email": "member@test.ch",
     }
     payload.update(overrides)
-    return client.post("/api/v1/members/", json=payload, headers=auth_headers)
+    return add_member(client, auth_headers, **payload)
 
 
 # ── New fields ───────────────────────────────────────────────────────────────

@@ -153,7 +153,7 @@ export function SignupScreen() {
             fw={600}
             onClick={(e) => {
               e.preventDefault()
-              navigate('/login')
+              navigate(`/login${window.location.search}`)
             }}
           >
             {tr('Anmelden', 'Sign in')}

@@ -5,6 +5,8 @@ Each test first shows the attack that used to work, now refused.
 
 from __future__ import annotations
 
+import pytest
+
 from datetime import datetime, timedelta, timezone
 
 from flask_jwt_extended import decode_token
@@ -48,14 +50,14 @@ class TestClubCannotTakeOverAccounts:
     def test_existing_account_is_not_pulled_into_the_club(
         self, client, auth_headers, db
     ):
-        _user(db, "boss@platform.ch", is_superadmin=True)
+        boss = _user(db, "boss@platform.ch", is_superadmin=True)
         db.session.commit()
-        resp = client.post(
+        client.post(
             "/api/v1/members/",
             json={"email": "boss@platform.ch", "first_name": "x", "last_name": "y"},
         )
-        assert resp.status_code == 409
-        assert resp.get_json()["error"] == "ACCOUNT_EXISTS"
+        # Adding only ever invites: no member until the person accepts.
+        assert db.session.query(Member).filter_by(user_id=boss.id).one_or_none() is None
 
     def test_members_are_not_added_by_account_id(self, client, auth_headers, db):
         victim = _user(db, "someone@test.ch")
@@ -66,58 +68,42 @@ class TestClubCannotTakeOverAccounts:
         )
         assert resp.status_code == 400
 
-    def test_no_password_or_email_change_for_an_account_used_elsewhere(
-        self, client, auth_headers, db, seeded_db
+    @pytest.mark.parametrize("elsewhere", [False, True])
+    def test_club_never_sets_passwords_or_changes_accounts(
+        self, client, auth_headers, db, seeded_db, elsewhere
     ):
-        other = Tenant(name="Other", slug="other", plan="starter", status="active")
-        db.session.add(other)
-        db.session.flush()
-        shared = _user(db, "shared@test.ch")
-        db.session.add(UserTenant(user_id=shared.id, tenant_id=other.id))
-        member = _member(db, shared, seeded_db)
+        person = _user(db, "person@test.ch")
+        if elsewhere:
+            other = Tenant(name="Other", slug="other", plan="starter", status="active")
+            db.session.add(other)
+            db.session.flush()
+            db.session.add(UserTenant(user_id=person.id, tenant_id=other.id))
+        member = _member(db, person, seeded_db)
         db.session.commit()
+        before = db.session.get(User, person.id).password_hash
 
         resp = client.post(
             f"/api/v1/members/{member.id}/set-password",
             json={"password": "Attacker-Chosen-9!x"},
         )
-        assert resp.status_code == 403
-        assert resp.get_json()["error"] == "ACCOUNT_NOT_MANAGED"
+        assert resp.status_code in (404, 405)
+        resp = client.post(f"/api/v1/members/{member.id}/verify-email")
+        assert resp.status_code in (404, 405)
+        assert db.session.get(User, person.id).password_hash == before
 
-        resp = client.patch(
-            f"/api/v1/members/{member.id}", json={"email": "attacker@evil.ch"}
-        )
-        assert resp.status_code == 403
-        assert db.session.get(User, shared.id).email == "shared@test.ch"
+        for change in (
+            {"email": "attacker@evil.ch"},
+            {"first_name": "Mallory"},
+            {"address_city": "Elsewhere"},
+        ):
+            resp = client.patch(f"/api/v1/members/{member.id}", json=change)
+            assert resp.status_code == 403
+            assert resp.get_json()["error"] == "ACCOUNT_FIELDS_READ_ONLY"
+        assert db.session.get(User, person.id).email == "person@test.ch"
 
         # Club-only fields still work.
         resp = client.patch(f"/api/v1/members/{member.id}", json={"notes": "hi"})
         assert resp.status_code == 200
-
-    def test_platform_staff_account_is_never_managed_by_a_club(
-        self, client, auth_headers, db, seeded_db
-    ):
-        staff = _user(db, "staff@test.ch", is_superadmin=True)
-        member = _member(db, staff, seeded_db)
-        db.session.commit()
-        resp = client.post(
-            f"/api/v1/members/{member.id}/set-password",
-            json={"password": "Attacker-Chosen-9!x"},
-        )
-        assert resp.status_code == 403
-
-    def test_own_accounts_can_still_get_a_password(
-        self, client, auth_headers, db, seeded_db
-    ):
-        own = _user(db, "own@test.ch")
-        member = _member(db, own, seeded_db)
-        db.session.commit()
-        resp = client.post(
-            f"/api/v1/members/{member.id}/set-password",
-            json={"password": "New-Passw0rd-123!"},
-        )
-        assert resp.status_code == 200
-        assert db.session.get(User, own.id).tokens_valid_after is not None
 
     def test_disabling_is_per_club(self, client, auth_headers, db, seeded_db):
         person = _user(db, "person@test.ch")

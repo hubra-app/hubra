@@ -1,144 +1,16 @@
 """S05 Member Lifecycle Automation Test Suite.
 
-Tests cover: approve → Member created with must_change_password=True →
-Celery tasks dispatched for WildDuck mailbox creation and welcome email →
-login surfaces must_change_password flag → protected route returns 403 until
-password changed → change-password clears flag → subsequent login succeeds.
+Tests cover: login surfaces must_change_password flag → protected route
+returns 403 until password changed → change-password clears flag →
+subsequent login succeeds. (Approving an application without an account
+sends an invite; see tests/members/test_invites.py.)
 
 All external calls (WildDuck, email) are mocked — no live services required.
 """
 
 from __future__ import annotations
 
-import sys
-import types
-from unittest.mock import MagicMock, patch
-
-
-# ── Helpers ───────────────────────────────────────────────────────────────────
-
-
-def _seed_application(db):
-    """Create a pending application and return it."""
-    from hubra.core.models.application import Application
-
-    app = Application(name="New Member", email="newmember@test.ch")
-    db.session.add(app)
-    db.session.commit()
-    return app
-
-
-def _seed_admin_role_and_tier(db):
-    """Ensure a 'Member' role and default tier exist for approve_application."""
-    from sqlalchemy import select
-    from hubra.core.models.member import MembershipTier
-    from hubra.core.models.role import Role
-
-    role = db.session.scalar(select(Role).where(Role.name == "Member"))
-    if role is None:
-        role = Role(name="Member", is_default=False)
-        db.session.add(role)
-
-    tier = db.session.scalar(select(MembershipTier))
-    if tier is None:
-        tier = MembershipTier(name="Standard", price_chf=30, color="#6366f1")
-        db.session.add(tier)
-
-    db.session.commit()
-    return role, tier
-
-
-# ── 1. approve creates member with must_change_password=True ─────────────────
-
-
-def test_approve_creates_member_with_must_change_password(
-    client, app, auth_headers, seeded_db, db
-):
-    application = _seed_application(db)
-    _seed_admin_role_and_tier(db)
-
-    # Mock WildDuck and email so approve_application doesn't blow up
-    with (
-        patch("hubra.core.services.wildduck.try_get_client", return_value=None),
-        patch("hubra.core.services.email._send"),
-    ):
-        resp = client.post(
-            f"/api/v1/applications/{application.id}/approve",
-            headers=auth_headers,
-        )
-
-    assert resp.status_code == 201
-    data = resp.get_json()
-    assert data.get("must_change_password") is True
-
-
-# ── 2. approve dispatches WildDuck Celery task ────────────────────────────────
-
-
-def test_approve_dispatches_wildduck_task(client, app, auth_headers, seeded_db, db):
-    application = _seed_application(db)
-    _seed_admin_role_and_tier(db)
-    app.config["MAIL_DOMAIN"] = "test.ch"
-    app.config["WILDDUCK_API_URL"] = "http://wildduck.test"
-    app.config["WILDDUCK_API_TOKEN"] = "test-token"
-
-    # Mock the Celery task module via sys.modules injection
-    mock_create_task = MagicMock()
-    mock_create_task.delay = MagicMock()
-    fake_wildduck_tasks = types.ModuleType("hubra.core.tasks.wildduck")
-    fake_wildduck_tasks.sync_wildduck_password = MagicMock()
-    fake_wildduck_tasks.create_wildduck_user = mock_create_task
-    sys.modules["hubra.core.tasks.wildduck"] = fake_wildduck_tasks
-
-    try:
-        with patch("hubra.core.services.email._send"):
-            resp = client.post(
-                f"/api/v1/applications/{application.id}/approve",
-                headers=auth_headers,
-            )
-    finally:
-        sys.modules.pop("hubra.core.tasks.wildduck", None)
-        app.config["MAIL_DOMAIN"] = ""
-        app.config["WILDDUCK_API_URL"] = ""
-        app.config["WILDDUCK_API_TOKEN"] = ""
-
-    assert resp.status_code == 201
-    mock_create_task.delay.assert_called_once()
-    call_args = mock_create_task.delay.call_args
-    # First positional arg should be the member_id (int)
-    assert isinstance(call_args.args[0], int)
-
-
-# ── 3. approve dispatches welcome email ───────────────────────────────────────
-
-
-def test_approve_dispatches_welcome_email(client, app, auth_headers, seeded_db, db):
-    application = _seed_application(db)
-    _seed_admin_role_and_tier(db)
-
-    # Mock the email Celery task module
-    mock_email_task = MagicMock()
-    mock_email_task.delay = MagicMock()
-    fake_email_tasks = types.ModuleType("hubra.core.tasks.email_tasks")
-    fake_email_tasks.send_email_task = mock_email_task
-    sys.modules["hubra.core.tasks.email_tasks"] = fake_email_tasks
-
-    try:
-        with (
-            patch("hubra.core.services.wildduck.try_get_client", return_value=None),
-            patch("hubra.core.services.email._send") as mock_send,
-        ):
-            resp = client.post(
-                f"/api/v1/applications/{application.id}/approve",
-                headers=auth_headers,
-            )
-            # Email service should be called (either directly or via task)
-            email_sent = mock_send.called or mock_email_task.delay.called
-    finally:
-        sys.modules.pop("hubra.core.tasks.email_tasks", None)
-
-    assert resp.status_code == 201
-    assert email_sent, "Welcome email must be sent (via _send or send_email_task.delay)"
+from unittest.mock import patch
 
 
 # ── 4. login surfaces must_change_password flag ───────────────────────────────

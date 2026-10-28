@@ -31,11 +31,16 @@ export async function approveApplication(
   id: string,
   tierId: number,
   role: string,
-): Promise<void> {
-  await apiFetch(`/applications/${id}/approve`, {
-    method: "POST",
-    body: JSON.stringify({ tierId, role }),
-  });
+): Promise<{ invited: boolean }> {
+  // 202 { invited: true }: the applicant had no account and got an invite.
+  const res = await apiFetch<{ invited?: boolean }>(
+    `/applications/${id}/approve`,
+    {
+      method: "POST",
+      body: JSON.stringify({ tierId, role }),
+    },
+  );
+  return { invited: !!res?.invited };
 }
 
 export async function declineApplication(id: string): Promise<void> {

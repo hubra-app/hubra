@@ -2343,5 +2343,19 @@
   "audit.actions.leave_requested": "Asked to leave",
   "audit.actions.leave_request_withdrawn": "Request to leave withdrawn",
   "audit.actions.leave_approved": "Leaving confirmed",
-  "audit.actions.leave_declined": "Request to leave declined"
+  "audit.actions.leave_declined": "Request to leave declined",
+  "mail.email.subject.club_invite": "[{{club_name}}] You're invited to join",
+  "mail.email.club_invite.intro": "{{invited_by}} invited you to join <strong>{{club_name}}</strong> on Hubra.",
+  "mail.email.club_invite.cta": "<a href=\"{{invite_url}}\">Accept the invite</a> — sign in or sign up with this email address. The link is valid for 14 days.",
+  "mail.email.club_invite.cta_text": "Open the link below, sign in or sign up with this email address and accept (valid for 14 days):",
+  "mail.email.club_invite.ignore": "If you don't want to join, ignore this email. The club sees nothing of your account until you accept.",
+  "members.invite.title": "Invite member",
+  "members.invite.subtitle": "The person gets a personal link, signs in or signs up with this address and accepts. Name, email and contact details stay theirs.",
+  "members.invite.send": "Send invite",
+  "members.invite.sentTitle": "Invite sent",
+  "members.invite.sent": "{{email}} gets a link to join.",
+  "members.invite.failed": "Invite failed",
+  "members.invite.nameHint": "Only used to greet them in the mail",
+  "members.accountFieldsHint": "From the member's own account. Only they can change it.",
+  "members.import.invitedMsg": "{{count}} invites sent, {{skipped}} already members."
 }

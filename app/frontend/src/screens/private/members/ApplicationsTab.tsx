@@ -58,11 +58,22 @@ export function ApplicationsTab() {
       const { tiersByName } = await getLookups()
       const tierId = tiersByName.get(approveTier)
       if (!tierId) throw new Error(`Unknown tier: ${approveTier}`)
-      await approveApplication(approveTarget.id, tierId, approveRole)
+      const { invited } = await approveApplication(approveTarget.id, tierId, approveRole)
       queryClient.invalidateQueries({ queryKey: ['applications'] })
       setPendingApplicationCount()
-      setMemberCount((prev) => prev + 1)
       setApproveTarget(null)
+      if (invited) {
+        // No account yet: they got an invite and join when they accept.
+        notify(
+          'success',
+          t('members.invite.sentTitle', 'Einladung gesendet'),
+          t('members.invite.sent', '{{email}} erhält einen Link zum Beitreten.', {
+            email: approveTarget.email,
+          }),
+        )
+        return
+      }
+      setMemberCount((prev) => prev + 1)
       notify(
         'success',
         t('members.applications.applicationApproved', 'Antrag angenommen'),

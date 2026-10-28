@@ -971,6 +971,73 @@ def join_club(slug: str):
     return jsonify({"status": "requested", "club": club}), 201
 
 
+# ── Club invites (a club adds people only by invite) ─────────────────────────
+
+
+def _invite_from_body():
+    from hubra.core.tenant.invites import open_invite
+
+    token = str((request.get_json(silent=True) or {}).get("token") or "")
+    invite = open_invite(token)
+    if invite is None:
+        raise_error(404, "INVITE_NOT_FOUND", "This invite is invalid or has expired")
+    tenant = db.session.get(Tenant, invite.tenant_id)  # type: ignore[union-attr]
+    if tenant is None or tenant.status != "active" or tenant.deleted_at is not None:
+        raise_error(404, "INVITE_NOT_FOUND", "This invite is invalid or has expired")
+    return invite, tenant
+
+
+@tenant_admin_bp.route("/invites/lookup", methods=["POST"])
+@jwt_required()
+def lookup_invite():
+    """The club and address behind an invite link, for the SSO accept page."""
+    user = _calling_user()
+    invite, tenant = _invite_from_body()
+    return jsonify(
+        {
+            "club": {"slug": tenant.slug, "name": tenant.name},
+            "email": invite.email,
+            "invitedBy": invite.invited_by,
+            "emailMatches": user.email.lower() == invite.email,
+            "membership": _membership_in(tenant.id, user),
+        }
+    )
+
+
+@tenant_admin_bp.route("/invites/accept", methods=["POST"])
+@jwt_required()
+def accept_invite():
+    """Accept an invite: the signed-in account with the invited address joins."""
+    from hubra.api.members.services import MembersService
+    from hubra.core.tenant.context import in_club
+
+    user = _calling_user()
+    invite, tenant = _invite_from_body()
+    if user.email.lower() != invite.email:
+        raise_error(
+            403,
+            "INVITE_EMAIL_MISMATCH",
+            "This invite was sent to another email address",
+        )
+    club = {"slug": tenant.slug, "name": tenant.name}
+
+    if _membership_in(tenant.id, user) != "member":
+        with in_club(tenant):
+            MembersService.add_account(user, invite.member_data)
+    invite.accepted_at = datetime.now(timezone.utc)
+    db.session.add(
+        GlobalAuditEntry(
+            tenant_id=tenant.id,
+            action="tenant.invite_accepted",
+            target_type="User",
+            target_id=str(user.id),
+            details={"email": user.email, "invited_by": invite.invited_by},
+        )
+    )
+    db.session.commit()
+    return jsonify({"status": "joined", "club": club}), 200
+
+
 # ── Club admins (the club's own admins, and platform managers) ────────────────
 #
 # A club's admins are the members holding its Admin or Owner role. Those

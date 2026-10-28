@@ -40,13 +40,12 @@ def link_user_to_tenant(user_id: int, tenant_id: int | None = None) -> None:
 
 
 def club_manages_account(user) -> bool:
-    """Whether the current club may change ``user``'s account itself.
+    """Whether the account belongs to the current club alone.
 
-    An account is the person's own login for every club and portal. A club
-    may set its password, email or other personal details, or switch the
-    whole account off, only when the account belongs to nobody else: it is
-    in no other club and holds no platform role. Otherwise the person
-    manages it themselves (and a platform manager can help).
+    Clubs never change an account (password, email and personal details are
+    the person's own). This only decides whether re-enabling a member may
+    also lift the account-wide block clubs used to set: when the account is
+    in no other club and holds no platform role.
     """
     if user is None:
         return False
@@ -65,16 +64,3 @@ def club_manages_account(user) -> bool:
     if tenant is not None:
         others = others.where(UserTenant.tenant_id != tenant.id)
     return db.session.scalar(others.limit(1)) is None
-
-
-def require_club_manages_account(user) -> None:
-    """403 unless the current club may change ``user``'s account."""
-    if not club_manages_account(user):
-        from hubra.core.errors import raise_error
-
-        raise_error(
-            403,
-            "ACCOUNT_NOT_MANAGED",
-            "This person's account is also used outside this club; "
-            "they change it themselves",
-        )
