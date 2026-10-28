@@ -395,7 +395,9 @@
     "enableMail": "Enable group mailing list",
     "mailAlias": "Mail Alias",
     "forwarding": "Forwarding",
-    "allowSendAs": "Allow send-as"
+    "allowSendAs": "Allow send-as",
+    "selfJoin": "Members can join and leave on their own",
+    "selfJoinHint": "For interest groups. Members find it under My account."
   },
   "events": {
     "title": "Events",
@@ -769,7 +771,13 @@
     "sessionNamePlaceholder": "My device",
     "sessionRenamed": "Session renamed",
     "nameCleared": "Name cleared",
-    "renameFailed": "Rename failed"
+    "renameFailed": "Rename failed",
+    "interestGroups": "Interest groups",
+    "groupMembers": "{{count}} members",
+    "leaveGroup": "Leave",
+    "joinGroup": "Join",
+    "myKeys": "My keys",
+    "keyDeposit": "Deposit CHF {{amount}}"
   },
   "system": {
     "title": "System",

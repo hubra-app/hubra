@@ -11,6 +11,7 @@ from sqlalchemy import select
 
 from vollbuild.api.permissions import (
     permission_required,
+    require_member,
     can_update,
     filter_updatable_fields,
 )
@@ -26,7 +27,7 @@ from vollbuild.core.schemas.group import (
     GroupMembershipUpdateSchema,
 )
 from vollbuild.core.schemas.member import MemberSchema
-from vollbuild.api.groups.services import GroupService, GroupsService
+from vollbuild.api.groups.services import GroupService, GroupsService, SelfJoinService
 
 
 groups_bp = Blueprint("groups_bp", __name__)
@@ -56,6 +57,32 @@ def count_groups():
 def list_groups():
     groups = GroupsService.list()
     return jsonify(_groups_schema.dump(groups)), 200
+
+
+# ── Self-join groups (any member) ────────────────────────────────────────────
+
+
+@groups_bp.get("/joinable")
+@require_member
+def list_joinable_groups():
+    member = get_current_member()
+    return jsonify(SelfJoinService.joinable(member.id)), 200
+
+
+@groups_bp.post("/<int:group_id>/join")
+@require_member
+def join_group(group_id: int):
+    SelfJoinService.join(group_id, get_current_member())
+    db.session.commit()
+    return "", 204
+
+
+@groups_bp.post("/<int:group_id>/leave")
+@require_member
+def leave_group(group_id: int):
+    SelfJoinService.leave(group_id, get_current_member())
+    db.session.commit()
+    return "", 204
 
 
 # ── GET /groups/<id> ──────────────────────────────────────────────────────────

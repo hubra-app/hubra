@@ -11,6 +11,8 @@ from vollbuild.core.errors import raise_error
 from vollbuild.core.extensions import db
 from vollbuild.core.models.group import Group, GroupMembership
 from vollbuild.core.models.member import Member, member_groups
+from vollbuild.core.modules import emit
+from vollbuild.core.modules.events import GROUP_MEMBERSHIP_CHANGED
 
 
 # ── GroupService (singular) ────────────────────────────────────────────────────
@@ -68,6 +70,7 @@ class GroupService:
             "type",
             "email_alias",
             "is_public",
+            "self_join",
             "parent_group_id",
         ):
             if field in data:
@@ -174,6 +177,12 @@ class GroupService:
         )
 
         _trigger_group_mail_sync(group.id)
+        emit(
+            GROUP_MEMBERSHIP_CHANGED,
+            group_id=group.id,
+            member_id=member.id,
+            action="joined",
+        )
 
     @staticmethod
     def remove_member(member_id: int, group_id: int) -> None:
@@ -208,6 +217,12 @@ class GroupService:
         )
 
         _trigger_group_mail_sync(group_id)
+        emit(
+            GROUP_MEMBERSHIP_CHANGED,
+            group_id=group_id,
+            member_id=member_id,
+            action="left",
+        )
 
     @staticmethod
     def update_member_role(
@@ -329,6 +344,7 @@ class GroupsService:
             type=data.get("type", "interest_group"),
             email_alias=data.get("email_alias"),
             is_public=data.get("is_public", True),
+            self_join=data.get("self_join", False),
             parent_group_id=data.get("parent_group_id"),
         )
         db.session.add(group)
@@ -390,3 +406,67 @@ def _trigger_group_mail_sync(group_id: int) -> None:
             db.session.commit()
         except Exception:
             db.session.rollback()
+
+
+class SelfJoinService:
+    """Members joining and leaving self-join groups on their own."""
+
+    @staticmethod
+    def joinable(member_id: int) -> list[dict]:
+        groups = db.session.scalars(
+            select(Group)
+            .where(
+                Group.self_join.is_(True),
+                Group.archived_at.is_(None),
+                Group.deleted_at.is_(None),
+            )
+            .order_by(Group.name)
+        ).all()
+        mine = set(
+            db.session.scalars(
+                select(member_groups.c.group_id).where(
+                    member_groups.c.member_id == member_id
+                )
+            )
+        )
+        counts = dict(
+            db.session.execute(
+                select(member_groups.c.group_id, func.count()).group_by(
+                    member_groups.c.group_id
+                )
+            ).all()
+        )
+        return [
+            {
+                "id": g.id,
+                "name": g.name,
+                "description": g.description,
+                "color": g.color,
+                "iconName": g.icon_name,
+                "type": g.type,
+                "memberCount": counts.get(g.id, 0),
+                "joined": g.id in mine,
+            }
+            for g in groups
+        ]
+
+    @staticmethod
+    def _open_group(group_id: int) -> Group:
+        group = db.session.get(Group, group_id)
+        if group is None or group.deleted_at is not None or group.archived_at:
+            raise_error(404, "NOT_FOUND", "Group not found")
+        if not group.self_join:
+            raise_error(403, "GROUP_NOT_SELF_JOIN", "Ask a group lead to add you")
+        return group
+
+    @staticmethod
+    def join(group_id: int, member: Member) -> None:
+        group = SelfJoinService._open_group(group_id)
+        GroupService.add_member(group, member)
+        log_audit(member.id, "join_group", "Group", group.id, group.name)
+
+    @staticmethod
+    def leave(group_id: int, member: Member) -> None:
+        group = SelfJoinService._open_group(group_id)
+        GroupService.remove_member(member.id, group.id)
+        log_audit(member.id, "leave_group", "Group", group.id, group.name)

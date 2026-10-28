@@ -23,6 +23,7 @@ class GroupSchema(ma.SQLAlchemyAutoSchema):
     type = fields.Str(dump_default="interest_group")
     email_alias = fields.Str(allow_none=True, dump_default=None)
     is_public = fields.Bool(dump_default=True)
+    self_join = fields.Bool(dump_default=False)
     parent_group_id = fields.Int(allow_none=True, dump_default=None)
     deleted_at = fields.DateTime(allow_none=True, dump_only=True, dump_default=None)
 
@@ -66,6 +67,7 @@ class GroupCreateSchema(ma.Schema):
     )
     email_alias = fields.Str(allow_none=True, load_default=None)
     is_public = fields.Bool(load_default=True)
+    self_join = fields.Bool(load_default=False)
     parent_group_id = fields.Int(allow_none=True, load_default=None)
 
 
@@ -89,6 +91,7 @@ class GroupUpdateSchema(ma.Schema):
     )
     email_alias = fields.Str(allow_none=True)
     is_public = fields.Bool()
+    self_join = fields.Bool()
     parent_group_id = fields.Int(allow_none=True)
 
 

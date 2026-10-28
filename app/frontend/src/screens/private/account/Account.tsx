@@ -14,6 +14,9 @@ import { InvoicePill } from "@/components/ui";
 import { listMyInvoices, downloadInvoicePdf } from "@/api/finance";
 import { formatCHF } from "@/format";
 import { useToggleJoinEvent } from "@/screens/private/operations/useEventActions";
+import { useModules } from "@/modules/useModules";
+import { MyGroupsCard } from "./MyGroupsCard";
+import { MyKeysCard } from "./MyKeysCard";
 
 /* -- Account Dashboard ------------------------ */
 export function AccountDashboardScreen() {
@@ -22,6 +25,7 @@ export function AccountDashboardScreen() {
   const { polls, events, myVotes } = useData();
   const { go, goInvoice } = useNav();
   const joinEventMutation = useToggleJoinEvent();
+  const modules = useModules();
   const myId = currentUser?.id ?? "";
 
   const {
@@ -504,6 +508,9 @@ export function AccountDashboardScreen() {
             })
           )}
         </Paper>
+
+        {modules.has("groups") && <MyGroupsCard />}
+        {modules.has("inventory.keys") && <MyKeysCard />}
 
         {/* My likes ? coming soon */}
         <Paper withBorder shadow="sm" radius="lg">

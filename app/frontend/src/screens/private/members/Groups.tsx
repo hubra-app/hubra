@@ -3,6 +3,7 @@ import {
   Badge,
   Button,
   Select,
+  Switch,
   Paper,
   Textarea,
   TextInput,
@@ -172,6 +173,7 @@ const groupSchema = z.object({
   sessions: z.string(),
   tools: z.number(),
   leadId: z.string(),
+  selfJoin: z.boolean(),
 })
 type GroupForm = z.infer<typeof groupSchema>
 
@@ -210,6 +212,7 @@ export function GroupsScreen() {
       sessions: '',
       tools: 0,
       leadId: '',
+      selfJoin: false,
     },
   })
 
@@ -232,6 +235,7 @@ export function GroupsScreen() {
       sessions: '',
       tools: 0,
       leadId: '',
+      selfJoin: false,
     })
     setAddOpen(true)
   }
@@ -244,6 +248,7 @@ export function GroupsScreen() {
       sessions: g.sessions,
       tools: g.tools,
       leadId: '',
+      selfJoin: g.selfJoin ?? false,
     })
   }
 
@@ -256,6 +261,7 @@ export function GroupsScreen() {
         sessions: data.sessions,
         tools: data.tools,
         leadId: data.leadId ? Number(data.leadId) : undefined,
+        selfJoin: data.selfJoin,
       })
       queryClient.invalidateQueries({ queryKey: ['groups'] })
       queryClient.invalidateQueries({ queryKey: ['lookups'] })
@@ -287,6 +293,7 @@ export function GroupsScreen() {
         sessions: data.sessions,
         tools: data.tools,
         ...(data.leadId ? { leadId: Number(data.leadId) } : {}),
+        selfJoin: data.selfJoin,
       })
       queryClient.invalidateQueries({ queryKey: ['groups'] })
       queryClient.invalidateQueries({ queryKey: ['lookups'] })
@@ -387,6 +394,14 @@ export function GroupsScreen() {
           />
         </Field>
       </div>
+      <Switch
+        label={t('groups.selfJoin', 'Members can join and leave on their own')}
+        description={t(
+          'groups.selfJoinHint',
+          'For interest groups. Members find it under My account.',
+        )}
+        {...form.getInputProps('selfJoin', { type: 'checkbox' })}
+      />
     </div>
   )
 

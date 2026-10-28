@@ -74,6 +74,7 @@ export interface Group {
   type?: string;
   emailAlias?: string;
   isPublic?: boolean;
+  selfJoin?: boolean;
   parentGroupId?: number | null;
   parentGroupName?: string | null;
 }

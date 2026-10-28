@@ -17,6 +17,7 @@ interface BackendGroup {
   type: string;
   email_alias: string | null;
   is_public: boolean;
+  self_join?: boolean;
   parent_group_id: number | null;
   parent_group_name: string | null;
 }
@@ -35,6 +36,7 @@ function adapt(b: BackendGroup): Group {
     type: b.type ?? "interest_group",
     emailAlias: b.email_alias ?? "",
     isPublic: b.is_public ?? true,
+    selfJoin: b.self_join ?? false,
     parentGroupId: b.parent_group_id ?? null,
     parentGroupName: b.parent_group_name ?? null,
   };
@@ -55,6 +57,7 @@ export interface GroupCreate {
   type?: string;
   emailAlias?: string;
   isPublic?: boolean;
+  selfJoin?: boolean;
   parentGroupId?: number | null;
 }
 
@@ -68,6 +71,7 @@ export async function createGroup(input: GroupCreate): Promise<Group> {
   if (input.type) body.type = input.type;
   if (input.emailAlias !== undefined) body.email_alias = input.emailAlias;
   if (input.isPublic !== undefined) body.is_public = input.isPublic;
+  if (input.selfJoin !== undefined) body.self_join = input.selfJoin;
   if (input.parentGroupId !== undefined) body.parent_group_id = input.parentGroupId;
   const b = await apiFetch<BackendGroup>("/groups/", {
     method: "POST",
@@ -87,6 +91,7 @@ export interface GroupUpdate {
   type?: string;
   emailAlias?: string;
   isPublic?: boolean;
+  selfJoin?: boolean;
   parentGroupId?: number | null;
 }
 
@@ -104,6 +109,7 @@ export async function updateGroup(
   if (input.type !== undefined) body.type = input.type;
   if (input.emailAlias !== undefined) body.email_alias = input.emailAlias;
   if (input.isPublic !== undefined) body.is_public = input.isPublic;
+  if (input.selfJoin !== undefined) body.self_join = input.selfJoin;
   if (input.parentGroupId !== undefined) body.parent_group_id = input.parentGroupId;
   const b = await apiFetch<BackendGroup>(`/groups/${id}`, {
     method: "PATCH",
@@ -132,4 +138,27 @@ export async function removeGroupMember(
   await apiFetch(`/groups/${groupId}/members/${memberId}`, {
     method: "DELETE",
   });
+}
+
+export interface JoinableGroup {
+  id: number;
+  name: string;
+  description: string | null;
+  color: string | null;
+  iconName: string | null;
+  type: string;
+  memberCount: number;
+  joined: boolean;
+}
+
+export async function listJoinableGroups(): Promise<JoinableGroup[]> {
+  return apiFetch<JoinableGroup[]>("/groups/joinable");
+}
+
+export async function joinGroup(id: number): Promise<void> {
+  await apiFetch(`/groups/${id}/join`, { method: "POST" });
+}
+
+export async function leaveGroup(id: number): Promise<void> {
+  await apiFetch(`/groups/${id}/leave`, { method: "POST" });
 }

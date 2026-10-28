@@ -472,7 +472,9 @@
     "createGroup": "Gruppe erstelle",
     "groupCreatedMsg": "{{name}} isch erstellt.",
     "groupUpdatedMsg": "{{name}} isch aktualisiert worde.",
-    "groupDeletedMsg": "{{name}} isch entfernt worde."
+    "groupDeletedMsg": "{{name}} isch entfernt worde.",
+    "selfJoin": "Mitglieder chönd sälber biiträte und ustrete",
+    "selfJoinHint": "Für Interessegruppe. Mitglieder finded si under Mis Konto."
   },
   "events": {
     "title": "Verahstaltigä",
@@ -1014,7 +1016,13 @@
     "sessionNamePlaceholder": "Mis Grät",
     "sessionRenamed": "Sitzig umbenennt",
     "nameCleared": "Name glöscht",
-    "renameFailed": "Umbenenne fählgschlage"
+    "renameFailed": "Umbenenne fählgschlage",
+    "interestGroups": "Interessegruppe",
+    "groupMembers": "{{count}} Mitglieder",
+    "leaveGroup": "Ustrete",
+    "joinGroup": "Biiträte",
+    "myKeys": "Mini Schlüssel",
+    "keyDeposit": "Depot CHF {{amount}}"
   },
   "system": {
     "title": "Endpunkt-Berechtigunge",
