@@ -195,6 +195,7 @@ def make_celery(app: Flask) -> Celery:
         broker_connection_retry_on_startup=False,
         timezone="UTC",
     )
+    conf["beat_schedule"].update(_module_schedules())
     if testing:
         conf["task_always_eager"] = True
         conf["task_eager_propagates"] = True
@@ -210,6 +211,14 @@ def _module_task_imports() -> list[str]:
 
     registry.load()
     return registry.task_modules()
+
+
+def _module_schedules() -> dict:
+    """Periodic tasks declared by module manifests (``schedule=``)."""
+    from hubra.core.modules import registry
+
+    registry.load()
+    return {s.name: {"task": s.task, "schedule": s.every} for s in registry.schedules()}
 
 
 def _bootstrap_celery() -> Celery:

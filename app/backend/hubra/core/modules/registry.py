@@ -147,6 +147,9 @@ class ModuleRegistry:
     def task_modules(self) -> list[str]:
         return [t for m in self.all() for t in m.tasks]
 
+    def schedules(self) -> list:
+        return [s for m in self.all() for s in m.schedule]
+
     def tenant_tables(self) -> list[str]:
         tables: list[str] = []
         for m in self.all():
