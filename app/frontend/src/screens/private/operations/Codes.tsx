@@ -192,7 +192,7 @@ export function CodesScreen() {
                     style={{
                       fontFamily: '"JetBrains Mono", monospace',
                       fontSize: 'var(--mantine-font-size-sm)',
-                      background: '#f4f8f5',
+                      background: '#f4f2f9',
                       padding: '2px 8px',
                       borderRadius: 4,
                       letterSpacing: visible ? '0.06em' : '0.15em',
@@ -218,7 +218,7 @@ export function CodesScreen() {
             key: 'description',
             header: t('codes.description'),
             render: (c) => (
-              <span style={{ color: '#6b7480' }}>{c.description ?? '—'}</span>
+              <span style={{ color: '#5e5873' }}>{c.description ?? '—'}</span>
             ),
           },
           {
@@ -240,7 +240,7 @@ export function CodesScreen() {
               <span
                 className="num"
                 style={{
-                  color: '#6b7480',
+                  color: '#5e5873',
                   fontSize: 'var(--mantine-font-size-xs)',
                 }}
               >

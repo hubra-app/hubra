@@ -103,10 +103,12 @@ Then either:
   (set `HUBRA_BIND=0.0.0.0` if the proxy runs on another machine) and keep
   `VITE_API_BASE=/api`. Each app reaches the API on its own host. Set
   `REAL_IP_FROM` to the proxy's address so rate limits see real client IPs.
-- **Separate API host** (how vollbuild.ch runs): route `api.example.org` to the
+- **Separate API host** (how the hosted Hubra runs): route `api.example.org` to the
   `backend` service and set `VITE_API_BASE=https://api.example.org/api`.
   `docker-compose.traefik.yml` does this with an external Traefik; enable it
-  with `COMPOSE_FILE=docker-compose.yml:docker-compose.traefik.yml` in `.env`.
+  with `COMPOSE_FILE=docker-compose.yml:docker-compose.traefik.yml` in `.env`,
+  and takes its host names from `HUBRA_APP_HOST`, `HUBRA_MANAGE_HOST`,
+  `HUBRA_SSO_HOST` and `HUBRA_API_HOST` (default `*.hubra.club`).
 
 The frontend images read these values when the container starts, so changing
 them needs `docker compose up -d`, not a rebuild.

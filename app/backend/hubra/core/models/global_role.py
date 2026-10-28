@@ -1,7 +1,7 @@
 """Global RBAC models — platform-level roles and permissions.
 
 These live in the public schema (alongside User, Tenant) and control
-access to the manager portal (manage.vollbuild.ch). They are separate
+access to the manager portal (manage.hubra.club). They are separate
 from the tenant-scoped Role/Permission/RolePermission models which
 control access within a single tenant's data.
 

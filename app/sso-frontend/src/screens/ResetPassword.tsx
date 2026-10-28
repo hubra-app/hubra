@@ -69,8 +69,8 @@ export function ResetPassword() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
           <div className="logo-mark" />
           <div>
-            <div style={{ fontSize: 'var(--mantine-font-size-md)', fontWeight: 700, color: '#181818' }}>Hubra</div>
-            <div style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#8a6a00', fontFamily: '"JetBrains Mono"', letterSpacing: '0.06em' }}>
+            <div className="wordmark" style={{ fontSize: 20, color: '#1a1625' }}>hubra</div>
+            <div style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#6131c4', fontFamily: '"JetBrains Mono"', letterSpacing: '0.06em' }}>
               Makerspace · Schwyz
             </div>
           </div>
@@ -80,17 +80,17 @@ export function ResetPassword() {
           <>
             <div
               style={{
-                width: 48, height: 48, borderRadius: '50%', background: '#fffbea',
-                border: '1.5px solid #fece2b55', display: 'flex', alignItems: 'center',
+                width: 48, height: 48, borderRadius: '50%', background: '#f5f1ff',
+                border: '1.5px solid #7441e055', display: 'flex', alignItems: 'center',
                 justifyContent: 'center', marginBottom: 20,
               }}
             >
-              <IconKey size={22} color="#8a6a00" />
+              <IconKey size={22} color="#6131c4" />
             </div>
-            <h2 style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 700, color: '#181818', margin: '0 0 6px' }}>
+            <h2 style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 700, color: '#1a1625', margin: '0 0 6px' }}>
               Set a new password
             </h2>
-            <p style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#6b7480', margin: '0 0 28px' }}>
+            <p style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#5e5873', margin: '0 0 28px' }}>
               Choose a strong password for your account.
             </p>
 
@@ -133,10 +133,10 @@ export function ResetPassword() {
             >
               <IconCheck size={28} color="#1f9d57" />
             </div>
-            <h2 style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 700, color: '#181818', margin: '0 0 8px' }}>
+            <h2 style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 700, color: '#1a1625', margin: '0 0 8px' }}>
               Password updated
             </h2>
-            <p style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#6b7480', margin: '0 0 28px' }}>
+            <p style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#5e5873', margin: '0 0 28px' }}>
               You can now sign in with your new password.
             </p>
             <Button

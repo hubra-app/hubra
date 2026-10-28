@@ -42,8 +42,8 @@ export function ForgotPassword() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
           <div className="logo-mark" />
           <div>
-            <div style={{ fontSize: 'var(--mantine-font-size-md)', fontWeight: 700, color: '#181818' }}>Hubra</div>
-            <div style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#8a6a00', fontFamily: '"JetBrains Mono"', letterSpacing: '0.06em' }}>
+            <div className="wordmark" style={{ fontSize: 20, color: '#1a1625' }}>hubra</div>
+            <div style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#6131c4', fontFamily: '"JetBrains Mono"', letterSpacing: '0.06em' }}>
               Makerspace · Schwyz
             </div>
           </div>
@@ -53,17 +53,17 @@ export function ForgotPassword() {
           <>
             <div
               style={{
-                width: 48, height: 48, borderRadius: '50%', background: '#fffbea',
-                border: '1.5px solid #fece2b55', display: 'flex', alignItems: 'center',
+                width: 48, height: 48, borderRadius: '50%', background: '#f5f1ff',
+                border: '1.5px solid #7441e055', display: 'flex', alignItems: 'center',
                 justifyContent: 'center', marginBottom: 20,
               }}
             >
-              <IconMail size={22} color="#8a6a00" />
+              <IconMail size={22} color="#6131c4" />
             </div>
-            <h2 style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 700, color: '#181818', margin: '0 0 6px' }}>
+            <h2 style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 700, color: '#1a1625', margin: '0 0 6px' }}>
               Reset your password
             </h2>
-            <p style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#6b7480', margin: '0 0 28px' }}>
+            <p style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#5e5873', margin: '0 0 28px' }}>
               Enter your email and we'll send you a reset link.
             </p>
 
@@ -102,10 +102,10 @@ export function ForgotPassword() {
             >
               <IconCheck size={28} color="#1f9d57" />
             </div>
-            <h2 style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 700, color: '#181818', margin: '0 0 8px' }}>
+            <h2 style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 700, color: '#1a1625', margin: '0 0 8px' }}>
               Check your inbox
             </h2>
-            <p style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#6b7480', margin: '0 0 28px', lineHeight: 1.6 }}>
+            <p style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#5e5873', margin: '0 0 28px', lineHeight: 1.6 }}>
               If an account exists for {form.values.email}, a password reset link has been sent.
             </p>
             <Button variant="subtle" style={{ gap: 8 }} onClick={() => navigate('/login')}>

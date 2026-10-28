@@ -281,13 +281,13 @@ export function MembersTab() {
                     lastSeen={m.lastSeen}
                   />
                   <div>
-                    <div style={{ fontWeight: 600, color: '#181818' }}>
+                    <div style={{ fontWeight: 600, color: '#1a1625' }}>
                       {m.name}
                     </div>
                     <div
                       style={{
                         fontSize: 'var(--mantine-font-size-xs)',
-                        color: '#6b7480',
+                        color: '#5e5873',
                       }}
                     >
                       {m.email}
@@ -316,7 +316,7 @@ export function MembersTab() {
                   className="num"
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
-                    color: '#99a2ac',
+                    color: '#8c86a0',
                   }}
                 >
                   {m.id}
@@ -346,7 +346,7 @@ export function MembersTab() {
                 <span
                   className="num"
                   style={{
-                    color: '#6b7480',
+                    color: '#5e5873',
                     fontSize: 'var(--mantine-font-size-sm)',
                   }}
                 >
@@ -475,7 +475,7 @@ export function MembersTab() {
           <div
             style={{
               padding: '14px 16px',
-              borderBottom: '1px solid #d3ddd7',
+              borderBottom: '1px solid #d6d2e3',
               display: 'flex',
               gap: 10,
               flexWrap: 'wrap',
@@ -490,7 +490,7 @@ export function MembersTab() {
                   left: 11,
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  color: '#99a2ac',
+                  color: '#8c86a0',
                 }}
               />
               <TextInput
@@ -511,7 +511,7 @@ export function MembersTab() {
                     {t !== 'All' && (
                       <span
                         className="dot"
-                        style={{ background: tierColors[t] ?? '#8e97a7' }}
+                        style={{ background: tierColors[t] ?? '#857f99' }}
                       />
                     )}
                     {t}
@@ -548,7 +548,7 @@ export function MembersTab() {
               <span
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
-                  color: '#6b7480',
+                  color: '#5e5873',
                 }}
               >
                 {t('members.shown', { count: members.length })}
@@ -597,7 +597,7 @@ export function MembersTab() {
                       <div
                         style={{
                           fontWeight: 600,
-                          color: '#181818',
+                          color: '#1a1625',
                           fontSize: 'var(--mantine-font-size-sm)',
                         }}
                       >
@@ -606,7 +606,7 @@ export function MembersTab() {
                       <div
                         style={{
                           fontSize: 'var(--mantine-font-size-xs)',
-                          color: '#6b7480',
+                          color: '#5e5873',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
@@ -643,7 +643,7 @@ export function MembersTab() {
                     style={{
                       display: 'flex',
                       gap: 8,
-                      borderTop: '1px solid #e3eae6',
+                      borderTop: '1px solid #e6e3ef',
                       paddingTop: 10,
                       marginTop: 2,
                     }}
@@ -776,8 +776,8 @@ export function MembersTab() {
           <div
             style={{
               fontSize: 'var(--mantine-font-size-sm)',
-              color: '#6b7480',
-              background: '#f4f8f5',
+              color: '#5e5873',
+              background: '#f4f2f9',
               borderRadius: 8,
               padding: '10px 14px',
             }}

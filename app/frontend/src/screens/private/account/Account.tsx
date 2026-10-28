@@ -444,7 +444,7 @@ export function AccountDashboardScreen() {
                             <span
                               style={{
                                 fontSize: "var(--mantine-font-size-sm)",
-                                color: isMyVote ? "#8a6a00" : "#6b7480",
+                                color: isMyVote ? "#6131c4" : "#5e5873",
                                 fontWeight: isMyVote ? 600 : 400,
                               }}
                             >
@@ -455,7 +455,7 @@ export function AccountDashboardScreen() {
                               className="num"
                               style={{
                                 fontSize: "var(--mantine-font-size-sm)",
-                                color: isWinner ? "#8a6a00" : "#6b7480",
+                                color: isWinner ? "#6131c4" : "#5e5873",
                               }}
                             >
                               {pct}%
@@ -468,10 +468,10 @@ export function AccountDashboardScreen() {
                             styles={{
                               section: {
                                 background: isMyVote
-                                  ? "#fece2b"
+                                  ? "#7441e0"
                                   : isWinner
-                                    ? "#fece2b55"
-                                    : "#e7eeea",
+                                    ? "#7441e055"
+                                    : "#ebe8f2",
                                 transition: "width .4s",
                               },
                             }}
@@ -483,7 +483,7 @@ export function AccountDashboardScreen() {
                   <div
                     style={{
                       fontSize: "var(--mantine-font-size-xs)",
-                      color: "#99a2ac",
+                      color: "#8c86a0",
                       marginTop: 8,
                     }}
                   >
@@ -519,7 +519,7 @@ export function AccountDashboardScreen() {
             gap="sm"
             style={{ borderBottom: "1px solid var(--mantine-color-gray-3)" }}
           >
-            <IconHeart size={16} style={{ color: "#6b7480" }} />
+            <IconHeart size={16} style={{ color: "#5e5873" }} />
             <Text fw={700} fz="md">
               {t("account.likedPosts", "Liked posts")}
             </Text>
@@ -528,7 +528,7 @@ export function AccountDashboardScreen() {
             style={{
               padding: "24px",
               textAlign: "center",
-              color: "#99a2ac",
+              color: "#8c86a0",
               fontSize: "var(--mantine-font-size-sm)",
             }}
           >

@@ -133,7 +133,7 @@ export function SystemScreen() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 12,
-                color: '#99a2ac',
+                color: '#8c86a0',
                 fontSize: 'var(--mantine-font-size-sm)',
               }}
             >
@@ -187,7 +187,7 @@ export function SystemScreen() {
               <div
                 style={{
                   padding: '14px 16px',
-                  borderBottom: '1px solid #d3ddd7',
+                  borderBottom: '1px solid #d6d2e3',
                   display: 'flex',
                   gap: 10,
                   flexWrap: 'wrap',
@@ -202,7 +202,7 @@ export function SystemScreen() {
                       left: 11,
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      color: '#99a2ac',
+                      color: '#8c86a0',
                     }}
                   />
                   <TextInput
@@ -232,7 +232,7 @@ export function SystemScreen() {
                   style={{
                     marginLeft: 'auto',
                     fontSize: 'var(--mantine-font-size-sm)',
-                    color: '#6b7480',
+                    color: '#5e5873',
                   }}
                 >
                   {filtered.length} {t('system.endpoint', 'Endpunkt')}
@@ -249,7 +249,7 @@ export function SystemScreen() {
                   style={{
                     padding: '48px 24px',
                     textAlign: 'center',
-                    color: '#99a2ac',
+                    color: '#8c86a0',
                     fontSize: 'var(--mantine-font-size-sm)',
                   }}
                 >
@@ -287,16 +287,16 @@ export function SystemScreen() {
                             style={{
                               fontFamily: "'JetBrains Mono', monospace",
                               fontSize: 'var(--mantine-font-size-sm)',
-                              color: '#181818',
+                              color: '#1a1625',
                             }}
                           >
                             {e.path}
                           </Table.Td>
                           <Table.Td
                             data-label={t('system.permission', 'Berechtigung')}
-                            style={{ color: '#6b7480' }}
+                            style={{ color: '#5e5873' }}
                           >
-                            <div style={{ fontWeight: 600, color: '#3a4048' }}>
+                            <div style={{ fontWeight: 600, color: '#2e2940' }}>
                               {e.display_name}
                             </div>
                             <div

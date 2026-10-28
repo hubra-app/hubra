@@ -33,11 +33,11 @@ add() {
   script="${script}s|__RUNTIME_$1__|$(sed_escape "$value")|g;"
 }
 add VITE_API_BASE /api
-add VITE_SSO_URL https://sso.vollbuild.ch
-add VITE_COS_URL https://cos.vollbuild.ch
-add VITE_MANAGE_URL https://manage.vollbuild.ch
-add VITE_ADMIN_PORTAL_URL https://manage.vollbuild.ch
-add VITE_TENANT_APP_URL https://cos.vollbuild.ch
+add VITE_SSO_URL https://sso.hubra.club
+add VITE_COS_URL https://app.hubra.club
+add VITE_MANAGE_URL https://manage.hubra.club
+add VITE_ADMIN_PORTAL_URL https://manage.hubra.club
+add VITE_TENANT_APP_URL https://app.hubra.club
 
 find "$html" -type f \( -name '*.js' -o -name '*.html' \) -exec sed -i "$script" {} +
 

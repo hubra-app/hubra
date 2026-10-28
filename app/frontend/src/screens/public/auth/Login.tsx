@@ -95,7 +95,7 @@ export function LoginScreen() {
               </Text>
               <Anchor
                 size="sm"
-                c="#8a6a00"
+                c="#6131c4"
                 onClick={(e) => {
                   e.preventDefault()
                   navigate('/forgot-password')

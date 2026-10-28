@@ -61,12 +61,12 @@ export function VerifyEmail() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px',
               }}
             >
-              <IconLoader2 size={28} color="#6366f1" className="spin" />
+              <IconLoader2 size={28} color="#7441e0" className="spin" />
             </div>
-            <h2 style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 700, color: '#181818', margin: '0 0 8px' }}>
+            <h2 style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 700, color: '#1a1625', margin: '0 0 8px' }}>
               Verifying email…
             </h2>
-            <p style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#6b7480', margin: 0 }}>
+            <p style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#5e5873', margin: 0 }}>
               Please wait while we confirm your email address.
             </p>
           </>
@@ -82,10 +82,10 @@ export function VerifyEmail() {
             >
               <IconCheck size={28} color="#1f9d57" />
             </div>
-            <h2 style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 700, color: '#181818', margin: '0 0 8px' }}>
+            <h2 style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 700, color: '#1a1625', margin: '0 0 8px' }}>
               Email verified
             </h2>
-            <p style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#6b7480', margin: '0 0 28px' }}>
+            <p style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#5e5873', margin: '0 0 28px' }}>
               Your email has been confirmed. You can now sign in.
             </p>
             <Button
@@ -108,10 +108,10 @@ export function VerifyEmail() {
             >
               <IconCircleX size={28} color="#dc2626" />
             </div>
-            <h2 style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 700, color: '#181818', margin: '0 0 8px' }}>
+            <h2 style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 700, color: '#1a1625', margin: '0 0 8px' }}>
               Verification failed
             </h2>
-            <p style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#6b7480', margin: '0 0 28px' }}>
+            <p style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#5e5873', margin: '0 0 28px' }}>
               {message}
             </p>
             <Button

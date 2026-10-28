@@ -39,7 +39,7 @@ export function Sidebar() {
   )
   const userName = currentUser?.name ?? ''
   const userRole = currentUser?.roles?.join(', ') ?? ''
-  const userBg = currentUser?.avatarColor ?? '#e7eeea'
+  const userBg = currentUser?.avatarColor ?? '#ebe8f2'
 
   return (
     <Box

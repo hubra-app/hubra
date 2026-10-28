@@ -156,9 +156,9 @@ spec:
                   cert="/etc/letsencrypt/live/$MAIL_HOST/fullchain.pem"
                   [ -e "$cert" ] || { echo "no cert yet at $cert"; exit 0; }
                   stamp="$(stat -L -c %Y "$cert")"
-                  key='club.vollbuild.ch/cert-stamp'
+                  key='hubra.club/cert-stamp'
                   for d in mailserver haraka zonemta; do
-                    cur="$(kubectl get deploy "$d" -o jsonpath="{.spec.template.metadata.annotations.club\.vollbuild\.ch/cert-stamp}")"
+                    cur="$(kubectl get deploy "$d" -o jsonpath="{.spec.template.metadata.annotations.hubra\.club/cert-stamp}")"
                     if [ "$cur" = "$stamp" ]; then
                       echo "$d: cert unchanged"
                       continue

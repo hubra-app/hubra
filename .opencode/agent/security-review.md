@@ -59,7 +59,8 @@ Best Practices, Backend / Flask Best Practices).
 
 - Validate redirect URLs against an allowlist before redirecting. The SSO
   frontend's `validateRedirect()` is the correct pattern — only allow
-  `*.vollbuild.ch` or `localhost`.
+  subdomains of the club app's domain (`*.hubra.club` by
+  default) or `localhost`.
 - Flag any `window.location.assign(userInput)` or `window.location.href =
   userInput` without validation (open redirect vulnerability).
 

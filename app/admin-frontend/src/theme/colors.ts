@@ -1,4 +1,19 @@
+// Hubra Violet. Shade 6 is the light-mode primary, shade 4 the dark-mode one.
 export const accColors = [
+  '#f5f1ff',
+  '#ebe3ff',
+  '#d6c7ff',
+  '#bba3fd',
+  '#9f7cf8',
+  '#8758f0',
+  '#7441e0',
+  '#6131c4',
+  '#4d27a0',
+  '#3a1e78',
+] as const
+
+// Signal Gold: the logo dot, "new" and "due" markers. Always with dark text.
+export const goldColors = [
   '#fffbeb',
   '#fff3c4',
   '#fce588',

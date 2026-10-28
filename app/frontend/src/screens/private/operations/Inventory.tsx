@@ -116,7 +116,7 @@ const STATUS_CONFIG: Record<
   },
   archived: {
     label: 'Archiviert',
-    color: '#99a2ac',
+    color: '#8c86a0',
     icon: <IconArchive size={12} />,
   },
   checked_out: {
@@ -136,7 +136,7 @@ const STATUS_CONFIG: Record<
   },
   retired: {
     label: 'Ausgemustert',
-    color: '#99a2ac',
+    color: '#8c86a0',
     icon: <IconArchive size={12} />,
   },
 }
@@ -313,7 +313,7 @@ function ItemDetailPanel({
         <div
           style={{
             padding: '20px 20px 14px',
-            borderBottom: '1px solid #d3ddd7',
+            borderBottom: '1px solid #d6d2e3',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
@@ -337,7 +337,7 @@ function ItemDetailPanel({
                 style={{
                   fontSize: 'var(--mantine-font-size-md)',
                   fontWeight: 700,
-                  color: '#181818',
+                  color: '#1a1625',
                 }}
               >
                 {item.name}
@@ -383,13 +383,13 @@ function ItemDetailPanel({
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {/* Details */}
           <div
-            style={{ padding: '14px 20px', borderBottom: '1px solid #e3eae6' }}
+            style={{ padding: '14px 20px', borderBottom: '1px solid #e6e3ef' }}
           >
             {item.description && (
               <p
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
-                  color: '#3a4048',
+                  color: '#2e2940',
                   lineHeight: 1.6,
                   margin: '0 0 12px',
                 }}
@@ -411,7 +411,7 @@ function ItemDetailPanel({
                     style={{
                       fontSize: 'var(--mantine-font-size-xs)',
                       fontWeight: 600,
-                      color: '#99a2ac',
+                      color: '#8c86a0',
                       textTransform: 'uppercase',
                       letterSpacing: '0.06em',
                       marginBottom: 2,
@@ -422,7 +422,7 @@ function ItemDetailPanel({
                   <div
                     style={{
                       fontSize: 'var(--mantine-font-size-sm)',
-                      color: '#3a4048',
+                      color: '#2e2940',
                     }}
                   >
                     {item.ownerName}
@@ -435,7 +435,7 @@ function ItemDetailPanel({
                     style={{
                       fontSize: 'var(--mantine-font-size-xs)',
                       fontWeight: 600,
-                      color: '#99a2ac',
+                      color: '#8c86a0',
                       textTransform: 'uppercase',
                       letterSpacing: '0.06em',
                       marginBottom: 2,
@@ -446,7 +446,7 @@ function ItemDetailPanel({
                   <div
                     style={{
                       fontSize: 'var(--mantine-font-size-sm)',
-                      color: '#3a4048',
+                      color: '#2e2940',
                     }}
                   >
                     {item.responsibleName}
@@ -459,7 +459,7 @@ function ItemDetailPanel({
                     style={{
                       fontSize: 'var(--mantine-font-size-xs)',
                       fontWeight: 600,
-                      color: '#99a2ac',
+                      color: '#8c86a0',
                       textTransform: 'uppercase',
                       letterSpacing: '0.06em',
                       marginBottom: 2,
@@ -471,7 +471,7 @@ function ItemDetailPanel({
                     className="num"
                     style={{
                       fontSize: 'var(--mantine-font-size-sm)',
-                      color: '#3a4048',
+                      color: '#2e2940',
                     }}
                   >
                     CHF {item.cost}
@@ -483,7 +483,7 @@ function ItemDetailPanel({
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
                     fontWeight: 600,
-                    color: '#99a2ac',
+                    color: '#8c86a0',
                     textTransform: 'uppercase',
                     letterSpacing: '0.06em',
                     marginBottom: 2,
@@ -494,7 +494,7 @@ function ItemDetailPanel({
                 <div
                   style={{
                     fontSize: 'var(--mantine-font-size-sm)',
-                    color: '#3a4048',
+                    color: '#2e2940',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 4,
@@ -516,14 +516,14 @@ function ItemDetailPanel({
             <div
               style={{
                 padding: '14px 20px',
-                borderBottom: '1px solid #e3eae6',
+                borderBottom: '1px solid #e6e3ef',
               }}
             >
               <div
                 style={{
                   fontSize: 'var(--mantine-font-size-xs)',
                   fontWeight: 600,
-                  color: '#6b7480',
+                  color: '#5e5873',
                   marginBottom: 8,
                 }}
               >
@@ -560,7 +560,7 @@ function ItemDetailPanel({
                 style={{
                   fontSize: 'var(--mantine-font-size-xs)',
                   fontWeight: 600,
-                  color: '#6b7480',
+                  color: '#5e5873',
                   marginBottom: 10,
                 }}
               >
@@ -612,7 +612,7 @@ function ItemDetailPanel({
                 style={{
                   fontSize: 'var(--mantine-font-size-xs)',
                   fontWeight: 600,
-                  color: '#99a2ac',
+                  color: '#8c86a0',
                   marginBottom: 6,
                 }}
               >
@@ -635,14 +635,14 @@ function ItemDetailPanel({
                     left: 10,
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    color: '#99a2ac',
+                    color: '#8c86a0',
                   }}
                 />
               </div>
               {addResults.length > 0 && (
                 <div
                   style={{
-                    border: '1px solid #d3ddd7',
+                    border: '1px solid #d6d2e3',
                     borderRadius: 8,
                     overflow: 'hidden',
                     background: 'white',
@@ -658,7 +658,7 @@ function ItemDetailPanel({
                         justifyContent: 'flex-start',
                         padding: '8px 12px',
                         borderRadius: 0,
-                        borderBottom: '1px solid #e3eae6',
+                        borderBottom: '1px solid #e6e3ef',
                         gap: 8,
                       }}
                       onClick={() => handleAddInstruction(Number(m.id), m.name)}
@@ -684,7 +684,7 @@ function ItemDetailPanel({
                   style={{
                     padding: '16px 0',
                     textAlign: 'center',
-                    color: '#99a2ac',
+                    color: '#8c86a0',
                     fontSize: 'var(--mantine-font-size-sm)',
                   }}
                 >
@@ -705,7 +705,7 @@ function ItemDetailPanel({
                         alignItems: 'center',
                         gap: 10,
                         padding: '8px 0',
-                        borderBottom: '1px solid #f0f4f1',
+                        borderBottom: '1px solid #f1eff7',
                       }}
                     >
                       <IconCircleCheck
@@ -716,7 +716,7 @@ function ItemDetailPanel({
                         style={{
                           flex: 1,
                           fontSize: 'var(--mantine-font-size-sm)',
-                          color: '#181818',
+                          color: '#1a1625',
                         }}
                       >
                         {name}
@@ -724,7 +724,7 @@ function ItemDetailPanel({
                       <Button
                         size="sm"
                         variant="subtle"
-                        style={{ color: '#99a2ac', padding: '2px 6px' }}
+                        style={{ color: '#8c86a0', padding: '2px 6px' }}
                         onClick={() =>
                           handleRemoveInstruction(
                             item.instructedMemberIds[i],
@@ -748,7 +748,7 @@ function ItemDetailPanel({
                 alignItems: 'center',
                 gap: 8,
                 fontSize: 'var(--mantine-font-size-sm)',
-                color: '#99a2ac',
+                color: '#8c86a0',
               }}
             >
               <IconInfoCircle size={16} />
@@ -1136,7 +1136,7 @@ export function InventoryScreen() {
           alignItems: 'center',
           gap: 8,
           fontSize: 'var(--mantine-font-size-sm)',
-          color: '#3a4048',
+          color: '#2e2940',
           cursor: 'pointer',
         }}
       >
@@ -1206,7 +1206,7 @@ export function InventoryScreen() {
                   <span style={{ color: CATEGORY_COLORS[item.category] }}>
                     {CATEGORY_ICONS[item.category]}
                   </span>
-                  <span style={{ fontWeight: 600, color: '#181818' }}>
+                  <span style={{ fontWeight: 600, color: '#1a1625' }}>
                     {item.name}
                   </span>
                 </div>
@@ -1265,7 +1265,7 @@ export function InventoryScreen() {
               render: (item) => (
                 <span
                   style={{
-                    color: item.ownerName ? '#3a4048' : '#c2c9d0',
+                    color: item.ownerName ? '#2e2940' : '#c2c9d0',
                     fontSize: 'var(--mantine-font-size-sm)',
                   }}
                 >

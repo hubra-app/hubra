@@ -30,7 +30,7 @@ const TYPE_LABELS: Record<string, string> = {
 }
 
 const TYPE_COLORS: Record<string, string> = {
-  manual: '#6b7480',
+  manual: '#5e5873',
   scheduled_daily: '#2596be',
   scheduled_weekly: '#27ae60',
   scheduled_monthly: '#9b59b6',
@@ -157,7 +157,7 @@ export function BackupsTab() {
       {/* ── Config status banner ─────────────────────────────────────── */}
       {configQuery.isLoading && (
         <div
-          style={{ color: '#99a2ac', fontSize: 'var(--mantine-font-size-sm)' }}
+          style={{ color: '#8c86a0', fontSize: 'var(--mantine-font-size-sm)' }}
         >
           Loading backup configuration…
         </div>
@@ -282,7 +282,7 @@ export function BackupsTab() {
                 style={{
                   fontFamily: "'JetBrains Mono', monospace",
                   fontSize: 'var(--mantine-font-size-xs)',
-                  color: '#6b7480',
+                  color: '#5e5873',
                 }}
               >
                 {config.bucket}
@@ -333,7 +333,7 @@ export function BackupsTab() {
               style={{
                 marginTop: 8,
                 fontSize: 'var(--mantine-font-size-sm)',
-                color: '#6b7480',
+                color: '#5e5873',
               }}
             >
               Configure S3 settings in the Settings tab (backup namespace) and
@@ -366,7 +366,7 @@ export function BackupsTab() {
                     style={{
                       padding: '32px 16px',
                       textAlign: 'center',
-                      color: '#99a2ac',
+                      color: '#8c86a0',
                       fontSize: 'var(--mantine-font-size-sm)',
                     }}
                   >
@@ -378,7 +378,7 @@ export function BackupsTab() {
 
             {backups.map((b) => (
               <Table.Tr key={b.id}>
-                <Table.Td data-label="#" style={{ color: '#6b7480' }}>
+                <Table.Td data-label="#" style={{ color: '#5e5873' }}>
                   {b.id}
                 </Table.Td>
                 <Table.Td data-label="Date">
@@ -387,7 +387,7 @@ export function BackupsTab() {
                 <Table.Td data-label="Type">
                   <span
                     style={{
-                      background: TYPE_COLORS[b.type] ?? '#6b7480',
+                      background: TYPE_COLORS[b.type] ?? '#5e5873',
                       color: '#fff',
                       fontSize: 'var(--mantine-font-size-xs)',
                       fontWeight: 600,
@@ -402,7 +402,7 @@ export function BackupsTab() {
                 <Table.Td data-label="Status">
                   <span
                     style={{
-                      color: STATUS_COLORS[b.status] ?? '#6b7480',
+                      color: STATUS_COLORS[b.status] ?? '#5e5873',
                       fontWeight: 600,
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -428,7 +428,7 @@ export function BackupsTab() {
                     </div>
                   )}
                 </Table.Td>
-                <Table.Td data-label="Size" style={{ color: '#6b7480' }}>
+                <Table.Td data-label="Size" style={{ color: '#5e5873' }}>
                   {formatSize(b.size_bytes)}
                 </Table.Td>
                 <Table.Td data-label="Verified">
@@ -461,7 +461,7 @@ export function BackupsTab() {
                     <span style={{ color: '#bbb' }}>—</span>
                   )}
                 </Table.Td>
-                <Table.Td data-label="Tables" style={{ color: '#6b7480' }}>
+                <Table.Td data-label="Tables" style={{ color: '#5e5873' }}>
                   {b.table_count ?? '—'}
                 </Table.Td>
                 <Table.Td data-label="Actions">

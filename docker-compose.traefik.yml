@@ -1,8 +1,12 @@
-# Production on vollbuild.ch behind the external Traefik (network `frontend`).
+# Production behind the external Traefik (network `frontend`).
 # Use it on top of docker-compose.yml, for example via .env:
 #   COMPOSE_FILE=docker-compose.yml:docker-compose.traefik.yml
 # Set the production URLs in .env (see .env.example). The SPAs call the API on
-# api.vollbuild.ch, so VITE_API_BASE=https://api.vollbuild.ch/api there.
+# its own host, so VITE_API_BASE=https://api.hubra.club/api there.
+#
+# Host names default to app/manage/sso/api.hubra.club. Another domain sets
+# HUBRA_APP_HOST, HUBRA_MANAGE_HOST, HUBRA_SSO_HOST and HUBRA_API_HOST in .env
+# (the vollbuild.ch server: see .env.example).
 #
 # This file used to be docker-compose.override.yaml, which Compose loads
 # automatically; it is opt-in now so a fresh checkout runs without Traefik.
@@ -15,7 +19,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=frontend"
-      - "traefik.http.routers.hubra-secure.rule=Host(`cos.vollbuild.ch`)"
+      - "traefik.http.routers.hubra-secure.rule=Host(`${HUBRA_APP_HOST:-app.hubra.club}`)"
       - "traefik.http.routers.hubra-secure.entrypoints=websecure"
       - "traefik.http.routers.hubra-secure.tls.certresolver=letencrypt"
       - "traefik.http.services.hubra-secure.loadbalancer.server.port=80"
@@ -28,7 +32,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=frontend"
-      - "traefik.http.routers.manage-secure.rule=Host(`manage.vollbuild.ch`)"
+      - "traefik.http.routers.manage-secure.rule=Host(`${HUBRA_MANAGE_HOST:-manage.hubra.club}`)"
       - "traefik.http.routers.manage-secure.entrypoints=websecure"
       - "traefik.http.routers.manage-secure.tls.certresolver=letencrypt"
       - "traefik.http.services.manage-secure.loadbalancer.server.port=80"
@@ -41,7 +45,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=frontend"
-      - "traefik.http.routers.sso-secure.rule=Host(`sso.vollbuild.ch`)"
+      - "traefik.http.routers.sso-secure.rule=Host(`${HUBRA_SSO_HOST:-sso.hubra.club}`)"
       - "traefik.http.routers.sso-secure.entrypoints=websecure"
       - "traefik.http.routers.sso-secure.tls.certresolver=letencrypt"
       - "traefik.http.services.sso-secure.loadbalancer.server.port=80"
@@ -54,14 +58,14 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=frontend"
-      - "traefik.http.routers.hubra-api-secure.rule=Host(`api.vollbuild.ch`)"
+      - "traefik.http.routers.hubra-api-secure.rule=Host(`${HUBRA_API_HOST:-api.hubra.club}`)"
       - "traefik.http.routers.hubra-api-secure.entrypoints=websecure"
       # TLS terminates in the external Traefik; this only REFERENCES its
       # pre-defined certresolver. No ACME/certresolver/TLS-store config lives
       # in this repo — do not add any here.
       - "traefik.http.routers.hubra-api-secure.tls.certresolver=letencrypt"
       - "traefik.http.services.hubra-api-secure.loadbalancer.server.port=5000"
-      # OPERATOR NOTE: do NOT add CORS headers for api.vollbuild.ch in Traefik.
+      # OPERATOR NOTE: do NOT add CORS headers for the API host in Traefik.
       # The Flask app owns CORS (single source of truth). A duplicate
       # Access-Control-Allow-Origin makes browsers reject every response.
       # Ensure crowdsec@file and error-pages-middleware pass OPTIONS preflight

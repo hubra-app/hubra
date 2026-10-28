@@ -80,10 +80,10 @@ export function AddressesTab({ scope }: { scope: 'owned' | 'all' }) {
         color = OWNER_COLORS.mail_address
       } else if (entry.ownerType && OWNER_LABELS[entry.ownerType]) {
         label = OWNER_LABELS[entry.ownerType]
-        color = OWNER_COLORS[entry.ownerType] ?? '#6b7480'
+        color = OWNER_COLORS[entry.ownerType] ?? '#5e5873'
       } else {
         label = entry.kind ?? 'Other'
-        color = '#6b7480'
+        color = '#5e5873'
       }
       return (
         <span

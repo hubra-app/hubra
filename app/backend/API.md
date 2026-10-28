@@ -1,7 +1,7 @@
 # Hubra — Backend API
 
-Base URL: `https://api.vollbuild.ch/api/v1` (production)
-Auth: JWT cookies (`HttpOnly`, `Domain=.vollbuild.ch`, `SameSite=Lax`)
+Base URL: `https://api.hubra.club/api/v1` (production)
+Auth: JWT cookies (`HttpOnly`, `Domain=.hubra.club`, `SameSite=Lax`)
 Content-Type: `application/json`
 
 ---
@@ -314,7 +314,7 @@ All `id` fields are auto-incremented database integers. Foreign keys reference t
 ```ts
 {
   id: int;
-  address: string; // e.g. "info@vollbuild.ch"
+  address: string; // e.g. "info@hubra.club"
   displayName: string;
   messageCount: int;
   quotaUsed: number; // GB

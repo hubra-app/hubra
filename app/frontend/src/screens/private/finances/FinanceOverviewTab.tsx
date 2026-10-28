@@ -73,7 +73,7 @@ export function FinanceOverviewTab() {
               : '—'
           }
           sub={t('finance.incomeMinusExpenses', 'Ihname – Usgaabe')}
-          accent="#8a6a00"
+          accent="#6131c4"
         />
         <StatTile
           label={t('common.openInvoices', 'Offeni Rächnige')}
@@ -153,7 +153,7 @@ export function FinanceOverviewTab() {
                     <div
                       style={{
                         fontSize: 9,
-                        color: '#99a2ac',
+                        color: '#8c86a0',
                         fontFamily: '"JetBrains Mono"',
                         letterSpacing: '0.04em',
                         marginTop: 4,
@@ -178,7 +178,7 @@ export function FinanceOverviewTab() {
                 <span
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
-                    color: '#6b7480',
+                    color: '#5e5873',
                   }}
                 >
                   {t('finance.income', 'Ihname')}
@@ -196,7 +196,7 @@ export function FinanceOverviewTab() {
                 <span
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
-                    color: '#6b7480',
+                    color: '#5e5873',
                   }}
                 >
                   {t('finance.expenses', 'Usgaabe')}
@@ -219,7 +219,7 @@ export function FinanceOverviewTab() {
             <Button
               size="sm"
               variant="subtle"
-              style={{ marginLeft: 'auto', color: '#8a6a00' }}
+              style={{ marginLeft: 'auto', color: '#6131c4' }}
               onClick={() => go('/app/finance/transactions')}
             >
               {t('finance.viewAll', 'Alli ahluege')}
@@ -241,7 +241,7 @@ export function FinanceOverviewTab() {
                       colSpan={3}
                       style={{
                         textAlign: 'center',
-                        color: '#99a2ac',
+                        color: '#8c86a0',
                         padding: '24px',
                         fontSize: 'var(--mantine-font-size-sm)',
                       }}
@@ -268,7 +268,7 @@ export function FinanceOverviewTab() {
                         <div
                           style={{
                             fontSize: 'var(--mantine-font-size-xs)',
-                            color: '#99a2ac',
+                            color: '#8c86a0',
                           }}
                         >
                           {t.category}
@@ -290,7 +290,7 @@ export function FinanceOverviewTab() {
                         <span
                           className="num"
                           style={{
-                            color: '#6b7480',
+                            color: '#5e5873',
                             fontSize: 'var(--mantine-font-size-xs)',
                           }}
                         >

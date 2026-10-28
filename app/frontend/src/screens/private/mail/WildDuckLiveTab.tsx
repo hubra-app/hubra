@@ -139,7 +139,7 @@ export function WildDuckLiveTab() {
               position: 'absolute',
               left: 10,
               top: 10,
-              color: '#99a2ac',
+              color: '#8c86a0',
             }}
           />
           <TextInput
@@ -201,7 +201,7 @@ export function WildDuckLiveTab() {
                       data-label={t('mail.address', 'Adrässe')}
                       style={{
                         fontSize: 'var(--mantine-font-size-sm)',
-                        color: '#181818',
+                        color: '#1a1625',
                       }}
                     >
                       {e.address}
@@ -256,7 +256,7 @@ export function WildDuckLiveTab() {
                       data-label={t('mail.admin.owner', 'Besitzer')}
                       style={{
                         fontSize: 'var(--mantine-font-size-xs)',
-                        color: '#6b7480',
+                        color: '#5e5873',
                       }}
                     >
                       {e.ownerName || e.name || '\u2014'}
@@ -265,7 +265,7 @@ export function WildDuckLiveTab() {
                       data-label={t('mail.admin.targets', 'Targets')}
                       style={{
                         fontSize: 'var(--mantine-font-size-xs)',
-                        color: '#6b7480',
+                        color: '#5e5873',
                       }}
                     >
                       {e.targets.length > 0 ? e.targets.join(', ') : '—'}
@@ -274,7 +274,7 @@ export function WildDuckLiveTab() {
                       data-label={t('mail.admin.quota', 'Quota')}
                       style={{
                         fontSize: 'var(--mantine-font-size-xs)',
-                        color: '#6b7480',
+                        color: '#5e5873',
                       }}
                     >
                       {e.quotaUsed != null && e.quotaTotal != null
@@ -288,7 +288,7 @@ export function WildDuckLiveTab() {
                         <span
                           style={{
                             fontSize: 'var(--mantine-font-size-xs)',
-                            color: '#99a2ac',
+                            color: '#8c86a0',
                           }}
                         >
                           {t(

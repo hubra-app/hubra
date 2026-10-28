@@ -6,8 +6,8 @@ const MOCK_USER = {
   first_name: 'Test',
   last_name: 'Admin',
   name: 'Test Admin',
-  email: 'admin@vollbuild.ch',
-  public_email: 'admin@vollbuild.ch',
+  email: 'admin@hubra.club',
+  public_email: 'admin@hubra.club',
   tier: { name: 'Standard' },
   roles: [{ name: 'Admin' }],
   status: 'active',
@@ -22,7 +22,7 @@ const MOCK_USER = {
 const MOCK_MEMBER_BACKEND = {
   id: '1',
   name: 'Anna Huber',
-  public_email: 'anna@vollbuild.ch',
+  public_email: 'anna@hubra.club',
   mailbox_enabled: false,
   forwarding_enabled: false,
   retention_days: 90,
@@ -51,7 +51,7 @@ const MOCK_GROUP_BACKEND = {
 // Backend-shaped alias (camelCase — matches BackendAlias interface in mail.ts)
 const MOCK_ALIAS = {
   id: 'wd-1',
-  address: 'werkstatt@vollbuild.ch',
+  address: 'werkstatt@hubra.club',
   type: 'Distribution',
   deliversTo: ['a@b.com'],
   enabled: true,
@@ -229,8 +229,8 @@ test.describe('Mail admin UAT — member mail, group mail, alias delete block', 
 
     await page.goto('/mail/aliases')
 
-    // Click delete (trash icon) in the werkstatt@vollbuild.ch row
-    const row = page.locator('table tbody tr', { hasText: 'werkstatt@vollbuild.ch' })
+    // Click delete (trash icon) in the werkstatt@hubra.club row
+    const row = page.locator('table tbody tr', { hasText: 'werkstatt@hubra.club' })
     await expect(row).toBeVisible()
     await row.locator('button').click()
 

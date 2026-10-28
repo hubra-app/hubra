@@ -39,6 +39,12 @@ For one club without the manager and SSO portals, use the overlay
 `deploy/single-club` instead of `deploy/app` (see
 [single-club.md](single-club.md)). The steps below are the same.
 
+`deploy/app` serves `app`, `manage`, `sso` and `api.hubra.club`. Another
+domain changes the hosts in `deploy/app/ingress.yaml` and the `hubra-frontend`
+ConfigMap in `deploy/app/kustomization.yaml`, or uses an overlay like
+`deploy/vollbuild-ch`, which keeps the existing `vollbuild.ch` server on its
+old hosts (`path: ./deploy/vollbuild-ch` in `deploy/flux/app.yaml`).
+
 1. **Install k3s and the Flux CLI** on the node:
    ```sh
    curl -sfL https://get.k3s.io | sh -
@@ -175,6 +181,6 @@ Redis and the celery-beat schedule don't need moving. For mail data, see
 
 - The **CrowdSec and error-pages middlewares** lived in the external Traefik's
   file provider. Re-create them as Traefik `Middleware` objects and reference
-  them from the Ingress. Keep OPTIONS preflights on `api.vollbuild.ch`
+  them from the Ingress. Keep OPTIONS preflights on `api.hubra.club`
   untouched, because Flask owns CORS.
 - **Roundcube** isn't in either Compose file, so it isn't here either.

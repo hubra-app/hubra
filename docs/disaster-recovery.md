@@ -177,7 +177,7 @@ production:
 
 ```sh
 # 1. Create a backup via the API (or wait for a scheduled one)
-curl -X POST https://api.vollbuild.ch/api/v1/backups/ \
+curl -X POST https://api.hubra.club/api/v1/backups/ \
     -H "Cookie: csrf_access_token=..." \
     -H "X-CSRF-TOKEN: ..."
 

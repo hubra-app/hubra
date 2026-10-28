@@ -1,4 +1,4 @@
-"""Tests for the api.vollbuild.ch subdomain split (cross-origin auth).
+"""Tests for the api.hubra.club subdomain split (cross-origin auth).
 
 Covers the acceptance criteria from the subdomain migration:
   - Preflight OPTIONS returns 200 with CORS headers and is not blocked by
@@ -143,7 +143,7 @@ def test_auth_cookies_have_production_attrs(app, client, seeded_db):
         app.config,
         {
             "JWT_COOKIE_SECURE": True,
-            "JWT_COOKIE_DOMAIN": ".vollbuild.ch",
+            "JWT_COOKIE_DOMAIN": ".hubra.club",
             "JWT_COOKIE_SAMESITE": "Lax",
         },
     ):
@@ -156,17 +156,17 @@ def test_auth_cookies_have_production_attrs(app, client, seeded_db):
     assert attrs, "access_token cookie must be set on login"
     assert attrs.get("secure") == ""  # Secure is a flag (present, empty value)
     assert "httponly" in attrs
-    assert _domain_is(attrs, ".vollbuild.ch")
+    assert _domain_is(attrs, ".hubra.club")
     assert attrs.get("samesite") == "Lax"
 
 
 def test_remembered_email_cookie_is_cross_subdomain_readable(app, client, seeded_db):
-    """remembered_email is Domain=.vollbuild.ch + HttpOnly=False (JS-readable)."""
+    """remembered_email is Domain=.hubra.club + HttpOnly=False (JS-readable)."""
     with patch.dict(
         app.config,
         {
             "JWT_COOKIE_SECURE": True,
-            "JWT_COOKIE_DOMAIN": ".vollbuild.ch",
+            "JWT_COOKIE_DOMAIN": ".hubra.club",
         },
     ):
         resp = client.post(
@@ -183,7 +183,7 @@ def test_remembered_email_cookie_is_cross_subdomain_readable(app, client, seeded
     assert attrs.get("max-age") == "2592000"
     assert attrs.get("samesite") == "Lax"
     assert "secure" in attrs
-    assert _domain_is(attrs, ".vollbuild.ch")
+    assert _domain_is(attrs, ".hubra.club")
     # HttpOnly must NOT be present — the frontend SPA reads this via document.cookie.
     assert "httponly" not in attrs
 
@@ -193,14 +193,14 @@ def test_logout_clears_remembered_email_with_matching_domain(app):
 
     The full logout flow (domain=None) is covered by test_login.py; this isolates
     the cross-subdomain delete path, which can't be exercised via the authenticated
-    logout endpoint with Domain=.vollbuild.ch (the access cookie wouldn't be sent
+    logout endpoint with Domain=.hubra.club (the access cookie wouldn't be sent
     to the test client's localhost host).
     """
     from flask import make_response
 
     from hubra.api.auth.routes import _clear_remembered_email_cookie
 
-    with patch.dict(app.config, {"JWT_COOKIE_DOMAIN": ".vollbuild.ch"}):
+    with patch.dict(app.config, {"JWT_COOKIE_DOMAIN": ".hubra.club"}):
         with app.test_request_context("/"):
             resp = make_response("", 204)
             _clear_remembered_email_cookie(resp)
@@ -212,7 +212,7 @@ def test_logout_clears_remembered_email_with_matching_domain(app):
     assert len(cookies) == 1
     assert ("Max-Age=0" in cookies[0]) or ("delete" in cookies[0].lower())
     attrs = _cookie_attrs(resp, "remembered_email")
-    assert _domain_is(attrs, ".vollbuild.ch")
+    assert _domain_is(attrs, ".hubra.club")
 
 
 # ── CSRF double-submit ─────────────────────────────────────────────────────────
@@ -250,7 +250,7 @@ def test_password_reset_link_uses_frontend_base_url(
     app, client, seeded_db, monkeypatch
 ):
     """forgot-password links point at FRONTEND_BASE_URL, not the API host."""
-    monkeypatch.setitem(app.config, "FRONTEND_BASE_URL", "https://cos.vollbuild.ch")
+    monkeypatch.setitem(app.config, "FRONTEND_BASE_URL", "https://app.hubra.club")
     captured: dict = {}
 
     def _capture(to_email, to_name, url, lang="de-CH"):
@@ -263,5 +263,5 @@ def test_password_reset_link_uses_frontend_base_url(
             "/api/v1/auth/forgot-password", json={"email": "admin@test.ch"}
         )
     assert resp.status_code == 200
-    assert captured["url"].startswith("https://cos.vollbuild.ch/reset-password#token=")
-    assert "api.vollbuild.ch" not in captured["url"]
+    assert captured["url"].startswith("https://app.hubra.club/reset-password#token=")
+    assert "api.hubra.club" not in captured["url"]

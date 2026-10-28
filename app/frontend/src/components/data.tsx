@@ -607,7 +607,7 @@ export function DataTable<T>({
                     alignItems: 'center',
                     paddingLeft: si > 0 ? 12 : 0,
                     marginLeft: si > 0 ? 12 : 0,
-                    borderLeft: si > 0 ? '1px solid #e3eae6' : 'none',
+                    borderLeft: si > 0 ? '1px solid #e6e3ef' : 'none',
                   }}
                 >
                   <span

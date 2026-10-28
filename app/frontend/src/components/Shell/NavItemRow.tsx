@@ -32,8 +32,8 @@ export function NavItemRow({
           width: 44,
           height: 44,
           borderRadius: 10,
-          color: isActiveParent ? '#8a6a00' : 'var(--mantine-color-dimmed)',
-          background: isActiveParent ? 'rgba(254,206,43,.2)' : undefined,
+          color: isActiveParent ? '#6131c4' : 'var(--mantine-color-dimmed)',
+          background: isActiveParent ? 'rgba(116,65,224,.2)' : undefined,
         }}
       >
         {item.icon}
@@ -52,8 +52,8 @@ export function NavItemRow({
           borderRadius: 9,
           padding: '9px 11px',
           width: '100%',
-          color: isActiveParent ? '#8a6a00' : 'var(--mantine-color-dimmed)',
-          background: isActiveParent ? 'rgba(254,206,43,.2)' : undefined,
+          color: isActiveParent ? '#6131c4' : 'var(--mantine-color-dimmed)',
+          background: isActiveParent ? 'rgba(116,65,224,.2)' : undefined,
           fontSize: 'var(--mantine-font-size-sm)',
           fontWeight: 500,
           transition: 'background .15s, color .15s',

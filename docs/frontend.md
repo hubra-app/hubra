@@ -58,7 +58,7 @@ export function listMembers(
 ```
 
 `apiFetch` prepends `BASE` (from `VITE_API_BASE` env var + `/v1`), so calls go
-to `https://api.vollbuild.ch/api/v1/...` in production or
+to `https://api.hubra.club/api/v1/...` in production or
 `http://localhost:5000/api/v1/...` in local dev.
 
 ## Development
@@ -73,8 +73,8 @@ npm run lint       # ESLint check
 
 In local dev, `VITE_API_BASE=http://localhost:5000/api` (in
 `app/frontend/.env`) points directly at the Flask backend. In production,
-`VITE_API_BASE=https://api.vollbuild.ch/api` is set via
-`docker-compose.override.yaml` and Traefik routes `api.vollbuild.ch` directly
+`VITE_API_BASE=https://api.hubra.club/api` is set via
+`docker-compose.override.yaml` and Traefik routes `api.hubra.club` directly
 to the backend container.
 
 ## E2E tests

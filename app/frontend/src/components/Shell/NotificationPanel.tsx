@@ -127,7 +127,7 @@ export function NotificationPanel() {
               p="md"
               style={{
                 borderBottom: '1px solid var(--mantine-color-gray-2)',
-                background: n.read ? 'transparent' : 'rgba(254,206,43,.06)',
+                background: n.read ? 'transparent' : 'rgba(116,65,224,.06)',
               }}
               align="flex-start"
             >

@@ -71,7 +71,7 @@ export function MemberEditModal({
       notes: '',
       clubUsername: '',
       mustChangePw: false,
-      avatarColor: '#6366f1',
+      avatarColor: '#7441e0',
     },
   })
 
@@ -99,7 +99,7 @@ export function MemberEditModal({
             notes: '',
             clubUsername: '',
             mustChangePw: false,
-            avatarColor: '#6366f1',
+            avatarColor: '#7441e0',
           })
         }
         if (mode === 'edit' && member) {
@@ -114,7 +114,7 @@ export function MemberEditModal({
             notes: member.notes,
             clubUsername: member.clubUsername ?? '',
             mustChangePw: member.mustChangePassword ?? false,
-            avatarColor: member.avatarColor ?? '#6366f1',
+            avatarColor: member.avatarColor ?? '#7441e0',
           })
         }
         setUsernameError('')
@@ -296,7 +296,7 @@ export function MemberEditModal({
                 padding: '2px 4px',
                 cursor: 'pointer',
                 borderRadius: 6,
-                border: '1px solid #d3ddd7',
+                border: '1px solid #d6d2e3',
               }}
             />
             <span

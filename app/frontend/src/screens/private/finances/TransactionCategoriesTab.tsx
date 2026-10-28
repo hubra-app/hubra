@@ -185,7 +185,7 @@ export function TransactionCategoriesTab() {
                     colSpan={3}
                     style={{
                       textAlign: 'center',
-                      color: '#99a2ac',
+                      color: '#8c86a0',
                       padding: '24px',
                       fontSize: 'var(--mantine-font-size-sm)',
                     }}
@@ -199,7 +199,7 @@ export function TransactionCategoriesTab() {
                     colSpan={3}
                     style={{
                       textAlign: 'center',
-                      color: '#99a2ac',
+                      color: '#8c86a0',
                       padding: '24px',
                       fontSize: 'var(--mantine-font-size-sm)',
                     }}
@@ -244,7 +244,7 @@ export function TransactionCategoriesTab() {
                         <span
                           style={{
                             fontSize: 'var(--mantine-font-size-xs)',
-                            color: '#99a2ac',
+                            color: '#8c86a0',
                           }}
                         >
                           {t('finance.category.custom', 'Benutzerdefiniert')}
@@ -271,7 +271,7 @@ export function TransactionCategoriesTab() {
                             {c.isDefault ? (
                               <IconLock
                                 size={16}
-                                style={{ color: '#99a2ac' }}
+                                style={{ color: '#8c86a0' }}
                               />
                             ) : (
                               <IconPencil size={16} />
@@ -283,7 +283,7 @@ export function TransactionCategoriesTab() {
                             size="sm"
                             variant="subtle"
                             style={{
-                              color: c.isDefault ? '#99a2ac' : '#ff4d3d',
+                              color: c.isDefault ? '#8c86a0' : '#ff4d3d',
                             }}
                             onClick={() => {
                               if (!c.isDefault) setDeleteTarget(c)

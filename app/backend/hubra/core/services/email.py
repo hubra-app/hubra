@@ -55,10 +55,10 @@ def _get_setting(key: str, default: str = "") -> str:
 def _get_base_url() -> str:
     """Return the frontend's base URL for link generation (password-reset, etc.).
 
-    The API lives on api.vollbuild.ch and the frontend SPA on cos.vollbuild.ch,
+    The API lives on api.hubra.club and the frontend SPA on app.hubra.club,
     so request.url_root (which resolves to the API host) must NOT be used to build
     links that open the frontend. FRONTEND_BASE_URL is the canonical frontend
-    origin (e.g. https://cos.vollbuild.ch).
+    origin (e.g. https://app.hubra.club).
 
     A request-context fallback to request.url_root is intentionally omitted —
     every link generated here must point at the frontend, never the API host.
@@ -71,7 +71,7 @@ def _get_sso_base_url() -> str:
     """Return the SSO portal's base URL for auth-related email links.
 
     Password-reset and email-verification links should point to the SSO portal
-    (sso.vollbuild.ch) so users land on the centralized login experience.
+    (sso.hubra.club) so users land on the centralized login experience.
     Falls back to _get_base_url() for backward compatibility when SSO_BASE_URL
     is not configured. A single-club install has no SSO portal, so its links
     always open the club app.

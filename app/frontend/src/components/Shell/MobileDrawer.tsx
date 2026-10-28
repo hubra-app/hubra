@@ -70,8 +70,8 @@ export function MobileDrawer() {
       >
         <Group gap={10} wrap="nowrap">
           <div className="logo-mark" />
-          <Text fz="md" fw={700}>
-            Hubra
+          <Text fz={22} className="wordmark">
+            hubra
           </Text>
         </Group>
         <ActionIcon

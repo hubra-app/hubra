@@ -498,17 +498,17 @@ def test_resolve_local_part_collision_suffixes(app, db):
     from hubra.core.services.mail_provisioning import resolve_local_part
 
     Setting.__table__.create(db.session.get_bind(), checkfirst=True)
-    db.session.add(Setting(key="mail.domain", value="vollbuild.ch"))
+    db.session.add(Setting(key="mail.domain", value="hubra.club"))
     db.session.commit()
 
     from hubra.core.models.managed_mail import ManagedMailAddress
 
     mma = ManagedMailAddress(
-        address="vorstand@vollbuild.ch",
+        address="vorstand@hubra.club",
         address_type="mailbox",
         kind="group",
         local_part="vorstand",
-        domain="vollbuild.ch",
+        domain="hubra.club",
     )
     db.session.add(mma)
     db.session.commit()
@@ -517,11 +517,11 @@ def test_resolve_local_part_collision_suffixes(app, db):
 
     # Now take "vorstand2" too — should skip to "vorstand3"
     mma2 = ManagedMailAddress(
-        address="vorstand2@vollbuild.ch",
+        address="vorstand2@hubra.club",
         address_type="alias",
         kind="group",
         local_part="vorstand2",
-        domain="vollbuild.ch",
+        domain="hubra.club",
     )
     db.session.add(mma2)
     db.session.commit()
@@ -550,11 +550,11 @@ def test_ensure_mailbox_creates(mock_tgc, app, db):
     mock_tgc.return_value = mock_wd
 
     mma = ManagedMailAddress(
-        address="test@vollbuild.ch",
+        address="test@hubra.club",
         address_type="mailbox",
         kind="member",
         local_part="test",
-        domain="vollbuild.ch",
+        domain="hubra.club",
         display_name="Test User",
     )
     db.session.add(mma)
@@ -578,11 +578,11 @@ def test_ensure_mailbox_updates(mock_tgc, app, db):
     mock_tgc.return_value = mock_wd
 
     mma = ManagedMailAddress(
-        address="test@vollbuild.ch",
+        address="test@hubra.club",
         address_type="mailbox",
         kind="member",
         local_part="test",
-        domain="vollbuild.ch",
+        domain="hubra.club",
         wildduck_id="wd-existing",
     )
     db.session.add(mma)
@@ -607,11 +607,11 @@ def test_ensure_mailbox_recreates_when_not_found(mock_tgc, app, db):
     mock_tgc.return_value = mock_wd
 
     mma = ManagedMailAddress(
-        address="test@vollbuild.ch",
+        address="test@hubra.club",
         address_type="mailbox",
         kind="group",
         local_part="test",
-        domain="vollbuild.ch",
+        domain="hubra.club",
         wildduck_id="wd-stale",
     )
     db.session.add(mma)
@@ -632,11 +632,11 @@ def test_ensure_mailbox_skips_when_not_configured(mock_tgc, app, db):
     mock_tgc.return_value = None
 
     mma = ManagedMailAddress(
-        address="test@vollbuild.ch",
+        address="test@hubra.club",
         address_type="mailbox",
         kind="member",
         local_part="test",
-        domain="vollbuild.ch",
+        domain="hubra.club",
     )
     db.session.add(mma)
     db.session.commit()
@@ -656,11 +656,11 @@ def test_ensure_alias_for_mailbox(mock_tgc, app, db):
     mock_tgc.return_value = mock_wd
 
     mma = ManagedMailAddress(
-        address="test@vollbuild.ch",
+        address="test@hubra.club",
         address_type="mailbox",
         kind="member",
         local_part="test",
-        domain="vollbuild.ch",
+        domain="hubra.club",
         wildduck_id="wd-user",
     )
     db.session.add(mma)
@@ -669,7 +669,7 @@ def test_ensure_alias_for_mailbox(mock_tgc, app, db):
     ensure_alias(mma)
 
     mock_wd.add_address_to_user.assert_called_once_with(
-        "wd-user", "test@vollbuild.ch", allow_wildcard=False
+        "wd-user", "test@hubra.club", allow_wildcard=False
     )
     assert mma.sync_state == "ok"
 
@@ -686,11 +686,11 @@ def test_ensure_alias_forwarding(mock_tgc, app, db):
     mock_tgc.return_value = mock_wd
 
     mma = ManagedMailAddress(
-        address="forward@vollbuild.ch",
+        address="forward@hubra.club",
         address_type="alias",
         kind=None,
         local_part="forward",
-        domain="vollbuild.ch",
+        domain="hubra.club",
         display_name="Forward Alias",
     )
     db.session.add(mma)
@@ -699,7 +699,7 @@ def test_ensure_alias_forwarding(mock_tgc, app, db):
     ensure_alias(mma)
 
     mock_wd.create_forwarding_alias.assert_called_once_with(
-        "forward@vollbuild.ch", targets=[], name="Forward Alias"
+        "forward@hubra.club", targets=[], name="Forward Alias"
     )
     assert mma.wildduck_id == "wd-alias-new"
     assert mma.sync_state == "ok"
@@ -715,11 +715,11 @@ def test_ensure_forwarding_sets_targets(mock_tgc, app, db):
     mock_tgc.return_value = mock_wd
 
     mma = ManagedMailAddress(
-        address="test@vollbuild.ch",
+        address="test@hubra.club",
         address_type="mailbox",
         kind="member",
         local_part="test",
-        domain="vollbuild.ch",
+        domain="hubra.club",
         wildduck_id="wd-user",
     )
     db.session.add(mma)
@@ -743,11 +743,11 @@ def test_ensure_absent_removes(mock_tgc, app, db):
     mock_tgc.return_value = mock_wd
 
     mma = ManagedMailAddress(
-        address="test@vollbuild.ch",
+        address="test@hubra.club",
         address_type="mailbox",
         kind="member",
         local_part="test",
-        domain="vollbuild.ch",
+        domain="hubra.club",
         wildduck_id="wd-remove",
     )
     db.session.add(mma)
@@ -776,11 +776,11 @@ def test_reconcile_mail_provisions_mailbox(mock_wd_tgc, mock_mp_tgc, app, db):
     mock_mp_tgc.return_value = mock_wd
 
     mma = ManagedMailAddress(
-        address="test@vollbuild.ch",
+        address="test@hubra.club",
         address_type="mailbox",
         kind=None,
         local_part="test",
-        domain="vollbuild.ch",
+        domain="hubra.club",
     )
     db.session.add(mma)
     db.session.commit()
@@ -807,11 +807,11 @@ def test_reconcile_mail_removes_orphans(mock_wd_tgc, mock_mp_tgc, app, db):
     mock_mp_tgc.return_value = mock_wd
 
     mma = ManagedMailAddress(
-        address="managed@vollbuild.ch",
+        address="managed@hubra.club",
         address_type="mailbox",
         kind=None,
         local_part="managed",
-        domain="vollbuild.ch",
+        domain="hubra.club",
         wildduck_id="wd-managed",
     )
     db.session.add(mma)
@@ -837,11 +837,11 @@ def test_reconcile_mail_continues_on_error(mock_wd_tgc, mock_mp_tgc, app, db):
     mock_mp_tgc.return_value = mock_wd
 
     mma = ManagedMailAddress(
-        address="error@vollbuild.ch",
+        address="error@hubra.club",
         address_type="mailbox",
         kind=None,
         local_part="error",
-        domain="vollbuild.ch",
+        domain="hubra.club",
     )
     db.session.add(mma)
     db.session.commit()
@@ -959,11 +959,11 @@ def test_check_mailbox_quota_sends_alert(mock_tgc, mock_send, app, db):
     mock_tgc.return_value = mock_wd
 
     mma = ManagedMailAddress(
-        address="full@vollbuild.ch",
+        address="full@hubra.club",
         address_type="mailbox",
         kind="member",
         local_part="full",
-        domain="vollbuild.ch",
+        domain="hubra.club",
         wildduck_id="wd-full",
     )
     db.session.add(mma)
@@ -986,11 +986,11 @@ def test_check_mailbox_quota_skips_under_90(mock_tgc, app, db):
     mock_tgc.return_value = mock_wd
 
     mma = ManagedMailAddress(
-        address="half@vollbuild.ch",
+        address="half@hubra.club",
         address_type="mailbox",
         kind="member",
         local_part="half",
-        domain="vollbuild.ch",
+        domain="hubra.club",
         wildduck_id="wd-half",
     )
     db.session.add(mma)
@@ -1013,11 +1013,11 @@ def test_check_mailbox_quota_respects_cooldown(mock_tgc, app, db):
     mock_tgc.return_value = mock_wd
 
     mma = ManagedMailAddress(
-        address="recent@vollbuild.ch",
+        address="recent@hubra.club",
         address_type="mailbox",
         kind="member",
         local_part="recent",
-        domain="vollbuild.ch",
+        domain="hubra.club",
         wildduck_id="wd-recent",
         last_quota_alert_at=datetime.now(timezone.utc).replace(tzinfo=None)
         - timedelta(hours=1),

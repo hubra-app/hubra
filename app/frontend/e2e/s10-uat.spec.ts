@@ -7,7 +7,7 @@ const RAW_MOCK_MEMBER = {
   last_name: 'User',
   name: 'Test User',
   email: 'test@example.com',
-  public_email: 'test@vollbuild.ch',
+  public_email: 'test@hubra.club',
   tier: { name: 'Standard' },
   roles: [{ name: 'Member' }],
   status: 'active',
