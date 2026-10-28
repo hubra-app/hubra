@@ -14,6 +14,7 @@ spec:
         - app.hubra.club
         - manage.hubra.club
         - sso.hubra.club
+        - plugins.hubra.club
   rules:
     - host: api.hubra.club
       http:
@@ -43,3 +44,10 @@ spec:
             pathType: Prefix
             backend:
               service: { name: sso-frontend, port: { name: http } }
+    - host: plugins.hubra.club
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: plugins, port: { name: http } }
