@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { Box, Group, Paper, Stack, Text, Button, Loader, Center } from '@mantine/core'
-import { IconArrowRight, IconSearch } from '@tabler/icons-react'
+import { Badge, Box, Group, Paper, Stack, Text, Button, Loader, Center } from '@mantine/core'
+import { IconArrowRight, IconSearch, IconUsers } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { SSO_URL } from '@hubra/api-client'
 import { PageHead } from '@/components/ui'
@@ -58,20 +58,38 @@ export function MyTenantsTab() {
           <Paper key={t.tenant_id} withBorder radius="md" p="md">
             <Group justify="space-between">
               <Box>
-                <Text fw={600}>{t.tenant_name ?? t.tenant_slug ?? `Tenant ${t.tenant_id}`}</Text>
+                <Group gap={8}>
+                  <Text fw={600}>{t.tenant_name ?? t.tenant_slug ?? `Tenant ${t.tenant_id}`}</Text>
+                  {t.admin_level && (
+                    <Badge size="xs" variant="light" color="violet">
+                      {t.admin_level === 'owner' ? 'Owner' : 'Admin'}
+                    </Badge>
+                  )}
+                </Group>
                 <Text fz="xs" c="dimmed">
                   {t.tenant_slug}
                 </Text>
               </Box>
-              <Button
-                variant="light"
-                rightSection={<IconArrowRight size={16} />}
-                onClick={() => {
-                  window.location.assign(`${COS_URL}/${t.tenant_slug}/app/dashboard`)
-                }}
-              >
-                Enter
-              </Button>
+              <Group gap="xs">
+                {t.admin_level && (
+                  <Button
+                    variant="default"
+                    leftSection={<IconUsers size={16} />}
+                    onClick={() => navigate(`/app/clubs/${t.tenant_id}/admins`)}
+                  >
+                    Admins
+                  </Button>
+                )}
+                <Button
+                  variant="light"
+                  rightSection={<IconArrowRight size={16} />}
+                  onClick={() => {
+                    window.location.assign(`${COS_URL}/${t.tenant_slug}/app/dashboard`)
+                  }}
+                >
+                  Enter
+                </Button>
+              </Group>
             </Group>
           </Paper>
         ))}

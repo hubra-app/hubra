@@ -468,7 +468,8 @@ class AuthService:
         scanning tenant schemas for a Member with matching user_id when
         UserTenant records are missing.
 
-        Returns list of {tenant_id, tenant_slug, tenant_name, member_id}.
+        Returns list of {tenant_id, tenant_slug, tenant_name, member_id}, plus
+        ``admin_level`` ('owner', 'admin' or None) from user_tenants.
         """
         from hubra.core.models.tenant import Tenant
         from hubra.core.tenant.context import set_search_path, reset_search_path
@@ -485,9 +486,18 @@ class AuthService:
                 if tenant is None:
                     continue
                 set_search_path(tenant.id)
-                member_id = db.session.scalar(
-                    select(Member.id).where(Member.user_id == user_id)
+                member = db.session.scalar(
+                    select(Member).where(Member.user_id == user_id)
                 )
+                roles = member.roles if member is not None else []
+                admin_level = (
+                    "owner"
+                    if any(r.is_owner for r in roles)
+                    else "admin"
+                    if any(r.is_admin for r in roles)
+                    else None
+                )
+                member_id = member.id if member is not None else None
                 reset_search_path()
                 result.append(
                     {
@@ -495,6 +505,7 @@ class AuthService:
                         "tenant_slug": tenant.slug,
                         "tenant_name": tenant.name,
                         "member_id": member_id,
+                        "admin_level": admin_level,
                     }
                 )
             return result
