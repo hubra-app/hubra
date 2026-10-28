@@ -8,6 +8,7 @@ import { Shell } from '@/components/Shell'
 import { AdminPortal } from '@/screens/AdminPortal'
 import { MyTenantsTab } from '@/screens/MyTenantsTab'
 import { TenantDetail } from '@/screens/TenantDetail'
+import { MailRelay } from '@/screens/platform/MailRelay'
 import { SSO_URL } from '@hubra/api-client'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -186,6 +187,16 @@ function AppRoutes() {
             <RequireGlobalPermission perm="plugins.manage">
               <Shell>
                 <AdminPortal />
+              </Shell>
+            </RequireGlobalPermission>
+          }
+        />
+        <Route
+          path="/app/platform/mail"
+          element={
+            <RequireGlobalPermission perm="platform.settings">
+              <Shell>
+                <MailRelay />
               </Shell>
             </RequireGlobalPermission>
           }
