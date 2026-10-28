@@ -22,7 +22,14 @@ const makeSchema = () =>
     slug: z
       .string()
       .min(3, tr('Mindestens 3 Zeichen', 'At least 3 characters'))
-      .max(64, tr('Höchstens 64 Zeichen', 'At most 64 characters')),
+      .max(64, tr('Höchstens 64 Zeichen', 'At most 64 characters'))
+      .regex(
+        /^[a-z0-9][a-z0-9-]*[a-z0-9]$/,
+        tr(
+          'Nur Kleinbuchstaben, Ziffern und Bindestriche, nicht am Anfang oder Ende',
+          'Only lowercase letters, digits and hyphens, not at the start or end',
+        ),
+      ),
     plan: z.string(),
     adminEmail: z.string().email(tr('Ungültige E-Mail-Adresse', 'Invalid email')).or(z.literal('')),
     adminPassword: z.string(),
@@ -33,6 +40,13 @@ type FormValues = z.infer<ReturnType<typeof makeSchema>>
 function slugify(name: string): string {
   return name
     .toLowerCase()
+    .replace(/ä/g, 'ae')
+    .replace(/ö/g, 'oe')
+    .replace(/ü/g, 'ue')
+    .replace(/ß/g, 'ss')
+    // é → e and the like: drop the accent, keep the letter.
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9-]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .replace(/-{2,}/g, '-')
