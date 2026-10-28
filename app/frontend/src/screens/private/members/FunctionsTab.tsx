@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Button, Group, Textarea, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT, zmsg } from '@/locales/i18n'
@@ -61,7 +61,7 @@ export function FunctionsTab() {
   const [manageHolders, setManageHolders] = useState<ClubFunction | null>(null)
 
   const form = useForm<FunctionForm>({
-    validate: zodResolver(functionSchema),
+    validate: zod4Resolver(functionSchema),
     initialValues: {
       name: '',
       description: '',

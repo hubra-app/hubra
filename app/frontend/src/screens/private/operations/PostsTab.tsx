@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { Button, Group, TextInput, Paper } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useMutation } from '@tanstack/react-query'
 import { useT, zmsg } from '@/locales/i18n'
@@ -72,7 +72,7 @@ export function PostsTab() {
   const pg = usePagination(posts, 10)
 
   const form = useForm<PostForm>({
-    validate: zodResolver(postSchema),
+    validate: zod4Resolver(postSchema),
     initialValues: { title: '', summary: '', body: '' },
   })
 

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Modal, TextInput, Button, Stack, Group, Text, Alert } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { IconReplaceUser } from '@tabler/icons-react'
 import { impersonateTenant } from '@/api/tenants'
@@ -31,7 +31,7 @@ export function ImpersonateModal({
   const [loading, setLoading] = useState(false)
 
   const form = useForm<FormValues>({
-    validate: zodResolver(schema),
+    validate: zod4Resolver(schema),
     initialValues: { reason: '' },
   })
 

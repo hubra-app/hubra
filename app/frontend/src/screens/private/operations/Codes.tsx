@@ -8,7 +8,7 @@ import {
   Slider,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT, zmsg } from '@/locales/i18n'
@@ -51,7 +51,7 @@ export function CodesScreen() {
   const [codeLength, setCodeLength] = useState(4)
 
   const form = useForm<CodeForm>({
-    validate: zodResolver(codeSchema),
+    validate: zod4Resolver(codeSchema),
     initialValues: { name: '', code: '', description: '', isActive: true },
   })
 

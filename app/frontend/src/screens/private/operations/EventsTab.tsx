@@ -2,7 +2,7 @@ import { EVENT_TYPE_COLORS } from '@/constants'
 import { useState } from 'react'
 import { Button, Group, TextInput, Select, Badge } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useT, zmsg } from '@/locales/i18n'
 import i18n from 'i18next'
@@ -67,7 +67,7 @@ export function EventsTab() {
   const [editTarget, setEditTarget] = useState<ClubEvent | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ClubEvent | null>(null)
   const form = useForm<EventForm>({
-    validate: zodResolver(eventSchema),
+    validate: zod4Resolver(eventSchema),
     initialValues: {
       title: '',
       date: new Date().toISOString().slice(0, 10),

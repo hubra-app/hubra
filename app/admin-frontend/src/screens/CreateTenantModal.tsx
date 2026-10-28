@@ -9,7 +9,7 @@ import {
   Alert,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { createTenant } from '@/api/tenants'
@@ -51,7 +51,7 @@ export function CreateTenantModal({
   const [slugEdited, setSlugEdited] = useState(false)
 
   const form = useForm<FormValues>({
-    validate: zodResolver(makeSchema()),
+    validate: zod4Resolver(makeSchema()),
     initialValues: {
       name: '',
       slug: '',

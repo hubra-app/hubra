@@ -9,7 +9,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT, zmsg } from '@/locales/i18n'
@@ -206,7 +206,7 @@ export function GroupsScreen() {
   const [detailGroup, setDetailGroup] = useState<Group | null>(null)
 
   const form = useForm<GroupForm>({
-    validate: zodResolver(groupSchema),
+    validate: zod4Resolver(groupSchema),
     initialValues: {
       name: '',
       description: '',

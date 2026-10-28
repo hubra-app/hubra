@@ -7,7 +7,7 @@ import {
   Textarea,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useT } from '@/locales/i18n'
 import { useToast } from '@/context/AppContext'
@@ -57,7 +57,7 @@ export function MemberEditModal({
   const [saving, setSaving] = useState(false)
 
   const form = useForm<MemberForm>({
-    validate: zodResolver(memberSchema),
+    validate: zod4Resolver(memberSchema),
     initialValues: {
       firstName: '',
       lastName: '',

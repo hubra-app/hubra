@@ -14,7 +14,7 @@ import {
   Box,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useNavigate } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
@@ -41,7 +41,7 @@ export function LoginScreen() {
   const [error, setError] = useState('')
 
   const form = useForm<FormValues>({
-    validate: (values) => zodResolver(makeSchema())(values),
+    validate: (values) => zod4Resolver(makeSchema())(values),
     initialValues: {
       email: getRememberedEmail(),
       password: '',

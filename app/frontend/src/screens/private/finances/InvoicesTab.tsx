@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import i18n from 'i18next'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useQuery } from '@tanstack/react-query'
 import { Button, Group, Select, TextInput } from '@mantine/core'
@@ -111,7 +111,7 @@ export function InvoicesTab() {
   const [purposeFilter, setPurposeFilter] = useState('All')
 
   const singleForm = useForm<SingleForm>({
-    validate: zodResolver(singleSchema),
+    validate: zod4Resolver(singleSchema),
     initialValues: {
       recipientType: 'member',
       purpose: 'membership',
@@ -124,7 +124,7 @@ export function InvoicesTab() {
     },
   })
   const bulkForm = useForm<BulkForm>({
-    validate: zodResolver(bulkSchema),
+    validate: zod4Resolver(bulkSchema),
     initialValues: { tierId: '', due: '', description: '' },
   })
   const { data: membersData } = useQuery({
