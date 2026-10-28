@@ -106,6 +106,28 @@ def get_translations(locale: str) -> list[Translation]:
     return list(db.session.scalars(stmt).all())
 
 
+def _platform_rows(locale: str) -> list:
+    """The platform's translations (public schema) under a club's own.
+
+    A club's schema has its own ``translation`` table, which hides
+    public.translation on the search_path, so a new club would otherwise
+    see no texts at all. Empty outside a club and on SQLite (no schemas).
+    """
+    from sqlalchemy import text
+
+    if _club() == 0 or db.session.get_bind().dialect.name != "postgresql":
+        return []
+    return list(
+        db.session.execute(
+            text(
+                "SELECT key, value, alias_for FROM public.translation"
+                " WHERE locale = :locale"
+            ),
+            {"locale": locale},
+        )
+    )
+
+
 def get_translations_dict(locale: str) -> dict[str, str]:
     # Determine ETag version for cache key
     etag = get_etag(locale)
@@ -130,13 +152,17 @@ def get_translations_dict(locale: str) -> dict[str, str]:
             return data
         _mem_translations.pop(cache_key, None)
 
-    # DB query (uses index on locale)
-    qs = get_translations(locale)
-    alias_map = {t.key: t for t in qs}
+    # DB query (uses index on locale). A club starts from the platform's
+    # translations; its own rows win where they hold a text or an alias
+    # (a key reported missing is stored empty and must not hide the default).
+    alias_map = {r.key: r for r in _platform_rows(locale)}
+    for t in get_translations(locale):
+        if t.value or t.alias_for or t.key not in alias_map:
+            alias_map[t.key] = t
     resolved: dict[str, str] = {}
-    for t in qs:
+    for t in alias_map.values():
         if t.alias_for:
-            resolved[t.key] = _resolve_alias_chain(t.key, alias_map, resolved, {t.key})
+            resolved[t.key] = _resolve_alias_chain(t.key, alias_map, resolved, set())
         else:
             resolved[t.key] = t.value
 
