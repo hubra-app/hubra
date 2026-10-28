@@ -226,6 +226,8 @@ export interface MyTenant {
   tenant_slug: string | null
   tenant_name: string | null
   member_id: number | null
+  /** Whether I administer this club. */
+  admin_level: 'owner' | 'admin' | null
 }
 
 export async function getMyTenants(): Promise<{ tenants: MyTenant[] }> {
@@ -261,4 +263,37 @@ export async function setTenantModule(
     method: 'PUT',
     body: JSON.stringify(body),
   })
+}
+
+// ── Club admins ──────────────────────────────────────────────────────────────
+
+export interface ClubAdmin {
+  user_id: number
+  member_id: number
+  name: string
+  email: string
+  level: 'owner' | 'admin'
+}
+
+export interface ClubAdminsResponse {
+  club: { id: number; slug: string; name: string }
+  admins: ClubAdmin[]
+  /** How the caller may manage this list. */
+  access: 'platform' | 'owner' | 'admin'
+  canManageOwners: boolean
+}
+
+export async function getClubAdmins(tenantId: number) {
+  return apiFetch<ClubAdminsResponse>(`/system/tenants/${tenantId}/admins`)
+}
+
+export async function addClubAdmin(tenantId: number, email: string, level: 'owner' | 'admin') {
+  return apiFetch<{ admin: ClubAdmin }>(`/system/tenants/${tenantId}/admins`, {
+    method: 'POST',
+    body: JSON.stringify({ email, level }),
+  })
+}
+
+export async function removeClubAdmin(tenantId: number, userId: number) {
+  return apiFetch(`/system/tenants/${tenantId}/admins/${userId}`, { method: 'DELETE' })
 }

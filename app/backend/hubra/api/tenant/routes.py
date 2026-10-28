@@ -920,6 +920,235 @@ def join_club(slug: str):
     return jsonify({"status": "requested", "club": club}), 201
 
 
+# ── Club admins (the club's own admins, and platform managers) ────────────────
+#
+# A club's admins are the members holding its Admin or Owner role. Those
+# admins manage this list themselves from the manager portal; platform
+# managers (``tenants.members.write``) can manage it for any club. Only an
+# owner (or a platform manager) can name or remove owners, and the last
+# owner can't be removed.
+
+
+def _club_roles() -> tuple:
+    """(admin role, owner role) of the club the search_path points at."""
+    from hubra.core.models.role import Role
+
+    owner = db.session.scalar(select(Role).where(Role.is_owner.is_(True)).limit(1))
+    admin = db.session.scalar(
+        select(Role)
+        .where(Role.is_admin.is_(True), Role.is_owner.is_(False))
+        .order_by(Role.is_system.desc(), Role.id)
+        .limit(1)
+    )
+    return admin, owner
+
+
+def _admin_level(member: Member | None) -> str | None:
+    """'owner', 'admin' or None for a member of the current club."""
+    if member is None:
+        return None
+    roles = member.roles or []
+    if any(r.is_owner for r in roles):
+        return "owner"
+    if any(r.is_admin for r in roles):
+        return "admin"
+    return None
+
+
+def _club_admin_access(tenant: Tenant, user: User) -> str:
+    """'platform', 'owner' or 'admin'; 403 for anyone else."""
+    if _can_add_members(user):
+        return "platform"
+    from hubra.core.tenant.context import reset_search_path, set_search_path
+
+    try:
+        set_search_path(tenant.id)
+        member = db.session.scalar(
+            select(Member).where(
+                Member.user_id == user.id, Member.archived_at.is_(None)
+            )
+        )
+        level = _admin_level(member)
+    finally:
+        reset_search_path()
+    if level is None:
+        raise_error(403, "FORBIDDEN", "Only the club's admins can do this")
+    return level  # type: ignore[return-value]
+
+
+def _admin_dict(member: Member) -> dict:
+    user = member.user
+    return {
+        "user_id": member.user_id,
+        "member_id": member.id,
+        "name": user.name if user else "",
+        "email": user.email if user else "",
+        "level": _admin_level(member),
+    }
+
+
+def _club_or_404(tenant_id: int) -> Tenant:
+    tenant = db.session.get(Tenant, tenant_id)
+    if tenant is None or tenant.deleted_at is not None:
+        raise_error(404, "NOT_FOUND", "Club not found")
+    return tenant  # type: ignore[return-value]
+
+
+@tenant_admin_bp.route("/tenants/<int:tenant_id>/admins", methods=["GET"])
+@jwt_required()
+def list_club_admins(tenant_id: int):
+    """The club's owners and admins, and what the caller may change."""
+    from hubra.core.tenant.context import reset_search_path, set_search_path
+
+    tenant = _club_or_404(tenant_id)
+    access = _club_admin_access(tenant, _calling_user())
+    try:
+        set_search_path(tenant.id)
+        members = db.session.scalars(
+            select(Member).where(Member.archived_at.is_(None)).order_by(Member.id)
+        ).all()
+        admins = [_admin_dict(m) for m in members if _admin_level(m)]
+    finally:
+        reset_search_path()
+    return jsonify(
+        {
+            "club": {"id": tenant.id, "slug": tenant.slug, "name": tenant.name},
+            "admins": admins,
+            "access": access,
+            "canManageOwners": access in ("platform", "owner"),
+        }
+    ), 200
+
+
+@tenant_admin_bp.route("/tenants/<int:tenant_id>/admins", methods=["POST"])
+@jwt_required()
+def add_club_admin(tenant_id: int):
+    """Make an existing account an admin (or owner) of the club.
+
+    Body: ``{"email": str, "level": "admin" | "owner"}``. Someone who isn't
+    a member yet becomes one first.
+    """
+    from hubra.core.tenant.context import reset_search_path, set_search_path
+
+    tenant = _club_or_404(tenant_id)
+    caller = _calling_user()
+    access = _club_admin_access(tenant, caller)
+
+    body = request.get_json(silent=True) or {}
+    email = str(body.get("email") or "").strip().lower()
+    level = body.get("level") or "admin"
+    if not email:
+        raise_error(400, "VALIDATION_ERROR", "email is required")
+    if level not in ("admin", "owner"):
+        raise_error(400, "VALIDATION_ERROR", "level must be 'admin' or 'owner'")
+    if level == "owner" and access == "admin":
+        raise_error(403, "FORBIDDEN", "Only an owner can name another owner")
+
+    user = db.session.scalar(select(User).where(User.email == email))
+    if user is None:
+        raise_error(
+            404,
+            "NOT_FOUND",
+            f"No Hubra account for {email}; they need to sign up first",
+        )
+
+    from hubra.core.tenant.membership import link_user_to_tenant
+
+    if _membership_in(tenant.id, user) != "member":
+        _add_user_to_tenant(tenant, user)  # type: ignore[arg-type]
+    link_user_to_tenant(user.id, tenant.id)  # type: ignore[union-attr]
+
+    try:
+        set_search_path(tenant.id)
+        admin_role, owner_role = _club_roles()
+        role = owner_role if level == "owner" else admin_role
+        if role is None:
+            raise_error(409, "CONFLICT", f"This club has no {level} role")
+        member = db.session.scalar(
+            select(Member).where(Member.user_id == user.id)  # type: ignore[union-attr]
+        )
+        if member.archived_at is not None:
+            raise_error(
+                409,
+                "ARCHIVED",
+                "This member is archived; restore them in the club first",
+            )
+        if role not in member.roles:
+            member.roles = [*member.roles, role]
+        db.session.flush()
+        result = _admin_dict(member)
+    finally:
+        reset_search_path()
+
+    db.session.add(
+        GlobalAuditEntry(
+            tenant_id=tenant.id,
+            actor_id=caller.id,
+            action=f"tenant.add_{level}",
+            target_type="User",
+            target_id=str(user.id),  # type: ignore[union-attr]
+            details={"email": email, "by": access},
+            ip_address=request.remote_addr,
+        )
+    )
+    db.session.commit()
+    return jsonify({"admin": result}), 201
+
+
+@tenant_admin_bp.route(
+    "/tenants/<int:tenant_id>/admins/<int:user_id>", methods=["DELETE"]
+)
+@jwt_required()
+def remove_club_admin(tenant_id: int, user_id: int):
+    """Take the admin and owner roles away; the person stays a member."""
+    from hubra.core.tenant.context import reset_search_path, set_search_path
+
+    tenant = _club_or_404(tenant_id)
+    caller = _calling_user()
+    access = _club_admin_access(tenant, caller)
+
+    try:
+        set_search_path(tenant.id)
+        member = db.session.scalar(select(Member).where(Member.user_id == user_id))
+        level = _admin_level(member)
+        if level is None:
+            raise_error(404, "NOT_FOUND", "Not an admin of this club")
+        if level == "owner":
+            if access == "admin":
+                raise_error(403, "FORBIDDEN", "Only an owner can remove an owner")
+            owners = [
+                m
+                for m in db.session.scalars(
+                    select(Member).where(Member.archived_at.is_(None))
+                ).all()
+                if _admin_level(m) == "owner"
+            ]
+            if len(owners) <= 1:
+                raise_error(409, "LAST_OWNER", "A club needs at least one owner")
+        member.roles = [  # type: ignore[union-attr]
+            r
+            for r in member.roles  # type: ignore[union-attr]
+            if not (r.is_admin or r.is_owner)
+        ]
+        db.session.flush()
+    finally:
+        reset_search_path()
+
+    db.session.add(
+        GlobalAuditEntry(
+            tenant_id=tenant.id,
+            actor_id=caller.id,
+            action=f"tenant.remove_{level}",
+            target_type="User",
+            target_id=str(user_id),
+            details={"by": access},
+            ip_address=request.remote_addr,
+        )
+    )
+    db.session.commit()
+    return "", 204
+
+
 # ── Global RBAC management ───────────────────────────────────────────────────
 
 

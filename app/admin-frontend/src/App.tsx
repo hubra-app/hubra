@@ -9,6 +9,7 @@ import { AdminPortal } from '@/screens/AdminPortal'
 import { MyTenantsTab } from '@/screens/MyTenantsTab'
 import { TenantDetail } from '@/screens/TenantDetail'
 import { MailRelay } from '@/screens/platform/MailRelay'
+import { ClubAdmins } from '@/screens/ClubAdmins'
 import { SSO_URL } from '@hubra/api-client'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -189,6 +190,16 @@ function AppRoutes() {
                 <AdminPortal />
               </Shell>
             </RequireGlobalPermission>
+          }
+        />
+        <Route
+          path="/app/clubs/:id/admins"
+          element={
+            <RequireAuth>
+              <Shell>
+                <ClubAdmins />
+              </Shell>
+            </RequireAuth>
           }
         />
         <Route
