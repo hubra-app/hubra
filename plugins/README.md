@@ -204,5 +204,16 @@ of `index.json` and your key id. For plugins in their own repositories,
 `flask plugins build-index sources.yaml ./public --key me.pem` builds the
 index from their GitHub releases instead.
 
+**The official marketplace.** The plugins in this folder are published at
+<https://plugins.hubra.club/index.json> by `.github/workflows/plugins.yml`. On
+pushes to `main` that touch a plugin, it takes the marketplace out of the
+latest `ghcr.io/hubra-app/hubra/plugins` image, then builds and signs only the
+versions that aren't in it yet, so a published version never changes. It
+pushes the result as a new image (nginx, `app/deploy/plugins/`), and the
+Contabo cluster serves that image (`deploy/clusters/contabo/plugins.yaml`). To
+release a plugin, bump `version` in its `plugin.yaml` and add a `CHANGELOG.md`
+entry. The workflow needs the secret `HUBRA_SIGNING_KEY` in hubra-app/hubra,
+which holds the private key of `keys/official/Hubra.pub`.
+
 Single archives: `flask plugins sign ./my-plugin --key me.pem --signer "Your
 Name"`, then `flask plugins pack ./my-plugin -o my-plugin-1.0.0.zip`.
