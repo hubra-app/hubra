@@ -98,6 +98,7 @@ def create_key():
         raise
 
     log_audit(get_current_member().id, "create", "internal_key", ik.id, ik.key)
+    db.session.commit()
 
     return jsonify(serialize_key(ik)), 201
 
@@ -149,6 +150,7 @@ def update_key(key_id: int):
         raise
 
     log_audit(get_current_member().id, "update", "internal_key", key_id, ik.key)
+    db.session.commit()
 
     return jsonify(serialize_key(ik)), 200
 
@@ -183,6 +185,7 @@ def delete_key(key_id: int):
         raise
 
     log_audit(get_current_member().id, "delete", "internal_key", key_id, key_name)
+    db.session.commit()
 
     return "", 204
 
@@ -259,6 +262,7 @@ def create_binding_route():
         binding.id,
         f"{binding.type}:{binding.source_attribute}",
     )
+    db.session.commit()
 
     return jsonify(serialize_binding(binding)), 201
 
@@ -300,6 +304,7 @@ def update_binding_route(binding_id: int):
         binding.id,
         f"{binding.type}:{binding.source_attribute}",
     )
+    db.session.commit()
 
     return jsonify(serialize_binding(binding)), 200
 
@@ -325,6 +330,7 @@ def delete_binding_route(binding_id: int):
         binding_id,
         None,
     )
+    db.session.commit()
 
     return "", 204
 
@@ -356,6 +362,7 @@ def toggle_binding_route(binding_id: int):
         binding.id,
         f"enabled={data['enabled']}",
     )
+    db.session.commit()
 
     return jsonify(serialize_binding(binding)), 200
 

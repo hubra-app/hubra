@@ -45,6 +45,7 @@ def create_function():
         target_id=fn.id,
         target_label=fn.name,
     )
+    db.session.commit()
 
     return jsonify(FunctionService.serialize(fn)), 201
 
@@ -66,6 +67,7 @@ def update_function(function_id: int):
         target_id=fn.id,
         target_label=fn.name,
     )
+    db.session.commit()
 
     return jsonify(FunctionService.serialize(fn)), 200
 
@@ -86,6 +88,7 @@ def delete_function(function_id: int):
         target_id=function_id,
         target_label=name,
     )
+    db.session.commit()
 
     return jsonify({"ok": True}), 200
 
@@ -109,6 +112,7 @@ def assign_holder(function_id: int):
         target_id=function_id,
         target_label=fn.name,
     )
+    db.session.commit()
 
     return jsonify({"ok": True}), 201
 
@@ -127,5 +131,6 @@ def remove_holder(function_id: int, member_id: int):
         target_id=function_id,
         target_label=fn.name,
     )
+    db.session.commit()
 
     return jsonify({"ok": True}), 200

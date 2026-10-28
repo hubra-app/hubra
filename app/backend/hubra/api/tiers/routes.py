@@ -89,6 +89,7 @@ def update_tier(tier_id: int):
         raise
 
     log_audit(get_current_member().id, "update", "tier", tier.id, tier.name)
+    db.session.commit()
     return jsonify(_tier_schema.dump(tier)), 200
 
 

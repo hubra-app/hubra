@@ -346,6 +346,7 @@ def create_member_mail_mma(member_id: int):
         target_id=addr.id,
         target_label=addr.address,
     )
+    db.session.commit()
 
     return jsonify(mma_service.serialize(addr)), 201
 
@@ -385,6 +386,7 @@ def delete_member_mail_mma(member_id: int):
         target_id=addr.id,
         target_label=address_label,
     )
+    db.session.commit()
 
     return "", 204
 
@@ -418,6 +420,7 @@ def toggle_member_mail_mma(member_id: int):
         target_id=addr.id,
         target_label=f"{addr.address} ({'enabled' if enabled else 'disabled'})",
     )
+    db.session.commit()
 
     return jsonify(mma_service.serialize(addr)), 200
 
@@ -516,6 +519,7 @@ def create_group_mail(group_id: int):
         target_id=addr.id,
         target_label=addr.address,
     )
+    db.session.commit()
 
     return jsonify(mma_service.serialize(addr)), 201
 
@@ -638,6 +642,7 @@ def create_function_mail(function_id: int):
         target_id=addr.id,
         target_label=addr.address,
     )
+    db.session.commit()
 
     return jsonify(mma_service.serialize(addr)), 201
 
@@ -693,6 +698,7 @@ def toggle_group_mail(group_id: int):
         target_id=addr.id,
         target_label=f"{addr.address} ({'enabled' if enabled else 'disabled'})",
     )
+    db.session.commit()
 
     return jsonify(mma_service.serialize(addr)), 200
 
@@ -737,6 +743,7 @@ def change_group_mail_prefix(group_id: int):
         target_id=addr.id,
         target_label=addr.address,
     )
+    db.session.commit()
 
     return jsonify(mma_service.serialize(addr)), 200
 
@@ -953,6 +960,7 @@ def toggle_function_mail(function_id: int):
         target_id=addr.id,
         target_label=f"{addr.address} ({'enabled' if enabled else 'disabled'})",
     )
+    db.session.commit()
 
     return jsonify(mma_service.serialize(addr)), 200
 
@@ -1000,6 +1008,7 @@ def change_function_mail_prefix(function_id: int):
         target_id=addr.id,
         target_label=addr.address,
     )
+    db.session.commit()
 
     return jsonify(mma_service.serialize(addr)), 200
 
@@ -1246,6 +1255,7 @@ def update_address_route(address_id: int):
         address_id,
         result.get("address"),
     )
+    db.session.commit()
     return jsonify(result), 200
 
 
@@ -1267,6 +1277,7 @@ def toggle_address_route(address_id: int):
         address_id,
         f"{result.get('address')} ({'enabled' if enabled else 'disabled'})",
     )
+    db.session.commit()
     return jsonify(result), 200
 
 
@@ -1296,6 +1307,7 @@ def change_address_prefix_route(address_id: int):
         address_id,
         result.get("address"),
     )
+    db.session.commit()
     return jsonify(result), 200
 
 
@@ -1336,6 +1348,7 @@ def create_alias_route(address_id: int):
         alias.id,
         alias.address,
     )
+    db.session.commit()
     return jsonify(mma_service.serialize(alias)), 201
 
 
@@ -1351,6 +1364,7 @@ def delete_alias_route(address_id: int, alias_id: int):
         alias_id,
         None,
     )
+    db.session.commit()
     return "", 204
 
 
@@ -1428,6 +1442,7 @@ def delete_address_route(address_id: int):
         address_id,
         addr.address,
     )
+    db.session.commit()
     return "", 204
 
 
@@ -1514,6 +1529,7 @@ def create_system_address():
         target_id=addr.id,
         target_label=addr.address,
     )
+    db.session.commit()
 
     return jsonify(mma_service.serialize(addr)), 201
 
@@ -1551,6 +1567,7 @@ def delete_system_address(address_id: int):
         target_id=address_id,
         target_label=address_label,
     )
+    db.session.commit()
 
     return "", 204
 
@@ -1581,6 +1598,7 @@ def toggle_system_address(address_id: int):
         target_id=addr.id,
         target_label=f"{addr.address} ({'enabled' if enabled else 'disabled'})",
     )
+    db.session.commit()
 
     return jsonify(mma_service.serialize(addr)), 200
 
@@ -1635,6 +1653,7 @@ def create_system_alias(address_id: int):
         target_id=alias.id,
         target_label=alias.address,
     )
+    db.session.commit()
     return jsonify(mma_service.serialize(alias)), 201
 
 
@@ -1650,6 +1669,7 @@ def delete_system_alias(address_id: int, alias_id: int):
         target_id=alias_id,
         target_label=None,
     )
+    db.session.commit()
     return "", 204
 
 
@@ -1746,6 +1766,7 @@ def update_system_forwarding(address_id: int):
         target_id=addr.id,
         target_label=f"{addr.address} → {targets}",
     )
+    db.session.commit()
 
     return jsonify({"targets": targets}), 200
 
@@ -1813,6 +1834,7 @@ def reset_system_address_password(address_id: int):
         target_id=addr.id,
         target_label=addr.address,
     )
+    db.session.commit()
 
     if auto_generated:
         return jsonify({"password": user_password}), 200

@@ -614,5 +614,6 @@ def revoke_member_sessions(member_id: int):
         target_id=member_id,
         target_label=f"{count} sessions revoked",
     )
+    db.session.commit()
 
     return jsonify({"ok": True, "revoked": count}), 200
