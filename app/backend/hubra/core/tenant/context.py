@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from functools import wraps
 
-from flask import g, has_app_context, jsonify
+from flask import current_app, g, has_app_context, jsonify
 from sqlalchemy import event, text
 
 from hubra.core.extensions import db
@@ -14,6 +14,11 @@ from hubra.core.models.tenant import Tenant
 def current_tenant() -> Tenant | None:
     """Return the resolved Tenant for the current request, or None."""
     return getattr(g, "tenant", None)
+
+
+def single_club_slug() -> str | None:
+    """Slug of the one club this install serves, or None in multi-club mode."""
+    return current_app.config.get("SINGLE_CLUB") or None
 
 
 def _apply_search_path(path: str) -> None:

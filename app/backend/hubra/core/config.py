@@ -116,6 +116,13 @@ class BaseConfig:
     # FRONTEND_BASE_URL for backward compatibility when not set.
     SSO_BASE_URL: str = os.environ.get("SSO_BASE_URL", "")
 
+    # ── Single-club mode ────────────────────────────────────────────────────
+    # Slug of the one club this install serves. When set, every request runs
+    # in that club, the club app uses its own sign-in pages, and the manager
+    # API, the SSO portal and open sign-up are off. `flask setup-club`
+    # creates the club. Leave empty for the multi-club setup.
+    SINGLE_CLUB: str = os.environ.get("SINGLE_CLUB", "").strip().lower()
+
     # ── Integrations ────────────────────────────────────────────────────────
     WILDDUCK_API_URL: str = os.environ.get("WILDDUCK_API_URL", "")
     WILDDUCK_API_TOKEN: str = os.environ.get("WILDDUCK_API_TOKEN", "")

@@ -55,7 +55,7 @@ from hubra.core.schemas.member import MemberSchema
 from hubra.core.services import email as email_svc
 from hubra.core.services.email import _get_sso_base_url
 from hubra.api.notifications.services import create_notification
-from hubra.core.tenant.context import current_tenant
+from hubra.core.tenant.context import current_tenant, single_club_slug
 
 _log = logging.getLogger(__name__)
 
@@ -184,6 +184,14 @@ def login():
         raise_error(401, "UNAUTHORIZED", "Invalid credentials")
 
     if member is None and user is not None:
+        if single_club_slug():
+            # No club picker and no manager portal to land on: an account
+            # without a membership in this club has nothing to sign in to.
+            raise_error(
+                403,
+                "NO_MEMBERSHIP",
+                "This account is not a member of this club",
+            )
         tenants = AuthService.find_user_tenants(user.id)
         if tenants:
             return jsonify({"requiresTenantSelection": True, "tenants": tenants}), 200
@@ -291,8 +299,15 @@ def signup():
     """Create a new global User account with no tenant membership.
 
     The user can then request a tenant from the manager portal or be
-    invited to an existing tenant by an admin.
+    invited to an existing tenant by an admin. A single-club install has no
+    manager portal, so new people apply for membership instead.
     """
+    if single_club_slug():
+        raise_error(
+            403,
+            "SIGNUP_DISABLED",
+            "Open sign-up is off. Apply for membership instead.",
+        )
     body = request.get_json(silent=True) or {}
     name = (body.get("name") or "").strip()
     email = (body.get("email") or "").strip().lower()

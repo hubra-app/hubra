@@ -5,6 +5,9 @@ Resolution priority:
   2. JWT claim:    tenant_slug in the access token
   3. Header:       X-Tenant-Slug
 
+In single-club mode (SINGLE_CLUB) every request runs in that club, whatever
+the path, token or header says.
+
 The middleware rewrites PATH_INFO so downstream blueprints see their
 original URL (the tenant slug segment is stripped).
 
@@ -23,7 +26,7 @@ from sqlalchemy import select
 from hubra.core.extensions import db
 from hubra.core.models.tenant import Tenant
 
-from .context import set_search_path
+from .context import set_search_path, single_club_slug
 from hubra.core.redis_client import get_redis_client as _get_redis_client
 from hubra.core.redis_client import mark_redis_down as _mark_redis_down
 
@@ -139,6 +142,10 @@ def resolve_tenant() -> None:
     if tenant_slug:
         _rewrite_path(environ)
 
+    single = single_club_slug()
+    if single:
+        tenant_slug = single
+
     # 2. JWT claim (authenticated requests)
     if not tenant_slug:
         try:
@@ -160,6 +167,10 @@ def resolve_tenant() -> None:
     # Resolve slug → Tenant record
     tenant = _lookup_tenant(tenant_slug)
     if tenant is None or tenant.status != "active":
+        if single:
+            _log.warning(
+                "SINGLE_CLUB=%s has no active club; run `flask setup-club`", single
+            )
         g.tenant = None
         return
 

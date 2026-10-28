@@ -13,7 +13,7 @@ import os
 import time
 
 import click
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_jwt_extended import get_jwt_identity
 from sqlalchemy import select
 
@@ -235,6 +235,29 @@ def create_app(config_name: str | None = None) -> Flask:
     # Registered after resolve_tenant, so g.tenant is known here.
     app.before_request(module_gate)
 
+    # ── Single-club mode: no manager plane ────────────────────────────────────
+    from hubra.core.tenant.context import single_club_slug
+
+    # Club provisioning, tenant requests, impersonation and the module
+    # catalog belong to the manager portal, as does everything under
+    # /api/v2/manager/.
+    _MANAGER_BLUEPRINTS = frozenset({"tenant_admin", "features_bp"})
+
+    @app.before_request
+    def _single_club_gate():
+        if not single_club_slug():
+            return None
+        if request.blueprint in _MANAGER_BLUEPRINTS or request.path.startswith(
+            "/api/v2/manager/"
+        ):
+            return jsonify(
+                {
+                    "error": "NOT_FOUND",
+                    "message": "Not available on a single-club install",
+                }
+            ), 404
+        return None
+
     # ── Root health endpoint (for Docker healthcheck) ──────────────────────────
     @app.get("/health")
     @limiter.exempt
@@ -419,6 +442,81 @@ def _register_cli(app: Flask) -> None:
         except TenantProvisioningError as exc:
             click.echo(f"ERROR: {exc}", err=True)
             raise SystemExit(1) from exc
+
+    @app.cli.command("setup-club")
+    @click.option(
+        "--slug",
+        envvar="SINGLE_CLUB",
+        required=True,
+        help="Club slug (default: $SINGLE_CLUB)",
+    )
+    @click.option("--name", envvar="CLUB_NAME", default=None, help="Club name")
+    @click.option(
+        "--admin-email", envvar="ADMIN_EMAIL", default=None, help="First admin"
+    )
+    @click.option(
+        "--admin-password",
+        envvar="ADMIN_PASSWORD",
+        default=None,
+        help="First admin's password (default: generated and printed once)",
+    )
+    def setup_club(slug, name, admin_email, admin_password):
+        """Create the club of a single-club install, with its first admin.
+
+        Safe to run on every start: does nothing once the club exists.
+        """
+        import secrets as _secrets
+
+        from hubra.core.models.member import Member
+        from hubra.core.models.tenant import Tenant
+        from hubra.core.models.user import User
+        from hubra.core.tenant.context import reset_search_path, set_search_path
+        from hubra.core.tenant.service import TenantService, TenantProvisioningError
+
+        slug = slug.strip().lower()
+        existing = db.session.scalar(select(Tenant).where(Tenant.slug == slug))
+        if existing is not None:
+            click.echo(f"Club '{existing.slug}' is already set up (id={existing.id}).")
+            return
+        if not admin_email:
+            raise click.ClickException(
+                "The club needs a first admin: pass --admin-email or set ADMIN_EMAIL"
+            )
+
+        admin_email = admin_email.strip().lower()
+        user = db.session.scalar(select(User).where(User.email == admin_email))
+        generated = None
+        if user is None and not admin_password:
+            generated = admin_password = _secrets.token_urlsafe(12)
+        try:
+            tenant = TenantService.provision_tenant(
+                name=name or slug.replace("-", " ").title(),
+                slug=slug,
+                admin_email=admin_email if user is None else None,
+                admin_password=admin_password if user is None else None,
+                admin_user_id=user.id if user is not None else None,
+            )
+        except TenantProvisioningError as exc:
+            raise click.ClickException(str(exc)) from exc
+
+        if generated:
+            set_search_path(tenant.id)
+            member = db.session.scalar(
+                select(Member).join(User).where(User.email == admin_email)
+            )
+            if member is not None:
+                member.must_change_password = True
+            reset_search_path()
+            db.session.commit()
+
+        click.echo(f"Club '{tenant.name}' set up (slug={tenant.slug}, id={tenant.id}).")
+        if user is not None:
+            click.echo(f"  Owner: existing account {admin_email} (password unchanged).")
+        elif generated:
+            click.echo(f"  Owner: {admin_email}, one-time password: {generated}")
+            click.echo("  The password must be changed at the first sign-in.")
+        else:
+            click.echo(f"  Owner: {admin_email}")
 
     @app.cli.command("list-tenants")
     def list_tenants():
