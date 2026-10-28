@@ -191,7 +191,8 @@ function MailServerPanel() {
   const [deleteTarget, setDeleteTarget] = useState<MailServerEntry | null>(null)
   const [busy, setBusy] = useState(false)
 
-  const query = useQuery({ queryKey: ['mail-server'], queryFn: getMailServer })
+  // 503 when the instance has no mail server: show that at once, no retries.
+  const query = useQuery({ queryKey: ['mail-server'], queryFn: getMailServer, retry: false })
   const entries = query.data ?? []
   const q = search.trim().toLowerCase()
   const filtered = entries.filter(

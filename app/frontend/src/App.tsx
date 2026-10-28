@@ -1,6 +1,6 @@
 import i18n from 'i18next'
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { ErrorBoundary as RouteErrorBoundary } from 'react-error-boundary'
 import { useT } from '@/locales/i18n'
 import { AppProvider, useApp } from '@/context/AppContext'
@@ -156,6 +156,11 @@ function SsoRedirect({ path }: { path: string }) {
     window.location.assign(`${ssoUrl}/${path}${window.location.search}${window.location.hash}`)
   }, [ssoUrl, path])
   return <FullPageLoader />
+}
+
+function ClubApplyRedirect() {
+  const { club = '' } = useParams()
+  return <SsoRedirect path={`clubs/${encodeURIComponent(club)}`} />
 }
 
 /** /app/*: the club's pages, or the SSO portal when the URL names no club. */
@@ -535,14 +540,10 @@ function AppInner() {
         <Route key={path} path={`/${path}`} element={<SsoRedirect path={path} />} />
       ))}
 
-      {/* Public — tenant-specific */}
-      {/* Asking to join happens on the SSO portal, signed in. */}
-      <Route
-        path="/apply"
-        element={
-          <SsoRedirect path={URL_CLUB ? `clubs/${encodeURIComponent(URL_CLUB)}` : 'clubs'} />
-        }
-      />
+      {/* Asking to join happens on the SSO portal, signed in: /<club>/apply
+          opens that club's page there, /apply the club search. */}
+      <Route path="/apply" element={<SsoRedirect path="clubs" />} />
+      <Route path="/:club/apply" element={<ClubApplyRedirect />} />
 
       {/* / and /app/* → into the club; club pages run below /<club> (clubBase.ts) */}
       <Route path="/" element={<HomeRedirect />} />

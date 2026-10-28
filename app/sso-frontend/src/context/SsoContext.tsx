@@ -47,6 +47,12 @@ export function isManager(perms: PermissionsResponse | null): boolean {
   return !!perms && (perms.is_superadmin || (perms.global_permissions?.length ?? 0) > 0)
 }
 
+/** The trusted ?redirect= of the current URL. */
+function currentRedirect(): string | null {
+  const raw = new URLSearchParams(window.location.search).get('redirect')
+  return validateRedirect(raw, URLS, { dev: import.meta.env.DEV, self: window.location.origin })
+}
+
 export function SsoProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading')
@@ -54,10 +60,7 @@ export function SsoProvider({ children }: { children: ReactNode }) {
 
   const { redirectTarget, errorParam } = useMemo(() => {
     const params = new URLSearchParams(window.location.search)
-    return {
-      redirectTarget: validateRedirect(params.get('redirect'), URLS, { dev: import.meta.env.DEV }),
-      errorParam: params.get('error'),
-    }
+    return { redirectTarget: currentRedirect(), errorParam: params.get('error') }
   }, [])
 
   const isSuperadmin = permissions?.is_superadmin ?? false
@@ -74,7 +77,9 @@ export function SsoProvider({ children }: { children: ReactNode }) {
           setAuthStatus('authed')
           return
         }
-        const target = signedInTarget(redirectTarget)
+        // Read now, not at start: pages such as /clubs/<slug> send anonymous
+        // visitors to /login?redirect=… without reloading.
+        const target = signedInTarget(currentRedirect())
         if (target) {
           window.location.assign(target)
           return
@@ -83,7 +88,7 @@ export function SsoProvider({ children }: { children: ReactNode }) {
         setAuthStatus('authed')
       })
       .catch(() => setAuthStatus('anon'))
-  }, [redirectTarget, navigate])
+  }, [navigate])
 
   useEffect(() => {
     if (errorParam === 'insufficient_permissions') {
