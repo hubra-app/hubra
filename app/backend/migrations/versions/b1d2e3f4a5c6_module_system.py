@@ -24,20 +24,21 @@ down_revision = "f4a7c2e91b03"
 branch_labels = None
 depends_on = None
 
-# Modules that existed before the module system, with the name the catalog
-# needs if the row is missing (normally `flask seed` writes these).
+# Modules that existed before the module system: catalog name and the
+# manifest default, used when the catalog row is missing (normally
+# `flask seed` writes these).
 _EXISTING = {
-    "groups": "Groups",
-    "functions": "Functions",
-    "events": "Events",
-    "polls": "Polls",
-    "posts": "Posts",
-    "finance": "Finance",
-    "mail": "Mail",
-    "inventory": "Inventory",
-    "codes": "Codes",
-    "bindings": "Bindings",
-    "backups": "Backups",
+    "groups": ("Groups", True),
+    "functions": ("Functions", True),
+    "events": ("Events", True),
+    "polls": ("Polls", True),
+    "posts": ("Posts", True),
+    "finance": ("Finance", True),
+    "mail": ("Mail", False),
+    "inventory": ("Inventory", False),
+    "codes": ("Codes", False),
+    "bindings": ("Bindings", False),
+    "backups": ("Backups", False),
 }
 
 
@@ -64,13 +65,13 @@ def upgrade():
         )
 
     if bind.dialect.name == "postgresql":
-        for code, name in _EXISTING.items():
+        for code, (name, default) in _EXISTING.items():
             bind.execute(
                 sa.text(
                     "INSERT INTO public.features (code, name, default_enabled) "
-                    "VALUES (:code, :name, false) ON CONFLICT (code) DO NOTHING"
+                    "VALUES (:code, :name, :default) ON CONFLICT (code) DO NOTHING"
                 ),
-                {"code": code, "name": name},
+                {"code": code, "name": name, "default": default},
             )
             # Mail was only on where the club (or the old catalog default)
             # had it on; keep exactly that.
