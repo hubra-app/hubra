@@ -83,9 +83,22 @@ def _derive_perm_key(blueprint_name: str | None, resource: str, action: str) -> 
     return f"{prefix}.{resource}.{action}"
 
 
+def _club_key(suffix: str) -> str:
+    """A permission cache key for the current club.
+
+    Roles and members live in each club's schema, so their ids repeat from
+    club to club: a key without the club would hand one club's permissions
+    to the member with the same id in another.
+    """
+    from hubra.core.tenant.context import current_tenant
+
+    tenant = current_tenant()
+    return f"perms:{tenant.id if tenant is not None else 0}:{suffix}"
+
+
 def _get_role_permission_keys(role_id: int) -> set[str]:
     """Return the set of permission keys for a role, using Redis cache if available."""
-    cache_key = f"perms:{role_id}"
+    cache_key = _club_key(f"role:{role_id}")
 
     client = _get_redis_client()
     if client is not None:
@@ -131,7 +144,7 @@ def _get_member_permission_keys(member) -> set[str]:
     if not role_ids:
         return set()
 
-    cache_key = f"perms:member:{member.id}"
+    cache_key = _club_key(f"member:{member.id}")
     client = _get_redis_client()
     if client is not None:
         try:
@@ -165,7 +178,7 @@ def invalidate_member_permissions(member_id: int) -> None:
     client = _get_redis_client()
     if client is not None:
         try:
-            client.delete(f"perms:member:{member_id}")
+            client.delete(_club_key(f"member:{member_id}"))
         except Exception:
             logger.debug("Redis member cache invalidation failed for %s", member_id)
             _mark_redis_down()
@@ -218,7 +231,7 @@ def invalidate_role_permissions(role_id: int) -> None:
     if client is None:
         return
     try:
-        client.delete(f"perms:{role_id}")
+        client.delete(_club_key(f"role:{role_id}"))
         # Best-effort: clear member caches for members holding this role.
         from hubra.core.models.member import member_roles
 
@@ -226,7 +239,7 @@ def invalidate_role_permissions(role_id: int) -> None:
             select(member_roles.c.member_id).where(member_roles.c.role_id == role_id)
         ).all()
         if member_ids:
-            client.delete(*[f"perms:member:{mid}" for mid in member_ids])
+            client.delete(*[_club_key(f"member:{mid}") for mid in member_ids])
     except Exception:
         logger.debug("Redis cache invalidation failed for role %s", role_id)
         _mark_redis_down()

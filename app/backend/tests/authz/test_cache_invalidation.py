@@ -131,7 +131,7 @@ class TestCacheHit:
             keys = _get_role_permission_keys(role.id)
 
         assert keys == {"members.members.read", "groups.groups.read"}
-        mock_client.smembers.assert_called_once_with(f"perms:{role.id}")
+        mock_client.smembers.assert_called_once_with(f"perms:0:role:{role.id}")
 
     def test_cached_member_permissions_returned_from_redis(self, db, seeded_db):
         """_get_member_permission_keys returns cached set from Redis."""
@@ -177,7 +177,7 @@ class TestCacheInvalidation:
         with patch("hubra.api.permissions._get_redis_client", return_value=mock_client):
             invalidate_role_permissions(role.id)
 
-        mock_client.delete.assert_any_call(f"perms:{role.id}")
+        mock_client.delete.assert_any_call(f"perms:0:role:{role.id}")
 
     def test_invalidate_member_permissions_deletes_key(self, db, seeded_db):
         """invalidate_member_permissions deletes the member cache key."""
@@ -185,7 +185,7 @@ class TestCacheInvalidation:
         with patch("hubra.api.permissions._get_redis_client", return_value=mock_client):
             invalidate_member_permissions(42)
 
-        mock_client.delete.assert_called_once_with("perms:member:42")
+        mock_client.delete.assert_called_once_with("perms:0:member:42")
 
     def test_invalidate_role_permissions_clears_member_caches(self, db, seeded_db):
         """invalidate_role_permissions also clears member caches for members holding the role."""
@@ -219,8 +219,8 @@ class TestCacheInvalidation:
         for call in delete_calls:
             args = call[0]
             all_deleted.extend(args)
-        assert f"perms:{role.id}" in all_deleted
-        assert f"perms:member:{member.id}" in all_deleted
+        assert f"perms:0:role:{role.id}" in all_deleted
+        assert f"perms:0:member:{member.id}" in all_deleted
 
     def test_invalidate_with_no_redis_is_silent(self, db, seeded_db):
         """Cache invalidation doesn't raise when Redis is unavailable."""
@@ -252,3 +252,49 @@ class TestRedisDownNegativeCache:
 
         keys = _get_role_permission_keys(role.id)
         assert keys == {"members.members.read"}
+
+
+class _DictRedis:
+    """Just the set commands the permission cache uses."""
+
+    def __init__(self):
+        self.sets: dict[str, set[str]] = {}
+
+    def smembers(self, key):
+        return set(self.sets.get(key, set()))
+
+    def pipeline(self):
+        return self
+
+    def delete(self, *keys):
+        for k in keys:
+            self.sets.pop(k, None)
+
+    def sadd(self, key, *values):
+        self.sets.setdefault(key, set()).update(values)
+
+    def expire(self, *a):
+        pass
+
+    def execute(self):
+        pass
+
+
+def test_the_cache_keeps_clubs_apart(app, db):
+    """Member and role ids repeat in every club schema."""
+    from flask import g
+
+    from hubra.core.models.tenant import Tenant
+
+    fake = _DictRedis()
+    member = type("M", (), {"id": 3, "roles": [type("R", (), {"id": 5})()]})()
+    with patch("hubra.api.permissions._get_redis_client", return_value=fake):
+        g.tenant = Tenant(id=1, name="A", slug="a")
+        fake.sadd("perms:1:role:5", "finance.invoices.read")
+        try:
+            assert _get_member_permission_keys(member) == {"finance.invoices.read"}
+            # Club B: role 5 grants nothing there (empty in this DB).
+            g.tenant = Tenant(id=2, name="B", slug="b")
+            assert _get_member_permission_keys(member) == set()
+        finally:
+            g.tenant = None
