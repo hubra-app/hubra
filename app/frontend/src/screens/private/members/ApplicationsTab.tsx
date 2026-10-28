@@ -12,6 +12,7 @@ import {
 } from '@/api/applications'
 import { getLookups } from '@/api/lookups'
 import { formatDateTime } from '@/format'
+import { LeaveRequests } from './LeaveRequests'
 
 /* ── Applications ───────────────────────────── */
 export function ApplicationsTab() {
@@ -190,6 +191,8 @@ export function ApplicationsTab() {
           ))
         )}
       </Paper>
+
+      <LeaveRequests />
 
       <Modal
         open={!!approveTarget}

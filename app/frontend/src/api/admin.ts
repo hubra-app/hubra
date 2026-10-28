@@ -2,6 +2,8 @@ import { apiFetch } from '@hubra/api-client'
 
 export interface ClubSettings {
   club_name?: string
+  /** Members ask to leave and an admin approves (off: they leave at once). */
+  leave_requires_approval?: boolean
   club_description?: string
   logo?: string
   primary_color?: string

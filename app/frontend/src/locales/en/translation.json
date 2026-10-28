@@ -206,6 +206,18 @@
       "verifyNow": "Confirm now",
       "forwardHint": "Incoming club mail is copied to your private address.",
       "tab": "In the club"
+    },
+    "leaveClub": {
+      "title": "Leave the club",
+      "request": "Ask to leave",
+      "withdraw": "Withdraw the request",
+      "requested": "Request to leave sent",
+      "requestedMsg": "The club's admins will confirm it.",
+      "pending": "You asked to leave on {{date}}. The club's admins will confirm it.",
+      "needsApproval": "You leave once the club's admins confirm it.",
+      "atOnce": "You leave the club at once. Your Hubra account and your other clubs stay.",
+      "confirmTitle": "Leave the club?",
+      "confirmBody": "You lose access to the club's pages. Your invoices and entries stay with the club. To come back later, ask to join again."
     }
   },
   "app": {
@@ -1636,7 +1648,15 @@
     "disabled": "Member disabled",
     "enabled": "Member enabled",
     "invoicesSoon": "Member invoice history coming soon.",
-    "activitySoon": "Activity log coming soon."
+    "activitySoon": "Activity log coming soon.",
+    "leave": {
+      "requestsTitle": "Requests to leave",
+      "wantsToLeave": "wants to leave",
+      "approve": "Confirm leaving",
+      "decline": "Decline",
+      "approved": "Leaving confirmed",
+      "declined": "Request declined"
+    }
   },
   "notifications": {
     "invoicePaid": "Invoice paid",
@@ -2248,7 +2268,10 @@
     "bannerText": "Banner Text",
     "bannerPlaceholder": "Annual meeting on Friday!",
     "save": "Save Settings",
-    "loading": "Loading settings..."
+    "loading": "Loading settings...",
+    "membership": "Membership",
+    "leaveRequiresApproval": "Leaving needs approval",
+    "leaveRequiresApprovalHint": "On: members ask to leave and you approve it under Members › Applications. Off: members leave at once."
   },
   "domains": {
     "added": "Domain added",
@@ -2422,7 +2445,11 @@
       "update_mail_settings": "Mail settings updated",
       "create": "Created",
       "update": "Updated",
-      "delete": "Deleted"
+      "delete": "Deleted",
+      "leave_requested": "Asked to leave",
+      "leave_request_withdrawn": "Request to leave withdrawn",
+      "leave_approved": "Leaving confirmed",
+      "leave_declined": "Request to leave declined"
     }
   },
   "kv": {

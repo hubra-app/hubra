@@ -206,6 +206,18 @@
       "verifyNow": "Jetzt bestätigen",
       "forwardHint": "Eingehende Vereins-Mails gehen als Kopie an deine private Adresse.",
       "tab": "Im Verein"
+    },
+    "leaveClub": {
+      "title": "Verein verlassen",
+      "request": "Austritt beantragen",
+      "withdraw": "Antrag zurückziehen",
+      "requested": "Austritt beantragt",
+      "requestedMsg": "Die Vereinsleitung bestätigt deinen Austritt.",
+      "pending": "Du hast am {{date}} den Austritt beantragt. Die Vereinsleitung bestätigt ihn.",
+      "needsApproval": "Dein Austritt wird wirksam, sobald die Vereinsleitung ihn bestätigt.",
+      "atOnce": "Du verlässt den Verein sofort. Dein Hubra-Konto und deine anderen Vereine bleiben.",
+      "confirmTitle": "Verein wirklich verlassen?",
+      "confirmBody": "Du verlierst den Zugang zu den Seiten des Vereins. Deine Rechnungen und Einträge bleiben beim Verein. Möchtest du später zurück, kannst du wieder um Aufnahme bitten."
     }
   },
   "app": {
@@ -1636,7 +1648,15 @@
     "disabled": "Mitglied deaktiviert",
     "enabled": "Mitglied aktiviert",
     "invoicesSoon": "Die Rechnungsübersicht pro Mitglied folgt bald.",
-    "activitySoon": "Das Aktivitätsprotokoll folgt bald."
+    "activitySoon": "Das Aktivitätsprotokoll folgt bald.",
+    "leave": {
+      "requestsTitle": "Austrittsgesuche",
+      "wantsToLeave": "möchte austreten",
+      "approve": "Austritt bestätigen",
+      "decline": "Ablehnen",
+      "approved": "Austritt bestätigt",
+      "declined": "Austritt abgelehnt"
+    }
   },
   "notifications": {
     "invoicePaid": "Rechnung bezahlt",
@@ -2248,7 +2268,10 @@
     "bannerText": "Bannertext",
     "bannerPlaceholder": "Generalversammlung am Freitag!",
     "save": "Einstellungen speichern",
-    "loading": "Einstellungen werden geladen …"
+    "loading": "Einstellungen werden geladen …",
+    "membership": "Mitgliedschaft",
+    "leaveRequiresApproval": "Austritt nur mit Bestätigung",
+    "leaveRequiresApprovalHint": "Ein: Mitglieder beantragen den Austritt, und ihr bestätigt ihn unter Mitglieder › Anträge. Aus: Mitglieder treten sofort selbst aus."
   },
   "domains": {
     "added": "Domain hinzugefügt",
@@ -2422,7 +2445,11 @@
       "update_mail_settings": "Mail-Einstellungen geändert",
       "create": "Erstellt",
       "update": "Geändert",
-      "delete": "Gelöscht"
+      "delete": "Gelöscht",
+      "leave_requested": "Austritt beantragt",
+      "leave_request_withdrawn": "Austrittsgesuch zurückgezogen",
+      "leave_approved": "Austritt bestätigt",
+      "leave_declined": "Austritt abgelehnt"
     }
   },
   "kv": {
