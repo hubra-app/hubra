@@ -110,7 +110,10 @@ def render_mail_template(
 
     text = render_template(f"email/{template_name}.txt", **shared_ctx)
     text = unescape(re.sub(r"<[^>]+>", "", text))
-    subject = render_template(f"email/{template_name}_subject.j2", **shared_ctx).strip()
+    # t() escapes values for the HTML part; a subject is plain text.
+    subject = unescape(
+        render_template(f"email/{template_name}_subject.j2", **shared_ctx).strip()
+    )
 
     _touch_last_used(locale, t._accessed_keys)  # type: ignore[attr-defined]
 

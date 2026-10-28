@@ -130,3 +130,26 @@ def test_names_with_special_characters_stay_one_address(app, db):
     sender = [(a.display_name, a.addr_spec) for a in msg["From"].addresses]
     assert to == [("Dora <img src=x>, Müller", "dora@example.com")]
     assert sender == [("Verein Grün & Co.", "noreply@example.com")]
+
+
+def test_the_subject_shows_the_club_name_as_typed(app, db):
+    from hubra.core.models.translation import Translation
+    from hubra.core.services.mail_i18n import render_mail_template
+
+    db.session.add(
+        Translation(
+            locale="en-GB",
+            key="mail.email.subject.club_invite",
+            value="[{{club_name}}] You're invited",
+        )
+    )
+    db.session.commit()
+    with app.test_request_context():
+        _, _, subject = render_mail_template(
+            "club_invite",
+            "en-GB",
+            club_name="Müller & Söhne",
+            invited_by="Alice",
+            invite_url="https://sso.example/invite#token=x",
+        )
+    assert subject == "[Müller & Söhne] You're invited"
