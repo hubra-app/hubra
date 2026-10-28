@@ -8,8 +8,6 @@ import { getSystemPermissions } from '@/api/system'
 import { PageHead, Tabs, Pagination, usePagination } from '@/components/ui'
 import { RolesTab } from '@/screens/private/system/RolesTab'
 import { HealthTab } from '@/screens/private/system/HealthTab'
-import { useModules } from '@/modules/useModules'
-import { BackupsTab } from '@/screens/private/system/BackupsTab'
 
 const METHOD_STYLES: Record<string, string> = {
   GET: '#1f9d57',
@@ -103,7 +101,6 @@ export function SystemScreen() {
   }, [entries, methodFilter, search])
 
   const pg = usePagination(filtered, 25)
-  const hasBackups = useModules().has('backups')
 
   return (
     <div style={{ padding: '0 0 2rem' }}>
@@ -114,9 +111,6 @@ export function SystemScreen() {
           { id: 'permissions', label: t('system.permissions', 'Permissions') },
           { id: 'roles', label: t('system.roles', 'Roles') },
           { id: 'health', label: t('system.health', 'Health') },
-          ...(hasBackups
-            ? [{ id: 'backups', label: t('system.backups', 'Backups') }]
-            : []),
         ]}
         activeTab={tab}
         onTabChange={(id) =>
@@ -323,7 +317,6 @@ export function SystemScreen() {
 
       {tab === 'roles' && <RolesTab />}
       {tab === 'health' && <HealthTab />}
-      {tab === 'backups' && hasBackups && <BackupsTab />}
     </div>
   )
 }

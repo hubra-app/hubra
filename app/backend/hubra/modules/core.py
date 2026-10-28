@@ -108,6 +108,12 @@ module = Module(
             "/api/v1/manager/platform",
             v2=(("/api/v2/manager/platform", "platform_bp_v2"),),
         ),
+        Blueprint(
+            "hubra.api.backups.routes",
+            "platform_backups_bp",
+            "/api/v1/manager/platform/backups",
+            v2=(("/api/v2/manager/platform/backups", "platform_backups_bp_v2"),),
+        ),
     ),
     nav=(
         NavItem("/app/dashboard", "shell.nav.dashboard", "dashboard", order=0),

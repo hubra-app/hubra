@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, Table, Paper, Badge } from '@mantine/core'
+import { Button, Table, Paper, Badge, Modal, Group, Text, Anchor } from '@mantine/core'
+import { Link } from 'react-router-dom'
 import {
   IconRefresh,
   IconTrash,
@@ -9,9 +10,8 @@ import {
   IconCloudUpload,
   IconAlertTriangle,
 } from '@tabler/icons-react'
-import { useT } from '@/locales/i18n'
-import { useToast } from '@/context/AppContext'
-import { ConfirmModal } from '@/components/ui'
+import { useAdmin } from '@/context/AdminContext'
+import { PageHead } from '@/components/ui'
 import { useState } from 'react'
 import {
   listBackups,
@@ -47,8 +47,7 @@ function formatSize(bytes: number | null): string {
   if (bytes === null) return '—'
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  if (bytes < 1024 * 1024 * 1024)
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
 }
 
@@ -64,9 +63,12 @@ function formatDate(iso: string | null): string {
   })
 }
 
-export function BackupsTab() {
-  const { t } = useT()
-  const { notify } = useToast()
+/**
+ * Backups of the whole database (every club), for platform staff. Where
+ * they go is set under Platform Settings; the passphrase stays in env.
+ */
+export function Backups() {
+  const { notify } = useAdmin()
   const queryClient = useQueryClient()
   const [deleteTarget, setDeleteTarget] = useState<BackupRecord | null>(null)
   const [creating, setCreating] = useState(false)
@@ -96,11 +98,7 @@ export function BackupsTab() {
       queryClient.invalidateQueries({ queryKey: ['backups'] })
       notify('success', 'Backup started', 'A new backup is being created.')
     } catch (err: unknown) {
-      notify(
-        'error',
-        'Backup failed',
-        err instanceof Error ? err.message : 'Unknown error',
-      )
+      notify('error', 'Backup failed', err instanceof Error ? err.message : 'Unknown error')
     } finally {
       setCreating(false)
     }
@@ -111,17 +109,9 @@ export function BackupsTab() {
     try {
       await verifyBackup(id)
       queryClient.invalidateQueries({ queryKey: ['backups'] })
-      notify(
-        'success',
-        'Verification started',
-        'Backup verification is running.',
-      )
+      notify('success', 'Verification started', 'Backup verification is running.')
     } catch (err: unknown) {
-      notify(
-        'error',
-        'Verify failed',
-        err instanceof Error ? err.message : 'Unknown error',
-      )
+      notify('error', 'Verify failed', err instanceof Error ? err.message : 'Unknown error')
     } finally {
       setVerifyingId(null)
     }
@@ -134,11 +124,7 @@ export function BackupsTab() {
       setDeleteTarget(null)
       notify('success', 'Deleted', `Backup #${record.id} removed.`)
     } catch (err: unknown) {
-      notify(
-        'error',
-        'Delete failed',
-        err instanceof Error ? err.message : 'Unknown error',
-      )
+      notify('error', 'Delete failed', err instanceof Error ? err.message : 'Unknown error')
     }
   }
 
@@ -148,28 +134,32 @@ export function BackupsTab() {
   return (
     <div
       style={{
-        marginTop: '1.5rem',
         display: 'flex',
         flexDirection: 'column',
         gap: 16,
       }}
     >
+      <div>
+        <PageHead eyebrow="Platform" title="Backups" />
+        <Text size="sm" c="dimmed" maw={720}>
+          Each backup holds the whole database, every club included, encrypted with
+          BACKUP_ENCRYPTION_KEY from env. Daily, weekly and monthly backups run on their own; the
+          storage is set under{' '}
+          <Anchor component={Link} to="/app/platform/settings" size="sm">
+            Platform Settings
+          </Anchor>
+          .
+        </Text>
+      </div>
       {/* ── Config status banner ─────────────────────────────────────── */}
       {configQuery.isLoading && (
-        <div
-          style={{ color: '#8c86a0', fontSize: 'var(--mantine-font-size-sm)' }}
-        >
+        <div style={{ color: '#8c86a0', fontSize: 'var(--mantine-font-size-sm)' }}>
           Loading backup configuration…
         </div>
       )}
 
       {config && (
-        <Paper
-          withBorder
-          shadow="sm"
-          radius="lg"
-          style={{ padding: '1rem 1.25rem' }}
-        >
+        <Paper withBorder shadow="sm" radius="lg" style={{ padding: '1rem 1.25rem' }}>
           <div
             style={{
               display: 'flex',
@@ -300,7 +290,7 @@ export function BackupsTab() {
                 }}
                 loading={configQuery.isFetching || backupsQuery.isFetching}
               >
-                {t('common.refresh', 'Refresh')}
+                Refresh
               </Button>
               <Button
                 variant="filled"
@@ -336,8 +326,8 @@ export function BackupsTab() {
                 color: '#5e5873',
               }}
             >
-              Configure S3 settings in the Settings tab (backup namespace) and
-              set BACKUP_ENCRYPTION_KEY in .env to enable backups.
+              Configure S3 settings in the Settings tab (backup namespace) and set
+              BACKUP_ENCRYPTION_KEY in .env to enable backups.
             </div>
           )}
         </Paper>
@@ -381,9 +371,7 @@ export function BackupsTab() {
                 <Table.Td data-label="#" style={{ color: '#5e5873' }}>
                   {b.id}
                 </Table.Td>
-                <Table.Td data-label="Date">
-                  {formatDate(b.created_at)}
-                </Table.Td>
+                <Table.Td data-label="Date">{formatDate(b.created_at)}</Table.Td>
                 <Table.Td data-label="Type">
                   <span
                     style={{
@@ -457,9 +445,7 @@ export function BackupsTab() {
                       <IconX size={14} /> Failed
                     </span>
                   )}
-                  {b.verified_ok === null && (
-                    <span style={{ color: '#bbb' }}>—</span>
-                  )}
+                  {b.verified_ok === null && <span style={{ color: '#bbb' }}>—</span>}
                 </Table.Td>
                 <Table.Td data-label="Tables" style={{ color: '#5e5873' }}>
                   {b.table_count ?? '—'}
@@ -495,21 +481,32 @@ export function BackupsTab() {
         </Table>
       </Paper>
 
-      <ConfirmModal
-        open={deleteTarget !== null}
+      <Modal
+        opened={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
         title="Delete backup"
-        body={
-          deleteTarget
+      >
+        <Text size="sm" mb="lg">
+          {deleteTarget
             ? `Delete backup #${deleteTarget.id} from ${formatDate(
                 deleteTarget.created_at,
               )}? This removes the S3 object and cannot be undone.`
-            : ''
-        }
-        onConfirm={() => {
-          if (deleteTarget) handleDelete(deleteTarget)
-        }}
-        onClose={() => setDeleteTarget(null)}
-      />
+            : ''}
+        </Text>
+        <Group justify="flex-end">
+          <Button variant="default" onClick={() => setDeleteTarget(null)}>
+            Cancel
+          </Button>
+          <Button
+            color="red"
+            onClick={() => {
+              if (deleteTarget) handleDelete(deleteTarget)
+            }}
+          >
+            Delete
+          </Button>
+        </Group>
+      </Modal>
     </div>
   )
 }

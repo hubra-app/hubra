@@ -1,5 +1,8 @@
 import { apiFetch } from '@hubra/api-client'
 
+// Backups dump the whole database, so they are the platform's (backups.manage).
+const B = '/manager/platform/backups'
+
 export interface BackupRecord {
   id: string
   created_at: string
@@ -27,25 +30,25 @@ export interface BackupConfigStatus {
 }
 
 export async function listBackups(): Promise<BackupRecord[]> {
-  return apiFetch<BackupRecord[]>('/backups/')
+  return apiFetch<BackupRecord[]>(`${B}/`)
 }
 
 export async function createBackup(): Promise<{ task_id: string; status: string }> {
-  return apiFetch<{ task_id: string; status: string }>('/backups/', {
+  return apiFetch<{ task_id: string; status: string }>(`${B}/`, {
     method: 'POST',
   })
 }
 
 export async function getBackupConfig(): Promise<BackupConfigStatus> {
-  return apiFetch<BackupConfigStatus>('/backups/config')
+  return apiFetch<BackupConfigStatus>(`${B}/config`)
 }
 
 export async function verifyBackup(id: string): Promise<{ task_id: string; status: string }> {
-  return apiFetch<{ task_id: string; status: string }>(`/backups/${id}/verify`, {
+  return apiFetch<{ task_id: string; status: string }>(`${B}/${id}/verify`, {
     method: 'POST',
   })
 }
 
 export async function deleteBackup(id: string): Promise<void> {
-  await apiFetch(`/backups/${id}`, { method: 'DELETE' })
+  await apiFetch(`${B}/${id}`, { method: 'DELETE' })
 }

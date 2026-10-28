@@ -7,8 +7,8 @@
    **If this key is lost, all backups are unrecoverable.**
 
 2. **S3 credentials** — Contabo S3 endpoint, bucket name, access key, and secret key.
-   These are stored in the Settings KV store (backup namespace) and can also be
-   found in `.env` on the production server.
+   These come from `BACKUP_S3_*` in `.env` on the production server, unless a
+   superadmin overrode them in manage under Platform › Platform Settings.
 
 3. **`pg_restore`** — PostgreSQL 16+ client tools must be installed on the
    recovery machine. Install with:
@@ -176,8 +176,9 @@ This procedure tests the entire backup→restore pipeline without touching
 production:
 
 ```sh
-# 1. Create a backup via the API (or wait for a scheduled one)
-curl -X POST https://api.hubra.club/api/v1/backups/ \
+# 1. Create a backup (manage › Platform › Backups › "Create backup now", the
+#    API as a superadmin below, or wait for a scheduled one)
+curl -X POST https://api.hubra.club/api/v1/manager/platform/backups/ \
     -H "Cookie: csrf_access_token=..." \
     -H "X-CSRF-TOKEN: ..."
 
