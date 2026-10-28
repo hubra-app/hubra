@@ -231,3 +231,32 @@ export interface MyTenant {
 export async function getMyTenants(): Promise<{ tenants: MyTenant[] }> {
   return apiFetch<{ tenants: MyTenant[] }>('/account/my-tenants')
 }
+
+export interface TenantModule {
+  code: string
+  name: string
+  description: string
+  required: boolean
+  dependsOn: string[]
+  enabled: boolean
+  switchedOn: boolean
+  allowed: boolean
+  missingDependencies: string[]
+}
+
+export async function getTenantModules(
+  tenantId: number,
+): Promise<TenantModule[]> {
+  return apiFetch<TenantModule[]>(`/features/tenants/${tenantId}`)
+}
+
+export async function setTenantModule(
+  tenantId: number,
+  code: string,
+  body: { allowed?: boolean; enabled?: boolean },
+): Promise<TenantModule> {
+  return apiFetch<TenantModule>(`/features/tenants/${tenantId}/${code}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  })
+}

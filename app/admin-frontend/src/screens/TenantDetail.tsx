@@ -36,6 +36,7 @@ import {
 import { useAdmin } from '@/context/AdminContext'
 import { StatTile, StatGrid } from '@/components/ui'
 import { ImpersonateModal } from '@/screens/ImpersonateModal'
+import { TenantModules } from '@/screens/TenantModules'
 
 const STATUS_COLORS: Record<string, string> = {
   active: 'green',
@@ -247,6 +248,8 @@ export function TenantDetail() {
           )}
         </Stack>
       </Paper>
+
+      <TenantModules tenantId={tenant.id} />
 
       <Paper withBorder shadow="sm" radius="lg" p="lg" mb={20}>
         <Group justify="space-between" mb={12}>
