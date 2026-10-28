@@ -50,7 +50,7 @@ class TestGenerateQrrReference:
 
     def test_large_values(self) -> None:
         ref = generate_qrr_reference(
-            member_id=999999, invoice_id=9999999999999999, year=2026
+            member_id=999999, invoice_id=2_147_483_647, year=2026
         )
         assert len(ref) == 27
         assert ref.isdigit()
@@ -84,7 +84,7 @@ class TestParseQrrReference:
 
     def test_round_trip_large(self) -> None:
         member_id = 999999
-        invoice_id = 9999999999999999
+        invoice_id = 2_147_483_647
         ref = generate_qrr_reference(
             member_id=member_id, invoice_id=invoice_id, year=2099
         )

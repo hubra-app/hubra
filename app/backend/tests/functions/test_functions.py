@@ -583,7 +583,7 @@ def test_reassign_holder_repoints_forwarding(app, db, seeded_db):
         user_id=user_b.id,
         public_email="b@example.ch",
         status="active",
-        tier_id=1,
+        tier_id=seeded_db["tier"].id,
     )
     db.session.add(member_b)
     db.session.flush()
@@ -627,7 +627,7 @@ def test_function_two_holders_both_forward(app, db, seeded_db):
         user_id=user2.id,
         public_email="second@example.ch",
         status="active",
-        tier_id=1,
+        tier_id=seeded_db["tier"].id,
     )
     db.session.add(m2)
     db.session.flush()

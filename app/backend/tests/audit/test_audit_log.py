@@ -67,10 +67,16 @@ def test_actor_name_survives_member_delete(client, db, auth_headers, seeded_db):
 
     # SQLite FK constraints are OFF by default; deleting the member leaves
     # the audit entry's actor_id as a dangling ref but actor_name is preserved.
-    db.session.execute(db.text("PRAGMA foreign_keys = OFF"))
+    postgres = db.engine.dialect.name == "postgresql"
+    off, on = (
+        ("SET session_replication_role = replica", "SET session_replication_role = DEFAULT")
+        if postgres
+        else ("PRAGMA foreign_keys = OFF", "PRAGMA foreign_keys = ON")
+    )
+    db.session.execute(db.text(off))
     db.session.execute(db.text("DELETE FROM members WHERE id = :id"), {"id": member_id})
+    db.session.execute(db.text(on))
     db.session.commit()
-    db.session.execute(db.text("PRAGMA foreign_keys = ON"))
 
     resp = _get_audit(client, auth_headers)
     assert resp.status_code == 200

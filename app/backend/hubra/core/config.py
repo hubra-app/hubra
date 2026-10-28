@@ -254,7 +254,11 @@ class TestingConfig(BaseConfig):
     TESTING: bool = True
     DEBUG: bool = True
     PLUGINS_AUTOINSTALL: str = "all"
-    SQLALCHEMY_DATABASE_URI: str = "sqlite:///:memory:"
+    # TEST_DATABASE_URL runs the suite on Postgres (an empty database that
+    # the tests may wipe); without it the tests use in-memory SQLite.
+    SQLALCHEMY_DATABASE_URI: str = os.environ.get(
+        "TEST_DATABASE_URL", "sqlite:///:memory:"
+    )
     SQLALCHEMY_ECHO: bool = False
     # Long-lived tokens so tests don't expire mid-run
     JWT_ACCESS_TOKEN_EXPIRES: timedelta = timedelta(hours=1)
