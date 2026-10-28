@@ -106,21 +106,33 @@ class TierService:
         for field in DECIMAL_FIELDS:
             if field in data:
                 val = data[field]
-                setattr(tier, field, Decimal(str(val)) if val is not None else None)
+                try:
+                    number = Decimal(str(val)) if val is not None else None
+                except InvalidOperation:
+                    number = Decimal("NaN")
+                if number is not None and not number.is_finite():
+                    raise_error(400, "VALIDATION_ERROR", f"{field} must be a number")
+                setattr(tier, field, number)
 
         if "round_to" in data:
             val = data["round_to"]
-            tier.round_to = int(val) if val is not None else None
+            try:
+                tier.round_to = int(val) if val is not None else None
+            except (TypeError, ValueError):
+                raise_error(400, "VALIDATION_ERROR", "round_to must be an integer")
 
         if "deduct_tier_ids" in data:
             val = data["deduct_tier_ids"]
-            if val is not None and not isinstance(val, list):
+            try:
+                if val is not None and not isinstance(val, list):
+                    raise TypeError
+                tier.deduct_tier_ids = [int(i) for i in val] if val else []
+            except (TypeError, ValueError):
                 raise_error(
                     400,
                     "VALIDATION_ERROR",
                     "deduct_tier_ids must be a list of integers or null",
                 )
-            tier.deduct_tier_ids = [int(i) for i in val] if val else []
 
         return tier
 
