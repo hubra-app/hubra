@@ -8,6 +8,7 @@ import { ApplyScreen } from '@/screens/public/Apply'
 import { NotFoundScreen } from '@/screens/public/NotFound'
 import { Toasts } from '@/components/ui'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { ForcedPasswordChangeModal } from '@/components/ForcedPasswordChangeModal'
 import { SSO_URL } from '@hubra/api-client'
 import { IconAlertTriangle, IconRefresh } from '@tabler/icons-react'
 import { Loader, Center, Overlay, Paper, Text, Button, Stack } from '@mantine/core'
@@ -162,7 +163,8 @@ function PrivateRoutes() {
 
   useEffect(() => {
     if (urlSlug && urlSlug !== tenantSlug) {
-      switchTenant(urlSlug)
+      // The club in the URL becomes active; a deep link keeps its page.
+      switchTenant(urlSlug, true)
     }
   }, [urlSlug, tenantSlug, switchTenant])
 
@@ -532,6 +534,12 @@ function AppInner() {
   )
 }
 
+/** A temporary password blocks the API, so ask for the new one before the app loads. */
+function PasswordChangeGate() {
+  const { passwordChangeRequired } = useApp()
+  return passwordChangeRequired ? <ForcedPasswordChangeModal /> : null
+}
+
 function BackendBanner() {
   const { t } = useT()
   const { backendOnline, recheckBackend } = useApp()
@@ -578,6 +586,7 @@ export default function App() {
     <ErrorBoundary>
       <AppProvider>
         <BackendBanner />
+        <PasswordChangeGate />
         <AppInner />
         <Toasts />
       </AppProvider>

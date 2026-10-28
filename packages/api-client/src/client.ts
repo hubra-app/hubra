@@ -119,13 +119,15 @@ export async function apiFetch<T = unknown>(
 
   if (!res.ok) {
     let message = `HTTP ${res.status}`;
+    let code: string | undefined;
     try {
       const body = await res.json();
       message = body.message ?? body.error ?? message;
+      code = body.error;
     } catch {
       /* ignore */
     }
-    throw Object.assign(new Error(message), { status: res.status });
+    throw Object.assign(new Error(message), { status: res.status, code });
   }
 
   if (res.status === 204) return undefined as T;
@@ -170,13 +172,15 @@ export async function apiFetchRaw(
 
   if (!res.ok) {
     let message = `HTTP ${res.status}`;
+    let code: string | undefined;
     try {
       const body = await res.json();
       message = body.message ?? body.error ?? message;
+      code = body.error;
     } catch {
       /* ignore */
     }
-    throw Object.assign(new Error(message), { status: res.status });
+    throw Object.assign(new Error(message), { status: res.status, code });
   }
 
   return res;

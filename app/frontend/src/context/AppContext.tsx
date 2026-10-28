@@ -61,6 +61,8 @@ interface AuthState {
   hasPermission: (key: string) => boolean
   setPhase: (p: Phase) => void
   clearMustChangePassword: () => void
+  /** Signed in, but the API answers nothing until the password is changed. */
+  passwordChangeRequired: boolean
   impersonation: {
     is_impersonating: boolean
     impersonator_id: number
@@ -115,7 +117,8 @@ interface DataState {
   moduleList: ModuleInfo[]
   modulesLoaded: boolean
   myTenants: MyTenant[]
-  switchTenant: (slug: string) => void
+  /** Make `slug` the active club; opens its dashboard unless `keepPath`. */
+  switchTenant: (slug: string, keepPath?: boolean) => void
 }
 
 type AppState = ToastState & AuthState & NavState & DataState
@@ -146,6 +149,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
   const [permissions, setPermissions] = useState<string[]>([])
   const [impersonation, setImpersonation] = useState<AuthState['impersonation']>(null)
+  const [passwordChangeRequired, setPasswordChangeRequired] = useState(false)
 
   const redirectToSso = useCallback(() => {
     const currentUrl = window.location.origin + window.location.pathname
@@ -193,7 +197,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           window.location.assign(`${SSO_URL}/login`)
           return
         }
-        const status = (err as { status?: number })?.status
+        const { status, code } = err as { status?: number; code?: string }
+        if (status === 403 && code === 'MUST_CHANGE_PASSWORD') {
+          // Stays 'loading': only the password change form is shown.
+          setPasswordChangeRequired(true)
+          return
+        }
         if (status === 401) {
           clearTokens()
           clearLookups()
@@ -317,10 +326,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const switchTenant = useCallback(
-    (slug: string) => {
+    (slug: string, keepPath = false) => {
       apiSwitchTenant(slug).then(() => {
         setActiveTenant(slug)
-        navigate(`/${slug}/app/dashboard`)
+        if (!keepPath) navigate(`/${slug}/app/dashboard`)
       })
     },
     [navigate, setActiveTenant],
@@ -488,7 +497,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const isAdmin = currentUser?.roles?.includes('Admin') ?? false
+  // The API answers ['*'] for every admin role, the club's Owner included.
+  const isAdmin = (currentUser?.roles?.includes('Admin') ?? false) || permissions.includes('*')
 
   const hasPermission = useCallback(
     (key: string) => {
@@ -499,8 +509,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   )
 
   const clearMustChangePassword = useCallback(() => {
+    // Nothing was loaded yet, so start the app over now that the API answers.
+    if (passwordChangeRequired) window.location.reload()
     setCurrentUser((prev) => (prev ? { ...prev, mustChangePassword: false } : prev))
-  }, [])
+  }, [passwordChangeRequired])
 
   const stopImpersonation = useCallback(() => {
     const adminUrl = import.meta.env.VITE_ADMIN_PORTAL_URL ?? 'https://manage.vollbuild.ch'
@@ -525,12 +537,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
       hasPermission,
       setPhase,
       clearMustChangePassword,
+      passwordChangeRequired,
       impersonation,
       stopImpersonation,
     }),
     // Stable callbacks (useCallback) intentionally excluded
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [phase, authStatus, tenantSlug, currentUser, isAdmin, permissions, impersonation],
+    [
+      phase,
+      authStatus,
+      tenantSlug,
+      currentUser,
+      isAdmin,
+      permissions,
+      impersonation,
+      passwordChangeRequired,
+    ],
   )
 
   const navValue = useMemo<NavState>(
