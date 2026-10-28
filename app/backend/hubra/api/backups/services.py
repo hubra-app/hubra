@@ -9,8 +9,8 @@ class BackupsService:
     """Collection operations on backups — thin wrapper over BackupService."""
 
     @staticmethod
-    def list() -> list:
-        return BackupService.list_backups()
+    def list(tenant_id: int | None = None) -> list:
+        return BackupService.list_backups(tenant_id)
 
     @staticmethod
     def config_status() -> dict:

@@ -1,7 +1,18 @@
 """Backup service — encrypted Postgres backups to S3-compatible storage.
 
+There is no backup of the whole database.  Each backup holds one schema:
+
+    * global: the ``public`` schema (accounts, clubs, domains, platform
+      settings), under ``backups/global/``;
+    * club: one club's ``tenant_{id}`` schema, under
+      ``backups/clubs/{id}-{slug}/``, so one club can be restored without
+      touching the others (``restore_club``).
+
+Scheduled runs (``create_scheduled_backups``) make one global backup and one
+per active club.
+
 Flow:
-    1. pg_dump (custom format) → temp file
+    1. pg_dump --schema (custom format) → temp file
     2. GPG symmetric encryption → .gpg file
     3. SHA-256 checksum of encrypted file
     4. Upload to S3 (Contabo or any S3-compatible endpoint)
@@ -12,8 +23,16 @@ Verification:
     2. GPG decrypt
     3. pg_restore --list to confirm valid archive
 
-S3 connection settings are read from the KV Setting store (backup namespace)
-with env-var fallback via Flask config.
+Club restore:
+    1. Download and decrypt
+    2. Rename the club's schema to ``tenant_{id}_before_restore_{ts}`` (the
+       safety copy, kept until someone drops it)
+    3. pg_restore into a fresh ``tenant_{id}`` in one transaction; on failure
+       the new schema is dropped and the safety copy renamed back
+    4. Migrate the restored schema to the current code
+
+S3 settings are platform settings (``backup.s3.*``, defaulting to env); the
+encryption key only ever comes from env.
 """
 
 from __future__ import annotations
@@ -27,10 +46,11 @@ from datetime import datetime, timezone
 from urllib.parse import urlparse
 
 from flask import current_app
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from hubra.core.extensions import db
 from hubra.core.models.backup import BackupRecord
+from hubra.core.models.tenant import Tenant
 
 logger = logging.getLogger(__name__)
 
@@ -91,8 +111,105 @@ def _parse_database_url() -> dict[str, str]:
     }
 
 
+def _pg_conn_args(db_params: dict[str, str]) -> list[str]:
+    return [
+        "--host",
+        db_params["host"],
+        "--port",
+        db_params["port"],
+        "--username",
+        db_params["user"],
+        "--no-password",
+    ]
+
+
+def _pg_env(db_params: dict[str, str]) -> dict[str, str]:
+    env = os.environ.copy()
+    env["PGPASSWORD"] = db_params["password"]
+    return env
+
+
+def _stderr(result) -> str:
+    return result.stderr.decode("utf-8", errors="replace")
+
+
+def _club_schema(tenant_id: int) -> str:
+    return f"tenant_{int(tenant_id)}"
+
+
+def _s3_prefix(tenant: Tenant | None) -> str:
+    if tenant is None:
+        return "backups/global"
+    return f"backups/clubs/{tenant.id}-{tenant.slug}"
+
+
+def _schema_exists(name: str) -> bool:
+    return bool(
+        db.session.execute(
+            text("SELECT 1 FROM information_schema.schemata WHERE schema_name = :n"),
+            {"n": name},
+        ).scalar()
+    )
+
+
+def _rename_schema(old: str, new: str) -> None:
+    db.session.execute(text(f'ALTER SCHEMA "{old}" RENAME TO "{new}"'))
+    db.session.commit()
+
+
+def _drop_schema(name: str) -> None:
+    db.session.execute(text(f'DROP SCHEMA IF EXISTS "{name}" CASCADE'))
+    db.session.commit()
+
+
+def _download_and_decrypt(record: BackupRecord, tmpdir: str) -> str:
+    """Fetch the record's object from S3 and decrypt it.  Returns the dump path."""
+    encryption_key = _get_encryption_key()
+    if not encryption_key:
+        raise RuntimeError("BACKUP_ENCRYPTION_KEY is not set")
+
+    s3_client = _get_s3_client()
+    if s3_client is None:
+        raise RuntimeError("S3 is not configured")
+
+    cfg = _get_s3_config()
+    gpg_path = os.path.join(tmpdir, "backup.dump.gpg")
+    dump_path = os.path.join(tmpdir, "backup.dump")
+
+    logger.info("Downloading backup %s from S3", record.id)
+    s3_client.download_file(cfg["bucket"], record.s3_key, gpg_path)
+
+    gpg_cmd = [
+        "gpg",
+        "--batch",
+        "--yes",
+        "--quiet",
+        "--pinentry-mode",
+        "loopback",
+        "--passphrase-fd",
+        "0",
+        "--decrypt",
+        "--output",
+        dump_path,
+        gpg_path,
+    ]
+    gpg_result = subprocess.run(
+        gpg_cmd,
+        input=encryption_key.encode(),
+        capture_output=True,
+        timeout=300,
+    )
+    if gpg_result.returncode != 0:
+        raise RuntimeError(f"GPG decryption failed: {_stderr(gpg_result)}")
+    return dump_path
+
+
+class RestoreError(RuntimeError):
+    """A club restore failed; the club's data was put back as it was."""
+
+
 class BackupService:
-    """Backup operations — create, verify, list, delete, retention."""
+    """Backup operations — create, verify, restore, list, delete, retention."""
 
     @staticmethod
     def get_config_status() -> dict:
@@ -126,14 +243,21 @@ class BackupService:
 
     @staticmethod
     def create_backup(
-        backup_type: str = "manual", triggered_by: str | None = None
+        backup_type: str = "manual",
+        triggered_by: str | None = None,
+        tenant_id: int | None = None,
+        *,
+        cleanup: bool = True,
     ) -> BackupRecord:
-        """Create a database backup: pg_dump → GPG encrypt → S3 upload.
+        """Back up one schema: pg_dump → GPG encrypt → S3 upload.
 
         Args:
             backup_type: One of 'manual', 'scheduled_daily', 'scheduled_weekly',
                          'scheduled_monthly'.
             triggered_by: Member name for manual backups, or 'schedule'.
+            tenant_id: The club to back up; ``None`` backs up the global
+                       ``public`` schema.
+            cleanup: Run retention afterwards (scheduled types only).
 
         Returns:
             The updated BackupRecord.
@@ -141,10 +265,19 @@ class BackupService:
         if backup_type not in _BACKUP_TYPES:
             raise ValueError(f"Invalid backup type: {backup_type}")
 
+        tenant = None
+        if tenant_id is not None:
+            tenant = db.session.get(Tenant, tenant_id)
+            if tenant is None:
+                raise ValueError(f"Club {tenant_id} not found")
+
         record = BackupRecord(
             type=backup_type,
             status="pending",
             triggered_by=triggered_by,
+            scope="club" if tenant else "global",
+            tenant_id=tenant.id if tenant else None,
+            tenant_slug=tenant.slug if tenant else None,
         )
         db.session.add(record)
         db.session.commit()
@@ -170,40 +303,32 @@ class BackupService:
             cfg = _get_s3_config()
 
             timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M%S")
-            s3_key = f"backups/{timestamp}_{backup_type}.dump.gpg"
+            s3_key = f"{_s3_prefix(tenant)}/{timestamp}_{backup_type}.dump.gpg"
+            schema = _club_schema(tenant.id) if tenant else "public"
 
             with tempfile.TemporaryDirectory(prefix="backup_") as tmpdir:
                 dump_path = os.path.join(tmpdir, "backup.dump")
                 gpg_path = os.path.join(tmpdir, "backup.dump.gpg")
 
-                # ── 1. pg_dump (custom format for pg_restore) ──────────────
-                env = os.environ.copy()
-                env["PGPASSWORD"] = db_params["password"]
-
+                # ── 1. pg_dump of one schema (custom format) ───────────────
                 pg_cmd = [
                     "pg_dump",
-                    "--host",
-                    db_params["host"],
-                    "--port",
-                    db_params["port"],
-                    "--username",
-                    db_params["user"],
+                    *_pg_conn_args(db_params),
                     "--format",
                     "custom",
-                    "--no-password",
+                    "--schema",
+                    schema,
                     db_params["db"],
                 ]
-                logger.info("Running pg_dump for backup %s", record.id)
+                logger.info("Running pg_dump of %s for backup %s", schema, record.id)
                 result = subprocess.run(
                     pg_cmd,
-                    env=env,
+                    env=_pg_env(db_params),
                     capture_output=True,
                     timeout=600,
                 )
                 if result.returncode != 0:
-                    raise RuntimeError(
-                        f"pg_dump failed: {result.stderr.decode('utf-8', errors='replace')}"
-                    )
+                    raise RuntimeError(f"pg_dump failed: {_stderr(result)}")
 
                 with open(dump_path, "wb") as f:
                     f.write(result.stdout)
@@ -233,9 +358,7 @@ class BackupService:
                     timeout=300,
                 )
                 if gpg_result.returncode != 0:
-                    raise RuntimeError(
-                        f"GPG encryption failed: {gpg_result.stderr.decode('utf-8', errors='replace')}"
-                    )
+                    raise RuntimeError(f"GPG encryption failed: {_stderr(gpg_result)}")
 
                 # ── 3. SHA-256 checksum ────────────────────────────────────
                 hasher = hashlib.sha256()
@@ -269,16 +392,44 @@ class BackupService:
                     checksum[:16],
                 )
 
-            if backup_type in _RETENTION:
+            if cleanup and backup_type in _RETENTION:
                 BackupService.run_retention_cleanup()
 
         except Exception as exc:
             logger.error("Backup %s failed: %s", record.id, exc)
+            db.session.rollback()
             record.status = "failed"
             record.error_message = str(exc)
             db.session.commit()
 
         return record
+
+    @staticmethod
+    def create_scheduled_backups(
+        backup_type: str, triggered_by: str = "schedule"
+    ) -> list[BackupRecord]:
+        """One global backup plus one per active club, then retention.
+
+        A club that fails does not stop the others; its record says why.
+        """
+        records = [
+            BackupService.create_backup(backup_type, triggered_by, cleanup=False)
+        ]
+        tenant_ids = db.session.scalars(
+            select(Tenant.id)
+            .where(Tenant.status == "active")
+            .where(Tenant.deleted_at.is_(None))
+            .order_by(Tenant.id)
+        ).all()
+        for tenant_id in tenant_ids:
+            records.append(
+                BackupService.create_backup(
+                    backup_type, triggered_by, tenant_id, cleanup=False
+                )
+            )
+        if backup_type in _RETENTION:
+            BackupService.run_retention_cleanup()
+        return records
 
     @staticmethod
     def verify_backup(record_id: int) -> BackupRecord:
@@ -292,52 +443,16 @@ class BackupService:
         if record.status != "completed" or not record.s3_key:
             raise ValueError(f"Backup {record_id} is not in a verifiable state")
 
-        encryption_key = _get_encryption_key()
-        if not encryption_key:
+        if not _get_encryption_key():
             raise RuntimeError("BACKUP_ENCRYPTION_KEY is not set")
-
-        s3_client = _get_s3_client()
-        if s3_client is None:
+        if _get_s3_client() is None:
             raise RuntimeError("S3 is not configured")
-
-        cfg = _get_s3_config()
 
         try:
             with tempfile.TemporaryDirectory(prefix="verify_") as tmpdir:
-                gpg_path = os.path.join(tmpdir, "backup.dump.gpg")
-                dump_path = os.path.join(tmpdir, "backup.dump")
+                dump_path = _download_and_decrypt(record, tmpdir)
 
-                # ── 1. Download from S3 ────────────────────────────────────
-                logger.info("Downloading backup %s from S3 for verification", record_id)
-                s3_client.download_file(cfg["bucket"], record.s3_key, gpg_path)
-
-                # ── 2. GPG decrypt ─────────────────────────────────────────
-                gpg_cmd = [
-                    "gpg",
-                    "--batch",
-                    "--yes",
-                    "--quiet",
-                    "--pinentry-mode",
-                    "loopback",
-                    "--passphrase-fd",
-                    "0",
-                    "--decrypt",
-                    "--output",
-                    dump_path,
-                    gpg_path,
-                ]
-                gpg_result = subprocess.run(
-                    gpg_cmd,
-                    input=encryption_key.encode(),
-                    capture_output=True,
-                    timeout=300,
-                )
-                if gpg_result.returncode != 0:
-                    raise RuntimeError(
-                        f"GPG decryption failed: {gpg_result.stderr.decode('utf-8', errors='replace')}"
-                    )
-
-                # ── 3. pg_restore --list to confirm valid archive ──────────
+                # pg_restore --list to confirm a valid archive
                 restore_result = subprocess.run(
                     ["pg_restore", "--list", dump_path],
                     capture_output=True,
@@ -345,7 +460,7 @@ class BackupService:
                 )
                 if restore_result.returncode != 0:
                     raise RuntimeError(
-                        f"pg_restore --list failed: {restore_result.stderr.decode('utf-8', errors='replace')}"
+                        f"pg_restore --list failed: {_stderr(restore_result)}"
                     )
 
                 listing = restore_result.stdout.decode("utf-8", errors="replace")
@@ -375,13 +490,96 @@ class BackupService:
         return record
 
     @staticmethod
-    def list_backups() -> list[BackupRecord]:
-        """Return all backup records, newest first."""
-        return list(
-            db.session.scalars(
-                select(BackupRecord).order_by(BackupRecord.created_at.desc())  # type: ignore[attr-defined]
-            ).all()
+    def restore_club(record_id: int) -> BackupRecord:
+        """Put one club back to the state of a club backup.
+
+        The club's current schema is renamed to a safety copy first
+        (``record.safety_schema``) and stays in the database.  If the restore
+        fails, the half-restored schema is dropped, the safety copy gets its
+        name back and ``RestoreError`` is raised; the record says why.
+        """
+        record = db.session.get(BackupRecord, record_id)
+        if record is None:
+            raise ValueError(f"Backup record {record_id} not found")
+        if record.scope != "club" or record.tenant_id is None:
+            raise ValueError("Only a club backup of an existing club can be restored")
+        if record.status != "completed" or not record.s3_key:
+            raise ValueError(f"Backup {record_id} is not complete")
+
+        schema = _club_schema(record.tenant_id)
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S%f")
+        safety = f"{schema}_before_restore_{stamp}"
+        renamed = False
+
+        record.restore_error = None
+        db.session.commit()
+
+        try:
+            with tempfile.TemporaryDirectory(prefix="restore_") as tmpdir:
+                dump_path = _download_and_decrypt(record, tmpdir)
+
+                if _schema_exists(schema):
+                    logger.info(
+                        "Restore %s: keeping %s as %s", record_id, schema, safety
+                    )
+                    _rename_schema(schema, safety)
+                    renamed = True
+
+                db_params = _parse_database_url()
+                pg_cmd = [
+                    "pg_restore",
+                    *_pg_conn_args(db_params),
+                    "--dbname",
+                    db_params["db"],
+                    "--no-owner",
+                    "--no-acl",
+                    "--exit-on-error",
+                    "--single-transaction",
+                    dump_path,
+                ]
+                logger.info("Restoring backup %s into %s", record_id, schema)
+                result = subprocess.run(
+                    pg_cmd,
+                    env=_pg_env(db_params),
+                    capture_output=True,
+                    timeout=1800,
+                )
+                if result.returncode != 0:
+                    raise RuntimeError(f"pg_restore failed: {_stderr(result)}")
+
+            # Bring an older backup up to the current code.
+            from hubra.core.tenant.migration import apply_migrations_to_tenant
+
+            apply_migrations_to_tenant(record.tenant_id)
+        except Exception as exc:
+            logger.error("Restore of backup %s failed: %s", record_id, exc)
+            db.session.rollback()
+            if renamed:
+                _drop_schema(schema)
+                _rename_schema(safety, schema)
+            record = db.session.get(BackupRecord, record_id)
+            record.restore_error = str(exc)
+            db.session.commit()
+            raise RestoreError(str(exc)) from exc
+
+        record.restored_at = datetime.now(timezone.utc)
+        record.safety_schema = safety if renamed else None
+        db.session.commit()
+        logger.info(
+            "Backup %s restored into %s (previous data kept as %s)",
+            record_id,
+            schema,
+            record.safety_schema,
         )
+        return record
+
+    @staticmethod
+    def list_backups(tenant_id: int | None = None) -> list[BackupRecord]:
+        """Backup records, newest first; only one club's with *tenant_id*."""
+        query = select(BackupRecord).order_by(BackupRecord.created_at.desc())  # type: ignore[attr-defined]
+        if tenant_id is not None:
+            query = query.where(BackupRecord.tenant_id == tenant_id)  # type: ignore[arg-type]
+        return list(db.session.scalars(query).all())
 
     @staticmethod
     def get_backup(record_id: int) -> BackupRecord | None:
@@ -419,7 +617,8 @@ class BackupService:
     def run_retention_cleanup() -> dict:
         """Delete backups exceeding retention policy per type.
 
-        Manual backups are never auto-deleted.
+        Retention counts per backup set: the global backups, and each club's
+        own.  Manual backups are never auto-deleted.
 
         Returns:
             Summary dict with counts of deleted records per type.
@@ -433,27 +632,30 @@ class BackupService:
                 select(BackupRecord)
                 .where(BackupRecord.type == backup_type)  # type: ignore[arg-type]
                 .where(BackupRecord.status == "completed")  # type: ignore[arg-type]
-                .order_by(BackupRecord.created_at.desc())  # type: ignore[attr-defined]
+                .order_by(BackupRecord.created_at.desc(), BackupRecord.id.desc())  # type: ignore[attr-defined]
             ).all()
 
-            if len(records) <= keep_count:
-                continue
+            sets: dict[tuple, list[BackupRecord]] = {}
+            for record in records:
+                key = (record.scope or "global", record.tenant_id, record.tenant_slug)
+                sets.setdefault(key, []).append(record)
 
-            for record in records[keep_count:]:
-                if record.s3_key:
-                    try:
-                        if s3_client is not None:
-                            s3_client.delete_object(
-                                Bucket=cfg["bucket"], Key=record.s3_key
+            for kept in sets.values():
+                for record in kept[keep_count:]:
+                    if record.s3_key:
+                        try:
+                            if s3_client is not None:
+                                s3_client.delete_object(
+                                    Bucket=cfg["bucket"], Key=record.s3_key
+                                )
+                        except Exception as exc:
+                            logger.warning(
+                                "Retention: failed to delete S3 object %s: %s",
+                                record.s3_key,
+                                exc,
                             )
-                    except Exception as exc:
-                        logger.warning(
-                            "Retention: failed to delete S3 object %s: %s",
-                            record.s3_key,
-                            exc,
-                        )
-                db.session.delete(record)
-                deleted[backup_type] = deleted.get(backup_type, 0) + 1
+                    db.session.delete(record)
+                    deleted[backup_type] = deleted.get(backup_type, 0) + 1
 
         if deleted:
             db.session.commit()

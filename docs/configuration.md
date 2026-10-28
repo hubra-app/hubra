@@ -47,10 +47,13 @@ sender mailbox from the mail module; that mailbox logs in to the mail
 module's server (`ZONEMTA_SMTP_HOST`), or to the relay without one.
 `BACKUP_ENCRYPTION_KEY` stays in env only.
 
-**Backups** dump the whole database, so they are platform-only too: manage ›
-Platform › Backups (global permission `backups.manage`; superadmins have
-it). Scheduled daily, weekly and monthly backups run without anyone
-pressing a button. There is no club Backups module any more.
+**Backups** are platform-only too: manage › Platform › Backups (global
+permission `backups.manage`; superadmins have it). There is no backup of the
+whole database: the global backup holds the public schema (accounts, clubs,
+platform settings), and each club has its own backups, so one club can be
+restored on its own. Scheduled daily, weekly and monthly runs make one global
+backup and one per club without anyone pressing a button. There is no club
+Backups module any more. See [disaster-recovery.md](disaster-recovery.md).
 
 **Club settings** (name, contact addresses, sender name, modules) are kept
 per club and edited by the club's owners and admins. They no longer

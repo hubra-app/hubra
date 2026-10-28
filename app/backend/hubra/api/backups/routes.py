@@ -1,10 +1,11 @@
 """Backups for the manager portal.
 
 ``platform_backups_bp`` (``/api/v1/manager/platform/backups``, also under
-``/api/v2``): a backup dumps the whole database, every club included, so
-only platform staff with the global permission ``backups.manage`` start,
-verify or delete one.  Where they are stored is a platform setting
-(``backup.s3.*``).
+``/api/v2``): platform staff with the global permission ``backups.manage``
+start, verify, restore and delete backups.  A backup is either global (the
+public schema) or one club's schema; a club backup can be restored on its
+own, after typing the club's address to confirm.  Where backups are stored
+is a platform setting (``backup.s3.*``).
 """
 
 from __future__ import annotations
@@ -17,7 +18,7 @@ from hubra.api.backups.services import BackupsService, BackupServiceAPI
 from hubra.api.permissions import require_global_permission
 from hubra.core.errors import api_error
 from hubra.core.extensions import db
-from hubra.core.models.tenant import GlobalAuditEntry
+from hubra.core.models.tenant import GlobalAuditEntry, Tenant
 from hubra.core.schemas.backup import BackupConfigSchema, BackupRecordSchema
 
 logger = logging.getLogger(__name__)
@@ -53,16 +54,30 @@ def _audit(action: str, record_id: int | None, details: dict | None = None) -> N
 @platform_backups_bp.get("/")
 @require_global_permission(_PERM)
 def list_backups():
-    """All backup records, newest first."""
-    records = BackupsService.list()
+    """Backup records, newest first (``?tenant_id=`` for one club's)."""
+    tenant_id = request.args.get("tenant_id", type=int)
+    records = BackupsService.list(tenant_id)
     return jsonify(_backups_schema.dump(records)), 200
 
 
 @platform_backups_bp.post("/")
 @require_global_permission(_PERM)
 def create_backup():
-    """Start a manual backup via Celery. Returns 202 with the task ID."""
+    """Start a manual backup via Celery. Returns 202 with the task ID.
+
+    Body ``{"tenant_id": N}`` backs up that club; without it the global
+    (public schema) backup is made.
+    """
     from hubra.core.tasks.backup_tasks import create_backup_task
+
+    data = request.get_json(silent=True) or {}
+    tenant_id = data.get("tenant_id")
+    if tenant_id is not None:
+        if not isinstance(tenant_id, int) or isinstance(tenant_id, bool):
+            return api_error("VALIDATION_ERROR", "tenant_id must be a number", 400)
+        if db.session.get(Tenant, tenant_id) is None:
+            return api_error("NOT_FOUND", "Club not found", 404)
+    details = {"tenant_id": tenant_id} if tenant_id is not None else {}
 
     actor = _actor()
     triggered_by = (getattr(actor, "email", None) or "platform") if actor else "platform"
@@ -71,13 +86,15 @@ def create_backup():
         from hubra.core.services.backup import BackupService
 
         record = BackupService.create_backup(
-            backup_type="manual", triggered_by=triggered_by
+            backup_type="manual", triggered_by=triggered_by, tenant_id=tenant_id
         )
-        _audit("create", record.id)
+        _audit("create", record.id, details)
         return jsonify(_backup_schema.dump(record)), 201
 
-    task = create_backup_task.delay(backup_type="manual", triggered_by=triggered_by)
-    _audit("create", None, {"task_id": task.id})
+    task = create_backup_task.delay(
+        backup_type="manual", triggered_by=triggered_by, tenant_id=tenant_id
+    )
+    _audit("create", None, {"task_id": task.id, **details})
     return jsonify({"task_id": task.id, "status": "pending"}), 202
 
 
@@ -121,6 +138,51 @@ def verify_backup(record_id: int):
     _audit("verify", record_id)
     return jsonify(
         {"task_id": task.id, "record_id": record_id, "status": "verifying"}
+    ), 202
+
+
+@platform_backups_bp.post("/<int:record_id>/restore")
+@require_global_permission(_PERM)
+def restore_backup(record_id: int):
+    """Restore one club from a club backup.  Returns 202 (200 when TESTING).
+
+    Body ``{"confirm": "<club address>"}``: the club's current slug, typed
+    by hand.  The club's current data is kept as a safety copy schema.
+    """
+    record = BackupServiceAPI.get(record_id)
+    if record is None:
+        return api_error("NOT_FOUND", "Backup record not found", 404)
+    if record.scope != "club" or record.tenant_id is None:
+        return api_error(
+            "CONFLICT", "Only a backup of an existing club can be restored", 409
+        )
+    if record.status != "completed":
+        return api_error("CONFLICT", "Only completed backups can be restored", 409)
+    tenant = db.session.get(Tenant, record.tenant_id)
+    data = request.get_json(silent=True) or {}
+    if tenant is None or data.get("confirm") != tenant.slug:
+        return api_error(
+            "VALIDATION_ERROR", "Type the club's address to confirm the restore", 400
+        )
+    details = {"tenant_id": tenant.id, "slug": tenant.slug}
+
+    if current_app.config.get("TESTING"):
+        from hubra.core.services.backup import BackupService, RestoreError
+
+        try:
+            updated = BackupService.restore_club(record_id)
+        except RestoreError as exc:
+            _audit("restore_failed", record_id, {**details, "error": str(exc)})
+            return api_error("RESTORE_FAILED", str(exc), 500)
+        _audit("restore", record_id, details)
+        return jsonify(_backup_schema.dump(updated)), 200
+
+    from hubra.core.tasks.backup_tasks import restore_club_backup_task
+
+    task = restore_club_backup_task.delay(record_id)
+    _audit("restore", record_id, {**details, "task_id": task.id})
+    return jsonify(
+        {"task_id": task.id, "record_id": record_id, "status": "restoring"}
     ), 202
 
 
