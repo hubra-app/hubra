@@ -139,18 +139,21 @@ class HealthService:
 
     @staticmethod
     def check_smtp() -> dict:
-        """Check Infomaniak SMTP submission (port 587)."""
+        """Check the platform mail relay (manager portal, defaults from env)."""
+        from hubra.core.services import platform_settings
+
         start = time.monotonic()
         ok = False
         error = None
         try:
-            smtp_host = current_app.config.get("SMTP_HOST", "")
-            smtp_port = int(current_app.config.get("SMTP_PORT", 587))
+            relay = platform_settings.relay()
+            smtp_host = relay.host
+            smtp_port = relay.port
             if not smtp_host:
                 return {
                     "ok": False,
                     "latency_ms": 0,
-                    "error": "SMTP_HOST not configured",
+                    "error": "Mail relay not configured",
                 }
 
             with smtplib.SMTP(smtp_host, smtp_port, timeout=1) as server:

@@ -26,6 +26,7 @@ _GLOBAL_ONLY_TABLES = frozenset(
         "plugin_archives",
         "plugin_repositories",
         "plugin_state",
+        "platform_settings",
         "plugin_trusted_keys",
     }
 )
