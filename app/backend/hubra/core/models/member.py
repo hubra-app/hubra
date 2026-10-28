@@ -159,6 +159,11 @@ class Member(db.Model):
     archived_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # Set while a club admin has switched this member off. Only this club:
+    # the person's account (and their other clubs) is not touched.
+    disabled_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     # Set while the member's request to leave waits for a club admin.
     leave_requested_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
@@ -281,12 +286,14 @@ class Member(db.Model):
 
     @property
     def is_disabled(self) -> bool:
+        """Switched off in this club, or the whole account is disabled."""
+        if self.disabled_at is not None:
+            return True
         return self.user.is_disabled if self.user else False
 
     @is_disabled.setter
     def is_disabled(self, value: bool) -> None:
-        if self.user:
-            self.user.is_disabled = value
+        self.disabled_at = datetime.now(timezone.utc) if value else None
 
     @property
     def private_email_verified(self) -> bool:

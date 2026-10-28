@@ -17,7 +17,7 @@ def test_get_available_locales_cached(app, db):
     _seed_translation("de-CH", "test.key1")
     _seed_translation("en-GB", "test.key1")
 
-    i18n_services._mem_locales = None  # reset cache
+    i18n_services._mem_locales.clear()  # reset cache
 
     with patch.object(db.session, "scalars", wraps=db.session.scalars):
         locales1 = i18n_services.get_available_locales()
@@ -29,13 +29,13 @@ def test_get_available_locales_cached(app, db):
         # Note: we can't assert exact call count because other code may use scalars,
         # but the in-memory cache means the DISTINCT query isn't re-run.
 
-    i18n_services._mem_locales = None  # cleanup
+    i18n_services._mem_locales.clear()  # cleanup
 
 
 def test_duplicate_locale_invalidates_locales_cache(app, db):
     """duplicate_locale clears the locales cache so the new locale appears."""
     _seed_translation("de-CH", "test.key1")
-    i18n_services._mem_locales = None
+    i18n_services._mem_locales.clear()
 
     locales1 = i18n_services.get_available_locales()
     assert "fr-FR" not in locales1
@@ -48,7 +48,7 @@ def test_duplicate_locale_invalidates_locales_cache(app, db):
     locales2 = i18n_services.get_available_locales()
     assert "fr-FR" in locales2
 
-    i18n_services._mem_locales = None  # cleanup
+    i18n_services._mem_locales.clear()  # cleanup
 
 
 def test_get_translations_dict_cached(app, db):

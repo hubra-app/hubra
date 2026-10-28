@@ -28,6 +28,14 @@ _setting_schema = SettingSchema()
 _settings_schema = SettingSchema(many=True)
 _write_schema = SettingWriteSchema()
 
+# New keys with these prefixes always land in this namespace, so writing
+# "general" settings can't create, say, the IBAN printed on QR bills.
+_RESERVED_NAMESPACES = {
+    "Club.Banking.": "finance",
+    "mail.": "mail",
+    "I18n.": "I18n",
+}
+
 
 # ── GET /settings ─────────────────────────────────────────────────────────────
 
@@ -76,7 +84,28 @@ def upsert_setting(key: str):
 
     if not member_is_admin(_current_member()):
         perms = _get_member_permission_keys(_current_member())
-        ns = data.get("namespace") or "general"
+        # An existing setting is checked in the namespace it lives in, never
+        # one the request names; how a setting is kept (namespace, secret,
+        # locked, required, its type) is for admins to change.
+        existing = SettingService.get_setting(key)
+        if existing is not None:
+            ns = existing.namespace or "general"
+            for field in (
+                "namespace",
+                "sensitive",
+                "required",
+                "restricted",
+                "validation_type",
+            ):
+                data.pop(field, None)
+        else:
+            ns = _RESERVED_NAMESPACES.get(
+                next((p for p in _RESERVED_NAMESPACES if key.startswith(p)), ""),
+                data.get("namespace") or "general",
+            )
+            data["namespace"] = ns
+            data.pop("restricted", None)
+            data.pop("required", None)
         if not SettingService.can_write(ns, key, perms):
             return api_error(
                 "FORBIDDEN",

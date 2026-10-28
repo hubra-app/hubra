@@ -28,7 +28,10 @@ from hubra.core.models.user import User
 from hubra.core.models.role import Role
 from hubra.core.models.setting import Setting
 from hubra.core.services import email as email_svc
-from hubra.core.tenant.membership import link_user_to_tenant
+from hubra.core.tenant.membership import (
+    link_user_to_tenant,
+    require_club_manages_account,
+)
 from hubra.core.services.wildduck import (
     WildDuckError,
     apply_email_schema,
@@ -460,8 +463,9 @@ class MemberService:
         from hubra.core.services.managed_mail import disable_member_mail
 
         disable_member_mail(member_id)
-        if member.user:
-            member.user.is_disabled = True
+        # This club only: the account and the person's other clubs stay as
+        # they are.
+        member.disabled_at = datetime.now(timezone.utc)
         return member  # type: ignore[return-value]
 
     @staticmethod
@@ -482,8 +486,14 @@ class MemberService:
             enable_member_mail(
                 member_id, member.user.password_hash if member.user else ""
             )
-        if member.user:
-            member.user.is_disabled = False
+        member.disabled_at = None
+        # Clubs used to switch off the whole account; undo that only where
+        # the account is this club's alone (a platform manager's block stays).
+        if member.user and member.user.is_disabled:
+            from hubra.core.tenant.membership import club_manages_account
+
+            if club_manages_account(member.user):
+                member.user.is_disabled = False
         return member  # type: ignore[return-value]
 
     @staticmethod
@@ -507,10 +517,12 @@ class MemberService:
             from hubra.api.auth.services import _enforce_password_strength
 
             _enforce_password_strength(password)
+        require_club_manages_account(member.user)
         pwd = secrets.token_urlsafe(12) if generate else password
         if member.user:
             member.user.set_password(pwd)
             member.user.must_change_password = True if generate else must_change
+            member.user.end_sessions()
 
         # Non-blocking WildDuck password sync (sends hashed password via async task)
         if current_app.config.get("WILDDUCK_API_URL"):
@@ -868,12 +880,22 @@ class MembersService:
 
         new_user = False
         if user_id:
-            user = db.session.get(User, user_id)
-            if user is None:
-                raise_error(404, "NOT_FOUND", f"User {user_id} not found")
+            # Linking an account by id is for platform tooling, never a club.
+            raise_error(
+                400, "VALIDATION_ERROR", "Add members by email, not by account id"
+            )
         elif email:
-            # Check if a User with this email already exists
+            # Someone who already has an account joins the club themselves
+            # (the club's join page): a club can't pull an existing account,
+            # with its personal details, into the club without them.
             user = db.session.scalar(select(User).where(User.email == email))
+            if user is not None:
+                raise_error(
+                    409,
+                    "ACCOUNT_EXISTS",
+                    f"{email} already has a Hubra account; ask them to join "
+                    "the club from its join page",
+                )
             if user is None:
                 # Create a new User
                 if not first_name or not last_name:
@@ -1084,12 +1106,6 @@ class MembersService:
             "birthday",
             "emergency_contact",
         ]
-        if member.user:
-            for field in identity_fields:
-                if field in validated:
-                    setattr(member.user, field, validated[field])
-
-        # Address fields — proxy to User
         address_fields = [
             "address_street",
             "address_house_no",
@@ -1097,6 +1113,18 @@ class MembersService:
             "address_city",
             "address_country",
         ]
+        # These live on the person's account, shared with their other clubs.
+        if member.user and any(
+            field in validated and validated[field] != getattr(member.user, field)
+            for field in (*identity_fields, *address_fields)
+        ):
+            require_club_manages_account(member.user)
+        if member.user:
+            for field in identity_fields:
+                if field in validated:
+                    setattr(member.user, field, validated[field])
+
+        # Address fields — proxy to User
         if member.user:
             for field in address_fields:
                 if field in validated:
@@ -1379,6 +1407,15 @@ class MembersService:
                 if existing_member is not None:
                     skipped += 1
                     continue
+                # An existing account joins the club itself (see create).
+                errors.append(
+                    {
+                        "row": i,
+                        "error": f"{data['email']} already has a Hubra account; "
+                        "ask them to join the club from its join page",
+                    }
+                )
+                continue
 
             try:
                 validated = schema.load(data)

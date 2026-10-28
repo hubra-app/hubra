@@ -16,12 +16,14 @@ from hubra.core.redis_client import get_redis_client
 
 _log = logging.getLogger(__name__)
 
-_LOCALES_CACHE_KEY = "i18n:locales"
+_LOCALES_CACHE_KEY = "i18n:locales"  # + ":<club id>"
 _LOCALES_CACHE_TTL = 3600
 _TRANS_CACHE_TTL = 3600
 _MEM_TRANS_TTL = 60  # in-memory fallback TTL (shorter)
 
-_mem_locales: list[str] | None = None
+# Per club: translations live in each club's schema, so every cache key
+# names the club (0 = no club, the public schema).
+_mem_locales: dict[int, list[str]] = {}
 _mem_translations: dict[str, tuple[dict, float]] = {}
 
 
@@ -29,14 +31,24 @@ def _get_redis_client():
     return get_redis_client(timeout=1)
 
 
+def _club() -> int:
+    from hubra.core.tenant.context import current_tenant
+
+    tenant = current_tenant()
+    return tenant.id if tenant is not None else 0
+
+
+def _locales_key() -> str:
+    return f"{_LOCALES_CACHE_KEY}:{_club()}"
+
+
 def _invalidate_locales_cache() -> None:
     """Clear the cached locale list in Redis and in-memory."""
-    global _mem_locales
-    _mem_locales = None
+    _mem_locales.pop(_club(), None)
     client = _get_redis_client()
     if client is not None:
         try:
-            client.delete(_LOCALES_CACHE_KEY)
+            client.delete(_locales_key())
         except Exception:
             _log.debug("locales cache invalidation failed")
 
@@ -61,7 +73,7 @@ def compute_is_stale(last_used_at: datetime | None, threshold_seconds: int) -> b
 
 
 def _etag_version_key(locale: str) -> str:
-    return f"i18n:version:{locale}"
+    return f"i18n:version:{_club()}:{locale}"
 
 
 def _bump_etag(locale: str) -> None:
@@ -98,7 +110,7 @@ def get_translations_dict(locale: str) -> dict[str, str]:
     # Determine ETag version for cache key
     etag = get_etag(locale)
     version = etag.strip('"') if etag else "_no_etag"
-    cache_key = f"i18n:dict:{locale}:{version}"
+    cache_key = f"i18n:dict:{_club()}:{locale}:{version}"
 
     # Try Redis
     client = _get_redis_client()
@@ -169,21 +181,19 @@ def get_available_locales() -> list[str]:
 
     Results are cached in Redis (1h TTL) with an in-memory fallback.
     """
-    global _mem_locales
-
     # Try Redis
     client = _get_redis_client()
     if client is not None:
         try:
-            cached = client.get(_LOCALES_CACHE_KEY)
+            cached = client.get(_locales_key())
             if cached:
                 return json.loads(cached)
         except Exception:
             _log.debug("locales cache read failed")
 
     # Try in-memory
-    if _mem_locales is not None:
-        return _mem_locales
+    if _club() in _mem_locales:
+        return _mem_locales[_club()]
 
     # DB query (uses index on locale)
     stmt = select(Translation.locale).distinct().order_by(Translation.locale)  # type: ignore[call-overload]
@@ -192,11 +202,11 @@ def get_available_locales() -> list[str]:
     # Cache in Redis
     if client is not None:
         try:
-            client.setex(_LOCALES_CACHE_KEY, _LOCALES_CACHE_TTL, json.dumps(locales))
+            client.setex(_locales_key(), _LOCALES_CACHE_TTL, json.dumps(locales))
         except Exception:
             _log.debug("locales cache write failed")
 
-    _mem_locales = locales
+    _mem_locales[_club()] = locales
     return locales
 
 
