@@ -41,7 +41,7 @@ export function AccessDenied() {
               permissions required to access the admin portal.
             </Text>
             <Text size="xs" c="dimmed">
-              Redirect target: {redirectTarget}
+              Redirect target: {redirectTarget ?? '—'}
             </Text>
             <Button
               variant="filled"

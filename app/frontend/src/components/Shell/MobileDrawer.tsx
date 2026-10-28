@@ -51,8 +51,10 @@ export function MobileDrawer() {
     <Drawer
       opened={mobileDrawerOpen}
       onClose={() => setMobileDrawerOpen(false)}
-      position="top"
-      size="100%"
+      // A side panel over a dimmed page, not a full-screen sheet: the page
+      // stays in view and a tap beside the panel closes it.
+      position="left"
+      size="min(300px, 85vw)"
       padding={0}
       withCloseButton={false}
       styles={{ content: { background: 'var(--mantine-color-white)' } }}

@@ -18,8 +18,6 @@ import { useNavigate } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import * as authApi from '@/api/auth'
 
-const DEFAULT_MANAGE_URL = import.meta.env.VITE_MANAGE_URL ?? 'https://manage.hubra.club'
-
 function passwordStrength(password: string): { value: number; label: string; color: string } {
   if (!password) return { value: 0, label: '', color: 'gray' }
   let score = 0
@@ -33,7 +31,7 @@ function passwordStrength(password: string): { value: number; label: string; col
 }
 
 export function SignupScreen() {
-  const { notify } = useSso()
+  const { notify, continueSignedIn } = useSso()
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -53,8 +51,8 @@ export function SignupScreen() {
     setLoading(true)
     try {
       await authApi.signup(name, email.trim().toLowerCase(), password, keepSignedIn)
-      notify('success', 'Account created', 'Welcome to Hubra.')
-      window.location.assign(DEFAULT_MANAGE_URL)
+      notify('success', 'Account created', 'Welcome to Hubra. Now find your club.')
+      continueSignedIn()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Signup failed'
       setError(msg)

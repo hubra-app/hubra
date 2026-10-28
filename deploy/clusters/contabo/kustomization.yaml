@@ -18,6 +18,7 @@ namespace: hubra
 resources:
   - ../../app
   - postgres.yaml
+  - plugins.yaml
 
 patches:
   - path: ingress.yaml
@@ -90,3 +91,7 @@ images:
     newTag: sha-66d4e53
   - name: ghcr.io/hubra-app/hubra/sso-frontend
     newTag: sha-66d4e53
+  # The marketplace (plugins.yaml): the sha-<commit> tag of the latest
+  # Plugins workflow run (its build-push step lists it).
+  - name: ghcr.io/hubra-app/hubra/plugins
+    newTag: sha-1457901

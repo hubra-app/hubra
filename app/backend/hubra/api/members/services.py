@@ -28,6 +28,7 @@ from hubra.core.models.user import User
 from hubra.core.models.role import Role
 from hubra.core.models.setting import Setting
 from hubra.core.services import email as email_svc
+from hubra.core.tenant.membership import link_user_to_tenant
 from hubra.core.services.wildduck import (
     WildDuckError,
     apply_email_schema,
@@ -840,6 +841,7 @@ class MembersService:
             password or validated.get("password") or secrets.token_urlsafe(12)
         )
 
+        new_user = False
         if user_id:
             user = db.session.get(User, user_id)
             if user is None:
@@ -883,6 +885,7 @@ class MembersService:
                         setattr(user, fld, val)
                 db.session.add(user)
                 db.session.flush()
+                new_user = True
         else:
             raise_error(400, "VALIDATION_ERROR", "user_id or email is required")
 
@@ -954,6 +957,7 @@ class MembersService:
 
         db.session.add(member)
         db.session.flush()
+        link_user_to_tenant(user.id)
 
         if role_ids:
             roles = db.session.scalars(select(Role).where(Role.id.in_(role_ids))).all()
@@ -976,15 +980,17 @@ class MembersService:
         # WildDuck mailbox creation — non-blocking
         _provision_member_mailbox(member, club_domain)
 
-        # Welcome email — non-blocking
-        login_email = member.email or public_email or ""
-        email_svc.send_welcome(
-            member.email,
-            member.name,
-            login_email,
-            temp_password,
-            lang=getattr(member, "language", "de-CH") or "de-CH",
-        )
+        # Welcome email with the temporary password — non-blocking. A user who
+        # already had an account keeps their own password.
+        if new_user:
+            login_email = member.email or public_email or ""
+            email_svc.send_welcome(
+                member.email,
+                member.name,
+                login_email,
+                temp_password,
+                lang=getattr(member, "language", "de-CH") or "de-CH",
+            )
 
         db.session.refresh(member)
 
@@ -1389,6 +1395,7 @@ class MembersService:
             )
             db.session.add(member)
             db.session.flush()
+            link_user_to_tenant(user.id)
 
             log_audit(
                 actor_id=actor_id,
@@ -1402,11 +1409,12 @@ class MembersService:
         return {"created": created, "skipped": skipped, "errors": errors}
 
     @staticmethod
-    def create_from_application(application: object) -> tuple[Member, str]:
+    def create_from_application(application: object) -> tuple[Member, str | None]:
         """Create a Member from an Application object.
 
         Does NOT flush or commit — caller is responsible.
-        Returns (member, temp_password).
+        Returns (member, temp_password); temp_password is None when the
+        applicant already had an account (a signed-in join request).
         """
         existing_user = db.session.scalar(
             select(User).where(User.email == application.email)  # type: ignore[attr-defined]
@@ -1453,8 +1461,9 @@ class MembersService:
         parts = application.name.split(" ", 1)  # type: ignore[attr-defined]
         username = public_email.split("@")[0] if public_email else None
 
-        # Create or reuse User
-        user = db.session.scalar(select(User).where(User.email == application.email))  # type: ignore[attr-defined]
+        # Create or reuse User. A user who already has an account keeps their
+        # password, so there is no temporary one to send.
+        user = existing_user
         if user is None:
             user = User(
                 email=application.email,  # type: ignore[attr-defined]
@@ -1466,6 +1475,8 @@ class MembersService:
             user.must_change_password = True
             db.session.add(user)
             db.session.flush()
+        else:
+            temp_password = None
 
         member = Member(
             user_id=user.id,
@@ -1478,4 +1489,5 @@ class MembersService:
         if role is not None:
             member.roles = [role]
         db.session.add(member)
+        link_user_to_tenant(user.id)
         return member, temp_password
