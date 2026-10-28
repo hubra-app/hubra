@@ -1,6 +1,6 @@
 """phase4_feature_catalog
 
-Revision ID: a1b2c3d4e5f6
+Revision ID: f4a7c2e91b03
 Revises: 5c037f09eb7f
 Create Date: 2026-07-13 15:37:00.000000
 
@@ -18,7 +18,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "a1b2c3d4e5f6"
+revision = "f4a7c2e91b03"
 down_revision = "5c037f09eb7f"
 branch_labels = None
 depends_on = None
