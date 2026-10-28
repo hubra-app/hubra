@@ -39,6 +39,7 @@ x-frontend-env: &frontend-env
   VITE_MANAGE_URL: ${MANAGE_BASE_URL:-http://localhost:8081}
   VITE_ADMIN_PORTAL_URL: ${MANAGE_BASE_URL:-http://localhost:8081}
   REAL_IP_FROM: ${REAL_IP_FROM:-}
+  CSP: ${CSP:-}
 
 services:
   frontend:
@@ -170,8 +171,9 @@ services:
       backend:
         condition: service_started
     healthcheck:
+      # The image has no ps: look at the main process directly.
       test:
-        ["CMD-SHELL", "ps aux | grep -v grep | grep 'celery.*worker' || exit 1"]
+        ["CMD", "python", "-c", "import sys; sys.exit(b'worker' not in open('/proc/1/cmdline', 'rb').read())"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -196,8 +198,9 @@ services:
       backend:
         condition: service_started
     healthcheck:
+      # The image has no ps: look at the main process directly.
       test:
-        ["CMD-SHELL", "ps aux | grep -v grep | grep 'celery.*beat' || exit 1"]
+        ["CMD", "python", "-c", "import sys; sys.exit(b'beat' not in open('/proc/1/cmdline', 'rb').read())"]
       interval: 30s
       timeout: 10s
       retries: 3

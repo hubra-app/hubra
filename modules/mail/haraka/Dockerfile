@@ -1,4 +1,4 @@
-FROM instrumentisto/haraka:3.1.5
+FROM instrumentisto/haraka:3.1.5@sha256:55484431233c190e09b15e71cfc53f96a10ea4a490c35308b45315b7ec335a1f
 
 
 RUN apk add --no-cache gettext openssl && \

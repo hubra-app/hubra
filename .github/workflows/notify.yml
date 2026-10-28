@@ -1,0 +1,45 @@
+# Posts to Discord when CI or the image build fails on main, and when a
+# release's images are published. Needs the repository secret
+# DISCORD_CI_WEBHOOK (a Discord channel webhook URL); without it the job
+# does nothing.
+name: Notify
+
+on:
+  workflow_run:
+    workflows: [CI, Images]
+    types: [completed]
+    branches: [main]
+  release:
+    types: [published]
+
+permissions: {}
+
+jobs:
+  discord:
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'release' ||
+      github.event.workflow_run.conclusion == 'failure'
+    steps:
+      - name: Post to Discord
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_CI_WEBHOOK }}
+          EVENT: ${{ github.event_name }}
+          RUN_NAME: ${{ github.event.workflow_run.name }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          COMMIT: ${{ github.event.workflow_run.head_commit.message }}
+          TAG: ${{ github.event.release.tag_name }}
+          RELEASE_URL: ${{ github.event.release.html_url }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "DISCORD_CI_WEBHOOK is not set; nothing to send."
+            exit 0
+          fi
+          if [ "$EVENT" = release ]; then
+            text="Hubra $TAG is released: $RELEASE_URL"
+          else
+            text="❌ $RUN_NAME failed on main: ${COMMIT%%$'\n'*}
+          $RUN_URL"
+          fi
+          jq -n --arg content "$text" '{content: $content, allowed_mentions: {parse: []}}' |
+            curl -fsS -H 'Content-Type: application/json' -d @- "$WEBHOOK"

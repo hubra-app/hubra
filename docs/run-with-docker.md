@@ -127,6 +127,23 @@ Two options:
   docker compose exec backend flask modules enable mail
   ```
 
+## Testing a change
+
+`scripts/smoke-test.sh` checks a running stack end to end: the apps answer,
+they send their security headers, a club admin can sign in and the Celery
+processes run. CI runs it for both stacks on every pull request.
+
+```sh
+docker compose build && docker compose up -d
+scripts/smoke-test.sh multi
+# single-club: set SINGLE_CLUB, CLUB_NAME, ADMIN_EMAIL and ADMIN_PASSWORD
+# and COMPOSE_FILE=docker-compose.yml:docker-compose.single-club.yml in .env
+scripts/smoke-test.sh single
+```
+
+For two clubs on a multi-club stack:
+`docker compose exec backend flask provision-tenant --name "Club A" --slug club-a --admin-email a@example.org --admin-password '…'`.
+
 ## Useful commands
 
 ```sh

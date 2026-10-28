@@ -3,12 +3,13 @@
   "extends": [
     "config:recommended",
     ":separateMajorMinor",
-    ":combinePatchMinorUpdates"
+    ":combinePatchMinorUpdates",
+    "helpers:pinGitHubActionDigests"
   ],
   "labels": ["dependencies"],
   "packageRules": [
     {
-      "matchUpdateTypes": ["minor", "patch"],
+      "matchUpdateTypes": ["minor", "patch", "digest", "pinDigest"],
       "groupName": "all non-major dependencies",
       "groupSlug": "all-minor-patch"
     }
@@ -20,14 +21,10 @@
     "extends": ["npm:unpublishSafe"]
   },
   "pip_requirements": {
-    "enabled": true
+    "enabled": true,
+    "managerFilePatterns": ["/(^|/)requirements\\.lock$/", "/(^|/)requirements(-dev)?\\.txt$/"]
   },
-  "regexManagers": [
-    {
-      "description": "Update base images in Dockerfiles",
-      "fileMatch": ["Dockerfile$"],
-      "matchStrings": ["FROM\\s+(?<depName>\\S+):(?<currentValue>\\S+)"],
-      "datasourceTemplate": "docker"
-    }
-  ]
+  "vulnerabilityAlerts": {
+    "labels": ["security"]
+  }
 }

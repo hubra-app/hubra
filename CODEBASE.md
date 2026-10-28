@@ -252,7 +252,7 @@ club-management-suite/
 │   ├── sync.py                  # Development sync utility
 │   └── validate-mail-config.py  # Mail configuration validator
 │
-├── graphify-out/                # Knowledge graph (AST-based)
+├── graphify-out/                # Knowledge graph (AST-based, generated locally, not tracked)
 ├── .agents/                     # Agent skills (AI coding tools)
 ├── .claude/                     # Claude-specific config & skills
 ├── .opencode/                   # OpenCode AI plugins

@@ -1,4 +1,4 @@
-FROM node:22-alpine AS base
+FROM node:22-alpine@sha256:16e22a550f3863206a3f701448c45f7912c6896a62de43add43bb9c86130c3e2 AS base
 WORKDIR /app
 COPY packages/api-client /packages/api-client
 COPY app/sso-frontend/package.json app/sso-frontend/package-lock.json* ./
@@ -28,7 +28,7 @@ ENV VITE_API_BASE=${VITE_API_BASE} \
     VITE_TENANT_APP_URL=${VITE_TENANT_APP_URL}
 RUN npm run build
 
-FROM nginx:alpine AS production
+FROM nginx:alpine@sha256:54f2a904c251d5a34adf545a72d32515a15e08418dae0266e23be2e18c66fefa AS production
 COPY --from=builder /app/dist /opt/spa
 COPY app/deploy/nginx/40-hubra-runtime.sh /docker-entrypoint.d/
 EXPOSE 80
