@@ -27,6 +27,16 @@ from hubra.core.services.mail_i18n import render_mail_template
 # ── Shared helpers ────────────────────────────────────────────────────────────
 
 
+def _delete_send_history(invoice_id: int) -> None:
+    """An invoice's send history (every generated invoice has one) goes
+    with the invoice; its foreign key would refuse the delete otherwise."""
+    db.session.execute(
+        delete(InvoiceReminderHistory).where(
+            InvoiceReminderHistory.invoice_id == invoice_id
+        )
+    )
+
+
 def _parse_page_params(args):
     try:
         page = max(1, int(args.get("page", 1)))
@@ -323,6 +333,7 @@ class TransactionService:
         )
         if linked_invoice is not None:
             linked_invoice.transaction_id = None
+            _delete_send_history(linked_invoice.id)
             db.session.flush()
             db.session.delete(linked_invoice)
             db.session.flush()
@@ -522,16 +533,9 @@ class InvoiceService:
             target_label=f"Invoice {invoice.id}",
         )
 
-        from hubra.core.models.invoice_reminder import InvoiceReminderHistory
-
         linked_tx_id = invoice.transaction_id
         invoice.transaction_id = None
-        # Its send history (every generated invoice has one) goes with it.
-        db.session.execute(
-            delete(InvoiceReminderHistory).where(
-                InvoiceReminderHistory.invoice_id == invoice.id
-            )
-        )
+        _delete_send_history(invoice.id)
         db.session.flush()
         db.session.delete(invoice)
         db.session.flush()

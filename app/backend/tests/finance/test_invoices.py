@@ -222,3 +222,56 @@ def test_delete_invoice_that_was_mailed(client, auth_headers, seeded_db, db):
         db.session.query(InvoiceReminderHistory).filter_by(invoice_id=invoice_id).count()
         == 0
     )
+
+
+def test_delete_transaction_of_a_mailed_invoice(client, auth_headers, seeded_db, db):
+    """Deleting a transaction deletes its invoice, and with it the invoice's
+    send history."""
+    from hubra.core.models.finance import Invoice, Transaction, TransactionCategory
+    from hubra.core.models.invoice_reminder import InvoiceReminderHistory
+
+    category = TransactionCategory(name="Beiträge", color="#123456")
+    db.session.add(category)
+    db.session.flush()
+    tx = Transaction(
+        category_id=category.id,
+        date=date.today(),
+        description="Beitrag",
+        method="Bank Transfer",
+        amount=Decimal("45.00"),
+        type="income",
+        status="Pending",
+    )
+    db.session.add(tx)
+    db.session.flush()
+    invoice = Invoice(
+        member_id=seeded_db["admin"].id,
+        issued=date.today(),
+        due=date.today() + timedelta(days=30),
+        amount=Decimal("45.00"),
+        status="Open",
+        transaction_id=tx.id,
+    )
+    db.session.add(invoice)
+    db.session.flush()
+    db.session.add(
+        InvoiceReminderHistory(
+            invoice_id=invoice.id,
+            reminder_type="generation",
+            recipient_email="admin@test.ch",
+            recipient_name="Test Admin",
+        )
+    )
+    db.session.commit()
+    tx_id, invoice_id = tx.id, invoice.id
+
+    resp = client.delete(f"/api/v1/finance/transactions/{tx_id}", headers=auth_headers)
+    assert resp.status_code == 204
+
+    db.session.expunge_all()
+    assert db.session.get(Transaction, tx_id) is None
+    assert db.session.get(Invoice, invoice_id) is None
+    assert (
+        db.session.query(InvoiceReminderHistory).filter_by(invoice_id=invoice_id).count()
+        == 0
+    )
