@@ -91,7 +91,7 @@ images:
     newTag: sha-66d4e53
   - name: ghcr.io/hubra-app/hubra/sso-frontend
     newTag: sha-66d4e53
-  # The marketplace (plugins.yaml): latest until the first Plugins workflow run,
-  # then pin the sha-<commit> tag it pushed, like the images above.
+  # The marketplace (plugins.yaml): the sha-<commit> tag of the latest
+  # Plugins workflow run (its build-push step lists it).
   - name: ghcr.io/hubra-app/hubra/plugins
-    newTag: latest
+    newTag: sha-1457901
