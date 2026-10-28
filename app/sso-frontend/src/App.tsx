@@ -80,7 +80,6 @@ function AppRoutes() {
         <Route path="/verify" element={<VerifyScreen />} />
         <Route path="/account" element={<AccountScreen />} />
         <Route path="/account/:tab" element={<AccountScreen />} />
-        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </RouteErrorBoundary>
