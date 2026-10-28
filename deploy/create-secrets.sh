@@ -5,6 +5,8 @@
 #   GHCR_USER=<github login> GHCR_TOKEN=<token with read:packages> deploy/create-secrets.sh
 #
 # Secret hubra-env:             every KEY= in .env, DATABASE_URL pointed at the postgres Service
+#                               (POSTGRES_HOST, default postgres; postgres-rw for CloudNativePG)
+# Secret hubra-postgres:        if POSTGRES_HOST is set: owner + password for a CloudNativePG cluster
 # Secret ghcr-pull:             if GHCR_USER/GHCR_TOKEN are set (needed while the images are private)
 # Secret cloudflare-credentials: if modules/mail/certbot/cloudflare.ini exists (mail module)
 set -eu
@@ -26,8 +28,13 @@ env_out="$(mktemp)"
 trap 'rm -f "$env_out"' EXIT INT TERM
 sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' "$ENV_FILE" | sort -u | grep -vx DATABASE_URL |
   while read -r key; do printf '%s=%s\n' "$key" "$(printenv "$key" || true)"; done > "$env_out"
-echo "DATABASE_URL=postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@postgres:${POSTGRES_PORT:-5432}/$POSTGRES_DB" >> "$env_out"
+echo "DATABASE_URL=postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/$POSTGRES_DB" >> "$env_out"
 apply create secret generic hubra-env --from-env-file="$env_out"
+
+if [ -n "${POSTGRES_HOST:-}" ]; then
+  apply create secret generic hubra-postgres --type=kubernetes.io/basic-auth \
+    --from-literal=username="$POSTGRES_USER" --from-literal=password="$POSTGRES_PASSWORD"
+fi
 
 if [ -n "${GHCR_USER:-}" ]; then
   apply create secret docker-registry ghcr-pull --docker-server=ghcr.io \

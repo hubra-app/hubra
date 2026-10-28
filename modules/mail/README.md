@@ -151,9 +151,9 @@ Group alias ────────►│  Club mailbox │──► IMAP (memb
 
 ## Running on k3s
 
-The module ships its own manifests in `modules/mail/k8s/`, which Flux applies
-through `deploy/flux/mail.yaml`. They're off by default. To turn them on, set
-`suspend: false` in that file and push. Prerequisites are the same as for
+The module ships its own manifests in `modules/mail/k8s/`. They're off unless
+you deploy that directory next to `deploy/app` (a second Kustomization in your
+GitOps tool, or `kubectl apply -k`). Prerequisites are the same as for
 Compose, plus the general setup in [docs/k3s.md](../../docs/k3s.md).
 
 - **Host ports.** IMAPS 993, SMTP 25 and submission 465/587 are `LoadBalancer`

@@ -75,8 +75,7 @@ backend and everything else to the club app. It also adds
    empty, and run `deploy/create-secrets.sh`.
 2. Replace `club.example.org` in `deploy/single-club/kustomization.yaml`
    and `deploy/single-club/ingress.yaml` with your host.
-3. Point Flux at the overlay: `path: ./deploy/single-club` in
-   `deploy/flux/app.yaml`.
+3. Deploy the overlay instead of `deploy/app` (see [k3s.md](k3s.md)).
 
 The one-time password is in
 `kubectl -n hubra logs deploy/backend -c flask-init`.

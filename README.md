@@ -35,7 +35,7 @@ cross-origin auth setup (CORS, CSRF, cookie attributes, ProxyFix).
 | **Background** | Celery 5 + Redis                                                    |
 | **Mail**       | WildDuck (IMAP), Haraka (inbound SMTP), ZoneMTA (outbound SMTP)     |
 | **Edge**       | External Traefik (TLS, routing, CrowdSec) + Caddy 2 (frontend only) |
-| **Deployment** | Docker Compose, or k3s + Flux (see docs/k3s.md)                     |
+| **Deployment** | Docker Compose, or Kubernetes/k3s manifests (see docs/k3s.md)       |
 
 ## Quick Start
 
@@ -52,7 +52,7 @@ with `docker compose exec backend flask make-admin --email you@example.com`.
 The full walkthrough, production host names and mail are in
 [docs/run-with-docker.md](docs/run-with-docker.md).
 
-To run on k3s with Flux instead, see [docs/k3s.md](docs/k3s.md). The images
+To run on Kubernetes (k3s) instead, see [docs/k3s.md](docs/k3s.md). The images
 are built by GitHub Actions (`.github/workflows/images.yml`) and pushed to
 `ghcr.io/hubra-app/hubra/*`.
 
@@ -84,7 +84,7 @@ npx playwright test
 | API endpoints, auth, permissions       | [docs/api-overview.md](docs/api-overview.md)             |
 | Full API reference                     | [app/backend/API.md](app/backend/API.md)                 |
 | Mail stack (WildDuck, Haraka, ZoneMTA) | [modules/mail/README.md](modules/mail/README.md)         |
-| Running on k3s with Flux               | [docs/k3s.md](docs/k3s.md)                               |
+| Running on Kubernetes (k3s)            | [docs/k3s.md](docs/k3s.md)                               |
 | Frontend stack & structure             | [docs/frontend.md](docs/frontend.md)                     |
 | Environment & settings config          | [docs/configuration.md](docs/configuration.md)           |
 | Subdomain migration (CORS, cookies)    | [docs/SUBDOMAIN_MIGRATION.md](docs/SUBDOMAIN_MIGRATION.md) |
@@ -99,7 +99,7 @@ npx playwright test
 ├── docker-compose.yml             # App stack (default)
 ├── docker-compose.override.yaml   # Production routing + env overrides
 ├── settings.yaml                  # Deployment-time feature flags & limits
-├── deploy/                        # k3s manifests + Flux sync (docs/k3s.md)
+├── deploy/                        # Kubernetes manifests (docs/k3s.md)
 ├── .env.example                   # Environment variable template
 ├── AGENTS.md                      # AI agent instructions
 ├── app/
@@ -124,7 +124,7 @@ npx playwright test
 ├── modules/
 │   └── mail/                      # Opt-in self-hosted mail stack, self-contained
 │       ├── docker-compose.mail.yml  # Compose add-on (opt-in via -f)
-│       ├── k8s/                   # k3s manifests (Flux Kustomization `mail`)
+│       ├── k8s/                   # Kubernetes manifests (opt-in)
 │       ├── haraka/                # Inbound SMTP
 │       ├── zonemta/               # Outbound SMTP
 │       ├── certbot/               # TLS certificates

@@ -1,6 +1,6 @@
 # deploy/app on the old vollbuild.ch host names (cos/manage/sso/api.vollbuild.ch)
-# for the server that already runs there. Point Flux at it instead of deploy/app
-# (deploy/flux/app.yaml: path: ./deploy/vollbuild-ch). By hand:
+# for the server that already runs there. Deploy it instead of deploy/app.
+# By hand:
 #   kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/vollbuild-ch | kubectl apply -f -
 #
 # The backend URLs stay in .env (Secret hubra-env): FRONTEND_BASE_URL,
