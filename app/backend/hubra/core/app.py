@@ -122,7 +122,10 @@ def create_app(config_name: str | None = None) -> Flask:
     ma.init_app(app)
 
     # ── Register tenant resolver middleware ───────────────────────────────────
+    from hubra.core.tenant.context import install_search_path_guard
     from hubra.core.tenant.middleware import resolve_tenant
+
+    install_search_path_guard()
 
     app.before_request(resolve_tenant)
 

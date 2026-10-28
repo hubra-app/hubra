@@ -9,7 +9,7 @@ from sqlalchemy import select, text
 from hubra.core.extensions import db
 from hubra.core.models.tenant import Tenant
 
-from .context import set_search_path
+from .context import reset_search_path, set_search_path
 
 _log = logging.getLogger(__name__)
 
@@ -30,8 +30,7 @@ def apply_migrations_to_tenant(tenant_id: int) -> None:
 
     _upgrade()
 
-    # Reset search_path back to public
-    db.session.execute(text("SET search_path TO public"))
+    reset_search_path()
     db.session.commit()
     _log.info("Migrations applied to %s", schema)
 

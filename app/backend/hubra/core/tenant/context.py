@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from functools import wraps
 
-from flask import g, jsonify
-from sqlalchemy import text
+from flask import g, has_app_context, jsonify
+from sqlalchemy import event, text
 
 from hubra.core.extensions import db
 from hubra.core.models.tenant import Tenant
@@ -16,17 +16,25 @@ def current_tenant() -> Tenant | None:
     return getattr(g, "tenant", None)
 
 
+def _apply_search_path(path: str) -> None:
+    if db.session.get_bind().dialect.name == "sqlite":
+        return
+    # Remembered for the app context, so _restore_search_path can put it back
+    # on whatever connection the next transaction gets.
+    g._search_path = path
+    db.session.execute(text(f"SET search_path TO {path}"))
+
+
 def set_search_path(tenant_id: int) -> None:
     """Set the PostgreSQL search_path for the current DB session.
 
     Places the tenant schema first so domain-table queries resolve there,
     with public as fallback for global tables (tenants, domains, etc.).
+    The path holds for the rest of the app context, across commits.
 
     No-op on SQLite (no schema support).
     """
-    if db.session.get_bind().dialect.name == "sqlite":
-        return
-    db.session.execute(text(f"SET search_path TO tenant_{tenant_id}, public"))
+    _apply_search_path(f"tenant_{tenant_id}, public")
 
 
 def reset_search_path() -> None:
@@ -34,9 +42,27 @@ def reset_search_path() -> None:
 
     No-op on SQLite (no schema support).
     """
-    if db.session.get_bind().dialect.name == "sqlite":
+    _apply_search_path("public")
+
+
+def _restore_search_path(session, transaction, connection) -> None:
+    """Give every new transaction the search_path this app context asked for.
+
+    SET search_path sticks to the pooled connection, not to the request, and
+    a rollback undoes a SET made inside it. So after a commit or rollback the
+    next transaction can run on public (the club's rows look deleted) or on
+    a schema another request left behind. Contexts that never set a path run
+    on public.
+    """
+    if connection.dialect.name == "sqlite" or not has_app_context():
         return
-    db.session.execute(text("SET search_path TO public"))
+    connection.exec_driver_sql(f"SET search_path TO {g.get('_search_path', 'public')}")
+
+
+def install_search_path_guard() -> None:
+    """Register _restore_search_path on the app's session (once per process)."""
+    if not event.contains(db.session, "after_begin", _restore_search_path):
+        event.listen(db.session, "after_begin", _restore_search_path)
 
 
 def tenant_required(fn):
