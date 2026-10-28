@@ -78,8 +78,7 @@ jobs:
           echo "95f14e87aa28c09d5941f11bd024c1d02fdc0303ccaa23f61cef67bc92619d73  kubeconform.tar.gz" | sha256sum -c -
           tar xzf kubeconform.tar.gz kubeconform
 
-          for dir in deploy/app deploy/single-club deploy/vollbuild-ch modules/mail/k8s; do
-
+          for dir in deploy/app deploy/single-club deploy/vollbuild-ch deploy/clusters/contabo modules/mail/k8s; do
             kubectl kustomize --load-restrictor LoadRestrictionsNone "$dir" > "/tmp/$(basename "$dir").yaml"
           done
           ./kubeconform -strict -summary -kubernetes-version 1.31.0 \
