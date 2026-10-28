@@ -11,6 +11,7 @@ import {
   IconShield,
   IconGlobe,
   IconKey,
+  IconLock,
   IconDevicesCog,
   IconLink,
 } from '@tabler/icons-react'
@@ -79,6 +80,7 @@ const NAV_ICONS: Record<string, ReactNode> = {
   wallet: <IconWallet size={24} />,
   mail: <IconMail size={24} />,
   key: <IconKey size={24} />,
+  lock: <IconLock size={24} />,
   link: <IconLink size={24} />,
   settings: <IconSettings size={24} />,
   shield: <IconShield size={24} />,

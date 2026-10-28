@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING
 
 
 from vollbuild.core.extensions import db
+from vollbuild.core.modules import emit, per_tenant_job
+from vollbuild.core.modules.events import INVOICE_OVERDUE
 from vollbuild.core.tasks import celery_app
 from vollbuild.core.pricing import (
     calculate_invoice_amount,
@@ -150,6 +152,12 @@ def _record_reminder_history(
     reject_on_worker_lost=True,
 )
 def generate_invoices_task(self) -> dict:
+    """Generate invoices for every club with finance on (see _generate_invoices)."""
+    return _generate_invoices()
+
+
+@per_tenant_job("finance")
+def _generate_invoices() -> dict:
     """Generate invoices for all active members whose tier has a billing cycle.
 
     Handles three price types:
@@ -307,6 +315,12 @@ def generate_invoices_task(self) -> dict:
     reject_on_worker_lost=True,
 )
 def send_overdue_reminders_task(self) -> dict:
+    """Send overdue reminders in every club with finance on."""
+    return _send_overdue_reminders()
+
+
+@per_tenant_job("finance")
+def _send_overdue_reminders() -> dict:
     """Send overdue reminders for unpaid invoices past their due date.
 
     Two reminder rounds:
@@ -315,6 +329,9 @@ def send_overdue_reminders_task(self) -> dict:
 
     Idempotency: each reminder_type is sent at most once per invoice, tracked
     via InvoiceReminderHistory.
+
+    The first reminder for an invoice also emits ``invoice.overdue`` so other
+    modules can react (for example keys tells the key managers).
 
     Returns a summary dict with counts per round.
     """
@@ -387,6 +404,8 @@ def send_overdue_reminders_task(self) -> dict:
                 reminder_type="overdue_14d",
             )
             overdue_14d += 1
+            if not sent:
+                emit(INVOICE_OVERDUE, member_id=member.id, invoice_id=invoice.id)
             logger.info(
                 "overdue_reminder_sent invoice_id=%s member_id=%s round=14d",
                 invoice.id,
@@ -411,6 +430,7 @@ def send_overdue_reminders_task(self) -> dict:
                 reminder_type="overdue_7d",
             )
             overdue_7d += 1
+            emit(INVOICE_OVERDUE, member_id=member.id, invoice_id=invoice.id)
             logger.info(
                 "overdue_reminder_sent invoice_id=%s member_id=%s round=7d",
                 invoice.id,

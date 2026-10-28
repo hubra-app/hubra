@@ -20,7 +20,7 @@ module = Module(
         NavItem(
             "/app/operations/codes",
             "shell.nav.codes",
-            "key",
+            "lock",
             section="operations",
             order=20,
             perms=("codes.codes.read",),

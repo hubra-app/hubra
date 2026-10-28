@@ -170,9 +170,9 @@ def test_set_enabled_refuses_blocked(db, tenant):
 
 
 def test_set_enabled_creates_grant(db, tenant):
-    modules.set_enabled("inventory", False, tenant.id)
+    modules.set_enabled("bindings", False, tenant.id)
     db.session.commit()
-    grant = db.session.query(TenantFeature).filter_by(feature_code="inventory").one()
+    grant = db.session.query(TenantFeature).filter_by(feature_code="bindings").one()
     assert grant.enabled is False and grant.allowed is True
 
 
@@ -292,13 +292,13 @@ def test_list_modules_requires_auth(client, db):
 
 def test_switch_module(client, db, auth_headers, tenant):
     resp = client.put(
-        "/api/v1/modules/inventory",
+        "/api/v1/modules/bindings",
         json={"enabled": False},
         headers={"X-Tenant-Slug": "club-a"},
     )
     assert resp.status_code == 200
     assert resp.get_json()["enabled"] is False
-    assert not modules.is_enabled("inventory", tenant.id)
+    assert not modules.is_enabled("bindings", tenant.id)
 
 
 def test_switch_module_reports_dependency(client, db, auth_headers, tenant):

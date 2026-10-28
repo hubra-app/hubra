@@ -54,7 +54,8 @@
       "systemMail": "System Mail",
       "permissions": "Permissions",
       "codes": "Codes",
-      "bindings": "Bindings"
+      "bindings": "Bindings",
+      "keys": "Keys"
     },
     "sections": {
       "workspace": "Workspace",
@@ -636,7 +637,15 @@
     "itemSaved": "Item saved.",
     "itemDeleted": "Item deleted.",
     "confirmDelete": "Are you sure you want to delete this item?",
-    "detail": "Item Detail"
+    "detail": "Item Detail",
+    "guide": {
+      "title": "Guide",
+      "add": "Add guide",
+      "saved": "Guide saved",
+      "placeholder": "Steps, safety rules, what to check after use. Markdown works.",
+      "link": "Link to manual or video",
+      "openLink": "Open manual"
+    }
   },
   "settings": {
     "title": "Settings",
@@ -832,7 +841,8 @@
     "required": "required",
     "notAvailable": "N/A",
     "addMember": "Add member",
-    "myEvents": "My Events"
+    "myEvents": "My Events",
+    "unknownError": "Unknown error"
   },
   "codes": {
     "title": "Codes",
@@ -873,5 +883,54 @@
     "success": "Success",
     "warning": "Warning",
     "error": "Error"
+  },
+  "keys": {
+    "title": "Keys",
+    "count": "{{count}} keys",
+    "add": "Add key",
+    "edit": "Edit key",
+    "saved": "Key saved",
+    "empty": "No keys yet.",
+    "search": "Search label, number, holder…",
+    "label": "Label",
+    "labelPlaceholder": "Front door",
+    "number": "Number",
+    "kind": "Type",
+    "opens": "Opens",
+    "opensPlaceholder": "Main entrance, workshop",
+    "statusLabel": "Status",
+    "holder": "Holder",
+    "deposit": "Deposit",
+    "notes": "Notes",
+    "note": "Note",
+    "member": "Member",
+    "pickMember": "Search member…",
+    "issue": "Hand out",
+    "issueTitle": "Hand out {{name}}",
+    "return": "Take back",
+    "markLost": "Mark as lost",
+    "markFound": "Found again",
+    "retire": "Retire",
+    "delete": "Delete key",
+    "deleteConfirm": "Delete {{name}} and its history?",
+    "noHistory": "No handovers yet.",
+    "status": {
+      "available": "Available",
+      "issued": "Handed out",
+      "lost": "Lost",
+      "retired": "Retired"
+    },
+    "kinds": {
+      "key": "Key",
+      "card": "Card",
+      "fob": "Fob"
+    },
+    "actions": {
+      "issue": "Handed out",
+      "return": "Taken back",
+      "lost": "Lost",
+      "found": "Found",
+      "retire": "Retired"
+    }
   }
 }

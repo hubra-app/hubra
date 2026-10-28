@@ -464,6 +464,7 @@ class InvoiceService:
                     f"ExternalParty {data['external_party_id']} not found",
                 )
 
+        was_paid = invoice.status == "Paid"
         for field in (
             "member_id",
             "external_party_id",
@@ -485,6 +486,12 @@ class InvoiceService:
             linked_tx = db.session.get(Transaction, invoice.transaction_id)
             if linked_tx is not None:
                 linked_tx.status = "Completed"
+
+        if invoice.status == "Paid" and not was_paid and invoice.member_id:
+            from vollbuild.core.modules import emit
+            from vollbuild.core.modules.events import INVOICE_PAID
+
+            emit(INVOICE_PAID, member_id=invoice.member_id, invoice_id=invoice.id)
 
         log_audit(
             actor_id=actor_id,

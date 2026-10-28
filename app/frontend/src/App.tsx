@@ -100,6 +100,11 @@ const AccessDeniedScreen = lazy(() =>
     default: m.AccessDeniedScreen,
   })),
 )
+const KeysScreen = lazy(() =>
+  import('./screens/private/operations/Keys').then((m) => ({
+    default: m.KeysScreen,
+  })),
+)
 const CodesScreen = lazy(() =>
   import('./screens/private/operations/Codes').then((m) => ({
     default: m.CodesScreen,
@@ -366,6 +371,16 @@ function PrivateRoutes() {
                   element={
                     <RequireModule code="inventory">
                       <InventoryScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="inventory/keys"
+                  element={
+                    <RequireModule code="inventory.keys">
+                      <RequirePermission permKey="keys.keys.read">
+                        <KeysScreen />
+                      </RequirePermission>
                     </RequireModule>
                   }
                 />

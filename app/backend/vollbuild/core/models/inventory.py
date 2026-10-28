@@ -107,6 +107,9 @@ class InventoryItem(db.Model):
     )
     image_url: Mapped[str | None] = mapped_column(db.String(500), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Usage guide (inventory.guides module): Markdown and/or a Drive link.
+    guide: Mapped[str | None] = mapped_column(Text, nullable=True)
+    guide_url: Mapped[str | None] = mapped_column(db.String(500), nullable=True)
     deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

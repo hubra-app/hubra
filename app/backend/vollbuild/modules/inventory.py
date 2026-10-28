@@ -24,6 +24,20 @@ module = Module(
             label="Longest checkout (days)",
             description="Default due date for new checkouts",
         ),
+        SettingField(
+            "require_induction",
+            "bool",
+            default=True,
+            label="Only inducted members can check out",
+            description="Applies to items marked as needing instruction",
+        ),
+        SettingField(
+            "block_when_overdue",
+            "bool",
+            default=False,
+            label="Block checkouts while an invoice is overdue",
+            description="More than 7 days past due; needs the Finance module",
+        ),
     ),
     nav=(
         NavItem(

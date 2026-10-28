@@ -18,6 +18,25 @@ from vollbuild.core.models.inventory import (
 from vollbuild.core.models.member import Member
 
 
+def _has_overdue_invoice(member_id: int, grace_days: int = 7) -> bool:
+    """True when the member has an unpaid invoice more than *grace_days* late."""
+    from datetime import date
+
+    from vollbuild.core.models.finance import Invoice
+
+    cutoff = date.today() - timedelta(days=grace_days)
+    return (
+        db.session.scalar(
+            select(Invoice.id)
+            .where(Invoice.member_id == member_id)
+            .where(Invoice.status == "Open")
+            .where(Invoice.due <= cutoff)
+            .limit(1)
+        )
+        is not None
+    )
+
+
 _LOAD_OPTS = [
     selectinload(InventoryItem.owner),
     selectinload(InventoryItem.responsible),
@@ -163,10 +182,32 @@ class InventoryService:
         if member is None or member.archived_at is not None:
             raise_error(404, "NOT_FOUND", f"Member {member_id} not found")
 
-        if expected_return_at is None:
-            from vollbuild.core.modules import get_config
+        from vollbuild.core.modules import get_config, is_enabled
 
-            max_days = get_config("inventory").get("checkout_max_days") or 0
+        config = get_config("inventory")
+        if (
+            config.get("require_induction")
+            and item.instruction_required
+            and member not in item.instructed_members
+        ):
+            raise_error(
+                409,
+                "NOT_INSTRUCTED",
+                f"{member.name} has not been instructed on {item.name}",
+            )
+        if (
+            config.get("block_when_overdue")
+            and is_enabled("finance")
+            and _has_overdue_invoice(member_id)
+        ):
+            raise_error(
+                409,
+                "PAYMENT_OVERDUE",
+                f"{member.name} has an overdue invoice",
+            )
+
+        if expected_return_at is None:
+            max_days = config.get("checkout_max_days") or 0
             if max_days > 0:
                 expected_return_at = datetime.now(timezone.utc) + timedelta(
                     days=max_days
