@@ -153,7 +153,7 @@ import { Trans, useTranslation } from 'react-i18next'
 import * as sdk from './sdk'
 
 /** The host API version; plugins built for a newer major refuse to load. */
-export const HOST_API = 1
+export const HOST_API = 2
 
 const host = {
   api: HOST_API,

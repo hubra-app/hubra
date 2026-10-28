@@ -16,7 +16,7 @@ test('a new role can be created, given a permission and deleted', async ({ page 
   expect(role).toBeTruthy()
   try {
     // The new role starts without permissions; tick the first one it shows.
-    await page.getByRole('textbox', { name: 'Rollen' }).click()
+    await page.getByRole('combobox', { name: 'Rollen' }).click()
     await page.getByRole('option', { name }).click()
     await page.keyboard.press('Escape')
     const column = page.locator('th', { hasText: name })

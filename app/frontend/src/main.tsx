@@ -7,7 +7,7 @@ import { Notifications } from '@mantine/notifications'
 import '@mantine/core/styles.css'
 import '@mantine/notifications/styles.css'
 import '@mantine/tiptap/styles.css'
-import { theme } from '@hubra/ui'
+import { cssVariablesResolver, theme } from '@hubra/ui'
 // Before the app's own styles, so those win.
 import '@hubra/ui/ui.css'
 import './index.css'
@@ -31,7 +31,7 @@ const queryClient = new QueryClient({
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <MantineProvider theme={theme}>
+    <MantineProvider theme={theme} cssVariablesResolver={cssVariablesResolver}>
       <Notifications position="bottom-right" />
       <BrowserRouter basename={ROUTER_BASENAME}>
         <QueryClientProvider client={queryClient}>

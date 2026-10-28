@@ -5,9 +5,12 @@
 - **React 19** with hooks and functional components (StrictMode enabled)
 - **TypeScript 6** strict mode
 - **Vite 8** for dev server and build
-- **Mantine 7** (`@mantine/core`, `@mantine/hooks`, `@mantine/form`,
+- **Mantine 9** (`@mantine/core`, `@mantine/hooks`, `@mantine/form`,
   `@mantine/notifications`, `@mantine/tiptap`) — component library, theming,
-  forms, notifications. PostCSS uses `postcss-preset-mantine`.
+  forms, notifications. PostCSS uses `postcss-preset-mantine`. The light
+  variant keeps Mantine 8's see-through tints (`cssVariablesResolver` in
+  `@hubra/ui`).
+- **Tiptap 3** with `tiptap-markdown` for the post editor (stores Markdown)
 - **TanStack Query 5** (`@tanstack/react-query`) — server state, cache,
   dedup, automatic refetch. All server data goes through it (see Data layer).
 - **zod** + `mantine-form-zod-resolver` — schema-based form validation
@@ -89,6 +92,16 @@ manage and sign-in use), and the page blocks `PageHead`, `StatTile`,
 `packages/api-client` it is wired in by path alias (`vite.config.ts`,
 `tsconfig.app.json`) and copied in each Dockerfile; it takes React and
 Mantine from the app's own `node_modules`.
+
+## Plugin host API
+
+Plugin frontends get React, Mantine and the other shared libraries from the
+app at run time (`src/plugins/host.ts`). `HOST_API` there is the version of
+that hand-over; a plugin built for another version does not load. Raise it
+when a library the host hands over changes in a breaking way (it went to 2
+with Mantine 9), then rebuild the plugins (`npm run build:plugin`), bump their
+versions and set their `hubra:` range to the Hubra version that has the new
+host.
 
 ## Development
 

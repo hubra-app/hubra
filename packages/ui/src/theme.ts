@@ -1,4 +1,4 @@
-import { createTheme, DEFAULT_THEME, rem } from '@mantine/core'
+import { createTheme, DEFAULT_THEME, rem, v8CssVariablesResolver } from '@mantine/core'
 import { accColors, goldColors, grayColors, pinkColors } from './colors'
 
 // Hubra brand theme (brand/README.md). The same file is used by the club app,
@@ -208,7 +208,13 @@ export const theme = createTheme({
       styles: { title: { fontWeight: 700 } },
     },
     Switch: {
+      // Mantine 8+ puts a dot in the thumb; keep the plain thumb.
+      defaultProps: { withThumbIndicator: false },
       styles: { label: { fontWeight: 500 } },
     },
   },
 })
+
+// Mantine 9 made the light variant solid colours, which turned avatars and
+// light buttons grey on our tinted backgrounds. Keep the 8.x see-through tints.
+export const cssVariablesResolver = v8CssVariablesResolver

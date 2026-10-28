@@ -23,7 +23,7 @@ describe('MemberPicker', () => {
   it('asks the server for what was typed and hands back the member', async () => {
     const onChange = vi.fn()
     renderWithProviders(<MemberPicker label="Mitglied" value={null} onChange={onChange} />)
-    await userEvent.type(screen.getByRole('textbox', { name: 'Mitglied' }), 'ben')
+    await userEvent.type(screen.getByRole('combobox', { name: 'Mitglied' }), 'ben')
     await waitFor(() =>
       expect(listMembers).toHaveBeenCalledWith(expect.objectContaining({ search: 'ben' })),
     )
@@ -35,7 +35,7 @@ describe('MemberPicker', () => {
     listMembers.mockResolvedValueOnce({ members: [], total: 0 })
     renderWithProviders(<MemberPicker label="Mitglied" value="1" onChange={() => {}} />)
     await waitFor(() =>
-      expect(screen.getByRole('textbox', { name: 'Mitglied' })).toHaveValue('Anna Muster'),
+      expect(screen.getByRole('combobox', { name: 'Mitglied' })).toHaveValue('Anna Muster'),
     )
   })
 })

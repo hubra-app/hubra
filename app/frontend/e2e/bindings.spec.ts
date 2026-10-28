@@ -11,7 +11,7 @@ test('a binding can be added and edited', async ({ page }) => {
     await page.getByRole('button', { name: 'Verknüpfung hinzufügen' }).click()
     const dialog = page.getByRole('dialog')
     const pick = async (label: string, option?: string) => {
-      await dialog.getByRole('textbox', { name: label }).click()
+      await dialog.getByRole('combobox', { name: label }).click()
       const opts = page.getByRole('option')
       await (option ? opts.filter({ hasText: option }) : opts.nth(1)).first().click()
     }
@@ -34,7 +34,7 @@ test('a binding can be added and edited', async ({ page }) => {
       .first()
       .click()
     await expect(
-      page.getByRole('dialog').getByRole('textbox', { name: 'Zielschlüssel' }),
+      page.getByRole('dialog').getByRole('combobox', { name: 'Zielschlüssel' }),
     ).toHaveValue(new RegExp(keyName))
     await page.getByRole('dialog').getByRole('checkbox').check()
     await page.getByRole('dialog').getByRole('button', { name: 'Speichern' }).click()

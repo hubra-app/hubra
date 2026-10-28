@@ -17,7 +17,7 @@ test('the group lead picker finds a member by typing their name', async ({ page 
     .getByRole('button', { name: /Gruppe (hinzufügen|erstellen)|Neue Gruppe/ })
     .first()
     .click()
-  const lead = page.getByRole('dialog').getByRole('textbox', { name: 'Gruppenleitung' })
+  const lead = page.getByRole('dialog').getByRole('combobox', { name: 'Gruppenleitung' })
   await lead.fill(name)
   await page.getByRole('option', { name }).click()
   await expect(lead).toHaveValue(name)

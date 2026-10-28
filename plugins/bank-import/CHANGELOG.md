@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.0
+
+Built for Hubra 0.2 (Mantine 9, plugin host API 2). Needs Hubra 0.2 or newer.
+
 ## 1.1.1
 
 - camt files with a DOCTYPE are refused wherever it appears and in any
