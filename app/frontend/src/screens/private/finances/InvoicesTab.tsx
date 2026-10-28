@@ -135,17 +135,17 @@ export function InvoicesTab() {
   // The chosen member's tier sets the amount of a membership invoice.
   const [memberTier, setMemberTier] = useState<string | null>(null)
   const { data: tierOptions = [] } = useQuery({
-    queryKey: ['tiers'],
+    queryKey: qk.tiers.all,
     queryFn: () => listTiers(),
     enabled: addOpen || bulkOpen,
   })
   const { data: externalParties = [] } = useQuery({
-    queryKey: ['external-parties'],
+    queryKey: qk.externalParties,
     queryFn: () => listExternalParties(),
     enabled: addOpen,
   })
   const { data: txCategories = [] } = useQuery({
-    queryKey: ['transaction-categories'],
+    queryKey: qk.transactions.categories,
     queryFn: () => listTxCategories(),
     enabled: addOpen,
   })

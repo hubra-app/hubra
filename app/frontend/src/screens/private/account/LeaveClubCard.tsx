@@ -8,6 +8,7 @@ import { useInstance } from '@/context/InstanceContext'
 import { Modal } from '@/components/ui'
 import { getMyLeave, leaveClub, withdrawLeaveRequest } from '@/api/members'
 import { formatDate } from '@/format'
+import { qk } from '@/data/keys'
 
 /** Leave the club, or ask to leave when the club approves it. */
 export function LeaveClubCard() {
@@ -17,7 +18,7 @@ export function LeaveClubCard() {
   const queryClient = useQueryClient()
   const [confirming, setConfirming] = useState(false)
   const [busy, setBusy] = useState(false)
-  const { data: leave } = useQuery({ queryKey: ['my-leave'], queryFn: getMyLeave })
+  const { data: leave } = useQuery({ queryKey: qk.account.leave, queryFn: getMyLeave })
   if (!leave) return null
 
   const fail = (err: unknown) =>
@@ -37,7 +38,7 @@ export function LeaveClubCard() {
         window.location.assign(`${ssoUrl}/clubs`)
         return
       }
-      queryClient.invalidateQueries({ queryKey: ['my-leave'] })
+      queryClient.invalidateQueries({ queryKey: qk.account.leave })
       notify(
         'success',
         t('account.leaveClub.requested', 'Austritt beantragt'),
@@ -54,7 +55,7 @@ export function LeaveClubCard() {
     setBusy(true)
     try {
       await withdrawLeaveRequest()
-      queryClient.invalidateQueries({ queryKey: ['my-leave'] })
+      queryClient.invalidateQueries({ queryKey: qk.account.leave })
     } catch (err) {
       fail(err)
     } finally {

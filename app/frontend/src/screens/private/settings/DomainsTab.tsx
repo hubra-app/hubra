@@ -25,6 +25,7 @@ import {
 } from '@/api/admin'
 import { useToast } from '@/context/AppContext'
 import { useT } from '@/locales/i18n'
+import { qk } from '@/data/keys'
 
 const STATUS_COLORS: Record<string, string> = {
   verified: 'green',
@@ -43,11 +44,11 @@ export function DomainsTab() {
   const [deleteTarget, setDeleteTarget] = useState<Domain | null>(null)
 
   const { data: domains = [], isLoading } = useQuery({
-    queryKey: ['domains'],
+    queryKey: qk.settings.domains,
     queryFn: listDomains,
   })
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ['domains'] })
+  const refresh = () => queryClient.invalidateQueries({ queryKey: qk.settings.domains })
 
   const handleAdd = async () => {
     if (!newDomain.trim()) return

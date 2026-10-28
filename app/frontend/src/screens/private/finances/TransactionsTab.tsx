@@ -23,6 +23,7 @@ import {
   listTxCategories,
 } from '@/api/finance'
 import { formatCHF } from '@/format'
+import { qk } from '@/data/keys'
 
 /* ── Transactions ────────────────────────────── */
 export function TransactionsTab() {
@@ -41,11 +42,11 @@ export function TransactionsTab() {
     error: fetchError,
     refetch,
   } = useQuery({
-    queryKey: ['transactions'],
+    queryKey: qk.transactions.all,
     queryFn: () => listTransactions(),
   })
   const { data: categories = [] } = useQuery({
-    queryKey: ['transaction-categories'],
+    queryKey: qk.transactions.categories,
     queryFn: () => listTxCategories(),
     enabled: canCreate,
   })
@@ -94,7 +95,7 @@ export function TransactionsTab() {
       await updateTransaction(editTarget.id, {
         status: editStatus,
       })
-      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      queryClient.invalidateQueries({ queryKey: qk.transactions.all })
       setEditTarget(null)
       notify(
         'success',
@@ -118,7 +119,7 @@ export function TransactionsTab() {
     if (!deleteTarget) return
     try {
       await deleteTransaction(deleteTarget.id)
-      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      queryClient.invalidateQueries({ queryKey: qk.transactions.all })
       notify(
         'info',
         t('finance.transaction.deleted', 'Buchung gelöscht.'),
@@ -172,7 +173,7 @@ export function TransactionsTab() {
         method: addMethod,
         type: addType,
       })
-      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      queryClient.invalidateQueries({ queryKey: qk.transactions.all })
       setAddOpen(false)
       notify(
         'success',

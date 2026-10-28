@@ -32,6 +32,7 @@ import { ping } from '@/api/system'
 import { getModules, type ModuleInfo } from '@/api/modules'
 import { loadAllTranslationsFromApi } from '@/locales/i18n'
 import { useInstance } from '@/context/InstanceContext'
+import { qk } from '@/data/keys'
 
 export type AuthStatus = 'loading' | 'authed' | 'anon'
 
@@ -226,7 +227,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [authStatus])
 
   const { data: modulesData } = useQuery({
-    queryKey: ['modules'],
+    queryKey: qk.modules,
     queryFn: getModules,
     enabled: queryEnabled,
   })

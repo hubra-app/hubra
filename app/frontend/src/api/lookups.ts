@@ -27,8 +27,8 @@ export interface Lookups {
 }
 
 export function clearLookups(): void {
-  // No-op — lookups are now cached by React Query ([ 'lookups' ] key).
-  // Invalidate via queryClient.invalidateQueries({ queryKey: ['lookups'] })
+  // No-op — lookups are now cached by React Query (qk.lookups).
+  // Invalidate via queryClient.invalidateQueries({ queryKey: qk.lookups })
   // after tier/role/group mutations.
 }
 

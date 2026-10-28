@@ -7,6 +7,7 @@ import { useAuth, useToast } from '@/context/AppContext'
 import type { Poll } from '@/types'
 import { castVote, getProxy, grantProxy, revokeProxy } from '@/api/polls'
 import { MemberPicker } from '@/components/MemberPicker'
+import { qk } from '@/data/keys'
 
 /** Proxy voting on one poll: give your vote to someone, take it back, or
  * vote for the members whose proxy you hold. */
@@ -23,7 +24,7 @@ export function ProxyPanel({
   const { notify } = useToast()
   const { currentUser } = useAuth()
   const queryClient = useQueryClient()
-  const key = ['poll-proxy', poll.id]
+  const key = qk.pollProxy(poll.id)
   const { data: state } = useQuery({
     queryKey: key,
     queryFn: () => getProxy(poll.id),

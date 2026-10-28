@@ -24,6 +24,7 @@ import {
   markAllNotificationsRead,
 } from '@/api/notifications'
 import type { Notification } from '@/types'
+import { qk } from '@/data/keys'
 
 export function NotificationPanel() {
   const { t } = useT()
@@ -32,13 +33,13 @@ export function NotificationPanel() {
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
 
   const { data: notifications = [] } = useQuery<Notification[]>({
-    queryKey: ['notifications'],
+    queryKey: qk.notifications,
     queryFn: listNotifications,
     refetchInterval: 30_000,
   })
 
   const markNotifsRead = useCallback(async () => {
-    queryClient.setQueryData<Notification[]>(['notifications'], (prev) =>
+    queryClient.setQueryData<Notification[]>(qk.notifications, (prev) =>
       (prev ?? []).map((n) => ({ ...n, read: true })),
     )
     try {
@@ -50,7 +51,7 @@ export function NotificationPanel() {
 
   const dismissNotif = useCallback(
     (id: string) => {
-      queryClient.setQueryData<Notification[]>(['notifications'], (prev) =>
+      queryClient.setQueryData<Notification[]>(qk.notifications, (prev) =>
         (prev ?? []).filter((n) => n.id !== id),
       )
     },

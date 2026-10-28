@@ -75,7 +75,7 @@ export function MembersTab() {
   const [bulkSaving, setBulkSaving] = useState(false)
 
   const { data: lookupsData } = useQuery({
-    queryKey: ['lookups'],
+    queryKey: qk.lookups,
     queryFn: () => getLookups(),
   })
   const allTiers = useMemo(
@@ -95,7 +95,7 @@ export function MembersTab() {
   }, [lookupsData])
 
   const { data: bulkTiers = [] } = useQuery({
-    queryKey: ['tiers'],
+    queryKey: qk.tiers.all,
     queryFn: () => listTiers(),
     enabled: bulkInvoiceOpen,
   })
@@ -106,7 +106,7 @@ export function MembersTab() {
   }, [search])
 
   const { data: membersData } = useQuery({
-    queryKey: ['members', debouncedSearch, tierFilter, showArchived],
+    queryKey: qk.members.list(debouncedSearch, tierFilter, showArchived),
     queryFn: () =>
       listMembers({
         search: debouncedSearch,
@@ -162,7 +162,7 @@ export function MembersTab() {
     if (!archiveTarget) return
     try {
       await archiveMember(archiveTarget.id)
-      queryClient.invalidateQueries({ queryKey: ['members'] })
+      queryClient.invalidateQueries({ queryKey: qk.members.all })
       queryClient.invalidateQueries({ queryKey: qk.dashboard })
       notify(
         'info',
@@ -181,7 +181,7 @@ export function MembersTab() {
   const handleUnarchive = async (m: Member) => {
     try {
       await unarchiveMember(m.id)
-      queryClient.invalidateQueries({ queryKey: ['members'] })
+      queryClient.invalidateQueries({ queryKey: qk.members.all })
       queryClient.invalidateQueries({ queryKey: qk.dashboard })
       notify(
         'success',
@@ -203,7 +203,7 @@ export function MembersTab() {
     if (!hardDeleteTarget) return
     try {
       await hardDeleteMember(hardDeleteTarget.id)
-      queryClient.invalidateQueries({ queryKey: ['members'] })
+      queryClient.invalidateQueries({ queryKey: qk.members.all })
       notify(
         'info',
         t('members.member.deletedTitle', 'Mitglied gelöscht'),
@@ -825,7 +825,7 @@ export function MembersTab() {
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
         onSaved={() => {
-          queryClient.invalidateQueries({ queryKey: ['members'] })
+          queryClient.invalidateQueries({ queryKey: qk.members.all })
           setEditTarget(null)
         }}
       />

@@ -479,7 +479,7 @@ export function RolesTab() {
   const [roleMembersOpen, setRoleMembersOpen] = useState<Role | null>(null)
 
   const { data, isLoading: loading } = useQuery({
-    queryKey: ['roles-permissions'],
+    queryKey: qk.settings.rolesPermissions,
     queryFn: async () => {
       const [roleList, perms] = await Promise.all([
         listRoles(),
@@ -658,8 +658,8 @@ export function RolesTab() {
           await setRolePermissions(roleId, templateRole.permissions)
         }
       }
-      await queryClient.invalidateQueries({ queryKey: ['roles-permissions'] })
-      queryClient.invalidateQueries({ queryKey: ['lookups'] })
+      await queryClient.invalidateQueries({ queryKey: qk.settings.rolesPermissions })
+      queryClient.invalidateQueries({ queryKey: qk.lookups })
       setTemplateOpen(false)
       notify(
         'success',
@@ -771,7 +771,7 @@ export function RolesTab() {
           }
         })
       }
-      queryClient.invalidateQueries({ queryKey: ['lookups'] })
+      queryClient.invalidateQueries({ queryKey: qk.lookups })
       setNewRoleName('')
       setNewRoleDesc('')
       setNewRoleIsAdmin(false)
@@ -807,7 +807,7 @@ export function RolesTab() {
           rolePerms: nextPerms,
         }
       })
-      queryClient.invalidateQueries({ queryKey: ['lookups'] })
+      queryClient.invalidateQueries({ queryKey: qk.lookups })
       setLocalPerms((prev) => {
         const next = { ...prev }
         delete next[role.id]
@@ -849,7 +849,7 @@ export function RolesTab() {
           roles: old.roles.map((r) => (r.id === updated.id ? updated : r)),
         }
       })
-      queryClient.invalidateQueries({ queryKey: ['lookups'] })
+      queryClient.invalidateQueries({ queryKey: qk.lookups })
       setEditTarget(null)
       notify('success', t('roles.updated', 'Rolle gespeichert'), t('roles.updatedMsg', '«{{name}}» wurde gespeichert.', { name: updated.name }))
     } catch (err: unknown) {

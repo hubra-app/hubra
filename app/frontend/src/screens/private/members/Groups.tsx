@@ -43,6 +43,7 @@ import {
 import { listGroupMembers } from '@/api/members'
 import { MemberPicker } from '@/components/MemberPicker'
 import { useMemberSearch } from '@/data/members'
+import { qk } from '@/data/keys'
 
 /* ── Group Detail Panel ──────────────────────── */
 function GroupDetailPanel({
@@ -56,7 +57,7 @@ function GroupDetailPanel({
   const { t } = useT()
   const queryClient = useQueryClient()
   const { data: members = [], isLoading: loading } = useQuery({
-    queryKey: ['group-members', group.id],
+    queryKey: qk.groups.members(group.id),
     queryFn: () => listGroupMembers(group.id),
   })
   const [searchQuery, setSearchQuery] = useState('')
@@ -92,7 +93,7 @@ function GroupDetailPanel({
     addGroupMember(group.id, m.id)
       .then(() => {
         queryClient.invalidateQueries({
-          queryKey: ['group-members', group.id],
+          queryKey: qk.groups.members(group.id),
         })
         notify(
           'success',
@@ -115,7 +116,7 @@ function GroupDetailPanel({
     removeGroupMember(group.id, m.id)
       .then(() => {
         queryClient.invalidateQueries({
-          queryKey: ['group-members', group.id],
+          queryKey: qk.groups.members(group.id),
         })
         notify(
           'info',
@@ -183,7 +184,7 @@ export function GroupsScreen() {
   const canUpdate = hasPermission('groups.groups.update')
   const canDelete = hasPermission('groups.groups.delete')
   const { data: groups = [] } = useQuery({
-    queryKey: ['groups'],
+    queryKey: qk.groups.all,
     queryFn: () => listGroups(),
   })
   const [addOpen, setAddOpen] = useState(false)
@@ -251,8 +252,8 @@ export function GroupsScreen() {
         leadId: data.leadId ? Number(data.leadId) : undefined,
         selfJoin: data.selfJoin,
       })
-      queryClient.invalidateQueries({ queryKey: ['groups'] })
-      queryClient.invalidateQueries({ queryKey: ['lookups'] })
+      queryClient.invalidateQueries({ queryKey: qk.groups.all })
+      queryClient.invalidateQueries({ queryKey: qk.lookups })
       setAddOpen(false)
       notify(
         'success',
@@ -282,8 +283,8 @@ export function GroupsScreen() {
         ...(data.leadId ? { leadId: Number(data.leadId) } : {}),
         selfJoin: data.selfJoin,
       })
-      queryClient.invalidateQueries({ queryKey: ['groups'] })
-      queryClient.invalidateQueries({ queryKey: ['lookups'] })
+      queryClient.invalidateQueries({ queryKey: qk.groups.all })
+      queryClient.invalidateQueries({ queryKey: qk.lookups })
       setEditTarget(null)
       notify(
         'success',
@@ -305,8 +306,8 @@ export function GroupsScreen() {
     if (!deleteTarget) return
     try {
       await deleteGroup(deleteTarget.id)
-      queryClient.invalidateQueries({ queryKey: ['groups'] })
-      queryClient.invalidateQueries({ queryKey: ['lookups'] })
+      queryClient.invalidateQueries({ queryKey: qk.groups.all })
+      queryClient.invalidateQueries({ queryKey: qk.lookups })
       notify(
         'info',
         t('groups.group.deleted'),

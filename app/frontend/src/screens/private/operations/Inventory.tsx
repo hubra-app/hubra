@@ -67,6 +67,7 @@ import {
 import { MemberPicker } from '@/components/MemberPicker'
 import { useMemberSearch } from '@/data/members'
 import { PluginSlot } from '@/plugins'
+import { qk } from '@/data/keys'
 
 // -- Constants --------------------------------------------------------------
 
@@ -815,7 +816,7 @@ export function InventoryScreen() {
     error: fetchError,
     refetch,
   } = useQuery({
-    queryKey: ['inventory'],
+    queryKey: qk.inventory,
     queryFn: () => listInventory(),
   })
   const [catFilter, setCatFilter] = useState<InventoryCategory | 'All'>('All')
@@ -891,7 +892,7 @@ export function InventoryScreen() {
         links: fLinks,
         instructionRequired: fInstructionRequired,
       })
-      queryClient.invalidateQueries({ queryKey: ['inventory'] })
+      queryClient.invalidateQueries({ queryKey: qk.inventory })
       setAddOpen(false)
       notify(
         'success',
@@ -928,7 +929,7 @@ export function InventoryScreen() {
         links: fLinks,
         instructionRequired: fInstructionRequired,
       })
-      queryClient.invalidateQueries({ queryKey: ['inventory'] })
+      queryClient.invalidateQueries({ queryKey: qk.inventory })
       if (detailItem?.id === item.id) setDetailItem(item)
       setEditTarget(null)
       notify(
@@ -953,7 +954,7 @@ export function InventoryScreen() {
     if (!deleteTarget) return
     try {
       await deleteInventoryItem(deleteTarget.id)
-      queryClient.invalidateQueries({ queryKey: ['inventory'] })
+      queryClient.invalidateQueries({ queryKey: qk.inventory })
       if (detailItem?.id === deleteTarget.id) setDetailItem(null)
       notify(
         'info',
@@ -976,7 +977,7 @@ export function InventoryScreen() {
   }
 
   const handleInstructionChange = (updated: InventoryItem) => {
-    queryClient.invalidateQueries({ queryKey: ['inventory'] })
+    queryClient.invalidateQueries({ queryKey: qk.inventory })
     setDetailItem(updated)
   }
 

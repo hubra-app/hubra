@@ -41,6 +41,7 @@ import type {
   BindingSource,
   BindingPreview,
 } from '@/api/bindings'
+import { qk } from '@/data/keys'
 
 type Tab = 'keys' | 'bindings'
 
@@ -79,7 +80,7 @@ function KeysTab() {
   const canUpdate = hasPermission('keys.keys.write')
   const canDelete = hasPermission('keys.keys.delete')
   const { data: keys = [], isLoading: loading } = useQuery({
-    queryKey: ['keys'],
+    queryKey: qk.keys,
     queryFn: () => listKeys(),
   })
   const [search, setSearch] = useState('')
@@ -116,7 +117,7 @@ function KeysTab() {
         allow_multiple: newAllowMultiple,
         is_protected: newIsProtected,
       })
-      queryClient.invalidateQueries({ queryKey: ['keys'] })
+      queryClient.invalidateQueries({ queryKey: qk.keys })
       setShowAdd(false)
       setNewKey('')
       setNewLabel('')
@@ -137,7 +138,7 @@ function KeysTab() {
   const handleDelete = async (ik: InternalKey) => {
     try {
       await deleteKey(ik.id)
-      queryClient.invalidateQueries({ queryKey: ['keys'] })
+      queryClient.invalidateQueries({ queryKey: qk.keys })
       setDeleteTarget(null)
       notify('success', t('common.deleted', 'Gelöscht'), t('kv.removedMsg', '{{key}} wurde entfernt.', { key: ik.key }))
     } catch (err: unknown) {
@@ -158,7 +159,7 @@ function KeysTab() {
         allow_multiple: editAllowMultiple,
         is_protected: editIsProtected,
       })
-      queryClient.invalidateQueries({ queryKey: ['keys'] })
+      queryClient.invalidateQueries({ queryKey: qk.keys })
       setEditTarget(null)
       notify('success', t('common.saved', 'Gespeichert'), t('kv.updatedMsg', '{{key}} wurde gespeichert.', { key: updated.key }))
     } catch (err: unknown) {
@@ -546,7 +547,7 @@ function BindingsTab() {
   const canUpdate = hasPermission('bindings.bindings.write')
   const canDelete = hasPermission('bindings.bindings.delete')
   const { data: combinedData, isLoading: loading } = useQuery({
-    queryKey: ['bindings'],
+    queryKey: qk.bindings.all,
     queryFn: () =>
       Promise.all([listBindings(), listKeys(), getRegistry(), getValidators()]),
   })
@@ -569,7 +570,7 @@ function BindingsTab() {
   const [newValidator, setNewValidator] = useState('none')
 
   const { data: sources = [], isLoading: sourcesLoading } = useQuery({
-    queryKey: ['binding-sources', newType],
+    queryKey: qk.bindings.sources(newType),
     queryFn: () => getSources(newType),
     enabled: showAdd,
   })
@@ -578,7 +579,7 @@ function BindingsTab() {
   )
 
   const { data: newPreview } = useQuery<BindingPreview>({
-    queryKey: ['binding-preview', newType, newSourceId, newAttribute],
+    queryKey: qk.bindings.preview(newType, newSourceId, newAttribute),
     queryFn: () => previewBindingValue(newType, newSourceId, newAttribute),
     enabled: !!newSourceId && !!newAttribute,
   })
@@ -592,7 +593,7 @@ function BindingsTab() {
   const [editProtected, setEditProtected] = useState(false)
 
   const { data: editSources = [], isLoading: editSourcesLoading } = useQuery({
-    queryKey: ['binding-sources', editType],
+    queryKey: qk.bindings.sources(editType),
     queryFn: () => getSources(editType),
     enabled: editTarget !== null,
   })
@@ -600,7 +601,7 @@ function BindingsTab() {
     useState<BindingSource | null>(null)
 
   const { data: editPreview } = useQuery<BindingPreview>({
-    queryKey: ['binding-preview', editType, editSourceId, editAttribute],
+    queryKey: qk.bindings.preview(editType, editSourceId, editAttribute),
     queryFn: () => previewBindingValue(editType, editSourceId, editAttribute),
     enabled: !!editSourceId && !!editAttribute,
   })
@@ -667,7 +668,7 @@ function BindingsTab() {
         key_id: parseInt(newKeyId, 10),
         validator: newValidator,
       })
-      queryClient.invalidateQueries({ queryKey: ['bindings'] })
+      queryClient.invalidateQueries({ queryKey: qk.bindings.all })
       setShowAdd(false)
       setNewSourceId('')
       setNewAttribute('')
@@ -689,7 +690,7 @@ function BindingsTab() {
   const handleDelete = async (b: Binding) => {
     try {
       await deleteBinding(b.id)
-      queryClient.invalidateQueries({ queryKey: ['bindings'] })
+      queryClient.invalidateQueries({ queryKey: qk.bindings.all })
       setDeleteTarget(null)
       notify('success', t('common.deleted', 'Gelöscht'), t('bindings.removedMsg', 'Verknüpfung #{{id}} entfernt.', { id: b.id }))
     } catch (err: unknown) {
@@ -704,7 +705,7 @@ function BindingsTab() {
   const handleToggle = async (b: Binding) => {
     try {
       const updated = await toggleBinding(b.id, !b.enabled)
-      queryClient.invalidateQueries({ queryKey: ['bindings'] })
+      queryClient.invalidateQueries({ queryKey: qk.bindings.all })
       notify(
         'success',
         updated.enabled ? t('common.enabled', 'Aktiviert') : t('common.disabled', 'Deaktiviert'),
@@ -749,7 +750,7 @@ function BindingsTab() {
         data.is_protected = editProtected
 
       const updated = await updateBinding(editTarget.id, data)
-      queryClient.invalidateQueries({ queryKey: ['bindings'] })
+      queryClient.invalidateQueries({ queryKey: qk.bindings.all })
       setEditTarget(null)
       notify('success', t('common.saved', 'Gespeichert'), t('bindings.updatedMsg', 'Verknüpfung #{{id}} gespeichert.', { id: updated.id }))
     } catch (err: unknown) {

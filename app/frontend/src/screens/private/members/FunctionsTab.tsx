@@ -35,6 +35,7 @@ import {
 } from '@/api/functions'
 import { withBase } from '@/clubBase'
 import { useMemberSearch } from '@/data/members'
+import { qk } from '@/data/keys'
 
 const functionSchema = z.object({
   name: z.string().min(1, zmsg('common.nameRequired', 'Name ist erforderlich')),
@@ -52,7 +53,7 @@ export function FunctionsTab() {
   const canUpdate = hasPermission('functions.functions.update')
   const canDelete = hasPermission('functions.functions.delete')
   const { data: functions = [], isLoading: loading } = useQuery({
-    queryKey: ['functions'],
+    queryKey: qk.functions,
     queryFn: () => listFunctions(),
   })
   const [addOpen, setAddOpen] = useState(false)
@@ -94,7 +95,7 @@ export function FunctionsTab() {
         description: data.description || undefined,
         maxHolders: data.maxHolders,
       })
-      queryClient.invalidateQueries({ queryKey: ['functions'] })
+      queryClient.invalidateQueries({ queryKey: qk.functions })
       setAddOpen(false)
       notify(
         'success',
@@ -118,7 +119,7 @@ export function FunctionsTab() {
         description: data.description || undefined,
         maxHolders: data.maxHolders,
       })
-      queryClient.invalidateQueries({ queryKey: ['functions'] })
+      queryClient.invalidateQueries({ queryKey: qk.functions })
       setEditTarget(null)
       notify(
         'success',
@@ -138,7 +139,7 @@ export function FunctionsTab() {
     if (!deleteTarget) return
     try {
       await deleteFunction(deleteTarget.id)
-      queryClient.invalidateQueries({ queryKey: ['functions'] })
+      queryClient.invalidateQueries({ queryKey: qk.functions })
       notify(
         'info',
         t('functions.deleted', 'Gelöscht'),
@@ -342,7 +343,7 @@ export function FunctionsTab() {
           fn={manageHolders}
           onClose={() => {
             setManageHolders(null)
-            queryClient.invalidateQueries({ queryKey: ['functions'] })
+            queryClient.invalidateQueries({ queryKey: qk.functions })
           }}
         />
       )}

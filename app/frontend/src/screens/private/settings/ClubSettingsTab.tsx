@@ -17,6 +17,7 @@ import {
 } from '@mantine/core'
 import { getClubSettings, updateClubSettings, type ClubSettings } from '@/api/admin'
 import { useT } from '@/locales/i18n'
+import { qk } from '@/data/keys'
 
 function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
   const { t } = useT()
@@ -32,7 +33,7 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
     setSaving(true)
     try {
       await updateClubSettings(form)
-      queryClient.invalidateQueries({ queryKey: ['club-settings'] })
+      queryClient.invalidateQueries({ queryKey: qk.settings.club })
     } finally {
       setSaving(false)
     }
@@ -176,7 +177,7 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
 export function ClubSettingsTab() {
   const { t } = useT()
   const { data, isLoading } = useQuery({
-    queryKey: ['club-settings'],
+    queryKey: qk.settings.club,
     queryFn: getClubSettings,
   })
 

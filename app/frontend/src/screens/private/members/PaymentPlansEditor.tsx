@@ -22,6 +22,7 @@ import {
   type PlanInput,
   type PlanInterval,
 } from '@/api/paymentPlans'
+import { qk } from '@/data/keys'
 
 const INTERVALS: PlanInterval[] = ['yearly', 'half_yearly', 'quarterly', 'monthly']
 
@@ -31,7 +32,7 @@ export function PaymentPlansEditor({ tierId }: { tierId: string }) {
   const { notify } = useToast()
   const queryClient = useQueryClient()
   const { data: plans = [] } = useQuery({
-    queryKey: ['payment-plans', tierId],
+    queryKey: qk.tiers.paymentPlans(tierId),
     queryFn: () => listPlans(tierId),
   })
   const [draft, setDraft] = useState<PlanInput | null>(null)
@@ -39,8 +40,8 @@ export function PaymentPlansEditor({ tierId }: { tierId: string }) {
   const run = async (fn: () => Promise<unknown>) => {
     try {
       await fn()
-      await queryClient.invalidateQueries({ queryKey: ['payment-plans', tierId] })
-      await queryClient.invalidateQueries({ queryKey: ['tiers'] })
+      await queryClient.invalidateQueries({ queryKey: qk.tiers.paymentPlans(tierId) })
+      await queryClient.invalidateQueries({ queryKey: qk.tiers.all })
     } catch (err) {
       notify(
         'error',

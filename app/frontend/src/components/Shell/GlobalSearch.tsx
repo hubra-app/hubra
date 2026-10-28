@@ -11,6 +11,7 @@ import { listTransactions } from '@/api/finance'
 import { listInventory } from '@/api/inventory'
 import { listAuditLog } from '@/api/settings'
 import type { SearchResult } from './nav'
+import { qk } from '@/data/keys'
 
 export function GlobalSearch() {
   const { t } = useT()
@@ -29,31 +30,31 @@ export function GlobalSearch() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { data: memberResp } = useQuery({
-    queryKey: ['search-members'],
+    queryKey: qk.search.members,
     enabled: used && modules.members === true,
     queryFn: () => listMembers({ pageSize: 200 }),
     staleTime: 60_000,
   })
   const { data: groupList = [] } = useQuery({
-    queryKey: ['search-groups'],
+    queryKey: qk.search.groups,
     enabled: used && modules.groups === true,
     queryFn: () => listGroups(),
     staleTime: 60_000,
   })
   const { data: txList = [] } = useQuery({
-    queryKey: ['search-transactions'],
+    queryKey: qk.search.transactions,
     enabled: used && modules.finance === true && hasPermission('finance.transactions.read'),
     queryFn: () => listTransactions({ pageSize: 200 }),
     staleTime: 60_000,
   })
   const { data: inventoryList = [] } = useQuery({
-    queryKey: ['search-inventory'],
+    queryKey: qk.search.inventory,
     enabled: used && modules.inventory === true,
     queryFn: () => listInventory(),
     staleTime: 60_000,
   })
   const { data: auditPage } = useQuery({
-    queryKey: ['search-audit'],
+    queryKey: qk.search.audit,
     enabled: used && hasPermission('audit.audit.read'),
     queryFn: () => listAuditLog({ pageSize: 200 }),
     staleTime: 60_000,

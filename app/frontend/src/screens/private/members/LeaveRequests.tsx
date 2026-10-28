@@ -5,6 +5,7 @@ import { useToast, useAuth } from '@/context/AppContext'
 import { Avatar } from '@/components/ui'
 import { listLeaveRequests, approveLeave, declineLeave } from '@/api/members'
 import { formatDateTime } from '@/format'
+import { qk } from '@/data/keys'
 
 /* ── Requests to leave (clubs that approve them) ───────── */
 export function LeaveRequests() {
@@ -14,7 +15,7 @@ export function LeaveRequests() {
   const queryClient = useQueryClient()
   const canDecide = hasPermission('members.members.archive')
   const { data: requests = [] } = useQuery({
-    queryKey: ['leave-requests'],
+    queryKey: qk.leaveRequests,
     queryFn: listLeaveRequests,
     enabled: canDecide,
   })
@@ -23,8 +24,8 @@ export function LeaveRequests() {
   const decide = async (id: string, name: string, approve: boolean) => {
     try {
       await (approve ? approveLeave(id) : declineLeave(id))
-      queryClient.invalidateQueries({ queryKey: ['leave-requests'] })
-      queryClient.invalidateQueries({ queryKey: ['members'] })
+      queryClient.invalidateQueries({ queryKey: qk.leaveRequests })
+      queryClient.invalidateQueries({ queryKey: qk.members.all })
       notify(
         approve ? 'success' : 'info',
         approve

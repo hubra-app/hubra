@@ -12,6 +12,7 @@ import {
   updateTxCategory,
   deleteTxCategory,
 } from '@/api/finance'
+import { qk } from '@/data/keys'
 
 /* ── Transaction Categories ──────────────────── */
 export function TransactionCategoriesTab() {
@@ -29,7 +30,7 @@ export function TransactionCategoriesTab() {
     'transaction_categories.transaction_categories.delete',
   )
   const { data: cats = [], isLoading: loading } = useQuery({
-    queryKey: ['transaction-categories'],
+    queryKey: qk.transactions.categories,
     queryFn: () => listTxCategories(),
   })
   const [addOpen, setAddOpen] = useState(false)
@@ -55,7 +56,7 @@ export function TransactionCategoriesTab() {
     if (!cName) return
     try {
       await createTxCategory({ name: cName, color: cColor })
-      queryClient.invalidateQueries({ queryKey: ['transaction-categories'] })
+      queryClient.invalidateQueries({ queryKey: qk.transactions.categories })
       setAddOpen(false)
       notify(
         'success',
@@ -85,7 +86,7 @@ export function TransactionCategoriesTab() {
         name: cName,
         color: cColor,
       })
-      queryClient.invalidateQueries({ queryKey: ['transaction-categories'] })
+      queryClient.invalidateQueries({ queryKey: qk.transactions.categories })
       setEditTarget(null)
       notify(
         'success',
@@ -112,7 +113,7 @@ export function TransactionCategoriesTab() {
     if (!deleteTarget) return
     try {
       await deleteTxCategory(deleteTarget.id)
-      queryClient.invalidateQueries({ queryKey: ['transaction-categories'] })
+      queryClient.invalidateQueries({ queryKey: qk.transactions.categories })
       notify(
         'info',
         t('finance.category.deleted', 'Kategorie gelöscht.'),

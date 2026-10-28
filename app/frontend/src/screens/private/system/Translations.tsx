@@ -37,6 +37,7 @@ import {
   importTranslations,
   type TranslationEntry,
 } from '@/api/i18n'
+import { qk } from '@/data/keys'
 
 type FilterMode = 'all' | 'flagged' | 'missing'
 
@@ -106,7 +107,7 @@ export function TranslationsScreen() {
   } | null>(null)
 
   const languagesQuery = useQuery({
-    queryKey: ['languages'],
+    queryKey: qk.languages,
     queryFn: () => fetchLanguages(),
   })
   const languages = useMemo(() => {
@@ -117,7 +118,7 @@ export function TranslationsScreen() {
   }, [languagesQuery.data, languagesQuery.isError])
 
   const translationsQuery = useQuery({
-    queryKey: ['translations', activeLocale],
+    queryKey: qk.translations(activeLocale),
     queryFn: () => fetchTranslationsList(activeLocale),
     enabled: !!activeLocale,
   })
@@ -210,7 +211,7 @@ export function TranslationsScreen() {
     try {
       await patchTranslations(activeLocale, [{ key, value: editValue }])
       queryClient.invalidateQueries({
-        queryKey: ['translations', activeLocale],
+        queryKey: qk.translations(activeLocale),
       })
       setEditingKey(null)
       setEditValue('')
@@ -237,7 +238,7 @@ export function TranslationsScreen() {
         })
       }
       queryClient.invalidateQueries({
-        queryKey: ['translations', activeLocale],
+        queryKey: qk.translations(activeLocale),
       })
       notify(
         'success',
@@ -259,7 +260,7 @@ export function TranslationsScreen() {
         { key: aliasTarget.key, value: '', alias_for: aliasValue.trim() },
       ])
       queryClient.invalidateQueries({
-        queryKey: ['translations', activeLocale],
+        queryKey: qk.translations(activeLocale),
       })
       notify('success', t('translations.alias.linked'), aliasTarget.key)
     } catch {
@@ -275,7 +276,7 @@ export function TranslationsScreen() {
         { key: entry.key, value: '', alias_for: null },
       ])
       queryClient.invalidateQueries({
-        queryKey: ['translations', activeLocale],
+        queryKey: qk.translations(activeLocale),
       })
       notify('success', t('translations.alias.removed'), entry.key)
     } catch {
@@ -288,7 +289,7 @@ export function TranslationsScreen() {
       await patchTranslations(activeLocale, [{ key, value }])
       setShowAddModal(false)
       queryClient.invalidateQueries({
-        queryKey: ['translations', activeLocale],
+        queryKey: qk.translations(activeLocale),
       })
       notify('success', t('translations.added'), key)
     } catch {
@@ -307,10 +308,10 @@ export function TranslationsScreen() {
       notify('success', t('translations.duplicated'), String(result.inserted))
       if (targetLocale === activeLocale) {
         queryClient.invalidateQueries({
-          queryKey: ['translations', activeLocale],
+          queryKey: qk.translations(activeLocale),
         })
       }
-      queryClient.invalidateQueries({ queryKey: ['languages'] })
+      queryClient.invalidateQueries({ queryKey: qk.languages })
     } catch {
       notify('error', t('translations.duplicateFailed'))
     }
@@ -330,7 +331,7 @@ export function TranslationsScreen() {
     try {
       const result = await copyDefaultsApi(activeLocale)
       queryClient.invalidateQueries({
-        queryKey: ['translations', activeLocale],
+        queryKey: qk.translations(activeLocale),
       })
       notify(
         'success',
@@ -347,7 +348,7 @@ export function TranslationsScreen() {
     try {
       const result = await importTranslations(activeLocale, file, format)
       queryClient.invalidateQueries({
-        queryKey: ['translations', activeLocale],
+        queryKey: qk.translations(activeLocale),
       })
       notify(
         'success',

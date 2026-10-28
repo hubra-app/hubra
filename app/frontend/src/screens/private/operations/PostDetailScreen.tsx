@@ -21,6 +21,7 @@ import {
   addComment,
   deleteComment,
 } from '@/api/posts'
+import { qk } from '@/data/keys'
 
 export function PostDetailScreen() {
   const { id } = useParams<{ id: string }>()
@@ -35,12 +36,12 @@ export function PostDetailScreen() {
     isLoading: loading,
     isError,
   } = useQuery({
-    queryKey: ['post', id],
+    queryKey: qk.posts.one(id),
     queryFn: () => getPost(id!),
     enabled: !!id,
   })
   const { data: comments = [] } = useQuery<PostCommentType[]>({
-    queryKey: ['post-comments', id],
+    queryKey: qk.posts.comments(id),
     queryFn: () => listComments(id!),
     enabled: !!id,
   })
@@ -56,7 +57,7 @@ export function PostDetailScreen() {
       const updated = liked
         ? await unlikePost(post.id)
         : await likePost(post.id)
-      queryClient.setQueryData<Post>(['post', id], updated)
+      queryClient.setQueryData<Post>(qk.posts.one(id), updated)
     } catch (err: unknown) {
       notify(
         'error',
@@ -75,7 +76,7 @@ export function PostDetailScreen() {
         ['post-comments', id],
         (prev) => [...(prev ?? []), comment],
       )
-      queryClient.setQueryData<Post>(['post', id], (prev) =>
+      queryClient.setQueryData<Post>(qk.posts.one(id), (prev) =>
         prev ? { ...prev, comments: prev.comments + 1 } : prev,
       )
       setCommentInput('')
@@ -98,7 +99,7 @@ export function PostDetailScreen() {
         ['post-comments', id],
         (prev) => (prev ?? []).filter((c) => c.id !== commentId),
       )
-      queryClient.setQueryData<Post>(['post', id], (prev) =>
+      queryClient.setQueryData<Post>(qk.posts.one(id), (prev) =>
         prev ? { ...prev, comments: prev.comments - 1 } : prev,
       )
     } catch (err: unknown) {

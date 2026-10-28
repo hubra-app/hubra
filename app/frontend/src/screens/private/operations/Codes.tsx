@@ -24,6 +24,7 @@ import {
 } from '@/components/ui'
 import type { Code } from '@/types'
 import { listCodes, createCode, updateCode, deleteCode } from '@/api/codes'
+import { qk } from '@/data/keys'
 
 const codeSchema = z.object({
   name: z.string().min(1, zmsg('common.nameRequired', 'Name ist erforderlich')),
@@ -39,7 +40,7 @@ export function CodesScreen() {
   const { hasPermission } = useAuth()
   const queryClient = useQueryClient()
   const { data: codes = [], isLoading: loading } = useQuery({
-    queryKey: ['codes'],
+    queryKey: qk.codes,
     queryFn: () => listCodes(),
   })
   const [addOpen, setAddOpen] = useState(false)
@@ -83,7 +84,7 @@ export function CodesScreen() {
         code: data.code,
         description: data.description || null,
       })
-      queryClient.invalidateQueries({ queryKey: ['codes'] })
+      queryClient.invalidateQueries({ queryKey: qk.codes })
       setAddOpen(false)
       notify('success', t('codes.saved'))
     } catch (err: unknown) {
@@ -104,7 +105,7 @@ export function CodesScreen() {
         description: data.description || null,
         isActive: data.isActive,
       })
-      queryClient.invalidateQueries({ queryKey: ['codes'] })
+      queryClient.invalidateQueries({ queryKey: qk.codes })
       setEditTarget(null)
       notify('success', t('codes.saved'))
     } catch (err: unknown) {
@@ -120,7 +121,7 @@ export function CodesScreen() {
     if (!deleteTarget) return
     try {
       await deleteCode(deleteTarget.id)
-      queryClient.invalidateQueries({ queryKey: ['codes'] })
+      queryClient.invalidateQueries({ queryKey: qk.codes })
       setDeleteTarget(null)
       notify('success', t('codes.deleted'))
     } catch (err: unknown) {

@@ -18,6 +18,7 @@ import { useToggleJoinEvent } from "@/screens/private/operations/useEventActions
 import { useModules } from "@/modules/useModules";
 import { MyGroupsCard } from "./MyGroupsCard";
 import { PluginSlot } from "@/plugins";
+import { qk } from "@/data/keys";
 
 /* -- Account Dashboard ------------------------ */
 export function AccountDashboardScreen() {
@@ -36,7 +37,7 @@ export function AccountDashboardScreen() {
     isLoading: invoicesLoading,
     isError: invoicesError,
   } = useQuery({
-    queryKey: ["my-invoices"],
+    queryKey: qk.invoices.mine,
     queryFn: () => listMyInvoices(),
   });
   const myInvoices = useMemo(

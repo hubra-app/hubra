@@ -47,11 +47,11 @@ export function PollsTab() {
   const { hasPermission } = useAuth();
   const { t, i18n } = useT();
   const { data: groups = [] } = useQuery({
-    queryKey: ["groups"],
+    queryKey: qk.groups.all,
     queryFn: listGroups,
   });
   const { data: functions = [] } = useQuery({
-    queryKey: ["functions"],
+    queryKey: qk.functions,
     queryFn: listFunctions,
   });
   const canCreate = hasPermission("polls.polls.create");

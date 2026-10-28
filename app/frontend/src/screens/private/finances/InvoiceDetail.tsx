@@ -18,6 +18,7 @@ import {
   useMarkInvoicePaid,
   useSendInvoiceReminder,
 } from '@/screens/private/finances/useInvoiceActions'
+import { qk } from '@/data/keys'
 
 /* -- Invoice Detail ---------------------------- */
 export function InvoiceDetailScreen() {
@@ -28,7 +29,7 @@ export function InvoiceDetailScreen() {
   const markPaidMutation = useMarkInvoicePaid()
   const sendReminderMutation = useSendInvoiceReminder()
   const { data: fetchedInvoice } = useQuery({
-    queryKey: ['invoice', id],
+    queryKey: qk.invoices.one(id),
     queryFn: () => getInvoice(id!),
     enabled: !!id,
   })

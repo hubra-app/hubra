@@ -25,11 +25,11 @@ export function ApplicationsTab() {
   const canApprove = hasPermission('applications.applications.approve')
   const canDecline = hasPermission('applications.applications.decline')
   const { data: apps = [] } = useQuery({
-    queryKey: ['applications'],
+    queryKey: qk.applications,
     queryFn: () => listApplications(),
   })
   const { data: lookupsData } = useQuery({
-    queryKey: ['lookups'],
+    queryKey: qk.lookups,
     queryFn: () => getLookups(),
   })
   const allTiers = useMemo(
@@ -60,7 +60,7 @@ export function ApplicationsTab() {
       const tierId = tiersByName.get(approveTier)
       if (!tierId) throw new Error(`Unknown tier: ${approveTier}`)
       const { invited } = await approveApplication(approveTarget.id, tierId, approveRole)
-      queryClient.invalidateQueries({ queryKey: ['applications'] })
+      queryClient.invalidateQueries({ queryKey: qk.applications })
       setApproveTarget(null)
       if (invited) {
         // No account yet: they got an invite and join when they accept.
@@ -97,7 +97,7 @@ export function ApplicationsTab() {
   const decline = async (id: string, name: string) => {
     try {
       await declineApplication(id)
-      queryClient.invalidateQueries({ queryKey: ['applications'] })
+      queryClient.invalidateQueries({ queryKey: qk.applications })
       notify(
         'info',
         t('members.applications.applicationDeclined', 'Antrag abgelehnt'),
