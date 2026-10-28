@@ -30,8 +30,15 @@ _GLOBAL_ONLY_TABLES = frozenset(
         "plugin_trusted_keys",
         "email_verifications",
         "backup_record",
+        # The permission catalog: a club copy would hide it inside the club.
+        "permissions",
     }
 )
+
+
+def test_global_only_tables_are_not_cloned(db):
+    """A club copy of a public table hides the real one inside the club."""
+    assert not set(tables_to_clone()) & _GLOBAL_ONLY_TABLES
 
 
 def test_tables_to_clone_match_registered_models(db):
