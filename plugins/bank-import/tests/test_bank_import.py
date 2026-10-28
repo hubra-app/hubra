@@ -170,6 +170,22 @@ def test_payment_for_paid_invoice_is_flagged(client, db, auth_headers, invoices)
     resp = client.post("/api/v1/bank/camt054", data=_camt(_tx("120.00", ref_a, "T9")))
     assert resp.get_json()["summary"]["duplicate_payment"] == 1
 
+    # The money is in the bank: it waits for review and can be booked.
+    open_lines = [
+        p
+        for p in client.get("/api/v1/bank/payments?status=open").get_json()
+        if p["status"] == "duplicate_payment"
+    ]
+    assert len(open_lines) == 1
+    cat = TransactionCategory(name="Rückerstattungen")
+    db.session.add(cat)
+    db.session.commit()
+    resp = client.post(
+        f"/api/v1/bank/payments/{open_lines[0]['id']}/book",
+        json={"category_id": cat.id},
+    )
+    assert resp.status_code == 200, resp.get_json()
+
 
 def test_module_off(client, auth_headers, invoices):
     set_modules(False, "finance.bank")

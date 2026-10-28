@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.2
+
+- A second payment of an already paid invoice now waits in the review
+  queue, where it can be booked into a category, put on another invoice or
+  left out of the books. Before, it only showed in the import summary and
+  could not be booked at all.
+
 ## 1.1.1
 
 - camt files with a DOCTYPE are refused wherever it appears and in any
