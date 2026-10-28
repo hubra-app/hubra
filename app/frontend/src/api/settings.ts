@@ -216,3 +216,23 @@ export async function listAuditLog(params?: {
     totalPages: data.totalPages,
   };
 }
+
+// ── Club profile (what every member sees of Settings > Verein) ───────────────
+
+export interface ClubProfile {
+  club_name: string | null;
+  club_description: string | null;
+  logo: string | null;
+  primary_color: string | null;
+  secondary_color: string | null;
+  accent_color: string | null;
+  timezone: string | null;
+  locale: string | null;
+  date_format: string | null;
+  /** The announcement banner text while it is switched on, else null. */
+  banner: string | null;
+}
+
+export async function getClubProfile(): Promise<ClubProfile> {
+  return apiFetch<ClubProfile>("/settings/club-profile");
+}

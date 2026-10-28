@@ -230,3 +230,37 @@ def test_membership_rules_persist_and_are_checked(tenant_ctx, client, auth_heade
         headers=auth_headers,
     )
     assert resp.status_code == 422
+
+
+def test_club_profile_for_members(tenant_ctx, client, auth_headers, db):
+    """Members read the club's name, look and active banner, not its rules."""
+    tenant_ctx.settings = {
+        "branding": {
+            "primary_color": "#123456",
+            "announcement_banner_text": "  GV am Freitag  ",
+            "announcement_banner_active": True,
+            "join_requests_open": False,
+        }
+    }
+    db.session.commit()
+    with patch("hubra.core.tenant.context.current_tenant", return_value=tenant_ctx):
+        body = client.get("/api/v1/settings/club-profile").get_json()
+    assert body["club_name"] == "Test Club"
+    assert body["primary_color"] == "#123456"
+    assert body["banner"] == "GV am Freitag"
+    assert "join_requests_open" not in body
+
+    tenant_ctx.settings = {
+        "branding": {
+            "announcement_banner_text": "Old news",
+            "announcement_banner_active": False,
+        }
+    }
+    db.session.commit()
+    with patch("hubra.core.tenant.context.current_tenant", return_value=tenant_ctx):
+        body = client.get("/api/v1/settings/club-profile").get_json()
+    assert body["banner"] is None
+
+
+def test_club_profile_needs_sign_in(client, db):
+    assert client.get("/api/v1/settings/club-profile").status_code == 401

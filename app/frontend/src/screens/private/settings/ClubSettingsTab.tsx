@@ -34,6 +34,7 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
     try {
       await updateClubSettings(form)
       queryClient.invalidateQueries({ queryKey: ['club-settings'] })
+      queryClient.invalidateQueries({ queryKey: ['club-profile'] })
     } finally {
       setSaving(false)
     }

@@ -1880,6 +1880,7 @@
   "shell.emailVerify.sending": "Sending…",
   "shell.goToDashboard": "Go to dashboard",
   "shell.impersonation.actingAs": "Acting in club {{club}}",
+  "shell.clubBanner.dismiss": "Hide banner",
   "shell.impersonation.badge": "Impersonating",
   "shell.impersonation.reason": "Reason: {{reason}}",
   "shell.impersonation.remaining": "{{min}} min remaining",
