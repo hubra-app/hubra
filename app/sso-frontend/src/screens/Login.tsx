@@ -11,9 +11,7 @@ import {
   Title,
   Anchor,
   Divider,
-  Paper,
   Box,
-  Center,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zodResolver } from 'mantine-form-zod-resolver'
@@ -23,23 +21,28 @@ import { useNavigate } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import { getRememberedEmail } from '@hubra/api-client'
 import * as authApi from '@/api/auth'
+import { AuthFrame } from '@/components/AuthFrame'
+import { tr, useLang } from '@/lang'
 
-const schema = z.object({
-  email: z.string().email('Invalid email'),
-  password: z.string().min(1, 'Password is required'),
-  keepSignedIn: z.boolean(),
-})
+// Built per render so the messages follow the chosen language.
+const makeSchema = () =>
+  z.object({
+    email: z.string().email(tr('Ungültige E-Mail-Adresse', 'Invalid email')),
+    password: z.string().min(1, tr('Bitte gib dein Passwort ein', 'Password is required')),
+    keepSignedIn: z.boolean(),
+  })
 
-type FormValues = z.infer<typeof schema>
+type FormValues = z.infer<ReturnType<typeof makeSchema>>
 
 export function LoginScreen() {
   const { notify, redirectTarget, urls, continueSignedIn } = useSso()
+  const { tr } = useLang()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const form = useForm<FormValues>({
-    validate: zodResolver(schema),
+    validate: (values) => zodResolver(makeSchema())(values),
     initialValues: {
       email: getRememberedEmail(),
       password: '',
@@ -60,157 +63,92 @@ export function LoginScreen() {
       )
       continueSignedIn()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Login failed'
+      const msg = err instanceof Error ? err.message : tr('Anmeldung fehlgeschlagen', 'Login failed')
       setError(msg)
-      notify('error', 'Login', msg)
+      notify('error', tr('Anmelden', 'Sign in'), msg)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="graph-bg" style={{ minHeight: '100vh', display: 'flex' }}>
-      <Center flex={1} p={32}>
-        <Box style={{ width: '100%', maxWidth: 380 }}>
-          <Group gap={10} mb={32}>
-            <div className="logo-mark" />
-            <Box>
-              <Text fz={20} className="wordmark">
-                hubra
+    <AuthFrame>
+      <Title order={1} fz={30} mb={6}>
+        {tr('Willkommen zurück', 'Welcome back')}
+      </Title>
+      <Text c="dimmed" mb={28}>
+        {tr('Melde dich mit deinem Hubra-Konto an.', 'Sign in to your Hubra account.')}
+      </Text>
+
+      {error && (
+        <Alert color="red" variant="light" mb="md">
+          {error}
+        </Alert>
+      )}
+
+      <form onSubmit={form.onSubmit(handleLogin)}>
+        <Stack gap="md">
+          <TextInput
+            label={tr('E-Mail', 'Email')}
+            type="email"
+            autoComplete="email"
+            size="md"
+            {...form.getInputProps('email')}
+          />
+
+          <Box>
+            <Group justify="space-between" mb={4}>
+              <Text component="label" htmlFor="login-password" size="sm" fw={600}>
+                {tr('Passwort', 'Password')}
               </Text>
-              <Text
-                fz="xs"
-                c="#6131c4"
-                ff="'JetBrains Mono', monospace"
-                style={{ letterSpacing: '0.06em' }}
-              >
-                Club management
-              </Text>
-            </Box>
-          </Group>
-
-          <Title order={2} mb={6}>
-            Welcome back
-          </Title>
-          <Text size="sm" c="dimmed" mb={28}>
-            Sign in to your Hubra account
-          </Text>
-
-          {error && (
-            <Alert color="red" variant="light" mb="md">
-              {error}
-            </Alert>
-          )}
-
-          <Stack gap="md">
-            <form onSubmit={form.onSubmit(handleLogin)}>
-              <Stack gap="md">
-                <TextInput label="Email" type="email" {...form.getInputProps('email')} />
-
-                <Box>
-                  <Group justify="space-between" mb={6}>
-                    <Text component="label" size="sm" fw={600} c="dimmed">
-                      Password
-                    </Text>
-                    <Anchor
-                      size="sm"
-                      c="#6131c4"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        navigate('/forgot-password')
-                      }}
-                    >
-                      Forgot password?
-                    </Anchor>
-                  </Group>
-                  <PasswordInput {...form.getInputProps('password')} />
-                </Box>
-
-                <Checkbox
-                  label="Keep me signed in"
-                  {...form.getInputProps('keepSignedIn', { type: 'checkbox' })}
-                />
-
-                <Button type="submit" size="sm" fullWidth loading={loading} mt={4}>
-                  {loading ? 'Signing in…' : 'Sign in'}
-                </Button>
-              </Stack>
-            </form>
-
-            <Divider label="or" labelPosition="center" c="dimmed" />
-
-            <Stack gap="sm">
-              <Button variant="default" size="sm" fullWidth onClick={() => navigate('/signup')}>
-                Create account
-              </Button>
-
-              <Button
-                variant="subtle"
+              <Anchor
                 size="sm"
-                fullWidth
-                leftSection={<IconShield size={16} color="#2596be" />}
-                onClick={() => {
-                  window.location.assign(redirectTarget ?? urls.cos)
+                fw={600}
+                onClick={(e) => {
+                  e.preventDefault()
+                  navigate('/forgot-password')
                 }}
               >
-                Continue as guest
-              </Button>
-            </Stack>
-          </Stack>
-        </Box>
-      </Center>
+                {tr('Passwort vergessen?', 'Forgot password?')}
+              </Anchor>
+            </Group>
+            <PasswordInput
+              id="login-password"
+              autoComplete="current-password"
+              size="md"
+              {...form.getInputProps('password')}
+            />
+          </Box>
 
-      <Box
-        className="mantine-visible-from-sm"
-        style={{ width: '46%', position: 'relative', display: 'flex', alignItems: 'stretch' }}
-      >
-        <div className="blueprint-plate" style={{ flex: 1, margin: 24 }}>
-          <div className="blueprint-label">SCHNITT Nr. 001 · MASSSTAB 1:1</div>
-          <Text
-            fz="xs"
-            c="dimmed"
-            ff="'JetBrains Mono', monospace"
-            mb={20}
-            style={{ alignSelf: 'flex-end' }}
-          >
-            v2.4 · Spaces
-          </Text>
-          <blockquote
-            style={{
-              margin: 0,
-              fontSize: 'var(--mantine-font-size-lg)',
-              lineHeight: 1.6,
-              color: '#2e2940',
-              maxWidth: 340,
-            }}
-          >
-            "The space where we manage our <span className="hi">members, dues, tools</span> and{' '}
-            <span className="hi">mailing list</span> — all in one place."
-          </blockquote>
-          <Group gap={12} mt={32} wrap="wrap">
-            {[
-              { label: 'Members', value: '342' },
-              { label: 'Groups', value: '7' },
-              { label: 'Uptime', value: '98%' },
-            ].map((chip) => (
-              <Paper
-                key={chip.label}
-                withBorder
-                radius="md"
-                p="sm"
-                style={{ background: 'rgba(255,255,255,.7)' }}
-              >
-                <Text className="num" fz="lg" fw={700}>
-                  {chip.value}
-                </Text>
-                <Text fz="xs" c="dimmed">
-                  {chip.label}
-                </Text>
-              </Paper>
-            ))}
-          </Group>
-        </div>
-      </Box>
-    </div>
+          <Checkbox
+            label={tr('Angemeldet bleiben', 'Keep me signed in')}
+            {...form.getInputProps('keepSignedIn', { type: 'checkbox' })}
+          />
+
+          <Button type="submit" size="md" fullWidth loading={loading} mt={4}>
+            {tr('Anmelden', 'Sign in')}
+          </Button>
+        </Stack>
+      </form>
+
+      <Divider label={tr('oder', 'or')} labelPosition="center" my="lg" />
+
+      <Stack gap="xs">
+        <Button variant="default" size="md" fullWidth onClick={() => navigate('/signup')}>
+          {tr('Konto erstellen', 'Create account')}
+        </Button>
+        <Button
+          variant="subtle"
+          color="gray"
+          fullWidth
+          leftSection={<IconShield size={16} />}
+          onClick={() => {
+            window.location.assign(redirectTarget ?? urls.cos)
+          }}
+        >
+          {tr('Als Gast weiter', 'Continue as guest')}
+        </Button>
+      </Stack>
+    </AuthFrame>
   )
 }

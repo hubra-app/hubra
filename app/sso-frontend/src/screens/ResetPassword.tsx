@@ -1,37 +1,42 @@
 import { useState } from 'react'
-import { PasswordInput, Button, Alert, Text } from '@mantine/core'
+import { PasswordInput, Button, Alert, Stack, Text, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zodResolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
-import { IconArrowLeft, IconCheck, IconKey } from '@tabler/icons-react'
+import { IconArrowLeft, IconCheck, IconKey, IconLinkOff } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import * as authApi from '@/api/auth'
+import { AuthFrame, AuthIcon } from '@/components/AuthFrame'
+import { tr, useLang } from '@/lang'
 
-const schema = z
-  .object({
-    password: z.string().min(8, 'Password must be at least 8 characters'),
-    confirm: z.string(),
-  })
-  .refine((d) => d.password === d.confirm, {
-    message: 'Passwords do not match',
-    path: ['confirm'],
-  })
+const makeSchema = () =>
+  z
+    .object({
+      password: z
+        .string()
+        .min(8, tr('Das Passwort braucht mindestens 8 Zeichen', 'Password must be at least 8 characters')),
+      confirm: z.string(),
+    })
+    .refine((d) => d.password === d.confirm, {
+      message: tr('Die Passwörter stimmen nicht überein', 'Passwords do not match'),
+      path: ['confirm'],
+    })
 
-type FormValues = z.infer<typeof schema>
+type FormValues = z.infer<ReturnType<typeof makeSchema>>
 
 export function ResetPassword() {
   const navigate = useNavigate()
+  const { tr } = useLang()
   const hashParams = new URLSearchParams(
     typeof window !== 'undefined' ? window.location.hash.replace(/^#/, '') : '',
   )
   const token = hashParams.get('token') ?? ''
-
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
 
   const form = useForm<FormValues>({
-    validate: zodResolver(schema),
+    validate: (values) => zodResolver(makeSchema())(values),
     initialValues: { password: '', confirm: '' },
   })
 
@@ -42,113 +47,99 @@ export function ResetPassword() {
       await authApi.resetPassword(token, values.password)
       setDone(true)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Invalid or expired token.')
+      setError(
+        err instanceof Error
+          ? err.message
+          : tr('Der Link ist ungültig oder abgelaufen.', 'Invalid or expired token.'),
+      )
     } finally {
       setLoading(false)
     }
   }
 
-  if (!token) {
+  if (!token)
     return (
-      <div className="graph-bg" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-        <div style={{ maxWidth: 380, textAlign: 'center' }}>
-          <p style={{ color: '#b91c1c', fontSize: 'var(--mantine-font-size-sm)', marginBottom: 20 }}>
-            Invalid or missing reset token.
-          </p>
-          <Button variant="subtle" style={{ gap: 8 }} onClick={() => navigate('/forgot-password')}>
-            <IconArrowLeft size={16} /> Request a new link
-          </Button>
-        </div>
-      </div>
+      <AuthFrame>
+        <AuthIcon tone="red">
+          <IconLinkOff size={24} color="#b91c1c" />
+        </AuthIcon>
+        <Title order={1} fz={30} mb={8}>
+          {tr('Link ungültig', 'Link not valid')}
+        </Title>
+        <Text c="dimmed" mb={28}>
+          {tr(
+            'Dieser Link ist unvollständig oder abgelaufen. Fordere einfach einen neuen an.',
+            'This link is incomplete or has expired. Just request a new one.',
+          )}
+        </Text>
+        <Button size="md" fullWidth onClick={() => navigate('/forgot-password')}>
+          {tr('Neuen Link anfordern', 'Request a new link')}
+        </Button>
+      </AuthFrame>
     )
-  }
+
+  if (done)
+    return (
+      <AuthFrame>
+        <AuthIcon tone="green">
+          <IconCheck size={26} color="#1f9d57" />
+        </AuthIcon>
+        <Title order={1} fz={30} mb={8}>
+          {tr('Passwort geändert', 'Password updated')}
+        </Title>
+        <Text c="dimmed" mb={28}>
+          {tr('Du kannst dich jetzt mit dem neuen Passwort anmelden.', 'You can now sign in with your new password.')}
+        </Text>
+        <Button size="md" fullWidth onClick={() => navigate('/login')}>
+          {tr('Zur Anmeldung', 'Go to sign in')}
+        </Button>
+      </AuthFrame>
+    )
 
   return (
-    <div className="graph-bg" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-      <div style={{ width: '100%', maxWidth: 380 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
-          <div className="logo-mark" />
-          <div>
-            <div className="wordmark" style={{ fontSize: 20, color: '#1a1625' }}>hubra</div>
-            <div style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#6131c4', fontFamily: '"JetBrains Mono"', letterSpacing: '0.06em' }}>
-              Club management
-            </div>
-          </div>
-        </div>
-
-        {!done ? (
-          <>
-            <div
-              style={{
-                width: 48, height: 48, borderRadius: '50%', background: '#f5f1ff',
-                border: '1.5px solid #7441e055', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', marginBottom: 20,
-              }}
-            >
-              <IconKey size={22} color="#6131c4" />
-            </div>
-            <h2 style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 700, color: '#1a1625', margin: '0 0 6px' }}>
-              Set a new password
-            </h2>
-            <p style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#5e5873', margin: '0 0 28px' }}>
-              Choose a strong password for your account.
-            </p>
-
-            {error && <Alert color="red" variant="light" mb={16}>{error}</Alert>}
-
-            <form onSubmit={form.onSubmit(handleReset)}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div>
-                  <Text component="label" size="sm" fw={600} c="dimmed">New password</Text>
-                  <PasswordInput
-                    {...form.getInputProps('password')}
-                    autoFocus
-                  />
-                </div>
-                <div>
-                  <Text component="label" size="sm" fw={600} c="dimmed">Confirm password</Text>
-                  <PasswordInput
-                    {...form.getInputProps('confirm')}
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  variant="filled"
-                  style={{ height: 44, fontSize: 'var(--mantine-font-size-md)' }}
-                  loading={loading}
-                  disabled={loading}
-                >
-                  {loading ? 'Updating…' : 'Set new password'}
-                </Button>
-              </div>
-            </form>
-          </>
-        ) : (
-          <div style={{ textAlign: 'center' }}>
-            <div
-              style={{
-                width: 56, height: 56, borderRadius: '50%', background: 'rgba(31,157,87,.12)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px',
-              }}
-            >
-              <IconCheck size={28} color="#1f9d57" />
-            </div>
-            <h2 style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 700, color: '#1a1625', margin: '0 0 8px' }}>
-              Password updated
-            </h2>
-            <p style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#5e5873', margin: '0 0 28px' }}>
-              You can now sign in with your new password.
-            </p>
-            <Button
-              variant="filled"
-              style={{ height: 44, fontSize: 'var(--mantine-font-size-md)', width: '100%' }}
-              onClick={() => navigate('/login')}
-            >
-              Sign in →
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
+    <AuthFrame>
+      <AuthIcon>
+        <IconKey size={24} color="#6131c4" />
+      </AuthIcon>
+      <Title order={1} fz={30} mb={6}>
+        {tr('Neues Passwort setzen', 'Set a new password')}
+      </Title>
+      <Text c="dimmed" mb={28}>
+        {tr('Wähle ein sicheres Passwort für dein Konto.', 'Choose a strong password for your account.')}
+      </Text>
+      {error && (
+        <Alert color="red" variant="light" mb="md">
+          {error}
+        </Alert>
+      )}
+      <form onSubmit={form.onSubmit(handleReset)}>
+        <Stack gap="md">
+          <PasswordInput
+            label={tr('Neues Passwort', 'New password')}
+            autoComplete="new-password"
+            size="md"
+            autoFocus
+            {...form.getInputProps('password')}
+          />
+          <PasswordInput
+            label={tr('Passwort wiederholen', 'Confirm password')}
+            autoComplete="new-password"
+            size="md"
+            {...form.getInputProps('confirm')}
+          />
+          <Button type="submit" size="md" fullWidth loading={loading}>
+            {tr('Passwort speichern', 'Set new password')}
+          </Button>
+          <Button
+            variant="subtle"
+            fullWidth
+            leftSection={<IconArrowLeft size={16} />}
+            onClick={() => navigate('/login')}
+          >
+            {tr('Zurück zur Anmeldung', 'Back to sign in')}
+          </Button>
+        </Stack>
+      </form>
+    </AuthFrame>
   )
 }
