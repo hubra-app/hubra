@@ -5,7 +5,7 @@ Public-schema table only, so the revision is safe to run again per club
 every key falls back to its env default until a platform manager sets it.
 
 Revision ID: 3a7c1e9d5b20
-Revises: 202ee240e1d8
+Revises: 3e7a9c1d5b20
 Create Date: 2026-10-28 13:30:00.000000
 
 """
@@ -16,7 +16,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "3a7c1e9d5b20"
-down_revision = "202ee240e1d8"
+down_revision = "3e7a9c1d5b20"
 branch_labels = None
 depends_on = None
 
