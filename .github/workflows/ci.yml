@@ -84,7 +84,7 @@ jobs:
           ./kubeconform -strict -summary -kubernetes-version 1.31.0 \
             -schema-location default \
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
-            /tmp/app.yaml /tmp/single-club.yaml /tmp/vollbuild-ch.yaml /tmp/k8s.yaml deploy/infrastructure deploy/flux
+            /tmp/app.yaml /tmp/single-club.yaml /tmp/vollbuild-ch.yaml /tmp/contabo.yaml /tmp/k8s.yaml
       - name: Shell scripts
         run: shellcheck deploy/create-secrets.sh scripts/init-env.sh scripts/smoke-test.sh app/deploy/nginx/40-hubra-runtime.sh
 

@@ -1,0 +1,41 @@
+# Pushes main and the v* tags to the GitLab project, where .gitlab-ci.yml
+# runs the checks and builds releases (docs/gitlab.md). Does nothing until
+# the repository variable GITLAB_MIRROR_URL is set.
+#
+#   vars.GITLAB_MIRROR_URL       gitlab.com/<group>/<project>.git (no https://)
+#   secrets.GITLAB_MIRROR_TOKEN  GitLab project access token, role Maintainer,
+#                                scope write_repository
+name: Mirror to GitLab
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mirror-gitlab
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    if: vars.GITLAB_MIRROR_URL != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Push to GitLab
+        env:
+          GITLAB_MIRROR_URL: ${{ vars.GITLAB_MIRROR_URL }}
+          GITLAB_MIRROR_TOKEN: ${{ secrets.GITLAB_MIRROR_TOKEN }}
+        run: |
+          git remote add gitlab "https://oauth2:${GITLAB_MIRROR_TOKEN}@${GITLAB_MIRROR_URL}"
+          # main first, so a new tag's commit is already there.
+          git push gitlab "refs/remotes/origin/main:refs/heads/main"
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            git push gitlab "refs/tags/${GITHUB_REF_NAME}"
+          fi

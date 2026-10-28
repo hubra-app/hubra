@@ -1,0 +1,191 @@
+# GitLab CI: checks, release images and GitLab Releases.
+#
+# GitHub (hubra-app/hubra) is where the code lives; .github/workflows/mirror-gitlab.yml
+# pushes main and the tags to the GitLab project, which runs this file:
+#
+#   main, merge requests   checks (the same as .github/workflows/ci.yml)
+#   tag v1.2.3             checks, then a GitLab Release with the changelog and
+#                          the GHCR images of that version pinned by digest
+#
+# The images themselves come from GitHub (.github/workflows/images.yml, which
+# pushes ghcr.io/hubra-app/hubra/<image>:1.2.3 for the same tag). Setup and CI
+# variables: docs/gitlab.md.
+
+workflow:
+  auto_cancel:
+    on_new_commit: interruptible
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/
+    # GitHub already ran the same checks; set HUBRA_SKIP_MAIN_CHECKS=true to
+    # save CI minutes on main.
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $HUBRA_SKIP_MAIN_CHECKS != "true"
+    - if: $CI_PIPELINE_SOURCE == "web"
+
+stages:
+  - check
+  - release
+
+default:
+  interruptible: true
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  npm_config_cache: "$CI_PROJECT_DIR/.cache/npm"
+
+.release:
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/
+
+# ── Checks ──────────────────────────────────────────────────────────────────
+
+backend:
+  stage: check
+  image: python:3.13-slim-bookworm
+  cache:
+    key:
+      files: [app/backend/requirements.lock]
+    paths: [.cache/pip]
+  script:
+    - cd app/backend
+    - pip install --no-deps -r requirements.lock
+    - pip install pytest pytest-flask ruff==0.15.17
+    - ruff check .
+    # Tests run on in-memory SQLite (TestingConfig); no services needed.
+    - pytest -q
+
+frontends:
+  stage: check
+  image: node:22-bookworm-slim
+  parallel:
+    matrix:
+      - APP: [frontend, admin-frontend, sso-frontend]
+  cache:
+    key: npm-$APP
+    paths: [.cache/npm]
+  script:
+    - cd "app/$APP"
+    - npm ci
+    - npm run lint
+    - npm run build
+    - |
+      if [ "$APP" = frontend ]; then
+        npm run typecheck:plugins
+        npm run build:plugin
+      fi
+
+compose:
+  stage: check
+  image: docker:27.5.1-cli
+  script:
+    - scripts/init-env.sh
+    - docker compose config -q
+    - docker compose -f docker-compose.yml -f docker-compose.traefik.yml config -q
+    - docker compose -f docker-compose.yml -f modules/mail/docker-compose.mail.yml config -q
+
+kubernetes:
+  stage: check
+  image:
+    name: alpine/k8s:1.31.4
+    entrypoint: [""]
+  script:
+    - |
+      set -e
+      out=/tmp/rendered
+      mkdir -p "$out"
+      # Every overlay under deploy/ and the mail stack.
+      for kfile in deploy/*/kustomization.yaml deploy/*/*/kustomization.yaml modules/mail/k8s/kustomization.yaml; do
+        [ -f "$kfile" ] || continue
+        dir="$(dirname "$kfile")"
+        echo "kustomize $dir"
+        kubectl kustomize --load-restrictor LoadRestrictionsNone "$dir" > "$out/$(echo "$dir" | tr / _).yaml"
+      done
+      # Plain manifests, where the repo still has them.
+      extra=""
+      for dir in deploy/infrastructure deploy/flux; do
+        [ -d "$dir" ] && extra="$extra $dir"
+      done
+      # shellcheck disable=SC2086
+      kubeconform -strict -summary -kubernetes-version 1.31.0 \
+        -schema-location default \
+        -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+        "$out" $extra
+
+shellcheck:
+  stage: check
+  image: koalaman/shellcheck-alpine:v0.10.0
+  script:
+    - shellcheck deploy/create-secrets.sh scripts/init-env.sh scripts/changelog.sh app/deploy/nginx/40-hubra-runtime.sh
+
+# ── GitLab Release (tags only) ──────────────────────────────────────────────
+
+release-notes:
+  stage: release
+  extends: .release
+  image: alpine:3.20
+  variables:
+    GIT_DEPTH: 0 # the changelog needs the previous tag
+    GHCR_REPOSITORY: ghcr.io/hubra-app/hubra
+  script:
+    - apk add --no-cache git curl jq
+    - scripts/changelog.sh "$CI_COMMIT_TAG" > release-notes.md
+    - |
+      set -eu
+      version="${CI_COMMIT_TAG#v}"
+      registry="${GHCR_REPOSITORY%%/*}"
+      path="${GHCR_REPOSITORY#*/}"
+      accept="application/vnd.oci.image.index.v1+json,application/vnd.oci.image.manifest.v1+json,application/vnd.docker.distribution.manifest.list.v2+json,application/vnd.docker.distribution.manifest.v2+json"
+      # Digest of <image>:<version> on GHCR, empty while GitHub is still
+      # building it. GHCR_USER/GHCR_TOKEN (read:packages) for private images.
+      digest() {
+        auth=""
+        [ -n "${GHCR_TOKEN:-}" ] && auth="-u ${GHCR_USER}:${GHCR_TOKEN}"
+        # shellcheck disable=SC2086
+        token="$(curl -fsS $auth "https://$registry/token?scope=repository:$path/$1:pull" | jq -r .token)"
+        curl -fsSI -H "Authorization: Bearer $token" -H "Accept: $accept" \
+          "https://$registry/v2/$path/$1/manifests/$version" 2>/dev/null |
+          tr -d '\r' | sed -n 's/^[Dd]ocker-[Cc]ontent-[Dd]igest: //p'
+      }
+      {
+        echo
+        echo "## Images"
+        echo
+        echo "Built by GitHub Actions. Pinned by digest, for the images: block of an"
+        echo "overlay such as deploy/clusters/contabo:"
+        echo
+        echo '```yaml'
+        echo "images:"
+      } >> release-notes.md
+      # Wait for GitHub's images.yml to push this version (it starts on the
+      # same tag push), at most GHCR_WAIT_MINUTES.
+      deadline=$(( $(date +%s) + ${GHCR_WAIT_MINUTES:-30} * 60 ))
+      for image in backend frontend admin-frontend sso-frontend haraka zonemta cert-watcher; do
+        d="$(digest "$image" || true)"
+        while [ -z "$d" ] && [ "$(date +%s)" -lt "$deadline" ]; do
+          echo "waiting for $GHCR_REPOSITORY/$image:$version"
+          sleep 30
+          d="$(digest "$image" || true)"
+        done
+        [ -n "$d" ] || { echo "$GHCR_REPOSITORY/$image:$version not found on GHCR" >&2; exit 1; }
+        {
+          echo "  - name: $GHCR_REPOSITORY/$image"
+          echo "    newTag: \"$version\""
+          echo "    digest: $d"
+        } >> release-notes.md
+      done
+      echo '```' >> release-notes.md
+    - cat release-notes.md
+  artifacts:
+    paths: [release-notes.md]
+
+release:
+  stage: release
+  extends: .release
+  image: registry.gitlab.com/gitlab-org/release-cli:v0.24.0
+  needs: [release-notes]
+  script:
+    - echo "Releasing $CI_COMMIT_TAG"
+  release:
+    tag_name: $CI_COMMIT_TAG
+    name: Hubra $CI_COMMIT_TAG
+    description: release-notes.md

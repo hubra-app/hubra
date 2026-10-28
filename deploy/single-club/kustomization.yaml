@@ -1,6 +1,6 @@
 # Single-club install on k3s: deploy/app without the manager and SSO portals,
-# on one host name (docs/single-club.md). Point Flux at it instead of
-# deploy/app (deploy/flux/app.yaml: path: ./deploy/single-club). By hand:
+# on one host name (docs/single-club.md). Deploy it instead of deploy/app.
+# By hand:
 #   kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/single-club | kubectl apply -f -
 #
 # Before the first start, set in .env and re-run deploy/create-secrets.sh:
