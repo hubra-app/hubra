@@ -269,7 +269,7 @@ export function MemberEditModal({
           <Select
             data={STATIC_STATUS.map((s) => ({
               value: s,
-              label: s.charAt(0).toUpperCase() + s.slice(1),
+              label: t(`status.${s}`),
             }))}
             {...form.getInputProps('status')}
           />
@@ -338,7 +338,6 @@ export function MemberEditModal({
           <Textarea
             rows={3}
             {...form.getInputProps('notes')}
-            placeholder="Admin notes about this member\u2026"
           />
         </Field>
       </div>
