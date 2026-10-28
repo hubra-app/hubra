@@ -496,14 +496,21 @@ class InvoiceService:
             if field in data:
                 setattr(invoice, field, data[field])
 
-        if (
-            "status" in data
-            and data["status"] == "Paid"
-            and invoice.transaction_id is not None
-        ):
-            linked_tx = db.session.get(Transaction, invoice.transaction_id)
-            if linked_tx is not None:
+        linked_tx = (
+            db.session.get(Transaction, invoice.transaction_id)
+            if invoice.transaction_id is not None
+            else None
+        )
+        if linked_tx is not None:
+            # The linked income follows the invoice: paid → completed, and
+            # back to pending when a payment is taken back. Its amount
+            # follows while the money is still expected.
+            if invoice.status == "Paid":
                 linked_tx.status = "Completed"
+            elif was_paid:
+                linked_tx.status = "Pending"
+            if "amount" in data and linked_tx.status == "Pending":
+                linked_tx.amount = abs(Decimal(str(invoice.amount)))
 
         if invoice.status == "Paid" and not was_paid and invoice.member_id:
             from hubra.core.modules import emit
