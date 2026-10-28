@@ -689,10 +689,12 @@ class MailService:
 
     @staticmethod
     def send_test(from_addr: str, to_addr: str, subject: str) -> dict:
-        """Send a test email via configured SMTP."""
-        ss = SettingService
-        smtp_host = ss.get("mail.smtp_host") or ""
-        smtp_port = int(ss.get("mail.smtp_port") or 587)
+        """Send a test email through the platform relay."""
+        from hubra.core.services import platform_settings
+
+        relay = platform_settings.relay()
+        smtp_host = relay.host
+        smtp_port = relay.port
 
         if not smtp_host:
             raise_error(503, "SERVICE_UNAVAILABLE", "SMTP not configured")
@@ -715,6 +717,8 @@ class MailService:
                 if smtp_port != 25:
                     server.starttls()
                     server.ehlo()
+                if relay.user and relay.password:
+                    server.login(relay.user, relay.password)
                 server.sendmail(from_addr, [to_addr], msg.as_string())
         except Exception as exc:
             raise_error(502, "INTERNAL_ERROR", f"SMTP error: {exc}")

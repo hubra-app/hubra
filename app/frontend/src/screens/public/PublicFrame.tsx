@@ -1,16 +1,22 @@
 import type { ReactNode } from 'react'
 import { Box, Group, Stack, Text, Title } from '@mantine/core'
-import { useInstance } from '@/context/InstanceContext'
 import { useT } from '@/locales/i18n'
 
 /**
- * Signed-out pages: the form on the left, the Hubra brand panel on the right
- * (hidden on phones). The same layout as the SSO portal.
+ * Public club pages (the membership application): the form on the left, the
+ * Hubra brand panel on the right (hidden on phones). The same layout as the
+ * SSO portal, where sign-in lives.
  */
-export function AuthFrame({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
-  const { info } = useInstance()
+export function PublicFrame({
+  children,
+  wide = false,
+  clubName,
+}: {
+  children: ReactNode
+  wide?: boolean
+  clubName?: string
+}) {
   const { t } = useT()
-  const clubName = info.club?.name
 
   return (
     <div className="auth-layout">

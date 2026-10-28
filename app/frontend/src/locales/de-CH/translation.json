@@ -192,7 +192,21 @@
     "view": "Ansehen",
     "voted": "Abgestimmt",
     "votes": "{{count}} Stimmen",
-    "avatarColor": "Avatarfarbe"
+    "avatarColor": "Avatarfarbe",
+    "club": {
+      "forwardingOn": "Weiterleitung eingeschaltet.",
+      "forwardingOff": "Weiterleitung ausgeschaltet.",
+      "forwardingFailed": "Die Weiterleitung konnte nicht geändert werden.",
+      "manageAccount": "Konto verwalten",
+      "accountHint": "Name, E-Mail, Passwort, Sprache und Sitzungen gelten für alle deine Vereine und werden in deinem Hubra-Konto geändert.",
+      "mailTitle": "Vereins-Mail",
+      "addressHint": "Vom Verein vergeben. Für eine Änderung wende dich an die Vereinsleitung.",
+      "forward": "An meine private Adresse weiterleiten",
+      "verifyFirst": "Bestätige zuerst deine private Adresse.",
+      "verifyNow": "Jetzt bestätigen",
+      "forwardHint": "Eingehende Vereins-Mails gehen als Kopie an deine private Adresse.",
+      "tab": "Im Verein"
+    }
   },
   "app": {
     "backend": {

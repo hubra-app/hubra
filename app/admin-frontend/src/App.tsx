@@ -8,6 +8,8 @@ import { Shell } from '@/components/Shell'
 import { AdminPortal } from '@/screens/AdminPortal'
 import { MyTenantsTab } from '@/screens/MyTenantsTab'
 import { TenantDetail } from '@/screens/TenantDetail'
+import { MailRelay } from '@/screens/platform/MailRelay'
+import { ClubAdmins } from '@/screens/ClubAdmins'
 import { SSO_URL } from '@hubra/api-client'
 import { useLang } from '@/lang'
 
@@ -189,6 +191,26 @@ function AppRoutes() {
             <RequireGlobalPermission perm="plugins.manage">
               <Shell>
                 <AdminPortal />
+              </Shell>
+            </RequireGlobalPermission>
+          }
+        />
+        <Route
+          path="/app/clubs/:id/admins"
+          element={
+            <RequireAuth>
+              <Shell>
+                <ClubAdmins />
+              </Shell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/app/platform/mail"
+          element={
+            <RequireGlobalPermission perm="platform.settings">
+              <Shell>
+                <MailRelay />
               </Shell>
             </RequireGlobalPermission>
           }

@@ -21,6 +21,7 @@ import {
   IconHome,
   IconKey,
   IconLogout,
+  IconMail,
   IconPuzzle,
   IconSearch,
   IconShieldCheck,
@@ -169,6 +170,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const platformItems: NavItem[] = [
     ...(hasGlobalPermission('tenants.read')
       ? [{ path: '/app/tenants', label: tr('Alle Vereine', 'All clubs'), icon: <IconBuildingCommunity size={20} /> }]
+      : []),
+    ...(hasGlobalPermission('platform.settings')
+      ? [{ path: '/app/platform/mail', label: tr('Mail-Relay', 'Mail relay'), icon: <IconMail size={20} /> }]
       : []),
     ...(hasGlobalPermission('plugins.manage')
       ? [{ path: '/app/plugins', label: tr('Plugin-Katalog', 'Plugin catalogue'), icon: <IconPuzzle size={20} /> }]

@@ -17,7 +17,6 @@ from hubra.core.extensions import db
 from hubra.core.models.audit import AuditEntry
 from hubra.core.models.finance import Invoice
 from hubra.core.models.member import Member
-from hubra.core.models.email_verification import EmailVerificationToken
 from hubra.core.models.password_reset import PasswordResetToken
 from hubra.core.models.token import TokenBlocklist
 from hubra.core.models.user import User
@@ -468,7 +467,8 @@ class AuthService:
         scanning tenant schemas for a Member with matching user_id when
         UserTenant records are missing.
 
-        Returns list of {tenant_id, tenant_slug, tenant_name, member_id}.
+        Returns list of {tenant_id, tenant_slug, tenant_name, member_id}, plus
+        ``admin_level`` ('owner', 'admin' or None) from user_tenants.
         """
         from hubra.core.models.tenant import Tenant
         from hubra.core.tenant.context import set_search_path, reset_search_path
@@ -485,9 +485,18 @@ class AuthService:
                 if tenant is None:
                     continue
                 set_search_path(tenant.id)
-                member_id = db.session.scalar(
-                    select(Member.id).where(Member.user_id == user_id)
+                member = db.session.scalar(
+                    select(Member).where(Member.user_id == user_id)
                 )
+                roles = member.roles if member is not None else []
+                admin_level = (
+                    "owner"
+                    if any(r.is_owner for r in roles)
+                    else "admin"
+                    if any(r.is_admin for r in roles)
+                    else None
+                )
+                member_id = member.id if member is not None else None
                 reset_search_path()
                 result.append(
                     {
@@ -495,6 +504,7 @@ class AuthService:
                         "tenant_slug": tenant.slug,
                         "tenant_name": tenant.name,
                         "member_id": member_id,
+                        "admin_level": admin_level,
                     }
                 )
             return result
@@ -957,48 +967,3 @@ class AccountService:
             )
 
         return changed
-
-    @staticmethod
-    def create_email_verification_token(member: Member) -> str:
-        """Create an email verification token. Returns the raw token."""
-        existing = db.session.scalars(
-            select(EmailVerificationToken)
-            .where(EmailVerificationToken.user_id == member.user_id)
-            .where(EmailVerificationToken.used.is_(False))
-        ).all()
-        for t in existing:
-            t.used = True
-
-        raw_token = secrets.token_urlsafe(32)
-        token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-        expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
-
-        db.session.add(
-            EmailVerificationToken(
-                user_id=member.user_id,
-                token_hash=token_hash,
-                expires_at=expires_at,
-            )
-        )
-        return raw_token
-
-    @staticmethod
-    def verify_email(raw_token: str) -> Member:
-        """Verify an email verification token. Returns the member."""
-        token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-        evt = db.session.scalar(
-            select(EmailVerificationToken).where(
-                EmailVerificationToken.token_hash == token_hash
-            )
-        )
-
-        if evt is None or not evt.is_valid:
-            raise_error(
-                400, "INVALID_TOKEN", "Verification link is invalid or has expired"
-            )
-
-        member = db.session.scalar(select(Member).where(Member.user_id == evt.user_id))
-        assert member is not None, f"Member for user {evt.user_id} not found"
-        member.private_email_verified = True
-        evt.used = True
-        return member

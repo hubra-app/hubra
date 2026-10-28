@@ -192,7 +192,21 @@
     "view": "View",
     "voted": "Voted",
     "votes": "{{count}} votes",
-    "avatarColor": "Avatar color"
+    "avatarColor": "Avatar color",
+    "club": {
+      "forwardingOn": "Forwarding switched on.",
+      "forwardingOff": "Forwarding switched off.",
+      "forwardingFailed": "Forwarding could not be changed.",
+      "manageAccount": "Manage account",
+      "accountHint": "Name, email, password, language and sessions apply to all your clubs and are changed in your Hubra account.",
+      "mailTitle": "Club mail",
+      "addressHint": "Assigned by the club. Ask the club board to change it.",
+      "forward": "Forward to my private address",
+      "verifyFirst": "Confirm your private address first.",
+      "verifyNow": "Confirm now",
+      "forwardHint": "Incoming club mail is copied to your private address.",
+      "tab": "In the club"
+    }
   },
   "app": {
     "backend": {

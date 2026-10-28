@@ -1,4 +1,4 @@
-import { apiFetch, BASE } from '@hubra/api-client';
+import { apiFetch } from '@hubra/api-client';
 import type { Member } from "../types";
 
 interface RawMember {
@@ -120,22 +120,6 @@ export async function changePassword(
   });
 }
 
-export async function updateAccount(fields: {
-  first_name?: string;
-  last_name?: string;
-  email?: string;
-  avatar?: string;
-  avatar_color?: string;
-  profile_note?: string;
-  language?: string;
-}): Promise<Member> {
-  const raw = await apiFetch<RawMember>("/account/", {
-    method: "PATCH",
-    body: JSON.stringify(fields),
-  });
-  return adaptMember(raw);
-}
-
 export async function getMailSettings(): Promise<{
   forwarding_enabled: boolean;
   private_email_verified: boolean;
@@ -144,10 +128,6 @@ export async function getMailSettings(): Promise<{
     forwarding_enabled: boolean;
     private_email_verified: boolean;
   }>("/account/mail-settings");
-}
-
-export async function requestEmailVerification(): Promise<void> {
-  await apiFetch("/account/request-email-verification", { method: "POST" });
 }
 
 export async function updateMailSettings(
@@ -163,131 +143,4 @@ export async function getMyGroups(): Promise<{ id: string; name: string }[]> {
   const data =
     await apiFetch<{ id: string; name: string }[]>("/account/groups");
   return data;
-}
-
-export interface SessionInfo {
-  id: number;
-  deviceId: number;
-  deviceName: string | null;
-  browserFamily: string;
-  platform: string;
-  ipAddress: string;
-  userAgent: string;
-  createReason: string | null;
-  createdAt: string | null;
-  lastActiveAt: string | null;
-  revokedAt: string | null;
-  revokedReason: string | null;
-  current: boolean;
-}
-
-export async function getSessions(
-  includeRevoked = false,
-): Promise<SessionInfo[]> {
-  const query = includeRevoked ? "?include_revoked=1" : "";
-  return apiFetch<SessionInfo[]>(`/account/sessions${query}`);
-}
-
-export async function revokeSession(sessionId: number): Promise<void> {
-  await apiFetch(`/account/sessions/${sessionId}`, { method: "DELETE" });
-}
-
-export async function renameSession(
-  sessionId: number,
-  name: string | null,
-): Promise<SessionInfo> {
-  return apiFetch<SessionInfo>(`/account/sessions/${sessionId}`, {
-    method: "PATCH",
-    body: JSON.stringify({ name }),
-  });
-}
-
-export async function revokeAllSessions(
-  includeCurrent = false,
-): Promise<{ ok: boolean; revoked: number }> {
-  return apiFetch<{ ok: boolean; revoked: number }>(
-    "/account/sessions/revoke-all",
-    {
-      method: "POST",
-      body: JSON.stringify({ includeCurrent: includeCurrent }),
-    },
-  );
-}
-
-export interface DeviceInfo {
-  id: number;
-  name: string | null;
-  browserFamily: string;
-  platform: string;
-  userAgent: string;
-  fingerprint: string;
-  createdAt: string | null;
-  lastSeenAt: string | null;
-  activeSessionCount: number;
-  lastActiveAt: string | null;
-}
-
-export async function getDevices(): Promise<DeviceInfo[]> {
-  return apiFetch<DeviceInfo[]>("/account/devices");
-}
-
-export async function renameDevice(
-  deviceId: number,
-  name: string | null,
-): Promise<DeviceInfo> {
-  return apiFetch<DeviceInfo>(`/account/devices/${deviceId}`, {
-    method: "PATCH",
-    body: JSON.stringify({ name }),
-  });
-}
-
-export async function revokeDeviceSessions(
-  deviceId: number,
-): Promise<{ ok: boolean; revoked: number }> {
-  return apiFetch<{ ok: boolean; revoked: number }>(
-    `/account/devices/${deviceId}`,
-    { method: "DELETE" },
-  );
-}
-
-/* ── Signed-out pages (single-club installs sign in here, not on the SSO portal) ── */
-
-// Plain fetch, not apiFetch: a 401 for a wrong password must reach the form
-// instead of triggering the token refresh and the signed-out redirect.
-async function publicPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const message = data.message ?? data.error ?? `HTTP ${res.status}`;
-    throw Object.assign(new Error(message), { status: res.status, code: data.error });
-  }
-  return data as T;
-}
-
-export interface LoginResult {
-  mustChangePassword?: boolean;
-  tenant_slug?: string | null;
-  requiresTenantSelection?: boolean;
-  noTenant?: boolean;
-}
-
-export function login(email: string, password: string, keepSignedIn: boolean): Promise<LoginResult> {
-  return publicPost<LoginResult>("/auth/login", { email, password, keepSignedIn });
-}
-
-export async function forgotPassword(email: string): Promise<void> {
-  await publicPost("/auth/forgot-password", { email });
-}
-
-export async function resetPassword(token: string, password: string): Promise<void> {
-  await publicPost("/auth/reset-password", { token, password });
-}
-
-export async function verifyEmail(token: string): Promise<void> {
-  await publicPost("/account/verify-email", { token });
 }

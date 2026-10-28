@@ -10,7 +10,7 @@ Resolution for one module and one tenant:
    starts as the manifest default) applies.
 4. A module is only effectively on when all its dependencies are on.
 
-Without a tenant (single-club installs and the public schema) the catalog
+Without a tenant (the public schema) the catalog
 row itself is the switch.
 
 The resolved state is cached for the rest of the request and cleared by
@@ -205,7 +205,7 @@ def sync_catalog() -> int:
     """Upsert one ``Feature`` row per manifest.  Returns rows created.
 
     ``default_enabled`` is only written when the row is created, so a
-    single-club install that switched a module keeps its choice.
+    manager who changed a default keeps that choice.
     """
     from hubra.core.models.feature import Feature
 

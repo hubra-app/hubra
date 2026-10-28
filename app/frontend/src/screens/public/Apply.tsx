@@ -18,7 +18,7 @@ import { IconCheck, IconArrowLeft } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { submitApplication } from '@/api/applications'
 import { getLookups } from '@/api/lookups'
-import { AuthFrame } from './auth/AuthFrame'
+import { PublicFrame } from './PublicFrame'
 
 export function ApplyScreen() {
   const { t } = useT()
@@ -83,7 +83,7 @@ export function ApplyScreen() {
 
   if (done)
     return (
-      <AuthFrame>
+      <PublicFrame>
         <Stack align="center" ta="center" gap="xs">
           <ThemeIcon size={56} radius="xl" color="green" variant="light" mb="sm">
             <IconCheck size={28} />
@@ -107,11 +107,11 @@ export function ApplyScreen() {
             {t('common.backToLogin', 'Zurück zur Anmeldung')}
           </Button>
         </Stack>
-      </AuthFrame>
+      </PublicFrame>
     )
 
   return (
-    <AuthFrame wide>
+    <PublicFrame wide>
       <Title order={1} fz={28} mb={6}>
         {t('apply.applyForMembership', 'Mitgliedschaft beantragen')}
       </Title>
@@ -220,6 +220,6 @@ export function ApplyScreen() {
           </Button>
         </Stack>
       </form>
-    </AuthFrame>
+    </PublicFrame>
   )
 }

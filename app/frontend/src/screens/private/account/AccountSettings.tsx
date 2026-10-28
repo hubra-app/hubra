@@ -1,30 +1,15 @@
 import { Box, Button, Select, Stack, UnstyledButton } from '@mantine/core'
-import {
-  IconChevronDown,
-  IconUser,
-  IconShield,
-  IconBuildingBank,
-  IconGlobe,
-  IconDeviceDesktop,
-} from '@tabler/icons-react'
+import { IconChevronDown, IconUser, IconBuildingBank } from '@tabler/icons-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useNav } from '@/context/AppContext'
 import { PageHead } from '@/components/ui'
 import { useT } from '@/locales/i18n'
-import { AccountSettingsProfileTab } from './AccountSettingsProfileTab'
+import { AccountSettingsClubTab } from './AccountSettingsClubTab'
 import { AccountSettingsMembershipTab } from './AccountSettingsMembershipTab'
-import { AccountSettingsSecurityTab } from './AccountSettingsSecurityTab'
-import { AccountSettingsSessionsTab } from './AccountSettingsSessionsTab'
-import { AccountSettingsDevicesTab } from './AccountSettingsDevicesTab'
-import { AccountSettingsLanguageTab } from './AccountSettingsLanguageTab'
 
-type SettingsTab =
-  | 'profile'
-  | 'membership'
-  | 'security'
-  | 'sessions'
-  | 'devices'
-  | 'language'
+// Only what this club adds to the account; the account itself (profile,
+// email, password, language, sessions) is on the SSO portal.
+type SettingsTab = 'profile' | 'membership'
 
 const tabs: {
   id: SettingsTab
@@ -34,8 +19,8 @@ const tabs: {
 }[] = [
   {
     id: 'profile',
-    labelKey: 'account.profile.tab',
-    labelDefault: 'Profil',
+    labelKey: 'account.club.tab',
+    labelDefault: 'Im Verein',
     icon: <IconUser size={16} />,
   },
   {
@@ -44,30 +29,6 @@ const tabs: {
     labelDefault: 'Mitgliedschaft',
     icon: <IconBuildingBank size={16} />,
   },
-  {
-    id: 'security',
-    labelKey: 'account.securityTab',
-    labelDefault: 'Sicherheit',
-    icon: <IconShield size={16} />,
-  },
-  {
-    id: 'sessions',
-    labelKey: 'account.sessionsTab',
-    labelDefault: 'Sitzungen',
-    icon: <IconDeviceDesktop size={16} />,
-  },
-  {
-    id: 'devices',
-    labelKey: 'account.devicesTab',
-    labelDefault: 'Geräte',
-    icon: <IconDeviceDesktop size={16} />,
-  },
-  {
-    id: 'language',
-    labelKey: 'account.language.tab',
-    labelDefault: 'Sprache',
-    icon: <IconGlobe size={16} />,
-  },
 ]
 
 export function AccountSettingsScreen() {
@@ -75,9 +36,7 @@ export function AccountSettingsScreen() {
   const { go } = useNav()
   const location = useLocation()
   const navigate = useNavigate()
-  const tab = (location.pathname
-    .replace('/app/account/settings', '')
-    .replace('/', '') || 'profile') as SettingsTab
+  const tab: SettingsTab = location.pathname.endsWith('/membership') ? 'membership' : 'profile'
 
   return (
     <div>
@@ -123,11 +82,7 @@ export function AccountSettingsScreen() {
               <UnstyledButton
                 key={item.id}
                 onClick={() =>
-                  navigate(
-                    `/app/account/settings${
-                      item.id === 'profile' ? '' : '/' + item.id
-                    }`,
-                  )
+                  navigate(`/app/account/settings${item.id === 'profile' ? '' : '/' + item.id}`)
                 }
                 style={{
                   display: 'flex',
@@ -139,11 +94,8 @@ export function AccountSettingsScreen() {
                   fontSize: 'var(--mantine-font-size-sm)',
                   fontWeight: tab === item.id ? 600 : 400,
                   color:
-                    tab === item.id
-                      ? 'var(--mantine-color-ink-8)'
-                      : 'var(--mantine-color-dimmed)',
-                  background:
-                    tab === item.id ? 'rgba(116,65,224,.15)' : undefined,
+                    tab === item.id ? 'var(--mantine-color-ink-8)' : 'var(--mantine-color-dimmed)',
+                  background: tab === item.id ? 'rgba(116,65,224,.15)' : undefined,
                 }}
               >
                 {item.icon}
@@ -162,12 +114,8 @@ export function AccountSettingsScreen() {
             gap: 16,
           }}
         >
-          {tab === 'profile' && <AccountSettingsProfileTab />}
+          {tab === 'profile' && <AccountSettingsClubTab />}
           {tab === 'membership' && <AccountSettingsMembershipTab />}
-          {tab === 'security' && <AccountSettingsSecurityTab />}
-          {tab === 'sessions' && <AccountSettingsSessionsTab />}
-          {tab === 'devices' && <AccountSettingsDevicesTab />}
-          {tab === 'language' && <AccountSettingsLanguageTab />}
         </div>
       </div>
     </div>

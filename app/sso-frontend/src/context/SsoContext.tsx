@@ -10,7 +10,7 @@ import {
 import { notifications } from '@mantine/notifications'
 import { hasTokens, setAuthFailureHandler } from '@hubra/api-client'
 import { useNavigate } from 'react-router-dom'
-import { getMyPermissions, type PermissionsResponse } from '@/api/auth'
+import { getMyPermissions, getVerificationStatus, type PermissionsResponse } from '@/api/auth'
 import { signedInTarget, validateRedirect, type AppUrls } from '@/redirect'
 
 export type AuthStatus = 'loading' | 'authed' | 'anon'
@@ -24,7 +24,10 @@ interface SsoState {
   /** The trusted ?redirect= target, or null when there is none. */
   redirectTarget: string | null
   urls: AppUrls
-  /** Leave for the ?redirect= target, or show the club picker (see signedInTarget). */
+  /**
+   * After sign-in: the email step if it is still open, else the ?redirect=
+   * target or the club picker (see signedInTarget).
+   */
   continueSignedIn: () => void
   notify: (kind: 'success' | 'error' | 'info', title: string, msg?: string) => void
 }
@@ -37,7 +40,7 @@ const URLS: AppUrls = {
 }
 
 /** Pages a signed-in visitor stays on instead of being sent on. */
-const SIGNED_IN_PAGES = ['/clubs']
+const SIGNED_IN_PAGES = ['/clubs', '/account', '/verify', '/verify-email']
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function isManager(perms: PermissionsResponse | null): boolean {
@@ -60,17 +63,23 @@ export function SsoProvider({ children }: { children: ReactNode }) {
   const isSuperadmin = permissions?.is_superadmin ?? false
 
   const continueSignedIn = useCallback(() => {
-    const target = signedInTarget(redirectTarget)
-    if (target) {
-      window.location.assign(target)
-      return
-    }
-    // Still 'anon' from before sign-in: the picker would bounce to /login.
+    // Still 'anon' right after sign-in: the next page would bounce to /login.
     setAuthStatus('loading')
-    navigate('/clubs', { replace: true })
-    getMyPermissions()
-      .then((perms) => {
+    Promise.all([getMyPermissions(), getVerificationStatus()])
+      .then(([perms, verification]) => {
         setPermissions(perms)
+        if (verification.required) {
+          // Keep ?redirect= so the step can send the person on afterwards.
+          navigate(`/verify${window.location.search}`, { replace: true })
+          setAuthStatus('authed')
+          return
+        }
+        const target = signedInTarget(redirectTarget)
+        if (target) {
+          window.location.assign(target)
+          return
+        }
+        navigate('/clubs', { replace: true })
         setAuthStatus('authed')
       })
       .catch(() => setAuthStatus('anon'))
@@ -101,7 +110,17 @@ export function SsoProvider({ children }: { children: ReactNode }) {
         if (cancelled) return
         setPermissions(permData)
 
-        if (SIGNED_IN_PAGES.includes(window.location.pathname)) {
+        const path = window.location.pathname
+        if (SIGNED_IN_PAGES.some((p) => path === p || path.startsWith(`${p}/`))) {
+          // Signed-in pages still wait for the email step (the link page
+          // itself and the step are where it gets done).
+          if (path !== '/verify' && path !== '/verify-email') {
+            const verification = await getVerificationStatus(ctrl.signal)
+            if (cancelled) return
+            if (verification.required) {
+              navigate(`/verify${window.location.search}`, { replace: true })
+            }
+          }
           setAuthStatus('authed')
           return
         }

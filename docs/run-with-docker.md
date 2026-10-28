@@ -54,10 +54,6 @@ domain setup is needed locally.
 
 ## 4. First login and first club
 
-> Running one club only? Use `docker-compose.single-club.yml` instead: no
-> manager or SSO portal, and the club and its admin are created on the first
-> start. See [single-club.md](single-club.md).
-
 1. Open http://localhost:8082, choose **Create account** and sign up.
 2. Make that account the platform admin:
    ```sh
@@ -131,17 +127,14 @@ Two options:
 
 `scripts/smoke-test.sh` checks a running stack end to end: the apps answer,
 they send their security headers, a club admin can sign in and the Celery
-processes run. CI runs it for both stacks on every pull request.
+processes run. CI runs it on every pull request.
 
 ```sh
 docker compose build && docker compose up -d
-scripts/smoke-test.sh multi
-# single-club: set SINGLE_CLUB, CLUB_NAME, ADMIN_EMAIL and ADMIN_PASSWORD
-# and COMPOSE_FILE=docker-compose.yml:docker-compose.single-club.yml in .env
-scripts/smoke-test.sh single
+scripts/smoke-test.sh
 ```
 
-For two clubs on a multi-club stack:
+For two clubs:
 `docker compose exec backend flask provision-tenant --name "Club A" --slug club-a --admin-email a@example.org --admin-password '…'`.
 
 ## Useful commands

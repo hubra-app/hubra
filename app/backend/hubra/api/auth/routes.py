@@ -44,6 +44,7 @@ from hubra.api.permissions import (
 from hubra.core.errors import api_error, raise_error
 from hubra.core.extensions import db, limiter
 
+from hubra.core.models.audit import AuditEntry
 from hubra.core.models.token import TokenBlocklist
 from hubra.core.models.device_session import Session
 from hubra.core.models.member import Member
@@ -53,9 +54,11 @@ from hubra.core.schemas.finance import InvoiceSchema
 from hubra.core.schemas.group import GroupSchema
 from hubra.core.schemas.member import MemberSchema
 from hubra.core.services import email as email_svc
+from hubra.core.services import account as account_svc
+from hubra.core.services import email_verification
 from hubra.core.services.email import _get_sso_base_url
 from hubra.api.notifications.services import create_notification
-from hubra.core.tenant.context import current_tenant, single_club_slug
+from hubra.core.tenant.context import current_tenant
 
 _log = logging.getLogger(__name__)
 
@@ -188,15 +191,10 @@ def login():
     if member is None and user is None:
         raise_error(401, "UNAUTHORIZED", "Invalid credentials")
 
+    if user is not None and email_verification.auto_verify_superadmin(user):
+        db.session.commit()
+
     if member is None and user is not None:
-        if single_club_slug():
-            # No club picker and no manager portal to land on: an account
-            # without a membership in this club has nothing to sign in to.
-            raise_error(
-                403,
-                "NO_MEMBERSHIP",
-                "This account is not a member of this club",
-            )
         # A user-level session in both cases: the tenant picker then calls
         # /auth/switch-tenant, which needs this token to know the user.
         tenants = AuthService.find_user_tenants(user.id)
@@ -302,15 +300,8 @@ def signup():
     """Create a new global User account with no tenant membership.
 
     The user can then request a tenant from the manager portal or be
-    invited to an existing tenant by an admin. A single-club install has no
-    manager portal, so new people apply for membership instead.
+    invited to an existing tenant by an admin.
     """
-    if single_club_slug():
-        raise_error(
-            403,
-            "SIGNUP_DISABLED",
-            "Open sign-up is off. Apply for membership instead.",
-        )
     body = request.get_json(silent=True) or {}
     name = (body.get("name") or "").strip()
     email = (body.get("email") or "").strip().lower()
@@ -333,6 +324,9 @@ def signup():
     user.set_password(password)
     db.session.add(user)
     db.session.commit()
+
+    if email_verification.required(user):
+        email_verification.send(user, _get_sso_base_url())
 
     additional_claims = {"user_id": user.id}
     access_token = create_access_token(
@@ -358,6 +352,19 @@ def signup():
 
 
 # ── POST /auth/refresh ────────────────────────────────────────────────────────
+
+
+# Claims set at sign-in, club switch or impersonation that every access
+# token minted from the same refresh token must keep.
+_SESSION_CLAIMS = (
+    "sid",
+    "user_id",
+    "tenant_slug",
+    "impersonator_id",
+    "impersonator_user_id",
+    "impersonation_reason",
+    "impersonation_expires_at",
+)
 
 
 @auth_bp.post("/refresh")
@@ -387,7 +394,9 @@ def refresh():
             _clear_remembered_email_cookie(response)
             return response
 
-    # Preserve sid claim from refresh token if present
+    # The new access token carries the same session as the refresh token:
+    # without user_id a superadmin loses the manager portal, and without
+    # tenant_slug a member token is refused in its own club.
     refresh_claims = get_jwt()
     sid = refresh_claims.get("sid")
 
@@ -401,7 +410,11 @@ def refresh():
         else:
             update_session_activity.delay(int(sid))
 
-    additional_claims = {"sid": sid} if sid is not None else {}
+    additional_claims = {
+        key: refresh_claims[key]
+        for key in _SESSION_CLAIMS
+        if refresh_claims.get(key) is not None
+    }
     access_token = create_access_token(
         identity=identity,
         additional_claims=additional_claims,
@@ -475,6 +488,19 @@ def switch_tenant():
     tenant = db.session.scalar(select(Tenant).where(Tenant.slug == target_slug))
     if tenant is None:
         return api_error("NOT_FOUND", "Tenant not found", 404)
+
+    # Verification happens on the SSO portal after sign-in; no club opens
+    # before it is done.
+    user = db.session.get(User, int(user_id))
+    if user is not None:
+        must_verify = email_verification.required(user)
+        db.session.commit()  # required() may have flagged a superadmin
+        if must_verify:
+            return api_error(
+                "EMAIL_NOT_VERIFIED",
+                "Confirm your email address before opening a club",
+                403,
+            )
 
     membership = db.session.scalar(
         select(UserTenant).where(
@@ -906,45 +932,70 @@ def update_account_mail_settings():
     ), 202
 
 
-# ── POST /account/request-email-verification ─────────────────────────────────
+# ── Email verification (the SSO portal's step after sign-in) ─────────────────
+
+
+def _signed_in_user() -> User:
+    """The global User behind the session, with or without a club."""
+    if isinstance(current_user, User):
+        return current_user
+    user = getattr(current_user, "user", None)
+    if user is None:
+        raise_error(401, "UNAUTHORIZED", "User not found")
+    return user
+
+
+@account_bp.get("/email-verification")
+@jwt_required()
+def get_email_verification():
+    user = _signed_in_user()
+    status = email_verification.status(user)
+    db.session.commit()  # status() may have flagged a superadmin
+    return jsonify(status), 200
 
 
 @account_bp.post("/request-email-verification")
 @jwt_required()
+@limiter.limit("5 per hour")
 def request_email_verification():
-    member = current_user  # type: Member
-    raw_token = AccountService.create_email_verification_token(member)
-
-    db.session.commit()
-
-    verify_url = f"{_get_sso_base_url()}/verify-email#token={raw_token}"
-    email_svc.send_email_verification(
-        member.email,
-        member.name,
-        verify_url,
-        lang=getattr(member, "language", "de-CH") or "de-CH",
-    )
-    _log.info(
-        "email_verification_requested member_id=%s to_email=%s", member.id, member.email
-    )
-
+    user = _signed_in_user()
+    if user.private_email_verified:
+        return api_error("ALREADY_VERIFIED", "Email address is already verified", 409)
+    if not email_verification.mail_configured():
+        return api_error("MAIL_NOT_CONFIGURED", "System mail is not set up", 409)
+    email_verification.send(user, _get_sso_base_url())
     return jsonify({"ok": True}), 202
 
 
-# ── POST /account/verify-email ─────────────────────────────────────────────────
-
-
 @account_bp.post("/verify-email")
+@limiter.limit("20 per hour")
 def verify_email():
     body = request.get_json(silent=True) or {}
-    raw_token = body.get("token", "").strip()
+    raw_token = (body.get("token") or "").strip()
     if not raw_token:
         return api_error("VALIDATION_ERROR", "token is required", 400)
-    member = AccountService.verify_email(raw_token)
+    user = email_verification.confirm(raw_token)
     db.session.commit()
 
-    _log.info("email_verification_confirmed member_id=%s", member.id)
+    _log.info("email_verification_confirmed user_id=%s", user.id)
     return jsonify({"ok": True, "verified": True}), 200
+
+
+@account_bp.patch("/email")
+@jwt_required()
+@limiter.limit("10 per hour")
+def change_account_email():
+    """Change the address (login and private mail); a new link goes out."""
+    body = request.get_json(silent=True) or {}
+    user = _signed_in_user()
+    old_email = user.email
+    email_verification.change_email(
+        user, body.get("email", ""), body.get("currentPassword", "")
+    )
+    db.session.commit()
+    if user.email != old_email and email_verification.required(user):
+        email_verification.send(user, _get_sso_base_url())
+    return jsonify(email_verification.status(user)), 200
 
 
 # ── GET /account/sessions ─────────────────────────────────────────────────────
@@ -1078,4 +1129,129 @@ def revoke_account_device(device_id: int):
     if count == 0:
         raise_error(404, "NOT_FOUND", "Device not found or no active sessions")
     db.session.commit()
+    return jsonify({"ok": True, "revoked": count}), 200
+
+
+# ── The account on the SSO portal (global, works without a club) ─────────────
+
+
+@account_bp.get("/profile")
+@jwt_required()
+def get_account_profile():
+    return jsonify(account_svc.profile(_signed_in_user())), 200
+
+
+@account_bp.patch("/profile")
+@jwt_required()
+def update_account_profile():
+    body = request.get_json(silent=True) or {}
+    allowed = {
+        "name",
+        "firstName",
+        "lastName",
+        "avatarColor",
+        "profileNote",
+        "language",
+    }
+    user = _signed_in_user()
+    account_svc.update_profile(user, {k: v for k, v in body.items() if k in allowed})
+    db.session.commit()
+    return jsonify(account_svc.profile(user)), 200
+
+
+@account_bp.post("/password")
+@jwt_required()
+@limiter.limit("10 per minute")
+def change_account_password():
+    """Change the password of the account, for every club at once."""
+    body = request.get_json(silent=True) or {}
+    user = _signed_in_user()
+    account_svc.change_password(
+        user, body.get("currentPassword", ""), body.get("newPassword", "")
+    )
+    db.session.commit()
+
+    from hubra.core.models.managed_mail import ManagedMailAddress as _MMA
+    from hubra.core.tasks.wildduck import sync_wildduck_password
+
+    # Club mailboxes log in with the account password.
+    for _tenant, member in account_svc.memberships(user.id):
+        db.session.add(
+            AuditEntry(
+                actor_id=member.id,
+                actor_name=user.name,
+                actor_avatar_color=user.avatar_color,
+                action="change_password",
+                target_type="Member",
+                target_id=member.id,
+                target_label=user.name,
+            )
+        )
+        db.session.commit()
+        addr = db.session.scalar(
+            select(_MMA).where(_MMA.owner_type == "member", _MMA.owner_id == member.id)
+        )
+        if addr and addr.wildduck_user_id:
+            sync_wildduck_password.delay(member.id)
+
+    if user.private_email_verified:
+        email_svc.send_password_changed(
+            user.email, user.name, lang=user.language or "de-CH"
+        )
+    return jsonify({"ok": True}), 200
+
+
+def _current_session_key() -> tuple[str | None, str | None]:
+    claims = get_jwt()
+    sid = claims.get("sid")
+    return claims.get("tenant_slug"), str(sid) if sid is not None else None
+
+
+@account_bp.get("/all-sessions")
+@jwt_required()
+def list_all_sessions():
+    """The account's sessions in every club, newest first."""
+    user = _signed_in_user()
+    current_slug, current_sid = _current_session_key()
+    out = []
+    for tenant, member in account_svc.memberships(user.id):
+        for s in session_service.list_sessions(member.id):
+            out.append(
+                {
+                    **session_service.serialize_session(s),
+                    "club": {"slug": tenant.slug, "name": tenant.name},
+                    "current": tenant.slug == current_slug and str(s.id) == current_sid,
+                }
+            )
+    out.sort(key=lambda s: s["lastActiveAt"] or "", reverse=True)
+    return jsonify(out), 200
+
+
+@account_bp.delete("/all-sessions/<slug>/<int:session_id>")
+@jwt_required()
+def revoke_club_session(slug: str, session_id: int):
+    user = _signed_in_user()
+    with account_svc.as_member_of(user.id, slug) as member:
+        session = session_service.revoke_session(session_id, member.id)
+        if session is None:
+            raise_error(404, "NOT_FOUND", "Session not found or already revoked")
+        db.session.commit()
+    return jsonify({"ok": True}), 200
+
+
+@account_bp.post("/all-sessions/revoke-all")
+@jwt_required()
+def revoke_sessions_everywhere():
+    """Sign out everywhere except this browser."""
+    user = _signed_in_user()
+    current_slug, current_sid = _current_session_key()
+    count = 0
+    for tenant, member in account_svc.memberships(user.id):
+        if tenant.slug == current_slug and current_sid is not None:
+            count += session_service.revoke_all_other_sessions(
+                member.id, int(current_sid)
+            )
+        else:
+            count += session_service.revoke_all_including_current(member.id)
+        db.session.commit()
     return jsonify({"ok": True, "revoked": count}), 200

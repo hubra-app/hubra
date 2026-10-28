@@ -2234,5 +2234,17 @@
   "modules.inventory.settings.require_induction.label": "Nur eingeführte Mitglieder dürfen ausleihen",
   "modules.inventory.settings.require_induction.description": "Gilt für Gegenstände, die eine Einführung brauchen",
   "modules.inventory.settings.block_when_overdue.label": "Ausleihen sperren, solange eine Rechnung überfällig ist",
-  "modules.inventory.settings.block_when_overdue.description": "Mehr als 7 Tage überfällig; braucht das Modul Finanzen"
+  "modules.inventory.settings.block_when_overdue.description": "Mehr als 7 Tage überfällig; braucht das Modul Finanzen",
+  "account.club.forwardingOn": "Weiterleitung eingeschaltet.",
+  "account.club.forwardingOff": "Weiterleitung ausgeschaltet.",
+  "account.club.forwardingFailed": "Die Weiterleitung konnte nicht geändert werden.",
+  "account.club.manageAccount": "Konto verwalten",
+  "account.club.accountHint": "Name, E-Mail, Passwort, Sprache und Sitzungen gelten für alle deine Vereine und werden in deinem Hubra-Konto geändert.",
+  "account.club.mailTitle": "Vereins-Mail",
+  "account.club.addressHint": "Vom Verein vergeben. Für eine Änderung wende dich an die Vereinsleitung.",
+  "account.club.forward": "An meine private Adresse weiterleiten",
+  "account.club.verifyFirst": "Bestätige zuerst deine private Adresse.",
+  "account.club.verifyNow": "Jetzt bestätigen",
+  "account.club.forwardHint": "Eingehende Vereins-Mails gehen als Kopie an deine private Adresse.",
+  "account.club.tab": "Im Verein"
 }

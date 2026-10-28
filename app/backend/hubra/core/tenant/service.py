@@ -558,8 +558,7 @@ def _seed_tenant(
         db.session.flush()
 
         # Give the club its own switch for every optional module, set to the
-        # manifest default, so catalog defaults (used by single-club
-        # installs) never leak into new clubs.
+        # manifest default, so catalog defaults never leak into new clubs.
         reset_search_path()
         from hubra.core.models.feature import TenantFeature
         from hubra.core.modules import registry, sync_catalog

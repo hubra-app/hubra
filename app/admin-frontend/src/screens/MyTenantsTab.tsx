@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import {
   Avatar,
+  Badge,
   Button,
   Center,
   Group,
@@ -12,7 +13,7 @@ import {
   ThemeIcon,
   Title,
 } from '@mantine/core'
-import { IconArrowRight, IconBuildingCommunity, IconPlus, IconSearch } from '@tabler/icons-react'
+import { IconArrowRight, IconBuildingCommunity, IconPlus, IconSearch, IconUsers } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { SSO_URL } from '@hubra/api-client'
 import { PageHead } from '@/components/ui'
@@ -103,10 +104,17 @@ export function MyTenantsTab() {
                 <Avatar size={48} radius="md" color="acc" variant="light">
                   {clubName(t).slice(0, 2).toUpperCase()}
                 </Avatar>
-                <div style={{ minWidth: 0 }}>
-                  <Text fw={700} fz="lg" truncate>
-                    {clubName(t)}
-                  </Text>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <Group gap={8} wrap="nowrap">
+                    <Text fw={700} fz="lg" truncate>
+                      {clubName(t)}
+                    </Text>
+                    {t.admin_level && (
+                      <Badge size="xs" variant="light" style={{ flexShrink: 0 }}>
+                        {t.admin_level === 'owner' ? tr('Inhaber', 'Owner') : tr('Admin', 'Admin')}
+                      </Badge>
+                    )}
+                  </Group>
                   {t.tenant_slug && (
                     <Text fz="sm" c="dimmed" className="num" truncate>
                       {t.tenant_slug}
@@ -114,17 +122,27 @@ export function MyTenantsTab() {
                   )}
                 </div>
               </Group>
-              <Button
-                fullWidth
-                variant="light"
-                rightSection={<IconArrowRight size={16} />}
-                disabled={!t.tenant_slug}
-                onClick={() => {
-                  window.location.assign(`${COS_URL}/${t.tenant_slug}/app/dashboard`)
-                }}
-              >
-                {tr('Verein öffnen', 'Open club')}
-              </Button>
+              <Group gap="xs" grow>
+                {t.admin_level && (
+                  <Button
+                    variant="default"
+                    leftSection={<IconUsers size={16} />}
+                    onClick={() => navigate(`/app/clubs/${t.tenant_id}/admins`)}
+                  >
+                    {tr('Admins', 'Admins')}
+                  </Button>
+                )}
+                <Button
+                  variant="light"
+                  rightSection={<IconArrowRight size={16} />}
+                  disabled={!t.tenant_slug}
+                  onClick={() => {
+                    window.location.assign(`${COS_URL}/${t.tenant_slug}/app/dashboard`)
+                  }}
+                >
+                  {tr('Verein öffnen', 'Open club')}
+                </Button>
+              </Group>
             </Stack>
           </Paper>
         ))}

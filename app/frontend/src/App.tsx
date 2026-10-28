@@ -1,11 +1,11 @@
 import i18n from 'i18next'
-import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { ErrorBoundary as RouteErrorBoundary } from 'react-error-boundary'
 import { useT } from '@/locales/i18n'
 import { AppProvider, useApp } from '@/context/AppContext'
 import { URL_CLUB } from '@/clubBase'
-import { InstanceProvider, safeReturnPath, useInstance } from '@/context/InstanceContext'
+import { InstanceProvider, useInstance } from '@/context/InstanceContext'
 import { RequireModule } from '@/modules/RequireModule'
 import { usePluginLoader, usePluginRoutes } from '@/plugins'
 import { ApplyScreen } from '@/screens/public/Apply'
@@ -15,26 +15,6 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ForcedPasswordChangeModal } from '@/components/ForcedPasswordChangeModal'
 import { IconAlertTriangle, IconRefresh } from '@tabler/icons-react'
 import { Loader, Center, Overlay, Paper, Text, Button, Stack } from '@mantine/core'
-
-// Signed-out pages of a single-club install (multi-club uses the SSO portal)
-const LoginScreen = lazy(() =>
-  import('./screens/public/auth/Login').then((m) => ({ default: m.LoginScreen })),
-)
-const ForgotPasswordScreen = lazy(() =>
-  import('./screens/public/auth/ForgotPassword').then((m) => ({
-    default: m.ForgotPasswordScreen,
-  })),
-)
-const ResetPasswordScreen = lazy(() =>
-  import('./screens/public/auth/ResetPassword').then((m) => ({
-    default: m.ResetPasswordScreen,
-  })),
-)
-const VerifyEmailScreen = lazy(() =>
-  import('./screens/public/auth/VerifyEmail').then((m) => ({
-    default: m.VerifyEmailScreen,
-  })),
-)
 
 const Shell = lazy(() => import('./components/Shell').then((m) => ({ default: m.Shell })))
 
@@ -142,12 +122,11 @@ const PostDetailScreen = lazy(() =>
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { authStatus } = useApp()
-  const { standalone, loginUrl } = useInstance()
+  const { loginUrl } = useInstance()
   const { pathname } = useLocation()
   useEffect(() => {
-    if (authStatus === 'anon' && !standalone) window.location.assign(loginUrl(pathname))
-  }, [authStatus, standalone, loginUrl, pathname])
-  if (authStatus === 'anon' && standalone) return <Navigate to={loginUrl(pathname)} replace />
+    if (authStatus === 'anon') window.location.assign(loginUrl(pathname))
+  }, [authStatus, loginUrl, pathname])
   if (authStatus === 'loading' || authStatus === 'anon')
     return (
       <Center h="100vh">
@@ -180,72 +159,28 @@ function SsoRedirect({ path }: { path: string }) {
   return <FullPageLoader />
 }
 
-/**
- * A signed-out page: built in on a single-club install, on the SSO portal
- * otherwise. `anonOnly` pages send a signed-in visitor on into the club.
- */
-function AuthRoute({
-  path,
-  anonOnly = false,
-  children,
-}: {
-  path: string
-  anonOnly?: boolean
-  children: ReactNode
-}) {
-  const { standalone, homePath } = useInstance()
-  const { authStatus } = useApp()
-  if (!standalone) return <SsoRedirect path={path} />
-  if (anonOnly && authStatus === 'loading') return <FullPageLoader />
-  if (anonOnly && authStatus === 'authed') {
-    const returnTo = safeReturnPath(new URLSearchParams(window.location.search).get('redirect'))
-    return <Navigate to={returnTo ?? homePath ?? '/'} replace />
-  }
-  return <Suspense fallback={<FullPageLoader />}>{children}</Suspense>
-}
-
-/** /app/*: the club's pages on a single-club install, the SSO portal otherwise. */
-function SingleClubRoutes() {
-  const { standalone } = useInstance()
-  // On multi-club pages the router runs below /<club> (clubBase.ts).
-  return standalone || URL_CLUB ? <PrivateRoutes /> : <SsoRedirect path="login" />
+/** /app/*: the club's pages, or the SSO portal when the URL names no club. */
+function ClubRoutes() {
+  // On club pages the router runs below /<club> (clubBase.ts).
+  return URL_CLUB ? <PrivateRoutes /> : <SsoRedirect path="login" />
 }
 
 /** `/`: into the club, or to the sign-in. */
 function HomeRedirect() {
-  const { standalone, homePath } = useInstance()
   if (URL_CLUB) return <Navigate to="/app/dashboard" replace />
-  if (!standalone) return <SsoRedirect path="login" />
-  if (!homePath)
-    return (
-      <Center h="100vh" p="lg">
-        <Paper shadow="lg" p="xl" maw={460}>
-          <Stack gap="sm" align="center" ta="center">
-            <Text fz={18} fw={700}>
-              {i18n.t('app.notSetUp', 'Dieser Verein ist noch nicht eingerichtet')}
-            </Text>
-            <Text size="sm" c="dimmed">
-              {i18n.t('app.notSetUpHint', 'Eine Administratorin oder ein Administrator muss auf dem Server diesen Befehl ausführen:')}{' '}
-              <code>flask setup-club</code>
-            </Text>
-          </Stack>
-        </Paper>
-      </Center>
-    )
-  return <Navigate to={homePath} replace />
+  return <SsoRedirect path="login" />
 }
 
 function PrivateRoutes() {
   const location = useLocation()
   const { tenantSlug, switchTenant } = useApp()
-  const { standalone } = useInstance()
 
   useEffect(() => {
-    if (!standalone && URL_CLUB && URL_CLUB !== tenantSlug) {
+    if (URL_CLUB && URL_CLUB !== tenantSlug) {
       // The club in the URL becomes active; a deep link keeps its page.
       switchTenant(URL_CLUB, true)
     }
-  }, [standalone, tenantSlug, switchTenant])
+  }, [tenantSlug, switchTenant])
 
   const pluginsReady = usePluginLoader()
   const pluginRoutes = usePluginRoutes()
@@ -575,10 +510,14 @@ function PrivateRoutes() {
                   <Route path="account" element={<AccountDashboardScreen />} />
                   <Route path="account/settings" element={<AccountSettingsScreen />} />
                   <Route path="account/settings/membership" element={<AccountSettingsScreen />} />
-                  <Route path="account/settings/security" element={<AccountSettingsScreen />} />
-                  <Route path="account/settings/sessions" element={<AccountSettingsScreen />} />
-                  <Route path="account/settings/devices" element={<AccountSettingsScreen />} />
-                  <Route path="account/settings/language" element={<AccountSettingsScreen />} />
+                  {/* The account itself lives on the SSO portal */}
+                  {['security', 'sessions', 'devices', 'language'].map((tab) => (
+                    <Route
+                      key={tab}
+                      path={`account/settings/${tab}`}
+                      element={<SsoRedirect path="account" />}
+                    />
+                  ))}
                   {pluginRoutes.map((r) => (
                     <Route
                       key={r.path}
@@ -610,46 +549,17 @@ function PrivateRoutes() {
 function AppInner() {
   return (
     <Routes>
-      {/* Signed-out pages — built in on a single-club install, else the SSO portal */}
-      <Route
-        path="/login"
-        element={
-          <AuthRoute path="login" anonOnly>
-            <LoginScreen />
-          </AuthRoute>
-        }
-      />
-      <Route
-        path="/forgot-password"
-        element={
-          <AuthRoute path="forgot-password" anonOnly>
-            <ForgotPasswordScreen />
-          </AuthRoute>
-        }
-      />
-      <Route
-        path="/reset-password"
-        element={
-          <AuthRoute path="reset-password">
-            <ResetPasswordScreen />
-          </AuthRoute>
-        }
-      />
-      <Route
-        path="/verify-email"
-        element={
-          <AuthRoute path="verify-email">
-            <VerifyEmailScreen />
-          </AuthRoute>
-        }
-      />
+      {/* Signed-out pages live on the SSO portal; old links still get there */}
+      {['login', 'forgot-password', 'reset-password', 'verify-email'].map((path) => (
+        <Route key={path} path={`/${path}`} element={<SsoRedirect path={path} />} />
+      ))}
 
       {/* Public — tenant-specific */}
       <Route path="/apply" element={<ApplyScreen />} />
 
-      {/* / and /app/* → into the club; multi-club pages run below /<club> (clubBase.ts) */}
+      {/* / and /app/* → into the club; club pages run below /<club> (clubBase.ts) */}
       <Route path="/" element={<HomeRedirect />} />
-      <Route path="/app/*" element={<SingleClubRoutes />} />
+      <Route path="/app/*" element={<ClubRoutes />} />
 
       {/* Default */}
       <Route path="/*" element={<NotFoundScreen />} />

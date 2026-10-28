@@ -40,6 +40,11 @@ _DEFAULT_PERMISSIONS = [
         "Manage plugins",
         "Install, update and remove plugins; trust repositories and signing keys",
     ),
+    (
+        "platform.settings",
+        "Manage platform settings",
+        "Mail relay, system sender and other instance-wide settings",
+    ),
 ]
 
 # (role_name, description, [permission_keys])
@@ -60,6 +65,7 @@ _DEFAULT_ROLES = [
             "impersonate",
             "roles.manage",
             "plugins.manage",
+            "platform.settings",
         ],
     ),
     (

@@ -1,4 +1,4 @@
-"""Transactional email via SMTP (local Maddy sender with Infomaniak fallback).
+"""Transactional email via SMTP.
 
 All public send_* functions log errors and return silently on failure -- email
 delivery issues must never block member creation or other core operations.
@@ -9,13 +9,18 @@ resolve translations from the Translation table with fallback chain:
     en-GB -> [en-GB]
     other -> [de-CH, en-GB]
 
-SMTP credentials are read from the encrypted InternalKey table:
-    mail.smtp.user
-    mail.smtp.password
+Every mail goes through the platform relay (``platform_settings.relay()``,
+set in the manager portal, defaults from SMTP_* / MAIL_FROM in env):
 
-SMTP host/port are read from the Setting KV store:
-    mail.smtp_host  -- defaults to ``localhost``
-    mail.smtp_port  -- defaults to ``587``
+* System mail (``system=True``: password reset, verification, password
+  changed, new sign-in, account deleted) is sent from the platform sender.
+* Club mail is sent from the platform sender with the club's
+  ``club.notification_sender_email`` as Reply-To.  A club with its own sender
+  mailbox (InternalKey ``mail.smtp.user`` / ``mail.smtp.password``, from the
+  mail module) sends as that mailbox, through ``mail.smtp_host`` if the club
+  set one.
+* With no platform sender configured, both fall back to the club sender, as
+  before the platform relay existed.
 """
 
 from __future__ import annotations
@@ -24,11 +29,14 @@ import base64
 import logging
 import smtplib
 import ssl
+from dataclasses import dataclass
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from flask import current_app
+
+from hubra.core.services import platform_settings
 
 from hubra.core.services.mail_i18n import render_mail_template
 
@@ -73,15 +81,32 @@ def _get_sso_base_url() -> str:
     Password-reset and email-verification links should point to the SSO portal
     (sso.hubra.club) so users land on the centralized login experience.
     Falls back to _get_base_url() for backward compatibility when SSO_BASE_URL
-    is not configured. A single-club install has no SSO portal, so its links
-    always open the club app.
+    is not configured.
     """
-    if current_app.config.get("SINGLE_CLUB"):
-        return _get_base_url()
     sso_base = current_app.config.get("SSO_BASE_URL", "")
     if sso_base:
         return str(sso_base).rstrip("/")
     return _get_base_url()
+
+
+@dataclass(frozen=True)
+class _Route:
+    host: str
+    port: int
+    user: str
+    password: str
+
+
+def _club_mailbox() -> tuple[str, str] | None:
+    """The club's own sender mailbox login, if the mail module set one."""
+    try:
+        from hubra.core.services.key_service import KeyService
+
+        user = str(KeyService.get("mail.smtp.user") or "")
+        password = str(KeyService.get("mail.smtp.password") or "")
+    except Exception:
+        return None
+    return (user, password) if user and password else None
 
 
 def _send_via_smtp(
@@ -93,24 +118,19 @@ def _send_via_smtp(
     body_html: str,
     body_text: str,
     attachments: list[dict] | None = None,
+    *,
+    reply_to: str | None = None,
+    route: _Route | None = None,
 ) -> bool:
-    """Send a transactional email via SMTP (Maddy with Infomaniak fallback).
+    """Send one email over SMTP.  *route* defaults to the platform relay.
 
-    Reads SMTP host/port from the ``mail.smtp_host`` / ``mail.smtp_port``
-    Setting KV rows, and credentials from ``mail.smtp.user`` / ``mail.smtp.password``
-    InternalKey records.
     Returns True on success, raises EmailDeliveryError on failure.
     """
-    smtp_host = _get_setting("mail.smtp_host") or "localhost"
-    smtp_port = int(_get_setting("mail.smtp_port") or 587)
-    try:
-        from hubra.core.services.key_service import KeyService
-
-        smtp_user = str(KeyService.get("mail.smtp.user") or "")
-        smtp_password = str(KeyService.get("mail.smtp.password") or "")
-    except Exception:
-        smtp_user = ""
-        smtp_password = ""
+    if route is None:
+        r = platform_settings.relay()
+        route = _Route(r.host, r.port, r.user, r.password)
+    smtp_host = route.host or "localhost"
+    smtp_port = route.port
 
     if attachments:
         msg = MIMEMultipart("mixed")
@@ -132,6 +152,8 @@ def _send_via_smtp(
     msg["Subject"] = subject
     msg["From"] = f"{sender_name} <{sender_email}>"
     msg["To"] = f"{to_name} <{to_email}>"
+    if reply_to:
+        msg["Reply-To"] = reply_to
 
     try:
         with smtplib.SMTP(smtp_host, smtp_port) as server:
@@ -143,8 +165,8 @@ def _send_via_smtp(
                     _smtp_context.verify_mode = ssl.CERT_NONE
                 server.starttls(context=_smtp_context)
                 server.ehlo()
-            if smtp_user and smtp_password:
-                server.login(smtp_user, smtp_password)
+            if route.user and route.password:
+                server.login(route.user, route.password)
             server.sendmail(sender_email, [to_email], msg.as_string())
         logger.info("smtp_fallback_sent to_email=%s subject=%s", to_email, subject)
         return True
@@ -165,19 +187,42 @@ def _send(
     body_html: str,
     body_text: str,
     attachments: list[dict] | None = None,
+    *,
+    system: bool = False,
 ) -> bool:
-    """Send a single transactional email via SMTP (Maddy with Infomaniak fallback).
+    """Send a single transactional email (see the module docstring for who sends).
 
     Returns True on success, False on failure (delivery failures must not block callers).
 
     For callers that need retry, catch EmailDeliveryError from _send_via_smtp.
     """
-    sender_email = _get_setting("club.notification_sender_email")
-    sender_name = _get_setting("club.notification_sender_name", "Club Notifications")
+    platform = platform_settings.relay()
+    club_sender = _get_setting("club.notification_sender_email")
+    club_name = _get_setting("club.notification_sender_name")
 
-    if not sender_email:
+    route: _Route | None = None
+    reply_to: str | None = None
+    mailbox = None if system else _club_mailbox()
+    if club_sender and mailbox:
+        sender_email, sender_name = club_sender, club_name or "Club Notifications"
+        port = _get_setting("mail.smtp_port")
+        route = _Route(
+            _get_setting("mail.smtp_host") or platform.host,
+            int(port) if port.isdigit() else platform.port,
+            *mailbox,
+        )
+    elif platform.sender_email:
+        sender_email = platform.sender_email
+        sender_name = (
+            platform.sender_name if system else club_name or platform.sender_name
+        )
+        reply_to = None if system else club_sender or None
+    elif club_sender:
+        sender_email, sender_name = club_sender, club_name or "Club Notifications"
+    else:
         logger.warning(
-            "club.notification_sender_email not set in settings -- skipping email to %s",
+            "No sender configured (platform mail.system.sender_email or "
+            "club.notification_sender_email) -- skipping email to %s",
             to_email,
         )
         return False
@@ -192,6 +237,8 @@ def _send(
             body_html,
             body_text,
             attachments=attachments,
+            reply_to=reply_to,
+            route=route,
         )
     except EmailDeliveryError:
         return False
@@ -239,7 +286,7 @@ def send_password_reset(
         club_name=club_name,
         reset_url=reset_url,
     )
-    _send(to_address, name, subject, body_html, body_text)
+    _send(to_address, name, subject, body_html, body_text, system=True)
 
 
 def send_email_verification(
@@ -259,7 +306,7 @@ def send_email_verification(
         club_name=club_name,
         verify_url=verify_url,
     )
-    _send(to_address, name, subject, body_html, body_text)
+    _send(to_address, name, subject, body_html, body_text, system=True)
 
 
 def send_password_changed(
@@ -277,7 +324,7 @@ def send_password_changed(
         club_name=club_name,
         support_url=support_url,
     )
-    _send(to_address, name, subject, body_html, body_text)
+    _send(to_address, name, subject, body_html, body_text, system=True)
 
 
 def send_new_device_login(
@@ -304,7 +351,7 @@ def send_new_device_login(
         user_agent=user_agent,
         support_url=support_url,
     )
-    _send(to_address, name, subject, body_html, body_text)
+    _send(to_address, name, subject, body_html, body_text, system=True)
 
 
 def send_account_deleted(
@@ -322,4 +369,4 @@ def send_account_deleted(
         club_name=club_name,
         support_url=support_url,
     )
-    _send(to_address, name, subject, body_html, body_text)
+    _send(to_address, name, subject, body_html, body_text, system=True)

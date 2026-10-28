@@ -10,6 +10,8 @@ import { ResetPassword } from '@/screens/ResetPassword'
 import { VerifyEmail } from '@/screens/VerifyEmail'
 import { AccessDenied } from '@/screens/AccessDenied'
 import { ClubsScreen } from '@/screens/Clubs'
+import { VerifyScreen } from '@/screens/Verify'
+import { AccountScreen } from '@/screens/Account'
 
 function RequireAnon({ children }: { children: React.ReactNode }) {
   const { authStatus } = useSso()
@@ -72,6 +74,9 @@ function AppRoutes() {
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/access-denied" element={<AccessDenied />} />
         <Route path="/clubs" element={<ClubsScreen />} />
+        <Route path="/verify" element={<VerifyScreen />} />
+        <Route path="/account" element={<AccountScreen />} />
+        <Route path="/account/:tab" element={<AccountScreen />} />
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

@@ -2234,5 +2234,17 @@
   "modules.codes.name": "Codes",
   "modules.codes.description": "Encrypted door codes and passcodes",
   "modules.roles.name": "Roles & permissions",
-  "modules.roles.description": "Roles and the permissions they grant"
+  "modules.roles.description": "Roles and the permissions they grant",
+  "account.club.forwardingOn": "Forwarding switched on.",
+  "account.club.forwardingOff": "Forwarding switched off.",
+  "account.club.forwardingFailed": "Forwarding could not be changed.",
+  "account.club.manageAccount": "Manage account",
+  "account.club.accountHint": "Name, email, password, language and sessions apply to all your clubs and are changed in your Hubra account.",
+  "account.club.mailTitle": "Club mail",
+  "account.club.addressHint": "Assigned by the club. Ask the club board to change it.",
+  "account.club.forward": "Forward to my private address",
+  "account.club.verifyFirst": "Confirm your private address first.",
+  "account.club.verifyNow": "Confirm now",
+  "account.club.forwardHint": "Incoming club mail is copied to your private address.",
+  "account.club.tab": "In the club"
 }
