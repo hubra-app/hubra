@@ -18,6 +18,7 @@ not using mail, leave the mail variables blank.
 | CORS        | `CORS_ORIGINS`                                                             | Always (comma-separated allowlist, no wildcards)         |
 | JWT cookies | `JWT_COOKIE_DOMAIN`, `JWT_COOKIE_SAMESITE`, `JWT_COOKIE_SECURE`            | Production (cross-subdomain auth)                        |
 | Frontend    | `FRONTEND_BASE_URL`                                                        | Production (email link generation — points at the SPA)   |
+| Superadmins | `SUPERADMIN_EMAILS` (comma-separated; promoted on every start, never demoted) | Optional; or `flask make-admin --email <email>` |
 | Single club | `SINGLE_CLUB`, `CLUB_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`                | Single-club installs only, see [single-club.md](single-club.md) |
 | Domain      | `MAIL_HOST`, `MAIL_FROM`, `MAIL_DOMAIN`                                    | Always (mail vars only when mail enabled)                |
 | Modules     | Per club in Settings › Modules, or `flask modules enable <code>`           | Always                                                   |

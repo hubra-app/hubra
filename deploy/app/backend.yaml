@@ -30,7 +30,7 @@ spec:
       initContainers:
         - name: flask-init
           image: hubra/backend
-          command: ["sh", "-c", "flask db upgrade && flask sync-permissions && flask seed --skip-migrate && flask plugins sync"]
+          command: ["sh", "-c", "flask db upgrade && flask sync-permissions && flask seed --skip-migrate && flask ensure-superadmins && flask plugins sync"]
           envFrom: [{ secretRef: { name: hubra-env } }]
           env: [{ name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }]
           volumeMounts: [{ name: settings, mountPath: /etc/hubra }]

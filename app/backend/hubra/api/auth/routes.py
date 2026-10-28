@@ -360,6 +360,19 @@ def signup():
 # ── POST /auth/refresh ────────────────────────────────────────────────────────
 
 
+# Claims set at sign-in, club switch or impersonation that every access
+# token minted from the same refresh token must keep.
+_SESSION_CLAIMS = (
+    "sid",
+    "user_id",
+    "tenant_slug",
+    "impersonator_id",
+    "impersonator_user_id",
+    "impersonation_reason",
+    "impersonation_expires_at",
+)
+
+
 @auth_bp.post("/refresh")
 @jwt_required(refresh=True)
 @limiter.limit("20 per minute")
@@ -387,7 +400,9 @@ def refresh():
             _clear_remembered_email_cookie(response)
             return response
 
-    # Preserve sid claim from refresh token if present
+    # The new access token carries the same session as the refresh token:
+    # without user_id a superadmin loses the manager portal, and without
+    # tenant_slug a member token is refused in its own club.
     refresh_claims = get_jwt()
     sid = refresh_claims.get("sid")
 
@@ -401,7 +416,11 @@ def refresh():
         else:
             update_session_activity.delay(int(sid))
 
-    additional_claims = {"sid": sid} if sid is not None else {}
+    additional_claims = {
+        key: refresh_claims[key]
+        for key in _SESSION_CLAIMS
+        if refresh_claims.get(key) is not None
+    }
     access_token = create_access_token(
         identity=identity,
         additional_claims=additional_claims,
