@@ -123,10 +123,11 @@ def create_app(config_name: str | None = None) -> Flask:
 
     # ── Register tenant resolver middleware ───────────────────────────────────
     from hubra.core.tenant.context import install_search_path_guard
-    from hubra.core.tenant.middleware import resolve_tenant
+    from hubra.core.tenant.middleware import TenantPathMiddleware, resolve_tenant
 
     install_search_path_guard()
 
+    app.wsgi_app = TenantPathMiddleware(app.wsgi_app)
     app.before_request(resolve_tenant)
 
     limiter.init_app(app)

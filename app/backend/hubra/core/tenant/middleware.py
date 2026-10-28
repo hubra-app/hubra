@@ -6,8 +6,11 @@ Resolution priority:
   3. Header:       X-Tenant-Slug
 
 
-The middleware rewrites PATH_INFO so downstream blueprints see their
-original URL (the tenant slug segment is stripped).
+TenantPathMiddleware (a WSGI wrapper) strips the slug segment from
+PATH_INFO before Flask matches the URL, so the blueprints see their
+original URL, and leaves the slug in the environ for resolve_tenant.
+Rewriting inside a before_request handler is too late: Flask has already
+matched the URL by then, and /api/<slug>/v1/... answers 404.
 
 When no slug is present in the path (e.g. /api/v1/<resource>), the
 request runs in single-tenant mode — no search_path is set, and all
@@ -98,6 +101,23 @@ def _rewrite_path(environ: dict) -> None:
         environ["PATH_INFO"] = "/" + "/".join(new_parts)
 
 
+_PATH_SLUG_KEY = "hubra.path_tenant_slug"
+
+
+class TenantPathMiddleware:
+    """WSGI wrapper: take the club slug out of /api/<slug>/v1/... paths."""
+
+    def __init__(self, wsgi_app):
+        self.wsgi_app = wsgi_app
+
+    def __call__(self, environ, start_response):
+        slug = _extract_slug_from_path(environ)
+        if slug:
+            environ[_PATH_SLUG_KEY] = slug
+            _rewrite_path(environ)
+        return self.wsgi_app(environ, start_response)
+
+
 # ── Main resolver ──────────────────────────────────────────────────────────
 
 
@@ -107,12 +127,9 @@ def resolve_tenant() -> None:
     Called as ``app.before_request(resolve_tenant)``.
     """
     environ = request.environ
-    tenant_slug = None
 
-    # 1. Path prefix: /api/<tenant_slug>/v1/...
-    tenant_slug = _extract_slug_from_path(environ)
-    if tenant_slug:
-        _rewrite_path(environ)
+    # 1. Path prefix: /api/<tenant_slug>/v1/... (set by TenantPathMiddleware)
+    tenant_slug = environ.get(_PATH_SLUG_KEY)
 
     # 2. JWT claim (authenticated requests)
     if not tenant_slug:

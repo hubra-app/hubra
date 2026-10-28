@@ -103,3 +103,54 @@ def test_resolve_tenant_no_slug_sets_none(app):
     with app.test_request_context("/api/v1/members"):
         resolve_tenant()
         assert g.tenant is None
+
+
+# ── End to end: every slug source reaches the route ──────────────────────────
+
+
+def _sign_in(client):
+    resp = client.post(
+        "/api/v1/auth/login", json={"email": "user@test.ch", "password": "password123"}
+    )
+    assert resp.status_code == 200
+
+
+def test_slug_in_path_routes_to_the_club(client, tenant_pair):
+    """/api/<slug>/v1/... reaches the route, not a 404 from the URL map."""
+    resp = client.get("/api/tenant-a/v1/health")
+    assert resp.status_code == 200
+
+
+def test_slug_in_path_sets_the_tenant(client, tenant_pair):
+    """The club token is accepted under its own club's path slug, which
+    only works when g.tenant was set from the path."""
+    _sign_in(client)
+    client.post("/api/v1/auth/switch-tenant", json={"tenantSlug": "tenant-a"})
+    resp = client.get("/api/tenant-a/v1/account/")
+    assert resp.status_code == 200
+    assert resp.get_json()["roles"][0]["name"] == "Admin A"
+
+
+def test_unknown_slug_in_path_has_no_tenant(client, tenant_pair):
+    resp = client.get("/api/nope/v1/health")
+    assert resp.status_code == 200
+
+
+def test_slug_from_club_token(client, tenant_pair):
+    """After switch-tenant, the token's tenant_slug claim picks the club
+    without a path slug or an X-Tenant-Slug header."""
+    _sign_in(client)
+    resp = client.post("/api/v1/auth/switch-tenant", json={"tenantSlug": "tenant-a"})
+    assert resp.status_code == 200
+    resp = client.get("/api/v1/account/")
+    assert resp.status_code == 200
+    assert resp.get_json()["roles"][0]["name"] == "Admin A"
+
+
+def test_path_slug_wins_over_token(client, tenant_pair):
+    """A club token used under another club's path is refused (401), not
+    applied to the club in the token."""
+    _sign_in(client)
+    client.post("/api/v1/auth/switch-tenant", json={"tenantSlug": "tenant-a"})
+    resp = client.get("/api/tenant-b/v1/account/")
+    assert resp.status_code == 401
