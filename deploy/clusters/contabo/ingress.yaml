@@ -1,0 +1,45 @@
+# hubra.club host names on the cluster's public Traefik and issuer.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hubra
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik-public
+  tls:
+    - secretName: hubra-tls
+      hosts:
+        - api.hubra.club
+        - app.hubra.club
+        - manage.hubra.club
+        - sso.hubra.club
+  rules:
+    - host: api.hubra.club
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: backend, port: { name: http } }
+    - host: app.hubra.club
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: frontend, port: { name: http } }
+    - host: manage.hubra.club
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: admin-frontend, port: { name: http } }
+    - host: sso.hubra.club
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: sso-frontend, port: { name: http } }

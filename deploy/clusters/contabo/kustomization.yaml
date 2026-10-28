@@ -1,0 +1,64 @@
+# Mike's Contabo k3s cluster (hubra.club), behind Cloudflare. Flux applies this
+# from the cluster repo with a GitRepository `hubra` and a Kustomization at
+# path ./deploy/clusters/contabo (docs/k3s.md, "Existing cluster").
+#
+# The cluster brings its own Traefik (class traefik-public), cert-manager
+# (ClusterIssuer letsencrypt-prod) and Longhorn, so deploy/infrastructure is not
+# used here.
+#
+# .env for this cluster (then deploy/create-secrets.sh):
+#   FRONTEND_BASE_URL=https://app.hubra.club
+#   MANAGE_BASE_URL=https://manage.hubra.club
+#   SSO_BASE_URL=https://sso.hubra.club
+#   CORS_ORIGINS=https://app.hubra.club,https://manage.hubra.club,https://sso.hubra.club
+#   JWT_COOKIE_DOMAIN=.hubra.club
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../app
+
+patches:
+  - path: ingress.yaml
+  - path: resources.yaml
+  # Cloudflare -> Traefik -> backend is two X-Forwarded-For hops. Only right
+  # once traefik-public trusts the Cloudflare ranges (forwardedHeaders.trustedIPs).
+  - patch: |
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { name: PROXY_FIX_X_FOR, value: "2" }
+    target: { kind: Deployment, name: backend }
+  # Longhorn instead of local-path, so the data follows the pod to another node.
+  - patch: |
+      - op: add
+        path: /spec/volumeClaimTemplates/0/spec/storageClassName
+        value: longhorn
+    target: { kind: StatefulSet, name: "postgres|redis" }
+  - patch: |
+      - op: add
+        path: /spec/storageClassName
+        value: longhorn
+    target: { kind: PersistentVolumeClaim, name: celerybeat }
+  # Prefer the core nodes; the edge nodes run ingress.
+  - patch: |
+      - op: add
+        path: /spec/template/spec/affinity
+        value:
+          nodeAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                preference:
+                  matchExpressions:
+                    - { key: node-role.kubernetes.io/core, operator: Exists }
+    target: { kind: "Deployment|StatefulSet" }
+
+configMapGenerator:
+  - name: hubra-frontend
+    behavior: merge
+    literals:
+      - VITE_API_BASE=https://api.hubra.club/api
+      - VITE_SSO_URL=https://sso.hubra.club
+      - VITE_COS_URL=https://app.hubra.club
+      - VITE_TENANT_APP_URL=https://app.hubra.club
+      - VITE_MANAGE_URL=https://manage.hubra.club
+      - VITE_ADMIN_PORTAL_URL=https://manage.hubra.club

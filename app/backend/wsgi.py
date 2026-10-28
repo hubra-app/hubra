@@ -8,7 +8,10 @@ And by flask CLI in development:
     flask run
 """
 
+import os
+
 from werkzeug.middleware.proxy_fix import ProxyFix
+
 from hubra import create_app
 
 app = create_app()
@@ -18,4 +21,7 @@ app = create_app()
 # x_for=1 trusts exactly one X-Forwarded-For entry so request.remote_addr is the
 # real client IP — critical for CrowdSec (traefik middleware) and flask-limiter
 # keying. Over-trusting (x_for=2) would let a spoofed header shift attribution.
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+# Behind a CDN that Traefik trusts (Cloudflare -> Traefik -> Flask) there are
+# two hops: set PROXY_FIX_X_FOR=2 there and nowhere else.
+x_for = int(os.environ.get("PROXY_FIX_X_FOR", "1"))
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=x_for, x_proto=1, x_host=1)
