@@ -27,7 +27,7 @@ export function AdminPortal() {
               : 'tenants'
 
   const tabs = [
-    { id: 'my-tenants', label: 'My Spaces' },
+    { id: 'my-tenants', label: 'My Clubs' },
     ...(hasGlobalPermission('tenants.read') ? [{ id: 'tenants', label: 'All Tenants' }] : []),
     { id: 'requests', label: 'My Requests' },
     ...(hasGlobalPermission('audit.read') ? [{ id: 'audit', label: 'Audit Log' }] : []),

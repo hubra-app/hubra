@@ -55,6 +55,7 @@ jobs:
       - name: Known vulnerabilities (runtime dependencies, high and critical)
         run: npm audit --omit=dev --audit-level=high
       - run: npm run lint
+      - run: npm test --if-present
       - run: npm run build
       - if: matrix.app == 'frontend'
         name: Plugin frontends
