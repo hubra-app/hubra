@@ -357,7 +357,8 @@ def _send_overdue_reminders() -> dict:
     # Fetch all open invoices that are past due
     overdue_invoices: list[Invoice] = db.session.scalars(  # type: ignore[assignment]
         select(Invoice)
-        .where(Invoice.status == "Open")
+        # "Overdue" is also unpaid (an admin may set it by hand).
+        .where(Invoice.status.in_(("Open", "Overdue")))
         .where(Invoice.due < today)
         .order_by(Invoice.due.asc())
     ).all()
@@ -409,7 +410,9 @@ def _send_overdue_reminders() -> dict:
                 reminder_type="overdue_14d",
             )
             overdue_14d += 1
-            if not sent:
+            # First overdue round for this invoice (its send history also
+            # holds the "generation" and "manual" mails).
+            if "overdue_7d" not in sent:
                 emit(INVOICE_OVERDUE, member_id=member.id, invoice_id=invoice.id)
             logger.info(
                 "overdue_reminder_sent invoice_id=%s member_id=%s round=14d",
