@@ -14,7 +14,7 @@ installs them:
 | `keys`        | `inventory.keys`   | Keys and access cards, handovers and deposits    |
 | `guides`      | `inventory.guides` | Usage guides on inventory items                  |
 | `budgets`     | `finance.budgets`  | Yearly budgets per transaction category          |
-| `bank-import` | `finance.bank`     | camt.054 import and matching of QR-bill payments |
+| `bank-import` | `finance.bank`     | Bank statement import (camt.053/054, MT940, CSV), invoice matching and booking rules |
 | `discord`     | `discord`          | Announce events, posts and polls in Discord      |
 
 The signing, repository and update design comes from
