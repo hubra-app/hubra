@@ -1002,5 +1002,19 @@
         "monthly": "per month"
       }
     }
+  },
+  "polls": {
+    "proxy": {
+      "field": "Proxy votes",
+      "allow": "Members may let another member vote for them",
+      "givenTo": "Your vote is with {{name}}",
+      "revoke": "Take back",
+      "pick": "Who votes for you?",
+      "give": "Give vote",
+      "giveButton": "Can't attend? Give your vote to someone",
+      "for": "For {{name}}",
+      "option": "Option",
+      "vote": "Vote"
+    }
   }
 }

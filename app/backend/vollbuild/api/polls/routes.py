@@ -15,7 +15,7 @@ from vollbuild.core.schemas.poll import (
     PollUpdateSchema,
     VoteSchema,
 )
-from vollbuild.api.polls.services import PollService, PollsService
+from vollbuild.api.polls.services import PollService, PollsService, ProxyService
 
 polls_bp = Blueprint("polls_bp", __name__)
 
@@ -83,7 +83,9 @@ def cast_vote(poll_id: int):
     except ValidationError as exc:
         return api_error("VALIDATION_ERROR", str(exc.messages), 400)
 
-    PollService.vote(poll, member_id, data["option_index"])
+    PollService.vote(
+        poll, member_id, data["option_index"], on_behalf_of=data.get("on_behalf_of")
+    )
 
     try:
         db.session.commit()
@@ -93,6 +95,39 @@ def cast_vote(poll_id: int):
 
     updated_poll = PollService.get(poll_id)
     return jsonify(_poll_schema.dump(updated_poll)), 200
+
+
+# ── Proxy votes ──────────────────────────────────────────────────────────────
+
+
+@polls_bp.get("/<int:poll_id>/proxy")
+@permission_required("polls", "vote", "Vote on polls")
+def get_proxy(poll_id: int):
+    poll = PollService.get(poll_id)
+    return jsonify(ProxyService.state(poll, get_current_member().id)), 200
+
+
+@polls_bp.post("/<int:poll_id>/proxy")
+@permission_required("polls", "vote", "Vote on polls")
+def grant_proxy(poll_id: int):
+    poll = PollService.get(poll_id)
+    holder_id = (request.get_json(silent=True) or {}).get("holder_id")
+    if not isinstance(holder_id, int):
+        return api_error("VALIDATION_ERROR", "holder_id is required", 400)
+    member_id = get_current_member().id
+    ProxyService.grant(poll, member_id, holder_id)
+    db.session.commit()
+    return jsonify(ProxyService.state(poll, member_id)), 201
+
+
+@polls_bp.delete("/<int:poll_id>/proxy")
+@permission_required("polls", "vote", "Vote on polls")
+def revoke_proxy(poll_id: int):
+    poll = PollService.get(poll_id)
+    member_id = get_current_member().id
+    ProxyService.revoke(poll, member_id)
+    db.session.commit()
+    return jsonify(ProxyService.state(poll, member_id)), 200
 
 
 # ── PATCH /polls/<id>/close ───────────────────────────────────────────────────

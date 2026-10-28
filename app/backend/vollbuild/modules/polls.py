@@ -25,5 +25,5 @@ module = Module(
             group="management",
         ),
     ),
-    tables=("polls", "poll_options", "poll_votes"),
+    tables=("polls", "poll_options", "poll_votes", "poll_proxies"),
 )

@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from sqlalchemy import DateTime, ForeignKey, JSON, UniqueConstraint
+import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from vollbuild.core.extensions import db
@@ -26,6 +27,14 @@ class Poll(db.Model):
     is_required: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     required_group_ids: Mapped[list[int] | None] = mapped_column(JSON, nullable=True)
     required_function_ids: Mapped[list[int] | None] = mapped_column(JSON, nullable=True)
+    # Proxy voting (general assembly): a member may let another member vote
+    # for them, if the statutes allow it.
+    allow_proxy: Mapped[bool] = mapped_column(
+        db.Boolean, default=False, server_default=sa.false(), nullable=False
+    )
+    max_proxies_per_member: Mapped[int] = mapped_column(
+        db.Integer, default=1, server_default="1", nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -92,6 +101,10 @@ class PollVote(db.Model):
     member_id: Mapped[int] = mapped_column(
         db.Integer, ForeignKey("members.id"), nullable=False
     )
+    # Set when a proxy holder cast this vote for ``member_id``.
+    cast_by_id: Mapped[int | None] = mapped_column(
+        db.Integer, ForeignKey("members.id", ondelete="SET NULL"), nullable=True
+    )
     cast_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -103,9 +116,37 @@ class PollVote(db.Model):
     option: Mapped["PollOption"] = relationship(
         "PollOption", back_populates="poll_votes"
     )
-    member: Mapped["Member"] = relationship("Member")  # type: ignore[name-defined]  # noqa: F821
+    member: Mapped["Member"] = relationship("Member", foreign_keys=[member_id])  # type: ignore[name-defined]  # noqa: F821
 
     def __repr__(self) -> str:
         return (
             f"<PollVote id={self.id} poll_id={self.poll_id} member_id={self.member_id}>"
         )
+
+
+class PollProxy(db.Model):
+    """``grantor`` lets ``holder`` vote for them in one poll."""
+
+    __tablename__ = "poll_proxies"
+    __table_args__ = (
+        UniqueConstraint("poll_id", "grantor_id", name="uq_poll_proxy_grantor"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    poll_id: Mapped[int] = mapped_column(
+        db.Integer, ForeignKey("polls.id", ondelete="CASCADE"), nullable=False
+    )
+    grantor_id: Mapped[int] = mapped_column(
+        db.Integer, ForeignKey("members.id", ondelete="CASCADE"), nullable=False
+    )
+    holder_id: Mapped[int] = mapped_column(
+        db.Integer, ForeignKey("members.id", ondelete="CASCADE"), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    grantor = relationship("Member", foreign_keys=[grantor_id])
+    holder = relationship("Member", foreign_keys=[holder_id])

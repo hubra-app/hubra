@@ -35,6 +35,8 @@ class PollSchema(ma.SQLAlchemyAutoSchema):
     total_votes = fields.Method("get_total_votes", dump_only=True)
     created_by_id = fields.Integer(dump_only=True, allow_none=True)
     is_required = fields.Boolean(dump_only=True)
+    allow_proxy = fields.Boolean(dump_only=True)
+    max_proxies_per_member = fields.Int(dump_only=True)
     required_group_ids = fields.List(fields.Integer(), dump_only=True, allow_none=True)
     required_function_ids = fields.List(
         fields.Integer(), dump_only=True, allow_none=True
@@ -72,6 +74,10 @@ class PollCreateSchema(ma.Schema):
     required_function_ids = fields.List(
         fields.Integer(), load_default=None, allow_none=True
     )
+    allow_proxy = fields.Boolean(load_default=False)
+    max_proxies_per_member = fields.Int(
+        load_default=1, validate=validate.Range(min=1, max=20)
+    )
 
 
 class PollUpdateSchema(ma.Schema):
@@ -87,6 +93,8 @@ class PollUpdateSchema(ma.Schema):
     is_required = fields.Boolean()
     required_group_ids = fields.List(fields.Integer(), allow_none=True)
     required_function_ids = fields.List(fields.Integer(), allow_none=True)
+    allow_proxy = fields.Boolean()
+    max_proxies_per_member = fields.Int(validate=validate.Range(min=1, max=20))
 
 
 class VoteSchema(ma.Schema):
@@ -94,3 +102,4 @@ class VoteSchema(ma.Schema):
         unknown = RAISE
 
     option_index = fields.Int(required=True, validate=validate.Range(min=0))
+    on_behalf_of = fields.Int(load_default=None, allow_none=True)

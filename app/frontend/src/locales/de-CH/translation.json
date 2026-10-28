@@ -543,7 +543,19 @@
     "optionPlaceholder1": "z.B. Drehbank",
     "optionPlaceholder2": "z.B. Plasma-Schneider",
     "optionPlaceholderOptional": "Optional",
-    "autoCloseDateOptional": "Auto-Schlussdatum (optional)"
+    "autoCloseDateOptional": "Auto-Schlussdatum (optional)",
+    "proxy": {
+      "field": "Stellvertretig",
+      "allow": "Mitglieder chönd öpper anders für sich lah abstimme",
+      "givenTo": "Dini Stimm hät {{name}}",
+      "revoke": "Zruggnäh",
+      "pick": "Wer stimmt für dich?",
+      "give": "Stimm übergäh",
+      "giveButton": "Chasch nöd cho? Gib dini Stimm öpperem",
+      "for": "Für {{name}}",
+      "option": "Option",
+      "vote": "Abstimme"
+    }
   },
   "posts": {
     "comingSoonDesc": "Club-Akündigunge und Community-Biträg sind in Entwicklig.",

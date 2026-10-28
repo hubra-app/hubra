@@ -34,6 +34,7 @@ import {
 } from "@/api/polls";
 import { listGroups } from "@/api/groups";
 import { listFunctions } from "@/api/functions";
+import { ProxyPanel } from "./ProxyPanel";
 
 /* -- Polls ------------------------------------ */
 export function PollsTab() {
@@ -60,6 +61,7 @@ export function PollsTab() {
   const [saving, setSaving] = useState(false);
   const [options, setOptions] = useState<string[]>(["", ""]);
   const [isRequired, setIsRequired] = useState(false);
+  const [allowProxy, setAllowProxy] = useState(false);
   const [requiredGroupIds, setRequiredGroupIds] = useState<number[]>([]);
   const [requiredFunctionIds, setRequiredFunctionIds] = useState<number[]>([]);
   const [remindingPollId, setRemindingPollId] = useState<string | null>(null);
@@ -142,6 +144,7 @@ export function PollsTab() {
     form.reset();
     setOptions(["", ""]);
     setIsRequired(false);
+    setAllowProxy(false);
     setRequiredGroupIds([]);
     setRequiredFunctionIds([]);
   };
@@ -156,6 +159,7 @@ export function PollsTab() {
     form.setValues({ question: poll.question, closesAt: poll.closesAt ?? "" });
     setOptions(poll.options.map((o) => o.label));
     setIsRequired(poll.isRequired ?? false);
+    setAllowProxy(poll.allowProxy ?? false);
     setRequiredGroupIds(poll.requiredGroupIds ?? []);
     setRequiredFunctionIds(poll.requiredFunctionIds ?? []);
     setEditTarget(poll);
@@ -178,6 +182,7 @@ export function PollsTab() {
         options: validOptions,
         closesAt: form.values.closesAt || undefined,
         isRequired,
+        allowProxy,
         requiredGroupIds: isRequired ? requiredGroupIds : [],
         requiredFunctionIds: isRequired ? requiredFunctionIds : [],
       };
@@ -434,6 +439,17 @@ export function PollsTab() {
                     )}
                   </div>
                 </div>
+                {poll.allowProxy && poll.status === "open" && (
+                  <ProxyPanel
+                    poll={poll}
+                    hasVoted={hasVoted}
+                    onPollUpdated={(updated) =>
+                      setPolls((prev) =>
+                        prev.map((p) => (p.id === updated.id ? updated : p)),
+                      )
+                    }
+                  />
+                )}
               </Paper>
             );
           })}
@@ -519,6 +535,17 @@ export function PollsTab() {
             <TextInput
               type="datetime-local"
               {...form.getInputProps("closesAt")}
+            />
+          </Field>
+
+          <Field label={t("polls.proxy.field", "Proxy votes")}>
+            <Switch
+              checked={allowProxy}
+              onChange={(e) => setAllowProxy(e.currentTarget.checked)}
+              label={t(
+                "polls.proxy.allow",
+                "Members may let another member vote for them",
+              )}
             />
           </Field>
 

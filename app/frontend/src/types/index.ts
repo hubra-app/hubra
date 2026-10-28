@@ -121,6 +121,7 @@ export interface Poll {
   status: "open" | "closed";
   createdById?: string;
   isRequired?: boolean;
+  allowProxy?: boolean;
   requiredGroupIds?: number[];
   requiredFunctionIds?: number[];
 }

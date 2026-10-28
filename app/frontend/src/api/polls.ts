@@ -25,6 +25,8 @@ interface BackendPoll {
   status: "open" | "closed";
   created_by_id: number | null;
   is_required: boolean;
+  allow_proxy?: boolean;
+  max_proxies_per_member?: number;
   required_group_ids: number[] | null;
   required_function_ids: number[] | null;
 }
@@ -46,6 +48,7 @@ function adapt(b: BackendPoll): Poll {
     status: b.status,
     createdById: b.created_by_id ? String(b.created_by_id) : undefined,
     isRequired: b.is_required,
+    allowProxy: b.allow_proxy ?? false,
     requiredGroupIds: b.required_group_ids ?? undefined,
     requiredFunctionIds: b.required_function_ids ?? undefined,
   };
@@ -61,6 +64,7 @@ export interface PollCreate {
   options: string[];
   closesAt?: string;
   isRequired?: boolean;
+  allowProxy?: boolean;
   requiredGroupIds?: number[];
   requiredFunctionIds?: number[];
 }
@@ -73,6 +77,7 @@ export async function createPoll(input: PollCreate): Promise<Poll> {
       options: input.options.map((label) => ({ label })),
       closes_at: input.closesAt ?? null,
       is_required: input.isRequired ?? false,
+      allow_proxy: input.allowProxy ?? false,
       required_group_ids: input.requiredGroupIds ?? null,
       required_function_ids: input.requiredFunctionIds ?? null,
     }),
@@ -85,6 +90,7 @@ export interface PollUpdate {
   options?: string[];
   closesAt?: string | null;
   isRequired?: boolean;
+  allowProxy?: boolean;
   requiredGroupIds?: number[] | null;
   requiredFunctionIds?: number[] | null;
 }
@@ -99,6 +105,7 @@ export async function updatePoll(
     body.options = input.options.map((label) => ({ label }));
   if (input.closesAt !== undefined) body.closes_at = input.closesAt;
   if (input.isRequired !== undefined) body.is_required = input.isRequired;
+  if (input.allowProxy !== undefined) body.allow_proxy = input.allowProxy;
   if (input.requiredGroupIds !== undefined)
     body.required_group_ids = input.requiredGroupIds;
   if (input.requiredFunctionIds !== undefined)
@@ -114,10 +121,14 @@ export async function updatePoll(
 export async function castVote(
   pollId: string,
   optionIndex: number,
+  onBehalfOf?: number,
 ): Promise<Poll> {
   const b = await apiFetch<BackendPoll>(`/polls/${pollId}/vote`, {
     method: "POST",
-    body: JSON.stringify({ option_index: optionIndex }),
+    body: JSON.stringify({
+      option_index: optionIndex,
+      on_behalf_of: onBehalfOf ?? null,
+    }),
   });
   return adapt(b);
 }
@@ -130,4 +141,29 @@ export async function remindPoll(id: string): Promise<{ sent: number }> {
   return apiFetch<{ sent: number }>(`/polls/${id}/remind`, {
     method: "POST",
   });
+}
+
+export interface ProxyState {
+  allow_proxy: boolean;
+  max_proxies_per_member: number;
+  given_to: { id: number; name: string } | null;
+  holding: { id: number; name: string; voted: boolean }[];
+}
+
+export async function getProxy(pollId: string): Promise<ProxyState> {
+  return apiFetch<ProxyState>(`/polls/${pollId}/proxy`);
+}
+
+export async function grantProxy(
+  pollId: string,
+  holderId: number,
+): Promise<ProxyState> {
+  return apiFetch<ProxyState>(`/polls/${pollId}/proxy`, {
+    method: "POST",
+    body: JSON.stringify({ holder_id: holderId }),
+  });
+}
+
+export async function revokeProxy(pollId: string): Promise<ProxyState> {
+  return apiFetch<ProxyState>(`/polls/${pollId}/proxy`, { method: "DELETE" });
 }

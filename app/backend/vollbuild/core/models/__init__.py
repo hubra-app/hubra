@@ -33,7 +33,7 @@ from vollbuild.core.models.group import Group, GroupMembership
 from vollbuild.core.models.function import Function, FunctionHolder
 from vollbuild.core.models.managed_mail import ManagedMailAddress
 from vollbuild.core.models.event import ClubEvent, event_attendees, EventRegistration
-from vollbuild.core.models.poll import Poll, PollOption, PollVote
+from vollbuild.core.models.poll import Poll, PollOption, PollVote, PollProxy
 from vollbuild.core.models.post import Post, PostLike, PostComment
 from vollbuild.core.models.finance import Transaction, Invoice, TransactionCategory
 from vollbuild.core.models.external_party import ExternalParty
@@ -90,6 +90,7 @@ __all__ = [
     "Poll",
     "PollOption",
     "PollVote",
+    "PollProxy",
     "Post",
     "PostLike",
     "PostComment",
