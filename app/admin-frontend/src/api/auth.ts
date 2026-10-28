@@ -25,3 +25,17 @@ export async function getMyPermissions(
 export async function logout(): Promise<void> {
   await apiFetch('/auth/logout', { method: 'POST' }).catch(() => {})
 }
+
+/** The signed-in person, for the user card in the shell. */
+export interface Profile {
+  id: number
+  email: string
+  name: string
+  avatarColor: string
+  language: string
+  isSuperadmin: boolean
+}
+
+export async function getProfile(signal?: AbortSignal): Promise<Profile> {
+  return apiFetch<Profile>('/account/profile', { signal })
+}
