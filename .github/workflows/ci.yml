@@ -52,6 +52,9 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
+      - if: matrix.app == 'frontend'
+        name: Plugin frontends
+        run: npm run typecheck:plugins && npm run build:plugin
 
   deploy-config:
     runs-on: ubuntu-latest

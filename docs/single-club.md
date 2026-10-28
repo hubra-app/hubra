@@ -90,7 +90,14 @@ flask db upgrade
 flask sync-permissions
 flask seed --skip-migrate
 flask setup-club
+flask plugins sync
 ```
+
+`flask plugins sync` brings the tables of installed plugins up to date. A
+single club has no manager portal, so plugins (keys, guides, budgets, bank
+import, Discord, …) are installed from the command line, for example
+`docker compose exec backend flask plugins install keys`. See
+[plugins/README.md](../plugins/README.md).
 
 `flask setup-club` reads `SINGLE_CLUB`, `CLUB_NAME`, `ADMIN_EMAIL` and
 `ADMIN_PASSWORD` (or the options `--slug`, `--name`, `--admin-email`,

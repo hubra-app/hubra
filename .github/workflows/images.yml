@@ -33,7 +33,7 @@ jobs:
       matrix:
         include:
           - image: backend
-            context: app/backend
+            context: .
             dockerfile: app/backend/Dockerfile
           - image: frontend
             context: .
