@@ -69,11 +69,6 @@ const AuditLogScreen = lazy(() =>
     default: m.AuditLogScreen,
   })),
 )
-const AccountDashboardScreen = lazy(() =>
-  import('./screens/private/account/Account').then((m) => ({
-    default: m.AccountDashboardScreen,
-  })),
-)
 const AccountSettingsScreen = lazy(() =>
   import('./screens/private/account/AccountSettings').then((m) => ({
     default: m.AccountSettingsScreen,
@@ -497,7 +492,8 @@ function PrivateRoutes() {
                       </RequirePermission>
                     }
                   />
-                  <Route path="account" element={<AccountDashboardScreen />} />
+                  {/* The personal overview is the dashboard's first tab. */}
+                  <Route path="account" element={<Navigate to="/app/dashboard" replace />} />
                   <Route path="account/settings" element={<AccountSettingsScreen />} />
                   <Route path="account/settings/membership" element={<AccountSettingsScreen />} />
                   {/* The account itself lives on the SSO portal */}
