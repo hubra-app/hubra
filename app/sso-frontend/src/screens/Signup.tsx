@@ -18,7 +18,7 @@ import { useNavigate } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import * as authApi from '@/api/auth'
 
-const DEFAULT_MANAGE_URL = import.meta.env.VITE_MANAGE_URL ?? 'https://manage.vollbuild.ch'
+const DEFAULT_MANAGE_URL = import.meta.env.VITE_MANAGE_URL ?? 'https://manage.hubra.club'
 
 function passwordStrength(password: string): { value: number; label: string; color: string } {
   if (!password) return { value: 0, label: '', color: 'gray' }

@@ -4,7 +4,7 @@ import { IconArrowRight } from '@tabler/icons-react'
 import { PageHead } from '@/components/ui'
 import { getMyTenants, type MyTenant } from '@/api/tenants'
 
-const COS_URL = import.meta.env.VITE_COS_URL ?? 'https://cos.vollbuild.ch'
+const COS_URL = import.meta.env.VITE_COS_URL ?? 'https://app.hubra.club'
 
 export function MyTenantsTab() {
   const { data, isLoading } = useQuery<{ tenants: MyTenant[] }>({

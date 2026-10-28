@@ -33,14 +33,14 @@ def run_seeds(db):
         ),
         (
             "mail.domain",
-            _ca.config.get("MAIL_DOMAIN") or "vollbuild.ch",
+            _ca.config.get("MAIL_DOMAIN") or "hubra.club",
             "general",
             False,
             True,
             False,
             "domain",
             "Mail domain",
-            "Domain used for member email addresses and mail routing (e.g. vollbuild.ch)",
+            "Domain used for member email addresses and mail routing (e.g. hubra.club)",
         ),
         (
             "club.currency",
@@ -66,7 +66,7 @@ def run_seeds(db):
         ),
         (
             "club.notification_sender_email",
-            "noreply@vollbuild.ch",
+            "noreply@hubra.club",
             "general",
             False,
             True,
@@ -438,7 +438,7 @@ def run_seeds(db):
     # ── 5. System ManagedMailAddress rows ──────────────────────────────────────
 
     _cd = session.get(Setting, "mail.domain")
-    club_domain = _cd.value if _cd and _cd.value else "vollbuild.ch"
+    club_domain = _cd.value if _cd and _cd.value else "hubra.club"
 
     system_defs = [
         ("noreply", "mailbox", True, "No-Reply", None),

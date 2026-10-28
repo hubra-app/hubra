@@ -39,7 +39,7 @@ The project is deployed via Docker Compose and uses a React SPA frontend with a 
                      │  (TLS termination, ACME)  │
                      └──────┬───────────┬────────┘
                             │           │
-               Host(cos.vollbuild.ch)  Host(api.vollbuild.ch)
+               Host(app.hubra.club)  Host(api.hubra.club)
                             │           │
                             ▼           ▼
                      ┌──────────────┐  ┌──────────────┐
@@ -73,8 +73,8 @@ The project is deployed via Docker Compose and uses a React SPA frontend with a 
 ```
 
 1. **Browser → Traefik** — External Traefik terminates TLS and routes by Host header.
-2. **Traefik → Caddy** (`cos.vollbuild.ch`) — Serves frontend HTML/JS with security headers and CSP.
-3. **Traefik → Backend** (`api.vollbuild.ch`) — API requests go directly to Flask (no Caddy proxy).
+2. **Traefik → Caddy** (`app.hubra.club`) — Serves frontend HTML/JS with security headers and CSP.
+3. **Traefik → Backend** (`api.hubra.club`) — API requests go directly to Flask (no Caddy proxy).
 4. **Flask ↔ PostgreSQL** — Member data, groups, finance, settings, audit log.
 5. **Flask ↔ Redis** — Rate limiting storage, Celery broker.
 6. **Celery tasks ↔ WildDuck API** — Async mailbox/alias provisioning, password sync, retention cleanup.
@@ -120,7 +120,7 @@ Authentication uses JWT access tokens stored in **HttpOnly cookies** (not `local
 
 - `JWT_TOKEN_LOCATION: ["cookies"]`
 - `JWT_COOKIE_CSRF_PROTECT: True`
-- `JWT_COOKIE_DOMAIN: .vollbuild.ch` (production)
+- `JWT_COOKIE_DOMAIN: .hubra.club` (production)
 - Access token TTL: 15 minutes (configurable)
 - Refresh token TTL: 30 days
 
@@ -517,4 +517,4 @@ docker compose -f docker-compose.yml -f docker-compose.override.yaml \
                -f modules/mail/docker-compose.mail.yml up -d
 ```
 
-The `docker-compose.override.yaml` adds Traefik labels (`cos.vollbuild.ch` / `api.vollbuild.ch`), sets `JWT_COOKIE_DOMAIN=.vollbuild.ch`, mounts live code volumes, and switches `VITE_API_BASE` to the production API URL. This file is **not** committed broadly — it lives in `.gitignore` and is maintained per-deployment.
+The `docker-compose.override.yaml` adds Traefik labels (`app.hubra.club` / `api.hubra.club`), sets `JWT_COOKIE_DOMAIN=.hubra.club`, mounts live code volumes, and switches `VITE_API_BASE` to the production API URL. This file is **not** committed broadly — it lives in `.gitignore` and is maintained per-deployment.

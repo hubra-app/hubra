@@ -68,7 +68,7 @@ Use proper status codes: 200/201/204, 400, 401, 403, 404, 409 (duplicate), 422 (
 
 ## 3. Auth & users
 
-JWT. Seed an owner user `marco@vollbuild.ch` / `password` (dev only).
+JWT. Seed an owner user `marco@hubra.club` / `password` (dev only).
 
 | Method | Path | Body | Notes |
 | --- | --- | --- | --- |
@@ -83,7 +83,7 @@ JWT. Seed an owner user `marco@vollbuild.ch` / `password` (dev only).
 
 ```json
 { "club": {"name":"VollBuild Makerspace","city":"Schwyz","type":"makerspace"},
-  "account": {"name":"Marco Köhler","email":"marco@vollbuild.ch","password":"…","digest":true},
+  "account": {"name":"Marco Köhler","email":"marco@hubra.club","password":"…","digest":true},
   "tiers": ["maker","pro","student"] }
 ```
 
@@ -92,7 +92,7 @@ Returns `{accessToken, user, club}`. After bootstrap, `/auth/bootstrap` returns 
 **User object:**
 
 ```json
-{ "id":"u_1","name":"Marco Köhler","email":"marco@vollbuild.ch","role":"owner","avatarColor":"#fece2b","initials":"MK" }
+{ "id":"u_1","name":"Marco Köhler","email":"marco@hubra.club","role":"owner","avatarColor":"#fece2b","initials":"MK" }
 ```
 
 **RBAC:** roles `owner > admin > treasurer > lead > member` (see §9). Protect endpoints with a `@require_perm("Finances & invoices")` style decorator that checks the role's permission matrix. Treasurer can touch finances but not roles; leads only their own group/events; etc. Return 403 with the error envelope when denied.
@@ -211,24 +211,24 @@ All money in **CHF**. Compute from transactions/invoices, don't hardcode.
 
 ## 8. Mail (hosting — **NOT** marketing campaigns)
 
-This module is **mail-server administration** for the domain `vollbuild.ch`: mailboxes & quota, aliases/forwarders, and a message log for troubleshooting/testing. There are **no campaign / open-rate / CTR concepts** — ignore the legacy `CAMPAIGNS` fixture in the old frontend data; do not build it.
+This module is **mail-server administration** for the domain `hubra.club`: mailboxes & quota, aliases/forwarders, and a message log for troubleshooting/testing. There are **no campaign / open-rate / CTR concepts** — ignore the legacy `CAMPAIGNS` fixture in the old frontend data; do not build it.
 
 **Mailboxes** `/mail/mailboxes`:
 
 ```json
-{ "id":"mb_1","addr":"marco@vollbuild.ch","name":"Marco Köhler","used":6.2,"quota":10,
+{ "id":"mb_1","addr":"marco@hubra.club","name":"Marco Köhler","used":6.2,"quota":10,
   "msgs":4821,"color":"#2596be","status":"active" }
 ```
 
 - `used`/`quota` in **GB** (float); `status ∈ {active, send-only}`. CRUD:
-  - `POST` body `{local, name, quota}` → addr = `{local}@vollbuild.ch`; reject duplicates (409) and invalid local-parts (422). quota 1–25 GB.
+  - `POST` body `{local, name, quota}` → addr = `{local}@hubra.club`; reject duplicates (409) and invalid local-parts (422). quota 1–25 GB.
   - `PATCH` quota/name/status; `DELETE` mailbox (block if aliases still deliver to it → 409).
   - `GET /mail/mailboxes/summary` → `{count, usedTotal, quotaTotal, msgsStored, domainStatus:{spf,dkim,dmarc}}` for the stat tiles.
 
 **Aliases & forwarders** `/mail/aliases`:
 
 ```json
-{ "id":"al_1","alias":"info@vollbuild.ch","dest":["hoi@vollbuild.ch"],"type":"Alias","on":true }
+{ "id":"al_1","alias":"info@hubra.club","dest":["hoi@hubra.club"],"type":"Alias","on":true }
 ```
 
 - `type ∈ {Alias, Forward, Distribution}`; `dest` = list of recipient addresses. CRUD; `PATCH /mail/aliases/{id}` toggles `on` (enable/pause). Validate recipients exist as mailboxes or are valid external addresses.
@@ -236,7 +236,7 @@ This module is **mail-server administration** for the domain `vollbuild.ch`: mai
 **Message log** `/mail/log` (troubleshooting trace — the core "tracking" screen):
 
 ```json
-{ "id":"ml_1","dir":"in","from":"lieferung@filamentworld.ch","to":"buchhaltung@vollbuild.ch",
+{ "id":"ml_1","dir":"in","from":"lieferung@filamentworld.ch","to":"buchhaltung@hubra.club",
   "subj":"Rechnung #4471 — PLA/PETG","time":"Today 09:42","timeAt":"2026-06-08T09:42:00Z",
   "size":"84 KB","sizeBytes":86016,"status":"delivered" }
 ```
@@ -247,7 +247,7 @@ This module is **mail-server administration** for the domain `vollbuild.ch`: mai
 ```json
 { "...": "...", "headers": {...},
   "log": [
-    {"t":"09:42:01","stage":"connect","line":"220 mx.vollbuild.ch ESMTP ready"},
+    {"t":"09:42:01","stage":"connect","line":"220 mx.hubra.club ESMTP ready"},
     {"t":"09:42:02","stage":"mail-from","line":"250 2.1.0 Ok"},
     {"t":"09:42:03","stage":"data","line":"250 2.0.0 queued as 4A1F2"},
     {"t":"09:42:04","stage":"delivery","line":"250 2.1.5 delivered to buchhaltung"}

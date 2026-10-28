@@ -1,7 +1,7 @@
 # API Overview
 
-All endpoints live under `https://api.vollbuild.ch/api/v1/`. In production, an
-external Traefik terminates TLS and routes `api.vollbuild.ch` directly to the
+All endpoints live under `https://api.hubra.club/api/v1/`. In production, an
+external Traefik terminates TLS and routes `api.hubra.club` directly to the
 Flask backend (`backend:5000`). Caddy is not in the API path.
 
 For the complete endpoint reference, see [`app/backend/API.md`](../app/backend/API.md).
@@ -18,7 +18,7 @@ not `Authorization: Bearer` headers. Tokens are never exposed to JavaScript.
 | `csrf_access_token`     | No       | CSRF double-submit (JS-readable) |
 | `csrf_refresh_token`    | No       | CSRF double-submit (JS-readable) |
 
-All cookies use `Domain=.vollbuild.ch`, `SameSite=Lax`, `Secure` (HTTPS only),
+All cookies use `Domain=.hubra.club`, `SameSite=Lax`, `Secure` (HTTPS only),
 `Path=/`. See [SUBDOMAIN_MIGRATION.md](SUBDOMAIN_MIGRATION.md) for the full
 cookie/CORS rationale.
 
@@ -27,10 +27,10 @@ cookie/CORS rationale.
 ```
 POST /api/v1/auth/login     { "email": "...", "password": "..." }
   → 200  { "mustChangePassword": false, "member": { ... } }
-  → Set-Cookie: access_token_cookie=...; HttpOnly; Secure; Domain=.vollbuild.ch; SameSite=Lax
-  → Set-Cookie: refresh_token_cookie=...; HttpOnly; Secure; Domain=.vollbuild.ch; SameSite=Lax
-  → Set-Cookie: csrf_access_token=...; Secure; Domain=.vollbuild.ch; SameSite=Lax
-  → Set-Cookie: csrf_refresh_token=...; Secure; Domain=.vollbuild.ch; SameSite=Lax
+  → Set-Cookie: access_token_cookie=...; HttpOnly; Secure; Domain=.hubra.club; SameSite=Lax
+  → Set-Cookie: refresh_token_cookie=...; HttpOnly; Secure; Domain=.hubra.club; SameSite=Lax
+  → Set-Cookie: csrf_access_token=...; Secure; Domain=.hubra.club; SameSite=Lax
+  → Set-Cookie: csrf_refresh_token=...; Secure; Domain=.hubra.club; SameSite=Lax
 
 POST /api/v1/auth/refresh   (refresh cookie sent automatically)
   + X-CSRF-TOKEN: <csrf_refresh_token cookie value>
@@ -51,8 +51,8 @@ header is in the CORS `Access-Control-Allow-Headers` list.
 
 ### Cross-origin requests
 
-The frontend and API are on different subdomains (`cos.vollbuild.ch` vs
-`api.vollbuild.ch`), so every frontend request must send credentials:
+The frontend and API are on different subdomains (`app.hubra.club` vs
+`api.hubra.club`), so every frontend request must send credentials:
 
 - `fetch` → `credentials: 'include'`
 - `axios` → `withCredentials: true`

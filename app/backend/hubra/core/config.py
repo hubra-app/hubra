@@ -118,15 +118,15 @@ class BaseConfig:
     ]
 
     # ── Frontend origin (for email links & out-of-band URLs) ────────────────
-    # The API and frontend now live on separate subdomains (api.vollbuild.ch vs
-    # cos.vollbuild.ch), so request.url_root resolves to the API host and must
+    # The API and frontend now live on separate subdomains (api.hubra.club vs
+    # app.hubra.club), so request.url_root resolves to the API host and must
     # NOT be used to build links that open the SPA. Set this to the frontend's
-    # canonical origin, e.g. https://cos.vollbuild.ch.
+    # canonical origin, e.g. https://app.hubra.club.
     FRONTEND_BASE_URL: str = os.environ.get("FRONTEND_BASE_URL", "")
 
     # ── SSO portal origin (for auth-related email links) ─────────────────────
     # Password-reset and email-verification links point to the SSO portal
-    # (sso.vollbuild.ch) rather than the COS frontend. Falls back to
+    # (sso.hubra.club) rather than the COS frontend. Falls back to
     # FRONTEND_BASE_URL for backward compatibility when not set.
     SSO_BASE_URL: str = os.environ.get("SSO_BASE_URL", "")
 

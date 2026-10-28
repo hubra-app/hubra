@@ -1,0 +1,43 @@
+# The deploy/app routes on the vollbuild.ch host names. The lists replace the
+# base ones, so every host is listed here.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hubra
+spec:
+  tls:
+    - secretName: hubra-tls
+      hosts:
+        - api.vollbuild.ch
+        - cos.vollbuild.ch
+        - manage.vollbuild.ch
+        - sso.vollbuild.ch
+  rules:
+    - host: api.vollbuild.ch
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: backend, port: { name: http } }
+    - host: cos.vollbuild.ch
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: frontend, port: { name: http } }
+    - host: manage.vollbuild.ch
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: admin-frontend, port: { name: http } }
+    - host: sso.vollbuild.ch
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: sso-frontend, port: { name: http } }

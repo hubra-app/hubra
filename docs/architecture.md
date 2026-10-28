@@ -9,7 +9,7 @@
                     │   routing, CrowdSec)      │
                     └──────┬───────────┬────────┘
                            │           │
-               Host(cos.vollbuild.ch)  Host(api.vollbuild.ch)
+               Host(app.hubra.club)  Host(api.hubra.club)
                            │           │
                            ▼           ▼
                     ┌──────────────┐  ┌──────────────┐
@@ -56,9 +56,9 @@
 
 1. **Browser → Traefik** — External Traefik terminates TLS and routes by Host
    header. CrowdSec middleware (`crowdsec@file`) inspects all requests.
-2. **Traefik → Caddy** (`cos.vollbuild.ch`) — Frontend HTML/JS served by Caddy
+2. **Traefik → Caddy** (`app.hubra.club`) — Frontend HTML/JS served by Caddy
    → React SPA. Caddy adds CSP, Permissions-Policy, and other security headers.
-3. **Traefik → Backend** (`api.vollbuild.ch`) — API requests go directly to
+3. **Traefik → Backend** (`api.hubra.club`) — API requests go directly to
    Flask (no Caddy proxy). One proxy hop; ProxyFix `x_for=1`.
 4. **Flask ↔ PostgreSQL** — Member data, groups, finance, settings, audit log.
 5. **Flask ↔ Redis** — Rate limiting storage, Celery broker.
@@ -75,14 +75,14 @@ The API and frontend are on different subdomains. See
   browsers). Allowlist via `CORS_ORIGINS`, no wildcards, `Vary: Origin` on all
   CORS responses.
 - **Cookies** — JWT access/refresh tokens in HttpOnly cookies with
-  `Domain=.vollbuild.ch`, `SameSite=Lax`, `Secure`. CSRF double-submit via
+  `Domain=.hubra.club`, `SameSite=Lax`, `Secure`. CSRF double-submit via
   readable `csrf_*` cookies + `X-CSRF-TOKEN` header.
 - **Preflight** — `OPTIONS` returns 200/204 with CORS headers, exempt from auth,
   RBAC, and rate limiting. CrowdSec (Traefik) must also pass OPTIONS through.
 - **ProxyFix** — `x_for=1, x_proto=1, x_host=1` so the app sees the real client
   IP (CrowdSec/rate-limit attribution), HTTPS scheme (Secure cookies), and
-  `api.vollbuild.ch` host.
-- **Email links** — `FRONTEND_BASE_URL` (e.g. `https://cos.vollbuild.ch`) is
+  `api.hubra.club` host.
+- **Email links** — `FRONTEND_BASE_URL` (e.g. `https://app.hubra.club`) is
   used for password-reset and email-verification links, not `request.url_root`
   (which resolves to the API host).
 

@@ -4,23 +4,24 @@ A self-hosted club management platform with member management, finance, group
 communication, events, polls, and an integrated self-hosted mail stack.
 
 Hubra was previously called VollBuild COS (Club Operations Suite). VollBuild
-is now only the name of the first club running it, which is why the default
-deployment uses the `vollbuild.ch` hosts and seeds "VollBuild Makerspace" as
-the club name.
+is now only the name of the first club running it, which is why a fresh
+install still seeds "VollBuild Makerspace" as the club name. The default host
+names are under `hubra.club`; the existing `vollbuild.ch` server keeps its
+hosts through `.env` (Compose) or the `deploy/vollbuild-ch` overlay (k3s).
 
 ## Architecture
 
-The app is split across three subdomains of `vollbuild.ch`:
+The app is split across four subdomains of `hubra.club`:
 
-| Subdomain             | Served by     | Purpose                          |
-| --------------------- | ------------- | -------------------------------- |
-| `api.vollbuild.ch`    | Flask backend | REST API (JSON)                  |
-| `cos.vollbuild.ch`    | Caddy + React | Tenant frontend SPA (members)    |
-| `manage.vollbuild.ch` | Nginx + React | Admin portal SPA (superadmins)   |
-| `sso.vollbuild.ch`    | Nginx + React | Centralized SSO login portal     |
+| Subdomain           | Served by     | Purpose                          |
+| ------------------- | ------------- | -------------------------------- |
+| `api.hubra.club`    | Flask backend | REST API (JSON)                  |
+| `app.hubra.club`    | Caddy + React | Tenant frontend SPA (members)    |
+| `manage.hubra.club` | Nginx + React | Admin portal SPA (superadmins)   |
+| `sso.hubra.club`    | Nginx + React | Centralized SSO login portal     |
 
 An external Traefik terminates TLS and routes by Host header. JWT auth cookies
-use `Domain=.vollbuild.ch` so they flow cross-subdomain. See
+use `Domain=.hubra.club` so they flow cross-subdomain. See
 [docs/SUBDOMAIN_MIGRATION.md](docs/SUBDOMAIN_MIGRATION.md) for the full
 cross-origin auth setup (CORS, CSRF, cookie attributes, ProxyFix).
 

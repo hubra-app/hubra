@@ -37,7 +37,7 @@
     "namespace": "mail",
     "validation_type": "domain",
     "label": "Mail domain",
-    "description": "Domain used for member email addresses and mail routing (e.g. vollbuild.ch). Seeded from MAIL_DOMAIN env var."
+    "description": "Domain used for member email addresses and mail routing (e.g. hubra.club). Seeded from MAIL_DOMAIN env var."
   },
   {
     "key": "mail.smtp_host",
@@ -97,7 +97,7 @@
   },
   {
     "key": "club.notification_sender_email",
-    "value": "noreply@vollbuild.ch",
+    "value": "noreply@hubra.club",
     "namespace": "general",
     "validation_type": "email",
     "label": "Notification sender email",

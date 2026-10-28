@@ -16,7 +16,7 @@ def _make_system_mma(
     db,
     *,
     local_part: str,
-    domain: str = "vollbuild.ch",
+    domain: str = "hubra.club",
     is_mailbox: bool = True,
     wildduck_id: str | None = None,
     fixed_forward_targets: list[str] | None = None,
@@ -51,7 +51,7 @@ def _make_system_mma(
     return addr
 
 
-def _ensure_settings(db, domain: str = "vollbuild.ch"):
+def _ensure_settings(db, domain: str = "hubra.club"):
     """Ensure mail.domain setting exists."""
     existing = db.session.get(Setting, "mail.domain")
     if existing is None:
@@ -69,7 +69,7 @@ def test_get_hub_address_default(app, db):
     from hubra.core.services.mail_provisioning import _get_hub_address
 
     _ensure_settings(db)
-    assert _get_hub_address() == "postmaster@vollbuild.ch"
+    assert _get_hub_address() == "postmaster@hubra.club"
 
 
 # ── System alias target resolver tests ────────────────────────────────────────
@@ -84,7 +84,7 @@ def test_resolve_system_alias_targets_hub_marker(app, db):
         db, local_part="abuse", is_mailbox=False, fixed_forward_targets=["hub"]
     )
     targets = _resolve_system_alias_targets(mma)
-    assert targets == ["postmaster@vollbuild.ch"]
+    assert targets == ["postmaster@hubra.club"]
 
 
 def test_resolve_system_alias_targets_passthrough(app, db):
@@ -99,7 +99,7 @@ def test_resolve_system_alias_targets_passthrough(app, db):
         fixed_forward_targets=["external@example.com", "hub"],
     )
     targets = _resolve_system_alias_targets(mma)
-    assert targets == ["external@example.com", "postmaster@vollbuild.ch"]
+    assert targets == ["external@example.com", "postmaster@hubra.club"]
 
 
 def test_resolve_system_alias_targets_no_fixed_falls_back_to_hub(app, db):
@@ -109,7 +109,7 @@ def test_resolve_system_alias_targets_no_fixed_falls_back_to_hub(app, db):
     _ensure_settings(db)
     mma = _make_system_mma(db, local_part="info", is_mailbox=False)
     targets = _resolve_system_alias_targets(mma)
-    assert targets == ["postmaster@vollbuild.ch"]
+    assert targets == ["postmaster@hubra.club"]
 
 
 # ── System forward target resolver tests ──────────────────────────────────────
@@ -129,7 +129,7 @@ def test_resolve_system_forward_targets_with_fixed(app, db):
         fixed_forward_targets=["hub", "external@example.com"],
     )
     targets = _resolve_system_forward_targets(mma)
-    assert targets == ["postmaster@vollbuild.ch", "external@example.com"]
+    assert targets == ["postmaster@hubra.club", "external@example.com"]
 
 
 def test_resolve_system_forward_targets_empty_when_no_fixed_no_group(app, db):
@@ -175,7 +175,7 @@ def test_ensure_catchall_adds_wildcard_to_hub(mock_tgc, app, db):
     ensure_catchall(catchall_mma)
 
     mock_wd.add_address_to_user.assert_called_once_with(
-        "wd-hub", "*@vollbuild.ch", allow_wildcard=True
+        "wd-hub", "*@hubra.club", allow_wildcard=True
     )
     assert catchall_mma.sync_state == "ok"
 
@@ -213,7 +213,7 @@ def test_ensure_catchall_noop_when_already_present(mock_tgc, app, db):
 
     mock_wd = MagicMock()
     mock_wd.list_user_addresses.return_value = {
-        "results": [{"address": "*@vollbuild.ch"}]
+        "results": [{"address": "*@hubra.club"}]
     }
     mock_tgc.return_value = mock_wd
 
@@ -287,8 +287,8 @@ def test_ensure_alias_system_resolves_hub_targets(mock_tgc, app, db):
     ensure_alias(mma)
 
     mock_wd.create_forwarding_alias.assert_called_once_with(
-        "abuse@vollbuild.ch",
-        targets=["postmaster@vollbuild.ch"],
+        "abuse@hubra.club",
+        targets=["postmaster@hubra.club"],
         name="Abuse",
     )
     assert mma.wildduck_id == "wd-alias-abuse"
@@ -319,7 +319,7 @@ def test_ensure_alias_system_updates_targets_when_different(mock_tgc, app, db):
     ensure_alias(mma)
 
     mock_wd.update_forwarding_alias.assert_called_once_with(
-        "wd-alias-abuse", ["postmaster@vollbuild.ch"]
+        "wd-alias-abuse", ["postmaster@hubra.club"]
     )
     mock_wd.create_forwarding_alias.assert_not_called()
 
@@ -378,7 +378,7 @@ def test_reconcile_mail_catchall(mock_wd_tgc, mock_mp_tgc, app, db):
 
     assert result["provisioned"] >= 1
     mock_wd.add_address_to_user.assert_any_call(
-        "wd-hub", "*@vollbuild.ch", allow_wildcard=True
+        "wd-hub", "*@hubra.club", allow_wildcard=True
     )
 
 
@@ -407,7 +407,7 @@ def test_reconcile_mail_system_mailbox_forwarding(mock_wd_tgc, mock_mp_tgc, app,
     reconcile_mail.run()
 
     mock_wd.update_user_attributes.assert_any_call(
-        "wd-pm", targets=["postmaster@vollbuild.ch"]
+        "wd-pm", targets=["postmaster@hubra.club"]
     )
 
 
@@ -438,8 +438,8 @@ def test_reconcile_mail_system_alias_with_hub_targets(
     reconcile_mail.run()
 
     mock_wd.create_forwarding_alias.assert_called_once_with(
-        "abuse@vollbuild.ch",
-        targets=["postmaster@vollbuild.ch"],
+        "abuse@hubra.club",
+        targets=["postmaster@hubra.club"],
         name="Abuse",
     )
 
@@ -698,7 +698,7 @@ def test_seed_creates_noreply_mma_with_password(app, db):
 
     noreply = db.session.scalar(
         select(ManagedMailAddress).where(
-            ManagedMailAddress.address == "noreply@vollbuild.ch"
+            ManagedMailAddress.address == "noreply@hubra.club"
         )
     )
     assert noreply is not None

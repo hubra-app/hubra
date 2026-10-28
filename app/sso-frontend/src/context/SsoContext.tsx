@@ -23,8 +23,19 @@ interface SsoState {
 
 const SsoContext = createContext<SsoState | null>(null)
 
-const DEFAULT_COS_URL = import.meta.env.VITE_COS_URL ?? 'https://cos.vollbuild.ch'
-const DEFAULT_MANAGE_URL = import.meta.env.VITE_MANAGE_URL ?? 'https://manage.vollbuild.ch'
+const DEFAULT_COS_URL = import.meta.env.VITE_COS_URL ?? 'https://app.hubra.club'
+const DEFAULT_MANAGE_URL = import.meta.env.VITE_MANAGE_URL ?? 'https://manage.hubra.club'
+
+// Parent domain of the club app (app.hubra.club -> hubra.club); any of its
+// subdomains is a valid redirect target. Empty for localhost and bare hosts.
+const APP_DOMAIN = (() => {
+  try {
+    const labels = new URL(DEFAULT_COS_URL).hostname.split('.')
+    return labels.length > 2 ? labels.slice(1).join('.') : ''
+  } catch {
+    return ''
+  }
+})()
 
 function validateRedirect(raw: string | null): string {
   if (!raw) return DEFAULT_COS_URL
@@ -33,8 +44,8 @@ function validateRedirect(raw: string | null): string {
     if (url.protocol === 'http:') {
       if (url.hostname === 'localhost') return raw
     }
-    if (url.protocol === 'https:') {
-      if (url.hostname.endsWith('.vollbuild.ch')) return raw
+    if (url.protocol === 'https:' && APP_DOMAIN) {
+      if (url.hostname.endsWith(`.${APP_DOMAIN}`)) return raw
     }
     // The configured app origins (set at container start for other domains).
     const allowed = [DEFAULT_COS_URL, DEFAULT_MANAGE_URL].map((u) => new URL(u).origin)

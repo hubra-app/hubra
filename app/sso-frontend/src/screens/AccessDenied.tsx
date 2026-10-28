@@ -7,7 +7,7 @@ export function AccessDenied() {
   const navigate = useNavigate()
   const { redirectTarget } = useSso()
 
-  const cosUrl = import.meta.env.VITE_COS_URL ?? 'https://cos.vollbuild.ch'
+  const cosUrl = import.meta.env.VITE_COS_URL ?? 'https://app.hubra.club'
 
   return (
     <div

@@ -25,11 +25,11 @@ npm run lint       # ESLint
 
 | Variable         | Dev                          | Production                       |
 | ---------------- | ---------------------------- | -------------------------------- |
-| `VITE_API_BASE`  | `http://localhost:5000/api`  | `https://api.vollbuild.ch/api`   |
+| `VITE_API_BASE`  | `http://localhost:5000/api`  | `https://api.hubra.club/api`   |
 
 In dev, `app/frontend/.env` sets `VITE_API_BASE` to point at the Flask backend
 directly. In production, `docker-compose.override.yaml` sets it to the API
-subdomain (Traefik routes `api.vollbuild.ch` → backend).
+subdomain (Traefik routes `api.hubra.club` → backend).
 
 ## API client
 

@@ -1,4 +1,4 @@
-# Let's Encrypt issuer for the app hosts (api/cos/manage/sso.vollbuild.ch).
+# Let's Encrypt issuer for the app hosts (api/app/manage/sso.hubra.club).
 # Applied after cert-manager is ready (Flux Kustomization infra-config).
 # Replaces the `letencrypt` certresolver of the old external Traefik.
 apiVersion: cert-manager.io/v1
