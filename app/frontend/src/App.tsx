@@ -172,14 +172,6 @@ function HomeRedirect() {
 
 function PrivateRoutes() {
   const location = useLocation()
-  const { tenantSlug, switchTenant } = useApp()
-
-  useEffect(() => {
-    if (URL_CLUB && URL_CLUB !== tenantSlug) {
-      // The club in the URL becomes active; a deep link keeps its page.
-      switchTenant(URL_CLUB, true)
-    }
-  }, [tenantSlug, switchTenant])
 
   const pluginsReady = usePluginLoader()
   const pluginRoutes = usePluginRoutes()

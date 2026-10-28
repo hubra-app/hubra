@@ -22,7 +22,7 @@ import {
   apiFetch,
 } from '@hubra/api-client'
 import {
-  getAccount,
+  getAccountSession,
   logout as apiLogout,
   getMyPermissions,
   getMyTenants,
@@ -30,6 +30,7 @@ import {
   type MyTenant,
 } from '@/api/auth'
 import { clearLookups } from '@/api/lookups'
+import { URL_CLUB } from '@/clubBase'
 import { ping } from '@/api/system'
 import { listEvents } from '@/api/events'
 import { listPolls } from '@/api/polls'
@@ -184,9 +185,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       try {
         // Both at once: the permissions do not wait for the account.
-        const permRequest = getMyPermissions(ctrl.signal).catch(() => null)
-        const member = await getAccount(ctrl.signal)
+        let permRequest = getMyPermissions(ctrl.signal).catch(() => null)
+        let session = await getAccountSession(ctrl.signal)
         if (cancelled) return
+        if (URL_CLUB && session.tenantSlug !== URL_CLUB) {
+          // The token is for no club or another one: switch to the club in
+          // the URL first, then read the account and permissions there.
+          await apiSwitchTenant(URL_CLUB).catch((err: { status?: number; code?: string }) => {
+            // Not a member of this club (or it does not exist): as without a club.
+            if ((err?.status === 403 || err?.status === 404) && err.code !== 'EMAIL_NOT_VERIFIED') {
+              throw Object.assign(new Error('noTenant'), { noTenant: true })
+            }
+            throw err
+          })
+          if (cancelled) return
+          permRequest = getMyPermissions(ctrl.signal).catch(() => null)
+          session = await getAccountSession(ctrl.signal)
+          if (cancelled) return
+        }
+        const member = session.member
+        if (!member) {
+          throw Object.assign(new Error('noTenant'), { noTenant: true })
+        }
+        if (URL_CLUB) {
+          setTenantSlug(URL_CLUB)
+          setTenantSlugState(URL_CLUB)
+        }
         setCurrentUser(member)
         const permData = await permRequest
         if (cancelled) return
@@ -214,6 +238,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return
         }
         const { status, code } = err as { status?: number; code?: string }
+        if (code === 'EMAIL_NOT_VERIFIED') {
+          // The email step after sign-in is still open: do it on SSO first.
+          const back = encodeURIComponent(window.location.href)
+          window.location.assign(`${ssoUrl}/verify?redirect=${back}`)
+          return
+        }
         if (status === 403 && code === 'MUST_CHANGE_PASSWORD') {
           // Stays 'loading': only the password change form is shown.
           setPasswordChangeRequired(true)

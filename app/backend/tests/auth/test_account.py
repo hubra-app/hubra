@@ -12,6 +12,22 @@ def test_get_account_authenticated(client, auth_headers):
     assert body["email"] == "admin@test.ch"
 
 
+def test_get_account_names_the_token_club(client, db, seeded_db):
+    """The club app compares it with the URL to skip /auth/switch-tenant."""
+    from hubra.core.models.tenant import Tenant
+
+    db.session.add(Tenant(name="Club A", slug="club-a", status="active"))
+    db.session.commit()
+    client.post(
+        "/api/v1/auth/login",
+        json={"email": "admin@test.ch", "password": "password123"},
+        headers={"X-Tenant-Slug": "club-a"},
+    )
+    resp = client.get("/api/v1/account/")
+    assert resp.status_code == 200
+    assert resp.get_json()["tenantSlug"] == "club-a"
+
+
 def test_get_account_unauthenticated(client, seeded_db):
     resp = client.get("/api/v1/account/")
     assert resp.status_code == 401
