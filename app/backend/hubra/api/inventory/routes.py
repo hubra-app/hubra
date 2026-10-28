@@ -152,7 +152,7 @@ def checkout_item(item_id: int):
     try:
         data = CheckoutCreateSchema().load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.members), 400)
+        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
 
     checkout = InventoryService.checkout(
         item_id=item_id,

@@ -568,7 +568,11 @@ class InvoiceService:
         """Generate a QR-bill PDF for the invoice and return the bytes."""
         from hubra.core.services.qr_bill import generate_invoice_pdf
 
-        return generate_invoice_pdf(invoice)
+        try:
+            return generate_invoice_pdf(invoice)
+        except ValueError as exc:
+            # Banking details (IBAN, postal code, city) not set up yet.
+            raise_error(409, "QR_BILL_NOT_CONFIGURED", str(exc))
 
     @staticmethod
     def dispatch_reminder(invoice: Invoice, actor_id: int) -> dict:

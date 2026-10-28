@@ -179,7 +179,7 @@ def register_for_event(event_id: int):
     try:
         data = RegisterSchema().load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.members), 400)
+        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
 
     member_id = get_current_member().id
     registration = EventService.register(
@@ -208,7 +208,7 @@ def register_member_for_event(event_id: int, member_id: int):
     try:
         data = RegisterSchema().load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.members), 400)
+        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
 
     registration = EventService.register(
         event_id=event_id,

@@ -9,6 +9,14 @@ from hubra.core.extensions import db
 from hubra.core.models.function import Function, FunctionHolder
 
 
+def _holder_count(value) -> int:
+    """At least one holder; a value that is not a whole number is a 400."""
+    try:
+        return max(1, int(value))
+    except (TypeError, ValueError):
+        raise_error(400, "VALIDATION_ERROR", "maxHolders must be a whole number")
+
+
 class FunctionService:
     @staticmethod
     def list_all() -> list[Function]:
@@ -25,9 +33,10 @@ class FunctionService:
     def create(
         name: str, description: str | None = None, max_holders: int = 1
     ) -> Function:
-        name = name.strip()
+        name = name.strip() if isinstance(name, str) else ""
         if not name:
             raise_error(400, "VALIDATION_ERROR", "Function name cannot be empty")
+        max_holders = _holder_count(max_holders)
 
         existing = db.session.scalar(select(Function).where(Function.name == name))
         if existing is not None:
@@ -36,7 +45,7 @@ class FunctionService:
         fn = Function(
             name=name,
             description=description,
-            max_holders=max(1, max_holders),
+            max_holders=max_holders,
         )
         db.session.add(fn)
         db.session.flush()
@@ -59,7 +68,7 @@ class FunctionService:
         updates = {k: v for k, v in fields.items() if k in allowed}
 
         if "name" in updates:
-            name = updates["name"].strip()
+            name = updates["name"].strip() if isinstance(updates["name"], str) else ""
             if not name:
                 raise_error(400, "VALIDATION_ERROR", "Function name cannot be empty")
             if name != fn.name:
@@ -71,7 +80,7 @@ class FunctionService:
             updates["name"] = name
 
         if "max_holders" in updates:
-            updates["max_holders"] = max(1, int(updates["max_holders"]))
+            updates["max_holders"] = _holder_count(updates["max_holders"])
             current_holders = len(fn.holders)
             if updates["max_holders"] < current_holders:
                 raise_error(

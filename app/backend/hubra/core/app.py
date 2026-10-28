@@ -13,13 +13,13 @@ import os
 import time
 
 import click
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_jwt_extended import get_jwt_identity
 from sqlalchemy import select
 
 from .config import config_map
 from .extensions import db, migrate, jwt, ma, cors, limiter
-from .errors import register_error_handlers
+from .errors import api_error, register_error_handlers
 from .settings_loader import load_settings
 
 
@@ -65,6 +65,18 @@ def _resolve_rate_limit_storage(app: Flask) -> str:
             )
             return "memory://"
     return uri
+
+
+def _reject_scalar_json():
+    """Endpoints read a JSON object (a few a list); a bare string or number
+    would reach ``body.get(...)`` and fail with a 500."""
+    if request.method in ("POST", "PUT", "PATCH") and request.is_json:
+        body = request.get_json(silent=True)
+        if isinstance(body, (str, int, float, bool)):
+            return api_error(
+                "VALIDATION_ERROR", "Request body must be a JSON object", 400
+            )
+    return None
 
 
 def create_app(config_name: str | None = None) -> Flask:
@@ -128,6 +140,7 @@ def create_app(config_name: str | None = None) -> Flask:
     install_search_path_guard()
 
     app.wsgi_app = TenantPathMiddleware(app.wsgi_app)
+    app.before_request(_reject_scalar_json)
     app.before_request(resolve_tenant)
 
     limiter.init_app(app)
