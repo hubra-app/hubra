@@ -174,7 +174,7 @@ def test_api_needs_the_permission(client, auth_headers):
 
 
 def test_api_lists_and_updates(client, superadmin, db):
-    body = client.get("/api/v2/manager/platform/settings").get_json()
+    body = client.get("/api/v1/manager/platform/settings").get_json()
     keys = {s["key"] for s in body["settings"]}
     assert {
         "mail.relay.host",

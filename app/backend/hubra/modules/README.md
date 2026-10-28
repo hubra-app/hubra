@@ -3,7 +3,7 @@
 Every section of the suite is a module: members, groups, finance, inventory,
 mail and so on. A club admin switches optional modules on or off under
 **Settings > Modules**; a platform manager can block a module for a club
-(manager API `PUT /api/v2/manager/features/tenants/<id>/<code>` with
+(manager API `PUT /api/v1/features/tenants/<id>/<code>` with
 `{"allowed": false}`).
 
 Switching a module off hides it and makes its API answer
@@ -50,7 +50,6 @@ module = Module(
             "hubra_keys.routes",
             "keys_bp",
             "/api/v1/keys",
-            v2=(("/api/v2/tenants/keys", "keys_bp_v2"),),
         ),
     ),
     settings=(SettingField("handover_requires_signature", "bool", default=False),),

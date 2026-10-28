@@ -26,11 +26,11 @@ export function TenantModules({ tenantId }: { tenantId: number }) {
     }
   }
 
-  // Shipped modules in German; plugins keep their manifest's texts.
+  // Shipped modules and plugins in German; other plugins keep their manifest's texts.
   const optional = modules
     .filter((m) => !m.required)
     .map((m) => {
-      const de = m.plugin ? undefined : MODULE_DE[m.code]
+      const de = MODULE_DE[m.code]
       return de ? { ...m, name: tr(de[0], m.name), description: tr(de[1], m.description) } : m
     })
 

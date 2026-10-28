@@ -13,7 +13,6 @@ module = Module(
             "hubra_budgets.routes",
             "budgets_bp",
             "/api/v1/budgets",
-            v2=(("/api/v2/tenants/budgets", "budgets_bp_v2"),),
         ),
     ),
     tables=("budgets", "budget_lines"),

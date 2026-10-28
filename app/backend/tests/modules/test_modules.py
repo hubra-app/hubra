@@ -78,18 +78,6 @@ def test_registry_rejects_cycles():
         reg.validate()
 
 
-def test_v2_blueprints_share_v1_permission_keys():
-    from hubra.api.permissions import _derive_perm_key
-
-    assert (
-        _derive_perm_key("members_bp_v2", "members", "read") == "members.members.read"
-    )
-    assert (
-        _derive_perm_key("settings_bp_v2_tenant", "settings", "read")
-        == "settings.settings.read"
-    )
-
-
 def test_every_blueprint_belongs_to_a_module(app):
     for name in app.blueprints:
         assert modules.registry.module_for_blueprint(name) is not None, name
@@ -260,12 +248,6 @@ def test_gate_blocks_disabled_module_for_tenant(client, db, auth_headers, tenant
     assert client.get("/api/v1/inventory/").status_code == 200
 
 
-def test_gate_covers_v2_blueprints(client, db, auth_headers):
-    set_modules(False, "polls")
-    resp = client.get("/api/v2/tenants/polls/")
-    assert resp.status_code == 403
-
-
 def test_gate_leaves_required_modules_alone(client, db, auth_headers, tenant):
     set_modules(False)
     resp = client.get("/api/v1/members/", headers={"X-Tenant-Slug": "club-a"})
@@ -426,7 +408,7 @@ def superadmin(client, seeded_db, db):
 
 def test_manager_blocks_module_for_club(client, db, superadmin, tenant):
     resp = client.put(
-        f"/api/v2/manager/features/tenants/{tenant.id}/inventory",
+        f"/api/v1/features/tenants/{tenant.id}/inventory",
         json={"allowed": False},
     )
     assert resp.status_code == 200
@@ -448,7 +430,7 @@ def test_manager_blocks_module_for_club(client, db, superadmin, tenant):
 
 def test_manager_unknown_module(client, db, superadmin, tenant):
     resp = client.put(
-        f"/api/v2/manager/features/tenants/{tenant.id}/nope", json={"allowed": True}
+        f"/api/v1/features/tenants/{tenant.id}/nope", json={"allowed": True}
     )
     assert resp.status_code == 404
 

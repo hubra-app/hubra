@@ -13,7 +13,6 @@ module = Module(
             "hubra.api.events.routes",
             "events_bp",
             "/api/v1/events",
-            v2=(("/api/v2/tenants/events", "events_bp_v2"),),
         ),
     ),
     nav=(

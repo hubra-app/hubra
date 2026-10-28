@@ -27,9 +27,7 @@ def module_gate():
     module = registry.module_for_blueprint(request.blueprint)
     if module is None or module.required:
         return None
-    endpoint = request.endpoint or ""
-    bp, _, view = endpoint.rpartition(".")
-    if f"{registry.canonical_blueprint(bp)}.{view}" in module.public_endpoints:
+    if (request.endpoint or "") in module.public_endpoints:
         return None
     if not is_enabled(module.code):
         return _disabled(module)

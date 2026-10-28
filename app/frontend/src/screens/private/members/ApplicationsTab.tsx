@@ -13,6 +13,7 @@ import {
 import { getLookups } from '@/api/lookups'
 import { formatDateTime } from '@/format'
 import { LeaveRequests } from './LeaveRequests'
+import { roleLabel } from '@/roles'
 
 /* ── Applications ───────────────────────────── */
 export function ApplicationsTab() {
@@ -233,7 +234,7 @@ export function ApplicationsTab() {
           </Field>
           <Field label={t('common.roles', 'Rollen')}>
             <Select
-              data={allRoles.map((r) => ({ value: r, label: r }))}
+              data={allRoles.map((r) => ({ value: r, label: roleLabel(r) }))}
               value={approveRole}
               onChange={(v) => v && setApproveRole(v)}
               searchable

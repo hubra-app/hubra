@@ -14,7 +14,6 @@ module = Module(
             "hubra_keys.routes",
             "keys_bp",
             "/api/v1/keys",
-            v2=(("/api/v2/tenants/keys", "keys_bp_v2"),),
         ),
     ),
     nav=(

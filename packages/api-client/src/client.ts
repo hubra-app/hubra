@@ -1,6 +1,8 @@
 // In production: VITE_API_BASE points to https://api.hubra.club/api (Traefik → backend)
 // In local dev: VITE_API_BASE points to http://localhost:5000/api (direct to Flask)
 // VITE_API_BASE can fall back to relative "/api" (Vite proxy or Caddy proxy)
+import { localizeError } from "./errors";
+
 export const BASE = (import.meta.env.VITE_API_BASE ?? "/api") + "/v1";
 
 export const SSO_URL = import.meta.env.VITE_SSO_URL ?? "https://sso.hubra.club";
@@ -142,7 +144,10 @@ export async function apiFetch<T = unknown>(
     } catch {
       /* ignore */
     }
-    throw Object.assign(new Error(message), { status: res.status, code });
+    throw Object.assign(new Error(localizeError(res.status, code, message)), {
+      status: res.status,
+      code,
+    });
   }
 
   if (res.status === 204) return undefined as T;
@@ -195,7 +200,10 @@ export async function apiFetchRaw(
     } catch {
       /* ignore */
     }
-    throw Object.assign(new Error(message), { status: res.status, code });
+    throw Object.assign(new Error(localizeError(res.status, code, message)), {
+      status: res.status,
+      code,
+    });
   }
 
   return res;

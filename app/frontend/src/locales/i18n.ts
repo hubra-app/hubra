@@ -29,6 +29,12 @@ i18n.use(initReactI18next).init({
   returnEmptyString: false,
 });
 
+// The API client reads the page language to translate error messages.
+document.documentElement.lang = i18n.language;
+i18n.on("languageChanged", (lng) => {
+  document.documentElement.lang = lng;
+});
+
 // ── Missing key tracking ──────────────────────────────────────────────────
 const accessedKeys = new Map<string, string | undefined>();
 let reportTimer: ReturnType<typeof setTimeout> | null = null;

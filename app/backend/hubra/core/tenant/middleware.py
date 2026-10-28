@@ -72,27 +72,14 @@ def _extract_slug_from_path(environ: dict) -> str | None:
     """Extract tenant slug from the path.
 
     URL structures:
-      /api/v2/tenants/<slug>/<resource>  →  returns <slug>
-      /api/<slug>/v1/<resource>           →  returns <slug>  (legacy v1)
-      /api/v1/<resource>                  →  returns None (single-tenant mode)
-      /api/v2/global/<resource>           →  returns None (global plane)
-      /api/v2/manager/<resource>          →  returns None (manager plane)
+      /api/<slug>/v1/<resource>  →  returns <slug>
+      /api/v1/<resource>         →  returns None
     """
     path = environ.get("PATH_INFO", "")
     parts = path.strip("/").split("/")
 
-    # v2 tenant path: /api/v2/tenants/<slug>/...
-    if (
-        len(parts) >= 4
-        and parts[0] == "api"
-        and parts[1] == "v2"
-        and parts[2] == "tenants"
-    ):
-        return parts[3]
-
-    # v1 tenant path: /api/<slug>/v1/...
-    # Exclude v1 and v2 as "slugs" — they're version identifiers
-    if len(parts) >= 3 and parts[0] == "api" and parts[1] not in ("v1", "v2"):
+    # /api/<slug>/v1/...; "v1" itself is the version, not a slug.
+    if len(parts) >= 3 and parts[0] == "api" and parts[1] != "v1":
         return parts[1]
 
     return None
@@ -101,25 +88,12 @@ def _extract_slug_from_path(environ: dict) -> str | None:
 def _rewrite_path(environ: dict) -> None:
     """Rewrite PATH_INFO to remove the tenant slug segment.
 
-    /api/v2/tenants/<slug>/<resource>  →  /api/v2/tenants/<resource>
-    /api/<slug>/v1/<resource>           →  /api/v1/<resource>
+    /api/<slug>/v1/<resource>  →  /api/v1/<resource>
     """
     path = environ.get("PATH_INFO", "")
     parts = path.strip("/").split("/")
 
-    # v2 tenant path: /api/v2/tenants/<slug>/... → /api/v2/tenants/...
-    if (
-        len(parts) >= 4
-        and parts[0] == "api"
-        and parts[1] == "v2"
-        and parts[2] == "tenants"
-    ):
-        new_parts = parts[:3] + parts[4:]
-        environ["PATH_INFO"] = "/" + "/".join(new_parts)
-        return
-
-    # v1 tenant path: /api/<slug>/v1/... → /api/v1/...
-    if len(parts) >= 3 and parts[0] == "api" and parts[1] not in ("v1", "v2"):
+    if len(parts) >= 3 and parts[0] == "api" and parts[1] != "v1":
         new_parts = parts[:1] + parts[2:]
         environ["PATH_INFO"] = "/" + "/".join(new_parts)
 

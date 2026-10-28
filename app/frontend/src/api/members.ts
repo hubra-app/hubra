@@ -51,7 +51,7 @@ function adapt(
     name: b.name,
     email: b.email,
     publicEmail: b.public_email ?? "",
-    tier: b.tier?.name ?? "Maker",
+    tier: b.tier?.name ?? "",
     groups: b.group_ids.map((id) => groupsById.get(id)?.name ?? String(id)),
     roles: b.roles?.map((r) => r.name) ?? ["Member"],
     joined: b.joined ?? "",

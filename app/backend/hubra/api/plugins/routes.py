@@ -1,7 +1,6 @@
 """Plugins.
 
-``plugins_bp`` (platform managers, ``/api/v1/manager/plugins``, also at
-``/api/v2/manager/plugins``): the marketplace, installing, updating,
+``plugins_bp`` (platform managers, ``/api/v1/manager/plugins``): the marketplace, installing, updating,
 rolling back and removing plugins, repositories and trusted signing keys.  Everything needs the global
 permission ``plugins.manage``: a plugin is code that runs with full access.
 

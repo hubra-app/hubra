@@ -1949,7 +1949,10 @@
     },
     "search": {
       "noResults": "Keine Ergebnisse für «{{query}}»",
-      "placeholder": "Mitglieder, Rechnungen, Inventar suchen …"
+      "placeholder": "Mitglieder, Rechnungen, Inventar suchen …",
+      "pollOpen": "Offen",
+      "pollClosed": "Geschlossen",
+      "invoice": "Rechnung {{id}} – {{member}}"
     },
     "searchKind": {
       "audit": "Protokoll",
@@ -2588,7 +2591,13 @@
     "updatedMsg": "«{{name}}» wurde gespeichert.",
     "newSubtitle": "Startet ohne Berechtigungen. Lege sie danach in der Tabelle fest.",
     "descHint": "Optional, wird in der Verwaltung angezeigt",
-    "templateWarning": "Eine Vorlage legt fehlende Rollen an und setzt ihre Berechtigungen. Bei bestehenden Rollen mit gleichem Namen werden die Berechtigungen ersetzt."
+    "templateWarning": "Eine Vorlage legt fehlende Rollen an und setzt ihre Berechtigungen. Bei bestehenden Rollen mit gleichem Namen werden die Berechtigungen ersetzt.",
+    "system": {
+      "Owner": "Inhaber/in",
+      "Admin": "Administration",
+      "Treasurer": "Kassier/in",
+      "Member": "Mitglied"
+    }
   },
   "modules": {
     "backups": {

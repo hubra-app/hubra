@@ -7,6 +7,7 @@ import { NavItemRow } from './NavItemRow'
 import { UserMenu } from './UserMenu'
 import { usePlugins } from '@/plugins/store'
 import { buildNav, filterNav, initials, contrastColor } from './nav'
+import { roleLabels } from '@/roles'
 
 export function Sidebar() {
   const { t } = useT()
@@ -38,7 +39,7 @@ export function Sidebar() {
     hasPermission,
   )
   const userName = currentUser?.name ?? ''
-  const userRole = currentUser?.roles?.join(', ') ?? ''
+  const userRole = roleLabels(currentUser?.roles)
   const userBg = currentUser?.avatarColor ?? '#ebe8f2'
 
   return (

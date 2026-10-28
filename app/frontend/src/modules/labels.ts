@@ -1,9 +1,9 @@
 import i18n from 'i18next'
 import type { ModuleInfo } from '@/api/modules'
 
-// The backend describes modules in English. Shipped modules get German
-// defaults here and can be overridden per language under modules.<code>.*;
-// plugins keep whatever their manifest says.
+// The backend describes modules in English. Shipped modules and the plugins
+// shipped with Hubra get German defaults here and can be overridden per
+// language under modules.<code>.*; other plugins keep their manifest's texts.
 const DE: Record<string, { name: string; description: string; settings?: Record<string, [string, string]> }> = {
   bindings: { name: 'Verknüpfungen', description: 'Vereinsdaten mit externen Schnittstellen abgleichen' },
   codes: { name: 'Codes', description: 'Verschlüsselte Türcodes und Zugangscodes' },
@@ -32,11 +32,38 @@ const DE: Record<string, { name: string; description: string; settings?: Record<
   polls: { name: 'Umfragen', description: 'Umfragen und Abstimmungen unter Mitgliedern' },
   posts: { name: 'Beiträge', description: 'Vereinsmitteilungen und Beiträge aus der Community' },
   roles: { name: 'Rollen und Berechtigungen', description: 'Rollen und die Berechtigungen, die sie vergeben' },
+  // Plugins shipped with Hubra
+  'finance.bank': {
+    name: 'Bankimport',
+    description:
+      'Kontoauszüge importieren (camt.053/054, MT940, CSV); Zahlungen werden Rechnungen zugeordnet, andere Buchungen kommen in die Buchhaltung',
+  },
+  'finance.budgets': { name: 'Budgets', description: 'Jahresbudgets pro Kategorie, verglichen mit den Buchungen' },
+  discord: {
+    name: 'Discord',
+    description: 'Neue Anlässe, Beiträge und Umfragen in einem Discord-Kanal ankündigen',
+    settings: {
+      webhook_url: ['Webhook-URL', 'Discord: Kanaleinstellungen › Integrationen › Webhooks › URL kopieren'],
+      announce_events: ['Neue Anlässe', ''],
+      announce_posts: ['Neue Beiträge', ''],
+      announce_polls: ['Neue Umfragen', ''],
+      mention: ['Erwähnung', 'Optional, z. B. @everyone oder <@&Rollen-ID>'],
+    },
+  },
+  'inventory.guides': { name: 'Anleitungen', description: 'Anleitungen für Maschinen und Werkzeuge (Markdown oder ein Link)' },
+  inbox: {
+    name: 'Gemeinsamer Posteingang',
+    description: 'Die Postfächer des Vereins (IMAP) in Hubra lesen, jedes für eine Gruppe sichtbar',
+  },
+  'inventory.keys': {
+    name: 'Schlüssel',
+    description: 'Schlüssel, Karten und Badges: wer welchen hat, mit Übergabeprotokoll',
+  },
 }
 
 export function localizeModule(m: ModuleInfo): ModuleInfo {
   const de = DE[m.code]
-  if (!de || m.plugin) return m
+  if (!de) return m
   const key = `modules.${m.code}`
   return {
     ...m,

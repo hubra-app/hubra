@@ -8,6 +8,7 @@ import { useT } from '@/locales/i18n'
 import { formatDate } from '@/format'
 import { PaymentPlanCard } from './PaymentPlanCard'
 import { LeaveClubCard } from './LeaveClubCard'
+import { roleLabels } from '@/roles'
 
 export function AccountSettingsMembershipTab() {
   const { t } = useT()
@@ -48,12 +49,16 @@ export function AccountSettingsMembershipTab() {
             },
             {
               label: t('common.roles', 'Rollen'),
-              value: currentUser?.roles?.join(', ') ?? '?',
+              value: roleLabels(currentUser?.roles) || '?',
             },
-            {
-              label: t('account.toolHours', 'Werkzeugstunden'),
-              value: `${currentUser?.toolHours ?? 0} h`,
-            },
+            ...(currentUser?.toolHours
+              ? [
+                  {
+                    label: t('account.toolHours', 'Werkzeugstunden'),
+                    value: `${currentUser.toolHours} h`,
+                  },
+                ]
+              : []),
             {
               label: t('common.status', 'Status'),
               value: currentUser?.status ? t(`status.${currentUser.status}`, currentUser.status) : '?',

@@ -78,12 +78,7 @@ _PERM_CACHE_TTL = 300  # 5 minutes
 
 def _derive_perm_key(blueprint_name: str | None, resource: str, action: str) -> str:
     """Build a structured permission key from blueprint + resource + action."""
-    from hubra.core.modules import registry
-
-    prefix = "app"
-    if blueprint_name:
-        # v2 registrations (members_bp_v2) share the v1 permission keys.
-        prefix = registry.canonical_blueprint(blueprint_name).removesuffix("_bp")
+    prefix = blueprint_name.removesuffix("_bp") if blueprint_name else "app"
     return f"{prefix}.{resource}.{action}"
 
 
