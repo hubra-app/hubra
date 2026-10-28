@@ -204,5 +204,16 @@ of `index.json` and your key id. For plugins in their own repositories,
 `flask plugins build-index sources.yaml ./public --key me.pem` builds the
 index from their GitHub releases instead.
 
+**The official marketplace.** The plugins in this folder are published to
+[hubra-app/hubra-plugins](https://github.com/hubra-app/hubra-plugins), at
+<https://hubra-app.github.io/hubra-plugins/index.json>, by
+`.github/workflows/plugins.yml`. The workflow runs on pushes to `main` that touch
+a plugin. It builds and signs only the versions that aren't in the marketplace
+yet, so a published version never changes. To release a plugin, bump `version`
+in its `plugin.yaml` and add a `CHANGELOG.md` entry. The workflow needs two
+secrets in hubra-app/hubra: `HUBRA_SIGNING_KEY` (the private key of
+`keys/official/Hubra.pub`) and `PLUGINS_DEPLOY_KEY` (a deploy key with write
+access on hubra-plugins).
+
 Single archives: `flask plugins sign ./my-plugin --key me.pem --signer "Your
 Name"`, then `flask plugins pack ./my-plugin -o my-plugin-1.0.0.zip`.

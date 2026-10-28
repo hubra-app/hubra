@@ -8,9 +8,10 @@ name is the signer's name shown to managers.
 - `Hubra.pub`: the project's key, id `b84edc01a8b17490` (added 2026-10-28).
   Its private key is kept outside the repository; it belongs in the
   marketplace repository as the GitHub Actions secret `HUBRA_SIGNING_KEY`.
-- `index.url`: not set up yet (it still says `OWNER`). Publish the
-  marketplace (see `plugins/README.md`) and write the URL of its
-  `index.json` here.
+- `index.url`: the official marketplace,
+  <https://hubra-app.github.io/hubra-plugins/index.json>. It is the repository
+  hubra-app/hubra-plugins on GitHub Pages, and `.github/workflows/plugins.yml`
+  publishes `plugins/` there.
 
 To replace or add a key: `flask plugins keygen <name>.pem`, keep the `.pem`
 secret, and commit `<name>.pem.pub` here as `<name>.pub`.
