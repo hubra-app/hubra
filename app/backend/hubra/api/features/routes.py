@@ -43,7 +43,6 @@ def list_modules():
     values are only included for members who may change them.
     """
     from hubra.api.permissions import (
-        _current_member,
         _derive_perm_key,
         _get_member_permission_keys,
         member_is_admin,
