@@ -6,20 +6,26 @@ import { z } from 'zod'
 import { IconArrowLeft, IconCheck, IconKey } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import * as authApi from '@/api/auth'
+import { tr, useLang } from '@/lang'
 
-const schema = z
-  .object({
-    password: z.string().min(8, 'Password must be at least 8 characters'),
-    confirm: z.string(),
-  })
-  .refine((d) => d.password === d.confirm, {
-    message: 'Passwords do not match',
-    path: ['confirm'],
-  })
+// The API asks for 12 characters (auth/services.py _MIN_PASSWORD_LEN).
+const makeSchema = () =>
+  z
+    .object({
+      password: z
+        .string()
+        .min(12, tr('Das Passwort braucht mindestens 12 Zeichen', 'Password must be at least 12 characters')),
+      confirm: z.string(),
+    })
+    .refine((d) => d.password === d.confirm, {
+      message: tr('Die Passwörter stimmen nicht überein', 'Passwords do not match'),
+      path: ['confirm'],
+    })
 
-type FormValues = z.infer<typeof schema>
+type FormValues = z.infer<ReturnType<typeof makeSchema>>
 
 export function ResetPassword() {
+  useLang()
   const navigate = useNavigate()
   const hashParams = new URLSearchParams(
     typeof window !== 'undefined' ? window.location.hash.replace(/^#/, '') : '',
@@ -31,7 +37,7 @@ export function ResetPassword() {
   const [done, setDone] = useState(false)
 
   const form = useForm<FormValues>({
-    validate: zodResolver(schema),
+    validate: zodResolver(makeSchema()),
     initialValues: { password: '', confirm: '' },
   })
 
@@ -42,7 +48,7 @@ export function ResetPassword() {
       await authApi.resetPassword(token, values.password)
       setDone(true)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Invalid or expired token.')
+      setError(err instanceof Error ? err.message : tr('Der Link ist ungültig oder abgelaufen.', 'Invalid or expired token.'))
     } finally {
       setLoading(false)
     }
@@ -53,10 +59,10 @@ export function ResetPassword() {
       <div className="graph-bg" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
         <div style={{ maxWidth: 380, textAlign: 'center' }}>
           <p style={{ color: '#b91c1c', fontSize: 'var(--mantine-font-size-sm)', marginBottom: 20 }}>
-            Invalid or missing reset token.
+            {tr('Der Link ist ungültig oder unvollständig.', 'Invalid or missing reset token.')}
           </p>
           <Button variant="subtle" style={{ gap: 8 }} onClick={() => navigate('/forgot-password')}>
-            <IconArrowLeft size={16} /> Request a new link
+            <IconArrowLeft size={16} /> {tr('Neuen Link anfordern', 'Request a new link')}
           </Button>
         </div>
       </div>
@@ -71,7 +77,7 @@ export function ResetPassword() {
           <div>
             <div className="wordmark" style={{ fontSize: 20, color: '#1a1625' }}>hubra</div>
             <div style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#6131c4', fontFamily: '"JetBrains Mono"', letterSpacing: '0.06em' }}>
-              Club management
+              {tr('Vereinsverwaltung', 'Club management')}
             </div>
           </div>
         </div>
@@ -88,10 +94,10 @@ export function ResetPassword() {
               <IconKey size={22} color="#6131c4" />
             </div>
             <h2 style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 700, color: '#1a1625', margin: '0 0 6px' }}>
-              Set a new password
+              {tr('Neues Passwort festlegen', 'Set a new password')}
             </h2>
             <p style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#5e5873', margin: '0 0 28px' }}>
-              Choose a strong password for your account.
+              {tr('Wähle ein sicheres Passwort für dein Konto.', 'Choose a strong password for your account.')}
             </p>
 
             {error && <Alert color="red" variant="light" mb={16}>{error}</Alert>}
@@ -99,14 +105,14 @@ export function ResetPassword() {
             <form onSubmit={form.onSubmit(handleReset)}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div>
-                  <Text component="label" size="sm" fw={600} c="dimmed">New password</Text>
+                  <Text component="label" size="sm" fw={600} c="dimmed">{tr('Neues Passwort', 'New password')}</Text>
                   <PasswordInput
                     {...form.getInputProps('password')}
                     autoFocus
                   />
                 </div>
                 <div>
-                  <Text component="label" size="sm" fw={600} c="dimmed">Confirm password</Text>
+                  <Text component="label" size="sm" fw={600} c="dimmed">{tr('Passwort bestätigen', 'Confirm password')}</Text>
                   <PasswordInput
                     {...form.getInputProps('confirm')}
                   />
@@ -118,7 +124,7 @@ export function ResetPassword() {
                   loading={loading}
                   disabled={loading}
                 >
-                  {loading ? 'Updating…' : 'Set new password'}
+                  {loading ? tr('Wird gespeichert …', 'Updating…') : tr('Passwort speichern', 'Set new password')}
                 </Button>
               </div>
             </form>
@@ -134,17 +140,17 @@ export function ResetPassword() {
               <IconCheck size={28} color="#1f9d57" />
             </div>
             <h2 style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 700, color: '#1a1625', margin: '0 0 8px' }}>
-              Password updated
+              {tr('Passwort geändert', 'Password updated')}
             </h2>
             <p style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#5e5873', margin: '0 0 28px' }}>
-              You can now sign in with your new password.
+              {tr('Du kannst dich jetzt mit dem neuen Passwort anmelden.', 'You can now sign in with your new password.')}
             </p>
             <Button
               variant="filled"
               style={{ height: 44, fontSize: 'var(--mantine-font-size-md)', width: '100%' }}
               onClick={() => navigate('/login')}
             >
-              Sign in →
+              {tr('Anmelden →', 'Sign in →')}
             </Button>
           </div>
         )}

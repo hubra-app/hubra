@@ -17,6 +17,8 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import * as authApi from '@/api/auth'
+import { tr, useLang } from '@/lang'
+import { LangSwitch } from '@/components/LangSwitch'
 
 function passwordStrength(password: string): { value: number; label: string; color: string } {
   if (!password) return { value: 0, label: '', color: 'gray' }
@@ -25,12 +27,13 @@ function passwordStrength(password: string): { value: number; label: string; col
   if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 25
   if (/\d/.test(password)) score += 25
   if (/[^a-zA-Z0-9]/.test(password)) score += 25
-  if (score < 50) return { value: score, label: 'Weak', color: 'red' }
-  if (score < 75) return { value: score, label: 'Fair', color: 'yellow' }
-  return { value: score, label: 'Strong', color: 'green' }
+  if (score < 50) return { value: score, label: tr('Schwach', 'Weak'), color: 'red' }
+  if (score < 75) return { value: score, label: tr('Mittel', 'Fair'), color: 'yellow' }
+  return { value: score, label: tr('Stark', 'Strong'), color: 'green' }
 }
 
 export function SignupScreen() {
+  useLang()
   const { notify, continueSignedIn } = useSso()
   const navigate = useNavigate()
   const [name, setName] = useState('')
@@ -45,18 +48,22 @@ export function SignupScreen() {
   const handleSignup = async () => {
     setError('')
     if (!name || !email || !password) {
-      setError('All fields are required')
+      setError(tr('Bitte fülle alle Felder aus', 'All fields are required'))
       return
     }
     setLoading(true)
     try {
       await authApi.signup(name, email.trim().toLowerCase(), password, keepSignedIn)
-      notify('success', 'Account created', 'Welcome to Hubra. Now find your club.')
+      notify(
+        'success',
+        tr('Konto erstellt', 'Account created'),
+        tr('Willkommen bei Hubra. Such jetzt deinen Verein.', 'Welcome to Hubra. Now find your club.'),
+      )
       continueSignedIn()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Signup failed'
+      const msg = err instanceof Error ? err.message : tr('Registrierung fehlgeschlagen', 'Signup failed')
       setError(msg)
-      notify('error', 'Signup failed', msg)
+      notify('error', tr('Registrierung fehlgeschlagen', 'Signup failed'), msg)
     } finally {
       setLoading(false)
     }
@@ -71,43 +78,47 @@ export function SignupScreen() {
             <Box>
               <Text fz={20} className="wordmark">hubra</Text>
               <Text fz="xs" c="#6131c4" ff="'JetBrains Mono', monospace" style={{ letterSpacing: '0.06em' }}>
-                Club management
+                {tr('Vereinsverwaltung', 'Club management')}
               </Text>
             </Box>
+            <LangSwitch />
           </Group>
 
-          <Title order={2} mb={6}>Create account</Title>
+          <Title order={2} mb={6}>{tr('Konto erstellen', 'Create account')}</Title>
           <Text size="sm" c="dimmed" mb={28}>
-            Sign up to start a club or join an existing one.
+            {tr(
+              'Mit einem Konto gründest du einen Verein oder trittst einem bestehenden bei.',
+              'Sign up to start a club or join an existing one.',
+            )}
           </Text>
 
           {error && <Alert color="red" variant="light" mb="md">{error}</Alert>}
 
           <Stack gap="md">
             <TextInput
-              label="Full name"
+              label={tr('Vor- und Nachname', 'Full name')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSignup()}
-              placeholder="Jane Doe"
+              placeholder={tr('Anna Muster', 'Jane Doe')}
             />
 
             <TextInput
-              label="Email"
+              label={tr('E-Mail', 'Email')}
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSignup()}
-              placeholder="jane@example.ch"
+              placeholder={tr('anna@beispiel.ch', 'jane@example.ch')}
             />
 
             <Box>
               <PasswordInput
-                label="Password"
+                label={tr('Passwort', 'Password')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSignup()}
-                placeholder="At least 12 characters"
+                placeholder={tr('Mindestens 12 Zeichen', 'At least 12 characters')}
               />
               {password && (
                 <Group gap="xs" mt={6}>
@@ -116,24 +127,27 @@ export function SignupScreen() {
                 </Group>
               )}
               <Text fz="xs" c="dimmed" mt={4}>
-                Minimum 12 characters with a mix of letters, numbers, and symbols.
+                {tr(
+                  'Mindestens 12 Zeichen, gemischt aus Buchstaben, Ziffern und Sonderzeichen.',
+                  'Minimum 12 characters with a mix of letters, numbers, and symbols.',
+                )}
               </Text>
             </Box>
 
             <Checkbox
-              label="Keep me signed in"
+              label={tr('Angemeldet bleiben', 'Keep me signed in')}
               checked={keepSignedIn}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setKeepSignedIn(e.currentTarget.checked)}
             />
 
             <Button size="sm" fullWidth onClick={handleSignup} loading={loading} mt={4}>
-              {loading ? 'Creating account…' : 'Create account'}
+              {loading ? tr('Konto wird erstellt …', 'Creating account…') : tr('Konto erstellen', 'Create account')}
             </Button>
 
             <Text size="sm" c="dimmed" ta="center">
-              Already have an account?{' '}
+              {tr('Schon ein Konto?', 'Already have an account?')}{' '}
               <Anchor size="sm" c="#6131c4" onClick={(e) => { e.preventDefault(); navigate('/login') }}>
-                Sign in
+                {tr('Anmelden', 'Sign in')}
               </Anchor>
             </Text>
           </Stack>
@@ -147,14 +161,14 @@ export function SignupScreen() {
         <div className="blueprint-plate" style={{ flex: 1, margin: 24 }}>
           <div className="blueprint-label">SCHNITT Nr. 002 · MASSSTAB 1:1</div>
           <Text fz="xs" c="dimmed" ff="'JetBrains Mono', monospace" mb={20} style={{ alignSelf: 'flex-end' }}>
-            v2.4 · Signup
+            v2.4 · Konto
           </Text>
           <blockquote style={{ margin: 0, fontSize: 'var(--mantine-font-size-lg)', lineHeight: 1.6, color: '#2e2940', maxWidth: 340 }}>
-            "New here?{' '}
-            <span className="hi">Request a space</span>{' '}
-            and our team will get you set up — or{' '}
-            <span className="hi">join an existing one</span>{' '}
-            with an invite from your admin."
+            {tr('«Neu hier? ', '"New here? ')}
+            <span className="hi">{tr('Gründe deinen Verein', 'Start your club')}</span>
+            {tr(' oder ', ' or ')}
+            <span className="hi">{tr('tritt einem bestehenden bei', 'join an existing one')}</span>
+            {tr('.»', '."')}
           </blockquote>
         </div>
       </Box>

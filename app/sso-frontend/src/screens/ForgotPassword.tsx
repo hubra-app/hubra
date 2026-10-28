@@ -6,20 +6,23 @@ import { z } from 'zod'
 import { IconArrowLeft, IconCheck, IconMail } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import * as authApi from '@/api/auth'
+import { tr, useLang } from '@/lang'
 
-const schema = z.object({
-  email: z.string().email('Invalid email'),
-})
+const makeSchema = () =>
+  z.object({
+    email: z.string().email(tr('Ungültige E-Mail-Adresse', 'Invalid email')),
+  })
 
-type FormValues = z.infer<typeof schema>
+type FormValues = z.infer<ReturnType<typeof makeSchema>>
 
 export function ForgotPassword() {
+  useLang()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
 
   const form = useForm<FormValues>({
-    validate: zodResolver(schema),
+    validate: zodResolver(makeSchema()),
     initialValues: { email: '' },
   })
 
@@ -44,7 +47,7 @@ export function ForgotPassword() {
           <div>
             <div className="wordmark" style={{ fontSize: 20, color: '#1a1625' }}>hubra</div>
             <div style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#6131c4', fontFamily: '"JetBrains Mono"', letterSpacing: '0.06em' }}>
-              Club management
+              {tr('Vereinsverwaltung', 'Club management')}
             </div>
           </div>
         </div>
@@ -61,16 +64,19 @@ export function ForgotPassword() {
               <IconMail size={22} color="#6131c4" />
             </div>
             <h2 style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 700, color: '#1a1625', margin: '0 0 6px' }}>
-              Reset your password
+              {tr('Passwort zurücksetzen', 'Reset your password')}
             </h2>
             <p style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#5e5873', margin: '0 0 28px' }}>
-              Enter your email and we'll send you a reset link.
+              {tr(
+                'Gib deine E-Mail-Adresse ein. Wir schicken dir einen Link für ein neues Passwort.',
+                "Enter your email and we'll send you a reset link.",
+              )}
             </p>
 
             <form onSubmit={form.onSubmit(handleSubmit)}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div>
-                  <Text component="label" size="sm" fw={600} c="dimmed">Email</Text>
+                  <Text component="label" size="sm" fw={600} c="dimmed">{tr('E-Mail', 'Email')}</Text>
                   <TextInput
                     type="email"
                     {...form.getInputProps('email')}
@@ -84,10 +90,10 @@ export function ForgotPassword() {
                   loading={loading}
                   disabled={loading}
                 >
-                  {loading ? 'Sending…' : 'Send reset link'}
+                  {loading ? tr('Wird gesendet …', 'Sending…') : tr('Link senden', 'Send reset link')}
                 </Button>
                 <Button variant="subtle" style={{ gap: 8 }} onClick={() => navigate('/login')}>
-                  <IconArrowLeft size={16} /> Back to login
+                  <IconArrowLeft size={16} /> {tr('Zurück zur Anmeldung', 'Back to login')}
                 </Button>
               </div>
             </form>
@@ -103,13 +109,16 @@ export function ForgotPassword() {
               <IconCheck size={28} color="#1f9d57" />
             </div>
             <h2 style={{ fontSize: 'var(--mantine-font-size-xl)', fontWeight: 700, color: '#1a1625', margin: '0 0 8px' }}>
-              Check your inbox
+              {tr('Schau in dein Postfach', 'Check your inbox')}
             </h2>
             <p style={{ fontSize: 'var(--mantine-font-size-sm)', color: '#5e5873', margin: '0 0 28px', lineHeight: 1.6 }}>
-              If an account exists for {form.values.email}, a password reset link has been sent.
+              {tr(
+                `Falls es ein Konto für ${form.values.email} gibt, haben wir einen Link zum Zurücksetzen geschickt.`,
+                `If an account exists for ${form.values.email}, a password reset link has been sent.`,
+              )}
             </p>
             <Button variant="subtle" style={{ gap: 8 }} onClick={() => navigate('/login')}>
-              <IconArrowLeft size={16} /> Back to login
+              <IconArrowLeft size={16} /> {tr('Zurück zur Anmeldung', 'Back to login')}
             </Button>
           </div>
         )}

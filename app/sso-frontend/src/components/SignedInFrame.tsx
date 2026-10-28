@@ -3,6 +3,8 @@ import { Box, Button, Group, Text } from '@mantine/core'
 import { IconLogout } from '@tabler/icons-react'
 import { clearTokens } from '@hubra/api-client'
 import * as authApi from '@/api/auth'
+import { LangSwitch } from '@/components/LangSwitch'
+import { tr, useLang } from '@/lang'
 
 async function signOut() {
   await authApi.logout()
@@ -20,6 +22,7 @@ export function SignedInFrame({
   actions?: ReactNode
   children: ReactNode
 }) {
+  useLang()
   return (
     <div className="graph-bg" style={{ minHeight: '100vh', padding: '32px 16px' }}>
       <Box style={{ width: '100%', maxWidth: width, margin: '0 auto' }}>
@@ -31,6 +34,7 @@ export function SignedInFrame({
             </Text>
           </Group>
           <Group gap={4} wrap="nowrap">
+            <LangSwitch />
             {actions}
             <Button
               variant="subtle"
@@ -38,7 +42,7 @@ export function SignedInFrame({
               leftSection={<IconLogout size={16} />}
               onClick={signOut}
             >
-              Abmelden
+              {tr('Abmelden', 'Sign out')}
             </Button>
           </Group>
         </Group>

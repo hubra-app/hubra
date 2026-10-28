@@ -11,35 +11,37 @@ import {
   Title,
   Anchor,
   Divider,
-  Paper,
   Box,
   Center,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zodResolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
-import { IconShield } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import { getRememberedEmail } from '@hubra/api-client'
 import * as authApi from '@/api/auth'
+import { tr, useLang } from '@/lang'
+import { LangSwitch } from '@/components/LangSwitch'
 
-const schema = z.object({
-  email: z.string().email('Invalid email'),
-  password: z.string().min(1, 'Password is required'),
-  keepSignedIn: z.boolean(),
-})
+const makeSchema = () =>
+  z.object({
+    email: z.string().email(tr('Ungültige E-Mail-Adresse', 'Invalid email')),
+    password: z.string().min(1, tr('Bitte gib dein Passwort ein', 'Password is required')),
+    keepSignedIn: z.boolean(),
+  })
 
-type FormValues = z.infer<typeof schema>
+type FormValues = z.infer<ReturnType<typeof makeSchema>>
 
 export function LoginScreen() {
-  const { notify, redirectTarget, urls, continueSignedIn } = useSso()
+  useLang()
+  const { notify, continueSignedIn } = useSso()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const form = useForm<FormValues>({
-    validate: zodResolver(schema),
+    validate: zodResolver(makeSchema()),
     initialValues: {
       email: getRememberedEmail(),
       password: '',
@@ -60,9 +62,9 @@ export function LoginScreen() {
       )
       continueSignedIn()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Login failed'
+      const msg = err instanceof Error ? err.message : tr('Anmelden fehlgeschlagen', 'Login failed')
       setError(msg)
-      notify('error', 'Login', msg)
+      notify('error', tr('Anmelden', 'Sign in'), msg)
     } finally {
       setLoading(false)
     }
@@ -84,16 +86,17 @@ export function LoginScreen() {
                 ff="'JetBrains Mono', monospace"
                 style={{ letterSpacing: '0.06em' }}
               >
-                Club management
+                {tr('Vereinsverwaltung', 'Club management')}
               </Text>
             </Box>
+            <LangSwitch />
           </Group>
 
           <Title order={2} mb={6}>
-            Welcome back
+            {tr('Willkommen zurück', 'Welcome back')}
           </Title>
           <Text size="sm" c="dimmed" mb={28}>
-            Sign in to your Hubra account
+            {tr('Melde dich mit deinem Hubra-Konto an', 'Sign in to your Hubra account')}
           </Text>
 
           {error && (
@@ -105,12 +108,12 @@ export function LoginScreen() {
           <Stack gap="md">
             <form onSubmit={form.onSubmit(handleLogin)}>
               <Stack gap="md">
-                <TextInput label="Email" type="email" {...form.getInputProps('email')} />
+                <TextInput label={tr('E-Mail', 'Email')} type="email" {...form.getInputProps('email')} />
 
                 <Box>
                   <Group justify="space-between" mb={6}>
                     <Text component="label" size="sm" fw={600} c="dimmed">
-                      Password
+                      {tr('Passwort', 'Password')}
                     </Text>
                     <Anchor
                       size="sm"
@@ -120,40 +123,28 @@ export function LoginScreen() {
                         navigate('/forgot-password')
                       }}
                     >
-                      Forgot password?
+                      {tr('Passwort vergessen?', 'Forgot password?')}
                     </Anchor>
                   </Group>
                   <PasswordInput {...form.getInputProps('password')} />
                 </Box>
 
                 <Checkbox
-                  label="Keep me signed in"
+                  label={tr('Angemeldet bleiben', 'Keep me signed in')}
                   {...form.getInputProps('keepSignedIn', { type: 'checkbox' })}
                 />
 
                 <Button type="submit" size="sm" fullWidth loading={loading} mt={4}>
-                  {loading ? 'Signing in…' : 'Sign in'}
+                  {loading ? tr('Anmelden …', 'Signing in…') : tr('Anmelden', 'Sign in')}
                 </Button>
               </Stack>
             </form>
 
-            <Divider label="or" labelPosition="center" c="dimmed" />
+            <Divider label={tr('oder', 'or')} labelPosition="center" c="dimmed" />
 
             <Stack gap="sm">
               <Button variant="default" size="sm" fullWidth onClick={() => navigate('/signup')}>
-                Create account
-              </Button>
-
-              <Button
-                variant="subtle"
-                size="sm"
-                fullWidth
-                leftSection={<IconShield size={16} color="#2596be" />}
-                onClick={() => {
-                  window.location.assign(redirectTarget ?? urls.cos)
-                }}
-              >
-                Continue as guest
+                {tr('Konto erstellen', 'Create account')}
               </Button>
             </Stack>
           </Stack>
@@ -173,7 +164,7 @@ export function LoginScreen() {
             mb={20}
             style={{ alignSelf: 'flex-end' }}
           >
-            v2.4 · Spaces
+            v2.4 · Anmeldung
           </Text>
           <blockquote
             style={{
@@ -184,31 +175,12 @@ export function LoginScreen() {
               maxWidth: 340,
             }}
           >
-            "The space where we manage our <span className="hi">members, dues, tools</span> and{' '}
-            <span className="hi">mailing list</span> — all in one place."
+            {tr('«Hier verwalten wir ', '"The place where we manage our ')}
+            <span className="hi">{tr('Mitglieder, Beiträge, Anlässe', 'members, dues, events')}</span>
+            {tr(' und ', ' and ')}
+            <span className="hi">{tr('Finanzen', 'finances')}</span>
+            {tr(', alles an einem Ort.»', ', all in one place."')}
           </blockquote>
-          <Group gap={12} mt={32} wrap="wrap">
-            {[
-              { label: 'Members', value: '342' },
-              { label: 'Groups', value: '7' },
-              { label: 'Uptime', value: '98%' },
-            ].map((chip) => (
-              <Paper
-                key={chip.label}
-                withBorder
-                radius="md"
-                p="sm"
-                style={{ background: 'rgba(255,255,255,.7)' }}
-              >
-                <Text className="num" fz="lg" fw={700}>
-                  {chip.value}
-                </Text>
-                <Text fz="xs" c="dimmed">
-                  {chip.label}
-                </Text>
-              </Paper>
-            ))}
-          </Group>
         </div>
       </Box>
     </div>
