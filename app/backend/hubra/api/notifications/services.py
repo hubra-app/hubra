@@ -11,6 +11,14 @@ from hubra.core.extensions import db
 from hubra.core.models.member import Member
 from hubra.core.models.notification import Notification
 
+_MAX_TEXT = 255  # title and msg columns
+
+
+def _fit(text: str) -> str:
+    """Shorten text to the column size; a prefixed title ("New vote: …")
+    can exceed it even when the poll question fits."""
+    return text if len(text) <= _MAX_TEXT else text[: _MAX_TEXT - 1] + "…"
+
 
 def notify_all_active(
     kind: str, title: str, msg: str, skip_member_id: int | None = None
@@ -25,13 +33,17 @@ def notify_all_active(
         if skip_member_id is not None and member_id == skip_member_id:
             continue
         db.session.add(
-            Notification(member_id=member_id, kind=kind, title=title, msg=msg)
+            Notification(
+                member_id=member_id, kind=kind, title=_fit(title), msg=_fit(msg)
+            )
         )
 
 
 def notify_member(member_id: int, kind: str, title: str, msg: str) -> None:
     """Create a notification for a single member."""
-    db.session.add(Notification(member_id=member_id, kind=kind, title=title, msg=msg))
+    db.session.add(
+        Notification(member_id=member_id, kind=kind, title=_fit(title), msg=_fit(msg))
+    )
 
 
 def create_notification(
@@ -41,8 +53,8 @@ def create_notification(
     notif = Notification(
         member_id=member_id,
         kind=kind,
-        title=title,
-        msg=msg,
+        title=_fit(title),
+        msg=_fit(msg),
         time=datetime.now(timezone.utc),
         read=False,
     )
