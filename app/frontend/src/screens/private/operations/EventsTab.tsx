@@ -115,7 +115,7 @@ export function EventsTab() {
         t('common.error'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekanni Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -143,7 +143,7 @@ export function EventsTab() {
         t('common.error'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekanni Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -164,7 +164,7 @@ export function EventsTab() {
         t('common.error'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekanni Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -176,7 +176,7 @@ export function EventsTab() {
           {...form.getInputProps('title')}
           placeholder={t(
             'events.event.titlePlaceholder',
-            'z.B. Holzwerkstatt-Grundlag',
+            'z. B. Einführung Holzwerkstatt',
           )}
         />
       </Field>
@@ -187,7 +187,7 @@ export function EventsTab() {
         <Field label={t('common.date', 'Datum')}>
           <TextInput type="date" {...form.getInputProps('date')} />
         </Field>
-        <Field label={t('events.time', 'Zyt') + ' (optional)'}>
+        <Field label={t('events.time', 'Zeit') + ' (optional)'}>
           <TextInput
             {...form.getInputProps('time')}
             placeholder="14:00–18:00"
@@ -197,7 +197,7 @@ export function EventsTab() {
       <Field label={t('events.location', 'Ort') + ' (optional)'}>
         <TextInput
           {...form.getInputProps('location')}
-          placeholder={t('events.locationPlaceholder', 'z.B. Holzwerkstatt')}
+          placeholder={t('events.locationPlaceholder', 'z. B. Holzwerkstatt')}
         />
       </Field>
       <Field label={t('common.type', 'Typ')}>
@@ -288,7 +288,7 @@ export function EventsTab() {
           },
           {
             key: 'timeLocation',
-            header: t('events.time', 'Zyt'),
+            header: t('events.time', 'Zeit'),
             render: (ev) => (
               <span
                 style={{
@@ -303,7 +303,7 @@ export function EventsTab() {
           },
           {
             key: 'attendees',
-            header: t('events.attendees', 'Teilnähmer'),
+            header: t('events.attendees', 'Teilnehmende'),
             width: 80,
             render: (ev) => (
               <div
@@ -371,12 +371,12 @@ export function EventsTab() {
                     {joined ? (
                       <>
                         <Leave size={16} />
-                        {t('events.leave', 'Verlah')}
+                        {t('events.leave', 'Abmelden')}
                       </>
                     ) : (
                       <>
                         <IconLogin size={16} />
-                        {t('events.join', 'Mitmache')}
+                        {t('events.join', 'Teilnehmen')}
                       </>
                     )}
                   </Button>
@@ -390,12 +390,12 @@ export function EventsTab() {
           },
         ]}
         data={pg.paged}
-        emptyMessage={t('events.noEvents', 'Kei Aaläss gfunde.')}
+        emptyMessage={t('events.noEvents', 'Keine Anlässe gefunden.')}
         searchValue={search}
         onSearchChange={setSearch}
-        searchPlaceholder={t('events.search', 'Sueche…')}
+        searchPlaceholder={t('events.search', 'Suchen …')}
         filters={types.map((typeItem) => ({
-          label: typeItem === 'All' ? t('common.all', 'Alli') : typeItem,
+          label: typeItem === 'All' ? t('common.all', 'Alle') : typeItem,
           value: typeItem.toLowerCase(),
           active: typeFilter === typeItem,
           onClick: () => setTypeFilter(typeItem),
@@ -418,7 +418,7 @@ export function EventsTab() {
               {t('common.cancel')}
             </Button>
             <Button variant="filled" onClick={() => form.onSubmit(saveAdd)()}>
-              {t('events.createEvent', 'Aalass erstelle')}
+              {t('events.createEvent', 'Anlass erstellen')}
             </Button>
           </>
         }
@@ -446,10 +446,12 @@ export function EventsTab() {
       <ConfirmModal
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        title={t('events.deleteEventTitle', `"${deleteTarget?.title}" lösche?`)}
+        title={t('events.deleteEventTitle', '{{title}} löschen?', {
+          title: deleteTarget?.title ?? '',
+        })}
         body={t(
           'events.deleteEventBody',
-          'Die Aalass und ihri Däilnähmer-Liste wirde permanent entfernt.',
+          'Der Anlass und seine Teilnehmerliste werden endgültig gelöscht.',
         )}
         onConfirm={confirmDelete}
       />

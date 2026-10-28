@@ -122,14 +122,14 @@ export function PostDetailScreen() {
     return (
       <div>
         <PageHead
-          title={t('posts.notFound', 'Post not found')}
+          title={t('posts.notFound', 'Beitrag nicht gefunden')}
           actions={
             <Button
               variant="default"
               onClick={() => navigate('/app/operations/posts')}
             >
               <IconArrowLeft size={16} />
-              {t('common.back', 'Back')}
+              {t('common.back', 'Zurück')}
             </Button>
           }
         />
@@ -149,7 +149,7 @@ export function PostDetailScreen() {
             onClick={() => navigate('/app/operations/posts')}
           >
             <IconArrowLeft size={16} />
-            {t('posts.backToPosts', 'Back to posts')}
+            {t('posts.backToPosts', 'Zurück zu den Beiträgen')}
           </Button>
         }
       />
@@ -230,7 +230,7 @@ export function PostDetailScreen() {
             marginBottom: 16,
           }}
         >
-          {t('posts.comments', 'Comments')}
+          {t('posts.comments', 'Kommentare')}
         </div>
         {comments.length === 0 ? (
           <div
@@ -240,7 +240,7 @@ export function PostDetailScreen() {
               marginBottom: 12,
             }}
           >
-            {t('posts.noComments', 'No comments yet.')}
+            {t('posts.noComments', 'Noch keine Kommentare.')}
           </div>
         ) : (
           <div
@@ -316,7 +316,7 @@ export function PostDetailScreen() {
             <TextInput
               value={commentInput}
               onChange={(e) => setCommentInput(e.target.value)}
-              placeholder={t('posts.commentPlaceholder', 'Write a comment…')}
+              placeholder={t('posts.commentPlaceholder', 'Schreibe einen Kommentar …')}
               style={{ flex: 1 }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -331,7 +331,7 @@ export function PostDetailScreen() {
               disabled={!commentInput.trim() || submittingComment}
               onClick={submitComment}
             >
-              {t('posts.comment', 'Comment')}
+              {t('posts.comment', 'Kommentieren')}
             </Button>
           </div>
         )}

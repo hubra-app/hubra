@@ -49,7 +49,7 @@ export function BindingsScreen() {
   const tab: Tab = location.pathname.includes('/list') ? 'bindings' : 'keys'
   return (
     <div>
-      <PageHead eyebrow="Operations" title="Bindings" actions={null} />
+      <PageHead title="Bindings" actions={null} />
       <Tabs
         tabs={[
           { id: 'keys', label: 'Internal Keys' },

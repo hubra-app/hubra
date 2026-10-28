@@ -156,7 +156,7 @@ export function CodesScreen() {
     <div>
       <PageHead
         title={t('codes.title')}
-        desc={t('codes.count', '{{count}} codes', { count: filtered.length })}
+        desc={t('codes.count', '{{count}} Codes', { count: filtered.length })}
         actions={
           canCreate ? (
             <Button variant="default" onClick={openAdd}>
@@ -265,10 +265,10 @@ export function CodesScreen() {
         emptyMessage={t('codes.noCodes')}
         searchValue={search}
         onSearchChange={setSearch}
-        searchPlaceholder={t('codes.searchPlaceholder', 'Search…')}
+        searchPlaceholder={t('codes.searchPlaceholder', 'Suchen …')}
         filters={[
           {
-            label: t('common.all', 'All'),
+            label: t('common.all', 'Alle'),
             value: 'all',
             active: statusFilter === 'All',
             onClick: () => setStatusFilter('All'),

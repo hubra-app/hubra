@@ -198,18 +198,18 @@ export function MailSettingsModal({
       }
       notify(
         'success',
-        t('common.saved', 'Gspeichert'),
-        t('mail.admin.settingsSaved', 'Mail-Iistellige gspeichert.'),
+        t('common.saved', 'Gespeichert'),
+        t('mail.admin.settingsSaved', 'Mail-Einstellungen gespeichert.'),
       )
       onSaved()
       onClose()
     } catch {
       notify(
         'error',
-        t('common.updateFailed', 'Update fehlgeschlage'),
+        t('common.updateFailed', 'Speichern fehlgeschlagen'),
         t(
           'mail.admin.couldNotSave',
-          'Mail-Iistellige chonnt nöd gspeichert wärde.',
+          'Mail-Einstellungen konnten nicht gespeichert werden.',
         ),
       )
     } finally {
@@ -231,8 +231,8 @@ export function MailSettingsModal({
       }
       notify(
         'info',
-        t('mail.admin.deleted', 'Mail-Adrässe entfernt'),
-        t('mail.admin.deletedMsg', '{{address}} isch entfernt worde.', {
+        t('mail.admin.deleted', 'Mail-Adresse entfernt'),
+        t('mail.admin.deletedMsg', '{{address}} wurde entfernt.', {
           address: entry.address,
         }),
       )
@@ -241,8 +241,8 @@ export function MailSettingsModal({
     } catch {
       notify(
         'error',
-        t('common.deleteFailed', 'Lösche fehlgeschlage'),
-        t('mail.admin.couldNotDelete', 'Mail-Adrässe chonnt nöd gösche wärde.'),
+        t('common.deleteFailed', 'Löschen fehlgeschlagen'),
+        t('mail.admin.couldNotDelete', 'Mail-Adresse konnte nicht gelöscht werden.'),
       )
     } finally {
       setBusy(false)
@@ -260,8 +260,8 @@ export function MailSettingsModal({
       )
       notify(
         'success',
-        t('mail.system.password.set', 'Passwort gsetzt'),
-        t('mail.system.password.generated', 'Neus Passwort: {{pwd}}', { pwd }),
+        t('mail.system.password.set', 'Passwort festlegen'),
+        t('mail.system.password.generated', 'Neues Passwort: {{pwd}}', { pwd }),
       )
       setCustomPassword('')
     } catch {
@@ -270,7 +270,7 @@ export function MailSettingsModal({
         t('common.error', 'Fehler'),
         t(
           'mail.system.password.resetFailed',
-          'Passwort chonnt nöd zrugggsetzt wärde.',
+          'Passwort konnte nicht zurückgesetzt werden.',
         ),
       )
     } finally {
@@ -292,14 +292,14 @@ export function MailSettingsModal({
       invalidateAliases()
       notify(
         'success',
-        t('common.saved', 'Gspeichert'),
+        t('common.saved', 'Gespeichert'),
         t('mail.admin.aliasCreated', 'Alias erstellt.'),
       )
     } catch {
       notify(
         'error',
         t('common.error', 'Fehler'),
-        t('mail.admin.aliasCreateFailed', 'Alias chonnt nöd erstellt wärde.'),
+        t('mail.admin.aliasCreateFailed', 'Alias konnte nicht erstellt werden.'),
       )
     } finally {
       setAliasBusy(false)
@@ -318,8 +318,8 @@ export function MailSettingsModal({
     } catch {
       notify(
         'error',
-        t('common.deleteFailed', 'Lösche fehlgeschlage'),
-        t('mail.admin.aliasDeleteFailed', 'Alias chonnt nöd gösche wärde.'),
+        t('common.deleteFailed', 'Löschen fehlgeschlagen'),
+        t('mail.admin.aliasDeleteFailed', 'Alias konnte nicht gelöscht werden.'),
       )
     } finally {
       setAliasBusy(false)
@@ -339,7 +339,7 @@ export function MailSettingsModal({
       notify(
         'error',
         t('common.error', 'Fehler'),
-        t('mail.admin.aliasToggleFailed', 'Alias chonnt nöd gänderet wärde.'),
+        t('mail.admin.aliasToggleFailed', 'Alias konnte nicht geändert werden.'),
       )
     } finally {
       setAliasBusy(false)
@@ -365,7 +365,7 @@ export function MailSettingsModal({
       <Modal
         open={open}
         onClose={onClose}
-        title={t('mail.admin.settings', 'Mail-Iistellige')}
+        title={t('mail.admin.settings', 'Mail-Einstellungen')}
         subtitle={entry.address}
         footer={
           <div
@@ -384,18 +384,18 @@ export function MailSettingsModal({
                 onClick={() => setDeleteOpen(true)}
                 disabled={busy}
               >
-                {t('common.delete', 'Lösche')}
+                {t('common.delete', 'Löschen')}
               </Button>
             ) : (
               <span />
             )}
             <div style={{ display: 'flex', gap: 8 }}>
               <Button variant="default" onClick={onClose} disabled={busy}>
-                {t('common.cancel', 'Abbräche')}
+                {t('common.cancel', 'Abbrechen')}
               </Button>
               {canManage && (
                 <Button variant="filled" onClick={handleSave} disabled={busy}>
-                  {busy ? '...' : t('common.save', 'Speichere')}
+                  {busy ? '...' : t('common.save', 'Speichern')}
                 </Button>
               )}
             </div>
@@ -404,13 +404,13 @@ export function MailSettingsModal({
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           {canManage && (
-            <Field label={t('mail.enabled', 'Aktiviert')}>
+            <Field label={t('mail.enabled', 'Eingeschaltet')}>
               <Toggle checked={enabled} onChange={setEnabled} />
             </Field>
           )}
 
           {category !== 'system' && (
-            <Field label={t('mail.forwarding', 'Witergleiti')}>
+            <Field label={t('mail.forwarding', 'Weiterleitung')}>
               <Toggle
                 checked={forwarding}
                 onChange={setForwarding}
@@ -420,7 +420,7 @@ export function MailSettingsModal({
           )}
 
           {showQuota && canManage && (
-            <Field label={t('mail.admin.quotaMb', 'Quota (MB)')}>
+            <Field label={t('mail.admin.quotaMb', 'Speicherplatz (MB)')}>
               <TextInput
                 type="number"
                 min={10}
@@ -435,7 +435,7 @@ export function MailSettingsModal({
             <Field
               label={t(
                 'mail.admin.retentionDays',
-                'Retention (Täg, leer = OFF)',
+                'Aufbewahrung (Tage, leer = unbegrenzt)',
               )}
             >
               <TextInput
@@ -445,7 +445,7 @@ export function MailSettingsModal({
                 onChange={(e) =>
                   setRetention(e.target.value ? Number(e.target.value) : null)
                 }
-                placeholder={t('mail.admin.retentionOff', 'OFF')}
+                placeholder={t('mail.admin.retentionOff', 'Unbegrenzt')}
               />
             </Field>
           )}
@@ -474,7 +474,7 @@ export function MailSettingsModal({
 
           {showForwardTargets && (
             <Field
-              label={t('mail.admin.forwardingTargets', 'Witergleitigs-Ziil')}
+              label={t('mail.admin.forwardingTargets', 'Weiterleitungsziele')}
             >
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {forwardTargets.map((target, i) => (
@@ -509,7 +509,7 @@ export function MailSettingsModal({
                   onClick={() => setForwardTargets([...forwardTargets, ''])}
                   disabled={busy}
                 >
-                  + {t('mail.admin.addTarget', 'Ziil hinzuefüege')}
+                  + {t('mail.admin.addTarget', 'Ziel hinzufügen')}
                 </Button>
               </div>
             </Field>
@@ -517,10 +517,10 @@ export function MailSettingsModal({
 
           {showFixedTargets && (
             <Field
-              label={t('mail.admin.forwardingTargets', 'Witergleitigs-Ziil')}
+              label={t('mail.admin.forwardingTargets', 'Weiterleitungsziele')}
               hint={t(
                 'mail.admin.fixedTargets',
-                'Fixed to parent address — not editable',
+                'Fest an die übergeordnete Adresse gebunden, nicht änderbar',
               )}
             >
               <div
@@ -554,7 +554,7 @@ export function MailSettingsModal({
                   >
                     {t(
                       'mail.admin.autoResolved',
-                      'Automatically resolved from parent',
+                      'Automatisch von der übergeordneten Adresse übernommen',
                     )}
                   </span>
                 )}
@@ -563,7 +563,7 @@ export function MailSettingsModal({
           )}
 
           {showFromWhitelist && (
-            <Field label={t('mail.admin.fromWhitelist', 'Send-as Whitelist')}>
+            <Field label={t('mail.admin.fromWhitelist', 'Erlaubte Absender (Senden als)')}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {wlEntries.map((addr, i) => (
                   <div key={addr + '-' + i} style={{ display: 'flex', gap: 6 }}>
@@ -596,7 +596,7 @@ export function MailSettingsModal({
                   onClick={() => setWlEntries([...wlEntries, ''])}
                   disabled={busy}
                 >
-                  + {t('mail.admin.addWhitelist', 'Adrässe hinzuefüege')}
+                  + {t('mail.admin.addWhitelist', 'Adresse hinzufügen')}
                 </Button>
               </div>
               {wlEffective.length > 0 && (
@@ -607,7 +607,7 @@ export function MailSettingsModal({
                     marginTop: 6,
                   }}
                 >
-                  {t('mail.admin.effectiveWhitelist', 'Effektiv')}:{' '}
+                  {t('mail.admin.effectiveWhitelist', 'Wirksam')}:{' '}
                   {wlEffective.join(', ')}
                 </div>
               )}
@@ -624,7 +624,7 @@ export function MailSettingsModal({
                   marginBottom: 8,
                 }}
               >
-                {t('mail.admin.aliases', 'Zuesätzlichi Aliasse')}
+                {t('mail.admin.aliases', 'Weitere Aliasse')}
               </div>
               {aliases.length === 0 ? (
                 <div
@@ -633,7 +633,7 @@ export function MailSettingsModal({
                     color: '#8c86a0',
                   }}
                 >
-                  {t('mail.admin.noAliases', 'Keini zuesätzliche Aliasse.')}
+                  {t('mail.admin.noAliases', 'Keine weiteren Aliasse.')}
                 </div>
               ) : (
                 <div
@@ -684,7 +684,7 @@ export function MailSettingsModal({
                   onKeyDown={(e) => e.key === 'Enter' && handleAddAlias()}
                   placeholder={t(
                     'mail.admin.aliasPrefix',
-                    'Präfix für nöis Alias',
+                    'Präfix für neuen Alias',
                   )}
                   style={{ flex: 1 }}
                 />
@@ -702,7 +702,7 @@ export function MailSettingsModal({
 
           {showPassword && canManage && (
             <Field
-              label={t('mail.system.password.set', 'Passwort setze/generiere')}
+              label={t('mail.system.password.set', 'Passwort festlegen')}
             >
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <TextInput
@@ -721,7 +721,7 @@ export function MailSettingsModal({
                 >
                   {customPassword.trim()
                     ? 'Set'
-                    : t('mail.system.password.reset', 'Generiere')}
+                    : t('mail.system.password.reset', 'Passwort zurücksetzen')}
                 </Button>
               </div>
             </Field>
@@ -737,7 +737,7 @@ export function MailSettingsModal({
                 color: '#e65100',
               }}
             >
-              <strong>{t('mail.admin.syncError', 'Sync-Fehler')}:</strong>{' '}
+              <strong>{t('mail.admin.syncError', 'Fehler')}:</strong>{' '}
               {entry.syncError}
             </div>
           )}
@@ -746,10 +746,10 @@ export function MailSettingsModal({
 
       <ConfirmModal
         open={deleteOpen}
-        title={t('mail.admin.deleteTitle', 'Mail-Adrässe entferne')}
+        title={t('mail.admin.deleteTitle', 'Mail-Adresse entfernen')}
         body={t(
           'mail.admin.deleteBody',
-          'D Mail-Adrässe {{address}} wird entfernet.',
+          'Die Mail-Adresse {{address}} wird entfernt.',
           { address: entry.address },
         )}
         onConfirm={handleDelete}

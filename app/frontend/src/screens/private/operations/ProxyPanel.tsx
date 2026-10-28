@@ -75,12 +75,12 @@ export function ProxyPanel({
       {state.given_to ? (
         <Group justify="space-between" gap="xs">
           <Text fz="sm">
-            {t('polls.proxy.givenTo', 'Your vote is with {{name}}', {
+            {t('polls.proxy.givenTo', 'Deine Stimme liegt bei {{name}}', {
               name: state.given_to.name,
             })}
           </Text>
           <Button size="xs" variant="subtle" onClick={() => run(() => revokeProxy(poll.id))}>
-            {t('polls.proxy.revoke', 'Take back')}
+            {t('polls.proxy.revoke', 'Zurücknehmen')}
           </Button>
         </Group>
       ) : state.holding.length === 0 && !hasVoted ? (
@@ -93,7 +93,7 @@ export function ProxyPanel({
               data={memberOptions}
               value={holderId}
               onChange={setHolderId}
-              placeholder={t('polls.proxy.pick', 'Who votes for you?')}
+              placeholder={t('polls.proxy.pick', 'Wer stimmt für dich ab?')}
             />
             <Button
               size="xs"
@@ -105,12 +105,12 @@ export function ProxyPanel({
                 })
               }
             >
-              {t('polls.proxy.give', 'Give vote')}
+              {t('polls.proxy.give', 'Stimme übertragen')}
             </Button>
           </Group>
         ) : (
           <Button size="xs" variant="subtle" onClick={() => setGiving(true)}>
-            {t('polls.proxy.giveButton', "Can't attend? Give your vote to someone")}
+            {t('polls.proxy.giveButton', 'Du kannst nicht dabei sein? Übertrage deine Stimme')}
           </Button>
         )
       ) : null}
@@ -118,7 +118,7 @@ export function ProxyPanel({
       {state.holding.map((g) => (
         <Group key={g.id} gap="xs" wrap="nowrap" mt={6}>
           <Text fz="sm" style={{ flex: 1 }}>
-            {t('polls.proxy.for', 'For {{name}}', { name: g.name })}
+            {t('polls.proxy.for', 'Für {{name}}', { name: g.name })}
             {g.voted && (
               <IconCheck
                 size={14}
@@ -143,7 +143,7 @@ export function ProxyPanel({
               })
             }
           >
-            {t('polls.proxy.vote', 'Vote')}
+            {t('polls.proxy.vote', 'Abstimmen')}
           </Button>
         </Group>
       ))}

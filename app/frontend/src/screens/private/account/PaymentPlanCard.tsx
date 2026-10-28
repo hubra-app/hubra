@@ -25,7 +25,7 @@ export function PaymentPlanCard() {
     try {
       await chooseMyPlan(value === 'tier' ? null : Number(value))
       await queryClient.invalidateQueries({ queryKey: ['my-plan'] })
-      notify('success', t('account.plan.saved', 'Payment plan saved'))
+      notify('success', t('account.plan.saved', 'Zahlungsplan gespeichert'))
     } catch (err) {
       notify(
         'error',
@@ -45,7 +45,7 @@ export function PaymentPlanCard() {
       <Group p="md" gap="sm" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}>
         <IconCalendarRepeat size={16} style={{ color: 'var(--mantine-color-ink-4)' }} />
         <Text fw={700} fz="md">
-          {t('account.plan.title', 'How you pay')}
+          {t('account.plan.title', 'Wie du bezahlst')}
         </Text>
       </Group>
       <Radio.Group
@@ -72,7 +72,7 @@ export function PaymentPlanCard() {
       <Text fz="xs" c="dimmed" px="md" pb="md">
         {t(
           'account.plan.hint',
-          'Applies from your next invoice. Invoices already sent stay as they are.',
+          'Gilt ab der nächsten Rechnung. Bereits versendete Rechnungen bleiben unverändert.',
         )}
       </Text>
     </Paper>

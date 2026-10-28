@@ -6,23 +6,24 @@ import { z } from 'zod'
 import { IconArrowLeft, IconCheck, IconKey } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import * as authApi from '@/api/auth'
+import { useT } from '@/locales/i18n'
 import { AuthFrame } from './AuthFrame'
 
-const schema = z
-  .object({
-    password: z.string().min(8, 'Password must be at least 8 characters'),
-    confirm: z.string(),
-  })
-  .refine((d) => d.password === d.confirm, {
-    message: 'Passwords do not match',
-    path: ['confirm'],
-  })
-
-type FormValues = z.infer<typeof schema>
+type FormValues = { password: string; confirm: string }
 
 /** Opened from the reset mail: /reset-password#token=… */
 export function ResetPasswordScreen() {
   const navigate = useNavigate()
+  const { t } = useT()
+  const schema = z
+    .object({
+      password: z.string().min(8, t('auth.passwordMin8', 'Mindestens 8 Zeichen.')),
+      confirm: z.string(),
+    })
+    .refine((d) => d.password === d.confirm, {
+      message: t('auth.passwordsDontMatch', 'Die Passwörter stimmen nicht überein.'),
+      path: ['confirm'],
+    })
   const token = new URLSearchParams(window.location.hash.replace(/^#/, '')).get('token') ?? ''
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -40,7 +41,7 @@ export function ResetPasswordScreen() {
       await authApi.resetPassword(token, values.password)
       setDone(true)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Invalid or expired link.')
+      setError(err instanceof Error ? err.message : t('auth.linkExpired', 'Der Link ist ungültig oder abgelaufen.'))
     } finally {
       setLoading(false)
     }
@@ -51,14 +52,14 @@ export function ResetPasswordScreen() {
       <AuthFrame>
         <Stack align="center" ta="center" gap="md">
           <Text c="red" size="sm">
-            This reset link is invalid or incomplete.
+            {t('auth.resetLinkInvalid', 'Dieser Link ist ungültig oder unvollständig.')}
           </Text>
           <Button
             variant="subtle"
             leftSection={<IconArrowLeft size={16} />}
             onClick={() => navigate('/forgot-password')}
           >
-            Request a new link
+            {t('auth.requestNewLink', 'Neuen Link anfordern')}
           </Button>
         </Stack>
       </AuthFrame>
@@ -71,12 +72,12 @@ export function ResetPasswordScreen() {
           <ThemeIcon size={56} radius="xl" color="green" variant="light">
             <IconCheck size={28} />
           </ThemeIcon>
-          <Title order={2}>Password updated</Title>
+          <Title order={2}>{t('auth.passwordUpdated', 'Passwort geändert')}</Title>
           <Text size="sm" c="dimmed" mb="md">
-            You can now sign in with your new password.
+            {t('auth.signInWithNew', 'Du kannst dich jetzt mit dem neuen Passwort anmelden.')}
           </Text>
-          <Button fullWidth onClick={() => navigate('/login')}>
-            Sign in
+          <Button fullWidth size="md" onClick={() => navigate('/login')}>
+            {t('auth.signIn', 'Anmelden')}
           </Button>
         </Stack>
       </AuthFrame>
@@ -84,14 +85,14 @@ export function ResetPasswordScreen() {
 
   return (
     <AuthFrame>
-      <ThemeIcon size={48} radius="xl" color="yellow" variant="light" mb="md">
+      <ThemeIcon size={48} radius="xl" color="acc" variant="light" mb="lg">
         <IconKey size={22} />
       </ThemeIcon>
-      <Title order={2} mb={6}>
-        Set a new password
+      <Title order={1} fz={28} mb={6}>
+        {t('auth.newPasswordTitle', 'Neues Passwort festlegen')}
       </Title>
-      <Text size="sm" c="dimmed" mb={28}>
-        Choose a strong password for your account.
+      <Text size="md" c="dimmed" mb={32}>
+        {t('auth.newPasswordSubtitle', 'Wähle ein sicheres Passwort für dein Konto.')}
       </Text>
       {error && (
         <Alert color="red" variant="light" mb="md">
@@ -100,10 +101,17 @@ export function ResetPasswordScreen() {
       )}
       <form onSubmit={form.onSubmit(handleReset)}>
         <Stack gap="md">
-          <PasswordInput label="New password" autoFocus {...form.getInputProps('password')} />
-          <PasswordInput label="Confirm password" {...form.getInputProps('confirm')} />
-          <Button type="submit" fullWidth loading={loading}>
-            Set new password
+          <PasswordInput
+            label={t('auth.newPassword', 'Neues Passwort')}
+            size="md"
+            autoComplete="new-password"
+            autoFocus {...form.getInputProps('password')} />
+          <PasswordInput
+            label={t('auth.confirmPassword', 'Passwort bestätigen')}
+            size="md"
+            autoComplete="new-password" {...form.getInputProps('confirm')} />
+          <Button type="submit" size="md" fullWidth loading={loading}>
+            {t('auth.saveNewPassword', 'Passwort speichern')}
           </Button>
         </Stack>
       </form>

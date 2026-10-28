@@ -63,19 +63,19 @@ export function Sidebar() {
             : undefined
         }
       >
-        <Stack gap={sidebarCollapsed ? 12 : 16} p={sidebarCollapsed ? 0 : 'xs'}>
+        <Stack gap={sidebarCollapsed ? 12 : 20} p={sidebarCollapsed ? 0 : 'sm'} pt={sidebarCollapsed ? 0 : 'md'}>
           {nav.map((section) => (
             <Box key={section.label}>
               {!sidebarCollapsed && (
                 <Text
-                  fz="xs"
-                  fw={600}
-                  c="dimmed"
+                  fz={11}
+                  fw={700}
+                  c="gray.6"
                   tt="uppercase"
                   style={{
-                    letterSpacing: '0.10em',
-                    padding: '0 11px',
-                    marginBottom: 4,
+                    letterSpacing: '0.08em',
+                    padding: '0 12px',
+                    marginBottom: 6,
                   }}
                 >
                   {section.label}
@@ -114,10 +114,11 @@ export function Sidebar() {
               alignItems: 'center',
               justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
               gap: 10,
-              height: 42,
+              height: 52,
               padding: '0 10px',
-              borderRadius: 10,
-              background: 'var(--mantine-color-gray-1)',
+              borderRadius: 12,
+              border: '1px solid var(--mantine-color-gray-3)',
+              background: 'var(--mantine-color-white)',
             }}
           >
             <Box
@@ -140,10 +141,10 @@ export function Sidebar() {
             {!sidebarCollapsed && (
               <>
                 <Box style={{ flex: 1, textAlign: 'left', minWidth: 0 }}>
-                  <Text fz="sm" fw={600} lh={1.2}>
+                  <Text fz="sm" fw={600} lh={1.2} truncate>
                     {userName}
                   </Text>
-                  <Text fz="xs" c="dimmed" opacity={0.65}>
+                  <Text fz="xs" c="dimmed" truncate>
                     {userRole}
                   </Text>
                 </Box>

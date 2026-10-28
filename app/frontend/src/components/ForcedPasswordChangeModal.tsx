@@ -28,7 +28,7 @@ export function ForcedPasswordChangeModal() {
     setError('')
     if (!currentPw || !newPw) {
       setError(
-        t('account.password.change.text', 'Aktuells un neus Passwort ingeh.'),
+        t('account.password.change.text', 'Gib dein aktuelles und dein neues Passwort ein.'),
       )
       return
     }
@@ -36,14 +36,14 @@ export function ForcedPasswordChangeModal() {
       setError(
         t(
           'account.password.minLength',
-          'Neus Passwort muss mindestens 8 Zeiche ha.',
+          'Das neue Passwort muss mindestens 8 Zeichen lang sein.',
         ),
       )
       return
     }
     if (newPw !== confirmPw) {
       setError(
-        t('account.passwordsDoNotMatch', 'Neui Passwörter stimmed nöd überi.'),
+        t('account.passwordsDoNotMatch', 'Die neuen Passwörter stimmen nicht überein.'),
       )
       return
     }
@@ -53,10 +53,10 @@ export function ForcedPasswordChangeModal() {
       clearMustChangePassword()
       notify(
         'success',
-        t('account.password.changed', 'Passwort gändert'),
+        t('account.password.changed', 'Passwort geändert'),
         t(
           'account.password.updatedMsg',
-          'Din Passwort isch aktualisiert worde.',
+          'Dein Passwort wurde geändert.',
         ),
       )
     } catch (err: unknown) {
@@ -65,7 +65,7 @@ export function ForcedPasswordChangeModal() {
           ? err.message
           : t(
               'account.failedToChangePassword',
-              'Passwortänderig fehlgeschlage.',
+              'Passwort konnte nicht geändert werden.',
             )
       setError(msg)
     } finally {
@@ -89,12 +89,12 @@ export function ForcedPasswordChangeModal() {
         </ThemeIcon>
         <Stack gap={2}>
           <Text fz={17} fw={700}>
-            {t('account.must.change.password', 'Passwort muss gändert werde')}
+            {t('account.must.change.passwordLabel', 'Passwort muss geändert werden')}
           </Text>
           <Text size="sm" c="dimmed">
             {t(
               'account.must.change.password.desc',
-              'Bitte ändere din Passwort, um wiiterzmache.',
+              'Bitte ändere dein Passwort, um weiterzumachen.',
             )}
           </Text>
         </Stack>
@@ -108,20 +108,20 @@ export function ForcedPasswordChangeModal() {
 
       <Stack gap="sm">
         <PasswordInput
-          label={t('account.currentPassword', 'Aktuells Passwort')}
+          label={t('account.currentPassword', 'Aktuelles Passwort')}
           value={currentPw}
           onChange={(e) => setCurrentPw(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           autoFocus
         />
         <PasswordInput
-          label={t('account.newPassword', 'Neus Passwort')}
+          label={t('account.newPassword', 'Neues Passwort')}
           value={newPw}
           onChange={(e) => setNewPw(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
         />
         <PasswordInput
-          label={t('account.confirm.password', 'Passwort bestätige')}
+          label={t('account.confirm.password', 'Passwort bestätigen')}
           value={confirmPw}
           onChange={(e) => setConfirmPw(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
@@ -137,8 +137,8 @@ export function ForcedPasswordChangeModal() {
         loading={loading}
       >
         {loading
-          ? t('common.saving', 'Speichere...')
-          : t('account.changePassword', 'Passwort ändere')}
+          ? t('common.saving', 'Wird gespeichert …')
+          : t('account.changePassword', 'Passwort ändern')}
       </Button>
     </Modal>
   )

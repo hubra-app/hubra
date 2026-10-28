@@ -62,14 +62,14 @@ export function GlobalOverviewScreen() {
       {summaryError && (
         <Card style={{ marginBottom: 16, borderColor: "red" }}>
           <Text c="red" size="sm">
-            {t("common.error", "Error loading dashboard data")}
+            {t("common.error", 'Fehler')}
           </Text>
         </Card>
       )}
       {summaryLoading && (
         <Card style={{ marginBottom: 16 }}>
           <Text c="dimmed" size="sm">
-            {t("common.loading", "Loading…")}
+            {t("common.loading", 'Wird geladen …')}
           </Text>
         </Card>
       )}
@@ -174,7 +174,7 @@ export function GlobalOverviewScreen() {
               ? `+${summary.stats.memberDelta} ${t(
                   "dashboard.thisMonth",
                 ).toLowerCase()}`
-              : t("common.loading", "Loading…")
+              : t("common.loading", 'Wird geladen …')
           }
           onClick={() => go("/app/members")}
         />
@@ -199,7 +199,7 @@ export function GlobalOverviewScreen() {
           onClick={() => go("/app/finance/invoices")}
         />
         <StatTile
-          label={t("dashboard.upcomingEvents")}
+          label={t("dashboard.upcomingEventsLabel")}
           value={
             summary?.stats ? String(summary.stats.upcomingEvents) : "\u2014"
           }
@@ -400,10 +400,10 @@ export function GlobalOverviewScreen() {
                       {post.author_name ?? t("account.unknownAuthor")}
                       {" \u00b7 "}
                       {post.like_count}{" "}
-                      {t("events.likes", "likes").toLowerCase()}
+                      {t("events.likes", 'Likes').toLowerCase()}
                       {" \u00b7 "}
                       {post.comment_count}{" "}
-                      {t("events.comments", "comments").toLowerCase()}
+                      {t("events.comments", 'Kommentare').toLowerCase()}
                     </div>
                   </div>
                 </UnstyledButton>

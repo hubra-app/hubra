@@ -32,7 +32,7 @@ export function SettingsScreen() {
 
   return (
     <div>
-      <PageHead title={t('shell.nav.settings', 'Settings')} />
+      <PageHead title={t('shell.nav.settings', 'Einstellungen')} />
       <Tabs
         tabs={tabs.map((tab) => ({ id: tab.id, label: t(tab.labelKey, tab.label) }))}
         activeTab={activeTab}

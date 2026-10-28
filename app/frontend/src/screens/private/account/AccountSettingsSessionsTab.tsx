@@ -43,7 +43,7 @@ export function AccountSettingsSessionsTab() {
         t('account.sessions.revoked', 'Sitzung beendet'),
         t(
           'account.sessions.revokedMsg',
-          'D Sitzung isch erfolgreich beendet worde.',
+          'Das Gerät ist jetzt abgemeldet.',
         ),
       )
     } catch (err: unknown) {
@@ -54,7 +54,7 @@ export function AccountSettingsSessionsTab() {
           ? err.message
           : t(
               'account.couldNotRevokeSession',
-              'Sitzung chunt nöd beendet wärde.',
+              'Sitzung konnte nicht beendet werden.',
             ),
       )
     } finally {
@@ -71,13 +71,13 @@ export function AccountSettingsSessionsTab() {
       setEditingSessionId(null)
       notify(
         'success',
-        t('account.sessions.renamed', 'Sitzig umbenennt'),
-        name ?? t('account.nameCleared', 'Name glöscht'),
+        t('account.sessions.renamed', 'Sitzung umbenannt'),
+        name ?? t('account.nameCleared', 'Name entfernt'),
       )
     } catch (err: unknown) {
       notify(
         'error',
-        t('account.renameFailed', 'Umbenenne fählgschlage'),
+        t('account.renameFailed', 'Umbenennen fehlgeschlagen'),
         err instanceof Error ? err.message : 'Unknown error',
       )
     } finally {
@@ -88,14 +88,14 @@ export function AccountSettingsSessionsTab() {
   const handleRevokeAll = async () => {
     setRevokeAllLoading(true)
     try {
-      const result = await authApi.revokeAllSessions(false)
+      await authApi.revokeAllSessions(false)
       queryClient.invalidateQueries({ queryKey: ['sessions'] })
       notify(
         'success',
-        t('account.allOtherSessionsRevoked', 'Anderi Sitzungen beendet'),
+        t('account.allOtherSessionsRevoked', 'Alle anderen Sitzungen beendet'),
         t(
           'account.allOtherSessionsRevokedMsg',
-          `${result.revoked} Sitzung(e) beendet.`,
+          'Du bist jetzt nur noch auf diesem Gerät angemeldet.',
         ),
       )
     } catch (err: unknown) {
@@ -106,7 +106,7 @@ export function AccountSettingsSessionsTab() {
           ? err.message
           : t(
               'account.couldNotRevokeAll',
-              'Sitzungen chented nöd beendet wärde.',
+              'Sitzungen konnten nicht beendet werden.',
             ),
       )
     } finally {
@@ -129,12 +129,12 @@ export function AccountSettingsSessionsTab() {
             style={{ color: 'var(--mantine-color-ink-4)' }}
           />
           <Text fw={700} fz="md">
-            {t('account.activeSessions', 'Aktivi Sitzunge')}
+            {t('account.activeSessions', 'Aktive Sitzungen')}
           </Text>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Toggle checked={showRevoked} onChange={(v) => setShowRevoked(v)} />
             <Text fz="xs" c="dimmed">
-              {t('account.showRevoked', 'Beendeti zeige')}
+              {t('account.showRevoked', 'Beendete anzeigen')}
             </Text>
           </div>
         </Group>
@@ -147,7 +147,7 @@ export function AccountSettingsSessionsTab() {
                 color: 'var(--mantine-color-ink-3)',
               }}
             >
-              {t('account.loadingSessions', 'Sitzunge werde glade…')}
+              {t('account.loadingSessions', 'Sitzungen werden geladen …')}
             </div>
           )}
           {!sessionsLoading && sessions.length === 0 && (
@@ -158,7 +158,7 @@ export function AccountSettingsSessionsTab() {
                 color: 'var(--mantine-color-ink-3)',
               }}
             >
-              {t('account.noSessions', 'Kei aktivi Sitzunge gfunde.')}
+              {t('account.noSessions', 'Keine aktiven Sitzungen gefunden.')}
             </div>
           )}
           {sessionsPg.paged.map((s: SessionInfo) => (
@@ -204,7 +204,7 @@ export function AccountSettingsSessionsTab() {
                       disabled={savingNameId === s.id}
                       placeholder={t(
                         'account.sessions.namePlaceholder',
-                        'Mis Grät',
+                        'Mein Gerät',
                       )}
                       style={{
                         height: 28,
@@ -230,12 +230,12 @@ export function AccountSettingsSessionsTab() {
                         setEditingSessionId(s.id)
                         setEditSessionName(s.deviceName ?? '')
                       }}
-                      title={t('account.editName', 'Name bearbeite')}
+                      title={t('account.editName', 'Name bearbeiten')}
                     >
                       {s.deviceName ||
                         `${s.browserFamily} on ${s.platform}` ||
                         s.userAgent ||
-                        t('account.unknownDevice', 'Unbekannts Grät')}
+                        t('account.unknownDevice', 'Unbekanntes Gerät')}
                     </span>
                   )}
                   {editingSessionId !== s.id && (
@@ -254,7 +254,7 @@ export function AccountSettingsSessionsTab() {
                         display: 'flex',
                         alignItems: 'center',
                       }}
-                      title={t('account.editName', 'Name bearbeite')}
+                      title={t('account.editName', 'Name bearbeiten')}
                     >
                       <IconPencil size={11} />
                     </button>
@@ -287,17 +287,17 @@ export function AccountSettingsSessionsTab() {
                       }}
                     >
                       {s.createReason === 'new_device'
-                        ? t('account.reasonNewDevice', 'Neus Grät')
+                        ? t('account.reasonNewDevice', 'Neues Gerät')
                         : s.createReason === 'new_ip'
-                          ? t('account.reasonNewIp', 'Neui IP')
+                          ? t('account.reasonNewIp', 'Neue IP-Adresse')
                           : s.createReason === 'new_ua'
                             ? t('account.reasonNewUa', 'Neuer Browser')
                             : s.createReason === 'session_expired'
-                              ? t('account.reasonExpired', 'Sitzig abgloffe')
+                              ? t('account.reasonExpired', 'Sitzung abgelaufen')
                               : s.createReason === 'first_login'
                                 ? t(
                                     'account.reasonFirstLogin',
-                                    'Ersti Aameldig',
+                                    'Erste Anmeldung',
                                   )
                                 : s.createReason}
                     </span>
@@ -329,7 +329,7 @@ export function AccountSettingsSessionsTab() {
                   {s.lastActiveAt && (
                     <span>
                       {' ? '}
-                      {t('account.lastActive', 'Zletscht aktiv')}:{' '}
+                      {t('account.lastActive', 'Zuletzt aktiv')}:{' '}
                       {new Date(s.lastActiveAt).toLocaleString()}
                     </span>
                   )}
@@ -349,8 +349,8 @@ export function AccountSettingsSessionsTab() {
                 >
                   <IconTrash size={16} />
                   {revokingId === s.id
-                    ? t('account.revoking', 'Wird beendet…')
-                    : t('account.revoke', 'Beende')}
+                    ? t('account.revoking', 'Wird beendet …')
+                    : t('account.revoke', 'Beenden')}
                 </Button>
               )}
             </div>
@@ -376,8 +376,8 @@ export function AccountSettingsSessionsTab() {
         >
           <Leave size={16} />
           {revokeAllLoading
-            ? t('account.revoking', 'Wird beendet…')
-            : t('account.revokeAllOthers', 'Alli andere Sitzige beende')}
+            ? t('account.revoking', 'Wird beendet …')
+            : t('account.revokeAllOthers', 'Alle anderen Sitzungen beenden')}
         </Button>
       </div>
 
@@ -392,7 +392,7 @@ export function AccountSettingsSessionsTab() {
       >
         {t(
           'account.sessionsInfo',
-          'Verwalte dini aktive Sitzige. Wemmer e Sitzig beendet, wird die sofort ungültig.',
+          'Hier siehst du, wo du angemeldet bist. Eine beendete Sitzung ist sofort ungültig.',
         )}
       </div>
 

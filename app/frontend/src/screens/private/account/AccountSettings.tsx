@@ -8,7 +8,7 @@ import {
   IconDeviceDesktop,
 } from '@tabler/icons-react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useNav, useAuth } from '@/context/AppContext'
+import { useNav } from '@/context/AppContext'
 import { PageHead } from '@/components/ui'
 import { useT } from '@/locales/i18n'
 import { AccountSettingsProfileTab } from './AccountSettingsProfileTab'
@@ -73,7 +73,6 @@ const tabs: {
 export function AccountSettingsScreen() {
   const { t } = useT()
   const { go } = useNav()
-  const { currentUser } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const tab = (location.pathname
@@ -83,11 +82,10 @@ export function AccountSettingsScreen() {
   return (
     <div>
       <PageHead
-        eyebrow={currentUser?.name ?? ''}
-        title={t('account.settings.title', 'Konto-Iistellige')}
+        title={t('account.settings.title', 'Kontoeinstellungen')}
         actions={
           <Button variant="subtle" onClick={() => go('/app/account')}>
-            {'\u2190'} {t('account.myAccount', 'Mis Konto')}
+            {'\u2190'} {t('account.myAccount', 'Mein Konto')}
           </Button>
         }
       />

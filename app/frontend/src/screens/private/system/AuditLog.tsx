@@ -395,7 +395,6 @@ export function AuditLogScreen() {
   return (
     <div>
       <PageHead
-        eyebrow="System"
         title="Audit log"
         desc={`${total} entr${total === 1 ? 'y' : 'ies'}`}
       />

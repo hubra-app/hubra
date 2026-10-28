@@ -55,7 +55,7 @@ export function AccountSettingsDevicesTab() {
                 color: 'var(--mantine-color-ink-3)',
               }}
             >
-              {t('account.loadingDevices', 'Geräte werde glade?')}
+              {t('account.loadingDevices', 'Geräte werden geladen …')}
             </div>
           )}
           {!devicesLoading && devices.length === 0 && (
@@ -66,7 +66,7 @@ export function AccountSettingsDevicesTab() {
                 color: 'var(--mantine-color-ink-3)',
               }}
             >
-              {t('account.noDevices', 'Keini Geräte gfunde.')}
+              {t('account.noDevices', 'Keine Geräte gefunden.')}
             </div>
           )}
           {devicesPg.paged.map((d: DeviceInfo) => (
@@ -124,7 +124,7 @@ export function AccountSettingsDevicesTab() {
                       disabled={savingDeviceNameId === d.id}
                       placeholder={t(
                         'account.sessions.namePlaceholder',
-                        'Mis Grät',
+                        'Mein Gerät',
                       )}
                       style={{
                         height: 28,
@@ -150,11 +150,11 @@ export function AccountSettingsDevicesTab() {
                         setEditingDeviceId(d.id)
                         setEditDeviceName(d.name ?? '')
                       }}
-                      title={t('account.editName', 'Name bearbeite')}
+                      title={t('account.editName', 'Name bearbeiten')}
                     >
                       {d.name ||
                         `${d.browserFamily} on ${d.platform}` ||
-                        t('account.unknownDevice', 'Unbekannts Grät')}
+                        t('account.unknownDevice', 'Unbekanntes Gerät')}
                     </span>
                   )}
                   {editingDeviceId !== d.id && (
@@ -173,7 +173,7 @@ export function AccountSettingsDevicesTab() {
                         display: 'flex',
                         alignItems: 'center',
                       }}
-                      title={t('account.editName', 'Name bearbeite')}
+                      title={t('account.editName', 'Name bearbeiten')}
                     >
                       <IconPencil size={11} />
                     </button>
@@ -209,7 +209,7 @@ export function AccountSettingsDevicesTab() {
                 >
                   {d.lastSeenAt && (
                     <span>
-                      {t('account.lastSeen', 'Zletscht gseh')}:{' '}
+                      {t('account.lastSeen', 'Zuletzt gesehen')}:{' '}
                       {new Date(d.lastSeenAt).toLocaleString()}
                     </span>
                   )}
@@ -247,8 +247,8 @@ export function AccountSettingsDevicesTab() {
                 >
                   <IconTrash size={16} />
                   {revokingDeviceId === d.id
-                    ? t('account.revoking', 'Wird beendet?')
-                    : t('account.revokeAll', 'All beende')}
+                    ? t('account.revoking', 'Wird beendet …')
+                    : t('account.revokeAll', 'Alle beenden')}
                 </Button>
               )}
             </div>

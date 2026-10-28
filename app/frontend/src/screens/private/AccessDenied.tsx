@@ -20,16 +20,16 @@ export function AccessDeniedScreen() {
           marginBottom: 8,
         }}
       >
-        {t('shell.accessDenied', 'Access denied')}
+        {t('shell.accessDenied', 'Kein Zugriff')}
       </div>
       <div style={{ color: '#5e5873', marginBottom: 24 }}>
         {t(
           'shell.noPermission',
-          'You do not have permission to access this page.',
+          'Du hast keine Berechtigung für diese Seite.',
         )}
       </div>
       <Button variant="filled" onClick={() => navigate('/app/dashboard')}>
-        {t('shell.goToDashboard', 'Go to dashboard')}
+        {t('shell.goToDashboard', 'Zum Dashboard')}
       </Button>
     </div>
   )

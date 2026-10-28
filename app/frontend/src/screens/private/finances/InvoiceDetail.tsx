@@ -20,7 +20,7 @@ import {
 
 /* -- Invoice Detail ---------------------------- */
 export function InvoiceDetailScreen() {
-  const { t } = useT()
+  const { t, i18n } = useT()
   const { id } = useParams<{ id: string }>()
   const { go, selectedInvoice } = useNav()
   const { invoices } = useData()
@@ -40,15 +40,14 @@ export function InvoiceDetailScreen() {
     return (
       <div>
         <PageHead
-          eyebrow={t('finance.title', 'Finanze')}
-          title={t('finance.invoice.notFound', 'Rächnig nöd gfunde')}
+          title={t('finance.invoice.notFound', 'Rechnung nicht gefunden')}
           actions={
             <Button
               variant="subtle"
               onClick={() => go('/app/finance/invoices')}
             >
               <IconArrowLeft size={16} />
-              {t('finance.backToInvoices', 'Zrugg zue Rächnige')}
+              {t('finance.backToInvoices', 'Zurück zu den Rechnungen')}
             </Button>
           }
         />
@@ -62,22 +61,17 @@ export function InvoiceDetailScreen() {
   const lineItemDesc =
     inv.description ||
     (inv.purpose === 'membership'
-      ? t(
-          'finance.monthlyMembershipFee',
-          `Monatlichi Mitgliedschaft (${new Date(inv.issued).toLocaleString(
-            'en',
-            {
-              month: 'long',
-              year: 'numeric',
-            },
-          )})`,
-        )
-      : t('finance.invoice.defaultDescription', 'Rächnig'))
+      ? t('finance.monthlyMembershipFee', 'Mitgliederbeitrag {{month}}', {
+          month: new Date(inv.issued).toLocaleString(i18n.language, {
+            month: 'long',
+            year: 'numeric',
+          }),
+        })
+      : t('finance.invoice.defaultDescription', 'Rechnung'))
 
   return (
     <div>
       <PageHead
-        eyebrow={t('finance.invoicesBreadcrumb', 'Finanze › Rächnige')}
         title={inv.id}
         actions={
           <div style={{ display: 'flex', gap: 8 }}>
@@ -86,11 +80,11 @@ export function InvoiceDetailScreen() {
               onClick={() => go('/app/finance/invoices')}
             >
               <IconArrowLeft size={16} />
-              {t('finance.allInvoices', 'Alli Rächnige')}
+              {t('finance.allInvoices', 'Alle Rechnungen')}
             </Button>
             <Button variant="subtle" onClick={() => downloadInvoicePdf(inv.id)}>
               <IconFileDownload size={16} />
-              {t('finance.downloadQrBill', 'QR-Rächnig')}
+              {t('finance.downloadQrBill', 'QR-Rechnung herunterladen')}
             </Button>
             {!isPaid && (
               <Button
@@ -98,7 +92,7 @@ export function InvoiceDetailScreen() {
                 onClick={() => sendReminderMutation.mutate(inv.id)}
               >
                 <IconBell size={16} />
-                {t('finance.sendReminder', 'Erinnerig sende')}
+                {t('finance.sendReminder', 'Erinnerung senden')}
               </Button>
             )}
             {!isPaid && (
@@ -107,7 +101,7 @@ export function InvoiceDetailScreen() {
                 onClick={() => markPaidMutation.mutate(inv.id)}
               >
                 <IconCheck size={16} />
-                {t('finance.markPaid', 'Als bezahlt markiere')}
+                {t('finance.markPaid', 'Als bezahlt markieren')}
               </Button>
             )}
           </div>
@@ -130,14 +124,14 @@ export function InvoiceDetailScreen() {
               style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}
             >
               <Text fw={700} fz="md">
-                {t('finance.lineItems', 'Positions')}
+                {t('finance.lineItems', 'Positionen')}
               </Text>
             </Group>
             <div style={{ overflowX: 'auto' }}>
               <Table highlightOnHover className="responsive-table">
                 <Table.Thead>
                   <Table.Tr>
-                    <Table.Th>{t('common.description', 'Beschribig')}</Table.Th>
+                    <Table.Th>{t('common.description', 'Beschreibung')}</Table.Th>
                     <Table.Th style={{ textAlign: 'right' }}>
                       {t('finance.amount', 'Betrag')}
                     </Table.Th>
@@ -146,7 +140,7 @@ export function InvoiceDetailScreen() {
                 <Table.Tbody>
                   <Table.Tr>
                     <Table.Td
-                      data-label={t('common.description', 'Beschribig')}
+                      data-label={t('common.description', 'Beschreibung')}
                     >
                       {lineItemDesc}
                     </Table.Td>
@@ -201,7 +195,7 @@ export function InvoiceDetailScreen() {
             >
               <IconBell size={16} style={{ color: '#5e5873' }} />
               <Text fw={700} fz="md">
-                {t('finance.reminder.history', 'Erinnerigs-Verlauf')}
+                {t('finance.reminder.history', 'Versendete Erinnerungen')}
               </Text>
               {!isPaid && (
                 <Button
@@ -210,7 +204,7 @@ export function InvoiceDetailScreen() {
                   style={{ marginLeft: 'auto' }}
                   onClick={() => sendReminderMutation.mutate(inv.id)}
                 >
-                  {t('finance.sendReminder', 'Erinnerig sende')}
+                  {t('finance.sendReminder', 'Erinnerung senden')}
                 </Button>
               )}
             </Group>
@@ -223,7 +217,7 @@ export function InvoiceDetailScreen() {
                   fontSize: 'var(--mantine-font-size-sm)',
                 }}
               >
-                {t('finance.noReminders', 'No cheni Erinnerige gsendet.')}
+                {t('finance.noReminders', 'Noch keine Mahnungen versendet.')}
               </div>
             ) : (
               <div>
@@ -251,7 +245,7 @@ export function InvoiceDetailScreen() {
                       >
                         {t(
                           'finance.reminder.emailSent',
-                          'Erinnerigs-E-Mail gsendet',
+                          'Zahlungserinnerung per E-Mail gesendet',
                         )}
                       </div>
                       <div
@@ -260,7 +254,7 @@ export function InvoiceDetailScreen() {
                           color: '#5e5873',
                         }}
                       >
-                        {t('finance.to', 'A')}: {inv.member}
+                        {t('finance.to', 'An')}: {inv.member}
                       </div>
                     </div>
                     <span
@@ -294,22 +288,22 @@ export function InvoiceDetailScreen() {
               value: inv.member,
             },
             {
-              label: t('finance.purpose', 'Zweck'),
+              label: t('finance.purposeLabel', 'Zweck'),
               value:
                 inv.purpose === 'membership'
                   ? t('finance.purpose.membership', 'Mitgliedschaft')
-                  : t('finance.purpose.other', 'Anderers'),
+                  : t('finance.purpose.other', 'Anderes'),
             },
             {
-              label: t('finance.invoice.number', 'Rächnigs-Nr.'),
+              label: t('finance.invoice.number', 'Rechnungsnummer'),
               value: inv.id,
             },
             {
-              label: t('finance.invoice.issued', 'Usgstellt'),
+              label: t('finance.invoice.issued', 'Ausgestellt'),
               value: inv.issued,
             },
             {
-              label: t('finance.invoice.due', 'Fälligkeitsdatum'),
+              label: t('finance.invoice.due', 'Fällig'),
               value: inv.due,
             },
             {
@@ -327,7 +321,7 @@ export function InvoiceDetailScreen() {
                 : '?',
             },
             {
-              label: t('finance.remindersSent', 'Erinnerige gsendet'),
+              label: t('finance.remindersSent', 'Erinnerungen gesendet'),
               value: String(reminders.length),
             },
           ].map(({ label, value }) => (
@@ -373,7 +367,7 @@ export function InvoiceDetailScreen() {
                 onClick={() => go('/app/finance/transactions')}
               >
                 <IconExternalLink size={16} />
-                {t('finance.viewTransaction', 'Transaktion #{{id}} ahluege', {
+                {t('finance.viewTransaction', 'Buchung #{{id}} ansehen', {
                   id: inv.transactionId,
                 })}
               </Button>

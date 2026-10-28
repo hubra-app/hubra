@@ -7,7 +7,6 @@ import {
   Badge,
   Accordion,
   ActionIcon,
-  Box,
   Group,
   Stack,
   Paper,
@@ -21,7 +20,6 @@ import {
   IconPencil,
   IconTrash,
   IconInbox,
-  IconChevronDown,
 } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 import { LoadingSpinner, EmptyState } from './feedback'
@@ -43,58 +41,33 @@ export function Tabs({
   onTabChange: (id: string) => void
 }) {
   return (
-    <>
-      <Box hiddenFrom="nav" mb={16}>
-        <Select
-          label="Section"
-          data={tabs.map((t) => ({ value: t.id, label: t.label }))}
-          value={activeTab}
-          onChange={(v) => v && onTabChange(v)}
-          size="md"
-          radius="md"
-          checkIconPosition="right"
-          rightSection={<IconChevronDown size={20} />}
-          styles={{
-            input: {
-              fontWeight: 600,
-              fontSize: 'var(--mantine-font-size-md)',
-              borderColor: 'var(--mantine-color-gray-4)',
-            },
-          }}
-        />
-      </Box>
-      <Box visibleFrom="nav">
-        <MantineTabs
-          value={activeTab}
-          onChange={(v) => v && onTabChange(v)}
-          mb={24}
-          variant="underline"
-          color="dark"
-          className="hubra-tabs"
-          styles={{
-            tab: {
-              paddingTop: '0.875rem',
-              paddingBottom: '0.875rem',
-              paddingLeft: '1rem',
-              paddingRight: '1rem',
-              fontSize: 'var(--mantine-font-size-lg)',
-            },
-            list: {
-              borderBottom: '1px solid var(--mantine-color-gray-3)',
-              gap: '0.25rem',
-            },
-          }}
-        >
-          <MantineTabs.List>
-            {tabs.map((t) => (
-              <MantineTabs.Tab key={t.id} value={t.id} leftSection={t.icon}>
-                {t.label}
-              </MantineTabs.Tab>
-            ))}
-          </MantineTabs.List>
-        </MantineTabs>
-      </Box>
-    </>
+    <MantineTabs
+      value={activeTab}
+      onChange={(v) => v && onTabChange(v)}
+      mb={24}
+      variant="default"
+      className="hubra-tabs"
+      styles={{
+        tab: {
+          paddingTop: 12,
+          paddingBottom: 12,
+          paddingLeft: 14,
+          paddingRight: 14,
+          fontSize: 'var(--mantine-font-size-sm)',
+        },
+        list: {
+          gap: 4,
+        },
+      }}
+    >
+      <MantineTabs.List>
+        {tabs.map((t) => (
+          <MantineTabs.Tab key={t.id} value={t.id} leftSection={t.icon}>
+            {t.label}
+          </MantineTabs.Tab>
+        ))}
+      </MantineTabs.List>
+    </MantineTabs>
   )
 }
 

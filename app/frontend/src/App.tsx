@@ -1,3 +1,4 @@
+import i18n from 'i18next'
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { ErrorBoundary as RouteErrorBoundary } from 'react-error-boundary'
@@ -221,10 +222,11 @@ function HomeRedirect() {
         <Paper shadow="lg" p="xl" maw={460}>
           <Stack gap="sm" align="center" ta="center">
             <Text fz={18} fw={700}>
-              This club is not set up yet
+              {i18n.t('app.notSetUp', 'Dieser Verein ist noch nicht eingerichtet')}
             </Text>
             <Text size="sm" c="dimmed">
-              An administrator needs to run <code>flask setup-club</code> on the server.
+              {i18n.t('app.notSetUpHint', 'Eine Administratorin oder ein Administrator muss auf dem Server diesen Befehl ausführen:')}{' '}
+              <code>flask setup-club</code>
             </Text>
           </Stack>
         </Paper>
@@ -267,12 +269,14 @@ function PrivateRoutes() {
                   <Stack gap="sm" align="center">
                     <IconAlertTriangle size={40} color="#dc2626" />
                     <Text fz={18} fw={700} c="red">
-                      Something went wrong
+                      {i18n.t('app.errorTitle', 'Etwas ist schiefgelaufen')}
                     </Text>
                     <Text size="sm" c="dimmed" lh={1.6} ta="center">
-                      An unexpected error occurred while loading this page.
+                      {i18n.t('app.errorText', 'Beim Laden dieser Seite ist ein unerwarteter Fehler aufgetreten.')}
                     </Text>
-                    <Button onClick={() => resetErrorBoundary()}>Retry</Button>
+                    <Button onClick={() => resetErrorBoundary()}>
+                      {i18n.t('app.retry', 'Nochmals versuchen')}
+                    </Button>
                   </Stack>
                 </Paper>
               </Center>

@@ -223,7 +223,7 @@ export function PollsTab() {
         <Group justify="flex-end" mb={16}>
           <Button variant="filled" onClick={openAdd}>
             <IconPlus size={16} />
-            {t("polls.createPoll", "New Poll")}
+            {t("polls.createPoll", 'Neue Umfrage')}
           </Button>
         </Group>
       )}
@@ -288,7 +288,7 @@ export function PollsTab() {
                         radius="xl"
                         style={{ fontSize: "var(--mantine-font-size-xs)" }}
                       >
-                        {t("polls.voted", "Voted")}
+                        {t("polls.voted", 'Abgestimmt')}
                       </Badge>
                     )}
                   </div>
@@ -388,15 +388,15 @@ export function PollsTab() {
                     >
                       {poll.totalVotes}
                     </span>{" "}
-                    {t("polls.votes", "votes")} &middot;{" "}
+                    {t("polls.votes", 'Stimmen')} &middot;{" "}
                     {poll.closesAt
-                      ? `${t("polls.closes", "closes")} ${new Date(
+                      ? `${t("polls.closes", 'endet')} ${new Date(
                           poll.closesAt,
                         ).toLocaleDateString(i18n.language, {
                           day: "numeric",
                           month: "short",
                         })}`
-                      : `${t("polls.closesIn", "closes in")} ${poll.closesIn}d`}
+                      : `${t("polls.closesIn", 'endet in')} ${poll.closesIn}d`}
                   </span>
                   <div
                     style={{ display: "flex", gap: 6, alignItems: "center" }}
@@ -477,24 +477,24 @@ export function PollsTab() {
             </Button>
             <Button variant="filled" onClick={savePoll} disabled={saving}>
               {editTarget
-                ? t("common.save", "Save")
-                : t("polls.createPoll", "Create Poll")}
+                ? t("common.save", 'Speichern')
+                : t("polls.createPoll", 'Neue Umfrage')}
             </Button>
           </>
         }
       >
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <Field label={t("polls.poll.question", "Question")}>
+          <Field label={t("polls.poll.question", 'Frage')}>
             <TextInput
               {...form.getInputProps("question")}
               placeholder={t(
                 "polls.questionPlaceholder",
-                "What should we invest in next?",
+                'Worin sollen wir als Nächstes investieren?',
               )}
             />
           </Field>
 
-          <Field label={t("polls.options", "Options")}>
+          <Field label={t("polls.options", 'Optionen')}>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {options.map((opt, i) => (
                 <div
@@ -529,7 +529,7 @@ export function PollsTab() {
           <Field
             label={t(
               "polls.autoCloseDateOptional",
-              "Auto-close date (optional)",
+              'Automatisch beenden am (optional)',
             )}
           >
             <TextInput
@@ -538,13 +538,13 @@ export function PollsTab() {
             />
           </Field>
 
-          <Field label={t("polls.proxy.field", "Proxy votes")}>
+          <Field label={t("polls.proxy.field", 'Stellvertretung')}>
             <Switch
               checked={allowProxy}
               onChange={(e) => setAllowProxy(e.currentTarget.checked)}
               label={t(
                 "polls.proxy.allow",
-                "Members may let another member vote for them",
+                'Mitglieder dürfen ihre Stimme einem anderen Mitglied übertragen',
               )}
             />
           </Field>
@@ -594,10 +594,10 @@ export function PollsTab() {
       <ConfirmModal
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        title={t("polls.deletePollTitle", "Delete poll?")}
+        title={t("polls.deletePollTitle", 'Umfrage löschen?')}
         body={t(
           "polls.deletePollBody",
-          "All votes will be permanently removed.",
+          'Alle Stimmen werden endgültig gelöscht.',
         )}
         onConfirm={() => {
           if (deleteTarget) deletePollMutation.mutate(deleteTarget);

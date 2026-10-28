@@ -1,0 +1,6360 @@
+{
+ "note": "Values shipped by earlier releases. flask seed replaces a stored translation that still equals one of these with the current value; retired keys are removed.",
+ "retired": [
+  "account.language",
+  "account.mail",
+  "account.must.change.password",
+  "account.profile",
+  "dashboard.upcomingEvents",
+  "finance.category",
+  "finance.invoice",
+  "finance.purpose",
+  "finance.recipientType",
+  "groups.confirmDelete",
+  "inventory.item",
+  "mail.alias",
+  "mail.localPart",
+  "mail.mailbox",
+  "mail.provisioning",
+  "mail.system.address.created",
+  "mail.type",
+  "system.health",
+  "translations.addKey",
+  "translations.addLanguage",
+  "translations.copyDefaults",
+  "translations.copyValues"
+ ],
+ "values": {
+  "de-CH": {
+   "account.accountSettingsTitle": [
+    "Konto-Iistellige"
+   ],
+   "account.activeSessions": [
+    "Aktivi Sitzunge"
+   ],
+   "account.allOtherSessionsRevoked": [
+    "All other sessions revoked",
+    "Anderi Sitzungen beendet"
+   ],
+   "account.allOtherSessionsRevokedMsg": [
+    "All other sessions revoked msg"
+   ],
+   "account.allPolls": [
+    "All polls",
+    "Alli Umfroge"
+   ],
+   "account.attending": [
+    "Attending",
+    "Teilnähmer"
+   ],
+   "account.browseEvents": [
+    "Browse events",
+    "Events durchsueche"
+   ],
+   "account.categories": [
+    "Kategorie"
+   ],
+   "account.changePassword": [
+    "Passwort ändere",
+    "Passwort änderä"
+   ],
+   "account.changesSaved": [
+    "Änderige gspeicheret."
+   ],
+   "account.checkInbox": [
+    "Überprüch din privat E-Mail-Inbox.",
+    "Überprüch din private E-Mail-Inbox."
+   ],
+   "account.closesInDays": [
+    "Schlüsst in {{days}}T"
+   ],
+   "account.closesOn": [
+    "Schlüsst am {{date}}"
+   ],
+   "account.clubEmail": [
+    "Club E-Mail",
+    "Club email"
+   ],
+   "account.clubEmailHint": [
+    "Automatisch generiert - kontaktier en Administrator zum ändere",
+    "Club email hint"
+   ],
+   "account.confirm.password": [
+    "Passwort bestätige"
+   ],
+   "account.confirmNewPassword": [
+    "Neus Passwort bestätige"
+   ],
+   "account.contactAdminToChange": [
+    "Wen dini Stuf, Gruppe oder Kategorie wetsch ändere, kontaktier en Administrator.",
+    "Wen dini Stuf, Gruppe oder Kategorie wetsch änderä, kontaktier en Administrator."
+   ],
+   "account.copyIncomingClubMail": [
+    "Igangendi Club-Mail a dini private E-Mail-Adresse chopie",
+    "Mails ah dini privat E-Mail kopiere"
+   ],
+   "account.couldNotRevokeAll": [
+    "Could not revoke all",
+    "Sitzungen chented nöd beendet wärde."
+   ],
+   "account.couldNotRevokeSession": [
+    "Could not revoke session",
+    "Sitzung chunt nöd beendet wärde."
+   ],
+   "account.couldNotSendVerification": [
+    "Verifikations-E-Mail chonnt nöd gsendet wärde."
+   ],
+   "account.couldNotUpdateMailSettings": [
+    "Mail-Iistellige chonnt nöd aktualisiert wärde."
+   ],
+   "account.couldNotUpdateProfile": [
+    "Profil chonnt nöd aktualisiert wärde."
+   ],
+   "account.currentPassword": [
+    "Aktuells Passwort"
+   ],
+   "account.currentTier": [
+    "Aktuelli Stuf"
+   ],
+   "account.dashboard": [
+    "Dashboard"
+   ],
+   "account.due": [
+    "Due"
+   ],
+   "account.editName": [
+    "Name bearbeite"
+   ],
+   "account.enterCurrentAndNew": [
+    "Aktuells un Neus Passwort ingeh."
+   ],
+   "account.eventsJoined": [
+    "Events biitritt",
+    "Events joined"
+   ],
+   "account.failedToChangePassword": [
+    "Passwortänderig fehlgeschlage."
+   ],
+   "account.forwardToPrivateEmail": [
+    "A private E-Mail witergleite",
+    "Forward to private email"
+   ],
+   "account.forwardingDisabled": [
+    "Weiterleitig deaktiviert.",
+    "Witergleiti deaktiviert."
+   ],
+   "account.forwardingEnabled": [
+    "Weiterleitig aktiviert.",
+    "Witergleiti aktiviert."
+   ],
+   "account.groupMembers": [
+    "{{count}} members"
+   ],
+   "account.groups": [
+    "Gruppe"
+   ],
+   "account.groupsCategories": [
+    "Gruppe & Kategorie",
+    "Gruppen & Kategorie"
+   ],
+   "account.interestGroups": [
+    "Interessegruppe",
+    "Interest groups"
+   ],
+   "account.invoice": [
+    "Invoice",
+    "Rechnig",
+    "invoice"
+   ],
+   "account.joinGroup": [
+    "Biiträte",
+    "Join"
+   ],
+   "account.language": [
+    "Spraach",
+    "Sprooch"
+   ],
+   "account.language.changed": [
+    "Spraach gändert",
+    "Sprooch gändert"
+   ],
+   "account.language.changedMsg": [
+    "Oberflächi isch jetzt uf {{nativeLabel}}."
+   ],
+   "account.language.description": [
+    "Wähl dii bevorzugti Spraach für d Oberflächi.",
+    "Wähl dii bevorzugti Sprooch für d Oberflächi."
+   ],
+   "account.language.tab": [
+    "Sprooch"
+   ],
+   "account.languageChanged": [
+    "Sprooch gändert"
+   ],
+   "account.languageChangedMsg": [
+    "Oberflächi isch jetzt uf {{nativeLabel}}."
+   ],
+   "account.languageDescription": [
+    "Wähl dii bevorzugti Sprooch für d Oberflächi."
+   ],
+   "account.languageTab": [
+    "Sprooch"
+   ],
+   "account.lastActive": [
+    "Zletscht aktiv"
+   ],
+   "account.lastSeen": [
+    "Zletscht gseh",
+    "Zuletzt gseh"
+   ],
+   "account.leave": [
+    "Leave",
+    "Verlah"
+   ],
+   "account.leaveGroup": [
+    "Leave",
+    "Ustrete"
+   ],
+   "account.likedPosts": [
+    "Gliketi Biträge",
+    "Liked posts"
+   ],
+   "account.loadingDevices": [
+    "Geräte werde glade?"
+   ],
+   "account.loadingMailSettings": [
+    "Mail-Iistellige werden glade…"
+   ],
+   "account.loadingSessions": [
+    "Sitzunge werde glade…"
+   ],
+   "account.mail": [
+    "Mail settings",
+    "Mail-Iistellige"
+   ],
+   "account.mail.saved": [
+    "Mail-Iistellige gspeicheret",
+    "Mail-Iistellige gspeichert"
+   ],
+   "account.mailSettingsSaved": [
+    "Mail-Iistellige gspeicheret"
+   ],
+   "account.memberSince": [
+    "Mitglid siit"
+   ],
+   "account.membership.details": [
+    "Mitgliedschaft-Datene"
+   ],
+   "account.membershipDetails": [
+    "Mitgliedschaft-Datene"
+   ],
+   "account.minimum8Chars": [
+    "Mindestens 8 Zeiche"
+   ],
+   "account.minimum8chars": [
+    "Mindestens 8 Zeiche"
+   ],
+   "account.must.change.password": [
+    "Passwort muss gändert werde"
+   ],
+   "account.must.change.password.desc": [
+    "Bitte ändere din Passwort, um wiiterzmache."
+   ],
+   "account.myAccount": [
+    "Mis Konto"
+   ],
+   "account.myEvents": [
+    "Mini Verahstaltigä"
+   ],
+   "account.myGroups": [
+    "Mini Gruppe"
+   ],
+   "account.myInvoices": [
+    "Mini Rächnige"
+   ],
+   "account.myVotes": [
+    "Mini Abstimmige",
+    "My votes"
+   ],
+   "account.nameCleared": [
+    "Name glöscht"
+   ],
+   "account.newPassword": [
+    "Neus Passwort"
+   ],
+   "account.noCategoriesAssigned": [
+    "Cheni Kategorie zuegwise"
+   ],
+   "account.noDevices": [
+    "Keini Geräte gfunde."
+   ],
+   "account.noEvents": [
+    "Kei Verahstaltigä."
+   ],
+   "account.noEventsJoined": [
+    "Du bisch no bi keiner Events biitrette.",
+    "No events joined",
+    "You haven't joined any events yet."
+   ],
+   "account.noGroups": [
+    "Du bisch no in Kei Gruppe."
+   ],
+   "account.noGroupsAssigned": [
+    "Cheni Gruppe zuegwise"
+   ],
+   "account.noInvoices": [
+    "Kei Rächnige."
+   ],
+   "account.noPollsVoted": [
+    "Du hesch no bi keiner Umfrag abgstimmt.",
+    "No polls voted",
+    "You haven't voted in any polls yet."
+   ],
+   "account.noSessions": [
+    "Kei aktivi Sitzunge gfunde."
+   ],
+   "account.notifications": [
+    "Benachrichtigunge"
+   ],
+   "account.password.change.text": [
+    "Aktuells un neus Passwort ingeh."
+   ],
+   "account.password.changeFailed": [
+    "Passwortänderig fehlgeschlage"
+   ],
+   "account.password.changed": [
+    "Passwort gändert"
+   ],
+   "account.password.minLength": [
+    "Neus Passwort muss mindestens 8 Zeiche ha."
+   ],
+   "account.password.updatedMsg": [
+    "Din Passwort isch aktualisiert worde."
+   ],
+   "account.passwordChangeFailed": [
+    "Passwortänderig fehlgeschlage"
+   ],
+   "account.passwordChanged": [
+    "Passwort gändert"
+   ],
+   "account.passwordMinLength": [
+    "Neus Passwort muss mindestens 8 Zeiche ha."
+   ],
+   "account.passwordUpdatedMsg": [
+    "Din Passwort isch aktualisiert worde."
+   ],
+   "account.passwordsDoNotMatch": [
+    "Neui Passwörter stimmed nöd überi."
+   ],
+   "account.pendingPayment": [
+    "Outstanding payment",
+    "Pending payment",
+    "Uusstelligi Zahlig"
+   ],
+   "account.plan.hint": [
+    "Applies from your next invoice. Invoices already sent stay as they are.",
+    "Gilt ab de nächste Rächnig. Scho verschickti Rächnige bliibed wie si sind."
+   ],
+   "account.plan.saved": [
+    "Payment plan saved",
+    "Zahligsplan gspeicheret"
+   ],
+   "account.plan.title": [
+    "How you pay",
+    "Wie du zahlsch"
+   ],
+   "account.pollsVoted": [
+    "Polls voted",
+    "Umfroge abgstimmt"
+   ],
+   "account.postsComingSoon": [
+    "Biträge chömed bald.",
+    "Posts coming soon",
+    "Posts coming soon."
+   ],
+   "account.postsLiked": [
+    "Biträge gliket",
+    "Posts liked"
+   ],
+   "account.preferences": [
+    "Vorliebe"
+   ],
+   "account.privateEmail": [
+    "Private email"
+   ],
+   "account.privateEmailHint": [
+    "Dini persönlichi E-Mail - wird mit andere Mitglider nöd teilt",
+    "Private email hint"
+   ],
+   "account.profile.note": [
+    "Profil-Notiz",
+    "Profile note"
+   ],
+   "account.profile.noteHint": [
+    "Kurzi Bio oder Notiz, wo uf dim Profil azeigt wird",
+    "Profile note hint"
+   ],
+   "account.profile.saved": [
+    "Profil gspeicheret",
+    "Profil gspeichert"
+   ],
+   "account.profile.updatedMsg": [
+    "Din Profil isch aktualisiert worde."
+   ],
+   "account.profileSaved": [
+    "Profil gspeicheret"
+   ],
+   "account.profileUpdatedMsg": [
+    "Din Profil isch aktualisiert worde."
+   ],
+   "account.readOnly": [
+    "Read only",
+    "nur lese"
+   ],
+   "account.reasonExpired": [
+    "Sitzig abgloffe"
+   ],
+   "account.reasonFirstLogin": [
+    "Ersti Aameldig"
+   ],
+   "account.reasonNewDevice": [
+    "Neus Grät"
+   ],
+   "account.reasonNewIp": [
+    "Neui IP"
+   ],
+   "account.renameFailed": [
+    "Umbenenne fählgschlage"
+   ],
+   "account.revoke": [
+    "Beende"
+   ],
+   "account.revokeAll": [
+    "All beende"
+   ],
+   "account.revokeAllOthers": [
+    "Alli andere Sitzige beende"
+   ],
+   "account.revoking": [
+    "Wird beendet?",
+    "Wird beendet…"
+   ],
+   "account.saveChanges": [
+    "Änderige speichere"
+   ],
+   "account.saveFailed": [
+    "Speichere fehlgeschlage",
+    "Spychere fehlgeschlage"
+   ],
+   "account.saveProfile": [
+    "Profil speichere",
+    "Save profile"
+   ],
+   "account.saving": [
+    "Saving",
+    "Wird gspeichert…"
+   ],
+   "account.sendVerificationEmail": [
+    "Send verification email",
+    "Verifikations-E-Mail sende"
+   ],
+   "account.sending": [
+    "Sending",
+    "Wird gsendet…"
+   ],
+   "account.sessionNamePlaceholder": [
+    "Mis Grät"
+   ],
+   "account.sessionRenamed": [
+    "Sitzig umbenennt"
+   ],
+   "account.sessions.namePlaceholder": [
+    "Mis Grät"
+   ],
+   "account.sessions.renamed": [
+    "Sitzig umbenennt"
+   ],
+   "account.sessions.revoked": [
+    "Session revoked"
+   ],
+   "account.sessions.revokedMsg": [
+    "D Sitzung isch erfolgreich beendet worde.",
+    "Session revoked msg"
+   ],
+   "account.sessionsInfo": [
+    "Verwalte dini aktive Sitzige. Wemmer e Sitzig beendet, wird die sofort ungültig."
+   ],
+   "account.sessionsTab": [
+    "Sitzunge"
+   ],
+   "account.settings.title": [
+    "Konto-Iistellige"
+   ],
+   "account.settingsTitle": [
+    "Konto-Iistellige"
+   ],
+   "account.settings_title": [
+    "Konto-Iistellige"
+   ],
+   "account.showRevoked": [
+    "Beendeti zeige"
+   ],
+   "account.title": [
+    "Mis Konto"
+   ],
+   "account.toolHours": [
+    "Wärchzeug-Stunde"
+   ],
+   "account.unknownDevice": [
+    "Unbekannts Grät"
+   ],
+   "account.updatePassword": [
+    "Passwort aktualisiere"
+   ],
+   "account.updating": [
+    "Wird aktualisiert…"
+   ],
+   "account.verificationEmailSent": [
+    "Verifikations-E-Mail gsendet"
+   ],
+   "account.verifyEmailAboveToEnable": [
+    "(E-Mail oben verifiziere zum aktiviere)"
+   ],
+   "account.verifyEmailToEnableForwarding": [
+    "Verifizier dini private E-Mail zum Witergleiti aktiviere",
+    "Verify email to enable forwarding"
+   ],
+   "account.view": [
+    "Ahluege",
+    "View"
+   ],
+   "account.voted": [
+    "Voted"
+   ],
+   "account.votes": [
+    "{{count}} Stimme"
+   ],
+   "app.backend.unreachable": [
+    "Server nöd erreichbar"
+   ],
+   "app.backend.unreachableMsg": [
+    "De Server antwortet nöd. Überprüef, ob er lauft, und versuech's neu."
+   ],
+   "app.backendUnreachable": [
+    "Server nöd erreichbar"
+   ],
+   "app.backendUnreachableMsg": [
+    "De Server antwortet nöd. Überprüef, ob er lauft, und versuech's neu."
+   ],
+   "app.checking": [
+    "Überprüefe..."
+   ],
+   "app.retry": [
+    "Neu versueche"
+   ],
+   "apply.applicationReceived": [
+    "Application received"
+   ],
+   "apply.applyForMembership": [
+    "Für Mitgliedschaft bewärbe"
+   ],
+   "apply.error": [
+    "Bewerbig nöd chönne ygsee."
+   ],
+   "apply.fillInDetails": [
+    "Füll dini Date i ond mir überprüfed di Bewerbig."
+   ],
+   "apply.firstNamePlaceholder": [
+    "First name placeholder"
+   ],
+   "apply.lastNamePlaceholder": [
+    "Last name placeholder"
+   ],
+   "apply.membershipTier": [
+    "Mitgliedschaft-Stuf"
+   ],
+   "apply.message": [
+    "Message"
+   ],
+   "apply.messagePlaceholder": [
+    "Message placeholder"
+   ],
+   "apply.submissionFailed": [
+    "Ingab fehlgeschlage. Bitte nöchstmol versueche."
+   ],
+   "apply.submit": [
+    "Bewerbig yréeche"
+   ],
+   "apply.submitApplication": [
+    "Bewerbig iireiche"
+   ],
+   "apply.submitting": [
+    "Wird ygsee..."
+   ],
+   "apply.success": [
+    "Bewerbig ygseet! Lueg in dimem Postfach nöch für nöchste Schritt."
+   ],
+   "apply.thanksMsg": [
+    "Thanks msg"
+   ],
+   "apply.title": [
+    "Für Mitglied bewärbe"
+   ],
+   "apply.usuallyTakesTime": [
+    "Usually takes time"
+   ],
+   "apply.wantsTier": [
+    "Mitgliedstyp"
+   ],
+   "auth.applyForMembership": [
+    "Als Mitglied bewärbe"
+   ],
+   "auth.applyForMembershipFull": [
+    "Als Mitglied bewärbe"
+   ],
+   "auth.backToLogin": [
+    "Zrugg zur Aamäldig"
+   ],
+   "auth.backToSignIn": [
+    "Zrugg zur Aamäldig"
+   ],
+   "auth.confirmPassword": [
+    "Passwort bestätige"
+   ],
+   "auth.continueWithSSO": [
+    "Mit SSO witerfahre"
+   ],
+   "auth.continueWithSso": [
+    "Mit SSO witerfahre"
+   ],
+   "auth.forgot.checkInbox": [
+    "Lueg in dim Postfach nöch"
+   ],
+   "auth.forgot.enterEmail": [
+    "Gib dini E-Mail ii, und mir sended der en Link zum Zruggsetze."
+   ],
+   "auth.forgot.ifEmailRegistered": [
+    "Wenn {{email}} registriert isch, chunnt innert paar Minute en Link. De Link lauft nach 1 Stund ab."
+   ],
+   "auth.forgot.link": [
+    "Vergesse?"
+   ],
+   "auth.forgot.password": [
+    "Passwort vergesse?"
+   ],
+   "auth.forgot.sendResetLink": [
+    "Reset-Link sende"
+   ],
+   "auth.forgot.title": [
+    "Passwort zruggsetze"
+   ],
+   "auth.forgotLink": [
+    "Vergesse?"
+   ],
+   "auth.forgotPassword": [
+    "Passwort vergesse?"
+   ],
+   "auth.keepSignedIn": [
+    "Mich agmäldet la"
+   ],
+   "auth.loggingIn": [
+    "Wird agmäldet..."
+   ],
+   "auth.login": [
+    "Ahmälde",
+    "Login"
+   ],
+   "auth.loginAdmin": [
+    "Mäld di im Admin-Bereich a"
+   ],
+   "auth.newClub": [
+    "Neue Club?"
+   ],
+   "auth.newPassword": [
+    "Neus Passwort"
+   ],
+   "auth.noAccount": [
+    "Hesch keis Konto?"
+   ],
+   "auth.passwordLength": [
+    "Passwort muess mindestens 12 Zeiche ha."
+   ],
+   "auth.passwordMismatch": [
+    "Passwörter stimmed nöd überi."
+   ],
+   "auth.reset.canNowLogin": [
+    "Du chasch dich jetzt mit dim neue Passwort ahmälde."
+   ],
+   "auth.reset.canNowSignIn": [
+    "Du chasch dich jetzt mit dim neue Passwort ahmälde."
+   ],
+   "auth.reset.chooseStrong": [
+    "Wähl e sichers Passwort — mindestens 12 Zeiche."
+   ],
+   "auth.reset.done": [
+    "Passwort aktualisiert"
+   ],
+   "auth.reset.invalidToken": [
+    "Ungültige oder fehlende Reset Token."
+   ],
+   "auth.reset.login": [
+    "Ahmälde"
+   ],
+   "auth.reset.password": [
+    "Passwort zruggsetze"
+   ],
+   "auth.reset.requestNewLink": [
+    "Neue Link aforderä"
+   ],
+   "auth.reset.setNewPassword": [
+    "Neus Passwort setze"
+   ],
+   "auth.reset.signIn": [
+    "Ahmälde"
+   ],
+   "auth.reset.title": [
+    "Neus Passwort setze"
+   ],
+   "auth.reset.updating": [
+    "Wird aktualisiert…"
+   ],
+   "auth.resetPassword": [
+    "Passwort zruggsetze"
+   ],
+   "auth.resetting": [
+    "Wird zrugggsetzt..."
+   ],
+   "auth.sendResetLink": [
+    "Reset-Link sende"
+   ],
+   "auth.sending": [
+    "Wird gsendet..."
+   ],
+   "auth.setUpYourSpace": [
+    "Dini Club ihrichte"
+   ],
+   "auth.setupSpace": [
+    "Dini Club ihrichte"
+   ],
+   "auth.signIn": [
+    "Ahmälde"
+   ],
+   "auth.signInToAdmin": [
+    "Mäld di im Admin-Bereich a"
+   ],
+   "auth.signingIn": [
+    "Wird agmäldet…"
+   ],
+   "auth.wantToJoin": [
+    "Wetsch au biträtte?"
+   ],
+   "auth.welcomeBack": [
+    "Wilkomme zrugg"
+   ],
+   "bootstrap.aboutYourClub": [
+    "Über diin Club"
+   ],
+   "bootstrap.admin.email": [
+    "Admin E-Mail"
+   ],
+   "bootstrap.admin.password": [
+    "Admin Passwort"
+   ],
+   "bootstrap.adminEmail": [
+    "Admin E-Mail"
+   ],
+   "bootstrap.adminPassword": [
+    "Admin Passwort"
+   ],
+   "bootstrap.allSet": [
+    "Alles siap!"
+   ],
+   "bootstrap.back": [
+    "Zrugg"
+   ],
+   "bootstrap.bootstrapFailed": [
+    "Bootstrap fehlgeschlage"
+   ],
+   "bootstrap.chooseStrongPassword": [
+    "Wähl e starks Passwort"
+   ],
+   "bootstrap.chooseTiersToEnable": [
+    "Wähl weli Stufe du wetsch iischalte. Du chasch das spöter änderän."
+   ],
+   "bootstrap.city": [
+    "Stadt"
+   ],
+   "bootstrap.club": [
+    "Club"
+   ],
+   "bootstrap.clubName": [
+    "Club-Name"
+   ],
+   "bootstrap.clubNamePlaceholder": [
+    "z.B. Makerspace Zürich"
+   ],
+   "bootstrap.clubType": [
+    "Club-Typ"
+   ],
+   "bootstrap.continue": [
+    "Witer"
+   ],
+   "bootstrap.enterDashboard": [
+    "In Dashboard iitrete →"
+   ],
+   "bootstrap.finish": [
+    "Abschliesse"
+   ],
+   "bootstrap.fullName": [
+    "Vollständige Name"
+   ],
+   "bootstrap.hubraSetup": [
+    "Hubra-Yrichtig"
+   ],
+   "bootstrap.isReady": [
+    "isch siap. Guet go."
+   ],
+   "bootstrap.makerspace": [
+    "Werkstatt"
+   ],
+   "bootstrap.membershipTiers": [
+    "Mitgliedschafts-Stufe"
+   ],
+   "bootstrap.other": [
+    "Anderi"
+   ],
+   "bootstrap.sendWeeklyDigest": [
+    "Mir der wuchentlich Zsämefassig seude"
+   ],
+   "bootstrap.settingUp": [
+    "Yrichtig..."
+   ],
+   "bootstrap.setup": [
+    "Iirichte"
+   ],
+   "bootstrap.setupFailed": [
+    "Yrichtig fehlgeschlage"
+   ],
+   "bootstrap.spaceReady": [
+    "Din Berich isch ready."
+   ],
+   "bootstrap.tier.price1": [
+    "CHF 80/Mt"
+   ],
+   "bootstrap.tier.price2": [
+    "CHF 150/Mt"
+   ],
+   "bootstrap.tier.price3": [
+    "CHF 40/Mt"
+   ],
+   "bootstrap.tier.price4": [
+    "CHF 25/Mt"
+   ],
+   "bootstrap.tier.student": [
+    "Student"
+   ],
+   "bootstrap.tierPrice1": [
+    "CHF 80/Mt"
+   ],
+   "bootstrap.tierPrice2": [
+    "CHF 150/Mt"
+   ],
+   "bootstrap.tierPrice3": [
+    "CHF 40/Mt"
+   ],
+   "bootstrap.tierPrice4": [
+    "CHF 25/Mt"
+   ],
+   "bootstrap.tierStudent": [
+    "Student"
+   ],
+   "bootstrap.title": [
+    "Club iirichte"
+   ],
+   "bootstrap.welcome": [
+    "Wilkomme zue Hubra!"
+   ],
+   "codes.add": [
+    "Code hinzuefüege"
+   ],
+   "codes.codeHidden": [
+    "Code aazeige"
+   ],
+   "codes.codePlaceholder": [
+    "z.B. 1234"
+   ],
+   "codes.codeVisible": [
+    "Code verstecke"
+   ],
+   "codes.count": [
+    "{{count}} codes"
+   ],
+   "codes.delete": [
+    "Code lösche"
+   ],
+   "codes.deleteConfirm": [
+    "Wetsch «{{name}}» würkli lösche?"
+   ],
+   "codes.deleteError": [
+    "Schlüsselcode chonnt nöd glöscht wärde."
+   ],
+   "codes.deleted": [
+    "Schlüsselcode glöscht."
+   ],
+   "codes.description": [
+    "Beschribig"
+   ],
+   "codes.descriptionPlaceholder": [
+    "Optionali Aagab…"
+   ],
+   "codes.edit": [
+    "Code bearbeite"
+   ],
+   "codes.lastUpdated": [
+    "Zletscht aktualisiert"
+   ],
+   "codes.namePlaceholder": [
+    "z.B. Hüsdörä"
+   ],
+   "codes.noCodes": [
+    "No kei Codes."
+   ],
+   "codes.saveError": [
+    "Schlüsselcode chonnt nöd gspeicheret wärde."
+   ],
+   "codes.saved": [
+    "Schlüsselcode gspeicheret."
+   ],
+   "codes.searchPlaceholder": [
+    "Search…"
+   ],
+   "common.actions": [
+    "Aktione",
+    "Aktioone"
+   ],
+   "common.add": [
+    "Add",
+    "Funktion hinzufügen"
+   ],
+   "common.addMember": [
+    "MITGLID HINZUE",
+    "Mitglied hinzuefüege"
+   ],
+   "common.all": [
+    "All",
+    "Alli"
+   ],
+   "common.back": [
+    "Back",
+    "Zrugg"
+   ],
+   "common.backToLogin": [
+    "Back to login"
+   ],
+   "common.cancel": [
+    "Abbreche",
+    "Abbräche",
+    "Cancel"
+   ],
+   "common.close": [
+    "Schliesse"
+   ],
+   "common.clubName": [
+    "Club-Name"
+   ],
+   "common.color": [
+    "Farb"
+   ],
+   "common.confirm": [
+    "Bestätige"
+   ],
+   "common.copied": [
+    "Gkopiirt!"
+   ],
+   "common.copy": [
+    "Copy"
+   ],
+   "common.create": [
+    "Create",
+    "Erstelle"
+   ],
+   "common.createFailed": [
+    "Create failed",
+    "Erstelle fehlgeschlage"
+   ],
+   "common.created": [
+    "Created",
+    "Funktion erstellt"
+   ],
+   "common.delete": [
+    "Delete",
+    "Lösche"
+   ],
+   "common.deleteFailed": [
+    "Delete failed",
+    "Lösche fehlgeschlage",
+    "Lösche fehlgschlage"
+   ],
+   "common.description": [
+    "Beschribig"
+   ],
+   "common.descriptionPlaceholder": [
+    "Churzi Beschribig vo der Gruppe…",
+    "Description placeholder",
+    "Kurzi Beschribig…",
+    "Monatlichi Mitgliedschaft"
+   ],
+   "common.disabled": [
+    "Deaktiviert"
+   ],
+   "common.displayName": [
+    "Azeigename",
+    "Display name"
+   ],
+   "common.download": [
+    "Abelade"
+   ],
+   "common.edit": [
+    "Bearbeite",
+    "Funktion bearbeiten"
+   ],
+   "common.empty": [
+    "Nöd verfügbar."
+   ],
+   "common.enabled": [
+    "Aktiviert"
+   ],
+   "common.error": [
+    "Error",
+    "Error loading dashboard data",
+    "Error loading invoices"
+   ],
+   "common.export": [
+    "Exportiere"
+   ],
+   "common.filter": [
+    "Filtere…"
+   ],
+   "common.houseNo": [
+    "Hausnr."
+   ],
+   "common.import": [
+    "Importiere"
+   ],
+   "common.loading": [
+    "Laden…",
+    "Loading…",
+    "Wird glade...",
+    "Wird glade…"
+   ],
+   "common.member": [
+    "Mitglid"
+   ],
+   "common.members": [
+    "Mitglider"
+   ],
+   "common.myEvents": [
+    "Mini Verahstaltigä",
+    "My Events"
+   ],
+   "common.namePlaceholder": [
+    "Name placeholder",
+    "z.B. Kassier",
+    "z.B. MIG Schweissgerät"
+   ],
+   "common.next": [
+    "Witer"
+   ],
+   "common.no": [
+    "Nei"
+   ],
+   "common.noNotifications": [
+    "Kei Benachrichtigunge."
+   ],
+   "common.noResults": [
+    "Kei Ergebnis.",
+    "Kei Resultat.",
+    "Keini Resultat"
+   ],
+   "common.none": [
+    "Keini"
+   ],
+   "common.notAvailable": [
+    "N/V"
+   ],
+   "common.notes": [
+    "Notize"
+   ],
+   "common.of": [
+    "vo"
+   ],
+   "common.openInvoices": [
+    "Offeni Rächnige"
+   ],
+   "common.page": [
+    "Syte"
+   ],
+   "common.previous": [
+    "Vorhär"
+   ],
+   "common.print": [
+    "Drucke"
+   ],
+   "common.refresh": [
+    "Aktualisiere",
+    "Refresh"
+   ],
+   "common.removed": [
+    "Removed"
+   ],
+   "common.required": [
+    "erfolderlich"
+   ],
+   "common.retry": [
+    "Nochmal versuchen"
+   ],
+   "common.roles": [
+    "Roles",
+    "Roll",
+    "Rolle"
+   ],
+   "common.save": [
+    "Save",
+    "Speichere",
+    "Spíchere"
+   ],
+   "common.saveChanges": [
+    "Save changes",
+    "Änderige speichere"
+   ],
+   "common.saved": [
+    "Gspeichert",
+    "Saved"
+   ],
+   "common.saving": [
+    "Speichere...",
+    "Speichere…"
+   ],
+   "common.search": [
+    "Suchen…",
+    "Sueche",
+    "Sueche…"
+   ],
+   "common.select": [
+    "Select"
+   ],
+   "common.sort": [
+    "Sortiere"
+   ],
+   "common.success": [
+    "Erfolg"
+   ],
+   "common.unknownError": [
+    "Unbekanni Fehler",
+    "Unbekannte Fehler",
+    "Unknown error"
+   ],
+   "common.updateFailed": [
+    "Update failed",
+    "Update fehlgeschlage"
+   ],
+   "common.updated": [
+    "Funktion aktualisiert",
+    "Updated"
+   ],
+   "common.upload": [
+    "Hochlade"
+   ],
+   "common.vote": [
+    "Abstimme"
+   ],
+   "dashboard.activeMembers": [
+    "Aktivi Mitglieder "
+   ],
+   "dashboard.buttons.addMember": [
+    "Mitglied hinzuefüege"
+   ],
+   "dashboard.buttons.newEvent": [
+    "Neui Veranstaltig"
+   ],
+   "dashboard.eyebrow.organization": [
+    "Organisatioon"
+   ],
+   "dashboard.global": [
+    "Globals Dashboard"
+   ],
+   "dashboard.goodAfternoon": [
+    "Guete Tag"
+   ],
+   "dashboard.goodEvening": [
+    "Guete Abig"
+   ],
+   "dashboard.goodMorning": [
+    "Guete Morge"
+   ],
+   "dashboard.incomeMinusExpenses": [
+    "Ihname – Usgabene"
+   ],
+   "dashboard.manageInventory": [
+    "Inventar verwälte"
+   ],
+   "dashboard.memberStats": [
+    "Mitglieder -Statistik"
+   ],
+   "dashboard.myEvents": [
+    "Mini Verahstaltigä"
+   ],
+   "dashboard.netThisMonth": [
+    "Netto dä Monet"
+   ],
+   "dashboard.nextEvent": [
+    "Nöchst: {{title}}"
+   ],
+   "dashboard.noPolls": [
+    "Kei offeni Umfrage"
+   ],
+   "dashboard.noUpcomingEvents": [
+    "Kei aktuelli Verahstaltigä"
+   ],
+   "dashboard.noneScheduled": [
+    "Kei planti"
+   ],
+   "dashboard.openInvoices": [
+    "Offeni Rächnige"
+   ],
+   "dashboard.outstanding": [
+    "{{count}} usständig"
+   ],
+   "dashboard.quickActions": [
+    "Schnelli Aktioone"
+   ],
+   "dashboard.recent.activity": [
+    "Letzti Aktivität"
+   ],
+   "dashboard.recent.polls": [
+    "Aktuelli Umfrage"
+   ],
+   "dashboard.recentActivity": [
+    "Letzti Aktivität"
+   ],
+   "dashboard.recentPolls": [
+    "Aktuelli Umfrage"
+   ],
+   "dashboard.recentPosts.comingSoon": [
+    "Biträg chöme bald."
+   ],
+   "dashboard.recentPosts.title": [
+    "Letzti Biträg"
+   ],
+   "dashboard.recentPostsCard.comingSoon": [
+    "Biträge chömed bald."
+   ],
+   "dashboard.recentPostsCard.noComments": [
+    "No kei Kommentär."
+   ],
+   "dashboard.recentPostsCard.noLikes": [
+    "No kei Gfellig."
+   ],
+   "dashboard.recentPostsCard.noPosts": [
+    "No kei Biträge."
+   ],
+   "dashboard.recentPostsCard.title": [
+    "Letzti Biträg"
+   ],
+   "dashboard.tabs.account": [
+    "Konto"
+   ],
+   "dashboard.tabs.overview": [
+    "Übersicht"
+   ],
+   "dashboard.thisMonth": [
+    "Dä Mont",
+    "dä Monet"
+   ],
+   "dashboard.thisWeek": [
+    "Die Wuche"
+   ],
+   "dashboard.today": [
+    "Hüt"
+   ],
+   "dashboard.upcomingEvents": [
+    "Animmti Verahstaltigä"
+   ],
+   "dashboard.upcomingEvents.title": [
+    "Verahstaltigä"
+   ],
+   "dashboard.upcomingEventsCard.title": [
+    "Verahstaltigä"
+   ],
+   "dashboard.viewAll": [
+    "Alli aluege"
+   ],
+   "dashboard.viewGroups": [
+    "Gruppe aluege"
+   ],
+   "dashboard.viewInvoices": [
+    "Rächnige aluege"
+   ],
+   "dashboard.viewMail": [
+    "Mail aluege"
+   ],
+   "dashboard.viewMembers": [
+    "Mitglieder aluege"
+   ],
+   "dashboard.voteNeeded.closesIn": [
+    "Schlüsst in {{days}}d"
+   ],
+   "dashboard.voteNeeded.closesOn": [
+    "Schlüsst am {{date}}"
+   ],
+   "dashboard.voteNeeded.options": [
+    "{{count}} Optione"
+   ],
+   "dashboard.voteNeeded.pollsRequire": [
+    "{{count}} offeni Umfrag{{count, plural, one {} other s}} bruched din Vote"
+   ],
+   "dashboard.voteNeeded.title": [
+    "Dini Stimme isch gforderät"
+   ],
+   "dashboard.voteNeeded.vote": [
+    "Abstimme"
+   ],
+   "dashboard.welcome": [
+    "Wilkomme zrugg, {{name}}"
+   ],
+   "dashboard.welcomeShort": [
+    "Wilkomme"
+   ],
+   "events.addEvent": [
+    "Veranstaltig hinzuefüege"
+   ],
+   "events.addOption": [
+    "Optioon hinzuefüege"
+   ],
+   "events.attendees": [
+    "Teilnähmer"
+   ],
+   "events.author": [
+    "Autor"
+   ],
+   "events.comingSoonDesc": [
+    "Veranstaltigs-Planig und RSVP-Verwaltig isch in Entwicklig."
+   ],
+   "events.comments": [
+    "comments"
+   ],
+   "events.createEvent": [
+    "Aalass erstelle",
+    "Veranstaltig erstelle"
+   ],
+   "events.createPoll": [
+    "Umfrag erstelle"
+   ],
+   "events.deleteEvent": [
+    "Veranstaltig lösche"
+   ],
+   "events.deleteEventBody": [
+    "Die Aalass und ihri Däilnähmer-Liste wirde permanent entfernt.",
+    "Die Veranstaltig und ihri Teilnähmer-Liste wirde permanent entfernt."
+   ],
+   "events.deleteEventTitle": [
+    "{{title}} lösche?"
+   ],
+   "events.editEvent": [
+    "Veranstaltig bearbeite"
+   ],
+   "events.event.createdMsg": [
+    "{{title}} isch hinzuegfüegt worde."
+   ],
+   "events.event.deleted": [
+    "Veranstaltig glöscht."
+   ],
+   "events.event.deletedMsg": [
+    "{{title}} isch entfernt worde."
+   ],
+   "events.event.saved": [
+    "Veranstaltig gspeicheret."
+   ],
+   "events.event.titlePlaceholder": [
+    "z.B. Holzwerkstatt-Grundlag"
+   ],
+   "events.event.updatedMsg": [
+    "{{title}} isch aktualisiert worde."
+   ],
+   "events.eventCreatedMsg": [
+    "{{title}} isch hinzuegfüegt worde."
+   ],
+   "events.eventDeleted": [
+    "Veranstaltig glöscht."
+   ],
+   "events.eventDeletedMsg": [
+    "{{title}} isch entfernt worde."
+   ],
+   "events.eventSaved": [
+    "Veranstaltig gspeicheret."
+   ],
+   "events.eventTitlePlaceholder": [
+    "z.B. Holzwerkstatt-Grundlag"
+   ],
+   "events.eventUpdatedMsg": [
+    "{{title}} isch aktualisiert worde."
+   ],
+   "events.join": [
+    "Mitmache"
+   ],
+   "events.joined": [
+    "Mitgmacht"
+   ],
+   "events.leave": [
+    "Verlah"
+   ],
+   "events.likes": [
+    "Gfelle",
+    "likes"
+   ],
+   "events.locationPlaceholder": [
+    "z.B. Holzwerkstatt"
+   ],
+   "events.noEvents": [
+    "Kei Aaläss gfunde.",
+    "Kei Verahstaltigä gfunde."
+   ],
+   "events.poll.deleted": [
+    "Umfrag glöscht."
+   ],
+   "events.poll.options": [
+    "Optioone"
+   ],
+   "events.poll.question": [
+    "Frag"
+   ],
+   "events.pollDeleted": [
+    "Umfrag glöscht."
+   ],
+   "events.pollOptions": [
+    "Optioone"
+   ],
+   "events.pollQuestion": [
+    "Frag"
+   ],
+   "events.pollsTitle": [
+    "Umfrage"
+   ],
+   "events.polls_title": [
+    "Umfrage"
+   ],
+   "events.postsTitle": [
+    "Biträg"
+   ],
+   "events.posts_title": [
+    "Biträg"
+   ],
+   "events.saveEvent": [
+    "Veranstaltig speichere"
+   ],
+   "events.search": [
+    "Sueche…"
+   ],
+   "events.subscribe.button": [
+    "Add to my calendar",
+    "In mim Kalender aazeige"
+   ],
+   "events.subscribe.copied": [
+    "Copied"
+   ],
+   "events.subscribe.copy": [
+    "Copy",
+    "Kopiere"
+   ],
+   "events.subscribe.hint": [
+    "Add this address as a calendar subscription (Google Calendar: \"From URL\", Apple Calendar: \"New Calendar Subscription\"). New and changed events show up there on their own. The link is personal; do not share it.",
+    "Füeg die Adrässe als Kalender-Abo hinzue (Google Kalender: «Per URL», Apple Kalender: «Neues Kalenderabonnement»). Neui und gänderti Aaläss chömed dänn vo sälber. De Link isch persönlich, gib en nöd wiiter."
+   ],
+   "events.subscribe.title": [
+    "Subscribe to club events",
+    "Vereinsaaläss abonniere"
+   ],
+   "events.time": [
+    "Zyt"
+   ],
+   "events.title": [
+    "Verahstaltigä"
+   ],
+   "events.totalVotes": [
+    "{{count}} Stimme"
+   ],
+   "events.vote": [
+    "Abstimme"
+   ],
+   "finance.addCategory": [
+    "Kategorie hinzuefüege"
+   ],
+   "finance.addTransaction": [
+    "Transaktion erfasse",
+    "Transaktion hinzuefüege"
+   ],
+   "finance.allActiveMembers": [
+    "All active members",
+    "Alli aktive Mitglider"
+   ],
+   "finance.allInvoices": [
+    "All invoices",
+    "Alli Rächnige"
+   ],
+   "finance.amount": [
+    "Betrag (CHF)"
+   ],
+   "finance.amountPreviewFailed": [
+    "Betrag-Vorschau fehlgeschlagen"
+   ],
+   "finance.asOfToday": [
+    "Hit",
+    "Hüt"
+   ],
+   "finance.awaitingPayment": [
+    " Wartet uf Zaalig"
+   ],
+   "finance.backToInvoices": [
+    "Back to invoices",
+    "Zrugg zue Rächnige"
+   ],
+   "finance.basedOnTier": [
+    "Based on tier"
+   ],
+   "finance.bulk.create": [
+    "Bulk create",
+    "Massenerstellig"
+   ],
+   "finance.bulk.createTitle": [
+    "Bulk create title",
+    "Massenerstellig vo Rächnige"
+   ],
+   "finance.bulk.note": [
+    "Bulk note",
+    "Pro Mitglid wird e Rächnig mit sym Stufepreis erstellt. Mitglider ohni Preis in ihrer Stufe werde übersprunge."
+   ],
+   "finance.category.color": [
+    "Cat color",
+    "Farb"
+   ],
+   "finance.category.created": [
+    "Category created"
+   ],
+   "finance.category.createdMsg": [
+    "\"{{name}}\" isch jetzt verfüegbar.",
+    "Category created msg"
+   ],
+   "finance.category.custom": [
+    "Benutzerdefiniert",
+    "Cat custom"
+   ],
+   "finance.category.default": [
+    "Cat default"
+   ],
+   "finance.category.deleted": [
+    "Kategorie glöscht.",
+    "Kategorie gösche"
+   ],
+   "finance.category.name": [
+    "Cat name"
+   ],
+   "finance.category.namePlaceholder": [
+    "Cat name placeholder",
+    "z.B. Material"
+   ],
+   "finance.category.removedMsg": [
+    "\"{{name}}\" isch entfern worde.",
+    "Category removed msg"
+   ],
+   "finance.category.saved": [
+    "Kategorie gspeicheret."
+   ],
+   "finance.category.savedMsg": [
+    "\"{{name}}\" isch gspeicheret.",
+    "Category saved msg"
+   ],
+   "finance.category.updated": [
+    "Category updated",
+    "Kategorie aktualisiert"
+   ],
+   "finance.categoryColor": [
+    "Farb"
+   ],
+   "finance.categoryDeleted": [
+    "Kategorie glöscht."
+   ],
+   "finance.categoryHint": [
+    "Kategorie für di verlinkti Transaktion"
+   ],
+   "finance.categorySaved": [
+    "Kategorie gspeicheret."
+   ],
+   "finance.completed": [
+    "Abgschlosse"
+   ],
+   "finance.confirmDelete": [
+    "Wetsch des würkli lösche?"
+   ],
+   "finance.couldNotCreateCategory": [
+    "Could not create category",
+    "Kategorie chonnt nöd erstellt wärde."
+   ],
+   "finance.couldNotDeleteCategory": [
+    "Could not delete category",
+    "Kategorie chonnt nöd gösche wärde."
+   ],
+   "finance.couldNotUpdateCategory": [
+    "Could not update category",
+    "Kategorie chonnt nöd aktualisiert wärde."
+   ],
+   "finance.createInvoice": [
+    "Create invoice",
+    "Rächnig erstelle"
+   ],
+   "finance.createInvoices": [
+    "Create invoices",
+    "Rächnige erstelle"
+   ],
+   "finance.creating": [
+    "Creating",
+    "Wird erstellt…"
+   ],
+   "finance.defaultCannotDelete": [
+    "Default cannot delete",
+    "Standard-Kategorie chann nöd gösche wärde"
+   ],
+   "finance.defaultCannotEdit": [
+    "Default cannot edit",
+    "Standard-Kategorie chann nöd bearbeitet wärde"
+   ],
+   "finance.deleteCategory": [
+    "Lösche"
+   ],
+   "finance.deleteCategoryBody": [
+    "Delete category body",
+    "Transaktione, wo die Kategorie bruched, wärded unkategorisiert."
+   ],
+   "finance.deleteCategoryTitle": [
+    "\"{{name}}\" lösche?",
+    "Delete category title"
+   ],
+   "finance.deleteInvoice": [
+    "Lösche"
+   ],
+   "finance.deleteInvoiceBody": [
+    "Delete invoice body"
+   ],
+   "finance.deleteInvoiceTitle": [
+    "Delete invoice title",
+    "Rächnig {{id}} lösche?"
+   ],
+   "finance.deleteTransactionTitle": [
+    "Transaktion lösche?"
+   ],
+   "finance.description": [
+    "Beschribig"
+   ],
+   "finance.descriptionHint": [
+    "Description hint",
+    "Optional ? wird uf jeder Rächnig azeigt"
+   ],
+   "finance.descriptionOptionalHint": [
+    "Description optional hint",
+    "Optional ? z.B. Monatlichi Mitgliedschaft"
+   ],
+   "finance.downloadQrBill": [
+    "QR-Rechnig abelade",
+    "QR-Rächnig",
+    "QR-bill"
+   ],
+   "finance.editCategory": [
+    "Edit category",
+    "Kategorie bearbeite"
+   ],
+   "finance.editTransaction": [
+    "Transaktion bearbeite"
+   ],
+   "finance.expense": [
+    "Usgab"
+   ],
+   "finance.expenseLower": [
+    "Usgab"
+   ],
+   "finance.expense_lower": [
+    "Usgab"
+   ],
+   "finance.expenses": [
+    "Usgaabe",
+    "Usgabene"
+   ],
+   "finance.expensesMTD": [
+    "Usgabe dä Monet"
+   ],
+   "finance.expensesMtd": [
+    "Usgaabe dä Mont",
+    "Usgabe dä Monet"
+   ],
+   "finance.externalParty.couldNotCreate": [
+    "Externi Partei chonnt nöd erstellt wärde."
+   ],
+   "finance.externalParty.couldNotDelete": [
+    "Externi Partei chonnt nöd gösche wärde."
+   ],
+   "finance.externalParty.couldNotUpdate": [
+    "Externi Partei chonnt nöd aktualisiert wärde."
+   ],
+   "finance.externalParty.created": [
+    "Externi Partei erstellt"
+   ],
+   "finance.externalParty.createdMsg": [
+    "\"{{name}}\" isch jetzt verfüegbar."
+   ],
+   "finance.externalParty.deleteBody": [
+    "Rächnige, wo die Partei bruched, wärded nöd mitgösche."
+   ],
+   "finance.externalParty.deleteTitle": [
+    "\"{{name}}\" lösche?"
+   ],
+   "finance.externalParty.deleted": [
+    "Externi Partei gösche"
+   ],
+   "finance.externalParty.edit": [
+    "Partei bearbeite"
+   ],
+   "finance.externalParty.namePlaceholder": [
+    "z.B. Acme Corp"
+   ],
+   "finance.externalParty.new": [
+    "Neui Partei"
+   ],
+   "finance.externalParty.none": [
+    "No cheni externi Parteie."
+   ],
+   "finance.externalParty.noneHint": [
+    "Erstellig externi Parteie im Tab \"Externi\"."
+   ],
+   "finance.externalParty.removedMsg": [
+    "\"{{name}}\" isch entfern worde."
+   ],
+   "finance.externalParty.savedMsg": [
+    "\"{{name}}\" isch gspeicheret."
+   ],
+   "finance.externalParty.updated": [
+    "Externi Partei aktualisiert"
+   ],
+   "finance.in": [
+    "I"
+   ],
+   "finance.income": [
+    "Ihname",
+    "Iiname"
+   ],
+   "finance.incomeLower": [
+    "Ihname"
+   ],
+   "finance.incomeMTD": [
+    "Ihname dä Monet"
+   ],
+   "finance.incomeMinusExpenses": [
+    "Ihname – Usgaabe",
+    "Ihname – Usgabene"
+   ],
+   "finance.incomeMtd": [
+    "Ihname dä Monet",
+    "Ihname dä Mont"
+   ],
+   "finance.income_lower": [
+    "Ihname"
+   ],
+   "finance.invoice": [
+    "Rechnig",
+    "Rächnig"
+   ],
+   "finance.invoice.created": [
+    "Invoice created",
+    "Rächnig erstellt"
+   ],
+   "finance.invoice.createdMsg": [
+    "Invoice created msg",
+    "Neui Rächnig isch usgstellt worde."
+   ],
+   "finance.invoice.defaultDescription": [
+    "Rächnig"
+   ],
+   "finance.invoice.deleted": [
+    "Rechnig glöscht.",
+    "Rächnig glöscht"
+   ],
+   "finance.invoice.deletedMsg": [
+    "Invoice deleted msg",
+    "Rächnig isch entfernt worde."
+   ],
+   "finance.invoice.detail": [
+    "Rechnigs-Detail"
+   ],
+   "finance.invoice.due": [
+    "Fälligkeitsdatum"
+   ],
+   "finance.invoice.issued": [
+    "Usgstellt"
+   ],
+   "finance.invoice.notFound": [
+    "Invoice not found",
+    "Rächnig nöd gfunde"
+   ],
+   "finance.invoice.number": [
+    "Invoice number",
+    "Rächnigs-Nr."
+   ],
+   "finance.invoice.paid": [
+    "Rechnig bezahlt."
+   ],
+   "finance.invoiceDeleted": [
+    "Rechnig glöscht."
+   ],
+   "finance.invoiceDescription": [
+    "Beschribig"
+   ],
+   "finance.invoiceDetail": [
+    "Rechnigs-Detail"
+   ],
+   "finance.invoiceIssued": [
+    "Usgstellt"
+   ],
+   "finance.invoicePaid": [
+    "Rechnig bezahlt."
+   ],
+   "finance.invoicesBreadcrumb": [
+    "Invoices breadcrumb"
+   ],
+   "finance.invoicesCreated": [
+    "Invoices created",
+    "Rächnige erstellt"
+   ],
+   "finance.invoicesCreatedMsg": [
+    "Invoices created msg"
+   ],
+   "finance.invoicesTitle": [
+    "Rächnige"
+   ],
+   "finance.invoices_title": [
+    "Rächnige"
+   ],
+   "finance.issueInvoice": [
+    "Neui Rächnig",
+    "Rechnig usstelle"
+   ],
+   "finance.lineItems": [
+    "Line items",
+    "Positions"
+   ],
+   "finance.linkedInvoiceAlsoDeleted": [
+    " Di verlinkti Rechnig wird au glöscht.",
+    " Di verlinkti Rächnig wird au glöscht."
+   ],
+   "finance.linkedTransactionAlsoDeleted": [
+    " Di verlinkti Transaktion wird au glöscht.",
+    "Linked transaction also deleted"
+   ],
+   "finance.loading": [
+    "Loading",
+    "Wird glade…"
+   ],
+   "finance.loadingMembers": [
+    "Loading members",
+    "Mitglider werde glade…"
+   ],
+   "finance.markPaid": [
+    "Als bezahlt",
+    "Als bezahlt markiere"
+   ],
+   "finance.method": [
+    "Methode"
+   ],
+   "finance.monthlyMembershipFee": [
+    "Monthly membership fee"
+   ],
+   "finance.newCategory": [
+    "Neui Kategorie",
+    "New category"
+   ],
+   "finance.noCategories": [
+    "No categories",
+    "No cheni Kategorie."
+   ],
+   "finance.noInvoices": [
+    "Cheni Rächnige.",
+    "Kei Rächnige gfunde."
+   ],
+   "finance.noPrice": [
+    " (kei Preis)",
+    "No price"
+   ],
+   "finance.noReminders": [
+    "No cheni Erinnerige gsendet.",
+    "No kei Erinnerige gsendet."
+   ],
+   "finance.noTransactions": [
+    "Cheni Transaktione.",
+    "Kei Transaktione gfunde."
+   ],
+   "finance.open": [
+    "Offe"
+   ],
+   "finance.openInvoices": [
+    "Offeni Rächnige"
+   ],
+   "finance.out": [
+    "Us"
+   ],
+   "finance.overview12Month": [
+    "12-Monet-Übersicht"
+   ],
+   "finance.overview12month": [
+    "12-Monet-Übersicht"
+   ],
+   "finance.pending": [
+    "Offe",
+    "Uständig"
+   ],
+   "finance.purpose.other": [
+    "Anderers"
+   ],
+   "finance.recentTransactions": [
+    "Letzti Transaktione"
+   ],
+   "finance.recipientType": [
+    "Empfänger-Typ"
+   ],
+   "finance.recipientType.external": [
+    "Extern",
+    "Externi Partei"
+   ],
+   "finance.recipientType.member": [
+    "Mitglid"
+   ],
+   "finance.reminder.emailSent": [
+    "Erinnerigs-E-Mail gsendet",
+    "Reminder email sent"
+   ],
+   "finance.reminder.history": [
+    "Erinnerigs-Verlauf"
+   ],
+   "finance.reminder.sent": [
+    "Erinnerig gsendet."
+   ],
+   "finance.reminderHistory": [
+    "Erinnerigs-Verlauf"
+   ],
+   "finance.reminderSent": [
+    "Erinnerig gsendet."
+   ],
+   "finance.remindersSent": [
+    "Erinnerige gsendet",
+    "Reminders sent"
+   ],
+   "finance.saveCategory": [
+    "Spíchere"
+   ],
+   "finance.searchInvoices": [
+    "Sueche?"
+   ],
+   "finance.searchTransactions": [
+    "Transaktione suche...",
+    "Transaktione sueche…"
+   ],
+   "finance.selectCategory": [
+    "Kategorie wähle…"
+   ],
+   "finance.sendReminder": [
+    "Erinnerig",
+    "Erinnerig sende"
+   ],
+   "finance.tierHint": [
+    "Leer lasse für alli aktive Mitglider Rächnige z'erstelle",
+    "Tier hint"
+   ],
+   "finance.title": [
+    "Finanze"
+   ],
+   "finance.to": [
+    "A",
+    "To"
+   ],
+   "finance.transaction.categoriesTitle": [
+    "Transaction categories title"
+   ],
+   "finance.transaction.createdMsg": [
+    "Transaktion erstellt."
+   ],
+   "finance.transaction.deleted": [
+    "Transaktion glöscht."
+   ],
+   "finance.transaction.deletedMsg": [
+    "Datensatz entfernt."
+   ],
+   "finance.transaction.saved": [
+    "Transaktion erfasse",
+    "Transaktion gspeicheret.",
+    "Transaktion gspeichert."
+   ],
+   "finance.transaction.updatedMsg": [
+    "Status zue {{status}} gändert."
+   ],
+   "finance.transactionDeleted": [
+    "Transaktion glöscht."
+   ],
+   "finance.transactionDeletedMsg": [
+    "Datensatz entfernt."
+   ],
+   "finance.transactionDescription": [
+    "z.B. Härzblutere Iizahlig"
+   ],
+   "finance.transactionSaved": [
+    "Transaktion gspeicheret."
+   ],
+   "finance.transactionUpdatedMsg": [
+    "Status zue {{status}} gändert."
+   ],
+   "finance.transactions": [
+    "Transaktione"
+   ],
+   "finance.transactionsTitle": [
+    "Ihname & Usgabene"
+   ],
+   "finance.tx.categoriesTitle": [
+    "Transaktions-Kategorie"
+   ],
+   "finance.txCategories_title": [
+    "Transaktions-Kategorie"
+   ],
+   "finance.viewAll": [
+    "Alli ahluege"
+   ],
+   "finance.viewInvoice": [
+    "Rechnig ahluege",
+    "Rächnig ahluege"
+   ],
+   "finance.viewTransaction": [
+    "Transaktion #{{id}} ahluege",
+    "View transaction"
+   ],
+   "functions.assignHolder": [
+    "Inhaber hinzufügen"
+   ],
+   "functions.deleteBody": [
+    "Delete body",
+    "Die Funktion wird entfernt. Mail-Adressen werden deprovisioniert."
+   ],
+   "functions.deleteTitle": [
+    "Delete title"
+   ],
+   "functions.deleted": [
+    "Deleted"
+   ],
+   "functions.deletedMsg": [
+    "Deleted msg",
+    "Funktion entfernt"
+   ],
+   "functions.descPlaceholder": [
+    "Desc placeholder",
+    "Kurze Beschreibung…"
+   ],
+   "functions.empty": [
+    "Empty",
+    "Keine Funktionen."
+   ],
+   "functions.holders": [
+    "Inhaber"
+   ],
+   "functions.manageHolders": [
+    "Inhaber verwalten",
+    "Manage holders"
+   ],
+   "functions.maxHolders": [
+    "Max holders",
+    "Max. Anzahl Inhaber"
+   ],
+   "functions.noHolder": [
+    "Kein Inhaber",
+    "No holder"
+   ],
+   "functions.noHolders": [
+    "No holders"
+   ],
+   "functions.protected": [
+    "Protected"
+   ],
+   "functions.searchMembers": [
+    "Mitglieder suchen…",
+    "Search members"
+   ],
+   "functions.title": [
+    "Title"
+   ],
+   "groups.addGroup": [
+    "Gruppe hinzuefüege"
+   ],
+   "groups.allowSendAs": [
+    "Send Als erlaube"
+   ],
+   "groups.color": [
+    "Farb"
+   ],
+   "groups.confirmDelete": [
+    "Wetsch die Gruppe würkli lösche?"
+   ],
+   "groups.confirmDelete.body": [
+    "Mitglider wirde nöd glöscht — sie verlah die Gruppe nume.",
+    "Mitglieder werded nöd glöscht — sie werded nur us de Gruppe entfärnt."
+   ],
+   "groups.confirmDelete.title": [
+    "\"{{name}}\" lösche?"
+   ],
+   "groups.confirmDeleteBody": [
+    "Mitglieder werded nöd glöscht — sie werded nur us de Gruppe entfärnt."
+   ],
+   "groups.confirmDeleteTitle": [
+    "\"{{name}}\" lösche?"
+   ],
+   "groups.createGroup": [
+    "Gruppe erstelle"
+   ],
+   "groups.description": [
+    "Beschribig"
+   ],
+   "groups.descriptionPlaceholder": [
+    "Churzi Beschribig vo der Gruppe…"
+   ],
+   "groups.editGroup": [
+    "Gruppe bearbeite"
+   ],
+   "groups.enableMail": [
+    "Gruppen-Mailingliste iischalte"
+   ],
+   "groups.filterMembers": [
+    "Mitglieder filtere…"
+   ],
+   "groups.forwarding": [
+    "Weiterleitig"
+   ],
+   "groups.group.createdMsg": [
+    "{{name}} isch erstellt."
+   ],
+   "groups.group.deleted": [
+    "Gruppe glöscht."
+   ],
+   "groups.group.deletedMsg": [
+    "{{name}} isch entfernt worde."
+   ],
+   "groups.group.name": [
+    "Gruppename"
+   ],
+   "groups.group.namePlaceholder": [
+    "z.B. Keramik"
+   ],
+   "groups.group.saved": [
+    "Gruppe gspeicheret."
+   ],
+   "groups.group.updatedMsg": [
+    "{{name}} isch aktualisiert worde."
+   ],
+   "groups.groupCreatedMsg": [
+    "{{name}} isch erstellt."
+   ],
+   "groups.groupDeleted": [
+    "Gruppe glöscht."
+   ],
+   "groups.groupDeletedMsg": [
+    "{{name}} isch entfernt worde."
+   ],
+   "groups.groupName": [
+    "Gruppename"
+   ],
+   "groups.groupNamePlaceholder": [
+    "z.B. Keramik"
+   ],
+   "groups.groupSaved": [
+    "Gruppe gspeicheret."
+   ],
+   "groups.groupUpdatedMsg": [
+    "{{name}} isch aktualisiert worde."
+   ],
+   "groups.lead": [
+    "Gruppenleiter"
+   ],
+   "groups.ledBy": [
+    "Gmacht vo"
+   ],
+   "groups.member.added": [
+    "Mitglied hinzuegfüegt"
+   ],
+   "groups.member.addedMsg": [
+    "{{member}} isch zur {{group}} hinzuegfüegt worde."
+   ],
+   "groups.member.removedMsg": [
+    "{{member}} isch us de {{group}} entfern worde."
+   ],
+   "groups.memberAdded": [
+    "Mitglied hinzuegfüegt"
+   ],
+   "groups.memberAddedMsg": [
+    "{{member}} isch zur {{group}} hinzuegfüegt worde."
+   ],
+   "groups.memberRemovedMsg": [
+    "{{member}} isch us de {{group}} entfern worde."
+   ],
+   "groups.members": [
+    "Mitglider",
+    "Mitglieder "
+   ],
+   "groups.membersInGroup_one": [
+    "{{count}} Mitglied in derä Gruppe"
+   ],
+   "groups.membersInGroup_other": [
+    "{{count}} Mitglieder in derä Gruppe"
+   ],
+   "groups.noDescription": [
+    "Cheni Beschribig.",
+    "Kei Beschribig."
+   ],
+   "groups.noGroups": [
+    "Kei Gruppe gfunde."
+   ],
+   "groups.noLead": [
+    "Kein Lead"
+   ],
+   "groups.noMembersInGroup": [
+    "No kei Mitglieder in derä Gruppe."
+   ],
+   "groups.noMembersMatchSearch": [
+    "Kei Mitglieder entspräche diner Suech."
+   ],
+   "groups.removeFromGroup": [
+    "Us Gruppe entfern"
+   ],
+   "groups.search": [
+    "Gruppe suche...",
+    "Gruppe sueche…"
+   ],
+   "groups.searchMembersToAdd": [
+    "Mitglieder suchen…",
+    "Mitglieder suche…"
+   ],
+   "groups.selfJoin": [
+    "Members can join and leave on their own",
+    "Mitglieder chönd sälber biiträte und ustrete"
+   ],
+   "groups.selfJoinHint": [
+    "For interest groups. Members find it under My account.",
+    "Für Interessegruppe. Mitglieder finded si under Mis Konto."
+   ],
+   "groups.sessions": [
+    "Sitzige"
+   ],
+   "groups.sessionsHint": [
+    "z.B. 2x/Wuch"
+   ],
+   "groups.sessionsPlaceholder": [
+    "3x/Wuch"
+   ],
+   "groups.title": [
+    "Gruppe"
+   ],
+   "groups.tools": [
+    "Wärchzüüg"
+   ],
+   "inventory.addFirstItem": [
+    "Add first item"
+   ],
+   "inventory.addInventoryItem": [
+    "Add inventory item",
+    "Inventar-Item hinzue"
+   ],
+   "inventory.addItem": [
+    "Item hinzue",
+    "Item hinzuefüege"
+   ],
+   "inventory.addLink": [
+    "Link hinzuefüege"
+   ],
+   "inventory.allCategories": [
+    "All categories",
+    "Alli"
+   ],
+   "inventory.allStatuses": [
+    "All statuses",
+    "Alli Status"
+   ],
+   "inventory.available": [
+    "Verfüegbar"
+   ],
+   "inventory.backToInventory": [
+    "Back to inventory",
+    "Zrugg zum Inventar"
+   ],
+   "inventory.byResponsible": [
+    "By responsible"
+   ],
+   "inventory.confirmDelete": [
+    "Wetsch des Item würkli lösche?"
+   ],
+   "inventory.cost": [
+    "Cost"
+   ],
+   "inventory.costOptional": [
+    "Cost optional",
+    "Koste (CHF, optional)"
+   ],
+   "inventory.deleteItemBody": [
+    "Das Item und alli Instruktions-Datensätz wärded permanent entfernt.",
+    "Delete item body"
+   ],
+   "inventory.deleteItemTitle": [
+    "\"{{name}}\" lösche?",
+    "Delete item title"
+   ],
+   "inventory.desc": [
+    "Desc",
+    "Wärchzeug, Items und Material verfolge."
+   ],
+   "inventory.description": [
+    "Beschribig"
+   ],
+   "inventory.descriptionOptional": [
+    "Beschribig (optional)",
+    "Description optional"
+   ],
+   "inventory.detail": [
+    "Item-Detail"
+   ],
+   "inventory.editItem": [
+    "Item bearbeite"
+   ],
+   "inventory.failed": [
+    "Failed"
+   ],
+   "inventory.failedToLoadInventory": [
+    "Failed to load inventory",
+    "Inventar chonnt n\\u00f6d glade w\\u00e4rde"
+   ],
+   "inventory.inUse": [
+    "Iigsetzt"
+   ],
+   "inventory.instructedMembers": [
+    "Aagwiisi Mitglieder "
+   ],
+   "inventory.instruction.recorded": [
+    "Instruction recorded",
+    "Instruktion erfasst"
+   ],
+   "inventory.instruction.removed": [
+    "Instruction removed",
+    "Instruktion entfernt"
+   ],
+   "inventory.instruction.reqShort": [
+    "Instruction req short"
+   ],
+   "inventory.instruction.required": [
+    "Aaleitig erforderlich",
+    "Instruktion vor Bruch erforderlich"
+   ],
+   "inventory.instructionRequired": [
+    "Aaleitig erforderlich"
+   ],
+   "inventory.item": [
+    "Item"
+   ],
+   "inventory.item.added": [
+    "Item added",
+    "Item hinzuegse"
+   ],
+   "inventory.item.addedMsg": [
+    "Item added msg",
+    "{{name}} isch zum Inventar hinzuegse worde."
+   ],
+   "inventory.item.deleted": [
+    "Item glöscht."
+   ],
+   "inventory.item.removed": [
+    "Item entfernt",
+    "Item removed"
+   ],
+   "inventory.item.removedMsg": [
+    "Item removed msg",
+    "{{name}} isch glöscht worde."
+   ],
+   "inventory.item.saved": [
+    "Item gspeicheret."
+   ],
+   "inventory.item.updated": [
+    "Item aktualisiert",
+    "Item updated"
+   ],
+   "inventory.item.updatedMsg": [
+    "Item updated msg",
+    "{{name}} isch aktualisiert worde."
+   ],
+   "inventory.itemDeleted": [
+    "Item glöscht."
+   ],
+   "inventory.itemSaved": [
+    "Item gspeicheret."
+   ],
+   "inventory.link.label": [
+    "Beschriftig"
+   ],
+   "inventory.linkLabel": [
+    "Beschriftig"
+   ],
+   "inventory.loadingInventory": [
+    "Loading inventory"
+   ],
+   "inventory.maintenance": [
+    "Wartig"
+   ],
+   "inventory.markMyselfInstructed": [
+    "Mark myself instructed",
+    "Mich als instruiert markiere"
+   ],
+   "inventory.memberMarkedInstructed": [
+    "Member marked instructed",
+    "{{member}} isch als instruiert markiert."
+   ],
+   "inventory.noInstructionRequired": [
+    "Für das Item isch cheni Instruktion erforderlich.",
+    "No instruction required"
+   ],
+   "inventory.noItemSelected": [
+    "Kei Item usgwehlt.",
+    "No item selected"
+   ],
+   "inventory.noItems": [
+    "Kei Inventar-Items gfunde."
+   ],
+   "inventory.noItemsFound": [
+    "Kei Items gfunde",
+    "No items found"
+   ],
+   "inventory.noMembersInstructed": [
+    "No cheni Mitglieder instruiert.",
+    "No members instructed"
+   ],
+   "inventory.noOneAssigned": [
+    "Niemand zuegwise",
+    "No one assigned"
+   ],
+   "inventory.noOwner": [
+    "Kei Bsitzer",
+    "No owner"
+   ],
+   "inventory.noResponsible": [
+    "No responsible"
+   ],
+   "inventory.owner": [
+    "Bsitzer"
+   ],
+   "inventory.privateShort": [
+    "Private short"
+   ],
+   "inventory.recordCleared": [
+    "Datensatz gelöscht.",
+    "Record cleared"
+   ],
+   "inventory.recorded": [
+    "Recorded"
+   ],
+   "inventory.search": [
+    "Inventar suche..."
+   ],
+   "inventory.searchItems": [
+    "Items sueche\\u2026",
+    "Search items"
+   ],
+   "inventory.searchMembersPlaceholder": [
+    "Mitglieder sueche…",
+    "Search members placeholder"
+   ],
+   "inventory.selfInstructedMsg": [
+    "Du bisch jetzt als instruiert markiert für das Item.",
+    "Self instructed msg"
+   ],
+   "inventory.shared": [
+    "Gmeinsam"
+   ],
+   "inventory.tool": [
+    "W\\u00e4rchzeug",
+    "Wärchzeug",
+    "Wärchzüüg"
+   ],
+   "inventory.tryClearingFilters": [
+    "Try clearing filters"
+   ],
+   "inventory.visibility": [
+    "Sichtbarkait"
+   ],
+   "inventory.youAreInstructed": [
+    "Du bisch instruiert für das Item",
+    "You are instructed"
+   ],
+   "mail.action": [
+    "Action"
+   ],
+   "mail.activeInboxes": [
+    "Active inboxes"
+   ],
+   "mail.activeWildDuckAccounts": [
+    "Active wild duck accounts"
+   ],
+   "mail.add.system.address": [
+    "System-Adresse hinzue"
+   ],
+   "mail.addAlias": [
+    "Alias hinzuefüege"
+   ],
+   "mail.address": [
+    "Address",
+    "Adrasse",
+    "Adrässe"
+   ],
+   "mail.admin.addTarget": [
+    "Ziil hinzuefüege"
+   ],
+   "mail.admin.addWhitelist": [
+    "Adrässe hinzuefüege"
+   ],
+   "mail.admin.aliasCreateFailed": [
+    "Alias chonnt nöd erstellt wärde."
+   ],
+   "mail.admin.aliasDeleteFailed": [
+    "Alias chonnt nöd gösche wärde."
+   ],
+   "mail.admin.aliasPrefix": [
+    "Präfix für nöis Alias"
+   ],
+   "mail.admin.aliasToggleFailed": [
+    "Alias chonnt nöd gänderet wärde."
+   ],
+   "mail.admin.aliases": [
+    "Zuesätzlichi Aliasse"
+   ],
+   "mail.admin.autoResolved": [
+    "Automatically resolved from parent"
+   ],
+   "mail.admin.couldNotDelete": [
+    "Mail-Adrässe chonnt nöd gösche wärde."
+   ],
+   "mail.admin.couldNotDeleteOrphan": [
+    "Orphan chonnt nöd gösche wärde."
+   ],
+   "mail.admin.couldNotLoadLive": [
+    "WildDuck-Datene chonnt nöd glade wärde."
+   ],
+   "mail.admin.couldNotReconcile": [
+    "Reconcile chonnt nöd gstartet wärde."
+   ],
+   "mail.admin.couldNotSave": [
+    "Mail-Iistellige chonnt nöd gspeichert wärde."
+   ],
+   "mail.admin.deleteBody": [
+    "D Mail-Adrässe {{address}} wird entfernet."
+   ],
+   "mail.admin.deleteOrphanBody": [
+    "D WildDuck-Adrässe {{address}} wird permanent entfernet."
+   ],
+   "mail.admin.deleteOrphanTitle": [
+    "Orphan entferne"
+   ],
+   "mail.admin.deleteTitle": [
+    "Mail-Adrässe entferne"
+   ],
+   "mail.admin.deleted": [
+    "Mail-Adrässe entfernt"
+   ],
+   "mail.admin.deletedMsg": [
+    "{{address}} isch entfernt worde."
+   ],
+   "mail.admin.editInCategory": [
+    "I Kategorie-Tab bearbeite"
+   ],
+   "mail.admin.effectiveWhitelist": [
+    "Effektiv"
+   ],
+   "mail.admin.enableMailOnCreate": [
+    "Mail bi Erstelle aktiviere"
+   ],
+   "mail.admin.fixedTargets": [
+    "Fixed to parent address — not editable"
+   ],
+   "mail.admin.forwardingTargets": [
+    "Witergleitigs-Ziil"
+   ],
+   "mail.admin.fromWhitelist": [
+    "Send-as Whitelist"
+   ],
+   "mail.admin.mailPrefixHint": [
+    "z.B. keramik → keramik@vereini.ch"
+   ],
+   "mail.admin.mailPrefixPlaceholder": [
+    "Local part"
+   ],
+   "mail.admin.mailbox": [
+    "Mailbox"
+   ],
+   "mail.admin.noAliases": [
+    "Keini zuesätzliche Aliasse."
+   ],
+   "mail.admin.noEntries": [
+    "Keini WildDuck-Iiträg gfunde."
+   ],
+   "mail.admin.noFunctionMail": [
+    "Keini Funktions-Mail-Iiträg gfunde."
+   ],
+   "mail.admin.noGroupMail": [
+    "Keini Gruppe-Mail-Iiträg gfunde."
+   ],
+   "mail.admin.noMemberMail": [
+    "Keini Mitglid-Mail-Iiträg gfunde."
+   ],
+   "mail.admin.openInMailAdmin": [
+    "Im Mail-Admin verwalte"
+   ],
+   "mail.admin.orphan": [
+    "Orphan"
+   ],
+   "mail.admin.orphanDeleted": [
+    "Orphan entfernt"
+   ],
+   "mail.admin.orphanDeletedMsg": [
+    "{{address}} isch entfernet worde."
+   ],
+   "mail.admin.owner": [
+    "Besitzer"
+   ],
+   "mail.admin.quota": [
+    "Quota"
+   ],
+   "mail.admin.quotaMb": [
+    "Quota (MB)"
+   ],
+   "mail.admin.reconcileNow": [
+    "Reconcile jetzt"
+   ],
+   "mail.admin.reconcileStarted": [
+    "Reconcile gstartet"
+   ],
+   "mail.admin.reconcileStartedMsg": [
+    "D Sync-Uftrag isch in Warte-Schlange plaziert."
+   ],
+   "mail.admin.retention": [
+    "Retention"
+   ],
+   "mail.admin.retentionDays": [
+    "Retention (Täg, leer = OFF)"
+   ],
+   "mail.admin.retentionOff": [
+    "OFF"
+   ],
+   "mail.admin.settings": [
+    "Mail-Iistellige"
+   ],
+   "mail.admin.settingsSaved": [
+    "Mail-Iistellige gspeichert."
+   ],
+   "mail.admin.sync": [
+    "Sync"
+   ],
+   "mail.admin.syncAll": [
+    "All Sync-Zueständ"
+   ],
+   "mail.admin.syncDrift": [
+    "Abwichig"
+   ],
+   "mail.admin.syncError": [
+    "Sync-Fehler"
+   ],
+   "mail.admin.syncPending": [
+    "Usstehend"
+   ],
+   "mail.admin.tabFunctions": [
+    "Funktione"
+   ],
+   "mail.admin.tabGroups": [
+    "Gruppe"
+   ],
+   "mail.admin.tabMembers": [
+    "Mitglider"
+   ],
+   "mail.admin.targets": [
+    "Targets"
+   ],
+   "mail.admin.wildduckLive": [
+    "WildDuck Live"
+   ],
+   "mail.admin.wildduckLiveDesc": [
+    "Alli live WildDuck-Mailboxe un Aliasse mit Managed/Orphan-Markierig."
+   ],
+   "mail.admin.wildduckLiveTitle": [
+    "WildDuck Live-Zuestand"
+   ],
+   "mail.alias.activated": [
+    "Alias activated"
+   ],
+   "mail.alias.added": [
+    "Alias added"
+   ],
+   "mail.alias.address": [
+    "Adrässe"
+   ],
+   "mail.alias.created": [
+    "Alias created"
+   ],
+   "mail.alias.createdMsg": [
+    "Alias created msg"
+   ],
+   "mail.alias.deleted": [
+    "Alias glöscht."
+   ],
+   "mail.alias.deletedMsg": [
+    "Alias deleted msg"
+   ],
+   "mail.alias.enabled": [
+    "Alias enabled"
+   ],
+   "mail.alias.paused": [
+    "Alias paused"
+   ],
+   "mail.alias.pausedMsg": [
+    "Alias paused msg"
+   ],
+   "mail.alias.removedMsg": [
+    "Alias removed msg"
+   ],
+   "mail.alias.saved": [
+    "Alias gspeicheret."
+   ],
+   "mail.aliasAddress": [
+    "Adrässe"
+   ],
+   "mail.aliasDeleted": [
+    "Alias glöscht."
+   ],
+   "mail.aliasSaved": [
+    "Alias gspeicheret."
+   ],
+   "mail.aliases": [
+    "Aliases"
+   ],
+   "mail.aliasesForGroup": [
+    "Aliases for group"
+   ],
+   "mail.aliasesTitle": [
+    "Aliases title"
+   ],
+   "mail.aliases_title": [
+    "Alias"
+   ],
+   "mail.allInboxes": [
+    "All inboxes"
+   ],
+   "mail.bounced": [
+    "Zrugggstoosse"
+   ],
+   "mail.commaSeparatedAddresses": [
+    "Comma separated addresses"
+   ],
+   "mail.compose": [
+    "Verfasse"
+   ],
+   "mail.could.not.create.system.address": [
+    "System-Adrässe chonnt nöd erstellt wärde."
+   ],
+   "mail.couldNotCreateAlias": [
+    "Could not create alias"
+   ],
+   "mail.couldNotCreateMailbox": [
+    "Could not create mailbox"
+   ],
+   "mail.couldNotDeleteAlias": [
+    "Could not delete alias"
+   ],
+   "mail.couldNotDeleteMailbox": [
+    "Could not delete mailbox"
+   ],
+   "mail.couldNotLoadFunctionMail": [
+    "Could not load function mail"
+   ],
+   "mail.couldNotLoadGroupMail": [
+    "Could not load group mail"
+   ],
+   "mail.couldNotLoadMemberMail": [
+    "Could not load member mail"
+   ],
+   "mail.couldNotQueueProvisioning": [
+    "Could not queue provisioning"
+   ],
+   "mail.couldNotSaveMailboxSettings": [
+    "Could not save mailbox settings"
+   ],
+   "mail.couldNotUpdateAlias": [
+    "Could not update alias"
+   ],
+   "mail.couldNotUpdateFunctionMail": [
+    "Could not update function mail"
+   ],
+   "mail.couldNotUpdateGroupMail": [
+    "Could not update group mail"
+   ],
+   "mail.couldNotUpdateMemberMail": [
+    "Could not update member mail"
+   ],
+   "mail.create.system.address": [
+    "System-Adrässe erstellen"
+   ],
+   "mail.createMailbox": [
+    "Create mailbox"
+   ],
+   "mail.createsMailboxSubtitle": [
+    "Creates mailbox subtitle"
+   ],
+   "mail.deferred": [
+    "Verspötet"
+   ],
+   "mail.deleteAlias": [
+    "Delete alias"
+   ],
+   "mail.deleteAliasBody": [
+    "Delete alias body"
+   ],
+   "mail.deleteAliasConfirmBody": [
+    "Delete alias confirm body"
+   ],
+   "mail.deleteAliasTitle": [
+    "Delete alias title"
+   ],
+   "mail.deleteAliasTitle2": [
+    "Delete alias title2"
+   ],
+   "mail.deleteMailboxBody": [
+    "Delete mailbox body"
+   ],
+   "mail.deleteMailboxTitle": [
+    "Delete mailbox title"
+   ],
+   "mail.delivered": [
+    "Zugstellt"
+   ],
+   "mail.deliversTo": [
+    "Ziellig"
+   ],
+   "mail.direction": [
+    "Richtig"
+   ],
+   "mail.disable": [
+    "Disable"
+   ],
+   "mail.disableGroupMail": [
+    "Gruppe-Mail usschalte"
+   ],
+   "mail.disableMailbox": [
+    "Mailbox usschalte"
+   ],
+   "mail.disabled": [
+    "Deaktiviert"
+   ],
+   "mail.display.name": [
+    "Azeige Name"
+   ],
+   "mail.displayNamePlaceholder": [
+    "Display name placeholder"
+   ],
+   "mail.distribution": [
+    "Distribution"
+   ],
+   "mail.domainStatus": [
+    "Domain status"
+   ],
+   "mail.email.account_deleted.body": [
+    "Din <strong>{{club_name}}</strong>-Konto isch deaktiviert worde. Du chasch dich nüme ahmelde."
+   ],
+   "mail.email.account_deleted.contact_link": [
+    "kontaktier üs"
+   ],
+   "mail.email.account_deleted.contact_note": [
+    "Wen du glaubsch, das isch en Fähler, bitte kontaktier eus under {{support_url}}"
+   ],
+   "mail.email.account_deleted.contact_note_no_url": [
+    "Wen du glaubsch, das isch en Fähler, bitte kontaktier eus."
+   ],
+   "mail.email.account_deleted.contact_prefix": [
+    "Wen du glaubsch, das isch en Fähler, bitte"
+   ],
+   "mail.email.address": [
+    "Email address"
+   ],
+   "mail.email.footer": [
+    "Die Nachricht isch vo {{club_name}} gsendet worde."
+   ],
+   "mail.email.greeting": [
+    "Hoi {{name}},"
+   ],
+   "mail.email.invoice_generated.body": [
+    "E neui Rächnig isch für dich erstellt worde."
+   ],
+   "mail.email.invoice_generated.cta_link": [
+    "meld di a um dini Rächnig ahluege"
+   ],
+   "mail.email.invoice_generated.cta_note": [
+    "Bitte meld di a zum dini Rächnig ahluege under {{portal_url}}"
+   ],
+   "mail.email.invoice_generated.cta_note_no_url": [
+    "Bitte meld di a zum dini Rächnig ahluege."
+   ],
+   "mail.email.invoice_generated.due_date": [
+    "isch fällig am {{due_date}}"
+   ],
+   "mail.email.invoice_generated.invoice_id": [
+    "Rächnig #{{invoice_id}}"
+   ],
+   "mail.email.invoice_reminder.body": [
+    "Das isch e Erinnerig, dass d Rächnig #{{invoice_id}} über {{amount}} am {{due_date}} fällig isch."
+   ],
+   "mail.email.invoice_reminder.cta_link": [
+    "meld di a zum dini Rächnig z'begliche"
+   ],
+   "mail.email.invoice_reminder.cta_note": [
+    "Bitte meld di a zum dini Rächnig z'begliche under {{portal_url}}"
+   ],
+   "mail.email.invoice_reminder.cta_note_no_url": [
+    "Bitte meld di a zum dini Rächnig z'begliche."
+   ],
+   "mail.email.invoice_reminder.paid_note": [
+    "Wen du scho zahlt hesch, chasch die Nachricht ignoriere bzw. d Rächnig als zahlt markiere."
+   ],
+   "mail.email.new_device_login.body": [
+    "Dis <strong>{{club_name}}</strong>-Konto isch vo eme neue Grät verwendet worde:"
+   ],
+   "mail.email.new_device_login.change_password_link": [
+    "Passwort ändere"
+   ],
+   "mail.email.new_device_login.not_you_note": [
+    "Wen das nöd du gsi bisch, bitte sofort Passwort ändere under {{support_url}}"
+   ],
+   "mail.email.new_device_login.not_you_note_no_url": [
+    "Wen das nöd du gsi bisch, bitte sofort Passwort ändere."
+   ],
+   "mail.email.new_device_login.not_you_prefix": [
+    "Wen das nöd du gsi bisch, bitte sofort"
+   ],
+   "mail.email.new_device_login.table_time": [
+    "Zit"
+   ],
+   "mail.email.new_device_login.was_you": [
+    "Wen das du gsi bisch, bruchsch nüt mache."
+   ],
+   "mail.email.notification.view_link": [
+    "Dini Benachrichtigunge ahluege"
+   ],
+   "mail.email.password_changed.body": [
+    "Dis <strong>{{club_name}}</strong>-Passwort isch grad gändert worde."
+   ],
+   "mail.email.password_changed.contact_link": [
+    "kontaktier eus"
+   ],
+   "mail.email.password_changed.not_you_note": [
+    "Wen du das nöd gmacht hesch, bitte sofort kontaktier eus under {{support_url}}"
+   ],
+   "mail.email.password_changed.not_you_note_no_url": [
+    "Wen du das nöd gmacht hesch, bitte sofort kontaktier eus."
+   ],
+   "mail.email.password_changed.not_you_prefix": [
+    "Wen du das nöd gmacht hesch, bitte sofort"
+   ],
+   "mail.email.password_changed.not_you_suffix": [
+    ""
+   ],
+   "mail.email.password_reset.body": [
+    "Mir hend e Aafrag übercho zum Zruggsetze vo dim <strong>{{club_name}}</strong>-Passwort."
+   ],
+   "mail.email.password_reset.cta": [
+    "<a href=\"{{reset_url}}\">Passwort zruggsetze</a> — de Link lauft nach 1 Stund ab."
+   ],
+   "mail.email.password_reset.cta_note": [
+    "Klick uf de Link underhalb innert 1 Stund zum en neus Passwort z'setze"
+   ],
+   "mail.email.password_reset.ignore": [
+    "Wen du das nöd ahgfräget hesch, chasch die E-Mail ignoriere."
+   ],
+   "mail.email.subject.account_deleted": [
+    "[{{club_name}}] Din Konto isch deaktiviert worde"
+   ],
+   "mail.email.subject.invoice_generated": [
+    "[{{club_name}}] Neui Rächnig — Rächnig #{{invoice_id}}"
+   ],
+   "mail.email.subject.invoice_reminder": [
+    "[{{club_name}}] Zaaligserinnerig — Rächnig #{{invoice_id}}"
+   ],
+   "mail.email.subject.new_device_login": [
+    "[{{club_name}}] Nöie Login uf dim Konto"
+   ],
+   "mail.email.subject.password_changed": [
+    "[{{club_name}}] Din Passwort isch gändert worde"
+   ],
+   "mail.email.subject.password_reset": [
+    "[{{club_name}}] Passwort zruggsetze"
+   ],
+   "mail.email.subject.verify_email": [
+    "[{{club_name}}] Bestätig dini E-Mail-Adresse"
+   ],
+   "mail.email.subject.welcome": [
+    "Wilkomme zue {{club_name}} — din Konto isch bereit"
+   ],
+   "mail.email.verify_email.body": [
+    "Bitte bestätig dini privati E-Mail-Adresse für dis <strong>{{club_name}}</strong>-Konto."
+   ],
+   "mail.email.verify_email.cta": [
+    "<a href=\"{{verify_url}}\">E-Mail-Adresse bestätige</a> — de Link lauft nach 24 Stund ab."
+   ],
+   "mail.email.verify_email.cta_note": [
+    "Klick uf de Link underhalb innert 24 Stund zum dini E-Mail-Adresse z'bestätige"
+   ],
+   "mail.email.verify_email.ignore": [
+    "Wen du das nöd ahgfräget hesch, chasch die E-Mail ignoriere."
+   ],
+   "mail.email.welcome.closing": [
+    "Wilkomme a Bord!"
+   ],
+   "mail.email.welcome.cta": [
+    "Bitte <a href=\"{{login_url}}\">meld di aa</a> und ändere dis Passwort sofort."
+   ],
+   "mail.email.welcome.cta_note": [
+    "Bitte meld di aa und ändere dis Passwort sofort:"
+   ],
+   "mail.email.welcome.intro": [
+    "Dis <strong>{{club_name}}</strong>-Konto isch erstellt worde. Da sind dini Login-Angabe:"
+   ],
+   "mail.email.welcome.login_email": [
+    "Login E-Mail"
+   ],
+   "mail.enableGroupMail": [
+    "Gruppe-Mail iischalte"
+   ],
+   "mail.enableMail": [
+    "Enable mail"
+   ],
+   "mail.enableMailbox": [
+    "Mailbox iischalte"
+   ],
+   "mail.enabled": [
+    "Aktiviert"
+   ],
+   "mail.forward": [
+    "Weiterleite"
+   ],
+   "mail.forwardedTo": [
+    "Forwarded to"
+   ],
+   "mail.forwarding": [
+    "Forwarding",
+    "Witergleiti"
+   ],
+   "mail.forwardingEnabled": [
+    "Weiterleitig aktiviert"
+   ],
+   "mail.from": [
+    "Vo"
+   ],
+   "mail.functionMail.desc": [
+    "Function mail desc"
+   ],
+   "mail.functionMail.title": [
+    "Function mail title"
+   ],
+   "mail.group": [
+    "Group"
+   ],
+   "mail.groupAlias": [
+    "Group alias"
+   ],
+   "mail.groupMail.desc": [
+    "Group mail desc"
+   ],
+   "mail.groupMail.disabled": [
+    "Gruppe-Mail deaktiviert."
+   ],
+   "mail.groupMail.enabled": [
+    "Gruppe-Mail aktiviert."
+   ],
+   "mail.groupMail.title": [
+    "Group mail title"
+   ],
+   "mail.groupMailDisabled": [
+    "Gruppe-Mail deaktiviert."
+   ],
+   "mail.groupMailEnabled": [
+    "Gruppe-Mail aktiviert."
+   ],
+   "mail.groupMailTitle": [
+    "Gruppe-Mail"
+   ],
+   "mail.groupMail_title": [
+    "Gruppe-Mail"
+   ],
+   "mail.inbound": [
+    "Iigahnd"
+   ],
+   "mail.linkToGroup": [
+    "Link to group"
+   ],
+   "mail.linkToGroupHint": [
+    "Link to group hint"
+   ],
+   "mail.loadFailed": [
+    "Load failed"
+   ],
+   "mail.loading": [
+    "Wird glade..."
+   ],
+   "mail.localPart": [
+    "Local part"
+   ],
+   "mail.localPart.placeholder": [
+    "Local part placeholder"
+   ],
+   "mail.localPart.placeholder2": [
+    "Local part placeholder2"
+   ],
+   "mail.mail": [
+    "MAIL"
+   ],
+   "mail.mailDisabledFor": [
+    "Mail disabled for"
+   ],
+   "mail.mailEnabledFor": [
+    "Mail enabled for"
+   ],
+   "mail.mailEyebrow": [
+    "Mail eyebrow"
+   ],
+   "mail.mailServerUnreachable": [
+    "Mail server unreachable"
+   ],
+   "mail.mailbox": [
+    "Mailbox"
+   ],
+   "mail.mailbox.created": [
+    "Mailbox created"
+   ],
+   "mail.mailbox.deleted": [
+    "Mailbox deleted"
+   ],
+   "mail.mailbox.disabled": [
+    "Mailbox deaktiviert."
+   ],
+   "mail.mailbox.enabled": [
+    "Mailbox aktiviert."
+   ],
+   "mail.mailbox.notProvisioned": [
+    "Mailbox not provisioned"
+   ],
+   "mail.mailbox.ready": [
+    "Mailbox ready"
+   ],
+   "mail.mailbox.removedMsg": [
+    "Mailbox removed msg"
+   ],
+   "mail.mailbox.settings": [
+    "Mailbox settings"
+   ],
+   "mail.mailbox.updated": [
+    "Mailbox updated"
+   ],
+   "mail.mailbox.updatedMsg": [
+    "Mailbox updated msg"
+   ],
+   "mail.mailboxDisabled": [
+    "Mailbox deaktiviert."
+   ],
+   "mail.mailboxEnabled": [
+    "Mailbox aktiviert."
+   ],
+   "mail.mailboxes": [
+    "Mailboxes"
+   ],
+   "mail.mailboxesProvisioned": [
+    "Mailboxes provisioned"
+   ],
+   "mail.mailboxesTitle": [
+    "Mailboxes title"
+   ],
+   "mail.mainAlias": [
+    "Main alias"
+   ],
+   "mail.manageAliases": [
+    "Manage aliases"
+   ],
+   "mail.maxStorageHint": [
+    "Max storage hint"
+   ],
+   "mail.memberMailTitle": [
+    "Mitglieder -Mail"
+   ],
+   "mail.memberMail_title": [
+    "Mitglieder -Mail"
+   ],
+   "mail.memberMailboxes.desc": [
+    "Member mailboxes desc"
+   ],
+   "mail.memberMailboxes.title": [
+    "Member mailboxes title"
+   ],
+   "mail.memberSingular": [
+    "Member singular"
+   ],
+   "mail.membersPlural": [
+    "Members plural"
+   ],
+   "mail.membersWithForwarding": [
+    "Members with forwarding"
+   ],
+   "mail.messages": [
+    "Messages"
+   ],
+   "mail.messagesStored": [
+    "Messages stored"
+   ],
+   "mail.myMailbox": [
+    "Mini Mailbox"
+   ],
+   "mail.newAlias": [
+    "New alias"
+   ],
+   "mail.newAliasActive": [
+    "New alias active"
+   ],
+   "mail.newMailbox": [
+    "New mailbox"
+   ],
+   "mail.noAliasesYet": [
+    "No aliases yet"
+   ],
+   "mail.noEntries": [
+    "Kei Log-Einträg."
+   ],
+   "mail.noFunctionsFound": [
+    "No functions found"
+   ],
+   "mail.noGroupsFound": [
+    "No groups found"
+   ],
+   "mail.noMessages": [
+    "Kei Nachrichtä."
+   ],
+   "mail.none": [
+    "None"
+   ],
+   "mail.ofTotalGb": [
+    "Of total gb"
+   ],
+   "mail.outbound": [
+    "Usgahnd"
+   ],
+   "mail.paused": [
+    "Paused"
+   ],
+   "mail.permission.system.read": [
+    "System-Mail anzeigen"
+   ],
+   "mail.placeholderEmails": [
+    "Placeholder emails"
+   ],
+   "mail.provision": [
+    "Provision"
+   ],
+   "mail.provisionFailed": [
+    "Provision failed"
+   ],
+   "mail.provisionQueued": [
+    "Provision queued"
+   ],
+   "mail.provisioned": [
+    "Provisioned"
+   ],
+   "mail.provisioning": [
+    "Wird bereitgstellt..."
+   ],
+   "mail.provisioning.error": [
+    "Provisioning error"
+   ],
+   "mail.provisioning.startedFor": [
+    "Provisioning started for"
+   ],
+   "mail.quota.label": [
+    "Quota label"
+   ],
+   "mail.quota.used": [
+    "Quota used"
+   ],
+   "mail.rejected": [
+    "Abglehnt"
+   ],
+   "mail.reply": [
+    "Anthworte"
+   ],
+   "mail.replyAll": [
+    "Allne anthworte"
+   ],
+   "mail.retentionDays": [
+    "Aufbewahrig (Täg)"
+   ],
+   "mail.selectMessage": [
+    "Wähl e Nochricht zum läse."
+   ],
+   "mail.sendOnly": [
+    "Send only"
+   ],
+   "mail.sent": [
+    "Gsendet"
+   ],
+   "mail.setAutoFromGroup": [
+    "Set auto from group"
+   ],
+   "mail.setByGroup": [
+    "Set by group"
+   ],
+   "mail.settings": [
+    "Settings"
+   ],
+   "mail.size": [
+    "Grössi"
+   ],
+   "mail.stale": [
+    "Stale"
+   ],
+   "mail.storageUsed": [
+    "Storage used"
+   ],
+   "mail.system.address.created": [
+    "System-Mail erstellt"
+   ],
+   "mail.system.address.created.msg": [
+    "System-Adrässe {{address}} erstellt."
+   ],
+   "mail.system.catchall": [
+    "Catch-All"
+   ],
+   "mail.system.hub": [
+    "Hub-Postfach"
+   ],
+   "mail.system.hubPrefix": [
+    "System-Hub-Präfix"
+   ],
+   "mail.system.password.generated": [
+    "Generiertes Passwort",
+    "Neus Passwort: {{pwd}}"
+   ],
+   "mail.system.password.reset": [
+    "Generiere"
+   ],
+   "mail.system.password.resetFailed": [
+    "Passwort chonnt nöd zrugggsetzt wärde."
+   ],
+   "mail.system.password.set": [
+    "Passwort gsetzt",
+    "Passwort setze/generiere"
+   ],
+   "mail.system.title": [
+    "System-Mail-Adressen"
+   ],
+   "mail.to": [
+    "A"
+   ],
+   "mail.totalMembers": [
+    "Total members"
+   ],
+   "mail.trackingTitle": [
+    "Tracking"
+   ],
+   "mail.tracking_title": [
+    "Tracking"
+   ],
+   "mail.type.mailbox": [
+    "Mailbox"
+   ],
+   "mail.unread": [
+    "Unread"
+   ],
+   "mail.usage": [
+    "Usage"
+   ],
+   "mail.verified": [
+    "Verified"
+   ],
+   "mail.withMailSettings": [
+    "With mail settings"
+   ],
+   "members.addFailed": [
+    "Hinzuefüege fehlgschlage"
+   ],
+   "members.addMember": [
+    "Mitglied hinzuefüege"
+   ],
+   "members.addMemberModalTitle": [
+    "Mitglied hinzuefüege"
+   ],
+   "members.allMembers": [
+    "Alli Mitglieder "
+   ],
+   "members.applications.applicationApproved": [
+    "Aatrag approvesiert",
+    "Bewerbig approvesiert"
+   ],
+   "members.applications.applicationApprovedMsg": [
+    "{{name}} isch als Mitglied hinzuegfüegt worde."
+   ],
+   "members.applications.applicationDeclined": [
+    "Aatrag abglehnt",
+    "Bewerbig abglehnt"
+   ],
+   "members.applications.applicationDeclinedMsg": [
+    "{{name}} sini Bewerbig isch abglehnt worde."
+   ],
+   "members.applications.approve": [
+    "Ahnäh",
+    "Approvesiere"
+   ],
+   "members.applications.approveAndCreate": [
+    "Ahnäh & Mitglied erstelle",
+    "Approvesiere & Mitglid erstelle"
+   ],
+   "members.applications.approveTitle": [
+    "Aatrag approvesiere",
+    "Bewerbig approvesiere"
+   ],
+   "members.applications.approving": [
+    "Wird approvesiert…"
+   ],
+   "members.applications.decline": [
+    "Ablehne"
+   ],
+   "members.applications.noPendingApplications": [
+    "Cheni usständigi Aaträg",
+    "Kei offeni Bewerbige"
+   ],
+   "members.applications.pendingDesc": [
+    "{{count}} offeni Bewerbig{{count, plural, one {} other s}}"
+   ],
+   "members.applications.title": [
+    "Bewerbige"
+   ],
+   "members.applications.wants": [
+    "wünscht"
+   ],
+   "members.archive": [
+    "Archiviere"
+   ],
+   "members.archiveFailed": [
+    "Archiviere fehlgschlage"
+   ],
+   "members.archivedCount": [
+    "{{count}} archivierti Mitglieder "
+   ],
+   "members.archivedMembers": [
+    "Archivierti Mitglieder "
+   ],
+   "members.avatarColor": [
+    "Avatar-Farb"
+   ],
+   "members.bulkInvoice.allActiveMembers": [
+    "Alli aktive Mitglieder "
+   ],
+   "members.bulkInvoice.bulkFailed": [
+    "Masse-Rechnig fehlgschlage",
+    "Massen-Rächnig fehlgschlage"
+   ],
+   "members.bulkInvoice.createInvoices": [
+    "Rächnige erstelle"
+   ],
+   "members.bulkInvoice.created": [
+    "Rächnige erstellt"
+   ],
+   "members.bulkInvoice.creating": [
+    "Wird erstellt…"
+   ],
+   "members.bulkInvoice.description": [
+    "Beschribig"
+   ],
+   "members.bulkInvoice.descriptionHint": [
+    "Optional — wird uf jedi Rechnig azeigt"
+   ],
+   "members.bulkInvoice.descriptionPlaceholder": [
+    "Monatlichi Mitgliedschaft"
+   ],
+   "members.bulkInvoice.dueDate": [
+    "Fälligkeitsdatum"
+   ],
+   "members.bulkInvoice.invoicesCreated": [
+    "Rächnige erstellt"
+   ],
+   "members.bulkInvoice.invoicesCreatedMsg": [
+    "{{count}} Rechnig{{count, plural, one {} other s}} usgstellt."
+   ],
+   "members.bulkInvoice.invoicesIssued": [
+    "{{count}} Rechnig{{count, plural, one {} other s}} usgstellt."
+   ],
+   "members.bulkInvoice.noPrice": [
+    "(kei Preis)"
+   ],
+   "members.bulkInvoice.note": [
+    "Pro Mitglied wird e Rechnig mit sym Stufepreis erstellt. Mitglieder ohni Preis in ihrere Stufe werde übersprunge."
+   ],
+   "members.bulkInvoice.tierHint": [
+    "Leer lasse für alli aktive Mitglieder Rächnige z'erstelle"
+   ],
+   "members.bulkInvoice.title": [
+    "Rächnige für Mitglieder erstelle"
+   ],
+   "members.cancel": [
+    "Abbräche"
+   ],
+   "members.cardsView": [
+    "Chartene"
+   ],
+   "members.categories.addCategory": [
+    "Neui Kategorie"
+   ],
+   "members.categories.categoryCreatedMsg": [
+    "{{name}} isch jetzt verfügbar."
+   ],
+   "members.categories.categoryDeleted": [
+    "Kategorie glöscht"
+   ],
+   "members.categories.categoryDeletedMsg": [
+    "{{name}} isch entfernt worde."
+   ],
+   "members.categories.categoryName": [
+    "Kategoriename"
+   ],
+   "members.categories.categoryNamePlaceholder": [
+    "z.B. Aafänger"
+   ],
+   "members.categories.categorySaved": [
+    "Kategorie gspeicheret"
+   ],
+   "members.categories.categoryUpdatedMsg": [
+    "{{name}} isch aktualisiert worde."
+   ],
+   "members.categories.confirmDeleteBody": [
+    "Mitglieder i derä Kategorie wird zuegwise. Die Aktion chan nöd rückgängig gmacht werde."
+   ],
+   "members.categories.confirmDeleteTitle": [
+    "\"{{name}}\" lösche?"
+   ],
+   "members.categories.create": [
+    "Erstelle"
+   ],
+   "members.categories.descriptionPlaceholder": [
+    "Churzi Beschribig…"
+   ],
+   "members.categories.editCategory": [
+    "Kategorie bearbeite"
+   ],
+   "members.categories.filterMembers": [
+    "Mitglieder filtere…"
+   ],
+   "members.categories.membersInCategory_one": [
+    "{{count}} Mitglied i derä Kategorie"
+   ],
+   "members.categories.membersInCategory_other": [
+    "{{count}} Mitglieder i derä Kategorie"
+   ],
+   "members.categories.noMembersInCategory": [
+    "No kei Mitglieder i derä Kategorie."
+   ],
+   "members.categories.noMembersMatchSearch": [
+    "Kei Mitglieder entspräche diner Suech."
+   ],
+   "members.categories.removeFromCategory": [
+    "Us Kategorie entfern"
+   ],
+   "members.categories.searchMembersToAdd": [
+    "Mitglieder suche…"
+   ],
+   "members.categories.title": [
+    "Kategorie"
+   ],
+   "members.clubUsername": [
+    "Club-Benutzername"
+   ],
+   "members.clubUsernameHint": [
+    "Eidütige Benutzername für das Mitglied"
+   ],
+   "members.confirmArchive.body": [
+    "Das Mitglied wird verschobe is Archiv und us allne Gruppe und Kategorie entfernt. Du chunsch se spöter wiederherstelle."
+   ],
+   "members.confirmArchive.title": [
+    "{{name}} archiviere?"
+   ],
+   "members.confirmDelete.body": [
+    "Das wird alli Mitglieder-Datene permanent lösche. Die Aktion chan nöd rückgängig gmacht werde."
+   ],
+   "members.confirmDelete.member": [
+    "Wetsch das Mitglied würkli lösche?"
+   ],
+   "members.confirmDelete.title": [
+    "{{name}} endgültig lösche?"
+   ],
+   "members.confirmDeleteMember": [
+    "Wetsch das Mitglied würkli lösche?"
+   ],
+   "members.createInvoices": [
+    "Rächnige erstelle"
+   ],
+   "members.delete": [
+    "Lösche"
+   ],
+   "members.deleteFailed": [
+    "Lösche fehlgschlage"
+   ],
+   "members.deleteMember": [
+    "Mitglied lösche"
+   ],
+   "members.deletePermanently": [
+    "Endgültig lösche"
+   ],
+   "members.detail.backToMembers": [
+    "← Zrugg zu de Mitglieder"
+   ],
+   "members.detail.categories": [
+    "Kategorie"
+   ],
+   "members.detail.disable": [
+    "Deaktiviere"
+   ],
+   "members.detail.disabled": [
+    "Deaktiviert"
+   ],
+   "members.detail.edit": [
+    "Bearbeite"
+   ],
+   "members.detail.enable": [
+    "Aktiviere"
+   ],
+   "members.detail.eventsAttended": [
+    "Bsuchti Verahstaltigä"
+   ],
+   "members.detail.groups": [
+    "Gruppe"
+   ],
+   "members.detail.message": [
+    "Nochricht"
+   ],
+   "members.detail.monthsActive": [
+    "Aktivi Monet"
+   ],
+   "members.detail.mustChange": [
+    "Muss änderä"
+   ],
+   "members.detail.notVerifiedLabel": [
+    "Nöd bestätigt"
+   ],
+   "members.detail.payments": [
+    "Zahlige"
+   ],
+   "members.detail.toolHours": [
+    "Wärchzüüg-Stunde"
+   ],
+   "members.detail.verifiedNo": [
+    "Nei"
+   ],
+   "members.editMember": [
+    "Mitglied bearbeite"
+   ],
+   "members.editMemberModalTitle": [
+    "Mitglied bearbeite"
+   ],
+   "members.export.csv": [
+    "CSV exportiere"
+   ],
+   "members.export.failed": [
+    "Export fehlgschlage"
+   ],
+   "members.export.failedMsg": [
+    "CSV chan nöd abeglade werde.",
+    "CSV nöd chönne abelade."
+   ],
+   "members.exportCsv": [
+    "CSV exportiere"
+   ],
+   "members.exportFailed": [
+    "Export fehlgschlage"
+   ],
+   "members.exportFailedMsg": [
+    "CSV chan nöd abeglade werde."
+   ],
+   "members.forcePasswordChange": [
+    "Passwort bim nächste Login änderä"
+   ],
+   "members.functionsCategories": [
+    "Funktione / Kategorie"
+   ],
+   "members.generate": [
+    "Generiere"
+   ],
+   "members.groupsCol": [
+    "Gruppe"
+   ],
+   "members.joined": [
+    "Biitritte"
+   ],
+   "members.lastSeen": [
+    "Zletscht gseh"
+   ],
+   "members.loadFailed": [
+    "Lade fehlgschlage"
+   ],
+   "members.loadTiersFailedMsg": [
+    "Stufe nöd chönne glade werde."
+   ],
+   "members.markVerified": [
+    "Als bestätigt markiere"
+   ],
+   "members.member.added": [
+    "Mitglied hinzuegfüegt"
+   ],
+   "members.member.addedTitle": [
+    "Mitglied hinzuegfüegt"
+   ],
+   "members.member.addedToCategoryMsg": [
+    "{{member}} isch zu {{category}} hinzuegfüegt worde."
+   ],
+   "members.member.archived": [
+    "{{name}} isch archiviert worde."
+   ],
+   "members.member.deleted": [
+    "Mitglied glöscht."
+   ],
+   "members.member.deletedPermanently": [
+    "{{name}} isch endgültig glöscht worde."
+   ],
+   "members.member.deletedTitle": [
+    "Mitglid glöscht",
+    "Mitglied glöscht"
+   ],
+   "members.member.detail": [
+    "Mitglieder-Detail"
+   ],
+   "members.member.removedFromCategoryMsg": [
+    "{{member}} isch us {{category}} entfernt worde."
+   ],
+   "members.member.restored": [
+    "{{name}} isch widerhergstellt worde."
+   ],
+   "members.member.restoredTitle": [
+    "Mitglied widerhergstellt"
+   ],
+   "members.member.saved": [
+    "Mitglied gspeicheret."
+   ],
+   "members.member.updated": [
+    "{{name}} isch aktualisiert worde."
+   ],
+   "members.member.updatedTitle": [
+    "Mitglied aktualisiert"
+   ],
+   "members.memberAdded": [
+    "Mitglied hinzuegfüegt"
+   ],
+   "members.memberAddedTitle": [
+    "Mitglied hinzuegfüegt"
+   ],
+   "members.memberAddedToCategoryMsg": [
+    "{{member}} isch zu {{category}} hinzuegfüegt worde."
+   ],
+   "members.memberArchived": [
+    "{{name}} isch archiviert worde."
+   ],
+   "members.memberDeleted": [
+    "Mitglied glöscht."
+   ],
+   "members.memberDeletedPermanently": [
+    "{{name}} isch endgültig glöscht worde."
+   ],
+   "members.memberDeletedTitle": [
+    "Mitglied glöscht"
+   ],
+   "members.memberDetail": [
+    "Mitglieder-Detail"
+   ],
+   "members.memberRemovedFromCategoryMsg": [
+    "{{member}} isch us {{category}} entfernt worde."
+   ],
+   "members.memberRestored": [
+    "{{name}} isch widerhergstellt worde."
+   ],
+   "members.memberRestoredTitle": [
+    "Mitglied widerhergstellt"
+   ],
+   "members.memberSaved": [
+    "Mitglied gspeicheret."
+   ],
+   "members.memberUpdated": [
+    "{{name}} isch aktualisiert worde."
+   ],
+   "members.memberUpdatedTitle": [
+    "Mitglied aktualisiert"
+   ],
+   "members.newMemberStatusNote": [
+    "Neis Mitglied wird di gwählti Status übername."
+   ],
+   "members.newPasswordPlaceholder": [
+    "Neus Passwort…"
+   ],
+   "members.noCategoriesSelected": [
+    "Kei Kategorie gwählt"
+   ],
+   "members.noGroupsSelected": [
+    "Kei Gruppe gwählt"
+   ],
+   "members.noMembers": [
+    "Kei Mitglieder gfunde.",
+    "No members"
+   ],
+   "members.noNotesYet": [
+    "No kei Notize."
+   ],
+   "members.noRolesSelected": [
+    "Select roles…"
+   ],
+   "members.notVerified": [
+    "Nöd bestätigt"
+   ],
+   "members.notes": [
+    "Notize"
+   ],
+   "members.password.updateFailed": [
+    "Passwort-Änderig fehlgschlage"
+   ],
+   "members.password.updated": [
+    "Mitglieder -Passwort isch gändert worde.",
+    "Passwort aktualisiert"
+   ],
+   "members.password.updatedMsg": [
+    "Mitglider-Passwort isch g\\u00e4ndert worde.",
+    "Mitglieder -Passwort isch gändert worde."
+   ],
+   "members.passwordUpdateFailed": [
+    "Passwort-Änderig fehlgschlage"
+   ],
+   "members.passwordUpdated": [
+    "Mitglieder -Passwort isch gändert worde."
+   ],
+   "members.passwordUpdatedMsg": [
+    "Mitglieder -Passwort isch gändert worde."
+   ],
+   "members.privateEmail": [
+    "Privati E-Mail"
+   ],
+   "members.privateEmailHint": [
+    "Persönlichi E-Mail-Adrässe"
+   ],
+   "members.restore": [
+    "Widerherstelle"
+   ],
+   "members.restoreFailed": [
+    "Widerherstelle fehlgschlage"
+   ],
+   "members.saveChanges": [
+    "Änderige speichere"
+   ],
+   "members.search": [
+    "Mitglieder suche..."
+   ],
+   "members.set": [
+    "Setze"
+   ],
+   "members.setPassword": [
+    "Passwort setze"
+   ],
+   "members.shown": [
+    "{{count}} azeigt"
+   ],
+   "members.suspended": [
+    "Gsperrt"
+   ],
+   "members.title": [
+    "Mitglieder "
+   ],
+   "members.trial": [
+    "Probezit"
+   ],
+   "members.updateFailed": [
+    "Aktualisiere fehlgschlage"
+   ],
+   "members.usernameTaken": [
+    "Benutzername scho vergeben"
+   ],
+   "notifications.invoicePaid": [
+    "Rechnig bezahlt"
+   ],
+   "notifications.joinedEvent": [
+    "Hät bi Veranstaltig mitgmacht"
+   ],
+   "notifications.leftEvent": [
+    "Hät Veranstaltig verlah"
+   ],
+   "notifications.markAllRead": [
+    "Alli als gläse markiere"
+   ],
+   "notifications.noNotifications": [
+    "Kei Benachrichtigunge."
+   ],
+   "notifications.reminderSent": [
+    "Erinnerig gsendet"
+   ],
+   "notifications.title": [
+    "Benachrichtigunge"
+   ],
+   "notifications.voteCast": [
+    "Hät abgstimmt"
+   ],
+   "polls.autoCloseDateOptional": [
+    "Auto-Schlussdatum (optional)",
+    "Auto-close date (optional)"
+   ],
+   "polls.closes": [
+    "closes",
+    "schlüsst"
+   ],
+   "polls.closesIn": [
+    "closes in",
+    "schlüsst in"
+   ],
+   "polls.comingSoonDesc": [
+    "Mitglieder-Umfrage und Abstimmige sind in Entwicklig"
+   ],
+   "polls.createPoll": [
+    "Create Poll",
+    "Neui Umfrag",
+    "New Poll"
+   ],
+   "polls.deletePollBody": [
+    "All votes will be permanently removed.",
+    "Alli Stimme werdet permanent entfernt."
+   ],
+   "polls.deletePollTitle": [
+    "Delete poll?",
+    "Umfrag lösche?"
+   ],
+   "polls.option.placeholder1": [
+    "z.B. Drehbank"
+   ],
+   "polls.option.placeholder2": [
+    "z.B. Plasma-Schneider"
+   ],
+   "polls.option1": [
+    "Optioon 1"
+   ],
+   "polls.option2": [
+    "Optioon 2"
+   ],
+   "polls.option3Optional": [
+    "Optioon 3 (optional)"
+   ],
+   "polls.option3optional": [
+    "Optioon 3 (optional)"
+   ],
+   "polls.optionPlaceholder1": [
+    "z.B. Drehbank"
+   ],
+   "polls.optionPlaceholder2": [
+    "z.B. Plasma-Schneider"
+   ],
+   "polls.options": [
+    "Options"
+   ],
+   "polls.poll.created": [
+    "Umfrag erstellt"
+   ],
+   "polls.poll.createdMsg": [
+    "Mitglieder chönd jetzt abstimme."
+   ],
+   "polls.poll.question": [
+    "Frag",
+    "Question"
+   ],
+   "polls.pollCreated": [
+    "Umfrag erstellt"
+   ],
+   "polls.pollCreatedMsg": [
+    "Mitglieder chönd jetzt abstimme."
+   ],
+   "polls.pollQuestion": [
+    "Frag"
+   ],
+   "polls.proxy.allow": [
+    "Members may let another member vote for them",
+    "Mitglieder chönd öpper anders für sich lah abstimme"
+   ],
+   "polls.proxy.field": [
+    "Proxy votes",
+    "Stellvertretig"
+   ],
+   "polls.proxy.for": [
+    "For {{name}}"
+   ],
+   "polls.proxy.give": [
+    "Give vote",
+    "Stimm übergäh"
+   ],
+   "polls.proxy.giveButton": [
+    "Can't attend? Give your vote to someone",
+    "Chasch nöd cho? Gib dini Stimm öpperem"
+   ],
+   "polls.proxy.givenTo": [
+    "Dini Stimm hät {{name}}",
+    "Your vote is with {{name}}"
+   ],
+   "polls.proxy.pick": [
+    "Wer stimmt für dich?",
+    "Who votes for you?"
+   ],
+   "polls.proxy.revoke": [
+    "Take back",
+    "Zruggnäh"
+   ],
+   "polls.proxy.vote": [
+    "Abstimme",
+    "Vote"
+   ],
+   "polls.questionPlaceholder": [
+    "Was söll mir als nöchsts investiere?",
+    "What should we invest in next?"
+   ],
+   "polls.voted": [
+    "Abgstimmt",
+    "Voted"
+   ],
+   "polls.votes": [
+    "Stimme",
+    "votes"
+   ],
+   "posts.backToPosts": [
+    "Back to posts"
+   ],
+   "posts.beFirstToShare": [
+    "Be the first to share an update with the club.",
+    "Bisch de Erst wo es Update mitem Club teilt."
+   ],
+   "posts.comingSoonDesc": [
+    "Club-Akündigunge und Community-Biträg sind in Entwicklig."
+   ],
+   "posts.comment": [
+    "Comment"
+   ],
+   "posts.commentAdded": [
+    "Comment added"
+   ],
+   "posts.commentPlaceholder": [
+    "Write a comment…"
+   ],
+   "posts.comments": [
+    "Comments",
+    "Kommentär"
+   ],
+   "posts.commentsComingSoon": [
+    "Kommentär-Threads chöme bald."
+   ],
+   "posts.content.label": [
+    "Content"
+   ],
+   "posts.content.placeholder": [
+    "Share an update with the club…",
+    "Teile es Update mitem Club…"
+   ],
+   "posts.contentPlaceholder": [
+    "Teile es Update mitem Club…"
+   ],
+   "posts.deletePostBody": [
+    "Die Bitrag wird permanent entfernt.",
+    "This post will be permanently removed."
+   ],
+   "posts.deletePostTitle": [
+    "Delete post?",
+    "{{title}} lösche?"
+   ],
+   "posts.editPost": [
+    "Bitrag bearbeite",
+    "Edit Post"
+   ],
+   "posts.newPost": [
+    "Neui Biträg",
+    "New Post"
+   ],
+   "posts.noComments": [
+    "No comments yet."
+   ],
+   "posts.noPostsYet": [
+    "No Kei Biträg",
+    "No posts yet"
+   ],
+   "posts.notFound": [
+    "Post not found"
+   ],
+   "posts.pageDesc": [
+    "Club-Akündigunge und Community-Updates."
+   ],
+   "posts.post.deleted": [
+    "Bitrag glöscht",
+    "Post deleted"
+   ],
+   "posts.post.deletedMsg": [
+    "{{title}} isch entfernt worde."
+   ],
+   "posts.post.published": [
+    "Bitrag veröffentlicht",
+    "Post published"
+   ],
+   "posts.post.publishedMsg": [
+    "Din Bitrag isch jetzt für alli Mitglieder sichtbar.",
+    "Your post is now visible to all members."
+   ],
+   "posts.post.updated": [
+    "Bitrag aktualisiert",
+    "Post updated"
+   ],
+   "posts.post.updatedMsg": [
+    "Changes saved.",
+    "Änderige gspeicheret."
+   ],
+   "posts.postDeleted": [
+    "Bitrag glöscht"
+   ],
+   "posts.postDeletedMsg": [
+    "{{title}} isch entfernt worde."
+   ],
+   "posts.postPublished": [
+    "Bitrag veröffentlicht"
+   ],
+   "posts.postPublishedMsg": [
+    "Din Bitrag isch jetzt für alli Mitglieder sichtbar."
+   ],
+   "posts.postUpdated": [
+    "Bitrag aktualisiert"
+   ],
+   "posts.postUpdatedMsg": [
+    "Änderige gspeicheret."
+   ],
+   "posts.publish": [
+    "Publish",
+    "Veröffentliche"
+   ],
+   "posts.readMore": [
+    "Read more"
+   ],
+   "posts.showLess": [
+    "Show less"
+   ],
+   "posts.summaryLabel": [
+    "Summary (optional)"
+   ],
+   "posts.summaryPlaceholder": [
+    "A short teaser shown in the list"
+   ],
+   "posts.titleLabel": [
+    "Title"
+   ],
+   "posts.titlePlaceholder": [
+    "Neui Staubextraktion installiert!",
+    "New dust extractor installed!"
+   ],
+   "settings.changePassword": [
+    "Passwort änderä"
+   ],
+   "settings.clubLanguage": [
+    "Sproch"
+   ],
+   "settings.clubName": [
+    "Club-Name"
+   ],
+   "settings.currentPassword": [
+    "Aktuells Passwort"
+   ],
+   "settings.featureConfigRequired": [
+    "Konfiguration erforderlich"
+   ],
+   "settings.featureConfigRequiredMsg": [
+    "{{label}} bruucht en Konfiguration, bevor s chonnt bruucht wärde."
+   ],
+   "settings.featureDisabledSkipped": [
+    "Feature deaktiviert — Konfiguration erforderlich"
+   ],
+   "settings.featureDisabledSkippedMsg": [
+    "{{label}} isch deaktiviert worde, will d erforderliche Iistellige nöd aagee worde sind."
+   ],
+   "settings.featureEnabledConfigured": [
+    "Feature aktiviert & konfiguriert"
+   ],
+   "settings.featureEnabledConfiguredMsg": [
+    "{{label}} isch jetzt bruuchsbar."
+   ],
+   "settings.featureSettingsRequired": [
+    "Bitte füll all erforderliche Felder us."
+   ],
+   "settings.featureSettingsSaveFailed": [
+    "Iistellige chönnet nöd gspeichert wärde."
+   ],
+   "settings.featureSettingsSubtitle": [
+    "Füll d erforderliche Iistellige us, um das Feature z nutze. Überspringe deaktiviert es."
+   ],
+   "settings.featureSettingsTitle": [
+    "{{label}} konfiguriere"
+   ],
+   "settings.general": [
+    "Allgmein"
+   ],
+   "settings.modules.alwaysOn": [
+    "Always on: {{names}}",
+    "Immer aa: {{names}}"
+   ],
+   "settings.modules.blocked": [
+    "Für dä Verein nöd verfüegbar",
+    "Not available for this club"
+   ],
+   "settings.modules.configure": [
+    "Iistellige",
+    "Settings"
+   ],
+   "settings.modules.intro": [
+    "Schalt ab, was din Verein nöd bruucht. En abgschaltete Modul isch für alli usbländet; d Date bliibed erhalte und sind wieder da, wenn du s wieder iischaltisch.",
+    "Switch off what your club does not use. Switching a module off hides it for everyone; its data is kept and comes back when you switch it on again."
+   ],
+   "settings.modules.needs": [
+    "Bruucht {{names}}",
+    "Needs {{names}}"
+   ],
+   "settings.modules.needsSetup": [
+    "Muess no iigrichtet wärde",
+    "Needs setup"
+   ],
+   "settings.modules.saved": [
+    "Iistellige gspeicheret",
+    "Settings saved"
+   ],
+   "settings.modules.secretKept": [
+    "Leave empty to keep the stored value",
+    "Leer la, um de gspeicheret Wert z bhalte"
+   ],
+   "settings.modules.switchedOff": [
+    "{{name}} abgschaltet",
+    "{{name}} switched off"
+   ],
+   "settings.modules.switchedOn": [
+    "{{name}} iigschaltet",
+    "{{name}} switched on"
+   ],
+   "settings.modules.uses": [
+    "Bruucht {{names}}",
+    "Uses {{names}}"
+   ],
+   "settings.noFeatures": [
+    "Kei Feature-Flags konfiguriert"
+   ],
+   "settings.profileSaved": [
+    "Profil gspeicheret."
+   ],
+   "settings.saveAndEnable": [
+    "Speichere & aktiviere"
+   ],
+   "settings.saveProfile": [
+    "Profil speichere"
+   ],
+   "settings.saveSettings": [
+    "Iistellige speichere"
+   ],
+   "settings.settingsSaved": [
+    "Iistellige gspeicheret."
+   ],
+   "settings.skip": [
+    "Überspringe"
+   ],
+   "settings.tabs.settings": [
+    "Iistellige"
+   ],
+   "settings.title": [
+    "Iistellige"
+   ],
+   "settings.yourAccount": [
+    "Din Konto"
+   ],
+   "shell.a11y.toggleSidebar": [
+    "Seitenleiste ein-/ausblenden"
+   ],
+   "shell.accessDenied": [
+    "Access denied",
+    "Kei Zuegriff"
+   ],
+   "shell.breadcrumbs.account": [
+    "Mis Konto"
+   ],
+   "shell.breadcrumbs.accountSettings": [
+    "Konto-Iistellige"
+   ],
+   "shell.breadcrumbs.aliases": [
+    "Mail › Alias"
+   ],
+   "shell.breadcrumbs.applications": [
+    "Mitglieder › Bewerbige"
+   ],
+   "shell.breadcrumbs.auditLog": [
+    "Audit-Log"
+   ],
+   "shell.breadcrumbs.bindings": [
+    "Bindings"
+   ],
+   "shell.breadcrumbs.categories": [
+    "Mitglieder › Kategorie"
+   ],
+   "shell.breadcrumbs.dashboardGlobal": [
+    "Dashboard › Übersicht"
+   ],
+   "shell.breadcrumbs.events": [
+    "Verwaltig › Verahstaltigä"
+   ],
+   "shell.breadcrumbs.externalParties": [
+    "Externi Partner"
+   ],
+   "shell.breadcrumbs.finance": [
+    "Finanze › Übersicht"
+   ],
+   "shell.breadcrumbs.functionMail": [
+    "Breadcrumbs function mail"
+   ],
+   "shell.breadcrumbs.functions": [
+    "Verwaltig › Funktionä"
+   ],
+   "shell.breadcrumbs.groupMail": [
+    "Mail › Gruppe-Mail"
+   ],
+   "shell.breadcrumbs.groups": [
+    "Gruppe"
+   ],
+   "shell.breadcrumbs.inventoryItemDetail": [
+    "Inventar › Detail"
+   ],
+   "shell.breadcrumbs.invoiceDetail": [
+    "Finanze › Rechnigs-Detail"
+   ],
+   "shell.breadcrumbs.invoices": [
+    "Finanze › Rächnige"
+   ],
+   "shell.breadcrumbs.mail": [
+    "Mail",
+    "Mail › Mailboxe",
+    "Mail › Verwaldig"
+   ],
+   "shell.breadcrumbs.memberMail": [
+    "Mail › Mitglieder -Mailboxe"
+   ],
+   "shell.breadcrumbs.members": [
+    "Mitglieder › Alli Mitglieder "
+   ],
+   "shell.breadcrumbs.polls": [
+    "Verwaltig › Umfrage"
+   ],
+   "shell.breadcrumbs.posts": [
+    "Verwaltig › Biträg"
+   ],
+   "shell.breadcrumbs.settings": [
+    "Iistellige"
+   ],
+   "shell.breadcrumbs.system": [
+    "System › Berächtigunge"
+   ],
+   "shell.breadcrumbs.tiers": [
+    "Mitglieder › Mitgliedsstufe"
+   ],
+   "shell.breadcrumbs.tracking": [
+    "Mail › Nachrichtä-Log"
+   ],
+   "shell.breadcrumbs.transactions": [
+    "Finanze › Ihname & Usgabene"
+   ],
+   "shell.breadcrumbs.translations": [
+    "Übersetzige"
+   ],
+   "shell.breadcrumbs.txCategories": [
+    "Finanze › Kategorie"
+   ],
+   "shell.emailVerify.banner": [
+    "Dini privat E-Mail isch nöd bestätigt. En Teil vo de Funktione sind nöd verfügbar, bis du sie bestätigsch."
+   ],
+   "shell.emailVerify.resend": [
+    "Bestätigungsmail neu sende"
+   ],
+   "shell.emailVerify.sending": [
+    "Wird gsendet…"
+   ],
+   "shell.goToDashboard": [
+    "Go to dashboard"
+   ],
+   "shell.nav.account": [
+    "Mis Konto"
+   ],
+   "shell.nav.accountSettings": [
+    "Konto-Iistellige"
+   ],
+   "shell.nav.aliases": [
+    "Alias"
+   ],
+   "shell.nav.allMembers": [
+    "Alli Mitglieder "
+   ],
+   "shell.nav.applications": [
+    "Bewerbige"
+   ],
+   "shell.nav.auditLog": [
+    "Audit-Log"
+   ],
+   "shell.nav.bindings": [
+    "Bindings"
+   ],
+   "shell.nav.categories": [
+    "Kategorie"
+   ],
+   "shell.nav.events": [
+    "Verahstaltigä"
+   ],
+   "shell.nav.externalParties": [
+    "Externi"
+   ],
+   "shell.nav.finance": [
+    "Finance",
+    "Finanze"
+   ],
+   "shell.nav.functionMail": [
+    "Funktions-Mail",
+    "Nav function mail"
+   ],
+   "shell.nav.functions": [
+    "Funktionä"
+   ],
+   "shell.nav.groupMail": [
+    "Gruppe-Mail"
+   ],
+   "shell.nav.groups": [
+    "Gruppe"
+   ],
+   "shell.nav.incomeExpenses": [
+    "Ihname & Usgabene"
+   ],
+   "shell.nav.invoices": [
+    "Rächnige"
+   ],
+   "shell.nav.mail": [
+    "Mail-Verwaldig"
+   ],
+   "shell.nav.mailboxes": [
+    "Mailboxe"
+   ],
+   "shell.nav.management": [
+    "Verwaltig"
+   ],
+   "shell.nav.memberMail": [
+    "Mitglieder -Mail"
+   ],
+   "shell.nav.memberMailboxes": [
+    "Mitglieder-Mailboxe"
+   ],
+   "shell.nav.members": [
+    "Members",
+    "Mitglieder "
+   ],
+   "shell.nav.membershipTiers": [
+    "Mitgliedsstufe"
+   ],
+   "shell.nav.messageLog": [
+    "Nachrichtä-Log"
+   ],
+   "shell.nav.operations": [
+    "Operations"
+   ],
+   "shell.nav.overview": [
+    " Übersicht"
+   ],
+   "shell.nav.permissions": [
+    "Berächtigunge"
+   ],
+   "shell.nav.polls": [
+    "Umfrage"
+   ],
+   "shell.nav.posts": [
+    "Biträg"
+   ],
+   "shell.nav.settings": [
+    "Iistellige",
+    "Settings"
+   ],
+   "shell.nav.systemMail": [
+    "System-Mail"
+   ],
+   "shell.nav.tiers": [
+    "Mitgliedsstufe"
+   ],
+   "shell.nav.tracking": [
+    "Tracking"
+   ],
+   "shell.nav.transactions": [
+    "Transaktione"
+   ],
+   "shell.nav.translations": [
+    "Übersetzige"
+   ],
+   "shell.nav.txCategories": [
+    "Kategorie"
+   ],
+   "shell.noPermission": [
+    "Du hesch kei Berächtigung, die Site ahluege.",
+    "You do not have permission to access this page."
+   ],
+   "shell.notif.markAllRead": [
+    "Alli als gläse markiere"
+   ],
+   "shell.notif.noUnread": [
+    "Kei ungläsni Benachrichtigunge."
+   ],
+   "shell.notif.title": [
+    "Benachrichtigunge"
+   ],
+   "shell.notif.unread": [
+    "Ungläse"
+   ],
+   "shell.notifPanel.all": [
+    "Alli"
+   ],
+   "shell.notifPanel.markAllRead": [
+    "Alli als gläse markiere"
+   ],
+   "shell.notifPanel.noNotifications": [
+    "Kei Benachrichtigunge."
+   ],
+   "shell.notifPanel.noUnread": [
+    "Kei ungläsni Benachrichtigunge."
+   ],
+   "shell.notifPanel.title": [
+    "Benachrichtigunge"
+   ],
+   "shell.notifPanel.unread": [
+    "Ungläse"
+   ],
+   "shell.search.noResults": [
+    "Kei Ergebnis für \"{{query}}\""
+   ],
+   "shell.search.placeholder": [
+    "Mitglieder, Rächnige, Inventar suche…"
+   ],
+   "shell.searchKind.audit": [
+    "Audit"
+   ],
+   "shell.searchKind.event": [
+    "Veranstaltig"
+   ],
+   "shell.searchKind.invoice": [
+    "Rechnig"
+   ],
+   "shell.searchKind.poll": [
+    "Umfrag"
+   ],
+   "shell.searchKind.transaction": [
+    "Transaktion"
+   ],
+   "shell.searchNoResults": [
+    "Kei Ergebnis für \"{{query}}\""
+   ],
+   "shell.searchPlaceholder": [
+    "Mitglieder, Rächnige, Inventar suche…"
+   ],
+   "shell.sections.management": [
+    "Sections management"
+   ],
+   "shell.sections.me": [
+    "Ich"
+   ],
+   "shell.sections.workspace": [
+    "Arbeitsbereich"
+   ],
+   "shell.tooltips.dismiss": [
+    "Wegmache"
+   ],
+   "shell.tooltips.signOut": [
+    "Abmälden"
+   ],
+   "shell.tooltips.whatsNew": [
+    "Was isch neu"
+   ],
+   "shell.userMenu.account": [
+    "Mis Konto"
+   ],
+   "shell.userMenu.accountSettings": [
+    "Konto-Iistellige"
+   ],
+   "shell.userMenu.logout": [
+    "Abmälden"
+   ],
+   "shell.whatsNew.changelogSoon": [
+    "Changelog chunnt bald."
+   ],
+   "shell.whatsNew.title": [
+    "Was isch neu"
+   ],
+   "system.accessDenied": [
+    "Zueg verweigert — Admin-Roll erforderlich."
+   ],
+   "system.adminRequired": [
+    "Detaillierti Dienstprüefige erfordere Admin-Roll."
+   ],
+   "system.allMethods": [
+    "Alli Methoden"
+   ],
+   "system.changelog": [
+    "Änderigsprotokoll"
+   ],
+   "system.changelogLoadFailed": [
+    "Änderigsprotokoll chönt nöd glade wärde."
+   ],
+   "system.couldNotLoad": [
+    "Berächtigungs-Tabelle chönt nöd glade werde."
+   ],
+   "system.database": [
+    "Datebank"
+   ],
+   "system.endpointsPlural": [
+    "Endpoints plural",
+    "s"
+   ],
+   "system.health": [
+    "Health",
+    "System-Gsundheit"
+   ],
+   "system.health.adminRequired": [
+    "Detailed service checks require admin role."
+   ],
+   "system.health.changelog": [
+    "Changelog"
+   ],
+   "system.health.hideRaw": [
+    "Hide"
+   ],
+   "system.health.noData": [
+    "No data available."
+   ],
+   "system.health.noEntries": [
+    "No changes documented."
+   ],
+   "system.health.rawData": [
+    "Raw Health Data"
+   ],
+   "system.health.services": [
+    "Services"
+   ],
+   "system.health.showRaw": [
+    "Show"
+   ],
+   "system.health.title": [
+    "System Health"
+   ],
+   "system.health.unknown": [
+    "Unknown"
+   ],
+   "system.health.unreleased": [
+    "Unreleased"
+   ],
+   "system.health.version": [
+    "Backend Version"
+   ],
+   "system.hideRaw": [
+    "Verberge"
+   ],
+   "system.loadingPermissions": [
+    "Berechtigige wird glade\\u2026",
+    "Berechtigunge wird glade…"
+   ],
+   "system.noData": [
+    "Kei Datene verfüegbar."
+   ],
+   "system.noEndpointsMatch": [
+    "Kei Endpunkte passed zue dine Filtre."
+   ],
+   "system.noEntries": [
+    "Kei Änderige dokumentiert."
+   ],
+   "system.noPermissionsLoaded": [
+    "Kei Berechtigige glade.",
+    "Kei Berechtigunge glade."
+   ],
+   "system.permissions": [
+    "Permissions"
+   ],
+   "system.rawData": [
+    "Roh-Datene"
+   ],
+   "system.roles": [
+    "Roles"
+   ],
+   "system.searchPlaceholder": [
+    "Noch Pfad oder Berechtigung suche\\u2026",
+    "Noch Pfad oder Berechtigung suche…"
+   ],
+   "system.services": [
+    "Dienstleischtige"
+   ],
+   "system.showRaw": [
+    "Azeige"
+   ],
+   "system.title": [
+    "Endpunkt-Berechtigunge"
+   ],
+   "tenantPicker.createNew": [
+    "Neue Verein gründe"
+   ],
+   "tenantPicker.loading": [
+    "Wird glade..."
+   ],
+   "tenantPicker.noTenants": [
+    "Du bisch keim Verein zuegordnet."
+   ],
+   "tenantPicker.open": [
+    "Öffne"
+   ],
+   "tenantPicker.subtitle": [
+    "Wähl de Verein, i dänm du wersch schaffe welle."
+   ],
+   "tenantPicker.title": [
+    "Verein wähle"
+   ],
+   "tiers.plans.add": [
+    "Add payment plan",
+    "Zahligsplan hinzuefüege"
+   ],
+   "tiers.plans.hint": [
+    "Let members pay this tier in instalments. Without a plan they are billed on the tier cycle.",
+    "Mitglieder chönd die Stuf in Rate zahle. Ohni Plan wird im Rhythmus vo de Stuf verrechnet."
+   ],
+   "tiers.plans.intervals.monthly": [
+    "Monetlich"
+   ],
+   "tiers.plans.intervals.quarterly": [
+    "Quartalswiis"
+   ],
+   "tiers.plans.namePlaceholder": [
+    "Quartalswiis",
+    "Quarterly"
+   ],
+   "tiers.plans.per.monthly": [
+    "pro Monet"
+   ],
+   "tiers.plans.surcharge": [
+    "Surcharge",
+    "Zueschlag"
+   ],
+   "tiers.plans.title": [
+    "Payment plans",
+    "Zahligsplän"
+   ],
+   "tiers.plans.visible": [
+    "Members can pick",
+    "Mitglieder chönd uswähle"
+   ],
+   "toast.success": [
+    "Erfolg"
+   ],
+   "toast.warning": [
+    "Warnig"
+   ],
+   "translations.addFailed": [
+    "Hinzufügen fehlgeschlagen"
+   ],
+   "translations.addKey.desc": [
+    "Neuen Übersetzungsschlüssel zu dieser Sprache hinzufügen"
+   ],
+   "translations.addLanguage.desc": [
+    "Neue Sprache erstellen, indem alle Schlüssel aus einer bestehenden Sprache kopiert werden"
+   ],
+   "translations.alias.failed": [
+    "Verlinkig fehlgschlage"
+   ],
+   "translations.alias.link": [
+    "Schlüssel verlinke"
+   ],
+   "translations.alias.linked": [
+    "Verlinkt"
+   ],
+   "translations.alias.removed": [
+    "Verlinkung ufgehobe"
+   ],
+   "translations.alias.resolved": [
+    "Verlinkt"
+   ],
+   "translations.alias.target": [
+    "Verlinkt uf"
+   ],
+   "translations.alias.targetHint": [
+    "De Ziilschlüssel i dem gliiche Sprachegebiet"
+   ],
+   "translations.alias.unlink": [
+    "Verlinkung ufhebe"
+   ],
+   "translations.copyDefaults": [
+    "Copy defaults"
+   ],
+   "translations.copyDefaults.done": [
+    "Defaults copied"
+   ],
+   "translations.copyDefaults.failed": [
+    "Copy failed"
+   ],
+   "translations.copyDefaults.hint": [
+    "Fill empty values from defaults"
+   ],
+   "translations.copyValues": [
+    "Werte aus Quelle kopieren"
+   ],
+   "translations.copyValues.off": [
+    "Schlüssel werden mit leeren Platzhalter-Werten erstellt, die Sie ausfüllen können."
+   ],
+   "translations.copyValues.on": [
+    "Alle Quellwerte werden unverändert kopiert. Passen Sie diese anschliessend für die neue Sprache an."
+   ],
+   "translations.createLanguage": [
+    "Sprache erstellen"
+   ],
+   "translations.default": [
+    "Default"
+   ],
+   "translations.deleteCascade.warning": [
+    "{{count}} Verlinkige werde au glöscht."
+   ],
+   "translations.deleteConfirm": [
+    "Delete this translation?",
+    "Die Übersetzig lösche?"
+   ],
+   "translations.deleteFailed": [
+    "Löschen fehlgeschlagen"
+   ],
+   "translations.description": [
+    "Übersetzungsschlüssel und Werte für alle Sprachen verwalten"
+   ],
+   "translations.duplicateFailed": [
+    "Sprache konnte nicht erstellt werden"
+   ],
+   "translations.duplicated": [
+    "Sprache erstellt"
+   ],
+   "translations.entries": [
+    "Einträg"
+   ],
+   "translations.flagged.none": [
+    "Keine markierten Übersetzige"
+   ],
+   "translations.flagged.title": [
+    "Übersetzige mit fehlenden Werten"
+   ],
+   "translations.lastUsed": [
+    "Zuletzt genutzt"
+   ],
+   "translations.loading": [
+    "Übersetzige werden geladen…",
+    "Übersetzungen werden geladen…"
+   ],
+   "translations.loadingLanguages": [
+    "Sprache werden geladen…"
+   ],
+   "translations.localeExists": [
+    "Diese Sprache existiert bereits"
+   ],
+   "translations.noResults": [
+    "Keine Übersetzige gefunden"
+   ],
+   "translations.saved": [
+    "Übersetzige gespeichert"
+   ],
+   "translations.saving": [
+    "Speichern…"
+   ],
+   "translations.searchPlaceholder": [
+    "Schlüssel oder Werte suchen…"
+   ],
+   "translations.sourceLocale": [
+    "Quell-Sprache"
+   ],
+   "translations.targetLocale": [
+    "Ziel-Sprachcode"
+   ],
+   "translations.title": [
+    "Übersetzige"
+   ],
+   "verify.email.confirmedMsg": [
+    "Email confirmed msg"
+   ],
+   "verify.email.error": [
+    "Bestätigung fehlgschlage. De Link isch möglicherweis abgloffe."
+   ],
+   "verify.email.success": [
+    "E-Mail bestätigt! Du chunsch di jetzt agmälden."
+   ],
+   "verify.email.title": [
+    "E-Mail bestätige"
+   ],
+   "verify.email.verified": [
+    "Email verified"
+   ],
+   "verify.email.verifying": [
+    "Wird di E-Mail bestätigt..."
+   ],
+   "verify.login": [
+    "Login"
+   ],
+   "verify.missingToken": [
+    "Missing token"
+   ],
+   "verify.pleaseWait": [
+    "Please wait"
+   ],
+   "verify.verification.failed": [
+    "Verification failed"
+   ],
+   "verify.verification.failedTitle": [
+    "Verification failed title"
+   ],
+   "verify.verifyingEmail": [
+    "Verifying email"
+   ],
+   "verifyEmail.error": [
+    "Bestätigung fehlgschlage. De Link isch möglicherweis abgloffe."
+   ],
+   "verifyEmail.success": [
+    "E-Mail bestätigt! Du chunsch di jetzt agmälden."
+   ],
+   "verifyEmail.title": [
+    "E-Mail bestätige"
+   ],
+   "verifyEmail.verifying": [
+    "Wird di E-Mail bestätigt..."
+   ]
+  },
+  "en-GB": {
+   "account.allOtherSessionsRevokedMsg": [
+    "All other sessions revoked msg"
+   ],
+   "account.checkInbox": [
+    "Check inbox"
+   ],
+   "account.clubEmailHint": [
+    "Club email hint"
+   ],
+   "account.contactAdminToChange": [
+    "Contact admin to change"
+   ],
+   "account.copyIncomingClubMail": [
+    "Copy incoming club mail"
+   ],
+   "account.couldNotRevokeAll": [
+    "Could not revoke all"
+   ],
+   "account.couldNotRevokeSession": [
+    "Could not revoke session"
+   ],
+   "account.couldNotSendVerification": [
+    "Could not send verification"
+   ],
+   "account.couldNotUpdateMailSettings": [
+    "Could not update mail settings"
+   ],
+   "account.couldNotUpdateProfile": [
+    "Could not update profile"
+   ],
+   "account.enterCurrentAndNew": [
+    "Enter current and new"
+   ],
+   "account.failedToChangePassword": [
+    "Failed to change password"
+   ],
+   "account.groupsCategories": [
+    "Groups categories"
+   ],
+   "account.invoice": [
+    "Invoice"
+   ],
+   "account.language.changedMsg": [
+    "Language changed msg"
+   ],
+   "account.language.description": [
+    "Language description"
+   ],
+   "account.language.tab": [
+    "Language tab"
+   ],
+   "account.likedPosts": [
+    "Liked posts"
+   ],
+   "account.loadingMailSettings": [
+    "Loading mail settings"
+   ],
+   "account.membership.details": [
+    "Membership details"
+   ],
+   "account.membership.tab": [
+    "Membership tab"
+   ],
+   "account.minimum8chars": [
+    "Minimum8chars"
+   ],
+   "account.noEventsJoined": [
+    "No events joined"
+   ],
+   "account.noPollsVoted": [
+    "No polls voted"
+   ],
+   "account.password.minLength": [
+    "Password min length"
+   ],
+   "account.password.updatedMsg": [
+    "Password updated msg"
+   ],
+   "account.pendingPayment": [
+    "Pending payment"
+   ],
+   "account.postsComingSoon": [
+    "Posts coming soon"
+   ],
+   "account.privateEmailHint": [
+    "Private email hint"
+   ],
+   "account.profile.noteHint": [
+    "Profile note hint"
+   ],
+   "account.profile.tab": [
+    "Profile tab"
+   ],
+   "account.profile.updatedMsg": [
+    "Profile updated msg"
+   ],
+   "account.readOnly": [
+    "Read only"
+   ],
+   "account.revoke": [
+    "Revoke"
+   ],
+   "account.revokeAllOthers": [
+    "Revoke all other sessions"
+   ],
+   "account.revoked": [
+    "Revoked"
+   ],
+   "account.revoking": [
+    "Revoking…"
+   ],
+   "account.saving": [
+    "Saving"
+   ],
+   "account.securityTab": [
+    "Security tab"
+   ],
+   "account.sending": [
+    "Sending"
+   ],
+   "account.sessions.revoked": [
+    "Session revoked"
+   ],
+   "account.sessions.revokedMsg": [
+    "Session revoked msg"
+   ],
+   "account.sessionsInfo": [
+    "Manage your active sessions. Revoking a session will immediately invalidate it."
+   ],
+   "account.settings.title": [
+    "Account settings title"
+   ],
+   "account.settingsTitle": [
+    "Account Settings"
+   ],
+   "account.settings_title": [
+    "Account Settings"
+   ],
+   "account.updatePassword": [
+    "Update password"
+   ],
+   "account.updating": [
+    "Updating"
+   ],
+   "account.verifyEmailAboveToEnable": [
+    "Verify email above to enable"
+   ],
+   "account.verifyEmailToEnableForwarding": [
+    "Verify email to enable forwarding"
+   ],
+   "app.backend.unreachable": [
+    "Backend unreachable"
+   ],
+   "app.backendUnreachable": [
+    "Backend unreachable"
+   ],
+   "app.checking": [
+    "Checking..."
+   ],
+   "app.retry": [
+    "Retry"
+   ],
+   "apply.emailPlaceholder": [
+    "Email placeholder"
+   ],
+   "apply.error": [
+    "Could not submit application."
+   ],
+   "apply.fillInDetails": [
+    "Fill in details"
+   ],
+   "apply.firstName": [
+    "First Name"
+   ],
+   "apply.firstNamePlaceholder": [
+    "First name placeholder"
+   ],
+   "apply.lastName": [
+    "Last Name"
+   ],
+   "apply.lastNamePlaceholder": [
+    "Last name placeholder"
+   ],
+   "apply.messagePlaceholder": [
+    "Message placeholder"
+   ],
+   "apply.submissionFailed": [
+    "Submission failed"
+   ],
+   "apply.submit": [
+    "Submit Application"
+   ],
+   "apply.submitting": [
+    "Submitting..."
+   ],
+   "apply.thanksMsg": [
+    "Thanks msg"
+   ],
+   "apply.title": [
+    "Apply for Membership"
+   ],
+   "apply.usuallyTakesTime": [
+    "Usually takes time"
+   ],
+   "apply.wantsTier": [
+    "Membership Type"
+   ],
+   "auth.applyForMembershipFull": [
+    "Apply for Membership"
+   ],
+   "auth.backToLogin": [
+    "Back to Login",
+    "Back to sign in"
+   ],
+   "auth.confirmPassword": [
+    "Confirm Password"
+   ],
+   "auth.continueWithSSO": [
+    "Continue with SSO"
+   ],
+   "auth.continueWithSso": [
+    "Continue with SSO"
+   ],
+   "auth.forgotPassword": [
+    "Forgot Password?"
+   ],
+   "auth.loggingIn": [
+    "Logging in..."
+   ],
+   "auth.login": [
+    "Login"
+   ],
+   "auth.loginAdmin": [
+    "Sign in to your admin panel"
+   ],
+   "auth.newPassword": [
+    "New Password"
+   ],
+   "auth.reset.updating": [
+    "Updating…"
+   ],
+   "auth.resetting": [
+    "Resetting..."
+   ],
+   "auth.sendResetLink": [
+    "Send Reset Link"
+   ],
+   "auth.sending": [
+    "Sending..."
+   ],
+   "auth.setUpYourSpace": [
+    "Set up your space"
+   ],
+   "auth.setupSpace": [
+    "Set up your space"
+   ],
+   "auth.signInToAdmin": [
+    "Sign in to your admin panel"
+   ],
+   "bootstrap.admin.email": [
+    "Admin Email"
+   ],
+   "bootstrap.admin.password": [
+    "Admin Password"
+   ],
+   "bootstrap.adminEmail": [
+    "Admin Email"
+   ],
+   "bootstrap.adminPassword": [
+    "Admin Password"
+   ],
+   "bootstrap.allSet": [
+    "All set"
+   ],
+   "bootstrap.bootstrapFailed": [
+    "Bootstrap failed"
+   ],
+   "bootstrap.chooseStrongPassword": [
+    "Choose strong password"
+   ],
+   "bootstrap.chooseTiersToEnable": [
+    "Choose tiers to enable"
+   ],
+   "bootstrap.clubName": [
+    "Club Name"
+   ],
+   "bootstrap.culturalAssoc": [
+    "Cultural assoc"
+   ],
+   "bootstrap.enterDashboard": [
+    "Enter dashboard"
+   ],
+   "bootstrap.isReady": [
+    "Is ready"
+   ],
+   "bootstrap.settingUp": [
+    "Setting up..."
+   ],
+   "bootstrap.spaceReady": [
+    "Space ready"
+   ],
+   "bootstrap.tier.maker": [
+    "Tier maker"
+   ],
+   "bootstrap.tier.price1": [
+    "Tier price1"
+   ],
+   "bootstrap.tier.price2": [
+    "Tier price2"
+   ],
+   "bootstrap.tier.price3": [
+    "Tier price3"
+   ],
+   "bootstrap.tier.price4": [
+    "Tier price4"
+   ],
+   "bootstrap.tier.pro": [
+    "Tier pro"
+   ],
+   "bootstrap.tier.student": [
+    "Tier student"
+   ],
+   "bootstrap.tier.workshop": [
+    "Tier workshop"
+   ],
+   "bootstrap.title": [
+    "Setup Your Club"
+   ],
+   "codes.deleted": [
+    "Lock code deleted."
+   ],
+   "codes.saved": [
+    "Lock code saved."
+   ],
+   "common.clubName": [
+    "Club Name"
+   ],
+   "common.color": [
+    "Color"
+   ],
+   "common.descriptionPlaceholder": [
+    "Description placeholder"
+   ],
+   "common.firstName": [
+    "First Name"
+   ],
+   "common.lastName": [
+    "Last Name"
+   ],
+   "common.loading": [
+    "Loading..."
+   ],
+   "common.namePlaceholder": [
+    "Name placeholder"
+   ],
+   "common.notAvailable": [
+    "N/A"
+   ],
+   "common.optional": [
+    "Optional"
+   ],
+   "common.updateFailed": [
+    "Update failed"
+   ],
+   "common.updated": [
+    "Updated"
+   ],
+   "dashboard.eyebrow.organization": [
+    "Organization"
+   ],
+   "dashboard.global": [
+    "Global Dashboard"
+   ],
+   "dashboard.tabs.account": [
+    "Account"
+   ],
+   "dashboard.tabs.overview": [
+    "Overview"
+   ],
+   "dashboard.voteNeeded.pollsRequire": [
+    "{{count}} open poll{{count, plural, one {} other s}} require your input"
+   ],
+   "events.comingSoonDesc": [
+    "Coming soon desc"
+   ],
+   "events.deleteEventBody": [
+    "Delete event body"
+   ],
+   "events.deleteEventTitle": [
+    "Delete event title"
+   ],
+   "events.event.createdMsg": [
+    "Event created msg"
+   ],
+   "events.event.deletedMsg": [
+    "Event deleted msg"
+   ],
+   "events.event.titlePlaceholder": [
+    "Event title placeholder"
+   ],
+   "events.event.updatedMsg": [
+    "Event updated msg"
+   ],
+   "events.locationPlaceholder": [
+    "Location placeholder"
+   ],
+   "finance.addTransaction": [
+    "Add Transaction"
+   ],
+   "finance.basedOnTier": [
+    "Based on tier"
+   ],
+   "finance.bulk.create": [
+    "Bulk create"
+   ],
+   "finance.bulk.createTitle": [
+    "Bulk create title"
+   ],
+   "finance.bulk.note": [
+    "Bulk note"
+   ],
+   "finance.category.color": [
+    "Cat color"
+   ],
+   "finance.category.createdMsg": [
+    "Category created msg"
+   ],
+   "finance.category.custom": [
+    "Cat custom"
+   ],
+   "finance.category.default": [
+    "Cat default"
+   ],
+   "finance.category.name": [
+    "Cat name"
+   ],
+   "finance.category.namePlaceholder": [
+    "Cat name placeholder"
+   ],
+   "finance.category.removedMsg": [
+    "Category removed msg"
+   ],
+   "finance.category.savedMsg": [
+    "Category saved msg"
+   ],
+   "finance.category.updated": [
+    "Category updated"
+   ],
+   "finance.categoryColor": [
+    "Color"
+   ],
+   "finance.couldNotCreateCategory": [
+    "Could not create category"
+   ],
+   "finance.couldNotDeleteCategory": [
+    "Could not delete category"
+   ],
+   "finance.couldNotUpdateCategory": [
+    "Could not update category"
+   ],
+   "finance.creating": [
+    "Creating"
+   ],
+   "finance.defaultCannotDelete": [
+    "Default cannot delete"
+   ],
+   "finance.defaultCannotEdit": [
+    "Default cannot edit"
+   ],
+   "finance.deleteCategoryBody": [
+    "Delete category body"
+   ],
+   "finance.deleteCategoryTitle": [
+    "Delete category title"
+   ],
+   "finance.deleteInvoiceBody": [
+    "Delete invoice body"
+   ],
+   "finance.deleteInvoiceTitle": [
+    "Delete invoice title"
+   ],
+   "finance.deleteTransactionTitle": [
+    "Delete transaction title"
+   ],
+   "finance.descriptionHint": [
+    "Description hint"
+   ],
+   "finance.descriptionOptionalHint": [
+    "Description optional hint"
+   ],
+   "finance.expensesMtd": [
+    "Expenses mtd"
+   ],
+   "finance.incomeMtd": [
+    "Income mtd"
+   ],
+   "finance.invoice.createdMsg": [
+    "Invoice created msg"
+   ],
+   "finance.invoice.deletedMsg": [
+    "Invoice deleted msg"
+   ],
+   "finance.invoice.detail": [
+    "Invoice Detail"
+   ],
+   "finance.invoiceDetail": [
+    "Invoice Detail"
+   ],
+   "finance.invoicesBreadcrumb": [
+    "Invoices breadcrumb"
+   ],
+   "finance.invoicesCreatedMsg": [
+    "Invoices created msg"
+   ],
+   "finance.linkedInvoiceAlsoDeleted": [
+    "Linked invoice also deleted"
+   ],
+   "finance.linkedTransactionAlsoDeleted": [
+    "Linked transaction also deleted"
+   ],
+   "finance.loading": [
+    "Loading"
+   ],
+   "finance.loadingMembers": [
+    "Loading members"
+   ],
+   "finance.method": [
+    "Method"
+   ],
+   "finance.monthlyMembershipFee": [
+    "Monthly membership fee"
+   ],
+   "finance.noCategories": [
+    "No categories"
+   ],
+   "finance.noPrice": [
+    "No price"
+   ],
+   "finance.overview12month": [
+    "Overview12month"
+   ],
+   "finance.reminder.history": [
+    "Reminder History"
+   ],
+   "finance.searchTransactions": [
+    "Search transactions..."
+   ],
+   "finance.tierHint": [
+    "Tier hint"
+   ],
+   "finance.transaction.categoriesTitle": [
+    "Transaction categories title"
+   ],
+   "finance.transaction.deletedMsg": [
+    "Transaction deleted msg"
+   ],
+   "finance.transaction.updatedMsg": [
+    "Transaction updated msg"
+   ],
+   "finance.transactionsTitle": [
+    "Transactions title"
+   ],
+   "finance.tx.categoriesTitle": [
+    "Transaction Categories"
+   ],
+   "finance.txCategories_title": [
+    "Transaction Categories"
+   ],
+   "finance.viewTransaction": [
+    "View transaction"
+   ],
+   "functions.deleteBody": [
+    "Delete body"
+   ],
+   "functions.deleteTitle": [
+    "Delete title"
+   ],
+   "functions.deletedMsg": [
+    "Deleted msg"
+   ],
+   "functions.descPlaceholder": [
+    "Desc placeholder"
+   ],
+   "functions.empty": [
+    "Empty"
+   ],
+   "functions.manageHolders": [
+    "Manage holders"
+   ],
+   "functions.maxHolders": [
+    "Max holders"
+   ],
+   "functions.noHolder": [
+    "No holder"
+   ],
+   "functions.noHolders": [
+    "No holders"
+   ],
+   "functions.searchMembers": [
+    "Search members"
+   ],
+   "functions.title": [
+    "Title"
+   ],
+   "groups.allowSendAs": [
+    "Allow send-as"
+   ],
+   "groups.color": [
+    "Color"
+   ],
+   "groups.confirmDelete.body": [
+    "Confirm delete body"
+   ],
+   "groups.confirmDelete.title": [
+    "Confirm delete title"
+   ],
+   "groups.filterMembers": [
+    "Filter members"
+   ],
+   "groups.group.createdMsg": [
+    "Group created msg"
+   ],
+   "groups.group.deleted": [
+    "Group deleted successfully."
+   ],
+   "groups.group.deletedMsg": [
+    "Group deleted msg"
+   ],
+   "groups.group.name": [
+    "Group Name"
+   ],
+   "groups.group.namePlaceholder": [
+    "Group name placeholder"
+   ],
+   "groups.group.saved": [
+    "Group saved successfully."
+   ],
+   "groups.group.updatedMsg": [
+    "Group updated msg"
+   ],
+   "groups.groupDeleted": [
+    "Group deleted successfully."
+   ],
+   "groups.groupName": [
+    "Group Name"
+   ],
+   "groups.groupSaved": [
+    "Group saved successfully."
+   ],
+   "groups.member.addedMsg": [
+    "Member added msg"
+   ],
+   "groups.member.removedMsg": [
+    "Member removed msg"
+   ],
+   "groups.noDescription": [
+    "No description"
+   ],
+   "groups.noMembersInGroup": [
+    "No members in group"
+   ],
+   "groups.noMembersMatchSearch": [
+    "No members match search"
+   ],
+   "groups.search": [
+    "Search groups..."
+   ],
+   "groups.searchMembersToAdd": [
+    "Search members to add"
+   ],
+   "groups.sessionsHint": [
+    "Sessions hint"
+   ],
+   "groups.sessionsPlaceholder": [
+    "Sessions placeholder"
+   ],
+   "inventory.addFirstItem": [
+    "Add first item"
+   ],
+   "inventory.addInventoryItem": [
+    "Add inventory item"
+   ],
+   "inventory.byResponsible": [
+    "By responsible"
+   ],
+   "inventory.costOptional": [
+    "Cost optional"
+   ],
+   "inventory.deleteItemBody": [
+    "Delete item body"
+   ],
+   "inventory.deleteItemTitle": [
+    "Delete item title"
+   ],
+   "inventory.desc": [
+    "Desc"
+   ],
+   "inventory.descriptionOptional": [
+    "Description optional"
+   ],
+   "inventory.detail": [
+    "Item Detail"
+   ],
+   "inventory.failed": [
+    "Failed"
+   ],
+   "inventory.failedToLoadInventory": [
+    "Failed to load inventory"
+   ],
+   "inventory.instruction.reqShort": [
+    "Instruction req short"
+   ],
+   "inventory.instruction.required": [
+    "Instruction Required"
+   ],
+   "inventory.instructionRequired": [
+    "Instruction Required"
+   ],
+   "inventory.item.addedMsg": [
+    "Item added msg"
+   ],
+   "inventory.item.removed": [
+    "Item removed"
+   ],
+   "inventory.item.removedMsg": [
+    "Item removed msg"
+   ],
+   "inventory.item.updated": [
+    "Item updated"
+   ],
+   "inventory.item.updatedMsg": [
+    "Item updated msg"
+   ],
+   "inventory.loadingInventory": [
+    "Loading inventory"
+   ],
+   "inventory.markMyselfInstructed": [
+    "Mark myself instructed"
+   ],
+   "inventory.memberMarkedInstructed": [
+    "Member marked instructed"
+   ],
+   "inventory.noInstructionRequired": [
+    "No instruction required"
+   ],
+   "inventory.noItemSelected": [
+    "No item selected"
+   ],
+   "inventory.noMembersInstructed": [
+    "No members instructed"
+   ],
+   "inventory.noResponsible": [
+    "No responsible"
+   ],
+   "inventory.privateShort": [
+    "Private short"
+   ],
+   "inventory.recordCleared": [
+    "Record cleared"
+   ],
+   "inventory.searchItems": [
+    "Search items"
+   ],
+   "inventory.searchMembersPlaceholder": [
+    "Search members placeholder"
+   ],
+   "inventory.selfInstructedMsg": [
+    "Self instructed msg"
+   ],
+   "inventory.tryClearingFilters": [
+    "Try clearing filters"
+   ],
+   "inventory.youAreInstructed": [
+    "You are instructed"
+   ],
+   "mail.activeWildDuckAccounts": [
+    "Active wild duck accounts"
+   ],
+   "mail.admin.couldNotReconcile": [
+    "Reconcile could not be started."
+   ],
+   "mail.admin.editInCategory": [
+    "Edit in category tab"
+   ],
+   "mail.admin.mailPrefixHint": [
+    "e.g. keramik → keramik@club.ch"
+   ],
+   "mail.admin.mailPrefixPlaceholder": [
+    "Local part"
+   ],
+   "mail.admin.noFunctionMail": [
+    "No function mail entries found."
+   ],
+   "mail.admin.noGroupMail": [
+    "No group mail entries found."
+   ],
+   "mail.admin.noMemberMail": [
+    "No member mail entries found."
+   ],
+   "mail.admin.owner": [
+    "Owner"
+   ],
+   "mail.admin.reconcileNow": [
+    "Reconcile now"
+   ],
+   "mail.admin.reconcileStarted": [
+    "Reconcile started"
+   ],
+   "mail.admin.reconcileStartedMsg": [
+    "The sync task has been queued."
+   ],
+   "mail.admin.retentionDays": [
+    "Retention (days, empty = OFF)"
+   ],
+   "mail.admin.retentionOff": [
+    "OFF"
+   ],
+   "mail.admin.syncAll": [
+    "All sync states"
+   ],
+   "mail.admin.wildduckLiveTitle": [
+    "WildDuck Live State"
+   ],
+   "mail.alias.activated": [
+    "Alias activated"
+   ],
+   "mail.alias.createdMsg": [
+    "Alias created msg"
+   ],
+   "mail.alias.deletedMsg": [
+    "Alias deleted msg"
+   ],
+   "mail.alias.enabled": [
+    "Alias enabled"
+   ],
+   "mail.alias.pausedMsg": [
+    "Alias paused msg"
+   ],
+   "mail.alias.removedMsg": [
+    "Alias removed msg"
+   ],
+   "mail.aliasesForGroup": [
+    "Aliases for group"
+   ],
+   "mail.aliasesTitle": [
+    "Aliases title"
+   ],
+   "mail.commaSeparatedAddresses": [
+    "Comma separated addresses"
+   ],
+   "mail.couldNotCreateAlias": [
+    "Could not create alias"
+   ],
+   "mail.couldNotCreateMailbox": [
+    "Could not create mailbox"
+   ],
+   "mail.couldNotDeleteAlias": [
+    "Could not delete alias"
+   ],
+   "mail.couldNotDeleteMailbox": [
+    "Could not delete mailbox"
+   ],
+   "mail.couldNotLoadFunctionMail": [
+    "Could not load function mail"
+   ],
+   "mail.couldNotLoadGroupMail": [
+    "Could not load group mail"
+   ],
+   "mail.couldNotLoadMemberMail": [
+    "Could not load member mail"
+   ],
+   "mail.couldNotQueueProvisioning": [
+    "Could not queue provisioning"
+   ],
+   "mail.couldNotSaveMailboxSettings": [
+    "Could not save mailbox settings"
+   ],
+   "mail.couldNotUpdateAlias": [
+    "Could not update alias"
+   ],
+   "mail.couldNotUpdateFunctionMail": [
+    "Could not update function mail"
+   ],
+   "mail.couldNotUpdateGroupMail": [
+    "Could not update group mail"
+   ],
+   "mail.couldNotUpdateMemberMail": [
+    "Could not update member mail"
+   ],
+   "mail.createsMailboxSubtitle": [
+    "Creates mailbox subtitle"
+   ],
+   "mail.deleteAliasBody": [
+    "Delete alias body"
+   ],
+   "mail.deleteAliasConfirmBody": [
+    "Delete alias confirm body"
+   ],
+   "mail.deleteAliasTitle": [
+    "Delete alias title"
+   ],
+   "mail.deleteAliasTitle2": [
+    "Delete alias title2"
+   ],
+   "mail.deleteMailboxBody": [
+    "Delete mailbox body"
+   ],
+   "mail.deleteMailboxTitle": [
+    "Delete mailbox title"
+   ],
+   "mail.disable": [
+    "Disable"
+   ],
+   "mail.displayNamePlaceholder": [
+    "Display name placeholder"
+   ],
+   "mail.functionMail.desc": [
+    "Function mail desc"
+   ],
+   "mail.functionMail.title": [
+    "Function mail title"
+   ],
+   "mail.groupMail.desc": [
+    "Group mail desc"
+   ],
+   "mail.groupMail.title": [
+    "Group mail title"
+   ],
+   "mail.linkToGroupHint": [
+    "Link to group hint"
+   ],
+   "mail.loading": [
+    "Loading..."
+   ],
+   "mail.localPart": [
+    "Local part"
+   ],
+   "mail.localPart.placeholder": [
+    "Local part placeholder"
+   ],
+   "mail.localPart.placeholder2": [
+    "Local part placeholder2"
+   ],
+   "mail.mailDisabledFor": [
+    "Mail disabled for"
+   ],
+   "mail.mailEnabledFor": [
+    "Mail enabled for"
+   ],
+   "mail.mailEyebrow": [
+    "Mail eyebrow"
+   ],
+   "mail.mailbox.notProvisioned": [
+    "Mailbox not provisioned"
+   ],
+   "mail.mailbox.removedMsg": [
+    "Mailbox removed msg"
+   ],
+   "mail.mailbox.updated": [
+    "Mailbox updated"
+   ],
+   "mail.mailbox.updatedMsg": [
+    "Mailbox updated msg"
+   ],
+   "mail.mailboxesProvisioned": [
+    "Mailboxes provisioned"
+   ],
+   "mail.mailboxesTitle": [
+    "Mailboxes title"
+   ],
+   "mail.mainAlias": [
+    "Main alias"
+   ],
+   "mail.maxStorageHint": [
+    "Max storage hint"
+   ],
+   "mail.memberMailboxes.desc": [
+    "Member mailboxes desc"
+   ],
+   "mail.memberMailboxes.title": [
+    "Member mailboxes title"
+   ],
+   "mail.memberSingular": [
+    "Member singular"
+   ],
+   "mail.membersPlural": [
+    "Members plural"
+   ],
+   "mail.ofTotalGb": [
+    "Of total gb"
+   ],
+   "mail.placeholderEmails": [
+    "Placeholder emails"
+   ],
+   "mail.provision": [
+    "Provision"
+   ],
+   "mail.provisionFailed": [
+    "Provision failed"
+   ],
+   "mail.provisionQueued": [
+    "Provision queued"
+   ],
+   "mail.provisioned": [
+    "Provisioned"
+   ],
+   "mail.provisioning": [
+    "Provisioning..."
+   ],
+   "mail.provisioning.error": [
+    "Provisioning error"
+   ],
+   "mail.provisioning.startedFor": [
+    "Provisioning started for"
+   ],
+   "mail.quota.label": [
+    "Quota label"
+   ],
+   "mail.quota.used": [
+    "Quota used"
+   ],
+   "mail.setAutoFromGroup": [
+    "Set auto from group"
+   ],
+   "mail.setByGroup": [
+    "Set by group"
+   ],
+   "mail.system.hub": [
+    "Hub Mailbox"
+   ],
+   "mail.system.hubPrefix": [
+    "System Hub Prefix"
+   ],
+   "mail.system.password.generated": [
+    "Generated password"
+   ],
+   "mail.system.title": [
+    "System Mail Addresses"
+   ],
+   "mail.trackingTitle": [
+    "Tracking"
+   ],
+   "mail.tracking_title": [
+    "Tracking"
+   ],
+   "members.applications.applicationApproved": [
+    "Applications application approved"
+   ],
+   "members.applications.applicationApprovedMsg": [
+    "Applications application approved msg"
+   ],
+   "members.applications.applicationDeclined": [
+    "Applications application declined"
+   ],
+   "members.applications.applicationDeclinedMsg": [
+    "Applications application declined msg"
+   ],
+   "members.applications.approve": [
+    "Applications approve"
+   ],
+   "members.applications.approveAndCreate": [
+    "Applications approve and create"
+   ],
+   "members.applications.approveTitle": [
+    "Applications approve title"
+   ],
+   "members.applications.approving": [
+    "Applications approving"
+   ],
+   "members.applications.decline": [
+    "Applications decline"
+   ],
+   "members.applications.noPendingApplications": [
+    "Applications no pending applications"
+   ],
+   "members.applications.title": [
+    "Applications title"
+   ],
+   "members.applications.wants": [
+    "Applications wants"
+   ],
+   "members.bulkInvoice.descriptionPlaceholder": [
+    "Monthly membership fee"
+   ],
+   "members.bulkInvoice.invoicesCreated": [
+    "Bulk invoice invoices created"
+   ],
+   "members.bulkInvoice.invoicesCreatedMsg": [
+    "Bulk invoice invoices created msg"
+   ],
+   "members.bulkInvoice.invoicesIssued": [
+    "{{count}} invoice{{count, plural, one {} other s}} issued."
+   ],
+   "members.detail.backToMembers": [
+    "← Back to members"
+   ],
+   "members.export.failedMsg": [
+    "Export failed msg"
+   ],
+   "members.loadTiersFailedMsg": [
+    "Load tiers failed msg"
+   ],
+   "members.member.addedTitle": [
+    "Member added title"
+   ],
+   "members.member.deletedTitle": [
+    "Member deleted title"
+   ],
+   "members.member.detail": [
+    "Member Detail"
+   ],
+   "members.member.restoredTitle": [
+    "Member restored title"
+   ],
+   "members.member.updatedTitle": [
+    "Member updated title"
+   ],
+   "members.memberDetail": [
+    "Member Detail"
+   ],
+   "members.password.updated": [
+    "Member password has been changed."
+   ],
+   "members.password.updatedMsg": [
+    "Password updated msg"
+   ],
+   "members.search": [
+    "Search members..."
+   ],
+   "members.updateFailed": [
+    "Update failed"
+   ],
+   "notifications.joinedEvent": [
+    "Joined event"
+   ],
+   "notifications.leftEvent": [
+    "Left event"
+   ],
+   "notifications.markAllRead": [
+    "Mark All Read"
+   ],
+   "notifications.voteCast": [
+    "Vote cast"
+   ],
+   "polls.autoCloseDateOptional": [
+    "Auto close date optional"
+   ],
+   "polls.closes": [
+    "Closes"
+   ],
+   "polls.closesIn": [
+    "Closes in"
+   ],
+   "polls.comingSoonDesc": [
+    "Coming soon desc"
+   ],
+   "polls.createPoll": [
+    "Create poll"
+   ],
+   "polls.deletePollBody": [
+    "Delete poll body"
+   ],
+   "polls.deletePollTitle": [
+    "Delete poll title"
+   ],
+   "polls.option.placeholder1": [
+    "Option placeholder1"
+   ],
+   "polls.option.placeholder2": [
+    "Option placeholder2"
+   ],
+   "polls.option.placeholderOptional": [
+    "Option placeholder optional"
+   ],
+   "polls.option1": [
+    "Option1"
+   ],
+   "polls.option2": [
+    "Option2"
+   ],
+   "polls.option3optional": [
+    "Option3optional"
+   ],
+   "polls.poll.createdMsg": [
+    "Poll created msg"
+   ],
+   "polls.poll.question": [
+    "Poll question"
+   ],
+   "polls.questionPlaceholder": [
+    "Question placeholder"
+   ],
+   "polls.votes": [
+    "Votes"
+   ],
+   "posts.beFirstToShare": [
+    "Be first to share"
+   ],
+   "posts.comingSoonDesc": [
+    "Coming soon desc"
+   ],
+   "posts.commentsComingSoon": [
+    "Comments coming soon"
+   ],
+   "posts.content.label": [
+    "Content label"
+   ],
+   "posts.content.placeholder": [
+    "Content placeholder"
+   ],
+   "posts.deletePostBody": [
+    "Delete post body"
+   ],
+   "posts.deletePostTitle": [
+    "Delete post title"
+   ],
+   "posts.pageDesc": [
+    "Page desc"
+   ],
+   "posts.post.deletedMsg": [
+    "Post deleted msg"
+   ],
+   "posts.post.publishedMsg": [
+    "Post published msg"
+   ],
+   "posts.post.updated": [
+    "Post updated"
+   ],
+   "posts.post.updatedMsg": [
+    "Post updated msg"
+   ],
+   "posts.titleLabel": [
+    "Title label"
+   ],
+   "posts.titlePlaceholder": [
+    "Title placeholder"
+   ],
+   "settings.clubName": [
+    "Club Name"
+   ],
+   "settings.featureDisabledSkipped": [
+    "Feature disabled — configuration required"
+   ],
+   "settings.featureDisabledSkippedMsg": [
+    "{{label}} was disabled because the required settings were not provided."
+   ],
+   "settings.featureEnabledConfigured": [
+    "Feature enabled & configured"
+   ],
+   "settings.featureSettingsSubtitle": [
+    "Fill in the required settings to use this feature. Skipping disables it."
+   ],
+   "settings.featureSettingsTitle": [
+    "Configure {{label}}"
+   ],
+   "settings.saveAndEnable": [
+    "Save & enable"
+   ],
+   "settings.tabs.settings": [
+    "Settings"
+   ],
+   "shell.accessDenied": [
+    "Access Denied"
+   ],
+   "shell.breadcrumbs.dashboardGlobal": [
+    "Dashboard › Overview"
+   ],
+   "shell.breadcrumbs.events": [
+    "Management › Events"
+   ],
+   "shell.breadcrumbs.externalParties": [
+    "External parties"
+   ],
+   "shell.breadcrumbs.functionMail": [
+    "Breadcrumbs function mail"
+   ],
+   "shell.breadcrumbs.functions": [
+    "Management › Functions"
+   ],
+   "shell.breadcrumbs.groupMail": [
+    "Mail › Group mail"
+   ],
+   "shell.breadcrumbs.inventoryItemDetail": [
+    "Inventory › Item detail"
+   ],
+   "shell.breadcrumbs.invoiceDetail": [
+    "Finances › Invoice detail"
+   ],
+   "shell.breadcrumbs.mail": [
+    "Mail › Mailboxes"
+   ],
+   "shell.breadcrumbs.polls": [
+    "Management › Polls"
+   ],
+   "shell.breadcrumbs.posts": [
+    "Management › Posts"
+   ],
+   "shell.breadcrumbs.tiers": [
+    "Members › Membership tiers"
+   ],
+   "shell.breadcrumbs.tracking": [
+    "Mail › Message log"
+   ],
+   "shell.breadcrumbs.transactions": [
+    "Finances › Income & expenses"
+   ],
+   "shell.breadcrumbs.txCategories": [
+    "Finances › Categories"
+   ],
+   "shell.emailVerify.banner": [
+    "Your private email is not verified. Some features are unavailable until you verify it."
+   ],
+   "shell.nav.auditLog": [
+    "Audit Log"
+   ],
+   "shell.nav.functionMail": [
+    "Function Mail",
+    "Nav function mail"
+   ],
+   "shell.nav.groupMail": [
+    "Group Mail"
+   ],
+   "shell.nav.incomeExpenses": [
+    "Income & expenses"
+   ],
+   "shell.nav.mail": [
+    "Mail Administration"
+   ],
+   "shell.nav.management": [
+    "Management"
+   ],
+   "shell.nav.membershipTiers": [
+    "Membership tiers"
+   ],
+   "shell.nav.messageLog": [
+    "Message log"
+   ],
+   "shell.nav.systemMail": [
+    "System Mail"
+   ],
+   "shell.nav.tracking": [
+    "Tracking"
+   ],
+   "shell.notif.markAllRead": [
+    "Mark all read"
+   ],
+   "shell.notifPanel.markAllRead": [
+    "Mark all read"
+   ],
+   "shell.sections.management": [
+    "Sections management"
+   ],
+   "shell.sections.me": [
+    "Me"
+   ],
+   "shell.sections.workspace": [
+    "Workspace"
+   ],
+   "shell.userMenu.logout": [
+    "Logout"
+   ],
+   "system.accessDenied": [
+    "Access denied"
+   ],
+   "system.couldNotLoad": [
+    "Could not load"
+   ],
+   "system.endpointsPlural": [
+    "Endpoints plural"
+   ],
+   "system.eyebrow": [
+    "Eyebrow"
+   ],
+   "system.health": [
+    "System Health"
+   ],
+   "system.loadingPermissions": [
+    "Loading permissions"
+   ],
+   "system.noEndpointsMatch": [
+    "No endpoints match"
+   ],
+   "system.noPermissionsLoaded": [
+    "No permissions loaded"
+   ],
+   "system.searchPlaceholder": [
+    "Search placeholder"
+   ],
+   "tenantPicker.loading": [
+    "Loading..."
+   ],
+   "translations.deleteCascade.warning": [
+    "{{count}} alias(es) will also be deleted."
+   ],
+   "verify.email.confirmedMsg": [
+    "Email confirmed msg"
+   ],
+   "verify.login": [
+    "Login"
+   ],
+   "verify.missingToken": [
+    "Missing token"
+   ],
+   "verify.pleaseWait": [
+    "Please wait"
+   ],
+   "verify.verification.failedTitle": [
+    "Verification failed title"
+   ],
+   "verify.verifyingEmail": [
+    "Verifying email"
+   ]
+  }
+ }
+}

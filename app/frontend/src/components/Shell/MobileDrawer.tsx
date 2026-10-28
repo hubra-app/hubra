@@ -91,14 +91,14 @@ export function MobileDrawer() {
           {nav.map((section) => (
             <Box key={section.label}>
               <Text
-                fz="xs"
-                fw={600}
-                c="dimmed"
+                fz={11}
+                fw={700}
+                c="gray.6"
                 tt="uppercase"
                 style={{
-                  letterSpacing: '0.10em',
-                  padding: '0 11px',
-                  marginBottom: 4,
+                  letterSpacing: '0.08em',
+                  padding: '0 12px',
+                  marginBottom: 6,
                 }}
               >
                 {section.label}

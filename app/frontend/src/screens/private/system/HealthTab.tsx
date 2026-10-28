@@ -49,7 +49,7 @@ export function HealthTab() {
   }
 
   const overallStatus = health?.status ?? (backendOnline ? 'ok' : 'error')
-  const displayVersion = version ?? t('system.health.unknown', 'Unknown')
+  const displayVersion = version ?? t('system.health.unknown', 'Unbekannt')
 
   return (
     <div
@@ -62,7 +62,7 @@ export function HealthTab() {
     >
       {/* ── Section A: Summary ─────────────────────────────────────── */}
       <Card>
-        <Card.Header title={t('system.health.title', 'System Health')}>
+        <Card.Header title={t('system.health.title', 'Systemzustand')}>
           <Button
             variant="subtle"
             size="sm"
@@ -73,7 +73,7 @@ export function HealthTab() {
             }}
             loading={healthQuery.isFetching || changelogQuery.isFetching}
           >
-            {t('common.refresh', 'Refresh')}
+            {t('common.refresh', 'Aktualisieren')}
           </Button>
         </Card.Header>
         <div style={{ padding: '16px 20px' }}>
@@ -179,7 +179,7 @@ export function HealthTab() {
                   minWidth: 140,
                 }}
               >
-                {t('system.health.version', 'Backend Version')}
+                {t('system.health.version', 'Backend-Version')}
               </span>
               <span
                 style={{
@@ -198,7 +198,7 @@ export function HealthTab() {
 
       {/* ── Section B: Service Breakdown ───────────────────────────── */}
       <Card>
-        <Card.Header title={t('system.health.services', 'Services')} />
+        <Card.Header title={t('system.health.services', 'Dienste')} />
         <div style={{ padding: '16px 20px' }}>
           {health ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -274,7 +274,7 @@ export function HealthTab() {
             >
               {t(
                 'system.health.adminRequired',
-                'Detailed service checks require admin role.',
+                'Ausführliche Dienstprüfungen brauchen die Admin-Rolle.',
               )}
             </div>
           )}
@@ -283,7 +283,7 @@ export function HealthTab() {
 
       {/* ── Section C: Changelog ───────────────────────────────────── */}
       <Card>
-        <Card.Header title={t('system.health.changelog', 'Changelog')} />
+        <Card.Header title={t('system.health.changelog', 'Änderungshistorie')} />
         <div style={{ padding: '16px 20px' }}>
           {changelog && changelog.entries.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -327,7 +327,7 @@ export function HealthTab() {
                           padding: '1px 6px',
                         }}
                       >
-                        {t('system.health.unreleased', 'Unreleased')}
+                        {t('system.health.unreleased', 'Unveröffentlicht')}
                       </span>
                     )}
                   </div>
@@ -380,7 +380,7 @@ export function HealthTab() {
                         marginLeft: 12,
                       }}
                     >
-                      {t('system.health.noEntries', 'No changes documented.')}
+                      {t('system.health.noEntries', 'Keine Änderungen dokumentiert.')}
                     </div>
                   )}
                 </div>
@@ -393,7 +393,7 @@ export function HealthTab() {
                 color: '#8c86a0',
               }}
             >
-              {t('system.health.noData', 'No data available.')}
+              {t('system.health.noData', 'Keine Daten verfügbar.')}
             </div>
           )}
         </div>
@@ -403,7 +403,7 @@ export function HealthTab() {
       {health && (
         <Card>
           <Card.Header
-            title={t('system.health.rawData', 'Raw Health Data')}
+            title={t('system.health.rawData', 'Rohdaten')}
             style={{ cursor: 'pointer', userSelect: 'none' }}
           >
             <button
@@ -419,8 +419,8 @@ export function HealthTab() {
               }}
             >
               {showRaw
-                ? t('system.health.hideRaw', 'Hide')
-                : t('system.health.showRaw', 'Show')}
+                ? t('system.health.hideRaw', 'Ausblenden')
+                : t('system.health.showRaw', 'Anzeigen')}
             </button>
           </Card.Header>
           {showRaw && (

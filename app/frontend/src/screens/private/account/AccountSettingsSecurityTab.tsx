@@ -39,10 +39,10 @@ export function AccountSettingsSecurityTab() {
       passwordForm.reset()
       notify(
         'success',
-        t('account.password.changed', 'Passwort gändert'),
+        t('account.password.changed', 'Passwort geändert'),
         t(
           'account.password.updatedMsg',
-          'Din Passwort isch aktualisiert worde.',
+          'Dein Passwort wurde geändert.',
         ),
       )
     } catch (err: unknown) {
@@ -51,12 +51,12 @@ export function AccountSettingsSecurityTab() {
           ? err.message
           : t(
               'account.failedToChangePassword',
-              'Passwortänderig fehlgeschlage.',
+              'Passwort konnte nicht geändert werden.',
             )
       passwordForm.setFieldError('root', msg)
       notify(
         'error',
-        t('account.password.changeFailed', 'Passwortänderig fehlgeschlage'),
+        t('account.password.changeFailed', 'Passwort konnte nicht geändert werden'),
         msg,
       )
     } finally {
@@ -76,7 +76,7 @@ export function AccountSettingsSecurityTab() {
         >
           <IconLock size={16} style={{ color: 'var(--mantine-color-ink-4)' }} />
           <Text fw={700} fz="md">
-            {t('account.changePassword', 'Passwort ändere')}
+            {t('account.changePassword', 'Passwort ändern')}
           </Text>
         </Group>
         <div
@@ -98,17 +98,17 @@ export function AccountSettingsSecurityTab() {
                 passwordForm.errors.confirmPw}
             </Alert>
           )}
-          <Field label={t('account.currentPassword', 'Aktuells Passwort')}>
+          <Field label={t('account.currentPassword', 'Aktuelles Passwort')}>
             <PasswordInput {...passwordForm.getInputProps('currentPw')} />
           </Field>
           <Field
-            label={t('account.newPassword', 'Neus Passwort')}
-            hint={t('account.minimum8chars', 'Mindestens 8 Zeiche')}
+            label={t('account.newPassword', 'Neues Passwort')}
+            hint={t('account.minimum8chars', 'Mindestens 8 Zeichen')}
           >
             <PasswordInput {...passwordForm.getInputProps('newPw')} />
           </Field>
           <Field
-            label={t('account.confirmNewPassword', 'Neus Passwort bestätige')}
+            label={t('account.confirmNewPassword', 'Neues Passwort bestätigen')}
           >
             <PasswordInput {...passwordForm.getInputProps('confirmPw')} />
           </Field>
@@ -120,8 +120,8 @@ export function AccountSettingsSecurityTab() {
             >
               <IconCheck size={16} />
               {pwLoading
-                ? t('account.updating', 'Wird aktualisiert…')
-                : t('account.updatePassword', 'Passwort aktualisiere')}
+                ? t('account.updating', 'Wird gespeichert …')
+                : t('account.updatePassword', 'Passwort ändern')}
             </Button>
           </div>
         </div>

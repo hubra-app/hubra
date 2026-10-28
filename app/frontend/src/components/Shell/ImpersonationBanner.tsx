@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import { Badge, Button, Group, Text } from '@mantine/core'
 import { IconAlertTriangle, IconX } from '@tabler/icons-react'
 import { useAuth } from '@/context/AppContext'
+import { useT } from '@/locales/i18n'
 
 export function ImpersonationBanner() {
+  const { t } = useT()
   const { impersonation, stopImpersonation } = useAuth()
   const [remainingMin, setRemainingMin] = useState<number | null>(null)
 
@@ -38,19 +40,21 @@ export function ImpersonationBanner() {
     >
       <IconAlertTriangle size={20} color="#d97706" />
       <Badge color="orange" variant="filled" size="sm">
-        Impersonating
+        {t('shell.impersonation.badge', 'Fremdzugriff')}
       </Badge>
       <Text fz="sm" fw={600}>
-        Acting as tenant: {impersonation.tenant_slug}
+        {t('shell.impersonation.actingAs', 'Du handelst im Verein {{club}}', {
+          club: impersonation.tenant_slug,
+        })}
       </Text>
       {impersonation.reason && (
         <Text fz="xs" c="dimmed">
-          Reason: {impersonation.reason}
+          {t('shell.impersonation.reason', 'Grund: {{reason}}', { reason: impersonation.reason })}
         </Text>
       )}
       {remainingMin !== null && (
         <Text fz="xs" c="dimmed">
-          {remainingMin} min remaining
+          {t('shell.impersonation.remaining', 'noch {{min}} Min.', { min: remainingMin })}
         </Text>
       )}
       <Group gap={6} style={{ marginLeft: 'auto' }}>
@@ -61,7 +65,7 @@ export function ImpersonationBanner() {
           leftSection={<IconX size={14} />}
           onClick={stopImpersonation}
         >
-          Stop Impersonating
+          {t('shell.impersonation.stop', 'Fremdzugriff beenden')}
         </Button>
       </Group>
     </div>

@@ -58,10 +58,10 @@ export function WildDuckLiveTab() {
       await triggerReconcile()
       notify(
         'success',
-        t('mail.admin.reconcileStarted', 'Reconcile gstartet'),
+        t('mail.admin.reconcileStarted', 'Abgleich gestartet'),
         t(
           'mail.admin.reconcileStartedMsg',
-          'D Sync-Uftrag isch in Warte-Schlange plaziert.',
+          'Der Abgleich läuft im Hintergrund.',
         ),
       )
     } catch {
@@ -70,7 +70,7 @@ export function WildDuckLiveTab() {
         t('common.error', 'Fehler'),
         t(
           'mail.admin.couldNotReconcile',
-          'Reconcile chonnt nöd gstartet wärde.',
+          'Abgleich konnte nicht gestartet werden.',
         ),
       )
     } finally {
@@ -86,16 +86,16 @@ export function WildDuckLiveTab() {
       queryClient.invalidateQueries({ queryKey: ['wildduck-live'] })
       notify(
         'info',
-        t('mail.admin.orphanDeleted', 'Orphan entfernt'),
-        t('mail.admin.orphanDeletedMsg', '{{address}} isch entfernet worde.', {
+        t('mail.admin.orphanDeleted', 'Verwaister Eintrag entfernt'),
+        t('mail.admin.orphanDeletedMsg', '{{address}} wurde entfernt.', {
           address: deleteTarget.address,
         }),
       )
     } catch {
       notify(
         'error',
-        t('common.deleteFailed', 'Lösche fehlgeschlage'),
-        t('mail.admin.couldNotDeleteOrphan', 'Orphan chonnt nöd gösche wärde.'),
+        t('common.deleteFailed', 'Löschen fehlgeschlagen'),
+        t('mail.admin.couldNotDeleteOrphan', 'Verwaister Eintrag konnte nicht gelöscht werden.'),
       )
     } finally {
       setBusy(false)
@@ -112,7 +112,7 @@ export function WildDuckLiveTab() {
           disabled={isFetching}
         >
           <IconRefresh size={16} className={isFetching ? 'spin' : ''} />
-          {t('common.refresh', 'Aktualisiere')}
+          {t('common.refresh', 'Aktualisieren')}
         </Button>
         {canReconcile && (
           <Button
@@ -121,7 +121,7 @@ export function WildDuckLiveTab() {
             disabled={busy}
           >
             <IconBolt size={16} />
-            {t('mail.admin.reconcileNow', 'Reconcile jetzt')}
+            {t('mail.admin.reconcileNow', 'Jetzt abgleichen')}
           </Button>
         )}
       </Group>
@@ -144,7 +144,7 @@ export function WildDuckLiveTab() {
           />
           <TextInput
             style={{ paddingLeft: 32 }}
-            placeholder={t('common.search', 'Sueche…')}
+            placeholder={t('common.search', 'Suchen')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -155,10 +155,10 @@ export function WildDuckLiveTab() {
         <LoadingSpinner />
       ) : filtered.length === 0 ? (
         <EmptyState
-          title={t('common.noResults', 'Keini Resultat')}
+          title={t('common.noResults', 'Keine Ergebnisse.')}
           description={t(
             'mail.admin.noEntries',
-            'Keini WildDuck-Iiträg gfunde.',
+            'Keine WildDuck-Einträge gefunden.',
           )}
         />
       ) : (
@@ -168,13 +168,13 @@ export function WildDuckLiveTab() {
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th>{t('mail.admin.type', 'Typ')}</Table.Th>
-                  <Table.Th>{t('mail.address', 'Adrässe')}</Table.Th>
+                  <Table.Th>{t('mail.address', 'Adresse')}</Table.Th>
                   <Table.Th>{t('mail.admin.managed', 'Verwaltet')}</Table.Th>
                   <Table.Th>{t('mail.admin.category', 'Kategorie')}</Table.Th>
-                  <Table.Th>{t('mail.admin.owner', 'Besitzer')}</Table.Th>
-                  <Table.Th>{t('mail.admin.targets', 'Targets')}</Table.Th>
-                  <Table.Th>{t('mail.admin.quota', 'Quota')}</Table.Th>
-                  <Table.Th>{t('common.actions', 'Aktione')}</Table.Th>
+                  <Table.Th>{t('mail.admin.owner', 'Zugehörig zu')}</Table.Th>
+                  <Table.Th>{t('mail.admin.targets', 'Ziele')}</Table.Th>
+                  <Table.Th>{t('mail.admin.quota', 'Speicherplatz')}</Table.Th>
+                  <Table.Th>{t('common.actions', 'Aktionen')}</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
@@ -193,12 +193,12 @@ export function WildDuckLiveTab() {
                         }}
                       >
                         {e.type === 'mailbox'
-                          ? t('mail.admin.mailbox', 'Mailbox')
+                          ? t('mail.admin.mailbox', 'Postfach')
                           : t('mail.admin.alias', 'Alias')}
                       </Badge>
                     </Table.Td>
                     <Table.Td
-                      data-label={t('mail.address', 'Adrässe')}
+                      data-label={t('mail.address', 'Adresse')}
                       style={{
                         fontSize: 'var(--mantine-font-size-sm)',
                         color: '#1a1625',
@@ -219,7 +219,7 @@ export function WildDuckLiveTab() {
                             root: { background: '#fff3e0', color: '#e65100' },
                           }}
                         >
-                          {t('mail.admin.orphan', 'Orphan')}
+                          {t('mail.admin.orphan', 'Verwaist')}
                         </Badge>
                       )}
                     </Table.Td>
@@ -253,7 +253,7 @@ export function WildDuckLiveTab() {
                       })()}
                     </Table.Td>
                     <Table.Td
-                      data-label={t('mail.admin.owner', 'Besitzer')}
+                      data-label={t('mail.admin.owner', 'Zugehörig zu')}
                       style={{
                         fontSize: 'var(--mantine-font-size-xs)',
                         color: '#5e5873',
@@ -262,7 +262,7 @@ export function WildDuckLiveTab() {
                       {e.ownerName || e.name || '\u2014'}
                     </Table.Td>
                     <Table.Td
-                      data-label={t('mail.admin.targets', 'Targets')}
+                      data-label={t('mail.admin.targets', 'Ziele')}
                       style={{
                         fontSize: 'var(--mantine-font-size-xs)',
                         color: '#5e5873',
@@ -271,7 +271,7 @@ export function WildDuckLiveTab() {
                       {e.targets.length > 0 ? e.targets.join(', ') : '—'}
                     </Table.Td>
                     <Table.Td
-                      data-label={t('mail.admin.quota', 'Quota')}
+                      data-label={t('mail.admin.quota', 'Speicherplatz')}
                       style={{
                         fontSize: 'var(--mantine-font-size-xs)',
                         color: '#5e5873',
@@ -283,7 +283,7 @@ export function WildDuckLiveTab() {
                           ).toFixed(0)} MB`
                         : '—'}
                     </Table.Td>
-                    <Table.Td data-label={t('common.actions', 'Aktione')}>
+                    <Table.Td data-label={t('common.actions', 'Aktionen')}>
                       {e.managed ? (
                         <span
                           style={{
@@ -293,7 +293,7 @@ export function WildDuckLiveTab() {
                         >
                           {t(
                             'mail.admin.editInCategory',
-                            'I Kategorie-Tab bearbeite',
+                            'Im Tab der Kategorie bearbeiten',
                           )}
                         </span>
                       ) : canDelete ? (
@@ -304,7 +304,7 @@ export function WildDuckLiveTab() {
                           onClick={() => setDeleteTarget(e)}
                         >
                           <IconTrash size={16} />
-                          {t('common.delete', 'Lösche')}
+                          {t('common.delete', 'Löschen')}
                         </Button>
                       ) : null}
                     </Table.Td>
@@ -318,10 +318,10 @@ export function WildDuckLiveTab() {
 
       <ConfirmModal
         open={!!deleteTarget}
-        title={t('mail.admin.deleteOrphanTitle', 'Orphan entferne')}
+        title={t('mail.admin.deleteOrphanTitle', 'Verwaisten Eintrag entfernen')}
         body={t(
           'mail.admin.deleteOrphanBody',
-          'D WildDuck-Adrässe {{address}} wird permanent entfernet.',
+          'Die WildDuck-Adresse {{address}} wird endgültig entfernt.',
           { address: deleteTarget?.address || '' },
         )}
         onConfirm={handleDeleteOrphan}

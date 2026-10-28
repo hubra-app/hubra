@@ -25,7 +25,7 @@ export function AccountSettingsLanguageTab() {
             style={{ color: 'var(--mantine-color-ink-4)' }}
           />
           <Text fw={700} fz="md">
-            {t('account.language', 'Spraach')}
+            {t('account.languageLabel', 'Sprache')}
           </Text>
         </Group>
         <div
@@ -45,7 +45,7 @@ export function AccountSettingsLanguageTab() {
           >
             {t(
               'account.language.description',
-              'Wähl dii bevorzugti Spraach für d Oberflächi.',
+              'Wähle die Sprache der Oberfläche.',
             )}
           </p>
           {[
@@ -80,11 +80,10 @@ export function AccountSettingsLanguageTab() {
                 setLanguage(lang.code)
                 notify(
                   'success',
-                  t('account.language.changed', 'Spraach gändert'),
-                  t(
-                    'account.language.changedMsg',
-                    `Oberflächi isch jetzt uf ${lang.nativeLabel}.`,
-                  ),
+                  t('account.language.changed', 'Sprache geändert'),
+                  t('account.language.changedMsg', 'Die Oberfläche ist jetzt auf {{nativeLabel}}.', {
+                    nativeLabel: lang.nativeLabel,
+                  }),
                 )
                 try {
                   await authApi.updateAccount({ language: lang.code })

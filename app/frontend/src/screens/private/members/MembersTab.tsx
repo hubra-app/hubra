@@ -134,7 +134,7 @@ export function MembersTab() {
       setBulkInvoiceOpen(false)
       notify(
         'success',
-        t('members.bulkInvoice.invoicesCreated', 'Rächnige erstellt'),
+        t('members.bulkInvoice.invoicesCreated', 'Rechnungen erstellt'),
         t('members.bulkInvoice.invoicesCreatedMsg', {
           count: result.created,
         }),
@@ -142,10 +142,10 @@ export function MembersTab() {
     } catch (err: unknown) {
       notify(
         'error',
-        t('members.bulkInvoice.bulkFailed', 'Massen-Rächnig fehlgschlage'),
+        t('members.bulkInvoice.bulkFailed', 'Sammelrechnung fehlgeschlagen'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekanni Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setBulkSaving(false)
@@ -193,7 +193,7 @@ export function MembersTab() {
         t('members.restoreFailed'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekanni Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -205,7 +205,7 @@ export function MembersTab() {
       queryClient.invalidateQueries({ queryKey: ['members'] })
       notify(
         'info',
-        t('members.member.deletedTitle', 'Mitglid glöscht'),
+        t('members.member.deletedTitle', 'Mitglied gelöscht'),
         t('members.member.deletedPermanently', {
           name: hardDeleteTarget.name,
         }),
@@ -213,10 +213,10 @@ export function MembersTab() {
     } catch (err: unknown) {
       notify(
         'error',
-        t('common.deleteFailed', 'Lösche fehlgschlage'),
+        t('common.deleteFailed', 'Löschen fehlgeschlagen'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekanni Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -228,7 +228,7 @@ export function MembersTab() {
       notify(
         'error',
         t('members.export.failed'),
-        t('members.export.failedMsg', 'CSV nöd chönne abelade.'),
+        t('members.export.failedMsg', 'Die CSV-Datei konnte nicht heruntergeladen werden.'),
       )
     }
   }
@@ -408,7 +408,7 @@ export function MembersTab() {
             },
           ]}
           data={pg.paged}
-          emptyMessage={t('members.noMembers', 'No members')}
+          emptyMessage={t('members.noMembers', 'Keine Mitglieder gefunden.')}
           searchValue={search}
           onSearchChange={setSearch}
           searchPlaceholder={t('members.search')}

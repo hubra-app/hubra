@@ -1,3 +1,4 @@
+import i18n from 'i18next'
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { Paper, Text, Button, Stack, Center, Code } from '@mantine/core'
 
@@ -35,15 +36,14 @@ export class ErrorBoundary extends Component<Props, State> {
           <Paper shadow="lg" p="xl" maw={460}>
             <Stack gap="sm">
               <Text fz={18} fw={700} c="red">
-                Something went wrong
+                {i18n.t('app.errorTitle', 'Etwas ist schiefgelaufen')}
               </Text>
               <Text size="sm" c="dimmed" lh={1.6}>
-                An unexpected error occurred. Please refresh the page to try
-                again.
+                {i18n.t('app.errorReload', 'Ein unerwarteter Fehler ist aufgetreten. Bitte lade die Seite neu.')}
               </Text>
               <Code block>{this.state.error?.message}</Code>
               <Button onClick={() => window.location.reload()}>
-                Reload page
+                {i18n.t('app.reload', 'Seite neu laden')}
               </Button>
             </Stack>
           </Paper>

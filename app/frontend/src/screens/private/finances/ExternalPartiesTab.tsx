@@ -89,10 +89,10 @@ export function ExternalPartiesTab() {
       setAddOpen(false)
       notify(
         'success',
-        t('finance.externalParty.created', 'Externi Partei erstellt'),
+        t('finance.externalParty.created', 'Externe Partei erstellt'),
         t(
           'finance.externalParty.createdMsg',
-          '"{{name}}" isch jetzt verfüegbar.',
+          '«{{name}}» ist jetzt verfügbar.',
           {
             name: form.name,
           },
@@ -106,7 +106,7 @@ export function ExternalPartiesTab() {
           ? err.message
           : t(
               'finance.externalParty.couldNotCreate',
-              'Externi Partei chonnt nöd erstellt wärde.',
+              'Externe Partei konnte nicht erstellt werden.',
             ),
       )
     }
@@ -120,8 +120,8 @@ export function ExternalPartiesTab() {
       setEditTarget(null)
       notify(
         'success',
-        t('finance.externalParty.updated', 'Externi Partei aktualisiert'),
-        t('finance.externalParty.savedMsg', '"{{name}}" isch gspeicheret.', {
+        t('finance.externalParty.updated', 'Externe Partei gespeichert'),
+        t('finance.externalParty.savedMsg', '«{{name}}» wurde gespeichert.', {
           name: form.name,
         }),
       )
@@ -133,7 +133,7 @@ export function ExternalPartiesTab() {
           ? err.message
           : t(
               'finance.externalParty.couldNotUpdate',
-              'Externi Partei chonnt nöd aktualisiert wärde.',
+              'Externe Partei konnte nicht gespeichert werden.',
             ),
       )
     }
@@ -146,10 +146,10 @@ export function ExternalPartiesTab() {
       queryClient.invalidateQueries({ queryKey: ['external-parties'] })
       notify(
         'info',
-        t('finance.externalParty.deleted', 'Externi Partei gösche'),
+        t('finance.externalParty.deleted', 'Externe Partei gelöscht'),
         t(
           'finance.externalParty.removedMsg',
-          '"{{name}}" isch entfern worde.',
+          '«{{name}}» wurde gelöscht.',
           {
             name: deleteTarget.name,
           },
@@ -163,7 +163,7 @@ export function ExternalPartiesTab() {
           ? err.message
           : t(
               'finance.externalParty.couldNotDelete',
-              'Externi Partei chonnt nöd gösche wärde.',
+              'Externe Partei konnte nicht gelöscht werden.',
             ),
       )
     }
@@ -177,7 +177,7 @@ export function ExternalPartiesTab() {
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           placeholder={t(
             'finance.externalParty.namePlaceholder',
-            'z.B. Acme Corp',
+            'z. B. Muster AG',
           )}
         />
       </Field>
@@ -197,7 +197,7 @@ export function ExternalPartiesTab() {
             }
           />
         </Field>
-        <Field label={t('common.houseNo', 'Hausnr.')}>
+        <Field label={t('common.houseNo', 'Nr.')}>
           <TextInput
             value={form.addressHouseNo}
             onChange={(e) =>
@@ -233,7 +233,7 @@ export function ExternalPartiesTab() {
           />
         </Field>
       </div>
-      <Field label={t('common.notes', 'Notize')}>
+      <Field label={t('common.notes', 'Notizen')}>
         <TextInput
           value={form.notes}
           onChange={(e) => setForm({ ...form, notes: e.target.value })}
@@ -248,7 +248,7 @@ export function ExternalPartiesTab() {
         <Group justify="flex-end" mb={16}>
           <Button variant="filled" onClick={openAdd}>
             <IconPlus size={16} />
-            {t('finance.externalParty.new', 'Neui Partei')}
+            {t('finance.externalParty.new', 'Neue Partei')}
           </Button>
         </Group>
       )}
@@ -275,7 +275,7 @@ export function ExternalPartiesTab() {
                       fontSize: 'var(--mantine-font-size-sm)',
                     }}
                   >
-                    {t('finance.loading', 'Wird glade…')}
+                    {t('finance.loading', 'Wird geladen …')}
                   </Table.Td>
                 </Table.Tr>
               ) : parties.length === 0 ? (
@@ -291,7 +291,7 @@ export function ExternalPartiesTab() {
                   >
                     {t(
                       'finance.externalParty.none',
-                      'No cheni externi Parteie.',
+                      'Noch keine externen Parteien.',
                     )}
                   </Table.Td>
                 </Table.Tr>
@@ -355,14 +355,14 @@ export function ExternalPartiesTab() {
       <Modal
         open={addOpen}
         onClose={() => setAddOpen(false)}
-        title={t('finance.externalParty.new', 'Neui Partei')}
+        title={t('finance.externalParty.new', 'Neue Partei')}
         footer={
           <>
             <Button variant="default" onClick={() => setAddOpen(false)}>
-              {t('common.cancel', 'Abbreche')}
+              {t('common.cancel', 'Abbrechen')}
             </Button>
             <Button variant="filled" onClick={saveAdd}>
-              {t('common.create', 'Erstelle')}
+              {t('common.create', 'Erstellen')}
             </Button>
           </>
         }
@@ -372,15 +372,15 @@ export function ExternalPartiesTab() {
       <Modal
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
-        title={t('finance.externalParty.edit', 'Partei bearbeite')}
+        title={t('finance.externalParty.edit', 'Partei bearbeiten')}
         subtitle={editTarget?.name}
         footer={
           <>
             <Button variant="default" onClick={() => setEditTarget(null)}>
-              {t('common.cancel', 'Abbreche')}
+              {t('common.cancel', 'Abbrechen')}
             </Button>
             <Button variant="filled" onClick={saveEdit}>
-              {t('common.save', 'Speichere')}
+              {t('common.save', 'Speichern')}
             </Button>
           </>
         }
@@ -390,12 +390,12 @@ export function ExternalPartiesTab() {
       <ConfirmModal
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        title={t('finance.externalParty.deleteTitle', '"{{name}}" lösche?', {
+        title={t('finance.externalParty.deleteTitle', '«{{name}}» löschen?', {
           name: deleteTarget?.name ?? '',
         })}
         body={t(
           'finance.externalParty.deleteBody',
-          'Rächnige, wo die Partei bruched, wärded nöd mitgösche.',
+          'Rechnungen an diese Partei bleiben erhalten.',
         )}
         onConfirm={confirmDelete}
       />

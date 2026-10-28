@@ -218,10 +218,10 @@ function ItemDetailPanel({
       setAddResults([])
       notify(
         'success',
-        t('inventory.instruction.recorded', 'Instruktion erfasst'),
+        t('inventory.instruction.recorded', 'Einweisung erfasst'),
         t(
           'inventory.memberMarkedInstructed',
-          '{{member}} isch als instruiert markiert.',
+          '{{member}} ist als eingewiesen markiert.',
           { member: memberName },
         ),
       )
@@ -251,8 +251,8 @@ function ItemDetailPanel({
       })
       notify(
         'info',
-        t('inventory.instruction.removed', 'Instruktion entfernt'),
-        t('inventory.recordCleared', 'Datensatz gelöscht.'),
+        t('inventory.instruction.removed', 'Einweisung entfernt'),
+        t('inventory.recordCleared', 'Eintrag entfernt.'),
       )
     } catch (err: unknown) {
       notify(
@@ -260,7 +260,7 @@ function ItemDetailPanel({
         t('inventory.failed', 'Fehler'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekannte Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setLoading(false)
@@ -286,7 +286,7 @@ function ItemDetailPanel({
         t('inventory.recorded', 'Erfasst'),
         t(
           'inventory.selfInstructedMsg',
-          'Du bisch jetzt als instruiert markiert für das Item.',
+          'Du bist jetzt für diesen Gegenstand als eingewiesen markiert.',
         ),
       )
     } catch (err: unknown) {
@@ -295,7 +295,7 @@ function ItemDetailPanel({
         t('inventory.failed', 'Fehler'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekannte Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setLoading(false)
@@ -582,7 +582,7 @@ function ItemDetailPanel({
                   <IconUserCheck size={16} />
                   {t(
                     'inventory.markMyselfInstructed',
-                    'Mich als instruiert markiere',
+                    'Mich als eingewiesen markieren',
                   )}
                 </Button>
               )}
@@ -603,7 +603,7 @@ function ItemDetailPanel({
                   <IconCircleCheck size={16} />
                   {t(
                     'inventory.youAreInstructed',
-                    'Du bisch instruiert für das Item',
+                    'Du bist für diesen Gegenstand eingewiesen',
                   )}
                 </div>
               )}
@@ -616,14 +616,14 @@ function ItemDetailPanel({
                   marginBottom: 6,
                 }}
               >
-                {t('common.addMember', 'MITGLID HINZUE')}
+                {t('common.addMember', 'Mitglied hinzufügen')}
               </div>
               <div style={{ position: 'relative', marginBottom: 8 }}>
                 <TextInput
                   style={{ paddingLeft: 32, height: 36 }}
                   placeholder={t(
                     'inventory.searchMembersPlaceholder',
-                    'Mitglieder sueche…',
+                    'Mitglieder suchen …',
                   )}
                   value={addSearch}
                   onChange={(e) => setAddSearch(e.target.value)}
@@ -690,7 +690,7 @@ function ItemDetailPanel({
                 >
                   {t(
                     'inventory.noMembersInstructed',
-                    'No cheni Mitglieder instruiert.',
+                    'Noch niemand eingewiesen.',
                   )}
                 </div>
               ) : (
@@ -754,7 +754,7 @@ function ItemDetailPanel({
               <IconInfoCircle size={16} />
               {t(
                 'inventory.noInstructionRequired',
-                'Für das Item isch cheni Instruktion erforderlich.',
+                'Für diesen Gegenstand ist keine Einweisung nötig.',
               )}
             </div>
           )}
@@ -932,20 +932,20 @@ export function InventoryScreen() {
       setAddOpen(false)
       notify(
         'success',
-        t('inventory.item.added', 'Item hinzuegse', { name: fName }),
+        t('inventory.item.added', 'Gegenstand hinzugefügt', { name: fName }),
         t(
           'inventory.item.addedMsg',
-          '{{name}} isch zum Inventar hinzuegse worde.',
+          '{{name}} wurde zum Inventar hinzugefügt.',
           { name: fName },
         ),
       )
     } catch (err: unknown) {
       notify(
         'error',
-        t('common.createFailed', 'Erstelle fehlgeschlage'),
+        t('common.createFailed', 'Erstellen fehlgeschlagen'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekannte Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -970,18 +970,18 @@ export function InventoryScreen() {
       setEditTarget(null)
       notify(
         'success',
-        t('inventory.item.updated', 'Item aktualisiert'),
-        t('inventory.item.updatedMsg', '{{name}} isch aktualisiert worde.', {
+        t('inventory.item.updated', 'Gegenstand gespeichert'),
+        t('inventory.item.updatedMsg', '{{name}} wurde gespeichert.', {
           name: fName,
         }),
       )
     } catch (err: unknown) {
       notify(
         'error',
-        t('common.updateFailed', 'Update fehlgeschlage'),
+        t('common.updateFailed', 'Speichern fehlgeschlagen'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekannte Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -994,18 +994,18 @@ export function InventoryScreen() {
       if (detailItem?.id === deleteTarget.id) setDetailItem(null)
       notify(
         'info',
-        t('inventory.item.removed', 'Item entfernt'),
-        t('inventory.item.removedMsg', '{{name}} isch glöscht worde.', {
+        t('inventory.item.removed', 'Gegenstand gelöscht'),
+        t('inventory.item.removedMsg', '{{name}} wurde gelöscht.', {
           name: deleteTarget.name,
         }),
       )
     } catch (err: unknown) {
       notify(
         'error',
-        t('common.deleteFailed', 'Lösche fehlgeschlage'),
+        t('common.deleteFailed', 'Löschen fehlgeschlagen'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekannte Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setDeleteTarget(null)
@@ -1023,7 +1023,7 @@ export function InventoryScreen() {
         <TextInput
           value={fName}
           onChange={(e) => setFName(e.target.value)}
-          placeholder={t('common.namePlaceholder', 'z.B. MIG Schweissgerät')}
+          placeholder={t('common.namePlaceholder', 'Name')}
         />
       </Field>
       <div
@@ -1033,8 +1033,8 @@ export function InventoryScreen() {
         <Field label={t('inventory.category', 'Kategorie')}>
           <Select
             data={[
-              { value: 'Tool', label: t('inventory.tool', 'Wärchzeug') },
-              { value: 'Item', label: t('inventory.item', 'Item') },
+              { value: 'Tool', label: t('inventory.tool', 'Werkzeug') },
+              { value: 'Item', label: t('inventory.itemLabel', 'Gegenstand') },
               { value: 'Material', label: t('inventory.material', 'Material') },
             ]}
             value={fCat}
@@ -1053,23 +1053,23 @@ export function InventoryScreen() {
         </Field>
       </div>
       <Field
-        label={t('inventory.descriptionOptional', 'Beschribig (optional)')}
+        label={t('inventory.descriptionOptional', 'Beschreibung (optional)')}
       >
         <Textarea
           rows={2}
           value={fDesc}
           onChange={(e) => setFDesc(e.target.value)}
-          placeholder={t('common.descriptionPlaceholder', 'Kurzi Beschribig…')}
+          placeholder={t('common.descriptionPlaceholder', 'Kurze Beschreibung …')}
         />
       </Field>
       <div
         className="grid-2"
         style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}
       >
-        <Field label={t('inventory.owner', 'Bsitzer')}>
+        <Field label={t('inventory.owner', 'Eigentümer:in')}>
           <Select
             data={[
-              { value: '', label: t('inventory.noOwner', 'Kei Bsitzer') },
+              { value: '', label: t('inventory.noOwner', 'Keine Eigentümer:in') },
               ...members.map((m) => ({
                 value: String(m.id),
                 label: m.name,
@@ -1085,7 +1085,7 @@ export function InventoryScreen() {
             data={[
               {
                 value: '',
-                label: t('inventory.noOneAssigned', 'Niemand zuegwise'),
+                label: t('inventory.noOneAssigned', 'Niemand zugewiesen'),
               },
               ...members.map((m) => ({
                 value: String(m.id),
@@ -1107,7 +1107,7 @@ export function InventoryScreen() {
         <Field label={t('inventory.visibility', 'Sichtbarkeit')}>
           <Select
             data={[
-              { value: 'shared', label: t('inventory.shared', 'Gmeinsam') },
+              { value: 'shared', label: t('inventory.shared', 'Gemeinsam') },
               { value: 'private', label: t('inventory.private', 'Privat') },
             ]}
             value={fVisibility}
@@ -1116,7 +1116,7 @@ export function InventoryScreen() {
             }
           />
         </Field>
-        <Field label={t('inventory.costOptional', 'Koste (CHF, optional)')}>
+        <Field label={t('inventory.costOptional', 'Kosten (CHF, optional)')}>
           <TextInput
             type="number"
             min={0}
@@ -1147,7 +1147,7 @@ export function InventoryScreen() {
         />
         {t(
           'inventory.instruction.required',
-          'Instruktion vor Bruch erforderlich',
+          'Einweisung vor Gebrauch nötig',
         )}
       </label>
     </div>
@@ -1159,14 +1159,13 @@ export function InventoryScreen() {
   return (
     <div>
       <PageHead
-        eyebrow={t('shell.sections.workspace', 'Werkplatz')}
         title={t('inventory.title', 'Inventar')}
-        desc={t('inventory.desc', 'Wärchzeug, Items und Material verfolge.')}
+        desc={t('inventory.desc', 'Werkzeuge, Geräte und Material im Blick.')}
         actions={
           canCreate && (
             <Button variant="filled" onClick={openAdd}>
               <IconPlus size={16} />
-              {t('inventory.addItem', 'Item hinzue')}
+              {t('inventory.addItem', 'Gegenstand hinzufügen')}
             </Button>
           )
         }
@@ -1179,7 +1178,7 @@ export function InventoryScreen() {
               ? fetchError.message
               : t(
                   'inventory.failedToLoadInventory',
-                  'Inventar chonnt n\u00f6d glade w\u00e4rde',
+                  'Inventar konnte nicht geladen werden',
                 )
           }
           onRetry={() => refetch()}
@@ -1227,9 +1226,9 @@ export function InventoryScreen() {
                   }}
                 >
                   {item.category === 'Tool'
-                    ? t('inventory.tool', 'W\u00e4rchzeug')
+                    ? t('inventory.tool', 'Werkzeug')
                     : item.category === 'Item'
-                      ? t('inventory.item', 'Item')
+                      ? t('inventory.itemLabel', 'Gegenstand')
                       : t('inventory.material', 'Material')}
                 </Badge>
               ),
@@ -1261,7 +1260,7 @@ export function InventoryScreen() {
             },
             {
               key: 'owner',
-              header: t('inventory.owner', 'Bsitzer'),
+              header: t('inventory.owner', 'Eigentümer:in'),
               render: (item) => (
                 <span
                   style={{
@@ -1269,7 +1268,7 @@ export function InventoryScreen() {
                     fontSize: 'var(--mantine-font-size-sm)',
                   }}
                 >
-                  {item.ownerName ?? t('inventory.noOwner', 'Kei Bsitzer')}
+                  {item.ownerName ?? t('inventory.noOwner', 'Keine Eigentümer:in')}
                 </span>
               ),
             },
@@ -1290,14 +1289,14 @@ export function InventoryScreen() {
           ]}
           data={pg.paged}
           loading={loading}
-          emptyMessage={t('inventory.noItemsFound', 'Kei Items gfunde')}
+          emptyMessage={t('inventory.noItemsFound', 'Keine Gegenstände gefunden')}
           onRowClick={(item) => setDetailItem(item)}
           searchValue={search}
           onSearchChange={setSearch}
-          searchPlaceholder={t('inventory.searchItems', 'Items sueche\u2026')}
+          searchPlaceholder={t('inventory.searchItems', 'Gegenstände suchen …')}
           filters={[
             {
-              label: t('inventory.allCategories', 'Alli'),
+              label: t('inventory.allCategories', 'Alle Kategorien'),
               value: 'cat-all',
               active: catFilter === 'All',
               onClick: () => setCatFilter('All'),
@@ -1310,9 +1309,9 @@ export function InventoryScreen() {
                     style={{ background: CATEGORY_COLORS[c] }}
                   />
                   {c === 'Tool'
-                    ? t('inventory.tool', 'W\u00e4rchzeug')
+                    ? t('inventory.tool', 'Werkzeug')
                     : c === 'Item'
-                      ? t('inventory.item', 'Item')
+                      ? t('inventory.itemLabel', 'Gegenstand')
                       : t('inventory.material', 'Material')}
                 </>
               ),
@@ -1328,7 +1327,7 @@ export function InventoryScreen() {
                 data={[
                   {
                     value: 'All',
-                    label: t('inventory.allStatuses', 'Alli Status'),
+                    label: t('inventory.allStatuses', 'Alle Status'),
                   },
                   ...STATUSES.map((s) => ({
                     value: s,
@@ -1385,7 +1384,7 @@ export function InventoryScreen() {
               <TextInput
                 size="sm"
                 style={{ paddingLeft: 34 }}
-                placeholder={t('inventory.searchItems', 'Items sueche\u2026')}
+                placeholder={t('inventory.searchItems', 'Gegenstände suchen …')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -1395,7 +1394,7 @@ export function InventoryScreen() {
                 className={`chip${catFilter === 'All' ? ' on' : ''}`}
                 onClick={() => setCatFilter('All')}
               >
-                {t('inventory.allCategories', 'Alli')}
+                {t('inventory.allCategories', 'Alle Kategorien')}
               </button>
               {CATEGORIES.map((c) => (
                 <button
@@ -1408,9 +1407,9 @@ export function InventoryScreen() {
                     style={{ background: CATEGORY_COLORS[c] }}
                   />
                   {c === 'Tool'
-                    ? t('inventory.tool', 'W\u00e4rchzeug')
+                    ? t('inventory.tool', 'Werkzeug')
                     : c === 'Item'
-                      ? t('inventory.item', 'Item')
+                      ? t('inventory.itemLabel', 'Gegenstand')
                       : t('inventory.material', 'Material')}
                 </button>
               ))}
@@ -1421,7 +1420,7 @@ export function InventoryScreen() {
                 data={[
                   {
                     value: 'All',
-                    label: t('inventory.allStatuses', 'Alli Status'),
+                    label: t('inventory.allStatuses', 'Alle Status'),
                   },
                   ...STATUSES.map((s) => ({
                     value: s,
@@ -1448,7 +1447,7 @@ export function InventoryScreen() {
             <LoadingSpinner compact message="Loading\u2026" />
           ) : pg.paged.length === 0 ? (
             <EmptyState
-              title={t('inventory.noItemsFound', 'Kei Items gfunde')}
+              title={t('inventory.noItemsFound', 'Keine Gegenstände gefunden')}
             />
           ) : (
             <>
@@ -1480,7 +1479,7 @@ export function InventoryScreen() {
                         title={item.name}
                         subtitle={
                           item.ownerName ??
-                          t('inventory.noOwner', 'Kei Bsitzer')
+                          t('inventory.noOwner', 'Keine Eigentümer:in')
                         }
                         onClick={() => setDetailItem(item)}
                         footer={
@@ -1566,14 +1565,14 @@ export function InventoryScreen() {
       <Modal
         open={addOpen}
         onClose={() => setAddOpen(false)}
-        title={t('inventory.addInventoryItem', 'Inventar-Item hinzue')}
+        title={t('inventory.addInventoryItem', 'Gegenstand hinzufügen')}
         footer={
           <>
             <Button variant="default" onClick={() => setAddOpen(false)}>
-              {t('common.cancel', 'Abbreche')}
+              {t('common.cancel', 'Abbrechen')}
             </Button>
             <Button variant="filled" onClick={saveAdd}>
-              {t('inventory.addItem', 'Item hinzue')}
+              {t('inventory.addItem', 'Gegenstand hinzufügen')}
             </Button>
           </>
         }
@@ -1583,15 +1582,15 @@ export function InventoryScreen() {
       <Modal
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
-        title={t('inventory.editItem', 'Item bearbeite')}
+        title={t('inventory.editItem', 'Gegenstand bearbeiten')}
         subtitle={editTarget?.name}
         footer={
           <>
             <Button variant="default" onClick={() => setEditTarget(null)}>
-              {t('common.cancel', 'Abbreche')}
+              {t('common.cancel', 'Abbrechen')}
             </Button>
             <Button variant="filled" onClick={saveEdit}>
-              {t('common.saveChanges', 'Änderige speichere')}
+              {t('common.saveChanges', 'Änderungen speichern')}
             </Button>
           </>
         }
@@ -1601,12 +1600,12 @@ export function InventoryScreen() {
       <ConfirmModal
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        title={t('inventory.deleteItemTitle', '"{{name}}" lösche?', {
+        title={t('inventory.deleteItemTitle', '«{{name}}» löschen?', {
           name: deleteTarget?.name ?? '',
         })}
         body={t(
           'inventory.deleteItemBody',
-          'Das Item und alli Instruktions-Datensätz wärded permanent entfernt.',
+          'Der Gegenstand und alle Einweisungen dazu werden endgültig gelöscht.',
         )}
         onConfirm={confirmDelete}
       />

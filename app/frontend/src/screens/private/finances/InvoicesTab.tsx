@@ -189,11 +189,10 @@ export function InvoicesTab() {
       setBulkOpen(false)
       notify(
         'success',
-        t('finance.invoicesCreated', 'Rächnige erstellt'),
-        t(
-          'finance.invoicesCreatedMsg',
-          `${result.created} invoice${result.created !== 1 ? 's' : ''} issued.`,
-        ),
+        t('finance.invoicesCreated', 'Rechnungen erstellt'),
+        t('finance.invoicesCreatedMsg', '{{count}} Rechnungen ausgestellt.', {
+          count: result.created,
+        }),
       )
     } catch (err: unknown) {
       notify(
@@ -201,7 +200,7 @@ export function InvoicesTab() {
         t('common.error'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekanni Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setBulkSaving(false)
@@ -241,8 +240,8 @@ export function InvoicesTab() {
       setAddOpen(false)
       notify(
         'success',
-        t('finance.invoice.created', 'Rächnig erstellt'),
-        t('finance.invoice.createdMsg', 'Neui Rächnig isch usgstellt worde.'),
+        t('finance.invoice.created', 'Rechnung erstellt'),
+        t('finance.invoice.createdMsg', 'Die neue Rechnung wurde ausgestellt.'),
       )
     } catch (err: unknown) {
       notify(
@@ -250,7 +249,7 @@ export function InvoicesTab() {
         t('common.error'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unbekanni Fehler'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setSaving(false)
@@ -290,7 +289,7 @@ export function InvoicesTab() {
               'error',
               t(
                 'finance.amountPreviewFailed',
-                'Betrag-Vorschau fehlgeschlagen',
+                'Betragsvorschau fehlgeschlagen',
               ),
             )
         })
@@ -316,13 +315,13 @@ export function InvoicesTab() {
         {canBulkCreate && (
           <Button variant="default" onClick={openBulk}>
             <IconPlus size={16} />
-            {t('finance.bulk.create', 'Massenerstellig')}
+            {t('finance.bulk.create', 'Sammelrechnung')}
           </Button>
         )}
         {canCreate && (
           <Button variant="filled" onClick={openAdd}>
             <IconPlus size={16} />
-            {t('finance.issueInvoice', 'Neui Rächnig')}
+            {t('finance.issueInvoice', 'Rechnung ausstellen')}
           </Button>
         )}
       </Group>
@@ -331,7 +330,7 @@ export function InvoicesTab() {
         columns={[
           {
             key: 'id',
-            header: t('finance.invoice.number', 'Rächnigs-Nr.'),
+            header: t('finance.invoice.number', 'Rechnungsnummer'),
             render: (inv) => (
               <span
                 className="num"
@@ -358,7 +357,7 @@ export function InvoicesTab() {
                       color: '#8c86a0',
                     }}
                   >
-                    {t('finance.recipientType.external', 'Extern')}
+                    {t('finance.recipientType.external', 'Externe Partei')}
                   </span>
                 )}
               </div>
@@ -366,7 +365,7 @@ export function InvoicesTab() {
           },
           {
             key: 'purpose',
-            header: t('finance.purpose', 'Zweck'),
+            header: t('finance.purposeLabel', 'Zweck'),
             render: (inv) => (
               <span
                 style={{
@@ -376,13 +375,13 @@ export function InvoicesTab() {
               >
                 {inv.purpose === 'membership'
                   ? t('finance.purpose.membership', 'Mitgliedschaft')
-                  : t('finance.purpose.other', 'Anderers')}
+                  : t('finance.purpose.other', 'Anderes')}
               </span>
             ),
           },
           {
             key: 'issued',
-            header: t('finance.invoice.issued', 'Usgstellt'),
+            header: t('finance.invoice.issued', 'Ausgestellt'),
             render: (inv) => (
               <span
                 className="num"
@@ -444,7 +443,7 @@ export function InvoicesTab() {
                       variant="subtle"
                       onClick={() => downloadInvoicePdf(inv.id)}
                     >
-                      {t('finance.downloadQrBill', 'QR-Rächnig')}
+                      {t('finance.downloadQrBill', 'QR-Rechnung herunterladen')}
                     </Button>
                     {canRemind && (
                       <Button
@@ -452,7 +451,7 @@ export function InvoicesTab() {
                         variant="subtle"
                         onClick={() => sendReminderMutation.mutate(inv.id)}
                       >
-                        {t('finance.sendReminder', 'Erinnerig')}
+                        {t('finance.sendReminder', 'Erinnerung senden')}
                       </Button>
                     )}
                     {inv.status !== 'Paid' && canUpdate && (
@@ -461,7 +460,7 @@ export function InvoicesTab() {
                         variant="filled"
                         onClick={() => markPaidMutation.mutate(inv.id)}
                       >
-                        {t('finance.markPaid', 'Als bezahlt')}
+                        {t('finance.markPaid', 'Als bezahlt markieren')}
                       </Button>
                     )}
                   </>
@@ -474,13 +473,13 @@ export function InvoicesTab() {
           },
         ]}
         data={pg.paged}
-        emptyMessage={t('finance.noInvoices', 'Cheni Rächnige.')}
+        emptyMessage={t('finance.noInvoices', 'Keine Rechnungen gefunden.')}
         searchValue={search}
         onSearchChange={setSearch}
-        searchPlaceholder={t('finance.searchInvoices', 'Sueche?')}
+        searchPlaceholder={t('finance.searchInvoices', 'Rechnungen suchen …')}
         filters={[
           {
-            label: t('common.all', 'All'),
+            label: t('common.all', 'Alle'),
             value: 'all',
             active: statusFilter === 'All',
             onClick: () => setStatusFilter('All'),
@@ -513,7 +512,7 @@ export function InvoicesTab() {
               ),
           },
           {
-            label: t('finance.purpose.other', 'Anderers'),
+            label: t('finance.purpose.other', 'Anderes'),
             value: 'purpose-other',
             active: purposeFilter === 'other',
             onClick: () =>
@@ -532,27 +531,26 @@ export function InvoicesTab() {
       <ConfirmModal
         open={!!deleteTargetId}
         onClose={() => setDeleteTargetId(null)}
-        title={t('finance.deleteInvoiceTitle', 'Rächnig {{id}} lösche?', {
+        title={t('finance.deleteInvoiceTitle', 'Rechnung {{id}} löschen?', {
           id: deleteTarget?.id ?? '',
         })}
-        body={t(
-          'finance.deleteInvoiceBody',
-          `Die Rächnig wirde permanent entfernt.${
-            deleteTarget?.transactionId
-              ? t(
-                  'finance.linkedTransactionAlsoDeleted',
-                  ' Di verlinkti Transaktion wird au glöscht.',
-                )
-              : ''
-          }`,
-        )}
+        body={
+          t('finance.deleteInvoiceBody', 'Die Rechnung wird endgültig gelöscht.') +
+          (deleteTarget?.transactionId
+            ? ' ' +
+              t(
+                'finance.linkedTransactionAlsoDeleted',
+                'Die verknüpfte Buchung wird ebenfalls gelöscht.',
+              )
+            : '')
+        }
         onConfirm={() => {
           if (deleteTargetId) {
             deleteInvoiceMutation.mutate(deleteTargetId)
             notify(
               'info',
-              t('finance.invoice.deleted', 'Rächnig glöscht'),
-              t('finance.invoice.deletedMsg', 'Rächnig isch entfernt worde.'),
+              t('finance.invoice.deleted', 'Rechnung gelöscht.'),
+              t('finance.invoice.deletedMsg', 'Die Rechnung wurde gelöscht.'),
             )
           }
         }}
@@ -561,7 +559,7 @@ export function InvoicesTab() {
       <Modal
         open={bulkOpen}
         onClose={() => setBulkOpen(false)}
-        title={t('finance.bulk.createTitle', 'Massenerstellig vo Rächnige')}
+        title={t('finance.bulk.createTitle', 'Rechnungen für mehrere Mitglieder erstellen')}
         footer={
           <>
             <Button variant="default" onClick={() => setBulkOpen(false)}>
@@ -573,8 +571,8 @@ export function InvoicesTab() {
               disabled={bulkSaving}
             >
               {bulkSaving
-                ? t('finance.creating', 'Wird erstellt…')
-                : t('finance.createInvoices', 'Rächnige erstelle')}
+                ? t('finance.creating', 'Wird erstellt …')
+                : t('finance.createInvoices', 'Rechnungen erstellen')}
             </Button>
           </>
         }
@@ -584,21 +582,21 @@ export function InvoicesTab() {
             label={t('members.tier', 'Stufe')}
             hint={t(
               'finance.tierHint',
-              "Leer lasse für alli aktive Mitglider Rächnige z'erstelle",
+              'Leer lassen, um allen aktiven Mitgliedern eine Rechnung zu stellen',
             )}
           >
             <Select
               data={[
                 {
                   value: '',
-                  label: t('finance.allActiveMembers', 'Alli aktive Mitglider'),
+                  label: t('finance.allActiveMembers', 'Alle aktiven Mitglieder'),
                 },
                 ...tierOptions.map((tierItem) => ({
                   value: tierItem.id,
                   label: `${tierItem.name}${
                     tierItem.priceChf != null
                       ? ` — CHF ${formatCHF(tierItem.priceChf)}`
-                      : ` ${t('finance.noPrice', ' (kei Preis)')}`
+                      : ` ${t('finance.noPrice', '(kein Preis)')}`
                   }`,
                 })),
               ]}
@@ -607,21 +605,21 @@ export function InvoicesTab() {
             />
           </Field>
           <Field
-            label={t('common.description', 'Beschribig')}
+            label={t('common.description', 'Beschreibung')}
             hint={t(
               'finance.descriptionHint',
-              'Optional ? wird uf jeder Rächnig azeigt',
+              'Optional, erscheint auf jeder Rechnung',
             )}
           >
             <TextInput
               placeholder={t(
                 'common.descriptionPlaceholder',
-                'Monatlichi Mitgliedschaft',
+                'Kurze Beschreibung …',
               )}
               {...bulkForm.getInputProps('description')}
             />
           </Field>
-          <Field label={t('finance.invoice.due', 'Fälligkeitsdatum')}>
+          <Field label={t('finance.invoice.due', 'Fällig')}>
             <TextInput type="date" {...bulkForm.getInputProps('due')} />
           </Field>
           <div
@@ -635,7 +633,7 @@ export function InvoicesTab() {
           >
             {t(
               'finance.bulk.note',
-              'Pro Mitglid wird e Rächnig mit sym Stufepreis erstellt. Mitglider ohni Preis in ihrer Stufe werde übersprunge.',
+              'Jedes Mitglied erhält eine Rechnung zum Preis seiner Stufe. Mitglieder ohne Preis in ihrer Stufe werden übersprungen.',
             )}
           </div>
         </div>
@@ -644,7 +642,7 @@ export function InvoicesTab() {
       <Modal
         open={addOpen}
         onClose={() => setAddOpen(false)}
-        title={t('finance.issueInvoice', 'Neui Rächnig')}
+        title={t('finance.issueInvoice', 'Rechnung ausstellen')}
         footer={
           <>
             <Button variant="default" onClick={() => setAddOpen(false)}>
@@ -656,23 +654,23 @@ export function InvoicesTab() {
               disabled={saving}
             >
               {saving
-                ? t('finance.creating', 'Wird erstellt…')
-                : t('finance.createInvoice', 'Rächnig erstelle')}
+                ? t('finance.creating', 'Wird erstellt …')
+                : t('finance.createInvoice', 'Rechnung erstellen')}
             </Button>
           </>
         }
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Field label={t('finance.recipientType', 'Empfänger-Typ')}>
+          <Field label={t('finance.recipientTypeLabel', 'Empfängertyp')}>
             <Select
               data={[
                 {
                   value: 'member',
-                  label: t('finance.recipientType.member', 'Mitglid'),
+                  label: t('finance.recipientType.member', 'Mitglied'),
                 },
                 {
                   value: 'external',
-                  label: t('finance.recipientType.external', 'Externi Partei'),
+                  label: t('finance.recipientType.external', 'Externe Partei'),
                 },
               ]}
               {...singleForm.getInputProps('recipientType')}
@@ -681,7 +679,7 @@ export function InvoicesTab() {
 
           {watchedRecipientType === 'member' ? (
             <>
-              <Field label={t('finance.recipientType.member', 'Mitglid')}>
+              <Field label={t('finance.recipientType.member', 'Mitglied')}>
                 <Select
                   data={
                     memberOptions.length === 0
@@ -690,7 +688,7 @@ export function InvoicesTab() {
                             value: '',
                             label: t(
                               'finance.loadingMembers',
-                              'Mitglider werde glade…',
+                              'Mitglieder werden geladen …',
                             ),
                           },
                         ]
@@ -703,7 +701,7 @@ export function InvoicesTab() {
                   {...singleForm.getInputProps('memberId')}
                 />
               </Field>
-              <Field label={t('finance.purpose', 'Zweck')}>
+              <Field label={t('finance.purposeLabel', 'Zweck')}>
                 <Select
                   data={[
                     {
@@ -712,7 +710,7 @@ export function InvoicesTab() {
                     },
                     {
                       value: 'other',
-                      label: t('finance.purpose.other', 'Anderers'),
+                      label: t('finance.purpose.other', 'Anderes'),
                     },
                   ]}
                   {...singleForm.getInputProps('purpose')}
@@ -721,12 +719,12 @@ export function InvoicesTab() {
             </>
           ) : (
             <Field
-              label={t('finance.recipientType.external', 'Externi Partei')}
+              label={t('finance.recipientType.external', 'Externe Partei')}
               hint={
                 externalParties.length === 0
                   ? t(
                       'finance.externalParty.noneHint',
-                      'Erstellig externi Parteie im Tab "Externi".',
+                      'Externe Parteien erfasst du im Tab «Extern».',
                     )
                   : undefined
               }
@@ -739,7 +737,7 @@ export function InvoicesTab() {
                           value: '',
                           label: t(
                             'finance.externalParty.none',
-                            'No cheni externi Parteie.',
+                            'Noch keine externen Parteien.',
                           ),
                         },
                       ]
@@ -755,16 +753,16 @@ export function InvoicesTab() {
           )}
 
           <Field
-            label={t('common.description', 'Beschribig')}
+            label={t('common.description', 'Beschreibung')}
             hint={t(
               'finance.descriptionOptionalHint',
-              'Optional ? z.B. Monatlichi Mitgliedschaft',
+              'Optional, z. B. Mitgliederbeitrag Oktober',
             )}
           >
             <TextInput
               placeholder={t(
                 'common.descriptionPlaceholder',
-                'Monatlichi Mitgliedschaft',
+                'Kurze Beschreibung …',
               )}
               {...singleForm.getInputProps('description')}
             />
@@ -784,10 +782,9 @@ export function InvoicesTab() {
                         (o) => o.id === watchedMemberId,
                       )
                       if (!m) return undefined
-                      return t(
-                        'finance.basedOnTier',
-                        `Basierend uf ${m.tierName} Stuf`,
-                      )
+                      return t('finance.basedOnTier', 'Gemäss Stufe {{tier}}', {
+                        tier: m.tierName,
+                      })
                     })()
                   : undefined
               }
@@ -800,7 +797,7 @@ export function InvoicesTab() {
                 {...singleForm.getInputProps('amount')}
               />
             </Field>
-            <Field label={t('finance.invoice.due', 'Fälligkeitsdatum')}>
+            <Field label={t('finance.invoice.due', 'Fällig')}>
               <TextInput type="date" {...singleForm.getInputProps('due')} />
             </Field>
           </div>
@@ -808,17 +805,17 @@ export function InvoicesTab() {
           {(watchedRecipientType === 'external' ||
             watchedPurpose === 'other') && (
             <Field
-              label={t('finance.category', 'Kategorie')}
+              label={t('finance.categoryLabel', 'Kategorie')}
               hint={t(
                 'finance.categoryHint',
-                'Kategorie für di verlinkti Transaktion',
+                'Kategorie der verknüpften Buchung',
               )}
             >
               <Select
                 data={[
                   {
                     value: '',
-                    label: t('finance.selectCategory', 'Kategorie wähle…'),
+                    label: t('finance.selectCategory', 'Kategorie wählen …'),
                   },
                   ...txCategories.map((c) => ({
                     value: c.id,

@@ -60,7 +60,7 @@ export function TransactionCategoriesTab() {
       notify(
         'success',
         t('finance.category.created', 'Kategorie erstellt'),
-        t('finance.category.createdMsg', '"{{name}}" isch jetzt verfüegbar.', {
+        t('finance.category.createdMsg', '«{{name}}» ist jetzt verfügbar.', {
           name: cName,
         }),
       )
@@ -72,7 +72,7 @@ export function TransactionCategoriesTab() {
           ? err.message
           : t(
               'finance.couldNotCreateCategory',
-              'Kategorie chonnt nöd erstellt wärde.',
+              'Kategorie konnte nicht erstellt werden.',
             ),
       )
     }
@@ -89,8 +89,8 @@ export function TransactionCategoriesTab() {
       setEditTarget(null)
       notify(
         'success',
-        t('finance.category.updated', 'Kategorie aktualisiert'),
-        t('finance.category.savedMsg', '"{{name}}" isch gspeicheret.', {
+        t('finance.category.updated', 'Kategorie gespeichert'),
+        t('finance.category.savedMsg', '«{{name}}» wurde gespeichert.', {
           name: cName,
         }),
       )
@@ -102,7 +102,7 @@ export function TransactionCategoriesTab() {
           ? err.message
           : t(
               'finance.couldNotUpdateCategory',
-              'Kategorie chonnt nöd aktualisiert wärde.',
+              'Kategorie konnte nicht gespeichert werden.',
             ),
       )
     }
@@ -115,8 +115,8 @@ export function TransactionCategoriesTab() {
       queryClient.invalidateQueries({ queryKey: ['transaction-categories'] })
       notify(
         'info',
-        t('finance.category.deleted', 'Kategorie gösche'),
-        t('finance.category.removedMsg', '"{{name}}" isch entfern worde.', {
+        t('finance.category.deleted', 'Kategorie gelöscht.'),
+        t('finance.category.removedMsg', '«{{name}}» wurde gelöscht.', {
           name: deleteTarget.name,
         }),
       )
@@ -128,7 +128,7 @@ export function TransactionCategoriesTab() {
           ? err.message
           : t(
               'finance.couldNotDeleteCategory',
-              'Kategorie chonnt nöd gösche wärde.',
+              'Kategorie konnte nicht gelöscht werden.',
             ),
       )
     }
@@ -143,10 +143,10 @@ export function TransactionCategoriesTab() {
           <TextInput
             value={cName}
             onChange={(e) => setCName(e.target.value)}
-            placeholder={t('finance.category.namePlaceholder', 'z.B. Material')}
+            placeholder={t('finance.category.namePlaceholder', 'z. B. Material')}
           />
         </Field>
-        <Field label={t('finance.category.color', 'Farb')}>
+        <Field label={t('finance.category.color', 'Farbe')}>
           <TextInput
             type="color"
             value={cColor}
@@ -164,7 +164,7 @@ export function TransactionCategoriesTab() {
         <Group justify="flex-end" mb={16}>
           <Button variant="filled" onClick={openAdd}>
             <IconPlus size={16} />
-            {t('finance.newCategory', 'Neui Kategorie')}
+            {t('finance.newCategory', 'Neue Kategorie')}
           </Button>
         </Group>
       )}
@@ -173,7 +173,7 @@ export function TransactionCategoriesTab() {
           <Table highlightOnHover className="responsive-table">
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>{t('finance.category', 'Kategorie')}</Table.Th>
+                <Table.Th>{t('finance.categoryLabel', 'Kategorie')}</Table.Th>
                 <Table.Th>{t('common.type', 'Typ')}</Table.Th>
                 <Table.Th style={{ width: 80 }}></Table.Th>
               </Table.Tr>
@@ -190,7 +190,7 @@ export function TransactionCategoriesTab() {
                       fontSize: 'var(--mantine-font-size-sm)',
                     }}
                   >
-                    {t('finance.loading', 'Wird glade…')}
+                    {t('finance.loading', 'Wird geladen …')}
                   </Table.Td>
                 </Table.Tr>
               ) : cats.length === 0 ? (
@@ -204,13 +204,13 @@ export function TransactionCategoriesTab() {
                       fontSize: 'var(--mantine-font-size-sm)',
                     }}
                   >
-                    {t('finance.noCategories', 'No cheni Kategorie.')}
+                    {t('finance.noCategories', 'Noch keine Kategorien.')}
                   </Table.Td>
                 </Table.Tr>
               ) : (
                 cats.map((c) => (
                   <Table.Tr key={c.id}>
-                    <Table.Td data-label={t('finance.category', 'Kategorie')}>
+                    <Table.Td data-label={t('finance.categoryLabel', 'Kategorie')}>
                       <div
                         style={{
                           display: 'flex',
@@ -247,7 +247,7 @@ export function TransactionCategoriesTab() {
                             color: '#8c86a0',
                           }}
                         >
-                          {t('finance.category.custom', 'Benutzerdefiniert')}
+                          {t('finance.category.custom', 'Eigene')}
                         </span>
                       )}
                     </Table.Td>
@@ -263,7 +263,7 @@ export function TransactionCategoriesTab() {
                               c.isDefault
                                 ? t(
                                     'finance.defaultCannotEdit',
-                                    'Standard-Kategorie chann nöd bearbeitet wärde',
+                                    'Standardkategorien können nicht bearbeitet werden',
                                   )
                                 : undefined
                             }
@@ -293,7 +293,7 @@ export function TransactionCategoriesTab() {
                               c.isDefault
                                 ? t(
                                     'finance.defaultCannotDelete',
-                                    'Standard-Kategorie chann nöd gösche wärde',
+                                    'Standardkategorien können nicht gelöscht werden',
                                   )
                                 : undefined
                             }
@@ -314,14 +314,14 @@ export function TransactionCategoriesTab() {
       <Modal
         open={addOpen}
         onClose={() => setAddOpen(false)}
-        title={t('finance.newCategory', 'Neui Kategorie')}
+        title={t('finance.newCategory', 'Neue Kategorie')}
         footer={
           <>
             <Button variant="default" onClick={() => setAddOpen(false)}>
-              {t('common.cancel', 'Abbreche')}
+              {t('common.cancel', 'Abbrechen')}
             </Button>
             <Button variant="filled" onClick={saveAdd}>
-              {t('common.create', 'Erstelle')}
+              {t('common.create', 'Erstellen')}
             </Button>
           </>
         }
@@ -331,15 +331,15 @@ export function TransactionCategoriesTab() {
       <Modal
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
-        title={t('finance.editCategory', 'Kategorie bearbeite')}
+        title={t('finance.editCategory', 'Kategorie bearbeiten')}
         subtitle={editTarget?.name}
         footer={
           <>
             <Button variant="default" onClick={() => setEditTarget(null)}>
-              {t('common.cancel', 'Abbreche')}
+              {t('common.cancel', 'Abbrechen')}
             </Button>
             <Button variant="filled" onClick={saveEdit}>
-              {t('common.save', 'Speichere')}
+              {t('common.save', 'Speichern')}
             </Button>
           </>
         }
@@ -349,12 +349,12 @@ export function TransactionCategoriesTab() {
       <ConfirmModal
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        title={t('finance.deleteCategoryTitle', '"{{name}}" lösche?', {
+        title={t('finance.deleteCategoryTitle', '«{{name}}» löschen?', {
           name: deleteTarget?.name ?? '',
         })}
         body={t(
           'finance.deleteCategoryBody',
-          'Transaktione, wo die Kategorie bruched, wärded unkategorisiert.',
+          'Buchungen mit dieser Kategorie sind danach ohne Kategorie.',
         )}
         onConfirm={confirmDelete}
       />

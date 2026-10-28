@@ -20,25 +20,28 @@ import { useNavigate } from 'react-router-dom'
 import { getRememberedEmail } from '@hubra/api-client'
 import * as authApi from '@/api/auth'
 import { safeReturnPath, useInstance } from '@/context/InstanceContext'
+import { useT } from '@/locales/i18n'
 import { AuthFrame } from './AuthFrame'
 
-const schema = z.object({
-  email: z.string().email('Invalid email'),
-  password: z.string().min(1, 'Password is required'),
-  keepSignedIn: z.boolean(),
-})
+const makeSchema = (t: (k: string, d: string) => string) =>
+  z.object({
+    email: z.string().email(t('auth.invalidEmail', 'Bitte gib eine gültige E-Mail-Adresse ein.')),
+    password: z.string().min(1, t('auth.passwordRequired', 'Bitte gib dein Passwort ein.')),
+    keepSignedIn: z.boolean(),
+  })
 
-type FormValues = z.infer<typeof schema>
+type FormValues = z.infer<ReturnType<typeof makeSchema>>
 
 /** Sign-in for single-club installs; multi-club installs use the SSO portal. */
 export function LoginScreen() {
   const { homePath } = useInstance()
   const navigate = useNavigate()
+  const { t } = useT()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const form = useForm<FormValues>({
-    validate: zodResolver(schema),
+    validate: zodResolver(makeSchema(t)),
     initialValues: {
       email: getRememberedEmail(),
       password: '',
@@ -56,7 +59,7 @@ export function LoginScreen() {
         values.keepSignedIn,
       )
       if (res.requiresTenantSelection || res.noTenant) {
-        setError('This account is not a member of this club')
+        setError(t('auth.notMember', 'Dieses Konto ist kein Mitglied dieses Vereins.'))
         setLoading(false)
         return
       }
@@ -64,18 +67,18 @@ export function LoginScreen() {
       // A full page load, so the app starts over with the new session.
       window.location.assign(returnTo ?? homePath ?? '/')
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Login failed')
+      setError(err instanceof Error ? err.message : t('auth.loginFailed', 'Anmeldung fehlgeschlagen.'))
       setLoading(false)
     }
   }
 
   return (
     <AuthFrame>
-      <Title order={2} mb={6}>
-        Welcome back
+      <Title order={1} fz={28} mb={6}>
+        {t('auth.welcomeBack', 'Willkommen zurück')}
       </Title>
-      <Text size="sm" c="dimmed" mb={28}>
-        Sign in to your account
+      <Text size="md" c="dimmed" mb={32}>
+        {t('auth.signInSubtitle', 'Melde dich mit deinem Konto an.')}
       </Text>
 
       {error && (
@@ -86,41 +89,56 @@ export function LoginScreen() {
 
       <form onSubmit={form.onSubmit(handleLogin)}>
         <Stack gap="md">
-          <TextInput label="Email" type="email" autoFocus {...form.getInputProps('email')} />
+          <TextInput
+            label={t('auth.email', 'E-Mail')}
+            type="email"
+            size="md"
+            autoComplete="email"
+            autoFocus {...form.getInputProps('email')} />
 
           <Box>
             <Group justify="space-between" mb={6}>
-              <Text component="label" size="sm" fw={600} c="dimmed">
-                Password
+              <Text component="label" htmlFor="login-password" size="sm" fw={600}>
+                {t('auth.password', 'Passwort')}
               </Text>
               <Anchor
                 size="sm"
-                c="#6131c4"
+                fw={600}
+                href="/forgot-password"
                 onClick={(e) => {
                   e.preventDefault()
                   navigate('/forgot-password')
                 }}
               >
-                Forgot password?
+                {t('auth.forgotPassword', 'Passwort vergessen?')}
               </Anchor>
             </Group>
-            <PasswordInput {...form.getInputProps('password')} />
+            <PasswordInput
+              id="login-password"
+              size="md"
+              autoComplete="current-password"
+              {...form.getInputProps('password')}
+            />
           </Box>
 
           <Checkbox
-            label="Keep me signed in"
+            label={t('auth.keepSignedIn', 'Angemeldet bleiben')}
             {...form.getInputProps('keepSignedIn', { type: 'checkbox' })}
           />
 
-          <Button type="submit" size="sm" fullWidth loading={loading} mt={4}>
-            {loading ? 'Signing in…' : 'Sign in'}
+          <Button type="submit" size="md" fullWidth loading={loading} mt={4}>
+            {t('auth.signIn', 'Anmelden')}
           </Button>
         </Stack>
       </form>
 
-      <Divider label="Not a member yet?" labelPosition="center" c="dimmed" my="lg" />
-      <Button variant="default" size="sm" fullWidth onClick={() => navigate('/apply')}>
-        Apply for membership
+      <Divider
+        label={t('auth.notMemberYet', 'Noch kein Mitglied?')}
+        labelPosition="center"
+        my="xl"
+      />
+      <Button variant="default" size="md" fullWidth onClick={() => navigate('/apply')}>
+        {t('auth.applyForMembership', 'Mitgliedschaft beantragen')}
       </Button>
     </AuthFrame>
   )

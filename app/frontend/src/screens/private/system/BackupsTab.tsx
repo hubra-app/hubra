@@ -300,7 +300,7 @@ export function BackupsTab() {
                 }}
                 loading={configQuery.isFetching || backupsQuery.isFetching}
               >
-                {t('common.refresh', 'Refresh')}
+                {t('common.refresh', 'Aktualisieren')}
               </Button>
               <Button
                 variant="filled"

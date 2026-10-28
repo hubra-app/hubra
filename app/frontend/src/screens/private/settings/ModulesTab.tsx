@@ -52,8 +52,8 @@ export function ModulesTab() {
       notify(
         'success',
         enabled
-          ? t('settings.modules.switchedOn', '{{name}} switched on', { name: m.name })
-          : t('settings.modules.switchedOff', '{{name}} switched off', { name: m.name }),
+          ? t('settings.modules.switchedOn', '{{name}} eingeschaltet', { name: m.name })
+          : t('settings.modules.switchedOff', '{{name}} ausgeschaltet', { name: m.name }),
       )
       if (enabled && updated.settings.length > 0 && !updated.configured) {
         setEditing(updated)
@@ -66,9 +66,9 @@ export function ModulesTab() {
   }
 
   const describeBlocker = (m: ModuleInfo): string | null => {
-    if (!m.allowed) return t('settings.modules.blocked', 'Not available for this club')
+    if (!m.allowed) return t('settings.modules.blocked', 'Für diesen Verein nicht verfügbar')
     if (m.switchedOn && m.missingDependencies.length > 0)
-      return t('settings.modules.needs', 'Needs {{names}}', {
+      return t('settings.modules.needs', 'Braucht {{names}}', {
         names: m.missingDependencies.map((c) => byCode[c]?.name ?? c).join(', '),
       })
     return null
@@ -80,7 +80,7 @@ export function ModulesTab() {
         <Text fz="sm" c="dimmed" mb="sm">
           {t(
             'settings.modules.intro',
-            'Switch off what your club does not use. Switching a module off hides it for everyone; its data is kept and comes back when you switch it on again.',
+            'Schalte aus, was dein Verein nicht braucht. Ein ausgeschaltetes Modul ist für alle ausgeblendet. Die Daten bleiben erhalten und sind wieder da, sobald du es einschaltest.',
           )}
         </Text>
         {optional.map((m) => {
@@ -108,7 +108,7 @@ export function ModulesTab() {
                   )}
                   {m.enabled && m.settings.length > 0 && !m.configured && (
                     <Badge size="sm" color="red" variant="light">
-                      {t('settings.modules.needsSetup', 'Needs setup')}
+                      {t('settings.modules.needsSetup', 'Muss noch eingerichtet werden')}
                     </Badge>
                   )}
                 </Group>
@@ -117,7 +117,7 @@ export function ModulesTab() {
                 </Text>
                 {m.dependsOn.some((d) => !byCode[d]?.required) && (
                   <Text fz="xs" c="dimmed">
-                    {t('settings.modules.uses', 'Uses {{names}}', {
+                    {t('settings.modules.uses', 'Nutzt {{names}}', {
                       names: m.dependsOn
                         .filter((d) => !byCode[d]?.required)
                         .map((d) => byCode[d]?.name ?? d)
@@ -129,7 +129,7 @@ export function ModulesTab() {
               <Group gap="sm" wrap="nowrap">
                 {m.settings.length > 0 && m.enabled && canWrite && (
                   <Button size="xs" variant="default" onClick={() => setEditing(m)}>
-                    {t('settings.modules.configure', 'Settings')}
+                    {t('settings.modules.configure', 'Einstellungen')}
                   </Button>
                 )}
                 <Switch
@@ -145,7 +145,7 @@ export function ModulesTab() {
         })}
         {required.length > 0 && (
           <Text fz="xs" c="dimmed" mt="md">
-            {t('settings.modules.alwaysOn', 'Always on: {{names}}', {
+            {t('settings.modules.alwaysOn', 'Immer eingeschaltet: {{names}}', {
               names: required.map((m) => m.name).join(', '),
             })}
           </Text>
@@ -185,7 +185,7 @@ function ModuleSettingsModal({
     setBusy(true)
     try {
       await saveModuleSettings(module.code, values)
-      notify('success', t('settings.modules.saved', 'Settings saved'), module.name)
+      notify('success', t('settings.modules.saved', 'Einstellungen gespeichert'), module.name)
       onSaved()
     } catch (err) {
       notify('error', module.name, (err as Error).message)
@@ -211,10 +211,10 @@ function ModuleSettingsModal({
             props={{ code: module.code, configured: module.configured, name: module.name }}
           />
           <Button variant="default" onClick={onClose}>
-            {t('common.cancel', 'Cancel')}
+            {t('common.cancel', 'Abbrechen')}
           </Button>
           <Button onClick={save} loading={busy}>
-            {t('common.save', 'Save')}
+            {t('common.save', 'Speichern')}
           </Button>
         </Group>
       </Stack>
@@ -269,7 +269,7 @@ function SettingInput({
       return (
         <PasswordInput
           {...common}
-          placeholder={t('settings.modules.secretKept', 'Leave empty to keep the stored value')}
+          placeholder={t('settings.modules.secretKept', 'Leer lassen, um den gespeicherten Wert zu behalten')}
           value={typeof value === 'string' ? value : ''}
           onChange={(e) => onChange(e.currentTarget.value)}
         />

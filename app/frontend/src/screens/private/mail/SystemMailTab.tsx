@@ -75,10 +75,10 @@ export function SystemMailTab() {
       setCreateOpen(false)
       notify(
         'success',
-        t('mail.system.address.created', 'System-Mail erstellt'),
+        t('mail.system.address.createdLabel', 'System-Adresse erstellt'),
         t(
           'mail.system.address.created.msg',
-          'System-Adrässe {{address}} erstellt.',
+          'System-Adresse {{address}} erstellt.',
           { address: created.address },
         ),
       )
@@ -88,9 +88,9 @@ export function SystemMailTab() {
           ? e.message
           : t(
               'mail.could.not.create.system.address',
-              'System-Adrässe chonnt nöd erstellt wärde.',
+              'System-Adresse konnte nicht erstellt werden.',
             )
-      notify('error', t('common.createFailed', 'Erstelle fehlgeschlage'), msg)
+      notify('error', t('common.createFailed', 'Erstellen fehlgeschlagen'), msg)
     } finally {
       setCreating(false)
     }
@@ -105,12 +105,12 @@ export function SystemMailTab() {
           disabled={isFetching}
         >
           <IconRefresh size={16} className={isFetching ? 'spin' : ''} />
-          {t('common.refresh', 'Aktualisiere')}
+          {t('common.refresh', 'Aktualisieren')}
         </Button>
         {canManage && (
           <Button variant="filled" onClick={() => setCreateOpen(true)}>
             <IconPlus size={16} />
-            {t('mail.add.system.address', 'System-Adresse hinzue')}
+            {t('mail.add.system.address', 'System-Adresse hinzufügen')}
           </Button>
         )}
       </Group>
@@ -120,10 +120,10 @@ export function SystemMailTab() {
         columns={columns}
         data={pg.paged}
         loading={loading}
-        emptyMessage={t('common.noResults', 'Keini Resultat')}
+        emptyMessage={t('common.noResults', 'Keine Ergebnisse.')}
         searchValue={search}
         onSearchChange={setSearch}
-        searchPlaceholder={t('common.search', 'Sueche…')}
+        searchPlaceholder={t('common.search', 'Suchen')}
         page={pg.page}
         perPage={pg.perPage}
         total={pg.total}
@@ -139,16 +139,16 @@ export function SystemMailTab() {
             data={[
               {
                 value: 'all',
-                label: t('mail.admin.syncAll', 'All Sync-Zueständ'),
+                label: t('mail.admin.syncAll', 'Alle Zustände'),
               },
               { value: 'ok', label: t('mail.admin.syncOk', 'OK') },
               {
                 value: 'pending',
-                label: t('mail.admin.syncPending', 'Usstehend'),
+                label: t('mail.admin.syncPending', 'Ausstehend'),
               },
               {
                 value: 'drift',
-                label: t('mail.admin.syncDrift', 'Abwichig'),
+                label: t('mail.admin.syncDrift', 'Abweichung'),
               },
               { value: 'error', label: t('mail.admin.syncError', 'Fehler') },
             ]}
@@ -174,7 +174,7 @@ export function SystemMailTab() {
         <Modal
           open={createOpen}
           onClose={() => setCreateOpen(false)}
-          title={t('mail.create.system.address', 'System-Adrässe erstellen')}
+          title={t('mail.create.system.address', 'System-Adresse erstellen')}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
@@ -187,7 +187,7 @@ export function SystemMailTab() {
                   display: 'block',
                 }}
               >
-                {t('mail.address', 'Adrässe')}
+                {t('mail.address', 'Adresse')}
               </label>
               <TextInput
                 placeholder="noreply@example.org"
@@ -207,13 +207,13 @@ export function SystemMailTab() {
                   display: 'block',
                 }}
               >
-                {t('mail.type', 'Typ')}
+                {t('mail.typeLabel', 'Typ')}
               </label>
               <Select
                 data={[
                   {
                     value: 'mailbox',
-                    label: t('mail.type.mailbox', 'Mailbox'),
+                    label: t('mail.type.mailbox', 'Postfach'),
                   },
                   { value: 'alias', label: t('mail.type.alias', 'Alias') },
                 ]}
@@ -231,7 +231,7 @@ export function SystemMailTab() {
                   display: 'block',
                 }}
               >
-                {t('mail.display.name', 'Azeige Name')}
+                {t('mail.display.name', 'Anzeigename')}
               </label>
               <TextInput
                 placeholder="No Reply"
@@ -244,7 +244,7 @@ export function SystemMailTab() {
               style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}
             >
               <Button variant="default" onClick={() => setCreateOpen(false)}>
-                {t('common.cancel', 'Abbräche')}
+                {t('common.cancel', 'Abbrechen')}
               </Button>
               <Button
                 variant="filled"

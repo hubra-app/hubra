@@ -76,12 +76,12 @@ export function SystemScreen() {
     if (msg.includes('403') || msg.toLowerCase().includes('forbidden')) {
       return t(
         'system.accessDenied',
-        'Zueg verweigert — Admin-Roll erforderlich.',
+        'Kein Zugriff: Admin-Rolle nötig.',
       )
     }
     return t(
       'system.couldNotLoad',
-      'Berächtigungs-Tabelle chönt nöd glade werde.',
+      'Die Berechtigungen konnten nicht geladen werden.',
     )
   }, [queryError, t])
 
@@ -111,9 +111,9 @@ export function SystemScreen() {
 
       <Tabs
         tabs={[
-          { id: 'permissions', label: t('system.permissions', 'Permissions') },
-          { id: 'roles', label: t('system.roles', 'Roles') },
-          { id: 'health', label: t('system.health', 'Health') },
+          { id: 'permissions', label: t('system.permissions', 'Berechtigungen') },
+          { id: 'roles', label: t('system.roles', 'Rollen') },
+          { id: 'health', label: t('system.healthLabel', 'Systemzustand') },
           ...(hasBackups
             ? [{ id: 'backups', label: t('system.backups', 'Backups') }]
             : []),
@@ -157,7 +157,7 @@ export function SystemScreen() {
                 <div></div>
                 <div></div>
               </div>
-              {t('system.loadingPermissions', 'Berechtigige wird glade\u2026')}
+              {t('system.loadingPermissions', 'Berechtigungen werden geladen …')}
             </div>
           )}
 
@@ -209,7 +209,7 @@ export function SystemScreen() {
                     style={{ height: 36, paddingLeft: 34 }}
                     placeholder={t(
                       'system.searchPlaceholder',
-                      'Noch Pfad oder Berechtigung suche\u2026',
+                      'Nach Pfad oder Berechtigung suchen …',
                     )}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
@@ -223,7 +223,7 @@ export function SystemScreen() {
                       onClick={() => setMethodFilter(m)}
                     >
                       {m === 'All'
-                        ? t('system.allMethods', 'Alli Methoden')
+                        ? t('system.allMethods', 'Alle Methoden')
                         : m}
                     </button>
                   ))}
@@ -237,7 +237,7 @@ export function SystemScreen() {
                 >
                   {filtered.length} {t('system.endpoint', 'Endpunkt')}
                   {filtered.length !== 1
-                    ? t('system.endpointsPlural', 's')
+                    ? t('system.endpointsPlural', 'Endpunkte')
                     : ''}
                 </div>
               </div>
@@ -254,10 +254,10 @@ export function SystemScreen() {
                   }}
                 >
                   {entries.length === 0
-                    ? t('system.noPermissionsLoaded', 'Kei Berechtigige glade.')
+                    ? t('system.noPermissionsLoaded', 'Keine Berechtigungen geladen.')
                     : t(
                         'system.noEndpointsMatch',
-                        'Kei Endpunkte passed zue dine Filtre.',
+                        'Keine Endpunkte passen zu deinen Filtern.',
                       )}
                 </div>
               )}

@@ -32,9 +32,11 @@ export function NavItemRow({
           width: 44,
           height: 44,
           borderRadius: 10,
-          color: isActiveParent ? '#6131c4' : 'var(--mantine-color-dimmed)',
-          background: isActiveParent ? 'rgba(116,65,224,.2)' : undefined,
+          color: isActiveParent ? '#4d27a0' : '#5e5873',
+          background: isActiveParent ? '#ebe3ff' : undefined,
         }}
+        className="nav-item"
+        data-active={isActiveParent || undefined}
       >
         {item.icon}
       </UnstyledButton>
@@ -49,25 +51,38 @@ export function NavItemRow({
           display: 'flex',
           alignItems: 'center',
           gap: 12,
-          borderRadius: 9,
-          padding: '9px 11px',
+          borderRadius: 10,
+          padding: '8px 12px',
+          minHeight: 40,
           width: '100%',
-          color: isActiveParent ? '#6131c4' : 'var(--mantine-color-dimmed)',
-          background: isActiveParent ? 'rgba(116,65,224,.2)' : undefined,
+          color: isActiveParent ? '#4d27a0' : '#4a4560',
+          background: isActiveParent ? '#ebe3ff' : undefined,
           fontSize: 'var(--mantine-font-size-sm)',
-          fontWeight: 500,
+          fontWeight: isActiveParent ? 700 : 500,
           transition: 'background .15s, color .15s',
         }}
+        className="nav-item"
+        data-active={isActiveParent || undefined}
+        aria-current={isActiveParent ? 'page' : undefined}
       >
-        <span style={{ flexShrink: 0 }}>{item.icon}</span>
+        <span
+          style={{
+            flexShrink: 0,
+            display: 'flex',
+            color: isActiveParent ? '#7441e0' : '#5e5873',
+          }}
+        >
+          {item.icon}
+        </span>
         <span style={{ flex: 1, fontSize: 'var(--mantine-font-size-sm)' }}>
           {item.label}
         </span>
         {item.count !== undefined && (
           <Badge
-            variant="light"
-            size="xs"
-            color="gray"
+            variant={isActiveParent ? 'white' : 'light'}
+            size="sm"
+            color={isActiveParent ? 'acc' : 'gray'}
+            radius="xl"
             ff="'JetBrains Mono', monospace"
           >
             {item.count}

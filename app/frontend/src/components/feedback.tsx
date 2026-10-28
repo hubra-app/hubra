@@ -174,7 +174,7 @@ export function ConfirmModal({
       )}
       <Group justify="flex-end" gap="xs" mt="md">
         <Button variant="default" onClick={onClose}>
-          {t('common.cancel', 'Cancel')}
+          {t('common.cancel', 'Abbrechen')}
         </Button>
         <Button
           variant="light"
@@ -185,7 +185,7 @@ export function ConfirmModal({
             onClose()
           }}
         >
-          {t('common.delete', 'Delete')}
+          {t('common.delete', 'Löschen')}
         </Button>
       </Group>
     </MantineModal>
@@ -222,6 +222,7 @@ export function ErrorBanner({
   onRetry?: () => void
   onDismiss?: () => void
 }) {
+  const { t } = useT()
   return (
     <Alert
       color="red"
@@ -243,7 +244,7 @@ export function ErrorBanner({
             leftSection={<IconRefresh size={13} />}
             onClick={onRetry}
           >
-            Retry
+            {t('common.retry', 'Nochmals versuchen')}
           </Button>
         )}
       </Group>
@@ -263,21 +264,21 @@ export function EmptyState({
   action?: { label: string; onClick: () => void }
 }) {
   return (
-    <Center py={48}>
-      <Stack align="center" gap="xs">
-        <ThemeIcon size="xl" variant="light" color="gray">
-          {icon ?? <IconInbox size={36} />}
+    <Center py={56} px="md">
+      <Stack align="center" gap={6}>
+        <ThemeIcon size={52} radius="xl" variant="light" color="acc" mb={6}>
+          {icon ?? <IconInbox size={26} stroke={1.6} />}
         </ThemeIcon>
-        <Text fw={600} fz="md">
+        <Text fw={700} fz="md" ta="center">
           {title}
         </Text>
         {description && (
-          <Text size="sm" c="dimmed" maw={400} ta="center">
+          <Text size="sm" c="dimmed" maw={420} ta="center">
             {description}
           </Text>
         )}
         {action && (
-          <Button mt="xs" onClick={action.onClick}>
+          <Button mt="sm" onClick={action.onClick}>
             {action.label}
           </Button>
         )}

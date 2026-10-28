@@ -68,7 +68,7 @@ export function MemberDetailScreen({
   }
 
   const m = member
-  if (!m) return <LoadingSpinner message={t('common.loading', 'Wird glade…')} />
+  if (!m) return <LoadingSpinner message={t('common.loading', 'Wird geladen …')} />
 
   const toggleDisable = async () => {
     if (!member) return
@@ -315,7 +315,7 @@ export function MemberDetailScreen({
             <DetailRow label={t('members.clubUsername')} mono>
               {m.clubUsername || <Empty />}
             </DetailRow>
-            <DetailRow label={t('common.roles', 'Roles')}>
+            <DetailRow label={t('common.roles', 'Rollen')}>
               {m.roles.join(', ')}
             </DetailRow>
             <DetailRow label={t('members.joined')} mono>
@@ -479,7 +479,7 @@ export function MemberDetailScreen({
                     lineHeight: 1.6,
                   }}
                 >
-                  {m.notes || t('members.noNotesYet', 'No kei Notize.')}
+                  {m.notes || t('members.noNotesYet', 'Noch keine Notizen')}
                 </div>
               </div>
             )}

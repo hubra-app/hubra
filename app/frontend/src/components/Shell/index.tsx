@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
-import { AppShell, Alert, Button, Group, Text } from '@mantine/core'
-import { IconShieldCheckFilled } from '@tabler/icons-react'
+import { AppShell, Button, Text } from '@mantine/core'
+import { IconMailExclamation } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
 import { useAuth, useNav } from '@/context/AppContext'
 import { requestEmailVerification } from '@/api/auth'
@@ -39,9 +39,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
       styles={{
         main: {
           background: '#f7f6fb',
-          backgroundImage:
-            'linear-gradient(rgba(24,24,24,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(24,24,24,.08) 1px, transparent 1px), linear-gradient(rgba(24,24,24,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(24,24,24,.05) 1px, transparent 1px)',
-          backgroundSize: '132px 132px, 132px 132px, 22px 22px, 22px 22px',
           height: 'calc(100vh - 64px)',
           minHeight: 'calc(100vh - 64px)',
           overflowY: 'auto',
@@ -60,35 +57,27 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <MobileDrawer />
 
       <AppShell.Main>
-        {currentUser && !currentUser.privateEmailVerified && (
-          <Alert
-            icon={<IconShieldCheckFilled size={18} />}
-            color="acc"
-            variant="filled"
-            radius={0}
-            styles={{
-              root: {
-                borderRadius: 0,
-                position: 'sticky',
-                top: 0,
-                zIndex: 10,
-              },
-            }}
-          >
-            <Group justify="space-between" gap="md" px="xl">
-              <Text size="sm">{t('shell.emailVerify.banner')}</Text>
+        <div className="page-container">
+          {currentUser && !currentUser.privateEmailVerified && (
+            <div className="verify-banner" role="status">
+              <IconMailExclamation size={20} color="#8a6a00" style={{ flexShrink: 0 }} />
+              <Text size="sm" style={{ flex: '1 1 260px' }}>
+                {t('shell.emailVerify.banner')}
+              </Text>
               <Button
-                size="sm"
-                variant="default"
+                size="xs"
+                variant="white"
+                color="dark"
+                style={{ border: '1px solid #fce588' }}
                 onClick={handleResendVerification}
                 loading={verifySending}
               >
-                {verifySending ? t('shell.emailVerify.sending') : t('shell.emailVerify.resend')}
+                {t('shell.emailVerify.resend')}
               </Button>
-            </Group>
-          </Alert>
-        )}
-        <div style={{ padding: 'var(--mantine-spacing-xl)' }}>{children}</div>
+            </div>
+          )}
+          {children}
+        </div>
       </AppShell.Main>
 
       <NotificationPanel />

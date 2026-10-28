@@ -8,14 +8,14 @@ export function InventoryItemDetailScreen() {
   return (
     <div style={{ padding: 40, textAlign: 'center', color: '#8c86a0' }}>
       <div style={{ fontSize: 'var(--mantine-font-size-sm)' }}>
-        {t('inventory.noItemSelected', 'Kei Item usgwehlt.')}
+        {t('inventory.noItemSelected', 'Kein Gegenstand ausgewählt.')}
       </div>
       <Button
         variant="filled"
         style={{ marginTop: 16 }}
         onClick={() => go('/app/inventory')}
       >
-        {t('inventory.backToInventory', 'Zrugg zum Inventar')}
+        {t('inventory.backToInventory', 'Zurück zum Inventar')}
       </Button>
     </div>
   )

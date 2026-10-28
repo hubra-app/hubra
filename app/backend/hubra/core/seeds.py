@@ -22,7 +22,7 @@ def run_seeds(db):
     _kv_defaults = [
         (
             "club.name",
-            "VollBuild Makerspace",
+            "Hubra",
             "general",
             False,
             True,
@@ -576,4 +576,68 @@ def run_seeds(db):
             click.echo(f"  Seeded {inserted} new translations for locale '{locale}'.")
     session.flush()
 
+    refresh_shipped_translations(session, _seeds_dir)
+    session.flush()
+
     session.commit()
+
+
+def refresh_shipped_translations(session, seeds_dir) -> None:
+    """Bring stored translations up to date with the shipped ones.
+
+    A stored value that still equals a value an earlier release shipped (listed
+    in superseded.json) was never edited by the club, so it is replaced with the
+    current value; retired keys are removed. Edited values are left alone.
+    Runs on the public schema and on every club schema.
+    """
+    import pathlib as _pathlib
+
+    from hubra.core.models.tenant import Tenant
+    from hubra.core.models.translation import Translation
+    from hubra.core.tenant.context import reset_search_path, set_search_path
+
+    path = _pathlib.Path(seeds_dir) / "superseded.json"
+    if not path.exists():
+        return
+    with open(path, encoding="utf-8") as f:
+        superseded = json.load(f)
+    current: dict[str, dict[str, str]] = {}
+    for locale in superseded.get("values", {}):
+        current_path = _pathlib.Path(seeds_dir) / f"{locale}.json"
+        if current_path.exists():
+            with open(current_path, encoding="utf-8") as f:
+                current[locale] = json.load(f)
+    retired = set(superseded.get("retired", []))
+
+    def refresh_schema() -> int:
+        changed = 0
+        for row in session.scalars(select(Translation)).all():
+            if row.alias_for:
+                continue
+            old_values = superseded.get("values", {}).get(row.locale, {}).get(row.key)
+            if row.key in retired and (not row.value or old_values is None or row.value in old_values):
+                session.delete(row)
+                changed += 1
+                continue
+            new_value = current.get(row.locale, {}).get(row.key)
+            if new_value and old_values and row.value in old_values and row.value != new_value:
+                row.value = new_value
+                row.needs_attention = False
+                row.is_missing = False
+                changed += 1
+            elif new_value and not row.value and row.is_missing:
+                row.value = new_value
+                row.needs_attention = False
+                row.is_missing = False
+                changed += 1
+        return changed
+
+    total = refresh_schema()
+    session.flush()
+    for tenant in session.scalars(select(Tenant)).all():
+        set_search_path(tenant.id)
+        total += refresh_schema()
+        session.flush()
+    reset_search_path()
+    if total:
+        click.echo(f"  Updated {total} translations to the current wording.")

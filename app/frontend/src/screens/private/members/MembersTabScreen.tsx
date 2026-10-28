@@ -39,7 +39,7 @@ export function MembersTabScreen() {
 
   return (
     <div>
-      <PageHead title={t('shell.nav.members', 'Members')} />
+      <PageHead title={t('shell.nav.members', 'Mitglieder')} />
       <Tabs
         tabs={tabs}
         activeTab={tab}

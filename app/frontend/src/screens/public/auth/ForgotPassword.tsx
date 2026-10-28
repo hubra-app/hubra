@@ -6,16 +6,17 @@ import { z } from 'zod'
 import { IconArrowLeft, IconCheck, IconMail } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import * as authApi from '@/api/auth'
+import { useT } from '@/locales/i18n'
 import { AuthFrame } from './AuthFrame'
 
-const schema = z.object({
-  email: z.string().email('Invalid email'),
-})
-
-type FormValues = z.infer<typeof schema>
+type FormValues = { email: string }
 
 export function ForgotPasswordScreen() {
   const navigate = useNavigate()
+  const { t } = useT()
+  const schema = z.object({
+    email: z.string().email(t('auth.invalidEmail', 'Bitte gib eine gültige E-Mail-Adresse ein.')),
+  })
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
 
@@ -42,7 +43,7 @@ export function ForgotPasswordScreen() {
       leftSection={<IconArrowLeft size={16} />}
       onClick={() => navigate('/login')}
     >
-      Back to login
+      {t('auth.backToLogin', 'Zurück zur Anmeldung')}
     </Button>
   )
 
@@ -53,9 +54,13 @@ export function ForgotPasswordScreen() {
           <ThemeIcon size={56} radius="xl" color="green" variant="light">
             <IconCheck size={28} />
           </ThemeIcon>
-          <Title order={2}>Check your inbox</Title>
+          <Title order={2}>{t('auth.checkInbox', 'Schau in dein Postfach')}</Title>
           <Text size="sm" c="dimmed" mb="md">
-            If an account exists for {form.values.email}, a password reset link has been sent.
+            {t(
+              'auth.resetSent',
+              'Falls es ein Konto für {{email}} gibt, haben wir dir einen Link zum Zurücksetzen geschickt.',
+              { email: form.values.email },
+            )}
           </Text>
           {back}
         </Stack>
@@ -64,20 +69,25 @@ export function ForgotPasswordScreen() {
 
   return (
     <AuthFrame>
-      <ThemeIcon size={48} radius="xl" color="yellow" variant="light" mb="md">
+      <ThemeIcon size={48} radius="xl" color="acc" variant="light" mb="lg">
         <IconMail size={22} />
       </ThemeIcon>
-      <Title order={2} mb={6}>
-        Reset your password
+      <Title order={1} fz={28} mb={6}>
+        {t('auth.resetTitle', 'Passwort zurücksetzen')}
       </Title>
-      <Text size="sm" c="dimmed" mb={28}>
-        Enter your email and we'll send you a reset link.
+      <Text size="md" c="dimmed" mb={32}>
+        {t('auth.resetSubtitle', 'Gib deine E-Mail-Adresse ein. Wir schicken dir einen Link.')}
       </Text>
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack gap="md">
-          <TextInput label="Email" type="email" autoFocus {...form.getInputProps('email')} />
-          <Button type="submit" fullWidth loading={loading}>
-            Send reset link
+          <TextInput
+            label={t('auth.email', 'E-Mail')}
+            type="email"
+            size="md"
+            autoComplete="email"
+            autoFocus {...form.getInputProps('email')} />
+          <Button type="submit" size="md" fullWidth loading={loading}>
+            {t('auth.sendResetLink', 'Link senden')}
           </Button>
           {back}
         </Stack>

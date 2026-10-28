@@ -267,7 +267,7 @@ export function MemberSlideOver({
             <TextInput
               size="sm"
               style={{ paddingLeft: 32 }}
-              placeholder={addPlaceholder ?? t('common.search', 'Suchen…')}
+              placeholder={addPlaceholder ?? t('common.search', 'Suchen')}
               value={addSearch}
               onChange={(e) => setAddSearch(e.target.value)}
             />
@@ -341,13 +341,13 @@ export function MemberSlideOver({
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {loading ? (
-          <LoadingSpinner message={t('common.loading', 'Laden…')} />
+          <LoadingSpinner message={t('common.loading', 'Wird geladen …')} />
         ) : members.length === 0 ? (
           <EmptyState
             title={
               search
-                ? t('common.noResults', 'Kei Resultat.')
-                : t('common.empty', 'Nöd verfügbar.')
+                ? t('common.noResults', 'Keine Ergebnisse.')
+                : t('common.empty', 'Nicht verfügbar.')
             }
           />
         ) : (
@@ -406,7 +406,7 @@ export function MemberSlideOver({
           <TextInput
             size="sm"
             style={{ paddingLeft: 32 }}
-            placeholder={t('common.filter', 'Filtere…')}
+            placeholder={t('common.filter', 'Filter')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -438,7 +438,7 @@ export function MemberSlideOver({
             color: 'var(--mantine-color-ink-3)',
           }}
         >
-          {members.length} {t('common.members', 'Mitglider')}
+          {members.length} {t('common.members', 'Mitglieder')}
         </div>
       </div>
 

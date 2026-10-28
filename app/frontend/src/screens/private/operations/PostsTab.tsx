@@ -100,10 +100,10 @@ export function PostsTab() {
       setAddOpen(false)
       notify(
         'success',
-        t('posts.post.published', 'Post published'),
+        t('posts.post.published', 'Beitrag veröffentlicht'),
         t(
           'posts.post.publishedMsg',
-          'Your post is now visible to all members.',
+          'Dein Beitrag ist jetzt für alle Mitglieder sichtbar.',
         ),
       )
     } catch (err: unknown) {
@@ -112,7 +112,7 @@ export function PostsTab() {
         t('common.error'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unknown error'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -129,8 +129,8 @@ export function PostsTab() {
       setEditTarget(null)
       notify(
         'success',
-        t('posts.post.updated', 'Post updated'),
-        t('posts.post.updatedMsg', 'Changes saved.'),
+        t('posts.post.updated', 'Beitrag gespeichert'),
+        t('posts.post.updatedMsg', 'Änderungen gespeichert.'),
       )
     } catch (err: unknown) {
       notify(
@@ -138,7 +138,7 @@ export function PostsTab() {
         t('common.error'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unknown error'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -150,7 +150,7 @@ export function PostsTab() {
       setPosts((prev) => prev.filter((p) => p.id !== deleteTarget.id))
       notify(
         'info',
-        t('posts.post.deleted', 'Post deleted'),
+        t('posts.post.deleted', 'Beitrag gelöscht'),
         t('posts.post.deletedMsg', { title: deleteTarget.title }),
       )
     } catch (err: unknown) {
@@ -159,7 +159,7 @@ export function PostsTab() {
         t('common.error'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unknown error'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -247,14 +247,14 @@ export function PostsTab() {
         ),
       )
       setCommentInput('')
-      notify('success', t('posts.commentAdded', 'Comment added'), '')
+      notify('success', t('posts.commentAdded', 'Kommentar hinzugefügt'), '')
     } catch (err: unknown) {
       notify(
         'error',
         t('common.error'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unknown error'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setSubmittingComment(false)
@@ -279,38 +279,38 @@ export function PostsTab() {
         t('common.error'),
         err instanceof Error
           ? err.message
-          : t('common.unknownError', 'Unknown error'),
+          : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
 
   const postForm = (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <Field label={t('posts.titleLabel', 'Title')}>
+      <Field label={t('posts.titleLabel', 'Titel')}>
         <TextInput
           {...form.getInputProps('title')}
           placeholder={t(
             'posts.titlePlaceholder',
-            'New dust extractor installed!',
+            'Neue Absauganlage installiert!',
           )}
         />
       </Field>
-      <Field label={t('posts.summaryLabel', 'Summary (optional)')}>
+      <Field label={t('posts.summaryLabel', 'Zusammenfassung (optional)')}>
         <TextInput
           {...form.getInputProps('summary')}
           placeholder={t(
             'posts.summaryPlaceholder',
-            'A short teaser shown in the list',
+            'Ein kurzer Anriss für die Liste',
           )}
         />
       </Field>
-      <Field label={t('posts.content.label', 'Content')}>
+      <Field label={t('posts.content.label', 'Inhalt')}>
         <RichTextEditor
           value={form.values.body}
           onChange={(val) => form.setFieldValue('body', val)}
           placeholder={t(
             'posts.content.placeholder',
-            'Share an update with the club…',
+            'Teile eine Neuigkeit mit dem Verein …',
           )}
         />
       </Field>
@@ -329,7 +329,7 @@ export function PostsTab() {
         <Group justify="flex-end" mb={16}>
           <Button variant="filled" onClick={openAdd}>
             <IconPlus size={16} />
-            {t('posts.newPost', 'New Post')}
+            {t('posts.newPost', 'Neuer Beitrag')}
           </Button>
         </Group>
       )}
@@ -346,14 +346,14 @@ export function PostsTab() {
                 fontWeight: 500,
               }}
             >
-              {t('posts.noPostsYet', 'No posts yet')}
+              {t('posts.noPostsYet', 'Noch keine Beiträge')}
             </div>
             <div
               style={{ fontSize: 'var(--mantine-font-size-sm)', marginTop: 4 }}
             >
               {t(
                 'posts.beFirstToShare',
-                'Be the first to share an update with the club.',
+                'Teile als Erste:r eine Neuigkeit mit dem Verein.',
               )}
             </div>
           </div>
@@ -440,7 +440,7 @@ export function PostsTab() {
                       onClick={() => toggleExpandBody(post.id)}
                       style={{ marginLeft: 4, padding: '0 4px' }}
                     >
-                      {t('posts.readMore', 'Read more')}
+                      {t('posts.readMore', 'Weiterlesen')}
                     </Button>
                   )}
                   {bodyExpanded && (
@@ -451,7 +451,7 @@ export function PostsTab() {
                       style={{ marginLeft: 4, padding: '0 4px' }}
                     >
                       <IconArrowBackUp size={14} />
-                      {t('posts.showLess', 'Show less')}
+                      {t('posts.showLess', 'Weniger anzeigen')}
                     </Button>
                   )}
                 </div>
@@ -508,7 +508,7 @@ export function PostsTab() {
                           marginBottom: 8,
                         }}
                       >
-                        {t('posts.noComments', 'No comments yet.')}
+                        {t('posts.noComments', 'Noch keine Kommentare.')}
                       </div>
                     ) : (
                       <div
@@ -595,7 +595,7 @@ export function PostsTab() {
                           onChange={(e) => setCommentInput(e.target.value)}
                           placeholder={t(
                             'posts.commentPlaceholder',
-                            'Write a comment…',
+                            'Schreibe einen Kommentar …',
                           )}
                           style={{ flex: 1 }}
                           onKeyDown={(e) => {
@@ -611,7 +611,7 @@ export function PostsTab() {
                           disabled={!commentInput.trim() || submittingComment}
                           onClick={() => submitComment(post.id)}
                         >
-                          {t('posts.comment', 'Comment')}
+                          {t('posts.comment', 'Kommentieren')}
                         </Button>
                       </div>
                     )}
@@ -627,14 +627,14 @@ export function PostsTab() {
       <Modal
         open={addOpen}
         onClose={() => setAddOpen(false)}
-        title={t('posts.newPost', 'New Post')}
+        title={t('posts.newPost', 'Neuer Beitrag')}
         footer={
           <>
             <Button variant="default" onClick={() => setAddOpen(false)}>
               {t('common.cancel')}
             </Button>
             <Button variant="filled" onClick={() => form.onSubmit(saveAdd)()}>
-              {t('posts.publish', 'Publish')}
+              {t('posts.publish', 'Veröffentlichen')}
             </Button>
           </>
         }
@@ -644,7 +644,7 @@ export function PostsTab() {
       <Modal
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
-        title={t('posts.editPost', 'Edit Post')}
+        title={t('posts.editPost', 'Beitrag bearbeiten')}
         subtitle={editTarget?.title}
         footer={
           <>
@@ -662,10 +662,10 @@ export function PostsTab() {
       <ConfirmModal
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        title={t('posts.deletePostTitle', 'Delete post?')}
+        title={t('posts.deletePostTitle', 'Beitrag löschen?')}
         body={t(
           'posts.deletePostBody',
-          'This post will be permanently removed.',
+          'Der Beitrag wird endgültig gelöscht.',
         )}
         onConfirm={confirmDelete}
       />

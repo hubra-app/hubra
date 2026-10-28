@@ -37,7 +37,7 @@ export function MailScreen() {
 
   return (
     <div>
-      <PageHead title={t('shell.breadcrumbs.mail', 'Mail')} />
+      <PageHead title={t('shell.breadcrumbs.mail', 'Mail › Verwaltung')} />
       <Tabs
         tabs={TABS.map((tab) => ({ id: tab.key, label: t(tab.labelKey) }))}
         activeTab={activeTab}

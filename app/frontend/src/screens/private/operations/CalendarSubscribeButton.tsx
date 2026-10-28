@@ -31,18 +31,18 @@ export function CalendarSubscribeButton() {
     <>
       <Button variant="default" onClick={open} loading={loading}>
         <IconCalendarShare size={16} />
-        {t('events.subscribe.button', 'Add to my calendar')}
+        {t('events.subscribe.button', 'Kalender abonnieren')}
       </Button>
       <Modal
         opened={url !== null}
         onClose={() => setUrl(null)}
-        title={t('events.subscribe.title', 'Subscribe to club events')}
+        title={t('events.subscribe.title', 'Anlässe des Vereins abonnieren')}
         centered
       >
         <Text fz="sm" mb="sm">
           {t(
             'events.subscribe.hint',
-            'Add this address as a calendar subscription (Google Calendar: "From URL", Apple Calendar: "New Calendar Subscription"). New and changed events show up there on their own. The link is personal; do not share it.',
+            'Füge diese Adresse als Kalenderabo hinzu (Google Kalender: «Per URL», Apple Kalender: «Neues Kalenderabonnement»). Neue und geänderte Anlässe erscheinen dann automatisch. Der Link ist persönlich, gib ihn nicht weiter.',
           )}
         </Text>
         <Group gap="xs" wrap="nowrap">
@@ -56,8 +56,8 @@ export function CalendarSubscribeButton() {
             {({ copied, copy }) => (
               <Button onClick={copy} variant={copied ? 'light' : 'filled'}>
                 {copied
-                  ? t('events.subscribe.copied', 'Copied')
-                  : t('events.subscribe.copy', 'Copy')}
+                  ? t('events.subscribe.copied', 'Kopiert')
+                  : t('events.subscribe.copy', 'Kopieren')}
               </Button>
             )}
           </CopyButton>

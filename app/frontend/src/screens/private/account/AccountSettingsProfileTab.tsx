@@ -85,18 +85,18 @@ export function AccountSettingsProfileTab() {
       setCurrentUser(updated)
       notify(
         'success',
-        t('account.profile.saved', 'Profil gspeichert'),
-        t('account.profile.updatedMsg', 'Din Profil isch aktualisiert worde.'),
+        t('account.profile.saved', 'Profil gespeichert'),
+        t('account.profile.updatedMsg', 'Dein Profil wurde gespeichert.'),
       )
     } catch (err: unknown) {
       notify(
         'error',
-        t('account.saveFailed', 'Speichere fehlgeschlage'),
+        t('account.saveFailed', 'Speichern fehlgeschlagen'),
         err instanceof Error
           ? err.message
           : t(
               'account.couldNotUpdateProfile',
-              'Profil chonnt nöd aktualisiert wärde.',
+              'Profil konnte nicht gespeichert werden.',
             ),
       )
     } finally {
@@ -110,10 +110,10 @@ export function AccountSettingsProfileTab() {
       await authApi.updateMailSettings(val)
       notify(
         'success',
-        t('account.mail.saved', 'Mail-Iistellige gspeichert'),
+        t('account.mail.saved', 'Mail-Einstellungen gespeichert'),
         val
-          ? t('account.forwardingEnabled', 'Witergleiti aktiviert.')
-          : t('account.forwardingDisabled', 'Witergleiti deaktiviert.'),
+          ? t('account.forwardingEnabled', 'Weiterleitung eingeschaltet.')
+          : t('account.forwardingDisabled', 'Weiterleitung ausgeschaltet.'),
       )
     } catch {
       setMailForwarding(!val)
@@ -122,7 +122,7 @@ export function AccountSettingsProfileTab() {
         t('common.error', 'Fehler'),
         t(
           'account.couldNotUpdateMailSettings',
-          'Mail-Iistellige chonnt nöd aktualisiert wärde.',
+          'Mail-Einstellungen konnten nicht gespeichert werden.',
         ),
       )
     }
@@ -134,8 +134,8 @@ export function AccountSettingsProfileTab() {
       await authApi.requestEmailVerification()
       notify(
         'success',
-        t('account.verificationEmailSent', 'Verifikations-E-Mail gsendet'),
-        t('account.checkInbox', 'Überprüch din private E-Mail-Inbox.'),
+        t('account.verificationEmailSent', 'Bestätigungs-E-Mail gesendet'),
+        t('account.checkInbox', 'Schau in dein privates E-Mail-Postfach.'),
       )
     } catch (err: unknown) {
       notify(
@@ -145,7 +145,7 @@ export function AccountSettingsProfileTab() {
           ? err.message
           : t(
               'account.couldNotSendVerification',
-              'Verifikations-E-Mail chonnt nöd gsendet wärde.',
+              'Bestätigungs-E-Mail konnte nicht gesendet werden.',
             ),
       )
     } finally {
@@ -165,7 +165,7 @@ export function AccountSettingsProfileTab() {
         >
           <IconUser size={16} style={{ color: 'var(--mantine-color-ink-4)' }} />
           <Text fw={700} fz="md">
-            {t('account.profile', 'Profil')}
+            {t('account.profileLabel', 'Profil')}
           </Text>
         </Group>
         <div
@@ -213,23 +213,23 @@ export function AccountSettingsProfileTab() {
               />
             </div>
           </div>
-          <Field label={t('common.displayName', 'Azeigename')}>
+          <Field label={t('common.displayName', 'Anzeigename')}>
             <TextInput {...profileForm.getInputProps('displayName')} />
           </Field>
           <Field
             label={t('account.privateEmail', 'Private E-Mail')}
             hint={t(
               'account.privateEmailHint',
-              'Dini persönlichi E-Mail - wird mit andere Mitglider nöd teilt',
+              'Deine persönliche Adresse. Andere Mitglieder sehen sie nicht.',
             )}
           >
             <TextInput type="email" {...profileForm.getInputProps('email')} />
           </Field>
           <Field
-            label={t('account.clubEmail', 'Club E-Mail')}
+            label={t('account.clubEmail', 'Vereins-E-Mail')}
             hint={t(
               'account.clubEmailHint',
-              'Automatisch generiert - kontaktier en Administrator zum ändere',
+              'Wird automatisch erstellt. Nur der Vorstand kann sie ändern.',
             )}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -253,15 +253,15 @@ export function AccountSettingsProfileTab() {
                   whiteSpace: 'nowrap',
                 }}
               >
-                {t('account.readOnly', 'nur lese')}
+                {t('account.readOnly', 'nur lesen')}
               </span>
             </div>
           </Field>
           <Field
-            label={t('account.profile.note', 'Profil-Notiz')}
+            label={t('account.profile.note', 'Profilnotiz')}
             hint={t(
               'account.profile.noteHint',
-              'Kurzi Bio oder Notiz, wo uf dim Profil azeigt wird',
+              'Ein kurzer Text über dich, den andere Mitglieder sehen.',
             )}
           >
             <Textarea
@@ -278,8 +278,8 @@ export function AccountSettingsProfileTab() {
             >
               <IconCheck size={16} />
               {profileLoading
-                ? t('account.saving', 'Wird gspeichert…')
-                : t('account.saveProfile', 'Profil speichere')}
+                ? t('account.saving', 'Wird gespeichert …')
+                : t('account.saveProfile', 'Profil speichern')}
             </Button>
           </div>
         </div>
@@ -295,7 +295,7 @@ export function AccountSettingsProfileTab() {
         >
           <IconMail size={16} style={{ color: 'var(--mantine-color-ink-4)' }} />
           <Text fw={700} fz="md">
-            {t('account.mail', 'Mail-Iistellige')}
+            {t('account.mailLabel', 'Mail-Einstellungen')}
           </Text>
         </Group>
         <div
@@ -327,7 +327,7 @@ export function AccountSettingsProfileTab() {
               >
                 {t(
                   'account.verifyEmailToEnableForwarding',
-                  'Verifizier dini private E-Mail zum Witergleiti aktiviere',
+                  'Bestätige deine E-Mail-Adresse, um die Weiterleitung einzuschalten.',
                 )}
               </div>
               <Button
@@ -337,10 +337,10 @@ export function AccountSettingsProfileTab() {
                 disabled={verifyLoading}
               >
                 {verifyLoading
-                  ? t('account.sending', 'Wird gsendet…')
+                  ? t('account.sending', 'Wird gesendet …')
                   : t(
                       'account.sendVerificationEmail',
-                      'Verifikations-E-Mail sende',
+                      'Bestätigungs-E-Mail senden',
                     )}
               </Button>
             </div>
@@ -366,7 +366,7 @@ export function AccountSettingsProfileTab() {
               >
                 {t(
                   'account.forwardToPrivateEmail',
-                  'A private E-Mail witergleite',
+                  'An private E-Mail weiterleiten',
                 )}
               </div>
               <div
@@ -379,11 +379,11 @@ export function AccountSettingsProfileTab() {
                 {emailVerified === false
                   ? t(
                       'account.verifyEmailAboveToEnable',
-                      '(E-Mail oben verifiziere zum aktiviere)',
+                      '(Bestätige zuerst oben deine E-Mail-Adresse)',
                     )
                   : t(
                       'account.copyIncomingClubMail',
-                      'Igangendi Club-Mail a dini private E-Mail-Adresse chopie',
+                      'Eingehende Vereins-Mails an meine private E-Mail kopieren',
                     )}
               </div>
             </div>
@@ -402,7 +402,7 @@ export function AccountSettingsProfileTab() {
             >
               {t(
                 'account.loadingMailSettings',
-                'Mail-Iistellige werden glade…',
+                'Mail-Einstellungen werden geladen …',
               )}
             </div>
           )}

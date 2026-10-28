@@ -31,25 +31,25 @@ export function AccountSettingsMembershipTab() {
             style={{ color: 'var(--mantine-color-ink-4)' }}
           />
           <Text fw={700} fz="md">
-            {t('account.membership.details', 'Mitgliedschaft-Datene')}
+            {t('account.membership.details', 'Mitgliedschaft')}
           </Text>
         </Group>
         <div style={{ padding: '4px 0' }}>
           {[
             {
-              label: t('account.currentTier', 'Aktuelli Stuf'),
+              label: t('account.currentTier', 'Aktuelle Stufe'),
               value: currentUser?.tier ?? '?',
             },
             {
-              label: t('account.memberSince', 'Mitglid siit'),
+              label: t('account.memberSince', 'Mitglied seit'),
               value: currentUser?.joined ?? '?',
             },
             {
-              label: t('common.roles', 'Roll'),
+              label: t('common.roles', 'Rollen'),
               value: currentUser?.roles?.join(', ') ?? '?',
             },
             {
-              label: t('account.toolHours', 'Wärchzeug-Stunde'),
+              label: t('account.toolHours', 'Werkzeugstunden'),
               value: `${currentUser?.toolHours ?? 0} h`,
             },
             {
@@ -98,7 +98,7 @@ export function AccountSettingsMembershipTab() {
                 color: 'var(--mantine-color-ink-4)',
               }}
             >
-              {t('account.lastSeen', 'Zuletzt gseh')}
+              {t('account.lastSeen', 'Zuletzt gesehen')}
             </span>
             <span
               style={{
@@ -122,7 +122,7 @@ export function AccountSettingsMembershipTab() {
           }}
         >
           <Text fw={700} fz="md">
-            {t('account.groupsCategories', 'Gruppen & Kategorie')}
+            {t('account.groupsCategories', 'Gruppen und Kategorien')}
           </Text>
         </Group>
         <div
@@ -160,7 +160,7 @@ export function AccountSettingsMembershipTab() {
                     color: 'var(--mantine-color-ink-3)',
                   }}
                 >
-                  {t('account.noGroupsAssigned', 'Cheni Gruppe zuegwise')}
+                  {t('account.noGroupsAssigned', 'Keine Gruppen zugewiesen')}
                 </span>
               )}
             </div>
@@ -181,7 +181,7 @@ export function AccountSettingsMembershipTab() {
       >
         {t(
           'account.contactAdminToChange',
-          'Wen dini Stuf, Gruppe oder Kategorie wetsch ändere, kontaktier en Administrator.',
+          'Für Änderungen an Stufe, Gruppen oder Kategorien wende dich an den Vorstand.',
         )}
       </div>
     </>

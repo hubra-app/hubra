@@ -98,8 +98,8 @@ export function FunctionsTab() {
       setAddOpen(false)
       notify(
         'success',
-        t('common.saved', 'Gspeichert'),
-        t('common.created', 'Funktion erstellt'),
+        t('common.saved', 'Gespeichert'),
+        t('common.created', 'Erstellt'),
       )
     } catch (err: unknown) {
       notify(
@@ -122,8 +122,8 @@ export function FunctionsTab() {
       setEditTarget(null)
       notify(
         'success',
-        t('common.saved', 'Gspeichert'),
-        t('common.updated', 'Funktion aktualisiert'),
+        t('common.saved', 'Gespeichert'),
+        t('common.updated', 'Gespeichert'),
       )
     } catch (err: unknown) {
       notify(
@@ -142,7 +142,7 @@ export function FunctionsTab() {
       notify(
         'info',
         t('functions.deleted', 'Gelöscht'),
-        t('functions.deletedMsg', 'Funktion entfernt'),
+        t('functions.deletedMsg', 'Die Funktion wurde gelöscht.'),
       )
     } catch (err: unknown) {
       notify(
@@ -158,17 +158,17 @@ export function FunctionsTab() {
       <Field label={t('common.name', 'Name')}>
         <TextInput
           {...form.getInputProps('name')}
-          placeholder={t('common.namePlaceholder', 'z.B. Kassier')}
+          placeholder={t('common.namePlaceholder', 'Name')}
         />
       </Field>
       <Field label={t('common.description', 'Beschreibung')}>
         <Textarea
           rows={2}
           {...form.getInputProps('description')}
-          placeholder={t('functions.descPlaceholder', 'Kurze Beschreibung…')}
+          placeholder={t('functions.descPlaceholder', 'Kurze Beschreibung …')}
         />
       </Field>
-      <Field label={t('functions.maxHolders', 'Max. Anzahl Inhaber')}>
+      <Field label={t('functions.maxHolders', 'Max. Anzahl Personen')}>
         <TextInput
           type="number"
           min={1}
@@ -184,14 +184,14 @@ export function FunctionsTab() {
         <Group justify="flex-end" mb={16}>
           <Button variant="filled" onClick={openAdd}>
             <IconPlus size={16} />
-            {t('common.add', 'Funktion hinzufügen')}
+            {t('common.add', 'Hinzufügen')}
           </Button>
         </Group>
       )}
       {loading ? (
-        <LoadingSpinner message={t('common.loading', 'Laden…')} />
+        <LoadingSpinner message={t('common.loading', 'Wird geladen …')} />
       ) : functions.length === 0 ? (
-        <EmptyState title={t('functions.empty', 'Keine Funktionen.')} />
+        <EmptyState title={t('functions.empty', 'Noch keine Funktionen.')} />
       ) : (
         <CardGrid columns={3}>
           {functions.map((fn) => (
@@ -223,7 +223,7 @@ export function FunctionsTab() {
                     onClick={() => setManageHolders(fn)}
                   >
                     <IconUserCog size={16} />
-                    {t('functions.holders', 'Inhaber')} ({fn.holders.length}/
+                    {t('functions.holders', 'Besetzt durch')} ({fn.holders.length}/
                     {fn.maxHolders})
                   </Button>
                   {canUpdate && (
@@ -282,7 +282,7 @@ export function FunctionsTab() {
                     color: '#8c86a0',
                   }}
                 >
-                  {t('functions.noHolder', 'Kein Inhaber')}
+                  {t('functions.noHolder', 'Unbesetzt')}
                 </div>
               )}
             </CardItem>
@@ -293,7 +293,7 @@ export function FunctionsTab() {
       <Modal
         open={addOpen}
         onClose={() => setAddOpen(false)}
-        title={t('common.add', 'Funktion hinzufügen')}
+        title={t('common.add', 'Hinzufügen')}
         footer={
           <>
             <Button variant="default" onClick={() => setAddOpen(false)}>
@@ -310,7 +310,7 @@ export function FunctionsTab() {
       <Modal
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
-        title={t('common.edit', 'Funktion bearbeiten')}
+        title={t('common.edit', 'Bearbeiten')}
         subtitle={editTarget?.name}
         footer={
           <>
@@ -331,7 +331,7 @@ export function FunctionsTab() {
         title={t('functions.deleteTitle', 'Funktion löschen?')}
         body={t(
           'functions.deleteBody',
-          'Die Funktion wird entfernt. Mail-Adressen werden deprovisioniert.',
+          'Die Funktion wird gelöscht. Ihre Mail-Adressen werden entfernt.',
         )}
         onConfirm={confirmDelete}
       />
@@ -414,7 +414,7 @@ function HolderPanel({
         ])
         notify(
           'success',
-          t('common.saved', 'Gspeichert'),
+          t('common.saved', 'Gespeichert'),
           `${m.name} → ${fn.name}`,
         )
       })
@@ -451,7 +451,7 @@ function HolderPanel({
   return (
     <MemberSlideOver
       title={fn.name}
-      subtitle={`${t('functions.manageHolders', 'Inhaber verwalten')} · ${
+      subtitle={`${t('functions.manageHolders', 'Personen verwalten')} · ${
         holders.length
       }/${fn.maxHolders}`}
       icon={
@@ -471,9 +471,9 @@ function HolderPanel({
       }
       members={slideMembers}
       addLabel={
-        canAdd ? t('functions.assignHolder', 'Inhaber hinzufügen') : undefined
+        canAdd ? t('functions.assignHolder', 'Person zuweisen') : undefined
       }
-      addPlaceholder={t('functions.searchMembers', 'Mitglieder suchen…')}
+      addPlaceholder={t('functions.searchMembers', 'Mitglieder suchen …')}
       searchResults={canAdd ? searchResults : undefined}
       onAdd={canAdd ? handleAdd : undefined}
       onAddSearch={setSearchQuery}
@@ -502,7 +502,7 @@ function HolderPanel({
               }}
             >
               <MailIcon size={13} />
-              {t('mail.mail', 'MAIL')}
+              {t('mail.mail', 'Mail')}
             </div>
             <a
               href={withBase('/app/mail?tab=functions')}
@@ -512,7 +512,7 @@ function HolderPanel({
                 textDecoration: 'none',
               }}
             >
-              {t('mail.admin.openInMailAdmin', 'Im Mail-Admin verwalte')} →
+              {t('mail.admin.openInMailAdmin', 'In der Mail-Verwaltung öffnen')} →
             </a>
           </div>
         ) : null

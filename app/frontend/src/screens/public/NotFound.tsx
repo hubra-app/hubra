@@ -1,7 +1,7 @@
-import { Button } from '@mantine/core'
+import { Button, Stack, Text, Title } from '@mantine/core'
 import { useNavigate } from 'react-router-dom'
 import { useT } from '@/locales/i18n'
-import { IconHome } from '@tabler/icons-react'
+import { IconArrowLeft } from '@tabler/icons-react'
 import { hasTokens } from '@hubra/api-client'
 
 export function NotFoundScreen() {
@@ -14,45 +14,28 @@ export function NotFoundScreen() {
       style={{
         minHeight: '100vh',
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 16,
-        padding: 32,
+        padding: 24,
+        background: '#f7f6fb',
       }}
-      className="graph-bg"
     >
-      <div style={{ fontSize: 64, fontWeight: 800, color: '#1a1625' }}>404</div>
-      <div
-        style={{
-          fontSize: 'var(--mantine-font-size-lg)',
-          fontWeight: 600,
-          color: '#2e2940',
-        }}
-      >
-        {t('common.pageNotFound', 'Page not found')}
-      </div>
-      <div
-        style={{
-          fontSize: 'var(--mantine-font-size-sm)',
-          color: '#5e5873',
-          textAlign: 'center',
-          maxWidth: 360,
-        }}
-      >
-        {t(
-          'common.pageNotFoundDesc',
-          'The page you are looking for does not exist or has been moved.',
-        )}
-      </div>
-      <Button
-        variant="filled"
-        style={{ marginTop: 8 }}
-        onClick={() => navigate(target)}
-      >
-        <IconHome size={16} />
-        {t('common.goHome', 'Go home')}
-      </Button>
+      <Stack align="center" gap="sm" maw={420} ta="center">
+        <div className="logo-mark" style={{ width: 48, height: 48, marginBottom: 8 }} />
+        <Text className="num" fz="sm" fw={600} c="acc.7">
+          404
+        </Text>
+        <Title order={1}>{t('common.pageNotFound', 'Seite nicht gefunden')}</Title>
+        <Text c="dimmed">
+          {t(
+            'common.pageNotFoundDesc',
+            'Diese Seite gibt es nicht oder sie wurde verschoben.',
+          )}
+        </Text>
+        <Button mt="md" leftSection={<IconArrowLeft size={16} />} onClick={() => navigate(target)}>
+          {t('common.goHome', 'Zur Startseite')}
+        </Button>
+      </Stack>
     </div>
   )
 }
