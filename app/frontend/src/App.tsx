@@ -8,7 +8,6 @@ import { URL_CLUB } from '@/clubBase'
 import { InstanceProvider, useInstance } from '@/context/InstanceContext'
 import { RequireModule } from '@/modules/RequireModule'
 import { usePluginLoader, usePluginRoutes } from '@/plugins'
-import { ApplyScreen } from '@/screens/public/Apply'
 import { NotFoundScreen } from '@/screens/public/NotFound'
 import { Toasts } from '@/components/ui'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
@@ -367,11 +366,7 @@ function PrivateRoutes() {
                   />
                   <Route
                     path="mail/wildduck"
-                    element={
-                      <RequireModule code="mail">
-                        <MailScreen />
-                      </RequireModule>
-                    }
+                    element={<Navigate to="/app/mail" replace />}
                   />
                   <Route
                     path="operations/codes"
@@ -475,11 +470,7 @@ function PrivateRoutes() {
                   />
                   <Route
                     path="system/health"
-                    element={
-                      <RequirePermission permKey="roles.roles.create">
-                        <SystemScreen />
-                      </RequirePermission>
-                    }
+                    element={<Navigate to="/app/system" replace />}
                   />
                   <Route
                     path="audit-log"
@@ -545,7 +536,13 @@ function AppInner() {
       ))}
 
       {/* Public — tenant-specific */}
-      <Route path="/apply" element={<ApplyScreen />} />
+      {/* Asking to join happens on the SSO portal, signed in. */}
+      <Route
+        path="/apply"
+        element={
+          <SsoRedirect path={URL_CLUB ? `clubs/${encodeURIComponent(URL_CLUB)}` : 'clubs'} />
+        }
+      />
 
       {/* / and /app/* → into the club; club pages run below /<club> (clubBase.ts) */}
       <Route path="/" element={<HomeRedirect />} />

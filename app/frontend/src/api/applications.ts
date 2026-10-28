@@ -22,31 +22,6 @@ function adapt(b: BackendApplication): Application {
   };
 }
 
-export interface ApplicationSubmit {
-  firstName: string;
-  lastName: string;
-  email: string;
-  wantsTierId?: number;
-  message?: string;
-}
-
-export async function submitApplication(
-  input: ApplicationSubmit,
-): Promise<Application> {
-  const body = {
-    first_name: input.firstName,
-    last_name: input.lastName,
-    email: input.email,
-    wants_tier_id: input.wantsTierId ?? null,
-    message: input.message ?? "",
-  };
-  const data = await apiFetch<BackendApplication>("/applications/", {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
-  return adapt(data);
-}
-
 export async function listApplications(): Promise<Application[]> {
   const data = await apiFetch<BackendApplication[]>("/applications");
   return data.map(adapt);

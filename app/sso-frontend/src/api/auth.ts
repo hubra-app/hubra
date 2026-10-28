@@ -127,11 +127,26 @@ export async function findClubs(
   return apiFetch(`/system/clubs${qs}`)
 }
 
+export interface ClubPage extends ClubListing {
+  /** The membership tiers a person can ask for. */
+  tiers: { id: number; name: string }[]
+  canJoinDirectly: boolean
+}
+
+/** One club for its join page (the club app's /apply sends people here). */
+export async function getClub(slug: string): Promise<ClubPage> {
+  return apiFetch(`/system/clubs/${encodeURIComponent(slug)}`)
+}
+
 /** Join a club (platform managers) or ask to join it (everyone else). */
 export async function joinClub(
   slug: string,
+  wantsTierId?: number,
 ): Promise<{ status: 'joined' | 'requested'; club: { slug: string; name: string } }> {
-  return apiFetch(`/system/clubs/${encodeURIComponent(slug)}/join`, { method: 'POST' })
+  return apiFetch(`/system/clubs/${encodeURIComponent(slug)}/join`, {
+    method: 'POST',
+    body: JSON.stringify(wantsTierId ? { wantsTierId } : {}),
+  })
 }
 
 export interface ClubRequest {
