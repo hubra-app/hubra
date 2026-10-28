@@ -127,6 +127,11 @@ def register_jwt_callbacks(jwt_manager) -> None:
         identity = jwt_data["sub"]
         if isinstance(identity, str) and identity.startswith("user:"):
             return db.session.get(User, int(identity[5:]))
+        # A member id only means something in the club that issued the
+        # token: refuse it in any other club (None -> 401 below).
+        tenant = current_tenant()
+        if (tenant.slug if tenant else None) != jwt_data.get("tenant_slug"):
+            return None
         return db.session.get(Member, int(identity))
 
     @jwt_manager.user_lookup_error_loader

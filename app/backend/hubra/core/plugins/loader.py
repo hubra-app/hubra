@@ -264,6 +264,10 @@ def _import(spec: Spec) -> list:
     if not pkg:
         return []
     path = str(spec.path)
+    if not spec.bundled:
+        # Only the signed sources may run: drop any bytecode next to them.
+        for cache in spec.path.rglob("__pycache__"):
+            shutil.rmtree(cache, ignore_errors=True)
     if path not in sys.path:
         sys.path.insert(0, path)
     mod = importlib.import_module(pkg)

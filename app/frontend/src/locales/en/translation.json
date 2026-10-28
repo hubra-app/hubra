@@ -1,6 +1,9 @@
 {
   "shell": {
-    "search": "Search members, groups...",
+    "search": {
+      "placeholder": "Search members, invoices, inventory…",
+      "noResults": "No results for \"{{query}}\""
+    },
     "searchPlaceholder": "Search members, invoices, inventory…",
     "searchNoResults": "No results for \"{{query}}\"",
     "searchKind": {
@@ -54,7 +57,8 @@
       "systemMail": "System Mail",
       "permissions": "Permissions",
       "codes": "Codes",
-      "bindings": "Bindings"
+      "bindings": "Bindings",
+      "translations": "Translations"
     },
     "sections": {
       "workspace": "Workspace",
@@ -98,7 +102,9 @@
       "auditLog": "Audit log",
       "system": "System › Permissions",
       "codes": "Codes",
-      "bindings": "Bindings"
+      "bindings": "Bindings",
+      "externalParties": "External parties",
+      "translations": "Translations"
     },
     "notifPanel": {
       "title": "Notifications",
@@ -121,6 +127,12 @@
       "signOut": "Sign out",
       "whatsNew": "What's new",
       "dismiss": "Dismiss"
+    },
+    "notif": {
+      "title": "Notifications",
+      "markAllRead": "Mark all read",
+      "unread": "Unread",
+      "noUnread": "No unread notifications."
     }
   },
   "app": {
@@ -248,6 +260,9 @@
       "noPosts": "No posts yet.",
       "noLikes": "No likes yet.",
       "noComments": "No comments yet."
+    },
+    "recentPosts": {
+      "title": "Recent posts"
     }
   },
   "members": {
@@ -371,6 +386,18 @@
       "overview": "Overview",
       "payments": "Payments",
       "activity": "Activity"
+    },
+    "member": {
+      "addedTitle": "Member added title",
+      "updatedTitle": "Member updated title",
+      "restoredTitle": "Member restored title"
+    },
+    "password": {
+      "updateFailed": "Password update failed"
+    },
+    "export": {
+      "failed": "Export failed",
+      "csv": "Export CSV"
     }
   },
   "groups": {
@@ -395,7 +422,15 @@
     "forwarding": "Forwarding",
     "allowSendAs": "Allow send-as",
     "selfJoin": "Members can join and leave on their own",
-    "selfJoinHint": "For interest groups. Members find it under My account."
+    "selfJoinHint": "For interest groups. Members find it under My account.",
+    "member": {
+      "added": "Member added",
+      "removed": "Member removed"
+    },
+    "group": {
+      "saved": "Group saved successfully.",
+      "deleted": "Group deleted successfully."
+    }
   },
   "events": {
     "title": "Events",
@@ -433,6 +468,10 @@
       "hint": "Add this address as a calendar subscription (Google Calendar: \"From URL\", Apple Calendar: \"New Calendar Subscription\"). New and changed events show up there on their own. The link is personal; do not share it.",
       "copy": "Copy",
       "copied": "Copied"
+    },
+    "event": {
+      "saved": "Event saved.",
+      "deleted": "Event deleted."
     }
   },
   "finance": {
@@ -688,6 +727,12 @@
       "alwaysOn": "Always on: {{names}}",
       "saved": "Settings saved",
       "secretKept": "Leave empty to keep the stored value"
+    },
+    "tabs": {
+      "settings": "Settings",
+      "modules": "Modules",
+      "club": "Club",
+      "domains": "Domains"
     }
   },
   "bootstrap": {
@@ -852,7 +897,16 @@
     "notAvailable": "N/A",
     "addMember": "Add member",
     "myEvents": "My Events",
-    "unknownError": "Unknown error"
+    "unknownError": "Unknown error",
+    "updateFailed": "Update failed",
+    "saveChanges": "Save changes",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "status": "Status",
+    "member": "Member",
+    "noNotifications": "No notifications.",
+    "archived": "Archived",
+    "password": "Password"
   },
   "codes": {
     "title": "Codes",
@@ -930,5 +984,57 @@
       "option": "Option",
       "vote": "Vote"
     }
+  },
+  "translations": {
+    "saved": "Translations saved",
+    "saveFailed": "Failed to save translations",
+    "deleted": "Key deleted",
+    "deleteFailed": "Failed to delete key",
+    "alias": {
+      "linked": "Linked",
+      "failed": "Linking failed",
+      "removed": "Unlinked",
+      "target": "Alias for",
+      "resolved": "Alias for",
+      "unlink": "Unlink",
+      "link": "Link key",
+      "targetHint": "The target key in the same locale"
+    },
+    "added": "Key added",
+    "addFailed": "Failed to add key",
+    "duplicated": "Language created",
+    "duplicateFailed": "Failed to create language",
+    "exported": "Exported",
+    "exportFailed": "Export failed",
+    "entries": "entries",
+    "imported": "Imported",
+    "importFailed": "Import failed",
+    "title": "Translations",
+    "description": "Manage translation keys and values for all locales",
+    "format": {
+      "json": "JSON",
+      "csv": "CSV"
+    },
+    "addLanguage": "Add language",
+    "addKey": "Add key",
+    "searchPlaceholder": "Search keys or values…",
+    "flagged": {
+      "showAll": "Show all",
+      "showFlagged": "Show flagged only",
+      "missing": "missing",
+      "empty": "empty"
+    },
+    "keys": "keys",
+    "empty": "empty",
+    "editValue": "Edit value",
+    "delete": "Delete",
+    "noResults": "No translations found",
+    "key": "Key",
+    "value": "Value",
+    "createLanguage": "Create language",
+    "targetLocale": "Target locale code",
+    "localeExists": "This locale already exists",
+    "sourceLocale": "Source locale",
+    "copyValues": "Copy values from source"
   }
 }

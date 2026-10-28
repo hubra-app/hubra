@@ -41,6 +41,28 @@ add VITE_TENANT_APP_URL https://app.hubra.club
 
 find "$html" -type f \( -name '*.js' -o -name '*.html' \) -exec sed -i "$script" {} +
 
+# Security headers for the SPA (the API sets its own). The page loads scripts
+# and calls the API on its own origin or, when VITE_API_BASE is a full URL,
+# on that origin (plugin frontends come from the API). Fonts come from Google
+# Fonts. CSP replaces the policy; CSP=off sends none.
+origin_of() {
+  case "$1" in
+    http://* | https://*) printf '%s' "$1" | sed -E 's#^(https?://[^/]+).*#\1#' ;;
+  esac
+}
+api_origin="$(origin_of "${VITE_API_BASE-/api}")"
+default_csp="default-src 'self'; script-src 'self' ${api_origin}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' ${api_origin}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+csp="${CSP:-$default_csp}"
+{
+  echo 'add_header X-Content-Type-Options "nosniff" always;'
+  echo 'add_header X-Frame-Options "DENY" always;'
+  echo 'add_header Referrer-Policy "strict-origin-when-cross-origin" always;'
+  echo 'add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;'
+  if [ "$csp" != "off" ]; then
+    echo "add_header Content-Security-Policy \"$csp\" always;"
+  fi
+} > /etc/nginx/hubra-headers.conf
+
 real_ip=""
 if [ -n "${REAL_IP_FROM:-}" ]; then
   for cidr in $(echo "$REAL_IP_FROM" | tr ',' ' '); do
@@ -81,11 +103,13 @@ ${real_ip}
 ${api}
     location /assets/ {
         expires 1y;
+        include /etc/nginx/hubra-headers.conf;
         add_header Cache-Control "public, immutable";
         try_files \$uri =404;
     }
 
     location / {
+        include /etc/nginx/hubra-headers.conf;
         add_header Cache-Control "no-cache";
         try_files \$uri \$uri/ /index.html;
     }

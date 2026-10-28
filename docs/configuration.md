@@ -23,7 +23,7 @@ not using mail, leave the mail variables blank.
 | Modules     | Per club in Settings › Modules, or `flask modules enable <code>`           | Always                                                   |
 | SMTP/IMAP   | `SMTP_HOST`, `SMTP_PORT`, `IMAP_HOST`, `IMAP_PORT`                         | Mail feature enabled (Infomaniak SMTP/IMAP)              |
 | Backups     | `BACKUP_S3_*`, `BACKUP_ENCRYPTION_KEY`                                     | Backups enabled                                          |
-| Plugins     | `HUBRA_PLUGIN_DIR`, `HUBRA_PLUGINS_RELOAD_POLL`, `HUBRA_OFFICIAL_INDEX`     | Optional, see [plugins/README.md](../plugins/README.md)  |
+| Plugins     | `HUBRA_PLUGIN_DIR`, `HUBRA_PLUGINS_RELOAD_POLL`, `HUBRA_OFFICIAL_INDEX`, `HUBRA_PLUGINS_ALLOW_PRIVATE` (1 = allow a repository on a private address) | Optional, see [plugins/README.md](../plugins/README.md)  |
 
 ### Cross-origin auth variables
 

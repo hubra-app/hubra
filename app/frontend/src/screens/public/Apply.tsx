@@ -118,7 +118,7 @@ export function ApplyScreen() {
                 letterSpacing: '0.06em',
               }}
             >
-              Makerspace ? Schwyz
+              Club management
             </div>
           </div>
         </div>

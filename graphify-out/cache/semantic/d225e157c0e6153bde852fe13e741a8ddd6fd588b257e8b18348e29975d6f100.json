@@ -1,1 +1,0 @@
-{"nodes": [{"id": "model_poll", "name": "Poll / PollOption / PollVote", "file_type": "concept", "definition": "Polling system: question, closes_at, status (open/closed); options with vote_count property; votes per member per option", "source_file": "app/backend/htmlcov/z_819d6647f72bcf98_poll_py.html"}], "edges": [], "hyperedges": []}

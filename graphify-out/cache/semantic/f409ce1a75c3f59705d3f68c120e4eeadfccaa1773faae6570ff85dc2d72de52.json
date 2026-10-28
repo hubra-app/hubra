@@ -1,1 +1,0 @@
-{"nodes": [{"id": "model_audit_entry", "name": "AuditEntry", "file_type": "concept", "definition": "Audit log with actor, action, target type/id, actor info snapshots (name, avatar color)", "source_file": "app/backend/htmlcov/z_819d6647f72bcf98_audit_py.html"}], "edges": [], "hyperedges": []}

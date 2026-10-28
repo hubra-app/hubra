@@ -60,6 +60,11 @@ def configure_logging(app: Flask) -> None:
     # Remove existing handlers to avoid duplicate output
     root_logger.handlers = []
     root_logger.addHandler(handler)
+    # app.logger also propagates to root: without this every line of it
+    # would print twice, once plain and once as JSON.
+    from flask.logging import default_handler
+
+    app.logger.removeHandler(default_handler)
     root_logger.setLevel(logging.INFO)
 
     # Silence Werkzeug's default request line — we log our own

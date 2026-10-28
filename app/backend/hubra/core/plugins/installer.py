@@ -20,12 +20,16 @@ from __future__ import annotations
 
 import hashlib
 import io
+import ipaddress
 import json
 import logging
+import os
 import shutil
+import socket
 import tempfile
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import zipfile
 from datetime import datetime, timedelta, timezone
@@ -36,7 +40,7 @@ from sqlalchemy import select
 from hubra.core.extensions import db
 
 from .spec import MANIFEST, Spec, compatibility, read_manifest, validate
-from .trust import load_public, verify
+from .trust import SKIP_DIRS, load_public, verify
 
 _log = logging.getLogger(__name__)
 
@@ -85,6 +89,14 @@ def community_keys() -> dict:
 # ── Archives ─────────────────────────────────────────────────────────────────
 
 
+def _unhashed(name: str) -> bool:
+    """Paths the signature leaves out: bytecode, caches, VCS and node_modules."""
+    parts = [p for p in name.replace("\\", "/").split("/") if p]
+    return any(
+        p in SKIP_DIRS or p.endswith((".pyc", ".pyo")) for p in parts
+    )
+
+
 def safe_extract(blob: bytes, dest: Path) -> Path:
     """Unpack a plugin zip into *dest*; return the folder holding plugin.yaml."""
     if len(blob) > MAX_ZIP:
@@ -106,6 +118,10 @@ def safe_extract(blob: bytes, dest: Path) -> Path:
             raise InstallError(f"unsafe path in archive: {name}")
         if (i.external_attr >> 16) & 0o170000 == 0o120000:
             raise InstallError(f"symlinks aren't allowed: {name}")
+        if _unhashed(name):
+            # The signature doesn't cover these (trust.file_hashes skips them),
+            # and Python would run a .pyc instead of the signed .py next to it.
+            raise InstallError(f"compiled or tooling files aren't allowed: {name}")
         target = (dest / name).resolve()
         if not target.is_relative_to(dest.resolve()):
             raise InstallError(f"unsafe path in archive: {name}")
@@ -583,12 +599,37 @@ def hold(pid: str, version: str | None) -> None:
 _index_cache: dict = {}
 
 
-def http_get(url: str, timeout: int = 30, limit: int = MAX_ZIP) -> bytes:
-    if not url.startswith(("https://", "http://")):
-        raise InstallError(f"{url}: only http(s) addresses")
-    req = urllib.request.Request(url, headers={"User-Agent": "Hubra plugin installer"})
+def _check_url(url: str) -> None:
+    """Plugin downloads go to public https hosts only, so a manager can't
+    point the server at its own network (HUBRA_PLUGINS_ALLOW_PRIVATE=1 lifts
+    the address check for a repository on the local network)."""
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme != "https" or not parsed.hostname:
+        raise InstallError(f"{url}: only https:// addresses")
+    if os.environ.get("HUBRA_PLUGINS_ALLOW_PRIVATE") == "1":
+        return
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
+        infos = socket.getaddrinfo(parsed.hostname, parsed.port or 443)
+    except OSError as exc:
+        raise InstallError(f"{url}: {exc}") from exc
+    for info in infos:
+        ip = ipaddress.ip_address(info[4][0])
+        if not ip.is_global:
+            raise InstallError(f"{url}: {parsed.hostname} is not a public address")
+
+
+class _CheckedRedirects(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        _check_url(newurl)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def http_get(url: str, timeout: int = 30, limit: int = MAX_ZIP) -> bytes:
+    _check_url(url)
+    req = urllib.request.Request(url, headers={"User-Agent": "Hubra plugin installer"})
+    opener = urllib.request.build_opener(_CheckedRedirects)
+    try:
+        with opener.open(req, timeout=timeout) as resp:
             data = resp.read(limit + 1)
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         raise InstallError(f"{url}: {exc}") from exc
@@ -611,7 +652,7 @@ def preview_repository(url: str) -> dict:
     """What adding this repository would trust: its name and key (from the index, checked against itself)."""
     from .trust import key_id, official_keys, verify_index
 
-    if not url.startswith(("https://", "http://")):
+    if not url.startswith("https://"):
         raise InstallError("the index URL starts with https://")
     doc = _get_index(url)
     try:

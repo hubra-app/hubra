@@ -57,15 +57,15 @@ jobs:
             context: modules/mail/cert-watcher
             dockerfile: modules/mail/cert-watcher/Dockerfile
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Image name
         id: name
         run: echo "image=ghcr.io/${GITHUB_REPOSITORY,,}/${{ matrix.image }}" >> "$GITHUB_OUTPUT"
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         if: github.event_name != 'pull_request'
         with:
           registry: ghcr.io
@@ -73,7 +73,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         with:
           images: ${{ steps.name.outputs.image }}
           tags: |
@@ -86,14 +86,37 @@ jobs:
 
       # Add linux/arm64 to platforms for Raspberry Pi / Ampere clusters
       # (slower: builds under QEMU).
-      - uses: docker/build-push-action@v6
+      - id: build
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
           target: ${{ matrix.target }}
           platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
+          load: ${{ github.event_name == 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+      # Fixable HIGH/CRITICAL CVEs go to the job summary. Report only for now;
+      # set TRIVY_EXIT_CODE=1 once the images are clean to fail the build.
+      - name: Scan the image (Trivy)
+        env:
+          REF: ${{ github.event_name == 'pull_request' && steps.build.outputs.imageid || format('{0}@{1}', steps.name.outputs.image, steps.build.outputs.digest) }}
+          TRIVY_EXIT_CODE: "0"
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$HOME/.docker:/root/.docker:ro" \
+            aquasec/trivy:0.69.3@sha256:bcc376de8d77cfe086a917230e818dc9f8528e3c852f7b1aff648949b6258d1c \
+            image --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed \
+            --exit-code "$TRIVY_EXIT_CODE" --no-progress --format table "$REF" \
+            | tee trivy.txt
+          {
+            echo "### ${{ matrix.image }}: fixable HIGH/CRITICAL vulnerabilities"
+            echo '```'
+            cat trivy.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

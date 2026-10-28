@@ -34,6 +34,7 @@ import {
   removeHolder,
 } from '@/api/functions'
 import { listMembers } from '@/api/members'
+import { withBase } from '@/clubBase'
 
 const functionSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -504,7 +505,7 @@ function HolderPanel({
               {t('mail.mail', 'MAIL')}
             </div>
             <a
-              href="/app/mail?tab=functions"
+              href={withBase('/app/mail?tab=functions')}
               style={{
                 fontSize: 'var(--mantine-font-size-xs)',
                 color: '#2596be',

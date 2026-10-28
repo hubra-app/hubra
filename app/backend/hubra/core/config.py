@@ -58,6 +58,11 @@ class BaseConfig:
 
     # ── SQLAlchemy ──────────────────────────────────────────────────────────
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
+
+    # Largest request body Flask accepts (the frontends' nginx allows 25 MB).
+    MAX_CONTENT_LENGTH: int = int(
+        os.environ.get("MAX_CONTENT_LENGTH", 25 * 1024 * 1024)
+    )
     # pool_pre_ping is safe for all dialects (SQLite + PostgreSQL).
     # Pool-sizing options (pool_size, max_overflow, pool_timeout) are set
     # separately in DevelopmentConfig and ProductionConfig because SQLite's
@@ -170,9 +175,11 @@ class BaseConfig:
     # flask-limiter 4.x reads RATELIMIT_STORAGE_URI (not RATE_LIMIT_STORAGE).
     # Accept both for backward compatibility.  Normalise to include "://"
     # since the limits library requires a scheme (e.g. "memory" → "memory://").
+    # Without an explicit setting, use Redis when it is configured: memory://
+    # counts per gunicorn worker, which multiplies every limit by the workers.
     _raw_storage = os.environ.get(
         "RATELIMIT_STORAGE_URI",
-        os.environ.get("RATE_LIMIT_STORAGE", "memory://"),
+        os.environ.get("RATE_LIMIT_STORAGE", REDIS_URL or "memory://"),
     )
     RATELIMIT_STORAGE_URI: str = (
         _raw_storage if "://" in _raw_storage else f"{_raw_storage}://"

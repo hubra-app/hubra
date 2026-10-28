@@ -1,6 +1,9 @@
 {
   "shell": {
-    "search": "Mitglieder, Gruppe suche...",
+    "search": {
+      "placeholder": "Mitglieder, Rächnige, Inventar suche…",
+      "noResults": "Kei Ergebnis für \"{{query}}\""
+    },
     "searchPlaceholder": "Mitglieder, Rächnige, Inventar suche…",
     "searchNoResults": "Kei Ergebnis für \"{{query}}\"",
     "searchKind": {
@@ -54,7 +57,8 @@
       "systemMail": "System-Mail",
       "permissions": "Berächtigunge",
       "codes": "Codes",
-      "bindings": "Bindings"
+      "bindings": "Bindings",
+      "translations": "Übersetzige"
     },
     "sections": {
       "workspace": "Arbeitsbereich",
@@ -98,7 +102,9 @@
       "auditLog": "Audit-Log",
       "system": "System › Berächtigunge",
       "codes": "Codes",
-      "bindings": "Bindings"
+      "bindings": "Bindings",
+      "externalParties": "Externi Partner",
+      "translations": "Übersetzige"
     },
     "notifPanel": {
       "title": "Benachrichtigunge",
@@ -121,6 +127,12 @@
       "signOut": "Abmälden",
       "whatsNew": "Was isch neu",
       "dismiss": "Wegmache"
+    },
+    "notif": {
+      "title": "Benachrichtigunge",
+      "markAllRead": "Alli als gläse markiere",
+      "unread": "Ungläse",
+      "noUnread": "Kei ungläsni Benachrichtigunge."
     }
   },
   "app": {
@@ -248,6 +260,9 @@
       "noPosts": "No kei Biträge.",
       "noLikes": "No kei Gfellig.",
       "noComments": "No kei Kommentär."
+    },
+    "recentPosts": {
+      "title": "Letzti Biträg"
     }
   },
   "members": {
@@ -424,7 +439,19 @@
     "memberAddedToCategoryMsg": "{{member}} isch zu {{category}} hinzuegfüegt worde.",
     "memberRemoved": "Mitglied entfernt",
     "memberRemovedFromCategoryMsg": "{{member}} isch us {{category}} entfernt worde.",
-    "noNotesYet": "No kei Notize."
+    "noNotesYet": "No kei Notize.",
+    "member": {
+      "addedTitle": "Mitglied hinzuegfüegt",
+      "updatedTitle": "Mitglied aktualisiert",
+      "restoredTitle": "Mitglied widerhergstellt"
+    },
+    "password": {
+      "updateFailed": "Passwort-Änderig fehlgschlage"
+    },
+    "export": {
+      "failed": "Export fehlgschlage",
+      "csv": "CSV exportiere"
+    }
   },
   "groups": {
     "title": "Gruppe",
@@ -472,7 +499,15 @@
     "groupUpdatedMsg": "{{name}} isch aktualisiert worde.",
     "groupDeletedMsg": "{{name}} isch entfernt worde.",
     "selfJoin": "Mitglieder chönd sälber biiträte und ustrete",
-    "selfJoinHint": "Für Interessegruppe. Mitglieder finded si under Mis Konto."
+    "selfJoinHint": "Für Interessegruppe. Mitglieder finded si under Mis Konto.",
+    "member": {
+      "added": "Mitglied hinzuegfüegt",
+      "removed": "Mitglied entfernt"
+    },
+    "group": {
+      "saved": "Gruppe gspeicheret.",
+      "deleted": "Gruppe glöscht."
+    }
   },
   "events": {
     "title": "Verahstaltigä",
@@ -520,6 +555,10 @@
       "hint": "Füeg die Adrässe als Kalender-Abo hinzue (Google Kalender: «Per URL», Apple Kalender: «Neues Kalenderabonnement»). Neui und gänderti Aaläss chömed dänn vo sälber. De Link isch persönlich, gib en nöd wiiter.",
       "copy": "Kopiere",
       "copied": "Kopiert"
+    },
+    "event": {
+      "saved": "Veranstaltig gspeicheret.",
+      "deleted": "Veranstaltig glöscht."
     }
   },
   "polls": {
@@ -851,6 +890,12 @@
       "alwaysOn": "Immer aa: {{names}}",
       "saved": "Iistellige gspeicheret",
       "secretKept": "Leer la, um de gspeicheret Wert z bhalte"
+    },
+    "tabs": {
+      "settings": "Iistellige",
+      "modules": "Module",
+      "club": "Verein",
+      "domains": "Domains"
     }
   },
   "bootstrap": {
@@ -1117,7 +1162,16 @@
     "required": "erfolderlich",
     "notAvailable": "N/V",
     "addMember": "Mitglied hinzuefüege",
-    "myEvents": "Mini Verahstaltigä"
+    "myEvents": "Mini Verahstaltigä",
+    "updateFailed": "Update failed",
+    "saveChanges": "Save changes",
+    "firstName": "Vorname",
+    "lastName": "Nachname",
+    "status": "Status",
+    "member": "Mitglied",
+    "noNotifications": "Kei Benachrichtigunge.",
+    "archived": "Archiviert",
+    "password": "Passwort"
   },
   "codes": {
     "title": "Codes",
@@ -1181,5 +1235,57 @@
         "monthly": "pro Monet"
       }
     }
+  },
+  "translations": {
+    "saved": "Übersetzige gespeichert",
+    "saveFailed": "Speichern fehlgeschlagen",
+    "deleted": "Schlüssel gelöscht",
+    "deleteFailed": "Löschen fehlgeschlagen",
+    "alias": {
+      "linked": "Verlinkt",
+      "failed": "Verlinkig fehlgschlage",
+      "removed": "Verlinkung ufgehobe",
+      "target": "Verlinkt uf",
+      "resolved": "Verlinkt",
+      "unlink": "Verlinkung ufhebe",
+      "link": "Schlüssel verlinke",
+      "targetHint": "De Ziilschlüssel i dem gliiche Sprachegebiet"
+    },
+    "added": "Schlüssel hinzugefügt",
+    "addFailed": "Hinzufügen fehlgeschlagen",
+    "duplicated": "Sprache erstellt",
+    "duplicateFailed": "Sprache konnte nicht erstellt werden",
+    "exported": "Exportiert",
+    "exportFailed": "Export fehlgeschlagen",
+    "entries": "Einträg",
+    "imported": "Importiert",
+    "importFailed": "Import fehlgeschlagen",
+    "title": "Übersetzige",
+    "description": "Übersetzungsschlüssel und Werte für alle Sprachen verwalten",
+    "format": {
+      "json": "JSON",
+      "csv": "CSV"
+    },
+    "addLanguage": "Sprache hinzufügen",
+    "addKey": "Schlüssel hinzufügen",
+    "searchPlaceholder": "Schlüssel oder Werte suchen…",
+    "flagged": {
+      "showAll": "Alle anzeigen",
+      "showFlagged": "Nur markierte anzeigen",
+      "missing": "fehlt",
+      "empty": "leer"
+    },
+    "keys": "Schlüssel",
+    "empty": "leer",
+    "editValue": "Wert bearbeiten",
+    "delete": "Löschen",
+    "noResults": "Keine Übersetzige gefunden",
+    "key": "Schlüssel",
+    "value": "Wert",
+    "createLanguage": "Sprache erstellen",
+    "targetLocale": "Ziel-Sprachcode",
+    "localeExists": "Diese Sprache existiert bereits",
+    "sourceLocale": "Quell-Sprache",
+    "copyValues": "Werte aus Quelle kopieren"
   }
 }

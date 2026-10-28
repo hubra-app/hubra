@@ -20,7 +20,7 @@ botocore==1.43.44
     # via
     #   boto3
     #   s3transfer
-brotli==1.2.0
+brotli==1.2.1
     # via fonttools
 celery[redis]==5.6.3
     # via -r requirements.txt
@@ -42,7 +42,7 @@ click-plugins==1.1.1.2
     # via celery
 click-repl==0.3.0
     # via celery
-cryptography==49.0.0
+cryptography==50.0.2
     # via -r requirements.txt
 cssselect2==0.9.0
     # via weasyprint
@@ -116,7 +116,7 @@ packaging==26.2
     #   gunicorn
     #   kombu
     #   limits
-pillow==12.3.0
+pillow==13.0.0
     # via weasyprint
 prompt-toolkit==3.0.52
     # via click-repl
@@ -132,7 +132,7 @@ pydantic-settings[yaml]==2.14.2
     # via -r requirements.txt
 pydyf==0.12.1
     # via weasyprint
-pyjwt==2.13.0
+pyjwt==2.15.1
     # via flask-jwt-extended
 pyphen==0.17.2
     # via weasyprint
@@ -193,7 +193,7 @@ tzdata==2026.2
     # via kombu
 tzlocal==5.4.4
     # via celery
-urllib3==2.7.0
+urllib3==2.8.0
     # via botocore
 vine==5.1.0
     # via
@@ -202,14 +202,14 @@ vine==5.1.0
     #   kombu
 wcwidth==0.8.2
     # via prompt-toolkit
-weasyprint==69.0
+weasyprint==70.0
     # via -r requirements.txt
 webencodings==0.5.1
     # via
     #   cssselect2
     #   tinycss2
     #   tinyhtml5
-werkzeug==3.1.8
+werkzeug==3.1.9
     # via
     #   flask
     #   flask-cors

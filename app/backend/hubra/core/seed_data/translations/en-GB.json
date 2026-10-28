@@ -1082,7 +1082,6 @@
   "shell.notif.noUnread": "No unread notifications.",
   "shell.notif.title": "Notifications",
   "shell.notif.unread": "Unread",
-  "shell.search": "Search members, groups...",
   "shell.search.noResults": "No results for \"{{query}}\"",
   "shell.search.placeholder": "Search members, invoices, inventory…",
   "shell.searchKind.audit": "Audit",
@@ -1198,5 +1197,10 @@
   "verify.pleaseWait": "Please wait",
   "verify.verification.failed": "Verification failed",
   "verify.verification.failedTitle": "Verification failed title",
-  "verify.verifyingEmail": "Verifying email"
+  "verify.verifyingEmail": "Verifying email",
+  "shell.breadcrumbs.externalParties": "External parties",
+  "settings.tabs.settings": "Settings",
+  "settings.tabs.modules": "Modules",
+  "settings.tabs.club": "Club",
+  "settings.tabs.domains": "Domains"
 }

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Center, Loader } from '@mantine/core'
 import { getInstance, SSO_URL, type InstanceInfo } from '@hubra/api-client'
+import { withBase } from '@/clubBase'
 
 /**
  * How this install is set up. A single-club install (backend SINGLE_CLUB)
@@ -48,7 +49,7 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
         if (standalone) {
           return returnTo ? `/login?redirect=${encodeURIComponent(returnTo)}` : '/login'
         }
-        const target = returnTo ? window.location.origin + returnTo : null
+        const target = returnTo ? window.location.origin + withBase(returnTo) : null
         return target ? `${ssoUrl}/login?redirect=${encodeURIComponent(target)}` : `${ssoUrl}/login`
       },
       // One club, so its pages live at /app/… without the club in the path.

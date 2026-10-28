@@ -41,8 +41,10 @@ function validateRedirect(raw: string | null): string {
   if (!raw) return DEFAULT_COS_URL
   try {
     const url = new URL(raw)
-    if (url.protocol === 'http:') {
-      if (url.hostname === 'localhost') return raw
+    // Any local port is fine while developing; a build only trusts the
+    // configured origins below (which may themselves be localhost URLs).
+    if (import.meta.env.DEV && url.protocol === 'http:' && url.hostname === 'localhost') {
+      return raw
     }
     if (url.protocol === 'https:' && APP_DOMAIN) {
       if (url.hostname.endsWith(`.${APP_DOMAIN}`)) return raw

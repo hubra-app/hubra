@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { TextInput, Box, Text, Stack } from '@mantine/core'
 import { IconSearch } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
-import { useNav, useData } from '@/context/AppContext'
+import { useNav, useData, useApp } from '@/context/AppContext'
 import { listMembers } from '@/api/members'
 import { listGroups } from '@/api/groups'
 import { listTransactions } from '@/api/finance'
@@ -15,6 +15,8 @@ export function GlobalSearch() {
   const { t } = useT()
   const { go } = useNav()
   const { events, polls, invoices } = useData()
+  // A switched-off module answers 403: only search what is on.
+  const { modules } = useApp()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [dropOpen, setDropOpen] = useState(false)
@@ -23,21 +25,25 @@ export function GlobalSearch() {
 
   const { data: memberResp } = useQuery({
     queryKey: ['search-members'],
+    enabled: modules.members === true,
     queryFn: () => listMembers({ pageSize: 200 }),
     staleTime: 60_000,
   })
   const { data: groupList = [] } = useQuery({
     queryKey: ['search-groups'],
+    enabled: modules.groups === true,
     queryFn: () => listGroups(),
     staleTime: 60_000,
   })
   const { data: txList = [] } = useQuery({
     queryKey: ['search-transactions'],
+    enabled: modules.finance === true,
     queryFn: () => listTransactions(),
     staleTime: 60_000,
   })
   const { data: inventoryList = [] } = useQuery({
     queryKey: ['search-inventory'],
+    enabled: modules.inventory === true,
     queryFn: () => listInventory(),
     staleTime: 60_000,
   })

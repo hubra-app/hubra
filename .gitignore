@@ -84,3 +84,4 @@ docs/deps/**
 
 # Built plugin frontends (npm run build:plugin in app/frontend)
 plugins/*/frontend/dist/
+graphify-out/

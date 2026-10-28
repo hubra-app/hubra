@@ -14,7 +14,7 @@ from sqlalchemy.orm import selectinload
 
 from hubra.api.mail.services import MailboxService
 from hubra.api.settings.services import SettingService
-from hubra.api.utils import escape_like, log_audit
+from hubra.api.utils import csv_safe, escape_like, log_audit
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 from hubra.core.models.group import Group
@@ -801,7 +801,7 @@ class MembersService:
                 "address_city": m.address_city or "",
                 "address_country": m.address_country or "",
             }
-            writer.writerow([row_values.get(f, "") for f in export_fields])
+            writer.writerow([csv_safe(row_values.get(f, "")) for f in export_fields])
 
         return output.getvalue(), truncated
 

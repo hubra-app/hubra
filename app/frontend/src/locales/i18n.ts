@@ -85,13 +85,17 @@ export async function loadAllTranslationsFromApi() {
     // API unavailable — use static fallbacks only
   }
   await Promise.all(locales.map((loc) => loadTranslationsFromApi(loc)));
+  // addResource is silent: re-render the screens that already showed keys.
+  await i18n.changeLanguage(i18n.language);
   flushAccessedKeys();
 }
 
 export async function loadTranslationsFromApi(locale: string) {
   try {
     const data = await fetchTranslations(locale);
-    for (const [key, value] of Object.entries(data)) {
+    // Parents before children: "a.b" after "a.b.c" would replace the
+    // object that holds "a.b.c" with a string.
+    for (const [key, value] of Object.entries(data).sort(([a], [b]) => (a < b ? -1 : 1))) {
       i18n.addResource(locale, "translation", key, value, { silent: true });
     }
   } catch {

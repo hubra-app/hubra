@@ -22,6 +22,17 @@ def tenant(db, seeded_db):
     return t
 
 
+@pytest.fixture
+def club_auth(client, seeded_db, tenant):
+    """Sign in inside club-a: member tokens only count in the club that issued them."""
+    client.post(
+        "/api/v1/auth/login",
+        json={"email": "admin@test.ch", "password": "password123"},
+        headers={"X-Tenant-Slug": "club-a"},
+    )
+    return {}
+
+
 def _grant(db, tenant, code, enabled=True, allowed=True, config=None):
     db.session.add(
         TenantFeature(
@@ -277,7 +288,7 @@ def test_gate_applies_to_mail_without_tenant(client, db, auth_headers):
 # ── API ──────────────────────────────────────────────────────────────────────
 
 
-def test_list_modules(client, db, auth_headers, tenant):
+def test_list_modules(client, db, club_auth, tenant):
     resp = client.get("/api/v1/modules/", headers={"X-Tenant-Slug": "club-a"})
     assert resp.status_code == 200
     data = {m["code"]: m for m in resp.get_json()}
@@ -290,7 +301,7 @@ def test_list_modules_requires_auth(client, db):
     assert client.get("/api/v1/modules/").status_code == 401
 
 
-def test_switch_module(client, db, auth_headers, tenant):
+def test_switch_module(client, db, club_auth, tenant):
     resp = client.put(
         "/api/v1/modules/bindings",
         json={"enabled": False},
@@ -301,7 +312,7 @@ def test_switch_module(client, db, auth_headers, tenant):
     assert not modules.is_enabled("bindings", tenant.id)
 
 
-def test_switch_module_reports_dependency(client, db, auth_headers, tenant):
+def test_switch_module_reports_dependency(client, db, club_auth, tenant):
     _grant(db, tenant, "mail", enabled=True)
     resp = client.put(
         "/api/v1/modules/groups",
@@ -322,7 +333,7 @@ def test_switch_unknown_module(client, db, auth_headers):
     assert resp.status_code == 404
 
 
-def test_update_module_settings(client, db, auth_headers, tenant):
+def test_update_module_settings(client, db, club_auth, tenant):
     resp = client.put(
         "/api/v1/modules/inventory/settings",
         json={"config": {"checkout_max_days": 30}},
@@ -332,7 +343,7 @@ def test_update_module_settings(client, db, auth_headers, tenant):
     assert resp.get_json()["config"]["checkout_max_days"] == 30
 
 
-def test_update_module_settings_rejects_bad_values(client, db, auth_headers, tenant):
+def test_update_module_settings_rejects_bad_values(client, db, club_auth, tenant):
     resp = client.put(
         "/api/v1/modules/inventory/settings",
         json={"config": {"checkout_max_days": "lots"}},
@@ -421,6 +432,11 @@ def test_manager_blocks_module_for_club(client, db, superadmin, tenant):
     assert resp.status_code == 200
     body = resp.get_json()
     assert body["allowed"] is False and body["enabled"] is False
+    client.post(  # sign in again inside the club
+        "/api/v1/auth/login",
+        json={"email": "admin@test.ch", "password": "password123"},
+        headers={"X-Tenant-Slug": "club-a"},
+    )
     resp = client.put(
         "/api/v1/modules/inventory",
         json={"enabled": True},
