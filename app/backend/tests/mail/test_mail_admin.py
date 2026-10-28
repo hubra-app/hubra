@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from unittest.mock import MagicMock, patch
 
 from hubra.core.models.group import Group
@@ -179,7 +181,27 @@ def test_serialize_includes_sync_error(client, db, seeded_db, auth_headers):
 # ── wildduck-live ─────────────────────────────────────────────────────────────
 
 
-def test_wildduck_live_lists_managed_and_orphan(client, db, seeded_db, auth_headers):
+@pytest.fixture
+def platform_staff(seeded_db, db):
+    """WildDuck is shared by every club, so its live tab is for superadmins."""
+    seeded_db["user"].is_superadmin = True
+    db.session.commit()
+    yield
+    seeded_db["user"].is_superadmin = False
+    db.session.commit()
+
+
+def test_wildduck_live_forbidden_for_club_admin(client, db, seeded_db, auth_headers):
+    resp = client.get("/api/v1/mail/wildduck-live", headers=auth_headers)
+    assert resp.status_code == 403
+    resp = client.delete(
+        "/api/v1/mail/wildduck-live/mailbox/aabbccddee11223344556677",
+        headers=auth_headers,
+    )
+    assert resp.status_code == 403
+
+
+def test_wildduck_live_lists_managed_and_orphan(client, db, seeded_db, auth_headers, platform_staff):
     _ensure_mail_domain(db)
     _make_member_mma(db, seeded_db["admin"].id, wildduck_id="5f8d0b1a2c3e4f5a6b7c8d9e")
     mock_wd = _mock_wd()
@@ -203,7 +225,7 @@ def test_wildduck_live_lists_managed_and_orphan(client, db, seeded_db, auth_head
 # ── delete orphan ──────────────────────────────────────────────────────────────
 
 
-def test_delete_orphan_mailbox(client, db, seeded_db, auth_headers):
+def test_delete_orphan_mailbox(client, db, seeded_db, auth_headers, platform_staff):
     _ensure_mail_domain(db)
     mock_wd = _mock_wd()
 
@@ -219,7 +241,7 @@ def test_delete_orphan_mailbox(client, db, seeded_db, auth_headers):
     mock_wd.delete_user.assert_called_once_with("aabbccddee11223344556677")
 
 
-def test_delete_orphan_rejects_managed(client, db, seeded_db, auth_headers):
+def test_delete_orphan_rejects_managed(client, db, seeded_db, auth_headers, platform_staff):
     _ensure_mail_domain(db)
     _make_member_mma(db, seeded_db["admin"].id, wildduck_id="5f8d0b1a2c3e4f5a6b7c8d9e")
     mock_wd = _mock_wd()
@@ -235,7 +257,7 @@ def test_delete_orphan_rejects_managed(client, db, seeded_db, auth_headers):
     mock_wd.delete_user.assert_not_called()
 
 
-def test_delete_orphan_alias(client, db, seeded_db, auth_headers):
+def test_delete_orphan_alias(client, db, seeded_db, auth_headers, platform_staff):
     _ensure_mail_domain(db)
     mock_wd = _mock_wd()
 
@@ -253,7 +275,7 @@ def test_delete_orphan_alias(client, db, seeded_db, auth_headers):
     )
 
 
-def test_delete_orphan_invalid_type(client, db, seeded_db, auth_headers):
+def test_delete_orphan_invalid_type(client, db, seeded_db, auth_headers, platform_staff):
     resp = client.delete(
         "/api/v1/mail/wildduck-live/invalid/wd-orphan",
         headers=auth_headers,
