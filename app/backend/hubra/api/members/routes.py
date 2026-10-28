@@ -106,7 +106,13 @@ def import_members():
     if not file.filename or not file.filename.endswith(".csv"):
         return api_error("VALIDATION_ERROR", "File must be a CSV", 400)
 
-    stream = io.StringIO(file.read().decode("utf-8-sig"), newline=None)
+    raw = file.read()
+    try:
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        # Excel on Windows saves CSV as Windows-1252, not UTF-8.
+        text = raw.decode("cp1252", errors="replace")
+    stream = io.StringIO(text, newline=None)
     reader = csv.DictReader(stream)
     rows = list(reader)
 
