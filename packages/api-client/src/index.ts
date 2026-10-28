@@ -1,6 +1,7 @@
 export {
   BASE,
   SSO_URL,
+  getInstance,
   getCookie,
   hasTokens,
   getRememberedEmail,
@@ -11,3 +12,4 @@ export {
   apiFetch,
   apiFetchRaw,
 } from "./client";
+export type { InstanceInfo } from "./client";

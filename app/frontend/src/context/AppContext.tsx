@@ -20,7 +20,6 @@ import {
   resetAuthFailure,
   setTenantSlug,
   apiFetch,
-  SSO_URL,
 } from '@hubra/api-client'
 import {
   getAccount,
@@ -41,8 +40,12 @@ import { listApplications } from '@/api/applications'
 import { listGroups } from '@/api/groups'
 import { getModules, type ModuleInfo } from '@/api/modules'
 import { loadAllTranslationsFromApi } from '@/locales/i18n'
+import { useInstance } from '@/context/InstanceContext'
 
 export type AuthStatus = 'loading' | 'authed' | 'anon'
+
+// Club pages need a session; sign-in, password reset and /apply do not.
+const PRIVATE_PATH = /^(\/[^/]+)?\/app(\/|$)/
 
 /* ── Split context types ─────────────────────── */
 
@@ -151,10 +154,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [impersonation, setImpersonation] = useState<AuthState['impersonation']>(null)
   const [passwordChangeRequired, setPasswordChangeRequired] = useState(false)
 
-  const redirectToSso = useCallback(() => {
-    const currentUrl = window.location.origin + window.location.pathname
-    window.location.assign(`${SSO_URL}/login?redirect=${encodeURIComponent(currentUrl)}`)
-  }, [])
+  const { standalone, loginUrl } = useInstance()
+
+  const redirectToLogin = useCallback(() => {
+    if (!PRIVATE_PATH.test(window.location.pathname)) return
+    const url = loginUrl(window.location.pathname)
+    if (standalone) navigate(url, { replace: true })
+    else window.location.assign(url)
+  }, [loginUrl, navigate, standalone])
 
   useEffect(() => {
     const ctrl = new AbortController()
@@ -164,7 +171,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!hasTokens()) {
         if (!cancelled) {
           setAuthStatus('anon')
-          redirectToSso()
+          redirectToLogin()
         }
         return
       }
@@ -194,7 +201,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
             setAuthStatus('anon')
             resetAuthFailure()
           }
-          window.location.assign(`${SSO_URL}/login`)
+          if (standalone) navigate(loginUrl(), { replace: true })
+          else window.location.assign(loginUrl())
           return
         }
         const { status, code } = err as { status?: number; code?: string }
@@ -207,7 +215,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           clearTokens()
           clearLookups()
           setAuthStatus('anon')
-          redirectToSso()
+          redirectToLogin()
         } else {
           setBackendOnline(false)
           setAuthStatus('anon')
@@ -233,10 +241,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setCurrentUser(null)
       setPermissions([])
       queryClient.clear()
-      redirectToSso()
+      redirectToLogin()
     })
     return () => setAuthFailureHandler(null)
-  }, [queryClient, redirectToSso])
+  }, [queryClient, redirectToLogin])
 
   const queryEnabled = authStatus === 'authed'
 
@@ -434,14 +442,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
             setPermissions([])
             queryClient.clear()
           })
-        redirectToSso()
+        redirectToLogin()
       }
       if (p === 'app') {
         setAuthStatus('authed')
         navigate('/app/dashboard', { replace: true })
       }
     },
-    [navigate, queryClient, redirectToSso],
+    [navigate, queryClient, redirectToLogin],
   )
 
   const go = useCallback(
