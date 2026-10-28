@@ -419,6 +419,8 @@ export function DataTable<T>({
   data,
   loading,
   emptyMessage,
+  emptyDescription,
+  emptyAction,
   onRowClick,
   searchPlaceholder,
   searchValue,
@@ -440,6 +442,10 @@ export function DataTable<T>({
   data: T[]
   loading?: boolean
   emptyMessage?: ReactNode
+  /** A hint under the empty message, e.g. what to do next. */
+  emptyDescription?: string
+  /** A button in the empty state, e.g. "Add the first one". */
+  emptyAction?: { label: string; onClick: () => void }
   onRowClick?: (item: T) => void
   searchPlaceholder?: string
   searchValue?: string
@@ -636,10 +642,16 @@ export function DataTable<T>({
       {loading ? (
         <LoadingSpinner compact message={i18n.t('common.loading', 'Wird geladen …')} />
       ) : data.length === 0 ? (
-        <EmptyState
-          icon={<IconInbox size={36} />}
-          title={typeof emptyMessage === 'string' ? emptyMessage : i18n.t('data.noData', 'Keine Daten')}
-        />
+        typeof emptyMessage === 'string' || emptyMessage === undefined ? (
+          <EmptyState
+            icon={<IconInbox size={36} />}
+            title={emptyMessage ?? i18n.t('data.noData', 'Keine Daten')}
+            description={emptyDescription}
+            action={emptyAction}
+          />
+        ) : (
+          emptyMessage
+        )
       ) : grouped ? (
         <Accordion
           variant="separated"
