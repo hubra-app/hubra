@@ -2550,7 +2550,12 @@
     "deleteKeyBody": "Delete \"{{key}}\"? All bindings must be removed first.",
     "editTitle": "Edit binding #{{id}}",
     "deleteBody": "Delete binding #{{id}} ({{source}} → {{key}})?",
-    "protectedToggle": "Protected: cannot toggle"
+    "protectedToggle": "Protected: cannot toggle",
+    "additionalAlias": "Additional alias: {{address}}",
+    "noSources": "No {{type}} records available.",
+    "selectSource": "Select a record …",
+    "currentValue": "Current value:",
+    "hidden": "(hidden)"
   },
   "roles": {
     "hideFields": "Hide field permissions",

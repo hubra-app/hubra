@@ -154,6 +154,8 @@ def update_binding(binding_id: int, **fields) -> Binding:
         binding.key_id = fields["key_id"]
     if "enabled" in fields:
         binding.enabled = fields["enabled"]
+    if "is_protected" in fields:
+        binding.is_protected = fields["is_protected"]
 
     db.session.flush()
 

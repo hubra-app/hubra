@@ -273,6 +273,38 @@ def test_update_binding_validator(client, seeded_db, auth_headers, db):
     assert resp.get_json()["validator"] == "non_empty"
 
 
+def test_update_binding_protection(client, seeded_db, auth_headers, db):
+    ik = _make_key(db, "test.protect_binding")
+    m = _make_member(db, "Alice Smith", "alice@example.ch")
+    db.session.commit()
+    binding_id = client.post(
+        "/api/v1/bindings/",
+        headers=auth_headers,
+        json={
+            "type": "member",
+            "source_id": str(m.id),
+            "source_attribute": "name",
+            "key_id": ik.id,
+        },
+    ).get_json()["id"]
+
+    resp = client.put(
+        f"/api/v1/bindings/{binding_id}",
+        headers=auth_headers,
+        json={"is_protected": True},
+    )
+    assert resp.status_code == 200
+    assert resp.get_json()["is_protected"] is True
+    assert client.delete(f"/api/v1/bindings/{binding_id}", headers=auth_headers).status_code == 409
+
+    client.put(
+        f"/api/v1/bindings/{binding_id}",
+        headers=auth_headers,
+        json={"is_protected": False},
+    )
+    assert client.delete(f"/api/v1/bindings/{binding_id}", headers=auth_headers).status_code in (200, 204)
+
+
 def test_list_bindings_filtered_by_key(client, seeded_db, auth_headers, db):
     ik1 = _make_key(db, "test.filter1")
     ik2 = _make_key(db, "test.filter2")
