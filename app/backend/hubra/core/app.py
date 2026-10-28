@@ -523,7 +523,7 @@ def _register_cli(app: Flask) -> None:
         """List all tenants."""
         from hubra.core.tenant.service import TenantService
 
-        tenants = TenantService.list_tenants()
+        tenants = TenantService.list_tenants(per_page=10_000)["tenants"]
         if not tenants:
             click.echo("No tenants found.")
             return
