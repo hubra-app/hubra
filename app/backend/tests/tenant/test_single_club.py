@@ -113,7 +113,7 @@ def test_manager_plane_is_off(client, auth_headers, single_club, path):
     assert resp.status_code == 404
 
 
-def test_club_admin_api_stays_on(client, auth_headers, single_club):
+def test_club_admin_api_stays_on(client, single_club, auth_headers):
     """Club-level admin endpoints are not part of the manager plane."""
     resp = client.get("/api/v1/modules/")
     assert resp.status_code == 200
@@ -155,3 +155,21 @@ def test_setup_club_is_idempotent(app, db):
     )
     assert result.exit_code == 0, result.output
     assert "already set up" in result.output
+
+
+def test_member_token_only_counts_in_its_own_club(app, client, db, seeded_db):
+    """A member id names a member of one club; another club must not accept it."""
+    from hubra.core.models.tenant import Tenant
+
+    db.session.add(Tenant(name="Club A", slug="club-a", status="active"))
+    db.session.add(Tenant(name="Club B", slug="club-b", status="active"))
+    db.session.commit()
+    client.post(
+        "/api/v1/auth/login",
+        json={"email": "admin@test.ch", "password": "password123"},
+        headers={"X-Tenant-Slug": "club-a"},
+    )
+    assert client.get("/api/v1/account/").status_code == 200
+    # The same token where the request resolves to club-b instead.
+    with patch.dict(app.config, {"SINGLE_CLUB": "club-b"}):
+        assert client.get("/api/v1/account/").status_code == 401

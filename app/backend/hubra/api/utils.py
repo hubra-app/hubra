@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 
 from flask import jsonify
 
@@ -45,3 +47,22 @@ def log_audit(actor_id, action, target_type, target_id, target_label, color=None
             color=color,
         )
     )
+
+
+_PLAIN_NUMBER = re.compile(r"[+-]?[\d\s/().'-]*")
+
+
+def csv_safe(value):
+    """Neutralise spreadsheet formulas in a CSV cell (CWE-1236).
+
+    Excel and LibreOffice run a cell that starts with = + - @ (or a tab or
+    carriage return) as a formula. Such text gets a leading apostrophe;
+    plain numbers like +41 79 123 45 67 or -12.50 stay as they are.
+    """
+    if not isinstance(value, str) or not value:
+        return value
+    if value[0] in "=@\t\r" or (
+        value[0] in "+-" and not _PLAIN_NUMBER.fullmatch(value)
+    ):
+        return "'" + value
+    return value

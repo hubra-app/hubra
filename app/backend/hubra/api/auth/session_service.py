@@ -17,12 +17,20 @@ _log = logging.getLogger(__name__)
 _SESSION_CACHE_TTL = 60  # seconds
 
 
+def _cache_key(session_id: int) -> str:
+    """Sessions live in each club's schema, so the key names the club too."""
+    from hubra.core.tenant.context import current_tenant
+
+    tenant = current_tenant()
+    return f"session:{tenant.id if tenant else 0}:{session_id}"
+
+
 def _invalidate_session_cache(session_id: int) -> None:
     """Delete the cached session-valid flag for a session ID."""
     client = _get_redis_client()
     if client is not None:
         try:
-            client.delete(f"session:{session_id}")
+            client.delete(_cache_key(session_id))
         except Exception:
             _log.debug("Redis cache invalidation failed for session %s", session_id)
             _mark_redis_down()
@@ -30,7 +38,7 @@ def _invalidate_session_cache(session_id: int) -> None:
 
 def is_session_revoked(session_id: int) -> bool:
     """Check if a session is revoked, using Redis cache (60s TTL) if available."""
-    cache_key = f"session:{session_id}"
+    cache_key = _cache_key(session_id)
     client = _get_redis_client()
     redis_read_ok = True
     if client is not None:
