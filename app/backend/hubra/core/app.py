@@ -603,6 +603,31 @@ def _register_cli(app: Flask) -> None:
         db.session.commit()
         click.echo(f"Done. User {email} updated.")
 
+    @app.cli.command("ensure-superadmins")
+    @click.option(
+        "--emails",
+        envvar="SUPERADMIN_EMAILS",
+        default="",
+        help="Comma-separated login emails (default: env SUPERADMIN_EMAILS)",
+    )
+    def ensure_superadmins(emails: str):
+        """Make the listed accounts superadmins. Never demotes anyone.
+
+        Safe to run on every start (the init job does): unknown emails are
+        skipped with a warning, so the account can sign up later.
+        """
+        from hubra.core.models.user import User
+
+        wanted = [e.strip().lower() for e in emails.split(",") if e.strip()]
+        for email in wanted:
+            user = db.session.scalar(select(User).where(User.email == email))
+            if user is None:
+                click.echo(f"  WARNING: no account for {email} yet, skipped.", err=True)
+            elif not user.is_superadmin:
+                user.is_superadmin = True
+                click.echo(f"  {email} is now superadmin.")
+        db.session.commit()
+
     @app.cli.command("apply-tenant-migrations")
     @click.option(
         "--slug",
