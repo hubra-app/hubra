@@ -53,7 +53,6 @@ i18n.on("languageChanged", (lng) => {
 const accessedKeys = new Map<string, string | undefined>();
 let reportTimer: ReturnType<typeof setTimeout> | null = null;
 const REPORT_DEBOUNCE_MS = 30_000;
-let reportingRefused = false;
 
 function recordKey(key: string, defaultValue?: string) {
   if (!key) return;
@@ -76,9 +75,6 @@ async function flushAccessedKeys() {
     default_value: dv ?? null,
   }));
   accessedKeys.clear();
-  // Only people who may write translations can report; everyone else got a
-  // 403 for every language on every page load.
-  if (reportingRefused) return;
   let locales = KNOWN_LANGUAGES;
   try {
     locales = await clubLanguages();
@@ -87,9 +83,7 @@ async function flushAccessedKeys() {
   }
   for (const locale of locales) {
     // Fire-and-forget — don't block the UI
-    reportMissingKeys(locale, keys).catch((err: { status?: number }) => {
-      if (err?.status === 403) reportingRefused = true;
-    });
+    reportMissingKeys(locale, keys).catch(() => {});
   }
 }
 
