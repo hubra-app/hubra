@@ -4,7 +4,7 @@
 
 See `.env.example` for the full list with descriptions.
 
-The mail stack is **opt-in**. Set `features.mail: true` in `settings.yaml`
+The mail stack is **opt-in**. Switch on the `mail` module (`flask modules enable mail`, or Settings › Modules)
 and configure the Infomaniak IMAP/SMTP variables to enable mail. If you are
 not using mail, leave the mail variables blank.
 
@@ -20,7 +20,7 @@ not using mail, leave the mail variables blank.
 | Frontend    | `FRONTEND_BASE_URL`                                                        | Production (email link generation — points at the SPA)   |
 | Single club | `SINGLE_CLUB`, `CLUB_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`                | Single-club installs only, see [single-club.md](single-club.md) |
 | Domain      | `MAIL_HOST`, `MAIL_FROM`, `MAIL_DOMAIN`                                    | Always (mail vars only when mail enabled)                |
-| Features    | Toggled in `settings.yaml` (`features.mail`, `features.polls`, etc.)       | Always                                                   |
+| Modules     | Per club in Settings › Modules, or `flask modules enable <code>`           | Always                                                   |
 | SMTP/IMAP   | `SMTP_HOST`, `SMTP_PORT`, `IMAP_HOST`, `IMAP_PORT`                         | Mail feature enabled (Infomaniak SMTP/IMAP)              |
 | Backups     | `BACKUP_S3_*`, `BACKUP_ENCRYPTION_KEY`                                     | Backups enabled                                          |
 

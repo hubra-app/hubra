@@ -39,22 +39,21 @@ cross-origin auth setup (CORS, CSRF, cookie attributes, ProxyFix).
 ## Quick Start
 
 ```bash
-git clone <repo-url>
-cd club-management-suite
-cp .env.example .env       # Edit with your secrets
-docker compose up -d       # App stack only (default)
+git clone git@github.com:hubra-app/hubra.git
+cd hubra
+scripts/init-env.sh        # .env with fresh secrets, localhost defaults
+docker compose pull        # images from GHCR (or: docker compose build)
+docker compose up -d
 ```
 
-The self-hosted mail stack (WildDuck, Haraka, ZoneMTA) is opt-in. To run it
-alongside the app:
+Then open http://localhost:8082, sign up, and make yourself the platform admin
+with `docker compose exec backend flask make-admin --email you@example.com`.
+The full walkthrough, production host names and mail are in
+[docs/run-with-docker.md](docs/run-with-docker.md).
 
-```bash
-docker compose -f docker-compose.yml -f modules/mail/docker-compose.mail.yml up -d
-```
-
-See [modules/mail/README.md](modules/mail/README.md) for mail prerequisites.
-
-To run on k3s with Flux instead of Compose, see [docs/k3s.md](docs/k3s.md).
+To run on k3s with Flux instead, see [docs/k3s.md](docs/k3s.md). The images
+are built by GitHub Actions (`.github/workflows/images.yml`) and pushed to
+`ghcr.io/hubra-app/hubra/*`.
 
 **Development mode:** See [docs/frontend.md](docs/frontend.md) and
 [app/backend/API.md](app/backend/API.md).
@@ -62,9 +61,9 @@ To run on k3s with Flux instead of Compose, see [docs/k3s.md](docs/k3s.md).
 ## Testing
 
 ```bash
-# Backend (756 tests)
+# Backend
 cd app/backend
-python -m pytest tests/ --ignore=tests/test_s11_backend_gaps.py
+python -m pytest tests/
 
 # Frontend
 cd app/frontend
@@ -75,10 +74,6 @@ npm run lint           # ESLint
 cd app/frontend
 npx playwright test
 ```
-
-> `test_s11_backend_gaps.py` requires a running Redis instance and will hang
-> if Redis is unavailable. The `--ignore` flag skips it when testing without
-> Docker.
 
 ## Documentation
 

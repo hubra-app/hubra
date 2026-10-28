@@ -1,7 +1,7 @@
 # Running on k3s with Flux
 
-Flux watches this GitLab repo and keeps a single-node [k3s](https://k3s.io)
-cluster in sync with it. To deploy, you push to `master`. Secrets stay out of
+Flux watches the GitHub repo (`hubra-app/hubra`) and keeps a single-node
+[k3s](https://k3s.io) cluster in sync with it. To deploy, you push to `main`. Secrets stay out of
 git and are created once with `deploy/create-secrets.sh`.
 
 ```
@@ -9,10 +9,12 @@ deploy/
 ├── flux/                     # what Flux syncs (flux bootstrap --path=deploy/flux)
 │   ├── infrastructure.yaml   #   cert-manager, then issuer + Traefik tweaks
 │   ├── app.yaml              #   deploy/app
-│   └── mail.yaml             #   modules/mail/k8s (suspended = off)
+│   ├── mail.yaml             #   modules/mail/k8s (suspended = off)
+│   └── image-automation.yaml.example  # rename to switch on image automation
+├── flux-image-automation/    # optional: Flux bumps image tags on new builds
 ├── infrastructure/           # cert-manager HelmRelease, Let's Encrypt issuer, k3s Traefik config
 ├── app/                      # the app stack (plain Kustomize)
-└── create-secrets.sh         # .env -> Secret hubra-env (+ registry, Cloudflare)
+└── create-secrets.sh         # .env -> Secret hubra-env (+ GHCR pull secret, Cloudflare)
 modules/mail/k8s/             # the opt-in mail stack, see modules/mail/README.md
 ```
 
@@ -23,7 +25,7 @@ modules/mail/k8s/             # the opt-in mail stack, see modules/mail/README.m
 | `postgres`, `redis` + volumes                 | StatefulSets with `local-path` volumes                           |
 | `flask-init`                                  | initContainer on `backend` (migrate, sync-permissions, seed)     |
 | `backend`, `celery-worker`, `celery-beat`     | Deployments (`backend.yaml`)                                     |
-| `frontend`, `admin-frontend`, `sso-frontend`  | nginx Deployments                                                |
+| `frontend`, `admin-frontend`, `sso-frontend`  | nginx Deployments, host names from ConfigMap `hubra-frontend`    |
 | Traefik labels in the override file           | one `Ingress` on k3s's bundled Traefik, cert from cert-manager   |
 | `env_file: .env`                              | Secret `hubra-env` (`create-secrets.sh`)                          |
 | `settings.yaml`                               | ConfigMap generated from the repo file; a change rolls the pods  |
@@ -33,29 +35,44 @@ hostnames in `.env` keep working.
 
 ## Setup
 
-1. **Install k3s and Flux CLI** on the node: `curl -sfL https://get.k3s.io | sh -`
-   and `curl -s https://fluxcd.io/install.sh | sudo bash`.
-2. **Images.** k3s can't build images, so GitLab CI pushes `backend`, `frontend`,
-   `admin-frontend`, `sso-frontend`, `haraka` and `zonemta` to the project
-   registry on `master`. Set the CI/CD variable
-   `VITE_API_BASE=https://api.vollbuild.ch/api`, because the frontends bake it in.
-   Replace `CHANGE-ME` in `deploy/app/kustomization.yaml` (and
-   `modules/mail/k8s/kustomization.yaml`) with your GitLab group.
-3. **Secrets.** Make a GitLab deploy token with `read_registry`, then on a
-   machine with `.env` and cluster access run:
+1. **Install k3s and the Flux CLI** on the node:
    ```sh
-   REGISTRY_USER=<token user> REGISTRY_PASSWORD=<token> deploy/create-secrets.sh
+   curl -sfL https://get.k3s.io | sh -
+   curl -s https://fluxcd.io/install.sh | sudo bash
+   export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
    ```
-   `REDIS_URL` and `RATE_LIMIT_STORAGE` in `.env` must use host `redis`, which
-   they already do for Compose.
-4. **Bootstrap Flux.** Use a GitLab personal access token with `api` scope:
+2. **Images.** k3s can't build images. GitHub Actions
+   (`.github/workflows/images.yml`) pushes `backend`, `frontend`,
+   `admin-frontend`, `sso-frontend`, `haraka`, `zonemta` and `cert-watcher` to
+   `ghcr.io/hubra-app/hubra/<image>` on every push to `main`. Check the
+   **Actions** tab after the first push. The frontend images hold no host
+   names; set yours in the `hubra-frontend` ConfigMap in
+   `deploy/app/kustomization.yaml` and in `deploy/app/ingress.yaml`.
+3. **Secrets.** The repo is private, so are its packages. Create a GitHub
+   token (classic) with `read:packages`, then on a machine with `.env`
+   (`scripts/init-env.sh`, then set the production values, see
+   `.env.example`) and cluster access run:
    ```sh
-   export GITLAB_TOKEN=<token>
-   flux bootstrap gitlab --owner=<group> --repository=hubra \
-     --branch=master --path=deploy/flux
+   GHCR_USER=<github login> GHCR_TOKEN=<token> deploy/create-secrets.sh
    ```
-   Flux commits its own manifests to `deploy/flux/flux-system/` and starts
-   syncing. Check progress with `flux get kustomizations`.
+   `REDIS_URL` and `RATE_LIMIT_STORAGE` must use host `redis`, which the
+   example already does.
+4. **Bootstrap Flux** with a GitHub token that can administer the repo
+   (classic: `repo`; fine-grained: Administration + Contents read/write):
+   ```sh
+   export GITHUB_TOKEN=<token>
+   flux bootstrap github --owner=hubra-app --repository=hubra \
+     --branch=main --path=deploy/flux
+   ```
+   Flux adds a deploy key to the repo, commits its own manifests to
+   `deploy/flux/flux-system/` and starts syncing. Watch it with
+   `flux get kustomizations --watch`. `git pull` afterwards so your checkout
+   has Flux's commit.
+5. **First admin.** Sign up on the SSO host, then:
+   ```sh
+   kubectl -n hubra exec deploy/backend -- flask make-admin --email you@example.com
+   ```
+   Sign in again and create a club in the manager portal.
 
 **Ports 80/443.** k3s's Traefik binds them, which is where today's external
 Traefik listens. Stop the external Traefik at cutover, because k3s's Traefik
@@ -63,9 +80,17 @@ replaces it.
 
 ## Day to day
 
-- **Deploy a new build:** set `newTag` in `deploy/app/kustomization.yaml` to the
-  commit SHA CI pushed, then push. Leave it at `latest` and run
-  `kubectl -n hubra rollout restart deployment` if you prefer.
+- **Deploy a new build:** `latest` follows `main`, but Kubernetes doesn't
+  notice a moved tag. Run `kubectl -n hubra rollout restart deployment` after
+  the Images workflow finishes, or pin `newTag` in
+  `deploy/app/kustomization.yaml` to a build tag (`sha-<commit>`) or a
+  release (`1.2.3`) and push.
+- **Automatic roll-outs (optional):** Flux image automation picks up every
+  new `main` build and commits the tag for you. Bootstrap with
+  `--components-extra=image-reflector-controller,image-automation-controller --read-write-key`,
+  create the `ghcr-pull` secret in `flux-system` as well, and rename
+  `deploy/flux/image-automation.yaml.example` to `image-automation.yaml`.
+  Details are at the top of `deploy/flux-image-automation/image-automation.yaml`.
 - **Change settings:** edit `settings.yaml` and push.
 - **Change secrets:** edit `.env`, re-run `create-secrets.sh`, then run
   `kubectl -n hubra rollout restart deployment`.

@@ -17,10 +17,10 @@ docker compose -f docker-compose.yml -f modules/mail/docker-compose.mail.yml up 
 
 Prerequisites:
 
-- `features.mail: true` in `settings.yaml`
+- the mail module switched on: `docker compose exec backend flask modules enable mail`
 - Mail-related env vars set in `.env` (`WILDDUCK_API_TOKEN`, `LOOP_SECRET`,
   `SRS_SECRET`, `REWRITE_DOMAIN`, `ACME_EMAIL`, `MAIL_HOST`, etc.)
-- `./mail/certbot/cloudflare.ini` present with Cloudflare API credentials
+- `./modules/mail/certbot/cloudflare.ini` present with Cloudflare API credentials
 
 All 8 mail services (`mongo`, `mailserver`, `haraka`, `zonemta`, `certbot-init`,
 `certbot-renew`, `cert-watcher`, `socket-proxy`) are defined in
