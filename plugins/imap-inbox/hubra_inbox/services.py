@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import imaplib
 import logging
 from datetime import datetime, timedelta, timezone
 
@@ -313,7 +314,7 @@ def sync_mailbox(mailbox: InboxMailbox) -> dict:
         mailbox.last_sync_at = now
         return {"error": mailbox.last_error}
     state = dict(mailbox.sync_state or {})
-    since = (now - timedelta(days=mailbox.retention_days)).strftime("%d-%b-%Y")
+    since = _imap_date(now - timedelta(days=mailbox.retention_days))
     try:
         for folder in mailbox.folders or ["INBOX"]:
             validity = imap.select(conn, folder, readonly=not mailbox.mark_seen)
@@ -336,8 +337,10 @@ def sync_mailbox(mailbox: InboxMailbox) -> dict:
                 fetched += 1
             state[folder] = folder_state
         mailbox.last_error = None
-    except imap.ImapError as exc:
-        mailbox.last_error = str(exc)[:500]
+    except (imap.ImapError, imaplib.IMAP4.error, OSError) as exc:
+        # imaplib raises its own errors (and socket timeouts) on select and
+        # fetch; they belong to this mailbox, not to the whole sync.
+        mailbox.last_error = str(exc)[:500] or type(exc).__name__
     finally:
         imap.close(conn)
     mailbox.sync_state = state
@@ -353,13 +356,35 @@ def sync_mailbox(mailbox: InboxMailbox) -> dict:
     return {"fetched": fetched, "error": mailbox.last_error}
 
 
+_MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
+
+
+def _imap_date(day: datetime) -> str:
+    """An IMAP SEARCH date (01-Oct-2026), whatever the process locale."""
+    return f"{day.day:02d}-{_MONTHS[day.month - 1]}-{day.year}"
+
+
 def sync_all() -> dict:
     results = {}
-    for mailbox in db.session.scalars(
-        select(InboxMailbox).where(InboxMailbox.active.is_(True))
-    ):
-        results[mailbox.id] = sync_mailbox(mailbox)
-        db.session.commit()
+    ids = db.session.scalars(
+        select(InboxMailbox.id)
+        .where(InboxMailbox.active.is_(True))
+        .order_by(InboxMailbox.id)
+    ).all()
+    for mailbox_id in ids:
+        mailbox = db.session.get(InboxMailbox, mailbox_id)
+        try:
+            results[mailbox_id] = sync_mailbox(mailbox)
+            db.session.commit()
+        except Exception as exc:
+            # One broken mailbox must not stop the others.
+            db.session.rollback()
+            _log.exception("inbox sync failed mailbox_id=%s", mailbox_id)
+            mailbox = db.session.get(InboxMailbox, mailbox_id)
+            mailbox.last_error = (str(exc) or type(exc).__name__)[:500]
+            mailbox.last_sync_at = datetime.now(timezone.utc)
+            db.session.commit()
+            results[mailbox_id] = {"error": mailbox.last_error}
     return results
 
 

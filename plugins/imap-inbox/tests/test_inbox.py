@@ -406,3 +406,42 @@ def test_scheduled_sync(app, db, seeded_db, board, fake):
     db.session.commit()
     result = sync_all.run()
     assert list(result.values())[0]["fetched"] == 2
+
+
+def test_a_broken_mailbox_does_not_stop_the_others(db, board, fake, monkeypatch):
+    class Dropped(FakeImap):
+        def uid(self, command, *args):
+            if command == "FETCH":
+                raise imap.imaplib.IMAP4.abort("socket error: EOF")
+            return super().uid(command, *args)
+
+    broken = Dropped(fake.folders)
+    monkeypatch.setattr(
+        imap,
+        "_PinnedSSL",
+        lambda host, port, address, context: broken if host == "bad.example" else fake,
+    )
+    for name, host in (("A", "bad.example"), ("B", "good.example")):
+        db.session.add(
+            InboxMailbox(
+                name=name,
+                host=host,
+                username="u",
+                password_encrypted=crypto.encrypt("secret"),
+                folders=["INBOX"],
+                sync_state={},
+            )
+        )
+    db.session.commit()
+
+    services.sync_all()
+    bad = db.session.query(InboxMailbox).filter_by(name="A").one()
+    good = db.session.query(InboxMailbox).filter_by(name="B").one()
+    assert "EOF" in bad.last_error
+    assert good.last_error is None and good.last_sync_at is not None
+
+
+def test_search_dates_do_not_depend_on_the_locale():
+    from datetime import datetime
+
+    assert services._imap_date(datetime(2026, 3, 5)) == "05-Mar-2026"

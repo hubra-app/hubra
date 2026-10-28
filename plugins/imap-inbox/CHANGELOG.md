@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1
+
+- One mailbox that drops the connection or answers with an IMAP error no
+  longer stops the sync of every later mailbox of the club. The error is
+  shown on that mailbox, and the others sync as usual.
+- The search date no longer depends on the server's locale.
+
 ## 1.0.0
 
 First release.
