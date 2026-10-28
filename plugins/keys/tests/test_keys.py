@@ -91,9 +91,16 @@ def test_lost_and_found(client, auth_headers, key):
 def test_my_keys(client, db, auth_headers, key, seeded_db):
     key.status = "issued"
     key.holder_id = seeded_db["admin"].id
+    key.notes = "Depot noch offen, nachfragen"
     db.session.commit()
     mine = client.get("/api/v1/keys/mine").get_json()
     assert [k["id"] for k in mine] == [key.id]
+    # Manager notes stay with the managers.
+    assert "notes" not in mine[0] and "codeId" not in mine[0]
+
+    key.status = "retired"
+    db.session.commit()
+    assert client.get("/api/v1/keys/mine").get_json() == []
 
 
 def test_keys_need_inventory(client, db, auth_headers):
