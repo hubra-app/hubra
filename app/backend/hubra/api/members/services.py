@@ -233,6 +233,25 @@ def _active_member_with_email(email: str) -> bool:
     )
 
 
+def _free_club_address(local: str, domain: str) -> tuple[str, str | None]:
+    """A club username, and address when the club has a mail domain, that no
+    other member has: ``anna.muster``, then ``anna.muster2``, ``anna.muster3``…
+
+    Two people with the same name joining one club hit the unique
+    club_username / public_email columns otherwise.
+    """
+    n = 1
+    while True:
+        candidate = local if n == 1 else f"{local}{n}"
+        address = f"{candidate}@{domain}" if domain else None
+        clash = Member.club_username == candidate
+        if address:
+            clash = clash | (Member.public_email == address)
+        if db.session.scalar(select(Member.id).where(clash).limit(1)) is None:
+            return candidate, address
+        n += 1
+
+
 # ── Helper for creating WildDuck mailbox for a new member ──────────────────────
 
 
@@ -919,8 +938,9 @@ class MembersService:
             if club_domain
             else None
         )
-        username = (
-            public_email.split("@")[0] if public_email else make_username(full_name)
+        username, public_email = _free_club_address(
+            public_email.split("@")[0] if public_email else make_username(full_name),
+            club_domain if public_email else "",
         )
 
         member = Member(
@@ -1383,7 +1403,11 @@ class MembersService:
             else None
         )
 
-        username = public_email.split("@")[0] if public_email else None
+        username = None
+        if public_email:
+            username, public_email = _free_club_address(
+                public_email.split("@")[0], club_domain
+            )
 
         user = existing_user
 
