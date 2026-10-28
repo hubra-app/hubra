@@ -165,23 +165,20 @@ def _apply_sort(query, args: dict[str, str]):
     """Apply sort param to a query. Default: last_name, first_name ascending.
 
     Identity field sorts (name, first_name, last_name, email) use User
-    columns — the query is expected to already have a User join.
+    columns — the query is expected to already have a User join. Member.id
+    breaks ties, so pages of the same list never repeat or skip a member
+    (Postgres returns rows with equal sort keys in any order).
     """
     sort = args.get("sort", "").strip()
-    if not sort:
-        return query.order_by(User.last_name, User.first_name)
-
     descending = sort.startswith("-")
-    field_name = sort.lstrip("-+")
-
-    columns = _SORT_COLUMNS.get(field_name)
+    columns = _SORT_COLUMNS.get(sort.lstrip("-+")) if sort else None
 
     if columns is None:
-        return query.order_by(User.last_name, User.first_name)
+        return query.order_by(User.last_name, User.first_name, Member.id)
 
     if descending:
         columns = tuple(c.desc() for c in columns)
-    return query.order_by(*columns)
+    return query.order_by(*columns, Member.id)
 
 
 def _paginate_query(query, page: int, page_size: int, schema):
