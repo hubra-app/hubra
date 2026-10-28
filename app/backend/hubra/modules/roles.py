@@ -31,5 +31,6 @@ module = Module(
             ),
         ),
     ),
-    tables=("roles", "permissions", "role_permissions"),
+    # The permission catalog itself lives once in public (flask sync-permissions).
+    tables=("roles", "role_permissions"),
 )

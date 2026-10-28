@@ -56,6 +56,13 @@ def test_registry_has_every_section():
     assert {"core", "members", "roles", "finance", "inventory", "mail"} <= codes
 
 
+def test_platform_tables_are_not_cloned_into_clubs():
+    """A club copy of a public table hides the real one inside the club."""
+    modules.registry.load()
+    tables = set(modules.registry.tenant_tables())
+    assert not tables & {"permissions", "users", "tenants", "user_tenants"}
+
+
 def test_registry_orders_dependencies_first():
     order = modules.registry.codes()
     for m in modules.registry.all():
