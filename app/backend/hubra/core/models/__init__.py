@@ -64,6 +64,7 @@ from hubra.core.models.plugin import (
     PluginState,
     TrustedKey,
 )
+from hubra.core.models import indexes  # noqa: F401,E402 — needs every table above
 
 # Plugins import their own models when they load (hubra.core.plugins).
 
