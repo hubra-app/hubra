@@ -442,7 +442,7 @@ def superadmin(client, seeded_db, db):
 
 
 def test_marketplace_needs_the_permission(client, auth_headers):
-    assert client.get("/api/v2/manager/plugins/?fetch=0").status_code == 403
+    assert client.get("/api/v1/manager/plugins/?fetch=0").status_code == 403
 
 
 def test_marketplace_lists_bundled_plugins(client, superadmin):
@@ -455,16 +455,16 @@ def test_marketplace_lists_bundled_plugins(client, superadmin):
 def test_upload_and_confirm_over_the_api(client, superadmin, tmp_path, plugin_dir):
     blob = publish.pack(make_plugin(tmp_path))
     resp = client.post(
-        "/api/v2/manager/plugins/upload",
+        "/api/v1/manager/plugins/upload",
         data={"file": (io.BytesIO(blob), "hello-1.0.0.zip")},
         content_type="multipart/form-data",
     )
     assert resp.status_code == 200, resp.get_json()
     token = resp.get_json()["token"]
-    resp = client.post(f"/api/v2/manager/plugins/stage/{token}/confirm", json={})
+    resp = client.post(f"/api/v1/manager/plugins/stage/{token}/confirm", json={})
     assert resp.status_code == 400 and "signed" in resp.get_json()["message"]
     resp = client.post(
-        f"/api/v2/manager/plugins/stage/{token}/confirm", json={"acceptUnsigned": True}
+        f"/api/v1/manager/plugins/stage/{token}/confirm", json={"acceptUnsigned": True}
     )
     assert resp.status_code == 200 and resp.get_json()["version"] == "1.0.0"
 
@@ -472,17 +472,17 @@ def test_upload_and_confirm_over_the_api(client, superadmin, tmp_path, plugin_di
 def test_trusted_keys_api(client, superadmin, key):
     _pem, pub = key
     resp = client.post(
-        "/api/v2/manager/plugins/keys", json={"name": "Ana", "publicKey": pub}
+        "/api/v1/manager/plugins/keys", json={"name": "Ana", "publicKey": pub}
     )
     assert resp.status_code == 201
     kid = resp.get_json()["keyId"]
     assert (
         client.post(
-            "/api/v2/manager/plugins/keys", json={"name": "Ana 2", "publicKey": pub}
+            "/api/v1/manager/plugins/keys", json={"name": "Ana 2", "publicKey": pub}
         ).status_code
         == 409
     )
-    keys = client.get("/api/v2/manager/plugins/keys").get_json()
+    keys = client.get("/api/v1/manager/plugins/keys").get_json()
     assert any(k["keyId"] == kid for k in keys)
 
 

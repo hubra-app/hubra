@@ -27,7 +27,6 @@ class ModuleRegistry:
     def __init__(self) -> None:
         self._modules: dict[str, Module] = {}
         self._bp_to_module: dict[str, str] = {}
-        self._bp_canonical: dict[str, str] = {}
         self._loaded = False
 
     # ── Discovery ───────────────────────────────────────────────────────────
@@ -59,13 +58,9 @@ class ModuleRegistry:
             # request.blueprint reports the Blueprint's own name, which is
             # not always the attribute name (health_bp is "health").
             name = self._blueprint(bp).name
-            for registered in (name, *(n for _, n in bp.v2)):
-                if registered in self._bp_to_module:
-                    raise ModuleRegistryError(
-                        f"Blueprint {registered!r} registered twice"
-                    )
-                self._bp_to_module[registered] = manifest.code
-                self._bp_canonical[registered] = name
+            if name in self._bp_to_module:
+                raise ModuleRegistryError(f"Blueprint {name!r} registered twice")
+            self._bp_to_module[name] = manifest.code
 
     def validate(self) -> None:
         for m in self._modules.values():
@@ -135,12 +130,6 @@ class ModuleRegistry:
         code = self._bp_to_module.get(blueprint_name.split(".")[0])
         return self._modules.get(code) if code else None
 
-    def canonical_blueprint(self, blueprint_name: str | None) -> str | None:
-        """Map a v2 registration name back to the v1 blueprint name."""
-        if not blueprint_name:
-            return blueprint_name
-        return self._bp_canonical.get(blueprint_name, blueprint_name)
-
     def subscribers(self, event: str) -> list[tuple[Module, str]]:
         return [(m, m.events[event]) for m in self.all() if event in m.events]
 
@@ -167,8 +156,6 @@ class ModuleRegistry:
             for bp in m.blueprints:
                 blueprint = self._blueprint(bp)
                 app.register_blueprint(blueprint, url_prefix=bp.url_prefix)
-                for prefix, name in bp.v2:
-                    app.register_blueprint(blueprint, url_prefix=prefix, name=name)
                 _log.debug("Module %s: registered %s", m.code, bp.attr)
 
 

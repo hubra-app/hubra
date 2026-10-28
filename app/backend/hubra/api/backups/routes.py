@@ -1,7 +1,6 @@
 """Backups for the manager portal.
 
-``platform_backups_bp`` (``/api/v1/manager/platform/backups``, also under
-``/api/v2``): platform staff with the global permission ``backups.manage``
+``platform_backups_bp`` (``/api/v1/manager/platform/backups``): platform staff with the global permission ``backups.manage``
 start, verify, restore and delete backups.  A backup is either global (the
 public schema) or one club's schema; a club backup can be restored on its
 own, after typing the club's address to confirm.  Where backups are stored

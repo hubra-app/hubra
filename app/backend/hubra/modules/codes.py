@@ -13,7 +13,6 @@ module = Module(
             "hubra.api.codes.routes",
             "codes_bp",
             "/api/v1/codes",
-            v2=(("/api/v2/tenants/codes", "codes_bp_v2"),),
         ),
     ),
     nav=(

@@ -18,8 +18,8 @@ _SETTING_TYPES = {"str", "int", "bool", "float", "secret", "url", "email", "choi
 class Blueprint:
     """A Flask blueprint owned by a module.
 
-    ``v2`` lists extra ``(url_prefix, name)`` registrations of the same
-    blueprint under the v2 namespaces.
+    ``v2`` is ignored. The /api/v2 aliases were removed; the field stays so
+    plugins built before that still load.
     """
 
     import_path: str

@@ -13,7 +13,6 @@ module = Module(
             "hubra.api.groups.routes",
             "groups_bp",
             "/api/v1/groups",
-            v2=(("/api/v2/tenants/groups", "groups_bp_v2"),),
         ),
     ),
     nav=(

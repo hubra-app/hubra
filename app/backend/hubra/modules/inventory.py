@@ -13,7 +13,6 @@ module = Module(
             "hubra.api.inventory.routes",
             "inventory_bp",
             "/api/v1/inventory",
-            v2=(("/api/v2/tenants/inventory", "inventory_bp_v2"),),
         ),
     ),
     settings=(

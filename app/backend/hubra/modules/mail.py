@@ -13,7 +13,6 @@ module = Module(
             "hubra.api.mail.routes",
             "mail_bp",
             "/api/v1/mail",
-            v2=(("/api/v2/tenants/mail", "mail_bp_v2"),),
         ),
     ),
     public_endpoints=("mail_bp.mail_health",),

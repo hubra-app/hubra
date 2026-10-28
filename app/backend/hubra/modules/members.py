@@ -13,19 +13,16 @@ module = Module(
             "hubra.api.members.routes",
             "members_bp",
             "/api/v1/members",
-            v2=(("/api/v2/tenants/members", "members_bp_v2"),),
         ),
         Blueprint(
             "hubra.api.applications.routes",
             "applications_bp",
             "/api/v1/applications",
-            v2=(("/api/v2/tenants/applications", "applications_bp_v2"),),
         ),
         Blueprint(
             "hubra.api.tiers.routes",
             "tiers_bp",
             "/api/v1/tiers",
-            v2=(("/api/v2/tenants/tiers", "tiers_bp_v2"),),
         ),
     ),
     nav=(
