@@ -9,7 +9,7 @@ import { DomainsTab } from '@/screens/private/settings/DomainsTab'
 
 const TABS = [
   { id: 'settings', labelKey: 'settings.tabs.settings', label: 'Settings', Component: KVSettingsTab },
-  { id: 'modules', labelKey: 'settings.tabs.modules', label: 'Modules', Component: ModulesTab },
+  { id: 'modules', labelKey: 'settings.tabs.modules', label: 'Module & Plugins', Component: ModulesTab },
   { id: 'club', labelKey: 'settings.tabs.club', label: 'Club', Component: ClubSettingsTab },
   { id: 'domains', labelKey: 'settings.tabs.domains', label: 'Domains', Component: DomainsTab },
 ] as const

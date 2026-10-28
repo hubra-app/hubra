@@ -7,16 +7,16 @@ import { IconCheck, IconLock } from '@tabler/icons-react'
 import * as authApi from '@/api/auth'
 import { useToast } from '@/context/AppContext'
 import { Field } from '@/components/ui'
-import { useT } from '@/locales/i18n'
+import { useT, zmsg } from '@/locales/i18n'
 
 const passwordSchema = z
   .object({
-    currentPw: z.string().min(1, 'Current password is required'),
-    newPw: z.string().min(8, 'Password must be at least 8 characters'),
-    confirmPw: z.string().min(8, 'Password must be at least 8 characters'),
+    currentPw: z.string().min(1, zmsg('validation.currentPasswordRequired', 'Aktuelles Passwort ist erforderlich')),
+    newPw: z.string().min(8, zmsg('validation.passwordMin', 'Das Passwort muss mindestens 8 Zeichen lang sein')),
+    confirmPw: z.string().min(8, zmsg('validation.passwordMin', 'Das Passwort muss mindestens 8 Zeichen lang sein')),
   })
   .refine((data) => data.newPw === data.confirmPw, {
-    message: 'Passwords do not match',
+    ...zmsg('validation.passwordsMismatch', 'Die Passwörter stimmen nicht überein'),
     path: ['confirmPw'],
   })
 type PasswordForm = z.infer<typeof passwordSchema>

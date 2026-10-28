@@ -4,7 +4,7 @@ import { useForm } from '@mantine/form'
 import { zodResolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useMutation } from '@tanstack/react-query'
-import { useT } from '@/locales/i18n'
+import { useT, zmsg } from '@/locales/i18n'
 import {
   IconPlus,
   IconTrash,
@@ -38,9 +38,9 @@ import {
 } from '@/api/posts'
 
 const postSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
+  title: z.string().min(1, zmsg('validation.titleRequired', 'Titel ist erforderlich')),
   summary: z.string(),
-  body: z.string().refine((v) => v.trim().length > 0, 'Content is required'),
+  body: z.string().refine((v) => v.trim().length > 0, zmsg('validation.contentRequired', 'Inhalt ist erforderlich')),
 })
 type PostForm = z.infer<typeof postSchema>
 
@@ -187,7 +187,7 @@ export function PostsTab() {
       return { liked }
     },
     onError: (err, { postId }) => {
-      const msg = err instanceof Error ? err.message : 'Could not toggle like.'
+      const msg = err instanceof Error ? err.message : t('posts.likeFailed', 'Das Like konnte nicht gespeichert werden.')
       notify('error', t('common.error'), msg)
       getPost(postId).then((post) => {
         setPosts((prev) => prev.map((p) => (p.id === post.id ? post : p)))

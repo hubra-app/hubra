@@ -140,4 +140,9 @@ export function useT() {
   return { t: wrappedT, i18n: i18nInstance, ready };
 }
 
+/** A zod error message that is translated when validation runs. */
+export function zmsg(key: string, defaultValue: string) {
+  return { error: () => i18n.t(key, defaultValue) };
+}
+
 export default i18n;

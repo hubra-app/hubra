@@ -1,3 +1,4 @@
+import i18n from "i18next";
 import { useMutation } from "@tanstack/react-query";
 import { useToast, useAuth, useData } from "@/context/AppContext";
 import { joinEvent, leaveEvent } from "@/api/events";
@@ -60,14 +61,14 @@ export function useToggleJoinEvent() {
         );
       }
       const msg =
-        err instanceof Error ? err.message : "Could not update attendance.";
+        err instanceof Error ? err.message : i18n.t('events.attendanceFailed', 'Die Teilnahme konnte nicht gespeichert werden.');
       notify("error", "Error", msg);
     },
     onSuccess: ({ isJoined, eventTitle }) => {
       if (isJoined) {
-        notify("info", "Left event", `You left "${eventTitle}".`);
+        notify("info", i18n.t('events.left', 'Abgemeldet'), i18n.t('events.leftMsg', 'Du bist von «{{title}}» abgemeldet.', { title: eventTitle }));
       } else {
-        notify("success", "Joined event", `You joined "${eventTitle}".`);
+        notify("success", i18n.t('events.joined', 'Angemeldet'), i18n.t('events.joinedMsg', 'Du bist für «{{title}}» angemeldet.', { title: eventTitle }));
       }
     },
   });

@@ -8,11 +8,11 @@ import { IconCheck, IconMail, IconUser } from '@tabler/icons-react'
 import * as authApi from '@/api/auth'
 import { useAuth, useToast } from '@/context/AppContext'
 import { Avatar, Field, Toggle } from '@/components/ui'
-import { useT } from '@/locales/i18n'
+import { useT, zmsg } from '@/locales/i18n'
 
 const profileSchema = z.object({
-  displayName: z.string().min(1, 'Display name is required'),
-  email: z.string().email('Invalid email'),
+  displayName: z.string().min(1, zmsg('validation.displayNameRequired', 'Anzeigename ist erforderlich')),
+  email: z.string().email(zmsg('validation.invalidEmail', 'Ungültige E-Mail-Adresse')),
   profileNote: z.string(),
   avatarColor: z.string(),
 })
@@ -197,7 +197,7 @@ export function AccountSettingsProfileTab() {
                   marginBottom: 6,
                 }}
               >
-                Avatar color
+                {t('account.avatarColor', 'Avatarfarbe')}
               </div>
               <input
                 type="color"

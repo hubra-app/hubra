@@ -53,14 +53,14 @@ export function MemberDetailScreen({
       queryClient.invalidateQueries({ queryKey: ['member', id] })
       notify(
         'success',
-        'Email verified',
+        t('members.emailVerified', 'E-Mail bestätigt'),
         `${member.name}'s email has been marked as verified.`,
       )
     } catch (err: unknown) {
       notify(
         'error',
-        'Verification failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('members.verifyFailed', 'Bestätigung fehlgeschlagen'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setVerifying(false)
@@ -80,7 +80,7 @@ export function MemberDetailScreen({
       queryClient.invalidateQueries({ queryKey: ['member', id] })
       notify(
         'success',
-        updated.isDisabled ? 'Member disabled' : 'Member enabled',
+        updated.isDisabled ? t('members.disabled', 'Mitglied deaktiviert') : t('members.enabled', 'Mitglied aktiviert'),
         `${updated.name} has been ${
           updated.isDisabled ? 'disabled' : 'enabled'
         }.`,
@@ -88,8 +88,8 @@ export function MemberDetailScreen({
     } catch (err: unknown) {
       notify(
         'error',
-        'Toggle failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('common.updateFailed', 'Aktualisieren fehlgeschlagen'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setTogglingDisable(false)
@@ -492,7 +492,7 @@ export function MemberDetailScreen({
                   textAlign: 'center',
                 }}
               >
-                Member invoice history coming soon.
+                {t('members.invoicesSoon', 'Die Rechnungsübersicht pro Mitglied folgt bald.')}
               </div>
             )}
             {tab === 'activity' && (
@@ -504,7 +504,7 @@ export function MemberDetailScreen({
                   textAlign: 'center',
                 }}
               >
-                Activity log coming soon.
+                {t('members.activitySoon', 'Das Aktivitätsprotokoll folgt bald.')}
               </div>
             )}
           </div>

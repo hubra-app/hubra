@@ -12,7 +12,7 @@ import { useForm } from '@mantine/form'
 import { zodResolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useT } from '@/locales/i18n'
+import { useT, zmsg } from '@/locales/i18n'
 import {
   IconPlus,
   IconClock,
@@ -167,7 +167,7 @@ function GroupDetailPanel({
 
 /* ── Groups ─────────────────────────────────── */
 const groupSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+  name: z.string().min(1, zmsg('common.nameRequired', 'Name ist erforderlich')),
   description: z.string(),
   color: z.string(),
   sessions: z.string(),

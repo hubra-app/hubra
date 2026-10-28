@@ -165,14 +165,14 @@ export function MembersTab() {
       setMemberCount((prev) => Math.max(0, prev - 1))
       notify(
         'info',
-        'Member archived',
+        t('members.archived', 'Mitglied archiviert'),
         `${archiveTarget.name} has been archived.`,
       )
     } catch (err: unknown) {
       notify(
         'error',
-        'Archive failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('members.archiveFailed', 'Archivieren fehlgeschlagen'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -293,7 +293,7 @@ export function MembersTab() {
                       {m.email}
                       {!m.privateEmailVerified && (
                         <span
-                          title="Private email not verified"
+                          title={t('members.privateEmailUnverified', 'Private E-Mail nicht bestätigt')}
                           style={{
                             color: '#f59e0b',
                             marginLeft: 4,
@@ -615,7 +615,7 @@ export function MembersTab() {
                         {m.email}
                         {!m.privateEmailVerified && (
                           <span
-                            title="Private email not verified"
+                            title={t('members.privateEmailUnverified', 'Private E-Mail nicht bestätigt')}
                             style={{
                               color: '#f59e0b',
                               marginLeft: 4,

@@ -171,7 +171,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       ? [{ path: '/app/tenants', label: tr('Alle Vereine', 'All clubs'), icon: <IconBuildingCommunity size={20} /> }]
       : []),
     ...(hasGlobalPermission('plugins.manage')
-      ? [{ path: '/app/plugins', label: tr('Plugins', 'Plugins'), icon: <IconPuzzle size={20} /> }]
+      ? [{ path: '/app/plugins', label: tr('Plugin-Katalog', 'Plugin catalogue'), icon: <IconPuzzle size={20} /> }]
       : []),
     ...(hasGlobalPermission('roles.manage')
       ? [{ path: '/app/roles', label: tr('Rollen', 'Roles'), icon: <IconKey size={20} /> }]

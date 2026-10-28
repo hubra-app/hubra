@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import i18n from "i18next";
 import { useToast, useNav, useData } from "@/context/AppContext";
 import type { Invoice } from "@/types";
 import {
@@ -37,11 +38,11 @@ export function useMarkInvoicePaid() {
       );
       setOpenInvoiceCount((c) => c + 1);
       const msg =
-        err instanceof Error ? err.message : "Could not update invoice.";
-      notify("error", "Error", msg);
+        err instanceof Error ? err.message : i18n.t('finance.invoiceUpdateFailed', 'Die Rechnung konnte nicht aktualisiert werden.');
+      notify("error", i18n.t('common.error', 'Fehler'), msg);
     },
     onSuccess: () => {
-      notify("success", "Invoice paid", "Invoice marked as paid.");
+      notify("success", i18n.t('finance.invoicePaid', 'Rechnung bezahlt'), i18n.t('finance.invoicePaidMsg', 'Die Rechnung ist als bezahlt markiert.'));
     },
   });
 }
@@ -69,12 +70,12 @@ export function useSendInvoiceReminder() {
           ? { ...prev, reminderSentAt: [...(prev.reminderSentAt ?? []), ts] }
           : prev,
       );
-      notify("success", "Reminder sent", "Payment reminder email dispatched.");
+      notify("success", i18n.t('finance.reminderSent', 'Erinnerung gesendet'), i18n.t('finance.reminderSentMsg', 'Die Zahlungserinnerung wurde per E-Mail verschickt.'));
     },
     onError: (err) => {
       const msg =
-        err instanceof Error ? err.message : "Could not send reminder.";
-      notify("error", "Error", msg);
+        err instanceof Error ? err.message : i18n.t('finance.reminderFailed', 'Die Erinnerung konnte nicht gesendet werden.');
+      notify("error", i18n.t('common.error', 'Fehler'), msg);
     },
   });
 }
@@ -100,8 +101,8 @@ export function useDeleteInvoice() {
     onError: (err, _id, ctx) => {
       if (ctx?.prev) queryClient.setQueryData(["invoices"], ctx.prev);
       const msg =
-        err instanceof Error ? err.message : "Could not delete invoice.";
-      notify("error", "Error", msg);
+        err instanceof Error ? err.message : i18n.t('finance.invoiceDeleteFailed', 'Die Rechnung konnte nicht gelöscht werden.');
+      notify("error", i18n.t('common.error', 'Fehler'), msg);
     },
   });
 }

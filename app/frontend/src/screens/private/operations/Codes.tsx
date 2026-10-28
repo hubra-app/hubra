@@ -11,7 +11,7 @@ import { useForm } from '@mantine/form'
 import { zodResolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useT } from '@/locales/i18n'
+import { useT, zmsg } from '@/locales/i18n'
 import { IconPlus, IconEye, IconEyeOff } from '@tabler/icons-react'
 import { useToast, useAuth } from '@/context/AppContext'
 import {
@@ -26,8 +26,8 @@ import type { Code } from '@/types'
 import { listCodes, createCode, updateCode, deleteCode } from '@/api/codes'
 
 const codeSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  code: z.string().min(1, 'Code is required'),
+  name: z.string().min(1, zmsg('common.nameRequired', 'Name ist erforderlich')),
+  code: z.string().min(1, zmsg('validation.codeRequired', 'Code ist erforderlich')),
   description: z.string(),
   isActive: z.boolean(),
 })
@@ -330,7 +330,7 @@ export function CodesScreen() {
               length={codeLength}
               type="alphanumeric"
               mask={false}
-              aria-label="Code"
+              aria-label={t('codes.code', 'Code')}
               size="sm"
             />
           </Field>
@@ -383,7 +383,7 @@ export function CodesScreen() {
               length={codeLength}
               type="alphanumeric"
               mask={false}
-              aria-label="Code"
+              aria-label={t('codes.code', 'Code')}
               size="sm"
             />
           </Field>

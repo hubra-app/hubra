@@ -4,7 +4,7 @@ import { Button, Group, TextInput, Select, Badge } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zodResolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
-import { useT } from '@/locales/i18n'
+import { useT, zmsg } from '@/locales/i18n'
 import {
   IconPlus,
   IconUserCheck,
@@ -27,8 +27,8 @@ import { CalendarSubscribeButton } from './CalendarSubscribeButton'
 
 /* ── Events ─────────────────────────────────── */
 const eventSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  date: z.string().min(1, 'Date is required'),
+  title: z.string().min(1, zmsg('validation.titleRequired', 'Titel ist erforderlich')),
+  date: z.string().min(1, zmsg('validation.dateRequired', 'Datum ist erforderlich')),
   time: z.string(),
   location: z.string(),
   type: z.string(),

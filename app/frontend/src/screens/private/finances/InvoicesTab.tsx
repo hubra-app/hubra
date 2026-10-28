@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import i18n from 'i18next'
 import { useForm } from '@mantine/form'
 import { zodResolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
@@ -49,21 +50,21 @@ const singleSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['memberId'],
-        message: 'Member is required',
+        message: i18n.t('finance.validation.memberRequired', 'Bitte wähle ein Mitglied'),
       })
     }
     if (data.recipientType === 'external' && !data.externalPartyId) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['externalPartyId'],
-        message: 'External party is required',
+        message: i18n.t('finance.validation.partyRequired', 'Bitte wähle eine externe Partei'),
       })
     }
     if (!data.amount) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['amount'],
-        message: 'Amount is required',
+        message: i18n.t('finance.validation.amountRequired', 'Bitte gib einen Betrag ein'),
       })
     }
     if (
@@ -73,7 +74,7 @@ const singleSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['categoryId'],
-        message: 'Category is required',
+        message: i18n.t('finance.validation.categoryRequired', 'Bitte wähle eine Kategorie'),
       })
     }
   })
@@ -485,19 +486,19 @@ export function InvoicesTab() {
             onClick: () => setStatusFilter('All'),
           },
           {
-            label: 'Open',
+            label: t('finance.invoiceStatus.open', 'Offen'),
             value: 'open',
             active: statusFilter === 'Open',
             onClick: () => setStatusFilter('Open'),
           },
           {
-            label: 'Paid',
+            label: t('finance.invoiceStatus.paid', 'Bezahlt'),
             value: 'paid',
             active: statusFilter === 'Paid',
             onClick: () => setStatusFilter('Paid'),
           },
           {
-            label: 'Overdue',
+            label: t('finance.invoiceStatus.overdue', 'Überfällig'),
             value: 'overdue',
             active: statusFilter === 'Overdue',
             onClick: () => setStatusFilter('Overdue'),

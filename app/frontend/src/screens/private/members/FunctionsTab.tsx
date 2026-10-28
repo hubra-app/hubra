@@ -4,7 +4,7 @@ import { useForm } from '@mantine/form'
 import { zodResolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useT } from '@/locales/i18n'
+import { useT, zmsg } from '@/locales/i18n'
 import {
   IconPlus,
   IconPencil,
@@ -37,7 +37,7 @@ import { listMembers } from '@/api/members'
 import { withBase } from '@/clubBase'
 
 const functionSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+  name: z.string().min(1, zmsg('common.nameRequired', 'Name ist erforderlich')),
   description: z.string(),
   maxHolders: z.number().min(1),
 })

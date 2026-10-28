@@ -52,10 +52,10 @@ export function AdminPortal() {
     return (
       <>
         <PageHead
-          title={tr('Plugins', 'Plugins')}
+          title={tr('Plugin-Katalog', 'Plugin catalogue')}
           desc={tr(
-            'Plugins aus dem Marktplatz installieren und für Vereine freischalten.',
-            'Install plugins from the marketplace and enable them for clubs.',
+            'Was die Vereine als Plugin bekommen können. Hier geprüfte und installierte Plugins schalten die Vereine selbst unter Einstellungen → Module & Plugins ein.',
+            'What clubs can get as a plugin. Plugins vetted and installed here are switched on by each club under Settings → Modules & plugins.',
           )}
         />
         <MarketplaceTab />

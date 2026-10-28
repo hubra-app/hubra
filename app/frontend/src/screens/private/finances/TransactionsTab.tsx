@@ -532,11 +532,11 @@ export function TransactionsTab() {
             <Field label={t('common.method', 'Methode')}>
               <Select
                 data={[
-                  { value: 'cash', label: 'Cash' },
-                  { value: 'bank', label: 'Bank' },
-                  { value: 'card', label: 'Card' },
+                  { value: 'cash', label: t('finance.methods.cash', 'Bar') },
+                  { value: 'bank', label: t('finance.methods.bank', 'Bank') },
+                  { value: 'card', label: t('finance.methods.card', 'Karte') },
                   { value: 'twint', label: 'TWINT' },
-                  { value: 'other', label: 'Other' },
+                  { value: 'other', label: t('finance.methods.other', 'Andere') },
                 ]}
                 value={addMethod}
                 onChange={(v) => setAddMethod(v ?? 'cash')}
