@@ -6,27 +6,13 @@ import { clubAppUrl, signedInTarget, validateRedirect } from '../src/redirect.ts
 
 const urls = { cos: 'https://app.hubra.club', manage: 'https://manage.hubra.club' }
 
-test('a member without a redirect goes into their club', () => {
-  assert.equal(
-    signedInTarget({ redirect: null, isManager: false, tenantSlug: 'demo' }, urls),
-    'https://app.hubra.club/demo/app/dashboard',
-  )
+test('everyone without a deep link lands on the club picker', () => {
+  assert.equal(signedInTarget(null), null)
 })
 
-test('someone without a club gets the club picker, not the manager portal', () => {
-  assert.equal(signedInTarget({ redirect: null, isManager: false, tenantSlug: null }, urls), null)
-})
-
-test('only managers are sent to the manager portal', () => {
-  assert.equal(
-    signedInTarget({ redirect: null, isManager: true, tenantSlug: null }, urls),
-    'https://manage.hubra.club',
-  )
-})
-
-test('a trusted redirect wins', () => {
+test('a trusted deep link wins', () => {
   const redirect = 'https://app.hubra.club/demo/app/members'
-  assert.equal(signedInTarget({ redirect, isManager: true, tenantSlug: null }, urls), redirect)
+  assert.equal(signedInTarget(redirect), redirect)
 })
 
 test('the bare club app is not a redirect target (it loops back to login)', () => {

@@ -24,8 +24,8 @@ interface SsoState {
   /** The trusted ?redirect= target, or null when there is none. */
   redirectTarget: string | null
   urls: AppUrls
-  /** Leave for wherever a signed-in user belongs (see signedInTarget). */
-  continueSignedIn: (perms: PermissionsResponse, tenantSlug?: string | null) => void
+  /** Leave for the ?redirect= target, or show the club picker (see signedInTarget). */
+  continueSignedIn: () => void
   notify: (kind: 'success' | 'error' | 'info', title: string, msg?: string) => void
 }
 
@@ -59,27 +59,22 @@ export function SsoProvider({ children }: { children: ReactNode }) {
 
   const isSuperadmin = permissions?.is_superadmin ?? false
 
-  const continueSignedIn = useCallback(
-    (perms: PermissionsResponse, tenantSlug?: string | null) => {
-      const target = signedInTarget(
-        {
-          redirect: redirectTarget,
-          isManager: isManager(perms),
-          tenantSlug: tenantSlug ?? perms.tenant_slug,
-        },
-        URLS,
-      )
-      if (target) {
-        window.location.assign(target)
-      } else {
-        // No club yet: the club picker, not the manager portal.
+  const continueSignedIn = useCallback(() => {
+    const target = signedInTarget(redirectTarget)
+    if (target) {
+      window.location.assign(target)
+      return
+    }
+    // Still 'anon' from before sign-in: the picker would bounce to /login.
+    setAuthStatus('loading')
+    navigate('/clubs', { replace: true })
+    getMyPermissions()
+      .then((perms) => {
         setPermissions(perms)
         setAuthStatus('authed')
-        navigate('/clubs', { replace: true })
-      }
-    },
-    [redirectTarget, navigate],
-  )
+      })
+      .catch(() => setAuthStatus('anon'))
+  }, [redirectTarget, navigate])
 
   useEffect(() => {
     if (errorParam === 'insufficient_permissions') {
@@ -110,7 +105,7 @@ export function SsoProvider({ children }: { children: ReactNode }) {
           setAuthStatus('authed')
           return
         }
-        continueSignedIn(permData)
+        continueSignedIn()
       } catch {
         if (cancelled) return
         setAuthStatus('anon')

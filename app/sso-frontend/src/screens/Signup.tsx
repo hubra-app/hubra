@@ -52,7 +52,7 @@ export function SignupScreen() {
     try {
       await authApi.signup(name, email.trim().toLowerCase(), password, keepSignedIn)
       notify('success', 'Account created', 'Welcome to Hubra. Now find your club.')
-      continueSignedIn(await authApi.getMyPermissions())
+      continueSignedIn()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Signup failed'
       setError(msg)

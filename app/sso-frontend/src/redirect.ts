@@ -59,21 +59,11 @@ export function validateRedirect(
 }
 
 /**
- * Where to send a signed-in user, in this order: the ?redirect= target, the
- * manager portal for platform managers, the club their session is in.
- * null means the club picker (/clubs): someone without a club can find one
- * there, instead of landing in the manager portal.
+ * Where to send a signed-in user: the ?redirect= deep link if there is one,
+ * else null for the club picker (/clubs). Everyone lands there, whatever
+ * their roles (one person can be a superadmin, a club owner and a member at
+ * once); the picker offers the manager portal to those who have it.
  */
-export function signedInTarget(
-  {
-    redirect,
-    isManager,
-    tenantSlug,
-  }: { redirect: string | null; isManager: boolean; tenantSlug?: string | null },
-  urls: AppUrls,
-): string | null {
-  if (redirect) return redirect
-  if (isManager) return urls.manage
-  if (tenantSlug) return clubAppUrl(urls, tenantSlug)
-  return null
+export function signedInTarget(redirect: string | null): string | null {
+  return redirect
 }

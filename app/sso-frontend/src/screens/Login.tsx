@@ -23,7 +23,6 @@ import { useNavigate } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import { getRememberedEmail } from '@hubra/api-client'
 import * as authApi from '@/api/auth'
-import { clubAppUrl } from '@/redirect'
 
 const schema = z.object({
   email: z.string().email('Invalid email'),
@@ -38,7 +37,6 @@ export function LoginScreen() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [tenants, setTenants] = useState<authApi.TenantChoice[] | null>(null)
 
   const form = useForm<FormValues>({
     validate: zodResolver(schema),
@@ -53,23 +51,14 @@ export function LoginScreen() {
     setError('')
     setLoading(true)
     try {
-      const res = await authApi.login(
+      // Everyone lands on the club picker (/clubs), unless a ?redirect=
+      // deep link says where to go.
+      await authApi.login(
         values.email.trim().toLowerCase(),
         values.password,
         values.keepSignedIn,
       )
-      if (res.requiresTenantSelection && res.tenants) {
-        if (res.tenants.length === 1) {
-          // Nothing to choose: open the one club straight away.
-          await handleSelectTenant(res.tenants[0].tenant_slug)
-          return
-        }
-        setTenants(res.tenants)
-        return
-      }
-      // Managers go to the manager portal, members into their club, and
-      // anyone without a club to the club picker.
-      continueSignedIn(await authApi.getMyPermissions(), res.tenant_slug)
+      continueSignedIn()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Login failed'
       setError(msg)
@@ -77,94 +66,6 @@ export function LoginScreen() {
     } finally {
       setLoading(false)
     }
-  }
-
-  const handleSelectTenant = async (slug: string) => {
-    setLoading(true)
-    setError('')
-    try {
-      await authApi.switchTenant(slug)
-      window.location.assign(redirectTarget || clubAppUrl(urls, slug))
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Tenant switch failed'
-      setError(msg)
-      notify('error', 'Tenant Switch', msg)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (tenants) {
-    return (
-      <div
-        className="graph-bg"
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 32,
-        }}
-      >
-        <Box style={{ width: '100%', maxWidth: 380 }}>
-          <Group gap={10} mb={32}>
-            <div className="logo-mark" />
-            <Box>
-              <Text fz={20} className="wordmark">
-                hubra
-              </Text>
-              <Text
-                fz="xs"
-                c="#6131c4"
-                ff="'JetBrains Mono', monospace"
-                style={{ letterSpacing: '0.06em' }}
-              >
-                Club management
-              </Text>
-            </Box>
-          </Group>
-
-          <Title order={2} mb={6}>
-            Choose a club
-          </Title>
-          <Text size="sm" c="dimmed" mb={28}>
-            Your account belongs to several clubs. Choose the one to open.
-          </Text>
-
-          {error && (
-            <Alert color="red" variant="light" mb="md">
-              {error}
-            </Alert>
-          )}
-
-          <Stack gap="sm">
-            {tenants.map((t) => (
-              <Paper
-                key={t.tenant_slug}
-                withBorder
-                radius="md"
-                p="md"
-                onClick={() => handleSelectTenant(t.tenant_slug)}
-                style={{ cursor: 'pointer' }}
-              >
-                <Group justify="space-between">
-                  <Box>
-                    <Text fw={600}>{t.tenant_name}</Text>
-                    <Text fz="xs" c="dimmed">
-                      {t.tenant_slug}
-                    </Text>
-                  </Box>
-                </Group>
-              </Paper>
-            ))}
-          </Stack>
-
-          <Button variant="subtle" fullWidth mt="md" onClick={() => setTenants(null)}>
-            Back to login
-          </Button>
-        </Box>
-      </div>
-    )
   }
 
   return (

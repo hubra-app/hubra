@@ -24,9 +24,9 @@ import { clubAppUrl } from '@/redirect'
 import * as authApi from '@/api/auth'
 
 /**
- * The club picker: where a signed-in user without a club lands. Lists their
- * clubs, and lets them find another one and ask to join it (platform
- * managers join straight away).
+ * The club picker: where everyone lands after signing in. Lists their clubs
+ * (and the manager portal for platform managers), and lets them find another
+ * club and ask to join it (platform managers join straight away).
  */
 export function ClubsScreen() {
   const { authStatus, isManager, urls, notify } = useSso()
@@ -117,6 +117,28 @@ export function ClubsScreen() {
             Sign out
           </Button>
         </Group>
+
+        {isManager && (
+          <Paper withBorder radius="md" p="md" mb="xl">
+            <Group justify="space-between" wrap="nowrap">
+              <Box style={{ minWidth: 0 }}>
+                <Text fw={600}>Manager portal</Text>
+                <Text fz="xs" c="dimmed">
+                  Clubs, requests, roles and plugins of this platform
+                </Text>
+              </Box>
+              <Button
+                component="a"
+                href={urls.manage}
+                variant="light"
+                style={{ flexShrink: 0 }}
+                rightSection={<IconArrowRight size={16} />}
+              >
+                Open
+              </Button>
+            </Group>
+          </Paper>
+        )}
 
         <Title order={2} mb={6}>
           Your clubs
@@ -219,11 +241,6 @@ export function ClubsScreen() {
             Starting a new club?{' '}
             <Anchor href={`${urls.manage}/app/requests`}>Request one</Anchor>
           </Text>
-          {isManager && (
-            <Text size="sm" c="dimmed">
-              <Anchor href={urls.manage}>Go to the manager portal</Anchor>
-            </Text>
-          )}
         </Stack>
       </Box>
     </div>
