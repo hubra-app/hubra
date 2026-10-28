@@ -25,6 +25,7 @@ from sqlalchemy import func, select
 
 from hubra.api.permissions import (
     check_impersonation_restriction,
+    get_user_global_permissions,
     require_global_permission,
 )
 from hubra.core.errors import raise_error
@@ -709,29 +710,45 @@ def add_tenant_member(tenant_id: int):
     else:
         raise_error(400, "VALIDATION_ERROR", "email or user_id is required")
 
+    member_dict = _add_user_to_tenant(tenant, user)
+    db.session.commit()
+
+    return jsonify({"member": member_dict}), 201
+
+
+def _add_user_to_tenant(tenant: Tenant, user: User) -> dict:
+    """Give ``user`` a Member (default role) in ``tenant``, linked in user_tenants.
+
+    Raises 409 when the user is already a member. Leaves the commit to the
+    caller and returns the new member as a dict.
+    """
+    from hubra.core.models.member import MembershipTier
+    from hubra.core.models.role import Role
     from hubra.core.models.user_tenant import UserTenant
+    from hubra.core.tenant.context import reset_search_path, set_search_path
+    from hubra.core.tenant.membership import link_user_to_tenant
 
     existing = db.session.scalar(
         select(UserTenant).where(
             UserTenant.user_id == user.id,
-            UserTenant.tenant_id == tenant_id,
+            UserTenant.tenant_id == tenant.id,
         )
     )
     if existing is not None:
         raise_error(409, "CONFLICT", "User is already a member of this tenant")
 
-    from hubra.core.tenant.context import set_search_path, reset_search_path
-
     try:
-        set_search_path(tenant_id)
-
-        from hubra.core.models.role import Role
+        set_search_path(tenant.id)
+        if db.session.scalar(select(Member.id).where(Member.user_id == user.id)):
+            # A Member without the user_tenants link (made before links were
+            # kept for every new member): repair the link instead of failing.
+            link_user_to_tenant(user.id, tenant.id)
+            db.session.commit()
+            raise_error(409, "CONFLICT", "User is already a member of this tenant")
 
         default_role = db.session.scalar(
             select(Role).where(Role.is_default.is_(True)).limit(1)
         )
-        from hubra.core.models.member import MembershipTier
-
         tier = db.session.scalar(select(MembershipTier).limit(1))
 
         member = Member(
@@ -744,27 +761,163 @@ def add_tenant_member(tenant_id: int):
         db.session.add(member)
         db.session.flush()
 
-        # Build response dict WHILE search_path is still set to tenant schema
-        # to avoid ObjectDeletedError after commit expires attributes
+        # Build the dict while the search_path still points at the club, so
+        # a later commit expiring the attributes can't break it.
         member_dict = _member_to_dict(member)
+    finally:
         reset_search_path()
-    except Exception:
-        reset_search_path()
-        raise
 
-    db.session.add(UserTenant(user_id=user.id, tenant_id=tenant_id))
+    link_user_to_tenant(user.id, tenant.id)
     db.session.add(
         GlobalAuditEntry(
-            tenant_id=tenant_id,
+            tenant_id=tenant.id,
             action="tenant.add_member",
             target_type="User",
             target_id=str(user.id),
-            details={"email": user.email, "member_id": member.id},
+            details={"email": user.email, "member_id": member_dict["id"]},
         )
     )
-    db.session.commit()
+    return member_dict
 
-    return jsonify({"member": member_dict}), 201
+
+# ── Club directory and join requests (any signed-in user) ─────────────────────
+
+
+def _calling_user() -> User:
+    user_id = get_jwt().get("user_id")
+    user = db.session.get(User, int(user_id)) if user_id else None
+    if user is None:
+        raise_error(401, "UNAUTHORIZED", "No user_id in token")
+    return user  # type: ignore[return-value]
+
+
+def _can_add_members(user: User) -> bool:
+    """True for platform managers, who join a club straight away."""
+    if user.is_superadmin:
+        return True
+    perms = get_user_global_permissions(user.id)
+    return "tenants.members.write" in perms or "*" in perms
+
+
+def _active_club(slug: str) -> Tenant:
+    tenant = db.session.scalar(
+        select(Tenant).where(
+            Tenant.slug == slug,
+            Tenant.status == "active",
+            Tenant.deleted_at.is_(None),
+        )
+    )
+    if tenant is None:
+        raise_error(404, "NOT_FOUND", "Club not found")
+    return tenant  # type: ignore[return-value]
+
+
+def _membership_in(tenant_id: int, user: User) -> str | None:
+    """'member', 'pending' (an open application) or None, read in the club."""
+    from hubra.core.models.application import Application
+    from hubra.core.tenant.context import reset_search_path, set_search_path
+
+    try:
+        set_search_path(tenant_id)
+        if db.session.scalar(select(Member.id).where(Member.user_id == user.id)):
+            return "member"
+        if db.session.scalar(
+            select(Application.id).where(Application.email == user.email)
+        ):
+            return "pending"
+        return None
+    finally:
+        reset_search_path()
+
+
+@tenant_admin_bp.route("/clubs", methods=["GET"])
+@jwt_required()
+def club_directory():
+    """Active clubs the signed-in user can ask to join, with their status.
+
+    Everyone else has to search (2+ characters), so the full list of clubs
+    isn't handed to anyone who signs up. Platform managers see every club.
+    """
+    from hubra.api.utils import escape_like
+    from hubra.core.models.user_tenant import UserTenant
+
+    user = _calling_user()
+    can_join = _can_add_members(user)
+    search = (request.args.get("search") or "").strip()
+    if len(search) < 2 and not can_join:
+        return jsonify({"clubs": [], "canJoinDirectly": False})
+
+    query = select(Tenant).where(
+        Tenant.status == "active", Tenant.deleted_at.is_(None)
+    )
+    if search:
+        like = f"%{escape_like(search)}%"
+        query = query.where(
+            Tenant.name.ilike(like, escape="\\") | Tenant.slug.ilike(like, escape="\\")
+        )
+    tenants = db.session.scalars(query.order_by(Tenant.name).limit(50)).all()
+    linked = set(
+        db.session.scalars(
+            select(UserTenant.tenant_id).where(UserTenant.user_id == user.id)
+        ).all()
+    )
+
+    clubs = [
+        {
+            "slug": t.slug,
+            "name": t.name,
+            "membership": "member" if t.id in linked else _membership_in(t.id, user),
+        }
+        for t in tenants
+    ]
+    return jsonify({"clubs": clubs, "canJoinDirectly": can_join})
+
+
+@tenant_admin_bp.route("/clubs/<slug>/join", methods=["POST"])
+@jwt_required()
+def join_club(slug: str):
+    """Join a club, or ask to join it.
+
+    Platform managers (superadmins, ``tenants.members.write``) become a
+    member straight away. Everyone else files a membership application in
+    the club, which its admins approve under Members → Applications;
+    approving links the existing account, password unchanged.
+    """
+    from hubra.api.applications.services import ApplicationsService
+    from hubra.core.tenant.context import reset_search_path, set_search_path
+    from hubra.core.tenant.membership import link_user_to_tenant
+
+    user = _calling_user()
+    tenant = _active_club(slug)
+    club = {"slug": tenant.slug, "name": tenant.name}
+
+    status = _membership_in(tenant.id, user)
+    if status == "member":
+        # Members made before every new member got a user_tenants link.
+        link_user_to_tenant(user.id, tenant.id)
+        db.session.commit()
+        raise_error(409, "ALREADY_MEMBER", "You are already a member of this club")
+
+    if _can_add_members(user):
+        _add_user_to_tenant(tenant, user)
+        db.session.commit()
+        return jsonify({"status": "joined", "club": club}), 201
+
+    if status == "pending":
+        raise_error(409, "REQUEST_PENDING", "Your request to join this club is pending")
+
+    try:
+        set_search_path(tenant.id)
+        ApplicationsService.submit(
+            user.first_name or user.email.split("@")[0],
+            user.last_name or "",
+            user.email,
+        )
+        db.session.commit()
+    finally:
+        reset_search_path()
+
+    return jsonify({"status": "requested", "club": club}), 201
 
 
 # ── Global RBAC management ───────────────────────────────────────────────────

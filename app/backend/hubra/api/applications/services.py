@@ -78,17 +78,19 @@ class ApplicationService:
                     "Could not queue WildDuck mailbox for member %s", member.id
                 )
 
-        # Welcome email — non-blocking
-        from hubra.core.services import email as email_svc
+        # Welcome email with the temporary password — non-blocking. Skipped
+        # for applicants who already had an account (signed-in join requests).
+        if temp_password:
+            from hubra.core.services import email as email_svc
 
-        login_email = member.public_email or member.email
-        email_svc.send_welcome(
-            member.email,
-            member.name,
-            login_email,
-            temp_password,
-            lang=getattr(member, "language", "de-CH") or "de-CH",
-        )
+            login_email = member.public_email or member.email
+            email_svc.send_welcome(
+                member.email,
+                member.name,
+                login_email,
+                temp_password,
+                lang=getattr(member, "language", "de-CH") or "de-CH",
+            )
 
         db.session.refresh(member)
         return member  # type: ignore[return-value]
