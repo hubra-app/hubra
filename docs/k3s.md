@@ -49,8 +49,8 @@ ConfigMap in `deploy/app/kustomization.yaml`, or uses an overlay like
 
 1. **Images.** GitHub Actions (`.github/workflows/images.yml`) pushes
    `backend`, `frontend`, `admin-frontend`, `sso-frontend`, `haraka`,
-   `zonemta` and `cert-watcher` to `ghcr.io/hubra-app/hubra/<image>` on every
-   push to `main`. The frontend images hold no host names; they come from the
+   `zonemta` and `cert-watcher` to `ghcr.io/hubra-app/hubra/<image>` when a
+   GitHub release is published (or when run by hand in the Actions tab). The frontend images hold no host names; they come from the
    `hubra-frontend` ConfigMap at container start.
 2. **Secrets.** The repo is private, so are its packages. Create a GitHub
    token (classic) with `read:packages`, then on a machine with `.env`
@@ -117,11 +117,12 @@ with SSL mode **Full (strict)**.
 
 ## Day to day
 
-- **Deploy a new build:** `latest` follows `main`, but Kubernetes doesn't
-  notice a moved tag. Run `kubectl -n hubra rollout restart deployment` after
-  the Images workflow finishes, or pin `newTag` in
-  `deploy/app/kustomization.yaml` (or your overlay) to a build tag
-  (`sha-<commit>`) or a release (`1.2.3`) and push.
+- **Deploy a new build:** publish a GitHub release (or run the Images
+  workflow by hand), then pin `newTag` in `deploy/app/kustomization.yaml`
+  (or your overlay) to the release (`1.2.3`) or the build tag
+  (`sha-<commit>`) and push. `latest` follows the newest release, but
+  Kubernetes doesn't notice a moved tag; with `latest`, run
+  `kubectl -n hubra rollout restart deployment` after the workflow finishes.
 - **Change settings:** edit `settings.yaml` and push.
 - **Change secrets:** edit `.env`, re-run `create-secrets.sh`, then run
   `kubectl -n hubra rollout restart deployment`.

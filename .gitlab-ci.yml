@@ -8,7 +8,8 @@
 #                          the GHCR images of that version pinned by digest
 #
 # The images themselves come from GitHub (.github/workflows/images.yml, which
-# pushes ghcr.io/hubra-app/hubra/<image>:1.2.3 for the same tag). Setup and CI
+# pushes ghcr.io/hubra-app/hubra/<image>:1.2.3 when the GitHub release v1.2.3
+# is published). Setup and CI
 # variables: docs/gitlab.md.
 
 workflow:
@@ -156,8 +157,8 @@ release-notes:
         echo '```yaml'
         echo "images:"
       } >> release-notes.md
-      # Wait for GitHub's images.yml to push this version (it starts on the
-      # same tag push), at most GHCR_WAIT_MINUTES.
+      # Wait for GitHub's images.yml to push this version (it starts when the
+      # GitHub release is published), at most GHCR_WAIT_MINUTES.
       deadline=$(( $(date +%s) + ${GHCR_WAIT_MINUTES:-30} * 60 ))
       for image in backend frontend admin-frontend sso-frontend haraka zonemta cert-watcher; do
         d="$(digest "$image" || true)"
