@@ -11,7 +11,6 @@ from __future__ import annotations
 from collections.abc import Iterator
 from contextlib import contextmanager
 
-from flask import g
 from sqlalchemy import select
 
 from hubra.core.errors import raise_error
@@ -20,29 +19,9 @@ from hubra.core.models.member import Member
 from hubra.core.models.tenant import Tenant
 from hubra.core.models.user import User
 from hubra.core.models.user_tenant import UserTenant
-from hubra.core.tenant.context import (
-    current_tenant,
-    reset_search_path,
-    set_search_path,
-)
+from hubra.core.tenant.context import in_club
 
 LANGUAGES = ("de-CH", "en-GB")
-
-
-@contextmanager
-def _in_club(tenant: Tenant) -> Iterator[None]:
-    """Run as a request of *tenant*'s club, then go back."""
-    previous = current_tenant()
-    g.tenant = tenant
-    set_search_path(tenant.id)
-    try:
-        yield
-    finally:
-        g.tenant = previous
-        if previous is not None:
-            set_search_path(previous.id)
-        else:
-            reset_search_path()
 
 
 def memberships(user_id: int) -> Iterator[tuple[Tenant, Member]]:
@@ -54,7 +33,7 @@ def memberships(user_id: int) -> Iterator[tuple[Tenant, Member]]:
         tenant = db.session.get(Tenant, tenant_id)
         if tenant is None or tenant.status != "active":
             continue
-        with _in_club(tenant):
+        with in_club(tenant):
             member = db.session.scalar(
                 select(Member).where(
                     Member.user_id == user_id, Member.archived_at.is_(None)
@@ -81,7 +60,7 @@ def club(user_id: int, slug: str) -> Tenant:
 def as_member_of(user_id: int, slug: str) -> Iterator[Member]:
     """The user's Member in club *slug*, with that club's schema active."""
     tenant = club(user_id, slug)
-    with _in_club(tenant):
+    with in_club(tenant):
         member = db.session.scalar(select(Member).where(Member.user_id == user_id))
         if member is None:
             raise_error(404, "NOT_FOUND", "Club not found")

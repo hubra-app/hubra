@@ -54,7 +54,7 @@ def test_seed_global_rbac_creates_permissions_and_roles(db):
     seed_global_rbac()
 
     perm_count = db.session.query(GlobalPermission).count()
-    assert perm_count == 14, f"Expected 14 permissions, got {perm_count}"
+    assert perm_count == 15, f"Expected 15 permissions, got {perm_count}"
 
     role_count = db.session.query(GlobalRole).count()
     assert role_count == 4, f"Expected 4 roles, got {role_count}"
@@ -86,7 +86,7 @@ def test_seed_global_rbac_is_idempotent(db):
     seed_global_rbac()
     seed_global_rbac()
 
-    assert db.session.query(GlobalPermission).count() == 14
+    assert db.session.query(GlobalPermission).count() == 15
     assert db.session.query(GlobalRole).count() == 4
 
 

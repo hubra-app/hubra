@@ -1,4 +1,8 @@
-"""System diagnostic endpoints (admin-only)."""
+"""The club's permission catalogue, for its role editor (club admins).
+
+manage shows the same list to platform staff at
+``/api/v1/manager/platform/permissions``.
+"""
 
 from __future__ import annotations
 

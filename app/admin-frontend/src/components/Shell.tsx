@@ -27,6 +27,7 @@ import {
   IconSearch,
   IconShieldCheck,
   IconDatabase,
+  IconHeartbeat,
 } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
 import { useLang, type Lang } from '@/lang'
@@ -181,6 +182,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
       : []),
     ...(hasGlobalPermission('backups.manage')
       ? [{ path: '/app/platform/backups', label: tr('Backups', 'Backups'), icon: <IconDatabase size={20} /> }]
+      : []),
+    ...(hasGlobalPermission('platform.diagnostics')
+      ? [{ path: '/app/platform/diagnostics', label: tr('Diagnose', 'Diagnostics'), icon: <IconHeartbeat size={20} /> }]
       : []),
     ...(hasGlobalPermission('plugins.manage')
       ? [{ path: '/app/plugins', label: tr('Plugin-Katalog', 'Plugin catalogue'), icon: <IconPuzzle size={20} /> }]
