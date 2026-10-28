@@ -115,8 +115,8 @@ jobs:
           SIGNING_KEY: ${{ secrets.HUBRA_SIGNING_KEY }}
         run: |
           key="$RUNNER_TEMP/hubra.pem"
-          umask 077
-          printf '%s\n' "$SIGNING_KEY" > "$key"
+          # Only the key file is private; the published files must stay readable.
+          (umask 077 && printf '%s\n' "$SIGNING_KEY" > "$key")
           # Refuse to sign with any key but the official one.
           python - "$key" <<'EOF'
           import sys
