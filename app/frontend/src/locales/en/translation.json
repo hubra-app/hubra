@@ -2670,6 +2670,7 @@
     "roles": {
       "name": "Roles & permissions",
       "description": "Roles and the permissions they grant"
-    }
+    },
+    "pluginFailed": "This extension could not be shown."
   }
 }

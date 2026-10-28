@@ -2670,6 +2670,7 @@
     "roles": {
       "name": "Rollen und Berechtigungen",
       "description": "Rollen und die Berechtigungen, die sie vergeben"
-    }
+    },
+    "pluginFailed": "Diese Erweiterung konnte nicht angezeigt werden."
   }
 }
