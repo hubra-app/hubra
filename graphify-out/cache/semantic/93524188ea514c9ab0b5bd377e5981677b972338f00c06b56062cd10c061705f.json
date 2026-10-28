@@ -1,1 +1,0 @@
-{"nodes": [{"id": "model_translation", "name": "Translation", "file_type": "concept", "definition": "I18n translation with locale+key unique constraint, default_value, needs_attention, is_missing, alias_for", "source_file": "app/backend/htmlcov/z_819d6647f72bcf98_translation_py.html"}], "edges": [], "hyperedges": []}

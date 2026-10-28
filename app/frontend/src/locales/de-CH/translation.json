@@ -1,6 +1,9 @@
 {
   "shell": {
-    "search": "Mitglieder, Gruppe suche...",
+    "search": {
+      "placeholder": "Mitglieder, Rächnige, Inventar suche…",
+      "noResults": "Kei Ergebnis für \"{{query}}\""
+    },
     "searchPlaceholder": "Mitglieder, Rächnige, Inventar suche…",
     "searchNoResults": "Kei Ergebnis für \"{{query}}\"",
     "searchKind": {

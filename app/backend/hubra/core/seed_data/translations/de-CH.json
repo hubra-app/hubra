@@ -1111,7 +1111,6 @@
   "shell.notif.noUnread": "Kei ungläsni Benachrichtigunge.",
   "shell.notif.title": "Benachrichtigunge",
   "shell.notif.unread": "Ungläse",
-  "shell.search": "Mitglieder, Gruppe suche...",
   "shell.search.noResults": "Kei Ergebnis für \"{{query}}\"",
   "shell.search.placeholder": "Mitglieder, Rächnige, Inventar suche…",
   "shell.searchKind.audit": "Audit",

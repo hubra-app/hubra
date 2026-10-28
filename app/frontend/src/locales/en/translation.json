@@ -1,6 +1,9 @@
 {
   "shell": {
-    "search": "Search members, groups...",
+    "search": {
+      "placeholder": "Search members, invoices, inventory…",
+      "noResults": "No results for \"{{query}}\""
+    },
     "searchPlaceholder": "Search members, invoices, inventory…",
     "searchNoResults": "No results for \"{{query}}\"",
     "searchKind": {

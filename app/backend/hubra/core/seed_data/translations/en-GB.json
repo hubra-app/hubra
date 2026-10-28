@@ -1082,7 +1082,6 @@
   "shell.notif.noUnread": "No unread notifications.",
   "shell.notif.title": "Notifications",
   "shell.notif.unread": "Unread",
-  "shell.search": "Search members, groups...",
   "shell.search.noResults": "No results for \"{{query}}\"",
   "shell.search.placeholder": "Search members, invoices, inventory…",
   "shell.searchKind.audit": "Audit",

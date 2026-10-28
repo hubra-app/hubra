@@ -1,1 +1,0 @@
-{"nodes": [{"id": "app_backend_vollbuild_templates_email_welcome_txt", "label": "Welcome Email (Text)", "file_type": "code", "source_file": "app/backend/vollbuild/templates/email/welcome.txt", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null}], "edges": [], "hyperedges": []}
