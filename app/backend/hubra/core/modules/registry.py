@@ -1,6 +1,7 @@
 """Module registry: discovers manifests and registers their blueprints.
 
-Every package under ``hubra.modules`` exposes a ``module`` manifest.
+Every package under ``hubra.modules`` exposes a ``module`` manifest, and so
+does every installed plugin (``hubra.core.plugins``).
 The registry imports them once, checks dependencies, and is the single
 place that knows which blueprint belongs to which module.
 """
@@ -42,6 +43,11 @@ class ModuleRegistry:
             if not isinstance(manifest, Module):
                 continue
             self.add(manifest)
+        # Installed plugins add their modules next (needs an app context to
+        # read what is installed; without one only Hubra's own modules load).
+        from hubra.core.plugins import loader
+
+        loader.load(self)
         self.validate()
         self._loaded = True
 

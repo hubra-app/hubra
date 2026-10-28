@@ -69,6 +69,30 @@ def run_migrations_offline():
         context.run_migrations()
 
 
+def _plugin_tables():
+    """Tables of loaded plugins: their own migrations manage them."""
+    from hubra.core.plugins import current
+
+    tables = set()
+    for spec in current().loaded():
+        for module in spec.modules:
+            tables.update(module.tables)
+    return tables
+
+
+def include_object(obj, name, type_, reflected, compare_to):
+    tables = _plugin_tables()
+    if type_ == "table":
+        if reflected and compare_to is None:
+            # In the database but not in Hubra's models: a plugin's table
+            # (also one kept after uninstalling it).  Never drop those here;
+            # removing a core table takes a hand-written drop_table.
+            return False
+        return name not in tables and not name.startswith("alembic_version_")
+    table = getattr(obj, "table", None)
+    return table is None or table.name not in tables
+
+
 def run_migrations_online():
     """Run migrations in 'online' mode.
 
@@ -90,6 +114,8 @@ def run_migrations_online():
     conf_args = current_app.extensions["migrate"].configure_args
     if conf_args.get("process_revision_directives") is None:
         conf_args["process_revision_directives"] = process_revision_directives
+    if conf_args.get("include_object") is None:
+        conf_args["include_object"] = include_object
 
     connectable = get_engine()
 

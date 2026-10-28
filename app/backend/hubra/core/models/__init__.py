@@ -55,13 +55,22 @@ from hubra.core.models.binding import Binding
 from hubra.core.models.backup import BackupRecord
 from hubra.core.models.qrr_reference import QrrReference
 from hubra.core.models.payment_plan import PaymentPlan
+from hubra.core.models.plugin import (
+    InstalledPlugin,
+    PluginArchive,
+    PluginRepository,
+    PluginState,
+    TrustedKey,
+)
 
-# Models owned by self-contained modules (hubra/modules/<name>/models.py).
-from hubra.modules.finance_bank.models import BankPayment
-from hubra.modules.finance_budgets.models import Budget, BudgetLine
-from hubra.modules.inventory_keys.models import Key, KeyHandover
+# Plugins import their own models when they load (hubra.core.plugins).
 
 __all__ = [
+    "InstalledPlugin",
+    "PluginArchive",
+    "PluginRepository",
+    "PluginState",
+    "TrustedKey",
     "Tenant",
     "GlobalAuditEntry",
     "Domain",
@@ -120,9 +129,4 @@ __all__ = [
     "BackupRecord",
     "QrrReference",
     "PaymentPlan",
-    "BankPayment",
-    "Budget",
-    "BudgetLine",
-    "Key",
-    "KeyHandover",
 ]

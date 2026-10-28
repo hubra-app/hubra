@@ -47,14 +47,14 @@ module = Module(
     default_enabled=False,
     blueprints=(
         Blueprint(
-            "hubra.modules.inventory_keys.routes",
+            "hubra_keys.routes",
             "keys_bp",
             "/api/v1/keys",
             v2=(("/api/v2/tenants/keys", "keys_bp_v2"),),
         ),
     ),
     settings=(SettingField("handover_requires_signature", "bool", default=False),),
-    events={"invoice.overdue": "hubra.modules.inventory_keys.hooks:on_overdue"},
+    events={"invoice.overdue": "hubra_keys.hooks:on_overdue"},
     tables=("keys", "key_handovers"),
 )
 ```

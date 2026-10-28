@@ -117,6 +117,8 @@ class Module:
     that is called when the event is emitted for a tenant that has this
     module enabled.
     ``tasks`` lists Python modules with Celery tasks for the worker to load.
+    ``plugin`` is the id of the plugin that brought the module (set by the
+    plugin loader; ``None`` for modules built into Hubra).
     """
 
     code: str
@@ -132,6 +134,7 @@ class Module:
     public_endpoints: tuple[str, ...] = ()
     tables: tuple[str, ...] = ()
     tasks: tuple[str, ...] = ()
+    plugin: str | None = None
 
     def setting(self, key: str) -> SettingField | None:
         return next((s for s in self.settings if s.key == key), None)
@@ -156,6 +159,7 @@ class Module:
             "dependsOn": list(self.depends_on),
             "required": self.required,
             "defaultEnabled": self.default_enabled,
+            "plugin": self.plugin,
             "nav": [
                 {
                     "path": n.path,

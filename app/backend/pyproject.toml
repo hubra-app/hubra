@@ -18,6 +18,8 @@ module = [
 disable_error_code = ["name-defined"]
 
 [tool.pytest.ini_options]
+# Hubra's tests, then the bundled plugins' (plugins/<id>/tests).
+testpaths = ["tests", "../../plugins"]
 filterwarnings = [
     # Third-party: pythonjsonlogger moved its module path in a newer version.
     # Suppress the deprecation warning until the library is updated.

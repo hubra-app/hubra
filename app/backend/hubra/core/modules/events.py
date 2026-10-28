@@ -2,7 +2,7 @@
 
 A module subscribes in its manifest::
 
-    events={"invoice.overdue": "hubra.modules.inventory_keys.hooks:on_overdue"}
+    events={"invoice.overdue": "hubra_keys.hooks:on_invoice_overdue"}
 
 ``emit("invoice.overdue", member_id=..., invoice_id=...)`` then calls every
 subscriber whose module is enabled for the tenant, with ``tenant_id`` and

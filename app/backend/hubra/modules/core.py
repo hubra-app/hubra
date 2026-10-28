@@ -95,6 +95,13 @@ module = Module(
             "/api/v1/admin",
             v2=(("/api/v2/manager/tenants", "admin_bp_v2"),),
         ),
+        Blueprint(
+            "hubra.api.plugins.routes",
+            "plugins_bp",
+            "/api/v1/manager/plugins",
+            v2=(("/api/v2/manager/plugins", "plugins_bp_v2"),),
+        ),
+        Blueprint("hubra.api.plugins.routes", "plugin_assets_bp", "/api/v1/plugins"),
     ),
     nav=(
         NavItem("/app/dashboard", "shell.nav.dashboard", "dashboard", order=0),

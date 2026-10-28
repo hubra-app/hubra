@@ -230,7 +230,11 @@ def create_app(config_name: str | None = None) -> Flask:
     # ── Modules: blueprints and the per-tenant gate ──────────────────────────
     from hubra.core.modules import module_gate, registry
 
-    registry.load()
+    with app.app_context():
+        registry.load()
+        from hubra.core.plugins import loader as plugin_loader
+
+        app.extensions["hubra.plugins"] = plugin_loader.current()
     registry.register_blueprints(app)
     # Registered after resolve_tenant, so g.tenant is known here.
     app.before_request(module_gate)
@@ -239,9 +243,10 @@ def create_app(config_name: str | None = None) -> Flask:
     from hubra.core.tenant.context import single_club_slug
 
     # Club provisioning, tenant requests, impersonation and the module
-    # catalog belong to the manager portal, as does everything under
+    # catalog belong to the manager portal, as do the plugins (use
+    # `flask plugins` on a single club) and everything under
     # /api/v2/manager/.
-    _MANAGER_BLUEPRINTS = frozenset({"tenant_admin", "features_bp"})
+    _MANAGER_BLUEPRINTS = frozenset({"tenant_admin", "features_bp", "plugins_bp"})
 
     @app.before_request
     def _single_club_gate():
@@ -307,6 +312,10 @@ def _register_cli(app: Flask) -> None:
 
         run_seeds(db)
         click.echo("Seed data inserted.")
+
+    from hubra.core.plugins.cli import register as register_plugin_cli
+
+    register_plugin_cli(app)
 
     @app.cli.group("modules")
     def modules_cli():

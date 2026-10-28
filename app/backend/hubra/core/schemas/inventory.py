@@ -26,7 +26,7 @@ class InventoryItemSchema(ma.SQLAlchemyAutoSchema):
         load_instance = True
         unknown = EXCLUDE
         # The guide belongs to the inventory.guides module (/guides API).
-        exclude = ("instructed_members", "checkouts", "guide", "guide_url")
+        exclude = ("instructed_members", "checkouts")
 
     cost = fields.Decimal(as_string=True, allow_none=True)
     purchase_cost = fields.Decimal(as_string=True, allow_none=True, dump_default=None)

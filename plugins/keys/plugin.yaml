@@ -1,0 +1,13 @@
+id: keys
+name: Keys
+version: "1.0.0"
+hubra: ">=0.1,<1"
+description: "Physical keys, cards and fobs: who holds which, with a handover log. Members see their keys on their account page."
+author: Hubra
+homepage: https://github.com/hubra-app/hubra
+tags: [inventory]
+package: hubra_keys
+modules: [inventory.keys]
+requires: [inventory]
+migrations: migrations
+frontend: frontend/dist/plugin.js

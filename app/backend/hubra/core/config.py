@@ -66,6 +66,20 @@ class BaseConfig:
         "pool_pre_ping": True,  # detect stale connections before use
     }
 
+    # ── Plugins ─────────────────────────────────────────────────────────────
+    # Where each process unpacks installed plugins (a local, writable folder;
+    # the archives themselves live in the database).
+    PLUGIN_DIR: str = os.environ.get("HUBRA_PLUGIN_DIR", "")
+    # Plugins shipped with this copy (the repository's plugins/ folder, or
+    # /app/plugins in the image).  Loaded only once installed.
+    BUNDLED_PLUGIN_DIR: str = os.environ.get("HUBRA_BUNDLED_PLUGINS", "")
+    # Bundled plugins that count as installed without a database row:
+    # "all", or a comma-separated list of ids.  For tests and development.
+    PLUGINS_AUTOINSTALL: str = os.environ.get("HUBRA_PLUGINS_AUTOINSTALL", "")
+    # Seconds between checks whether another process installed or removed a
+    # plugin (0 = never; the process then needs a restart).
+    PLUGINS_RELOAD_POLL: int = int(os.environ.get("HUBRA_PLUGINS_RELOAD_POLL", 15))
+
     # ── JWT ─────────────────────────────────────────────────────────────────
     JWT_SECRET_KEY: str = _dev_secret("JWT_SECRET_KEY")
     JWT_ACCESS_TOKEN_EXPIRES: timedelta = timedelta(
@@ -235,6 +249,7 @@ class ProductionConfig(BaseConfig):
 class TestingConfig(BaseConfig):
     TESTING: bool = True
     DEBUG: bool = True
+    PLUGINS_AUTOINSTALL: str = "all"
     SQLALCHEMY_DATABASE_URI: str = "sqlite:///:memory:"
     SQLALCHEMY_ECHO: bool = False
     # Long-lived tokens so tests don't expire mid-run

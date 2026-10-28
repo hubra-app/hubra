@@ -22,6 +22,11 @@ _GLOBAL_ONLY_TABLES = frozenset(
         "user_global_roles",
         "features",
         "tenant_features",
+        "installed_plugins",
+        "plugin_archives",
+        "plugin_repositories",
+        "plugin_state",
+        "plugin_trusted_keys",
     }
 )
 

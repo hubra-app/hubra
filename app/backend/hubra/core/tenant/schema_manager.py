@@ -49,6 +49,7 @@ def create_tenant_schema(tenant_id: int) -> None:
 
     _create_tenant_indexes(schema_name)
     _init_alembic_version(schema_name)
+    _init_plugin_versions(schema_name)
 
     db.session.commit()
     _log.info("Tenant schema %s created successfully", schema_name)
@@ -128,4 +129,35 @@ def _init_alembic_version(schema_name: str) -> None:
             "  Initialised alembic_version at %s for %s",
             public_version,
             schema_name,
+        )
+
+
+def _init_plugin_versions(schema_name: str) -> None:
+    """Copy each loaded plugin's version table from public.
+
+    The plugin's tables were cloned above, so the club starts at the same
+    plugin revisions as public.
+    """
+    from hubra.core.plugins import current
+
+    for spec in current().loaded():
+        if spec.migrations_dir is None:
+            continue
+        table = spec.version_table
+        exists = db.session.execute(
+            text("SELECT to_regclass(:name)"), {"name": f"public.{table}"}
+        ).scalar()
+        if exists is None:
+            continue
+        db.session.execute(
+            text(
+                f"CREATE TABLE IF NOT EXISTS {schema_name}.{table} "
+                f"(LIKE public.{table} INCLUDING ALL)"
+            )
+        )
+        db.session.execute(
+            text(
+                f"INSERT INTO {schema_name}.{table} (version_num) "
+                f"SELECT version_num FROM public.{table} ON CONFLICT DO NOTHING"
+            )
         )

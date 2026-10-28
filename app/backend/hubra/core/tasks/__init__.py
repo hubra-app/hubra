@@ -103,6 +103,7 @@ def make_celery(app: Flask) -> Celery:
             "hubra.core.tasks.domain_tasks",
             "hubra.core.tasks.monitoring",
             "hubra.core.tasks.infra_checks",
+            "hubra.core.tasks.plugin_tasks",
             *_module_task_imports(),
         ],
     )
@@ -186,6 +187,10 @@ def make_celery(app: Flask) -> Celery:
                 "task": "hubra.core.tasks.monitoring.check_api_error_rate_task",
                 "schedule": crontab(minute=15),
             },
+            "plugin-updates": {
+                "task": "hubra.core.tasks.plugin_tasks.check_plugin_updates",
+                "schedule": crontab(hour="*/6", minute=40),
+            },
         },
         broker_connection_retry_on_startup=False,
         timezone="UTC",
@@ -218,3 +223,16 @@ def _bootstrap_celery() -> Celery:
 
 
 celery_app = _bootstrap_celery()
+
+
+def _watch_plugins(**_kwargs) -> None:
+    """Stop gracefully when plugins change, so the container restarts with them."""
+    from hubra.core.plugins.reload import watch_celery
+
+    watch_celery()
+
+
+from celery import signals  # noqa: E402
+
+signals.worker_ready.connect(_watch_plugins, weak=False)
+signals.beat_init.connect(_watch_plugins, weak=False)

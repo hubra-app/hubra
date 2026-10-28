@@ -35,6 +35,11 @@ _DEFAULT_PERMISSIONS = [
         "Manage global roles",
         "Create roles, assign permissions, assign users",
     ),
+    (
+        "plugins.manage",
+        "Manage plugins",
+        "Install, update and remove plugins; trust repositories and signing keys",
+    ),
 ]
 
 # (role_name, description, [permission_keys])
@@ -54,6 +59,7 @@ _DEFAULT_ROLES = [
             "audit.read",
             "impersonate",
             "roles.manage",
+            "plugins.manage",
         ],
     ),
     (

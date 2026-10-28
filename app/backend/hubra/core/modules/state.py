@@ -56,6 +56,20 @@ class ModuleState:
 
     def to_dict(self) -> dict:
         data = self.module.to_dict()
+        if self.module.plugin:
+            from hubra.core.plugins import current
+
+            spec = current().get(self.module.plugin)
+            if spec is not None:
+                data["plugin"] = {
+                    "id": spec.id,
+                    "name": spec.name,
+                    "version": spec.version,
+                    "author": str(spec.manifest.get("author", "")),
+                    "trust": spec.trust.get("status", ""),
+                    # The app loads <api>/v1/plugins/<id>/frontend.js?v=<this>.
+                    "frontend": spec.frontend_tag,
+                }
         secrets = {s.key for s in self.module.settings if s.type == "secret"}
         data.update(
             {
@@ -122,8 +136,12 @@ def states(tenant_id=CURRENT) -> dict[str, ModuleState]:
             ).all()
         }
 
+    removed = _uninstalled_plugins()
     result: dict[str, ModuleState] = {}
     for m in registry.all():  # dependencies first
+        if m.plugin is not None and m.plugin in removed:
+            # Uninstalled since this process started; gone after its reload.
+            continue
         grant = grants.get(m.code)
         feature = catalog.get(m.code)
         if m.required:
@@ -134,7 +152,9 @@ def states(tenant_id=CURRENT) -> dict[str, ModuleState]:
             enabled, allowed = bool(feature.default_enabled), True
         else:
             enabled, allowed = m.default_enabled, True
-        missing = [d for d in m.depends_on if not result[d].effective]
+        missing = [
+            d for d in m.depends_on if d not in result or not result[d].effective
+        ]
         raw_config = (grant.config if grant is not None else None) or {}
         config = {s.key: raw_config.get(s.key, s.default) for s in m.settings}
         result[m.code] = ModuleState(
@@ -149,6 +169,19 @@ def states(tenant_id=CURRENT) -> dict[str, ModuleState]:
     if cache is not None:
         cache[tid] = result
     return result
+
+
+def _uninstalled_plugins() -> set[str]:
+    """Plugins this process loaded that are no longer installed."""
+    from hubra.core.models.plugin import InstalledPlugin
+    from hubra.core.plugins import current
+
+    plugins = current()
+    loaded = {s.id for s in plugins.loaded()} - plugins.autoinstalled
+    if not loaded:
+        return set()
+    installed = set(db.session.scalars(select(InstalledPlugin.id)).all())
+    return loaded - installed
 
 
 def is_enabled(code: str, tenant_id=CURRENT) -> bool:
@@ -200,7 +233,7 @@ def sync_catalog() -> int:
 def _module_or_404(code: str) -> Module:
     registry.load()
     m = registry.get(code)
-    if m is None:
+    if m is None or (m.plugin is not None and m.plugin in _uninstalled_plugins()):
         raise_error(404, "NOT_FOUND", f"Module '{code}' does not exist")
     return m
 
@@ -248,7 +281,7 @@ def set_enabled(code: str, enabled: bool, tenant_id=CURRENT) -> ModuleState:
             raise_error(
                 403, "MODULE_NOT_ALLOWED", f"{m.name} is not available for this club"
             )
-        off = [d for d in m.depends_on if not current[d].effective]
+        off = [d for d in m.depends_on if d not in current or not current[d].effective]
         if off:
             names = ", ".join(registry.get(d).name for d in off)
             raise_error(
@@ -257,7 +290,11 @@ def set_enabled(code: str, enabled: bool, tenant_id=CURRENT) -> ModuleState:
                 f"Switch on {names} first; {m.name} needs it",
             )
     else:
-        on = [d.name for d in registry.dependents(code) if current[d.code].effective]
+        on = [
+            d.name
+            for d in registry.dependents(code)
+            if d.code in current and current[d.code].effective
+        ]
         if on:
             raise_error(
                 409,
