@@ -21,6 +21,21 @@ import {
   type PlatformSetting,
 } from '@/api/platform'
 
+// German label and help per key; the API's own texts are the English ones.
+const GERMAN: Record<string, [string, string]> = {
+  'mail.relay.host': ['SMTP-Relay-Server', 'Ausgehender Mailserver für jede Mail, die Hubra verschickt'],
+  'mail.relay.port': ['SMTP-Relay-Port', '587 für STARTTLS, 25 für ein internes Relay ohne TLS'],
+  'mail.relay.user': ['SMTP-Benutzer', 'Leer lassen, wenn das Relay keine Anmeldung braucht'],
+  'mail.relay.password': ['SMTP-Passwort', 'Wird verschlüsselt gespeichert'],
+  'mail.system.sender_email': ['Absenderadresse', 'Absender von Anmelde-, SSO- und Plattform-Mails'],
+  'mail.system.sender_name': ['Absendername', 'Anzeigename des Systemabsenders'],
+  'backup.s3.endpoint': ['S3-Endpunkt', 'URL eines S3-kompatiblen Speichers, z. B. https://eu2.contabostorage.com'],
+  'backup.s3.bucket': ['S3-Bucket', 'Bucket für die verschlüsselten Backups'],
+  'backup.s3.region': ['S3-Region', "Bei Contabo meist 'default'"],
+  'backup.s3.access_key': ['S3-Zugriffsschlüssel', 'Wird verschlüsselt gespeichert'],
+  'backup.s3.secret_key': ['S3-Geheimschlüssel', 'Wird verschlüsselt gespeichert'],
+}
+
 const RELAY = ['mail.relay.host', 'mail.relay.port', 'mail.relay.user', 'mail.relay.password']
 const SENDER = ['mail.system.sender_email', 'mail.system.sender_name']
 const BACKUP = [
@@ -100,14 +115,14 @@ export function PlatformSettings() {
     if (!s) return null
     const label = (
       <Group gap={6} component="span">
-        {s.label}
+        {tr(GERMAN[key]?.[0] ?? s.label, s.label)}
         <SourceBadge s={s} />
       </Group>
     )
     const common = {
       key,
       label,
-      description: s.description,
+      description: tr(GERMAN[key]?.[1] ?? s.description, s.description),
       value: draft[key] ?? s.value,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
         setDraft((d) => ({ ...d, [key]: e.currentTarget.value })),
@@ -177,8 +192,8 @@ export function PlatformSettings() {
             </Group>
             <Text size="xs" c="dimmed" mb={12}>
               {tr(
-                'Backups enthalten die ganze Datenbank, verschlüsselt mit BACKUP_ENCRYPTION_KEY aus der Umgebung.',
-                'Backups hold the whole database, encrypted with BACKUP_ENCRYPTION_KEY from env.',
+                'Hierhin gehen das globale Backup und die Backups jedes Vereins, verschlüsselt mit BACKUP_ENCRYPTION_KEY aus der Umgebung.',
+                'The global backup and every club backup go here, encrypted with BACKUP_ENCRYPTION_KEY from env.',
               )}
             </Text>
             <Stack gap="sm">{BACKUP.map(field)}</Stack>

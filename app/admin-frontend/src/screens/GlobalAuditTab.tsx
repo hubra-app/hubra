@@ -19,6 +19,21 @@ export function GlobalAuditTab() {
   const total = data?.total ?? 0
   const totalPages = Math.max(1, Math.ceil(total / perPage))
 
+  const actionLabel = (action: string): string => {
+    const de: Record<string, string> = {
+      'tenant.provision': 'Verein eingerichtet',
+      'tenant.update': 'Verein geändert',
+      'tenant.soft_delete': 'Verein archiviert',
+      'tenant.delete': 'Verein gelöscht',
+      'tenant.add_member': 'Mitglied hinzugefügt',
+      'club_settings.update': 'Vereinseinstellungen geändert',
+      'platform.settings.update': 'Plattform-Einstellungen geändert',
+      'impersonation.start': 'Als Admin geöffnet',
+      'impersonation.end': 'Admin-Ansicht beendet',
+    }
+    return de[action] ? tr(de[action], action) : action
+  }
+
   const actionColor = (action: string): string => {
     if (action.includes('delete')) return 'red'
     if (action.includes('suspend') || action.includes('disable')) return 'orange'
@@ -62,7 +77,7 @@ export function GlobalAuditTab() {
                 </Table.Td>
                 <Table.Td>
                   <Badge variant="light" color={actionColor(entry.action)} size="sm">
-                    {entry.action}
+                    {actionLabel(entry.action)}
                   </Badge>
                 </Table.Td>
                 <Table.Td className="num" fz="sm">

@@ -5,7 +5,6 @@ import type { ModuleInfo } from '@/api/modules'
 // defaults here and can be overridden per language under modules.<code>.*;
 // plugins keep whatever their manifest says.
 const DE: Record<string, { name: string; description: string; settings?: Record<string, [string, string]> }> = {
-  backups: { name: 'Backups', description: 'Verschlüsselte Datenbank-Backups' },
   bindings: { name: 'Verknüpfungen', description: 'Vereinsdaten mit externen Schnittstellen abgleichen' },
   codes: { name: 'Codes', description: 'Verschlüsselte Türcodes und Zugangscodes' },
   core: { name: 'Basis', description: 'Anmeldung, Konten, Einstellungen, Dashboard, Protokoll und Mitteilungen' },
