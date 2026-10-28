@@ -11,27 +11,29 @@ import {
   Title,
   Anchor,
   Box,
-  Center,
   Progress,
 } from '@mantine/core'
 import { useNavigate } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import * as authApi from '@/api/auth'
+import { AuthFrame } from '@/components/AuthFrame'
+import { useLang } from '@/lang'
 
-function passwordStrength(password: string): { value: number; label: string; color: string } {
+function passwordStrength(password: string, tr: (de: string, en: string) => string) {
   if (!password) return { value: 0, label: '', color: 'gray' }
   let score = 0
   if (password.length >= 12) score += 25
   if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 25
   if (/\d/.test(password)) score += 25
   if (/[^a-zA-Z0-9]/.test(password)) score += 25
-  if (score < 50) return { value: score, label: 'Weak', color: 'red' }
-  if (score < 75) return { value: score, label: 'Fair', color: 'yellow' }
-  return { value: score, label: 'Strong', color: 'green' }
+  if (score < 50) return { value: score, label: tr('Schwach', 'Weak'), color: 'red' }
+  if (score < 75) return { value: score, label: tr('Mittel', 'Fair'), color: 'yellow' }
+  return { value: score, label: tr('Stark', 'Strong'), color: 'green' }
 }
 
 export function SignupScreen() {
   const { notify, continueSignedIn } = useSso()
+  const { tr } = useLang()
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -40,124 +42,124 @@ export function SignupScreen() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const strength = passwordStrength(password)
+  const strength = passwordStrength(password, tr)
 
   const handleSignup = async () => {
     setError('')
     if (!name || !email || !password) {
-      setError('All fields are required')
+      setError(tr('Bitte fülle alle Felder aus.', 'All fields are required.'))
       return
     }
     setLoading(true)
     try {
       await authApi.signup(name, email.trim().toLowerCase(), password, keepSignedIn)
-      notify('success', 'Account created', 'Welcome to Hubra. Now find your club.')
+      notify(
+        'success',
+        tr('Konto erstellt', 'Account created'),
+        tr('Willkommen bei Hubra. Such jetzt deinen Verein.', 'Welcome to Hubra. Now find your club.'),
+      )
       continueSignedIn()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Signup failed'
+      const msg = err instanceof Error ? err.message : tr('Registrierung fehlgeschlagen', 'Signup failed')
       setError(msg)
-      notify('error', 'Signup failed', msg)
+      notify('error', tr('Registrierung fehlgeschlagen', 'Signup failed'), msg)
     } finally {
       setLoading(false)
     }
   }
 
+  const onEnter = (e: React.KeyboardEvent) => e.key === 'Enter' && handleSignup()
+
   return (
-    <div className="graph-bg" style={{ minHeight: '100vh', display: 'flex' }}>
-      <Center flex={1} p={32}>
-        <Box style={{ width: '100%', maxWidth: 380 }}>
-          <Group gap={10} mb={32}>
-            <div className="logo-mark" />
-            <Box>
-              <Text fz={20} className="wordmark">hubra</Text>
-              <Text fz="xs" c="#6131c4" ff="'JetBrains Mono', monospace" style={{ letterSpacing: '0.06em' }}>
-                Club management
-              </Text>
-            </Box>
-          </Group>
+    <AuthFrame>
+      <Title order={1} fz={30} mb={6}>
+        {tr('Konto erstellen', 'Create account')}
+      </Title>
+      <Text c="dimmed" mb={28}>
+        {tr(
+          'Ein Konto für alle deine Vereine. Danach trittst du einem Verein bei oder beantragst einen neuen.',
+          'One account for all your clubs. Then join a club or request a new one.',
+        )}
+      </Text>
 
-          <Title order={2} mb={6}>Create account</Title>
-          <Text size="sm" c="dimmed" mb={28}>
-            Sign up to start a club or join an existing one.
+      {error && (
+        <Alert color="red" variant="light" mb="md">
+          {error}
+        </Alert>
+      )}
+
+      <Stack gap="md">
+        <TextInput
+          label={tr('Vor- und Nachname', 'Full name')}
+          autoComplete="name"
+          size="md"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={onEnter}
+          placeholder={tr('Anna Muster', 'Jane Doe')}
+        />
+
+        <TextInput
+          label={tr('E-Mail', 'Email')}
+          type="email"
+          autoComplete="email"
+          size="md"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          onKeyDown={onEnter}
+          placeholder="anna@example.ch"
+        />
+
+        <Box>
+          <PasswordInput
+            label={tr('Passwort', 'Password')}
+            autoComplete="new-password"
+            size="md"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={onEnter}
+            placeholder={tr('Mindestens 12 Zeichen', 'At least 12 characters')}
+          />
+          {password && (
+            <Group gap="xs" mt={8}>
+              <Progress value={strength.value} color={strength.color} size="xs" style={{ flex: 1 }} />
+              <Text fz="xs" c="dimmed">
+                {strength.label}
+              </Text>
+            </Group>
+          )}
+          <Text fz="xs" c="dimmed" mt={6}>
+            {tr(
+              'Mindestens 12 Zeichen, gemischt aus Buchstaben, Zahlen und Sonderzeichen.',
+              'At least 12 characters with a mix of letters, numbers and symbols.',
+            )}
           </Text>
-
-          {error && <Alert color="red" variant="light" mb="md">{error}</Alert>}
-
-          <Stack gap="md">
-            <TextInput
-              label="Full name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSignup()}
-              placeholder="Jane Doe"
-            />
-
-            <TextInput
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSignup()}
-              placeholder="jane@example.ch"
-            />
-
-            <Box>
-              <PasswordInput
-                label="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSignup()}
-                placeholder="At least 12 characters"
-              />
-              {password && (
-                <Group gap="xs" mt={6}>
-                  <Progress value={strength.value} color={strength.color} size="xs" style={{ flex: 1 }} />
-                  <Text fz="xs" c="dimmed">{strength.label}</Text>
-                </Group>
-              )}
-              <Text fz="xs" c="dimmed" mt={4}>
-                Minimum 12 characters with a mix of letters, numbers, and symbols.
-              </Text>
-            </Box>
-
-            <Checkbox
-              label="Keep me signed in"
-              checked={keepSignedIn}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setKeepSignedIn(e.currentTarget.checked)}
-            />
-
-            <Button size="sm" fullWidth onClick={handleSignup} loading={loading} mt={4}>
-              {loading ? 'Creating account…' : 'Create account'}
-            </Button>
-
-            <Text size="sm" c="dimmed" ta="center">
-              Already have an account?{' '}
-              <Anchor size="sm" c="#6131c4" onClick={(e) => { e.preventDefault(); navigate('/login') }}>
-                Sign in
-              </Anchor>
-            </Text>
-          </Stack>
         </Box>
-      </Center>
 
-      <Box
-        className="mantine-visible-from-sm"
-        style={{ width: '46%', position: 'relative', display: 'flex', alignItems: 'stretch' }}
-      >
-        <div className="blueprint-plate" style={{ flex: 1, margin: 24 }}>
-          <div className="blueprint-label">SCHNITT Nr. 002 · MASSSTAB 1:1</div>
-          <Text fz="xs" c="dimmed" ff="'JetBrains Mono', monospace" mb={20} style={{ alignSelf: 'flex-end' }}>
-            v2.4 · Signup
-          </Text>
-          <blockquote style={{ margin: 0, fontSize: 'var(--mantine-font-size-lg)', lineHeight: 1.6, color: '#2e2940', maxWidth: 340 }}>
-            "New here?{' '}
-            <span className="hi">Request a space</span>{' '}
-            and our team will get you set up — or{' '}
-            <span className="hi">join an existing one</span>{' '}
-            with an invite from your admin."
-          </blockquote>
-        </div>
-      </Box>
-    </div>
+        <Checkbox
+          label={tr('Angemeldet bleiben', 'Keep me signed in')}
+          checked={keepSignedIn}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setKeepSignedIn(e.currentTarget.checked)}
+        />
+
+        <Button size="md" fullWidth onClick={handleSignup} loading={loading} mt={4}>
+          {tr('Konto erstellen', 'Create account')}
+        </Button>
+
+        <Text size="sm" c="dimmed" ta="center">
+          {tr('Du hast schon ein Konto?', 'Already have an account?')}{' '}
+          <Anchor
+            size="sm"
+            fw={600}
+            onClick={(e) => {
+              e.preventDefault()
+              navigate('/login')
+            }}
+          >
+            {tr('Anmelden', 'Sign in')}
+          </Anchor>
+        </Text>
+      </Stack>
+    </AuthFrame>
   )
 }

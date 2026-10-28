@@ -67,52 +67,71 @@ body {
   line-height: 1;
 }
 
+/* Signed-in SSO pages (club picker, account, verification). */
 .graph-bg {
   background-color: #f7f6fb;
-  background-image: linear-gradient(rgba(24, 24, 24, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(24, 24, 24, 0.08) 1px, transparent 1px),
-    linear-gradient(rgba(24, 24, 24, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(24, 24, 24, 0.05) 1px, transparent 1px);
-  background-size:
-    132px 132px,
-    132px 132px,
-    22px 22px,
-    22px 22px;
 }
 
-.blueprint-plate {
-  position: relative;
-  height: 100%;
+.auth-layout {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  background: #ffffff;
+}
+
+.auth-main {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 48px;
-  border: 1.5px dashed rgba(24, 24, 24, 0.2);
-  margin: 24px;
-  border-radius: 12px;
+  padding: 48px 32px;
 }
 
-.blueprint-label {
+.auth-brand {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(155deg, #7441e0 0%, #6131c4 45%, #3a1e78 100%);
+  display: flex;
+  align-items: center;
+  padding: 64px;
+}
+
+.auth-brand::after {
+  /* the doorway of the mark, very large and faint */
+  content: "";
   position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #f7f6fb;
-  padding: 0 12px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: var(--mantine-font-size-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #5e5873;
+  right: -120px;
+  bottom: -140px;
+  width: 520px;
+  height: 520px;
+  background: url("/hubra-mark-white.svg") center / contain no-repeat;
+  opacity: 0.07;
+  pointer-events: none;
 }
 
-.blueprint-plate .hi {
+.auth-brand-inner {
+  position: relative;
+  z-index: 1;
+}
+
+.auth-brand-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
   background: #fece2b;
-  padding: 2px 6px;
-  border-radius: 4px;
-  color: #1a1625;
-  font-weight: 600;
+  flex-shrink: 0;
+}
+
+@media (max-width: 62em) {
+  .auth-layout {
+    grid-template-columns: 1fr;
+  }
+  .auth-brand {
+    display: none;
+  }
+  .auth-main {
+    align-items: flex-start;
+    padding: 40px 20px;
+  }
 }
 
 @keyframes spin {
@@ -121,4 +140,14 @@ body {
 
 .spin {
   animation: spin 1s linear infinite;
+}
+
+/* Top bar of the signed-in SSO pages. */
+.sso-topbar {
+  height: 60px;
+  background: #ffffff;
+  border-bottom: 1px solid #ebe8f2;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }

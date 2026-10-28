@@ -49,6 +49,21 @@ function SourceBadge({ s }: { s: PlatformSetting }) {
  * sender; club mail does too, with the club's address as Reply-To) and where
  * the encrypted database backups are stored.
  */
+// The backend describes the settings in English; German first here.
+const FIELD_DE: Record<string, [string, string]> = {
+  'mail.relay.host': ['SMTP-Relay-Server', 'Ausgehender Mailserver für alle Mails, die Hubra verschickt'],
+  'mail.relay.port': ['SMTP-Relay-Port', '587 für STARTTLS, 25 für ein internes Relay ohne TLS'],
+  'mail.relay.user': ['SMTP-Benutzer', 'Leer lassen, wenn das Relay keine Anmeldung braucht'],
+  'mail.relay.password': ['SMTP-Passwort', 'Wird verschlüsselt gespeichert'],
+  'mail.system.sender_email': ['Absenderadresse des Systems', 'Absender für Anmelde-, SSO- und Plattform-Mails'],
+  'mail.system.sender_name': ['Absendername des Systems', 'Angezeigter Name des Systemabsenders'],
+  'backup.s3.endpoint': ['S3-Endpunkt', 'S3-kompatible Adresse, z. B. https://eu2.contabostorage.com'],
+  'backup.s3.bucket': ['S3-Bucket', 'Bucket, in den die verschlüsselten Backups gehen'],
+  'backup.s3.region': ['S3-Region', "Bei Contabo meist 'default'"],
+  'backup.s3.access_key': ['S3-Access-Key', 'Wird verschlüsselt gespeichert'],
+  'backup.s3.secret_key': ['S3-Secret-Key', 'Wird verschlüsselt gespeichert'],
+}
+
 export function PlatformSettings() {
   const { notify } = useAdmin()
   const { tr } = useLang()
@@ -98,16 +113,17 @@ export function PlatformSettings() {
   const field = (key: string) => {
     const s = byKey[key]
     if (!s) return null
+    const de = FIELD_DE[key]
     const label = (
       <Group gap={6} component="span">
-        {s.label}
+        {de ? tr(de[0], s.label) : s.label}
         <SourceBadge s={s} />
       </Group>
     )
     const common = {
       key,
       label,
-      description: s.description,
+      description: de ? tr(de[1], s.description) : s.description,
       value: draft[key] ?? s.value,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
         setDraft((d) => ({ ...d, [key]: e.currentTarget.value })),

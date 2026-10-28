@@ -1,67 +1,41 @@
-import { Button, Stack, Text, Title, Paper, Box, Group } from '@mantine/core'
+import { Button, Stack, Text, Title } from '@mantine/core'
 import { IconArrowLeft, IconShieldX } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
-import { useSso } from '@/context/SsoContext'
+import { AuthFrame, AuthIcon } from '@/components/AuthFrame'
+import { useLang } from '@/lang'
 
 export function AccessDenied() {
   const navigate = useNavigate()
-  const { redirectTarget } = useSso()
-
+  const { tr } = useLang()
   const cosUrl = import.meta.env.VITE_COS_URL ?? 'https://app.hubra.club'
 
   return (
-    <div
-      className="graph-bg"
-      style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32 }}
-    >
-      <Box style={{ width: '100%', maxWidth: 420, textAlign: 'center' }}>
-        <Group gap={10} mb={32} justify="center">
-          <div className="logo-mark" />
-          <Box>
-            <Text fz={20} className="wordmark">hubra</Text>
-            <Text fz="xs" c="#6131c4" ff="'JetBrains Mono', monospace" style={{ letterSpacing: '0.06em' }}>
-              Club management
-            </Text>
-          </Box>
-        </Group>
-
-        <Paper withBorder shadow="sm" radius="lg" p="xl">
-          <Stack gap="md" align="center">
-            <div
-              style={{
-                width: 56, height: 56, borderRadius: '50%', background: 'rgba(220,38,38,.12)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
-            >
-              <IconShieldX size={28} color="#dc2626" />
-            </div>
-            <Title order={2}>Access Denied</Title>
-            <Text size="sm" c="dimmed" lh={1.6}>
-              You are signed in, but your account does not have superadmin
-              permissions required to access the admin portal.
-            </Text>
-            <Text size="xs" c="dimmed">
-              Redirect target: {redirectTarget ?? '—'}
-            </Text>
-            <Button
-              variant="filled"
-              fullWidth
-              mt={8}
-              onClick={() => { window.location.assign(cosUrl) }}
-            >
-              Go to member portal
-            </Button>
-            <Button
-              variant="subtle"
-              fullWidth
-              leftSection={<IconArrowLeft size={16} />}
-              onClick={() => navigate('/login')}
-            >
-              Back to login
-            </Button>
-          </Stack>
-        </Paper>
-      </Box>
-    </div>
+    <AuthFrame>
+      <AuthIcon tone="red">
+        <IconShieldX size={26} color="#b91c1c" />
+      </AuthIcon>
+      <Title order={1} fz={30} mb={8}>
+        {tr('Kein Zugriff', 'Access denied')}
+      </Title>
+      <Text c="dimmed" mb={28} lh={1.6}>
+        {tr(
+          'Du bist angemeldet, aber dein Konto hat keine Berechtigung für die Plattform-Verwaltung.',
+          'You are signed in, but your account may not use the platform admin portal.',
+        )}
+      </Text>
+      <Stack gap="xs">
+        <Button size="md" fullWidth onClick={() => window.location.assign(cosUrl)}>
+          {tr('Zu meinen Vereinen', 'Go to my clubs')}
+        </Button>
+        <Button
+          variant="subtle"
+          fullWidth
+          leftSection={<IconArrowLeft size={16} />}
+          onClick={() => navigate('/login')}
+        >
+          {tr('Zurück zur Anmeldung', 'Back to sign in')}
+        </Button>
+      </Stack>
+    </AuthFrame>
   )
 }
