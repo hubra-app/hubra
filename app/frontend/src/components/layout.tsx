@@ -287,7 +287,7 @@ export function Pagination({
         }))}
         style={{ width: 80 }}
       />
-      <Text size="sm" c="dimmed" flex={1}>
+      <Text size="sm" c="dimmed" flex={1} style={{ whiteSpace: 'nowrap' }}>
         {t('common.rangeOf', '{{start}}–{{end}} von {{total}}', { start, end, total })}
       </Text>
       <MantinePagination
