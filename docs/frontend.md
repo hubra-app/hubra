@@ -77,15 +77,22 @@ In local dev, `VITE_API_BASE=http://localhost:5000/api` (in
 `docker-compose.override.yaml` and Traefik routes `api.hubra.club` directly
 to the backend container.
 
-## E2E tests
+## Tests
 
-Playwright tests live in `app/frontend/e2e/`. They require a running app
-stack:
+Component tests (Vitest and Testing Library) sit next to the code as
+`*.test.tsx` and run with `npm test`. Playwright tests live in
+`app/frontend/e2e/` and run against a real stack: they sign in on the SSO
+portal with the account in `e2e/env.ts` (or the `E2E_*` variables) and use the
+API as that user. CI runs both: the component tests in the `frontends` job,
+the browser tests in `compose-smoke` against the Compose stack.
 
 ```bash
-docker compose up -d       # Start the app
 cd app/frontend
-npx playwright test        # Run E2E tests
+npm test                   # Component tests
+docker compose up -d       # or the dev servers
+E2E_APP_URL=http://localhost:8080 E2E_SSO_URL=http://localhost:8082 \
+E2E_MANAGE_URL=http://localhost:8081 E2E_CLUB=<club> E2E_EMAIL=<admin> \
+E2E_PASSWORD=<password> npm run test:e2e
 ```
 
 ## Known issues
