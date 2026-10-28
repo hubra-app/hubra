@@ -467,6 +467,7 @@ def report_keys(locale: str):
 
 @i18n_bp.get("/<string:locale>/flagged")
 @jwt_required()
+@permission_required("i18n", "write", "Write translations")
 def get_flagged_i18n(locale: str):
     rows = get_flagged(locale)
     threshold = _get_stale_threshold_seconds()
