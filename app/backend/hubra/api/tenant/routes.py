@@ -34,6 +34,7 @@ from hubra.core.models.member import Member
 from hubra.core.models.tenant import GlobalAuditEntry, Tenant
 from hubra.core.models.tenant_request import TenantRequest
 from hubra.core.models.user import User
+from hubra.core.services import email_verification
 from hubra.core.tenant.service import TenantService, TenantProvisioningError
 
 tenant_admin_bp = Blueprint("tenant_admin", __name__)
@@ -961,6 +962,15 @@ def join_club(slug: str):
     user = _calling_user()
     tenant = _active_club(slug)
     club = {"slug": tenant.slug, "name": tenant.name}
+
+    # A club's admins approve the address they see, so it must be confirmed.
+    if email_verification.required(user):
+        db.session.commit()  # required() may have flagged a superadmin
+        raise_error(
+            403,
+            "EMAIL_NOT_VERIFIED",
+            "Confirm your email address before joining a club",
+        )
 
     status = _membership_in(tenant.id, user)
     if status == "member":

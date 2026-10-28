@@ -258,6 +258,20 @@ def login():
         _set_remembered_email_cookie(response, email)
         return response
 
+    # The same gate as /auth/switch-tenant: no club opens before the address
+    # is confirmed (otherwise signing in with X-Tenant-Slug skips it).
+    if (
+        current_tenant() is not None
+        and user is not None
+        and email_verification.required(user)
+    ):
+        db.session.commit()  # required() may have flagged a superadmin
+        raise_error(
+            403,
+            "EMAIL_NOT_VERIFIED",
+            "Confirm your email address before opening a club",
+        )
+
     raw_ua = request.headers.get("User-Agent", "")[:512]
     fp = compute_fingerprint(request.headers)
     new_device, session_id = AuthService.record_login(
