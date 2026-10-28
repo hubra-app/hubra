@@ -54,6 +54,10 @@ domain setup is needed locally.
 
 ## 4. First login and first club
 
+> Running one club only? Use `docker-compose.single-club.yml` instead: no
+> manager or SSO portal, and the club and its admin are created on the first
+> start. See [single-club.md](single-club.md).
+
 1. Open http://localhost:8082, choose **Create account** and sign up.
 2. Make that account the platform admin:
    ```sh

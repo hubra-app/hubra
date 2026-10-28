@@ -1,0 +1,25 @@
+# Single-club install: one club, no manager portal and no SSO portal
+# (docs/single-club.md). Use it on top of docker-compose.yml, for example via
+# .env:
+#   COMPOSE_FILE=docker-compose.yml:docker-compose.single-club.yml
+#   SINGLE_CLUB=fcb
+#   CLUB_NAME=FC Beispiel
+#   ADMIN_EMAIL=praesident@fcb.ch
+#
+# Only the club app (port 8080) is published. It proxies /api/ to the backend,
+# so the app and the API share one origin. The init job creates the club and
+# its first admin on the first start; without ADMIN_PASSWORD it prints a
+# one-time password: docker compose logs flask-init
+#
+# The manager and SSO frontends only start with --profile multi-club.
+
+services:
+  admin-frontend:
+    profiles: [multi-club]
+
+  sso-frontend:
+    profiles: [multi-club]
+
+  flask-init:
+    command: >
+      sh -c "flask db upgrade && flask sync-permissions && flask seed --skip-migrate && flask setup-club"

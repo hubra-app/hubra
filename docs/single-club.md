@@ -43,6 +43,44 @@ CORS_ORIGINS=https://club.example.org
 # VITE_API_BASE not set: the frontend calls /api on its own host
 ```
 
+## Docker Compose
+
+`docker-compose.single-club.yml` goes on top of `docker-compose.yml`. It
+keeps the manager and SSO frontends from starting and adds
+`flask setup-club` to the init job. After `scripts/init-env.sh`, add to
+`.env`:
+
+```
+COMPOSE_FILE=docker-compose.yml:docker-compose.single-club.yml
+SINGLE_CLUB=fcb
+CLUB_NAME=FC Beispiel
+ADMIN_EMAIL=praesident@fcb.ch
+```
+
+Then `docker compose up -d` and open http://localhost:8080. The
+one-time password is in `docker compose logs flask-init`. The club app
+container forwards `/api/` to the backend, so nothing else is needed
+locally. For a real host name, set `FRONTEND_BASE_URL` and
+`CORS_ORIGINS` to it and put your reverse proxy in front of port 8080 only.
+
+## k3s
+
+`deploy/single-club` is a Kustomize overlay of `deploy/app`. It removes
+the manager and SSO frontends and serves one host: `/api` goes to the
+backend and everything else to the club app. It also adds
+`flask setup-club` to the backend's init container.
+
+1. Put the single-club variables in `.env` (see the top of
+   `deploy/single-club/kustomization.yaml`), with `JWT_COOKIE_DOMAIN`
+   empty, and run `deploy/create-secrets.sh`.
+2. Replace `club.example.org` in `deploy/single-club/kustomization.yaml`
+   and `deploy/single-club/ingress.yaml` with your host.
+3. Point Flux at the overlay: `path: ./deploy/single-club` in
+   `deploy/flux/app.yaml`.
+
+The one-time password is in
+`kubectl -n hubra logs deploy/backend -c flask-init`.
+
 ## First start
 
 The init job runs, in this order:

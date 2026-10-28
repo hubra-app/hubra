@@ -35,6 +35,10 @@ hostnames in `.env` keep working.
 
 ## Setup
 
+For one club without the manager and SSO portals, use the overlay
+`deploy/single-club` instead of `deploy/app` (see
+[single-club.md](single-club.md)). The steps below are the same.
+
 1. **Install k3s and the Flux CLI** on the node:
    ```sh
    curl -sfL https://get.k3s.io | sh -
