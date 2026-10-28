@@ -185,3 +185,40 @@ def test_list_my_invoices_requires_auth(client):
     """GET /invoices/mine without auth returns 401."""
     resp = client.get("/api/v1/finance/invoices/mine")
     assert resp.status_code == 401
+
+
+def test_delete_invoice_that_was_mailed(client, auth_headers, seeded_db, db):
+    """An invoice with send history (every generated invoice has one) can be
+    deleted; its history goes with it."""
+    from hubra.core.models.finance import Invoice
+    from hubra.core.models.invoice_reminder import InvoiceReminderHistory
+
+    invoice = Invoice(
+        member_id=seeded_db["admin"].id,
+        issued=date.today(),
+        due=date.today() + timedelta(days=30),
+        amount=Decimal("45.00"),
+        status="Open",
+    )
+    db.session.add(invoice)
+    db.session.flush()
+    db.session.add(
+        InvoiceReminderHistory(
+            invoice_id=invoice.id,
+            reminder_type="generation",
+            recipient_email="admin@test.ch",
+            recipient_name="Test Admin",
+        )
+    )
+    db.session.commit()
+    invoice_id = invoice.id
+
+    resp = client.delete(f"/api/v1/finance/invoices/{invoice_id}", headers=auth_headers)
+    assert resp.status_code == 204
+
+    db.session.expunge_all()
+    assert db.session.get(Invoice, invoice_id) is None
+    assert (
+        db.session.query(InvoiceReminderHistory).filter_by(invoice_id=invoice_id).count()
+        == 0
+    )

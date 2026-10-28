@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime, timezone
 from math import ceil
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import selectinload
 
 from hubra.api.utils import escape_like, log_audit
@@ -515,8 +515,16 @@ class InvoiceService:
             target_label=f"Invoice {invoice.id}",
         )
 
+        from hubra.core.models.invoice_reminder import InvoiceReminderHistory
+
         linked_tx_id = invoice.transaction_id
         invoice.transaction_id = None
+        # Its send history (every generated invoice has one) goes with it.
+        db.session.execute(
+            delete(InvoiceReminderHistory).where(
+                InvoiceReminderHistory.invoice_id == invoice.id
+            )
+        )
         db.session.flush()
         db.session.delete(invoice)
         db.session.flush()
