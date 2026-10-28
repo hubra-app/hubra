@@ -230,6 +230,7 @@ class TiersService:
             deduct_tier_ids=data.get("deduct_tier_ids"),
         )
         db.session.add(tier)
+        db.session.flush()
 
         log_audit(
             actor_id=actor_id,

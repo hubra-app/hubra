@@ -173,3 +173,20 @@ def test_set_permissions_on_admin_role_returns_409(client, db, seeded_db, auth_h
         headers=auth_headers,
     )
     assert resp.status_code == 409
+
+
+def test_create_role_and_tier_are_audited_with_their_ids(client, auth_headers, db):
+    from hubra.core.models.audit import AuditEntry
+
+    role = client.post("/api/v1/roles/", json={"name": "Kasse"}, headers=auth_headers)
+    assert role.status_code == 201, role.get_json()
+    tier = client.post(
+        "/api/v1/tiers/",
+        json={"name": "Passiv", "price_chf": 20, "color": "#123456", "price_type": "fixed"},
+        headers=auth_headers,
+    )
+    assert tier.status_code == 201, tier.get_json()
+
+    by_type = {e.target_type: e.target_id for e in db.session.query(AuditEntry).all()}
+    assert by_type["Role"] == role.get_json()["id"]
+    assert by_type["tier"] == tier.get_json()["id"]

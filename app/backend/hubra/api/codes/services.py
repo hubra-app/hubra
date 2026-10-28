@@ -45,7 +45,14 @@ class CodeService:
         return code
 
     @staticmethod
-    def delete(code: Code) -> None:
+    def delete(code: Code, actor_id: int) -> None:
+        log_audit(
+            actor_id=actor_id,
+            action="delete_code",
+            target_type="Code",
+            target_id=code.id,
+            target_label=code.name,
+        )
         db.session.delete(code)
 
 
@@ -67,6 +74,7 @@ class CodesService:
             updated_by_id=actor_id,
         )
         db.session.add(code)
+        db.session.flush()
 
         log_audit(
             actor_id=actor_id,
