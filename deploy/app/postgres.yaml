@@ -25,9 +25,13 @@ spec:
       labels:
         app.kubernetes.io/name: postgres
     spec:
+      securityContext:
+        seccompProfile: { type: RuntimeDefault }
       containers:
         - name: postgres
           image: postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
+          securityContext:
+            allowPrivilegeEscalation: false
           ports:
             - name: postgres
               containerPort: 5432

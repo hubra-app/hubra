@@ -352,6 +352,34 @@ def _sanitize_svg_avatar(value: str | None) -> str | None:
     return f"data:image/svg+xml;base64,{clean_b64}"
 
 
+LOCKOUT_AFTER = 5
+LOCKOUT_MINUTES = 15
+
+
+def _count_failed_login(user: User) -> None:
+    """Count a wrong password; lock the account for a while after too many.
+
+    Committed at once: the request ends in an error, which would otherwise
+    drop the count with the session.
+    """
+    user.failed_login_count = (user.failed_login_count or 0) + 1
+    if user.failed_login_count >= LOCKOUT_AFTER:
+        user.locked_until = datetime.now(timezone.utc) + timedelta(
+            minutes=LOCKOUT_MINUTES
+        )
+        user.failed_login_count = 0
+        _log.warning(
+            "Account locked due to too many failed login attempts",
+            extra={"user_id": user.id, "locked_until": user.locked_until.isoformat()},
+        )
+    else:
+        _log.warning(
+            "Failed login attempt",
+            extra={"user_id": user.id, "failed_login_count": user.failed_login_count},
+        )
+    db.session.commit()
+
+
 class AuthService:
     """Authentication business logic."""
 
@@ -391,26 +419,8 @@ class AuthService:
             )
 
         if not member.check_password(password):
-            member.failed_login_count = (member.failed_login_count or 0) + 1
-            if member.failed_login_count >= 5:
-                member.locked_until = datetime.now(timezone.utc) + timedelta(minutes=15)
-                _log.warning(
-                    "Account locked due to too many failed login attempts",
-                    extra={
-                        "member_id": member.id,
-                        "failed_login_count": member.failed_login_count,
-                        "locked_until": member.locked_until.isoformat(),
-                    },
-                )
-            else:
-                _log.warning(
-                    "Failed login attempt",
-                    extra={
-                        "member_id": member.id,
-                        "failed_login_count": member.failed_login_count,
-                    },
-                )
-            db.session.add(member)
+            if member.user is not None:
+                _count_failed_login(member.user)
             raise_error(401, "UNAUTHORIZED", "Invalid credentials")
 
         member.failed_login_count = 0
@@ -432,9 +442,23 @@ class AuthService:
         if user is None:
             raise_error(401, "UNAUTHORIZED", "Invalid credentials")
 
+        locked = user.locked_until
+        if locked is not None and locked.tzinfo is None:
+            locked = locked.replace(tzinfo=timezone.utc)
+        if locked is not None and datetime.now(timezone.utc) < locked:
+            raise_error(
+                403,
+                "ACCOUNT_LOCKED",
+                "Account is temporarily locked due to too many failed login attempts. Try again later.",
+            )
+
         if not user.check_password(password):
+            _count_failed_login(user)
             raise_error(401, "UNAUTHORIZED", "Invalid credentials")
 
+        if user.failed_login_count or user.locked_until:
+            user.failed_login_count = 0
+            user.locked_until = None
         return user
 
     @staticmethod

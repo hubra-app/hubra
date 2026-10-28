@@ -15,17 +15,6 @@ export function clubAppUrl(urls: AppUrls, tenantSlug: string): string {
   return `${urls.cos}/${encodeURIComponent(tenantSlug)}/app/dashboard`
 }
 
-// Parent domain of the club app (app.hubra.club -> hubra.club); any of its
-// subdomains is a valid redirect target. Empty for localhost and bare hosts.
-function appDomain(urls: AppUrls): string {
-  try {
-    const labels = new URL(urls.cos).hostname.split('.')
-    return labels.length > 2 ? labels.slice(1).join('.') : ''
-  } catch {
-    return ''
-  }
-}
-
 /**
  * The ?redirect= target if it is one we trust, else null.
  *
@@ -53,9 +42,9 @@ export function validateRedirect(
   // Any local port is fine while developing; a build only trusts the
   // configured origins below (which may themselves be localhost URLs).
   if (dev && url.protocol === 'http:' && url.hostname === 'localhost') return raw
-  const domain = appDomain(urls)
-  if (url.protocol === 'https:' && domain && url.hostname.endsWith(`.${domain}`)) return raw
-  // The configured app origins (set at container start for other domains).
+  // Only the configured app origins (set at container start). Not every
+  // subdomain of the app's domain: one of them serving someone else's page
+  // would receive the signed-in visitor.
   if ([cosOrigin, new URL(urls.manage).origin].includes(url.origin)) return raw
   return null
 }

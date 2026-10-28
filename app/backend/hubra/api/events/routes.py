@@ -282,7 +282,8 @@ def calendar_export():
 #
 # Calendar apps cannot log in or send headers, so the feed URL carries a
 # signed token with the club and the member. It stops working when the member
-# is archived, the club is suspended, or the events module is switched off.
+# is archived or disabled, the club is suspended, or the events module is
+# switched off.
 
 
 def _feed_serializer() -> URLSafeSerializer:
@@ -325,7 +326,7 @@ def calendar_feed(token: str):
     if not is_enabled("events"):
         return api_error("NOT_FOUND", "Unknown calendar", 404)
     member = db.session.get(Member, data.get("m"))
-    if member is None or member.archived_at is not None:
+    if member is None or member.archived_at is not None or member.is_disabled:
         return api_error("NOT_FOUND", "Unknown calendar", 404)
 
     # The last 90 days and everything ahead.

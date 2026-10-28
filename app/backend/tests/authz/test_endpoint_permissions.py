@@ -247,12 +247,11 @@ class TestRolesPermissions:
         db.session.add(role)
         db.session.commit()
 
-        # Seed a permission to assign
-        from tests.authz.conftest import _seed_permissions
-
-        _seed_permissions(["members.members.read"])
-
-        headers = permissioned_member_factory(["roles.roles.set_permissions"])
+        # A permission the editor holds themselves (the factory seeds it);
+        # nobody can give a permission they don't have.
+        headers = permissioned_member_factory(
+            ["roles.roles.set_permissions", "members.members.read"]
+        )
         resp = client.put(
             f"/api/v1/roles/{role.id}/permissions",
             json={"permissions": ["members.members.read"]},

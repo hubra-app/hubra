@@ -321,3 +321,140 @@ def test_translation_cache_is_per_club(app, db):
     with patch("hubra.core.tenant.context.current_tenant", return_value=_T(2)):
         assert i18n_services.get_translations_dict("de-CH")["greeting"] == "Club B"
     i18n_services._mem_translations.clear()
+
+
+# ── M1: repeated wrong passwords lock the account ────────────────────────────
+
+
+class TestLoginLockout:
+    def test_sso_login_locks_after_five_failures(self, client, db, seeded_db):
+        for _ in range(5):
+            resp = client.post(
+                "/api/v1/auth/login",
+                json={"email": "admin@test.ch", "password": "wrong"},
+            )
+            assert resp.status_code == 401
+        # The right password no longer helps until the lock runs out.
+        resp = client.post(
+            "/api/v1/auth/login",
+            json={"email": "admin@test.ch", "password": "password123"},
+        )
+        assert resp.status_code == 403
+        assert resp.get_json()["error"] == "ACCOUNT_LOCKED"
+
+        user = db.session.get(User, seeded_db["user"].id)
+        user.locked_until = datetime.now(timezone.utc) - timedelta(seconds=1)
+        db.session.commit()
+        resp = client.post(
+            "/api/v1/auth/login",
+            json={"email": "admin@test.ch", "password": "password123"},
+        )
+        assert resp.status_code == 200
+
+    def test_a_good_login_resets_the_count(self, client, db, seeded_db):
+        for _ in range(4):
+            client.post(
+                "/api/v1/auth/login",
+                json={"email": "admin@test.ch", "password": "wrong"},
+            )
+        assert (
+            client.post(
+                "/api/v1/auth/login",
+                json={"email": "admin@test.ch", "password": "password123"},
+            ).status_code
+            == 200
+        )
+        assert db.session.get(User, seeded_db["user"].id).failed_login_count == 0
+
+
+# ── Roles: nobody hands out more than they have ──────────────────────────────
+
+
+def _member_by_email(db, email):
+    return (
+        db.session.query(Member)
+        .join(User, Member.user_id == User.id)
+        .filter(User.email == email)
+        .one()
+    )
+
+
+class TestNoRoleEscalation:
+    def test_update_holder_cannot_make_themselves_admin(
+        self, client, db, seeded_db, permissioned_member_factory
+    ):
+        headers = permissioned_member_factory(
+            ["members.members.update", "members.members.read"], email="climber@test.ch"
+        )
+        me = _member_by_email(db, "climber@test.ch")
+        own = [r.id for r in me.roles]
+        resp = client.patch(
+            f"/api/v1/members/{me.id}",
+            json={"role_ids": [*own, seeded_db["role"].id], "tool_hours": 0},
+            headers=headers,
+        )
+        assert resp.status_code == 403
+        assert resp.get_json()["error"] == "ADMIN_ONLY"
+
+    def test_only_roles_within_your_own_permissions(
+        self, client, db, seeded_db, permissioned_member_factory
+    ):
+        headers = permissioned_member_factory(
+            ["members.members.update", "members.members.read"], email="giver@test.ch"
+        )
+        me = _member_by_email(db, "giver@test.ch")
+        target = _member(db, _user(db, "target2@test.ch"), seeded_db)
+
+        from tests.authz.conftest import _seed_permissions
+
+        def role_with(name, keys):
+            _seed_permissions(
+                [k for k in keys if not db.session.query(Permission).filter_by(key=k).count()]
+            )
+            role = Role(name=name, is_default=False, is_admin=False)
+            db.session.add(role)
+            db.session.flush()
+            for key in keys:
+                perm = db.session.query(Permission).filter_by(key=key).one()
+                db.session.add(RolePermission(role_id=role.id, permission_id=perm.id))
+            db.session.commit()
+            return role
+
+        bigger = role_with("Treasurer", ["finance.invoices.create"])
+        smaller = role_with("Reader", ["members.members.read"])
+
+        resp = client.patch(
+            f"/api/v1/members/{target.id}",
+            json={"role_ids": [bigger.id], "tool_hours": 0},
+            headers=headers,
+        )
+        assert resp.status_code == 403
+        assert resp.get_json()["error"] == "BEYOND_OWN_PERMISSIONS"
+
+        resp = client.patch(
+            f"/api/v1/members/{target.id}",
+            json={"role_ids": [smaller.id], "tool_hours": 0},
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        assert me.id != target.id
+
+    def test_role_editor_cannot_add_permissions_they_lack(
+        self, client, db, seeded_db, permissioned_member_factory
+    ):
+        headers = permissioned_member_factory(
+            ["roles.roles.set_permissions", "roles.roles.create"]
+        )
+        role = Role(name="Helpers", is_default=False, is_admin=False)
+        db.session.add(role)
+        db.session.commit()
+        from tests.authz.conftest import _seed_permissions
+
+        _seed_permissions(["finance.invoices.create"])
+        resp = client.put(
+            f"/api/v1/roles/{role.id}/permissions",
+            json={"permissions": ["finance.invoices.create"]},
+            headers=headers,
+        )
+        assert resp.status_code == 403
+        assert resp.get_json()["error"] == "BEYOND_OWN_PERMISSIONS"

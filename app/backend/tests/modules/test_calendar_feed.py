@@ -76,6 +76,13 @@ def test_feed_stops_when_member_archived_or_events_off(
     assert client.get(path).status_code == 404
 
 
+def test_feed_stops_when_member_disabled(client, db, auth_headers, events, seeded_db):
+    path = _feed_path(client)
+    seeded_db["admin"].is_disabled = True
+    db.session.commit()
+    assert client.get(path).status_code == 404
+
+
 def test_long_lines_are_folded():
     line = "DESCRIPTION:" + "ä" * 60
     folded = _fold(line)

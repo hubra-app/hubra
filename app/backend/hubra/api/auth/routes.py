@@ -41,7 +41,7 @@ from hubra.api.permissions import (
     _get_member_permission_keys,
     member_is_admin,
 )
-from hubra.core.errors import api_error, raise_error
+from hubra.core.errors import ApiError, api_error, raise_error
 from hubra.core.extensions import db, limiter
 
 from hubra.core.models.audit import AuditEntry
@@ -217,7 +217,11 @@ def login():
                     "ACCOUNT_LOCKED",
                     "Account is temporarily locked due to too many failed login attempts. Try again later.",
                 )
-    except Exception:
+    except ApiError:
+        # An account address answers for itself (wrong password, locked);
+        # only a club address (a member's public email) falls through.
+        if db.session.scalar(select(User.id).where(User.email == email)):
+            raise
         member = AuthService.authenticate(email, password)
         user = db.session.scalar(select(User).where(User.email == email))
         if user is None and member.user_id:

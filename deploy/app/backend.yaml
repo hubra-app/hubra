@@ -27,9 +27,19 @@ spec:
       labels:
         app.kubernetes.io/name: backend
     spec:
+      securityContext:
+        seccompProfile: { type: RuntimeDefault }
+        # appuser (uid 1000) from app/backend/Dockerfile; numeric, so the
+        # kubelet can check runAsNonRoot.
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
       initContainers:
         - name: flask-init
           image: hubra/backend
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
           command: ["sh", "-c", "flask db upgrade && flask sync-permissions && flask seed --skip-migrate && flask ensure-superadmins && flask plugins sync"]
           envFrom: [{ secretRef: { name: hubra-env } }]
           env: [{ name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }]
@@ -37,6 +47,9 @@ spec:
       containers:
         - name: backend
           image: hubra/backend
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
           ports: [{ name: http, containerPort: 5000 }]
           envFrom: [{ secretRef: { name: hubra-env } }]
           env: [{ name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }]
@@ -63,9 +76,19 @@ spec:
       labels:
         app.kubernetes.io/name: celery-worker
     spec:
+      securityContext:
+        seccompProfile: { type: RuntimeDefault }
+        # appuser (uid 1000) from app/backend/Dockerfile; numeric, so the
+        # kubelet can check runAsNonRoot.
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
       containers:
         - name: celery-worker
           image: hubra/backend
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
           command: ["celery", "-A", "hubra.core.tasks.celery_app", "worker", "--loglevel=info"]
           envFrom: [{ secretRef: { name: hubra-env } }]
           env: [{ name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }]
@@ -102,9 +125,20 @@ spec:
       labels:
         app.kubernetes.io/name: celery-beat
     spec:
+      securityContext:
+        seccompProfile: { type: RuntimeDefault }
+        # appuser (uid 1000) from app/backend/Dockerfile; numeric, so the
+        # kubelet can check runAsNonRoot.
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000 # so beat can write its schedule to the volume
       containers:
         - name: celery-beat
           image: hubra/backend
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
           command: ["celery", "-A", "hubra.core.tasks.celery_app", "beat", "--loglevel=info", "--schedule", "/celerybeat/celerybeat-schedule"]
           envFrom: [{ secretRef: { name: hubra-env } }]
           env: [{ name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }]

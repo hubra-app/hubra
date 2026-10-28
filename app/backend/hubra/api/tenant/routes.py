@@ -731,8 +731,8 @@ def _add_user_to_tenant(tenant: Tenant, user: User) -> dict:
     Raises 409 when the user is already a member. Leaves the commit to the
     caller and returns the new member as a dict.
     """
+    from hubra.api.members.services import _default_role
     from hubra.core.models.member import MembershipTier
-    from hubra.core.models.role import Role
     from hubra.core.models.user_tenant import UserTenant
     from hubra.core.tenant.context import reset_search_path, set_search_path
     from hubra.core.tenant.membership import link_user_to_tenant
@@ -755,9 +755,7 @@ def _add_user_to_tenant(tenant: Tenant, user: User) -> dict:
             db.session.commit()
             raise_error(409, "CONFLICT", "User is already a member of this tenant")
 
-        default_role = db.session.scalar(
-            select(Role).where(Role.is_default.is_(True)).limit(1)
-        )
+        default_role = _default_role()
         tier = db.session.scalar(select(MembershipTier).limit(1))
 
         member = Member(

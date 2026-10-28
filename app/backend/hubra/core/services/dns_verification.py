@@ -8,7 +8,9 @@ from typing import Any
 
 _log = logging.getLogger(__name__)
 
-_VERIFICATION_PREFIX = "verevia-verify="
+_VERIFICATION_PREFIX = "hubra-verify="
+# Records published before the rename still count.
+_LEGACY_PREFIXES = ("verevia-verify=",)
 
 
 def generate_verification_token() -> str:
@@ -24,7 +26,10 @@ def verify_domain(domain_name: str, expected_token: str) -> dict[str, Any]:
       - ``found_records``: list of all TXT record values found
       - ``error``: error message if the lookup failed
     """
-    expected_value = f"{_VERIFICATION_PREFIX}{expected_token}"
+    expected_values = {
+        f"{prefix}{expected_token}"
+        for prefix in (_VERIFICATION_PREFIX, *_LEGACY_PREFIXES)
+    }
 
     try:
         import dns.resolver
@@ -39,7 +44,7 @@ def verify_domain(domain_name: str, expected_token: str) -> dict[str, Any]:
             for txt in rdata.strings:
                 decoded = txt.decode() if isinstance(txt, bytes) else txt
                 found_records.append(decoded)
-                if decoded.strip() == expected_value:
+                if decoded.strip() in expected_values:
                     _log.info(
                         "Domain %s verified successfully (TXT record matched)",
                         domain_name,
