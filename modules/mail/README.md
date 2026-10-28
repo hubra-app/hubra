@@ -55,7 +55,7 @@ and config templates.
 
 Member mailbox:  member@club.ch  ← IMAP (143/993)
 Group alias:     events@club.ch  → forwards to member mailboxes
-Forwarding:      member@club.ch  → mike@gmail.com (optional, per-user)
+Forwarding:      member@club.ch  → someone@gmail.com (optional, per-user)
 ```
 
 ## Services
