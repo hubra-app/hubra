@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import pytest
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from hubra.core.models.group import Group
 from hubra.core.models.managed_mail import ManagedMailAddress
@@ -47,61 +46,6 @@ def _make_member_mma(
     db.session.add(addr)
     db.session.commit()
     return addr
-
-
-def _mock_wd():
-    """Create a mock WildDuck client."""
-    wd = MagicMock()
-    wd.list_users.return_value = {
-        "results": [
-            {
-                "id": "5f8d0b1a2c3e4f5a6b7c8d9e",
-                "address": "alice@club.ch",
-                "name": "Alice",
-                "disabled": False,
-                "targets": ["alice@gmail.com"],
-                "quota": {"used": 1048576, "allowed": 1073741824},
-            },
-            {
-                "id": "aabbccddee11223344556677",
-                "address": "orphan@club.ch",
-                "name": "Orphan",
-                "disabled": False,
-                "targets": [],
-                "quota": {"used": 0, "allowed": 104857600},
-            },
-        ],
-        "total": 2,
-    }
-    wd.list_addresses.return_value = {
-        "results": [
-            {
-                "id": "11223344556677889900aabb",
-                "address": "team@club.ch",
-                "name": "Team",
-                "disabled": False,
-                "targets": ["alice@club.ch"],
-                "user": None,
-            },
-            {
-                "id": "aabbccddeeff001122334455",
-                "address": "stale@club.ch",
-                "name": "Stale",
-                "disabled": False,
-                "targets": [],
-                "user": None,
-            },
-        ],
-        "total": 2,
-    }
-    wd.get_user.return_value = {
-        "id": "aabbccddee11223344556677",
-        "address": "orphan@club.ch",
-        "name": "Orphan",
-    }
-    wd.delete_user.return_value = {"deleted": True}
-    wd.safe_delete_forwarding_alias.return_value = True
-    return wd
 
 
 # ── resolve-local-part ─────────────────────────────────────────────────────────
@@ -176,111 +120,6 @@ def test_serialize_includes_sync_error(client, db, seeded_db, auth_headers):
     data = serialize(addr)
     assert data["syncState"] == "error"
     assert data["syncError"] == "Connection refused"
-
-
-# ── wildduck-live ─────────────────────────────────────────────────────────────
-
-
-@pytest.fixture
-def platform_staff(seeded_db, db):
-    """WildDuck is shared by every club, so its live tab is for superadmins."""
-    seeded_db["user"].is_superadmin = True
-    db.session.commit()
-    yield
-    seeded_db["user"].is_superadmin = False
-    db.session.commit()
-
-
-def test_wildduck_live_forbidden_for_club_admin(client, db, seeded_db, auth_headers):
-    resp = client.get("/api/v1/mail/wildduck-live", headers=auth_headers)
-    assert resp.status_code == 403
-    resp = client.delete(
-        "/api/v1/mail/wildduck-live/mailbox/aabbccddee11223344556677",
-        headers=auth_headers,
-    )
-    assert resp.status_code == 403
-
-
-def test_wildduck_live_lists_managed_and_orphan(client, db, seeded_db, auth_headers, platform_staff):
-    _ensure_mail_domain(db)
-    _make_member_mma(db, seeded_db["admin"].id, wildduck_id="5f8d0b1a2c3e4f5a6b7c8d9e")
-    mock_wd = _mock_wd()
-
-    with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
-        with patch("hubra.api.mail.services.try_get_client", return_value=mock_wd):
-            resp = client.get("/api/v1/mail/wildduck-live", headers=auth_headers)
-
-    assert resp.status_code == 200
-    data = resp.get_json()["data"]
-    assert len(data) == 4
-
-    managed = [d for d in data if d["managed"]]
-    orphans = [d for d in data if not d["managed"]]
-    assert len(managed) == 1
-    assert len(orphans) == 3
-    assert managed[0]["address"] == "alice@club.ch"
-    assert managed[0]["kind"] == "member"
-
-
-# ── delete orphan ──────────────────────────────────────────────────────────────
-
-
-def test_delete_orphan_mailbox(client, db, seeded_db, auth_headers, platform_staff):
-    _ensure_mail_domain(db)
-    mock_wd = _mock_wd()
-
-    with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
-        with patch("hubra.api.mail.services.try_get_client", return_value=mock_wd):
-            resp = client.delete(
-                "/api/v1/mail/wildduck-live/mailbox/aabbccddee11223344556677",
-                headers=auth_headers,
-            )
-
-    assert resp.status_code == 200
-    assert resp.get_json()["ok"] is True
-    mock_wd.delete_user.assert_called_once_with("aabbccddee11223344556677")
-
-
-def test_delete_orphan_rejects_managed(client, db, seeded_db, auth_headers, platform_staff):
-    _ensure_mail_domain(db)
-    _make_member_mma(db, seeded_db["admin"].id, wildduck_id="5f8d0b1a2c3e4f5a6b7c8d9e")
-    mock_wd = _mock_wd()
-
-    with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
-        with patch("hubra.api.mail.services.try_get_client", return_value=mock_wd):
-            resp = client.delete(
-                "/api/v1/mail/wildduck-live/mailbox/5f8d0b1a2c3e4f5a6b7c8d9e",
-                headers=auth_headers,
-            )
-
-    assert resp.status_code == 409
-    mock_wd.delete_user.assert_not_called()
-
-
-def test_delete_orphan_alias(client, db, seeded_db, auth_headers, platform_staff):
-    _ensure_mail_domain(db)
-    mock_wd = _mock_wd()
-
-    with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
-        with patch("hubra.api.mail.services.try_get_client", return_value=mock_wd):
-            resp = client.delete(
-                "/api/v1/mail/wildduck-live/alias/aabbccddeeff001122334455",
-                headers=auth_headers,
-            )
-
-    assert resp.status_code == 200
-    assert resp.get_json()["ok"] is True
-    mock_wd.safe_delete_forwarding_alias.assert_called_once_with(
-        "aabbccddeeff001122334455"
-    )
-
-
-def test_delete_orphan_invalid_type(client, db, seeded_db, auth_headers, platform_staff):
-    resp = client.delete(
-        "/api/v1/mail/wildduck-live/invalid/wd-orphan",
-        headers=auth_headers,
-    )
-    assert resp.status_code == 400
 
 
 # ── reconcile ──────────────────────────────────────────────────────────────────

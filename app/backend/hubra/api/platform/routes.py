@@ -2,10 +2,16 @@
 
 ``platform_bp`` (``/api/v1/manager/platform``, also at
 ``/api/v2/manager/platform``): instance-wide settings such as the outbound
-mail relay.  Everything needs the global permission ``platform.settings``.
+mail relay, which need the global permission ``platform.settings``, and the
+diagnostics of the whole instance (system health, the shared mail server,
+the API permission table), which need ``platform.diagnostics`` to look at
+and ``platform.settings`` to change anything.
 """
 
 from __future__ import annotations
+
+import re
+import time
 
 from flask import Blueprint, g, jsonify, request
 
@@ -13,12 +19,30 @@ from hubra.api.permissions import require_global_permission
 from hubra.core.errors import api_error
 from hubra.core.extensions import db, limiter
 from hubra.core.models.tenant import GlobalAuditEntry
-from hubra.core.services import email, platform_settings
+from hubra.core.services import email, mail_server, platform_settings
 from hubra.core.services.platform_settings import PlatformSettingError
 
 platform_bp = Blueprint("platform_bp", __name__)
 
 _PERM = "platform.settings"
+_DIAGNOSTICS = "platform.diagnostics"
+_STALE_THRESHOLD = 60  # seconds — 3× the 20s beat interval
+_OBJECTID_RE = re.compile(r"^[0-9a-fA-F]{24}$")
+
+
+def _audit(action: str, target_type: str, target_id: str, details: dict | None = None):
+    actor = getattr(g, "system_user", None)
+    db.session.add(
+        GlobalAuditEntry(
+            tenant_id=None,
+            actor_id=getattr(actor, "id", None),
+            action=action,
+            target_type=target_type,
+            target_id=target_id,
+            details=details or {},
+            ip_address=request.remote_addr,
+        )
+    )
 
 
 @platform_bp.get("/settings")
@@ -99,3 +123,79 @@ def send_test_mail():
     except email.EmailDeliveryError as exc:
         return api_error("SMTP_ERROR", f"The relay refused the mail: {exc}", 502)
     return jsonify({"ok": True, "to": to}), 200
+
+
+# ── Diagnostics ───────────────────────────────────────────────────────────────
+
+
+@platform_bp.get("/health")
+@require_global_permission(_DIAGNOSTICS)
+@limiter.exempt
+def health_detailed():
+    """Every service check with latencies, run now, plus the version.
+
+    ``stale`` is true when the beat task that caches the public ``/health``
+    status has not run for a while.  Always 200: this is for people, and the
+    overall state is in ``status`` (load balancers use the public ``/health``).
+    """
+    from hubra.api.health.cache import HealthCache
+    from hubra.api.health.services import HealthService
+    from hubra.api.version.services import VersionService
+
+    payload = HealthService.run_all_checks()
+    payload["version"] = VersionService.get_version()
+
+    cached = HealthCache.get()
+    if cached is not None and "checked_at" in cached:
+        payload["stale"] = time.time() - cached["checked_at"] > _STALE_THRESHOLD
+        payload["checked_at"] = cached["checked_at"]
+    else:
+        payload["stale"] = True
+    return jsonify(payload), 200
+
+
+@platform_bp.get("/permissions")
+@require_global_permission(_DIAGNOSTICS)
+def list_permissions():
+    """Every club API endpoint that a club permission guards, by path and method."""
+    from hubra.api.system.services import SystemService
+
+    return jsonify(SystemService.list_permissions()), 200
+
+
+@platform_bp.get("/mail-server")
+@require_global_permission(_DIAGNOSTICS)
+def mail_server_live():
+    """Every mailbox and alias on the shared mail server, with its club."""
+    return jsonify({"data": mail_server.live()}), 200
+
+
+@platform_bp.delete("/mail-server/<string:entry_type>/<string:entry_id>")
+@require_global_permission(_PERM)
+def mail_server_delete_orphan(entry_type: str, entry_id: str):
+    """Delete a mailbox or alias that no club manages."""
+    if entry_type not in ("mailbox", "alias"):
+        return api_error("VALIDATION_ERROR", "Type must be 'mailbox' or 'alias'", 400)
+    if not _OBJECTID_RE.match(entry_id):
+        return api_error("VALIDATION_ERROR", f"Invalid ID format: {entry_id!r}", 400)
+
+    label = mail_server.delete_orphan(entry_type, entry_id)
+    _audit(
+        f"platform.mail_server.delete_{entry_type}",
+        f"wildduck_{entry_type}",
+        entry_id,
+        {"address": label},
+    )
+    db.session.commit()
+    return jsonify({"ok": True, "type": entry_type, "id": entry_id}), 200
+
+
+@platform_bp.post("/mail-server/reconcile")
+@require_global_permission(_PERM)
+@limiter.limit("10 per hour")
+def mail_server_reconcile():
+    """Reconcile every club's addresses with the mail server now."""
+    from hubra.core.tasks.mail_tasks import reconcile_mail
+
+    reconcile_mail.delay()
+    return jsonify({"ok": True, "task": "reconcile_mail"}), 202

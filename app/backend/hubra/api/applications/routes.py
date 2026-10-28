@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-import re as _re
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify
 from hubra.api.auth.helpers import get_current_member
 
 from hubra.api.permissions import permission_required
-from hubra.core.errors import api_error
-from hubra.core.extensions import db, limiter
+from hubra.core.extensions import db
 from hubra.core.schemas.application import ApplicationSchema
 from hubra.core.schemas.member import MemberSchema
 from hubra.api.applications.services import ApplicationService, ApplicationsService
@@ -21,32 +19,8 @@ _applications_schema = ApplicationSchema(many=True)
 _member_schema = MemberSchema()
 
 
-# ── POST /applications (public — no auth required) ────────────────────────────
-
-
-@applications_bp.post("/")
-@limiter.limit("5 per minute")
-def submit_application():
-    body = request.get_json(silent=True) or {}
-    first_name = (body.get("first_name") or "").strip()
-    last_name = (body.get("last_name") or "").strip()
-    email = (body.get("email") or "").strip().lower()
-    wants_tier_id = body.get("wants_tier_id")
-
-    if not first_name or not last_name:
-        return api_error("VALIDATION_ERROR", "First and last name are required", 400)
-    if not email or not _re.match(r"[^@]+@[^@]+\.[^@]+", email):
-        return api_error("VALIDATION_ERROR", "A valid email is required", 400)
-
-    app = ApplicationsService.submit(first_name, last_name, email, wants_tier_id)
-
-    try:
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        raise
-
-    return jsonify(_application_schema.dump(app)), 201
+# People ask to join on the SSO portal (POST /system/clubs/<slug>/join),
+# signed in with a verified address; there is no anonymous form any more.
 
 
 # ── GET /applications ─────────────────────────────────────────────────────────

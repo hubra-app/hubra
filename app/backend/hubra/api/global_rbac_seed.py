@@ -50,6 +50,11 @@ _DEFAULT_PERMISSIONS = [
         "Manage backups",
         "Start, verify and delete backups of the whole database",
     ),
+    (
+        "platform.diagnostics",
+        "View platform diagnostics",
+        "System health, the shared mail server and the API permission table",
+    ),
 ]
 
 # (role_name, description, [permission_keys])
@@ -72,6 +77,7 @@ _DEFAULT_ROLES = [
             "plugins.manage",
             "platform.settings",
             "backups.manage",
+            "platform.diagnostics",
         ],
     ),
     (
@@ -94,6 +100,7 @@ _DEFAULT_ROLES = [
             "tenants.read",
             "audit.read",
             "impersonate",
+            "platform.diagnostics",
         ],
     ),
     ("Requester", "Any authenticated user — can submit tenant requests", []),

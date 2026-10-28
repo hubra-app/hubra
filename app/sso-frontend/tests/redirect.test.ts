@@ -43,3 +43,9 @@ test('localhost on any port only while developing', () => {
 test('club slugs are escaped in the club URL', () => {
   assert.equal(clubAppUrl(urls, 'a b'), 'https://app.hubra.club/a%20b/app/dashboard')
 })
+
+test('pages of the portal itself are fine (join page, start a club)', () => {
+  const self = 'https://login.example.org'
+  assert.equal(validateRedirect(`${self}/clubs/ruder-zug`, urls, { self }), `${self}/clubs/ruder-zug`)
+  assert.equal(validateRedirect('https://evil.example/clubs/x', urls, { self }), null)
+})

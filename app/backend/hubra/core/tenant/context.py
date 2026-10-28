@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from functools import wraps
 
 from flask import g, has_app_context, jsonify
@@ -43,6 +45,22 @@ def reset_search_path() -> None:
     No-op on SQLite (no schema support).
     """
     _apply_search_path("public")
+
+
+@contextmanager
+def in_club(tenant: Tenant) -> Iterator[None]:
+    """Run as a request of *tenant*'s club, then go back."""
+    previous = current_tenant()
+    g.tenant = tenant
+    set_search_path(tenant.id)
+    try:
+        yield
+    finally:
+        g.tenant = previous
+        if previous is not None:
+            set_search_path(previous.id)
+        else:
+            reset_search_path()
 
 
 def _restore_search_path(session, transaction, connection) -> None:

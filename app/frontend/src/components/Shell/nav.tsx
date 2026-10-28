@@ -179,7 +179,6 @@ export function getParentPath(pathname: string): string {
     ['/app/audit-log', '/app/audit-log'],
     ['/app/system', '/app/system'],
     ['/app/system/roles', '/app/system'],
-    ['/app/system/health', '/app/system'],
     ['/app/translations', '/app/translations'],
     ['/app/account', '/app/account/settings'],
     ['/app/account/settings', '/app/account/settings'],
@@ -225,7 +224,6 @@ export function getBreadcrumb(
     '/app/audit-log': t('shell.breadcrumbs.auditLog'),
     '/app/system': t('shell.breadcrumbs.system'),
     '/app/system/roles': t('shell.breadcrumbs.roles'),
-    '/app/system/health': t('shell.breadcrumbs.health'),
     '/app/translations': t('shell.breadcrumbs.translations'),
   }
   if (map[pathname]) return map[pathname]

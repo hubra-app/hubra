@@ -36,7 +36,7 @@ function appDomain(urls: AppUrls): string {
 export function validateRedirect(
   raw: string | null,
   urls: AppUrls,
-  { dev = false }: { dev?: boolean } = {},
+  { dev = false, self }: { dev?: boolean; self?: string } = {},
 ): string | null {
   if (!raw) return null
   let url: URL
@@ -45,6 +45,8 @@ export function validateRedirect(
   } catch {
     return null
   }
+  // A page of this portal itself (/clubs/<slug>, /start).
+  if (self && url.origin === self) return raw
   const cosOrigin = new URL(urls.cos).origin
   if (url.origin === cosOrigin && (url.pathname === '/' || url.pathname === '')) return null
 

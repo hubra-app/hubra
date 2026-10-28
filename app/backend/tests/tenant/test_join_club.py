@@ -166,3 +166,64 @@ def test_approve_skips_the_temp_password_mail_for_existing_accounts(
         resp = client.post(f"/api/v1/applications/{application.id}/approve")
     assert resp.status_code == 201, resp.get_json()
     send_welcome.assert_not_called()
+
+
+# ── The club's join page on SSO (replaces the club app's /apply form) ─────────
+
+
+def _tier(db, name: str):
+    from hubra.core.models.member import MembershipTier
+
+    tier = MembershipTier(name=name)
+    db.session.add(tier)
+    db.session.commit()
+    return tier
+
+
+def test_club_page_shows_name_status_and_tiers(client, db):
+    _club(db, "tennis-chur", "Tennis Chur")
+    tier = _tier(db, "Aktiv Chur")
+    _signup(client, "page@test.ch")
+
+    body = client.get("/api/v1/system/clubs/tennis-chur").get_json()
+    assert body["name"] == "Tennis Chur"
+    assert body["membership"] is None
+    assert body["canJoinDirectly"] is False
+    assert {"id": tier.id, "name": "Aktiv Chur"} in body["tiers"]
+
+
+def test_club_page_needs_sign_in_and_an_active_club(client, db):
+    _club(db, "tennis-old", "Tennis Old", status="archived")
+    assert client.get("/api/v1/system/clubs/tennis-old").status_code == 401
+    _signup(client, "page2@test.ch")
+    assert client.get("/api/v1/system/clubs/tennis-old").status_code == 404
+
+
+def test_join_request_with_a_tier(client, db):
+    _club(db, "golf-sion", "Golf Sion")
+    tier = _tier(db, "Junior Sion")
+    _signup(client, "tier@test.ch")
+
+    resp = client.post(
+        "/api/v1/system/clubs/golf-sion/join", json={"wantsTierId": tier.id}
+    )
+    assert resp.status_code == 201
+    application = db.session.scalar(
+        select(Application).where(Application.email == "tier@test.ch")
+    )
+    assert application.wants_tier_id == tier.id
+
+
+def test_join_request_with_an_unknown_tier(client, db):
+    _club(db, "golf-brig", "Golf Brig")
+    _signup(client, "tier2@test.ch")
+    resp = client.post("/api/v1/system/clubs/golf-brig/join", json={"wantsTierId": 99999})
+    assert resp.status_code == 400
+
+
+def test_the_anonymous_application_form_is_gone(client, db):
+    resp = client.post(
+        "/api/v1/applications/",
+        json={"first_name": "A", "last_name": "B", "email": "anon@test.ch"},
+    )
+    assert resp.status_code in (401, 403, 404, 405)

@@ -53,7 +53,7 @@ export function ClubsScreen() {
   })
 
   const join = useMutation({
-    mutationFn: authApi.joinClub,
+    mutationFn: (slug: string) => authApi.joinClub(slug),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['clubs'] })
       queryClient.invalidateQueries({ queryKey: ['my-tenants'] })
