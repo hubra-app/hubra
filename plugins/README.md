@@ -9,13 +9,14 @@ any built-in module.
 The plugins in this folder ship with Hubra but are not active until a manager
 installs them:
 
-| Plugin        | Module(s)          | What it does                                     |
-| ------------- | ------------------ | ------------------------------------------------ |
-| `keys`        | `inventory.keys`   | Keys and access cards, handovers and deposits    |
-| `guides`      | `inventory.guides` | Usage guides on inventory items                  |
-| `budgets`     | `finance.budgets`  | Yearly budgets per transaction category          |
-| `bank-import` | `finance.bank`     | camt.054 import and matching of QR-bill payments |
-| `discord`     | `discord`          | Announce events, posts and polls in Discord      |
+| Plugin        | Module(s)          | What it does                                                                |
+| ------------- | ------------------ | --------------------------------------------------------------------------- |
+| `keys`        | `inventory.keys`   | Keys and access cards, handovers and deposits                               |
+| `guides`      | `inventory.guides` | Usage guides on inventory items                                             |
+| `budgets`     | `finance.budgets`  | Yearly budgets per transaction category                                     |
+| `bank-import` | `finance.bank`     | Bank statements (camt.053/054, MT940, CSV), invoice matching, booking rules |
+| `imap-inbox`  | `inbox`            | Read club mailboxes over IMAP, read-only, per group                         |
+| `discord`     | `discord`          | Announce events, posts and polls in Discord                                 |
 
 The signing, repository and update design comes from
 [labdex](https://github.com/labdex-app/labdex).

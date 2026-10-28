@@ -105,6 +105,19 @@ class SettingField:
 
 
 @dataclass(frozen=True)
+class Schedule:
+    """A periodic Celery task the beat scheduler runs every *every* seconds.
+
+    The task body is usually wrapped in ``@per_tenant_job`` so it runs once
+    per club that has the module on.
+    """
+
+    name: str
+    task: str
+    every: float
+
+
+@dataclass(frozen=True)
 class Module:
     """A module manifest.
 
@@ -117,6 +130,7 @@ class Module:
     that is called when the event is emitted for a tenant that has this
     module enabled.
     ``tasks`` lists Python modules with Celery tasks for the worker to load.
+    ``schedule`` lists periodic tasks for the beat scheduler.
     ``plugin`` is the id of the plugin that brought the module (set by the
     plugin loader; ``None`` for modules built into Hubra).
     """
@@ -134,6 +148,7 @@ class Module:
     public_endpoints: tuple[str, ...] = ()
     tables: tuple[str, ...] = ()
     tasks: tuple[str, ...] = ()
+    schedule: tuple[Schedule, ...] = ()
     plugin: str | None = None
 
     def setting(self, key: str) -> SettingField | None:

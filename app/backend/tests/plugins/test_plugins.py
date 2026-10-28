@@ -139,6 +139,7 @@ def test_bundled_plugins_are_valid():
         "guides",
         "budgets",
         "bank-import",
+        "imap-inbox",
         "discord",
     }
     for s in specs:
@@ -149,7 +150,7 @@ def test_bundled_plugins_load_in_tests(app):
     from hubra.core.modules import registry
 
     loaded = {s.id for s in loader.current().loaded()}
-    assert {"keys", "guides", "budgets", "bank-import", "discord"} <= loaded
+    assert {"keys", "guides", "budgets", "bank-import", "imap-inbox", "discord"} <= loaded
     keys = registry.get("inventory.keys")
     assert keys is not None and keys.plugin == "keys"
 

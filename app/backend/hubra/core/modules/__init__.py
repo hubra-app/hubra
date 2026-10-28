@@ -3,7 +3,7 @@
 See ``hubra/modules/README.md`` for how to add a module.
 """
 
-from .base import Blueprint, Module, NavItem, SettingField
+from .base import Blueprint, Module, NavItem, Schedule, SettingField
 from .events import emit
 from .gate import module_gate, module_required
 from .registry import ModuleRegistryError, registry
@@ -27,6 +27,7 @@ __all__ = [
     "Module",
     "ModuleRegistryError",
     "NavItem",
+    "Schedule",
     "SettingField",
     "emit",
     "enabled_codes",
