@@ -60,6 +60,21 @@ def _get_setting(key: str, default: str = "") -> str:
         return default
 
 
+def club_display_name(default: str = "Hubra") -> str:
+    """The club's name for mail and invoices: the ``club.name`` setting when
+    the club set one, otherwise its name on the platform."""
+    name = _get_setting("club.name", "")
+    if name:
+        return name
+    try:
+        from hubra.core.tenant.context import current_tenant
+
+        tenant = current_tenant()
+    except Exception:
+        tenant = None
+    return (tenant.name if tenant is not None else "") or default
+
+
 def _get_base_url() -> str:
     """Return the frontend's base URL for link generation (password-reset, etc.).
 
@@ -256,7 +271,7 @@ def send_welcome(
     lang: str = DEFAULT_LANG,
 ) -> None:
     """Send new-member welcome email with temporary credentials."""
-    club_name = _get_setting("club.name", "Your Club")
+    club_name = club_display_name()
     base = _get_base_url()
     login_url = f"{base}/login" if base else "the member portal"
 
@@ -281,7 +296,7 @@ def send_club_invite(
     lang: str = DEFAULT_LANG,
 ) -> None:
     """Send a personal link to join the club. Valid for 14 days."""
-    club_name = _get_setting("club.name", "Your Club")
+    club_name = club_display_name()
 
     body_html, body_text, subject = render_mail_template(
         "club_invite",
@@ -302,7 +317,7 @@ def send_password_reset(
     lang: str = DEFAULT_LANG,
 ) -> None:
     """Send a password reset link. Token expires in 1 hour."""
-    club_name = _get_setting("club.name", "Your Club")
+    club_name = club_display_name()
 
     body_html, body_text, subject = render_mail_template(
         "password_reset",
@@ -322,7 +337,7 @@ def send_email_verification(
     lang: str = DEFAULT_LANG,
 ) -> None:
     """Send a private email verification link. Token expires in 24 hours."""
-    club_name = _get_setting("club.name", "Your Club")
+    club_name = club_display_name()
 
     body_html, body_text, subject = render_mail_template(
         "verify_email",
@@ -338,7 +353,7 @@ def send_password_changed(
     to_address: str, name: str, *, lang: str = DEFAULT_LANG
 ) -> None:
     """Notify a member that their password was successfully changed."""
-    club_name = _get_setting("club.name", "Your Club")
+    club_name = club_display_name()
     base = _get_base_url()
     support_url = f"{base}/contact" if base else ""
 
@@ -362,7 +377,7 @@ def send_new_device_login(
     lang: str = DEFAULT_LANG,
 ) -> None:
     """Alert a member that their account was accessed from a new IP address."""
-    club_name = _get_setting("club.name", "Your Club")
+    club_name = club_display_name()
     base = _get_base_url()
     support_url = f"{base}/contact" if base else ""
 
@@ -383,7 +398,7 @@ def send_account_deleted(
     to_address: str, name: str, *, lang: str = DEFAULT_LANG
 ) -> None:
     """Notify a member that their account has been deactivated."""
-    club_name = _get_setting("club.name", "Your Club")
+    club_name = club_display_name()
     base = _get_base_url()
     support_url = f"{base}/contact" if base else ""
 

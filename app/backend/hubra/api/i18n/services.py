@@ -106,7 +106,7 @@ def get_translations(locale: str) -> list[Translation]:
     return list(db.session.scalars(stmt).all())
 
 
-def _platform_rows(locale: str) -> list:
+def platform_rows(locale: str) -> list:
     """The platform's translations (public schema) under a club's own.
 
     A club's schema has its own ``translation`` table, which hides
@@ -155,7 +155,7 @@ def get_translations_dict(locale: str) -> dict[str, str]:
     # DB query (uses index on locale). A club starts from the platform's
     # translations; its own rows win where they hold a text or an alias
     # (a key reported missing is stored empty and must not hide the default).
-    alias_map = {r.key: r for r in _platform_rows(locale)}
+    alias_map = {r.key: r for r in platform_rows(locale)}
     for t in get_translations(locale):
         if t.value or t.alias_for or t.key not in alias_map:
             alias_map[t.key] = t

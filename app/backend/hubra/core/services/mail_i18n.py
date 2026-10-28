@@ -41,11 +41,18 @@ def get_mail_translator(locale: str):
         select(Translation).where(Translation.locale.in_(chain))  # type: ignore[attr-defined]
     ).all()
 
+    from hubra.api.i18n.services import platform_rows
+
     lookup: dict[str, str] = {}
     row_by_key_locale: dict[tuple[str, str], Translation] = {}
     for fallback_locale in reversed(chain):
+        # A club's own texts win over the platform's, but an empty club row
+        # (a key reported missing) doesn't hide the platform text.
+        for prow in platform_rows(fallback_locale):
+            if prow.value:
+                lookup[prow.key] = prow.value
         for row in rows:
-            if row.locale == fallback_locale:
+            if row.locale == fallback_locale and (row.value or row.key not in lookup):
                 lookup[row.key] = row.value
                 row_by_key_locale[(row.key, row.locale)] = row
 
@@ -96,7 +103,13 @@ def render_mail_template(
     shared_ctx = {"t": t, "locale": locale, **context}
 
     html = render_template(f"email/{template_name}.html", **shared_ctx)
+    # The texts carry simple HTML (<strong>, <br>) for the HTML part; the
+    # plain-text part shows them as tags otherwise.
+    import re
+    from html import unescape
+
     text = render_template(f"email/{template_name}.txt", **shared_ctx)
+    text = unescape(re.sub(r"<[^>]+>", "", text))
     subject = render_template(f"email/{template_name}_subject.j2", **shared_ctx).strip()
 
     _touch_last_used(locale, t._accessed_keys)  # type: ignore[attr-defined]

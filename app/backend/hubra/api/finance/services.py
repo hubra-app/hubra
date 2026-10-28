@@ -19,7 +19,7 @@ from hubra.core.pricing import (
     calculate_invoice_amount,
     total_deducted_annual_for_tiers,
 )
-from hubra.core.services.email import _get_setting
+from hubra.core.services.email import club_display_name
 from hubra.core.services.mail_i18n import render_mail_template
 
 
@@ -575,7 +575,7 @@ class InvoiceService:
             from hubra.core.services.email import _get_base_url
 
             _base = _get_base_url()
-            club_name = _get_setting("club.name", "Your Club")
+            club_name = club_display_name()
             portal_url = f"{_base}/invoices" if _base else ""
 
             lang = getattr(member, "language", "de-CH") or "de-CH"
@@ -613,7 +613,7 @@ class InvoiceService:
             recipient_email = member.email or ""
             recipient_name = member.name
         elif ext and ext.email:
-            club_name = _get_setting("club.name", "Your Club")
+            club_name = club_display_name()
             lang = "de-CH"
             body_html, body_text, subject = render_mail_template(
                 "invoice_reminder",

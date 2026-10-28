@@ -128,7 +128,7 @@ def test_club_translations_start_from_the_platform(app, db):
     _seed_translation("de-CH", "shell.nav.members", "Leute")  # the club's own
     i18n_services._mem_translations.clear()
 
-    with patch.object(i18n_services, "_platform_rows", return_value=platform):
+    with patch.object(i18n_services, "platform_rows", return_value=platform):
         result = i18n_services.get_translations_dict("de-CH")
 
     assert result["shell.nav.dashboard"] == "Dashboard"

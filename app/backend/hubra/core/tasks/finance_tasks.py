@@ -38,9 +38,9 @@ def _render_invoice_generated(
     lang: str = DEFAULT_LANG,
 ) -> tuple[str, str, str]:
     """Render invoice_generated email templates, returning (subject, html, text)."""
-    from hubra.core.services.email import _get_setting
+    from hubra.core.services.email import club_display_name
 
-    club_name = _get_setting("club.name", "Your Club")
+    club_name = club_display_name()
     return render_mail_template(
         "invoice_generated",
         locale=lang,
@@ -63,9 +63,9 @@ def _render_invoice_reminder(
     lang: str = DEFAULT_LANG,
 ) -> tuple[str, str, str]:
     """Render invoice_reminder email templates, returning (subject, html, text)."""
-    from hubra.core.services.email import _get_setting
+    from hubra.core.services.email import club_display_name
 
-    club_name = _get_setting("club.name", "Your Club")
+    club_name = club_display_name()
     return render_mail_template(
         "invoice_reminder",
         locale=lang,
