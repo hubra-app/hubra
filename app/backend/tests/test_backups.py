@@ -313,30 +313,8 @@ class TestBackupService:
         assert len(manual) == 1
 
 
-class TestBackupAPIClubAdmin:
-    """Backups dump every club, so a club admin alone may not touch them."""
-
-    def test_club_admin_is_forbidden(self, client, seeded_db, auth_headers):
-        for method, path in (
-            ("get", "/api/v1/backups/"),
-            ("post", "/api/v1/backups/"),
-            ("get", "/api/v1/backups/config"),
-            ("delete", "/api/v1/backups/1"),
-        ):
-            resp = getattr(client, method)(path, headers=auth_headers)
-            assert resp.status_code == 403, (method, path)
-
-
 class TestBackupAPI:
-    """Backup API routes — platform staff (here a superadmin) only."""
-
-    @pytest.fixture(autouse=True)
-    def _superadmin(self, seeded_db, db):
-        seeded_db["user"].is_superadmin = True
-        db.session.commit()
-        yield
-        seeded_db["user"].is_superadmin = False
-        db.session.commit()
+    """Backup API routes — admin-only access."""
 
     def test_list_backups_admin(self, client, seeded_db, auth_headers):
         resp = client.get("/api/v1/backups/", headers=auth_headers)

@@ -60,8 +60,6 @@ interface AuthState {
   currentUser: Member | null
   setCurrentUser: (m: Member | null) => void
   isAdmin: boolean
-  /** Platform superadmin (whole-platform tools such as backups). */
-  isSuperadmin: boolean
   permissions: string[]
   hasPermission: (key: string) => boolean
   setPhase: (p: Phase) => void
@@ -154,7 +152,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
   const [permissions, setPermissions] = useState<string[]>([])
   const [impersonation, setImpersonation] = useState<AuthState['impersonation']>(null)
-  const [isSuperadmin, setIsSuperadmin] = useState(false)
   const [passwordChangeRequired, setPasswordChangeRequired] = useState(false)
 
   const { loginUrl, ssoUrl } = useInstance()
@@ -186,7 +183,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (cancelled) return
           setPermissions(permData.permissions)
           setImpersonation(permData.impersonation ?? null)
-          setIsSuperadmin(permData.is_superadmin === true)
         } catch {
           if (!cancelled) setPermissions([])
         }
@@ -551,7 +547,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       currentUser,
       setCurrentUser,
       isAdmin,
-      isSuperadmin,
       permissions,
       hasPermission,
       setPhase,
@@ -568,7 +563,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       tenantSlug,
       currentUser,
       isAdmin,
-      isSuperadmin,
       permissions,
       impersonation,
       passwordChangeRequired,

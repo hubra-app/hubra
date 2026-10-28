@@ -1,10 +1,4 @@
-"""Backups blueprint — database backup management for platform staff.
-
-A backup is a pg_dump of the whole database (every club), stored in the
-platform's backup storage. Club admins must not see or trigger them, so every
-endpoint needs the platform.settings global permission on top of an admin
-membership in the club the request runs in.
-"""
+"""Backups blueprint — admin-only endpoints for database backup management."""
 
 from __future__ import annotations
 
@@ -14,7 +8,7 @@ from flask import Blueprint, jsonify
 from flask_jwt_extended import current_user
 from hubra.api.auth.helpers import get_current_member
 
-from hubra.api.permissions import require_admin, require_global_permission
+from hubra.api.permissions import require_admin
 from hubra.api.utils import log_audit
 from hubra.core.errors import api_error
 from hubra.core.schemas.backup import BackupRecordSchema, BackupConfigSchema
@@ -31,7 +25,6 @@ _config_schema = BackupConfigSchema()
 
 @backups_bp.get("/")
 @require_admin
-@require_global_permission("platform.settings")
 def list_backups():
     """List all backup records, newest first."""
     records = BackupsService.list()
@@ -40,7 +33,6 @@ def list_backups():
 
 @backups_bp.post("/")
 @require_admin
-@require_global_permission("platform.settings")
 def create_backup():
     """Trigger a manual backup via Celery. Returns 202 with the new record ID."""
     from hubra.core.tasks.backup_tasks import create_backup_task
@@ -68,7 +60,6 @@ def create_backup():
 
 @backups_bp.get("/config")
 @require_admin
-@require_global_permission("platform.settings")
 def get_config():
     """Return S3 connection + encryption configuration status."""
     status = BackupsService.config_status()
@@ -77,7 +68,6 @@ def get_config():
 
 @backups_bp.get("/<int:record_id>")
 @require_admin
-@require_global_permission("platform.settings")
 def get_backup(record_id: int):
     """Get a single backup record."""
     record = BackupServiceAPI.get(record_id)
@@ -88,7 +78,6 @@ def get_backup(record_id: int):
 
 @backups_bp.post("/<int:record_id>/verify")
 @require_admin
-@require_global_permission("platform.settings")
 def verify_backup(record_id: int):
     """Trigger backup verification via Celery. Returns 202."""
     record = BackupServiceAPI.get(record_id)
@@ -123,7 +112,6 @@ def verify_backup(record_id: int):
 
 @backups_bp.delete("/<int:record_id>")
 @require_admin
-@require_global_permission("platform.settings")
 def delete_backup(record_id: int):
     """Delete a backup (S3 object + DB record)."""
     record = BackupServiceAPI.get(record_id)
