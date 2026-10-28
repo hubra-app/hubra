@@ -1371,25 +1371,14 @@ export function InventoryScreen() {
               alignItems: 'center',
             }}
           >
-            <div style={{ position: 'relative', flex: '1 1 220px' }}>
-              <IconSearch
-                size={16}
-                style={{
-                  position: 'absolute',
-                  left: 11,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: 'var(--mantine-color-gray-5)',
-                }}
-              />
-              <TextInput
-                size="sm"
-                style={{ paddingLeft: 34 }}
-                placeholder={t('inventory.searchItems', 'Gegenstände suchen …')}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
+            <TextInput
+              style={{ flex: '1 1 220px' }}
+              leftSection={<IconSearch size={16} />}
+              size="sm"
+              placeholder={t('inventory.searchItems', 'Gegenstände suchen …')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               <button
                 className={`chip${catFilter === 'All' ? ' on' : ''}`}

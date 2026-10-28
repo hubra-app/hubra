@@ -24,6 +24,7 @@ import {
   type ModuleInfo,
   type ModuleSettingField,
 } from '@/api/modules'
+import { localizeModule } from '@/modules/labels'
 
 type FormValue = string | number | boolean | null
 
@@ -39,6 +40,7 @@ export function ModulesTab() {
   const { data: modules = [] } = useQuery({
     queryKey: ['modules'],
     queryFn: getModules,
+    select: (list) => list.map(localizeModule),
   })
   const byCode = Object.fromEntries(modules.map((m) => [m.code, m]))
   const optional = modules.filter((m) => !m.required)

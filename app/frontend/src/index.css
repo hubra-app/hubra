@@ -57,6 +57,14 @@ body {
   letter-spacing: -0.02em;
 }
 
+/* Big figures in stat tiles: brand heading face, digits lined up. */
+.stat-value {
+  font-family: "Bricolage Grotesque", "Hanken Grotesk", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
 .logo-mark {
   width: 28px;
   height: 28px;
@@ -811,5 +819,26 @@ table[style*="min-width"] td::before {
   .auth-main {
     align-items: flex-start;
     padding: 40px 20px;
+  }
+}
+
+/* Page action buttons: on phones they share the row instead of stacking
+   one per line against the right edge. */
+@media (max-width: 48em) {
+  .page-actions > * {
+    flex: 1 1 auto;
+  }
+}
+
+/* Detail pages: profile card beside the content, stacked on phones. */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 62em) {
+  .detail-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

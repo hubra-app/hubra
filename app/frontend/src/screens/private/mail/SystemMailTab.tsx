@@ -98,7 +98,7 @@ export function SystemMailTab() {
 
   return (
     <div>
-      <Group justify="flex-end" mb={16}>
+      <Group justify="flex-end" mb={16} className="page-actions">
         <Button
           variant="default"
           onClick={() => refetch()}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Button, Group, Select, Paper, TextInput, ActionIcon } from '@mantine/core'
+import { Button, Group, Menu, Select, Paper, TextInput, ActionIcon } from '@mantine/core'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT } from '@/locales/i18n'
 import {
@@ -12,6 +12,7 @@ import {
   IconUserX,
   IconFileText,
   IconShieldCheckFilled,
+  IconDots,
 } from '@tabler/icons-react'
 import { useNav, useToast, useAuth, useData } from '@/context/AppContext'
 import {
@@ -238,24 +239,55 @@ export function MembersTab() {
 
   return (
     <div>
-      <Group justify="flex-end" mb={16}>
+      <Group justify="flex-end" mb={16} gap="xs" wrap="nowrap">
         {!showArchived && canExport && (
-          <Button variant="default" onClick={handleExport}>
+          <Button variant="default" visibleFrom="sm" onClick={handleExport}>
             <IconUpload size={16} />
             {t('members.export.csv')}
           </Button>
         )}
         {!showArchived && canBulkInvoice && (
-          <Button variant="default" onClick={openBulkInvoice}>
+          <Button variant="default" visibleFrom="sm" onClick={openBulkInvoice}>
             <IconFileText size={16} />
             {t('members.createInvoices')}
           </Button>
         )}
         {!showArchived && canCreate && (
-          <Button variant="filled" onClick={() => setAddOpen(true)}>
+          <Button
+            variant="filled"
+            style={{ flex: '1 1 auto', maxWidth: 320 }}
+            onClick={() => setAddOpen(true)}
+          >
             <IconPlus size={16} />
             {t('common.addMember')}
           </Button>
+        )}
+        {/* Phones: the less common actions move into a menu. */}
+        {!showArchived && (canExport || canBulkInvoice) && (
+          <Menu position="bottom-end" withinPortal>
+            <Menu.Target>
+              <ActionIcon
+                variant="default"
+                size={36}
+                hiddenFrom="sm"
+                aria-label={t('common.moreActions', 'Weitere Aktionen')}
+              >
+                <IconDots size={18} />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
+              {canExport && (
+                <Menu.Item leftSection={<IconUpload size={16} />} onClick={handleExport}>
+                  {t('members.export.csv')}
+                </Menu.Item>
+              )}
+              {canBulkInvoice && (
+                <Menu.Item leftSection={<IconFileText size={16} />} onClick={openBulkInvoice}>
+                  {t('members.createInvoices')}
+                </Menu.Item>
+              )}
+            </Menu.Dropdown>
+          </Menu>
         )}
       </Group>
 
@@ -482,39 +514,28 @@ export function MembersTab() {
               alignItems: 'center',
             }}
           >
-            <div style={{ position: 'relative', flex: '1 1 220px' }}>
-              <IconSearch
-                size={15}
-                style={{
-                  position: 'absolute',
-                  left: 11,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#8c86a0',
-                }}
-              />
-              <TextInput
-                style={{ height: 36, paddingLeft: 34 }}
-                placeholder={t('members.search')}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
+            <TextInput
+              style={{ flex: '1 1 220px' }}
+              leftSection={<IconSearch size={16} />}
+              placeholder={t('members.search')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {!showArchived &&
-                tiers.map((t) => (
+                tiers.map((tier) => (
                   <button
-                    key={t}
-                    className={`chip${tierFilter === t ? ' on' : ''}`}
-                    onClick={() => setTierFilter(t)}
+                    key={tier}
+                    className={`chip${tierFilter === tier ? ' on' : ''}`}
+                    onClick={() => setTierFilter(tier)}
                   >
-                    {t !== 'All' && (
+                    {tier !== 'All' && (
                       <span
                         className="dot"
-                        style={{ background: tierColors[t] ?? '#857f99' }}
+                        style={{ background: tierColors[tier] ?? '#857f99' }}
                       />
                     )}
-                    {t}
+                    {tier === 'All' ? t('common.all', 'Alle') : tier}
                   </button>
                 ))}
               <button

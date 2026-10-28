@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Badge, Button, Group, Paper, Progress, Text } from "@mantine/core";
+import { Badge, Button, Group, Paper, Progress, Text, ThemeIcon } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
 import { useT } from "@/locales/i18n";
 import {
@@ -170,53 +170,38 @@ export function AccountDashboardScreen() {
           {
             label: t("account.eventsJoined", 'Angemeldete Anlässe'),
             value: myEvents.length,
-            icon: <IconCalendar size={18} style={{ color: "#2596be" }} />,
+            icon: <IconCalendar size={20} />,
+            color: "blue",
           },
           {
             label: t("account.pollsVoted", 'Abstimmungen'),
             value: Object.keys(myVotes).length,
-            icon: <IconChartBar size={18} style={{ color: "#1f9d57" }} />,
+            icon: <IconChartBar size={20} />,
+            color: "green",
           },
           {
             label: t("account.postsLiked", 'Beiträge mit Like'),
             value: 0,
-            icon: <IconHeart size={18} style={{ color: "#fe64ac" }} />,
+            icon: <IconHeart size={20} />,
+            color: "pink",
           },
         ].map((s) => (
           <Paper
             key={s.label}
             withBorder
-            shadow="sm"
-            radius="lg"
-            style={{
-              padding: "14px 16px",
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-            }}
+            p="md"
+            style={{ display: "flex", alignItems: "center", gap: 14 }}
           >
-            {s.icon}
-            <div>
-              <div
-                className="num"
-                style={{
-                  fontSize: "var(--mantine-font-size-xl)",
-                  fontWeight: 700,
-                  color: "var(--mantine-color-ink-8)",
-                  lineHeight: 1,
-                }}
-              >
+            <ThemeIcon size={44} radius="md" variant="light" color={s.color}>
+              {s.icon}
+            </ThemeIcon>
+            <div style={{ minWidth: 0 }}>
+              <Text className="stat-value" fz={26} fw={700} lh={1.1}>
                 {s.value}
-              </div>
-              <div
-                style={{
-                  fontSize: "var(--mantine-font-size-xs)",
-                  color: "var(--mantine-color-ink-4)",
-                  marginTop: 2,
-                }}
-              >
+              </Text>
+              <Text fz="sm" c="dimmed" mt={2}>
                 {s.label}
-              </div>
+              </Text>
             </div>
           </Paper>
         ))}

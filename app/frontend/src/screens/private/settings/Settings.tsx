@@ -7,11 +7,13 @@ import { ModulesTab } from '@/screens/private/settings/ModulesTab'
 import { ClubSettingsTab } from '@/screens/private/settings/ClubSettingsTab'
 import { DomainsTab } from '@/screens/private/settings/DomainsTab'
 
+// The club profile is what most admins come for, so it is the default tab;
+// the raw key/value store sits last under "Erweitert".
 const TABS = [
-  { id: 'settings', labelKey: 'settings.tabs.settings', label: 'Settings', Component: KVSettingsTab },
+  { id: 'club', labelKey: 'settings.tabs.club', label: 'Verein', Component: ClubSettingsTab },
   { id: 'modules', labelKey: 'settings.tabs.modules', label: 'Module & Plugins', Component: ModulesTab },
-  { id: 'club', labelKey: 'settings.tabs.club', label: 'Club', Component: ClubSettingsTab },
   { id: 'domains', labelKey: 'settings.tabs.domains', label: 'Domains', Component: DomainsTab },
+  { id: 'advanced', labelKey: 'settings.tabs.settings', label: 'Erweitert', Component: KVSettingsTab },
 ] as const
 
 export function SettingsScreen() {
@@ -25,10 +27,10 @@ export function SettingsScreen() {
 
   const activeTab =
     location.pathname.replace('/app/settings', '').replace('/', '') ||
-    'settings'
+    'club'
 
   const ActiveComponent =
-    tabs.find((tab) => tab.id === activeTab)?.Component ?? KVSettingsTab
+    tabs.find((tab) => tab.id === activeTab)?.Component ?? ClubSettingsTab
 
   return (
     <div>
@@ -37,7 +39,7 @@ export function SettingsScreen() {
         tabs={tabs.map((tab) => ({ id: tab.id, label: t(tab.labelKey, tab.label) }))}
         activeTab={activeTab}
         onTabChange={(id) =>
-          navigate(`/app/settings${id === 'settings' ? '' : '/' + id}`)
+          navigate(`/app/settings${id === 'club' ? '' : '/' + id}`)
         }
       />
       <ActiveComponent />

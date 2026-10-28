@@ -515,6 +515,14 @@ function PrivateRoutes() {
                     }
                   />
                   <Route
+                    path="settings/advanced"
+                    element={
+                      <RequirePermission permKey="settings.settings.read">
+                        <SettingsScreen />
+                      </RequirePermission>
+                    }
+                  />
+                  <Route
                     path="system"
                     element={
                       <RequirePermission permKey="roles.roles.create">

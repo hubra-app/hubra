@@ -873,7 +873,7 @@ export function RolesTab() {
 
   return (
     <div>
-      <Group justify="flex-end" mb={16}>
+      <Group justify="flex-end" mb={16} className="page-actions">
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {canCreate && (
             <Button variant="default" onClick={() => setTemplateOpen(true)}>

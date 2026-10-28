@@ -530,25 +530,14 @@ export function DataTable<T>({
           }}
         >
           {hasSearch && (
-            <div style={{ position: 'relative', flex: '1 1 220px' }}>
-              <IconSearch
-                size={16}
-                style={{
-                  position: 'absolute',
-                  left: 11,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: 'var(--mantine-color-gray-5)',
-                }}
-              />
-              <TextInput
-                size="sm"
-                style={{ paddingLeft: 34 }}
-                placeholder={searchPlaceholder ?? i18n.t('common.searchPlaceholder', 'Suchen …')}
-                value={searchValue ?? ''}
-                onChange={(e) => onSearchChange!(e.target.value)}
-              />
-            </div>
+            <TextInput
+              size="sm"
+              style={{ flex: '1 1 220px' }}
+              leftSection={<IconSearch size={16} />}
+              placeholder={searchPlaceholder ?? i18n.t('common.searchPlaceholder', 'Suchen …')}
+              value={searchValue ?? ''}
+              onChange={(e) => onSearchChange!(e.target.value)}
+            />
           )}
           {hasFlatFilters && (
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>

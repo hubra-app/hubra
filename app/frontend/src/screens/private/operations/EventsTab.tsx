@@ -5,6 +5,7 @@ import { useForm } from '@mantine/form'
 import { zodResolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useT, zmsg } from '@/locales/i18n'
+import i18n from 'i18next'
 import {
   IconPlus,
   IconUserCheck,
@@ -35,6 +36,22 @@ const eventSchema = z.object({
 })
 type EventForm = z.infer<typeof eventSchema>
 
+
+const EVENT_TYPES = ['Workshop', 'Social', 'Certification', 'Meeting']
+
+/** Stored event types are English keys; show them in the user's language. */
+function eventTypeLabel(type: string) {
+  const defaults: Record<string, string> = {
+    Workshop: 'Workshop',
+    Social: 'Geselliges',
+    Certification: 'Einführung',
+    Meeting: 'Sitzung',
+  }
+  return defaults[type]
+    ? i18n.t(`events.types.${type.toLowerCase()}`, defaults[type])
+    : type
+}
+
 export function EventsTab() {
   const { notify } = useToast()
   const { myJoinedEvents, events, setEvents } = useData()
@@ -60,7 +77,7 @@ export function EventsTab() {
     },
   })
 
-  const types = ['All', 'Workshop', 'Social', 'Certification', 'Meeting']
+  const types = ['All', ...EVENT_TYPES]
   const filtered = events.filter((e) => {
     const matchType = typeFilter === 'All' || e.type === typeFilter
     const q = search.toLowerCase()
@@ -202,12 +219,10 @@ export function EventsTab() {
       </Field>
       <Field label={t('common.type', 'Typ')}>
         <Select
-          data={['Workshop', 'Social', 'Certification', 'Meeting'].map(
-            (tp) => ({
-              value: tp,
-              label: tp,
-            }),
-          )}
+          data={EVENT_TYPES.map((tp) => ({
+            value: tp,
+            label: eventTypeLabel(tp),
+          }))}
           {...form.getInputProps('type')}
         />
       </Field>
@@ -216,7 +231,7 @@ export function EventsTab() {
 
   return (
     <div>
-      <Group justify="flex-end" mb={16} gap="xs">
+      <Group justify="flex-end" mb={16} gap="xs" className="page-actions">
         <CalendarSubscribeButton />
         {canCreate && (
           <Button variant="filled" onClick={openAdd}>
@@ -339,7 +354,7 @@ export function EventsTab() {
                   background: EVENT_TYPE_COLORS[ev.type] + '1a',
                 }}
               >
-                {ev.type}
+                {eventTypeLabel(ev.type)}
               </Badge>
             ),
           },
@@ -395,7 +410,7 @@ export function EventsTab() {
         onSearchChange={setSearch}
         searchPlaceholder={t('events.search', 'Suchen …')}
         filters={types.map((typeItem) => ({
-          label: typeItem === 'All' ? t('common.all', 'Alle') : typeItem,
+          label: typeItem === 'All' ? t('common.all', 'Alle') : eventTypeLabel(typeItem),
           value: typeItem.toLowerCase(),
           active: typeFilter === typeItem,
           onClick: () => setTypeFilter(typeItem),

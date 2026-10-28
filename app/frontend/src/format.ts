@@ -24,6 +24,19 @@ export function formatCHF(amount: number): string {
   return chfFormatter.format(amount);
 }
 
+const chfWholeFormatter = new Intl.NumberFormat("de-CH", {
+  style: "currency",
+  currency: "CHF",
+  maximumFractionDigits: 0,
+});
+
+/** "CHF 1’250" – whole francs, for stat tiles. Pass `sign` for "+CHF 1’250". */
+export function formatCHFWhole(amount: number, sign = false): string {
+  const s = chfWholeFormatter.format(Math.abs(amount)).replace(/\u00a0/g, " ");
+  if (amount < 0) return `−${s}`;
+  return sign && amount > 0 ? `+${s}` : s;
+}
+
 export function formatCHFCompact(amount: number): string {
   return chfCompactFormatter.format(amount);
 }

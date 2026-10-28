@@ -72,9 +72,9 @@ export function StatTile({
         {icon && <Box c="acc.6" style={{ lineHeight: 0 }}>{icon}</Box>}
       </Group>
       <Text
-        className="num"
+        className="stat-value"
         fz={28}
-        fw={600}
+        fw={700}
         lh={1.1}
         c={accent || 'var(--mantine-color-black)'}
       >

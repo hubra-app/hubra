@@ -508,7 +508,8 @@
     "nameRequired": "Name ist erforderlich",
     "searchPlaceholder": "Suchen …",
     "saveFailed": "Speichern fehlgeschlagen",
-    "deleted": "Gelöscht"
+    "deleted": "Gelöscht",
+    "moreActions": "Weitere Aktionen"
   },
   "dashboard": {
     "activeMembers": "Aktive Mitglieder",
@@ -652,7 +653,13 @@
     "attendanceFailed": "Die Teilnahme konnte nicht gespeichert werden.",
     "left": "Abgemeldet",
     "leftMsg": "Du bist von «{{title}}» abgemeldet.",
-    "joinedMsg": "Du bist für «{{title}}» angemeldet."
+    "joinedMsg": "Du bist für «{{title}}» angemeldet.",
+    "types": {
+      "workshop": "Workshop",
+      "social": "Geselliges",
+      "certification": "Einführung",
+      "meeting": "Sitzung"
+    }
   },
   "finance": {
     "addCategory": "Kategorie hinzufügen",
@@ -1511,7 +1518,8 @@
       "payments": "Zahlungen",
       "toolHours": "Werkzeugstunden",
       "verifiedNo": "Nein",
-      "verifiedYes": "Ja"
+      "verifiedYes": "Ja",
+      "notes": "Notizen"
     },
     "editMember": "Mitglied bearbeiten",
     "editMemberModalTitle": "Mitglied bearbeiten",
@@ -1789,7 +1797,10 @@
       "settings": "Erweitert"
     },
     "title": "Einstellungen",
-    "yourAccount": "Dein Konto"
+    "yourAccount": "Dein Konto",
+    "kv": {
+      "addEntry": "Eintrag hinzufügen"
+    }
   },
   "shell": {
     "a11y": {
@@ -1834,7 +1845,9 @@
       "tracking": "Mail › Zustellprotokoll",
       "transactions": "Finanzen › Einnahmen und Ausgaben",
       "translations": "Übersetzungen",
-      "txCategories": "Finanzen › Kategorien"
+      "txCategories": "Finanzen › Kategorien",
+      "roles": "System › Rollen",
+      "health": "System › Systemzustand"
     },
     "emailVerify": {
       "banner": "Deine private E-Mail-Adresse ist noch nicht bestätigt. Einige Funktionen sind erst danach verfügbar.",
@@ -2461,5 +2474,77 @@
     "newSubtitle": "Startet ohne Berechtigungen. Lege sie danach in der Tabelle fest.",
     "descHint": "Optional, wird in der Verwaltung angezeigt",
     "templateWarning": "Eine Vorlage legt fehlende Rollen an und setzt ihre Berechtigungen. Bei bestehenden Rollen mit gleichem Namen werden die Berechtigungen ersetzt."
+  },
+  "modules": {
+    "backups": {
+      "name": "Backups",
+      "description": "Verschlüsselte Datenbank-Backups"
+    },
+    "bindings": {
+      "name": "Verknüpfungen",
+      "description": "Vereinsdaten mit externen Schnittstellen abgleichen"
+    },
+    "codes": {
+      "name": "Codes",
+      "description": "Verschlüsselte Türcodes und Zugangscodes"
+    },
+    "core": {
+      "name": "Basis",
+      "description": "Anmeldung, Konten, Einstellungen, Dashboard, Protokoll und Mitteilungen"
+    },
+    "events": {
+      "name": "Anlässe",
+      "description": "Anlässe, Workshops und Treffen mit Anmeldung"
+    },
+    "finance": {
+      "name": "Finanzen",
+      "description": "Buchungen, Rechnungen mit Schweizer QR-Rechnung und Mahnungen"
+    },
+    "functions": {
+      "name": "Funktionen",
+      "description": "Vereinsämter und wer sie innehat"
+    },
+    "groups": {
+      "name": "Gruppen",
+      "description": "Teams, Kommissionen und Interessengruppen"
+    },
+    "inventory": {
+      "name": "Inventar",
+      "description": "Werkzeuge, Maschinen und Material, Ausleihen und Einführungen",
+      "settings": {
+        "checkout_max_days": {
+          "label": "Längste Ausleihe (Tage)",
+          "description": "Standard-Rückgabefrist für neue Ausleihen"
+        },
+        "require_induction": {
+          "label": "Nur eingeführte Mitglieder dürfen ausleihen",
+          "description": "Gilt für Gegenstände, die eine Einführung brauchen"
+        },
+        "block_when_overdue": {
+          "label": "Ausleihen sperren, solange eine Rechnung überfällig ist",
+          "description": "Mehr als 7 Tage überfällig; braucht das Modul Finanzen"
+        }
+      }
+    },
+    "mail": {
+      "name": "Mail",
+      "description": "Vereinspostfächer und Aliasse (braucht den eigenen Mailserver)"
+    },
+    "members": {
+      "name": "Mitglieder",
+      "description": "Mitgliederverzeichnis, Profile, Anträge und Mitgliedschaftsstufen"
+    },
+    "polls": {
+      "name": "Umfragen",
+      "description": "Umfragen und Abstimmungen unter Mitgliedern"
+    },
+    "posts": {
+      "name": "Beiträge",
+      "description": "Vereinsmitteilungen und Beiträge aus der Community"
+    },
+    "roles": {
+      "name": "Rollen und Berechtigungen",
+      "description": "Rollen und die Berechtigungen, die sie vergeben"
+    }
   }
 }

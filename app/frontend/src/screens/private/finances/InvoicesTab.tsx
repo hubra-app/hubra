@@ -312,7 +312,7 @@ export function InvoicesTab() {
 
   return (
     <div>
-      <Group justify="flex-end" mb={16}>
+      <Group justify="flex-end" mb={16} className="page-actions">
         {canBulkCreate && (
           <Button variant="default" onClick={openBulk}>
             <IconPlus size={16} />

@@ -111,7 +111,8 @@ export const theme = createTheme({
   components: {
     Button: {
       defaultProps: { radius: "md", size: "sm" },
-      styles: { root: { fontWeight: 600 } },
+      // Icons passed as children (not leftSection) still get breathing room.
+      styles: { root: { fontWeight: 600 }, label: { gap: 6 } },
     },
     ActionIcon: {
       defaultProps: { radius: "md", color: "gray", variant: "subtle" },

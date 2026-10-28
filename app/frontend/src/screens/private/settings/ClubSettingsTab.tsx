@@ -9,6 +9,7 @@ import {
   Button,
   Stack,
   Group,
+  SimpleGrid,
   Paper,
   Text,
   Title,
@@ -59,7 +60,7 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
       <Paper withBorder p="lg">
         <Title order={3} mb="md">{t('clubSettings.branding', 'Erscheinungsbild')}</Title>
         <Stack gap={14}>
-          <Group gap={14} grow>
+          <SimpleGrid cols={{ base: 1, xs: 3 }} spacing={14}>
             <ColorInput
               label={t('clubSettings.primaryColor', 'Primärfarbe')}
               value={form.primary_color ?? '#7441e0'}
@@ -75,13 +76,13 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
               value={form.accent_color ?? '#f59e0b'}
               onChange={(v) => update('accent_color', v)}
             />
-          </Group>
+          </SimpleGrid>
         </Stack>
       </Paper>
 
       <Paper withBorder p="lg">
         <Title order={3} mb="md">{t('clubSettings.localization', 'Region und Sprache')}</Title>
-        <Group gap={14} grow>
+        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing={14}>
           <Select
             label={t('clubSettings.timezone', 'Zeitzone')}
             value={form.timezone ?? 'Europe/Zurich'}
@@ -99,7 +100,13 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
             label={t('clubSettings.locale', 'Sprache')}
             value={form.locale ?? 'de-CH'}
             onChange={(v) => v && update('locale', v)}
-            data={['de-CH', 'en-GB', 'de-DE', 'fr-FR', 'it-IT']}
+            data={[
+              { value: 'de-CH', label: 'Deutsch (Schweiz)' },
+              { value: 'en-GB', label: 'English' },
+              { value: 'de-DE', label: 'Deutsch (Deutschland)' },
+              { value: 'fr-FR', label: 'Français' },
+              { value: 'it-IT', label: 'Italiano' },
+            ]}
           />
           <Select
             label={t('clubSettings.dateFormat', 'Datumsformat')}
@@ -107,7 +114,7 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
             onChange={(v) => v && update('date_format', v)}
             data={['DD.MM.YYYY', 'YYYY-MM-DD', 'DD/MM/YYYY', 'MM/DD/YYYY']}
           />
-        </Group>
+        </SimpleGrid>
       </Paper>
 
       <Paper withBorder p="lg">

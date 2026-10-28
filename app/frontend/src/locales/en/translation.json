@@ -508,7 +508,8 @@
     "nameRequired": "Name is required",
     "searchPlaceholder": "Search…",
     "saveFailed": "Save failed",
-    "deleted": "Deleted"
+    "deleted": "Deleted",
+    "moreActions": "More actions"
   },
   "dashboard": {
     "activeMembers": "Active members",
@@ -652,7 +653,13 @@
     "attendanceFailed": "Could not update attendance.",
     "left": "Left event",
     "leftMsg": "You left \"{{title}}\".",
-    "joinedMsg": "You joined \"{{title}}\"."
+    "joinedMsg": "You joined \"{{title}}\".",
+    "types": {
+      "workshop": "Workshop",
+      "social": "Social",
+      "certification": "Induction",
+      "meeting": "Meeting"
+    }
   },
   "finance": {
     "addCategory": "Add Category",
@@ -1511,7 +1518,8 @@
       "payments": "Payments",
       "toolHours": "Tool hours",
       "verifiedNo": "No",
-      "verifiedYes": "Yes"
+      "verifiedYes": "Yes",
+      "notes": "Notes"
     },
     "editMember": "Edit Member",
     "editMemberModalTitle": "Edit member",
@@ -1789,7 +1797,10 @@
       "settings": "Advanced"
     },
     "title": "Settings",
-    "yourAccount": "Your Account"
+    "yourAccount": "Your Account",
+    "kv": {
+      "addEntry": "Add entry"
+    }
   },
   "shell": {
     "a11y": {
@@ -1834,7 +1845,9 @@
       "tracking": "Mail › Delivery log",
       "transactions": "Finance › Income and expenses",
       "translations": "Translations",
-      "txCategories": "Finance › Categories"
+      "txCategories": "Finance › Categories",
+      "roles": "System › Roles",
+      "health": "System › Health"
     },
     "emailVerify": {
       "banner": "Your private email address isn't verified yet. Some features are only available after that.",
@@ -2461,5 +2474,77 @@
     "newSubtitle": "Starts with no permissions. Set them in the table afterwards.",
     "descHint": "Optional, shown in the admin area",
     "templateWarning": "Applying a template creates any missing roles and sets their permissions. Existing roles with the same name have their permissions replaced."
+  },
+  "modules": {
+    "functions": {
+      "name": "Functions",
+      "description": "Club offices and who holds them"
+    },
+    "members": {
+      "name": "Members",
+      "description": "Member directory, profiles, applications and membership tiers"
+    },
+    "mail": {
+      "name": "Mail",
+      "description": "Club mailboxes and aliases (needs the self-hosted mail stack)"
+    },
+    "groups": {
+      "name": "Groups",
+      "description": "Teams, committees and interest groups"
+    },
+    "polls": {
+      "name": "Polls",
+      "description": "Member polls and voting"
+    },
+    "backups": {
+      "name": "Backups",
+      "description": "Encrypted database backups"
+    },
+    "posts": {
+      "name": "Posts",
+      "description": "Club announcements and community posts"
+    },
+    "core": {
+      "name": "Core",
+      "description": "Sign-in, accounts, settings, dashboard, audit log and notifications"
+    },
+    "finance": {
+      "name": "Finance",
+      "description": "Transactions, invoices with Swiss QR-bill, and reminders"
+    },
+    "bindings": {
+      "name": "Bindings",
+      "description": "Sync club data with external APIs"
+    },
+    "inventory": {
+      "name": "Inventory",
+      "description": "Tools, machines and materials, checkouts and inductions",
+      "settings": {
+        "checkout_max_days": {
+          "label": "Longest checkout (days)",
+          "description": "Default due date for new checkouts"
+        },
+        "require_induction": {
+          "label": "Only inducted members can check out",
+          "description": "Applies to items marked as needing instruction"
+        },
+        "block_when_overdue": {
+          "label": "Block checkouts while an invoice is overdue",
+          "description": "More than 7 days past due; needs the Finance module"
+        }
+      }
+    },
+    "events": {
+      "name": "Events",
+      "description": "Events, workshops and gatherings with registration"
+    },
+    "codes": {
+      "name": "Codes",
+      "description": "Encrypted door codes and passcodes"
+    },
+    "roles": {
+      "name": "Roles & permissions",
+      "description": "Roles and the permissions they grant"
+    }
   }
 }

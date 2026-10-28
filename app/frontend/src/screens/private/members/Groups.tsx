@@ -430,24 +430,13 @@ export function GroupsScreen() {
             alignItems: 'center',
           }}
         >
-          <div style={{ position: 'relative', flex: '1 1 220px' }}>
-            <IconSearch
-              size={16}
-              style={{
-                position: 'absolute',
-                left: 11,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#8c86a0',
-              }}
-            />
-            <TextInput
-              style={{ height: 36, paddingLeft: 34 }}
-              placeholder={t('groups.search', 'Gruppen suchen …')}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+          <TextInput
+            style={{ flex: '1 1 220px' }}
+            leftSection={<IconSearch size={16} />}
+            placeholder={t('groups.search', 'Gruppen suchen …')}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
         <Pagination {...pg} top />
         <div

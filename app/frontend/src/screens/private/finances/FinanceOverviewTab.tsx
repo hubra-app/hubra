@@ -4,13 +4,13 @@ import { useT } from '@/locales/i18n'
 import { useNav, useData } from '@/context/AppContext'
 import { StatTile } from '@/components/ui'
 import { getFinanceOverview, listTransactions } from '@/api/finance'
-import { formatCHF } from '@/format'
+import { formatCHF, formatCHFWhole } from '@/format'
 
 /* ── Finance Overview ────────────────────────── */
 export function FinanceOverviewTab() {
   const { go } = useNav()
   const { invoices } = useData()
-  const { t } = useT()
+  const { t, i18n } = useT()
   const { data: overview } = useQuery({
     queryKey: ['finance-overview'],
     queryFn: () => getFinanceOverview(),
@@ -39,18 +39,14 @@ export function FinanceOverviewTab() {
         <StatTile
           label={t('finance.balance', 'Saldo')}
           value={
-            overview
-              ? `CHF ${overview.balance.toLocaleString('de-CH', {
-                  minimumFractionDigits: 0,
-                })}`
-              : '—'
+            overview ? formatCHFWhole(overview.balance) : '—'
           }
           sub={t('finance.asOfToday', 'Stand heute')}
         />
         <StatTile
           label={t('finance.incomeMtd', 'Einnahmen diesen Monat')}
           value={
-            overview ? `+CHF ${(overview.incomeMTD / 1000).toFixed(1)}k` : '—'
+            overview ? formatCHFWhole(overview.incomeMTD, true) : '—'
           }
           sub={t('dashboard.thisMonth', 'Diesen Monat')}
           accent="#1f9d57"
@@ -58,7 +54,7 @@ export function FinanceOverviewTab() {
         <StatTile
           label={t('finance.expensesMtd', 'Ausgaben diesen Monat')}
           value={
-            overview ? `−CHF ${(overview.expensesMTD / 1000).toFixed(1)}k` : '—'
+            overview ? formatCHFWhole(-Math.abs(overview.expensesMTD)) : '—'
           }
           sub={t('dashboard.thisMonth', 'Diesen Monat')}
           accent="#ff4d3d"
@@ -66,11 +62,7 @@ export function FinanceOverviewTab() {
         <StatTile
           label={t('finance.net', 'Netto')}
           value={
-            overview
-              ? `${overview.netMTD >= 0 ? '+' : ''}CHF ${(
-                  overview.netMTD / 1000
-                ).toFixed(1)}k`
-              : '—'
+            overview ? formatCHFWhole(overview.netMTD, true) : '—'
           }
           sub={t('finance.incomeMinusExpenses', 'Einnahmen minus Ausgaben')}
           accent="#6131c4"
@@ -152,14 +144,17 @@ export function FinanceOverviewTab() {
                     </div>
                     <div
                       style={{
-                        fontSize: 9,
+                        fontSize: 10,
                         color: '#8c86a0',
-                        fontFamily: '"JetBrains Mono"',
-                        letterSpacing: '0.04em',
                         marginTop: 4,
                       }}
                     >
-                      {m.m.toUpperCase()}
+                      {m.month
+                        ? new Date(m.year ?? 2000, m.month - 1, 1).toLocaleString(
+                            i18n.language,
+                            { month: 'short' },
+                          )
+                        : m.m}
                     </div>
                   </div>
                 )

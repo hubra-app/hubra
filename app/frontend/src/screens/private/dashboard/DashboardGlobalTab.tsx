@@ -50,7 +50,7 @@ export function GlobalOverviewScreen() {
 
   return (
     <div>
-      <Group justify="flex-end" mb="md">
+      <Group justify="flex-end" mb="md" className="page-actions">
         <Button variant="default" onClick={() => go("/app/operations/events")}>
           {t("dashboard.buttons.newEvent")}
         </Button>

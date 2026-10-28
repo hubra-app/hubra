@@ -185,7 +185,7 @@ export function KVSettingsTab() {
             onClick={() => setShowAdd(true)}
             style={{ display: 'flex', alignItems: 'center', gap: 6 }}
           >
-            <IconPlus size={16} /> Add entry
+            <IconPlus size={16} /> {t('settings.kv.addEntry', 'Eintrag hinzufügen')}
           </Button>
         }
         editingKey={editingKey}

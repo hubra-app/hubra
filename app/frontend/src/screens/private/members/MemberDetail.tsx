@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { Button, Paper } from '@mantine/core'
+import { Button, Paper, Title } from '@mantine/core'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT } from '@/locales/i18n'
 import { useParams } from 'react-router-dom'
-import { IconPencil, IconLock, IconCircleCheck } from '@tabler/icons-react'
+import { IconArrowLeft, IconPencil, IconLock, IconCircleCheck } from '@tabler/icons-react'
 import { useNav, useToast, useAuth } from '@/context/AppContext'
 import {
   Avatar,
@@ -102,8 +102,10 @@ export function MemberDetailScreen({
         <Button
           size="sm"
           variant="subtle"
+          px={6}
+          leftSection={<IconArrowLeft size={16} />}
           onClick={() => go('/app/members')}
-          style={{ marginBottom: 12 }}
+          style={{ marginBottom: 12, marginLeft: -6 }}
         >
           {t('members.detail.backToMembers')}
         </Button>
@@ -115,16 +117,9 @@ export function MemberDetailScreen({
             flexWrap: 'wrap',
           }}
         >
-          <h1
-            style={{
-              margin: 0,
-              fontSize: 'var(--mantine-font-size-xl)',
-              fontWeight: 700,
-              color: '#1a1625',
-            }}
-          >
+          <Title order={1} fz={{ base: 26, sm: 32 }}>
             {m.name}
-          </h1>
+          </Title>
           <span
             className="num"
             style={{
@@ -168,12 +163,7 @@ export function MemberDetailScreen({
       </div>
 
       <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '320px 1fr',
-          gap: 16,
-          alignItems: 'start',
-        }}
+        className="detail-grid"
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <Paper
@@ -447,9 +437,9 @@ export function MemberDetailScreen({
                         {label}
                       </div>
                       <div
-                        className="num"
+                        className="stat-value"
                         style={{
-                          fontSize: 'var(--mantine-font-size-xl)',
+                          fontSize: 22,
                           fontWeight: 700,
                           color: '#1a1625',
                         }}
@@ -467,7 +457,7 @@ export function MemberDetailScreen({
                     marginBottom: 8,
                   }}
                 >
-                  Notes
+                  {t('members.detail.notes', 'Notizen')}
                 </div>
                 <div
                   style={{
