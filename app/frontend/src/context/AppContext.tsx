@@ -417,25 +417,53 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const ctrl = new AbortController()
-    let timer: ReturnType<typeof setTimeout>
-    let lastStatus: string | null = null
+    let timer: ReturnType<typeof setTimeout> | undefined
+    let failures = 0
+
+    // A hidden tab is throttled or frozen by the browser, and its requests can
+    // fail without the server being down. So polling pauses while the tab is
+    // hidden, a fresh check runs when it comes back, and the banner only shows
+    // after two failed checks in a row.
+    const schedule = (delay: number) => {
+      clearTimeout(timer)
+      timer = document.hidden ? undefined : setTimeout(check, delay)
+    }
 
     const check = async () => {
+      let healthy: boolean
       try {
         const { status } = await ping({ signal: ctrl.signal })
-        if (ctrl.signal.aborted) return
-        setBackendOnline(status === 'ok' || status === 'degraded')
-        lastStatus = status
+        healthy = status === 'ok' || status === 'degraded'
       } catch {
-        if (!ctrl.signal.aborted) setBackendOnline(false)
-        lastStatus = 'error'
+        healthy = false
       }
-      // Back off to 60s when the server is not healthy; 30s otherwise.
-      const delay = lastStatus === 'ok' ? 30_000 : 60_000
-      timer = setTimeout(check, delay)
+      if (ctrl.signal.aborted) return
+      if (healthy) {
+        failures = 0
+        setBackendOnline(true)
+        schedule(30_000)
+      } else {
+        failures += 1
+        if (failures >= 2) setBackendOnline(false)
+        // Retry soon after the first failure; back off once the banner is up.
+        schedule(failures >= 2 ? 30_000 : 5_000)
+      }
     }
+
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        clearTimeout(timer)
+        timer = undefined
+      } else {
+        failures = 0
+        check()
+      }
+    }
+
+    document.addEventListener('visibilitychange', onVisibilityChange)
     check()
     return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
       clearTimeout(timer)
       ctrl.abort()
     }
