@@ -6,6 +6,7 @@ import { useNav, useAuth, useData } from '@/context/AppContext'
 import { NavItemRow } from './NavItemRow'
 import { UserMenu } from './UserMenu'
 import { usePlugins } from '@/plugins/store'
+import { useNavCounts } from '@/data/lists'
 import { buildNav, filterNav, initials, contrastColor } from './nav'
 import { roleLabels } from '@/roles'
 
@@ -14,25 +15,12 @@ export function Sidebar() {
   const location = useLocation()
   const { go, sidebarCollapsed, userMenuOpen, setUserMenuOpen } = useNav()
   const { currentUser, hasPermission } = useAuth()
-  const {
-    memberCount,
-    pendingApplicationCount,
-    groupCount,
-    polls,
-    openInvoiceCount,
-    moduleList,
-  } = useData()
-  const openPolls = polls.filter((p) => p.status === 'open').length
+  const { moduleList } = useData()
+  const counts = useNavCounts()
   usePlugins() // plugin icons arrive after the first render
   const nav = filterNav(
     buildNav(
-      {
-        members: memberCount,
-        applications: pendingApplicationCount,
-        groups: groupCount,
-        polls: openPolls,
-        invoices: openInvoiceCount,
-      },
+      counts,
       t,
       moduleList,
     ),

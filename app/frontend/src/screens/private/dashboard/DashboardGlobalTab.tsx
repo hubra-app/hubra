@@ -1,12 +1,9 @@
 import { Badge, Button, Group, Text, UnstyledButton } from "@mantine/core";
 import { EVENT_TYPE_COLORS } from "@/constants";
-import { useQuery } from "@tanstack/react-query";
 import { useT } from "@/locales/i18n";
-import { useNav, useData } from "@/context/AppContext";
+import { useNav } from "@/context/AppContext";
+import { useDashboardSummary, useEvents, useMyVotes, usePolls } from "@/data/lists";
 import { StatTile, Card, StatGrid, Avatar } from "@/components/ui";
-import { getDashboardSummary } from "@/api/dashboard";
-import { listEvents } from "@/api/events";
-import { listPolls } from "@/api/polls";
 import { formatCHFCompact } from "@/format";
 
 function fmtNet(n: number): string {
@@ -17,23 +14,10 @@ function fmtNet(n: number): string {
 export function GlobalOverviewScreen() {
   const { t, i18n } = useT();
   const { go } = useNav();
-  const { myVotes } = useData();
-  const {
-    data: summary,
-    isLoading: summaryLoading,
-    isError: summaryError,
-  } = useQuery({
-    queryKey: ["dashboard-summary"],
-    queryFn: () => getDashboardSummary(),
-  });
-  const { data: events = [] } = useQuery({
-    queryKey: ["events"],
-    queryFn: () => listEvents(),
-  });
-  const { data: polls = [] } = useQuery({
-    queryKey: ["polls"],
-    queryFn: listPolls,
-  });
+  const myVotes = useMyVotes();
+  const { data: summary, isLoading: summaryLoading, isError: summaryError } = useDashboardSummary();
+  const { events } = useEvents();
+  const { polls } = usePolls();
 
   const today = new Date();
 

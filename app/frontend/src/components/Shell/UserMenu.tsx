@@ -3,6 +3,7 @@ import { IconLogout, IconBuilding } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
 import { useAuth, useNav, useData } from '@/context/AppContext'
 import { useInstance } from '@/context/InstanceContext'
+import { useMyTenants } from '@/data/lists'
 import { initials, contrastColor } from './nav'
 
 export function UserMenu() {
@@ -10,7 +11,8 @@ export function UserMenu() {
   const { setPhase, currentUser } = useAuth()
   const { go, setUserMenuOpen } = useNav()
   const { ssoUrl } = useInstance()
-  const { myTenants, switchTenant } = useData()
+  const { switchTenant } = useData()
+  const myTenants = useMyTenants()
   const name = currentUser?.name ?? ''
   const email = currentUser?.publicEmail || currentUser?.email || ''
   const bg = currentUser?.avatarColor ?? '#ebe8f2'

@@ -21,7 +21,7 @@ import {
   IconTrash,
   IconSearch,
 } from '@tabler/icons-react'
-import { useToast, useData, useAuth } from '@/context/AppContext'
+import { useToast, useAuth } from '@/context/AppContext'
 import {
   PageHead,
   Modal,
@@ -179,7 +179,6 @@ type GroupForm = z.infer<typeof groupSchema>
 
 export function GroupsScreen() {
   const { notify } = useToast()
-  const { setGroupCount } = useData()
   const { hasPermission } = useAuth()
   const { t } = useT()
   const queryClient = useQueryClient()
@@ -265,7 +264,6 @@ export function GroupsScreen() {
       })
       queryClient.invalidateQueries({ queryKey: ['groups'] })
       queryClient.invalidateQueries({ queryKey: ['lookups'] })
-      setGroupCount()
       setAddOpen(false)
       notify(
         'success',
@@ -320,7 +318,6 @@ export function GroupsScreen() {
       await deleteGroup(deleteTarget.id)
       queryClient.invalidateQueries({ queryKey: ['groups'] })
       queryClient.invalidateQueries({ queryKey: ['lookups'] })
-      setGroupCount()
       notify(
         'info',
         t('groups.group.deleted'),

@@ -12,7 +12,9 @@ import {
   IconLogin,
   IconLogout as Leave,
 } from '@tabler/icons-react'
-import { useToast, useData, useAuth } from '@/context/AppContext'
+import { useToast, useAuth } from '@/context/AppContext'
+import { qk } from '@/data/keys'
+import { useEvents, useListCache, useMyJoinedEvents } from '@/data/lists'
 import {
   Modal,
   Field,
@@ -54,7 +56,9 @@ function eventTypeLabel(type: string) {
 
 export function EventsTab() {
   const { notify } = useToast()
-  const { myJoinedEvents, events, setEvents } = useData()
+  const { events } = useEvents()
+  const myJoinedEvents = useMyJoinedEvents()
+  const eventCache = useListCache<ClubEvent>(qk.events)
   const { currentUser, hasPermission } = useAuth()
   const { t, i18n } = useT()
   const joinEventMutation = useToggleJoinEvent()
@@ -119,7 +123,7 @@ export function EventsTab() {
         location: data.location || undefined,
         type: data.type,
       })
-      setEvents((prev) => [...prev, ev])
+      eventCache.append(ev)
       setAddOpen(false)
       notify(
         'success',
@@ -147,7 +151,7 @@ export function EventsTab() {
         location: data.location || undefined,
         type: data.type,
       })
-      setEvents((prev) => prev.map((e) => (e.id === ev.id ? ev : e)))
+      eventCache.replace(ev)
       setEditTarget(null)
       notify(
         'success',
@@ -169,7 +173,7 @@ export function EventsTab() {
     if (!deleteTarget) return
     try {
       await deleteEvent(deleteTarget.id)
-      setEvents((prev) => prev.filter((e) => e.id !== deleteTarget.id))
+      eventCache.remove(deleteTarget.id)
       notify(
         'info',
         t('events.event.deleted'),

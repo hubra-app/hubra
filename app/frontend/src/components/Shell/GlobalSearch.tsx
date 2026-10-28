@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query'
 import { TextInput, Box, Text, Stack } from '@mantine/core'
 import { IconSearch } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
-import { useNav, useData, useApp } from '@/context/AppContext'
+import { useNav, useApp } from '@/context/AppContext'
+import { useEvents, useInvoices, usePolls } from '@/data/lists'
 import { listMembers } from '@/api/members'
 import { listGroups } from '@/api/groups'
 import { listTransactions } from '@/api/finance'
@@ -14,7 +15,6 @@ import type { SearchResult } from './nav'
 export function GlobalSearch() {
   const { t } = useT()
   const { go } = useNav()
-  const { events, polls, invoices } = useData()
   // A switched-off module answers 403: only search what is on.
   const { modules, hasPermission } = useApp()
   const [query, setQuery] = useState('')
@@ -22,6 +22,9 @@ export function GlobalSearch() {
   const [dropOpen, setDropOpen] = useState(false)
   // Load what the search looks through only once someone uses it.
   const [used, setUsed] = useState(false)
+  const { events } = useEvents({ enabled: used })
+  const { polls } = usePolls({ enabled: used })
+  const { invoices } = useInvoices({ enabled: used })
   const searchRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 

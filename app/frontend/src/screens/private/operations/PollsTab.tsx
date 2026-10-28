@@ -11,10 +11,12 @@ import {
   Group,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useT } from "@/locales/i18n";
 import { IconPlus, IconEdit, IconTrash, IconBell } from "@tabler/icons-react";
-import { useToast, useData, useAuth } from "@/context/AppContext";
+import { useToast, useAuth } from "@/context/AppContext";
+import { qk } from "@/data/keys";
+import { useListCache, useMyVotes, usePolls } from "@/data/lists";
 import {
   Modal,
   Field,
@@ -39,10 +41,11 @@ import { ProxyPanel } from "./ProxyPanel";
 /* -- Polls ------------------------------------ */
 export function PollsTab() {
   const { notify } = useToast();
-  const { polls, setPolls, myVotes, setMyVotes } = useData();
+  const { polls } = usePolls();
+  const myVotes = useMyVotes();
+  const pollCache = useListCache<Poll>(qk.polls);
   const { hasPermission } = useAuth();
   const { t, i18n } = useT();
-  const queryClient = useQueryClient();
   const { data: groups = [] } = useQuery({
     queryKey: ["groups"],
     queryFn: listGroups,
@@ -82,23 +85,15 @@ export function PollsTab() {
       apiCastVote(pollId, optIdx),
     onMutate: ({ pollId, optIdx }) => {
       const oldOptIdx = myVotes[pollId];
-      setMyVotes((prev) => ({ ...prev, [pollId]: optIdx }));
+      pollCache.patch(pollId, (p) => ({ ...p, myVote: optIdx }));
       return { oldOptIdx };
     },
-    onSuccess: (updated, { pollId }) => {
-      setPolls((prev) => prev.map((p) => (p.id === pollId ? updated : p)));
+    onSuccess: (updated) => {
+      pollCache.replace(updated);
       notify("success", t("polls.voteCast", "Stimme abgegeben"), t("polls.voteCastMsg", "Deine Stimme wurde gespeichert."));
     },
     onError: (err, { pollId }, ctx) => {
-      if (ctx?.oldOptIdx !== undefined) {
-        setMyVotes((prev) => ({ ...prev, [pollId]: ctx.oldOptIdx }));
-      } else {
-        setMyVotes((prev) => {
-          const n = { ...prev };
-          delete n[pollId];
-          return n;
-        });
-      }
+      pollCache.patch(pollId, (p) => ({ ...p, myVote: ctx?.oldOptIdx }));
       const msg = err instanceof Error ? err.message : t("polls.voteFailed", "Die Stimme konnte nicht abgegeben werden.");
       notify("error", t("common.error", "Fehler"), msg);
     },
@@ -108,13 +103,13 @@ export function PollsTab() {
     mutationFn: (pollId: string) => apiDeletePoll(pollId),
     onMutate: (pollId) => {
       setDeletingPollId(pollId);
-      setPolls((prev) => prev.filter((p) => p.id !== pollId));
+      pollCache.remove(pollId);
     },
     onSettled: () => {
       setDeletingPollId(null);
     },
     onError: () => {
-      queryClient.invalidateQueries({ queryKey: ["polls"] });
+      pollCache.invalidate();
     },
   });
 
@@ -189,13 +184,11 @@ export function PollsTab() {
 
       if (editTarget) {
         const updated = await updatePoll(editTarget.id, payload as PollUpdate);
-        setPolls((prev) =>
-          prev.map((p) => (p.id === updated.id ? updated : p)),
-        );
+        pollCache.replace(updated);
         notify("success", t("polls.updated", "Umfrage gespeichert"), t("polls.updatedMsg", "Die Änderungen sind gespeichert."));
       } else {
         const poll = await createPoll(payload as PollCreate);
-        setPolls((prev) => [poll, ...prev]);
+        pollCache.prepend(poll);
         notify("success", t("polls.created", "Umfrage erstellt"), t("polls.createdMsg", "Die Mitglieder können jetzt abstimmen."));
       }
       setAddOpen(false);
@@ -444,9 +437,7 @@ export function PollsTab() {
                     poll={poll}
                     hasVoted={hasVoted}
                     onPollUpdated={(updated) =>
-                      setPolls((prev) =>
-                        prev.map((p) => (p.id === updated.id ? updated : p)),
-                      )
+                      pollCache.replace(updated)
                     }
                   />
                 )}

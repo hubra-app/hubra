@@ -9,7 +9,8 @@ import {
   IconExternalLink,
   IconFileDownload,
 } from '@tabler/icons-react'
-import { useNav, useData } from '@/context/AppContext'
+import { useNav } from '@/context/AppContext'
+import { useInvoices } from '@/data/lists'
 import { PageHead, InvoicePill } from '@/components/ui'
 import { getInvoice, downloadInvoicePdf } from '@/api/finance'
 import { formatCHF } from '@/format'
@@ -23,7 +24,7 @@ export function InvoiceDetailScreen() {
   const { t, i18n } = useT()
   const { id } = useParams<{ id: string }>()
   const { go, selectedInvoice } = useNav()
-  const { invoices } = useData()
+  const { invoices } = useInvoices()
   const markPaidMutation = useMarkInvoicePaid()
   const sendReminderMutation = useSendInvoiceReminder()
   const { data: fetchedInvoice } = useQuery({

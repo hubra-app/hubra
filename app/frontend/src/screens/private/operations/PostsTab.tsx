@@ -12,7 +12,9 @@ import {
   IconMessage2,
   IconArrowBackUp,
 } from '@tabler/icons-react'
-import { useToast, useAuth, useData } from '@/context/AppContext'
+import { useToast, useAuth } from '@/context/AppContext'
+import { qk } from '@/data/keys'
+import { useListCache, usePosts } from '@/data/lists'
 import {
   Modal,
   Field,
@@ -52,7 +54,8 @@ type PostForm = z.infer<typeof postSchema>
 export function PostsTab() {
   const { notify } = useToast()
   const { currentUser, hasPermission, isAdmin } = useAuth()
-  const { posts, setPosts } = useData()
+  const { posts } = usePosts()
+  const postCache = useListCache<Post>(qk.posts.all)
   const { t } = useT()
   const canCreate = hasPermission('posts.posts.create')
   const canUpdate = hasPermission('posts.posts.update')
@@ -100,7 +103,7 @@ export function PostsTab() {
         summary: data.summary || undefined,
         body: data.body,
       })
-      setPosts((prev) => [post, ...prev])
+      postCache.prepend(post)
       setAddOpen(false)
       notify(
         'success',
@@ -129,7 +132,7 @@ export function PostsTab() {
         summary: data.summary || undefined,
         body: data.body,
       })
-      setPosts((prev) => prev.map((p) => (p.id === post.id ? post : p)))
+      postCache.replace(post)
       setEditTarget(null)
       notify(
         'success',
@@ -151,7 +154,7 @@ export function PostsTab() {
     if (!deleteTarget) return
     try {
       await deletePost(deleteTarget.id)
-      setPosts((prev) => prev.filter((p) => p.id !== deleteTarget.id))
+      postCache.remove(deleteTarget.id)
       notify(
         'info',
         t('posts.post.deleted', 'Beitrag gelöscht'),
@@ -173,32 +176,25 @@ export function PostsTab() {
       liked ? unlikePost(postId) : likePost(postId),
     onMutate: ({ postId, liked }) => {
       const myId = currentUser?.id ?? ''
-      setPosts((prev) =>
-        prev.map((p) => {
-          if (p.id !== postId) return p
-          const likeMemberIds = liked
-            ? p.likeMemberIds.filter((id) => id !== myId)
-            : p.likeMemberIds.includes(myId)
-              ? p.likeMemberIds
-              : [...p.likeMemberIds, myId]
-          return {
-            ...p,
-            likeMemberIds,
-            likes: likeMemberIds.length,
-          }
-        }),
-      )
+      postCache.patch(postId, (p) => {
+        const likeMemberIds = liked
+          ? p.likeMemberIds.filter((id) => id !== myId)
+          : p.likeMemberIds.includes(myId)
+            ? p.likeMemberIds
+            : [...p.likeMemberIds, myId]
+        return { ...p, likeMemberIds, likes: likeMemberIds.length }
+      })
       return { liked }
     },
     onError: (err, { postId }) => {
       const msg = err instanceof Error ? err.message : t('posts.likeFailed', 'Das Like konnte nicht gespeichert werden.')
       notify('error', t('common.error'), msg)
       getPost(postId).then((post) => {
-        setPosts((prev) => prev.map((p) => (p.id === post.id ? post : p)))
+        postCache.replace(post)
       })
     },
     onSuccess: (post) => {
-      setPosts((prev) => prev.map((p) => (p.id === post.id ? post : p)))
+      postCache.replace(post)
     },
   })
 
@@ -245,11 +241,7 @@ export function PostsTab() {
         ...prev,
         [postId]: [...(prev[postId] ?? []), comment],
       }))
-      setPosts((prev) =>
-        prev.map((p) =>
-          p.id === postId ? { ...p, comments: p.comments + 1 } : p,
-        ),
-      )
+      postCache.patch(postId, (p) => ({ ...p, comments: p.comments + 1 }))
       setCommentInput('')
       notify('success', t('posts.commentAdded', 'Kommentar hinzugefügt'), '')
     } catch (err: unknown) {
@@ -272,11 +264,7 @@ export function PostsTab() {
         ...prev,
         [postId]: (prev[postId] ?? []).filter((c) => c.id !== commentId),
       }))
-      setPosts((prev) =>
-        prev.map((p) =>
-          p.id === postId ? { ...p, comments: p.comments - 1 } : p,
-        ),
-      )
+      postCache.patch(postId, (p) => ({ ...p, comments: p.comments - 1 }))
     } catch (err: unknown) {
       notify(
         'error',

@@ -14,7 +14,8 @@ import {
   IconShieldCheckFilled,
   IconDots,
 } from '@tabler/icons-react'
-import { useNav, useToast, useAuth, useData } from '@/context/AppContext'
+import { useNav, useToast, useAuth } from '@/context/AppContext'
+import { qk } from '@/data/keys'
 import {
   Avatar,
   TierTag,
@@ -49,7 +50,6 @@ export function MembersTab() {
   const { go } = useNav()
   const { notify } = useToast()
   const { currentUser, hasPermission } = useAuth()
-  const { setMemberCount } = useData()
   const canCreate = hasPermission('members.members.create')
   const canUpdate = hasPermission('members.members.update')
   const canArchive = hasPermission('members.members.archive')
@@ -163,7 +163,7 @@ export function MembersTab() {
     try {
       await archiveMember(archiveTarget.id)
       queryClient.invalidateQueries({ queryKey: ['members'] })
-      setMemberCount((prev) => Math.max(0, prev - 1))
+      queryClient.invalidateQueries({ queryKey: qk.dashboard })
       notify(
         'info',
         t('members.archived', 'Mitglied archiviert'),
@@ -182,7 +182,7 @@ export function MembersTab() {
     try {
       await unarchiveMember(m.id)
       queryClient.invalidateQueries({ queryKey: ['members'] })
-      setMemberCount((prev) => prev + 1)
+      queryClient.invalidateQueries({ queryKey: qk.dashboard })
       notify(
         'success',
         t('members.member.restoredTitle'),

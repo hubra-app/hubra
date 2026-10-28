@@ -1,26 +1,24 @@
 import type { Page } from '@playwright/test'
-import { CLUB } from './env'
+import { APP_URL, CLUB } from './env'
 
-/** Calls the API from the signed-in page, the way the app does. */
+/**
+ * Calls the API as the signed-in user, with the page's cookies and the
+ * headers the app sends. It goes through the browser context rather than
+ * the page, so a reload in between does not cut it off.
+ */
 export async function api<T = unknown>(page: Page, method: string, path: string, body?: unknown) {
-  return page.evaluate(
-    async ({ method, path, body, club }) => {
-      const csrf = document.cookie.match(/(?:^|; )csrf_access_token=([^;]+)/)?.[1] ?? ''
-      const res = await fetch(`/api/v1${path}`, {
-        method,
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': decodeURIComponent(csrf),
-          'X-Tenant-Slug': club,
-        },
-        body: body === undefined ? undefined : JSON.stringify(body),
-      })
-      if (!res.ok) throw new Error(`${method} ${path}: ${res.status} ${await res.text()}`)
-      return res.status === 204 ? null : res.json()
+  const cookies = await page.context().cookies(APP_URL)
+  const csrf = cookies.find((c) => c.name === 'csrf_access_token')?.value ?? ''
+  const res = await page.request.fetch(`${APP_URL}/api/v1${path}`, {
+    method,
+    headers: {
+      'X-CSRF-TOKEN': decodeURIComponent(csrf),
+      'X-Tenant-Slug': CLUB,
     },
-    { method, path, body, club: CLUB },
-  ) as Promise<T>
+    data: body,
+  })
+  if (!res.ok()) throw new Error(`${method} ${path}: ${res.status()} ${await res.text()}`)
+  return (res.status() === 204 ? null : await res.json()) as T
 }
 
 /** A name no other run has used. */

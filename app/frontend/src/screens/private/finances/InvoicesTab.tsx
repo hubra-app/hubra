@@ -3,11 +3,14 @@ import i18n from 'i18next'
 import { useForm } from '@mantine/form'
 import { zodResolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, Group, Select, TextInput } from '@mantine/core'
 import { useT, zmsg } from '@/locales/i18n'
 import { IconPlus } from '@tabler/icons-react'
-import { useToast, useData, useNav, useAuth } from '@/context/AppContext'
+import { useToast, useNav, useAuth } from '@/context/AppContext'
+import { qk } from '@/data/keys'
+import { useInvoices, useListCache } from '@/data/lists'
+import type { Invoice } from '@/types'
 import {
   Modal,
   Field,
@@ -89,7 +92,9 @@ type BulkForm = z.infer<typeof bulkSchema>
 
 export function InvoicesTab() {
   const { notify } = useToast()
-  const { invoices, setInvoices } = useData()
+  const { invoices } = useInvoices()
+  const invoiceCache = useListCache<Invoice>(qk.invoices.all)
+  const queryClient = useQueryClient()
   const { goInvoice } = useNav()
   const { hasPermission } = useAuth()
   const { t } = useT()
@@ -186,7 +191,8 @@ export function InvoicesTab() {
         tierId: data.tierId || undefined,
         description: data.description || undefined,
       })
-      setInvoices((prev) => [...result.invoices, ...prev])
+      invoiceCache.invalidate()
+      queryClient.invalidateQueries({ queryKey: qk.dashboard })
       setBulkOpen(false)
       notify(
         'success',
@@ -237,7 +243,8 @@ export function InvoicesTab() {
         categoryId: data.categoryId || undefined,
         description: data.description || undefined,
       })
-      setInvoices((prev) => [inv, ...prev])
+      invoiceCache.prepend(inv)
+      queryClient.invalidateQueries({ queryKey: qk.dashboard })
       setAddOpen(false)
       notify(
         'success',
