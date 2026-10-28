@@ -78,7 +78,7 @@ export function SignupScreen() {
 
           <Title order={2} mb={6}>Create account</Title>
           <Text size="sm" c="dimmed" mb={28}>
-            Sign up to request a space or join an existing one.
+            Sign up to start a club or join an existing one.
           </Text>
 
           {error && <Alert color="red" variant="light" mb="md">{error}</Alert>}

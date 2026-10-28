@@ -44,8 +44,8 @@ export function MyTenantsTab() {
       >
         {tr('Verein finden', 'Find a club')}
       </Button>
-      <Button leftSection={<IconPlus size={16} />} onClick={() => navigate('/app/requests')}>
-        {tr('Neuen Verein beantragen', 'Request a new club')}
+      <Button component="a" href={`${SSO_URL}/start`} leftSection={<IconPlus size={16} />}>
+        {tr('Verein gründen', 'Start a club')}
       </Button>
     </>
   )

@@ -8,7 +8,7 @@ import { Shell } from '@/components/Shell'
 import { AdminPortal } from '@/screens/AdminPortal'
 import { MyTenantsTab } from '@/screens/MyTenantsTab'
 import { TenantDetail } from '@/screens/TenantDetail'
-import { MailRelay } from '@/screens/platform/MailRelay'
+import { PlatformSettings } from '@/screens/platform/PlatformSettings'
 import { ClubAdmins } from '@/screens/ClubAdmins'
 import { SSO_URL } from '@hubra/api-client'
 import { useLang } from '@/lang'
@@ -71,6 +71,27 @@ function RequireGlobalPermission({ perm, children }: { perm: string; children: R
     )
 
   return <>{children}</>
+}
+
+// Club requests used to be asked for here; people now do that on SSO
+// (/start), and only staff review them here.
+function ClubRequestsRoute() {
+  const { hasGlobalPermission } = useAdmin()
+  const staff = hasGlobalPermission('requests.read.all')
+  useEffect(() => {
+    if (!staff) window.location.assign(`${SSO_URL}/start`)
+  }, [staff])
+  if (!staff)
+    return (
+      <Center h="100vh">
+        <Loader />
+      </Center>
+    )
+  return (
+    <Shell>
+      <AdminPortal />
+    </Shell>
+  )
 }
 
 function SsoLoginRedirect() {
@@ -159,9 +180,7 @@ function AppRoutes() {
           path="/app/requests"
           element={
             <RequireAuth>
-              <Shell>
-                <AdminPortal />
-              </Shell>
+              <ClubRequestsRoute />
             </RequireAuth>
           }
         />
@@ -206,14 +225,18 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/app/platform/mail"
+          path="/app/platform/settings"
           element={
             <RequireGlobalPermission perm="platform.settings">
               <Shell>
-                <MailRelay />
+                <PlatformSettings />
               </Shell>
             </RequireGlobalPermission>
           }
+        />
+        <Route
+          path="/app/platform/mail"
+          element={<Navigate to="/app/platform/settings" replace />}
         />
         <Route path="/" element={<DefaultRoute />} />
         <Route path="*" element={<DefaultRoute />} />

@@ -10,6 +10,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 import { notifications as mantineNotifications } from '@mantine/notifications'
 import { getMyPermissions, logout as apiLogout, type PermissionsResponse } from '@/api/auth'
+import { getMyTenants } from '@/api/tenants'
 import { hasTokens, setAuthFailureHandler, SSO_URL } from '@hubra/api-client'
 
 export type AuthStatus = 'loading' | 'authed' | 'anon'
@@ -27,6 +28,22 @@ interface AdminAppState {
 }
 
 const AdminContext = createContext<AdminAppState | null>(null)
+
+/**
+ * manage is for platform staff (any global permission) and for the owners
+ * and admins of a club. Everyone else belongs on the club picker.
+ */
+async function mayUseManage(perms: PermissionsResponse): Promise<boolean> {
+  if (perms.is_superadmin || (perms.global_permissions?.length ?? 0) > 0) return true
+  try {
+    const { tenants } = await getMyTenants()
+    return tenants.some((t) => t.admin_level)
+  } catch {
+    // Not knowing is no reason to bounce between here and SSO: the API
+    // still refuses what they may not do.
+    return true
+  }
+}
 
 function redirectToSso() {
   const currentUrl = window.location.href
@@ -47,8 +64,13 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     const ctrl = new AbortController()
     let cancelled = false
     getMyPermissions(ctrl.signal)
-      .then((data) => {
+      .then(async (data) => {
+        const allowed = await mayUseManage(data)
         if (cancelled) return
+        if (!allowed) {
+          window.location.assign(`${SSO_URL}/clubs`)
+          return
+        }
         setPermData(data)
         setAuthStatus('authed')
       })

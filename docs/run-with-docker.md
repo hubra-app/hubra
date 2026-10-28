@@ -88,7 +88,7 @@ terminates TLS. Set in `.env`:
 FRONTEND_BASE_URL=https://club.example.org
 MANAGE_BASE_URL=https://manage.example.org
 SSO_BASE_URL=https://sso.example.org
-CORS_ORIGINS=https://club.example.org,https://manage.example.org,https://sso.example.org
+CORS_ORIGINS=https://club.example.org,https://manage.example.org,https://sso.example.org,https://join.example.org
 JWT_COOKIE_SECURE=true
 JWT_COOKIE_DOMAIN=.example.org
 ```
@@ -104,7 +104,10 @@ Then either:
   `docker-compose.traefik.yml` does this with an external Traefik; enable it
   with `COMPOSE_FILE=docker-compose.yml:docker-compose.traefik.yml` in `.env`,
   and takes its host names from `HUBRA_APP_HOST`, `HUBRA_MANAGE_HOST`,
-  `HUBRA_SSO_HOST` and `HUBRA_API_HOST` (default `*.hubra.club`).
+  `HUBRA_SSO_HOST`, `HUBRA_JOIN_HOST` and `HUBRA_API_HOST` (default
+  `*.hubra.club`). The join host serves the SSO frontend too: people start a
+  club there (`/start`) and find one to join (`/clubs`). Add its origin to
+  `CORS_ORIGINS`.
 
 The frontend images read these values when the container starts, so changing
 them needs `docker compose up -d`, not a rebuild.

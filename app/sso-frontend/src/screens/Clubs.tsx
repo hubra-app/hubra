@@ -99,6 +99,8 @@ export function ClubsScreen() {
     )
 
   const myClubs = mine.data?.tenants ?? []
+  // Club owners and admins run their club in the manager portal too.
+  const runsAClub = myClubs.some((t) => t.admin_level)
   const results = found.data?.clubs ?? []
   const canJoinDirectly = found.data?.canJoinDirectly ?? false
 
@@ -132,13 +134,15 @@ export function ClubsScreen() {
           </Group>
         </Group>
 
-        {isManager && (
+        {(isManager || runsAClub) && (
           <Paper withBorder radius="md" p="md" mb="xl">
             <Group justify="space-between" wrap="nowrap">
               <Box style={{ minWidth: 0 }}>
                 <Text fw={600}>Manager portal</Text>
                 <Text fz="xs" c="dimmed">
-                  Clubs, requests, roles and plugins of this platform
+                  {isManager
+                    ? 'Clubs, requests, roles and plugins of this platform'
+                    : 'Admins and settings of the clubs you run'}
                 </Text>
               </Box>
               <Button
@@ -172,9 +176,16 @@ export function ClubsScreen() {
                     <Text fw={600} truncate>
                       {t.tenant_name}
                     </Text>
-                    <Text fz="xs" c="dimmed">
-                      {t.tenant_slug}
-                    </Text>
+                    <Group gap={6} wrap="nowrap">
+                      <Text fz="xs" c="dimmed">
+                        {t.tenant_slug}
+                      </Text>
+                      {t.admin_level && (
+                        <Badge size="xs" variant="light">
+                          {t.admin_level === 'owner' ? 'Owner' : 'Admin'}
+                        </Badge>
+                      )}
+                    </Group>
                   </Box>
                   <Button
                     variant="light"
@@ -253,7 +264,15 @@ export function ClubsScreen() {
         <Stack gap={4} mt={40}>
           <Text size="sm" c="dimmed">
             Starting a new club?{' '}
-            <Anchor href={`${urls.manage}/app/requests`}>Request one</Anchor>
+            <Anchor
+              href="/start"
+              onClick={(e) => {
+                e.preventDefault()
+                navigate('/start')
+              }}
+            >
+              Request one
+            </Anchor>
           </Text>
         </Stack>
       </Box>

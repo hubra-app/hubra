@@ -22,6 +22,11 @@ spec:
         - app.hubra.club
         - manage.hubra.club
         - sso.hubra.club
+    # Its own certificate, so a join host without DNS yet can't hold up the
+    # others.
+    - secretName: hubra-join-tls
+      hosts:
+        - join.hubra.club
   rules:
     - host: api.hubra.club
       http:
@@ -45,6 +50,15 @@ spec:
             backend:
               service: { name: admin-frontend, port: { name: http } }
     - host: sso.hubra.club
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: sso-frontend, port: { name: http } }
+    # Start a club, find one and ask to join: the SSO frontend under a
+    # second name.
+    - host: join.hubra.club
       http:
         paths:
           - path: /

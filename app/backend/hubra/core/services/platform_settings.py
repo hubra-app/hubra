@@ -1,4 +1,5 @@
-"""Platform settings: the outbound mail relay and other instance-wide values.
+"""Platform settings: the outbound mail relay, backup storage and other
+instance-wide values.
 
 Each known key has a spec with a default taken from the deployment config
 (env), so a fresh install works from ``.env`` alone.  A row in
@@ -13,7 +14,10 @@ Mail split:
   * club mail goes through the platform relay too, from the platform sender
     with the club's address as Reply-To, unless the club has its own sender
     mailbox (``mail.smtp.user`` / ``mail.smtp.password`` from the mail
-    module), which keeps sending as before.
+    module), which sends as that mailbox through the same relay.
+
+Backups dump the whole database, so where they are stored (``backup.s3.*``)
+is the platform's to decide, not a club's.
 """
 
 from __future__ import annotations
@@ -87,6 +91,39 @@ SPECS: tuple[Spec, ...] = (
         "System sender name",
         "Display name of the system sender",
         lambda cfg: "Hubra",
+    ),
+    Spec(
+        "backup.s3.endpoint",
+        "S3 endpoint",
+        "S3-compatible endpoint URL, e.g. https://eu2.contabostorage.com",
+        lambda cfg: cfg.get("BACKUP_S3_ENDPOINT") or "",
+        "url",
+    ),
+    Spec(
+        "backup.s3.bucket",
+        "S3 bucket",
+        "Bucket the encrypted backups go to",
+        lambda cfg: cfg.get("BACKUP_S3_BUCKET") or "",
+    ),
+    Spec(
+        "backup.s3.region",
+        "S3 region",
+        "Usually 'default' for Contabo",
+        lambda cfg: cfg.get("BACKUP_S3_REGION") or "default",
+    ),
+    Spec(
+        "backup.s3.access_key",
+        "S3 access key",
+        "Stored encrypted",
+        lambda cfg: cfg.get("BACKUP_S3_ACCESS_KEY") or "",
+        secret=True,
+    ),
+    Spec(
+        "backup.s3.secret_key",
+        "S3 secret key",
+        "Stored encrypted",
+        lambda cfg: cfg.get("BACKUP_S3_SECRET_KEY") or "",
+        secret=True,
     ),
 )
 

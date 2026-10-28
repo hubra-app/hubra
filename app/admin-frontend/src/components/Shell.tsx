@@ -21,7 +21,8 @@ import {
   IconHome,
   IconKey,
   IconLogout,
-  IconMail,
+  IconPlus,
+  IconSettings,
   IconPuzzle,
   IconSearch,
   IconShieldCheck,
@@ -171,8 +172,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
     ...(hasGlobalPermission('tenants.read')
       ? [{ path: '/app/tenants', label: tr('Alle Vereine', 'All clubs'), icon: <IconBuildingCommunity size={20} /> }]
       : []),
+    ...(hasGlobalPermission('requests.read.all')
+      ? [{ path: '/app/requests', label: tr('Vereinsanfragen', 'Club requests'), icon: <IconClipboardList size={20} /> }]
+      : []),
     ...(hasGlobalPermission('platform.settings')
-      ? [{ path: '/app/platform/mail', label: tr('Mail-Relay', 'Mail relay'), icon: <IconMail size={20} /> }]
+      ? [{ path: '/app/platform/settings', label: tr('Plattform-Einstellungen', 'Platform settings'), icon: <IconSettings size={20} /> }]
       : []),
     ...(hasGlobalPermission('plugins.manage')
       ? [{ path: '/app/plugins', label: tr('Plugin-Katalog', 'Plugin catalogue'), icon: <IconPuzzle size={20} /> }]
@@ -190,7 +194,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       label: tr('Persönlich', 'Personal'),
       items: [
         { path: '/app/my-tenants', label: tr('Meine Vereine', 'My clubs'), icon: <IconHome size={20} /> },
-        { path: '/app/requests', label: tr('Meine Anfragen', 'My requests'), icon: <IconClipboardList size={20} /> },
+        { href: `${SSO_URL}/start`, label: tr('Verein gründen', 'Start a club'), icon: <IconPlus size={20} /> },
         { href: `${SSO_URL}/clubs`, label: tr('Verein finden', 'Find a club'), icon: <IconSearch size={20} /> },
       ],
     },

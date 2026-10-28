@@ -22,6 +22,13 @@ import {
 
 const RELAY = ['mail.relay.host', 'mail.relay.port', 'mail.relay.user', 'mail.relay.password']
 const SENDER = ['mail.system.sender_email', 'mail.system.sender_name']
+const BACKUP = [
+  'backup.s3.endpoint',
+  'backup.s3.bucket',
+  'backup.s3.region',
+  'backup.s3.access_key',
+  'backup.s3.secret_key',
+]
 
 function SourceBadge({ s }: { s: PlatformSetting }) {
   return s.source === 'platform' ? (
@@ -36,11 +43,12 @@ function SourceBadge({ s }: { s: PlatformSetting }) {
 }
 
 /**
- * The outbound mail relay for the whole platform. Sign-in, SSO and platform
- * mail always go out through it from the system sender; club mail does too,
- * with the club's address as Reply-To.
+ * Settings of the whole platform, not of one club: the outbound mail relay
+ * (sign-in, SSO and platform mail always go out through it from the system
+ * sender; club mail does too, with the club's address as Reply-To) and where
+ * the encrypted database backups are stored.
  */
-export function MailRelay() {
+export function PlatformSettings() {
   const { notify } = useAdmin()
   const queryClient = useQueryClient()
   const { data: settings = [], isLoading } = useQuery({
@@ -65,7 +73,7 @@ export function MailRelay() {
       const fresh = await updatePlatformSettings(values)
       queryClient.setQueryData(['platform-settings'], fresh)
       setDraft({})
-      notify('success', 'Mail relay saved')
+      notify('success', 'Platform settings saved')
     } catch (err) {
       notify('error', 'Could not save', err instanceof Error ? err.message : undefined)
     } finally {
@@ -130,11 +138,11 @@ export function MailRelay() {
 
   return (
     <div>
-      <PageHead eyebrow="Platform" title="Mail relay" />
+      <PageHead eyebrow="Platform" title="Platform settings" />
       <Text size="sm" c="dimmed" mb={20} maw={720}>
-        Every mail Hubra sends goes through this relay. Sign-in, SSO and platform notices come from
-        the system sender. Club mail comes from the system sender too, with the club&apos;s address
-        as Reply-To, unless the club has its own sender mailbox.
+        These apply to every club. Every mail Hubra sends goes through this relay. Sign-in, SSO and
+        platform notices come from the system sender. Club mail comes from the system sender too,
+        with the club&apos;s address as Reply-To, unless the club has its own sender mailbox.
       </Text>
 
       {isLoading ? (
@@ -157,6 +165,17 @@ export function MailRelay() {
               {resetButton(SENDER)}
             </Group>
             <Stack gap="sm">{SENDER.map(field)}</Stack>
+          </Paper>
+
+          <Paper withBorder shadow="sm" radius="lg" p="lg">
+            <Group justify="space-between" mb={4}>
+              <Title order={3}>Backup storage</Title>
+              {resetButton(BACKUP)}
+            </Group>
+            <Text size="xs" c="dimmed" mb={12}>
+              Backups hold the whole database, encrypted with BACKUP_ENCRYPTION_KEY from env.
+            </Text>
+            <Stack gap="sm">{BACKUP.map(field)}</Stack>
           </Paper>
 
           <Group>

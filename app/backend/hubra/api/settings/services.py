@@ -13,8 +13,6 @@ from hubra.core.validators import validate_value as _validate_value
 
 _CONFIG_FALLBACKS: dict[str, str] = {
     "mail.domain": "MAIL_DOMAIN",
-    "mail.smtp_host": "SMTP_HOST",
-    "mail.smtp_port": "SMTP_PORT",
 }
 
 

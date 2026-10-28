@@ -21,9 +21,42 @@ not using mail, leave the mail variables blank.
 | Superadmins | `SUPERADMIN_EMAILS` (comma-separated; promoted on every start, never demoted) | Optional; or `flask make-admin --email <email>` |
 | Domain      | `MAIL_HOST`, `MAIL_FROM`, `MAIL_DOMAIN`                                    | Always (mail vars only when mail enabled)                |
 | Modules     | Per club in Settings › Modules, or `flask modules enable <code>`           | Always                                                   |
-| SMTP/IMAP   | `SMTP_HOST`, `SMTP_PORT`, `IMAP_HOST`, `IMAP_PORT`                         | Mail feature enabled (Infomaniak SMTP/IMAP)              |
+| SMTP/IMAP   | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `IMAP_HOST`, `IMAP_PORT` | Mail feature enabled (Infomaniak SMTP/IMAP)        |
 | Backups     | `BACKUP_S3_*`, `BACKUP_ENCRYPTION_KEY`                                     | Backups enabled                                          |
 | Plugins     | `HUBRA_PLUGIN_DIR`, `HUBRA_PLUGINS_RELOAD_POLL`, `HUBRA_OFFICIAL_INDEX`, `HUBRA_PLUGINS_ALLOW_PRIVATE` (1 = allow a repository on a private address) | Optional, see [plugins/README.md](../plugins/README.md)  |
+
+## Platform settings and club settings
+
+Some settings belong to the whole platform, others to one club.
+
+**Platform settings** live in the public `platform_settings` table and are
+edited in manage under **Platform › Platform Settings** (global permission
+`platform.settings`, superadmins have it). Each one starts from its env
+variable; a value saved there overrides env until you press "Reset to env".
+
+| Setting                                   | Env default                                  |
+| ----------------------------------------- | -------------------------------------------- |
+| Mail relay host, port, user, password     | `SMTP_HOST` (else `ZONEMTA_SMTP_HOST`), `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` |
+| System sender address and name            | `MAIL_FROM`, "Hubra"                         |
+| Backup storage (S3 endpoint, bucket, region, keys) | `BACKUP_S3_*`                        |
+
+Every mail Hubra sends goes through the relay. Sign-in, SSO and account
+mail always comes from the system sender. Club mail comes from the system
+sender with the club's address as Reply-To, unless the club has its own
+sender mailbox from the mail module; that mailbox logs in to the mail
+module's server (`ZONEMTA_SMTP_HOST`), or to the relay without one.
+`BACKUP_ENCRYPTION_KEY` stays in env only.
+
+**Club settings** (name, contact addresses, sender name, modules) are kept
+per club and edited by the club's owners and admins. They no longer
+include an SMTP server or backup storage. If you had typed those into a
+club's settings screen rather than env, enter them once under Platform
+Settings: the migration that removed them doesn't carry them over.
+
+**Who uses what:** platform staff (anyone with a global permission) and club
+owners/admins sign in to manage. Everyone else uses the club app, and starts
+or finds a club on the SSO site (`/start`, `/clubs`), which is also served as
+`join.<domain>` (`HUBRA_JOIN_HOST`).
 
 ### Cross-origin auth variables
 

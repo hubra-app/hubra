@@ -15,14 +15,14 @@ export function AdminPortal() {
   const { tr } = useLang()
   const path = location.pathname
 
-  if (path === '/app/requests')
+  if (path === '/app/requests' && hasGlobalPermission('requests.read.all'))
     return (
       <>
         <PageHead
-          title={tr('Meine Anfragen', 'My requests')}
+          title={tr('Vereinsanfragen', 'Club requests')}
           desc={tr(
-            'Beantrage einen neuen Verein auf Hubra und verfolge den Stand deiner Anfragen.',
-            'Request a new club on Hubra and follow the status of your requests.',
+            'Neue Vereine, die Leute auf der Anmeldeseite beantragt haben. Hier prüfst du sie und gibst sie frei.',
+            'New clubs people asked for on the sign-in site. Review and approve them here.',
           )}
         />
         <TenantRequestsTab />

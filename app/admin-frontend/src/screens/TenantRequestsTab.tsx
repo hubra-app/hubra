@@ -9,15 +9,12 @@ import {
   Text,
   Modal,
   TextInput,
-  Select,
   Stack,
-  Alert,
+  Anchor,
 } from '@mantine/core'
-import { IconPlus } from '@tabler/icons-react'
+import { SSO_URL } from '@hubra/api-client'
 import {
   listTenantRequests,
-  listMyTenantRequests,
-  createTenantRequest,
   approveTenantRequest,
   rejectTenantRequest,
   type TenantRequest,
@@ -43,48 +40,20 @@ function requestStatus(status: string) {
   return l ? tr(l[0], l[1]) : status
 }
 
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-{2,}/g, '-')
-}
-
+/**
+ * New clubs people asked for, for platform staff to review. People ask for
+ * a club on the SSO site (/start), not here.
+ */
 export function TenantRequestsTab() {
-  const { isSuperadmin, notify } = useAdmin()
+  const { hasGlobalPermission, notify } = useAdmin()
   const queryClient = useQueryClient()
-  const [createOpen, setCreateOpen] = useState(false)
   const [rejectTarget, setRejectTarget] = useState<TenantRequest | null>(null)
   const [rejectNote, setRejectNote] = useState('')
-  const [name, setName] = useState('')
-  const [slug, setSlug] = useState('')
-  const [slugEdited, setSlugEdited] = useState(false)
-  const [plan, setPlan] = useState('starter')
-  const [formError, setFormError] = useState('')
+  const canReview = hasGlobalPermission('requests.approve')
 
   const { data, isLoading } = useQuery({
-    queryKey: ['tenant-requests', isSuperadmin],
-    queryFn: () =>
-      isSuperadmin
-        ? listTenantRequests()
-        : listMyTenantRequests(),
-  })
-
-  const createMutation = useMutation({
-    mutationFn: createTenantRequest,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tenant-requests'] })
-      notify('success', tr('Anfrage gesendet', 'Request sent'), tr('Deine Anfrage wird jetzt geprüft.', 'Your request will now be reviewed.'))
-      setCreateOpen(false)
-      setName('')
-      setSlug('')
-      setSlugEdited(false)
-      setFormError('')
-    },
-    onError: (err: Error) => {
-      setFormError(err.message)
-    },
+    queryKey: ['tenant-requests'],
+    queryFn: () => listTenantRequests(),
   })
 
   const approveMutation = useMutation({
@@ -113,32 +82,14 @@ export function TenantRequestsTab() {
     },
   })
 
-  const handleNameChange = (val: string) => {
-    setName(val)
-    if (!slugEdited) setSlug(slugify(val))
-  }
-
-  const handleCreate = () => {
-    if (!name || !slug) {
-      setFormError(tr('Name und Kürzel sind erforderlich', 'Name and slug are required'))
-      return
-    }
-    createMutation.mutate({ name, slug, plan })
-  }
-
   const requests = data?.requests ?? []
 
   return (
     <div>
       <Group justify="flex-end" mb="md">
-        {!isSuperadmin && (
-          <Button
-            leftSection={<IconPlus size={16} />}
-            onClick={() => setCreateOpen(true)}
-          >
-            {tr('Neuen Verein beantragen', 'Request a new club')}
-          </Button>
-        )}
+        <Anchor href={`${SSO_URL}/start`} size="sm" target="_blank" rel="noreferrer">
+          {tr('Seite für neue Vereine', 'Request page')}
+        </Anchor>
       </Group>
 
       <Paper withBorder style={{ overflow: 'hidden' }}>
@@ -164,7 +115,7 @@ export function TenantRequestsTab() {
                 <Table.Th>{tr('Plan', 'Plan')}</Table.Th>
                 <Table.Th>{tr('Status', 'Status')}</Table.Th>
                 <Table.Th>{tr('Erstellt', 'Created')}</Table.Th>
-                {isSuperadmin && <Table.Th>{tr('Aktionen', 'Actions')}</Table.Th>}
+                {canReview && <Table.Th>{tr('Aktionen', 'Actions')}</Table.Th>}
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -187,7 +138,7 @@ export function TenantRequestsTab() {
                   <Table.Td fz="sm" c="dimmed">
                     {r.created_at ? formatDate(r.created_at) : '–'}
                   </Table.Td>
-                  {isSuperadmin && (
+                  {canReview && (
                     <Table.Td>
                       {r.status === 'pending' && (
                         <Group gap="xs">
@@ -219,52 +170,6 @@ export function TenantRequestsTab() {
           </Table.ScrollContainer>
         )}
       </Paper>
-
-      <Modal opened={createOpen} onClose={() => setCreateOpen(false)} title={tr('Neuen Verein beantragen', 'Request a new club')} size="md">
-        <Stack gap={16}>
-          {formError && (
-            <Alert color="red" variant="light">
-              {formError}
-            </Alert>
-          )}
-          <TextInput
-            label={tr('Vereinsname', 'Club name')}
-            required
-            value={name}
-            onChange={(e) => handleNameChange(e.target.value)}
-            placeholder={tr('Kanuclub Seeblick', 'Lakeside Canoe Club')}
-          />
-          <TextInput
-            label={tr('Kürzel', 'Slug')}
-            required
-            value={slug}
-            onChange={(e) => {
-              setSlug(e.target.value)
-              setSlugEdited(true)
-            }}
-            placeholder="kanuclub-seeblick"
-            description={tr('Erscheint in der Adresse: 3–64 Zeichen, Kleinbuchstaben und Bindestriche', 'Used in the address: 3–64 characters, lowercase letters and hyphens')}
-          />
-          <Select
-            label={tr('Plan', 'Plan')}
-            value={plan}
-            onChange={(v) => v && setPlan(v)}
-            data={[
-              { value: 'starter', label: 'Starter' },
-              { value: 'growth', label: 'Growth' },
-              { value: 'enterprise', label: 'Enterprise' },
-            ]}
-          />
-          <Group justify="flex-end" mt={8}>
-            <Button variant="default" onClick={() => setCreateOpen(false)}>
-              {tr('Abbrechen', 'Cancel')}
-            </Button>
-            <Button loading={createMutation.isPending} onClick={handleCreate}>
-              {tr('Anfrage senden', 'Send request')}
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
 
       <Modal
         opened={!!rejectTarget}
