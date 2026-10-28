@@ -48,6 +48,11 @@ export function ClubsScreen() {
     queryFn: authApi.getMyTenants,
     enabled: authed,
   })
+  const waiting = useQuery({
+    queryKey: ['join-requests'],
+    queryFn: authApi.getMyJoinRequests,
+    enabled: authed,
+  })
   const found = useQuery({
     queryKey: ['clubs', debounced],
     queryFn: () => authApi.findClubs(debounced),
@@ -59,6 +64,7 @@ export function ClubsScreen() {
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['clubs'] })
       queryClient.invalidateQueries({ queryKey: ['my-tenants'] })
+      queryClient.invalidateQueries({ queryKey: ['join-requests'] })
       if (res.status === 'joined') {
         notify('success', tr(`Du bist jetzt bei ${res.club.name}`, `You joined ${res.club.name}`))
       } else {
@@ -104,6 +110,7 @@ export function ClubsScreen() {
   const myClubs = mine.data?.tenants ?? []
   // Club owners and admins run their club in the manager portal too.
   const runsAClub = myClubs.some((t) => t.admin_level)
+  const pending = waiting.data?.requests ?? []
   const results = found.data?.clubs ?? []
   const canJoinDirectly = found.data?.canJoinDirectly ?? false
 
@@ -206,6 +213,36 @@ export function ClubsScreen() {
             </Paper>
           ))}
         </Stack>
+      )}
+
+      {pending.length > 0 && (
+        <>
+          <Title order={2} fz={20} mb="sm">
+            {tr('Wartet auf Freigabe', 'Waiting for approval')}
+          </Title>
+          <Stack gap="sm" mb="xl">
+            {pending.map((c) => (
+              <Paper key={c.slug} withBorder p="md">
+                <Group justify="space-between" wrap="nowrap">
+                  <Box style={{ minWidth: 0 }}>
+                    <Text fw={700} truncate>
+                      {c.name}
+                    </Text>
+                    <Text fz="sm" c="dimmed">
+                      {tr(
+                        'Der Verein prüft deine Anfrage. Danach kannst du ihn hier öffnen.',
+                        'The club is reviewing your request. Once accepted you can open it here.',
+                      )}
+                    </Text>
+                  </Box>
+                  <Badge variant="light" color="gray" style={{ flexShrink: 0 }}>
+                    {tr('Anfrage gesendet', 'Request sent')}
+                  </Badge>
+                </Group>
+              </Paper>
+            ))}
+          </Stack>
+        </>
       )}
 
       <Title order={2} fz={20} mb="sm">
