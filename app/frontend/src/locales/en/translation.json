@@ -860,6 +860,7 @@
     "searchInvoices": "Search invoices…",
     "searchTransactions": "Search transactions…",
     "selectCategory": "Choose a category…",
+    "noCategoriesHint": "Create a category under Finance → Categories first.",
     "sendReminder": "Send Reminder",
     "status": "Status",
     "tierHint": "Leave empty to invoice all active members",
