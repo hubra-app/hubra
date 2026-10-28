@@ -87,7 +87,7 @@ class Invoice(db.Model):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     member_id: Mapped[int | None] = mapped_column(
-        db.Integer, ForeignKey("members.id"), nullable=True
+        db.Integer, ForeignKey("members.id"), nullable=True, index=True
     )
     external_party_id: Mapped[int | None] = mapped_column(
         db.Integer,
