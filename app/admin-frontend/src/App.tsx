@@ -9,6 +9,7 @@ import { AdminPortal } from '@/screens/AdminPortal'
 import { MyTenantsTab } from '@/screens/MyTenantsTab'
 import { TenantDetail } from '@/screens/TenantDetail'
 import { PlatformSettings } from '@/screens/platform/PlatformSettings'
+import { Backups } from '@/screens/platform/Backups'
 import { ClubAdmins } from '@/screens/ClubAdmins'
 import { SSO_URL } from '@hubra/api-client'
 import { useLang } from '@/lang'
@@ -237,6 +238,16 @@ function AppRoutes() {
         <Route
           path="/app/platform/mail"
           element={<Navigate to="/app/platform/settings" replace />}
+        />
+        <Route
+          path="/app/platform/backups"
+          element={
+            <RequireGlobalPermission perm="backups.manage">
+              <Shell>
+                <Backups />
+              </Shell>
+            </RequireGlobalPermission>
+          }
         />
         <Route path="/" element={<DefaultRoute />} />
         <Route path="*" element={<DefaultRoute />} />

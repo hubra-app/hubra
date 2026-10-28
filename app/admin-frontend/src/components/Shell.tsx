@@ -26,6 +26,7 @@ import {
   IconPuzzle,
   IconSearch,
   IconShieldCheck,
+  IconDatabase,
 } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
 import { useLang, type Lang } from '@/lang'
@@ -177,6 +178,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
       : []),
     ...(hasGlobalPermission('platform.settings')
       ? [{ path: '/app/platform/settings', label: tr('Plattform-Einstellungen', 'Platform settings'), icon: <IconSettings size={20} /> }]
+      : []),
+    ...(hasGlobalPermission('backups.manage')
+      ? [{ path: '/app/platform/backups', label: tr('Backups', 'Backups'), icon: <IconDatabase size={20} /> }]
       : []),
     ...(hasGlobalPermission('plugins.manage')
       ? [{ path: '/app/plugins', label: tr('Plugin-Katalog', 'Plugin catalogue'), icon: <IconPuzzle size={20} /> }]

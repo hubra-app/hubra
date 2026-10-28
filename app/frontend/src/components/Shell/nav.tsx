@@ -180,7 +180,6 @@ export function getParentPath(pathname: string): string {
     ['/app/system', '/app/system'],
     ['/app/system/roles', '/app/system'],
     ['/app/system/health', '/app/system'],
-    ['/app/system/backups', '/app/system'],
     ['/app/translations', '/app/translations'],
     ['/app/account', '/app/account/settings'],
     ['/app/account/settings', '/app/account/settings'],

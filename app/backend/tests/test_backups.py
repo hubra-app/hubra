@@ -314,26 +314,44 @@ class TestBackupService:
 
 
 class TestBackupAPI:
-    """Backup API routes — admin-only access."""
+    """Backup API routes in the manager portal: platform staff only."""
+
+    @pytest.fixture(autouse=True)
+    def _platform_staff(self, seeded_db, db):
+        """A backup holds every club: only platform staff may use the API."""
+        seeded_db["user"].is_superadmin = True
+        db.session.commit()
+        yield
+        seeded_db["user"].is_superadmin = False
+        db.session.commit()
+
+    def test_club_admins_are_refused(self, client, seeded_db, auth_headers, db):
+        seeded_db["user"].is_superadmin = False
+        db.session.commit()
+        url = "/api/v1/manager/platform/backups/"
+        assert client.get(url, headers=auth_headers).status_code == 403
+        assert client.post(url, headers=auth_headers).status_code == 403
+        # The old club route is gone.
+        assert client.get("/api/v1/backups/", headers=auth_headers).status_code == 404
 
     def test_list_backups_admin(self, client, seeded_db, auth_headers):
-        resp = client.get("/api/v1/backups/", headers=auth_headers)
+        resp = client.get("/api/v1/manager/platform/backups/", headers=auth_headers)
         assert resp.status_code == 200
         assert isinstance(resp.get_json(), list)
 
     def test_list_backups_unauthenticated(self, client, seeded_db):
-        resp = client.get("/api/v1/backups/")
+        resp = client.get("/api/v1/manager/platform/backups/")
         assert resp.status_code == 401
 
     def test_get_config_admin(self, client, seeded_db, auth_headers):
-        resp = client.get("/api/v1/backups/config", headers=auth_headers)
+        resp = client.get("/api/v1/manager/platform/backups/config", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.get_json()
         assert "s3_configured" in data
         assert "encryption_configured" in data
 
     def test_get_config_unauthenticated(self, client, seeded_db):
-        resp = client.get("/api/v1/backups/config")
+        resp = client.get("/api/v1/manager/platform/backups/config")
         assert resp.status_code == 401
 
     def test_create_backup_testing_mode(
@@ -362,7 +380,7 @@ class TestBackupAPI:
                 return_value=mock_s3_client,
             ),
         ):
-            resp = client.post("/api/v1/backups/", headers=auth_headers)
+            resp = client.post("/api/v1/manager/platform/backups/", headers=auth_headers)
 
         assert resp.status_code == 201
         data = resp.get_json()
@@ -378,14 +396,14 @@ class TestBackupAPI:
         db.session.add(record)
         db.session.commit()
 
-        resp = client.get(f"/api/v1/backups/{record.id}", headers=auth_headers)
+        resp = client.get(f"/api/v1/manager/platform/backups/{record.id}", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["id"] == record.id
         assert data["status"] == "completed"
 
     def test_get_single_backup_not_found(self, client, seeded_db, auth_headers):
-        resp = client.get("/api/v1/backups/9999", headers=auth_headers)
+        resp = client.get("/api/v1/manager/platform/backups/9999", headers=auth_headers)
         assert resp.status_code == 404
 
     def test_delete_backup_api(
@@ -403,12 +421,12 @@ class TestBackupAPI:
         with patch(
             "hubra.core.services.backup._get_s3_client", return_value=mock_s3_client
         ):
-            resp = client.delete(f"/api/v1/backups/{record_id}", headers=auth_headers)
+            resp = client.delete(f"/api/v1/manager/platform/backups/{record_id}", headers=auth_headers)
 
         assert resp.status_code == 204
 
     def test_delete_backup_not_found(self, client, seeded_db, auth_headers):
-        resp = client.delete("/api/v1/backups/9999", headers=auth_headers)
+        resp = client.delete("/api/v1/manager/platform/backups/9999", headers=auth_headers)
         assert resp.status_code == 404
 
     def test_verify_backup_api_testing_mode(
@@ -452,7 +470,7 @@ class TestBackupAPI:
             ),
         ):
             resp = client.post(
-                f"/api/v1/backups/{record.id}/verify", headers=auth_headers
+                f"/api/v1/manager/platform/backups/{record.id}/verify", headers=auth_headers
             )
 
         assert resp.status_code == 200
@@ -467,5 +485,5 @@ class TestBackupAPI:
         db.session.add(record)
         db.session.commit()
 
-        resp = client.post(f"/api/v1/backups/{record.id}/verify", headers=auth_headers)
+        resp = client.post(f"/api/v1/manager/platform/backups/{record.id}/verify", headers=auth_headers)
         assert resp.status_code == 409
