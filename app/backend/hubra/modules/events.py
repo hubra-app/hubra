@@ -1,6 +1,6 @@
 """Events: club events, registrations and attendance."""
 
-from hubra.core.modules import Blueprint, Module, NavItem
+from hubra.core.modules import Blueprint, Module, NavItem, SettingField
 
 module = Module(
     code="events",
@@ -13,6 +13,15 @@ module = Module(
             "hubra.api.events.routes",
             "events_bp",
             "/api/v1/events",
+        ),
+    ),
+    settings=(
+        SettingField(
+            "notify_members",
+            "bool",
+            default=True,
+            label="Notify members about new events",
+            description="An in-app notification for every member when an event is published",
         ),
     ),
     nav=(

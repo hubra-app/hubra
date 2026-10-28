@@ -5,7 +5,7 @@ from __future__ import annotations
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import selectinload
 
-from hubra.api.notifications.services import notify_all_active
+from hubra.api.notifications.services import notify_on_publish
 from hubra.api.utils import log_audit
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
@@ -181,7 +181,9 @@ class PostsService:
         db.session.add(post)
         db.session.flush()
 
-        notify_all_active("info", "New post", post.title, skip_member_id=author_id)
+        notify_on_publish(
+            "posts", "info", "New post", post.title, skip_member_id=author_id
+        )
         emit(POST_PUBLISHED, post_id=post.id)
 
         log_audit(
