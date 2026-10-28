@@ -16,7 +16,6 @@ import {
 import { useForm } from '@mantine/form'
 import { zodResolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
-import { IconShield } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import { getRememberedEmail } from '@hubra/api-client'
@@ -35,7 +34,7 @@ const makeSchema = () =>
 type FormValues = z.infer<ReturnType<typeof makeSchema>>
 
 export function LoginScreen() {
-  const { notify, redirectTarget, urls, continueSignedIn } = useSso()
+  const { notify, continueSignedIn } = useSso()
   const { tr } = useLang()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
@@ -136,17 +135,6 @@ export function LoginScreen() {
       <Stack gap="xs">
         <Button variant="default" size="md" fullWidth onClick={() => navigate('/signup')}>
           {tr('Konto erstellen', 'Create account')}
-        </Button>
-        <Button
-          variant="subtle"
-          color="gray"
-          fullWidth
-          leftSection={<IconShield size={16} />}
-          onClick={() => {
-            window.location.assign(redirectTarget ?? urls.cos)
-          }}
-        >
-          {tr('Als Gast weiter', 'Continue as guest')}
         </Button>
       </Stack>
     </AuthFrame>
