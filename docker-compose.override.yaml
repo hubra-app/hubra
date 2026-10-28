@@ -4,23 +4,23 @@ services:
       args:
         VITE_API_BASE: ${VITE_API_BASE}
     networks:
-      - cos_internal
+      - hubra_internal
       - frontend
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=frontend"
-      - "traefik.http.routers.cos-secure.rule=Host(`cos.vollbuild.ch`)"
-      - "traefik.http.routers.cos-secure.entrypoints=websecure"
-      - "traefik.http.routers.cos-secure.tls.certresolver=letencrypt"
-      - "traefik.http.services.cos-secure.loadbalancer.server.port=80"
-      - "traefik.http.routers.cos-secure.middlewares=crowdsec@file,error-pages-middleware"
+      - "traefik.http.routers.hubra-secure.rule=Host(`cos.vollbuild.ch`)"
+      - "traefik.http.routers.hubra-secure.entrypoints=websecure"
+      - "traefik.http.routers.hubra-secure.tls.certresolver=letencrypt"
+      - "traefik.http.services.hubra-secure.loadbalancer.server.port=80"
+      - "traefik.http.routers.hubra-secure.middlewares=crowdsec@file,error-pages-middleware"
 
   admin-frontend:
     build:
       args:
         VITE_API_BASE: ${VITE_API_BASE}
     networks:
-      - cos_internal
+      - hubra_internal
       - frontend
     labels:
       - "traefik.enable=true"
@@ -36,7 +36,7 @@ services:
       args:
         VITE_API_BASE: ${VITE_API_BASE}
     networks:
-      - cos_internal
+      - hubra_internal
       - frontend
     labels:
       - "traefik.enable=true"
@@ -49,24 +49,24 @@ services:
 
   backend:
     networks:
-      - cos_internal
+      - hubra_internal
       - frontend
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=frontend"
-      - "traefik.http.routers.cos-api-secure.rule=Host(`api.vollbuild.ch`)"
-      - "traefik.http.routers.cos-api-secure.entrypoints=websecure"
+      - "traefik.http.routers.hubra-api-secure.rule=Host(`api.vollbuild.ch`)"
+      - "traefik.http.routers.hubra-api-secure.entrypoints=websecure"
       # TLS terminates in the external Traefik; this only REFERENCES its
       # pre-defined certresolver. No ACME/certresolver/TLS-store config lives
       # in this repo — do not add any here.
-      - "traefik.http.routers.cos-api-secure.tls.certresolver=letencrypt"
-      - "traefik.http.services.cos-api-secure.loadbalancer.server.port=5000"
+      - "traefik.http.routers.hubra-api-secure.tls.certresolver=letencrypt"
+      - "traefik.http.services.hubra-api-secure.loadbalancer.server.port=5000"
       # OPERATOR NOTE: do NOT add CORS headers for api.vollbuild.ch in Traefik.
       # The Flask app owns CORS (single source of truth). A duplicate
       # Access-Control-Allow-Origin makes browsers reject every response.
       # Ensure crowdsec@file and error-pages-middleware pass OPTIONS preflight
       # through unchanged (200/204, not rewritten to HTML error pages).
-      - "traefik.http.routers.cos-api-secure.middlewares=crowdsec@file,error-pages-middleware"
+      - "traefik.http.routers.hubra-api-secure.middlewares=crowdsec@file,error-pages-middleware"
     volumes:
       - ./app/backend/migrations:/app/migrations
       - ./app/backend/vollbuild:/app/vollbuild
@@ -75,7 +75,7 @@ services:
 
   flask-init:
     networks:
-      - cos_internal
+      - hubra_internal
     volumes:
       - ./app/backend/migrations:/app/migrations
       - ./app/backend/vollbuild:/app/vollbuild
@@ -84,22 +84,22 @@ services:
 
   celery-worker:
     networks:
-      - cos_internal
+      - hubra_internal
 
   celery-beat:
     networks:
-      - cos_internal
+      - hubra_internal
 
   postgres:
     networks:
-      - cos_internal
+      - hubra_internal
 
   redis:
     networks:
-      - cos_internal
+      - hubra_internal
 
 networks:
   edge:
   frontend:
     external: true
-  cos_internal:
+  hubra_internal:

@@ -12,7 +12,7 @@ deploy/
 │   └── mail.yaml             #   modules/mail/k8s (suspended = off)
 ├── infrastructure/           # cert-manager HelmRelease, Let's Encrypt issuer, k3s Traefik config
 ├── app/                      # the app stack (plain Kustomize)
-└── create-secrets.sh         # .env -> Secret club-env (+ registry, Cloudflare)
+└── create-secrets.sh         # .env -> Secret hubra-env (+ registry, Cloudflare)
 modules/mail/k8s/             # the opt-in mail stack, see modules/mail/README.md
 ```
 
@@ -25,7 +25,7 @@ modules/mail/k8s/             # the opt-in mail stack, see modules/mail/README.m
 | `backend`, `celery-worker`, `celery-beat`     | Deployments (`backend.yaml`)                                     |
 | `frontend`, `admin-frontend`, `sso-frontend`  | nginx Deployments                                                |
 | Traefik labels in the override file           | one `Ingress` on k3s's bundled Traefik, cert from cert-manager   |
-| `env_file: .env`                              | Secret `club-env` (`create-secrets.sh`)                          |
+| `env_file: .env`                              | Secret `hubra-env` (`create-secrets.sh`)                          |
 | `settings.yaml`                               | ConfigMap generated from the repo file; a change rolls the pods  |
 
 Service names match the Compose names (`postgres`, `redis`, `backend`), so
@@ -51,7 +51,7 @@ hostnames in `.env` keep working.
 4. **Bootstrap Flux.** Use a GitLab personal access token with `api` scope:
    ```sh
    export GITLAB_TOKEN=<token>
-   flux bootstrap gitlab --owner=<group> --repository=club-operations-suite \
+   flux bootstrap gitlab --owner=<group> --repository=hubra \
      --branch=master --path=deploy/flux
    ```
    Flux commits its own manifests to `deploy/flux/flux-system/` and starts
@@ -65,21 +65,21 @@ replaces it.
 
 - **Deploy a new build:** set `newTag` in `deploy/app/kustomization.yaml` to the
   commit SHA CI pushed, then push. Leave it at `latest` and run
-  `kubectl -n club rollout restart deployment` if you prefer.
+  `kubectl -n hubra rollout restart deployment` if you prefer.
 - **Change settings:** edit `settings.yaml` and push.
 - **Change secrets:** edit `.env`, re-run `create-secrets.sh`, then run
-  `kubectl -n club rollout restart deployment`.
+  `kubectl -n hubra rollout restart deployment`.
 - **Force a sync:** `flux reconcile kustomization app --with-source`.
-- **Logs:** `kubectl -n club logs deploy/backend -c flask-init` shows migrations.
+- **Logs:** `kubectl -n hubra logs deploy/backend -c flask-init` shows migrations.
 
 ## Moving data from Compose
 
 Stop writes first (`docker compose stop backend celery-worker celery-beat`), then:
 
 ```sh
-docker compose exec -T postgres pg_dump -U "$POSTGRES_USER" -Fc "$POSTGRES_DB" > club.dump
-kubectl -n club exec -i postgres-0 -- sh -c \
-  'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists --no-owner' < club.dump
+docker compose exec -T postgres pg_dump -U "$POSTGRES_USER" -Fc "$POSTGRES_DB" > hubra.dump
+kubectl -n hubra exec -i postgres-0 -- sh -c \
+  'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists --no-owner' < hubra.dump
 ```
 
 Redis and the celery-beat schedule don't need moving. For mail data, see

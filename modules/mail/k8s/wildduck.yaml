@@ -63,7 +63,7 @@ spec:
             - until [ -e "/etc/letsencrypt/live/$MAIL_HOST/fullchain.pem" ]; do echo "waiting for certbot-init"; sleep 10; done
           env:
             - name: MAIL_HOST
-              valueFrom: { secretKeyRef: { name: club-env, key: MAIL_HOST } }
+              valueFrom: { secretKeyRef: { name: hubra-env, key: MAIL_HOST } }
           volumeMounts:
             - name: letsencrypt
               mountPath: /etc/letsencrypt
@@ -73,27 +73,27 @@ spec:
           image: ghcr.io/zone-eu/wildduck:latest@sha256:d37c43ccda33ef69d11b5afdc888623434fdbc20080d653aa901dc7df83f5000
           env:
             - name: MONGO_USER
-              valueFrom: { secretKeyRef: { name: club-env, key: MONGO_USER } }
+              valueFrom: { secretKeyRef: { name: hubra-env, key: MONGO_USER } }
             - name: MONGO_PASSWORD
-              valueFrom: { secretKeyRef: { name: club-env, key: MONGO_PASSWORD } }
+              valueFrom: { secretKeyRef: { name: hubra-env, key: MONGO_PASSWORD } }
             - name: REDIS_PASSWORD
-              valueFrom: { secretKeyRef: { name: club-env, key: REDIS_PASSWORD } }
+              valueFrom: { secretKeyRef: { name: hubra-env, key: REDIS_PASSWORD } }
             - name: MAIL_HOST
-              valueFrom: { secretKeyRef: { name: club-env, key: MAIL_HOST } }
+              valueFrom: { secretKeyRef: { name: hubra-env, key: MAIL_HOST } }
             - name: APPCONF_dbs_sender
-              valueFrom: { secretKeyRef: { name: club-env, key: APPCONF_dbs_sender } }
+              valueFrom: { secretKeyRef: { name: hubra-env, key: APPCONF_dbs_sender } }
             - name: APPCONF_api_host
-              valueFrom: { secretKeyRef: { name: club-env, key: APPCONF_api_host } }
+              valueFrom: { secretKeyRef: { name: hubra-env, key: APPCONF_api_host } }
             - name: APPCONF_api_port
-              valueFrom: { secretKeyRef: { name: club-env, key: APPCONF_api_port } }
+              valueFrom: { secretKeyRef: { name: hubra-env, key: APPCONF_api_port } }
             - name: APPCONF_api_accessToken
-              valueFrom: { secretKeyRef: { name: club-env, key: WILDDUCK_API_TOKEN } }
+              valueFrom: { secretKeyRef: { name: hubra-env, key: WILDDUCK_API_TOKEN } }
             - name: APPCONF_emailDomain
-              valueFrom: { secretKeyRef: { name: club-env, key: MAIL_DOMAIN } }
+              valueFrom: { secretKeyRef: { name: hubra-env, key: MAIL_DOMAIN } }
             - name: APPCONF_sender_loopSecret
-              valueFrom: { secretKeyRef: { name: club-env, key: LOOP_SECRET } }
+              valueFrom: { secretKeyRef: { name: hubra-env, key: LOOP_SECRET } }
             - name: APPCONF_webhooks_enabled
-              valueFrom: { secretKeyRef: { name: club-env, key: APPCONF_webhooks_enabled } }
+              valueFrom: { secretKeyRef: { name: hubra-env, key: APPCONF_webhooks_enabled } }
             - name: APPCONF_dbs_mongo
               value: mongodb://$(MONGO_USER):$(MONGO_PASSWORD)@mongo:27017/wildduck?authSource=admin
             - name: APPCONF_dbs_redis

@@ -2,7 +2,7 @@ services:
   caddy:
     networks:
       - frontend
-      - cos_internal
+      - hubra_internal
     # ports: !reset []
 
   frontend:
@@ -10,13 +10,13 @@ services:
       args:
         VITE_API_BASE: ${VITE_API_BASE}
     networks:
-      - cos_internal
+      - hubra_internal
     ports:
       - "8080:80"
 
   backend:
     networks:
-      - cos_internal
+      - hubra_internal
       - frontend
     ports:
       - "5000:5000"
@@ -28,7 +28,7 @@ services:
 
   flask-init:
     networks:
-      - cos_internal
+      - hubra_internal
     volumes:
       - ./app/backend/migrations:/app/migrations
       - ./app/backend/vollbuild:/app/vollbuild
@@ -37,26 +37,26 @@ services:
 
   celery-worker:
     networks:
-      - cos_internal
+      - hubra_internal
 
   celery-beat:
     networks:
-      - cos_internal
+      - hubra_internal
 
   postgres:
     ports:
       - "5432:5432"
     networks:
-      - cos_internal
+      - hubra_internal
 
   redis:
     ports:
       - "6379:6379"
     networks:
-      - cos_internal
+      - hubra_internal
 
 networks:
   edge:
   frontend:
     external: true
-  cos_internal:
+  hubra_internal:

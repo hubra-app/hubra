@@ -38,23 +38,23 @@ spec:
             - until [ -e "/etc/letsencrypt/live/$MAIL_HOST/fullchain.pem" ]; do echo "waiting for certbot-init"; sleep 10; done
           env:
             - name: MAIL_HOST
-              valueFrom: { secretKeyRef: { name: club-env, key: MAIL_HOST } }
+              valueFrom: { secretKeyRef: { name: hubra-env, key: MAIL_HOST } }
           volumeMounts:
             - name: letsencrypt
               mountPath: /etc/letsencrypt
               readOnly: true
       containers:
         - name: haraka
-          image: club/haraka
+          image: hubra/haraka
           env:
             - name: SRS_SECRET
-              valueFrom: { secretKeyRef: { name: club-env, key: SRS_SECRET } }
+              valueFrom: { secretKeyRef: { name: hubra-env, key: SRS_SECRET } }
             - name: LOOP_SECRET
-              valueFrom: { secretKeyRef: { name: club-env, key: LOOP_SECRET } }
+              valueFrom: { secretKeyRef: { name: hubra-env, key: LOOP_SECRET } }
             - name: REWRITE_DOMAIN
-              valueFrom: { secretKeyRef: { name: club-env, key: REWRITE_DOMAIN } }
+              valueFrom: { secretKeyRef: { name: hubra-env, key: REWRITE_DOMAIN } }
             - name: MAIL_HOST
-              valueFrom: { secretKeyRef: { name: club-env, key: MAIL_HOST } }
+              valueFrom: { secretKeyRef: { name: hubra-env, key: MAIL_HOST } }
           ports:
             - name: smtp
               containerPort: 25

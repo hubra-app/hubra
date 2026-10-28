@@ -111,7 +111,7 @@ The project is deployed via Docker Compose and uses a React SPA frontend with a 
 
 - **edge** — Public-facing network (Caddy, Haraka inbound SMTP).
 - **internal** — Private Docker network for inter-service communication.
-- **cos_internal** — Production override network (Traefik integration).
+- **hubra_internal** — Production override network (Traefik integration).
 - **frontend** — External Traefik network in production.
 
 ### Auth flow

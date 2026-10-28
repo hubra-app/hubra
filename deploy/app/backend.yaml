@@ -29,25 +29,25 @@ spec:
     spec:
       initContainers:
         - name: flask-init
-          image: club/backend
+          image: hubra/backend
           command: ["sh", "-c", "flask db upgrade && flask sync-permissions && flask seed --skip-migrate"]
-          envFrom: [{ secretRef: { name: club-env } }]
-          env: [{ name: SETTINGS_FILE, value: /etc/club/settings.yaml }]
-          volumeMounts: [{ name: settings, mountPath: /etc/club }]
+          envFrom: [{ secretRef: { name: hubra-env } }]
+          env: [{ name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }]
+          volumeMounts: [{ name: settings, mountPath: /etc/hubra }]
       containers:
         - name: backend
-          image: club/backend
+          image: hubra/backend
           ports: [{ name: http, containerPort: 5000 }]
-          envFrom: [{ secretRef: { name: club-env } }]
-          env: [{ name: SETTINGS_FILE, value: /etc/club/settings.yaml }]
-          volumeMounts: [{ name: settings, mountPath: /etc/club }]
+          envFrom: [{ secretRef: { name: hubra-env } }]
+          env: [{ name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }]
+          volumeMounts: [{ name: settings, mountPath: /etc/hubra }]
           readinessProbe:
             httpGet: { path: /health, port: http }
           resources:
             limits: { cpu: "1", memory: 512Mi }
       volumes:
         - name: settings
-          configMap: { name: club-settings }
+          configMap: { name: hubra-settings }
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -65,16 +65,16 @@ spec:
     spec:
       containers:
         - name: celery-worker
-          image: club/backend
+          image: hubra/backend
           command: ["celery", "-A", "vollbuild.core.tasks.celery_app", "worker", "--loglevel=info"]
-          envFrom: [{ secretRef: { name: club-env } }]
-          env: [{ name: SETTINGS_FILE, value: /etc/club/settings.yaml }]
-          volumeMounts: [{ name: settings, mountPath: /etc/club }]
+          envFrom: [{ secretRef: { name: hubra-env } }]
+          env: [{ name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }]
+          volumeMounts: [{ name: settings, mountPath: /etc/hubra }]
           resources:
             limits: { cpu: "1", memory: 512Mi }
       volumes:
         - name: settings
-          configMap: { name: club-settings }
+          configMap: { name: hubra-settings }
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -104,17 +104,17 @@ spec:
     spec:
       containers:
         - name: celery-beat
-          image: club/backend
+          image: hubra/backend
           command: ["celery", "-A", "vollbuild.core.tasks.celery_app", "beat", "--loglevel=info", "--schedule", "/celerybeat/celerybeat-schedule"]
-          envFrom: [{ secretRef: { name: club-env } }]
-          env: [{ name: SETTINGS_FILE, value: /etc/club/settings.yaml }]
+          envFrom: [{ secretRef: { name: hubra-env } }]
+          env: [{ name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }]
           volumeMounts:
-            - { name: settings, mountPath: /etc/club }
+            - { name: settings, mountPath: /etc/hubra }
             - { name: schedule, mountPath: /celerybeat }
           resources:
             limits: { cpu: 500m, memory: 256Mi }
       volumes:
         - name: settings
-          configMap: { name: club-settings }
+          configMap: { name: hubra-settings }
         - name: schedule
           persistentVolumeClaim: { claimName: celerybeat }

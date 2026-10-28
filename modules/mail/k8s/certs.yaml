@@ -52,9 +52,9 @@ spec:
                 --keep-until-expiring
           env:
             - name: MAIL_CERT_DOMAINS
-              valueFrom: { secretKeyRef: { name: club-env, key: MAIL_CERT_DOMAINS } }
+              valueFrom: { secretKeyRef: { name: hubra-env, key: MAIL_CERT_DOMAINS } }
             - name: ACME_EMAIL
-              valueFrom: { secretKeyRef: { name: club-env, key: ACME_EMAIL } }
+              valueFrom: { secretKeyRef: { name: hubra-env, key: ACME_EMAIL } }
           volumeMounts:
             - name: letsencrypt
               mountPath: /etc/letsencrypt
@@ -169,7 +169,7 @@ spec:
                   done
               env:
                 - name: MAIL_HOST
-                  valueFrom: { secretKeyRef: { name: club-env, key: MAIL_HOST } }
+                  valueFrom: { secretKeyRef: { name: hubra-env, key: MAIL_HOST } }
               volumeMounts:
                 - name: letsencrypt
                   mountPath: /etc/letsencrypt

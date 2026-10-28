@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: club/frontend
+          image: hubra/frontend
           ports:
             - name: http
               containerPort: 80
@@ -67,7 +67,7 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: club/admin-frontend
+          image: hubra/admin-frontend
           ports:
             - name: http
               containerPort: 80
@@ -105,7 +105,7 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: club/sso-frontend
+          image: hubra/sso-frontend
           ports:
             - name: http
               containerPort: 80

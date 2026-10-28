@@ -30,7 +30,7 @@ spec:
           args: ["redis-server", "--requirepass", "$(REDIS_PASSWORD)"]
           env:
             - name: REDIS_PASSWORD
-              valueFrom: { secretKeyRef: { name: club-env, key: REDIS_PASSWORD } }
+              valueFrom: { secretKeyRef: { name: hubra-env, key: REDIS_PASSWORD } }
           ports:
             - name: redis
               containerPort: 6379

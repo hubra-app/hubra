@@ -2,12 +2,18 @@
 # Flux applies this directory (deploy/flux/app.yaml). By hand:
 #   kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/app | kubectl apply -f -
 #
-# Secrets are not in git: Secret `club-env` (from .env) and `gitlab-registry`
+# Secrets are not in git: Secret `hubra-env` (from .env) and `gitlab-registry`
 # are created once with deploy/create-secrets.sh.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: club
+namespace: hubra
+
+# Added to every object, not to selectors, so existing Deployments stay valid.
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: hubra
+    includeSelectors: false
 
 resources:
   - namespace.yaml
@@ -20,22 +26,22 @@ resources:
 
 # settings.yaml from the repo root; a change rolls the backend pods.
 configMapGenerator:
-  - name: club-settings
+  - name: hubra-settings
     files:
       - settings.yaml=../../settings.yaml
 
 # Images pushed by GitLab CI. Set newName to your $CI_REGISTRY_IMAGE and pin
 # newTag to a commit SHA to deploy a specific build.
 images:
-  - name: club/backend
-    newName: registry.gitlab.com/CHANGE-ME/club-operations-suite/backend
+  - name: hubra/backend
+    newName: registry.gitlab.com/CHANGE-ME/hubra/backend
     newTag: latest
-  - name: club/frontend
-    newName: registry.gitlab.com/CHANGE-ME/club-operations-suite/frontend
+  - name: hubra/frontend
+    newName: registry.gitlab.com/CHANGE-ME/hubra/frontend
     newTag: latest
-  - name: club/admin-frontend
-    newName: registry.gitlab.com/CHANGE-ME/club-operations-suite/admin-frontend
+  - name: hubra/admin-frontend
+    newName: registry.gitlab.com/CHANGE-ME/hubra/admin-frontend
     newTag: latest
-  - name: club/sso-frontend
-    newName: registry.gitlab.com/CHANGE-ME/club-operations-suite/sso-frontend
+  - name: hubra/sso-frontend
+    newName: registry.gitlab.com/CHANGE-ME/hubra/sso-frontend
     newTag: latest
