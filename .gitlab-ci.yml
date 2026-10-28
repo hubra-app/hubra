@@ -4,13 +4,12 @@
 # pushes main and the tags to the GitLab project, which runs this file:
 #
 #   main, merge requests   checks (the same as .github/workflows/ci.yml)
-#   tag v1.2.3             checks, then the seven images go to the GitLab
-#                          Container Registry, then a GitLab Release with the
-#                          changelog and the image digests
+#   tag v1.2.3             checks, then a GitLab Release with the changelog and
+#                          the GHCR images of that version pinned by digest
 #
-# Images: $CI_REGISTRY_IMAGE/<image>:1.2.3 (plus :1.2 and :1 for final
-# releases). No `latest`: the cluster pins a version or a digest. Setup, CI
-# variables and the cluster pull secret: docs/gitlab.md.
+# The images themselves come from GitHub (.github/workflows/images.yml, which
+# pushes ghcr.io/hubra-app/hubra/<image>:1.2.3 for the same tag). Setup and CI
+# variables: docs/gitlab.md.
 
 workflow:
   auto_cancel:
@@ -25,7 +24,6 @@ workflow:
 
 stages:
   - check
-  - build
   - release
 
 default:
@@ -119,97 +117,63 @@ shellcheck:
   script:
     - shellcheck deploy/create-secrets.sh scripts/init-env.sh scripts/changelog.sh app/deploy/nginx/40-hubra-runtime.sh
 
-# ── Release images (tags only) ──────────────────────────────────────────────
-
-images:
-  stage: build
-  extends: .release
-  image: docker:27.5.1
-  services:
-    - docker:27.5.1-dind
-  variables:
-    DOCKER_HOST: tcp://docker:2376
-    DOCKER_TLS_CERTDIR: "/certs"
-    DOCKER_TLS_VERIFY: "1"
-    DOCKER_CERT_PATH: "/certs/client"
-  parallel:
-    matrix:
-      - { IMAGE: backend, CONTEXT: ., DOCKERFILE: app/backend/Dockerfile }
-      - { IMAGE: frontend, CONTEXT: ., DOCKERFILE: app/frontend/Dockerfile, TARGET: production }
-      - { IMAGE: admin-frontend, CONTEXT: ., DOCKERFILE: app/admin-frontend/Dockerfile, TARGET: production }
-      - { IMAGE: sso-frontend, CONTEXT: ., DOCKERFILE: app/sso-frontend/Dockerfile, TARGET: production }
-      - { IMAGE: haraka, CONTEXT: modules/mail/haraka, DOCKERFILE: modules/mail/haraka/Dockerfile }
-      - { IMAGE: zonemta, CONTEXT: modules/mail/zonemta, DOCKERFILE: modules/mail/zonemta/Dockerfile }
-      - { IMAGE: cert-watcher, CONTEXT: modules/mail/cert-watcher, DOCKERFILE: modules/mail/cert-watcher/Dockerfile }
-  before_script:
-    - apk add --no-cache jq
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
-    - docker buildx create --use --driver docker-container
-  script:
-    - |
-      set -eu
-      version="${CI_COMMIT_TAG#v}"
-      repo="$CI_REGISTRY_IMAGE/$IMAGE"
-      tags="--tag $repo:$version"
-      # Final releases also move 1.2 and 1; pre-releases (1.2.3-rc.1) don't.
-      case "$version" in
-        *-*) ;;
-        *) tags="$tags --tag $repo:${version%.*} --tag $repo:${version%%.*}" ;;
-      esac
-      target=""
-      [ -n "${TARGET:-}" ] && target="--target $TARGET"
-      # Add linux/arm64 for arm nodes (slower: builds under QEMU).
-      # shellcheck disable=SC2086
-      docker buildx build "$CONTEXT" \
-        --file "$DOCKERFILE" $target \
-        --platform linux/amd64 \
-        $tags \
-        --label org.opencontainers.image.source="$CI_PROJECT_URL" \
-        --label org.opencontainers.image.version="$version" \
-        --label org.opencontainers.image.revision="$CI_COMMIT_SHA" \
-        --cache-from "type=registry,ref=$repo:buildcache" \
-        --cache-to "type=registry,ref=$repo:buildcache,mode=max,image-manifest=true,oci-mediatypes=true" \
-        --metadata-file metadata.json \
-        --push
-      mkdir -p digests
-      # "<repository> <digest>", read by release-notes.
-      echo "$repo $(jq -r '."containerimage.digest"' metadata.json)" > "digests/$IMAGE"
-      cat "digests/$IMAGE"
-  artifacts:
-    paths: [digests/]
-    expire_in: 1 week
-
-# ── GitLab Release ──────────────────────────────────────────────────────────
+# ── GitLab Release (tags only) ──────────────────────────────────────────────
 
 release-notes:
   stage: release
   extends: .release
   image: alpine:3.20
-  needs: [images]
   variables:
     GIT_DEPTH: 0 # the changelog needs the previous tag
+    GHCR_REPOSITORY: ghcr.io/hubra-app/hubra
   script:
-    - apk add --no-cache git
+    - apk add --no-cache git curl jq
     - scripts/changelog.sh "$CI_COMMIT_TAG" > release-notes.md
     - |
+      set -eu
+      version="${CI_COMMIT_TAG#v}"
+      registry="${GHCR_REPOSITORY%%/*}"
+      path="${GHCR_REPOSITORY#*/}"
+      accept="application/vnd.oci.image.index.v1+json,application/vnd.oci.image.manifest.v1+json,application/vnd.docker.distribution.manifest.list.v2+json,application/vnd.docker.distribution.manifest.v2+json"
+      # Digest of <image>:<version> on GHCR, empty while GitHub is still
+      # building it. GHCR_USER/GHCR_TOKEN (read:packages) for private images.
+      digest() {
+        auth=""
+        [ -n "${GHCR_TOKEN:-}" ] && auth="-u ${GHCR_USER}:${GHCR_TOKEN}"
+        # shellcheck disable=SC2086
+        token="$(curl -fsS $auth "https://$registry/token?scope=repository:$path/$1:pull" | jq -r .token)"
+        curl -fsSI -H "Authorization: Bearer $token" -H "Accept: $accept" \
+          "https://$registry/v2/$path/$1/manifests/$version" 2>/dev/null |
+          tr -d '\r' | sed -n 's/^[Dd]ocker-[Cc]ontent-[Dd]igest: //p'
+      }
       {
         echo
         echo "## Images"
         echo
-        echo "Pinned by digest, for the images: block of an overlay such as"
-        echo "deploy/clusters/contabo (deploy/app and modules/mail/k8s name them"
-        echo "ghcr.io/hubra-app/hubra/<image>):"
+        echo "Built by GitHub Actions. Pinned by digest, for the images: block of an"
+        echo "overlay such as deploy/clusters/contabo:"
         echo
         echo '```yaml'
         echo "images:"
-        for image in backend frontend admin-frontend sso-frontend haraka zonemta cert-watcher; do
-          read -r repo digest < "digests/$image"
-          echo "  - name: ghcr.io/hubra-app/hubra/$image"
-          echo "    newName: $repo # ${CI_COMMIT_TAG#v}"
-          echo "    digest: $digest"
-        done
-        echo '```'
       } >> release-notes.md
+      # Wait for GitHub's images.yml to push this version (it starts on the
+      # same tag push), at most GHCR_WAIT_MINUTES.
+      deadline=$(( $(date +%s) + ${GHCR_WAIT_MINUTES:-30} * 60 ))
+      for image in backend frontend admin-frontend sso-frontend haraka zonemta cert-watcher; do
+        d="$(digest "$image" || true)"
+        while [ -z "$d" ] && [ "$(date +%s)" -lt "$deadline" ]; do
+          echo "waiting for $GHCR_REPOSITORY/$image:$version"
+          sleep 30
+          d="$(digest "$image" || true)"
+        done
+        [ -n "$d" ] || { echo "$GHCR_REPOSITORY/$image:$version not found on GHCR" >&2; exit 1; }
+        {
+          echo "  - name: $GHCR_REPOSITORY/$image"
+          echo "    newTag: \"$version\""
+          echo "    digest: $d"
+        } >> release-notes.md
+      done
+      echo '```' >> release-notes.md
     - cat release-notes.md
   artifacts:
     paths: [release-notes.md]
