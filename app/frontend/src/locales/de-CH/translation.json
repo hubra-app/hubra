@@ -218,7 +218,9 @@
       "atOnce": "Du verlässt den Verein sofort. Dein Hubra-Konto und deine anderen Vereine bleiben.",
       "confirmTitle": "Verein wirklich verlassen?",
       "confirmBody": "Du verlierst den Zugang zu den Seiten des Vereins. Deine Rechnungen und Einträge bleiben beim Verein. Möchtest du später zurück, kannst du wieder um Aufnahme bitten."
-    }
+    },
+    "invoicesLoadFailed": "Deine Rechnungen konnten nicht geladen werden.",
+    "openInvoices": "Offene Rechnungen"
   },
   "app": {
     "backend": {
@@ -872,7 +874,9 @@
       "deleted": "Buchung gelöscht.",
       "deletedMsg": "Die Buchung wurde gelöscht.",
       "saved": "Buchung gespeichert.",
-      "updatedMsg": "Status auf «{{status}}» geändert."
+      "updatedMsg": "Status auf «{{status}}» geändert.",
+      "saveFailed": "Buchung nicht gespeichert",
+      "updatedMsg2": "«{{description}}» wurde gespeichert."
     },
     "transactionDeleted": "Buchung gelöscht.",
     "transactionDeletedMsg": "Die Buchung wurde gelöscht.",
@@ -911,7 +915,42 @@
       "paid": "Bezahlt",
       "overdue": "Überfällig"
     },
-    "loadTransactionsFailed": "Buchungen konnten nicht geladen werden"
+    "loadTransactionsFailed": "Buchungen konnten nicht geladen werden",
+    "addFirstTransaction": "Erste Buchung erfassen",
+    "allStatuses": "Alle Status",
+    "amountChf": "Betrag (CHF)",
+    "createStarterCategories": "Übliche Kategorien anlegen",
+    "deleteTransactionBody": "«{{description}}» ({{amount}}) wird endgültig gelöscht.",
+    "form": {
+      "amountRequired": "Gib einen Betrag über 0 ein.",
+      "categoryRequired": "Wähle eine Kategorie.",
+      "dateRequired": "Wähle ein Datum.",
+      "descriptionRequired": "Beschreibe die Buchung kurz.",
+      "expense": "Ausgabe",
+      "income": "Einnahme",
+      "linkedMember": "Verknüpft mit {{name}}",
+      "noCategory": "Keine passende Kategorie",
+      "openCategories": "Zu den Kategorien",
+      "payee": "Von / an (optional)",
+      "payeePlaceholder": "z. B. Baumarkt AG",
+      "record": "Buchung erfassen"
+    },
+    "noTransactionsFilterHint": "Ändere die Suche oder die Filter.",
+    "noTransactionsYet": "Noch keine Buchungen",
+    "noTransactionsYetHint": "Hier erscheinen Einnahmen und Ausgaben des Vereins, auch bezahlte Rechnungen.",
+    "noCategoriesWhy": "Jede Buchung gehört zu einer Kategorie. Lege eigene an oder starte mit einer Auswahl.",
+    "paymentMethod": "Zahlungsart",
+    "recordedOn": "Erfasst am {{date}}",
+    "starter": {
+      "donations": "Spenden",
+      "events": "Anlässe",
+      "fees": "Mitgliederbeiträge",
+      "material": "Material",
+      "other": "Diverses",
+      "rent": "Miete"
+    },
+    "starterCreated": "Kategorien angelegt",
+    "starterCreatedMsg": "Du kannst sie jederzeit umbenennen oder löschen."
   },
   "functions": {
     "assignHolder": "Person zuweisen",
@@ -997,7 +1036,9 @@
     "sessionsHint": "z. B. 2× pro Woche",
     "sessionsPlaceholder": "3× pro Woche",
     "title": "Gruppen",
-    "tools": "Werkzeuge"
+    "tools": "Werkzeuge",
+    "memberCount_one": "{{count}} Mitglied",
+    "memberCount_other": "{{count}} Mitglieder"
   },
   "inventory": {
     "addFirstItem": "Ersten Gegenstand hinzufügen",
@@ -1657,7 +1698,8 @@
       "decline": "Ablehnen",
       "approved": "Austritt bestätigt",
       "declined": "Austritt abgelehnt"
-    }
+    },
+    "noMembersFilterHint": "Ändere die Suche oder den Filter."
   },
   "notifications": {
     "invoicePaid": "Rechnung bezahlt",
@@ -2139,7 +2181,8 @@
     "members": "Mitglieder",
     "create": "Stufe erstellen",
     "deleteTitle": "Stufe «{{name}}» löschen?",
-    "deleteBody": "Mitglieder in dieser Stufe müssen einer anderen Stufe zugewiesen werden. Das kann nicht rückgängig gemacht werden."
+    "deleteBody": "Mitglieder in dieser Stufe müssen einer anderen Stufe zugewiesen werden. Das kann nicht rückgängig gemacht werden.",
+    "noPrice": "Kein Beitrag"
   },
   "toast": {
     "error": "Fehler",
@@ -2275,7 +2318,10 @@
     "loading": "Einstellungen werden geladen …",
     "membership": "Mitgliedschaft",
     "leaveRequiresApproval": "Austritt nur mit Bestätigung",
-    "leaveRequiresApprovalHint": "Ein: Mitglieder beantragen den Austritt, und ihr bestätigt ihn unter Mitglieder › Anträge. Aus: Mitglieder treten sofort selbst aus."
+    "leaveRequiresApprovalHint": "Ein: Mitglieder beantragen den Austritt, und ihr bestätigt ihn unter Mitglieder › Anträge. Aus: Mitglieder treten sofort selbst aus.",
+    "loadFailed": "Die Einstellungen konnten nicht geladen werden.",
+    "saveFailed": "Einstellungen nicht gespeichert",
+    "saved": "Einstellungen gespeichert"
   },
   "domains": {
     "added": "Domain hinzugefügt",
