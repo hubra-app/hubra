@@ -132,16 +132,9 @@ def test_compatibility_uses_the_hubra_range():
 
 
 def test_bundled_plugins_are_valid():
-    root = Path(__file__).resolve().parents[4] / "plugins"
+    root = Path(__file__).resolve().parent / "bundled"
     specs = scan(root, bundled=True)
-    assert {s.id for s in specs} >= {
-        "keys",
-        "guides",
-        "budgets",
-        "bank-import",
-        "imap-inbox",
-        "discord",
-    }
+    assert {s.id for s in specs} == {"notes", "badges"}
     for s in specs:
         assert s.error == "", f"{s.id}: {s.error}"
 
@@ -150,9 +143,9 @@ def test_bundled_plugins_load_in_tests(app):
     from hubra.core.modules import registry
 
     loaded = {s.id for s in loader.current().loaded()}
-    assert {"keys", "guides", "budgets", "bank-import", "imap-inbox", "discord"} <= loaded
-    keys = registry.get("inventory.keys")
-    assert keys is not None and keys.plugin == "keys"
+    assert {"notes", "badges"} <= loaded
+    notes = registry.get("notes")
+    assert notes is not None and notes.plugin == "notes"
 
 
 # ── Signatures ───────────────────────────────────────────────────────────────
@@ -412,20 +405,20 @@ def test_uninstall_keeps_or_deletes_data(
 
 
 def test_uninstall_refuses_while_another_plugin_needs_it(db, seeded_db):
-    installer.install_bundled("keys") if db.session.get(
-        InstalledPlugin, "keys"
+    installer.install_bundled("notes") if db.session.get(
+        InstalledPlugin, "notes"
     ) is None else None
     db.session.add(
         InstalledPlugin(
-            id="discord", name="Discord", version="1", source="bundled", trust="bundled"
+            id="badges", name="Badges", version="1", source="bundled", trust="bundled"
         )
     )
     db.session.commit()
-    spec = loader.current().get("discord")
-    spec.manifest = {**spec.manifest, "requires": ["inventory.keys"]}
+    spec = loader.current().get("badges")
+    spec.manifest = {**spec.manifest, "requires": ["notes"]}
     try:
         with pytest.raises(InstallError, match="need"):
-            installer.uninstall("keys")
+            installer.uninstall("notes")
     finally:
         spec.manifest = {**spec.manifest, "requires": ["members"]}
 
@@ -456,13 +449,13 @@ def test_uninstalled_plugin_modules_disappear_before_reload(db, seeded_db):
     from hubra.core.plugins import current
 
     plugins = current()
-    plugins.autoinstalled.discard("budgets")
+    plugins.autoinstalled.discard("badges")
     try:
-        assert "finance.budgets" not in states()
+        assert "badges" not in states()
         db.session.add(
             Row(
-                id="budgets",
-                name="Budgets",
+                id="badges",
+                name="Badges",
                 version="1",
                 source="bundled",
                 trust="bundled",
@@ -472,9 +465,9 @@ def test_uninstalled_plugin_modules_disappear_before_reload(db, seeded_db):
         from hubra.core.modules.state import invalidate
 
         invalidate()
-        assert "finance.budgets" in states()
+        assert "badges" in states()
     finally:
-        plugins.autoinstalled.add("budgets")
+        plugins.autoinstalled.add("badges")
 
 
 # ── API ──────────────────────────────────────────────────────────────────────
@@ -495,8 +488,8 @@ def test_marketplace_needs_the_permission(client, auth_headers):
 
 def test_marketplace_lists_bundled_plugins(client, superadmin):
     body = client.get("/api/v1/manager/plugins/?fetch=0").get_json()
-    keys = next(p for p in body["plugins"] if p["id"] == "keys")
-    assert keys["bundled"] and keys["installed"] and keys["autoinstalled"]
+    notes = next(p for p in body["plugins"] if p["id"] == "notes")
+    assert notes["bundled"] and notes["installed"] and notes["autoinstalled"]
     assert body["updateMode"] == "notify"
 
 
@@ -535,12 +528,12 @@ def test_trusted_keys_api(client, superadmin, key):
 
 
 def test_frontend_asset_is_served_for_loaded_plugins(client, monkeypatch, tmp_path):
-    spec = loader.current().get("keys")
+    spec = loader.current().get("notes")
     dist = tmp_path / "plugin.js"
-    dist.write_text("/* keys */")
+    dist.write_text("/* notes */")
     monkeypatch.setattr(type(spec), "frontend_file", property(lambda self: dist))
-    resp = client.get("/api/v1/plugins/keys/frontend.js")
-    assert resp.status_code == 200 and b"keys" in resp.data
+    resp = client.get("/api/v1/plugins/notes/frontend.js")
+    assert resp.status_code == 200 and b"notes" in resp.data
     assert resp.mimetype == "text/javascript"
     assert client.get("/api/v1/plugins/nope/frontend.js").status_code == 404
 
@@ -550,7 +543,7 @@ def test_module_list_says_which_plugin(client, auth_headers, db):
 
     set_modules(True)
     mods = {m["code"]: m for m in client.get("/api/v1/modules/").get_json()}
-    assert mods["inventory.keys"]["plugin"]["id"] == "keys"
+    assert mods["notes"]["plugin"]["id"] == "notes"
     assert mods["members"]["plugin"] is None
 
 

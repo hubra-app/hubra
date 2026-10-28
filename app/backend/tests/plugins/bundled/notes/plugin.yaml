@@ -1,0 +1,10 @@
+id: notes
+name: Notes
+version: "1.0.0"
+hubra: ">=0.1,<1"
+description: "A plugin Hubra's own tests load"
+author: Hubra
+package: hubra_test_notes
+modules: [notes]
+requires: [members]
+frontend: frontend/plugin.js

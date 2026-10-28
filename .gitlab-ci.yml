@@ -33,7 +33,6 @@ default:
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   npm_config_cache: "$CI_PROJECT_DIR/.cache/npm"
-  GIT_SUBMODULE_STRATEGY: recursive # plugins/ (one repository per plugin)
 
 .release:
   rules:
@@ -70,11 +69,6 @@ frontends:
     - npm ci
     - npm run lint
     - npm run build
-    - |
-      if [ "$APP" = frontend ]; then
-        npm run typecheck:plugins
-        npm run build:plugin
-      fi
 
 compose:
   stage: check

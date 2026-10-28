@@ -7,7 +7,7 @@ GitHub release.
 ## 1. Get the code and log in to GHCR
 
 ```sh
-git clone --recurse-submodules git@github.com:hubra-app/hubra.git
+git clone git@github.com:hubra-app/hubra.git
 cd hubra
 ```
 

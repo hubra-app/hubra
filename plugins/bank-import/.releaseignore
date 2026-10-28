@@ -1,4 +1,0 @@
-# Kept out of the release zip (see plugins/README.md)
-tests/
-frontend/src/
-frontend/tsconfig.json

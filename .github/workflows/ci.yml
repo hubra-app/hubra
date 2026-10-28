@@ -31,8 +31,6 @@ jobs:
         working-directory: app/backend
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          submodules: true  # plugins/ (one repository per plugin)
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.13"
@@ -53,8 +51,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          submodules: true  # plugins/ (one repository per plugin)
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
@@ -73,9 +69,6 @@ jobs:
           npm run lint
           npm test --if-present
           npm run build
-          # Plugin frontends
-          npm run typecheck:plugins
-          npm run build:plugin
       - name: "admin-frontend"
         if: ${{ !cancelled() }}
         working-directory: app/admin-frontend
@@ -128,8 +121,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          submodules: true  # plugins/ (one repository per plugin)
       - name: Configure
         run: scripts/init-env.sh
       - run: docker compose build

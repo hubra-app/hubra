@@ -40,7 +40,7 @@ cross-origin auth setup (CORS, CSRF, cookie attributes, ProxyFix).
 ## Quick Start
 
 ```bash
-git clone --recurse-submodules git@github.com:hubra-app/hubra.git
+git clone git@github.com:hubra-app/hubra.git
 cd hubra
 scripts/init-env.sh        # .env with fresh secrets, localhost defaults
 docker compose pull        # images from GHCR (or: docker compose build)

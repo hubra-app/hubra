@@ -1,6 +1,19 @@
 import os
+from pathlib import Path
 
 os.environ.setdefault("FLASK_ENV", "testing")
+
+# The plugins Hubra's own tests load (tests/plugins/bundled), next to plugins/,
+# where a plugin's repository puts itself to run its tests with Hubra's.
+os.environ.setdefault(
+    "HUBRA_BUNDLED_PLUGINS",
+    os.pathsep.join(
+        [
+            str(Path(__file__).resolve().parents[3] / "plugins"),
+            str(Path(__file__).resolve().parent / "plugins" / "bundled"),
+        ]
+    ),
+)
 
 from unittest.mock import patch
 

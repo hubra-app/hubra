@@ -4,7 +4,7 @@ official Hubra plugin (hubra-app/hubra-plugin-<id>): the plugin at the root, a
 README from its manifest, Hubra's LICENSE, and the workflow that tests it and,
 on a GitHub release, signs it and attaches <id>-<version>.zip.
 
-    python3 tools/plugin_repo/make_plugin_repo.py plugins/keys ../hubra-plugin-keys
+    python3 tools/plugin_repo/make_plugin_repo.py ../my-plugin ../hubra-plugin-my-plugin
 
 The Marketplace (hubra-app/hubra-plugins) finds every public hubra-plugin-*
 repository of hubra-app by itself.
@@ -41,9 +41,10 @@ the Hubra project key). Clubs then switch it on under Einstellungen → Module
 
 ## Develop
 
-Hubra has this repository as a submodule in `plugins/{m["id"]}`, so its tests
-run with Hubra's (`cd app/backend && pytest ../../plugins/{m["id"]}`) and
-`npm run build:plugin` in `app/frontend` builds its frontend.
+Clone this repository into `plugins/{m["id"]}` of a Hubra checkout. Its tests
+then run with Hubra's (`cd app/backend && pytest ../../plugins/{m["id"]}`), and
+`npm run build:plugin` in `app/frontend` builds its frontend. The workflow
+does the same against Hubra's `main` on every push and pull request.
 
 ## Releasing
 

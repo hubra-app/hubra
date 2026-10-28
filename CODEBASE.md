@@ -356,7 +356,7 @@ club-management-suite/
 ### Clone & configure
 
 ```bash
-git clone --recurse-submodules <repo-url>
+git clone <repo-url>
 cd club-management-suite
 cp .env.example .env         # Edit secrets
 ```

@@ -1,15 +1,5 @@
-# Built from the repository root (like the frontends), because the image
-# carries the plugins in plugins/ with their frontends built.
-
-# ── Plugin frontends (npm run build:plugin, with the club app's toolchain) ──
-FROM node:22-alpine@sha256:16e22a550f3863206a3f701448c45f7912c6896a62de43add43bb9c86130c3e2 AS plugins
-WORKDIR /src
-COPY packages/api-client packages/api-client
-COPY app/frontend/package.json app/frontend/package-lock.json app/frontend/
-RUN cd app/frontend && npm ci
-COPY app/frontend app/frontend
-COPY plugins plugins
-RUN cd app/frontend && npm run build:plugin
+# Built from the repository root, like the frontends. No plugins are shipped:
+# platform admins install them from the Marketplace (plugins.hubra.club).
 
 # ── API, Celery worker and beat ─────────────────────────────────────────────
 FROM python:3.13-slim-bookworm@sha256:fcbd8dfc2605ba7c2eca646846c5e892b2931e41f6227985154a596f26ab8ed7
@@ -39,8 +29,6 @@ RUN adduser --disabled-password --gecos "" appuser
 RUN mkdir -p /celerybeat && chown appuser:appuser /celerybeat
 
 COPY app/backend/ .
-# Plugins shipped with Hubra: available in the Marketplace, active once installed.
-COPY --from=plugins /src/plugins /app/plugins
 
 USER appuser
 

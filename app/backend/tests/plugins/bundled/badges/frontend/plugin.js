@@ -1,0 +1,1 @@
+HubraPluginHost.register({id:'badges'})

@@ -59,8 +59,6 @@ jobs:
             dockerfile: modules/mail/cert-watcher/Dockerfile
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          submodules: true  # plugins/ (one repository per plugin)
 
       - name: Image name
         id: name
