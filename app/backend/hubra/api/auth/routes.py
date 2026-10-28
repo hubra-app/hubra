@@ -1268,7 +1268,44 @@ def change_account_password():
         email_svc.send_password_changed(
             user.email, user.name, lang=user.language or "de-CH"
         )
-    return jsonify({"ok": True}), 200
+
+    # A new password ends every other sign-in, in every club and portal: a
+    # stolen session must not outlive the change. This browser gets fresh
+    # tokens for the same session, so it stays signed in.
+    user.end_sessions()
+    db.session.commit()
+    return _reissue_session_tokens(jsonify({"ok": True}))
+
+
+def _reissue_session_tokens(body):
+    """*body* as a response carrying new tokens for the current session."""
+    from flask_jwt_extended import decode_token
+
+    claims = get_jwt()
+    identity = get_jwt_identity()
+    additional_claims = {
+        key: claims[key] for key in _SESSION_CLAIMS if claims.get(key) is not None
+    }
+    response = make_response(body, 200)
+    set_access_cookies(
+        response,
+        create_access_token(identity=identity, additional_claims=additional_claims),
+    )
+    # Keep the sign-in's lifetime ("stay signed in" or not).
+    max_age = 24 * 3600
+    old_refresh = request.cookies.get(current_app.config["JWT_REFRESH_COOKIE_NAME"])
+    if old_refresh:
+        try:
+            exp = decode_token(old_refresh, allow_expired=True)["exp"]
+            max_age = max(0, int(exp - datetime.now(timezone.utc).timestamp()))
+        except Exception:
+            pass
+    set_refresh_cookies(
+        response,
+        create_refresh_token(identity=identity, additional_claims=additional_claims),
+        max_age=max_age,
+    )
+    return response
 
 
 def _current_session_key() -> tuple[str | None, str | None]:

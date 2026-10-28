@@ -80,6 +80,29 @@ def test_password_change(client, db):
     assert user.check_password("Neues-Passwort-42!")
 
 
+def test_password_change_signs_out_every_other_session(app, client, db):
+    import time
+
+    _user_without_club(db)
+    other = app.test_client()
+    _login(other, "solo@test.ch")
+    _login(client, "solo@test.ch")
+    # Tokens carry whole seconds: the change must come in a later second.
+    time.sleep(1.1)
+    resp = client.post(
+        "/api/v1/account/password",
+        json={"currentPassword": PASSWORD, "newPassword": "Neues-Passwort-42!"},
+    )
+    assert resp.status_code == 200
+
+    assert other.get("/api/v1/account/profile").status_code == 401
+    assert other.post("/api/v1/auth/refresh").status_code == 401
+    # This browser stays signed in, also after a refresh.
+    assert client.get("/api/v1/account/profile").status_code == 200
+    assert client.post("/api/v1/auth/refresh").status_code == 200
+    assert client.get("/api/v1/account/profile").status_code == 200
+
+
 def test_password_change_needs_the_current_password(client, db):
     _user_without_club(db)
     _login(client, "solo@test.ch")
