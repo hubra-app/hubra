@@ -81,7 +81,16 @@ function SsoLoginRedirect() {
 }
 
 function DefaultRoute() {
-  const { isSuperadmin, hasGlobalPermission } = useAdmin()
+  const { authStatus, isSuperadmin, hasGlobalPermission } = useAdmin()
+  // Wait for the permissions, or managers land on My Clubs instead of Tenants.
+  if (authStatus !== 'authed')
+    return (
+      <RequireAuth>
+        <Center h="100vh">
+          <Loader />
+        </Center>
+      </RequireAuth>
+    )
   if (hasGlobalPermission?.('tenants.read') || isSuperadmin) {
     return <Navigate to="/app/tenants" replace />
   }

@@ -101,3 +101,37 @@ export async function verifyEmail(
     signal,
   })
 }
+
+export async function logout(): Promise<void> {
+  await apiFetch('/auth/logout', { method: 'POST' }).catch(() => {})
+}
+
+/** The clubs the signed-in user belongs to. */
+export async function getMyTenants(): Promise<{ tenants: TenantChoice[] }> {
+  return apiFetch<{ tenants: TenantChoice[] }>('/account/my-tenants')
+}
+
+export interface ClubListing {
+  slug: string
+  name: string
+  /** 'member', 'pending' (asked to join, not yet approved) or null. */
+  membership: 'member' | 'pending' | null
+}
+
+/**
+ * Active clubs matching `search`. Ordinary users get results only for a
+ * search of 2+ characters; platform managers see every club.
+ */
+export async function findClubs(
+  search: string,
+): Promise<{ clubs: ClubListing[]; canJoinDirectly: boolean }> {
+  const qs = search ? `?search=${encodeURIComponent(search)}` : ''
+  return apiFetch(`/system/clubs${qs}`)
+}
+
+/** Join a club (platform managers) or ask to join it (everyone else). */
+export async function joinClub(
+  slug: string,
+): Promise<{ status: 'joined' | 'requested'; club: { slug: string; name: string } }> {
+  return apiFetch(`/system/clubs/${encodeURIComponent(slug)}/join`, { method: 'POST' })
+}

@@ -9,81 +9,72 @@ import {
 } from 'react'
 import { notifications } from '@mantine/notifications'
 import { hasTokens, setAuthFailureHandler } from '@hubra/api-client'
+import { useNavigate } from 'react-router-dom'
 import { getMyPermissions, type PermissionsResponse } from '@/api/auth'
+import { signedInTarget, validateRedirect, type AppUrls } from '@/redirect'
 
 export type AuthStatus = 'loading' | 'authed' | 'anon'
 
 interface SsoState {
   authStatus: AuthStatus
   isSuperadmin: boolean
+  /** Superadmin, or any global permission: the manager portal is theirs. */
+  isManager: boolean
   permissions: PermissionsResponse | null
-  redirectTarget: string
+  /** The trusted ?redirect= target, or null when there is none. */
+  redirectTarget: string | null
+  urls: AppUrls
+  /** Leave for the ?redirect= target, or show the club picker (see signedInTarget). */
+  continueSignedIn: () => void
   notify: (kind: 'success' | 'error' | 'info', title: string, msg?: string) => void
 }
 
 const SsoContext = createContext<SsoState | null>(null)
 
-const DEFAULT_COS_URL = import.meta.env.VITE_COS_URL ?? 'https://app.hubra.club'
-const DEFAULT_MANAGE_URL = import.meta.env.VITE_MANAGE_URL ?? 'https://manage.hubra.club'
-
-// Parent domain of the club app (app.hubra.club -> hubra.club); any of its
-// subdomains is a valid redirect target. Empty for localhost and bare hosts.
-const APP_DOMAIN = (() => {
-  try {
-    const labels = new URL(DEFAULT_COS_URL).hostname.split('.')
-    return labels.length > 2 ? labels.slice(1).join('.') : ''
-  } catch {
-    return ''
-  }
-})()
-
-function validateRedirect(raw: string | null): string {
-  if (!raw) return DEFAULT_COS_URL
-  try {
-    const url = new URL(raw)
-    // Any local port is fine while developing; a build only trusts the
-    // configured origins below (which may themselves be localhost URLs).
-    if (import.meta.env.DEV && url.protocol === 'http:' && url.hostname === 'localhost') {
-      return raw
-    }
-    if (url.protocol === 'https:' && APP_DOMAIN) {
-      if (url.hostname.endsWith(`.${APP_DOMAIN}`)) return raw
-    }
-    // The configured app origins (set at container start for other domains).
-    const allowed = [DEFAULT_COS_URL, DEFAULT_MANAGE_URL].map((u) => new URL(u).origin)
-    if (allowed.includes(url.origin)) return raw
-  } catch {
-    /* fall through */
-  }
-  return DEFAULT_COS_URL
+const URLS: AppUrls = {
+  cos: import.meta.env.VITE_COS_URL ?? 'https://app.hubra.club',
+  manage: import.meta.env.VITE_MANAGE_URL ?? 'https://manage.hubra.club',
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
-export function determineDefaultRedirect(isSuperadmin: boolean): string {
-  return isSuperadmin ? DEFAULT_MANAGE_URL : DEFAULT_COS_URL
-}
+/** Pages a signed-in visitor stays on instead of being sent on. */
+const SIGNED_IN_PAGES = ['/clubs']
 
-/** Dashboard of one club in the club app (routes are /:tenantSlug/app/*). */
 // eslint-disable-next-line react-refresh/only-export-components
-export function clubAppUrl(tenantSlug: string): string {
-  return `${DEFAULT_COS_URL}/${encodeURIComponent(tenantSlug)}/app/dashboard`
+export function isManager(perms: PermissionsResponse | null): boolean {
+  return !!perms && (perms.is_superadmin || (perms.global_permissions?.length ?? 0) > 0)
 }
 
 export function SsoProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate()
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading')
   const [permissions, setPermissions] = useState<PermissionsResponse | null>(null)
 
-  const { redirectTarget, errorParam, hasExplicitRedirect } = useMemo(() => {
+  const { redirectTarget, errorParam } = useMemo(() => {
     const params = new URLSearchParams(window.location.search)
-    const explicitRedirect = params.get('redirect')
     return {
-      redirectTarget: validateRedirect(explicitRedirect),
+      redirectTarget: validateRedirect(params.get('redirect'), URLS, { dev: import.meta.env.DEV }),
       errorParam: params.get('error'),
-      hasExplicitRedirect: explicitRedirect !== null,
     }
   }, [])
 
   const isSuperadmin = permissions?.is_superadmin ?? false
+
+  const continueSignedIn = useCallback(() => {
+    const target = signedInTarget(redirectTarget)
+    if (target) {
+      window.location.assign(target)
+      return
+    }
+    // Still 'anon' from before sign-in: the picker would bounce to /login.
+    setAuthStatus('loading')
+    navigate('/clubs', { replace: true })
+    getMyPermissions()
+      .then((perms) => {
+        setPermissions(perms)
+        setAuthStatus('authed')
+      })
+      .catch(() => setAuthStatus('anon'))
+  }, [redirectTarget, navigate])
 
   useEffect(() => {
     if (errorParam === 'insufficient_permissions') {
@@ -110,18 +101,11 @@ export function SsoProvider({ children }: { children: ReactNode }) {
         if (cancelled) return
         setPermissions(permData)
 
-        const hasGlobalAccess =
-          permData.is_superadmin || (permData.global_permissions?.length ?? 0) > 0
-        if (hasGlobalAccess && !hasExplicitRedirect) {
-          window.location.assign(DEFAULT_MANAGE_URL)
+        if (SIGNED_IN_PAGES.includes(window.location.pathname)) {
+          setAuthStatus('authed')
           return
         }
-
-        window.location.assign(
-          !hasExplicitRedirect && permData.tenant_slug
-            ? clubAppUrl(permData.tenant_slug)
-            : redirectTarget,
-        )
+        continueSignedIn()
       } catch {
         if (cancelled) return
         setAuthStatus('anon')
@@ -156,11 +140,14 @@ export function SsoProvider({ children }: { children: ReactNode }) {
     () => ({
       authStatus,
       isSuperadmin,
+      isManager: isManager(permissions),
       permissions,
       redirectTarget,
+      urls: URLS,
+      continueSignedIn,
       notify,
     }),
-    [authStatus, isSuperadmin, permissions, redirectTarget, notify],
+    [authStatus, isSuperadmin, permissions, redirectTarget, continueSignedIn, notify],
   )
 
   return <SsoContext.Provider value={value}>{children}</SsoContext.Provider>
