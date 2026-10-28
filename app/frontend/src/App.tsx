@@ -471,16 +471,6 @@ function PrivateRoutes() {
                     }
                   />
                   <Route
-                    path="system/backups"
-                    element={
-                      <RequireModule code="backups">
-                        <RequirePermission permKey="roles.roles.create">
-                          <SystemScreen />
-                        </RequirePermission>
-                      </RequireModule>
-                    }
-                  />
-                  <Route
                     path="audit-log"
                     element={
                       <RequirePermission permKey="audit.audit.read">

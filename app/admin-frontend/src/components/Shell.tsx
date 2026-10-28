@@ -13,6 +13,7 @@ import {
   IconKey,
   IconPuzzle,
   IconSettings,
+  IconDatabase,
   IconPlus,
 } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
@@ -147,6 +148,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 icon: <IconSettings size={22} />,
               },
             ]
+          : []),
+        ...(hasGlobalPermission('backups.manage')
+          ? [{ path: '/app/platform/backups', label: 'Backups', icon: <IconDatabase size={22} /> }]
           : []),
         ...(hasGlobalPermission('plugins.manage')
           ? [{ path: '/app/plugins', label: 'Plugins', icon: <IconPuzzle size={22} /> }]

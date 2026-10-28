@@ -45,6 +45,11 @@ _DEFAULT_PERMISSIONS = [
         "Manage platform settings",
         "Mail relay, system sender and other instance-wide settings",
     ),
+    (
+        "backups.manage",
+        "Manage backups",
+        "Start, verify and delete backups of the whole database",
+    ),
 ]
 
 # (role_name, description, [permission_keys])
@@ -66,6 +71,7 @@ _DEFAULT_ROLES = [
             "roles.manage",
             "plugins.manage",
             "platform.settings",
+            "backups.manage",
         ],
     ),
     (

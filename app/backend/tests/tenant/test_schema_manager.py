@@ -29,6 +29,7 @@ _GLOBAL_ONLY_TABLES = frozenset(
         "platform_settings",
         "plugin_trusted_keys",
         "email_verifications",
+        "backup_record",
     }
 )
 
