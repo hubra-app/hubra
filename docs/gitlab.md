@@ -1,15 +1,14 @@
 # Releases on GitLab
 
 GitHub (`hubra-app/hubra`) stays the place for code, pull requests, their
-checks and the container images (GHCR). A GitLab project gets a copy of
-`main` and the tags, runs the checks again and turns version tags into
+checks, releases and the container images (GHCR). A GitLab project gets a
+copy of `main` and the tags, runs the checks again and turns version tags into
 GitLab Releases:
 
 ```
-GitHub main ─────┬─ images.yml ──▶ ghcr.io/hubra-app/hubra/<image>:sha-<commit>
-                 └─ mirror-gitlab.yml ──▶ GitLab main ──▶ checks
-GitHub tag v1.2.3 ┬─ images.yml ──▶ ghcr.io/hubra-app/hubra/<image>:1.2.3
-                 └─ mirror-gitlab.yml ──▶ GitLab tag ──▶ checks ─▶ GitLab Release
+GitHub main ───────────────── mirror-gitlab.yml ──▶ GitLab main ──▶ checks
+GitHub release v1.2.3 ┬─ images.yml ──▶ ghcr.io/hubra-app/hubra/<image>:1.2.3
+ (creates tag v1.2.3) └─ mirror-gitlab.yml ──▶ GitLab tag ──▶ checks ─▶ GitLab Release
 ```
 
 | Pipeline on GitLab | Jobs |
@@ -28,15 +27,18 @@ Every image is built once, by `.github/workflows/images.yml`, and lives at
 
 | Tag | Pushed by |
 | --- | --- |
-| `sha-<commit>`, `main-<timestamp>-<commit>` | every push to `main` |
-| `1.2.3`, `1.2` | tag `v1.2.3` |
-| `latest` | every push to `main`; not for the cluster |
+| `1.2.3` | GitHub release `v1.2.3` (pre-releases too) |
+| `1.2`, `latest` | GitHub release `v1.2.3`, not for pre-releases; `latest` not for the cluster |
+| `sha-<commit>` | every build: releases and manual runs (Actions → Images → Run workflow) |
+
+To save Actions minutes, a push to `main` builds no images.
 
 The cluster pins a version, ideally by digest. Each GitLab Release ends with
 an `images:` block for the overlay (`deploy/clusters/contabo/kustomization.yaml`)
 with `newTag` and `digest` for every image. Paste it over the overlay's
 `images:` and commit; Flux rolls out exactly those images and nothing else.
-Between releases, pin a `sha-<commit>` build instead.
+Between releases, run the Images workflow by hand on `main` and pin the
+`sha-<commit>` build it pushes.
 
 ## Setup
 
@@ -80,10 +82,16 @@ reach only protected refs, which is why step 1 protects `v*`.
 
 ## Cutting a release
 
+Publish a release on GitHub (Releases → Draft a new release, new tag
+`v0.1.0` on `main`, Publish), or from the command line:
+
 ```sh
-git tag -a v0.1.0 -m "Hubra 0.1.0"
-git push origin v0.1.0        # to GitHub; images.yml and the mirror both start
+gh release create v0.1.0 --target main --title "Hubra 0.1.0" --generate-notes
 ```
+
+Publishing starts images.yml; the new tag starts the mirror. A tag pushed
+without a GitHub release builds no images, and the GitLab release then fails
+after `GHCR_WAIT_MINUTES`.
 
 The release notes group the commit subjects since the previous `v*` tag by
 Conventional Commit type (`scripts/changelog.sh v0.1.0` shows them locally).

@@ -1,25 +1,21 @@
-# Builds the container images and pushes them to GitHub Container Registry:
-#   ghcr.io/<owner>/<repo>/<image>:latest        newest build of main
-#   ghcr.io/<owner>/<repo>/<image>:sha-<commit>  every build of main
-#   ghcr.io/<owner>/<repo>/<image>:main-<timestamp>-<commit>
-#                                                 same build, sortable (Flux image automation)
-#   ghcr.io/<owner>/<repo>/<image>:1.2.3         tags v1.2.3
+# Builds the container images and pushes them to GitHub Container Registry.
+# To save Actions minutes it runs only when a GitHub release is published,
+# or by hand (Actions > Images > Run workflow):
+#   ghcr.io/<owner>/<repo>/<image>:1.2.3         release v1.2.3
+#   ghcr.io/<owner>/<repo>/<image>:1.2           release v1.2.3 (not pre-releases)
+#   ghcr.io/<owner>/<repo>/<image>:latest        newest release (not pre-releases)
+#   ghcr.io/<owner>/<repo>/<image>:sha-<commit>  every build, releases and manual runs
 #
-# To save Actions minutes, pull requests build no images (CI's compose-smoke
-# job already builds them), and a push to main rebuilds only the images whose
-# files changed. The others get the new sha-/main- tags on their newest
-# build (:latest), so every image still has a sha-<commit> tag for every
-# commit on main (a docs-only commit builds nothing, it is only tagged).
-# Tags and manual runs build everything.
+# Publishing a release on GitHub also creates its v* tag, which the GitLab
+# mirror turns into a GitLab Release (docs/gitlab.md).
 #
 # The frontend images carry no host names; they are set at container start
 # (app/deploy/nginx/40-hubra-runtime.sh), so one image fits every install.
 name: Images
 
 on:
-  push:
-    branches: [main]
-    tags: ["v*"]
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -31,75 +27,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Which images to build, and which only get new tags.
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      build: ${{ steps.pick.outputs.build }}
-      retag: ${{ steps.pick.outputs.retag }}
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          fetch-depth: 0
-      - id: pick
-        env:
-          BEFORE: ${{ github.event.before }}
-        run: |
-          # image  context  dockerfile  target  paths that go into it
-          images='[
-            {"image": "backend", "context": ".", "dockerfile": "app/backend/Dockerfile",
-             "paths": ["app/backend/", "app/frontend/", "packages/api-client/", "plugins/"]},
-            {"image": "frontend", "context": ".", "dockerfile": "app/frontend/Dockerfile", "target": "production",
-             "paths": ["app/frontend/", "packages/api-client/", "app/deploy/nginx/"]},
-            {"image": "admin-frontend", "context": ".", "dockerfile": "app/admin-frontend/Dockerfile", "target": "production",
-             "paths": ["app/admin-frontend/", "packages/api-client/", "app/deploy/nginx/"]},
-            {"image": "sso-frontend", "context": ".", "dockerfile": "app/sso-frontend/Dockerfile", "target": "production",
-             "paths": ["app/sso-frontend/", "packages/api-client/", "app/deploy/nginx/"]},
-            {"image": "haraka", "context": "modules/mail/haraka", "dockerfile": "modules/mail/haraka/Dockerfile",
-             "paths": ["modules/mail/haraka/"]},
-            {"image": "zonemta", "context": "modules/mail/zonemta", "dockerfile": "modules/mail/zonemta/Dockerfile",
-             "paths": ["modules/mail/zonemta/"]},
-            {"image": "cert-watcher", "context": "modules/mail/cert-watcher", "dockerfile": "modules/mail/cert-watcher/Dockerfile",
-             "paths": ["modules/mail/cert-watcher/"]}
-          ]'
-          # Everything on tags, manual runs, a new branch, or when the base
-          # commit is unknown (force push) or this workflow changed.
-          all=false
-          if [ "$GITHUB_REF_TYPE" != branch ] || [ "$GITHUB_EVENT_NAME" != push ] ||
-             ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
-            all=true
-            changed=""
-          else
-            changed="$(git diff --name-only "$BEFORE" "$GITHUB_SHA")"
-            if printf '%s\n' "$changed" | grep -qx '.github/workflows/images.yml'; then
-              all=true
-            fi
-          fi
-          echo "Changed files:"
-          printf '%s\n' "$changed"
-          printf '%s\n' "$changed" > changed.txt
-          pick() {
-            jq -c --argjson all "$all" --rawfile changed changed.txt "
-              (\$changed | split(\"\\n\") | map(select(. != \"\"))) as \$files
-              | [ .[] | select(
-                  (\$all or ([.paths[] as \$p | \$files[] | startswith(\$p)] | any)) == $1
-                ) | del(.paths) ]" <<< "$images"
-          }
-          build="$(pick true)"
-          retag="$(pick false | jq -c 'map(.image)')"
-          echo "build=$build" >> "$GITHUB_OUTPUT"
-          echo "retag=$retag" >> "$GITHUB_OUTPUT"
-          echo "Build: $build"
-          echo "Retag: $retag"
-
   build:
-    needs: changes
-    if: needs.changes.outputs.build != '[]'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJSON(needs.changes.outputs.build) }}
+        include:
+          - image: backend
+            context: .
+            dockerfile: app/backend/Dockerfile
+          - image: frontend
+            context: .
+            dockerfile: app/frontend/Dockerfile
+            target: production
+          - image: admin-frontend
+            context: .
+            dockerfile: app/admin-frontend/Dockerfile
+            target: production
+          - image: sso-frontend
+            context: .
+            dockerfile: app/sso-frontend/Dockerfile
+            target: production
+          - image: haraka
+            context: modules/mail/haraka
+            dockerfile: modules/mail/haraka/Dockerfile
+          - image: zonemta
+            context: modules/mail/zonemta
+            dockerfile: modules/mail/zonemta/Dockerfile
+          - image: cert-watcher
+            context: modules/mail/cert-watcher
+            dockerfile: modules/mail/cert-watcher/Dockerfile
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
@@ -119,10 +76,10 @@ jobs:
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         with:
           images: ${{ steps.name.outputs.image }}
+          # latest comes with the semver tags of a release that is not a
+          # pre-release (flavor latest=auto).
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,format=short,enable={{is_default_branch}}
-            type=raw,value=main-{{date 'YYYYMMDDHHmmss'}}-{{sha}},enable={{is_default_branch}}
+            type=sha,format=short
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
 
@@ -161,29 +118,3 @@ jobs:
             cat trivy.txt
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-
-  # Images that did not change: their newest build gets this commit's tags.
-  retag:
-    needs: changes
-    if: needs.changes.outputs.retag != '[]'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - env:
-          IMAGES: ${{ needs.changes.outputs.retag }}
-        run: |
-          set -eu
-          base="ghcr.io/${GITHUB_REPOSITORY,,}"
-          sha="${GITHUB_SHA::7}"
-          ts="$(date -u +%Y%m%d%H%M%S)"
-          for image in $(jq -r '.[]' <<< "$IMAGES"); do
-            echo "$base/$image:latest -> sha-$sha, main-$ts-$sha"
-            docker buildx imagetools create \
-              -t "$base/$image:sha-$sha" \
-              -t "$base/$image:main-$ts-$sha" \
-              "$base/$image:latest"
-          done
