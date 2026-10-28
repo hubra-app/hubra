@@ -12,7 +12,7 @@ import {
   IconLogin,
   IconLogout as Leave,
 } from '@tabler/icons-react'
-import { useToast, useData, useAuth } from '@/context/AppContext'
+import { useToast, useLoadData, useAuth } from '@/context/AppContext'
 import {
   Modal,
   Field,
@@ -54,7 +54,7 @@ function eventTypeLabel(type: string) {
 
 export function EventsTab() {
   const { notify } = useToast()
-  const { myJoinedEvents, events, setEvents } = useData()
+  const { myJoinedEvents, events, setEvents } = useLoadData('events')
   const { currentUser, hasPermission } = useAuth()
   const { t, i18n } = useT()
   const joinEventMutation = useToggleJoinEvent()

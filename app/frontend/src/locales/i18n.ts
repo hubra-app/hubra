@@ -18,6 +18,20 @@ export const resources = {
 
 const KNOWN_LANGUAGES = ["de-CH", "en-GB"];
 
+// The club's languages, asked once per page load (loading and key reports
+// both need them).
+let apiLanguages: Promise<string[]> | null = null;
+
+function clubLanguages(): Promise<string[]> {
+  apiLanguages ??= fetchLanguages()
+    .then((locales) => (locales.length > 0 ? locales : KNOWN_LANGUAGES))
+    .catch((err) => {
+      apiLanguages = null;
+      throw err;
+    });
+  return apiLanguages;
+}
+
 const savedLang = localStorage.getItem(STORAGE_KEY) ?? "de-CH";
 
 i18n.use(initReactI18next).init({
@@ -63,8 +77,7 @@ async function flushAccessedKeys() {
   accessedKeys.clear();
   let locales = KNOWN_LANGUAGES;
   try {
-    const apiLocales = await fetchLanguages();
-    if (apiLocales.length > 0) locales = apiLocales;
+    locales = await clubLanguages();
   } catch {
     // API unavailable — skip reporting
   }
@@ -85,8 +98,7 @@ window.addEventListener("beforeunload", () => {
 export async function loadAllTranslationsFromApi() {
   let locales = KNOWN_LANGUAGES;
   try {
-    const apiLocales = await fetchLanguages();
-    if (apiLocales.length > 0) locales = apiLocales;
+    locales = await clubLanguages();
   } catch {
     // API unavailable — use static fallbacks only
   }

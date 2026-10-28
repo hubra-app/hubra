@@ -167,6 +167,7 @@ class TierService:
             .where(Member.archived_at.is_(None))
             .order_by(User.last_name, User.first_name)
             .options(
+                selectinload(Member.user),
                 selectinload(Member.tier),
                 selectinload(Member.roles),
                 selectinload(Member.groups),
@@ -191,7 +192,9 @@ class TiersService:
     def list() -> list[MembershipTier]:
         """Return all tiers ordered by name."""
         return db.session.scalars(  # type: ignore[return-value]
-            select(MembershipTier).order_by(MembershipTier.name)
+            select(MembershipTier)
+            .options(selectinload(MembershipTier.payment_plans))
+            .order_by(MembershipTier.name)
         ).all()
 
     @staticmethod

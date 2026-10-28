@@ -9,7 +9,7 @@ import {
   IconLogout as Leave,
   IconCreditCard,
 } from "@tabler/icons-react";
-import { useAuth, useData, useNav } from "@/context/AppContext";
+import { useAuth, useLoadData, useNav } from "@/context/AppContext";
 import { InvoicePill } from "@/components/ui";
 import { listMyInvoices, downloadInvoicePdf } from "@/api/finance";
 import { formatCHF } from "@/format";
@@ -22,7 +22,7 @@ import { PluginSlot } from "@/plugins";
 export function AccountDashboardScreen() {
   const { t, i18n } = useT();
   const { currentUser } = useAuth();
-  const { polls, events, myVotes } = useData();
+  const { polls, events, myVotes } = useLoadData("events");
   const { go, goInvoice } = useNav();
   const joinEventMutation = useToggleJoinEvent();
   const modules = useModules();

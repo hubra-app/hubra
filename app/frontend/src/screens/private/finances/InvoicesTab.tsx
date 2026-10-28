@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Button, Group, Select, TextInput } from '@mantine/core'
 import { useT, zmsg } from '@/locales/i18n'
 import { IconPlus } from '@tabler/icons-react'
-import { useToast, useData, useNav, useAuth } from '@/context/AppContext'
+import { useToast, useLoadData, useNav, useAuth } from '@/context/AppContext'
 import {
   Modal,
   Field,
@@ -89,7 +89,7 @@ type BulkForm = z.infer<typeof bulkSchema>
 
 export function InvoicesTab() {
   const { notify } = useToast()
-  const { invoices, setInvoices } = useData()
+  const { invoices, setInvoices } = useLoadData('invoices')
   const { goInvoice } = useNav()
   const { hasPermission } = useAuth()
   const { t } = useT()
