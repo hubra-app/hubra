@@ -221,7 +221,7 @@ export function TransactionsTab() {
               <span
                 className="num"
                 style={{
-                  color: '#99a2ac',
+                  color: '#8c86a0',
                   fontSize: 'var(--mantine-font-size-xs)',
                 }}
               >
@@ -236,7 +236,7 @@ export function TransactionsTab() {
               <span
                 className="num"
                 style={{
-                  color: '#6b7480',
+                  color: '#5e5873',
                   fontSize: 'var(--mantine-font-size-sm)',
                 }}
               >
@@ -269,7 +269,7 @@ export function TransactionsTab() {
             key: 'member',
             header: t('common.member', 'Mitglid'),
             render: (tx) => (
-              <span style={{ color: '#6b7480' }}>{tx.member}</span>
+              <span style={{ color: '#5e5873' }}>{tx.member}</span>
             ),
           },
           {
@@ -292,7 +292,7 @@ export function TransactionsTab() {
             key: 'method',
             header: t('common.method', 'Methode'),
             render: (tx) => (
-              <span style={{ color: '#6b7480' }}>{tx.method}</span>
+              <span style={{ color: '#5e5873' }}>{tx.method}</span>
             ),
           },
           {
@@ -441,8 +441,8 @@ export function TransactionsTab() {
             <div
               style={{
                 fontSize: 'var(--mantine-font-size-sm)',
-                color: '#6b7480',
-                background: '#f4f8f5',
+                color: '#5e5873',
+                background: '#f4f2f9',
                 borderRadius: 8,
                 padding: '10px 14px',
               }}

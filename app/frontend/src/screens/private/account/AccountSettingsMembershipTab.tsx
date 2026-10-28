@@ -63,7 +63,7 @@ export function AccountSettingsMembershipTab() {
                 display: 'flex',
                 justifyContent: 'space-between',
                 padding: '13px 24px',
-                borderBottom: '1px solid #f0f4f1',
+                borderBottom: '1px solid #f1eff7',
               }}
             >
               <span

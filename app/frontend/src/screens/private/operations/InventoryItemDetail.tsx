@@ -6,7 +6,7 @@ export function InventoryItemDetailScreen() {
   const { t } = useT()
   const { go } = useNav()
   return (
-    <div style={{ padding: 40, textAlign: 'center', color: '#99a2ac' }}>
+    <div style={{ padding: 40, textAlign: 'center', color: '#8c86a0' }}>
       <div style={{ fontSize: 'var(--mantine-font-size-sm)' }}>
         {t('inventory.noItemSelected', 'Kei Item usgwehlt.')}
       </div>

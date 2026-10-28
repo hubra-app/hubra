@@ -161,7 +161,7 @@ function adaptAuditDetail(b: BackendAuditEntry): AuditEntryDetail {
     id: String(b.id),
     actorId: b.actor_id ?? null,
     actorName: b.actor_name ?? null,
-    actorAvatarColor: b.actor_avatar_color ?? "#8e97a7",
+    actorAvatarColor: b.actor_avatar_color ?? "#857f99",
     action: b.action,
     targetType: b.target_type ?? null,
     targetId: b.target_id ?? null,
@@ -182,7 +182,7 @@ function adaptAudit(b: BackendAuditEntry): AuditEntry {
     action: b.action.replace(/_/g, " "),
     target: `${b.target_type}: ${b.target_label}`,
     time: b.time,
-    avatarColor: b.actor_avatar_color ?? "#8e97a7",
+    avatarColor: b.actor_avatar_color ?? "#857f99",
   };
 }
 

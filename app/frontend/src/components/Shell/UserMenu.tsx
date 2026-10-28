@@ -11,7 +11,7 @@ export function UserMenu() {
   const { myTenants, switchTenant } = useData()
   const name = currentUser?.name ?? ''
   const email = currentUser?.publicEmail || currentUser?.email || ''
-  const bg = currentUser?.avatarColor ?? '#e7eeea'
+  const bg = currentUser?.avatarColor ?? '#ebe8f2'
 
   return (
     <Box
@@ -24,7 +24,7 @@ export function UserMenu() {
         background: 'var(--mantine-color-white)',
         border: '1px solid var(--mantine-color-gray-5)',
         borderRadius: 13,
-        boxShadow: '0 26px 64px -22px rgba(24,32,28,.28), 0 4px 14px -6px rgba(24,32,28,.15)',
+        boxShadow: '0 26px 64px -22px rgba(26,22,37,.28), 0 4px 14px -6px rgba(26,22,37,.15)',
         zIndex: 60,
         overflow: 'hidden',
       }}

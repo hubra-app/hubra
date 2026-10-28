@@ -25,7 +25,7 @@ export function AuthFrame({ children }: { children: ReactNode }) {
             </Text>
             <Text
               fz="xs"
-              c="#8a6a00"
+              c="#6131c4"
               ff="'JetBrains Mono', monospace"
               style={{ letterSpacing: '0.06em' }}
             >

@@ -262,7 +262,7 @@ export function PollsTab() {
                     style={{
                       fontSize: "var(--mantine-font-size-sm)",
                       fontWeight: 600,
-                      color: "#181818",
+                      color: "#1a1625",
                       display: "flex",
                       alignItems: "center",
                       gap: 6,
@@ -329,7 +329,7 @@ export function PollsTab() {
                             <span
                               style={{
                                 fontSize: "var(--mantine-font-size-sm)",
-                                color: isMyVote ? "#8a6a00" : "#3a4048",
+                                color: isMyVote ? "#6131c4" : "#2e2940",
                                 fontWeight: isMyVote ? 600 : 400,
                               }}
                             >
@@ -340,7 +340,7 @@ export function PollsTab() {
                               className="num"
                               style={{
                                 fontSize: "var(--mantine-font-size-sm)",
-                                color: isWinner ? "#8a6a00" : "#6b7480",
+                                color: isWinner ? "#6131c4" : "#5e5873",
                                 fontWeight: isWinner ? 700 : 400,
                               }}
                             >
@@ -354,10 +354,10 @@ export function PollsTab() {
                             styles={{
                               section: {
                                 background: isMyVote
-                                  ? "#fece2b"
+                                  ? "#7441e0"
                                   : isWinner
-                                    ? "#fece2b88"
-                                    : "#e7eeea",
+                                    ? "#7441e088"
+                                    : "#ebe8f2",
                                 transition: "width .4s",
                               },
                             }}
@@ -372,19 +372,19 @@ export function PollsTab() {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    borderTop: "1px solid #e3eae6",
+                    borderTop: "1px solid #e6e3ef",
                     paddingTop: 12,
                   }}
                 >
                   <span
                     style={{
                       fontSize: "var(--mantine-font-size-xs)",
-                      color: "#6b7480",
+                      color: "#5e5873",
                     }}
                   >
                     <span
                       className="num"
-                      style={{ fontWeight: 600, color: "#181818" }}
+                      style={{ fontWeight: 600, color: "#1a1625" }}
                     >
                       {poll.totalVotes}
                     </span>{" "}

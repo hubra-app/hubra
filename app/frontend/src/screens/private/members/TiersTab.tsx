@@ -101,7 +101,7 @@ function TierDetailPanel({
             width: 12,
             height: 12,
             borderRadius: 3,
-            background: tier.color ?? '#6366f1',
+            background: tier.color ?? '#7441e0',
           }}
         />
       }
@@ -178,7 +178,7 @@ export function TiersTab() {
     validate: zodResolver(tierSchema),
     initialValues: {
       name: '',
-      color: '#fece2b',
+      color: '#7441e0',
       priceType: 'fixed',
       billingCycle: '',
       price: '',
@@ -240,7 +240,7 @@ export function TiersTab() {
   const openAdd = () => {
     form.setValues({
       name: '',
-      color: '#fece2b',
+      color: '#7441e0',
       priceType: 'fixed',
       billingCycle: '',
       price: '',
@@ -499,7 +499,7 @@ export function TiersTab() {
                 .length === 0 && (
                 <span
                   style={{
-                    color: '#99a2ac',
+                    color: '#8c86a0',
                     fontSize: 'var(--mantine-font-size-xs)',
                   }}
                 >
@@ -516,15 +516,15 @@ export function TiersTab() {
           style={{
             padding: '10px 14px',
             borderRadius: 8,
-            background: '#eef3f0',
+            background: '#f7f6fb',
             fontSize: 'var(--mantine-font-size-sm)',
             fontWeight: 600,
-            color: '#181818',
+            color: '#1a1625',
           }}
         >
           {costPreview.summary}
           {costPreview.members > 1 && (
-            <span style={{ fontWeight: 400, color: '#6b7480', marginLeft: 8 }}>
+            <span style={{ fontWeight: 400, color: '#5e5873', marginLeft: 8 }}>
               · {costPreview.members} member
               {costPreview.members !== 1 ? 's' : ''}
             </span>
@@ -589,7 +589,7 @@ export function TiersTab() {
                   style={{
                     fontSize: 'var(--mantine-font-size-md)',
                     fontWeight: 700,
-                    color: '#181818',
+                    color: '#1a1625',
                   }}
                 >
                   {tier.name}
@@ -605,7 +605,7 @@ export function TiersTab() {
                 <span
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
-                    color: '#6b7480',
+                    color: '#5e5873',
                   }}
                 >
                   Price
@@ -615,7 +615,7 @@ export function TiersTab() {
                   style={{
                     fontSize: 'var(--mantine-font-size-sm)',
                     fontWeight: 700,
-                    color: '#181818',
+                    color: '#1a1625',
                   }}
                 >
                   {tierCosts[tier.id]?.summary ??
@@ -640,8 +640,8 @@ export function TiersTab() {
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
                     fontWeight: 600,
-                    color: '#6b7480',
-                    background: '#eef3f0',
+                    color: '#5e5873',
+                    background: '#f7f6fb',
                     borderRadius: 4,
                     padding: '2px 8px',
                   }}
@@ -653,8 +653,8 @@ export function TiersTab() {
                     style={{
                       fontSize: 'var(--mantine-font-size-xs)',
                       fontWeight: 600,
-                      color: '#6b7480',
-                      background: '#eef3f0',
+                      color: '#5e5873',
+                      background: '#f7f6fb',
                       borderRadius: 4,
                       padding: '2px 8px',
                     }}
@@ -706,17 +706,17 @@ export function TiersTab() {
             justifyContent: 'center',
             padding: 28,
             cursor: 'pointer',
-            border: '1.5px dashed #d3ddd7',
+            border: '1.5px dashed #d6d2e3',
             background: 'transparent',
             minHeight: 200,
           }}
           onClick={openAdd}
         >
-          <IconPlus size={22} style={{ color: '#b3c1ba', marginBottom: 8 }} />
+          <IconPlus size={22} style={{ color: '#b7b0c9', marginBottom: 8 }} />
           <span
             style={{
               fontSize: 'var(--mantine-font-size-sm)',
-              color: '#99a2ac',
+              color: '#8c86a0',
             }}
           >
             New tier

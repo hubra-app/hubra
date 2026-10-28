@@ -337,7 +337,7 @@ export function PostsTab() {
         <Pagination {...pg} top />
         {pg.paged.length === 0 ? (
           <div
-            style={{ padding: '48px', textAlign: 'center', color: '#99a2ac' }}
+            style={{ padding: '48px', textAlign: 'center', color: '#8c86a0' }}
           >
             <div style={{ fontSize: 32, marginBottom: 12 }}>📢</div>
             <div
@@ -368,7 +368,7 @@ export function PostsTab() {
                 key={post.id}
                 style={{
                   padding: '20px 24px',
-                  borderBottom: '1px solid #e3eae6',
+                  borderBottom: '1px solid #e6e3ef',
                 }}
               >
                 <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
@@ -382,7 +382,7 @@ export function PostsTab() {
                       style={{
                         fontSize: 'var(--mantine-font-size-sm)',
                         fontWeight: 600,
-                        color: '#181818',
+                        color: '#1a1625',
                       }}
                     >
                       {post.author}
@@ -391,7 +391,7 @@ export function PostsTab() {
                       className="num"
                       style={{
                         fontSize: 'var(--mantine-font-size-xs)',
-                        color: '#99a2ac',
+                        color: '#8c86a0',
                       }}
                     >
                       {post.time}
@@ -414,7 +414,7 @@ export function PostsTab() {
                   style={{
                     fontSize: 'var(--mantine-font-size-md)',
                     fontWeight: 700,
-                    color: '#181818',
+                    color: '#1a1625',
                     marginBottom: 8,
                   }}
                 >
@@ -423,7 +423,7 @@ export function PostsTab() {
                 <div
                   style={{
                     fontSize: 'var(--mantine-font-size-sm)',
-                    color: '#3a4048',
+                    color: '#2e2940',
                     lineHeight: 1.6,
                     margin: '0 0 14px',
                   }}
@@ -459,7 +459,7 @@ export function PostsTab() {
                   style={{
                     display: 'flex',
                     gap: 12,
-                    borderTop: '1px solid #e3eae6',
+                    borderTop: '1px solid #e6e3ef',
                     paddingTop: 12,
                   }}
                 >
@@ -468,7 +468,7 @@ export function PostsTab() {
                       size="sm"
                       variant="subtle"
                       style={{
-                        color: liked ? '#ff4d3d' : '#6b7480',
+                        color: liked ? '#ff4d3d' : '#5e5873',
                       }}
                       onClick={() => toggleLike(post)}
                     >
@@ -484,7 +484,7 @@ export function PostsTab() {
                   <Button
                     size="sm"
                     variant="subtle"
-                    style={{ color: '#6b7480' }}
+                    style={{ color: '#5e5873' }}
                     onClick={() => toggleComments(post.id)}
                   >
                     <IconMessage2 size={16} />
@@ -497,14 +497,14 @@ export function PostsTab() {
                     style={{
                       marginTop: 12,
                       paddingTop: 12,
-                      borderTop: '1px solid #e3eae6',
+                      borderTop: '1px solid #e6e3ef',
                     }}
                   >
                     {comments.length === 0 ? (
                       <div
                         style={{
                           fontSize: 'var(--mantine-font-size-xs)',
-                          color: '#99a2ac',
+                          color: '#8c86a0',
                           marginBottom: 8,
                         }}
                       >
@@ -542,7 +542,7 @@ export function PostsTab() {
                                   style={{
                                     fontSize: 'var(--mantine-font-size-xs)',
                                     fontWeight: 600,
-                                    color: '#181818',
+                                    color: '#1a1625',
                                   }}
                                 >
                                   {comment.author}
@@ -551,7 +551,7 @@ export function PostsTab() {
                                   className="num"
                                   style={{
                                     fontSize: 'var(--mantine-font-size-xs)',
-                                    color: '#99a2ac',
+                                    color: '#8c86a0',
                                   }}
                                 >
                                   {comment.time}
@@ -577,7 +577,7 @@ export function PostsTab() {
                               <div
                                 style={{
                                   fontSize: 'var(--mantine-font-size-sm)',
-                                  color: '#3a4048',
+                                  color: '#2e2940',
                                   lineHeight: 1.5,
                                 }}
                               >

@@ -239,7 +239,7 @@ export function EventsTab() {
                   style={{
                     textAlign: 'center',
                     minWidth: 48,
-                    background: '#f4f8f5',
+                    background: '#f4f2f9',
                     borderRadius: 10,
                     padding: '8px 0',
                   }}
@@ -249,7 +249,7 @@ export function EventsTab() {
                     style={{
                       fontSize: 'var(--mantine-font-size-xl)',
                       fontWeight: 700,
-                      color: '#181818',
+                      color: '#1a1625',
                       lineHeight: 1,
                     }}
                   >
@@ -259,7 +259,7 @@ export function EventsTab() {
                     style={{
                       fontSize: 'var(--mantine-font-size-xs)',
                       fontWeight: 600,
-                      color: '#99a2ac',
+                      color: '#8c86a0',
                       letterSpacing: '0.08em',
                     }}
                   >
@@ -279,7 +279,7 @@ export function EventsTab() {
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
                   fontWeight: 600,
-                  color: '#181818',
+                  color: '#1a1625',
                 }}
               >
                 {ev.title}
@@ -293,7 +293,7 @@ export function EventsTab() {
               <span
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
-                  color: '#6b7480',
+                  color: '#5e5873',
                 }}
               >
                 {ev.time && <>{ev.time} · </>}
@@ -313,12 +313,12 @@ export function EventsTab() {
                   gap: 4,
                 }}
               >
-                <IconUserCheck size={13} style={{ color: '#6b7480' }} />
+                <IconUserCheck size={13} style={{ color: '#5e5873' }} />
                 <span
                   className="num"
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
-                    color: '#6b7480',
+                    color: '#5e5873',
                   }}
                 >
                   {ev.attendees.length}

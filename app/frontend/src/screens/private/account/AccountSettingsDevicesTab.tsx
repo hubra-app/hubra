@@ -77,7 +77,7 @@ export function AccountSettingsDevicesTab() {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '14px 24px',
-                borderBottom: '1px solid #f0f4f1',
+                borderBottom: '1px solid #f1eff7',
               }}
             >
               <div

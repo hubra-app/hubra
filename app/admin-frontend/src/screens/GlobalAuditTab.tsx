@@ -66,7 +66,7 @@ export function GlobalAuditTab() {
           <Table.Tbody>
             {entries.map((entry: GlobalAuditEntry) => (
               <Table.Tr key={entry.id}>
-                <Table.Td style={{ fontSize: 14, color: '#6b7480' }}>
+                <Table.Td style={{ fontSize: 14, color: '#5e5873' }}>
                   {formatDateTime(entry.time)}
                 </Table.Td>
                 <Table.Td>
@@ -80,7 +80,7 @@ export function GlobalAuditTab() {
                 <Table.Td style={{ fontSize: 14 }}>
                   {entry.actor_id ?? 'system'}
                 </Table.Td>
-                <Table.Td style={{ fontSize: 14, color: '#6b7480' }}>
+                <Table.Td style={{ fontSize: 14, color: '#5e5873' }}>
                   {entry.target_type ? `${entry.target_type}:${entry.target_id ?? ''}` : '-'}
                 </Table.Td>
               </Table.Tr>

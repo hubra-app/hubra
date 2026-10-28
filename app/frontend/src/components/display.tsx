@@ -124,18 +124,18 @@ const TIER_COLORS: Record<string, string> = {
   Workshop: '#fece2b',
 }
 export function TierTag({ tier }: { tier: string }) {
-  const c = TIER_COLORS[tier] || '#8e97a7'
+  const c = TIER_COLORS[tier] || '#857f99'
   return <Tag color={c}>{tier}</Tag>
 }
 
 const STATUS_COLORS: Record<string, string> = {
   active: '#1f9d57',
   trial: '#c2870f',
-  inactive: '#8e97a7',
+  inactive: '#857f99',
   suspended: '#ff4d3d',
 }
 export function StatusBadge({ status }: { status: string }) {
-  const c = STATUS_COLORS[status] || '#8e97a7'
+  const c = STATUS_COLORS[status] || '#857f99'
   return (
     <Group gap={7} wrap="nowrap">
       <Box
@@ -247,7 +247,7 @@ export function MemberSlideOver({
         <div
           style={{
             padding: '12px 0',
-            borderBottom: '1px solid #e3eae6',
+            borderBottom: '1px solid #e6e3ef',
           }}
         >
           {addLabel && (
@@ -286,7 +286,7 @@ export function MemberSlideOver({
             <div
               style={{
                 marginTop: 4,
-                border: '1px solid #d3ddd7',
+                border: '1px solid #d6d2e3',
                 borderRadius: 8,
                 overflow: 'hidden',
                 background: 'white',
@@ -305,7 +305,7 @@ export function MemberSlideOver({
                     gap: 10,
                     width: '100%',
                     padding: '8px 12px',
-                    borderBottom: '1px solid #e3eae6',
+                    borderBottom: '1px solid #e6e3ef',
                   }}
                 >
                   <Avatar name={m.name} color={m.avatarColor} size={24} />
@@ -359,7 +359,7 @@ export function MemberSlideOver({
                 alignItems: 'center',
                 gap: 12,
                 padding: '12px 0',
-                borderBottom: '1px solid #e3eae6',
+                borderBottom: '1px solid #e6e3ef',
               }}
             >
               <Avatar name={m.name} color={m.avatarColor} size={32} />
@@ -401,7 +401,7 @@ export function MemberSlideOver({
         )}
       </div>
 
-      <div style={{ borderTop: '1px solid #e3eae6' }}>
+      <div style={{ borderTop: '1px solid #e6e3ef' }}>
         <div style={{ padding: '12px 0', position: 'relative' }}>
           <TextInput
             size="sm"

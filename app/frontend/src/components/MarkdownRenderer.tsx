@@ -54,7 +54,7 @@ export function MarkdownRenderer({
           blockquote: (props) => (
             <blockquote
               style={{
-                borderLeft: '3px solid #fece2b',
+                borderLeft: '3px solid #7441e0',
                 paddingLeft: '12px',
                 marginLeft: 0,
                 marginBottom: '0.5em',
@@ -112,7 +112,7 @@ export function MarkdownRenderer({
             <hr
               style={{
                 border: 'none',
-                borderTop: '1px solid #e3eae6',
+                borderTop: '1px solid #e6e3ef',
                 margin: '1em 0',
               }}
               {...props}

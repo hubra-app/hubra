@@ -165,7 +165,7 @@ export function InvoiceDetailScreen() {
             <div
               style={{
                 padding: '12px 20px',
-                borderTop: '2px solid #e3eae6',
+                borderTop: '2px solid #e6e3ef',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
@@ -175,7 +175,7 @@ export function InvoiceDetailScreen() {
                 style={{
                   fontWeight: 700,
                   fontSize: 'var(--mantine-font-size-sm)',
-                  color: '#181818',
+                  color: '#1a1625',
                 }}
               >
                 {t('common.total', 'Total')}
@@ -185,7 +185,7 @@ export function InvoiceDetailScreen() {
                 style={{
                   fontWeight: 700,
                   fontSize: 'var(--mantine-font-size-md)',
-                  color: '#181818',
+                  color: '#1a1625',
                 }}
               >
                 CHF {formatCHF(inv.amount)}
@@ -199,7 +199,7 @@ export function InvoiceDetailScreen() {
               gap="sm"
               style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}
             >
-              <IconBell size={16} style={{ color: '#6b7480' }} />
+              <IconBell size={16} style={{ color: '#5e5873' }} />
               <Text fw={700} fz="md">
                 {t('finance.reminder.history', 'Erinnerigs-Verlauf')}
               </Text>
@@ -219,7 +219,7 @@ export function InvoiceDetailScreen() {
                 style={{
                   padding: '24px',
                   textAlign: 'center',
-                  color: '#99a2ac',
+                  color: '#8c86a0',
                   fontSize: 'var(--mantine-font-size-sm)',
                 }}
               >
@@ -234,7 +234,7 @@ export function InvoiceDetailScreen() {
                       display: 'flex',
                       gap: 12,
                       padding: '12px 20px',
-                      borderBottom: '1px solid #f0f4f1',
+                      borderBottom: '1px solid #f1eff7',
                       alignItems: 'center',
                     }}
                   >
@@ -246,7 +246,7 @@ export function InvoiceDetailScreen() {
                       <div
                         style={{
                           fontSize: 'var(--mantine-font-size-sm)',
-                          color: '#181818',
+                          color: '#1a1625',
                         }}
                       >
                         {t(
@@ -257,7 +257,7 @@ export function InvoiceDetailScreen() {
                       <div
                         style={{
                           fontSize: 'var(--mantine-font-size-xs)',
-                          color: '#6b7480',
+                          color: '#5e5873',
                         }}
                       >
                         {t('finance.to', 'A')}: {inv.member}
@@ -267,7 +267,7 @@ export function InvoiceDetailScreen() {
                       className="num"
                       style={{
                         fontSize: 'var(--mantine-font-size-xs)',
-                        color: '#99a2ac',
+                        color: '#8c86a0',
                       }}
                     >
                       {ts}
@@ -337,13 +337,13 @@ export function InvoiceDetailScreen() {
                 display: 'flex',
                 justifyContent: 'space-between',
                 padding: '10px 0',
-                borderBottom: '1px solid #f0f4f1',
+                borderBottom: '1px solid #f1eff7',
               }}
             >
               <span
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
-                  color: '#6b7480',
+                  color: '#5e5873',
                 }}
               >
                 {label}
@@ -353,7 +353,7 @@ export function InvoiceDetailScreen() {
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
                   fontWeight: 500,
-                  color: '#181818',
+                  color: '#1a1625',
                 }}
               >
                 {value}

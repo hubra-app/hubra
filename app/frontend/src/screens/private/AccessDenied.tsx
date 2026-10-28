@@ -22,7 +22,7 @@ export function AccessDeniedScreen() {
       >
         {t('shell.accessDenied', 'Access denied')}
       </div>
-      <div style={{ color: '#6b7480', marginBottom: 24 }}>
+      <div style={{ color: '#5e5873', marginBottom: 24 }}>
         {t(
           'shell.noPermission',
           'You do not have permission to access this page.',

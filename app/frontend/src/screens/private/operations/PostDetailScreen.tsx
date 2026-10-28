@@ -161,7 +161,7 @@ export function PostDetailScreen() {
               style={{
                 fontSize: 'var(--mantine-font-size-sm)',
                 fontWeight: 600,
-                color: '#181818',
+                color: '#1a1625',
               }}
             >
               {post.author}
@@ -170,7 +170,7 @@ export function PostDetailScreen() {
               className="num"
               style={{
                 fontSize: 'var(--mantine-font-size-xs)',
-                color: '#99a2ac',
+                color: '#8c86a0',
               }}
             >
               {post.time}
@@ -180,7 +180,7 @@ export function PostDetailScreen() {
         <div
           style={{
             fontSize: 'var(--mantine-font-size-sm)',
-            color: '#3a4048',
+            color: '#2e2940',
             lineHeight: 1.6,
             marginBottom: 16,
           }}
@@ -191,7 +191,7 @@ export function PostDetailScreen() {
           style={{
             display: 'flex',
             gap: 12,
-            borderTop: '1px solid #e3eae6',
+            borderTop: '1px solid #e6e3ef',
             paddingTop: 12,
           }}
         >
@@ -199,7 +199,7 @@ export function PostDetailScreen() {
             <Button
               size="sm"
               variant="subtle"
-              style={{ color: liked ? '#ff4d3d' : '#6b7480' }}
+              style={{ color: liked ? '#ff4d3d' : '#5e5873' }}
               onClick={toggleLike}
             >
               <IconHeart
@@ -209,7 +209,7 @@ export function PostDetailScreen() {
               {post.likes}
             </Button>
           )}
-          <Button size="sm" variant="subtle" style={{ color: '#6b7480' }}>
+          <Button size="sm" variant="subtle" style={{ color: '#5e5873' }}>
             <IconMessage2 size={16} />
             {post.comments}
           </Button>
@@ -226,7 +226,7 @@ export function PostDetailScreen() {
           style={{
             fontSize: 'var(--mantine-font-size-sm)',
             fontWeight: 700,
-            color: '#181818',
+            color: '#1a1625',
             marginBottom: 16,
           }}
         >
@@ -236,7 +236,7 @@ export function PostDetailScreen() {
           <div
             style={{
               fontSize: 'var(--mantine-font-size-xs)',
-              color: '#99a2ac',
+              color: '#8c86a0',
               marginBottom: 12,
             }}
           >
@@ -271,7 +271,7 @@ export function PostDetailScreen() {
                       style={{
                         fontSize: 'var(--mantine-font-size-xs)',
                         fontWeight: 600,
-                        color: '#181818',
+                        color: '#1a1625',
                       }}
                     >
                       {comment.author}
@@ -280,7 +280,7 @@ export function PostDetailScreen() {
                       className="num"
                       style={{
                         fontSize: 'var(--mantine-font-size-xs)',
-                        color: '#99a2ac',
+                        color: '#8c86a0',
                       }}
                     >
                       {comment.time}
@@ -300,7 +300,7 @@ export function PostDetailScreen() {
                   <div
                     style={{
                       fontSize: 'var(--mantine-font-size-sm)',
-                      color: '#3a4048',
+                      color: '#2e2940',
                       lineHeight: 1.5,
                     }}
                   >

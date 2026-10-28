@@ -1,0 +1,11 @@
+{
+  "name": "Hubra",
+  "short_name": "Hubra",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "theme_color": "#7441e0",
+  "background_color": "#f7f6fb",
+  "display": "standalone"
+}

@@ -193,7 +193,7 @@ export function KVSettingsTab() {
         renderKeySuffix={(entry) => (
           <>
             {entry.sensitive && (
-              <IconLock size={11} style={{ color: '#99a2ac', flexShrink: 0 }} />
+              <IconLock size={11} style={{ color: '#8c86a0', flexShrink: 0 }} />
             )}
             {entry.restricted && (
               <Badge
@@ -253,7 +253,7 @@ export function KVSettingsTab() {
             <div
               style={{
                 fontSize: 'var(--mantine-font-size-xs)',
-                color: '#99a2ac',
+                color: '#8c86a0',
                 marginTop: 2,
               }}
             >
@@ -514,12 +514,12 @@ export function KVSettingsTab() {
                 type="checkbox"
                 checked={metaSensitive}
                 onChange={(e) => setMetaSensitive(e.target.checked)}
-                style={{ width: 16, height: 16, accentColor: '#fece2b' }}
+                style={{ width: 16, height: 16, accentColor: '#7441e0' }}
               />
               <span style={{ fontWeight: 600 }}>Sensitive</span>
               <span
                 style={{
-                  color: '#6b7480',
+                  color: '#5e5873',
                   fontSize: 'var(--mantine-font-size-xs)',
                 }}
               >
@@ -539,12 +539,12 @@ export function KVSettingsTab() {
                 type="checkbox"
                 checked={metaRequired}
                 onChange={(e) => setMetaRequired(e.target.checked)}
-                style={{ width: 16, height: 16, accentColor: '#fece2b' }}
+                style={{ width: 16, height: 16, accentColor: '#7441e0' }}
               />
               <span style={{ fontWeight: 600 }}>Required</span>
               <span
                 style={{
-                  color: '#6b7480',
+                  color: '#5e5873',
                   fontSize: 'var(--mantine-font-size-xs)',
                 }}
               >
@@ -564,12 +564,12 @@ export function KVSettingsTab() {
                 type="checkbox"
                 checked={metaRestricted}
                 onChange={(e) => setMetaRestricted(e.target.checked)}
-                style={{ width: 16, height: 16, accentColor: '#fece2b' }}
+                style={{ width: 16, height: 16, accentColor: '#7441e0' }}
               />
               <span style={{ fontWeight: 600 }}>Restricted</span>
               <span
                 style={{
-                  color: '#6b7480',
+                  color: '#5e5873',
                   fontSize: 'var(--mantine-font-size-xs)',
                 }}
               >

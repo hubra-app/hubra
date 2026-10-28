@@ -47,7 +47,7 @@ export async function getLookups(): Promise<Lookups> {
         t.id,
         {
           name: t.name,
-          color: t.color ?? "#6366f1",
+          color: t.color ?? "#7441e0",
           priceChf: t.price_chf ?? 0,
         },
       ]),
@@ -56,7 +56,7 @@ export async function getLookups(): Promise<Lookups> {
     roles: new Map(roles.map((r) => [r.id, r.name])),
     rolesByName: new Map(roles.map((r) => [r.name, r.id])),
     groups: new Map(
-      groups.map((g) => [g.id, { name: g.name, color: g.color ?? "#6366f1" }]),
+      groups.map((g) => [g.id, { name: g.name, color: g.color ?? "#7441e0" }]),
     ),
     groupsByName: new Map(groups.map((g) => [g.name, g.id])),
   };

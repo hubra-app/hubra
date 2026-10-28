@@ -99,7 +99,7 @@ export function HealthTab() {
               <span
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
-                  color: '#6b7480',
+                  color: '#5e5873',
                   minWidth: 140,
                 }}
               >
@@ -109,7 +109,7 @@ export function HealthTab() {
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
                   fontWeight: 600,
-                  color: '#181818',
+                  color: '#1a1625',
                   textTransform: 'capitalize',
                 }}
               >
@@ -137,7 +137,7 @@ export function HealthTab() {
               <span
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
-                  color: '#6b7480',
+                  color: '#5e5873',
                   minWidth: 140,
                 }}
               >
@@ -147,7 +147,7 @@ export function HealthTab() {
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
                   fontWeight: 600,
-                  color: '#181818',
+                  color: '#1a1625',
                 }}
               >
                 {backendOnline
@@ -168,14 +168,14 @@ export function HealthTab() {
                   width: 10,
                   height: 10,
                   borderRadius: '50%',
-                  background: '#6b7480',
+                  background: '#5e5873',
                   flexShrink: 0,
                 }}
               />
               <span
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
-                  color: '#6b7480',
+                  color: '#5e5873',
                   minWidth: 140,
                 }}
               >
@@ -185,7 +185,7 @@ export function HealthTab() {
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
                   fontWeight: 600,
-                  color: '#181818',
+                  color: '#1a1625',
                   fontFamily: "'JetBrains Mono', monospace",
                 }}
               >
@@ -225,7 +225,7 @@ export function HealthTab() {
                   <span
                     style={{
                       fontSize: 'var(--mantine-font-size-sm)',
-                      color: '#6b7480',
+                      color: '#5e5873',
                       minWidth: 160,
                     }}
                   >
@@ -243,7 +243,7 @@ export function HealthTab() {
                   <span
                     style={{
                       fontSize: 'var(--mantine-font-size-xs)',
-                      color: '#99a2ac',
+                      color: '#8c86a0',
                       fontFamily: "'JetBrains Mono', monospace",
                     }}
                   >
@@ -268,7 +268,7 @@ export function HealthTab() {
             <div
               style={{
                 fontSize: 'var(--mantine-font-size-sm)',
-                color: '#99a2ac',
+                color: '#8c86a0',
                 padding: '8px 0',
               }}
             >
@@ -301,7 +301,7 @@ export function HealthTab() {
                       style={{
                         fontSize: 'var(--mantine-font-size-sm)',
                         fontWeight: 700,
-                        color: '#181818',
+                        color: '#1a1625',
                       }}
                     >
                       v{entry.version}
@@ -310,7 +310,7 @@ export function HealthTab() {
                       <span
                         style={{
                           fontSize: 'var(--mantine-font-size-xs)',
-                          color: '#99a2ac',
+                          color: '#8c86a0',
                         }}
                       >
                         {entry.date}
@@ -340,7 +340,7 @@ export function HealthTab() {
                         style={{
                           fontSize: 'var(--mantine-font-size-xs)',
                           fontWeight: 600,
-                          color: '#6b7480',
+                          color: '#5e5873',
                           textTransform: 'uppercase',
                           letterSpacing: '0.04em',
                           marginBottom: 4,
@@ -362,7 +362,7 @@ export function HealthTab() {
                             key={item + i}
                             style={{
                               fontSize: 'var(--mantine-font-size-sm)',
-                              color: '#3a4048',
+                              color: '#2e2940',
                               lineHeight: 1.5,
                             }}
                           >
@@ -376,7 +376,7 @@ export function HealthTab() {
                     <div
                       style={{
                         fontSize: 'var(--mantine-font-size-xs)',
-                        color: '#99a2ac',
+                        color: '#8c86a0',
                         marginLeft: 12,
                       }}
                     >
@@ -390,7 +390,7 @@ export function HealthTab() {
             <div
               style={{
                 fontSize: 'var(--mantine-font-size-sm)',
-                color: '#99a2ac',
+                color: '#8c86a0',
               }}
             >
               {t('system.health.noData', 'No data available.')}
@@ -410,11 +410,11 @@ export function HealthTab() {
               onClick={() => setShowRaw((v) => !v)}
               style={{
                 background: 'none',
-                border: '1px solid #e3eae6',
+                border: '1px solid #e6e3ef',
                 borderRadius: 6,
                 padding: '2px 10px',
                 fontSize: 'var(--mantine-font-size-xs)',
-                color: '#6b7480',
+                color: '#5e5873',
                 cursor: 'pointer',
               }}
             >
@@ -429,12 +429,12 @@ export function HealthTab() {
                 style={{
                   margin: 0,
                   padding: 12,
-                  background: '#f8faf9',
+                  background: '#f9f8fc',
                   borderRadius: 8,
-                  border: '1px solid #e3eae6',
+                  border: '1px solid #e6e3ef',
                   fontSize: 'var(--mantine-font-size-xs)',
                   fontFamily: "'JetBrains Mono', monospace",
-                  color: '#3a4048',
+                  color: '#2e2940',
                   overflowX: 'auto',
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word',

@@ -42,8 +42,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <Group gap={10} mb={30} px="sm">
           <div className="logo-mark" />
           <div>
-            <Text fw={700} fz="sm" lh={1.2}>
-              Club Ops Suite
+            <Text fz={20} className="wordmark">
+              hubra
             </Text>
             <Text fz="xs" c="dimmed">
               Admin Portal
@@ -63,9 +63,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
               borderRadius: 8,
               textDecoration: 'none',
               fontWeight: location.pathname.startsWith(item.path) ? 700 : 500,
-              color: location.pathname.startsWith(item.path) ? '#181818' : '#6b7480',
+              color: location.pathname.startsWith(item.path) ? '#1a1625' : '#5e5873',
               background: location.pathname.startsWith(item.path)
-                ? 'rgba(254,206,43,0.12)'
+                ? 'rgba(116,65,224,0.12)'
                 : 'transparent',
               marginBottom: 4,
             }}
@@ -78,7 +78,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <Group mt="auto" px="sm" style={{ marginTop: 'auto' }}>
           <UnstyledButton
             onClick={logout}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6b7480' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#5e5873' }}
           >
             <IconLogout size={18} />
             <Text fz="sm">Logout</Text>

@@ -60,7 +60,7 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
           <Group gap={14} grow>
             <ColorInput
               label="Primary Color"
-              value={form.primary_color ?? '#6366f1'}
+              value={form.primary_color ?? '#7441e0'}
               onChange={(v) => update('primary_color', v)}
             />
             <ColorInput

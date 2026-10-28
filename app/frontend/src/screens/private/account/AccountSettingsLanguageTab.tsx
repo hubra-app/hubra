@@ -72,7 +72,7 @@ export function AccountSettingsLanguageTab() {
                 cursor: 'pointer',
                 background:
                   language === lang.code
-                    ? 'rgba(254,206,43,.08)'
+                    ? 'rgba(116,65,224,.08)'
                     : 'transparent',
               }}
               onClick={async () => {
@@ -114,7 +114,7 @@ export function AccountSettingsLanguageTab() {
                 }}
               >
                 {language === lang.code && (
-                  <IconCheck size={11} color="#181818" strokeWidth={3} />
+                  <IconCheck size={11} color="#1a1625" strokeWidth={3} />
                 )}
               </div>
               <div

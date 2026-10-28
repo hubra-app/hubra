@@ -145,7 +145,7 @@ export function AccountSettingsScreen() {
                       ? 'var(--mantine-color-ink-8)'
                       : 'var(--mantine-color-dimmed)',
                   background:
-                    tab === item.id ? 'rgba(254,206,43,.15)' : undefined,
+                    tab === item.id ? 'rgba(116,65,224,.15)' : undefined,
                 }}
               >
                 {item.icon}

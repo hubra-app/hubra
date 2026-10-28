@@ -111,12 +111,12 @@ export function LoginScreen() {
           <Group gap={10} mb={32}>
             <div className="logo-mark" />
             <Box>
-              <Text fz="md" fw={700}>
-                Hubra
+              <Text fz={20} className="wordmark">
+                hubra
               </Text>
               <Text
                 fz="xs"
-                c="#8a6a00"
+                c="#6131c4"
                 ff="'JetBrains Mono', monospace"
                 style={{ letterSpacing: '0.06em' }}
               >
@@ -175,12 +175,12 @@ export function LoginScreen() {
           <Group gap={10} mb={32}>
             <div className="logo-mark" />
             <Box>
-              <Text fz="md" fw={700}>
-                Hubra
+              <Text fz={20} className="wordmark">
+                hubra
               </Text>
               <Text
                 fz="xs"
-                c="#8a6a00"
+                c="#6131c4"
                 ff="'JetBrains Mono', monospace"
                 style={{ letterSpacing: '0.06em' }}
               >
@@ -214,7 +214,7 @@ export function LoginScreen() {
                     </Text>
                     <Anchor
                       size="sm"
-                      c="#8a6a00"
+                      c="#6131c4"
                       onClick={(e) => {
                         e.preventDefault()
                         navigate('/forgot-password')
@@ -280,7 +280,7 @@ export function LoginScreen() {
               margin: 0,
               fontSize: 'var(--mantine-font-size-lg)',
               lineHeight: 1.6,
-              color: '#3a4048',
+              color: '#2e2940',
               maxWidth: 340,
             }}
           >

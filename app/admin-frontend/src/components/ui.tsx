@@ -87,10 +87,10 @@ export function Tabs({
           px={14}
           py={8}
           fw={tab.id === activeTab ? 700 : 400}
-          c={tab.id === activeTab ? '#181818' : 'dimmed'}
+          c={tab.id === activeTab ? '#1a1625' : 'dimmed'}
           style={{
             borderRadius: 8,
-            background: tab.id === activeTab ? 'rgba(254,206,43,0.15)' : 'transparent',
+            background: tab.id === activeTab ? 'rgba(116,65,224,0.15)' : 'transparent',
           }}
         >
           {tab.label}

@@ -137,7 +137,7 @@ export function DomainsTab() {
                       d.verified && (
                         <IconStar
                           size={16}
-                          color="#99a2ac"
+                          color="#8c86a0"
                           style={{ cursor: 'pointer' }}
                           onClick={() => handleSetPrimary(d)}
                         />
