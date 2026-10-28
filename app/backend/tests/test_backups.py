@@ -487,3 +487,319 @@ class TestBackupAPI:
 
         resp = client.post(f"/api/v1/manager/platform/backups/{record.id}/verify", headers=auth_headers)
         assert resp.status_code == 409
+
+
+# ── Global and per-club backups, club restore ────────────────────────────────
+
+
+def _fake_tools(calls, *, restore_rc=0):
+    """subprocess.run stand-in for pg_dump, gpg and pg_restore; records each cmd."""
+
+    def fake_run(cmd, env=None, capture_output=True, timeout=None, input=None):
+        calls.append(cmd)
+        if cmd[0] == "pg_dump":
+            return MagicMock(returncode=0, stdout=b"FAKE_DUMP", stderr=b"")
+        if cmd[0] == "gpg":
+            output_file = cmd[cmd.index("--output") + 1]
+            with open(output_file, "wb") as f:
+                f.write(b"GPG_OUT")
+            return MagicMock(returncode=0, stdout=b"", stderr=b"")
+        if cmd[0] == "pg_restore":
+            return MagicMock(returncode=restore_rc, stdout=b"", stderr=b"boom")
+        return MagicMock(returncode=0, stdout=b"", stderr=b"")
+
+    return fake_run
+
+
+def _download(bucket, key, path):
+    with open(path, "wb") as f:
+        f.write(b"ENCRYPTED")
+
+
+def _club(db, status="active"):
+    import uuid
+
+    from hubra.core.models.tenant import Tenant
+
+    slug = f"club-{uuid.uuid4().hex[:8]}"
+    tenant = Tenant(name=slug, slug=slug, plan="starter", status=status)
+    db.session.add(tenant)
+    db.session.commit()
+    return tenant
+
+
+def _club_record(db, tenant, **kw):
+    from hubra.core.models.backup import BackupRecord
+
+    record = BackupRecord(
+        type="manual",
+        status="completed",
+        scope="club",
+        tenant_id=tenant.id,
+        tenant_slug=tenant.slug,
+        s3_key=f"backups/clubs/{tenant.id}-{tenant.slug}/x.dump.gpg",
+        **kw,
+    )
+    db.session.add(record)
+    db.session.commit()
+    return record
+
+
+def _pg_dump_schema(calls):
+    dump = next(c for c in calls if c[0] == "pg_dump")
+    return dump[dump.index("--schema") + 1]
+
+
+class TestScopedBackups:
+    def test_global_backup_holds_only_public(
+        self, app, db, backup_config, mock_s3_client
+    ):
+        from hubra.core.services.backup import BackupService
+
+        calls: list = []
+        with (
+            patch("hubra.core.services.backup.subprocess.run", side_effect=_fake_tools(calls)),
+            patch("hubra.core.services.backup._get_s3_client", return_value=mock_s3_client),
+        ):
+            record = BackupService.create_backup("manual", "t")
+
+        assert record.status == "completed"
+        assert record.scope == "global"
+        assert record.tenant_id is None
+        assert _pg_dump_schema(calls) == "public"
+        assert record.s3_key.startswith("backups/global/")
+
+    def test_club_backup_holds_only_its_schema(
+        self, app, db, backup_config, mock_s3_client
+    ):
+        from hubra.core.services.backup import BackupService
+
+        club = _club(db)
+        calls: list = []
+        with (
+            patch("hubra.core.services.backup.subprocess.run", side_effect=_fake_tools(calls)),
+            patch("hubra.core.services.backup._get_s3_client", return_value=mock_s3_client),
+        ):
+            record = BackupService.create_backup("manual", "t", club.id)
+
+        assert record.status == "completed"
+        assert (record.scope, record.tenant_id, record.tenant_slug) == (
+            "club",
+            club.id,
+            club.slug,
+        )
+        assert _pg_dump_schema(calls) == f"tenant_{club.id}"
+        assert record.s3_key.startswith(f"backups/clubs/{club.id}-{club.slug}/")
+
+    def test_unknown_club_is_refused(self, app, db):
+        from hubra.core.services.backup import BackupService
+
+        with pytest.raises(ValueError, match="not found"):
+            BackupService.create_backup("manual", "t", 987654)
+
+    def test_scheduled_run_backs_up_global_and_each_active_club(
+        self, app, db, backup_config, mock_s3_client
+    ):
+        from hubra.core.services.backup import BackupService
+
+        active, other = _club(db), _club(db)
+        disabled = _club(db, status="disabled")
+        calls: list = []
+        with (
+            patch("hubra.core.services.backup.subprocess.run", side_effect=_fake_tools(calls)),
+            patch("hubra.core.services.backup._get_s3_client", return_value=mock_s3_client),
+        ):
+            records = BackupService.create_scheduled_backups("scheduled_monthly")
+
+        assert [r.scope for r in records].count("global") == 1
+        clubs = {r.tenant_id for r in records if r.scope == "club"}
+        assert {active.id, other.id} <= clubs
+        assert disabled.id not in clubs
+        assert all(r.status == "completed" for r in records)
+        dumped = {c[c.index("--schema") + 1] for c in calls if c[0] == "pg_dump"}
+        assert dumped >= {
+            "public",
+            f"tenant_{active.id}",
+            f"tenant_{other.id}",
+        }
+
+    def test_retention_counts_each_club_on_its_own(
+        self, app, db, backup_config, mock_s3_client
+    ):
+        from hubra.core.models.backup import BackupRecord
+        from hubra.core.services.backup import BackupService
+
+        a, b = _club(db), _club(db)
+        for club in (a, b):
+            for i in range(9):
+                _club_record(db, club)
+        for r in BackupRecord.query.filter(
+            BackupRecord.tenant_id.in_([a.id, b.id])
+        ).all():
+            r.type = "scheduled_daily"
+        db.session.commit()
+
+        with patch("hubra.core.services.backup._get_s3_client", return_value=mock_s3_client):
+            BackupService.run_retention_cleanup()
+
+        for club in (a, b):
+            assert len(BackupService.list_backups(club.id)) == 7
+
+
+class TestClubRestore:
+    def _run(self, record_id, *, restore_rc=0, schema_exists=True):
+        from hubra.core.services.backup import BackupService
+
+        calls: list = []
+        s3 = MagicMock()
+        s3.download_file = MagicMock(side_effect=_download)
+        rename, drop, migrate = MagicMock(), MagicMock(), MagicMock()
+        with (
+            patch("hubra.core.services.backup.subprocess.run", side_effect=_fake_tools(calls, restore_rc=restore_rc)),
+            patch("hubra.core.services.backup._get_s3_client", return_value=s3),
+            patch("hubra.core.services.backup._schema_exists", return_value=schema_exists),
+            patch("hubra.core.services.backup._rename_schema", rename),
+            patch("hubra.core.services.backup._drop_schema", drop),
+            patch("hubra.core.tenant.migration.apply_migrations_to_tenant", migrate),
+        ):
+            try:
+                result = BackupService.restore_club(record_id)
+            except Exception as exc:
+                result = exc
+        return result, calls, rename, drop, migrate
+
+    def test_restore_keeps_a_safety_copy(self, app, db, backup_config):
+        club = _club(db)
+        record = _club_record(db, club)
+
+        result, calls, rename, drop, migrate = self._run(record.id)
+
+        schema = f"tenant_{club.id}"
+        rename.assert_called_once()
+        old, new = rename.call_args.args
+        assert old == schema and new.startswith(f"{schema}_before_restore_")
+        drop.assert_not_called()
+        migrate.assert_called_once_with(club.id)
+        restore = next(c for c in calls if c[0] == "pg_restore")
+        assert "--single-transaction" in restore and "--exit-on-error" in restore
+        assert result.restored_at is not None
+        assert result.safety_schema == new
+        assert result.restore_error is None
+
+    def test_failed_restore_puts_the_club_back(self, app, db, backup_config):
+        from hubra.core.services.backup import RestoreError
+
+        club = _club(db)
+        record = _club_record(db, club)
+
+        result, _calls, rename, drop, migrate = self._run(record.id, restore_rc=1)
+
+        schema = f"tenant_{club.id}"
+        assert isinstance(result, RestoreError)
+        drop.assert_called_once_with(schema)
+        assert rename.call_count == 2
+        safety = rename.call_args_list[0].args[1]
+        assert rename.call_args_list[1].args == (safety, schema)
+        migrate.assert_not_called()
+        db.session.refresh(record)
+        assert "pg_restore failed" in record.restore_error
+        assert record.restored_at is None
+
+    def test_global_backup_cannot_be_restored_here(self, app, db, backup_config):
+        from hubra.core.models.backup import BackupRecord
+
+        record = BackupRecord(type="manual", status="completed", s3_key="backups/global/x")
+        db.session.add(record)
+        db.session.commit()
+
+        result, calls, rename, _drop, _migrate = self._run(record.id)
+
+        assert isinstance(result, ValueError)
+        assert calls == []
+        rename.assert_not_called()
+
+
+class TestScopedBackupAPI:
+    @pytest.fixture(autouse=True)
+    def _platform_staff(self, seeded_db, db):
+        seeded_db["user"].is_superadmin = True
+        db.session.commit()
+        yield
+        seeded_db["user"].is_superadmin = False
+        db.session.commit()
+
+    URL = "/api/v1/manager/platform/backups/"
+
+    def test_back_up_one_club(
+        self, client, auth_headers, db, backup_config, mock_s3_client
+    ):
+        club = _club(db)
+        calls: list = []
+        with (
+            patch("hubra.core.services.backup.subprocess.run", side_effect=_fake_tools(calls)),
+            patch("hubra.core.services.backup._get_s3_client", return_value=mock_s3_client),
+        ):
+            resp = client.post(self.URL, json={"tenant_id": club.id}, headers=auth_headers)
+
+        assert resp.status_code == 201
+        data = resp.get_json()
+        assert data["scope"] == "club"
+        assert data["tenant_slug"] == club.slug
+
+        listed = client.get(f"{self.URL}?tenant_id={club.id}", headers=auth_headers)
+        assert [r["id"] for r in listed.get_json()] == [data["id"]]
+
+    def test_back_up_unknown_club(self, client, auth_headers):
+        resp = client.post(self.URL, json={"tenant_id": 987654}, headers=auth_headers)
+        assert resp.status_code == 404
+
+    def test_restore_needs_the_club_address(self, client, auth_headers, db):
+        club = _club(db)
+        record = _club_record(db, club)
+        resp = client.post(
+            f"{self.URL}{record.id}/restore", json={"confirm": "nope"}, headers=auth_headers
+        )
+        assert resp.status_code == 400
+
+    def test_restore_refuses_global_backups(self, client, auth_headers, db):
+        from hubra.core.models.backup import BackupRecord
+
+        record = BackupRecord(type="manual", status="completed", s3_key="backups/global/y")
+        db.session.add(record)
+        db.session.commit()
+        resp = client.post(
+            f"{self.URL}{record.id}/restore", json={"confirm": "x"}, headers=auth_headers
+        )
+        assert resp.status_code == 409
+
+    def test_restore_club(self, client, auth_headers, db, backup_config):
+        from hubra.core.services.backup import BackupService
+
+        club = _club(db)
+        record = _club_record(db, club)
+
+        def fake_restore(record_id):
+            r = BackupService.get_backup(record_id)
+            r.safety_schema = f"tenant_{club.id}_before_restore_1"
+            return r
+
+        with patch.object(BackupService, "restore_club", side_effect=fake_restore) as m:
+            resp = client.post(
+                f"{self.URL}{record.id}/restore",
+                json={"confirm": club.slug},
+                headers=auth_headers,
+            )
+
+        assert resp.status_code == 200
+        m.assert_called_once_with(record.id)
+        assert resp.get_json()["safety_schema"].startswith(f"tenant_{club.id}_")
+
+    def test_club_admins_cannot_restore(self, client, seeded_db, auth_headers, db):
+        seeded_db["user"].is_superadmin = False
+        db.session.commit()
+        club = _club(db)
+        record = _club_record(db, club)
+        resp = client.post(
+            f"{self.URL}{record.id}/restore", json={"confirm": club.slug}, headers=auth_headers
+        )
+        assert resp.status_code == 403

@@ -16,8 +16,8 @@ Mail split:
     mailbox (``mail.smtp.user`` / ``mail.smtp.password`` from the mail
     module), which sends as that mailbox through the same relay.
 
-Backups dump the whole database, so where they are stored (``backup.s3.*``)
-is the platform's to decide, not a club's.
+Backups (the global one and one per club) are the platform's, so where they
+are stored (``backup.s3.*``) is the platform's to decide, not a club's.
 """
 
 from __future__ import annotations
