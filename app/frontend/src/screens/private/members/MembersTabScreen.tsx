@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useT } from '@/locales/i18n'
 import { PageHead, Tabs } from '@/components/ui'
 import { useAuth } from '@/context/AppContext'
+import { useModules } from '@/modules/useModules'
 import { MembersTab } from '@/screens/private/members/MembersTab'
 import { FunctionsTab } from '@/screens/private/members/FunctionsTab'
 import { ApplicationsTab } from '@/screens/private/members/ApplicationsTab'
@@ -12,6 +13,7 @@ export function MembersTabScreen() {
   const location = useLocation()
   const navigate = useNavigate()
   const { hasPermission } = useAuth()
+  const { has } = useModules()
 
   const path = location.pathname.replace('/app/members', '').replace('/', '')
   const tab = path === '' ? 'all' : path
@@ -27,7 +29,9 @@ export function MembersTabScreen() {
   ].filter(
     (tb) =>
       tb.id === 'all' ||
-      (tb.id === 'functions' && hasPermission('functions.functions.read')) ||
+      (tb.id === 'functions' &&
+        has('functions') &&
+        hasPermission('functions.functions.read')) ||
       (tb.id === 'applications' &&
         hasPermission('applications.applications.read')) ||
       (tb.id === 'tiers' && hasPermission('tiers.tiers.read')),

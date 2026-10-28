@@ -362,7 +362,7 @@ function HolderPanel({
   onClose: () => void
 }) {
   const { notify } = useToast()
-  const { features } = useData()
+  const { modules } = useData()
   const { t } = useT()
   const [searchQuery, setSearchQuery] = useState('')
   const [holders, setHolders] = useState<HolderEntry[]>(() =>
@@ -480,7 +480,7 @@ function HolderPanel({
       showRemove
       onClose={onClose}
       footer={
-        features.mail ? (
+        modules.mail ? (
           <div
             style={{
               padding: '12px 0',

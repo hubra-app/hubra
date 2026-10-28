@@ -18,7 +18,7 @@ module is switched on again.
 | One manifest per module | this folder |
 | Club admin API | `GET /api/v1/modules`, `PUT /api/v1/modules/<code>`, `PUT /api/v1/modules/<code>/settings` |
 | CLI | `flask modules list|enable|disable|sync [--tenant <slug>]` |
-| Frontend | `app/frontend/src/modules/` (route and tab registry), sidebar built from `/modules` |
+| Frontend | sidebar built from `GET /modules`; `RequireModule` and `useModules()` in `app/frontend/src/modules/` |
 
 ## Adding a module
 
@@ -67,8 +67,10 @@ Then:
    missing).
 3. Write an Alembic migration (`flask db migrate`), and run `flask modules
    sync` (or `flask seed`) so the catalog gets a row.
-4. Add the frontend side in `app/frontend/src/modules/registry.tsx`: routes,
-   tabs and the icon name used in `nav`.
+4. Frontend: wrap the module's routes in `<RequireModule code="...">`, hide
+   its tabs with `useModules().has("...")`, and add its `nav` icon name to
+   `NAV_ICONS` in `components/Shell/nav.tsx`. The sidebar entry itself comes
+   from the manifest.
 
 Permission keys follow the blueprint name as before:
 `keys_bp` + `@permission_required("keys", "read")` gives `keys.keys.read`.

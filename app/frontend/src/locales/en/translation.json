@@ -666,7 +666,20 @@
     "featureEnabledConfiguredMsg": "{{label}} is now ready to use.",
     "featureSettingsSaveFailed": "Settings could not be saved.",
     "skip": "Skip",
-    "saveAndEnable": "Save & enable"
+    "saveAndEnable": "Save & enable",
+    "modules": {
+      "intro": "Switch off what your club does not use. Switching a module off hides it for everyone; its data is kept and comes back when you switch it on again.",
+      "switchedOn": "{{name}} switched on",
+      "switchedOff": "{{name}} switched off",
+      "blocked": "Not available for this club",
+      "needs": "Needs {{names}}",
+      "needsSetup": "Needs setup",
+      "uses": "Uses {{names}}",
+      "configure": "Settings",
+      "alwaysOn": "Always on: {{names}}",
+      "saved": "Settings saved",
+      "secretKept": "Leave empty to keep the stored value"
+    }
   },
   "bootstrap": {
     "title": "Setup Your Club",

@@ -27,7 +27,7 @@ export function MobileDrawer() {
     groupCount,
     polls,
     openInvoiceCount,
-    features,
+    moduleList,
   } = useData()
   const openPolls = polls.filter((p) => p.status === 'open').length
   const nav = filterNav(
@@ -40,9 +40,9 @@ export function MobileDrawer() {
         invoices: openInvoiceCount,
       },
       t,
+      moduleList,
     ),
     hasPermission,
-    features,
   )
 
   return (

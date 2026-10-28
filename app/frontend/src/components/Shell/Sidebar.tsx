@@ -18,7 +18,7 @@ export function Sidebar() {
     groupCount,
     polls,
     openInvoiceCount,
-    features,
+    moduleList,
   } = useData()
   const openPolls = polls.filter((p) => p.status === 'open').length
   const nav = filterNav(
@@ -31,9 +31,9 @@ export function Sidebar() {
         invoices: openInvoiceCount,
       },
       t,
+      moduleList,
     ),
     hasPermission,
-    features,
   )
   const userName = currentUser?.name ?? ''
   const userRole = currentUser?.roles?.join(', ') ?? ''

@@ -2,13 +2,13 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { PageHead, Tabs } from '@/components/ui'
 import { useAuth } from '@/context/AppContext'
 import { KVSettingsTab } from '@/screens/private/settings/KVSettingsTab'
-import { FeaturesTab } from '@/screens/private/settings/FeaturesTab'
+import { ModulesTab } from '@/screens/private/settings/ModulesTab'
 import { ClubSettingsTab } from '@/screens/private/settings/ClubSettingsTab'
 import { DomainsTab } from '@/screens/private/settings/DomainsTab'
 
 const TABS = [
   { id: 'settings', label: 'Settings', Component: KVSettingsTab },
-  { id: 'features', label: 'Features', Component: FeaturesTab },
+  { id: 'modules', label: 'Modules', Component: ModulesTab },
   { id: 'club', label: 'Club', Component: ClubSettingsTab },
   { id: 'domains', label: 'Domains', Component: DomainsTab },
 ] as const
@@ -18,8 +18,8 @@ export function SettingsScreen() {
   const navigate = useNavigate()
   const { hasPermission } = useAuth()
 
-  const canWriteFeatures = hasPermission('features.features.write')
-  const tabs = TABS.filter((tab) => tab.id !== 'features' || canWriteFeatures)
+  const canWriteModules = hasPermission('modules.modules.write')
+  const tabs = TABS.filter((tab) => tab.id !== 'modules' || canWriteModules)
 
   const activeTab =
     location.pathname.replace('/app/settings', '').replace('/', '') ||

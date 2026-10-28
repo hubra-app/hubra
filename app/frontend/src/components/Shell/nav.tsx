@@ -15,6 +15,7 @@ import {
   IconLink,
 } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
+import type { ModuleInfo } from '@/api/modules'
 
 export type NavItem = {
   path: string
@@ -22,7 +23,6 @@ export type NavItem = {
   icon: ReactNode
   count?: number
   permKeys?: string[]
-  featureKey?: string
 }
 export type NavSection = { label: string; items: NavItem[] }
 
@@ -70,151 +70,77 @@ export function contrastColor(hex: string): string {
   return lum > 140 ? '#181818' : '#ffffff'
 }
 
+const NAV_ICONS: Record<string, ReactNode> = {
+  dashboard: <IconLayoutDashboard size={24} />,
+  users: <IconUsers size={24} />,
+  box: <IconBox size={24} />,
+  package: <IconPackage size={24} />,
+  'layout-list': <IconLayoutList size={24} />,
+  wallet: <IconWallet size={24} />,
+  mail: <IconMail size={24} />,
+  key: <IconKey size={24} />,
+  link: <IconLink size={24} />,
+  settings: <IconSettings size={24} />,
+  shield: <IconShield size={24} />,
+  'devices-cog': <IconDevicesCog size={24} />,
+  globe: <IconGlobe size={24} />,
+  user: <IconUser size={24} />,
+}
+
+const SECTION_ORDER = ['workspace', 'operations', 'system', 'me']
+
+/** Sidebar entries come from the modules that are on for the active club. */
 export function buildNav(
   c: NavCounts,
   t: (key: string, params?: Record<string, unknown>) => string,
+  modules: ModuleInfo[],
 ): NavSection[] {
-  return [
-    {
-      label: t('shell.sections.workspace'),
-      items: [
-        {
-          path: '/app/dashboard',
-          label: t('shell.nav.dashboard'),
-          icon: <IconLayoutDashboard size={24} />,
-        },
-        {
-          path: '/app/members',
-          label: t('shell.nav.members'),
-          icon: <IconUsers size={24} />,
-          count: c.members || undefined,
-          permKeys: [
-            'members.members.read',
-            'functions.functions.read',
-            'applications.applications.read',
-            'tiers.tiers.read',
-          ],
-        },
-        {
-          path: '/app/groups',
-          label: t('shell.nav.groups'),
-          icon: <IconBox size={24} />,
-          count: c.groups || undefined,
-          permKeys: ['groups.groups.read'],
-        },
-        {
-          path: '/app/inventory',
-          label: t('shell.nav.inventory'),
-          icon: <IconPackage size={24} />,
-          permKeys: ['inventory.items.read'],
-        },
-        {
-          path: '/app/operations/events',
-          label: t('shell.nav.management'),
-          icon: <IconLayoutList size={24} />,
-        },
-      ],
-    },
-    {
-      label: t('shell.sections.operations'),
-      items: [
-        {
-          path: '/app/finance',
-          label: t('shell.nav.finance'),
-          icon: <IconWallet size={24} />,
-          permKeys: [
-            'finance.overview.read',
-            'finance.transactions.read',
-            'finance.invoices.read',
-            'finance.transaction_categories.read',
-          ],
-        },
-        {
-          path: '/app/mail',
-          label: t('shell.nav.mail'),
-          icon: <IconMail size={24} />,
-          featureKey: 'mail',
-          permKeys: [
-            'mail.mailboxes.read',
-            'mail.aliases.read',
-            'mail.system.read',
-            'mail.member_mail.read',
-            'mail.wildduck.read',
-          ],
-        },
-        {
-          path: '/app/operations/codes',
-          label: t('shell.nav.codes'),
-          icon: <IconKey size={24} />,
-          permKeys: ['codes.codes.read'],
-        },
-        {
-          path: '/app/operations/bindings',
-          label: t('shell.nav.bindings'),
-          icon: <IconLink size={24} />,
-          permKeys: ['bindings.bindings.read'],
-        },
-      ],
-    },
-    {
-      label: t('shell.sections.system'),
-      items: [
-        {
-          path: '/app/settings',
-          label: t('shell.nav.settings'),
-          icon: <IconSettings size={24} />,
-          permKeys: ['settings.settings.read'],
-        },
-        {
-          path: '/app/audit-log',
-          label: t('shell.nav.auditLog'),
-          icon: <IconShield size={24} />,
-          permKeys: ['audit.audit.read'],
-        },
-        {
-          path: '/app/system',
-          label: t('shell.nav.permissions'),
-          icon: <IconDevicesCog size={24} />,
-          permKeys: [
-            'roles.roles.create',
-            'roles.roles.update',
-            'roles.roles.set_permissions',
-            'roles.roles.delete',
-          ],
-        },
-        {
-          path: '/app/translations',
-          label: t('shell.nav.translations'),
-          icon: <IconGlobe size={24} />,
-          permKeys: ['i18n.i18n.write'],
-        },
-      ],
-    },
-    {
-      label: t('shell.sections.me'),
-      items: [
-        {
-          path: '/app/account/settings',
-          label: t('shell.nav.accountSettings'),
-          icon: <IconUser size={24} />,
-        },
-      ],
-    },
-  ]
+  const counts: Record<string, number> = {
+    '/app/members': c.members,
+    '/app/groups': c.groups,
+  }
+  const items = modules
+    .filter((m) => m.enabled)
+    .flatMap((m) => m.nav)
+    .sort((a, b) => a.order - b.order)
+  const sections = new Map<string, NavItem[]>()
+  const seenGroups = new Set<string>()
+  for (const item of items) {
+    // Modules shown as tabs of one screen share a single entry.
+    if (item.group) {
+      if (seenGroups.has(item.group)) continue
+      seenGroups.add(item.group)
+    }
+    const list = sections.get(item.section) ?? []
+    list.push({
+      path: item.path,
+      label: t(item.labelKey),
+      icon: NAV_ICONS[item.icon] ?? <IconBox size={24} />,
+      count: counts[item.path] || undefined,
+      permKeys: item.perms.length ? item.perms : undefined,
+    })
+    sections.set(item.section, list)
+  }
+  return [...sections.entries()]
+    .sort(
+      ([a], [b]) =>
+        (SECTION_ORDER.indexOf(a) + 1 || 99) - (SECTION_ORDER.indexOf(b) + 1 || 99),
+    )
+    .map(([section, list]) => ({
+      label: t(`shell.sections.${section}`),
+      items: list,
+    }))
 }
 
 export function filterNav(
   nav: NavSection[],
   hasPerm: (key: string) => boolean,
-  features: Record<string, boolean> = {},
 ): NavSection[] {
   return nav
     .map((section) => ({
       ...section,
       items: section.items.filter(
-        (item) =>
-          (!item.featureKey || features[item.featureKey] === true) &&
-          (!item.permKeys || item.permKeys.some(hasPerm)),
+        (item) => !item.permKeys || item.permKeys.some(hasPerm),
       ),
     }))
     .filter((section) => section.items.length > 0)

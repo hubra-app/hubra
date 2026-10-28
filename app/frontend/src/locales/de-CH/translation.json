@@ -817,7 +817,20 @@
     "featureEnabledConfiguredMsg": "{{label}} isch jetzt bruuchsbar.",
     "featureSettingsSaveFailed": "Iistellige chönnet nöd gspeichert wärde.",
     "skip": "Überspringe",
-    "saveAndEnable": "Speichere & aktiviere"
+    "saveAndEnable": "Speichere & aktiviere",
+    "modules": {
+      "intro": "Schalt ab, was din Verein nöd bruucht. En abgschaltete Modul isch für alli usbländet; d Date bliibed erhalte und sind wieder da, wenn du s wieder iischaltisch.",
+      "switchedOn": "{{name}} iigschaltet",
+      "switchedOff": "{{name}} abgschaltet",
+      "blocked": "Für dä Verein nöd verfüegbar",
+      "needs": "Bruucht {{names}}",
+      "needsSetup": "Muess no iigrichtet wärde",
+      "uses": "Bruucht {{names}}",
+      "configure": "Iistellige",
+      "alwaysOn": "Immer aa: {{names}}",
+      "saved": "Iistellige gspeicheret",
+      "secretKept": "Leer la, um de gspeicheret Wert z bhalte"
+    }
   },
   "bootstrap": {
     "title": "Club iirichte",

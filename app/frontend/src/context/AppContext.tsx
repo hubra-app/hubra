@@ -39,7 +39,7 @@ import { listInvoices } from '@/api/finance'
 import { getDashboardSummary, type DashboardSummary } from '@/api/dashboard'
 import { listApplications } from '@/api/applications'
 import { listGroups } from '@/api/groups'
-import { getFeatures } from '@/api/features'
+import { getModules, type ModuleInfo } from '@/api/modules'
 import { loadAllTranslationsFromApi } from '@/locales/i18n'
 
 export type AuthStatus = 'loading' | 'authed' | 'anon'
@@ -110,7 +110,10 @@ interface DataState {
   setOpenInvoiceCount: (value: number | ((prev: number) => number)) => void
   backendOnline: boolean
   recheckBackend: () => void
-  features: Record<string, boolean>
+  /** Module code → effectively on for the active club. */
+  modules: Record<string, boolean>
+  moduleList: ModuleInfo[]
+  modulesLoaded: boolean
   myTenants: MyTenant[]
   switchTenant: (slug: string) => void
 }
@@ -234,25 +237,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [authStatus])
 
+  const { data: modulesData } = useQuery({
+    queryKey: ['modules'],
+    queryFn: getModules,
+    enabled: queryEnabled,
+  })
+  const moduleList = useMemo(() => modulesData ?? [], [modulesData])
+  const modulesMap = useMemo(() => {
+    const map: Record<string, boolean> = {}
+    for (const m of moduleList) map[m.code] = m.enabled
+    return map
+  }, [moduleList])
+  const modulesLoaded = modulesData !== undefined
+  // Data of a switched-off module would answer 403, so only load what is on.
+  const moduleQuery = (code: string) => queryEnabled && modulesMap[code] === true
+
   const { data: eventsData } = useQuery({
     queryKey: ['events'],
     queryFn: () => listEvents(),
-    enabled: queryEnabled,
+    enabled: moduleQuery('events'),
   })
   const { data: pollsData } = useQuery({
     queryKey: ['polls'],
     queryFn: listPolls,
-    enabled: queryEnabled,
+    enabled: moduleQuery('polls'),
   })
   const { data: postsData } = useQuery({
     queryKey: ['posts'],
     queryFn: listPosts,
-    enabled: queryEnabled,
+    enabled: moduleQuery('posts'),
   })
   const { data: invoicesData } = useQuery({
     queryKey: ['invoices'],
     queryFn: listInvoices,
-    enabled: queryEnabled,
+    enabled: moduleQuery('finance'),
   })
   const { data: dashboardData } = useQuery({
     queryKey: ['dashboard-summary'],
@@ -267,12 +285,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const { data: groupsData } = useQuery({
     queryKey: ['groups'],
     queryFn: listGroups,
-    enabled: queryEnabled,
-  })
-  const { data: featuresData } = useQuery({
-    queryKey: ['features'],
-    queryFn: getFeatures,
-    enabled: queryEnabled,
+    enabled: moduleQuery('groups'),
   })
   const { data: tenantsData } = useQuery({
     queryKey: ['my-tenants'],
@@ -295,13 +308,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const openInvoiceCount = dashboardData?.stats?.openInvoices ?? 0
   const pendingApplicationCount = applicationsData?.length ?? 0
   const groupCount = groupsData?.length ?? 0
-  const featuresMap = useMemo(() => {
-    const map: Record<string, boolean> = {}
-    for (const f of featuresData ?? []) {
-      map[f.key] = f.enabled
-    }
-    return map
-  }, [featuresData])
 
   const myTenants = useMemo(() => tenantsData?.tenants ?? [], [tenantsData])
 
@@ -578,7 +584,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setOpenInvoiceCount,
       backendOnline,
       recheckBackend,
-      features: featuresMap,
+      modules: modulesMap,
+      moduleList,
+      modulesLoaded,
       myTenants,
       switchTenant,
     }),
@@ -596,7 +604,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       groupCount,
       openInvoiceCount,
       backendOnline,
-      featuresMap,
+      modulesMap,
+      moduleList,
+      modulesLoaded,
       myTenants,
     ],
   )
