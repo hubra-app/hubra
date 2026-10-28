@@ -2,14 +2,17 @@
 
 Plugins signed with a key in this folder count as **official**, and the
 repository in `index.url` is added to every Hubra as the official
-Marketplace (once; a manager who removes it keeps it removed).
+Marketplace (once; a manager who removes it keeps it removed). The file
+name is the signer's name shown to managers.
 
-Neither is set up yet. To set them up:
+- `Hubra.pub`: the project's key, id `b84edc01a8b17490` (added 2026-10-28).
+  Its private key is kept outside the repository; it belongs in the
+  marketplace repository as the GitHub Actions secret `HUBRA_SIGNING_KEY`.
+- `index.url`: not set up yet (it still says `OWNER`). Publish the
+  marketplace (see `plugins/README.md`) and write the URL of its
+  `index.json` here.
 
-1. `flask plugins keygen hubra-project.pem` — keep `hubra-project.pem`
-   secret (a GitHub Actions secret `HUBRA_SIGNING_KEY` in the marketplace
-   repository), and commit `hubra-project.pem.pub` here.
-2. Publish the marketplace (see `plugins/README.md`) and write the URL of its
-   `index.json` into `index.url`.
+To replace or add a key: `flask plugins keygen <name>.pem`, keep the `.pem`
+secret, and commit `<name>.pem.pub` here as `<name>.pub`.
 
 `HUBRA_OFFICIAL_INDEX` overrides `index.url` at runtime.
