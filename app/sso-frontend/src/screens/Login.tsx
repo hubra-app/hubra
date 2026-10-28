@@ -23,7 +23,7 @@ import { useNavigate } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import { getRememberedEmail } from '@hubra/api-client'
 import * as authApi from '@/api/auth'
-import { clubAppUrl, determineDefaultRedirect } from '@/context/SsoContext'
+import { clubAppUrl } from '@/redirect'
 
 const schema = z.object({
   email: z.string().email('Invalid email'),
@@ -34,7 +34,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 export function LoginScreen() {
-  const { notify, redirectTarget, isSuperadmin } = useSso()
+  const { notify, redirectTarget, urls, continueSignedIn } = useSso()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -67,15 +67,9 @@ export function LoginScreen() {
         setTenants(res.tenants)
         return
       }
-      if (res.noTenant) {
-        const target = redirectTarget || determineDefaultRedirect(isSuperadmin)
-        window.location.assign(target)
-        return
-      }
-      const target =
-        redirectTarget ||
-        (res.tenant_slug ? clubAppUrl(res.tenant_slug) : determineDefaultRedirect(isSuperadmin))
-      window.location.assign(target)
+      // Managers go to the manager portal, members into their club, and
+      // anyone without a club to the club picker.
+      continueSignedIn(await authApi.getMyPermissions(), res.tenant_slug)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Login failed'
       setError(msg)
@@ -90,7 +84,7 @@ export function LoginScreen() {
     setError('')
     try {
       await authApi.switchTenant(slug)
-      window.location.assign(redirectTarget || clubAppUrl(slug))
+      window.location.assign(redirectTarget || clubAppUrl(urls, slug))
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Tenant switch failed'
       setError(msg)
@@ -255,7 +249,7 @@ export function LoginScreen() {
                 fullWidth
                 leftSection={<IconShield size={16} color="#2596be" />}
                 onClick={() => {
-                  window.location.assign(redirectTarget)
+                  window.location.assign(redirectTarget ?? urls.cos)
                 }}
               >
                 Continue as guest
