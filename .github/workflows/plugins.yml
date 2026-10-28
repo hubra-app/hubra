@@ -2,8 +2,8 @@
 # image ghcr.io/hubra-app/hubra/plugins (nginx with the signed index.json and
 # the plugin archives). The Contabo cluster serves it at
 #   https://plugins.hubra.club/index.json
-# Tags: latest, sha-<commit> and main-<timestamp>-<commit>.
 # (keys/official/index.url points there; deploy/clusters/contabo/plugins.yaml).
+# Tags: latest, sha-<commit> and main-<timestamp>-<commit>.
 #
 # The marketplace so far comes out of the latest image, and only plugin
 # versions that are not in it yet are built and signed, so a published
