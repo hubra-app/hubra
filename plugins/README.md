@@ -195,25 +195,31 @@ has a module on for the club.
 flask plugins keygen me.pem                       # once; share me.pem.pub and its key id
 flask plugins repo ./plugins ./public --key me.pem --name "My plugins"
 flask plugins yank ./public my-plugin 1.0.1 --key me.pem --reason "breaks imports"
+flask plugins check https://me.github.io/my-plugins/index.json --key-id <key id>
 ```
 
 `repo` copies each plugin, leaves out what `.releaseignore` lists, signs it,
 zips it and writes a signed `index.json` that keeps earlier versions. Serve
 `./public` from any web server (GitHub Pages works), and give people the URL
-of `index.json` and your key id. For plugins in their own repositories,
-`flask plugins build-index sources.yaml ./public --key me.pem` builds the
-index from their GitHub releases instead.
+of `index.json` and your key id. `check` downloads the published index and
+every archive and verifies them the way a Hubra will. For plugins in their
+own repositories, `flask plugins build-index sources.yaml ./public --key
+me.pem` builds the index from their GitHub releases instead.
 
 **The official marketplace.** The plugins in this folder are published at
-<https://plugins.hubra.club/index.json> by `.github/workflows/plugins.yml`. On
-pushes to `main` that touch a plugin, it takes the marketplace out of the
-latest `ghcr.io/hubra-app/hubra/plugins` image, then builds and signs only the
-versions that aren't in it yet, so a published version never changes. It
-pushes the result as a new image (nginx, `app/deploy/plugins/`), and the
-Contabo cluster serves that image (`deploy/clusters/contabo/plugins.yaml`). To
-release a plugin, bump `version` in its `plugin.yaml` and add a `CHANGELOG.md`
-entry. The workflow needs the secret `HUBRA_SIGNING_KEY` in hubra-app/hubra,
-which holds the private key of `keys/official/Hubra.pub`.
+<https://plugins.hubra.club/index.json> by `.github/workflows/plugins.yml`.
+The site is the public repository
+[hubra-app/hubra-plugins](https://github.com/hubra-app/hubra-plugins), served
+by GitHub Pages; it only ever holds signed archives and the signed index. On
+pushes to `main` that touch a plugin, the workflow clones that repository,
+builds and signs only the versions that aren't in it yet, so a published
+version never changes, and pushes the result. It then downloads
+`index.json` and every archive from plugins.hubra.club and checks them like
+a Hubra does (`flask plugins check`). To release a plugin, bump `version` in
+its `plugin.yaml` and add a `CHANGELOG.md` entry. The workflow needs two
+secrets in hubra-app/hubra: `HUBRA_SIGNING_KEY`, the private key of
+`keys/official/Hubra.pub`, and `PLUGINS_DEPLOY_KEY`, a deploy key with write
+access on hubra-app/hubra-plugins.
 
 Single archives: `flask plugins sign ./my-plugin --key me.pem --signer "Your
 Name"`, then `flask plugins pack ./my-plugin -o my-plugin-1.0.0.zip`.

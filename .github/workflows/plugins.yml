@@ -1,17 +1,24 @@
-# Builds the official plugin marketplace from plugins/ and pushes it as the
-# image ghcr.io/hubra-app/hubra/plugins (nginx with the signed index.json and
-# the plugin archives). The Contabo cluster serves it at
+# Publishes the official plugin marketplace on GitHub Pages:
 #   https://plugins.hubra.club/index.json
-# (keys/official/index.url points there; deploy/clusters/contabo/plugins.yaml).
-# Tags: latest, sha-<commit> and main-<timestamp>-<commit>.
+# (keys/official/index.url points there). The site is the public repository
+# hubra-app/hubra-plugins, branch main, served by GitHub Pages with the
+# custom domain plugins.hubra.club. The plugin sources and the signing key
+# stay in this repository; only signed archives and index.json go there.
 #
-# The marketplace so far comes out of the latest image, and only plugin
-# versions that are not in it yet are built and signed, so a published
-# version never changes. Bump `version` in a plugin's plugin.yaml (and add a
-# CHANGELOG.md entry) to release it.
+# The marketplace so far is that branch, and only plugin versions that are
+# not in it yet are built and signed, so a published version never changes.
+# Bump `version` in a plugin's plugin.yaml (and add a CHANGELOG.md entry) to
+# release it. The first run, on an empty site, starts from the last image
+# ghcr.io/hubra-app/hubra/plugins that the cluster used to serve, so the
+# versions published there keep their archives and signatures.
 #
-# Secret in this repository:
-#   HUBRA_SIGNING_KEY   the private key (PEM) of keys/official/Hubra.pub
+# Every run ends by downloading the live index.json and every archive from
+# plugins.hubra.club and checking them like a Hubra does (flask plugins check).
+#
+# Secrets in this repository:
+#   HUBRA_SIGNING_KEY    the private key (PEM) of keys/official/Hubra.pub
+#   PLUGINS_DEPLOY_KEY   the private half of a deploy key on
+#                        hubra-app/hubra-plugins with write access
 name: Plugins
 
 on:
@@ -21,17 +28,20 @@ on:
       - "plugins/**"
       - "app/frontend/src/plugins/**"
       - "app/frontend/scripts/build-plugin.mjs"
-      - "app/deploy/plugins/**"
       - ".github/workflows/plugins.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
-  packages: write
+  packages: read
 
 concurrency:
   group: plugins-publish
   cancel-in-progress: false
+
+env:
+  SITE_REPO: hubra-app/hubra-plugins
+  SITE_HOST: plugins.hubra.club
 
 jobs:
   publish:
@@ -39,35 +49,43 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - name: Image name
-        id: name
+      - name: The marketplace so far
+        id: site
+        env:
+          DEPLOY_KEY: ${{ secrets.PLUGINS_DEPLOY_KEY }}
         run: |
-          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}/plugins" >> "$GITHUB_OUTPUT"
-          echo "sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-          # Sortable tag for Flux image automation, as in images.yml.
-          echo "ts=$(date -u +%Y%m%d%H%M%S)" >> "$GITHUB_OUTPUT"
+          ssh="$RUNNER_TEMP/ssh"
+          mkdir -m 700 "$ssh"
+          (umask 077 && printf '%s\n' "$DEPLOY_KEY" > "$ssh/key")
+          # github.com's published host key, so nothing else can take the push.
+          echo "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl" > "$ssh/known_hosts"
+          echo "GIT_SSH_COMMAND=ssh -i $ssh/key -o IdentitiesOnly=yes -o UserKnownHostsFile=$ssh/known_hosts" >> "$GITHUB_ENV"
+          GIT_SSH_COMMAND="ssh -i $ssh/key -o IdentitiesOnly=yes -o UserKnownHostsFile=$ssh/known_hosts" \
+            git clone --depth 1 "git@github.com:$SITE_REPO.git" site
+          git -C site checkout -B main
+          echo "seed=$([ -f site/index.json ] && echo false || echo true)" >> "$GITHUB_OUTPUT"
+          ls -l site
 
       - uses: docker/login-action@v3
+        if: steps.site.outputs.seed == 'true'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: The marketplace so far
-        env:
-          IMAGE: ${{ steps.name.outputs.image }}
+      - name: Start from the last plugins image
+        if: steps.site.outputs.seed == 'true'
         run: |
-          mkdir public
-          if docker manifest inspect "$IMAGE:latest" > /dev/null 2>&1; then
-            docker pull -q "$IMAGE:latest"
-            id=$(docker create "$IMAGE:latest")
-            docker cp "$id:/usr/share/nginx/html/." public/
+          image="ghcr.io/${GITHUB_REPOSITORY,,}/plugins:latest"
+          if docker manifest inspect "$image" > /dev/null 2>&1; then
+            docker pull -q "$image"
+            id=$(docker create "$image")
+            docker cp "$id:/usr/share/nginx/html/." site/
             docker rm "$id"
-            rm -f public/index.html public/50x.html
+            rm -f site/index.html site/50x.html
           else
-            echo "No $IMAGE:latest yet; this is the first publish."
+            echo "No $image; this is the first publish."
           fi
-          ls -l public
+          ls -l site
 
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
@@ -79,9 +97,9 @@ jobs:
       - name: Plugin versions not published yet
         id: new
         run: |
-          python - <<'EOF' >> "$GITHUB_OUTPUT"
+          python - <<'PY' >> "$GITHUB_OUTPUT"
           import json, pathlib, yaml
-          index = pathlib.Path("public/index.json")
+          index = pathlib.Path("site/index.json")
           published = set()
           if index.is_file():
               for p in json.loads(index.read_text()).get("plugins") or []:
@@ -92,9 +110,10 @@ jobs:
               m = yaml.safe_load(f.read_text())
               if (str(m["id"]), str(m["version"])) not in published:
                   new.append(str(m["id"]))
+          print("ids=" + " ".join(new))
           print("only=" + " ".join(f"--only {i}" for i in new))
           print("any=" + ("true" if new else "false"))
-          EOF
+          PY
           cat "$GITHUB_OUTPUT"
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -121,7 +140,7 @@ jobs:
           # Only the key file is private; the published files must stay readable.
           (umask 077 && printf '%s\n' "$SIGNING_KEY" > "$key")
           # Refuse to sign with any key but the official one.
-          python - "$key" <<'EOF'
+          python - "$key" <<'PY'
           import sys
           from cryptography.hazmat.primitives import serialization
           from hubra.core.plugins.trust import OFFICIAL_DIR, key_id, load_public
@@ -129,22 +148,53 @@ jobs:
           official = load_public((OFFICIAL_DIR / "Hubra.pub").read_text())
           if key_id(pub) != key_id(official):
               sys.exit(f"HUBRA_SIGNING_KEY is {key_id(pub)}, not the official key {key_id(official)}")
-          EOF
-          flask plugins repo ../../plugins ../../public --key "$key" \
+          PY
+          flask plugins repo ../../plugins ../../site --key "$key" \
             --name "Hubra official" --description "Plugins made by the Hubra project" \
             ${{ steps.new.outputs.only }}
           rm -f "$key"
 
-      - uses: docker/setup-buildx-action@v3
-        if: steps.new.outputs.any == 'true' || github.event_name == 'workflow_dispatch'
-      - uses: docker/build-push-action@v6
-        if: steps.new.outputs.any == 'true' || github.event_name == 'workflow_dispatch'
-        with:
-          context: .
-          file: app/deploy/plugins/Dockerfile
-          platforms: linux/amd64
-          push: true
-          tags: |
-            ${{ steps.name.outputs.image }}:latest
-            ${{ steps.name.outputs.image }}:sha-${{ steps.name.outputs.sha }}
-            ${{ steps.name.outputs.image }}:main-${{ steps.name.outputs.ts }}-${{ steps.name.outputs.sha }}
+      - name: Push to the Pages repository
+        env:
+          IDS: ${{ steps.new.outputs.ids }}
+        run: |
+          cd site
+          echo "$SITE_HOST" > CNAME
+          touch .nojekyll  # serve every file as it is
+          cat > README.md <<MD
+          # Hubra official plugins
+
+          The signed plugin marketplace that every Hubra reads from
+          <https://$SITE_HOST/index.json>. Each \`<id>-<version>.zip\` carries a
+          \`SIGNATURE.json\`, and \`index.json\` is signed too, with the official key
+          \`Hubra.pub\` that ships with Hubra.
+
+          Published by GitHub Actions from the plugin sources; don't edit by hand.
+          MD
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing new to publish."
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -q -m "Publish ${IDS:-site files}" -m "From $GITHUB_REPOSITORY@$GITHUB_SHA"
+          git push origin main
+
+      - name: Check what plugins.hubra.club serves
+        working-directory: app/backend
+        env:
+          FLASK_APP: "hubra:create_app()"
+        run: |
+          want=$(python -c 'import json; print(json.load(open("../../site/index.json"))["generated"])')
+          # GitHub Pages takes a minute to deploy and its CDN keeps files for up
+          # to 10 minutes, so ask with a fresh query string each time.
+          for i in $(seq 1 20); do
+            url="https://$SITE_HOST/index.json?run=$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$i"
+            got=$(curl -fsS "$url" | python -c 'import json,sys; print(json.load(sys.stdin)["generated"])' 2>/dev/null || true)
+            [ "$got" = "$want" ] && break
+            echo "Serving '${got:-nothing}', waiting for $want"
+            sleep 30
+          done
+          [ "$got" = "$want" ] || { echo "::error::$SITE_HOST doesn't serve the new index.json"; exit 1; }
+          flask plugins check "$url"

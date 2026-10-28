@@ -250,6 +250,54 @@ def test_repository_index_is_signed_and_pinned(tmp_path, key, db, monkeypatch):
     assert db.session.get(PluginRepository, repo.id).error
 
 
+def test_check_repository_downloads_and_verifies_every_archive(
+    tmp_path, key, monkeypatch
+):
+    pem, _pub = key
+    src = tmp_path / "src"
+    src.mkdir()
+    d = make_plugin(src)
+    out = tmp_path / "public"
+    publish.build_repository(src, out, pem, "Test plugins")
+    m = (d / "plugin.yaml").read_text().replace("version: 1.0.0", "version: 1.1.0")
+    (d / "plugin.yaml").write_text(m)
+    doc = publish.build_repository(src, out, pem, "Test plugins")
+
+    def fake_get(url, timeout=30, limit=0):
+        return (out / url.split("?")[0].rsplit("/", 1)[-1]).read_bytes()
+
+    monkeypatch.setattr(installer, "http_get", fake_get)
+    monkeypatch.setattr(publish, "http_get", fake_get)
+    url = "https://plugins.example/index.json?v=1"
+    assert publish.check_repository(url, doc["key_id"]) == (doc, [])
+    _, problems = publish.check_repository(url)
+    assert problems == [f"the index is signed with key {doc['key_id']}, not b84edc01a8b17490"]
+
+    # An archive changed after signing: re-zipped with a new checksum in a re-signed index.
+    with zipfile.ZipFile(out / "hello-1.0.0.zip") as zf:
+        files = {n: zf.read(n) for n in zf.namelist()}
+    init = next(n for n in files if n.endswith("hubra_hello/__init__.py"))
+    files[init] += b"# changed\n"
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        for n, b in files.items():
+            zf.writestr(n, b)
+    (out / "hello-1.0.0.zip").write_bytes(buf.getvalue())
+    idx = json.loads((out / "index.json").read_text())
+    import hashlib
+
+    for v in idx["plugins"][0]["versions"]:
+        if v["version"] == "1.0.0":
+            v["sha256"] = hashlib.sha256(buf.getvalue()).hexdigest()
+    for k in ("signature", "key_id", "public_key"):
+        idx.pop(k)
+    (out / "index.json").write_text(json.dumps(trust.sign_index(idx, pem)))
+    _, problems = publish.check_repository(url, doc["key_id"])
+    assert problems == [
+        "hello 1.0.0: files differ from what was signed: hubra_hello/__init__.py"
+    ]
+
+
 def test_install_from_repository_then_update_and_rollback(
     tmp_path, key, db, seeded_db, plugin_dir, monkeypatch
 ):

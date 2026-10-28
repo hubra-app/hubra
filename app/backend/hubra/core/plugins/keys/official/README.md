@@ -6,12 +6,12 @@ Marketplace (once; a manager who removes it keeps it removed). The file
 name is the signer's name shown to managers.
 
 - `Hubra.pub`: the project's key, id `b84edc01a8b17490` (added 2026-10-28).
-  Its private key is kept outside the repository; it belongs in the
-  marketplace repository as the GitHub Actions secret `HUBRA_SIGNING_KEY`.
+  Its private key is kept outside the repository; it is the GitHub Actions
+  secret `HUBRA_SIGNING_KEY` in hubra-app/hubra, never in the public
+  hubra-plugins repository.
 - `index.url`: the official marketplace, <https://plugins.hubra.club/index.json>.
-  `.github/workflows/plugins.yml` builds it from `plugins/` into the image
-  `ghcr.io/hubra-app/hubra/plugins`, which the Contabo cluster serves
-  (`deploy/clusters/contabo/plugins.yaml`).
+  `.github/workflows/plugins.yml` builds it from `plugins/` and publishes it
+  with GitHub Pages from the public repository hubra-app/hubra-plugins.
 
 To replace or add a key: `flask plugins keygen <name>.pem`, keep the `.pem`
 secret, and commit `<name>.pem.pub` here as `<name>.pub`.

@@ -14,7 +14,6 @@ spec:
         - app.hubra.club
         - manage.hubra.club
         - sso.hubra.club
-        - plugins.hubra.club
     # Own certificate, so join can't hold up the others.
     - secretName: hubra-join-tls
       hosts:
@@ -48,13 +47,6 @@ spec:
             pathType: Prefix
             backend:
               service: { name: sso-frontend, port: { name: http } }
-    - host: plugins.hubra.club
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service: { name: plugins, port: { name: http } }
     # Start a club, find one and ask to join: the SSO frontend again.
     - host: join.hubra.club
       http:
