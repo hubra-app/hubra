@@ -225,3 +225,52 @@ def test_api_test_mail(client, superadmin, db):
     assert resp.status_code == 200
     assert smtp.call_args.args[0] == "ops@example.com"
     assert smtp.call_args.args[2] == "noreply@hubra.example"
+
+
+# ── Club mailbox and backups ─────────────────────────────────────────────────
+
+
+def test_club_mailbox_logs_in_to_the_mail_module_server(app, db):
+    _club_sender(db)
+    platform_settings.set_many({"mail.relay.host": "relay.example.net"})
+    db.session.commit()
+    app.config["ZONEMTA_SMTP_HOST"] = "zonemta"
+    app.config["ZONEMTA_SMTP_PORT"] = 2587
+    try:
+        with patch.object(email, "_club_mailbox", return_value=("club@example.org", "pw")):
+            route = _send().call_args.kwargs["route"]
+        assert (route.host, route.port) == ("zonemta", 2587)
+    finally:
+        app.config["ZONEMTA_SMTP_HOST"] = ""
+        app.config["ZONEMTA_SMTP_PORT"] = 0
+
+    # Without the mail module's server it uses the platform relay.
+    with patch.object(email, "_club_mailbox", return_value=("club@example.org", "pw")):
+        route = _send().call_args.kwargs["route"]
+    assert route.host == "relay.example.net"
+
+
+def test_backup_storage_is_a_platform_setting(app, db):
+    from hubra.core.services.backup import _get_s3_config
+
+    app.config["BACKUP_S3_BUCKET"] = "from-env"
+    try:
+        assert _get_s3_config()["bucket"] == "from-env"
+        platform_settings.set_many(
+            {"backup.s3.bucket": "hubra-backups", "backup.s3.secret_key": "k3y"}
+        )
+        db.session.commit()
+        cfg = _get_s3_config()
+        assert cfg["bucket"] == "hubra-backups"
+        assert cfg["secret_key"] == "k3y"
+        assert cfg["region"] == "default"
+    finally:
+        app.config["BACKUP_S3_BUCKET"] = ""
+
+    listed = {s["key"]: s for s in platform_settings.as_list()}
+    assert listed["backup.s3.secret_key"]["value"] == ""
+
+
+def test_clubs_no_longer_get_relay_or_backup_settings(db, seeded_db):
+    keys = {s.key for s in db.session.query(Setting).all()}
+    assert not {k for k in keys if k.startswith(("mail.smtp_", "backup.s3_"))}

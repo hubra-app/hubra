@@ -12,7 +12,7 @@ import {
   IconClipboardList,
   IconKey,
   IconPuzzle,
-  IconMail,
+  IconSettings,
   IconPlus,
 } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
@@ -140,7 +140,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
             ]
           : []),
         ...(hasGlobalPermission('platform.settings')
-          ? [{ path: '/app/platform/mail', label: 'Mail Relay', icon: <IconMail size={22} /> }]
+          ? [
+              {
+                path: '/app/platform/settings',
+                label: 'Platform Settings',
+                icon: <IconSettings size={22} />,
+              },
+            ]
           : []),
         ...(hasGlobalPermission('plugins.manage')
           ? [{ path: '/app/plugins', label: 'Plugins', icon: <IconPuzzle size={22} /> }]
