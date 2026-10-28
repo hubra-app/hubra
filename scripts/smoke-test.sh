@@ -2,13 +2,10 @@
 # Smoke test of a running Compose stack: the apps answer, the SPA sends its
 # security headers, a club admin can sign in, and the Celery processes run.
 #
-#   scripts/smoke-test.sh multi    # docker-compose.yml
-#   scripts/smoke-test.sh single   # plus docker-compose.single-club.yml;
-#                                  # needs ADMIN_EMAIL and ADMIN_PASSWORD in .env
+#   scripts/smoke-test.sh
 set -eu
 
 cd "$(dirname "$0")/.."
-mode="${1:-multi}"
 app="http://localhost:${FRONTEND_PORT:-8080}"
 jar="$(mktemp)"
 trap 'rm -f "$jar"' EXIT
@@ -16,10 +13,6 @@ trap 'rm -f "$jar"' EXIT
 fail() {
   echo "FAIL: $*" >&2
   exit 1
-}
-
-env_value() {
-  sed -n "s/^$1=//p" .env | tail -n 1
 }
 
 echo "Waiting for the API behind $app ..."
@@ -30,34 +23,23 @@ until curl -fsS "$app/api/v1/instance" >/dev/null 2>&1; do
   sleep 2
 done
 
-instance="$(curl -fsS "$app/api/v1/instance")"
-echo "instance: $instance"
-echo "$instance" | grep -q "\"mode\":\"$mode\"" || fail "expected mode $mode"
+echo "instance: $(curl -fsS "$app/api/v1/instance")"
 
 headers="$(curl -fsSI "$app/")"
 for h in content-security-policy x-frame-options x-content-type-options; do
   echo "$headers" | grep -qi "^$h:" || fail "the club app does not send $h"
 done
 
-if [ "$mode" = multi ]; then
-  for port in "${ADMIN_FRONTEND_PORT:-8081}" "${SSO_FRONTEND_PORT:-8082}"; do
-    curl -fsS -o /dev/null "http://localhost:$port/" || fail "nothing on port $port"
-  done
-  email=admin@smoke.test
-  password="Smoke-Test-$(date +%s)!"
-  docker compose exec -T backend flask provision-tenant \
-    --name "Smoke Club" --slug smoke --admin-email "$email" --admin-password "$password" >/dev/null
-  login_headers="-H X-Tenant-Slug:smoke"
-else
-  email="$(env_value ADMIN_EMAIL)"
-  password="$(env_value ADMIN_PASSWORD)"
-  [ -n "$email" ] && [ -n "$password" ] || fail "set ADMIN_EMAIL and ADMIN_PASSWORD in .env"
-  login_headers=""
-fi
+for port in "${ADMIN_FRONTEND_PORT:-8081}" "${SSO_FRONTEND_PORT:-8082}"; do
+  curl -fsS -o /dev/null "http://localhost:$port/" || fail "nothing on port $port"
+done
+email=admin@smoke.test
+password="Smoke-Test-$(date +%s)!"
+docker compose exec -T backend flask provision-tenant \
+  --name "Smoke Club" --slug smoke --admin-email "$email" --admin-password "$password" >/dev/null
 
 body="$(printf '{"email":"%s","password":"%s"}' "$email" "$password")"
-# shellcheck disable=SC2086 # login_headers is empty or one curl option
-status="$(curl -sS -o /dev/null -w '%{http_code}' -c "$jar" $login_headers \
+status="$(curl -sS -o /dev/null -w '%{http_code}' -c "$jar" -H X-Tenant-Slug:smoke \
   -H 'Content-Type: application/json' -d "$body" "$app/api/v1/auth/login")"
 [ "$status" = 200 ] || fail "sign-in answered $status"
 for path in account/ modules/; do
@@ -71,4 +53,4 @@ for svc in celery-worker celery-beat; do
     fail "$svc is not running Celery"
 done
 
-echo "Smoke test ($mode) passed."
+echo "Smoke test passed."

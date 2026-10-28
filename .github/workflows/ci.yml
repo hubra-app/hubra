@@ -78,39 +78,25 @@ jobs:
           echo "95f14e87aa28c09d5941f11bd024c1d02fdc0303ccaa23f61cef67bc92619d73  kubeconform.tar.gz" | sha256sum -c -
           tar xzf kubeconform.tar.gz kubeconform
 
-          for dir in deploy/app deploy/single-club deploy/vollbuild-ch deploy/clusters/contabo modules/mail/k8s; do
+          for dir in deploy/app deploy/vollbuild-ch deploy/clusters/contabo modules/mail/k8s; do
             kubectl kustomize --load-restrictor LoadRestrictionsNone "$dir" > "/tmp/$(basename "$dir").yaml"
           done
           ./kubeconform -strict -summary -kubernetes-version 1.31.0 \
             -schema-location default \
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
-            /tmp/app.yaml /tmp/single-club.yaml /tmp/vollbuild-ch.yaml /tmp/contabo.yaml /tmp/k8s.yaml
+            /tmp/app.yaml /tmp/vollbuild-ch.yaml /tmp/contabo.yaml /tmp/k8s.yaml
       - name: Shell scripts
         run: shellcheck deploy/create-secrets.sh scripts/init-env.sh scripts/smoke-test.sh app/deploy/nginx/40-hubra-runtime.sh
 
   # Builds the images and runs both Compose stacks end to end.
   compose-smoke:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        mode: [multi, single]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Configure
-        run: |
-          scripts/init-env.sh
-          if [ "${{ matrix.mode }}" = single ]; then
-            sed -i \
-              -e 's/^SINGLE_CLUB=.*/SINGLE_CLUB=smoke/' \
-              -e 's/^CLUB_NAME=.*/CLUB_NAME=Smoke Club/' \
-              -e 's/^ADMIN_EMAIL=.*/ADMIN_EMAIL=admin@smoke.test/' \
-              -e "s/^ADMIN_PASSWORD=.*/ADMIN_PASSWORD=Smoke-Test-$(openssl rand -hex 8)!/" \
-              .env
-            echo "COMPOSE_FILE=docker-compose.yml:docker-compose.single-club.yml" >> .env
-          fi
+        run: scripts/init-env.sh
       - run: docker compose build
       - run: docker compose up -d
-      - run: scripts/smoke-test.sh ${{ matrix.mode }}
+      - run: scripts/smoke-test.sh
       - if: failure()
         run: docker compose ps -a && docker compose logs --tail=200

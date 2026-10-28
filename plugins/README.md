@@ -59,7 +59,7 @@ working.
 data back, unless you tick "also delete its data". Plugins other plugins
 need can't be uninstalled first.
 
-**Command line**, for single-club installs and scripts:
+**Command line**, for scripts:
 
 ```
 flask plugins list
