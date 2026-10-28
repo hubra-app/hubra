@@ -1,9 +1,9 @@
 """Email verification token model — single-use, time-limited tokens.
 
-Tokens reference the global User (not the tenant-scoped Member) because
-email verification is now global. The token table itself remains per-tenant
-(cloned into every tenant schema) so that each tenant has its own verification token store,
-but the FK points to the public.users table.
+Verification belongs to the global User and happens on the SSO portal, where
+no club is selected, so the table lives in the public schema only (it is in
+no module manifest and never cloned into a club schema).  Each token names
+the address it was sent to: changing the address makes older links useless.
 """
 
 from __future__ import annotations
@@ -17,12 +17,14 @@ from hubra.core.extensions import db
 
 
 class EmailVerificationToken(db.Model):
-    __tablename__ = "email_verification_tokens"
+    __tablename__ = "email_verifications"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(
         db.Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
+    # The address the link was sent to.
+    email: Mapped[str] = mapped_column(db.String(255), nullable=False)
     # SHA-256 hex digest of the raw token sent in the verification email.
     token_hash: Mapped[str] = mapped_column(db.String(64), unique=True, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(
