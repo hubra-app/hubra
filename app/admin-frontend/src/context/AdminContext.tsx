@@ -8,10 +8,12 @@ import {
   type ReactNode,
 } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { Button, Center, Stack, Text } from '@mantine/core'
 import { notifications as mantineNotifications } from '@mantine/notifications'
 import { getMyPermissions, logout as apiLogout, type PermissionsResponse } from '@/api/auth'
 import { getMyTenants } from '@/api/tenants'
 import { hasTokens, setAuthFailureHandler, SSO_URL } from '@hubra/api-client'
+import { tr } from '@/lang'
 
 export type AuthStatus = 'loading' | 'authed' | 'anon'
 
@@ -54,6 +56,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
   const [authStatus, setAuthStatus] = useState<AuthStatus>(() => (hasTokens() ? 'loading' : 'anon'))
   const [permData, setPermData] = useState<PermissionsResponse | null>(null)
+  const [offline, setOffline] = useState(false)
 
   useEffect(() => {
     if (!hasTokens()) {
@@ -74,8 +77,15 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         setPermData(data)
         setAuthStatus('authed')
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         if (cancelled) return
+        // Server down or restarting: the session is unknown, not gone, so
+        // say so instead of sending a signed-in person to the sign-in page.
+        const status = (err as { status?: number })?.status
+        if (status === undefined || status >= 500) {
+          setOffline(true)
+          return
+        }
         setAuthStatus('anon')
         redirectToSso()
       })
@@ -137,6 +147,22 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     [authStatus, permData, globalPermissions, globalRoles, hasGlobalPermission, notify, logout],
   )
 
+  if (offline)
+    return (
+      <Center h="100vh" p="md">
+        <Stack align="center" gap="md" maw={420} ta="center">
+          <Text fz={18} fw={600}>
+            {tr('Der Server ist gerade nicht erreichbar', 'The server cannot be reached')}
+          </Text>
+          <Text size="sm" c="dimmed">
+            {tr('Versuche es in einem Moment nochmals.', 'Please try again in a moment.')}
+          </Text>
+          <Button variant="default" onClick={() => window.location.reload()}>
+            {tr('Erneut versuchen', 'Try again')}
+          </Button>
+        </Stack>
+      </Center>
+    )
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>
 }
 
