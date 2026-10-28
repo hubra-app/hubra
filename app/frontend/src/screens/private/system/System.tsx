@@ -9,6 +9,7 @@ import { PageHead, Tabs, Pagination, usePagination } from '@/components/ui'
 import { RolesTab } from '@/screens/private/system/RolesTab'
 import { HealthTab } from '@/screens/private/system/HealthTab'
 import { useModules } from '@/modules/useModules'
+import { useAuth } from '@/context/AppContext'
 import { BackupsTab } from '@/screens/private/system/BackupsTab'
 
 const METHOD_STYLES: Record<string, string> = {
@@ -103,7 +104,9 @@ export function SystemScreen() {
   }, [entries, methodFilter, search])
 
   const pg = usePagination(filtered, 25)
-  const hasBackups = useModules().has('backups')
+  // Backups dump every club's data, so only platform superadmins see them.
+  const { isSuperadmin } = useAuth()
+  const hasBackups = useModules().has('backups') && isSuperadmin
 
   return (
     <div style={{ padding: '0 0 2rem' }}>
