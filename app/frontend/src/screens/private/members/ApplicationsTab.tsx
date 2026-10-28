@@ -10,7 +10,7 @@ import {
   approveApplication,
   declineApplication,
 } from '@/api/applications'
-import { getLookups } from '@/api/lookups'
+import { getLookups, lookupsQuery } from '@/api/lookups'
 import { formatDateTime } from '@/format'
 import { LeaveRequests } from './LeaveRequests'
 import { roleLabel } from '@/roles'
@@ -29,8 +29,7 @@ export function ApplicationsTab() {
     queryFn: () => listApplications(),
   })
   const { data: lookupsData } = useQuery({
-    queryKey: ['lookups'],
-    queryFn: () => getLookups(),
+    ...lookupsQuery,
   })
   const allTiers = useMemo(
     () => (lookupsData ? [...lookupsData.tiersByName.keys()] : []),

@@ -12,7 +12,7 @@ import {
   IconMessage2,
   IconArrowBackUp,
 } from '@tabler/icons-react'
-import { useToast, useAuth, useData } from '@/context/AppContext'
+import { useToast, useAuth, useLoadData } from '@/context/AppContext'
 import {
   Modal,
   Field,
@@ -48,7 +48,7 @@ type PostForm = z.infer<typeof postSchema>
 export function PostsTab() {
   const { notify } = useToast()
   const { currentUser, hasPermission, isAdmin } = useAuth()
-  const { posts, setPosts } = useData()
+  const { posts, setPosts } = useLoadData('posts')
   const { t } = useT()
   const canCreate = hasPermission('posts.posts.create')
   const canUpdate = hasPermission('posts.posts.update')
