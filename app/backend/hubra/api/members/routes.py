@@ -309,18 +309,7 @@ def archive_member(member_id: int):
 
     archived_email = member.email
     archived_name = member.name
-    # Capture before commit — provision_member_mail reads the MMA and
-    # calls wd.delete_user() to tear down the WildDuck account.
-    from hubra.core.models.managed_mail import ManagedMailAddress
-    from sqlalchemy import select as _select
-
-    _addr = db.session.scalar(
-        _select(ManagedMailAddress)
-        .where(ManagedMailAddress.owner_type == "member")
-        .where(ManagedMailAddress.owner_id == member_id)
-        .where(ManagedMailAddress.wildduck_user_id.isnot(None))
-    )
-    had_wildduck = _addr is not None
+    had_wildduck = _has_wildduck_mailbox(member_id)
 
     try:
         db.session.commit()
@@ -328,6 +317,37 @@ def archive_member(member_id: int):
         db.session.rollback()
         raise
 
+    _after_archive(member_id, affected_group_ids, had_wildduck)
+
+    from hubra.core.services import email as email_svc
+
+    email_svc.send_account_deleted(
+        archived_email,
+        archived_name,
+        lang=getattr(member, "language", "de-CH") or "de-CH",
+    )
+    return "", 204
+
+
+def _has_wildduck_mailbox(member_id: int) -> bool:
+    """Read before commit: provision_member_mail reads the address and calls
+    wd.delete_user() to tear down the WildDuck account."""
+    from hubra.core.models.managed_mail import ManagedMailAddress
+    from sqlalchemy import select as _select
+
+    return (
+        db.session.scalar(
+            _select(ManagedMailAddress.id)
+            .where(ManagedMailAddress.owner_type == "member")
+            .where(ManagedMailAddress.owner_id == member_id)
+            .where(ManagedMailAddress.wildduck_user_id.isnot(None))
+        )
+        is not None
+    )
+
+
+def _after_archive(member_id: int, affected_group_ids: set[int], had_wildduck: bool):
+    """Side effects once an archive (or a member leaving) is committed."""
     if affected_group_ids:
         from hubra.api.groups.services import _trigger_group_mail_sync
 
@@ -339,13 +359,158 @@ def archive_member(member_id: int):
 
         provision_member_mail.delay(member_id)
 
-    from hubra.core.services import email as email_svc
 
-    email_svc.send_account_deleted(
-        archived_email,
-        archived_name,
-        lang=getattr(member, "language", "de-CH") or "de-CH",
+# ── Leaving the club ──────────────────────────────────────────────────────────
+#
+# A member leaves on their own, or, when the club switched on "leaving needs
+# approval" (club settings), asks to leave and a club admin approves it.
+
+
+def _leave_needs_approval() -> bool:
+    from hubra.core.tenant.context import current_tenant
+
+    tenant = current_tenant()
+    branding = (tenant.settings or {}).get("branding", {}) if tenant else {}
+    return bool(branding.get("leave_requires_approval"))
+
+
+def _leave_state(member) -> dict:
+    requested = member.leave_requested_at
+    return {
+        "requiresApproval": _leave_needs_approval(),
+        "requestedAt": requested.isoformat() if requested else None,
+    }
+
+
+def _leave_now(member, actor_id: int, action: str) -> None:
+    member_id = member.id
+    had_wildduck = _has_wildduck_mailbox(member_id)
+    affected_group_ids = MemberService.leave(member)
+    log_audit(
+        actor_id=actor_id,
+        action=action,
+        target_type="Member",
+        target_id=member_id,
+        target_label=member.name,
     )
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+    _after_archive(member_id, affected_group_ids, had_wildduck)
+
+
+@members_bp.get("/me/leave")
+@jwt_required()
+def get_my_leave():
+    return jsonify(_leave_state(get_current_member())), 200
+
+
+@members_bp.post("/me/leave")
+@jwt_required()
+def leave_club():
+    """Leave the club now, or ask to leave when the club wants to approve it."""
+    member = get_current_member()
+    if not _leave_needs_approval():
+        _leave_now(member, member.id, "left")
+        return jsonify({"status": "left"}), 200
+
+    if member.leave_requested_at is None:
+        from datetime import datetime, timezone
+
+        from hubra.api.members.services import _check_last_owner
+
+        _check_last_owner(member)
+        member.leave_requested_at = datetime.now(timezone.utc)
+        log_audit(
+            actor_id=member.id,
+            action="leave_requested",
+            target_type="Member",
+            target_id=member.id,
+            target_label=member.name,
+        )
+        db.session.commit()
+    return jsonify({"status": "requested", **_leave_state(member)}), 200
+
+
+@members_bp.delete("/me/leave")
+@jwt_required()
+def cancel_leave_request():
+    member = get_current_member()
+    if member.leave_requested_at is not None:
+        member.leave_requested_at = None
+        log_audit(
+            actor_id=member.id,
+            action="leave_request_withdrawn",
+            target_type="Member",
+            target_id=member.id,
+            target_label=member.name,
+        )
+        db.session.commit()
+    return jsonify(_leave_state(member)), 200
+
+
+@members_bp.get("/leave-requests")
+@permission_required("members", "archive", "Archive members")
+def list_leave_requests():
+    from sqlalchemy import select as _select
+
+    from hubra.core.models.member import Member
+
+    rows = db.session.scalars(
+        _select(Member)
+        .where(Member.leave_requested_at.isnot(None))
+        .where(Member.archived_at.is_(None))
+        .order_by(Member.leave_requested_at)
+    ).all()
+    return jsonify(
+        [
+            {
+                "id": m.id,
+                "name": m.name,
+                "email": m.email,
+                "avatarColor": m.avatar_color,
+                "requestedAt": m.leave_requested_at.isoformat(),
+            }
+            for m in rows
+        ]
+    ), 200
+
+
+def _pending_leave(member_id: int):
+    from hubra.core.models.member import Member
+
+    member = db.session.get(Member, member_id)
+    if (
+        member is None
+        or member.archived_at is not None
+        or member.leave_requested_at is None
+    ):
+        raise_error(404, "NOT_FOUND", "No request to leave from this member")
+    return member
+
+
+@members_bp.post("/<int:member_id>/leave/approve")
+@permission_required("members", "archive", "Archive members")
+def approve_leave(member_id: int):
+    _leave_now(_pending_leave(member_id), get_current_member().id, "leave_approved")
+    return "", 204
+
+
+@members_bp.post("/<int:member_id>/leave/decline")
+@permission_required("members", "archive", "Archive members")
+def decline_leave(member_id: int):
+    member = _pending_leave(member_id)
+    member.leave_requested_at = None
+    log_audit(
+        actor_id=get_current_member().id,
+        action="leave_declined",
+        target_type="Member",
+        target_id=member.id,
+        target_label=member.name,
+    )
+    db.session.commit()
     return "", 204
 
 

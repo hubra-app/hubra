@@ -43,8 +43,8 @@ export function AccountSettingsScreen() {
       <PageHead
         title={t('account.settings.title', 'Kontoeinstellungen')}
         actions={
-          <Button variant="subtle" onClick={() => go('/app/account')}>
-            {'\u2190'} {t('account.myAccount', 'Mein Konto')}
+          <Button variant="subtle" onClick={() => go('/app/dashboard')}>
+            {'\u2190'} {t('shell.nav.dashboard', 'Dashboard')}
           </Button>
         }
       />

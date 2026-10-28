@@ -327,3 +327,47 @@ export async function exportMembersCSV(fields?: string[]): Promise<void> {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+// ── Leaving the club ──────────────────────────────────────────────────────────
+
+export interface LeaveState {
+  /** The club approves requests to leave (club setting). */
+  requiresApproval: boolean;
+  /** Set while this member's request waits for a club admin. */
+  requestedAt: string | null;
+}
+
+export interface LeaveRequest {
+  id: string;
+  name: string;
+  email: string;
+  avatarColor: string;
+  requestedAt: string;
+}
+
+export function getMyLeave(): Promise<LeaveState> {
+  return apiFetch<LeaveState>("/members/me/leave");
+}
+
+export function leaveClub(): Promise<{ status: "left" | "requested" } & Partial<LeaveState>> {
+  return apiFetch("/members/me/leave", { method: "POST" });
+}
+
+export function withdrawLeaveRequest(): Promise<LeaveState> {
+  return apiFetch<LeaveState>("/members/me/leave", { method: "DELETE" });
+}
+
+export async function listLeaveRequests(): Promise<LeaveRequest[]> {
+  const rows = await apiFetch<(Omit<LeaveRequest, "id"> & { id: number })[]>(
+    "/members/leave-requests",
+  );
+  return rows.map((r) => ({ ...r, id: String(r.id) }));
+}
+
+export async function approveLeave(id: string): Promise<void> {
+  await apiFetch(`/members/${id}/leave/approve`, { method: "POST" });
+}
+
+export async function declineLeave(id: string): Promise<void> {
+  await apiFetch(`/members/${id}/leave/decline`, { method: "POST" });
+}

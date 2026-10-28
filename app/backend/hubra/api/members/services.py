@@ -316,6 +316,31 @@ class MemberService:
         return member, affected_group_ids  # type: ignore[return-value]
 
     @staticmethod
+    def leave(member: Member) -> set[int]:
+        """The member leaves the club: archived, and the account unlinked.
+
+        Returns the affected group ids before commit. The last owner can't
+        leave; another owner has to be named first.
+        """
+        _check_last_owner(member)
+        affected_group_ids = _clear_member_all_associations(member.id)
+        member.archived_at = datetime.now(timezone.utc)
+        member.leave_requested_at = None
+        from hubra.core.services.managed_mail import disable_member_mail
+
+        disable_member_mail(member.id)
+        if member.user_id is not None:
+            from hubra.core.models.user_tenant import UserTenant
+            from hubra.core.tenant.context import current_tenant
+
+            tenant = current_tenant()
+            if tenant is not None:
+                db.session.query(UserTenant).filter_by(
+                    user_id=member.user_id, tenant_id=tenant.id
+                ).delete()
+        return affected_group_ids
+
+    @staticmethod
     def unarchive(member_id: int) -> Member:
         """Unarchive the member. Returns member before commit."""
         member = db.session.scalar(
@@ -1420,6 +1445,20 @@ class MembersService:
             select(User).where(User.email == application.email)  # type: ignore[attr-defined]
         )
         if existing_user:
+            # Someone who left comes back as the member they were.
+            former = db.session.scalar(
+                select(Member)
+                .where(Member.user_id == existing_user.id)
+                .where(Member.archived_at.isnot(None))
+            )
+            if former is not None:
+                former.archived_at = None
+                former.leave_requested_at = None
+                # Back as an ordinary member, whatever roles they had before.
+                role = db.session.scalar(select(Role).where(Role.name == "Member"))
+                former.roles = [role] if role is not None else []
+                link_user_to_tenant(existing_user.id)
+                return former, None
             existing = db.session.scalar(
                 select(Member.id).where(Member.user_id == existing_user.id)
             )

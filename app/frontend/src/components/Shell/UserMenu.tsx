@@ -2,12 +2,14 @@ import { Group, Text, Avatar, Divider, Box, UnstyledButton, Stack, ScrollArea } 
 import { IconLogout, IconBuilding } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
 import { useAuth, useNav, useData } from '@/context/AppContext'
+import { useInstance } from '@/context/InstanceContext'
 import { initials, contrastColor } from './nav'
 
 export function UserMenu() {
   const { t } = useT()
   const { setPhase, currentUser } = useAuth()
   const { go, setUserMenuOpen } = useNav()
+  const { ssoUrl } = useInstance()
   const { myTenants, switchTenant } = useData()
   const name = currentUser?.name ?? ''
   const email = currentUser?.publicEmail || currentUser?.email || ''
@@ -93,8 +95,8 @@ export function UserMenu() {
         <Stack gap={0}>
           <UnstyledButton
             onClick={() => {
-              go('/app/account')
-              setUserMenuOpen(false)
+              // The account (name, email, password, sessions) lives on SSO.
+              window.location.assign(`${ssoUrl}/account`)
             }}
             style={{
               height: 36,

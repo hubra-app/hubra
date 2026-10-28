@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Badge, Group, Paper, Stack, Switch, Table, Text, Title } from '@mantine/core'
 import { useAdmin } from '@/context/AdminContext'
 import { tr } from '@/lang'
+import { MODULE_DE } from '@/moduleLabels'
 import { getTenantModules, setTenantModule, type TenantModule } from '@/api/tenants'
 
 /**
@@ -25,7 +26,13 @@ export function TenantModules({ tenantId }: { tenantId: number }) {
     }
   }
 
-  const optional = modules.filter((m) => !m.required)
+  // Shipped modules in German; plugins keep their manifest's texts.
+  const optional = modules
+    .filter((m) => !m.required)
+    .map((m) => {
+      const de = m.plugin ? undefined : MODULE_DE[m.code]
+      return de ? { ...m, name: tr(de[0], m.name), description: tr(de[1], m.description) } : m
+    })
 
   return (
     <Paper withBorder p="lg" mb={20}>

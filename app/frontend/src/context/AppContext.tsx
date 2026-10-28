@@ -269,6 +269,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const modulesLoaded = modulesData !== undefined
   // Data of a switched-off module would answer 403, so only load what is on.
   const moduleQuery = (code: string) => queryEnabled && modulesMap[code] === true
+  // Lists the member may not read answer 403: skip them too.
+  const mayRead = (key: string) =>
+    permissions.includes('*') || (currentUser?.roles?.includes('Admin') ?? false) || permissions.includes(key)
 
   const { data: eventsData } = useQuery({
     queryKey: ['events'],
@@ -288,7 +291,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const { data: invoicesData } = useQuery({
     queryKey: ['invoices'],
     queryFn: listInvoices,
-    enabled: moduleQuery('finance'),
+    enabled: moduleQuery('finance') && mayRead('finance.invoices.read'),
   })
   const { data: dashboardData } = useQuery({
     queryKey: ['dashboard-summary'],
@@ -298,7 +301,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const { data: applicationsData } = useQuery({
     queryKey: ['applications'],
     queryFn: listApplications,
-    enabled: queryEnabled,
+    enabled: queryEnabled && mayRead('applications.applications.read'),
   })
   const { data: groupsData } = useQuery({
     queryKey: ['groups'],

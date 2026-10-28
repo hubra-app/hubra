@@ -5,7 +5,9 @@ import * as authApi from '@/api/auth'
 import { useAuth } from '@/context/AppContext'
 import { LastSeenBadge } from '@/components/ui'
 import { useT } from '@/locales/i18n'
+import { formatDate } from '@/format'
 import { PaymentPlanCard } from './PaymentPlanCard'
+import { LeaveClubCard } from './LeaveClubCard'
 
 export function AccountSettingsMembershipTab() {
   const { t } = useT()
@@ -42,7 +44,7 @@ export function AccountSettingsMembershipTab() {
             },
             {
               label: t('account.memberSince', 'Mitglied seit'),
-              value: currentUser?.joined ?? '?',
+              value: currentUser?.joined ? formatDate(currentUser.joined) : '?',
             },
             {
               label: t('common.roles', 'Rollen'),
@@ -54,7 +56,7 @@ export function AccountSettingsMembershipTab() {
             },
             {
               label: t('common.status', 'Status'),
-              value: currentUser?.status ?? '?',
+              value: currentUser?.status ? t(`status.${currentUser.status}`, currentUser.status) : '?',
             },
           ].map(({ label, value }) => (
             <div
@@ -184,6 +186,8 @@ export function AccountSettingsMembershipTab() {
           'Für Änderungen an Stufe, Gruppen oder Kategorien wende dich an den Vorstand.',
         )}
       </div>
+
+      <LeaveClubCard />
     </>
   )
 }

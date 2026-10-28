@@ -43,13 +43,14 @@ def list_modules():
     values are only included for members who may change them.
     """
     from hubra.api.permissions import (
-        _current_member,
         _derive_perm_key,
         _get_member_permission_keys,
         member_is_admin,
     )
 
-    member = _current_member()
+    from hubra.api.auth.helpers import get_current_member
+
+    member = get_current_member()  # members of this club only
     can_write = member is not None and (
         member_is_admin(member)
         or (

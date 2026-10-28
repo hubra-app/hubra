@@ -819,7 +819,11 @@ def _membership_in(tenant_id: int, user: User) -> str | None:
 
     try:
         set_search_path(tenant_id)
-        if db.session.scalar(select(Member.id).where(Member.user_id == user.id)):
+        if db.session.scalar(
+            select(Member.id).where(
+                Member.user_id == user.id, Member.archived_at.is_(None)
+            )
+        ):
             return "member"
         if db.session.scalar(
             select(Application.id).where(Application.email == user.email)

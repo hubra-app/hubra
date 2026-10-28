@@ -205,3 +205,33 @@ class TestCrossTenantPermissionScoping:
         # Both members share the same global User (same email), but are
         # separate Member entities in different tenants.
         assert member_a.email == member_b.email
+
+
+# ── Accounts without a member profile in the club ─────────────────────────────
+
+
+class TestNonMemberReads:
+    """Any signed-in account could read these club endpoints before."""
+
+    def test_club_endpoints_refuse_accounts_without_membership(self, client, db, seeded_db):
+        from hubra.core.models.user import User
+
+        outsider = User(
+            email="outsider@test.ch",
+            first_name="Out",
+            last_name="Sider",
+            private_email_verified=True,
+        )
+        outsider.set_password("password123")
+        db.session.add(outsider)
+        db.session.commit()
+        client.post(
+            "/api/v1/auth/login",
+            json={"email": "outsider@test.ch", "password": "password123"},
+        )
+
+        for path in ("/dashboard/summary", "/roles/", "/settings/", "/modules/"):
+            resp = client.get(f"/api/v1{path}")
+            assert resp.status_code == 403, (path, resp.status_code)
+        resp = client.put("/api/v1/settings/x", json={"value": "1"})
+        assert resp.status_code == 403

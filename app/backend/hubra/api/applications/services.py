@@ -138,8 +138,11 @@ class ApplicationsService:
 
         existing_user = db.session.scalar(select(_User).where(_User.email == email))
         if existing_user:
+            # A former member (archived) may ask to come back.
             existing_member = db.session.scalar(
-                select(Member.id).where(Member.user_id == existing_user.id)
+                select(Member.id).where(
+                    Member.user_id == existing_user.id, Member.archived_at.is_(None)
+                )
             )
             if existing_member:
                 raise_error(

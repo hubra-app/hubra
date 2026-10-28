@@ -14,7 +14,7 @@ const makeSchema = () =>
     .object({
       password: z
         .string()
-        .min(8, tr('Das Passwort braucht mindestens 8 Zeichen', 'Password must be at least 8 characters')),
+        .min(12, tr('Das Passwort braucht mindestens 12 Zeichen', 'Password must be at least 12 characters')),
       confirm: z.string(),
     })
     .refine((d) => d.password === d.confirm, {

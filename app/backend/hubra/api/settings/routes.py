@@ -35,6 +35,7 @@ _write_schema = SettingWriteSchema()
 @settings_bp.get("/")
 @jwt_required()
 def get_settings():
+    get_current_member()  # members of this club only
     all_settings = SettingsService.list()
 
     member = _current_member()
@@ -66,6 +67,7 @@ def get_settings():
 @settings_bp.put("/<string:key>")
 @jwt_required()
 def upsert_setting(key: str):
+    get_current_member()  # members of this club only
     body = request.get_json(silent=True) or {}
     try:
         data = _write_schema.load(body)
@@ -105,6 +107,7 @@ def upsert_setting(key: str):
 @settings_bp.delete("/<string:key>")
 @jwt_required()
 def delete_setting(key: str):
+    get_current_member()  # members of this club only
     if not member_is_admin(_current_member()):
         perms = _get_member_permission_keys(_current_member())
         setting = SettingService.get_setting(key)
@@ -133,6 +136,7 @@ def delete_setting(key: str):
 @settings_bp.post("/<string:key>/revert")
 @jwt_required()
 def revert_setting(key: str):
+    get_current_member()  # members of this club only
     if not member_is_admin(_current_member()):
         perms = _get_member_permission_keys(_current_member())
         setting = SettingService.get_setting(key)

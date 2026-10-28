@@ -134,6 +134,19 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
       </Paper>
 
       <Paper withBorder p="lg">
+        <Title order={3} mb="md">{t('clubSettings.membership', 'Mitgliedschaft')}</Title>
+        <Switch
+          label={t('clubSettings.leaveRequiresApproval', 'Austritt nur mit Bestätigung')}
+          description={t(
+            'clubSettings.leaveRequiresApprovalHint',
+            'Ein: Mitglieder beantragen den Austritt, und ihr bestätigt ihn unter Mitglieder › Anträge. Aus: Mitglieder treten sofort selbst aus.',
+          )}
+          checked={form.leave_requires_approval ?? false}
+          onChange={(e) => update('leave_requires_approval', e.currentTarget.checked)}
+        />
+      </Paper>
+
+      <Paper withBorder p="lg">
         <Title order={3} mb="md">{t('clubSettings.banner', 'Ankündigungsbanner')}</Title>
         <Stack gap={14}>
           <Switch

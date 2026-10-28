@@ -71,6 +71,8 @@ class ClubSettingsSchema(Schema):
 
     member_directory_visible = fields.Bool(required=False, allow_none=True)
     public_group_listing = fields.Bool(required=False, allow_none=True)
+    # Members ask to leave and a club admin approves (off: they leave at once).
+    leave_requires_approval = fields.Bool(required=False, allow_none=True)
 
     announcement_banner_text = fields.Str(required=False, allow_none=True)
     announcement_banner_active = fields.Bool(required=False, allow_none=True)
