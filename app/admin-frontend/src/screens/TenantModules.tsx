@@ -52,9 +52,16 @@ export function TenantModules({ tenantId }: { tenantId: number }) {
             {optional.map((m) => (
               <Table.Tr key={m.code}>
                 <Table.Td>
-                  <Text size="sm" fw={600}>
-                    {m.name}
-                  </Text>
+                  <Group gap={6}>
+                    <Text size="sm" fw={600}>
+                      {m.name}
+                    </Text>
+                    {m.plugin && (
+                      <Badge size="xs" variant="outline" color="gray">
+                        Plugin {m.plugin.name} {m.plugin.version}
+                      </Badge>
+                    )}
+                  </Group>
                   <Text size="xs" c="dimmed">
                     {m.description}
                   </Text>

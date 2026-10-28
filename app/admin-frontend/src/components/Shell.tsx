@@ -6,6 +6,7 @@ import {
   IconLogout,
   IconClipboardList,
   IconKey,
+  IconPuzzle,
 } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
 
@@ -23,6 +24,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
       : []),
     ...(hasGlobalPermission('roles.manage')
       ? [{ path: '/app/roles', label: 'Roles', icon: <IconKey size={22} /> }]
+      : []),
+    ...(hasGlobalPermission('plugins.manage')
+      ? [{ path: '/app/plugins', label: 'Plugins', icon: <IconPuzzle size={22} /> }]
       : []),
   ]
 

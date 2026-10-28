@@ -5,6 +5,7 @@ import { MyTenantsTab } from '@/screens/MyTenantsTab'
 import { TenantRequestsTab } from '@/screens/TenantRequestsTab'
 import { GlobalAuditTab } from '@/screens/GlobalAuditTab'
 import { RolesTab } from '@/screens/RolesTab'
+import { MarketplaceTab } from '@/screens/MarketplaceTab'
 import { useAdmin } from '@/context/AdminContext'
 
 export function AdminPortal() {
@@ -19,9 +20,11 @@ export function AdminPortal() {
         ? 'requests'
         : location.pathname === '/app/roles'
           ? 'roles'
-          : location.pathname === '/app/my-tenants'
-            ? 'my-tenants'
-            : 'tenants'
+          : location.pathname === '/app/plugins'
+            ? 'plugins'
+            : location.pathname === '/app/my-tenants'
+              ? 'my-tenants'
+              : 'tenants'
 
   const tabs = [
     { id: 'my-tenants', label: 'My Spaces' },
@@ -29,6 +32,7 @@ export function AdminPortal() {
     { id: 'requests', label: 'My Requests' },
     ...(hasGlobalPermission('audit.read') ? [{ id: 'audit', label: 'Audit Log' }] : []),
     ...(hasGlobalPermission('roles.manage') ? [{ id: 'roles', label: 'Roles' }] : []),
+    ...(hasGlobalPermission('plugins.manage') ? [{ id: 'plugins', label: 'Plugins' }] : []),
   ]
 
   return (
@@ -50,7 +54,9 @@ export function AdminPortal() {
                   ? '/app/audit'
                   : id === 'roles'
                     ? '/app/roles'
-                    : '/app/my-tenants',
+                    : id === 'plugins'
+                      ? '/app/plugins'
+                      : '/app/my-tenants',
           )
         }
       />
@@ -59,6 +65,7 @@ export function AdminPortal() {
       {tab === 'requests' && <TenantRequestsTab />}
       {tab === 'audit' && hasGlobalPermission('audit.read') && <GlobalAuditTab />}
       {tab === 'roles' && hasGlobalPermission('roles.manage') && <RolesTab />}
+      {tab === 'plugins' && hasGlobalPermission('plugins.manage') && <MarketplaceTab />}
     </div>
   )
 }

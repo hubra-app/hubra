@@ -171,6 +171,16 @@ function AppRoutes() {
             </RequireGlobalPermission>
           }
         />
+        <Route
+          path="/app/plugins"
+          element={
+            <RequireGlobalPermission perm="plugins.manage">
+              <Shell>
+                <AdminPortal />
+              </Shell>
+            </RequireGlobalPermission>
+          }
+        />
         <Route path="/" element={<DefaultRoute />} />
         <Route path="*" element={<DefaultRoute />} />
       </Routes>

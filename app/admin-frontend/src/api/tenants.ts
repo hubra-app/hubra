@@ -242,6 +242,8 @@ export interface TenantModule {
   switchedOn: boolean
   allowed: boolean
   missingDependencies: string[]
+  /** Set when the module comes from a plugin. */
+  plugin?: { id: string; name: string; version: string; trust: string }
 }
 
 export async function getTenantModules(
