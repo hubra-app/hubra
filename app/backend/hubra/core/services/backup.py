@@ -44,21 +44,15 @@ _RETENTION: dict[str, int] = {
 
 
 def _get_s3_config() -> dict[str, str]:
-    """Read S3 connection settings from KV store with env-var fallback."""
-    from hubra.api.settings.services import SettingService
-
-    def _get(key: str, env_key: str) -> str:
-        val = SettingService.get(key)
-        if val:
-            return val
-        return current_app.config.get(env_key, "")
+    """Where backups are stored: a platform setting, defaulting to env."""
+    from hubra.core.services import platform_settings
 
     return {
-        "endpoint": _get("backup.s3_endpoint", "BACKUP_S3_ENDPOINT"),
-        "bucket": _get("backup.s3_bucket", "BACKUP_S3_BUCKET"),
-        "access_key": _get("backup.s3_access_key", "BACKUP_S3_ACCESS_KEY"),
-        "secret_key": _get("backup.s3_secret_key", "BACKUP_S3_SECRET_KEY"),
-        "region": _get("backup.s3_region", "BACKUP_S3_REGION") or "default",
+        "endpoint": platform_settings.get("backup.s3.endpoint"),
+        "bucket": platform_settings.get("backup.s3.bucket"),
+        "access_key": platform_settings.get("backup.s3.access_key"),
+        "secret_key": platform_settings.get("backup.s3.secret_key"),
+        "region": platform_settings.get("backup.s3.region") or "default",
     }
 
 
@@ -170,7 +164,7 @@ class BackupService:
             s3_client = _get_s3_client()
             if s3_client is None:
                 raise RuntimeError(
-                    "S3 is not configured — set backup.s3_* settings or env vars"
+                    "S3 is not configured — set it under Platform settings or BACKUP_S3_* env vars"
                 )
 
             cfg = _get_s3_config()

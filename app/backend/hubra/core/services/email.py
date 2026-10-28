@@ -17,8 +17,8 @@ set in the manager portal, defaults from SMTP_* / MAIL_FROM in env):
 * Club mail is sent from the platform sender with the club's
   ``club.notification_sender_email`` as Reply-To.  A club with its own sender
   mailbox (InternalKey ``mail.smtp.user`` / ``mail.smtp.password``, from the
-  mail module) sends as that mailbox, through ``mail.smtp_host`` if the club
-  set one.
+  mail module) sends as that mailbox, through the mail module's own server
+  (``ZONEMTA_SMTP_HOST``) or else the platform relay.
 * With no platform sender configured, both fall back to the club sender, as
   before the platform relay existed.
 """
@@ -107,6 +107,14 @@ def _club_mailbox() -> tuple[str, str] | None:
     except Exception:
         return None
     return (user, password) if user and password else None
+
+
+def _mailbox_route(platform, mailbox: tuple[str, str]) -> _Route:
+    """A club mailbox logs in to the mail module's server, not an outside relay."""
+    cfg = current_app.config
+    host = cfg.get("ZONEMTA_SMTP_HOST") or platform.host
+    port = int(cfg.get("ZONEMTA_SMTP_PORT") or 0) or platform.port
+    return _Route(host, port, *mailbox)
 
 
 def _send_via_smtp(
@@ -205,12 +213,7 @@ def _send(
     mailbox = None if system else _club_mailbox()
     if club_sender and mailbox:
         sender_email, sender_name = club_sender, club_name or "Club Notifications"
-        port = _get_setting("mail.smtp_port")
-        route = _Route(
-            _get_setting("mail.smtp_host") or platform.host,
-            int(port) if port.isdigit() else platform.port,
-            *mailbox,
-        )
+        route = _mailbox_route(platform, mailbox)
     elif platform.sender_email:
         sender_email = platform.sender_email
         sender_name = (

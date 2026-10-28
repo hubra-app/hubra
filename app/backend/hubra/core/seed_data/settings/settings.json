@@ -40,38 +40,6 @@
     "description": "Domain used for member email addresses and mail routing (e.g. hubra.club). Seeded from MAIL_DOMAIN env var."
   },
   {
-    "key": "mail.smtp_host",
-    "value": null,
-    "namespace": "mail",
-    "validation_type": "host",
-    "label": "SMTP host",
-    "description": "Outgoing SMTP server hostname. Seeded from SMTP_HOST or ZONEMTA_SMTP_HOST env var."
-  },
-  {
-    "key": "mail.smtp_port",
-    "value": null,
-    "namespace": "mail",
-    "validation_type": "port",
-    "label": "SMTP port",
-    "description": "Outgoing SMTP server port (typically 587 for STARTTLS). Seeded from SMTP_PORT or ZONEMTA_SMTP_PORT env var."
-  },
-  {
-    "key": "mail.smtp_user",
-    "value": null,
-    "namespace": "mail",
-    "validation_type": "email",
-    "label": "SMTP username",
-    "description": "System SMTP user (noreply address). Seeded from MAIL_DOMAIN env var as noreply@<domain>."
-  },
-  {
-    "key": "mail.smtp_password",
-    "value": null,
-    "namespace": "mail",
-    "validation_type": null,
-    "label": "SMTP password",
-    "description": "Password for system SMTP authentication. Generated once during seed."
-  },
-  {
     "key": "club.email_schema",
     "value": "firstname.lastname",
     "namespace": "general",

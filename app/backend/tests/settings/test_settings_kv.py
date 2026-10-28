@@ -51,7 +51,7 @@ def test_put_settings_with_validation_type(client, db, auth_headers):
 
 def test_put_settings_rejects_invalid_email(client, db, auth_headers):
     resp = client.put(
-        "/api/v1/settings/mail.smtp_user",
+        "/api/v1/settings/club.contact_email",
         json={"value": "not-an-email", "validation_type": "email"},
         headers=auth_headers,
     )
@@ -60,7 +60,7 @@ def test_put_settings_rejects_invalid_email(client, db, auth_headers):
 
 def test_put_settings_accepts_valid_email(client, db, auth_headers):
     resp = client.put(
-        "/api/v1/settings/mail.smtp_user",
+        "/api/v1/settings/club.contact_email",
         json={"value": "user@example.com", "validation_type": "email"},
         headers=auth_headers,
     )
@@ -87,7 +87,7 @@ def test_put_settings_accepts_valid_url(client, db, auth_headers):
 
 def test_put_settings_rejects_invalid_port(client, db, auth_headers):
     resp = client.put(
-        "/api/v1/settings/mail.smtp_port",
+        "/api/v1/settings/test.port",
         json={"value": "999999", "validation_type": "port"},
         headers=auth_headers,
     )
@@ -96,7 +96,7 @@ def test_put_settings_rejects_invalid_port(client, db, auth_headers):
 
 def test_put_settings_accepts_valid_port(client, db, auth_headers):
     resp = client.put(
-        "/api/v1/settings/mail.smtp_port",
+        "/api/v1/settings/test.port",
         json={"value": "587", "validation_type": "port"},
         headers=auth_headers,
     )
