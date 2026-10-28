@@ -2,10 +2,10 @@
 # Create the secrets that stay out of git. Run once per cluster, and again after
 # changing .env (then `kubectl -n hubra rollout restart deployment`).
 #
-#   REGISTRY_USER=... REGISTRY_PASSWORD=... deploy/create-secrets.sh
+#   GHCR_USER=<github login> GHCR_TOKEN=<token with read:packages> deploy/create-secrets.sh
 #
 # Secret hubra-env:             every KEY= in .env, DATABASE_URL pointed at the postgres Service
-# Secret gitlab-registry:       if REGISTRY_USER/REGISTRY_PASSWORD are set (deploy token, read_registry)
+# Secret ghcr-pull:             if GHCR_USER/GHCR_TOKEN are set (needed while the images are private)
 # Secret cloudflare-credentials: if modules/mail/certbot/cloudflare.ini exists (mail module)
 set -eu
 
@@ -29,9 +29,9 @@ sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' "$ENV_FILE" | sort -u | grep -vx 
 echo "DATABASE_URL=postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@postgres:${POSTGRES_PORT:-5432}/$POSTGRES_DB" >> "$env_out"
 apply create secret generic hubra-env --from-env-file="$env_out"
 
-if [ -n "${REGISTRY_USER:-}" ]; then
-  apply create secret docker-registry gitlab-registry --docker-server=registry.gitlab.com \
-    --docker-username="$REGISTRY_USER" --docker-password="$REGISTRY_PASSWORD"
+if [ -n "${GHCR_USER:-}" ]; then
+  apply create secret docker-registry ghcr-pull --docker-server=ghcr.io \
+    --docker-username="$GHCR_USER" --docker-password="$GHCR_TOKEN"
 fi
 
 if [ -f "$ROOT/modules/mail/certbot/cloudflare.ini" ]; then

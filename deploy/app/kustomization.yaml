@@ -2,8 +2,9 @@
 # Flux applies this directory (deploy/flux/app.yaml). By hand:
 #   kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/app | kubectl apply -f -
 #
-# Secrets are not in git: Secret `hubra-env` (from .env) and `gitlab-registry`
-# are created once with deploy/create-secrets.sh.
+# Secrets are not in git: Secret `hubra-env` (from .env) and `ghcr-pull` are
+# created once with deploy/create-secrets.sh. Host names: ingress.yaml and the
+# hubra-frontend ConfigMap below.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
@@ -30,18 +31,33 @@ configMapGenerator:
     files:
       - settings.yaml=../../settings.yaml
 
-# Images pushed by GitLab CI. Set newName to your $CI_REGISTRY_IMAGE and pin
-# newTag to a commit SHA to deploy a specific build.
+# Runtime settings of the three SPA images (app/deploy/nginx/40-hubra-runtime.sh).
+# Keep the host names in step with ingress.yaml.
+  - name: hubra-frontend
+    literals:
+      - VITE_API_BASE=https://api.vollbuild.ch/api
+      - VITE_SSO_URL=https://sso.vollbuild.ch
+      - VITE_COS_URL=https://cos.vollbuild.ch
+      - VITE_TENANT_APP_URL=https://cos.vollbuild.ch
+      - VITE_MANAGE_URL=https://manage.vollbuild.ch
+      - VITE_ADMIN_PORTAL_URL=https://manage.vollbuild.ch
+      # k3s pod network: trust X-Forwarded-For from Traefik.
+      - REAL_IP_FROM=10.42.0.0/16
+
+# Images built by .github/workflows/images.yml. `latest` follows main; pin
+# newTag to a release (1.2.3) or a build tag to stay on one version. The
+# $imagepolicy markers let Flux image automation bump the tags
+# (deploy/flux-image-automation, optional).
 images:
   - name: hubra/backend
-    newName: registry.gitlab.com/CHANGE-ME/hubra/backend
-    newTag: latest
+    newName: ghcr.io/hubra-app/hubra/backend
+    newTag: latest # {"$imagepolicy": "flux-system:hubra-backend:tag"}
   - name: hubra/frontend
-    newName: registry.gitlab.com/CHANGE-ME/hubra/frontend
-    newTag: latest
+    newName: ghcr.io/hubra-app/hubra/frontend
+    newTag: latest # {"$imagepolicy": "flux-system:hubra-frontend:tag"}
   - name: hubra/admin-frontend
-    newName: registry.gitlab.com/CHANGE-ME/hubra/admin-frontend
-    newTag: latest
+    newName: ghcr.io/hubra-app/hubra/admin-frontend
+    newTag: latest # {"$imagepolicy": "flux-system:hubra-admin-frontend:tag"}
   - name: hubra/sso-frontend
-    newName: registry.gitlab.com/CHANGE-ME/hubra/sso-frontend
-    newTag: latest
+    newName: ghcr.io/hubra-app/hubra/sso-frontend
+    newTag: latest # {"$imagepolicy": "flux-system:hubra-sso-frontend:tag"}

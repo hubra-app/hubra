@@ -25,8 +25,8 @@ resources:
 
 images:
   - name: hubra/haraka
-    newName: registry.gitlab.com/CHANGE-ME/hubra/haraka
+    newName: ghcr.io/hubra-app/hubra/haraka
     newTag: latest
   - name: hubra/zonemta
-    newName: registry.gitlab.com/CHANGE-ME/hubra/zonemta
+    newName: ghcr.io/hubra-app/hubra/zonemta
     newTag: latest

@@ -1,6 +1,6 @@
 # Static SPAs served by nginx (production target of each app/*/Dockerfile).
-# VITE_API_BASE is baked in at image build time, so these images are built per
-# environment (see the frontend jobs in .gitlab-ci.yml).
+# Host names come from the hubra-frontend ConfigMap at container start
+# (kustomization.yaml), so the same images serve any install.
 apiVersion: v1
 kind: Service
 metadata:
@@ -30,6 +30,9 @@ spec:
       containers:
         - name: nginx
           image: hubra/frontend
+          envFrom:
+            - configMapRef:
+                name: hubra-frontend
           ports:
             - name: http
               containerPort: 80
@@ -68,6 +71,9 @@ spec:
       containers:
         - name: nginx
           image: hubra/admin-frontend
+          envFrom:
+            - configMapRef:
+                name: hubra-frontend
           ports:
             - name: http
               containerPort: 80
@@ -106,6 +112,9 @@ spec:
       containers:
         - name: nginx
           image: hubra/sso-frontend
+          envFrom:
+            - configMapRef:
+                name: hubra-frontend
           ports:
             - name: http
               containerPort: 80

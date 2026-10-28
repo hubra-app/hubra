@@ -1,0 +1,141 @@
+# Optional: Flux image automation. Flux watches GHCR for new main builds
+# (tags main-<timestamp>-<sha>, pushed by .github/workflows/images.yml),
+# writes the newest tag into deploy/app/kustomization.yaml, commits that to
+# main and then deploys it. Without this, `latest` is deployed and you roll
+# out new builds yourself (docs/k3s.md).
+#
+# Needs the image controllers and a deploy key with write access:
+#   flux bootstrap github ... --components-extra=image-reflector-controller,image-automation-controller --read-write-key
+# and the GHCR pull secret in flux-system while the packages are private:
+#   kubectl -n flux-system create secret docker-registry ghcr-pull \
+#     --docker-server=ghcr.io --docker-username=<login> --docker-password=<token>
+# Then add deploy/flux/image-automation.yaml.example as deploy/flux/image-automation.yaml.
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: hubra-backend
+  namespace: flux-system
+spec:
+  image: ghcr.io/hubra-app/hubra/backend
+  interval: 5m
+  secretRef:
+    name: ghcr-pull
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: hubra-backend
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: hubra-backend
+  filterTags:
+    pattern: '^main-(?P<ts>[0-9]+)-[a-f0-9]+$'
+    extract: '$ts'
+  policy:
+    numerical:
+      order: asc
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: hubra-frontend
+  namespace: flux-system
+spec:
+  image: ghcr.io/hubra-app/hubra/frontend
+  interval: 5m
+  secretRef:
+    name: ghcr-pull
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: hubra-frontend
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: hubra-frontend
+  filterTags:
+    pattern: '^main-(?P<ts>[0-9]+)-[a-f0-9]+$'
+    extract: '$ts'
+  policy:
+    numerical:
+      order: asc
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: hubra-admin-frontend
+  namespace: flux-system
+spec:
+  image: ghcr.io/hubra-app/hubra/admin-frontend
+  interval: 5m
+  secretRef:
+    name: ghcr-pull
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: hubra-admin-frontend
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: hubra-admin-frontend
+  filterTags:
+    pattern: '^main-(?P<ts>[0-9]+)-[a-f0-9]+$'
+    extract: '$ts'
+  policy:
+    numerical:
+      order: asc
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: hubra-sso-frontend
+  namespace: flux-system
+spec:
+  image: ghcr.io/hubra-app/hubra/sso-frontend
+  interval: 5m
+  secretRef:
+    name: ghcr-pull
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: hubra-sso-frontend
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: hubra-sso-frontend
+  filterTags:
+    pattern: '^main-(?P<ts>[0-9]+)-[a-f0-9]+$'
+    extract: '$ts'
+  policy:
+    numerical:
+      order: asc
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageUpdateAutomation
+metadata:
+  name: hubra
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        name: fluxcdbot
+        email: fluxcdbot@users.noreply.github.com
+      messageTemplate: "chore(deploy): roll out new images"
+    push:
+      branch: main
+  update:
+    path: ./deploy/app
+    strategy: Setters
