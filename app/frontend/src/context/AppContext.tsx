@@ -337,10 +337,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     (slug: string, keepPath = false) => {
       apiSwitchTenant(slug).then(() => {
         setActiveTenant(slug)
-        if (!keepPath) navigate(`/${slug}/app/dashboard`)
+        // The router runs below /<club>: another club is a new page.
+        if (!keepPath) window.location.assign(`/${encodeURIComponent(slug)}/app/dashboard`)
       })
     },
-    [navigate, setActiveTenant],
+    [setActiveTenant],
   )
 
   const setEvents = useCallback(

@@ -85,6 +85,8 @@ export async function loadAllTranslationsFromApi() {
     // API unavailable — use static fallbacks only
   }
   await Promise.all(locales.map((loc) => loadTranslationsFromApi(loc)));
+  // addResource is silent: re-render the screens that already showed keys.
+  await i18n.changeLanguage(i18n.language);
   flushAccessedKeys();
 }
 

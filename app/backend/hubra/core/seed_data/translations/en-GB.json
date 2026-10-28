@@ -1198,5 +1198,10 @@
   "verify.pleaseWait": "Please wait",
   "verify.verification.failed": "Verification failed",
   "verify.verification.failedTitle": "Verification failed title",
-  "verify.verifyingEmail": "Verifying email"
+  "verify.verifyingEmail": "Verifying email",
+  "shell.breadcrumbs.externalParties": "External parties",
+  "settings.tabs.settings": "Settings",
+  "settings.tabs.modules": "Modules",
+  "settings.tabs.club": "Club",
+  "settings.tabs.domains": "Domains"
 }

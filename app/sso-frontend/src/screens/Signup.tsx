@@ -73,7 +73,7 @@ export function SignupScreen() {
             <Box>
               <Text fz={20} className="wordmark">hubra</Text>
               <Text fz="xs" c="#6131c4" ff="'JetBrains Mono', monospace" style={{ letterSpacing: '0.06em' }}>
-                Makerspace · Schwyz
+                Club management
               </Text>
             </Box>
           </Group>

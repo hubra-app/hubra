@@ -59,6 +59,11 @@ export function LoginScreen() {
         values.keepSignedIn,
       )
       if (res.requiresTenantSelection && res.tenants) {
+        if (res.tenants.length === 1) {
+          // Nothing to choose: open the one club straight away.
+          await handleSelectTenant(res.tenants[0].tenant_slug)
+          return
+        }
         setTenants(res.tenants)
         return
       }
@@ -120,16 +125,16 @@ export function LoginScreen() {
                 ff="'JetBrains Mono', monospace"
                 style={{ letterSpacing: '0.06em' }}
               >
-                Makerspace · Schwyz
+                Club management
               </Text>
             </Box>
           </Group>
 
           <Title order={2} mb={6}>
-            Select a Space
+            Choose a club
           </Title>
           <Text size="sm" c="dimmed" mb={28}>
-            Your account has access to multiple spaces. Choose one to continue.
+            Your account belongs to several clubs. Choose the one to open.
           </Text>
 
           {error && (
@@ -184,7 +189,7 @@ export function LoginScreen() {
                 ff="'JetBrains Mono', monospace"
                 style={{ letterSpacing: '0.06em' }}
               >
-                Makerspace · Schwyz
+                Club management
               </Text>
             </Box>
           </Group>

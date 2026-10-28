@@ -1218,5 +1218,10 @@
   "verify.pleaseWait": "Please wait",
   "verify.verification.failed": "Verification failed",
   "verify.verification.failedTitle": "Verification failed title",
-  "verify.verifyingEmail": "Verifying email"
+  "verify.verifyingEmail": "Verifying email",
+  "shell.breadcrumbs.externalParties": "Externi Partner",
+  "settings.tabs.settings": "Iistellige",
+  "settings.tabs.modules": "Module",
+  "settings.tabs.club": "Verein",
+  "settings.tabs.domains": "Domains"
 }

@@ -44,7 +44,7 @@ export function ForgotPassword() {
           <div>
             <div className="wordmark" style={{ fontSize: 20, color: '#1a1625' }}>hubra</div>
             <div style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#6131c4', fontFamily: '"JetBrains Mono"', letterSpacing: '0.06em' }}>
-              Makerspace · Schwyz
+              Club management
             </div>
           </div>
         </div>

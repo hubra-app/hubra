@@ -1,8 +1,9 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
-import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { ErrorBoundary as RouteErrorBoundary } from 'react-error-boundary'
 import { useT } from '@/locales/i18n'
 import { AppProvider, useApp } from '@/context/AppContext'
+import { URL_CLUB } from '@/clubBase'
 import { InstanceProvider, safeReturnPath, useInstance } from '@/context/InstanceContext'
 import { RequireModule } from '@/modules/RequireModule'
 import { usePluginLoader, usePluginRoutes } from '@/plugins'
@@ -205,21 +206,14 @@ function AuthRoute({
 /** /app/*: the club's pages on a single-club install, the SSO portal otherwise. */
 function SingleClubRoutes() {
   const { standalone } = useInstance()
-  return standalone ? <PrivateRoutes /> : <SsoRedirect path="login" />
-}
-
-/** /<club>/app/*: a single-club install drops the club from the path. */
-function ClubRoutes() {
-  const { standalone } = useInstance()
-  const { pathname, search } = useLocation()
-  if (standalone)
-    return <Navigate to={pathname.replace(/^\/[^/]+\/app/, '/app') + search} replace />
-  return <PrivateRoutes />
+  // On multi-club pages the router runs below /<club> (clubBase.ts).
+  return standalone || URL_CLUB ? <PrivateRoutes /> : <SsoRedirect path="login" />
 }
 
 /** `/`: into the club, or to the sign-in. */
 function HomeRedirect() {
   const { standalone, homePath } = useInstance()
+  if (URL_CLUB) return <Navigate to="/app/dashboard" replace />
   if (!standalone) return <SsoRedirect path="login" />
   if (!homePath)
     return (
@@ -242,14 +236,14 @@ function HomeRedirect() {
 function PrivateRoutes() {
   const location = useLocation()
   const { tenantSlug, switchTenant } = useApp()
-  const { tenantSlug: urlSlug } = useParams<{ tenantSlug: string }>()
+  const { standalone } = useInstance()
 
   useEffect(() => {
-    if (urlSlug && urlSlug !== tenantSlug) {
+    if (!standalone && URL_CLUB && URL_CLUB !== tenantSlug) {
       // The club in the URL becomes active; a deep link keeps its page.
-      switchTenant(urlSlug, true)
+      switchTenant(URL_CLUB, true)
     }
-  }, [urlSlug, tenantSlug, switchTenant])
+  }, [standalone, tenantSlug, switchTenant])
 
   const pluginsReady = usePluginLoader()
   const pluginRoutes = usePluginRoutes()
@@ -641,12 +635,9 @@ function AppInner() {
       {/* Public — tenant-specific */}
       <Route path="/apply" element={<ApplyScreen />} />
 
-      {/* / and legacy /app/* → into the club (the SSO portal resolves it on multi-club) */}
+      {/* / and /app/* → into the club; multi-club pages run below /<club> (clubBase.ts) */}
       <Route path="/" element={<HomeRedirect />} />
       <Route path="/app/*" element={<SingleClubRoutes />} />
-
-      {/* Private — tenant-scoped */}
-      <Route path="/:tenantSlug/app/*" element={<ClubRoutes />} />
 
       {/* Default */}
       <Route path="/*" element={<NotFoundScreen />} />
