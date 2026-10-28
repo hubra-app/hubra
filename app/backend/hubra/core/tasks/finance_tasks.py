@@ -167,8 +167,9 @@ def _generate_invoices() -> dict:
       - formula:    (baseline - coefficient * sum(deducted_tier_annual_fees)) / members_in_tier
                     per year, divided into periods, rounded up to round_to
 
-    Idempotency guard: skips a member if an Open invoice already exists for the
-    current billing period (current month for 'monthly', current year for 'yearly').
+    Idempotency guard: skips a member if a membership invoice (in any status)
+    already exists for the current billing period (current month for
+    'monthly', current year for 'yearly').
 
     Sends an invoice_generated email for each created invoice and records the
     dispatch in InvoiceReminderHistory.
@@ -220,17 +221,19 @@ def _generate_invoices() -> dict:
         cycle = billing_cycle_for(member, tier)
         period_start, period_end = period_window(today, cycle)
 
+        # Any membership invoice of this period counts, paid or not: the
+        # task runs daily, and a paid fee must not be billed again.
         existing = db.session.scalar(
             select(Invoice.id)
             .where(Invoice.member_id == member.id)
-            .where(Invoice.status == "Open")
+            .where(Invoice.purpose == "membership")
             .where(Invoice.issued >= period_start)
             .where(Invoice.issued <= period_end)
         )
 
         if existing is not None:
             logger.info(
-                "invoice_generation_skipped member_id=%s reason=open_invoice_exists_for_period invoice_id=%s",
+                "invoice_generation_skipped member_id=%s reason=invoice_exists_for_period invoice_id=%s",
                 member.id,
                 existing,
             )
