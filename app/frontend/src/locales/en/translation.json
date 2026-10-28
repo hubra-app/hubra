@@ -535,7 +535,12 @@
     "searchPlaceholder": "Search…",
     "saveFailed": "Save failed",
     "deleted": "Deleted",
-    "moreActions": "More actions"
+    "moreActions": "More actions",
+    "perPage": "Rows per page",
+    "pageFirst": "First page",
+    "pagePrevious": "Previous page",
+    "pageNext": "Next page",
+    "pageLast": "Last page"
   },
   "dashboard": {
     "activeMembers": "Active members",

@@ -136,6 +136,7 @@ export function Pagination({
         onChange={(v) => setPerPage(Number(v))}
         data={PER_PAGE_OPTS.map((n) => ({ value: String(n), label: String(n) }))}
         style={{ width: 80 }}
+        aria-label={tr('Einträge pro Seite', 'Rows per page')}
       />
       <Text size="sm" c="dimmed" flex={1}>
         {start}–{end} {tr('von', 'of')} {total}
@@ -147,6 +148,14 @@ export function Pagination({
         size="sm"
         withEdges
         boundaries={1}
+        getControlProps={(control) => ({
+          'aria-label': {
+            first: tr('Erste Seite', 'First page'),
+            previous: tr('Vorherige Seite', 'Previous page'),
+            next: tr('Nächste Seite', 'Next page'),
+            last: tr('Letzte Seite', 'Last page'),
+          }[control],
+        })}
       />
     </Group>
   )

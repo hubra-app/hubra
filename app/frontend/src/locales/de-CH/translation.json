@@ -535,7 +535,12 @@
     "searchPlaceholder": "Suchen …",
     "saveFailed": "Speichern fehlgeschlagen",
     "deleted": "Gelöscht",
-    "moreActions": "Weitere Aktionen"
+    "moreActions": "Weitere Aktionen",
+    "perPage": "Einträge pro Seite",
+    "pageFirst": "Erste Seite",
+    "pagePrevious": "Vorherige Seite",
+    "pageNext": "Nächste Seite",
+    "pageLast": "Letzte Seite"
   },
   "dashboard": {
     "activeMembers": "Aktive Mitglieder",
