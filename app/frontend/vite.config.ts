@@ -23,7 +23,9 @@ export default defineConfig({
     },
   },
   build: {
-    modulePreload: false,
+    // A lazy screen fetches its own imports together with itself instead of
+    // after it (one round trip less on every first visit to a screen).
+    modulePreload: { polyfill: false },
     sourcemap: false,
     rollupOptions: {
       output: {
