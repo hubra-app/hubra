@@ -1,8 +1,10 @@
 """Feature catalog and per-tenant feature grants.
 
-Feature is a public-schema catalog of all available features.
-TenantFeature links a Tenant to a Feature with an explicit enabled flag
-and optional config JSONB, overriding the catalog's default_enabled.
+Feature is a public-schema catalog row per module (see vollbuild.modules);
+it is kept in sync with the module manifests.  TenantFeature holds one
+club's switch for a module, whether the platform manager allows it, and
+the module's settings for that club.  vollbuild.core.modules.state reads
+both.
 """
 
 from __future__ import annotations
@@ -63,6 +65,11 @@ class TenantFeature(db.Model):
         index=True,
     )
     enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default="1"
+    )
+    # Set by the platform manager.  A club cannot switch on a module that
+    # is not allowed for it.
+    allowed: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True, server_default="1"
     )
     config: Mapped[dict | None] = mapped_column(

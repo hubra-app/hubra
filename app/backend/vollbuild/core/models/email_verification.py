@@ -2,7 +2,7 @@
 
 Tokens reference the global User (not the tenant-scoped Member) because
 email verification is now global. The token table itself remains per-tenant
-(in TABLES_TO_CLONE) so that each tenant has its own verification token store,
+(cloned into every tenant schema) so that each tenant has its own verification token store,
 but the FK points to the public.users table.
 """
 

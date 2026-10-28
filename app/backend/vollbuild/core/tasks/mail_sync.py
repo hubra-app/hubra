@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import logging
 
+from vollbuild.core.modules import per_tenant_job
 from vollbuild.core.tasks import celery_app
 
 logger = logging.getLogger(__name__)
@@ -28,12 +29,11 @@ def sync_wildduck_message_counts(self) -> dict:
     counters, and upserts a MailboxFolder row for every folder returned.
     Fails for individual members are logged but do not abort the batch.
     """
-    from vollbuild.api.features.services import FeatureFlagService
+    return _sync_wildduck_message_counts()
 
-    if not FeatureFlagService.is_enabled_sync("mail"):
-        logger.debug("sync_wildduck_message_counts: mail feature disabled, skipping")
-        return {"ok": False, "reason": "mail disabled"}
 
+@per_tenant_job("mail")
+def _sync_wildduck_message_counts() -> dict:
     from sqlalchemy import select
 
     from vollbuild.api.mail.services import MailboxService
@@ -107,12 +107,11 @@ def sync_wildduck_quota(self) -> dict:
 
     Runs every 5 minutes via Celery beat.
     """
-    from vollbuild.api.features.services import FeatureFlagService
+    return _sync_wildduck_quota()
 
-    if not FeatureFlagService.is_enabled_sync("mail"):
-        logger.debug("sync_wildduck_quota: mail feature disabled, skipping")
-        return {"ok": False, "reason": "mail disabled"}
 
+@per_tenant_job("mail")
+def _sync_wildduck_quota() -> dict:
     from datetime import datetime, timezone
 
     from sqlalchemy import select

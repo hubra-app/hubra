@@ -54,20 +54,17 @@ through the Settings UI or `/api/v1/settings/` API.
 > for email links. Password-reset and email-verification links now point at the
 > frontend SPA, not the API host.
 
-## Feature flags & limits (`settings.yaml`)
+## Limits (`settings.yaml`)
 
 Deployment-time settings at the project root. Override any value at runtime
 via environment variables using double-underscore as a nested delimiter:
-`FEATURES__MAIL=false`, `LIMITS__MAX_MEMBERS=50`.
+`LIMITS__MAX_MEMBERS=50`.
+
+Which modules (events, finance, mail, ...) a club uses is not set here: club
+admins switch them under Settings > Modules, and platform managers can block
+a module per club. See `app/backend/vollbuild/modules/README.md`.
 
 ```yaml
-features:
-  polls: true
-  events: true
-  finance: true
-  # Member-facing IMAP inbox — requires Infomaniak SMTP/IMAP configuration.
-  mail: true
-
 limits:
   # 0 = unlimited
   max_members: 0

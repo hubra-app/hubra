@@ -1,6 +1,7 @@
 """Deployment-time settings via pydantic-settings + settings.yaml.
 
-Operator-controlled flags (feature toggles, limits) are defined here.
+Operator-controlled limits are defined here.  Module switches are per
+club, see vollbuild.core.modules.
 Club identity (name, domain, sender address) lives in the database.
 Secrets (API keys, passwords) live in .env.
 
@@ -9,7 +10,6 @@ Usage:
     load_settings(app)   # stores AppSettings at app.config['SETTINGS']
 
 Environment variable overrides use double-underscore as the nested delimiter:
-    FEATURES__MAIL=false
     LIMITS__MAX_MEMBERS=50
 """
 
@@ -45,13 +45,6 @@ class AdminSettings(BaseModel):
     email: str = "admin@example.com"
 
 
-class FeaturesSettings(BaseModel):
-    polls: bool = True
-    events: bool = True
-    finance: bool = True
-    mail: bool = True
-
-
 class LimitsSettings(BaseModel):
     max_members: int = 0
     max_events_per_month: int = 0
@@ -66,7 +59,6 @@ class AppSettings(BaseSettings):
     )
 
     admin: AdminSettings = AdminSettings()
-    features: FeaturesSettings = FeaturesSettings()
     limits: LimitsSettings = LimitsSettings()
 
     @classmethod
@@ -94,6 +86,5 @@ def load_settings(app: Any) -> None:
     except Exception as exc:
         app.logger.exception("Failed to load settings.yaml: %s — using defaults", exc)
         app.config["SETTINGS"] = AppSettings.model_construct(
-            features=FeaturesSettings(),
             limits=LimitsSettings(),
         )

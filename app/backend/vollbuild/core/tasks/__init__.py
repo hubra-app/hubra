@@ -32,11 +32,51 @@ def make_celery(app: Flask) -> Celery:
     """
 
     class FlaskTask(Task):
-        """Task subclass that pushes a Flask app context before each execution."""
+        """Task subclass that pushes a Flask app context before each execution.
+
+        A task queued during a request for a club carries that club's id in
+        a ``tenant_id`` header, and runs with the club's schema and
+        ``g.tenant`` set, so it reads and writes the same data the request
+        did.
+        """
+
+        def apply_async(self, args=None, kwargs=None, **options):
+            from vollbuild.core.tenant.context import current_tenant
+
+            try:
+                tenant = current_tenant()
+            except RuntimeError:  # no app context
+                tenant = None
+            if tenant is not None:
+                headers = dict(options.get("headers") or {})
+                headers.setdefault("tenant_id", tenant.id)
+                options["headers"] = headers
+            return super().apply_async(args, kwargs, **options)
 
         def __call__(self, *args: object, **kwargs: object) -> object:
             with app.app_context():
-                return self.run(*args, **kwargs)
+                tenant_id = getattr(self.request, "tenant_id", None) or (
+                    getattr(self.request, "headers", None) or {}
+                ).get("tenant_id")
+                if tenant_id is None:
+                    return self.run(*args, **kwargs)
+
+                from flask import g
+
+                from vollbuild.core.extensions import db
+                from vollbuild.core.models.tenant import Tenant
+                from vollbuild.core.tenant.context import (
+                    reset_search_path,
+                    set_search_path,
+                )
+
+                g.tenant = db.session.get(Tenant, int(tenant_id))
+                set_search_path(int(tenant_id))
+                try:
+                    return self.run(*args, **kwargs)
+                finally:
+                    reset_search_path()
+                    g.tenant = None
 
     testing = app.config.get("TESTING", False)
     broker = (

@@ -1,6 +1,10 @@
-"""Tests for TABLES_TO_CLONE consistency — regression guard against name drift."""
+"""Tests for the tenant clone list — regression guard against name drift.
 
-from vollbuild.core.tenant.schema_manager import TABLES_TO_CLONE
+The list comes from the module manifests (``tables=``), so a new model
+whose table no module claims fails here.
+"""
+
+from vollbuild.core.tenant.schema_manager import tables_to_clone
 
 # Tables that live in the public schema only and must NOT be cloned.
 _GLOBAL_ONLY_TABLES = frozenset(
@@ -23,23 +27,23 @@ _GLOBAL_ONLY_TABLES = frozenset(
 
 
 def test_tables_to_clone_match_registered_models(db):
-    """Every TABLES_TO_CLONE entry must correspond to a real SQLAlchemy table."""
+    """Every the clone list entry must correspond to a real SQLAlchemy table."""
     registered = set(db.metadata.tables.keys())
 
-    for table_name in TABLES_TO_CLONE:
+    for table_name in tables_to_clone():
         assert table_name in registered, (
-            f"TABLES_TO_CLONE contains '{table_name}' but no model defines "
+            f"the clone list contains '{table_name}' but no model defines "
             f"that table. Check __tablename__ on the model class."
         )
 
 
 def test_no_domain_tables_missing_from_clone_list(db):
-    """Every registered domain table should be in TABLES_TO_CLONE (or be global-only)."""
+    """Every registered domain table should be in the clone list (or be global-only)."""
     registered = set(db.metadata.tables.keys())
-    cloned = set(TABLES_TO_CLONE)
+    cloned = set(tables_to_clone())
 
     missing = registered - cloned - _GLOBAL_ONLY_TABLES
     assert not missing, (
-        f"These tables exist in the model registry but are NOT in TABLES_TO_CLONE "
+        f"These tables exist in the model registry but are NOT in the clone list "
         f"and are not in the global-only exclusion set: {sorted(missing)}"
     )

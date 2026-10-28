@@ -5,7 +5,6 @@ from __future__ import annotations
 import re as _re
 
 from flask import Blueprint, current_app, jsonify, request
-from flask_jwt_extended import get_jwt_identity
 from vollbuild.api.auth.helpers import get_current_member
 
 from vollbuild.api.mail.services import (
@@ -28,29 +27,6 @@ from vollbuild.core.services import managed_mail as mma_service
 mail_bp = Blueprint("mail_bp", __name__)
 
 _OBJECTID_RE = _re.compile(r"^[0-9a-fA-F]{24}$")
-
-
-@mail_bp.before_request
-def _gate_mail_feature():
-    from flask_jwt_extended import verify_jwt_in_request
-
-    from vollbuild.api.features.services import FeatureFlagService
-
-    # Health check is always accessible — no auth, no feature gate.
-    # (request.path is the full /api/.../mail/health, so match the endpoint.)
-    if (request.endpoint or "").endswith(".mail_health"):
-        return None
-
-    try:
-        verify_jwt_in_request(optional=True)
-    except Exception:
-        return None
-
-    if get_jwt_identity() is None:
-        return None
-
-    if not FeatureFlagService.is_enabled("mail"):
-        return api_error("FEATURE_DISABLED", "Mail feature is disabled", 409)
 
 
 def _validate_wd_id(wd_id: str) -> None:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone, timedelta
 
+from vollbuild.core.modules import per_tenant_job
 from vollbuild.core.tasks import celery_app
 
 logger = logging.getLogger(__name__)
@@ -26,12 +27,11 @@ def retention_cleanup(self) -> dict:
 
     Returns a summary dict: {processed, deleted, errors}.
     """
-    from vollbuild.api.features.services import FeatureFlagService
+    return _retention_cleanup()
 
-    if not FeatureFlagService.is_enabled_sync("mail"):
-        logger.debug("retention_cleanup: mail feature disabled, skipping")
-        return {"skipped": "mail disabled"}
 
+@per_tenant_job("mail")
+def _retention_cleanup() -> dict:
     from sqlalchemy import select
 
     from vollbuild.api.settings.services import SettingService
@@ -187,12 +187,11 @@ def verify_protected_mail_addresses(self) -> dict:
 
     Returns a summary dict: {verified, re_provisioned, errors}.
     """
-    from vollbuild.api.features.services import FeatureFlagService
+    return _verify_protected_mail_addresses()
 
-    if not FeatureFlagService.is_enabled_sync("mail"):
-        logger.debug("verify_protected_mail_addresses: mail feature disabled, skipping")
-        return {"skipped": "mail disabled"}
 
+@per_tenant_job("mail")
+def _verify_protected_mail_addresses() -> dict:
     from sqlalchemy import select
 
     from vollbuild.api.utils import log_audit
@@ -310,12 +309,11 @@ def reconcile_mail(self) -> dict:
     New-generation version using ``MailProvisioningService`` primitives.
     Runs every 15 minutes.
     """
-    from vollbuild.api.features.services import FeatureFlagService
+    return _reconcile_mail()
 
-    if not FeatureFlagService.is_enabled_sync("mail"):
-        logger.debug("reconcile_mail: mail feature disabled, skipping")
-        return {"skipped": "mail disabled"}
 
+@per_tenant_job("mail")
+def _reconcile_mail() -> dict:
     from sqlalchemy import select
 
     from vollbuild.core.extensions import db
@@ -521,10 +519,11 @@ def reconcile_entity_forwarding_task(self, entity_type: str, entity_id: int) -> 
 
     Dispatched by membership-change hooks (group member add/remove,
     function holder assign/remove, member archive, set_groups).
+    Runs in the club that queued it (see FlaskTask).
     """
-    from vollbuild.api.features.services import FeatureFlagService
+    from vollbuild.core.modules import is_enabled
 
-    if not FeatureFlagService.is_enabled_sync("mail"):
+    if not is_enabled("mail"):
         logger.debug(
             "reconcile_entity_forwarding_task: mail feature disabled, skipping"
         )
@@ -557,12 +556,11 @@ def check_mailbox_quota(self) -> dict:
     Respects a 24-hour cooldown via ``last_quota_alert_at``.
     Runs hourly.
     """
-    from vollbuild.api.features.services import FeatureFlagService
+    return _check_mailbox_quota()
 
-    if not FeatureFlagService.is_enabled_sync("mail"):
-        logger.debug("check_mailbox_quota: mail feature disabled, skipping")
-        return {"skipped": "mail disabled"}
 
+@per_tenant_job("mail")
+def _check_mailbox_quota() -> dict:
     from datetime import timedelta
 
     from sqlalchemy import select

@@ -42,10 +42,9 @@ def test_run_health_checks_writes_ok_to_cache(app):
 
 def test_run_health_checks_writes_degraded_to_cache(app, db):
     """DB+Redis ok, mail enabled but down → 'degraded' in cache."""
-    from vollbuild.core.models.feature_flag import FeatureFlag
+    from tests.helpers import set_modules
 
-    db.session.add(FeatureFlag(key="mail", enabled=True, label="Mail"))
-    db.session.commit()
+    set_modules(True, "mail")
 
     HealthCache.clear()
     ctxs = _patch_all(

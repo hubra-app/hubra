@@ -818,9 +818,9 @@ def get_account_groups():
 @account_bp.get("/mail-settings")
 @require_password_changed
 def get_account_mail_settings():
-    from vollbuild.api.features.services import FeatureFlagService
+    from vollbuild.core.modules import is_enabled
 
-    mail_disabled = not FeatureFlagService.is_enabled("mail")
+    mail_disabled = not is_enabled("mail")
 
     from sqlalchemy import select as _sel
 
@@ -844,9 +844,9 @@ def get_account_mail_settings():
 @account_bp.patch("/mail-settings")
 @require_password_changed
 def update_account_mail_settings():
-    from vollbuild.api.features.services import FeatureFlagService
+    from vollbuild.core.modules import is_enabled
 
-    if not FeatureFlagService.is_enabled("mail"):
+    if not is_enabled("mail"):
         return api_error("FEATURE_DISABLED", "Mail feature is disabled", 409)
 
     body = request.get_json(silent=True) or {}

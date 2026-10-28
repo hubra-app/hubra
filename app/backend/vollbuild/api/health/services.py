@@ -75,9 +75,9 @@ class HealthService:
 
         critical_ok = services["db"]["ok"] and services["redis"]["ok"]
 
-        from vollbuild.api.features.services import FeatureFlagService
+        from vollbuild.core.modules import is_enabled
 
-        if FeatureFlagService.is_enabled("mail"):
+        if is_enabled("mail"):
             mail_ok = services["smtp"]["ok"] and services["imap"]["ok"]
         else:
             mail_ok = True

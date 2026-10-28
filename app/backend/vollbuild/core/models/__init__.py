@@ -39,7 +39,6 @@ from vollbuild.core.models.finance import Transaction, Invoice, TransactionCateg
 from vollbuild.core.models.external_party import ExternalParty
 from vollbuild.core.models.mail import MailboxFolder
 from vollbuild.core.models.setting import Setting
-from vollbuild.core.models.feature_flag import FeatureFlag
 from vollbuild.core.models.feature import Feature, TenantFeature
 from vollbuild.core.models.translation import Translation
 from vollbuild.core.models.notification import Notification
@@ -95,7 +94,6 @@ __all__ = [
     "ExternalParty",
     "MailboxFolder",
     "Setting",
-    "FeatureFlag",
     "Feature",
     "TenantFeature",
     "Translation",

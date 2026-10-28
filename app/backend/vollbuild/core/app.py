@@ -212,6 +212,8 @@ def create_app(config_name: str | None = None) -> Flask:
         allow_headers=[
             "Content-Type",
             "X-CSRF-Token",
+            # The SPA sends the active club on every request (api-client).
+            "X-Tenant-Slug",
         ],
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         expose_headers=[
@@ -222,17 +224,13 @@ def create_app(config_name: str | None = None) -> Flask:
     )
     app.logger.info("CORS origins: %s", app.config["CORS_ORIGINS"])
 
-    # ── Register blueprints ───────────────────────────────────────────────────
-    _register_blueprints(app)
+    # ── Modules: blueprints and the per-tenant gate ──────────────────────────
+    from vollbuild.core.modules import module_gate, registry
 
-    # ── Register v2 namespace blueprints ───────────────────────────────────────
-    from vollbuild.apps.global_.routes import register_global_v2
-    from vollbuild.apps.manager.routes import register_manager_v2
-    from vollbuild.apps.tenants.routes import register_tenants_v2
-
-    register_global_v2(app)
-    register_manager_v2(app)
-    register_tenants_v2(app)
+    registry.load()
+    registry.register_blueprints(app)
+    # Registered after resolve_tenant, so g.tenant is known here.
+    app.before_request(module_gate)
 
     # ── Root health endpoint (for Docker healthcheck) ──────────────────────────
     @app.get("/health")
@@ -251,69 +249,6 @@ def create_app(config_name: str | None = None) -> Flask:
     _register_cli(app)
 
     return app
-
-
-# ── Blueprint registration ────────────────────────────────────────────────────
-
-_BLUEPRINT_SPECS = [
-    # (import_path,      blueprint_name,  url_prefix)
-    ("vollbuild.api.auth.routes", "auth_bp", "/api/v1/auth"),
-    ("vollbuild.api.auth.routes", "account_bp", "/api/v1/account"),
-    ("vollbuild.api.members.routes", "members_bp", "/api/v1/members"),
-    ("vollbuild.api.applications.routes", "applications_bp", "/api/v1/applications"),
-    ("vollbuild.api.groups.routes", "groups_bp", "/api/v1/groups"),
-    ("vollbuild.api.functions.routes", "functions_bp", "/api/v1/functions"),
-    ("vollbuild.api.events.routes", "events_bp", "/api/v1/events"),
-    ("vollbuild.api.polls.routes", "polls_bp", "/api/v1/polls"),
-    ("vollbuild.api.posts.routes", "posts_bp", "/api/v1/posts"),
-    ("vollbuild.api.finance.routes", "finance_bp", "/api/v1/finance"),
-    ("vollbuild.api.mail.routes", "mail_bp", "/api/v1/mail"),
-    ("vollbuild.api.settings.routes", "settings_bp", "/api/v1/settings"),
-    ("vollbuild.api.features.routes", "features_bp", "/api/v1/features"),
-    ("vollbuild.api.bindings.routes", "bindings_bp", "/api/v1/bindings"),
-    ("vollbuild.api.dashboard.routes", "dashboard_bp", "/api/v1/dashboard"),
-    ("vollbuild.api.notifications.routes", "notifications_bp", "/api/v1/notifications"),
-    ("vollbuild.api.roles.routes", "roles_bp", "/api/v1/roles"),
-    ("vollbuild.api.tiers.routes", "tiers_bp", "/api/v1/tiers"),
-    ("vollbuild.api.audit.routes", "audit_bp", "/api/v1/audit"),
-    ("vollbuild.api.inventory.routes", "inventory_bp", "/api/v1/inventory"),
-    ("vollbuild.api.health.routes", "health_bp", "/api/v1"),
-    ("vollbuild.api.system.routes", "system_bp", "/api/v1/system"),
-    ("vollbuild.api.i18n.routes", "i18n_bp", "/api/v1/i18n"),
-    ("vollbuild.api.codes.routes", "codes_bp", "/api/v1/codes"),
-    ("vollbuild.api.version.routes", "version_bp", "/api/v1"),
-    ("vollbuild.api.backups.routes", "backups_bp", "/api/v1/backups"),
-    ("vollbuild.api.tenant.routes", "tenant_admin_bp", "/api/v1/system"),
-    ("vollbuild.api.admin.routes", "admin_bp", "/api/v1/admin"),
-]
-
-
-def _register_blueprints(app: Flask) -> None:
-    """
-    Attempt to import and register each domain blueprint.
-
-    Blueprints that do not exist yet are silently skipped so the app can
-    start even before all domain modules are implemented.
-    """
-    import importlib
-
-    for module_path, bp_name, prefix in _BLUEPRINT_SPECS:
-        try:
-            module = importlib.import_module(module_path)
-            blueprint = getattr(module, bp_name)
-            app.register_blueprint(blueprint, url_prefix=prefix)
-            app.logger.debug("Registered blueprint %s → %s", bp_name, prefix)
-        except ModuleNotFoundError as exc:
-            top_level = module_path.split(".")[0]
-            if exc.name and not exc.name.startswith(top_level):
-                raise  # a dependency inside the blueprint is broken
-            app.logger.debug("Blueprint %s not yet implemented, skipping", module_path)
-        except AttributeError:
-            app.logger.warning(
-                "Module '%s' does not expose '%s' — skipping.",
-                module_path,
-                bp_name,
-            )
 
 
 # ── CLI commands ──────────────────────────────────────────────────────────────
@@ -346,6 +281,66 @@ def _register_cli(app: Flask) -> None:
 
         run_seeds(db)
         click.echo("Seed data inserted.")
+
+    @app.cli.group("modules")
+    def modules_cli():
+        """List and switch modules per club."""
+
+    def _tenant_id(slug: str | None) -> int | None:
+        if slug is None:
+            return None
+        from vollbuild.core.models.tenant import Tenant
+
+        tenant = db.session.scalar(select(Tenant).where(Tenant.slug == slug))
+        if tenant is None:
+            raise click.ClickException(f"Tenant '{slug}' not found")
+        return tenant.id
+
+    @modules_cli.command("sync")
+    def modules_sync():
+        """Write one catalog row per module manifest."""
+        from vollbuild.core.modules import sync_catalog
+
+        created = sync_catalog()
+        db.session.commit()
+        click.echo(f"Module catalog synced ({created} new).")
+
+    @modules_cli.command("list")
+    @click.option("--tenant", "slug", help="Tenant slug (default: no tenant)")
+    def modules_list(slug: str | None):
+        """Show every module and whether it is on."""
+        from vollbuild.core.modules import states
+
+        for code, st in states(_tenant_id(slug)).items():
+            flag = "on " if st.effective else "off"
+            note = ""
+            if not st.allowed:
+                note = " (blocked by manager)"
+            elif st.missing_dependencies:
+                note = f" (needs {', '.join(st.missing_dependencies)})"
+            elif st.module.required:
+                note = " (required)"
+            click.echo(f"{flag} {code:<20} {st.module.name}{note}")
+
+    @modules_cli.command("enable")
+    @click.argument("code")
+    @click.option("--tenant", "slug", help="Tenant slug (default: no tenant)")
+    def modules_enable(code: str, slug: str | None):
+        from vollbuild.core.modules import set_enabled
+
+        set_enabled(code, True, _tenant_id(slug))
+        db.session.commit()
+        click.echo(f"{code} switched on.")
+
+    @modules_cli.command("disable")
+    @click.argument("code")
+    @click.option("--tenant", "slug", help="Tenant slug (default: no tenant)")
+    def modules_disable(code: str, slug: str | None):
+        from vollbuild.core.modules import set_enabled
+
+        set_enabled(code, False, _tenant_id(slug))
+        db.session.commit()
+        click.echo(f"{code} switched off.")
 
     @app.cli.command("create-tables")
     def create_tables():

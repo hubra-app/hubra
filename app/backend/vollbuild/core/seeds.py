@@ -10,8 +10,6 @@ def run_seeds(db):
     from vollbuild.core.models.setting import Setting
     from vollbuild.core.models.translation import Translation
     from vollbuild.core.models.managed_mail import ManagedMailAddress
-    from vollbuild.core.models.feature_flag import FeatureFlag
-    from vollbuild.core.models.feature import Feature
 
     session = db.session
 
@@ -343,70 +341,11 @@ def run_seeds(db):
                     existing_s.description = _sd.get("description")
         session.flush()
 
-    # ── 1c. Feature flags (legacy) ───────────────────────────────────────────
+    # ── 1c. Module catalog (public schema) ──────────────────────────────────
 
-    _feature_flag_defaults = [
-        ("mail", True, "Mail", "Club email provisioning"),
-        ("backup", False, "Backup", "Automated encrypted database backups"),
-        (
-            "finance",
-            True,
-            "Finance",
-            "Member invoices, transactions, and financial reports",
-        ),
-        ("events", True, "Events", "Club events, workshops, and gatherings"),
-        ("polls", True, "Polls", "Member polls and voting"),
-        ("posts", True, "Posts", "Club announcements and community posts"),
-    ]
-    for _ff_key, _ff_enabled, _ff_label, _ff_desc in _feature_flag_defaults:
-        _existing_ff = session.get(FeatureFlag, _ff_key)
-        if _existing_ff is None:
-            session.add(
-                FeatureFlag(
-                    key=_ff_key,
-                    enabled=_ff_enabled,
-                    label=_ff_label,
-                    description=_ff_desc,
-                )
-            )
-        else:
-            _existing_ff.enabled = _ff_enabled
-            _existing_ff.label = _ff_label
-            _existing_ff.description = _ff_desc
-    session.flush()
+    from vollbuild.core.modules import sync_catalog
 
-    # ── 1d. Feature catalog (public schema) ──────────────────────────────────
-
-    _feature_catalog = [
-        ("members", "Member Management", True, "Core member directory and profiles"),
-        ("groups", "Groups", True, "Group management and communication"),
-        ("functions", "Functions/Offices", True, "Club offices and function holders"),
-        ("events", "Events", True, "Event creation and registration"),
-        ("polls", "Polls", True, "Voting and polls"),
-        ("posts", "Posts & News", True, "Internal news and posts"),
-        ("finance", "Finances", True, "Transactions, invoices, billing"),
-        ("mail", "Mail", True, "Club email provisioning"),
-        ("inventory", "Inventory", False, "Equipment and inventory tracking"),
-        ("bindings", "Bindings", False, "External API binding engine"),
-        ("codes", "Encrypted Codes", False, "Secure code storage"),
-        ("backups", "Backups", False, "Database backup management"),
-    ]
-    for _code, _name, _default, _desc in _feature_catalog:
-        _existing = session.get(Feature, _code)
-        if _existing is None:
-            session.add(
-                Feature(
-                    code=_code,
-                    name=_name,
-                    default_enabled=_default,
-                    description=_desc,
-                )
-            )
-        else:
-            _existing.name = _name
-            _existing.default_enabled = _default
-            _existing.description = _desc
-    session.flush()
+    sync_catalog()
 
     # ── 2. TransactionCategories ───────────────────────────────────────────────
 

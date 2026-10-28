@@ -7,7 +7,7 @@ and user management endpoints accessible via v2 manager namespace.
 import pytest
 
 from vollbuild.core.extensions import db
-from vollbuild.core.models.feature import Feature, TenantFeature
+from vollbuild.core.models.feature import TenantFeature
 from vollbuild.core.models.tenant import GlobalAuditEntry, Tenant
 
 
@@ -86,24 +86,18 @@ def test_list_global_audit_filters_by_action(client, seeded_db, superadmin_heade
 
 def test_list_feature_catalog(client, seeded_db, superadmin_headers):
     """GET /api/v2/manager/features/catalog returns 200."""
-    db.session.add(
-        Feature(code="test_catalog", name="Test Catalog", default_enabled=True)
-    )
-    db.session.commit()
-
     resp = client.get("/api/v2/manager/features/catalog", headers=superadmin_headers)
     assert resp.status_code == 200
     data = resp.get_json()
     assert isinstance(data, list)
     codes = [f["code"] for f in data]
-    assert "test_catalog" in codes
+    assert {"core", "members", "finance", "inventory"} <= set(codes)
 
 
 def test_list_tenant_features(client, seeded_db, superadmin_headers):
     """GET /api/v2/manager/features/tenants/{id} returns 200."""
     tenant = Tenant(name="Test", slug="test-feat-tenant")
     db.session.add(tenant)
-    db.session.add(Feature(code="mail", name="Mail", default_enabled=True))
     db.session.flush()
     db.session.add(
         TenantFeature(tenant_id=tenant.id, feature_code="mail", enabled=True)
@@ -123,7 +117,6 @@ def test_set_tenant_feature(client, seeded_db, superadmin_headers):
     """PUT /api/v2/manager/features/tenants/{id}/{code} creates grant."""
     tenant = Tenant(name="Test2", slug="test-set-feature")
     db.session.add(tenant)
-    db.session.add(Feature(code="inventory", name="Inventory", default_enabled=False))
     db.session.commit()
 
     resp = client.put(
@@ -134,7 +127,7 @@ def test_set_tenant_feature(client, seeded_db, superadmin_headers):
     assert resp.status_code == 200
     data = resp.get_json()
     assert data["enabled"] is True
-    assert data["feature_code"] == "inventory"
+    assert data["code"] == "inventory"
 
 
 # ── Platform metrics ─────────────────────────────────────────────────────────

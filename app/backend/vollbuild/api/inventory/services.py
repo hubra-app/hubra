@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import delete, func, insert, select
 from sqlalchemy.orm import selectinload
@@ -162,6 +162,15 @@ class InventoryService:
         member = db.session.get(Member, member_id)
         if member is None or member.archived_at is not None:
             raise_error(404, "NOT_FOUND", f"Member {member_id} not found")
+
+        if expected_return_at is None:
+            from vollbuild.core.modules import get_config
+
+            max_days = get_config("inventory").get("checkout_max_days") or 0
+            if max_days > 0:
+                expected_return_at = datetime.now(timezone.utc) + timedelta(
+                    days=max_days
+                )
 
         checkout = InventoryCheckout(
             item_id=item_id,

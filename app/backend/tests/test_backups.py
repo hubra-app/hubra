@@ -327,7 +327,7 @@ class TestBackupAPI:
         assert resp.status_code == 200
         assert isinstance(resp.get_json(), list)
 
-    def test_list_backups_unauthenticated(self, client):
+    def test_list_backups_unauthenticated(self, client, seeded_db):
         resp = client.get("/api/v1/backups/")
         assert resp.status_code == 401
 
@@ -338,7 +338,7 @@ class TestBackupAPI:
         assert "s3_configured" in data
         assert "encryption_configured" in data
 
-    def test_get_config_unauthenticated(self, client):
+    def test_get_config_unauthenticated(self, client, seeded_db):
         resp = client.get("/api/v1/backups/config")
         assert resp.status_code == 401
 

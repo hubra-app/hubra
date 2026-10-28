@@ -557,21 +557,23 @@ def _seed_tenant(
         db.session.add(tier)
         db.session.flush()
 
-        # Seed TenantFeature grants for all default-enabled features
+        # Give the club its own switch for every optional module, set to the
+        # manifest default, so catalog defaults (used by single-club
+        # installs) never leak into new clubs.
         reset_search_path()
-        from vollbuild.core.models.feature import Feature, TenantFeature
+        from vollbuild.core.models.feature import TenantFeature
+        from vollbuild.core.modules import registry, sync_catalog
 
-        default_features = db.session.scalars(
-            select(Feature).where(Feature.default_enabled.is_(True))
-        ).all()
-        for feat in default_features:
-            db.session.add(
-                TenantFeature(
-                    tenant_id=tenant_id,
-                    feature_code=feat.code,
-                    enabled=True,
+        sync_catalog()
+        for module in registry.all():
+            if not module.required:
+                db.session.add(
+                    TenantFeature(
+                        tenant_id=tenant_id,
+                        feature_code=module.code,
+                        enabled=module.default_enabled,
+                    )
                 )
-            )
         db.session.flush()
         set_search_path(tenant_id)
 

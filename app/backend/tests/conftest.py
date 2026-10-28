@@ -118,14 +118,12 @@ def seeded_db(db):
     admin.roles = [owner_role]
     db.session.add(admin)
 
-    from vollbuild.core.models.feature_flag import FeatureFlag
-
-    flag = db.session.get(FeatureFlag, "mail")
-    if flag is None:
-        db.session.add(FeatureFlag(key="mail", enabled=True, label="Mail"))
-    else:
-        flag.enabled = True
     db.session.commit()
+
+    # Every module on, as before modules could be switched off.
+    from tests.helpers import set_modules
+
+    set_modules(True)
 
     return {
         "role": role,

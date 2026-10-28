@@ -10,57 +10,13 @@ from vollbuild.core.extensions import db
 
 _log = logging.getLogger(__name__)
 
-# All domain tables that should be cloned into each tenant schema.
-# These are the tables currently in the public schema (excluding global-only
-# tables such as tenants, domains, and alembic_version).
-TABLES_TO_CLONE: list[str] = [
-    "members",
-    "member_groups",
-    "member_roles",
-    "membership_tiers",
-    "roles",
-    "permissions",
-    "role_permissions",
-    "applications",
-    "groups",
-    "group_memberships",
-    "functions",
-    "function_holders",
-    "managed_mail_addresses",
-    "club_events",
-    "event_attendees",
-    "event_registrations",
-    "polls",
-    "poll_options",
-    "poll_votes",
-    "posts",
-    "post_likes",
-    "post_comments",
-    "transactions",
-    "invoices",
-    "transaction_categories",
-    "external_parties",
-    "mailbox_folders",
-    "setting",
-    "feature_flag",  # deprecated — superseded by public-schema Feature/TenantFeature
-    "translation",
-    "notifications",
-    "audit_entries",
-    "token_blocklist",
-    "devices",
-    "sessions",
-    "inventory_items",
-    "inventory_checkouts",
-    "item_instructions",
-    "password_reset_tokens",
-    "email_verification_tokens",
-    "invoice_reminder_history",
-    "codes",
-    "internal_keys",
-    "bindings",
-    "backup_record",
-    "qrr_references",
-]
+
+def tables_to_clone() -> list[str]:
+    """Tenant-schema tables, as declared by the module manifests."""
+    from vollbuild.core.modules import registry
+
+    registry.load()
+    return registry.tenant_tables()
 
 
 def create_tenant_schema(tenant_id: int) -> None:
@@ -79,7 +35,7 @@ def create_tenant_schema(tenant_id: int) -> None:
     _log.info("Creating tenant schema: %s", schema_name)
     db.session.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema_name}"))
 
-    for table in TABLES_TO_CLONE:
+    for table in tables_to_clone():
         sql = text(
             f"CREATE TABLE IF NOT EXISTS {schema_name}.{table} "
             f"(LIKE public.{table} INCLUDING ALL EXCLUDING STATISTICS)"

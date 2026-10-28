@@ -1,0 +1,145 @@
+"""Core: sign-in, accounts, settings, dashboard, audit and platform admin."""
+
+from vollbuild.core.modules import Blueprint, Module, NavItem
+
+module = Module(
+    code="core",
+    name="Core",
+    description="Sign-in, accounts, settings, dashboard, audit log and notifications",
+    required=True,
+    blueprints=(
+        Blueprint(
+            "vollbuild.api.auth.routes",
+            "auth_bp",
+            "/api/v1/auth",
+            v2=(("/api/v2/global/auth", "auth_bp_v2"),),
+        ),
+        Blueprint(
+            "vollbuild.api.auth.routes",
+            "account_bp",
+            "/api/v1/account",
+            v2=(("/api/v2/global/account", "account_bp_v2"),),
+        ),
+        Blueprint(
+            "vollbuild.api.settings.routes",
+            "settings_bp",
+            "/api/v1/settings",
+            v2=(
+                ("/api/v2/tenants/settings", "settings_bp_v2_tenant"),
+                ("/api/v2/manager/settings", "settings_bp_v2_manager"),
+            ),
+        ),
+        Blueprint(
+            "vollbuild.api.features.routes",
+            "features_bp",
+            "/api/v1/features",
+            v2=(("/api/v2/manager/features", "features_bp_v2"),),
+        ),
+        Blueprint(
+            "vollbuild.api.features.routes",
+            "modules_bp",
+            "/api/v1/modules",
+            v2=(("/api/v2/tenants/modules", "modules_bp_v2"),),
+        ),
+        Blueprint(
+            "vollbuild.api.dashboard.routes",
+            "dashboard_bp",
+            "/api/v1/dashboard",
+            v2=(("/api/v2/tenants/dashboard", "dashboard_bp_v2"),),
+        ),
+        Blueprint(
+            "vollbuild.api.notifications.routes",
+            "notifications_bp",
+            "/api/v1/notifications",
+            v2=(("/api/v2/tenants/notifications", "notifications_bp_v2"),),
+        ),
+        Blueprint(
+            "vollbuild.api.audit.routes",
+            "audit_bp",
+            "/api/v1/audit",
+            v2=(("/api/v2/tenants/audit", "audit_bp_v2"),),
+        ),
+        Blueprint(
+            "vollbuild.api.health.routes",
+            "health_bp",
+            "/api/v1",
+            v2=(("/api/v2/global", "health_bp_v2"),),
+        ),
+        Blueprint(
+            "vollbuild.api.system.routes",
+            "system_bp",
+            "/api/v1/system",
+            v2=(("/api/v2/global/system", "system_bp_v2"),),
+        ),
+        Blueprint(
+            "vollbuild.api.i18n.routes",
+            "i18n_bp",
+            "/api/v1/i18n",
+            v2=(("/api/v2/global/i18n", "i18n_bp_v2"),),
+        ),
+        Blueprint(
+            "vollbuild.api.version.routes",
+            "version_bp",
+            "/api/v1",
+            v2=(("/api/v2/global", "version_bp_v2"),),
+        ),
+        Blueprint(
+            "vollbuild.api.tenant.routes",
+            "tenant_admin_bp",
+            "/api/v1/system",
+            v2=(("/api/v2/manager/tenants", "tenant_admin_bp_v2"),),
+        ),
+        Blueprint(
+            "vollbuild.api.admin.routes",
+            "admin_bp",
+            "/api/v1/admin",
+            v2=(("/api/v2/manager/tenants", "admin_bp_v2"),),
+        ),
+    ),
+    nav=(
+        NavItem("/app/dashboard", "shell.nav.dashboard", "dashboard", order=0),
+        NavItem(
+            "/app/settings",
+            "shell.nav.settings",
+            "settings",
+            section="system",
+            order=0,
+            perms=("settings.settings.read",),
+        ),
+        NavItem(
+            "/app/audit-log",
+            "shell.nav.auditLog",
+            "shield",
+            section="system",
+            order=10,
+            perms=("audit.audit.read",),
+        ),
+        NavItem(
+            "/app/translations",
+            "shell.nav.translations",
+            "globe",
+            section="system",
+            order=30,
+            perms=("i18n.i18n.write",),
+        ),
+        NavItem(
+            "/app/account/settings",
+            "shell.nav.accountSettings",
+            "user",
+            section="me",
+            order=0,
+        ),
+    ),
+    tables=(
+        "setting",
+        "translation",
+        "notifications",
+        "audit_entries",
+        "token_blocklist",
+        "devices",
+        "sessions",
+        "password_reset_tokens",
+        "email_verification_tokens",
+        "internal_keys",
+    ),
+)

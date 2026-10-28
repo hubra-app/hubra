@@ -497,19 +497,12 @@ cd app/frontend && npm run lint && npx tsc --noEmit
 
 Configuration classes (`DevelopmentConfig`, `ProductionConfig`, `TestingConfig`) in `vollbuild/core/config.py` inherit from `BaseConfig`. Environment variables take precedence over defaults. Production requires explicit validation via `ProductionConfig.validate()`.
 
-### Feature flags
+### Modules
 
-Controlled via `settings.yaml` at deploy time:
-
-```yaml
-features:
-  polls: true
-  events: true
-  finance: true
-  mail: true # Requires mail stack (WildDuck, Haraka, ZoneMTA)
-```
-
-Overridable at runtime via environment variables: `FEATURES__MAIL=false`.
+Each section of the suite (members, finance, inventory, ...) is a module with
+a manifest in `app/backend/vollbuild/modules/`. Club admins switch modules on
+or off per club under Settings > Modules; platform managers can block a module
+for a club. See `app/backend/vollbuild/modules/README.md`.
 
 ### Deployment
 

@@ -78,9 +78,12 @@ _PERM_CACHE_TTL = 300  # 5 minutes
 
 def _derive_perm_key(blueprint_name: str | None, resource: str, action: str) -> str:
     """Build a structured permission key from blueprint + resource + action."""
+    from vollbuild.core.modules import registry
+
     prefix = "app"
     if blueprint_name:
-        prefix = blueprint_name.removesuffix("_bp")
+        # v2 registrations (members_bp_v2) share the v1 permission keys.
+        prefix = registry.canonical_blueprint(blueprint_name).removesuffix("_bp")
     return f"{prefix}.{resource}.{action}"
 
 
@@ -296,8 +299,7 @@ def can_update(resource: str, display_name: str | None = None):
                 ), 403
 
             perms = _get_member_permission_keys(member)
-            prefix = (request.blueprint or "app").removesuffix("_bp")
-            coarse_key = f"{prefix}.{resource}.update"
+            coarse_key = _derive_perm_key(request.blueprint, resource, "update")
 
             if coarse_key in perms:
                 g.updatable_fields = None
@@ -476,40 +478,6 @@ def require_global_permission(permission_key: str):
 
             g.system_user = user
             g.permission_scope = "global"
-            return fn(*args, **kwargs)
-
-        return wrapper
-
-    return decorator
-
-
-def require_tenant_feature(feature_key: str):
-    """Decorator: blocks access if a feature is disabled for the current tenant.
-
-    Uses FeatureFlagService.is_enabled() to check the per-tenant feature flag.
-    Must be applied after (innermost) @permission_required or @jwt_required.
-    """
-
-    def decorator(fn):
-        @wraps(fn)
-        def wrapper(*args, **kwargs):
-            try:
-                verify_jwt_in_request()
-            except Exception:
-                return jsonify(
-                    {"error": "UNAUTHORIZED", "message": "Token invalid or expired"}
-                ), 401
-
-            from vollbuild.api.features.services import FeatureFlagService
-
-            if not FeatureFlagService.is_enabled(feature_key):
-                return jsonify(
-                    {
-                        "error": "FEATURE_DISABLED",
-                        "message": f"Feature '{feature_key}' is not enabled",
-                    }
-                ), 403
-
             return fn(*args, **kwargs)
 
         return wrapper

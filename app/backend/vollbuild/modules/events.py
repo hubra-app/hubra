@@ -1,0 +1,29 @@
+"""Events: club events, registrations and attendance."""
+
+from vollbuild.core.modules import Blueprint, Module, NavItem
+
+module = Module(
+    code="events",
+    name="Events",
+    description="Events, workshops and gatherings with registration",
+    default_enabled=True,
+    depends_on=("members",),
+    blueprints=(
+        Blueprint(
+            "vollbuild.api.events.routes",
+            "events_bp",
+            "/api/v1/events",
+            v2=(("/api/v2/tenants/events", "events_bp_v2"),),
+        ),
+    ),
+    nav=(
+        NavItem(
+            "/app/operations/events",
+            "shell.nav.management",
+            "layout-list",
+            order=40,
+            group="management",
+        ),
+    ),
+    tables=("club_events", "event_attendees", "event_registrations"),
+)
