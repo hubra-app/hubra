@@ -30,6 +30,7 @@ from hubra.core.extensions import db
 from hubra.core.models.email_verification import EmailVerificationToken
 from hubra.core.models.user import User
 from hubra.core.services import email as email_svc
+from hubra.core.services import platform_settings
 
 _log = logging.getLogger(__name__)
 
@@ -45,13 +46,11 @@ def _hash(raw: str) -> str:
 def mail_configured() -> bool:
     """True when system mail (sign-in and account mail) can be sent.
 
-    That needs a relay host (``mail.smtp_host``, seeded from SMTP_HOST, which
-    an install without mail leaves empty) and a sender address.
+    That needs the platform relay's host and the system sender address
+    (manage → Platform → Mail relay, defaults from SMTP_HOST and MAIL_FROM).
     """
-    return bool(
-        email_svc._get_setting("mail.smtp_host")
-        and email_svc._get_setting("club.notification_sender_email")
-    )
+    relay = platform_settings.relay()
+    return bool(relay.host and relay.sender_email)
 
 
 _warned = False
@@ -65,8 +64,8 @@ def _warn_mail_missing(user: User) -> None:
     _log.log(
         level,
         "email_verification_skipped user_id=%s: system mail is not configured "
-        "(no SMTP relay host or no sender address), so nobody is asked to "
-        "verify their email. Set SMTP_HOST and the sender to turn it on.",
+        "(no relay host or no system sender), so nobody is asked to verify "
+        "their email. Set both under Platform -> Mail relay in manage.",
         user.id,
     )
 

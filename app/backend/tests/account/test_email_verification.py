@@ -19,7 +19,7 @@ from hubra.core.models.setting import Setting
 from hubra.core.models.tenant import Tenant
 from hubra.core.models.user import User
 from hubra.core.models.user_tenant import UserTenant
-from hubra.core.services import email_verification
+from hubra.core.services import email_verification, platform_settings
 
 PASSWORD = "password123"
 SEND = "hubra.core.services.email_verification.email_svc.send_email_verification"
@@ -27,16 +27,12 @@ SEND = "hubra.core.services.email_verification.email_svc.send_email_verification
 
 @pytest.fixture
 def mail_on(db):
-    """System mail configured: a relay host and a sender address are set."""
-    db.session.add_all(
-        [
-            Setting(key="mail.smtp_host", value="smtp.hubra.test", namespace="mail"),
-            Setting(
-                key="club.notification_sender_email",
-                value="noreply@hubra.test",
-                namespace="club",
-            ),
-        ]
+    """System mail configured: the platform relay has a host and a sender."""
+    platform_settings.set_many(
+        {
+            "mail.relay.host": "smtp.hubra.test",
+            "mail.system.sender_email": "noreply@hubra.test",
+        }
     )
     db.session.commit()
 
@@ -148,9 +144,8 @@ def test_nobody_is_blocked_without_mail(client, db, caplog):
     assert "system mail is not configured" in caplog.text
 
 
-def test_a_sender_without_a_relay_host_is_not_mail(app, client, db, monkeypatch):
-    """A fresh install seeds a sender address; without SMTP_HOST there is no mail."""
-    monkeypatch.setitem(app.config, "SMTP_HOST", "")
+def test_a_club_sender_alone_is_not_system_mail(client, db):
+    """A fresh install seeds a club sender; system mail needs the platform sender."""
     db.session.add(
         Setting(
             key="club.notification_sender_email",
@@ -162,6 +157,14 @@ def test_a_sender_without_a_relay_host_is_not_mail(app, client, db, monkeypatch)
     _user(db)
     _login(client)
     assert _status(client)["required"] is False
+
+
+def test_a_relay_without_a_system_sender_is_not_mail(client, db):
+    platform_settings.set_many({"mail.relay.host": "smtp.hubra.test"})
+    db.session.commit()
+    _user(db)
+    _login(client)
+    assert _status(client)["mailConfigured"] is False
 
 
 def test_status_needs_a_session(client, db):

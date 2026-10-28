@@ -10,7 +10,7 @@ public, once.  The old tables are dropped in every schema in one go, club
 schemas first, because their id columns use the public table's sequence.
 
 Revision ID: 7b2d4f6a8c10
-Revises: 3e7a9c1d5b20
+Revises: 3a7c1e9d5b20
 Create Date: 2026-10-28 14:20:00.000000
 
 """
@@ -21,7 +21,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "7b2d4f6a8c10"
-down_revision = "3e7a9c1d5b20"
+down_revision = "3a7c1e9d5b20"
 branch_labels = None
 depends_on = None
 
