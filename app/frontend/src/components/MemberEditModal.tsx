@@ -9,7 +9,7 @@ import {
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
-import { useT } from '@/locales/i18n'
+import { useT, zmsg } from '@/locales/i18n'
 import { useToast } from '@/context/AppContext'
 import { Modal, Field } from '@/components/ui'
 import type { Member } from '@/types'
@@ -24,7 +24,7 @@ const STATIC_STATUS = ['active', 'trial', 'inactive', 'suspended'] as const
 const memberSchema = z.object({
   firstName: z.string(),
   lastName: z.string(),
-  email: z.string().email('Invalid email'),
+  email: z.string().email(zmsg('validation.invalidEmail', 'Ungültige E-Mail-Adresse')),
   status: z.string(),
   tier: z.string(),
   roles: z.array(z.string()),
