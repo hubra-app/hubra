@@ -95,7 +95,12 @@ interface NavState {
   goInvoice: (inv: Invoice) => void
 }
 
+/** Lists only some screens show: loaded once a screen asks (useLoadData). */
+export type LazyData = 'events' | 'posts' | 'invoices'
+
 interface DataState {
+  /** Start loading these lists; see useLoadData. */
+  loadData: (keys: LazyData[]) => void
   events: ClubEvent[]
   setEvents: Dispatch<SetStateAction<ClubEvent[]>>
   polls: Poll[]
@@ -178,17 +183,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       try {
+        // Both at once: the permissions do not wait for the account.
+        const permRequest = getMyPermissions(ctrl.signal).catch(() => null)
         const member = await getAccount(ctrl.signal)
         if (cancelled) return
         setCurrentUser(member)
-        try {
-          const permData = await getMyPermissions(ctrl.signal)
-          if (cancelled) return
+        const permData = await permRequest
+        if (cancelled) return
+        if (permData) {
           setPermissions(permData.permissions)
           setImpersonation(permData.impersonation ?? null)
           setIsSuperadmin(permData.is_superadmin === true)
-        } catch {
-          if (!cancelled) setPermissions([])
+        } else {
+          setPermissions([])
         }
         if (!cancelled) {
           setAuthStatus('authed')
@@ -273,10 +280,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const mayRead = (key: string) =>
     permissions.includes('*') || (currentUser?.roles?.includes('Admin') ?? false) || permissions.includes(key)
 
+  // Events, posts and invoices wait until a screen that shows them asks, so
+  // other pages do not load them first.
+  const [wantedData, setWantedData] = useState<ReadonlySet<LazyData>>(new Set())
+  const loadData = useCallback((keys: LazyData[]) => {
+    setWantedData((prev) =>
+      keys.every((key) => prev.has(key)) ? prev : new Set([...prev, ...keys]),
+    )
+  }, [])
+
   const { data: eventsData } = useQuery({
     queryKey: ['events'],
     queryFn: () => listEvents(),
-    enabled: moduleQuery('events'),
+    enabled: moduleQuery('events') && wantedData.has('events'),
   })
   const { data: pollsData } = useQuery({
     queryKey: ['polls'],
@@ -286,12 +302,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const { data: postsData } = useQuery({
     queryKey: ['posts'],
     queryFn: listPosts,
-    enabled: moduleQuery('posts'),
+    enabled: moduleQuery('posts') && wantedData.has('posts'),
   })
   const { data: invoicesData } = useQuery({
     queryKey: ['invoices'],
     queryFn: listInvoices,
-    enabled: moduleQuery('finance') && mayRead('finance.invoices.read'),
+    enabled:
+      moduleQuery('finance') && mayRead('finance.invoices.read') && wantedData.has('invoices'),
   })
   const { data: dashboardData } = useQuery({
     queryKey: ['dashboard-summary'],
@@ -636,6 +653,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const dataValue = useMemo<DataState>(
     () => ({
+      loadData,
       events,
       setEvents,
       polls,
@@ -723,6 +741,18 @@ export function useData() {
   const ctx = useContext(DataContext)
   if (!ctx) throw new Error('useData must be used within AppProvider')
   return ctx
+}
+
+/** useData for a screen that shows events, posts or invoices: loads them. */
+// eslint-disable-next-line react-refresh/only-export-components
+export function useLoadData(...keys: LazyData[]) {
+  const data = useData()
+  const { loadData } = data
+  const wanted = keys.join(',')
+  useEffect(() => {
+    if (wanted) loadData(wanted.split(',') as LazyData[])
+  }, [wanted, loadData])
+  return data
 }
 
 /* ── Backward-compatible merged hook ──────────── */

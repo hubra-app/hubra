@@ -1,4 +1,5 @@
 import { apiFetch } from '@hubra/api-client';
+import { queryClient } from "@/queryClient";
 
 interface BackendTier {
   id: number;
@@ -26,13 +27,29 @@ export interface Lookups {
   groupsByName: Map<string, number>;
 }
 
+/** Tiers, roles and groups by id and by name, cached under ['lookups']. */
+export const lookupsQuery = {
+  queryKey: ["lookups"],
+  queryFn: fetchLookups,
+};
+
+/** Mark the cached lookups stale after a tier, role or group changed. */
 export function clearLookups(): void {
-  // No-op — lookups are now cached by React Query ([ 'lookups' ] key).
-  // Invalidate via queryClient.invalidateQueries({ queryKey: ['lookups'] })
-  // after tier/role/group mutations.
+  void queryClient.invalidateQueries({
+    queryKey: lookupsQuery.queryKey,
+    refetchType: "none",
+  });
 }
 
-export async function getLookups(): Promise<Lookups> {
+/**
+ * The cached lookups, fetched once for every caller that needs them within
+ * the query client's stale time (the member list asks on each search).
+ */
+export function getLookups(): Promise<Lookups> {
+  return queryClient.fetchQuery(lookupsQuery);
+}
+
+async function fetchLookups(): Promise<Lookups> {
   const results = await Promise.allSettled([
     apiFetch<BackendTier[]>("/tiers"),
     apiFetch<BackendRole[]>("/roles"),
