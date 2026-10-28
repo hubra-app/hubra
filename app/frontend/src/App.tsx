@@ -499,10 +499,14 @@ function PrivateRoutes() {
                   <Route path="account" element={<AccountDashboardScreen />} />
                   <Route path="account/settings" element={<AccountSettingsScreen />} />
                   <Route path="account/settings/membership" element={<AccountSettingsScreen />} />
-                  <Route path="account/settings/security" element={<AccountSettingsScreen />} />
-                  <Route path="account/settings/sessions" element={<AccountSettingsScreen />} />
-                  <Route path="account/settings/devices" element={<AccountSettingsScreen />} />
-                  <Route path="account/settings/language" element={<AccountSettingsScreen />} />
+                  {/* The account itself lives on the SSO portal */}
+                  {['security', 'sessions', 'devices', 'language'].map((tab) => (
+                    <Route
+                      key={tab}
+                      path={`account/settings/${tab}`}
+                      element={<SsoRedirect path="account" />}
+                    />
+                  ))}
                   {pluginRoutes.map((r) => (
                     <Route
                       key={r.path}

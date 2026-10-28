@@ -27,13 +27,16 @@ SEND = "hubra.core.services.email_verification.email_svc.send_email_verification
 
 @pytest.fixture
 def mail_on(db):
-    """System mail configured: a sender address is set."""
-    db.session.add(
-        Setting(
-            key="club.notification_sender_email",
-            value="noreply@hubra.test",
-            namespace="club",
-        )
+    """System mail configured: a relay host and a sender address are set."""
+    db.session.add_all(
+        [
+            Setting(key="mail.smtp_host", value="smtp.hubra.test", namespace="mail"),
+            Setting(
+                key="club.notification_sender_email",
+                value="noreply@hubra.test",
+                namespace="club",
+            ),
+        ]
     )
     db.session.commit()
 
@@ -143,6 +146,22 @@ def test_nobody_is_blocked_without_mail(client, db, caplog):
     assert status["required"] is False
     assert status["mailConfigured"] is False
     assert "system mail is not configured" in caplog.text
+
+
+def test_a_sender_without_a_relay_host_is_not_mail(app, client, db, monkeypatch):
+    """A fresh install seeds a sender address; without SMTP_HOST there is no mail."""
+    monkeypatch.setitem(app.config, "SMTP_HOST", "")
+    db.session.add(
+        Setting(
+            key="club.notification_sender_email",
+            value="noreply@hubra.test",
+            namespace="club",
+        )
+    )
+    db.session.commit()
+    _user(db)
+    _login(client)
+    assert _status(client)["required"] is False
 
 
 def test_status_needs_a_session(client, db):

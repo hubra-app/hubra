@@ -45,10 +45,13 @@ def _hash(raw: str) -> str:
 def mail_configured() -> bool:
     """True when system mail (sign-in and account mail) can be sent.
 
-    System mail needs a sender address; the relay host falls back to
-    localhost and is always set.
+    That needs a relay host (``mail.smtp_host``, seeded from SMTP_HOST, which
+    an install without mail leaves empty) and a sender address.
     """
-    return bool(email_svc._get_setting("club.notification_sender_email"))
+    return bool(
+        email_svc._get_setting("mail.smtp_host")
+        and email_svc._get_setting("club.notification_sender_email")
+    )
 
 
 _warned = False
@@ -62,8 +65,8 @@ def _warn_mail_missing(user: User) -> None:
     _log.log(
         level,
         "email_verification_skipped user_id=%s: system mail is not configured "
-        "(no sender address), so nobody is asked to verify their email. "
-        "Set the system sender to turn verification on.",
+        "(no SMTP relay host or no sender address), so nobody is asked to "
+        "verify their email. Set SMTP_HOST and the sender to turn it on.",
         user.id,
     )
 

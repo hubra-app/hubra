@@ -1,9 +1,5 @@
-import { useState, useCallback } from 'react'
-import { AppShell, Alert, Button, Group, Text } from '@mantine/core'
-import { IconShieldCheckFilled } from '@tabler/icons-react'
-import { useT } from '@/locales/i18n'
+import { AppShell } from '@mantine/core'
 import { useAuth, useNav } from '@/context/AppContext'
-import { requestEmailVerification } from '@/api/auth'
 import { ForcedPasswordChangeModal } from '@/components/ForcedPasswordChangeModal'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
@@ -12,20 +8,8 @@ import { NotificationPanel } from './NotificationPanel'
 import { ImpersonationBanner } from './ImpersonationBanner'
 
 export function Shell({ children }: { children: React.ReactNode }) {
-  const { t } = useT()
   const { currentUser } = useAuth()
   const { sidebarCollapsed } = useNav()
-  const [verifySending, setVerifySending] = useState(false)
-
-  const handleResendVerification = useCallback(async () => {
-    setVerifySending(true)
-    try {
-      await requestEmailVerification()
-    } catch {
-      /* ignore */
-    }
-    setVerifySending(false)
-  }, [])
 
   return (
     <AppShell
@@ -60,34 +44,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <MobileDrawer />
 
       <AppShell.Main>
-        {currentUser && !currentUser.privateEmailVerified && (
-          <Alert
-            icon={<IconShieldCheckFilled size={18} />}
-            color="acc"
-            variant="filled"
-            radius={0}
-            styles={{
-              root: {
-                borderRadius: 0,
-                position: 'sticky',
-                top: 0,
-                zIndex: 10,
-              },
-            }}
-          >
-            <Group justify="space-between" gap="md" px="xl">
-              <Text size="sm">{t('shell.emailVerify.banner')}</Text>
-              <Button
-                size="sm"
-                variant="default"
-                onClick={handleResendVerification}
-                loading={verifySending}
-              >
-                {verifySending ? t('shell.emailVerify.sending') : t('shell.emailVerify.resend')}
-              </Button>
-            </Group>
-          </Alert>
-        )}
         <div style={{ padding: 'var(--mantine-spacing-xl)' }}>{children}</div>
       </AppShell.Main>
 

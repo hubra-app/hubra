@@ -91,14 +91,10 @@ export async function resetPassword(
   })
 }
 
-export async function verifyEmail(
-  token: string,
-  signal?: AbortSignal,
-): Promise<{ ok: boolean; verified: boolean }> {
+export async function verifyEmail(token: string): Promise<{ ok: boolean; verified: boolean }> {
   return apiFetch(`/account/verify-email`, {
     method: 'POST',
     body: JSON.stringify({ token }),
-    signal,
   })
 }
 
@@ -134,4 +130,100 @@ export async function joinClub(
   slug: string,
 ): Promise<{ status: 'joined' | 'requested'; club: { slug: string; name: string } }> {
   return apiFetch(`/system/clubs/${encodeURIComponent(slug)}/join`, { method: 'POST' })
+}
+
+// ── Email verification: the step after sign-in ───────────────────────────────
+
+export interface VerificationStatus {
+  email: string
+  verified: boolean
+  /** True while the person still has to confirm their address. */
+  required: boolean
+  /** False when the platform can't send mail; then nobody has to verify. */
+  mailConfigured: boolean
+  /** When the open link was sent, or null if none is open. */
+  sentAt: string | null
+}
+
+export async function getVerificationStatus(signal?: AbortSignal): Promise<VerificationStatus> {
+  return apiFetch<VerificationStatus>('/account/email-verification', { signal })
+}
+
+export async function sendVerificationEmail(): Promise<void> {
+  await apiFetch('/account/request-email-verification', { method: 'POST' })
+}
+
+/** New login and private address; a new link goes out. */
+export async function changeEmail(
+  email: string,
+  currentPassword: string,
+): Promise<VerificationStatus> {
+  return apiFetch<VerificationStatus>('/account/email', {
+    method: 'PATCH',
+    body: JSON.stringify({ email, currentPassword }),
+  })
+}
+
+// ── Account ──────────────────────────────────────────────────────────────────
+
+export interface Profile {
+  id: number
+  email: string
+  emailVerified: boolean
+  name: string
+  firstName: string
+  lastName: string
+  avatarColor: string
+  profileNote: string | null
+  language: string
+  isSuperadmin: boolean
+  mustChangePassword: boolean
+}
+
+export type ProfileUpdate = Partial<
+  Pick<Profile, 'name' | 'avatarColor' | 'profileNote' | 'language'>
+>
+
+export async function getProfile(): Promise<Profile> {
+  return apiFetch<Profile>('/account/profile')
+}
+
+export async function updateProfile(updates: ProfileUpdate): Promise<Profile> {
+  return apiFetch<Profile>('/account/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  })
+}
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  await apiFetch('/account/password', {
+    method: 'POST',
+    body: JSON.stringify({ currentPassword, newPassword }),
+  })
+}
+
+export interface AccountSession {
+  id: number
+  deviceName: string | null
+  browserFamily: string
+  platform: string
+  ipAddress: string
+  createdAt: string | null
+  lastActiveAt: string | null
+  club: { slug: string; name: string }
+  current: boolean
+}
+
+export async function getSessions(): Promise<AccountSession[]> {
+  return apiFetch<AccountSession[]>('/account/all-sessions')
+}
+
+export async function revokeSession(clubSlug: string, id: number): Promise<void> {
+  await apiFetch(`/account/all-sessions/${encodeURIComponent(clubSlug)}/${id}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function revokeOtherSessions(): Promise<{ revoked: number }> {
+  return apiFetch('/account/all-sessions/revoke-all', { method: 'POST' })
 }

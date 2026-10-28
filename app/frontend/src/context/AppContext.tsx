@@ -154,7 +154,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [impersonation, setImpersonation] = useState<AuthState['impersonation']>(null)
   const [passwordChangeRequired, setPasswordChangeRequired] = useState(false)
 
-  const { loginUrl } = useInstance()
+  const { loginUrl, ssoUrl } = useInstance()
 
   const redirectToLogin = useCallback(() => {
     if (!PRIVATE_PATH.test(window.location.pathname)) return
@@ -332,13 +332,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const switchTenant = useCallback(
     (slug: string, keepPath = false) => {
-      apiSwitchTenant(slug).then(() => {
-        setActiveTenant(slug)
-        // The router runs below /<club>: another club is a new page.
-        if (!keepPath) window.location.assign(`/${encodeURIComponent(slug)}/app/dashboard`)
-      })
+      apiSwitchTenant(slug)
+        .then(() => {
+          setActiveTenant(slug)
+          // The router runs below /<club>: another club is a new page.
+          if (!keepPath) window.location.assign(`/${encodeURIComponent(slug)}/app/dashboard`)
+        })
+        .catch((err: { code?: string }) => {
+          // The email step after sign-in is still open: do it on SSO first.
+          if (err?.code === 'EMAIL_NOT_VERIFIED') {
+            const back = encodeURIComponent(window.location.href)
+            window.location.assign(`${ssoUrl}/verify?redirect=${back}`)
+          }
+        })
     },
-    [setActiveTenant],
+    [setActiveTenant, ssoUrl],
   )
 
   const setEvents = useCallback(

@@ -120,22 +120,6 @@ export async function changePassword(
   });
 }
 
-export async function updateAccount(fields: {
-  first_name?: string;
-  last_name?: string;
-  email?: string;
-  avatar?: string;
-  avatar_color?: string;
-  profile_note?: string;
-  language?: string;
-}): Promise<Member> {
-  const raw = await apiFetch<RawMember>("/account/", {
-    method: "PATCH",
-    body: JSON.stringify(fields),
-  });
-  return adaptMember(raw);
-}
-
 export async function getMailSettings(): Promise<{
   forwarding_enabled: boolean;
   private_email_verified: boolean;
@@ -144,10 +128,6 @@ export async function getMailSettings(): Promise<{
     forwarding_enabled: boolean;
     private_email_verified: boolean;
   }>("/account/mail-settings");
-}
-
-export async function requestEmailVerification(): Promise<void> {
-  await apiFetch("/account/request-email-verification", { method: "POST" });
 }
 
 export async function updateMailSettings(
@@ -163,89 +143,4 @@ export async function getMyGroups(): Promise<{ id: string; name: string }[]> {
   const data =
     await apiFetch<{ id: string; name: string }[]>("/account/groups");
   return data;
-}
-
-export interface SessionInfo {
-  id: number;
-  deviceId: number;
-  deviceName: string | null;
-  browserFamily: string;
-  platform: string;
-  ipAddress: string;
-  userAgent: string;
-  createReason: string | null;
-  createdAt: string | null;
-  lastActiveAt: string | null;
-  revokedAt: string | null;
-  revokedReason: string | null;
-  current: boolean;
-}
-
-export async function getSessions(
-  includeRevoked = false,
-): Promise<SessionInfo[]> {
-  const query = includeRevoked ? "?include_revoked=1" : "";
-  return apiFetch<SessionInfo[]>(`/account/sessions${query}`);
-}
-
-export async function revokeSession(sessionId: number): Promise<void> {
-  await apiFetch(`/account/sessions/${sessionId}`, { method: "DELETE" });
-}
-
-export async function renameSession(
-  sessionId: number,
-  name: string | null,
-): Promise<SessionInfo> {
-  return apiFetch<SessionInfo>(`/account/sessions/${sessionId}`, {
-    method: "PATCH",
-    body: JSON.stringify({ name }),
-  });
-}
-
-export async function revokeAllSessions(
-  includeCurrent = false,
-): Promise<{ ok: boolean; revoked: number }> {
-  return apiFetch<{ ok: boolean; revoked: number }>(
-    "/account/sessions/revoke-all",
-    {
-      method: "POST",
-      body: JSON.stringify({ includeCurrent: includeCurrent }),
-    },
-  );
-}
-
-export interface DeviceInfo {
-  id: number;
-  name: string | null;
-  browserFamily: string;
-  platform: string;
-  userAgent: string;
-  fingerprint: string;
-  createdAt: string | null;
-  lastSeenAt: string | null;
-  activeSessionCount: number;
-  lastActiveAt: string | null;
-}
-
-export async function getDevices(): Promise<DeviceInfo[]> {
-  return apiFetch<DeviceInfo[]>("/account/devices");
-}
-
-export async function renameDevice(
-  deviceId: number,
-  name: string | null,
-): Promise<DeviceInfo> {
-  return apiFetch<DeviceInfo>(`/account/devices/${deviceId}`, {
-    method: "PATCH",
-    body: JSON.stringify({ name }),
-  });
-}
-
-export async function revokeDeviceSessions(
-  deviceId: number,
-): Promise<{ ok: boolean; revoked: number }> {
-  return apiFetch<{ ok: boolean; revoked: number }>(
-    `/account/devices/${deviceId}`,
-    { method: "DELETE" },
-  );
 }
