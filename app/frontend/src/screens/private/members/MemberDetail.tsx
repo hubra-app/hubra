@@ -17,6 +17,7 @@ import type { Member } from '@/types'
 import { getMember, disableMember, enableMember } from '@/api/members'
 import { verifyMemberEmail } from '@/api/mail'
 import { MemberEditModal } from '@/components/MemberEditModal'
+import { roleLabels } from '@/roles'
 
 /* ── Member Detail ──────────────────────────── */
 export function MemberDetailScreen({
@@ -306,7 +307,7 @@ export function MemberDetailScreen({
               {m.clubUsername || <Empty />}
             </DetailRow>
             <DetailRow label={t('common.roles', 'Rollen')}>
-              {m.roles.join(', ')}
+              {roleLabels(m.roles)}
             </DetailRow>
             <DetailRow label={t('members.joined')} mono>
               {m.joined || <Empty />}
@@ -314,9 +315,11 @@ export function MemberDetailScreen({
             <DetailRow label={t('members.lastSeen')}>
               <LastSeenBadge lastSeen={m.lastSeen} />
             </DetailRow>
-            <DetailRow label={t('members.detail.toolHours')} mono>
-              {m.toolHours}h
-            </DetailRow>
+            {m.toolHours > 0 && (
+              <DetailRow label={t('members.detail.toolHours')} mono>
+                {m.toolHours}h
+              </DetailRow>
+            )}
             <DetailRow
               label={t('common.password')}
               borderless={!m.mustChangePassword}
@@ -405,50 +408,6 @@ export function MemberDetailScreen({
           <div style={{ padding: 20 }}>
             {tab === 'overview' && (
               <div>
-                <div
-                  className="grid-3"
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(3, 1fr)',
-                    gap: 12,
-                    marginBottom: 20,
-                  }}
-                >
-                  {[
-                    [t('members.detail.toolHours'), m.toolHours],
-                    [t('members.detail.monthsActive'), '—'],
-                    [t('members.detail.eventsAttended'), '—'],
-                  ].map(([label, val]) => (
-                    <div
-                      key={String(label)}
-                      style={{
-                        background: '#f4f2f9',
-                        borderRadius: 10,
-                        padding: '14px 16px',
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: 'var(--mantine-font-size-xs)',
-                          color: '#5e5873',
-                          marginBottom: 4,
-                        }}
-                      >
-                        {label}
-                      </div>
-                      <div
-                        className="stat-value"
-                        style={{
-                          fontSize: 22,
-                          fontWeight: 700,
-                          color: '#1a1625',
-                        }}
-                      >
-                        {val}
-                      </div>
-                    </div>
-                  ))}
-                </div>
                 <div
                   style={{
                     fontSize: 'var(--mantine-font-size-sm)',

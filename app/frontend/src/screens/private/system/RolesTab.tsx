@@ -44,6 +44,7 @@ import { getSystemPermissions, type PermissionEntry } from '@/api/system'
 import { listMembers, updateMember } from '@/api/members'
 import type { Member } from '@/types'
 import { ROLE_TEMPLATES, type RoleTemplate } from '@/data/roleTemplates'
+import { roleLabel } from '@/roles'
 
 function SectionToggle({
   role,
@@ -937,7 +938,7 @@ export function RolesTab() {
                 data={roles.map((r) => ({
                   value: r.id,
                   label:
-                    r.name +
+                    roleLabel(r.name) +
                     (r.isAdmin ? ' (Admin)' : r.isDefault ? ' (System)' : ''),
                 }))}
                 value={mobileSelectedRoleId}
@@ -975,7 +976,7 @@ export function RolesTab() {
                 data={roles.map((r) => ({
                   value: r.id,
                   label:
-                    r.name +
+                    roleLabel(r.name) +
                     (r.isAdmin ? ' (Admin)' : r.isDefault ? ' (System)' : ''),
                 }))}
                 value={selectedRoleIds}
@@ -1035,7 +1036,7 @@ export function RolesTab() {
                                   : '#5e5873',
                             }}
                           />
-                          {role.name}
+                          {roleLabel(role.name)}
                           {role.isAdmin && (
                             <span
                               style={{
@@ -1561,7 +1562,7 @@ export function RolesTab() {
                         }}
                       />
                       <Text size="sm" fw={600}>
-                        {role.name}
+                        {roleLabel(role.name)}
                       </Text>
                       {role.isAdmin && (
                         <Badge size="xs" color="indigo" variant="light">
@@ -1853,7 +1854,7 @@ export function RolesTab() {
               label={t('roles.role', 'Rolle')}
               data={visibleRoles.map((r) => ({
                 value: r.id,
-                label: r.name + (r.isAdmin ? ' (Admin)' : ''),
+                label: roleLabel(r.name) + (r.isAdmin ? ' (Admin)' : ''),
               }))}
               value={roleMembersOpen?.id ?? ''}
               onChange={(v) => {

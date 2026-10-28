@@ -30,7 +30,7 @@ function adaptMember(raw: RawMember): Member {
     name: raw.name,
     email: raw.email,
     publicEmail: raw.public_email ?? "",
-    tier: (raw.tier?.name ?? "Maker") as Member["tier"],
+    tier: raw.tier?.name ?? "",
     roles: raw.roles?.map((r) => r.name) ?? ["Member"],
     status: raw.status,
     toolHours: raw.tool_hours,

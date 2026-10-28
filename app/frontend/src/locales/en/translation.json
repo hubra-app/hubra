@@ -2588,7 +2588,13 @@
     "updatedMsg": "\"{{name}}\" has been updated.",
     "newSubtitle": "Starts with no permissions. Set them in the table afterwards.",
     "descHint": "Optional, shown in the admin area",
-    "templateWarning": "Applying a template creates any missing roles and sets their permissions. Existing roles with the same name have their permissions replaced."
+    "templateWarning": "Applying a template creates any missing roles and sets their permissions. Existing roles with the same name have their permissions replaced.",
+    "system": {
+      "Owner": "Owner",
+      "Admin": "Admin",
+      "Treasurer": "Treasurer",
+      "Member": "Member"
+    }
   },
   "modules": {
     "functions": {
