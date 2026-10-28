@@ -515,7 +515,14 @@
     "eventUpdatedMsg": "{{title}} isch aktualisiert worde.",
     "eventDeletedMsg": "{{title}} isch entfernt worde.",
     "eventTitlePlaceholder": "z.B. Holzwerkstatt-Grundlag",
-    "locationPlaceholder": "z.B. Holzwerkstatt"
+    "locationPlaceholder": "z.B. Holzwerkstatt",
+    "subscribe": {
+      "button": "In mim Kalender aazeige",
+      "title": "Vereinsaaläss abonniere",
+      "hint": "Füeg die Adrässe als Kalender-Abo hinzue (Google Kalender: «Per URL», Apple Kalender: «Neues Kalenderabonnement»). Neui und gänderti Aaläss chömed dänn vo sälber. De Link isch persönlich, gib en nöd wiiter.",
+      "copy": "Kopiere",
+      "copied": "Kopiert"
+    }
   },
   "polls": {
     "comingSoonDesc": "Mitglieder-Umfrage und Abstimmige sind in Entwicklig",

@@ -166,3 +166,8 @@ export interface EventRegistration {
   notes: string | null;
   guests: number;
 }
+
+export async function getCalendarFeedUrl(): Promise<string> {
+  const data = await apiFetch<{ url: string }>("/events/calendar/feed");
+  return data.url;
+}

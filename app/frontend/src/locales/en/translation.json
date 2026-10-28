@@ -428,7 +428,14 @@
     "posts_title": "Posts",
     "author": "Author",
     "likes": "Likes",
-    "comments": "Comments"
+    "comments": "Comments",
+    "subscribe": {
+      "button": "Add to my calendar",
+      "title": "Subscribe to club events",
+      "hint": "Add this address as a calendar subscription (Google Calendar: \"From URL\", Apple Calendar: \"New Calendar Subscription\"). New and changed events show up there on their own. The link is personal; do not share it.",
+      "copy": "Copy",
+      "copied": "Copied"
+    }
   },
   "finance": {
     "title": "Finance",

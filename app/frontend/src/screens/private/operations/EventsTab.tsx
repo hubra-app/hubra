@@ -23,6 +23,7 @@ import {
 import type { ClubEvent } from '@/types'
 import { createEvent, updateEvent, deleteEvent } from '@/api/events'
 import { useToggleJoinEvent } from '@/screens/private/operations/useEventActions'
+import { CalendarSubscribeButton } from './CalendarSubscribeButton'
 
 /* ── Events ─────────────────────────────────── */
 const eventSchema = z.object({
@@ -215,14 +216,15 @@ export function EventsTab() {
 
   return (
     <div>
-      {canCreate && (
-        <Group justify="flex-end" mb={16}>
+      <Group justify="flex-end" mb={16} gap="xs">
+        <CalendarSubscribeButton />
+        {canCreate && (
           <Button variant="filled" onClick={openAdd}>
             <IconPlus size={16} />
             {t('events.addEvent')}
           </Button>
-        </Group>
-      )}
+        )}
+      </Group>
       <DataTable
         breakpoint="wide"
         columns={[

@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
-from flask import Blueprint, Response, jsonify, request
+from datetime import date, timedelta
+
+from flask import Blueprint, Response, current_app, g, jsonify, request, url_for
+from itsdangerous import BadSignature, URLSafeSerializer
 from vollbuild.api.auth.helpers import get_current_member
 from marshmallow import ValidationError
-from vollbuild.api.permissions import permission_required
+from vollbuild.api.permissions import permission_required, require_member
 from vollbuild.core.errors import api_error, raise_error
 from vollbuild.core.extensions import db
 from vollbuild.core.models.member import Member
@@ -272,4 +275,67 @@ def calendar_export():
         status=200,
         mimetype="text/calendar",
         headers={"Content-Disposition": "attachment; filename=events.ics"},
+    )
+
+
+# ── Calendar subscription feed ───────────────────────────────────────────────
+#
+# Calendar apps cannot log in or send headers, so the feed URL carries a
+# signed token with the club and the member. It stops working when the member
+# is archived, the club is suspended, or the events module is switched off.
+
+
+def _feed_serializer() -> URLSafeSerializer:
+    return URLSafeSerializer(current_app.config["SECRET_KEY"], salt="calendar-feed")
+
+
+@events_bp.get("/calendar/feed")
+@require_member
+def calendar_feed_link():
+    """The member's personal calendar subscription URL."""
+    from vollbuild.core.tenant.context import current_tenant
+
+    tenant = current_tenant()
+    token = _feed_serializer().dumps(
+        {"t": tenant.id if tenant else None, "m": get_current_member().id}
+    )
+    url = url_for("events_bp.calendar_feed", token=token, _external=True)
+    return jsonify({"url": url}), 200
+
+
+@events_bp.get("/calendar/<token>.ics")
+def calendar_feed(token: str):
+    """Public iCalendar feed for calendar apps (token from /calendar/feed)."""
+    from vollbuild.core.models.tenant import Tenant
+    from vollbuild.core.modules import is_enabled
+    from vollbuild.core.tenant.context import set_search_path
+
+    try:
+        data = _feed_serializer().loads(token)
+    except BadSignature:
+        return api_error("NOT_FOUND", "Unknown calendar", 404)
+
+    tenant = None
+    if data.get("t") is not None:
+        tenant = db.session.get(Tenant, data["t"])
+        if tenant is None or tenant.status != "active":
+            return api_error("NOT_FOUND", "Unknown calendar", 404)
+        g.tenant = tenant
+        set_search_path(tenant.id)
+    if not is_enabled("events"):
+        return api_error("NOT_FOUND", "Unknown calendar", 404)
+    member = db.session.get(Member, data.get("m"))
+    if member is None or member.archived_at is not None:
+        return api_error("NOT_FOUND", "Unknown calendar", 404)
+
+    # The last 90 days and everything ahead.
+    since = (date.today() - timedelta(days=90)).isoformat()
+    ical = EventService.generate_ical(
+        EventsService.list(from_str=since), name=tenant.name if tenant else None
+    )
+    return Response(
+        ical,
+        status=200,
+        mimetype="text/calendar",
+        headers={"Cache-Control": "private, max-age=900"},
     )

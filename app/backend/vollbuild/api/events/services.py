@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+import re
+from datetime import date, datetime, time, timedelta, timezone
 
 from sqlalchemy import delete, func, insert, select
 from sqlalchemy.orm import selectinload
@@ -236,41 +237,126 @@ class EventService:
         return registration
 
     @staticmethod
-    def generate_ical(events: list[ClubEvent]) -> str:
-        """Generate iCal format calendar data for a list of events."""
+    def generate_ical(events: list[ClubEvent], name: str | None = None) -> str:
+        """Generate an iCalendar (RFC 5545) feed for a list of events.
+
+        Events with a ``time`` like "14:00-18:00" get local start and end
+        times (Europe/Zurich); others are all-day.
+        """
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         lines = [
             "BEGIN:VCALENDAR",
             "VERSION:2.0",
             "PRODID:-//Club Management Suite//Event Calendar//EN",
             "CALSCALE:GREGORIAN",
+            "METHOD:PUBLISH",
         ]
+        if name:
+            lines.append(f"X-WR-CALNAME:{_ical_text(name)}")
+        lines.append("X-WR-TIMEZONE:Europe/Zurich")
+        lines += _ZURICH_VTIMEZONE
 
         for event in events:
-            lines.extend(
-                [
-                    "BEGIN:VEVENT",
-                    f"UID:{event.id}@club-management-suite",
-                    f"SUMMARY:{event.title}",
-                    f"DTSTART:{event.date.isoformat().replace('-', '')}",
-                ]
-            )
-            if event.end_date:
-                lines.append(f"DTEND:{event.end_date.isoformat().replace('-', '')}")
+            lines += [
+                "BEGIN:VEVENT",
+                f"UID:event-{event.id}@club-management-suite",
+                f"DTSTAMP:{stamp}",
+                f"SUMMARY:{_ical_text(event.title)}",
+            ]
+            start, end = _event_times(event)
+            if start is None:
+                last = event.end_date or event.date
+                lines.append(f"DTSTART;VALUE=DATE:{event.date:%Y%m%d}")
+                # DTEND of an all-day event is exclusive.
+                lines.append(f"DTEND;VALUE=DATE:{last + timedelta(days=1):%Y%m%d}")
+            else:
+                lines.append(f"DTSTART;TZID=Europe/Zurich:{start:%Y%m%dT%H%M%S}")
+                lines.append(f"DTEND;TZID=Europe/Zurich:{end:%Y%m%dT%H%M%S}")
             if event.location:
-                lines.append(f"LOCATION:{event.location}")
-            if event.description:
-                lines.append(f"DESCRIPTION:{event.description}")
-            if event.time:
-                lines.append(f"COMMENT:Time: {event.time}")
-            lines.extend(
-                [
-                    f"CATEGORIES:{event.type}",
-                    "END:VEVENT",
-                ]
-            )
+                lines.append(f"LOCATION:{_ical_text(event.location)}")
+            description = event.description or ""
+            if event.meeting_url:
+                description = f"{description}\n\n{event.meeting_url}".strip()
+                lines.append(f"URL:{event.meeting_url}")
+            if description:
+                lines.append(f"DESCRIPTION:{_ical_text(description)}")
+            lines += [f"CATEGORIES:{_ical_text(event.type)}", "END:VEVENT"]
 
         lines.append("END:VCALENDAR")
-        return "\r\n".join(lines)
+        return "\r\n".join(_fold(line) for line in lines) + "\r\n"
+
+
+_ZURICH_VTIMEZONE = [
+    "BEGIN:VTIMEZONE",
+    "TZID:Europe/Zurich",
+    "BEGIN:DAYLIGHT",
+    "TZOFFSETFROM:+0100",
+    "TZOFFSETTO:+0200",
+    "TZNAME:CEST",
+    "DTSTART:19700329T020000",
+    "RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU",
+    "END:DAYLIGHT",
+    "BEGIN:STANDARD",
+    "TZOFFSETFROM:+0200",
+    "TZOFFSETTO:+0100",
+    "TZNAME:CET",
+    "DTSTART:19701025T030000",
+    "RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU",
+    "END:STANDARD",
+    "END:VTIMEZONE",
+]
+
+
+def _ical_text(value: str) -> str:
+    """Escape a TEXT value (RFC 5545 3.3.11)."""
+    return (
+        value.replace("\\", "\\\\")
+        .replace(";", "\\;")
+        .replace(",", "\\,")
+        .replace("\r\n", "\\n")
+        .replace("\n", "\\n")
+    )
+
+
+def _fold(line: str) -> str:
+    """Fold lines longer than 75 octets (RFC 5545 3.1)."""
+    data = line.encode("utf-8")
+    if len(data) <= 75:
+        return line
+    parts, chunk = [], b""
+    for ch in line:
+        enc = ch.encode("utf-8")
+        if len(chunk) + len(enc) > (75 if not parts else 74):
+            parts.append(chunk.decode("utf-8"))
+            chunk = b""
+        chunk += enc
+    parts.append(chunk.decode("utf-8"))
+    return "\r\n ".join(parts)
+
+
+_TIME_RANGE = re.compile(r"^\s*(\d{1,2})[:.](\d{2})\s*(?:-\s*(\d{1,2})[:.](\d{2}))?")
+
+
+def _event_times(event: ClubEvent):
+    """Local start and end datetimes, or (None, None) for all-day events."""
+    if event.all_day or not event.time:
+        return None, None
+    m = _TIME_RANGE.match(event.time)
+    if not m:
+        return None, None
+    try:
+        start = datetime.combine(event.date, time(int(m[1]), int(m[2])))
+        if m[3]:
+            end = datetime.combine(
+                event.end_date or event.date, time(int(m[3]), int(m[4]))
+            )
+        else:
+            end = start + timedelta(hours=1)
+    except ValueError:
+        return None, None
+    if end <= start:
+        end = start + timedelta(hours=1)
+    return start, end
 
 
 class EventsService:

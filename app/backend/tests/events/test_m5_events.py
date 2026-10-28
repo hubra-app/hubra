@@ -247,7 +247,7 @@ def test_calendar_export(client, auth_headers, seeded_db):
     assert "BEGIN:VCALENDAR" in data
     assert "END:VCALENDAR" in data
     assert "Calendar Event" in data
-    assert "DTSTART:20260901" in data
+    assert "DTSTART;VALUE=DATE:20260901" in data
 
 
 def test_calendar_export_empty(client, auth_headers, seeded_db):
