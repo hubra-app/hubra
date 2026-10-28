@@ -40,7 +40,7 @@ import {
 } from '@/api/members'
 import { createBulkInvoices } from '@/api/finance'
 import { listTiers } from '@/api/tiers'
-import { getLookups } from '@/api/lookups'
+import { lookupsQuery } from '@/api/lookups'
 import { formatCHF } from '@/format'
 import { MemberEditModal } from '@/components/MemberEditModal'
 
@@ -75,8 +75,7 @@ export function MembersTab() {
   const [bulkSaving, setBulkSaving] = useState(false)
 
   const { data: lookupsData } = useQuery({
-    queryKey: qk.lookups,
-    queryFn: () => getLookups(),
+    ...lookupsQuery,
   })
   const allTiers = useMemo(
     () =>

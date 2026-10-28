@@ -149,17 +149,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       try {
+        // Both at once: the permissions do not wait for the account.
+        const permRequest = getMyPermissions(ctrl.signal).catch(() => null)
         const member = await getAccount(ctrl.signal)
         if (cancelled) return
         setCurrentUser(member)
-        try {
-          const permData = await getMyPermissions(ctrl.signal)
-          if (cancelled) return
+        const permData = await permRequest
+        if (cancelled) return
+        if (permData) {
           setPermissions(permData.permissions)
           setImpersonation(permData.impersonation ?? null)
           setIsSuperadmin(permData.is_superadmin === true)
-        } catch {
-          if (!cancelled) setPermissions([])
+        } else {
+          setPermissions([])
         }
         if (!cancelled) {
           setAuthStatus('authed')

@@ -215,6 +215,8 @@ export function TiersTab() {
   const [costPreview, setCostPreview] = useState<TierCostPreview | null>(null)
 
   useEffect(() => {
+    // The preview belongs to the tier form: nothing to work out while it is closed.
+    if (!addOpen && !editTarget) return
     const timer = setTimeout(async () => {
       try {
         const result = await calculateTierCost({
@@ -246,6 +248,7 @@ export function TiersTab() {
     watchedCoefficient,
     watchedRoundTo,
     watchedDeductIds,
+    addOpen,
     editTarget,
   ])
 

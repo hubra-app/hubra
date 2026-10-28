@@ -6,6 +6,9 @@ from sqlalchemy import select, func
 from hubra.core.extensions import ma, db
 from hubra.core.models.group import Group
 from hubra.core.models.member import member_groups
+from hubra.core.schemas.counts import cached_count, clear_counts, prime_counts
+
+_MEMBER_COUNT = "_member_count"
 
 
 class GroupSchema(ma.SQLAlchemyAutoSchema):
@@ -27,14 +30,25 @@ class GroupSchema(ma.SQLAlchemyAutoSchema):
     parent_group_id = fields.Int(allow_none=True, dump_default=None)
     deleted_at = fields.DateTime(allow_none=True, dump_only=True, dump_default=None)
 
+    def dump(self, obj, *, many=None):
+        if not (self.many if many is None else many):
+            return super().dump(obj, many=many)
+        groups = list(obj)
+        prime_counts(groups, _MEMBER_COUNT, member_groups.c.group_id)
+        try:
+            return super().dump(groups, many=many)
+        finally:
+            clear_counts(groups, _MEMBER_COUNT)
+
     def get_member_count(self, obj):
-        return (
-            db.session.scalar(
+        return cached_count(
+            obj,
+            _MEMBER_COUNT,
+            lambda: db.session.scalar(
                 select(func.count())
                 .select_from(member_groups)
                 .where(member_groups.c.group_id == obj.id)
-            )
-            or 0
+            ),
         )
 
     def get_lead_name(self, obj):

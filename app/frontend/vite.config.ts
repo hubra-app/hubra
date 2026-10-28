@@ -29,7 +29,9 @@ export default defineConfig({
   // all of it (the rich text editor came along with Mantine that way).  The
   // default splitting keeps what only some screens use in their chunks.
   build: {
-    modulePreload: false,
+    // A lazy screen fetches its own imports together with itself instead of
+    // after it (one round trip less on every first visit to a screen).
+    modulePreload: { polyfill: false },
     sourcemap: false,
   },
 })

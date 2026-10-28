@@ -139,6 +139,7 @@ class GroupService:
             .where(Member.archived_at.is_(None))
             .order_by(User.last_name, User.first_name)
             .options(
+                selectinload(Member.user),
                 selectinload(Member.tier),
                 selectinload(Member.roles),
                 selectinload(Member.groups),
@@ -310,7 +311,10 @@ class GroupsService:
             select(Group)
             .where(Group.archived_at.is_(None))
             .order_by(Group.name)
-            .options(selectinload(Group.lead))
+            .options(
+                selectinload(Group.lead).selectinload(Member.user),
+                selectinload(Group.parent_group),
+            )
         ).all()
 
     @staticmethod

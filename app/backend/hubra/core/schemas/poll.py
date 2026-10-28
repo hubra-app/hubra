@@ -6,6 +6,9 @@ from sqlalchemy import select, func
 
 from hubra.core.extensions import ma, db
 from hubra.core.models.poll import Poll, PollOption, PollVote
+from hubra.core.schemas.counts import cached_count, clear_counts, prime_counts
+
+_VOTE_COUNT = "_vote_count"
 
 
 class PollOptionSchema(ma.SQLAlchemyAutoSchema):
@@ -18,9 +21,12 @@ class PollOptionSchema(ma.SQLAlchemyAutoSchema):
     vote_count = fields.Method("get_vote_count", dump_only=True)
 
     def get_vote_count(self, obj):
-        return (
-            db.session.scalar(select(func.count()).where(PollVote.option_id == obj.id))
-            or 0
+        return cached_count(
+            obj,
+            _VOTE_COUNT,
+            lambda: db.session.scalar(
+                select(func.count()).where(PollVote.option_id == obj.id)
+            ),
         )
 
 
@@ -45,26 +51,63 @@ class PollSchema(ma.SQLAlchemyAutoSchema):
 
     my_vote = fields.Method("get_my_vote", dump_only=True)
 
+    def dump(self, obj, *, many=None):
+        if not (self.many if many is None else many):
+            return super().dump(obj, many=many)
+        polls = list(obj)
+        options = [option for poll in polls for option in poll.options]
+        prime_counts(polls, _VOTE_COUNT, PollVote.poll_id)
+        prime_counts(options, _VOTE_COUNT, PollVote.option_id)
+        # On g, not on the schema: schema instances are shared.
+        g.poll_my_votes = _my_votes(polls)
+        try:
+            return super().dump(polls, many=many)
+        finally:
+            g.pop("poll_my_votes", None)
+            clear_counts(polls, _VOTE_COUNT)
+            clear_counts(options, _VOTE_COUNT)
+
     def get_total_votes(self, obj):
-        return (
-            db.session.scalar(select(func.count()).where(PollVote.poll_id == obj.id))
-            or 0
+        return cached_count(
+            obj,
+            _VOTE_COUNT,
+            lambda: db.session.scalar(
+                select(func.count()).where(PollVote.poll_id == obj.id)
+            ),
         )
 
     def get_my_vote(self, obj):
         """Index of the option the signed-in member chose, or None."""
-        member_id = _current_member_id()
-        if member_id is None:
-            return None
-        option_id = db.session.scalar(
-            select(PollVote.option_id).where(
-                PollVote.poll_id == obj.id, PollVote.member_id == member_id
+        my_votes = g.get("poll_my_votes")
+        if my_votes is not None:
+            option_id = my_votes.get(obj.id)
+        else:
+            member_id = _current_member_id()
+            if member_id is None:
+                return None
+            option_id = db.session.scalar(
+                select(PollVote.option_id).where(
+                    PollVote.poll_id == obj.id, PollVote.member_id == member_id
+                )
             )
-        )
         if option_id is None:
             return None
         ids = sorted(o.id for o in obj.options)
         return ids.index(option_id) if option_id in ids else None
+
+
+def _my_votes(polls) -> dict[int, int]:
+    """The signed-in member's choice in each of *polls*, in one query."""
+    member_id = _current_member_id()
+    if member_id is None or not polls:
+        return {}
+    rows = db.session.execute(
+        select(PollVote.poll_id, PollVote.option_id).where(
+            PollVote.member_id == member_id,
+            PollVote.poll_id.in_([p.id for p in polls]),
+        )
+    )
+    return {poll_id: option_id for poll_id, option_id in rows}
 
 
 def _current_member_id() -> int | None:
