@@ -5,7 +5,7 @@ import { zodResolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useQuery } from '@tanstack/react-query'
 import { Button, Group, Select, TextInput } from '@mantine/core'
-import { useT } from '@/locales/i18n'
+import { useT, zmsg } from '@/locales/i18n'
 import { IconPlus } from '@tabler/icons-react'
 import { useToast, useData, useNav, useAuth } from '@/context/AppContext'
 import {
@@ -41,7 +41,7 @@ const singleSchema = z
     memberId: z.string(),
     externalPartyId: z.string(),
     amount: z.string(),
-    due: z.string().min(1, 'Due date is required'),
+    due: z.string().min(1, zmsg('validation.dueRequired', 'Fälligkeitsdatum ist erforderlich')),
     description: z.string(),
     categoryId: z.string(),
   })
@@ -82,7 +82,7 @@ type SingleForm = z.infer<typeof singleSchema>
 
 const bulkSchema = z.object({
   tierId: z.string(),
-  due: z.string().min(1, 'Due date is required'),
+  due: z.string().min(1, zmsg('validation.dueRequired', 'Fälligkeitsdatum ist erforderlich')),
   description: z.string(),
 })
 type BulkForm = z.infer<typeof bulkSchema>

@@ -28,6 +28,7 @@ import {
   Checkbox,
   Alert,
 } from '@mantine/core'
+import { useT } from '@/locales/i18n'
 import { useToast, useAuth } from '@/context/AppContext'
 import { Modal, Field, LoadingSpinner } from '@/components/ui'
 import {
@@ -139,6 +140,7 @@ function MobilePermissionList({
   expandedResources: Set<string>
   toggleResourceExpand: (resource: string) => void
 }) {
+  const { t } = useT()
   return (
     <Stack gap={10}>
       {groupedPerms.map(([bp, items]) => {
@@ -344,8 +346,8 @@ function MobilePermissionList({
                               }}
                               title={
                                 isExpanded
-                                  ? 'Hide field permissions'
-                                  : 'Show field permissions'
+                                  ? t('roles.hideFields', 'Feldrechte ausblenden')
+                                  : t('roles.showFields', 'Feldrechte anzeigen')
                               }
                             >
                               <IconChevronRight
@@ -441,6 +443,7 @@ function MobilePermissionList({
 }
 
 export function RolesTab() {
+  const { t } = useT()
   const { notify } = useToast()
   const { hasPermission } = useAuth()
   const queryClient = useQueryClient()
@@ -662,14 +665,14 @@ export function RolesTab() {
       setTemplateOpen(false)
       notify(
         'success',
-        'Template applied',
-        `"${template.name}" template has been applied. ${template.roles.length} roles configured.`,
+        t('roles.templateApplied', 'Vorlage angewendet'),
+        t('roles.templateAppliedMsg', 'Die Vorlage «{{name}}» wurde angewendet: {{count}} Rollen eingerichtet.', { name: template.name, count: template.roles.length }),
       )
     } catch (err: unknown) {
       notify(
         'error',
-        'Template failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('roles.templateFailed', 'Vorlage fehlgeschlagen'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setApplyingTemplate(false)
@@ -691,8 +694,8 @@ export function RolesTab() {
     } catch (err: unknown) {
       notify(
         'error',
-        'Role assignment failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('roles.assignFailed', 'Rolle konnte nicht zugewiesen werden'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -708,8 +711,8 @@ export function RolesTab() {
       setLocalPerms((prev) => ({ ...prev, [role.id]: base }))
       notify(
         'error',
-        'Permission update failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('roles.permFailed', 'Berechtigung konnte nicht geändert werden'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     })
   }
@@ -727,8 +730,8 @@ export function RolesTab() {
       setLocalPerms((prev) => ({ ...prev, [role.id]: base }))
       notify(
         'error',
-        'Permission update failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('roles.permFailed', 'Berechtigung konnte nicht geändert werden'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     })
   }
@@ -777,14 +780,14 @@ export function RolesTab() {
       setAddOpen(false)
       notify(
         'success',
-        'Role created',
-        `"${name}" role is ready. Set its permissions below.`,
+        t('roles.created', 'Rolle erstellt'),
+        t('roles.createdMsg', 'Die Rolle «{{name}}» ist bereit. Lege unten ihre Berechtigungen fest.', { name }),
       )
     } catch (err: unknown) {
       notify(
         'error',
-        'Create failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('common.createFailed', 'Erstellen fehlgeschlagen'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -812,12 +815,12 @@ export function RolesTab() {
         delete next[role.id]
         return next
       })
-      notify('info', 'Role removed', `"${role.name}" has been deleted.`)
+      notify('info', t('roles.removed', 'Rolle entfernt'), t('roles.removedMsg', '«{{name}}» wurde gelöscht.', { name: role.name }))
     } catch (err: unknown) {
       notify(
         'error',
-        'Delete failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('common.deleteFailed', 'Löschen fehlgeschlagen'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -850,12 +853,12 @@ export function RolesTab() {
       })
       queryClient.invalidateQueries({ queryKey: ['lookups'] })
       setEditTarget(null)
-      notify('success', 'Role updated', `"${updated.name}" has been updated.`)
+      notify('success', t('roles.updated', 'Rolle gespeichert'), t('roles.updatedMsg', '«{{name}}» wurde gespeichert.', { name: updated.name }))
     } catch (err: unknown) {
       notify(
         'error',
-        'Update failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('common.updateFailed', 'Aktualisieren fehlgeschlagen'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -863,7 +866,7 @@ export function RolesTab() {
   if (loading) {
     return (
       <div>
-        <LoadingSpinner compact message="Loading?" />
+        <LoadingSpinner compact message={t('common.loading', 'Wird geladen …')} />
       </div>
     )
   }
@@ -875,13 +878,13 @@ export function RolesTab() {
           {canCreate && (
             <Button variant="default" onClick={() => setTemplateOpen(true)}>
               <IconTemplate size={16} />
-              Templates
+              {t('roles.templates', 'Vorlagen')}
             </Button>
           )}
           {canCreate && (
             <Button variant="default" onClick={() => setAddOpen(true)}>
               <IconPlus size={16} />
-              New role
+              {t('roles.new', 'Neue Rolle')}
             </Button>
           )}
         </div>
@@ -897,7 +900,7 @@ export function RolesTab() {
               label: (
                 <Group gap={4} wrap="nowrap">
                   <IconList size={14} />
-                  By permission
+                  {t('roles.byPermission', 'Nach Berechtigung')}
                 </Group>
               ),
             },
@@ -906,7 +909,7 @@ export function RolesTab() {
               label: (
                 <Group gap={4} wrap="nowrap">
                   <IconGridDots size={14} />
-                  By resource
+                  {t('roles.byResource', 'Nach Bereich')}
                 </Group>
               ),
             },
@@ -921,7 +924,7 @@ export function RolesTab() {
             }}
           >
             <IconUsers size={14} />
-            Role members
+            {t('roles.members', 'Rollenmitglieder')}
           </Button>
         )}
       </Group>
@@ -930,7 +933,7 @@ export function RolesTab() {
           {isMobile ? (
             <Stack gap={12} mb={16}>
               <Select
-                label="Role"
+                label={t('roles.role', 'Rolle')}
                 data={roles.map((r) => ({
                   value: r.id,
                   label:
@@ -943,7 +946,7 @@ export function RolesTab() {
                 size="sm"
               />
               <Select
-                label="Namespace"
+                label={t('roles.namespace', 'Bereich')}
                 data={namespaces.map((ns) => ({
                   value: ns,
                   label: blueprintLabel(ns),
@@ -957,7 +960,7 @@ export function RolesTab() {
           ) : (
             <Group gap={12} mb={16} grow align="flex-end">
               <Select
-                label="Namespace"
+                label={t('roles.namespace', 'Bereich')}
                 data={namespaces.map((ns) => ({
                   value: ns,
                   label: blueprintLabel(ns),
@@ -968,7 +971,7 @@ export function RolesTab() {
                 size="sm"
               />
               <MultiSelect
-                label="Roles"
+                label={t('common.roles', 'Rollen')}
                 data={roles.map((r) => ({
                   value: r.id,
                   label:
@@ -977,7 +980,7 @@ export function RolesTab() {
                 }))}
                 value={selectedRoleIds}
                 onChange={setSelectedRoleIds}
-                placeholder="Select roles to display"
+                placeholder={t('roles.selectDisplay', 'Rollen zur Anzeige wählen')}
                 searchable
                 clearable
                 hidePickedOptions
@@ -1008,7 +1011,7 @@ export function RolesTab() {
               <Table highlightOnHover style={{ minWidth: 560 }}>
                 <Table.Thead>
                   <Table.Tr>
-                    <Table.Th style={{ minWidth: 160 }}>Permission</Table.Th>
+                    <Table.Th style={{ minWidth: 160 }}>{t('roles.permission', 'Berechtigung')}</Table.Th>
                     {visibleRoles.map((role) => (
                       <Table.Th
                         key={role.id}
@@ -1108,8 +1111,8 @@ export function RolesTab() {
                               const allKeys = allPerms.map((p) => p.key)
                               const roleSet = rolePerms[role.id]
                               return allKeys.every((k) => roleSet?.has(k))
-                                ? 'Deselect all'
-                                : 'Select all'
+                                ? t('roles.deselectAll', 'Alle abwählen')
+                                : t('roles.selectAll', 'Alle wählen')
                             })()}
                           </button>
                         )}
@@ -1384,8 +1387,8 @@ export function RolesTab() {
                                                 }}
                                                 title={
                                                   isExpanded
-                                                    ? 'Hide field permissions'
-                                                    : 'Show field permissions'
+                                                    ? t('roles.hideFields', 'Feldrechte ausblenden')
+                                                    : t('roles.showFields', 'Feldrechte anzeigen')
                                                 }
                                               >
                                                 <IconChevronRight
@@ -1540,7 +1543,7 @@ export function RolesTab() {
           <Table highlightOnHover style={{ minWidth: 520 }}>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th style={{ minWidth: 180 }}>Resource</Table.Th>
+                <Table.Th style={{ minWidth: 180 }}>{t('roles.resource', 'Bereich')}</Table.Th>
                 {visibleRoles.map((role) => (
                   <Table.Th
                     key={role.id}
@@ -1667,31 +1670,31 @@ export function RolesTab() {
       <Modal
         open={addOpen}
         onClose={() => setAddOpen(false)}
-        title="New role"
-        subtitle="Starts with no permissions ? configure them in the matrix."
+        title={t('roles.new', 'Neue Rolle')}
+        subtitle={t('roles.newSubtitle', 'Startet ohne Berechtigungen. Lege sie danach in der Tabelle fest.')}
         footer={
           <>
             <Button variant="default" onClick={() => setAddOpen(false)}>
-              Cancel
+              {t('common.cancel', 'Abbrechen')}
             </Button>
             <Button variant="filled" onClick={handleCreateRole}>
-              Create role
+              {t('roles.create', 'Rolle erstellen')}
             </Button>
           </>
         }
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Field label="Role name">
+          <Field label={t('roles.name', 'Name der Rolle')}>
             <TextInput
-              placeholder="e.g. Moderator"
+              placeholder={t('roles.namePlaceholder', 'z. B. Moderation')}
               value={newRoleName}
               onChange={(e) => setNewRoleName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreateRole()}
             />
           </Field>
-          <Field label="Description" hint="Optional ? shown in the admin UI">
+          <Field label={t('common.description', 'Beschreibung')} hint={t('roles.descHint', 'Optional, wird in der Verwaltung angezeigt')}>
             <TextInput
-              placeholder="e.g. Can manage members and finances"
+              placeholder={t('roles.descPlaceholder', 'z. B. Darf Mitglieder und Finanzen verwalten')}
               value={newRoleDesc}
               onChange={(e) => setNewRoleDesc(e.target.value)}
             />
@@ -1711,14 +1714,14 @@ export function RolesTab() {
               onChange={(e) => setNewRoleIsAdmin(e.target.checked)}
               style={{ width: 16, height: 16, accentColor: '#3a1e78' }}
             />
-            <span style={{ fontWeight: 600 }}>Admin role</span>
+            <span style={{ fontWeight: 600 }}>{t('roles.adminRole', 'Admin-Rolle')}</span>
             <span
               style={{
                 color: '#5e5873',
                 fontSize: 'var(--mantine-font-size-xs)',
               }}
             >
-              Bypasses all permission checks
+              {t('roles.adminHint', 'Umgeht alle Berechtigungsprüfungen')}
             </span>
           </label>
         </div>
@@ -1727,27 +1730,27 @@ export function RolesTab() {
       <Modal
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
-        title="Edit role"
+        title={t('roles.edit', 'Rolle bearbeiten')}
         subtitle={editTarget?.name}
         footer={
           <>
             <Button variant="default" onClick={() => setEditTarget(null)}>
-              Cancel
+              {t('common.cancel', 'Abbrechen')}
             </Button>
             <Button variant="filled" onClick={handleSaveEdit}>
-              Save changes
+              {t('common.saveChanges', 'Änderungen speichern')}
             </Button>
           </>
         }
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Field label="Role name">
+          <Field label={t('roles.name', 'Name der Rolle')}>
             <TextInput
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
             />
           </Field>
-          <Field label="Description" hint="Optional ? shown in the admin UI">
+          <Field label={t('common.description', 'Beschreibung')} hint={t('roles.descHint', 'Optional, wird in der Verwaltung angezeigt')}>
             <TextInput
               value={editDesc}
               onChange={(e) => setEditDesc(e.target.value)}
@@ -1768,14 +1771,14 @@ export function RolesTab() {
               onChange={(e) => setEditIsAdmin(e.target.checked)}
               style={{ width: 16, height: 16, accentColor: '#3a1e78' }}
             />
-            <span style={{ fontWeight: 600 }}>Admin role</span>
+            <span style={{ fontWeight: 600 }}>{t('roles.adminRole', 'Admin-Rolle')}</span>
             <span
               style={{
                 color: '#5e5873',
                 fontSize: 'var(--mantine-font-size-xs)',
               }}
             >
-              Bypasses all permission checks
+              {t('roles.adminHint', 'Umgeht alle Berechtigungsprüfungen')}
             </span>
           </label>
         </div>
@@ -1784,15 +1787,16 @@ export function RolesTab() {
       <Modal
         open={templateOpen}
         onClose={() => setTemplateOpen(false)}
-        title="Role templates"
-        subtitle="Apply a pre-configured set of roles and permissions."
+        title={t('roles.templatesTitle', 'Rollenvorlagen')}
+        subtitle={t('roles.templatesSubtitle', 'Wende einen vorbereiteten Satz an Rollen und Berechtigungen an.')}
         wide
       >
         <Stack gap={16}>
           <Alert color="blue" variant="light">
-            Applying a template will create any missing roles and set their
-            permissions. Existing roles with the same name will have their
-            permissions replaced.
+            {t(
+              'roles.templateWarning',
+              'Eine Vorlage legt fehlende Rollen an und setzt ihre Berechtigungen. Bei bestehenden Rollen mit gleichem Namen werden die Berechtigungen ersetzt.',
+            )}
           </Alert>
           {ROLE_TEMPLATES.map((template) => (
             <Paper key={template.id} withBorder p="md" radius="md">
@@ -1824,7 +1828,7 @@ export function RolesTab() {
                   loading={applyingTemplate}
                   onClick={() => handleApplyTemplate(template)}
                 >
-                  Apply
+                  {t('roles.apply', 'Anwenden')}
                 </Button>
               </Group>
             </Paper>
@@ -1835,7 +1839,7 @@ export function RolesTab() {
       <Modal
         open={!!roleMembersOpen}
         onClose={() => setRoleMembersOpen(null)}
-        title="Role members"
+        title={t('roles.members', 'Rollenmitglieder')}
         subtitle={
           roleMembersOpen
             ? `Assign roles to members — ${roleMembersOpen.name}`
@@ -1846,7 +1850,7 @@ export function RolesTab() {
         <Stack gap={12}>
           {visibleRoles.length > 0 && (
             <Select
-              label="Role"
+              label={t('roles.role', 'Rolle')}
               data={visibleRoles.map((r) => ({
                 value: r.id,
                 label: r.name + (r.isAdmin ? ' (Admin)' : ''),
@@ -1923,11 +1927,11 @@ export function RolesTab() {
                 })}
                 {membersData && membersData.length === 0 && (
                   <Text c="dimmed" ta="center" py="lg">
-                    No members found.
+                    {t('roles.noMembers', 'Keine Mitglieder gefunden.')}
                   </Text>
                 )}
                 {!membersData && (
-                  <LoadingSpinner compact message="Loading members..." />
+                  <LoadingSpinner compact message={t('roles.loadingMembers', 'Mitglieder werden geladen …')} />
                 )}
               </Stack>
             </ScrollArea.Autosize>

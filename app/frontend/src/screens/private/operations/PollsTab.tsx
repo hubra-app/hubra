@@ -71,7 +71,7 @@ export function PollsTab() {
     initialValues: { question: "", closesAt: "" },
     validate: {
       question: (v: string) =>
-        v.trim().length < 1 ? "Question is required" : null,
+        v.trim().length < 1 ? t("validation.questionRequired", "Frage ist erforderlich") : null,
     },
   });
 
@@ -87,7 +87,7 @@ export function PollsTab() {
     },
     onSuccess: (updated, { pollId }) => {
       setPolls((prev) => prev.map((p) => (p.id === pollId ? updated : p)));
-      notify("success", "Vote cast", "Your vote has been recorded.");
+      notify("success", t("polls.voteCast", "Stimme abgegeben"), t("polls.voteCastMsg", "Deine Stimme wurde gespeichert."));
     },
     onError: (err, { pollId }, ctx) => {
       if (ctx?.oldOptIdx !== undefined) {
@@ -99,8 +99,8 @@ export function PollsTab() {
           return n;
         });
       }
-      const msg = err instanceof Error ? err.message : "Could not cast vote.";
-      notify("error", "Error", msg);
+      const msg = err instanceof Error ? err.message : t("polls.voteFailed", "Die Stimme konnte nicht abgegeben werden.");
+      notify("error", t("common.error", "Fehler"), msg);
     },
   });
 
@@ -127,12 +127,12 @@ export function PollsTab() {
       setRemindingPollId(null);
     },
     onSuccess: (result) => {
-      notify("success", "Reminders sent", `${result.sent} reminder(s) sent.`);
+      notify("success", t("polls.remindersSent", "Erinnerungen gesendet"), t("polls.remindersSentMsg", "{{count}} Erinnerungen gesendet.", { count: result.sent }));
     },
     onError: (err) => {
       const msg =
-        err instanceof Error ? err.message : "Could not send reminders.";
-      notify("error", "Error", msg);
+        err instanceof Error ? err.message : t("polls.remindersFailed", "Die Erinnerungen konnten nicht gesendet werden.");
+      notify("error", t("common.error", "Fehler"), msg);
     },
   });
 
@@ -171,7 +171,7 @@ export function PollsTab() {
     if (!question) return;
     const validOptions = options.filter(Boolean);
     if (validOptions.length < 2) {
-      notify("error", "Validation", "At least 2 options are required.");
+      notify("error", t("polls.validation", "Eingabe prüfen"), t("polls.minOptions", "Es braucht mindestens 2 Optionen."));
       return;
     }
 
@@ -192,19 +192,19 @@ export function PollsTab() {
         setPolls((prev) =>
           prev.map((p) => (p.id === updated.id ? updated : p)),
         );
-        notify("success", "Poll updated", "Changes saved.");
+        notify("success", t("polls.updated", "Umfrage gespeichert"), t("polls.updatedMsg", "Die Änderungen sind gespeichert."));
       } else {
         const poll = await createPoll(payload as PollCreate);
         setPolls((prev) => [poll, ...prev]);
-        notify("success", "Poll created", "Members can now vote.");
+        notify("success", t("polls.created", "Umfrage erstellt"), t("polls.createdMsg", "Die Mitglieder können jetzt abstimmen."));
       }
       setAddOpen(false);
       resetForm();
     } catch (err: unknown) {
       notify(
         "error",
-        "Error",
-        err instanceof Error ? err.message : "Unknown error",
+        t("common.error", "Fehler"),
+        err instanceof Error ? err.message : t("common.unknownError", "Unbekannter Fehler"),
       );
     } finally {
       setSaving(false);
@@ -276,7 +276,7 @@ export function PollsTab() {
                         size="xs"
                         radius="xl"
                       >
-                        Required
+                        {t("polls.requiredBadge", "Pflicht")}
                       </Badge>
                     )}
                   </div>
@@ -410,7 +410,7 @@ export function PollsTab() {
                         variant="subtle"
                         onClick={() => remindPollMutation.mutate(poll.id)}
                         loading={remindingPollId === poll.id}
-                        aria-label="Remind"
+                        aria-label={t('polls.remind', 'Erinnern')}
                       >
                         <IconBell size={18} />
                       </ActionIcon>
@@ -420,7 +420,7 @@ export function PollsTab() {
                         size="md"
                         variant="subtle"
                         onClick={() => openEdit(poll)}
-                        aria-label="Edit"
+                        aria-label={t('common.edit', 'Bearbeiten')}
                       >
                         <IconEdit size={18} />
                       </ActionIcon>
@@ -432,7 +432,7 @@ export function PollsTab() {
                         color="red"
                         onClick={() => setDeleteTarget(poll.id)}
                         loading={deletingPollId === poll.id}
-                        aria-label="Delete"
+                        aria-label={t('common.delete', 'Löschen')}
                       >
                         <IconTrash size={18} />
                       </ActionIcon>
@@ -463,7 +463,7 @@ export function PollsTab() {
           setAddOpen(false);
           resetForm();
         }}
-        title={editTarget ? "Edit Poll" : "New Poll"}
+        title={editTarget ? t("polls.editTitle", "Umfrage bearbeiten") : t("polls.createPoll", "Neue Umfrage")}
         footer={
           <>
             <Button
@@ -513,7 +513,7 @@ export function PollsTab() {
                       variant="subtle"
                       color="red"
                       onClick={() => removeOption(i)}
-                      aria-label="Remove option"
+                      aria-label={t('polls.removeOption', 'Option entfernen')}
                     >
                       <IconTrash size={14} />
                     </ActionIcon>
@@ -549,17 +549,17 @@ export function PollsTab() {
             />
           </Field>
 
-          <Field label="Required poll">
+          <Field label={t('polls.required', 'Pflicht-Umfrage')}>
             <Switch
               checked={isRequired}
               onChange={(e) => setIsRequired(e.currentTarget.checked)}
-              label="Members must vote on this poll"
+              label={t('polls.requiredHint', 'Mitglieder müssen an dieser Umfrage teilnehmen')}
             />
           </Field>
 
           {isRequired && (
             <>
-              <Field label="Required for groups">
+              <Field label={t('polls.requiredGroups', 'Pflicht für Gruppen')}>
                 <MultiSelect
                   data={groups.map((g) => ({
                     value: String(g.id),
@@ -569,11 +569,11 @@ export function PollsTab() {
                   onChange={(vals: string[]) =>
                     setRequiredGroupIds(vals.map(Number))
                   }
-                  placeholder="Select groups"
+                  placeholder={t('polls.selectGroups', 'Gruppen wählen')}
                   clearable
                 />
               </Field>
-              <Field label="Required for functions">
+              <Field label={t('polls.requiredFunctions', 'Pflicht für Funktionen')}>
                 <MultiSelect
                   data={functions.map((f) => ({
                     value: String(f.id),
@@ -583,7 +583,7 @@ export function PollsTab() {
                   onChange={(vals: string[]) =>
                     setRequiredFunctionIds(vals.map(Number))
                   }
-                  placeholder="Select functions"
+                  placeholder={t('polls.selectFunctions', 'Funktionen wählen')}
                   clearable
                 />
               </Field>

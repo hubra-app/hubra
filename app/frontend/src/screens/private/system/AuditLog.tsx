@@ -5,6 +5,7 @@ import { IconX } from '@tabler/icons-react'
 import { Select, ActionIcon, Badge } from '@mantine/core'
 import { PageHead, Avatar, Tag, DataTable } from '@/components/ui'
 import { listAuditLog, getAuditEntry } from '@/api/settings'
+import { useT } from '@/locales/i18n'
 
 /* -- Audit entry detail panel ------------------ */
 function AuditEntryDetailPanel({
@@ -14,6 +15,7 @@ function AuditEntryDetailPanel({
   entryId: string
   onClose: () => void
 }) {
+  const { t, i18n } = useT()
   const {
     data: detail,
     isLoading: loading,
@@ -26,12 +28,12 @@ function AuditEntryDetailPanel({
     queryError instanceof Error
       ? queryError.message
       : queryError
-        ? 'Failed to load entry'
+        ? t('audit.loadFailed', 'Eintrag konnte nicht geladen werden')
         : null
 
   const formatTime = (iso: string) => {
     try {
-      return new Date(iso).toLocaleString(undefined, {
+      return new Date(iso).toLocaleString(i18n.language, {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -66,7 +68,7 @@ function AuditEntryDetailPanel({
                 color: '#1a1625',
               }}
             >
-              Audit entry #{entryId}
+              {t('audit.entryTitle', 'Eintrag #{{id}}', { id: entryId })}
             </div>
             <div
               style={{
@@ -74,7 +76,7 @@ function AuditEntryDetailPanel({
                 color: '#5e5873',
               }}
             >
-              Full event details
+              {t('audit.fullDetails', 'Alle Details zum Ereignis')}
             </div>
           </div>
           <ActionIcon variant="subtle" onClick={onClose}>
@@ -90,7 +92,7 @@ function AuditEntryDetailPanel({
                 fontSize: 'var(--mantine-font-size-sm)',
               }}
             >
-              Loading…
+              {t('common.loading', 'Wird geladen …')}
             </div>
           )}
           {error && (
@@ -117,7 +119,7 @@ function AuditEntryDetailPanel({
                     marginBottom: 6,
                   }}
                 >
-                  Action
+                  {t('audit.action', 'Aktion')}
                 </div>
                 <Badge
                   variant="light"
@@ -144,7 +146,7 @@ function AuditEntryDetailPanel({
                     marginBottom: 6,
                   }}
                 >
-                  Timestamp
+                  {t('audit.timestamp', 'Zeitpunkt')}
                 </div>
                 <div
                   className="num"
@@ -169,7 +171,7 @@ function AuditEntryDetailPanel({
                     marginBottom: 8,
                   }}
                 >
-                  Actor
+                  {t('audit.actor', 'Person')}
                 </div>
                 {detail.actorName ? (
                   <div
@@ -197,7 +199,7 @@ function AuditEntryDetailPanel({
                             color: '#8c86a0',
                           }}
                         >
-                          Member ID {detail.actorId}
+                          {t('audit.memberId', 'Mitglied #{{id}}', { id: detail.actorId })}
                         </div>
                       )}
                     </div>
@@ -228,7 +230,7 @@ function AuditEntryDetailPanel({
                       marginBottom: 8,
                     }}
                   >
-                    Target
+                    {t('audit.target', 'Ziel')}
                   </div>
                   <div
                     style={{
@@ -253,7 +255,7 @@ function AuditEntryDetailPanel({
                             color: '#8c86a0',
                           }}
                         >
-                          Type
+                          {t('common.type', 'Typ')}
                         </span>
                         <Tag>{detail.targetType}</Tag>
                       </div>
@@ -272,7 +274,7 @@ function AuditEntryDetailPanel({
                             color: '#8c86a0',
                           }}
                         >
-                          Label
+                          {t('audit.label', 'Bezeichnung')}
                         </span>
                         <span
                           style={{
@@ -299,7 +301,7 @@ function AuditEntryDetailPanel({
                             color: '#8c86a0',
                           }}
                         >
-                          ID
+                          {t('audit.id', 'ID')}
                         </span>
                         <span
                           className="num"
@@ -328,7 +330,7 @@ function AuditEntryDetailPanel({
                     marginBottom: 4,
                   }}
                 >
-                  Entry ID
+                  {t('audit.entryId', 'Eintrags-ID')}
                 </div>
                 <span
                   className="num"
@@ -350,18 +352,19 @@ function AuditEntryDetailPanel({
 }
 
 /* -- Audit log --------------------------------- */
-const AUDIT_ACTIONS = [
-  { value: '', label: 'All actions' },
-  { value: 'create_member', label: 'Create member' },
-  { value: 'update_member', label: 'Update member' },
-  { value: 'delete_member_permanent', label: 'Delete member' },
-  { value: 'archive_member', label: 'Archive member' },
-  { value: 'approve_application', label: 'Approve application' },
-  { value: 'decline_application', label: 'Decline application' },
+const AUDIT_ACTIONS: [string, string][] = [
+  ['', 'Alle Aktionen'],
+  ['create_member', 'Mitglied erstellt'],
+  ['update_member', 'Mitglied geändert'],
+  ['delete_member_permanent', 'Mitglied gelöscht'],
+  ['archive_member', 'Mitglied archiviert'],
+  ['approve_application', 'Antrag angenommen'],
+  ['decline_application', 'Antrag abgelehnt'],
 ]
 const PAGE_SIZE = 25
 
 export function AuditLogScreen() {
+  const { t } = useT()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(PAGE_SIZE)
   const [action, setAction] = useState('')
@@ -395,14 +398,14 @@ export function AuditLogScreen() {
   return (
     <div>
       <PageHead
-        title="Audit log"
-        desc={`${total} entr${total === 1 ? 'y' : 'ies'}`}
+        title={t('audit.title', 'Audit-Log')}
+        desc={t('audit.entryCount', '{{count}} Einträge', { count: total })}
       />
       <DataTable
         columns={[
           {
             key: 'time',
-            header: 'Time',
+            header: t('audit.time', 'Zeit'),
             render: (entry) => (
               <span
                 className="num"
@@ -417,14 +420,14 @@ export function AuditLogScreen() {
           },
           {
             key: 'actor',
-            header: 'Actor',
+            header: t('audit.actor', 'Person'),
             render: (entry) => (
               <span style={{ fontWeight: 500 }}>{entry.actor}</span>
             ),
           },
           {
             key: 'action',
-            header: 'Action',
+            header: t('audit.action', 'Aktion'),
             render: (entry) => {
               const action = entry.action.toLowerCase()
               const color =
@@ -448,7 +451,7 @@ export function AuditLogScreen() {
           },
           {
             key: 'target',
-            header: 'Target',
+            header: t('audit.target', 'Ziel'),
             render: (entry) => (
               <span
                 style={{
@@ -463,11 +466,11 @@ export function AuditLogScreen() {
         ]}
         data={filteredEntries}
         loading={loading}
-        emptyMessage="No entries."
+        emptyMessage={t('audit.empty', 'Keine Einträge.')}
         onRowClick={(entry) => setSelectedEntryId(entry.id)}
         searchValue={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search audit log…"
+        searchPlaceholder={t('audit.search', 'Audit-Log durchsuchen …')}
         page={page}
         perPage={pageSize}
         total={total}
@@ -481,7 +484,10 @@ export function AuditLogScreen() {
         toolbar={
           <Select
             size="sm"
-            data={AUDIT_ACTIONS}
+            data={AUDIT_ACTIONS.map(([value, label]) => ({
+              value,
+              label: t(`audit.actions.${value || 'all'}`, label),
+            }))}
             value={action}
             onChange={(v) => handleActionChange(v ?? '')}
             style={{ width: 200 }}

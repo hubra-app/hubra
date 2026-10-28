@@ -205,7 +205,7 @@ export function TransactionsTab() {
           message={
             fetchError instanceof Error
               ? fetchError.message
-              : 'Failed to load transactions'
+              : t('finance.loadTransactionsFailed', 'Buchungen konnten nicht geladen werden')
           }
           onRetry={() => refetch()}
         />

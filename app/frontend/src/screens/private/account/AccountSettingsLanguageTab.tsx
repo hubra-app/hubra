@@ -49,12 +49,8 @@ export function AccountSettingsLanguageTab() {
             )}
           </p>
           {[
-            { code: 'en', label: 'English', nativeLabel: 'English' },
-            {
-              code: 'de-CH',
-              label: 'Swiss German',
-              nativeLabel: 'Schwiizerdütsch',
-            },
+            { code: 'de-CH', label: 'Deutsch (Schweiz)', nativeLabel: 'Deutsch' },
+            { code: 'en-GB', label: 'Englisch', nativeLabel: 'English' },
           ].map((lang) => (
             <label
               key={lang.code}

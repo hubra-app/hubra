@@ -56,9 +56,9 @@ export function DomainsTab() {
       const result = await addDomain(newDomain.trim().toLowerCase())
       setTxtInstructions(result.txt_record.instructions)
       refresh()
-      notify('success', t('domains.added', 'Domain added'), t('domains.addedMsg', 'Add the TXT record to verify ownership.'))
+      notify('success', t('domains.added', 'Domain hinzugefügt'), t('domains.addedMsg', 'Füge den TXT-Eintrag hinzu, um die Domain zu bestätigen.'))
     } catch (err) {
-      notify('error', t('domains.addFailed', 'Failed to add domain'), err instanceof Error ? err.message : undefined)
+      notify('error', t('domains.addFailed', 'Domain konnte nicht hinzugefügt werden'), err instanceof Error ? err.message : undefined)
     } finally {
       setAdding(false)
     }
@@ -68,23 +68,23 @@ export function DomainsTab() {
     try {
       const result = await verifyDomain(domain.id)
       if (result.verified) {
-        notify('success', t('domains.verified', 'Domain verified'), domain.domain)
+        notify('success', t('domains.verified', 'Domain bestätigt'), domain.domain)
       } else {
-        notify('error', t('domains.verifyFailed', 'Verification failed'), result.error ?? undefined)
+        notify('error', t('domains.verifyFailed', 'Bestätigung fehlgeschlagen'), result.error ?? undefined)
       }
       refresh()
     } catch (err) {
-      notify('error', t('domains.verifyFailed', 'Verification failed'), err instanceof Error ? err.message : undefined)
+      notify('error', t('domains.verifyFailed', 'Bestätigung fehlgeschlagen'), err instanceof Error ? err.message : undefined)
     }
   }
 
   const handleRemove = async (id: number) => {
     try {
       await removeDomain(id)
-      notify('success', t('domains.removed', 'Domain removed'))
+      notify('success', t('domains.removed', 'Domain entfernt'))
       refresh()
     } catch {
-      notify('error', t('domains.removeFailed', 'Failed to remove domain'))
+      notify('error', t('domains.removeFailed', 'Domain konnte nicht entfernt werden'))
     }
     setDeleteTarget(null)
   }
@@ -92,26 +92,26 @@ export function DomainsTab() {
   const handleSetPrimary = async (domain: Domain) => {
     try {
       await setPrimaryDomain(domain.id)
-      notify('success', t('domains.primarySet', 'Primary domain set'), domain.domain)
+      notify('success', t('domains.primarySet', 'Hauptdomain festgelegt'), domain.domain)
       refresh()
     } catch (err) {
-      notify('error', t('domains.primaryFailed', 'Failed to set primary'), err instanceof Error ? err.message : undefined)
+      notify('error', t('domains.primaryFailed', 'Hauptdomain konnte nicht festgelegt werden'), err instanceof Error ? err.message : undefined)
     }
   }
 
   return (
     <Stack gap={20}>
       <Group justify="space-between">
-        <Text fw={700} fz="lg">{t('domains.title', 'Custom Domains')}</Text>
+        <Text fw={700} fz="lg">{t('domains.title', 'Eigene Domains')}</Text>
         <Button leftSection={<IconPlus size={16} />} onClick={() => setAddOpen(true)}>
-          {t('domains.add', 'Add Domain')}
+          {t('domains.add', 'Domain hinzufügen')}
         </Button>
       </Group>
 
       <Paper withBorder>
-        {isLoading && <Text p={20} c="dimmed">{t('domains.loading', 'Loading domains...')}</Text>}
+        {isLoading && <Text p={20} c="dimmed">{t('domains.loading', 'Domains werden geladen …')}</Text>}
         {!isLoading && domains.length === 0 && (
-          <Text p={40} ta="center" c="dimmed">{t('domains.empty', 'No domains configured.')}</Text>
+          <Text p={40} ta="center" c="dimmed">{t('domains.empty', 'Noch keine eigenen Domains eingerichtet.')}</Text>
         )}
         {domains.length > 0 && (
           <Table highlightOnHover>
@@ -119,8 +119,8 @@ export function DomainsTab() {
               <Table.Tr>
                 <Table.Th>{t('domains.domain', 'Domain')}</Table.Th>
                 <Table.Th>{t('common.status', 'Status')}</Table.Th>
-                <Table.Th>{t('domains.primary', 'Primary')}</Table.Th>
-                <Table.Th>{t('common.actions', 'Actions')}</Table.Th>
+                <Table.Th>{t('domains.primary', 'Hauptdomain')}</Table.Th>
+                <Table.Th>{t('common.actions', 'Aktionen')}</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -150,7 +150,7 @@ export function DomainsTab() {
                     <Group gap={6}>
                       {d.verification_status !== 'verified' && (
                         <Button size="xs" variant="light" onClick={() => handleVerify(d)}>
-                          {t('domains.verify', 'Verify')}
+                          {t('domains.verify', 'Bestätigen')}
                         </Button>
                       )}
                       <ActionIcon
@@ -169,12 +169,12 @@ export function DomainsTab() {
         )}
       </Paper>
 
-      <Modal opened={addOpen} onClose={() => { setAddOpen(false); setTxtInstructions(null); setNewDomain('') }} title={t('domains.add', 'Add Domain')}>
+      <Modal opened={addOpen} onClose={() => { setAddOpen(false); setTxtInstructions(null); setNewDomain('') }} title={t('domains.add', 'Domain hinzufügen')}>
         <Stack gap={14}>
           {txtInstructions ? (
             <Alert icon={<IconCheck size={16} />} color="blue" variant="light">
               <Stack gap={8}>
-                <Text fw={600}>{t('domains.txtHint', 'Add this TXT record to your DNS:')}</Text>
+                <Text fw={600}>{t('domains.txtHint', 'Füge diesen TXT-Eintrag in deinem DNS hinzu:')}</Text>
                 <Group gap={6}>
                   <Text className="num" fz="sm" style={{ wordBreak: 'break-all' }}>
                     {txtInstructions}
@@ -201,8 +201,8 @@ export function DomainsTab() {
                 onChange={(e) => setNewDomain(e.target.value)}
               />
               <Group justify="flex-end">
-                <Button variant="default" onClick={() => setAddOpen(false)}>{t('common.cancel', 'Cancel')}</Button>
-                <Button loading={adding} onClick={handleAdd}>{t('common.add', 'Add')}</Button>
+                <Button variant="default" onClick={() => setAddOpen(false)}>{t('common.cancel', 'Abbrechen')}</Button>
+                <Button loading={adding} onClick={handleAdd}>{t('common.add', 'Hinzufügen')}</Button>
               </Group>
             </>
           )}
@@ -212,15 +212,15 @@ export function DomainsTab() {
       <Modal
         opened={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        title={t('domains.removeTitle', 'Remove Domain')}
+        title={t('domains.removeTitle', 'Domain entfernen')}
         size="sm"
       >
         <Stack gap={14}>
           <Text>{t('domains.removeConfirm', 'Willst du {{domain}} wirklich entfernen?', { domain: deleteTarget?.domain ?? '' })}</Text>
           <Group justify="flex-end">
-            <Button variant="default" onClick={() => setDeleteTarget(null)}>{t('common.cancel', 'Cancel')}</Button>
+            <Button variant="default" onClick={() => setDeleteTarget(null)}>{t('common.cancel', 'Abbrechen')}</Button>
             <Button color="red" onClick={() => deleteTarget && handleRemove(deleteTarget.id)}>
-              {t('domains.remove', 'Remove')}
+              {t('domains.remove', 'Entfernen')}
             </Button>
           </Group>
         </Stack>

@@ -349,13 +349,13 @@ export function BackupsTab() {
           <Table.Thead>
             <Table.Tr>
               <Table.Th>#</Table.Th>
-              <Table.Th>Date</Table.Th>
-              <Table.Th>Type</Table.Th>
-              <Table.Th>Status</Table.Th>
-              <Table.Th>Size</Table.Th>
-              <Table.Th>Verified</Table.Th>
-              <Table.Th>Tables</Table.Th>
-              <Table.Th style={{ width: 100 }}>Actions</Table.Th>
+              <Table.Th>{t('common.date', 'Datum')}</Table.Th>
+              <Table.Th>{t('common.type', 'Typ')}</Table.Th>
+              <Table.Th>{t('common.status', 'Status')}</Table.Th>
+              <Table.Th>{t('backups.size', 'Grösse')}</Table.Th>
+              <Table.Th>{t('backups.verified', 'Geprüft')}</Table.Th>
+              <Table.Th>{t('backups.tables', 'Tabellen')}</Table.Th>
+              <Table.Th style={{ width: 100 }}>{t('common.actions', 'Aktionen')}</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -473,7 +473,7 @@ export function BackupsTab() {
                         onClick={() => handleVerify(b.id)}
                         loading={verifyingId === b.id}
                         style={{ padding: '2px 6px' }}
-                        title="Verify backup"
+                        title={t('backups.verify', 'Backup prüfen')}
                       >
                         Verify
                       </Button>
@@ -483,7 +483,7 @@ export function BackupsTab() {
                       size="compact-sm"
                       onClick={() => setDeleteTarget(b)}
                       style={{ padding: '2px 6px', color: '#c0392b' }}
-                      title="Delete backup"
+                      title={t('backups.delete', 'Backup löschen')}
                     >
                       <IconTrash size={14} />
                     </Button>
@@ -497,7 +497,7 @@ export function BackupsTab() {
 
       <ConfirmModal
         open={deleteTarget !== null}
-        title="Delete backup"
+        title={t('backups.delete', 'Backup löschen')}
         body={
           deleteTarget
             ? `Delete backup #${deleteTarget.id} from ${formatDate(

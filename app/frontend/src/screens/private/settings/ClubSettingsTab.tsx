@@ -40,15 +40,15 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
   return (
     <Stack gap={20}>
       <Paper withBorder p="lg">
-        <Title order={3} mb="md">{t('clubSettings.identity', 'Club Identity')}</Title>
+        <Title order={3} mb="md">{t('clubSettings.identity', 'Vereinsprofil')}</Title>
         <Stack gap={14}>
           <TextInput
-            label={t('clubSettings.clubName', 'Club Name')}
+            label={t('clubSettings.clubName', 'Vereinsname')}
             value={form.club_name ?? ''}
             onChange={(e) => update('club_name', e.target.value)}
           />
           <Textarea
-            label={t('clubSettings.description', 'Description')}
+            label={t('clubSettings.description', 'Beschreibung')}
             value={form.club_description ?? ''}
             onChange={(e) => update('club_description', e.target.value)}
             rows={3}
@@ -57,21 +57,21 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
       </Paper>
 
       <Paper withBorder p="lg">
-        <Title order={3} mb="md">{t('clubSettings.branding', 'Branding')}</Title>
+        <Title order={3} mb="md">{t('clubSettings.branding', 'Erscheinungsbild')}</Title>
         <Stack gap={14}>
           <Group gap={14} grow>
             <ColorInput
-              label={t('clubSettings.primaryColor', 'Primary Color')}
+              label={t('clubSettings.primaryColor', 'Primärfarbe')}
               value={form.primary_color ?? '#7441e0'}
               onChange={(v) => update('primary_color', v)}
             />
             <ColorInput
-              label={t('clubSettings.secondaryColor', 'Secondary Color')}
+              label={t('clubSettings.secondaryColor', 'Sekundärfarbe')}
               value={form.secondary_color ?? '#2596be'}
               onChange={(v) => update('secondary_color', v)}
             />
             <ColorInput
-              label={t('clubSettings.accentColor', 'Accent Color')}
+              label={t('clubSettings.accentColor', 'Akzentfarbe')}
               value={form.accent_color ?? '#f59e0b'}
               onChange={(v) => update('accent_color', v)}
             />
@@ -80,10 +80,10 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
       </Paper>
 
       <Paper withBorder p="lg">
-        <Title order={3} mb="md">{t('clubSettings.localization', 'Localization')}</Title>
+        <Title order={3} mb="md">{t('clubSettings.localization', 'Region und Sprache')}</Title>
         <Group gap={14} grow>
           <Select
-            label={t('clubSettings.timezone', 'Timezone')}
+            label={t('clubSettings.timezone', 'Zeitzone')}
             value={form.timezone ?? 'Europe/Zurich'}
             onChange={(v) => v && update('timezone', v)}
             data={[
@@ -96,13 +96,13 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
             ]}
           />
           <Select
-            label={t('clubSettings.locale', 'Locale')}
+            label={t('clubSettings.locale', 'Sprache')}
             value={form.locale ?? 'de-CH'}
             onChange={(v) => v && update('locale', v)}
             data={['de-CH', 'en-GB', 'de-DE', 'fr-FR', 'it-IT']}
           />
           <Select
-            label={t('clubSettings.dateFormat', 'Date Format')}
+            label={t('clubSettings.dateFormat', 'Datumsformat')}
             value={form.date_format ?? 'DD.MM.YYYY'}
             onChange={(v) => v && update('date_format', v)}
             data={['DD.MM.YYYY', 'YYYY-MM-DD', 'DD/MM/YYYY', 'MM/DD/YYYY']}
@@ -111,15 +111,15 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
       </Paper>
 
       <Paper withBorder p="lg">
-        <Title order={3} mb="md">{t('clubSettings.privacy', 'Privacy')}</Title>
+        <Title order={3} mb="md">{t('clubSettings.privacy', 'Privatsphäre')}</Title>
         <Stack gap={14}>
           <Switch
-            label={t('clubSettings.directoryVisible', 'Member directory visible to all members')}
+            label={t('clubSettings.directoryVisible', 'Mitgliederverzeichnis für alle Mitglieder sichtbar')}
             checked={form.member_directory_visible ?? false}
             onChange={(e) => update('member_directory_visible', e.currentTarget.checked)}
           />
           <Switch
-            label={t('clubSettings.publicGroups', 'Public group listing')}
+            label={t('clubSettings.publicGroups', 'Gruppen öffentlich auflisten')}
             checked={form.public_group_listing ?? false}
             onChange={(e) => update('public_group_listing', e.currentTarget.checked)}
           />
@@ -127,18 +127,18 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
       </Paper>
 
       <Paper withBorder p="lg">
-        <Title order={3} mb="md">{t('clubSettings.banner', 'Announcement Banner')}</Title>
+        <Title order={3} mb="md">{t('clubSettings.banner', 'Ankündigungsbanner')}</Title>
         <Stack gap={14}>
           <Switch
-            label={t('clubSettings.showBanner', 'Show banner')}
+            label={t('clubSettings.showBanner', 'Banner anzeigen')}
             checked={form.announcement_banner_active ?? false}
             onChange={(e) => update('announcement_banner_active', e.currentTarget.checked)}
           />
           <TextInput
-            label={t('clubSettings.bannerText', 'Banner Text')}
+            label={t('clubSettings.bannerText', 'Bannertext')}
             value={form.announcement_banner_text ?? ''}
             onChange={(e) => update('announcement_banner_text', e.target.value)}
-            placeholder={t('clubSettings.bannerPlaceholder', 'Annual meeting on Friday!')}
+            placeholder={t('clubSettings.bannerPlaceholder', 'Generalversammlung am Freitag!')}
           />
         </Stack>
       </Paper>
@@ -146,7 +146,7 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
       <Divider />
       <Group justify="flex-end">
         <Button loading={saving} onClick={handleSave}>
-          {t('clubSettings.save', 'Save Settings')}
+          {t('clubSettings.save', 'Einstellungen speichern')}
         </Button>
       </Group>
     </Stack>
@@ -161,7 +161,7 @@ export function ClubSettingsTab() {
   })
 
   if (isLoading) {
-    return <Text p={20} c="dimmed">{t('clubSettings.loading', 'Loading settings...')}</Text>
+    return <Text p={20} c="dimmed">{t('clubSettings.loading', 'Einstellungen werden geladen …')}</Text>
   }
 
   return <ClubSettingsForm initialData={data ?? {}} />

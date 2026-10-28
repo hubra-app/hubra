@@ -95,17 +95,17 @@ const STATUS_CONFIG: Record<
   { label: string; color: string; icon: React.ReactNode }
 > = {
   available: {
-    label: 'Verfüegbar',
+    label: 'Verfügbar',
     color: '#1f9d57',
     icon: <IconCircleCheck size={12} />,
   },
   in_use: {
-    label: 'In Bruch',
+    label: 'In Gebrauch',
     color: '#2596be',
     icon: <IconClock size={12} />,
   },
   maintenance: {
-    label: 'Wartig',
+    label: 'Wartung',
     color: '#c2870f',
     icon: <IconAlertCircle size={12} />,
   },
@@ -120,7 +120,7 @@ const STATUS_CONFIG: Record<
     icon: <IconArchive size={12} />,
   },
   checked_out: {
-    label: 'Ausgecheckt',
+    label: 'Ausgeliehen',
     color: '#2596be',
     icon: <IconClock size={12} />,
   },
@@ -228,8 +228,8 @@ function ItemDetailPanel({
     } catch (err: unknown) {
       notify(
         'error',
-        'Failed',
-        err instanceof Error ? err.message : 'Unknown error',
+        t('common.error', 'Fehler'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setLoading(false)
@@ -365,7 +365,7 @@ function ItemDetailPanel({
                   }}
                 >
                   {sc.icon}
-                  {sc.label}
+                  {t(`inventory.status_${item.status}`, sc.label)}
                 </Badge>
               </div>
             </div>
@@ -505,7 +505,7 @@ function ItemDetailPanel({
                   ) : (
                     <IconEye size={16} />
                   )}
-                  {item.visibility === 'private' ? 'Private' : 'Shared'}
+                  {item.visibility === 'private' ? t('inventory.private', 'Privat') : t('inventory.shared', 'Geteilt')}
                 </div>
               </div>
             </div>
@@ -775,6 +775,7 @@ function LinkEditor({
   links: InventoryLink[]
   onChange: (l: InventoryLink[]) => void
 }) {
+  const { t } = useT()
   const add = () => onChange([...links, { label: '', url: '' }])
   const remove = (i: number) => onChange(links.filter((_, idx) => idx !== i))
   const update = (i: number, field: 'label' | 'url', val: string) =>
@@ -794,7 +795,7 @@ function LinkEditor({
           }}
         >
           <TextInput
-            placeholder="Label"
+            placeholder={t('inventory.linkLabel', 'Bezeichnung')}
             value={l.label}
             onChange={(e) => update(i, 'label', e.target.value)}
             style={{ height: 34, fontSize: 'var(--mantine-font-size-xs)' }}
@@ -822,7 +823,7 @@ function LinkEditor({
         style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#2596be' }}
       >
         <IconPlus size={16} />
-        Add link
+        {t('inventory.addLink', 'Link hinzufügen')}
       </Button>
     </div>
   )
@@ -1253,7 +1254,7 @@ export function InventoryScreen() {
                     }}
                   >
                     {sc.icon}
-                    {sc.label}
+                    {t(`inventory.status_${item.status}`, sc.label)}
                   </Badge>
                 )
               },
@@ -1444,7 +1445,7 @@ export function InventoryScreen() {
             </div>
           </div>
           {loading ? (
-            <LoadingSpinner compact message="Loading\u2026" />
+            <LoadingSpinner compact message={t('common.loading', 'Wird geladen …')} />
           ) : pg.paged.length === 0 ? (
             <EmptyState
               title={t('inventory.noItemsFound', 'Keine Gegenstände gefunden')}
@@ -1499,7 +1500,7 @@ export function InventoryScreen() {
                                 background: sc.color + '11',
                               }}
                             >
-                              {sc.label}
+                              {t(`inventory.status_${item.status}`, sc.label)}
                             </Badge>
                             <div onClick={(e) => e.stopPropagation()}>
                               <ActionButtons

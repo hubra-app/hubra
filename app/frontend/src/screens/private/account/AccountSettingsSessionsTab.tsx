@@ -78,7 +78,7 @@ export function AccountSettingsSessionsTab() {
       notify(
         'error',
         t('account.renameFailed', 'Umbenennen fehlgeschlagen'),
-        err instanceof Error ? err.message : 'Unknown error',
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setSavingNameId(null)

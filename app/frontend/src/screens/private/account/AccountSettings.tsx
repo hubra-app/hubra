@@ -65,7 +65,7 @@ const tabs: {
   {
     id: 'language',
     labelKey: 'account.language.tab',
-    labelDefault: 'Spraach',
+    labelDefault: 'Sprache',
     icon: <IconGlobe size={16} />,
   },
 ]

@@ -373,13 +373,13 @@ export function TiersTab() {
       <div
         style={{ display: 'grid', gridTemplateColumns: '1fr 72px', gap: 12 }}
       >
-        <Field label={t('tiers.form.name', 'Tier name')}>
+        <Field label={t('tiers.form.name', 'Name der Stufe')}>
           <TextInput
             {...form.getInputProps('name')}
-            placeholder={t('tiers.form.namePlaceholder', 'e.g. Full Access')}
+            placeholder={t('tiers.form.namePlaceholder', 'z. B. Vollzugang')}
           />
         </Field>
-        <Field label={t('common.color', 'Color')}>
+        <Field label={t('common.color', 'Farbe')}>
           <TextInput
             type="color"
             {...form.getInputProps('color')}
@@ -388,23 +388,23 @@ export function TiersTab() {
         </Field>
       </div>
 
-      <Field label={t('tiers.form.priceType', 'Price type')}>
+      <Field label={t('tiers.form.priceType', 'Preisart')}>
         <Select
           data={[
-            { value: 'fixed', label: t('tiers.type.fixed', 'Fixed') },
-            { value: 'percentage', label: t('tiers.type.percentage', 'Percentage') },
-            { value: 'formula', label: t('tiers.type.formula', 'Formula') },
+            { value: 'fixed', label: t('tiers.type.fixed', 'Fester Betrag') },
+            { value: 'percentage', label: t('tiers.type.percentage', 'Prozentual') },
+            { value: 'formula', label: t('tiers.type.formula', 'Formel') },
           ]}
           {...form.getInputProps('priceType')}
         />
       </Field>
 
-      <Field label={t('tiers.form.billingCycle', 'Billing cycle')}>
+      <Field label={t('tiers.form.billingCycle', 'Abrechnung')}>
         <Select
           data={[
-            { value: '', label: t('tiers.cycle.none', 'None (manual)') },
-            { value: 'monthly', label: t('tiers.cycle.monthly', 'Monthly') },
-            { value: 'yearly', label: t('tiers.cycle.yearly', 'Yearly') },
+            { value: '', label: t('tiers.cycle.none', 'Keine (manuell)') },
+            { value: 'monthly', label: t('tiers.cycle.monthly', 'Monatlich') },
+            { value: 'yearly', label: t('tiers.cycle.yearly', 'Jährlich') },
           ]}
           {...form.getInputProps('billingCycle')}
         />
@@ -412,7 +412,7 @@ export function TiersTab() {
 
       {watchedPriceType === 'fixed' && (
         <Field
-          label={t('tiers.form.price', 'Price (CHF)')}
+          label={t('tiers.form.price', 'Preis (CHF)')}
           hint={t('tiers.form.perPeriod', 'Pro {{period}}', { period: t(`tiers.per.${watchedBillingCycle || 'period'}`, watchedBillingCycle || 'Periode') })}
         >
           <TextInput
@@ -427,7 +427,7 @@ export function TiersTab() {
       {watchedPriceType === 'percentage' && (
         <>
           <Field
-            label={t('tiers.form.percentage', 'Percentage value (%)')}
+            label={t('tiers.form.percentage', 'Prozentsatz (%)')}
             hint={t('tiers.form.percentageHint', 'z. B. 2.5 heisst 2.5 % der jährlichen Ausgaben pro Mitglied und Jahr')}
           >
             <TextInput
@@ -444,7 +444,7 @@ export function TiersTab() {
       {watchedPriceType === 'formula' && (
         <>
           <Field
-            label={t('tiers.form.coefficient', 'Coefficient')}
+            label={t('tiers.form.coefficient', 'Koeffizient')}
             hint={t('tiers.form.coefficientHint', 'z. B. 0.70, um 70 % der Beiträge anderer Stufen abzuziehen')}
           >
             <TextInput
@@ -457,7 +457,7 @@ export function TiersTab() {
             />
           </Field>
           <Field
-            label={t('tiers.form.roundTo', 'Round to')}
+            label={t('tiers.form.roundTo', 'Runden auf')}
             hint={t('tiers.form.roundHint', 'Aufrunden auf (z. B. 5 → nächste 5 CHF)')}
           >
             <TextInput
@@ -468,7 +468,7 @@ export function TiersTab() {
             />
           </Field>
           <Field
-            label={t('tiers.form.deduct', 'Deduct tier fees from')}
+            label={t('tiers.form.deduct', 'Beiträge abziehen von')}
             hint={t('tiers.form.deductHint', 'Stufen, deren Beiträge in der Formel abgezogen werden')}
           >
             <div
@@ -744,7 +744,7 @@ export function TiersTab() {
       <Modal
         open={addOpen}
         onClose={() => setAddOpen(false)}
-        title={t('tiers.newTitle', 'New membership tier')}
+        title={t('tiers.newTitle', 'Neue Mitgliedschaftsstufe')}
         footer={
           <>
             <Button variant="default" onClick={() => setAddOpen(false)}>
@@ -765,7 +765,7 @@ export function TiersTab() {
       <Modal
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
-        title={t('tiers.editTitle', 'Edit tier')}
+        title={t('tiers.editTitle', 'Stufe bearbeiten')}
         subtitle={editTarget?.name}
         footer={
           <>

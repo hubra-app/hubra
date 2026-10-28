@@ -720,7 +720,7 @@ export function MailSettingsModal({
                   disabled={busy}
                 >
                   {customPassword.trim()
-                    ? 'Set'
+                    ? t('mail.system.password.set', 'Setzen')
                     : t('mail.system.password.reset', 'Passwort zurücksetzen')}
                 </Button>
               </div>
