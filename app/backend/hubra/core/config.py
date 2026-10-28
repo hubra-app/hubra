@@ -147,6 +147,10 @@ class BaseConfig:
     WILDDUCK_API_TOKEN: str = os.environ.get("WILDDUCK_API_TOKEN", "")
     SMTP_HOST: str = os.environ.get("SMTP_HOST", "localhost")
     SMTP_PORT: int = int(os.environ.get("SMTP_PORT", 587))
+    # Login for the platform relay; the manager portal can override all of
+    # these (Platform > Mail relay).
+    SMTP_USER: str = os.environ.get("SMTP_USER", "")
+    SMTP_PASSWORD: str = os.environ.get("SMTP_PASSWORD", "")
     IMAP_HOST: str = os.environ.get("IMAP_HOST", "localhost")
     IMAP_PORT: int = int(os.environ.get("IMAP_PORT", 143))
     MAIL_FROM: str = os.environ.get("MAIL_FROM", "")

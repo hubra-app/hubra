@@ -244,9 +244,12 @@ def create_app(config_name: str | None = None) -> Flask:
 
     # Club provisioning, tenant requests, impersonation and the module
     # catalog belong to the manager portal, as do the plugins (use
-    # `flask plugins` on a single club) and everything under
+    # `flask plugins` on a single club), the platform settings (env on a
+    # single club) and everything under
     # /api/v2/manager/.
-    _MANAGER_BLUEPRINTS = frozenset({"tenant_admin", "features_bp", "plugins_bp"})
+    _MANAGER_BLUEPRINTS = frozenset(
+        {"tenant_admin", "features_bp", "plugins_bp", "platform_bp"}
+    )
 
     @app.before_request
     def _single_club_gate():

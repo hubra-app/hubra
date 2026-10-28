@@ -83,7 +83,7 @@ def test_smtp_sends_on_success(email_ctx, caplog):
 
 
 def test_missing_sender_skips(email_ctx, caplog):
-    """Missing club.notification_sender_email skips sending with a warning."""
+    """No club sender and no platform sender: skip sending with a warning."""
     import logging
 
     from hubra.core.models.setting import Setting
@@ -101,7 +101,7 @@ def test_missing_sender_skips(email_ctx, caplog):
             _call_send(email_ctx)
 
         mock_smtp_fn.assert_not_called()
-        assert "not set" in caplog.text
+        assert "No sender configured" in caplog.text
 
     setting.value = old
     db.session.commit()
