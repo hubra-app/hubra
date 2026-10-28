@@ -196,6 +196,25 @@ def test_safe_extract_refuses_path_traversal(tmp_path):
         installer.safe_extract(buf.getvalue(), tmp_path / "x")
 
 
+@pytest.mark.parametrize(
+    "name",
+    [
+        "hello/hello_pkg/__pycache__/__init__.cpython-313.pyc",
+        "hello/hello_pkg/extra.pyc",
+        "hello/node_modules/x/index.js",
+        "hello/.git/config",
+    ],
+)
+def test_safe_extract_refuses_files_the_signature_skips(tmp_path, name):
+    """A .pyc next to a signed .py would run instead of it, unsigned."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("hello/plugin.yaml", "id: hello\n")
+        zf.writestr(name, "x")
+    with pytest.raises(InstallError, match="compiled or tooling"):
+        installer.safe_extract(buf.getvalue(), tmp_path / "x")
+
+
 # ── Repositories ─────────────────────────────────────────────────────────────
 
 
@@ -498,3 +517,19 @@ def test_index_json_round_trips(tmp_path, key):
     doc = json.loads((out / "index.json").read_text())
     assert doc["plugins"][0]["yanked"] == "broken"
     trust.verify_index(doc, trust.load_public(key[1]))
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://plugins.example/index.json",
+        "https://127.0.0.1/index.json",
+        "https://169.254.169.254/latest/meta-data",
+        "https://[::1]/index.json",
+        "file:///etc/passwd",
+    ],
+)
+def test_downloads_only_go_to_public_https_hosts(url, monkeypatch):
+    monkeypatch.delenv("HUBRA_PLUGINS_ALLOW_PRIVATE", raising=False)
+    with pytest.raises(InstallError):
+        installer.http_get(url)
