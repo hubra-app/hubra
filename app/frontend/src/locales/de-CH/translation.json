@@ -191,7 +191,8 @@
     "verifyEmailToEnableForwarding": "Bestätige deine E-Mail-Adresse, um die Weiterleitung einzuschalten.",
     "view": "Ansehen",
     "voted": "Abgestimmt",
-    "votes": "{{count}} Stimmen"
+    "votes": "{{count}} Stimmen",
+    "avatarColor": "Avatarfarbe"
   },
   "app": {
     "backend": {
@@ -499,12 +500,13 @@
     "type": "Typ",
     "unknown": "Unbekannt",
     "unknownError": "Unbekannter Fehler",
-    "updateFailed": "Speichern fehlgeschlagen",
+    "updateFailed": "Aktualisieren fehlgeschlagen",
     "updated": "Gespeichert",
     "upload": "Hochladen",
     "vote": "Abstimmen",
     "yes": "Ja",
-    "nameRequired": "Name ist erforderlich"
+    "nameRequired": "Name ist erforderlich",
+    "searchPlaceholder": "Suchen …"
   },
   "dashboard": {
     "activeMembers": "Aktive Mitglieder",
@@ -644,7 +646,11 @@
     "title": "Anlässe",
     "totalVotes": "{{count}} Stimmen",
     "type": "Typ",
-    "vote": "Abstimmen"
+    "vote": "Abstimmen",
+    "attendanceFailed": "Die Teilnahme konnte nicht gespeichert werden.",
+    "left": "Abgemeldet",
+    "leftMsg": "Du bist von «{{title}}» abgemeldet.",
+    "joinedMsg": "Du bist für «{{title}}» angemeldet."
   },
   "finance": {
     "addCategory": "Kategorie hinzufügen",
@@ -760,7 +766,7 @@
     "invoiceIssued": "Ausgestellt",
     "invoiceLabel": "Rechnung",
     "invoiceMember": "Mitglied",
-    "invoicePaid": "Rechnung bezahlt.",
+    "invoicePaid": "Rechnung bezahlt",
     "invoiceStatus": "Status",
     "invoicesBreadcrumb": "Finanzen › Rechnungen",
     "invoicesCreated": "Rechnungen erstellt",
@@ -813,7 +819,7 @@
       "sent": "Erinnerung gesendet."
     },
     "reminderHistory": "Versendete Erinnerungen",
-    "reminderSent": "Erinnerung gesendet.",
+    "reminderSent": "Erinnerung gesendet",
     "remindersSent": "Erinnerungen gesendet",
     "saveCategory": "Speichern",
     "searchInvoices": "Rechnungen suchen …",
@@ -846,7 +852,29 @@
     "type": "Typ",
     "viewAll": "Alle ansehen",
     "viewInvoice": "Rechnung ansehen",
-    "viewTransaction": "Buchung #{{id}} ansehen"
+    "viewTransaction": "Buchung #{{id}} ansehen",
+    "validation": {
+      "memberRequired": "Bitte wähle ein Mitglied",
+      "partyRequired": "Bitte wähle eine externe Partei",
+      "amountRequired": "Bitte gib einen Betrag ein",
+      "categoryRequired": "Bitte wähle eine Kategorie"
+    },
+    "invoiceUpdateFailed": "Die Rechnung konnte nicht aktualisiert werden.",
+    "invoicePaidMsg": "Die Rechnung ist als bezahlt markiert.",
+    "reminderSentMsg": "Die Zahlungserinnerung wurde per E-Mail verschickt.",
+    "reminderFailed": "Die Erinnerung konnte nicht gesendet werden.",
+    "invoiceDeleteFailed": "Die Rechnung konnte nicht gelöscht werden.",
+    "methods": {
+      "cash": "Bar",
+      "bank": "Bank",
+      "card": "Karte",
+      "other": "Andere"
+    },
+    "invoiceFilter": {
+      "open": "Offen",
+      "paid": "Bezahlt",
+      "overdue": "Überfällig"
+    }
   },
   "functions": {
     "assignHolder": "Person zuweisen",
@@ -1339,7 +1367,28 @@
     "unread": "Ungelesen",
     "usage": "Belegung",
     "verified": "Bestätigt",
-    "withMailSettings": "Mit Mail-Einstellungen"
+    "withMailSettings": "Mit Mail-Einstellungen",
+    "owner": {
+      "member": "Mitglied",
+      "group": "Gruppe",
+      "function": "Funktion",
+      "alias": "Alias",
+      "system": "System",
+      "other": "Andere"
+    },
+    "sync": {
+      "all": "Alle",
+      "ok": "OK",
+      "pending": "Ausstehend",
+      "drift": "Abweichung",
+      "error": "Fehler"
+    },
+    "noAddresses": "Keine Mail-Adressen gefunden.",
+    "searchAddress": "Adresse suchen …",
+    "allTypes": "Alle Typen",
+    "state": "Zustand",
+    "allStates": "Alle",
+    "syncLabel": "Abgleich"
   },
   "members": {
     "active": "Aktiv",
@@ -1366,7 +1415,7 @@
     },
     "archive": "Archivieren",
     "archiveFailed": "Archivieren fehlgeschlagen",
-    "archived": "Archiviert",
+    "archived": "Mitglied archiviert",
     "archivedCount": "{{count}} archivierte Mitglieder",
     "archivedMembers": "Archivierte Mitglieder",
     "avatarColor": "Avatar-Farbe",
@@ -1547,7 +1596,13 @@
     "trial": "Probezeit",
     "updateFailed": "Speichern fehlgeschlagen",
     "usernameTaken": "Dieser Benutzername ist schon vergeben",
-    "verified": "Bestätigt"
+    "verified": "Bestätigt",
+    "privateEmailUnverified": "Private E-Mail nicht bestätigt",
+    "verifyFailed": "Bestätigung fehlgeschlagen",
+    "disabled": "Mitglied deaktiviert",
+    "enabled": "Mitglied aktiviert",
+    "invoicesSoon": "Die Rechnungsübersicht pro Mitglied folgt bald.",
+    "activitySoon": "Das Aktivitätsprotokoll folgt bald."
   },
   "notifications": {
     "invoicePaid": "Rechnung bezahlt",
@@ -1647,7 +1702,8 @@
     "summaryLabel": "Zusammenfassung (optional)",
     "summaryPlaceholder": "Ein kurzer Anriss für die Liste",
     "titleLabel": "Titel",
-    "titlePlaceholder": "Neue Absauganlage installiert!"
+    "titlePlaceholder": "Neue Absauganlage installiert!",
+    "likeFailed": "Das Like konnte nicht gespeichert werden."
   },
   "settings": {
     "changePassword": "Passwort ändern",
@@ -1679,7 +1735,9 @@
       "secretKept": "Leer lassen, um den gespeicherten Wert zu behalten",
       "switchedOff": "{{name}} ausgeschaltet",
       "switchedOn": "{{name}} eingeschaltet",
-      "uses": "Nutzt {{names}}"
+      "uses": "Nutzt {{names}}",
+      "pluginsTitle": "Plugins",
+      "pluginsIntro": "Zusatzfunktionen aus dem Hubra-Katalog. Schalte ein, was dein Verein nutzen möchte."
     },
     "noFeatures": "Keine Funktionsschalter eingerichtet",
     "profile": "Profil",
@@ -1692,7 +1750,7 @@
     "tabs": {
       "club": "Verein",
       "domains": "Domains",
-      "modules": "Module",
+      "modules": "Module & Plugins",
       "settings": "Erweitert"
     },
     "title": "Einstellungen",
@@ -2156,5 +2214,41 @@
       "pending": "Ausstehend",
       "failed": "Fehlgeschlagen"
     }
+  },
+  "status": {
+    "active": "Aktiv",
+    "trial": "Probezeit",
+    "inactive": "Inaktiv",
+    "suspended": "Gesperrt",
+    "pending": "Ausstehend",
+    "archived": "Archiviert",
+    "disabled": "Deaktiviert",
+    "Paid": "Bezahlt",
+    "Open": "Offen",
+    "Overdue": "Überfällig"
+  },
+  "time": {
+    "justNow": "Gerade eben",
+    "minutesAgo": "vor {{n}} Min.",
+    "hoursAgo": "vor {{n}} Std.",
+    "daysAgo": "vor {{n}} Tagen"
+  },
+  "data": {
+    "filterKeyValue": "Nach Schlüssel oder Wert filtern …",
+    "nothingHere": "Hier ist noch nichts.",
+    "key": "Schlüssel",
+    "value": "Wert",
+    "noData": "Keine Daten"
+  },
+  "validation": {
+    "displayNameRequired": "Anzeigename ist erforderlich",
+    "invalidEmail": "Ungültige E-Mail-Adresse",
+    "currentPasswordRequired": "Aktuelles Passwort ist erforderlich",
+    "passwordMin": "Das Passwort muss mindestens 8 Zeichen lang sein",
+    "passwordsMismatch": "Die Passwörter stimmen nicht überein",
+    "codeRequired": "Code ist erforderlich",
+    "titleRequired": "Titel ist erforderlich",
+    "contentRequired": "Inhalt ist erforderlich",
+    "dateRequired": "Datum ist erforderlich"
   }
 }

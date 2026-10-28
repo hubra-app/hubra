@@ -191,7 +191,8 @@
     "verifyEmailToEnableForwarding": "Verify your email address to turn on forwarding.",
     "view": "View",
     "voted": "Voted",
-    "votes": "{{count}} votes"
+    "votes": "{{count}} votes",
+    "avatarColor": "Avatar color"
   },
   "app": {
     "backend": {
@@ -499,12 +500,13 @@
     "type": "Type",
     "unknown": "Unknown",
     "unknownError": "Unknown error",
-    "updateFailed": "Saving failed",
+    "updateFailed": "Update failed",
     "updated": "Saved",
     "upload": "Upload",
     "vote": "Vote",
     "yes": "Yes",
-    "nameRequired": "Name is required"
+    "nameRequired": "Name is required",
+    "searchPlaceholder": "Search…"
   },
   "dashboard": {
     "activeMembers": "Active members",
@@ -612,7 +614,7 @@
     "eventTitlePlaceholder": "e.g. Woodshop basics",
     "eventUpdatedMsg": "{{title}} has been updated.",
     "join": "Join",
-    "joined": "Joined",
+    "joined": "Joined event",
     "leave": "Leave",
     "likes": "Likes",
     "location": "Location",
@@ -644,7 +646,11 @@
     "title": "Events",
     "totalVotes": "{{count}} votes",
     "type": "Type",
-    "vote": "Vote"
+    "vote": "Vote",
+    "attendanceFailed": "Could not update attendance.",
+    "left": "Left event",
+    "leftMsg": "You left \"{{title}}\".",
+    "joinedMsg": "You joined \"{{title}}\"."
   },
   "finance": {
     "addCategory": "Add Category",
@@ -760,7 +766,7 @@
     "invoiceIssued": "Issued",
     "invoiceLabel": "Invoice",
     "invoiceMember": "Member",
-    "invoicePaid": "Invoice paid.",
+    "invoicePaid": "Invoice paid",
     "invoiceStatus": "Status",
     "invoicesBreadcrumb": "Finance › Invoices",
     "invoicesCreated": "Invoices created",
@@ -813,7 +819,7 @@
       "sent": "Reminder sent."
     },
     "reminderHistory": "Reminder History",
-    "reminderSent": "Reminder sent.",
+    "reminderSent": "Reminder sent",
     "remindersSent": "Reminders sent",
     "saveCategory": "Save",
     "searchInvoices": "Search invoices…",
@@ -846,7 +852,29 @@
     "type": "Type",
     "viewAll": "View all",
     "viewInvoice": "View invoice",
-    "viewTransaction": "View transaction #{{id}}"
+    "viewTransaction": "View transaction #{{id}}",
+    "validation": {
+      "memberRequired": "Member is required",
+      "partyRequired": "External party is required",
+      "amountRequired": "Amount is required",
+      "categoryRequired": "Category is required"
+    },
+    "invoiceUpdateFailed": "Could not update invoice.",
+    "invoicePaidMsg": "Invoice marked as paid.",
+    "reminderSentMsg": "Payment reminder email sent.",
+    "reminderFailed": "Could not send reminder.",
+    "invoiceDeleteFailed": "Could not delete invoice.",
+    "methods": {
+      "cash": "Cash",
+      "bank": "Bank",
+      "card": "Card",
+      "other": "Other"
+    },
+    "invoiceFilter": {
+      "open": "Open",
+      "paid": "Paid",
+      "overdue": "Overdue"
+    }
   },
   "functions": {
     "assignHolder": "Assign person",
@@ -1339,7 +1367,28 @@
     "unread": "Unread",
     "usage": "Usage",
     "verified": "Verified",
-    "withMailSettings": "With mail settings"
+    "withMailSettings": "With mail settings",
+    "owner": {
+      "member": "Member",
+      "group": "Group",
+      "function": "Function",
+      "alias": "Alias",
+      "system": "System",
+      "other": "Other"
+    },
+    "sync": {
+      "all": "All",
+      "ok": "OK",
+      "pending": "Pending",
+      "drift": "Drift",
+      "error": "Error"
+    },
+    "noAddresses": "No mail addresses found.",
+    "searchAddress": "Search address…",
+    "allTypes": "All types",
+    "state": "State",
+    "allStates": "All states",
+    "syncLabel": "Sync"
   },
   "members": {
     "active": "Active",
@@ -1366,7 +1415,7 @@
     },
     "archive": "Archive",
     "archiveFailed": "Archive failed",
-    "archived": "Archived",
+    "archived": "Member archived",
     "archivedCount": "{{count}} archived members",
     "archivedMembers": "Archived members",
     "avatarColor": "Avatar colour",
@@ -1547,7 +1596,13 @@
     "trial": "Trial",
     "updateFailed": "Saving failed",
     "usernameTaken": "Username already taken",
-    "verified": "Verified"
+    "verified": "Verified",
+    "privateEmailUnverified": "Private email not verified",
+    "verifyFailed": "Verification failed",
+    "disabled": "Member disabled",
+    "enabled": "Member enabled",
+    "invoicesSoon": "Member invoice history coming soon.",
+    "activitySoon": "Activity log coming soon."
   },
   "notifications": {
     "invoicePaid": "Invoice paid",
@@ -1647,7 +1702,8 @@
     "summaryLabel": "Summary (optional)",
     "summaryPlaceholder": "A short teaser shown in the list",
     "titleLabel": "Title",
-    "titlePlaceholder": "New dust extractor installed!"
+    "titlePlaceholder": "New dust extractor installed!",
+    "likeFailed": "Could not save the like."
   },
   "settings": {
     "changePassword": "Change Password",
@@ -1679,7 +1735,9 @@
       "secretKept": "Leave empty to keep the stored value",
       "switchedOff": "{{name}} switched off",
       "switchedOn": "{{name}} switched on",
-      "uses": "Uses {{names}}"
+      "uses": "Uses {{names}}",
+      "pluginsTitle": "Plugins",
+      "pluginsIntro": "Extra features from the Hubra catalogue. Switch on what your club wants to use."
     },
     "noFeatures": "No feature flags configured",
     "profile": "Profile",
@@ -1692,7 +1750,7 @@
     "tabs": {
       "club": "Club",
       "domains": "Domains",
-      "modules": "Modules",
+      "modules": "Modules & plugins",
       "settings": "Advanced"
     },
     "title": "Settings",
@@ -2156,5 +2214,41 @@
       "pending": "Pending",
       "failed": "Failed"
     }
+  },
+  "status": {
+    "active": "Active",
+    "trial": "Trial",
+    "inactive": "Inactive",
+    "suspended": "Suspended",
+    "pending": "Pending",
+    "archived": "Archived",
+    "disabled": "Disabled",
+    "Paid": "Paid",
+    "Open": "Open",
+    "Overdue": "Overdue"
+  },
+  "time": {
+    "justNow": "Just now",
+    "minutesAgo": "{{n}}m ago",
+    "hoursAgo": "{{n}}h ago",
+    "daysAgo": "{{n}}d ago"
+  },
+  "data": {
+    "filterKeyValue": "Filter by key or value…",
+    "nothingHere": "Nothing here.",
+    "key": "Key",
+    "value": "Value",
+    "noData": "No data"
+  },
+  "validation": {
+    "displayNameRequired": "Display name is required",
+    "invalidEmail": "Invalid email",
+    "currentPasswordRequired": "Current password is required",
+    "passwordMin": "Password must be at least 8 characters",
+    "passwordsMismatch": "Passwords do not match",
+    "codeRequired": "Code is required",
+    "titleRequired": "Title is required",
+    "contentRequired": "Content is required",
+    "dateRequired": "Date is required"
   }
 }

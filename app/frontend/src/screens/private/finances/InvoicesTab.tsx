@@ -486,19 +486,19 @@ export function InvoicesTab() {
             onClick: () => setStatusFilter('All'),
           },
           {
-            label: t('finance.invoiceStatus.open', 'Offen'),
+            label: t('finance.invoiceFilter.open', 'Offen'),
             value: 'open',
             active: statusFilter === 'Open',
             onClick: () => setStatusFilter('Open'),
           },
           {
-            label: t('finance.invoiceStatus.paid', 'Bezahlt'),
+            label: t('finance.invoiceFilter.paid', 'Bezahlt'),
             value: 'paid',
             active: statusFilter === 'Paid',
             onClick: () => setStatusFilter('Paid'),
           },
           {
-            label: t('finance.invoiceStatus.overdue', 'Überfällig'),
+            label: t('finance.invoiceFilter.overdue', 'Überfällig'),
             value: 'overdue',
             active: statusFilter === 'Overdue',
             onClick: () => setStatusFilter('Overdue'),
