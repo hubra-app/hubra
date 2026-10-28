@@ -84,9 +84,9 @@ def bundled_dir(app=None) -> Path | None:
     here = Path(__file__).resolve()
     # A checkout: <repo>/app/backend/hubra/core/plugins -> <repo>/plugins.
     # The image: /app/hubra/core/plugins -> /app/plugins.
-    for candidate in (here.parents[5] / "plugins", here.parents[3] / "plugins"):
-        if candidate.is_dir():
-            return candidate
+    for up in (5, 3):
+        if len(here.parents) > up and (here.parents[up] / "plugins").is_dir():
+            return here.parents[up] / "plugins"
     return None
 
 
