@@ -55,7 +55,8 @@
       "permissions": "Permissions",
       "codes": "Codes",
       "bindings": "Bindings",
-      "keys": "Keys"
+      "keys": "Keys",
+      "budgets": "Budgets"
     },
     "sections": {
       "workspace": "Workspace",
@@ -932,5 +933,30 @@
       "found": "Found",
       "retire": "Retired"
     }
+  },
+  "budgets": {
+    "pick": "Choose a budget",
+    "editLines": "Edit lines",
+    "unapprove": "Reopen",
+    "approve": "Mark approved",
+    "copy": "Copy to {{year}}",
+    "new": "New budget",
+    "empty": "No budget yet. Create one for this year.",
+    "delete": "Delete budget",
+    "deleteConfirm": "Delete {{name}} {{year}}?",
+    "plannedResult": "Planned result",
+    "actualResult": "Result so far",
+    "approved": "Approved",
+    "income": "Income",
+    "expense": "Expenses",
+    "category": "Category",
+    "planned": "Planned",
+    "actual": "Actual",
+    "unplanned": "not in budget",
+    "total": "Total",
+    "defaultName": "Annual budget",
+    "name": "Name",
+    "year": "Year",
+    "addLine": "Add line"
   }
 }

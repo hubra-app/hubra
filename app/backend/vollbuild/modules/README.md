@@ -22,8 +22,9 @@ module is switched on again.
 
 ## Adding a module
 
-Small modules live in one file here (`budgets.py`). A module with its own
-models, routes and services gets a package (`inventory_keys/`) that holds all
+Small modules live in one file here (`codes.py`). A module with its own
+models, routes and services gets a package (`inventory_keys/`,
+`finance_budgets/`) that holds all
 of them:
 
 ```

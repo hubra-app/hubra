@@ -7,12 +7,15 @@ import { TransactionsTab } from '@/screens/private/finances/TransactionsTab'
 import { InvoicesTab } from '@/screens/private/finances/InvoicesTab'
 import { TransactionCategoriesTab } from '@/screens/private/finances/TransactionCategoriesTab'
 import { ExternalPartiesTab } from '@/screens/private/finances/ExternalPartiesTab'
+import { BudgetsTab } from '@/screens/private/finances/BudgetsTab'
+import { useModules } from '@/modules/useModules'
 
 export function FinanceTabScreen() {
   const { t } = useT()
   const location = useLocation()
   const navigate = useNavigate()
   const { hasPermission } = useAuth()
+  const modules = useModules()
 
   const path = location.pathname.replace('/app/finance', '').replace('/', '')
   const tab = path === '' ? 'overview' : path
@@ -26,6 +29,7 @@ export function FinanceTabScreen() {
       id: 'external-parties',
       label: t('shell.nav.externalParties', 'Externi'),
     },
+    { id: 'budgets', label: t('shell.nav.budgets', 'Budgets') },
   ].filter(
     (tb) =>
       tb.id === 'overview' ||
@@ -35,7 +39,10 @@ export function FinanceTabScreen() {
       (tb.id === 'categories' &&
         hasPermission('finance.transaction_categories.read')) ||
       (tb.id === 'external-parties' &&
-        hasPermission('finance.external_parties.read')),
+        hasPermission('finance.external_parties.read')) ||
+      (tb.id === 'budgets' &&
+        modules.has('finance.budgets') &&
+        hasPermission('budgets.budgets.read')),
   )
 
   return (
@@ -53,6 +60,7 @@ export function FinanceTabScreen() {
       {tab === 'invoices' && <InvoicesTab />}
       {tab === 'categories' && <TransactionCategoriesTab />}
       {tab === 'external-parties' && <ExternalPartiesTab />}
+      {tab === 'budgets' && modules.has('finance.budgets') && <BudgetsTab />}
     </div>
   )
 }

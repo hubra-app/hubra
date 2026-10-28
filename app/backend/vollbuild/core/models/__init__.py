@@ -56,6 +56,7 @@ from vollbuild.core.models.backup import BackupRecord
 from vollbuild.core.models.qrr_reference import QrrReference
 
 # Models owned by self-contained modules (vollbuild/modules/<name>/models.py).
+from vollbuild.modules.finance_budgets.models import Budget, BudgetLine
 from vollbuild.modules.inventory_keys.models import Key, KeyHandover
 
 __all__ = [
@@ -115,6 +116,8 @@ __all__ = [
     "Binding",
     "BackupRecord",
     "QrrReference",
+    "Budget",
+    "BudgetLine",
     "Key",
     "KeyHandover",
 ]

@@ -283,6 +283,14 @@ function PrivateRoutes() {
                   }
                 />
                 <Route
+                  path="finance/budgets"
+                  element={
+                    <RequireModule code="finance.budgets">
+                      <FinanceTabScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
                   path="finance/invoices/:id"
                   element={
                     <RequireModule code="finance">

@@ -55,7 +55,8 @@
       "permissions": "Berächtigunge",
       "codes": "Codes",
       "bindings": "Bindings",
-      "keys": "Schlüssel"
+      "keys": "Schlüssel",
+      "budgets": "Budget"
     },
     "sections": {
       "workspace": "Arbeitsbereich",
@@ -1185,5 +1186,30 @@
       "found": "Gfunde",
       "retire": "Usgmuschteret"
     }
+  },
+  "budgets": {
+    "pick": "Budget uswähle",
+    "editLines": "Poste bearbeite",
+    "unapprove": "Widr ufmache",
+    "approve": "Als gnehmigt markiere",
+    "copy": "Uf {{year}} kopiere",
+    "new": "Neus Budget",
+    "empty": "No kei Budget. Leg eis für das Jahr aa.",
+    "delete": "Budget lösche",
+    "deleteConfirm": "{{name}} {{year}} lösche?",
+    "plannedResult": "Budgetierts Ergebnis",
+    "actualResult": "Ergebnis bis jetzt",
+    "approved": "Gnehmigt",
+    "income": "Iinahme",
+    "expense": "Usgabe",
+    "category": "Kategorie",
+    "planned": "Budget",
+    "actual": "Ist",
+    "unplanned": "nöd budgetiert",
+    "total": "Total",
+    "defaultName": "Jahresbudget",
+    "name": "Name",
+    "year": "Jahr",
+    "addLine": "Poste hinzuefüege"
   }
 }
