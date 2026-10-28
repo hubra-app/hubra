@@ -28,6 +28,7 @@ sed_escape() {
 
 script=""
 add() {
+  value=""
   eval "value=\${$1-$2}"
   script="${script}s|__RUNTIME_$1__|$(sed_escape "$value")|g;"
 }
