@@ -122,6 +122,8 @@ class FunctionService:
         from hubra.core.models.member import Member
 
         fn = FunctionService.get_by_id(function_id)
+        # Under a row lock, so two assignments cannot both pass max_holders.
+        db.session.refresh(fn, with_for_update=True)
 
         member = db.session.get(Member, member_id)
         if member is None:

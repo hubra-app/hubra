@@ -170,6 +170,9 @@ class InventoryService:
     ) -> InventoryCheckout:
         """Check out an item to a member. Raises 409 if not available."""
         item = InventoryService.get(item_id)
+        # Re-read under a row lock: two checkouts of one item must not both
+        # see it available (Postgres; a no-op on SQLite).
+        db.session.refresh(item, with_for_update=True)
 
         if item.status not in ("available",):
             raise_error(
