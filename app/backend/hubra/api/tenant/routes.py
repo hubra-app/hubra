@@ -77,8 +77,8 @@ def provision_tenant():
     """Provision a new tenant (creates record + schema + seeds)."""
     data = request.get_json(silent=True) or {}
 
-    name = data.get("name", "").strip()
-    slug = data.get("slug", "").strip()
+    name = str(data.get("name") or "").strip()
+    slug = str(data.get("slug") or "").strip()
     plan = data.get("plan", "starter")
     admin_email = data.get("admin_email")
     admin_password = data.get("admin_password")
@@ -229,7 +229,7 @@ def update_tenant_status(tenant_id: int):
     Prefer the dedicated /disable, /enable, /archive endpoints.
     """
     data = request.get_json(silent=True) or {}
-    status = data.get("status", "").strip()
+    status = str(data.get("status") or "").strip()
 
     if status not in _VALID_STATUSES:
         return jsonify(

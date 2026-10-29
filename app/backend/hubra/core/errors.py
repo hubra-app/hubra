@@ -96,6 +96,20 @@ def register_error_handlers(app: Flask) -> None:
             "VALIDATION_ERROR", "A value is too long or not valid for its field.", 400
         )
 
+    @app.errorhandler(AttributeError)
+    def attribute_error(exc: AttributeError):
+        # Routes read their body with body.get(...); a JSON array or number
+        # there is the request's fault.
+        from flask import request
+
+        body = request.get_json(silent=True)
+        if body is not None and not isinstance(body, dict):
+            return api_error(
+                "VALIDATION_ERROR", "The request body must be a JSON object.", 400
+            )
+        app.logger.exception("Unhandled exception: %s", exc)
+        return api_error("INTERNAL_ERROR", "An unexpected error occurred.", 500)
+
     @app.errorhandler(500)
     def internal_error(exc):
         app.logger.exception("Unhandled exception: %s", exc)

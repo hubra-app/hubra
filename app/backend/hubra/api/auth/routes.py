@@ -192,7 +192,7 @@ def _token_still_valid(user: User | None, jwt_data: dict) -> bool:
 @limiter.limit("5 per minute")
 def login():
     body = request.get_json(silent=True) or {}
-    email = body.get("email", "").strip().lower()
+    email = str(body.get("email") or "").strip().lower()
     password = body.get("password", "")
     keep_signed_in = bool(body.get("keepSignedIn", True))
 
@@ -531,7 +531,7 @@ def switch_tenant():
     target tenant via UserTenant, then reissues JWTs scoped to that tenant.
     """
     body = request.get_json(silent=True) or {}
-    target_slug = body.get("tenantSlug", "").strip()
+    target_slug = str(body.get("tenantSlug") or "").strip()
     if not target_slug:
         return api_error("VALIDATION_ERROR", "tenantSlug is required", 400)
 
@@ -627,7 +627,7 @@ def switch_tenant():
 @limiter.limit("3 per hour")
 def forgot_password():
     body = request.get_json(silent=True) or {}
-    email = body.get("email", "").strip().lower()
+    email = str(body.get("email") or "").strip().lower()
 
     if not email:
         return jsonify({"ok": True}), 200
@@ -668,8 +668,10 @@ def forgot_password():
 @limiter.limit("10 per minute")
 def reset_password():
     body = request.get_json(silent=True) or {}
-    raw_token = body.get("token", "").strip()
+    raw_token = str(body.get("token") or "").strip()
     new_password = body.get("password", "")
+    if not isinstance(new_password, str):
+        return api_error("VALIDATION_ERROR", "password must be text", 400)
 
     member = AuthService.reset_password(raw_token, new_password)
 

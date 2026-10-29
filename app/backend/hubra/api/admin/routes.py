@@ -61,7 +61,7 @@ def add_domain():
         return jsonify({"error": "NO_TENANT", "message": "No tenant context"}), 400
 
     data = request.get_json(silent=True) or {}
-    domain_name = data.get("domain", "").strip().lower()
+    domain_name = str(data.get("domain") or "").strip().lower()
 
     if not domain_name or "." not in domain_name:
         return jsonify(
