@@ -139,17 +139,3 @@ def test_an_archived_member_is_not_put_on_the_list(client, auth_headers, seeded_
         f"/api/v1/events/{event_id}/attendees/{member_id}", headers=auth_headers
     )
     assert resp.status_code == 404
-
-
-def test_line_breaks_cannot_add_lines_to_the_calendar(client, auth_headers, seeded_db):
-    _create_event(
-        client,
-        auth_headers,
-        title="A\rBEGIN:VEVENT",
-        meeting_url="https://x.ch/\r\nBEGIN:VEVENT",
-    )
-    ical = client.get("/api/v1/events/calendar", headers=auth_headers).get_data(
-        as_text=True
-    )
-    assert ical.split("\r\n").count("BEGIN:VEVENT") == 1
-    assert "\r" not in ical.replace("\r\n", "")

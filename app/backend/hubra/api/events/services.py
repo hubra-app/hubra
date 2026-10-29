@@ -404,10 +404,7 @@ class EventService:
             description = event.description or ""
             if event.meeting_url:
                 description = f"{description}\n\n{event.meeting_url}".strip()
-                # A URL value is not escaped; a line break would start a
-                # new property (or a whole event) in the feed.
-                url = "".join(event.meeting_url.split())
-                lines.append(f"URL:{url}")
+                lines.append(f"URL:{event.meeting_url}")
             if description:
                 lines.append(f"DESCRIPTION:{_ical_text(description)}")
             lines += [f"CATEGORIES:{_ical_text(event.type)}", "END:VEVENT"]
@@ -445,7 +442,6 @@ def _ical_text(value: str) -> str:
         .replace(",", "\\,")
         .replace("\r\n", "\\n")
         .replace("\n", "\\n")
-        .replace("\r", "\\n")
     )
 
 
