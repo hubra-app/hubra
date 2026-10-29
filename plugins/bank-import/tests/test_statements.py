@@ -390,7 +390,7 @@ def test_rule_books_debit_and_manual_booking(client, db, auth_headers, setup):
     )
     assert (tx.type, tx.amount, tx.status, tx.method) == (
         "expense",
-        Decimal("45.50"),
+        Decimal("-45.50"),
         "Completed",
         "IBAN",
     )

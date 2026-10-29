@@ -160,7 +160,10 @@ def test_import_marks_matching_invoice_paid(client, db, auth_headers, invoices):
     )
     assert resp.get_json()["status"] == "assigned"
     db.session.expire_all()
-    assert db.session.get(Invoice, b.id).status == "Paid"
+    paid_b = db.session.get(Invoice, b.id)
+    assert paid_b.status == "Paid"
+    # The books hold the 40.- that arrived, not the invoice amount.
+    assert db.session.get(Transaction, paid_b.transaction_id).amount == Decimal("40.00")
 
 
 def test_payment_for_paid_invoice_is_flagged(client, db, auth_headers, invoices):
