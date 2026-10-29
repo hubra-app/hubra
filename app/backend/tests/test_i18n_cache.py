@@ -135,3 +135,16 @@ def test_club_translations_start_from_the_platform(app, db):
     assert result["shell.nav.members"] == "Leute"
     assert result["shell.nav.home"] == "Dashboard"
     i18n_services._mem_translations.clear()
+
+
+def test_dict_leaves_out_keys_without_text(app, db):
+    """A key reported missing (stored empty) leaves room for the app's fallbacks."""
+    _seed_translation("de-CH", "shell.nav.keys", "")
+    _seed_translation("de-CH", "shell.nav.home", "Start")
+    i18n_services._mem_translations.clear()
+
+    result = i18n_services.get_translations_dict("de-CH")
+    assert "shell.nav.keys" not in result
+    assert result["shell.nav.home"] == "Start"
+
+    i18n_services._mem_translations.clear()

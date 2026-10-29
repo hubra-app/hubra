@@ -72,6 +72,9 @@ def compute_is_stale(last_used_at: datetime | None, threshold_seconds: int) -> b
     return (now - last_used_at).total_seconds() > threshold_seconds
 
 
+_DICT_FORMAT = "v2"
+
+
 def _etag_version_key(locale: str) -> str:
     return f"i18n:version:{_club()}:{locale}"
 
@@ -106,7 +109,9 @@ def get_etag(locale: str) -> str | None:
         return None
     if all(v is None for v in vers):
         return None
-    return '"' + ".".join(v.decode() if v else "0" for v in vers) + '"'
+    # _DICT_FORMAT changes the ETag (and the cache key) whenever what the
+    # dictionary holds changes shape, so browsers don't keep an old one.
+    return f'"{_DICT_FORMAT}.' + ".".join(v.decode() if v else "0" for v in vers) + '"'
 
 
 def get_translations(locale: str) -> list[Translation]:
@@ -141,7 +146,7 @@ def get_translations_dict(locale: str) -> dict[str, str]:
     # Determine ETag version for cache key
     etag = get_etag(locale)
     version = etag.strip('"') if etag else "_no_etag"
-    cache_key = f"i18n:dict:{_club()}:{locale}:{version}"
+    cache_key = f"i18n:dict:{_DICT_FORMAT}:{_club()}:{locale}:{version}"
 
     # Try Redis
     client = _get_redis_client()
@@ -174,6 +179,9 @@ def get_translations_dict(locale: str) -> dict[str, str]:
             resolved[t.key] = _resolve_alias_chain(t.key, alias_map, resolved, set())
         else:
             resolved[t.key] = t.value
+    # A key reported missing has no text yet. Left in as "", it would stop
+    # the app's own fallbacks, such as a plugin's bundled texts.
+    resolved = {k: v for k, v in resolved.items() if v}
 
     # Cache in Redis
     if client is not None:

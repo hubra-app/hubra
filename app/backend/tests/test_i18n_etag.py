@@ -25,9 +25,9 @@ def test_club_etag_changes_with_a_platform_edit():
     before = _etag(7, {"i18n:version:7:de-CH": b"3", "i18n:version:0:de-CH": b"5"})
     after = _etag(7, {"i18n:version:7:de-CH": b"3", "i18n:version:0:de-CH": b"6"})
     assert before != after
-    assert _etag(7, {"i18n:version:0:de-CH": b"6"}) == '"0.6"'
+    assert _etag(7, {"i18n:version:0:de-CH": b"6"}) == '"v2.0.6"'
 
 
 def test_platform_etag_and_unset_versions():
-    assert _etag(0, {"i18n:version:0:de-CH": b"6"}) == '"6"'
+    assert _etag(0, {"i18n:version:0:de-CH": b"6"}) == '"v2.6"'
     assert _etag(7, {}) is None
