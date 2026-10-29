@@ -66,12 +66,13 @@ def _extract_platform(headers) -> str:
     ua = headers.get("User-Agent", "") or ""
     if "Windows" in ua:
         return "Windows"
+    # Before macOS: an iPhone's user agent says "like Mac OS X".
+    if "iPhone" in ua or "iPad" in ua:
+        return "iOS"
     if "Mac OS" in ua or "Macintosh" in ua:
         return "macOS"
     if "Android" in ua:
         return "Android"
-    if "iPhone" in ua or "iPad" in ua:
-        return "iOS"
     if "Linux" in ua:
         return "Linux"
     return "Unknown"

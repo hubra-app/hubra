@@ -657,3 +657,15 @@ def test_refresh_token_blocked_after_logout(client, seeded_db):
     client.post("/api/v1/auth/logout")
     resp = client.post("/api/v1/auth/refresh")
     assert resp.status_code == 401
+
+
+def test_iphone_is_ios_not_macos():
+    from hubra.api.auth.services import _extract_platform
+
+    ua = (
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15"
+        " (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+    )
+    assert _extract_platform({"User-Agent": ua}) == "iOS"
+    mac = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) Safari/605.1.15"
+    assert _extract_platform({"User-Agent": mac}) == "macOS"
