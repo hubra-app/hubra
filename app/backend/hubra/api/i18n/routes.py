@@ -353,7 +353,8 @@ def import_i18n(locale: str):
         )
 
     try:
-        file_content = uploaded_file.stream.read(max_bytes + 1).decode("utf-8")
+        # utf-8-sig: a file saved by Excel starts with a byte order mark.
+        file_content = uploaded_file.stream.read(max_bytes + 1).decode("utf-8-sig")
         if len(file_content.encode("utf-8")) > max_bytes:
             return api_error(
                 "VALIDATION_ERROR",
@@ -367,7 +368,9 @@ def import_i18n(locale: str):
 
     if fmt == "csv":
         reader = csv.DictReader(io.StringIO(file_content), fieldnames=["key", "value"])
-        for row in reader:
+        for n, row in enumerate(reader):
+            if n == 0 and (row.get("key") or "").strip() == "key":
+                continue  # the header line the export writes
             if row.get("key") and row.get("key", "").strip():
                 entries.append(
                     {"key": row["key"].strip(), "value": row.get("value", "") or ""}
