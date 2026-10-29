@@ -18,20 +18,40 @@ _RETENTION_DAYS = 90
 
 @celery_app.task(name="hubra.core.tasks.session_tasks.cleanup_revoked_sessions")
 def cleanup_revoked_sessions() -> int:
-    """Delete Session rows that were revoked more than _RETENTION_DAYS ago.
+    """Delete Session rows that were revoked more than _RETENTION_DAYS ago,
+    in the public schema and in every club's (club sign-ins are recorded
+    in the club schema).
 
     Device rows are kept — they persist so the device history is retained.
     Returns the number of rows deleted.
     """
+    from sqlalchemy import select
+
+    from hubra.core.models.tenant import Tenant
+    from hubra.core.tenant.context import reset_search_path, set_search_path
+
     cutoff = datetime.now(timezone.utc) - timedelta(days=_RETENTION_DAYS)
-    result = db.session.execute(
-        delete(Session).where(
-            Session.revoked_at.is_not(None),
-            Session.revoked_at < cutoff,
+
+    def _clean() -> int:
+        result = db.session.execute(
+            delete(Session).where(
+                Session.revoked_at.is_not(None),
+                Session.revoked_at < cutoff,
+            )
         )
-    )
-    db.session.commit()
-    count = result.rowcount  # type: ignore[attr-defined]
+        db.session.commit()
+        return result.rowcount  # type: ignore[attr-defined]
+
+    count = _clean()
+    for tenant_id in db.session.scalars(select(Tenant.id)).all():
+        try:
+            set_search_path(tenant_id)
+            count += _clean()
+        except Exception:
+            db.session.rollback()
+            _log.exception("session cleanup failed for tenant %s", tenant_id)
+        finally:
+            reset_search_path()
     _log.info(
         "cleaned up %s revoked sessions older than %s days", count, _RETENTION_DAYS
     )
