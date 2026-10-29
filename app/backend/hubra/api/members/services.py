@@ -543,6 +543,25 @@ class MemberService:
         )
         if member is None:
             raise_error(404, "NOT_FOUND", f"Archived member {member_id} not found")
+        if member.user_id is not None:  # type: ignore[union-attr]
+            # Someone who left unlinked their account; only they can come
+            # back, through an invite. Restoring the row alone listed them
+            # as a member who could not open the club.
+            from hubra.core.models.user_tenant import UserTenant
+            from hubra.core.tenant.context import current_tenant
+
+            tenant = current_tenant()
+            if tenant is not None and not db.session.scalar(
+                select(UserTenant.user_id).where(
+                    UserTenant.user_id == member.user_id,  # type: ignore[union-attr]
+                    UserTenant.tenant_id == tenant.id,
+                )
+            ):
+                raise_error(
+                    409,
+                    "MEMBER_LEFT",
+                    "This member left the club; invite them to bring them back",
+                )
         member.archived_at = None  # type: ignore[union-attr]
         # Re-enable WildDuck mailbox (only if member is not also disabled)
         if not member.is_disabled:

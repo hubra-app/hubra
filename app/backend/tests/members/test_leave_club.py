@@ -178,3 +178,27 @@ def test_a_deleted_member_who_comes_back_is_listed_again(client, db, club):
     assert resp.status_code in (200, 201), resp.json
     anna = db.session.get(Member, club["anna"].id)
     assert anna.archived_at is None and anna.deleted_at is None
+
+
+def test_an_admin_cannot_bring_back_someone_who_left(client, db, club):
+    """Leaving unlinks the account, so only an invite brings them back."""
+    _login(client, "anna@test.ch")
+    client.post("/api/v1/members/me/leave", headers=H)
+
+    _login(client, "admin@test.ch")
+    url = f"/api/v1/members/{club['anna'].id}/unarchive"
+    resp = client.post(url, headers=H)
+    assert resp.status_code == 409 and resp.json["error"] == "MEMBER_LEFT"
+    assert db.session.get(Member, club["anna"].id).archived_at is not None
+
+
+def test_an_archived_member_can_be_brought_back(client, db, club):
+    _login(client, "admin@test.ch")
+    anna_id = club["anna"].id
+    assert client.post(f"/api/v1/members/{anna_id}/archive", headers=H).status_code in (
+        200,
+        204,
+    )
+    resp = client.post(f"/api/v1/members/{anna_id}/unarchive", headers=H)
+    assert resp.status_code == 200, resp.json
+    assert db.session.get(Member, anna_id).archived_at is None
