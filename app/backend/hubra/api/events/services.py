@@ -478,7 +478,10 @@ class EventsService:
         if from_str:
             try:
                 from_date = date.fromisoformat(from_str)
-                query = query.where(ClubEvent.date >= from_date)
+                # An event that started earlier and is still on counts too.
+                query = query.where(
+                    func.coalesce(ClubEvent.end_date, ClubEvent.date) >= from_date
+                )
             except ValueError:
                 raise_error(
                     400,

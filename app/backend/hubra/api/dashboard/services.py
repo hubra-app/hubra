@@ -16,6 +16,11 @@ from hubra.core.models.member import Member
 from hubra.core.models.post import Post
 
 
+def _still_on(today: date):
+    """Events from today on, and those that started earlier and run on."""
+    return func.coalesce(ClubEvent.end_date, ClubEvent.date) >= today
+
+
 def _last_day_of_month(year: int, month: int) -> date:
     return date(year, month, monthrange(year, month)[1])
 
@@ -72,7 +77,7 @@ class DashboardService:
 
         upcoming_count: int = (
             db.session.scalar(
-                select(func.count(ClubEvent.id)).where(ClubEvent.date >= today)
+                select(func.count(ClubEvent.id)).where(_still_on(today))
             )
             or 0
         )
@@ -116,7 +121,7 @@ class DashboardService:
         today = date.today()
         return db.session.scalars(  # type: ignore[return-value]
             select(ClubEvent)
-            .where(ClubEvent.date >= today)
+            .where(_still_on(today))
             .order_by(ClubEvent.date.asc())
             .limit(limit)
         ).all()
