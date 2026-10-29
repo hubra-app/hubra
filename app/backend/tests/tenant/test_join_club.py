@@ -239,4 +239,3 @@ def test_the_anonymous_application_form_is_gone(client, db):
         json={"first_name": "A", "last_name": "B", "email": "anon@test.ch"},
     )
     assert resp.status_code in (401, 403, 404, 405)
-
