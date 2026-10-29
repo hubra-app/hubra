@@ -21,6 +21,14 @@ _smtp_context.verify_mode = ssl.CERT_NONE
 _CHECK_TIMEOUT = 1.0  # seconds per individual check
 
 
+def _imap_client(host: str, port: int) -> imaplib.IMAP4:
+    """Port 993 is IMAP over TLS from the first byte (as 465 is for SMTP);
+    a plain client there waits for a greeting that never comes."""
+    if port == 993:
+        return imaplib.IMAP4_SSL(host, port, timeout=1)
+    return imaplib.IMAP4(host, port, timeout=1)
+
+
 class HealthService:
     """Per-service health checks."""
 
@@ -186,7 +194,7 @@ class HealthService:
                     "error": "IMAP_HOST not configured",
                 }
 
-            with imaplib.IMAP4(imap_host, imap_port, timeout=1) as client:
+            with _imap_client(imap_host, imap_port) as client:
                 ok = client.capabilities is not None
         except Exception as exc:
             error = str(exc)
