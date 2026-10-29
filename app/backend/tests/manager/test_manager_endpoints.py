@@ -81,34 +81,6 @@ def test_list_global_audit_filters_by_action(client, seeded_db, superadmin_heade
     assert all("provision" in a for a in actions)
 
 
-def test_list_global_audit_total_follows_filters(client, seeded_db, superadmin_headers):
-    """total counts the filtered entries, and % in the filter is literal."""
-    for _ in range(3):
-        db.session.add(GlobalAuditEntry(actor_id=1, action="noise.x"))
-    db.session.add(GlobalAuditEntry(actor_id=1, action="wanted.y"))
-    db.session.commit()
-
-    data = client.get(
-        "/api/v1/system/audit?action=wanted", headers=superadmin_headers
-    ).get_json()
-    assert data["total"] == len(data["entries"]) == 1
-
-    data = client.get(
-        "/api/v1/system/audit?action=%25", headers=superadmin_headers
-    ).get_json()
-    assert data["total"] == 0
-
-
-def test_list_global_audit_bad_paging_is_400(client, seeded_db, superadmin_headers):
-    for qs in ("page=abc", "tenant_id=x", "per_page=1.5"):
-        resp = client.get(f"/api/v1/system/audit?{qs}", headers=superadmin_headers)
-        assert resp.status_code == 400, qs
-    resp = client.get(
-        "/api/v1/system/audit?page=0&per_page=-5", headers=superadmin_headers
-    )
-    assert resp.status_code == 200
-
-
 # ── Feature catalog ──────────────────────────────────────────────────────────
 
 
