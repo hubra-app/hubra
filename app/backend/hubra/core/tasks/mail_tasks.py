@@ -462,7 +462,7 @@ def _reconcile_mail() -> dict:
         # WildDuck is shared by every club: a mailbox is an orphan only when
         # no club manages it, not just this one.
         db.session.flush()
-        known_user_ids = set(managed_index())
+        known_user_ids = set(managed_index(every_club=True))
         # Walk WildDuck users and remove unmanaged ones
         try:
             page = 1

@@ -239,3 +239,18 @@ def test_delete_refuses_another_clubs_mailbox(client, staff_headers, wd):
             p.stop()
     # Not managed by either club: deleted.
     assert resp.status_code == 200
+
+
+def test_every_club_includes_suspended_clubs(app, db):
+    """The orphan sweep's index must not drop a suspended club's mailboxes."""
+    from hubra.core.models.tenant import Tenant
+
+    db.session.add_all(
+        [
+            Tenant(slug="on-club", name="On", status="active"),
+            Tenant(slug="paused-club", name="Paused", status="suspended"),
+        ]
+    )
+    db.session.commit()
+    slugs = {t.slug for t in mail_server._every_club()}
+    assert {"on-club", "paused-club"} <= slugs
