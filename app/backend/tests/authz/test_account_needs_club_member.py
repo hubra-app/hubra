@@ -74,3 +74,32 @@ def test_user_without_a_club_still_has_the_account_page(client, outsider_with_na
 def test_member_still_reads_their_own(client, auth_headers):
     for url in ("/api/v1/account/invoices", "/api/v1/account/sessions"):
         assert client.get(url, headers=auth_headers).status_code == 200, url
+
+
+def test_qr_bill_for_a_user_without_a_club_is_403(client, db, outsider_with_namesake):
+    invoice = db.session.query(Invoice).filter_by(member_id=outsider_with_namesake.id).one()
+    resp = client.get(f"/api/v1/finance/invoices/{invoice.id}/qr-bill.pdf")
+    assert resp.status_code == 403
+
+
+def test_translations_record_the_member_not_the_user(app, client, db, seeded_db):
+    """With an account sign-in, the editor is the club member of that account
+    (its id differs from the account's id)."""
+    from hubra.core.models.translation import Translation
+
+    user = User(email="editor@test.ch", first_name="Edi", last_name="Tor")
+    user.set_password("password123")
+    db.session.add(user)
+    db.session.flush()
+    member = Member(id=user.id + 500, user_id=user.id, status="active", tier_id=seeded_db["tier"].id)
+    member.roles = [seeded_db["role"]]
+    db.session.add(member)
+    db.session.commit()
+    with app.app_context():
+        client.set_cookie("access_token_cookie", create_access_token(identity=f"user:{user.id}"))
+
+    resp = client.patch("/api/v1/i18n/de", json=[{"key": "x.hello", "value": "Hallo"}])
+    assert resp.status_code == 200, resp.get_data(as_text=True)
+
+    row = db.session.query(Translation).filter_by(key="x.hello").one()
+    assert row.updated_by_id == member.id

@@ -397,10 +397,9 @@ def download_invoice_pdf(id: int):
       - Member invoices: the owning member or any admin.
       - External-party invoices: admin only (no member owner).
     """
-    from flask_jwt_extended import current_user
-
     invoice = InvoiceService.get(id)
-    member = current_user
+    # 403 for a sign-in that is not a member of this club.
+    member = get_current_member()
 
     is_admin = any(r.is_admin for r in (member.roles or []))
 

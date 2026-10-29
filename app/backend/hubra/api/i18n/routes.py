@@ -8,7 +8,9 @@ import json
 import logging
 
 from flask import Blueprint, Response, jsonify, request
-from flask_jwt_extended import current_user, jwt_required
+from flask_jwt_extended import jwt_required
+
+from hubra.api.auth.helpers import get_current_member
 from marshmallow import Schema, fields, validate
 
 from hubra.api.permissions import permission_required
@@ -123,7 +125,7 @@ def patch_i18n(locale: str):
         entries.append(validated)
 
     try:
-        updated = bulk_upsert(locale, entries, updated_by_id=current_user.id)
+        updated = bulk_upsert(locale, entries, updated_by_id=get_current_member().id)
         db.session.commit()
     except Exception as exc:
         db.session.rollback()
@@ -156,7 +158,7 @@ def post_translation(locale: str):
             locale=locale,
             key=data["key"],
             value=data["value"],
-            updated_by_id=current_user.id,
+            updated_by_id=get_current_member().id,
             alias_for=data.get("alias_for"),
         )
         db.session.commit()
@@ -236,7 +238,7 @@ def duplicate_i18n(locale: str):
             source_locale=source,
             target_locale=locale,
             copy_values=copy_values,
-            updated_by_id=current_user.id,
+            updated_by_id=get_current_member().id,
         )
         db.session.commit()
     except Exception as exc:
@@ -399,7 +401,7 @@ def import_i18n(locale: str):
         count = import_translations(
             locale,
             entries,
-            updated_by_id=current_user.id,
+            updated_by_id=get_current_member().id,
         )
         db.session.commit()
     except Exception as exc:
