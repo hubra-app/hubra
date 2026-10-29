@@ -234,6 +234,9 @@ const DE_CODE: Record<string, string> = {
   MUST_CHANGE_PASSWORD: "Bitte ändere zuerst dein Passwort.",
   LAST_OWNER: "Die letzte Inhaberin oder der letzte Inhaber kann den Verein nicht verlassen.",
   WEAK_PASSWORD: "Dieses Passwort ist zu schwach.",
+  BEYOND_OWN_PERMISSIONS: "Du kannst nur Rechte vergeben, die du selbst hast.",
+  OWNER_ONLY: "Nur eine Inhaberin oder ein Inhaber kann die Inhaber-Rolle vergeben oder entziehen.",
+  ADMIN_ONLY: "Nur Admins können eine Admin-Rolle vergeben oder entziehen.",
 };
 
 // Field checks arrive as the API's validation dict, e.g.

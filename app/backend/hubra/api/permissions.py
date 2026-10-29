@@ -253,6 +253,26 @@ def check_grant(actor, *, given=(), taken=(), keys=()) -> None:
         )
 
 
+def check_global_grant(keys) -> None:
+    """403 unless the platform user of this request holds every platform
+    permission in *keys* (a superadmin holds all). The platform's version of
+    ``check_grant``: ``roles.manage`` alone does not let anyone climb."""
+    user = getattr(g, "system_user", None)
+    if user is None:
+        return  # the system itself (CLI, tasks)
+    held = get_user_global_permissions(user.id)
+    if "*" in held:
+        return
+    missing = set(keys) - held
+    if missing:
+        raise_error(
+            403,
+            "BEYOND_OWN_PERMISSIONS",
+            "You can only give permissions you have yourself: "
+            + ", ".join(sorted(missing)[:5]),
+        )
+
+
 def invalidate_role_permissions(role_id: int) -> None:
     """Delete the cached permission set for a role and any member caches that
     include it. Member caches are invalidated by looking up which members hold
