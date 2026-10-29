@@ -107,3 +107,24 @@ def test_an_event_cannot_end_before_it_starts(client, auth_headers, seeded_db):
         f"/api/v1/events/{event_id}", json={"end_date": "2030-06-08"}, headers=auth_headers
     )
     assert resp.status_code == 200
+
+
+def test_members_hear_when_their_event_moves(client, auth_headers, seeded_db):
+    from hubra.core.extensions import db
+    from hubra.core.models.notification import Notification
+
+    event_id = _create_event(client, auth_headers, title="Grillabend").get_json()["id"]
+    member_id = _create_member(client, auth_headers, email="g@test.ch").get_json()["id"]
+    client.post(
+        f"/api/v1/events/{event_id}/register/{member_id}", json={}, headers=auth_headers
+    )
+    url = f"/api/v1/events/{event_id}"
+    client.patch(url, json={"description": "Bring a salad"}, headers=auth_headers)
+    client.patch(url, json={"date": "2030-06-07"}, headers=auth_headers)
+
+    told = db.session.scalars(
+        select(Notification.msg).where(
+            Notification.member_id == member_id, Notification.title == "Event changed"
+        )
+    ).all()
+    assert told == ["Grillabend"]

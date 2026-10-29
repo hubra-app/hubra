@@ -37,6 +37,17 @@ def _check_dates(start, end) -> None:
     if start is not None and end is not None and end < start:
         raise_error(400, "VALIDATION_ERROR", "end_date is before date")
 
+
+def _tell_registered(event, title: str, skip_member_id: int | None = None) -> None:
+    """Notify those signed up for (or waiting on) an upcoming event."""
+    from hubra.api.notifications.services import notify_member
+
+    if (event.end_date or event.date) < date.today():
+        return
+    for reg in event.registrations:
+        if reg.status in ("registered", "waitlisted") and reg.member_id != skip_member_id:
+            notify_member(reg.member_id, "info", title, event.title)
+
 class EventService:
     """Operations on a single event."""
 
@@ -58,6 +69,7 @@ class EventService:
     @staticmethod
     def update(event: ClubEvent, data: dict, actor_id: int) -> ClubEvent:
         """Update allowed fields on an event."""
+        before = (event.date, event.time, event.end_date, event.location)
         for field in (
             "title",
             "date",
@@ -81,6 +93,8 @@ class EventService:
                 setattr(event, field, data[field])
         if "date" in data or "end_date" in data:
             _check_dates(event.date, event.end_date)
+        if (event.date, event.time, event.end_date, event.location) != before:
+            _tell_registered(event, "Event changed", skip_member_id=actor_id)
         if "max_attendees" in data:
             # More places (or no limit any more): the waitlist moves up.
             EventService._lock(event.id)
@@ -109,15 +123,7 @@ class EventService:
             target_label=event.title,
         )
         # Those who signed up hear that it is off rather than turn up.
-        from hubra.api.notifications.services import notify_member
-
-        if (event.end_date or event.date) >= date.today():
-            for reg in event.registrations:
-                if (
-                    reg.status in ("registered", "waitlisted")
-                    and reg.member_id != actor_id
-                ):
-                    notify_member(reg.member_id, "info", "Event cancelled", event.title)
+        _tell_registered(event, "Event cancelled", skip_member_id=actor_id)
         db.session.delete(event)
 
     @staticmethod
