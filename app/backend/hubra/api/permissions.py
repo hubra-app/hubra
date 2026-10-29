@@ -65,7 +65,7 @@ def _current_member():
             )
         )
         if member is not None:
-            return None if member.is_disabled else member
+            return None if member.is_blocked else member
         # No Member found — fall back to the User object so that
         # require_password_changed can pass it through for noTenant routes.
         return current_user

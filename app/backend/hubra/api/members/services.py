@@ -1199,6 +1199,17 @@ class MembersService:
                 raise_error(400, "VALIDATION_ERROR", str(exc.messages))
             raise
 
+        # "Suspended" closes the club to the member (Member.is_blocked), so
+        # the same rules as for disabling apply.
+        if validated.get("status") == "suspended" and member.status != "suspended":
+            if member.id == actor_id:
+                raise_error(409, "CONFLICT", "You cannot suspend yourself")
+            if any(r.is_owner or r.is_admin for r in (member.roles or [])):
+                raise_error(
+                    409, "CONFLICT", "Cannot suspend an Owner or Admin role member"
+                )
+            _check_may_remove(member, actor_id)
+
         # Email uniqueness if changed — check against User table (global)
         if "email" in validated and validated["email"] != member.email:
             conflict = db.session.scalar(

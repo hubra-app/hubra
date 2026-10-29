@@ -303,6 +303,13 @@ class Member(db.Model):
         self.disabled_at = datetime.now(timezone.utc) if value else None
 
     @property
+    def is_blocked(self) -> bool:
+        """May not open the club: switched off (``is_disabled``) or marked
+        "suspended". Unlike a disabled one, a suspended member's status is
+        set back to active by an admin, not their switch."""
+        return self.is_disabled or self.status == "suspended"
+
+    @property
     def private_email_verified(self) -> bool:
         return self.user.private_email_verified if self.user else False
 

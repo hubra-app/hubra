@@ -330,7 +330,7 @@ def calendar_feed(token: str):
     if not is_enabled("events"):
         return api_error("NOT_FOUND", "Unknown calendar", 404)
     member = db.session.get(Member, data.get("m"))
-    if member is None or member.archived_at is not None or member.is_disabled:
+    if member is None or member.archived_at is not None or member.is_blocked:
         return api_error("NOT_FOUND", "Unknown calendar", 404)
 
     # The last 90 days and everything ahead.
