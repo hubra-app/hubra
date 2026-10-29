@@ -52,6 +52,9 @@ class DashboardService:
         net_month = (
             db.session.scalar(
                 select(func.coalesce(func.sum(Transaction.amount), 0))
+                # Money that moved, as on the finance overview: an invoice's
+                # pending income counts once it is paid.
+                .where(Transaction.status == "Completed")
                 .where(Transaction.date >= month_start)
                 .where(Transaction.date <= month_end)
             )
