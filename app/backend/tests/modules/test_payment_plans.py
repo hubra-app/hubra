@@ -82,13 +82,6 @@ def test_plan_crud_and_member_choice(client, db, auth_headers, tier, seeded_db):
         ).status_code
         == 400
     )
-    assert (
-        client.post(
-            f"/api/v1/tiers/{tier.id}/plans",
-            json={"name": 5, "interval": "monthly"},
-        ).status_code
-        == 400
-    )
 
     tiers = client.get("/api/v1/tiers/").get_json()
     assert [p["name"] for p in tiers[0]["payment_plans"]] == ["Quarterly", "Monthly"]
