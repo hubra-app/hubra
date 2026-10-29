@@ -566,6 +566,7 @@ export function DataTable<T>({
                   key={si}
                   style={{
                     display: 'flex',
+                    flexWrap: 'wrap',
                     gap: 6,
                     alignItems: 'center',
                     paddingLeft: si > 0 ? 12 : 0,
