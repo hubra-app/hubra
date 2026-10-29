@@ -36,7 +36,17 @@ import { listGroups } from "@/api/groups";
 import { listFunctions } from "@/api/functions";
 import { ProxyPanel } from "./ProxyPanel";
 
+/** An ISO time as the value a datetime-local input shows (local time). */
+function toLocalInput(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 /* -- Polls ------------------------------------ */
+
 export function PollsTab() {
   const { notify } = useToast();
   const { polls, setPolls, myVotes, setMyVotes } = useData();
@@ -156,7 +166,7 @@ export function PollsTab() {
   };
 
   const openEdit = (poll: Poll) => {
-    form.setValues({ question: poll.question, closesAt: poll.closesAt ?? "" });
+    form.setValues({ question: poll.question, closesAt: toLocalInput(poll.closesAt) });
     setOptions(poll.options.map((o) => o.label));
     setIsRequired(poll.isRequired ?? false);
     setAllowProxy(poll.allowProxy ?? false);
@@ -181,7 +191,11 @@ export function PollsTab() {
         question,
         options: validOptions,
         // An emptied date on edit clears the deadline; a missing key keeps it.
-        closesAt: form.values.closesAt || (editTarget ? null : undefined),
+        closesAt: form.values.closesAt
+          ? new Date(form.values.closesAt).toISOString()
+          : editTarget
+            ? null
+            : undefined,
         isRequired,
         allowProxy,
         requiredGroupIds: isRequired ? requiredGroupIds : [],
