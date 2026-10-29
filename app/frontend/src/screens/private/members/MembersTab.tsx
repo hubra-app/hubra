@@ -736,7 +736,6 @@ export function MembersTab() {
                               e.stopPropagation()
                               setArchiveTarget(m)
                             }}
-                            aria-label={t('members.archive')}
                           >
                             <IconUserX size={16} />
                           </Button>
