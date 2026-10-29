@@ -124,3 +124,17 @@ def test_generate_invoices_email_args_are_json_serialisable(app, billable_tier_d
         kwargs = delay.call_args.kwargs
         json.dumps(kwargs)
         assert base64.b64decode(kwargs["attachments"][0]["content"]) == b"%PDF-1.7 test"
+
+
+def test_generated_invoice_mail_has_subject_and_bodies_in_place(app, billable_tier_db):
+    from hubra.core.tasks.finance_tasks import generate_invoices_task
+
+    with app.app_context():
+        with patch("hubra.core.tasks.email_tasks.send_email_task.delay") as delay:
+            generate_invoices_task.run()
+
+        kwargs = delay.call_args.kwargs
+        assert "<" not in kwargs["subject"] and "\n" not in kwargs["subject"]
+        assert "<html" in kwargs["body_html"].lower()
+        assert "<html" not in kwargs["body_text"].lower()
+        assert kwargs["body_text"] != kwargs["subject"]

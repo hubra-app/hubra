@@ -41,7 +41,8 @@ def _render_invoice_generated(
     from hubra.core.services.email import club_display_name
 
     club_name = club_display_name()
-    return render_mail_template(
+    # render_mail_template returns (html, text, subject).
+    body_html, body_text, subject = render_mail_template(
         "invoice_generated",
         locale=lang,
         name=name,
@@ -51,6 +52,7 @@ def _render_invoice_generated(
         due_date=due_date.isoformat(),
         portal_url=portal_url,
     )
+    return subject, body_html, body_text
 
 
 def _render_invoice_reminder(
@@ -66,7 +68,8 @@ def _render_invoice_reminder(
     from hubra.core.services.email import club_display_name
 
     club_name = club_display_name()
-    return render_mail_template(
+    # render_mail_template returns (html, text, subject).
+    body_html, body_text, subject = render_mail_template(
         "invoice_reminder",
         locale=lang,
         name=name,
@@ -76,6 +79,7 @@ def _render_invoice_reminder(
         due_date=due_date.isoformat(),
         portal_url=portal_url,
     )
+    return subject, body_html, body_text
 
 
 def _dispatch_invoice_email(
