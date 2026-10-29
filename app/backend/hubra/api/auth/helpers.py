@@ -53,13 +53,18 @@ def get_current_member() -> Member:
 
     # For user: identities, parse the user_id and resolve to a Member
     if is_user_identity(identity):
+        from hubra.core.tenant.context import current_tenant
+
+        # Inside a club only the club token counts (see _current_member).
+        if current_tenant() is not None:
+            raise_error(401, "UNAUTHORIZED", "Open the club to continue")
         user_id = int(identity[5:])
         member = db.session.scalar(
             select(Member)
             .where(Member.user_id == user_id)
             .where(Member.archived_at.is_(None))
         )
-        if member is None:
+        if member is None or member.is_disabled:
             raise_error(403, "FORBIDDEN", "No member profile in this tenant")
         return member
 

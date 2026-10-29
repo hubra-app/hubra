@@ -2,14 +2,13 @@ import { useState, useMemo } from 'react'
 import {
   Badge,
   Button,
-  Select,
   Switch,
   Paper,
   Textarea,
   TextInput,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT, zmsg } from '@/locales/i18n'
@@ -21,7 +20,7 @@ import {
   IconTrash,
   IconSearch,
 } from '@tabler/icons-react'
-import { useToast, useData, useAuth } from '@/context/AppContext'
+import { useToast, useAuth } from '@/context/AppContext'
 import {
   PageHead,
   Modal,
@@ -31,6 +30,7 @@ import {
   ConfirmModal,
   usePagination,
   Pagination,
+  useSubmitOnce,
 } from '@/components/ui'
 import type { Group } from '@/types'
 import {
@@ -41,7 +41,10 @@ import {
   addGroupMember,
   removeGroupMember,
 } from '@/api/groups'
-import { listMembers, listGroupMembers } from '@/api/members'
+import { listGroupMembers } from '@/api/members'
+import { MemberPicker } from '@/components/MemberPicker'
+import { useMemberSearch } from '@/data/members'
+import { qk } from '@/data/keys'
 
 /* ── Group Detail Panel ──────────────────────── */
 function GroupDetailPanel({
@@ -55,15 +58,11 @@ function GroupDetailPanel({
   const { t } = useT()
   const queryClient = useQueryClient()
   const { data: members = [], isLoading: loading } = useQuery({
-    queryKey: ['group-members', group.id],
+    queryKey: qk.groups.members(group.id),
     queryFn: () => listGroupMembers(group.id),
   })
   const [searchQuery, setSearchQuery] = useState('')
-  const { data: searchData } = useQuery({
-    queryKey: ['members-search', searchQuery],
-    queryFn: () => listMembers({ search: searchQuery, pageSize: 10 }),
-    enabled: searchQuery.length >= 2,
-  })
+  const { data: searchData } = useMemberSearch(searchQuery, { enabled: searchQuery.length >= 2 })
 
   const slideMembers: SlideOverMember[] = useMemo(
     () =>
@@ -95,7 +94,7 @@ function GroupDetailPanel({
     addGroupMember(group.id, m.id)
       .then(() => {
         queryClient.invalidateQueries({
-          queryKey: ['group-members', group.id],
+          queryKey: qk.groups.members(group.id),
         })
         notify(
           'success',
@@ -118,7 +117,7 @@ function GroupDetailPanel({
     removeGroupMember(group.id, m.id)
       .then(() => {
         queryClient.invalidateQueries({
-          queryKey: ['group-members', group.id],
+          queryKey: qk.groups.members(group.id),
         })
         notify(
           'info',
@@ -179,7 +178,6 @@ type GroupForm = z.infer<typeof groupSchema>
 
 export function GroupsScreen() {
   const { notify } = useToast()
-  const { setGroupCount } = useData()
   const { hasPermission } = useAuth()
   const { t } = useT()
   const queryClient = useQueryClient()
@@ -187,26 +185,16 @@ export function GroupsScreen() {
   const canUpdate = hasPermission('groups.groups.update')
   const canDelete = hasPermission('groups.groups.delete')
   const { data: groups = [] } = useQuery({
-    queryKey: ['groups'],
+    queryKey: qk.groups.all,
     queryFn: () => listGroups(),
   })
   const [addOpen, setAddOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Group | null>(null)
-  // Only the lead picker in the group form lists all members.
-  const { data: membersData } = useQuery({
-    queryKey: ['members'],
-    queryFn: () => listMembers({ pageSize: 500 }),
-    enabled: addOpen || editTarget !== null,
-  })
-  const members = useMemo(
-    () => (membersData?.members ?? []).map((m) => ({ id: m.id, name: m.name })),
-    [membersData],
-  )
   const [deleteTarget, setDeleteTarget] = useState<Group | null>(null)
   const [detailGroup, setDetailGroup] = useState<Group | null>(null)
 
   const form = useForm<GroupForm>({
-    validate: zodResolver(groupSchema),
+    validate: zod4Resolver(groupSchema),
     initialValues: {
       name: '',
       description: '',
@@ -265,9 +253,8 @@ export function GroupsScreen() {
         leadId: data.leadId ? Number(data.leadId) : undefined,
         selfJoin: data.selfJoin,
       })
-      queryClient.invalidateQueries({ queryKey: ['groups'] })
-      queryClient.invalidateQueries({ queryKey: ['lookups'] })
-      setGroupCount()
+      queryClient.invalidateQueries({ queryKey: qk.groups.all })
+      queryClient.invalidateQueries({ queryKey: qk.lookups })
       setAddOpen(false)
       notify(
         'success',
@@ -284,6 +271,7 @@ export function GroupsScreen() {
       )
     }
   }
+  const [submitAdd, adding] = useSubmitOnce(saveAdd)
 
   const saveEdit = async (data: GroupForm) => {
     if (!editTarget) return
@@ -297,8 +285,8 @@ export function GroupsScreen() {
         ...(data.leadId ? { leadId: Number(data.leadId) } : {}),
         selfJoin: data.selfJoin,
       })
-      queryClient.invalidateQueries({ queryKey: ['groups'] })
-      queryClient.invalidateQueries({ queryKey: ['lookups'] })
+      queryClient.invalidateQueries({ queryKey: qk.groups.all })
+      queryClient.invalidateQueries({ queryKey: qk.lookups })
       setEditTarget(null)
       notify(
         'success',
@@ -320,9 +308,8 @@ export function GroupsScreen() {
     if (!deleteTarget) return
     try {
       await deleteGroup(deleteTarget.id)
-      queryClient.invalidateQueries({ queryKey: ['groups'] })
-      queryClient.invalidateQueries({ queryKey: ['lookups'] })
-      setGroupCount()
+      queryClient.invalidateQueries({ queryKey: qk.groups.all })
+      queryClient.invalidateQueries({ queryKey: qk.lookups })
       notify(
         'info',
         t('groups.group.deleted'),
@@ -365,13 +352,10 @@ export function GroupsScreen() {
         />
       </Field>
       <Field label={t('groups.lead', 'Gruppenleitung')}>
-        <Select
-          data={[
-            { value: '', label: t('groups.noLead', 'Keine Leitung') },
-            ...members.map((m) => ({ value: m.id, label: m.name })),
-          ]}
-          searchable
+        <MemberPicker
+          noneLabel={t('groups.noLead', 'Keine Leitung')}
           {...form.getInputProps('leadId')}
+          onChange={(id) => form.setFieldValue('leadId', id ?? '')}
         />
       </Field>
       <div
@@ -533,6 +517,8 @@ export function GroupsScreen() {
                     <Button
                       size="sm"
                       variant="subtle"
+                      aria-label={t('common.edit', 'Bearbeiten')}
+                      title={t('common.edit', 'Bearbeiten')}
                       onClick={() => openEdit(g)}
                     >
                       <IconPencil size={16} />
@@ -543,6 +529,8 @@ export function GroupsScreen() {
                       size="sm"
                       variant="subtle"
                       style={{ color: '#ff4d3d' }}
+                      aria-label={t('common.delete', 'Löschen')}
+                      title={t('common.delete', 'Löschen')}
                       onClick={() => setDeleteTarget(g)}
                     >
                       <IconTrash size={16} />
@@ -551,10 +539,10 @@ export function GroupsScreen() {
                   <Button
                     size="sm"
                     variant="subtle"
-                    style={{ color: '#6131c4' }}
+                    style={{ color: '#6131c4', marginLeft: 'auto' }}
                     onClick={() => setDetailGroup(g)}
                   >
-                    {t('groups.members', 'Mitglieder')} →
+                    {t('groups.memberCount', '{{count}} Mitglieder', { count: g.members })} →
                   </Button>
                 </div>
               </div>
@@ -562,10 +550,13 @@ export function GroupsScreen() {
           ))}
           {canCreate && (
           <Paper
+            component="button"
+            type="button"
             withBorder
             shadow="sm"
             radius="lg"
             style={{
+              font: 'inherit',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
@@ -599,6 +590,7 @@ export function GroupsScreen() {
       )}
 
       <Modal
+        onSubmit={form.onSubmit(submitAdd)}
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={t('groups.addGroup')}
@@ -607,7 +599,7 @@ export function GroupsScreen() {
             <Button variant="default" onClick={() => setAddOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="filled" onClick={() => form.onSubmit(saveAdd)()}>
+            <Button variant="filled" type="submit" loading={adding}>
               {t('groups.createGroup', 'Gruppe erstellen')}
             </Button>
           </>
@@ -616,6 +608,7 @@ export function GroupsScreen() {
         {groupForm}
       </Modal>
       <Modal
+        onSubmit={form.onSubmit(saveEdit)}
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
         title={t('groups.editGroup')}
@@ -625,7 +618,7 @@ export function GroupsScreen() {
             <Button variant="default" onClick={() => setEditTarget(null)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="filled" onClick={() => form.onSubmit(saveEdit)()}>
+            <Button variant="filled" type="submit">
               {t('common.save')}
             </Button>
           </>

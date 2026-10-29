@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react'
 import { Button, Select, Paper } from '@mantine/core'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT } from '@/locales/i18n'
-import { useToast, useData, useAuth } from '@/context/AppContext'
+import { useToast, useAuth } from '@/context/AppContext'
+import { qk } from '@/data/keys'
 import { Avatar, Modal, Field } from '@/components/ui'
 import type { Application } from '@/types'
 import {
@@ -18,14 +19,13 @@ import { roleLabel } from '@/roles'
 /* ── Applications ───────────────────────────── */
 export function ApplicationsTab() {
   const { notify } = useToast()
-  const { setPendingApplicationCount, setMemberCount } = useData()
   const { hasPermission } = useAuth()
   const { t } = useT()
   const queryClient = useQueryClient()
   const canApprove = hasPermission('applications.applications.approve')
   const canDecline = hasPermission('applications.applications.decline')
   const { data: apps = [] } = useQuery({
-    queryKey: ['applications'],
+    queryKey: qk.applications,
     queryFn: () => listApplications(),
   })
   const { data: lookupsData } = useQuery({
@@ -59,8 +59,7 @@ export function ApplicationsTab() {
       const tierId = tiersByName.get(approveTier)
       if (!tierId) throw new Error(`Unknown tier: ${approveTier}`)
       const { invited } = await approveApplication(approveTarget.id, tierId, approveRole)
-      queryClient.invalidateQueries({ queryKey: ['applications'] })
-      setPendingApplicationCount()
+      queryClient.invalidateQueries({ queryKey: qk.applications })
       setApproveTarget(null)
       if (invited) {
         // No account yet: they got an invite and join when they accept.
@@ -73,7 +72,7 @@ export function ApplicationsTab() {
         )
         return
       }
-      setMemberCount((prev) => prev + 1)
+      queryClient.invalidateQueries({ queryKey: qk.dashboard })
       notify(
         'success',
         t('members.applications.applicationApproved', 'Antrag angenommen'),
@@ -97,8 +96,7 @@ export function ApplicationsTab() {
   const decline = async (id: string, name: string) => {
     try {
       await declineApplication(id)
-      queryClient.invalidateQueries({ queryKey: ['applications'] })
-      setPendingApplicationCount()
+      queryClient.invalidateQueries({ queryKey: qk.applications })
       notify(
         'info',
         t('members.applications.applicationDeclined', 'Antrag abgelehnt'),

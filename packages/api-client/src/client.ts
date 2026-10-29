@@ -137,16 +137,20 @@ export async function apiFetch<T = unknown>(
   if (!res.ok) {
     let message = `HTTP ${res.status}`;
     let code: string | undefined;
+    let details: Record<string, unknown> | undefined;
     try {
       const body = await res.json();
       message = body.message ?? body.error ?? message;
       code = body.error;
+      // Per-field problems, e.g. { smtp_port: "must be a number" }.
+      if (body.details && typeof body.details === "object") details = body.details;
     } catch {
       /* ignore */
     }
     throw Object.assign(new Error(localizeError(res.status, code, message)), {
       status: res.status,
       code,
+      details,
     });
   }
 

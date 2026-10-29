@@ -15,6 +15,7 @@ import { NavItemRow } from './NavItemRow'
 import { UserMenu } from './UserMenu'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { usePlugins } from '@/plugins/store'
+import { useNavCounts } from '@/data/lists'
 import { buildNav, filterNav } from './nav'
 
 export function MobileDrawer() {
@@ -22,25 +23,12 @@ export function MobileDrawer() {
   const location = useLocation()
   const { go, mobileDrawerOpen, setMobileDrawerOpen } = useNav()
   const { hasPermission, currentUser } = useAuth()
-  const {
-    memberCount,
-    pendingApplicationCount,
-    groupCount,
-    polls,
-    openInvoiceCount,
-    moduleList,
-  } = useData()
-  const openPolls = polls.filter((p) => p.status === 'open').length
+  const { moduleList } = useData()
+  const counts = useNavCounts()
   usePlugins() // plugin icons arrive after the first render
   const nav = filterNav(
     buildNav(
-      {
-        members: memberCount,
-        applications: pendingApplicationCount,
-        groups: groupCount,
-        polls: openPolls,
-        invoices: openInvoiceCount,
-      },
+      counts,
       t,
       moduleList,
     ),

@@ -136,12 +136,19 @@ export async function deleteEvent(id: string): Promise<void> {
   await apiFetch(`/events/${id}`, { method: "DELETE" });
 }
 
+// The signed-in member signs up or gives up their place. This goes through
+// registration (capacity, waitlist, deadlines) and needs only the member's
+// own "register" right; /attendees/<id> is the organisers' list. The member
+// id stays in the signature for the callers; the server takes the signed-in
+// member.
 export async function joinEvent(
   eventId: string,
   memberId: string,
 ): Promise<void> {
-  await apiFetch(`/events/${eventId}/attendees/${memberId}`, {
+  void memberId;
+  await apiFetch(`/events/${eventId}/register`, {
     method: "POST",
+    body: JSON.stringify({}),
   });
 }
 
@@ -149,8 +156,9 @@ export async function leaveEvent(
   eventId: string,
   memberId: string,
 ): Promise<void> {
-  await apiFetch(`/events/${eventId}/attendees/${memberId}`, {
-    method: "DELETE",
+  void memberId;
+  await apiFetch(`/events/${eventId}/cancel-registration`, {
+    method: "POST",
   });
 }
 

@@ -68,7 +68,7 @@ export function SignupScreen() {
     }
   }
 
-  const onEnter = (e: React.KeyboardEvent) => e.key === 'Enter' && handleSignup()
+  const onEnter = (e: React.KeyboardEvent) => e.key === 'Enter' && !loading && handleSignup()
 
   return (
     <AuthFrame>

@@ -57,14 +57,6 @@ body {
   letter-spacing: -0.02em;
 }
 
-/* Big figures in stat tiles: brand heading face, digits lined up. */
-.stat-value {
-  font-family: "Bricolage Grotesque", "Hanken Grotesk", system-ui, sans-serif;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-  overflow-wrap: anywhere;
-}
-
 .logo-mark {
   width: 28px;
   height: 28px;
@@ -77,14 +69,6 @@ body {
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1;
-}
-
-.eyebrow {
-  font-size: var(--mantine-font-size-xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #6131c4;
 }
 
 .terminal-block {
@@ -681,32 +665,6 @@ table[style*="min-width"] td::before {
   }
 }
 
-.hubra-tabs .mantine-Tabs-list {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.hubra-tabs .mantine-Tabs-list::-webkit-scrollbar {
-  display: none;
-}
-
-.hubra-tabs .mantine-Tabs-tab {
-  color: #5e5873;
-  font-weight: 600;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.hubra-tabs .mantine-Tabs-tab:hover {
-  background: transparent;
-  color: #1a1625;
-}
-
-.hubra-tabs .mantine-Tabs-tab[data-active] {
-  color: #4d27a0;
-}
-
 /* Page content: one width and one gutter on every screen. */
 .page-container {
   width: 100%;
@@ -837,8 +795,16 @@ table[style*="min-width"] td::before {
   gap: 16px;
   align-items: start;
 }
+/* The same with the narrow column on the right (invoice detail). */
+.detail-grid-end {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 16px;
+  align-items: start;
+}
 @media (max-width: 62em) {
-  .detail-grid {
+  .detail-grid,
+  .detail-grid-end {
     grid-template-columns: minmax(0, 1fr);
   }
 }

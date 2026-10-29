@@ -5,24 +5,28 @@ import { useT } from "@/locales/i18n";
 import {
   IconCalendar,
   IconChartBar,
-  IconHeart,
+  IconReceipt,
   IconLogout as Leave,
   IconCreditCard,
 } from "@tabler/icons-react";
-import { useAuth, useLoadData, useNav } from "@/context/AppContext";
-import { InvoicePill } from "@/components/ui";
+import { useAuth, useNav } from "@/context/AppContext";
+import { useEvents, useMyVotes, usePolls } from "@/data/lists";
+import { ErrorBanner, InvoicePill } from "@/components/ui";
 import { listMyInvoices, downloadInvoicePdf } from "@/api/finance";
 import { formatCHF } from "@/format";
 import { useToggleJoinEvent } from "@/screens/private/operations/useEventActions";
 import { useModules } from "@/modules/useModules";
 import { MyGroupsCard } from "./MyGroupsCard";
 import { PluginSlot } from "@/plugins";
+import { qk } from "@/data/keys";
 
 /* -- Account Dashboard ------------------------ */
 export function AccountDashboardScreen() {
   const { t, i18n } = useT();
   const { currentUser } = useAuth();
-  const { polls, events, myVotes } = useLoadData("events");
+  const { polls } = usePolls();
+  const { events } = useEvents();
+  const myVotes = useMyVotes();
   const { go, goInvoice } = useNav();
   const joinEventMutation = useToggleJoinEvent();
   const modules = useModules();
@@ -32,8 +36,9 @@ export function AccountDashboardScreen() {
     data: invoicesData,
     isLoading: invoicesLoading,
     isError: invoicesError,
+    refetch: refetchInvoices,
   } = useQuery({
-    queryKey: ["my-invoices"],
+    queryKey: qk.invoices.mine,
     queryFn: () => listMyInvoices(),
   });
   const myInvoices = useMemo(
@@ -48,9 +53,10 @@ export function AccountDashboardScreen() {
     <>
       {/* pending payments banner */}
       {invoicesError && (
-        <Paper withBorder shadow="sm" radius="lg" p="md" mb="md" c="red">
-          <Text size="sm">{t("common.error", 'Fehler')}</Text>
-        </Paper>
+        <ErrorBanner
+          message={t("account.invoicesLoadFailed", 'Deine Rechnungen konnten nicht geladen werden.')}
+          onRetry={() => refetchInvoices()}
+        />
       )}
       {invoicesLoading && (
         <Paper withBorder shadow="sm" radius="lg" p="md" mb="md">
@@ -109,6 +115,8 @@ export function AccountDashboardScreen() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
+                  // On a phone the buttons go under the amount.
+                  flexWrap: "wrap",
                   padding: "10px 16px",
                   borderTop: "1px solid rgba(255, 77, 61, 0.12)",
                   gap: 12,
@@ -134,7 +142,14 @@ export function AccountDashboardScreen() {
                     {formatCHF(inv.amount)}
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 8,
+                    alignItems: "center",
+                  }}
+                >
                   <InvoicePill status={inv.status} />
                   <Button
                     size="sm"
@@ -180,10 +195,10 @@ export function AccountDashboardScreen() {
             color: "green",
           },
           {
-            label: t("account.postsLiked", 'Beiträge mit Like'),
-            value: 0,
-            icon: <IconHeart size={20} />,
-            color: "pink",
+            label: t("account.openInvoices", 'Offene Rechnungen'),
+            value: myInvoices.length,
+            icon: <IconReceipt size={20} />,
+            color: myInvoices.length > 0 ? "red" : "gray",
           },
         ].map((s) => (
           <Paper
@@ -319,6 +334,7 @@ export function AccountDashboardScreen() {
                   <Button
                     size="sm"
                     variant="subtle"
+                    disabled={joinEventMutation.isPending}
                     onClick={() =>
                       joinEventMutation.mutate({
                         eventId: ev.id,
@@ -448,6 +464,7 @@ export function AccountDashboardScreen() {
                           </div>
                           <Progress
                             value={pct}
+                            aria-label={opt.label}
                             size="sm"
                             radius="xl"
                             styles={{
@@ -497,29 +514,6 @@ export function AccountDashboardScreen() {
         {modules.has("groups") && <MyGroupsCard />}
         <PluginSlot name="account.cards" />
 
-        {/* My likes ? coming soon */}
-        <Paper withBorder shadow="sm" radius="lg">
-          <Group
-            p="md"
-            gap="sm"
-            style={{ borderBottom: "1px solid var(--mantine-color-gray-3)" }}
-          >
-            <IconHeart size={16} style={{ color: "#5e5873" }} />
-            <Text fw={700} fz="md">
-              {t("account.likedPosts", 'Beiträge, die dir gefallen')}
-            </Text>
-          </Group>
-          <div
-            style={{
-              padding: "24px",
-              textAlign: "center",
-              color: "#8c86a0",
-              fontSize: "var(--mantine-font-size-sm)",
-            }}
-          >
-            {t("account.postsComingSoon", 'Beiträge folgen bald.')}
-          </div>
-        </Paper>
       </div>
     </>
   );

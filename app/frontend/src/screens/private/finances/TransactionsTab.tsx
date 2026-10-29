@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { TextInput, Button, Group, Badge, Select, ActionIcon } from '@mantine/core'
+import { Button, Group, Badge, Select, ActionIcon, Text } from '@mantine/core'
 import { useT } from '@/locales/i18n'
 import { IconExternalLink, IconPlus } from '@tabler/icons-react'
-import { useToast, useNav, useLoadData, useAuth } from '@/context/AppContext'
+import { useToast, useNav, useAuth } from '@/context/AppContext'
+import { useInvoices } from '@/data/lists'
 import {
-  Modal,
-  Field,
   usePagination,
   ConfirmModal,
   ErrorBanner,
@@ -21,13 +20,16 @@ import {
   deleteTransaction,
   listTxCategories,
 } from '@/api/finance'
-import { formatCHF } from '@/format'
+import { formatCHF, formatDate } from '@/format'
+import { TransactionFormModal, type TransactionFormValues } from './TransactionFormModal'
+import { methodLabel, statusLabel } from './transactionLabels'
+import { qk } from '@/data/keys'
 
 /* ── Transactions ────────────────────────────── */
 export function TransactionsTab() {
   const { notify } = useToast()
   const { go, goInvoice } = useNav()
-  const { invoices } = useLoadData('invoices')
+  const { invoices } = useInvoices()
   const { hasPermission } = useAuth()
   const { t } = useT()
   const queryClient = useQueryClient()
@@ -40,30 +42,21 @@ export function TransactionsTab() {
     error: fetchError,
     refetch,
   } = useQuery({
-    queryKey: ['transactions'],
+    queryKey: qk.transactions.all,
     queryFn: () => listTransactions(),
   })
   const { data: categories = [] } = useQuery({
-    queryKey: ['transaction-categories'],
+    queryKey: qk.transactions.categories,
     queryFn: () => listTxCategories(),
-    enabled: canCreate,
+    enabled: canCreate || canUpdate,
   })
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('All')
   const [statusFilter, setStatusFilter] = useState('All')
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null)
-  const [editTarget, setEditTarget] = useState<Transaction | null>(null)
-  const [editStatus, setEditStatus] = useState<'Pending' | 'Completed'>(
-    'Completed',
-  )
-  const [addOpen, setAddOpen] = useState(false)
-  const [addDesc, setAddDesc] = useState('')
-  const [addAmount, setAddAmount] = useState('')
-  const [addType, setAddType] = useState<'income' | 'expense'>('expense')
-  const [addDate, setAddDate] = useState(new Date().toISOString().slice(0, 10))
-  const [addMethod, setAddMethod] = useState('Cash')
-  const [addCategory, setAddCategory] = useState<string | null>(null)
-  const [addSaving, setAddSaving] = useState(false)
+  // The form: closed (null), a new transaction ('new') or one to change.
+  const [formTarget, setFormTarget] = useState<Transaction | 'new' | null>(null)
+  const [saving, setSaving] = useState(false)
 
   const filtered = transactions.filter((t) => {
     const q = search.toLowerCase()
@@ -81,35 +74,63 @@ export function TransactionsTab() {
   })
   const pg = usePagination(filtered, 25)
 
-  const openEdit = (t: Transaction, e?: React.MouseEvent) => {
+  const openEdit = (tx: Transaction, e?: React.MouseEvent) => {
     e?.stopPropagation()
-    setEditTarget(t)
-    setEditStatus(t.status)
+    setFormTarget(tx)
   }
 
-  const handleEdit = async () => {
-    if (!editTarget) return
+  const handleSave = async (values: TransactionFormValues) => {
+    if (!formTarget) return
+    setSaving(true)
     try {
-      await updateTransaction(editTarget.id, {
-        status: editStatus,
-      })
-      queryClient.invalidateQueries({ queryKey: ['transactions'] })
-      setEditTarget(null)
+      if (formTarget === 'new') {
+        await createTransaction({
+          date: values.date,
+          description: values.description,
+          categoryId: values.categoryId,
+          amount: values.amount,
+          method: values.method,
+          type: values.type,
+          payeeName: values.payeeName.trim() || undefined,
+        })
+      } else {
+        const before = formTarget
+        await updateTransaction(before.id, {
+          date: values.date,
+          description: values.description,
+          categoryId: values.categoryId,
+          amount: values.amount,
+          method: values.method,
+          type: values.type,
+          status: values.status,
+          // Only send the name when it changed: an empty one would unlink nothing
+          // but blank out a name the bank import set.
+          ...(values.payeeName.trim() !== (before.payeeName ?? '')
+            ? { payeeName: values.payeeName.trim() }
+            : {}),
+        })
+      }
+      queryClient.invalidateQueries({ queryKey: qk.transactions.all })
       notify(
         'success',
         t('finance.transaction.saved', 'Buchung gespeichert.'),
-        t('finance.transaction.updatedMsg', 'Status auf «{{status}}» geändert.', {
-          status: editStatus,
-        }),
+        formTarget === 'new'
+          ? t('finance.transaction.createdMsg', 'Buchung erfasst.')
+          : t('finance.transaction.updatedMsg2', '«{{description}}» wurde gespeichert.', {
+              description: values.description,
+            }),
       )
+      setFormTarget(null)
     } catch (err: unknown) {
       notify(
         'error',
-        t('common.error'),
+        t('finance.transaction.saveFailed', 'Buchung nicht gespeichert'),
         err instanceof Error
           ? err.message
           : t('common.unknownError', 'Unbekannter Fehler'),
       )
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -117,7 +138,7 @@ export function TransactionsTab() {
     if (!deleteTarget) return
     try {
       await deleteTransaction(deleteTarget.id)
-      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      queryClient.invalidateQueries({ queryKey: qk.transactions.all })
       notify(
         'info',
         t('finance.transaction.deleted', 'Buchung gelöscht.'),
@@ -141,75 +162,17 @@ export function TransactionsTab() {
     else go('/app/finance/invoices')
   }
 
-  const openAdd = () => {
-    setAddDesc('')
-    setAddAmount('')
-    setAddType('expense')
-    setAddDate(new Date().toISOString().slice(0, 10))
-    setAddMethod('Cash')
-    setAddCategory(categories.find((c) => c.isDefault)?.id ?? null)
-    setAddOpen(true)
-  }
-
-  // The backend takes a positive amount; the type says whether it is in or out.
-  const addAmountValue = Math.abs(Number(addAmount))
-  const addValid =
-    !!addDesc.trim() &&
-    Number.isFinite(addAmountValue) &&
-    addAmountValue > 0 &&
-    !!addCategory
-
-  const handleAdd = async () => {
-    if (!addValid || !addCategory) return
-    setAddSaving(true)
-    try {
-      await createTransaction({
-        date: addDate,
-        description: addDesc.trim(),
-        categoryId: addCategory,
-        amount: addAmountValue,
-        method: addMethod,
-        type: addType,
-      })
-      queryClient.invalidateQueries({ queryKey: ['transactions'] })
-      setAddOpen(false)
-      notify(
-        'success',
-        t('finance.transaction.saved', 'Buchung gespeichert.'),
-        t('finance.transaction.createdMsg', 'Buchung erfasst.'),
-      )
-    } catch (err: unknown) {
-      notify(
-        'error',
-        t('common.error'),
-        err instanceof Error
-          ? err.message
-          : t('common.unknownError', 'Unbekannter Fehler'),
-      )
-    } finally {
-      setAddSaving(false)
-    }
-  }
-
-  const formatDate = (iso: string) => {
-    if (!iso) return '—'
-    try {
-      return new Date(iso).toLocaleDateString('en-CH', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      })
-    } catch {
-      return iso
-    }
-  }
+  const isFiltered = !!search || typeFilter !== 'All' || statusFilter !== 'All'
 
   return (
     <div>
       {canCreate && (
         <Group justify="flex-end" mb={16} className="page-actions">
-          <Button variant="filled" onClick={openAdd}>
-            <IconPlus size={16} />
+          <Button
+            variant="filled"
+            leftSection={<IconPlus size={16} />}
+            onClick={() => setFormTarget('new')}
+          >
             {t('finance.addTransaction', 'Buchung erfassen')}
           </Button>
         </Group>
@@ -228,21 +191,6 @@ export function TransactionsTab() {
         breakpoint="xwide"
         columns={[
           {
-            key: 'createdAt',
-            header: t('finance.recorded', 'Erfasst'),
-            render: (tx) => (
-              <span
-                className="num"
-                style={{
-                  color: '#8c86a0',
-                  fontSize: 'var(--mantine-font-size-xs)',
-                }}
-              >
-                {formatDate(tx.createdAt)}
-              </span>
-            ),
-          },
-          {
             key: 'date',
             header: t('common.date', 'Datum'),
             render: (tx) => (
@@ -251,9 +199,10 @@ export function TransactionsTab() {
                 style={{
                   color: '#5e5873',
                   fontSize: 'var(--mantine-font-size-sm)',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                {tx.date}
+                {tx.date ? formatDate(tx.date) : '—'}
               </span>
             ),
           },
@@ -261,28 +210,25 @@ export function TransactionsTab() {
             key: 'description',
             header: t('common.description', 'Beschreibung'),
             render: (tx) => (
-              <div
-                style={{
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  maxWidth: 200,
-                }}
-              >
-                {tx.description}
+              <div style={{ minWidth: 0, maxWidth: 280 }}>
+                <Text size="sm" fw={600} truncate="end">
+                  {tx.description}
+                </Text>
+                {tx.member && tx.member !== '—' && (
+                  <Text size="xs" c="dimmed" truncate="end">
+                    {tx.member}
+                  </Text>
+                )}
               </div>
             ),
           },
           {
             key: 'category',
             header: t('finance.categoryLabel', 'Kategorie'),
-            render: (tx) => <Badge variant="light">{tx.category}</Badge>,
-          },
-          {
-            key: 'member',
-            header: t('common.member', 'Mitglied'),
             render: (tx) => (
-              <span style={{ color: '#5e5873' }}>{tx.member}</span>
+              <Badge variant="light" style={{ textTransform: 'none', maxWidth: 180 }}>
+                {tx.category || '—'}
+              </Badge>
             ),
           },
           {
@@ -293,19 +239,22 @@ export function TransactionsTab() {
                 className="num"
                 style={{
                   fontWeight: 700,
+                  whiteSpace: 'nowrap',
                   color: tx.type === 'income' ? '#1f9d57' : '#ff4d3d',
                 }}
               >
-                {tx.type === 'income' ? '+' : '−'}CHF{' '}
+                {tx.type === 'income' ? '+' : '−'}CHF{'\u00a0'}
                 {formatCHF(Math.abs(tx.amount))}
               </span>
             ),
           },
           {
             key: 'method',
-            header: t('common.method', 'Methode'),
+            header: t('finance.paymentMethod', 'Zahlungsart'),
             render: (tx) => (
-              <span style={{ color: '#5e5873' }}>{tx.method}</span>
+              <span style={{ color: '#5e5873', whiteSpace: 'nowrap' }}>
+                {methodLabel(t, tx.method)}
+              </span>
             ),
           },
           {
@@ -316,9 +265,9 @@ export function TransactionsTab() {
                 variant="light"
                 color={tx.status === 'Pending' ? 'yellow' : 'green'}
                 radius="xl"
-                style={{ fontSize: 'var(--mantine-font-size-xs)' }}
+                style={{ fontSize: 'var(--mantine-font-size-xs)', textTransform: 'none', overflow: 'visible' }}
               >
-                {tx.status}
+                {statusLabel(t, tx.status)}
               </Badge>
             ),
           },
@@ -351,7 +300,24 @@ export function TransactionsTab() {
         ]}
         data={pg.paged}
         loading={loading}
-        emptyMessage={t('finance.noTransactions', 'Keine Buchungen gefunden.')}
+        emptyMessage={
+          isFiltered
+            ? t('finance.noTransactions', 'Keine Buchungen gefunden.')
+            : t('finance.noTransactionsYet', 'Noch keine Buchungen')
+        }
+        emptyDescription={
+          isFiltered
+            ? t('finance.noTransactionsFilterHint', 'Ändere die Suche oder die Filter.')
+            : t(
+                'finance.noTransactionsYetHint',
+                'Hier erscheinen Einnahmen und Ausgaben des Vereins, auch bezahlte Rechnungen.',
+              )
+        }
+        emptyAction={
+          !isFiltered && canCreate
+            ? { label: t('finance.addFirstTransaction', 'Erste Buchung erfassen'), onClick: () => setFormTarget('new') }
+            : undefined
+        }
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder={t(
@@ -379,8 +345,9 @@ export function TransactionsTab() {
         toolbar={
           <Select
             size="sm"
+            aria-label={t('common.status', 'Status')}
             data={[
-              { value: 'All', label: t('common.all', 'Alle') },
+              { value: 'All', label: t('finance.allStatuses', 'Alle Status') },
               { value: 'Pending', label: t('finance.pending', 'Offen') },
               {
                 value: 'Completed',
@@ -389,7 +356,8 @@ export function TransactionsTab() {
             ]}
             value={statusFilter}
             onChange={(v) => setStatusFilter(v ?? 'All')}
-            style={{ width: 140 }}
+            allowDeselect={false}
+            style={{ width: 160 }}
           />
         }
       />
@@ -400,184 +368,38 @@ export function TransactionsTab() {
         title={t('finance.deleteTransactionTitle', 'Buchung löschen?')}
         body={
           deleteTarget
-            ? `"${deleteTarget.description}" (${
-                deleteTarget.type === 'income' ? '+' : '−'
-              }CHF ${Math.abs(deleteTarget.amount).toFixed(
-                2,
-              )}) wirde permanent entfernt.${
-                deleteTarget.invoiceId
-                  ? t(
-                      'finance.linkedInvoiceAlsoDeleted',
-                      'Die verknüpfte Rechnung wird ebenfalls gelöscht.',
-                    )
-                  : ''
-              }`
+            ? t('finance.deleteTransactionBody', '«{{description}}» ({{amount}}) wird endgültig gelöscht.', {
+                description: deleteTarget.description,
+                amount: `${deleteTarget.type === 'income' ? '+' : '−'}CHF ${formatCHF(Math.abs(deleteTarget.amount))}`,
+                interpolation: { escapeValue: false },
+              }) +
+              (deleteTarget.invoiceId
+                ? ' ' +
+                  t(
+                    'finance.linkedInvoiceAlsoDeleted',
+                    'Die verknüpfte Rechnung wird ebenfalls gelöscht.',
+                  )
+                : '')
             : ''
         }
         onConfirm={handleDelete}
       />
 
-      {/* Edit status modal */}
-      <Modal
-        open={!!editTarget}
-        onClose={() => setEditTarget(null)}
-        title={t('finance.editTransaction', 'Buchung bearbeiten')}
-        subtitle={editTarget?.description}
-        footer={
-          <>
-            <Button variant="default" onClick={() => setEditTarget(null)}>
-              {t('common.cancel')}
-            </Button>
-            <Button variant="filled" onClick={handleEdit}>
-              {t('common.save')}
-            </Button>
-          </>
-        }
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Field label={t('common.status', 'Status')}>
-            <Select
-              data={[
-                { value: 'Pending', label: t('finance.pending', 'Offen') },
-                {
-                  value: 'Completed',
-                  label: t('finance.completed', 'Abgeschlossen'),
-                },
-              ]}
-              value={editStatus}
-              onChange={(v) =>
-                setEditStatus((v ?? 'Pending') as 'Pending' | 'Completed')
-              }
-            />
-          </Field>
-          {editTarget && (
-            <div
-              style={{
-                fontSize: 'var(--mantine-font-size-sm)',
-                color: '#5e5873',
-                background: '#f4f2f9',
-                borderRadius: 8,
-                padding: '10px 14px',
-              }}
-            >
-              <div>
-                {t('finance.amount', 'Betrag')}:{' '}
-                <strong>CHF {formatCHF(Math.abs(editTarget.amount))}</strong>
-              </div>
-              <div>
-                {t('common.date', 'Datum')}: <strong>{editTarget.date}</strong>
-              </div>
-              <div>
-                {t('finance.recorded', 'Erfasst')}:{' '}
-                <strong>{formatDate(editTarget.createdAt)}</strong>
-              </div>
-              {editTarget.invoiceId && (
-                <div>
-                  {t('finance.invoiceLabel', 'Rechnung')}:{' '}
-                  <strong>#{editTarget.invoiceId}</strong>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </Modal>
-
-      <Modal
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        title={t('finance.addTransaction', 'Buchung erfassen')}
-        footer={
-          <>
-            <Button variant="default" onClick={() => setAddOpen(false)}>
-              {t('common.cancel')}
-            </Button>
-            <Button
-              variant="filled"
-              onClick={handleAdd}
-              disabled={addSaving || !addValid}
-            >
-              {addSaving ? t('common.saving', 'Wird gespeichert …') : t('common.save')}
-            </Button>
-          </>
-        }
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Field label={t('common.description', 'Beschreibung')}>
-            <TextInput
-              value={addDesc}
-              onChange={(e) => setAddDesc(e.target.value)}
-              placeholder={t(
-                'finance.transactionDescription',
-                'z. B. Spende Sommerfest',
-              )}
-            />
-          </Field>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <Field label={t('finance.amount', 'Betrag')}>
-              <TextInput
-                type="number"
-                step="0.05"
-                min="0"
-                value={addAmount}
-                onChange={(e) => setAddAmount(e.target.value)}
-                placeholder="50.00"
-              />
-            </Field>
-            <Field label={t('common.type', 'Typ')}>
-              <Select
-                data={[
-                  { value: 'expense', label: t('finance.expense', 'Ausgabe') },
-                  { value: 'income', label: t('finance.income', 'Einnahmen') },
-                ]}
-                value={addType}
-                onChange={(v) =>
-                  setAddType((v ?? 'expense') as 'income' | 'expense')
-                }
-              />
-            </Field>
-          </div>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <Field label={t('common.date', 'Datum')}>
-              <TextInput
-                type="date"
-                value={addDate}
-                onChange={(e) => setAddDate(e.target.value)}
-              />
-            </Field>
-            <Field label={t('common.method', 'Methode')}>
-              <Select
-                data={[
-                  { value: 'Cash', label: t('finance.methods.cash', 'Bar') },
-                  { value: 'IBAN', label: t('finance.methods.bank', 'Bank') },
-                  { value: 'Card', label: t('finance.methods.card', 'Karte') },
-                  { value: 'Twint', label: 'TWINT' },
-                ]}
-                value={addMethod}
-                onChange={(v) => setAddMethod(v ?? 'Cash')}
-              />
-            </Field>
-          </div>
-          <Field
-            label={t('finance.categoryLabel', 'Kategorie')}
-            hint={
-              categories.length === 0
-                ? t(
-                    'finance.noCategoriesHint',
-                    'Lege zuerst unter Finanzen → Kategorien eine Kategorie an.',
-                  )
-                : undefined
-            }
-          >
-            <Select
-              data={categories.map((c) => ({ value: c.id, label: c.name }))}
-              value={addCategory}
-              onChange={setAddCategory}
-              placeholder={t('finance.selectCategory', 'Kategorie wählen …')}
-              searchable
-            />
-          </Field>
-        </div>
-      </Modal>
+      {formTarget && (
+        <TransactionFormModal
+          key={formTarget === 'new' ? 'new' : formTarget.id}
+          open
+          transaction={formTarget === 'new' ? null : formTarget}
+          categories={categories}
+          saving={saving}
+          onClose={() => setFormTarget(null)}
+          onSubmit={handleSave}
+          onOpenCategories={() => {
+            setFormTarget(null)
+            go('/app/finance/categories')
+          }}
+        />
+      )}
     </div>
   )
 }

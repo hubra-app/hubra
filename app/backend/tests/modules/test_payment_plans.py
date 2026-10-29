@@ -127,3 +127,13 @@ def test_invoice_generation_uses_plan(app, db, tier, seeded_db):
         select(Invoice.amount).where(Invoice.member_id == member.id)
     ).all()
     assert amounts == [Decimal("30.00")]
+
+
+def test_cost_preview_refuses_a_tier_id_that_is_not_a_number(
+    client, auth_headers, tier
+):
+    for tier_id in ({"a": 1}, [1], True):
+        resp = client.post("/api/v1/tiers/calculate-cost", json={"tier_id": tier_id})
+        assert resp.status_code == 400, tier_id
+    resp = client.post("/api/v1/tiers/calculate-cost", json={"tier_id": "1"})
+    assert resp.status_code == 200

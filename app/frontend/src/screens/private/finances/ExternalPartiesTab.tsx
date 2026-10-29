@@ -4,7 +4,7 @@ import { Table, Button, Group, Paper, TextInput } from '@mantine/core'
 import { useT } from '@/locales/i18n'
 import { IconPlus, IconTrash, IconPencil } from '@tabler/icons-react'
 import { useToast, useAuth } from '@/context/AppContext'
-import { Modal, Field, ConfirmModal } from '@/components/ui'
+import { Modal, Field, ConfirmModal, useSubmitOnce } from '@/components/ui'
 import type { ExternalParty } from '@/types'
 import {
   listExternalParties,
@@ -12,6 +12,7 @@ import {
   updateExternalParty,
   deleteExternalParty,
 } from '@/api/finance'
+import { qk } from '@/data/keys'
 
 export function ExternalPartiesTab() {
   const { t } = useT()
@@ -22,7 +23,7 @@ export function ExternalPartiesTab() {
   const canUpdate = hasPermission('finance.external_parties.update')
   const canDelete = hasPermission('finance.external_parties.delete')
   const { data: parties = [], isLoading: loading } = useQuery({
-    queryKey: ['external-parties'],
+    queryKey: qk.externalParties,
     queryFn: () => listExternalParties(),
   })
   const [addOpen, setAddOpen] = useState(false)
@@ -85,7 +86,7 @@ export function ExternalPartiesTab() {
     if (!form.name) return
     try {
       await createExternalParty(buildPayload())
-      queryClient.invalidateQueries({ queryKey: ['external-parties'] })
+      queryClient.invalidateQueries({ queryKey: qk.externalParties })
       setAddOpen(false)
       notify(
         'success',
@@ -111,12 +112,13 @@ export function ExternalPartiesTab() {
       )
     }
   }
+  const [submitAdd, adding] = useSubmitOnce(saveAdd)
 
   const saveEdit = async () => {
     if (!editTarget) return
     try {
       await updateExternalParty(editTarget.id, buildPayload())
-      queryClient.invalidateQueries({ queryKey: ['external-parties'] })
+      queryClient.invalidateQueries({ queryKey: qk.externalParties })
       setEditTarget(null)
       notify(
         'success',
@@ -143,7 +145,7 @@ export function ExternalPartiesTab() {
     if (!deleteTarget) return
     try {
       await deleteExternalParty(deleteTarget.id)
-      queryClient.invalidateQueries({ queryKey: ['external-parties'] })
+      queryClient.invalidateQueries({ queryKey: qk.externalParties })
       notify(
         'info',
         t('finance.externalParty.deleted', 'Externe Partei gelöscht'),
@@ -361,7 +363,7 @@ export function ExternalPartiesTab() {
             <Button variant="default" onClick={() => setAddOpen(false)}>
               {t('common.cancel', 'Abbrechen')}
             </Button>
-            <Button variant="filled" onClick={saveAdd}>
+            <Button variant="filled" onClick={submitAdd} loading={adding}>
               {t('common.create', 'Erstellen')}
             </Button>
           </>

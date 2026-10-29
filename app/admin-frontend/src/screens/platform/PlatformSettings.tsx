@@ -92,7 +92,18 @@ export function PlatformSettings() {
       setDraft({})
       notify('success', tr('Plattform-Einstellungen gespeichert', 'Platform settings saved'))
     } catch (err) {
-      notify('error', tr('Speichern fehlgeschlagen', 'Could not save'), err instanceof Error ? err.message : undefined)
+      // Name the fields the server refused, not only "Invalid platform settings".
+      const details = (err as { details?: Record<string, unknown> }).details
+      const fields = details
+        ? Object.entries(details)
+            .map(([k, v]) => `${byKey[k]?.label ?? k}: ${String(v)}`)
+            .join(' · ')
+        : ''
+      notify(
+        'error',
+        tr('Speichern fehlgeschlagen', 'Could not save'),
+        fields || (err instanceof Error ? err.message : undefined),
+      )
     } finally {
       setSaving(false)
     }
@@ -121,7 +132,6 @@ export function PlatformSettings() {
       </Group>
     )
     const common = {
-      key,
       label,
       description: de ? tr(de[1], s.description) : s.description,
       value: draft[key] ?? s.value,
@@ -129,9 +139,9 @@ export function PlatformSettings() {
         setDraft((d) => ({ ...d, [key]: e.currentTarget.value })),
     }
     return s.secret ? (
-      <PasswordInput {...common} placeholder={s.isSet ? tr('•••••••• (unverändert)', '•••••••• (unchanged)') : ''} />
+      <PasswordInput key={key} {...common} placeholder={s.isSet ? tr('•••••••• (unverändert)', '•••••••• (unchanged)') : ''} />
     ) : (
-      <TextInput {...common} />
+      <TextInput key={key} {...common} />
     )
   }
 

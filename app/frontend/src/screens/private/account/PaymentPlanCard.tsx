@@ -6,6 +6,7 @@ import { useT } from '@/locales/i18n'
 import { useToast } from '@/context/AppContext'
 import { formatCHF } from '@/format'
 import { chooseMyPlan, getMyPlanOptions } from '@/api/paymentPlans'
+import { qk } from '@/data/keys'
 
 /** Lets a member pick how they pay their tier, when the tier offers plans. */
 export function PaymentPlanCard() {
@@ -14,7 +15,7 @@ export function PaymentPlanCard() {
   const queryClient = useQueryClient()
   const [busy, setBusy] = useState(false)
   const { data } = useQuery({
-    queryKey: ['my-plan'],
+    queryKey: qk.account.plan,
     queryFn: getMyPlanOptions,
   })
   if (!data?.tier || data.plans.length === 0) return null
@@ -24,7 +25,7 @@ export function PaymentPlanCard() {
     setBusy(true)
     try {
       await chooseMyPlan(value === 'tier' ? null : Number(value))
-      await queryClient.invalidateQueries({ queryKey: ['my-plan'] })
+      await queryClient.invalidateQueries({ queryKey: qk.account.plan })
       notify('success', t('account.plan.saved', 'Zahlungsplan gespeichert'))
     } catch (err) {
       notify(

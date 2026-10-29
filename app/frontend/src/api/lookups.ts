@@ -1,5 +1,6 @@
 import { apiFetch } from '@hubra/api-client';
 import { queryClient } from "@/queryClient";
+import { qk } from "@/data/keys";
 
 interface BackendTier {
   id: number;
@@ -29,7 +30,7 @@ export interface Lookups {
 
 /** Tiers, roles and groups by id and by name, cached under ['lookups']. */
 export const lookupsQuery = {
-  queryKey: ["lookups"],
+  queryKey: qk.lookups,
   queryFn: fetchLookups,
 };
 

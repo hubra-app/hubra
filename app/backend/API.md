@@ -658,6 +658,8 @@ The authenticated member's own profile. Equivalent to `GET /members/:id` for the
 | GET    | `/account` | Get current member profile                             |
 | PATCH  | `/account` | Update personal fields (name, private email, password) |
 
+**GET /account** returns the member plus `tenantSlug`, the club the session's token is for. The club app compares it with the club in the URL and calls `POST /auth/switch-tenant` only when they differ. A token without a club answers `{ "noTenant": true, "user": {...} }` instead.
+
 **PATCH /account — allowed fields only**
 
 ```json

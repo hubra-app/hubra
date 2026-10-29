@@ -4,7 +4,7 @@ import { Table, Button, Group, Paper, TextInput, Badge } from '@mantine/core'
 import { useT } from '@/locales/i18n'
 import { IconPlus, IconTrash, IconPencil, IconLock } from '@tabler/icons-react'
 import { useToast, useAuth } from '@/context/AppContext'
-import { Modal, Field, ConfirmModal } from '@/components/ui'
+import { Modal, Field, ConfirmModal, EmptyState } from '@/components/ui'
 import type { TransactionCategory } from '@/types'
 import {
   listTxCategories,
@@ -12,6 +12,7 @@ import {
   updateTxCategory,
   deleteTxCategory,
 } from '@/api/finance'
+import { qk } from '@/data/keys'
 
 /* ── Transaction Categories ──────────────────── */
 export function TransactionCategoriesTab() {
@@ -29,7 +30,7 @@ export function TransactionCategoriesTab() {
     'transaction_categories.transaction_categories.delete',
   )
   const { data: cats = [], isLoading: loading } = useQuery({
-    queryKey: ['transaction-categories'],
+    queryKey: qk.transactions.categories,
     queryFn: () => listTxCategories(),
   })
   const [addOpen, setAddOpen] = useState(false)
@@ -45,6 +46,37 @@ export function TransactionCategoriesTab() {
     setCColor('#2596be')
     setAddOpen(true)
   }
+  // A new club has no categories, and no transaction can be recorded
+  // without one: offer the usual ones in one go.
+  const [starting, setStarting] = useState(false)
+  const createStarterSet = async () => {
+    const starter = [
+      { name: t('finance.starter.fees', 'Mitgliederbeiträge'), color: '#7441e0' },
+      { name: t('finance.starter.donations', 'Spenden'), color: '#1f9d57' },
+      { name: t('finance.starter.events', 'Anlässe'), color: '#2596be' },
+      { name: t('finance.starter.material', 'Material'), color: '#f59e0b' },
+      { name: t('finance.starter.rent', 'Miete'), color: '#ff4d3d' },
+      { name: t('finance.starter.other', 'Diverses'), color: '#8c86a0' },
+    ]
+    setStarting(true)
+    try {
+      for (const c of starter) await createTxCategory(c)
+      notify(
+        'success',
+        t('finance.starterCreated', 'Kategorien angelegt'),
+        t('finance.starterCreatedMsg', 'Du kannst sie jederzeit umbenennen oder löschen.'),
+      )
+    } catch (err: unknown) {
+      notify(
+        'error',
+        t('finance.couldNotCreateCategory', 'Kategorie konnte nicht erstellt werden.'),
+        err instanceof Error ? err.message : undefined,
+      )
+    } finally {
+      queryClient.invalidateQueries({ queryKey: qk.transactions.categories })
+      setStarting(false)
+    }
+  }
   const openEdit = (c: TransactionCategory) => {
     setEditTarget(c)
     setCName(c.name)
@@ -55,7 +87,7 @@ export function TransactionCategoriesTab() {
     if (!cName) return
     try {
       await createTxCategory({ name: cName, color: cColor })
-      queryClient.invalidateQueries({ queryKey: ['transaction-categories'] })
+      queryClient.invalidateQueries({ queryKey: qk.transactions.categories })
       setAddOpen(false)
       notify(
         'success',
@@ -85,7 +117,7 @@ export function TransactionCategoriesTab() {
         name: cName,
         color: cColor,
       })
-      queryClient.invalidateQueries({ queryKey: ['transaction-categories'] })
+      queryClient.invalidateQueries({ queryKey: qk.transactions.categories })
       setEditTarget(null)
       notify(
         'success',
@@ -112,7 +144,7 @@ export function TransactionCategoriesTab() {
     if (!deleteTarget) return
     try {
       await deleteTxCategory(deleteTarget.id)
-      queryClient.invalidateQueries({ queryKey: ['transaction-categories'] })
+      queryClient.invalidateQueries({ queryKey: qk.transactions.categories })
       notify(
         'info',
         t('finance.category.deleted', 'Kategorie gelöscht.'),
@@ -168,148 +200,165 @@ export function TransactionCategoriesTab() {
           </Button>
         </Group>
       )}
-      <Paper withBorder shadow="sm" radius="lg">
-        <div style={{ overflowX: 'auto' }}>
-          <Table highlightOnHover className="responsive-table">
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>{t('finance.categoryLabel', 'Kategorie')}</Table.Th>
-                <Table.Th>{t('common.type', 'Typ')}</Table.Th>
-                <Table.Th style={{ width: 80 }}></Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {loading ? (
+      {!loading && cats.length === 0 && canCreate ? (
+        <Paper withBorder shadow="sm" radius="lg">
+          <EmptyState
+            title={t('finance.noCategories', 'Noch keine Kategorien.')}
+            description={t(
+              'finance.noCategoriesWhy',
+              'Jede Buchung gehört zu einer Kategorie. Lege eigene an oder starte mit einer Auswahl.',
+            )}
+          />
+          <Group justify="center" gap="xs" pb="xl" px="md" mt={-32}>
+            <Button onClick={createStarterSet} loading={starting}>
+              {t('finance.createStarterCategories', 'Übliche Kategorien anlegen')}
+            </Button>
+          </Group>
+        </Paper>
+      ) : (
+        <Paper withBorder shadow="sm" radius="lg">
+          <div style={{ overflowX: 'auto' }}>
+            <Table highlightOnHover className="responsive-table">
+              <Table.Thead>
                 <Table.Tr>
-                  <Table.Td
-                    colSpan={3}
-                    style={{
-                      textAlign: 'center',
-                      color: '#8c86a0',
-                      padding: '24px',
-                      fontSize: 'var(--mantine-font-size-sm)',
-                    }}
-                  >
-                    {t('finance.loading', 'Wird geladen …')}
-                  </Table.Td>
+                  <Table.Th>{t('finance.categoryLabel', 'Kategorie')}</Table.Th>
+                  <Table.Th>{t('common.type', 'Typ')}</Table.Th>
+                  <Table.Th style={{ width: 80 }}></Table.Th>
                 </Table.Tr>
-              ) : cats.length === 0 ? (
-                <Table.Tr>
-                  <Table.Td
-                    colSpan={3}
-                    style={{
-                      textAlign: 'center',
-                      color: '#8c86a0',
-                      padding: '24px',
-                      fontSize: 'var(--mantine-font-size-sm)',
-                    }}
-                  >
-                    {t('finance.noCategories', 'Noch keine Kategorien.')}
-                  </Table.Td>
-                </Table.Tr>
-              ) : (
-                cats.map((c) => (
-                  <Table.Tr key={c.id}>
-                    <Table.Td data-label={t('finance.categoryLabel', 'Kategorie')}>
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 10,
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 12,
-                            height: 12,
-                            borderRadius: 3,
-                            background: c.color,
-                            flexShrink: 0,
-                          }}
-                        />
-                        <span style={{ fontWeight: 500 }}>{c.name}</span>
-                      </div>
-                    </Table.Td>
-                    <Table.Td data-label={t('common.type', 'Typ')}>
-                      {c.isDefault ? (
-                        <Badge
-                          variant="light"
-                          color="cyan"
-                          radius="xl"
-                          style={{ fontSize: 'var(--mantine-font-size-xs)' }}
-                        >
-                          {t('finance.category.default', 'Standard')}
-                        </Badge>
-                      ) : (
-                        <span
-                          style={{
-                            fontSize: 'var(--mantine-font-size-xs)',
-                            color: '#8c86a0',
-                          }}
-                        >
-                          {t('finance.category.custom', 'Eigene')}
-                        </span>
-                      )}
-                    </Table.Td>
-                    <Table.Td data-label="">
-                      <div style={{ display: 'flex', gap: 4 }}>
-                        {canUpdate && (
-                          <Button
-                            size="sm"
-                            variant="subtle"
-                            onClick={() => openEdit(c)}
-                            disabled={c.isDefault}
-                            title={
-                              c.isDefault
-                                ? t(
-                                    'finance.defaultCannotEdit',
-                                    'Standardkategorien können nicht bearbeitet werden',
-                                  )
-                                : undefined
-                            }
-                          >
-                            {c.isDefault ? (
-                              <IconLock
-                                size={16}
-                                style={{ color: '#8c86a0' }}
-                              />
-                            ) : (
-                              <IconPencil size={16} />
-                            )}
-                          </Button>
-                        )}
-                        {canDelete && (
-                          <Button
-                            size="sm"
-                            variant="subtle"
-                            style={{
-                              color: c.isDefault ? '#8c86a0' : '#ff4d3d',
-                            }}
-                            onClick={() => {
-                              if (!c.isDefault) setDeleteTarget(c)
-                            }}
-                            disabled={c.isDefault}
-                            title={
-                              c.isDefault
-                                ? t(
-                                    'finance.defaultCannotDelete',
-                                    'Standardkategorien können nicht gelöscht werden',
-                                  )
-                                : undefined
-                            }
-                          >
-                            <IconTrash size={16} />
-                          </Button>
-                        )}
-                      </div>
+              </Table.Thead>
+              <Table.Tbody>
+                {loading ? (
+                  <Table.Tr>
+                    <Table.Td
+                      colSpan={3}
+                      style={{
+                        textAlign: 'center',
+                        color: '#8c86a0',
+                        padding: '24px',
+                        fontSize: 'var(--mantine-font-size-sm)',
+                      }}
+                    >
+                      {t('finance.loading', 'Wird geladen …')}
                     </Table.Td>
                   </Table.Tr>
-                ))
-              )}
-            </Table.Tbody>
-          </Table>
-        </div>
-      </Paper>
+                ) : cats.length === 0 ? (
+                  <Table.Tr>
+                    <Table.Td
+                      colSpan={3}
+                      style={{
+                        textAlign: 'center',
+                        color: '#8c86a0',
+                        padding: '24px',
+                        fontSize: 'var(--mantine-font-size-sm)',
+                      }}
+                    >
+                      {t('finance.noCategories', 'Noch keine Kategorien.')}
+                    </Table.Td>
+                  </Table.Tr>
+                ) : (
+                  cats.map((c) => (
+                    <Table.Tr key={c.id}>
+                      <Table.Td data-label={t('finance.categoryLabel', 'Kategorie')}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: 12,
+                              height: 12,
+                              borderRadius: 3,
+                              background: c.color,
+                              flexShrink: 0,
+                            }}
+                          />
+                          <span style={{ fontWeight: 500 }}>{c.name}</span>
+                        </div>
+                      </Table.Td>
+                      <Table.Td data-label={t('common.type', 'Typ')}>
+                        {c.isDefault ? (
+                          <Badge
+                            variant="light"
+                            color="cyan"
+                            radius="xl"
+                            style={{ fontSize: 'var(--mantine-font-size-xs)' }}
+                          >
+                            {t('finance.category.default', 'Standard')}
+                          </Badge>
+                        ) : (
+                          <span
+                            style={{
+                              fontSize: 'var(--mantine-font-size-xs)',
+                              color: '#8c86a0',
+                            }}
+                          >
+                            {t('finance.category.custom', 'Eigene')}
+                          </span>
+                        )}
+                      </Table.Td>
+                      <Table.Td data-label="">
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          {canUpdate && (
+                            <Button
+                              size="sm"
+                              variant="subtle"
+                              onClick={() => openEdit(c)}
+                              disabled={c.isDefault}
+                              title={
+                                c.isDefault
+                                  ? t(
+                                      'finance.defaultCannotEdit',
+                                      'Standardkategorien können nicht bearbeitet werden',
+                                    )
+                                  : undefined
+                              }
+                            >
+                              {c.isDefault ? (
+                                <IconLock
+                                  size={16}
+                                  style={{ color: '#8c86a0' }}
+                                />
+                              ) : (
+                                <IconPencil size={16} />
+                              )}
+                            </Button>
+                          )}
+                          {canDelete && (
+                            <Button
+                              size="sm"
+                              variant="subtle"
+                              style={{
+                                color: c.isDefault ? '#8c86a0' : '#ff4d3d',
+                              }}
+                              onClick={() => {
+                                if (!c.isDefault) setDeleteTarget(c)
+                              }}
+                              disabled={c.isDefault}
+                              title={
+                                c.isDefault
+                                  ? t(
+                                      'finance.defaultCannotDelete',
+                                      'Standardkategorien können nicht gelöscht werden',
+                                    )
+                                  : undefined
+                              }
+                            >
+                              <IconTrash size={16} />
+                            </Button>
+                          )}
+                        </div>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))
+                )}
+              </Table.Tbody>
+            </Table>
+          </div>
+        </Paper>
+      )}
 
       <Modal
         open={addOpen}

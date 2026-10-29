@@ -62,6 +62,16 @@ class InventoryService:
     @staticmethod
     def update(item: InventoryItem, data: dict, actor_id: int) -> InventoryItem:
         """Update allowed fields on an inventory item."""
+        # "checked_out" belongs to the checkout record: setting it by hand
+        # left an item nobody had, and leaving it by hand an open checkout
+        # that blocked the next one's check-in.
+        status = data.get("status", item.status)
+        if status != item.status and "checked_out" in (status, item.status):
+            raise_error(
+                409,
+                "USE_CHECKOUT",
+                "Use check out and check in to change whether an item is out",
+            )
         for field in (
             "name",
             "category",
@@ -110,8 +120,12 @@ class InventoryService:
         db.session.delete(item)
 
     @staticmethod
-    def add_instruction(item: InventoryItem, member: Member) -> None:
+    def add_instruction(
+        item: InventoryItem, member: Member, actor_id: int | None = None
+    ) -> None:
         """Record a member being instructed on an item. Raises 409 if already."""
+        if member.archived_at is not None:
+            raise_error(404, "NOT_FOUND", f"Member {member.id} not found")
         already = db.session.scalar(
             select(func.count())
             .select_from(item_instructions)
@@ -134,9 +148,18 @@ class InventoryService:
                 instructed_at=datetime.now(timezone.utc),
             )
         )
+        log_audit(
+            actor_id=actor_id,
+            action="add_item_instruction",
+            target_type="InventoryItem",
+            target_id=item.id,
+            target_label=f"{item.name}: {member.name}",
+        )
 
     @staticmethod
-    def remove_instruction(item_id: int, member_id: int) -> None:
+    def remove_instruction(
+        item_id: int, member_id: int, actor_id: int | None = None
+    ) -> None:
         """Remove an instruction record. Raises 404 if not found."""
         exists = db.session.scalar(
             select(func.count())
@@ -159,6 +182,16 @@ class InventoryService:
                 item_instructions.c.member_id == member_id,
             )
         )
+        item = db.session.get(InventoryItem, item_id)
+        member = db.session.get(Member, member_id)
+        log_audit(
+            actor_id=actor_id,
+            action="remove_item_instruction",
+            target_type="InventoryItem",
+            target_id=item_id,
+            target_label=f"{item.name if item else item_id}: "
+            f"{member.name if member else member_id}",
+        )
 
     @staticmethod
     def checkout(
@@ -170,6 +203,9 @@ class InventoryService:
     ) -> InventoryCheckout:
         """Check out an item to a member. Raises 409 if not available."""
         item = InventoryService.get(item_id)
+        # Re-read under a row lock: two checkouts of one item must not both
+        # see it available (Postgres; a no-op on SQLite).
+        db.session.refresh(item, with_for_update=True)
 
         if item.status not in ("available",):
             raise_error(

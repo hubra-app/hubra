@@ -13,8 +13,10 @@ Fallback chain:
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime, timezone
 
+import nh3
 from flask import render_template
 from markupsafe import Markup, escape
 
@@ -24,6 +26,20 @@ _FALLBACK_CHAIN: dict[str, list[str]] = {
     "de-CH": ["de-CH", "en-GB"],
     "en-GB": ["en-GB"],
 }
+
+
+# A club can edit its own mail texts, and some of its mail (invites) goes to
+# strangers from the platform's sender: a text keeps simple formatting only,
+# and a link only to the URL the mail itself fills in ({{reset_url}}, ...).
+_MAIL_TAGS = {"a", "strong", "b", "em", "i", "br"}
+_FOREIGN_LINK = re.compile(r'<a href="(?!\{\{\w+\}\}")[^"]*"[^>]*>')
+
+
+def _safe_text(value: str) -> str:
+    if "<" not in value:
+        return value
+    cleaned = nh3.clean(value, tags=_MAIL_TAGS, attributes={"a": {"href"}})
+    return _FOREIGN_LINK.sub("<a>", cleaned)
 
 
 def get_mail_translator(locale: str):
@@ -41,11 +57,18 @@ def get_mail_translator(locale: str):
         select(Translation).where(Translation.locale.in_(chain))  # type: ignore[attr-defined]
     ).all()
 
+    from hubra.api.i18n.services import platform_rows
+
     lookup: dict[str, str] = {}
     row_by_key_locale: dict[tuple[str, str], Translation] = {}
     for fallback_locale in reversed(chain):
+        # A club's own texts win over the platform's, but an empty club row
+        # (a key reported missing) doesn't hide the platform text.
+        for prow in platform_rows(fallback_locale):
+            if prow.value:
+                lookup[prow.key] = prow.value
         for row in rows:
-            if row.locale == fallback_locale:
+            if row.locale == fallback_locale and (row.value or row.key not in lookup):
                 lookup[row.key] = row.value
                 row_by_key_locale[(row.key, row.locale)] = row
 
@@ -57,6 +80,7 @@ def get_mail_translator(locale: str):
         if value is None:
             logger.warning("mail_translation_missing key=%s locale=%s", key, locale)
             return Markup(f"[{key}]")
+        value = _safe_text(value)
         if kwargs:
             for k, v in kwargs.items():
                 value = value.replace("{{" + k + "}}", str(escape(v)))
@@ -96,8 +120,17 @@ def render_mail_template(
     shared_ctx = {"t": t, "locale": locale, **context}
 
     html = render_template(f"email/{template_name}.html", **shared_ctx)
+    # The texts carry simple HTML (<strong>, <br>) for the HTML part; the
+    # plain-text part shows them as tags otherwise.
+    import re
+    from html import unescape
+
     text = render_template(f"email/{template_name}.txt", **shared_ctx)
-    subject = render_template(f"email/{template_name}_subject.j2", **shared_ctx).strip()
+    text = unescape(re.sub(r"<[^>]+>", "", text))
+    # t() escapes values for the HTML part; a subject is plain text.
+    subject = unescape(
+        render_template(f"email/{template_name}_subject.j2", **shared_ctx).strip()
+    )
 
     _touch_last_used(locale, t._accessed_keys)  # type: ignore[attr-defined]
 

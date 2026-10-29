@@ -218,7 +218,9 @@
       "atOnce": "You leave the club at once. Your Hubra account and your other clubs stay.",
       "confirmTitle": "Leave the club?",
       "confirmBody": "You lose access to the club's pages. Your invoices and entries stay with the club. To come back later, ask to join again."
-    }
+    },
+    "invoicesLoadFailed": "Your invoices could not be loaded.",
+    "openInvoices": "Open invoices"
   },
   "app": {
     "backend": {
@@ -480,7 +482,7 @@
     "houseNo": "No.",
     "import": "Import",
     "lastName": "Last name",
-    "loading": "Loading?",
+    "loading": "Loading …",
     "member": "Member",
     "members": "Members",
     "method": "Method",
@@ -535,7 +537,12 @@
     "searchPlaceholder": "Search…",
     "saveFailed": "Save failed",
     "deleted": "Deleted",
-    "moreActions": "More actions"
+    "moreActions": "More actions",
+    "perPage": "Rows per page",
+    "pageFirst": "First page",
+    "pagePrevious": "Previous page",
+    "pageNext": "Next page",
+    "pageLast": "Last page"
   },
   "dashboard": {
     "activeMembers": "Active members",
@@ -586,6 +593,7 @@
       "overview": "Club"
     },
     "thisMonth": "This Month",
+    "joinedLast30": "+{{count}} in the last 30 days",
     "thisWeek": "This Week",
     "title": "Dashboard",
     "today": "Today",
@@ -872,7 +880,9 @@
       "deleted": "Transaction deleted.",
       "deletedMsg": "The transaction has been deleted.",
       "saved": "Transaction saved.",
-      "updatedMsg": "Status changed to \"{{status}}\"."
+      "updatedMsg": "Status changed to \"{{status}}\".",
+      "saveFailed": "Transaction not saved",
+      "updatedMsg2": "“{{description}}” was saved."
     },
     "transactionDeleted": "Transaction deleted.",
     "transactionDeletedMsg": "The transaction has been deleted.",
@@ -911,7 +921,42 @@
       "paid": "Paid",
       "overdue": "Overdue"
     },
-    "loadTransactionsFailed": "Failed to load transactions"
+    "loadTransactionsFailed": "Failed to load transactions",
+    "addFirstTransaction": "Record the first transaction",
+    "allStatuses": "All statuses",
+    "amountChf": "Amount (CHF)",
+    "createStarterCategories": "Create the usual categories",
+    "deleteTransactionBody": "“{{description}}” ({{amount}}) will be deleted for good.",
+    "form": {
+      "amountRequired": "Enter an amount above 0.",
+      "categoryRequired": "Choose a category.",
+      "dateRequired": "Choose a date.",
+      "descriptionRequired": "Describe the transaction briefly.",
+      "expense": "Expense",
+      "income": "Income",
+      "linkedMember": "Linked to {{name}}",
+      "noCategory": "No matching category",
+      "openCategories": "Go to categories",
+      "payee": "From / to (optional)",
+      "payeePlaceholder": "e.g. Hardware store Ltd",
+      "record": "Record transaction"
+    },
+    "noTransactionsFilterHint": "Change the search or the filters.",
+    "noTransactionsYet": "No transactions yet",
+    "noTransactionsYetHint": "The club's income and expenses appear here, including paid invoices.",
+    "noCategoriesWhy": "Every transaction belongs to a category. Create your own or start with a set.",
+    "paymentMethod": "Payment method",
+    "recordedOn": "Recorded on {{date}}",
+    "starter": {
+      "donations": "Donations",
+      "events": "Events",
+      "fees": "Membership fees",
+      "material": "Material",
+      "other": "Other",
+      "rent": "Rent"
+    },
+    "starterCreated": "Categories created",
+    "starterCreatedMsg": "You can rename or delete them at any time."
   },
   "functions": {
     "assignHolder": "Assign person",
@@ -997,7 +1042,9 @@
     "sessionsHint": "e.g. twice a week",
     "sessionsPlaceholder": "3 times a week",
     "title": "Groups",
-    "tools": "Tools"
+    "tools": "Tools",
+    "memberCount_one": "{{count}} member",
+    "memberCount_other": "{{count}} members"
   },
   "inventory": {
     "addFirstItem": "Add the first item",
@@ -1170,6 +1217,8 @@
       "syncError": "Error",
       "syncOk": "OK",
       "syncPending": "Pending",
+      "tabAddresses": "Addresses",
+      "tabAll": "All addresses",
       "tabFunctions": "Functions",
       "tabGroups": "Groups",
       "tabMembers": "Members",
@@ -1657,7 +1706,8 @@
       "decline": "Decline",
       "approved": "Leaving confirmed",
       "declined": "Request declined"
-    }
+    },
+    "noMembersFilterHint": "Change the search or the filter."
   },
   "notifications": {
     "invoicePaid": "Invoice paid",
@@ -1726,6 +1776,7 @@
     "voteFailed": "Could not cast vote.",
     "remindersSent": "Reminders sent",
     "remindersFailed": "Could not send reminders.",
+    "deleteFailed": "Could not delete the poll.",
     "validation": "Check your input",
     "minOptions": "At least 2 options are required.",
     "updated": "Poll updated",
@@ -2139,7 +2190,8 @@
     "members": "Members",
     "create": "Create tier",
     "deleteTitle": "Delete the \"{{name}}\" tier?",
-    "deleteBody": "Members assigned to this tier will need to be reassigned. This cannot be undone."
+    "deleteBody": "Members assigned to this tier will need to be reassigned. This cannot be undone.",
+    "noPrice": "No fee"
   },
   "toast": {
     "error": "Error",
@@ -2260,6 +2312,7 @@
     "primaryColor": "Primary Color",
     "secondaryColor": "Secondary Color",
     "accentColor": "Accent Color",
+    "pickColor": "Pick a colour from the screen",
     "localization": "Localization",
     "timezone": "Timezone",
     "locale": "Locale",
@@ -2275,7 +2328,10 @@
     "loading": "Loading settings...",
     "membership": "Membership",
     "leaveRequiresApproval": "Leaving needs approval",
-    "leaveRequiresApprovalHint": "On: members ask to leave and you approve it under Members › Applications. Off: members leave at once."
+    "leaveRequiresApprovalHint": "On: members ask to leave and you approve it under Members › Applications. Off: members leave at once.",
+    "loadFailed": "The settings could not be loaded.",
+    "saveFailed": "Settings not saved",
+    "saved": "Settings saved"
   },
   "domains": {
     "added": "Domain added",
@@ -2370,7 +2426,8 @@
     "entryCount_other": "{{count}} entries",
     "actions": {
       "all": "All actions",
-      "create_member": "Member created",
+      "invite_member": "Member invited",
+      "accept_invite": "Invite accepted",
       "update_member": "Member updated",
       "delete_member_permanent": "Member deleted",
       "archive_member": "Member archived",
@@ -2401,6 +2458,12 @@
       "archive_group": "Group archived",
       "join_group": "Joined a group",
       "leave_group": "Left a group",
+      "add_group_member": "Added to a group",
+      "remove_group_member": "Removed from a group",
+      "add_domain": "Domain added",
+      "verify_domain": "Domain verified",
+      "remove_domain": "Domain removed",
+      "set_primary_domain": "Main domain set",
       "create_function": "Function created",
       "update_function": "Function updated",
       "delete_function": "Function deleted",
@@ -2438,8 +2501,47 @@
       "delete_inventory_item": "Item deleted",
       "checkout_inventory_item": "Checked out",
       "checkin_inventory_item": "Checked in",
+      "add_item_instruction": "Instruction recorded",
+      "remove_item_instruction": "Instruction removed",
       "create_code": "Code created",
       "update_code": "Code updated",
+      "delete_code": "Code deleted",
+      "create_member_mail": "Member mail address created",
+      "update_member_mail": "Member mail address changed",
+      "delete_member_mail": "Member mail address deleted",
+      "toggle_member_mail": "Member mail address on/off",
+      "provision_member_mail": "Member mailbox set up",
+      "create_group_mail": "Group mail address created",
+      "toggle_group_mail": "Group mail address on/off",
+      "change_group_mail_prefix": "Group mail address renamed",
+      "create_group_alias": "Group alias created",
+      "toggle_group_alias": "Group alias on/off",
+      "delete_group_alias": "Group alias deleted",
+      "create_function_mail": "Function mail address created",
+      "toggle_function_mail": "Function mail address on/off",
+      "change_function_mail_prefix": "Function mail address renamed",
+      "create_function_alias": "Function alias created",
+      "toggle_function_alias": "Function alias on/off",
+      "delete_function_alias": "Function alias deleted",
+      "create_system_address": "System mail address created",
+      "toggle_system_address": "System mail address on/off",
+      "delete_system_address": "System mail address deleted",
+      "create_system_alias": "System alias created",
+      "delete_system_alias": "System alias deleted",
+      "update_system_forwarding": "System forwarding changed",
+      "reset_system_mailbox_password": "System mailbox password reset",
+      "mailbox_quota_alert": "Mailbox nearly full",
+      "mail_stale_id_detected": "Stale mailbox id found",
+      "update_from_whitelist": "Allowed senders changed",
+      "grant_proxy": "Proxy vote given",
+      "set_payment_plan": "Payment plan set",
+      "revert": "Reset to default",
+      "upsert": "Setting saved",
+      "toggle": "Binding on/off",
+      "toggle_address": "Mail address on/off",
+      "update_address": "Mail address changed",
+      "delete_address": "Mail address deleted",
+      "change_prefix": "Mail address renamed",
       "create_mailbox": "Mailbox created",
       "update_mailbox": "Mailbox updated",
       "delete_mailbox": "Mailbox deleted",
@@ -2550,7 +2652,12 @@
     "deleteKeyBody": "Delete \"{{key}}\"? All bindings must be removed first.",
     "editTitle": "Edit binding #{{id}}",
     "deleteBody": "Delete binding #{{id}} ({{source}} → {{key}})?",
-    "protectedToggle": "Protected: cannot toggle"
+    "protectedToggle": "Protected: cannot toggle",
+    "additionalAlias": "Additional alias: {{address}}",
+    "noSources": "No {{type}} records available.",
+    "selectSource": "Select a record …",
+    "currentValue": "Current value:",
+    "hidden": "(hidden)"
   },
   "roles": {
     "hideFields": "Hide field permissions",
@@ -2598,7 +2705,9 @@
       "Admin": "Admin",
       "Treasurer": "Treasurer",
       "Member": "Member"
-    }
+    },
+    "assignTo": "Give members the role {{role}}",
+    "searchMembers": "Search members …"
   },
   "modules": {
     "functions": {
@@ -2670,6 +2779,7 @@
     "roles": {
       "name": "Roles & permissions",
       "description": "Roles and the permissions they grant"
-    }
+    },
+    "pluginFailed": "This extension could not be shown."
   }
 }

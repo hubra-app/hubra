@@ -7,9 +7,9 @@ import {
   Textarea,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
-import { useT } from '@/locales/i18n'
+import { useT, zmsg } from '@/locales/i18n'
 import { useToast } from '@/context/AppContext'
 import { Modal, Field } from '@/components/ui'
 import type { Member } from '@/types'
@@ -24,7 +24,7 @@ const STATIC_STATUS = ['active', 'trial', 'inactive', 'suspended'] as const
 const memberSchema = z.object({
   firstName: z.string(),
   lastName: z.string(),
-  email: z.string().email('Invalid email'),
+  email: z.string().email(zmsg('validation.invalidEmail', 'Ungültige E-Mail-Adresse')),
   status: z.string(),
   tier: z.string(),
   roles: z.array(z.string()),
@@ -57,7 +57,7 @@ export function MemberEditModal({
   const [saving, setSaving] = useState(false)
 
   const form = useForm<MemberForm>({
-    validate: zodResolver(memberSchema),
+    validate: zod4Resolver(memberSchema),
     initialValues: {
       firstName: '',
       lastName: '',
@@ -185,6 +185,7 @@ export function MemberEditModal({
 
   return (
     <Modal
+      onSubmit={form.onSubmit(handleSave)}
       open={open}
       onClose={onClose}
       title={
@@ -207,7 +208,7 @@ export function MemberEditModal({
           </Button>
           <Button
             variant="filled"
-            onClick={() => form.onSubmit(handleSave)()}
+            type="submit"
             disabled={saving}
           >
             {mode === 'create'
@@ -269,7 +270,7 @@ export function MemberEditModal({
           <Select
             data={STATIC_STATUS.map((s) => ({
               value: s,
-              label: s.charAt(0).toUpperCase() + s.slice(1),
+              label: t(`status.${s}`),
             }))}
             {...form.getInputProps('status')}
           />
@@ -338,7 +339,6 @@ export function MemberEditModal({
           <Textarea
             rows={3}
             {...form.getInputProps('notes')}
-            placeholder="Admin notes about this member\u2026"
           />
         </Field>
       </div>

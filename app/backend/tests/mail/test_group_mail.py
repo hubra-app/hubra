@@ -243,7 +243,10 @@ def test_list_aliases_shows_group_name(client, db, seeded_db, auth_headers):
         ]
     }
 
-    with patch("hubra.api.mail.services.try_get_client", return_value=mock_wd):
+    with (
+        patch("hubra.api.mail.services.try_get_client", return_value=mock_wd),
+        patch_mail_domain("club.ch"),
+    ):
         resp = client.get("/api/v1/mail/aliases", headers=auth_headers)
 
     assert resp.status_code == 200
@@ -272,7 +275,11 @@ def test_delete_group_tied_alias_returns_409(client, db, seeded_db, auth_headers
     db.session.commit()
 
     mock_wd = MagicMock()
-    with patch("hubra.api.mail.services.try_get_client", return_value=mock_wd):
+    mock_wd.get_address.return_value = {"address": "block-delete@club.ch"}
+    with (
+        patch("hubra.api.mail.services.try_get_client", return_value=mock_wd),
+        patch_mail_domain("club.ch"),
+    ):
         resp = client.delete(f"/api/v1/mail/aliases/{alias_id}", headers=auth_headers)
 
     assert resp.status_code == 409
@@ -283,7 +290,11 @@ def test_delete_non_group_alias_succeeds(client, db, seeded_db, auth_headers):
     """DELETE /mail/aliases/<id> succeeds (204) when the alias is not tied to any group."""
     alias_id = "f6e5d4c3b2a1f6e5d4c3b2a1"
     mock_wd = MagicMock()
-    with patch("hubra.api.mail.services.try_get_client", return_value=mock_wd):
+    mock_wd.get_address.return_value = {"address": "loose@club.ch"}
+    with (
+        patch("hubra.api.mail.services.try_get_client", return_value=mock_wd),
+        patch_mail_domain("club.ch"),
+    ):
         resp = client.delete(f"/api/v1/mail/aliases/{alias_id}", headers=auth_headers)
 
     assert resp.status_code == 204
@@ -302,3 +313,26 @@ def test_post_group_no_longer_auto_creates_alias(client, db, seeded_db, auth_hea
     )
 
     assert resp.status_code == 201
+
+
+def test_an_address_clash_does_not_lose_the_new_group(
+    client, db, auth_headers, seeded_db
+):
+    """The automatic group address failing must not undo the group itself."""
+    # A row that takes the address without the parts the free-name check reads.
+    db.session.add(
+        ManagedMailAddress(
+            address="werkstatt@club.ch",
+            address_type="mailbox",
+            owner_type="member",
+            owner_id=999,
+        )
+    )
+    db.session.commit()
+
+    with patch_mail_domain("club.ch"):
+        resp = client.post(
+            "/api/v1/groups/", json={"name": "Werkstatt"}, headers=auth_headers
+        )
+    assert resp.status_code == 201
+    assert db.session.get(Group, resp.get_json()["id"]) is not None

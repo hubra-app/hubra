@@ -22,10 +22,15 @@ function adapt(b: BackendNotification): Notification {
 }
 
 export async function listNotifications(): Promise<Notification[]> {
-  const data = await apiFetch<BackendNotification[]>("/notifications/");
+  // The API answers { data, meta: { unread } }, not a bare list.
+  const { data } = await apiFetch<{ data: BackendNotification[] }>("/notifications/");
   return data.map(adapt);
 }
 
 export async function markAllNotificationsRead(): Promise<void> {
   await apiFetch("/notifications/read-all", { method: "POST" });
+}
+
+export async function deleteNotification(id: string): Promise<void> {
+  await apiFetch(`/notifications/${encodeURIComponent(id)}`, { method: "DELETE" });
 }

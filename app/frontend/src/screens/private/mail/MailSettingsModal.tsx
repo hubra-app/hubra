@@ -31,6 +31,7 @@ import {
   getFromWhitelist,
   updateFromWhitelist,
 } from '@/api/mail'
+import { qk } from '@/data/keys'
 
 type Category = 'member' | 'group' | 'function' | 'system'
 
@@ -91,7 +92,7 @@ export function MailSettingsModal({
   const showFromWhitelist = entry?.addressType === 'mailbox'
 
   const { data: wlData } = useQuery({
-    queryKey: ['from-whitelist', entry?.id],
+    queryKey: qk.mail.fromWhitelist(entry?.id),
     queryFn: () => getFromWhitelist(entry!.id!),
     enabled: open && showFromWhitelist && entry?.id != null,
   })
@@ -113,7 +114,7 @@ export function MailSettingsModal({
         : null
 
   const { data: aliases = [] } = useQuery<ManagedMailAddressInfo[]>({
-    queryKey: ['mail-aliases', category, linkedId],
+    queryKey: qk.mail.aliases(category, linkedId),
     queryFn: () => {
       if (category === 'group' && entry?.ownerId != null) {
         return listGroupAliases(entry.ownerId)
@@ -131,7 +132,7 @@ export function MailSettingsModal({
 
   const invalidateAliases = () =>
     queryClient.invalidateQueries({
-      queryKey: ['mail-aliases', category, linkedId],
+      queryKey: qk.mail.aliases(category, linkedId),
     })
 
   useEffect(() => {
@@ -405,7 +406,11 @@ export function MailSettingsModal({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           {canManage && (
             <Field label={t('mail.enabled', 'Eingeschaltet')}>
-              <Toggle checked={enabled} onChange={setEnabled} />
+              <Toggle
+                checked={enabled}
+                onChange={setEnabled}
+                label={t('mail.enabled', 'Eingeschaltet')}
+              />
             </Field>
           )}
 
@@ -414,6 +419,7 @@ export function MailSettingsModal({
               <Toggle
                 checked={forwarding}
                 onChange={setForwarding}
+                label={t('mail.forwarding', 'Weiterleitung')}
                 disabled={!canManage}
               />
             </Field>
@@ -661,6 +667,7 @@ export function MailSettingsModal({
                       </span>
                       <Toggle
                         checked={alias.isEnabled}
+                        label={alias.address}
                         onChange={(v) => handleToggleAlias(alias.id, v)}
                         disabled={aliasBusy}
                       />

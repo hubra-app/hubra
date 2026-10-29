@@ -5,6 +5,7 @@ import {
   Textarea,
   Select,
   Switch,
+  NumberInput,
   ColorInput,
   Button,
   Stack,
@@ -17,14 +18,18 @@ import {
 } from '@mantine/core'
 import { getClubSettings, updateClubSettings, type ClubSettings } from '@/api/admin'
 import { useT } from '@/locales/i18n'
+import { qk } from '@/data/keys'
+import { useToast } from '@/context/AppContext'
+import { ErrorBanner } from '@/components/ui'
 
 function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
   const { t } = useT()
+  const { notify } = useToast()
   const queryClient = useQueryClient()
   const [form, setForm] = useState<ClubSettings>(initialData)
   const [saving, setSaving] = useState(false)
 
-  const update = (key: keyof ClubSettings, value: string | boolean) => {
+  const update = (key: keyof ClubSettings, value: string | boolean | number) => {
     setForm((prev) => ({ ...prev, [key]: value }))
   }
 
@@ -32,11 +37,21 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
     setSaving(true)
     try {
       await updateClubSettings(form)
-      queryClient.invalidateQueries({ queryKey: ['club-settings'] })
+      queryClient.invalidateQueries({ queryKey: qk.settings.club })
+      queryClient.invalidateQueries({ queryKey: qk.settings.clubProfile })
+      notify('success', t('clubSettings.saved', 'Einstellungen gespeichert'))
+    } catch (err: unknown) {
+      notify(
+        'error',
+        t('clubSettings.saveFailed', 'Einstellungen nicht gespeichert'),
+        err instanceof Error ? err.message : undefined,
+      )
     } finally {
       setSaving(false)
     }
   }
+
+  const eyeDropperProps = { 'aria-label': t('clubSettings.pickColor') }
 
   return (
     <Stack gap={20}>
@@ -65,16 +80,19 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
               label={t('clubSettings.primaryColor', 'Primärfarbe')}
               value={form.primary_color ?? '#7441e0'}
               onChange={(v) => update('primary_color', v)}
+              eyeDropperButtonProps={eyeDropperProps}
             />
             <ColorInput
               label={t('clubSettings.secondaryColor', 'Sekundärfarbe')}
               value={form.secondary_color ?? '#2596be'}
               onChange={(v) => update('secondary_color', v)}
+              eyeDropperButtonProps={eyeDropperProps}
             />
             <ColorInput
               label={t('clubSettings.accentColor', 'Akzentfarbe')}
               value={form.accent_color ?? '#f59e0b'}
               onChange={(v) => update('accent_color', v)}
+              eyeDropperButtonProps={eyeDropperProps}
             />
           </SimpleGrid>
         </Stack>
@@ -144,6 +162,25 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
           checked={form.leave_requires_approval ?? false}
           onChange={(e) => update('leave_requires_approval', e.currentTarget.checked)}
         />
+        <Switch
+          mt={14}
+          label={t('clubSettings.joinRequestsOpen', 'Beitrittsanfragen annehmen')}
+          description={t(
+            'clubSettings.joinRequestsOpenHint',
+            'Aus: Neue Mitglieder kommen nur noch über eine Einladung dazu, und auf join.hubra.club steht «Nur auf Einladung».',
+          )}
+          checked={form.join_requests_open ?? true}
+          onChange={(e) => update('join_requests_open', e.currentTarget.checked)}
+        />
+        <NumberInput
+          mt={14}
+          maw={240}
+          label={t('clubSettings.inviteValidDays', 'Einladungen gültig (Tage)')}
+          min={1}
+          max={60}
+          value={form.invite_valid_days ?? 14}
+          onChange={(v) => typeof v === 'number' && update('invite_valid_days', v)}
+        />
       </Paper>
 
       <Paper withBorder p="lg">
@@ -175,13 +212,23 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
 
 export function ClubSettingsTab() {
   const { t } = useT()
-  const { data, isLoading } = useQuery({
-    queryKey: ['club-settings'],
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: qk.settings.club,
     queryFn: getClubSettings,
   })
 
   if (isLoading) {
     return <Text p={20} c="dimmed">{t('clubSettings.loading', 'Einstellungen werden geladen …')}</Text>
+  }
+  // Saving over settings that never loaded would show empty fields as if
+  // the club had none.
+  if (error) {
+    return (
+      <ErrorBanner
+        message={t('clubSettings.loadFailed', 'Die Einstellungen konnten nicht geladen werden.')}
+        onRetry={() => refetch()}
+      />
+    )
   }
 
   return <ClubSettingsForm initialData={data ?? {}} />

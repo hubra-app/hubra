@@ -114,6 +114,8 @@ export interface ClubListing {
   name: string
   /** 'member', 'pending' (asked to join, not yet approved) or null. */
   membership: 'member' | 'pending' | null
+  /** False when the club takes new members by invite only. */
+  acceptsRequests?: boolean
 }
 
 /**

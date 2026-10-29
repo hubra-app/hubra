@@ -12,65 +12,14 @@ import {
   Stack,
   Paper,
   Text,
-  Tabs as MantineTabs,
 } from '@mantine/core'
-import {
-  IconSearch,
-  IconCheck,
-  IconX,
-  IconPencil,
-  IconTrash,
-  IconInbox,
-} from '@tabler/icons-react'
+import { IconSearch, IconCheck, IconX, IconPencil, IconTrash, IconInbox } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 import { LoadingSpinner, EmptyState } from './feedback'
 import { Pagination } from './layout'
+import { clickableProps } from './hooks'
 
-export interface TabDef {
-  id: string
-  label: string
-  icon?: React.ReactNode
-}
-
-export function Tabs({
-  tabs,
-  activeTab,
-  onTabChange,
-}: {
-  tabs: TabDef[]
-  activeTab: string
-  onTabChange: (id: string) => void
-}) {
-  return (
-    <MantineTabs
-      value={activeTab}
-      onChange={(v) => v && onTabChange(v)}
-      mb={24}
-      variant="default"
-      className="hubra-tabs"
-      styles={{
-        tab: {
-          paddingTop: 12,
-          paddingBottom: 12,
-          paddingLeft: 14,
-          paddingRight: 14,
-          fontSize: 'var(--mantine-font-size-sm)',
-        },
-        list: {
-          gap: 4,
-        },
-      }}
-    >
-      <MantineTabs.List>
-        {tabs.map((t) => (
-          <MantineTabs.Tab key={t.id} value={t.id} leftSection={t.icon}>
-            {t.label}
-          </MantineTabs.Tab>
-        ))}
-      </MantineTabs.List>
-    </MantineTabs>
-  )
-}
+export { Tabs, type TabDef } from '@hubra/ui'
 
 /* ── Table<T> ──────────────────────────────── */
 
@@ -181,23 +130,14 @@ export function KVTable<T extends { key: string }>({
           {emptyMessage}
         </Text>
       ) : (
-        <Accordion
-          variant="separated"
-          radius="lg"
-          multiple
-          defaultValue={Object.keys(grouped)}
-        >
+        <Accordion variant="separated" radius="lg" multiple defaultValue={Object.keys(grouped)}>
           {Object.entries(grouped)
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([ns, nsEntries]) => (
               <Accordion.Item key={ns} value={ns}>
                 <Accordion.Control>
                   <Group gap="sm" justify="space-between">
-                    <Text
-                      fw={700}
-                      fz="md"
-                      style={{ textTransform: 'capitalize' }}
-                    >
+                    <Text fw={700} fz="md" style={{ textTransform: 'capitalize' }}>
                       {ns}
                     </Text>
                     <Badge variant="light" size="sm">
@@ -206,20 +146,14 @@ export function KVTable<T extends { key: string }>({
                   </Group>
                 </Accordion.Control>
                 <Accordion.Panel p={0}>
-                  <ScrollArea
-                    w="100%"
-                    type="hover"
-                    className="responsive-scroll-wrap"
-                  >
+                  <ScrollArea w="100%" type="hover" className="responsive-scroll-wrap">
                     <MantineTable
                       className="responsive-table"
                       styles={{ table: { tableLayout: 'fixed' } }}
                     >
                       <MantineTable.Thead>
                         <MantineTable.Tr>
-                          <MantineTable.Th
-                            style={{ width: keyWidth, whiteSpace: 'nowrap' }}
-                          >
+                          <MantineTable.Th style={{ width: keyWidth, whiteSpace: 'nowrap' }}>
                             {i18n.t('data.key', 'Schlüssel')}
                           </MantineTable.Th>
                           <MantineTable.Th>{i18n.t('data.value', 'Wert')}</MantineTable.Th>
@@ -235,9 +169,7 @@ export function KVTable<T extends { key: string }>({
                               {col.header}
                             </MantineTable.Th>
                           ))}
-                          <MantineTable.Th
-                            style={{ width: 120, whiteSpace: 'nowrap' }}
-                          />
+                          <MantineTable.Th style={{ width: 120, whiteSpace: 'nowrap' }} />
                         </MantineTable.Tr>
                       </MantineTable.Thead>
                       <MantineTable.Tbody>
@@ -260,16 +192,12 @@ export function KVTable<T extends { key: string }>({
                               <MantineTable.Td
                                 data-label={i18n.t('data.value', 'Wert')}
                                 onClick={() => {
-                                  if (
-                                    isValueClickable(entry) &&
-                                    editingKey !== entry.key
-                                  )
+                                  if (isValueClickable(entry) && editingKey !== entry.key)
                                     onEditStart(entry)
                                 }}
                                 style={{
                                   cursor:
-                                    isValueClickable(entry) &&
-                                    editingKey !== entry.key
+                                    isValueClickable(entry) && editingKey !== entry.key
                                       ? 'pointer'
                                       : undefined,
                                 }}
@@ -279,9 +207,7 @@ export function KVTable<T extends { key: string }>({
                                     <TextInput
                                       type={getInputType?.(entry) ?? 'text'}
                                       value={editValue}
-                                      onChange={(e) =>
-                                        onEditValueChange(e.target.value)
-                                      }
+                                      onChange={(e) => onEditValueChange(e.target.value)}
                                       onKeyDown={(e) => {
                                         if (e.key === 'Enter') onEditSave(entry)
                                         if (e.key === 'Escape') onEditCancel()
@@ -296,6 +222,7 @@ export function KVTable<T extends { key: string }>({
                                       size="sm"
                                       onClick={() => onEditSave(entry)}
                                       loading={saving}
+                                      aria-label={i18n.t('common.save')}
                                     >
                                       <IconCheck size={12} />
                                     </ActionIcon>
@@ -303,6 +230,7 @@ export function KVTable<T extends { key: string }>({
                                       variant="subtle"
                                       size="sm"
                                       onClick={onEditCancel}
+                                      aria-label={i18n.t('common.cancel')}
                                     >
                                       <IconX size={12} />
                                     </ActionIcon>
@@ -314,21 +242,14 @@ export function KVTable<T extends { key: string }>({
                               {extraColumns?.map((col) => (
                                 <MantineTable.Td
                                   key={col.key}
-                                  data-label={
-                                    typeof col.header === 'string'
-                                      ? col.header
-                                      : col.key
-                                  }
+                                  data-label={typeof col.header === 'string' ? col.header : col.key}
                                 >
                                   {col.render(entry)}
                                 </MantineTable.Td>
                               ))}
-                              <MantineTable.Td
-                                onClick={(e) => e.stopPropagation()}
-                              >
+                              <MantineTable.Td onClick={(e) => e.stopPropagation()}>
                                 <Group gap={4} justify="flex-end" wrap="nowrap">
-                                  {editingKey !== entry.key &&
-                                    renderActions(entry)}
+                                  {editingKey !== entry.key && renderActions(entry)}
                                 </Group>
                               </MantineTable.Td>
                             </MantineTable.Tr>
@@ -419,6 +340,8 @@ export function DataTable<T>({
   data,
   loading,
   emptyMessage,
+  emptyDescription,
+  emptyAction,
   onRowClick,
   searchPlaceholder,
   searchValue,
@@ -440,6 +363,10 @@ export function DataTable<T>({
   data: T[]
   loading?: boolean
   emptyMessage?: ReactNode
+  /** A hint under the empty message, e.g. what to do next. */
+  emptyDescription?: string
+  /** A button in the empty state, e.g. "Add the first one". */
+  emptyAction?: { label: string; onClick: () => void }
   onRowClick?: (item: T) => void
   searchPlaceholder?: string
   searchValue?: string
@@ -498,7 +425,7 @@ export function DataTable<T>({
   const renderTableRow = (item: T, i: number) => (
     <MantineTable.Tr
       key={getRowKey ? getRowKey(item, i) : i}
-      onClick={onRowClick ? () => onRowClick(item) : undefined}
+      {...clickableProps(onRowClick ? () => onRowClick(item) : undefined)}
       style={{ cursor: onRowClick ? 'pointer' : undefined }}
     >
       {columns.map((col) => {
@@ -566,6 +493,7 @@ export function DataTable<T>({
                   key={si}
                   style={{
                     display: 'flex',
+                    flexWrap: 'wrap',
                     gap: 6,
                     alignItems: 'center',
                     paddingLeft: si > 0 ? 12 : 0,
@@ -608,11 +536,7 @@ export function DataTable<T>({
               ))}
             </div>
           )}
-          {toolbar && (
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-              {toolbar}
-            </div>
-          )}
+          {toolbar && <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>{toolbar}</div>}
         </div>
       )}
 
@@ -636,28 +560,25 @@ export function DataTable<T>({
       {loading ? (
         <LoadingSpinner compact message={i18n.t('common.loading', 'Wird geladen …')} />
       ) : data.length === 0 ? (
-        <EmptyState
-          icon={<IconInbox size={36} />}
-          title={typeof emptyMessage === 'string' ? emptyMessage : i18n.t('data.noData', 'Keine Daten')}
-        />
+        typeof emptyMessage === 'string' || emptyMessage === undefined ? (
+          <EmptyState
+            icon={<IconInbox size={36} />}
+            title={emptyMessage ?? i18n.t('data.noData', 'Keine Daten')}
+            description={emptyDescription}
+            action={emptyAction}
+          />
+        ) : (
+          emptyMessage
+        )
       ) : grouped ? (
-        <Accordion
-          variant="separated"
-          radius="lg"
-          multiple
-          defaultValue={Object.keys(grouped)}
-        >
+        <Accordion variant="separated" radius="lg" multiple defaultValue={Object.keys(grouped)}>
           {Object.entries(grouped)
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([groupKey, items]) => (
               <Accordion.Item key={groupKey} value={groupKey}>
                 <Accordion.Control>
                   <Group gap="sm" justify="space-between">
-                    <Text
-                      fw={700}
-                      fz="md"
-                      style={{ textTransform: 'capitalize' }}
-                    >
+                    <Text fw={700} fz="md" style={{ textTransform: 'capitalize' }}>
                       {groupBy!.label ? groupBy!.label(groupKey) : groupKey}
                     </Text>
                     <Badge variant="light" size="sm">

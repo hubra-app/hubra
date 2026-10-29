@@ -16,6 +16,9 @@ export function statusLabel(status: string, tr: (de: string, en: string) => stri
     pending: ['Offen', 'Pending'],
     approved: ['Freigegeben', 'Approved'],
     rejected: ['Abgelehnt', 'Rejected'],
+    // Member statuses
+    trial: ['Probezeit', 'Trial'],
+    inactive: ['Inaktiv', 'Inactive'],
   }
   const l = labels[status]
   return l ? tr(l[0], l[1]) : status

@@ -177,8 +177,13 @@ has `perm`). Slots: `account.cards`, `inventory.item` (`{ itemId }`) and
 `settings.module.actions` (`{ code, configured, name }`). The SDK
 (`app/frontend/src/plugins/sdk.ts`) gives you the app's hooks, components
 and API client. React, Mantine, react-query, react-router and react-i18next
-come from the app at runtime; import them as usual. Anything else, such as
-icons, is bundled.
+come from the app at runtime; import them as usual, by name
+(`import { Button } from '@mantine/core'`). The app hands over only the names
+listed in `app/frontend/src/plugins/host.ts`, and the build fails when a
+plugin imports another one; ask for a name to be added there. Anything else,
+such as icons, is bundled. A built plugin carries the host API version it was
+built for and does not run in an app with another one, so rebuild it when
+that version changes.
 
 Build it with the club app's toolchain:
 

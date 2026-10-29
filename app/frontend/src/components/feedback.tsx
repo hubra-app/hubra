@@ -20,7 +20,7 @@ import {
   IconTrash,
 } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
-import type { ReactNode } from 'react'
+import type { FormEvent, ReactNode } from 'react'
 
 interface ModalProps {
   open: boolean
@@ -30,6 +30,11 @@ interface ModalProps {
   wide?: boolean
   children: ReactNode
   footer?: ReactNode
+  /**
+   * Makes the dialog a form: Enter in a field submits it, and so does a
+   * `type="submit"` button in the footer.
+   */
+  onSubmit?: (event?: FormEvent<HTMLFormElement>) => void
 }
 export function Modal({
   open,
@@ -39,7 +44,21 @@ export function Modal({
   wide,
   children,
   footer,
+  onSubmit,
 }: ModalProps) {
+  const body = (
+    <>
+      <Stack gap="sm">{children}</Stack>
+      {footer && (
+        <>
+          <Divider my="sm" />
+          <Group justify="flex-end" gap="xs">
+            {footer}
+          </Group>
+        </>
+      )}
+    </>
+  )
   return (
     <MantineModal
       opened={open}
@@ -59,14 +78,12 @@ export function Modal({
       size={wide ? 'lg' : 'md'}
       padding="md"
     >
-      <Stack gap="sm">{children}</Stack>
-      {footer && (
-        <>
-          <Divider my="sm" />
-          <Group justify="flex-end" gap="xs">
-            {footer}
-          </Group>
-        </>
+      {onSubmit ? (
+        <form noValidate onSubmit={onSubmit}>
+          {body}
+        </form>
+      ) : (
+        body
       )}
     </MantineModal>
   )
@@ -87,6 +104,7 @@ export function SlideOver({
   onClose: () => void
   children: ReactNode
 }) {
+  const { t } = useT()
   return (
     <Drawer
       opened
@@ -124,7 +142,7 @@ export function SlideOver({
               </Text>
             )}
           </div>
-          <ActionIcon variant="subtle" onClick={onClose}>
+          <ActionIcon variant="subtle" onClick={onClose} aria-label={t('common.close')}>
             <IconX size={16} />
           </ActionIcon>
         </div>

@@ -19,6 +19,7 @@ import secrets
 
 from datetime import date
 
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from hubra.core.extensions import db
@@ -69,9 +70,25 @@ def generate_qrr_reference(
 
     Returns:
         27-character string of digits (the QRR reference).
+
+    An invoice keeps the reference it got first: every PDF of it (download,
+    mail, reminder) carries the same one.
     """
     if year is None:
         year = date.today().year
+
+    existing = db.session.scalar(
+        select(QrrReference.opaque_reference)
+        .where(
+            QrrReference.invoice_id == invoice_id,
+            QrrReference.member_id == member_id,
+            QrrReference.year == year,
+        )
+        .order_by(QrrReference.id)
+        .limit(1)
+    )
+    if existing is not None:
+        return existing
 
     for attempt in range(3):
         body = _generate_random_body()

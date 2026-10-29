@@ -124,6 +124,8 @@ export interface Poll {
   allowProxy?: boolean;
   requiredGroupIds?: number[];
   requiredFunctionIds?: number[];
+  /** Option index the signed-in member chose; absent until they vote. */
+  myVote?: number;
 }
 
 export interface PostComment {
@@ -183,6 +185,9 @@ export interface Transaction {
   status: "Pending" | "Completed";
   invoiceId: string | null;
   createdAt: string;
+  categoryId?: string | null;
+  memberName?: string | null;
+  payeeName?: string | null;
 }
 
 export interface Invoice {

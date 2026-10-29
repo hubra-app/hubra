@@ -37,6 +37,7 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
   const [email, setEmail] = useState('')
   const [level, setLevel] = useState<'admin' | 'owner'>('admin')
   const [busy, setBusy] = useState(false)
+  const [removing, setRemoving] = useState<number | null>(null)
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['club-admins', tenantId] })
 
@@ -55,12 +56,16 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
   }
 
   const remove = async (a: ClubAdmin) => {
+    if (removing !== null) return
+    setRemoving(a.user_id)
     try {
       await removeClubAdmin(tenantId, a.user_id)
       notify('success', tr('Entfernt', 'Removed'), tr(`${a.email} bleibt Mitglied im Verein.`, `${a.email} stays a member of the club.`))
       await refresh()
     } catch (err) {
       notify('error', tr('Entfernen fehlgeschlagen', 'Could not remove'), err instanceof Error ? err.message : undefined)
+    } finally {
+      setRemoving(null)
     }
   }
 
@@ -126,6 +131,7 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
                             : undefined
                         }
                         onClick={() => remove(a)}
+                        loading={removing === a.user_id}
                       >
                         {tr('Entfernen', 'Remove')}
                       </Button>

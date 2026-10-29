@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Button, Group, Menu, Select, Paper, TextInput, ActionIcon } from '@mantine/core'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT } from '@/locales/i18n'
 import {
   IconPlus,
@@ -14,7 +14,8 @@ import {
   IconShieldCheckFilled,
   IconDots,
 } from '@tabler/icons-react'
-import { useNav, useToast, useAuth, useData } from '@/context/AppContext'
+import { useNav, useToast, useAuth } from '@/context/AppContext'
+import { qk } from '@/data/keys'
 import {
   Avatar,
   TierTag,
@@ -23,8 +24,9 @@ import {
   Modal,
   Seg,
   Tag,
-  usePagination,
   Pagination,
+  EmptyState,
+  LoadingSpinner,
   ConfirmModal,
   DataTable,
   ActionButtons,
@@ -42,6 +44,7 @@ import { listTiers } from '@/api/tiers'
 import { lookupsQuery } from '@/api/lookups'
 import { formatCHF } from '@/format'
 import { MemberEditModal } from '@/components/MemberEditModal'
+import { useServerPagination } from '@/components/serverPagination'
 
 /* ── Members List ───────────────────────────── */
 export function MembersTab() {
@@ -49,7 +52,6 @@ export function MembersTab() {
   const { go } = useNav()
   const { notify } = useToast()
   const { currentUser, hasPermission } = useAuth()
-  const { setMemberCount } = useData()
   const canCreate = hasPermission('members.members.create')
   const canUpdate = hasPermission('members.members.update')
   const canArchive = hasPermission('members.members.archive')
@@ -79,9 +81,8 @@ export function MembersTab() {
   })
   const allTiers = useMemo(
     () =>
-      lookupsData
-        ? [...lookupsData.tiersByName.keys()]
-        : ['Maker', 'Pro', 'Student', 'Workshop'],
+      // No made-up tiers while the club's own are still loading.
+      lookupsData ? [...lookupsData.tiersByName.keys()] : [],
     [lookupsData],
   )
   const tierColors = useMemo(() => {
@@ -94,7 +95,7 @@ export function MembersTab() {
   }, [lookupsData])
 
   const { data: bulkTiers = [] } = useQuery({
-    queryKey: ['tiers'],
+    queryKey: qk.tiers.all,
     queryFn: () => listTiers(),
     enabled: bulkInvoiceOpen,
   })
@@ -104,16 +105,22 @@ export function MembersTab() {
     return () => clearTimeout(timer)
   }, [search])
 
-  const { data: membersData } = useQuery({
-    queryKey: ['members', debouncedSearch, tierFilter, showArchived],
+  // The API pages the list: ask for the page on screen, not for everything.
+  const paging = useServerPagination(`${debouncedSearch}|${tierFilter}|${showArchived}`)
+  const { data: membersData, isLoading: membersLoading } = useQuery({
+    queryKey: qk.members.list(debouncedSearch, tierFilter, showArchived, paging.page, paging.perPage),
     queryFn: () =>
       listMembers({
         search: debouncedSearch,
         tier: tierFilter,
         archived: showArchived,
+        page: paging.page,
+        pageSize: paging.perPage,
       }),
+    placeholderData: keepPreviousData,
   })
   const members = membersData?.members ?? []
+  const pg = paging.withTotal(membersData?.total ?? 0)
 
   const openBulkInvoice = () => {
     setBulkTierId('')
@@ -161,8 +168,8 @@ export function MembersTab() {
     if (!archiveTarget) return
     try {
       await archiveMember(archiveTarget.id)
-      queryClient.invalidateQueries({ queryKey: ['members'] })
-      setMemberCount((prev) => Math.max(0, prev - 1))
+      queryClient.invalidateQueries({ queryKey: qk.members.all })
+      queryClient.invalidateQueries({ queryKey: qk.dashboard })
       notify(
         'info',
         t('members.archived', 'Mitglied archiviert'),
@@ -180,8 +187,8 @@ export function MembersTab() {
   const handleUnarchive = async (m: Member) => {
     try {
       await unarchiveMember(m.id)
-      queryClient.invalidateQueries({ queryKey: ['members'] })
-      setMemberCount((prev) => prev + 1)
+      queryClient.invalidateQueries({ queryKey: qk.members.all })
+      queryClient.invalidateQueries({ queryKey: qk.dashboard })
       notify(
         'success',
         t('members.member.restoredTitle'),
@@ -202,7 +209,7 @@ export function MembersTab() {
     if (!hardDeleteTarget) return
     try {
       await hardDeleteMember(hardDeleteTarget.id)
-      queryClient.invalidateQueries({ queryKey: ['members'] })
+      queryClient.invalidateQueries({ queryKey: qk.members.all })
       notify(
         'info',
         t('members.member.deletedTitle', 'Mitglied gelöscht'),
@@ -234,7 +241,6 @@ export function MembersTab() {
   }
 
   const tiers = ['All', ...allTiers]
-  const pg = usePagination(members, 25)
 
   return (
     <div>
@@ -438,7 +444,8 @@ export function MembersTab() {
               ),
             },
           ]}
-          data={pg.paged}
+          data={members}
+          loading={membersLoading}
           emptyMessage={t('members.noMembers', 'Keine Mitglieder gefunden.')}
           searchValue={search}
           onSearchChange={setSearch}
@@ -571,7 +578,7 @@ export function MembersTab() {
                   color: '#5e5873',
                 }}
               >
-                {t('members.shown', { count: members.length })}
+                {t('members.shown', { count: pg.total })}
               </span>
               <Seg
                 options={[
@@ -586,6 +593,17 @@ export function MembersTab() {
 
           <>
             <Pagination {...pg} top />
+            {membersLoading && <LoadingSpinner compact />}
+            {!membersLoading && members.length === 0 && (
+              <EmptyState
+                title={t('members.noMembers', 'Keine Mitglieder gefunden.')}
+                description={
+                  debouncedSearch || tierFilter !== 'All'
+                    ? t('members.noMembersFilterHint', 'Ändere die Suche oder den Filter.')
+                    : undefined
+                }
+              />
+            )}
             <div
               style={{
                 padding: 16,
@@ -594,7 +612,7 @@ export function MembersTab() {
                 gap: 12,
               }}
             >
-              {pg.paged.map((m) => (
+              {members.map((m) => (
                 <Paper
                   key={m.id}
                   withBorder
@@ -688,6 +706,7 @@ export function MembersTab() {
                             variant="subtle"
                             style={{ color: '#ff4d3d' }}
                             onClick={() => setHardDeleteTarget(m)}
+                            aria-label={t('members.deletePermanently')}
                           >
                             <IconTrash size={16} />
                           </Button>
@@ -711,6 +730,8 @@ export function MembersTab() {
                             size="sm"
                             variant="subtle"
                             style={{ color: '#ff4d3d' }}
+                            aria-label={t('members.archive', 'Archivieren')}
+                            title={t('members.archive', 'Archivieren')}
                             onClick={(e) => {
                               e.stopPropagation()
                               setArchiveTarget(m)
@@ -824,7 +845,7 @@ export function MembersTab() {
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
         onSaved={() => {
-          queryClient.invalidateQueries({ queryKey: ['members'] })
+          queryClient.invalidateQueries({ queryKey: qk.members.all })
           setEditTarget(null)
         }}
       />

@@ -50,12 +50,25 @@ export async function logout(): Promise<void> {
   await apiFetch("/auth/logout", { method: "POST" }).catch(() => {});
 }
 
-export async function getAccount(signal?: AbortSignal): Promise<Member> {
-  const raw = await apiFetch<RawMember | { noTenant: true }>("/account/", { signal });
+/** The signed-in member, and the club the session's token is for. */
+export async function getAccountSession(
+  signal?: AbortSignal,
+): Promise<{ member: Member | null; tenantSlug: string | null }> {
+  const raw = await apiFetch<
+    (RawMember & { tenantSlug?: string | null }) | { noTenant: true }
+  >("/account/", { signal });
   if (raw && typeof raw === "object" && "noTenant" in raw) {
+    return { member: null, tenantSlug: null };
+  }
+  return { member: adaptMember(raw), tenantSlug: raw.tenantSlug ?? null };
+}
+
+export async function getAccount(signal?: AbortSignal): Promise<Member> {
+  const { member } = await getAccountSession(signal);
+  if (!member) {
     throw Object.assign(new Error("noTenant"), { status: 200, noTenant: true });
   }
-  return adaptMember(raw as RawMember);
+  return member;
 }
 
 export async function getMyPermissions(

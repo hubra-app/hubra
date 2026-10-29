@@ -7,6 +7,7 @@ import { useAuth, useToast } from '@/context/AppContext'
 import { useInstance } from '@/context/InstanceContext'
 import { Avatar, Field, Toggle } from '@/components/ui'
 import { useT } from '@/locales/i18n'
+import { qk } from '@/data/keys'
 
 /**
  * What the account looks like in this club. Name, email, password,
@@ -22,11 +23,11 @@ export function AccountSettingsClubTab() {
   const [forwardingChoice, setMailForwarding] = useState<boolean | null>(null)
 
   const accountQuery = useQuery({
-    queryKey: ['account'],
+    queryKey: qk.account.all,
     queryFn: () => authApi.getAccount(),
   })
   const mailSettingsQuery = useQuery({
-    queryKey: ['account', 'mail-settings'],
+    queryKey: qk.account.mailSettings,
     queryFn: () => authApi.getMailSettings(),
   })
   const emailVerified = mailSettingsQuery.data?.private_email_verified ?? null
@@ -111,6 +112,7 @@ export function AccountSettingsClubTab() {
             <TextInput
               value={clubEmail}
               readOnly
+              aria-label={t('account.clubEmail', 'Vereinsadresse')}
               styles={{
                 input: { fontFamily: '"JetBrains Mono"', fontSize: 'var(--mantine-font-size-sm)' },
               }}
@@ -147,6 +149,7 @@ export function AccountSettingsClubTab() {
             </div>
             <Toggle
               checked={mailForwarding}
+              label={t('account.club.forward', 'An meine private Adresse weiterleiten')}
               onChange={toggleMailForwarding}
               disabled={emailVerified !== true}
             />

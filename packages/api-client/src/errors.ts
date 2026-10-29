@@ -52,7 +52,7 @@ const DE: Record<string, string> = {
   "You are not a member of this tenant": "Du bist nicht Mitglied in diesem Verein.",
   "No member profile in this tenant": "Du hast in diesem Verein kein Mitgliedsprofil.",
   "Confirm your email address before opening a club":
-    "Bestätige zuerst deine E-Mail-Adresse, dann kannst du einen Verein gründen.",
+    "Bestätige zuerst deine E-Mail-Adresse, dann kannst du den Verein öffnen.",
   "A tenant with this slug already exists": "Diese Adresse ist schon vergeben.",
   "A pending request with this slug already exists": "Für diese Adresse wartet schon eine Anfrage.",
   "slug must be between 3 and 64 characters": "Die Adresse braucht 3 bis 64 Zeichen.",
@@ -145,6 +145,7 @@ const DE: Record<string, string> = {
   "No active registration found": "Es gibt keine Anmeldung.",
   "No registration found for this member": "Diese Person ist nicht angemeldet.",
   "Unknown calendar": "Diesen Kalender gibt es nicht.",
+  "end_date is before date": "Das Enddatum liegt vor dem Beginn.",
 
   // Finance
   "Invoice not found": "Diese Rechnung gibt es nicht.",
@@ -223,11 +224,98 @@ const DE_STATUS: Record<number, string> = {
 
 const DE_CODE: Record<string, string> = {
   MODULE_DISABLED: "Dieses Modul ist für den Verein ausgeschaltet.",
+  REMINDER_NOT_SENT: "Die Erinnerung wurde nicht verschickt: Die Empfängerin oder der Empfänger hat keine (bestätigte) E-Mail-Adresse.",
+  REGISTRATION_CLOSED: "Die Anmeldung für diesen Anlass ist geschlossen.",
+  CANCELLATION_CLOSED: "Die Abmeldefrist für diesen Anlass ist vorbei.",
+  POLL_HAS_VOTES: "Es wurde schon abgestimmt; die Antworten können nicht mehr geändert werden.",
+  USE_CHECKOUT: "Ob ein Gegenstand ausgeliehen ist, ändert sich nur mit Ausleihen und Zurückgeben.",
+  ROLE_LOCKED: "Diese Rolle ist geschützt und kann so nicht geändert werden.",
   EMAIL_NOT_VERIFIED: "Bestätige zuerst deine E-Mail-Adresse.",
   MUST_CHANGE_PASSWORD: "Bitte ändere zuerst dein Passwort.",
   LAST_OWNER: "Die letzte Inhaberin oder der letzte Inhaber kann den Verein nicht verlassen.",
   WEAK_PASSWORD: "Dieses Passwort ist zu schwach.",
 };
+
+// Field checks arrive as the API's validation dict, e.g.
+// {'color': ['Missing data for required field.']}. Turn them into a sentence.
+const DE_FIELDS: Record<string, string> = {
+  name: "Name",
+  first_name: "Vorname",
+  last_name: "Nachname",
+  email: "E-Mail",
+  public_email: "E-Mail",
+  phone: "Telefon",
+  color: "Farbe",
+  date: "Datum",
+  due: "Fälligkeit",
+  amount: "Betrag",
+  price_chf: "Preis",
+  description: "Beschreibung",
+  title: "Titel",
+  body: "Text",
+  category_id: "Kategorie",
+  member_id: "Mitglied",
+  tier_id: "Stufe",
+  method: "Zahlungsart",
+  type: "Typ",
+  status: "Status",
+  slug: "Adresse",
+  password: "Passwort",
+  start: "Beginn",
+  end: "Ende",
+  starts_at: "Beginn",
+  ends_at: "Ende",
+  location: "Ort",
+  capacity: "Plätze",
+};
+
+function deProblem(problem: string): string {
+  if (/^Missing data for required field/.test(problem)) return "fehlt";
+  if (/^Field may not be (null|blank)/.test(problem)) return "darf nicht leer sein";
+  if (/^Not a valid email/.test(problem)) return "ist keine gültige E-Mail-Adresse";
+  if (/^Not a valid (number|integer|decimal)/.test(problem)) return "ist keine gültige Zahl";
+  if (/^Not a valid (date|datetime)/.test(problem)) return "ist kein gültiges Datum";
+  if (/^Unknown field/.test(problem)) return "ist hier nicht erlaubt";
+  if (/^Must be one of/.test(problem)) return "hat einen ungültigen Wert";
+  if (/^(Shorter|Longer) than|^Length must be/.test(problem)) return "ist zu kurz oder zu lang";
+  const min = problem.match(/^Must be greater than (?:or equal to )?(\d+(?:\.\d+)?)/);
+  if (min) return `muss grösser als ${min[1]} sein`;
+  return "ist ungültig";
+}
+
+function parseFieldErrors(message: string): [string, string[]][] | null {
+  if (!/^\{\s*'/.test(message)) return null;
+  const out: [string, string[]][] = [];
+  const entry = /'([\w.]+)':\s*\[([^\]]*)\]/g;
+  for (const m of message.matchAll(entry)) {
+    const problems = [...m[2].matchAll(/'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"/g)].map(
+      (p) => p[1] ?? p[2],
+    );
+    out.push([m[1], problems]);
+  }
+  return out.length ? out : null;
+}
+
+function humanField(field: string): string {
+  return field === "_schema" ? "" : field.replace(/_id$/, "").replace(/_/g, " ");
+}
+
+function fieldErrorsMessage(message: string, english: boolean): string | null {
+  const fields = parseFieldErrors(message);
+  if (!fields) return null;
+  if (english) {
+    const parts = fields.map(([f, p]) =>
+      f === "_schema" ? p.join(" ") : `${humanField(f)} (${p.join(" ")})`,
+    );
+    return `Please check: ${parts.join(", ")}`;
+  }
+  const parts = fields.map(([f, p]) =>
+    f === "_schema"
+      ? "die Angaben passen nicht zusammen"
+      : `${DE_FIELDS[f] ?? humanField(f)} ${deProblem(p[0] ?? "")}`,
+  );
+  return `Bitte prüfe die Eingaben: ${parts.join(", ")}.`;
+}
 
 function pageLanguage(): string {
   return typeof document === "undefined" ? "de" : document.documentElement.lang || "de";
@@ -235,7 +323,10 @@ function pageLanguage(): string {
 
 /** The message to show for a failed request, in the page's language. */
 export function localizeError(status: number, code: string | undefined, message: string): string {
-  if (pageLanguage().toLowerCase().startsWith("en")) {
+  const english = pageLanguage().toLowerCase().startsWith("en");
+  const fieldText = fieldErrorsMessage(message, english);
+  if (fieldText) return fieldText;
+  if (english) {
     return status === 429 ? "Too many attempts. Please wait a moment and try again." : message;
   }
   if (DE[message]) return DE[message];

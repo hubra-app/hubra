@@ -221,6 +221,7 @@ def test_get_settings_masks_sensitive_value(client, db, auth_headers):
         Setting(
             key="test.secret",
             value="super-secret-password",
+            default_value="super-secret-password",
             namespace="test",
             sensitive=True,
         )
@@ -232,6 +233,7 @@ def test_get_settings_masks_sensitive_value(client, db, auth_headers):
     match = next((i for i in resp.get_json() if i["key"] == "test.secret"), None)
     assert match is not None
     assert match["value"] == "****"
+    assert match["default_value"] == "****"
 
 
 def test_put_setting_response_masks_sensitive_value(client, db, auth_headers):
@@ -856,3 +858,35 @@ def test_non_admin_read_key_level_only_sees_that_key(
     keys = [i["key"] for i in resp.get_json()]
     assert "custom.my.visible" in keys
     assert "custom.my.hidden" not in keys
+
+
+# ── Revert rights ─────────────────────────────────────────────────────────────
+
+
+def _changed_setting(db, key, namespace):
+    db.session.add(
+        Setting(
+            key=key,
+            value="changed",
+            default_value="original",
+            namespace=namespace,
+            is_default=False,
+        )
+    )
+    db.session.commit()
+
+
+def test_a_reader_cannot_revert(client, db, ns_read_headers):
+    _changed_setting(db, "custom.greeting", "custom")
+    resp = client.post("/api/v1/settings/custom.greeting/revert")
+    assert resp.status_code == 403
+    assert db.session.get(Setting, "custom.greeting").value == "changed"
+
+
+def test_a_writer_reverts_only_their_namespace(client, db, ns_write_headers):
+    _changed_setting(db, "custom.greeting", "custom")
+    _changed_setting(db, "club.motto", "club")
+    resp = client.post("/api/v1/settings/custom.greeting/revert")
+    assert resp.status_code == 200 and resp.get_json()["value"] == "original"
+    assert client.post("/api/v1/settings/club.motto/revert").status_code == 403
+    assert client.post("/api/v1/settings/custom.nothing/revert").status_code == 404

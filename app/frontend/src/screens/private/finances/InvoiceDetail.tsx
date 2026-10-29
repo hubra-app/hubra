@@ -9,7 +9,8 @@ import {
   IconExternalLink,
   IconFileDownload,
 } from '@tabler/icons-react'
-import { useNav, useLoadData } from '@/context/AppContext'
+import { useNav } from '@/context/AppContext'
+import { useInvoices } from '@/data/lists'
 import { PageHead, InvoicePill } from '@/components/ui'
 import { getInvoice, downloadInvoicePdf } from '@/api/finance'
 import { formatCHF } from '@/format'
@@ -17,17 +18,18 @@ import {
   useMarkInvoicePaid,
   useSendInvoiceReminder,
 } from '@/screens/private/finances/useInvoiceActions'
+import { qk } from '@/data/keys'
 
 /* -- Invoice Detail ---------------------------- */
 export function InvoiceDetailScreen() {
   const { t, i18n } = useT()
   const { id } = useParams<{ id: string }>()
   const { go, selectedInvoice } = useNav()
-  const { invoices } = useLoadData('invoices')
+  const { invoices } = useInvoices()
   const markPaidMutation = useMarkInvoicePaid()
   const sendReminderMutation = useSendInvoiceReminder()
   const { data: fetchedInvoice } = useQuery({
-    queryKey: ['invoice', id],
+    queryKey: qk.invoices.one(id),
     queryFn: () => getInvoice(id!),
     enabled: !!id,
   })
@@ -74,7 +76,7 @@ export function InvoiceDetailScreen() {
       <PageHead
         title={inv.id}
         actions={
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             <Button
               variant="subtle"
               onClick={() => go('/app/finance/invoices')}
@@ -99,6 +101,7 @@ export function InvoiceDetailScreen() {
               <Button
                 variant="filled"
                 onClick={() => markPaidMutation.mutate(inv.id)}
+                loading={markPaidMutation.isPending}
               >
                 <IconCheck size={16} />
                 {t('finance.markPaid', 'Als bezahlt markieren')}
@@ -108,14 +111,7 @@ export function InvoiceDetailScreen() {
         }
       />
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 340px',
-          gap: 16,
-          alignItems: 'start',
-        }}
-      >
+      <div className="detail-grid-end">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Paper withBorder shadow="sm" radius="lg">
             <Group

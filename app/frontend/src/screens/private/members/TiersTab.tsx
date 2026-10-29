@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Button, Group, Select, Paper, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { IconPlus, IconPencil, IconTrash } from '@tabler/icons-react'
@@ -23,8 +23,10 @@ import {
   deleteTier,
   calculateTierCost,
 } from '@/api/tiers'
-import { listTierMembers, listMembers, updateMember } from '@/api/members'
+import { listTierMembers, updateMember } from '@/api/members'
 import { PaymentPlansEditor } from './PaymentPlansEditor'
+import { useMemberSearch } from '@/data/members'
+import { qk } from '@/data/keys'
 
 type Translate = ReturnType<typeof useT>['t']
 
@@ -56,14 +58,10 @@ function TierDetailPanel({
   const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState('')
   const { data: members = [], isLoading: loading } = useQuery({
-    queryKey: ['tier-members', tier.id],
+    queryKey: qk.tiers.members(tier.id),
     queryFn: () => listTierMembers(tier.id),
   })
-  const { data: searchData } = useQuery({
-    queryKey: ['members-search', searchQuery],
-    queryFn: () => listMembers({ search: searchQuery, pageSize: 10 }),
-    enabled: searchQuery.length >= 2,
-  })
+  const { data: searchData } = useMemberSearch(searchQuery, { enabled: searchQuery.length >= 2 })
 
   const slideMembers: SlideOverMember[] = useMemo(
     () =>
@@ -94,7 +92,7 @@ function TierDetailPanel({
   const handleAdd = (m: SlideOverMember) => {
     updateMember(m.id, { tierName: tier.name })
       .then(() => {
-        queryClient.invalidateQueries({ queryKey: ['tier-members', tier.id] })
+        queryClient.invalidateQueries({ queryKey: qk.tiers.members(tier.id) })
         notify('success', t('tiers.updated', 'Stufe aktualisiert'), t('tiers.memberMoved', '{{member}} ist jetzt in {{tier}}.', { member: m.name, tier: tier.name }))
         onMemberMoved?.()
       })
@@ -156,7 +154,7 @@ export function TiersTab() {
   const canUpdate = hasPermission('tiers.tiers.update')
   const canDelete = hasPermission('tiers.tiers.delete')
   const { data: tiers = [] } = useQuery({
-    queryKey: ['tiers'],
+    queryKey: qk.tiers.all,
     queryFn: () => listTiers(),
   })
   const [addOpen, setAddOpen] = useState(false)
@@ -165,7 +163,7 @@ export function TiersTab() {
   const [detailTier, setDetailTier] = useState<MembershipTier | null>(null)
   const [saving, setSaving] = useState(false)
   const { data: tierCosts = {} } = useQuery({
-    queryKey: ['tier-costs', tiers],
+    queryKey: qk.tiers.costs(tiers),
     queryFn: async () => {
       const costs: Record<string, TierCostPreview> = {}
       await Promise.all(
@@ -192,7 +190,7 @@ export function TiersTab() {
   })
 
   const form = useForm<TierForm>({
-    validate: zodResolver(makeTierSchema(t)),
+    validate: zod4Resolver(makeTierSchema(t)),
     initialValues: {
       name: '',
       color: '#7441e0',
@@ -301,8 +299,8 @@ export function TiersTab() {
         roundTo: data.roundTo ? Number(data.roundTo) : null,
         deductTierIds: data.deductIds,
       })
-      queryClient.invalidateQueries({ queryKey: ['tiers'] })
-      queryClient.invalidateQueries({ queryKey: ['lookups'] })
+      queryClient.invalidateQueries({ queryKey: qk.tiers.all })
+      queryClient.invalidateQueries({ queryKey: qk.lookups })
       setAddOpen(false)
       notify(
         'success',
@@ -338,8 +336,8 @@ export function TiersTab() {
         roundTo: data.roundTo ? Number(data.roundTo) : null,
         deductTierIds: data.deductIds,
       })
-      queryClient.invalidateQueries({ queryKey: ['tiers'] })
-      queryClient.invalidateQueries({ queryKey: ['lookups'] })
+      queryClient.invalidateQueries({ queryKey: qk.tiers.all })
+      queryClient.invalidateQueries({ queryKey: qk.lookups })
       setEditTarget(null)
       notify('success', t('tiers.updated', 'Stufe aktualisiert'), t('tiers.updatedMsg', '{{name}} wurde gespeichert.', { name: data.name }))
     } catch (err: unknown) {
@@ -357,8 +355,8 @@ export function TiersTab() {
     if (!deleteTarget) return
     try {
       await deleteTier(deleteTarget.id)
-      queryClient.invalidateQueries({ queryKey: ['tiers'] })
-      queryClient.invalidateQueries({ queryKey: ['lookups'] })
+      queryClient.invalidateQueries({ queryKey: qk.tiers.all })
+      queryClient.invalidateQueries({ queryKey: qk.lookups })
       notify('info', t('tiers.deleted', 'Stufe gelöscht'), t('tiers.deletedMsg', '{{name}} wurde entfernt.', { name: deleteTarget.name }))
     } catch (err: unknown) {
       notify(
@@ -639,7 +637,7 @@ export function TiersTab() {
                         ? `${tier.percentageValue ?? '?'}%`
                         : tier.priceChf != null
                           ? `CHF ${tier.priceChf}`
-                          : '—')}
+                          : t('tiers.noPrice', 'Kein Beitrag'))}
                 </span>
               </div>
               <div
@@ -650,18 +648,20 @@ export function TiersTab() {
                   flexWrap: 'wrap',
                 }}
               >
-                <span
-                  style={{
-                    fontSize: 'var(--mantine-font-size-xs)',
-                    fontWeight: 600,
-                    color: '#5e5873',
-                    background: '#f7f6fb',
-                    borderRadius: 4,
-                    padding: '2px 8px',
-                  }}
-                >
-                  {tier.priceType ? t(`tiers.type.${tier.priceType}`, tier.priceType) : t('tiers.noType', 'Kein Typ')}
-                </span>
+                {tier.priceType && (
+                  <span
+                    style={{
+                      fontSize: 'var(--mantine-font-size-xs)',
+                      fontWeight: 600,
+                      color: '#5e5873',
+                      background: '#f7f6fb',
+                      borderRadius: 4,
+                      padding: '2px 8px',
+                    }}
+                  >
+                    {t(`tiers.type.${tier.priceType}`, tier.priceType)}
+                  </span>
+                )}
                 {tier.billingCycle && (
                   <span
                     style={{
@@ -681,11 +681,10 @@ export function TiersTab() {
                 {canUpdate && (
                   <Button
                     variant="subtle"
-                    color="blue"
-                    style={{ flex: 1 }}
+                    color="acc"
+                    leftSection={<IconPencil size={16} />}
                     onClick={() => openEdit(tier)}
                   >
-                    <IconPencil size={16} />
                     {t('common.edit', 'Bearbeiten')}
                   </Button>
                 )}
@@ -700,6 +699,9 @@ export function TiersTab() {
                   <Button
                     variant="subtle"
                     color="red"
+                    ml="auto"
+                    aria-label={t('common.delete', 'Löschen')}
+                    title={t('common.delete', 'Löschen')}
                     onClick={() => setDeleteTarget(tier)}
                   >
                     <IconTrash size={16} />
@@ -709,31 +711,37 @@ export function TiersTab() {
             </div>
           </Paper>
         ))}
-        <Paper
-          withBorder
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 28,
-            cursor: 'pointer',
-            border: '1.5px dashed #d6d2e3',
-            background: 'transparent',
-            minHeight: 200,
-          }}
-          onClick={openAdd}
-        >
-          <IconPlus size={22} style={{ color: '#b7b0c9', marginBottom: 8 }} />
-          <span
+        {canCreate && (
+          <Paper
+            component="button"
+            type="button"
+            withBorder
             style={{
-              fontSize: 'var(--mantine-font-size-sm)',
-              color: '#8c86a0',
+              font: 'inherit',
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 28,
+              cursor: 'pointer',
+              border: '1.5px dashed #d6d2e3',
+              background: 'transparent',
+              minHeight: 200,
             }}
+            onClick={openAdd}
           >
-            {t('tiers.new', 'Neue Stufe')}
-          </span>
-        </Paper>
+            <IconPlus size={22} style={{ color: '#b7b0c9', marginBottom: 8 }} />
+            <span
+              style={{
+                fontSize: 'var(--mantine-font-size-sm)',
+                color: '#8c86a0',
+              }}
+            >
+              {t('tiers.new', 'Neue Stufe')}
+            </span>
+          </Paper>
+        )}
       </div>
 
       {detailTier && (
@@ -745,6 +753,7 @@ export function TiersTab() {
       )}
 
       <Modal
+        onSubmit={form.onSubmit(saveAdd)}
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={t('tiers.newTitle', 'Neue Mitgliedschaftsstufe')}
@@ -755,7 +764,7 @@ export function TiersTab() {
             </Button>
             <Button
               variant="filled"
-              onClick={() => form.onSubmit(saveAdd)()}
+              type="submit"
               disabled={saving}
             >
               {t('tiers.create', 'Stufe erstellen')}
@@ -766,6 +775,7 @@ export function TiersTab() {
         {tierForm}
       </Modal>
       <Modal
+        onSubmit={form.onSubmit(saveEdit)}
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
         title={t('tiers.editTitle', 'Stufe bearbeiten')}
@@ -777,7 +787,7 @@ export function TiersTab() {
             </Button>
             <Button
               variant="filled"
-              onClick={() => form.onSubmit(saveEdit)()}
+              type="submit"
               disabled={saving}
             >
               {t('common.saveChanges', 'Änderungen speichern')}

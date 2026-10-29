@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import sys
 import types
+from tests.helpers import patch_mail_domain
 from unittest.mock import MagicMock, patch
 
 
@@ -30,8 +31,11 @@ def test_create_mailbox_calls_wildduck(client, app, auth_headers, seeded_db):
     mock_client.create_user.return_value = {"id": "wd-user-001"}
 
     try:
-        with patch(
-            "hubra.core.services.wildduck.WildDuckClient", return_value=mock_client
+        with (
+            patch(
+                "hubra.core.services.wildduck.WildDuckClient", return_value=mock_client
+            ),
+            patch_mail_domain("test.ch"),
         ):
             resp = client.post(
                 "/api/v1/mail/mailboxes",
@@ -119,8 +123,11 @@ def test_create_alias_calls_wildduck(client, app, auth_headers, seeded_db):
     mock_client.create_forwarding_alias.return_value = {"id": "addr-001"}
 
     try:
-        with patch(
-            "hubra.core.services.wildduck.WildDuckClient", return_value=mock_client
+        with (
+            patch(
+                "hubra.core.services.wildduck.WildDuckClient", return_value=mock_client
+            ),
+            patch_mail_domain("test.ch"),
         ):
             resp = client.post(
                 "/api/v1/mail/aliases",
@@ -213,49 +220,16 @@ def test_password_change_dispatches_celery_task(
     mock_task.delay.assert_called_once_with(admin.id)
 
 
-# ── 8. Account PATCH password dispatches Celery task ─────────────────────────
+# ── 8. Account PATCH never sets a password ──────────────────────────────────
 
 
-def test_account_patch_password_dispatches_celery_task(
-    client, app, auth_headers, seeded_db, db
-):
-    from hubra.core.models.managed_mail import ManagedMailAddress
-
-    admin = seeded_db["admin"]
-    addr = ManagedMailAddress(
-        address="admin@club.ch",
-        address_type="mailbox",
-        is_protected=False,
-        wildduck_user_id="wd-admin-002",
-        wildduck_id="wd-admin-002",
-        kind="member",
-        enabled=True,
-        is_enabled=True,
-        local_part="admin",
-        domain="club.ch",
-        owner_type="member",
-        owner_id=admin.id,
+def test_account_patch_refuses_password(client, auth_headers, seeded_db):
+    """The password changes only with the current one (POST /account/password)."""
+    resp = client.patch(
+        "/api/v1/account/", json={"password": "patchedpass99"}, headers=auth_headers
     )
-    db.session.add(addr)
-    db.session.commit()
-
-    # Inject a fake wildduck task module so the lazy import in the route succeeds
-    mock_task = MagicMock()
-    mock_task.delay = MagicMock()
-    fake_mod = types.ModuleType("hubra.core.tasks.wildduck")
-    fake_mod.sync_wildduck_password = mock_task
-    sys.modules["hubra.core.tasks.wildduck"] = fake_mod
-    try:
-        resp = client.patch(
-            "/api/v1/account/",
-            json={"password": "patchedpass99"},
-            headers=auth_headers,
-        )
-    finally:
-        sys.modules.pop("hubra.core.tasks.wildduck", None)
-
-    assert resp.status_code == 200
-    mock_task.delay.assert_called_once_with(admin.id)
+    assert resp.status_code == 400
+    assert not seeded_db["user"].check_password("patchedpass99")
 
 
 # ── 9. WildDuck error on group creation — graceful degradation ───────────────

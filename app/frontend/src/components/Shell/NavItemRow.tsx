@@ -1,3 +1,5 @@
+import type { MouseEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { UnstyledButton, Badge, Box } from '@mantine/core'
 import type { NavItem } from './nav'
 import { getParentPath } from './nav'
@@ -16,13 +18,19 @@ export function NavItemRow({
   const parent = getParentPath(pathname)
   const isActiveParent = parent === item.path
 
-  const handleClick = () => {
+  // A real link, so it can be opened in a new tab; a plain click navigates
+  // through `go`, which also closes the open menus.
+  const handleClick = (e: MouseEvent) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+    e.preventDefault()
     go(item.path)
   }
 
   if (collapsed) {
     return (
       <UnstyledButton
+        component={Link}
+        to={item.path}
         onClick={handleClick}
         title={item.label}
         style={{
@@ -46,6 +54,8 @@ export function NavItemRow({
   return (
     <Box>
       <UnstyledButton
+        component={Link}
+        to={item.path}
         onClick={handleClick}
         style={{
           display: 'flex',

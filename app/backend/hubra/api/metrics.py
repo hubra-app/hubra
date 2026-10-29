@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import time
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from flask import Flask, g, request
 from hubra.core.redis_client import get_redis_client as _get_redis_client
@@ -28,11 +28,18 @@ _SKIP_METHODS = {"OPTIONS", "HEAD"}
 _KEY_PREFIX = "api:calls:"
 _ERROR_KEY_PREFIX = "api:errors:"
 _KEY_TTL_SECONDS = 45 * 24 * 60 * 60
+# Daily keys feed the rolling 30-day count; keep a few days beyond the window.
+_DAY_KEY_TTL_SECONDS = 32 * 24 * 60 * 60
 
 
 def _redis_key(tenant_id: int, dt: datetime) -> str:
     """Build Redis key for a tenant+month: api:calls:{tenant_id}:{YYYY-MM}."""
     return f"{_KEY_PREFIX}{tenant_id}:{dt.strftime('%Y-%m')}"
+
+
+def _day_redis_key(tenant_id: int, dt: datetime) -> str:
+    """Build Redis key for a tenant+day: api:calls:{tenant_id}:d:{YYYY-MM-DD}."""
+    return f"{_KEY_PREFIX}{tenant_id}:d:{dt.strftime('%Y-%m-%d')}"
 
 
 def _error_redis_key(dt: datetime) -> str:
@@ -94,10 +101,14 @@ def configure_api_counting(app: Flask) -> None:
         try:
             client = _get_redis_client()
             if client is not None:
-                key = _redis_key(tenant.id, datetime.now(timezone.utc))
+                now = datetime.now(timezone.utc)
+                key = _redis_key(tenant.id, now)
+                day_key = _day_redis_key(tenant.id, now)
                 pipe = client.pipeline()
                 pipe.incr(key)
                 pipe.expire(key, _KEY_TTL_SECONDS)
+                pipe.incr(day_key)
+                pipe.expire(day_key, _DAY_KEY_TTL_SECONDS)
                 pipe.execute()
                 client.close()
         except Exception:
@@ -110,8 +121,7 @@ def configure_api_counting(app: Flask) -> None:
 def get_api_calls_30d(tenant_id: int) -> int:
     """Return the total API calls for the given tenant in the last 30 days.
 
-    Sums across the current month and the two previous months to cover
-    the full 30-day rolling window.
+    Sums the daily counters for today and the 29 days before it.
     """
     try:
         client = _get_redis_client()
@@ -119,22 +129,8 @@ def get_api_calls_30d(tenant_id: int) -> int:
             return 0
 
         now = datetime.now(timezone.utc)
-        total = 0
-
-        # Check current month and two previous months
-        for months_ago in range(3):
-            # Calculate month offset manually (avoid dateutil dependency)
-            year = now.year
-            month = now.month - months_ago
-            while month <= 0:
-                month += 12
-                year -= 1
-            dt = datetime(year, month, 1, tzinfo=timezone.utc)
-
-            key = _redis_key(tenant_id, dt)
-            val = client.get(key)
-            if val is not None:
-                total += int(val)
+        keys = [_day_redis_key(tenant_id, now - timedelta(days=d)) for d in range(30)]
+        total = sum(int(val) for val in client.mget(keys) if val is not None)
 
         client.close()
         return total

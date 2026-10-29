@@ -37,30 +37,3 @@ def link_user_to_tenant(user_id: int, tenant_id: int | None = None) -> None:
     )
     if exists is None:
         db.session.add(UserTenant(user_id=user_id, tenant_id=tenant_id))
-
-
-def club_manages_account(user) -> bool:
-    """Whether the account belongs to the current club alone.
-
-    Clubs never change an account (password, email and personal details are
-    the person's own). This only decides whether re-enabling a member may
-    also lift the account-wide block clubs used to set: when the account is
-    in no other club and holds no platform role.
-    """
-    if user is None:
-        return False
-    if user.is_superadmin:
-        return False
-    from hubra.core.models.global_role import UserGlobalRole
-
-    if db.session.scalar(
-        select(UserGlobalRole.id).where(UserGlobalRole.user_id == user.id).limit(1)
-    ):
-        return False
-    from hubra.core.tenant.context import current_tenant
-
-    tenant = current_tenant()
-    others = select(UserTenant.id).where(UserTenant.user_id == user.id)
-    if tenant is not None:
-        others = others.where(UserTenant.tenant_id != tenant.id)
-    return db.session.scalar(others.limit(1)) is None

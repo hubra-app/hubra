@@ -7,7 +7,7 @@ import { TransactionsTab } from '@/screens/private/finances/TransactionsTab'
 import { InvoicesTab } from '@/screens/private/finances/InvoicesTab'
 import { TransactionCategoriesTab } from '@/screens/private/finances/TransactionCategoriesTab'
 import { ExternalPartiesTab } from '@/screens/private/finances/ExternalPartiesTab'
-import { usePluginTabs } from '@/plugins'
+import { PluginBoundary, usePluginTabs } from '@/plugins'
 
 export function FinanceTabScreen() {
   const { t } = useT()
@@ -32,16 +32,13 @@ export function FinanceTabScreen() {
   ].filter(
     (tb) =>
       tb.id === 'overview' ||
-      (tb.id === 'transactions' &&
-        hasPermission('finance.transactions.read')) ||
+      (tb.id === 'transactions' && hasPermission('finance.transactions.read')) ||
       (tb.id === 'invoices' && hasPermission('finance.invoices.read')) ||
-      (tb.id === 'categories' &&
-        hasPermission('finance.transaction_categories.read')) ||
-      (tb.id === 'external-parties' &&
-        hasPermission('finance.external_parties.read')),
+      (tb.id === 'categories' && hasPermission('finance.transaction_categories.read')) ||
+      (tb.id === 'external-parties' && hasPermission('finance.external_parties.read')),
   )
   tabs.push(...pluginTabs.map((pt) => ({ id: pt.id, label: t(pt.label) })))
-  const PluginTab = pluginTabs.find((pt) => pt.id === tab)?.component
+  const pluginTab = pluginTabs.find((pt) => pt.id === tab)
 
   return (
     <div>
@@ -49,16 +46,18 @@ export function FinanceTabScreen() {
       <Tabs
         tabs={tabs}
         activeTab={tab}
-        onTabChange={(id) =>
-          navigate(`/app/finance${id === 'overview' ? '' : '/' + id}`)
-        }
+        onTabChange={(id) => navigate(`/app/finance${id === 'overview' ? '' : '/' + id}`)}
       />
       {tab === 'overview' && <FinanceOverviewTab />}
       {tab === 'transactions' && <TransactionsTab />}
       {tab === 'invoices' && <InvoicesTab />}
       {tab === 'categories' && <TransactionCategoriesTab />}
       {tab === 'external-parties' && <ExternalPartiesTab />}
-      {PluginTab && <PluginTab />}
+      {pluginTab && (
+        <PluginBoundary key={pluginTab.id} plugin={pluginTab.plugin} notice>
+          <pluginTab.component />
+        </PluginBoundary>
+      )}
     </div>
   )
 }

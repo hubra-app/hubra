@@ -59,6 +59,7 @@ export function TenantDetail() {
   const queryClient = useQueryClient()
   const { notify } = useAdmin()
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [pendingAction, setPendingAction] = useState<string | null>(null)
   const [impersonateOpen, setImpersonateOpen] = useState(false)
   const [addMemberOpen, setAddMemberOpen] = useState(false)
   const [memberEmail, setMemberEmail] = useState('')
@@ -96,18 +97,27 @@ export function TenantDetail() {
   const usage = tenant?.usage
   const members = membersData?.members ?? []
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ['tenant', tenantId] })
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['tenant', tenantId] })
+    // The club list and the backup club list show the status too.
+    queryClient.invalidateQueries({ queryKey: ['tenants'] })
+    queryClient.invalidateQueries({ queryKey: ['backup-clubs'] })
+  }
 
   const handleAction = async (
     action: 'disable' | 'enable' | 'archive',
     fn: (id: number) => Promise<unknown>,
   ) => {
+    if (pendingAction) return
+    setPendingAction(action)
     try {
       await fn(tenantId)
       notify('success', ACTION_DONE[action](), tenant?.name)
       refresh()
     } catch (err) {
       notify('error', tr('Aktion fehlgeschlagen', 'Action failed'), err instanceof Error ? err.message : undefined)
+    } finally {
+      setPendingAction(null)
     }
   }
 
@@ -115,6 +125,7 @@ export function TenantDetail() {
     try {
       await deleteTenant(tenantId, force)
       notify('success', tr('Verein gelöscht', 'Club deleted'), tenant?.name)
+      refresh()
       navigate('/app/tenants')
     } catch (err) {
       notify('error', tr('Löschen fehlgeschlagen', 'Delete failed'), err instanceof Error ? err.message : undefined)
@@ -174,6 +185,7 @@ export function TenantDetail() {
               variant="default"
               leftSection={<IconBan size={16} />}
               onClick={() => handleAction('disable', disableTenant)}
+              loading={pendingAction === 'disable'}
             >
               {tr('Sperren', 'Suspend')}
             </Button>
@@ -182,6 +194,7 @@ export function TenantDetail() {
               variant="default"
               leftSection={<IconCheck size={16} />}
               onClick={() => handleAction('enable', enableTenant)}
+              loading={pendingAction === 'enable'}
             >
               {tr('Aktivieren', 'Enable')}
             </Button>
@@ -190,6 +203,7 @@ export function TenantDetail() {
             variant="default"
             leftSection={<IconArchive size={16} />}
             onClick={() => handleAction('archive', archiveTenant)}
+            loading={pendingAction === 'archive'}
           >
             {tr('Archivieren', 'Archive')}
           </Button>
@@ -307,7 +321,7 @@ export function TenantDetail() {
                       color={m.status === 'active' ? 'green' : 'gray'}
                       size="sm"
                     >
-                      {m.status === 'active' ? tr('Aktiv', 'Active') : m.status}
+                      {statusLabel(m.status, tr)}
                     </Badge>
                   </Table.Td>
                 </Table.Tr>

@@ -74,26 +74,26 @@ def send_alert(
 
 def alert_error(
     title: str,
-    message: str,
+    description: str,
     fields: list[dict[str, Any]] | None = None,
 ) -> bool:
     """Send a red (error) alert."""
-    return send_alert(title, message, color=COLOR_RED, fields=fields)
+    return send_alert(title, description, color=COLOR_RED, fields=fields)
 
 
 def alert_warning(
     title: str,
-    message: str,
+    description: str,
     fields: list[dict[str, Any]] | None = None,
 ) -> bool:
     """Send an orange (warning) alert."""
-    return send_alert(title, message, color=COLOR_ORANGE, fields=fields)
+    return send_alert(title, description, color=COLOR_ORANGE, fields=fields)
 
 
 def alert_resolved(
     title: str,
-    message: str,
+    description: str,
     fields: list[dict[str, Any]] | None = None,
 ) -> bool:
     """Send a green (resolved) alert."""
-    return send_alert(title, message, color=COLOR_GREEN, fields=fields)
+    return send_alert(title, description, color=COLOR_GREEN, fields=fields)

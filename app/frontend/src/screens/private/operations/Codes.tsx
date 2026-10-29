@@ -8,7 +8,7 @@ import {
   Slider,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT, zmsg } from '@/locales/i18n'
@@ -21,9 +21,11 @@ import {
   ConfirmModal,
   DataTable,
   ActionButtons,
+  useSubmitOnce,
 } from '@/components/ui'
 import type { Code } from '@/types'
 import { listCodes, createCode, updateCode, deleteCode } from '@/api/codes'
+import { qk } from '@/data/keys'
 
 const codeSchema = z.object({
   name: z.string().min(1, zmsg('common.nameRequired', 'Name ist erforderlich')),
@@ -39,7 +41,7 @@ export function CodesScreen() {
   const { hasPermission } = useAuth()
   const queryClient = useQueryClient()
   const { data: codes = [], isLoading: loading } = useQuery({
-    queryKey: ['codes'],
+    queryKey: qk.codes,
     queryFn: () => listCodes(),
   })
   const [addOpen, setAddOpen] = useState(false)
@@ -51,7 +53,7 @@ export function CodesScreen() {
   const [codeLength, setCodeLength] = useState(4)
 
   const form = useForm<CodeForm>({
-    validate: zodResolver(codeSchema),
+    validate: zod4Resolver(codeSchema),
     initialValues: { name: '', code: '', description: '', isActive: true },
   })
 
@@ -83,7 +85,7 @@ export function CodesScreen() {
         code: data.code,
         description: data.description || null,
       })
-      queryClient.invalidateQueries({ queryKey: ['codes'] })
+      queryClient.invalidateQueries({ queryKey: qk.codes })
       setAddOpen(false)
       notify('success', t('codes.saved'))
     } catch (err: unknown) {
@@ -94,6 +96,7 @@ export function CodesScreen() {
       )
     }
   }
+  const [submitAdd, adding] = useSubmitOnce(saveAdd)
 
   const saveEdit = async (data: CodeForm) => {
     if (!editTarget) return
@@ -104,7 +107,7 @@ export function CodesScreen() {
         description: data.description || null,
         isActive: data.isActive,
       })
-      queryClient.invalidateQueries({ queryKey: ['codes'] })
+      queryClient.invalidateQueries({ queryKey: qk.codes })
       setEditTarget(null)
       notify('success', t('codes.saved'))
     } catch (err: unknown) {
@@ -120,7 +123,7 @@ export function CodesScreen() {
     if (!deleteTarget) return
     try {
       await deleteCode(deleteTarget.id)
-      queryClient.invalidateQueries({ queryKey: ['codes'] })
+      queryClient.invalidateQueries({ queryKey: qk.codes })
       setDeleteTarget(null)
       notify('success', t('codes.deleted'))
     } catch (err: unknown) {
@@ -291,6 +294,7 @@ export function CodesScreen() {
 
       {/* Add Modal */}
       <Modal
+        onSubmit={form.onSubmit(submitAdd)}
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={t('codes.add')}
@@ -299,7 +303,7 @@ export function CodesScreen() {
             <Button variant="subtle" onClick={() => setAddOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="default" onClick={() => form.onSubmit(saveAdd)()}>
+            <Button variant="default" type="submit" loading={adding}>
               {t('common.save')}
             </Button>
           </>
@@ -347,6 +351,7 @@ export function CodesScreen() {
 
       {/* Edit Modal */}
       <Modal
+        onSubmit={form.onSubmit(saveEdit)}
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
         title={t('codes.edit')}
@@ -355,7 +360,7 @@ export function CodesScreen() {
             <Button variant="subtle" onClick={() => setEditTarget(null)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="default" onClick={() => form.onSubmit(saveEdit)()}>
+            <Button variant="default" type="submit">
               {t('common.save')}
             </Button>
           </>

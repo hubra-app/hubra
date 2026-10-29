@@ -173,3 +173,52 @@ def test_set_permissions_on_admin_role_returns_409(client, db, seeded_db, auth_h
         headers=auth_headers,
     )
     assert resp.status_code == 409
+
+
+def test_create_role_and_tier_are_audited_with_their_ids(client, auth_headers, db):
+    from hubra.core.models.audit import AuditEntry
+
+    role = client.post("/api/v1/roles/", json={"name": "Kasse"}, headers=auth_headers)
+    assert role.status_code == 201, role.get_json()
+    tier = client.post(
+        "/api/v1/tiers/",
+        json={"name": "Passiv", "price_chf": 20, "color": "#123456", "price_type": "fixed"},
+        headers=auth_headers,
+    )
+    assert tier.status_code == 201, tier.get_json()
+
+    by_type = {e.target_type: e.target_id for e in db.session.query(AuditEntry).all()}
+    assert by_type["Role"] == role.get_json()["id"]
+    assert by_type["tier"] == tier.get_json()["id"]
+
+
+def test_rename_a_role(client, db, seeded_db, auth_headers):
+    role = _create_non_admin_role(db)
+    db.session.add(Role(name="Helfer"))
+    db.session.commit()
+    url = f"{BASE}/{role.id}"
+    resp = client.patch(url, json={"name": "  Trainer  "}, headers=auth_headers)
+    assert resp.status_code == 200 and resp.get_json()["name"] == "Trainer"
+    assert (
+        client.patch(url, json={"name": "Helfer"}, headers=auth_headers).status_code
+        == 409
+    )
+    assert (
+        client.patch(url, json={"name": "   "}, headers=auth_headers).status_code == 400
+    )
+    admin_url = f"{BASE}/{seeded_db['role'].id}"
+    resp = client.patch(admin_url, json={"name": "Chef"}, headers=auth_headers)
+    assert resp.status_code == 409
+
+
+def test_role_fields_must_have_the_right_type(client, db, seeded_db, auth_headers):
+    """A string is_admin used to count as true ("no" made the role an admin),
+    and a non-text description crashed with a 500."""
+    role = _create_non_admin_role(db)
+    url = f"{BASE}/{role.id}"
+    for body in ({"is_admin": "no"}, {"is_admin": 1}, {"description": {"a": 1}}):
+        assert client.patch(url, json=body, headers=auth_headers).status_code == 400
+    db.session.refresh(role)
+    assert role.is_admin is False
+    resp = client.patch(url, json={"description": "Hilft"}, headers=auth_headers)
+    assert resp.status_code == 200 and resp.get_json()["description"] == "Hilft"

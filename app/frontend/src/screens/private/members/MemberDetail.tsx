@@ -17,6 +17,7 @@ import type { Member } from '@/types'
 import { getMember, disableMember, enableMember } from '@/api/members'
 import { MemberEditModal } from '@/components/MemberEditModal'
 import { roleLabels } from '@/roles'
+import { qk } from '@/data/keys'
 
 /* ── Member Detail ──────────────────────────── */
 export function MemberDetailScreen({
@@ -35,7 +36,7 @@ export function MemberDetailScreen({
   const canEnable = hasPermission('members.members.enable')
   const [tab, setTab] = useState('overview')
   const { data: member } = useQuery({
-    queryKey: ['member', id],
+    queryKey: qk.members.one(id),
     queryFn: () => getMember(id!),
     enabled: !!id,
     initialData: propMember ?? undefined,
@@ -53,7 +54,7 @@ export function MemberDetailScreen({
       const updated = member.isDisabled
         ? await enableMember(member.id)
         : await disableMember(member.id)
-      queryClient.invalidateQueries({ queryKey: ['member', id] })
+      queryClient.invalidateQueries({ queryKey: qk.members.one(id) })
       notify(
         'success',
         updated.isDisabled ? t('members.disabled', 'Mitglied deaktiviert') : t('members.enabled', 'Mitglied aktiviert'),
@@ -428,7 +429,7 @@ export function MemberDetailScreen({
         open={editOpen}
         onClose={() => setEditOpen(false)}
         onSaved={() => {
-          queryClient.invalidateQueries({ queryKey: ['member', id] })
+          queryClient.invalidateQueries({ queryKey: qk.members.one(id) })
           setEditOpen(false)
         }}
       />

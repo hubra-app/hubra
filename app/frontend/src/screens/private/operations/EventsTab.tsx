@@ -2,7 +2,7 @@ import { EVENT_TYPE_COLORS } from '@/constants'
 import { useState } from 'react'
 import { Button, Group, TextInput, Select, Badge } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useT, zmsg } from '@/locales/i18n'
 import i18n from 'i18next'
@@ -12,7 +12,9 @@ import {
   IconLogin,
   IconLogout as Leave,
 } from '@tabler/icons-react'
-import { useToast, useLoadData, useAuth } from '@/context/AppContext'
+import { useToast, useAuth } from '@/context/AppContext'
+import { qk } from '@/data/keys'
+import { useEvents, useListCache, useMyJoinedEvents } from '@/data/lists'
 import {
   Modal,
   Field,
@@ -20,6 +22,7 @@ import {
   ConfirmModal,
   DataTable,
   ActionButtons,
+  useSubmitOnce,
 } from '@/components/ui'
 import type { ClubEvent } from '@/types'
 import { createEvent, updateEvent, deleteEvent } from '@/api/events'
@@ -54,7 +57,9 @@ function eventTypeLabel(type: string) {
 
 export function EventsTab() {
   const { notify } = useToast()
-  const { myJoinedEvents, events, setEvents } = useLoadData('events')
+  const { events } = useEvents()
+  const myJoinedEvents = useMyJoinedEvents()
+  const eventCache = useListCache<ClubEvent>(qk.events)
   const { currentUser, hasPermission } = useAuth()
   const { t, i18n } = useT()
   const joinEventMutation = useToggleJoinEvent()
@@ -67,7 +72,7 @@ export function EventsTab() {
   const [editTarget, setEditTarget] = useState<ClubEvent | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ClubEvent | null>(null)
   const form = useForm<EventForm>({
-    validate: zodResolver(eventSchema),
+    validate: zod4Resolver(eventSchema),
     initialValues: {
       title: '',
       date: new Date().toISOString().slice(0, 10),
@@ -119,7 +124,7 @@ export function EventsTab() {
         location: data.location || undefined,
         type: data.type,
       })
-      setEvents((prev) => [...prev, ev])
+      eventCache.append(ev)
       setAddOpen(false)
       notify(
         'success',
@@ -136,6 +141,7 @@ export function EventsTab() {
       )
     }
   }
+  const [submitAdd, adding] = useSubmitOnce(saveAdd)
 
   const saveEdit = async (data: EventForm) => {
     if (!editTarget) return
@@ -147,7 +153,7 @@ export function EventsTab() {
         location: data.location || undefined,
         type: data.type,
       })
-      setEvents((prev) => prev.map((e) => (e.id === ev.id ? ev : e)))
+      eventCache.replace(ev)
       setEditTarget(null)
       notify(
         'success',
@@ -169,7 +175,7 @@ export function EventsTab() {
     if (!deleteTarget) return
     try {
       await deleteEvent(deleteTarget.id)
-      setEvents((prev) => prev.filter((e) => e.id !== deleteTarget.id))
+      eventCache.remove(deleteTarget.id)
       notify(
         'info',
         t('events.event.deleted'),
@@ -375,6 +381,7 @@ export function EventsTab() {
                   <Button
                     size="sm"
                     variant={joined ? 'default' : 'filled'}
+                    disabled={joinEventMutation.isPending}
                     onClick={() =>
                       joinEventMutation.mutate({
                         eventId: ev.id,
@@ -424,6 +431,7 @@ export function EventsTab() {
         getRowKey={(ev) => ev.id}
       />
       <Modal
+        onSubmit={form.onSubmit(submitAdd)}
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={t('events.addEvent')}
@@ -432,7 +440,7 @@ export function EventsTab() {
             <Button variant="default" onClick={() => setAddOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="filled" onClick={() => form.onSubmit(saveAdd)()}>
+            <Button variant="filled" type="submit" loading={adding}>
               {t('events.createEvent', 'Anlass erstellen')}
             </Button>
           </>
@@ -441,6 +449,7 @@ export function EventsTab() {
         {eventForm}
       </Modal>
       <Modal
+        onSubmit={form.onSubmit(saveEdit)}
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
         title={t('events.editEvent')}
@@ -450,7 +459,7 @@ export function EventsTab() {
             <Button variant="default" onClick={() => setEditTarget(null)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="filled" onClick={() => form.onSubmit(saveEdit)()}>
+            <Button variant="filled" type="submit">
               {t('common.save')}
             </Button>
           </>

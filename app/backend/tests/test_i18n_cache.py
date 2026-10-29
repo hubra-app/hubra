@@ -112,3 +112,39 @@ def test_report_keys_dispatches_async_task(client, auth_headers):
             assert resp.status_code == 200
             assert resp.get_json()["flagged"] == 0
             mock_delay.assert_called_once()
+
+
+def test_club_translations_start_from_the_platform(app, db):
+    """A club sees the platform texts; its own empty rows don't hide them."""
+    from collections import namedtuple
+
+    Row = namedtuple("Row", "key value alias_for")
+    platform = [
+        Row("shell.nav.dashboard", "Dashboard", None),
+        Row("shell.nav.members", "Mitglieder", None),
+        Row("shell.nav.home", None, "shell.nav.dashboard"),
+    ]
+    _seed_translation("de-CH", "shell.nav.dashboard", "")  # reported missing
+    _seed_translation("de-CH", "shell.nav.members", "Leute")  # the club's own
+    i18n_services._mem_translations.clear()
+
+    with patch.object(i18n_services, "platform_rows", return_value=platform):
+        result = i18n_services.get_translations_dict("de-CH")
+
+    assert result["shell.nav.dashboard"] == "Dashboard"
+    assert result["shell.nav.members"] == "Leute"
+    assert result["shell.nav.home"] == "Dashboard"
+    i18n_services._mem_translations.clear()
+
+
+def test_dict_leaves_out_keys_without_text(app, db):
+    """A key reported missing (stored empty) leaves room for the app's fallbacks."""
+    _seed_translation("de-CH", "shell.nav.keys", "")
+    _seed_translation("de-CH", "shell.nav.home", "Start")
+    i18n_services._mem_translations.clear()
+
+    result = i18n_services.get_translations_dict("de-CH")
+    assert "shell.nav.keys" not in result
+    assert result["shell.nav.home"] == "Start"
+
+    i18n_services._mem_translations.clear()

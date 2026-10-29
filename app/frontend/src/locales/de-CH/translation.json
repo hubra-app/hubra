@@ -218,7 +218,9 @@
       "atOnce": "Du verlässt den Verein sofort. Dein Hubra-Konto und deine anderen Vereine bleiben.",
       "confirmTitle": "Verein wirklich verlassen?",
       "confirmBody": "Du verlierst den Zugang zu den Seiten des Vereins. Deine Rechnungen und Einträge bleiben beim Verein. Möchtest du später zurück, kannst du wieder um Aufnahme bitten."
-    }
+    },
+    "invoicesLoadFailed": "Deine Rechnungen konnten nicht geladen werden.",
+    "openInvoices": "Offene Rechnungen"
   },
   "app": {
     "backend": {
@@ -535,7 +537,12 @@
     "searchPlaceholder": "Suchen …",
     "saveFailed": "Speichern fehlgeschlagen",
     "deleted": "Gelöscht",
-    "moreActions": "Weitere Aktionen"
+    "moreActions": "Weitere Aktionen",
+    "perPage": "Einträge pro Seite",
+    "pageFirst": "Erste Seite",
+    "pagePrevious": "Vorherige Seite",
+    "pageNext": "Nächste Seite",
+    "pageLast": "Letzte Seite"
   },
   "dashboard": {
     "activeMembers": "Aktive Mitglieder",
@@ -586,6 +593,7 @@
       "overview": "Verein"
     },
     "thisMonth": "Diesen Monat",
+    "joinedLast30": "+{{count}} in den letzten 30 Tagen",
     "thisWeek": "Diese Woche",
     "title": "Dashboard",
     "today": "Heute",
@@ -872,7 +880,9 @@
       "deleted": "Buchung gelöscht.",
       "deletedMsg": "Die Buchung wurde gelöscht.",
       "saved": "Buchung gespeichert.",
-      "updatedMsg": "Status auf «{{status}}» geändert."
+      "updatedMsg": "Status auf «{{status}}» geändert.",
+      "saveFailed": "Buchung nicht gespeichert",
+      "updatedMsg2": "«{{description}}» wurde gespeichert."
     },
     "transactionDeleted": "Buchung gelöscht.",
     "transactionDeletedMsg": "Die Buchung wurde gelöscht.",
@@ -911,7 +921,42 @@
       "paid": "Bezahlt",
       "overdue": "Überfällig"
     },
-    "loadTransactionsFailed": "Buchungen konnten nicht geladen werden"
+    "loadTransactionsFailed": "Buchungen konnten nicht geladen werden",
+    "addFirstTransaction": "Erste Buchung erfassen",
+    "allStatuses": "Alle Status",
+    "amountChf": "Betrag (CHF)",
+    "createStarterCategories": "Übliche Kategorien anlegen",
+    "deleteTransactionBody": "«{{description}}» ({{amount}}) wird endgültig gelöscht.",
+    "form": {
+      "amountRequired": "Gib einen Betrag über 0 ein.",
+      "categoryRequired": "Wähle eine Kategorie.",
+      "dateRequired": "Wähle ein Datum.",
+      "descriptionRequired": "Beschreibe die Buchung kurz.",
+      "expense": "Ausgabe",
+      "income": "Einnahme",
+      "linkedMember": "Verknüpft mit {{name}}",
+      "noCategory": "Keine passende Kategorie",
+      "openCategories": "Zu den Kategorien",
+      "payee": "Von / an (optional)",
+      "payeePlaceholder": "z. B. Baumarkt AG",
+      "record": "Buchung erfassen"
+    },
+    "noTransactionsFilterHint": "Ändere die Suche oder die Filter.",
+    "noTransactionsYet": "Noch keine Buchungen",
+    "noTransactionsYetHint": "Hier erscheinen Einnahmen und Ausgaben des Vereins, auch bezahlte Rechnungen.",
+    "noCategoriesWhy": "Jede Buchung gehört zu einer Kategorie. Lege eigene an oder starte mit einer Auswahl.",
+    "paymentMethod": "Zahlungsart",
+    "recordedOn": "Erfasst am {{date}}",
+    "starter": {
+      "donations": "Spenden",
+      "events": "Anlässe",
+      "fees": "Mitgliederbeiträge",
+      "material": "Material",
+      "other": "Diverses",
+      "rent": "Miete"
+    },
+    "starterCreated": "Kategorien angelegt",
+    "starterCreatedMsg": "Du kannst sie jederzeit umbenennen oder löschen."
   },
   "functions": {
     "assignHolder": "Person zuweisen",
@@ -997,7 +1042,9 @@
     "sessionsHint": "z. B. 2× pro Woche",
     "sessionsPlaceholder": "3× pro Woche",
     "title": "Gruppen",
-    "tools": "Werkzeuge"
+    "tools": "Werkzeuge",
+    "memberCount_one": "{{count}} Mitglied",
+    "memberCount_other": "{{count}} Mitglieder"
   },
   "inventory": {
     "addFirstItem": "Ersten Gegenstand hinzufügen",
@@ -1170,6 +1217,8 @@
       "syncError": "Fehler",
       "syncOk": "OK",
       "syncPending": "Ausstehend",
+      "tabAddresses": "Adressen",
+      "tabAll": "Alle Adressen",
       "tabFunctions": "Funktionen",
       "tabGroups": "Gruppen",
       "tabMembers": "Mitglieder",
@@ -1657,7 +1706,8 @@
       "decline": "Ablehnen",
       "approved": "Austritt bestätigt",
       "declined": "Austritt abgelehnt"
-    }
+    },
+    "noMembersFilterHint": "Ändere die Suche oder den Filter."
   },
   "notifications": {
     "invoicePaid": "Rechnung bezahlt",
@@ -1726,6 +1776,7 @@
     "voteFailed": "Die Stimme konnte nicht abgegeben werden.",
     "remindersSent": "Erinnerungen gesendet",
     "remindersFailed": "Die Erinnerungen konnten nicht gesendet werden.",
+    "deleteFailed": "Die Umfrage konnte nicht gelöscht werden.",
     "validation": "Eingabe prüfen",
     "minOptions": "Es braucht mindestens 2 Optionen.",
     "updated": "Umfrage gespeichert",
@@ -2139,7 +2190,8 @@
     "members": "Mitglieder",
     "create": "Stufe erstellen",
     "deleteTitle": "Stufe «{{name}}» löschen?",
-    "deleteBody": "Mitglieder in dieser Stufe müssen einer anderen Stufe zugewiesen werden. Das kann nicht rückgängig gemacht werden."
+    "deleteBody": "Mitglieder in dieser Stufe müssen einer anderen Stufe zugewiesen werden. Das kann nicht rückgängig gemacht werden.",
+    "noPrice": "Kein Beitrag"
   },
   "toast": {
     "error": "Fehler",
@@ -2260,6 +2312,7 @@
     "primaryColor": "Primärfarbe",
     "secondaryColor": "Sekundärfarbe",
     "accentColor": "Akzentfarbe",
+    "pickColor": "Farbe vom Bildschirm wählen",
     "localization": "Region und Sprache",
     "timezone": "Zeitzone",
     "locale": "Sprache",
@@ -2275,7 +2328,10 @@
     "loading": "Einstellungen werden geladen …",
     "membership": "Mitgliedschaft",
     "leaveRequiresApproval": "Austritt nur mit Bestätigung",
-    "leaveRequiresApprovalHint": "Ein: Mitglieder beantragen den Austritt, und ihr bestätigt ihn unter Mitglieder › Anträge. Aus: Mitglieder treten sofort selbst aus."
+    "leaveRequiresApprovalHint": "Ein: Mitglieder beantragen den Austritt, und ihr bestätigt ihn unter Mitglieder › Anträge. Aus: Mitglieder treten sofort selbst aus.",
+    "loadFailed": "Die Einstellungen konnten nicht geladen werden.",
+    "saveFailed": "Einstellungen nicht gespeichert",
+    "saved": "Einstellungen gespeichert"
   },
   "domains": {
     "added": "Domain hinzugefügt",
@@ -2370,7 +2426,8 @@
     "entryCount_other": "{{count}} Einträge",
     "actions": {
       "all": "Alle Aktionen",
-      "create_member": "Mitglied erstellt",
+      "invite_member": "Mitglied eingeladen",
+      "accept_invite": "Einladung angenommen",
       "update_member": "Mitglied geändert",
       "delete_member_permanent": "Mitglied gelöscht",
       "archive_member": "Mitglied archiviert",
@@ -2401,6 +2458,12 @@
       "archive_group": "Gruppe archiviert",
       "join_group": "Gruppe beigetreten",
       "leave_group": "Gruppe verlassen",
+      "add_group_member": "Zu Gruppe hinzugefügt",
+      "remove_group_member": "Aus Gruppe entfernt",
+      "add_domain": "Domain hinzugefügt",
+      "verify_domain": "Domain bestätigt",
+      "remove_domain": "Domain entfernt",
+      "set_primary_domain": "Hauptdomain gesetzt",
       "create_function": "Funktion erstellt",
       "update_function": "Funktion geändert",
       "delete_function": "Funktion gelöscht",
@@ -2438,8 +2501,47 @@
       "delete_inventory_item": "Inventar gelöscht",
       "checkout_inventory_item": "Ausgeliehen",
       "checkin_inventory_item": "Zurückgegeben",
+      "add_item_instruction": "Einweisung erfasst",
+      "remove_item_instruction": "Einweisung entfernt",
       "create_code": "Code erstellt",
       "update_code": "Code geändert",
+      "delete_code": "Code gelöscht",
+      "create_member_mail": "Mitglieder-Mailadresse erstellt",
+      "update_member_mail": "Mitglieder-Mailadresse geändert",
+      "delete_member_mail": "Mitglieder-Mailadresse gelöscht",
+      "toggle_member_mail": "Mitglieder-Mailadresse ein/aus",
+      "provision_member_mail": "Mitglieder-Postfach eingerichtet",
+      "create_group_mail": "Gruppen-Mailadresse erstellt",
+      "toggle_group_mail": "Gruppen-Mailadresse ein/aus",
+      "change_group_mail_prefix": "Gruppen-Mailadresse umbenannt",
+      "create_group_alias": "Gruppen-Alias erstellt",
+      "toggle_group_alias": "Gruppen-Alias ein/aus",
+      "delete_group_alias": "Gruppen-Alias gelöscht",
+      "create_function_mail": "Funktions-Mailadresse erstellt",
+      "toggle_function_mail": "Funktions-Mailadresse ein/aus",
+      "change_function_mail_prefix": "Funktions-Mailadresse umbenannt",
+      "create_function_alias": "Funktions-Alias erstellt",
+      "toggle_function_alias": "Funktions-Alias ein/aus",
+      "delete_function_alias": "Funktions-Alias gelöscht",
+      "create_system_address": "System-Mailadresse erstellt",
+      "toggle_system_address": "System-Mailadresse ein/aus",
+      "delete_system_address": "System-Mailadresse gelöscht",
+      "create_system_alias": "System-Alias erstellt",
+      "delete_system_alias": "System-Alias gelöscht",
+      "update_system_forwarding": "System-Weiterleitung geändert",
+      "reset_system_mailbox_password": "System-Postfach: Passwort neu gesetzt",
+      "mailbox_quota_alert": "Postfach fast voll",
+      "mail_stale_id_detected": "Veraltete Postfach-ID gefunden",
+      "update_from_whitelist": "Absender-Freigaben geändert",
+      "grant_proxy": "Stimmvollmacht erteilt",
+      "set_payment_plan": "Zahlungsplan gesetzt",
+      "revert": "Auf Standard zurückgesetzt",
+      "upsert": "Einstellung gespeichert",
+      "toggle": "Verknüpfung ein/aus",
+      "toggle_address": "Mailadresse ein/aus",
+      "update_address": "Mailadresse geändert",
+      "delete_address": "Mailadresse gelöscht",
+      "change_prefix": "Mailadresse umbenannt",
       "create_mailbox": "Postfach erstellt",
       "update_mailbox": "Postfach geändert",
       "delete_mailbox": "Postfach gelöscht",
@@ -2550,7 +2652,12 @@
     "deleteKeyBody": "«{{key}}» löschen? Alle Verknüpfungen müssen vorher entfernt werden.",
     "editTitle": "Verknüpfung #{{id}} bearbeiten",
     "deleteBody": "Verknüpfung #{{id}} ({{source}} → {{key}}) löschen?",
-    "protectedToggle": "Geschützt: kann nicht umgeschaltet werden"
+    "protectedToggle": "Geschützt: kann nicht umgeschaltet werden",
+    "additionalAlias": "Weitere Adresse: {{address}}",
+    "noSources": "Keine Einträge vom Typ {{type}}.",
+    "selectSource": "Eintrag wählen …",
+    "currentValue": "Aktueller Wert:",
+    "hidden": "(verborgen)"
   },
   "roles": {
     "hideFields": "Feldrechte ausblenden",
@@ -2598,7 +2705,9 @@
       "Admin": "Administration",
       "Treasurer": "Kassier/in",
       "Member": "Mitglied"
-    }
+    },
+    "assignTo": "Mitgliedern die Rolle {{role}} geben",
+    "searchMembers": "Mitglied suchen …"
   },
   "modules": {
     "backups": {
@@ -2670,6 +2779,7 @@
     "roles": {
       "name": "Rollen und Berechtigungen",
       "description": "Rollen und die Berechtigungen, die sie vergeben"
-    }
+    },
+    "pluginFailed": "Diese Erweiterung konnte nicht angezeigt werden."
   }
 }

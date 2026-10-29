@@ -42,11 +42,14 @@ All API calls go through `src/api/client.ts` → `apiFetch()`:
 
 See [docs/frontend.md](../../docs/frontend.md) for full architecture details.
 
-## E2E tests
+## Tests
 
 ```bash
-docker compose up -d       # Start the app stack
-npx playwright test        # Run Playwright tests
+npm test                   # Component tests (Vitest, src/**/*.test.tsx)
+npm run test:e2e           # Browser tests (Playwright, e2e/) against a running stack
 ```
 
-Tests live in `e2e/`.
+The browser tests sign in on the SSO portal and run against the dev servers
+by default; `E2E_APP_URL`, `E2E_SSO_URL`, `E2E_MANAGE_URL`, `E2E_CLUB`,
+`E2E_EMAIL` and `E2E_PASSWORD` point them elsewhere (see `e2e/env.ts`). CI runs
+them against the Compose stack.

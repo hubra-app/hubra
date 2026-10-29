@@ -26,6 +26,7 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { GlobalSearch } from './GlobalSearch'
 import { UserMenu } from './UserMenu'
 import { getBreadcrumb, initials, contrastColor } from './nav'
+import { qk } from '@/data/keys'
 
 export function TopBar() {
   const { t } = useT()
@@ -44,13 +45,13 @@ export function TopBar() {
   const parts = crumb.split(' > ')
 
   const { data: changelog } = useQuery({
-    queryKey: ['changelog'],
+    queryKey: qk.changelog,
     queryFn: getChangelog,
   })
   const latestEntries = changelog?.entries?.slice(0, 2) ?? []
 
   const { data: notifications = [] } = useQuery({
-    queryKey: ['notifications'],
+    queryKey: qk.notifications,
     queryFn: listNotifications,
   })
   const unreadCount = notifications.filter((n) => !n.read).length

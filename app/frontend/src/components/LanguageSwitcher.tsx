@@ -4,6 +4,7 @@ import { IconWorld, IconCheck } from '@tabler/icons-react'
 import { useQuery } from '@tanstack/react-query'
 import { setLanguage, getCurrentLanguage, useT } from '@/locales/i18n'
 import { fetchLanguages } from '@/api/i18n'
+import { qk } from '@/data/keys'
 
 const FALLBACK_LANGUAGES = ['de-CH', 'en-GB']
 
@@ -20,7 +21,7 @@ const LANGUAGE_SHORT: Record<string, string> = {
 export function LanguageSwitcher() {
   const { i18n } = useT()
   const { data, isError } = useQuery({
-    queryKey: ['languages'],
+    queryKey: qk.languages,
     queryFn: fetchLanguages,
   })
 

@@ -51,6 +51,7 @@ export function AccountSettingsScreen() {
 
       <Box hiddenFrom="nav" mb={16}>
         <Select
+          aria-label={t('account.settings.title', 'Kontoeinstellungen')}
           data={tabs.map((tab) => ({
             value: tab.id,
             label: t(tab.labelKey, tab.labelDefault),
@@ -108,6 +109,8 @@ export function AccountSettingsScreen() {
         <div
           style={{
             flex: 1,
+            // Lets the cards shrink to a phone's width instead of overflowing.
+            minWidth: 0,
             maxWidth: 640,
             display: 'flex',
             flexDirection: 'column',
