@@ -960,6 +960,9 @@ class MembersService:
             export_fields = all_fields
 
         output = io.StringIO()
+        # A byte order mark, so Excel reads the file as UTF-8 (umlauts);
+        # the member import reads it with utf-8-sig.
+        output.write("\ufeff")
         writer = csv.writer(output)
         writer.writerow(export_fields)
         for m in members:
