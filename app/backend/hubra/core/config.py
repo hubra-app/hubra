@@ -232,8 +232,15 @@ class ProductionConfig(BaseConfig):
         the error surfaces at app startup, not at module import time
         (which would break test collection).
         """
-        _require_env("SECRET_KEY")
-        _require_env("JWT_SECRET_KEY")
+        for key in ("SECRET_KEY", "JWT_SECRET_KEY"):
+            if len(_require_env(key)) < 32:
+                # Not fatal: a running club must not stop on an upgrade.
+                _cfg_log.warning(
+                    "%s is shorter than 32 characters; tokens signed with it "
+                    "can be brute-forced. Generate one with "
+                    "`python3 -c \"import secrets; print(secrets.token_hex(32))\"`.",
+                    key,
+                )
         _require_env("DATABASE_URL")
         if not os.environ.get("FERNET_KEY"):
             _cfg_log.warning(
