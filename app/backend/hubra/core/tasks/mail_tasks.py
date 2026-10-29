@@ -698,7 +698,7 @@ def _create_missing_mmas() -> int:
     created = 0
     for owner_type, ids_query, create in owners:
         for owner_id in db.session.scalars(ids_query).all():
-            if (owner_type, owner_id) not in existing:
-                create(owner_id)
+            # None when the club has no mail domain yet.
+            if (owner_type, owner_id) not in existing and create(owner_id):
                 created += 1
     return created

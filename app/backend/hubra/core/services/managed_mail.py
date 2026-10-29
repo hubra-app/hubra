@@ -1323,6 +1323,8 @@ def auto_create_mma_for_group(group_id: int) -> ManagedMailAddress | None:
     from hubra.api.settings.services import SettingService
 
     club_domain = SettingService.get("mail.domain") or ""
+    if not club_domain:
+        return None
     prefix = normalize_prefix_from_name(group.name)
     from hubra.core.services.mail_provisioning import resolve_local_part
 
@@ -1409,6 +1411,8 @@ def auto_create_mma_for_function(function_id: int) -> ManagedMailAddress | None:
     from hubra.api.settings.services import SettingService
 
     club_domain = SettingService.get("mail.domain") or ""
+    if not club_domain:
+        return None
     prefix = normalize_prefix_from_name(fn.name)
     from hubra.core.services.mail_provisioning import resolve_local_part
 
