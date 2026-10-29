@@ -2370,7 +2370,8 @@
     "entryCount_other": "{{count}} Einträge",
     "actions": {
       "all": "Alle Aktionen",
-      "create_member": "Mitglied erstellt",
+      "invite_member": "Mitglied eingeladen",
+      "accept_invite": "Einladung angenommen",
       "update_member": "Mitglied geändert",
       "delete_member_permanent": "Mitglied gelöscht",
       "archive_member": "Mitglied archiviert",

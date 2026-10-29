@@ -355,9 +355,11 @@ function AuditEntryDetailPanel({
 /* -- Audit log --------------------------------- */
 const AUDIT_ACTIONS: [string, string][] = [
   ['', 'Alle Aktionen'],
-  ['create_member', 'Mitglied erstellt'],
+  ['invite_member', 'Mitglied eingeladen'],
+  ['accept_invite', 'Einladung angenommen'],
   ['update_member', 'Mitglied geändert'],
   ['delete_member_permanent', 'Mitglied gelöscht'],
+  ['soft_delete_member', 'Mitglied entfernt'],
   ['archive_member', 'Mitglied archiviert'],
   ['approve_application', 'Antrag angenommen'],
   ['decline_application', 'Antrag abgelehnt'],
