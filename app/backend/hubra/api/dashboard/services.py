@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from calendar import monthrange
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 
 from sqlalchemy import func, select
 
@@ -90,16 +90,25 @@ class DashboardService:
                 month_num += 12
                 year_num -= 1
             month_ends.append(_last_day_of_month(year_num, month_num))
-        # Members per month end, all twelve months in one query.
+        # Members per month end, all twelve months in one query. Someone
+        # who left later still counts for the months they were in.
+        def _member_then(last_day: date):
+            next_day = datetime.combine(
+                last_day + timedelta(days=1), time.min, tzinfo=timezone.utc
+            )
+            return (Member.joined <= last_day) & (
+                Member.archived_at.is_(None) | (Member.archived_at >= next_day)
+            )
+
         growth: list[int] = [
             count or 0
             for count in db.session.execute(
                 select(
                     *(
-                        func.count(Member.id).filter(Member.joined <= last_day)
+                        func.count(Member.id).filter(_member_then(last_day))
                         for last_day in month_ends
                     )
-                ).where(Member.archived_at.is_(None))
+                )
             ).one()
         ]
 
