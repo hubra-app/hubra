@@ -383,6 +383,8 @@ class MemberService:
             select(Member)
             .where(Member.id == member_id)
             .where(Member.archived_at.isnot(None))
+            # A deleted member comes back only through a new invite.
+            .where(Member.deleted_at.is_(None))
             .options(
                 selectinload(Member.tier),
                 selectinload(Member.roles),

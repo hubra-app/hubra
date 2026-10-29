@@ -62,6 +62,15 @@ def test_soft_deleted_member_loses_access(client, seeded_db, auth_headers):
     assert r.status_code in (401, 403), r.status_code
 
 
+def test_deleted_member_is_not_restored_from_the_archive(
+    app, client, seeded_db, auth_headers
+):
+    v = _mk(seeded_db, "back@test.ch", MEMBER_PERMS)
+    assert client.delete(f"/api/v1/members/{v.id}/soft").status_code == 204
+    # Restoring from the archive is not the way back for a deleted member.
+    assert client.post(f"/api/v1/members/{v.id}/unarchive").status_code == 404
+
+
 def test_archived_member_not_added_as_attendee(client, seeded_db, auth_headers):
     eid = _event(client)
     m = _mk(seeded_db, "arch@test.ch")
