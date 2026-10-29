@@ -97,9 +97,10 @@ def register_error_handlers(app: Flask) -> None:
         )
 
     @app.errorhandler(AttributeError)
-    def attribute_error(exc: AttributeError):
-        # Routes read their body with body.get(...); a JSON array or number
-        # there is the request's fault.
+    @app.errorhandler(TypeError)
+    def body_type_error(exc: Exception):
+        # Routes read their body with body.get(...) or "key" in body; a JSON
+        # array or number there is the request's fault.
         from flask import request
 
         body = request.get_json(silent=True)

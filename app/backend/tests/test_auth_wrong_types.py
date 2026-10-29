@@ -9,6 +9,7 @@ import pytest
         ("/api/v1/auth/login", {"email": 5, "password": "x"}),
         ("/api/v1/auth/login", {"email": "a@b.ch", "password": 5}),
         ("/api/v1/auth/login", [1]),
+        ("/api/v1/auth/login", 5),
         ("/api/v1/auth/forgot-password", {"email": ["a@b.ch"]}),
         ("/api/v1/auth/reset-password", {"token": 5, "password": "x"}),
         ("/api/v1/auth/reset-password", {"token": "abc", "password": 5}),
