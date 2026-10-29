@@ -31,6 +31,17 @@ def test_create_post(client, auth_headers, seeded_db):
     assert body["like_member_ids"] == []
 
 
+def test_create_post_rejects_oversized_body(client, auth_headers, seeded_db):
+    resp = _create_post(client, auth_headers, body="x" * 100_001)
+    assert resp.status_code == 400
+
+    post_id = _create_post(client, auth_headers).get_json()["id"]
+    resp = client.patch(
+        f"/api/v1/posts/{post_id}", json={"body": "x" * 100_001}, headers=auth_headers
+    )
+    assert resp.status_code == 400
+
+
 def test_create_post_with_summary(client, auth_headers, seeded_db):
     resp = _create_post(
         client, auth_headers, summary="Quick update about the workshop."
