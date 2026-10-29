@@ -102,7 +102,9 @@ def _translation_rows(locale: str):
     # A club's editor also lists the platform texts it hasn't changed, as
     # its dictionary serves them (see get_translations_dict).
     own = {r.key for r in rows if r.value or r.alias_for}
-    platform = {r.key: r for r in platform_rows(locale) if r.key not in own}
+    # Only platform rows with text: an empty one would hide the club row's
+    # "missing" flag without giving the key a value.
+    platform = {r.key: r for r in platform_rows(locale) if r.key not in own and r.value}
     data = [d for d in data if d["key"] not in platform]
     data += [
         {
