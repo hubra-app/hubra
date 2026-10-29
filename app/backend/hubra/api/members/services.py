@@ -241,6 +241,25 @@ def _default_role() -> Role | None:
     return role
 
 
+def _welcome_back(former: Member, user_id: int, tier_id: int | None) -> Member:
+    """Someone who left comes back as the member they were: an ordinary
+    member again, whatever roles they had, on the tier they were invited or
+    applied for, and with their club mailbox open again."""
+    former.archived_at = None
+    former.leave_requested_at = None
+    role = _default_role()
+    former.roles = [role] if role is not None else []
+    if tier_id is not None and db.session.get(MembershipTier, tier_id) is not None:
+        former.tier_id = tier_id
+        former.payment_plan_id = None
+    link_user_to_tenant(user_id)
+    if not former.is_disabled:
+        from hubra.core.services.managed_mail import enable_member_mail
+
+        enable_member_mail(former.id, former.password_hash)
+    return former
+
+
 def _active_member_with_email(email: str) -> bool:
     """Whether the account with ``email`` is a member of the current club."""
     return (
@@ -1001,12 +1020,7 @@ class MembersService:
         if former is not None:
             if former.archived_at is None:
                 raise_error(409, "CONFLICT", "You are already a member of this club")
-            former.archived_at = None
-            former.leave_requested_at = None
-            # Back as an ordinary member, whatever roles they had before.
-            former.roles = [default_role] if default_role else []
-            link_user_to_tenant(user.id)
-            return former  # type: ignore[return-value]
+            return _welcome_back(former, user.id, data.get("tier_id"))
 
         tier_id = data.get("tier_id")
         if tier_id is not None and db.session.get(MembershipTier, tier_id) is None:
@@ -1458,13 +1472,11 @@ class MembersService:
                 .where(Member.archived_at.isnot(None))
             )
             if former is not None:
-                former.archived_at = None
-                former.leave_requested_at = None
-                # Back as an ordinary member, whatever roles they had before.
-                role = _default_role()
-                former.roles = [role] if role is not None else []
-                link_user_to_tenant(existing_user.id)
-                return former  # type: ignore[return-value]
+                return _welcome_back(
+                    former,
+                    existing_user.id,
+                    application.wants_tier_id,  # type: ignore[attr-defined]
+                )
             existing = db.session.scalar(
                 select(Member.id).where(Member.user_id == existing_user.id)
             )
