@@ -33,6 +33,7 @@ from dataclasses import dataclass
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formataddr
 
 from flask import current_app
 
@@ -58,6 +59,21 @@ def _get_setting(key: str, default: str = "") -> str:
     except Exception as exc:
         logger.warning("Could not load setting %r: %s", key, exc)
         return default
+
+
+def club_display_name(default: str = "Hubra") -> str:
+    """The club's name for mail and invoices: the ``club.name`` setting when
+    the club set one, otherwise its name on the platform."""
+    name = _get_setting("club.name", "")
+    if name:
+        return name
+    try:
+        from hubra.core.tenant.context import current_tenant
+
+        tenant = current_tenant()
+    except Exception:
+        tenant = None
+    return (tenant.name if tenant is not None else "") or default
 
 
 def _get_base_url() -> str:
@@ -117,6 +133,9 @@ def _mailbox_route(platform, mailbox: tuple[str, str]) -> _Route:
     return _Route(host, port, *mailbox)
 
 
+_SMTP_TIMEOUT = 30  # seconds
+
+
 def _send_via_smtp(
     to_email: str,
     to_name: str,
@@ -158,19 +177,30 @@ def _send_via_smtp(
         msg.attach(MIMEText(body_text, "plain"))
         msg.attach(MIMEText(body_html, "html"))
     msg["Subject"] = subject
-    msg["From"] = f"{sender_name} <{sender_email}>"
-    msg["To"] = f"{to_name} <{to_email}>"
+    # formataddr quotes and encodes names, so "Müller & Co." or a name
+    # with <, > or a comma stays one display name.
+    msg["From"] = formataddr((sender_name, sender_email))
+    msg["To"] = formataddr((to_name, to_email))
     if reply_to:
         msg["Reply-To"] = reply_to
 
     try:
-        with smtplib.SMTP(smtp_host, smtp_port) as server:
+        _smtp_context = ssl.create_default_context()
+        if current_app.config.get("SMTP_TLS_VERIFY", True) is False:
+            _smtp_context.check_hostname = False
+            _smtp_context.verify_mode = ssl.CERT_NONE
+        # A timeout, so a relay that stops answering fails the send (and
+        # the task's retry) instead of holding a worker forever. Port 465
+        # is TLS from the first byte; the others upgrade with STARTTLS.
+        if smtp_port == 465:
+            connection = smtplib.SMTP_SSL(
+                smtp_host, smtp_port, timeout=_SMTP_TIMEOUT, context=_smtp_context
+            )
+        else:
+            connection = smtplib.SMTP(smtp_host, smtp_port, timeout=_SMTP_TIMEOUT)
+        with connection as server:
             server.ehlo()
-            if smtp_port != 25:
-                _smtp_context = ssl.create_default_context()
-                if current_app.config.get("SMTP_TLS_VERIFY", True) is False:
-                    _smtp_context.check_hostname = False
-                    _smtp_context.verify_mode = ssl.CERT_NONE
+            if smtp_port not in (25, 465):
                 server.starttls(context=_smtp_context)
                 server.ehlo()
             if route.user and route.password:
@@ -256,7 +286,7 @@ def send_welcome(
     lang: str = DEFAULT_LANG,
 ) -> None:
     """Send new-member welcome email with temporary credentials."""
-    club_name = _get_setting("club.name", "Your Club")
+    club_name = club_display_name()
     base = _get_base_url()
     login_url = f"{base}/login" if base else "the member portal"
 
@@ -281,7 +311,7 @@ def send_club_invite(
     lang: str = DEFAULT_LANG,
 ) -> None:
     """Send a personal link to join the club. Valid for 14 days."""
-    club_name = _get_setting("club.name", "Your Club")
+    club_name = club_display_name()
 
     body_html, body_text, subject = render_mail_template(
         "club_invite",
@@ -302,7 +332,7 @@ def send_password_reset(
     lang: str = DEFAULT_LANG,
 ) -> None:
     """Send a password reset link. Token expires in 1 hour."""
-    club_name = _get_setting("club.name", "Your Club")
+    club_name = club_display_name()
 
     body_html, body_text, subject = render_mail_template(
         "password_reset",
@@ -322,7 +352,7 @@ def send_email_verification(
     lang: str = DEFAULT_LANG,
 ) -> None:
     """Send a private email verification link. Token expires in 24 hours."""
-    club_name = _get_setting("club.name", "Your Club")
+    club_name = club_display_name()
 
     body_html, body_text, subject = render_mail_template(
         "verify_email",
@@ -338,7 +368,7 @@ def send_password_changed(
     to_address: str, name: str, *, lang: str = DEFAULT_LANG
 ) -> None:
     """Notify a member that their password was successfully changed."""
-    club_name = _get_setting("club.name", "Your Club")
+    club_name = club_display_name()
     base = _get_base_url()
     support_url = f"{base}/contact" if base else ""
 
@@ -362,7 +392,7 @@ def send_new_device_login(
     lang: str = DEFAULT_LANG,
 ) -> None:
     """Alert a member that their account was accessed from a new IP address."""
-    club_name = _get_setting("club.name", "Your Club")
+    club_name = club_display_name()
     base = _get_base_url()
     support_url = f"{base}/contact" if base else ""
 
@@ -383,7 +413,7 @@ def send_account_deleted(
     to_address: str, name: str, *, lang: str = DEFAULT_LANG
 ) -> None:
     """Notify a member that their account has been deactivated."""
-    club_name = _get_setting("club.name", "Your Club")
+    club_name = club_display_name()
     base = _get_base_url()
     support_url = f"{base}/contact" if base else ""
 

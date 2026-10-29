@@ -71,13 +71,21 @@ export interface PollCreate {
   requiredFunctionIds?: number[];
 }
 
+/** The closing time from a datetime-local field is the club's local time;
+ *  sent without a zone, the server read it as UTC (an hour or two late). */
+function toInstant(value: string | null | undefined): string | null | undefined {
+  if (!value || /(?:[zZ]|[+-]\d\d:?\d\d)$/.test(value)) return value;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toISOString();
+}
+
 export async function createPoll(input: PollCreate): Promise<Poll> {
   const b = await apiFetch<BackendPoll>("/polls/", {
     method: "POST",
     body: JSON.stringify({
       question: input.question,
       options: input.options.map((label) => ({ label })),
-      closes_at: input.closesAt ?? null,
+      closes_at: toInstant(input.closesAt) ?? null,
       is_required: input.isRequired ?? false,
       allow_proxy: input.allowProxy ?? false,
       required_group_ids: input.requiredGroupIds ?? null,
@@ -105,7 +113,7 @@ export async function updatePoll(
   if (input.question !== undefined) body.question = input.question;
   if (input.options !== undefined)
     body.options = input.options.map((label) => ({ label }));
-  if (input.closesAt !== undefined) body.closes_at = input.closesAt;
+  if (input.closesAt !== undefined) body.closes_at = toInstant(input.closesAt);
   if (input.isRequired !== undefined) body.is_required = input.isRequired;
   if (input.allowProxy !== undefined) body.allow_proxy = input.allowProxy;
   if (input.requiredGroupIds !== undefined)

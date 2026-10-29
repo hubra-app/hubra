@@ -129,7 +129,14 @@ export function JoinClubScreen() {
             </Alert>
           )}
 
-          {data.membership === null && (
+          {data.membership === null && !data.canJoinDirectly && data.acceptsRequests === false && (
+            <Alert color="gray" title="Nur auf Einladung">
+              {data.name} nimmt neue Mitglieder nur auf Einladung auf. Wenn du dabei sein möchtest,
+              frag jemanden aus dem Verein nach einer Einladung.
+            </Alert>
+          )}
+
+          {data.membership === null && (data.canJoinDirectly || data.acceptsRequests !== false) && (
             <>
               <Text size="sm">
                 {data.canJoinDirectly

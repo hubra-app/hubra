@@ -17,6 +17,18 @@ from hubra.core.models.finance import Invoice
 
 logger = logging.getLogger(__name__)
 
+# What the QR bill itself holds (SIX spec); the invoice above it shows all.
+_MAX_INFO = 140
+_MAX_NAME = 70
+
+
+class QRBillNotConfigured(ValueError):
+    """The club's banking details are missing or refused by the QR bill."""
+
+
+def _fit(text: str, limit: int) -> str:
+    return text if len(text) <= limit else text[: limit - 1] + "…"
+
 # ── Setting helpers (same pattern as email.py) ─────────────────────────────
 
 _DEFAULT_LANG = "de-CH"
@@ -62,7 +74,9 @@ def generate_invoice_pdf(invoice: Invoice) -> bytes:
         raise ValueError(f"Invoice {invoice.id} has no recipient")
 
     # ── 1. Gather creditor info from settings ──────────────────────────────
-    club_name = _get_setting("club.name", "Verein")
+    from hubra.core.services.email import club_display_name
+
+    club_name = club_display_name()
     iban = _get_setting("Club.Banking.Iban", "")
     creditor_street = _get_setting("Club.Banking.Street", "")
     creditor_house_no = _get_setting("Club.Banking.HouseNo", "")
@@ -72,11 +86,11 @@ def generate_invoice_pdf(invoice: Invoice) -> bytes:
     finance_email = _get_setting("Club.Contact.FinanceEmail", "")
 
     if not iban:
-        raise ValueError(
+        raise QRBillNotConfigured(
             "Club.Banking.Iban is not configured — cannot generate QR-bill"
         )
     if not creditor_pcode or not creditor_city:
-        raise ValueError(
+        raise QRBillNotConfigured(
             "Club.Banking.PostalCode and Club.Banking.City must be configured "
             "— cannot generate QR-bill"
         )
@@ -125,7 +139,7 @@ def generate_invoice_pdf(invoice: Invoice) -> bytes:
     from qrbill import QRBill
 
     creditor_address = {
-        "name": club_name,
+        "name": _fit(club_name, _MAX_NAME),
         "street": creditor_street,
         "house_num": creditor_house_no,
         "pcode": creditor_pcode,
@@ -136,7 +150,7 @@ def generate_invoice_pdf(invoice: Invoice) -> bytes:
     debtor_address = None
     if has_full_debtor:
         debtor_address = {
-            "name": recipient_name,
+            "name": _fit(recipient_name, _MAX_NAME),
             "street": debtor_street,
             "house_num": debtor_house_no,
             "pcode": debtor_pcode,
@@ -144,18 +158,31 @@ def generate_invoice_pdf(invoice: Invoice) -> bytes:
             "country": debtor_country,
         }
 
-    bill = QRBill(
-        account=iban,
-        creditor=creditor_address,
-        debtor=debtor_address,
-        amount=str(invoice.amount),
-        currency="CHF",
-        reference_number=reference,
-        additional_information=description,
-        language="de" if lang and lang.startswith("de") else "en",
-        top_line=True,
-        payment_line=True,
-    )
+    def _bill(debtor: dict | None) -> QRBill:
+        return QRBill(
+            account=iban,
+            creditor=creditor_address,
+            debtor=debtor,
+            amount=str(invoice.amount),
+            currency="CHF",
+            reference_number=reference,
+            additional_information=_fit(description, _MAX_INFO),
+            language="de" if lang and lang.startswith("de") else "en",
+            top_line=True,
+            payment_line=True,
+        )
+
+    try:
+        bill = _bill(debtor_address)
+    except ValueError as exc:
+        message = str(exc)
+        if "IBAN" in message or "creditor" in message:
+            raise QRBillNotConfigured(message) from exc
+        if debtor_address is None or "debtor" not in message:
+            raise
+        # An address the QR bill refuses (a street over 70 characters,
+        # "UK" instead of GB): the payer fills it in instead.
+        bill = _bill(None)
 
     # Render QR-bill SVG (full A4 page with bill at bottom)
     svg_buffer = StringIO()

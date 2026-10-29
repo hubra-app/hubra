@@ -76,7 +76,7 @@ export function InvoiceDetailScreen() {
       <PageHead
         title={inv.id}
         actions={
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             <Button
               variant="subtle"
               onClick={() => go('/app/finance/invoices')}
@@ -101,6 +101,7 @@ export function InvoiceDetailScreen() {
               <Button
                 variant="filled"
                 onClick={() => markPaidMutation.mutate(inv.id)}
+                loading={markPaidMutation.isPending}
               >
                 <IconCheck size={16} />
                 {t('finance.markPaid', 'Als bezahlt markieren')}
@@ -110,14 +111,7 @@ export function InvoiceDetailScreen() {
         }
       />
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 340px',
-          gap: 16,
-          alignItems: 'start',
-        }}
-      >
+      <div className="detail-grid-end">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Paper withBorder shadow="sm" radius="lg">
             <Group

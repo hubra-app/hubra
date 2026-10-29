@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Button, Group, Textarea, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT, zmsg } from '@/locales/i18n'
@@ -23,6 +23,7 @@ import {
   CardItem,
   MemberSlideOver,
   type SlideOverMember,
+  useSubmitOnce,
 } from '@/components/ui'
 import type { ClubFunction } from '@/types'
 import {
@@ -62,7 +63,7 @@ export function FunctionsTab() {
   const [manageHolders, setManageHolders] = useState<ClubFunction | null>(null)
 
   const form = useForm<FunctionForm>({
-    validate: zodResolver(functionSchema),
+    validate: zod4Resolver(functionSchema),
     initialValues: {
       name: '',
       description: '',
@@ -110,6 +111,7 @@ export function FunctionsTab() {
       )
     }
   }
+  const [submitAdd, adding] = useSubmitOnce(saveAdd)
 
   const saveEdit = async (data: FunctionForm) => {
     if (!editTarget) return
@@ -292,7 +294,7 @@ export function FunctionsTab() {
       )}
 
       <Modal
-        onSubmit={form.onSubmit(saveAdd)}
+        onSubmit={form.onSubmit(submitAdd)}
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={t('common.add', 'Hinzufügen')}
@@ -301,7 +303,7 @@ export function FunctionsTab() {
             <Button variant="default" onClick={() => setAddOpen(false)}>
               {t('common.cancel', 'Abbrechen')}
             </Button>
-            <Button variant="filled" type="submit">
+            <Button variant="filled" type="submit" loading={adding}>
               {t('common.create', 'Erstellen')}
             </Button>
           </>

@@ -34,12 +34,49 @@ from hubra.core.models.member import Member
 from hubra.core.models.tenant import GlobalAuditEntry, Tenant
 from hubra.core.models.tenant_request import TenantRequest
 from hubra.core.models.user import User
+from hubra.core.services import email_verification
 from hubra.core.tenant.service import TenantService, TenantProvisioningError
+from hubra.core.tenant.club_settings import accepts_join_requests
 
 tenant_admin_bp = Blueprint("tenant_admin", __name__)
 
+
+def _body_text(body: dict, key: str) -> str:
+    """*key* from a JSON body as stripped text ("" if absent); 400 otherwise."""
+    value = body.get(key)
+    if value is None:
+        return ""
+    if not isinstance(value, str):
+        raise_error(400, "VALIDATION_ERROR", f"{key} must be text")
+    return value.strip()
+
+
+def _body_id(body: dict, key: str) -> int | None:
+    """*key* as a positive id, None if absent; 400 otherwise."""
+    value = body.get(key)
+    if value is None or value == "":
+        return None
+    if isinstance(value, str) and value.isdigit():
+        value = int(value)
+    if not isinstance(value, int) or isinstance(value, bool) or value < 1:
+        raise_error(400, "VALIDATION_ERROR", f"{key} must be an id")
+    return value
+
+
+def _body_keys(body: dict, key: str) -> list[str] | None:
+    """*key* as a list of strings, None if absent; 400 otherwise."""
+    value = body.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, list) or not all(isinstance(v, str) for v in value):
+        raise_error(400, "VALIDATION_ERROR", f"{key} must be a list of keys")
+    return value
+
+
 _VALID_STATUSES = {"active", "suspended", "archived"}
-_VALID_PLANS = {"starter", "growth", "enterprise"}
+# A tuple: "in" then compares, so a list or object sent as plan is a 400,
+# not a TypeError from hashing it.
+_VALID_PLANS = ("starter", "growth", "enterprise")
 
 
 # ── Routes ──────────────────────────────────────────────────────────────────
@@ -76,8 +113,8 @@ def provision_tenant():
     """Provision a new tenant (creates record + schema + seeds)."""
     data = request.get_json(silent=True) or {}
 
-    name = data.get("name", "").strip()
-    slug = data.get("slug", "").strip()
+    name = str(data.get("name") or "").strip()
+    slug = str(data.get("slug") or "").strip()
     plan = data.get("plan", "starter")
     admin_email = data.get("admin_email")
     admin_password = data.get("admin_password")
@@ -145,9 +182,13 @@ def update_tenant(tenant_id: int):
     """Update tenant attributes (name, plan, settings)."""
     data = request.get_json(silent=True) or {}
 
-    name = data.get("name")
+    name = _body_text(data, "name") if data.get("name") is not None else None
+    if name is not None and not 0 < len(name) <= 255:
+        raise_error(400, "VALIDATION_ERROR", "name must be 1 to 255 characters")
     plan = data.get("plan")
     settings = data.get("settings")
+    if settings is not None and not isinstance(settings, dict):
+        raise_error(400, "VALIDATION_ERROR", "settings must be an object")
 
     if plan is not None and plan not in _VALID_PLANS:
         return jsonify(
@@ -228,7 +269,7 @@ def update_tenant_status(tenant_id: int):
     Prefer the dedicated /disable, /enable, /archive endpoints.
     """
     data = request.get_json(silent=True) or {}
-    status = data.get("status", "").strip()
+    status = str(data.get("status") or "").strip()
 
     if status not in _VALID_STATUSES:
         return jsonify(
@@ -322,6 +363,14 @@ def impersonate_tenant_user(tenant_id: int):
 
     # Find the target member: either a specific user_id or the tenant's admin
     target_member = None
+
+    if target_user_id is not None and not isinstance(target_user_id, int):
+        try:
+            target_user_id = int(target_user_id)
+        except (TypeError, ValueError):
+            return jsonify(
+                {"error": "VALIDATION_ERROR", "message": "user_id must be a number"}
+            ), 422
 
     if target_user_id:
         target_user = db.session.get(User, int(target_user_id))
@@ -522,15 +571,21 @@ def _tenant_request_to_dict(req: TenantRequest) -> dict:
 def submit_tenant_request():
     """Submit a request for a new tenant (any authenticated user)."""
     body = request.get_json(silent=True) or {}
-    name = (body.get("name") or "").strip()
-    slug = (body.get("slug") or "").strip()
+    name = _body_text(body, "name")
+    slug = _body_text(body, "slug")
     plan = body.get("plan", "starter")
 
     if not name or not slug:
         raise_error(400, "VALIDATION_ERROR", "name and slug are required")
 
-    if not (3 <= len(slug) <= 64):
-        raise_error(400, "VALIDATION_ERROR", "slug must be between 3 and 64 characters")
+    from hubra.core.tenant.service import slug_problem
+
+    # Checked now, not only when staff approve the request.
+    problem = slug_problem(slug)
+    if problem:
+        raise_error(400, "VALIDATION_ERROR", problem)
+    if len(name) > 255:
+        raise_error(400, "VALIDATION_ERROR", "name is longer than 255 characters")
 
     if plan not in _VALID_PLANS:
         raise_error(
@@ -705,15 +760,15 @@ def add_tenant_member(tenant_id: int):
         raise_error(404, "NOT_FOUND", "Tenant not found")
 
     body = request.get_json(silent=True) or {}
-    email = (body.get("email") or "").strip().lower()
-    user_id_body = body.get("user_id")
+    email = _body_text(body, "email").lower()
+    user_id_body = _body_id(body, "user_id")
 
     if email:
         user = db.session.scalar(select(User).where(User.email == email))
         if user is None:
             raise_error(404, "NOT_FOUND", f"No user found with email {email}")
     elif user_id_body:
-        user = db.session.get(User, int(user_id_body))
+        user = db.session.get(User, user_id_body)
         if user is None:
             raise_error(404, "NOT_FOUND", f"No user found with id {user_id_body}")
     else:
@@ -731,7 +786,7 @@ def _add_user_to_tenant(tenant: Tenant, user: User) -> dict:
     Raises 409 when the user is already a member. Leaves the commit to the
     caller and returns the new member as a dict.
     """
-    from hubra.api.members.services import _default_role
+    from hubra.api.members.services import _default_role, _welcome_back
     from hubra.core.models.member import MembershipTier
     from hubra.core.models.user_tenant import UserTenant
     from hubra.core.tenant.context import reset_search_path, set_search_path
@@ -748,24 +803,29 @@ def _add_user_to_tenant(tenant: Tenant, user: User) -> dict:
 
     try:
         set_search_path(tenant.id)
-        if db.session.scalar(select(Member.id).where(Member.user_id == user.id)):
+        member = db.session.scalar(select(Member).where(Member.user_id == user.id))
+        if member is not None and member.archived_at is None:
             # A Member without the user_tenants link (made before links were
             # kept for every new member): repair the link instead of failing.
             link_user_to_tenant(user.id, tenant.id)
             db.session.commit()
             raise_error(409, "CONFLICT", "User is already a member of this tenant")
 
-        default_role = _default_role()
-        tier = db.session.scalar(select(MembershipTier).limit(1))
+        if member is not None:
+            # Someone who left comes back as the member they were.
+            _welcome_back(member, user.id, None, tenant.id)
+        else:
+            default_role = _default_role()
+            tier = db.session.scalar(select(MembershipTier).limit(1))
 
-        member = Member(
-            tier_id=tier.id if tier else None,
-            user_id=user.id,
-            status="active",
-        )
-        if default_role:
-            member.roles = [default_role]
-        db.session.add(member)
+            member = Member(
+                tier_id=tier.id if tier else None,
+                user_id=user.id,
+                status="active",
+            )
+            if default_role:
+                member.roles = [default_role]
+            db.session.add(member)
         db.session.flush()
 
         # Build the dict while the search_path still points at the club, so
@@ -876,6 +936,7 @@ def club_directory():
             "slug": t.slug,
             "name": t.name,
             "membership": "member" if t.id in linked else _membership_in(t.id, user),
+            "acceptsRequests": accepts_join_requests(t),
         }
         for t in tenants
     ]
@@ -939,6 +1000,7 @@ def club_page(slug: str):
             "membership": _membership_in(tenant.id, user),
             "tiers": _club_tiers(tenant.id),
             "canJoinDirectly": _can_add_members(user),
+            "acceptsRequests": accepts_join_requests(tenant),
         }
     )
 
@@ -962,6 +1024,15 @@ def join_club(slug: str):
     tenant = _active_club(slug)
     club = {"slug": tenant.slug, "name": tenant.name}
 
+    # A club's admins approve the address they see, so it must be confirmed.
+    if email_verification.required(user):
+        db.session.commit()  # required() may have flagged a superadmin
+        raise_error(
+            403,
+            "EMAIL_NOT_VERIFIED",
+            "Confirm your email address before joining a club",
+        )
+
     status = _membership_in(tenant.id, user)
     if status == "member":
         # Members made before every new member got a user_tenants link.
@@ -976,6 +1047,11 @@ def join_club(slug: str):
 
     if status == "pending":
         raise_error(409, "REQUEST_PENDING", "Your request to join this club is pending")
+
+    if not accepts_join_requests(tenant):
+        raise_error(
+            403, "JOIN_REQUESTS_CLOSED", "This club takes new members by invite only"
+        )
 
     wants_tier_id = (request.get_json(silent=True) or {}).get("wantsTierId")
     if wants_tier_id is not None and wants_tier_id not in {
@@ -1344,6 +1420,24 @@ def list_global_roles():
     return jsonify({"roles": result}), 200
 
 
+def _audit_global_role(action: str, target_type: str, target_id, details: dict) -> None:
+    """Record a platform role change (who may run the platform)."""
+    from flask import g
+
+    actor = getattr(g, "system_user", None)
+    db.session.add(
+        GlobalAuditEntry(
+            tenant_id=None,
+            actor_id=getattr(actor, "id", None),
+            action=f"global_role.{action}",
+            target_type=target_type,
+            target_id=str(target_id),
+            details=details,
+            ip_address=request.remote_addr,
+        )
+    )
+
+
 @tenant_admin_bp.route("/global-roles", methods=["POST"])
 @require_global_permission("roles.manage")
 def create_global_role():
@@ -1351,9 +1445,9 @@ def create_global_role():
     from hubra.core.models.global_role import GlobalRole
 
     body = request.get_json(silent=True) or {}
-    name = (body.get("name") or "").strip()
-    description = (body.get("description") or "").strip() or None
-    permission_keys = body.get("permissions") or []
+    name = _body_text(body, "name")
+    description = _body_text(body, "description") or None
+    permission_keys = _body_keys(body, "permissions") or []
 
     if not name:
         raise_error(400, "VALIDATION_ERROR", "name is required")
@@ -1375,6 +1469,9 @@ def create_global_role():
         if perm:
             db.session.add(GlobalRolePermission(role_id=role.id, permission_id=perm.id))
 
+    _audit_global_role(
+        "create", "GlobalRole", role.id, {"name": name, "permissions": permission_keys}
+    )
     db.session.commit()
     return jsonify(
         {
@@ -1404,11 +1501,11 @@ def update_global_role(role_id: int):
         raise_error(404, "NOT_FOUND", "Role not found")
 
     body = request.get_json(silent=True) or {}
-    permission_keys = body.get("permissions")
+    permission_keys = _body_keys(body, "permissions")
     description = body.get("description")
 
     if description is not None:
-        role.description = description.strip() or None
+        role.description = _body_text(body, "description") or None
 
     if permission_keys is not None:
         # Replace all permissions
@@ -1424,6 +1521,12 @@ def update_global_role(role_id: int):
                     GlobalRolePermission(role_id=role.id, permission_id=perm.id)
                 )
 
+    _audit_global_role(
+        "update",
+        "GlobalRole",
+        role.id,
+        {"name": role.name, "permissions": permission_keys},
+    )
     db.session.commit()
     perms = sorted(
         db.session.execute(
@@ -1514,11 +1617,11 @@ def assign_user_global_role(user_id: int):
         raise_error(404, "NOT_FOUND", "User not found")
 
     body = request.get_json(silent=True) or {}
-    role_id = body.get("role_id")
+    role_id = _body_id(body, "role_id")
     if not role_id:
         raise_error(400, "VALIDATION_ERROR", "role_id is required")
 
-    role = db.session.get(GlobalRole, int(role_id))
+    role = db.session.get(GlobalRole, role_id)
     if role is None:
         raise_error(404, "NOT_FOUND", "Role not found")
 
@@ -1532,6 +1635,9 @@ def assign_user_global_role(user_id: int):
         raise_error(409, "CONFLICT", "User already has this role")
 
     db.session.add(UserGlobalRole(user_id=user_id, role_id=role.id))
+    _audit_global_role(
+        "assign", "User", user_id, {"email": user.email, "role": role.name}
+    )
     db.session.commit()
     return jsonify(
         {"user_id": user_id, "role_id": role.id, "role_name": role.name}
@@ -1554,6 +1660,7 @@ def remove_user_global_role(user_id: int, role_id: int):
         raise_error(404, "NOT_FOUND", "Role assignment not found")
 
     db.session.delete(link)
+    _audit_global_role("remove", "User", user_id, {"role_id": role_id})
     db.session.commit()
     return jsonify({"ok": True}), 200
 
@@ -1577,27 +1684,47 @@ def search_users():
 # ── Platform audit log ──────────────────────────────────────────────────────
 
 
+def _page_args() -> tuple[int, int]:
+    """``page`` (from 1) and ``per_page`` (1–100) from the query string;
+    anything that is not a number falls back to the default."""
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+    except ValueError:
+        page = 1
+    try:
+        per_page = min(max(1, int(request.args.get("per_page", 25))), 100)
+    except ValueError:
+        per_page = 25
+    return page, per_page
+
+
 @tenant_admin_bp.route("/audit", methods=["GET"])
 @require_global_permission("audit.read")
 def list_global_audit():
     """List platform-wide audit entries with pagination and filters."""
-    page = int(request.args.get("page", 1))
-    per_page = min(int(request.args.get("per_page", 25)), 100)
+    page, per_page = _page_args()
 
-    query = select(GlobalAuditEntry).order_by(GlobalAuditEntry.time.desc())
+    query = select(GlobalAuditEntry).order_by(
+        GlobalAuditEntry.time.desc(), GlobalAuditEntry.id.desc()
+    )
 
     tenant_id = request.args.get("tenant_id")
     if tenant_id:
+        if not tenant_id.isdigit():
+            raise_error(400, "VALIDATION_ERROR", "tenant_id must be a number")
         query = query.where(GlobalAuditEntry.tenant_id == int(tenant_id))
 
     action = request.args.get("action")
     if action:
-        query = query.where(GlobalAuditEntry.action.ilike(f"%{action}%"))
+        from hubra.api.utils import escape_like
 
-    total = db.session.scalar(
-        select(func.count()).select_from(
-            select(GlobalAuditEntry.id).order_by(None).subquery()
+        query = query.where(
+            GlobalAuditEntry.action.ilike(f"%{escape_like(action)}%", escape="\\")
         )
+
+    # Count what the filters leave, not the whole table.
+    total = db.session.scalar(
+        select(func.count()).select_from(query.order_by(None).subquery())
     )
     entries = list(
         db.session.scalars(query.offset((page - 1) * per_page).limit(per_page)).all()
@@ -1646,16 +1773,17 @@ def platform_metrics():
 @require_global_permission("users.read")
 def list_users():
     """List all users with pagination and search."""
-    page = int(request.args.get("page", 1))
-    per_page = min(int(request.args.get("per_page", 25)), 100)
+    page, per_page = _page_args()
     search = (request.args.get("search") or "").strip().lower()
 
     query = select(User).order_by(User.id.desc())
     if search:
-        query = query.where(User.email.ilike(f"%{search}%"))
+        from hubra.api.utils import escape_like
+
+        query = query.where(User.email.ilike(f"%{escape_like(search)}%", escape="\\"))
 
     total = db.session.scalar(
-        select(func.count()).select_from(select(User.id).order_by(None).subquery())
+        select(func.count()).select_from(query.order_by(None).subquery())
     )
     users = list(
         db.session.scalars(query.offset((page - 1) * per_page).limit(per_page)).all()

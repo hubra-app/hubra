@@ -367,7 +367,11 @@ def remind_invoice(id: int):
         raise
 
     result = InvoiceService.dispatch_reminder(invoice, member.id)
-    db.session.commit()
+    db.session.commit()  # keeps the failed attempt in the reminder history
+    if not result["ok"]:
+        return api_error(
+            "REMINDER_NOT_SENT", f"Reminder not sent: {result['message']}", 409
+        )
     return jsonify(result), 200
 
 
@@ -388,25 +392,32 @@ def list_my_invoices():
     ), 200
 
 
+def _reads_invoices(member) -> bool:
+    """A role with invoices:read (a treasurer) sees every member's invoice."""
+    from hubra.api.permissions import _get_member_permission_keys
+
+    return "finance.invoices.read" in _get_member_permission_keys(member)
+
+
 @finance_bp.get("/invoices/<int:id>/qr-bill.pdf")
 @require_member
 def download_invoice_pdf(id: int):
     """Download a QR-bill invoice PDF for the given invoice.
 
     Access rules:
-      - Member invoices: the owning member or any admin.
+      - Member invoices: the owning member, an admin or a role with
+        invoices:read.
       - External-party invoices: admin only (no member owner).
     """
-    from flask_jwt_extended import current_user
-
     invoice = InvoiceService.get(id)
-    member = current_user
+    # 403 for a sign-in that is not a member of this club.
+    member = get_current_member()
 
     is_admin = any(r.is_admin for r in (member.roles or []))
 
     if invoice.member_id is not None:
         is_owner = invoice.member_id == member.id
-        if not is_owner and not is_admin:
+        if not is_owner and not (is_admin or _reads_invoices(member)):
             from hubra.core.errors import raise_error as _raise
 
             _raise(403, "FORBIDDEN", "You do not have access to this invoice")

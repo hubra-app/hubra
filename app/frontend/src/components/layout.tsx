@@ -125,6 +125,13 @@ export function Pagination(props: ComponentProps<typeof SharedPagination>) {
       rangeLabel={(start, end, total) =>
         t('common.rangeOf', '{{start}}–{{end}} von {{total}}', { start, end, total })
       }
+      labels={{
+        perPage: t('common.perPage', 'Einträge pro Seite'),
+        first: t('common.pageFirst', 'Erste Seite'),
+        previous: t('common.pagePrevious', 'Vorherige Seite'),
+        next: t('common.pageNext', 'Nächste Seite'),
+        last: t('common.pageLast', 'Letzte Seite'),
+      }}
       {...props}
     />
   )

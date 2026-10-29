@@ -41,13 +41,17 @@ export function Toggle({
   checked,
   onChange,
   disabled,
+  label,
 }: {
   checked: boolean
   onChange: (v: boolean) => void
   disabled?: boolean
+  /** What the switch turns on, for screen readers (the visible text sits beside it). */
+  label?: string
 }) {
   return (
     <Switch
+      aria-label={label}
       checked={checked}
       onChange={(e) => onChange(e.currentTarget.checked)}
       disabled={disabled}

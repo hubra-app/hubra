@@ -2,7 +2,7 @@ import { EVENT_TYPE_COLORS } from '@/constants'
 import { useState } from 'react'
 import { Button, Group, TextInput, Select, Badge } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useT, zmsg } from '@/locales/i18n'
 import i18n from 'i18next'
@@ -22,6 +22,7 @@ import {
   ConfirmModal,
   DataTable,
   ActionButtons,
+  useSubmitOnce,
 } from '@/components/ui'
 import type { ClubEvent } from '@/types'
 import { createEvent, updateEvent, deleteEvent } from '@/api/events'
@@ -71,7 +72,7 @@ export function EventsTab() {
   const [editTarget, setEditTarget] = useState<ClubEvent | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ClubEvent | null>(null)
   const form = useForm<EventForm>({
-    validate: zodResolver(eventSchema),
+    validate: zod4Resolver(eventSchema),
     initialValues: {
       title: '',
       date: new Date().toISOString().slice(0, 10),
@@ -140,6 +141,7 @@ export function EventsTab() {
       )
     }
   }
+  const [submitAdd, adding] = useSubmitOnce(saveAdd)
 
   const saveEdit = async (data: EventForm) => {
     if (!editTarget) return
@@ -379,6 +381,7 @@ export function EventsTab() {
                   <Button
                     size="sm"
                     variant={joined ? 'default' : 'filled'}
+                    disabled={joinEventMutation.isPending}
                     onClick={() =>
                       joinEventMutation.mutate({
                         eventId: ev.id,
@@ -428,7 +431,7 @@ export function EventsTab() {
         getRowKey={(ev) => ev.id}
       />
       <Modal
-        onSubmit={form.onSubmit(saveAdd)}
+        onSubmit={form.onSubmit(submitAdd)}
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={t('events.addEvent')}
@@ -437,7 +440,7 @@ export function EventsTab() {
             <Button variant="default" onClick={() => setAddOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="filled" type="submit">
+            <Button variant="filled" type="submit" loading={adding}>
               {t('events.createEvent', 'Anlass erstellen')}
             </Button>
           </>

@@ -8,6 +8,13 @@ export function Pagination(props: ComponentProps<typeof SharedPagination>) {
   return (
     <SharedPagination
       rangeLabel={(start, end, total) => `${start}–${end} ${tr('von', 'of')} ${total}`}
+      labels={{
+        perPage: tr('Einträge pro Seite', 'Rows per page'),
+        first: tr('Erste Seite', 'First page'),
+        previous: tr('Vorherige Seite', 'Previous page'),
+        next: tr('Nächste Seite', 'Next page'),
+        last: tr('Letzte Seite', 'Last page'),
+      }}
       {...props}
     />
   )

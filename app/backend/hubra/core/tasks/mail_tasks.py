@@ -158,19 +158,37 @@ def cleanup_token_blocklist(self) -> dict:
     Runs daily (Celery Beat at 03:00 UTC). Tokens older than 30 days are safe
     to remove — no valid JWT can have a lifetime that long.
 
+    The blocklist is also a club table (a sign-out in a club records it
+    there), so every club's is cleaned too.
+
     Returns a summary dict: {deleted}.
     """
-    from sqlalchemy import delete
+    from sqlalchemy import delete, select
 
     from hubra.core.extensions import db
+    from hubra.core.models.tenant import Tenant
     from hubra.core.models.token import TokenBlocklist
+    from hubra.core.tenant.context import reset_search_path, set_search_path
 
     cutoff = datetime.now(timezone.utc) - timedelta(days=30)
-    result = db.session.execute(
-        delete(TokenBlocklist).where(TokenBlocklist.created_at < cutoff)
-    )
-    db.session.commit()
-    deleted = result.rowcount  # type: ignore[attr-defined]
+
+    def _clean() -> int:
+        result = db.session.execute(
+            delete(TokenBlocklist).where(TokenBlocklist.created_at < cutoff)
+        )
+        db.session.commit()
+        return result.rowcount  # type: ignore[attr-defined]
+
+    deleted = _clean()
+    for tenant_id in db.session.scalars(select(Tenant.id)).all():
+        try:
+            set_search_path(tenant_id)
+            deleted += _clean()
+        except Exception:
+            db.session.rollback()
+            logger.exception("token blocklist cleanup failed for tenant %s", tenant_id)
+        finally:
+            reset_search_path()
     logger.info("cleanup_token_blocklist: deleted %d expired tokens", deleted)
     return {"deleted": deleted}
 
@@ -217,9 +235,12 @@ def _verify_protected_mail_addresses() -> dict:
     verified = 0
     re_provisioned = 0
     errors = 0
+    # Queued after the commit: a worker that starts first would still see
+    # the old WildDuck ids and do nothing.
+    queued: list = []
 
-    try:
-        for addr in protected_addrs:
+    for addr in protected_addrs:
+        try:
             if addr.address_type == "alias" and addr.wildduck_id:
                 try:
                     wd.get_address(addr.wildduck_id)
@@ -235,7 +256,7 @@ def _verify_protected_mail_addresses() -> dict:
                     )
                     addr.wildduck_id = None
                     addr.provisioning_status = "pending"
-                    sync_managed_address.delay(addr.id)
+                    queued.append((sync_managed_address, addr.id))
                     log_audit(
                         actor_id=None,
                         action="mail_stale_id_detected",
@@ -262,7 +283,7 @@ def _verify_protected_mail_addresses() -> dict:
                     addr.wildduck_filter_id = None
                     addr.provisioning_status = "pending"
                     if addr.owner_type == "member":
-                        provision_member_mail.delay(addr.owner_id)
+                        queued.append((provision_member_mail, addr.owner_id))
                     log_audit(
                         actor_id=None,
                         action="mail_stale_id_detected",
@@ -271,18 +292,20 @@ def _verify_protected_mail_addresses() -> dict:
                         target_label=addr.address,
                     )
                     re_provisioned += 1
-
-    except Exception:
-        logger.warning(
-            "verify_protected: error checking %s", addr.address, exc_info=True
-        )
-        errors += 1
+        except Exception:
+            # One address must not stop the check of the others.
+            logger.warning(
+                "verify_protected: error checking %s", addr.address, exc_info=True
+            )
+            errors += 1
 
     try:
         db.session.commit()
     except Exception:
         db.session.rollback()
         raise
+    for task, arg in queued:
+        task.delay(arg)
 
     logger.info(
         "verify_protected_mail_addresses: verified=%d, re_provisioned=%d, errors=%d",
@@ -462,7 +485,7 @@ def _reconcile_mail() -> dict:
         # WildDuck is shared by every club: a mailbox is an orphan only when
         # no club manages it, not just this one.
         db.session.flush()
-        known_user_ids = set(managed_index())
+        known_user_ids = set(managed_index(every_club=True))
         # Walk WildDuck users and remove unmanaged ones
         try:
             page = 1
@@ -572,7 +595,7 @@ def _check_mailbox_quota() -> dict:
         return {"checked": 0, "alerts_sent": 0, "errors": 0}
 
     cooldown = timedelta(hours=24)
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = datetime.now(timezone.utc)
     ninety_pct = 0.9
 
     addrs = list(
@@ -598,7 +621,11 @@ def _check_mailbox_quota() -> dict:
                 continue
 
             # Cooldown check
-            if mma.last_quota_alert_at and (now - mma.last_quota_alert_at) < cooldown:
+            # Postgres gives an aware datetime back, SQLite a naive UTC one.
+            last_alert = mma.last_quota_alert_at
+            if last_alert is not None and last_alert.tzinfo is None:
+                last_alert = last_alert.replace(tzinfo=timezone.utc)
+            if last_alert and (now - last_alert) < cooldown:
                 continue
 
             # Determine recipient(s)
@@ -698,7 +725,7 @@ def _create_missing_mmas() -> int:
     created = 0
     for owner_type, ids_query, create in owners:
         for owner_id in db.session.scalars(ids_query).all():
-            if (owner_type, owner_id) not in existing:
-                create(owner_id)
+            # None when the club has no mail domain yet.
+            if (owner_type, owner_id) not in existing and create(owner_id):
                 created += 1
     return created

@@ -1,7 +1,7 @@
 import { Badge, Button, Group, Text, UnstyledButton } from "@mantine/core";
 import { EVENT_TYPE_COLORS } from "@/constants";
 import { useT } from "@/locales/i18n";
-import { useNav } from "@/context/AppContext";
+import { useNav, useAuth } from "@/context/AppContext";
 import { useDashboardSummary, useEvents, useMyVotes, usePolls } from "@/data/lists";
 import { StatTile, Card, StatGrid, Avatar } from "@/components/ui";
 import { formatCHFCompact } from "@/format";
@@ -15,9 +15,14 @@ export function GlobalOverviewScreen() {
   const { t, i18n } = useT();
   const { go } = useNav();
   const myVotes = useMyVotes();
+  const { hasPermission } = useAuth();
+  const canCreateEvent = hasPermission("events.events.create");
+  const canAddMember = hasPermission("members.members.create");
   const { data: summary, isLoading: summaryLoading, isError: summaryError } = useDashboardSummary();
   const { events } = useEvents();
   const { polls } = usePolls();
+  // The server leaves out club money totals for members without finance access.
+  const showMoney = summary?.stats.netMonth !== null;
 
   const today = new Date();
 
@@ -34,14 +39,23 @@ export function GlobalOverviewScreen() {
 
   return (
     <div>
-      <Group justify="flex-end" mb="md" className="page-actions">
-        <Button variant="default" onClick={() => go("/app/operations/events")}>
-          {t("dashboard.buttons.newEvent")}
-        </Button>
-        <Button variant="filled" onClick={() => go("/app/members")}>
-          {t("common.addMember")}
-        </Button>
-      </Group>
+      {(canCreateEvent || canAddMember) && (
+        <Group justify="flex-end" mb="md" className="page-actions">
+          {canCreateEvent && (
+            <Button
+              variant="default"
+              onClick={() => go("/app/operations/events")}
+            >
+              {t("dashboard.buttons.newEvent")}
+            </Button>
+          )}
+          {canAddMember && (
+            <Button variant="filled" onClick={() => go("/app/members")}>
+              {t("common.addMember")}
+            </Button>
+          )}
+        </Group>
+      )}
 
       {summaryError && (
         <Card style={{ marginBottom: 16, borderColor: "red" }}>
@@ -147,7 +161,7 @@ export function GlobalOverviewScreen() {
         </Card>
       )}
 
-      <StatGrid columns={4}>
+      <StatGrid columns={showMoney ? 4 : 2}>
         <StatTile
           label={t("dashboard.activeMembers")}
           value={
@@ -155,33 +169,41 @@ export function GlobalOverviewScreen() {
           }
           sub={
             summary?.stats
-              ? `+${summary.stats.memberDelta} ${t(
-                  "dashboard.thisMonth",
-                ).toLowerCase()}`
+              ? t("dashboard.joinedLast30", {
+                  count: summary.stats.memberDelta,
+                })
               : t("common.loading", 'Wird geladen …')
           }
           onClick={() => go("/app/members")}
         />
-        <StatTile
-          label={t("dashboard.netThisMonth")}
-          value={summary?.stats ? fmtNet(summary.stats.netMonth) : "\u2014"}
-          sub={t("dashboard.incomeMinusExpenses")}
-          accent="#1f9d57"
-          onClick={() => go("/app/finance")}
-        />
-        <StatTile
-          label={t("common.openInvoices")}
-          value={summary?.stats ? String(summary.stats.openInvoices) : "\u2014"}
-          sub={
-            summary?.stats && summary.stats.openInvoices > 0
-              ? t("dashboard.outstanding", {
-                  count: summary.stats.openInvoices,
-                })
-              : t("dashboard.allPaid")
-          }
-          accent="#6131c4"
-          onClick={() => go("/app/finance/invoices")}
-        />
+        {showMoney && (
+          <>
+            <StatTile
+              label={t("dashboard.netThisMonth")}
+              value={
+                summary?.stats ? fmtNet(summary.stats.netMonth ?? 0) : "\u2014"
+              }
+              sub={t("dashboard.incomeMinusExpenses")}
+              accent="#1f9d57"
+              onClick={() => go("/app/finance")}
+            />
+            <StatTile
+              label={t("common.openInvoices")}
+              value={
+                summary?.stats ? String(summary.stats.openInvoices) : "\u2014"
+              }
+              sub={
+                summary?.stats && (summary.stats.openInvoices ?? 0) > 0
+                  ? t("dashboard.outstanding", {
+                      count: summary.stats.openInvoices,
+                    })
+                  : t("dashboard.allPaid")
+              }
+              accent="#6131c4"
+              onClick={() => go("/app/finance/invoices")}
+            />
+          </>
+        )}
         <StatTile
           label={t("dashboard.upcomingEventsLabel")}
           value={
@@ -384,10 +406,10 @@ export function GlobalOverviewScreen() {
                       {post.author_name ?? t("account.unknownAuthor")}
                       {" \u00b7 "}
                       {post.like_count}{" "}
-                      {t("events.likes", 'Likes').toLowerCase()}
+                      {t("events.likes", 'Likes')}
                       {" \u00b7 "}
                       {post.comment_count}{" "}
-                      {t("events.comments", 'Kommentare').toLowerCase()}
+                      {t("events.comments", 'Kommentare')}
                     </div>
                   </div>
                 </UnstyledButton>

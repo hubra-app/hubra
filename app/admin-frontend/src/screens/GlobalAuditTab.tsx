@@ -30,6 +30,10 @@ export function GlobalAuditTab() {
       'platform.settings.update': 'Plattform-Einstellungen geändert',
       'impersonation.start': 'Als Admin geöffnet',
       'impersonation.end': 'Admin-Ansicht beendet',
+      'global_role.create': 'Plattform-Rolle erstellt',
+      'global_role.update': 'Plattform-Rolle geändert',
+      'global_role.assign': 'Plattform-Rolle vergeben',
+      'global_role.remove': 'Plattform-Rolle entzogen',
     }
     return de[action] ? tr(de[action], action) : action
   }

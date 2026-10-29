@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState, useCallback } from 'react'
 import { Button, Group, Loader, TextInput, Paper } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useMutation } from '@tanstack/react-query'
 import { useT, zmsg } from '@/locales/i18n'
@@ -23,6 +23,7 @@ import {
   Pagination,
   ConfirmModal,
   ActionButtons,
+  useSubmitOnce,
 } from '@/components/ui'
 import { MarkdownRenderer } from '@/components/MarkdownRenderer'
 import type { Post, PostComment } from '@/types'
@@ -79,7 +80,7 @@ export function PostsTab() {
   const pg = usePagination(posts, 10)
 
   const form = useForm<PostForm>({
-    validate: zodResolver(postSchema),
+    validate: zod4Resolver(postSchema),
     initialValues: { title: '', summary: '', body: '' },
   })
 
@@ -123,6 +124,7 @@ export function PostsTab() {
       )
     }
   }
+  const [submitAdd, adding] = useSubmitOnce(saveAdd)
 
   const saveEdit = async (data: PostForm) => {
     if (!editTarget) return
@@ -619,7 +621,7 @@ export function PostsTab() {
       </Paper>
 
       <Modal
-        onSubmit={form.onSubmit(saveAdd)}
+        onSubmit={form.onSubmit(submitAdd)}
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={t('posts.newPost', 'Neuer Beitrag')}
@@ -628,7 +630,7 @@ export function PostsTab() {
             <Button variant="default" onClick={() => setAddOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="filled" type="submit">
+            <Button variant="filled" type="submit" loading={adding}>
               {t('posts.publish', 'Veröffentlichen')}
             </Button>
           </>

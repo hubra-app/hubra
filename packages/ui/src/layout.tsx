@@ -178,6 +178,7 @@ export function Pagination({
   setPerPage,
   top,
   rangeLabel = (start, end, total) => `${start}–${end} von ${total}`,
+  labels = {},
 }: {
   page: number
   perPage: number
@@ -188,7 +189,17 @@ export function Pagination({
   top?: boolean
   /** The "1–25 of 80" text; German unless the app passes its own. */
   rangeLabel?: (start: number, end: number, total: number) => ReactNode
+  /** Screen-reader names of the controls; German unless the app passes its own. */
+  labels?: Partial<Record<'perPage' | 'first' | 'previous' | 'next' | 'last', string>>
 }) {
+  const names = {
+    perPage: 'Einträge pro Seite',
+    first: 'Erste Seite',
+    previous: 'Vorherige Seite',
+    next: 'Nächste Seite',
+    last: 'Letzte Seite',
+    ...labels,
+  }
   if (total === 0) return null
   const start = (page - 1) * perPage + 1
   const end = Math.min(page * perPage, total)
@@ -216,6 +227,7 @@ export function Pagination({
             label: String(n),
           }))}
         style={{ width: 80 }}
+        aria-label={names.perPage}
       />
       <Text size="sm" c="dimmed" flex={1}>
         {rangeLabel(start, end, total)}
@@ -227,6 +239,7 @@ export function Pagination({
         size="sm"
         withEdges
         boundaries={1}
+        getControlProps={(control) => ({ 'aria-label': names[control] })}
       />
     </Group>
   )

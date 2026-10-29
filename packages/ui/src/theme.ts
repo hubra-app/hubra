@@ -56,7 +56,8 @@ export const theme = createTheme({
       '#f4f2f9',
       '#ebe8f2',
       '#dfdbe9',
-      '#8c86a0',
+      // Muted text: 4.6:1 on white and on the light greys (WCAG AA).
+      '#706a85',
       '#5e5873',
       '#5e5873',
       '#2e2940',

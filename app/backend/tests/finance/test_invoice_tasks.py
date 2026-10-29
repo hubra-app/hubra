@@ -104,6 +104,68 @@ def test_generate_invoices_is_idempotent(app, billable_tier_db):
         assert count == 1
 
 
+def test_generate_invoices_skips_a_period_already_paid(app, billable_tier_db):
+    """The task runs every day: a member who paid this period's invoice is
+    not billed again the next morning."""
+    from hubra.core.tasks.finance_tasks import generate_invoices_task
+    from hubra.core.models.finance import Invoice
+    from hubra.core.extensions import db
+
+    member_id = billable_tier_db["member_billed"].id
+    with app.app_context():
+        with patch("hubra.core.tasks.email_tasks.send_email_task.delay"):
+            generate_invoices_task.run()
+            invoice = db.session.scalars(
+                select(Invoice).where(Invoice.member_id == member_id)
+            ).one()
+            for status in ("Paid", "Overdue"):
+                invoice.status = status
+                db.session.commit()
+                assert generate_invoices_task.run()["created"] == 0
+
+        assert (
+            len(
+                db.session.scalars(
+                    select(Invoice).where(Invoice.member_id == member_id)
+                ).all()
+            )
+            == 1
+        )
+
+
+def test_generate_invoices_ignores_other_open_invoices(app, billable_tier_db):
+    """An open invoice for something else (an event, a key deposit) does not
+    stand in for the membership fee."""
+    from datetime import date
+
+    from hubra.core.tasks.finance_tasks import generate_invoices_task
+    from hubra.core.models.finance import Invoice
+    from hubra.core.extensions import db
+
+    member_id = billable_tier_db["member_billed"].id
+    with app.app_context():
+        db.session.add(
+            Invoice(
+                member_id=member_id,
+                issued=date.today(),
+                due=date.today() + timedelta(days=30),
+                amount=20,
+                status="Open",
+                purpose="other",
+                description="Workshop",
+            )
+        )
+        db.session.commit()
+        with patch("hubra.core.tasks.email_tasks.send_email_task.delay"):
+            generate_invoices_task.run()
+        purposes = sorted(
+            db.session.scalars(
+                select(Invoice.purpose).where(Invoice.member_id == member_id)
+            ).all()
+        )
+        assert purposes == ["membership", "other"]
+
+
 def test_generate_invoices_email_args_are_json_serialisable(app, billable_tier_db):
     """The QR-bill PDF travels through Celery's JSON serializer as base64."""
     import base64
@@ -124,3 +186,38 @@ def test_generate_invoices_email_args_are_json_serialisable(app, billable_tier_d
         kwargs = delay.call_args.kwargs
         json.dumps(kwargs)
         assert base64.b64decode(kwargs["attachments"][0]["content"]) == b"%PDF-1.7 test"
+
+
+def test_generated_invoice_mail_has_subject_and_bodies_in_place(app, billable_tier_db):
+    from hubra.core.tasks.finance_tasks import generate_invoices_task
+
+    with app.app_context():
+        with patch("hubra.core.tasks.email_tasks.send_email_task.delay") as delay:
+            generate_invoices_task.run()
+
+        kwargs = delay.call_args.kwargs
+        assert "<" not in kwargs["subject"] and "\n" not in kwargs["subject"]
+        assert "<html" in kwargs["body_html"].lower()
+        assert "<html" not in kwargs["body_text"].lower()
+        assert kwargs["body_text"] != kwargs["subject"]
+
+
+def test_bulk_invoices_leave_out_inactive_members(app, billable_tier_db):
+    from sqlalchemy import select
+
+    from hubra.api.finance.services import InvoicesService
+    from hubra.core.extensions import db
+    from hubra.core.models.finance import Invoice
+
+    with app.app_context():
+        member = billable_tier_db["member_billed"]
+        member.status = "inactive"
+        db.session.commit()
+        try:
+            InvoicesService.bulk_create({"due": "2099-01-31"}, actor_id=member.id)
+        except Exception:
+            db.session.rollback()  # "no active members" is fine too
+        billed = db.session.scalars(
+            select(Invoice).where(Invoice.member_id == member.id)
+        ).all()
+        assert billed == []

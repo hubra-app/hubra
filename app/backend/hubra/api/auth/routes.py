@@ -40,6 +40,7 @@ from hubra.api.permissions import (
     require_password_changed,
     _get_member_permission_keys,
     member_is_admin,
+    refuse_during_impersonation,
 )
 from hubra.core.errors import ApiError, api_error, raise_error
 from hubra.core.extensions import db, limiter
@@ -57,6 +58,7 @@ from hubra.core.services import email as email_svc
 from hubra.core.services import account as account_svc
 from hubra.core.services import email_verification
 from hubra.core.services.email import _get_sso_base_url
+from hubra.api.auth.account_guard import club_member_only
 from hubra.api.notifications.services import create_notification
 from hubra.core.tenant.context import current_tenant
 
@@ -69,6 +71,9 @@ _DUMMY_HASH = _ph.hash("timing-dummy-value")
 
 auth_bp = Blueprint("auth_bp", __name__)
 account_bp = Blueprint("account_bp", __name__)
+
+# Account routes on one club's data refuse a sign-in without that club.
+account_bp.before_request(club_member_only)
 
 _member_schema = MemberSchema()
 _invoice_schema = InvoiceSchema()
@@ -191,7 +196,7 @@ def _token_still_valid(user: User | None, jwt_data: dict) -> bool:
 @limiter.limit("5 per minute")
 def login():
     body = request.get_json(silent=True) or {}
-    email = body.get("email", "").strip().lower()
+    email = str(body.get("email") or "").strip().lower()
     password = body.get("password", "")
     keep_signed_in = bool(body.get("keepSignedIn", True))
 
@@ -257,6 +262,20 @@ def login():
         set_refresh_cookies(response, refresh_token, max_age=refresh_max_age)
         _set_remembered_email_cookie(response, email)
         return response
+
+    # The same gate as /auth/switch-tenant: no club opens before the address
+    # is confirmed (otherwise signing in with X-Tenant-Slug skips it).
+    if (
+        current_tenant() is not None
+        and user is not None
+        and email_verification.required(user)
+    ):
+        db.session.commit()  # required() may have flagged a superadmin
+        raise_error(
+            403,
+            "EMAIL_NOT_VERIFIED",
+            "Confirm your email address before opening a club",
+        )
 
     raw_ua = request.headers.get("User-Agent", "")[:512]
     fp = compute_fingerprint(request.headers)
@@ -532,7 +551,7 @@ def switch_tenant():
     target tenant via UserTenant, then reissues JWTs scoped to that tenant.
     """
     body = request.get_json(silent=True) or {}
-    target_slug = body.get("tenantSlug", "").strip()
+    target_slug = str(body.get("tenantSlug") or "").strip()
     if not target_slug:
         return api_error("VALIDATION_ERROR", "tenantSlug is required", 400)
 
@@ -546,6 +565,10 @@ def switch_tenant():
     tenant = db.session.scalar(select(Tenant).where(Tenant.slug == target_slug))
     if tenant is None:
         return api_error("NOT_FOUND", "Tenant not found", 404)
+    if tenant.status != "active":
+        # Every request in it would fail as signed out, and the club app
+        # would send the person back to sign in, round and round.
+        return api_error("CLUB_INACTIVE", "This club is not active", 403)
 
     # Verification happens on the SSO portal after sign-in; no club opens
     # before it is done.
@@ -628,7 +651,7 @@ def switch_tenant():
 @limiter.limit("3 per hour")
 def forgot_password():
     body = request.get_json(silent=True) or {}
-    email = body.get("email", "").strip().lower()
+    email = str(body.get("email") or "").strip().lower()
 
     if not email:
         return jsonify({"ok": True}), 200
@@ -666,8 +689,10 @@ def forgot_password():
 @limiter.limit("10 per minute")
 def reset_password():
     body = request.get_json(silent=True) or {}
-    raw_token = body.get("token", "").strip()
+    raw_token = str(body.get("token") or "").strip()
     new_password = body.get("password", "")
+    if not isinstance(new_password, str):
+        return api_error("VALIDATION_ERROR", "password must be text", 400)
 
     user = AuthService.reset_password(raw_token, new_password)
 
@@ -702,7 +727,11 @@ def get_account():
                 "user": {"email": current_user.email, "name": current_user.name},
             }
         ), 200
-    return jsonify(_member_schema.dump(current_user)), 200
+    body = _member_schema.dump(current_user)
+    # The club this token is for: the club app calls /auth/switch-tenant
+    # only when it is not the club in the URL.
+    body["tenantSlug"] = get_jwt().get("tenant_slug")
+    return jsonify(body), 200
 
 
 # ── GET /account/permissions ─────────────────────────────────────────────────
@@ -1106,6 +1135,7 @@ def list_account_sessions():
 @account_bp.delete("/sessions/<int:session_id>")
 @jwt_required()
 def revoke_account_session(session_id: int):
+    refuse_during_impersonation()
     member = current_user  # type: Member
     session = session_service.revoke_session(session_id, member.id)
     if session is None:
@@ -1153,6 +1183,7 @@ def rename_account_session(session_id: int):
 @account_bp.post("/sessions/revoke-all")
 @jwt_required()
 def revoke_all_other_sessions():
+    refuse_during_impersonation()
     member = current_user  # type: Member
     current_sid = get_jwt().get("sid")
     body = request.get_json(silent=True) or {}
@@ -1161,7 +1192,10 @@ def revoke_all_other_sessions():
     if include_current:
         count = session_service.revoke_all_including_current(member.id)
     else:
-        count = session_service.revoke_all_other_sessions(member.id, int(current_sid))
+        # A token without a tracked session keeps none of them.
+        count = session_service.revoke_all_other_sessions(
+            member.id, int(current_sid) if current_sid else 0
+        )
 
     db.session.commit()
     return jsonify({"ok": True, "revoked": count}), 200
@@ -1202,6 +1236,7 @@ def rename_account_device(device_id: int):
 @account_bp.delete("/devices/<int:device_id>")
 @jwt_required()
 def revoke_account_device(device_id: int):
+    refuse_during_impersonation()
     member = current_user  # type: Member
     count = session_service.revoke_device_sessions(device_id, member.id)
     if count == 0:
@@ -1312,6 +1347,7 @@ def list_all_sessions():
 @account_bp.delete("/all-sessions/<slug>/<int:session_id>")
 @jwt_required()
 def revoke_club_session(slug: str, session_id: int):
+    refuse_during_impersonation()
     user = _signed_in_user()
     with account_svc.as_member_of(user.id, slug) as member:
         session = session_service.revoke_session(session_id, member.id)
@@ -1325,6 +1361,7 @@ def revoke_club_session(slug: str, session_id: int):
 @jwt_required()
 def revoke_sessions_everywhere():
     """Sign out everywhere except this browser."""
+    refuse_during_impersonation()
     user = _signed_in_user()
     current_slug, current_sid = _current_session_key()
     count = 0

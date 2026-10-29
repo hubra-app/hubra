@@ -1,6 +1,6 @@
 """Polls: member polls and votes."""
 
-from hubra.core.modules import Blueprint, Module, NavItem
+from hubra.core.modules import Blueprint, Module, NavItem, SettingField
 
 module = Module(
     code="polls",
@@ -13,6 +13,15 @@ module = Module(
             "hubra.api.polls.routes",
             "polls_bp",
             "/api/v1/polls",
+        ),
+    ),
+    settings=(
+        SettingField(
+            "notify_members",
+            "bool",
+            default=True,
+            label="Notify members about new polls",
+            description="An in-app notification for every member when a poll is published",
         ),
     ),
     nav=(

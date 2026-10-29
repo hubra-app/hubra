@@ -239,3 +239,31 @@ def test_the_anonymous_application_form_is_gone(client, db):
         json={"first_name": "A", "last_name": "B", "email": "anon@test.ch"},
     )
     assert resp.status_code in (401, 403, 404, 405)
+
+
+def test_invite_only_club_refuses_join_requests(client, db):
+    club = _club(db, "invite-only", "Invite Only")
+    club.settings = {"branding": {"join_requests_open": False}}
+    db.session.commit()
+    _signup(client, "hopeful@test.ch")
+
+    page = client.get("/api/v1/system/clubs/invite-only").get_json()
+    assert page["acceptsRequests"] is False
+    listing = client.get("/api/v1/system/clubs?search=invite").get_json()
+    assert listing["clubs"][0]["acceptsRequests"] is False
+
+    resp = client.post("/api/v1/system/clubs/invite-only/join")
+    assert resp.status_code == 403
+    assert resp.get_json()["error"] == "JOIN_REQUESTS_CLOSED"
+    assert (
+        db.session.scalar(
+            select(Application).where(Application.email == "hopeful@test.ch")
+        )
+        is None
+    )
+
+
+def test_clubs_accept_join_requests_by_default(client, db):
+    _club(db, "open-door", "Open Door")
+    _signup(client, "welcome@test.ch")
+    assert client.get("/api/v1/system/clubs/open-door").get_json()["acceptsRequests"]

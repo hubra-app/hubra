@@ -55,6 +55,11 @@ _binding_update_schema = BindingUpdateSchema()
 _binding_toggle_schema = BindingToggleSchema()
 
 
+def _bad_source_id(binding_type: str, source_id) -> bool:
+    """Every source but a setting is a row id."""
+    return binding_type != "setting" and not str(source_id).isdigit()
+
+
 # ── GET /bindings/keys ────────────────────────────────────────────────────────
 
 
@@ -98,6 +103,7 @@ def create_key():
         raise
 
     log_audit(get_current_member().id, "create", "internal_key", ik.id, ik.key)
+    db.session.commit()
 
     return jsonify(serialize_key(ik)), 201
 
@@ -149,6 +155,7 @@ def update_key(key_id: int):
         raise
 
     log_audit(get_current_member().id, "update", "internal_key", key_id, ik.key)
+    db.session.commit()
 
     return jsonify(serialize_key(ik)), 200
 
@@ -183,6 +190,7 @@ def delete_key(key_id: int):
         raise
 
     log_audit(get_current_member().id, "delete", "internal_key", key_id, key_name)
+    db.session.commit()
 
     return "", 204
 
@@ -216,6 +224,8 @@ def create_binding_route():
             f"Attribute '{data['source_attribute']}' is not valid for type '{data['type']}'",
             400,
         )
+    if _bad_source_id(data["type"], data["source_id"]):
+        return api_error("VALIDATION_ERROR", "source_id must be a number", 400)
 
     if data.get("validator", "none") != "none":
         from hubra.core.services.binding_registry import (
@@ -259,6 +269,7 @@ def create_binding_route():
         binding.id,
         f"{binding.type}:{binding.source_attribute}",
     )
+    db.session.commit()
 
     return jsonify(serialize_binding(binding)), 201
 
@@ -277,13 +288,23 @@ def update_binding_route(binding_id: int):
 
     fields = {k: v for k, v in data.items() if v is not None}
 
-    if "type" in fields and "source_attribute" in fields:
-        if not is_valid_attribute(fields["type"], fields["source_attribute"]):
+    if {"type", "source_id", "source_attribute"} & fields.keys():
+        # Check the source as it will be, with the binding's current values.
+        from hubra.core.models.binding import Binding
+
+        current = db.session.get(Binding, binding_id)
+        if current is None:
+            return api_error("NOT_FOUND", f"Binding {binding_id} not found", 404)
+        b_type = fields.get("type", current.type)
+        attribute = fields.get("source_attribute", current.source_attribute)
+        if not is_valid_attribute(b_type, attribute):
             return api_error(
                 "VALIDATION_ERROR",
-                f"Attribute '{fields['source_attribute']}' is not valid for type '{fields['type']}'",
+                f"Attribute '{attribute}' is not valid for type '{b_type}'",
                 400,
             )
+        if _bad_source_id(b_type, fields.get("source_id", current.source_id)):
+            return api_error("VALIDATION_ERROR", "source_id must be a number", 400)
 
     binding = update_binding(binding_id, **fields)
 
@@ -300,6 +321,7 @@ def update_binding_route(binding_id: int):
         binding.id,
         f"{binding.type}:{binding.source_attribute}",
     )
+    db.session.commit()
 
     return jsonify(serialize_binding(binding)), 200
 
@@ -325,6 +347,7 @@ def delete_binding_route(binding_id: int):
         binding_id,
         None,
     )
+    db.session.commit()
 
     return "", 204
 
@@ -356,6 +379,7 @@ def toggle_binding_route(binding_id: int):
         binding.id,
         f"enabled={data['enabled']}",
     )
+    db.session.commit()
 
     return jsonify(serialize_binding(binding)), 200
 
@@ -403,8 +427,8 @@ def preview_binding_value():
     source_attribute = request.args.get("source_attribute")
     if not binding_type or binding_type not in build_attribute_registry():
         return api_error("VALIDATION_ERROR", f"Invalid type: {binding_type}", 400)
-    if not source_id:
-        return api_error("VALIDATION_ERROR", "source_id is required", 400)
+    if not source_id or _bad_source_id(binding_type, source_id):
+        return api_error("VALIDATION_ERROR", "A valid source_id is required", 400)
     if not source_attribute or not is_valid_attribute(binding_type, source_attribute):
         return api_error(
             "VALIDATION_ERROR", f"Invalid attribute: {source_attribute}", 400

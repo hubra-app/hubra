@@ -7,11 +7,13 @@ import {
   useMemo,
   type ReactNode,
 } from 'react'
+import { Button, Center, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { hasTokens, setAuthFailureHandler } from '@hubra/api-client'
 import { useNavigate } from 'react-router-dom'
 import { getMyPermissions, getVerificationStatus, type PermissionsResponse } from '@/api/auth'
 import { signedInTarget, validateRedirect, type AppUrls } from '@/redirect'
+import { tr } from '@/lang'
 
 export type AuthStatus = 'loading' | 'authed' | 'anon'
 
@@ -57,6 +59,7 @@ export function SsoProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading')
   const [permissions, setPermissions] = useState<PermissionsResponse | null>(null)
+  const [offline, setOffline] = useState(false)
 
   const { redirectTarget, errorParam } = useMemo(() => {
     const params = new URLSearchParams(window.location.search)
@@ -93,8 +96,8 @@ export function SsoProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (errorParam === 'insufficient_permissions') {
       notifications.show({
-        title: 'Access Denied',
-        message: 'You do not have permission to access the admin portal.',
+        title: tr('Kein Zugriff', 'Access denied'),
+        message: tr('Du hast keinen Zugriff auf die Verwaltung.', 'You do not have access to the admin portal.'),
         color: 'red',
       })
     }
@@ -135,8 +138,15 @@ export function SsoProvider({ children }: { children: ReactNode }) {
           return
         }
         continueSignedIn()
-      } catch {
+      } catch (err: unknown) {
         if (cancelled) return
+        // Server down or restarting: the session is unknown, not gone, so
+        // say so instead of showing the sign-in form.
+        const status = (err as { status?: number })?.status
+        if (status === undefined || status >= 500) {
+          setOffline(true)
+          return
+        }
         setAuthStatus('anon')
       }
     }
@@ -179,6 +189,22 @@ export function SsoProvider({ children }: { children: ReactNode }) {
     [authStatus, isSuperadmin, permissions, redirectTarget, continueSignedIn, notify],
   )
 
+  if (offline)
+    return (
+      <Center h="100vh" p="md">
+        <Stack align="center" gap="md" maw={420} ta="center">
+          <Text fz={18} fw={600}>
+            {tr('Der Server ist gerade nicht erreichbar', 'The server cannot be reached')}
+          </Text>
+          <Text size="sm" c="dimmed">
+            {tr('Versuche es in einem Moment nochmals.', 'Please try again in a moment.')}
+          </Text>
+          <Button variant="default" onClick={() => window.location.reload()}>
+            {tr('Erneut versuchen', 'Try again')}
+          </Button>
+        </Stack>
+      </Center>
+    )
   return <SsoContext.Provider value={value}>{children}</SsoContext.Provider>
 }
 

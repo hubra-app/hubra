@@ -1,6 +1,6 @@
 """Posts: announcements with likes and comments."""
 
-from hubra.core.modules import Blueprint, Module, NavItem
+from hubra.core.modules import Blueprint, Module, NavItem, SettingField
 
 module = Module(
     code="posts",
@@ -13,6 +13,15 @@ module = Module(
             "hubra.api.posts.routes",
             "posts_bp",
             "/api/v1/posts",
+        ),
+    ),
+    settings=(
+        SettingField(
+            "notify_members",
+            "bool",
+            default=True,
+            label="Notify members about new posts",
+            description="An in-app notification for every member when a post is published",
         ),
     ),
     nav=(

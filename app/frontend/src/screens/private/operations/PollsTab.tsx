@@ -38,7 +38,17 @@ import { listGroups } from "@/api/groups";
 import { listFunctions } from "@/api/functions";
 import { ProxyPanel } from "./ProxyPanel";
 
+/** An ISO time as the value a datetime-local input shows (local time). */
+function toLocalInput(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 /* -- Polls ------------------------------------ */
+
 export function PollsTab() {
   const { notify } = useToast();
   const { polls } = usePolls();
@@ -108,8 +118,10 @@ export function PollsTab() {
     onSettled: () => {
       setDeletingPollId(null);
     },
-    onError: () => {
+    onError: (err) => {
       pollCache.invalidate();
+      const msg = err instanceof Error ? err.message : t("polls.deleteFailed", "Die Umfrage konnte nicht gelöscht werden.");
+      notify("error", t("common.error", "Fehler"), msg);
     },
   });
 
@@ -151,7 +163,7 @@ export function PollsTab() {
   };
 
   const openEdit = (poll: Poll) => {
-    form.setValues({ question: poll.question, closesAt: poll.closesAt ?? "" });
+    form.setValues({ question: poll.question, closesAt: toLocalInput(poll.closesAt) });
     setOptions(poll.options.map((o) => o.label));
     setIsRequired(poll.isRequired ?? false);
     setAllowProxy(poll.allowProxy ?? false);
@@ -162,8 +174,8 @@ export function PollsTab() {
   };
 
   const savePoll = async () => {
+    if (form.validate().hasErrors) return;
     const question = form.values.question.trim();
-    if (!question) return;
     const validOptions = options.filter(Boolean);
     if (validOptions.length < 2) {
       notify("error", t("polls.validation", "Eingabe prüfen"), t("polls.minOptions", "Es braucht mindestens 2 Optionen."));
@@ -175,7 +187,12 @@ export function PollsTab() {
       const payload: PollCreate | PollUpdate = {
         question,
         options: validOptions,
-        closesAt: form.values.closesAt || undefined,
+        // An emptied date on edit clears the deadline; a missing key keeps it.
+        closesAt: form.values.closesAt
+          ? new Date(form.values.closesAt).toISOString()
+          : editTarget
+            ? null
+            : undefined,
         isRequired,
         allowProxy,
         requiredGroupIds: isRequired ? requiredGroupIds : [],
@@ -342,6 +359,7 @@ export function PollsTab() {
                           </div>
                           <Progress
                             value={pct}
+                            aria-label={opt.label}
                             size="sm"
                             radius="xl"
                             styles={{

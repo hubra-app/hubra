@@ -80,6 +80,8 @@ npx playwright test
 
 | Topic                                  | File                                                     |
 | -------------------------------------- | -------------------------------------------------------- |
+| Operators: install, upgrade, backups   | [docs/operator-guide.md](docs/operator-guide.md)         |
+| Club owners and admins                 | [docs/club-admin-guide.md](docs/club-admin-guide.md)     |
 | Architecture & request flow            | [docs/architecture.md](docs/architecture.md)             |
 | API endpoints, auth, permissions       | [docs/api-overview.md](docs/api-overview.md)             |
 | Full API reference                     | [app/backend/API.md](app/backend/API.md)                 |

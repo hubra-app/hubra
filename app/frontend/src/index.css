@@ -795,8 +795,16 @@ table[style*="min-width"] td::before {
   gap: 16px;
   align-items: start;
 }
+/* The same with the narrow column on the right (invoice detail). */
+.detail-grid-end {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 16px;
+  align-items: start;
+}
 @media (max-width: 62em) {
-  .detail-grid {
+  .detail-grid,
+  .detail-grid-end {
     grid-template-columns: minmax(0, 1fr);
   }
 }

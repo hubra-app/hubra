@@ -18,6 +18,7 @@ from hubra.core.extensions import db
 from hubra.core.models.club_invite import ClubInvite
 from hubra.core.models.tenant import Tenant
 from hubra.core.models.user import User
+from hubra.core.tenant.club_settings import club_setting
 
 INVITE_DAYS = 14
 # Invites go to any address from the platform's sender: a club gets this many
@@ -71,7 +72,8 @@ def send_invite(
         token_hash=_hash(raw),
         invited_by=(invited_by or "")[:255],
         member_data=data or None,
-        expires_at=datetime.now(timezone.utc) + timedelta(days=INVITE_DAYS),
+        expires_at=datetime.now(timezone.utc)
+        + timedelta(days=club_setting(tenant, "invite_valid_days", INVITE_DAYS)),
     )
     db.session.add(invite)
     db.session.flush()

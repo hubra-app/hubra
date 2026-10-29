@@ -28,6 +28,9 @@ export function useMarkInvoicePaid() {
       setSelectedInvoice((prev) =>
         prev?.id === id ? { ...prev, status: "Paid" as const } : prev,
       );
+      queryClient.setQueryData<Invoice>(qk.invoices.one(id), (old) =>
+        old ? { ...old, status: "Paid" as const } : old,
+      );
       return { prev };
     },
     onError: (err, _id, ctx) => {
@@ -35,6 +38,7 @@ export function useMarkInvoicePaid() {
       setSelectedInvoice((prev) =>
         prev?.id === _id ? { ...prev, status: "Open" as const } : prev,
       );
+      queryClient.invalidateQueries({ queryKey: qk.invoices.one(_id) });
       const msg =
         err instanceof Error ? err.message : i18n.t('finance.invoiceUpdateFailed', 'Die Rechnung konnte nicht aktualisiert werden.');
       notify("error", i18n.t('common.error', 'Fehler'), msg);
@@ -102,6 +106,9 @@ export function useDeleteInvoice() {
       const msg =
         err instanceof Error ? err.message : i18n.t('finance.invoiceDeleteFailed', 'Die Rechnung konnte nicht gelöscht werden.');
       notify("error", i18n.t('common.error', 'Fehler'), msg);
+    },
+    onSuccess: () => {
+      notify("info", i18n.t('finance.invoice.deleted', 'Rechnung gelöscht.'), i18n.t('finance.invoice.deletedMsg', 'Die Rechnung wurde gelöscht.'));
     },
   });
 }

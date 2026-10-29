@@ -4,7 +4,7 @@ import { Table, Button, Group, Paper, TextInput } from '@mantine/core'
 import { useT } from '@/locales/i18n'
 import { IconPlus, IconTrash, IconPencil } from '@tabler/icons-react'
 import { useToast, useAuth } from '@/context/AppContext'
-import { Modal, Field, ConfirmModal } from '@/components/ui'
+import { Modal, Field, ConfirmModal, useSubmitOnce } from '@/components/ui'
 import type { ExternalParty } from '@/types'
 import {
   listExternalParties,
@@ -112,6 +112,7 @@ export function ExternalPartiesTab() {
       )
     }
   }
+  const [submitAdd, adding] = useSubmitOnce(saveAdd)
 
   const saveEdit = async () => {
     if (!editTarget) return
@@ -362,7 +363,7 @@ export function ExternalPartiesTab() {
             <Button variant="default" onClick={() => setAddOpen(false)}>
               {t('common.cancel', 'Abbrechen')}
             </Button>
-            <Button variant="filled" onClick={saveAdd}>
+            <Button variant="filled" onClick={submitAdd} loading={adding}>
               {t('common.create', 'Erstellen')}
             </Button>
           </>

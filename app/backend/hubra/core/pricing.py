@@ -91,7 +91,10 @@ def calculate_invoice_amount(member, tier, deducted_annual_fees: Decimal) -> Dec
     periods, plus the plan's surcharge, rounded to 5 Rappen.
     """
     amount = tier_period_amount(member, tier, deducted_annual_fees)
-    return apply_plan(amount, tier, _plan_for(member, tier))
+    amount = apply_plan(amount, tier, _plan_for(member, tier))
+    # An invoice is in whole Rappen: a percentage tier gives e.g. 27.7500 or
+    # 8.3333..., which the QR bill refuses (it needs ###.##).
+    return amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 def apply_plan(tier_amount: Decimal, tier, plan) -> Decimal:
@@ -167,7 +170,8 @@ def calculate_preview_cost(config: dict, db_session=None) -> dict:
     members = 0
     tier_id = config.get("tier_id")
 
-    if db_session and tier_id:
+    # A preview for a tier that doesn't exist yet has no tier_id.
+    if db_session and isinstance(tier_id, int) and not isinstance(tier_id, bool):
         members = (
             db_session.scalar(
                 select(func.count(Member.id))
@@ -238,6 +242,23 @@ def calculate_preview_cost(config: dict, db_session=None) -> dict:
         "members": members,
         "summary": summary,
     }
+
+
+def deductions_by_tier(db_session):
+    """A function giving, per formula tier, the yearly fees of the tiers it
+    deducts: each tier its own ``deduct_tier_ids``, not all formula tiers'."""
+    cache: dict[int, Decimal] = {}
+
+    def for_tier(tier) -> Decimal:
+        if tier is None or tier.price_type != "formula" or not tier.deduct_tier_ids:
+            return Decimal(0)
+        if tier.id not in cache:
+            cache[tier.id] = total_deducted_annual_for_tiers(
+                db_session, set(tier.deduct_tier_ids)
+            )
+        return cache[tier.id]
+
+    return for_tier
 
 
 def total_deducted_annual_for_tiers(session, tier_ids: set[int]) -> Decimal:

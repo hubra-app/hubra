@@ -90,6 +90,7 @@ export const qk = {
   settings: {
     kv: ['kv-settings'] as const,
     club: ['club-settings'] as const,
+    clubProfile: ['club-profile'] as const,
     domains: ['domains'] as const,
     rolesPermissions: ['roles-permissions'] as const,
   },

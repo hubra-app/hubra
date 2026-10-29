@@ -308,8 +308,14 @@ def test_remind_external_invoice_no_email(client, auth_headers, seeded_db):
             f"/api/v1/finance/invoices/{inv_id}/remind", headers=auth_headers
         )
 
-    assert resp.status_code == 200
+    # Nothing went out, so the treasurer is told; the attempt is kept.
+    assert resp.status_code == 409
+    assert resp.get_json()["error"] == "REMINDER_NOT_SENT"
     mock_delay.assert_not_called()
+    history = client.get(
+        f"/api/v1/finance/invoices/{inv_id}/reminders", headers=auth_headers
+    ).get_json()
+    assert len(history) == 1
 
 
 # ── Invoice schema output fields ──────────────────────────────────────────────
@@ -343,3 +349,22 @@ def test_external_invoice_recipient_name(client, auth_headers, seeded_db):
     body = resp.get_json()
     assert body["recipient_name"] == "Named Ext"
     assert body["recipient_type"] == "external"
+
+
+def test_deleting_a_party_clears_it_on_its_invoices(client, auth_headers, seeded_db):
+    # Club schemas have no foreign keys, so nothing else clears the id.
+    ext = _ext_party(client, auth_headers)
+    invoice_id = client.post(
+        "/api/v1/finance/invoices",
+        json=_ext_invoice_payload(ext["id"]),
+        headers=auth_headers,
+    ).get_json()["id"]
+    resp = client.delete(
+        f"/api/v1/finance/external-parties/{ext['id']}", headers=auth_headers
+    )
+    assert resp.status_code == 204
+
+    body = client.get(
+        f"/api/v1/finance/invoices/{invoice_id}", headers=auth_headers
+    ).get_json()
+    assert body["external_party_id"] is None

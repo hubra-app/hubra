@@ -93,3 +93,23 @@ def test_long_lines_are_folded():
 def test_ical_without_events_is_valid():
     out = EventService.generate_ical([])
     assert out.startswith("BEGIN:VCALENDAR") and out.endswith("END:VCALENDAR\r\n")
+
+
+def test_event_uids_name_the_club(app, tenant_pair):
+    """Event ids repeat across clubs, so a UID without the club would make
+    calendar apps merge club A's event 1 with club B's event 1."""
+    from datetime import date
+
+    from flask import g
+
+    from hubra.api.events.services import EventService
+    from hubra.core.models.event import ClubEvent
+
+    event = ClubEvent(id=1, title="Meeting", date=date(2026, 5, 1), type="Social")
+    uids = []
+    for tenant in (tenant_pair["tenant_a"], tenant_pair["tenant_b"]):
+        with app.test_request_context():
+            g.tenant = tenant
+            ical = EventService.generate_ical([event])
+        uids += [line for line in ical.splitlines() if line.startswith("UID:")]
+    assert uids == ["UID:event-1@tenant-a.hubra", "UID:event-1@tenant-b.hubra"]

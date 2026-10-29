@@ -75,6 +75,9 @@ def make_celery(app: Flask) -> Celery:
                 try:
                     return self.run(*args, **kwargs)
                 finally:
+                    # A failed task leaves the transaction aborted; SET
+                    # search_path would then fail and hide the real error.
+                    db.session.rollback()
                     reset_search_path()
                     g.tenant = None
 
@@ -129,6 +132,10 @@ def make_celery(app: Flask) -> Celery:
             "cleanup-token-blocklist-daily": {
                 "task": "hubra.core.tasks.mail_tasks.cleanup_token_blocklist",
                 "schedule": crontab(hour=3, minute=0),
+            },
+            "verify-protected-mail-daily": {
+                "task": "hubra.core.tasks.mail_tasks.verify_protected_mail_addresses",
+                "schedule": crontab(hour=4, minute=0),
             },
             "sync-wildduck-message-counts": {
                 "task": "hubra.core.tasks.mail_sync.sync_wildduck_message_counts",
@@ -202,6 +209,7 @@ def make_celery(app: Flask) -> Celery:
     instance.conf.update(conf)
     instance.set_default()
     app.extensions["celery"] = instance
+    instance.flask_app = app
     return instance
 
 
@@ -243,5 +251,20 @@ def _watch_plugins(**_kwargs) -> None:
 
 from celery import signals  # noqa: E402
 
+
+def _fresh_db_connections(**_kwargs) -> None:
+    """Give each forked worker process its own database connections.
+
+    The app is created (and the pool filled) in the parent before the
+    prefork pool forks; children sharing those sockets interleave their
+    queries ("error with status PGRES_TUPLES_OK and no message").
+    """
+    from hubra.core.extensions import db
+
+    with celery_app.flask_app.app_context():
+        db.engine.dispose(close=False)
+
+
+signals.worker_process_init.connect(_fresh_db_connections, weak=False)
 signals.worker_ready.connect(_watch_plugins, weak=False)
 signals.beat_init.connect(_watch_plugins, weak=False)

@@ -32,6 +32,23 @@ def _mail_clubs() -> list[Tenant]:
     return [t for t in tenants if is_enabled("mail", tenant_id=t.id)]
 
 
+def _every_club() -> list[Tenant]:
+    """Every club that still has a schema, whatever its status or modules.
+
+    The orphan sweep deletes what no club claims, so a suspended club, or one
+    that switched mail off for a while, must still claim its mailboxes.
+    """
+    tenants = db.session.scalars(select(Tenant)).all()
+    if db.engine.dialect.name != "postgresql":
+        return list(tenants)
+    schemas = set(
+        db.session.execute(
+            db.text("SELECT schema_name FROM information_schema.schemata")
+        ).scalars()
+    )
+    return [t for t in tenants if f"tenant_{t.id}" in schemas]
+
+
 def _owner_names(mmas) -> dict[tuple[str, int], str]:
     """``{(owner_type, owner_id): name}`` for the owners of *mmas*."""
     from hubra.core.models.function import Function
@@ -73,13 +90,15 @@ def _club_entries() -> dict[str, dict]:
     return index
 
 
-def managed_index() -> dict[str, dict]:
+def managed_index(every_club: bool = False) -> dict[str, dict]:
     """Every club's managed addresses, keyed by WildDuck id and ``addr:<address>``.
 
     Each value names the club it belongs to.  Pending ORM changes are not
-    flushed while another club's schema is active.
+    flushed while another club's schema is active.  ``every_club`` also reads
+    suspended clubs and clubs with mail off; anything that deletes what is
+    missing from the index must pass it.
     """
-    tenants = _mail_clubs()
+    tenants = _every_club() if every_club else _mail_clubs()
     index: dict[str, dict] = {}
     with db.session.no_autoflush:
         if not tenants:

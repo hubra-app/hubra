@@ -15,6 +15,10 @@ from hubra.core.extensions import db
 from hubra.core.models.group import Group
 from hubra.core.models.mail import MailboxFolder
 from hubra.core.models.member import Member
+from hubra.core.services.managed_mail import (
+    owns_mail_address,
+    require_own_mail_address,
+)
 from hubra.core.services.wildduck import (
     WildDuckClient,
     WildDuckError,
@@ -68,18 +72,23 @@ class MailboxService:
 
     @staticmethod
     def get(wd_id: str) -> dict:
-        """Fetch a single WildDuck user by ID. Raises 404 if not found."""
+        """Fetch one of this club's WildDuck users by ID. Raises 404 if not
+        found, or if it is another club's (the mail server is shared)."""
         wd = _wd_required()
         try:
-            return wd.get_user(wd_id)
+            user = wd.get_user(wd_id)
         except WildDuckError as exc:
             if exc.status == 404:
                 raise_error(404, "NOT_FOUND", f"Mailbox {wd_id} not found")
             raise
+        if not owns_mail_address(user.get("address", "")):
+            raise_error(404, "NOT_FOUND", f"Mailbox {wd_id} not found")
+        return user
 
     @staticmethod
     def update(wd_id: str, **fields: Any) -> dict:
         """Update a WildDuck user and return the updated user."""
+        MailboxService.get(wd_id)
         wd = _wd_required()
         try:
             wd.update_user(wd_id, **fields)
@@ -111,9 +120,9 @@ class MailboxService:
                 f"Mailbox belongs to member {member.name if member else addr.owner_id} — "
                 "disable their mailbox in Member Mail settings first",
             )
+        user = MailboxService.get(wd_id)
         wd = _wd_required()
         try:
-            user = wd.get_user(wd_id)
             wd.delete_user(wd_id)
         except WildDuckError as exc:
             if exc.status == 404:
@@ -273,6 +282,7 @@ class MailboxesService:
         wd = _wd_required()
         club_domain = SettingService.get("mail.domain") or ""
         address = f"{username}@{club_domain}" if "@" not in username else username
+        require_own_mail_address(address)
         pwd = password or secrets.token_urlsafe(16)
 
         try:
@@ -430,9 +440,10 @@ class MailboxesService:
         )
 
         if mail_flag_changed:
+            from hubra.core.tasks.after_commit import delay_after_commit
             from hubra.core.tasks.wildduck import provision_member_mail
 
-            provision_member_mail.delay(member_id)
+            delay_after_commit(provision_member_mail, member_id)
 
         wd_id = (addr.wildduck_id or addr.wildduck_user_id) if addr else None
         return {
@@ -476,14 +487,19 @@ class AliasService:
 
     @staticmethod
     def get(wd_id: str) -> dict:
+        """One of this club's aliases; 404 for another club's (shared server)."""
         wd = _wd_required()
         try:
-            return wd.get_address(wd_id)
+            alias = wd.get_address(wd_id)
         except WildDuckError:
             raise_error(404, "NOT_FOUND", f"Alias {wd_id} not found")
+        if not owns_mail_address(alias.get("address", "")):
+            raise_error(404, "NOT_FOUND", f"Alias {wd_id} not found")
+        return alias
 
     @staticmethod
     def update(wd_id: str, delivers_to: list[str]) -> None:
+        AliasService.get(wd_id)
         wd = _wd_required()
         try:
             wd.update_forwarding_alias(wd_id, delivers_to)
@@ -498,13 +514,8 @@ class AliasService:
 
         Returns the alias address for audit logging.
         """
-        alias_address = ""
+        alias_address = AliasService.get(wd_id).get("address", "")
         wd = _wd_required()
-        try:
-            alias_info = wd.get_address(wd_id)
-            alias_address = alias_info.get("address", "")
-        except WildDuckError:
-            pass
 
         main_group = AliasService.is_main_alias(wd_id, alias_address)
         if main_group:
@@ -566,7 +577,7 @@ class AliasesService:
         addresses = result.get("results", [])
         data = []
         for a in addresses:
-            if a.get("user"):
+            if a.get("user") or not owns_mail_address(a.get("address", "")):
                 continue
             gid, gname = alias_to_group.get(a["id"], (None, None))
             if gid is None:
@@ -609,6 +620,7 @@ class AliasesService:
 
         if "@" not in address and club_domain:
             address = f"{address}@{club_domain}"
+        require_own_mail_address(address)
 
         linked_group: Group | None = None
         if group_id is not None:

@@ -38,6 +38,8 @@ member_groups = Table(
         db.Integer,
         ForeignKey("groups.id", ondelete="CASCADE"),
         primary_key=True,
+        # The primary key leads with member_id; lists by group need this.
+        index=True,
     ),
 )
 
@@ -57,6 +59,8 @@ member_roles = Table(
         db.Integer,
         ForeignKey("roles.id", ondelete="CASCADE"),
         primary_key=True,
+        # The primary key leads with member_id; lists by role need this.
+        index=True,
     ),
 )
 
@@ -114,7 +118,10 @@ class Member(db.Model):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int | None] = mapped_column(
-        db.Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+        db.Integer,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
 
     # Tenant-specific club mail address (local part is club_username)
@@ -126,7 +133,7 @@ class Member(db.Model):
     )
 
     tier_id: Mapped[int | None] = mapped_column(
-        db.Integer, ForeignKey("membership_tiers.id"), nullable=True
+        db.Integer, ForeignKey("membership_tiers.id"), nullable=True, index=True
     )
     # How the tier is paid; None means the tier's own billing cycle.
     payment_plan_id: Mapped[int | None] = mapped_column(

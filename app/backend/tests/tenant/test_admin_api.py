@@ -404,3 +404,110 @@ def test_get_provisioning_status(client, superadmin_headers, sample_tenants):
     body = resp.get_json()
     assert body["status"] == "complete"
     assert body["tenant_id"] == sample_tenants[0].id
+
+
+def test_global_audit_pages_entries_of_one_moment_in_order(
+    client, db, superadmin_headers
+):
+    """Entries with one timestamp neither repeat nor go missing across pages."""
+    from datetime import datetime, timezone
+
+    same = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    for _ in range(5):
+        db.session.add(GlobalAuditEntry(action="tie.test", time=same))
+    db.session.commit()
+
+    seen = []
+    for page in (1, 2, 3):
+        resp = client.get(
+            f"/api/v1/system/audit?action=tie.test&page={page}&per_page=2",
+            headers=superadmin_headers,
+        )
+        assert resp.status_code == 200
+        body = resp.get_json()
+        assert body["total"] == 5  # what the filter leaves, not the whole table
+        seen += [e["id"] for e in body["entries"]]
+    assert seen == sorted(seen, reverse=True)
+    assert len(set(seen)) == 5
+
+    resp = client.get(
+        "/api/v1/system/audit?page=x&per_page=0", headers=superadmin_headers
+    )
+    assert resp.status_code == 200
+
+
+def test_user_search_counts_only_matching_users(client, db, superadmin_headers):
+    from hubra.core.models.user import User
+
+    user = User(email="findme@test.ch", first_name="F", last_name="M")
+    user.set_password("password123")
+    db.session.add(user)
+    db.session.commit()
+
+    body = client.get(
+        "/api/v1/system/users?search=findme", headers=superadmin_headers
+    ).get_json()
+    assert [u["email"] for u in body["users"]] == ["findme@test.ch"]
+    assert body["total"] == 1
+
+
+def test_platform_role_changes_are_audited(
+    client, db, superadmin_headers, superadmin_db
+):
+    """Who got which platform role is in the platform audit log."""
+    from hubra.core.models.user import User
+
+    other = User(email="ops@test.ch", first_name="O", last_name="P")
+    other.set_password("password123")
+    db.session.add(other)
+    db.session.commit()
+
+    role_id = client.post(
+        "/api/v1/system/global-roles",
+        json={"name": "Ops", "permissions": []},
+        headers=superadmin_headers,
+    ).get_json()["role"]["id"]
+    client.patch(
+        f"/api/v1/system/global-roles/{role_id}",
+        json={"permissions": []},
+        headers=superadmin_headers,
+    )
+    client.post(
+        f"/api/v1/system/users/{other.id}/roles",
+        json={"role_id": role_id},
+        headers=superadmin_headers,
+    )
+    client.delete(
+        f"/api/v1/system/users/{other.id}/roles/{role_id}", headers=superadmin_headers
+    )
+
+    entries = db.session.scalars(
+        select(GlobalAuditEntry)
+        .where(GlobalAuditEntry.action.like("global_role.%"))
+        .order_by(GlobalAuditEntry.id)
+    ).all()
+    assert [e.action for e in entries] == [
+        "global_role.create",
+        "global_role.update",
+        "global_role.assign",
+        "global_role.remove",
+    ]
+    assert entries[2].target_id == str(other.id)
+    assert entries[2].actor_id == superadmin_db["user"].id
+
+
+def test_a_plan_that_is_not_text_is_rejected(client, staff_headers, db):
+    """A list or object as plan crashed with a 500 (it was looked up in a set)."""
+    from hubra.core.models.tenant import Tenant
+
+    t = Tenant(name="Club A", slug="club-a", status="active")
+    db.session.add(t)
+    db.session.commit()
+    for plan in (["starter"], {"a": 1}):
+        resp = client.patch(f"/api/v1/system/tenants/{t.id}", json={"plan": plan})
+        assert resp.status_code in (400, 422)
+        resp = client.post(
+            "/api/v1/system/tenant-requests",
+            json={"name": "Club B", "slug": "club-b", "plan": plan},
+        )
+        assert resp.status_code == 400

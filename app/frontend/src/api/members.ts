@@ -1,5 +1,6 @@
 import { apiFetch, apiFetchRaw } from '@hubra/api-client';
 import { getLookups } from "@/api/lookups";
+import { API_PAGE_SIZE, fetchPages } from "@/api/pages";
 import type { Member } from "@/types";
 
 interface BackendMember {
@@ -99,13 +100,20 @@ export async function listMembers(
     params.set("membership_type", filters.membershipType);
   if (filters.group && filters.group !== "All") params.set("group", filters.group);
   if (filters.sort) params.set("sort", filters.sort);
-  if (filters.page) params.set("page", String(filters.page));
-  if (filters.pageSize) params.set("pageSize", String(filters.pageSize));
   if (filters.archived) params.set("archived", "1");
   if (filters.includeDeleted) params.set("include_deleted", "1");
 
+  // A pageSize above the API's page limit means "this many rows": ask page
+  // by page instead of silently getting only the first 100.
+  const many = !filters.page && (filters.pageSize ?? 0) > API_PAGE_SIZE;
+  if (!many) {
+    if (filters.page) params.set("page", String(filters.page));
+    if (filters.pageSize) params.set("pageSize", String(filters.pageSize));
+  }
   const [resp, lookups] = await Promise.all([
-    apiFetch<PagedResponse>(`/members?${params}`),
+    many
+      ? fetchPages<BackendMember>("/members", params, filters.pageSize!)
+      : apiFetch<PagedResponse>(`/members?${params}`),
     getLookups(),
   ]);
   return {

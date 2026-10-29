@@ -309,6 +309,7 @@ def provision_member_mail(self, member_id: int) -> None:
             target_id=member_id,
             target_label=member.name,
         )
+        db.session.commit()
         logger.info("provision_member_mail: provisioned member %s", member_id)
 
     except WildDuckError as exc:

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Button, Group, Select, Paper, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { IconPlus, IconPencil, IconTrash } from '@tabler/icons-react'
@@ -190,7 +190,7 @@ export function TiersTab() {
   })
 
   const form = useForm<TierForm>({
-    validate: zodResolver(makeTierSchema(t)),
+    validate: zod4Resolver(makeTierSchema(t)),
     initialValues: {
       name: '',
       color: '#7441e0',

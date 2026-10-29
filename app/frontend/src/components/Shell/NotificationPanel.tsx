@@ -22,9 +22,11 @@ import { useNav } from '@/context/AppContext'
 import {
   listNotifications,
   markAllNotificationsRead,
+  deleteNotification,
 } from '@/api/notifications'
 import type { Notification } from '@/types'
 import { qk } from '@/data/keys'
+import { formatRelative } from '@/format'
 
 export function NotificationPanel() {
   const { t } = useT()
@@ -45,7 +47,8 @@ export function NotificationPanel() {
     try {
       await markAllNotificationsRead()
     } catch {
-      /* non-blocking */
+      // Show the server's state again rather than a false "all read".
+      queryClient.invalidateQueries({ queryKey: qk.notifications })
     }
   }, [queryClient])
 
@@ -53,6 +56,10 @@ export function NotificationPanel() {
     (id: string) => {
       queryClient.setQueryData<Notification[]>(qk.notifications, (prev) =>
         (prev ?? []).filter((n) => n.id !== id),
+      )
+      // Delete it on the server too, or the next refetch brings it back.
+      deleteNotification(id).catch(() =>
+        queryClient.invalidateQueries({ queryKey: qk.notifications }),
       )
     },
     [queryClient],
@@ -145,7 +152,7 @@ export function NotificationPanel() {
                   {n.msg}
                 </Text>
                 <Text className="num" fz="xs" c="dimmed">
-                  {n.time}
+                  {formatRelative(n.time)}
                 </Text>
               </Stack>
               <Group gap={6} align="flex-start" style={{ flexShrink: 0 }}>
