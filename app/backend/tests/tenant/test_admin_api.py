@@ -404,3 +404,48 @@ def test_get_provisioning_status(client, superadmin_headers, sample_tenants):
     body = resp.get_json()
     assert body["status"] == "complete"
     assert body["tenant_id"] == sample_tenants[0].id
+
+
+def test_global_audit_pages_entries_of_one_moment_in_order(
+    client, db, superadmin_headers
+):
+    """Entries with one timestamp neither repeat nor go missing across pages."""
+    from datetime import datetime, timezone
+
+    same = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    for _ in range(5):
+        db.session.add(GlobalAuditEntry(action="tie.test", time=same))
+    db.session.commit()
+
+    seen = []
+    for page in (1, 2, 3):
+        resp = client.get(
+            f"/api/v1/system/audit?action=tie.test&page={page}&per_page=2",
+            headers=superadmin_headers,
+        )
+        assert resp.status_code == 200
+        body = resp.get_json()
+        assert body["total"] == 5  # what the filter leaves, not the whole table
+        seen += [e["id"] for e in body["entries"]]
+    assert seen == sorted(seen, reverse=True)
+    assert len(set(seen)) == 5
+
+    resp = client.get(
+        "/api/v1/system/audit?page=x&per_page=0", headers=superadmin_headers
+    )
+    assert resp.status_code == 200
+
+
+def test_user_search_counts_only_matching_users(client, db, superadmin_headers):
+    from hubra.core.models.user import User
+
+    user = User(email="findme@test.ch", first_name="F", last_name="M")
+    user.set_password("password123")
+    db.session.add(user)
+    db.session.commit()
+
+    body = client.get(
+        "/api/v1/system/users?search=findme", headers=superadmin_headers
+    ).get_json()
+    assert [u["email"] for u in body["users"]] == ["findme@test.ch"]
+    assert body["total"] == 1

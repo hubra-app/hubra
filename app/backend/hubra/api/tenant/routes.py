@@ -1581,27 +1581,47 @@ def search_users():
 # ── Platform audit log ──────────────────────────────────────────────────────
 
 
+def _page_args() -> tuple[int, int]:
+    """``page`` (from 1) and ``per_page`` (1–100) from the query string;
+    anything that is not a number falls back to the default."""
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+    except ValueError:
+        page = 1
+    try:
+        per_page = min(max(1, int(request.args.get("per_page", 25))), 100)
+    except ValueError:
+        per_page = 25
+    return page, per_page
+
+
 @tenant_admin_bp.route("/audit", methods=["GET"])
 @require_global_permission("audit.read")
 def list_global_audit():
     """List platform-wide audit entries with pagination and filters."""
-    page = int(request.args.get("page", 1))
-    per_page = min(int(request.args.get("per_page", 25)), 100)
+    page, per_page = _page_args()
 
-    query = select(GlobalAuditEntry).order_by(GlobalAuditEntry.time.desc())
+    query = select(GlobalAuditEntry).order_by(
+        GlobalAuditEntry.time.desc(), GlobalAuditEntry.id.desc()
+    )
 
     tenant_id = request.args.get("tenant_id")
     if tenant_id:
+        if not tenant_id.isdigit():
+            raise_error(400, "VALIDATION_ERROR", "tenant_id must be a number")
         query = query.where(GlobalAuditEntry.tenant_id == int(tenant_id))
 
     action = request.args.get("action")
     if action:
-        query = query.where(GlobalAuditEntry.action.ilike(f"%{action}%"))
+        from hubra.api.utils import escape_like
 
-    total = db.session.scalar(
-        select(func.count()).select_from(
-            select(GlobalAuditEntry.id).order_by(None).subquery()
+        query = query.where(
+            GlobalAuditEntry.action.ilike(f"%{escape_like(action)}%", escape="\\")
         )
+
+    # Count what the filters leave, not the whole table.
+    total = db.session.scalar(
+        select(func.count()).select_from(query.order_by(None).subquery())
     )
     entries = list(
         db.session.scalars(query.offset((page - 1) * per_page).limit(per_page)).all()
@@ -1650,16 +1670,17 @@ def platform_metrics():
 @require_global_permission("users.read")
 def list_users():
     """List all users with pagination and search."""
-    page = int(request.args.get("page", 1))
-    per_page = min(int(request.args.get("per_page", 25)), 100)
+    page, per_page = _page_args()
     search = (request.args.get("search") or "").strip().lower()
 
     query = select(User).order_by(User.id.desc())
     if search:
-        query = query.where(User.email.ilike(f"%{search}%"))
+        from hubra.api.utils import escape_like
+
+        query = query.where(User.email.ilike(f"%{escape_like(search)}%", escape="\\"))
 
     total = db.session.scalar(
-        select(func.count()).select_from(select(User.id).order_by(None).subquery())
+        select(func.count()).select_from(query.order_by(None).subquery())
     )
     users = list(
         db.session.scalars(query.offset((page - 1) * per_page).limit(per_page)).all()
