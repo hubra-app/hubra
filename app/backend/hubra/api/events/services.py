@@ -18,8 +18,12 @@ from hubra.core.modules import emit
 from hubra.core.modules.events import EVENT_PUBLISHED
 
 
-# Registration states that take one of the event's places.
+# Registration states that take one of the event's places (the member's
+# and their guests'). "pending" waits for an organiser on an event that needs
+# approval and takes none yet; "declined" is the organiser's no.
 _HOLDS_A_PLACE = ("registered", "approved", "attended")
+# A registration a member still has, so they cannot sign up again.
+_OPEN = ("registered", "approved", "waitlisted", "pending")
 
 
 def _passed(deadline: datetime | None) -> bool:
@@ -45,7 +49,7 @@ def _tell_registered(event, title: str, skip_member_id: int | None = None) -> No
     if (event.end_date or event.date) < date.today():
         return
     for reg in event.registrations:
-        if reg.status in ("registered", "waitlisted") and reg.member_id != skip_member_id:
+        if reg.status in _OPEN and reg.member_id != skip_member_id:
             notify_member(reg.member_id, "info", title, event.title)
 
 class EventService:
@@ -95,6 +99,19 @@ class EventService:
             _check_dates(event.date, event.end_date)
         if (event.date, event.time, event.end_date, event.location) != before:
             _tell_registered(event, "Event changed", skip_member_id=actor_id)
+        if data.get("requires_approval") is False:
+            # Approval switched off: whoever is waiting for it is let in, in
+            # the order they asked (or put on the waitlist if it is full).
+            EventService._lock(event.id)
+            for reg in db.session.scalars(
+                select(EventRegistration)
+                .where(
+                    EventRegistration.event_id == event.id,
+                    EventRegistration.status == "pending",
+                )
+                .order_by(EventRegistration.registered_at, EventRegistration.id)
+            ).all():
+                EventService._admit(event, reg)
         if "max_attendees" in data:
             # More places (or no limit any more): the waitlist moves up.
             EventService._lock(event.id)
@@ -210,11 +227,21 @@ class EventService:
                 EventRegistration.member_id == member_id,
             )
         )
-        if registration is not None and registration.status != "cancelled":
+        if registration is not None and registration.status in _OPEN:
             raise_error(409, "CONFLICT", "Already registered for this event")
 
-        # Events that need approval still start as "registered".
-        status = "waitlisted" if EventService._is_full(event) else "registered"
+        # A member asking for a place on an event that needs approval waits
+        # for an organiser; an organiser signing someone up approves it.
+        if own and event.requires_approval:
+            status = "pending"
+        elif EventService._is_full(
+            event, needed=1 + guests
+        ) or EventService._has_waitlist(event.id):
+            # Nobody gets ahead of those already waiting (a free place may
+            # only be too small for the first in line and their guests).
+            status = "waitlisted"
+        else:
+            status = "approved" if event.requires_approval else "registered"
 
         if registration is None:
             registration = EventRegistration(event_id=event_id, member_id=member_id)
@@ -225,10 +252,84 @@ class EventService:
         registration.registered_at = datetime.now(timezone.utc)
         registration.cancelled_at = None
 
-        if status != "waitlisted":
+        if status in _HOLDS_A_PLACE:
             EventService._ensure_attendee(event_id, member)
+        if status == "pending":
+            from hubra.api.notifications.staff import notify_permitted
+
+            notify_permitted(
+                "events.events.add_attendee",
+                "info",
+                "Sign-up to approve",
+                f"{member.name}: {event.title}",
+                skip_member_id=member.id,
+            )
 
         return registration
+
+    @staticmethod
+    def _admit(event: ClubEvent, registration: EventRegistration) -> None:
+        """Give an approved registration its place, or the waitlist when the
+        event is full (with the member's guests)."""
+        if EventService._is_full(
+            event, needed=1 + (registration.guests or 0)
+        ) or EventService._has_waitlist(event.id):
+            registration.status = "waitlisted"
+        else:
+            registration.status = "approved"
+            member = db.session.get(Member, registration.member_id)
+            if member is not None:
+                EventService._ensure_attendee(event.id, member)
+        db.session.flush()
+
+    @staticmethod
+    def decide(event_id: int, member_id: int, approve: bool, actor_id: int):
+        """An organiser approves or declines a pending sign-up."""
+        from hubra.api.notifications.services import notify_member
+
+        event = EventService.get(event_id)
+        EventService._lock(event_id)
+        registration = db.session.scalar(
+            select(EventRegistration).where(
+                EventRegistration.event_id == event_id,
+                EventRegistration.member_id == member_id,
+            )
+        )
+        if registration is None or registration.status != "pending":
+            raise_error(409, "NOT_PENDING", "This sign-up is not waiting for approval")
+        if approve:
+            EventService._admit(event, registration)
+            title = (
+                "Sign-up confirmed"
+                if registration.status == "approved"
+                else "Sign-up confirmed, on the waitlist"
+            )
+        else:
+            registration.status = "declined"
+            title = "Sign-up declined"
+        notify_member(member_id, "info", title, event.title)
+        log_audit(
+            actor_id=actor_id,
+            action="approve_registration" if approve else "decline_registration",
+            target_type="Event",
+            target_id=event.id,
+            target_label=event.title,
+        )
+        return registration
+
+    @staticmethod
+    def registrations(event_id: int, status: str | None = None):
+        """An event's registrations, oldest first (for the organisers)."""
+        EventService.get(event_id)
+        query = (
+            select(EventRegistration)
+            .where(EventRegistration.event_id == event_id)
+            .options(selectinload(EventRegistration.member).selectinload(Member.user))
+            .order_by(EventRegistration.registered_at, EventRegistration.id)
+        )
+        if status:
+            query = query.where(EventRegistration.status == status)
+        return db.session.scalars(query).all()
 
     @staticmethod
     def _lock(event_id: int) -> None:
@@ -240,21 +341,39 @@ class EventService:
         )
 
     @staticmethod
-    def _is_full(event: ClubEvent) -> bool:
-        if not event.max_attendees or event.max_attendees <= 0:
-            return False
-        active_count = (
+    def places_taken(event_id: int) -> int:
+        """Places taken: each registration that holds one, with its guests."""
+        return (
             db.session.scalar(
-                select(func.count())
-                .select_from(EventRegistration)
-                .where(
-                    EventRegistration.event_id == event.id,
+                select(func.sum(1 + EventRegistration.guests)).where(
+                    EventRegistration.event_id == event_id,
                     EventRegistration.status.in_(_HOLDS_A_PLACE),
                 )
             )
             or 0
         )
-        return active_count >= event.max_attendees
+
+    @staticmethod
+    def _has_waitlist(event_id: int) -> bool:
+        return (
+            db.session.scalar(
+                select(EventRegistration.id)
+                .where(
+                    EventRegistration.event_id == event_id,
+                    EventRegistration.status == "waitlisted",
+                )
+                .limit(1)
+            )
+            is not None
+        )
+
+    @staticmethod
+    def _is_full(event: ClubEvent, needed: int = 1) -> bool:
+        """Whether *needed* more places (a member and their guests) no longer
+        fit within the event's limit."""
+        if not event.max_attendees or event.max_attendees <= 0:
+            return False
+        return EventService.places_taken(event.id) + needed > event.max_attendees
 
     @staticmethod
     def _ensure_attendee(event_id: int, member: Member) -> None:
@@ -278,7 +397,7 @@ class EventService:
             select(EventRegistration).where(
                 EventRegistration.event_id == event_id,
                 EventRegistration.member_id == member_id,
-                EventRegistration.status.in_(["registered", "approved", "waitlisted"]),
+                EventRegistration.status.in_(_OPEN),
             )
         )
         if registration is None:
@@ -290,7 +409,7 @@ class EventService:
             return None
         if (
             own
-            and registration.status != "waitlisted"
+            and registration.status in _HOLDS_A_PLACE
             and _passed(EventService.get(event_id).cancellation_deadline)
         ):
             raise_error(
@@ -317,8 +436,9 @@ class EventService:
 
     @staticmethod
     def _promote_waitlist(event: ClubEvent) -> None:
-        """Give free places to the waitlist, first come first served."""
-        while not EventService._is_full(event):
+        """Give free places to the waitlist, first come first served: the
+        first in line moves up once there is room for them and their guests."""
+        while True:
             nxt = db.session.scalar(
                 select(EventRegistration)
                 .where(
@@ -328,9 +448,9 @@ class EventService:
                 .order_by(EventRegistration.registered_at, EventRegistration.id)
                 .limit(1)
             )
-            if nxt is None:
+            if nxt is None or EventService._is_full(event, needed=1 + nxt.guests):
                 return
-            nxt.status = "registered"
+            nxt.status = "approved" if event.requires_approval else "registered"
             db.session.flush()
             member = db.session.get(Member, nxt.member_id)
             if member is not None:

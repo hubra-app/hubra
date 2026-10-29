@@ -693,7 +693,22 @@
       "social": "Geselliges",
       "certification": "Einführung",
       "meeting": "Sitzung"
-    }
+    },
+    "requested": "Anfrage gesendet",
+    "requestedMsg": "Die Organisatoren bestätigen deine Anmeldung für «{{title}}».",
+    "waitlisted": "Auf der Warteliste",
+    "waitlistedMsg": "«{{title}}» ist voll. Du rückst nach, sobald ein Platz frei wird.",
+    "maxAttendees": "Plätze",
+    "maxAttendeesPlaceholder": "Leer: ohne Begrenzung",
+    "requiresApproval": "Anmeldungen bestätigen (Organisatoren entscheiden über jede Anmeldung)",
+    "pendingCount": "{{count}} offen",
+    "withdrawRequest": "Anfrage zurückziehen",
+    "leaveWaitlist": "Warteliste verlassen",
+    "pendingTitle": "Offene Anmeldungen",
+    "noPending": "Keine offenen Anmeldungen.",
+    "guests": "{{count}} Gäste",
+    "decline": "Ablehnen",
+    "approve": "Bestätigen"
   },
   "finance": {
     "addCategory": "Kategorie hinzufügen",
@@ -2397,7 +2412,8 @@
     "contentRequired": "Inhalt ist erforderlich",
     "dateRequired": "Datum ist erforderlich",
     "questionRequired": "Frage ist erforderlich",
-    "dueRequired": "Fälligkeitsdatum ist erforderlich"
+    "dueRequired": "Fälligkeitsdatum ist erforderlich",
+    "wholeNumber": "Bitte eine ganze Zahl eingeben"
   },
   "backups": {
     "size": "Grösse",

@@ -141,7 +141,9 @@ def _clear_member_events(member_id: int) -> None:
             .join(ClubEvent, ClubEvent.id == EventRegistration.event_id)
             .where(
                 EventRegistration.member_id == member_id,
-                EventRegistration.status.in_(["registered", "approved", "waitlisted"]),
+                EventRegistration.status.in_(
+                    ["registered", "approved", "waitlisted", "pending"]
+                ),
                 upcoming,
             )
         ).all()

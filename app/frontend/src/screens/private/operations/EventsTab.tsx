@@ -1,6 +1,6 @@
 import { EVENT_TYPE_COLORS } from '@/constants'
 import { useState } from 'react'
-import { Button, Group, TextInput, Select, Badge } from '@mantine/core'
+import { Button, Group, TextInput, Select, Badge, Checkbox } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
@@ -24,8 +24,12 @@ import {
 } from '@/components/ui'
 import type { ClubEvent } from '@/types'
 import { createEvent, updateEvent, deleteEvent } from '@/api/events'
-import { useToggleJoinEvent } from '@/screens/private/operations/useEventActions'
+import {
+  hasOpenSignUp,
+  useToggleJoinEvent,
+} from '@/screens/private/operations/useEventActions'
 import { CalendarSubscribeButton } from './CalendarSubscribeButton'
+import { PendingSignUpsModal } from './PendingSignUpsModal'
 
 /* ── Events ─────────────────────────────────── */
 const eventSchema = z.object({
@@ -34,8 +38,15 @@ const eventSchema = z.object({
   time: z.string(),
   location: z.string(),
   type: z.string(),
+  // Empty: no limit.
+  maxAttendees: z
+    .string()
+    .regex(/^\d*$/, zmsg('validation.wholeNumber', 'Bitte eine ganze Zahl eingeben')),
+  requiresApproval: z.boolean(),
 })
 type EventForm = z.infer<typeof eventSchema>
+
+const limitOf = (value: string) => (value.trim() ? Number(value) : null)
 
 
 const EVENT_TYPES = ['Workshop', 'Social', 'Certification', 'Meeting']
@@ -62,6 +73,8 @@ export function EventsTab() {
   const canCreate = hasPermission('events.events.create')
   const canUpdate = hasPermission('events.events.update')
   const canDelete = hasPermission('events.events.delete')
+  const canApprove = hasPermission('events.events.add_attendee')
+  const [pendingFor, setPendingFor] = useState<ClubEvent | null>(null)
   const [typeFilter, setTypeFilter] = useState('All')
   const [search, setSearch] = useState('')
   const [addOpen, setAddOpen] = useState(false)
@@ -75,6 +88,8 @@ export function EventsTab() {
       time: '',
       location: '',
       type: 'Workshop',
+      maxAttendees: '',
+      requiresApproval: false,
     },
   })
 
@@ -97,6 +112,8 @@ export function EventsTab() {
       time: '',
       location: '',
       type: 'Workshop',
+      maxAttendees: '',
+      requiresApproval: false,
     })
     setAddOpen(true)
   }
@@ -108,6 +125,8 @@ export function EventsTab() {
       time: ev.time ?? '',
       location: ev.location ?? '',
       type: ev.type,
+      maxAttendees: ev.maxAttendees ? String(ev.maxAttendees) : '',
+      requiresApproval: ev.requiresApproval ?? false,
     })
   }
 
@@ -119,6 +138,8 @@ export function EventsTab() {
         time: data.time || undefined,
         location: data.location || undefined,
         type: data.type,
+        maxAttendees: limitOf(data.maxAttendees),
+        requiresApproval: data.requiresApproval,
       })
       setEvents((prev) => [...prev, ev])
       setAddOpen(false)
@@ -148,6 +169,8 @@ export function EventsTab() {
         time: data.time || undefined,
         location: data.location || undefined,
         type: data.type,
+        maxAttendees: limitOf(data.maxAttendees),
+        requiresApproval: data.requiresApproval,
       })
       setEvents((prev) => prev.map((e) => (e.id === ev.id ? ev : e)))
       setEditTarget(null)
@@ -228,6 +251,20 @@ export function EventsTab() {
           {...form.getInputProps('type')}
         />
       </Field>
+      <Field label={t('events.maxAttendees', 'Plätze') + ' (optional)'}>
+        <TextInput
+          inputMode="numeric"
+          {...form.getInputProps('maxAttendees')}
+          placeholder={t('events.maxAttendeesPlaceholder', 'Leer: ohne Begrenzung')}
+        />
+      </Field>
+      <Checkbox
+        label={t(
+          'events.requiresApproval',
+          'Anmeldungen bestätigen (Organisatoren entscheiden über jede Anmeldung)',
+        )}
+        {...form.getInputProps('requiresApproval', { type: 'checkbox' })}
+      />
     </div>
   )
 
@@ -321,7 +358,7 @@ export function EventsTab() {
           {
             key: 'attendees',
             header: t('events.attendees', 'Teilnehmende'),
-            width: 80,
+            width: 130,
             render: (ev) => (
               <div
                 style={{
@@ -338,8 +375,21 @@ export function EventsTab() {
                     color: '#5e5873',
                   }}
                 >
-                  {ev.attendees.length}
+                  {ev.placesTaken ?? ev.attendees.length}
+                  {ev.maxAttendees ? ` / ${ev.maxAttendees}` : ''}
                 </span>
+                {canApprove && (ev.pendingCount ?? 0) > 0 && (
+                  <Badge
+                    variant="light"
+                    color="orange"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setPendingFor(ev)}
+                  >
+                    {t('events.pendingCount', '{{count}} offen', {
+                      count: ev.pendingCount,
+                    })}
+                  </Badge>
+                )}
               </div>
             ),
           },
@@ -365,7 +415,7 @@ export function EventsTab() {
             header: '',
             width: 200,
             render: (ev) => {
-              const joined = myJoinedEvents.has(ev.id)
+              const joined = hasOpenSignUp(ev, myJoinedEvents.has(ev.id))
               return (
                 <div
                   style={{
@@ -389,7 +439,11 @@ export function EventsTab() {
                     {joined ? (
                       <>
                         <Leave size={16} />
-                        {t('events.leave', 'Abmelden')}
+                        {ev.myStatus === 'pending'
+                          ? t('events.withdrawRequest', 'Anfrage zurückziehen')
+                          : ev.myStatus === 'waitlisted'
+                            ? t('events.leaveWaitlist', 'Warteliste verlassen')
+                            : t('events.leave', 'Abmelden')}
                       </>
                     ) : (
                       <>
@@ -461,6 +515,13 @@ export function EventsTab() {
       >
         {eventForm}
       </Modal>
+      <PendingSignUpsModal
+        event={pendingFor}
+        onClose={() => setPendingFor(null)}
+        onDecided={(ev) =>
+          setEvents((prev) => prev.map((e) => (e.id === ev.id ? ev : e)))
+        }
+      />
       <ConfirmModal
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
