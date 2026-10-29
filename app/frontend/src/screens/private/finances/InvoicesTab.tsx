@@ -460,6 +460,7 @@ export function InvoicesTab() {
                         size="sm"
                         variant="filled"
                         onClick={() => markPaidMutation.mutate(inv.id)}
+                        loading={markPaidMutation.isPending}
                       >
                         {t('finance.markPaid', 'Als bezahlt markieren')}
                       </Button>
@@ -548,11 +549,6 @@ export function InvoicesTab() {
         onConfirm={() => {
           if (deleteTargetId) {
             deleteInvoiceMutation.mutate(deleteTargetId)
-            notify(
-              'info',
-              t('finance.invoice.deleted', 'Rechnung gelöscht.'),
-              t('finance.invoice.deletedMsg', 'Die Rechnung wurde gelöscht.'),
-            )
           }
         }}
       />

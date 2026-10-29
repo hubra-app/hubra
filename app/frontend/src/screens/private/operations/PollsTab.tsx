@@ -123,8 +123,10 @@ export function PollsTab() {
     onSettled: () => {
       setDeletingPollId(null);
     },
-    onError: () => {
+    onError: (err) => {
       queryClient.invalidateQueries({ queryKey: ["polls"] });
+      const msg = err instanceof Error ? err.message : t("polls.deleteFailed", "Die Umfrage konnte nicht gelöscht werden.");
+      notify("error", t("common.error", "Fehler"), msg);
     },
   });
 

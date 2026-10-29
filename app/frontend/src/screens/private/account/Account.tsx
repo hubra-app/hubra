@@ -328,6 +328,7 @@ export function AccountDashboardScreen() {
                   <Button
                     size="sm"
                     variant="subtle"
+                    disabled={joinEventMutation.isPending}
                     onClick={() =>
                       joinEventMutation.mutate({
                         eventId: ev.id,

@@ -28,6 +28,9 @@ export function useMarkInvoicePaid() {
       setSelectedInvoice((prev) =>
         prev?.id === id ? { ...prev, status: "Paid" as const } : prev,
       );
+      queryClient.setQueryData<Invoice>(["invoice", id], (old) =>
+        old ? { ...old, status: "Paid" as const } : old,
+      );
       setOpenInvoiceCount((c) => Math.max(0, c - 1));
       return { prev };
     },
@@ -36,6 +39,7 @@ export function useMarkInvoicePaid() {
       setSelectedInvoice((prev) =>
         prev?.id === _id ? { ...prev, status: "Open" as const } : prev,
       );
+      queryClient.invalidateQueries({ queryKey: ["invoice", _id] });
       setOpenInvoiceCount((c) => c + 1);
       const msg =
         err instanceof Error ? err.message : i18n.t('finance.invoiceUpdateFailed', 'Die Rechnung konnte nicht aktualisiert werden.');
@@ -103,6 +107,9 @@ export function useDeleteInvoice() {
       const msg =
         err instanceof Error ? err.message : i18n.t('finance.invoiceDeleteFailed', 'Die Rechnung konnte nicht gelöscht werden.');
       notify("error", i18n.t('common.error', 'Fehler'), msg);
+    },
+    onSuccess: () => {
+      notify("info", i18n.t('finance.invoice.deleted', 'Rechnung gelöscht.'), i18n.t('finance.invoice.deletedMsg', 'Die Rechnung wurde gelöscht.'));
     },
   });
 }

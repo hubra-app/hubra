@@ -99,6 +99,7 @@ export function InvoiceDetailScreen() {
               <Button
                 variant="filled"
                 onClick={() => markPaidMutation.mutate(inv.id)}
+                loading={markPaidMutation.isPending}
               >
                 <IconCheck size={16} />
                 {t('finance.markPaid', 'Als bezahlt markieren')}

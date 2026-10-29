@@ -1700,6 +1700,7 @@
   "polls.questionPlaceholder": "What should we invest in next?",
   "polls.remind": "Remind",
   "polls.remindersFailed": "Could not send reminders.",
+  "polls.deleteFailed": "Could not delete the poll.",
   "polls.remindersSent": "Reminders sent",
   "polls.remindersSentMsg_one": "{{count}} reminder sent.",
   "polls.remindersSentMsg_other": "{{count}} reminders sent.",

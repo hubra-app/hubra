@@ -1734,6 +1734,7 @@
     "voteFailed": "Could not cast vote.",
     "remindersSent": "Reminders sent",
     "remindersFailed": "Could not send reminders.",
+    "deleteFailed": "Could not delete the poll.",
     "validation": "Check your input",
     "minOptions": "At least 2 options are required.",
     "updated": "Poll updated",

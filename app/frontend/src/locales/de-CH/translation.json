@@ -1734,6 +1734,7 @@
     "voteFailed": "Die Stimme konnte nicht abgegeben werden.",
     "remindersSent": "Erinnerungen gesendet",
     "remindersFailed": "Die Erinnerungen konnten nicht gesendet werden.",
+    "deleteFailed": "Die Umfrage konnte nicht gelöscht werden.",
     "validation": "Eingabe prüfen",
     "minOptions": "Es braucht mindestens 2 Optionen.",
     "updated": "Umfrage gespeichert",

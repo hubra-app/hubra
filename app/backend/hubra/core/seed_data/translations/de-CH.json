@@ -1700,6 +1700,7 @@
   "polls.questionPlaceholder": "Worin sollen wir als Nächstes investieren?",
   "polls.remind": "Erinnern",
   "polls.remindersFailed": "Die Erinnerungen konnten nicht gesendet werden.",
+  "polls.deleteFailed": "Die Umfrage konnte nicht gelöscht werden.",
   "polls.remindersSent": "Erinnerungen gesendet",
   "polls.remindersSentMsg_one": "{{count}} Erinnerung gesendet.",
   "polls.remindersSentMsg_other": "{{count}} Erinnerungen gesendet.",

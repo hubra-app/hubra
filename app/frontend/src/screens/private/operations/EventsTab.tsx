@@ -377,6 +377,7 @@ export function EventsTab() {
                   <Button
                     size="sm"
                     variant={joined ? 'default' : 'filled'}
+                    disabled={joinEventMutation.isPending}
                     onClick={() =>
                       joinEventMutation.mutate({
                         eventId: ev.id,
