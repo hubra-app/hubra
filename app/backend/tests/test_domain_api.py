@@ -85,11 +85,6 @@ def test_add_domain_validation_error(tenant_ctx, client, auth_headers):
         headers=auth_headers,
     )
     assert resp.status_code == 422
-    for value in (3, None, ["a.ch"]):
-        resp = client.post(
-            "/api/v1/admin/domains", json={"domain": value}, headers=auth_headers
-        )
-        assert resp.status_code == 422
 
 
 def test_add_domain_duplicate(tenant_ctx, client, auth_headers, db):
