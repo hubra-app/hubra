@@ -178,8 +178,8 @@ def generate_invoice_pdf(invoice: Invoice) -> bytes:
             raise QRBillNotConfigured(message) from exc
         if debtor_address is None or "debtor" not in message:
             raise
-        # An address the QR bill refuses (a country name instead of its
-        # code, a street too long): the payer fills it in instead.
+        # An address the QR bill refuses (a street over 70 characters,
+        # "UK" instead of GB): the payer fills it in instead.
         bill = _bill(None)
 
     # Render QR-bill SVG (full A4 page with bill at bottom)

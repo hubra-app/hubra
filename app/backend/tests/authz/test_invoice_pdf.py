@@ -97,16 +97,16 @@ def test_plain_member_gets_only_their_own(
 
 def test_awkward_invoices_still_get_a_qr_bill(client, db, seeded_db, banking, auth_headers):
     """A description over 140 characters or a member address the QR bill
-    refuses (a country name instead of its code) made the PDF fail, so the
+    refuses (a street over 70 characters, "UK" for GB) made the PDF fail, so the
     member could not download it and the invoice mail went without it."""
     from hubra.core.models.member import Member
 
     banking(QR_IBAN)
     admin = db.session.get(Member, seeded_db["admin"].id)
     user = admin.user
-    user.address_street, user.address_house_no = "Hauptstrasse", "5"
+    user.address_street, user.address_house_no = "Hauptstrasse " * 6, "5"
     user.address_postal_code, user.address_city = "8001", "Zürich"
-    user.address_country = "Schweiz"
+    user.address_country = "UK"
     db.session.commit()
 
     invoice_id = _invoice(db, member_id=admin.id, description="Beitrag " * 30)
