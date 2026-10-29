@@ -236,13 +236,97 @@ const DE_CODE: Record<string, string> = {
   WEAK_PASSWORD: "Dieses Passwort ist zu schwach.",
 };
 
+// Field checks arrive as the API's validation dict, e.g.
+// {'color': ['Missing data for required field.']}. Turn them into a sentence.
+const DE_FIELDS: Record<string, string> = {
+  name: "Name",
+  first_name: "Vorname",
+  last_name: "Nachname",
+  email: "E-Mail",
+  public_email: "E-Mail",
+  phone: "Telefon",
+  color: "Farbe",
+  date: "Datum",
+  due: "Fälligkeit",
+  amount: "Betrag",
+  price_chf: "Preis",
+  description: "Beschreibung",
+  title: "Titel",
+  body: "Text",
+  category_id: "Kategorie",
+  member_id: "Mitglied",
+  tier_id: "Stufe",
+  method: "Zahlungsart",
+  type: "Typ",
+  status: "Status",
+  slug: "Adresse",
+  password: "Passwort",
+  start: "Beginn",
+  end: "Ende",
+  starts_at: "Beginn",
+  ends_at: "Ende",
+  location: "Ort",
+  capacity: "Plätze",
+};
+
+function deProblem(problem: string): string {
+  if (/^Missing data for required field/.test(problem)) return "fehlt";
+  if (/^Field may not be (null|blank)/.test(problem)) return "darf nicht leer sein";
+  if (/^Not a valid email/.test(problem)) return "ist keine gültige E-Mail-Adresse";
+  if (/^Not a valid (number|integer|decimal)/.test(problem)) return "ist keine gültige Zahl";
+  if (/^Not a valid (date|datetime)/.test(problem)) return "ist kein gültiges Datum";
+  if (/^Unknown field/.test(problem)) return "ist hier nicht erlaubt";
+  if (/^Must be one of/.test(problem)) return "hat einen ungültigen Wert";
+  if (/^(Shorter|Longer) than|^Length must be/.test(problem)) return "ist zu kurz oder zu lang";
+  const min = problem.match(/^Must be greater than (?:or equal to )?(\d+(?:\.\d+)?)/);
+  if (min) return `muss grösser als ${min[1]} sein`;
+  return "ist ungültig";
+}
+
+function parseFieldErrors(message: string): [string, string[]][] | null {
+  if (!/^\{\s*'/.test(message)) return null;
+  const out: [string, string[]][] = [];
+  const entry = /'([\w.]+)':\s*\[([^\]]*)\]/g;
+  for (const m of message.matchAll(entry)) {
+    const problems = [...m[2].matchAll(/'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"/g)].map(
+      (p) => p[1] ?? p[2],
+    );
+    out.push([m[1], problems]);
+  }
+  return out.length ? out : null;
+}
+
+function humanField(field: string): string {
+  return field === "_schema" ? "" : field.replace(/_id$/, "").replace(/_/g, " ");
+}
+
+function fieldErrorsMessage(message: string, english: boolean): string | null {
+  const fields = parseFieldErrors(message);
+  if (!fields) return null;
+  if (english) {
+    const parts = fields.map(([f, p]) =>
+      f === "_schema" ? p.join(" ") : `${humanField(f)} (${p.join(" ")})`,
+    );
+    return `Please check: ${parts.join(", ")}`;
+  }
+  const parts = fields.map(([f, p]) =>
+    f === "_schema"
+      ? "die Angaben passen nicht zusammen"
+      : `${DE_FIELDS[f] ?? humanField(f)} ${deProblem(p[0] ?? "")}`,
+  );
+  return `Bitte prüfe die Eingaben: ${parts.join(", ")}.`;
+}
+
 function pageLanguage(): string {
   return typeof document === "undefined" ? "de" : document.documentElement.lang || "de";
 }
 
 /** The message to show for a failed request, in the page's language. */
 export function localizeError(status: number, code: string | undefined, message: string): string {
-  if (pageLanguage().toLowerCase().startsWith("en")) {
+  const english = pageLanguage().toLowerCase().startsWith("en");
+  const fieldText = fieldErrorsMessage(message, english);
+  if (fieldText) return fieldText;
+  if (english) {
     return status === 429 ? "Too many attempts. Please wait a moment and try again." : message;
   }
   if (DE[message]) return DE[message];

@@ -471,197 +471,200 @@ export function Backups() {
         />
       </Group>
       <Paper withBorder shadow="sm" radius="lg">
-        <Table highlightOnHover className="responsive-table">
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>#</Table.Th>
-              <Table.Th>{tr('Datum', 'Date')}</Table.Th>
-              <Table.Th>{tr('Bereich', 'Scope')}</Table.Th>
-              <Table.Th>{tr('Art', 'Type')}</Table.Th>
-              <Table.Th>{tr('Status', 'Status')}</Table.Th>
-              <Table.Th>{tr('Grösse', 'Size')}</Table.Th>
-              <Table.Th>{tr('Geprüft', 'Verified')}</Table.Th>
-              <Table.Th>{tr('Tabellen', 'Tables')}</Table.Th>
-              <Table.Th style={{ width: 130 }}>{tr('Aktionen', 'Actions')}</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {backups.length === 0 && !backupsQuery.isLoading && (
+        {/* Nine columns do not fit a phone: the table scrolls inside its card. */}
+        <Table.ScrollContainer minWidth={860}>
+          <Table highlightOnHover>
+            <Table.Thead>
               <Table.Tr>
-                <Table.Td colSpan={9}>
-                  <div
-                    style={{
-                      padding: '32px 16px',
-                      textAlign: 'center',
-                      color: '#8c86a0',
-                      fontSize: 'var(--mantine-font-size-sm)',
-                    }}
-                  >
-                    {tr('Noch keine Backups. Mit «Jetzt sichern» legst du das erste an.', 'No backups yet. Click "Create backup now" to start.')}
-                  </div>
-                </Table.Td>
+                <Table.Th>#</Table.Th>
+                <Table.Th>{tr('Datum', 'Date')}</Table.Th>
+                <Table.Th>{tr('Bereich', 'Scope')}</Table.Th>
+                <Table.Th>{tr('Art', 'Type')}</Table.Th>
+                <Table.Th>{tr('Status', 'Status')}</Table.Th>
+                <Table.Th>{tr('Grösse', 'Size')}</Table.Th>
+                <Table.Th>{tr('Geprüft', 'Verified')}</Table.Th>
+                <Table.Th>{tr('Tabellen', 'Tables')}</Table.Th>
+                <Table.Th style={{ width: 130 }}>{tr('Aktionen', 'Actions')}</Table.Th>
               </Table.Tr>
-            )}
+            </Table.Thead>
+            <Table.Tbody>
+              {backups.length === 0 && !backupsQuery.isLoading && (
+                <Table.Tr>
+                  <Table.Td colSpan={9}>
+                    <div
+                      style={{
+                        padding: '32px 16px',
+                        textAlign: 'center',
+                        color: '#8c86a0',
+                        fontSize: 'var(--mantine-font-size-sm)',
+                      }}
+                    >
+                      {tr('Noch keine Backups. Mit «Jetzt sichern» legst du das erste an.', 'No backups yet. Click "Create backup now" to start.')}
+                    </div>
+                  </Table.Td>
+                </Table.Tr>
+              )}
 
-            {backups.map((b) => (
-              <Table.Tr key={b.id}>
-                <Table.Td data-label="#" style={{ color: '#5e5873' }}>
-                  {b.id}
-                </Table.Td>
-                <Table.Td data-label="Date">{formatDate(b.created_at)}</Table.Td>
-                <Table.Td data-label="Scope">
-                  {b.scope === 'club' ? (
-                    <span style={{ fontWeight: 600 }}>{b.tenant_slug ?? `#${b.tenant_id}`}</span>
-                  ) : (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#5e5873' }}>
-                      <IconWorld size={13} /> {tr('Global', 'Global')}
-                    </span>
-                  )}
-                  {b.scope === 'club' && b.tenant_id === null && (
-                    <div style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#8c86a0' }}>
-                      {tr('Verein gelöscht', 'Club deleted')}
-                    </div>
-                  )}
-                  {b.restored_at && (
-                    <div
-                      style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#1a7d43', marginTop: 2 }}
-                      title={b.safety_schema ? tr(`Vorheriger Stand: ${b.safety_schema}`, `Previous data: ${b.safety_schema}`) : ''}
-                    >
-                      {tr('Wiederhergestellt', 'Restored')} {formatDate(b.restored_at)}
-                    </div>
-                  )}
-                  {b.restore_error && (
-                    <div
-                      style={{
-                        fontSize: 'var(--mantine-font-size-xs)',
-                        color: '#c0392b',
-                        marginTop: 2,
-                        fontFamily: "'JetBrains Mono', monospace",
-                      }}
-                    >
-                      {tr('Wiederherstellung fehlgeschlagen: ', 'Restore failed: ')}
-                      {b.restore_error}
-                    </div>
-                  )}
-                </Table.Td>
-                <Table.Td data-label="Type">
-                  <span
-                    style={{
-                      background: TYPE_COLORS[b.type] ?? '#5e5873',
-                      color: '#fff',
-                      fontSize: 'var(--mantine-font-size-xs)',
-                      fontWeight: 600,
-                      padding: '2px 8px',
-                      borderRadius: 5,
-                      display: 'inline-block',
-                    }}
-                  >
-                    {label(TYPE_LABELS, b.type)}
-                  </span>
-                </Table.Td>
-                <Table.Td data-label="Status">
-                  <span
-                    style={{
-                      color: STATUS_COLORS[b.status] ?? '#5e5873',
-                      fontWeight: 600,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 5,
-                      fontSize: 'var(--mantine-font-size-sm)',
-                    }}
-                  >
-                    {b.status === 'pending' || b.status === 'running' ? (
-                      <IconClock size={13} />
-                    ) : null}
-                    {label(STATUS_LABELS, b.status)}
-                  </span>
-                  {b.error_message && (
-                    <div
-                      style={{
-                        fontSize: 'var(--mantine-font-size-xs)',
-                        color: '#c0392b',
-                        marginTop: 2,
-                        fontFamily: "'JetBrains Mono', monospace",
-                      }}
-                    >
-                      {b.error_message}
-                    </div>
-                  )}
-                </Table.Td>
-                <Table.Td data-label="Size" style={{ color: '#5e5873' }}>
-                  {formatSize(b.size_bytes)}
-                </Table.Td>
-                <Table.Td data-label="Verified">
-                  {b.verified_ok === true && (
+              {backups.map((b) => (
+                <Table.Tr key={b.id}>
+                  <Table.Td data-label="#" style={{ color: '#5e5873' }}>
+                    {b.id}
+                  </Table.Td>
+                  <Table.Td data-label="Date">{formatDate(b.created_at)}</Table.Td>
+                  <Table.Td data-label="Scope">
+                    {b.scope === 'club' ? (
+                      <span style={{ fontWeight: 600 }}>{b.tenant_slug ?? `#${b.tenant_id}`}</span>
+                    ) : (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#5e5873' }}>
+                        <IconWorld size={13} /> {tr('Global', 'Global')}
+                      </span>
+                    )}
+                    {b.scope === 'club' && b.tenant_id === null && (
+                      <div style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#8c86a0' }}>
+                        {tr('Verein gelöscht', 'Club deleted')}
+                      </div>
+                    )}
+                    {b.restored_at && (
+                      <div
+                        style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#1a7d43', marginTop: 2 }}
+                        title={b.safety_schema ? tr(`Vorheriger Stand: ${b.safety_schema}`, `Previous data: ${b.safety_schema}`) : ''}
+                      >
+                        {tr('Wiederhergestellt', 'Restored')} {formatDate(b.restored_at)}
+                      </div>
+                    )}
+                    {b.restore_error && (
+                      <div
+                        style={{
+                          fontSize: 'var(--mantine-font-size-xs)',
+                          color: '#c0392b',
+                          marginTop: 2,
+                          fontFamily: "'JetBrains Mono', monospace",
+                        }}
+                      >
+                        {tr('Wiederherstellung fehlgeschlagen: ', 'Restore failed: ')}
+                        {b.restore_error}
+                      </div>
+                    )}
+                  </Table.Td>
+                  <Table.Td data-label="Type">
                     <span
                       style={{
-                        color: '#1a7d43',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4,
+                        background: TYPE_COLORS[b.type] ?? '#5e5873',
+                        color: '#fff',
+                        fontSize: 'var(--mantine-font-size-xs)',
+                        fontWeight: 600,
+                        padding: '2px 8px',
+                        borderRadius: 5,
+                        display: 'inline-block',
                       }}
                     >
-                      <IconCheck size={14} /> {formatDate(b.verified_at)}
+                      {label(TYPE_LABELS, b.type)}
                     </span>
-                  )}
-                  {b.verified_ok === false && (
+                  </Table.Td>
+                  <Table.Td data-label="Status">
                     <span
                       style={{
-                        color: '#c0392b',
+                        color: STATUS_COLORS[b.status] ?? '#5e5873',
+                        fontWeight: 600,
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: 4,
+                        gap: 5,
+                        fontSize: 'var(--mantine-font-size-sm)',
                       }}
-                      title={b.verify_error ?? ''}
                     >
-                      <IconX size={14} /> {tr('Fehlgeschlagen', 'Failed')}
+                      {b.status === 'pending' || b.status === 'running' ? (
+                        <IconClock size={13} />
+                      ) : null}
+                      {label(STATUS_LABELS, b.status)}
                     </span>
-                  )}
-                  {b.verified_ok === null && <span style={{ color: '#bbb' }}>—</span>}
-                </Table.Td>
-                <Table.Td data-label="Tables" style={{ color: '#5e5873' }}>
-                  {b.table_count ?? '—'}
-                </Table.Td>
-                <Table.Td data-label="Actions">
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    {b.status === 'completed' && b.verified_ok === null && (
+                    {b.error_message && (
+                      <div
+                        style={{
+                          fontSize: 'var(--mantine-font-size-xs)',
+                          color: '#c0392b',
+                          marginTop: 2,
+                          fontFamily: "'JetBrains Mono', monospace",
+                        }}
+                      >
+                        {b.error_message}
+                      </div>
+                    )}
+                  </Table.Td>
+                  <Table.Td data-label="Size" style={{ color: '#5e5873' }}>
+                    {formatSize(b.size_bytes)}
+                  </Table.Td>
+                  <Table.Td data-label="Verified">
+                    {b.verified_ok === true && (
+                      <span
+                        style={{
+                          color: '#1a7d43',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                      >
+                        <IconCheck size={14} /> {formatDate(b.verified_at)}
+                      </span>
+                    )}
+                    {b.verified_ok === false && (
+                      <span
+                        style={{
+                          color: '#c0392b',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                        title={b.verify_error ?? ''}
+                      >
+                        <IconX size={14} /> {tr('Fehlgeschlagen', 'Failed')}
+                      </span>
+                    )}
+                    {b.verified_ok === null && <span style={{ color: '#bbb' }}>—</span>}
+                  </Table.Td>
+                  <Table.Td data-label="Tables" style={{ color: '#5e5873' }}>
+                    {b.table_count ?? '—'}
+                  </Table.Td>
+                  <Table.Td data-label="Actions">
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      {b.status === 'completed' && b.verified_ok === null && (
+                        <Button
+                          variant="subtle"
+                          size="compact-sm"
+                          onClick={() => handleVerify(b.id)}
+                          loading={verifyingId === b.id}
+                          style={{ padding: '2px 6px' }}
+                          title={tr('Backup prüfen', 'Verify backup')}
+                        >
+                          {tr('Prüfen', 'Verify')}
+                        </Button>
+                      )}
+                      {b.status === 'completed' && b.scope === 'club' && b.tenant_id !== null && (
+                        <Button
+                          variant="subtle"
+                          size="compact-sm"
+                          onClick={() => setRestoreTarget(b)}
+                          style={{ padding: '2px 6px' }}
+                          title={tr('Verein aus diesem Backup wiederherstellen', 'Restore the club from this backup')}
+                        >
+                          <IconRestore size={14} />
+                        </Button>
+                      )}
                       <Button
                         variant="subtle"
                         size="compact-sm"
-                        onClick={() => handleVerify(b.id)}
-                        loading={verifyingId === b.id}
-                        style={{ padding: '2px 6px' }}
-                        title={tr('Backup prüfen', 'Verify backup')}
+                        onClick={() => setDeleteTarget(b)}
+                        style={{ padding: '2px 6px', color: '#c0392b' }}
+                        title={tr('Backup löschen', 'Delete backup')}
                       >
-                        {tr('Prüfen', 'Verify')}
+                        <IconTrash size={14} />
                       </Button>
-                    )}
-                    {b.status === 'completed' && b.scope === 'club' && b.tenant_id !== null && (
-                      <Button
-                        variant="subtle"
-                        size="compact-sm"
-                        onClick={() => setRestoreTarget(b)}
-                        style={{ padding: '2px 6px' }}
-                        title={tr('Verein aus diesem Backup wiederherstellen', 'Restore the club from this backup')}
-                      >
-                        <IconRestore size={14} />
-                      </Button>
-                    )}
-                    <Button
-                      variant="subtle"
-                      size="compact-sm"
-                      onClick={() => setDeleteTarget(b)}
-                      style={{ padding: '2px 6px', color: '#c0392b' }}
-                      title={tr('Backup löschen', 'Delete backup')}
-                    >
-                      <IconTrash size={14} />
-                    </Button>
-                  </div>
-                </Table.Td>
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
+                    </div>
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
       </Paper>
 
       <Modal

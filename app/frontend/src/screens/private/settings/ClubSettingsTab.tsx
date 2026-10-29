@@ -18,9 +18,12 @@ import {
 } from '@mantine/core'
 import { getClubSettings, updateClubSettings, type ClubSettings } from '@/api/admin'
 import { useT } from '@/locales/i18n'
+import { useToast } from '@/context/AppContext'
+import { ErrorBanner } from '@/components/ui'
 
 function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
   const { t } = useT()
+  const { notify } = useToast()
   const queryClient = useQueryClient()
   const [form, setForm] = useState<ClubSettings>(initialData)
   const [saving, setSaving] = useState(false)
@@ -35,6 +38,13 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
       await updateClubSettings(form)
       queryClient.invalidateQueries({ queryKey: ['club-settings'] })
       queryClient.invalidateQueries({ queryKey: ['club-profile'] })
+      notify('success', t('clubSettings.saved', 'Einstellungen gespeichert'))
+    } catch (err: unknown) {
+      notify(
+        'error',
+        t('clubSettings.saveFailed', 'Einstellungen nicht gespeichert'),
+        err instanceof Error ? err.message : undefined,
+      )
     } finally {
       setSaving(false)
     }
@@ -201,13 +211,23 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
 
 export function ClubSettingsTab() {
   const { t } = useT()
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['club-settings'],
     queryFn: getClubSettings,
   })
 
   if (isLoading) {
     return <Text p={20} c="dimmed">{t('clubSettings.loading', 'Einstellungen werden geladen …')}</Text>
+  }
+  // Saving over settings that never loaded would show empty fields as if
+  // the club had none.
+  if (error) {
+    return (
+      <ErrorBanner
+        message={t('clubSettings.loadFailed', 'Die Einstellungen konnten nicht geladen werden.')}
+        onRetry={() => refetch()}
+      />
+    )
   }
 
   return <ClubSettingsForm initialData={data ?? {}} />

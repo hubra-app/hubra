@@ -218,7 +218,9 @@
       "atOnce": "You leave the club at once. Your Hubra account and your other clubs stay.",
       "confirmTitle": "Leave the club?",
       "confirmBody": "You lose access to the club's pages. Your invoices and entries stay with the club. To come back later, ask to join again."
-    }
+    },
+    "invoicesLoadFailed": "Your invoices could not be loaded.",
+    "openInvoices": "Open invoices"
   },
   "app": {
     "backend": {
@@ -878,7 +880,9 @@
       "deleted": "Transaction deleted.",
       "deletedMsg": "The transaction has been deleted.",
       "saved": "Transaction saved.",
-      "updatedMsg": "Status changed to \"{{status}}\"."
+      "updatedMsg": "Status changed to \"{{status}}\".",
+      "saveFailed": "Transaction not saved",
+      "updatedMsg2": "“{{description}}” was saved."
     },
     "transactionDeleted": "Transaction deleted.",
     "transactionDeletedMsg": "The transaction has been deleted.",
@@ -917,7 +921,42 @@
       "paid": "Paid",
       "overdue": "Overdue"
     },
-    "loadTransactionsFailed": "Failed to load transactions"
+    "loadTransactionsFailed": "Failed to load transactions",
+    "addFirstTransaction": "Record the first transaction",
+    "allStatuses": "All statuses",
+    "amountChf": "Amount (CHF)",
+    "createStarterCategories": "Create the usual categories",
+    "deleteTransactionBody": "“{{description}}” ({{amount}}) will be deleted for good.",
+    "form": {
+      "amountRequired": "Enter an amount above 0.",
+      "categoryRequired": "Choose a category.",
+      "dateRequired": "Choose a date.",
+      "descriptionRequired": "Describe the transaction briefly.",
+      "expense": "Expense",
+      "income": "Income",
+      "linkedMember": "Linked to {{name}}",
+      "noCategory": "No matching category",
+      "openCategories": "Go to categories",
+      "payee": "From / to (optional)",
+      "payeePlaceholder": "e.g. Hardware store Ltd",
+      "record": "Record transaction"
+    },
+    "noTransactionsFilterHint": "Change the search or the filters.",
+    "noTransactionsYet": "No transactions yet",
+    "noTransactionsYetHint": "The club's income and expenses appear here, including paid invoices.",
+    "noCategoriesWhy": "Every transaction belongs to a category. Create your own or start with a set.",
+    "paymentMethod": "Payment method",
+    "recordedOn": "Recorded on {{date}}",
+    "starter": {
+      "donations": "Donations",
+      "events": "Events",
+      "fees": "Membership fees",
+      "material": "Material",
+      "other": "Other",
+      "rent": "Rent"
+    },
+    "starterCreated": "Categories created",
+    "starterCreatedMsg": "You can rename or delete them at any time."
   },
   "functions": {
     "assignHolder": "Assign person",
@@ -1003,7 +1042,9 @@
     "sessionsHint": "e.g. twice a week",
     "sessionsPlaceholder": "3 times a week",
     "title": "Groups",
-    "tools": "Tools"
+    "tools": "Tools",
+    "memberCount_one": "{{count}} member",
+    "memberCount_other": "{{count}} members"
   },
   "inventory": {
     "addFirstItem": "Add the first item",
@@ -1665,7 +1706,8 @@
       "decline": "Decline",
       "approved": "Leaving confirmed",
       "declined": "Request declined"
-    }
+    },
+    "noMembersFilterHint": "Change the search or the filter."
   },
   "notifications": {
     "invoicePaid": "Invoice paid",
@@ -2148,7 +2190,8 @@
     "members": "Members",
     "create": "Create tier",
     "deleteTitle": "Delete the \"{{name}}\" tier?",
-    "deleteBody": "Members assigned to this tier will need to be reassigned. This cannot be undone."
+    "deleteBody": "Members assigned to this tier will need to be reassigned. This cannot be undone.",
+    "noPrice": "No fee"
   },
   "toast": {
     "error": "Error",
@@ -2285,7 +2328,10 @@
     "loading": "Loading settings...",
     "membership": "Membership",
     "leaveRequiresApproval": "Leaving needs approval",
-    "leaveRequiresApprovalHint": "On: members ask to leave and you approve it under Members › Applications. Off: members leave at once."
+    "leaveRequiresApprovalHint": "On: members ask to leave and you approve it under Members › Applications. Off: members leave at once.",
+    "loadFailed": "The settings could not be loaded.",
+    "saveFailed": "Settings not saved",
+    "saved": "Settings saved"
   },
   "domains": {
     "added": "Domain added",
