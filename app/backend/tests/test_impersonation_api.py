@@ -197,3 +197,18 @@ def test_actions_not_blocked_when_not_impersonating():
         mock_jwt.return_value = {}
         result = check_impersonation_restriction("delete_tenant")
         assert result is None
+
+
+def test_impersonate_user_id_must_be_a_number(
+    client, superadmin_headers, target_tenant
+):
+    with (
+        patch("hubra.core.tenant.context.set_search_path"),
+        patch("hubra.api.tenant.routes.set_search_path", create=True),
+    ):
+        resp = client.post(
+            f"/api/v1/system/tenants/{target_tenant['tenant'].id}/impersonate",
+            json={"reason": "support", "user_id": "abc"},
+            headers=superadmin_headers,
+        )
+    assert resp.status_code == 422

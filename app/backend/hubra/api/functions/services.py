@@ -2,17 +2,42 @@
 
 from __future__ import annotations
 
+import logging
+
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 from hubra.core.models.function import Function, FunctionHolder
 
 
+def _holder_count(value) -> int:
+    """At least one holder; a value that is not a whole number is a 400."""
+    try:
+        return max(1, int(value))
+    except (TypeError, ValueError):
+        raise_error(400, "VALIDATION_ERROR", "maxHolders must be a whole number")
+
+
 class FunctionService:
     @staticmethod
     def list_all() -> list[Function]:
-        return list(db.session.scalars(select(Function).order_by(Function.name)).all())
+        from hubra.core.models.member import Member
+
+        # Holders, their members and accounts in three queries, not three
+        # per function.
+        return list(
+            db.session.scalars(
+                select(Function)
+                .order_by(Function.name)
+                .options(
+                    selectinload(Function.holders)
+                    .selectinload(FunctionHolder.member)
+                    .selectinload(Member.user)
+                )
+            ).all()
+        )
 
     @staticmethod
     def get_by_id(function_id: int) -> Function:
@@ -25,9 +50,10 @@ class FunctionService:
     def create(
         name: str, description: str | None = None, max_holders: int = 1
     ) -> Function:
-        name = name.strip()
+        name = name.strip() if isinstance(name, str) else ""
         if not name:
             raise_error(400, "VALIDATION_ERROR", "Function name cannot be empty")
+        max_holders = _holder_count(max_holders)
 
         existing = db.session.scalar(select(Function).where(Function.name == name))
         if existing is not None:
@@ -36,7 +62,7 @@ class FunctionService:
         fn = Function(
             name=name,
             description=description,
-            max_holders=max(1, max_holders),
+            max_holders=max_holders,
         )
         db.session.add(fn)
         db.session.flush()
@@ -59,7 +85,7 @@ class FunctionService:
         updates = {k: v for k, v in fields.items() if k in allowed}
 
         if "name" in updates:
-            name = updates["name"].strip()
+            name = updates["name"].strip() if isinstance(updates["name"], str) else ""
             if not name:
                 raise_error(400, "VALIDATION_ERROR", "Function name cannot be empty")
             if name != fn.name:
@@ -71,7 +97,7 @@ class FunctionService:
             updates["name"] = name
 
         if "max_holders" in updates:
-            updates["max_holders"] = max(1, int(updates["max_holders"]))
+            updates["max_holders"] = _holder_count(updates["max_holders"])
             current_holders = len(fn.holders)
             if updates["max_holders"] < current_holders:
                 raise_error(
@@ -113,6 +139,8 @@ class FunctionService:
         from hubra.core.models.member import Member
 
         fn = FunctionService.get_by_id(function_id)
+        # Under a row lock, so two assignments cannot both pass max_holders.
+        db.session.refresh(fn, with_for_update=True)
 
         member = db.session.get(Member, member_id)
         if member is None:
@@ -160,14 +188,10 @@ class FunctionService:
 
     @staticmethod
     def serialize(fn: Function) -> dict:
-        from hubra.core.models.member import Member
-
-        holders = db.session.scalars(
-            select(Member)
-            .join(FunctionHolder, FunctionHolder.member_id == Member.id)
-            .where(FunctionHolder.function_id == fn.id)
-        ).all()
-
+        holders = sorted(
+            (fh for fh in fn.holders if fh.member is not None),
+            key=lambda fh: fh.member_id,
+        )
         return {
             "id": fn.id,
             "name": fn.name,
@@ -175,14 +199,13 @@ class FunctionService:
             "maxHolders": fn.max_holders,
             "holders": [
                 {
-                    "memberId": h.id,
-                    "memberName": h.name,
-                    "assignedAt": holder.assigned_at.isoformat()
-                    if holder.assigned_at
+                    "memberId": fh.member_id,
+                    "memberName": fh.member.name,
+                    "assignedAt": fh.assigned_at.isoformat()
+                    if fh.assigned_at
                     else None,
                 }
-                for h in holders
-                for holder in [fh for fh in fn.holders if fh.member_id == h.id]
+                for fh in holders
             ],
         }
 
@@ -215,8 +238,12 @@ def _trigger_mail_sync(function_id: int) -> None:
             reconcile_entity_forwarding,
         )
 
+        # A savepoint: a failure here must not undo the change that
+        # triggered the sync, which the caller has not committed yet.
         try:
-            reconcile_entity_forwarding("function", function_id)
-            db.session.commit()
+            with db.session.begin_nested():
+                reconcile_entity_forwarding("function", function_id)
         except Exception:
-            db.session.rollback()
+            logging.getLogger(__name__).warning(
+                "Inline mail sync failed for function %s", function_id, exc_info=True
+            )

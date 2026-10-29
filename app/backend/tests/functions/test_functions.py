@@ -583,7 +583,7 @@ def test_reassign_holder_repoints_forwarding(app, db, seeded_db):
         user_id=user_b.id,
         public_email="b@example.ch",
         status="active",
-        tier_id=1,
+        tier_id=seeded_db["tier"].id,
     )
     db.session.add(member_b)
     db.session.flush()
@@ -627,7 +627,7 @@ def test_function_two_holders_both_forward(app, db, seeded_db):
         user_id=user2.id,
         public_email="second@example.ch",
         status="active",
-        tier_id=1,
+        tier_id=seeded_db["tier"].id,
     )
     db.session.add(m2)
     db.session.flush()
@@ -955,3 +955,38 @@ def test_function_service_create_auto_creates_disabled_mma(app, db, seeded_db):
     assert mma is not None
     assert mma.enabled is False
     assert mma.address_type == "alias"
+
+
+def test_archiving_a_holder_frees_the_function(client, seeded_db, auth_headers):
+    """The treasurer leaves: the office is free for a successor instead of
+    still listing (and counting) the archived member."""
+    from hubra.core.models.member import Member
+    from hubra.core.models.user import User
+
+    def person(n):
+        user = User(email=f"office{n}@test.ch", first_name="Office", last_name=str(n))
+        user.set_password("password123")
+        db.session.add(user)
+        db.session.flush()
+        member = Member(user_id=user.id, status="active", tier_id=seeded_db["tier"].id)
+        db.session.add(member)
+        db.session.flush()
+        return member
+
+    fn = Function(name="Kassier", max_holders=1)
+    db.session.add(fn)
+    db.session.flush()
+    old, new = person(1), person(2)
+    db.session.add(FunctionHolder(function_id=fn.id, member_id=old.id))
+    db.session.commit()
+    fn_id, old_id, new_id = fn.id, old.id, new.id
+
+    resp = client.post(f"/api/v1/members/{old_id}/archive", headers=auth_headers)
+    assert resp.status_code == 204
+
+    listed = client.get(f"/api/v1/functions/{fn_id}", headers=auth_headers).get_json()
+    assert listed["holders"] == []
+    resp = client.post(
+        f"/api/v1/functions/{fn_id}/holders", headers=auth_headers, json={"memberId": new_id}
+    )
+    assert resp.status_code in (200, 201), resp.get_json()

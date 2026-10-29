@@ -136,3 +136,45 @@ class TestCalculatePreviewCost:
             db_session=db.session,
         )
         assert result["amount_yearly"] == 80.0
+
+
+def test_invoice_amount_is_in_whole_rappen(
+    yearly_expenses_setting, percentage_tier, db
+):
+    from hubra.core.pricing import calculate_invoice_amount
+
+    percentage_tier.billing_cycle = "monthly"
+    percentage_tier.percentage_value = Decimal("3.33")
+    member = type("M", (), {"tier": percentage_tier, "payment_plan": None})()
+    amount = calculate_invoice_amount(member, percentage_tier, Decimal(0))
+    assert amount == Decimal("27.75")
+    assert amount.as_tuple().exponent == -2
+
+
+def test_each_formula_tier_deducts_only_its_own_tiers(billable_tier_db, db):
+    from hubra.core.models.member import MembershipTier
+    from hubra.core.pricing import deductions_by_tier
+
+    premium = billable_tier_db["billable_tier"]
+    fa = MembershipTier(
+        name="FA",
+        color="#000",
+        billing_cycle="yearly",
+        price_type="formula",
+        coefficient=Decimal("1"),
+        deduct_tier_ids=[premium.id],
+    )
+    fb = MembershipTier(
+        name="FB",
+        color="#000",
+        billing_cycle="yearly",
+        price_type="formula",
+        coefficient=Decimal("1"),
+        deduct_tier_ids=[billable_tier_db["free_tier"].id],
+    )
+    db.session.add_all([fa, fb])
+    db.session.commit()
+
+    deducted_for = deductions_by_tier(db.session)
+    assert deducted_for(fa) == Decimal("1188.00")  # 99 a month, one member
+    assert deducted_for(fb) == Decimal(0)

@@ -9,7 +9,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT, zmsg } from '@/locales/i18n'
@@ -31,6 +31,7 @@ import {
   ConfirmModal,
   usePagination,
   Pagination,
+  useSubmitOnce,
 } from '@/components/ui'
 import type { Group } from '@/types'
 import {
@@ -206,7 +207,7 @@ export function GroupsScreen() {
   const [detailGroup, setDetailGroup] = useState<Group | null>(null)
 
   const form = useForm<GroupForm>({
-    validate: zodResolver(groupSchema),
+    validate: zod4Resolver(groupSchema),
     initialValues: {
       name: '',
       description: '',
@@ -284,6 +285,7 @@ export function GroupsScreen() {
       )
     }
   }
+  const [submitAdd, adding] = useSubmitOnce(saveAdd)
 
   const saveEdit = async (data: GroupForm) => {
     if (!editTarget) return
@@ -614,7 +616,7 @@ export function GroupsScreen() {
             <Button variant="default" onClick={() => setAddOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="filled" onClick={() => form.onSubmit(saveAdd)()}>
+            <Button variant="filled" onClick={() => form.onSubmit(submitAdd)()} loading={adding}>
               {t('groups.createGroup', 'Gruppe erstellen')}
             </Button>
           </>

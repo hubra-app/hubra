@@ -216,3 +216,15 @@ def test_approving_an_application_without_an_account_invites(db, admin, club):
     assert db.session.scalar(select(User).where(User.email == "paper@test.ch")) is None
     assert db.session.scalar(select(ClubInvite)).email == "paper@test.ch"
     assert db.session.scalar(select(Application)) is None
+
+
+def test_invite_validity_follows_the_club_setting(db, admin, club):
+    club["tenant"].settings = {"branding": {"invite_valid_days": 3}}
+    db.session.commit()
+    _invite(admin, {"email": "soon@test.ch", "first_name": "Sam"})
+    invite = db.session.scalar(
+        select(ClubInvite).where(ClubInvite.email == "soon@test.ch")
+    )
+    expires = invite.expires_at.replace(tzinfo=invite.expires_at.tzinfo or timezone.utc)
+    left = expires - datetime.now(timezone.utc)
+    assert timedelta(days=2, hours=23) < left <= timedelta(days=3)

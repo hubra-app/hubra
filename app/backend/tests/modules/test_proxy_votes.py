@@ -8,7 +8,7 @@ from sqlalchemy import select
 from hubra.api.polls.services import PollService, ProxyService
 from hubra.core.errors import ApiError
 from hubra.core.models.member import Member
-from hubra.core.models.poll import Poll, PollOption, PollVote
+from hubra.core.models.poll import Poll, PollOption, PollProxy, PollVote
 from hubra.core.models.user import User
 
 
@@ -132,3 +132,15 @@ def test_create_poll_with_proxy(client, auth_headers, seeded_db):
     assert resp.status_code == 201
     body = resp.get_json()
     assert body["allow_proxy"] is True and body["max_proxies_per_member"] == 2
+
+
+def test_deleting_a_poll_removes_its_proxies(db, setup):
+    # Club schemas have no foreign keys, so the database does not cascade.
+    poll, admin, anna, _ = setup
+    ProxyService.grant(poll, anna.id, admin.id)
+    db.session.commit()
+
+    PollService.delete(poll.id, admin.id)
+    db.session.commit()
+
+    assert db.session.scalars(select(PollProxy)).all() == []

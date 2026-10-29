@@ -382,3 +382,28 @@ def test_switch_tenant_lets_a_superadmin_in_with_mail(client, db, seeded_db, mai
     assert resp.status_code == 200
     db.session.refresh(user)
     assert user.private_email_verified is True
+
+
+def test_club_sign_in_refuses_an_unverified_user(client, db, seeded_db, mail_on):
+    """Signing in straight into a club (X-Tenant-Slug) checks the address too."""
+    user = _user(db)
+    tenant = _club_member(db, user)
+    with patch("hubra.api.auth.routes.current_tenant", return_value=tenant):
+        resp = client.post(
+            "/api/v1/auth/login",
+            json={"email": user.email, "password": PASSWORD},
+        )
+    assert resp.status_code == 403
+    assert resp.get_json()["error"] == "EMAIL_NOT_VERIFIED"
+
+
+def test_join_request_needs_a_verified_address(client, db, seeded_db, mail_on):
+    _user(db)
+    db.session.add(
+        Tenant(name="Club Y", slug="club-y", plan="starter", status="active")
+    )
+    db.session.commit()
+    _login(client)
+    resp = client.post("/api/v1/system/clubs/club-y/join", json={})
+    assert resp.status_code == 403
+    assert resp.get_json()["error"] == "EMAIL_NOT_VERIFIED"

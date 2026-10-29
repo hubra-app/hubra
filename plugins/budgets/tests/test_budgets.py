@@ -86,6 +86,10 @@ def test_budget_validation(client, auth_headers, cats):
     fees, _ = cats
     assert client.post("/api/v1/budgets/", json={"year": 2026}).status_code == 400
     assert client.post("/api/v1/budgets/", json={"name": "x"}).status_code == 400
+    assert (
+        client.post("/api/v1/budgets/", json={"name": 5, "year": 2026}).status_code
+        == 400
+    )
     assert _create(client, cats).status_code == 201
     assert _create(client, cats).status_code == 409
     bid = client.get("/api/v1/budgets/").get_json()[0]["id"]
@@ -94,6 +98,8 @@ def test_budget_validation(client, auth_headers, cats):
         [{"category_id": fees.id, "kind": "gift", "planned": 1}],
         [{"category_id": fees.id, "kind": "income", "planned": -1}],
         [{"category_id": fees.id, "kind": "income", "planned": "abc"}],
+        [{"category_id": fees.id, "kind": "income", "planned": "NaN"}],
+        [{"category_id": fees.id, "kind": "income", "planned": "1e12"}],
         [{"category_id": fees.id, "kind": "income", "planned": 1}] * 2,
     ]
     for lines in bad:

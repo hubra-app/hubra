@@ -37,6 +37,8 @@ class PollSchema(ma.SQLAlchemyAutoSchema):
         exclude = ("votes",)
 
     closes_at = fields.DateTime(allow_none=True)
+    # A poll past its closing time is closed, even before anyone closes it.
+    status = fields.Method("get_status", dump_only=True)
     options = fields.List(fields.Nested(PollOptionSchema), dump_only=True)
     total_votes = fields.Method("get_total_votes", dump_only=True)
     created_by_id = fields.Integer(dump_only=True, allow_none=True)
@@ -60,6 +62,11 @@ class PollSchema(ma.SQLAlchemyAutoSchema):
         finally:
             clear_counts(polls, _VOTE_COUNT)
             clear_counts(options, _VOTE_COUNT)
+
+    def get_status(self, obj):
+        from hubra.api.polls.services import is_closed
+
+        return "closed" if is_closed(obj) else obj.status
 
     def get_total_votes(self, obj):
         return cached_count(
@@ -107,7 +114,8 @@ class PollUpdateSchema(ma.Schema):
         unknown = RAISE
 
     question = fields.Str(validate=validate.Length(min=1, max=255))
-    closes_at = fields.DateTime(allow_none=True, load_default=None)
+    # No load_default: a PATCH without closes_at keeps the deadline.
+    closes_at = fields.DateTime(allow_none=True)
     options = fields.List(
         fields.Nested(_PollOptionInputSchema),
         validate=validate.Length(min=2),

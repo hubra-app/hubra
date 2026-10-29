@@ -37,6 +37,13 @@ const STATUS_LABELS: Record<string, [string, string]> = {
 function slugify(name: string): string {
   return name
     .toLowerCase()
+    .replace(/ä/g, 'ae')
+    .replace(/ö/g, 'oe')
+    .replace(/ü/g, 'ue')
+    .replace(/ß/g, 'ss')
+    // é → e and the like: drop the accent, keep the letter.
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9-]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .replace(/-{2,}/g, '-')
@@ -89,6 +96,7 @@ export function StartClubScreen() {
   })
 
   const send = () => {
+    if (submit.isPending) return
     setError('')
     const cleanSlug = slugify(slug)
     if (!name.trim() || !cleanSlug) {

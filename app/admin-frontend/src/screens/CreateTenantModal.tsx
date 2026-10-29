@@ -9,7 +9,8 @@ import {
   Alert,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { useQueryClient } from '@tanstack/react-query'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { createTenant } from '@/api/tenants'
@@ -22,7 +23,14 @@ const makeSchema = () =>
     slug: z
       .string()
       .min(3, tr('Mindestens 3 Zeichen', 'At least 3 characters'))
-      .max(64, tr('Höchstens 64 Zeichen', 'At most 64 characters')),
+      .max(64, tr('Höchstens 64 Zeichen', 'At most 64 characters'))
+      .regex(
+        /^[a-z0-9][a-z0-9-]*[a-z0-9]$/,
+        tr(
+          'Nur Kleinbuchstaben, Ziffern und Bindestriche, nicht am Anfang oder Ende',
+          'Only lowercase letters, digits and hyphens, not at the start or end',
+        ),
+      ),
     plan: z.string(),
     adminEmail: z.string().email(tr('Ungültige E-Mail-Adresse', 'Invalid email')).or(z.literal('')),
     adminPassword: z.string(),
@@ -33,6 +41,13 @@ type FormValues = z.infer<ReturnType<typeof makeSchema>>
 function slugify(name: string): string {
   return name
     .toLowerCase()
+    .replace(/ä/g, 'ae')
+    .replace(/ö/g, 'oe')
+    .replace(/ü/g, 'ue')
+    .replace(/ß/g, 'ss')
+    // é → e and the like: drop the accent, keep the letter.
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9-]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .replace(/-{2,}/g, '-')
@@ -51,7 +66,7 @@ export function CreateTenantModal({
   const [slugEdited, setSlugEdited] = useState(false)
 
   const form = useForm<FormValues>({
-    validate: zodResolver(makeSchema()),
+    validate: zod4Resolver(makeSchema()),
     initialValues: {
       name: '',
       slug: '',
@@ -74,6 +89,8 @@ export function CreateTenantModal({
     form.setFieldValue('slug', e.target.value)
   }
 
+  const queryClient = useQueryClient()
+
   const handleSubmit = async (values: FormValues) => {
     setLoading(true)
     setError('')
@@ -85,6 +102,8 @@ export function CreateTenantModal({
         admin_email: values.adminEmail || undefined,
         admin_password: values.adminPassword || undefined,
       })
+      queryClient.invalidateQueries({ queryKey: ['tenants'] })
+      queryClient.invalidateQueries({ queryKey: ['backup-clubs'] })
       notify('success', tr('Verein erstellt', 'Club created'), tr(`${values.name} ist eingerichtet.`, `${values.name} has been set up.`))
       onClose()
       form.reset()

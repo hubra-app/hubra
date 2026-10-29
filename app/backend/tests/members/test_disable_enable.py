@@ -253,11 +253,12 @@ def test_enable_member_returns_json(client, seeded_db, auth_headers):
     from hubra.core.models.user import User
     from hubra.core.extensions import db
 
+    from datetime import datetime, timezone
+
     regular_user = User(
         email="regular@test.ch",
         first_name="Regular",
         last_name="User",
-        is_disabled=True,
     )
     regular_user.set_password("password123")
     db.session.add(regular_user)
@@ -267,6 +268,7 @@ def test_enable_member_returns_json(client, seeded_db, auth_headers):
         user_id=regular_user.id,
         status="active",
         tier_id=seeded_db["tier"].id,
+        disabled_at=datetime.now(timezone.utc),
     )
     db.session.add(regular)
     db.session.commit()
@@ -281,6 +283,29 @@ def test_enable_member_returns_json(client, seeded_db, auth_headers):
     assert body["email"] == "regular@test.ch"
     assert body["is_disabled"] is False
     assert "password_hash" not in body
+
+
+def test_enable_member_keeps_account_block(client, seeded_db, auth_headers):
+    """A club switches its membership back on; a block on the whole account
+    is the platform's and stays."""
+    from hubra.core.models.member import Member
+    from hubra.core.models.user import User
+    from hubra.core.extensions import db
+
+    blocked = User(
+        email="blocked@test.ch", first_name="B", last_name="L", is_disabled=True
+    )
+    blocked.set_password("password123")
+    db.session.add(blocked)
+    db.session.flush()
+    member = Member(user_id=blocked.id, status="active", tier_id=seeded_db["tier"].id)
+    db.session.add(member)
+    db.session.commit()
+
+    resp = client.post(f"/api/v1/members/{member.id}/enable", headers=auth_headers)
+    assert resp.status_code == 200
+    db.session.refresh(blocked)
+    assert blocked.is_disabled is True
 
 
 # ── Mail lifecycle hooks ─────────────────────────────────────────────────────

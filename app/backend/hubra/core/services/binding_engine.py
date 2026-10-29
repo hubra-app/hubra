@@ -139,6 +139,10 @@ def update_binding(binding_id: int, **fields) -> Binding:
                 )
         key_changed = True
 
+    # Switching a binding on takes the scalar key, as toggle_binding checks.
+    if fields.get("enabled") and not old_enabled and not key_changed:
+        _refuse_if_key_taken(binding)
+
     if "type" in fields:
         binding.type = fields["type"]
         source_changed = True
@@ -157,9 +161,9 @@ def update_binding(binding_id: int, **fields) -> Binding:
 
     db.session.flush()
 
-    if key_changed and old_enabled:
+    if old_enabled and (key_changed or not binding.enabled):
         sync_internal_key(old_key_id)
-    if binding.enabled and (key_changed or source_changed):
+    if binding.enabled and (key_changed or source_changed or not old_enabled):
         sync_binding(binding)
 
     return binding
@@ -184,6 +188,25 @@ def delete_binding(binding_id: int) -> None:
         sync_internal_key(key_id)
 
 
+def _refuse_if_key_taken(binding: Binding) -> None:
+    """409 if the binding's scalar key already has another enabled binding."""
+    if binding.key.allow_multiple:
+        return
+    active = db.session.scalar(
+        select(Binding).where(
+            Binding.key_id == binding.key_id,
+            Binding.enabled.is_(True),
+            Binding.id != binding.id,
+        )
+    )
+    if active is not None:
+        raise_error(
+            409,
+            "SCALAR_KEY_OCCUPIED",
+            f"Scalar key '{binding.key.key}' already has an enabled binding",
+        )
+
+
 def toggle_binding(binding_id: int, enabled: bool) -> Binding:
     """Enable or disable a binding. Protected bindings cannot be toggled."""
     binding = db.session.get(Binding, binding_id)
@@ -196,20 +219,8 @@ def toggle_binding(binding_id: int, enabled: bool) -> Binding:
     if binding.enabled == enabled:
         return binding
 
-    if enabled and not binding.key.allow_multiple:
-        active = db.session.scalar(
-            select(Binding).where(
-                Binding.key_id == binding.key_id,
-                Binding.enabled.is_(True),
-                Binding.id != binding_id,
-            )
-        )
-        if active is not None:
-            raise_error(
-                409,
-                "SCALAR_KEY_OCCUPIED",
-                f"Scalar key '{binding.key.key}' already has an enabled binding",
-            )
+    if enabled:
+        _refuse_if_key_taken(binding)
 
     binding.enabled = enabled
     db.session.flush()

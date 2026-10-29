@@ -286,6 +286,7 @@ export function Pagination({
           label: String(n),
         }))}
         style={{ width: 80 }}
+        aria-label={t('common.perPage', 'Einträge pro Seite')}
       />
       <Text size="sm" c="dimmed" flex={1} style={{ whiteSpace: 'nowrap' }}>
         {t('common.rangeOf', '{{start}}–{{end}} von {{total}}', { start, end, total })}
@@ -297,6 +298,14 @@ export function Pagination({
         size="sm"
         withEdges
         boundaries={1}
+        getControlProps={(control) => ({
+          'aria-label': {
+            first: t('common.pageFirst', 'Erste Seite'),
+            previous: t('common.pagePrevious', 'Vorherige Seite'),
+            next: t('common.pageNext', 'Nächste Seite'),
+            last: t('common.pageLast', 'Letzte Seite'),
+          }[control],
+        })}
       />
     </Group>
   )

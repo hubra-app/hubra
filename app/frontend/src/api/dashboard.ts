@@ -16,9 +16,10 @@ export interface DashboardSummary {
   stats: {
     activeMembers: number;
     memberDelta: number;
-    netMonth: number;
-    openInvoices: number;
-    openInvoicesAmount: number;
+    // null when the member may not see the finance overview
+    netMonth: number | null;
+    openInvoices: number | null;
+    openInvoicesAmount: number | null;
     upcomingEvents: number;
   };
   growth: number[];

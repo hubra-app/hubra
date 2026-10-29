@@ -141,3 +141,13 @@ class TestGetWebhookUrl:
         # Force the RuntimeError path (no Flask app context)
         result = _get_webhook_url()
         assert result == ""
+
+
+def test_the_alert_helpers_take_what_their_callers_pass():
+    """Every caller (task failures, disk, Redis, Postgres) passes description=;
+    the helpers took message=, so each alert raised TypeError instead."""
+    with patch("hubra.core.services.alerts.send_alert") as send:
+        alert_error(title="t", description="d", fields=[])
+        alert_warning(title="t", description="d")
+        alert_resolved(title="t", description="d")
+    assert send.call_count == 3

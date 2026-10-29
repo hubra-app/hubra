@@ -21,15 +21,16 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import { SignedInFrame } from '@/components/SignedInFrame'
-import { setLang } from '@/lang'
+import { LoadFailed } from '@/components/LoadFailed'
+import { getLang, setLang, tr, useLang } from '@/lang'
 import * as authApi from '@/api/auth'
 
 const TABS = [
-  { value: 'profil', label: 'Profil' },
-  { value: 'email', label: 'E-Mail' },
-  { value: 'passwort', label: 'Passwort' },
-  { value: 'einstellungen', label: 'Einstellungen' },
-  { value: 'sitzungen', label: 'Sitzungen' },
+  { value: 'profil', label: () => tr('Profil', 'Profile') },
+  { value: 'email', label: () => tr('E-Mail', 'Email') },
+  { value: 'passwort', label: () => tr('Passwort', 'Password') },
+  { value: 'einstellungen', label: () => tr('Einstellungen', 'Settings') },
+  { value: 'sitzungen', label: () => tr('Sitzungen', 'Sessions') },
 ] as const
 
 type Tab = (typeof TABS)[number]['value']
@@ -45,6 +46,8 @@ function errorText(err: unknown, fallback: string): string {
  */
 export function AccountScreen() {
   const { authStatus } = useSso()
+  // Re-render when the language changes on the settings tab.
+  useLang()
   const navigate = useNavigate()
   const { tab: rawTab } = useParams()
   const tab: Tab = TABS.some((t) => t.value === rawTab) ? (rawTab as Tab) : 'profil'
@@ -59,6 +62,12 @@ export function AccountScreen() {
     enabled: authStatus === 'authed',
   })
 
+  if (profile.isError)
+    return (
+      <Center h="100vh">
+        <LoadFailed onRetry={() => profile.refetch()} />
+      </Center>
+    )
   if (!profile.data)
     return (
       <Center h="100vh">
@@ -69,17 +78,19 @@ export function AccountScreen() {
   return (
     <SignedInFrame width={640}>
       <Title order={1} fz={30} mb={6}>
-        Mein Konto
+        {tr('Mein Konto', 'My account')}
       </Title>
       <Text c="dimmed" mb="lg">
-        Gilt für alle deine Vereine. Mitgliedschaft und Vereins-Mail findest du im jeweiligen
-        Verein.
+        {tr(
+          'Gilt für alle deine Vereine. Mitgliedschaft und Vereins-Mail findest du im jeweiligen Verein.',
+          'Applies to all your clubs. Membership and club mail are in each club.',
+        )}
       </Text>
       <Tabs value={tab} onChange={(v) => v && navigate(`/account/${v}`)} keepMounted={false}>
         <Tabs.List mb="lg" style={{ flexWrap: 'nowrap', overflowX: 'auto' }}>
           {TABS.map((t) => (
             <Tabs.Tab key={t.value} value={t.value}>
-              {t.label}
+              {t.label()}
             </Tabs.Tab>
           ))}
         </Tabs.List>
@@ -112,7 +123,8 @@ function useSaveProfile(success: string) {
       queryClient.setQueryData(['profile'], p)
       notify('success', success)
     },
-    onError: (err) => notify('error', 'Speichern fehlgeschlagen', errorText(err, '')),
+    onError: (err) =>
+      notify('error', tr('Speichern fehlgeschlagen', 'Saving failed'), errorText(err, '')),
   })
 }
 
@@ -120,7 +132,7 @@ function ProfileTab({ profile }: { profile: authApi.Profile }) {
   const [name, setName] = useState(profile.name)
   const [color, setColor] = useState(profile.avatarColor)
   const [note, setNote] = useState(profile.profileNote ?? '')
-  const save = useSaveProfile('Profil gespeichert')
+  const save = useSaveProfile(tr('Profil gespeichert', 'Profile saved'))
 
   return (
     <Paper withBorder radius="md" p="lg">
@@ -132,15 +144,26 @@ function ProfileTab({ profile }: { profile: authApi.Profile }) {
       >
         <Stack gap="md">
           <TextInput
-            label="Name"
+            label={tr('Name', 'Name')}
             required
             value={name}
             onChange={(e) => setName(e.currentTarget.value)}
           />
-          <ColorInput label="Avatar-Farbe" format="hex" value={color} onChange={setColor} />
+          <ColorInput
+            label={tr('Avatar-Farbe', 'Avatar colour')}
+            format="hex"
+            value={color}
+            onChange={setColor}
+            eyeDropperButtonProps={{
+              'aria-label': tr('Farbe vom Bildschirm wählen', 'Pick a colour from the screen'),
+            }}
+          />
           <Textarea
-            label="Über mich"
-            description="Sichtbar für die Mitglieder deiner Vereine"
+            label={tr('Über mich', 'About me')}
+            description={tr(
+              'Sichtbar für die Mitglieder deiner Vereine',
+              'Visible to the members of your clubs',
+            )}
             autosize
             minRows={3}
             maxLength={5000}
@@ -149,7 +172,7 @@ function ProfileTab({ profile }: { profile: authApi.Profile }) {
           />
           <Group justify="flex-end">
             <Button type="submit" loading={save.isPending}>
-              Speichern
+              {tr('Speichern', 'Save')}
             </Button>
           </Group>
         </Stack>
@@ -179,21 +202,32 @@ function EmailTab() {
       setError('')
       notify(
         'success',
-        'Adresse geändert',
-        next.required ? `Bestätige sie mit dem Link, den wir an ${next.email} gesendet haben.` : '',
+        tr('Adresse geändert', 'Address changed'),
+        next.required
+          ? tr(
+              `Bestätige sie mit dem Link, den wir an ${next.email} gesendet haben.`,
+              `Confirm it with the link we sent to ${next.email}.`,
+            )
+          : '',
       )
     },
-    onError: (err) => setError(errorText(err, 'Ändern fehlgeschlagen')),
+    onError: (err) => setError(errorText(err, tr('Ändern fehlgeschlagen', 'Change failed'))),
   })
   const resend = useMutation({
     mutationFn: authApi.sendVerificationEmail,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['email-verification'] })
-      notify('success', 'Link gesendet', 'Schau in deinem Posteingang nach.')
+      notify(
+        'success',
+        tr('Link gesendet', 'Link sent'),
+        tr('Schau in deinem Posteingang nach.', 'Check your inbox.'),
+      )
     },
-    onError: (err) => notify('error', 'Senden fehlgeschlagen', errorText(err, '')),
+    onError: (err) =>
+      notify('error', tr('Senden fehlgeschlagen', 'Sending failed'), errorText(err, '')),
   })
 
+  if (status.isError) return <LoadFailed onRetry={() => status.refetch()} />
   if (!status.data) return <Loader size="sm" />
   const s = status.data
 
@@ -203,7 +237,10 @@ function EmailTab() {
         <Group justify="space-between" wrap="nowrap" align="flex-start">
           <div style={{ minWidth: 0 }}>
             <Text size="sm" c="dimmed">
-              Deine Adresse für die Anmeldung und alle Mails von Hubra
+              {tr(
+                'Deine Adresse für die Anmeldung und alle Mails von Hubra',
+                'Your address for signing in and all mail from Hubra',
+              )}
             </Text>
             <Text fw={600} truncate>
               {s.email}
@@ -211,11 +248,11 @@ function EmailTab() {
           </div>
           {s.verified ? (
             <Badge color="green" variant="light">
-              Bestätigt
+              {tr('Bestätigt', 'Confirmed')}
             </Badge>
           ) : (
             <Badge color="yellow" variant="light">
-              Nicht bestätigt
+              {tr('Nicht bestätigt', 'Not confirmed')}
             </Badge>
           )}
         </Group>
@@ -226,7 +263,7 @@ function EmailTab() {
             loading={resend.isPending}
             onClick={() => resend.mutate()}
           >
-            Bestätigungslink senden
+            {tr('Bestätigungslink senden', 'Send confirmation link')}
           </Button>
         )}
       </Paper>
@@ -239,31 +276,34 @@ function EmailTab() {
           }}
         >
           <Stack gap="md">
-            <Title order={4}>Adresse ändern</Title>
+            <Title order={4}>{tr('Adresse ändern', 'Change address')}</Title>
             {error && (
               <Alert color="red" variant="light">
                 {error}
               </Alert>
             )}
             <TextInput
-              label="Neue E-Mail-Adresse"
+              label={tr('Neue E-Mail-Adresse', 'New email address')}
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.currentTarget.value)}
             />
             <PasswordInput
-              label="Aktuelles Passwort"
+              label={tr('Aktuelles Passwort', 'Current password')}
               required
               value={password}
               onChange={(e) => setPassword(e.currentTarget.value)}
             />
             <Text size="xs" c="dimmed">
-              Die neue Adresse musst du danach bestätigen.
+              {tr(
+                'Die neue Adresse musst du danach bestätigen.',
+                'You confirm the new address afterwards.',
+              )}
             </Text>
             <Group justify="flex-end">
               <Button type="submit" loading={change.isPending}>
-                Adresse ändern
+                {tr('Adresse ändern', 'Change address')}
               </Button>
             </Group>
           </Stack>
@@ -287,9 +327,13 @@ function PasswordTab() {
       setNext('')
       setRepeat('')
       setError('')
-      notify('success', 'Passwort geändert', 'Es gilt ab sofort für alle deine Vereine.')
+      notify(
+        'success',
+        tr('Passwort geändert', 'Password changed'),
+        tr('Es gilt ab sofort für alle deine Vereine.', 'It applies to all your clubs right away.'),
+      )
     },
-    onError: (err) => setError(errorText(err, 'Ändern fehlgeschlagen')),
+    onError: (err) => setError(errorText(err, tr('Ändern fehlgeschlagen', 'Change failed'))),
   })
 
   return (
@@ -298,7 +342,12 @@ function PasswordTab() {
         onSubmit={(e) => {
           e.preventDefault()
           if (next !== repeat) {
-            setError('Die beiden neuen Passwörter stimmen nicht überein.')
+            setError(
+              tr(
+                'Die beiden neuen Passwörter stimmen nicht überein.',
+                'The two new passwords do not match.',
+              ),
+            )
             return
           }
           change.mutate()
@@ -311,27 +360,27 @@ function PasswordTab() {
             </Alert>
           )}
           <PasswordInput
-            label="Aktuelles Passwort"
+            label={tr('Aktuelles Passwort', 'Current password')}
             required
             value={current}
             onChange={(e) => setCurrent(e.currentTarget.value)}
           />
           <PasswordInput
-            label="Neues Passwort"
-            description="Mindestens 12 Zeichen"
+            label={tr('Neues Passwort', 'New password')}
+            description={tr('Mindestens 12 Zeichen', 'At least 12 characters')}
             required
             value={next}
             onChange={(e) => setNext(e.currentTarget.value)}
           />
           <PasswordInput
-            label="Neues Passwort wiederholen"
+            label={tr('Neues Passwort wiederholen', 'Repeat the new password')}
             required
             value={repeat}
             onChange={(e) => setRepeat(e.currentTarget.value)}
           />
           <Group justify="flex-end">
             <Button type="submit" loading={change.isPending}>
-              Passwort ändern
+              {tr('Passwort ändern', 'Change password')}
             </Button>
           </Group>
         </Stack>
@@ -346,14 +395,16 @@ const LANGUAGES = [
 ]
 
 function SettingsTab({ profile }: { profile: authApi.Profile }) {
-  const save = useSaveProfile('Einstellungen gespeichert')
+  const save = useSaveProfile(tr('Einstellungen gespeichert', 'Settings saved'))
   return (
     <Paper withBorder radius="md" p="lg">
       <Stack gap="xs">
-        <Text fw={600}>Sprache</Text>
+        <Text fw={600}>{tr('Sprache', 'Language')}</Text>
         <Text size="sm" c="dimmed">
-          Für Hubra und für die Mails, die du bekommst. Was ein Verein nur für sich einstellt,
-          findest du in den Einstellungen des Vereins.
+          {tr(
+            'Für Hubra und für die Mails, die du bekommst. Was ein Verein nur für sich einstellt, findest du in den Einstellungen des Vereins.',
+            'For Hubra and the mail you get. What a club sets only for itself is in that club’s settings.',
+          )}
         </Text>
         <SegmentedControl
           mt="xs"
@@ -373,7 +424,10 @@ function SettingsTab({ profile }: { profile: authApi.Profile }) {
 
 function formatTime(iso: string | null): string {
   if (!iso) return ''
-  return new Date(iso).toLocaleString('de-CH', { dateStyle: 'medium', timeStyle: 'short' })
+  return new Date(iso).toLocaleString(getLang() === 'en' ? 'en-GB' : 'de-CH', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  })
 }
 
 function SessionsTab() {
@@ -385,24 +439,31 @@ function SessionsTab() {
   const revoke = useMutation({
     mutationFn: (s: authApi.AccountSession) => authApi.revokeSession(s.club.slug, s.id),
     onSuccess: refresh,
-    onError: (err) => notify('error', 'Abmelden fehlgeschlagen', errorText(err, '')),
+    onError: (err) =>
+      notify('error', tr('Abmelden fehlgeschlagen', 'Sign-out failed'), errorText(err, '')),
   })
   const revokeOthers = useMutation({
     mutationFn: authApi.revokeOtherSessions,
     onSuccess: (r) => {
       refresh()
-      notify('success', 'Überall abgemeldet', `${r.revoked} Sitzung(en) beendet.`)
+      notify(
+        'success',
+        tr('Überall abgemeldet', 'Signed out everywhere'),
+        tr(`${r.revoked} Sitzung(en) beendet.`, `${r.revoked} session(s) ended.`),
+      )
     },
-    onError: (err) => notify('error', 'Abmelden fehlgeschlagen', errorText(err, '')),
+    onError: (err) =>
+      notify('error', tr('Abmelden fehlgeschlagen', 'Sign-out failed'), errorText(err, '')),
   })
 
+  if (sessions.isError) return <LoadFailed onRetry={() => sessions.refetch()} />
   if (!sessions.data) return <Loader size="sm" />
 
   return (
     <Stack gap="sm">
       <Group justify="space-between">
         <Text size="sm" c="dimmed">
-          Wo du in deinen Vereinen angemeldet bist
+          {tr('Wo du in deinen Vereinen angemeldet bist', 'Where you are signed in to your clubs')}
         </Text>
         <Button
           variant="light"
@@ -412,13 +473,15 @@ function SessionsTab() {
           disabled={sessions.data.length === 0}
           onClick={() => revokeOthers.mutate()}
         >
-          Überall sonst abmelden
+          {tr('Überall sonst abmelden', 'Sign out everywhere else')}
         </Button>
       </Group>
       {sessions.data.length === 0 && (
         <Text size="sm" c="dimmed">
-          Keine Sitzungen gefunden. Aufgeführt werden Anmeldungen in deinen Vereinen; Anmeldungen
-          hier im Konto erscheinen noch nicht.
+          {tr(
+            'Keine Sitzungen gefunden. Aufgeführt werden Anmeldungen in deinen Vereinen; Anmeldungen hier im Konto erscheinen noch nicht.',
+            'No sessions found. This lists sign-ins to your clubs; sign-ins to this account page are not listed yet.',
+          )}
         </Text>
       )}
       {sessions.data.map((s) => (
@@ -428,18 +491,18 @@ function SessionsTab() {
               <Group gap="xs" wrap="nowrap">
                 <Text fw={600} truncate>
                   {s.deviceName ||
-                    [s.browserFamily, s.platform].filter(Boolean).join(' auf ') ||
-                    'Unbekanntes Gerät'}
+                    [s.browserFamily, s.platform].filter(Boolean).join(tr(' auf ', ' on ')) ||
+                    tr('Unbekanntes Gerät', 'Unknown device')}
                 </Text>
                 {s.current && (
                   <Badge size="sm" variant="light">
-                    Diese Sitzung
+                    {tr('Diese Sitzung', 'This session')}
                   </Badge>
                 )}
               </Group>
               <Text size="xs" c="dimmed" truncate>
-                {s.club.name} · {s.ipAddress || 'IP unbekannt'} · zuletzt aktiv{' '}
-                {formatTime(s.lastActiveAt)}
+                {s.club.name} · {s.ipAddress || tr('IP unbekannt', 'IP unknown')} ·{' '}
+                {tr('zuletzt aktiv', 'last active')} {formatTime(s.lastActiveAt)}
               </Text>
             </div>
             {!s.current && (
@@ -447,10 +510,11 @@ function SessionsTab() {
                 variant="subtle"
                 color="red"
                 size="xs"
+                style={{ flexShrink: 0 }}
                 loading={revoke.isPending && revoke.variables?.id === s.id}
                 onClick={() => revoke.mutate(s)}
               >
-                Abmelden
+                {tr('Abmelden', 'Sign out')}
               </Button>
             )}
           </Group>

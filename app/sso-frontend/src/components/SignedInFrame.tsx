@@ -66,6 +66,8 @@ export function SignedInFrame({
                   leftSection={item.icon}
                   onClick={() => navigate(item.path)}
                   aria-current={active ? 'page' : undefined}
+                  // On a phone only the icon shows.
+                  aria-label={item.label}
                 >
                   <Box component="span" visibleFrom="xs">
                     {item.label}

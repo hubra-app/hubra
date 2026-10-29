@@ -111,6 +111,7 @@ export function AccountSettingsClubTab() {
             <TextInput
               value={clubEmail}
               readOnly
+              aria-label={t('account.clubEmail', 'Vereinsadresse')}
               styles={{
                 input: { fontFamily: '"JetBrains Mono"', fontSize: 'var(--mantine-font-size-sm)' },
               }}
@@ -147,6 +148,7 @@ export function AccountSettingsClubTab() {
             </div>
             <Toggle
               checked={mailForwarding}
+              label={t('account.club.forward', 'An meine private Adresse weiterleiten')}
               onChange={toggleMailForwarding}
               disabled={emailVerified !== true}
             />

@@ -39,7 +39,10 @@ class AuditsService:
         except (TypeError, ValueError):
             page_size = 25
 
-        query = select(AuditEntry).order_by(AuditEntry.time.desc())
+        # id breaks ties, so a page never repeats or skips an entry.
+        query = select(AuditEntry).order_by(
+            AuditEntry.time.desc(), AuditEntry.id.desc()
+        )
 
         actor_id_raw = args.get("actorId")
         if actor_id_raw:
@@ -71,7 +74,13 @@ class AuditsService:
                     to_dt = to_dt.replace(tzinfo=timezone.utc)
             except ValueError:
                 raise_error(400, "VALIDATION_ERROR", "'to' must be an ISO datetime")
-            query = query.where(AuditEntry.time <= to_dt)
+            if len(to_raw) == 10:
+                # A bare date includes that whole day.
+                from datetime import timedelta
+
+                query = query.where(AuditEntry.time < to_dt + timedelta(days=1))
+            else:
+                query = query.where(AuditEntry.time <= to_dt)
 
         action_raw = args.get("action")
         if action_raw:

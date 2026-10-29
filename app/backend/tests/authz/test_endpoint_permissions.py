@@ -273,3 +273,11 @@ class TestRolesPermissions:
             headers=headers,
         )
         assert resp.status_code == 403
+
+
+def test_flagged_translations_need_the_translator_permission(
+    client, plain_member_token
+):
+    """The editor's flagged list is for translators, like ?list=1 and export."""
+    resp = client.get("/api/v1/i18n/de-CH/flagged", headers=plain_member_token)
+    assert resp.status_code == 403

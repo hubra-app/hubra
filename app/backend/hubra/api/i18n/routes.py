@@ -8,7 +8,9 @@ import json
 import logging
 
 from flask import Blueprint, Response, jsonify, request
-from flask_jwt_extended import current_user, jwt_required
+from flask_jwt_extended import jwt_required
+
+from hubra.api.auth.helpers import get_current_member
 from marshmallow import Schema, fields, validate
 
 from hubra.api.permissions import permission_required
@@ -23,6 +25,7 @@ from hubra.api.i18n.services import (
     _get_stale_threshold_seconds,
     get_available_locales,
     get_etag,
+    platform_rows,
     get_flagged,
     get_translations,
     get_translations_dict,
@@ -98,6 +101,29 @@ def _translation_rows(locale: str):
         }
         for r in rows
     ]
+    # A club's editor also lists the platform texts it hasn't changed, as
+    # its dictionary serves them (see get_translations_dict).
+    own = {r.key for r in rows if r.value or r.alias_for}
+    # Only platform rows with text: an empty one would hide the club row's
+    # "missing" flag without giving the key a value.
+    platform = {r.key: r for r in platform_rows(locale) if r.key not in own and r.value}
+    data = [d for d in data if d["key"] not in platform]
+    data += [
+        {
+            "id": None,
+            "locale": locale,
+            "key": r.key,
+            "value": r.value,
+            "default_value": r.value,
+            "needs_attention": False,
+            "is_missing": False,
+            "is_stale": False,
+            "last_used_at": None,
+            "updated_at": None,
+            "alias_for": r.alias_for,
+        }
+        for r in platform.values()
+    ]
     return jsonify(data), 200
 
 
@@ -123,7 +149,7 @@ def patch_i18n(locale: str):
         entries.append(validated)
 
     try:
-        updated = bulk_upsert(locale, entries, updated_by_id=current_user.id)
+        updated = bulk_upsert(locale, entries, updated_by_id=get_current_member().id)
         db.session.commit()
     except Exception as exc:
         db.session.rollback()
@@ -156,7 +182,7 @@ def post_translation(locale: str):
             locale=locale,
             key=data["key"],
             value=data["value"],
-            updated_by_id=current_user.id,
+            updated_by_id=get_current_member().id,
             alias_for=data.get("alias_for"),
         )
         db.session.commit()
@@ -236,7 +262,7 @@ def duplicate_i18n(locale: str):
             source_locale=source,
             target_locale=locale,
             copy_values=copy_values,
-            updated_by_id=current_user.id,
+            updated_by_id=get_current_member().id,
         )
         db.session.commit()
     except Exception as exc:
@@ -351,7 +377,8 @@ def import_i18n(locale: str):
         )
 
     try:
-        file_content = uploaded_file.stream.read(max_bytes + 1).decode("utf-8")
+        # utf-8-sig: a file saved by Excel starts with a byte order mark.
+        file_content = uploaded_file.stream.read(max_bytes + 1).decode("utf-8-sig")
         if len(file_content.encode("utf-8")) > max_bytes:
             return api_error(
                 "VALIDATION_ERROR",
@@ -365,7 +392,9 @@ def import_i18n(locale: str):
 
     if fmt == "csv":
         reader = csv.DictReader(io.StringIO(file_content), fieldnames=["key", "value"])
-        for row in reader:
+        for n, row in enumerate(reader):
+            if n == 0 and (row.get("key") or "").strip() == "key":
+                continue  # the header line the export writes
             if row.get("key") and row.get("key", "").strip():
                 entries.append(
                     {"key": row["key"].strip(), "value": row.get("value", "") or ""}
@@ -399,7 +428,7 @@ def import_i18n(locale: str):
         count = import_translations(
             locale,
             entries,
-            updated_by_id=current_user.id,
+            updated_by_id=get_current_member().id,
         )
         db.session.commit()
     except Exception as exc:
@@ -467,6 +496,7 @@ def report_keys(locale: str):
 
 @i18n_bp.get("/<string:locale>/flagged")
 @jwt_required()
+@permission_required("i18n", "write", "Write translations")
 def get_flagged_i18n(locale: str):
     rows = get_flagged(locale)
     threshold = _get_stale_threshold_seconds()

@@ -198,12 +198,12 @@ def test_function_grants_tenant_role_id_nullable(db):
 # ── FunctionHolder ────────────────────────────────────────────────────────────
 
 
-def test_function_holder_term_dates_nullable(db):
+def test_function_holder_term_dates_nullable(db, seeded_db):
     fn = Function(name="Term Function")
     db.session.add(fn)
     db.session.flush()
 
-    holder = FunctionHolder(function_id=fn.id, member_id=1)
+    holder = FunctionHolder(function_id=fn.id, member_id=seeded_db["admin"].id)
     db.session.add(holder)
     db.session.commit()
 
@@ -211,14 +211,14 @@ def test_function_holder_term_dates_nullable(db):
     assert holder.term_end is None
 
 
-def test_function_holder_term_dates_can_be_set(db):
+def test_function_holder_term_dates_can_be_set(db, seeded_db):
     fn = Function(name="Dated Function")
     db.session.add(fn)
     db.session.flush()
 
     holder = FunctionHolder(
         function_id=fn.id,
-        member_id=1,
+        member_id=seeded_db["admin"].id,
         term_start=date(2026, 1, 1),
         term_end=date(2026, 12, 31),
     )

@@ -610,3 +610,87 @@ def test_preview_function_mma_local_part_no_mma(client, seeded_db, auth_headers,
     assert resp.status_code == 200
     body = resp.get_json()
     assert body["value"] == "kassier"
+
+
+def _bind(client, auth_headers, member, key, enabled=True):
+    return client.post(
+        "/api/v1/bindings/",
+        headers=auth_headers,
+        json={
+            "type": "member",
+            "source_id": str(member.id),
+            "source_attribute": "name",
+            "key_id": key.id,
+            "enabled": enabled,
+        },
+    )
+
+
+def test_update_cannot_enable_onto_taken_scalar_key(
+    client, seeded_db, auth_headers, db
+):
+    ik = _make_key(db, "test.put_enable")
+    m1 = _make_member(db, "Alice", "alice@example.ch")
+    m2 = _make_member(db, "Bob", "bob@example.ch")
+    db.session.commit()
+    assert _bind(client, auth_headers, m1, ik).status_code == 201
+    second = _bind(client, auth_headers, m2, ik, enabled=False)
+    assert second.status_code == 201
+
+    resp = client.put(
+        f"/api/v1/bindings/{second.get_json()['id']}",
+        headers=auth_headers,
+        json={"enabled": True},
+    )
+    assert resp.status_code == 409
+    assert resp.get_json()["error"] == "SCALAR_KEY_OCCUPIED"
+
+
+def test_update_disable_clears_the_key(client, seeded_db, auth_headers, db):
+    ik = _make_key(db, "test.put_disable")
+    m = _make_member(db, "Alice Smith", "alice@example.ch")
+    db.session.commit()
+    binding_id = _bind(client, auth_headers, m, ik).get_json()["id"]
+    db.session.refresh(ik)
+    assert ik.value
+
+    resp = client.put(
+        f"/api/v1/bindings/{binding_id}", headers=auth_headers, json={"enabled": False}
+    )
+    assert resp.status_code == 200
+    db.session.refresh(ik)
+    assert not ik.value
+
+
+def test_update_checks_the_attribute_alone(client, seeded_db, auth_headers, db):
+    ik = _make_key(db, "test.put_attr")
+    m = _make_member(db, "Alice Smith", "alice@example.ch")
+    db.session.commit()
+    binding_id = _bind(client, auth_headers, m, ik).get_json()["id"]
+
+    for body in ({"source_attribute": "not_an_attribute"}, {"source_id": "abc"}):
+        resp = client.put(
+            f"/api/v1/bindings/{binding_id}", headers=auth_headers, json=body
+        )
+        assert resp.status_code == 400, body
+
+
+def test_non_numeric_source_id_is_a_400(client, seeded_db, auth_headers, db):
+    ik = _make_key(db, "test.bad_source")
+    db.session.commit()
+    resp = client.post(
+        "/api/v1/bindings/",
+        headers=auth_headers,
+        json={
+            "type": "member",
+            "source_id": "abc",
+            "source_attribute": "name",
+            "key_id": ik.id,
+        },
+    )
+    assert resp.status_code == 400
+    resp = client.get(
+        "/api/v1/bindings/preview?type=member&source_id=abc&source_attribute=name",
+        headers=auth_headers,
+    )
+    assert resp.status_code == 400

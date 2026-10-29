@@ -19,6 +19,7 @@ from hubra.api.permissions import (
     permission_required,
     can_update,
     filter_updatable_fields,
+    refuse_during_impersonation,
 )
 from hubra.api.utils import log_audit
 from hubra.core.errors import api_error, raise_error
@@ -35,6 +36,31 @@ _member_schema = MemberSchema()
 _members_schema = MemberSchema(many=True)
 _create_schema = MemberCreateSchema()
 _update_schema = MemberUpdateSchema()
+
+
+# What the club's admins write about a member, and who to call in an
+# emergency: only for those who may edit members, and the member themselves.
+_ADMIN_ONLY_FIELDS = ("notes", "emergency_contact")
+
+
+def _viewer_sees_admin_fields() -> bool:
+    from hubra.api.permissions import _get_member_permission_keys, member_is_admin
+
+    viewer = get_current_member()
+    return member_is_admin(viewer) or (
+        "members.members.update" in _get_member_permission_keys(viewer)
+    )
+
+
+def for_viewer(rows: list[dict]) -> list[dict]:
+    if _viewer_sees_admin_fields():
+        return rows
+    me = get_current_member().id
+    for row in rows:
+        if row.get("id") != me:
+            for field in _ADMIN_ONLY_FIELDS:
+                row.pop(field, None)
+    return rows
 
 
 # ── GET /members/me/mail ──────────────────────────────────────────────────────
@@ -65,7 +91,13 @@ def count_members():
 @members_bp.get("/")
 @permission_required("members", "read", "View members")
 def list_members():
-    result = MembersService.list(dict(request.args))
+    args = dict(request.args)
+    if not _viewer_sees_admin_fields():
+        # Former and deleted members are for those who manage members.
+        args.pop("archived", None)
+        args.pop("include_deleted", None)
+    result = MembersService.list(args)
+    for_viewer(result["data"])
     return jsonify(result), 200
 
 
@@ -89,6 +121,8 @@ def export_members():
 
 # ── POST /members/import ─────────────────────────────────────────────────────
 
+MAX_IMPORT_ROWS = 1000
+
 
 @members_bp.post("/import")
 @permission_required("members", "import", "Import members")
@@ -106,12 +140,31 @@ def import_members():
     if not file.filename or not file.filename.endswith(".csv"):
         return api_error("VALIDATION_ERROR", "File must be a CSV", 400)
 
-    stream = io.StringIO(file.read().decode("utf-8-sig"), newline=None)
-    reader = csv.DictReader(stream)
+    raw = file.read()
+    try:
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        # Excel on Windows saves CSV as Windows-1252, not UTF-8.
+        text = raw.decode("cp1252", errors="replace")
+    stream = io.StringIO(text, newline=None)
+    # Excel with a German or Swiss locale separates with ";".
+    try:
+        dialect = csv.Sniffer().sniff(text[:4096], delimiters=",;\t")
+    except csv.Error:
+        dialect = csv.excel
+    reader = csv.DictReader(stream, dialect=dialect)
     rows = list(reader)
 
     if not rows:
         return api_error("VALIDATION_ERROR", "CSV file is empty", 400)
+    # Each row sends its invite mail inside this request; a longer list runs
+    # past the worker timeout after the first mails went out.
+    if len(rows) > MAX_IMPORT_ROWS:
+        return api_error(
+            "VALIDATION_ERROR",
+            f"At most {MAX_IMPORT_ROWS} rows per import; split the file",
+            400,
+        )
 
     mapping = None
     mapping_json = request.form.get("mapping")
@@ -122,6 +175,12 @@ def import_members():
             mapping = json.loads(mapping_json)
         except json.JSONDecodeError:
             return api_error("VALIDATION_ERROR", "Invalid mapping JSON", 400)
+        if not isinstance(mapping, dict) or not all(
+            isinstance(v, str) for v in mapping.values()
+        ):
+            return api_error(
+                "VALIDATION_ERROR", "mapping must map columns to field names", 400
+            )
 
     dry_run = request.form.get("dry_run", "").strip().lower() in ("1", "true", "yes")
 
@@ -185,7 +244,7 @@ def get_member(member_id: int):
     member = MemberService.get(member_id)
     if member is None:
         raise_error(404, "NOT_FOUND", f"Member {member_id} not found")
-    return jsonify(_member_schema.dump(member)), 200
+    return jsonify(for_viewer([_member_schema.dump(member)])[0]), 200
 
 
 # ── POST /members ─────────────────────────────────────────────────────────────
@@ -385,6 +444,7 @@ def get_my_leave():
 @jwt_required()
 def leave_club():
     """Leave the club now, or ask to leave when the club wants to approve it."""
+    refuse_during_impersonation()
     member = get_current_member()
     if not _leave_needs_approval():
         _leave_now(member, member.id, "left")
@@ -403,6 +463,15 @@ def leave_club():
             target_type="Member",
             target_id=member.id,
             target_label=member.name,
+        )
+        from hubra.api.notifications.staff import notify_permitted
+
+        notify_permitted(
+            "members.members.archive",
+            "info",
+            "Request to leave",
+            member.name,
+            skip_member_id=member.id,
         )
         db.session.commit()
     return jsonify({"status": "requested", **_leave_state(member)}), 200
@@ -614,5 +683,6 @@ def revoke_member_sessions(member_id: int):
         target_id=member_id,
         target_label=f"{count} sessions revoked",
     )
+    db.session.commit()
 
     return jsonify({"ok": True, "revoked": count}), 200

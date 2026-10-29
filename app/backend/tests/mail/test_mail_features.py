@@ -485,7 +485,10 @@ def test_system_mailbox_gets_random_wildduck_password(app, db, seeded_db):
     mock_wd = MagicMock()
     mock_wd.create_user.return_value = {"id": "wd-sys-mbx"}
     mock_wd.create_forward_filter.return_value = {"id": "f-1"}
-    with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
+    with (
+        patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd),
+        patch_mail_domain("club.ch"),
+    ):
         create_system_address(
             "sysbox@club.ch", "mailbox", forward_targets=["t@example.ch"]
         )

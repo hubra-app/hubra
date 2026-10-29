@@ -95,6 +95,12 @@ def budget_to_dict(budget: Budget, with_lines: bool = False) -> dict:
     return data
 
 
+def _text(value, field: str) -> str:
+    if value is not None and not isinstance(value, str):
+        raise_error(400, "VALIDATION_ERROR", f"{field} must be text")
+    return (value or "").strip()
+
+
 def _year(value) -> int:
     try:
         year = int(value)
@@ -109,6 +115,9 @@ def _amount(value) -> Decimal:
     try:
         amount = Decimal(str(value)).quantize(Decimal("0.01"))
     except (InvalidOperation, TypeError, ValueError):
+        raise_error(400, "VALIDATION_ERROR", "planned must be an amount")
+    # NaN passes quantize; Numeric(12, 2) holds less than 10^10.
+    if not amount.is_finite() or amount >= Decimal("1e10"):
         raise_error(400, "VALIDATION_ERROR", "planned must be an amount")
     if amount < 0:
         raise_error(400, "VALIDATION_ERROR", "planned cannot be negative")
@@ -140,7 +149,7 @@ class BudgetService:
 
     @staticmethod
     def create(data: dict, actor_id: int | None) -> Budget:
-        name = (data.get("name") or "").strip()
+        name = _text(data.get("name"), "name")
         if not name:
             raise_error(400, "VALIDATION_ERROR", "name is required")
         year = _year(data.get("year"))
@@ -159,7 +168,7 @@ class BudgetService:
         if budget.approved and data.get("approved") is not False:
             raise_error(409, "BUDGET_APPROVED", "Approved budgets cannot be changed")
         if "name" in data or "year" in data:
-            name = (data.get("name", budget.name) or "").strip()
+            name = _text(data.get("name", budget.name), "name")
             if not name:
                 raise_error(400, "VALIDATION_ERROR", "name cannot be empty")
             year = _year(data.get("year", budget.year))

@@ -839,11 +839,13 @@ def test_reconcile_keeps_mailboxes_of_other_clubs(mock_wd_tgc, mock_mp_tgc, app,
     with patch(
         "hubra.core.services.mail_server.managed_index",
         return_value={"wd-other-club": {"club": {"slug": "club-b"}}},
-    ):
+    ) as index:
         result = reconcile_mail.run()
 
     wd.safe_delete_user.assert_called_once_with("wd-orphan")
     assert result["orphans_removed"] == 1
+    # Suspended clubs and clubs with mail off still claim their mailboxes.
+    index.assert_called_once_with(every_club=True)
 
 
 @patch("hubra.core.services.mail_provisioning.try_get_client")

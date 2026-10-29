@@ -22,7 +22,7 @@ import {
   apiFetch,
 } from '@hubra/api-client'
 import {
-  getAccount,
+  getAccountSession,
   logout as apiLogout,
   getMyPermissions,
   getMyTenants,
@@ -30,6 +30,7 @@ import {
   type MyTenant,
 } from '@/api/auth'
 import { clearLookups } from '@/api/lookups'
+import { URL_CLUB } from '@/clubBase'
 import { ping } from '@/api/system'
 import { listEvents } from '@/api/events'
 import { listPolls } from '@/api/polls'
@@ -156,6 +157,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const [myVotes, setMyVotes] = useState<Record<string, number>>({})
   const [backendOnline, setBackendOnline] = useState(true)
+  const [sessionCheckFailed, setSessionCheckFailed] = useState(false)
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
   const [permissions, setPermissions] = useState<string[]>([])
   const [impersonation, setImpersonation] = useState<AuthState['impersonation']>(null)
@@ -184,9 +186,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       try {
         // Both at once: the permissions do not wait for the account.
-        const permRequest = getMyPermissions(ctrl.signal).catch(() => null)
-        const member = await getAccount(ctrl.signal)
+        let permRequest = getMyPermissions(ctrl.signal).catch(() => null)
+        let session = await getAccountSession(ctrl.signal)
         if (cancelled) return
+        if (URL_CLUB && session.tenantSlug !== URL_CLUB) {
+          // The token is for no club or another one: switch to the club in
+          // the URL first, then read the account and permissions there.
+          await apiSwitchTenant(URL_CLUB).catch((err: { status?: number; code?: string }) => {
+            // Not a member of this club (or it does not exist): as without a club.
+            if ((err?.status === 403 || err?.status === 404) && err.code !== 'EMAIL_NOT_VERIFIED') {
+              throw Object.assign(new Error('noTenant'), { noTenant: true })
+            }
+            throw err
+          })
+          if (cancelled) return
+          permRequest = getMyPermissions(ctrl.signal).catch(() => null)
+          session = await getAccountSession(ctrl.signal)
+          if (cancelled) return
+        }
+        const member = session.member
+        if (!member) {
+          throw Object.assign(new Error('noTenant'), { noTenant: true })
+        }
+        if (URL_CLUB) {
+          setTenantSlug(URL_CLUB)
+          setTenantSlugState(URL_CLUB)
+        }
         setCurrentUser(member)
         const permData = await permRequest
         if (cancelled) return
@@ -214,19 +239,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return
         }
         const { status, code } = err as { status?: number; code?: string }
+        if (code === 'EMAIL_NOT_VERIFIED') {
+          // The email step after sign-in is still open: do it on SSO first.
+          const back = encodeURIComponent(window.location.href)
+          window.location.assign(`${ssoUrl}/verify?redirect=${back}`)
+          return
+        }
         if (status === 403 && code === 'MUST_CHANGE_PASSWORD') {
           // Stays 'loading': only the password change form is shown.
           setPasswordChangeRequired(true)
           return
         }
-        if (status === 401) {
+        // Only a missing answer, a 5xx or a 429 means "try again later";
+        // any other refusal ends the session like a 401.
+        const retryLater = status === undefined || status >= 500 || status === 429
+        if (!retryLater) {
           clearTokens()
           clearLookups()
           setAuthStatus('anon')
           redirectToLogin()
         } else {
+          // Server unreachable or busy: the session is unknown, not gone. Stay on
+          // 'loading' so the offline banner shows instead of a jump to the
+          // sign-in page, and start over once the server answers.
           setBackendOnline(false)
-          setAuthStatus('anon')
+          setSessionCheckFailed(true)
         }
       }
     }
@@ -239,6 +276,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Runs once on mount — navigate/queryClient are stable
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    if (!sessionCheckFailed) return
+    if (!backendOnline) return
+    // The health check passed. Reload at most every 30 s, in case only the
+    // account request keeps failing.
+    const KEY = 'hubra.offlineReloadAt'
+    let last = 0
+    try {
+      last = Number(sessionStorage.getItem(KEY)) || 0
+    } catch {
+      // No storage: reload right away.
+    }
+    const wait = Math.max(0, last + 30_000 - Date.now())
+    try {
+      sessionStorage.setItem(KEY, String(Date.now() + wait))
+    } catch {
+      // As above.
+    }
+    const timer = setTimeout(() => window.location.reload(), wait)
+    return () => clearTimeout(timer)
+  }, [sessionCheckFailed, backendOnline])
 
   useEffect(() => {
     setAuthFailureHandler(() => {
@@ -418,7 +477,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const setOpenInvoiceCount = useCallback(
     (updater: number | ((prev: number) => number)) => {
       queryClient.setQueryData<DashboardSummary | undefined>(['dashboard-summary'], (prev) => {
-        if (!prev?.stats) return prev
+        if (prev?.stats?.openInvoices == null) return prev
         const newCount = typeof updater === 'function' ? updater(prev.stats.openInvoices) : updater
         return { ...prev, stats: { ...prev.stats, openInvoices: newCount } }
       })

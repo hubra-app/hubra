@@ -32,6 +32,9 @@ class InventoryItemSchema(ma.SQLAlchemyAutoSchema):
     purchase_cost = fields.Decimal(as_string=True, allow_none=True, dump_default=None)
     current_value = fields.Decimal(as_string=True, allow_none=True, dump_default=None)
 
+    # Auto schemas leave foreign keys out; the club app needs these.
+    owner_id = fields.Int(dump_only=True, allow_none=True)
+    responsible_id = fields.Int(dump_only=True, allow_none=True)
     owner_name = fields.Method("get_owner_name", dump_only=True)
     responsible_name = fields.Method("get_responsible_name", dump_only=True)
     instructed_member_ids = fields.Method("get_instructed_ids", dump_only=True)

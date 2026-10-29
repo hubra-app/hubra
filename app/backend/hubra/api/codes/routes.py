@@ -72,6 +72,6 @@ def update_code(id: int):
 @permission_required("codes", "delete", "Delete codes")
 def delete_code(id: int):
     code = CodeService.get_by_id(id)
-    CodeService.delete(code)
+    CodeService.delete(code, get_current_member().id)
     db.session.commit()
     return jsonify({"message": "Lock code deleted"}), 200

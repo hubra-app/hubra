@@ -131,7 +131,7 @@ def add_instruction(item_id: int, member_id: int):
         raise_error(404, "NOT_FOUND", f"Member {member_id} not found")
         return
 
-    InventoryService.add_instruction(item, member)
+    InventoryService.add_instruction(item, member, get_current_member().id)
 
     try:
         db.session.commit()
@@ -152,7 +152,7 @@ def checkout_item(item_id: int):
     try:
         data = CheckoutCreateSchema().load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.members), 400)
+        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
 
     checkout = InventoryService.checkout(
         item_id=item_id,
@@ -179,6 +179,8 @@ def checkout_item(item_id: int):
 def checkin_item(item_id: int):
     body = request.get_json(silent=True) or {}
     condition_notes = body.get("condition_notes")
+    if condition_notes is not None and not isinstance(condition_notes, str):
+        return api_error("VALIDATION_ERROR", "condition_notes must be text", 400)
 
     checkout = InventoryService.checkin(
         item_id=item_id,
@@ -211,7 +213,7 @@ def list_overdue():
 @inventory_bp.delete("/<int:item_id>/instructions/<int:member_id>")
 @permission_required("items", "manage_instructions", "Manage item instructions")
 def remove_instruction(item_id: int, member_id: int):
-    InventoryService.remove_instruction(item_id, member_id)
+    InventoryService.remove_instruction(item_id, member_id, get_current_member().id)
 
     try:
         db.session.commit()
@@ -238,7 +240,7 @@ def add_self_instruction(item_id: int):
         raise_error(404, "NOT_FOUND", f"Member {member_id} not found")
         return
 
-    InventoryService.add_instruction(item, member)
+    InventoryService.add_instruction(item, member, get_current_member().id)
 
     try:
         db.session.commit()

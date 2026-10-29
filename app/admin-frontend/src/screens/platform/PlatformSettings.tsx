@@ -92,7 +92,18 @@ export function PlatformSettings() {
       setDraft({})
       notify('success', tr('Plattform-Einstellungen gespeichert', 'Platform settings saved'))
     } catch (err) {
-      notify('error', tr('Speichern fehlgeschlagen', 'Could not save'), err instanceof Error ? err.message : undefined)
+      // Name the fields the server refused, not only "Invalid platform settings".
+      const details = (err as { details?: Record<string, unknown> }).details
+      const fields = details
+        ? Object.entries(details)
+            .map(([k, v]) => `${byKey[k]?.label ?? k}: ${String(v)}`)
+            .join(' · ')
+        : ''
+      notify(
+        'error',
+        tr('Speichern fehlgeschlagen', 'Could not save'),
+        fields || (err instanceof Error ? err.message : undefined),
+      )
     } finally {
       setSaving(false)
     }

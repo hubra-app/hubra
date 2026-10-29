@@ -52,7 +52,7 @@ const DE: Record<string, string> = {
   "You are not a member of this tenant": "Du bist nicht Mitglied in diesem Verein.",
   "No member profile in this tenant": "Du hast in diesem Verein kein Mitgliedsprofil.",
   "Confirm your email address before opening a club":
-    "Bestätige zuerst deine E-Mail-Adresse, dann kannst du einen Verein gründen.",
+    "Bestätige zuerst deine E-Mail-Adresse, dann kannst du den Verein öffnen.",
   "A tenant with this slug already exists": "Diese Adresse ist schon vergeben.",
   "A pending request with this slug already exists": "Für diese Adresse wartet schon eine Anfrage.",
   "slug must be between 3 and 64 characters": "Die Adresse braucht 3 bis 64 Zeichen.",
@@ -145,6 +145,7 @@ const DE: Record<string, string> = {
   "No active registration found": "Es gibt keine Anmeldung.",
   "No registration found for this member": "Diese Person ist nicht angemeldet.",
   "Unknown calendar": "Diesen Kalender gibt es nicht.",
+  "end_date is before date": "Das Enddatum liegt vor dem Beginn.",
 
   // Finance
   "Invoice not found": "Diese Rechnung gibt es nicht.",
@@ -223,6 +224,12 @@ const DE_STATUS: Record<number, string> = {
 
 const DE_CODE: Record<string, string> = {
   MODULE_DISABLED: "Dieses Modul ist für den Verein ausgeschaltet.",
+  REMINDER_NOT_SENT: "Die Erinnerung wurde nicht verschickt: Die Empfängerin oder der Empfänger hat keine (bestätigte) E-Mail-Adresse.",
+  REGISTRATION_CLOSED: "Die Anmeldung für diesen Anlass ist geschlossen.",
+  CANCELLATION_CLOSED: "Die Abmeldefrist für diesen Anlass ist vorbei.",
+  POLL_HAS_VOTES: "Es wurde schon abgestimmt; die Antworten können nicht mehr geändert werden.",
+  USE_CHECKOUT: "Ob ein Gegenstand ausgeliehen ist, ändert sich nur mit Ausleihen und Zurückgeben.",
+  ROLE_LOCKED: "Diese Rolle ist geschützt und kann so nicht geändert werden.",
   EMAIL_NOT_VERIFIED: "Bestätige zuerst deine E-Mail-Adresse.",
   MUST_CHANGE_PASSWORD: "Bitte ändere zuerst dein Passwort.",
   LAST_OWNER: "Die letzte Inhaberin oder der letzte Inhaber kann den Verein nicht verlassen.",

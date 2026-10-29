@@ -5,7 +5,6 @@ from __future__ import annotations
 import base64
 import logging
 from datetime import date, timedelta
-from decimal import Decimal
 from typing import TYPE_CHECKING
 
 
@@ -13,11 +12,12 @@ from hubra.core.extensions import db
 from hubra.core.modules import emit, per_tenant_job
 from hubra.core.modules.events import INVOICE_OVERDUE
 from hubra.core.tasks import celery_app
+from hubra.core.services.mail_format import mail_date
 from hubra.core.pricing import (
     billing_cycle_for,
     calculate_invoice_amount,
     period_window,
-    total_deducted_annual_for_tiers,
+    deductions_by_tier,
 )
 from hubra.core.services.email import DEFAULT_LANG
 from hubra.core.services.mail_i18n import render_mail_template
@@ -38,19 +38,21 @@ def _render_invoice_generated(
     lang: str = DEFAULT_LANG,
 ) -> tuple[str, str, str]:
     """Render invoice_generated email templates, returning (subject, html, text)."""
-    from hubra.core.services.email import _get_setting
+    from hubra.core.services.email import club_display_name
 
-    club_name = _get_setting("club.name", "Your Club")
-    return render_mail_template(
+    club_name = club_display_name()
+    # render_mail_template returns (html, text, subject).
+    body_html, body_text, subject = render_mail_template(
         "invoice_generated",
         locale=lang,
         name=name,
         club_name=club_name,
         invoice_id=invoice_id,
         amount_formatted=f"CHF {amount:.2f}",
-        due_date=due_date.isoformat(),
+        due_date=mail_date(due_date, lang),
         portal_url=portal_url,
     )
+    return subject, body_html, body_text
 
 
 def _render_invoice_reminder(
@@ -63,19 +65,21 @@ def _render_invoice_reminder(
     lang: str = DEFAULT_LANG,
 ) -> tuple[str, str, str]:
     """Render invoice_reminder email templates, returning (subject, html, text)."""
-    from hubra.core.services.email import _get_setting
+    from hubra.core.services.email import club_display_name
 
-    club_name = _get_setting("club.name", "Your Club")
-    return render_mail_template(
+    club_name = club_display_name()
+    # render_mail_template returns (html, text, subject).
+    body_html, body_text, subject = render_mail_template(
         "invoice_reminder",
         locale=lang,
         name=name,
         club_name=club_name,
         invoice_id=invoice_id,
         amount_formatted=f"CHF {amount:.2f}",
-        due_date=due_date.isoformat(),
+        due_date=mail_date(due_date, lang),
         portal_url=portal_url,
     )
+    return subject, body_html, body_text
 
 
 def _dispatch_invoice_email(
@@ -100,10 +104,14 @@ def _dispatch_invoice_email(
         )
         return
 
+    from hubra.core.tasks.after_commit import delay_after_commit
     from hubra.core.tasks.email_tasks import send_email_task
 
     try:
-        send_email_task.delay(
+        # Sent once the invoice is committed: a club whose run fails later
+        # rolls the invoice back, and the next run would bill (and mail) again.
+        delay_after_commit(
+            send_email_task,
             to_email=member.email,  # type: ignore[attr-defined]
             to_name=member.name,  # type: ignore[attr-defined]
             subject=subject,
@@ -167,8 +175,9 @@ def _generate_invoices() -> dict:
       - formula:    (baseline - coefficient * sum(deducted_tier_annual_fees)) / members_in_tier
                     per year, divided into periods, rounded up to round_to
 
-    Idempotency guard: skips a member if an Open invoice already exists for the
-    current billing period (current month for 'monthly', current year for 'yearly').
+    Idempotency guard: skips a member if a membership invoice (in any status)
+    already exists for the current billing period (current month for
+    'monthly', current year for 'yearly').
 
     Sends an invoice_generated email for each created invoice and records the
     dispatch in InvoiceReminderHistory.
@@ -178,8 +187,10 @@ def _generate_invoices() -> dict:
     from sqlalchemy import select
     from hubra.core.models.finance import Invoice
     from hubra.core.models.member import Member, MembershipTier
+    from hubra.api.finance.services import billing_settings
     from hubra.core.services.email import _get_base_url
 
+    billing = billing_settings()
     today = date.today()
     created = 0
     skipped = 0
@@ -193,17 +204,8 @@ def _generate_invoices() -> dict:
         .where(Member.tier_id.isnot(None))
     ).all()
 
-    # Collect all deduct_tier_ids referenced by any formula tier
-    all_deduct_ids: set[int] = set()
-    for member in active_members:
-        t: MembershipTier | None = member.tier
-        if t and t.price_type == "formula" and t.deduct_tier_ids:
-            all_deduct_ids.update(t.deduct_tier_ids)
-
-    # Calculate total annual fees from all members in deducted tiers
-    total_deducted_annual: Decimal = total_deducted_annual_for_tiers(
-        db.session, all_deduct_ids
-    )
+    # Each formula tier deducts the yearly fees of its own deduct_tier_ids.
+    deducted_for = deductions_by_tier(db.session)
 
     # Generate invoices
     for member in active_members:
@@ -220,24 +222,26 @@ def _generate_invoices() -> dict:
         cycle = billing_cycle_for(member, tier)
         period_start, period_end = period_window(today, cycle)
 
+        # Any membership invoice of this period counts, paid or not: the
+        # task runs daily, and a paid fee must not be billed again.
         existing = db.session.scalar(
             select(Invoice.id)
             .where(Invoice.member_id == member.id)
-            .where(Invoice.status == "Open")
+            .where(Invoice.purpose == "membership")
             .where(Invoice.issued >= period_start)
             .where(Invoice.issued <= period_end)
         )
 
         if existing is not None:
             logger.info(
-                "invoice_generation_skipped member_id=%s reason=open_invoice_exists_for_period invoice_id=%s",
+                "invoice_generation_skipped member_id=%s reason=invoice_exists_for_period invoice_id=%s",
                 member.id,
                 existing,
             )
             skipped += 1
             continue
 
-        amount = calculate_invoice_amount(member, tier, total_deducted_annual)
+        amount = calculate_invoice_amount(member, tier, deducted_for(tier))
         if amount <= 0:
             logger.info(
                 "invoice_generation_skipped member_id=%s reason=amount_zero_or_negative",
@@ -246,7 +250,7 @@ def _generate_invoices() -> dict:
             skipped += 1
             continue
 
-        due_date = today + timedelta(days=30)
+        due_date = today + timedelta(days=billing["payment_term_days"])
         invoice = Invoice(
             member_id=member.id,
             issued=today,
@@ -272,6 +276,9 @@ def _generate_invoices() -> dict:
             invoice.id,
         )
         created += 1
+
+        if not billing["email_new_invoices"]:
+            continue
 
         # Generate QR-bill PDF attachment (best-effort)
         pdf_attachments = None
@@ -325,9 +332,12 @@ def send_overdue_reminders_task(self) -> dict:
 def _send_overdue_reminders() -> dict:
     """Send overdue reminders for unpaid invoices past their due date.
 
-    Two reminder rounds:
-      - overdue_7d:  sent when an invoice is 7+ days past due
-      - overdue_14d: sent when an invoice is 14+ days past due (if still unpaid)
+    Two reminder rounds (the day counts are the club's finance settings,
+    7 and 14 unless changed; the history keeps the original type names):
+      - overdue_7d:  sent when an invoice is first_reminder_days past due
+      - overdue_14d: sent when it is second_reminder_days past due (if still unpaid)
+
+    A club that switched reminders off gets none, and no ``invoice.overdue``.
 
     Idempotency: each reminder_type is sent at most once per invoice, tracked
     via InvoiceReminderHistory.
@@ -341,7 +351,12 @@ def _send_overdue_reminders() -> dict:
     from hubra.core.models.finance import Invoice
     from hubra.core.models.invoice_reminder import InvoiceReminderHistory
     from hubra.core.models.member import Member
+    from hubra.api.finance.services import billing_settings
     from hubra.core.services.email import _get_base_url
+
+    billing = billing_settings()
+    if not billing["reminders_enabled"]:
+        return {"overdue_7d": 0, "overdue_14d": 0, "skipped_no_email": 0}
 
     today = date.today()
     _base = _get_base_url()
@@ -354,7 +369,8 @@ def _send_overdue_reminders() -> dict:
     # Fetch all open invoices that are past due
     overdue_invoices: list[Invoice] = db.session.scalars(  # type: ignore[assignment]
         select(Invoice)
-        .where(Invoice.status == "Open")
+        # "Overdue" is also unpaid (an admin may set it by hand).
+        .where(Invoice.status.in_(("Open", "Overdue")))
         .where(Invoice.due < today)
         .order_by(Invoice.due.asc())
     ).all()
@@ -388,7 +404,9 @@ def _send_overdue_reminders() -> dict:
         sent = sent_types.get(invoice.id, set())
 
         # Check for 14-day reminder first (higher priority round)
-        if "overdue_14d" not in sent and invoice.due <= today - timedelta(days=14):
+        if "overdue_14d" not in sent and invoice.due <= today - timedelta(
+            days=billing["second_reminder_days"]
+        ):
             subject, body_html, body_text = _render_invoice_reminder(
                 name=member.name,
                 invoice_id=invoice.id,
@@ -406,7 +424,9 @@ def _send_overdue_reminders() -> dict:
                 reminder_type="overdue_14d",
             )
             overdue_14d += 1
-            if not sent:
+            # First overdue round for this invoice (its send history also
+            # holds the "generation" and "manual" mails).
+            if "overdue_7d" not in sent:
                 emit(INVOICE_OVERDUE, member_id=member.id, invoice_id=invoice.id)
             logger.info(
                 "overdue_reminder_sent invoice_id=%s member_id=%s round=14d",
@@ -414,7 +434,9 @@ def _send_overdue_reminders() -> dict:
                 member.id,
             )
 
-        elif "overdue_7d" not in sent and invoice.due <= today - timedelta(days=7):
+        elif "overdue_7d" not in sent and invoice.due <= today - timedelta(
+            days=billing["first_reminder_days"]
+        ):
             subject, body_html, body_text = _render_invoice_reminder(
                 name=member.name,
                 invoice_id=invoice.id,

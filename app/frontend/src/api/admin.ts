@@ -4,6 +4,10 @@ export interface ClubSettings {
   club_name?: string
   /** Members ask to leave and an admin approves (off: they leave at once). */
   leave_requires_approval?: boolean
+  /** Off: the club takes new members by invite only. */
+  join_requests_open?: boolean
+  /** How many days an invite link works (1–60). */
+  invite_valid_days?: number
   club_description?: string
   logo?: string
   primary_color?: string

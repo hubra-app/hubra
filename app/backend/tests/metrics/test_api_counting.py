@@ -136,27 +136,22 @@ class TestGetApiCalls30d:
         assert result == 0
 
     @patch("hubra.api.metrics._get_redis_client")
-    def test_sums_across_months(self, mock_get_redis):
-        """Sums counters across current and previous months."""
+    def test_sums_the_last_30_days(self, mock_get_redis):
+        """Sums the daily counters of the last 30 days, not whole months."""
+        from datetime import timedelta
+
         from hubra.api.metrics import get_api_calls_30d
 
         mock_redis = MagicMock()
         mock_get_redis.return_value = mock_redis
-
-        # Mock Redis get to return different values for different keys
         now = datetime.now(timezone.utc)
-        key_current = f"api:calls:1:{now.strftime('%Y-%m')}"
+        stored = {
+            f"api:calls:1:d:{(now - timedelta(days=d)).strftime('%Y-%m-%d')}": str(d + 1)
+            for d in range(40)
+        }
+        mock_redis.mget.side_effect = lambda keys: [stored.get(k) for k in keys]
 
-        def mock_get(key):
-            if key == key_current:
-                return b"100"
-            return b"50"
-
-        mock_redis.get.side_effect = mock_get
-
-        result = get_api_calls_30d(tenant_id=1)
-        # Should be at least 100 (current month) + 50 (prev months)
-        assert result >= 150
+        assert get_api_calls_30d(tenant_id=1) == sum(range(1, 31))
 
     @patch("hubra.api.metrics._get_redis_client")
     def test_handles_redis_exception(self, mock_get_redis):
@@ -164,7 +159,7 @@ class TestGetApiCalls30d:
         from hubra.api.metrics import get_api_calls_30d
 
         mock_redis = MagicMock()
-        mock_redis.get.side_effect = Exception("Redis error")
+        mock_redis.mget.side_effect = Exception("Redis error")
         mock_get_redis.return_value = mock_redis
 
         result = get_api_calls_30d(tenant_id=1)

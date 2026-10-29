@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 
+from cryptography.fernet import InvalidToken
 from sqlalchemy import Boolean, DateTime, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -44,7 +46,16 @@ class Code(db.Model):
 
     @property
     def plain_code(self) -> str:
-        return decrypt_code(self.code)
+        """The code in clear text, or "" when it no longer decrypts (the
+        encryption key changed), so one bad row does not break the list."""
+        try:
+            return decrypt_code(self.code)
+        except InvalidToken:
+            logging.getLogger(__name__).warning(
+                "Code %s cannot be decrypted; was SECRET_KEY or FERNET_KEY changed?",
+                self.id,
+            )
+            return ""
 
     def __repr__(self) -> str:
         return f"<Code id={self.id} name={self.name!r}>"

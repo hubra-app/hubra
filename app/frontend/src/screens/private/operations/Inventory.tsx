@@ -47,6 +47,7 @@ import {
   LoadingSpinner,
   EmptyState,
   Pagination,
+  useSubmitOnce,
 } from '@/components/ui'
 import type {
   InventoryItem,
@@ -950,6 +951,7 @@ export function InventoryScreen() {
       )
     }
   }
+  const [submitAdd, adding] = useSubmitOnce(saveAdd)
 
   const saveEdit = async () => {
     if (!editTarget || !fName) return
@@ -1325,6 +1327,7 @@ export function InventoryScreen() {
             <>
               <Select
                 size="sm"
+                aria-label={t('common.status', 'Status')}
                 data={[
                   {
                     value: 'All',
@@ -1407,6 +1410,7 @@ export function InventoryScreen() {
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <Select
                 size="sm"
+                aria-label={t('common.status', 'Status')}
                 data={[
                   {
                     value: 'All',
@@ -1561,7 +1565,7 @@ export function InventoryScreen() {
             <Button variant="default" onClick={() => setAddOpen(false)}>
               {t('common.cancel', 'Abbrechen')}
             </Button>
-            <Button variant="filled" onClick={saveAdd}>
+            <Button variant="filled" onClick={submitAdd} loading={adding}>
               {t('inventory.addItem', 'Gegenstand hinzufügen')}
             </Button>
           </>

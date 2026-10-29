@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from hubra.api.utils import log_audit
 from hubra.core.crypto import encrypt_code
@@ -45,7 +46,14 @@ class CodeService:
         return code
 
     @staticmethod
-    def delete(code: Code) -> None:
+    def delete(code: Code, actor_id: int) -> None:
+        log_audit(
+            actor_id=actor_id,
+            action="delete_code",
+            target_type="Code",
+            target_id=code.id,
+            target_label=code.name,
+        )
         db.session.delete(code)
 
 
@@ -54,7 +62,16 @@ class CodesService:
 
     @staticmethod
     def list() -> list[Code]:
-        result = db.session.scalars(select(Code).order_by(Code.name))
+        from hubra.core.models.member import Member
+
+        result = db.session.scalars(
+            select(Code)
+            .order_by(Code.name)
+            .options(
+                selectinload(Code.created_by).selectinload(Member.user),
+                selectinload(Code.updated_by).selectinload(Member.user),
+            )
+        )
         return list(result.all())
 
     @staticmethod
@@ -67,6 +84,7 @@ class CodesService:
             updated_by_id=actor_id,
         )
         db.session.add(code)
+        db.session.flush()
 
         log_audit(
             actor_id=actor_id,

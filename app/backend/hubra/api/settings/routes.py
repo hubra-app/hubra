@@ -69,6 +69,42 @@ def get_settings():
     return jsonify([]), 200
 
 
+# ── GET /settings/club-profile ────────────────────────────────────────────────
+
+# The parts of Settings > Verein every member may see (the rest, such as the
+# membership rules, stays with GET /admin/club-settings).
+_PUBLIC_CLUB_FIELDS = (
+    "club_name",
+    "club_description",
+    "logo",
+    "primary_color",
+    "secondary_color",
+    "accent_color",
+    "timezone",
+    "locale",
+    "date_format",
+)
+
+
+@settings_bp.get("/club-profile")
+@jwt_required()
+def get_club_profile():
+    """Name, look and announcement banner of the club, for every member."""
+    from hubra.core.tenant.context import current_tenant
+
+    get_current_member()  # members of this club only
+    tenant = current_tenant()
+    branding = dict((tenant.settings or {}).get("branding", {})) if tenant else {}
+    profile = {k: branding.get(k) for k in _PUBLIC_CLUB_FIELDS}
+    if not profile["club_name"] and tenant is not None:
+        profile["club_name"] = tenant.name
+    banner = (branding.get("announcement_banner_text") or "").strip()
+    profile["banner"] = (
+        banner if banner and branding.get("announcement_banner_active") else None
+    )
+    return jsonify(profile), 200
+
+
 # ── PUT /settings/<key> ───────────────────────────────────────────────────────
 
 
@@ -117,15 +153,15 @@ def upsert_setting(key: str):
 
     err = SettingService.validate_value(setting.validation_type, data.get("value", ""))
     if err:
+        db.session.rollback()
         return api_error("VALIDATION_ERROR", err, 400)
 
+    log_audit(get_current_member().id, "upsert", "setting", None, key)
     try:
         db.session.commit()
     except Exception:
         db.session.rollback()
         raise
-
-    log_audit(get_current_member().id, "upsert", "setting", None, key)
 
     return jsonify(_setting_schema.dump(setting)), 200
 
@@ -148,6 +184,7 @@ def delete_setting(key: str):
             )
 
     SettingService.delete(key)
+    log_audit(get_current_member().id, "delete", "setting", None, key)
 
     try:
         db.session.commit()
@@ -155,7 +192,6 @@ def delete_setting(key: str):
         db.session.rollback()
         raise
 
-    log_audit(get_current_member().id, "delete", "setting", None, key)
     return "", 204
 
 
@@ -176,19 +212,12 @@ def revert_setting(key: str):
                 403,
             )
 
-    try:
-        setting = SettingService.revert_to_default(key)
-    except Exception as exc:
-        status = getattr(exc, "code", 500)
-        return api_error(
-            "REVERT_FAILED", str(exc), status if isinstance(status, int) else 500
-        )
+    setting = SettingService.revert_to_default(key)  # 404 / 409 as ApiError
+    log_audit(get_current_member().id, "revert", "setting", None, key)
 
     try:
         db.session.commit()
     except Exception:
         db.session.rollback()
         raise
-
-    log_audit(get_current_member().id, "revert", "setting", None, key)
     return jsonify(_setting_schema.dump(setting)), 200

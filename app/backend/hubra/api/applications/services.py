@@ -85,19 +85,23 @@ class ApplicationService:
 
         db.session.delete(application)
 
-        # WildDuck mailbox — async via Celery
-        if member.public_email:
-            try:
-                from hubra.core.tasks.wildduck import create_wildduck_user
-
-                create_wildduck_user.delay(member.id)
-            except Exception:
-                current_app.logger.exception(
-                    "Could not queue WildDuck mailbox for member %s", member.id
-                )
-
         db.session.refresh(member)
         return member  # type: ignore[return-value]
+
+    @staticmethod
+    def queue_mailbox(member: Member) -> None:
+        """Queue the new member's WildDuck mailbox. Call after the commit:
+        a worker that runs first does not find the member and gives up."""
+        if not member.public_email:
+            return
+        try:
+            from hubra.core.tasks.wildduck import create_wildduck_user
+
+            create_wildduck_user.delay(member.id)
+        except Exception:
+            current_app.logger.exception(
+                "Could not queue WildDuck mailbox for member %s", member.id
+            )
 
     @staticmethod
     def decline(application_id: int, actor_id: int) -> None:
@@ -115,9 +119,18 @@ class ApplicationService:
         db.session.delete(application)
 
     @staticmethod
-    def delete(application_id: int) -> None:
-        """Delete an application without audit trail."""
+    def delete(application_id: int, actor_id: int) -> None:
+        """Delete an application (spam, a duplicate); audited like a decline."""
         application = ApplicationService.get(application_id)
+
+        log_audit(
+            actor_id=actor_id,
+            action="delete_application",
+            target_type="Application",
+            target_id=application.id,
+            target_label=application.name,
+        )
+
         db.session.delete(application)
 
 
@@ -167,4 +180,10 @@ class ApplicationsService:
             avatar_color=color,
         )
         db.session.add(app)
+
+        from hubra.api.notifications.staff import notify_permitted
+
+        notify_permitted(
+            "applications.applications.approve", "info", "New application", app.name
+        )
         return app  # type: ignore[return-value]
