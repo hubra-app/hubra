@@ -164,3 +164,12 @@ def test_bulk_invoices_with_bad_values(client, auth_headers, body):
 def test_mail_forms_with_bad_values(client, auth_headers, url, body):
     resp = client.post(url, json=body, headers=auth_headers)
     assert resp.status_code == 400, resp.get_data(as_text=True)[:200]
+
+
+@pytest.mark.parametrize("body", [{"price_chf": "1e12"}, {"coefficient": 10**9}])
+def test_number_too_large_for_its_column(client, auth_headers, db, seeded_db, body):
+    # SQLite has no column sizes; on Postgres this was a 500.
+    resp = client.patch(f"/api/v1/tiers/{seeded_db['tier'].id}", json=body, headers=auth_headers)
+    expected = 400 if db.engine.dialect.name == "postgresql" else 200
+    assert resp.status_code == expected
+    assert client.get("/api/v1/tiers/", headers=auth_headers).status_code == 200
