@@ -3,7 +3,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, Group, Badge, Select, ActionIcon, Text } from '@mantine/core'
 import { useT } from '@/locales/i18n'
 import { IconExternalLink, IconPlus } from '@tabler/icons-react'
-import { useToast, useNav, useLoadData, useAuth } from '@/context/AppContext'
+import { useToast, useNav, useAuth } from '@/context/AppContext'
+import { useInvoices } from '@/data/lists'
 import {
   usePagination,
   ConfirmModal,
@@ -22,12 +23,13 @@ import {
 import { formatCHF, formatDate } from '@/format'
 import { TransactionFormModal, type TransactionFormValues } from './TransactionFormModal'
 import { methodLabel, statusLabel } from './transactionLabels'
+import { qk } from '@/data/keys'
 
 /* ── Transactions ────────────────────────────── */
 export function TransactionsTab() {
   const { notify } = useToast()
   const { go, goInvoice } = useNav()
-  const { invoices } = useLoadData('invoices')
+  const { invoices } = useInvoices()
   const { hasPermission } = useAuth()
   const { t } = useT()
   const queryClient = useQueryClient()
@@ -40,11 +42,11 @@ export function TransactionsTab() {
     error: fetchError,
     refetch,
   } = useQuery({
-    queryKey: ['transactions'],
+    queryKey: qk.transactions.all,
     queryFn: () => listTransactions(),
   })
   const { data: categories = [] } = useQuery({
-    queryKey: ['transaction-categories'],
+    queryKey: qk.transactions.categories,
     queryFn: () => listTxCategories(),
     enabled: canCreate || canUpdate,
   })
@@ -108,7 +110,7 @@ export function TransactionsTab() {
             : {}),
         })
       }
-      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      queryClient.invalidateQueries({ queryKey: qk.transactions.all })
       notify(
         'success',
         t('finance.transaction.saved', 'Buchung gespeichert.'),
@@ -136,7 +138,7 @@ export function TransactionsTab() {
     if (!deleteTarget) return
     try {
       await deleteTransaction(deleteTarget.id)
-      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      queryClient.invalidateQueries({ queryKey: qk.transactions.all })
       notify(
         'info',
         t('finance.transaction.deleted', 'Buchung gelöscht.'),

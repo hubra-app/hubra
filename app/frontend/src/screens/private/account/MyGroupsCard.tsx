@@ -5,6 +5,7 @@ import { IconUsersGroup } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
 import { useToast } from '@/context/AppContext'
 import { joinGroup, leaveGroup, listJoinableGroups } from '@/api/groups'
+import { qk } from '@/data/keys'
 
 /** Interest groups the member can join or leave without asking anyone. */
 export function MyGroupsCard() {
@@ -13,7 +14,7 @@ export function MyGroupsCard() {
   const queryClient = useQueryClient()
   const [busy, setBusy] = useState<number | null>(null)
   const { data: groups = [] } = useQuery({
-    queryKey: ['groups', 'joinable'],
+    queryKey: qk.groups.joinable,
     queryFn: listJoinableGroups,
   })
   if (groups.length === 0) return null
@@ -22,7 +23,7 @@ export function MyGroupsCard() {
     setBusy(id)
     try {
       await (joined ? leaveGroup(id) : joinGroup(id))
-      await queryClient.invalidateQueries({ queryKey: ['groups'] })
+      await queryClient.invalidateQueries({ queryKey: qk.groups.all })
     } catch (err) {
       notify(
         'error',

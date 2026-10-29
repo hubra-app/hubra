@@ -482,7 +482,7 @@
     "houseNo": "No.",
     "import": "Import",
     "lastName": "Last name",
-    "loading": "Loading?",
+    "loading": "Loading …",
     "member": "Member",
     "members": "Members",
     "method": "Method",
@@ -2652,7 +2652,12 @@
     "deleteKeyBody": "Delete \"{{key}}\"? All bindings must be removed first.",
     "editTitle": "Edit binding #{{id}}",
     "deleteBody": "Delete binding #{{id}} ({{source}} → {{key}})?",
-    "protectedToggle": "Protected: cannot toggle"
+    "protectedToggle": "Protected: cannot toggle",
+    "additionalAlias": "Additional alias: {{address}}",
+    "noSources": "No {{type}} records available.",
+    "selectSource": "Select a record …",
+    "currentValue": "Current value:",
+    "hidden": "(hidden)"
   },
   "roles": {
     "hideFields": "Hide field permissions",
@@ -2700,7 +2705,9 @@
       "Admin": "Admin",
       "Treasurer": "Treasurer",
       "Member": "Member"
-    }
+    },
+    "assignTo": "Give members the role {{role}}",
+    "searchMembers": "Search members …"
   },
   "modules": {
     "functions": {
@@ -2772,6 +2779,7 @@
     "roles": {
       "name": "Roles & permissions",
       "description": "Roles and the permissions they grant"
-    }
+    },
+    "pluginFailed": "This extension could not be shown."
   }
 }

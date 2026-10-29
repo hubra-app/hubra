@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, type KeyboardEvent } from 'react'
 
 export function usePagination<T>(items: T[], defaultPerPage = 10) {
   const [page, setPage] = useState(1)
@@ -25,6 +25,26 @@ export function usePagination<T>(items: T[], defaultPerPage = 10) {
     paged,
     totalPages,
     total: items.length,
+  }
+}
+
+/**
+ * Props that let a clickable row or card be reached with Tab and opened
+ * with Enter or Space, like a button. Keys pressed inside a control in it
+ * (a button, an input) are left to that control.
+ */
+export function clickableProps(onClick?: () => void) {
+  if (!onClick) return {}
+  return {
+    onClick,
+    tabIndex: 0,
+    onKeyDown: (e: KeyboardEvent<HTMLElement>) => {
+      if (e.target !== e.currentTarget) return
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        onClick()
+      }
+    },
   }
 }
 

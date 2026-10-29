@@ -1,13 +1,16 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import i18n from 'i18next'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, Group, Select, TextInput } from '@mantine/core'
 import { useT, zmsg } from '@/locales/i18n'
 import { IconPlus } from '@tabler/icons-react'
-import { useToast, useLoadData, useNav, useAuth } from '@/context/AppContext'
+import { useToast, useNav, useAuth } from '@/context/AppContext'
+import { qk } from '@/data/keys'
+import { useInvoices, useListCache } from '@/data/lists'
+import type { Invoice } from '@/types'
 import {
   Modal,
   Field,
@@ -24,7 +27,7 @@ import {
   listExternalParties,
   listTxCategories,
 } from '@/api/finance'
-import { listMembers } from '@/api/members'
+import { MemberPicker } from '@/components/MemberPicker'
 import { listTiers, calculateTierCost } from '@/api/tiers'
 import { formatCHF } from '@/format'
 import {
@@ -89,7 +92,9 @@ type BulkForm = z.infer<typeof bulkSchema>
 
 export function InvoicesTab() {
   const { notify } = useToast()
-  const { invoices, setInvoices } = useLoadData('invoices')
+  const { invoices } = useInvoices()
+  const invoiceCache = useListCache<Invoice>(qk.invoices.all)
+  const queryClient = useQueryClient()
   const { goInvoice } = useNav()
   const { hasPermission } = useAuth()
   const { t } = useT()
@@ -127,31 +132,20 @@ export function InvoicesTab() {
     validate: zod4Resolver(bulkSchema),
     initialValues: { tierId: '', due: '', description: '' },
   })
-  const { data: membersData } = useQuery({
-    queryKey: ['members'],
-    queryFn: () => listMembers({ pageSize: 500 }),
-  })
-  const memberOptions = useMemo(
-    () =>
-      (membersData?.members ?? []).map((m) => ({
-        id: m.id,
-        name: m.name,
-        tierName: m.tier,
-      })),
-    [membersData],
-  )
+  // The chosen member's tier sets the amount of a membership invoice.
+  const [memberTier, setMemberTier] = useState<string | null>(null)
   const { data: tierOptions = [] } = useQuery({
-    queryKey: ['tiers'],
+    queryKey: qk.tiers.all,
     queryFn: () => listTiers(),
     enabled: addOpen || bulkOpen,
   })
   const { data: externalParties = [] } = useQuery({
-    queryKey: ['external-parties'],
+    queryKey: qk.externalParties,
     queryFn: () => listExternalParties(),
     enabled: addOpen,
   })
   const { data: txCategories = [] } = useQuery({
-    queryKey: ['transaction-categories'],
+    queryKey: qk.transactions.categories,
     queryFn: () => listTxCategories(),
     enabled: addOpen,
   })
@@ -186,7 +180,8 @@ export function InvoicesTab() {
         tierId: data.tierId || undefined,
         description: data.description || undefined,
       })
-      setInvoices((prev) => [...result.invoices, ...prev])
+      invoiceCache.invalidate()
+      queryClient.invalidateQueries({ queryKey: qk.dashboard })
       setBulkOpen(false)
       notify(
         'success',
@@ -212,7 +207,7 @@ export function InvoicesTab() {
     singleForm.initialize({
       recipientType: 'member',
       purpose: 'membership',
-      memberId: memberOptions[0]?.id ?? '',
+      memberId: '',
       externalPartyId: externalParties[0]?.id ?? '',
       amount: '',
       due: '',
@@ -237,7 +232,8 @@ export function InvoicesTab() {
         categoryId: data.categoryId || undefined,
         description: data.description || undefined,
       })
-      setInvoices((prev) => [inv, ...prev])
+      invoiceCache.prepend(inv)
+      queryClient.invalidateQueries({ queryKey: qk.dashboard })
       setAddOpen(false)
       notify(
         'success',
@@ -265,9 +261,8 @@ export function InvoicesTab() {
       tierOptions.length === 0
     )
       return
-    const m = memberOptions.find((o) => o.id === watchedMemberId)
-    if (!m) return
-    const tier = tierOptions.find((tp) => tp.name === m.tierName)
+    if (!memberTier) return
+    const tier = tierOptions.find((tp) => tp.name === memberTier)
     if (!tier) return
     let cancelled = false
     const timer = setTimeout(() => {
@@ -304,7 +299,7 @@ export function InvoicesTab() {
     watchedPurpose,
     watchedMemberId,
     tierOptions,
-    memberOptions,
+    memberTier,
     singleForm,
     notify,
     t,
@@ -554,6 +549,7 @@ export function InvoicesTab() {
       />
 
       <Modal
+        onSubmit={bulkForm.onSubmit(handleBulk)}
         open={bulkOpen}
         onClose={() => setBulkOpen(false)}
         title={t('finance.bulk.createTitle', 'Rechnungen für mehrere Mitglieder erstellen')}
@@ -564,7 +560,7 @@ export function InvoicesTab() {
             </Button>
             <Button
               variant="filled"
-              onClick={() => bulkForm.onSubmit(handleBulk)()}
+              type="submit"
               disabled={bulkSaving}
             >
               {bulkSaving
@@ -637,6 +633,7 @@ export function InvoicesTab() {
       </Modal>
 
       <Modal
+        onSubmit={singleForm.onSubmit(handleCreate)}
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={t('finance.issueInvoice', 'Rechnung ausstellen')}
@@ -647,7 +644,7 @@ export function InvoicesTab() {
             </Button>
             <Button
               variant="filled"
-              onClick={() => singleForm.onSubmit(handleCreate)()}
+              type="submit"
               disabled={saving}
             >
               {saving
@@ -677,25 +674,12 @@ export function InvoicesTab() {
           {watchedRecipientType === 'member' ? (
             <>
               <Field label={t('finance.recipientType.member', 'Mitglied')}>
-                <Select
-                  data={
-                    memberOptions.length === 0
-                      ? [
-                          {
-                            value: '',
-                            label: t(
-                              'finance.loadingMembers',
-                              'Mitglieder werden geladen …',
-                            ),
-                          },
-                        ]
-                      : memberOptions.map((m) => ({
-                          value: m.id,
-                          label: m.name,
-                        }))
-                  }
-                  searchable
+                <MemberPicker
                   {...singleForm.getInputProps('memberId')}
+                  onChange={(id, m) => {
+                    singleForm.setFieldValue('memberId', id ?? '')
+                    setMemberTier(m?.tier ?? null)
+                  }}
                 />
               </Field>
               <Field label={t('finance.purposeLabel', 'Zweck')}>
@@ -774,15 +758,11 @@ export function InvoicesTab() {
               hint={
                 watchedRecipientType === 'member' &&
                 watchedPurpose === 'membership'
-                  ? (() => {
-                      const m = memberOptions.find(
-                        (o) => o.id === watchedMemberId,
-                      )
-                      if (!m) return undefined
-                      return t('finance.basedOnTier', 'Gemäss Stufe {{tier}}', {
-                        tier: m.tierName,
+                  ? memberTier && watchedMemberId
+                    ? t('finance.basedOnTier', 'Gemäss Stufe {{tier}}', {
+                        tier: memberTier,
                       })
-                    })()
+                    : undefined
                   : undefined
               }
             >

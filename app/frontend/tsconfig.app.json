@@ -12,11 +12,19 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
+    "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "paths": { "@/*": ["./src/*"], "@hubra/api-client": ["../../packages/api-client/src/index.ts"] }
+    "paths": {
+      "@/*": ["./src/*"],
+      "@hubra/api-client": ["../../packages/api-client/src/index.ts"],
+      "@hubra/ui": ["../../packages/ui/src/index.ts"],
+      "react": ["./node_modules/@types/react"],
+      "react/*": ["./node_modules/@types/react/*"],
+      "@mantine/core": ["./node_modules/@mantine/core"]
+    }
   },
-  "include": ["src", "../../packages/api-client/src"]
+  "include": ["src", "../../packages/api-client/src", "../../packages/ui/src"]
 }

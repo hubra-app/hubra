@@ -25,6 +25,7 @@ import {
   deleteNotification,
 } from '@/api/notifications'
 import type { Notification } from '@/types'
+import { qk } from '@/data/keys'
 import { formatRelative } from '@/format'
 
 export function NotificationPanel() {
@@ -34,31 +35,31 @@ export function NotificationPanel() {
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
 
   const { data: notifications = [] } = useQuery<Notification[]>({
-    queryKey: ['notifications'],
+    queryKey: qk.notifications,
     queryFn: listNotifications,
     refetchInterval: 30_000,
   })
 
   const markNotifsRead = useCallback(async () => {
-    queryClient.setQueryData<Notification[]>(['notifications'], (prev) =>
+    queryClient.setQueryData<Notification[]>(qk.notifications, (prev) =>
       (prev ?? []).map((n) => ({ ...n, read: true })),
     )
     try {
       await markAllNotificationsRead()
     } catch {
       // Show the server's state again rather than a false "all read".
-      queryClient.invalidateQueries({ queryKey: ['notifications'] })
+      queryClient.invalidateQueries({ queryKey: qk.notifications })
     }
   }, [queryClient])
 
   const dismissNotif = useCallback(
     (id: string) => {
-      queryClient.setQueryData<Notification[]>(['notifications'], (prev) =>
+      queryClient.setQueryData<Notification[]>(qk.notifications, (prev) =>
         (prev ?? []).filter((n) => n.id !== id),
       )
       // Delete it on the server too, or the next refetch brings it back.
       deleteNotification(id).catch(() =>
-        queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+        queryClient.invalidateQueries({ queryKey: qk.notifications }),
       )
     },
     [queryClient],
@@ -97,7 +98,11 @@ export function NotificationPanel() {
           <Button variant="subtle" size="sm" onClick={markNotifsRead}>
             {t('shell.notif.markAllRead')}
           </Button>
-          <ActionIcon variant="subtle" onClick={() => setNotifPanelOpen(false)}>
+          <ActionIcon
+            variant="subtle"
+            onClick={() => setNotifPanelOpen(false)}
+            aria-label={t('common.close')}
+          >
             <IconX size={16} />
           </ActionIcon>
         </Group>

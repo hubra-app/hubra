@@ -1,12 +1,16 @@
 import i18n from "i18next";
 import { useMutation } from "@tanstack/react-query";
-import { useToast, useAuth, useData } from "@/context/AppContext";
+import { useToast, useAuth } from "@/context/AppContext";
+import { qk } from "@/data/keys";
+import { useListCache, useMyJoinedEvents } from "@/data/lists";
+import type { ClubEvent } from "@/types";
 import { joinEvent, leaveEvent } from "@/api/events";
 
 export function useToggleJoinEvent() {
   const { notify } = useToast();
   const { currentUser } = useAuth();
-  const { myJoinedEvents, setEvents } = useData();
+  const myJoinedEvents = useMyJoinedEvents();
+  const events = useListCache<ClubEvent>(qk.events);
 
   return useMutation({
     mutationFn: async ({
@@ -29,36 +33,24 @@ export function useToggleJoinEvent() {
     onMutate: ({ eventId }) => {
       const isJoined = myJoinedEvents.has(eventId);
       if (currentUser) {
-        setEvents((prev) =>
-          prev.map((ev) =>
-            ev.id !== eventId
-              ? ev
-              : {
-                  ...ev,
-                  attendees: isJoined
-                    ? ev.attendees.filter((id) => id !== currentUser.id)
-                    : [...ev.attendees, currentUser.id],
-                },
-          ),
-        );
+        events.patch(eventId, (ev) => ({
+          ...ev,
+          attendees: isJoined
+            ? ev.attendees.filter((id) => id !== currentUser.id)
+            : [...ev.attendees, currentUser.id],
+        }));
       }
       return { isJoined };
     },
     onError: (err, { eventId }, ctx) => {
       const isJoined = ctx?.isJoined ?? false;
       if (currentUser) {
-        setEvents((prev) =>
-          prev.map((ev) =>
-            ev.id !== eventId
-              ? ev
-              : {
-                  ...ev,
-                  attendees: isJoined
-                    ? [...ev.attendees, currentUser.id]
-                    : ev.attendees.filter((id) => id !== currentUser.id),
-                },
-          ),
-        );
+        events.patch(eventId, (ev) => ({
+          ...ev,
+          attendees: isJoined
+            ? [...ev.attendees, currentUser.id]
+            : ev.attendees.filter((id) => id !== currentUser.id),
+        }));
       }
       const msg =
         err instanceof Error ? err.message : i18n.t('events.attendanceFailed', 'Die Teilnahme konnte nicht gespeichert werden.');

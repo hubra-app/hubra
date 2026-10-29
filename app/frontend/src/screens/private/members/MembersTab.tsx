@@ -14,7 +14,8 @@ import {
   IconShieldCheckFilled,
   IconDots,
 } from '@tabler/icons-react'
-import { useNav, useToast, useAuth, useData } from '@/context/AppContext'
+import { useNav, useToast, useAuth } from '@/context/AppContext'
+import { qk } from '@/data/keys'
 import {
   Avatar,
   TierTag,
@@ -51,7 +52,6 @@ export function MembersTab() {
   const { go } = useNav()
   const { notify } = useToast()
   const { currentUser, hasPermission } = useAuth()
-  const { setMemberCount } = useData()
   const canCreate = hasPermission('members.members.create')
   const canUpdate = hasPermission('members.members.update')
   const canArchive = hasPermission('members.members.archive')
@@ -95,7 +95,7 @@ export function MembersTab() {
   }, [lookupsData])
 
   const { data: bulkTiers = [] } = useQuery({
-    queryKey: ['tiers'],
+    queryKey: qk.tiers.all,
     queryFn: () => listTiers(),
     enabled: bulkInvoiceOpen,
   })
@@ -108,7 +108,7 @@ export function MembersTab() {
   // The API pages the list: ask for the page on screen, not for everything.
   const paging = useServerPagination(`${debouncedSearch}|${tierFilter}|${showArchived}`)
   const { data: membersData, isLoading: membersLoading } = useQuery({
-    queryKey: ['members', debouncedSearch, tierFilter, showArchived, paging.page, paging.perPage],
+    queryKey: qk.members.list(debouncedSearch, tierFilter, showArchived, paging.page, paging.perPage),
     queryFn: () =>
       listMembers({
         search: debouncedSearch,
@@ -168,8 +168,8 @@ export function MembersTab() {
     if (!archiveTarget) return
     try {
       await archiveMember(archiveTarget.id)
-      queryClient.invalidateQueries({ queryKey: ['members'] })
-      setMemberCount((prev) => Math.max(0, prev - 1))
+      queryClient.invalidateQueries({ queryKey: qk.members.all })
+      queryClient.invalidateQueries({ queryKey: qk.dashboard })
       notify(
         'info',
         t('members.archived', 'Mitglied archiviert'),
@@ -187,8 +187,8 @@ export function MembersTab() {
   const handleUnarchive = async (m: Member) => {
     try {
       await unarchiveMember(m.id)
-      queryClient.invalidateQueries({ queryKey: ['members'] })
-      setMemberCount((prev) => prev + 1)
+      queryClient.invalidateQueries({ queryKey: qk.members.all })
+      queryClient.invalidateQueries({ queryKey: qk.dashboard })
       notify(
         'success',
         t('members.member.restoredTitle'),
@@ -209,7 +209,7 @@ export function MembersTab() {
     if (!hardDeleteTarget) return
     try {
       await hardDeleteMember(hardDeleteTarget.id)
-      queryClient.invalidateQueries({ queryKey: ['members'] })
+      queryClient.invalidateQueries({ queryKey: qk.members.all })
       notify(
         'info',
         t('members.member.deletedTitle', 'Mitglied gelöscht'),
@@ -845,7 +845,7 @@ export function MembersTab() {
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
         onSaved={() => {
-          queryClient.invalidateQueries({ queryKey: ['members'] })
+          queryClient.invalidateQueries({ queryKey: qk.members.all })
           setEditTarget(null)
         }}
       />

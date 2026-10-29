@@ -1,7 +1,7 @@
 id: budgets
 name: Budgets
-version: "1.0.1"
-hubra: ">=0.1,<1"
+version: "1.1.0"
+hubra: ">=0.2,<1"
 description: "A yearly budget per transaction category, compared with what was booked. Approve and lock it, and copy it to the next year."
 author: Hubra
 homepage: https://github.com/hubra-app/hubra

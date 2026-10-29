@@ -25,6 +25,7 @@ import {
   type ModuleSettingField,
 } from '@/api/modules'
 import { localizeModule } from '@/modules/labels'
+import { qk } from '@/data/keys'
 
 type FormValue = string | number | boolean | null
 
@@ -38,7 +39,7 @@ export function ModulesTab() {
   const [busy, setBusy] = useState<string | null>(null)
 
   const { data: modules = [] } = useQuery({
-    queryKey: ['modules'],
+    queryKey: qk.modules,
     queryFn: getModules,
     select: (list) => list.map(localizeModule),
   })
@@ -52,7 +53,7 @@ export function ModulesTab() {
     setBusy(m.code)
     try {
       const updated = await setModuleEnabled(m.code, enabled)
-      await queryClient.invalidateQueries({ queryKey: ['modules'] })
+      await queryClient.invalidateQueries({ queryKey: qk.modules })
       notify(
         'success',
         enabled
@@ -176,7 +177,7 @@ export function ModulesTab() {
           module={editing}
           onClose={() => setEditing(null)}
           onSaved={async () => {
-            await queryClient.invalidateQueries({ queryKey: ['modules'] })
+            await queryClient.invalidateQueries({ queryKey: qk.modules })
             setEditing(null)
           }}
         />

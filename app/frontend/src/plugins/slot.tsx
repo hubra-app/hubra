@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react'
+import { PluginBoundary } from './boundary'
 import { useVisible } from './hooks'
 import type { PluginSlotEntry, SlotProps } from './types'
 
@@ -15,7 +16,11 @@ export function PluginSlot<K extends keyof SlotProps>({
     <>
       {entries.map((e, i) => {
         const C = e.component as ComponentType<SlotProps[K]>
-        return <C key={i} {...((props ?? {}) as SlotProps[K])} />
+        return (
+          <PluginBoundary key={`${e.plugin}-${i}`} plugin={e.plugin}>
+            <C {...((props ?? {}) as SlotProps[K])} />
+          </PluginBoundary>
+        )
       })}
     </>
   )

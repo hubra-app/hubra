@@ -7,7 +7,7 @@ from hubra.api.version.services import VersionService
 
 def test_get_version_reads_pyproject_toml():
     version = VersionService.get_version()
-    assert version == "0.1.0"
+    assert version == "0.2.0"
 
 
 def test_changelog_parses_sample_file(tmp_path, monkeypatch):

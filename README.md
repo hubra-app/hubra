@@ -29,7 +29,7 @@ cross-origin auth setup (CORS, CSRF, cookie attributes, ProxyFix).
 
 | Layer          | Technology                                                          |
 | -------------- | ------------------------------------------------------------------- |
-| **Frontend**   | React 19, TypeScript 6, Vite 8, Mantine 7, TanStack Query 5         |
+| **Frontend**   | React 19, TypeScript 6, Vite 8, Mantine 9, TanStack Query 5         |
 | **Backend**    | Flask 3, Python 3.13, SQLAlchemy, Marshmallow                       |
 | **Database**   | PostgreSQL 16, MongoDB 7 (mail), Redis 7                            |
 | **Background** | Celery 5 + Redis                                                    |

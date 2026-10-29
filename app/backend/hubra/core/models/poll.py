@@ -52,7 +52,10 @@ class Poll(db.Model):
         "Member", foreign_keys=[created_by_id]
     )
     options: Mapped[list["PollOption"]] = relationship(
-        "PollOption", back_populates="poll", cascade="all, delete-orphan"
+        "PollOption",
+        back_populates="poll",
+        cascade="all, delete-orphan",
+        order_by="PollOption.id",
     )
     votes: Mapped[list["PollVote"]] = relationship(
         "PollVote", back_populates="poll", cascade="all, delete-orphan"

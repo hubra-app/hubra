@@ -7,7 +7,7 @@ import { AppProvider, useApp } from '@/context/AppContext'
 import { URL_CLUB } from '@/clubBase'
 import { InstanceProvider, useInstance } from '@/context/InstanceContext'
 import { RequireModule } from '@/modules/RequireModule'
-import { usePluginLoader, usePluginRoutes } from '@/plugins'
+import { PluginBoundary, usePluginLoader, usePluginRoutes } from '@/plugins'
 import { NotFoundScreen } from '@/screens/public/NotFound'
 import { Toasts } from '@/components/ui'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
@@ -215,289 +215,285 @@ function PrivateRoutes() {
                 </Center>
               }
             >
-              {!pluginsReady ? (
-                <Center h="50vh">
-                  <Loader />
-                </Center>
-              ) : (
-                <Routes>
-                  <Route path="dashboard" element={<DashboardScreen />} />
-                  <Route path="dashboard/global" element={<DashboardScreen />} />
-                  <Route path="members" element={<MembersTabScreen />} />
-                  <Route path="members/:id" element={<MemberDetailScreen />} />
-                  <Route path="members/applications" element={<MembersTabScreen />} />
-                  <Route path="members/tiers" element={<MembersTabScreen />} />
-                  <Route
-                    path="members/functions"
-                    element={
-                      <RequireModule code="functions">
-                        <MembersTabScreen />
-                      </RequireModule>
-                    }
-                  />
-                  <Route
-                    path="groups"
-                    element={
-                      <RequireModule code="groups">
-                        <GroupsScreen />
-                      </RequireModule>
-                    }
-                  />
-                  <Route
-                    path="operations/events"
-                    element={
-                      <RequireModule code="events">
-                        <OperationsTabScreen />
-                      </RequireModule>
-                    }
-                  />
-                  <Route
-                    path="operations/polls"
-                    element={
-                      <RequireModule code="polls">
-                        <OperationsTabScreen />
-                      </RequireModule>
-                    }
-                  />
-                  <Route
-                    path="operations/posts/:id"
-                    element={
-                      <RequireModule code="posts">
-                        <PostDetailScreen />
-                      </RequireModule>
-                    }
-                  />
-                  <Route
-                    path="operations/posts"
-                    element={
-                      <RequireModule code="posts">
-                        <OperationsTabScreen />
-                      </RequireModule>
-                    }
-                  />
-                  <Route
-                    path="finance"
-                    element={
-                      <RequireModule code="finance">
-                        <FinanceTabScreen />
-                      </RequireModule>
-                    }
-                  />
-                  <Route
-                    path="finance/transactions"
-                    element={
-                      <RequireModule code="finance">
-                        <FinanceTabScreen />
-                      </RequireModule>
-                    }
-                  />
-                  <Route
-                    path="finance/invoices"
-                    element={
-                      <RequireModule code="finance">
-                        <FinanceTabScreen />
-                      </RequireModule>
-                    }
-                  />
-                  {/* Tabs that plugins add to the finance screen. */}
-                  <Route
-                    path="finance/:tab"
-                    element={
-                      <RequireModule code="finance">
-                        <FinanceTabScreen />
-                      </RequireModule>
-                    }
-                  />
-                  <Route
-                    path="finance/invoices/:id"
-                    element={
-                      <RequireModule code="finance">
-                        <InvoiceDetailScreen />
-                      </RequireModule>
-                    }
-                  />
-                  <Route
-                    path="finance/categories"
-                    element={
-                      <RequireModule code="finance">
-                        <FinanceTabScreen />
-                      </RequireModule>
-                    }
-                  />
-                  <Route
-                    path="finance/external-parties"
-                    element={
-                      <RequireModule code="finance">
-                        <FinanceTabScreen />
-                      </RequireModule>
-                    }
-                  />
-                  <Route
-                    path="mail"
-                    element={
-                      <RequireModule code="mail">
-                        <MailScreen />
-                      </RequireModule>
-                    }
-                  />
-                  <Route
-                    path="mail/system"
-                    element={
-                      <RequireModule code="mail">
-                        <MailScreen />
-                      </RequireModule>
-                    }
-                  />
-                  <Route
-                    path="mail/all"
-                    element={
-                      <RequireModule code="mail">
-                        <MailScreen />
-                      </RequireModule>
-                    }
-                  />
-                  <Route
-                    path="mail/wildduck"
-                    element={<Navigate to="/app/mail" replace />}
-                  />
-                  <Route
-                    path="operations/codes"
-                    element={
-                      <RequireModule code="codes">
-                        <CodesScreen />
-                      </RequireModule>
-                    }
-                  />
-                  <Route
-                    path="operations/bindings"
-                    element={
-                      <RequireModule code="bindings">
-                        <RequirePermission permKey="bindings.bindings.read">
-                          <BindingsScreen />
-                        </RequirePermission>
-                      </RequireModule>
-                    }
-                  />
-                  <Route
-                    path="operations/bindings/list"
-                    element={
-                      <RequireModule code="bindings">
-                        <RequirePermission permKey="bindings.bindings.read">
-                          <BindingsScreen />
-                        </RequirePermission>
-                      </RequireModule>
-                    }
-                  />
-                  <Route
-                    path="inventory"
-                    element={
-                      <RequireModule code="inventory">
-                        <InventoryScreen />
-                      </RequireModule>
-                    }
-                  />
-                  <Route
-                    path="inventory/:id"
-                    element={
-                      <RequireModule code="inventory">
-                        <InventoryItemDetailScreen />
-                      </RequireModule>
-                    }
-                  />
-                  <Route
-                    path="settings"
-                    element={
-                      <RequirePermission permKey="settings.settings.read">
-                        <SettingsScreen />
+              <Routes>
+                <Route path="dashboard" element={<DashboardScreen />} />
+                <Route path="dashboard/global" element={<DashboardScreen />} />
+                <Route path="members" element={<MembersTabScreen />} />
+                <Route path="members/:id" element={<MemberDetailScreen />} />
+                <Route path="members/applications" element={<MembersTabScreen />} />
+                <Route path="members/tiers" element={<MembersTabScreen />} />
+                <Route
+                  path="members/functions"
+                  element={
+                    <RequireModule code="functions">
+                      <MembersTabScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="groups"
+                  element={
+                    <RequireModule code="groups">
+                      <GroupsScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="operations/events"
+                  element={
+                    <RequireModule code="events">
+                      <OperationsTabScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="operations/polls"
+                  element={
+                    <RequireModule code="polls">
+                      <OperationsTabScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="operations/posts/:id"
+                  element={
+                    <RequireModule code="posts">
+                      <PostDetailScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="operations/posts"
+                  element={
+                    <RequireModule code="posts">
+                      <OperationsTabScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="finance"
+                  element={
+                    <RequireModule code="finance">
+                      <FinanceTabScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="finance/transactions"
+                  element={
+                    <RequireModule code="finance">
+                      <FinanceTabScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="finance/invoices"
+                  element={
+                    <RequireModule code="finance">
+                      <FinanceTabScreen />
+                    </RequireModule>
+                  }
+                />
+                {/* Tabs that plugins add to the finance screen. */}
+                <Route
+                  path="finance/:tab"
+                  element={
+                    <RequireModule code="finance">
+                      <FinanceTabScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="finance/invoices/:id"
+                  element={
+                    <RequireModule code="finance">
+                      <InvoiceDetailScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="finance/categories"
+                  element={
+                    <RequireModule code="finance">
+                      <FinanceTabScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="finance/external-parties"
+                  element={
+                    <RequireModule code="finance">
+                      <FinanceTabScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="mail"
+                  element={
+                    <RequireModule code="mail">
+                      <MailScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="mail/system"
+                  element={
+                    <RequireModule code="mail">
+                      <MailScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="mail/all"
+                  element={
+                    <RequireModule code="mail">
+                      <MailScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="mail/wildduck"
+                  element={<Navigate to="/app/mail" replace />}
+                />
+                <Route
+                  path="operations/codes"
+                  element={
+                    <RequireModule code="codes">
+                      <CodesScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="operations/bindings"
+                  element={
+                    <RequireModule code="bindings">
+                      <RequirePermission permKey="bindings.bindings.read">
+                        <BindingsScreen />
                       </RequirePermission>
-                    }
-                  />
-                  <Route
-                    path="settings/modules"
-                    element={
-                      <RequirePermission permKey="settings.settings.read">
-                        <SettingsScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="operations/bindings/list"
+                  element={
+                    <RequireModule code="bindings">
+                      <RequirePermission permKey="bindings.bindings.read">
+                        <BindingsScreen />
                       </RequirePermission>
-                    }
-                  />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="inventory"
+                  element={
+                    <RequireModule code="inventory">
+                      <InventoryScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="inventory/:id"
+                  element={
+                    <RequireModule code="inventory">
+                      <InventoryItemDetailScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="settings"
+                  element={
+                    <RequirePermission permKey="settings.settings.read">
+                      <SettingsScreen />
+                    </RequirePermission>
+                  }
+                />
+                <Route
+                  path="settings/modules"
+                  element={
+                    <RequirePermission permKey="settings.settings.read">
+                      <SettingsScreen />
+                    </RequirePermission>
+                  }
+                />
+                <Route
+                  path="settings/club"
+                  element={
+                    <RequirePermission permKey="settings.settings.read">
+                      <SettingsScreen />
+                    </RequirePermission>
+                  }
+                />
+                <Route
+                  path="settings/domains"
+                  element={
+                    <RequirePermission permKey="settings.settings.read">
+                      <SettingsScreen />
+                    </RequirePermission>
+                  }
+                />
+                <Route
+                  path="settings/advanced"
+                  element={
+                    <RequirePermission permKey="settings.settings.read">
+                      <SettingsScreen />
+                    </RequirePermission>
+                  }
+                />
+                <Route
+                  path="system"
+                  element={
+                    <RequirePermission permKey="roles.roles.create">
+                      <SystemScreen />
+                    </RequirePermission>
+                  }
+                />
+                <Route
+                  path="system/roles"
+                  element={
+                    <RequirePermission permKey="roles.roles.create">
+                      <SystemScreen />
+                    </RequirePermission>
+                  }
+                />
+                <Route
+                  path="system/health"
+                  element={<Navigate to="/app/system" replace />}
+                />
+                <Route
+                  path="audit-log"
+                  element={
+                    <RequirePermission permKey="audit.audit.read">
+                      <AuditLogScreen />
+                    </RequirePermission>
+                  }
+                />
+                <Route
+                  path="translations"
+                  element={
+                    <RequirePermission permKey="i18n.i18n.write">
+                      <TranslationsScreen />
+                    </RequirePermission>
+                  }
+                />
+                {/* The personal overview is the dashboard's first tab. */}
+                <Route path="account" element={<Navigate to="/app/dashboard" replace />} />
+                <Route path="account/settings" element={<AccountSettingsScreen />} />
+                <Route path="account/settings/membership" element={<AccountSettingsScreen />} />
+                {/* The account itself lives on the SSO portal */}
+                {['security', 'sessions', 'devices', 'language'].map((tab) => (
                   <Route
-                    path="settings/club"
+                    key={tab}
+                    path={`account/settings/${tab}`}
+                    element={<SsoRedirect path="account" />}
+                  />
+                ))}
+                {pluginRoutes.map((r) => (
+                  <Route
+                    key={r.path}
+                    path={r.path}
                     element={
-                      <RequirePermission permKey="settings.settings.read">
-                        <SettingsScreen />
-                      </RequirePermission>
-                    }
-                  />
-                  <Route
-                    path="settings/domains"
-                    element={
-                      <RequirePermission permKey="settings.settings.read">
-                        <SettingsScreen />
-                      </RequirePermission>
-                    }
-                  />
-                  <Route
-                    path="settings/advanced"
-                    element={
-                      <RequirePermission permKey="settings.settings.read">
-                        <SettingsScreen />
-                      </RequirePermission>
-                    }
-                  />
-                  <Route
-                    path="system"
-                    element={
-                      <RequirePermission permKey="roles.roles.create">
-                        <SystemScreen />
-                      </RequirePermission>
-                    }
-                  />
-                  <Route
-                    path="system/roles"
-                    element={
-                      <RequirePermission permKey="roles.roles.create">
-                        <SystemScreen />
-                      </RequirePermission>
-                    }
-                  />
-                  <Route
-                    path="system/health"
-                    element={<Navigate to="/app/system" replace />}
-                  />
-                  <Route
-                    path="audit-log"
-                    element={
-                      <RequirePermission permKey="audit.audit.read">
-                        <AuditLogScreen />
-                      </RequirePermission>
-                    }
-                  />
-                  <Route
-                    path="translations"
-                    element={
-                      <RequirePermission permKey="i18n.i18n.write">
-                        <TranslationsScreen />
-                      </RequirePermission>
-                    }
-                  />
-                  {/* The personal overview is the dashboard's first tab. */}
-                  <Route path="account" element={<Navigate to="/app/dashboard" replace />} />
-                  <Route path="account/settings" element={<AccountSettingsScreen />} />
-                  <Route path="account/settings/membership" element={<AccountSettingsScreen />} />
-                  {/* The account itself lives on the SSO portal */}
-                  {['security', 'sessions', 'devices', 'language'].map((tab) => (
-                    <Route
-                      key={tab}
-                      path={`account/settings/${tab}`}
-                      element={<SsoRedirect path="account" />}
-                    />
-                  ))}
-                  {pluginRoutes.map((r) => (
-                    <Route
-                      key={r.path}
-                      path={r.path}
-                      element={
-                        <RequireModule code={r.module}>
+                      <RequireModule code={r.module}>
+                        <PluginBoundary key={r.path} plugin={r.plugin} notice>
                           {r.perm ? (
                             <RequirePermission permKey={r.perm}>
                               <r.component />
@@ -505,13 +501,26 @@ function PrivateRoutes() {
                           ) : (
                             <r.component />
                           )}
-                        </RequireModule>
-                      }
-                    />
-                  ))}
-                  <Route path="*" element={<Navigate to="dashboard" replace />} />
-                </Routes>
-              )}
+                        </PluginBoundary>
+                      </RequireModule>
+                    }
+                  />
+                ))}
+                {/* Until plugin frontends have loaded, an unknown path may
+                    still be a plugin's screen: wait instead of redirecting. */}
+                <Route
+                  path="*"
+                  element={
+                    pluginsReady ? (
+                      <Navigate to="/app/dashboard" replace />
+                    ) : (
+                      <Center h="50vh">
+                        <Loader />
+                      </Center>
+                    )
+                  }
+                />
+              </Routes>
             </Suspense>
           </RouteErrorBoundary>
         </Shell>

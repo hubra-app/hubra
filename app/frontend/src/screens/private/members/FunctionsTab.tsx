@@ -34,8 +34,9 @@ import {
   assignHolder,
   removeHolder,
 } from '@/api/functions'
-import { listMembers } from '@/api/members'
 import { withBase } from '@/clubBase'
+import { useMemberSearch } from '@/data/members'
+import { qk } from '@/data/keys'
 
 const functionSchema = z.object({
   name: z.string().min(1, zmsg('common.nameRequired', 'Name ist erforderlich')),
@@ -53,7 +54,7 @@ export function FunctionsTab() {
   const canUpdate = hasPermission('functions.functions.update')
   const canDelete = hasPermission('functions.functions.delete')
   const { data: functions = [], isLoading: loading } = useQuery({
-    queryKey: ['functions'],
+    queryKey: qk.functions,
     queryFn: () => listFunctions(),
   })
   const [addOpen, setAddOpen] = useState(false)
@@ -95,7 +96,7 @@ export function FunctionsTab() {
         description: data.description || undefined,
         maxHolders: data.maxHolders,
       })
-      queryClient.invalidateQueries({ queryKey: ['functions'] })
+      queryClient.invalidateQueries({ queryKey: qk.functions })
       setAddOpen(false)
       notify(
         'success',
@@ -120,7 +121,7 @@ export function FunctionsTab() {
         description: data.description || undefined,
         maxHolders: data.maxHolders,
       })
-      queryClient.invalidateQueries({ queryKey: ['functions'] })
+      queryClient.invalidateQueries({ queryKey: qk.functions })
       setEditTarget(null)
       notify(
         'success',
@@ -140,7 +141,7 @@ export function FunctionsTab() {
     if (!deleteTarget) return
     try {
       await deleteFunction(deleteTarget.id)
-      queryClient.invalidateQueries({ queryKey: ['functions'] })
+      queryClient.invalidateQueries({ queryKey: qk.functions })
       notify(
         'info',
         t('functions.deleted', 'Gelöscht'),
@@ -293,6 +294,7 @@ export function FunctionsTab() {
       )}
 
       <Modal
+        onSubmit={form.onSubmit(submitAdd)}
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={t('common.add', 'Hinzufügen')}
@@ -301,7 +303,7 @@ export function FunctionsTab() {
             <Button variant="default" onClick={() => setAddOpen(false)}>
               {t('common.cancel', 'Abbrechen')}
             </Button>
-            <Button variant="filled" onClick={() => form.onSubmit(submitAdd)()} loading={adding}>
+            <Button variant="filled" type="submit" loading={adding}>
               {t('common.create', 'Erstellen')}
             </Button>
           </>
@@ -310,6 +312,7 @@ export function FunctionsTab() {
         {functionForm}
       </Modal>
       <Modal
+        onSubmit={form.onSubmit(saveEdit)}
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
         title={t('common.edit', 'Bearbeiten')}
@@ -319,7 +322,7 @@ export function FunctionsTab() {
             <Button variant="default" onClick={() => setEditTarget(null)}>
               {t('common.cancel', 'Abbrechen')}
             </Button>
-            <Button variant="filled" onClick={() => form.onSubmit(saveEdit)()}>
+            <Button variant="filled" type="submit">
               {t('common.save', 'Speichern')}
             </Button>
           </>
@@ -342,7 +345,7 @@ export function FunctionsTab() {
           fn={manageHolders}
           onClose={() => {
             setManageHolders(null)
-            queryClient.invalidateQueries({ queryKey: ['functions'] })
+            queryClient.invalidateQueries({ queryKey: qk.functions })
           }}
         />
       )}
@@ -372,11 +375,7 @@ function HolderPanel({
     fn.holders.map((h) => ({ ...h, memberColor: '#5e5873' })),
   )
 
-  const { data: searchData } = useQuery({
-    queryKey: ['members-search', searchQuery],
-    queryFn: () => listMembers({ search: searchQuery, pageSize: 10 }),
-    enabled: searchQuery.length >= 2,
-  })
+  const { data: searchData } = useMemberSearch(searchQuery, { enabled: searchQuery.length >= 2 })
 
   const slideMembers: SlideOverMember[] = useMemo(
     () =>

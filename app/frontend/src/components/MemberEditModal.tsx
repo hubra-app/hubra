@@ -185,6 +185,7 @@ export function MemberEditModal({
 
   return (
     <Modal
+      onSubmit={form.onSubmit(handleSave)}
       open={open}
       onClose={onClose}
       title={
@@ -207,7 +208,7 @@ export function MemberEditModal({
           </Button>
           <Button
             variant="filled"
-            onClick={() => form.onSubmit(handleSave)()}
+            type="submit"
             disabled={saving}
           >
             {mode === 'create'
