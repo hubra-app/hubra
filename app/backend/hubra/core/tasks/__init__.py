@@ -133,6 +133,10 @@ def make_celery(app: Flask) -> Celery:
                 "task": "hubra.core.tasks.mail_tasks.cleanup_token_blocklist",
                 "schedule": crontab(hour=3, minute=0),
             },
+            "verify-protected-mail-daily": {
+                "task": "hubra.core.tasks.mail_tasks.verify_protected_mail_addresses",
+                "schedule": crontab(hour=4, minute=0),
+            },
             "sync-wildduck-message-counts": {
                 "task": "hubra.core.tasks.mail_sync.sync_wildduck_message_counts",
                 "schedule": 60.0,

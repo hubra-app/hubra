@@ -217,9 +217,12 @@ def _verify_protected_mail_addresses() -> dict:
     verified = 0
     re_provisioned = 0
     errors = 0
+    # Queued after the commit: a worker that starts first would still see
+    # the old WildDuck ids and do nothing.
+    queued: list = []
 
-    try:
-        for addr in protected_addrs:
+    for addr in protected_addrs:
+        try:
             if addr.address_type == "alias" and addr.wildduck_id:
                 try:
                     wd.get_address(addr.wildduck_id)
@@ -235,7 +238,7 @@ def _verify_protected_mail_addresses() -> dict:
                     )
                     addr.wildduck_id = None
                     addr.provisioning_status = "pending"
-                    sync_managed_address.delay(addr.id)
+                    queued.append((sync_managed_address, addr.id))
                     log_audit(
                         actor_id=None,
                         action="mail_stale_id_detected",
@@ -262,7 +265,7 @@ def _verify_protected_mail_addresses() -> dict:
                     addr.wildduck_filter_id = None
                     addr.provisioning_status = "pending"
                     if addr.owner_type == "member":
-                        provision_member_mail.delay(addr.owner_id)
+                        queued.append((provision_member_mail, addr.owner_id))
                     log_audit(
                         actor_id=None,
                         action="mail_stale_id_detected",
@@ -271,18 +274,20 @@ def _verify_protected_mail_addresses() -> dict:
                         target_label=addr.address,
                     )
                     re_provisioned += 1
-
-    except Exception:
-        logger.warning(
-            "verify_protected: error checking %s", addr.address, exc_info=True
-        )
-        errors += 1
+        except Exception:
+            # One address must not stop the check of the others.
+            logger.warning(
+                "verify_protected: error checking %s", addr.address, exc_info=True
+            )
+            errors += 1
 
     try:
         db.session.commit()
     except Exception:
         db.session.rollback()
         raise
+    for task, arg in queued:
+        task.delay(arg)
 
     logger.info(
         "verify_protected_mail_addresses: verified=%d, re_provisioned=%d, errors=%d",
