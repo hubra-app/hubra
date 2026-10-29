@@ -498,6 +498,11 @@ class InvoiceService:
                     f"ExternalParty {data['external_party_id']} not found",
                 )
 
+        issued = data.get("issued", invoice.issued)
+        due = data.get("due", invoice.due)
+        if issued and due and due < issued:
+            raise_error(400, "VALIDATION_ERROR", "due is before issued")
+
         was_paid = invoice.status == "Paid"
         for field in (
             "member_id",

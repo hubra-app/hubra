@@ -362,3 +362,23 @@ def test_an_invoice_cannot_be_due_before_it_is_issued(client, auth_headers, seed
         headers=auth_headers,
     )
     assert resp.status_code == 400
+
+
+def test_an_invoice_cannot_be_moved_to_be_due_before_it_is_issued(
+    client, auth_headers, seeded_db
+):
+    created = client.post(
+        "/api/v1/finance/invoices",
+        json={
+            "member_id": seeded_db["admin"].id,
+            "issued": "2026-11-01",
+            "due": "2026-11-30",
+            "amount": 45.0,
+        },
+        headers=auth_headers,
+    )
+    assert created.status_code == 201, created.json
+    url = f"/api/v1/finance/invoices/{created.json['id']}"
+    resp = client.patch(url, json={"issued": "2026-12-15"}, headers=auth_headers)
+    assert resp.status_code == 400
+    assert client.get(url, headers=auth_headers).json["issued"] == "2026-11-01"
