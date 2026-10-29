@@ -486,7 +486,7 @@ def test_update_last_seen_task_updates_member(app, db, seeded_db):
     member = seeded_db["admin"]
     assert member.last_seen is None
 
-    update_last_seen.run(member.id)
+    update_last_seen.run(member.user_id)
     db.session.refresh(member)
     assert member.last_seen is not None
 

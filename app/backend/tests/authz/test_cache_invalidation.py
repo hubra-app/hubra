@@ -131,7 +131,7 @@ class TestCacheHit:
             keys = _get_role_permission_keys(role.id)
 
         assert keys == {"members.members.read", "groups.groups.read"}
-        mock_client.smembers.assert_called_once_with(f"perms:{role.id}")
+        mock_client.smembers.assert_called_once_with(f"perms:public:{role.id}")
 
     def test_cached_member_permissions_returned_from_redis(self, db, seeded_db):
         """_get_member_permission_keys returns cached set from Redis."""
@@ -177,7 +177,7 @@ class TestCacheInvalidation:
         with patch("hubra.api.permissions._get_redis_client", return_value=mock_client):
             invalidate_role_permissions(role.id)
 
-        mock_client.delete.assert_any_call(f"perms:{role.id}")
+        mock_client.delete.assert_any_call(f"perms:public:{role.id}")
 
     def test_invalidate_member_permissions_deletes_key(self, db, seeded_db):
         """invalidate_member_permissions deletes the member cache key."""
@@ -185,7 +185,7 @@ class TestCacheInvalidation:
         with patch("hubra.api.permissions._get_redis_client", return_value=mock_client):
             invalidate_member_permissions(42)
 
-        mock_client.delete.assert_called_once_with("perms:member:42")
+        mock_client.delete.assert_called_once_with("perms:public:member:42")
 
     def test_invalidate_role_permissions_clears_member_caches(self, db, seeded_db):
         """invalidate_role_permissions also clears member caches for members holding the role."""
@@ -219,8 +219,8 @@ class TestCacheInvalidation:
         for call in delete_calls:
             args = call[0]
             all_deleted.extend(args)
-        assert f"perms:{role.id}" in all_deleted
-        assert f"perms:member:{member.id}" in all_deleted
+        assert f"perms:public:{role.id}" in all_deleted
+        assert f"perms:public:member:{member.id}" in all_deleted
 
     def test_invalidate_with_no_redis_is_silent(self, db, seeded_db):
         """Cache invalidation doesn't raise when Redis is unavailable."""
@@ -252,3 +252,37 @@ class TestRedisDownNegativeCache:
 
         keys = _get_role_permission_keys(role.id)
         assert keys == {"members.members.read"}
+
+
+def test_cache_keys_are_per_club(app):
+    """Role and member ids restart in every club schema: club A's member 5
+    must not read club B's cached permissions for member 5."""
+    from flask import g
+
+    from hubra.api.permissions import _member_cache_key, _role_cache_key
+
+    keys = set()
+    try:
+        for path in ("tenant_1, public", "tenant_2, public"):
+            g._search_path = path
+            keys.add((_role_cache_key(5), _member_cache_key(5)))
+    finally:
+        g.pop("_search_path", None)
+    assert keys == {
+        ("perms:tenant_1:5", "perms:tenant_1:member:5"),
+        ("perms:tenant_2:5", "perms:tenant_2:member:5"),
+    }
+
+
+def test_cache_keys_follow_the_resolved_club_without_postgres(app):
+    from types import SimpleNamespace
+
+    from flask import g
+
+    from hubra.api.permissions import _member_cache_key
+
+    g.tenant = SimpleNamespace(id=7, slug="seven")
+    try:
+        assert _member_cache_key(5) == "perms:tenant_7:member:5"
+    finally:
+        g.tenant = None

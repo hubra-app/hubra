@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import logging
 
-from sqlalchemy import delete, func, insert, select
+from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.orm import selectinload
 
 from hubra.api.utils import escape_like, log_audit
@@ -13,6 +14,19 @@ from hubra.core.models.group import Group, GroupMembership
 from hubra.core.models.member import Member, member_groups
 from hubra.core.modules import emit
 from hubra.core.modules.events import GROUP_MEMBERSHIP_CHANGED
+
+
+def _check_parent(parent_id: int | None, group_id: int | None = None) -> None:
+    """A parent group must exist, and a group cannot be its own ancestor."""
+    seen = {group_id}
+    while parent_id is not None:
+        if parent_id in seen:
+            raise_error(400, "VALIDATION_ERROR", "A group cannot be its own parent")
+        parent = db.session.get(Group, parent_id)
+        if parent is None or parent.archived_at is not None:
+            raise_error(404, "NOT_FOUND", f"Group {parent_id} not found")
+        seen.add(parent_id)
+        parent_id = parent.parent_group_id
 
 
 # ── GroupService (singular) ────────────────────────────────────────────────────
@@ -58,6 +72,9 @@ class GroupService:
                 raise_error(
                     409, "CONFLICT", f"Group name '{data['name']}' is already taken"
                 )
+
+        if data.get("parent_group_id") is not None:
+            _check_parent(data["parent_group_id"], group.id)
 
         for field in (
             "name",
@@ -113,6 +130,13 @@ class GroupService:
 
         db.session.execute(
             delete(member_groups).where(member_groups.c.group_id == group.id)
+        )
+        # Club schemas have no foreign keys: move subgroups up a level
+        # instead of leaving them under a group that no longer exists.
+        db.session.execute(
+            update(Group)
+            .where(Group.parent_group_id == group.id)
+            .values(parent_group_id=group.parent_group_id)
         )
         db.session.delete(group)
 
@@ -330,6 +354,8 @@ class GroupsService:
             if lead is None:
                 raise_error(404, "NOT_FOUND", f"Member {data['lead_id']} not found")
 
+        _check_parent(data.get("parent_group_id"))
+
         # Check name uniqueness
         existing = db.session.scalar(select(Group.id).where(Group.name == data["name"]))
         if existing is not None:
@@ -405,11 +431,15 @@ def _trigger_group_mail_sync(group_id: int) -> None:
             reconcile_entity_forwarding,
         )
 
+        # A savepoint: a failure here must not undo the change that
+        # triggered the sync, which the caller has not committed yet.
         try:
-            reconcile_entity_forwarding("group", group_id)
-            db.session.commit()
+            with db.session.begin_nested():
+                reconcile_entity_forwarding("group", group_id)
         except Exception:
-            db.session.rollback()
+            logging.getLogger(__name__).warning(
+                "Inline mail sync failed for group %s", group_id, exc_info=True
+            )
 
 
 class SelfJoinService:

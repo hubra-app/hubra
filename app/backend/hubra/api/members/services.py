@@ -107,9 +107,78 @@ def _clear_member_groups(member_id: int) -> set[int]:
     return group_ids
 
 
+def _clear_member_functions(member_id: int) -> None:
+    """Give up the member's functions (Kassier, ...), so the place is free
+    for a successor instead of counting against max_holders."""
+    from hubra.api.functions.services import _trigger_mail_sync
+    from hubra.core.models.function import FunctionHolder
+
+    function_ids = set(
+        db.session.scalars(
+            select(FunctionHolder.function_id).where(
+                FunctionHolder.member_id == member_id
+            )
+        ).all()
+    )
+    db.session.execute(
+        delete(FunctionHolder).where(FunctionHolder.member_id == member_id)
+    )
+    for function_id in function_ids:
+        _trigger_mail_sync(function_id)
+
+
+def _clear_member_events(member_id: int) -> None:
+    """Give up places at upcoming events, so the waiting list moves up
+    instead of a seat staying taken by someone who left."""
+    from hubra.api.events.services import EventService
+    from hubra.core.errors import ApiError
+    from hubra.core.models.event import ClubEvent, EventRegistration, event_attendees
+
+    upcoming = func.coalesce(ClubEvent.end_date, ClubEvent.date) >= date.today()
+    event_ids = set(
+        db.session.scalars(
+            select(EventRegistration.event_id)
+            .join(ClubEvent, ClubEvent.id == EventRegistration.event_id)
+            .where(
+                EventRegistration.member_id == member_id,
+                EventRegistration.status.in_(["registered", "approved", "waitlisted"]),
+                upcoming,
+            )
+        ).all()
+    ) | set(
+        db.session.scalars(
+            select(event_attendees.c.event_id)
+            .join(ClubEvent, ClubEvent.id == event_attendees.c.event_id)
+            .where(event_attendees.c.member_id == member_id, upcoming)
+        ).all()
+    )
+    for event_id in sorted(event_ids):
+        try:
+            EventService.cancel_registration(event_id, member_id)
+        except ApiError:
+            pass
+
+
+def _clear_member_proxies(member_id: int) -> None:
+    """Proxies in open polls, given or held, end with the membership."""
+    from hubra.core.models.poll import Poll, PollProxy
+
+    open_polls = select(Poll.id).where(Poll.status == "open")
+    db.session.execute(
+        delete(PollProxy).where(
+            (PollProxy.grantor_id == member_id) | (PollProxy.holder_id == member_id),
+            PollProxy.poll_id.in_(open_polls),
+        )
+    )
+
+
 def _clear_member_all_associations(member_id: int) -> set[int]:
-    """Remove member from all groups. Returns affected group IDs."""
+    """Remove member from all groups and functions, upcoming events and
+    open-poll proxies. Returns affected group IDs."""
     group_ids = _clear_member_groups(member_id)
+    _clear_member_functions(member_id)
+    _clear_member_events(member_id)
+    _clear_member_proxies(member_id)
     return group_ids
 
 
@@ -174,23 +243,20 @@ def _apply_sort(query, args: dict[str, str]):
     """Apply sort param to a query. Default: last_name, first_name ascending.
 
     Identity field sorts (name, first_name, last_name, email) use User
-    columns — the query is expected to already have a User join.
+    columns — the query is expected to already have a User join. Member.id
+    breaks ties, so pages of the same list never repeat or skip a member
+    (Postgres returns rows with equal sort keys in any order).
     """
     sort = args.get("sort", "").strip()
-    if not sort:
-        return query.order_by(User.last_name, User.first_name)
-
     descending = sort.startswith("-")
-    field_name = sort.lstrip("-+")
-
-    columns = _SORT_COLUMNS.get(field_name)
+    columns = _SORT_COLUMNS.get(sort.lstrip("-+")) if sort else None
 
     if columns is None:
-        return query.order_by(User.last_name, User.first_name)
+        return query.order_by(User.last_name, User.first_name, Member.id)
 
     if descending:
         columns = tuple(c.desc() for c in columns)
-    return query.order_by(*columns)
+    return query.order_by(*columns, Member.id)
 
 
 def _paginate_query(query, page: int, page_size: int, schema):
@@ -232,6 +298,29 @@ def _default_role() -> Role | None:
     return role
 
 
+def _welcome_back(
+    former: Member, user_id: int, tier_id: int | None, tenant_id: int | None = None
+) -> Member:
+    """Someone who left comes back as the member they were: an ordinary
+    member again, whatever roles they had, on the tier they were invited or
+    applied for, and with their club mailbox open again."""
+    former.archived_at = None
+    # A soft-deleted member is archived as well (#42); coming back undoes both.
+    former.deleted_at = None
+    former.leave_requested_at = None
+    role = _default_role()
+    former.roles = [role] if role is not None else []
+    if tier_id is not None and db.session.get(MembershipTier, tier_id) is not None:
+        former.tier_id = tier_id
+        former.payment_plan_id = None
+    link_user_to_tenant(user_id, tenant_id)
+    if not former.is_disabled:
+        from hubra.core.services.managed_mail import enable_member_mail
+
+        enable_member_mail(former.id, former.password_hash)
+    return former
+
+
 def _active_member_with_email(email: str) -> bool:
     """Whether the account with ``email`` is a member of the current club."""
     return (
@@ -243,6 +332,25 @@ def _active_member_with_email(email: str) -> bool:
         )
         is not None
     )
+
+
+def _free_club_address(local: str, domain: str) -> tuple[str, str | None]:
+    """A club username, and address when the club has a mail domain, that no
+    other member has: ``anna.muster``, then ``anna.muster2``, ``anna.muster3``…
+
+    Two people with the same name joining one club hit the unique
+    club_username / public_email columns otherwise.
+    """
+    n = 1
+    while True:
+        candidate = local if n == 1 else f"{local}{n}"
+        address = f"{candidate}@{domain}" if domain else None
+        clash = Member.club_username == candidate
+        if address:
+            clash = clash | (Member.public_email == address)
+        if db.session.scalar(select(Member.id).where(clash).limit(1)) is None:
+            return candidate, address
+        n += 1
 
 
 # ── Helper for creating WildDuck mailbox for a new member ──────────────────────
@@ -265,16 +373,17 @@ def _provision_member_mailbox(member: Member, club_domain: str) -> None:
     member.public_email = f"{local}@{club_domain}"
     member.club_username = local
 
+    # A savepoint: a failure here must not undo the new member itself.
     try:
-        addr = get_or_create_for_member(member.id, local, club_domain)
-        addr.provisioning_status = "pending"
-        db.session.commit()
+        with db.session.begin_nested():
+            addr = get_or_create_for_member(member.id, local, club_domain)
+            addr.provisioning_status = "pending"
     except Exception:
-        db.session.rollback()
         current_app.logger.warning(
             "Failed to create MMA for %s", member.email, exc_info=True
         )
         return
+    db.session.commit()
 
     try:
         from hubra.core.services.mail_provisioning import (
@@ -293,6 +402,49 @@ def _provision_member_mailbox(member: Member, club_domain: str) -> None:
 
 
 # ── MemberService (singular) ───────────────────────────────────────────────────
+
+
+def _apply_member_fk_actions(member_id: int) -> None:
+    """Do what each ``ondelete`` on a foreign key to members declares.
+
+    Club schemas are cloned with ``LIKE ... INCLUDING ALL``, which copies no
+    foreign keys, so on a real club the database neither cascades nor nulls
+    anything: posts, registrations, checkouts, likes and the like stayed
+    behind pointing at a member that no longer exists (tests run in public,
+    where the FKs exist, so they never saw it). Rows of a mapped class are
+    deleted through the ORM, so their own cascades (a post's comments and
+    likes) run too.
+    """
+    from sqlalchemy import update as sql_update
+
+    from hubra.core.tenant.schema_manager import tables_to_clone
+
+    club_tables = set(tables_to_clone())
+    classes = {m.local_table.name: m.class_ for m in db.Model.registry.mappers}
+    for table in db.metadata.sorted_tables:
+        if table.name not in club_tables:
+            continue
+        for fk in table.foreign_keys:
+            if fk.column.table.name != "members" or not fk.ondelete:
+                continue
+            column = fk.parent
+            action = fk.ondelete.upper()
+            if action == "SET NULL":
+                db.session.execute(
+                    sql_update(table)
+                    .where(column == member_id)
+                    .values({column.name: None})
+                )
+            elif action == "CASCADE":
+                cls = classes.get(table.name)
+                if cls is None:
+                    db.session.execute(delete(table).where(column == member_id))
+                    continue
+                for row in db.session.scalars(
+                    select(cls).where(column == member_id)
+                ).all():
+                    db.session.delete(row)
+    db.session.flush()
 
 
 class MemberService:
@@ -401,6 +553,25 @@ class MemberService:
         )
         if member is None:
             raise_error(404, "NOT_FOUND", f"Archived member {member_id} not found")
+        if member.user_id is not None:  # type: ignore[union-attr]
+            # Someone who left unlinked their account; only they can come
+            # back, through an invite. Restoring the row alone listed them
+            # as a member who could not open the club.
+            from hubra.core.models.user_tenant import UserTenant
+            from hubra.core.tenant.context import current_tenant
+
+            tenant = current_tenant()
+            if tenant is not None and not db.session.scalar(
+                select(UserTenant.user_id).where(
+                    UserTenant.user_id == member.user_id,  # type: ignore[union-attr]
+                    UserTenant.tenant_id == tenant.id,
+                )
+            ):
+                raise_error(
+                    409,
+                    "MEMBER_LEFT",
+                    "This member left the club; invite them to bring them back",
+                )
         member.archived_at = None  # type: ignore[union-attr]
         # Re-enable WildDuck mailbox (only if member is not also disabled)
         if not member.is_disabled:
@@ -443,14 +614,26 @@ class MemberService:
         from sqlalchemy import update as sql_update
 
         from hubra.core.models.audit import AuditEntry
+        from hubra.core.models.code import Code
         from hubra.core.models.finance import Invoice, Transaction
         from hubra.core.models.mail import MailboxFolder
         from hubra.core.models.notification import Notification
+        from hubra.core.models.poll import Poll, PollVote
+        from hubra.core.models.translation import Translation
 
         # Delete child rows whose FK is NOT NULL (cannot be nulled out).
         db.session.execute(
             delete(Notification).where(Notification.member_id == member_id)
         )
+        # Sign-in devices and their sessions. In public the FK cascades, but
+        # club schemas get these FKs from schema_manager without ON DELETE
+        # CASCADE, so there the member delete failed for anyone who had ever
+        # opened the club app.
+        from hubra.core.models.device_session import Device, Session
+
+        device_ids = select(Device.id).where(Device.member_id == member_id)
+        db.session.execute(delete(Session).where(Session.device_id.in_(device_ids)))
+        db.session.execute(delete(Device).where(Device.member_id == member_id))
         db.session.execute(
             delete(MailboxFolder).where(MailboxFolder.member_id == member_id)
         )
@@ -471,6 +654,22 @@ class MemberService:
             .where(AuditEntry.actor_id == member_id)
             .values(actor_id=None)
         )
+        # Authorship and leadership references: the row stays, unattributed.
+        for column in (
+            Code.created_by_id,
+            Code.updated_by_id,
+            Group.lead_id,
+            Poll.created_by_id,
+            Translation.updated_by_id,
+        ):
+            db.session.execute(
+                sql_update(column.class_)
+                .where(column == member_id)
+                .values({column.key: None})
+            )
+        # A vote belongs to its member (member_id is NOT NULL): it goes with them.
+        db.session.execute(delete(PollVote).where(PollVote.member_id == member_id))
+        _apply_member_fk_actions(member_id)
         # Remove WildDuck mailbox and MMA row (permanent deletion).
         from hubra.core.services.managed_mail import remove_for_member
 
@@ -788,6 +987,9 @@ class MembersService:
             export_fields = all_fields
 
         output = io.StringIO()
+        # A byte order mark, so Excel reads the file as UTF-8 (umlauts);
+        # the member import reads it with utf-8-sig.
+        output.write("\ufeff")
         writer = csv.writer(output)
         writer.writerow(export_fields)
         for m in members:
@@ -899,12 +1101,7 @@ class MembersService:
         if former is not None:
             if former.archived_at is None:
                 raise_error(409, "CONFLICT", "You are already a member of this club")
-            former.archived_at = None
-            former.leave_requested_at = None
-            # Back as an ordinary member, whatever roles they had before.
-            former.roles = [default_role] if default_role else []
-            link_user_to_tenant(user.id)
-            return former  # type: ignore[return-value]
+            return _welcome_back(former, user.id, data.get("tier_id"))
 
         tier_id = data.get("tier_id")
         if tier_id is not None and db.session.get(MembershipTier, tier_id) is None:
@@ -928,8 +1125,9 @@ class MembersService:
             if club_domain
             else None
         )
-        username = (
-            public_email.split("@")[0] if public_email else make_username(full_name)
+        username, public_email = _free_club_address(
+            public_email.split("@")[0] if public_email else make_username(full_name),
+            club_domain if public_email else "",
         )
 
         member = Member(
@@ -1063,6 +1261,15 @@ class MembersService:
             "membership_until",
             "custom_fields",
         ]
+        if (
+            validated.get("tier_id") is not None
+            and db.session.get(MembershipTier, validated["tier_id"]) is None
+        ):
+            raise_error(400, "VALIDATION_ERROR", "Unknown membership tier")
+        if "tier_id" in validated and validated["tier_id"] != member.tier_id:
+            # A payment plan belongs to one tier; on the new one they start
+            # on its own billing cycle and may pick one of its plans.
+            member.payment_plan_id = None
         for field in tenant_fields:
             if field in validated:
                 setattr(member, field, validated[field])
@@ -1139,6 +1346,9 @@ class MembersService:
                             new_local,
                             domain,
                         )
+                    # A taken name gets a numbered address (or none on
+                    # failure): show the one the mail actually goes to.
+                    member.public_email = mma.address
 
         # Replace group associations
         old_group_ids: set[int] = set()
@@ -1352,13 +1562,11 @@ class MembersService:
                 .where(Member.archived_at.isnot(None))
             )
             if former is not None:
-                former.archived_at = None
-                former.leave_requested_at = None
-                # Back as an ordinary member, whatever roles they had before.
-                role = _default_role()
-                former.roles = [role] if role is not None else []
-                link_user_to_tenant(existing_user.id)
-                return former  # type: ignore[return-value]
+                return _welcome_back(
+                    former,
+                    existing_user.id,
+                    application.wants_tier_id,  # type: ignore[attr-defined]
+                )
             existing = db.session.scalar(
                 select(Member.id).where(Member.user_id == existing_user.id)
             )
@@ -1394,7 +1602,11 @@ class MembersService:
             else None
         )
 
-        username = public_email.split("@")[0] if public_email else None
+        username = None
+        if public_email:
+            username, public_email = _free_club_address(
+                public_email.split("@")[0], club_domain
+            )
 
         user = existing_user
 

@@ -232,8 +232,15 @@ class ProductionConfig(BaseConfig):
         the error surfaces at app startup, not at module import time
         (which would break test collection).
         """
-        _require_env("SECRET_KEY")
-        _require_env("JWT_SECRET_KEY")
+        for key in ("SECRET_KEY", "JWT_SECRET_KEY"):
+            if len(_require_env(key)) < 32:
+                # Not fatal: a running club must not stop on an upgrade.
+                _cfg_log.warning(
+                    "%s is shorter than 32 characters; tokens signed with it "
+                    "can be brute-forced. Generate one with "
+                    "`python3 -c \"import secrets; print(secrets.token_hex(32))\"`.",
+                    key,
+                )
         _require_env("DATABASE_URL")
         if not os.environ.get("FERNET_KEY"):
             _cfg_log.warning(
@@ -254,7 +261,11 @@ class TestingConfig(BaseConfig):
     TESTING: bool = True
     DEBUG: bool = True
     PLUGINS_AUTOINSTALL: str = "all"
-    SQLALCHEMY_DATABASE_URI: str = "sqlite:///:memory:"
+    # TEST_DATABASE_URL runs the suite on Postgres (an empty database that
+    # the tests may wipe); without it the tests use in-memory SQLite.
+    SQLALCHEMY_DATABASE_URI: str = os.environ.get(
+        "TEST_DATABASE_URL", "sqlite:///:memory:"
+    )
     SQLALCHEMY_ECHO: bool = False
     # Long-lived tokens so tests don't expire mid-run
     JWT_ACCESS_TOKEN_EXPIRES: timedelta = timedelta(hours=1)

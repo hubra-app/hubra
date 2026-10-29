@@ -182,12 +182,13 @@ class RolesService:
             # is_system and is_owner are NOT settable via API — only by _seed_tenant
         )
         db.session.add(role)
+        db.session.flush()
 
         log_audit(
             actor_id=actor_id,
             action="create_role",
             target_type="Role",
-            target_id=None,
+            target_id=role.id,
             target_label=role.name,
         )
 

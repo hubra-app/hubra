@@ -65,3 +65,20 @@ python -m pytest tests/ --ignore=tests/test_s11_backend_gaps.py --cov=hubra
 > `test_s11_backend_gaps.py` requires a running Redis instance and will hang
 > if Redis is unavailable. Always use `--ignore=tests/test_s11_backend_gaps.py`
 > when testing without Docker.
+
+## Running on Postgres
+
+The suite uses in-memory SQLite by default. SQLite enforces no foreign keys
+here and drops time zones, so some bugs only show on Postgres. Point
+`TEST_DATABASE_URL` at a fresh, empty database (the tests create the tables
+and leave them behind, so drop and create it before each run):
+
+```bash
+dropdb --if-exists hubra_test && createdb hubra_test
+TEST_DATABASE_URL=postgresql://postgres@127.0.0.1/hubra_test pytest -q \
+  --ignore=tests/auth/test_rate_limiting.py --ignore=tests/mail/test_email_service.py
+```
+
+The two ignored files build their own app on the same database, which only
+works with SQLite's per-app in-memory database. This runs every table in one
+schema; it does not test the per-club schemas.

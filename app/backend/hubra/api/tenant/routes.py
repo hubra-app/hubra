@@ -39,7 +39,9 @@ from hubra.core.tenant.service import TenantService, TenantProvisioningError
 tenant_admin_bp = Blueprint("tenant_admin", __name__)
 
 _VALID_STATUSES = {"active", "suspended", "archived"}
-_VALID_PLANS = {"starter", "growth", "enterprise"}
+# A tuple: "in" then compares, so a list or object sent as plan is a 400,
+# not a TypeError from hashing it.
+_VALID_PLANS = ("starter", "growth", "enterprise")
 
 
 # ── Routes ──────────────────────────────────────────────────────────────────
@@ -731,7 +733,7 @@ def _add_user_to_tenant(tenant: Tenant, user: User) -> dict:
     Raises 409 when the user is already a member. Leaves the commit to the
     caller and returns the new member as a dict.
     """
-    from hubra.api.members.services import _default_role
+    from hubra.api.members.services import _default_role, _welcome_back
     from hubra.core.models.member import MembershipTier
     from hubra.core.models.user_tenant import UserTenant
     from hubra.core.tenant.context import reset_search_path, set_search_path
@@ -748,24 +750,29 @@ def _add_user_to_tenant(tenant: Tenant, user: User) -> dict:
 
     try:
         set_search_path(tenant.id)
-        if db.session.scalar(select(Member.id).where(Member.user_id == user.id)):
+        member = db.session.scalar(select(Member).where(Member.user_id == user.id))
+        if member is not None and member.archived_at is None:
             # A Member without the user_tenants link (made before links were
             # kept for every new member): repair the link instead of failing.
             link_user_to_tenant(user.id, tenant.id)
             db.session.commit()
             raise_error(409, "CONFLICT", "User is already a member of this tenant")
 
-        default_role = _default_role()
-        tier = db.session.scalar(select(MembershipTier).limit(1))
+        if member is not None:
+            # Someone who left comes back as the member they were.
+            _welcome_back(member, user.id, None, tenant.id)
+        else:
+            default_role = _default_role()
+            tier = db.session.scalar(select(MembershipTier).limit(1))
 
-        member = Member(
-            tier_id=tier.id if tier else None,
-            user_id=user.id,
-            status="active",
-        )
-        if default_role:
-            member.roles = [default_role]
-        db.session.add(member)
+            member = Member(
+                tier_id=tier.id if tier else None,
+                user_id=user.id,
+                status="active",
+            )
+            if default_role:
+                member.roles = [default_role]
+            db.session.add(member)
         db.session.flush()
 
         # Build the dict while the search_path still points at the club, so
@@ -1344,6 +1351,24 @@ def list_global_roles():
     return jsonify({"roles": result}), 200
 
 
+def _audit_global_role(action: str, target_type: str, target_id, details: dict) -> None:
+    """Record a platform role change (who may run the platform)."""
+    from flask import g
+
+    actor = getattr(g, "system_user", None)
+    db.session.add(
+        GlobalAuditEntry(
+            tenant_id=None,
+            actor_id=getattr(actor, "id", None),
+            action=f"global_role.{action}",
+            target_type=target_type,
+            target_id=str(target_id),
+            details=details,
+            ip_address=request.remote_addr,
+        )
+    )
+
+
 @tenant_admin_bp.route("/global-roles", methods=["POST"])
 @require_global_permission("roles.manage")
 def create_global_role():
@@ -1375,6 +1400,9 @@ def create_global_role():
         if perm:
             db.session.add(GlobalRolePermission(role_id=role.id, permission_id=perm.id))
 
+    _audit_global_role(
+        "create", "GlobalRole", role.id, {"name": name, "permissions": permission_keys}
+    )
     db.session.commit()
     return jsonify(
         {
@@ -1424,6 +1452,12 @@ def update_global_role(role_id: int):
                     GlobalRolePermission(role_id=role.id, permission_id=perm.id)
                 )
 
+    _audit_global_role(
+        "update",
+        "GlobalRole",
+        role.id,
+        {"name": role.name, "permissions": permission_keys},
+    )
     db.session.commit()
     perms = sorted(
         db.session.execute(
@@ -1532,6 +1566,9 @@ def assign_user_global_role(user_id: int):
         raise_error(409, "CONFLICT", "User already has this role")
 
     db.session.add(UserGlobalRole(user_id=user_id, role_id=role.id))
+    _audit_global_role(
+        "assign", "User", user_id, {"email": user.email, "role": role.name}
+    )
     db.session.commit()
     return jsonify(
         {"user_id": user_id, "role_id": role.id, "role_name": role.name}
@@ -1554,6 +1591,7 @@ def remove_user_global_role(user_id: int, role_id: int):
         raise_error(404, "NOT_FOUND", "Role assignment not found")
 
     db.session.delete(link)
+    _audit_global_role("remove", "User", user_id, {"role_id": role_id})
     db.session.commit()
     return jsonify({"ok": True}), 200
 
@@ -1577,27 +1615,47 @@ def search_users():
 # ── Platform audit log ──────────────────────────────────────────────────────
 
 
+def _page_args() -> tuple[int, int]:
+    """``page`` (from 1) and ``per_page`` (1–100) from the query string;
+    anything that is not a number falls back to the default."""
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+    except ValueError:
+        page = 1
+    try:
+        per_page = min(max(1, int(request.args.get("per_page", 25))), 100)
+    except ValueError:
+        per_page = 25
+    return page, per_page
+
+
 @tenant_admin_bp.route("/audit", methods=["GET"])
 @require_global_permission("audit.read")
 def list_global_audit():
     """List platform-wide audit entries with pagination and filters."""
-    page = int(request.args.get("page", 1))
-    per_page = min(int(request.args.get("per_page", 25)), 100)
+    page, per_page = _page_args()
 
-    query = select(GlobalAuditEntry).order_by(GlobalAuditEntry.time.desc())
+    query = select(GlobalAuditEntry).order_by(
+        GlobalAuditEntry.time.desc(), GlobalAuditEntry.id.desc()
+    )
 
     tenant_id = request.args.get("tenant_id")
     if tenant_id:
+        if not tenant_id.isdigit():
+            raise_error(400, "VALIDATION_ERROR", "tenant_id must be a number")
         query = query.where(GlobalAuditEntry.tenant_id == int(tenant_id))
 
     action = request.args.get("action")
     if action:
-        query = query.where(GlobalAuditEntry.action.ilike(f"%{action}%"))
+        from hubra.api.utils import escape_like
 
-    total = db.session.scalar(
-        select(func.count()).select_from(
-            select(GlobalAuditEntry.id).order_by(None).subquery()
+        query = query.where(
+            GlobalAuditEntry.action.ilike(f"%{escape_like(action)}%", escape="\\")
         )
+
+    # Count what the filters leave, not the whole table.
+    total = db.session.scalar(
+        select(func.count()).select_from(query.order_by(None).subquery())
     )
     entries = list(
         db.session.scalars(query.offset((page - 1) * per_page).limit(per_page)).all()
@@ -1646,16 +1704,17 @@ def platform_metrics():
 @require_global_permission("users.read")
 def list_users():
     """List all users with pagination and search."""
-    page = int(request.args.get("page", 1))
-    per_page = min(int(request.args.get("per_page", 25)), 100)
+    page, per_page = _page_args()
     search = (request.args.get("search") or "").strip().lower()
 
     query = select(User).order_by(User.id.desc())
     if search:
-        query = query.where(User.email.ilike(f"%{search}%"))
+        from hubra.api.utils import escape_like
+
+        query = query.where(User.email.ilike(f"%{escape_like(search)}%", escape="\\"))
 
     total = db.session.scalar(
-        select(func.count()).select_from(select(User.id).order_by(None).subquery())
+        select(func.count()).select_from(query.order_by(None).subquery())
     )
     users = list(
         db.session.scalars(query.offset((page - 1) * per_page).limit(per_page)).all()

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from calendar import monthrange
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 
 from sqlalchemy import func, select
 
@@ -14,6 +14,11 @@ from hubra.core.models.event import ClubEvent
 from hubra.core.models.finance import Invoice, Transaction
 from hubra.core.models.member import Member
 from hubra.core.models.post import Post
+
+
+def _still_on(today: date):
+    """Events from today on, and those that started earlier and run on."""
+    return func.coalesce(ClubEvent.end_date, ClubEvent.date) >= today
 
 
 def _last_day_of_month(year: int, month: int) -> date:
@@ -52,6 +57,9 @@ class DashboardService:
         net_month = (
             db.session.scalar(
                 select(func.coalesce(func.sum(Transaction.amount), 0))
+                # Money that moved, as on the finance overview: an invoice's
+                # pending income counts once it is paid.
+                .where(Transaction.status == "Completed")
                 .where(Transaction.date >= month_start)
                 .where(Transaction.date <= month_end)
             )
@@ -69,7 +77,7 @@ class DashboardService:
 
         upcoming_count: int = (
             db.session.scalar(
-                select(func.count(ClubEvent.id)).where(ClubEvent.date >= today)
+                select(func.count(ClubEvent.id)).where(_still_on(today))
             )
             or 0
         )
@@ -82,16 +90,25 @@ class DashboardService:
                 month_num += 12
                 year_num -= 1
             month_ends.append(_last_day_of_month(year_num, month_num))
-        # Members per month end, all twelve months in one query.
+        # Members per month end, all twelve months in one query. Someone
+        # who left later still counts for the months they were in.
+        def _member_then(last_day: date):
+            next_day = datetime.combine(
+                last_day + timedelta(days=1), time.min, tzinfo=timezone.utc
+            )
+            return (Member.joined <= last_day) & (
+                Member.archived_at.is_(None) | (Member.archived_at >= next_day)
+            )
+
         growth: list[int] = [
             count or 0
             for count in db.session.execute(
                 select(
                     *(
-                        func.count(Member.id).filter(Member.joined <= last_day)
+                        func.count(Member.id).filter(_member_then(last_day))
                         for last_day in month_ends
                     )
-                ).where(Member.archived_at.is_(None))
+                )
             ).one()
         ]
 
@@ -113,7 +130,7 @@ class DashboardService:
         today = date.today()
         return db.session.scalars(  # type: ignore[return-value]
             select(ClubEvent)
-            .where(ClubEvent.date >= today)
+            .where(_still_on(today))
             .order_by(ClubEvent.date.asc())
             .limit(limit)
         ).all()

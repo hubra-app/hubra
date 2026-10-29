@@ -1330,14 +1330,15 @@ def auto_create_mma_for_group(group_id: int) -> ManagedMailAddress | None:
             owner_id=group_id,
             enabled=False,
         )
-        db.session.add(addr)
-        db.session.flush()
+        # A savepoint, so a clash undoes only this address and not the
+        # caller's work (the new group, function or member).
+        with db.session.begin_nested():
+            db.session.add(addr)
         _log.info(
             "auto_create_mma_for_group: created disabled MMA for group %d", group_id
         )
         return addr
     except Exception:
-        db.session.rollback()
         _log.warning(
             "auto_create_mma_for_group: failed for group %d", group_id, exc_info=True
         )
@@ -1416,15 +1417,16 @@ def auto_create_mma_for_function(function_id: int) -> ManagedMailAddress | None:
             owner_id=function_id,
             enabled=False,
         )
-        db.session.add(addr)
-        db.session.flush()
+        # A savepoint, so a clash undoes only this address and not the
+        # caller's work (the new group, function or member).
+        with db.session.begin_nested():
+            db.session.add(addr)
         _log.info(
             "auto_create_mma_for_function: created disabled MMA for function %d",
             function_id,
         )
         return addr
     except Exception:
-        db.session.rollback()
         _log.warning(
             "auto_create_mma_for_function: failed for function %d",
             function_id,
@@ -1482,12 +1484,11 @@ def auto_create_mma_for_member(member_id: int) -> ManagedMailAddress | None:
             quota_bytes=1024 * 1024 * 1024,
             retention=None,
         )
-        db.session.add(addr)
-        db.session.flush()
+        with db.session.begin_nested():
+            db.session.add(addr)
         _log.info("auto_create_mma_for_member: created MMA for member %d", member_id)
         return addr
     except Exception:
-        db.session.rollback()
         _log.warning(
             "auto_create_mma_for_member: failed for member %d", member_id, exc_info=True
         )

@@ -22,7 +22,8 @@ function adapt(b: BackendNotification): Notification {
 }
 
 export async function listNotifications(): Promise<Notification[]> {
-  const data = await apiFetch<BackendNotification[]>("/notifications/");
+  // The API answers { data, meta: { unread } }, not a bare list.
+  const { data } = await apiFetch<{ data: BackendNotification[] }>("/notifications/");
   return data.map(adapt);
 }
 

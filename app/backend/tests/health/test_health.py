@@ -163,3 +163,20 @@ def test_health_db_checked(client, staff_headers):
     resp = client.get("/api/v1/manager/platform/health", headers=staff_headers)
     data = resp.get_json()
     assert data["services"]["db"]["ok"] is True
+
+
+def test_imap_check_speaks_tls_on_port_993():
+    """The provider default (993) is implicit TLS; a plain client timed out
+    there, so mail always showed as degraded."""
+    from unittest.mock import patch
+
+    from hubra.api.health import services
+
+    with (
+        patch.object(services.imaplib, "IMAP4_SSL") as tls,
+        patch.object(services.imaplib, "IMAP4") as plain,
+    ):
+        services._imap_client("imap.example.ch", 993)
+        services._imap_client("localhost", 143)
+    tls.assert_called_once_with("imap.example.ch", 993, timeout=1)
+    plain.assert_called_once_with("localhost", 143, timeout=1)

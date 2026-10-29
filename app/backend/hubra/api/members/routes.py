@@ -37,6 +37,31 @@ _create_schema = MemberCreateSchema()
 _update_schema = MemberUpdateSchema()
 
 
+# What the club's admins write about a member, and who to call in an
+# emergency: only for those who may edit members, and the member themselves.
+_ADMIN_ONLY_FIELDS = ("notes", "emergency_contact")
+
+
+def _viewer_sees_admin_fields() -> bool:
+    from hubra.api.permissions import _get_member_permission_keys, member_is_admin
+
+    viewer = get_current_member()
+    return member_is_admin(viewer) or (
+        "members.members.update" in _get_member_permission_keys(viewer)
+    )
+
+
+def for_viewer(rows: list[dict]) -> list[dict]:
+    if _viewer_sees_admin_fields():
+        return rows
+    me = get_current_member().id
+    for row in rows:
+        if row.get("id") != me:
+            for field in _ADMIN_ONLY_FIELDS:
+                row.pop(field, None)
+    return rows
+
+
 # ── GET /members/me/mail ──────────────────────────────────────────────────────
 
 
@@ -65,7 +90,13 @@ def count_members():
 @members_bp.get("/")
 @permission_required("members", "read", "View members")
 def list_members():
-    result = MembersService.list(dict(request.args))
+    args = dict(request.args)
+    if not _viewer_sees_admin_fields():
+        # Former and deleted members are for those who manage members.
+        args.pop("archived", None)
+        args.pop("include_deleted", None)
+    result = MembersService.list(args)
+    for_viewer(result["data"])
     return jsonify(result), 200
 
 
@@ -185,7 +216,7 @@ def get_member(member_id: int):
     member = MemberService.get(member_id)
     if member is None:
         raise_error(404, "NOT_FOUND", f"Member {member_id} not found")
-    return jsonify(_member_schema.dump(member)), 200
+    return jsonify(for_viewer([_member_schema.dump(member)])[0]), 200
 
 
 # ── POST /members ─────────────────────────────────────────────────────────────
@@ -404,6 +435,15 @@ def leave_club():
             target_id=member.id,
             target_label=member.name,
         )
+        from hubra.api.notifications.staff import notify_permitted
+
+        notify_permitted(
+            "members.members.archive",
+            "info",
+            "Request to leave",
+            member.name,
+            skip_member_id=member.id,
+        )
         db.session.commit()
     return jsonify({"status": "requested", **_leave_state(member)}), 200
 
@@ -614,5 +654,6 @@ def revoke_member_sessions(member_id: int):
         target_id=member_id,
         target_label=f"{count} sessions revoked",
     )
+    db.session.commit()
 
     return jsonify({"ok": True, "revoked": count}), 200

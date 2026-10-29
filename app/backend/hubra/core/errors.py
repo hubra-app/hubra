@@ -59,6 +59,20 @@ def register_error_handlers(app: Flask) -> None:
     def handle_api_error(exc: ApiError):
         return api_error(exc.code, exc.message, exc.status)
 
+    from sqlalchemy.exc import DataError
+
+    @app.errorhandler(DataError)
+    def handle_data_error(exc: DataError):
+        # The database refused a value (a number too large for its column,
+        # text that is not a number, ...): the request's input, not a bug.
+        from hubra.core.extensions import db
+
+        db.session.rollback()
+        app.logger.warning("Value refused by the database: %s", exc.orig)
+        return api_error(
+            "VALIDATION_ERROR", "A value is too large or has the wrong format", 400
+        )
+
     @app.errorhandler(400)
     def bad_request(exc):
         return api_error("VALIDATION_ERROR", str(exc.description), 400)

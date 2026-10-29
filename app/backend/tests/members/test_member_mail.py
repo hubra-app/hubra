@@ -587,3 +587,48 @@ def test_get_member_mail_with_quota_conversion(client, db, seeded_db):
         body = resp.get_json()
         assert body["mailbox"]["quotaUsed"] == 1.5
         assert body["mailbox"]["quotaTotal"] == 5.0
+
+
+def test_failed_inline_mail_sync_keeps_the_new_group_member(
+    client, db, seeded_db, auth_headers
+):
+    """Without Celery the sync runs inline; if it fails, the member still joins."""
+    from sqlalchemy import select
+
+    from hubra.core.models.group import Group, member_groups
+    from hubra.core.models.managed_mail import ManagedMailAddress
+
+    group = Group(name="InlineSyncGroup")
+    db.session.add(group)
+    db.session.commit()
+    db.session.add(
+        ManagedMailAddress(
+            address="inline-sync@club.ch",
+            address_type="alias",
+            is_protected=True,
+            owner_type="group",
+            owner_id=group.id,
+        )
+    )
+    db.session.commit()
+    member = _make_member(db, seeded_db, email="inline_sync@example.com")
+
+    with (
+        patch(
+            "hubra.core.tasks.mail_tasks.reconcile_entity_forwarding_task.delay",
+            side_effect=RuntimeError("no broker"),
+        ),
+        patch(
+            "hubra.core.services.mail_provisioning.reconcile_entity_forwarding",
+            side_effect=RuntimeError("mail server down"),
+        ),
+    ):
+        resp = client.post(
+            f"/api/v1/groups/{group.id}/members/{member.id}", headers=auth_headers
+        )
+
+    assert resp.status_code == 204
+    db.session.expire_all()
+    assert db.session.scalar(
+        select(member_groups.c.member_id).where(member_groups.c.group_id == group.id)
+    ) == member.id

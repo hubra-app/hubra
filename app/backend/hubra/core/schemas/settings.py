@@ -22,12 +22,17 @@ class SettingSchema(ma.Schema):
     description = fields.Str(allow_none=True)
     label = fields.Str(allow_none=True)
     is_default = fields.Bool()
-    default_value = fields.Str(allow_none=True)
+    default_value = fields.Method("_get_default_value")
 
     def _get_value(self, obj):
         if getattr(obj, "sensitive", False):
             return "****" if obj.value else None
         return obj.value
+
+    def _get_default_value(self, obj):
+        if getattr(obj, "sensitive", False):
+            return "****" if obj.default_value else None
+        return obj.default_value
 
 
 class SettingWriteSchema(ma.Schema):

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from sqlalchemy import select
+from datetime import datetime, timezone
+
+from sqlalchemy import delete, select
 from sqlalchemy.orm import selectinload
 
 from hubra.api.notifications.services import (
@@ -18,6 +20,18 @@ from hubra.core.models.member import Member
 from hubra.core.models.poll import Poll, PollOption, PollProxy, PollVote
 from hubra.core.modules import emit
 from hubra.core.modules.events import POLL_PUBLISHED
+
+
+def is_closed(poll: Poll) -> bool:
+    """Closed by hand, or its closing time has passed."""
+    if poll.status == "closed":
+        return True
+    closes_at = poll.closes_at
+    if closes_at is None:
+        return False
+    if closes_at.tzinfo is None:  # SQLite hands back naive datetimes
+        closes_at = closes_at.replace(tzinfo=timezone.utc)
+    return closes_at <= datetime.now(timezone.utc)
 
 
 class PollService:
@@ -44,7 +58,7 @@ class PollService:
 
         With ``on_behalf_of`` the caller votes as that member's proxy holder.
         """
-        if poll.status == "closed":
+        if is_closed(poll):
             raise_error(409, "CONFLICT", "This poll is closed")
         cast_by_id = None
         if on_behalf_of is not None and on_behalf_of != member_id:
@@ -123,13 +137,29 @@ class PollService:
             poll.required_function_ids = data["required_function_ids"]
         if "options" in data:
             existing_options = db.session.scalars(
-                select(PollOption).where(PollOption.poll_id == poll.id)
+                select(PollOption)
+                .where(PollOption.poll_id == poll.id)
+                .order_by(PollOption.id)
             ).all()
-            for opt in existing_options:
-                db.session.delete(opt)
-            db.session.flush()
-            for opt_data in data["options"]:
-                db.session.add(PollOption(poll_id=poll.id, label=opt_data["label"]))
+            labels = [opt_data["label"] for opt_data in data["options"]]
+            # The club app sends the options with every edit; the same
+            # options keep their votes. Replacing them would delete every
+            # vote cast (the votes go with their option).
+            if labels != [opt.label for opt in existing_options]:
+                has_votes = db.session.scalar(
+                    select(PollVote.id).where(PollVote.poll_id == poll.id).limit(1)
+                )
+                if has_votes is not None:
+                    raise_error(
+                        409,
+                        "POLL_HAS_VOTES",
+                        "The options cannot change once votes have been cast",
+                    )
+                for opt in existing_options:
+                    db.session.delete(opt)
+                db.session.flush()
+                for label in labels:
+                    db.session.add(PollOption(poll_id=poll.id, label=label))
 
         log_audit(
             actor_id=actor_id,
@@ -166,6 +196,8 @@ class PollService:
             target_id=poll.id,
             target_label=poll.question,
         )
+        # Club schemas have no foreign keys, so proxies do not cascade.
+        db.session.execute(delete(PollProxy).where(PollProxy.poll_id == poll.id))
         db.session.delete(poll)
 
     @staticmethod
@@ -193,6 +225,8 @@ class PollService:
     def remind(poll_id: int, actor_id: int) -> int:
         """Send reminder notifications to required members who haven't voted."""
         poll = PollService.get(poll_id)
+        if is_closed(poll):
+            raise_error(409, "CONFLICT", "This poll is closed")
         required = PollService.get_required_members(poll)
 
         voters = set(
@@ -308,7 +342,7 @@ class ProxyService:
     def grant(poll: Poll, grantor_id: int, holder_id: int) -> PollProxy:
         if not poll.allow_proxy:
             raise_error(409, "PROXY_NOT_ALLOWED", "This poll does not allow proxies")
-        if poll.status == "closed":
+        if is_closed(poll):
             raise_error(409, "CONFLICT", "This poll is closed")
         if holder_id == grantor_id:
             raise_error(400, "VALIDATION_ERROR", "You cannot be your own proxy")
@@ -352,7 +386,7 @@ class ProxyService:
     def revoke(poll: Poll, grantor_id: int) -> None:
         """Take a proxy back. A vote the holder already cast for the grantor
         is withdrawn too, so the grantor can vote themselves."""
-        if poll.status == "closed":
+        if is_closed(poll):
             raise_error(409, "CONFLICT", "This poll is closed")
         proxy = ProxyService.given(poll.id, grantor_id)
         if proxy is None:
