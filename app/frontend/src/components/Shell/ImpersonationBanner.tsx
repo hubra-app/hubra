@@ -34,7 +34,8 @@ export function ImpersonationBanner() {
         padding: '8px 16px',
         display: 'flex',
         alignItems: 'center',
-        gap: 12,
+        flexWrap: 'wrap',
+        gap: '4px 12px',
         zIndex: 100,
       }}
     >
