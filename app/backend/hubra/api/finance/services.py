@@ -616,6 +616,7 @@ class InvoiceService:
         """
         import logging
 
+        from hubra.core.services.mail_format import mail_date
         from hubra.core.tasks.email_tasks import send_email_task
 
         member = (
@@ -648,7 +649,7 @@ class InvoiceService:
                 club_name=club_name,
                 invoice_id=invoice.id,
                 amount_formatted=f"CHF {invoice.amount:.2f}",
-                due_date=invoice.due.isoformat(),
+                due_date=mail_date(invoice.due, lang),
                 portal_url=portal_url,
             )
             send_email_task.delay(
@@ -684,7 +685,7 @@ class InvoiceService:
                 club_name=club_name,
                 invoice_id=invoice.id,
                 amount_formatted=f"CHF {invoice.amount:.2f}",
-                due_date=invoice.due.isoformat(),
+                due_date=mail_date(invoice.due, lang),
                 portal_url="",
             )
             send_email_task.delay(

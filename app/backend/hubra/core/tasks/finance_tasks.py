@@ -13,6 +13,7 @@ from hubra.core.extensions import db
 from hubra.core.modules import emit, per_tenant_job
 from hubra.core.modules.events import INVOICE_OVERDUE
 from hubra.core.tasks import celery_app
+from hubra.core.services.mail_format import mail_date
 from hubra.core.pricing import (
     billing_cycle_for,
     calculate_invoice_amount,
@@ -48,7 +49,7 @@ def _render_invoice_generated(
         club_name=club_name,
         invoice_id=invoice_id,
         amount_formatted=f"CHF {amount:.2f}",
-        due_date=due_date.isoformat(),
+        due_date=mail_date(due_date, lang),
         portal_url=portal_url,
     )
 
@@ -73,7 +74,7 @@ def _render_invoice_reminder(
         club_name=club_name,
         invoice_id=invoice_id,
         amount_formatted=f"CHF {amount:.2f}",
-        due_date=due_date.isoformat(),
+        due_date=mail_date(due_date, lang),
         portal_url=portal_url,
     )
 
