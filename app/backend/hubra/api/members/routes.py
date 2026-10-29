@@ -435,6 +435,15 @@ def leave_club():
             target_id=member.id,
             target_label=member.name,
         )
+        from hubra.api.notifications.staff import notify_permitted
+
+        notify_permitted(
+            "members.members.archive",
+            "info",
+            "Request to leave",
+            member.name,
+            skip_member_id=member.id,
+        )
         db.session.commit()
     return jsonify({"status": "requested", **_leave_state(member)}), 200
 

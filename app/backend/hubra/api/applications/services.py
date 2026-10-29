@@ -171,4 +171,10 @@ class ApplicationsService:
             avatar_color=color,
         )
         db.session.add(app)
+
+        from hubra.api.notifications.staff import notify_permitted
+
+        notify_permitted(
+            "applications.applications.approve", "info", "New application", app.name
+        )
         return app  # type: ignore[return-value]
