@@ -572,3 +572,23 @@ def test_platform_routes_refuse_wrong_types(client, db, seeded_db, staff_headers
         assert resp.status_code == 400, (path, body, resp.get_json())
     db.session.refresh(tenant)
     assert tenant.name == "Typed"
+
+
+def test_club_picker_leaves_out_clubs_where_archived(db, seeded_db):
+    from datetime import datetime, timezone
+
+    from hubra.api.auth.services import AuthService
+    from hubra.core.models.tenant import Tenant
+    from hubra.core.models.user_tenant import UserTenant
+
+    user = seeded_db["user"]
+    t2 = Tenant(name="Club Two", slug="club-two", plan="growth")
+    db.session.add(t2)
+    db.session.flush()
+    db.session.add(UserTenant(user_id=user.id, tenant_id=t2.id))
+    db.session.commit()
+    assert AuthService.find_user_tenants(user.id)
+
+    seeded_db["admin"].archived_at = datetime.now(timezone.utc)
+    db.session.commit()
+    assert AuthService.find_user_tenants(user.id) == []

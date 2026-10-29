@@ -513,6 +513,11 @@ class AuthService:
                 member = db.session.scalar(
                     select(Member).where(Member.user_id == user_id)
                 )
+                if member is not None and member.archived_at is not None:
+                    # Archived in that club: switching there is refused, so
+                    # the club picker shouldn't offer it.
+                    reset_search_path()
+                    continue
                 roles = member.roles if member is not None else []
                 admin_level = (
                     "owner"
