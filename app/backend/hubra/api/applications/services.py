@@ -119,9 +119,18 @@ class ApplicationService:
         db.session.delete(application)
 
     @staticmethod
-    def delete(application_id: int) -> None:
-        """Delete an application without audit trail."""
+    def delete(application_id: int, actor_id: int) -> None:
+        """Delete an application (spam, a duplicate); audited like a decline."""
         application = ApplicationService.get(application_id)
+
+        log_audit(
+            actor_id=actor_id,
+            action="delete_application",
+            target_type="Application",
+            target_id=application.id,
+            target_label=application.name,
+        )
+
         db.session.delete(application)
 
 

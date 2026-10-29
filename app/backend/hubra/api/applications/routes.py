@@ -86,7 +86,7 @@ def decline_application(application_id: int):
 @applications_bp.delete("/<int:application_id>")
 @permission_required("applications", "delete", "Delete applications")
 def delete_application(application_id: int):
-    ApplicationService.delete(application_id)
+    ApplicationService.delete(application_id, get_current_member().id)
 
     try:
         db.session.commit()
