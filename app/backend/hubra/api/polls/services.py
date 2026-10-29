@@ -137,13 +137,29 @@ class PollService:
             poll.required_function_ids = data["required_function_ids"]
         if "options" in data:
             existing_options = db.session.scalars(
-                select(PollOption).where(PollOption.poll_id == poll.id)
+                select(PollOption)
+                .where(PollOption.poll_id == poll.id)
+                .order_by(PollOption.id)
             ).all()
-            for opt in existing_options:
-                db.session.delete(opt)
-            db.session.flush()
-            for opt_data in data["options"]:
-                db.session.add(PollOption(poll_id=poll.id, label=opt_data["label"]))
+            labels = [opt_data["label"] for opt_data in data["options"]]
+            # The club app sends the options with every edit; the same
+            # options keep their votes. Replacing them would delete every
+            # vote cast (the votes go with their option).
+            if labels != [opt.label for opt in existing_options]:
+                has_votes = db.session.scalar(
+                    select(PollVote.id).where(PollVote.poll_id == poll.id).limit(1)
+                )
+                if has_votes is not None:
+                    raise_error(
+                        409,
+                        "POLL_HAS_VOTES",
+                        "The options cannot change once votes have been cast",
+                    )
+                for opt in existing_options:
+                    db.session.delete(opt)
+                db.session.flush()
+                for label in labels:
+                    db.session.add(PollOption(poll_id=poll.id, label=label))
 
         log_audit(
             actor_id=actor_id,
