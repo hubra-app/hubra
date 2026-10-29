@@ -131,7 +131,7 @@ def add_instruction(item_id: int, member_id: int):
         raise_error(404, "NOT_FOUND", f"Member {member_id} not found")
         return
 
-    InventoryService.add_instruction(item, member)
+    InventoryService.add_instruction(item, member, get_current_member().id)
 
     try:
         db.session.commit()
@@ -211,7 +211,7 @@ def list_overdue():
 @inventory_bp.delete("/<int:item_id>/instructions/<int:member_id>")
 @permission_required("items", "manage_instructions", "Manage item instructions")
 def remove_instruction(item_id: int, member_id: int):
-    InventoryService.remove_instruction(item_id, member_id)
+    InventoryService.remove_instruction(item_id, member_id, get_current_member().id)
 
     try:
         db.session.commit()
@@ -238,7 +238,7 @@ def add_self_instruction(item_id: int):
         raise_error(404, "NOT_FOUND", f"Member {member_id} not found")
         return
 
-    InventoryService.add_instruction(item, member)
+    InventoryService.add_instruction(item, member, get_current_member().id)
 
     try:
         db.session.commit()

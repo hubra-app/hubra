@@ -2439,6 +2439,8 @@
       "delete_inventory_item": "Item deleted",
       "checkout_inventory_item": "Checked out",
       "checkin_inventory_item": "Checked in",
+      "add_item_instruction": "Instruction recorded",
+      "remove_item_instruction": "Instruction removed",
       "create_code": "Code created",
       "update_code": "Code updated",
       "delete_code": "Code deleted",

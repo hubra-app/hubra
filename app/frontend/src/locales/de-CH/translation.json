@@ -2439,6 +2439,8 @@
       "delete_inventory_item": "Inventar gelöscht",
       "checkout_inventory_item": "Ausgeliehen",
       "checkin_inventory_item": "Zurückgegeben",
+      "add_item_instruction": "Einweisung erfasst",
+      "remove_item_instruction": "Einweisung entfernt",
       "create_code": "Code erstellt",
       "update_code": "Code geändert",
       "delete_code": "Code gelöscht",
