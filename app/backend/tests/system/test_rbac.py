@@ -224,7 +224,7 @@ def test_invalidate_role_permissions_calls_redis_delete(app, db):
     with patch("hubra.api.permissions._get_redis_client", return_value=mock_redis):
         invalidate_role_permissions(42)
 
-    mock_redis.delete.assert_called_once_with("perms:0:role:42")
+    mock_redis.delete.assert_called_once_with("perms:42")
 
 
 def test_invalidate_role_permissions_noop_without_redis(app, db):
