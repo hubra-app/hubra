@@ -13,6 +13,7 @@ from hubra.api.permissions import (
     permission_required,
     can_update,
 )
+from hubra.api.utils import log_audit
 from hubra.core.errors import api_error
 from hubra.core.extensions import db
 from hubra.core.schemas.role import RoleCreateSchema, RoleSchema
@@ -87,8 +88,21 @@ def update_role(role_id: int):
 
     if "description" in body:
         role.description = body["description"]
-    if "is_admin" in body:
+    if "is_admin" in body and bool(body["is_admin"]) != role.is_admin:
+        # An admin could otherwise take admin rights from the Owner role,
+        # or make every member an admin through the Member role.
+        if role.is_system or role.is_owner:
+            return api_error(
+                "ROLE_LOCKED", "A system role's admin rights cannot be changed", 409
+            )
         role.is_admin = bool(body["is_admin"])
+        log_audit(
+            actor_id=get_current_member().id,
+            action="update_role",
+            target_type="Role",
+            target_id=role.id,
+            target_label=f"{role.name}: admin {'on' if role.is_admin else 'off'}",
+        )
 
     try:
         db.session.commit()
