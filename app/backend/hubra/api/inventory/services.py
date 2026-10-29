@@ -62,6 +62,16 @@ class InventoryService:
     @staticmethod
     def update(item: InventoryItem, data: dict, actor_id: int) -> InventoryItem:
         """Update allowed fields on an inventory item."""
+        # "checked_out" belongs to the checkout record: setting it by hand
+        # left an item nobody had, and leaving it by hand an open checkout
+        # that blocked the next one's check-in.
+        status = data.get("status", item.status)
+        if status != item.status and "checked_out" in (status, item.status):
+            raise_error(
+                409,
+                "USE_CHECKOUT",
+                "Use check out and check in to change whether an item is out",
+            )
         for field in (
             "name",
             "category",

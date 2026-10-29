@@ -227,6 +227,8 @@ const DE_CODE: Record<string, string> = {
   REGISTRATION_CLOSED: "Die Anmeldung für diesen Anlass ist geschlossen.",
   CANCELLATION_CLOSED: "Die Abmeldefrist für diesen Anlass ist vorbei.",
   POLL_HAS_VOTES: "Es wurde schon abgestimmt; die Antworten können nicht mehr geändert werden.",
+  USE_CHECKOUT: "Ob ein Gegenstand ausgeliehen ist, ändert sich nur mit Ausleihen und Zurückgeben.",
+  ROLE_LOCKED: "Diese Rolle ist geschützt und kann so nicht geändert werden.",
   EMAIL_NOT_VERIFIED: "Bestätige zuerst deine E-Mail-Adresse.",
   MUST_CHANGE_PASSWORD: "Bitte ändere zuerst dein Passwort.",
   LAST_OWNER: "Die letzte Inhaberin oder der letzte Inhaber kann den Verein nicht verlassen.",
