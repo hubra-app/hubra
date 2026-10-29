@@ -8,7 +8,6 @@ from marshmallow import ValidationError
 
 from hubra.api.permissions import (
     _current_member,
-    _get_member_permission_keys,
     member_is_admin,
     permission_required,
 )
@@ -232,13 +231,7 @@ def delete_comment(post_id: int, comment_id: int):
             "NOT_FOUND", f"Comment {comment_id} not found on post {post_id}", 404
         )
 
-    # Whoever may delete posts may also remove a comment (moderation).
-    actor = _current_member()
-    if (
-        comment.author_id != member_id
-        and not member_is_admin(actor)
-        and "posts.posts.delete" not in _get_member_permission_keys(actor)
-    ):
+    if comment.author_id != member_id and not member_is_admin(_current_member()):
         return api_error("FORBIDDEN", "You can only delete your own comments", 403)
 
     PostService.delete_comment(comment_id, member_id)
