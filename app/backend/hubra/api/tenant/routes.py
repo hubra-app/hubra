@@ -324,6 +324,14 @@ def impersonate_tenant_user(tenant_id: int):
     # Find the target member: either a specific user_id or the tenant's admin
     target_member = None
 
+    if target_user_id is not None and not isinstance(target_user_id, int):
+        try:
+            target_user_id = int(target_user_id)
+        except (TypeError, ValueError):
+            return jsonify(
+                {"error": "VALIDATION_ERROR", "message": "user_id must be a number"}
+            ), 422
+
     if target_user_id:
         target_user = db.session.get(User, int(target_user_id))
         if target_user is None:
