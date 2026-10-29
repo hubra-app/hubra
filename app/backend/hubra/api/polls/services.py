@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import selectinload
 
 from hubra.api.notifications.services import (
@@ -196,6 +196,8 @@ class PollService:
             target_id=poll.id,
             target_label=poll.question,
         )
+        # Club schemas have no foreign keys, so proxies do not cascade.
+        db.session.execute(delete(PollProxy).where(PollProxy.poll_id == poll.id))
         db.session.delete(poll)
 
     @staticmethod
