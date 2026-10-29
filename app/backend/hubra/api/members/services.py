@@ -481,6 +481,15 @@ class MemberService:
         db.session.execute(
             delete(Notification).where(Notification.member_id == member_id)
         )
+        # Sign-in devices and their sessions. In public the FK cascades, but
+        # club schemas get these FKs from schema_manager without ON DELETE
+        # CASCADE, so there the member delete failed for anyone who had ever
+        # opened the club app.
+        from hubra.core.models.device_session import Device, Session
+
+        device_ids = select(Device.id).where(Device.member_id == member_id)
+        db.session.execute(delete(Session).where(Session.device_id.in_(device_ids)))
+        db.session.execute(delete(Device).where(Device.member_id == member_id))
         db.session.execute(
             delete(MailboxFolder).where(MailboxFolder.member_id == member_id)
         )

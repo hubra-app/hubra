@@ -228,3 +228,28 @@ def test_permanent_delete_of_a_poll_author_group_lead_and_voter(
     assert (code.created_by_id, code.updated_by_id) == (None, None)
     assert db.session.get(Translation, ids[3]).updated_by_id is None
     assert db.session.query(PollVote).filter_by(member_id=member_id).count() == 0
+
+
+def test_permanent_delete_removes_sign_in_devices(client, auth_headers, seeded_db, db):
+    """Entering the club app records a Device and Session in the club.
+
+    In public these rows cascade, but club schemas get the FKs without
+    ON DELETE CASCADE (schema_manager), so the service has to remove them
+    itself; there the delete failed for anyone who had opened the app.
+    """
+    from hubra.api.members.services import MemberService
+    from hubra.core.models.device_session import Device, Session
+
+    member_id = _create_member(client, auth_headers, email="devices@test.ch").get_json()["id"]
+    device = Device(member_id=member_id, fingerprint="fp1")
+    db.session.add(device)
+    db.session.flush()
+    db.session.add(Session(device_id=device.id, jti="jti-perm-1"))
+    db.session.commit()
+    assert client.post(f"/api/v1/members/{member_id}/archive", headers=auth_headers).status_code == 204
+
+    MemberService.delete_permanent(member_id, seeded_db["admin"].id)
+
+    assert db.session.query(Device).filter_by(member_id=member_id).count() == 0
+    assert db.session.query(Session).filter_by(jti="jti-perm-1").count() == 0
+    db.session.rollback()
