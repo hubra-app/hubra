@@ -88,16 +88,25 @@ def _bump_etag(locale: str) -> None:
 
 
 def get_etag(locale: str) -> str | None:
-    """Return the current ETag string for *locale*, or None if not set."""
+    """Return the current ETag string for *locale*, or None if not set.
+
+    A club's dictionary includes the platform's texts (platform_rows), so
+    its ETag also changes when the platform edits a text.
+    """
     client = _get_redis_client()
     if client is None:
         return None
+    keys = [_etag_version_key(locale)]
+    if _club() != 0:
+        keys.append(f"i18n:version:0:{locale}")
     try:
-        ver = client.get(_etag_version_key(locale))
+        vers = client.mget(keys)
     except Exception:
         _log.debug("i18n etag lookup failed for %s", locale)
         return None
-    return f'"{ver.decode()}"' if ver is not None else None
+    if all(v is None for v in vers):
+        return None
+    return '"' + ".".join(v.decode() if v else "0" for v in vers) + '"'
 
 
 def get_translations(locale: str) -> list[Translation]:
@@ -224,6 +233,14 @@ def get_available_locales() -> list[str]:
     # DB query (uses index on locale)
     stmt = select(Translation.locale).distinct().order_by(Translation.locale)  # type: ignore[call-overload]
     locales = list(db.session.scalars(stmt).all())
+    if _club() != 0 and db.session.get_bind().dialect.name == "postgresql":
+        from sqlalchemy import text
+
+        # A club also serves the platform's languages (see platform_rows).
+        platform = db.session.scalars(
+            text("SELECT DISTINCT locale FROM public.translation")
+        )
+        locales = sorted(set(locales) | set(platform))
 
     # Cache in Redis
     if client is not None:
