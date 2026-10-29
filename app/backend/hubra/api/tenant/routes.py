@@ -36,6 +36,7 @@ from hubra.core.models.tenant_request import TenantRequest
 from hubra.core.models.user import User
 from hubra.core.services import email_verification
 from hubra.core.tenant.service import TenantService, TenantProvisioningError
+from hubra.core.tenant.club_settings import accepts_join_requests
 
 tenant_admin_bp = Blueprint("tenant_admin", __name__)
 
@@ -935,6 +936,7 @@ def club_directory():
             "slug": t.slug,
             "name": t.name,
             "membership": "member" if t.id in linked else _membership_in(t.id, user),
+            "acceptsRequests": accepts_join_requests(t),
         }
         for t in tenants
     ]
@@ -998,6 +1000,7 @@ def club_page(slug: str):
             "membership": _membership_in(tenant.id, user),
             "tiers": _club_tiers(tenant.id),
             "canJoinDirectly": _can_add_members(user),
+            "acceptsRequests": accepts_join_requests(tenant),
         }
     )
 
@@ -1044,6 +1047,11 @@ def join_club(slug: str):
 
     if status == "pending":
         raise_error(409, "REQUEST_PENDING", "Your request to join this club is pending")
+
+    if not accepts_join_requests(tenant):
+        raise_error(
+            403, "JOIN_REQUESTS_CLOSED", "This club takes new members by invite only"
+        )
 
     wants_tier_id = (request.get_json(silent=True) or {}).get("wantsTierId")
     if wants_tier_id is not None and wants_tier_id not in {

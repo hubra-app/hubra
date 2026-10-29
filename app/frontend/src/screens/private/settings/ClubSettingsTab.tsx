@@ -5,6 +5,7 @@ import {
   Textarea,
   Select,
   Switch,
+  NumberInput,
   ColorInput,
   Button,
   Stack,
@@ -24,7 +25,7 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
   const [form, setForm] = useState<ClubSettings>(initialData)
   const [saving, setSaving] = useState(false)
 
-  const update = (key: keyof ClubSettings, value: string | boolean) => {
+  const update = (key: keyof ClubSettings, value: string | boolean | number) => {
     setForm((prev) => ({ ...prev, [key]: value }))
   }
 
@@ -33,6 +34,7 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
     try {
       await updateClubSettings(form)
       queryClient.invalidateQueries({ queryKey: ['club-settings'] })
+      queryClient.invalidateQueries({ queryKey: ['club-profile'] })
     } finally {
       setSaving(false)
     }
@@ -148,6 +150,25 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
           )}
           checked={form.leave_requires_approval ?? false}
           onChange={(e) => update('leave_requires_approval', e.currentTarget.checked)}
+        />
+        <Switch
+          mt={14}
+          label={t('clubSettings.joinRequestsOpen', 'Beitrittsanfragen annehmen')}
+          description={t(
+            'clubSettings.joinRequestsOpenHint',
+            'Aus: Neue Mitglieder kommen nur noch über eine Einladung dazu, und auf join.hubra.club steht «Nur auf Einladung».',
+          )}
+          checked={form.join_requests_open ?? true}
+          onChange={(e) => update('join_requests_open', e.currentTarget.checked)}
+        />
+        <NumberInput
+          mt={14}
+          maw={240}
+          label={t('clubSettings.inviteValidDays', 'Einladungen gültig (Tage)')}
+          min={1}
+          max={60}
+          value={form.invite_valid_days ?? 14}
+          onChange={(v) => typeof v === 'number' && update('invite_valid_days', v)}
         />
       </Paper>
 

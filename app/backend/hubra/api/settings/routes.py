@@ -69,6 +69,42 @@ def get_settings():
     return jsonify([]), 200
 
 
+# ── GET /settings/club-profile ────────────────────────────────────────────────
+
+# The parts of Settings > Verein every member may see (the rest, such as the
+# membership rules, stays with GET /admin/club-settings).
+_PUBLIC_CLUB_FIELDS = (
+    "club_name",
+    "club_description",
+    "logo",
+    "primary_color",
+    "secondary_color",
+    "accent_color",
+    "timezone",
+    "locale",
+    "date_format",
+)
+
+
+@settings_bp.get("/club-profile")
+@jwt_required()
+def get_club_profile():
+    """Name, look and announcement banner of the club, for every member."""
+    from hubra.core.tenant.context import current_tenant
+
+    get_current_member()  # members of this club only
+    tenant = current_tenant()
+    branding = dict((tenant.settings or {}).get("branding", {})) if tenant else {}
+    profile = {k: branding.get(k) for k in _PUBLIC_CLUB_FIELDS}
+    if not profile["club_name"] and tenant is not None:
+        profile["club_name"] = tenant.name
+    banner = (branding.get("announcement_banner_text") or "").strip()
+    profile["banner"] = (
+        banner if banner and branding.get("announcement_banner_active") else None
+    )
+    return jsonify(profile), 200
+
+
 # ── PUT /settings/<key> ───────────────────────────────────────────────────────
 
 

@@ -73,6 +73,12 @@ class ClubSettingsSchema(Schema):
     public_group_listing = fields.Bool(required=False, allow_none=True)
     # Members ask to leave and a club admin approves (off: they leave at once).
     leave_requires_approval = fields.Bool(required=False, allow_none=True)
+    # Off: the club takes new members by invite only (no "ask to join").
+    join_requests_open = fields.Bool(required=False, allow_none=True)
+    # How long an invite link works.
+    invite_valid_days = fields.Int(
+        required=False, allow_none=True, validate=validate.Range(min=1, max=60)
+    )
 
     announcement_banner_text = fields.Str(required=False, allow_none=True)
     announcement_banner_active = fields.Bool(required=False, allow_none=True)

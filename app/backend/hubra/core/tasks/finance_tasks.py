@@ -187,8 +187,10 @@ def _generate_invoices() -> dict:
     from sqlalchemy import select
     from hubra.core.models.finance import Invoice
     from hubra.core.models.member import Member, MembershipTier
+    from hubra.api.finance.services import billing_settings
     from hubra.core.services.email import _get_base_url
 
+    billing = billing_settings()
     today = date.today()
     created = 0
     skipped = 0
@@ -248,7 +250,7 @@ def _generate_invoices() -> dict:
             skipped += 1
             continue
 
-        due_date = today + timedelta(days=30)
+        due_date = today + timedelta(days=billing["payment_term_days"])
         invoice = Invoice(
             member_id=member.id,
             issued=today,
@@ -274,6 +276,9 @@ def _generate_invoices() -> dict:
             invoice.id,
         )
         created += 1
+
+        if not billing["email_new_invoices"]:
+            continue
 
         # Generate QR-bill PDF attachment (best-effort)
         pdf_attachments = None
@@ -327,9 +332,12 @@ def send_overdue_reminders_task(self) -> dict:
 def _send_overdue_reminders() -> dict:
     """Send overdue reminders for unpaid invoices past their due date.
 
-    Two reminder rounds:
-      - overdue_7d:  sent when an invoice is 7+ days past due
-      - overdue_14d: sent when an invoice is 14+ days past due (if still unpaid)
+    Two reminder rounds (the day counts are the club's finance settings,
+    7 and 14 unless changed; the history keeps the original type names):
+      - overdue_7d:  sent when an invoice is first_reminder_days past due
+      - overdue_14d: sent when it is second_reminder_days past due (if still unpaid)
+
+    A club that switched reminders off gets none, and no ``invoice.overdue``.
 
     Idempotency: each reminder_type is sent at most once per invoice, tracked
     via InvoiceReminderHistory.
@@ -343,7 +351,12 @@ def _send_overdue_reminders() -> dict:
     from hubra.core.models.finance import Invoice
     from hubra.core.models.invoice_reminder import InvoiceReminderHistory
     from hubra.core.models.member import Member
+    from hubra.api.finance.services import billing_settings
     from hubra.core.services.email import _get_base_url
+
+    billing = billing_settings()
+    if not billing["reminders_enabled"]:
+        return {"overdue_7d": 0, "overdue_14d": 0, "skipped_no_email": 0}
 
     today = date.today()
     _base = _get_base_url()
@@ -391,7 +404,9 @@ def _send_overdue_reminders() -> dict:
         sent = sent_types.get(invoice.id, set())
 
         # Check for 14-day reminder first (higher priority round)
-        if "overdue_14d" not in sent and invoice.due <= today - timedelta(days=14):
+        if "overdue_14d" not in sent and invoice.due <= today - timedelta(
+            days=billing["second_reminder_days"]
+        ):
             subject, body_html, body_text = _render_invoice_reminder(
                 name=member.name,
                 invoice_id=invoice.id,
@@ -419,7 +434,9 @@ def _send_overdue_reminders() -> dict:
                 member.id,
             )
 
-        elif "overdue_7d" not in sent and invoice.due <= today - timedelta(days=7):
+        elif "overdue_7d" not in sent and invoice.due <= today - timedelta(
+            days=billing["first_reminder_days"]
+        ):
             subject, body_html, body_text = _render_invoice_reminder(
                 name=member.name,
                 invoice_id=invoice.id,

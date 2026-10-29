@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from math import ceil
 
@@ -25,6 +25,32 @@ from hubra.core.services.mail_i18n import render_mail_template
 
 
 # ── Shared helpers ────────────────────────────────────────────────────────────
+
+
+def billing_settings() -> dict:
+    """The club's finance settings (Settings > Modules > Finance), with the
+    day counts kept sane: a term of at least one day, and a second reminder
+    that never comes before the first."""
+    from hubra.core.modules import get_config
+
+    config = get_config("finance")
+    term = max(1, int(config.get("payment_term_days") or 30))
+    first = max(1, int(config.get("first_reminder_days") or 7))
+    second = max(first, int(config.get("second_reminder_days") or 14))
+    return {
+        "payment_term_days": term,
+        "email_new_invoices": config.get("email_new_invoices", True) is not False,
+        "reminders_enabled": config.get("reminders_enabled", True) is not False,
+        "first_reminder_days": first,
+        "second_reminder_days": second,
+    }
+
+
+def default_due_date(issued: date | None = None) -> date:
+    """Due date for an invoice issued on *issued* (today) under the club's term."""
+    return (issued or date.today()) + timedelta(
+        days=billing_settings()["payment_term_days"]
+    )
 
 
 def _delete_send_history(invoice_id: int) -> None:
@@ -900,16 +926,17 @@ class InvoicesService:
         if description is not None and not isinstance(description, str):
             raise_error(400, "VALIDATION_ERROR", "description must be text")
 
-        if not due_str:
-            raise_error(400, "VALIDATION_ERROR", "due date is required")
-        try:
-            due_date = date.fromisoformat(due_str)
-        except (TypeError, ValueError):
-            raise_error(400, "VALIDATION_ERROR", "due must be a valid ISO date")
-        if due_date < date.today():
-            raise_error(400, "VALIDATION_ERROR", "due is before issued")
-
         issued_date = date.today()
+        if not due_str:
+            # No date given: the club's payment term decides.
+            due_date = default_due_date(issued_date)
+        else:
+            try:
+                due_date = date.fromisoformat(due_str)
+            except (TypeError, ValueError):
+                raise_error(400, "VALIDATION_ERROR", "due must be a valid ISO date")
+            if due_date < issued_date:
+                raise_error(400, "VALIDATION_ERROR", "due is before issued")
 
         member_q = (
             select(Member)

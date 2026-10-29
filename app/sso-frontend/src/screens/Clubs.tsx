@@ -297,6 +297,10 @@ export function ClubsScreen() {
                 <Badge variant="light" color="gray" style={{ flexShrink: 0 }}>
                   {tr('Anfrage gesendet', 'Request sent')}
                 </Badge>
+              ) : !canJoinDirectly && c.acceptsRequests === false ? (
+                <Badge variant="light" color="gray" style={{ flexShrink: 0 }}>
+                  {tr('Nur auf Einladung', 'Invite only')}
+                </Badge>
               ) : (
                 <Button
                   style={{ flexShrink: 0 }}

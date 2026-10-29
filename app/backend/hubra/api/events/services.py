@@ -8,7 +8,7 @@ from datetime import date, datetime, time, timedelta, timezone
 from sqlalchemy import delete, func, insert, select
 from sqlalchemy.orm import selectinload
 
-from hubra.api.notifications.services import notify_all_active
+from hubra.api.notifications.services import notify_on_publish
 from hubra.api.utils import log_audit
 from hubra.core.errors import ApiError, raise_error
 from hubra.core.extensions import db
@@ -567,7 +567,9 @@ class EventsService:
         db.session.add(event)
         db.session.flush()
 
-        notify_all_active("info", "New event", event.title, skip_member_id=actor_id)
+        notify_on_publish(
+            "events", "info", "New event", event.title, skip_member_id=actor_id
+        )
         emit(EVENT_PUBLISHED, event_id=event.id)
 
         log_audit(

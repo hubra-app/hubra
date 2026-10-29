@@ -8,8 +8,8 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import selectinload
 
 from hubra.api.notifications.services import (
-    notify_all_active,
     notify_member,
+    notify_on_publish,
 )
 from hubra.api.utils import log_audit
 from hubra.core.errors import raise_error
@@ -288,7 +288,9 @@ class PollsService:
         for opt in data["options"]:
             db.session.add(PollOption(poll_id=poll.id, label=opt["label"]))
 
-        notify_all_active("info", "New poll", poll.question, skip_member_id=actor_id)
+        notify_on_publish(
+            "polls", "info", "New poll", poll.question, skip_member_id=actor_id
+        )
         emit(POLL_PUBLISHED, poll_id=poll.id)
 
         log_audit(

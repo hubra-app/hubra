@@ -56,7 +56,8 @@ backup and one per club without anyone pressing a button. There is no club
 Backups module any more. See [disaster-recovery.md](disaster-recovery.md).
 
 **Club settings** (name, contact addresses, sender name, modules) are kept
-per club and edited by the club's owners and admins. They no longer
+per club and edited by the club's owners and admins (where each kind is
+stored, and what every setting does: [settings/](settings/README.md)). They no longer
 include an SMTP server or backup storage. If you had typed those into a
 club's settings screen rather than env, enter them once under Platform
 Settings: the migration that removed them doesn't carry them over.
