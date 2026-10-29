@@ -109,6 +109,8 @@ export function AccountDashboardScreen() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
+                  // On a phone the buttons go under the amount.
+                  flexWrap: "wrap",
                   padding: "10px 16px",
                   borderTop: "1px solid rgba(255, 77, 61, 0.12)",
                   gap: 12,
@@ -134,7 +136,14 @@ export function AccountDashboardScreen() {
                     {formatCHF(inv.amount)}
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 8,
+                    alignItems: "center",
+                  }}
+                >
                   <InvoicePill status={inv.status} />
                   <Button
                     size="sm"
@@ -319,6 +328,7 @@ export function AccountDashboardScreen() {
                   <Button
                     size="sm"
                     variant="subtle"
+                    disabled={joinEventMutation.isPending}
                     onClick={() =>
                       joinEventMutation.mutate({
                         eventId: ev.id,
@@ -448,6 +458,7 @@ export function AccountDashboardScreen() {
                           </div>
                           <Progress
                             value={pct}
+                            aria-label={opt.label}
                             size="sm"
                             radius="xl"
                             styles={{

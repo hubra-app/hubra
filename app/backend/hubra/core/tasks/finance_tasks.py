@@ -5,7 +5,6 @@ from __future__ import annotations
 import base64
 import logging
 from datetime import date, timedelta
-from decimal import Decimal
 from typing import TYPE_CHECKING
 
 
@@ -18,7 +17,7 @@ from hubra.core.pricing import (
     billing_cycle_for,
     calculate_invoice_amount,
     period_window,
-    total_deducted_annual_for_tiers,
+    deductions_by_tier,
 )
 from hubra.core.services.email import DEFAULT_LANG
 from hubra.core.services.mail_i18n import render_mail_template
@@ -39,10 +38,11 @@ def _render_invoice_generated(
     lang: str = DEFAULT_LANG,
 ) -> tuple[str, str, str]:
     """Render invoice_generated email templates, returning (subject, html, text)."""
-    from hubra.core.services.email import _get_setting
+    from hubra.core.services.email import club_display_name
 
-    club_name = _get_setting("club.name", "Your Club")
-    return render_mail_template(
+    club_name = club_display_name()
+    # render_mail_template returns (html, text, subject).
+    body_html, body_text, subject = render_mail_template(
         "invoice_generated",
         locale=lang,
         name=name,
@@ -52,6 +52,7 @@ def _render_invoice_generated(
         due_date=mail_date(due_date, lang),
         portal_url=portal_url,
     )
+    return subject, body_html, body_text
 
 
 def _render_invoice_reminder(
@@ -64,10 +65,11 @@ def _render_invoice_reminder(
     lang: str = DEFAULT_LANG,
 ) -> tuple[str, str, str]:
     """Render invoice_reminder email templates, returning (subject, html, text)."""
-    from hubra.core.services.email import _get_setting
+    from hubra.core.services.email import club_display_name
 
-    club_name = _get_setting("club.name", "Your Club")
-    return render_mail_template(
+    club_name = club_display_name()
+    # render_mail_template returns (html, text, subject).
+    body_html, body_text, subject = render_mail_template(
         "invoice_reminder",
         locale=lang,
         name=name,
@@ -77,6 +79,7 @@ def _render_invoice_reminder(
         due_date=mail_date(due_date, lang),
         portal_url=portal_url,
     )
+    return subject, body_html, body_text
 
 
 def _dispatch_invoice_email(
@@ -101,10 +104,14 @@ def _dispatch_invoice_email(
         )
         return
 
+    from hubra.core.tasks.after_commit import delay_after_commit
     from hubra.core.tasks.email_tasks import send_email_task
 
     try:
-        send_email_task.delay(
+        # Sent once the invoice is committed: a club whose run fails later
+        # rolls the invoice back, and the next run would bill (and mail) again.
+        delay_after_commit(
+            send_email_task,
             to_email=member.email,  # type: ignore[attr-defined]
             to_name=member.name,  # type: ignore[attr-defined]
             subject=subject,
@@ -195,17 +202,8 @@ def _generate_invoices() -> dict:
         .where(Member.tier_id.isnot(None))
     ).all()
 
-    # Collect all deduct_tier_ids referenced by any formula tier
-    all_deduct_ids: set[int] = set()
-    for member in active_members:
-        t: MembershipTier | None = member.tier
-        if t and t.price_type == "formula" and t.deduct_tier_ids:
-            all_deduct_ids.update(t.deduct_tier_ids)
-
-    # Calculate total annual fees from all members in deducted tiers
-    total_deducted_annual: Decimal = total_deducted_annual_for_tiers(
-        db.session, all_deduct_ids
-    )
+    # Each formula tier deducts the yearly fees of its own deduct_tier_ids.
+    deducted_for = deductions_by_tier(db.session)
 
     # Generate invoices
     for member in active_members:
@@ -241,7 +239,7 @@ def _generate_invoices() -> dict:
             skipped += 1
             continue
 
-        amount = calculate_invoice_amount(member, tier, total_deducted_annual)
+        amount = calculate_invoice_amount(member, tier, deducted_for(tier))
         if amount <= 0:
             logger.info(
                 "invoice_generation_skipped member_id=%s reason=amount_zero_or_negative",

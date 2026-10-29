@@ -72,6 +72,9 @@ def compute_is_stale(last_used_at: datetime | None, threshold_seconds: int) -> b
     return (now - last_used_at).total_seconds() > threshold_seconds
 
 
+_DICT_FORMAT = "v2"
+
+
 def _etag_version_key(locale: str) -> str:
     return f"i18n:version:{_club()}:{locale}"
 
@@ -88,16 +91,27 @@ def _bump_etag(locale: str) -> None:
 
 
 def get_etag(locale: str) -> str | None:
-    """Return the current ETag string for *locale*, or None if not set."""
+    """Return the current ETag string for *locale*, or None if not set.
+
+    A club's dictionary includes the platform's texts (platform_rows), so
+    its ETag also changes when the platform edits a text.
+    """
     client = _get_redis_client()
     if client is None:
         return None
+    keys = [_etag_version_key(locale)]
+    if _club() != 0:
+        keys.append(f"i18n:version:0:{locale}")
     try:
-        ver = client.get(_etag_version_key(locale))
+        vers = client.mget(keys)
     except Exception:
         _log.debug("i18n etag lookup failed for %s", locale)
         return None
-    return f'"{ver.decode()}"' if ver is not None else None
+    if all(v is None for v in vers):
+        return None
+    # _DICT_FORMAT changes the ETag (and the cache key) whenever what the
+    # dictionary holds changes shape, so browsers don't keep an old one.
+    return f'"{_DICT_FORMAT}.' + ".".join(v.decode() if v else "0" for v in vers) + '"'
 
 
 def get_translations(locale: str) -> list[Translation]:
@@ -106,11 +120,33 @@ def get_translations(locale: str) -> list[Translation]:
     return list(db.session.scalars(stmt).all())
 
 
+def platform_rows(locale: str) -> list:
+    """The platform's translations (public schema) under a club's own.
+
+    A club's schema has its own ``translation`` table, which hides
+    public.translation on the search_path, so a new club would otherwise
+    see no texts at all. Empty outside a club and on SQLite (no schemas).
+    """
+    from sqlalchemy import text
+
+    if _club() == 0 or db.session.get_bind().dialect.name != "postgresql":
+        return []
+    return list(
+        db.session.execute(
+            text(
+                "SELECT key, value, alias_for FROM public.translation"
+                " WHERE locale = :locale"
+            ),
+            {"locale": locale},
+        )
+    )
+
+
 def get_translations_dict(locale: str) -> dict[str, str]:
     # Determine ETag version for cache key
     etag = get_etag(locale)
     version = etag.strip('"') if etag else "_no_etag"
-    cache_key = f"i18n:dict:{_club()}:{locale}:{version}"
+    cache_key = f"i18n:dict:{_DICT_FORMAT}:{_club()}:{locale}:{version}"
 
     # Try Redis
     client = _get_redis_client()
@@ -130,15 +166,22 @@ def get_translations_dict(locale: str) -> dict[str, str]:
             return data
         _mem_translations.pop(cache_key, None)
 
-    # DB query (uses index on locale)
-    qs = get_translations(locale)
-    alias_map = {t.key: t for t in qs}
+    # DB query (uses index on locale). A club starts from the platform's
+    # translations; its own rows win where they hold a text or an alias
+    # (a key reported missing is stored empty and must not hide the default).
+    alias_map = {r.key: r for r in platform_rows(locale)}
+    for t in get_translations(locale):
+        if t.value or t.alias_for or t.key not in alias_map:
+            alias_map[t.key] = t
     resolved: dict[str, str] = {}
-    for t in qs:
+    for t in alias_map.values():
         if t.alias_for:
-            resolved[t.key] = _resolve_alias_chain(t.key, alias_map, resolved, {t.key})
+            resolved[t.key] = _resolve_alias_chain(t.key, alias_map, resolved, set())
         else:
             resolved[t.key] = t.value
+    # A key reported missing has no text yet. Left in as "", it would stop
+    # the app's own fallbacks, such as a plugin's bundled texts.
+    resolved = {k: v for k, v in resolved.items() if v}
 
     # Cache in Redis
     if client is not None:
@@ -198,6 +241,14 @@ def get_available_locales() -> list[str]:
     # DB query (uses index on locale)
     stmt = select(Translation.locale).distinct().order_by(Translation.locale)  # type: ignore[call-overload]
     locales = list(db.session.scalars(stmt).all())
+    if _club() != 0 and db.session.get_bind().dialect.name == "postgresql":
+        from sqlalchemy import text
+
+        # A club also serves the platform's languages (see platform_rows).
+        platform = db.session.scalars(
+            text("SELECT DISTINCT locale FROM public.translation")
+        )
+        locales = sorted(set(locales) | set(platform))
 
     # Cache in Redis
     if client is not None:

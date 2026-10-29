@@ -405,7 +405,11 @@ export function MailSettingsModal({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           {canManage && (
             <Field label={t('mail.enabled', 'Eingeschaltet')}>
-              <Toggle checked={enabled} onChange={setEnabled} />
+              <Toggle
+                checked={enabled}
+                onChange={setEnabled}
+                label={t('mail.enabled', 'Eingeschaltet')}
+              />
             </Field>
           )}
 
@@ -414,6 +418,7 @@ export function MailSettingsModal({
               <Toggle
                 checked={forwarding}
                 onChange={setForwarding}
+                label={t('mail.forwarding', 'Weiterleitung')}
                 disabled={!canManage}
               />
             </Field>
@@ -661,6 +666,7 @@ export function MailSettingsModal({
                       </span>
                       <Toggle
                         checked={alias.isEnabled}
+                        label={alias.address}
                         onChange={(v) => handleToggleAlias(alias.id, v)}
                         disabled={aliasBusy}
                       />

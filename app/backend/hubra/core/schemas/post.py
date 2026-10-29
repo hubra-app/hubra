@@ -86,6 +86,11 @@ class PostSchema(ma.SQLAlchemyAutoSchema):
 # ── Write schemas ─────────────────────────────────────────────────────────────
 
 
+# Markdown body; generous for long announcements, small enough that one
+# post cannot bloat every list response.
+POST_BODY_MAX = 100_000
+
+
 class PostCreateSchema(ma.Schema):
     class Meta:
         unknown = RAISE
@@ -94,7 +99,7 @@ class PostCreateSchema(ma.Schema):
     summary = fields.Str(
         allow_none=True, load_default=None, validate=validate.Length(max=500)
     )
-    body = fields.Str(required=True, validate=validate.Length(min=1))
+    body = fields.Str(required=True, validate=validate.Length(min=1, max=POST_BODY_MAX))
 
 
 class PostUpdateSchema(ma.Schema):
@@ -105,7 +110,7 @@ class PostUpdateSchema(ma.Schema):
 
     title = fields.Str(validate=validate.Length(min=1, max=255))
     summary = fields.Str(allow_none=True, validate=validate.Length(max=500))
-    body = fields.Str(validate=validate.Length(min=1))
+    body = fields.Str(validate=validate.Length(min=1, max=POST_BODY_MAX))
 
 
 class CommentCreateSchema(ma.Schema):

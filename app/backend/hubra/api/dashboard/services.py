@@ -47,6 +47,7 @@ class DashboardService:
             db.session.scalar(
                 select(func.count(Member.id))
                 .where(Member.joined >= thirty_days_ago)
+                .where(Member.status == "active")
                 .where(Member.archived_at.is_(None))
             )
             or 0

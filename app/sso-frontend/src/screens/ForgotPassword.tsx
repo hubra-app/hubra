@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { TextInput, Button, Stack, Text, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { IconArrowLeft, IconCheck, IconMail } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
@@ -23,7 +23,7 @@ export function ForgotPassword() {
   const [sent, setSent] = useState(false)
 
   const form = useForm<FormValues>({
-    validate: (values) => zodResolver(makeSchema())(values),
+    validate: (values) => zod4Resolver(makeSchema())(values),
     initialValues: { email: '' },
   })
 
@@ -32,6 +32,12 @@ export function ForgotPassword() {
     try {
       await authApi.forgotPassword(values.email.trim().toLowerCase())
       setSent(true)
+    } catch (err) {
+      // e.g. 429 after three requests in an hour: say so instead of nothing.
+      form.setFieldError(
+        'email',
+        err instanceof Error ? err.message : tr('Das hat nicht geklappt.', 'That did not work.'),
+      )
     } finally {
       setLoading(false)
     }

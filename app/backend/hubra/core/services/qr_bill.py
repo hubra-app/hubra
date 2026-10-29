@@ -74,7 +74,9 @@ def generate_invoice_pdf(invoice: Invoice) -> bytes:
         raise ValueError(f"Invoice {invoice.id} has no recipient")
 
     # ── 1. Gather creditor info from settings ──────────────────────────────
-    club_name = _get_setting("club.name", "Verein")
+    from hubra.core.services.email import club_display_name
+
+    club_name = club_display_name()
     iban = _get_setting("Club.Banking.Iban", "")
     creditor_street = _get_setting("Club.Banking.Street", "")
     creditor_house_no = _get_setting("Club.Banking.HouseNo", "")

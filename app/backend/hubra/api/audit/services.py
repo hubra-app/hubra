@@ -74,7 +74,13 @@ class AuditsService:
                     to_dt = to_dt.replace(tzinfo=timezone.utc)
             except ValueError:
                 raise_error(400, "VALIDATION_ERROR", "'to' must be an ISO datetime")
-            query = query.where(AuditEntry.time <= to_dt)
+            if len(to_raw) == 10:
+                # A bare date includes that whole day.
+                from datetime import timedelta
+
+                query = query.where(AuditEntry.time < to_dt + timedelta(days=1))
+            else:
+                query = query.where(AuditEntry.time <= to_dt)
 
         action_raw = args.get("action")
         if action_raw:

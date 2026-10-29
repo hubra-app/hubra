@@ -8,7 +8,7 @@ import {
   Slider,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT, zmsg } from '@/locales/i18n'
@@ -21,6 +21,7 @@ import {
   ConfirmModal,
   DataTable,
   ActionButtons,
+  useSubmitOnce,
 } from '@/components/ui'
 import type { Code } from '@/types'
 import { listCodes, createCode, updateCode, deleteCode } from '@/api/codes'
@@ -51,7 +52,7 @@ export function CodesScreen() {
   const [codeLength, setCodeLength] = useState(4)
 
   const form = useForm<CodeForm>({
-    validate: zodResolver(codeSchema),
+    validate: zod4Resolver(codeSchema),
     initialValues: { name: '', code: '', description: '', isActive: true },
   })
 
@@ -94,6 +95,7 @@ export function CodesScreen() {
       )
     }
   }
+  const [submitAdd, adding] = useSubmitOnce(saveAdd)
 
   const saveEdit = async (data: CodeForm) => {
     if (!editTarget) return
@@ -299,7 +301,7 @@ export function CodesScreen() {
             <Button variant="subtle" onClick={() => setAddOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="default" onClick={() => form.onSubmit(saveAdd)()}>
+            <Button variant="default" onClick={() => form.onSubmit(submitAdd)()} loading={adding}>
               {t('common.save')}
             </Button>
           </>

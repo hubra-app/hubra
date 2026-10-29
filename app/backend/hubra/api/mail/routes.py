@@ -1941,6 +1941,10 @@ def update_from_whitelist(address_id: int):
             )
         if not email_re.match(entry):
             return api_error("VALIDATION_ERROR", f"Invalid email address: {entry}", 400)
+        if not mma_service.owns_mail_address(entry):
+            return api_error(
+                "VALIDATION_ERROR", f"{entry} is not in this club's mail domain", 400
+            )
         if entry not in cleaned:
             cleaned.append(entry)
 

@@ -403,6 +403,11 @@ class ProxyService:
         proxy = ProxyService.given(poll.id, grantor_id)
         if proxy is None or proxy.holder_id != holder_id:
             raise_error(403, "NOT_PROXY", "You do not hold this member's proxy")
+        # A proxy given earlier lapses when the poll stops allowing proxies
+        # or the member who gave it has left the club.
+        grantor = db.session.get(Member, grantor_id)
+        if not poll.allow_proxy or grantor is None or grantor.archived_at is not None:
+            raise_error(409, "PROXY_NOT_ALLOWED", "This proxy is no longer valid")
 
     @staticmethod
     def state(poll: Poll, member_id: int) -> dict:

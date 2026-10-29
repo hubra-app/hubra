@@ -41,3 +41,19 @@ def test_item_api_does_not_leak_guide(client, auth_headers, item, db):
     db.session.commit()
     body = client.get(f"/api/v1/inventory/{item.id}").get_json()
     assert "guide" not in str(body.keys())
+
+
+def test_guide_url_length_is_checked(client, auth_headers, item):
+    url = "https://example.org/" + "a" * 500
+    resp = client.put(f"/api/v1/guides/{item.id}", json={"guide_url": url})
+    assert resp.status_code == 400
+
+
+def test_deleted_item_has_no_guide(client, auth_headers, item, db):
+    from datetime import datetime, timezone
+
+    item.deleted_at = datetime.now(timezone.utc)
+    db.session.commit()
+    assert client.get(f"/api/v1/guides/{item.id}").status_code == 404
+    resp = client.put(f"/api/v1/guides/{item.id}", json={"guide": "x"})
+    assert resp.status_code == 404

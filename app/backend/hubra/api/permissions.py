@@ -607,3 +607,14 @@ def require_password_changed(fn):
         return fn(*args, **kwargs)
 
     return wrapper
+
+
+def refuse_during_impersonation() -> None:
+    """Support sees a club as the member does, but doesn't end the member's
+    membership or sessions for them."""
+    from flask_jwt_extended import get_jwt
+
+    if get_jwt().get("impersonator_id") is not None:
+        raise_error(
+            403, "IMPERSONATION_RESTRICTED", "Not allowed during impersonation"
+        )

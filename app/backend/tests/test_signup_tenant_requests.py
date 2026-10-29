@@ -531,3 +531,86 @@ def test_refresh_token_for_no_tenant_user(client, db):
     resp = client.post("/api/v1/auth/refresh")
     assert resp.status_code == 200
     assert resp.get_json().get("ok") is True
+
+
+def test_a_request_needs_a_slug_the_club_can_use(client, db):
+    """The slug is checked when the request comes in, not only on approval."""
+    _signup_and_get_client(client, db)
+    for slug in ("Mein Verein", "-abc", "api", "app", "assets"):
+        resp = client.post(
+            "/api/v1/system/tenant-requests",
+            json={"name": "Club", "slug": slug},
+        )
+        assert resp.status_code == 400, slug
+
+
+def test_tenant_request_and_global_role_refuse_wrong_types(client, db, staff_headers):
+    for body in ({"name": 5, "slug": "acme"}, {"name": "Acme", "slug": ["acme"]}):
+        resp = client.post("/api/v1/system/tenant-requests", json=body)
+        assert resp.status_code == 400, body
+    for body in ({"name": 5}, {"name": "Kasse", "permissions": 5}):
+        resp = client.post("/api/v1/system/global-roles", json=body)
+        assert resp.status_code == 400, body
+
+
+def test_platform_routes_refuse_wrong_types(client, db, seeded_db, staff_headers):
+    from hubra.core.models.tenant import Tenant
+
+    tenant = Tenant(name="Typed", slug="typed-club", plan="starter")
+    db.session.add(tenant)
+    db.session.commit()
+    user_id = seeded_db["user"].id
+    for method, path, body in (
+        ("patch", f"/api/v1/system/tenants/{tenant.id}", {"name": ["x"]}),
+        ("patch", f"/api/v1/system/tenants/{tenant.id}", {"name": ""}),
+        ("patch", f"/api/v1/system/tenants/{tenant.id}", {"settings": [1]}),
+        ("post", f"/api/v1/system/tenants/{tenant.id}/members", {"user_id": {"a": 1}}),
+        ("post", f"/api/v1/system/tenants/{tenant.id}/members", {"email": 5}),
+        ("post", f"/api/v1/system/users/{user_id}/roles", {"role_id": [1]}),
+    ):
+        resp = getattr(client, method)(path, json=body)
+        assert resp.status_code == 400, (path, body, resp.get_json())
+    db.session.refresh(tenant)
+    assert tenant.name == "Typed"
+
+
+def test_club_picker_leaves_out_clubs_where_archived(db, seeded_db):
+    from datetime import datetime, timezone
+
+    from hubra.api.auth.services import AuthService
+    from hubra.core.models.tenant import Tenant
+    from hubra.core.models.user_tenant import UserTenant
+
+    user = seeded_db["user"]
+    t2 = Tenant(name="Club Two", slug="club-two", plan="growth")
+    db.session.add(t2)
+    db.session.flush()
+    db.session.add(UserTenant(user_id=user.id, tenant_id=t2.id))
+    db.session.commit()
+    assert AuthService.find_user_tenants(user.id)
+
+    seeded_db["admin"].archived_at = datetime.now(timezone.utc)
+    db.session.commit()
+    assert AuthService.find_user_tenants(user.id) == []
+
+
+def test_suspended_club_is_not_offered_or_opened(client, db, seeded_db):
+    from hubra.api.auth.services import AuthService
+    from hubra.core.models.tenant import Tenant
+    from hubra.core.models.user_tenant import UserTenant
+
+    user = seeded_db["user"]
+    t2 = Tenant(name="Club Two", slug="club-two", plan="growth", status="suspended")
+    db.session.add(t2)
+    db.session.flush()
+    db.session.add(UserTenant(user_id=user.id, tenant_id=t2.id))
+    db.session.commit()
+    assert AuthService.find_user_tenants(user.id) == []
+
+    client.post(
+        "/api/v1/auth/login",
+        json={"email": "admin@test.ch", "password": "password123"},
+    )
+    resp = client.post("/api/v1/auth/switch-tenant", json={"tenantSlug": "club-two"})
+    assert resp.status_code == 403
+    assert resp.get_json()["error"] == "CLUB_INACTIVE"

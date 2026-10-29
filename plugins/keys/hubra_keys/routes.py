@@ -36,7 +36,18 @@ def list_keys():
 def my_keys():
     """Keys the signed-in member holds; no permission needed."""
     keys = KeyService.list(holder_id=get_current_member().id)
-    return jsonify([key_to_dict(k) for k in keys]), 200
+    # The holder's view: no manager notes, no code link, no retired keys.
+    hidden = ("notes", "codeId", "holderId", "holderName")
+    return (
+        jsonify(
+            [
+                {k: v for k, v in key_to_dict(key).items() if k not in hidden}
+                for key in keys
+                if key.status != "retired"
+            ]
+        ),
+        200,
+    )
 
 
 @keys_bp.get("/<int:key_id>")

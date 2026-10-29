@@ -18,9 +18,9 @@ from hubra.core.models.invoice_reminder import InvoiceReminderHistory
 from hubra.core.models.member import Member
 from hubra.core.pricing import (
     calculate_invoice_amount,
-    total_deducted_annual_for_tiers,
+    deductions_by_tier,
 )
-from hubra.core.services.email import _get_setting
+from hubra.core.services.email import club_display_name
 from hubra.core.services.mail_i18n import render_mail_template
 
 
@@ -643,7 +643,7 @@ class InvoiceService:
             from hubra.core.services.email import _get_base_url
 
             _base = _get_base_url()
-            club_name = _get_setting("club.name", "Your Club")
+            club_name = club_display_name()
             portal_url = f"{_base}/invoices" if _base else ""
 
             lang = getattr(member, "language", "de-CH") or "de-CH"
@@ -681,7 +681,7 @@ class InvoiceService:
             recipient_email = member.email or ""
             recipient_name = member.name
         elif ext and ext.email:
-            club_name = _get_setting("club.name", "Your Club")
+            club_name = club_display_name()
             lang = "de-CH"
             body_html, body_text, subject = render_mail_template(
                 "invoice_reminder",
@@ -915,6 +915,7 @@ class InvoicesService:
             select(Member)
             .options(selectinload(Member.tier))
             .where(Member.archived_at.is_(None))
+            .where(Member.status == "active")
         )
         if tier_id is not None:
             member_q = member_q.where(Member.tier_id == tier_id)
@@ -931,19 +932,15 @@ class InvoicesService:
         if membership_cat is None:
             membership_cat = db.session.scalar(select(TransactionCategory))
 
-        formula_deduct_ids: set[int] = set()
-        for member in members:
-            t = member.tier
-            if t and t.price_type == "formula" and t.deduct_tier_ids:
-                formula_deduct_ids.update(t.deduct_tier_ids)
-        total_deducted = total_deducted_annual_for_tiers(db.session, formula_deduct_ids)
+        # Each formula tier deducts the yearly fees of its own deduct_tier_ids.
+        deducted_for = deductions_by_tier(db.session)
 
         created = []
         for member in members:
             tier = member.tier
             if not tier:
                 continue
-            amount = float(calculate_invoice_amount(member, tier, total_deducted))
+            amount = float(calculate_invoice_amount(member, tier, deducted_for(tier)))
             if amount <= 0:
                 continue
 

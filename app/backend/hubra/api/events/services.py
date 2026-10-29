@@ -404,7 +404,10 @@ class EventService:
             description = event.description or ""
             if event.meeting_url:
                 description = f"{description}\n\n{event.meeting_url}".strip()
-                lines.append(f"URL:{event.meeting_url}")
+                # The URL property is not escaped text; a line break in it
+                # would start a new calendar property.
+                if re.fullmatch(r"https?://\S+", event.meeting_url):
+                    lines.append(f"URL:{event.meeting_url}")
             if description:
                 lines.append(f"DESCRIPTION:{_ical_text(description)}")
             lines += [f"CATEGORIES:{_ical_text(event.type)}", "END:VEVENT"]
@@ -442,6 +445,7 @@ def _ical_text(value: str) -> str:
         .replace(",", "\\,")
         .replace("\r\n", "\\n")
         .replace("\n", "\\n")
+        .replace("\r", "\\n")
     )
 
 

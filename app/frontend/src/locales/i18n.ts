@@ -38,7 +38,8 @@ i18n.use(initReactI18next).init({
   resources,
   lng: savedLang,
   fallbackLng: "en-GB",
-  interpolation: { escapeValue: true },
+  // React escapes rendered text, so i18next must not escape names a second time.
+  interpolation: { escapeValue: false },
   returnNull: false,
   returnEmptyString: false,
 });

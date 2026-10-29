@@ -545,6 +545,8 @@ class MemberService:
             select(Member)
             .where(Member.id == member_id)
             .where(Member.archived_at.isnot(None))
+            # A deleted member comes back only through a new invite.
+            .where(Member.deleted_at.is_(None))
             .options(
                 selectinload(Member.tier),
                 selectinload(Member.roles),
@@ -753,9 +755,10 @@ class MemberService:
             target_label=member.name,
         )
 
+        from hubra.core.tasks.after_commit import delay_after_commit
         from hubra.core.tasks.wildduck import provision_member_mail
 
-        provision_member_mail.delay(member_id)
+        delay_after_commit(provision_member_mail, member_id)
         return member  # type: ignore[return-value]
 
     @staticmethod
@@ -1429,9 +1432,10 @@ class MembersService:
 
         # Dispatch mail provisioning if mail flags changed
         if mail_flag_changed:
+            from hubra.core.tasks.after_commit import delay_after_commit
             from hubra.core.tasks.wildduck import provision_member_mail
 
-            provision_member_mail.delay(member_id)
+            delay_after_commit(provision_member_mail, member_id)
 
         from hubra.core.services.binding_engine import sync_for_source
 
@@ -1460,6 +1464,9 @@ class MembersService:
 
         # Remove from all groups
         _clear_member_groups(member_id)
+        # Sign-in and every permission check refuse archived members; a
+        # deleted one must be locked out the same way.
+        member.archived_at = member.deleted_at  # type: ignore[union-attr]
 
         log_audit(
             actor_id=actor_id,

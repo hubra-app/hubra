@@ -52,7 +52,7 @@ const DE: Record<string, string> = {
   "You are not a member of this tenant": "Du bist nicht Mitglied in diesem Verein.",
   "No member profile in this tenant": "Du hast in diesem Verein kein Mitgliedsprofil.",
   "Confirm your email address before opening a club":
-    "Bestätige zuerst deine E-Mail-Adresse, dann kannst du einen Verein gründen.",
+    "Bestätige zuerst deine E-Mail-Adresse, dann kannst du den Verein öffnen.",
   "A tenant with this slug already exists": "Diese Adresse ist schon vergeben.",
   "A pending request with this slug already exists": "Für diese Adresse wartet schon eine Anfrage.",
   "slug must be between 3 and 64 characters": "Die Adresse braucht 3 bis 64 Zeichen.",

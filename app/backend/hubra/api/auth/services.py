@@ -66,12 +66,13 @@ def _extract_platform(headers) -> str:
     ua = headers.get("User-Agent", "") or ""
     if "Windows" in ua:
         return "Windows"
+    # Before macOS: an iPhone's user agent says "like Mac OS X".
+    if "iPhone" in ua or "iPad" in ua:
+        return "iOS"
     if "Mac OS" in ua or "Macintosh" in ua:
         return "macOS"
     if "Android" in ua:
         return "Android"
-    if "iPhone" in ua or "iPad" in ua:
-        return "iOS"
     if "Linux" in ua:
         return "Linux"
     return "Unknown"
@@ -506,12 +507,19 @@ class AuthService:
             result = []
             for ut in records:
                 tenant = db.session.get(Tenant, ut.tenant_id)
-                if tenant is None:
+                # A suspended or archived club can't be opened (the tenant
+                # middleware ignores it), so it isn't offered either.
+                if tenant is None or tenant.status != "active":
                     continue
                 set_search_path(tenant.id)
                 member = db.session.scalar(
                     select(Member).where(Member.user_id == user_id)
                 )
+                if member is not None and member.archived_at is not None:
+                    # Archived in that club: switching there is refused, so
+                    # the club picker shouldn't offer it.
+                    reset_search_path()
+                    continue
                 roles = member.roles if member is not None else []
                 admin_level = (
                     "owner"

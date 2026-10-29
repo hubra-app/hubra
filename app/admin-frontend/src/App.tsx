@@ -67,6 +67,9 @@ function RequireGlobalPermission({ perm, children }: { perm: string; children: R
             <Text size="sm" c="dimmed">
               {tr('Du hast keine Berechtigung für diese Seite.', 'You do not have permission to access this page.')}
             </Text>
+            <Button component="a" href="/app/my-tenants" variant="light" mt="xs">
+              {tr('Zu meinen Vereinen', 'To my clubs')}
+            </Button>
           </Stack>
         </Paper>
       </Center>

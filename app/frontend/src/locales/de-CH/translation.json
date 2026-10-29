@@ -535,7 +535,12 @@
     "searchPlaceholder": "Suchen …",
     "saveFailed": "Speichern fehlgeschlagen",
     "deleted": "Gelöscht",
-    "moreActions": "Weitere Aktionen"
+    "moreActions": "Weitere Aktionen",
+    "perPage": "Einträge pro Seite",
+    "pageFirst": "Erste Seite",
+    "pagePrevious": "Vorherige Seite",
+    "pageNext": "Nächste Seite",
+    "pageLast": "Letzte Seite"
   },
   "dashboard": {
     "activeMembers": "Aktive Mitglieder",
@@ -586,6 +591,7 @@
       "overview": "Verein"
     },
     "thisMonth": "Diesen Monat",
+    "joinedLast30": "+{{count}} in den letzten 30 Tagen",
     "thisWeek": "Diese Woche",
     "title": "Dashboard",
     "today": "Heute",
@@ -1170,6 +1176,8 @@
       "syncError": "Fehler",
       "syncOk": "OK",
       "syncPending": "Ausstehend",
+      "tabAddresses": "Adressen",
+      "tabAll": "Alle Adressen",
       "tabFunctions": "Funktionen",
       "tabGroups": "Gruppen",
       "tabMembers": "Mitglieder",
@@ -1726,6 +1734,7 @@
     "voteFailed": "Die Stimme konnte nicht abgegeben werden.",
     "remindersSent": "Erinnerungen gesendet",
     "remindersFailed": "Die Erinnerungen konnten nicht gesendet werden.",
+    "deleteFailed": "Die Umfrage konnte nicht gelöscht werden.",
     "validation": "Eingabe prüfen",
     "minOptions": "Es braucht mindestens 2 Optionen.",
     "updated": "Umfrage gespeichert",
@@ -2260,6 +2269,7 @@
     "primaryColor": "Primärfarbe",
     "secondaryColor": "Sekundärfarbe",
     "accentColor": "Akzentfarbe",
+    "pickColor": "Farbe vom Bildschirm wählen",
     "localization": "Region und Sprache",
     "timezone": "Zeitzone",
     "locale": "Sprache",

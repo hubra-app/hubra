@@ -18,6 +18,7 @@ from __future__ import annotations
 from typing import NoReturn
 
 from flask import Flask, jsonify
+from sqlalchemy.exc import DataError
 from werkzeug.exceptions import HTTPException
 
 
@@ -96,6 +97,35 @@ def register_error_handlers(app: Flask) -> None:
     @app.errorhandler(422)
     def unprocessable(exc):
         return api_error("VALIDATION_ERROR", str(exc.description), 422)
+
+    @app.errorhandler(DataError)
+    def data_error(exc: DataError):
+        # SQLSTATE class 22: a value the column can't hold (too long, out of
+        # range, not a number). That is the request's fault, not the server's.
+        from hubra.core.extensions import db
+
+        db.session.rollback()
+        app.logger.info("data_error: %s", exc.orig)
+        return api_error(
+            "VALIDATION_ERROR", "A value is too long or not valid for its field.", 400
+        )
+
+    @app.errorhandler(AttributeError)
+    @app.errorhandler(TypeError)
+    def body_type_error(exc: Exception):
+        # Routes read their body with body.get(...) or "key" in body; a JSON
+        # array or number there is the request's fault.
+        from flask import request
+
+        body = request.get_json(silent=True)
+        if body is not None and not isinstance(body, dict):
+            return api_error(
+                "VALIDATION_ERROR", "The request body must be a JSON object.", 400
+            )
+        if app.testing or app.config.get("PROPAGATE_EXCEPTIONS"):
+            raise exc  # a real bug: let tests (and debug) see it
+        app.logger.exception("Unhandled exception: %s", exc)
+        return api_error("INTERNAL_ERROR", "An unexpected error occurred.", 500)
 
     @app.errorhandler(500)
     def internal_error(exc):

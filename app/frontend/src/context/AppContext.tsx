@@ -156,6 +156,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const [myVotes, setMyVotes] = useState<Record<string, number>>({})
   const [backendOnline, setBackendOnline] = useState(true)
+  const [sessionCheckFailed, setSessionCheckFailed] = useState(false)
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
   const [permissions, setPermissions] = useState<string[]>([])
   const [impersonation, setImpersonation] = useState<AuthState['impersonation']>(null)
@@ -219,14 +220,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setPasswordChangeRequired(true)
           return
         }
-        if (status === 401) {
+        // Only a missing answer, a 5xx or a 429 means "try again later";
+        // any other refusal ends the session like a 401.
+        const retryLater = status === undefined || status >= 500 || status === 429
+        if (!retryLater) {
           clearTokens()
           clearLookups()
           setAuthStatus('anon')
           redirectToLogin()
         } else {
+          // Server unreachable or busy: the session is unknown, not gone. Stay on
+          // 'loading' so the offline banner shows instead of a jump to the
+          // sign-in page, and start over once the server answers.
           setBackendOnline(false)
-          setAuthStatus('anon')
+          setSessionCheckFailed(true)
         }
       }
     }
@@ -239,6 +246,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Runs once on mount — navigate/queryClient are stable
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    if (!sessionCheckFailed) return
+    if (!backendOnline) return
+    // The health check passed. Reload at most every 30 s, in case only the
+    // account request keeps failing.
+    const KEY = 'hubra.offlineReloadAt'
+    let last = 0
+    try {
+      last = Number(sessionStorage.getItem(KEY)) || 0
+    } catch {
+      // No storage: reload right away.
+    }
+    const wait = Math.max(0, last + 30_000 - Date.now())
+    try {
+      sessionStorage.setItem(KEY, String(Date.now() + wait))
+    } catch {
+      // As above.
+    }
+    const timer = setTimeout(() => window.location.reload(), wait)
+    return () => clearTimeout(timer)
+  }, [sessionCheckFailed, backendOnline])
 
   useEffect(() => {
     setAuthFailureHandler(() => {
@@ -418,7 +447,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const setOpenInvoiceCount = useCallback(
     (updater: number | ((prev: number) => number)) => {
       queryClient.setQueryData<DashboardSummary | undefined>(['dashboard-summary'], (prev) => {
-        if (!prev?.stats) return prev
+        if (prev?.stats?.openInvoices == null) return prev
         const newCount = typeof updater === 'function' ? updater(prev.stats.openInvoices) : updater
         return { ...prev, stats: { ...prev.stats, openInvoices: newCount } }
       })

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Modal, TextInput, Button, Stack, Group, Text, Alert } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { zodResolver } from 'mantine-form-zod-resolver'
+import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { IconReplaceUser } from '@tabler/icons-react'
 import { impersonateTenant } from '@/api/tenants'
@@ -31,16 +31,19 @@ export function ImpersonateModal({
   const [loading, setLoading] = useState(false)
 
   const form = useForm<FormValues>({
-    validate: zodResolver(schema),
+    validate: zod4Resolver(schema),
     initialValues: { reason: '' },
   })
 
   const handleSubmit = async (values: FormValues) => {
     setLoading(true)
     try {
-      await impersonateTenant(tenantId, { reason: values.reason.trim() })
+      const res = await impersonateTenant(tenantId, { reason: values.reason.trim() })
       notify('success', tr('Stellvertretung gestartet', 'Impersonation started'), tr('Du wirst zum Verein weitergeleitet …', 'Redirecting to the club…'))
-      window.location.assign(`${TENANT_APP_URL}/app/dashboard`)
+      // The club app's routes start with the club's slug.
+      window.location.assign(
+        `${TENANT_APP_URL}/${encodeURIComponent(res.tenant_slug)}/app/dashboard`,
+      )
     } catch (err) {
       notify('error', tr('Stellvertretung fehlgeschlagen', 'Impersonation failed'), err instanceof Error ? err.message : undefined)
     } finally {

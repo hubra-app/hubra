@@ -535,7 +535,12 @@
     "searchPlaceholder": "Search…",
     "saveFailed": "Save failed",
     "deleted": "Deleted",
-    "moreActions": "More actions"
+    "moreActions": "More actions",
+    "perPage": "Rows per page",
+    "pageFirst": "First page",
+    "pagePrevious": "Previous page",
+    "pageNext": "Next page",
+    "pageLast": "Last page"
   },
   "dashboard": {
     "activeMembers": "Active members",
@@ -586,6 +591,7 @@
       "overview": "Club"
     },
     "thisMonth": "This Month",
+    "joinedLast30": "+{{count}} in the last 30 days",
     "thisWeek": "This Week",
     "title": "Dashboard",
     "today": "Today",
@@ -1170,6 +1176,8 @@
       "syncError": "Error",
       "syncOk": "OK",
       "syncPending": "Pending",
+      "tabAddresses": "Addresses",
+      "tabAll": "All addresses",
       "tabFunctions": "Functions",
       "tabGroups": "Groups",
       "tabMembers": "Members",
@@ -1726,6 +1734,7 @@
     "voteFailed": "Could not cast vote.",
     "remindersSent": "Reminders sent",
     "remindersFailed": "Could not send reminders.",
+    "deleteFailed": "Could not delete the poll.",
     "validation": "Check your input",
     "minOptions": "At least 2 options are required.",
     "updated": "Poll updated",
@@ -2260,6 +2269,7 @@
     "primaryColor": "Primary Color",
     "secondaryColor": "Secondary Color",
     "accentColor": "Accent Color",
+    "pickColor": "Pick a colour from the screen",
     "localization": "Localization",
     "timezone": "Timezone",
     "locale": "Locale",

@@ -25,6 +25,7 @@ from hubra.api.i18n.services import (
     _get_stale_threshold_seconds,
     get_available_locales,
     get_etag,
+    platform_rows,
     get_flagged,
     get_translations,
     get_translations_dict,
@@ -99,6 +100,29 @@ def _translation_rows(locale: str):
             "alias_for": r.alias_for,
         }
         for r in rows
+    ]
+    # A club's editor also lists the platform texts it hasn't changed, as
+    # its dictionary serves them (see get_translations_dict).
+    own = {r.key for r in rows if r.value or r.alias_for}
+    # Only platform rows with text: an empty one would hide the club row's
+    # "missing" flag without giving the key a value.
+    platform = {r.key: r for r in platform_rows(locale) if r.key not in own and r.value}
+    data = [d for d in data if d["key"] not in platform]
+    data += [
+        {
+            "id": None,
+            "locale": locale,
+            "key": r.key,
+            "value": r.value,
+            "default_value": r.value,
+            "needs_attention": False,
+            "is_missing": False,
+            "is_stale": False,
+            "last_used_at": None,
+            "updated_at": None,
+            "alias_for": r.alias_for,
+        }
+        for r in platform.values()
     ]
     return jsonify(data), 200
 
@@ -472,6 +496,7 @@ def report_keys(locale: str):
 
 @i18n_bp.get("/<string:locale>/flagged")
 @jwt_required()
+@permission_required("i18n", "write", "Write translations")
 def get_flagged_i18n(locale: str):
     rows = get_flagged(locale)
     threshold = _get_stale_threshold_seconds()

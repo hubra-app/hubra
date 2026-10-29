@@ -13,7 +13,7 @@ from hubra.api.auth.helpers import get_current_member
 from hubra.api.inventory.services import InventoryService
 from hubra.api.permissions import permission_required
 from hubra.api.utils import log_audit
-from hubra.core.errors import api_error
+from hubra.core.errors import api_error, raise_error
 from hubra.core.extensions import db
 from hubra.core.models.inventory import InventoryItem
 
@@ -47,10 +47,18 @@ def list_guides():
     return jsonify([_to_dict(item, guide) for item, guide in rows]), 200
 
 
+def _live_item(item_id: int):
+    """The item, or 404 once it is deleted (the list already hides those)."""
+    item = InventoryService.get(item_id)
+    if item.deleted_at is not None:
+        raise_error(404, "NOT_FOUND", f"Item {item_id} not found")
+    return item
+
+
 @guides_bp.get("/<int:item_id>")
 @permission_required("guides", "read", "Read guides")
 def get_guide(item_id: int):
-    item = InventoryService.get(item_id)
+    item = _live_item(item_id)
     return jsonify(_to_dict(item, db.session.get(ItemGuide, item.id))), 200
 
 
@@ -69,7 +77,9 @@ def save_guide(item_id: int):
             return api_error(
                 "VALIDATION_ERROR", "guide_url must start with https://", 400
             )
-    item = InventoryService.get(item_id)
+        if len(url) > 500:
+            return api_error("VALIDATION_ERROR", "guide_url is too long", 400)
+    item = _live_item(item_id)
     row = db.session.get(ItemGuide, item.id)
     if row is None:
         row = ItemGuide(item_id=item.id)
