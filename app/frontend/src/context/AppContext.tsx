@@ -220,13 +220,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setPasswordChangeRequired(true)
           return
         }
-        if (status === 401) {
+        // Only a missing answer, a 5xx or a 429 means "try again later";
+        // any other refusal ends the session like a 401.
+        const retryLater = status === undefined || status >= 500 || status === 429
+        if (!retryLater) {
           clearTokens()
           clearLookups()
           setAuthStatus('anon')
           redirectToLogin()
         } else {
-          // Server unreachable: the session is unknown, not gone. Stay on
+          // Server unreachable or busy: the session is unknown, not gone. Stay on
           // 'loading' so the offline banner shows instead of a jump to the
           // sign-in page, and start over once the server answers.
           setBackendOnline(false)
