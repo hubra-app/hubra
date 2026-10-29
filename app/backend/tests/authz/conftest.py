@@ -21,6 +21,10 @@ def _seed_permissions(keys: list[str]) -> dict[str, Permission]:
     """Create Permission rows for the given keys. Returns key→Permission dict."""
     perms: dict[str, Permission] = {}
     for key in keys:
+        existing = _db.session.query(Permission).filter_by(key=key).one_or_none()
+        if existing is not None:  # another member of the test has it already
+            perms[key] = existing
+            continue
         parts = key.split(".")
         resource = parts[1] if len(parts) > 1 else key
         action = parts[2] if len(parts) > 2 else key
