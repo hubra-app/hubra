@@ -1348,6 +1348,24 @@ def list_global_roles():
     return jsonify({"roles": result}), 200
 
 
+def _audit_global_role(action: str, target_type: str, target_id, details: dict) -> None:
+    """Record a platform role change (who may run the platform)."""
+    from flask import g
+
+    actor = getattr(g, "system_user", None)
+    db.session.add(
+        GlobalAuditEntry(
+            tenant_id=None,
+            actor_id=getattr(actor, "id", None),
+            action=f"global_role.{action}",
+            target_type=target_type,
+            target_id=str(target_id),
+            details=details,
+            ip_address=request.remote_addr,
+        )
+    )
+
+
 @tenant_admin_bp.route("/global-roles", methods=["POST"])
 @require_global_permission("roles.manage")
 def create_global_role():
@@ -1379,6 +1397,9 @@ def create_global_role():
         if perm:
             db.session.add(GlobalRolePermission(role_id=role.id, permission_id=perm.id))
 
+    _audit_global_role(
+        "create", "GlobalRole", role.id, {"name": name, "permissions": permission_keys}
+    )
     db.session.commit()
     return jsonify(
         {
@@ -1428,6 +1449,12 @@ def update_global_role(role_id: int):
                     GlobalRolePermission(role_id=role.id, permission_id=perm.id)
                 )
 
+    _audit_global_role(
+        "update",
+        "GlobalRole",
+        role.id,
+        {"name": role.name, "permissions": permission_keys},
+    )
     db.session.commit()
     perms = sorted(
         db.session.execute(
@@ -1536,6 +1563,9 @@ def assign_user_global_role(user_id: int):
         raise_error(409, "CONFLICT", "User already has this role")
 
     db.session.add(UserGlobalRole(user_id=user_id, role_id=role.id))
+    _audit_global_role(
+        "assign", "User", user_id, {"email": user.email, "role": role.name}
+    )
     db.session.commit()
     return jsonify(
         {"user_id": user_id, "role_id": role.id, "role_name": role.name}
@@ -1558,6 +1588,7 @@ def remove_user_global_role(user_id: int, role_id: int):
         raise_error(404, "NOT_FOUND", "Role assignment not found")
 
     db.session.delete(link)
+    _audit_global_role("remove", "User", user_id, {"role_id": role_id})
     db.session.commit()
     return jsonify({"ok": True}), 200
 
