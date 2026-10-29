@@ -415,6 +415,7 @@
   "bootstrap.title": "Set up your club",
   "bootstrap.welcome": "Welcome! Let's set up your club.",
   "clubSettings.accentColor": "Accent Color",
+  "clubSettings.pickColor": "Pick a colour from the screen",
   "clubSettings.banner": "Announcement Banner",
   "clubSettings.bannerPlaceholder": "Annual meeting on Friday!",
   "clubSettings.bannerText": "Banner Text",

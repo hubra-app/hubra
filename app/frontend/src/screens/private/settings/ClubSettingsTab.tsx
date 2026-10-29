@@ -38,6 +38,8 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
     }
   }
 
+  const eyeDropperProps = { 'aria-label': t('clubSettings.pickColor') }
+
   return (
     <Stack gap={20}>
       <Paper withBorder p="lg">
@@ -65,16 +67,19 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
               label={t('clubSettings.primaryColor', 'Primärfarbe')}
               value={form.primary_color ?? '#7441e0'}
               onChange={(v) => update('primary_color', v)}
+              eyeDropperButtonProps={eyeDropperProps}
             />
             <ColorInput
               label={t('clubSettings.secondaryColor', 'Sekundärfarbe')}
               value={form.secondary_color ?? '#2596be'}
               onChange={(v) => update('secondary_color', v)}
+              eyeDropperButtonProps={eyeDropperProps}
             />
             <ColorInput
               label={t('clubSettings.accentColor', 'Akzentfarbe')}
               value={form.accent_color ?? '#f59e0b'}
               onChange={(v) => update('accent_color', v)}
+              eyeDropperButtonProps={eyeDropperProps}
             />
           </SimpleGrid>
         </Stack>

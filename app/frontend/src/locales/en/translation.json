@@ -2267,6 +2267,7 @@
     "primaryColor": "Primary Color",
     "secondaryColor": "Secondary Color",
     "accentColor": "Accent Color",
+    "pickColor": "Pick a colour from the screen",
     "localization": "Localization",
     "timezone": "Timezone",
     "locale": "Locale",

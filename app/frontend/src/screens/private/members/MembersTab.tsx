@@ -688,6 +688,7 @@ export function MembersTab() {
                             variant="subtle"
                             style={{ color: '#ff4d3d' }}
                             onClick={() => setHardDeleteTarget(m)}
+                            aria-label={t('members.deletePermanently')}
                           >
                             <IconTrash size={16} />
                           </Button>
@@ -715,6 +716,7 @@ export function MembersTab() {
                               e.stopPropagation()
                               setArchiveTarget(m)
                             }}
+                            aria-label={t('members.archive')}
                           >
                             <IconUserX size={16} />
                           </Button>

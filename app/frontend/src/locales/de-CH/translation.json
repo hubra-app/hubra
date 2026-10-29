@@ -2267,6 +2267,7 @@
     "primaryColor": "Primärfarbe",
     "secondaryColor": "Sekundärfarbe",
     "accentColor": "Akzentfarbe",
+    "pickColor": "Farbe vom Bildschirm wählen",
     "localization": "Region und Sprache",
     "timezone": "Zeitzone",
     "locale": "Sprache",
