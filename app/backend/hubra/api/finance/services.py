@@ -306,6 +306,18 @@ class TransactionService:
             amount = abs(Decimal(str(transaction.amount)))
             transaction.amount = -amount if transaction.type == "expense" else amount
 
+        # Booking an invoice's income as received pays the invoice, so no
+        # reminder goes to someone who paid (and the other way round).
+        if "status" in data:
+            invoice = db.session.scalar(
+                select(Invoice).where(Invoice.transaction_id == transaction.id)
+            )
+            if invoice is not None:
+                if transaction.status == "Completed" and invoice.status != "Paid":
+                    InvoiceService.update(invoice, {"status": "Paid"}, actor_id)
+                elif transaction.status == "Pending" and invoice.status == "Paid":
+                    InvoiceService.update(invoice, {"status": "Open"}, actor_id)
+
         log_audit(
             actor_id=actor_id,
             action="update_transaction",
