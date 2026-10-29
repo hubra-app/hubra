@@ -538,8 +538,14 @@ def submit_tenant_request():
     if not name or not slug:
         raise_error(400, "VALIDATION_ERROR", "name and slug are required")
 
-    if not (3 <= len(slug) <= 64):
-        raise_error(400, "VALIDATION_ERROR", "slug must be between 3 and 64 characters")
+    from hubra.core.tenant.service import slug_problem
+
+    # Checked now, not only when staff approve the request.
+    problem = slug_problem(slug)
+    if problem:
+        raise_error(400, "VALIDATION_ERROR", problem)
+    if len(name) > 255:
+        raise_error(400, "VALIDATION_ERROR", "name is longer than 255 characters")
 
     if plan not in _VALID_PLANS:
         raise_error(

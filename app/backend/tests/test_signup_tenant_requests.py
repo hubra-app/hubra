@@ -531,3 +531,14 @@ def test_refresh_token_for_no_tenant_user(client, db):
     resp = client.post("/api/v1/auth/refresh")
     assert resp.status_code == 200
     assert resp.get_json().get("ok") is True
+
+
+def test_a_request_needs_a_slug_the_club_can_use(client, db):
+    """The slug is checked when the request comes in, not only on approval."""
+    _signup_and_get_client(client, db)
+    for slug in ("Mein Verein", "-abc", "api", "app", "assets"):
+        resp = client.post(
+            "/api/v1/system/tenant-requests",
+            json={"name": "Club", "slug": slug},
+        )
+        assert resp.status_code == 400, slug

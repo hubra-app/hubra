@@ -415,12 +415,27 @@ def _get_storage_bytes(tenant_id: int) -> int:
         return 0
 
 
-def _validate_slug(slug: str) -> None:
+# Slugs that are paths of their own: the club app lives at /<slug>/app/…,
+# next to /app/…, /api/…, /assets/… and /apply.
+RESERVED_SLUGS = frozenset({"app", "api", "apply", "assets"})
+
+
+def slug_problem(slug: str) -> str | None:
+    """Why *slug* can't name a club, or None when it can."""
     if not _SLUG_RE.match(slug):
-        raise TenantProvisioningError(
+        return (
             f"Invalid slug '{slug}'. Must be 3-64 chars, lowercase, "
             "start/end with alphanumeric, hyphens allowed in between."
         )
+    if slug in RESERVED_SLUGS:
+        return f"The address '{slug}' is reserved; choose another one."
+    return None
+
+
+def _validate_slug(slug: str) -> None:
+    problem = slug_problem(slug)
+    if problem:
+        raise TenantProvisioningError(problem)
 
 
 def _seed_tenant(
