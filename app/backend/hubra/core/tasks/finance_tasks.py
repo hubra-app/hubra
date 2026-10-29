@@ -103,10 +103,14 @@ def _dispatch_invoice_email(
         )
         return
 
+    from hubra.core.tasks.after_commit import delay_after_commit
     from hubra.core.tasks.email_tasks import send_email_task
 
     try:
-        send_email_task.delay(
+        # Sent once the invoice is committed: a club whose run fails later
+        # rolls the invoice back, and the next run would bill (and mail) again.
+        delay_after_commit(
+            send_email_task,
             to_email=member.email,  # type: ignore[attr-defined]
             to_name=member.name,  # type: ignore[attr-defined]
             subject=subject,
