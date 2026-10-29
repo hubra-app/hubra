@@ -195,9 +195,9 @@ def calculate_preview_cost(config: dict, db_session=None) -> dict:
         pct = config.get("percentage_value")
         baseline = _get_yearly_expenses()
         if pct is not None and baseline > 0:
+            # Each member pays the full percentage, as the invoice job charges
+            # (annual_fee_for_member); it is not split across the tier.
             amount_yearly = Decimal(str(pct)) / Decimal(100) * baseline
-            if members > 1:
-                amount_yearly /= Decimal(str(members))
             amount = amount_yearly / periods if periods else amount_yearly
 
     elif price_type == "formula":
