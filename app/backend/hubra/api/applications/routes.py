@@ -59,6 +59,7 @@ def approve_application(application_id: int):
     if member is None:
         # No account yet: the applicant got an invite to sign up and accept.
         return jsonify({"invited": True}), 202
+    ApplicationService.queue_mailbox(member)
     return jsonify(_member_schema.dump(member)), 201
 
 

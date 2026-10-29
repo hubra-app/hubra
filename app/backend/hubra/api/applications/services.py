@@ -85,19 +85,23 @@ class ApplicationService:
 
         db.session.delete(application)
 
-        # WildDuck mailbox — async via Celery
-        if member.public_email:
-            try:
-                from hubra.core.tasks.wildduck import create_wildduck_user
-
-                create_wildduck_user.delay(member.id)
-            except Exception:
-                current_app.logger.exception(
-                    "Could not queue WildDuck mailbox for member %s", member.id
-                )
-
         db.session.refresh(member)
         return member  # type: ignore[return-value]
+
+    @staticmethod
+    def queue_mailbox(member: Member) -> None:
+        """Queue the new member's WildDuck mailbox. Call after the commit:
+        a worker that runs first does not find the member and gives up."""
+        if not member.public_email:
+            return
+        try:
+            from hubra.core.tasks.wildduck import create_wildduck_user
+
+            create_wildduck_user.delay(member.id)
+        except Exception:
+            current_app.logger.exception(
+                "Could not queue WildDuck mailbox for member %s", member.id
+            )
 
     @staticmethod
     def decline(application_id: int, actor_id: int) -> None:
