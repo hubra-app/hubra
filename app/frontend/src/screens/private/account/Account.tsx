@@ -448,6 +448,7 @@ export function AccountDashboardScreen() {
                           </div>
                           <Progress
                             value={pct}
+                            aria-label={opt.label}
                             size="sm"
                             radius="xl"
                             styles={{

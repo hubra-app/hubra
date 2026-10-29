@@ -51,6 +51,7 @@ export function AccountSettingsScreen() {
 
       <Box hiddenFrom="nav" mb={16}>
         <Select
+          aria-label={t('account.settings.title', 'Kontoeinstellungen')}
           data={tabs.map((tab) => ({
             value: tab.id,
             label: t(tab.labelKey, tab.labelDefault),
