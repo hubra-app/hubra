@@ -323,6 +323,49 @@ def _provision_member_mailbox(member: Member, club_domain: str) -> None:
 # ── MemberService (singular) ───────────────────────────────────────────────────
 
 
+def _apply_member_fk_actions(member_id: int) -> None:
+    """Do what each ``ondelete`` on a foreign key to members declares.
+
+    Club schemas are cloned with ``LIKE ... INCLUDING ALL``, which copies no
+    foreign keys, so on a real club the database neither cascades nor nulls
+    anything: posts, registrations, checkouts, likes and the like stayed
+    behind pointing at a member that no longer exists (tests run in public,
+    where the FKs exist, so they never saw it). Rows of a mapped class are
+    deleted through the ORM, so their own cascades (a post's comments and
+    likes) run too.
+    """
+    from sqlalchemy import update as sql_update
+
+    from hubra.core.tenant.schema_manager import tables_to_clone
+
+    club_tables = set(tables_to_clone())
+    classes = {m.local_table.name: m.class_ for m in db.Model.registry.mappers}
+    for table in db.metadata.sorted_tables:
+        if table.name not in club_tables:
+            continue
+        for fk in table.foreign_keys:
+            if fk.column.table.name != "members" or not fk.ondelete:
+                continue
+            column = fk.parent
+            action = fk.ondelete.upper()
+            if action == "SET NULL":
+                db.session.execute(
+                    sql_update(table)
+                    .where(column == member_id)
+                    .values({column.name: None})
+                )
+            elif action == "CASCADE":
+                cls = classes.get(table.name)
+                if cls is None:
+                    db.session.execute(delete(table).where(column == member_id))
+                    continue
+                for row in db.session.scalars(
+                    select(cls).where(column == member_id)
+                ).all():
+                    db.session.delete(row)
+    db.session.flush()
+
+
 class MemberService:
     """Operations on a single member."""
 
@@ -525,6 +568,7 @@ class MemberService:
             )
         # A vote belongs to its member (member_id is NOT NULL): it goes with them.
         db.session.execute(delete(PollVote).where(PollVote.member_id == member_id))
+        _apply_member_fk_actions(member_id)
         # Remove WildDuck mailbox and MMA row (permanent deletion).
         from hubra.core.services.managed_mail import remove_for_member
 

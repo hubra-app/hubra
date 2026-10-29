@@ -253,3 +253,61 @@ def test_permanent_delete_removes_sign_in_devices(client, auth_headers, seeded_d
     assert db.session.query(Device).filter_by(member_id=member_id).count() == 0
     assert db.session.query(Session).filter_by(jti="jti-perm-1").count() == 0
     db.session.rollback()
+
+
+def test_permanent_delete_does_what_the_foreign_keys_declare(
+    client, auth_headers, seeded_db, db
+):
+    """Club schemas have no foreign keys (LIKE ... INCLUDING ALL copies
+    none), so the service itself cascades and nulls what the models declare;
+    checked here before the member row goes, where public's FKs would hide it.
+    """
+    from datetime import date
+
+    from sqlalchemy import insert, select
+
+    from hubra.api.members.services import MemberService
+    from hubra.core.models.event import ClubEvent, EventRegistration
+    from hubra.core.models.group import Group
+    from hubra.core.models.inventory import InventoryCheckout, InventoryItem
+    from hubra.core.models.member import member_groups
+    from hubra.core.models.post import Post, PostComment, PostLike
+
+    admin_id = seeded_db["admin"].id
+    member_id = _create_member(client, auth_headers, email="gone@test.ch").get_json()["id"]
+
+    post = Post(author_id=member_id, title="Hallo", body="Text")
+    event = ClubEvent(title="Fest", date=date(2030, 1, 1), type="Social", created_by=member_id)
+    item = InventoryItem(name="Bohrer", category="tools", responsible_id=member_id)
+    group = Group(name="Werkstatt")
+    db.session.add_all([post, event, item, group])
+    db.session.flush()
+    db.session.add_all(
+        [
+            PostComment(post_id=post.id, author_id=admin_id, body="Antwort"),
+            PostLike(post_id=post.id, member_id=admin_id),
+            EventRegistration(event_id=event.id, member_id=member_id, status="registered"),
+            InventoryCheckout(item_id=item.id, member_id=member_id),
+        ]
+    )
+    db.session.execute(insert(member_groups).values(member_id=member_id, group_id=group.id))
+    db.session.commit()
+    post_id, event_id, item_id = post.id, event.id, item.id
+    assert client.post(f"/api/v1/members/{member_id}/archive", headers=auth_headers).status_code == 204
+
+    MemberService.delete_permanent(member_id, admin_id)
+
+    # CASCADE: the member's post goes, with the comments and likes on it.
+    assert db.session.get(Post, post_id) is None
+    assert db.session.query(PostComment).filter_by(post_id=post_id).count() == 0
+    assert db.session.query(PostLike).filter_by(post_id=post_id).count() == 0
+    assert db.session.query(EventRegistration).filter_by(member_id=member_id).count() == 0
+    assert db.session.query(InventoryCheckout).filter_by(member_id=member_id).count() == 0
+    assert not db.session.execute(
+        select(member_groups).where(member_groups.c.member_id == member_id)
+    ).all()
+    # SET NULL: the event and the item stay, unattributed.
+    db.session.expire_all()
+    assert db.session.get(ClubEvent, event_id).created_by is None
+    assert db.session.get(InventoryItem, item_id).responsible_id is None
+    db.session.rollback()
