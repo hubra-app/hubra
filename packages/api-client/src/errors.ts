@@ -145,6 +145,7 @@ const DE: Record<string, string> = {
   "No active registration found": "Es gibt keine Anmeldung.",
   "No registration found for this member": "Diese Person ist nicht angemeldet.",
   "Unknown calendar": "Diesen Kalender gibt es nicht.",
+  "end_date is before date": "Das Enddatum liegt vor dem Beginn.",
 
   // Finance
   "Invoice not found": "Diese Rechnung gibt es nicht.",
