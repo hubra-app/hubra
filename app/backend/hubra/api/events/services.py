@@ -238,7 +238,7 @@ class EventService:
     @staticmethod
     def cancel_registration(
         event_id: int, member_id: int, own: bool = False
-    ) -> EventRegistration:
+    ) -> EventRegistration | None:
         """Cancel a member's registration; the first on the waitlist moves up.
 
         After the cancellation deadline a member can no longer cancel their
@@ -253,7 +253,12 @@ class EventService:
             )
         )
         if registration is None:
-            raise_error(404, "NOT_FOUND", "No active registration found")
+            # Put on the list by an organiser, without a registration.
+            try:
+                EventService.remove_attendee(event_id, member_id)
+            except ApiError:
+                raise_error(404, "NOT_FOUND", "No active registration found")
+            return None
         if (
             own
             and registration.status != "waitlisted"

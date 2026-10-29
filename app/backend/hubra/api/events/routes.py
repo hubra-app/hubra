@@ -242,6 +242,8 @@ def cancel_registration(event_id: int):
         db.session.rollback()
         raise
 
+    if registration is None:  # was only on the attendee list
+        return "", 204
     return jsonify(EventRegistrationSchema().dump(registration)), 200
 
 

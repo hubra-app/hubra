@@ -423,6 +423,51 @@ def _validate_slug(slug: str) -> None:
         )
 
 
+# What the system roles may do in a new club (Owner and Admin bypass checks).
+DEFAULT_ROLE_PERMISSIONS: dict[str, list[str]] = {
+    "Treasurer": [
+        "finance.transactions.read",
+        "finance.transactions.create",
+        "finance.transactions.update",
+        "finance.transactions.delete",
+        "finance.invoices.read",
+        "finance.invoices.create",
+        "finance.invoices.update",
+        "finance.invoices.delete",
+        "finance.invoices.remind",
+        "finance.invoices.read_reminders",
+        "finance.overview.read",
+        "finance.transaction_categories.read",
+        "finance.transaction_categories.create",
+        "finance.transaction_categories.update",
+        "finance.transaction_categories.delete",
+        "finance.external_parties.read",
+        "finance.external_parties.create",
+        "finance.external_parties.update",
+        "finance.external_parties.delete",
+        "members.members.read",
+        "tiers.tiers.read",
+        "tiers.tiers.calculate_cost",
+        "tiers.tiers.read_members",
+        "audit.audit.read",
+        "dashboard.dashboard.read",
+    ],
+    "Member": [
+        "members.members.read",
+        "groups.groups.read",
+        "events.events.read",
+        "events.events.register",
+        "polls.polls.read",
+        "polls.polls.vote",
+        "posts.posts.read",
+        "posts.posts.like",
+        "posts.posts.comment",
+        "dashboard.dashboard.read",
+        "notifications.notifications.read",
+    ],
+}
+
+
 def _seed_tenant(
     tenant_id: int,
     admin_email: str | None,
@@ -489,50 +534,9 @@ def _seed_tenant(
             db.session.flush()
             roles[rd["name"]] = role
 
-        _ROLE_PERMS: dict[str, list[str]] = {
-            "Treasurer": [
-                "finance.transactions.read",
-                "finance.transactions.create",
-                "finance.transactions.update",
-                "finance.transactions.delete",
-                "finance.invoices.read",
-                "finance.invoices.create",
-                "finance.invoices.update",
-                "finance.invoices.delete",
-                "finance.invoices.remind",
-                "finance.invoices.read_reminders",
-                "finance.overview.read",
-                "finance.transaction_categories.read",
-                "finance.transaction_categories.create",
-                "finance.transaction_categories.update",
-                "finance.transaction_categories.delete",
-                "finance.external_parties.read",
-                "finance.external_parties.create",
-                "finance.external_parties.update",
-                "finance.external_parties.delete",
-                "members.members.read",
-                "tiers.tiers.read",
-                "tiers.tiers.calculate_cost",
-                "tiers.tiers.read_members",
-                "audit.audit.read",
-                "dashboard.dashboard.read",
-            ],
-            "Member": [
-                "members.members.read",
-                "groups.groups.read",
-                "events.events.read",
-                "polls.polls.read",
-                "polls.polls.vote",
-                "posts.posts.read",
-                "posts.posts.like",
-                "posts.posts.comment",
-                "dashboard.dashboard.read",
-                "notifications.notifications.read",
-            ],
-        }
         from hubra.api.roles.services import RoleService
 
-        for role_name, perm_keys in _ROLE_PERMS.items():
+        for role_name, perm_keys in DEFAULT_ROLE_PERMISSIONS.items():
             role = roles.get(role_name)
             if role is None:
                 continue
