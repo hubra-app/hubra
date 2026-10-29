@@ -71,3 +71,17 @@ def test_unknown_code_is_404(client, auth_headers):
 def test_codes_need_a_sign_in(client):
     # Without a sign-in there is no club, so the module check answers first.
     assert client.get("/api/v1/codes/").status_code in (401, 403)
+
+
+def test_a_code_that_no_longer_decrypts_does_not_break_the_list(
+    client, auth_headers, db
+):
+    """After a key change old codes cannot be read; the rest still can."""
+    _create(client, auth_headers)
+    db.session.add(Code(name="Alt", code="encrypted-with-an-old-key"))
+    db.session.commit()
+
+    resp = client.get("/api/v1/codes/", headers=auth_headers)
+    assert resp.status_code == 200
+    by_name = {c["name"]: c["code"] for c in resp.get_json()}
+    assert by_name == {"Haustür": "4711", "Alt": ""}
