@@ -39,7 +39,10 @@ class AuditsService:
         except (TypeError, ValueError):
             page_size = 25
 
-        query = select(AuditEntry).order_by(AuditEntry.time.desc())
+        # id breaks ties, so a page never repeats or skips an entry.
+        query = select(AuditEntry).order_by(
+            AuditEntry.time.desc(), AuditEntry.id.desc()
+        )
 
         actor_id_raw = args.get("actorId")
         if actor_id_raw:

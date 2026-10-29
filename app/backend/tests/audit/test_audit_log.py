@@ -69,7 +69,10 @@ def test_actor_name_survives_member_delete(client, db, auth_headers, seeded_db):
     # the audit entry's actor_id as a dangling ref but actor_name is preserved.
     postgres = db.engine.dialect.name == "postgresql"
     off, on = (
-        ("SET session_replication_role = replica", "SET session_replication_role = DEFAULT")
+        (
+            "SET session_replication_role = replica",
+            "SET session_replication_role = DEFAULT",
+        )
         if postgres
         else ("PRAGMA foreign_keys = OFF", "PRAGMA foreign_keys = ON")
     )
@@ -141,8 +144,36 @@ def test_long_label_is_shortened_to_fit(db, seeded_db):
     would refuse the entry and fail the change it records."""
     from hubra.core.models.audit import AuditEntry
 
-    log_audit(seeded_db["admin"].id, "set_forwarding", "Mail", 1, "a@x.ch → " + "b" * 400)
+    log_audit(
+        seeded_db["admin"].id, "set_forwarding", "Mail", 1, "a@x.ch → " + "b" * 400
+    )
     db.session.commit()
 
     entry = db.session.query(AuditEntry).filter_by(action="set_forwarding").one()
     assert len(entry.target_label) == 255 and entry.target_label.endswith("…")
+
+
+def test_entries_at_the_same_time_page_in_a_fixed_order(
+    client, db, auth_headers, seeded_db
+):
+    """Entries with one timestamp (one request) neither repeat nor go missing."""
+    from datetime import datetime, timezone
+
+    from hubra.core.models.audit import AuditEntry
+
+    member = _make_member(db, seeded_db, first="Tie", last="Break", email="tie@test.ch")
+    for _ in range(5):
+        log_audit(member.id, "tie_test", "Member", member.id, "Tie Break")
+    db.session.flush()
+    same = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    db.session.query(AuditEntry).filter_by(action="tie_test").update({"time": same})
+    db.session.commit()
+
+    seen = []
+    for page in (1, 2, 3):
+        resp = _get_audit(
+            client, auth_headers, action="tie_test", page=page, pageSize=2
+        )
+        seen += [e["id"] for e in resp.get_json()["data"]]
+    assert seen == sorted(seen, reverse=True)
+    assert len(set(seen)) == 5
