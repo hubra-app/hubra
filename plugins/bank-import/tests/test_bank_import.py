@@ -190,3 +190,48 @@ def test_payment_for_paid_invoice_is_flagged(client, db, auth_headers, invoices)
 def test_module_off(client, auth_headers, invoices):
     set_modules(False, "finance.bank")
     assert client.post("/api/v1/bank/camt054", data=b"<x/>").status_code == 403
+
+
+_MT940_BAD_DATE = b""":20:STMT
+:25:CH9300762011623852957
+:28C:1/1
+:60F:C261001CHF100,00
+:61:2610320301C10,00NTRFNONREF
+:86:Test
+:62F:C261031CHF110,00
+"""
+
+
+@pytest.mark.parametrize(
+    "fmt, upload",
+    [
+        ("mt940", {"data": _MT940_BAD_DATE, "content_type": "text/plain"}),
+        (
+            "csv",
+            {
+                "data": {
+                    "file": (io.BytesIO(b"Datum;Betrag\n01.10.2026;10.00\n"), "a.csv"),
+                    "mapping": '{"date": [1], "amount": "Betrag"}',
+                },
+                "content_type": "multipart/form-data",
+            },
+        ),
+    ],
+)
+def test_a_malformed_file_is_a_400(client, auth_headers, invoices, fmt, upload):
+    resp = client.post(f"/api/v1/bank/import?format={fmt}", **upload)
+    assert resp.status_code == 400
+    assert resp.get_json()["error"] == "INVALID_FILE"
+
+
+@pytest.mark.parametrize("amount", ["NaN", "sNaN", "Infinity"])
+def test_amounts_must_be_numbers(amount):
+    ns = "urn:iso:std:iso:20022:tech:xsd:camt.053.001.08"
+    entry = """<Ntry><Amt Ccy="CHF">{}</Amt><CdtDbtInd>CRDT</CdtDbtInd>
+<Sts><Cd>BOOK</Cd></Sts><BookgDt><Dt>2026-10-27</Dt></BookgDt>
+<AcctSvcrRef>X{}</AcctSvcrRef></Ntry>"""
+    xml = f"""<?xml version="1.0"?><Document xmlns="{ns}"><BkToCstmrStmt><Stmt>
+{entry.format("10.00", 1)}{entry.format(amount, 2)}
+</Stmt></BkToCstmrStmt></Document>""".encode()
+    statement = parse(xml)
+    assert [line.amount for line in statement.lines] == [Decimal("10.00")]

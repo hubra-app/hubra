@@ -6,6 +6,9 @@
   queue, where it can be booked into a category, put on another invoice or
   left out of the books. Before, it only showed in the import summary and
   could not be booked at all.
+- A malformed file (an impossible date, a bad CSV column mapping) is
+  refused with a message instead of a server error, and camt amounts such
+  as NaN or Infinity are not read as numbers.
 
 ## 1.1.1
 
