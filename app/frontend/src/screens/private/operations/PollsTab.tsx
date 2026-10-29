@@ -180,7 +180,8 @@ export function PollsTab() {
       const payload: PollCreate | PollUpdate = {
         question,
         options: validOptions,
-        closesAt: form.values.closesAt || undefined,
+        // An emptied date on edit clears the deadline; a missing key keeps it.
+        closesAt: form.values.closesAt || (editTarget ? null : undefined),
         isRequired,
         allowProxy,
         requiredGroupIds: isRequired ? requiredGroupIds : [],
