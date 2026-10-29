@@ -26,6 +26,10 @@ export async function listNotifications(): Promise<Notification[]> {
   return data.map(adapt);
 }
 
+export async function deleteNotification(id: string): Promise<void> {
+  await apiFetch(`/notifications/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
 export async function markAllNotificationsRead(): Promise<void> {
   await apiFetch("/notifications/read-all", { method: "POST" });
 }

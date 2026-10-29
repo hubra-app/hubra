@@ -22,6 +22,7 @@ import { useNav } from '@/context/AppContext'
 import {
   listNotifications,
   markAllNotificationsRead,
+  deleteNotification,
 } from '@/api/notifications'
 import type { Notification } from '@/types'
 
@@ -44,7 +45,8 @@ export function NotificationPanel() {
     try {
       await markAllNotificationsRead()
     } catch {
-      /* non-blocking */
+      // Show the server's state again rather than a false "all read".
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
     }
   }, [queryClient])
 
@@ -52,6 +54,10 @@ export function NotificationPanel() {
     (id: string) => {
       queryClient.setQueryData<Notification[]>(['notifications'], (prev) =>
         (prev ?? []).filter((n) => n.id !== id),
+      )
+      // Delete it on the server too, or the next refetch brings it back.
+      deleteNotification(id).catch(() =>
+        queryClient.invalidateQueries({ queryKey: ['notifications'] }),
       )
     },
     [queryClient],
