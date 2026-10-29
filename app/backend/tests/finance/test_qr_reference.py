@@ -50,10 +50,16 @@ class TestGenerateQrrReference:
 
     def test_large_values(self) -> None:
         ref = generate_qrr_reference(
-            member_id=999999, invoice_id=9999999999999999, year=2026
+            member_id=999999, invoice_id=2_147_483_647, year=2026
         )
         assert len(ref) == 27
         assert ref.isdigit()
+
+    def test_an_invoice_keeps_its_reference(self) -> None:
+        """Every PDF of one invoice carries the same reference."""
+        first = generate_qrr_reference(member_id=7, invoice_id=70, year=2026)
+        assert generate_qrr_reference(member_id=7, invoice_id=70, year=2026) == first
+        assert generate_qrr_reference(member_id=7, invoice_id=71, year=2026) != first
 
     def test_default_year(self) -> None:
         ref = generate_qrr_reference(member_id=1, invoice_id=1)
@@ -84,7 +90,7 @@ class TestParseQrrReference:
 
     def test_round_trip_large(self) -> None:
         member_id = 999999
-        invoice_id = 9999999999999999
+        invoice_id = 2_147_483_647
         ref = generate_qrr_reference(
             member_id=member_id, invoice_id=invoice_id, year=2099
         )

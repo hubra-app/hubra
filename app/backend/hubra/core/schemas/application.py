@@ -14,6 +14,8 @@ class ApplicationSchema(ma.SQLAlchemyAutoSchema):
         exclude = ("wants_tier",)
 
     applied_at = fields.DateTime(dump_only=True)
+    # Auto schemas leave foreign keys out; the club app needs this one.
+    wants_tier_id = fields.Int(dump_only=True, allow_none=True)
     wants_tier_name = fields.Method("get_wants_tier_name", dump_only=True)
 
     def get_wants_tier_name(self, obj):

@@ -218,3 +218,30 @@ def test_overview_balance_includes_completed(client, db, auth_headers, category)
     assert resp.status_code == 200
     data = resp.get_json()
     assert data["balance"] == 250.0
+
+
+def test_patch_expense_amount_stays_an_expense(client, db, auth_headers, category):
+    """Amounts come in positive; an edited expense stays negative, and
+    switching the type flips the sign."""
+    resp = client.post(
+        "/api/v1/finance/transactions",
+        json=_tx_payload(category.id, amount=80.0, type="expense"),
+        headers=auth_headers,
+    )
+    tx_id = resp.get_json()["id"]
+    assert resp.get_json()["amount"] == -80.0
+
+    resp = client.patch(
+        f"/api/v1/finance/transactions/{tx_id}",
+        json={"amount": 95.0, "type": "expense"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+    assert resp.get_json()["amount"] == -95.0
+
+    resp = client.patch(
+        f"/api/v1/finance/transactions/{tx_id}",
+        json={"type": "income"},
+        headers=auth_headers,
+    )
+    assert resp.get_json()["amount"] == 95.0

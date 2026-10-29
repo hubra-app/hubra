@@ -435,6 +435,13 @@ def test_manager_unknown_module(client, db, superadmin, tenant):
     assert resp.status_code == 404
 
 
+def test_manager_module_flags_must_be_booleans(client, db, superadmin, tenant):
+    """bool("false") is True: a string used to switch the module on."""
+    url = f"/api/v1/features/tenants/{tenant.id}/inventory"
+    for body in ({"allowed": "false"}, {"enabled": "no"}, {"enabled": 0}):
+        assert client.put(url, json=body).status_code == 400
+
+
 # ── Celery ───────────────────────────────────────────────────────────────────
 
 
@@ -451,3 +458,23 @@ def test_task_queued_in_a_club_carries_the_club(app, db, tenant):
             g.tenant = tenant
             update_last_seen.apply_async((1,))
     assert parent.call_args.kwargs["headers"] == {"tenant_id": tenant.id}
+
+
+def test_provisioning_gives_the_standard_tier_a_price_type(db):
+    """Pricing only bills fixed, percentage and formula tiers, and the tier
+    form needs one of them; the seeded tier had none."""
+    from unittest.mock import patch
+
+    from hubra.core.models.member import MembershipTier
+    from hubra.core.tenant.service import _seed_tenant
+
+    new = Tenant(name="Priced", slug="priced-club", plan="starter")
+    db.session.add(new)
+    db.session.flush()
+    with (
+        patch("hubra.core.tenant.context.set_search_path"),
+        patch("hubra.core.tenant.context.reset_search_path"),
+    ):
+        _seed_tenant(new.id, None, None)
+    tier = db.session.query(MembershipTier).filter_by(name="Standard").one()
+    assert tier.price_type == "fixed"

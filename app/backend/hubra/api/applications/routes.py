@@ -59,6 +59,7 @@ def approve_application(application_id: int):
     if member is None:
         # No account yet: the applicant got an invite to sign up and accept.
         return jsonify({"invited": True}), 202
+    ApplicationService.queue_mailbox(member)
     return jsonify(_member_schema.dump(member)), 201
 
 
@@ -85,7 +86,7 @@ def decline_application(application_id: int):
 @applications_bp.delete("/<int:application_id>")
 @permission_required("applications", "delete", "Delete applications")
 def delete_application(application_id: int):
-    ApplicationService.delete(application_id)
+    ApplicationService.delete(application_id, get_current_member().id)
 
     try:
         db.session.commit()

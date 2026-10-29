@@ -5,14 +5,7 @@ import type {
   TransactionCategory,
   ExternalParty,
 } from "@/types";
-
-interface Paginated<T> {
-  data: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
+import { fetchPages } from "@/api/pages";
 
 // ── Transaction Categories ─────────────────────────────────────────────────
 
@@ -204,11 +197,10 @@ function adaptTx(b: BackendTransaction): Transaction {
 export async function listTransactions(params?: {
   pageSize?: number;
 }): Promise<Transaction[]> {
-  const qs = params?.pageSize
-    ? `?pageSize=${params.pageSize}`
-    : "?pageSize=1000";
-  const response = await apiFetch<Paginated<BackendTransaction>>(
-    `/finance/transactions${qs}`,
+  const response = await fetchPages<BackendTransaction>(
+    "/finance/transactions",
+    new URLSearchParams(),
+    params?.pageSize ?? 1000,
   );
   return response.data.map(adaptTx);
 }
@@ -315,15 +307,19 @@ function adaptInvoice(b: BackendInvoice): Invoice {
 }
 
 export async function listInvoices(): Promise<Invoice[]> {
-  const response = await apiFetch<Paginated<BackendInvoice>>(
-    "/finance/invoices?pageSize=1000",
+  const response = await fetchPages<BackendInvoice>(
+    "/finance/invoices",
+    new URLSearchParams(),
+    1000,
   );
   return response.data.map(adaptInvoice);
 }
 
 export async function listMyInvoices(): Promise<Invoice[]> {
-  const response = await apiFetch<Paginated<BackendInvoice>>(
-    "/finance/invoices/mine?pageSize=1000",
+  const response = await fetchPages<BackendInvoice>(
+    "/finance/invoices/mine",
+    new URLSearchParams(),
+    1000,
   );
   return response.data.map(adaptInvoice);
 }

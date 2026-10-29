@@ -65,7 +65,11 @@ def app():
     with app.app_context():
         _db.create_all()
         yield app
-        _db.drop_all()
+        # Not on Postgres: DROP waits on connections a test left open in a
+        # transaction (and the plugins' tests make a second app). Use a
+        # fresh database for each run instead.
+        if _db.engine.dialect.name != "postgresql":
+            _db.drop_all()
 
 
 @pytest.fixture(scope="function")
@@ -80,10 +84,19 @@ def db(app):
         _db.session.rollback()
         # Truncate every table so the next test starts with a clean slate.
         # Disable FK checks while deleting to avoid constraint ordering issues.
-        _db.session.execute(_db.text("PRAGMA foreign_keys = OFF"))
+        # (DELETE, not TRUNCATE, on Postgres: TRUNCATE waits for every other
+        # open transaction that read the table.)
+        postgres = _db.engine.dialect.name == "postgresql"
+        if postgres:
+            _db.session.execute(_db.text("SET session_replication_role = replica"))
+        else:
+            _db.session.execute(_db.text("PRAGMA foreign_keys = OFF"))
         for table in reversed(_db.metadata.sorted_tables):
             _db.session.execute(table.delete())
-        _db.session.execute(_db.text("PRAGMA foreign_keys = ON"))
+        if postgres:
+            _db.session.execute(_db.text("SET session_replication_role = DEFAULT"))
+        else:
+            _db.session.execute(_db.text("PRAGMA foreign_keys = ON"))
         _db.session.commit()
 
 

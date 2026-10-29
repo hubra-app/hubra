@@ -137,7 +137,7 @@ def add_attendee(event_id: int, member_id: int):
     EventService.get(event_id)  # 404 if not found
 
     member = db.session.get(Member, member_id)
-    if member is None:
+    if member is None or member.archived_at is not None:
         raise_error(404, "NOT_FOUND", f"Member {member_id} not found")
         return
 
@@ -158,7 +158,8 @@ def add_attendee(event_id: int, member_id: int):
 @events_bp.delete("/<int:event_id>/attendees/<int:member_id>")
 @permission_required("events", "remove_attendee", "Remove event attendee")
 def remove_attendee(event_id: int, member_id: int):
-    EventService.remove_attendee(event_id, member_id)
+    # Also ends their registration, so the place goes to the waitlist.
+    EventService.cancel_registration(event_id, member_id)
 
     try:
         db.session.commit()
@@ -179,7 +180,7 @@ def register_for_event(event_id: int):
     try:
         data = RegisterSchema().load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.members), 400)
+        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
 
     member_id = get_current_member().id
     registration = EventService.register(
@@ -187,6 +188,7 @@ def register_for_event(event_id: int):
         member_id=member_id,
         notes=data.get("notes"),
         guests=data.get("guests", 0),
+        own=True,
     )
 
     try:
@@ -208,7 +210,7 @@ def register_member_for_event(event_id: int, member_id: int):
     try:
         data = RegisterSchema().load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.members), 400)
+        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
 
     registration = EventService.register(
         event_id=event_id,
@@ -233,7 +235,7 @@ def register_member_for_event(event_id: int, member_id: int):
 @permission_required("events", "register", "Register for events")
 def cancel_registration(event_id: int):
     member_id = get_current_member().id
-    registration = EventService.cancel_registration(event_id, member_id)
+    registration = EventService.cancel_registration(event_id, member_id, own=True)
 
     try:
         db.session.commit()
@@ -241,6 +243,8 @@ def cancel_registration(event_id: int):
         db.session.rollback()
         raise
 
+    if registration is None:  # was only on the attendee list
+        return "", 204
     return jsonify(EventRegistrationSchema().dump(registration)), 200
 
 

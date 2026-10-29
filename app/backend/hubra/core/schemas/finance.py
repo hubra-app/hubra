@@ -245,6 +245,11 @@ class InvoiceCreateSchema(ma.Schema):
                 "purpose='membership' requires a member_id recipient."
             )
 
+    @validates_schema
+    def _validate_dates(self, data, **kwargs):
+        if data.get("due") and data.get("issued") and data["due"] < data["issued"]:
+            raise ValidationError("due is before issued", "due")
+
 
 class InvoiceUpdateSchema(ma.Schema):
     """PATCH — all fields optional."""

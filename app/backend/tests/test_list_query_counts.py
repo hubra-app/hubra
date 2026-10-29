@@ -16,7 +16,10 @@ def _count_queries(db):
     statements: list[str] = []
 
     def _on_execute(conn, cursor, statement, params, context, executemany):
-        statements.append(statement)
+        # Postgres resets search_path whenever a pooled connection is
+        # checked out; that is not a query of the endpoint.
+        if not statement.startswith("SET search_path"):
+            statements.append(statement)
 
     event.listen(db.engine, "before_cursor_execute", _on_execute)
     try:

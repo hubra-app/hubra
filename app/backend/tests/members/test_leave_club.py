@@ -124,3 +124,81 @@ def test_a_former_member_can_ask_to_join_again(client, db, club):
     anna = db.session.get(Member, club["anna"].id)
     assert anna.archived_at is None
     assert [r.name for r in anna.roles] == ["Member"]
+
+
+def test_a_returning_member_gets_the_tier_and_mailbox_back(
+    client, db, club, monkeypatch
+):
+    """Coming back used to keep the old tier, whatever was applied for, and
+    left the club mailbox closed from when they left."""
+    from hubra.api.applications.services import ApplicationsService
+    from hubra.core.models.application import Application
+    from hubra.core.models.member import MembershipTier
+    from hubra.core.services import managed_mail
+
+    reopened = []
+    monkeypatch.setattr(
+        managed_mail, "enable_member_mail", lambda mid, _hash: reopened.append(mid)
+    )
+    junior = MembershipTier(name="Junior", price_chf=10)
+    db.session.add(junior)
+    db.session.commit()
+
+    _login(client, "anna@test.ch")
+    client.post("/api/v1/members/me/leave", headers=H)
+    ApplicationsService.submit("Anna", "M", "anna@test.ch", wants_tier_id=junior.id)
+    db.session.commit()
+    app_id = db.session.query(Application).one().id
+
+    _login(client, "admin@test.ch")
+    resp = client.post(f"/api/v1/applications/{app_id}/approve", json={}, headers=H)
+    assert resp.status_code in (200, 201), resp.json
+    anna = db.session.get(Member, club["anna"].id)
+    assert anna.tier_id == junior.id
+    assert reopened == [anna.id]
+
+
+def test_a_deleted_member_who_comes_back_is_listed_again(client, db, club):
+    """Soft delete also archives (#42); approving their return clears both,
+    or they could sign in but stayed hidden from every member list."""
+    from datetime import datetime, timezone
+
+    from hubra.api.applications.services import ApplicationsService
+    from hubra.core.models.application import Application
+
+    anna = db.session.get(Member, club["anna"].id)
+    anna.archived_at = anna.deleted_at = datetime.now(timezone.utc)
+    db.session.commit()
+    ApplicationsService.submit("Anna", "M", "anna@test.ch")
+    db.session.commit()
+    app_id = db.session.query(Application).one().id
+
+    _login(client, "admin@test.ch")
+    resp = client.post(f"/api/v1/applications/{app_id}/approve", json={}, headers=H)
+    assert resp.status_code in (200, 201), resp.json
+    anna = db.session.get(Member, club["anna"].id)
+    assert anna.archived_at is None and anna.deleted_at is None
+
+
+def test_an_admin_cannot_bring_back_someone_who_left(client, db, club):
+    """Leaving unlinks the account, so only an invite brings them back."""
+    _login(client, "anna@test.ch")
+    client.post("/api/v1/members/me/leave", headers=H)
+
+    _login(client, "admin@test.ch")
+    url = f"/api/v1/members/{club['anna'].id}/unarchive"
+    resp = client.post(url, headers=H)
+    assert resp.status_code == 409 and resp.json["error"] == "MEMBER_LEFT"
+    assert db.session.get(Member, club["anna"].id).archived_at is not None
+
+
+def test_an_archived_member_can_be_brought_back(client, db, club):
+    _login(client, "admin@test.ch")
+    anna_id = club["anna"].id
+    assert client.post(f"/api/v1/members/{anna_id}/archive", headers=H).status_code in (
+        200,
+        204,
+    )
+    resp = client.post(f"/api/v1/members/{anna_id}/unarchive", headers=H)
+    assert resp.status_code == 200, resp.json
+    assert db.session.get(Member, anna_id).archived_at is None

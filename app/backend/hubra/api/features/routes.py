@@ -132,6 +132,10 @@ def set_tenant_feature_grant(tenant_id: int, feature_code: str):
     if modules.registry.get(feature_code) is None:
         return api_error("NOT_FOUND", f"Module '{feature_code}' does not exist", 404)
     body = request.get_json(silent=True) or {}
+    for flag in ("allowed", "enabled"):
+        # bool("false") is True: a string would have switched the module on.
+        if flag in body and not isinstance(body[flag], bool):
+            return api_error("VALIDATION_ERROR", f"{flag} must be true or false", 400)
     if "allowed" in body:
         modules.set_allowed(feature_code, bool(body["allowed"]), tenant_id)
     if "enabled" in body:

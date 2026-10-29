@@ -153,15 +153,15 @@ def upsert_setting(key: str):
 
     err = SettingService.validate_value(setting.validation_type, data.get("value", ""))
     if err:
+        db.session.rollback()
         return api_error("VALIDATION_ERROR", err, 400)
 
+    log_audit(get_current_member().id, "upsert", "setting", None, key)
     try:
         db.session.commit()
     except Exception:
         db.session.rollback()
         raise
-
-    log_audit(get_current_member().id, "upsert", "setting", None, key)
 
     return jsonify(_setting_schema.dump(setting)), 200
 
@@ -184,6 +184,7 @@ def delete_setting(key: str):
             )
 
     SettingService.delete(key)
+    log_audit(get_current_member().id, "delete", "setting", None, key)
 
     try:
         db.session.commit()
@@ -191,7 +192,6 @@ def delete_setting(key: str):
         db.session.rollback()
         raise
 
-    log_audit(get_current_member().id, "delete", "setting", None, key)
     return "", 204
 
 
@@ -212,19 +212,12 @@ def revert_setting(key: str):
                 403,
             )
 
-    try:
-        setting = SettingService.revert_to_default(key)
-    except Exception as exc:
-        status = getattr(exc, "code", 500)
-        return api_error(
-            "REVERT_FAILED", str(exc), status if isinstance(status, int) else 500
-        )
+    setting = SettingService.revert_to_default(key)  # 404 / 409 as ApiError
+    log_audit(get_current_member().id, "revert", "setting", None, key)
 
     try:
         db.session.commit()
     except Exception:
         db.session.rollback()
         raise
-
-    log_audit(get_current_member().id, "revert", "setting", None, key)
     return jsonify(_setting_schema.dump(setting)), 200

@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
 from math import ceil
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import selectinload
 
-from hubra.api.utils import escape_like, log_audit
+from hubra.api.utils import escape_like, id_from_body, log_audit
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 from hubra.core.models.external_party import ExternalParty
@@ -49,6 +50,16 @@ def default_due_date(issued: date | None = None) -> date:
     """Due date for an invoice issued on *issued* (today) under the club's term."""
     return (issued or date.today()) + timedelta(
         days=billing_settings()["payment_term_days"]
+    )
+
+
+def _delete_send_history(invoice_id: int) -> None:
+    """An invoice's send history (every generated invoice has one) goes
+    with the invoice; its foreign key would refuse the delete otherwise."""
+    db.session.execute(
+        delete(InvoiceReminderHistory).where(
+            InvoiceReminderHistory.invoice_id == invoice_id
+        )
     )
 
 
@@ -205,9 +216,13 @@ class ExternalPartyService:
 
     @staticmethod
     def delete(party_id: int, actor_id: int) -> None:
-        """Delete an external party. Linked invoices keep their rows
-        (external_party_id is SET NULL via the FK)."""
+        """Delete an external party. Linked invoices keep their rows without
+        a recipient (club schemas have no foreign keys to do this)."""
         party = ExternalPartyService.get(party_id)
+        for invoice in db.session.scalars(
+            select(Invoice).where(Invoice.external_party_id == party.id)
+        ):
+            invoice.external_party_id = None
 
         log_audit(
             actor_id=actor_id,
@@ -315,6 +330,24 @@ class TransactionService:
             if field in data:
                 setattr(transaction, field, data[field])
 
+        # The API takes amounts as positive numbers and stores expenses
+        # negative (as create does); keep that when amount or type change.
+        if "amount" in data or "type" in data:
+            amount = abs(Decimal(str(transaction.amount)))
+            transaction.amount = -amount if transaction.type == "expense" else amount
+
+        # Booking an invoice's income as received pays the invoice, so no
+        # reminder goes to someone who paid (and the other way round).
+        if "status" in data:
+            invoice = db.session.scalar(
+                select(Invoice).where(Invoice.transaction_id == transaction.id)
+            )
+            if invoice is not None:
+                if transaction.status == "Completed" and invoice.status != "Paid":
+                    InvoiceService.update(invoice, {"status": "Paid"}, actor_id)
+                elif transaction.status == "Pending" and invoice.status == "Paid":
+                    InvoiceService.update(invoice, {"status": "Open"}, actor_id)
+
         log_audit(
             actor_id=actor_id,
             action="update_transaction",
@@ -342,6 +375,7 @@ class TransactionService:
         )
         if linked_invoice is not None:
             linked_invoice.transaction_id = None
+            _delete_send_history(linked_invoice.id)
             db.session.flush()
             db.session.delete(linked_invoice)
             db.session.flush()
@@ -490,6 +524,11 @@ class InvoiceService:
                     f"ExternalParty {data['external_party_id']} not found",
                 )
 
+        issued = data.get("issued", invoice.issued)
+        due = data.get("due", invoice.due)
+        if issued and due and due < issued:
+            raise_error(400, "VALIDATION_ERROR", "due is before issued")
+
         was_paid = invoice.status == "Paid"
         for field in (
             "member_id",
@@ -504,14 +543,30 @@ class InvoiceService:
             if field in data:
                 setattr(invoice, field, data[field])
 
-        if (
-            "status" in data
-            and data["status"] == "Paid"
-            and invoice.transaction_id is not None
-        ):
-            linked_tx = db.session.get(Transaction, invoice.transaction_id)
-            if linked_tx is not None:
+        linked_tx = (
+            db.session.get(Transaction, invoice.transaction_id)
+            if invoice.transaction_id is not None
+            else None
+        )
+        if linked_tx is not None:
+            # The linked income follows the invoice: paid → completed, and
+            # back to pending when a payment is taken back. Its amount
+            # follows while the money is still expected.
+            if invoice.status == "Paid":
                 linked_tx.status = "Completed"
+            elif was_paid:
+                linked_tx.status = "Pending"
+            if "amount" in data and linked_tx.status == "Pending":
+                linked_tx.amount = abs(Decimal(str(invoice.amount)))
+            # So does who pays: the income is listed under the new recipient.
+            if "member_id" in data or "external_party_id" in data:
+                linked_tx.member_id = invoice.member_id
+                party = (
+                    db.session.get(ExternalParty, invoice.external_party_id)
+                    if invoice.external_party_id is not None
+                    else None
+                )
+                linked_tx.payee_name = party.name if party else None
 
         if invoice.status == "Paid" and not was_paid and invoice.member_id:
             from hubra.core.modules import emit
@@ -543,6 +598,7 @@ class InvoiceService:
 
         linked_tx_id = invoice.transaction_id
         invoice.transaction_id = None
+        _delete_send_history(invoice.id)
         db.session.flush()
         db.session.delete(invoice)
         db.session.flush()
@@ -566,9 +622,20 @@ class InvoiceService:
     @staticmethod
     def download_pdf(invoice: Invoice) -> bytes:
         """Generate a QR-bill PDF for the invoice and return the bytes."""
-        from hubra.core.services.qr_bill import generate_invoice_pdf
+        from hubra.core.services.qr_bill import (
+            QRBillNotConfigured,
+            generate_invoice_pdf,
+        )
 
-        return generate_invoice_pdf(invoice)
+        try:
+            return generate_invoice_pdf(invoice)
+        except QRBillNotConfigured as exc:
+            # Banking details (IBAN, postal code, city) not set up yet.
+            raise_error(409, "QR_BILL_NOT_CONFIGURED", str(exc))
+        except ValueError as exc:
+            # The invoice itself cannot be paid by QR bill (e.g. a credit
+            # note with a negative amount).
+            raise_error(422, "QR_BILL_INVALID", str(exc))
 
     @staticmethod
     def dispatch_reminder(invoice: Invoice, actor_id: int) -> dict:
@@ -580,6 +647,7 @@ class InvoiceService:
         """
         import logging
 
+        from hubra.core.services.mail_format import mail_date
         from hubra.core.tasks.email_tasks import send_email_task
 
         member = (
@@ -612,7 +680,7 @@ class InvoiceService:
                 club_name=club_name,
                 invoice_id=invoice.id,
                 amount_formatted=f"CHF {invoice.amount:.2f}",
-                due_date=invoice.due.isoformat(),
+                due_date=mail_date(invoice.due, lang),
                 portal_url=portal_url,
             )
             send_email_task.delay(
@@ -648,7 +716,7 @@ class InvoiceService:
                 club_name=club_name,
                 invoice_id=invoice.id,
                 amount_formatted=f"CHF {invoice.amount:.2f}",
-                due_date=invoice.due.isoformat(),
+                due_date=mail_date(invoice.due, lang),
                 portal_url="",
             )
             send_email_task.delay(
@@ -685,6 +753,8 @@ class InvoiceService:
         )
 
         reminded_at = datetime.now(timezone.utc).isoformat()
+        if not success:
+            return {"ok": False, "message": error_message, "remindedAt": None}
         return {"ok": True, "message": "Reminder queued", "remindedAt": reminded_at}
 
 
@@ -851,8 +921,10 @@ class InvoicesService:
     def bulk_create(body: dict, actor_id: int) -> dict:
         """Create one invoice per active member, optionally filtered by tier."""
         due_str = body.get("due")
-        tier_id = body.get("tier_id")
+        tier_id = id_from_body(body.get("tier_id"), "tier_id")
         description = body.get("description") or None
+        if description is not None and not isinstance(description, str):
+            raise_error(400, "VALIDATION_ERROR", "description must be text")
 
         issued_date = date.today()
         if not due_str:
@@ -861,8 +933,10 @@ class InvoicesService:
         else:
             try:
                 due_date = date.fromisoformat(due_str)
-            except ValueError:
+            except (TypeError, ValueError):
                 raise_error(400, "VALIDATION_ERROR", "due must be a valid ISO date")
+            if due_date < issued_date:
+                raise_error(400, "VALIDATION_ERROR", "due is before issued")
 
         member_q = (
             select(Member)
@@ -1056,7 +1130,7 @@ class FinanceOverviewService:
             "months": months_data,
             "openInvoices": {
                 "count": open_count,
-                "amount": open_amount,
+                "amount": float(open_amount),
             },
         }
 

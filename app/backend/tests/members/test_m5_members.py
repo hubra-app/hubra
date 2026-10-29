@@ -316,3 +316,13 @@ def test_import_csv_rejects_non_csv(client, auth_headers, seeded_db):
         headers=auth_headers,
     )
     assert resp.status_code == 400
+
+
+def test_export_opens_with_umlauts_in_excel(client, auth_headers, seeded_db):
+    """A UTF-8 byte order mark tells Excel the encoding; the import strips it."""
+    _create_member(
+        client, auth_headers, email="zuerich@test.ch", first_name="Jürg", last_name="Bär"
+    )
+    resp = client.get("/api/v1/members/export", headers=auth_headers)
+    assert resp.data.startswith("﻿".encode())
+    assert "Bär" in resp.data.decode("utf-8-sig")

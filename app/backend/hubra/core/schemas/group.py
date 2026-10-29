@@ -19,6 +19,8 @@ class GroupSchema(ma.SQLAlchemyAutoSchema):
         exclude = ("members", "lead", "memberships", "child_groups")
 
     member_count = fields.Method("get_member_count", dump_only=True)
+    # Auto schemas leave foreign keys out; the club app needs this one.
+    lead_id = fields.Int(dump_only=True, allow_none=True)
     lead_name = fields.Method("get_lead_name", dump_only=True)
     parent_group_name = fields.Method("get_parent_group_name", dump_only=True)
 

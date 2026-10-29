@@ -125,3 +125,5 @@ def change_password(user: User, current_password: str, new_password: str) -> Non
         raise_error(401, "UNAUTHORIZED", "Current password is incorrect")
     user.set_password(new_password)
     user.must_change_password = False
+    # Signed out everywhere; the route hands this browser a new session.
+    user.end_sessions()

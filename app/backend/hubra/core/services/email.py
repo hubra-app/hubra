@@ -117,6 +117,9 @@ def _mailbox_route(platform, mailbox: tuple[str, str]) -> _Route:
     return _Route(host, port, *mailbox)
 
 
+_SMTP_TIMEOUT = 30  # seconds
+
+
 def _send_via_smtp(
     to_email: str,
     to_name: str,
@@ -164,13 +167,22 @@ def _send_via_smtp(
         msg["Reply-To"] = reply_to
 
     try:
-        with smtplib.SMTP(smtp_host, smtp_port) as server:
+        _smtp_context = ssl.create_default_context()
+        if current_app.config.get("SMTP_TLS_VERIFY", True) is False:
+            _smtp_context.check_hostname = False
+            _smtp_context.verify_mode = ssl.CERT_NONE
+        # A timeout, so a relay that stops answering fails the send (and
+        # the task's retry) instead of holding a worker forever. Port 465
+        # is TLS from the first byte; the others upgrade with STARTTLS.
+        if smtp_port == 465:
+            connection = smtplib.SMTP_SSL(
+                smtp_host, smtp_port, timeout=_SMTP_TIMEOUT, context=_smtp_context
+            )
+        else:
+            connection = smtplib.SMTP(smtp_host, smtp_port, timeout=_SMTP_TIMEOUT)
+        with connection as server:
             server.ehlo()
-            if smtp_port != 25:
-                _smtp_context = ssl.create_default_context()
-                if current_app.config.get("SMTP_TLS_VERIFY", True) is False:
-                    _smtp_context.check_hostname = False
-                    _smtp_context.verify_mode = ssl.CERT_NONE
+            if smtp_port not in (25, 465):
                 server.starttls(context=_smtp_context)
                 server.ehlo()
             if route.user and route.password:

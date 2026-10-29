@@ -19,6 +19,9 @@ class PostCommentSchema(ma.SQLAlchemyAutoSchema):
         unknown = EXCLUDE
         exclude = ("post", "author")
 
+    # Auto schemas leave foreign keys out; the club app needs these.
+    post_id = fields.Int(dump_only=True)
+    author_id = fields.Int(dump_only=True, allow_none=True)
     author_name = fields.Method("get_author_name", dump_only=True)
     author_avatar_color = fields.Method("get_author_avatar_color", dump_only=True)
 
@@ -38,6 +41,8 @@ class PostSchema(ma.SQLAlchemyAutoSchema):
         unknown = EXCLUDE
         exclude = ("likes", "comments", "author")
 
+    # Auto schemas leave foreign keys out; the club app needs it.
+    author_id = fields.Int(dump_only=True, allow_none=True)
     like_count = fields.Method("get_like_count", dump_only=True)
     like_member_ids = fields.Method("get_like_member_ids", dump_only=True)
     comment_count = fields.Method("get_comment_count", dump_only=True)

@@ -13,6 +13,7 @@ from hubra.core.extensions import db
 from hubra.core.modules import emit, per_tenant_job
 from hubra.core.modules.events import INVOICE_OVERDUE
 from hubra.core.tasks import celery_app
+from hubra.core.services.mail_format import mail_date
 from hubra.core.pricing import (
     billing_cycle_for,
     calculate_invoice_amount,
@@ -48,7 +49,7 @@ def _render_invoice_generated(
         club_name=club_name,
         invoice_id=invoice_id,
         amount_formatted=f"CHF {amount:.2f}",
-        due_date=due_date.isoformat(),
+        due_date=mail_date(due_date, lang),
         portal_url=portal_url,
     )
 
@@ -73,7 +74,7 @@ def _render_invoice_reminder(
         club_name=club_name,
         invoice_id=invoice_id,
         amount_formatted=f"CHF {amount:.2f}",
-        due_date=due_date.isoformat(),
+        due_date=mail_date(due_date, lang),
         portal_url=portal_url,
     )
 
@@ -167,8 +168,9 @@ def _generate_invoices() -> dict:
       - formula:    (baseline - coefficient * sum(deducted_tier_annual_fees)) / members_in_tier
                     per year, divided into periods, rounded up to round_to
 
-    Idempotency guard: skips a member if an Open invoice already exists for the
-    current billing period (current month for 'monthly', current year for 'yearly').
+    Idempotency guard: skips a member if a membership invoice (in any status)
+    already exists for the current billing period (current month for
+    'monthly', current year for 'yearly').
 
     Sends an invoice_generated email for each created invoice and records the
     dispatch in InvoiceReminderHistory.
@@ -222,17 +224,19 @@ def _generate_invoices() -> dict:
         cycle = billing_cycle_for(member, tier)
         period_start, period_end = period_window(today, cycle)
 
+        # Any membership invoice of this period counts, paid or not: the
+        # task runs daily, and a paid fee must not be billed again.
         existing = db.session.scalar(
             select(Invoice.id)
             .where(Invoice.member_id == member.id)
-            .where(Invoice.status == "Open")
+            .where(Invoice.purpose == "membership")
             .where(Invoice.issued >= period_start)
             .where(Invoice.issued <= period_end)
         )
 
         if existing is not None:
             logger.info(
-                "invoice_generation_skipped member_id=%s reason=open_invoice_exists_for_period invoice_id=%s",
+                "invoice_generation_skipped member_id=%s reason=invoice_exists_for_period invoice_id=%s",
                 member.id,
                 existing,
             )
@@ -367,7 +371,8 @@ def _send_overdue_reminders() -> dict:
     # Fetch all open invoices that are past due
     overdue_invoices: list[Invoice] = db.session.scalars(  # type: ignore[assignment]
         select(Invoice)
-        .where(Invoice.status == "Open")
+        # "Overdue" is also unpaid (an admin may set it by hand).
+        .where(Invoice.status.in_(("Open", "Overdue")))
         .where(Invoice.due < today)
         .order_by(Invoice.due.asc())
     ).all()
@@ -421,7 +426,9 @@ def _send_overdue_reminders() -> dict:
                 reminder_type="overdue_14d",
             )
             overdue_14d += 1
-            if not sent:
+            # First overdue round for this invoice (its send history also
+            # holds the "generation" and "manual" mails).
+            if "overdue_7d" not in sent:
                 emit(INVOICE_OVERDUE, member_id=member.id, invoice_id=invoice.id)
             logger.info(
                 "overdue_reminder_sent invoice_id=%s member_id=%s round=14d",

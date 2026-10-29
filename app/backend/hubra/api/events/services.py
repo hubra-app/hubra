@@ -10,13 +10,43 @@ from sqlalchemy.orm import selectinload
 
 from hubra.api.notifications.services import notify_on_publish
 from hubra.api.utils import log_audit
-from hubra.core.errors import raise_error
+from hubra.core.errors import ApiError, raise_error
 from hubra.core.extensions import db
 from hubra.core.models.event import ClubEvent, EventRegistration, event_attendees
 from hubra.core.models.member import Member
 from hubra.core.modules import emit
 from hubra.core.modules.events import EVENT_PUBLISHED
 
+
+# Registration states that take one of the event's places.
+_HOLDS_A_PLACE = ("registered", "approved", "attended")
+
+
+def _passed(deadline: datetime | None) -> bool:
+    """Whether a deadline is set and over (SQLite hands back naive UTC)."""
+    if deadline is None:
+        return False
+    if deadline.tzinfo is None:
+        deadline = deadline.replace(tzinfo=timezone.utc)
+    return deadline < datetime.now(timezone.utc)
+
+
+
+def _check_dates(start, end) -> None:
+    """An event cannot end before it starts (calendar apps drop it)."""
+    if start is not None and end is not None and end < start:
+        raise_error(400, "VALIDATION_ERROR", "end_date is before date")
+
+
+def _tell_registered(event, title: str, skip_member_id: int | None = None) -> None:
+    """Notify those signed up for (or waiting on) an upcoming event."""
+    from hubra.api.notifications.services import notify_member
+
+    if (event.end_date or event.date) < date.today():
+        return
+    for reg in event.registrations:
+        if reg.status in ("registered", "waitlisted") and reg.member_id != skip_member_id:
+            notify_member(reg.member_id, "info", title, event.title)
 
 class EventService:
     """Operations on a single event."""
@@ -39,6 +69,7 @@ class EventService:
     @staticmethod
     def update(event: ClubEvent, data: dict, actor_id: int) -> ClubEvent:
         """Update allowed fields on an event."""
+        before = (event.date, event.time, event.end_date, event.location)
         for field in (
             "title",
             "date",
@@ -60,6 +91,15 @@ class EventService:
         ):
             if field in data:
                 setattr(event, field, data[field])
+        if "date" in data or "end_date" in data:
+            _check_dates(event.date, event.end_date)
+        if (event.date, event.time, event.end_date, event.location) != before:
+            _tell_registered(event, "Event changed", skip_member_id=actor_id)
+        if "max_attendees" in data:
+            # More places (or no limit any more): the waitlist moves up.
+            EventService._lock(event.id)
+            db.session.flush()
+            EventService._promote_waitlist(event)
 
         log_audit(
             actor_id=actor_id,
@@ -82,6 +122,8 @@ class EventService:
             target_id=event.id,
             target_label=event.title,
         )
+        # Those who signed up hear that it is off rather than turn up.
+        _tell_registered(event, "Event cancelled", skip_member_id=actor_id)
         db.session.delete(event)
 
     @staticmethod
@@ -139,67 +181,99 @@ class EventService:
         member_id: int,
         notes: str | None = None,
         guests: int = 0,
+        own: bool = False,
     ) -> EventRegistration:
-        """Register a member for an event. Handles waitlist when full."""
+        """Register a member for an event. Handles waitlist when full.
+
+        A member has one registration row per event: signing up again after
+        cancelling brings the cancelled row back. Waitlisted members are not
+        attendees until they get a place. A member signing up themselves
+        (``own``) cannot after the registration deadline or the event;
+        an organiser still can.
+        """
         event = EventService.get(event_id)
+        EventService._lock(event_id)
+        if own:
+            last_day = event.end_date or event.date
+            if _passed(event.registration_deadline) or last_day < date.today():
+                raise_error(
+                    409, "REGISTRATION_CLOSED", "Registration for this event is closed"
+                )
 
         member = db.session.get(Member, member_id)
         if member is None or member.archived_at is not None:
             raise_error(404, "NOT_FOUND", f"Member {member_id} not found")
 
-        # Check if already registered
-        existing = db.session.scalar(
+        registration = db.session.scalar(
             select(EventRegistration).where(
                 EventRegistration.event_id == event_id,
                 EventRegistration.member_id == member_id,
-                EventRegistration.status.in_(["registered", "approved", "waitlisted"]),
             )
         )
-        if existing is not None:
+        if registration is not None and registration.status != "cancelled":
             raise_error(409, "CONFLICT", "Already registered for this event")
 
-        # Check max attendees
-        status = "registered"
-        if event.requires_approval:
-            status = "registered"  # needs admin approval
+        # Events that need approval still start as "registered".
+        status = "waitlisted" if EventService._is_full(event) else "registered"
 
-        if event.max_attendees is not None and event.max_attendees > 0:
-            active_count = (
-                db.session.scalar(
-                    select(func.count())
-                    .select_from(EventRegistration)
-                    .where(
-                        EventRegistration.event_id == event_id,
-                        EventRegistration.status.in_(
-                            ["registered", "approved", "attended"]
-                        ),
-                    )
-                )
-                or 0
-            )
-            if active_count >= event.max_attendees:
-                status = "waitlisted"
+        if registration is None:
+            registration = EventRegistration(event_id=event_id, member_id=member_id)
+            db.session.add(registration)
+        registration.status = status
+        registration.notes = notes
+        registration.guests = guests
+        registration.registered_at = datetime.now(timezone.utc)
+        registration.cancelled_at = None
 
-        registration = EventRegistration(
-            event_id=event_id,
-            member_id=member_id,
-            status=status,
-            notes=notes,
-            guests=guests,
-        )
-        db.session.add(registration)
-
-        # Also add to attendees for backward compat
-        try:
-            EventService.add_attendee(event_id, member)
-        except Exception:
-            pass  # Already in attendees table
+        if status != "waitlisted":
+            EventService._ensure_attendee(event_id, member)
 
         return registration
 
     @staticmethod
-    def cancel_registration(event_id: int, member_id: int) -> EventRegistration:
-        """Cancel a member's registration for an event."""
+    def _lock(event_id: int) -> None:
+        """Serialize sign-ups and cancellations of one event until commit, so
+        two people cannot both take its last place (Postgres; SQLite has
+        no row locks and runs one writer anyway)."""
+        db.session.execute(
+            select(ClubEvent.id).where(ClubEvent.id == event_id).with_for_update()
+        )
+
+    @staticmethod
+    def _is_full(event: ClubEvent) -> bool:
+        if not event.max_attendees or event.max_attendees <= 0:
+            return False
+        active_count = (
+            db.session.scalar(
+                select(func.count())
+                .select_from(EventRegistration)
+                .where(
+                    EventRegistration.event_id == event.id,
+                    EventRegistration.status.in_(_HOLDS_A_PLACE),
+                )
+            )
+            or 0
+        )
+        return active_count >= event.max_attendees
+
+    @staticmethod
+    def _ensure_attendee(event_id: int, member: Member) -> None:
+        """Attendees table, kept for older screens and the calendar."""
+        try:
+            EventService.add_attendee(event_id, member)
+        except ApiError:
+            pass  # already in the attendees table
+
+    @staticmethod
+    def cancel_registration(
+        event_id: int, member_id: int, own: bool = False
+    ) -> EventRegistration | None:
+        """Cancel a member's registration; the first on the waitlist moves up.
+
+        After the cancellation deadline a member can no longer cancel their
+        own place (``own``); a waitlist entry can always be withdrawn.
+        """
+        EventService._lock(event_id)
         registration = db.session.scalar(
             select(EventRegistration).where(
                 EventRegistration.event_id == event_id,
@@ -208,18 +282,63 @@ class EventService:
             )
         )
         if registration is None:
-            raise_error(404, "NOT_FOUND", "No active registration found")
+            # Put on the list by an organiser, without a registration.
+            try:
+                EventService.remove_attendee(event_id, member_id)
+            except ApiError:
+                raise_error(404, "NOT_FOUND", "No active registration found")
+            return None
+        if (
+            own
+            and registration.status != "waitlisted"
+            and _passed(EventService.get(event_id).cancellation_deadline)
+        ):
+            raise_error(
+                409,
+                "CANCELLATION_CLOSED",
+                "The cancellation deadline for this event has passed",
+            )
 
+        freed_a_place = registration.status in _HOLDS_A_PLACE
         registration.status = "cancelled"
         registration.cancelled_at = datetime.now(timezone.utc)
 
         # Remove from attendees for backward compat
         try:
             EventService.remove_attendee(event_id, member_id)
-        except Exception:
+        except ApiError:
             pass
 
+        if freed_a_place:
+            db.session.flush()
+            EventService._promote_waitlist(EventService.get(event_id))
+
         return registration
+
+    @staticmethod
+    def _promote_waitlist(event: ClubEvent) -> None:
+        """Give free places to the waitlist, first come first served."""
+        while not EventService._is_full(event):
+            nxt = db.session.scalar(
+                select(EventRegistration)
+                .where(
+                    EventRegistration.event_id == event.id,
+                    EventRegistration.status == "waitlisted",
+                )
+                .order_by(EventRegistration.registered_at, EventRegistration.id)
+                .limit(1)
+            )
+            if nxt is None:
+                return
+            nxt.status = "registered"
+            db.session.flush()
+            member = db.session.get(Member, nxt.member_id)
+            if member is not None:
+                EventService._ensure_attendee(event.id, member)
+            # They may have given up on it; tell them they are in now.
+            from hubra.api.notifications.services import notify_member
+
+            notify_member(nxt.member_id, "info", "You got a place", event.title)
 
     @staticmethod
     def mark_attendance(event_id: int, member_id: int) -> EventRegistration:
@@ -245,7 +364,13 @@ class EventService:
         Events with a ``time`` like "14:00-18:00" get local start and end
         times (Europe/Zurich); others are all-day.
         """
+        from hubra.core.tenant.context import current_tenant
+
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        # Event ids repeat across clubs (one schema each): the club's slug
+        # keeps the UIDs apart for someone who subscribes to two clubs.
+        tenant = current_tenant()
+        uid_host = f"{tenant.slug}.hubra" if tenant else "hubra"
         lines = [
             "BEGIN:VCALENDAR",
             "VERSION:2.0",
@@ -261,7 +386,7 @@ class EventService:
         for event in events:
             lines += [
                 "BEGIN:VEVENT",
-                f"UID:event-{event.id}@club-management-suite",
+                f"UID:event-{event.id}@{uid_host}",
                 f"DTSTAMP:{stamp}",
                 f"SUMMARY:{_ical_text(event.title)}",
             ]
@@ -381,7 +506,10 @@ class EventsService:
         if from_str:
             try:
                 from_date = date.fromisoformat(from_str)
-                query = query.where(ClubEvent.date >= from_date)
+                # An event that started earlier and is still on counts too.
+                query = query.where(
+                    func.coalesce(ClubEvent.end_date, ClubEvent.date) >= from_date
+                )
             except ValueError:
                 raise_error(
                     400,
@@ -411,6 +539,7 @@ class EventsService:
     @staticmethod
     def create(data: dict, actor_id: int) -> ClubEvent:
         """Create a new event."""
+        _check_dates(data.get("date"), data.get("end_date"))
         event = ClubEvent(
             title=data["title"],
             date=data["date"],

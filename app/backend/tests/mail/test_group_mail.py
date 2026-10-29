@@ -302,3 +302,26 @@ def test_post_group_no_longer_auto_creates_alias(client, db, seeded_db, auth_hea
     )
 
     assert resp.status_code == 201
+
+
+def test_an_address_clash_does_not_lose_the_new_group(
+    client, db, auth_headers, seeded_db
+):
+    """The automatic group address failing must not undo the group itself."""
+    # A row that takes the address without the parts the free-name check reads.
+    db.session.add(
+        ManagedMailAddress(
+            address="werkstatt@club.ch",
+            address_type="mailbox",
+            owner_type="member",
+            owner_id=999,
+        )
+    )
+    db.session.commit()
+
+    with patch_mail_domain("club.ch"):
+        resp = client.post(
+            "/api/v1/groups/", json={"name": "Werkstatt"}, headers=auth_headers
+        )
+    assert resp.status_code == 201
+    assert db.session.get(Group, resp.get_json()["id"]) is not None
