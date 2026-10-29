@@ -545,6 +545,10 @@ def switch_tenant():
     tenant = db.session.scalar(select(Tenant).where(Tenant.slug == target_slug))
     if tenant is None:
         return api_error("NOT_FOUND", "Tenant not found", 404)
+    if tenant.status != "active":
+        # Every request in it would fail as signed out, and the club app
+        # would send the person back to sign in, round and round.
+        return api_error("CLUB_INACTIVE", "This club is not active", 403)
 
     # Verification happens on the SSO portal after sign-in; no club opens
     # before it is done.

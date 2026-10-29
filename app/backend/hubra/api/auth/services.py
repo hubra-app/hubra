@@ -507,7 +507,9 @@ class AuthService:
             result = []
             for ut in records:
                 tenant = db.session.get(Tenant, ut.tenant_id)
-                if tenant is None:
+                # A suspended or archived club can't be opened (the tenant
+                # middleware ignores it), so it isn't offered either.
+                if tenant is None or tenant.status != "active":
                     continue
                 set_search_path(tenant.id)
                 member = db.session.scalar(

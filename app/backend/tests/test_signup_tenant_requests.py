@@ -592,3 +592,25 @@ def test_club_picker_leaves_out_clubs_where_archived(db, seeded_db):
     seeded_db["admin"].archived_at = datetime.now(timezone.utc)
     db.session.commit()
     assert AuthService.find_user_tenants(user.id) == []
+
+
+def test_suspended_club_is_not_offered_or_opened(client, db, seeded_db):
+    from hubra.api.auth.services import AuthService
+    from hubra.core.models.tenant import Tenant
+    from hubra.core.models.user_tenant import UserTenant
+
+    user = seeded_db["user"]
+    t2 = Tenant(name="Club Two", slug="club-two", plan="growth", status="suspended")
+    db.session.add(t2)
+    db.session.flush()
+    db.session.add(UserTenant(user_id=user.id, tenant_id=t2.id))
+    db.session.commit()
+    assert AuthService.find_user_tenants(user.id) == []
+
+    client.post(
+        "/api/v1/auth/login",
+        json={"email": "admin@test.ch", "password": "password123"},
+    )
+    resp = client.post("/api/v1/auth/switch-tenant", json={"tenantSlug": "club-two"})
+    assert resp.status_code == 403
+    assert resp.get_json()["error"] == "CLUB_INACTIVE"
