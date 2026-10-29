@@ -348,6 +348,7 @@ def _send_overdue_reminders() -> dict:
     Returns a summary dict with counts per round.
     """
     from sqlalchemy import select
+    from hubra.core.models.external_party import ExternalParty
     from hubra.core.models.finance import Invoice
     from hubra.core.models.invoice_reminder import InvoiceReminderHistory
     from hubra.core.models.member import Member
@@ -392,74 +393,79 @@ def _send_overdue_reminders() -> dict:
         sent_types.setdefault(h.invoice_id, set()).add(h.reminder_type)
 
     for invoice in overdue_invoices:
-        member = db.session.get(Member, invoice.member_id)
-        if not member or not member.email:
+        # The same rule as a manual reminder (InvoiceService.dispatch_reminder):
+        # a member only at a verified address, an external party at its
+        # address; no portal link for an external party.
+        member = (
+            db.session.get(Member, invoice.member_id) if invoice.member_id else None
+        )
+        party = (
+            db.session.get(ExternalParty, invoice.external_party_id)
+            if member is None and invoice.external_party_id
+            else None
+        )
+        if member is not None and member.email and member.private_email_verified:
+            recipient = member
+            lang = getattr(member, "language", DEFAULT_LANG) or DEFAULT_LANG
+            link = portal_url
+        elif member is None and party is not None and party.email:
+            recipient = party
+            lang = DEFAULT_LANG
+            link = ""
+        else:
             skipped_no_email += 1
             logger.info(
-                "overdue_reminder_skipped invoice_id=%s reason=no_member_or_email",
+                "overdue_reminder_skipped invoice_id=%s reason=no_verified_address",
                 invoice.id,
             )
             continue
 
         sent = sent_types.get(invoice.id, set())
 
-        # Check for 14-day reminder first (higher priority round)
+        # The second round first: an invoice found late gets only that one.
         if "overdue_14d" not in sent and invoice.due <= today - timedelta(
             days=billing["second_reminder_days"]
         ):
-            subject, body_html, body_text = _render_invoice_reminder(
-                name=member.name,
-                invoice_id=invoice.id,
-                amount=float(invoice.amount),
-                due_date=invoice.due,
-                portal_url=portal_url,
-                lang=getattr(member, "language", DEFAULT_LANG) or DEFAULT_LANG,
-            )
-            _dispatch_invoice_email(
-                invoice=invoice,
-                member=member,
-                subject=subject,
-                body_html=body_html,
-                body_text=body_text,
-                reminder_type="overdue_14d",
-            )
-            overdue_14d += 1
-            # First overdue round for this invoice (its send history also
-            # holds the "generation" and "manual" mails).
-            if "overdue_7d" not in sent:
-                emit(INVOICE_OVERDUE, member_id=member.id, invoice_id=invoice.id)
-            logger.info(
-                "overdue_reminder_sent invoice_id=%s member_id=%s round=14d",
-                invoice.id,
-                member.id,
-            )
-
+            reminder_type = "overdue_14d"
         elif "overdue_7d" not in sent and invoice.due <= today - timedelta(
             days=billing["first_reminder_days"]
         ):
-            subject, body_html, body_text = _render_invoice_reminder(
-                name=member.name,
-                invoice_id=invoice.id,
-                amount=float(invoice.amount),
-                due_date=invoice.due,
-                portal_url=portal_url,
-                lang=getattr(member, "language", DEFAULT_LANG) or DEFAULT_LANG,
-            )
-            _dispatch_invoice_email(
-                invoice=invoice,
-                member=member,
-                subject=subject,
-                body_html=body_html,
-                body_text=body_text,
-                reminder_type="overdue_7d",
-            )
+            reminder_type = "overdue_7d"
+        else:
+            continue
+
+        subject, body_html, body_text = _render_invoice_reminder(
+            name=recipient.name,
+            invoice_id=invoice.id,
+            amount=float(invoice.amount),
+            due_date=invoice.due,
+            portal_url=link,
+            lang=lang,
+        )
+        _dispatch_invoice_email(
+            invoice=invoice,
+            member=recipient,
+            subject=subject,
+            body_html=body_html,
+            body_text=body_text,
+            reminder_type=reminder_type,
+        )
+        if reminder_type == "overdue_14d":
+            overdue_14d += 1
+        else:
             overdue_7d += 1
+        # The first overdue round for this invoice (its send history also
+        # holds the "generation" and "manual" mails). Members only: the
+        # event names a member.
+        if member is not None and "overdue_7d" not in sent:
             emit(INVOICE_OVERDUE, member_id=member.id, invoice_id=invoice.id)
-            logger.info(
-                "overdue_reminder_sent invoice_id=%s member_id=%s round=7d",
-                invoice.id,
-                member.id,
-            )
+        logger.info(
+            "overdue_reminder_sent invoice_id=%s member_id=%s party_id=%s round=%s",
+            invoice.id,
+            member.id if member else None,
+            party.id if party else None,
+            reminder_type,
+        )
 
     db.session.commit()
     logger.info(
