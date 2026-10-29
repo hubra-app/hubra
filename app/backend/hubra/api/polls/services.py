@@ -223,6 +223,8 @@ class PollService:
     def remind(poll_id: int, actor_id: int) -> int:
         """Send reminder notifications to required members who haven't voted."""
         poll = PollService.get(poll_id)
+        if is_closed(poll):
+            raise_error(409, "CONFLICT", "This poll is closed")
         required = PollService.get_required_members(poll)
 
         voters = set(
