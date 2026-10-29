@@ -1177,6 +1177,8 @@
   "mail.admin.syncError": "Error",
   "mail.admin.syncOk": "OK",
   "mail.admin.syncPending": "Pending",
+  "mail.admin.tabAddresses": "Addresses",
+  "mail.admin.tabAll": "All addresses",
   "mail.admin.tabFunctions": "Functions",
   "mail.admin.tabGroups": "Groups",
   "mail.admin.tabMembers": "Members",

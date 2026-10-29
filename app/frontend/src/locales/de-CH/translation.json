@@ -1175,6 +1175,8 @@
       "syncError": "Fehler",
       "syncOk": "OK",
       "syncPending": "Ausstehend",
+      "tabAddresses": "Adressen",
+      "tabAll": "Alle Adressen",
       "tabFunctions": "Funktionen",
       "tabGroups": "Gruppen",
       "tabMembers": "Mitglieder",
