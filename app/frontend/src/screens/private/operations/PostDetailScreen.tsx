@@ -48,6 +48,7 @@ export function PostDetailScreen() {
   const [submittingComment, setSubmittingComment] = useState(false)
   const canLike = hasPermission('posts.posts.like')
   const canComment = hasPermission('posts.posts.comment')
+  const canModerate = hasPermission('posts.posts.moderate')
 
   const toggleLike = async () => {
     if (!post) return
@@ -285,7 +286,8 @@ export function PostDetailScreen() {
                     >
                       {comment.time}
                     </span>
-                    {((canComment && comment.authorId === currentUser?.id) ||
+                    {((canComment &&
+                      (comment.authorId === currentUser?.id || canModerate)) ||
                       isAdmin) && (
                       <Button
                         size="compact-xs"

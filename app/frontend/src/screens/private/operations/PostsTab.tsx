@@ -56,6 +56,8 @@ export function PostsTab() {
   const canDelete = hasPermission('posts.posts.delete')
   const canLike = hasPermission('posts.posts.like')
   const canComment = hasPermission('posts.posts.comment')
+  // Moderators edit and remove other members' posts and comments too.
+  const canModerate = hasPermission('posts.posts.moderate')
 
   const [addOpen, setAddOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Post | null>(null)
@@ -320,10 +322,10 @@ export function PostsTab() {
   )
 
   const canEditPost = (post: Post) =>
-    (canUpdate && post.authorId === currentUser?.id) || isAdmin
+    (canUpdate && (post.authorId === currentUser?.id || canModerate)) || isAdmin
 
   const canDeletePost = (post: Post) =>
-    (canDelete && post.authorId === currentUser?.id) || isAdmin
+    (canDelete && (post.authorId === currentUser?.id || canModerate)) || isAdmin
 
   return (
     <div>
@@ -559,7 +561,8 @@ export function PostsTab() {
                                   {comment.time}
                                 </span>
                                 {((canComment &&
-                                  comment.authorId === currentUser?.id) ||
+                                  (comment.authorId === currentUser?.id ||
+                                    canModerate)) ||
                                   isAdmin) && (
                                   <Button
                                     size="compact-xs"

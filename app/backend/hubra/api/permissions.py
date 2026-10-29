@@ -199,6 +199,26 @@ def member_is_admin(member) -> bool:
     return any(r.is_admin for r in (getattr(member, "roles", None) or []))
 
 
+# Rights that no single route stands for (a route checks them itself).
+# sync-permissions adds them to the Permission table like the route ones.
+EXTRA_PERMISSIONS = (
+    {
+        "key": "posts.posts.moderate",
+        "display_name": "Moderate posts and comments",
+        "resource": "posts",
+        "action": "moderate",
+        "blueprint": "posts_bp",
+    },
+)
+
+
+def member_has_permission(member, key: str) -> bool:
+    """True for an admin, or when one of the member's roles grants *key*."""
+    if member is None:
+        return False
+    return member_is_admin(member) or key in _get_member_permission_keys(member)
+
+
 def check_grant(actor, *, given=(), taken=(), keys=()) -> None:
     """403 unless *actor* may give the roles *given* (and permission *keys*)
     and take the roles *taken*.
