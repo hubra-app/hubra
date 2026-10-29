@@ -110,6 +110,9 @@ def _amount(value) -> Decimal:
         amount = Decimal(str(value)).quantize(Decimal("0.01"))
     except (InvalidOperation, TypeError, ValueError):
         raise_error(400, "VALIDATION_ERROR", "planned must be an amount")
+    # NaN passes quantize; Numeric(12, 2) holds less than 10^10.
+    if not amount.is_finite() or amount >= Decimal("1e10"):
+        raise_error(400, "VALIDATION_ERROR", "planned must be an amount")
     if amount < 0:
         raise_error(400, "VALIDATION_ERROR", "planned cannot be negative")
     return amount

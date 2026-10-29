@@ -337,11 +337,12 @@ def test_parse_text_from_html_only_mail():
     msg = EmailMessage()
     msg["From"] = "Lisa <lisa@example.ch>"
     msg["Subject"] = "=?utf-8?q?Gr=C3=BCezi?="
-    msg.set_content("<p>Nur <b>HTML</b></p>", subtype="html")
+    msg.set_content("<p>Nur <b>HTML</b> &amp; 3 &lt; 4</p>", subtype="html")
     p = parse.parse(msg.as_bytes())
     assert p.subject == "Grüezi"
     assert p.from_name == "Lisa" and p.from_address == "lisa@example.ch"
     assert "Nur" in p.text_body and "<b>" not in p.text_body
+    assert "& 3 < 4" in p.text_body
 
 
 @pytest.mark.parametrize(

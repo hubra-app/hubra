@@ -6,6 +6,7 @@
   longer stops the sync of every later mailbox of the club. The error is
   shown on that mailbox, and the others sync as usual.
 - The search date no longer depends on the server's locale.
+- The text of an HTML-only mail shows & and < instead of &amp; and &lt;.
 
 ## 1.0.0
 
