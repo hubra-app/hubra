@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from decimal import Decimal, InvalidOperation
 
 from sqlalchemy import func, select
@@ -78,8 +79,11 @@ class TierService:
                 tier.price_chf = None
 
         if "color" in data:
-            if not isinstance(data["color"], str):
-                raise_error(400, "VALIDATION_ERROR", "color must be a string")
+            # Same rule as on create (TierCreateSchema): #rrggbb.
+            if not isinstance(data["color"], str) or not re.fullmatch(
+                r"#[0-9A-Fa-f]{6}", data["color"]
+            ):
+                raise_error(400, "VALIDATION_ERROR", "color must look like #1a2b3c")
             tier.color = data["color"]
 
         if "billing_cycle" in data:

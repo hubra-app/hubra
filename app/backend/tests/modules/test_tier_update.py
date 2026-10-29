@@ -43,3 +43,13 @@ def test_numbers_are_stored(client, auth_headers, tier_id):
     assert body["coefficient"] == 2
     assert body["round_to"] == 5
     assert body["deduct_tier_ids"] == [1, 2]
+
+
+def test_a_colour_must_look_like_one(client, auth_headers, tier_id):
+    """Create already demanded #rrggbb; an edit took any text."""
+    url = f"/api/v1/tiers/{tier_id}"
+    for color in ("red", "#12345", "#1234567", "url(x)"):
+        resp = client.patch(url, json={"color": color}, headers=auth_headers)
+        assert resp.status_code == 400, color
+    resp = client.patch(url, json={"color": "#1A2b3c"}, headers=auth_headers)
+    assert resp.status_code == 200 and resp.get_json()["color"] == "#1A2b3c"
