@@ -511,6 +511,15 @@ class InvoiceService:
                 linked_tx.status = "Pending"
             if "amount" in data and linked_tx.status == "Pending":
                 linked_tx.amount = abs(Decimal(str(invoice.amount)))
+            # So does who pays: the income is listed under the new recipient.
+            if "member_id" in data or "external_party_id" in data:
+                linked_tx.member_id = invoice.member_id
+                party = (
+                    db.session.get(ExternalParty, invoice.external_party_id)
+                    if invoice.external_party_id is not None
+                    else None
+                )
+                linked_tx.payee_name = party.name if party else None
 
         if invoice.status == "Paid" and not was_paid and invoice.member_id:
             from hubra.core.modules import emit
