@@ -696,6 +696,8 @@ class InvoiceService:
         )
 
         reminded_at = datetime.now(timezone.utc).isoformat()
+        if not success:
+            return {"ok": False, "message": error_message, "remindedAt": None}
         return {"ok": True, "message": "Reminder queued", "remindedAt": reminded_at}
 
 

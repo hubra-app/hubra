@@ -223,6 +223,10 @@ const DE_STATUS: Record<number, string> = {
 
 const DE_CODE: Record<string, string> = {
   MODULE_DISABLED: "Dieses Modul ist für den Verein ausgeschaltet.",
+  REMINDER_NOT_SENT: "Die Erinnerung wurde nicht verschickt: Die Empfängerin oder der Empfänger hat keine (bestätigte) E-Mail-Adresse.",
+  REGISTRATION_CLOSED: "Die Anmeldung für diesen Anlass ist geschlossen.",
+  CANCELLATION_CLOSED: "Die Abmeldefrist für diesen Anlass ist vorbei.",
+  POLL_HAS_VOTES: "Es wurde schon abgestimmt; die Antworten können nicht mehr geändert werden.",
   EMAIL_NOT_VERIFIED: "Bestätige zuerst deine E-Mail-Adresse.",
   MUST_CHANGE_PASSWORD: "Bitte ändere zuerst dein Passwort.",
   LAST_OWNER: "Die letzte Inhaberin oder der letzte Inhaber kann den Verein nicht verlassen.",

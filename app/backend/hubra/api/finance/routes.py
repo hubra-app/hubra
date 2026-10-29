@@ -367,7 +367,11 @@ def remind_invoice(id: int):
         raise
 
     result = InvoiceService.dispatch_reminder(invoice, member.id)
-    db.session.commit()
+    db.session.commit()  # keeps the failed attempt in the reminder history
+    if not result["ok"]:
+        return api_error(
+            "REMINDER_NOT_SENT", f"Reminder not sent: {result['message']}", 409
+        )
     return jsonify(result), 200
 
 

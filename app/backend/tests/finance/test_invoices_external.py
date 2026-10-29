@@ -308,8 +308,14 @@ def test_remind_external_invoice_no_email(client, auth_headers, seeded_db):
             f"/api/v1/finance/invoices/{inv_id}/remind", headers=auth_headers
         )
 
-    assert resp.status_code == 200
+    # Nothing went out, so the treasurer is told; the attempt is kept.
+    assert resp.status_code == 409
+    assert resp.get_json()["error"] == "REMINDER_NOT_SENT"
     mock_delay.assert_not_called()
+    history = client.get(
+        f"/api/v1/finance/invoices/{inv_id}/reminders", headers=auth_headers
+    ).get_json()
+    assert len(history) == 1
 
 
 # ── Invoice schema output fields ──────────────────────────────────────────────
