@@ -93,3 +93,17 @@ def test_members_hear_when_their_event_is_deleted(client, auth_headers, seeded_d
         )
     ).all()
     assert titles == ["Ausflug"]
+
+
+def test_an_event_cannot_end_before_it_starts(client, auth_headers, seeded_db):
+    resp = _create_event(client, auth_headers, date="2030-06-06", end_date="2030-06-05")
+    assert resp.status_code == 400
+    event_id = _create_event(client, auth_headers, date="2030-06-06").get_json()["id"]
+    resp = client.patch(
+        f"/api/v1/events/{event_id}", json={"end_date": "2030-06-01"}, headers=auth_headers
+    )
+    assert resp.status_code == 400
+    resp = client.patch(
+        f"/api/v1/events/{event_id}", json={"end_date": "2030-06-08"}, headers=auth_headers
+    )
+    assert resp.status_code == 200

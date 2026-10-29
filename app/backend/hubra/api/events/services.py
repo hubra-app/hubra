@@ -31,6 +31,12 @@ def _passed(deadline: datetime | None) -> bool:
     return deadline < datetime.now(timezone.utc)
 
 
+
+def _check_dates(start, end) -> None:
+    """An event cannot end before it starts (calendar apps drop it)."""
+    if start is not None and end is not None and end < start:
+        raise_error(400, "VALIDATION_ERROR", "end_date is before date")
+
 class EventService:
     """Operations on a single event."""
 
@@ -73,6 +79,8 @@ class EventService:
         ):
             if field in data:
                 setattr(event, field, data[field])
+        if "date" in data or "end_date" in data:
+            _check_dates(event.date, event.end_date)
         if "max_attendees" in data:
             # More places (or no limit any more): the waitlist moves up.
             EventService._lock(event.id)
@@ -525,6 +533,7 @@ class EventsService:
     @staticmethod
     def create(data: dict, actor_id: int) -> ClubEvent:
         """Create a new event."""
+        _check_dates(data.get("date"), data.get("end_date"))
         event = ClubEvent(
             title=data["title"],
             date=data["date"],
