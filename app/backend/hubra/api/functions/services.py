@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
@@ -20,7 +21,21 @@ def _holder_count(value) -> int:
 class FunctionService:
     @staticmethod
     def list_all() -> list[Function]:
-        return list(db.session.scalars(select(Function).order_by(Function.name)).all())
+        from hubra.core.models.member import Member
+
+        # Holders, their members and accounts in three queries, not three
+        # per function.
+        return list(
+            db.session.scalars(
+                select(Function)
+                .order_by(Function.name)
+                .options(
+                    selectinload(Function.holders)
+                    .selectinload(FunctionHolder.member)
+                    .selectinload(Member.user)
+                )
+            ).all()
+        )
 
     @staticmethod
     def get_by_id(function_id: int) -> Function:
@@ -171,14 +186,10 @@ class FunctionService:
 
     @staticmethod
     def serialize(fn: Function) -> dict:
-        from hubra.core.models.member import Member
-
-        holders = db.session.scalars(
-            select(Member)
-            .join(FunctionHolder, FunctionHolder.member_id == Member.id)
-            .where(FunctionHolder.function_id == fn.id)
-        ).all()
-
+        holders = sorted(
+            (fh for fh in fn.holders if fh.member is not None),
+            key=lambda fh: fh.member_id,
+        )
         return {
             "id": fn.id,
             "name": fn.name,
@@ -186,14 +197,13 @@ class FunctionService:
             "maxHolders": fn.max_holders,
             "holders": [
                 {
-                    "memberId": h.id,
-                    "memberName": h.name,
-                    "assignedAt": holder.assigned_at.isoformat()
-                    if holder.assigned_at
+                    "memberId": fh.member_id,
+                    "memberName": fh.member.name,
+                    "assignedAt": fh.assigned_at.isoformat()
+                    if fh.assigned_at
                     else None,
                 }
-                for h in holders
-                for holder in [fh for fh in fn.holders if fh.member_id == h.id]
+                for fh in holders
             ],
         }
 
