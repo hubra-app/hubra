@@ -906,6 +906,8 @@ class InvoicesService:
             due_date = date.fromisoformat(due_str)
         except (TypeError, ValueError):
             raise_error(400, "VALIDATION_ERROR", "due must be a valid ISO date")
+        if due_date < date.today():
+            raise_error(400, "VALIDATION_ERROR", "due is before issued")
 
         issued_date = date.today()
 

@@ -382,3 +382,26 @@ def test_an_invoice_cannot_be_moved_to_be_due_before_it_is_issued(
     resp = client.patch(url, json={"issued": "2026-12-15"}, headers=auth_headers)
     assert resp.status_code == 400
     assert client.get(url, headers=auth_headers).json["issued"] == "2026-11-01"
+
+
+def test_bulk_invoices_bill_each_member_once(client, auth_headers, seeded_db, db):
+    from datetime import date, timedelta
+
+    from hubra.core.models.finance import Invoice
+
+    seeded_db["tier"].price_type = "fixed"
+    db.session.commit()
+    url = "/api/v1/finance/invoices/bulk"
+    due = (date.today() + timedelta(days=30)).isoformat()
+    resp = client.post(url, json={"due": due}, headers=auth_headers)
+    assert resp.status_code == 201, resp.json
+    assert resp.json["created"] == 1
+    invoice = db.session.get(Invoice, resp.json["invoices"][0]["id"])
+    assert invoice.member_id == seeded_db["admin"].id
+    assert invoice.issued == date.today() and invoice.due.isoformat() == due
+    assert float(invoice.amount) == 45.0
+
+    # Issued today, so a due date in the past would be overdue at once.
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    resp = client.post(url, json={"due": yesterday}, headers=auth_headers)
+    assert resp.status_code == 400
