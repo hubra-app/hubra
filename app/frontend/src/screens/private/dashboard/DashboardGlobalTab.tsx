@@ -422,10 +422,10 @@ export function GlobalOverviewScreen() {
                       {post.author_name ?? t("account.unknownAuthor")}
                       {" \u00b7 "}
                       {post.like_count}{" "}
-                      {t("events.likes", 'Likes').toLowerCase()}
+                      {t("events.likes", 'Likes')}
                       {" \u00b7 "}
                       {post.comment_count}{" "}
-                      {t("events.comments", 'Kommentare').toLowerCase()}
+                      {t("events.comments", 'Kommentare')}
                     </div>
                   </div>
                 </UnstyledButton>
