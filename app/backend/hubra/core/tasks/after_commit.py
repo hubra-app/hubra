@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 
+from flask import current_app
 from sqlalchemy import event
 
 from hubra.core.extensions import db
@@ -32,6 +33,9 @@ def _send(session) -> None:
         try:
             task.delay(*args, **kwargs)
         except Exception:
+            # Tests run tasks eagerly; a broken task must fail them.
+            if current_app.testing:
+                raise
             # The commit is done; a broker outage must not look like it failed.
             _log.exception("could not queue %s after commit", task.name)
 

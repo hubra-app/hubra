@@ -108,6 +108,8 @@ def register_error_handlers(app: Flask) -> None:
             return api_error(
                 "VALIDATION_ERROR", "The request body must be a JSON object.", 400
             )
+        if app.testing or app.config.get("PROPAGATE_EXCEPTIONS"):
+            raise exc  # a real bug: let tests (and debug) see it
         app.logger.exception("Unhandled exception: %s", exc)
         return api_error("INTERNAL_ERROR", "An unexpected error occurred.", 500)
 
