@@ -54,6 +54,48 @@ i18n.on("languageChanged", (lng) => {
 const accessedKeys = new Map<string, string | undefined>();
 let reportTimer: ReturnType<typeof setTimeout> | null = null;
 const REPORT_DEBOUNCE_MS = 30_000;
+// Keys the API has a value for, per locale; only the others are missing.
+const apiKeys = new Map<string, Set<string>>();
+// The report also marks keys as used (the stale flag on the translations
+// page, 30 days by default), so every used key goes out once a day. In
+// between, only keys this browser has not reported yet since then.
+const REPORTED_KEY = "cms_i18n_reported";
+const FULL_REPORT_MS = 24 * 60 * 60 * 1000;
+// Off for a day once the API says no (members without i18n write
+// permission).
+const DENIED_KEY = "cms_i18n_report_denied";
+
+function reportingDenied(): boolean {
+  try {
+    return Date.now() - Number(localStorage.getItem(DENIED_KEY)) < FULL_REPORT_MS;
+  } catch {
+    return false;
+  }
+}
+
+interface Reported {
+  at: number;
+  keys: string[];
+}
+
+function loadReported(locale: string): Reported | null {
+  try {
+    const raw = localStorage.getItem(`${REPORTED_KEY}:${locale}`);
+    const rec = raw ? (JSON.parse(raw) as Reported) : null;
+    if (!rec || !Array.isArray(rec.keys) || Date.now() - rec.at > FULL_REPORT_MS) return null;
+    return rec;
+  } catch {
+    return null;
+  }
+}
+
+function saveReported(locale: string, rec: Reported) {
+  try {
+    localStorage.setItem(`${REPORTED_KEY}:${locale}`, JSON.stringify(rec));
+  } catch {
+    // Storage blocked: report again next time
+  }
+}
 
 function recordKey(key: string, defaultValue?: string) {
   if (!key) return;
@@ -71,20 +113,48 @@ async function flushAccessedKeys() {
     reportTimer = null;
   }
   if (accessedKeys.size === 0) return;
+  if (reportingDenied()) {
+    accessedKeys.clear();
+    return;
+  }
   const keys = [...accessedKeys.entries()].map(([key, dv]) => ({
     key,
     default_value: dv ?? null,
   }));
   accessedKeys.clear();
-  let locales = KNOWN_LANGUAGES;
+  let locales: string[];
   try {
     locales = await clubLanguages();
   } catch {
     // API unavailable — skip reporting
+    return;
   }
   for (const locale of locales) {
+    const known = apiKeys.get(locale);
+    // Translations not loaded: nothing to compare against.
+    if (!known) continue;
+    const reported = loadReported(locale);
+    const done = new Set(reported?.keys);
+    const batch = reported
+      ? keys.filter((k) => !known.has(k.key) && !done.has(k.key))
+      : keys;
+    if (batch.length === 0) continue;
+    // Remember only the missing ones: the others are filtered by `known`.
+    // Saved before sending: a report on page unload never sees its answer.
+    const sent = batch.map((k) => k.key).filter((key) => !known.has(key));
+    saveReported(
+      locale,
+      reported ? { at: reported.at, keys: [...done, ...sent] } : { at: Date.now(), keys: sent },
+    );
     // Fire-and-forget — don't block the UI
-    reportMissingKeys(locale, keys).catch(() => {});
+    reportMissingKeys(locale, batch).catch((err: { status?: number }) => {
+      if (err?.status !== 403) return;
+      try {
+        localStorage.setItem(DENIED_KEY, String(Date.now()));
+      } catch {
+        // Storage blocked: ask again next time
+      }
+    });
   }
 }
 
@@ -112,6 +182,10 @@ export async function loadAllTranslationsFromApi() {
 export async function loadTranslationsFromApi(locale: string) {
   try {
     const data = await fetchTranslations(locale);
+    apiKeys.set(
+      locale,
+      new Set(Object.keys(data).filter((key) => data[key]?.trim())),
+    );
     // Parents before children: "a.b" after "a.b.c" would replace the
     // object that holds "a.b.c" with a string.
     for (const [key, value] of Object.entries(data).sort(([a], [b]) => (a < b ? -1 : 1))) {

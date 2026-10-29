@@ -727,7 +727,11 @@ def get_account():
                 "user": {"email": current_user.email, "name": current_user.name},
             }
         ), 200
-    return jsonify(_member_schema.dump(current_user)), 200
+    body = _member_schema.dump(current_user)
+    # The club this token is for: the club app calls /auth/switch-tenant
+    # only when it is not the club in the URL.
+    body["tenantSlug"] = get_jwt().get("tenant_slug")
+    return jsonify(body), 200
 
 
 # ── GET /account/permissions ─────────────────────────────────────────────────
