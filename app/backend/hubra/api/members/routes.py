@@ -19,6 +19,7 @@ from hubra.api.permissions import (
     permission_required,
     can_update,
     filter_updatable_fields,
+    refuse_during_impersonation,
 )
 from hubra.api.utils import log_audit
 from hubra.core.errors import api_error, raise_error
@@ -407,6 +408,7 @@ def get_my_leave():
 @jwt_required()
 def leave_club():
     """Leave the club now, or ask to leave when the club wants to approve it."""
+    refuse_during_impersonation()
     member = get_current_member()
     if not _leave_needs_approval():
         _leave_now(member, member.id, "left")

@@ -40,6 +40,7 @@ from hubra.api.permissions import (
     require_password_changed,
     _get_member_permission_keys,
     member_is_admin,
+    refuse_during_impersonation,
 )
 from hubra.core.errors import ApiError, api_error, raise_error
 from hubra.core.extensions import db, limiter
@@ -1098,6 +1099,7 @@ def list_account_sessions():
 @account_bp.delete("/sessions/<int:session_id>")
 @jwt_required()
 def revoke_account_session(session_id: int):
+    refuse_during_impersonation()
     member = current_user  # type: Member
     session = session_service.revoke_session(session_id, member.id)
     if session is None:
@@ -1145,6 +1147,7 @@ def rename_account_session(session_id: int):
 @account_bp.post("/sessions/revoke-all")
 @jwt_required()
 def revoke_all_other_sessions():
+    refuse_during_impersonation()
     member = current_user  # type: Member
     current_sid = get_jwt().get("sid")
     body = request.get_json(silent=True) or {}
@@ -1153,7 +1156,10 @@ def revoke_all_other_sessions():
     if include_current:
         count = session_service.revoke_all_including_current(member.id)
     else:
-        count = session_service.revoke_all_other_sessions(member.id, int(current_sid))
+        # A token without a tracked session keeps none of them.
+        count = session_service.revoke_all_other_sessions(
+            member.id, int(current_sid) if current_sid else 0
+        )
 
     db.session.commit()
     return jsonify({"ok": True, "revoked": count}), 200
@@ -1194,6 +1200,7 @@ def rename_account_device(device_id: int):
 @account_bp.delete("/devices/<int:device_id>")
 @jwt_required()
 def revoke_account_device(device_id: int):
+    refuse_during_impersonation()
     member = current_user  # type: Member
     count = session_service.revoke_device_sessions(device_id, member.id)
     if count == 0:
