@@ -1,10 +1,15 @@
 import { useEffect } from 'react'
-import { useEditor } from '@tiptap/react'
+import { useEditor, type Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import Underline from '@tiptap/extension-underline'
 import Placeholder from '@tiptap/extension-placeholder'
 import { Link, RichTextEditor as MantineRichTextEditor } from '@mantine/tiptap'
 import { Markdown } from 'tiptap-markdown'
+
+// tiptap-markdown's storage isn't in Tiptap 3's Storage type.
+function getMarkdown(editor: Editor): string {
+  const storage = editor.storage as unknown as { markdown: { getMarkdown(): string } }
+  return storage.markdown.getMarkdown()
+}
 
 interface RichTextEditorProps {
   value: string
@@ -21,10 +26,12 @@ export function RichTextEditor({
 }: RichTextEditorProps) {
   const editor = useEditor({
     extensions: [
+      // StarterKit 3 brings Underline and a Link of its own; Mantine's Link
+      // is the one its toolbar controls expect.
       StarterKit.configure({
         heading: { levels: [2, 3, 4] },
+        link: false,
       }),
-      Underline,
       Link,
       Placeholder.configure({
         placeholder: placeholder ?? '',
@@ -37,14 +44,17 @@ export function RichTextEditor({
       }),
     ],
     content: value,
+    // Tiptap 3 no longer re-renders on every change; the toolbar's active
+    // states (bold, heading, ...) need it.
+    shouldRerenderOnTransaction: true,
     onUpdate: ({ editor }) => {
-      onChange(editor.storage.markdown.getMarkdown())
+      onChange(getMarkdown(editor))
     },
   })
 
   useEffect(() => {
     if (!editor) return
-    const current = editor.storage.markdown.getMarkdown()
+    const current = getMarkdown(editor)
     if (value !== current) {
       editor.commands.setContent(value || '')
     }

@@ -47,7 +47,7 @@ nh3>=0.2
 qrbill>=1.2
 
 # PDF generation (HTML+CSS → PDF, requires GTK on Windows — use Docker for local dev)
-weasyprint>=62.0
+weasyprint>=70.0
 
 # Symmetric encryption (codes at rest)
 cryptography>=42.0.4
