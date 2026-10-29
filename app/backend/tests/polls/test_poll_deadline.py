@@ -1,4 +1,4 @@
-"""Editing a poll without closes_at keeps its deadline."""
+"""Editing a poll without closes_at keeps its deadline; null clears it."""
 
 
 def test_editing_a_poll_keeps_its_deadline(client, auth_headers, seeded_db):
@@ -18,3 +18,8 @@ def test_editing_a_poll_keeps_its_deadline(client, auth_headers, seeded_db):
     )
     assert resp.status_code == 200
     assert resp.get_json()["closes_at"].startswith("2099-01-01")
+    resp = client.patch(
+        f"/api/v1/polls/{poll_id}", json={"closes_at": None}, headers=auth_headers
+    )
+    assert resp.status_code == 200
+    assert resp.get_json()["closes_at"] is None
