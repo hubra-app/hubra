@@ -98,9 +98,30 @@ def _clear_member_groups(member_id: int) -> set[int]:
     return group_ids
 
 
+def _clear_member_functions(member_id: int) -> None:
+    """Give up the member's functions (Kassier, ...), so the place is free
+    for a successor instead of counting against max_holders."""
+    from hubra.api.functions.services import _trigger_mail_sync
+    from hubra.core.models.function import FunctionHolder
+
+    function_ids = set(
+        db.session.scalars(
+            select(FunctionHolder.function_id).where(
+                FunctionHolder.member_id == member_id
+            )
+        ).all()
+    )
+    db.session.execute(
+        delete(FunctionHolder).where(FunctionHolder.member_id == member_id)
+    )
+    for function_id in function_ids:
+        _trigger_mail_sync(function_id)
+
+
 def _clear_member_all_associations(member_id: int) -> set[int]:
-    """Remove member from all groups. Returns affected group IDs."""
+    """Remove member from all groups and functions. Returns affected group IDs."""
     group_ids = _clear_member_groups(member_id)
+    _clear_member_functions(member_id)
     return group_ids
 
 
