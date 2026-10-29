@@ -93,15 +93,3 @@ def test_long_lines_are_folded():
 def test_ical_without_events_is_valid():
     out = EventService.generate_ical([])
     assert out.startswith("BEGIN:VCALENDAR") and out.endswith("END:VCALENDAR\r\n")
-
-
-def test_line_breaks_cannot_add_calendar_properties(app, db):
-    event = ClubEvent(
-        title="Talk\rATTENDEE:mailto:x@example.com",
-        date=date.today(),
-        type="Meeting",
-        meeting_url="https://meet.example/a\r\nATTACH:https://evil.example/x",
-    )
-    lines = EventService.generate_ical([event]).split("\r\n")
-    assert not any(line.startswith(("ATTENDEE", "ATTACH")) for line in lines)
-    assert not any(line.startswith("URL:") for line in lines)

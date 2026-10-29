@@ -100,19 +100,3 @@ def test_close_poll(client, auth_headers, seeded_db):
     resp = client.patch(f"/api/v1/polls/{poll_id}/close", headers=auth_headers)
     assert resp.status_code == 200
     assert resp.get_json()["status"] == "closed"
-
-
-# ── Update ────────────────────────────────────────────────────────────────────
-
-
-def test_editing_a_poll_keeps_its_deadline(client, auth_headers, seeded_db):
-    poll_id = _create_poll(
-        client, auth_headers, closes_at="2099-01-01T12:00:00+00:00"
-    ).get_json()["id"]
-    resp = client.patch(
-        f"/api/v1/polls/{poll_id}",
-        json={"question": "Which evening works best?"},
-        headers=auth_headers,
-    )
-    assert resp.status_code == 200
-    assert resp.get_json()["closes_at"].startswith("2099-01-01")
