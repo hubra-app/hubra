@@ -1061,7 +1061,7 @@ class FinanceOverviewService:
             "months": months_data,
             "openInvoices": {
                 "count": open_count,
-                "amount": open_amount,
+                "amount": float(open_amount),
             },
         }
 

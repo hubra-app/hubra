@@ -328,3 +328,23 @@ def test_linked_transaction_follows_invoice_amount(client, auth_headers, seeded_
     tx = db.session.get(Transaction, tx_id)
     assert tx.status == "Completed"
     assert float(tx.amount) == 60.0
+
+
+def test_overview_open_invoice_amount_is_a_number(client, auth_headers, seeded_db, db):
+    """The overview's open-invoice total is a JSON number like its other
+    figures (a Decimal went out as the string "45.00")."""
+    from hubra.core.models.finance import Invoice
+
+    db.session.add(
+        Invoice(
+            member_id=seeded_db["admin"].id,
+            issued=date.today(),
+            due=date.today() + timedelta(days=30),
+            amount=Decimal("45.00"),
+            status="Open",
+        )
+    )
+    db.session.commit()
+
+    body = client.get("/api/v1/finance/overview", headers=auth_headers).get_json()
+    assert body["openInvoices"] == {"count": 1, "amount": 45.0}
