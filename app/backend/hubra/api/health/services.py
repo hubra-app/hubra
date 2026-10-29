@@ -164,9 +164,15 @@ class HealthService:
                     "error": "Mail relay not configured",
                 }
 
-            with smtplib.SMTP(smtp_host, smtp_port, timeout=1) as server:
+            if smtp_port == 465:
+                connection = smtplib.SMTP_SSL(
+                    smtp_host, smtp_port, timeout=1, context=_smtp_context
+                )
+            else:
+                connection = smtplib.SMTP(smtp_host, smtp_port, timeout=1)
+            with connection as server:
                 server.ehlo()
-                if smtp_port != 25:
+                if smtp_port not in (25, 465):
                     server.starttls(context=_smtp_context)
                     server.ehlo()
                 ok = True

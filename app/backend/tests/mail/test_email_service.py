@@ -143,3 +143,31 @@ def test_smtp_failure_logs_error_and_does_not_raise(email_ctx, caplog):
             _call_send(email_ctx)
 
         assert "smtp_fallback_error" in caplog.text
+
+
+@pytest.mark.parametrize("port, tls_from_start", [(587, False), (465, True)])
+def test_smtp_connects_with_a_timeout(email_ctx, port, tls_from_start):
+    """No timeout let a relay that stopped answering hold a worker forever,
+    and port 465 (TLS from the first byte) could not be used at all."""
+    from hubra.core.services.email import _Route, _send_via_smtp
+
+    with (
+        patch("smtplib.SMTP") as plain,
+        patch("smtplib.SMTP_SSL") as tls,
+    ):
+        _send_via_smtp(
+            "member@example.com",
+            "Alice",
+            "noreply@testclub.example",
+            "Test Club",
+            "Subject",
+            "<p>Hi</p>",
+            "Hi",
+            route=_Route("smtp.example.ch", port, None, None),
+        )
+    used, unused = (tls, plain) if tls_from_start else (plain, tls)
+    assert used.call_args.kwargs["timeout"] > 0
+    unused.assert_not_called()
+    server = used.return_value.__enter__.return_value
+    assert server.starttls.called is not tls_from_start
+    server.sendmail.assert_called_once()
