@@ -102,6 +102,18 @@ def test_close_poll(client, auth_headers, seeded_db):
     assert resp.get_json()["status"] == "closed"
 
 
+def test_poll_shows_my_vote(client, auth_headers, seeded_db):
+    poll_id = _create_poll(client, auth_headers).get_json()["id"]
+    listed = client.get("/api/v1/polls", headers=auth_headers).get_json()
+    assert next(p for p in listed if p["id"] == poll_id)["my_vote"] is None
+
+    client.post(
+        f"/api/v1/polls/{poll_id}/vote", json={"option_index": 1}, headers=auth_headers
+    )
+    listed = client.get("/api/v1/polls", headers=auth_headers).get_json()
+    assert next(p for p in listed if p["id"] == poll_id)["my_vote"] == 1
+
+
 def test_vote_after_closing_time(client, auth_headers, seeded_db):
     """A poll whose closing time has passed takes no more votes or proxies,
     even before anyone closes it by hand."""

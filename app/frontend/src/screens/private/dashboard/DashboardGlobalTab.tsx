@@ -1,12 +1,9 @@
 import { Badge, Button, Group, Text, UnstyledButton } from "@mantine/core";
 import { EVENT_TYPE_COLORS } from "@/constants";
-import { useQuery } from "@tanstack/react-query";
 import { useT } from "@/locales/i18n";
-import { useNav, useData, useAuth } from "@/context/AppContext";
+import { useNav, useAuth } from "@/context/AppContext";
+import { useDashboardSummary, useEvents, useMyVotes, usePolls } from "@/data/lists";
 import { StatTile, Card, StatGrid, Avatar } from "@/components/ui";
-import { getDashboardSummary } from "@/api/dashboard";
-import { listEvents } from "@/api/events";
-import { listPolls } from "@/api/polls";
 import { formatCHFCompact } from "@/format";
 
 function fmtNet(n: number): string {
@@ -17,26 +14,13 @@ function fmtNet(n: number): string {
 export function GlobalOverviewScreen() {
   const { t, i18n } = useT();
   const { go } = useNav();
-  const { myVotes } = useData();
+  const myVotes = useMyVotes();
   const { hasPermission } = useAuth();
   const canCreateEvent = hasPermission("events.events.create");
   const canAddMember = hasPermission("members.members.create");
-  const {
-    data: summary,
-    isLoading: summaryLoading,
-    isError: summaryError,
-  } = useQuery({
-    queryKey: ["dashboard-summary"],
-    queryFn: () => getDashboardSummary(),
-  });
-  const { data: events = [] } = useQuery({
-    queryKey: ["events"],
-    queryFn: () => listEvents(),
-  });
-  const { data: polls = [] } = useQuery({
-    queryKey: ["polls"],
-    queryFn: listPolls,
-  });
+  const { data: summary, isLoading: summaryLoading, isError: summaryError } = useDashboardSummary();
+  const { events } = useEvents();
+  const { polls } = usePolls();
   // The server leaves out club money totals for members without finance access.
   const showMoney = summary?.stats.netMonth !== null;
 

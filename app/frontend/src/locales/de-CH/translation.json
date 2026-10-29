@@ -2676,7 +2676,12 @@
     "deleteKeyBody": "«{{key}}» löschen? Alle Verknüpfungen müssen vorher entfernt werden.",
     "editTitle": "Verknüpfung #{{id}} bearbeiten",
     "deleteBody": "Verknüpfung #{{id}} ({{source}} → {{key}}) löschen?",
-    "protectedToggle": "Geschützt: kann nicht umgeschaltet werden"
+    "protectedToggle": "Geschützt: kann nicht umgeschaltet werden",
+    "additionalAlias": "Weitere Adresse: {{address}}",
+    "noSources": "Keine Einträge vom Typ {{type}}.",
+    "selectSource": "Eintrag wählen …",
+    "currentValue": "Aktueller Wert:",
+    "hidden": "(verborgen)"
   },
   "roles": {
     "hideFields": "Feldrechte ausblenden",
@@ -2724,7 +2729,9 @@
       "Admin": "Administration",
       "Treasurer": "Kassier/in",
       "Member": "Mitglied"
-    }
+    },
+    "assignTo": "Mitgliedern die Rolle {{role}} geben",
+    "searchMembers": "Mitglied suchen …"
   },
   "modules": {
     "backups": {
@@ -2796,6 +2803,7 @@
     "roles": {
       "name": "Rollen und Berechtigungen",
       "description": "Rollen und die Berechtigungen, die sie vergeben"
-    }
+    },
+    "pluginFailed": "Diese Erweiterung konnte nicht angezeigt werden."
   }
 }

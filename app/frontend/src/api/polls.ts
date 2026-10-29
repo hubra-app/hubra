@@ -29,6 +29,7 @@ interface BackendPoll {
   max_proxies_per_member?: number;
   required_group_ids: number[] | null;
   required_function_ids: number[] | null;
+  my_vote?: number | null;
 }
 
 function daysLeft(closesAt: string | null): number {
@@ -51,6 +52,7 @@ function adapt(b: BackendPoll): Poll {
     allowProxy: b.allow_proxy ?? false,
     requiredGroupIds: b.required_group_ids ?? undefined,
     requiredFunctionIds: b.required_function_ids ?? undefined,
+    myVote: b.my_vote ?? undefined,
   };
 }
 

@@ -12,6 +12,7 @@ import {
   createSystemAddress,
   type ManagedMailAddressInfo,
 } from '@/api/mail'
+import { qk } from '@/data/keys'
 
 type SyncFilter = 'all' | 'ok' | 'pending' | 'drift' | 'error'
 
@@ -39,7 +40,7 @@ export function SystemMailTab() {
     isFetching,
     refetch,
   } = useQuery({
-    queryKey: ['system-addresses'],
+    queryKey: qk.mail.systemAddresses,
     queryFn: () => listSystemAddresses(),
   })
   const entries = data ?? []
@@ -68,7 +69,7 @@ export function SystemMailTab() {
         displayName: newDisplayName.trim() || undefined,
         isProtected: false,
       })
-      queryClient.invalidateQueries({ queryKey: ['system-addresses'] })
+      queryClient.invalidateQueries({ queryKey: qk.mail.systemAddresses })
       setNewAddr('')
       setNewDisplayName('')
       setNewType('mailbox')
@@ -165,7 +166,7 @@ export function SystemMailTab() {
         open={!!editEntry}
         onClose={() => setEditEntry(null)}
         onSaved={() =>
-          queryClient.invalidateQueries({ queryKey: ['system-addresses'] })
+          queryClient.invalidateQueries({ queryKey: qk.mail.systemAddresses })
         }
         canManage={canManage}
       />

@@ -23,8 +23,10 @@ import {
   deleteTier,
   calculateTierCost,
 } from '@/api/tiers'
-import { listTierMembers, listMembers, updateMember } from '@/api/members'
+import { listTierMembers, updateMember } from '@/api/members'
 import { PaymentPlansEditor } from './PaymentPlansEditor'
+import { useMemberSearch } from '@/data/members'
+import { qk } from '@/data/keys'
 
 type Translate = ReturnType<typeof useT>['t']
 
@@ -56,14 +58,10 @@ function TierDetailPanel({
   const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState('')
   const { data: members = [], isLoading: loading } = useQuery({
-    queryKey: ['tier-members', tier.id],
+    queryKey: qk.tiers.members(tier.id),
     queryFn: () => listTierMembers(tier.id),
   })
-  const { data: searchData } = useQuery({
-    queryKey: ['members-search', searchQuery],
-    queryFn: () => listMembers({ search: searchQuery, pageSize: 10 }),
-    enabled: searchQuery.length >= 2,
-  })
+  const { data: searchData } = useMemberSearch(searchQuery, { enabled: searchQuery.length >= 2 })
 
   const slideMembers: SlideOverMember[] = useMemo(
     () =>
@@ -94,7 +92,7 @@ function TierDetailPanel({
   const handleAdd = (m: SlideOverMember) => {
     updateMember(m.id, { tierName: tier.name })
       .then(() => {
-        queryClient.invalidateQueries({ queryKey: ['tier-members', tier.id] })
+        queryClient.invalidateQueries({ queryKey: qk.tiers.members(tier.id) })
         notify('success', t('tiers.updated', 'Stufe aktualisiert'), t('tiers.memberMoved', '{{member}} ist jetzt in {{tier}}.', { member: m.name, tier: tier.name }))
         onMemberMoved?.()
       })
@@ -156,7 +154,7 @@ export function TiersTab() {
   const canUpdate = hasPermission('tiers.tiers.update')
   const canDelete = hasPermission('tiers.tiers.delete')
   const { data: tiers = [] } = useQuery({
-    queryKey: ['tiers'],
+    queryKey: qk.tiers.all,
     queryFn: () => listTiers(),
   })
   const [addOpen, setAddOpen] = useState(false)
@@ -165,7 +163,7 @@ export function TiersTab() {
   const [detailTier, setDetailTier] = useState<MembershipTier | null>(null)
   const [saving, setSaving] = useState(false)
   const { data: tierCosts = {} } = useQuery({
-    queryKey: ['tier-costs', tiers],
+    queryKey: qk.tiers.costs(tiers),
     queryFn: async () => {
       const costs: Record<string, TierCostPreview> = {}
       await Promise.all(
@@ -301,8 +299,8 @@ export function TiersTab() {
         roundTo: data.roundTo ? Number(data.roundTo) : null,
         deductTierIds: data.deductIds,
       })
-      queryClient.invalidateQueries({ queryKey: ['tiers'] })
-      queryClient.invalidateQueries({ queryKey: ['lookups'] })
+      queryClient.invalidateQueries({ queryKey: qk.tiers.all })
+      queryClient.invalidateQueries({ queryKey: qk.lookups })
       setAddOpen(false)
       notify(
         'success',
@@ -338,8 +336,8 @@ export function TiersTab() {
         roundTo: data.roundTo ? Number(data.roundTo) : null,
         deductTierIds: data.deductIds,
       })
-      queryClient.invalidateQueries({ queryKey: ['tiers'] })
-      queryClient.invalidateQueries({ queryKey: ['lookups'] })
+      queryClient.invalidateQueries({ queryKey: qk.tiers.all })
+      queryClient.invalidateQueries({ queryKey: qk.lookups })
       setEditTarget(null)
       notify('success', t('tiers.updated', 'Stufe aktualisiert'), t('tiers.updatedMsg', '{{name}} wurde gespeichert.', { name: data.name }))
     } catch (err: unknown) {
@@ -357,8 +355,8 @@ export function TiersTab() {
     if (!deleteTarget) return
     try {
       await deleteTier(deleteTarget.id)
-      queryClient.invalidateQueries({ queryKey: ['tiers'] })
-      queryClient.invalidateQueries({ queryKey: ['lookups'] })
+      queryClient.invalidateQueries({ queryKey: qk.tiers.all })
+      queryClient.invalidateQueries({ queryKey: qk.lookups })
       notify('info', t('tiers.deleted', 'Stufe gelöscht'), t('tiers.deletedMsg', '{{name}} wurde entfernt.', { name: deleteTarget.name }))
     } catch (err: unknown) {
       notify(
@@ -755,6 +753,7 @@ export function TiersTab() {
       )}
 
       <Modal
+        onSubmit={form.onSubmit(saveAdd)}
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={t('tiers.newTitle', 'Neue Mitgliedschaftsstufe')}
@@ -765,7 +764,7 @@ export function TiersTab() {
             </Button>
             <Button
               variant="filled"
-              onClick={() => form.onSubmit(saveAdd)()}
+              type="submit"
               disabled={saving}
             >
               {t('tiers.create', 'Stufe erstellen')}
@@ -776,6 +775,7 @@ export function TiersTab() {
         {tierForm}
       </Modal>
       <Modal
+        onSubmit={form.onSubmit(saveEdit)}
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
         title={t('tiers.editTitle', 'Stufe bearbeiten')}
@@ -787,7 +787,7 @@ export function TiersTab() {
             </Button>
             <Button
               variant="filled"
-              onClick={() => form.onSubmit(saveEdit)()}
+              type="submit"
               disabled={saving}
             >
               {t('common.saveChanges', 'Änderungen speichern')}

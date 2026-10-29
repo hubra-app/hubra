@@ -122,6 +122,23 @@ def test_search_by_mobile(client, auth_headers, seeded_db):
     assert any(m["email"] == "searchmobile@test.ch" for m in body["data"])
 
 
+def test_search_by_full_name(client, auth_headers, seeded_db):
+    _create_member(
+        client,
+        auth_headers,
+        email="fullname@test.ch",
+        first_name="Carla",
+        last_name="Vollname",
+    )
+    resp = client.get("/api/v1/members/?search=carla+vollname", headers=auth_headers)
+    assert resp.status_code == 200
+    emails = [m["email"] for m in resp.get_json()["data"]]
+    assert "fullname@test.ch" in emails
+
+    resp = client.get("/api/v1/members/?search=carla+other", headers=auth_headers)
+    assert "fullname@test.ch" not in [m["email"] for m in resp.get_json()["data"]]
+
+
 # ── Filter ────────────────────────────────────────────────────────────────────
 
 

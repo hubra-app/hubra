@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Button, Group, Text } from '@mantine/core'
 import { useT } from '@/locales/i18n'
 import { useToast } from '@/context/AppContext'
+import { qk } from '@/data/keys'
 import { Modal } from '@/components/ui'
 import type { ClubEvent } from '@/types'
 import {
@@ -52,7 +53,7 @@ function PendingList({
   const [decided, setDecided] = useState<number[]>([])
   const [busy, setBusy] = useState<number | null>(null)
   const { data, isLoading } = useQuery({
-    queryKey: ['events', event.id, 'pending'],
+    queryKey: qk.eventPending(event.id),
     queryFn: () => listRegistrations(event.id, 'pending'),
     staleTime: 0,
   })

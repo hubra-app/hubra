@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { IconAddressBook } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
 import { useToast } from '@/context/AppContext'
+import { qk } from '@/data/keys'
 import { getMyDirectory, setMyDirectory, type DirectoryChoice } from '@/api/members'
 
 /** The member chooses which contact data other members see. */
@@ -12,7 +13,7 @@ export function DirectoryCard() {
   const { notify } = useToast()
   const queryClient = useQueryClient()
   const [busy, setBusy] = useState(false)
-  const { data } = useQuery({ queryKey: ['my-directory'], queryFn: getMyDirectory })
+  const { data } = useQuery({ queryKey: qk.account.directory, queryFn: getMyDirectory })
   if (!data) return null
 
   const labels: Record<DirectoryChoice, string> = {
@@ -28,7 +29,7 @@ export function DirectoryCard() {
       : data.shared.filter((c) => c !== choice)
     setBusy(true)
     try {
-      queryClient.setQueryData(['my-directory'], await setMyDirectory(shared))
+      queryClient.setQueryData(qk.account.directory, await setMyDirectory(shared))
     } catch (err) {
       notify('error', t('common.error'), err instanceof Error ? err.message : '')
     } finally {

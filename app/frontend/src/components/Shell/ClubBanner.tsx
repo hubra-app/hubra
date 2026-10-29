@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { CloseButton, Group, Text } from '@mantine/core'
 import { IconSpeakerphone } from '@tabler/icons-react'
+import { qk } from '@/data/keys'
 import { getClubProfile } from '@/api/settings'
 import { useT } from '@/locales/i18n'
 
@@ -23,7 +24,7 @@ export function ClubBanner() {
   const { t } = useT()
   const [dismissed, setDismissed] = useState(readDismissed)
   const { data } = useQuery({
-    queryKey: ['club-profile'],
+    queryKey: qk.settings.clubProfile,
     queryFn: getClubProfile,
     staleTime: 5 * 60_000,
   })

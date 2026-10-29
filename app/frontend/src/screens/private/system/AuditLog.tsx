@@ -7,6 +7,7 @@ import { PageHead, Avatar, Tag, DataTable } from '@/components/ui'
 import { listAuditLog, getAuditEntry } from '@/api/settings'
 import { useT } from '@/locales/i18n'
 import { formatDateTime } from '@/format'
+import { qk } from '@/data/keys'
 
 /* -- Audit entry detail panel ------------------ */
 function AuditEntryDetailPanel({
@@ -22,7 +23,7 @@ function AuditEntryDetailPanel({
     isLoading: loading,
     error: queryError,
   } = useQuery({
-    queryKey: ['audit-entry', entryId],
+    queryKey: qk.audit.entry(entryId),
     queryFn: () => getAuditEntry(entryId),
   })
   const error =
@@ -80,7 +81,7 @@ function AuditEntryDetailPanel({
               {t('audit.fullDetails', 'Alle Details zum Ereignis')}
             </div>
           </div>
-          <ActionIcon variant="subtle" onClick={onClose}>
+          <ActionIcon variant="subtle" onClick={onClose} aria-label={t('common.close')}>
             <IconX size={16} />
           </ActionIcon>
         </div>
@@ -375,7 +376,7 @@ export function AuditLogScreen() {
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null)
 
   const { data, isLoading: loading } = useQuery({
-    queryKey: ['audit-log', page, action, pageSize],
+    queryKey: qk.audit.log(page, action, pageSize),
     queryFn: () =>
       listAuditLog({ page, pageSize, action: action || undefined }),
   })

@@ -9,7 +9,8 @@ import {
   IconExternalLink,
   IconFileDownload,
 } from '@tabler/icons-react'
-import { useNav, useLoadData } from '@/context/AppContext'
+import { useNav } from '@/context/AppContext'
+import { useInvoices } from '@/data/lists'
 import { PageHead, InvoicePill } from '@/components/ui'
 import { getInvoice, downloadInvoicePdf } from '@/api/finance'
 import { formatCHF } from '@/format'
@@ -17,17 +18,18 @@ import {
   useMarkInvoicePaid,
   useSendInvoiceReminder,
 } from '@/screens/private/finances/useInvoiceActions'
+import { qk } from '@/data/keys'
 
 /* -- Invoice Detail ---------------------------- */
 export function InvoiceDetailScreen() {
   const { t, i18n } = useT()
   const { id } = useParams<{ id: string }>()
   const { go, selectedInvoice } = useNav()
-  const { invoices } = useLoadData('invoices')
+  const { invoices } = useInvoices()
   const markPaidMutation = useMarkInvoicePaid()
   const sendReminderMutation = useSendInvoiceReminder()
   const { data: fetchedInvoice } = useQuery({
-    queryKey: ['invoice', id],
+    queryKey: qk.invoices.one(id),
     queryFn: () => getInvoice(id!),
     enabled: !!id,
   })

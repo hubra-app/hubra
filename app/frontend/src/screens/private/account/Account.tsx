@@ -9,7 +9,8 @@ import {
   IconLogout as Leave,
   IconCreditCard,
 } from "@tabler/icons-react";
-import { useAuth, useLoadData, useNav } from "@/context/AppContext";
+import { useAuth, useNav } from "@/context/AppContext";
+import { useEvents, useMyVotes, usePolls } from "@/data/lists";
 import { ErrorBanner, InvoicePill } from "@/components/ui";
 import { listMyInvoices, downloadInvoicePdf } from "@/api/finance";
 import { formatCHF } from "@/format";
@@ -17,12 +18,15 @@ import { useToggleJoinEvent } from "@/screens/private/operations/useEventActions
 import { useModules } from "@/modules/useModules";
 import { MyGroupsCard } from "./MyGroupsCard";
 import { PluginSlot } from "@/plugins";
+import { qk } from "@/data/keys";
 
 /* -- Account Dashboard ------------------------ */
 export function AccountDashboardScreen() {
   const { t, i18n } = useT();
   const { currentUser } = useAuth();
-  const { polls, events, myVotes } = useLoadData("events");
+  const { polls } = usePolls();
+  const { events } = useEvents();
+  const myVotes = useMyVotes();
   const { go, goInvoice } = useNav();
   const joinEventMutation = useToggleJoinEvent();
   const modules = useModules();
@@ -34,7 +38,7 @@ export function AccountDashboardScreen() {
     isError: invoicesError,
     refetch: refetchInvoices,
   } = useQuery({
-    queryKey: ["my-invoices"],
+    queryKey: qk.invoices.mine,
     queryFn: () => listMyInvoices(),
   });
   const myInvoices = useMemo(

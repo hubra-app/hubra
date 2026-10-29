@@ -13,6 +13,7 @@ import { useT } from '@/locales/i18n'
 import { KVTable, Modal, Field, ConfirmModal } from '@/components/ui'
 import { listSettings, upsertSetting, deleteSetting } from '@/api/settings'
 import type { SettingEntry } from '@/api/settings'
+import { qk } from '@/data/keys'
 
 const VALIDATION_TYPES: [string, string][] = [
   ['', 'Keine'],
@@ -62,7 +63,7 @@ export function KVSettingsTab() {
   const [metaSaving, setMetaSaving] = useState(false)
 
   const { data, isLoading: loading } = useQuery({
-    queryKey: ['kv-settings'],
+    queryKey: qk.settings.kv,
     queryFn: () => listSettings(),
   })
   const entries = data ?? []
@@ -86,7 +87,7 @@ export function KVSettingsTab() {
     setSaving(true)
     try {
       await upsertSetting(key, editValue)
-      queryClient.invalidateQueries({ queryKey: ['kv-settings'] })
+      queryClient.invalidateQueries({ queryKey: qk.settings.kv })
       setEditingKey(null)
       notify('success', t('common.saved', 'Gespeichert'), t('kv.updatedMsg', '{{key}} wurde gespeichert.', { key }))
     } catch (err: unknown) {
@@ -109,7 +110,7 @@ export function KVSettingsTab() {
         description: newDesc || null,
         validation_type: newValidationType || null,
       })
-      queryClient.invalidateQueries({ queryKey: ['kv-settings'] })
+      queryClient.invalidateQueries({ queryKey: qk.settings.kv })
       setShowAdd(false)
       setNewKey('')
       setNewValue('')
@@ -131,7 +132,7 @@ export function KVSettingsTab() {
   const handleDelete = async (entry: SettingEntry) => {
     try {
       await deleteSetting(entry.key)
-      queryClient.invalidateQueries({ queryKey: ['kv-settings'] })
+      queryClient.invalidateQueries({ queryKey: qk.settings.kv })
       setDeleteTarget(null)
       notify('success', t('common.deleted', 'Gelöscht'), t('kv.removedMsg', '{{key}} wurde entfernt.', { key: entry.key }))
     } catch (err: unknown) {
@@ -613,7 +614,7 @@ export function KVSettingsTab() {
                       restricted: metaRestricted,
                     },
                   )
-                  queryClient.invalidateQueries({ queryKey: ['kv-settings'] })
+                  queryClient.invalidateQueries({ queryKey: qk.settings.kv })
                   setEditingMeta(null)
                   notify(
                     'success',

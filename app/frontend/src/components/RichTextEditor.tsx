@@ -1,14 +1,14 @@
 import { useEffect } from 'react'
-import { useEditor, type Editor } from '@tiptap/react'
+import { useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import Placeholder from '@tiptap/extension-placeholder'
+import { Placeholder } from '@tiptap/extensions'
 import { Link, RichTextEditor as MantineRichTextEditor } from '@mantine/tiptap'
-import { Markdown } from 'tiptap-markdown'
+import { Markdown, type MarkdownStorage } from 'tiptap-markdown'
 
-// tiptap-markdown's storage isn't in Tiptap 3's Storage type.
-function getMarkdown(editor: Editor): string {
-  const storage = editor.storage as unknown as { markdown: { getMarkdown(): string } }
-  return storage.markdown.getMarkdown()
+declare module '@tiptap/core' {
+  interface Storage {
+    markdown: MarkdownStorage
+  }
 }
 
 interface RichTextEditorProps {
@@ -48,13 +48,15 @@ export function RichTextEditor({
     // states (bold, heading, ...) need it.
     shouldRerenderOnTransaction: true,
     onUpdate: ({ editor }) => {
-      onChange(getMarkdown(editor))
+      onChange(editor.storage.markdown.getMarkdown())
     },
   })
 
   useEffect(() => {
-    if (!editor) return
-    const current = getMarkdown(editor)
+    // In StrictMode React mounts twice and Tiptap destroys the first editor,
+    // which empties its storage.
+    if (!editor || editor.isDestroyed) return
+    const current = editor.storage.markdown.getMarkdown()
     if (value !== current) {
       editor.commands.setContent(value || '')
     }

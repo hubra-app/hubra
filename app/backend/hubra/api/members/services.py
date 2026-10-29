@@ -193,9 +193,10 @@ def _apply_member_filters(query, args: dict[str, str]):
     Identity fields (first_name, last_name, email, phone, mobile) live on
     the User model. The query is expected to already have a User join.
     """
-    search = args.get("search", "").strip()
-    if search:
-        pattern = f"%{escape_like(search)}%"
+    # Every word has to match some field, so "Anna Muster" finds Anna
+    # Muster although first and last name are separate columns.
+    for word in args.get("search", "").split():
+        pattern = f"%{escape_like(word)}%"
         match = User.first_name.ilike(pattern, escape="\\") | User.last_name.ilike(
             pattern, escape="\\"
         )

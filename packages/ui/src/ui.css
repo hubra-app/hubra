@@ -1,0 +1,43 @@
+/* Styles for the shared page blocks in layout.tsx. */
+
+/* Big figures in stat tiles: brand heading face, digits lined up. */
+.stat-value {
+  font-family: "Bricolage Grotesque", "Hanken Grotesk", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.eyebrow {
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6131c4;
+}
+
+.hubra-tabs .mantine-Tabs-list {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.hubra-tabs .mantine-Tabs-list::-webkit-scrollbar {
+  display: none;
+}
+
+.hubra-tabs .mantine-Tabs-tab {
+  color: #5e5873;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.hubra-tabs .mantine-Tabs-tab:hover {
+  background: transparent;
+  color: #1a1625;
+}
+
+.hubra-tabs .mantine-Tabs-tab[data-active] {
+  color: #4d27a0;
+}

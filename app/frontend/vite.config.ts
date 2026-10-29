@@ -6,9 +6,12 @@ import { resolve } from 'path'
 export default defineConfig({
   plugins: [react()],
   resolve: {
+    // packages/ui imports these; take them from this app's node_modules.
+    dedupe: ['react', 'react-dom', '@mantine/core'],
     alias: {
       '@': resolve(__dirname, 'src'),
       '@hubra/api-client': resolve(__dirname, '../../packages/api-client/src'),
+      '@hubra/ui': resolve(__dirname, '../../packages/ui/src'),
     },
   },
   server: {
@@ -22,24 +25,13 @@ export default defineConfig({
       },
     },
   },
+  // No manualChunks: forcing a library into one chunk makes every page load
+  // all of it (the rich text editor came along with Mantine that way).  The
+  // default splitting keeps what only some screens use in their chunks.
   build: {
     // A lazy screen fetches its own imports together with itself instead of
     // after it (one round trip less on every first visit to a screen).
     modulePreload: { polyfill: false },
     sourcemap: false,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('react-router-dom')) return 'react-vendor'
-            if (id.includes('/react/') || id.includes('/react-dom/')) return 'react-vendor'
-            if (id.includes('@mantine')) return 'mantine'
-            if (id.includes('@tabler/icons-react')) return 'icons'
-            if (id.includes('@tanstack/react-query')) return 'query'
-            if (id.includes('i18next') || id.includes('react-i18next')) return 'i18n'
-          }
-        },
-      },
-    },
   },
 })

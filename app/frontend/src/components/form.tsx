@@ -1,6 +1,11 @@
 import { Switch, SegmentedControl, Text } from '@mantine/core'
-import type { ReactNode } from 'react'
+import { cloneElement, isValidElement, useId, type ReactElement, type ReactNode } from 'react'
 
+/**
+ * A label above a form control. When the control is a single element (an
+ * input, a select), the label is tied to it, so clicking the label focuses
+ * it and screen readers announce it by name.
+ */
 export function Field({
   label,
   hint,
@@ -10,12 +15,19 @@ export function Field({
   hint?: string
   children: ReactNode
 }) {
+  const fallbackId = useId()
+  // Fragments and Suspense have symbol types and take no id.
+  const control =
+    isValidElement<{ id?: string }>(children) && typeof children.type !== 'symbol'
+      ? (children as ReactElement<{ id?: string }>)
+      : null
+  const id = control?.props.id ?? fallbackId
   return (
     <div>
-      <Text component="label" size="sm" fw={600} c="dimmed" mb={6}>
+      <Text component="label" htmlFor={control ? id : undefined} size="sm" fw={600} c="dimmed" mb={6}>
         {label}
       </Text>
-      {children}
+      {control && !control.props.id ? cloneElement(control, { id }) : children}
       {hint && (
         <Text size="xs" c="dimmed" mt={4}>
           {hint}

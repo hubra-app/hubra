@@ -12,6 +12,7 @@ import {
   updateExternalParty,
   deleteExternalParty,
 } from '@/api/finance'
+import { qk } from '@/data/keys'
 
 export function ExternalPartiesTab() {
   const { t } = useT()
@@ -22,7 +23,7 @@ export function ExternalPartiesTab() {
   const canUpdate = hasPermission('finance.external_parties.update')
   const canDelete = hasPermission('finance.external_parties.delete')
   const { data: parties = [], isLoading: loading } = useQuery({
-    queryKey: ['external-parties'],
+    queryKey: qk.externalParties,
     queryFn: () => listExternalParties(),
   })
   const [addOpen, setAddOpen] = useState(false)
@@ -85,7 +86,7 @@ export function ExternalPartiesTab() {
     if (!form.name) return
     try {
       await createExternalParty(buildPayload())
-      queryClient.invalidateQueries({ queryKey: ['external-parties'] })
+      queryClient.invalidateQueries({ queryKey: qk.externalParties })
       setAddOpen(false)
       notify(
         'success',
@@ -117,7 +118,7 @@ export function ExternalPartiesTab() {
     if (!editTarget) return
     try {
       await updateExternalParty(editTarget.id, buildPayload())
-      queryClient.invalidateQueries({ queryKey: ['external-parties'] })
+      queryClient.invalidateQueries({ queryKey: qk.externalParties })
       setEditTarget(null)
       notify(
         'success',
@@ -144,7 +145,7 @@ export function ExternalPartiesTab() {
     if (!deleteTarget) return
     try {
       await deleteExternalParty(deleteTarget.id)
-      queryClient.invalidateQueries({ queryKey: ['external-parties'] })
+      queryClient.invalidateQueries({ queryKey: qk.externalParties })
       notify(
         'info',
         t('finance.externalParty.deleted', 'Externe Partei gelöscht'),

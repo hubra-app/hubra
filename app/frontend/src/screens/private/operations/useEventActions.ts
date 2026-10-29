@@ -1,6 +1,8 @@
 import i18n from "i18next";
 import { useMutation } from "@tanstack/react-query";
-import { useToast, useAuth, useData } from "@/context/AppContext";
+import { useToast, useAuth } from "@/context/AppContext";
+import { qk } from "@/data/keys";
+import { useListCache, useMyJoinedEvents } from "@/data/lists";
 import { joinEvent, leaveEvent } from "@/api/events";
 import type { ClubEvent } from "@/types";
 
@@ -16,10 +18,8 @@ export function hasOpenSignUp(ev: ClubEvent, joined: boolean): boolean {
 export function useToggleJoinEvent() {
   const { notify } = useToast();
   const { currentUser } = useAuth();
-  const { myJoinedEvents, events, setEvents } = useData();
-
-  const update = (eventId: string, change: (ev: ClubEvent) => ClubEvent) =>
-    setEvents((prev) => prev.map((ev) => (ev.id === eventId ? change(ev) : ev)));
+  const myJoinedEvents = useMyJoinedEvents();
+  const events = useListCache<ClubEvent>(qk.events);
 
   return useMutation({
     mutationFn: async ({
@@ -31,7 +31,7 @@ export function useToggleJoinEvent() {
       eventTitle: string;
       memberId: string;
     }) => {
-      const ev = events.find((e) => e.id === eventId);
+      const ev = events.get()?.find((e) => e.id === eventId);
       const isJoined = ev
         ? hasOpenSignUp(ev, myJoinedEvents.has(eventId))
         : myJoinedEvents.has(eventId);
@@ -45,7 +45,7 @@ export function useToggleJoinEvent() {
     },
     onSuccess: ({ isJoined, eventTitle, eventId, status }) => {
       const me = currentUser?.id ?? "";
-      update(eventId, (ev) => {
+      events.patch(eventId, (ev) => {
         const holds = !isJoined && PLACE_STATUSES.has(status ?? "");
         const attendees = ev.attendees.filter((id) => id !== me);
         return {

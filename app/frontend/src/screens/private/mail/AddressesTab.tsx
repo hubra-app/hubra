@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { IconRefresh } from '@tabler/icons-react'
 import { Button } from '@mantine/core'
 import { useAuth } from '@/context/AppContext'
+import { qk } from '@/data/keys'
 import { useT } from '@/locales/i18n'
 import { DataTable } from '@/components/ui'
 import { useMailColumns } from '@/screens/private/mail/useMailColumns'
@@ -40,7 +41,7 @@ export function AddressesTab({ scope }: { scope: 'owned' | 'all' }) {
     return l ? t(l[0], l[1]) : type
   }
   const isAll = scope === 'all'
-  const queryKey = isAll ? 'mail-all-addresses' : 'mail-addresses'
+  const listKey = isAll ? qk.mail.allAddresses : qk.mail.addresses
   const { hasPermission } = useAuth()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
@@ -59,7 +60,7 @@ export function AddressesTab({ scope }: { scope: 'owned' | 'all' }) {
     isFetching,
     refetch,
   } = useQuery({
-    queryKey: [queryKey, ownerFilter, enabledFilter, syncFilter, search],
+    queryKey: [...listKey, ownerFilter, enabledFilter, syncFilter, search],
     queryFn: () =>
       (isAll ? listAllAddresses : listAddresses)({
         ownerType: ownerFilter === 'all' ? undefined : ownerFilter,
@@ -221,8 +222,8 @@ export function AddressesTab({ scope }: { scope: 'owned' | 'all' }) {
           open={editEntry !== null}
           onClose={() => setEditEntry(null)}
           onSaved={() => {
-            queryClient.invalidateQueries({ queryKey: ['mail-addresses'] })
-            queryClient.invalidateQueries({ queryKey: ['mail-all-addresses'] })
+            queryClient.invalidateQueries({ queryKey: qk.mail.addresses })
+            queryClient.invalidateQueries({ queryKey: qk.mail.allAddresses })
             setEditEntry(null)
           }}
           canManage={canManage}

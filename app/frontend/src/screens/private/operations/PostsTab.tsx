@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react'
-import { Button, Group, TextInput, Paper } from '@mantine/core'
+import { lazy, Suspense, useState, useCallback } from 'react'
+import { Button, Group, Loader, TextInput, Paper } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
@@ -12,7 +12,9 @@ import {
   IconMessage2,
   IconArrowBackUp,
 } from '@tabler/icons-react'
-import { useToast, useAuth, useLoadData } from '@/context/AppContext'
+import { useToast, useAuth } from '@/context/AppContext'
+import { qk } from '@/data/keys'
+import { useListCache, usePosts } from '@/data/lists'
 import {
   Modal,
   Field,
@@ -23,7 +25,6 @@ import {
   ActionButtons,
   useSubmitOnce,
 } from '@/components/ui'
-import { RichTextEditor } from '@/components/RichTextEditor'
 import { MarkdownRenderer } from '@/components/MarkdownRenderer'
 import type { Post, PostComment } from '@/types'
 import {
@@ -38,6 +39,11 @@ import {
   deleteComment,
 } from '@/api/posts'
 
+// The editor is large and only needed while writing a post.
+const RichTextEditor = lazy(() =>
+  import('@/components/RichTextEditor').then((m) => ({ default: m.RichTextEditor })),
+)
+
 const postSchema = z.object({
   title: z.string().min(1, zmsg('validation.titleRequired', 'Titel ist erforderlich')),
   summary: z.string(),
@@ -49,7 +55,8 @@ type PostForm = z.infer<typeof postSchema>
 export function PostsTab() {
   const { notify } = useToast()
   const { currentUser, hasPermission, isAdmin } = useAuth()
-  const { posts, setPosts } = useLoadData('posts')
+  const { posts } = usePosts()
+  const postCache = useListCache<Post>(qk.posts.all)
   const { t } = useT()
   const canCreate = hasPermission('posts.posts.create')
   const canUpdate = hasPermission('posts.posts.update')
@@ -99,7 +106,7 @@ export function PostsTab() {
         summary: data.summary || undefined,
         body: data.body,
       })
-      setPosts((prev) => [post, ...prev])
+      postCache.prepend(post)
       setAddOpen(false)
       notify(
         'success',
@@ -129,7 +136,7 @@ export function PostsTab() {
         summary: data.summary || undefined,
         body: data.body,
       })
-      setPosts((prev) => prev.map((p) => (p.id === post.id ? post : p)))
+      postCache.replace(post)
       setEditTarget(null)
       notify(
         'success',
@@ -151,7 +158,7 @@ export function PostsTab() {
     if (!deleteTarget) return
     try {
       await deletePost(deleteTarget.id)
-      setPosts((prev) => prev.filter((p) => p.id !== deleteTarget.id))
+      postCache.remove(deleteTarget.id)
       notify(
         'info',
         t('posts.post.deleted', 'Beitrag gelöscht'),
@@ -173,32 +180,25 @@ export function PostsTab() {
       liked ? unlikePost(postId) : likePost(postId),
     onMutate: ({ postId, liked }) => {
       const myId = currentUser?.id ?? ''
-      setPosts((prev) =>
-        prev.map((p) => {
-          if (p.id !== postId) return p
-          const likeMemberIds = liked
-            ? p.likeMemberIds.filter((id) => id !== myId)
-            : p.likeMemberIds.includes(myId)
-              ? p.likeMemberIds
-              : [...p.likeMemberIds, myId]
-          return {
-            ...p,
-            likeMemberIds,
-            likes: likeMemberIds.length,
-          }
-        }),
-      )
+      postCache.patch(postId, (p) => {
+        const likeMemberIds = liked
+          ? p.likeMemberIds.filter((id) => id !== myId)
+          : p.likeMemberIds.includes(myId)
+            ? p.likeMemberIds
+            : [...p.likeMemberIds, myId]
+        return { ...p, likeMemberIds, likes: likeMemberIds.length }
+      })
       return { liked }
     },
     onError: (err, { postId }) => {
       const msg = err instanceof Error ? err.message : t('posts.likeFailed', 'Das Like konnte nicht gespeichert werden.')
       notify('error', t('common.error'), msg)
       getPost(postId).then((post) => {
-        setPosts((prev) => prev.map((p) => (p.id === post.id ? post : p)))
+        postCache.replace(post)
       })
     },
     onSuccess: (post) => {
-      setPosts((prev) => prev.map((p) => (p.id === post.id ? post : p)))
+      postCache.replace(post)
     },
   })
 
@@ -245,11 +245,7 @@ export function PostsTab() {
         ...prev,
         [postId]: [...(prev[postId] ?? []), comment],
       }))
-      setPosts((prev) =>
-        prev.map((p) =>
-          p.id === postId ? { ...p, comments: p.comments + 1 } : p,
-        ),
-      )
+      postCache.patch(postId, (p) => ({ ...p, comments: p.comments + 1 }))
       setCommentInput('')
       notify('success', t('posts.commentAdded', 'Kommentar hinzugefügt'), '')
     } catch (err: unknown) {
@@ -272,11 +268,7 @@ export function PostsTab() {
         ...prev,
         [postId]: (prev[postId] ?? []).filter((c) => c.id !== commentId),
       }))
-      setPosts((prev) =>
-        prev.map((p) =>
-          p.id === postId ? { ...p, comments: p.comments - 1 } : p,
-        ),
-      )
+      postCache.patch(postId, (p) => ({ ...p, comments: p.comments - 1 }))
     } catch (err: unknown) {
       notify(
         'error',
@@ -309,14 +301,16 @@ export function PostsTab() {
         />
       </Field>
       <Field label={t('posts.content.label', 'Inhalt')}>
-        <RichTextEditor
-          value={form.values.body}
-          onChange={(val) => form.setFieldValue('body', val)}
-          placeholder={t(
-            'posts.content.placeholder',
-            'Teile eine Neuigkeit mit dem Verein …',
-          )}
-        />
+        <Suspense fallback={<Loader size="sm" />}>
+          <RichTextEditor
+            value={form.values.body}
+            onChange={(val) => form.setFieldValue('body', val)}
+            placeholder={t(
+              'posts.content.placeholder',
+              'Teile eine Neuigkeit mit dem Verein …',
+            )}
+          />
+        </Suspense>
       </Field>
     </div>
   )
@@ -630,6 +624,7 @@ export function PostsTab() {
       </Paper>
 
       <Modal
+        onSubmit={form.onSubmit(submitAdd)}
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={t('posts.newPost', 'Neuer Beitrag')}
@@ -638,7 +633,7 @@ export function PostsTab() {
             <Button variant="default" onClick={() => setAddOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="filled" onClick={() => form.onSubmit(submitAdd)()} loading={adding}>
+            <Button variant="filled" type="submit" loading={adding}>
               {t('posts.publish', 'Veröffentlichen')}
             </Button>
           </>
@@ -647,6 +642,7 @@ export function PostsTab() {
         {postForm}
       </Modal>
       <Modal
+        onSubmit={form.onSubmit(saveEdit)}
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
         title={t('posts.editPost', 'Beitrag bearbeiten')}
@@ -656,7 +652,7 @@ export function PostsTab() {
             <Button variant="default" onClick={() => setEditTarget(null)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="filled" onClick={() => form.onSubmit(saveEdit)()}>
+            <Button variant="filled" type="submit">
               {t('common.save')}
             </Button>
           </>

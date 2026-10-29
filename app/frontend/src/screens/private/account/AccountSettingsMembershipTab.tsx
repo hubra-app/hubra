@@ -10,12 +10,13 @@ import { PaymentPlanCard } from './PaymentPlanCard'
 import { LeaveClubCard } from './LeaveClubCard'
 import { DirectoryCard } from './DirectoryCard'
 import { roleLabels } from '@/roles'
+import { qk } from '@/data/keys'
 
 export function AccountSettingsMembershipTab() {
   const { t } = useT()
   const { currentUser } = useAuth()
   const myGroupsQuery = useQuery({
-    queryKey: ['my-groups'],
+    queryKey: qk.groups.mine,
     queryFn: () => authApi.getMyGroups(),
   })
   const myGroups = myGroupsQuery.data ?? []

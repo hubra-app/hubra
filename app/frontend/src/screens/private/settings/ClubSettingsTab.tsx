@@ -18,6 +18,7 @@ import {
 } from '@mantine/core'
 import { getClubSettings, updateClubSettings, type ClubSettings } from '@/api/admin'
 import { useT } from '@/locales/i18n'
+import { qk } from '@/data/keys'
 import { useToast } from '@/context/AppContext'
 import { ErrorBanner } from '@/components/ui'
 
@@ -36,8 +37,8 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
     setSaving(true)
     try {
       await updateClubSettings(form)
-      queryClient.invalidateQueries({ queryKey: ['club-settings'] })
-      queryClient.invalidateQueries({ queryKey: ['club-profile'] })
+      queryClient.invalidateQueries({ queryKey: qk.settings.club })
+      queryClient.invalidateQueries({ queryKey: qk.settings.clubProfile })
       notify('success', t('clubSettings.saved', 'Einstellungen gespeichert'))
     } catch (err: unknown) {
       notify(
@@ -212,7 +213,7 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
 export function ClubSettingsTab() {
   const { t } = useT()
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['club-settings'],
+    queryKey: qk.settings.club,
     queryFn: getClubSettings,
   })
 

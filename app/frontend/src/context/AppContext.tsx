@@ -12,7 +12,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { notifications as mantineNotifications } from '@mantine/notifications'
-import type { Phase, ToastKind, Member, Poll, Invoice, ClubEvent, Post } from '@/types'
+import type { Phase, ToastKind, Member, Invoice } from '@/types'
 import {
   clearTokens,
   hasTokens,
@@ -25,23 +25,15 @@ import {
   getAccountSession,
   logout as apiLogout,
   getMyPermissions,
-  getMyTenants,
   switchTenant as apiSwitchTenant,
-  type MyTenant,
 } from '@/api/auth'
 import { clearLookups } from '@/api/lookups'
 import { URL_CLUB } from '@/clubBase'
 import { ping } from '@/api/system'
-import { listEvents } from '@/api/events'
-import { listPolls } from '@/api/polls'
-import { listPosts } from '@/api/posts'
-import { listInvoices } from '@/api/finance'
-import { getDashboardSummary, type DashboardSummary } from '@/api/dashboard'
-import { listApplications } from '@/api/applications'
-import { listGroups } from '@/api/groups'
 import { getModules, type ModuleInfo } from '@/api/modules'
 import { loadAllTranslationsFromApi } from '@/locales/i18n'
 import { useInstance } from '@/context/InstanceContext'
+import { qk } from '@/data/keys'
 
 export type AuthStatus = 'loading' | 'authed' | 'anon'
 
@@ -96,38 +88,13 @@ interface NavState {
   goInvoice: (inv: Invoice) => void
 }
 
-/** Lists only some screens show: loaded once a screen asks (useLoadData). */
-export type LazyData = 'events' | 'posts' | 'invoices'
-
 interface DataState {
-  /** Start loading these lists; see useLoadData. */
-  loadData: (keys: LazyData[]) => void
-  events: ClubEvent[]
-  setEvents: Dispatch<SetStateAction<ClubEvent[]>>
-  polls: Poll[]
-  setPolls: Dispatch<SetStateAction<Poll[]>>
-  posts: Post[]
-  setPosts: Dispatch<SetStateAction<Post[]>>
-  invoices: Invoice[]
-  setInvoices: Dispatch<SetStateAction<Invoice[]>>
-  myJoinedEvents: Set<string>
-  myVotes: Record<string, number>
-  setMyVotes: Dispatch<SetStateAction<Record<string, number>>>
-  memberCount: number
-  setMemberCount: (value: number | ((prev: number) => number)) => void
-  pendingApplicationCount: number
-  setPendingApplicationCount: () => void
-  groupCount: number
-  setGroupCount: () => void
-  openInvoiceCount: number
-  setOpenInvoiceCount: (value: number | ((prev: number) => number)) => void
   backendOnline: boolean
   recheckBackend: () => void
   /** Module code → effectively on for the active club. */
   modules: Record<string, boolean>
   moduleList: ModuleInfo[]
   modulesLoaded: boolean
-  myTenants: MyTenant[]
   /** Make `slug` the active club; opens its dashboard unless `keepPath`. */
   switchTenant: (slug: string, keepPath?: boolean) => void
 }
@@ -155,7 +122,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [notifPanelOpen, setNotifPanelOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
-  const [myVotes, setMyVotes] = useState<Record<string, number>>({})
   const [backendOnline, setBackendOnline] = useState(true)
   const [sessionCheckFailed, setSessionCheckFailed] = useState(false)
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
@@ -322,7 +288,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [authStatus])
 
   const { data: modulesData } = useQuery({
-    queryKey: ['modules'],
+    queryKey: qk.modules,
     queryFn: getModules,
     enabled: queryEnabled,
   })
@@ -333,80 +299,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return map
   }, [moduleList])
   const modulesLoaded = modulesData !== undefined
-  // Data of a switched-off module would answer 403, so only load what is on.
-  const moduleQuery = (code: string) => queryEnabled && modulesMap[code] === true
-  // Lists the member may not read answer 403: skip them too.
-  const mayRead = (key: string) =>
-    permissions.includes('*') || (currentUser?.roles?.includes('Admin') ?? false) || permissions.includes(key)
-
-  // Events, posts and invoices wait until a screen that shows them asks, so
-  // other pages do not load them first.
-  const [wantedData, setWantedData] = useState<ReadonlySet<LazyData>>(new Set())
-  const loadData = useCallback((keys: LazyData[]) => {
-    setWantedData((prev) =>
-      keys.every((key) => prev.has(key)) ? prev : new Set([...prev, ...keys]),
-    )
-  }, [])
-
-  const { data: eventsData } = useQuery({
-    queryKey: ['events'],
-    queryFn: () => listEvents(),
-    enabled: moduleQuery('events') && wantedData.has('events'),
-  })
-  const { data: pollsData } = useQuery({
-    queryKey: ['polls'],
-    queryFn: listPolls,
-    enabled: moduleQuery('polls'),
-  })
-  const { data: postsData } = useQuery({
-    queryKey: ['posts'],
-    queryFn: listPosts,
-    enabled: moduleQuery('posts') && wantedData.has('posts'),
-  })
-  const { data: invoicesData } = useQuery({
-    queryKey: ['invoices'],
-    queryFn: listInvoices,
-    enabled:
-      moduleQuery('finance') && mayRead('finance.invoices.read') && wantedData.has('invoices'),
-  })
-  const { data: dashboardData } = useQuery({
-    queryKey: ['dashboard-summary'],
-    queryFn: getDashboardSummary,
-    enabled: queryEnabled,
-  })
-  const { data: applicationsData } = useQuery({
-    queryKey: ['applications'],
-    queryFn: listApplications,
-    enabled: queryEnabled && mayRead('applications.applications.read'),
-  })
-  const { data: groupsData } = useQuery({
-    queryKey: ['groups'],
-    queryFn: listGroups,
-    enabled: moduleQuery('groups'),
-  })
-  const { data: tenantsData } = useQuery({
-    queryKey: ['my-tenants'],
-    queryFn: () => getMyTenants(),
-    enabled: queryEnabled,
-  })
-
-  const events = useMemo(() => eventsData ?? [], [eventsData])
-  const polls = useMemo(() => pollsData ?? [], [pollsData])
-  const posts = useMemo(() => postsData ?? [], [postsData])
-  const invoices = useMemo(() => invoicesData ?? [], [invoicesData])
-  const myJoinedEvents = useMemo(
-    () =>
-      new Set(
-        events.filter((ev) => ev.attendees.includes(currentUser?.id ?? '')).map((ev) => ev.id),
-      ),
-    [events, currentUser],
-  )
-  const memberCount = dashboardData?.stats?.activeMembers ?? 0
-  const openInvoiceCount = dashboardData?.stats?.openInvoices ?? 0
-  const pendingApplicationCount = applicationsData?.length ?? 0
-  const groupCount = groupsData?.length ?? 0
-
-  const myTenants = useMemo(() => tenantsData?.tenants ?? [], [tenantsData])
 
   const setActiveTenant = useCallback((slug: string | null) => {
     setTenantSlug(slug)
@@ -431,65 +323,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     [setActiveTenant, ssoUrl],
   )
-
-  const setEvents = useCallback(
-    (updater: ClubEvent[] | ((prev: ClubEvent[]) => ClubEvent[])) => {
-      queryClient.setQueryData<ClubEvent[]>(['events'], (prev) =>
-        typeof updater === 'function' ? updater(prev ?? []) : updater,
-      )
-    },
-    [queryClient],
-  )
-  const setPolls = useCallback(
-    (updater: Poll[] | ((prev: Poll[]) => Poll[])) => {
-      queryClient.setQueryData<Poll[]>(['polls'], (prev) =>
-        typeof updater === 'function' ? updater(prev ?? []) : updater,
-      )
-    },
-    [queryClient],
-  )
-  const setPosts = useCallback(
-    (updater: Post[] | ((prev: Post[]) => Post[])) => {
-      queryClient.setQueryData<Post[]>(['posts'], (prev) =>
-        typeof updater === 'function' ? updater(prev ?? []) : updater,
-      )
-    },
-    [queryClient],
-  )
-  const setInvoices = useCallback(
-    (updater: Invoice[] | ((prev: Invoice[]) => Invoice[])) => {
-      queryClient.setQueryData<Invoice[]>(['invoices'], (prev) =>
-        typeof updater === 'function' ? updater(prev ?? []) : updater,
-      )
-    },
-    [queryClient],
-  )
-  const setMemberCount = useCallback(
-    (updater: number | ((prev: number) => number)) => {
-      queryClient.setQueryData<DashboardSummary | undefined>(['dashboard-summary'], (prev) => {
-        if (!prev?.stats) return prev
-        const newCount = typeof updater === 'function' ? updater(prev.stats.activeMembers) : updater
-        return { ...prev, stats: { ...prev.stats, activeMembers: newCount } }
-      })
-    },
-    [queryClient],
-  )
-  const setOpenInvoiceCount = useCallback(
-    (updater: number | ((prev: number) => number)) => {
-      queryClient.setQueryData<DashboardSummary | undefined>(['dashboard-summary'], (prev) => {
-        if (prev?.stats?.openInvoices == null) return prev
-        const newCount = typeof updater === 'function' ? updater(prev.stats.openInvoices) : updater
-        return { ...prev, stats: { ...prev.stats, openInvoices: newCount } }
-      })
-    },
-    [queryClient],
-  )
-  const setPendingApplicationCount = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['applications'] })
-  }, [queryClient])
-  const setGroupCount = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['groups'] })
-  }, [queryClient])
 
   useEffect(() => {
     const ctrl = new AbortController()
@@ -712,52 +545,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const dataValue = useMemo<DataState>(
     () => ({
-      loadData,
-      events,
-      setEvents,
-      polls,
-      setPolls,
-      posts,
-      setPosts,
-      invoices,
-      setInvoices,
-      myJoinedEvents,
-      myVotes,
-      setMyVotes,
-      memberCount,
-      setMemberCount,
-      pendingApplicationCount,
-      setPendingApplicationCount,
-      groupCount,
-      setGroupCount,
-      openInvoiceCount,
-      setOpenInvoiceCount,
       backendOnline,
       recheckBackend,
       modules: modulesMap,
       moduleList,
       modulesLoaded,
-      myTenants,
       switchTenant,
     }),
     // Stable callbacks (useCallback) intentionally excluded
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
-      events,
-      polls,
-      posts,
-      invoices,
-      myJoinedEvents,
-      myVotes,
-      memberCount,
-      pendingApplicationCount,
-      groupCount,
-      openInvoiceCount,
       backendOnline,
       modulesMap,
       moduleList,
       modulesLoaded,
-      myTenants,
     ],
   )
 
@@ -800,18 +601,6 @@ export function useData() {
   const ctx = useContext(DataContext)
   if (!ctx) throw new Error('useData must be used within AppProvider')
   return ctx
-}
-
-/** useData for a screen that shows events, posts or invoices: loads them. */
-// eslint-disable-next-line react-refresh/only-export-components
-export function useLoadData(...keys: LazyData[]) {
-  const data = useData()
-  const { loadData } = data
-  const wanted = keys.join(',')
-  useEffect(() => {
-    if (wanted) loadData(wanted.split(',') as LazyData[])
-  }, [wanted, loadData])
-  return data
 }
 
 /* ── Backward-compatible merged hook ──────────── */

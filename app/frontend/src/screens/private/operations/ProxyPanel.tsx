@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Button, Group, Select, Text } from '@mantine/core'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { IconCheck } from '@tabler/icons-react'
@@ -6,7 +6,8 @@ import { useT } from '@/locales/i18n'
 import { useAuth, useToast } from '@/context/AppContext'
 import type { Poll } from '@/types'
 import { castVote, getProxy, grantProxy, revokeProxy } from '@/api/polls'
-import { listMembers } from '@/api/members'
+import { MemberPicker } from '@/components/MemberPicker'
+import { qk } from '@/data/keys'
 
 /** Proxy voting on one poll: give your vote to someone, take it back, or
  * vote for the members whose proxy you hold. */
@@ -23,7 +24,7 @@ export function ProxyPanel({
   const { notify } = useToast()
   const { currentUser } = useAuth()
   const queryClient = useQueryClient()
-  const key = ['poll-proxy', poll.id]
+  const key = qk.pollProxy(poll.id)
   const { data: state } = useQuery({
     queryKey: key,
     queryFn: () => getProxy(poll.id),
@@ -31,18 +32,6 @@ export function ProxyPanel({
   const [giving, setGiving] = useState(false)
   const [holderId, setHolderId] = useState<string | null>(null)
   const [choice, setChoice] = useState<Record<number, string | null>>({})
-  const { data: membersData } = useQuery({
-    queryKey: ['members'],
-    queryFn: () => listMembers({ pageSize: 500 }),
-    enabled: giving,
-  })
-  const memberOptions = useMemo(
-    () =>
-      (membersData?.members ?? [])
-        .filter((m) => m.id !== currentUser?.id)
-        .map((m) => ({ value: m.id, label: m.name })),
-    [membersData, currentUser],
-  )
 
   const run = async (fn: () => Promise<unknown>) => {
     try {
@@ -86,13 +75,12 @@ export function ProxyPanel({
       ) : state.holding.length === 0 && !hasVoted ? (
         giving ? (
           <Group gap="xs" wrap="nowrap">
-            <Select
+            <MemberPicker
               style={{ flex: 1 }}
               size="xs"
-              searchable
-              data={memberOptions}
+              exclude={currentUser ? [currentUser.id] : undefined}
               value={holderId}
-              onChange={setHolderId}
+              onChange={(id) => setHolderId(id)}
               placeholder={t('polls.proxy.pick', 'Wer stimmt für dich ab?')}
             />
             <Button

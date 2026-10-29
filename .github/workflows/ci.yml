@@ -129,5 +129,37 @@ jobs:
       - run: docker compose build
       - run: docker compose up -d
       - run: scripts/smoke-test.sh
+      # Browser tests of the three apps against the same stack (app/frontend/e2e).
+      - name: Club and account for the browser tests
+        run: |
+          password="E2e-Test-$(date +%s)!"
+          echo "::add-mask::$password"
+          echo "E2E_PASSWORD=$password" >> "$GITHUB_ENV"
+          docker compose exec -T backend flask provision-tenant \
+            --name "E2E Club" --slug e2e --admin-email e2e@hubra.test --admin-password "$password"
+          docker compose exec -T -e SUPERADMIN_EMAILS=e2e@hubra.test backend flask ensure-superadmins
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: app/frontend/package-lock.json
+      - name: Browser tests
+        working-directory: app/frontend
+        env:
+          E2E_APP_URL: http://localhost:8080
+          E2E_MANAGE_URL: http://localhost:8081
+          E2E_SSO_URL: http://localhost:8082
+          E2E_CLUB: e2e
+          E2E_EMAIL: e2e@hubra.test
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npm run test:e2e
+      - if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: playwright-report
+          path: app/frontend/playwright-report/
+          retention-days: 7
       - if: failure()
         run: docker compose ps -a && docker compose logs --tail=200

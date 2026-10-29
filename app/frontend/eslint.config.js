@@ -18,5 +18,16 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // Query keys come from src/data/keys.ts, so two screens can't share a
+      // key for different data by accident.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "Property[key.name='queryKey'] > ArrayExpression[elements.0.type='Literal']",
+          message: 'Use a key from qk (src/data/keys.ts).',
+        },
+      ],
+    },
   },
 ])
