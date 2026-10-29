@@ -39,6 +39,27 @@ from hubra.core.tenant.service import TenantService, TenantProvisioningError
 
 tenant_admin_bp = Blueprint("tenant_admin", __name__)
 
+
+def _body_text(body: dict, key: str) -> str:
+    """*key* from a JSON body as stripped text ("" if absent); 400 otherwise."""
+    value = body.get(key)
+    if value is None:
+        return ""
+    if not isinstance(value, str):
+        raise_error(400, "VALIDATION_ERROR", f"{key} must be text")
+    return value.strip()
+
+
+def _body_keys(body: dict, key: str) -> list[str] | None:
+    """*key* as a list of strings, None if absent; 400 otherwise."""
+    value = body.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, list) or not all(isinstance(v, str) for v in value):
+        raise_error(400, "VALIDATION_ERROR", f"{key} must be a list of keys")
+    return value
+
+
 _VALID_STATUSES = {"active", "suspended", "archived"}
 _VALID_PLANS = {"starter", "growth", "enterprise"}
 
@@ -531,8 +552,8 @@ def _tenant_request_to_dict(req: TenantRequest) -> dict:
 def submit_tenant_request():
     """Submit a request for a new tenant (any authenticated user)."""
     body = request.get_json(silent=True) or {}
-    name = (body.get("name") or "").strip()
-    slug = (body.get("slug") or "").strip()
+    name = _body_text(body, "name")
+    slug = _body_text(body, "slug")
     plan = body.get("plan", "starter")
 
     if not name or not slug:
@@ -1374,9 +1395,9 @@ def create_global_role():
     from hubra.core.models.global_role import GlobalRole
 
     body = request.get_json(silent=True) or {}
-    name = (body.get("name") or "").strip()
-    description = (body.get("description") or "").strip() or None
-    permission_keys = body.get("permissions") or []
+    name = _body_text(body, "name")
+    description = _body_text(body, "description") or None
+    permission_keys = _body_keys(body, "permissions") or []
 
     if not name:
         raise_error(400, "VALIDATION_ERROR", "name is required")
@@ -1427,11 +1448,11 @@ def update_global_role(role_id: int):
         raise_error(404, "NOT_FOUND", "Role not found")
 
     body = request.get_json(silent=True) or {}
-    permission_keys = body.get("permissions")
+    permission_keys = _body_keys(body, "permissions")
     description = body.get("description")
 
     if description is not None:
-        role.description = description.strip() or None
+        role.description = _body_text(body, "description") or None
 
     if permission_keys is not None:
         # Replace all permissions

@@ -542,3 +542,12 @@ def test_a_request_needs_a_slug_the_club_can_use(client, db):
             json={"name": "Club", "slug": slug},
         )
         assert resp.status_code == 400, slug
+
+
+def test_tenant_request_and_global_role_refuse_wrong_types(client, db, staff_headers):
+    for body in ({"name": 5, "slug": "acme"}, {"name": "Acme", "slug": ["acme"]}):
+        resp = client.post("/api/v1/system/tenant-requests", json=body)
+        assert resp.status_code == 400, body
+    for body in ({"name": 5}, {"name": "Kasse", "permissions": 5}):
+        resp = client.post("/api/v1/system/global-roles", json=body)
+        assert resp.status_code == 400, body
