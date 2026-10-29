@@ -15,6 +15,19 @@ from hubra.core.modules import emit
 from hubra.core.modules.events import GROUP_MEMBERSHIP_CHANGED
 
 
+def _check_parent(parent_id: int | None, group_id: int | None = None) -> None:
+    """A parent group must exist, and a group cannot be its own ancestor."""
+    seen = {group_id}
+    while parent_id is not None:
+        if parent_id in seen:
+            raise_error(400, "VALIDATION_ERROR", "A group cannot be its own parent")
+        parent = db.session.get(Group, parent_id)
+        if parent is None or parent.archived_at is not None:
+            raise_error(404, "NOT_FOUND", f"Group {parent_id} not found")
+        seen.add(parent_id)
+        parent_id = parent.parent_group_id
+
+
 # ── GroupService (singular) ────────────────────────────────────────────────────
 
 
@@ -58,6 +71,9 @@ class GroupService:
                 raise_error(
                     409, "CONFLICT", f"Group name '{data['name']}' is already taken"
                 )
+
+        if data.get("parent_group_id") is not None:
+            _check_parent(data["parent_group_id"], group.id)
 
         for field in (
             "name",
@@ -329,6 +345,8 @@ class GroupsService:
             )
             if lead is None:
                 raise_error(404, "NOT_FOUND", f"Member {data['lead_id']} not found")
+
+        _check_parent(data.get("parent_group_id"))
 
         # Check name uniqueness
         existing = db.session.scalar(select(Group.id).where(Group.name == data["name"]))
