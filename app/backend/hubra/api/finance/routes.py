@@ -394,32 +394,27 @@ def download_invoice_pdf(id: int):
     """Download a QR-bill invoice PDF for the given invoice.
 
     Access rules:
-      - Member invoices: the owning member, or anyone who may read invoices.
-      - External-party invoices: only those who may read invoices.
+      - Member invoices: the owning member or any admin.
+      - External-party invoices: admin only (no member owner).
     """
-    from hubra.api.permissions import _get_member_permission_keys, member_is_admin
-
     invoice = InvoiceService.get(id)
     # 403 for a sign-in that is not a member of this club.
     member = get_current_member()
 
-    # A treasurer reads, sends and reminds invoices, so the PDF is theirs too.
-    may_read_invoices = member_is_admin(member) or (
-        "finance.invoices.read" in _get_member_permission_keys(member)
-    )
+    is_admin = any(r.is_admin for r in (member.roles or []))
 
     if invoice.member_id is not None:
         is_owner = invoice.member_id == member.id
-        if not is_owner and not may_read_invoices:
+        if not is_owner and not is_admin:
             from hubra.core.errors import raise_error as _raise
 
             _raise(403, "FORBIDDEN", "You do not have access to this invoice")
     else:
-        # External-party invoice — no member owns it.
-        if not may_read_invoices:
+        # External-party invoice — admin only.
+        if not is_admin:
             from hubra.core.errors import raise_error as _raise
 
-            _raise(403, "FORBIDDEN", "You do not have access to this invoice")
+            _raise(403, "FORBIDDEN", "Only admins can download external-party invoices")
 
     pdf_bytes = InvoiceService.download_pdf(invoice)
 
