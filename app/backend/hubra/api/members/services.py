@@ -118,10 +118,58 @@ def _clear_member_functions(member_id: int) -> None:
         _trigger_mail_sync(function_id)
 
 
+def _clear_member_events(member_id: int) -> None:
+    """Give up places at upcoming events, so the waiting list moves up
+    instead of a seat staying taken by someone who left."""
+    from hubra.api.events.services import EventService
+    from hubra.core.errors import ApiError
+    from hubra.core.models.event import ClubEvent, EventRegistration, event_attendees
+
+    upcoming = func.coalesce(ClubEvent.end_date, ClubEvent.date) >= date.today()
+    event_ids = set(
+        db.session.scalars(
+            select(EventRegistration.event_id)
+            .join(ClubEvent, ClubEvent.id == EventRegistration.event_id)
+            .where(
+                EventRegistration.member_id == member_id,
+                EventRegistration.status.in_(["registered", "approved", "waitlisted"]),
+                upcoming,
+            )
+        ).all()
+    ) | set(
+        db.session.scalars(
+            select(event_attendees.c.event_id)
+            .join(ClubEvent, ClubEvent.id == event_attendees.c.event_id)
+            .where(event_attendees.c.member_id == member_id, upcoming)
+        ).all()
+    )
+    for event_id in sorted(event_ids):
+        try:
+            EventService.cancel_registration(event_id, member_id)
+        except ApiError:
+            pass
+
+
+def _clear_member_proxies(member_id: int) -> None:
+    """Proxies in open polls, given or held, end with the membership."""
+    from hubra.core.models.poll import Poll, PollProxy
+
+    open_polls = select(Poll.id).where(Poll.status == "open")
+    db.session.execute(
+        delete(PollProxy).where(
+            (PollProxy.grantor_id == member_id) | (PollProxy.holder_id == member_id),
+            PollProxy.poll_id.in_(open_polls),
+        )
+    )
+
+
 def _clear_member_all_associations(member_id: int) -> set[int]:
-    """Remove member from all groups and functions. Returns affected group IDs."""
+    """Remove member from all groups and functions, upcoming events and
+    open-poll proxies. Returns affected group IDs."""
     group_ids = _clear_member_groups(member_id)
     _clear_member_functions(member_id)
+    _clear_member_events(member_id)
+    _clear_member_proxies(member_id)
     return group_ids
 
 
