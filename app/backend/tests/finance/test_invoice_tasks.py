@@ -138,3 +138,24 @@ def test_generated_invoice_mail_has_subject_and_bodies_in_place(app, billable_ti
         assert "<html" in kwargs["body_html"].lower()
         assert "<html" not in kwargs["body_text"].lower()
         assert kwargs["body_text"] != kwargs["subject"]
+
+
+def test_bulk_invoices_leave_out_inactive_members(app, billable_tier_db):
+    from sqlalchemy import select
+
+    from hubra.api.finance.services import InvoicesService
+    from hubra.core.extensions import db
+    from hubra.core.models.finance import Invoice
+
+    with app.app_context():
+        member = billable_tier_db["member_billed"]
+        member.status = "inactive"
+        db.session.commit()
+        try:
+            InvoicesService.bulk_create({"due": "2099-01-31"}, actor_id=member.id)
+        except Exception:
+            db.session.rollback()  # "no active members" is fine too
+        billed = db.session.scalars(
+            select(Invoice).where(Invoice.member_id == member.id)
+        ).all()
+        assert billed == []

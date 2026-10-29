@@ -244,6 +244,23 @@ def calculate_preview_cost(config: dict, db_session=None) -> dict:
     }
 
 
+def deductions_by_tier(db_session):
+    """A function giving, per formula tier, the yearly fees of the tiers it
+    deducts: each tier its own ``deduct_tier_ids``, not all formula tiers'."""
+    cache: dict[int, Decimal] = {}
+
+    def for_tier(tier) -> Decimal:
+        if tier is None or tier.price_type != "formula" or not tier.deduct_tier_ids:
+            return Decimal(0)
+        if tier.id not in cache:
+            cache[tier.id] = total_deducted_annual_for_tiers(
+                db_session, set(tier.deduct_tier_ids)
+            )
+        return cache[tier.id]
+
+    return for_tier
+
+
 def total_deducted_annual_for_tiers(session, tier_ids: set[int]) -> Decimal:
     """Calculate total annual fees from all active members in the given tier IDs.
 

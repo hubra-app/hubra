@@ -5,7 +5,6 @@ from __future__ import annotations
 import base64
 import logging
 from datetime import date, timedelta
-from decimal import Decimal
 from typing import TYPE_CHECKING
 
 
@@ -17,7 +16,7 @@ from hubra.core.pricing import (
     billing_cycle_for,
     calculate_invoice_amount,
     period_window,
-    total_deducted_annual_for_tiers,
+    deductions_by_tier,
 )
 from hubra.core.services.email import DEFAULT_LANG
 from hubra.core.services.mail_i18n import render_mail_template
@@ -197,17 +196,8 @@ def _generate_invoices() -> dict:
         .where(Member.tier_id.isnot(None))
     ).all()
 
-    # Collect all deduct_tier_ids referenced by any formula tier
-    all_deduct_ids: set[int] = set()
-    for member in active_members:
-        t: MembershipTier | None = member.tier
-        if t and t.price_type == "formula" and t.deduct_tier_ids:
-            all_deduct_ids.update(t.deduct_tier_ids)
-
-    # Calculate total annual fees from all members in deducted tiers
-    total_deducted_annual: Decimal = total_deducted_annual_for_tiers(
-        db.session, all_deduct_ids
-    )
+    # Each formula tier deducts the yearly fees of its own deduct_tier_ids.
+    deducted_for = deductions_by_tier(db.session)
 
     # Generate invoices
     for member in active_members:
@@ -241,7 +231,7 @@ def _generate_invoices() -> dict:
             skipped += 1
             continue
 
-        amount = calculate_invoice_amount(member, tier, total_deducted_annual)
+        amount = calculate_invoice_amount(member, tier, deducted_for(tier))
         if amount <= 0:
             logger.info(
                 "invoice_generation_skipped member_id=%s reason=amount_zero_or_negative",
