@@ -19,6 +19,7 @@ Authors and publishers::
     flask plugins repo ../../plugins ./public --key my.pem --name "My plugins"
     flask plugins build-index sources.yaml ./public --key my.pem
     flask plugins yank ./public keys 1.0.1 --key my.pem --reason "..."
+    flask plugins check https://plugins.hubra.club/index.json
     flask plugins revision keys -m "add a column" --autogenerate
 """
 
@@ -348,6 +349,33 @@ def register(app) -> None:
             click.echo(f"  ! {msg}", err=True)
         if doc["problems"] and not doc["plugins"]:
             raise SystemExit(1)
+
+    @plugins_cli.command("check")
+    @click.argument("url")
+    @click.option(
+        "--key-id",
+        default="",
+        help="The key the index must be signed with (default: the official key).",
+    )
+    def plugins_check(url, key_id):
+        """Download a published repository like a Hubra would and check every signature.
+
+        URL is its index.json.  Exits non-zero on any problem.
+        """
+        from .installer import InstallError
+        from .publish import check_repository
+
+        try:
+            doc, problems = check_repository(url, key_id)
+        except (InstallError, ValueError) as exc:
+            _fail(exc)
+        for p in doc["plugins"]:
+            click.echo(f"  {p['id']:<20} {p['version']:<8} {len(p.get('versions') or [p])} version(s)")
+        if problems:
+            for problem in problems:
+                click.echo(f"  ! {problem}", err=True)
+            raise SystemExit(1)
+        click.echo(f"{url}: index and every archive signed with {doc['key_id']}, generated {doc['generated']}")
 
     @plugins_cli.command("yank")
     @click.argument("output", type=click.Path(file_okay=False, exists=True))

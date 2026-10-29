@@ -82,7 +82,7 @@ docs/deps/**
 .worktrees/
 .secrets/
 
-# Built plugin frontends (npm run build:plugin in app/frontend)
-plugins/*/frontend/dist/
+# Plugins are their own repositories; clone one into plugins/<id> to work on it.
+/plugins/*/
 graphify-out/
 dump.rdb

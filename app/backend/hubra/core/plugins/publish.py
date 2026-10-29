@@ -423,3 +423,56 @@ def yank(out: Path, private_pem: bytes, pid: str, version: str, reason: str) -> 
     doc = sign_index(doc, private_pem)
     (out / "index.json").write_text(json.dumps(doc, indent=2) + "\n")
     return doc
+
+
+def check_repository(url: str, expect_key: str = "") -> tuple[dict, list[str]]:
+    """Download a published repository the way a Hubra does and check it.
+
+    The index must verify against its own key (and be *expect_key*, default
+    the official key), and every archive it offers must match its checksum,
+    unpack safely, and carry a SIGNATURE.json from that key for that id and
+    version.  Returns the index and the problems found ([] = all good).
+    """
+    from urllib.parse import urljoin
+
+    from .installer import preview_repository
+    from .trust import load_public, official_keys
+
+    info = preview_repository(url)
+    kid = info["keyId"]
+    wanted = expect_key or next(iter(official_keys()), "")
+    problems = []
+    if wanted and kid != wanted:
+        problems.append(f"the index is signed with key {kid}, not {wanted}")
+    doc = json.loads(http_get(url, timeout=15, limit=10 * 1024 * 1024))
+    signer = {kid: (info["name"], load_public(info["publicKey"]))}
+    for p in doc["plugins"]:
+        for v in versions_of(p):
+            what = f"{p.get('id')} {v['version']}"
+            if not v["url"] or not v["sha256"]:
+                problems.append(f"{what}: no archive or checksum in the index")
+                continue
+            try:
+                blob = http_get(urljoin(url, v["url"]), timeout=60)
+            except InstallError as exc:
+                problems.append(f"{what}: {exc}")
+                continue
+            if hashlib.sha256(blob).hexdigest() != v["sha256"]:
+                problems.append(f"{what}: the archive doesn't match its checksum")
+                continue
+            with tempfile.TemporaryDirectory() as tmp:
+                try:
+                    pdir = safe_extract(blob, Path(tmp))
+                    m = read_manifest(pdir)
+                except (InstallError, ValueError) as exc:
+                    problems.append(f"{what}: {exc}")
+                    continue
+                if (str(m.get("id")), str(m.get("version"))) != (
+                    str(p.get("id")),
+                    v["version"],
+                ):
+                    problems.append(f"{what}: the archive holds {m.get('id')} {m.get('version')}")
+                t = verify(pdir, m, signer)
+                if t["status"] not in ("official", "community") or t["key_id"] != kid:
+                    problems.append(f"{what}: {t['detail']}")
+    return doc, problems

@@ -77,18 +77,20 @@ def current() -> PluginSet:
 # ── Folders ──────────────────────────────────────────────────────────────────
 
 
-def bundled_dir(app=None) -> Path | None:
+def bundled_dirs(app=None) -> list[Path]:
+    """Folders of plugins shipped with this copy: BUNDLED_PLUGIN_DIR (several
+    separated by os.pathsep), else the plugins/ folder of the checkout or image."""
     app = app or current_app
     configured = app.config.get("BUNDLED_PLUGIN_DIR") or ""
     if configured:
-        return Path(configured)
+        return [Path(p) for p in configured.split(os.pathsep) if p]
     here = Path(__file__).resolve()
     # A checkout: <repo>/app/backend/hubra/core/plugins -> <repo>/plugins.
     # The image: /app/hubra/core/plugins -> /app/plugins.
     for up in (5, 3):
         if len(here.parents) > up and (here.parents[up] / "plugins").is_dir():
-            return here.parents[up] / "plugins"
-    return None
+            return [here.parents[up] / "plugins"]
+    return []
 
 
 def plugin_dir(app=None) -> Path:
@@ -193,7 +195,7 @@ def discover(app=None) -> PluginSet:
 
     app = app or current_app
     found = PluginSet()
-    for spec in scan(bundled_dir(app), bundled=True):
+    for spec in [s for root in bundled_dirs(app) for s in scan(root, bundled=True)]:
         spec.trust = {
             "status": "bundled",
             "signer": "Hubra",

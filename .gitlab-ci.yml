@@ -69,11 +69,6 @@ frontends:
     - npm ci
     - npm run lint
     - npm run build
-    - |
-      if [ "$APP" = frontend ]; then
-        npm run typecheck:plugins
-        npm run build:plugin
-      fi
 
 compose:
   stage: check

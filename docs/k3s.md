@@ -98,12 +98,10 @@ node fails, the operator promotes a replica. The app connects through the
 Redis and the Celery beat schedule stay on Longhorn: neither holds data that
 needs more than that.
 
-**Plugin marketplace.** The overlay also runs the official plugin
-marketplace at `plugins.hubra.club` (`plugins.yaml`). That is the image
-`ghcr.io/hubra-app/hubra/plugins`, built by `.github/workflows/plugins.yml`,
-and every Hubra fetches its `index.json`. It needs a Cloudflare DNS record for
-`plugins.hubra.club`, like the other hosts. After a plugin release, set the
-new `sha-<commit>` tag in `kustomization.yaml`.
+**Plugin marketplace.** The official plugin marketplace at
+`plugins.hubra.club` is not on the cluster: GitHub Pages serves it from
+hubra-app/hubra-plugins (`plugins/README.md`). Its Cloudflare record is a
+CNAME to `hubra-app.github.io`.
 
 **Behind Cloudflare.** Cloudflare -> Traefik -> backend is two
 `X-Forwarded-For` hops, so the overlay sets `PROXY_FIX_X_FOR=2`. That is

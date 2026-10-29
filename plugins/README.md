@@ -6,8 +6,9 @@ the club app. The platform manager installs it once from the Marketplace,
 and each club then switches its modules on or off in Settings › Modules, like
 any built-in module.
 
-The plugins in this folder ship with Hubra but are not active until a manager
-installs them:
+Plugins are independent of Hubra: each official one is its own repository,
+`hubra-app/hubra-plugin-<id>`, and Hubra ships none of them. Managers install
+them from the official Marketplace, <https://plugins.hubra.club/index.json>.
 
 | Plugin        | Module(s)          | What it does                                                                |
 | ------------- | ------------------ | --------------------------------------------------------------------------- |
@@ -18,13 +19,17 @@ installs them:
 | `imap-inbox`  | `inbox`            | Read club mailboxes over IMAP, read-only, per group                         |
 | `discord`     | `discord`          | Announce events, posts and polls in Discord                                 |
 
+This folder holds what a plugin needs to run its tests and type check with
+Hubra's (`conftest.py`, `tsconfig.json`). To work on a plugin, clone its
+repository into `plugins/<id>`; git here ignores it.
+
 The signing, repository and update design comes from
 [labdex](https://github.com/labdex-app/labdex).
 
 ## For platform managers
 
-**Install.** Manager portal › Plugins. Install a shipped plugin, one from a
-repository, or upload a `.zip`. Installing runs the plugin's migrations in
+**Install.** Manager portal › Plugins. Install a plugin from a repository
+(the official Marketplace is there out of the box), or upload a `.zip`. Installing runs the plugin's migrations in
 every club and records it in the database; every API and Celery process
 picks it up within `HUBRA_PLUGINS_RELOAD_POLL` seconds (15 by default)
 without a new image. Each process unpacks installed plugins from the
@@ -34,7 +39,7 @@ database into its own `HUBRA_PLUGIN_DIR`, so no shared volume is needed.
 
 | Badge              | Meaning                                                              |
 | ------------------ | -------------------------------------------------------------------- |
-| Shipped with Hubra | In this folder of the image                                          |
+| Shipped with Hubra | In `HUBRA_BUNDLED_PLUGINS` (development checkouts only)              |
 | Official           | Signed with a key in `app/backend/hubra/core/plugins/keys/official/` |
 | Community          | Signed with a key you trusted (Plugins › Signing keys)               |
 | Unsigned           | Installs only after you tick "I trust this code"                     |
@@ -63,7 +68,7 @@ need can't be uninstalled first.
 
 ```
 flask plugins list
-flask plugins install keys                 # shipped, or from a repository
+flask plugins install keys                 # from a repository
 flask plugins install ./keys-1.0.0.zip [--accept-unsigned]
 flask plugins uninstall keys [--delete-data]
 flask plugins rollback keys
@@ -75,7 +80,7 @@ flask plugins sync                          # on every deploy, after flask db up
 | Variable                    | Default                             | Meaning                                                           |
 | --------------------------- | ----------------------------------- | ----------------------------------------------------------------- |
 | `HUBRA_PLUGIN_DIR`          | `$TMPDIR/hubra-plugins-<uid>`       | Where a process unpacks installed plugins; any writable folder    |
-| `HUBRA_BUNDLED_PLUGINS`     | `plugins/` of the checkout or image | Plugins shipped with this copy                                    |
+| `HUBRA_BUNDLED_PLUGINS`     | `plugins/` of the checkout or image | Plugin folders loaded from disk (dev); several split by `:`       |
 | `HUBRA_PLUGINS_AUTOINSTALL` | empty                               | `all` or ids: count as installed without the database (dev/tests) |
 | `HUBRA_PLUGINS_RELOAD_POLL` | `15`                                | Seconds between checks for installs by other processes; 0 = off   |
 | `HUBRA_OFFICIAL_INDEX`      | `keys/official/index.url`           | The official repository                                           |
@@ -128,7 +133,8 @@ frontend: frontend/dist/plugin.js
 **Backend.** The package defines `Module` objects exactly like the built-in
 modules (see `app/backend/hubra/modules/README.md`): blueprints, settings,
 nav entries, permissions, event hooks, tables. Module codes must not clash
-with Hubra's. Look at `keys/` for a complete example.
+with Hubra's. [hubra-plugin-keys](https://github.com/hubra-app/hubra-plugin-keys)
+is a complete example.
 
 **Tables.** Write migrations with `flask plugins revision my-plugin -m "..."
 --autogenerate` (with `HUBRA_PLUGINS_AUTOINSTALL=my-plugin`). They run in
@@ -185,14 +191,16 @@ Build it with the club app's toolchain:
 cd app/frontend
 npm run build:plugin -- ../../plugins/my-plugin      # or /path/to/my-plugin
 npm run build:plugin -- --watch ../../plugins/my-plugin
-npm run typecheck:plugins                              # plugins in this folder
+npm run typecheck:plugins                              # plugins cloned into plugins/
 ```
 
 The club app loads `/api/v1/plugins/<id>/frontend.js` of each plugin that
 has a module on for the club.
 
-**Tests.** `pytest` in `app/backend` also runs `plugins/*/tests` (with
-`HUBRA_PLUGINS_AUTOINSTALL=all`). Use the backend's fixtures as usual.
+**Tests.** With the plugin cloned into `plugins/<id>`, `pytest
+../../plugins/<id>` in `app/backend` runs its tests with Hubra's fixtures
+(`HUBRA_PLUGINS_AUTOINSTALL=all`). Its repository's workflow does the same on
+every push, against Hubra's `main`.
 
 ## Publishing
 
@@ -200,25 +208,32 @@ has a module on for the club.
 flask plugins keygen me.pem                       # once; share me.pem.pub and its key id
 flask plugins repo ./plugins ./public --key me.pem --name "My plugins"
 flask plugins yank ./public my-plugin 1.0.1 --key me.pem --reason "breaks imports"
+flask plugins check https://me.github.io/my-plugins/index.json --key-id <key id>
 ```
 
 `repo` copies each plugin, leaves out what `.releaseignore` lists, signs it,
 zips it and writes a signed `index.json` that keeps earlier versions. Serve
 `./public` from any web server (GitHub Pages works), and give people the URL
-of `index.json` and your key id. For plugins in their own repositories,
-`flask plugins build-index sources.yaml ./public --key me.pem` builds the
-index from their GitHub releases instead.
+of `index.json` and your key id. `check` downloads the published index and
+every archive and verifies them the way a Hubra will. For plugins in their
+own repositories, `flask plugins build-index sources.yaml ./public --key
+me.pem` builds the index from their GitHub releases instead.
 
-**The official marketplace.** The plugins in this folder are published at
-<https://plugins.hubra.club/index.json> by `.github/workflows/plugins.yml`. On
-pushes to `main` that touch a plugin, it takes the marketplace out of the
-latest `ghcr.io/hubra-app/hubra/plugins` image, then builds and signs only the
-versions that aren't in it yet, so a published version never changes. It
-pushes the result as a new image (nginx, `app/deploy/plugins/`), and the
-Contabo cluster serves that image (`deploy/clusters/contabo/plugins.yaml`). To
-release a plugin, bump `version` in its `plugin.yaml` and add a `CHANGELOG.md`
-entry. The workflow needs the secret `HUBRA_SIGNING_KEY` in hubra-app/hubra,
-which holds the private key of `keys/official/Hubra.pub`.
+**The official marketplace** works like labdex's. Every official plugin is
+its own repository, `hubra-app/hubra-plugin-<id>`; publishing a GitHub
+release `v<version>` there runs its tests against Hubra, builds its frontend,
+signs it with the project key and attaches `<id>-<version>.zip`.
+[hubra-app/hubra-plugins](https://github.com/hubra-app/hubra-plugins) finds
+every public `hubra-plugin-*` repository, builds the signed index from their
+releases every hour (`flask plugins build-index`), publishes it with GitHub
+Pages at <https://plugins.hubra.club/index.json>, and then verifies what that
+URL serves (`flask plugins check`). To release a plugin, bump `version` in
+its `plugin.yaml`, add a `CHANGELOG.md` entry, push, and publish the release.
+For a new plugin, `python3 tools/plugin_repo/make_plugin_repo.py
+<plugin folder> ../hubra-plugin-<id>` writes the repository around it
+(README, LICENSE, workflow). The workflows need the secret
+`HUBRA_SIGNING_KEY` (the private key of `keys/official/Hubra.pub`) and, while
+hubra-app/hubra is private, `HUBRA_READ_TOKEN`, a token that can read it.
 
 Single archives: `flask plugins sign ./my-plugin --key me.pem --signer "Your
 Name"`, then `flask plugins pack ./my-plugin -o my-plugin-1.0.0.zip`.

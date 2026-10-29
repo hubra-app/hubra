@@ -69,9 +69,6 @@ jobs:
           npm run lint
           npm test --if-present
           npm run build
-          # Plugin frontends
-          npm run typecheck:plugins
-          npm run build:plugin
       - name: "admin-frontend"
         if: ${{ !cancelled() }}
         working-directory: app/admin-frontend
