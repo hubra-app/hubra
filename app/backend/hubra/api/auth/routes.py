@@ -1307,6 +1307,7 @@ def list_all_sessions():
 @account_bp.delete("/all-sessions/<slug>/<int:session_id>")
 @jwt_required()
 def revoke_club_session(slug: str, session_id: int):
+    refuse_during_impersonation()
     user = _signed_in_user()
     with account_svc.as_member_of(user.id, slug) as member:
         session = session_service.revoke_session(session_id, member.id)
@@ -1320,6 +1321,7 @@ def revoke_club_session(slug: str, session_id: int):
 @jwt_required()
 def revoke_sessions_everywhere():
     """Sign out everywhere except this browser."""
+    refuse_during_impersonation()
     user = _signed_in_user()
     current_slug, current_sid = _current_session_key()
     count = 0

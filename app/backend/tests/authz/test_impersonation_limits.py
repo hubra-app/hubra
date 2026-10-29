@@ -26,6 +26,8 @@ def test_support_cannot_leave_the_club_or_end_sessions(app, client, seeded_db):
         ("post", "/api/v1/account/sessions/revoke-all"),
         ("delete", "/api/v1/account/sessions/1"),
         ("delete", "/api/v1/account/devices/1"),
+        ("post", "/api/v1/account/all-sessions/revoke-all"),
+        ("delete", "/api/v1/account/all-sessions/test/1"),
     ):
         resp = getattr(client, method)(path, json={})
         assert resp.status_code == 403, path
