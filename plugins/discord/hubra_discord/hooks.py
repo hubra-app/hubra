@@ -50,7 +50,11 @@ def _send_pending(session) -> None:
     from .tasks import post_to_discord
 
     for url, body in pending:
-        post_to_discord.delay(url, body)
+        try:
+            post_to_discord.delay(url, body)
+        except Exception:
+            # The commit is done; a broker outage must not turn it into a 500.
+            _log.exception("discord: could not queue the announcement")
 
 
 def _drop_pending(session, previous_transaction) -> None:

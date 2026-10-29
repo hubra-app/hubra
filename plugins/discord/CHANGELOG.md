@@ -2,7 +2,7 @@
 
 ## 1.0.1
 
-- An announcement is sent only after the post, event or poll is saved, so a change that fails afterwards is never announced.
+- An announcement is sent only after the post, event or poll is saved, so a change that fails afterwards is never announced. A queue outage at that point is logged and does not fail the request.
 
 ## 1.0.0
 
