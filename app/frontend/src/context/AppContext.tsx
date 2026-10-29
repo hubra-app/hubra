@@ -447,7 +447,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const setOpenInvoiceCount = useCallback(
     (updater: number | ((prev: number) => number)) => {
       queryClient.setQueryData<DashboardSummary | undefined>(['dashboard-summary'], (prev) => {
-        if (!prev?.stats) return prev
+        if (prev?.stats?.openInvoices == null) return prev
         const newCount = typeof updater === 'function' ? updater(prev.stats.openInvoices) : updater
         return { ...prev, stats: { ...prev.stats, openInvoices: newCount } }
       })

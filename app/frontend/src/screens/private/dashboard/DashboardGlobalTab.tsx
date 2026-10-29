@@ -34,6 +34,8 @@ export function GlobalOverviewScreen() {
     queryKey: ["polls"],
     queryFn: listPolls,
   });
+  // The server leaves out club money totals for members without finance access.
+  const showMoney = summary?.stats.netMonth !== null;
 
   const today = new Date();
 
@@ -163,7 +165,7 @@ export function GlobalOverviewScreen() {
         </Card>
       )}
 
-      <StatGrid columns={4}>
+      <StatGrid columns={showMoney ? 4 : 2}>
         <StatTile
           label={t("dashboard.activeMembers")}
           value={
@@ -178,26 +180,34 @@ export function GlobalOverviewScreen() {
           }
           onClick={() => go("/app/members")}
         />
-        <StatTile
-          label={t("dashboard.netThisMonth")}
-          value={summary?.stats ? fmtNet(summary.stats.netMonth) : "\u2014"}
-          sub={t("dashboard.incomeMinusExpenses")}
-          accent="#1f9d57"
-          onClick={() => go("/app/finance")}
-        />
-        <StatTile
-          label={t("common.openInvoices")}
-          value={summary?.stats ? String(summary.stats.openInvoices) : "\u2014"}
-          sub={
-            summary?.stats && summary.stats.openInvoices > 0
-              ? t("dashboard.outstanding", {
-                  count: summary.stats.openInvoices,
-                })
-              : t("dashboard.allPaid")
-          }
-          accent="#6131c4"
-          onClick={() => go("/app/finance/invoices")}
-        />
+        {showMoney && (
+          <>
+            <StatTile
+              label={t("dashboard.netThisMonth")}
+              value={
+                summary?.stats ? fmtNet(summary.stats.netMonth ?? 0) : "\u2014"
+              }
+              sub={t("dashboard.incomeMinusExpenses")}
+              accent="#1f9d57"
+              onClick={() => go("/app/finance")}
+            />
+            <StatTile
+              label={t("common.openInvoices")}
+              value={
+                summary?.stats ? String(summary.stats.openInvoices) : "\u2014"
+              }
+              sub={
+                summary?.stats && (summary.stats.openInvoices ?? 0) > 0
+                  ? t("dashboard.outstanding", {
+                      count: summary.stats.openInvoices,
+                    })
+                  : t("dashboard.allPaid")
+              }
+              accent="#6131c4"
+              onClick={() => go("/app/finance/invoices")}
+            />
+          </>
+        )}
         <StatTile
           label={t("dashboard.upcomingEventsLabel")}
           value={
