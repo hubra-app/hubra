@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from sqlalchemy import DateTime, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from hubra.core.extensions import db
 
@@ -36,6 +36,14 @@ class AuditEntry(db.Model):
     actor: Mapped["Member | None"] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "Member", foreign_keys=[actor_id]
     )
+
+    @validates("actor_name", "target_label")
+    def _fit_column(self, _key: str, value: str | None) -> str | None:
+        # Two 255-character names make a 511-character actor name; the
+        # entry must not fail (and roll back) the change it records.
+        if value is not None and len(value) > 255:
+            return value[:254] + "…"
+        return value
 
     def __repr__(self) -> str:
         return f"<AuditEntry id={self.id} action={self.action!r}>"

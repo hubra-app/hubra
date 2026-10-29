@@ -89,12 +89,17 @@ def update_profile(user: User, updates: dict) -> None:
         name = (updates["name"] or "").strip()
         if not name:
             raise_error(400, "VALIDATION_ERROR", "Name cannot be empty")
+        first, _, last = name.partition(" ")
+        if len(first) > 255 or len(last.strip()) > 255:
+            raise_error(400, "VALIDATION_ERROR", "Name is too long")
         user.name = name
     for key, attr in (("firstName", "first_name"), ("lastName", "last_name")):
         if key in updates:
             value = (updates[key] or "").strip()
             if attr == "first_name" and not value:
                 raise_error(400, "VALIDATION_ERROR", "First name cannot be empty")
+            if len(value) > 255:
+                raise_error(400, "VALIDATION_ERROR", f"{key} exceeds 255 characters")
             setattr(user, attr, value)
     if "avatarColor" in updates:
         color = updates["avatarColor"] or ""

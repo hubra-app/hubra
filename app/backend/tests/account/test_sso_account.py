@@ -59,7 +59,13 @@ def test_profile_update(client, db):
 def test_profile_update_rejects_bad_values(client, db):
     _user_without_club(db)
     _login(client, "solo@test.ch")
-    for body in ({"name": " "}, {"avatarColor": "red"}, {"language": "xx"}):
+    for body in (
+        {"name": " "},
+        {"name": "b" * 256},
+        {"lastName": "a" * 256},
+        {"avatarColor": "red"},
+        {"language": "xx"},
+    ):
         assert client.patch("/api/v1/account/profile", json=body).status_code == 400
 
 
