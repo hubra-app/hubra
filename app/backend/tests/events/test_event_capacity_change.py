@@ -128,3 +128,14 @@ def test_members_hear_when_their_event_moves(client, auth_headers, seeded_db):
         )
     ).all()
     assert told == ["Grillabend"]
+
+
+def test_an_archived_member_is_not_put_on_the_list(client, auth_headers, seeded_db):
+    event_id = _create_event(client, auth_headers).get_json()["id"]
+    member_id = _create_member(client, auth_headers, email="old@test.ch").get_json()["id"]
+    client.post(f"/api/v1/members/{member_id}/archive", json={}, headers=auth_headers)
+
+    resp = client.post(
+        f"/api/v1/events/{event_id}/attendees/{member_id}", headers=auth_headers
+    )
+    assert resp.status_code == 404

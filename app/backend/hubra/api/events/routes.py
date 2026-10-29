@@ -137,7 +137,7 @@ def add_attendee(event_id: int, member_id: int):
     EventService.get(event_id)  # 404 if not found
 
     member = db.session.get(Member, member_id)
-    if member is None:
+    if member is None or member.archived_at is not None:
         raise_error(404, "NOT_FOUND", f"Member {member_id} not found")
         return
 
