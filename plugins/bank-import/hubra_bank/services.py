@@ -455,6 +455,8 @@ class RuleService:
             ("description", "description"),
         ):
             if key in data:
+                if data[key] is not None and not isinstance(data[key], str):
+                    raise_error(400, "VALIDATION_ERROR", f"{key} must be text")
                 value = (data.get(key) or "").strip()
                 out[field] = value or None
         if "direction" in data:

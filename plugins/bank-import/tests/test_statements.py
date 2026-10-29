@@ -365,6 +365,18 @@ def test_rule_books_debit_and_manual_booking(client, db, auth_headers, setup):
     )
     assert resp.status_code == 201
     rule_id = resp.get_json()["id"]
+    for key in ("name", "pattern"):
+        bad = client.post(
+            "/api/v1/bank/rules",
+            json={
+                "name": "Phone",
+                "direction": "debit",
+                "matchField": "counterparty",
+                "pattern": "swisscom",
+                key: 5,
+            },
+        )
+        assert bad.status_code == 400, key
 
     body = _upload(client, MT940.encode(), "oct.sta").get_json()
     assert body["format"] == "mt940"

@@ -9,6 +9,8 @@
 - A malformed file (an impossible date, a bad CSV column mapping) is
   refused with a message instead of a server error, and camt amounts such
   as NaN or Infinity are not read as numbers.
+- A rule whose name, pattern or description is not text is refused with
+  a message instead of a server error.
 
 ## 1.1.1
 

@@ -82,6 +82,13 @@ def test_plan_crud_and_member_choice(client, db, auth_headers, tier, seeded_db):
         ).status_code
         == 400
     )
+    assert (
+        client.post(
+            f"/api/v1/tiers/{tier.id}/plans",
+            json={"name": 5, "interval": "monthly"},
+        ).status_code
+        == 400
+    )
 
     tiers = client.get("/api/v1/tiers/").get_json()
     assert [p["name"] for p in tiers[0]["payment_plans"]] == ["Quarterly", "Monthly"]
@@ -127,3 +134,11 @@ def test_invoice_generation_uses_plan(app, db, tier, seeded_db):
         select(Invoice.amount).where(Invoice.member_id == member.id)
     ).all()
     assert amounts == [Decimal("30.00")]
+
+
+def test_cost_preview_ignores_a_tier_id_that_is_not_a_number(
+    client, auth_headers, tier
+):
+    for tier_id in ({"a": 1}, [1], "1", True):
+        resp = client.post("/api/v1/tiers/calculate-cost", json={"tier_id": tier_id})
+        assert resp.status_code == 200, tier_id

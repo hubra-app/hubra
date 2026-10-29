@@ -167,7 +167,8 @@ def calculate_preview_cost(config: dict, db_session=None) -> dict:
     members = 0
     tier_id = config.get("tier_id")
 
-    if db_session and tier_id:
+    # A preview for a tier that doesn't exist yet has no tier_id.
+    if db_session and isinstance(tier_id, int) and not isinstance(tier_id, bool):
         members = (
             db_session.scalar(
                 select(func.count(Member.id))

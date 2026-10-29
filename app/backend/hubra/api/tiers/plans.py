@@ -39,7 +39,10 @@ def _surcharge(value) -> Decimal:
 
 def _apply(plan: PaymentPlan, data: dict, partial: bool) -> None:
     if "name" in data or not partial:
-        name = (data.get("name") or "").strip()
+        name = data.get("name")
+        if name is not None and not isinstance(name, str):
+            raise_error(400, "VALIDATION_ERROR", "name must be text")
+        name = (name or "").strip()
         if not name:
             raise_error(400, "VALIDATION_ERROR", "name is required")
         plan.name = name
