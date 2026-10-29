@@ -22,6 +22,7 @@
     "paths": {
       "@hubra/plugin-sdk": ["../app/frontend/src/plugins/sdk.ts"],
       "@hubra/api-client": ["../packages/api-client/src/index.ts"],
+      "@hubra/ui": ["../packages/ui/src/index.ts"],
       "@/*": ["../app/frontend/src/*"],
       "*": ["../app/frontend/node_modules/@types/*", "../app/frontend/node_modules/*"]
     }
