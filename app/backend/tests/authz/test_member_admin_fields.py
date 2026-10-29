@@ -55,3 +55,21 @@ def test_member_editors_still_see_them(client, db, permissioned_member_factory):
     _note_everyone(db)
     rows = client.get("/api/v1/members?pageSize=100", headers=headers).get_json()["data"]
     assert all(row["notes"] == "Board note" for row in rows)
+
+
+def test_plain_member_cannot_list_former_members(client, db, permissioned_member_factory):
+    from datetime import datetime, timezone
+
+    from hubra.core.models.member import Member
+
+    headers = permissioned_member_factory(DEFAULT_ROLE_PERMISSIONS["Member"])
+    others = db.session.query(Member).all()
+    gone = others[0]
+    gone.archived_at = datetime.now(timezone.utc)
+    db.session.commit()
+
+    rows = client.get(
+        "/api/v1/members?archived=true&include_deleted=true&pageSize=100", headers=headers
+    ).get_json()["data"]
+    assert gone.id not in [row["id"] for row in rows]
+    assert rows  # the current members, as without the filters

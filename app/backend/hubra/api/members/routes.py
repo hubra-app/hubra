@@ -90,7 +90,12 @@ def count_members():
 @members_bp.get("/")
 @permission_required("members", "read", "View members")
 def list_members():
-    result = MembersService.list(dict(request.args))
+    args = dict(request.args)
+    if not _viewer_sees_admin_fields():
+        # Former and deleted members are for those who manage members.
+        args.pop("archived", None)
+        args.pop("include_deleted", None)
+    result = MembersService.list(args)
     for_viewer(result["data"])
     return jsonify(result), 200
 
