@@ -187,6 +187,7 @@ def register_for_event(event_id: int):
         member_id=member_id,
         notes=data.get("notes"),
         guests=data.get("guests", 0),
+        own=True,
     )
 
     try:
@@ -233,7 +234,7 @@ def register_member_for_event(event_id: int, member_id: int):
 @permission_required("events", "register", "Register for events")
 def cancel_registration(event_id: int):
     member_id = get_current_member().id
-    registration = EventService.cancel_registration(event_id, member_id)
+    registration = EventService.cancel_registration(event_id, member_id, own=True)
 
     try:
         db.session.commit()

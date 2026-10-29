@@ -6,7 +6,7 @@ from tests.helpers import add_member
 def _create_event(client, auth_headers, **overrides):
     payload = {
         "title": "Open Shop Night",
-        "date": "2026-06-06",
+        "date": "2030-06-06",
         "type": "Social",
     }
     payload.update(overrides)
@@ -317,3 +317,57 @@ def test_cancelling_frees_the_place_for_the_waitlist(client, auth_headers, seede
     # Only members with a place show as attending.
     attendees = client.get(f"/api/v1/events/{event_id}", headers=auth_headers)
     assert attendees.get_json()["attendee_ids"] == [first]
+
+
+# ── Deadlines (stored before, but never checked) ────────────────────────────
+
+
+def test_no_sign_up_after_the_registration_deadline(client, auth_headers, seeded_db):
+    event_id = _create_event(
+        client, auth_headers, registration_deadline="2020-01-01T12:00:00+00:00"
+    ).get_json()["id"]
+
+    resp = client.post(f"/api/v1/events/{event_id}/register", json={}, headers=auth_headers)
+    assert resp.status_code == 409
+    assert resp.get_json()["error"] == "REGISTRATION_CLOSED"
+
+    # An organiser can still add someone.
+    resp = client.post(
+        f"/api/v1/events/{event_id}/register/{seeded_db['admin'].id}",
+        json={},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 201
+
+
+def test_no_sign_up_for_a_past_event(client, auth_headers, seeded_db):
+    event_id = _create_event(client, auth_headers, date="2020-05-05").get_json()["id"]
+    resp = client.post(f"/api/v1/events/{event_id}/register", json={}, headers=auth_headers)
+    assert resp.status_code == 409
+
+
+def test_open_deadline_still_takes_sign_ups(client, auth_headers, seeded_db):
+    event_id = _create_event(
+        client, auth_headers, registration_deadline="2030-01-01T12:00:00+00:00"
+    ).get_json()["id"]
+    resp = client.post(f"/api/v1/events/{event_id}/register", json={}, headers=auth_headers)
+    assert resp.status_code == 201
+
+
+def test_no_cancelling_after_the_cancellation_deadline(client, auth_headers, db, seeded_db):
+    from datetime import datetime, timezone
+
+    from hubra.core.models.event import ClubEvent
+
+    event_id = _create_event(client, auth_headers).get_json()["id"]
+    url = f"/api/v1/events/{event_id}"
+    assert client.post(f"{url}/register", json={}, headers=auth_headers).status_code == 201
+
+    db.session.get(ClubEvent, event_id).cancellation_deadline = datetime(
+        2020, 1, 1, tzinfo=timezone.utc
+    )
+    db.session.commit()
+
+    resp = client.post(f"{url}/cancel-registration", headers=auth_headers)
+    assert resp.status_code == 409
+    assert resp.get_json()["error"] == "CANCELLATION_CLOSED"

@@ -22,6 +22,15 @@ from hubra.core.modules.events import EVENT_PUBLISHED
 _HOLDS_A_PLACE = ("registered", "approved", "attended")
 
 
+def _passed(deadline: datetime | None) -> bool:
+    """Whether a deadline is set and over (SQLite hands back naive UTC)."""
+    if deadline is None:
+        return False
+    if deadline.tzinfo is None:
+        deadline = deadline.replace(tzinfo=timezone.utc)
+    return deadline < datetime.now(timezone.utc)
+
+
 class EventService:
     """Operations on a single event."""
 
@@ -143,15 +152,24 @@ class EventService:
         member_id: int,
         notes: str | None = None,
         guests: int = 0,
+        own: bool = False,
     ) -> EventRegistration:
         """Register a member for an event. Handles waitlist when full.
 
         A member has one registration row per event: signing up again after
         cancelling brings the cancelled row back. Waitlisted members are not
-        attendees until they get a place.
+        attendees until they get a place. A member signing up themselves
+        (``own``) cannot after the registration deadline or the event;
+        an organiser still can.
         """
         event = EventService.get(event_id)
         EventService._lock(event_id)
+        if own:
+            last_day = event.end_date or event.date
+            if _passed(event.registration_deadline) or last_day < date.today():
+                raise_error(
+                    409, "REGISTRATION_CLOSED", "Registration for this event is closed"
+                )
 
         member = db.session.get(Member, member_id)
         if member is None or member.archived_at is not None:
@@ -218,8 +236,14 @@ class EventService:
             pass  # already in the attendees table
 
     @staticmethod
-    def cancel_registration(event_id: int, member_id: int) -> EventRegistration:
-        """Cancel a member's registration; the first on the waitlist moves up."""
+    def cancel_registration(
+        event_id: int, member_id: int, own: bool = False
+    ) -> EventRegistration:
+        """Cancel a member's registration; the first on the waitlist moves up.
+
+        After the cancellation deadline a member can no longer cancel their
+        own place (``own``); a waitlist entry can always be withdrawn.
+        """
         EventService._lock(event_id)
         registration = db.session.scalar(
             select(EventRegistration).where(
@@ -230,6 +254,16 @@ class EventService:
         )
         if registration is None:
             raise_error(404, "NOT_FOUND", "No active registration found")
+        if (
+            own
+            and registration.status != "waitlisted"
+            and _passed(EventService.get(event_id).cancellation_deadline)
+        ):
+            raise_error(
+                409,
+                "CANCELLATION_CLOSED",
+                "The cancellation deadline for this event has passed",
+            )
 
         freed_a_place = registration.status in _HOLDS_A_PLACE
         registration.status = "cancelled"
