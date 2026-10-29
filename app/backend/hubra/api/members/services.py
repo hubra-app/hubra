@@ -1321,6 +1321,9 @@ class MembersService:
                             new_local,
                             domain,
                         )
+                    # A taken name gets a numbered address (or none on
+                    # failure): show the one the mail actually goes to.
+                    member.public_email = mma.address
 
         # Replace group associations
         old_group_ids: set[int] = set()
