@@ -20,6 +20,7 @@ import {
   ConfirmModal,
   DataTable,
   ActionButtons,
+  useSubmitOnce,
 } from '@/components/ui'
 import type { ClubEvent } from '@/types'
 import { createEvent, updateEvent, deleteEvent } from '@/api/events'
@@ -136,6 +137,7 @@ export function EventsTab() {
       )
     }
   }
+  const [submitAdd, adding] = useSubmitOnce(saveAdd)
 
   const saveEdit = async (data: EventForm) => {
     if (!editTarget) return
@@ -432,7 +434,7 @@ export function EventsTab() {
             <Button variant="default" onClick={() => setAddOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="filled" onClick={() => form.onSubmit(saveAdd)()}>
+            <Button variant="filled" onClick={() => form.onSubmit(submitAdd)()} loading={adding}>
               {t('events.createEvent', 'Anlass erstellen')}
             </Button>
           </>

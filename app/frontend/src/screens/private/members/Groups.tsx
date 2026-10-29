@@ -31,6 +31,7 @@ import {
   ConfirmModal,
   usePagination,
   Pagination,
+  useSubmitOnce,
 } from '@/components/ui'
 import type { Group } from '@/types'
 import {
@@ -284,6 +285,7 @@ export function GroupsScreen() {
       )
     }
   }
+  const [submitAdd, adding] = useSubmitOnce(saveAdd)
 
   const saveEdit = async (data: GroupForm) => {
     if (!editTarget) return
@@ -607,7 +609,7 @@ export function GroupsScreen() {
             <Button variant="default" onClick={() => setAddOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="filled" onClick={() => form.onSubmit(saveAdd)()}>
+            <Button variant="filled" onClick={() => form.onSubmit(submitAdd)()} loading={adding}>
               {t('groups.createGroup', 'Gruppe erstellen')}
             </Button>
           </>

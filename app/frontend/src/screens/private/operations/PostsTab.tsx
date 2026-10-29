@@ -21,6 +21,7 @@ import {
   Pagination,
   ConfirmModal,
   ActionButtons,
+  useSubmitOnce,
 } from '@/components/ui'
 import { RichTextEditor } from '@/components/RichTextEditor'
 import { MarkdownRenderer } from '@/components/MarkdownRenderer'
@@ -116,6 +117,7 @@ export function PostsTab() {
       )
     }
   }
+  const [submitAdd, adding] = useSubmitOnce(saveAdd)
 
   const saveEdit = async (data: PostForm) => {
     if (!editTarget) return
@@ -633,7 +635,7 @@ export function PostsTab() {
             <Button variant="default" onClick={() => setAddOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="filled" onClick={() => form.onSubmit(saveAdd)()}>
+            <Button variant="filled" onClick={() => form.onSubmit(submitAdd)()} loading={adding}>
               {t('posts.publish', 'Veröffentlichen')}
             </Button>
           </>

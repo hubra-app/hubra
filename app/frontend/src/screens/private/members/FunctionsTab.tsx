@@ -23,6 +23,7 @@ import {
   CardItem,
   MemberSlideOver,
   type SlideOverMember,
+  useSubmitOnce,
 } from '@/components/ui'
 import type { ClubFunction } from '@/types'
 import {
@@ -109,6 +110,7 @@ export function FunctionsTab() {
       )
     }
   }
+  const [submitAdd, adding] = useSubmitOnce(saveAdd)
 
   const saveEdit = async (data: FunctionForm) => {
     if (!editTarget) return
@@ -299,7 +301,7 @@ export function FunctionsTab() {
             <Button variant="default" onClick={() => setAddOpen(false)}>
               {t('common.cancel', 'Abbrechen')}
             </Button>
-            <Button variant="filled" onClick={() => form.onSubmit(saveAdd)()}>
+            <Button variant="filled" onClick={() => form.onSubmit(submitAdd)()} loading={adding}>
               {t('common.create', 'Erstellen')}
             </Button>
           </>

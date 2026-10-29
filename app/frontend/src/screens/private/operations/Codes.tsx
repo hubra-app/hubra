@@ -21,6 +21,7 @@ import {
   ConfirmModal,
   DataTable,
   ActionButtons,
+  useSubmitOnce,
 } from '@/components/ui'
 import type { Code } from '@/types'
 import { listCodes, createCode, updateCode, deleteCode } from '@/api/codes'
@@ -94,6 +95,7 @@ export function CodesScreen() {
       )
     }
   }
+  const [submitAdd, adding] = useSubmitOnce(saveAdd)
 
   const saveEdit = async (data: CodeForm) => {
     if (!editTarget) return
@@ -299,7 +301,7 @@ export function CodesScreen() {
             <Button variant="subtle" onClick={() => setAddOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="default" onClick={() => form.onSubmit(saveAdd)()}>
+            <Button variant="default" onClick={() => form.onSubmit(submitAdd)()} loading={adding}>
               {t('common.save')}
             </Button>
           </>
