@@ -158,7 +158,8 @@ def add_attendee(event_id: int, member_id: int):
 @events_bp.delete("/<int:event_id>/attendees/<int:member_id>")
 @permission_required("events", "remove_attendee", "Remove event attendee")
 def remove_attendee(event_id: int, member_id: int):
-    EventService.remove_attendee(event_id, member_id)
+    # Also ends their registration, so the place goes to the waitlist.
+    EventService.cancel_registration(event_id, member_id)
 
     try:
         db.session.commit()
