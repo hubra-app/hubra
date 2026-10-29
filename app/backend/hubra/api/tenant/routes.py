@@ -1641,23 +1641,32 @@ def search_users():
 @require_global_permission("audit.read")
 def list_global_audit():
     """List platform-wide audit entries with pagination and filters."""
-    page = int(request.args.get("page", 1))
-    per_page = min(int(request.args.get("per_page", 25)), 100)
+    from hubra.api.utils import escape_like
+
+    try:
+        page = max(int(request.args.get("page", 1)), 1)
+        per_page = min(max(int(request.args.get("per_page", 25)), 1), 100)
+        tenant_id = request.args.get("tenant_id")
+        tenant_id = int(tenant_id) if tenant_id else None
+    except ValueError:
+        raise_error(
+            400, "VALIDATION_ERROR", "page, per_page and tenant_id must be numbers"
+        )
 
     query = select(GlobalAuditEntry).order_by(GlobalAuditEntry.time.desc())
 
-    tenant_id = request.args.get("tenant_id")
-    if tenant_id:
-        query = query.where(GlobalAuditEntry.tenant_id == int(tenant_id))
+    if tenant_id is not None:
+        query = query.where(GlobalAuditEntry.tenant_id == tenant_id)
 
     action = request.args.get("action")
     if action:
-        query = query.where(GlobalAuditEntry.action.ilike(f"%{action}%"))
-
-    total = db.session.scalar(
-        select(func.count()).select_from(
-            select(GlobalAuditEntry.id).order_by(None).subquery()
+        query = query.where(
+            GlobalAuditEntry.action.ilike(f"%{escape_like(action)}%", escape="\\")
         )
+
+    # Count what the filters match, not the whole table.
+    total = db.session.scalar(
+        select(func.count()).select_from(query.order_by(None).subquery())
     )
     entries = list(
         db.session.scalars(query.offset((page - 1) * per_page).limit(per_page)).all()
