@@ -362,16 +362,17 @@ def _provision_member_mailbox(member: Member, club_domain: str) -> None:
     member.public_email = f"{local}@{club_domain}"
     member.club_username = local
 
+    # A savepoint: a failure here must not undo the new member itself.
     try:
-        addr = get_or_create_for_member(member.id, local, club_domain)
-        addr.provisioning_status = "pending"
-        db.session.commit()
+        with db.session.begin_nested():
+            addr = get_or_create_for_member(member.id, local, club_domain)
+            addr.provisioning_status = "pending"
     except Exception:
-        db.session.rollback()
         current_app.logger.warning(
             "Failed to create MMA for %s", member.email, exc_info=True
         )
         return
+    db.session.commit()
 
     try:
         from hubra.core.services.mail_provisioning import (
