@@ -494,3 +494,20 @@ def test_platform_role_changes_are_audited(
     ]
     assert entries[2].target_id == str(other.id)
     assert entries[2].actor_id == superadmin_db["user"].id
+
+
+def test_a_plan_that_is_not_text_is_rejected(client, staff_headers, db):
+    """A list or object as plan crashed with a 500 (it was looked up in a set)."""
+    from hubra.core.models.tenant import Tenant
+
+    t = Tenant(name="Club A", slug="club-a", status="active")
+    db.session.add(t)
+    db.session.commit()
+    for plan in (["starter"], {"a": 1}):
+        resp = client.patch(f"/api/v1/system/tenants/{t.id}", json={"plan": plan})
+        assert resp.status_code in (400, 422)
+        resp = client.post(
+            "/api/v1/system/tenant-requests",
+            json={"name": "Club B", "slug": "club-b", "plan": plan},
+        )
+        assert resp.status_code == 400

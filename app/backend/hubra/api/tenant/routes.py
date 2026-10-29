@@ -39,7 +39,9 @@ from hubra.core.tenant.service import TenantService, TenantProvisioningError
 tenant_admin_bp = Blueprint("tenant_admin", __name__)
 
 _VALID_STATUSES = {"active", "suspended", "archived"}
-_VALID_PLANS = {"starter", "growth", "enterprise"}
+# A tuple: "in" then compares, so a list or object sent as plan is a 400,
+# not a TypeError from hashing it.
+_VALID_PLANS = ("starter", "growth", "enterprise")
 
 
 # ── Routes ──────────────────────────────────────────────────────────────────
