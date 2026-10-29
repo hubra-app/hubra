@@ -221,6 +221,7 @@ def test_get_settings_masks_sensitive_value(client, db, auth_headers):
         Setting(
             key="test.secret",
             value="super-secret-password",
+            default_value="super-secret-password",
             namespace="test",
             sensitive=True,
         )
@@ -232,6 +233,7 @@ def test_get_settings_masks_sensitive_value(client, db, auth_headers):
     match = next((i for i in resp.get_json() if i["key"] == "test.secret"), None)
     assert match is not None
     assert match["value"] == "****"
+    assert match["default_value"] == "****"
 
 
 def test_put_setting_response_masks_sensitive_value(client, db, auth_headers):
