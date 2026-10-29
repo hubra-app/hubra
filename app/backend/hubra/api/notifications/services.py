@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
@@ -12,6 +12,7 @@ from hubra.core.models.member import Member
 from hubra.core.models.notification import Notification
 
 _MAX_TEXT = 255  # title and msg columns
+LIST_LIMIT = 100  # newest notifications the bell gets
 
 
 def _fit(text: str) -> str:
@@ -102,14 +103,22 @@ class NotificationsService:
 
     @staticmethod
     def list(member_id: int) -> dict:
-        """Return notifications for a member with unread count."""
+        """Return a member's newest notifications with the unread count.
+
+        Nothing deletes old notifications, so the list is capped; the
+        unread count still covers all of them."""
         notifications = db.session.scalars(
             select(Notification)
             .where(Notification.member_id == member_id)
-            .order_by(Notification.time.desc())
+            .order_by(Notification.time.desc(), Notification.id.desc())
+            .limit(LIST_LIMIT)
         ).all()
 
-        unread = sum(1 for n in notifications if not n.read)
+        unread = db.session.scalar(
+            select(func.count())
+            .select_from(Notification)
+            .where(Notification.member_id == member_id, Notification.read.is_(False))
+        )
         return {
             "data": notifications,
             "meta": {"unread": unread},
