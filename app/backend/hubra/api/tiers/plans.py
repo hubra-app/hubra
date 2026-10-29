@@ -53,7 +53,9 @@ def _apply(plan: PaymentPlan, data: dict, partial: bool) -> None:
     if "surcharge_pct" in data:
         plan.surcharge_pct = _surcharge(data["surcharge_pct"])
     if "visible" in data:
-        plan.visible = bool(data["visible"])
+        if not isinstance(data["visible"], bool):
+            raise_error(400, "VALIDATION_ERROR", "visible must be true or false")
+        plan.visible = data["visible"]
 
 
 class PaymentPlanService:

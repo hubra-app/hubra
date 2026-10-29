@@ -435,6 +435,13 @@ def test_manager_unknown_module(client, db, superadmin, tenant):
     assert resp.status_code == 404
 
 
+def test_manager_module_flags_must_be_booleans(client, db, superadmin, tenant):
+    """bool("false") is True: a string used to switch the module on."""
+    url = f"/api/v1/features/tenants/{tenant.id}/inventory"
+    for body in ({"allowed": "false"}, {"enabled": "no"}, {"enabled": 0}):
+        assert client.put(url, json=body).status_code == 400
+
+
 # ── Celery ───────────────────────────────────────────────────────────────────
 
 

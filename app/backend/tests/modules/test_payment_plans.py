@@ -127,3 +127,12 @@ def test_invoice_generation_uses_plan(app, db, tier, seeded_db):
         select(Invoice.amount).where(Invoice.member_id == member.id)
     ).all()
     assert amounts == [Decimal("30.00")]
+
+
+def test_plan_visibility_must_be_a_boolean(client, db, auth_headers, tier):
+    """bool("false") is True: a string used to show a hidden plan to members."""
+    resp = client.post(
+        f"/api/v1/tiers/{tier.id}/plans",
+        json={"name": "Monthly", "interval": "monthly", "visible": "false"},
+    )
+    assert resp.status_code == 400
