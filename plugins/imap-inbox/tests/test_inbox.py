@@ -463,3 +463,32 @@ def test_sender_dates_do_not_drive_order_or_retention(
     }
     assert "Old" in by_subject
     assert by_subject["Top forever"]["sentAt"] < "2099"
+
+
+def test_a_mailbox_deleted_during_sync_is_skipped(db, monkeypatch):
+    calls = []
+    real_get = db.session.get
+
+    def vanishing_get(model, ident, *a, **kw):
+        if model is InboxMailbox and ident == first_id:
+            return None  # deleted between reading the ids and loading it
+        return real_get(model, ident, *a, **kw)
+
+    for name in ("Gone", "Kept"):
+        db.session.add(
+            InboxMailbox(
+                name=name,
+                host="x.example",
+                username="u",
+                password_encrypted=crypto.encrypt("secret"),
+                folders=["INBOX"],
+                sync_state={},
+            )
+        )
+    db.session.commit()
+    first_id, second_id = sorted(m.id for m in db.session.query(InboxMailbox))
+    monkeypatch.setattr(db.session, "get", vanishing_get)
+    monkeypatch.setattr(services, "sync_mailbox", lambda m: calls.append(m.id) or {})
+
+    results = services.sync_all()
+    assert calls == [second_id] and first_id not in results

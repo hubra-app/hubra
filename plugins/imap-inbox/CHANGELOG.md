@@ -10,6 +10,8 @@
 - A sender's Date header no longer decides retention or keeps a message
   on top: old-dated mail is kept for the retention period from when it
   was fetched, and a future date counts as now.
+- A mailbox deleted while the sync runs no longer stops the sync of the
+  club's other mailboxes.
 
 ## 1.0.0
 

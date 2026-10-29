@@ -377,6 +377,8 @@ def sync_all() -> dict:
     ).all()
     for mailbox_id in ids:
         mailbox = db.session.get(InboxMailbox, mailbox_id)
+        if mailbox is None:
+            continue  # deleted since the list was read
         try:
             results[mailbox_id] = sync_mailbox(mailbox)
             db.session.commit()
@@ -385,6 +387,8 @@ def sync_all() -> dict:
             db.session.rollback()
             _log.exception("inbox sync failed mailbox_id=%s", mailbox_id)
             mailbox = db.session.get(InboxMailbox, mailbox_id)
+            if mailbox is None:
+                continue
             mailbox.last_error = (str(exc) or type(exc).__name__)[:500]
             mailbox.last_sync_at = datetime.now(timezone.utc)
             db.session.commit()
