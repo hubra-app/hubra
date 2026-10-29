@@ -50,6 +50,11 @@ def key_to_dict(key: Key, with_history: bool = False) -> dict:
 
 def _clean(data: dict, partial: bool) -> dict:
     out = {k: data[k] for k in _EDITABLE if k in data}
+    for k in ("label", "number", "notes"):
+        if out.get(k) is not None and not isinstance(out[k], str):
+            raise_error(400, "VALIDATION_ERROR", f"{k} must be text")
+    if out.get("code_id") is not None and not isinstance(out["code_id"], int):
+        raise_error(400, "VALIDATION_ERROR", "code_id must be a number")
     if not partial and not (data.get("label") or "").strip():
         raise_error(400, "VALIDATION_ERROR", "label is required")
     if "label" in out:
@@ -64,6 +69,8 @@ def _clean(data: dict, partial: bool) -> dict:
         try:
             out["deposit_chf"] = Decimal(str(out["deposit_chf"]))
         except InvalidOperation:
+            raise_error(400, "VALIDATION_ERROR", "deposit_chf must be a number")
+        if not out["deposit_chf"].is_finite():
             raise_error(400, "VALIDATION_ERROR", "deposit_chf must be a number")
     elif "deposit_chf" in out:
         out["deposit_chf"] = None

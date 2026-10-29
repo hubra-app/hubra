@@ -54,6 +54,13 @@ def test_create_key_validates(client, auth_headers, key):
         client.post("/api/v1/keys/", json={"label": "x", "kind": "laser"}).status_code
         == 400
     )
+    for body in (
+        {"label": 5},
+        {"label": "x", "notes": ["a"]},
+        {"label": "x", "code_id": "1"},
+        {"label": "x", "deposit_chf": "NaN"},
+    ):
+        assert client.post("/api/v1/keys/", json=body).status_code == 400, body
     dup = client.post("/api/v1/keys/", json={"label": "Copy", "number": "A-1"})
     assert dup.status_code == 409
 

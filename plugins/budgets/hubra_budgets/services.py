@@ -95,6 +95,12 @@ def budget_to_dict(budget: Budget, with_lines: bool = False) -> dict:
     return data
 
 
+def _text(value, field: str) -> str:
+    if value is not None and not isinstance(value, str):
+        raise_error(400, "VALIDATION_ERROR", f"{field} must be text")
+    return (value or "").strip()
+
+
 def _year(value) -> int:
     try:
         year = int(value)
@@ -143,7 +149,7 @@ class BudgetService:
 
     @staticmethod
     def create(data: dict, actor_id: int | None) -> Budget:
-        name = (data.get("name") or "").strip()
+        name = _text(data.get("name"), "name")
         if not name:
             raise_error(400, "VALIDATION_ERROR", "name is required")
         year = _year(data.get("year"))
@@ -162,7 +168,7 @@ class BudgetService:
         if budget.approved and data.get("approved") is not False:
             raise_error(409, "BUDGET_APPROVED", "Approved budgets cannot be changed")
         if "name" in data or "year" in data:
-            name = (data.get("name", budget.name) or "").strip()
+            name = _text(data.get("name", budget.name), "name")
             if not name:
                 raise_error(400, "VALIDATION_ERROR", "name cannot be empty")
             year = _year(data.get("year", budget.year))
