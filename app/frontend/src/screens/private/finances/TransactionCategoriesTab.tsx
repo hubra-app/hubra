@@ -73,7 +73,7 @@ export function TransactionCategoriesTab() {
         err instanceof Error ? err.message : undefined,
       )
     } finally {
-      queryClient.invalidateQueries({ queryKey: ['transaction-categories'] })
+      queryClient.invalidateQueries({ queryKey: qk.transactions.categories })
       setStarting(false)
     }
   }
