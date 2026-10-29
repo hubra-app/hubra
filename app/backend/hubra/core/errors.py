@@ -18,6 +18,7 @@ from __future__ import annotations
 from typing import NoReturn
 
 from flask import Flask, jsonify
+from sqlalchemy.exc import DataError
 from werkzeug.exceptions import HTTPException
 
 
@@ -82,6 +83,18 @@ def register_error_handlers(app: Flask) -> None:
     @app.errorhandler(422)
     def unprocessable(exc):
         return api_error("VALIDATION_ERROR", str(exc.description), 422)
+
+    @app.errorhandler(DataError)
+    def data_error(exc: DataError):
+        # SQLSTATE class 22: a value the column can't hold (too long, out of
+        # range, not a number). That is the request's fault, not the server's.
+        from hubra.core.extensions import db
+
+        db.session.rollback()
+        app.logger.info("data_error: %s", exc.orig)
+        return api_error(
+            "VALIDATION_ERROR", "A value is too long or not valid for its field.", 400
+        )
 
     @app.errorhandler(500)
     def internal_error(exc):
