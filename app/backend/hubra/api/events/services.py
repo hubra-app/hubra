@@ -73,6 +73,11 @@ class EventService:
         ):
             if field in data:
                 setattr(event, field, data[field])
+        if "max_attendees" in data:
+            # More places (or no limit any more): the waitlist moves up.
+            EventService._lock(event.id)
+            db.session.flush()
+            EventService._promote_waitlist(event)
 
         log_audit(
             actor_id=actor_id,
