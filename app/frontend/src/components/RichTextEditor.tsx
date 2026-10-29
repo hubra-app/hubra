@@ -26,9 +26,10 @@ export function RichTextEditor({
 }: RichTextEditorProps) {
   const editor = useEditor({
     extensions: [
+      // StarterKit 3 brings Underline and a Link of its own; Mantine's Link
+      // is the one its toolbar controls expect.
       StarterKit.configure({
         heading: { levels: [2, 3, 4] },
-        // Mantine's Link below, which opens links in a new tab.
         link: false,
       }),
       Link,
@@ -43,6 +44,9 @@ export function RichTextEditor({
       }),
     ],
     content: value,
+    // Tiptap 3 no longer re-renders on every change; the toolbar's active
+    // states (bold, heading, ...) need it.
+    shouldRerenderOnTransaction: true,
     onUpdate: ({ editor }) => {
       onChange(editor.storage.markdown.getMarkdown())
     },
