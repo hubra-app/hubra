@@ -109,3 +109,12 @@ def test_delete_a_poll_with_votes(client, auth_headers, seeded_db):
     _vote(client, auth_headers, poll_id)
     assert client.delete(f"/api/v1/polls/{poll_id}", headers=auth_headers).status_code == 204
     assert client.get(f"/api/v1/polls/{poll_id}", headers=auth_headers).status_code == 404
+
+
+def test_a_poll_past_its_closing_time_shows_as_closed(client, auth_headers, seeded_db):
+    poll_id = _poll(client, auth_headers, closes_at="2020-01-01T12:00:00+00:00")
+    poll = client.get(f"/api/v1/polls/{poll_id}", headers=auth_headers).get_json()
+    assert poll["status"] == "closed"
+    listed = client.get("/api/v1/polls/", headers=auth_headers).get_json()
+    rows = listed["data"] if isinstance(listed, dict) else listed
+    assert next(p for p in rows if p["id"] == poll_id)["status"] == "closed"
