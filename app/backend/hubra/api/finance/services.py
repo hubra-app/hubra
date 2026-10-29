@@ -190,9 +190,13 @@ class ExternalPartyService:
 
     @staticmethod
     def delete(party_id: int, actor_id: int) -> None:
-        """Delete an external party. Linked invoices keep their rows
-        (external_party_id is SET NULL via the FK)."""
+        """Delete an external party. Linked invoices keep their rows without
+        a recipient (club schemas have no foreign keys to do this)."""
         party = ExternalPartyService.get(party_id)
+        for invoice in db.session.scalars(
+            select(Invoice).where(Invoice.external_party_id == party.id)
+        ):
+            invoice.external_party_id = None
 
         log_audit(
             actor_id=actor_id,
