@@ -73,3 +73,25 @@ def test_plain_member_cannot_list_former_members(client, db, permissioned_member
     ).get_json()["data"]
     assert gone.id not in [row["id"] for row in rows]
     assert rows  # the current members, as without the filters
+
+
+def test_tier_member_list_leaves_them_out_too(
+    client, db, seeded_db, permissioned_member_factory
+):
+    headers = permissioned_member_factory(
+        DEFAULT_ROLE_PERMISSIONS["Treasurer"], email="treasurer@test.ch"
+    )
+    _note_everyone(db)
+    tier_id = seeded_db["tier"].id
+    from hubra.core.models.member import Member
+
+    for member in db.session.query(Member).all():
+        member.tier_id = tier_id
+    db.session.commit()
+
+    rows = client.get(f"/api/v1/tiers/{tier_id}/members", headers=headers).get_json()[
+        "data"
+    ]
+    me = _member_ids(db)["treasurer@test.ch"]
+    assert len(rows) > 1
+    assert all("notes" not in row for row in rows if row["id"] != me)

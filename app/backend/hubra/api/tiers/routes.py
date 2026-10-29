@@ -123,7 +123,9 @@ def list_tier_members(tier_id: int):
     TierService.get(tier_id)  # 404 if not found
     search = request.args.get("search", "").strip()
     members = TierService.list_members(tier_id, search)
-    return jsonify({"data": _members_schema.dump(members)}), 200
+    from hubra.api.members.routes import for_viewer
+
+    return jsonify({"data": for_viewer(_members_schema.dump(members))}), 200
 
 
 # ── Payment plans ─────────────────────────────────────────────────────────────
