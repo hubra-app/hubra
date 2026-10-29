@@ -2402,6 +2402,8 @@
       "archive_group": "Group archived",
       "join_group": "Joined a group",
       "leave_group": "Left a group",
+      "add_group_member": "Added to a group",
+      "remove_group_member": "Removed from a group",
       "create_function": "Function created",
       "update_function": "Function updated",
       "delete_function": "Function deleted",

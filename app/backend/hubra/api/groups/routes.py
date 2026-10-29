@@ -28,6 +28,7 @@ from hubra.core.schemas.group import (
 )
 from hubra.core.schemas.member import MemberSchema
 from hubra.api.groups.services import GroupService, GroupsService, SelfJoinService
+from hubra.api.utils import log_audit
 
 
 groups_bp = Blueprint("groups_bp", __name__)
@@ -205,6 +206,13 @@ def add_member_to_group(group_id: int, member_id: int):
         return
 
     GroupService.add_member(group, member)
+    log_audit(
+        get_current_member().id,
+        "add_group_member",
+        "Group",
+        group.id,
+        f"{group.name}: {member.name}",
+    )
 
     try:
         db.session.commit()
@@ -222,6 +230,15 @@ def add_member_to_group(group_id: int, member_id: int):
 @permission_required("groups", "remove_member", "Remove member from group")
 def remove_group_member(group_id: int, member_id: int):
     GroupService.remove_member(member_id, group_id)
+    group = db.session.get(Group, group_id)
+    member = db.session.get(Member, member_id)
+    log_audit(
+        get_current_member().id,
+        "remove_group_member",
+        "Group",
+        group_id,
+        f"{group.name if group else group_id}: {member.name if member else member_id}",
+    )
 
     try:
         db.session.commit()
