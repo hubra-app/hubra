@@ -8,7 +8,7 @@ from datetime import date, datetime, time, timedelta, timezone
 from sqlalchemy import delete, func, insert, select
 from sqlalchemy.orm import selectinload
 
-from hubra.api.notifications.services import notify_all_active, notify_member
+from hubra.api.notifications.services import notify_all_active
 from hubra.api.utils import log_audit
 from hubra.core.errors import ApiError, raise_error
 from hubra.core.extensions import db
@@ -312,6 +312,8 @@ class EventService:
             if member is not None:
                 EventService._ensure_attendee(event.id, member)
             # They may have given up on it; tell them they are in now.
+            from hubra.api.notifications.services import notify_member
+
             notify_member(nxt.member_id, "info", "You got a place", event.title)
 
     @staticmethod
