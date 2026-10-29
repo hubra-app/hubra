@@ -23,9 +23,9 @@ def create_tenant_schema(tenant_id: int) -> None:
     """Create ``tenant_{id}`` schema and clone all domain tables from public.
 
     Uses ``CREATE TABLE ... (LIKE public.<tbl> INCLUDING ALL)`` to copy
-    column types, defaults, constraints, and indexes.  Sequences for identity
-    columns are cloned automatically by ``INCLUDING DEFAULTS`` when the
-    existing tables use ``Identity`` (not ``Serial``).
+    column types, defaults, constraints, and indexes. The core tables use
+    SERIAL, so the copied defaults still draw from public's sequences;
+    ``_own_sequences`` gives the club its own.
 
     Does NOT copy foreign key constraints pointing to other tables — those
     must be re-created in the tenant schema context after all tables exist.
@@ -47,6 +47,7 @@ def create_tenant_schema(tenant_id: int) -> None:
             _log.exception("Failed to clone table %s into %s", table, schema_name)
             raise
 
+    _own_sequences(schema_name)
     _create_tenant_indexes(schema_name)
     _init_alembic_version(schema_name)
     _init_plugin_versions(schema_name)
@@ -64,6 +65,44 @@ def drop_tenant_schema(tenant_id: int) -> None:
 
 
 # ── Internal helpers ───────────────────────────────────────────────────────
+
+
+def _own_sequences(schema_name: str) -> None:
+    """Give every id column of the club its own sequence.
+
+    ``LIKE ... INCLUDING ALL`` copies a SERIAL column's default, which still
+    calls ``nextval`` on the sequence in public, so all clubs shared one
+    counter per table: numbers jumped with other clubs' activity, and a
+    club's data could not move to another instance without collisions.
+    Each column gets ``<schema>.<table>_<column>_seq``, started after the
+    highest id already there.
+    """
+    columns = db.session.execute(
+        text(
+            "SELECT table_name, column_name FROM information_schema.columns "
+            "WHERE table_schema = :schema AND column_default LIKE :pattern"
+        ),
+        {"schema": schema_name, "pattern": "nextval(%"},
+    ).all()
+    for table, column in columns:
+        seq = f"{schema_name}.{table}_{column}_seq"
+        db.session.execute(text(f"CREATE SEQUENCE IF NOT EXISTS {seq}"))
+        db.session.execute(
+            text(
+                f"SELECT setval('{seq}', "
+                f"COALESCE((SELECT MAX({column}) FROM {schema_name}.{table}), 0) + 1, "
+                "false)"
+            )
+        )
+        db.session.execute(
+            text(
+                f"ALTER TABLE {schema_name}.{table} ALTER COLUMN {column} "
+                f"SET DEFAULT nextval('{seq}'::regclass)"
+            )
+        )
+        db.session.execute(
+            text(f"ALTER SEQUENCE {seq} OWNED BY {schema_name}.{table}.{column}")
+        )
 
 
 def _create_tenant_indexes(schema_name: str) -> None:
