@@ -32,3 +32,13 @@ def test_no_cycles(client, auth_headers, seeded_db):
         f"/api/v1/groups/{sub}", json={"parent_group_id": None}, headers=auth_headers
     )
     assert resp.status_code == 200
+
+
+def test_deleting_a_parent_keeps_its_subgroups(client, auth_headers, seeded_db):
+    top = _group(client, auth_headers, "Werkstatt")
+    sub = _group(client, auth_headers, "Holz", parent_group_id=top)
+
+    assert client.delete(f"/api/v1/groups/{top}", headers=auth_headers).status_code == 204
+    resp = client.get(f"/api/v1/groups/{sub}", headers=auth_headers)
+    assert resp.status_code == 200
+    assert resp.get_json()["parent_group_id"] is None
