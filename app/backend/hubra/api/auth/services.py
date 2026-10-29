@@ -725,23 +725,22 @@ class AuthService:
         db.session.add(TokenBlocklist(jti=jti, type=token_type))
 
     @staticmethod
-    def create_password_reset(email: str) -> tuple[str, Member] | None:
-        """Create a password reset token for a member. Returns (token, member) or None."""
+    def create_password_reset(email: str) -> tuple[str, User] | None:
+        """Create a password reset token for an account. Returns (token, user) or None.
+
+        The account, not a club's member: the SSO portal asks with no club,
+        where there are no members to find.
+        """
         if not email:
             return None
 
-        member = db.session.scalar(
-            select(Member)
-            .join(User, Member.user_id == User.id)
-            .where(User.email == email)
-            .where(Member.archived_at.is_(None))
-        )
-        if member is None:
+        user = db.session.scalar(select(User).where(User.email == email))
+        if user is None or user.is_disabled:
             return None
 
         existing = db.session.scalars(
             select(PasswordResetToken)
-            .where(PasswordResetToken.user_id == member.user_id)
+            .where(PasswordResetToken.user_id == user.id)
             .where(PasswordResetToken.used.is_(False))
         ).all()
         for t in existing:
@@ -753,17 +752,17 @@ class AuthService:
 
         db.session.add(
             PasswordResetToken(
-                user_id=member.user_id,
+                user_id=user.id,
                 token_hash=token_hash,
                 expires_at=expires_at,
             )
         )
 
-        return raw_token, member
+        return raw_token, user
 
     @staticmethod
-    def reset_password(raw_token: str, new_password: str) -> Member:
-        """Validate reset token and set new password. Returns member."""
+    def reset_password(raw_token: str, new_password: str) -> User:
+        """Validate reset token and set new password. Returns the account."""
         if not raw_token or not new_password:
             raise_error(400, "VALIDATION_ERROR", "token and password are required")
 
@@ -779,37 +778,40 @@ class AuthService:
         if reset_token is None or not reset_token.is_valid:
             raise_error(400, "INVALID_TOKEN", "Reset token is invalid or has expired")
 
-        member = db.session.scalar(
-            select(Member).where(Member.user_id == reset_token.user_id)
-        )
-        assert member is not None, f"Member for user {reset_token.user_id} not found"
-        member.set_password(new_password)
-        member.must_change_password = False
-        reset_token.used = True
+        user = db.session.get(User, reset_token.user_id)  # type: ignore[union-attr]
+        if user is None:
+            raise_error(400, "INVALID_TOKEN", "Reset token is invalid or has expired")
+        user.set_password(new_password)  # type: ignore[union-attr]
+        user.must_change_password = False  # type: ignore[union-attr]
+        reset_token.used = True  # type: ignore[union-attr]
         # Whoever knew the old password is signed out everywhere.
-        if member.user is not None:
-            member.user.end_sessions()
+        user.end_sessions()  # type: ignore[union-attr]
 
-        db.session.add(
-            AuditEntry(
-                actor_id=member.id,
-                actor_name=member.name,
-                actor_avatar_color=member.avatar_color,
-                action="reset_password",
-                target_type="Member",
-                target_id=member.id,
-                target_label=member.name,
-            )
+        # The club's audit log, when the reset ran inside a club.
+        member = db.session.scalar(
+            select(Member).where(Member.user_id == user.id)  # type: ignore[union-attr]
         )
-        return member
+        if member is not None:
+            db.session.add(
+                AuditEntry(
+                    actor_id=member.id,
+                    actor_name=member.name,
+                    actor_avatar_color=member.avatar_color,
+                    action="reset_password",
+                    target_type="Member",
+                    target_id=member.id,
+                    target_label=member.name,
+                )
+            )
+        return user  # type: ignore[return-value]
 
 
 class AccountService:
     """Account management business logic."""
 
     @staticmethod
-    def update_account(member: Member, updates: dict) -> tuple[Member, str | None]:
-        """Update allowed fields on a member account. Returns (member, new_password)."""
+    def update_account(member: Member, updates: dict) -> Member:
+        """Update the profile fields of an account (never its email or password)."""
         audit_changes = []
 
         if "name" in updates:
@@ -820,23 +822,6 @@ class AccountService:
             member.first_name = name_parts[0]
             member.last_name = name_parts[1] if len(name_parts) > 1 else ""
             audit_changes.append("name")
-
-        if "email" in updates:
-            new_email = updates["email"].strip().lower()
-            if not _EMAIL_RE.match(new_email):
-                raise_error(400, "VALIDATION_ERROR", "Invalid email address")
-            conflict = db.session.scalar(
-                select(Member.id)
-                .join(User, Member.user_id == User.id)
-                .where(User.email == new_email)
-                .where(Member.id != member.id)
-            )
-            if conflict is not None:
-                raise_error(409, "CONFLICT", "Email already in use")
-            member.email = new_email
-            member.private_email_verified = False
-            _log.info("email_changed member_id=%s — verification reset", member.id)
-            audit_changes.append("email")
 
         if "first_name" in updates:
             first_name = updates["first_name"].strip()
@@ -874,17 +859,6 @@ class AccountService:
             member.profile_note = note
             audit_changes.append("profile_note")
 
-        new_password: str | None = None
-        if "password" in updates:
-            new_password = updates["password"]
-            if not new_password or len(new_password) < 8:
-                raise_error(
-                    400, "VALIDATION_ERROR", "Password must be at least 8 characters"
-                )
-            member.set_password(new_password)
-            member.must_change_password = False
-            audit_changes.append("password")
-
         if audit_changes:
             db.session.add(
                 AuditEntry(
@@ -898,7 +872,7 @@ class AccountService:
                 )
             )
 
-        return member, new_password
+        return member
 
     @staticmethod
     def change_password(
@@ -919,6 +893,10 @@ class AccountService:
 
         member.set_password(new_password)
         member.must_change_password = False
+        # Signed out everywhere; the route hands this browser a new session.
+        account = getattr(member, "user", None) or member  # a Member or a User
+        if hasattr(account, "end_sessions"):
+            account.end_sessions()
 
         db.session.add(
             AuditEntry(

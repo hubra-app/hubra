@@ -51,13 +51,13 @@ def _current_member():
         user_id = getattr(g, "current_user_id", None)
     if user_id is not None:
         from hubra.core.models.member import Member
+        from hubra.core.tenant.context import current_tenant
 
-        try:
-            from hubra.core.tenant.context import current_tenant
-
-            current_tenant()
-        except Exception:
-            pass
+        # An account (SSO) token never opens a club: only the club token from
+        # /auth/switch-tenant does, which checks that the membership is on
+        # and the address confirmed, and which a club can revoke.
+        if current_tenant() is not None:
+            return None
         member = db.session.scalar(
             select(Member).where(
                 Member.user_id == user_id,
@@ -65,7 +65,7 @@ def _current_member():
             )
         )
         if member is not None:
-            return member
+            return None if member.is_disabled else member
         # No Member found — fall back to the User object so that
         # require_password_changed can pass it through for noTenant routes.
         return current_user
@@ -538,7 +538,8 @@ def require_global_permission(permission_key: str):
     return decorator
 
 
-_IMPERSONATION_RESTRICTED_ACTIONS = {"delete_tenant", "change_plan"}
+# Support sees a club as the member does, but never changes their account.
+_IMPERSONATION_RESTRICTED_ACTIONS = {"delete_tenant", "change_plan", "change_account"}
 
 
 def check_impersonation_restriction(action: str) -> tuple[str, str] | None:

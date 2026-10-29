@@ -215,12 +215,20 @@ def generate_invoice_pdf(invoice: Invoice) -> bytes:
     try:
         from weasyprint import HTML as WeasyHTML
 
-        pdf_bytes = WeasyHTML(string=html).write_pdf()
+        pdf_bytes = WeasyHTML(string=html, url_fetcher=_no_fetch()).write_pdf()
     except Exception as exc:
         logger.error("WeasyPrint PDF generation failed: %s", exc)
         raise RuntimeError(f"Failed to generate invoice PDF: {exc}") from exc
 
     return pdf_bytes
+
+
+def _no_fetch():
+    """WeasyPrint's url_fetcher: the invoice is self-contained, so nothing is
+    loaded from disk or the network (only inline data: URIs)."""
+    from weasyprint.urls import URLFetcher
+
+    return URLFetcher(allowed_protocols={"data"})
 
 
 def _description_for(invoice: Invoice, lang: str = _DEFAULT_LANG) -> str:

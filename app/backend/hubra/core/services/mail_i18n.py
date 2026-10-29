@@ -13,8 +13,10 @@ Fallback chain:
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime, timezone
 
+import nh3
 from flask import render_template
 from markupsafe import Markup, escape
 
@@ -24,6 +26,20 @@ _FALLBACK_CHAIN: dict[str, list[str]] = {
     "de-CH": ["de-CH", "en-GB"],
     "en-GB": ["en-GB"],
 }
+
+
+# A club can edit its own mail texts, and some of its mail (invites) goes to
+# strangers from the platform's sender: a text keeps simple formatting only,
+# and a link only to the URL the mail itself fills in ({{reset_url}}, ...).
+_MAIL_TAGS = {"a", "strong", "b", "em", "i", "br"}
+_FOREIGN_LINK = re.compile(r'<a href="(?!\{\{\w+\}\}")[^"]*"[^>]*>')
+
+
+def _safe_text(value: str) -> str:
+    if "<" not in value:
+        return value
+    cleaned = nh3.clean(value, tags=_MAIL_TAGS, attributes={"a": {"href"}})
+    return _FOREIGN_LINK.sub("<a>", cleaned)
 
 
 def get_mail_translator(locale: str):
@@ -57,6 +73,7 @@ def get_mail_translator(locale: str):
         if value is None:
             logger.warning("mail_translation_missing key=%s locale=%s", key, locale)
             return Markup(f"[{key}]")
+        value = _safe_text(value)
         if kwargs:
             for k, v in kwargs.items():
                 value = value.replace("{{" + k + "}}", str(escape(v)))

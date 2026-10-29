@@ -118,7 +118,7 @@ def test_render_mail_template_html_not_escaped(app, monkeypatch):
     # Translation HTML tags should be unescaped
     assert "<b>" in html
     assert "<strong>" in html
-    assert '<a href="https://example.com/login">' in html
+    assert '<a href="https://example.com/login"' in html
     # No escaped versions of translation tags
     assert "&lt;b&gt;" not in html
     assert "&lt;strong&gt;" not in html

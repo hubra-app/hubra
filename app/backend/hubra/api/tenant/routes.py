@@ -1120,7 +1120,8 @@ def _club_admin_access(tenant: Tenant, user: User) -> str:
                 Member.user_id == user.id, Member.archived_at.is_(None)
             )
         )
-        level = _admin_level(member)
+        # A member the club switched off manages nothing there.
+        level = None if member is None or member.is_disabled else _admin_level(member)
     finally:
         reset_search_path()
     if level is None:

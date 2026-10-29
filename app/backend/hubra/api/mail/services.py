@@ -3,10 +3,7 @@
 from __future__ import annotations
 
 import secrets
-import smtplib
 from datetime import datetime, timezone
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from typing import Any
 
 from sqlalchemy import select
@@ -688,42 +685,14 @@ class MailService:
     """Miscellaneous mail operations (test email, message log)."""
 
     @staticmethod
-    def send_test(from_addr: str, to_addr: str, subject: str) -> dict:
-        """Send a test email through the platform relay."""
-        from hubra.core.services import platform_settings
+    def send_test(to_addr: str, subject: str) -> dict:
+        """Send a test email through the route the club's own mail takes."""
+        from hubra.core.services import email as email_svc
 
-        relay = platform_settings.relay()
-        smtp_host = relay.host
-        smtp_port = relay.port
-
-        if not smtp_host:
-            raise_error(503, "SERVICE_UNAVAILABLE", "SMTP not configured")
-
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"] = from_addr
-        msg["To"] = to_addr
-        msg.attach(
-            MIMEText(
-                f"Test email sent from Hubra.\n\n"
-                f"From: {from_addr}",
-                "plain",
-            )
-        )
-
-        try:
-            with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
-                server.ehlo()
-                if smtp_port != 25:
-                    server.starttls()
-                    server.ehlo()
-                if relay.user and relay.password:
-                    server.login(relay.user, relay.password)
-                server.sendmail(from_addr, [to_addr], msg.as_string())
-        except Exception as exc:
-            raise_error(502, "INTERNAL_ERROR", f"SMTP error: {exc}")
-
-        return {"ok": True, "from": from_addr, "to": to_addr, "subject": subject}
+        text = "Test email sent from Hubra."
+        if not email_svc._send(to_addr, to_addr, subject, f"<p>{text}</p>", text):
+            raise_error(502, "INTERNAL_ERROR", "The test email could not be sent")
+        return {"ok": True, "to": to_addr, "subject": subject}
 
 
 # ── MailAdminService (unified mail administration) ─────────────────────────────

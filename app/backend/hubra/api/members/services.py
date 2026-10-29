@@ -39,6 +39,15 @@ from hubra.core.services.wildduck import (
 # ── Association helpers ────────────────────────────────────────────────────────
 
 
+def _check_may_remove(member: Member, actor_id: int | None) -> None:
+    """403 unless the actor may take every role *member* holds (check_grant):
+    archiving or deleting someone takes their roles with them."""
+    actor = db.session.get(Member, actor_id) if actor_id is not None else None
+    if actor_id is not None and actor is None:
+        raise_error(403, "FORBIDDEN", "Insufficient permissions")
+    check_grant(actor, taken=list(member.roles or []))
+
+
 def _check_last_owner(member: Member) -> None:
     """Raise 409 if the member is the last Owner in the tenant.
 
@@ -493,7 +502,8 @@ class MemberService:
         if member is None:
             raise_error(404, "NOT_FOUND", f"Member {member_id} not found")
 
-        _check_last_owner(member)
+        _check_last_owner(member)  # type: ignore[arg-type]
+        _check_may_remove(member, actor_id)  # type: ignore[arg-type]
 
         affected_group_ids = _clear_member_all_associations(member_id)
         member.archived_at = datetime.now(timezone.utc)  # type: ignore[union-attr]
@@ -688,8 +698,10 @@ class MemberService:
             _check_last_owner(member)
             raise_error(409, "CONFLICT", "Cannot disable an Owner role member")
 
-        if any(r.name == "Admin" for r in (member.roles or [])):
+        # Any admin role, whatever it is called: take the role away first.
+        if any(r.is_admin for r in (member.roles or [])):
             raise_error(409, "CONFLICT", "Cannot disable an Admin role member")
+        _check_may_remove(member, actor_id)  # type: ignore[arg-type]
 
         # Disable the WildDuck mailbox (retain storage, block login).
         from hubra.core.services.managed_mail import disable_member_mail
@@ -718,14 +730,8 @@ class MemberService:
             enable_member_mail(
                 member_id, member.user.password_hash if member.user else ""
             )
+        # This club only; a block on the whole account is the platform's.
         member.disabled_at = None
-        # Clubs used to switch off the whole account; undo that only where
-        # the account is this club's alone (a platform manager's block stays).
-        if member.user and member.user.is_disabled:
-            from hubra.core.tenant.membership import club_manages_account
-
-            if club_manages_account(member.user):
-                member.user.is_disabled = False
         return member  # type: ignore[return-value]
 
     @staticmethod
@@ -1448,6 +1454,8 @@ class MembersService:
         if member is None:
             raise_error(404, "NOT_FOUND", f"Member {member_id} not found")
 
+        _check_last_owner(member)  # type: ignore[arg-type]
+        _check_may_remove(member, actor_id)  # type: ignore[arg-type]
         member.deleted_at = datetime.now(timezone.utc)  # type: ignore[union-attr]
 
         # Remove from all groups
