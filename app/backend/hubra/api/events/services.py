@@ -151,6 +151,7 @@ class EventService:
         attendees until they get a place.
         """
         event = EventService.get(event_id)
+        EventService._lock(event_id)
 
         member = db.session.get(Member, member_id)
         if member is None or member.archived_at is not None:
@@ -183,6 +184,15 @@ class EventService:
         return registration
 
     @staticmethod
+    def _lock(event_id: int) -> None:
+        """Serialize sign-ups and cancellations of one event until commit, so
+        two people cannot both take its last place (Postgres; SQLite has
+        no row locks and runs one writer anyway)."""
+        db.session.execute(
+            select(ClubEvent.id).where(ClubEvent.id == event_id).with_for_update()
+        )
+
+    @staticmethod
     def _is_full(event: ClubEvent) -> bool:
         if not event.max_attendees or event.max_attendees <= 0:
             return False
@@ -210,6 +220,7 @@ class EventService:
     @staticmethod
     def cancel_registration(event_id: int, member_id: int) -> EventRegistration:
         """Cancel a member's registration; the first on the waitlist moves up."""
+        EventService._lock(event_id)
         registration = db.session.scalar(
             select(EventRegistration).where(
                 EventRegistration.event_id == event_id,
