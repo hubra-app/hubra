@@ -100,6 +100,16 @@ class EventService:
             target_id=event.id,
             target_label=event.title,
         )
+        # Those who signed up hear that it is off rather than turn up.
+        from hubra.api.notifications.services import notify_member
+
+        if (event.end_date or event.date) >= date.today():
+            for reg in event.registrations:
+                if (
+                    reg.status in ("registered", "waitlisted")
+                    and reg.member_id != actor_id
+                ):
+                    notify_member(reg.member_id, "info", "Event cancelled", event.title)
         db.session.delete(event)
 
     @staticmethod

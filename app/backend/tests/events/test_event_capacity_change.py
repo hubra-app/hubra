@@ -74,3 +74,22 @@ def test_a_member_who_gets_a_place_is_told(client, auth_headers, seeded_db):
         )
     ).all()
     assert titles == ["Last Seat"]
+
+
+def test_members_hear_when_their_event_is_deleted(client, auth_headers, seeded_db):
+    from hubra.core.extensions import db
+    from hubra.core.models.notification import Notification
+
+    event_id = _create_event(client, auth_headers, title="Ausflug").get_json()["id"]
+    member_id = _create_member(client, auth_headers, email="x@test.ch").get_json()["id"]
+    client.post(
+        f"/api/v1/events/{event_id}/register/{member_id}", json={}, headers=auth_headers
+    )
+    assert client.delete(f"/api/v1/events/{event_id}", headers=auth_headers).status_code == 204
+
+    titles = db.session.scalars(
+        select(Notification.msg).where(
+            Notification.member_id == member_id, Notification.title == "Event cancelled"
+        )
+    ).all()
+    assert titles == ["Ausflug"]
