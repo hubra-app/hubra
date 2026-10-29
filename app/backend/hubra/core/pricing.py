@@ -91,7 +91,10 @@ def calculate_invoice_amount(member, tier, deducted_annual_fees: Decimal) -> Dec
     periods, plus the plan's surcharge, rounded to 5 Rappen.
     """
     amount = tier_period_amount(member, tier, deducted_annual_fees)
-    return apply_plan(amount, tier, _plan_for(member, tier))
+    amount = apply_plan(amount, tier, _plan_for(member, tier))
+    # An invoice is in whole Rappen: a percentage tier gives e.g. 27.7500 or
+    # 8.3333..., which the QR bill refuses (it needs ###.##).
+    return amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 def apply_plan(tier_amount: Decimal, tier, plan) -> Decimal:

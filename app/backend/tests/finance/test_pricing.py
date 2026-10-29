@@ -136,3 +136,14 @@ class TestCalculatePreviewCost:
             db_session=db.session,
         )
         assert result["amount_yearly"] == 80.0
+
+
+def test_invoice_amount_is_in_whole_rappen(yearly_expenses_setting, percentage_tier, db):
+    from hubra.core.pricing import calculate_invoice_amount
+
+    percentage_tier.billing_cycle = "monthly"
+    percentage_tier.percentage_value = Decimal("3.33")
+    member = type("M", (), {"tier": percentage_tier, "payment_plan": None})()
+    amount = calculate_invoice_amount(member, percentage_tier, Decimal(0))
+    assert amount == Decimal("27.75")
+    assert amount.as_tuple().exponent == -2
