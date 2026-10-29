@@ -7,7 +7,7 @@ from hubra.api.auth.helpers import get_current_member
 
 from hubra.api.functions.services import FunctionService
 from hubra.api.permissions import permission_required
-from hubra.api.utils import log_audit
+from hubra.api.utils import id_from_body, log_audit
 from hubra.core.extensions import db
 
 functions_bp = Blueprint("functions_bp", __name__)
@@ -56,7 +56,8 @@ def update_function(function_id: int):
     body = request.get_json(silent=True) or {}
     field_map = {"maxHolders": "max_holders"}
     mapped = {field_map.get(k, k): v for k, v in body.items()}
-    fn = FunctionService.update(function_id, **mapped)
+    fields = {k: v for k, v in mapped.items() if k in ("name", "description", "max_holders")}
+    fn = FunctionService.update(function_id, **fields)
 
     db.session.commit()
 
@@ -101,7 +102,7 @@ def assign_holder(function_id: int):
     if not member_id:
         return jsonify({"error": "memberId is required"}), 400
 
-    FunctionService.assign_holder(function_id, int(member_id))
+    FunctionService.assign_holder(function_id, id_from_body(member_id, "memberId"))
     db.session.commit()
 
     fn = FunctionService.get_by_id(function_id)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from decimal import Decimal, InvalidOperation
 
-from hubra.api.utils import log_audit
+from hubra.api.utils import id_from_body, log_audit
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 from hubra.core.models.member import Member, MembershipTier
@@ -39,7 +39,8 @@ def _surcharge(value) -> Decimal:
 
 def _apply(plan: PaymentPlan, data: dict, partial: bool) -> None:
     if "name" in data or not partial:
-        name = (data.get("name") or "").strip()
+        name = data.get("name")
+        name = name.strip() if isinstance(name, str) else ""
         if not name:
             raise_error(400, "VALIDATION_ERROR", "name is required")
         plan.name = name
@@ -94,6 +95,7 @@ class PaymentPlanService:
     @staticmethod
     def assign(member: Member, plan_id: int | None, actor_id: int, own: bool) -> None:
         """Put a member on a plan of their tier, or back on the tier's cycle."""
+        plan_id = id_from_body(plan_id, "plan_id")
         if plan_id is not None:
             plan = PaymentPlanService.get(plan_id)
             if plan.tier_id != member.tier_id:

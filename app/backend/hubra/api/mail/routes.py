@@ -35,6 +35,24 @@ def _validate_wd_id(wd_id: str) -> None:
         raise_error(400, "VALIDATION_ERROR", f"Invalid ID format: {wd_id!r}")
 
 
+def _text(body: dict, *keys: str) -> str:
+    """The first of ``keys`` that is set, stripped; a value that is not
+    text is a 400."""
+    value = next((body.get(k) for k in keys if body.get(k)), "")
+    if not isinstance(value, str):
+        raise_error(400, "VALIDATION_ERROR", f"'{keys[0]}' must be text")
+    return value.strip()
+
+
+def _number(value, field: str) -> float:
+    if isinstance(value, bool):
+        raise_error(400, "VALIDATION_ERROR", f"'{field}' must be a number")
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        raise_error(400, "VALIDATION_ERROR", f"'{field}' must be a number")
+
+
 # ── Mailboxes ─────────────────────────────────────────────────────────────────
 
 
@@ -49,9 +67,9 @@ def list_mailboxes():
 @permission_required("mailboxes", "create", "Create mailboxes")
 def create_mailbox():
     body = request.get_json(silent=True) or {}
-    username = (body.get("username") or "").strip()
-    display_name = (body.get("displayName") or body.get("display_name") or "").strip()
-    quota_gb = float(body.get("quotaGb") or body.get("quota_gb") or 1.0)
+    username = _text(body, "username")
+    display_name = _text(body, "displayName", "display_name")
+    quota_gb = _number(body.get("quotaGb") or body.get("quota_gb") or 1.0, "quotaGb")
     password = body.get("password")
 
     if not username:
@@ -86,7 +104,7 @@ def update_mailbox(wd_id: str):
     if "quotaGb" in body or "quota_gb" in body:
         from hubra.api.mail.services import _gb_to_bytes
 
-        gb = float(body.get("quotaGb") or body.get("quota_gb"))  # type: ignore[arg-type]
+        gb = _number(body.get("quotaGb") or body.get("quota_gb"), "quotaGb")
         if gb < 0.1 or gb > 100:
             return api_error(
                 "VALIDATION_ERROR",
@@ -144,7 +162,7 @@ def list_aliases():
 @permission_required("aliases", "create", "Create aliases")
 def create_alias():
     body = request.get_json(silent=True) or {}
-    address = (body.get("address") or "").strip()
+    address = _text(body, "address")
     delivers_to = body.get("deliversTo") or body.get("delivers_to") or []
     alias_type = body.get("type", "Alias")
     group_id = body.get("groupId") or body.get("group_id")
@@ -315,7 +333,7 @@ def create_member_mail_mma(member_id: int):
         )
 
     body = request.get_json(silent=True) or {}
-    prefix = (body.get("prefix") or "").strip()
+    prefix = _text(body, "prefix")
     if not prefix:
         prefix = (
             member.public_email.split("@")[0]
@@ -482,7 +500,7 @@ def create_group_mail(group_id: int):
         )
 
     body = request.get_json(silent=True) or {}
-    prefix = (body.get("prefix") or "").strip()
+    prefix = _text(body, "prefix")
     if not prefix:
         prefix = mma_service.normalize_prefix_from_name(group.name)
 
@@ -602,7 +620,7 @@ def create_function_mail(function_id: int):
         )
 
     body = request.get_json(silent=True) or {}
-    prefix = (body.get("prefix") or "").strip()
+    prefix = _text(body, "prefix")
     if not prefix:
         prefix = mma_service.normalize_prefix_from_name(fn.name)
 
@@ -719,7 +737,7 @@ def change_group_mail_prefix(group_id: int):
         raise_error(404, "NOT_FOUND", f"Group {group_id} has no managed mail address")
 
     body = request.get_json(silent=True) or {}
-    prefix = (body.get("prefix") or "").strip()
+    prefix = _text(body, "prefix")
     if not prefix:
         return api_error("VALIDATION_ERROR", "'prefix' is required", 400)
 
@@ -804,7 +822,7 @@ def create_group_alias(group_id: int):
         )
 
     body = request.get_json(silent=True) or {}
-    prefix = (body.get("prefix") or "").strip()
+    prefix = _text(body, "prefix")
     if not prefix:
         return api_error("VALIDATION_ERROR", "'prefix' is required", 400)
 
@@ -984,7 +1002,7 @@ def change_function_mail_prefix(function_id: int):
         return
 
     body = request.get_json(silent=True) or {}
-    prefix = (body.get("prefix") or "").strip()
+    prefix = _text(body, "prefix")
     if not prefix:
         return api_error("VALIDATION_ERROR", "'prefix' is required", 400)
 
@@ -1051,7 +1069,7 @@ def create_function_alias(function_id: int):
         return
 
     body = request.get_json(silent=True) or {}
-    prefix = (body.get("prefix") or "").strip()
+    prefix = _text(body, "prefix")
     if not prefix:
         return api_error("VALIDATION_ERROR", "'prefix' is required", 400)
 
@@ -1285,7 +1303,7 @@ def toggle_address_route(address_id: int):
 @permission_required("aliases", "update", "Update aliases")
 def change_address_prefix_route(address_id: int):
     body = request.get_json(silent=True) or {}
-    prefix = (body.get("prefix") or "").strip()
+    prefix = _text(body, "prefix")
     if not prefix:
         return api_error("VALIDATION_ERROR", "'prefix' is required", 400)
     club_domain = SettingService.get("mail.domain") or ""
@@ -1321,7 +1339,7 @@ def list_aliases_route(address_id: int):
 @permission_required("aliases", "create", "Create aliases")
 def create_alias_route(address_id: int):
     body = request.get_json(silent=True) or {}
-    prefix = (body.get("prefix") or "").strip()
+    prefix = _text(body, "prefix")
     if not prefix:
         return api_error("VALIDATION_ERROR", "'prefix' is required", 400)
     club_domain = SettingService.get("mail.domain") or ""
@@ -1489,9 +1507,9 @@ def list_system_addresses():
 @permission_required("system", "manage", "Manage system mail")
 def create_system_address():
     body = request.get_json(silent=True) or {}
-    address = (body.get("address") or "").strip()
-    address_type = (body.get("addressType") or body.get("address_type") or "").strip()
-    display_name = (body.get("displayName") or body.get("display_name") or "").strip()
+    address = _text(body, "address")
+    address_type = _text(body, "addressType", "address_type")
+    display_name = _text(body, "displayName", "display_name")
     forward_targets = body.get("forwardTargets") or body.get("forward_targets") or []
     is_protected = bool(body.get("isProtected", False))
 
@@ -1627,7 +1645,7 @@ def create_system_alias(address_id: int):
         raise_error(404, "NOT_FOUND", f"Address {address_id} is not a system address")
 
     body = request.get_json(silent=True) or {}
-    prefix = (body.get("prefix") or "").strip()
+    prefix = _text(body, "prefix")
     if not prefix:
         return api_error("VALIDATION_ERROR", "'prefix' is required", 400)
 
@@ -1803,7 +1821,7 @@ def reset_system_address_password(address_id: int):
         )
 
     body = request.get_json(silent=True) or {}
-    user_password = (body.get("password") or "").strip()
+    user_password = _text(body, "password")
     auto_generated = False
     if not user_password:
         user_password = _secrets.token_urlsafe(16)
@@ -1964,9 +1982,9 @@ def update_from_whitelist(address_id: int):
 @permission_required("test_email", "send", "Send test email")
 def send_test_email():
     body = request.get_json(silent=True) or {}
-    from_addr = (body.get("from") or "").strip()
-    to_addr = (body.get("to") or "").strip()
-    subject = (body.get("subject") or "").strip()
+    from_addr = _text(body, "from")
+    to_addr = _text(body, "to")
+    subject = _text(body, "subject")
 
     if not from_addr or not to_addr or not subject:
         return api_error(

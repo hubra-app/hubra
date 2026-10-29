@@ -6,7 +6,7 @@ from flask import Blueprint, jsonify, request
 from hubra.api.auth.helpers import get_current_member
 
 from hubra.api.permissions import permission_required, require_member
-from hubra.api.utils import log_audit
+from hubra.api.utils import id_from_body, log_audit
 from marshmallow import ValidationError
 from hubra.core.errors import api_error
 from hubra.core.extensions import db
@@ -34,8 +34,12 @@ _members_schema = MemberSchema(many=True)
 @tiers_bp.post("/calculate-cost")
 @permission_required("tiers", "calculate_cost", "Calculate tier cost")
 def tier_calculate_cost():
-    body = request.get_json(silent=True) or {}
-    result = calculate_preview_cost(body, db_session=db.session)
+    body = dict(request.get_json(silent=True) or {})
+    body["tier_id"] = id_from_body(body.get("tier_id"), "tier_id")
+    try:
+        result = calculate_preview_cost(body, db_session=db.session)
+    except (ArithmeticError, TypeError, ValueError):
+        return api_error("VALIDATION_ERROR", "Prices and factors must be numbers", 400)
     return jsonify(result), 200
 
 

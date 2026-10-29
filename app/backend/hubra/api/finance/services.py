@@ -9,7 +9,7 @@ from math import ceil
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import selectinload
 
-from hubra.api.utils import escape_like, log_audit
+from hubra.api.utils import escape_like, id_from_body, log_audit
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 from hubra.core.models.external_party import ExternalParty
@@ -855,14 +855,16 @@ class InvoicesService:
     def bulk_create(body: dict, actor_id: int) -> dict:
         """Create one invoice per active member, optionally filtered by tier."""
         due_str = body.get("due")
-        tier_id = body.get("tier_id")
+        tier_id = id_from_body(body.get("tier_id"), "tier_id")
         description = body.get("description") or None
+        if description is not None and not isinstance(description, str):
+            raise_error(400, "VALIDATION_ERROR", "description must be text")
 
         if not due_str:
             raise_error(400, "VALIDATION_ERROR", "due date is required")
         try:
             due_date = date.fromisoformat(due_str)
-        except ValueError:
+        except (TypeError, ValueError):
             raise_error(400, "VALIDATION_ERROR", "due must be a valid ISO date")
 
         issued_date = date.today()

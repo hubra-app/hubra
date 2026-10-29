@@ -1113,6 +1113,11 @@ class MembersService:
             "membership_until",
             "custom_fields",
         ]
+        if (
+            validated.get("tier_id") is not None
+            and db.session.get(MembershipTier, validated["tier_id"]) is None
+        ):
+            raise_error(400, "VALIDATION_ERROR", "Unknown membership tier")
         for field in tenant_fields:
             if field in validated:
                 setattr(member, field, validated[field])

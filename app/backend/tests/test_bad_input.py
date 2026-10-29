@@ -76,3 +76,91 @@ def test_qr_bill_without_banking_details_is_409(client, auth_headers, db, seeded
     resp = client.get(f"/api/v1/finance/invoices/{invoice.id}/qr-bill.pdf", headers=auth_headers)
     assert resp.status_code == 409
     assert resp.get_json()["error"] == "QR_BILL_NOT_CONFIGURED"
+
+
+# ── Wrong field types (found by sending each body field as text, list,
+# object, bool and odd numbers) ───────────────────────────────────────────────
+
+
+def _function(db, name="Kasse"):
+    from hubra.core.models.function import Function
+
+    fn = Function(name=name, max_holders=1)
+    db.session.add(fn)
+    db.session.commit()
+    return fn.id
+
+
+@pytest.mark.parametrize("member_id", ["abc", [1], {"a": 1}, True, 1.5])
+def test_function_holder_needs_a_member_id(client, auth_headers, db, member_id):
+    url = f"/api/v1/functions/{_function(db)}/holders"
+    resp = client.post(url, json={"memberId": member_id}, headers=auth_headers)
+    assert resp.status_code == 400
+
+
+def test_function_update_ignores_unknown_keys(client, auth_headers, db):
+    fn_id = _function(db)
+    resp = client.patch(
+        f"/api/v1/functions/{fn_id}",
+        json={"function_id": 5, "description": "Kasse"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+    assert resp.get_json()["id"] == fn_id
+
+
+def test_member_update_with_unknown_tier(client, auth_headers, seeded_db):
+    resp = client.patch(
+        f"/api/v1/members/{seeded_db['admin'].id}",
+        json={"tier_id": 999999},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 400
+
+
+@pytest.mark.parametrize("plan_id", ["", "abc", [1], {"a": 1}, True])
+def test_payment_plan_id_must_be_an_id(client, auth_headers, seeded_db, plan_id):
+    for url in ("/api/v1/tiers/my-plan", f"/api/v1/tiers/members/{seeded_db['admin'].id}/plan"):
+        resp = client.put(url, json={"plan_id": plan_id}, headers=auth_headers)
+        assert resp.status_code == 400, url
+
+
+@pytest.mark.parametrize(
+    "body",
+    [{"tier_id": True}, {"tier_id": [1]}, {"tier_id": "abc"}, {"price_chf": "abc"}],
+)
+def test_tier_cost_preview_with_bad_values(client, auth_headers, body):
+    resp = client.post("/api/v1/tiers/calculate-cost", json=body, headers=auth_headers)
+    assert resp.status_code == 400
+
+
+def test_payment_plan_name_must_be_text(client, auth_headers, seeded_db):
+    resp = client.post(
+        f"/api/v1/tiers/{seeded_db['tier'].id}/plans",
+        json={"name": 5, "interval": "monthly"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 400
+
+
+@pytest.mark.parametrize(
+    "body", [{"due": 5}, {"due": "2030-01-01", "tier_id": "x"}, {"due": "2030-01-01", "description": [1]}]
+)
+def test_bulk_invoices_with_bad_values(client, auth_headers, body):
+    resp = client.post("/api/v1/finance/invoices/bulk", json=body, headers=auth_headers)
+    assert resp.status_code == 400
+
+
+@pytest.mark.parametrize(
+    "url, body",
+    [
+        ("/api/v1/mail/aliases", {"address": 5}),
+        ("/api/v1/mail/system-addresses", {"address": ["a"]}),
+        ("/api/v1/mail/mailboxes", {"username": "anna", "quotaGb": "lots"}),
+        ("/api/v1/mail/mailboxes", {"username": {"a": 1}}),
+        ("/api/v1/mail/test", {"to": True}),
+    ],
+)
+def test_mail_forms_with_bad_values(client, auth_headers, url, body):
+    resp = client.post(url, json=body, headers=auth_headers)
+    assert resp.status_code == 400, resp.get_data(as_text=True)[:200]

@@ -16,6 +16,20 @@ def escape_like(value: str) -> str:
     return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
+def id_from_body(value, field: str) -> int | None:
+    """An id sent in a JSON body: None stays None, a whole number (or its
+    digits as text) becomes an int, anything else is a 400."""
+    from hubra.core.errors import raise_error
+
+    if value is None:
+        return None
+    if isinstance(value, int) and not isinstance(value, bool):
+        return value
+    if isinstance(value, str) and value.strip().isdigit():
+        return int(value)
+    raise_error(400, "VALIDATION_ERROR", f"{field} must be an id")
+
+
 def success_response(data, meta=None, status=200):
     """Return a standardized JSON envelope: {"data": ..., "meta": ...}."""
     return jsonify({"data": data, "meta": meta or {}}), status
