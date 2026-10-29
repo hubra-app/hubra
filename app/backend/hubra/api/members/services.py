@@ -622,7 +622,7 @@ class MemberService:
         from hubra.core.models.finance import Invoice, Transaction
         from hubra.core.models.mail import MailboxFolder
         from hubra.core.models.notification import Notification
-        from hubra.core.models.poll import Poll, PollVote
+        from hubra.core.models.poll import Poll
         from hubra.core.models.translation import Translation
 
         # Delete child rows whose FK is NOT NULL (cannot be nulled out).
@@ -671,8 +671,7 @@ class MemberService:
                 .where(column == member_id)
                 .values({column.key: None})
             )
-        # A vote belongs to its member (member_id is NOT NULL): it goes with them.
-        db.session.execute(delete(PollVote).where(PollVote.member_id == member_id))
+        # Their poll votes stay, anonymous (PollVote.member_id SET NULL below).
         _apply_member_fk_actions(member_id)
         # Remove WildDuck mailbox and MMA row (permanent deletion).
         from hubra.core.services.managed_mail import remove_for_member

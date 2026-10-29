@@ -227,7 +227,10 @@ def test_permanent_delete_of_a_poll_author_group_lead_and_voter(
     code = db.session.get(Code, ids[2])
     assert (code.created_by_id, code.updated_by_id) == (None, None)
     assert db.session.get(Translation, ids[3]).updated_by_id is None
+    # The vote stays, anonymous, so the poll's result does not change.
     assert db.session.query(PollVote).filter_by(member_id=member_id).count() == 0
+    [vote] = db.session.query(PollVote).filter_by(poll_id=ids[0]).all()
+    assert vote.member_id is None
 
 
 def test_permanent_delete_removes_sign_in_devices(client, auth_headers, seeded_db, db):
