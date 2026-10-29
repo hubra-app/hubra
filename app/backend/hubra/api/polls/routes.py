@@ -112,7 +112,7 @@ def get_proxy(poll_id: int):
 def grant_proxy(poll_id: int):
     poll = PollService.get(poll_id)
     holder_id = (request.get_json(silent=True) or {}).get("holder_id")
-    if not isinstance(holder_id, int):
+    if not isinstance(holder_id, int) or isinstance(holder_id, bool):
         return api_error("VALIDATION_ERROR", "holder_id is required", 400)
     member_id = get_current_member().id
     ProxyService.grant(poll, member_id, holder_id)

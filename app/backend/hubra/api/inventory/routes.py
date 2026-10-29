@@ -179,6 +179,8 @@ def checkout_item(item_id: int):
 def checkin_item(item_id: int):
     body = request.get_json(silent=True) or {}
     condition_notes = body.get("condition_notes")
+    if condition_notes is not None and not isinstance(condition_notes, str):
+        return api_error("VALIDATION_ERROR", "condition_notes must be text", 400)
 
     checkout = InventoryService.checkin(
         item_id=item_id,

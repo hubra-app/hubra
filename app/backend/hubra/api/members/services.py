@@ -1242,6 +1242,9 @@ class MembersService:
 
         # Remove from all groups
         _clear_member_groups(member_id)
+        # Sign-in and every permission check refuse archived members; a
+        # deleted one must be locked out the same way.
+        member.archived_at = member.deleted_at  # type: ignore[union-attr]
 
         log_audit(
             actor_id=actor_id,
