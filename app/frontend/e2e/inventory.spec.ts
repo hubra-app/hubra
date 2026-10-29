@@ -1,9 +1,11 @@
 import { expect, test } from '@playwright/test'
-import { api, unique } from './api'
+import { api, enableModule, unique } from './api'
 import { appUrl } from './env'
 
 test('an inventory item can be added, opened and edited', async ({ page }) => {
   const name = unique('E2E Bohrer')
+  await page.goto(appUrl('dashboard'))
+  await enableModule(page, 'inventory')
   await page.goto(appUrl('inventory'))
   await page.getByRole('button', { name: 'Gegenstand hinzufügen' }).first().click()
   const dialog = page.getByRole('dialog')

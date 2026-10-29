@@ -1,8 +1,10 @@
 import { expect, test } from '@playwright/test'
-import { api, unique } from './api'
+import { api, enableModule, unique } from './api'
 import { appUrl } from './env'
 
 test('a binding can be added and edited', async ({ page }) => {
+  await page.goto(appUrl('dashboard'))
+  await enableModule(page, 'bindings')
   await page.goto(appUrl('operations/bindings/list'))
   const keyName = unique('e2e.key').replace(/\s/g, '_')
   const key = await api<{ id: number }>(page, 'POST', '/bindings/keys', { key: keyName })
