@@ -98,7 +98,7 @@ def test_names_with_special_characters_stay_one_address(app, db):
     sent = {}
 
     class FakeSMTP:
-        def __init__(self, *a):
+        def __init__(self, *a, **kw):
             pass
 
         def __enter__(self):

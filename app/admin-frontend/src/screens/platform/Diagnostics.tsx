@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Badge,
   Button,
+  Code,
   Group,
   Modal,
   Paper,
@@ -66,6 +67,7 @@ function failureText(err: unknown) {
 function HealthPanel() {
   const healthQuery = useQuery({ queryKey: ['platform-health'], queryFn: getPlatformHealth })
   const changelogQuery = useQuery({ queryKey: ['changelog'], queryFn: getChangelog })
+  const [showAllVersions, setShowAllVersions] = useState(false)
   const health = healthQuery.data
 
   return (
@@ -140,7 +142,9 @@ function HealthPanel() {
           </Text>
         )}
         <Stack gap={16}>
-          {(changelogQuery.data?.entries ?? []).map((entry) => (
+          {(changelogQuery.data?.entries ?? [])
+            .slice(0, showAllVersions ? undefined : 3)
+            .map((entry) => (
             <div key={entry.version}>
               <Group gap={8} mb={6}>
                 <Text fw={700} size="sm">
@@ -160,7 +164,9 @@ function HealthPanel() {
                   <ul style={{ margin: 0, paddingLeft: 18 }}>
                     {items.map((item, i) => (
                       <li key={item + i}>
-                        <Text size="sm">{item}</Text>
+                        <Text size="sm" style={{ overflowWrap: 'anywhere' }}>
+                          <InlineMarkdown text={item} />
+                        </Text>
                       </li>
                     ))}
                   </ul>
@@ -168,9 +174,39 @@ function HealthPanel() {
               ))}
             </div>
           ))}
+          {(changelogQuery.data?.entries ?? []).length > 3 && (
+            <Button
+              variant="subtle"
+              size="compact-sm"
+              style={{ alignSelf: 'flex-start' }}
+              onClick={() => setShowAllVersions((v) => !v)}
+            >
+              {showAllVersions
+                ? tr('Nur die neusten Versionen', 'Only the latest versions')
+                : tr('Alle Versionen zeigen', 'Show all versions')}
+            </Button>
+          )}
         </Stack>
       </Paper>
     </Stack>
+  )
+}
+
+/** **bold** and `code` from changelog lines, as text (never as HTML). */
+function InlineMarkdown({ text }: { text: string }) {
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).filter(Boolean)
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.startsWith('**') && part.endsWith('**') ? (
+          <strong key={i}>{part.slice(2, -2)}</strong>
+        ) : part.startsWith('`') && part.endsWith('`') ? (
+          <Code key={i}>{part.slice(1, -1)}</Code>
+        ) : (
+          part
+        ),
+      )}
+    </>
   )
 }
 

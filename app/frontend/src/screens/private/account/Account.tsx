@@ -5,13 +5,13 @@ import { useT } from "@/locales/i18n";
 import {
   IconCalendar,
   IconChartBar,
-  IconHeart,
+  IconReceipt,
   IconLogout as Leave,
   IconCreditCard,
 } from "@tabler/icons-react";
 import { useAuth, useNav } from "@/context/AppContext";
 import { useEvents, useMyVotes, usePolls } from "@/data/lists";
-import { InvoicePill } from "@/components/ui";
+import { ErrorBanner, InvoicePill } from "@/components/ui";
 import { listMyInvoices, downloadInvoicePdf } from "@/api/finance";
 import { formatCHF } from "@/format";
 import { useToggleJoinEvent } from "@/screens/private/operations/useEventActions";
@@ -36,6 +36,7 @@ export function AccountDashboardScreen() {
     data: invoicesData,
     isLoading: invoicesLoading,
     isError: invoicesError,
+    refetch: refetchInvoices,
   } = useQuery({
     queryKey: qk.invoices.mine,
     queryFn: () => listMyInvoices(),
@@ -52,9 +53,10 @@ export function AccountDashboardScreen() {
     <>
       {/* pending payments banner */}
       {invoicesError && (
-        <Paper withBorder shadow="sm" radius="lg" p="md" mb="md" c="red">
-          <Text size="sm">{t("common.error", 'Fehler')}</Text>
-        </Paper>
+        <ErrorBanner
+          message={t("account.invoicesLoadFailed", 'Deine Rechnungen konnten nicht geladen werden.')}
+          onRetry={() => refetchInvoices()}
+        />
       )}
       {invoicesLoading && (
         <Paper withBorder shadow="sm" radius="lg" p="md" mb="md">
@@ -193,10 +195,10 @@ export function AccountDashboardScreen() {
             color: "green",
           },
           {
-            label: t("account.postsLiked", 'Beiträge mit Like'),
-            value: 0,
-            icon: <IconHeart size={20} />,
-            color: "pink",
+            label: t("account.openInvoices", 'Offene Rechnungen'),
+            value: myInvoices.length,
+            icon: <IconReceipt size={20} />,
+            color: myInvoices.length > 0 ? "red" : "gray",
           },
         ].map((s) => (
           <Paper
@@ -512,29 +514,6 @@ export function AccountDashboardScreen() {
         {modules.has("groups") && <MyGroupsCard />}
         <PluginSlot name="account.cards" />
 
-        {/* My likes ? coming soon */}
-        <Paper withBorder shadow="sm" radius="lg">
-          <Group
-            p="md"
-            gap="sm"
-            style={{ borderBottom: "1px solid var(--mantine-color-gray-3)" }}
-          >
-            <IconHeart size={16} style={{ color: "#5e5873" }} />
-            <Text fw={700} fz="md">
-              {t("account.likedPosts", 'Beiträge, die dir gefallen')}
-            </Text>
-          </Group>
-          <div
-            style={{
-              padding: "24px",
-              textAlign: "center",
-              color: "#8c86a0",
-              fontSize: "var(--mantine-font-size-sm)",
-            }}
-          >
-            {t("account.postsComingSoon", 'Beiträge folgen bald.')}
-          </div>
-        </Paper>
       </div>
     </>
   );

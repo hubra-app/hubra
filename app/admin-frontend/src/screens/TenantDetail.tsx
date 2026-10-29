@@ -321,7 +321,7 @@ export function TenantDetail() {
                       color={m.status === 'active' ? 'green' : 'gray'}
                       size="sm"
                     >
-                      {m.status === 'active' ? tr('Aktiv', 'Active') : m.status}
+                      {statusLabel(m.status, tr)}
                     </Badge>
                   </Table.Td>
                 </Table.Tr>

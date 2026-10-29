@@ -517,6 +517,8 @@ export function GroupsScreen() {
                     <Button
                       size="sm"
                       variant="subtle"
+                      aria-label={t('common.edit', 'Bearbeiten')}
+                      title={t('common.edit', 'Bearbeiten')}
                       onClick={() => openEdit(g)}
                     >
                       <IconPencil size={16} />
@@ -527,6 +529,8 @@ export function GroupsScreen() {
                       size="sm"
                       variant="subtle"
                       style={{ color: '#ff4d3d' }}
+                      aria-label={t('common.delete', 'Löschen')}
+                      title={t('common.delete', 'Löschen')}
                       onClick={() => setDeleteTarget(g)}
                     >
                       <IconTrash size={16} />
@@ -535,10 +539,10 @@ export function GroupsScreen() {
                   <Button
                     size="sm"
                     variant="subtle"
-                    style={{ color: '#6131c4' }}
+                    style={{ color: '#6131c4', marginLeft: 'auto' }}
                     onClick={() => setDetailGroup(g)}
                   >
-                    {t('groups.members', 'Mitglieder')} →
+                    {t('groups.memberCount', '{{count}} Mitglieder', { count: g.members })} →
                   </Button>
                 </div>
               </div>
@@ -546,10 +550,13 @@ export function GroupsScreen() {
           ))}
           {canCreate && (
           <Paper
+            component="button"
+            type="button"
             withBorder
             shadow="sm"
             radius="lg"
             style={{
+              font: 'inherit',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',

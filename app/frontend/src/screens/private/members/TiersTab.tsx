@@ -637,7 +637,7 @@ export function TiersTab() {
                         ? `${tier.percentageValue ?? '?'}%`
                         : tier.priceChf != null
                           ? `CHF ${tier.priceChf}`
-                          : '—')}
+                          : t('tiers.noPrice', 'Kein Beitrag'))}
                 </span>
               </div>
               <div
@@ -648,18 +648,20 @@ export function TiersTab() {
                   flexWrap: 'wrap',
                 }}
               >
-                <span
-                  style={{
-                    fontSize: 'var(--mantine-font-size-xs)',
-                    fontWeight: 600,
-                    color: '#5e5873',
-                    background: '#f7f6fb',
-                    borderRadius: 4,
-                    padding: '2px 8px',
-                  }}
-                >
-                  {tier.priceType ? t(`tiers.type.${tier.priceType}`, tier.priceType) : t('tiers.noType', 'Kein Typ')}
-                </span>
+                {tier.priceType && (
+                  <span
+                    style={{
+                      fontSize: 'var(--mantine-font-size-xs)',
+                      fontWeight: 600,
+                      color: '#5e5873',
+                      background: '#f7f6fb',
+                      borderRadius: 4,
+                      padding: '2px 8px',
+                    }}
+                  >
+                    {t(`tiers.type.${tier.priceType}`, tier.priceType)}
+                  </span>
+                )}
                 {tier.billingCycle && (
                   <span
                     style={{
@@ -679,11 +681,10 @@ export function TiersTab() {
                 {canUpdate && (
                   <Button
                     variant="subtle"
-                    color="blue"
-                    style={{ flex: 1 }}
+                    color="acc"
+                    leftSection={<IconPencil size={16} />}
                     onClick={() => openEdit(tier)}
                   >
-                    <IconPencil size={16} />
                     {t('common.edit', 'Bearbeiten')}
                   </Button>
                 )}
@@ -698,6 +699,9 @@ export function TiersTab() {
                   <Button
                     variant="subtle"
                     color="red"
+                    ml="auto"
+                    aria-label={t('common.delete', 'Löschen')}
+                    title={t('common.delete', 'Löschen')}
                     onClick={() => setDeleteTarget(tier)}
                   >
                     <IconTrash size={16} />
@@ -707,31 +711,37 @@ export function TiersTab() {
             </div>
           </Paper>
         ))}
-        <Paper
-          withBorder
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 28,
-            cursor: 'pointer',
-            border: '1.5px dashed #d6d2e3',
-            background: 'transparent',
-            minHeight: 200,
-          }}
-          onClick={openAdd}
-        >
-          <IconPlus size={22} style={{ color: '#b7b0c9', marginBottom: 8 }} />
-          <span
+        {canCreate && (
+          <Paper
+            component="button"
+            type="button"
+            withBorder
             style={{
-              fontSize: 'var(--mantine-font-size-sm)',
-              color: '#8c86a0',
+              font: 'inherit',
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 28,
+              cursor: 'pointer',
+              border: '1.5px dashed #d6d2e3',
+              background: 'transparent',
+              minHeight: 200,
             }}
+            onClick={openAdd}
           >
-            {t('tiers.new', 'Neue Stufe')}
-          </span>
-        </Paper>
+            <IconPlus size={22} style={{ color: '#b7b0c9', marginBottom: 8 }} />
+            <span
+              style={{
+                fontSize: 'var(--mantine-font-size-sm)',
+                color: '#8c86a0',
+              }}
+            >
+              {t('tiers.new', 'Neue Stufe')}
+            </span>
+          </Paper>
+        )}
       </div>
 
       {detailTier && (

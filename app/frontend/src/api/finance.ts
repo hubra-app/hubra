@@ -191,6 +191,9 @@ function adaptTx(b: BackendTransaction): Transaction {
     status: b.status ?? "Completed",
     invoiceId: b.invoice_id != null ? String(b.invoice_id) : null,
     createdAt: b.created_at ?? "",
+    categoryId: b.category_id != null ? String(b.category_id) : null,
+    memberName: b.member_name,
+    payeeName: b.payee_name,
   };
 }
 

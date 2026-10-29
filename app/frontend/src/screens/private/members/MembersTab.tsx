@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Button, Group, Menu, Select, Paper, TextInput, ActionIcon } from '@mantine/core'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT } from '@/locales/i18n'
 import {
   IconPlus,
@@ -24,8 +24,9 @@ import {
   Modal,
   Seg,
   Tag,
-  usePagination,
   Pagination,
+  EmptyState,
+  LoadingSpinner,
   ConfirmModal,
   DataTable,
   ActionButtons,
@@ -43,6 +44,7 @@ import { listTiers } from '@/api/tiers'
 import { lookupsQuery } from '@/api/lookups'
 import { formatCHF } from '@/format'
 import { MemberEditModal } from '@/components/MemberEditModal'
+import { useServerPagination } from '@/components/serverPagination'
 
 /* ── Members List ───────────────────────────── */
 export function MembersTab() {
@@ -79,9 +81,8 @@ export function MembersTab() {
   })
   const allTiers = useMemo(
     () =>
-      lookupsData
-        ? [...lookupsData.tiersByName.keys()]
-        : ['Maker', 'Pro', 'Student', 'Workshop'],
+      // No made-up tiers while the club's own are still loading.
+      lookupsData ? [...lookupsData.tiersByName.keys()] : [],
     [lookupsData],
   )
   const tierColors = useMemo(() => {
@@ -104,16 +105,22 @@ export function MembersTab() {
     return () => clearTimeout(timer)
   }, [search])
 
-  const { data: membersData } = useQuery({
-    queryKey: qk.members.list(debouncedSearch, tierFilter, showArchived),
+  // The API pages the list: ask for the page on screen, not for everything.
+  const paging = useServerPagination(`${debouncedSearch}|${tierFilter}|${showArchived}`)
+  const { data: membersData, isLoading: membersLoading } = useQuery({
+    queryKey: qk.members.list(debouncedSearch, tierFilter, showArchived, paging.page, paging.perPage),
     queryFn: () =>
       listMembers({
         search: debouncedSearch,
         tier: tierFilter,
         archived: showArchived,
+        page: paging.page,
+        pageSize: paging.perPage,
       }),
+    placeholderData: keepPreviousData,
   })
   const members = membersData?.members ?? []
+  const pg = paging.withTotal(membersData?.total ?? 0)
 
   const openBulkInvoice = () => {
     setBulkTierId('')
@@ -234,7 +241,6 @@ export function MembersTab() {
   }
 
   const tiers = ['All', ...allTiers]
-  const pg = usePagination(members, 25)
 
   return (
     <div>
@@ -438,7 +444,8 @@ export function MembersTab() {
               ),
             },
           ]}
-          data={pg.paged}
+          data={members}
+          loading={membersLoading}
           emptyMessage={t('members.noMembers', 'Keine Mitglieder gefunden.')}
           searchValue={search}
           onSearchChange={setSearch}
@@ -571,7 +578,7 @@ export function MembersTab() {
                   color: '#5e5873',
                 }}
               >
-                {t('members.shown', { count: members.length })}
+                {t('members.shown', { count: pg.total })}
               </span>
               <Seg
                 options={[
@@ -586,6 +593,17 @@ export function MembersTab() {
 
           <>
             <Pagination {...pg} top />
+            {membersLoading && <LoadingSpinner compact />}
+            {!membersLoading && members.length === 0 && (
+              <EmptyState
+                title={t('members.noMembers', 'Keine Mitglieder gefunden.')}
+                description={
+                  debouncedSearch || tierFilter !== 'All'
+                    ? t('members.noMembersFilterHint', 'Ändere die Suche oder den Filter.')
+                    : undefined
+                }
+              />
+            )}
             <div
               style={{
                 padding: 16,
@@ -594,7 +612,7 @@ export function MembersTab() {
                 gap: 12,
               }}
             >
-              {pg.paged.map((m) => (
+              {members.map((m) => (
                 <Paper
                   key={m.id}
                   withBorder
@@ -712,11 +730,12 @@ export function MembersTab() {
                             size="sm"
                             variant="subtle"
                             style={{ color: '#ff4d3d' }}
+                            aria-label={t('members.archive', 'Archivieren')}
+                            title={t('members.archive', 'Archivieren')}
                             onClick={(e) => {
                               e.stopPropagation()
                               setArchiveTarget(m)
                             }}
-                            aria-label={t('members.archive')}
                           >
                             <IconUserX size={16} />
                           </Button>

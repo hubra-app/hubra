@@ -229,7 +229,7 @@ export function Pagination({
         style={{ width: 80 }}
         aria-label={names.perPage}
       />
-      <Text size="sm" c="dimmed" flex={1}>
+      <Text size="sm" c="dimmed" flex={1} style={{ whiteSpace: 'nowrap' }}>
         {rangeLabel(start, end, total)}
       </Text>
       <MantinePagination
