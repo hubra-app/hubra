@@ -42,3 +42,15 @@ def test_deleting_a_parent_keeps_its_subgroups(client, auth_headers, seeded_db):
     resp = client.get(f"/api/v1/groups/{sub}", headers=auth_headers)
     assert resp.status_code == 200
     assert resp.get_json()["parent_group_id"] is None
+
+
+def test_subgroups_move_up_when_their_parent_is_deleted(client, auth_headers, seeded_db):
+    top = _group(client, auth_headers, "Verein")
+    middle = _group(client, auth_headers, "Werkstatt", parent_group_id=top)
+    sub = _group(client, auth_headers, "Holz", parent_group_id=middle)
+
+    assert client.delete(f"/api/v1/groups/{middle}", headers=auth_headers).status_code == 204
+    resp = client.get(f"/api/v1/groups/{sub}", headers=auth_headers)
+    assert resp.get_json()["parent_group_id"] == top
+    # The former subgroup can still be picked as a parent.
+    _group(client, auth_headers, "Metall", parent_group_id=sub)

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 
-from sqlalchemy import delete, func, insert, select
+from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.orm import selectinload
 
 from hubra.api.utils import escape_like, log_audit
@@ -129,6 +129,13 @@ class GroupService:
 
         db.session.execute(
             delete(member_groups).where(member_groups.c.group_id == group.id)
+        )
+        # Club schemas have no foreign keys: move subgroups up a level
+        # instead of leaving them under a group that no longer exists.
+        db.session.execute(
+            update(Group)
+            .where(Group.parent_group_id == group.id)
+            .values(parent_group_id=group.parent_group_id)
         )
         db.session.delete(group)
 
