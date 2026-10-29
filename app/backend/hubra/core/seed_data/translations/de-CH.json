@@ -596,6 +596,7 @@
   "dashboard.tabs.account": "Persönlich",
   "dashboard.tabs.overview": "Verein",
   "dashboard.thisMonth": "Diesen Monat",
+  "dashboard.joinedLast30": "+{{count}} in den letzten 30 Tagen",
   "dashboard.thisWeek": "Diese Woche",
   "dashboard.title": "Dashboard",
   "dashboard.today": "Heute",

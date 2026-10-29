@@ -591,6 +591,7 @@
       "overview": "Verein"
     },
     "thisMonth": "Diesen Monat",
+    "joinedLast30": "+{{count}} in den letzten 30 Tagen",
     "thisWeek": "Diese Woche",
     "title": "Dashboard",
     "today": "Heute",

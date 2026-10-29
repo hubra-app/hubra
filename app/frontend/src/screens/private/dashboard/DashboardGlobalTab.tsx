@@ -2,7 +2,7 @@ import { Badge, Button, Group, Text, UnstyledButton } from "@mantine/core";
 import { EVENT_TYPE_COLORS } from "@/constants";
 import { useQuery } from "@tanstack/react-query";
 import { useT } from "@/locales/i18n";
-import { useNav, useData } from "@/context/AppContext";
+import { useNav, useData, useAuth } from "@/context/AppContext";
 import { StatTile, Card, StatGrid, Avatar } from "@/components/ui";
 import { getDashboardSummary } from "@/api/dashboard";
 import { listEvents } from "@/api/events";
@@ -18,6 +18,9 @@ export function GlobalOverviewScreen() {
   const { t, i18n } = useT();
   const { go } = useNav();
   const { myVotes } = useData();
+  const { hasPermission } = useAuth();
+  const canCreateEvent = hasPermission("events.events.create");
+  const canAddMember = hasPermission("members.members.create");
   const {
     data: summary,
     isLoading: summaryLoading,
@@ -52,14 +55,23 @@ export function GlobalOverviewScreen() {
 
   return (
     <div>
-      <Group justify="flex-end" mb="md" className="page-actions">
-        <Button variant="default" onClick={() => go("/app/operations/events")}>
-          {t("dashboard.buttons.newEvent")}
-        </Button>
-        <Button variant="filled" onClick={() => go("/app/members")}>
-          {t("common.addMember")}
-        </Button>
-      </Group>
+      {(canCreateEvent || canAddMember) && (
+        <Group justify="flex-end" mb="md" className="page-actions">
+          {canCreateEvent && (
+            <Button
+              variant="default"
+              onClick={() => go("/app/operations/events")}
+            >
+              {t("dashboard.buttons.newEvent")}
+            </Button>
+          )}
+          {canAddMember && (
+            <Button variant="filled" onClick={() => go("/app/members")}>
+              {t("common.addMember")}
+            </Button>
+          )}
+        </Group>
+      )}
 
       {summaryError && (
         <Card style={{ marginBottom: 16, borderColor: "red" }}>
@@ -173,9 +185,9 @@ export function GlobalOverviewScreen() {
           }
           sub={
             summary?.stats
-              ? `+${summary.stats.memberDelta} ${t(
-                  "dashboard.thisMonth",
-                ).toLowerCase()}`
+              ? t("dashboard.joinedLast30", {
+                  count: summary.stats.memberDelta,
+                })
               : t("common.loading", 'Wird geladen …')
           }
           onClick={() => go("/app/members")}
