@@ -57,6 +57,7 @@ from hubra.core.services import email as email_svc
 from hubra.core.services import account as account_svc
 from hubra.core.services import email_verification
 from hubra.core.services.email import _get_sso_base_url
+from hubra.api.auth.account_guard import club_member_only
 from hubra.api.notifications.services import create_notification
 from hubra.core.tenant.context import current_tenant
 
@@ -69,6 +70,9 @@ _DUMMY_HASH = _ph.hash("timing-dummy-value")
 
 auth_bp = Blueprint("auth_bp", __name__)
 account_bp = Blueprint("account_bp", __name__)
+
+# Account routes on one club's data refuse a sign-in without that club.
+account_bp.before_request(club_member_only)
 
 _member_schema = MemberSchema()
 _invoice_schema = InvoiceSchema()
