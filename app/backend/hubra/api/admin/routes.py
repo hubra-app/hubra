@@ -14,6 +14,7 @@ from marshmallow import ValidationError
 from sqlalchemy import select
 
 from hubra.api.permissions import require_admin
+from hubra.core.errors import ApiError
 from hubra.core.extensions import db
 from hubra.core.models.domain import Domain
 from hubra.core.models.tenant import GlobalAuditEntry
@@ -32,6 +33,17 @@ admin_bp = Blueprint("admin_bp", __name__)
 
 
 # ── Domain CRUD ─────────────────────────────────────────────────────────────
+
+
+def _audit_domain(action: str, domain: Domain) -> None:
+    from hubra.api.auth.helpers import get_current_member
+    from hubra.api.utils import log_audit
+
+    try:
+        actor_id = get_current_member().id
+    except ApiError:  # a platform admin without a seat in the club
+        actor_id = None
+    log_audit(actor_id, action, "Domain", domain.id, domain.domain)
 
 
 @admin_bp.get("/domains")
@@ -106,6 +118,8 @@ def add_domain():
         is_primary=is_first,
     )
     db.session.add(domain)
+    db.session.flush()
+    _audit_domain("add_domain", domain)
     db.session.commit()
 
     return (
@@ -153,6 +167,7 @@ def verify_domain_endpoint(domain_id: int):
         domain.verified = True
         domain.verification_status = "verified"
         domain.verified_at = datetime.now(timezone.utc)
+        _audit_domain("verify_domain", domain)
         db.session.commit()
 
     return jsonify(
@@ -178,6 +193,7 @@ def remove_domain(domain_id: int):
         return jsonify({"error": "NOT_FOUND", "message": "Domain not found"}), 404
 
     was_primary = domain.is_primary
+    _audit_domain("remove_domain", domain)
     db.session.delete(domain)
     db.session.flush()
 
@@ -223,6 +239,7 @@ def set_primary_domain(domain_id: int):
     for d in others:
         d.is_primary = False
     domain.is_primary = True
+    _audit_domain("set_primary_domain", domain)
     db.session.commit()
 
     return jsonify({"domain": _domain_to_dict(domain)}), 200
