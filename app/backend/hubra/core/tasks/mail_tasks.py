@@ -158,19 +158,37 @@ def cleanup_token_blocklist(self) -> dict:
     Runs daily (Celery Beat at 03:00 UTC). Tokens older than 30 days are safe
     to remove — no valid JWT can have a lifetime that long.
 
+    The blocklist is also a club table (a sign-out in a club records it
+    there), so every club's is cleaned too.
+
     Returns a summary dict: {deleted}.
     """
-    from sqlalchemy import delete
+    from sqlalchemy import delete, select
 
     from hubra.core.extensions import db
+    from hubra.core.models.tenant import Tenant
     from hubra.core.models.token import TokenBlocklist
+    from hubra.core.tenant.context import reset_search_path, set_search_path
 
     cutoff = datetime.now(timezone.utc) - timedelta(days=30)
-    result = db.session.execute(
-        delete(TokenBlocklist).where(TokenBlocklist.created_at < cutoff)
-    )
-    db.session.commit()
-    deleted = result.rowcount  # type: ignore[attr-defined]
+
+    def _clean() -> int:
+        result = db.session.execute(
+            delete(TokenBlocklist).where(TokenBlocklist.created_at < cutoff)
+        )
+        db.session.commit()
+        return result.rowcount  # type: ignore[attr-defined]
+
+    deleted = _clean()
+    for tenant_id in db.session.scalars(select(Tenant.id)).all():
+        try:
+            set_search_path(tenant_id)
+            deleted += _clean()
+        except Exception:
+            db.session.rollback()
+            logger.exception("token blocklist cleanup failed for tenant %s", tenant_id)
+        finally:
+            reset_search_path()
     logger.info("cleanup_token_blocklist: deleted %d expired tokens", deleted)
     return {"deleted": deleted}
 
