@@ -731,7 +731,7 @@ def _add_user_to_tenant(tenant: Tenant, user: User) -> dict:
     Raises 409 when the user is already a member. Leaves the commit to the
     caller and returns the new member as a dict.
     """
-    from hubra.api.members.services import _default_role
+    from hubra.api.members.services import _default_role, _welcome_back
     from hubra.core.models.member import MembershipTier
     from hubra.core.models.user_tenant import UserTenant
     from hubra.core.tenant.context import reset_search_path, set_search_path
@@ -748,24 +748,29 @@ def _add_user_to_tenant(tenant: Tenant, user: User) -> dict:
 
     try:
         set_search_path(tenant.id)
-        if db.session.scalar(select(Member.id).where(Member.user_id == user.id)):
+        member = db.session.scalar(select(Member).where(Member.user_id == user.id))
+        if member is not None and member.archived_at is None:
             # A Member without the user_tenants link (made before links were
             # kept for every new member): repair the link instead of failing.
             link_user_to_tenant(user.id, tenant.id)
             db.session.commit()
             raise_error(409, "CONFLICT", "User is already a member of this tenant")
 
-        default_role = _default_role()
-        tier = db.session.scalar(select(MembershipTier).limit(1))
+        if member is not None:
+            # Someone who left comes back as the member they were.
+            _welcome_back(member, user.id, None, tenant.id)
+        else:
+            default_role = _default_role()
+            tier = db.session.scalar(select(MembershipTier).limit(1))
 
-        member = Member(
-            tier_id=tier.id if tier else None,
-            user_id=user.id,
-            status="active",
-        )
-        if default_role:
-            member.roles = [default_role]
-        db.session.add(member)
+            member = Member(
+                tier_id=tier.id if tier else None,
+                user_id=user.id,
+                status="active",
+            )
+            if default_role:
+                member.roles = [default_role]
+            db.session.add(member)
         db.session.flush()
 
         # Build the dict while the search_path still points at the club, so

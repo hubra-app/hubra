@@ -241,7 +241,9 @@ def _default_role() -> Role | None:
     return role
 
 
-def _welcome_back(former: Member, user_id: int, tier_id: int | None) -> Member:
+def _welcome_back(
+    former: Member, user_id: int, tier_id: int | None, tenant_id: int | None = None
+) -> Member:
     """Someone who left comes back as the member they were: an ordinary
     member again, whatever roles they had, on the tier they were invited or
     applied for, and with their club mailbox open again."""
@@ -252,7 +254,7 @@ def _welcome_back(former: Member, user_id: int, tier_id: int | None) -> Member:
     if tier_id is not None and db.session.get(MembershipTier, tier_id) is not None:
         former.tier_id = tier_id
         former.payment_plan_id = None
-    link_user_to_tenant(user_id)
+    link_user_to_tenant(user_id, tenant_id)
     if not former.is_disabled:
         from hubra.core.services.managed_mail import enable_member_mail
 
