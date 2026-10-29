@@ -296,6 +296,8 @@ def _welcome_back(
     member again, whatever roles they had, on the tier they were invited or
     applied for, and with their club mailbox open again."""
     former.archived_at = None
+    # A soft-deleted member is archived as well (#42); coming back undoes both.
+    former.deleted_at = None
     former.leave_requested_at = None
     role = _default_role()
     former.roles = [role] if role is not None else []

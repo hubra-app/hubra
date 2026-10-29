@@ -156,3 +156,25 @@ def test_a_returning_member_gets_the_tier_and_mailbox_back(
     anna = db.session.get(Member, club["anna"].id)
     assert anna.tier_id == junior.id
     assert reopened == [anna.id]
+
+
+def test_a_deleted_member_who_comes_back_is_listed_again(client, db, club):
+    """Soft delete also archives (#42); approving their return clears both,
+    or they could sign in but stayed hidden from every member list."""
+    from datetime import datetime, timezone
+
+    from hubra.api.applications.services import ApplicationsService
+    from hubra.core.models.application import Application
+
+    anna = db.session.get(Member, club["anna"].id)
+    anna.archived_at = anna.deleted_at = datetime.now(timezone.utc)
+    db.session.commit()
+    ApplicationsService.submit("Anna", "M", "anna@test.ch")
+    db.session.commit()
+    app_id = db.session.query(Application).one().id
+
+    _login(client, "admin@test.ch")
+    resp = client.post(f"/api/v1/applications/{app_id}/approve", json={}, headers=H)
+    assert resp.status_code in (200, 201), resp.json
+    anna = db.session.get(Member, club["anna"].id)
+    assert anna.archived_at is None and anna.deleted_at is None
