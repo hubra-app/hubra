@@ -451,3 +451,23 @@ def test_task_queued_in_a_club_carries_the_club(app, db, tenant):
             g.tenant = tenant
             update_last_seen.apply_async((1,))
     assert parent.call_args.kwargs["headers"] == {"tenant_id": tenant.id}
+
+
+def test_provisioning_gives_the_standard_tier_a_price_type(db):
+    """Pricing only bills fixed, percentage and formula tiers, and the tier
+    form needs one of them; the seeded tier had none."""
+    from unittest.mock import patch
+
+    from hubra.core.models.member import MembershipTier
+    from hubra.core.tenant.service import _seed_tenant
+
+    new = Tenant(name="Priced", slug="priced-club", plan="starter")
+    db.session.add(new)
+    db.session.flush()
+    with (
+        patch("hubra.core.tenant.context.set_search_path"),
+        patch("hubra.core.tenant.context.reset_search_path"),
+    ):
+        _seed_tenant(new.id, None, None)
+    tier = db.session.query(MembershipTier).filter_by(name="Standard").one()
+    assert tier.price_type == "fixed"

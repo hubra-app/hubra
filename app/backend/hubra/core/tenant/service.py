@@ -556,6 +556,7 @@ def _seed_tenant(
         tier = MembershipTier(
             name="Standard",
             price_chf=Decimal(0),
+            price_type="fixed",
             color="#6366f1",
         )
         db.session.add(tier)
