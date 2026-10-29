@@ -59,6 +59,7 @@ export function TenantDetail() {
   const queryClient = useQueryClient()
   const { notify } = useAdmin()
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [pendingAction, setPendingAction] = useState<string | null>(null)
   const [impersonateOpen, setImpersonateOpen] = useState(false)
   const [addMemberOpen, setAddMemberOpen] = useState(false)
   const [memberEmail, setMemberEmail] = useState('')
@@ -107,12 +108,16 @@ export function TenantDetail() {
     action: 'disable' | 'enable' | 'archive',
     fn: (id: number) => Promise<unknown>,
   ) => {
+    if (pendingAction) return
+    setPendingAction(action)
     try {
       await fn(tenantId)
       notify('success', ACTION_DONE[action](), tenant?.name)
       refresh()
     } catch (err) {
       notify('error', tr('Aktion fehlgeschlagen', 'Action failed'), err instanceof Error ? err.message : undefined)
+    } finally {
+      setPendingAction(null)
     }
   }
 
@@ -180,6 +185,7 @@ export function TenantDetail() {
               variant="default"
               leftSection={<IconBan size={16} />}
               onClick={() => handleAction('disable', disableTenant)}
+              loading={pendingAction === 'disable'}
             >
               {tr('Sperren', 'Suspend')}
             </Button>
@@ -188,6 +194,7 @@ export function TenantDetail() {
               variant="default"
               leftSection={<IconCheck size={16} />}
               onClick={() => handleAction('enable', enableTenant)}
+              loading={pendingAction === 'enable'}
             >
               {tr('Aktivieren', 'Enable')}
             </Button>
@@ -196,6 +203,7 @@ export function TenantDetail() {
             variant="default"
             leftSection={<IconArchive size={16} />}
             onClick={() => handleAction('archive', archiveTenant)}
+            loading={pendingAction === 'archive'}
           >
             {tr('Archivieren', 'Archive')}
           </Button>
