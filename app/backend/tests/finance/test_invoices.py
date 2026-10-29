@@ -348,3 +348,17 @@ def test_overview_open_invoice_amount_is_a_number(client, auth_headers, seeded_d
 
     body = client.get("/api/v1/finance/overview", headers=auth_headers).get_json()
     assert body["openInvoices"] == {"count": 1, "amount": 45.0}
+
+
+def test_an_invoice_cannot_be_due_before_it_is_issued(client, auth_headers, seeded_db):
+    resp = client.post(
+        "/api/v1/finance/invoices",
+        json={
+            "member_id": seeded_db["admin"].id,
+            "issued": "2026-11-10",
+            "due": "2026-11-01",
+            "amount": 45.0,
+        },
+        headers=auth_headers,
+    )
+    assert resp.status_code == 400
