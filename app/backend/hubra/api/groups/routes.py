@@ -183,7 +183,9 @@ def list_group_members(group_id: int):
 
     search = request.args.get("search", "").strip()
     members = GroupService.list_members(group_id, search)
-    return jsonify({"data": _members_schema.dump(members)}), 200
+    from hubra.api.members.routes import for_viewer
+
+    return jsonify({"data": for_viewer(_members_schema.dump(members))}), 200
 
 
 # ── POST /groups/<id>/members/<member_id> ────────────────────────────────────
