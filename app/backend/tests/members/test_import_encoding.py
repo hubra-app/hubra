@@ -17,3 +17,27 @@ def test_import_reads_a_windows_1252_csv(client, auth_headers, seeded_db):
     )
     assert resp.status_code == 200
     assert resp.get_json()["preview"][0]["last_name"] == "Müller"
+
+
+def _post(client, auth_headers, csv_data, **form):
+    return client.post(
+        "/api/v1/members/import",
+        data={"file": (io.BytesIO(csv_data.encode()), "export.csv"), **form},
+        content_type="multipart/form-data",
+        headers=auth_headers,
+    )
+
+
+def test_a_list_too_long_for_one_request_is_refused(client, auth_headers, seeded_db):
+    from hubra.api.members.routes import MAX_IMPORT_ROWS
+
+    rows = "".join(f"x{i}@test.ch\n" for i in range(MAX_IMPORT_ROWS + 1))
+    resp = _post(client, auth_headers, "email\n" + rows)
+    assert resp.status_code == 400
+    assert str(MAX_IMPORT_ROWS) in resp.get_json()["message"]
+
+
+def test_a_mapping_that_is_not_an_object_is_a_400(client, auth_headers, seeded_db):
+    for mapping in ("[1]", '{"Mail": 1}', '"email"'):
+        resp = _post(client, auth_headers, "Mail\nx@test.ch\n", mapping=mapping)
+        assert resp.status_code == 400, mapping

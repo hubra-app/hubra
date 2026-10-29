@@ -89,6 +89,8 @@ def export_members():
 
 # ── POST /members/import ─────────────────────────────────────────────────────
 
+MAX_IMPORT_ROWS = 1000
+
 
 @members_bp.post("/import")
 @permission_required("members", "import", "Import members")
@@ -118,6 +120,14 @@ def import_members():
 
     if not rows:
         return api_error("VALIDATION_ERROR", "CSV file is empty", 400)
+    # Each row sends its invite mail inside this request; a longer list runs
+    # past the worker timeout after the first mails went out.
+    if len(rows) > MAX_IMPORT_ROWS:
+        return api_error(
+            "VALIDATION_ERROR",
+            f"At most {MAX_IMPORT_ROWS} rows per import; split the file",
+            400,
+        )
 
     mapping = None
     mapping_json = request.form.get("mapping")
@@ -128,6 +138,12 @@ def import_members():
             mapping = json.loads(mapping_json)
         except json.JSONDecodeError:
             return api_error("VALIDATION_ERROR", "Invalid mapping JSON", 400)
+        if not isinstance(mapping, dict) or not all(
+            isinstance(v, str) for v in mapping.values()
+        ):
+            return api_error(
+                "VALIDATION_ERROR", "mapping must map columns to field names", 400
+            )
 
     dry_run = request.form.get("dry_run", "").strip().lower() in ("1", "true", "yes")
 
