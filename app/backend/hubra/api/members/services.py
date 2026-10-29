@@ -548,9 +548,10 @@ class MemberService:
             target_label=member.name,
         )
 
+        from hubra.core.tasks.after_commit import delay_after_commit
         from hubra.core.tasks.wildduck import provision_member_mail
 
-        provision_member_mail.delay(member_id)
+        delay_after_commit(provision_member_mail, member_id)
         return member  # type: ignore[return-value]
 
     @staticmethod
@@ -1213,9 +1214,10 @@ class MembersService:
 
         # Dispatch mail provisioning if mail flags changed
         if mail_flag_changed:
+            from hubra.core.tasks.after_commit import delay_after_commit
             from hubra.core.tasks.wildduck import provision_member_mail
 
-            provision_member_mail.delay(member_id)
+            delay_after_commit(provision_member_mail, member_id)
 
         from hubra.core.services.binding_engine import sync_for_source
 

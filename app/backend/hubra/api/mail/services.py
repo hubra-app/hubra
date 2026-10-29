@@ -443,9 +443,10 @@ class MailboxesService:
         )
 
         if mail_flag_changed:
+            from hubra.core.tasks.after_commit import delay_after_commit
             from hubra.core.tasks.wildduck import provision_member_mail
 
-            provision_member_mail.delay(member_id)
+            delay_after_commit(provision_member_mail, member_id)
 
         wd_id = (addr.wildduck_id or addr.wildduck_user_id) if addr else None
         return {
