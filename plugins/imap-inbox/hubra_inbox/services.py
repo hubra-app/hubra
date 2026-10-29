@@ -290,7 +290,9 @@ def _store(
             from_address=p.from_address,
             to_addresses=p.to_addresses,
             cc_addresses=p.cc_addresses,
-            sent_at=p.sent_at,
+            # The sender writes the Date header: a date in the future would
+            # keep the message on top of the list for good.
+            sent_at=min(p.sent_at, datetime.now(timezone.utc)) if p.sent_at else None,
             text_body=p.text_body,
             html_body=p.html_body,
             attachments=p.attachments,
@@ -349,7 +351,9 @@ def sync_mailbox(mailbox: InboxMailbox) -> dict:
     db.session.execute(
         delete(InboxMessage).where(
             InboxMessage.mailbox_id == mailbox.id,
-            or_(InboxMessage.sent_at < cutoff, InboxMessage.fetched_at < cutoff),
+            # By when Hubra fetched it, not the sender's Date header, which
+            # could have a new message deleted in the sync that brought it.
+            InboxMessage.fetched_at < cutoff,
         )
     )
     db.session.flush()

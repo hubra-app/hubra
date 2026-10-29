@@ -7,6 +7,9 @@
   shown on that mailbox, and the others sync as usual.
 - The search date no longer depends on the server's locale.
 - The text of an HTML-only mail shows & and < instead of &amp; and &lt;.
+- A sender's Date header no longer decides retention or keeps a message
+  on top: old-dated mail is kept for the retention period from when it
+  was fetched, and a future date counts as now.
 
 ## 1.0.0
 

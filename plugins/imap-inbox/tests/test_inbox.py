@@ -21,12 +21,13 @@ def _mail(
     refs=None,
     html=None,
     attach=False,
+    date="Tue, 27 Oct 2026 10:00:00 +0100",
 ):
     msg = EmailMessage()
     msg["From"] = sender
     msg["To"] = "info@club.ch"
     msg["Subject"] = subject
-    msg["Date"] = "Tue, 27 Oct 2026 10:00:00 +0100"
+    msg["Date"] = date
     msg["Message-ID"] = (
         msgid or f"<{''.join(c for c in subject if c.isalnum())}@example.ch>"
     )
@@ -446,3 +447,19 @@ def test_search_dates_do_not_depend_on_the_locale():
     from datetime import datetime
 
     assert services._imap_date(datetime(2026, 3, 5)) == "05-Mar-2026"
+
+
+def test_sender_dates_do_not_drive_order_or_retention(
+    client, db, auth_headers, board, fake
+):
+    fake.folders["INBOX"][1][3] = _mail(
+        "Top forever", date="Fri, 01 Jan 2099 10:00:00 +0000"
+    )
+    fake.folders["INBOX"][1][4] = _mail("Old", date="Mon, 01 Jan 1990 10:00:00 +0000")
+    mailbox_id = _create(client).get_json()["id"]
+    client.post(f"/api/v1/inbox/mailboxes/{mailbox_id}/sync")
+    by_subject = {
+        m["subject"]: m for m in client.get("/api/v1/inbox/messages").get_json()
+    }
+    assert "Old" in by_subject
+    assert by_subject["Top forever"]["sentAt"] < "2099"
