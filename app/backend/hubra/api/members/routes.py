@@ -116,7 +116,12 @@ def import_members():
         # Excel on Windows saves CSV as Windows-1252, not UTF-8.
         text = raw.decode("cp1252", errors="replace")
     stream = io.StringIO(text, newline=None)
-    reader = csv.DictReader(stream)
+    # Excel with a German or Swiss locale separates with ";".
+    try:
+        dialect = csv.Sniffer().sniff(text[:4096], delimiters=",;\t")
+    except csv.Error:
+        dialect = csv.excel
+    reader = csv.DictReader(stream, dialect=dialect)
     rows = list(reader)
 
     if not rows:

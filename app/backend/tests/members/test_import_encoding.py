@@ -41,3 +41,16 @@ def test_a_mapping_that_is_not_an_object_is_a_400(client, auth_headers, seeded_d
     for mapping in ("[1]", '{"Mail": 1}', '"email"'):
         resp = _post(client, auth_headers, "Mail\nx@test.ch\n", mapping=mapping)
         assert resp.status_code == 400, mapping
+
+
+def test_semicolon_csv_from_a_swiss_excel(client, auth_headers, seeded_db):
+    """Excel with a German or Swiss locale separates fields with ';'."""
+    resp = _post(
+        client,
+        auth_headers,
+        "first_name;last_name;email\nAnna;Muster;anna@test.ch\n",
+        dry_run="true",
+    )
+    assert resp.status_code == 200
+    row = resp.get_json()["preview"][0]
+    assert row["email"] == "anna@test.ch" and row["last_name"] == "Muster"
