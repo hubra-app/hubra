@@ -96,6 +96,7 @@ export function StartClubScreen() {
   })
 
   const send = () => {
+    if (submit.isPending) return
     setError('')
     const cleanSlug = slugify(slug)
     if (!name.trim() || !cleanSlug) {

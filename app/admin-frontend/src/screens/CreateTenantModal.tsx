@@ -9,6 +9,7 @@ import {
   Alert,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
+import { useQueryClient } from '@tanstack/react-query'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { IconAlertCircle } from '@tabler/icons-react'
@@ -88,6 +89,8 @@ export function CreateTenantModal({
     form.setFieldValue('slug', e.target.value)
   }
 
+  const queryClient = useQueryClient()
+
   const handleSubmit = async (values: FormValues) => {
     setLoading(true)
     setError('')
@@ -99,6 +102,8 @@ export function CreateTenantModal({
         admin_email: values.adminEmail || undefined,
         admin_password: values.adminPassword || undefined,
       })
+      queryClient.invalidateQueries({ queryKey: ['tenants'] })
+      queryClient.invalidateQueries({ queryKey: ['backup-clubs'] })
       notify('success', tr('Verein erstellt', 'Club created'), tr(`${values.name} ist eingerichtet.`, `${values.name} has been set up.`))
       onClose()
       form.reset()

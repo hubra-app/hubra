@@ -32,6 +32,12 @@ export function ForgotPassword() {
     try {
       await authApi.forgotPassword(values.email.trim().toLowerCase())
       setSent(true)
+    } catch (err) {
+      // e.g. 429 after three requests in an hour: say so instead of nothing.
+      form.setFieldError(
+        'email',
+        err instanceof Error ? err.message : tr('Das hat nicht geklappt.', 'That did not work.'),
+      )
     } finally {
       setLoading(false)
     }

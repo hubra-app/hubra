@@ -96,7 +96,12 @@ export function TenantDetail() {
   const usage = tenant?.usage
   const members = membersData?.members ?? []
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ['tenant', tenantId] })
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['tenant', tenantId] })
+    // The club list and the backup club list show the status too.
+    queryClient.invalidateQueries({ queryKey: ['tenants'] })
+    queryClient.invalidateQueries({ queryKey: ['backup-clubs'] })
+  }
 
   const handleAction = async (
     action: 'disable' | 'enable' | 'archive',
@@ -115,6 +120,7 @@ export function TenantDetail() {
     try {
       await deleteTenant(tenantId, force)
       notify('success', tr('Verein gelöscht', 'Club deleted'), tenant?.name)
+      refresh()
       navigate('/app/tenants')
     } catch (err) {
       notify('error', tr('Löschen fehlgeschlagen', 'Delete failed'), err instanceof Error ? err.message : undefined)
