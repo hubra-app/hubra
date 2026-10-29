@@ -551,3 +551,24 @@ def test_tenant_request_and_global_role_refuse_wrong_types(client, db, staff_hea
     for body in ({"name": 5}, {"name": "Kasse", "permissions": 5}):
         resp = client.post("/api/v1/system/global-roles", json=body)
         assert resp.status_code == 400, body
+
+
+def test_platform_routes_refuse_wrong_types(client, db, seeded_db, staff_headers):
+    from hubra.core.models.tenant import Tenant
+
+    tenant = Tenant(name="Typed", slug="typed-club", plan="starter")
+    db.session.add(tenant)
+    db.session.commit()
+    user_id = seeded_db["user"].id
+    for method, path, body in (
+        ("patch", f"/api/v1/system/tenants/{tenant.id}", {"name": ["x"]}),
+        ("patch", f"/api/v1/system/tenants/{tenant.id}", {"name": ""}),
+        ("patch", f"/api/v1/system/tenants/{tenant.id}", {"settings": [1]}),
+        ("post", f"/api/v1/system/tenants/{tenant.id}/members", {"user_id": {"a": 1}}),
+        ("post", f"/api/v1/system/tenants/{tenant.id}/members", {"email": 5}),
+        ("post", f"/api/v1/system/users/{user_id}/roles", {"role_id": [1]}),
+    ):
+        resp = getattr(client, method)(path, json=body)
+        assert resp.status_code == 400, (path, body, resp.get_json())
+    db.session.refresh(tenant)
+    assert tenant.name == "Typed"

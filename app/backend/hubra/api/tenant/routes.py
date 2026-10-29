@@ -50,6 +50,18 @@ def _body_text(body: dict, key: str) -> str:
     return value.strip()
 
 
+def _body_id(body: dict, key: str) -> int | None:
+    """*key* as a positive id, None if absent; 400 otherwise."""
+    value = body.get(key)
+    if value is None or value == "":
+        return None
+    if isinstance(value, str) and value.isdigit():
+        value = int(value)
+    if not isinstance(value, int) or isinstance(value, bool) or value < 1:
+        raise_error(400, "VALIDATION_ERROR", f"{key} must be an id")
+    return value
+
+
 def _body_keys(body: dict, key: str) -> list[str] | None:
     """*key* as a list of strings, None if absent; 400 otherwise."""
     value = body.get(key)
@@ -167,9 +179,13 @@ def update_tenant(tenant_id: int):
     """Update tenant attributes (name, plan, settings)."""
     data = request.get_json(silent=True) or {}
 
-    name = data.get("name")
+    name = _body_text(data, "name") if data.get("name") is not None else None
+    if name is not None and not 0 < len(name) <= 255:
+        raise_error(400, "VALIDATION_ERROR", "name must be 1 to 255 characters")
     plan = data.get("plan")
     settings = data.get("settings")
+    if settings is not None and not isinstance(settings, dict):
+        raise_error(400, "VALIDATION_ERROR", "settings must be an object")
 
     if plan is not None and plan not in _VALID_PLANS:
         return jsonify(
@@ -741,15 +757,15 @@ def add_tenant_member(tenant_id: int):
         raise_error(404, "NOT_FOUND", "Tenant not found")
 
     body = request.get_json(silent=True) or {}
-    email = (body.get("email") or "").strip().lower()
-    user_id_body = body.get("user_id")
+    email = _body_text(body, "email").lower()
+    user_id_body = _body_id(body, "user_id")
 
     if email:
         user = db.session.scalar(select(User).where(User.email == email))
         if user is None:
             raise_error(404, "NOT_FOUND", f"No user found with email {email}")
     elif user_id_body:
-        user = db.session.get(User, int(user_id_body))
+        user = db.session.get(User, user_id_body)
         if user is None:
             raise_error(404, "NOT_FOUND", f"No user found with id {user_id_body}")
     else:
@@ -1558,11 +1574,11 @@ def assign_user_global_role(user_id: int):
         raise_error(404, "NOT_FOUND", "User not found")
 
     body = request.get_json(silent=True) or {}
-    role_id = body.get("role_id")
+    role_id = _body_id(body, "role_id")
     if not role_id:
         raise_error(400, "VALIDATION_ERROR", "role_id is required")
 
-    role = db.session.get(GlobalRole, int(role_id))
+    role = db.session.get(GlobalRole, role_id)
     if role is None:
         raise_error(404, "NOT_FOUND", "Role not found")
 
