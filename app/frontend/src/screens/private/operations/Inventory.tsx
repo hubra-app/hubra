@@ -1327,6 +1327,7 @@ export function InventoryScreen() {
             <>
               <Select
                 size="sm"
+                aria-label={t('common.status', 'Status')}
                 data={[
                   {
                     value: 'All',
@@ -1409,6 +1410,7 @@ export function InventoryScreen() {
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <Select
                 size="sm"
+                aria-label={t('common.status', 'Status')}
                 data={[
                   {
                     value: 'All',

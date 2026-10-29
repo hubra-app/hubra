@@ -485,6 +485,7 @@ export function AuditLogScreen() {
         toolbar={
           <Select
             size="sm"
+            aria-label={t('audit.action', 'Aktion')}
             data={AUDIT_ACTIONS.map(([value, label]) => ({
               value,
               label: t(`audit.actions.${value || 'all'}`, label),
