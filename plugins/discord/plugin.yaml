@@ -1,6 +1,6 @@
 id: discord
 name: Discord
-version: "1.0.0"
+version: "1.0.1"
 hubra: ">=0.1,<1"
 description: "Announce new events, posts and polls in a Discord channel through a webhook, with an optional mention."
 author: Hubra

@@ -135,3 +135,17 @@ def test_worker_loads_discord_tasks():
 
     registry.load()
     assert "hubra_discord.tasks" in registry.task_modules()
+
+
+def test_nothing_sent_when_the_change_is_rolled_back(app, db, discord_on):
+    from hubra_discord.hooks import _after_commit
+
+    db.session.execute(db.text("SELECT 1"))  # inside a transaction, as a request is
+    _after_commit("https://discord.com/api/webhooks/1/x", {"content": "a"})
+    db.session.rollback()
+    db.session.commit()
+    discord_on.assert_not_called()
+
+    _after_commit("https://discord.com/api/webhooks/1/x", {"content": "b"})
+    db.session.commit()
+    discord_on.assert_called_once()
