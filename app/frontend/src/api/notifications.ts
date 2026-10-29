@@ -22,17 +22,15 @@ function adapt(b: BackendNotification): Notification {
 }
 
 export async function listNotifications(): Promise<Notification[]> {
-  // The server answers { data, meta: { unread } }.
-  const res = await apiFetch<
-    { data: BackendNotification[] } | BackendNotification[]
-  >("/notifications/");
-  return (Array.isArray(res) ? res : res.data).map(adapt);
-}
-
-export async function deleteNotification(id: string): Promise<void> {
-  await apiFetch(`/notifications/${encodeURIComponent(id)}`, { method: "DELETE" });
+  // The API answers { data, meta: { unread } }, not a bare list.
+  const { data } = await apiFetch<{ data: BackendNotification[] }>("/notifications/");
+  return data.map(adapt);
 }
 
 export async function markAllNotificationsRead(): Promise<void> {
   await apiFetch("/notifications/read-all", { method: "POST" });
+}
+
+export async function deleteNotification(id: string): Promise<void> {
+  await apiFetch(`/notifications/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
