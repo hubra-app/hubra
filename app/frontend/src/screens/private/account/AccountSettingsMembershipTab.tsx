@@ -8,6 +8,7 @@ import { useT } from '@/locales/i18n'
 import { formatDate } from '@/format'
 import { PaymentPlanCard } from './PaymentPlanCard'
 import { LeaveClubCard } from './LeaveClubCard'
+import { DirectoryCard } from './DirectoryCard'
 import { roleLabels } from '@/roles'
 
 export function AccountSettingsMembershipTab() {
@@ -191,6 +192,8 @@ export function AccountSettingsMembershipTab() {
           'Für Änderungen an Stufe, Gruppen oder Kategorien wende dich an den Vorstand.',
         )}
       </div>
+
+      <DirectoryCard />
 
       <LeaveClubCard />
     </>

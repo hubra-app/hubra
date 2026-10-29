@@ -175,6 +175,12 @@ class Member(db.Model):
     leave_requested_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # Contact data this member shows other members in the club's directory
+    # ("email", "phone", "address", "birthday"). Nothing until they choose;
+    # those who manage members always see everything.
+    directory_shared: Mapped[list[str] | None] = mapped_column(
+        JSONB().with_variant(JSON, "sqlite"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

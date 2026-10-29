@@ -220,7 +220,15 @@
       "confirmBody": "You lose access to the club's pages. Your invoices and entries stay with the club. To come back later, ask to join again."
     },
     "invoicesLoadFailed": "Your invoices could not be loaded.",
-    "openInvoices": "Open invoices"
+    "openInvoices": "Open invoices",
+    "directory": {
+      "title": "Show in the member directory",
+      "hint": "What other members see of you. The board always sees your details.",
+      "email": "Email",
+      "phone": "Phone and mobile",
+      "address": "Address",
+      "birthday": "Birthday"
+    }
   },
   "app": {
     "backend": {

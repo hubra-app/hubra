@@ -52,14 +52,35 @@ def _viewer_sees_admin_fields() -> bool:
     )
 
 
+# Contact data each member chooses to show in the club's directory.
+DIRECTORY_FIELDS = {
+    "email": ("email",),
+    "phone": ("phone", "mobile"),
+    "address": (
+        "address_street",
+        "address_house_no",
+        "address_postal_code",
+        "address_city",
+        "address_country",
+    ),
+    "birthday": ("birthday",),
+}
+
+
 def for_viewer(rows: list[dict]) -> list[dict]:
     if _viewer_sees_admin_fields():
         return rows
     me = get_current_member().id
     for row in rows:
-        if row.get("id") != me:
-            for field in _ADMIN_ONLY_FIELDS:
-                row.pop(field, None)
+        if row.get("id") == me:
+            continue
+        for field in _ADMIN_ONLY_FIELDS:
+            row.pop(field, None)
+        shared = set(row.get("directory_shared") or ())
+        for choice, names in DIRECTORY_FIELDS.items():
+            if choice not in shared:
+                for field in names:
+                    row[field] = None
     return rows
 
 
@@ -73,6 +94,38 @@ def get_member_mail():
     member_id = get_current_member().id
     result = MemberService.get_member_mail(member_id)
     return jsonify(result), 200
+
+
+# ── GET/PUT /members/me/directory ────────────────────────────────────────────
+
+
+@members_bp.get("/me/directory")
+@jwt_required()
+def get_my_directory():
+    """What the member shows other members of this club."""
+    shared = get_current_member().directory_shared or []
+    return jsonify({"shared": list(shared), "choices": list(DIRECTORY_FIELDS)}), 200
+
+
+@members_bp.put("/me/directory")
+@jwt_required()
+def set_my_directory():
+    body = request.get_json(silent=True) or {}
+    shared = body.get("shared")
+    if not isinstance(shared, list) or any(
+        choice not in DIRECTORY_FIELDS for choice in shared
+    ):
+        raise_error(
+            422,
+            "VALIDATION_ERROR",
+            "shared must be a list of: " + ", ".join(DIRECTORY_FIELDS),
+        )
+    member = get_current_member()
+    member.directory_shared = [c for c in DIRECTORY_FIELDS if c in shared]
+    db.session.commit()
+    return jsonify(
+        {"shared": member.directory_shared, "choices": list(DIRECTORY_FIELDS)}
+    ), 200
 
 
 # ── GET /members/count ───────────────────────────────────────────────────────
@@ -96,6 +149,7 @@ def list_members():
         # Former and deleted members are for those who manage members.
         args.pop("archived", None)
         args.pop("include_deleted", None)
+        args["search_names_only"] = "1"
     result = MembersService.list(args)
     for_viewer(result["data"])
     return jsonify(result), 200

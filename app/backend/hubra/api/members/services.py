@@ -196,13 +196,19 @@ def _apply_member_filters(query, args: dict[str, str]):
     search = args.get("search", "").strip()
     if search:
         pattern = f"%{escape_like(search)}%"
-        query = query.where(
-            User.first_name.ilike(pattern, escape="\\")
-            | User.last_name.ilike(pattern, escape="\\")
-            | User.email.ilike(pattern, escape="\\")
-            | User.phone.ilike(pattern, escape="\\")
-            | User.mobile.ilike(pattern, escape="\\")
+        match = User.first_name.ilike(pattern, escape="\\") | User.last_name.ilike(
+            pattern, escape="\\"
         )
+        # Contact data may be hidden from the directory, so finding members
+        # by it is for those who see it all.
+        if not args.get("search_names_only"):
+            match = (
+                match
+                | User.email.ilike(pattern, escape="\\")
+                | User.phone.ilike(pattern, escape="\\")
+                | User.mobile.ilike(pattern, escape="\\")
+            )
+        query = query.where(match)
 
     status = args.get("status", "").strip()
     if status:

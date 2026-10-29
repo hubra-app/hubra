@@ -8,7 +8,8 @@ interface BackendMember {
   first_name: string;
   last_name: string;
   name: string;
-  email: string;
+  /** null when the member keeps it out of the club's directory */
+  email: string | null;
   public_email: string | null;
   tier: { id: number; name: string; color: string | null } | null;
   roles: { id: number; name: string }[];
@@ -50,7 +51,7 @@ function adapt(
     firstName: b.first_name,
     lastName: b.last_name,
     name: b.name,
-    email: b.email,
+    email: b.email ?? "",
     publicEmail: b.public_email ?? "",
     tier: b.tier?.name ?? "",
     groups: b.group_ids.map((id) => groupsById.get(id)?.name ?? String(id)),
@@ -284,6 +285,27 @@ export async function exportMembersCSV(fields?: string[]): Promise<void> {
   a.download = "members.csv";
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// ── What the directory shows ─────────────────────────────────────────────────
+
+export type DirectoryChoice = "email" | "phone" | "address" | "birthday";
+
+export interface DirectoryState {
+  /** Contact data other members see; the club's admins always see all. */
+  shared: DirectoryChoice[];
+  choices: DirectoryChoice[];
+}
+
+export function getMyDirectory(): Promise<DirectoryState> {
+  return apiFetch<DirectoryState>("/members/me/directory");
+}
+
+export function setMyDirectory(shared: DirectoryChoice[]): Promise<DirectoryState> {
+  return apiFetch<DirectoryState>("/members/me/directory", {
+    method: "PUT",
+    body: JSON.stringify({ shared }),
+  });
 }
 
 // ── Leaving the club ──────────────────────────────────────────────────────────
