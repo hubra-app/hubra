@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 
 from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.orm import selectinload
@@ -430,11 +431,15 @@ def _trigger_group_mail_sync(group_id: int) -> None:
             reconcile_entity_forwarding,
         )
 
+        # A savepoint: a failure here must not undo the change that
+        # triggered the sync, which the caller has not committed yet.
         try:
-            reconcile_entity_forwarding("group", group_id)
-            db.session.commit()
+            with db.session.begin_nested():
+                reconcile_entity_forwarding("group", group_id)
         except Exception:
-            db.session.rollback()
+            logging.getLogger(__name__).warning(
+                "Inline mail sync failed for group %s", group_id, exc_info=True
+            )
 
 
 class SelfJoinService:

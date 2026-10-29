@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
@@ -236,8 +238,12 @@ def _trigger_mail_sync(function_id: int) -> None:
             reconcile_entity_forwarding,
         )
 
+        # A savepoint: a failure here must not undo the change that
+        # triggered the sync, which the caller has not committed yet.
         try:
-            reconcile_entity_forwarding("function", function_id)
-            db.session.commit()
+            with db.session.begin_nested():
+                reconcile_entity_forwarding("function", function_id)
         except Exception:
-            db.session.rollback()
+            logging.getLogger(__name__).warning(
+                "Inline mail sync failed for function %s", function_id, exc_info=True
+            )
