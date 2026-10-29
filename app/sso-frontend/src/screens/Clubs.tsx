@@ -22,6 +22,7 @@ import { useSso } from '@/context/SsoContext'
 import { clubAppUrl } from '@/redirect'
 import * as authApi from '@/api/auth'
 import { SignedInFrame } from '@/components/SignedInFrame'
+import { LoadFailed } from '@/components/LoadFailed'
 import { useLang } from '@/lang'
 
 /**
@@ -162,6 +163,8 @@ export function ClubsScreen() {
 
       {mine.isLoading ? (
         <Loader size="sm" my="md" />
+      ) : mine.isError ? (
+        <LoadFailed onRetry={() => mine.refetch()} />
       ) : myClubs.length === 0 ? (
         <Paper withBorder p="xl" mb="xl">
           <Stack align="center" gap="xs" ta="center">

@@ -21,6 +21,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import { SignedInFrame } from '@/components/SignedInFrame'
+import { LoadFailed } from '@/components/LoadFailed'
 import { getLang, setLang, tr, useLang } from '@/lang'
 import * as authApi from '@/api/auth'
 
@@ -61,6 +62,12 @@ export function AccountScreen() {
     enabled: authStatus === 'authed',
   })
 
+  if (profile.isError)
+    return (
+      <Center h="100vh">
+        <LoadFailed onRetry={() => profile.refetch()} />
+      </Center>
+    )
   if (!profile.data)
     return (
       <Center h="100vh">
@@ -220,6 +227,7 @@ function EmailTab() {
       notify('error', tr('Senden fehlgeschlagen', 'Sending failed'), errorText(err, '')),
   })
 
+  if (status.isError) return <LoadFailed onRetry={() => status.refetch()} />
   if (!status.data) return <Loader size="sm" />
   const s = status.data
 
@@ -448,6 +456,7 @@ function SessionsTab() {
       notify('error', tr('Abmelden fehlgeschlagen', 'Sign-out failed'), errorText(err, '')),
   })
 
+  if (sessions.isError) return <LoadFailed onRetry={() => sessions.refetch()} />
   if (!sessions.data) return <Loader size="sm" />
 
   return (
