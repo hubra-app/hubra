@@ -36,8 +36,16 @@ def get_summary():
     member = get_current_member()  # members of this club only
     result = DashboardService.get_summary()
     if not _sees_finances(member):
+        # The open-invoice count and sum also feed the sidebar badge of
+        # whoever works the invoices (finance.invoices.read).
+        keep = (
+            {"openInvoices", "openInvoicesAmount"}
+            if "finance.invoices.read" in _get_member_permission_keys(member)
+            else set()
+        )
         for key in _FINANCE_STATS:
-            result["stats"][key] = None
+            if key not in keep:
+                result["stats"][key] = None
     upcoming_events = DashboardService.get_upcoming_events()
     recent_posts = DashboardService.get_recent_posts()
 

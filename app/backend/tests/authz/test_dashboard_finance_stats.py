@@ -20,3 +20,14 @@ def test_treasurer_does(client, permissioned_member_factory):
     permissioned_member_factory(["finance.overview.read"])
     stats = client.get("/api/v1/dashboard/summary").get_json()["stats"]
     assert all(stats[k] is not None for k in FINANCE)
+
+
+def test_invoice_reader_gets_the_open_invoice_count_only(
+    client, permissioned_member_factory
+):
+    """The sidebar badge needs the count; the club's net stays hidden."""
+    permissioned_member_factory(["finance.invoices.read"])
+    stats = client.get("/api/v1/dashboard/summary").get_json()["stats"]
+    assert stats["openInvoices"] is not None
+    assert stats["openInvoicesAmount"] is not None
+    assert stats["netMonth"] is None
