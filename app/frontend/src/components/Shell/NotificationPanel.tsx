@@ -25,6 +25,7 @@ import {
   deleteNotification,
 } from '@/api/notifications'
 import type { Notification } from '@/types'
+import { formatRelative } from '@/format'
 
 export function NotificationPanel() {
   const { t } = useT()
@@ -146,7 +147,7 @@ export function NotificationPanel() {
                   {n.msg}
                 </Text>
                 <Text className="num" fz="xs" c="dimmed">
-                  {n.time}
+                  {formatRelative(n.time)}
                 </Text>
               </Stack>
               <Group gap={6} align="flex-start" style={{ flexShrink: 0 }}>
