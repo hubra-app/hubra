@@ -1187,6 +1187,10 @@ class MembersService:
             and db.session.get(MembershipTier, validated["tier_id"]) is None
         ):
             raise_error(400, "VALIDATION_ERROR", "Unknown membership tier")
+        if "tier_id" in validated and validated["tier_id"] != member.tier_id:
+            # A payment plan belongs to one tier; on the new one they start
+            # on its own billing cycle and may pick one of its plans.
+            member.payment_plan_id = None
         for field in tenant_fields:
             if field in validated:
                 setattr(member, field, validated[field])
