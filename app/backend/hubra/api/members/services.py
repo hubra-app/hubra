@@ -141,7 +141,9 @@ def _clear_member_events(member_id: int) -> None:
             .join(ClubEvent, ClubEvent.id == EventRegistration.event_id)
             .where(
                 EventRegistration.member_id == member_id,
-                EventRegistration.status.in_(["registered", "approved", "waitlisted"]),
+                EventRegistration.status.in_(
+                    ["registered", "approved", "waitlisted", "pending"]
+                ),
                 upcoming,
             )
         ).all()
@@ -195,13 +197,19 @@ def _apply_member_filters(query, args: dict[str, str]):
     # Muster although first and last name are separate columns.
     for word in args.get("search", "").split():
         pattern = f"%{escape_like(word)}%"
-        query = query.where(
-            User.first_name.ilike(pattern, escape="\\")
-            | User.last_name.ilike(pattern, escape="\\")
-            | User.email.ilike(pattern, escape="\\")
-            | User.phone.ilike(pattern, escape="\\")
-            | User.mobile.ilike(pattern, escape="\\")
+        match = User.first_name.ilike(pattern, escape="\\") | User.last_name.ilike(
+            pattern, escape="\\"
         )
+        # Contact data may be hidden from the directory, so finding members
+        # by it is for those who see it all.
+        if not args.get("search_names_only"):
+            match = (
+                match
+                | User.email.ilike(pattern, escape="\\")
+                | User.phone.ilike(pattern, escape="\\")
+                | User.mobile.ilike(pattern, escape="\\")
+            )
+        query = query.where(match)
 
     status = args.get("status", "").strip()
     if status:
@@ -621,7 +629,7 @@ class MemberService:
         from hubra.core.models.finance import Invoice, Transaction
         from hubra.core.models.mail import MailboxFolder
         from hubra.core.models.notification import Notification
-        from hubra.core.models.poll import Poll, PollVote
+        from hubra.core.models.poll import Poll
         from hubra.core.models.translation import Translation
 
         # Delete child rows whose FK is NOT NULL (cannot be nulled out).
@@ -670,8 +678,7 @@ class MemberService:
                 .where(column == member_id)
                 .values({column.key: None})
             )
-        # A vote belongs to its member (member_id is NOT NULL): it goes with them.
-        db.session.execute(delete(PollVote).where(PollVote.member_id == member_id))
+        # Their poll votes stay, anonymous (PollVote.member_id SET NULL below).
         _apply_member_fk_actions(member_id)
         # Remove WildDuck mailbox and MMA row (permanent deletion).
         from hubra.core.services.managed_mail import remove_for_member
@@ -994,7 +1001,9 @@ class MembersService:
         # A byte order mark, so Excel reads the file as UTF-8 (umlauts);
         # the member import reads it with utf-8-sig.
         output.write("\ufeff")
-        writer = csv.writer(output)
+        # Semicolons: German and Swiss Excel open CSV with ";" (the import
+        # reads both).
+        writer = csv.writer(output, delimiter=";")
         writer.writerow(export_fields)
         for m in members:
             row_values = {
@@ -1197,6 +1206,17 @@ class MembersService:
             if isinstance(exc, ValidationError):
                 raise_error(400, "VALIDATION_ERROR", str(exc.messages))
             raise
+
+        # "Suspended" closes the club to the member (Member.is_blocked), so
+        # the same rules as for disabling apply.
+        if validated.get("status") == "suspended" and member.status != "suspended":
+            if member.id == actor_id:
+                raise_error(409, "CONFLICT", "You cannot suspend yourself")
+            if any(r.is_owner or r.is_admin for r in (member.roles or [])):
+                raise_error(
+                    409, "CONFLICT", "Cannot suspend an Owner or Admin role member"
+                )
+            _check_may_remove(member, actor_id)
 
         # Email uniqueness if changed — check against User table (global)
         if "email" in validated and validated["email"] != member.email:

@@ -252,5 +252,17 @@ def test_every_club_includes_suspended_clubs(app, db):
         ]
     )
     db.session.commit()
-    slugs = {t.slug for t in mail_server._every_club()}
-    assert {"on-club", "paused-club"} <= slugs
+    clubs = Tenant.query.filter(Tenant.slug.in_(["on-club", "paused-club"])).all()
+    if db.engine.dialect.name == "postgresql":
+        # On Postgres only clubs that still have a schema count.
+        for t in clubs:
+            db.session.execute(db.text(f"CREATE SCHEMA IF NOT EXISTS tenant_{t.id}"))
+        db.session.commit()
+    try:
+        slugs = {t.slug for t in mail_server._every_club()}
+        assert {"on-club", "paused-club"} <= slugs
+    finally:
+        if db.engine.dialect.name == "postgresql":
+            for t in clubs:
+                db.session.execute(db.text(f"DROP SCHEMA IF EXISTS tenant_{t.id}"))
+            db.session.commit()

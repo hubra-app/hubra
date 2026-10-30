@@ -20,6 +20,9 @@ interface BackendEvent {
   cover_image_url: string | null;
   color: string | null;
   registration_count: number;
+  places_taken?: number;
+  pending_count?: number;
+  my_status?: string | null;
 }
 
 function adapt(b: BackendEvent): ClubEvent {
@@ -42,6 +45,9 @@ function adapt(b: BackendEvent): ClubEvent {
     coverImageUrl: b.cover_image_url ?? null,
     color: b.color ?? null,
     registrationCount: b.registration_count ?? 0,
+    placesTaken: b.places_taken ?? b.registration_count ?? 0,
+    pendingCount: b.pending_count ?? 0,
+    myStatus: (b.my_status ?? null) as ClubEvent["myStatus"],
   };
 }
 
@@ -144,12 +150,14 @@ export async function deleteEvent(id: string): Promise<void> {
 export async function joinEvent(
   eventId: string,
   memberId: string,
-): Promise<void> {
+): Promise<string> {
   void memberId;
-  await apiFetch(`/events/${eventId}/register`, {
+  // "registered", "approved", "waitlisted", or "pending" (needs approval).
+  const reg = await apiFetch<{ status: string }>(`/events/${eventId}/register`, {
     method: "POST",
     body: JSON.stringify({}),
   });
+  return reg.status;
 }
 
 export async function leaveEvent(
@@ -173,6 +181,59 @@ export interface EventRegistration {
   attendedAt: string | null;
   notes: string | null;
   guests: number;
+}
+
+interface BackendRegistration {
+  id: number;
+  event_id: number;
+  member_id: number;
+  member_name: string | null;
+  status: string;
+  registered_at: string;
+  cancelled_at: string | null;
+  attended_at: string | null;
+  notes: string | null;
+  guests: number;
+}
+
+function adaptRegistration(r: BackendRegistration): EventRegistration {
+  return {
+    id: r.id,
+    eventId: r.event_id,
+    memberId: r.member_id,
+    memberName: r.member_name,
+    status: r.status,
+    registeredAt: r.registered_at,
+    cancelledAt: r.cancelled_at,
+    attendedAt: r.attended_at,
+    notes: r.notes,
+    guests: r.guests,
+  };
+}
+
+/** Organisers: an event's sign-ups, e.g. those waiting for approval. */
+export async function listRegistrations(
+  eventId: string,
+  status?: string,
+): Promise<EventRegistration[]> {
+  const suffix = status ? `?status=${encodeURIComponent(status)}` : "";
+  const data = await apiFetch<BackendRegistration[]>(
+    `/events/${eventId}/registrations${suffix}`,
+  );
+  return data.map(adaptRegistration);
+}
+
+/** Organisers: approve or decline a sign-up that waits for approval. */
+export async function decideRegistration(
+  eventId: string,
+  memberId: number,
+  decision: "approve" | "decline",
+): Promise<EventRegistration> {
+  const r = await apiFetch<BackendRegistration>(
+    `/events/${eventId}/registrations/${memberId}/${decision}`,
+    { method: "POST" },
+  );
+  return adaptRegistration(r);
 }
 
 export async function getCalendarFeedUrl(): Promise<string> {

@@ -3,8 +3,17 @@ import { useMutation } from "@tanstack/react-query";
 import { useToast, useAuth } from "@/context/AppContext";
 import { qk } from "@/data/keys";
 import { useListCache, useMyJoinedEvents } from "@/data/lists";
-import type { ClubEvent } from "@/types";
 import { joinEvent, leaveEvent } from "@/api/events";
+import type { ClubEvent } from "@/types";
+
+// A sign-up the member still has: the button then withdraws it.
+const OPEN_STATUSES = new Set(["registered", "approved", "waitlisted", "pending", "attended"]);
+// Those that hold a place (the member is on the attendee list).
+const PLACE_STATUSES = new Set(["registered", "approved", "attended"]);
+
+export function hasOpenSignUp(ev: ClubEvent, joined: boolean): boolean {
+  return joined || OPEN_STATUSES.has(ev.myStatus ?? "");
+}
 
 export function useToggleJoinEvent() {
   const { notify } = useToast();
@@ -22,46 +31,43 @@ export function useToggleJoinEvent() {
       eventTitle: string;
       memberId: string;
     }) => {
-      const isJoined = myJoinedEvents.has(eventId);
+      const ev = events.get()?.find((e) => e.id === eventId);
+      const isJoined = ev
+        ? hasOpenSignUp(ev, myJoinedEvents.has(eventId))
+        : myJoinedEvents.has(eventId);
+      let status: string | null = null;
       if (isJoined) {
         await leaveEvent(eventId, memberId);
       } else {
-        await joinEvent(eventId, memberId);
+        status = await joinEvent(eventId, memberId);
       }
-      return { isJoined, eventTitle };
+      return { isJoined, eventTitle, eventId, status };
     },
-    onMutate: ({ eventId }) => {
-      const isJoined = myJoinedEvents.has(eventId);
-      if (currentUser) {
-        events.patch(eventId, (ev) => ({
+    onSuccess: ({ isJoined, eventTitle, eventId, status }) => {
+      const me = currentUser?.id ?? "";
+      events.patch(eventId, (ev) => {
+        const holds = !isJoined && PLACE_STATUSES.has(status ?? "");
+        const attendees = ev.attendees.filter((id) => id !== me);
+        return {
           ...ev,
-          attendees: isJoined
-            ? ev.attendees.filter((id) => id !== currentUser.id)
-            : [...ev.attendees, currentUser.id],
-        }));
-      }
-      return { isJoined };
-    },
-    onError: (err, { eventId }, ctx) => {
-      const isJoined = ctx?.isJoined ?? false;
-      if (currentUser) {
-        events.patch(eventId, (ev) => ({
-          ...ev,
-          attendees: isJoined
-            ? [...ev.attendees, currentUser.id]
-            : ev.attendees.filter((id) => id !== currentUser.id),
-        }));
-      }
-      const msg =
-        err instanceof Error ? err.message : i18n.t('events.attendanceFailed', 'Die Teilnahme konnte nicht gespeichert werden.');
-      notify("error", "Error", msg);
-    },
-    onSuccess: ({ isJoined, eventTitle }) => {
+          myStatus: isJoined ? null : (status as ClubEvent["myStatus"]),
+          attendees: holds ? [...attendees, me] : attendees,
+        };
+      });
       if (isJoined) {
         notify("info", i18n.t('events.left', 'Abgemeldet'), i18n.t('events.leftMsg', 'Du bist von «{{title}}» abgemeldet.', { title: eventTitle }));
+      } else if (status === "pending") {
+        notify("info", i18n.t('events.requested', 'Anfrage gesendet'), i18n.t('events.requestedMsg', 'Die Organisatoren bestätigen deine Anmeldung für «{{title}}».', { title: eventTitle }));
+      } else if (status === "waitlisted") {
+        notify("info", i18n.t('events.waitlisted', 'Auf der Warteliste'), i18n.t('events.waitlistedMsg', '«{{title}}» ist voll. Du rückst nach, sobald ein Platz frei wird.', { title: eventTitle }));
       } else {
         notify("success", i18n.t('events.joined', 'Angemeldet'), i18n.t('events.joinedMsg', 'Du bist für «{{title}}» angemeldet.', { title: eventTitle }));
       }
+    },
+    onError: (err) => {
+      const msg =
+        err instanceof Error ? err.message : i18n.t('events.attendanceFailed', 'Die Teilnahme konnte nicht gespeichert werden.');
+      notify("error", "Error", msg);
     },
   });
 }

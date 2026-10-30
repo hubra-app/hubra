@@ -220,7 +220,15 @@
       "confirmBody": "Du verlierst den Zugang zu den Seiten des Vereins. Deine Rechnungen und Einträge bleiben beim Verein. Möchtest du später zurück, kannst du wieder um Aufnahme bitten."
     },
     "invoicesLoadFailed": "Deine Rechnungen konnten nicht geladen werden.",
-    "openInvoices": "Offene Rechnungen"
+    "openInvoices": "Offene Rechnungen",
+    "directory": {
+      "title": "Im Mitgliederverzeichnis zeigen",
+      "hint": "Was andere Mitglieder von dir sehen. Der Vorstand sieht deine Angaben immer.",
+      "email": "E-Mail",
+      "phone": "Telefon und Mobile",
+      "address": "Adresse",
+      "birthday": "Geburtstag"
+    }
   },
   "app": {
     "backend": {
@@ -693,7 +701,22 @@
       "social": "Geselliges",
       "certification": "Einführung",
       "meeting": "Sitzung"
-    }
+    },
+    "requested": "Anfrage gesendet",
+    "requestedMsg": "Die Organisatoren bestätigen deine Anmeldung für «{{title}}».",
+    "waitlisted": "Auf der Warteliste",
+    "waitlistedMsg": "«{{title}}» ist voll. Du rückst nach, sobald ein Platz frei wird.",
+    "maxAttendees": "Plätze",
+    "maxAttendeesPlaceholder": "Leer: ohne Begrenzung",
+    "requiresApproval": "Anmeldungen bestätigen (Organisatoren entscheiden über jede Anmeldung)",
+    "pendingCount": "{{count}} offen",
+    "withdrawRequest": "Anfrage zurückziehen",
+    "leaveWaitlist": "Warteliste verlassen",
+    "pendingTitle": "Offene Anmeldungen",
+    "noPending": "Keine offenen Anmeldungen.",
+    "guests": "{{count}} Gäste",
+    "decline": "Ablehnen",
+    "approve": "Bestätigen"
   },
   "finance": {
     "addCategory": "Kategorie hinzufügen",
@@ -2397,7 +2420,8 @@
     "contentRequired": "Inhalt ist erforderlich",
     "dateRequired": "Datum ist erforderlich",
     "questionRequired": "Frage ist erforderlich",
-    "dueRequired": "Fälligkeitsdatum ist erforderlich"
+    "dueRequired": "Fälligkeitsdatum ist erforderlich",
+    "wholeNumber": "Bitte eine ganze Zahl eingeben"
   },
   "backups": {
     "size": "Grösse",

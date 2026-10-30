@@ -155,7 +155,7 @@ def register_jwt_callbacks(jwt_manager) -> None:
         member = db.session.get(Member, int(identity))
         # Removed or switched off in this club: the session ends now, not
         # when the refresh token runs out.
-        if member is None or member.archived_at is not None or member.is_disabled:
+        if member is None or member.archived_at is not None or member.is_blocked:
             return None
         if member.user is None:  # members from before accounts existed
             return member
@@ -211,6 +211,10 @@ def login():
                 403,
                 "ACCOUNT_DISABLED",
                 "Account has been disabled by an administrator",
+            )
+        if member is not None and member.is_blocked:
+            raise_error(
+                403, "MEMBERSHIP_SUSPENDED", "Your membership in this club is suspended"
             )
         _locked = user.locked_until
         if _locked is not None:
@@ -606,6 +610,10 @@ def switch_tenant():
     if member.is_disabled:
         return api_error(
             "ACCOUNT_DISABLED", "Your membership in this club is switched off", 403
+        )
+    if member.is_blocked:
+        return api_error(
+            "MEMBERSHIP_SUSPENDED", "Your membership in this club is suspended", 403
         )
 
     # A session in the club, so "sign out everywhere" and an admin's

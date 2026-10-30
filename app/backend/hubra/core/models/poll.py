@@ -101,8 +101,10 @@ class PollVote(db.Model):
     option_id: Mapped[int] = mapped_column(
         db.Integer, ForeignKey("poll_options.id"), nullable=False
     )
-    member_id: Mapped[int] = mapped_column(
-        db.Integer, ForeignKey("members.id"), nullable=False
+    # None once the member is permanently deleted: the vote stays, anonymous,
+    # so a decided poll's result does not change afterwards.
+    member_id: Mapped[int | None] = mapped_column(
+        db.Integer, ForeignKey("members.id", ondelete="SET NULL"), nullable=True
     )
     # Set when a proxy holder cast this vote for ``member_id``.
     cast_by_id: Mapped[int | None] = mapped_column(

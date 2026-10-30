@@ -11,6 +11,8 @@ _EVENT_CATEGORIES = ["general", "training", "social", "meeting", "competition"]
 # Registrations that hold a place.
 _ACTIVE_REGISTRATION = ["registered", "approved", "attended"]
 _REGISTRATION_COUNT = "_registration_count"
+_PENDING_COUNT = "_pending_count"
+_PLACES_TAKEN = "_places_taken"
 
 
 class ClubEventSchema(ma.SQLAlchemyAutoSchema):
@@ -40,6 +42,13 @@ class ClubEventSchema(ma.SQLAlchemyAutoSchema):
 
     # Registration count
     registration_count = fields.Method("get_registration_count", dump_only=True)
+    # Places taken against max_attendees: each registration with its guests.
+    places_taken = fields.Method("get_places_taken", dump_only=True)
+    # Sign-ups waiting for an organiser (events that need approval).
+    pending_count = fields.Method("get_pending_count", dump_only=True)
+    # The viewer's own registration: registered, approved, pending,
+    # waitlisted, attended, declined, or None.
+    my_status = fields.Method("get_my_status", dump_only=True)
 
     def dump(self, obj, *, many=None):
         if not (self.many if many is None else many):
@@ -51,10 +60,17 @@ class ClubEventSchema(ma.SQLAlchemyAutoSchema):
             EventRegistration.event_id,
             EventRegistration.status.in_(_ACTIVE_REGISTRATION),
         )
+        prime_counts(
+            events,
+            _PENDING_COUNT,
+            EventRegistration.event_id,
+            EventRegistration.status == "pending",
+        )
+        _prime_places(events)
         try:
             return super().dump(events, many=many)
         finally:
-            clear_counts(events, _REGISTRATION_COUNT)
+            clear_counts(events, _REGISTRATION_COUNT, _PENDING_COUNT, _PLACES_TAKEN)
 
     def get_attendee_ids(self, obj):
         return [m.id for m in (obj.attendees or [])]
@@ -74,6 +90,91 @@ class ClubEventSchema(ma.SQLAlchemyAutoSchema):
                 )
             ),
         )
+
+
+    def get_places_taken(self, obj):
+        from hubra.api.events.services import EventService
+
+        return cached_count(
+            obj, _PLACES_TAKEN, lambda: EventService.places_taken(obj.id)
+        )
+
+    def get_pending_count(self, obj):
+        from sqlalchemy import func, select
+
+        return cached_count(
+            obj,
+            _PENDING_COUNT,
+            lambda: db.session.scalar(
+                select(func.count())
+                .select_from(EventRegistration)
+                .where(
+                    EventRegistration.event_id == obj.id,
+                    EventRegistration.status == "pending",
+                )
+            ),
+        )
+
+    def get_my_status(self, obj):
+        return _my_statuses().get(obj.id)
+
+
+def _prime_places(events) -> None:
+    """One grouped query for every event's places taken."""
+    from sqlalchemy import func, select
+
+    from hubra.api.events.services import _HOLDS_A_PLACE
+
+    ids = [e.id for e in events]
+    places: dict[int, int] = {}
+    if ids:
+        places = dict(
+            db.session.execute(
+                select(
+                    EventRegistration.event_id,
+                    func.sum(1 + EventRegistration.guests),
+                )
+                .where(
+                    EventRegistration.event_id.in_(ids),
+                    EventRegistration.status.in_(_HOLDS_A_PLACE),
+                )
+                .group_by(EventRegistration.event_id)
+            ).all()
+        )
+    for e in events:
+        e.__dict__[_PLACES_TAKEN] = int(places.get(e.id, 0))
+
+
+def _my_statuses() -> dict[int, str]:
+    """The current member's registration status per event, loaded once per
+    request ({} outside a member's request)."""
+    from flask import has_request_context, request
+    from sqlalchemy import select
+
+    if not has_request_context():
+        return {}
+    # Kept on the request itself: g can outlive one request (tests).
+    cached = request.environ.get("hubra.my_event_statuses")
+    if cached is not None:
+        return cached
+    from hubra.api.permissions import _current_member
+
+    try:
+        member = _current_member()
+    except Exception:
+        member = None
+    statuses: dict[int, str] = {}
+    if member is not None and getattr(member, "roles", None) is not None:
+        statuses = dict(
+            db.session.execute(
+                select(EventRegistration.event_id, EventRegistration.status).where(
+                    EventRegistration.member_id == member.id,
+                    EventRegistration.status != "cancelled",
+                )
+            ).all()
+        )
+    request.environ["hubra.my_event_statuses"] = statuses
+    return statuses
 
 
 from hubra.core.extensions import db  # noqa: E402 — needed by get_registration_count

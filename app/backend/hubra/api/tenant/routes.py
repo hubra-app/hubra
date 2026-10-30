@@ -24,6 +24,7 @@ from flask_jwt_extended import (
 from sqlalchemy import func, select
 
 from hubra.api.permissions import (
+    check_global_grant,
     check_impersonation_restriction,
     get_user_global_permissions,
     require_global_permission,
@@ -1420,6 +1421,22 @@ def list_global_roles():
     return jsonify({"roles": result}), 200
 
 
+def _global_role_keys(role_id: int) -> set[str]:
+    """The platform permission keys a platform role grants."""
+    from hubra.core.models.global_role import GlobalPermission, GlobalRolePermission
+
+    return set(
+        db.session.execute(
+            select(GlobalPermission.key)
+            .join(
+                GlobalRolePermission,
+                GlobalRolePermission.permission_id == GlobalPermission.id,
+            )
+            .where(GlobalRolePermission.role_id == role_id)
+        ).scalars()
+    )
+
+
 def _audit_global_role(action: str, target_type: str, target_id, details: dict) -> None:
     """Record a platform role change (who may run the platform)."""
     from flask import g
@@ -1451,6 +1468,7 @@ def create_global_role():
 
     if not name:
         raise_error(400, "VALIDATION_ERROR", "name is required")
+    check_global_grant(permission_keys)
 
     existing = db.session.scalar(select(GlobalRole).where(GlobalRole.name == name))
     if existing is not None:
@@ -1508,6 +1526,9 @@ def update_global_role(role_id: int):
         role.description = _body_text(body, "description") or None
 
     if permission_keys is not None:
+        # Only what is added must be the actor's own; a role keeps rights the
+        # actor lacks when its form is sent back unchanged.
+        check_global_grant(set(permission_keys) - _global_role_keys(role.id))
         # Replace all permissions
         db.session.query(GlobalRolePermission).filter(
             GlobalRolePermission.role_id == role_id
@@ -1625,6 +1646,8 @@ def assign_user_global_role(user_id: int):
     if role is None:
         raise_error(404, "NOT_FOUND", "Role not found")
 
+    check_global_grant(_global_role_keys(role.id))
+
     existing = db.session.scalar(
         select(UserGlobalRole).where(
             UserGlobalRole.user_id == user_id,
@@ -1658,6 +1681,9 @@ def remove_user_global_role(user_id: int, role_id: int):
     )
     if link is None:
         raise_error(404, "NOT_FOUND", "Role assignment not found")
+    # Taking a role away needs its rights too, so staff cannot strip those
+    # with more reach than themselves.
+    check_global_grant(_global_role_keys(role_id))
 
     db.session.delete(link)
     _audit_global_role("remove", "User", user_id, {"role_id": role_id})

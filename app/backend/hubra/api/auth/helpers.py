@@ -64,7 +64,7 @@ def get_current_member() -> Member:
             .where(Member.user_id == user_id)
             .where(Member.archived_at.is_(None))
         )
-        if member is None or member.is_disabled:
+        if member is None or member.is_blocked:
             raise_error(403, "FORBIDDEN", "No member profile in this tenant")
         return member
 

@@ -408,6 +408,10 @@ class AuthService:
             raise_error(
                 403, "ACCOUNT_DISABLED", "Account has been disabled by an administrator"
             )
+        if member.is_blocked:
+            raise_error(
+                403, "MEMBERSHIP_SUSPENDED", "Your membership in this club is suspended"
+            )
 
         _locked_until = member.locked_until
         if _locked_until is not None and _locked_until.tzinfo is None:

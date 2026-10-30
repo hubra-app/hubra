@@ -65,7 +65,7 @@ def _current_member():
             )
         )
         if member is not None:
-            return None if member.is_disabled else member
+            return None if member.is_blocked else member
         # No Member found — fall back to the User object so that
         # require_password_changed can pass it through for noTenant routes.
         return current_user
@@ -199,6 +199,26 @@ def member_is_admin(member) -> bool:
     return any(r.is_admin for r in (getattr(member, "roles", None) or []))
 
 
+# Rights that no single route stands for (a route checks them itself).
+# sync-permissions adds them to the Permission table like the route ones.
+EXTRA_PERMISSIONS = (
+    {
+        "key": "posts.posts.moderate",
+        "display_name": "Moderate posts and comments",
+        "resource": "posts",
+        "action": "moderate",
+        "blueprint": "posts_bp",
+    },
+)
+
+
+def member_has_permission(member, key: str) -> bool:
+    """True for an admin, or when one of the member's roles grants *key*."""
+    if member is None:
+        return False
+    return member_is_admin(member) or key in _get_member_permission_keys(member)
+
+
 def check_grant(actor, *, given=(), taken=(), keys=()) -> None:
     """403 unless *actor* may give the roles *given* (and permission *keys*)
     and take the roles *taken*.
@@ -224,6 +244,26 @@ def check_grant(actor, *, given=(), taken=(), keys=()) -> None:
     for role in given:
         wanted |= _get_role_permission_keys(role.id)
     missing = wanted - _get_member_permission_keys(actor)
+    if missing:
+        raise_error(
+            403,
+            "BEYOND_OWN_PERMISSIONS",
+            "You can only give permissions you have yourself: "
+            + ", ".join(sorted(missing)[:5]),
+        )
+
+
+def check_global_grant(keys) -> None:
+    """403 unless the platform user of this request holds every platform
+    permission in *keys* (a superadmin holds all). The platform's version of
+    ``check_grant``: ``roles.manage`` alone does not let anyone climb."""
+    user = getattr(g, "system_user", None)
+    if user is None:
+        return  # the system itself (CLI, tasks)
+    held = get_user_global_permissions(user.id)
+    if "*" in held:
+        return
+    missing = set(keys) - held
     if missing:
         raise_error(
             403,

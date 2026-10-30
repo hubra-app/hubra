@@ -24,7 +24,7 @@ def notify_permitted(
         .options(selectinload(Member.roles), selectinload(Member.user))
     ).all()
     for member in members:
-        if member.id == skip_member_id or member.is_disabled:
+        if member.id == skip_member_id or member.is_blocked:
             continue
         if member_is_admin(member) or perm_key in _get_member_permission_keys(member):
             notify_member(member.id, kind, title, msg)

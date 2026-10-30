@@ -163,6 +163,10 @@ class MemberSchema(ma.SQLAlchemyAutoSchema):
     membership_type = fields.Str(dump_default="regular")
     membership_until = fields.Date(allow_none=True, dump_default=None)
     custom_fields = fields.Dict(allow_none=True, dump_default=None)
+    directory_shared = fields.Method("get_directory_shared", dump_only=True)
+
+    def get_directory_shared(self, obj):
+        return list(obj.directory_shared or [])
 
     def get_name(self, obj):
         return obj.name

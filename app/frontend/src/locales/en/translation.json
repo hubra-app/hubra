@@ -220,7 +220,15 @@
       "confirmBody": "You lose access to the club's pages. Your invoices and entries stay with the club. To come back later, ask to join again."
     },
     "invoicesLoadFailed": "Your invoices could not be loaded.",
-    "openInvoices": "Open invoices"
+    "openInvoices": "Open invoices",
+    "directory": {
+      "title": "Show in the member directory",
+      "hint": "What other members see of you. The board always sees your details.",
+      "email": "Email",
+      "phone": "Phone and mobile",
+      "address": "Address",
+      "birthday": "Birthday"
+    }
   },
   "app": {
     "backend": {
@@ -693,7 +701,22 @@
       "social": "Social",
       "certification": "Induction",
       "meeting": "Meeting"
-    }
+    },
+    "requested": "Request sent",
+    "requestedMsg": "The organisers will confirm your sign-up for «{{title}}».",
+    "waitlisted": "On the waitlist",
+    "waitlistedMsg": "«{{title}}» is full. You move up as soon as a place is free.",
+    "maxAttendees": "Places",
+    "maxAttendeesPlaceholder": "Empty: no limit",
+    "requiresApproval": "Confirm sign-ups (organisers decide on each one)",
+    "pendingCount": "{{count}} waiting",
+    "withdrawRequest": "Withdraw request",
+    "leaveWaitlist": "Leave waitlist",
+    "pendingTitle": "Sign-ups waiting",
+    "noPending": "No sign-ups waiting.",
+    "guests": "{{count}} guests",
+    "decline": "Decline",
+    "approve": "Confirm"
   },
   "finance": {
     "addCategory": "Add Category",
@@ -2397,7 +2420,8 @@
     "contentRequired": "Content is required",
     "dateRequired": "Date is required",
     "questionRequired": "Question is required",
-    "dueRequired": "Due date is required"
+    "dueRequired": "Due date is required",
+    "wholeNumber": "Please enter a whole number"
   },
   "backups": {
     "size": "Size",

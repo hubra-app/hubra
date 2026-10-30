@@ -175,6 +175,12 @@ class Member(db.Model):
     leave_requested_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # Contact data this member shows other members in the club's directory
+    # ("email", "phone", "address", "birthday"). Nothing until they choose;
+    # those who manage members always see everything.
+    directory_shared: Mapped[list[str] | None] = mapped_column(
+        JSONB().with_variant(JSON, "sqlite"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -301,6 +307,13 @@ class Member(db.Model):
     @is_disabled.setter
     def is_disabled(self, value: bool) -> None:
         self.disabled_at = datetime.now(timezone.utc) if value else None
+
+    @property
+    def is_blocked(self) -> bool:
+        """May not open the club: switched off (``is_disabled``) or marked
+        "suspended". Unlike a disabled one, a suspended member's status is
+        set back to active by an admin, not their switch."""
+        return self.is_disabled or self.status == "suspended"
 
     @property
     def private_email_verified(self) -> bool:

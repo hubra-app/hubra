@@ -37,8 +37,8 @@ def test_last_place_goes_to_one(app, db, seeded_db, monkeypatch):
     # Widen the gap between "is there a place?" and taking it.
     is_full = event_services.EventService._is_full
 
-    def slow_is_full(ev):
-        full = is_full(ev)
+    def slow_is_full(ev, needed=1):
+        full = is_full(ev, needed)
         time.sleep(0.3)
         return full
 

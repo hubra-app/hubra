@@ -359,7 +359,8 @@ class TransactionService:
 
     @staticmethod
     def delete(transaction_id: int, actor_id: int) -> None:
-        """Delete a transaction, unlinking cascade invoice if present."""
+        """Delete a transaction. An invoice it was the income of stays, with
+        its status and send history; it is only unlinked."""
         transaction = TransactionService.get(transaction_id)
 
         log_audit(
@@ -375,9 +376,6 @@ class TransactionService:
         )
         if linked_invoice is not None:
             linked_invoice.transaction_id = None
-            _delete_send_history(linked_invoice.id)
-            db.session.flush()
-            db.session.delete(linked_invoice)
             db.session.flush()
 
         db.session.delete(transaction)

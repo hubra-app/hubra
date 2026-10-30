@@ -109,6 +109,19 @@ export interface ClubEvent {
   coverImageUrl?: string | null;
   color?: string | null;
   registrationCount?: number;
+  /** Places taken against maxAttendees (members with their guests). */
+  placesTaken?: number;
+  /** Sign-ups waiting for an organiser's approval. */
+  pendingCount?: number;
+  /** The viewer's own sign-up, if any. */
+  myStatus?:
+    | "registered"
+    | "approved"
+    | "waitlisted"
+    | "pending"
+    | "attended"
+    | "declined"
+    | null;
 }
 
 export interface Poll {

@@ -8,7 +8,7 @@ from marshmallow import ValidationError
 
 from hubra.api.permissions import (
     _current_member,
-    member_is_admin,
+    member_has_permission,
     permission_required,
 )
 from hubra.api.posts.services import PostService, PostsService
@@ -33,14 +33,15 @@ _comments_schema = PostCommentSchema(many=True)
 _comment_create_schema = CommentCreateSchema()
 
 
-def _is_author_or_admin(post, member_id: int) -> bool:
-    """Return True if *member_id* is the post author or the member is admin."""
-    if post.author_id == member_id:
+_MODERATE = "posts.posts.moderate"
+
+
+def _is_author_or_moderator(item, member_id: int) -> bool:
+    """The author of a post or comment, an admin, or a member whose role may
+    moderate (``posts.posts.moderate``)."""
+    if item.author_id == member_id:
         return True
-    member = _current_member()
-    if member is not None and member_is_admin(member):
-        return True
-    return False
+    return member_has_permission(_current_member(), _MODERATE)
 
 
 # ── GET /posts ────────────────────────────────────────────────────────────────
@@ -94,7 +95,7 @@ def update_post(post_id: int):
     post = PostService.get(post_id)
     member_id = get_current_member().id
 
-    if not _is_author_or_admin(post, member_id):
+    if not _is_author_or_moderator(post, member_id):
         return api_error("FORBIDDEN", "You can only edit your own posts", 403)
 
     body = request.get_json(silent=True) or {}
@@ -124,7 +125,7 @@ def delete_post(post_id: int):
     post = PostService.get(post_id)
     member_id = get_current_member().id
 
-    if not _is_author_or_admin(post, member_id):
+    if not _is_author_or_moderator(post, member_id):
         return api_error("FORBIDDEN", "You can only delete your own posts", 403)
 
     PostService.delete(post_id, member_id)
@@ -231,7 +232,7 @@ def delete_comment(post_id: int, comment_id: int):
             "NOT_FOUND", f"Comment {comment_id} not found on post {post_id}", 404
         )
 
-    if comment.author_id != member_id and not member_is_admin(_current_member()):
+    if not _is_author_or_moderator(comment, member_id):
         return api_error("FORBIDDEN", "You can only delete your own comments", 403)
 
     PostService.delete_comment(comment_id, member_id)

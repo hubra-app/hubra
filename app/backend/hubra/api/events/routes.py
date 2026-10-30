@@ -248,6 +248,27 @@ def cancel_registration(event_id: int):
     return jsonify(EventRegistrationSchema().dump(registration)), 200
 
 
+# ── Registrations, and sign-ups waiting for approval ─────────────────────────
+
+
+@events_bp.get("/<int:event_id>/registrations")
+@permission_required("events", "add_attendee", "See and approve event sign-ups")
+def list_registrations(event_id: int):
+    status = request.args.get("status") or None
+    registrations = EventService.registrations(event_id, status)
+    return jsonify(EventRegistrationSchema(many=True).dump(registrations)), 200
+
+
+@events_bp.post("/<int:event_id>/registrations/<int:member_id>/<any(approve, decline):decision>")
+@permission_required("events", "add_attendee", "See and approve event sign-ups")
+def decide_registration(event_id: int, member_id: int, decision: str):
+    registration = EventService.decide(
+        event_id, member_id, decision == "approve", get_current_member().id
+    )
+    db.session.commit()
+    return jsonify(EventRegistrationSchema().dump(registration)), 200
+
+
 # ── POST /events/<id>/attend/<member_id> — mark attendance ───────────────────
 
 
@@ -330,7 +351,7 @@ def calendar_feed(token: str):
     if not is_enabled("events"):
         return api_error("NOT_FOUND", "Unknown calendar", 404)
     member = db.session.get(Member, data.get("m"))
-    if member is None or member.archived_at is not None or member.is_disabled:
+    if member is None or member.archived_at is not None or member.is_blocked:
         return api_error("NOT_FOUND", "Unknown calendar", 404)
 
     # The last 90 days and everything ahead.

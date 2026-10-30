@@ -65,6 +65,8 @@ def test_no_invoice_email_when_switched_off(app, billable_tier_db):
 def overdue_invoice(db, billable_tier_db):
     from hubra.core.models.finance import Invoice
 
+    # Reminders only go to a verified address.
+    billable_tier_db["member_billed"].private_email_verified = True
     inv = Invoice(
         member_id=billable_tier_db["member_billed"].id,
         issued=date.today() - timedelta(days=40),

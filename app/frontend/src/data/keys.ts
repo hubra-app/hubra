@@ -23,9 +23,11 @@ export const qk = {
     mailSettings: ['account', 'mail-settings'] as const,
     plan: ['my-plan'] as const,
     leave: ['my-leave'] as const,
+    directory: ['my-directory'] as const,
   },
 
   events: ['events'] as const,
+  eventPending: (id: string) => ['events', id, 'pending'] as const,
   polls: ['polls'] as const,
   pollProxy: (id: string) => ['poll-proxy', id] as const,
   posts: {
