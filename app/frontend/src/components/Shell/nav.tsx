@@ -120,6 +120,7 @@ export function buildNav(
 ): NavSection[] {
   const counts: Record<string, number> = {
     '/app/members': c.members,
+    '/app/members/applications': c.applications,
     '/app/groups': c.groups,
   }
   const items = modules
@@ -201,6 +202,7 @@ export function getParentPath(pathname: string, navPaths: string[] = []): string
     ['/app/dashboard/global', '/app/dashboard'],
     ['/app/dashboard/me', '/app/dashboard'],
     ['/app/members', '/app/members'],
+    ['/app/members/applications', '/app/members/applications'],
     ['/app/groups', '/app/groups'],
     ['/app/operations/events', '/app/operations/events'],
     ['/app/operations/polls', '/app/operations/polls'],
