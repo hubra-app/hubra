@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Button,
   NumberInput,
@@ -11,8 +12,10 @@ import {
 } from '@mantine/core'
 import { useT } from '@/locales/i18n'
 import { Modal } from '@/components/ui'
+import { useAuth, useToast } from '@/context/AppContext'
 import type { Transaction, TransactionCategory } from '@/types'
-import type { TransactionCreate } from '@/api/finance'
+import { createTxCategory, type TransactionCreate } from '@/api/finance'
+import { qk } from '@/data/keys'
 import { formatDateTime } from '@/format'
 import { PAYMENT_METHODS, methodLabel } from './transactionLabels'
 
@@ -52,6 +55,9 @@ function initialValues(
   }
 }
 
+/** The option value that creates the typed category instead of picking one. */
+const NEW_CATEGORY = '__new__'
+
 /**
  * One form to record a transaction and to change it later. Mount it with a
  * `key` per transaction so it starts from that transaction's values.
@@ -80,6 +86,56 @@ export function TransactionFormModal({
   const set = <K extends keyof TransactionFormValues>(key: K, value: TransactionFormValues[K]) =>
     setValues((v) => ({ ...v, [key]: value }))
 
+  // The category is optional. Typing a name that doesn't exist yet offers to
+  // create it here, so nobody has to leave the form for Finanzen → Kategorien.
+  const { hasPermission } = useAuth()
+  const { notify } = useToast()
+  const queryClient = useQueryClient()
+  const canCreateCategory = hasPermission('transaction_categories.transaction_categories.create')
+  const [created, setCreated] = useState<TransactionCategory[]>([])
+  const [categorySearch, setCategorySearch] = useState('')
+  const [creatingCategory, setCreatingCategory] = useState(false)
+  const allCategories = [
+    ...categories,
+    ...created.filter((c) => !categories.some((x) => x.id === c.id)),
+  ]
+  const newName = categorySearch.trim()
+  const offerCreate =
+    canCreateCategory &&
+    !!newName &&
+    !allCategories.some((c) => c.name.toLowerCase() === newName.toLowerCase())
+  const categoryOptions = [
+    ...allCategories.map((c) => ({ value: c.id, label: c.name })),
+    ...(offerCreate
+      ? [
+          {
+            value: NEW_CATEGORY,
+            label: t('finance.form.createCategory', '+ «{{name}}» als Kategorie anlegen', {
+              name: newName,
+            }),
+          },
+        ]
+      : []),
+  ]
+  const createCategory = async (name: string) => {
+    setCreatingCategory(true)
+    try {
+      const cat = await createTxCategory({ name })
+      setCreated((list) => [...list, cat])
+      set('categoryId', cat.id)
+      setCategorySearch(cat.name)
+      queryClient.invalidateQueries({ queryKey: qk.transactions.categories })
+    } catch (err: unknown) {
+      notify(
+        'error',
+        t('finance.couldNotCreateCategory', 'Kategorie konnte nicht erstellt werden.'),
+        err instanceof Error ? err.message : undefined,
+      )
+    } finally {
+      setCreatingCategory(false)
+    }
+  }
+
   const errors = {
     description: !values.description.trim()
       ? t('finance.form.descriptionRequired', 'Beschreibe die Buchung kurz.')
@@ -89,9 +145,6 @@ export function TransactionFormModal({
         ? t('finance.form.amountRequired', 'Gib einen Betrag über 0 ein.')
         : null,
     date: !values.date ? t('finance.form.dateRequired', 'Wähle ein Datum.') : null,
-    categoryId: !values.categoryId
-      ? t('finance.form.categoryRequired', 'Wähle eine Kategorie.')
-      : null,
   }
   const valid = !Object.values(errors).some(Boolean)
   const show = (key: keyof typeof errors) => (touched ? errors[key] : null)
@@ -172,13 +225,23 @@ export function TransactionFormModal({
             error={show('date')}
           />
           <Select
-            label={t('finance.categoryLabel', 'Kategorie')}
-            data={categories.map((c) => ({ value: c.id, label: c.name }))}
+            label={t('finance.form.categoryOptional', 'Kategorie (optional)')}
+            data={categoryOptions}
             value={values.categoryId || null}
-            onChange={(v) => set('categoryId', v ?? '')}
-            placeholder={t('finance.selectCategory', 'Kategorie wählen …')}
+            onChange={(v) => {
+              if (v === NEW_CATEGORY) void createCategory(newName)
+              else set('categoryId', v ?? '')
+            }}
+            searchValue={categorySearch}
+            onSearchChange={setCategorySearch}
+            placeholder={
+              canCreateCategory && allCategories.length === 0
+                ? t('finance.form.typeCategory', 'Name eingeben, um eine anzulegen')
+                : t('finance.selectCategory', 'Kategorie wählen …')
+            }
             searchable
-            error={show('categoryId')}
+            clearable
+            disabled={creatingCategory}
             nothingFoundMessage={t('finance.form.noCategory', 'Keine passende Kategorie')}
           />
           <Select
@@ -189,12 +252,17 @@ export function TransactionFormModal({
             allowDeselect={false}
           />
         </SimpleGrid>
-        {categories.length === 0 && (
+        {allCategories.length === 0 && (
           <Text size="sm" c="dimmed">
-            {t(
-              'finance.noCategoriesHint',
-              'Lege zuerst unter Finanzen → Kategorien eine Kategorie an.',
-            )}{' '}
+            {canCreateCategory
+              ? t(
+                  'finance.form.noCategoriesYet',
+                  'Noch keine Kategorien. Tippe oben einen Namen ein, um eine anzulegen, oder lass das Feld leer.',
+                )
+              : t(
+                  'finance.form.noCategoriesOptional',
+                  'Noch keine Kategorien. Du kannst die Buchung auch ohne Kategorie erfassen.',
+                )}{' '}
             {onOpenCategories && (
               <Button variant="subtle" size="compact-sm" onClick={onOpenCategories}>
                 {t('finance.form.openCategories', 'Zu den Kategorien')}

@@ -26,16 +26,18 @@ export function MemberPicker({ value, onChange, exclude, noneLabel, ...rest }: M
   const id = value == null || value === '' ? null : String(value)
   const [search, setSearch] = useState('')
   const [picked, setPicked] = useState<Member | null>(null)
-  // Once a member is chosen the box shows their name: list everyone again
-  // instead of searching for that name.
-  const { data, isFetching } = useMemberSearch(picked && search === picked.name ? '' : search)
   // The chosen member may not be on the current page of results.
   const { data: current } = useQuery({
     queryKey: qk.members.one(id ?? ''),
     queryFn: () => getMember(id!),
-    enabled: id !== null && picked?.id !== id && !data?.members.some((m) => m.id === id),
+    enabled: id !== null && picked?.id !== id,
     staleTime: 60_000,
   })
+  // The box shows the chosen member's name, or the "nobody" label. Searching
+  // for that text would hide everyone else, so list all members until the
+  // user types something of their own.
+  const chosenLabel = id === null ? noneLabel : (picked?.id === id ? picked : current)?.name
+  const { data, isFetching } = useMemberSearch(search === chosenLabel ? '' : search)
 
   const members = useMemo(() => {
     const list = (data?.members ?? []).filter((m) => !exclude?.includes(m.id))
@@ -64,6 +66,11 @@ export function MemberPicker({ value, onChange, exclude, noneLabel, ...rest }: M
       }}
       searchValue={search}
       onSearchChange={setSearch}
+      // Typing replaces the shown name instead of appending to it.
+      onFocus={(e) => {
+        e.currentTarget.select()
+        rest.onFocus?.(e)
+      }}
       nothingFoundMessage={
         isFetching
           ? t('common.loading', 'Wird geladen …')

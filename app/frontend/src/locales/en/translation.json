@@ -964,7 +964,12 @@
       "openCategories": "Go to categories",
       "payee": "From / to (optional)",
       "payeePlaceholder": "e.g. Hardware store Ltd",
-      "record": "Record transaction"
+      "record": "Record transaction",
+      "createCategory": "+ Create category “{{name}}”",
+      "categoryOptional": "Category (optional)",
+      "typeCategory": "Type a name to create one",
+      "noCategoriesYet": "No categories yet. Type a name above to create one, or leave the field empty.",
+      "noCategoriesOptional": "No categories yet. You can record the transaction without one."
     },
     "noTransactionsFilterHint": "Change the search or the filters.",
     "noTransactionsYet": "No transactions yet",

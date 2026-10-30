@@ -129,7 +129,7 @@ class TransactionCreateSchema(ma.Schema):
 
     date = fields.Date(required=True)
     description = fields.Str(required=True, validate=validate.Length(min=1, max=255))
-    category_id = fields.Int(required=True)
+    category_id = fields.Int(allow_none=True, load_default=None)
     member_id = fields.Int(allow_none=True, load_default=None)
     payee_name = fields.Str(allow_none=True, load_default=None)
     amount = fields.Float(
@@ -155,7 +155,7 @@ class TransactionUpdateSchema(ma.Schema):
     amount = fields.Float(validate=validate.Range(min=0, min_inclusive=False))
     method = fields.Str(validate=validate.OneOf(_PAYMENT_METHODS))
     type = fields.Str(validate=validate.OneOf(_TRANSACTION_TYPES))
-    category_id = fields.Int()
+    category_id = fields.Int(allow_none=True)
     member_id = fields.Int(allow_none=True)
     payee_name = fields.Str(allow_none=True)
 

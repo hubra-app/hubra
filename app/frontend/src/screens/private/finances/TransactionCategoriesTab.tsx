@@ -46,8 +46,7 @@ export function TransactionCategoriesTab() {
     setCColor('#2596be')
     setAddOpen(true)
   }
-  // A new club has no categories, and no transaction can be recorded
-  // without one: offer the usual ones in one go.
+  // A new club has no categories: offer the usual ones in one go.
   const [starting, setStarting] = useState(false)
   const createStarterSet = async () => {
     const starter = [

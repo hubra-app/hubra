@@ -101,6 +101,26 @@ def test_create_transaction_invalid_category(client, auth_headers, seeded_db):
     assert resp.status_code == 404
 
 
+def test_create_transaction_without_category(client, auth_headers, seeded_db):
+    payload = _tx_payload(category_id=None)
+    del payload["category_id"]
+    resp = client.post(
+        "/api/v1/finance/transactions", json=payload, headers=auth_headers
+    )
+    assert resp.status_code == 201
+    assert resp.get_json()["category_id"] is None
+
+
+def test_patch_transaction_clears_category(client, auth_headers, transaction):
+    resp = client.patch(
+        f"/api/v1/finance/transactions/{transaction['id']}",
+        json={"category_id": None},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+    assert resp.get_json()["category_id"] is None
+
+
 # ── PATCH transaction status ──────────────────────────────────────────────────
 
 

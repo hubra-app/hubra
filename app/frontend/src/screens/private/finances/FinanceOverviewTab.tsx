@@ -248,7 +248,11 @@ export function FinanceOverviewTab() {
                   </Table.Tr>
                 ) : (
                   recentTx.map((tx) => (
-                    <Table.Tr key={tx.id}>
+                    <Table.Tr
+                      key={tx.id}
+                      onClick={() => go(`/app/finance/transactions?tx=${tx.id}`)}
+                      style={{ cursor: 'pointer' }}
+                    >
                       <Table.Td
                         data-label={t('finance.description', 'Beschreibung')}
                         style={{ maxWidth: 200 }}

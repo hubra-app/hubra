@@ -251,7 +251,7 @@ export async function updateTransaction(
   if (input.method !== undefined) body.method = input.method;
   if (input.type !== undefined) body.type = input.type;
   if (input.categoryId !== undefined)
-    body.category_id = Number(input.categoryId);
+    body.category_id = input.categoryId ? Number(input.categoryId) : null;
   if (input.memberId !== undefined) body.member_id = Number(input.memberId);
   if (input.payeeName !== undefined) body.payee_name = input.payeeName;
   const b = await apiFetch<BackendTransaction>(`/finance/transactions/${id}`, {

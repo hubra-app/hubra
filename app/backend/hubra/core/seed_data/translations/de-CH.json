@@ -2555,5 +2555,10 @@
   "mail.email.invoice_reminder.button": "Rechnung begleichen",
   "mail.email.invoice.number": "Rechnung Nr.",
   "mail.email.invoice.amount": "Betrag",
-  "mail.email.invoice.due": "Fällig am"
+  "mail.email.invoice.due": "Fällig am",
+  "finance.form.createCategory": "+ «{{name}}» als Kategorie anlegen",
+  "finance.form.categoryOptional": "Kategorie (optional)",
+  "finance.form.typeCategory": "Name eingeben, um eine anzulegen",
+  "finance.form.noCategoriesYet": "Noch keine Kategorien. Tippe oben einen Namen ein, um eine anzulegen, oder lass das Feld leer.",
+  "finance.form.noCategoriesOptional": "Noch keine Kategorien. Du kannst die Buchung auch ohne Kategorie erfassen."
 }

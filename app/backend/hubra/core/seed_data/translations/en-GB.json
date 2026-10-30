@@ -2555,5 +2555,10 @@
   "mail.email.invoice_reminder.button": "Settle invoice",
   "mail.email.invoice.number": "Invoice no.",
   "mail.email.invoice.amount": "Amount",
-  "mail.email.invoice.due": "Due on"
+  "mail.email.invoice.due": "Due on",
+  "finance.form.createCategory": "+ Create category “{{name}}”",
+  "finance.form.categoryOptional": "Category (optional)",
+  "finance.form.typeCategory": "Type a name to create one",
+  "finance.form.noCategoriesYet": "No categories yet. Type a name above to create one, or leave the field empty.",
+  "finance.form.noCategoriesOptional": "No categories yet. You can record the transaction without one."
 }
