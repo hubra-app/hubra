@@ -4372,7 +4372,8 @@
     "Iistellige"
    ],
    "shell.breadcrumbs.system": [
-    "System › Berächtigunge"
+    "System › Berächtigunge",
+    "System › Berechtigungen"
    ],
    "shell.breadcrumbs.tiers": [
     "Mitglieder › Mitgliedsstufe"
@@ -4947,6 +4948,12 @@
    ],
    "verifyEmail.verifying": [
     "Wird di E-Mail bestätigt..."
+   ],
+   "shell.sections.system": [
+    "System"
+   ],
+   "shell.breadcrumbs.roles": [
+    "System › Rollen"
    ]
   },
   "en-GB": {
@@ -6381,6 +6388,15 @@
    ],
    "groups.selfJoinHint": [
     "For interest groups. Members find it under My account."
+   ],
+   "shell.sections.system": [
+    "System"
+   ],
+   "shell.breadcrumbs.system": [
+    "System › Permissions"
+   ],
+   "shell.breadcrumbs.roles": [
+    "System › Roles"
    ]
   }
  }

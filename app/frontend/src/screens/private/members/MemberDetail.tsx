@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Button, Paper, Title } from '@mantine/core'
+import { formatDate } from '@/format'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT } from '@/locales/i18n'
 import { useParams } from 'react-router-dom'
@@ -273,8 +274,8 @@ export function MemberDetailScreen({
             <DetailRow label={t('common.roles', 'Rollen')}>
               {roleLabels(m.roles)}
             </DetailRow>
-            <DetailRow label={t('members.joined')} mono>
-              {m.joined || <Empty />}
+            <DetailRow label={t('members.joined')}>
+              {m.joined ? formatDate(m.joined) : <Empty />}
             </DetailRow>
             <DetailRow label={t('members.lastSeen')}>
               <LastSeenBadge lastSeen={m.lastSeen} />

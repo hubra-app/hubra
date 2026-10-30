@@ -8,7 +8,20 @@ const DE: Record<string, { name: string; description: string; settings?: Record<
   bindings: { name: 'Verknüpfungen', description: 'Vereinsdaten mit externen Schnittstellen abgleichen' },
   codes: { name: 'Codes', description: 'Verschlüsselte Türcodes und Zugangscodes' },
   core: { name: 'Basis', description: 'Anmeldung, Konten, Einstellungen, Dashboard, Protokoll und Mitteilungen' },
-  events: { name: 'Anlässe', description: 'Anlässe, Workshops und Treffen mit Anmeldung' },
+  events: {
+    name: 'Anlässe',
+    description: 'Anlässe, Workshops und Treffen mit Anmeldung',
+    settings: {
+      notify_members: [
+        'Mitglieder über neue Anlässe informieren',
+        'Eine Mitteilung in der App an alle Mitglieder, sobald ein Anlass veröffentlicht ist',
+      ],
+      event_types: [
+        'Anlass-Typen',
+        'Die Typen zur Auswahl, mit Komma getrennt (zum Beispiel Training, Match, Versammlung). Leer: Workshop, Geselliges, Einführung und Sitzung.',
+      ],
+    },
+  },
   finance: { name: 'Finanzen', description: 'Buchungen, Rechnungen mit Schweizer QR-Rechnung und Mahnungen' },
   functions: { name: 'Funktionen', description: 'Vereinsämter und wer sie innehat' },
   groups: { name: 'Gruppen', description: 'Teams, Kommissionen und Interessengruppen' },

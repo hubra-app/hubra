@@ -1765,6 +1765,15 @@
       "joinedNewest": "Newest first",
       "joinedOldest": "Oldest first",
       "status": "Status"
+    },
+    "since": "Since {{date}}",
+    "invites": {
+      "title": "Open invitations",
+      "expired": "Expired on {{date}}",
+      "sentOn": "Sent on {{date}}, valid until {{until}}",
+      "resend": "Send again",
+      "cancel": "Withdraw",
+      "cancelled": "Invitation withdrawn"
     }
   },
   "notifications": {
@@ -1845,7 +1854,10 @@
     "editTitle": "Edit poll",
     "remindersSentMsg_one": "{{count}} reminder sent.",
     "remindersSentMsg_other": "{{count}} reminders sent.",
-    "addOption": "+ Add option"
+    "addOption": "+ Add option",
+    "empty": "No polls yet.",
+    "emptyHint": "Ask the club what it thinks, for example about the next outing or a date.",
+    "emptyMember": "Once the board starts a poll, you can vote here."
   },
   "posts": {
     "backToPosts": "Back to posts",
@@ -1985,14 +1997,15 @@
       "polls": "Club life › Polls",
       "posts": "Club life › Posts",
       "settings": "Settings",
-      "system": "System › Permissions",
+      "system": "Administration › Roles",
       "tiers": "Members › Tiers",
       "tracking": "Mail › Delivery log",
       "transactions": "Finance › Income and expenses",
       "translations": "Translations",
       "txCategories": "Finance › Categories",
-      "roles": "System › Roles",
-      "health": "System › Health"
+      "roles": "Administration › Roles",
+      "health": "System › Health",
+      "dashboardMe": "Dashboard › Personal"
     },
     "emailVerify": {
       "banner": "Your private email address isn't verified yet. Some features are only available after that.",
@@ -2041,7 +2054,8 @@
       "tracking": "Delivery log",
       "transactions": "Transactions",
       "translations": "Translations",
-      "txCategories": "Categories"
+      "txCategories": "Categories",
+      "activeMembersCount": "{{count}} active members"
     },
     "noPermission": "You don't have permission to view this page.",
     "notif": {
@@ -2063,7 +2077,8 @@
       "placeholder": "Search…",
       "pollOpen": "Open",
       "pollClosed": "Closed",
-      "invoice": "Invoice {{id}} – {{member}}"
+      "invoice": "Invoice {{id}} – {{member}}",
+      "open": "Search"
     },
     "searchKind": {
       "audit": "Audit",
@@ -2081,8 +2096,9 @@
       "management": "Club life",
       "me": "Personal",
       "operations": "Operations",
-      "system": "System",
-      "workspace": "Club"
+      "system": "Administration",
+      "workspace": "Club",
+      "activities": "Club life"
     },
     "tooltips": {
       "dismiss": "Dismiss",

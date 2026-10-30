@@ -27,10 +27,10 @@ module = Module(
     nav=(
         NavItem(
             "/app/operations/posts",
-            "shell.nav.management",
-            "layout-list",
-            order=42,
-            group="management",
+            "shell.nav.posts",
+            "news",
+            section="activities",
+            order=32,
         ),
     ),
     tables=("posts", "post_likes", "post_comments"),

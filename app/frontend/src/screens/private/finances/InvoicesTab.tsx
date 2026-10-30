@@ -29,7 +29,7 @@ import {
 } from '@/api/finance'
 import { MemberPicker } from '@/components/MemberPicker'
 import { listTiers, calculateTierCost } from '@/api/tiers'
-import { formatCHF } from '@/format'
+import { formatCHF, formatDate } from '@/format'
 import {
   useMarkInvoicePaid,
   useSendInvoiceReminder,
@@ -386,7 +386,7 @@ export function InvoicesTab() {
                   fontSize: 'var(--mantine-font-size-sm)',
                 }}
               >
-                {inv.issued}
+                {inv.issued ? formatDate(inv.issued) : '—'}
               </span>
             ),
           },
@@ -401,7 +401,7 @@ export function InvoicesTab() {
                   fontSize: 'var(--mantine-font-size-sm)',
                 }}
               >
-                {inv.due}
+                {inv.due ? formatDate(inv.due) : '—'}
               </span>
             ),
           },

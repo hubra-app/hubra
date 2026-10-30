@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useClubProfile } from '@/data/clubProfile'
 import { setClubColors } from '@/branding'
+import { setDateFormat } from '@/format'
 
 // The Hubra icons from index.html, to put back when a club removes its logo.
 const defaultIcons = new Map<HTMLLinkElement, string>()
@@ -20,6 +21,8 @@ function setFavicon(logo: string | null) {
 /** Puts the club's colours on the theme and its logo on the browser tab. */
 export function ClubBranding() {
   const { data } = useClubProfile()
+  // Before the pages below render, so their dates use the club's format.
+  setDateFormat(data?.date_format)
 
   useEffect(() => {
     if (!data) return

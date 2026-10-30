@@ -16,7 +16,9 @@ describe('getParentPath', () => {
 
   it('keeps built-in sub-pages on their entry', () => {
     const nav = ['/app/operations/events', '/app/finance', '/app/account/settings']
-    expect(getParentPath('/app/operations/polls', nav)).toBe('/app/operations/events')
+    // Polls have their own sidebar entry now.
+    expect(getParentPath('/app/operations/polls', nav)).toBe('/app/operations/polls')
+    expect(getParentPath('/app/dashboard/me', nav)).toBe('/app/dashboard')
     expect(getParentPath('/app/finance/invoices/3', nav)).toBe('/app/finance')
     expect(getParentPath('/app/account', nav)).toBe('/app/account/settings')
   })

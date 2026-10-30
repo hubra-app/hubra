@@ -17,7 +17,14 @@ import { qk } from '@/data/keys'
 // One shared empty list, so an unloaded query keeps the same value each render.
 const NONE: never[] = []
 
-export function GlobalSearch() {
+export function GlobalSearch({
+  fullWidth = false,
+  onDone,
+}: {
+  /** Phones: fills the bar, focuses itself and reports when it is done. */
+  fullWidth?: boolean
+  onDone?: () => void
+} = {}) {
   const { t } = useT()
   const { go } = useNav()
   // A switched-off module answers 403: only search what is on.
@@ -226,6 +233,7 @@ export function GlobalSearch() {
     clearSearch()
     setResults([])
     setDropOpen(false)
+    onDone?.()
   }
 
   useEffect(() => {
@@ -262,12 +270,13 @@ export function GlobalSearch() {
   return (
     <Box
       ref={searchRef}
-      className="mantine-visible-from-sm"
-      style={{ position: 'relative', flexShrink: 0 }}
+      className={fullWidth ? undefined : 'mantine-visible-from-sm'}
+      style={{ position: 'relative', flexShrink: 0, flex: fullWidth ? 1 : undefined }}
     >
       <TextInput
         size="sm"
-        w={280}
+        w={fullWidth ? '100%' : 280}
+        autoFocus={fullWidth}
         leftSection={
           <IconSearch
             size={16}
@@ -295,6 +304,7 @@ export function GlobalSearch() {
             setDropOpen(false)
             clearSearch()
             inputRef.current?.blur()
+            onDone?.()
           } else if (e.key === 'ArrowDown' && results.length) {
             e.preventDefault()
             setDropOpen(true)
@@ -316,7 +326,7 @@ export function GlobalSearch() {
             position: 'absolute',
             top: '110%',
             left: 0,
-            width: 380,
+            width: fullWidth ? '100%' : 380,
             background: 'var(--hb-surface)',
             border: '1px solid var(--hb-border)',
             borderRadius: 10,

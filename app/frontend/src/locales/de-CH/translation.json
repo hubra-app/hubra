@@ -1765,6 +1765,15 @@
       "joinedNewest": "Neueste zuerst",
       "joinedOldest": "Älteste zuerst",
       "status": "Status"
+    },
+    "since": "Seit {{date}}",
+    "invites": {
+      "title": "Offene Einladungen",
+      "expired": "Abgelaufen am {{date}}",
+      "sentOn": "Gesendet am {{date}}, gültig bis {{until}}",
+      "resend": "Erneut senden",
+      "cancel": "Zurückziehen",
+      "cancelled": "Einladung zurückgezogen"
     }
   },
   "notifications": {
@@ -1845,7 +1854,10 @@
     "editTitle": "Umfrage bearbeiten",
     "remindersSentMsg_one": "{{count}} Erinnerung gesendet.",
     "remindersSentMsg_other": "{{count}} Erinnerungen gesendet.",
-    "addOption": "+ Option hinzufügen"
+    "addOption": "+ Option hinzufügen",
+    "empty": "Noch keine Umfragen.",
+    "emptyHint": "Frag den Verein nach seiner Meinung, zum Beispiel zum nächsten Ausflug oder zu einem Termin.",
+    "emptyMember": "Sobald der Vorstand eine Umfrage startet, kannst du hier abstimmen."
   },
   "posts": {
     "backToPosts": "Zurück zu den Beiträgen",
@@ -1985,14 +1997,15 @@
       "polls": "Vereinsleben › Umfragen",
       "posts": "Vereinsleben › Beiträge",
       "settings": "Einstellungen",
-      "system": "System › Berechtigungen",
+      "system": "Verwaltung › Rollen",
       "tiers": "Mitglieder › Stufen",
       "tracking": "Mail › Zustellprotokoll",
       "transactions": "Finanzen › Einnahmen und Ausgaben",
       "translations": "Übersetzungen",
       "txCategories": "Finanzen › Kategorien",
-      "roles": "System › Rollen",
-      "health": "System › Systemzustand"
+      "roles": "Verwaltung › Rollen",
+      "health": "System › Systemzustand",
+      "dashboardMe": "Dashboard › Persönlich"
     },
     "emailVerify": {
       "banner": "Deine private E-Mail-Adresse ist noch nicht bestätigt. Einige Funktionen sind erst danach verfügbar.",
@@ -2041,7 +2054,8 @@
       "tracking": "Zustellprotokoll",
       "transactions": "Buchungen",
       "translations": "Übersetzungen",
-      "txCategories": "Kategorien"
+      "txCategories": "Kategorien",
+      "activeMembersCount": "{{count}} aktive Mitglieder"
     },
     "noPermission": "Du hast keine Berechtigung für diese Seite.",
     "notif": {
@@ -2063,7 +2077,8 @@
       "placeholder": "Suchen …",
       "pollOpen": "Offen",
       "pollClosed": "Geschlossen",
-      "invoice": "Rechnung {{id}} – {{member}}"
+      "invoice": "Rechnung {{id}} – {{member}}",
+      "open": "Suchen"
     },
     "searchKind": {
       "audit": "Protokoll",
@@ -2081,8 +2096,9 @@
       "management": "Vereinsleben",
       "me": "Persönlich",
       "operations": "Betrieb",
-      "system": "System",
-      "workspace": "Verein"
+      "system": "Verwaltung",
+      "workspace": "Verein",
+      "activities": "Vereinsleben"
     },
     "tooltips": {
       "dismiss": "Ausblenden",

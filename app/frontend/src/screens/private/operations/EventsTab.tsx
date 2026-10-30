@@ -13,7 +13,7 @@ import {
   IconLogin,
   IconLogout as Leave,
 } from '@tabler/icons-react'
-import { useToast, useAuth } from '@/context/AppContext'
+import { useToast, useAuth, useData } from '@/context/AppContext'
 import { qk } from '@/data/keys'
 import { useEvents, useListCache, useMyJoinedEvents } from '@/data/lists'
 import {
@@ -54,6 +54,15 @@ const limitOf = (value: string) => (value.trim() ? Number(value) : null)
 
 const EVENT_TYPES = ['Workshop', 'Social', 'Certification', 'Meeting']
 
+/** The club's own types (Events module setting), or the built-in four. */
+function clubEventTypes(raw: unknown): string[] {
+  const own = String(raw ?? '')
+    .split(',')
+    .map((x) => x.trim())
+    .filter(Boolean)
+  return own.length ? own : EVENT_TYPES
+}
+
 /** Stored event types are English keys; show them in the user's language. */
 function eventTypeLabel(type: string) {
   const defaults: Record<string, string> = {
@@ -76,6 +85,10 @@ export function EventsTab() {
   const { t, i18n } = useT()
   const joinEventMutation = useToggleJoinEvent()
   const canCreate = hasPermission('events.events.create')
+  const { moduleList } = useData()
+  const eventTypes = clubEventTypes(
+    moduleList.find((m) => m.code === 'events')?.config?.event_types,
+  )
   const canUpdate = hasPermission('events.events.update')
   const canDelete = hasPermission('events.events.delete')
   const canApprove = hasPermission('events.events.add_attendee')
@@ -92,13 +105,13 @@ export function EventsTab() {
       date: new Date().toISOString().slice(0, 10),
       time: '',
       location: '',
-      type: 'Workshop',
+      type: eventTypes[0],
       maxAttendees: '',
       requiresApproval: false,
     },
   })
 
-  const types = ['All', ...EVENT_TYPES]
+  const types = ['All', ...eventTypes]
   const filtered = events.filter((e) => {
     const matchType = typeFilter === 'All' || e.type === typeFilter
     const q = search.toLowerCase()
@@ -116,7 +129,7 @@ export function EventsTab() {
       date: new Date().toISOString().slice(0, 10),
       time: '',
       location: '',
-      type: 'Workshop',
+      type: eventTypes[0],
       maxAttendees: '',
       requiresApproval: false,
     })
@@ -130,6 +143,8 @@ export function EventsTab() {
     setHandledNew(true)
     setAddOpen(true) // the form still holds its fresh initial values
   }
+  // Reset only once the URL has dropped ?new=1 (see MembersTab).
+  if (!newLink && handledNew) setHandledNew(false)
   const closeAdd = () => {
     setAddOpen(false)
     if (newLink) {
@@ -140,7 +155,6 @@ export function EventsTab() {
         },
         { replace: true },
       )
-      setHandledNew(false)
     }
   }
   const openEdit = (ev: ClubEvent) => {
@@ -270,7 +284,8 @@ export function EventsTab() {
       </Field>
       <Field label={t('common.type', 'Typ')}>
         <Select
-          data={EVENT_TYPES.map((tp) => ({
+          // An event keeps a type the club no longer lists.
+          data={[...new Set([...eventTypes, form.values.type])].map((tp) => ({
             value: tp,
             label: eventTypeLabel(tp),
           }))}

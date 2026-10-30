@@ -87,7 +87,8 @@ export function SsoProvider({ children }: { children: ReactNode }) {
           window.location.assign(target)
           return
         }
-        navigate('/clubs', { replace: true })
+        // signedIn: the picker may open the only club straight away.
+        navigate('/clubs', { replace: true, state: { signedIn: true } })
         setAuthStatus('authed')
       })
       .catch(() => setAuthStatus('anon'))

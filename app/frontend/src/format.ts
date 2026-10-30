@@ -16,12 +16,6 @@ const dateTimeFormatter = new Intl.DateTimeFormat("de-CH", {
   minute: "2-digit",
 });
 
-const dateFormatter = new Intl.DateTimeFormat("de-CH", {
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-});
-
 const relativeFormatter = new Intl.RelativeTimeFormat("de-CH", {
   style: "short",
 });
@@ -51,8 +45,36 @@ export function formatDateTime(iso: string | Date): string {
   return dateTimeFormatter.format(new Date(iso));
 }
 
+// The club's choice under Settings › Verein › Datumsformat.
+let clubDateFormat = "DD.MM.YYYY";
+
+export function setDateFormat(format: string | null | undefined): void {
+  clubDateFormat = format || "DD.MM.YYYY";
+}
+
+/** A date in the club's format; a bare "YYYY-MM-DD" stays that calendar day. */
 export function formatDate(iso: string | Date): string {
-  return dateFormatter.format(new Date(iso));
+  let d: Date;
+  if (typeof iso === "string" && /^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    const [y, m, day] = iso.split("-").map(Number);
+    d = new Date(y, m - 1, day);
+  } else {
+    d = new Date(iso);
+  }
+  if (Number.isNaN(d.getTime())) return typeof iso === "string" ? iso : "";
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = String(d.getFullYear());
+  switch (clubDateFormat) {
+    case "YYYY-MM-DD":
+      return `${yyyy}-${mm}-${dd}`;
+    case "DD/MM/YYYY":
+      return `${dd}/${mm}/${yyyy}`;
+    case "MM/DD/YYYY":
+      return `${mm}/${dd}/${yyyy}`;
+    default:
+      return `${dd}.${mm}.${yyyy}`;
+  }
 }
 
 export function formatRelative(iso: string | Date): string {

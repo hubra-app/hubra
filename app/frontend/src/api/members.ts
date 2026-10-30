@@ -147,6 +147,30 @@ export interface MemberInvite {
   notes?: string;
 }
 
+export interface OpenInvite {
+  id: number;
+  email: string;
+  invitedBy: string;
+  createdAt: string;
+  expiresAt: string;
+  expired: boolean;
+}
+
+/** Invites the club sent that nobody accepted yet. */
+export async function listInvites(): Promise<OpenInvite[]> {
+  const res = await apiFetch<{ invites: OpenInvite[] }>("/members/invites");
+  return res.invites;
+}
+
+/** Sends the invite again with a fresh link. */
+export function resendInvite(id: number): Promise<OpenInvite> {
+  return apiFetch<OpenInvite>(`/members/invites/${id}/resend`, { method: "POST" });
+}
+
+export async function cancelInvite(id: number): Promise<void> {
+  await apiFetch(`/members/invites/${id}`, { method: "DELETE" });
+}
+
 export async function inviteMember(
   input: MemberInvite,
 ): Promise<{ invited: true; email: string }> {
