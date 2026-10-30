@@ -123,9 +123,20 @@ export function SlideOver({
       position="right"
       size={phone ? '100%' : width}
       padding={0}
-      styles={{ content: { display: 'flex', flexDirection: 'column' } }}
+      styles={{
+        // Below the top bar, so the bell and the page title stay in view.
+        inner: { top: 'var(--hb-header-h, 0px)', height: 'calc(100% - var(--hb-header-h, 0px))' },
+        overlay: { top: 'var(--hb-header-h, 0px)' },
+        content: {
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          borderLeft: '1px solid var(--hb-border)',
+          boxShadow: '-12px 0 32px -16px rgba(26, 22, 37, 0.28)',
+        },
+      }}
     >
-      <Drawer.Overlay />
+      <Drawer.Overlay backgroundOpacity={0.18} />
       <Drawer.Content>
         <div
           style={{
