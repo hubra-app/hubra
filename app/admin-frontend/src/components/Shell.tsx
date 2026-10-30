@@ -420,25 +420,29 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <ActionIcon variant="subtle" size="lg" onClick={logout} aria-label={tr('Abmelden', 'Sign out')}>
             <IconLogout size={18} />
           </ActionIcon>
-          <Box
-            visibleFrom="sm"
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: '50%',
-              background: profile?.avatarColor ?? '#ebe8f2',
-              color: contrastColor(profile?.avatarColor ?? '#ebe8f2'),
-              fontSize: 'var(--mantine-font-size-xs)',
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-            title={profile?.name}
-          >
-            {initials(profile?.name ?? '')}
-          </Box>
+          {/* The expanded sidebar already shows the user card; the avatar
+              here only stands in for it while the sidebar is collapsed. */}
+          {collapsed && (
+            <Box
+              visibleFrom="sm"
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: '50%',
+                background: profile?.avatarColor ?? '#ebe8f2',
+                color: contrastColor(profile?.avatarColor ?? '#ebe8f2'),
+                fontSize: 'var(--mantine-font-size-xs)',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+              title={profile?.name}
+            >
+              {initials(profile?.name ?? '')}
+            </Box>
+          )}
         </Group>
       </AppShell.Header>
 
