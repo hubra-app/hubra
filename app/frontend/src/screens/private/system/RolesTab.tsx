@@ -27,6 +27,9 @@ export function RolesTab() {
   const canUpdate = hasPermission('roles.roles.update')
   const canDelete = hasPermission('roles.roles.delete')
   const canSetPermissions = hasPermission('roles.roles.set_permissions')
+  // Giving a role changes the member, so it takes the member right.
+  const canAssign =
+    hasPermission('members.members.update') || hasPermission('members.members.update.role_ids')
   const { roles, allPerms, rolePerms, isLoading: loading, ...rolesApi } = useRoles()
   // 'new' opens the form for a new role, a role opens it for that role.
   const [formRole, setFormRole] = useState<Role | 'new' | null>(null)
@@ -241,7 +244,7 @@ export function RolesTab() {
             },
           ]}
         />
-        {canUpdate && (
+        {canAssign && (
           <Button
             variant="subtle"
             size="xs"

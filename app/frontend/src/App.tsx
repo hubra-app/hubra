@@ -130,9 +130,14 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
-function RequirePermission({ permKey, children }: { permKey: string; children: React.ReactNode }) {
+/** Shows the page when the member holds `permKey`, or one of them for a list. */
+// Switching modules is its own permission; the other settings are for admins.
+const SETTINGS_OR_MODULES = ['settings.settings.read', 'modules.modules.write']
+
+function RequirePermission({ permKey, children }: { permKey: string | string[]; children: React.ReactNode }) {
   const { hasPermission } = useApp()
-  if (!hasPermission(permKey)) return <AccessDeniedScreen />
+  const keys = Array.isArray(permKey) ? permKey : [permKey]
+  if (!keys.some(hasPermission)) return <AccessDeniedScreen />
   return <>{children}</>
 }
 
@@ -418,7 +423,7 @@ function PrivateRoutes() {
                 <Route
                   path="settings"
                   element={
-                    <RequirePermission permKey="settings.settings.read">
+                    <RequirePermission permKey={SETTINGS_OR_MODULES}>
                       <SettingsScreen />
                     </RequirePermission>
                   }
@@ -426,7 +431,7 @@ function PrivateRoutes() {
                 <Route
                   path="settings/modules"
                   element={
-                    <RequirePermission permKey="settings.settings.read">
+                    <RequirePermission permKey={SETTINGS_OR_MODULES}>
                       <SettingsScreen />
                     </RequirePermission>
                   }

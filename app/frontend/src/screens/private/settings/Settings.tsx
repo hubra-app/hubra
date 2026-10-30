@@ -23,14 +23,14 @@ export function SettingsScreen() {
   const { t } = useT()
 
   const canWriteModules = hasPermission('modules.modules.write')
-  const tabs = TABS.filter((tab) => tab.id !== 'modules' || canWriteModules)
+  // The API keeps the club settings to admin roles; a role may still switch modules.
+  const canSettings = hasPermission('settings.settings.read')
+  const tabs = TABS.filter((tab) => (tab.id === 'modules' ? canWriteModules : canSettings))
 
-  const activeTab =
-    location.pathname.replace('/app/settings', '').replace('/', '') ||
-    'club'
+  const requested = location.pathname.replace('/app/settings', '').replace('/', '') || 'club'
+  const activeTab = tabs.some((tab) => tab.id === requested) ? requested : (tabs[0]?.id ?? 'club')
 
-  const ActiveComponent =
-    tabs.find((tab) => tab.id === activeTab)?.Component ?? ClubSettingsTab
+  const ActiveComponent = tabs.find((tab) => tab.id === activeTab)?.Component ?? ClubSettingsTab
 
   return (
     <div>

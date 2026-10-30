@@ -12,7 +12,7 @@ from sqlalchemy import delete, func, insert, select
 from sqlalchemy.orm import selectinload
 
 from hubra.api.mail.services import MailboxService
-from hubra.api.permissions import check_grant
+from hubra.api.permissions import check_grant, invalidate_member_permissions
 from hubra.api.settings.services import SettingService
 from hubra.api.utils import csv_safe, escape_like, log_audit
 from hubra.core.errors import raise_error
@@ -319,6 +319,8 @@ def _welcome_back(
     former.leave_requested_at = None
     role = _default_role()
     former.roles = [role] if role is not None else []
+    # Coming back starts from the default role, not the cached old ones.
+    invalidate_member_permissions(former.id)
     if tier_id is not None and db.session.get(MembershipTier, tier_id) is not None:
         former.tier_id = tier_id
         former.payment_plan_id = None
@@ -1430,8 +1432,6 @@ class MembersService:
                 taken=[r for rid, r in before.items() if rid not in after],
             )
             member.roles = list(roles)
-            from hubra.api.permissions import invalidate_member_permissions
-
             invalidate_member_permissions(member_id)
 
         log_audit(
