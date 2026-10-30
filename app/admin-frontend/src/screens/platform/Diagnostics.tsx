@@ -30,12 +30,25 @@ import {
 
 const MONO = "'JetBrains Mono', monospace"
 
-const SERVICE_LABELS: Record<string, string> = {
-  db: 'Datenbank / Database',
-  redis: 'Redis',
-  smtp: 'Mail-Relay / Mail relay',
-  imap: 'IMAP',
-}
+// Called at render time so the labels follow the chosen language.
+const serviceLabel = (key: string): string =>
+  ({
+    db: tr('Datenbank', 'Database'),
+    redis: 'Redis',
+    smtp: tr('Mail-Relay', 'Mail relay'),
+    imap: 'IMAP',
+  })[key] ?? key
+
+// The changelog is written in English; only its Keep-a-Changelog headings are translated.
+const sectionLabel = (section: string): string =>
+  ({
+    added: tr('Neu', 'Added'),
+    changed: tr('Geändert', 'Changed'),
+    fixed: tr('Behoben', 'Fixed'),
+    removed: tr('Entfernt', 'Removed'),
+    deprecated: tr('Veraltet', 'Deprecated'),
+    security: tr('Sicherheit', 'Security'),
+  })[section.toLowerCase()] ?? section
 
 function Dot({ ok }: { ok: boolean | null }) {
   const color = ok === null ? '#c2870f' : ok ? '#1f9d57' : '#c0392b'
@@ -112,7 +125,7 @@ function HealthPanel() {
               </Text>
             </Row>
             {Object.entries(health.services).map(([key, svc]) => (
-              <Row key={key} ok={svc.ok} label={SERVICE_LABELS[key] ?? key}>
+              <Row key={key} ok={svc.ok} label={serviceLabel(key)}>
                 <Group gap={10} wrap="wrap">
                   <Text size="sm" fw={600} c={svc.ok ? 'green.8' : 'red.8'}>
                     {svc.ok ? 'OK' : tr('Fehler', 'Failed')}
@@ -148,7 +161,9 @@ function HealthPanel() {
             <div key={entry.version}>
               <Group gap={8} mb={6}>
                 <Text fw={700} size="sm">
-                  v{entry.version}
+                  {entry.version.toLowerCase() === 'unreleased'
+                    ? tr('Noch nicht veröffentlicht', 'Unreleased')
+                    : `v${entry.version}`}
                 </Text>
                 {entry.date && (
                   <Text size="xs" c="dimmed">
@@ -159,7 +174,7 @@ function HealthPanel() {
               {Object.entries(entry.sections).map(([section, items]) => (
                 <div key={section} style={{ marginLeft: 12, marginBottom: 6 }}>
                   <Text size="xs" fw={600} c="dimmed" tt="uppercase">
-                    {section}
+                    {sectionLabel(section)}
                   </Text>
                   <ul style={{ margin: 0, paddingLeft: 18 }}>
                     {items.map((item, i) => (

@@ -907,7 +907,8 @@ def _membership_in(tenant_id: int, user: User) -> str | None:
 def club_directory():
     """Active clubs the signed-in user can ask to join, with their status.
 
-    Everyone else has to search (2+ characters), so the full list of clubs
+    Clubs they already belong to are left out: those are under "Meine
+    Vereine" already. Everyone else has to search (2+ characters), so the full list of clubs
     isn't handed to anyone who signs up. Platform managers see every club.
     """
     from hubra.api.utils import escape_like
@@ -919,28 +920,32 @@ def club_directory():
     if len(search) < 2 and not can_join:
         return jsonify({"clubs": [], "canJoinDirectly": False})
 
-    query = select(Tenant).where(Tenant.status == "active", Tenant.deleted_at.is_(None))
+    linked = select(UserTenant.tenant_id).where(UserTenant.user_id == user.id)
+    query = select(Tenant).where(
+        Tenant.status == "active",
+        Tenant.deleted_at.is_(None),
+        Tenant.id.not_in(linked),
+    )
     if search:
         like = f"%{escape_like(search)}%"
         query = query.where(
             Tenant.name.ilike(like, escape="\\") | Tenant.slug.ilike(like, escape="\\")
         )
     tenants = db.session.scalars(query.order_by(Tenant.name).limit(50)).all()
-    linked = set(
-        db.session.scalars(
-            select(UserTenant.tenant_id).where(UserTenant.user_id == user.id)
-        ).all()
-    )
 
-    clubs = [
-        {
-            "slug": t.slug,
-            "name": t.name,
-            "membership": "member" if t.id in linked else _membership_in(t.id, user),
-            "acceptsRequests": accepts_join_requests(t),
-        }
-        for t in tenants
-    ]
+    clubs = []
+    for t in tenants:
+        membership = _membership_in(t.id, user)
+        if membership == "member":
+            continue
+        clubs.append(
+            {
+                "slug": t.slug,
+                "name": t.name,
+                "membership": membership,
+                "acceptsRequests": accepts_join_requests(t),
+            }
+        )
     return jsonify({"clubs": clubs, "canJoinDirectly": can_join})
 
 
