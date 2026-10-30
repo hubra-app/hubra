@@ -283,7 +283,18 @@ export function MemberEditModal({
           />
         </Field>
         {mode === 'edit' && (
-        <Field label={t('common.roles', 'Rollen')}>
+        <Field
+          label={t('common.roles', 'Rollen')}
+          hint={
+            member?.functionRoles?.length
+              ? t('members.functionRolesHint', 'Über Funktionen: {{roles}}. Diese ändern sich mit der Funktion.', {
+                  roles: member.functionRoles
+                    .map((fr) => `${roleLabel(fr.name)} (${fr.function})`)
+                    .join(', '),
+                })
+              : undefined
+          }
+        >
           <MultiSelect
             data={allRoles.map((r) => ({ value: r, label: roleLabel(r) }))}
             value={watchedRoles}

@@ -13,6 +13,8 @@ interface BackendMember {
   public_email: string | null;
   tier: { id: number; name: string; color: string | null } | null;
   roles: { id: number; name: string }[];
+  /** Roles that come with a function the member holds. */
+  function_roles?: { id: number; name: string; function: string }[];
   group_ids: number[];
   joined: string | null;
   last_seen: string | null;
@@ -56,6 +58,7 @@ function adapt(
     tier: b.tier?.name ?? "",
     groups: b.group_ids.map((id) => groupsById.get(id)?.name ?? String(id)),
     roles: b.roles?.map((r) => r.name) ?? ["Member"],
+    functionRoles: (b.function_roles ?? []).map((r) => ({ name: r.name, function: r.function })),
     joined: b.joined ?? "",
     lastSeen: b.last_seen ?? "",
     status: b.status,
@@ -82,6 +85,8 @@ export interface MemberFilters {
   status?: string;
   membershipType?: string;
   group?: string;
+  /** Members holding this role, themselves or through a function. */
+  roleId?: string;
   sort?: string;
   page?: number;
   pageSize?: number;
@@ -100,6 +105,7 @@ export async function listMembers(
   if (filters.membershipType && filters.membershipType !== "All")
     params.set("membership_type", filters.membershipType);
   if (filters.group && filters.group !== "All") params.set("group", filters.group);
+  if (filters.roleId) params.set("role_id", filters.roleId);
   if (filters.sort) params.set("sort", filters.sort);
   if (filters.archived) params.set("archived", "1");
   if (filters.includeDeleted) params.set("include_deleted", "1");

@@ -21,13 +21,13 @@ export function TransactionCategoriesTab() {
   const { hasPermission } = useAuth()
   const queryClient = useQueryClient()
   const canCreate = hasPermission(
-    'transaction_categories.transaction_categories.create',
+    'finance.transaction_categories.create',
   )
   const canUpdate = hasPermission(
-    'transaction_categories.transaction_categories.update',
+    'finance.transaction_categories.update',
   )
   const canDelete = hasPermission(
-    'transaction_categories.transaction_categories.delete',
+    'finance.transaction_categories.delete',
   )
   const { data: cats = [], isLoading: loading } = useQuery({
     queryKey: qk.transactions.categories,

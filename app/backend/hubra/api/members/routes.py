@@ -816,7 +816,7 @@ def enable_member(member_id: int):
 
 
 @members_bp.delete("/<int:member_id>/sessions")
-@permission_required("members", "update", "Revoke member sessions")
+@permission_required("members", "update", "Update members")
 def revoke_member_sessions(member_id: int):
     """Admin endpoint: revoke all sessions for a member (force logout)."""
     from hubra.api.auth import session_service

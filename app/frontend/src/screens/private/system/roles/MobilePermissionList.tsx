@@ -5,7 +5,7 @@ import { useT } from '@/locales/i18n'
 import type { Role } from '@/api/settings'
 import { type PermissionEntry } from '@/api/system'
 import { PermCheckbox, SectionToggle } from './PermissionControls'
-import { blueprintLabel } from './labels'
+import { blueprintLabel, permLabel, resourceLabel } from './labels'
 
 export function MobilePermissionList({
   role,
@@ -81,7 +81,7 @@ export function MobilePermissionList({
                         }}
                       >
                         <Text fz="xs" fw={600} c="var(--hb-text-3)">
-                          {ns}
+                          {resourceLabel(ns)}
                         </Text>
                         <SectionToggle
                           role={role}
@@ -116,7 +116,7 @@ export function MobilePermissionList({
                                 fontSize: 'var(--mantine-font-size-sm)',
                               }}
                             >
-                              {perm.display_name}
+                              {permLabel(perm)}
                             </div>
                             <div
                               style={{
@@ -159,7 +159,7 @@ export function MobilePermissionList({
                                     fontSize: 'var(--mantine-font-size-sm)',
                                   }}
                                 >
-                                  {perm.display_name}
+                                  {permLabel(perm)}
                                 </div>
                                 <div
                                   style={{
@@ -241,7 +241,7 @@ export function MobilePermissionList({
                                 fontSize: 'var(--mantine-font-size-sm)',
                               }}
                             >
-                              {perm.display_name}
+                              {permLabel(perm)}
                             </div>
                             <div
                               style={{
@@ -284,7 +284,7 @@ export function MobilePermissionList({
                                   fontSize: 'var(--mantine-font-size-sm)',
                                 }}
                               >
-                                {perm.display_name}
+                                {permLabel(perm)}
                               </div>
                               <div
                                 style={{

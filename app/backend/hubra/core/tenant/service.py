@@ -515,7 +515,7 @@ def _seed_tenant(
                 "is_default": False,
                 "is_system": True,
                 "is_owner": True,
-                "description": "Full access — system role, un-lockoutable, always >=1 per tenant",
+                "description": "Full access. Only owners give or take this role; a club always has at least one.",
             },
             {
                 "name": "Admin",
@@ -523,7 +523,7 @@ def _seed_tenant(
                 "is_default": False,
                 "is_system": True,
                 "is_owner": False,
-                "description": "Manage all features except roles deletion and global settings",
+                "description": "Full access to the club, except giving or taking the Owner role.",
             },
             {
                 "name": "Treasurer",
@@ -531,7 +531,7 @@ def _seed_tenant(
                 "is_default": False,
                 "is_system": True,
                 "is_owner": False,
-                "description": "Manage finances, view members and audit logs",
+                "description": "Manages the finances, sees members and the audit log.",
             },
             {
                 "name": "Member",
@@ -539,7 +539,7 @@ def _seed_tenant(
                 "is_default": True,
                 "is_system": True,
                 "is_owner": False,
-                "description": "Basic member access — read-only on public resources",
+                "description": "What every member may do: events, polls, posts. The permissions can be changed.",
             },
         ]
         roles: dict[str, Role] = {}
