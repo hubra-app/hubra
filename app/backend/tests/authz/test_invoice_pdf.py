@@ -119,3 +119,31 @@ def test_a_bad_iban_is_a_setup_problem_and_a_credit_note_is_refused(
     resp = _pdf(client, invoice_id, auth_headers)
     assert resp.status_code == 422
     assert resp.get_json()["error"] == "QR_BILL_INVALID"
+
+
+def test_the_payment_slip_is_printed_at_full_size(
+    client, db, seeded_db, banking, auth_headers, monkeypatch
+):
+    """SIX: the payment part is 210 x 105 mm at the bottom of an A4 page and
+    must not be scaled. The full-page SVG went into a 200 x 105 mm box, so the
+    slip came out at a third of its size and the QR code was 16 mm wide."""
+    import flask
+
+    from hubra.core.models.member import Member
+
+    seen = {}
+    render = flask.render_template
+
+    def spy(name, **context):
+        seen.update(context)
+        return render(name, **context)
+
+    monkeypatch.setattr(flask, "render_template", spy)
+    banking(QR_IBAN)
+    admin = db.session.get(Member, seeded_db["admin"].id)
+    resp = _pdf(client, _invoice(db, member_id=admin.id), auth_headers)
+    assert resp.status_code == 200, resp.get_json()
+
+    svg = seen["qr_svg"]
+    assert 'width="210mm"' in svg and 'height="106mm"' in svg
+    assert seen["reference_display"].count(" ") == 5  # 2 + 5 x 5 digits

@@ -13,8 +13,11 @@ RUN pip install --no-cache-dir --no-deps -r requirements.lock
 
 # PostgreSQL 16 client tools (pg_dump/pg_restore) + GnuPG for backup encryption.
 # Bookworm ships PG 15 client which cannot dump from a PG 16 server.
+# Pango is what WeasyPrint draws invoice PDFs with, and Liberation Sans is a
+# font the Swiss QR bill allows (the slim image has no fonts at all).
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl wget ca-certificates gnupg lsb-release \
+    libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-liberation \
     && install -d /usr/share/postgresql-common/pgdg \
     && curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail \
        https://www.postgresql.org/media/keys/ACCC4CF8.asc \
