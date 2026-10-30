@@ -4,7 +4,7 @@
 Sign-in hands it to every portal as the ``hubra_theme`` cookie.
 
 Revision ID: c5e2a8d4f1b7
-Revises: b3d7f1a9c2e4
+Revises: c4e8a2f6b1d3
 Create Date: 2026-10-30 19:00:00.000000
 
 """
@@ -15,7 +15,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "c5e2a8d4f1b7"
-down_revision = "b3d7f1a9c2e4"
+down_revision = "c4e8a2f6b1d3"
 branch_labels = None
 depends_on = None
 
