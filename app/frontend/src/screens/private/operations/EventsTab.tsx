@@ -24,6 +24,8 @@ import {
   DataTable,
   ActionButtons,
   useSubmitOnce,
+  useLinkedId,
+  LinkedEntryBar,
 } from '@/components/ui'
 import type { ClubEvent } from '@/types'
 import { createEvent, updateEvent, deleteEvent } from '@/api/events'
@@ -112,7 +114,20 @@ export function EventsTab() {
   })
 
   const types = ['All', ...eventTypes]
-  const filtered = events.filter((e) => {
+  // ?event=<id> (from a notification) shows just that event; &pending=1
+  // opens its sign-ups waiting for approval.
+  const linked = useLinkedId('event', ['pending'])
+  const [handledPending, setHandledPending] = useState<string | null>(null)
+  if (linked.id && linked.params.get('pending') === '1' && handledPending !== linked.id) {
+    const ev = events.find((e) => e.id === linked.id)
+    if (ev) {
+      setHandledPending(linked.id)
+      if (canApprove) setPendingFor(ev)
+    }
+  }
+  const filtered = linked.id
+    ? events.filter((e) => e.id === linked.id)
+    : events.filter((e) => {
     const matchType = typeFilter === 'All' || e.type === typeFilter
     const q = search.toLowerCase()
     const matchSearch =
@@ -320,6 +335,16 @@ export function EventsTab() {
           </Button>
         )}
       </Group>
+      {linked.id && (
+        <LinkedEntryBar
+          label={
+            filtered.length
+              ? t('events.linkedOne', 'Du siehst den Anlass aus deiner Benachrichtigung.')
+              : t('events.linkedGone', 'Diesen Anlass gibt es nicht mehr.')
+          }
+          onShowAll={linked.clear}
+        />
+      )}
       <DataTable
         breakpoint="wide"
         columns={[

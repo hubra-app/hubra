@@ -9,13 +9,13 @@ import {
   Indicator,
   TextInput,
   UnstyledButton,
-  Button,
+  ActionIcon,
 } from '@mantine/core'
 
 import { IconSearch, IconPlus, IconX } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
 import type { ReactNode } from 'react'
-import { SlideOver, LoadingSpinner, EmptyState } from './feedback'
+import { SlideOver, PanelSection, LoadingSpinner } from './feedback'
 import { Pagination } from './layout'
 import { usePagination } from './hooks'
 
@@ -201,6 +201,117 @@ export interface SlideOverMember {
   tier?: string
 }
 
+/** One member line in a side panel: avatar, name, a second line and
+ * whatever goes at the end (a tag, a remove button). */
+export function PanelMemberRow({
+  name,
+  detail,
+  avatarColor,
+  right,
+}: {
+  name: string
+  detail?: ReactNode
+  avatarColor?: string
+  right?: ReactNode
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        padding: '10px 0',
+        borderBottom: '1px solid var(--hb-border)',
+      }}
+    >
+      <Avatar name={name} color={avatarColor ?? '#857f99'} size={32} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <Text fz="sm" fw={600} truncate style={{ color: 'var(--hb-text)' }}>
+          {name}
+        </Text>
+        {detail && (
+          <Text fz="xs" truncate style={{ color: 'var(--hb-text-3)' }}>
+            {detail}
+          </Text>
+        )}
+      </div>
+      {right}
+    </div>
+  )
+}
+
+/** A member search field whose matches can be picked from a list below it. */
+export function MemberAddSearch({
+  value,
+  onChange,
+  placeholder,
+  results,
+  onPick,
+  disabled,
+}: {
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+  results: { id: string; name: string; email?: string; avatarColor?: string }[]
+  onPick: (member: { id: string; name: string }) => void
+  disabled?: boolean
+}) {
+  const { t } = useT()
+  return (
+    <div>
+      <TextInput
+        size="sm"
+        leftSection={<IconSearch size={16} />}
+        placeholder={placeholder ?? t('common.searchMembers', 'Mitglieder suchen …')}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+      />
+      {results.length > 0 && (
+        <div
+          style={{
+            marginTop: 6,
+            border: '1px solid var(--hb-border)',
+            borderRadius: 8,
+            overflow: 'hidden',
+            background: 'var(--hb-surface)',
+          }}
+        >
+          {results.slice(0, 6).map((m, i) => (
+            <UnstyledButton
+              key={m.id}
+              className="hb-hover"
+              onClick={() => onPick(m)}
+              disabled={disabled}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                width: '100%',
+                padding: '8px 12px',
+                borderTop: i ? '1px solid var(--hb-border)' : undefined,
+              }}
+            >
+              <Avatar name={m.name} color={m.avatarColor ?? '#857f99'} size={24} />
+              <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                <Text fz="sm" fw={600} truncate style={{ color: 'var(--hb-text)' }}>
+                  {m.name}
+                </Text>
+                {m.email && (
+                  <Text fz="xs" truncate style={{ color: 'var(--hb-text-3)' }}>
+                    {m.email}
+                  </Text>
+                )}
+              </div>
+              <IconPlus size={16} color="var(--mantine-color-green-7)" />
+            </UnstyledButton>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function MemberSlideOver({
   title,
   subtitle,
@@ -235,7 +346,13 @@ export function MemberSlideOver({
   const { t } = useT()
   const [search, setSearch] = useState('')
   const [addSearch, setAddSearch] = useState('')
-  const pg = usePagination(members, 10)
+  const q = search.trim().toLowerCase()
+  const shown = q
+    ? members.filter(
+        (m) => m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q),
+      )
+    : members
+  const pg = usePagination(shown, 10)
 
   useEffect(() => {
     const timer = setTimeout(() => onAddSearch?.(addSearch), 250)
@@ -243,207 +360,99 @@ export function MemberSlideOver({
   }, [addSearch, onAddSearch])
 
   return (
-    <SlideOver title={title} subtitle={subtitle} icon={icon} onClose={onClose}>
+    <SlideOver
+      title={title}
+      subtitle={subtitle}
+      icon={icon}
+      onClose={onClose}
+      padded={false}
+      footer={
+        pg.totalPages > 1 || footer ? (
+          <>
+            {pg.totalPages > 1 && (
+              <Pagination
+                page={pg.page}
+                perPage={pg.perPage}
+                total={pg.total}
+                totalPages={pg.totalPages}
+                goPage={pg.goPage}
+                setPerPage={pg.setPerPage}
+              />
+            )}
+            {footer}
+          </>
+        ) : undefined
+      }
+    >
       {onAdd && (
-        <div
-          style={{
-            padding: '12px 0',
-            borderBottom: '1px solid var(--hb-border)',
-          }}
-        >
-          {addLabel && (
-            <div
-              style={{
-                fontSize: 'var(--mantine-font-size-xs)',
-                fontWeight: 600,
-                color: 'var(--mantine-color-ink-4)',
-                marginBottom: 6,
-                textTransform: 'uppercase',
-              }}
-            >
-              {addLabel}
-            </div>
-          )}
-          <div style={{ position: 'relative' }}>
-            <TextInput
-              size="sm"
-              style={{ paddingLeft: 32 }}
-              placeholder={addPlaceholder ?? t('common.search', 'Suchen')}
-              value={addSearch}
-              onChange={(e) => setAddSearch(e.target.value)}
-            />
-            <IconSearch
-              size={14}
-              style={{
-                position: 'absolute',
-                left: 10,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: 'var(--mantine-color-ink-3)',
-              }}
-            />
-          </div>
-          {searchResults && searchResults.length > 0 && (
-            <div
-              style={{
-                marginTop: 4,
-                border: '1px solid var(--hb-border)',
-                borderRadius: 8,
-                overflow: 'hidden',
-                background: 'var(--hb-surface)',
-              }}
-            >
-              {searchResults.slice(0, 6).map((m) => (
-                <UnstyledButton
-                  key={m.id}
-                  onClick={() => {
-                    onAdd(m)
-                    setAddSearch('')
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderBottom: '1px solid var(--hb-border)',
-                  }}
-                >
-                  <Avatar name={m.name} color={m.avatarColor} size={24} />
-                  <div style={{ textAlign: 'left', flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontSize: 'var(--mantine-font-size-sm)',
-                        fontWeight: 600,
-                        color: 'var(--mantine-color-ink-8)',
-                      }}
-                    >
-                      {m.name}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 'var(--mantine-font-size-xs)',
-                        color: 'var(--mantine-color-ink-4)',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {m.email}
-                    </div>
-                  </div>
-                  <IconPlus size={14} color="#1f9d57" />
-                </UnstyledButton>
-              ))}
-            </div>
-          )}
-        </div>
+        <PanelSection label={addLabel}>
+          <MemberAddSearch
+            value={addSearch}
+            onChange={setAddSearch}
+            placeholder={addPlaceholder}
+            results={searchResults ?? []}
+            onPick={(m) => {
+              const picked = (searchResults ?? []).find((r) => r.id === m.id)
+              if (picked) onAdd(picked)
+              setAddSearch('')
+            }}
+          />
+        </PanelSection>
       )}
 
-      <div style={{ flex: 1, overflowY: 'auto' }}>
-        {loading ? (
-          <LoadingSpinner message={t('common.loading', 'Wird geladen …')} />
-        ) : members.length === 0 ? (
-          <EmptyState
-            title={
-              search
-                ? t('common.noResults', 'Keine Ergebnisse.')
-                : t('common.empty', 'Nicht verfügbar.')
-            }
-          />
-        ) : (
-          pg.paged.map((m) => (
-            <div
-              key={m.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                padding: '12px 0',
-                borderBottom: '1px solid var(--hb-border)',
-              }}
-            >
-              <Avatar name={m.name} color={m.avatarColor} size={32} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    fontSize: 'var(--mantine-font-size-sm)',
-                    fontWeight: 600,
-                    color: 'var(--mantine-color-ink-8)',
-                  }}
-                >
-                  {m.name}
-                </div>
-                <div
-                  style={{
-                    fontSize: 'var(--mantine-font-size-xs)',
-                    color: 'var(--mantine-color-ink-4)',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {m.email}
-                </div>
-              </div>
-              {m.tier && <TierTag tier={m.tier} />}
-              {showRemove && onRemove && (
-                <Button
-                  size="sm"
-                  variant="subtle"
-                  style={{ color: 'var(--mantine-color-red-6)', flexShrink: 0 }}
-                  onClick={() => onRemove(m)}
-                >
-                  <IconX size={13} />
-                </Button>
-              )}
-            </div>
-          ))
-        )}
-      </div>
-
-      <div style={{ borderTop: '1px solid var(--hb-border)' }}>
-        <div style={{ padding: '12px 0', position: 'relative' }}>
+      <PanelSection
+        border={false}
+        label={t('common.members', 'Mitglieder')}
+        right={
+          <Text fz="xs" className="num" style={{ color: 'var(--hb-text-3)' }}>
+            {q ? `${shown.length} / ${members.length}` : members.length}
+          </Text>
+        }
+      >
+        {members.length > 10 && (
           <TextInput
             size="sm"
-            style={{ paddingLeft: 32 }}
+            mb={4}
+            leftSection={<IconSearch size={16} />}
             placeholder={t('common.filter', 'Filter')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <IconSearch
-            size={14}
-            style={{
-              position: 'absolute',
-              left: 10,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: 'var(--mantine-color-ink-3)',
-            }}
-          />
-        </div>
-        {members.length > 0 && (
-          <Pagination
-            page={pg.page}
-            perPage={pg.perPage}
-            total={pg.total}
-            totalPages={pg.totalPages}
-            goPage={pg.goPage}
-            setPerPage={pg.setPerPage}
-          />
         )}
-        <div
-          style={{
-            padding: '8px 0',
-            fontSize: 'var(--mantine-font-size-xs)',
-            color: 'var(--mantine-color-ink-3)',
-          }}
-        >
-          {members.length} {t('common.members', 'Mitglieder')}
-        </div>
-      </div>
-
-      {footer}
+        {loading ? (
+          <LoadingSpinner message={t('common.loading', 'Wird geladen …')} />
+        ) : shown.length === 0 ? (
+          <Text fz="sm" ta="center" py="xl" style={{ color: 'var(--hb-text-3)' }}>
+            {q
+              ? t('common.noResults', 'Keine Ergebnisse.')
+              : t('common.noMembersYet', 'Noch keine Mitglieder.')}
+          </Text>
+        ) : (
+          pg.paged.map((m) => (
+            <PanelMemberRow
+              key={m.id}
+              name={m.name}
+              detail={m.email}
+              avatarColor={m.avatarColor}
+              right={
+                <>
+                  {m.tier && <TierTag tier={m.tier} />}
+                  {showRemove && onRemove && (
+                    <ActionIcon
+                      variant="subtle"
+                      color="red"
+                      onClick={() => onRemove(m)}
+                      aria-label={t('common.remove', 'Entfernen')}
+                    >
+                      <IconX size={16} />
+                    </ActionIcon>
+                  )}
+                </>
+              }
+            />
+          ))
+        )}
+      </PanelSection>
     </SlideOver>
   )
 }
