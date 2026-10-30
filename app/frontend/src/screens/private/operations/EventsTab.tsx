@@ -1,5 +1,6 @@
 import { EVENT_TYPE_COLORS } from '@/constants'
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Button, Group, TextInput, Select, Badge, Checkbox } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
@@ -121,6 +122,27 @@ export function EventsTab() {
     })
     setAddOpen(true)
   }
+  // ?new=1 (the dashboard's "Neuer Anlass") opens the form right away.
+  const [params, setParams] = useSearchParams()
+  const newLink = params.get('new') === '1'
+  const [handledNew, setHandledNew] = useState(false)
+  if (newLink && canCreate && !handledNew) {
+    setHandledNew(true)
+    setAddOpen(true) // the form still holds its fresh initial values
+  }
+  const closeAdd = () => {
+    setAddOpen(false)
+    if (newLink) {
+      setParams(
+        (p) => {
+          p.delete('new')
+          return p
+        },
+        { replace: true },
+      )
+      setHandledNew(false)
+    }
+  }
   const openEdit = (ev: ClubEvent) => {
     setEditTarget(ev)
     form.setValues({
@@ -146,7 +168,7 @@ export function EventsTab() {
         requiresApproval: data.requiresApproval,
       })
       eventCache.append(ev)
-      setAddOpen(false)
+      closeAdd()
       notify(
         'success',
         t('events.event.saved'),
@@ -487,11 +509,11 @@ export function EventsTab() {
       <Modal
         onSubmit={form.onSubmit(submitAdd)}
         open={addOpen}
-        onClose={() => setAddOpen(false)}
+        onClose={closeAdd}
         title={t('events.addEvent')}
         footer={
           <>
-            <Button variant="default" onClick={() => setAddOpen(false)}>
+            <Button variant="default" onClick={closeAdd}>
               {t('common.cancel')}
             </Button>
             <Button variant="filled" type="submit" loading={adding}>

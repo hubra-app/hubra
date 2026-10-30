@@ -3,6 +3,7 @@ import {
   Badge,
   Button,
   Switch,
+  Text,
   Paper,
   Textarea,
   TextInput,
@@ -548,6 +549,13 @@ export function GroupsScreen() {
               </div>
             </Paper>
           ))}
+          {pg.paged.length === 0 && !canCreate && (
+            <Text size="sm" c="dimmed" ta="center" py="xl" style={{ gridColumn: '1 / -1' }}>
+              {search
+                ? t('groups.noMatch', 'Keine Gruppen gefunden.')
+                : t('groups.empty', 'Noch keine Gruppen.')}
+            </Text>
+          )}
           {canCreate && (
           <Paper
             component="button"

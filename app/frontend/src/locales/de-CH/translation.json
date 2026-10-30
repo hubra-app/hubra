@@ -174,7 +174,7 @@
     "sessionsInfo": "Hier siehst du, wo du angemeldet bist. Eine beendete Sitzung ist sofort ungültig.",
     "sessionsTab": "Sitzungen",
     "settings": {
-      "title": "Kontoeinstellungen"
+      "title": "Mein Vereinsprofil"
     },
     "settingsTitle": "Kontoeinstellungen",
     "settings_title": "Kontoeinstellungen",
@@ -1003,7 +1003,8 @@
     "noHolders": "Unbesetzt",
     "protected": "Geschützt",
     "searchMembers": "Mitglieder suchen …",
-    "title": "Funktionen"
+    "title": "Funktionen",
+    "emptyHint": "Funktionen sind die Ämter im Verein, zum Beispiel Präsidium oder Kassier. Lege sie an und weise ihnen Mitglieder zu."
   },
   "groups": {
     "addGroup": "Gruppe hinzufügen",
@@ -1067,14 +1068,16 @@
     "search": "Gruppen suchen …",
     "searchMembersToAdd": "Mitglieder suchen …",
     "selfJoin": "Mitglieder können selbst beitreten und austreten",
-    "selfJoinHint": "Für Interessengruppen. Mitglieder finden sie unter «Mein Konto».",
+    "selfJoinHint": "Für Interessengruppen. Mitglieder treten auf ihrem Dashboard unter «Persönlich» bei.",
     "sessions": "Treffen",
     "sessionsHint": "z. B. 2× pro Woche",
     "sessionsPlaceholder": "3× pro Woche",
     "title": "Gruppen",
     "tools": "Werkzeuge",
     "memberCount_one": "{{count}} Mitglied",
-    "memberCount_other": "{{count}} Mitglieder"
+    "memberCount_other": "{{count}} Mitglieder",
+    "empty": "Noch keine Gruppen.",
+    "noMatch": "Keine Gruppen gefunden."
   },
   "inventory": {
     "addFirstItem": "Ersten Gegenstand hinzufügen",
@@ -1537,7 +1540,8 @@
       "pendingDesc_one": "{{count}} offener Antrag",
       "pendingDesc_other": "{{count}} offene Anträge",
       "title": "Anträge",
-      "wants": "möchte"
+      "wants": "möchte",
+      "emptyHint": "Beitrittsanfragen erscheinen hier, bis du sie annimmst oder ablehnst."
     },
     "archive": "Archivieren",
     "archiveFailed": "Archivieren fehlgeschlagen",
@@ -1626,7 +1630,9 @@
       "toolHours": "Werkzeugstunden",
       "verifiedNo": "Nein",
       "verifiedYes": "Ja",
-      "notes": "Notizen"
+      "notes": "Notizen",
+      "number": "Nr. {{id}}",
+      "numberHint": "Mitgliedernummer"
     },
     "editMember": "Mitglied bearbeiten",
     "editMemberModalTitle": "Mitglied bearbeiten",
@@ -1952,7 +1958,7 @@
     "accessDenied": "Kein Zugriff",
     "breadcrumbs": {
       "account": "Mein Konto",
-      "accountSettings": "Kontoeinstellungen",
+      "accountSettings": "Mein Vereinsprofil",
       "aliases": "Mail › Aliasse",
       "applications": "Mitglieder › Anträge",
       "auditLog": "Protokoll",
@@ -1996,7 +2002,7 @@
     "goToDashboard": "Zum Dashboard",
     "nav": {
       "account": "Mein Konto",
-      "accountSettings": "Kontoeinstellungen",
+      "accountSettings": "Mein Vereinsprofil",
       "aliases": "Aliasse",
       "allMembers": "Alle Mitglieder",
       "applications": "Anträge",
@@ -2025,7 +2031,7 @@
       "messageLog": "Zustellprotokoll",
       "operations": "Vereinsleben",
       "overview": "Übersicht",
-      "permissions": "Berechtigungen",
+      "permissions": "Rollen",
       "polls": "Umfragen",
       "posts": "Beiträge",
       "settings": "Einstellungen",
@@ -2054,7 +2060,7 @@
     },
     "search": {
       "noResults": "Keine Ergebnisse für «{{query}}»",
-      "placeholder": "Mitglieder, Rechnungen, Inventar suchen …",
+      "placeholder": "Suchen …",
       "pollOpen": "Offen",
       "pollClosed": "Geschlossen",
       "invoice": "Rechnung {{id}} – {{member}}"
@@ -2085,7 +2091,7 @@
     },
     "userMenu": {
       "account": "Mein Konto",
-      "accountSettings": "Kontoeinstellungen",
+      "accountSettings": "Mein Vereinsprofil",
       "logout": "Abmelden",
       "clubs": "Vereine",
       "appearance": "Darstellung",

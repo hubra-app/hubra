@@ -13,7 +13,6 @@ import {
   IconLayoutSidebarLeftCollapse,
   IconChevronRight,
   IconBell,
-  IconLogout,
   IconBolt,
 } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
@@ -42,7 +41,7 @@ export function TopBar() {
     userMenuOpen,
     setUserMenuOpen,
   } = useNav()
-  const { setPhase, currentUser } = useAuth()
+  const { currentUser } = useAuth()
   const crumb = getBreadcrumb(location.pathname, t)
   const parts = crumb.split(' > ')
 
@@ -233,15 +232,6 @@ export function TopBar() {
               {unreadCount > 9 ? '9+' : unreadCount}
             </Badge>
           )}
-        </ActionIcon>
-
-        <ActionIcon
-          variant="subtle"
-          size="lg"
-          aria-label={t('shell.a11y.signOut', 'Abmelden')}
-          onClick={() => setPhase('login')}
-        >
-          <IconLogout size={18} />
         </ActionIcon>
 
         {/* The expanded sidebar already shows the user card with this menu;

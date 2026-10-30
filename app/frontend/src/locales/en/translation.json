@@ -174,7 +174,7 @@
     "sessionsInfo": "Where you are signed in. An ended session stops working immediately.",
     "sessionsTab": "Sessions",
     "settings": {
-      "title": "Account settings"
+      "title": "My club profile"
     },
     "settingsTitle": "Account settings",
     "settings_title": "Account settings",
@@ -1003,7 +1003,8 @@
     "noHolders": "Vacant",
     "protected": "Protected",
     "searchMembers": "Search members…",
-    "title": "Functions"
+    "title": "Functions",
+    "emptyHint": "Functions are the offices in your club, such as president or treasurer. Create them and assign members."
   },
   "groups": {
     "addGroup": "Add Group",
@@ -1067,14 +1068,16 @@
     "search": "Search groups…",
     "searchMembersToAdd": "Search members…",
     "selfJoin": "Members can join and leave on their own",
-    "selfJoinHint": "For interest groups. Members find it under My account.",
+    "selfJoinHint": "For interest groups. Members join on their dashboard under Personal.",
     "sessions": "Sessions",
     "sessionsHint": "e.g. twice a week",
     "sessionsPlaceholder": "3 times a week",
     "title": "Groups",
     "tools": "Tools",
     "memberCount_one": "{{count}} member",
-    "memberCount_other": "{{count}} members"
+    "memberCount_other": "{{count}} members",
+    "empty": "No groups yet.",
+    "noMatch": "No groups found."
   },
   "inventory": {
     "addFirstItem": "Add the first item",
@@ -1537,7 +1540,8 @@
       "pendingDesc_one": "{{count}} pending application",
       "pendingDesc_other": "{{count}} pending applications",
       "title": "Applications",
-      "wants": "wants"
+      "wants": "wants",
+      "emptyHint": "Join requests show up here until you accept or decline them."
     },
     "archive": "Archive",
     "archiveFailed": "Archive failed",
@@ -1626,7 +1630,9 @@
       "toolHours": "Tool hours",
       "verifiedNo": "No",
       "verifiedYes": "Yes",
-      "notes": "Notes"
+      "notes": "Notes",
+      "number": "No. {{id}}",
+      "numberHint": "Member number"
     },
     "editMember": "Edit Member",
     "editMemberModalTitle": "Edit member",
@@ -1952,7 +1958,7 @@
     "accessDenied": "Access denied",
     "breadcrumbs": {
       "account": "My account",
-      "accountSettings": "Account settings",
+      "accountSettings": "My club profile",
       "aliases": "Mail › Aliases",
       "applications": "Members › Applications",
       "auditLog": "Audit log",
@@ -1996,7 +2002,7 @@
     "goToDashboard": "Go to dashboard",
     "nav": {
       "account": "Account",
-      "accountSettings": "Account Settings",
+      "accountSettings": "My club profile",
       "aliases": "Aliases",
       "allMembers": "All members",
       "applications": "Applications",
@@ -2025,7 +2031,7 @@
       "messageLog": "Delivery log",
       "operations": "Club life",
       "overview": "Overview",
-      "permissions": "Permissions",
+      "permissions": "Roles",
       "polls": "Polls",
       "posts": "Posts",
       "settings": "Settings",
@@ -2054,7 +2060,7 @@
     },
     "search": {
       "noResults": "No results for \"{{query}}\"",
-      "placeholder": "Search members, invoices, inventory…",
+      "placeholder": "Search…",
       "pollOpen": "Open",
       "pollClosed": "Closed",
       "invoice": "Invoice {{id}} – {{member}}"
@@ -2085,7 +2091,7 @@
     },
     "userMenu": {
       "account": "My Account",
-      "accountSettings": "Account Settings",
+      "accountSettings": "My club profile",
       "logout": "Sign out",
       "clubs": "Clubs",
       "appearance": "Appearance",

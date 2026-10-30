@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Button, Group, Menu, Select, Paper, Text, TextInput, ActionIcon } from '@mantine/core'
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT } from '@/locales/i18n'
 import {
   IconPlus,
-  IconUpload,
+  IconDownload,
   IconPencil,
   IconTrash,
   IconArchive,
@@ -62,6 +63,27 @@ export function MembersTab() {
   const [showArchived, setShowArchived] = useState(false)
   const [sort, setSort] = useState('')
   const [addOpen, setAddOpen] = useState(false)
+  // ?invite=1 (the dashboard's "Mitglied einladen") opens the invite right away.
+  const [params, setParams] = useSearchParams()
+  const inviteLink = params.get('invite') === '1'
+  const [handledInvite, setHandledInvite] = useState(false)
+  if (inviteLink && canCreate && !handledInvite) {
+    setHandledInvite(true)
+    setAddOpen(true)
+  }
+  const closeInvite = () => {
+    setAddOpen(false)
+    if (inviteLink) {
+      setParams(
+        (p) => {
+          p.delete('invite')
+          return p
+        },
+        { replace: true },
+      )
+      setHandledInvite(false)
+    }
+  }
   const [editTarget, setEditTarget] = useState<Member | null>(null)
   const [archiveTarget, setArchiveTarget] = useState<Member | null>(null)
   const [hardDeleteTarget, setHardDeleteTarget] = useState<Member | null>(null)
@@ -345,7 +367,7 @@ export function MembersTab() {
       <Group justify="flex-end" mb={16} gap="xs" wrap="nowrap">
         {!showArchived && canExport && (
           <Button variant="default" visibleFrom="sm" onClick={handleExport}>
-            <IconUpload size={16} />
+            <IconDownload size={16} />
             {t('members.export.csv')}
           </Button>
         )}
@@ -362,7 +384,7 @@ export function MembersTab() {
             onClick={() => setAddOpen(true)}
           >
             <IconPlus size={16} />
-            {t('common.addMember')}
+            {t('members.invite.title', 'Mitglied einladen')}
           </Button>
         )}
         {/* Phones: the less common actions move into a menu. */}
@@ -380,7 +402,7 @@ export function MembersTab() {
             </Menu.Target>
             <Menu.Dropdown>
               {canExport && (
-                <Menu.Item leftSection={<IconUpload size={16} />} onClick={handleExport}>
+                <Menu.Item leftSection={<IconDownload size={16} />} onClick={handleExport}>
                   {t('members.export.csv')}
                 </Menu.Item>
               )}
@@ -572,15 +594,20 @@ export function MembersTab() {
                     active: tierFilter === tier,
                     onClick: () => setTierFilter(tier),
                   })),
-                  {
-                    label: t('common.archived'),
-                    value: 'archived',
-                    active: false,
-                    onClick: () => {
-                      setShowArchived(true)
-                      setTierFilter('All')
-                    },
-                  },
+                  // Only those who may restore or delete see the archive.
+                  ...(canUnarchive || canDelete
+                    ? [
+                        {
+                          label: t('common.archived'),
+                          value: 'archived',
+                          active: false,
+                          onClick: () => {
+                            setShowArchived(true)
+                            setTierFilter('All')
+                          },
+                        },
+                      ]
+                    : []),
                 ]
           }
           page={pg.page}
@@ -689,10 +716,10 @@ export function MembersTab() {
         member={null}
         mode="create"
         open={addOpen}
-        onClose={() => setAddOpen(false)}
+        onClose={closeInvite}
         onSaved={() => {
           // An invite: the member appears once the person accepts.
-          setAddOpen(false)
+          closeInvite()
         }}
       />
 

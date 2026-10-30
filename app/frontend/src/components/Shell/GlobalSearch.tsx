@@ -14,6 +14,9 @@ import { listAuditLog } from '@/api/settings'
 import type { SearchResult } from './nav'
 import { qk } from '@/data/keys'
 
+// One shared empty list, so an unloaded query keeps the same value each render.
+const NONE: never[] = []
+
 export function GlobalSearch() {
   const { t } = useT()
   const { go } = useNav()
@@ -41,19 +44,19 @@ export function GlobalSearch() {
     queryFn: () => listMembers({ pageSize: 200 }),
     staleTime: 60_000,
   })
-  const { data: groupList = [] } = useQuery({
+  const { data: groupList = NONE } = useQuery({
     queryKey: qk.search.groups,
     enabled: used && modules.groups === true,
     queryFn: () => listGroups(),
     staleTime: 60_000,
   })
-  const { data: txList = [] } = useQuery({
+  const { data: txList = NONE } = useQuery({
     queryKey: qk.search.transactions,
     enabled: used && modules.finance === true && hasPermission('finance.transactions.read'),
     queryFn: () => listTransactions({ pageSize: 200 }),
     staleTime: 60_000,
   })
-  const { data: inventoryList = [] } = useQuery({
+  const { data: inventoryList = NONE } = useQuery({
     queryKey: qk.search.inventory,
     enabled: used && modules.inventory === true,
     queryFn: () => listInventory(),
@@ -194,16 +197,33 @@ export function GlobalSearch() {
     setDropOpen(true)
   }
 
+  // Search with the lists of this render: they load on first focus, often
+  // after the first letters are typed, so search again once they arrive
+  // instead of keeping "no results".
+  const [term, setTerm] = useState('')
+  const sources = [term, memberResp, groupList, txList, inventoryList, auditPage, events, polls, invoices]
+  const [searched, setSearched] = useState(sources)
+  if (sources.some((s, i) => s !== searched[i])) {
+    setSearched(sources)
+    runSearch(term)
+  }
+
   const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const q = e.target.value
     setQuery(q)
     if (timerRef.current) clearTimeout(timerRef.current)
-    timerRef.current = setTimeout(() => runSearch(q), 200)
+    timerRef.current = setTimeout(() => setTerm(q), 200)
+  }
+
+  const clearSearch = () => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    setQuery('')
+    setTerm('')
   }
 
   const handleResultClick = (r: SearchResult) => {
     go(r.path)
-    setQuery('')
+    clearSearch()
     setResults([])
     setDropOpen(false)
   }
@@ -273,7 +293,7 @@ export function GlobalSearch() {
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
             setDropOpen(false)
-            setQuery('')
+            clearSearch()
             inputRef.current?.blur()
           } else if (e.key === 'ArrowDown' && results.length) {
             e.preventDefault()

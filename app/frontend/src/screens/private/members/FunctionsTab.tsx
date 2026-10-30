@@ -194,7 +194,13 @@ export function FunctionsTab() {
       {loading ? (
         <LoadingSpinner message={t('common.loading', 'Wird geladen …')} />
       ) : functions.length === 0 ? (
-        <EmptyState title={t('functions.empty', 'Noch keine Funktionen.')} />
+        <EmptyState
+          title={t('functions.empty', 'Noch keine Funktionen.')}
+          description={t(
+            'functions.emptyHint',
+            'Funktionen sind die Ämter im Verein, zum Beispiel Präsidium oder Kassier. Lege sie an und weise ihnen Mitglieder zu.',
+          )}
+        />
       ) : (
         <CardGrid columns={3}>
           {functions.map((fn) => (
