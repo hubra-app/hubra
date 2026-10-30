@@ -737,3 +737,17 @@ table[style*="min-width"] td::before {
     font-size: 20px !important;
   }
 }
+
+/* Member page: key figures under the name, and card rows without a
+   trailing border. */
+.member-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px 20px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--hb-border);
+}
+.member-rows > div:last-child {
+  border-bottom: none !important;
+}

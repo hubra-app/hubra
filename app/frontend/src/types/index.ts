@@ -49,6 +49,13 @@ export interface Member {
   birthday?: string;
   membershipType?: string;
   membershipUntil?: string;
+  address?: {
+    street: string;
+    houseNo: string;
+    postalCode: string;
+    city: string;
+    country: string;
+  };
   emergencyContact?: { name?: string; phone?: string; relation?: string } | null;
   customFields?: Record<string, unknown> | null;
 }
@@ -242,6 +249,8 @@ export interface AuditEntry {
   actor: string;
   action: string;
   target: string;
+  /** What the entry is about, without its type ("Anna Muster"). */
+  targetLabel?: string;
   time: string;
   avatarColor: string;
 }

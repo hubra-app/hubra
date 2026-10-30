@@ -65,6 +65,7 @@ export const qk = {
     all: ['invoices'] as const,
     one: (id: string | undefined) => ['invoice', id] as const,
     mine: ['my-invoices'] as const,
+    member: (id: string | undefined) => ['invoices', 'member', id] as const,
   },
   transactions: {
     all: ['transactions'] as const,
@@ -103,6 +104,7 @@ export const qk = {
   audit: {
     log: (page: number, action: unknown, pageSize: number) => ['audit-log', page, action, pageSize] as const,
     entry: (id: unknown) => ['audit-entry', id] as const,
+    member: (id: string | undefined) => ['audit-log', 'member', id] as const,
   },
 
   /** What the header search looks through, loaded once someone uses it. */
