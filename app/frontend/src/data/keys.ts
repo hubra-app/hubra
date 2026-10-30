@@ -42,10 +42,10 @@ export const qk = {
     one: (id: string | undefined) => ['member', id] as const,
     search: (q: string) => ['members', 'search', q] as const,
     list: (...filters: unknown[]) => ['members', 'list', ...filters] as const,
+    invites: ['members', 'invites'] as const,
   },
   applications: ['applications'] as const,
   leaveRequests: ['leave-requests'] as const,
-  invites: ['club-invites'] as const,
   groups: {
     all: ['groups'] as const,
     joinable: ['groups', 'joinable'] as const,
@@ -98,6 +98,7 @@ export const qk = {
     clubProfile: ['club-profile'] as const,
     domains: ['domains'] as const,
     rolesPermissions: ['roles-permissions'] as const,
+    roleScopes: (roleId: unknown) => ['roles-permissions', 'scopes', roleId] as const,
   },
   audit: {
     log: (page: number, action: unknown, pageSize: number) => ['audit-log', page, action, pageSize] as const,

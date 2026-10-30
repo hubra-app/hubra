@@ -28,6 +28,10 @@ export interface Member {
   tier: string;
   groups: string[];
   roles: string[];
+  /** Roles that come with a function the member holds (Kassier gives Treasurer). */
+  functionRoles?: { name: string; function: string }[];
+  /** Roles held for one group only ("Gruppenleitung", nur Jugend). */
+  scopedRoles?: { name: string; group: string }[];
   joined: string;
   lastSeen: string;
   status: "active" | "trial" | "inactive" | "suspended";
@@ -54,6 +58,8 @@ export interface ClubFunction {
   name: string;
   description: string | null;
   maxHolders: number;
+  /** The role the function gives its holders (Kassier gives Treasurer). */
+  grantsRoleId: number | null;
   holders: {
     memberId: number;
     memberName: string;

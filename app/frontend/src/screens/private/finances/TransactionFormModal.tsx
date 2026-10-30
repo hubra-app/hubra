@@ -91,7 +91,7 @@ export function TransactionFormModal({
   const { hasPermission } = useAuth()
   const { notify } = useToast()
   const queryClient = useQueryClient()
-  const canCreateCategory = hasPermission('transaction_categories.transaction_categories.create')
+  const canCreateCategory = hasPermission('finance.transaction_categories.create')
   const [created, setCreated] = useState<TransactionCategory[]>([])
   const [categorySearch, setCategorySearch] = useState('')
   const [creatingCategory, setCreatingCategory] = useState(false)

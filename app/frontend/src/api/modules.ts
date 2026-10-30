@@ -8,6 +8,8 @@ export interface ModuleNavItem {
   order: number
   perms: string[]
   group: string | null
+  /** Path of the entry this one is indented under. */
+  parent?: string | null
 }
 
 export interface ModuleSettingField {

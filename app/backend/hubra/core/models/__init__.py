@@ -16,7 +16,7 @@ from hubra.core.models.user import User
 from hubra.core.models.user_tenant import UserTenant
 from hubra.core.models.tenant_request import TenantRequest
 from hubra.core.models.platform_setting import PlatformSetting
-from hubra.core.models.role import Role, Permission, RolePermission
+from hubra.core.models.role import MemberRoleScope, Permission, Role, RolePermission
 from hubra.core.models.global_role import (
     GlobalRole,
     GlobalPermission,
@@ -86,6 +86,7 @@ __all__ = [
     "Role",
     "Permission",
     "RolePermission",
+    "MemberRoleScope",
     "GlobalRole",
     "GlobalPermission",
     "GlobalRolePermission",

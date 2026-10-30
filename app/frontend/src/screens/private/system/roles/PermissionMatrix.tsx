@@ -2,12 +2,13 @@ import { Fragment } from 'react'
 import { IconShield, IconPencil, IconLock, IconChevronRight } from '@tabler/icons-react'
 import { Table, Paper } from '@mantine/core'
 import { useT } from '@/locales/i18n'
+import { useAuth } from '@/context/AppContext'
 import type { Role } from '@/api/settings'
 import { type PermissionEntry } from '@/api/system'
-import { roleLabel } from '@/roles'
+import { roleDescription, roleLabel } from '@/roles'
 
 import { SectionToggle } from './PermissionControls'
-import { blueprintLabel } from './labels'
+import { blueprintLabel, permLabel, resourceLabel } from './labels'
 
 interface PermissionMatrixProps {
   visibleRoles: Role[]
@@ -24,6 +25,7 @@ interface PermissionMatrixProps {
   toggleAllInScope: (role: Role, keys: string[], on: boolean) => void
   openEdit: (role: Role) => void
   handleDeleteRole: (role: Role) => void
+  openMembers: (role: Role) => void
 }
 
 /** Roles across the top, one row per permission of the chosen area. */
@@ -43,8 +45,14 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
     toggleAllInScope,
     openEdit,
     handleDeleteRole,
+    openMembers,
   } = props
   const { t } = useT()
+  const { isAdmin } = useAuth()
+  // Only an admin changes an admin role; system roles keep their name.
+  const mayEdit = (role: Role) => canUpdate && !role.isOwner && (!role.isAdmin || isAdmin)
+  const mayDelete = (role: Role) =>
+    canDelete && !role.isSystem && !role.isDefault && (!role.isAdmin || isAdmin)
   return (
     <Paper
       withBorder
@@ -73,7 +81,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                       color: role.isAdmin ? 'var(--mantine-color-acc-9)' : role.isDefault ? 'var(--mantine-color-acc-6)' : 'var(--hb-text-2)',
                     }}
                   />
-                  {roleLabel(role.name)}
+                  <span title={roleDescription(role) || undefined}>{roleLabel(role.name)}</span>
                   {role.isAdmin && (
                     <span
                       style={{
@@ -88,8 +96,8 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                       ADMIN
                     </span>
                   )}
-                  {role.isAdmin && <IconLock size={11} style={{ color: 'var(--mantine-color-acc-9)' }} />}
-                  {canUpdate && !role.isAdmin && (
+                  {role.isSystem && <IconLock size={11} style={{ color: 'var(--mantine-color-acc-9)' }} />}
+                  {mayEdit(role) && (
                     <button
                       onClick={() => openEdit(role)}
                       style={{
@@ -105,7 +113,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                       <IconPencil size={11} />
                     </button>
                   )}
-                  {!role.isDefault && !role.isAdmin && canDelete && (
+                  {mayDelete(role) && (
                     <button
                       onClick={() => handleDeleteRole(role)}
                       style={{
@@ -122,6 +130,21 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                     </button>
                   )}
                 </div>
+                <button
+                  onClick={() => openMembers(role)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--hb-text-2)',
+                    fontSize: 'var(--mantine-font-size-xs)',
+                    padding: 0,
+                    display: 'block',
+                    margin: '2px auto 0',
+                  }}
+                >
+                  {t('roles.holderCount', '{{count}} Mitglieder', { count: role.memberCount })}
+                </button>
                 {role.isAdmin || !canSetPermissions ? null : (
                   <button
                     onClick={() => {
@@ -197,7 +220,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                               borderBottom: '1px solid var(--hb-border)',
                             }}
                           >
-                            <span>-- {ns} --</span>
+                            <span>-- {resourceLabel(ns)} --</span>
                           </Table.Td>
                           {visibleRoles.map((role) => (
                             <Table.Td
@@ -237,7 +260,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                                       color: 'var(--hb-text)',
                                     }}
                                   >
-                                    <div style={{ fontWeight: 600 }}>{perm.display_name}</div>
+                                    <div style={{ fontWeight: 600 }}>{permLabel(perm)}</div>
                                     <div
                                       style={{
                                         fontSize: 'var(--mantine-font-size-xs)',
@@ -258,6 +281,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                                         }
                                         onChange={() => toggle(role, perm.key)}
                                         disabled={role.isAdmin || !canSetPermissions}
+                                        title={role.isAdmin ? t('roles.adminLocked', 'Admin-Rollen haben alle Rechte; die einzelnen Berechtigungen gelten für sie nicht.') : undefined}
                                         style={{
                                           width: 16,
                                           height: 16,
@@ -279,7 +303,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                                           color: 'var(--hb-text)',
                                         }}
                                       >
-                                        <div style={{ fontWeight: 600 }}>{perm.display_name}</div>
+                                        <div style={{ fontWeight: 600 }}>{permLabel(perm)}</div>
                                         <div
                                           style={{
                                             fontSize: 'var(--mantine-font-size-xs)',
@@ -305,6 +329,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                                             }
                                             onChange={() => toggle(role, perm.key)}
                                             disabled={role.isAdmin || !canSetPermissions}
+                                            title={role.isAdmin ? t('roles.adminLocked', 'Admin-Rollen haben alle Rechte; die einzelnen Berechtigungen gelten für sie nicht.') : undefined}
                                             style={{
                                               width: 16,
                                               height: 16,
@@ -375,7 +400,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                                     </button>
                                   )}
                                   <div>
-                                    <div style={{ fontWeight: 600 }}>{perm.display_name}</div>
+                                    <div style={{ fontWeight: 600 }}>{permLabel(perm)}</div>
                                     <div
                                       style={{
                                         fontSize: 'var(--mantine-font-size-xs)',
@@ -397,6 +422,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                                     }
                                     onChange={() => toggle(role, perm.key)}
                                     disabled={role.isAdmin || !canSetPermissions}
+                                    title={role.isAdmin ? t('roles.adminLocked', 'Admin-Rollen haben alle Rechte; die einzelnen Berechtigungen gelten für sie nicht.') : undefined}
                                     style={{
                                       width: 16,
                                       height: 16,
@@ -423,7 +449,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                                       fontSize: 'var(--mantine-font-size-sm)',
                                     }}
                                   >
-                                    {perm.display_name}
+                                    {permLabel(perm)}
                                   </div>
                                   <div
                                     style={{
@@ -444,6 +470,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                                       }
                                       onChange={() => toggle(role, perm.key)}
                                       disabled={role.isAdmin || !canSetPermissions}
+                                      title={role.isAdmin ? t('roles.adminLocked', 'Admin-Rollen haben alle Rechte; die einzelnen Berechtigungen gelten für sie nicht.') : undefined}
                                       style={{
                                         width: 14,
                                         height: 14,

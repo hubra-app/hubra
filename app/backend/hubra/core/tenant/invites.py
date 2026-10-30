@@ -100,33 +100,6 @@ def open_invite(raw: str) -> ClubInvite | None:
     return invite
 
 
-def invite_status(invite: ClubInvite) -> str:
-    """'accepted', 'open' or 'expired'."""
-    if invite.accepted_at is not None:
-        return "accepted"
-    return "open" if invite.is_open else "expired"
-
-
-def club_invites(tenant: Tenant, limit: int = 200) -> list[ClubInvite]:
-    """The club's invites, newest first: open, accepted and expired ones."""
-    return list(
-        db.session.scalars(
-            select(ClubInvite)
-            .where(ClubInvite.tenant_id == tenant.id)
-            .order_by(ClubInvite.created_at.desc(), ClubInvite.id.desc())
-            .limit(limit)
-        )
-    )
-
-
-def club_invite(tenant: Tenant, invite_id: int) -> ClubInvite | None:
-    """One invite of ``tenant`` (None for another club's)."""
-    invite = db.session.get(ClubInvite, invite_id)
-    if invite is None or invite.tenant_id != tenant.id:
-        return None
-    return invite
-
-
 def open_invites_for(user: User) -> list[ClubInvite]:
     """Open invites to ``user``'s address, once the address is confirmed.
 

@@ -90,7 +90,7 @@ def leave_group(group_id: int):
 
 
 @groups_bp.get("/<int:id>")
-@permission_required("groups", "read", "View groups")
+@permission_required("groups", "read", "View groups", scope="id")
 def get_group(id: int):
     group = GroupService.get_by_id(id)
 
@@ -130,7 +130,7 @@ def create_group():
 
 
 @groups_bp.patch("/<int:id>")
-@can_update("groups", "Update groups")
+@can_update("groups", "Update groups", scope="id")
 def update_group(id: int):
     group = GroupService.get_by_id(id)
 
@@ -175,7 +175,7 @@ def delete_group(id: int):
 
 
 @groups_bp.get("/<int:group_id>/members")
-@permission_required("groups", "read", "View group members")
+@permission_required("groups", "read", "View groups", scope="group_id")
 def list_group_members(group_id: int):
     group = db.session.get(Group, group_id)
     if group is None:
@@ -193,7 +193,7 @@ def list_group_members(group_id: int):
 
 
 @groups_bp.post("/<int:group_id>/members/<int:member_id>")
-@permission_required("groups", "add_member", "Add member to group")
+@permission_required("groups", "add_member", "Add member to group", scope="group_id")
 def add_member_to_group(group_id: int, member_id: int):
     group = db.session.get(Group, group_id)
     if group is None:
@@ -227,7 +227,9 @@ def add_member_to_group(group_id: int, member_id: int):
 
 
 @groups_bp.delete("/<int:group_id>/members/<int:member_id>")
-@permission_required("groups", "remove_member", "Remove member from group")
+@permission_required(
+    "groups", "remove_member", "Remove member from group", scope="group_id"
+)
 def remove_group_member(group_id: int, member_id: int):
     GroupService.remove_member(member_id, group_id)
     group = db.session.get(Group, group_id)
@@ -253,7 +255,7 @@ def remove_group_member(group_id: int, member_id: int):
 
 
 @groups_bp.patch("/<int:group_id>/members/<int:member_id>")
-@permission_required("groups", "add_member", "Update group member role")
+@permission_required("groups", "add_member", "Add member to group", scope="group_id")
 def update_group_member_role(group_id: int, member_id: int):
     body = request.get_json(silent=True) or {}
     try:
@@ -281,7 +283,7 @@ def update_group_member_role(group_id: int, member_id: int):
 
 
 @groups_bp.get("/<int:group_id>/mailing-list")
-@permission_required("groups", "read", "View group mailing list")
+@permission_required("groups", "read", "View groups", scope="group_id")
 def get_mailing_list(group_id: int):
     """Return email addresses of all group members for mailing list export."""
     group = db.session.get(Group, group_id)

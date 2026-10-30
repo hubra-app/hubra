@@ -63,7 +63,7 @@ export function ApplicationsTab() {
       setApproveTarget(null)
       if (invited) {
         // No account yet: they got an invite and join when they accept.
-        queryClient.invalidateQueries({ queryKey: qk.invites })
+        queryClient.invalidateQueries({ queryKey: qk.members.invites })
         notify(
           'success',
           t('members.invite.sentTitle', 'Einladung gesendet'),
@@ -129,6 +129,12 @@ export function ApplicationsTab() {
               {t(
                 'members.applications.noPendingApplications',
                 'Keine offenen Anträge',
+              )}
+            </div>
+            <div style={{ fontSize: 'var(--mantine-font-size-sm)', marginTop: 4 }}>
+              {t(
+                'members.applications.emptyHint',
+                'Beitrittsanfragen erscheinen hier, bis du sie annimmst oder ablehnst.',
               )}
             </div>
           </div>

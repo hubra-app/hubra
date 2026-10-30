@@ -28,6 +28,7 @@ from hubra.api.permissions import (
     check_global_grant,
     check_impersonation_restriction,
     get_user_global_permissions,
+    invalidate_member_permissions,
     require_global_permission,
 )
 from hubra.core.errors import raise_error
@@ -1427,6 +1428,7 @@ def add_club_admin(tenant_id: int):
         if role not in member.roles:
             member.roles = [*member.roles, role]
         db.session.flush()
+        invalidate_member_permissions(member.id)
         result = _admin_dict(member)
     finally:
         reset_search_path()
@@ -1482,6 +1484,7 @@ def remove_club_admin(tenant_id: int, user_id: int):
             if not (r.is_admin or r.is_owner)
         ]
         db.session.flush()
+        invalidate_member_permissions(member.id)  # type: ignore[union-attr]
     finally:
         reset_search_path()
 

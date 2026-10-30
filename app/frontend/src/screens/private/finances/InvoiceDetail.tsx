@@ -13,7 +13,7 @@ import { useNav } from '@/context/AppContext'
 import { useInvoices } from '@/data/lists'
 import { PageHead, InvoicePill } from '@/components/ui'
 import { getInvoice, downloadInvoicePdf } from '@/api/finance'
-import { formatCHF } from '@/format'
+import { formatCHF, formatDate } from '@/format'
 import {
   useMarkInvoicePaid,
   useSendInvoiceReminder,
@@ -296,11 +296,11 @@ export function InvoiceDetailScreen() {
             },
             {
               label: t('finance.invoice.issued', 'Ausgestellt'),
-              value: inv.issued,
+              value: inv.issued ? formatDate(inv.issued) : '?',
             },
             {
               label: t('finance.invoice.due', 'Fällig'),
-              value: inv.due,
+              value: inv.due ? formatDate(inv.due) : '?',
             },
             {
               label: t('finance.amount', 'Betrag'),
@@ -308,13 +308,7 @@ export function InvoiceDetailScreen() {
             },
             {
               label: t('common.created', 'Erstellt'),
-              value: inv.createdAt
-                ? new Date(inv.createdAt).toLocaleDateString('en-CH', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric',
-                  })
-                : '?',
+              value: inv.createdAt ? formatDate(inv.createdAt) : '?',
             },
             {
               label: t('finance.remindersSent', 'Erinnerungen gesendet'),

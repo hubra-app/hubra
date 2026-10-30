@@ -103,7 +103,9 @@ module = Module(
             "settings",
             section="system",
             order=0,
-            perms=("settings.settings.read",),
+            # settings.settings.read stands for an admin role (the API
+            # checks is_admin); a role that switches modules sees that tab.
+            perms=("settings.settings.read", "modules.modules.write"),
         ),
         NavItem(
             "/app/audit-log",

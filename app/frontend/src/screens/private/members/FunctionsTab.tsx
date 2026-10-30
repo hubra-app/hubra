@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Button, Group, Textarea, TextInput } from '@mantine/core'
+import { Button, Group, Select, Textarea, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
@@ -37,11 +37,14 @@ import {
 import { withBase } from '@/clubBase'
 import { useMemberSearch } from '@/data/members'
 import { qk } from '@/data/keys'
+import { lookupsQuery } from '@/api/lookups'
+import { roleLabel } from '@/roles'
 
 const functionSchema = z.object({
   name: z.string().min(1, zmsg('common.nameRequired', 'Name ist erforderlich')),
   description: z.string(),
   maxHolders: z.number().min(1),
+  grantsRoleId: z.string(),
 })
 type FunctionForm = z.infer<typeof functionSchema>
 
@@ -68,14 +71,29 @@ export function FunctionsTab() {
       name: '',
       description: '',
       maxHolders: 1,
+      grantsRoleId: '',
     },
   })
+  const { data: lookups } = useQuery(lookupsQuery)
+  // Owners are named one by one, never through a function.
+  const roleOptions = useMemo(
+    () =>
+      lookups
+        ? [...lookups.roles.entries()]
+            .filter(([, name]) => name !== 'Owner')
+            .map(([id, name]) => ({ value: String(id), label: roleLabel(name) }))
+        : [],
+    [lookups],
+  )
+  const roleName = (id: number | null) =>
+    id != null && lookups?.roles.get(id) ? roleLabel(lookups.roles.get(id)!) : null
 
   const openAdd = () => {
     form.setValues({
       name: '',
       description: '',
       maxHolders: 1,
+      grantsRoleId: '',
     })
     setAddOpen(true)
   }
@@ -86,6 +104,7 @@ export function FunctionsTab() {
       name: fn.name,
       description: fn.description ?? '',
       maxHolders: fn.maxHolders,
+      grantsRoleId: fn.grantsRoleId != null ? String(fn.grantsRoleId) : '',
     })
   }
 
@@ -95,6 +114,7 @@ export function FunctionsTab() {
         name: data.name,
         description: data.description || undefined,
         maxHolders: data.maxHolders,
+        grantsRoleId: data.grantsRoleId ? Number(data.grantsRoleId) : null,
       })
       queryClient.invalidateQueries({ queryKey: qk.functions })
       setAddOpen(false)
@@ -120,6 +140,7 @@ export function FunctionsTab() {
         name: data.name,
         description: data.description || undefined,
         maxHolders: data.maxHolders,
+        grantsRoleId: data.grantsRoleId ? Number(data.grantsRoleId) : null,
       })
       queryClient.invalidateQueries({ queryKey: qk.functions })
       setEditTarget(null)
@@ -178,6 +199,21 @@ export function FunctionsTab() {
           {...form.getInputProps('maxHolders', { valueAsNumber: true })}
         />
       </Field>
+      <Field
+        label={t('functions.grantsRole', 'Gibt die Rolle')}
+        hint={t(
+          'functions.grantsRoleHint',
+          'Wer die Funktion innehat, hat diese Rolle, bis die Funktion endet.',
+        )}
+      >
+        <Select
+          data={roleOptions}
+          value={form.values.grantsRoleId || null}
+          onChange={(v) => form.setFieldValue('grantsRoleId', v ?? '')}
+          placeholder={t('functions.noRole', 'Keine Rolle')}
+          clearable
+        />
+      </Field>
     </div>
   )
 
@@ -194,7 +230,13 @@ export function FunctionsTab() {
       {loading ? (
         <LoadingSpinner message={t('common.loading', 'Wird geladen …')} />
       ) : functions.length === 0 ? (
-        <EmptyState title={t('functions.empty', 'Noch keine Funktionen.')} />
+        <EmptyState
+          title={t('functions.empty', 'Noch keine Funktionen.')}
+          description={t(
+            'functions.emptyHint',
+            'Funktionen sind die Ämter im Verein, zum Beispiel Präsidium oder Kassier. Lege sie an und weise ihnen Mitglieder zu.',
+          )}
+        />
       ) : (
         <CardGrid columns={3}>
           {functions.map((fn) => (
@@ -216,7 +258,18 @@ export function FunctionsTab() {
                 </div>
               }
               title={fn.name}
-              subtitle={fn.description ?? undefined}
+              subtitle={
+                [
+                  fn.description,
+                  roleName(fn.grantsRoleId)
+                    ? t('functions.givesRole', 'Gibt die Rolle {{role}}', {
+                        role: roleName(fn.grantsRoleId),
+                      })
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || undefined
+              }
               footer={
                 <div style={{ display: 'flex', gap: 8 }}>
                   <Button

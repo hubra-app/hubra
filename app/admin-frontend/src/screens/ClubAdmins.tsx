@@ -204,7 +204,7 @@ export function ClubAdmins() {
         onClick={() => navigate('/app/my-tenants')}
         mb={8}
       >
-        {tr('Meine Vereine', 'My clubs')}
+        {tr('Deine Vereine verwalten', 'Clubs you run')}
       </Button>
       <PageHead eyebrow={tr('Vereinsadmins', 'Club admins')} title={data?.club.name ?? tr('Verein', 'Club')} />
       <ClubAdminsPanel tenantId={tenantId} />

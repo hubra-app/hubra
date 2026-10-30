@@ -14,10 +14,10 @@ from hubra.api.permissions import (
     can_update,
 )
 from hubra.api.utils import log_audit
-from hubra.core.errors import api_error
+from hubra.core.errors import api_error, raise_error
 from hubra.core.extensions import db
 from hubra.core.schemas.role import RoleCreateSchema, RoleSchema
-from hubra.api.roles.services import RoleService, RolesService
+from hubra.api.roles.services import RoleScopeService, RoleService, RolesService
 
 roles_bp = Blueprint("roles_bp", __name__)
 
@@ -33,7 +33,11 @@ _create_schema = RoleCreateSchema()
 @jwt_required()
 def list_roles():
     get_current_member()  # members of this club only
-    return jsonify(_many_schema.dump(RolesService.list())), 200
+    counts = RolesService.member_counts()
+    rows = _many_schema.dump(RolesService.list())
+    for row in rows:
+        row["member_count"] = counts.get(row["id"], 0)
+    return jsonify(rows), 200
 
 
 # ── POST /roles ───────────────────────────────────────────────────────────────
@@ -71,6 +75,11 @@ def update_role(role_id: int):
 
     is_admin = member_is_admin(_current_member())
 
+    if role.is_admin and not is_admin:
+        return api_error("ADMIN_ONLY", "Only an admin can change an admin role", 403)
+    # The edit form always sends the flag; unchanged, it is no admin change.
+    if body.get("is_admin") is role.is_admin:
+        body.pop("is_admin")
     if "is_admin" in body and not is_admin:
         return api_error("FORBIDDEN", "Only admins can change is_admin", 403)
 
@@ -170,3 +179,47 @@ def set_role_permissions(role_id: int):
         raise
 
     return jsonify({"role_id": role_id, "permissions": sorted_perms}), 200
+
+
+# ── Roles held for one group ──────────────────────────────────────────────────
+
+
+def _may_give_roles() -> None:
+    """Giving a role changes the member: the right the members API asks for."""
+    from hubra.api.permissions import _get_member_permission_keys
+
+    member = get_current_member()
+    if member_is_admin(member):
+        return
+    keys = _get_member_permission_keys(member)
+    if not {"members.members.update", "members.members.update.role_ids"} & keys:
+        raise_error(403, "FORBIDDEN", "Insufficient permissions")
+
+
+@roles_bp.get("/<int:role_id>/scopes")
+@jwt_required()
+def list_role_scopes(role_id: int):
+    get_current_member()  # members of this club only
+    return jsonify(RoleScopeService.list(RoleService.get(role_id))), 200
+
+
+@roles_bp.post("/<int:role_id>/scopes")
+@jwt_required()
+def add_role_scope(role_id: int):
+    _may_give_roles()
+    role = RoleService.get(role_id)
+    body = request.get_json(silent=True) or {}
+    scope = RoleScopeService.add(
+        role, body.get("member_id"), body.get("group_id"), get_current_member().id
+    )
+    db.session.commit()
+    return jsonify({"id": scope.id}), 201
+
+
+@roles_bp.delete("/<int:role_id>/scopes/<int:scope_id>")
+@jwt_required()
+def remove_role_scope(role_id: int, scope_id: int):
+    _may_give_roles()
+    RoleScopeService.remove(RoleService.get(role_id), scope_id, get_current_member().id)
+    db.session.commit()
+    return "", 204

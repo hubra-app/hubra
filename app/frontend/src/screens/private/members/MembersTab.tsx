@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Button, Group, Menu, Select, Paper, Text, TextInput, ActionIcon } from '@mantine/core'
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT } from '@/locales/i18n'
 import {
   IconPlus,
-  IconUpload,
+  IconDownload,
   IconPencil,
   IconTrash,
   IconArchive,
@@ -38,9 +39,10 @@ import {
 import { createBulkInvoices } from '@/api/finance'
 import { listTiers } from '@/api/tiers'
 import { lookupsQuery } from '@/api/lookups'
-import { formatCHF } from '@/format'
+import { formatCHF, formatDate } from '@/format'
+import { roleLabel } from '@/roles'
 import { MemberEditModal } from '@/components/MemberEditModal'
-import { Invites } from './Invites'
+import { OpenInvites } from './OpenInvites'
 import { useServerPagination } from '@/components/serverPagination'
 
 /* ── Members List ───────────────────────────── */
@@ -55,14 +57,50 @@ export function MembersTab() {
   const canUnarchive = hasPermission('members.members.unarchive')
   const canDelete = hasPermission('members.members.delete')
   const canExport = hasPermission('members.members.export')
-  const canBulkInvoice = hasPermission('invoices.invoices.bulk_create')
+  const canBulkInvoice = hasPermission('finance.invoices.bulk_create')
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [tierFilter, setTierFilter] = useState('All')
+  // ?role=<id>, so the roles page can link to a role's members.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const roleFilter = searchParams.get('role') ?? ''
+  const setRoleFilter = (id: string) =>
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (id) next.set('role', id)
+        else next.delete('role')
+        return next
+      },
+      { replace: true },
+    )
   const [showArchived, setShowArchived] = useState(false)
   const [sort, setSort] = useState('')
   const [addOpen, setAddOpen] = useState(false)
+  // ?invite=1 (the dashboard's "Mitglied einladen") opens the invite right away.
+  const [params, setParams] = useSearchParams()
+  const inviteLink = params.get('invite') === '1'
+  const [handledInvite, setHandledInvite] = useState(false)
+  if (inviteLink && canCreate && !handledInvite) {
+    setHandledInvite(true)
+    setAddOpen(true)
+  }
+  // Reset only once the URL has dropped ?invite=1, or the modal reopens in
+  // the render between closing it and the URL update.
+  if (!inviteLink && handledInvite) setHandledInvite(false)
+  const closeInvite = () => {
+    setAddOpen(false)
+    if (inviteLink) {
+      setParams(
+        (p) => {
+          p.delete('invite')
+          return p
+        },
+        { replace: true },
+      )
+    }
+  }
   const [editTarget, setEditTarget] = useState<Member | null>(null)
   const [archiveTarget, setArchiveTarget] = useState<Member | null>(null)
   const [hardDeleteTarget, setHardDeleteTarget] = useState<Member | null>(null)
@@ -82,6 +120,15 @@ export function MembersTab() {
       lookupsData ? [...lookupsData.tiersByName.keys()] : [],
     [lookupsData],
   )
+  const roleOptions = useMemo(
+    () =>
+      lookupsData
+        ? [...lookupsData.roles.entries()]
+            .map(([id, name]) => ({ value: String(id), label: roleLabel(name) }))
+            .sort((a, b) => a.label.localeCompare(b.label))
+        : [],
+    [lookupsData],
+  )
   const { data: bulkTiers = [] } = useQuery({
     queryKey: qk.tiers.all,
     queryFn: () => listTiers(),
@@ -94,11 +141,14 @@ export function MembersTab() {
   }, [search])
 
   // The API pages the list: ask for the page on screen, not for everything.
-  const paging = useServerPagination(`${debouncedSearch}|${tierFilter}|${showArchived}|${sort}`)
+  const paging = useServerPagination(
+    `${debouncedSearch}|${tierFilter}|${roleFilter}|${showArchived}|${sort}`,
+  )
   const { data: membersData, isLoading: membersLoading } = useQuery({
     queryKey: qk.members.list(
       debouncedSearch,
       tierFilter,
+      roleFilter,
       showArchived,
       paging.page,
       paging.perPage,
@@ -108,6 +158,7 @@ export function MembersTab() {
       listMembers({
         search: debouncedSearch,
         tier: tierFilter,
+        roleId: roleFilter || undefined,
         archived: showArchived,
         sort: sort || undefined,
         page: paging.page,
@@ -247,6 +298,42 @@ export function MembersTab() {
   ]
 
   // A simple card: who, tier and status, and the actions an admin has.
+  // Edit and archive sit in one menu, so the red archive button is not one
+  // slip away from editing on every card.
+  const memberMenu = (m: Member) => {
+    const mayArchive = m.id !== currentUser?.id && canArchive
+    if (!canUpdate && !mayArchive) return null
+    return (
+      <Menu position="bottom-end" withinPortal>
+        <Menu.Target>
+          <ActionIcon
+            variant="subtle"
+            aria-label={t('common.moreActions', 'Weitere Aktionen')}
+            title={t('common.moreActions', 'Weitere Aktionen')}
+          >
+            <IconDots size={18} />
+          </ActionIcon>
+        </Menu.Target>
+        <Menu.Dropdown>
+          {canUpdate && (
+            <Menu.Item leftSection={<IconPencil size={16} />} onClick={() => openEdit(m)}>
+              {t('members.editMember')}
+            </Menu.Item>
+          )}
+          {mayArchive && (
+            <Menu.Item
+              color="red"
+              leftSection={<IconUserX size={16} />}
+              onClick={() => setArchiveTarget(m)}
+            >
+              {t('members.archive', 'Archivieren')}
+            </Menu.Item>
+          )}
+        </Menu.Dropdown>
+      </Menu>
+    )
+  }
+
   const renderMemberCard = (m: Member) => (
     <Paper
       withBorder
@@ -283,8 +370,8 @@ export function MembersTab() {
         style={{ borderTop: '1px solid var(--hb-border)' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <Text size="xs" c="dimmed" className="num">
-          {m.joined}
+        <Text size="xs" c="dimmed">
+          {m.joined ? t('members.since', 'Seit {{date}}', { date: formatDate(m.joined) }) : ''}
         </Text>
         <Group gap={2}>
           {showArchived ? (
@@ -313,27 +400,7 @@ export function MembersTab() {
             </>
           ) : (
             <>
-              {canUpdate && (
-                <ActionIcon
-                  variant="subtle"
-                  onClick={(e) => openEdit(m, e)}
-                  title={t('members.editMember')}
-                  aria-label={t('members.editMember')}
-                >
-                  <IconPencil size={18} />
-                </ActionIcon>
-              )}
-              {m.id !== currentUser?.id && canArchive && (
-                <ActionIcon
-                  variant="subtle"
-                  color="red"
-                  onClick={() => setArchiveTarget(m)}
-                  title={t('members.archive', 'Archivieren')}
-                  aria-label={t('members.archive', 'Archivieren')}
-                >
-                  <IconUserX size={18} />
-                </ActionIcon>
-              )}
+              {memberMenu(m)}
             </>
           )}
         </Group>
@@ -346,7 +413,7 @@ export function MembersTab() {
       <Group justify="flex-end" mb={16} gap="xs" wrap="nowrap">
         {!showArchived && canExport && (
           <Button variant="default" visibleFrom="sm" onClick={handleExport}>
-            <IconUpload size={16} />
+            <IconDownload size={16} />
             {t('members.export.csv')}
           </Button>
         )}
@@ -363,7 +430,7 @@ export function MembersTab() {
             onClick={() => setAddOpen(true)}
           >
             <IconPlus size={16} />
-            {t('common.addMember')}
+            {t('members.invite.title', 'Mitglied einladen')}
           </Button>
         )}
         {/* Phones: the less common actions move into a menu. */}
@@ -381,7 +448,7 @@ export function MembersTab() {
             </Menu.Target>
             <Menu.Dropdown>
               {canExport && (
-                <Menu.Item leftSection={<IconUpload size={16} />} onClick={handleExport}>
+                <Menu.Item leftSection={<IconDownload size={16} />} onClick={handleExport}>
                   {t('members.export.csv')}
                 </Menu.Item>
               )}
@@ -394,6 +461,8 @@ export function MembersTab() {
           </Menu>
         )}
       </Group>
+
+      {canCreate && !showArchived && <OpenInvites />}
 
       <DataTable
         breakpoint="wide"
@@ -464,6 +533,35 @@ export function MembersTab() {
               render: (m) => <TierTag tier={m.tier} />,
             },
             {
+              key: 'roles',
+              header: t('common.roles', 'Rollen'),
+              render: (m) => (
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {m.roles.map((r) => (
+                    <Tag key={r}>{roleLabel(r)}</Tag>
+                  ))}
+                  {(m.functionRoles ?? [])
+                    .filter((fr) => !m.roles.includes(fr.name))
+                    .map((fr) => (
+                      <Tag key={`${fr.name}-${fr.function}`}>
+                        {t('members.roleViaFunction', '{{role}} (über {{fn}})', {
+                          role: roleLabel(fr.name),
+                          fn: fr.function,
+                        })}
+                      </Tag>
+                    ))}
+                  {(m.scopedRoles ?? []).map((sr) => (
+                    <Tag key={`${sr.name}@${sr.group}`}>
+                      {t('members.roleForGroup', '{{role}} (nur {{group}})', {
+                        role: roleLabel(sr.name),
+                        group: sr.group,
+                      })}
+                    </Tag>
+                  ))}
+                </div>
+              ),
+            },
+            {
               key: 'groups',
               header: t('members.groupsCol'),
               render: (m) => (
@@ -485,7 +583,7 @@ export function MembersTab() {
                     fontSize: 'var(--mantine-font-size-sm)',
                   }}
                 >
-                  {m.joined}
+                  {m.joined ? formatDate(m.joined) : '—'}
                 </span>
               ),
             },
@@ -520,23 +618,7 @@ export function MembersTab() {
                       deleteTitle={t('members.deletePermanently')}
                     />
                   ) : (
-                    <ActionButtons
-                      onEdit={canUpdate ? () => openEdit(m) : undefined}
-                      editTitle={t('members.editMember')}
-                      extra={
-                        m.id !== currentUser?.id && canArchive ? (
-                          <ActionIcon
-                            variant="subtle"
-                            size="md"
-                            color="red"
-                            onClick={() => setArchiveTarget(m)}
-                            title={t('members.archive')}
-                          >
-                            <IconUserX size={18} />
-                          </ActionIcon>
-                        ) : undefined
-                      }
-                    />
+                    memberMenu(m)
                   )}
                 </div>
               ),
@@ -546,7 +628,7 @@ export function MembersTab() {
           loading={membersLoading}
           emptyMessage={t('members.noMembers', 'Keine Mitglieder gefunden.')}
           emptyDescription={
-            debouncedSearch || tierFilter !== 'All'
+            debouncedSearch || tierFilter !== 'All' || roleFilter
               ? t('members.noMembersFilterHint', 'Ändere die Suche oder den Filter.')
               : undefined
           }
@@ -573,15 +655,20 @@ export function MembersTab() {
                     active: tierFilter === tier,
                     onClick: () => setTierFilter(tier),
                   })),
-                  {
-                    label: t('common.archived'),
-                    value: 'archived',
-                    active: false,
-                    onClick: () => {
-                      setShowArchived(true)
-                      setTierFilter('All')
-                    },
-                  },
+                  // Only those who may restore or delete see the archive.
+                  ...(canUnarchive || canDelete
+                    ? [
+                        {
+                          label: t('common.archived'),
+                          value: 'archived',
+                          active: false,
+                          onClick: () => {
+                            setShowArchived(true)
+                            setTierFilter('All')
+                          },
+                        },
+                      ]
+                    : []),
                 ]
           }
           page={pg.page}
@@ -597,19 +684,29 @@ export function MembersTab() {
           renderCard={renderMemberCard}
           viewKey="members"
           toolbar={
-            <Select
-              size="xs"
-              aria-label={t('members.sort.label', 'Sortieren')}
-              data={sortOptions}
-              value={sort}
-              onChange={(v) => setSort(v ?? '')}
-              allowDeselect={false}
-              w={170}
-            />
+            <Group gap={8} wrap="nowrap">
+              <Select
+                size="xs"
+                aria-label={t('members.roleFilter', 'Nach Rolle filtern')}
+                placeholder={t('members.allRoles', 'Alle Rollen')}
+                data={roleOptions}
+                value={roleFilter || null}
+                onChange={(v) => setRoleFilter(v ?? '')}
+                clearable
+                w={160}
+              />
+              <Select
+                size="xs"
+                aria-label={t('members.sort.label', 'Sortieren')}
+                data={sortOptions}
+                value={sort}
+                onChange={(v) => setSort(v ?? '')}
+                allowDeselect={false}
+                w={170}
+              />
+            </Group>
           }
         />
-
-      {!showArchived && <Invites />}
 
       <Modal
         open={bulkInvoiceOpen}
@@ -692,11 +789,12 @@ export function MembersTab() {
         member={null}
         mode="create"
         open={addOpen}
-        onClose={() => setAddOpen(false)}
+        onClose={closeInvite}
         onSaved={() => {
-          // An invite: the member appears once the person accepts.
-          queryClient.invalidateQueries({ queryKey: qk.invites })
-          setAddOpen(false)
+          // An invite: the member appears once the person accepts; until then
+          // it is listed under «Offene Einladungen».
+          queryClient.invalidateQueries({ queryKey: qk.members.invites })
+          closeInvite()
         }}
       />
 

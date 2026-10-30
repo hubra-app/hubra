@@ -16,7 +16,7 @@ import { UserMenu } from './UserMenu'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { usePlugins } from '@/plugins/store'
 import { useNavCounts } from '@/data/lists'
-import { buildNav, filterNav, getParentPath } from './nav'
+import { buildNav, filterNav, getParentPath, navPaths } from './nav'
 import { useClubLogo, useClubProfile } from '@/data/clubProfile'
 
 export function MobileDrawer() {
@@ -39,7 +39,7 @@ export function MobileDrawer() {
   )
   const activePath = getParentPath(
     location.pathname,
-    nav.flatMap((section) => section.items.map((item) => item.path)),
+    navPaths(nav),
   )
 
   return (
@@ -112,7 +112,7 @@ export function MobileDrawer() {
                   <NavItemRow
                     key={item.path}
                     item={item}
-                    active={activePath === item.path}
+                    activePath={activePath}
                     go={go}
                     collapsed={false}
                   />

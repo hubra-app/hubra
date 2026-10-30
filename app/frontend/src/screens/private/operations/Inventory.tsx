@@ -42,9 +42,9 @@ export function InventoryScreen() {
   const { notify } = useToast()
   const { currentUser, hasPermission } = useAuth()
   const queryClient = useQueryClient()
-  const canCreate = hasPermission('items.items.create')
-  const canUpdate = hasPermission('items.items.update')
-  const canDelete = hasPermission('items.items.delete')
+  const canCreate = hasPermission('inventory.items.create')
+  const canUpdate = hasPermission('inventory.items.update')
+  const canDelete = hasPermission('inventory.items.delete')
   const {
     data: items = [],
     isLoading: loading,

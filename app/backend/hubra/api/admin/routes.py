@@ -243,7 +243,10 @@ def get_club_settings():
         return jsonify({"error": "NO_TENANT", "message": "No tenant context"}), 400
 
     settings = dict(tenant.settings or {})
-    branding = settings.get("branding", {})
+    branding = dict(settings.get("branding", {}))
+    # The form shows the club's name even before anyone saved one here.
+    if not branding.get("club_name"):
+        branding["club_name"] = tenant.name
     return jsonify({"settings": branding}), 200
 
 
@@ -276,6 +279,11 @@ def update_club_settings():
             branding[key] = value
     settings["branding"] = branding
     tenant.settings = settings
+    # One name everywhere: the club list, invites and the manager portal
+    # read tenant.name, so renaming the club here renames it there too.
+    new_name = (validated.get("club_name") or "").strip()
+    if new_name:
+        tenant.name = new_name
 
     db.session.add(
         GlobalAuditEntry(

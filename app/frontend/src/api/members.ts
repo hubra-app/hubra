@@ -13,6 +13,10 @@ interface BackendMember {
   public_email: string | null;
   tier: { id: number; name: string; color: string | null } | null;
   roles: { id: number; name: string }[];
+  /** Roles that come with a function the member holds. */
+  function_roles?: { id: number; name: string; function: string }[];
+  /** Roles held for one group only. */
+  scoped_roles?: { id: number; name: string; group_id: number; group: string }[];
   group_ids: number[];
   joined: string | null;
   last_seen: string | null;
@@ -56,6 +60,8 @@ function adapt(
     tier: b.tier?.name ?? "",
     groups: b.group_ids.map((id) => groupsById.get(id)?.name ?? String(id)),
     roles: b.roles?.map((r) => r.name) ?? ["Member"],
+    functionRoles: (b.function_roles ?? []).map((r) => ({ name: r.name, function: r.function })),
+    scopedRoles: (b.scoped_roles ?? []).map((r) => ({ name: r.name, group: r.group })),
     joined: b.joined ?? "",
     lastSeen: b.last_seen ?? "",
     status: b.status,
@@ -82,6 +88,8 @@ export interface MemberFilters {
   status?: string;
   membershipType?: string;
   group?: string;
+  /** Members holding this role, themselves or through a function. */
+  roleId?: string;
   sort?: string;
   page?: number;
   pageSize?: number;
@@ -100,6 +108,7 @@ export async function listMembers(
   if (filters.membershipType && filters.membershipType !== "All")
     params.set("membership_type", filters.membershipType);
   if (filters.group && filters.group !== "All") params.set("group", filters.group);
+  if (filters.roleId) params.set("role_id", filters.roleId);
   if (filters.sort) params.set("sort", filters.sort);
   if (filters.archived) params.set("archived", "1");
   if (filters.includeDeleted) params.set("include_deleted", "1");
@@ -145,6 +154,30 @@ export interface MemberInvite {
   status?: string;
   membershipType?: string;
   notes?: string;
+}
+
+export interface OpenInvite {
+  id: number;
+  email: string;
+  invitedBy: string;
+  createdAt: string;
+  expiresAt: string;
+  expired: boolean;
+}
+
+/** Invites the club sent that nobody accepted yet. */
+export async function listInvites(): Promise<OpenInvite[]> {
+  const res = await apiFetch<{ invites: OpenInvite[] }>("/members/invites");
+  return res.invites;
+}
+
+/** Sends the invite again with a fresh link. */
+export function resendInvite(id: number): Promise<OpenInvite> {
+  return apiFetch<OpenInvite>(`/members/invites/${id}/resend`, { method: "POST" });
+}
+
+export async function cancelInvite(id: number): Promise<void> {
+  await apiFetch(`/members/invites/${id}`, { method: "DELETE" });
 }
 
 export async function inviteMember(
@@ -350,28 +383,4 @@ export async function approveLeave(id: string): Promise<void> {
 
 export async function declineLeave(id: string): Promise<void> {
   await apiFetch(`/members/${id}/leave/decline`, { method: "POST" });
-}
-
-/** An invite the club sent, and what became of it. */
-export interface ClubInvite {
-  id: number;
-  email: string;
-  invitedBy: string;
-  status: "open" | "accepted" | "expired";
-  createdAt: string;
-  expiresAt: string;
-  acceptedAt: string | null;
-}
-
-export function listInvites(): Promise<ClubInvite[]> {
-  return apiFetch<ClubInvite[]>("/members/invites");
-}
-
-/** Sends a fresh link; the old one stops working. */
-export function resendInvite(id: number): Promise<ClubInvite> {
-  return apiFetch<ClubInvite>(`/members/invites/${id}/resend`, { method: "POST" });
-}
-
-export async function revokeInvite(id: number): Promise<void> {
-  await apiFetch(`/members/invites/${id}`, { method: "DELETE" });
 }

@@ -23,14 +23,25 @@ module = Module(
             label="Notify members about new events",
             description="An in-app notification for every member when an event is published",
         ),
+        SettingField(
+            "event_types",
+            "str",
+            default="",
+            label="Event types",
+            description=(
+                "The types to pick from, separated by commas (for example "
+                "Training, Match, Versammlung). Empty: Workshop, Social, "
+                "Certification and Meeting."
+            ),
+        ),
     ),
     nav=(
         NavItem(
             "/app/operations/events",
-            "shell.nav.management",
-            "layout-list",
-            order=40,
-            group="management",
+            "shell.nav.events",
+            "calendar",
+            section="activities",
+            order=30,
         ),
     ),
     # The calendar feed authenticates with its own signed token.

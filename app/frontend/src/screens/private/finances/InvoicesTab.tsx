@@ -29,7 +29,7 @@ import {
 } from '@/api/finance'
 import { MemberPicker } from '@/components/MemberPicker'
 import { listTiers, calculateTierCost } from '@/api/tiers'
-import { formatCHF } from '@/format'
+import { formatCHF, formatDate } from '@/format'
 import {
   useMarkInvoicePaid,
   useSendInvoiceReminder,
@@ -101,11 +101,11 @@ export function InvoicesTab() {
   const markPaidMutation = useMarkInvoicePaid()
   const sendReminderMutation = useSendInvoiceReminder()
   const deleteInvoiceMutation = useDeleteInvoice()
-  const canCreate = hasPermission('invoices.invoices.create')
-  const canBulkCreate = hasPermission('invoices.invoices.bulk_create')
-  const canUpdate = hasPermission('invoices.invoices.update')
-  const canDelete = hasPermission('invoices.invoices.delete')
-  const canRemind = hasPermission('invoices.invoices.remind')
+  const canCreate = hasPermission('finance.invoices.create')
+  const canBulkCreate = hasPermission('finance.invoices.bulk_create')
+  const canUpdate = hasPermission('finance.invoices.update')
+  const canDelete = hasPermission('finance.invoices.delete')
+  const canRemind = hasPermission('finance.invoices.remind')
   const [addOpen, setAddOpen] = useState(false)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -399,7 +399,7 @@ export function InvoicesTab() {
                   fontSize: 'var(--mantine-font-size-sm)',
                 }}
               >
-                {inv.issued}
+                {inv.issued ? formatDate(inv.issued) : '—'}
               </span>
             ),
           },
@@ -414,7 +414,7 @@ export function InvoicesTab() {
                   fontSize: 'var(--mantine-font-size-sm)',
                 }}
               >
-                {inv.due}
+                {inv.due ? formatDate(inv.due) : '—'}
               </span>
             ),
           },

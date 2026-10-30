@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import delete, select, text
+from sqlalchemy import delete, func, select, text
 
 from hubra.core.extensions import db
 from hubra.core.models.tenant import Tenant, GlobalAuditEntry
@@ -515,7 +515,7 @@ def _seed_tenant(
                 "is_default": False,
                 "is_system": True,
                 "is_owner": True,
-                "description": "Full access — system role, un-lockoutable, always >=1 per tenant",
+                "description": "Full access. Only owners give or take this role; a club always has at least one.",
             },
             {
                 "name": "Admin",
@@ -523,7 +523,7 @@ def _seed_tenant(
                 "is_default": False,
                 "is_system": True,
                 "is_owner": False,
-                "description": "Manage all features except roles deletion and global settings",
+                "description": "Full access to the club, except giving or taking the Owner role.",
             },
             {
                 "name": "Treasurer",
@@ -531,7 +531,7 @@ def _seed_tenant(
                 "is_default": False,
                 "is_system": True,
                 "is_owner": False,
-                "description": "Manage finances, view members and audit logs",
+                "description": "Manages the finances, sees members and the audit log.",
             },
             {
                 "name": "Member",
@@ -539,7 +539,7 @@ def _seed_tenant(
                 "is_default": True,
                 "is_system": True,
                 "is_owner": False,
-                "description": "Basic member access — read-only on public resources",
+                "description": "What every member may do: events, polls, posts. The permissions can be changed.",
             },
         ]
         roles: dict[str, Role] = {}
@@ -550,6 +550,17 @@ def _seed_tenant(
             roles[rd["name"]] = role
 
         from hubra.api.roles.services import RoleService
+        from hubra.core.models.role import Permission
+
+        # The catalog is filled by `flask sync-permissions` (run on every
+        # deploy); without it the new club's roles would grant nothing and
+        # members would get "Kein Zugriff" everywhere.
+        if db.session.scalar(select(func.count(Permission.id))) == 0:
+            _log.warning(
+                "Provisioning %s with an empty permission catalog: run "
+                "'flask sync-permissions' first, its roles grant nothing",
+                tenant_id,
+            )
 
         for role_name, perm_keys in DEFAULT_ROLE_PERMISSIONS.items():
             role = roles.get(role_name)
