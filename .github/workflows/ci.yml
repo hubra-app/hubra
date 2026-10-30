@@ -23,8 +23,46 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  backend:
+  # Which parts the push touches. A pull request that only changes the
+  # frontends (app/*frontend/, packages/) skips the backend and Compose jobs;
+  # one that only changes app/backend/ skips the frontends job. Pushes to main
+  # always run the Compose stack. Skipped jobs count as passed for required checks.
+  changes:
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.diff.outputs.backend }}
+      frontends: ${{ steps.diff.outputs.frontends }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - id: diff
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if ! files=$(git diff --name-only "$BASE...$HEAD" 2>/dev/null); then
+            # Unknown base (new branch, force push): run everything.
+            echo "backend=true" >> "$GITHUB_OUTPUT"
+            echo "frontends=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "$files"
+          if echo "$files" | grep -qvE '^(app/(frontend|admin-frontend|sso-frontend)/|packages/)'; then
+            echo "backend=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "backend=false" >> "$GITHUB_OUTPUT"
+          fi
+          if echo "$files" | grep -qvE '^app/backend/'; then
+            echo "frontends=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "frontends=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -47,7 +85,8 @@ jobs:
   # The three frontends and the deploy config, one after the other. Every
   # step runs even when an earlier one failed, so one run shows all failures.
   frontends:
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    needs: changes
+    if: needs.changes.outputs.frontends == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -117,7 +156,8 @@ jobs:
 
   # Builds the images and runs both Compose stacks end to end.
   compose-smoke:
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { IconCheck, IconCircleX } from '@tabler/icons-react'
 import { useSso } from '@/context/SsoContext'
 import * as authApi from '@/api/auth'
+import { useLang } from '@/lang'
 
 type State = 'verifying' | 'success' | 'error'
 
@@ -11,9 +12,12 @@ type State = 'verifying' | 'success' | 'error'
 export function VerifyEmail() {
   const { authStatus, continueSignedIn } = useSso()
   const navigate = useNavigate()
+  const { tr } = useLang()
   const token = new URLSearchParams(window.location.hash.replace(/^#/, '')).get('token')
   const [state, setState] = useState<State>(token ? 'verifying' : 'error')
-  const [message, setMessage] = useState(token ? '' : 'Der Link ist unvollständig.')
+  const [message, setMessage] = useState(
+    token ? '' : tr('Der Link ist unvollständig.', 'The link is incomplete.'),
+  )
   // Tokens are single-use: StrictMode's double effect must not spend it twice.
   const sent = useRef(false)
 
@@ -28,7 +32,7 @@ export function VerifyEmail() {
         setMessage(
           err instanceof Error && err.message
             ? err.message
-            : 'Der Link ist ungültig oder abgelaufen.',
+            : tr('Der Link ist ungültig oder abgelaufen.', 'The link is invalid or has expired.'),
         )
       })
   }, [token])
@@ -43,7 +47,7 @@ export function VerifyEmail() {
             {state === 'verifying' && (
               <>
                 <Loader />
-                <Title order={2}>E-Mail wird bestätigt…</Title>
+                <Title order={2}>{tr('E-Mail wird bestätigt…', 'Confirming email…')}</Title>
               </>
             )}
             {state === 'success' && (
@@ -51,9 +55,9 @@ export function VerifyEmail() {
                 <ThemeIcon size={56} radius="xl" color="green" variant="light">
                   <IconCheck size={28} />
                 </ThemeIcon>
-                <Title order={2}>E-Mail bestätigt</Title>
+                <Title order={2}>{tr('E-Mail bestätigt', 'Email confirmed')}</Title>
                 <Text size="sm" c="dimmed" mb="md">
-                  Danke, deine Adresse ist bestätigt.
+                  {tr('Danke, deine Adresse ist bestätigt.', 'Thanks, your address is confirmed.')}
                 </Text>
               </>
             )}
@@ -62,9 +66,13 @@ export function VerifyEmail() {
                 <ThemeIcon size={56} radius="xl" color="red" variant="light">
                   <IconCircleX size={28} />
                 </ThemeIcon>
-                <Title order={2}>Bestätigung fehlgeschlagen</Title>
+                <Title order={2}>{tr('Bestätigung fehlgeschlagen', 'Confirmation failed')}</Title>
                 <Text size="sm" c="dimmed" mb="md">
-                  {message} Melde dich an, um einen neuen Link zu erhalten.
+                  {message}{' '}
+                  {tr(
+                    'Melde dich an, um einen neuen Link zu erhalten.',
+                    'Sign in to get a new link.',
+                  )}
                 </Text>
               </>
             )}
@@ -73,11 +81,11 @@ export function VerifyEmail() {
                 <Loader size="sm" />
               ) : signedIn ? (
                 <Button fullWidth onClick={continueSignedIn}>
-                  Weiter
+                  {tr('Weiter', 'Continue')}
                 </Button>
               ) : (
                 <Button fullWidth onClick={() => navigate('/login')}>
-                  Zur Anmeldung
+                  {tr('Zur Anmeldung', 'Go to sign-in')}
                 </Button>
               ))}
           </Stack>
