@@ -22,6 +22,7 @@ from hubra.core.models.user_tenant import UserTenant
 from hubra.core.tenant.context import in_club
 
 LANGUAGES = ("de-CH", "en-GB")
+THEMES = ("light", "dark", "auto")
 
 
 def memberships(user_id: int) -> Iterator[tuple[Tenant, Member]]:
@@ -78,6 +79,7 @@ def profile(user: User) -> dict:
         "avatarColor": user.avatar_color,
         "profileNote": user.profile_note,
         "language": user.language,
+        "theme": user.theme,
         "isSuperadmin": user.is_superadmin,
         "mustChangePassword": user.must_change_password,
     }
@@ -115,6 +117,10 @@ def update_profile(user: User, updates: dict) -> None:
         if updates["language"] not in LANGUAGES:
             raise_error(400, "VALIDATION_ERROR", "Unknown language")
         user.language = updates["language"]
+    if "theme" in updates:
+        if updates["theme"] not in THEMES:
+            raise_error(400, "VALIDATION_ERROR", "Unknown theme")
+        user.theme = updates["theme"]
 
 
 def change_password(user: User, current_password: str, new_password: str) -> None:

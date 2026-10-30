@@ -162,7 +162,7 @@ export function ClubsScreen() {
       </Group>
 
       {(isManager || runsAClub) && (
-        <Paper withBorder p="md" mb="lg" style={{ background: '#f5f1ff', borderColor: '#d6c7ff' }}>
+        <Paper withBorder p="md" mb="lg" style={{ background: 'var(--mantine-color-acc-light)', borderColor: 'var(--mantine-color-acc-2)' }}>
           <Group justify="space-between" wrap="nowrap">
             <Box style={{ minWidth: 0 }}>
               <Text fw={700}>{tr('Verwaltung', 'Manager portal')}</Text>
@@ -194,7 +194,7 @@ export function ClubsScreen() {
       ) : myClubs.length === 0 ? (
         <Paper withBorder p="xl" mb="xl">
           <Stack align="center" gap="xs" ta="center">
-            <IconBuildingCommunity size={32} color="#7441e0" />
+            <IconBuildingCommunity size={32} color="var(--mantine-color-acc-6)" />
             <Text fw={700}>{tr('Noch kein Verein', 'No club yet')}</Text>
             <Text size="sm" c="dimmed" maw={380}>
               {tr(

@@ -237,6 +237,7 @@ def test_club_profile_for_members(tenant_ctx, client, auth_headers, db):
     tenant_ctx.settings = {
         "branding": {
             "primary_color": "#123456",
+            "logo": "data:image/png;base64,iVBORw0KGgo=",
             "announcement_banner_text": "  GV am Freitag  ",
             "announcement_banner_active": True,
             "join_requests_open": False,
@@ -249,6 +250,9 @@ def test_club_profile_for_members(tenant_ctx, client, auth_headers, db):
     assert body["primary_color"] == "#123456"
     assert body["banner"] == "GV am Freitag"
     assert "join_requests_open" not in body
+    # The logo is a cacheable URL away, not inlined.
+    assert "logo" not in body
+    assert body["logo_version"] and len(body["logo_version"]) == 12
 
     tenant_ctx.settings = {
         "branding": {

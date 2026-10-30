@@ -58,7 +58,7 @@ function label(map: Record<string, [string, string]>, key: string): string {
 }
 
 const TYPE_COLORS: Record<string, string> = {
-  manual: '#5e5873',
+  manual: 'var(--hb-text-2)',
   scheduled_daily: '#2596be',
   scheduled_weekly: '#27ae60',
   scheduled_monthly: '#9b59b6',
@@ -265,7 +265,7 @@ export function Backups() {
       />
       {/* ── Config status banner ─────────────────────────────────────── */}
       {configQuery.isLoading && (
-        <div style={{ color: '#8c86a0', fontSize: 'var(--mantine-font-size-sm)' }}>
+        <div style={{ color: 'var(--hb-text-3)', fontSize: 'var(--mantine-font-size-sm)' }}>
           {tr('Backup-Einstellungen werden geladen …', 'Loading backup configuration…')}
         </div>
       )}
@@ -286,8 +286,8 @@ export function Backups() {
                 radius="xl"
                 styles={{
                   root: {
-                    background: '#e6f7ed',
-                    color: '#1a7d43',
+                    background: 'var(--mantine-color-green-light)',
+                    color: 'var(--mantine-color-green-light-color)',
                     fontSize: 'var(--mantine-font-size-sm)',
                   },
                 }}
@@ -308,8 +308,8 @@ export function Backups() {
                 radius="xl"
                 styles={{
                   root: {
-                    background: '#fff3e0',
-                    color: '#e65100',
+                    background: 'var(--mantine-color-orange-light)',
+                    color: 'var(--mantine-color-orange-light-color)',
                     fontSize: 'var(--mantine-font-size-sm)',
                   },
                 }}
@@ -330,8 +330,8 @@ export function Backups() {
                 radius="xl"
                 styles={{
                   root: {
-                    background: '#ffebee',
-                    color: '#c0392b',
+                    background: 'var(--mantine-color-red-light)',
+                    color: 'var(--mantine-color-red-light-color)',
                     fontSize: 'var(--mantine-font-size-sm)',
                   },
                 }}
@@ -354,8 +354,8 @@ export function Backups() {
                 radius="xl"
                 styles={{
                   root: {
-                    background: '#e6f7ed',
-                    color: '#1a7d43',
+                    background: 'var(--mantine-color-green-light)',
+                    color: 'var(--mantine-color-green-light-color)',
                     fontSize: 'var(--mantine-font-size-xs)',
                   },
                 }}
@@ -369,8 +369,8 @@ export function Backups() {
                 radius="xl"
                 styles={{
                   root: {
-                    background: '#ffebee',
-                    color: '#c0392b',
+                    background: 'var(--mantine-color-red-light)',
+                    color: 'var(--mantine-color-red-light-color)',
                     fontSize: 'var(--mantine-font-size-xs)',
                   },
                 }}
@@ -384,7 +384,7 @@ export function Backups() {
                 style={{
                   fontFamily: "'JetBrains Mono', monospace",
                   fontSize: 'var(--mantine-font-size-xs)',
-                  color: '#5e5873',
+                  color: 'var(--hb-text-2)',
                 }}
               >
                 {config.bucket}
@@ -432,7 +432,7 @@ export function Backups() {
               style={{
                 marginTop: 8,
                 fontSize: 'var(--mantine-font-size-xs)',
-                color: '#c0392b',
+                color: 'var(--mantine-color-red-light-color)',
                 fontFamily: "'JetBrains Mono', monospace",
               }}
             >
@@ -445,7 +445,7 @@ export function Backups() {
               style={{
                 marginTop: 8,
                 fontSize: 'var(--mantine-font-size-sm)',
-                color: '#5e5873',
+                color: 'var(--hb-text-2)',
               }}
             >
               {tr(
@@ -495,7 +495,7 @@ export function Backups() {
                       style={{
                         padding: '32px 16px',
                         textAlign: 'center',
-                        color: '#8c86a0',
+                        color: 'var(--hb-text-3)',
                         fontSize: 'var(--mantine-font-size-sm)',
                       }}
                     >
@@ -507,7 +507,7 @@ export function Backups() {
 
               {backups.map((b) => (
                 <Table.Tr key={b.id}>
-                  <Table.Td data-label="#" style={{ color: '#5e5873' }}>
+                  <Table.Td data-label="#" style={{ color: 'var(--hb-text-2)' }}>
                     {b.id}
                   </Table.Td>
                   <Table.Td data-label={tr('Datum', 'Date')}>{formatDate(b.created_at)}</Table.Td>
@@ -515,18 +515,18 @@ export function Backups() {
                     {b.scope === 'club' ? (
                       <span style={{ fontWeight: 600 }}>{b.tenant_slug ?? `#${b.tenant_id}`}</span>
                     ) : (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#5e5873' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--hb-text-2)' }}>
                         <IconWorld size={13} /> {tr('Global', 'Global')}
                       </span>
                     )}
                     {b.scope === 'club' && b.tenant_id === null && (
-                      <div style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#8c86a0' }}>
+                      <div style={{ fontSize: 'var(--mantine-font-size-xs)', color: 'var(--hb-text-3)' }}>
                         {tr('Verein gelöscht', 'Club deleted')}
                       </div>
                     )}
                     {b.restored_at && (
                       <div
-                        style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#1a7d43', marginTop: 2 }}
+                        style={{ fontSize: 'var(--mantine-font-size-xs)', color: 'var(--mantine-color-green-light-color)', marginTop: 2 }}
                         title={b.safety_schema ? tr(`Vorheriger Stand: ${b.safety_schema}`, `Previous data: ${b.safety_schema}`) : ''}
                       >
                         {tr('Wiederhergestellt', 'Restored')} {formatDate(b.restored_at)}
@@ -536,7 +536,7 @@ export function Backups() {
                       <div
                         style={{
                           fontSize: 'var(--mantine-font-size-xs)',
-                          color: '#c0392b',
+                          color: 'var(--mantine-color-red-light-color)',
                           marginTop: 2,
                           fontFamily: "'JetBrains Mono', monospace",
                         }}
@@ -549,7 +549,7 @@ export function Backups() {
                   <Table.Td data-label={tr('Art', 'Type')}>
                     <span
                       style={{
-                        background: TYPE_COLORS[b.type] ?? '#5e5873',
+                        background: TYPE_COLORS[b.type] ?? 'var(--hb-text-2)',
                         color: '#fff',
                         fontSize: 'var(--mantine-font-size-xs)',
                         fontWeight: 600,
@@ -564,7 +564,7 @@ export function Backups() {
                   <Table.Td data-label={tr('Status', 'Status')}>
                     <span
                       style={{
-                        color: STATUS_COLORS[b.status] ?? '#5e5873',
+                        color: STATUS_COLORS[b.status] ?? 'var(--hb-text-2)',
                         fontWeight: 600,
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -581,7 +581,7 @@ export function Backups() {
                       <div
                         style={{
                           fontSize: 'var(--mantine-font-size-xs)',
-                          color: '#c0392b',
+                          color: 'var(--mantine-color-red-light-color)',
                           marginTop: 2,
                           fontFamily: "'JetBrains Mono', monospace",
                         }}
@@ -590,14 +590,14 @@ export function Backups() {
                       </div>
                     )}
                   </Table.Td>
-                  <Table.Td data-label={tr('Grösse', 'Size')} style={{ color: '#5e5873' }}>
+                  <Table.Td data-label={tr('Grösse', 'Size')} style={{ color: 'var(--hb-text-2)' }}>
                     {formatSize(b.size_bytes)}
                   </Table.Td>
                   <Table.Td data-label={tr('Geprüft', 'Verified')}>
                     {b.verified_ok === true && (
                       <span
                         style={{
-                          color: '#1a7d43',
+                          color: 'var(--mantine-color-green-light-color)',
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: 4,
@@ -609,7 +609,7 @@ export function Backups() {
                     {b.verified_ok === false && (
                       <span
                         style={{
-                          color: '#c0392b',
+                          color: 'var(--mantine-color-red-light-color)',
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: 4,
@@ -619,9 +619,9 @@ export function Backups() {
                         <IconX size={14} /> {tr('Fehlgeschlagen', 'Failed')}
                       </span>
                     )}
-                    {b.verified_ok === null && <span style={{ color: '#bbb' }}>—</span>}
+                    {b.verified_ok === null && <span style={{ color: 'var(--hb-text-3)' }}>—</span>}
                   </Table.Td>
-                  <Table.Td data-label={tr('Tabellen', 'Tables')} style={{ color: '#5e5873' }}>
+                  <Table.Td data-label={tr('Tabellen', 'Tables')} style={{ color: 'var(--hb-text-2)' }}>
                     {b.table_count ?? '—'}
                   </Table.Td>
                   <Table.Td data-label={tr('Aktionen', 'Actions')}>
@@ -653,7 +653,7 @@ export function Backups() {
                         variant="subtle"
                         size="compact-sm"
                         onClick={() => setDeleteTarget(b)}
-                        style={{ padding: '2px 6px', color: '#c0392b' }}
+                        style={{ padding: '2px 6px', color: 'var(--mantine-color-red-light-color)' }}
                         title={tr('Backup löschen', 'Delete backup')}
                       >
                         <IconTrash size={14} />

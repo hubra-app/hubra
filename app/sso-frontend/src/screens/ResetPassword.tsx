@@ -99,7 +99,7 @@ export function ResetPassword() {
   return (
     <AuthFrame>
       <AuthIcon>
-        <IconKey size={24} color="#6131c4" />
+        <IconKey size={24} color="var(--mantine-color-acc-7)" />
       </AuthIcon>
       <Title order={1} fz={30} mb={6}>
         {tr('Neues Passwort setzen', 'Set a new password')}

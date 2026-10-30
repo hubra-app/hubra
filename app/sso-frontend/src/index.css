@@ -1,34 +1,4 @@
-html {
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
-}
-
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.12);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.2);
-}
-
-body {
-  margin: 0;
-  background: #f7f6fb;
-  font-family: 'Hanken Grotesk', system-ui, sans-serif;
-  color: #2e2940;
-}
+/* The shared base (tokens, body, brand marks) is in packages/ui/src/ui.css. */
 
 #root {
   min-height: 100vh;
@@ -39,44 +9,24 @@ body {
   font-size: var(--mantine-font-size-xs);
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: #6131c4;
+  color: var(--mantine-color-acc-7);
 }
 
 .eyebrow::before {
   content: '// ';
-  color: #8758f0;
-}
-
-.num {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-}
-
-.logo-mark {
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-  background: url("/hubra-mark.svg") center / contain no-repeat;
-}
-
-.wordmark {
-  font-family: "Bricolage Grotesque", "Hanken Grotesk", system-ui, sans-serif;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1;
+  color: var(--mantine-color-acc-5);
 }
 
 /* Signed-in SSO pages (club picker, account, verification). */
 .graph-bg {
-  background-color: #f7f6fb;
+  background-color: var(--hb-page);
 }
 
 .auth-layout {
   min-height: 100vh;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  background: #ffffff;
+  background: var(--hb-surface);
 }
 
 .auth-main {
@@ -134,19 +84,11 @@ body {
   }
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.spin {
-  animation: spin 1s linear infinite;
-}
-
 /* Top bar of the signed-in SSO pages. */
 .sso-topbar {
   height: 60px;
-  background: #ffffff;
-  border-bottom: 1px solid #ebe8f2;
+  background: var(--hb-surface);
+  border-bottom: 1px solid var(--hb-border);
   position: sticky;
   top: 0;
   z-index: 10;

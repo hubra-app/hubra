@@ -1,82 +1,5 @@
-/* Colour tokens. Screens use these instead of hex values so the club app
-   works in light and dark mode. */
-:root {
-  --hb-page: #f7f6fb;
-  --hb-surface: #ffffff;
-  --hb-surface-2: #f4f2f9;
-  --hb-border: #e6e3ef;
-  --hb-text: #1a1625;
-  --hb-text-2: #5e5873;
-  --hb-text-3: #8c86a0;
-  /* The sidebar takes a light tint of the club colour. */
-  --hb-sidebar: color-mix(in srgb, var(--mantine-color-acc-0) 55%, #ffffff);
-}
-
-html:root[data-mantine-color-scheme="dark"] {
-  color-scheme: dark;
-  /* Neutral greys: the club colour only marks buttons, links and the
-     active page. */
-  --hb-page: #111113;
-  --hb-surface: #19191c;
-  --hb-surface-2: #222226;
-  --hb-border: #2f2f34;
-  --hb-text: #ededef;
-  --hb-text-2: #a8a8b0;
-  --hb-text-3: #7c7c85;
-  --hb-sidebar: #151517;
-  --mantine-color-body: var(--hb-surface);
-  --mantine-color-text: var(--hb-text);
-  --mantine-color-dimmed: var(--hb-text-3);
-  --mantine-color-default-border: var(--hb-border);
-  --mantine-color-ink-3: var(--hb-text-3);
-  --mantine-color-ink-4: var(--hb-text-2);
-  --mantine-color-ink-8: var(--hb-text);
-  --mantine-color-line-0: var(--hb-border);
-  --mantine-color-surface-1: var(--hb-surface-2);
-  --mantine-color-acc-0: color-mix(in srgb, var(--mantine-color-acc-6) 12%, #19191c);
-  --mantine-color-acc-1: color-mix(in srgb, var(--mantine-color-acc-6) 20%, #19191c);
-  --mantine-color-acc-7: color-mix(in srgb, var(--mantine-color-acc-4) 85%, #ffffff);
-  --mantine-color-acc-8: color-mix(in srgb, var(--mantine-color-acc-3) 80%, #ffffff);
-  --mantine-color-black: var(--hb-text);
-  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
-}
-
-html {
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
-}
-
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.12);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.2);
-}
-
-body {
-  margin: 0;
-  background: var(--hb-page);
-  font-family: "Hanken Grotesk", system-ui, sans-serif;
-  color: var(--hb-text);
-}
-
-::selection {
-  background: var(--mantine-color-acc-2);
-  color: var(--hb-text);
-}
+/* The shared base (tokens, body, brand marks, chips) is in
+   packages/ui/src/ui.css. */
 
 #root {
   height: 100vh;
@@ -92,33 +15,6 @@ body {
 
 .graph-bg {
   background-color: var(--hb-surface-2);
-}
-
-.num {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-}
-
-.logo-mark {
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-  background: url("/hubra-mark.svg") center / contain no-repeat;
-}
-
-.club-logo {
-  height: 32px;
-  max-width: 120px;
-  flex-shrink: 0;
-  object-fit: contain;
-}
-
-.wordmark {
-  font-family: "Bricolage Grotesque", "Hanken Grotesk", system-ui, sans-serif;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1;
 }
 
 .terminal-block {
@@ -180,44 +76,6 @@ body {
 
 .notif-panel.open {
   transform: translateX(0);
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--hb-border);
-  background: transparent;
-  color: var(--hb-text-2);
-  font-size: var(--mantine-font-size-sm);
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  white-space: nowrap;
-}
-
-.chip:hover {
-  border-color: #b7b0c9;
-  background: var(--hb-surface-2);
-}
-
-.chip.on {
-  border-color: var(--mantine-color-acc-3);
-  background: var(--mantine-color-acc-1);
-  color: var(--mantine-color-acc-8);
-  font-weight: 600;
 }
 
 /* ── Card styles (reusable across breakpoint tiers) ── */

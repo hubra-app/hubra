@@ -233,7 +233,8 @@ export async function listAuditLog(params?: {
 export interface ClubProfile {
   club_name: string | null;
   club_description: string | null;
-  logo: string | null;
+  /** Cache-busting version of the logo (see clubLogoUrl), null without one. */
+  logo_version: string | null;
   primary_color: string | null;
   secondary_color: string | null;
   accent_color: string | null;

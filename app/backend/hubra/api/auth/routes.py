@@ -100,6 +100,24 @@ def _set_remembered_email_cookie(response, email: str) -> None:
     )
 
 
+def _set_theme_cookie(response, theme: str | None) -> None:
+    """Hand the account's appearance to every portal (light, dark, auto).
+
+    Like remembered_email it sits on the shared domain and JS reads it, so
+    each portal paints in the right scheme before any request, the sign-in
+    page included.
+    """
+    response.set_cookie(
+        "hubra_theme",
+        value=theme or "auto",
+        max_age=365 * 24 * 3600,
+        httponly=False,
+        samesite="Lax",
+        secure=current_app.config.get("JWT_COOKIE_SECURE", False),
+        domain=current_app.config.get("JWT_COOKIE_DOMAIN") or None,
+    )
+
+
 def _clear_remembered_email_cookie(response) -> None:
     """Delete remembered_email using the SAME domain/path it was set with."""
     response.delete_cookie(
@@ -290,6 +308,7 @@ def login():
         refresh_max_age = 30 * 24 * 3600 if keep_signed_in else 24 * 3600
         set_refresh_cookies(response, refresh_token, max_age=refresh_max_age)
         _set_remembered_email_cookie(response, email)
+        _set_theme_cookie(response, user.theme)
         return response
 
     # The same gate as /auth/switch-tenant: no club opens before the address
@@ -375,6 +394,8 @@ def login():
     refresh_max_age = 30 * 24 * 3600 if keep_signed_in else 24 * 3600
     set_refresh_cookies(response, refresh_token, max_age=refresh_max_age)
     _set_remembered_email_cookie(response, email)
+    if user is not None:
+        _set_theme_cookie(response, user.theme)
     return response
 
 
@@ -436,6 +457,8 @@ def signup():
     refresh_max_age = 30 * 24 * 3600 if keep_signed_in else 24 * 3600
     set_refresh_cookies(response, refresh_token, max_age=refresh_max_age)
     _set_remembered_email_cookie(response, email)
+    if user is not None:
+        _set_theme_cookie(response, user.theme)
     return response
 
 
@@ -1316,11 +1339,15 @@ def update_account_profile():
         "avatarColor",
         "profileNote",
         "language",
+        "theme",
     }
     user = _signed_in_user()
     account_svc.update_profile(user, {k: v for k, v in body.items() if k in allowed})
     db.session.commit()
-    return jsonify(account_svc.profile(user)), 200
+    response = make_response(jsonify(account_svc.profile(user)), 200)
+    if "theme" in body:
+        _set_theme_cookie(response, user.theme)
+    return response
 
 
 @account_bp.post("/password")

@@ -4,7 +4,8 @@ import { IconBuildingCommunity, IconLogout, IconUserCircle } from '@tabler/icons
 import { useLocation, useNavigate } from 'react-router-dom'
 import { clearTokens } from '@hubra/api-client'
 import * as authApi from '@/api/auth'
-import { useLang } from '@/lang'
+import { ThemeToggle } from '@hubra/ui'
+import { themeLabels, useLang } from '@/lang'
 
 async function signOut() {
   await authApi.logout()
@@ -75,6 +76,7 @@ export function SignedInFrame({
                 </Button>
               )
             })}
+            <ThemeToggle labels={themeLabels(tr)} />
             <ActionIcon
               variant="subtle"
               color="gray"

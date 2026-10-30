@@ -13,6 +13,7 @@ import { useLocation } from 'react-router-dom'
 import { useNav, useAuth, useData } from '@/context/AppContext'
 import { NavItemRow } from './NavItemRow'
 import { UserMenu } from './UserMenu'
+import { ClubMark } from './ClubMark'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { usePlugins } from '@/plugins/store'
 import { useNavCounts } from '@/data/lists'
@@ -62,12 +63,7 @@ export function MobileDrawer() {
         }}
         wrap="nowrap"
       >
-        <Group gap={10} wrap="nowrap">
-          <div className="logo-mark" />
-          <Text fz={22} className="wordmark">
-            hubra
-          </Text>
-        </Group>
+        <ClubMark />
         <ActionIcon
           variant="subtle"
           size="lg"

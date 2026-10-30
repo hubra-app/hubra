@@ -56,6 +56,34 @@ def test_profile_update(client, db):
     assert user.is_superadmin is False
 
 
+def test_theme_follows_the_account(client, db):
+    """The appearance is saved on the account and handed out as a cookie."""
+    user = _user_without_club(db)
+    resp = client.post(
+        "/api/v1/auth/login", json={"email": "solo@test.ch", "password": PASSWORD}
+    )
+    assert "hubra_theme=auto" in " ".join(resp.headers.getlist("Set-Cookie"))
+    assert client.get("/api/v1/account/profile").get_json()["theme"] == "auto"
+
+    resp = client.patch("/api/v1/account/profile", json={"theme": "dark"})
+    assert resp.status_code == 200
+    assert resp.get_json()["theme"] == "dark"
+    assert "hubra_theme=dark" in " ".join(resp.headers.getlist("Set-Cookie"))
+    db.session.refresh(user)
+    assert user.theme == "dark"
+
+    assert (
+        client.patch("/api/v1/account/profile", json={"theme": "pink"}).status_code
+        == 400
+    )
+
+    client.post("/api/v1/auth/logout")
+    resp = client.post(
+        "/api/v1/auth/login", json={"email": "solo@test.ch", "password": PASSWORD}
+    )
+    assert "hubra_theme=dark" in " ".join(resp.headers.getlist("Set-Cookie"))
+
+
 def test_profile_update_rejects_bad_values(client, db):
     _user_without_club(db)
     _login(client, "solo@test.ch")
