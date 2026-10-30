@@ -5,14 +5,16 @@ full set only when a release is being prepared.
 
 | Workflow | Runs on | What it runs |
 | --- | --- | --- |
-| `ci.yml` (CI) | pull requests into `main`, pushes to `main` | `lint` (ruff, eslint and `tsc` in the three frontends, Compose files, Kustomize + kubeconform, shellcheck), backend unit tests, frontend unit tests |
+| `ci.yml` (CI) | pull requests into `main`, pushes to `main` | `lint` (ruff, eslint and `tsc` in the three frontends, Compose files, Kustomize + kubeconform, shellcheck), backend unit tests, frontend unit tests, and on pull requests that change a frontend the Compose stack with the browser tests |
 | `release-checks.yml` (Release checks) | `release/*` branches (create and push), pull requests into `release/*`, before every image build, by hand | all of `ci.yml` without the path filter, plus dependency audits (pip-audit, npm audit), the image builds and the Compose stack with the browser tests |
 | `images.yml` (Images) | GitHub release published, by hand | `release-checks.yml` first, then builds and pushes the images |
 
 On pull requests the test jobs run only when the change touches their code:
 the backend tests for `app/backend/`, `plugins/` and `settings.yaml`, the
-frontend tests for `app/*frontend/`, `packages/` and `plugins/`, and both
-for a change to `ci.yml` itself. Anything else (other workflows, `deploy/`,
+frontend tests and the browser tests (`browser-tests`, about five minutes)
+for `app/*frontend/`, `packages/` and `plugins/`, and all of them for a
+change to `ci.yml` itself. The browser tests run there so a screen change
+that breaks them fails its own pull request instead of the next image build. Anything else (other workflows, `deploy/`,
 `modules/`, `scripts/`, docs) runs `lint` only. Draft pull requests run
 nothing until they are marked ready for review.
 
