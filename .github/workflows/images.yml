@@ -6,6 +6,12 @@
 #   ghcr.io/<owner>/<repo>/<image>:1.2           release v1.2.3 (not pre-releases)
 #   ghcr.io/<owner>/<repo>/<image>:latest        newest release (not pre-releases)
 #   ghcr.io/<owner>/<repo>/<image>:sha-<commit>  every build, releases and manual runs
+#   ghcr.io/<owner>/<repo>/<image>:main-<timestamp>-<commit>
+#                                                 manual runs on main, sortable, for Flux
+#                                                 image automation (ImagePolicy on main-*)
+#
+# So to deploy main between releases, run Images by hand on main: Flux picks
+# up the main-<timestamp>-<commit> build and commits it to the GitOps repo.
 #
 # Publishing a release on GitHub also creates its v* tag, which the GitLab
 # mirror turns into a GitLab Release (docs/gitlab.md).
@@ -87,6 +93,7 @@ jobs:
           # pre-release (flavor latest=auto).
           tags: |
             type=sha,format=short
+            type=raw,value=main-{{date 'YYYYMMDDHHmmss'}}-{{sha}},enable={{is_default_branch}}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
 
