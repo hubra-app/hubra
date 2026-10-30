@@ -33,7 +33,11 @@ _create_schema = RoleCreateSchema()
 @jwt_required()
 def list_roles():
     get_current_member()  # members of this club only
-    return jsonify(_many_schema.dump(RolesService.list())), 200
+    counts = RolesService.member_counts()
+    rows = _many_schema.dump(RolesService.list())
+    for row in rows:
+        row["member_count"] = counts.get(row["id"], 0)
+    return jsonify(rows), 200
 
 
 # ── POST /roles ───────────────────────────────────────────────────────────────
@@ -71,6 +75,11 @@ def update_role(role_id: int):
 
     is_admin = member_is_admin(_current_member())
 
+    if role.is_admin and not is_admin:
+        return api_error("ADMIN_ONLY", "Only an admin can change an admin role", 403)
+    # The edit form always sends the flag; unchanged, it is no admin change.
+    if body.get("is_admin") is role.is_admin:
+        body.pop("is_admin")
     if "is_admin" in body and not is_admin:
         return api_error("FORBIDDEN", "Only admins can change is_admin", 403)
 

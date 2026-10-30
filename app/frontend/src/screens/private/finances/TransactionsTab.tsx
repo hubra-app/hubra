@@ -34,9 +34,9 @@ export function TransactionsTab() {
   const { hasPermission } = useAuth()
   const { t } = useT()
   const queryClient = useQueryClient()
-  const canCreate = hasPermission('transactions.transactions.create')
-  const canUpdate = hasPermission('transactions.transactions.update')
-  const canDelete = hasPermission('transactions.transactions.delete')
+  const canCreate = hasPermission('finance.transactions.create')
+  const canUpdate = hasPermission('finance.transactions.update')
+  const canDelete = hasPermission('finance.transactions.delete')
   const {
     data: transactions = [],
     isLoading: loading,

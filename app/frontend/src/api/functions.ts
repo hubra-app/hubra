@@ -6,6 +6,7 @@ interface BackendFunction {
   name: string;
   description: string | null;
   maxHolders: number;
+  grantsRoleId?: number | null;
   holders: {
     memberId: number;
     memberName: string;
@@ -19,6 +20,7 @@ function adapt(b: BackendFunction): ClubFunction {
     name: b.name,
     description: b.description,
     maxHolders: b.maxHolders,
+    grantsRoleId: b.grantsRoleId ?? null,
     holders: b.holders,
   };
 }
@@ -32,6 +34,8 @@ export interface FunctionCreate {
   name: string;
   description?: string;
   maxHolders?: number;
+  /** The role the function gives its holders; null for none. */
+  grantsRoleId?: number | null;
 }
 
 export async function createFunction(
@@ -40,6 +44,7 @@ export async function createFunction(
   const body: Record<string, unknown> = { name: input.name };
   if (input.description !== undefined) body.description = input.description;
   if (input.maxHolders !== undefined) body.maxHolders = input.maxHolders;
+  if (input.grantsRoleId !== undefined) body.grantsRoleId = input.grantsRoleId;
   const b = await apiFetch<BackendFunction>("/functions/", {
     method: "POST",
     body: JSON.stringify(body),
@@ -51,6 +56,7 @@ export interface FunctionUpdate {
   name?: string;
   description?: string;
   maxHolders?: number;
+  grantsRoleId?: number | null;
 }
 
 export async function updateFunction(
@@ -61,6 +67,7 @@ export async function updateFunction(
   if (input.name !== undefined) body.name = input.name;
   if (input.description !== undefined) body.description = input.description;
   if (input.maxHolders !== undefined) body.maxHolders = input.maxHolders;
+  if (input.grantsRoleId !== undefined) body.grantsRoleId = input.grantsRoleId;
   const b = await apiFetch<BackendFunction>(`/functions/${id}`, {
     method: "PATCH",
     body: JSON.stringify(body),

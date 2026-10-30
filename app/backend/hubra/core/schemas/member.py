@@ -148,6 +148,8 @@ class MemberSchema(ma.SQLAlchemyAutoSchema):
     # Nested read-only relationships
     tier = fields.Nested(_TierStubSchema, dump_only=True, allow_none=True)
     roles = fields.List(fields.Nested(_RoleStubSchema), dump_only=True, dump_default=[])
+    # Roles that come with a function the member holds (Kassier -> Treasurer).
+    function_roles = fields.Method("get_function_roles", dump_only=True)
 
     # Computed list fields from M:N relationships
     group_ids = fields.Method("get_group_ids", dump_only=True)
@@ -233,6 +235,11 @@ class MemberSchema(ma.SQLAlchemyAutoSchema):
 
     def get_group_ids(self, obj):
         return [g.id for g in (obj.groups or [])]
+
+    def get_function_roles(self, obj):
+        from hubra.api.permissions import function_role_grants
+
+        return function_role_grants().get(obj.id, [])
 
 
 # ── MemberCreateSchema ────────────────────────────────────────────────────────

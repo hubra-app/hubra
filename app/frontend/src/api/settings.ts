@@ -54,6 +54,11 @@ export interface Role {
   name: string;
   isDefault: boolean;
   isAdmin: boolean;
+  /** Owner, Admin, Treasurer, Member: can't be renamed or deleted. */
+  isSystem: boolean;
+  isOwner: boolean;
+  /** Members holding it, themselves or through a function. */
+  memberCount: number;
   description: string | null;
 }
 
@@ -62,6 +67,9 @@ interface BackendRole {
   name: string;
   is_default: boolean;
   is_admin: boolean;
+  is_system?: boolean;
+  is_owner?: boolean;
+  member_count?: number;
   description: string | null;
 }
 
@@ -71,6 +79,9 @@ function adaptRole(b: BackendRole): Role {
     name: b.name,
     isDefault: b.is_default,
     isAdmin: b.is_admin,
+    isSystem: b.is_system ?? false,
+    isOwner: b.is_owner ?? false,
+    memberCount: b.member_count ?? 0,
     description: b.description,
   };
 }

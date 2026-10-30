@@ -35,6 +35,8 @@ def create_function():
         name=body.get("name", ""),
         description=body.get("description"),
         max_holders=body.get("maxHolders", 1),
+        grants_role_id=body.get("grantsRoleId"),
+        actor_id=get_current_member().id,
     )
     db.session.commit()
 
@@ -54,10 +56,14 @@ def create_function():
 @permission_required("functions", "update", "Update functions")
 def update_function(function_id: int):
     body = request.get_json(silent=True) or {}
-    field_map = {"maxHolders": "max_holders"}
+    field_map = {"maxHolders": "max_holders", "grantsRoleId": "grants_role_id"}
     mapped = {field_map.get(k, k): v for k, v in body.items()}
-    fields = {k: v for k, v in mapped.items() if k in ("name", "description", "max_holders")}
-    fn = FunctionService.update(function_id, **fields)
+    fields = {
+        k: v
+        for k, v in mapped.items()
+        if k in ("name", "description", "max_holders", "grants_role_id")
+    }
+    fn = FunctionService.update(function_id, actor_id=get_current_member().id, **fields)
 
     db.session.commit()
 
@@ -102,7 +108,9 @@ def assign_holder(function_id: int):
     if not member_id:
         return jsonify({"error": "memberId is required"}), 400
 
-    FunctionService.assign_holder(function_id, id_from_body(member_id, "memberId"))
+    FunctionService.assign_holder(
+        function_id, id_from_body(member_id, "memberId"), get_current_member().id
+    )
     db.session.commit()
 
     fn = FunctionService.get_by_id(function_id)
@@ -121,7 +129,7 @@ def assign_holder(function_id: int):
 @functions_bp.delete("/<int:function_id>/holders/<int:member_id>")
 @permission_required("functions", "update", "Update functions")
 def remove_holder(function_id: int, member_id: int):
-    FunctionService.remove_holder(function_id, member_id)
+    FunctionService.remove_holder(function_id, member_id, get_current_member().id)
     db.session.commit()
 
     fn = FunctionService.get_by_id(function_id)

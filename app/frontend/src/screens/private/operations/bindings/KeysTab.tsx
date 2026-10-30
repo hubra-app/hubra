@@ -15,9 +15,9 @@ export function KeysTab() {
   const { t } = useT()
   const { hasPermission } = useAuth()
   const queryClient = useQueryClient()
-  const canCreate = hasPermission('keys.keys.write')
-  const canUpdate = hasPermission('keys.keys.write')
-  const canDelete = hasPermission('keys.keys.delete')
+  const canCreate = hasPermission('bindings.keys.write')
+  const canUpdate = hasPermission('bindings.keys.write')
+  const canDelete = hasPermission('bindings.keys.delete')
   const { data: keys = [], isLoading: loading } = useQuery({
     queryKey: qk.keys,
     queryFn: () => listKeys(),
