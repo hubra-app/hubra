@@ -437,7 +437,7 @@ function SessionsTab() {
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['sessions'] })
 
   const revoke = useMutation({
-    mutationFn: (s: authApi.AccountSession) => authApi.revokeSession(s.club.slug, s.id),
+    mutationFn: authApi.revokeSession,
     onSuccess: refresh,
     onError: (err) =>
       notify('error', tr('Abmelden fehlgeschlagen', 'Sign-out failed'), errorText(err, '')),
@@ -463,7 +463,7 @@ function SessionsTab() {
     <Stack gap="sm">
       <Group justify="space-between">
         <Text size="sm" c="dimmed">
-          {tr('Wo du in deinen Vereinen angemeldet bist', 'Where you are signed in to your clubs')}
+          {tr('Wo du angemeldet bist', 'Where you are signed in')}
         </Text>
         <Button
           variant="light"
@@ -479,13 +479,13 @@ function SessionsTab() {
       {sessions.data.length === 0 && (
         <Text size="sm" c="dimmed">
           {tr(
-            'Keine Sitzungen gefunden. Aufgeführt werden Anmeldungen in deinen Vereinen; Anmeldungen hier im Konto erscheinen noch nicht.',
-            'No sessions found. This lists sign-ins to your clubs; sign-ins to this account page are not listed yet.',
+            'Keine Sitzungen gefunden. Anmeldungen von vor diesem Update erscheinen erst nach der nächsten Anmeldung.',
+            'No sessions found. Sign-ins from before this update appear after the next sign-in.',
           )}
         </Text>
       )}
       {sessions.data.map((s) => (
-        <Paper key={`${s.club.slug}-${s.id}`} withBorder radius="md" p="md">
+        <Paper key={`${s.club?.slug ?? 'account'}-${s.id}`} withBorder radius="md" p="md">
           <Group justify="space-between" wrap="nowrap">
             <div style={{ minWidth: 0 }}>
               <Group gap="xs" wrap="nowrap">
@@ -501,7 +501,8 @@ function SessionsTab() {
                 )}
               </Group>
               <Text size="xs" c="dimmed" truncate>
-                {s.club.name} · {s.ipAddress || tr('IP unbekannt', 'IP unknown')} ·{' '}
+                {s.club?.name ?? tr('Konto (Anmeldeportal)', 'Account (sign-in portal)')} ·{' '}
+                {s.ipAddress || tr('IP unbekannt', 'IP unknown')} ·{' '}
                 {tr('zuletzt aktiv', 'last active')} {formatTime(s.lastActiveAt)}
               </Text>
             </div>
@@ -511,7 +512,7 @@ function SessionsTab() {
                 color="red"
                 size="xs"
                 style={{ flexShrink: 0 }}
-                loading={revoke.isPending && revoke.variables?.id === s.id}
+                loading={revoke.isPending && revoke.variables === s}
                 onClick={() => revoke.mutate(s)}
               >
                 {tr('Abmelden', 'Sign out')}
