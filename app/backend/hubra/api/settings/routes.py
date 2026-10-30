@@ -76,7 +76,6 @@ def get_settings():
 _PUBLIC_CLUB_FIELDS = (
     "club_name",
     "club_description",
-    "logo",
     "primary_color",
     "secondary_color",
     "accent_color",
@@ -90,12 +89,18 @@ _PUBLIC_CLUB_FIELDS = (
 @jwt_required()
 def get_club_profile():
     """Name, look and announcement banner of the club, for every member."""
+    from hubra.core.tenant.club_settings import club_logo_version
     from hubra.core.tenant.context import current_tenant
 
     get_current_member()  # members of this club only
     tenant = current_tenant()
     branding = dict((tenant.settings or {}).get("branding", {})) if tenant else {}
     profile = {k: branding.get(k) for k in _PUBLIC_CLUB_FIELDS}
+    # The logo itself (a data URL of up to 2 MB) slowed every page load and
+    # couldn't be cached; the app loads it from GET /system/clubs/<slug>/logo
+    # with this version in the link instead.
+    profile["slug"] = tenant.slug if tenant else None
+    profile["logo_version"] = club_logo_version(tenant)
     if not profile["club_name"] and tenant is not None:
         profile["club_name"] = tenant.name
     banner = (branding.get("announcement_banner_text") or "").strip()

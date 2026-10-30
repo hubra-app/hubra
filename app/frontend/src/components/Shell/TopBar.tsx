@@ -28,7 +28,7 @@ import { UserMenu } from './UserMenu'
 import { getBreadcrumb, initials, contrastColor } from './nav'
 import { qk } from '@/data/keys'
 import { useClubColors } from '@/branding'
-import { useClubProfile } from '@/data/clubProfile'
+import { useClubLogo, useClubProfile } from '@/data/clubProfile'
 
 export function TopBar() {
   const { t } = useT()
@@ -59,6 +59,7 @@ export function TopBar() {
   const unreadCount = notifications.filter((n) => !n.read).length
 
   const { data: club } = useClubProfile()
+  const logo = useClubLogo()
   const { secondary } = useClubColors()
 
   return (
@@ -85,9 +86,9 @@ export function TopBar() {
         <IconMenu2 size={20} />
       </ActionIcon>
 
-      {club?.logo ? (
+      {club && logo ? (
         <Group gap={10} wrap="nowrap" style={{ flexShrink: 1, minWidth: 0, maxWidth: 280 }}>
-          <img src={club.logo} alt="" className="club-logo" />
+          <img src={logo} alt="" className="club-logo" />
           <Text fz="lg" fw={700} truncate className="mantine-visible-from-xs">
             {club.club_name}
           </Text>
