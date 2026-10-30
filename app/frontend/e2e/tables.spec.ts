@@ -4,7 +4,7 @@ import { appUrl } from './env'
 /** The members screen in its table view (it remembers cards or table). */
 async function membersTable(page: Page) {
   await page.goto(appUrl('members'))
-  await page.getByText(/Tabelle/).first().click()
+  await page.getByRole('img', { name: 'Liste' }).first().click()
   await expect(page.locator('table').first()).toBeAttached()
 }
 
