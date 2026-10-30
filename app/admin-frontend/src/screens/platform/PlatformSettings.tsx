@@ -22,6 +22,12 @@ import {
 } from '@/api/platform'
 
 const RELAY = ['mail.relay.host', 'mail.relay.port', 'mail.relay.user', 'mail.relay.password']
+const FALLBACK = [
+  'mail.fallback.host',
+  'mail.fallback.port',
+  'mail.fallback.user',
+  'mail.fallback.password',
+]
 const SENDER = ['mail.system.sender_email', 'mail.system.sender_name']
 const BACKUP = [
   'backup.s3.endpoint',
@@ -55,6 +61,13 @@ const FIELD_DE: Record<string, [string, string]> = {
   'mail.relay.port': ['SMTP-Relay-Port', '587 für STARTTLS, 25 für ein internes Relay ohne TLS'],
   'mail.relay.user': ['SMTP-Benutzer', 'Leer lassen, wenn das Relay keine Anmeldung braucht'],
   'mail.relay.password': ['SMTP-Passwort', 'Wird verschlüsselt gespeichert'],
+  'mail.fallback.host': [
+    'Fallback-Relay-Server',
+    'Wird genutzt, wenn das Relay eine Mail ablehnt, z. B. weil das Sendekontingent erreicht ist (smtp-relay.brevo.com). Leer lassen für keinen Fallback',
+  ],
+  'mail.fallback.port': ['Fallback-Relay-Port', '587 für STARTTLS, 465 für TLS'],
+  'mail.fallback.user': ['Fallback-SMTP-Benutzer', 'Leer lassen, wenn der Fallback keine Anmeldung braucht'],
+  'mail.fallback.password': ['Fallback-SMTP-Passwort', 'Wird verschlüsselt gespeichert'],
   'mail.system.sender_email': ['Absenderadresse des Systems', 'Absender für Anmelde-, SSO- und Plattform-Mails'],
   'mail.system.sender_name': ['Absendername des Systems', 'Angezeigter Name des Systemabsenders'],
   'backup.s3.endpoint': ['S3-Endpunkt', 'S3-kompatible Adresse, z. B. https://eu2.contabostorage.com'],
@@ -76,7 +89,7 @@ export function PlatformSettings() {
   const [draft, setDraft] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const [testTo, setTestTo] = useState('')
-  const [testing, setTesting] = useState(false)
+  const [testing, setTesting] = useState<'relay' | 'fallback' | null>(null)
 
   const byKey = Object.fromEntries(settings.map((s) => [s.key, s]))
   // A secret field left empty keeps the stored value.
@@ -109,15 +122,15 @@ export function PlatformSettings() {
     }
   }
 
-  const sendTest = async () => {
-    setTesting(true)
+  const sendTest = async (via: 'relay' | 'fallback') => {
+    setTesting(via)
     try {
-      await sendPlatformTestMail(testTo.trim())
+      await sendPlatformTestMail(testTo.trim(), via)
       notify('success', tr('Testmail gesendet', 'Test mail sent'), testTo.trim())
     } catch (err) {
       notify('error', tr('Testmail fehlgeschlagen', 'Test mail failed'), err instanceof Error ? err.message : undefined)
     } finally {
-      setTesting(false)
+      setTesting(null)
     }
   }
 
@@ -189,6 +202,20 @@ export function PlatformSettings() {
           </Paper>
 
           <Paper withBorder shadow="sm" radius="lg" p="lg">
+            <Group justify="space-between" mb={4}>
+              <Title order={3}>{tr('Fallback-Relay', 'Fallback relay')}</Title>
+              {resetButton(FALLBACK)}
+            </Group>
+            <Text size="xs" c="dimmed" mb={12}>
+              {tr(
+                'Lehnt das Relay eine Mail ab (Kontingent erreicht, Ausfall, Anmeldung), geht sie über diesen Server raus, vom selben Absender. Danach wird das Relay 15 Minuten übersprungen. Die Absenderdomain muss auch beim Fallback-Anbieter verifiziert sein (SPF/DKIM).',
+                'When the relay refuses a mail (quota reached, outage, login), it goes out through this server, from the same sender. The relay is then skipped for 15 minutes. The sender domain must be verified with the fallback provider too (SPF/DKIM).',
+              )}
+            </Text>
+            <Stack gap="sm">{FALLBACK.map(field)}</Stack>
+          </Paper>
+
+          <Paper withBorder shadow="sm" radius="lg" p="lg">
             <Group justify="space-between" mb={12}>
               <Title order={3}>{tr('Systemabsender', 'System sender')}</Title>
               {resetButton(SENDER)}
@@ -234,12 +261,22 @@ export function PlatformSettings() {
               />
               <Button
                 variant="light"
-                loading={testing}
-                disabled={!testTo.includes('@') || changed.length > 0}
-                onClick={sendTest}
+                loading={testing === 'relay'}
+                disabled={!testTo.includes('@') || changed.length > 0 || testing !== null}
+                onClick={() => sendTest('relay')}
               >
-                {tr('Test senden', 'Send test')}
+                {tr('Test über Relay', 'Test via relay')}
               </Button>
+              {byKey['mail.fallback.host']?.isSet && (
+                <Button
+                  variant="light"
+                  loading={testing === 'fallback'}
+                  disabled={!testTo.includes('@') || changed.length > 0 || testing !== null}
+                  onClick={() => sendTest('fallback')}
+                >
+                  {tr('Test über Fallback', 'Test via fallback')}
+                </Button>
+              )}
             </Group>
             {changed.length > 0 && (
               <Text size="xs" c="dimmed" mt={6}>

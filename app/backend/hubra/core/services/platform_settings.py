@@ -16,6 +16,11 @@ Mail split:
     mailbox (``mail.smtp.user`` / ``mail.smtp.password`` from the mail
     module), which sends as that mailbox through the same relay.
 
+Fallback relay: when ``mail.fallback.host`` is set, a mail the platform
+relay refuses (a send quota, an outage, a login failure) is sent again
+through the fallback, e.g. Brevo's SMTP relay, from the same sender.  See
+``email._send_via_smtp``.
+
 Backups (the global one and one per club) are the platform's, so where they
 are stored (``backup.s3.*``) is the platform's to decide, not a club's.
 """
@@ -91,6 +96,34 @@ SPECS: tuple[Spec, ...] = (
         "System sender name",
         "Display name of the system sender",
         lambda cfg: "Hubra",
+    ),
+    Spec(
+        "mail.fallback.host",
+        "Fallback relay host",
+        "Used when the relay refuses a mail, e.g. its send quota is reached "
+        "(smtp-relay.brevo.com). Leave empty for no fallback",
+        lambda cfg: cfg.get("SMTP_FALLBACK_HOST") or "",
+        "host",
+    ),
+    Spec(
+        "mail.fallback.port",
+        "Fallback relay port",
+        "587 for STARTTLS, 465 for TLS",
+        lambda cfg: str(cfg.get("SMTP_FALLBACK_PORT") or 587),
+        "port",
+    ),
+    Spec(
+        "mail.fallback.user",
+        "Fallback SMTP user",
+        "Leave empty if the fallback needs no login",
+        lambda cfg: cfg.get("SMTP_FALLBACK_USER") or "",
+    ),
+    Spec(
+        "mail.fallback.password",
+        "Fallback SMTP password",
+        "Stored encrypted",
+        lambda cfg: cfg.get("SMTP_FALLBACK_PASSWORD") or "",
+        secret=True,
     ),
     Spec(
         "backup.s3.endpoint",
@@ -237,4 +270,29 @@ def relay() -> Relay:
         password=get("mail.relay.password"),
         sender_email=get("mail.system.sender_email"),
         sender_name=get("mail.system.sender_name") or "Hubra",
+    )
+
+
+@dataclass(frozen=True)
+class FallbackRelay:
+    host: str
+    port: int
+    user: str
+    password: str
+
+
+def fallback_relay() -> FallbackRelay | None:
+    """The fallback relay, or None when no host is set."""
+    host = get("mail.fallback.host")
+    if not host:
+        return None
+    try:
+        port = int(get("mail.fallback.port") or 587)
+    except ValueError:
+        port = 587
+    return FallbackRelay(
+        host=host,
+        port=port,
+        user=get("mail.fallback.user"),
+        password=get("mail.fallback.password"),
     )

@@ -96,14 +96,23 @@ def update_settings():
 @require_global_permission(_PERM)
 @limiter.limit("10 per hour")
 def send_test_mail():
-    """Send a test mail through the relay from the system sender."""
+    """Send a test mail from the system sender through the relay, or with
+    ``via: "fallback"`` through the fallback relay, never both."""
     body = request.get_json(silent=True) or {}
     to = str(body.get("to") or "").strip()
     if "@" not in to:
         return api_error("VALIDATION_ERROR", "'to' must be an email address", 400)
+    via = str(body.get("via") or "relay")
+    if via not in ("relay", "fallback"):
+        return api_error("VALIDATION_ERROR", "'via' must be relay or fallback", 400)
 
     relay = platform_settings.relay()
-    if not relay.host or not relay.sender_email:
+    host = (
+        relay.host
+        if via == "relay"
+        else getattr(platform_settings.fallback_relay(), "host", "")
+    )
+    if not host or not relay.sender_email:
         return api_error(
             "SERVICE_UNAVAILABLE",
             "Set the relay host and the system sender address first",
@@ -118,6 +127,7 @@ def send_test_mail():
             "Hubra test mail",
             "<p>This is a test mail from your Hubra platform relay.</p>",
             "This is a test mail from your Hubra platform relay.",
+            via=via,
         )
     except email.EmailDeliveryError as exc:
         return api_error("SMTP_ERROR", f"The relay refused the mail: {exc}", 502)

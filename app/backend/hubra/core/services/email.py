@@ -21,6 +21,12 @@ set in the manager portal, defaults from SMTP_* / MAIL_FROM in env):
   (``ZONEMTA_SMTP_HOST``) or else the platform relay.
 * With no platform sender configured, both fall back to the club sender, as
   before the platform relay existed.
+
+A mail the platform relay refuses (send quota, outage, login) is sent again
+through the fallback relay when one is set (``mail.fallback.*``).  After a
+relay failure the fallback succeeded on, the relay is skipped for a while
+(``_PRIMARY_DOWN_SECONDS``, kept in Redis), so a quota does not cost a failed
+attempt per mail.  Club mailboxes never use the fallback.
 """
 
 from __future__ import annotations
@@ -135,6 +141,67 @@ def _mailbox_route(platform, mailbox: tuple[str, str]) -> _Route:
 
 _SMTP_TIMEOUT = 30  # seconds
 
+_PRIMARY_DOWN_KEY = "mail:relay:primary_down"
+_PRIMARY_DOWN_SECONDS = 15 * 60
+
+
+def _primary_down() -> bool:
+    """Whether a recent relay failure says to try the fallback first."""
+    from hubra.core.redis_client import get_redis_client, mark_redis_down
+
+    client = get_redis_client()
+    if client is None:
+        return False
+    try:
+        return bool(client.exists(_PRIMARY_DOWN_KEY))
+    except Exception:
+        mark_redis_down()
+        return False
+
+
+def _mark_primary_down() -> None:
+    from hubra.core.redis_client import get_redis_client, mark_redis_down
+
+    client = get_redis_client()
+    if client is None:
+        return
+    try:
+        client.set(_PRIMARY_DOWN_KEY, "1", ex=_PRIMARY_DOWN_SECONDS)
+    except Exception:
+        mark_redis_down()
+
+
+def _fallback_route() -> _Route | None:
+    fb = platform_settings.fallback_relay()
+    return _Route(fb.host, fb.port, fb.user, fb.password) if fb else None
+
+
+def _deliver(route: _Route, sender_email: str, to_email: str, message: str) -> None:
+    """Hand one message to *route*; raises whatever smtplib raises."""
+    smtp_host = route.host or "localhost"
+    smtp_port = route.port
+    _smtp_context = ssl.create_default_context()
+    if current_app.config.get("SMTP_TLS_VERIFY", True) is False:
+        _smtp_context.check_hostname = False
+        _smtp_context.verify_mode = ssl.CERT_NONE
+    # A timeout, so a relay that stops answering fails the send (and
+    # the task's retry) instead of holding a worker forever. Port 465
+    # is TLS from the first byte; the others upgrade with STARTTLS.
+    if smtp_port == 465:
+        connection = smtplib.SMTP_SSL(
+            smtp_host, smtp_port, timeout=_SMTP_TIMEOUT, context=_smtp_context
+        )
+    else:
+        connection = smtplib.SMTP(smtp_host, smtp_port, timeout=_SMTP_TIMEOUT)
+    with connection as server:
+        server.ehlo()
+        if smtp_port not in (25, 465):
+            server.starttls(context=_smtp_context)
+            server.ehlo()
+        if route.user and route.password:
+            server.login(route.user, route.password)
+        server.sendmail(sender_email, [to_email], message)
+
 
 def _send_via_smtp(
     to_email: str,
@@ -148,16 +215,26 @@ def _send_via_smtp(
     *,
     reply_to: str | None = None,
     route: _Route | None = None,
+    via: str | None = None,
 ) -> bool:
-    """Send one email over SMTP.  *route* defaults to the platform relay.
+    """Send one email over SMTP.  *route* defaults to the platform relay,
+    with the fallback relay behind it.  ``via="relay"`` or ``"fallback"``
+    uses only that one (the manager portal's test mail).
 
     Returns True on success, raises EmailDeliveryError on failure.
     """
+    fallback: _Route | None = None
     if route is None:
         r = platform_settings.relay()
-        route = _Route(r.host, r.port, r.user, r.password)
-    smtp_host = route.host or "localhost"
-    smtp_port = route.port
+        primary = _Route(r.host, r.port, r.user, r.password)
+        if via == "fallback":
+            route = _fallback_route()
+            if route is None:
+                raise EmailDeliveryError("No fallback relay is set")
+        else:
+            route = primary
+            if via != "relay":
+                fallback = _fallback_route()
 
     if attachments:
         msg = MIMEMultipart("mixed")
@@ -183,39 +260,46 @@ def _send_via_smtp(
     msg["To"] = formataddr((to_name, to_email))
     if reply_to:
         msg["Reply-To"] = reply_to
+    message = msg.as_string()
 
-    try:
-        _smtp_context = ssl.create_default_context()
-        if current_app.config.get("SMTP_TLS_VERIFY", True) is False:
-            _smtp_context.check_hostname = False
-            _smtp_context.verify_mode = ssl.CERT_NONE
-        # A timeout, so a relay that stops answering fails the send (and
-        # the task's retry) instead of holding a worker forever. Port 465
-        # is TLS from the first byte; the others upgrade with STARTTLS.
-        if smtp_port == 465:
-            connection = smtplib.SMTP_SSL(
-                smtp_host, smtp_port, timeout=_SMTP_TIMEOUT, context=_smtp_context
+    routes = [route]
+    if fallback is not None:
+        routes = [fallback, route] if _primary_down() else [route, fallback]
+
+    primary_error: Exception | None = None
+    last_error: Exception | None = None
+    for current in routes:
+        is_fallback = current is fallback
+        try:
+            _deliver(current, sender_email, to_email, message)
+        except Exception as exc:
+            last_error = exc
+            if not is_fallback:
+                primary_error = exc
+            logger.error(
+                "smtp_fallback_error to_email=%s subject=%s relay=%s error=%s",
+                to_email,
+                subject,
+                current.host,
+                exc,
             )
-        else:
-            connection = smtplib.SMTP(smtp_host, smtp_port, timeout=_SMTP_TIMEOUT)
-        with connection as server:
-            server.ehlo()
-            if smtp_port not in (25, 465):
-                server.starttls(context=_smtp_context)
-                server.ehlo()
-            if route.user and route.password:
-                server.login(route.user, route.password)
-            server.sendmail(sender_email, [to_email], msg.as_string())
+            continue
+        if is_fallback:
+            # One refused recipient says nothing about the relay; a quota,
+            # an outage or a failed login does.
+            if primary_error is not None and not isinstance(
+                primary_error, smtplib.SMTPRecipientsRefused
+            ):
+                _mark_primary_down()
+            logger.warning(
+                "smtp_relay_fallback_used to_email=%s subject=%s relay=%s",
+                to_email,
+                subject,
+                current.host,
+            )
         logger.info("smtp_fallback_sent to_email=%s subject=%s", to_email, subject)
         return True
-    except Exception as exc:
-        logger.error(
-            "smtp_fallback_error to_email=%s subject=%s error=%s",
-            to_email,
-            subject,
-            exc,
-        )
-        raise EmailDeliveryError(str(exc)) from exc
+    raise EmailDeliveryError(str(last_error)) from last_error
 
 
 def _send(
