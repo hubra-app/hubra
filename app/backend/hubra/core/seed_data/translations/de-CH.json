@@ -2809,5 +2809,21 @@
   "roles.systemDesc.Treasurer": "Verwaltet die Finanzen, sieht Mitglieder und das Protokoll.",
   "roles.systemDesc.Member": "Grundrechte jedes Mitglieds: Anlässe, Umfragen, Beiträge. Die Rechte lassen sich anpassen.",
   "roles.systemNameHint": "Systemrollen behalten ihren Namen; die App zeigt ihn übersetzt.",
-  "roles.adminLocked": "Admin-Rollen haben alle Rechte; die einzelnen Berechtigungen gelten für sie nicht."
+  "roles.adminLocked": "Admin-Rollen haben alle Rechte; die einzelnen Berechtigungen gelten für sie nicht.",
+  "roles.membersOf": "Wer die Rolle {{role}} hat",
+  "roles.addMember": "Mitglied hinzufügen",
+  "roles.holderCount_one": "{{count}} Mitglied",
+  "roles.holderCount_other": "{{count}} Mitglieder",
+  "roles.showInList": "In der Mitgliederliste zeigen",
+  "roles.viaFunction": "über {{fn}}",
+  "roles.removeMember": "{{name}} die Rolle wegnehmen",
+  "roles.noHolders": "Noch niemand hat diese Rolle.",
+  "members.roleViaFunction": "{{role}} (über {{fn}})",
+  "members.roleFilter": "Nach Rolle filtern",
+  "members.allRoles": "Alle Rollen",
+  "members.functionRolesHint": "Über Funktionen: {{roles}}. Diese ändern sich mit der Funktion.",
+  "functions.grantsRole": "Gibt die Rolle",
+  "functions.grantsRoleHint": "Wer die Funktion innehat, hat diese Rolle, bis die Funktion endet.",
+  "functions.noRole": "Keine Rolle",
+  "functions.givesRole": "Gibt die Rolle {{role}}"
 }

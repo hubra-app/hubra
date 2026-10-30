@@ -2809,5 +2809,21 @@
   "roles.systemDesc.Treasurer": "Manages the finances, sees members and the audit log.",
   "roles.systemDesc.Member": "What every member may do: events, polls, posts. The permissions can be changed.",
   "roles.systemNameHint": "System roles keep their name; the app shows it translated.",
-  "roles.adminLocked": "Admin roles hold every permission; the single permissions don't apply to them."
+  "roles.adminLocked": "Admin roles hold every permission; the single permissions don't apply to them.",
+  "roles.membersOf": "Who has the role {{role}}",
+  "roles.addMember": "Add member",
+  "roles.holderCount_one": "{{count}} member",
+  "roles.holderCount_other": "{{count}} members",
+  "roles.showInList": "Show in the members list",
+  "roles.viaFunction": "through {{fn}}",
+  "roles.removeMember": "Take the role from {{name}}",
+  "roles.noHolders": "No one has this role yet.",
+  "members.roleViaFunction": "{{role}} (through {{fn}})",
+  "members.roleFilter": "Filter by role",
+  "members.allRoles": "All roles",
+  "members.functionRolesHint": "Through functions: {{roles}}. These change with the function.",
+  "functions.grantsRole": "Gives the role",
+  "functions.grantsRoleHint": "Whoever holds the function has this role until the function ends.",
+  "functions.noRole": "No role",
+  "functions.givesRole": "Gives the role {{role}}"
 }

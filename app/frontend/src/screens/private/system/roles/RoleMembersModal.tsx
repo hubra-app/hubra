@@ -1,43 +1,57 @@
 import { useState } from 'react'
-import { Checkbox, Group, ScrollArea, Select, Stack, Text, TextInput } from '@mantine/core'
-import { IconSearch } from '@tabler/icons-react'
-import { useQueryClient } from '@tanstack/react-query'
-import { updateMember } from '@/api/members'
+import { ActionIcon, Anchor, Badge, Group, ScrollArea, Select, Stack, Text } from '@mantine/core'
+import { IconX } from '@tabler/icons-react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { listMembers, updateMember } from '@/api/members'
 import type { Role } from '@/api/settings'
 import { Modal, LoadingSpinner } from '@/components/ui'
-import { useToast } from '@/context/AppContext'
+import { useNav, useToast } from '@/context/AppContext'
 import { qk } from '@/data/keys'
 import { useMemberSearch } from '@/data/members'
 import { useT } from '@/locales/i18n'
 import { roleLabel } from '@/roles'
 import type { Member } from '@/types'
 
-/** Gives members a role or takes it away, one checkbox per member. */
+/**
+ * Who holds a role, and giving it to members or taking it away. Members who
+ * hold it through a function are listed too; that role goes with the function.
+ */
 export function RoleMembersModal({
   role,
   roles,
+  canAssign,
   onRoleChange,
   onClose,
 }: {
   role: Role | null
   /** The roles that can be picked in the dialog. */
   roles: Role[]
+  canAssign: boolean
   onRoleChange: (role: Role) => void
   onClose: () => void
 }) {
   const { t } = useT()
   const { notify } = useToast()
+  const { go } = useNav()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
-  const { data: page } = useMemberSearch(search, { enabled: !!role })
-  const members = page?.members
+  const { data: holders } = useQuery({
+    queryKey: qk.members.list('role', role?.id),
+    queryFn: () => listMembers({ roleId: role!.id, pageSize: 500 }).then((r) => r.members),
+    enabled: !!role,
+  })
+  const { data: found } = useMemberSearch(search, { enabled: !!role && canAssign })
 
-  const toggle = async (member: Member, role: Role, add: boolean) => {
+  const change = async (member: Member, add: boolean) => {
+    if (!role) return
     const current = member.roles ?? []
     const roleNames = add ? [...current, role.name] : current.filter((r) => r !== role.name)
     try {
       await updateMember(member.id, { roleNames })
-      queryClient.invalidateQueries({ queryKey: qk.members.all })
+      await queryClient.invalidateQueries({ queryKey: qk.members.all })
+      // The member counts on the roles page.
+      queryClient.invalidateQueries({ queryKey: qk.settings.rolesPermissions })
+      setSearch('')
     } catch (err: unknown) {
       notify(
         'error',
@@ -47,6 +61,9 @@ export function RoleMembersModal({
     }
   }
 
+  const holderIds = new Set((holders ?? []).map((m) => m.id))
+  const candidates = (found?.members ?? []).filter((m) => !holderIds.has(m.id))
+
   return (
     <Modal
       open={!!role}
@@ -54,9 +71,7 @@ export function RoleMembersModal({
       title={t('roles.members', 'Rollenmitglieder')}
       subtitle={
         role
-          ? t('roles.assignTo', 'Mitgliedern die Rolle {{role}} geben', {
-              role: roleLabel(role.name),
-            })
+          ? t('roles.membersOf', 'Wer die Rolle {{role}} hat', { role: roleLabel(role.name) })
           : ''
       }
       wide
@@ -77,67 +92,109 @@ export function RoleMembersModal({
             size="sm"
           />
         )}
-        {role && (
-          <TextInput
-            size="sm"
-            leftSection={<IconSearch size={14} />}
+        {role && canAssign && (
+          <Select
+            label={t('roles.addMember', 'Mitglied hinzufügen')}
             placeholder={t('roles.searchMembers', 'Mitglied suchen …')}
-            aria-label={t('roles.searchMembers', 'Mitglied suchen …')}
-            value={search}
-            onChange={(e) => setSearch(e.currentTarget.value)}
+            searchable
+            searchValue={search}
+            onSearchChange={setSearch}
+            data={candidates.map((m) => ({ value: m.id, label: m.name }))}
+            value={null}
+            onChange={(id) => {
+              const member = candidates.find((m) => m.id === id)
+              if (member) change(member, true)
+            }}
+            nothingFoundMessage={t('roles.noMembers', 'Keine Mitglieder gefunden.')}
+            filter={({ options }) => options}
+            size="sm"
           />
         )}
         {role && (
+          <Group justify="space-between">
+            <Text size="sm" fw={600}>
+              {t('roles.holderCount', '{{count}} Mitglieder', { count: holders?.length ?? 0 })}
+            </Text>
+            <Anchor
+              size="sm"
+              onClick={() => {
+                onClose()
+                go(`/app/members?role=${role.id}`)
+              }}
+            >
+              {t('roles.showInList', 'In der Mitgliederliste zeigen')}
+            </Anchor>
+          </Group>
+        )}
+        {role && (
           <ScrollArea.Autosize mah={400} offsetScrollbars>
-            <Stack gap={6}>
-              {(members ?? []).map((member) => (
-                <Group
-                  key={member.id}
-                  justify="space-between"
-                  p="xs"
-                  style={{ borderBottom: '1px solid #f1eff7' }}
-                >
-                  <Group gap={10}>
-                    <div
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: '50%',
-                        background: member.avatarColor || '#3a1e78',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#fff',
-                        fontWeight: 700,
-                        fontSize: 13,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {member.firstName[0]}
-                      {member.lastName[0]}
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: 'sm' }}>{member.name}</div>
-                      <div style={{ fontSize: 'var(--mantine-font-size-xs)', color: 'var(--hb-text-3)' }}>
-                        {member.email}
+            <Stack gap={0}>
+              {(holders ?? []).map((member) => {
+                const direct = member.roles.includes(role.name)
+                const viaFunctions = (member.functionRoles ?? [])
+                  .filter((fr) => fr.name === role.name)
+                  .map((fr) => fr.function)
+                return (
+                  <Group
+                    key={member.id}
+                    justify="space-between"
+                    py={8}
+                    px="xs"
+                    wrap="nowrap"
+                    style={{ borderBottom: '1px solid var(--hb-border)' }}
+                  >
+                    <Group gap={10} wrap="nowrap">
+                      <div
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: '50%',
+                          background: member.avatarColor || '#3a1e78',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#fff',
+                          fontWeight: 700,
+                          fontSize: 13,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {member.firstName[0]}
+                        {member.lastName[0]}
                       </div>
-                    </div>
+                      <div>
+                        <div style={{ fontWeight: 600 }}>{member.name}</div>
+                        {viaFunctions.length > 0 && (
+                          <Badge size="xs" variant="light" color="gray">
+                            {t('roles.viaFunction', 'über {{fn}}', { fn: viaFunctions.join(', ') })}
+                          </Badge>
+                        )}
+                      </div>
+                    </Group>
+                    {direct && canAssign && (
+                      <ActionIcon
+                        variant="subtle"
+                        color="red"
+                        aria-label={t('roles.removeMember', '{{name}} die Rolle wegnehmen', {
+                          name: member.name,
+                        })}
+                        title={t('roles.removeMember', '{{name}} die Rolle wegnehmen', {
+                          name: member.name,
+                        })}
+                        onClick={() => change(member, false)}
+                      >
+                        <IconX size={16} />
+                      </ActionIcon>
+                    )}
                   </Group>
-                  <Checkbox
-                    checked={member.roles?.includes(role.name) ?? false}
-                    disabled={role.isAdmin}
-                    aria-label={member.name}
-                    onChange={(e) => toggle(member, role, e.currentTarget.checked)}
-                    size="sm"
-                  />
-                </Group>
-              ))}
-              {members && members.length === 0 && (
+                )
+              })}
+              {holders && holders.length === 0 && (
                 <Text c="dimmed" ta="center" py="lg">
-                  {t('roles.noMembers', 'Keine Mitglieder gefunden.')}
+                  {t('roles.noHolders', 'Noch niemand hat diese Rolle.')}
                 </Text>
               )}
-              {!members && (
+              {!holders && (
                 <LoadingSpinner
                   compact
                   message={t('roles.loadingMembers', 'Mitglieder werden geladen …')}

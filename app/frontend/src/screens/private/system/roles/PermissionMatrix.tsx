@@ -25,6 +25,7 @@ interface PermissionMatrixProps {
   toggleAllInScope: (role: Role, keys: string[], on: boolean) => void
   openEdit: (role: Role) => void
   handleDeleteRole: (role: Role) => void
+  openMembers: (role: Role) => void
 }
 
 /** Roles across the top, one row per permission of the chosen area. */
@@ -44,6 +45,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
     toggleAllInScope,
     openEdit,
     handleDeleteRole,
+    openMembers,
   } = props
   const { t } = useT()
   const { isAdmin } = useAuth()
@@ -128,6 +130,21 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                     </button>
                   )}
                 </div>
+                <button
+                  onClick={() => openMembers(role)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--hb-text-2)',
+                    fontSize: 'var(--mantine-font-size-xs)',
+                    padding: 0,
+                    display: 'block',
+                    margin: '2px auto 0',
+                  }}
+                >
+                  {t('roles.holderCount', '{{count}} Mitglieder', { count: role.memberCount })}
+                </button>
                 {role.isAdmin || !canSetPermissions ? null : (
                   <button
                     onClick={() => {

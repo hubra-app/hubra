@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Button, Group, Menu, Select, Paper, Text, TextInput, ActionIcon } from '@mantine/core'
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT } from '@/locales/i18n'
@@ -39,6 +40,7 @@ import { createBulkInvoices } from '@/api/finance'
 import { listTiers } from '@/api/tiers'
 import { lookupsQuery } from '@/api/lookups'
 import { formatCHF } from '@/format'
+import { roleLabel } from '@/roles'
 import { MemberEditModal } from '@/components/MemberEditModal'
 import { useServerPagination } from '@/components/serverPagination'
 
@@ -59,6 +61,19 @@ export function MembersTab() {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [tierFilter, setTierFilter] = useState('All')
+  // ?role=<id>, so the roles page can link to a role's members.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const roleFilter = searchParams.get('role') ?? ''
+  const setRoleFilter = (id: string) =>
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (id) next.set('role', id)
+        else next.delete('role')
+        return next
+      },
+      { replace: true },
+    )
   const [showArchived, setShowArchived] = useState(false)
   const [sort, setSort] = useState('')
   const [addOpen, setAddOpen] = useState(false)
@@ -81,6 +96,15 @@ export function MembersTab() {
       lookupsData ? [...lookupsData.tiersByName.keys()] : [],
     [lookupsData],
   )
+  const roleOptions = useMemo(
+    () =>
+      lookupsData
+        ? [...lookupsData.roles.entries()]
+            .map(([id, name]) => ({ value: String(id), label: roleLabel(name) }))
+            .sort((a, b) => a.label.localeCompare(b.label))
+        : [],
+    [lookupsData],
+  )
   const { data: bulkTiers = [] } = useQuery({
     queryKey: qk.tiers.all,
     queryFn: () => listTiers(),
@@ -93,11 +117,14 @@ export function MembersTab() {
   }, [search])
 
   // The API pages the list: ask for the page on screen, not for everything.
-  const paging = useServerPagination(`${debouncedSearch}|${tierFilter}|${showArchived}|${sort}`)
+  const paging = useServerPagination(
+    `${debouncedSearch}|${tierFilter}|${roleFilter}|${showArchived}|${sort}`,
+  )
   const { data: membersData, isLoading: membersLoading } = useQuery({
     queryKey: qk.members.list(
       debouncedSearch,
       tierFilter,
+      roleFilter,
       showArchived,
       paging.page,
       paging.perPage,
@@ -107,6 +134,7 @@ export function MembersTab() {
       listMembers({
         search: debouncedSearch,
         tier: tierFilter,
+        roleId: roleFilter || undefined,
         archived: showArchived,
         sort: sort || undefined,
         page: paging.page,
@@ -463,6 +491,27 @@ export function MembersTab() {
               render: (m) => <TierTag tier={m.tier} />,
             },
             {
+              key: 'roles',
+              header: t('common.roles', 'Rollen'),
+              render: (m) => (
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {m.roles.map((r) => (
+                    <Tag key={r}>{roleLabel(r)}</Tag>
+                  ))}
+                  {(m.functionRoles ?? [])
+                    .filter((fr) => !m.roles.includes(fr.name))
+                    .map((fr) => (
+                      <Tag key={`${fr.name}-${fr.function}`}>
+                        {t('members.roleViaFunction', '{{role}} (über {{fn}})', {
+                          role: roleLabel(fr.name),
+                          fn: fr.function,
+                        })}
+                      </Tag>
+                    ))}
+                </div>
+              ),
+            },
+            {
               key: 'groups',
               header: t('members.groupsCol'),
               render: (m) => (
@@ -545,7 +594,7 @@ export function MembersTab() {
           loading={membersLoading}
           emptyMessage={t('members.noMembers', 'Keine Mitglieder gefunden.')}
           emptyDescription={
-            debouncedSearch || tierFilter !== 'All'
+            debouncedSearch || tierFilter !== 'All' || roleFilter
               ? t('members.noMembersFilterHint', 'Ändere die Suche oder den Filter.')
               : undefined
           }
@@ -596,15 +645,27 @@ export function MembersTab() {
           renderCard={renderMemberCard}
           viewKey="members"
           toolbar={
-            <Select
-              size="xs"
-              aria-label={t('members.sort.label', 'Sortieren')}
-              data={sortOptions}
-              value={sort}
-              onChange={(v) => setSort(v ?? '')}
-              allowDeselect={false}
-              w={170}
-            />
+            <Group gap={8} wrap="nowrap">
+              <Select
+                size="xs"
+                aria-label={t('members.roleFilter', 'Nach Rolle filtern')}
+                placeholder={t('members.allRoles', 'Alle Rollen')}
+                data={roleOptions}
+                value={roleFilter || null}
+                onChange={(v) => setRoleFilter(v ?? '')}
+                clearable
+                w={160}
+              />
+              <Select
+                size="xs"
+                aria-label={t('members.sort.label', 'Sortieren')}
+                data={sortOptions}
+                value={sort}
+                onChange={(v) => setSort(v ?? '')}
+                allowDeselect={false}
+                w={170}
+              />
+            </Group>
           }
         />
 

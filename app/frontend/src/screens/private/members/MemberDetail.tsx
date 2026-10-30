@@ -16,7 +16,7 @@ import {
 import type { Member } from '@/types'
 import { getMember, disableMember, enableMember } from '@/api/members'
 import { MemberEditModal } from '@/components/MemberEditModal'
-import { roleLabels } from '@/roles'
+import { roleLabel, roleLabels } from '@/roles'
 import { qk } from '@/data/keys'
 
 /* ── Member Detail ──────────────────────────── */
@@ -270,7 +270,19 @@ export function MemberDetailScreen({
               {m.clubUsername || <Empty />}
             </DetailRow>
             <DetailRow label={t('common.roles', 'Rollen')}>
-              {roleLabels(m.roles)}
+              {[
+                roleLabels(m.roles),
+                ...(m.functionRoles ?? [])
+                  .filter((fr) => !m.roles.includes(fr.name))
+                  .map((fr) =>
+                    t('members.roleViaFunction', '{{role}} (über {{fn}})', {
+                      role: roleLabel(fr.name),
+                      fn: fr.function,
+                    }),
+                  ),
+              ]
+                .filter(Boolean)
+                .join(', ') || <Empty />}
             </DetailRow>
             <DetailRow label={t('members.joined')} mono>
               {m.joined || <Empty />}

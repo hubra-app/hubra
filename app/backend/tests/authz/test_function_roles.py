@@ -111,3 +111,17 @@ def test_linking_needs_the_right_to_give_the_role(client, db, seeded_db):
     resp = client.post(f"/api/v1/functions/{fn_id}/holders", json={"memberId": plain.id})
     assert resp.status_code == 403
     assert resp.get_json()["error"] == "BEYOND_OWN_PERMISSIONS"
+
+
+def test_roles_list_counts_holders(client, db, seeded_db):
+    kasse, plain = _kasse(db, seeded_db)
+    _admin(client)
+    fn_id = client.post(
+        "/api/v1/functions/", json={"name": "Kassier", "grantsRoleId": kasse.id}
+    ).get_json()["id"]
+    client.post(f"/api/v1/functions/{fn_id}/holders", json={"memberId": plain.id})
+
+    counts = {r["id"]: r["member_count"] for r in client.get("/api/v1/roles/").get_json()}
+    # kasse-holder@ holds it directly, plain@ through the function.
+    assert counts[kasse.id] == 2
+    assert counts[seeded_db["owner_role"].id] == 1

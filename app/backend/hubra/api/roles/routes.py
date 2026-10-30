@@ -33,7 +33,11 @@ _create_schema = RoleCreateSchema()
 @jwt_required()
 def list_roles():
     get_current_member()  # members of this club only
-    return jsonify(_many_schema.dump(RolesService.list())), 200
+    counts = RolesService.member_counts()
+    rows = _many_schema.dump(RolesService.list())
+    for row in rows:
+        row["member_count"] = counts.get(row["id"], 0)
+    return jsonify(rows), 200
 
 
 # ── POST /roles ───────────────────────────────────────────────────────────────

@@ -173,6 +173,32 @@ class RolesService:
     """Operations on the role collection."""
 
     @staticmethod
+    def member_counts() -> dict[int, int]:
+        """Role id -> how many current members hold it, themselves or through
+        a function whose term runs."""
+        from datetime import date
+
+        from sqlalchemy import func, union
+
+        from hubra.api.permissions import _active_term
+        from hubra.core.models.function import Function, FunctionHolder
+        from hubra.core.models.member import Member, member_roles
+
+        holds = union(
+            select(member_roles.c.role_id, member_roles.c.member_id),
+            select(Function.grants_tenant_role_id, FunctionHolder.member_id)
+            .join(Function, Function.id == FunctionHolder.function_id)
+            .where(Function.grants_tenant_role_id.is_not(None), *_active_term(date.today())),
+        ).subquery()
+        rows = db.session.execute(
+            select(holds.c[0], func.count())
+            .join(Member, Member.id == holds.c[1])
+            .where(Member.archived_at.is_(None), Member.deleted_at.is_(None))
+            .group_by(holds.c[0])
+        ).all()
+        return {role_id: count for role_id, count in rows}
+
+    @staticmethod
     def list() -> list[Role]:
         """Return all roles ordered by name."""
         return db.session.scalars(  # type: ignore[return-value]

@@ -1003,7 +1003,11 @@
     "noHolders": "Unbesetzt",
     "protected": "Geschützt",
     "searchMembers": "Mitglieder suchen …",
-    "title": "Funktionen"
+    "title": "Funktionen",
+    "grantsRole": "Gibt die Rolle",
+    "grantsRoleHint": "Wer die Funktion innehat, hat diese Rolle, bis die Funktion endet.",
+    "noRole": "Keine Rolle",
+    "givesRole": "Gibt die Rolle {{role}}"
   },
   "groups": {
     "addGroup": "Gruppe hinzufügen",
@@ -1759,7 +1763,11 @@
       "joinedNewest": "Neueste zuerst",
       "joinedOldest": "Älteste zuerst",
       "status": "Status"
-    }
+    },
+    "roleViaFunction": "{{role}} (über {{fn}})",
+    "roleFilter": "Nach Rolle filtern",
+    "allRoles": "Alle Rollen",
+    "functionRolesHint": "Über Funktionen: {{roles}}. Diese ändern sich mit der Funktion."
   },
   "notifications": {
     "invoicePaid": "Rechnung bezahlt",
@@ -3019,7 +3027,15 @@
       "Member": "Grundrechte jedes Mitglieds: Anlässe, Umfragen, Beiträge. Die Rechte lassen sich anpassen."
     },
     "systemNameHint": "Systemrollen behalten ihren Namen; die App zeigt ihn übersetzt.",
-    "adminLocked": "Admin-Rollen haben alle Rechte; die einzelnen Berechtigungen gelten für sie nicht."
+    "adminLocked": "Admin-Rollen haben alle Rechte; die einzelnen Berechtigungen gelten für sie nicht.",
+    "membersOf": "Wer die Rolle {{role}} hat",
+    "addMember": "Mitglied hinzufügen",
+    "holderCount_one": "{{count}} Mitglied",
+    "holderCount_other": "{{count}} Mitglieder",
+    "showInList": "In der Mitgliederliste zeigen",
+    "viaFunction": "über {{fn}}",
+    "removeMember": "{{name}} die Rolle wegnehmen",
+    "noHolders": "Noch niemand hat diese Rolle."
   },
   "modules": {
     "backups": {

@@ -1003,7 +1003,11 @@
     "noHolders": "Vacant",
     "protected": "Protected",
     "searchMembers": "Search members…",
-    "title": "Functions"
+    "title": "Functions",
+    "grantsRole": "Gives the role",
+    "grantsRoleHint": "Whoever holds the function has this role until the function ends.",
+    "noRole": "No role",
+    "givesRole": "Gives the role {{role}}"
   },
   "groups": {
     "addGroup": "Add Group",
@@ -1759,7 +1763,11 @@
       "joinedNewest": "Newest first",
       "joinedOldest": "Oldest first",
       "status": "Status"
-    }
+    },
+    "roleViaFunction": "{{role}} (through {{fn}})",
+    "roleFilter": "Filter by role",
+    "allRoles": "All roles",
+    "functionRolesHint": "Through functions: {{roles}}. These change with the function."
   },
   "notifications": {
     "invoicePaid": "Invoice paid",
@@ -3019,7 +3027,15 @@
       "Member": "What every member may do: events, polls, posts. The permissions can be changed."
     },
     "systemNameHint": "System roles keep their name; the app shows it translated.",
-    "adminLocked": "Admin roles hold every permission; the single permissions don't apply to them."
+    "adminLocked": "Admin roles hold every permission; the single permissions don't apply to them.",
+    "membersOf": "Who has the role {{role}}",
+    "addMember": "Add member",
+    "holderCount_one": "{{count}} member",
+    "holderCount_other": "{{count}} members",
+    "showInList": "Show in the members list",
+    "viaFunction": "through {{fn}}",
+    "removeMember": "Take the role from {{name}}",
+    "noHolders": "No one has this role yet."
   },
   "modules": {
     "functions": {

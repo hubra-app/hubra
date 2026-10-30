@@ -244,7 +244,7 @@ export function RolesTab() {
             },
           ]}
         />
-        {canAssign && (
+        {roles.length > 0 && (
           <Button
             variant="subtle"
             size="xs"
@@ -346,6 +346,7 @@ export function RolesTab() {
               toggleAllInScope={toggleAllInScope}
               openEdit={openEdit}
               handleDeleteRole={handleDeleteRole}
+              openMembers={setRoleMembersOpen}
             />
           )}
         </>
@@ -378,6 +379,7 @@ export function RolesTab() {
       <RoleMembersModal
         role={roleMembersOpen}
         roles={roles}
+        canAssign={canAssign}
         onRoleChange={setRoleMembersOpen}
         onClose={() => setRoleMembersOpen(null)}
       />
