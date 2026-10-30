@@ -1,6 +1,6 @@
 """Functions: club offices (president, treasurer, ...) and their holders."""
 
-from hubra.core.modules import Blueprint, Module
+from hubra.core.modules import Blueprint, Module, NavItem
 
 module = Module(
     code="functions",
@@ -15,6 +15,14 @@ module = Module(
             "/api/v1/functions",
         ),
     ),
-    # Shown as a tab of the Members screen.
+    nav=(
+        NavItem(
+            "/app/members/functions",
+            "shell.nav.functions",
+            "id-badge",
+            order=11,
+            perms=("functions.functions.read",),
+        ),
+    ),
     tables=("functions", "function_holders"),
 )

@@ -21,6 +21,19 @@ export const theme = createTheme({
   },
 
   colors: {
+    // Dark mode: neutral greys, so only the club colour carries colour.
+    dark: [
+      '#ededef',
+      '#c8c8ce',
+      '#a8a8b0',
+      '#7c7c85',
+      '#45454c',
+      '#2f2f34',
+      '#222226',
+      '#19191c',
+      '#151517',
+      '#111113',
+    ],
     acc: accColors,
     gold: goldColors,
     pink: pinkColors,

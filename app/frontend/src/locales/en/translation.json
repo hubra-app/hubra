@@ -964,7 +964,12 @@
       "openCategories": "Go to categories",
       "payee": "From / to (optional)",
       "payeePlaceholder": "e.g. Hardware store Ltd",
-      "record": "Record transaction"
+      "record": "Record transaction",
+      "createCategory": "+ Create category “{{name}}”",
+      "categoryOptional": "Category (optional)",
+      "typeCategory": "Type a name to create one",
+      "noCategoriesYet": "No categories yet. Type a name above to create one, or leave the field empty.",
+      "noCategoriesOptional": "No categories yet. You can record the transaction without one."
     },
     "noTransactionsFilterHint": "Change the search or the filters.",
     "noTransactionsYet": "No transactions yet",
@@ -1746,6 +1751,14 @@
     "accountFieldsHint": "From the member's own account. Only they can change it.",
     "import": {
       "invitedMsg": "{{count}} invites sent, {{skipped}} already members."
+    },
+    "sort": {
+      "label": "Sort",
+      "nameAsc": "Name A–Z",
+      "nameDesc": "Name Z–A",
+      "joinedNewest": "Newest first",
+      "joinedOldest": "Oldest first",
+      "status": "Status"
     }
   },
   "notifications": {
@@ -2074,7 +2087,11 @@
       "account": "My Account",
       "accountSettings": "Account Settings",
       "logout": "Sign out",
-      "clubs": "Clubs"
+      "clubs": "Clubs",
+      "appearance": "Appearance",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "Like device"
     },
     "whatsNew": {
       "changelogSoon": "Changelog coming soon.",
@@ -2439,7 +2456,9 @@
     "nothingHere": "Nothing here.",
     "key": "Key",
     "value": "Value",
-    "noData": "No data"
+    "noData": "No data",
+    "viewCards": "Cards",
+    "viewList": "List"
   },
   "validation": {
     "displayNameRequired": "Display name is required",

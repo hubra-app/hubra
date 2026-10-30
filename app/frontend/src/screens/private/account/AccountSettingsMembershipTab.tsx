@@ -28,7 +28,7 @@ export function AccountSettingsMembershipTab() {
           p="md"
           gap="sm"
           style={{
-            borderBottom: '1px solid var(--mantine-color-gray-3)',
+            borderBottom: '1px solid var(--hb-border)',
           }}
         >
           <IconBuildingBank
@@ -127,7 +127,7 @@ export function AccountSettingsMembershipTab() {
           p="md"
           gap="sm"
           style={{
-            borderBottom: '1px solid var(--mantine-color-gray-3)',
+            borderBottom: '1px solid var(--hb-border)',
           }}
         >
           <Text fw={700} fz="md">

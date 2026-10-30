@@ -17,7 +17,7 @@ export function NotFoundScreen() {
         alignItems: 'center',
         justifyContent: 'center',
         padding: 24,
-        background: '#f7f6fb',
+        background: 'var(--hb-surface-2)',
       }}
     >
       <Stack align="center" gap="sm" maw={420} ta="center">

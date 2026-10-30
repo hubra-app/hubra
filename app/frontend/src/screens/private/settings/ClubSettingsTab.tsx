@@ -109,8 +109,8 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
                 style={{
                   flexShrink: 0,
                   borderRadius: 'var(--mantine-radius-md)',
-                  border: '1px solid var(--mantine-color-gray-3)',
-                  background: 'var(--mantine-color-gray-0)',
+                  border: '1px solid var(--hb-border)',
+                  background: 'var(--hb-surface-2)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',

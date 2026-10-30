@@ -37,8 +37,8 @@ export function MyGroupsCard() {
 
   return (
     <Paper withBorder shadow="sm" radius="lg">
-      <Group p="md" gap="sm" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}>
-        <IconUsersGroup size={16} style={{ color: '#5e5873' }} />
+      <Group p="md" gap="sm" style={{ borderBottom: '1px solid var(--hb-border)' }}>
+        <IconUsersGroup size={16} style={{ color: 'var(--hb-text-2)' }} />
         <Text fw={700} fz="md">
           {t('account.interestGroups', 'Interessengruppen')}
         </Text>
@@ -50,7 +50,7 @@ export function MyGroupsCard() {
           wrap="nowrap"
           px="md"
           py="sm"
-          style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}
+          style={{ borderBottom: '1px solid var(--hb-border)' }}
         >
           <div style={{ minWidth: 0 }}>
             <Text fw={600} fz="sm">

@@ -190,7 +190,7 @@ export function ItemFormModal({
             alignItems: 'center',
             gap: 8,
             fontSize: 'var(--mantine-font-size-sm)',
-            color: '#2e2940',
+            color: 'var(--hb-text)',
             cursor: 'pointer',
           }}
         >

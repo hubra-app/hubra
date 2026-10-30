@@ -67,10 +67,10 @@ export function TopBar() {
       gap="xs"
       px="md"
       style={{
-        background: 'var(--mantine-color-white)',
+        background: 'var(--hb-surface)',
         borderBottom: secondary
           ? '3px solid var(--mantine-color-club2-6)'
-          : '1px solid var(--mantine-color-gray-3)',
+          : '1px solid var(--hb-border)',
         flexWrap: 'nowrap',
       }}
       wrap="nowrap"
@@ -132,7 +132,7 @@ export function TopBar() {
             )}
             <Text
               fz="sm"
-              c={i === parts.length - 1 ? 'dark' : 'dimmed'}
+              c={i === parts.length - 1 ? 'var(--hb-text)' : 'dimmed'}
               fw={i === parts.length - 1 ? 600 : 400}
               style={{ whiteSpace: 'nowrap' }}
             >
@@ -167,7 +167,7 @@ export function TopBar() {
               {latestEntries.length > 0 ? (
                 latestEntries.map((entry) => (
                   <div key={entry.version}>
-                    <Text fz="xs" fw={600} c="#1a1625">
+                    <Text fz="xs" fw={600} c="var(--hb-text)">
                       v{entry.version}
                       {entry.date && (
                         <Text component="span" fz="xs" c="dimmed" ml={6}>
@@ -178,14 +178,14 @@ export function TopBar() {
                     {Object.entries(entry.sections).map(([section, items]) =>
                       items.length > 0 ? (
                         <div key={section}>
-                          <Text fz="xs" fw={500} c="#5e5873" mt={4}>
+                          <Text fz="xs" fw={500} c="var(--hb-text-2)" mt={4}>
                             {section}
                           </Text>
                           {items.map((item, i) => (
                             <Text
                               key={section + '-' + i}
                               fz="xs"
-                              c="#5e5873"
+                              c="var(--hb-text-2)"
                               ml={8}
                             >
                               {item}

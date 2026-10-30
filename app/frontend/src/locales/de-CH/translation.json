@@ -964,7 +964,12 @@
       "openCategories": "Zu den Kategorien",
       "payee": "Von / an (optional)",
       "payeePlaceholder": "z. B. Baumarkt AG",
-      "record": "Buchung erfassen"
+      "record": "Buchung erfassen",
+      "createCategory": "+ «{{name}}» als Kategorie anlegen",
+      "categoryOptional": "Kategorie (optional)",
+      "typeCategory": "Name eingeben, um eine anzulegen",
+      "noCategoriesYet": "Noch keine Kategorien. Tippe oben einen Namen ein, um eine anzulegen, oder lass das Feld leer.",
+      "noCategoriesOptional": "Noch keine Kategorien. Du kannst die Buchung auch ohne Kategorie erfassen."
     },
     "noTransactionsFilterHint": "Ändere die Suche oder die Filter.",
     "noTransactionsYet": "Noch keine Buchungen",
@@ -1746,6 +1751,14 @@
     "accountFieldsHint": "Aus dem eigenen Konto des Mitglieds. Nur es selbst kann das ändern.",
     "import": {
       "invitedMsg": "{{count}} Einladungen gesendet, {{skipped}} schon Mitglied."
+    },
+    "sort": {
+      "label": "Sortieren",
+      "nameAsc": "Name A–Z",
+      "nameDesc": "Name Z–A",
+      "joinedNewest": "Neueste zuerst",
+      "joinedOldest": "Älteste zuerst",
+      "status": "Status"
     }
   },
   "notifications": {
@@ -2074,7 +2087,11 @@
       "account": "Mein Konto",
       "accountSettings": "Kontoeinstellungen",
       "logout": "Abmelden",
-      "clubs": "Vereine"
+      "clubs": "Vereine",
+      "appearance": "Darstellung",
+      "light": "Hell",
+      "dark": "Dunkel",
+      "system": "Wie Gerät"
     },
     "whatsNew": {
       "changelogSoon": "Die Änderungshistorie folgt bald.",
@@ -2439,7 +2456,9 @@
     "nothingHere": "Hier ist noch nichts.",
     "key": "Schlüssel",
     "value": "Wert",
-    "noData": "Keine Daten"
+    "noData": "Keine Daten",
+    "viewCards": "Karten",
+    "viewList": "Liste"
   },
   "validation": {
     "displayNameRequired": "Anzeigename ist erforderlich",

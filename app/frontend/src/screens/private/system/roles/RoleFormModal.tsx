@@ -104,7 +104,7 @@ export function RoleFormModal({
             style={{ width: 16, height: 16, accentColor: 'var(--mantine-color-acc-9)' }}
           />
           <span style={{ fontWeight: 600 }}>{t('roles.adminRole', 'Admin-Rolle')}</span>
-          <span style={{ color: '#5e5873', fontSize: 'var(--mantine-font-size-xs)' }}>
+          <span style={{ color: 'var(--hb-text-2)', fontSize: 'var(--mantine-font-size-xs)' }}>
             {t('roles.adminHint', 'Umgeht alle Berechtigungsprüfungen')}
           </span>
         </label>

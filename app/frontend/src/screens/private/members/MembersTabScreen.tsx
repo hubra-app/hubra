@@ -1,56 +1,31 @@
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { useT } from '@/locales/i18n'
-import { PageHead, Tabs } from '@/components/ui'
-import { useAuth } from '@/context/AppContext'
-import { useModules } from '@/modules/useModules'
+import { PageHead } from '@/components/ui'
 import { MembersTab } from '@/screens/private/members/MembersTab'
 import { FunctionsTab } from '@/screens/private/members/FunctionsTab'
 import { ApplicationsTab } from '@/screens/private/members/ApplicationsTab'
 import { TiersTab } from '@/screens/private/members/TiersTab'
 
+/** Members, functions, applications and tiers: each its own sidebar page. */
 export function MembersTabScreen() {
   const { t } = useT()
   const location = useLocation()
-  const navigate = useNavigate()
-  const { hasPermission } = useAuth()
-  const { has } = useModules()
+  const page = location.pathname.replace(/^\/app\/members\/?/, '') || 'all'
 
-  const path = location.pathname.replace('/app/members', '').replace('/', '')
-  const tab = path === '' ? 'all' : path
-
-  const tabs = [
-    { id: 'all', label: t('shell.nav.allMembers') },
-    { id: 'functions', label: t('shell.nav.functions') },
-    {
-      id: 'applications',
-      label: t('shell.nav.applications'),
-    },
-    { id: 'tiers', label: t('shell.nav.membershipTiers') },
-  ].filter(
-    (tb) =>
-      tb.id === 'all' ||
-      (tb.id === 'functions' &&
-        has('functions') &&
-        hasPermission('functions.functions.read')) ||
-      (tb.id === 'applications' &&
-        hasPermission('applications.applications.read')) ||
-      (tb.id === 'tiers' && hasPermission('tiers.tiers.read')),
-  )
+  const titles: Record<string, string> = {
+    all: t('shell.nav.members', 'Mitglieder'),
+    functions: t('shell.nav.functions', 'Funktionen'),
+    applications: t('shell.nav.applications', 'Anträge'),
+    tiers: t('shell.nav.membershipTiers', 'Stufen'),
+  }
 
   return (
     <div>
-      <PageHead title={t('shell.nav.members', 'Mitglieder')} />
-      <Tabs
-        tabs={tabs}
-        activeTab={tab}
-        onTabChange={(id) =>
-          navigate(`/app/members${id === 'all' ? '' : '/' + id}`)
-        }
-      />
-      {tab === 'all' && <MembersTab />}
-      {tab === 'functions' && <FunctionsTab />}
-      {tab === 'applications' && <ApplicationsTab />}
-      {tab === 'tiers' && <TiersTab />}
+      <PageHead title={titles[page] ?? titles.all} />
+      {page === 'all' && <MembersTab />}
+      {page === 'functions' && <FunctionsTab />}
+      {page === 'applications' && <ApplicationsTab />}
+      {page === 'tiers' && <TiersTab />}
     </div>
   )
 }

@@ -59,7 +59,7 @@ export function ResourceMatrix(props: ResourceMatrixProps) {
                   <IconShield
                     size={14}
                     style={{
-                      color: role.isAdmin ? 'var(--mantine-color-acc-9)' : role.isDefault ? 'var(--mantine-color-acc-6)' : '#5e5873',
+                      color: role.isAdmin ? 'var(--mantine-color-acc-9)' : role.isDefault ? 'var(--mantine-color-acc-6)' : 'var(--hb-text-2)',
                     }}
                   />
                   <Text size="sm" fw={600}>
@@ -87,7 +87,7 @@ export function ResourceMatrix(props: ResourceMatrixProps) {
                     style={{
                       fontWeight: 700,
                       fontSize: 'var(--mantine-font-size-xs)',
-                      color: '#857f99',
+                      color: 'var(--hb-text-3)',
                       textTransform: 'uppercase',
                       letterSpacing: '0.06em',
                       padding: '10px 16px',
@@ -112,7 +112,7 @@ export function ResourceMatrix(props: ResourceMatrixProps) {
                     <Table.Td
                       style={{
                         paddingLeft: 28,
-                        color: '#2e2940',
+                        color: 'var(--hb-text)',
                       }}
                     >
                       <div
@@ -128,7 +128,7 @@ export function ResourceMatrix(props: ResourceMatrixProps) {
                       <div
                         style={{
                           fontSize: 'var(--mantine-font-size-xs)',
-                          color: '#8c86a0',
+                          color: 'var(--hb-text-3)',
                           fontFamily: "'JetBrains Mono', monospace",
                         }}
                       >

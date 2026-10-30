@@ -137,7 +137,7 @@ export function KeysTab() {
         }
         renderValue={(entry) =>
           entry.has_value ? (
-            <span style={{ fontFamily: 'monospace', color: '#5e5873' }}>
+            <span style={{ fontFamily: 'monospace', color: 'var(--hb-text-2)' }}>
               {entry.masked_value}
             </span>
           ) : (
@@ -151,7 +151,7 @@ export function KeysTab() {
             width: 180,
             render: (entry) =>
               entry.label ? (
-                <span style={{ color: '#5e5873' }}>{entry.label}</span>
+                <span style={{ color: 'var(--hb-text-2)' }}>{entry.label}</span>
               ) : (
                 <em style={{ color: '#bbb' }}>{'\u2014'}</em>
               ),
@@ -210,7 +210,7 @@ export function KeysTab() {
               entry.updated_at ? (
                 <span
                   style={{
-                    color: '#8c86a0',
+                    color: 'var(--hb-text-3)',
                     fontSize: 'var(--mantine-font-size-xs)',
                   }}
                 >
@@ -319,7 +319,7 @@ export function KeysTab() {
             <span style={{ fontWeight: 600 }}>{t('bindings.arrayKey', 'Listen-Schlüssel')}</span>
             <span
               style={{
-                color: '#5e5873',
+                color: 'var(--hb-text-2)',
                 fontSize: 'var(--mantine-font-size-xs)',
               }}
             >
@@ -344,7 +344,7 @@ export function KeysTab() {
             <span style={{ fontWeight: 600 }}>{t('bindings.protected', 'Geschützt')}</span>
             <span
               style={{
-                color: '#5e5873',
+                color: 'var(--hb-text-2)',
                 fontSize: 'var(--mantine-font-size-xs)',
               }}
             >
@@ -406,7 +406,7 @@ export function KeysTab() {
             <span style={{ fontWeight: 600 }}>{t('bindings.arrayKey', 'Listen-Schlüssel')}</span>
             <span
               style={{
-                color: '#5e5873',
+                color: 'var(--hb-text-2)',
                 fontSize: 'var(--mantine-font-size-xs)',
               }}
             >
@@ -433,7 +433,7 @@ export function KeysTab() {
             <span style={{ fontWeight: 600 }}>{t('bindings.protected', 'Geschützt')}</span>
             <span
               style={{
-                color: '#5e5873',
+                color: 'var(--hb-text-2)',
                 fontSize: 'var(--mantine-font-size-xs)',
               }}
             >

@@ -124,7 +124,7 @@ export function SlideOver({
         <div
           style={{
             padding: 'var(--mantine-spacing-md)',
-            borderBottom: '1px solid var(--mantine-color-gray-3)',
+            borderBottom: '1px solid var(--hb-border)',
             display: 'flex',
             alignItems: 'center',
             gap: 'var(--mantine-spacing-sm)',

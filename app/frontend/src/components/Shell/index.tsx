@@ -29,7 +29,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       padding={0}
       styles={{
         main: {
-          background: '#f7f6fb',
+          background: 'var(--hb-page)',
           // Border-box: the header's padding-top is inside this height.
           height: '100dvh',
           minHeight: '100dvh',

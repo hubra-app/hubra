@@ -36,7 +36,7 @@ export function Sidebar() {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        background: 'var(--mantine-color-white)',
+        background: 'var(--hb-sidebar)',
       }}
     >
       <ScrollArea
@@ -90,7 +90,7 @@ export function Sidebar() {
         <Box
           p="xs"
           style={{
-            borderTop: '1px solid var(--mantine-color-gray-3)',
+            borderTop: '1px solid var(--hb-border)',
             position: 'relative',
           }}
         >
@@ -106,8 +106,8 @@ export function Sidebar() {
               height: 52,
               padding: '0 10px',
               borderRadius: 12,
-              border: '1px solid var(--mantine-color-gray-3)',
-              background: 'var(--mantine-color-white)',
+              border: '1px solid var(--hb-border)',
+              background: 'var(--hb-surface)',
             }}
           >
             <Box

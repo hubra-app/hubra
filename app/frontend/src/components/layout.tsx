@@ -33,7 +33,7 @@ function CardHeader({
       py="md"
       wrap="wrap"
       style={{
-        borderBottom: '1px solid var(--mantine-color-gray-3)',
+        borderBottom: '1px solid var(--hb-border)',
         ...style,
       }}
     >
@@ -105,7 +105,7 @@ export function CardItem({
             pt={12}
             mt={12}
             style={{
-              borderTop: '1px solid var(--mantine-color-gray-3)',
+              borderTop: '1px solid var(--hb-border)',
             }}
           >
             {footer}

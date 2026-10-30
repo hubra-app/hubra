@@ -183,7 +183,7 @@ export function SystemMailTab() {
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
                   fontWeight: 600,
-                  color: '#2e2940',
+                  color: 'var(--hb-text)',
                   marginBottom: 4,
                   display: 'block',
                 }}
@@ -203,7 +203,7 @@ export function SystemMailTab() {
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
                   fontWeight: 600,
-                  color: '#2e2940',
+                  color: 'var(--hb-text)',
                   marginBottom: 4,
                   display: 'block',
                 }}
@@ -227,7 +227,7 @@ export function SystemMailTab() {
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
                   fontWeight: 600,
-                  color: '#2e2940',
+                  color: 'var(--hb-text)',
                   marginBottom: 4,
                   display: 'block',
                 }}

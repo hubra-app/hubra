@@ -118,7 +118,7 @@ export function RoleMembersModal({
                     </div>
                     <div>
                       <div style={{ fontWeight: 600, fontSize: 'sm' }}>{member.name}</div>
-                      <div style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#8c86a0' }}>
+                      <div style={{ fontSize: 'var(--mantine-font-size-xs)', color: 'var(--hb-text-3)' }}>
                         {member.email}
                       </div>
                     </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { TextInput, Box, Text, Stack } from '@mantine/core'
+import { TextInput, Box, Text, Stack, Kbd } from '@mantine/core'
+import { useHotkeys } from '@mantine/hooks'
 import { IconSearch } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
 import { useNav, useApp } from '@/context/AppContext'
@@ -27,6 +28,11 @@ export function GlobalSearch() {
   const { polls } = usePolls({ enabled: used })
   const { invoices } = useInvoices({ enabled: used })
   const searchRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  // Arrow keys move through the results, Enter opens the highlighted one.
+  const [active, setActive] = useState(0)
+  // Ctrl+K / Cmd+K jumps to the search from anywhere.
+  useHotkeys([['mod+K', () => inputRef.current?.focus()]])
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { data: memberResp } = useQuery({
@@ -101,7 +107,7 @@ export function GlobalSearch() {
         id: inv.id,
         label: t('shell.search.invoice', 'Rechnung {{id}} – {{member}}', { id: inv.id, member: inv.member }),
         sub: `${t(`status.${inv.status}`, inv.status)} · CHF ${inv.amount}`,
-        path: '/app/finance/invoices',
+        path: `/app/finance/invoices/${inv.id}`,
       }))
 
     const mResults: SearchResult[] = (memberResp?.members ?? [])
@@ -116,7 +122,7 @@ export function GlobalSearch() {
         id: m.id,
         label: m.name,
         sub: m.tier,
-        path: '/app/members',
+        path: `/app/members/${m.id}`,
       }))
     const gResults: SearchResult[] = groupList
       .filter((g) => g.name.toLowerCase().includes(lower))
@@ -141,7 +147,7 @@ export function GlobalSearch() {
         id: tx.id,
         label: tx.description,
         sub: `${tx.type} · CHF ${tx.amount}`,
-        path: '/app/finance/transactions',
+        path: `/app/finance/transactions?tx=${tx.id}`,
       }))
     const inventoryResults: SearchResult[] = inventoryList
       .filter(
@@ -156,7 +162,7 @@ export function GlobalSearch() {
         id: item.id,
         label: item.name,
         sub: item.category,
-        path: '/app/inventory',
+        path: `/app/inventory/${item.id}`,
       }))
     const auditResults: SearchResult[] = (auditPage?.entries ?? [])
       .filter(
@@ -184,6 +190,7 @@ export function GlobalSearch() {
       ...inventoryResults,
       ...auditResults,
     ])
+    setActive(0)
     setDropOpen(true)
   }
 
@@ -254,10 +261,31 @@ export function GlobalSearch() {
           setUsed(true)
           if (results.length > 0) setDropOpen(true)
         }}
+        ref={inputRef}
+        rightSection={
+          !query ? (
+            <Kbd size="xs" style={{ whiteSpace: 'nowrap' }}>
+              {/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl K'}
+            </Kbd>
+          ) : undefined
+        }
+        rightSectionWidth={56}
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
             setDropOpen(false)
             setQuery('')
+            inputRef.current?.blur()
+          } else if (e.key === 'ArrowDown' && results.length) {
+            e.preventDefault()
+            setDropOpen(true)
+            setActive((i) => (i + 1) % results.length)
+          } else if (e.key === 'ArrowUp' && results.length) {
+            e.preventDefault()
+            setActive((i) => (i - 1 + results.length) % results.length)
+          } else if (e.key === 'Enter' && dropOpen && results[active]) {
+            e.preventDefault()
+            handleResultClick(results[active])
+            inputRef.current?.blur()
           }
         }}
         styles={{ input: { height: 38 } }}
@@ -269,8 +297,8 @@ export function GlobalSearch() {
             top: '110%',
             left: 0,
             width: 380,
-            background: 'var(--mantine-color-white)',
-            border: '1px solid var(--mantine-color-gray-3)',
+            background: 'var(--hb-surface)',
+            border: '1px solid var(--hb-border)',
             borderRadius: 10,
             boxShadow: '0 8px 24px rgba(0,0,0,.12)',
             zIndex: 800,
@@ -278,11 +306,12 @@ export function GlobalSearch() {
             padding: '8px 0',
           }}
         >
-          {results.map((r) => (
+          {results.map((r, i) => (
             <Box
               key={`${r.kind}-${r.id}`}
               component="button"
               onClick={() => handleResultClick(r)}
+              onMouseEnter={() => setActive(i)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -290,10 +319,10 @@ export function GlobalSearch() {
                 padding: '12px 16px',
                 width: '100%',
                 textAlign: 'left',
-                background: 'transparent',
+                background: i === active ? 'var(--hb-surface-2)' : 'transparent',
                 border: 'none',
                 cursor: 'pointer',
-                borderBottom: '1px solid var(--mantine-color-gray-2)',
+                borderBottom: '1px solid var(--hb-border)',
               }}
             >
               <span
@@ -304,7 +333,7 @@ export function GlobalSearch() {
                   padding: '3px 7px',
                   flexShrink: 0,
                   background:
-                    kindColors[r.kind]?.bg ?? 'var(--mantine-color-gray-1)',
+                    kindColors[r.kind]?.bg ?? 'var(--hb-surface-2)',
                   color:
                     kindColors[r.kind]?.color ?? 'var(--mantine-color-dimmed)',
                 }}
@@ -349,8 +378,8 @@ export function GlobalSearch() {
             top: '110%',
             left: 0,
             width: 280,
-            background: 'var(--mantine-color-white)',
-            border: '1px solid var(--mantine-color-gray-3)',
+            background: 'var(--hb-surface)',
+            border: '1px solid var(--hb-border)',
             borderRadius: 10,
             boxShadow: '0 8px 24px rgba(0,0,0,.12)',
             zIndex: 800,

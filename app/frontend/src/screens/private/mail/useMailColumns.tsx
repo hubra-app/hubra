@@ -85,7 +85,7 @@ function QuotaBar({
   total: number | null
 }) {
   if (used == null || total == null || total === 0)
-    return <span style={{ color: '#8c86a0' }}>—</span>
+    return <span style={{ color: 'var(--hb-text-3)' }}>—</span>
   const pct = Math.min(100, (used / total) * 100)
   const color = pct > 90 ? '#ff4d3d' : pct > 70 ? '#c2870f' : '#1f9d57'
   const usedMB = (used / 1048576).toFixed(0)
@@ -95,7 +95,7 @@ function QuotaBar({
       <div
         style={{
           fontSize: 'var(--mantine-font-size-xs)',
-          color: '#5e5873',
+          color: 'var(--hb-text-2)',
           marginBottom: 2,
         }}
       >
@@ -104,7 +104,7 @@ function QuotaBar({
       <div
         style={{
           height: 6,
-          background: '#e6e3ef',
+          background: 'var(--hb-border)',
           borderRadius: 3,
           overflow: 'hidden',
         }}
@@ -131,7 +131,7 @@ export function useMailColumns(
       key: 'name',
       header: t('common.name', 'Name'),
       render: (entry) => (
-        <span style={{ fontWeight: 600, color: '#1a1625' }}>
+        <span style={{ fontWeight: 600, color: 'var(--hb-text)' }}>
           {getOwnerName(entry) || entry.displayName || entry.address}
         </span>
       ),
@@ -193,7 +193,7 @@ export function useMailColumns(
             total={entry.quotaTotal ?? null}
           />
         ) : (
-          <span style={{ color: '#8c86a0' }}>{'\u2014'}</span>
+          <span style={{ color: 'var(--hb-text-3)' }}>{'\u2014'}</span>
         )
       },
     },
@@ -205,12 +205,12 @@ export function useMailColumns(
           entry.ownerType === 'mail_address' ||
           (entry.isSystem && entry.addressType === 'alias')
         )
-          return <span style={{ color: '#8c86a0' }}>{'\u2014'}</span>
+          return <span style={{ color: 'var(--hb-text-3)' }}>{'\u2014'}</span>
         return (
           <span
             style={{
               fontSize: 'var(--mantine-font-size-xs)',
-              color: '#5e5873',
+              color: 'var(--hb-text-2)',
             }}
           >
             {entry.retention != null
@@ -237,14 +237,14 @@ export function useMailColumns(
               alignItems: 'center',
               gap: 3,
               fontSize: 'var(--mantine-font-size-xs)',
-              color: '#5e5873',
+              color: 'var(--hb-text-2)',
             }}
           >
             <IconArrowForwardUp size={10} />
             {targetCount} {t('mail.admin.targets', 'Ziele')}
           </span>
         ) : (
-          <span style={{ color: '#8c86a0' }}>{'\u2014'}</span>
+          <span style={{ color: 'var(--hb-text-3)' }}>{'\u2014'}</span>
         )
       },
     },

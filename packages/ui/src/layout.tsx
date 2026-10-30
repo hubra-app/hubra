@@ -210,8 +210,8 @@ export function Pagination({
       px="md"
       py="xs"
       style={{
-        borderTop: top ? 'none' : '1px solid var(--mantine-color-gray-3)',
-        borderBottom: top ? '1px solid var(--mantine-color-gray-3)' : 'none',
+        borderTop: top ? 'none' : '1px solid var(--mantine-color-default-border)',
+        borderBottom: top ? '1px solid var(--mantine-color-default-border)' : 'none',
         flexWrap: 'wrap',
       }}
     >

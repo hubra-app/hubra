@@ -55,7 +55,7 @@ export function ProxyPanel({
   return (
     <div
       style={{
-        borderTop: '1px solid var(--mantine-color-gray-2)',
+        borderTop: '1px solid var(--hb-border)',
         marginTop: 12,
         paddingTop: 10,
         fontSize: 'var(--mantine-font-size-sm)',
