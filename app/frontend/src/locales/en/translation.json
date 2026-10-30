@@ -1759,6 +1759,21 @@
       "joinedNewest": "Newest first",
       "joinedOldest": "Oldest first",
       "status": "Status"
+    },
+    "invites": {
+      "title": "Invites",
+      "open": "Open",
+      "accepted": "Accepted",
+      "expired": "Expired",
+      "sentBy": "by {{name}} on {{date}}",
+      "validUntil": "valid until {{date}}",
+      "acceptedOn": "accepted on {{date}}",
+      "expiredOn": "expired on {{date}}",
+      "resend": "Send again",
+      "revoke": "Withdraw",
+      "revoked": "Invite withdrawn",
+      "revokeTitle": "Withdraw invite?",
+      "revokeBody": "The link sent to {{email}} stops working."
     }
   },
   "notifications": {
@@ -1839,7 +1854,9 @@
     "editTitle": "Edit poll",
     "remindersSentMsg_one": "{{count}} reminder sent.",
     "remindersSentMsg_other": "{{count}} reminders sent.",
-    "addOption": "+ Add option"
+    "addOption": "+ Add option",
+    "statusOpen": "Open",
+    "statusClosed": "Closed"
   },
   "posts": {
     "backToPosts": "Back to posts",

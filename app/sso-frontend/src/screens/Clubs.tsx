@@ -80,6 +80,11 @@ export function ClubsScreen() {
     queryFn: authApi.getMyJoinRequests,
     enabled: authed,
   })
+  const invited = useQuery({
+    queryKey: ['my-invites'],
+    queryFn: authApi.getMyInvites,
+    enabled: authed,
+  })
   const found = useQuery({
     queryKey: ['clubs', debounced],
     queryFn: () => authApi.findClubs(debounced),
@@ -106,6 +111,16 @@ export function ClubsScreen() {
       }
     },
     onError: (err: Error) => notify('error', tr('Beitreten fehlgeschlagen', 'Could not join'), err.message),
+  })
+
+  const accept = useMutation({
+    mutationFn: (id: number) => authApi.acceptMyInvite(id),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['my-invites'] })
+      queryClient.invalidateQueries({ queryKey: ['my-tenants'] })
+      notify('success', tr(`Du bist jetzt bei ${res.club.name}`, `You joined ${res.club.name}`))
+    },
+    onError: (err: Error) => notify('error', tr('Annehmen fehlgeschlagen', 'Could not accept'), err.message),
   })
 
   const openClub = async (slug: string) => {
@@ -138,6 +153,7 @@ export function ClubsScreen() {
   // Club owners and admins run their club in the manager portal too.
   const runsAClub = myClubs.some((t) => t.admin_level)
   const pending = waiting.data?.requests ?? []
+  const invites = invited.data?.invites ?? []
   const results = found.data?.clubs ?? []
   const canJoinDirectly = found.data?.canJoinDirectly ?? false
 
@@ -187,11 +203,48 @@ export function ClubsScreen() {
         </Paper>
       )}
 
+      {invites.length > 0 && (
+        <>
+          <Title order={2} fz={20} mb="sm">
+            {tr('Einladungen', 'Invites')}
+          </Title>
+          <Stack gap="sm" mb="xl">
+            {invites.map((inv) => (
+              <Paper key={inv.id} withBorder p="md" style={{ borderColor: 'var(--mantine-color-acc-3)' }}>
+                <Group justify="space-between" wrap="nowrap">
+                  <Group gap="md" wrap="nowrap" style={{ minWidth: 0 }}>
+                    <ClubAvatar slug={inv.club.slug} name={inv.club.name} />
+                    <Box style={{ minWidth: 0 }}>
+                      <Text fw={700} truncate>
+                        {inv.club.name}
+                      </Text>
+                      <Text fz="sm" c="dimmed">
+                        {tr(
+                          `${inv.invitedBy} lädt dich ein, Mitglied zu werden.`,
+                          `${inv.invitedBy} invites you to become a member.`,
+                        )}
+                      </Text>
+                    </Box>
+                  </Group>
+                  <Button
+                    style={{ flexShrink: 0 }}
+                    loading={accept.isPending && accept.variables === inv.id}
+                    onClick={() => accept.mutate(inv.id)}
+                  >
+                    {tr('Annehmen', 'Accept')}
+                  </Button>
+                </Group>
+              </Paper>
+            ))}
+          </Stack>
+        </>
+      )}
+
       {mine.isLoading ? (
         <Loader size="sm" my="md" />
       ) : mine.isError ? (
         <LoadFailed onRetry={() => mine.refetch()} />
-      ) : myClubs.length === 0 ? (
+      ) : myClubs.length === 0 && invites.length === 0 ? (
         <Paper withBorder p="xl" mb="xl">
           <Stack align="center" gap="xs" ta="center">
             <IconBuildingCommunity size={32} color="#7441e0" />
@@ -204,7 +257,7 @@ export function ClubsScreen() {
             </Text>
           </Stack>
         </Paper>
-      ) : (
+      ) : myClubs.length === 0 ? null : (
         <Stack gap="sm" mb="xl">
           {myClubs.map((t) => (
             <Paper key={t.tenant_slug} withBorder p="md">

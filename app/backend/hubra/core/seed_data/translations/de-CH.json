@@ -2594,5 +2594,20 @@
   "shell.userMenu.appearance": "Darstellung",
   "shell.userMenu.light": "Hell",
   "shell.userMenu.dark": "Dunkel",
-  "shell.userMenu.system": "Wie Gerät"
+  "shell.userMenu.system": "Wie Gerät",
+  "members.invites.title": "Einladungen",
+  "members.invites.open": "Offen",
+  "members.invites.accepted": "Angenommen",
+  "members.invites.expired": "Abgelaufen",
+  "members.invites.sentBy": "von {{name}} am {{date}}",
+  "members.invites.validUntil": "gültig bis {{date}}",
+  "members.invites.acceptedOn": "angenommen am {{date}}",
+  "members.invites.expiredOn": "abgelaufen am {{date}}",
+  "members.invites.resend": "Erneut senden",
+  "members.invites.revoke": "Zurückziehen",
+  "members.invites.revoked": "Einladung zurückgezogen",
+  "members.invites.revokeTitle": "Einladung zurückziehen?",
+  "members.invites.revokeBody": "Der Link an {{email}} funktioniert danach nicht mehr.",
+  "polls.statusOpen": "Offen",
+  "polls.statusClosed": "Beendet"
 }

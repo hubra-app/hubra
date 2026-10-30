@@ -351,3 +351,27 @@ export async function approveLeave(id: string): Promise<void> {
 export async function declineLeave(id: string): Promise<void> {
   await apiFetch(`/members/${id}/leave/decline`, { method: "POST" });
 }
+
+/** An invite the club sent, and what became of it. */
+export interface ClubInvite {
+  id: number;
+  email: string;
+  invitedBy: string;
+  status: "open" | "accepted" | "expired";
+  createdAt: string;
+  expiresAt: string;
+  acceptedAt: string | null;
+}
+
+export function listInvites(): Promise<ClubInvite[]> {
+  return apiFetch<ClubInvite[]>("/members/invites");
+}
+
+/** Sends a fresh link; the old one stops working. */
+export function resendInvite(id: number): Promise<ClubInvite> {
+  return apiFetch<ClubInvite>(`/members/invites/${id}/resend`, { method: "POST" });
+}
+
+export async function revokeInvite(id: number): Promise<void> {
+  await apiFetch(`/members/invites/${id}`, { method: "DELETE" });
+}

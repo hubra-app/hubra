@@ -40,6 +40,7 @@ import { listTiers } from '@/api/tiers'
 import { lookupsQuery } from '@/api/lookups'
 import { formatCHF } from '@/format'
 import { MemberEditModal } from '@/components/MemberEditModal'
+import { Invites } from './Invites'
 import { useServerPagination } from '@/components/serverPagination'
 
 /* ── Members List ───────────────────────────── */
@@ -608,6 +609,8 @@ export function MembersTab() {
           }
         />
 
+      {!showArchived && <Invites />}
+
       <Modal
         open={bulkInvoiceOpen}
         onClose={() => setBulkInvoiceOpen(false)}
@@ -692,6 +695,7 @@ export function MembersTab() {
         onClose={() => setAddOpen(false)}
         onSaved={() => {
           // An invite: the member appears once the person accepts.
+          queryClient.invalidateQueries({ queryKey: qk.invites })
           setAddOpen(false)
         }}
       />

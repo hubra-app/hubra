@@ -1759,6 +1759,21 @@
       "joinedNewest": "Neueste zuerst",
       "joinedOldest": "Älteste zuerst",
       "status": "Status"
+    },
+    "invites": {
+      "title": "Einladungen",
+      "open": "Offen",
+      "accepted": "Angenommen",
+      "expired": "Abgelaufen",
+      "sentBy": "von {{name}} am {{date}}",
+      "validUntil": "gültig bis {{date}}",
+      "acceptedOn": "angenommen am {{date}}",
+      "expiredOn": "abgelaufen am {{date}}",
+      "resend": "Erneut senden",
+      "revoke": "Zurückziehen",
+      "revoked": "Einladung zurückgezogen",
+      "revokeTitle": "Einladung zurückziehen?",
+      "revokeBody": "Der Link an {{email}} funktioniert danach nicht mehr."
     }
   },
   "notifications": {
@@ -1839,7 +1854,9 @@
     "editTitle": "Umfrage bearbeiten",
     "remindersSentMsg_one": "{{count}} Erinnerung gesendet.",
     "remindersSentMsg_other": "{{count}} Erinnerungen gesendet.",
-    "addOption": "+ Option hinzufügen"
+    "addOption": "+ Option hinzufügen",
+    "statusOpen": "Offen",
+    "statusClosed": "Beendet"
   },
   "posts": {
     "backToPosts": "Zurück zu den Beiträgen",

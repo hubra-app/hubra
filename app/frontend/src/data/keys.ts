@@ -45,6 +45,7 @@ export const qk = {
   },
   applications: ['applications'] as const,
   leaveRequests: ['leave-requests'] as const,
+  invites: ['club-invites'] as const,
   groups: {
     all: ['groups'] as const,
     joinable: ['groups', 'joinable'] as const,

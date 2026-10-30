@@ -63,6 +63,7 @@ export function ApplicationsTab() {
       setApproveTarget(null)
       if (invited) {
         // No account yet: they got an invite and join when they accept.
+        queryClient.invalidateQueries({ queryKey: qk.invites })
         notify(
           'success',
           t('members.invite.sentTitle', 'Einladung gesendet'),

@@ -2594,5 +2594,20 @@
   "shell.userMenu.appearance": "Appearance",
   "shell.userMenu.light": "Light",
   "shell.userMenu.dark": "Dark",
-  "shell.userMenu.system": "Like device"
+  "shell.userMenu.system": "Like device",
+  "members.invites.title": "Invites",
+  "members.invites.open": "Open",
+  "members.invites.accepted": "Accepted",
+  "members.invites.expired": "Expired",
+  "members.invites.sentBy": "by {{name}} on {{date}}",
+  "members.invites.validUntil": "valid until {{date}}",
+  "members.invites.acceptedOn": "accepted on {{date}}",
+  "members.invites.expiredOn": "expired on {{date}}",
+  "members.invites.resend": "Send again",
+  "members.invites.revoke": "Withdraw",
+  "members.invites.revoked": "Invite withdrawn",
+  "members.invites.revokeTitle": "Withdraw invite?",
+  "members.invites.revokeBody": "The link sent to {{email}} stops working.",
+  "polls.statusOpen": "Open",
+  "polls.statusClosed": "Closed"
 }

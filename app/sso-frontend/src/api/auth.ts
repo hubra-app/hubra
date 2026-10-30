@@ -309,3 +309,22 @@ export async function acceptInvite(
     body: JSON.stringify({ token }),
   })
 }
+
+/** An open invite to the signed-in account's confirmed address. */
+export interface MyInvite {
+  id: number
+  club: { slug: string; name: string }
+  invitedBy: string
+  expiresAt: string
+}
+
+/** Open invites to this account, for when the link got lost on the way. */
+export async function getMyInvites(): Promise<{ invites: MyInvite[] }> {
+  return apiFetch('/system/invites/mine')
+}
+
+export async function acceptMyInvite(
+  id: number,
+): Promise<{ status: 'joined'; club: { slug: string; name: string } }> {
+  return apiFetch(`/system/invites/${id}/accept`, { method: 'POST' })
+}

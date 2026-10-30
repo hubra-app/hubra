@@ -54,9 +54,7 @@ def send_invite(
         )
     )
     if (sent_today or 0) >= INVITES_PER_DAY:
-        raise_error(
-            429, "TOO_MANY_INVITES", "This club has sent its invites for today"
-        )
+        raise_error(429, "TOO_MANY_INVITES", "This club has sent its invites for today")
     db.session.execute(
         delete(ClubInvite).where(
             ClubInvite.tenant_id == tenant.id,
@@ -100,3 +98,50 @@ def open_invite(raw: str) -> ClubInvite | None:
     if invite is None or not invite.is_open:
         return None
     return invite
+
+
+def invite_status(invite: ClubInvite) -> str:
+    """'accepted', 'open' or 'expired'."""
+    if invite.accepted_at is not None:
+        return "accepted"
+    return "open" if invite.is_open else "expired"
+
+
+def club_invites(tenant: Tenant, limit: int = 200) -> list[ClubInvite]:
+    """The club's invites, newest first: open, accepted and expired ones."""
+    return list(
+        db.session.scalars(
+            select(ClubInvite)
+            .where(ClubInvite.tenant_id == tenant.id)
+            .order_by(ClubInvite.created_at.desc(), ClubInvite.id.desc())
+            .limit(limit)
+        )
+    )
+
+
+def club_invite(tenant: Tenant, invite_id: int) -> ClubInvite | None:
+    """One invite of ``tenant`` (None for another club's)."""
+    invite = db.session.get(ClubInvite, invite_id)
+    if invite is None or invite.tenant_id != tenant.id:
+        return None
+    return invite
+
+
+def open_invites_for(user: User) -> list[ClubInvite]:
+    """Open invites to ``user``'s address, once the address is confirmed.
+
+    Lets someone who signed up from an invite (and lost the link on the way,
+    e.g. by confirming their address on another device) still accept it.
+    An unconfirmed address proves nothing, so it sees none.
+    """
+    if not user.private_email_verified:
+        return []
+    rows = db.session.scalars(
+        select(ClubInvite)
+        .where(
+            ClubInvite.email == user.email.strip().lower(),
+            ClubInvite.accepted_at.is_(None),
+        )
+        .order_by(ClubInvite.created_at.desc())
+    )
+    return [i for i in rows if i.is_open]
