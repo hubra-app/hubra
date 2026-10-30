@@ -101,7 +101,7 @@ export function RoleFormModal({
             type="checkbox"
             checked={isAdmin}
             onChange={(e) => setIsAdmin(e.target.checked)}
-            style={{ width: 16, height: 16, accentColor: '#3a1e78' }}
+            style={{ width: 16, height: 16, accentColor: 'var(--mantine-color-acc-9)' }}
           />
           <span style={{ fontWeight: 600 }}>{t('roles.adminRole', 'Admin-Rolle')}</span>
           <span style={{ color: '#5e5873', fontSize: 'var(--mantine-font-size-xs)' }}>

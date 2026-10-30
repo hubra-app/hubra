@@ -2377,7 +2377,16 @@
     "saved": "Settings saved",
     "joinRequestsOpen": "Accept requests to join",
     "joinRequestsOpenHint": "Off: new members join by invite only, and join.hubra.club shows “Invite only”.",
-    "inviteValidDays": "Invites valid for (days)"
+    "inviteValidDays": "Invites valid for (days)",
+    "logo": "Logo",
+    "logoHint": "PNG, JPEG, WebP, GIF or SVG, at most 2 MB. Shown at the top of the app, in the browser tab and under “My clubs”.",
+    "logoUpload": "Upload logo",
+    "logoReplace": "Replace logo",
+    "logoRemove": "Remove logo",
+    "logoTooLarge": "The logo is larger than 2 MB.",
+    "logoWrongType": "Please choose a PNG, JPEG, WebP, GIF or SVG image.",
+    "colorsHint": "The primary colour is used for buttons, links and the active menu item, the accent colour for the announcement banner and the secondary colour for the stripe under the top bar.",
+    "resetColors": "Default colours"
   },
   "domains": {
     "added": "Domain added",

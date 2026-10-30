@@ -37,7 +37,11 @@ from hubra.core.models.tenant_request import TenantRequest
 from hubra.core.models.user import User
 from hubra.core.services import email_verification
 from hubra.core.tenant.service import TenantService, TenantProvisioningError
-from hubra.core.tenant.club_settings import accepts_join_requests
+from hubra.core.tenant.club_settings import (
+    accepts_join_requests,
+    club_logo,
+    club_logo_version,
+)
 
 tenant_admin_bp = Blueprint("tenant_admin", __name__)
 
@@ -944,6 +948,7 @@ def club_directory():
                 "name": t.name,
                 "membership": membership,
                 "acceptsRequests": accepts_join_requests(t),
+                "logoVersion": club_logo_version(t),
             }
         )
     return jsonify({"clubs": clubs, "canJoinDirectly": can_join})
@@ -1007,8 +1012,33 @@ def club_page(slug: str):
             "tiers": _club_tiers(tenant.id),
             "canJoinDirectly": _can_add_members(user),
             "acceptsRequests": accepts_join_requests(tenant),
+            "logoVersion": club_logo_version(tenant),
         }
     )
+
+
+@tenant_admin_bp.route("/clubs/<slug>/logo", methods=["GET"])
+def club_logo_image(slug: str):
+    """The club's logo as an image, for <img> tags on every portal.
+
+    Public like the club's name on its join page: an <img> can't send the
+    access token. Links carry ?v=<version>, so it may be cached for a day.
+    """
+    logo = club_logo(_active_club(slug))
+    if logo is None:
+        raise_error(404, "NOT_FOUND", "Club has no logo")
+    mime, data = logo  # type: ignore[misc]
+    response = make_response(data)
+    response.headers["Content-Type"] = mime
+    response.headers["Cache-Control"] = "public, max-age=86400"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    # An SVG opened on its own must not run scripts on the API's origin.
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+    )
+    # The portals load it from another origin.
+    response.headers["Cross-Origin-Resource-Policy"] = "cross-origin"
+    return response
 
 
 @tenant_admin_bp.route("/clubs/<slug>/join", methods=["POST"])

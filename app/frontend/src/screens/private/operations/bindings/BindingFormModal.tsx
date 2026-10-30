@@ -250,7 +250,7 @@ export function BindingFormModal({
               type="checkbox"
               checked={isProtected}
               onChange={(e) => setIsProtected(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: '#7441e0' }}
+              style={{ width: 16, height: 16, accentColor: 'var(--mantine-color-acc-6)' }}
             />
             <span style={{ fontWeight: 600 }}>{t('bindings.protected', 'Geschützt')}</span>
             <span style={{ color: '#5e5873', fontSize: 'var(--mantine-font-size-xs)' }}>

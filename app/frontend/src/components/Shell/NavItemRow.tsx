@@ -40,8 +40,8 @@ export function NavItemRow({
           width: 44,
           height: 44,
           borderRadius: 10,
-          color: isActiveParent ? '#4d27a0' : '#5e5873',
-          background: isActiveParent ? '#ebe3ff' : undefined,
+          color: isActiveParent ? 'var(--mantine-color-acc-8)' : '#5e5873',
+          background: isActiveParent ? 'var(--mantine-color-acc-1)' : undefined,
         }}
         className="nav-item"
         data-active={isActiveParent || undefined}
@@ -65,8 +65,8 @@ export function NavItemRow({
           padding: '8px 12px',
           minHeight: 40,
           width: '100%',
-          color: isActiveParent ? '#4d27a0' : '#4a4560',
-          background: isActiveParent ? '#ebe3ff' : undefined,
+          color: isActiveParent ? 'var(--mantine-color-acc-8)' : '#4a4560',
+          background: isActiveParent ? 'var(--mantine-color-acc-1)' : undefined,
           fontSize: 'var(--mantine-font-size-sm)',
           fontWeight: isActiveParent ? 700 : 500,
           transition: 'background .15s, color .15s',
@@ -79,7 +79,7 @@ export function NavItemRow({
           style={{
             flexShrink: 0,
             display: 'flex',
-            color: isActiveParent ? '#7441e0' : '#5e5873',
+            color: isActiveParent ? 'var(--mantine-color-acc-6)' : '#5e5873',
           }}
         >
           {item.icon}

@@ -27,6 +27,8 @@ import { GlobalSearch } from './GlobalSearch'
 import { UserMenu } from './UserMenu'
 import { getBreadcrumb, initials, contrastColor } from './nav'
 import { qk } from '@/data/keys'
+import { useClubColors } from '@/branding'
+import { useClubProfile } from '@/data/clubProfile'
 
 export function TopBar() {
   const { t } = useT()
@@ -56,6 +58,9 @@ export function TopBar() {
   })
   const unreadCount = notifications.filter((n) => !n.read).length
 
+  const { data: club } = useClubProfile()
+  const { secondary } = useClubColors()
+
   return (
     <Group
       h={64}
@@ -63,7 +68,9 @@ export function TopBar() {
       px="md"
       style={{
         background: 'var(--mantine-color-white)',
-        borderBottom: '1px solid var(--mantine-color-gray-3)',
+        borderBottom: secondary
+          ? '3px solid var(--mantine-color-club2-6)'
+          : '1px solid var(--mantine-color-gray-3)',
         flexWrap: 'nowrap',
       }}
       wrap="nowrap"
@@ -78,12 +85,21 @@ export function TopBar() {
         <IconMenu2 size={20} />
       </ActionIcon>
 
-      <Group gap={8} wrap="nowrap" style={{ flexShrink: 0 }}>
-        <div className="logo-mark" />
-        <Text fz={22} className="wordmark mantine-visible-from-xs">
-          hubra
-        </Text>
-      </Group>
+      {club?.logo ? (
+        <Group gap={10} wrap="nowrap" style={{ flexShrink: 1, minWidth: 0, maxWidth: 280 }}>
+          <img src={club.logo} alt="" className="club-logo" />
+          <Text fz="lg" fw={700} truncate className="mantine-visible-from-xs">
+            {club.club_name}
+          </Text>
+        </Group>
+      ) : (
+        <Group gap={8} wrap="nowrap" style={{ flexShrink: 0 }}>
+          <div className="logo-mark" />
+          <Text fz={22} className="wordmark mantine-visible-from-xs">
+            hubra
+          </Text>
+        </Group>
+      )}
 
       <ActionIcon
         variant="subtle"

@@ -70,7 +70,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                   <IconShield
                     size={16}
                     style={{
-                      color: role.isAdmin ? '#3a1e78' : role.isDefault ? '#7441e0' : '#5e5873',
+                      color: role.isAdmin ? 'var(--mantine-color-acc-9)' : role.isDefault ? 'var(--mantine-color-acc-6)' : '#5e5873',
                     }}
                   />
                   {roleLabel(role.name)}
@@ -79,7 +79,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                       style={{
                         fontSize: 'var(--mantine-font-size-xs)',
                         fontWeight: 600,
-                        color: '#3a1e78',
+                        color: 'var(--mantine-color-acc-9)',
                         background: '#eef2ff',
                         borderRadius: 4,
                         padding: '1px 6px',
@@ -88,7 +88,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                       ADMIN
                     </span>
                   )}
-                  {role.isAdmin && <IconLock size={11} style={{ color: '#3a1e78' }} />}
+                  {role.isAdmin && <IconLock size={11} style={{ color: 'var(--mantine-color-acc-9)' }} />}
                   {canUpdate && !role.isAdmin && (
                     <button
                       onClick={() => openEdit(role)}
@@ -261,7 +261,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                                         style={{
                                           width: 16,
                                           height: 16,
-                                          accentColor: role.isAdmin ? '#3a1e78' : '#7441e0',
+                                          accentColor: role.isAdmin ? 'var(--mantine-color-acc-9)' : 'var(--mantine-color-acc-6)',
                                           cursor: role.isAdmin ? 'default' : 'pointer',
                                         }}
                                       />
@@ -308,7 +308,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                                             style={{
                                               width: 16,
                                               height: 16,
-                                              accentColor: role.isAdmin ? '#3a1e78' : '#7441e0',
+                                              accentColor: role.isAdmin ? 'var(--mantine-color-acc-9)' : 'var(--mantine-color-acc-6)',
                                               cursor: role.isAdmin ? 'default' : 'pointer',
                                             }}
                                           />
@@ -400,7 +400,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                                     style={{
                                       width: 16,
                                       height: 16,
-                                      accentColor: role.isAdmin ? '#3a1e78' : '#7441e0',
+                                      accentColor: role.isAdmin ? 'var(--mantine-color-acc-9)' : 'var(--mantine-color-acc-6)',
                                       cursor: role.isAdmin ? 'default' : 'pointer',
                                     }}
                                   />
@@ -447,7 +447,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                                       style={{
                                         width: 14,
                                         height: 14,
-                                        accentColor: role.isAdmin ? '#3a1e78' : '#7441e0',
+                                        accentColor: role.isAdmin ? 'var(--mantine-color-acc-9)' : 'var(--mantine-color-acc-6)',
                                         cursor: role.isAdmin ? 'default' : 'pointer',
                                       }}
                                     />

@@ -199,7 +199,7 @@ export function GlobalOverviewScreen() {
                     })
                   : t("dashboard.allPaid")
               }
-              accent="#6131c4"
+              accent="var(--mantine-color-acc-7)"
               onClick={() => go("/app/finance/invoices")}
             />
           </>

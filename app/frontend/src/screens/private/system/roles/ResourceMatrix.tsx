@@ -59,7 +59,7 @@ export function ResourceMatrix(props: ResourceMatrixProps) {
                   <IconShield
                     size={14}
                     style={{
-                      color: role.isAdmin ? '#3a1e78' : role.isDefault ? '#7441e0' : '#5e5873',
+                      color: role.isAdmin ? 'var(--mantine-color-acc-9)' : role.isDefault ? 'var(--mantine-color-acc-6)' : '#5e5873',
                     }}
                   />
                   <Text size="sm" fw={600}>
@@ -145,7 +145,7 @@ export function ResourceMatrix(props: ResourceMatrixProps) {
                           style={{
                             width: 16,
                             height: 16,
-                            accentColor: role.isAdmin ? '#3a1e78' : '#7441e0',
+                            accentColor: role.isAdmin ? 'var(--mantine-color-acc-9)' : 'var(--mantine-color-acc-6)',
                             cursor: role.isAdmin ? 'default' : 'pointer',
                           }}
                         />

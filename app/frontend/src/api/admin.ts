@@ -9,10 +9,11 @@ export interface ClubSettings {
   /** How many days an invite link works (1–60). */
   invite_valid_days?: number
   club_description?: string
-  logo?: string
-  primary_color?: string
-  secondary_color?: string
-  accent_color?: string
+  /** A base64 image data URL; null removes it on save. */
+  logo?: string | null
+  primary_color?: string | null
+  secondary_color?: string | null
+  accent_color?: string | null
   timezone?: string
   locale?: string
   date_format?: string

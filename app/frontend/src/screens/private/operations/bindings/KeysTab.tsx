@@ -314,7 +314,7 @@ export function KeysTab() {
               type="checkbox"
               checked={newAllowMultiple}
               onChange={(e) => setNewAllowMultiple(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: '#7441e0' }}
+              style={{ width: 16, height: 16, accentColor: 'var(--mantine-color-acc-6)' }}
             />
             <span style={{ fontWeight: 600 }}>{t('bindings.arrayKey', 'Listen-Schlüssel')}</span>
             <span
@@ -339,7 +339,7 @@ export function KeysTab() {
               type="checkbox"
               checked={newIsProtected}
               onChange={(e) => setNewIsProtected(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: '#7441e0' }}
+              style={{ width: 16, height: 16, accentColor: 'var(--mantine-color-acc-6)' }}
             />
             <span style={{ fontWeight: 600 }}>{t('bindings.protected', 'Geschützt')}</span>
             <span
@@ -401,7 +401,7 @@ export function KeysTab() {
               checked={editAllowMultiple}
               onChange={(e) => setEditAllowMultiple(e.target.checked)}
               disabled={editIsProtected}
-              style={{ width: 16, height: 16, accentColor: '#7441e0' }}
+              style={{ width: 16, height: 16, accentColor: 'var(--mantine-color-acc-6)' }}
             />
             <span style={{ fontWeight: 600 }}>{t('bindings.arrayKey', 'Listen-Schlüssel')}</span>
             <span
@@ -428,7 +428,7 @@ export function KeysTab() {
               type="checkbox"
               checked={editIsProtected}
               onChange={(e) => setEditIsProtected(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: '#7441e0' }}
+              style={{ width: 16, height: 16, accentColor: 'var(--mantine-color-acc-6)' }}
             />
             <span style={{ fontWeight: 600 }}>{t('bindings.protected', 'Geschützt')}</span>
             <span

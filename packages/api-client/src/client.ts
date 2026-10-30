@@ -7,6 +7,15 @@ export const BASE = (import.meta.env.VITE_API_BASE ?? "/api") + "/v1";
 
 export const SSO_URL = import.meta.env.VITE_SSO_URL ?? "https://sso.hubra.club";
 
+/** The club's logo image, or undefined when it has none (logo version null). */
+export function clubLogoUrl(
+  slug: string | null | undefined,
+  version: string | null | undefined,
+): string | undefined {
+  if (!slug || !version) return undefined;
+  return `${BASE}/system/clubs/${encodeURIComponent(slug)}/logo?v=${version}`;
+}
+
 /** Where the SSO portal is, from GET /instance (public, no auth). */
 export interface InstanceInfo {
   ssoUrl: string | null;
