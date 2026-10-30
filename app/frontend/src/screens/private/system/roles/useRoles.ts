@@ -86,6 +86,14 @@ export function useRoles() {
     return savePerms(role, next)
   }
 
+  /** Gives the role exactly `keys` of an area's permissions. */
+  const setAreaPerms = (role: Role, area: string[], keys: string[]) => {
+    const next = new Set(rolePerms[role.id] ?? [])
+    for (const key of area) next.delete(key)
+    for (const key of keys) next.add(key)
+    return savePerms(role, next)
+  }
+
   const create = async ({ name, description, isAdmin }: RoleInput) => {
     let role = await createRole(name, description)
     if (isAdmin) role = await updateRole(role.id, { name, description, is_admin: true })
@@ -154,6 +162,7 @@ export function useRoles() {
     isLoading,
     togglePerm,
     setPerms,
+    setAreaPerms,
     create,
     save,
     remove,

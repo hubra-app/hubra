@@ -3084,7 +3084,24 @@
     "forScope": "Gilt für",
     "wholeClub": "Ganzer Verein",
     "groupHolders": "Nur für eine Gruppe",
-    "onlyGroup": "nur {{group}}"
+    "onlyGroup": "nur {{group}}",
+    "level": {
+      "none": "Keine",
+      "view": "Ansehen",
+      "edit": "Bearbeiten",
+      "all": "Alles",
+      "custom": "Angepasst"
+    },
+    "adminAll": "Diese Rolle ist eine Admin-Rolle und darf im Verein alles.",
+    "levelHint": "Ansehen: sehen und mitmachen (anmelden, abstimmen, kommentieren). Bearbeiten: auch erstellen und ändern. Alles: auch löschen und exportieren.",
+    "hideSingle": "Einzelne Rechte ausblenden",
+    "showSingle": "Einzelne Rechte zeigen",
+    "backToList": "Zurück zu den Rollen",
+    "systemRole": "Systemrolle",
+    "delete": "Rolle löschen",
+    "mayDo": "Darf",
+    "pageRoles": "Rollen",
+    "pageCompare": "Vergleichen"
   },
   "modules": {
     "backups": {

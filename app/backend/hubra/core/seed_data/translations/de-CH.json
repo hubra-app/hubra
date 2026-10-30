@@ -2870,5 +2870,20 @@
   "clubSettings.bank.city": "Ort",
   "clubSettings.bank.country": "Land (z. B. CH)",
   "clubSettings.bank.save": "Bankangaben speichern",
-  "clubSettings.bank.saved": "Bankangaben gespeichert"
+  "clubSettings.bank.saved": "Bankangaben gespeichert",
+  "roles.level.none": "Keine",
+  "roles.level.view": "Ansehen",
+  "roles.level.edit": "Bearbeiten",
+  "roles.level.all": "Alles",
+  "roles.level.custom": "Angepasst",
+  "roles.adminAll": "Diese Rolle ist eine Admin-Rolle und darf im Verein alles.",
+  "roles.levelHint": "Ansehen: sehen und mitmachen (anmelden, abstimmen, kommentieren). Bearbeiten: auch erstellen und ändern. Alles: auch löschen und exportieren.",
+  "roles.hideSingle": "Einzelne Rechte ausblenden",
+  "roles.showSingle": "Einzelne Rechte zeigen",
+  "roles.backToList": "Zurück zu den Rollen",
+  "roles.systemRole": "Systemrolle",
+  "roles.delete": "Rolle löschen",
+  "roles.mayDo": "Darf",
+  "roles.pageRoles": "Rollen",
+  "roles.pageCompare": "Vergleichen"
 }
