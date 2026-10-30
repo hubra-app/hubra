@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import i18n from 'i18next'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
@@ -253,6 +253,25 @@ export function InvoicesTab() {
     }
   }
 
+  // Read through a ref: useForm and t give new objects on every render, and
+  // as effect dependencies they re-ran the preview on each keystroke, which
+  // replaced a typed amount with the tier's price (0 for a free tier).
+  const latest = useRef<{
+    amount: string
+    setAmount: (v: string) => void
+    previewFailed: () => void
+  } | null>(null)
+  useEffect(() => {
+    latest.current = {
+      amount: singleForm.values.amount,
+      setAmount: (v) => singleForm.setFieldValue('amount', v),
+      previewFailed: () =>
+        notify('error', t('finance.amountPreviewFailed', 'Betragsvorschau fehlgeschlagen')),
+    }
+  })
+
+  // The tier's price fills the amount when the member, purpose or tier
+  // changes; after that the amount is the user's to change.
   useEffect(() => {
     if (
       watchedRecipientType !== 'member' ||
@@ -265,6 +284,8 @@ export function InvoicesTab() {
     const tier = tierOptions.find((tp) => tp.name === memberTier)
     if (!tier) return
     let cancelled = false
+    // An amount typed while the preview loads wins over the preview.
+    const typedBefore = latest.current?.amount
     const timer = setTimeout(() => {
       calculateTierCost({
         priceType: tier.priceType,
@@ -277,17 +298,12 @@ export function InvoicesTab() {
         tierId: parseInt(tier.id),
       })
         .then((r) => {
-          if (!cancelled) singleForm.setFieldValue('amount', String(r.amount))
+          // A free tier leaves the field empty to fill in, not at 0.
+          if (cancelled || latest.current?.amount !== typedBefore) return
+          latest.current?.setAmount(r.amount > 0 ? String(r.amount) : '')
         })
         .catch(() => {
-          if (!cancelled)
-            notify(
-              'error',
-              t(
-                'finance.amountPreviewFailed',
-                'Betragsvorschau fehlgeschlagen',
-              ),
-            )
+          if (!cancelled) latest.current?.previewFailed()
         })
     }, 300)
     return () => {
@@ -300,9 +316,6 @@ export function InvoicesTab() {
     watchedMemberId,
     tierOptions,
     memberTier,
-    singleForm,
-    notify,
-    t,
   ])
 
   return (
