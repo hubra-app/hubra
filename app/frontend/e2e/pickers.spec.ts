@@ -19,6 +19,7 @@ test('the group lead picker finds a member by typing their name', async ({ page 
     .click()
   const lead = page.getByRole('dialog').getByRole('combobox', { name: 'Gruppenleitung' })
   await lead.fill(name)
-  await page.getByRole('option', { name }).click()
+  // Two members can share a name; any of them will do.
+  await page.getByRole('option', { name, exact: true }).first().click()
   await expect(lead).toHaveValue(name)
 })
