@@ -1,4 +1,9 @@
-"""i18n blueprint — translation CRUD."""
+"""i18n blueprint — the platform's translations.
+
+The texts belong to the platform: every club reads the same ones, and only
+platform admins (global permission ``platform.settings``) change them, from
+the manager portal. Clubs suggest changes (see ``requests_routes``).
+"""
 
 from __future__ import annotations
 
@@ -8,12 +13,10 @@ import json
 import logging
 
 from flask import Blueprint, Response, jsonify, request
-from flask_jwt_extended import jwt_required
 
-from hubra.api.auth.helpers import get_current_member
 from marshmallow import Schema, fields, validate
 
-from hubra.api.permissions import permission_required
+from hubra.api.permissions import permission_required, require_global_permission
 from hubra.core.errors import api_error
 from hubra.core.extensions import db
 from hubra.api.i18n.services import (
@@ -25,7 +28,6 @@ from hubra.api.i18n.services import (
     _get_stale_threshold_seconds,
     get_available_locales,
     get_etag,
-    platform_rows,
     get_flagged,
     get_translations,
     get_translations_dict,
@@ -37,6 +39,8 @@ from hubra.api.i18n.services import (
 logger = logging.getLogger(__name__)
 
 i18n_bp = Blueprint("i18n_bp", __name__)
+
+_platform_admin = require_global_permission("platform.settings")
 
 
 def canonical_locale(code: str) -> str:
@@ -100,8 +104,7 @@ def get_i18n(locale: str):
     return resp, 200
 
 
-@jwt_required()
-@permission_required("i18n", "write", "Write translations")
+@_platform_admin
 def _translation_rows(locale: str):
     rows = get_translations(locale)
     threshold = _get_stale_threshold_seconds()
@@ -121,29 +124,6 @@ def _translation_rows(locale: str):
         }
         for r in rows
     ]
-    # A club's editor also lists the platform texts it hasn't changed, as
-    # its dictionary serves them (see get_translations_dict).
-    own = {r.key for r in rows if r.value or r.alias_for}
-    # Only platform rows with text: an empty one would hide the club row's
-    # "missing" flag without giving the key a value.
-    platform = {r.key: r for r in platform_rows(locale) if r.key not in own and r.value}
-    data = [d for d in data if d["key"] not in platform]
-    data += [
-        {
-            "id": None,
-            "locale": locale,
-            "key": r.key,
-            "value": r.value,
-            "default_value": r.value,
-            "needs_attention": False,
-            "is_missing": False,
-            "is_stale": False,
-            "last_used_at": None,
-            "updated_at": None,
-            "alias_for": r.alias_for,
-        }
-        for r in platform.values()
-    ]
     return jsonify(data), 200
 
 
@@ -151,8 +131,7 @@ def _translation_rows(locale: str):
 
 
 @i18n_bp.patch("/<string:locale>")
-@jwt_required()
-@permission_required("i18n", "write", "Write translations")
+@_platform_admin
 def patch_i18n(locale: str):
     body = request.get_json(silent=True)
     if not body or not isinstance(body, list):
@@ -169,7 +148,7 @@ def patch_i18n(locale: str):
         entries.append(validated)
 
     try:
-        updated = bulk_upsert(locale, entries, updated_by_id=get_current_member().id)
+        updated = bulk_upsert(locale, entries, updated_by_id=None)
         db.session.commit()
     except Exception as exc:
         db.session.rollback()
@@ -188,8 +167,7 @@ def patch_i18n(locale: str):
 
 
 @i18n_bp.post("/<string:locale>")
-@jwt_required()
-@permission_required("i18n", "write", "Write translations")
+@_platform_admin
 def post_translation(locale: str):
     body = request.get_json(silent=True) or {}
     try:
@@ -202,7 +180,7 @@ def post_translation(locale: str):
             locale=locale,
             key=data["key"],
             value=data["value"],
-            updated_by_id=get_current_member().id,
+            updated_by_id=None,
             alias_for=data.get("alias_for"),
         )
         db.session.commit()
@@ -225,8 +203,7 @@ def post_translation(locale: str):
 
 
 @i18n_bp.delete("/<string:locale>/<path:key>")
-@jwt_required()
-@permission_required("i18n", "write", "Write translations")
+@_platform_admin
 def delete_i18n(locale: str, key: str):
     try:
         deleted = delete_translation(locale, key)
@@ -254,8 +231,7 @@ _dup_schema = DuplicateLocaleSchema()
 
 
 @i18n_bp.post("/<string:locale>/duplicate")
-@jwt_required()
-@permission_required("i18n", "write", "Write translations")
+@_platform_admin
 def duplicate_i18n(locale: str):
     body = request.get_json(silent=True) or {}
     try:
@@ -282,7 +258,7 @@ def duplicate_i18n(locale: str):
             source_locale=source,
             target_locale=locale,
             copy_values=copy_values,
-            updated_by_id=get_current_member().id,
+            updated_by_id=None,
         )
         db.session.commit()
     except Exception as exc:
@@ -304,8 +280,7 @@ def duplicate_i18n(locale: str):
 
 
 @i18n_bp.post("/<string:locale>/copy-defaults")
-@jwt_required()
-@permission_required("i18n", "write", "Write translations")
+@_platform_admin
 def copy_defaults_i18n(locale: str):
     try:
         filled = copy_defaults(locale)
@@ -331,8 +306,7 @@ _export_query_schema = ExportQuerySchema()
 
 
 @i18n_bp.get("/<string:locale>/export")
-@jwt_required()
-@permission_required("i18n", "write", "Write translations")
+@_platform_admin
 def export_i18n(locale: str):
     try:
         query = _export_query_schema.load(request.args)
@@ -370,8 +344,7 @@ def export_i18n(locale: str):
 
 
 @i18n_bp.post("/<string:locale>/import")
-@jwt_required()
-@permission_required("i18n", "write", "Write translations")
+@_platform_admin
 def import_i18n(locale: str):
     try:
         query = _export_query_schema.load(request.args)
@@ -448,7 +421,7 @@ def import_i18n(locale: str):
         count = import_translations(
             locale,
             entries,
-            updated_by_id=get_current_member().id,
+            updated_by_id=None,
         )
         db.session.commit()
     except Exception as exc:
@@ -480,8 +453,7 @@ _report_schema = ReportKeysSchema()
 
 
 @i18n_bp.post("/<string:locale>/report")
-@jwt_required()
-@permission_required("i18n", "write", "Write translations")
+@_platform_admin
 def report_keys(locale: str):
     body = request.get_json(silent=True) or {}
     try:
@@ -515,8 +487,7 @@ def report_keys(locale: str):
 
 
 @i18n_bp.get("/<string:locale>/flagged")
-@jwt_required()
-@permission_required("i18n", "write", "Write translations")
+@_platform_admin
 def get_flagged_i18n(locale: str):
     rows = get_flagged(locale)
     threshold = _get_stale_threshold_seconds()
@@ -537,3 +508,67 @@ def get_flagged_i18n(locale: str):
         for r in rows
     ]
     return jsonify(data), 200
+
+
+# ── Club suggestions: /i18n/requests ────────────────────────────────────────
+
+
+class SuggestionSchema(Schema):
+    locale = fields.String(required=True, validate=validate.Length(min=2, max=10))
+    key = fields.String(required=True, validate=validate.Length(min=1, max=255))
+    value = fields.String(required=True, validate=validate.Length(min=1, max=5000))
+    note = fields.String(load_default=None, allow_none=True, validate=validate.Length(max=2000))
+
+
+_suggestion_schema = SuggestionSchema()
+
+
+def _club_id() -> int | None:
+    from hubra.core.tenant.context import current_tenant
+
+    tenant = current_tenant()
+    return tenant.id if tenant is not None else None
+
+
+@i18n_bp.get("/requests")
+@permission_required("i18n", "write", "Suggest translations")
+def list_club_requests():
+    """This club's suggestions, newest first."""
+    from hubra.api.i18n import requests as suggestions
+
+    club = _club_id()
+    if club is None:
+        return api_error("NO_TENANT", "No club selected", 400)
+    return jsonify([r.to_dict() for r in suggestions.for_club(club)]), 200
+
+
+@i18n_bp.post("/requests")
+@permission_required("i18n", "write", "Suggest translations")
+def create_club_request():
+    """Suggest a new text; a platform admin accepts or rejects it."""
+    from flask_jwt_extended import get_jwt
+
+    from hubra.api.i18n import requests as suggestions
+
+    club = _club_id()
+    if club is None:
+        return api_error("NO_TENANT", "No club selected", 400)
+    try:
+        data = _suggestion_schema.load(request.get_json(silent=True) or {})
+    except Exception as exc:
+        return api_error("VALIDATION_ERROR", str(exc), 400)
+    user_id = get_jwt().get("user_id")
+    try:
+        req = suggestions.submit(
+            club,
+            int(user_id) if user_id is not None else None,
+            canonical_locale(data["locale"]),
+            data["key"],
+            data["value"],
+            data.get("note"),
+        )
+        db.session.commit()
+    except suggestions.RequestError as exc:
+        db.session.rollback()
+        return api_error("VALIDATION_ERROR", str(exc), 400)
+    return jsonify(req.to_dict()), 201

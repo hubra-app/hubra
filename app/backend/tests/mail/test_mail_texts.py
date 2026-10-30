@@ -59,36 +59,6 @@ def test_the_plain_text_part_has_no_html_tags(app, db):
     assert subject == "[Alpha Club] You're invited"
 
 
-def test_a_new_club_mails_in_the_platform_texts(app, db):
-    """A club schema starts with an empty translation table (Postgres)."""
-    from collections import namedtuple
-    from unittest.mock import patch
-
-    from hubra.core.models.translation import Translation
-    from hubra.core.services.mail_i18n import get_mail_translator
-
-    Row = namedtuple("Row", "key value alias_for")
-    db.session.add(Translation(locale="de-CH", key="mail.a", value=""))  # reported
-    db.session.add(Translation(locale="de-CH", key="mail.b", value="Eigen"))
-    db.session.commit()
-    platform = {
-        "de-CH": [
-            Row("mail.a", "Plattform A", None),
-            Row("mail.b", "Plattform B", None),
-        ],
-        "en-GB": [Row("mail.c", "Platform C", None)],
-    }
-    with patch(
-        "hubra.api.i18n.services.platform_rows", side_effect=lambda loc: platform[loc]
-    ):
-        t = get_mail_translator("de-CH")
-    assert (t("mail.a"), t("mail.b"), t("mail.c")) == (
-        "Plattform A",
-        "Eigen",
-        "Platform C",
-    )
-
-
 def test_names_with_special_characters_stay_one_address(app, db):
     from email import message_from_string, policy
     from unittest.mock import patch

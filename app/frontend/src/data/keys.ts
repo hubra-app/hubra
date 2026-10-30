@@ -15,6 +15,7 @@ export const qk = {
   lookups: ['lookups'] as const,
   languages: ['languages'] as const,
   translations: (locale: string) => ['translations', locale] as const,
+  translationSuggestions: ['translation-suggestions'] as const,
   notifications: ['notifications'] as const,
   changelog: ['changelog'] as const,
 

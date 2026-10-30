@@ -15,6 +15,7 @@ import {
 import { PageHead, Tabs } from '@/components/ui'
 import { useAdmin } from '@/context/AdminContext'
 import { useLang, tr } from '@/lang'
+import { PlatformTranslations } from '@/screens/platform/Translations'
 import {
   getPlatformSettings,
   sendPlatformTestMail,
@@ -38,7 +39,7 @@ const BACKUP = [
   'backup.s3.secret_key',
 ]
 
-const TABS = ['mail', 'sender', 'backups'] as const
+const TABS = ['mail', 'sender', 'backups', 'translations'] as const
 type Tab = (typeof TABS)[number]
 
 function SourceBadge({ s }: { s: PlatformSetting }) {
@@ -202,6 +203,7 @@ export function PlatformSettings() {
           { id: 'mail', label: tr('Mail-Relay', 'Mail relay') },
           { id: 'sender', label: tr('Systemabsender', 'System sender') },
           { id: 'backups', label: tr('Backup-Speicher', 'Backup storage') },
+          { id: 'translations', label: tr('Übersetzungen', 'Translations') },
         ]}
         activeTab={tab}
         onTabChange={(id) =>
@@ -209,7 +211,9 @@ export function PlatformSettings() {
         }
       />
 
-      {isLoading ? (
+      {tab === 'translations' ? (
+        <PlatformTranslations />
+      ) : isLoading ? (
         <Text size="sm" c="dimmed">
           {tr('Wird geladen …', 'Loading…')}
         </Text>

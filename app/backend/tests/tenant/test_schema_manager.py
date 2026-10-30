@@ -14,6 +14,9 @@ _GLOBAL_ONLY_TABLES = frozenset(
         "users",
         "user_tenants",
         "tenant_requests",
+        # The texts are the platform's; clubs only suggest changes.
+        "translation",
+        "translation_requests",
         "global_audit_logs",
         "alembic_version",
         "global_permissions",

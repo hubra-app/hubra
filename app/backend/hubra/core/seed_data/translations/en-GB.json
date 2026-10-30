@@ -2555,5 +2555,22 @@
   "mail.email.invoice_reminder.button": "Settle invoice",
   "mail.email.invoice.number": "Invoice no.",
   "mail.email.invoice.amount": "Amount",
-  "mail.email.invoice.due": "Due on"
+  "mail.email.invoice.due": "Due on",
+  "suggest.title": "Suggest a translation",
+  "suggest.desc": "The app's texts are the same for every club and are kept by the platform. Suggest a better wording here; the platform admins decide.",
+  "suggest.mine": "The club's suggestions",
+  "suggest.none": "No suggestions yet.",
+  "suggest.sent": "Suggestion sent",
+  "suggest.sentMsg": "The platform admins will review it.",
+  "suggest.new": "New suggestion",
+  "suggest.search": "Search for the text you want to change…",
+  "suggest.current": "Now",
+  "suggest.proposed": "Your suggestion",
+  "suggest.note": "Why? (optional)",
+  "suggest.send": "Send suggestion",
+  "suggest.status.accepted": "Accepted",
+  "suggest.status.rejected": "Rejected",
+  "suggest.status.pending": "Open",
+  "suggest.was": "Before",
+  "suggest.reason": "Reason"
 }

@@ -131,7 +131,6 @@ module = Module(
     ),
     tables=(
         "setting",
-        "translation",
         "notifications",
         "audit_entries",
         "token_blocklist",

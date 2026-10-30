@@ -2555,5 +2555,22 @@
   "mail.email.invoice_reminder.button": "Rechnung begleichen",
   "mail.email.invoice.number": "Rechnung Nr.",
   "mail.email.invoice.amount": "Betrag",
-  "mail.email.invoice.due": "Fällig am"
+  "mail.email.invoice.due": "Fällig am",
+  "suggest.title": "Übersetzung vorschlagen",
+  "suggest.desc": "Die Texte der App gelten für alle Vereine und werden von der Plattform gepflegt. Schlage hier eine bessere Formulierung vor; die Plattform-Verwaltung entscheidet.",
+  "suggest.mine": "Vorschläge des Vereins",
+  "suggest.none": "Noch keine Vorschläge.",
+  "suggest.sent": "Vorschlag gesendet",
+  "suggest.sentMsg": "Die Plattform-Verwaltung prüft ihn.",
+  "suggest.new": "Neuer Vorschlag",
+  "suggest.search": "Text suchen, den du ändern möchtest …",
+  "suggest.current": "Heute",
+  "suggest.proposed": "Dein Vorschlag",
+  "suggest.note": "Warum? (optional)",
+  "suggest.send": "Vorschlag senden",
+  "suggest.status.accepted": "Angenommen",
+  "suggest.status.rejected": "Abgelehnt",
+  "suggest.status.pending": "Offen",
+  "suggest.was": "Vorher",
+  "suggest.reason": "Begründung"
 }
