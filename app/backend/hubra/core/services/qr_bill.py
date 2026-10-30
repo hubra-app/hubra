@@ -137,6 +137,7 @@ def generate_invoice_pdf(invoice: Invoice) -> bytes:
     _ensure_dependencies()
 
     from qrbill import QRBill
+    from qrbill.bill import format_ref_number
 
     creditor_address = {
         "name": _fit(club_name, _MAX_NAME),
@@ -184,9 +185,10 @@ def generate_invoice_pdf(invoice: Invoice) -> bytes:
         # "UK" instead of GB): the payer fills it in instead.
         bill = _bill(None)
 
-    # Render QR-bill SVG (full A4 page with bill at bottom)
+    # Only the payment slip (210 x 105 mm plus the scissors line above it);
+    # the template puts it at the bottom edge of the page at full size.
     svg_buffer = StringIO()
-    bill.as_svg(svg_buffer, full_page=True)
+    bill.as_svg(svg_buffer)
     qr_svg = svg_buffer.getvalue()
 
     # ── 6. Render full invoice HTML ────────────────────────────────────────
@@ -209,6 +211,7 @@ def generate_invoice_pdf(invoice: Invoice) -> bytes:
         amount_float=float(invoice.amount),
         description=description,
         reference=reference,
+        reference_display=format_ref_number(bill) if reference else "",
         qr_svg=qr_svg,
         lang=lang,
     )
