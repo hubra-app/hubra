@@ -41,6 +41,8 @@ class NavItem:
     # Items sharing a group collapse into the first visible one, for
     # screens that host several modules as tabs (events, polls, posts).
     group: str | None = None
+    # Path of the entry this one sits under, indented (members' sub-pages).
+    parent: str | None = None
 
 
 @dataclass(frozen=True)
@@ -184,6 +186,7 @@ class Module:
                     "order": n.order,
                     "perms": list(n.perms),
                     "group": n.group,
+                    "parent": n.parent,
                 }
                 for n in self.nav
             ],

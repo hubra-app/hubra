@@ -3,7 +3,7 @@ import { Anchor, Button, Group, Paper, Text, TextInput } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { IconExternalLink, IconMail, IconUser } from '@tabler/icons-react'
 import * as authApi from '@/api/auth'
-import { useAuth, useToast } from '@/context/AppContext'
+import { useApp, useAuth, useToast } from '@/context/AppContext'
 import { useInstance } from '@/context/InstanceContext'
 import { Avatar, Field, Toggle } from '@/components/ui'
 import { useT } from '@/locales/i18n'
@@ -18,6 +18,7 @@ export function AccountSettingsClubTab() {
   const { t } = useT()
   const { notify } = useToast()
   const { currentUser } = useAuth()
+  const { modules } = useApp()
   const { ssoUrl } = useInstance()
   // The switch shows the saved value until the person flips it.
   const [forwardingChoice, setMailForwarding] = useState<boolean | null>(null)
@@ -94,6 +95,8 @@ export function AccountSettingsClubTab() {
         </Text>
       </Paper>
 
+      {/* Club mail only exists while the club uses the mail module. */}
+      {modules.mail === true && (
       <Paper withBorder shadow="sm" radius="lg">
         <Group p="md" gap="sm" style={{ borderBottom: '1px solid var(--hb-border)' }}>
           <IconMail size={16} style={{ color: 'var(--mantine-color-ink-4)' }} />
@@ -156,6 +159,7 @@ export function AccountSettingsClubTab() {
           </div>
         </div>
       </Paper>
+      )}
     </>
   )
 }

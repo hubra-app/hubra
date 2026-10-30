@@ -17,6 +17,9 @@ import {
   IconUserPlus,
   IconId,
   IconStairs,
+  IconCalendar,
+  IconChartBar,
+  IconNews,
 } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 import type { ModuleInfo } from '@/api/modules'
@@ -27,7 +30,11 @@ export type NavItem = {
   label: string
   icon: ReactNode
   count?: number
+  /** What the count means, shown on hover. */
+  countTitle?: string
   permKeys?: string[]
+  /** Sub-pages shown indented below this entry. */
+  children?: NavItem[]
 }
 export type NavSection = { label: string; items: NavItem[] }
 
@@ -94,6 +101,9 @@ const NAV_ICONS: Record<string, ReactNode> = {
   'user-plus': <IconUserPlus size={24} />,
   'id-badge': <IconId size={24} />,
   stairs: <IconStairs size={24} />,
+  calendar: <IconCalendar size={24} />,
+  'chart-bar': <IconChartBar size={24} />,
+  news: <IconNews size={24} />,
 }
 
 /** An icon a plugin brought along, or a box. */
@@ -102,7 +112,7 @@ function navIcon(name: string): ReactNode {
   return Icon ? <Icon size={24} /> : <IconBox size={24} />
 }
 
-const SECTION_ORDER = ['workspace', 'operations', 'system', 'me']
+const SECTION_ORDER = ['workspace', 'activities', 'operations', 'system', 'me']
 
 /** Sidebar entries come from the modules that are on for the active club. */
 export function buildNav(
@@ -121,21 +131,37 @@ export function buildNav(
     .sort((a, b) => a.order - b.order)
   const sections = new Map<string, NavItem[]>()
   const seenGroups = new Set<string>()
+  const byPath = new Map<string, NavItem>()
+  const children: { parent: string; item: NavItem }[] = []
   for (const item of items) {
     // Modules shown as tabs of one screen share a single entry.
     if (item.group) {
       if (seenGroups.has(item.group)) continue
       seenGroups.add(item.group)
     }
-    const list = sections.get(item.section) ?? []
-    list.push({
+    const entry: NavItem = {
       path: item.path,
       label: t(item.labelKey),
       icon: NAV_ICONS[item.icon] ?? navIcon(item.icon),
       count: counts[item.path] || undefined,
+      countTitle:
+        item.path === '/app/members'
+          ? t('shell.nav.activeMembersCount', { count: counts[item.path] })
+          : undefined,
       permKeys: item.perms.length ? item.perms : undefined,
-    })
+    }
+    if (item.parent) {
+      children.push({ parent: item.parent, item: entry })
+      continue
+    }
+    byPath.set(item.path, entry)
+    const list = sections.get(item.section) ?? []
+    list.push(entry)
     sections.set(item.section, list)
+  }
+  for (const { parent, item } of children) {
+    const host = byPath.get(parent)
+    if (host) host.children = [...(host.children ?? []), item]
   }
   return [...sections.entries()]
     .sort(
@@ -148,6 +174,13 @@ export function buildNav(
     }))
 }
 
+/** Every path in the sidebar, sub-pages included. */
+export function navPaths(nav: NavSection[]): string[] {
+  return nav.flatMap((section) =>
+    section.items.flatMap((item) => [item.path, ...(item.children ?? []).map((c) => c.path)]),
+  )
+}
+
 export function filterNav(
   nav: NavSection[],
   hasPerm: (key: string) => boolean,
@@ -155,9 +188,14 @@ export function filterNav(
   return nav
     .map((section) => ({
       ...section,
-      items: section.items.filter(
-        (item) => !item.permKeys || item.permKeys.some(hasPerm),
-      ),
+      items: section.items
+        .filter((item) => !item.permKeys || item.permKeys.some(hasPerm))
+        .map((item) => ({
+          ...item,
+          children: item.children?.filter(
+            (child) => !child.permKeys || child.permKeys.some(hasPerm),
+          ),
+        })),
     }))
     .filter((section) => section.items.length > 0)
 }
@@ -171,14 +209,15 @@ export function getParentPath(pathname: string, navPaths: string[] = []): string
   const prefixes: [string, string][] = [
     ['/app/dashboard', '/app/dashboard'],
     ['/app/dashboard/global', '/app/dashboard'],
+    ['/app/dashboard/me', '/app/dashboard'],
     ['/app/members', '/app/members'],
     ['/app/members/functions', '/app/members/functions'],
     ['/app/members/applications', '/app/members/applications'],
     ['/app/members/tiers', '/app/members/tiers'],
     ['/app/groups', '/app/groups'],
     ['/app/operations/events', '/app/operations/events'],
-    ['/app/operations/polls', '/app/operations/events'],
-    ['/app/operations/posts', '/app/operations/events'],
+    ['/app/operations/polls', '/app/operations/polls'],
+    ['/app/operations/posts', '/app/operations/posts'],
     ['/app/finance', '/app/finance'],
     ['/app/finance/transactions', '/app/finance'],
     ['/app/finance/invoices', '/app/finance'],
@@ -219,6 +258,7 @@ export function getBreadcrumb(
   const map: Record<string, string> = {
     '/app/dashboard': t('shell.breadcrumbs.dashboard'),
     '/app/dashboard/global': t('shell.breadcrumbs.dashboardGlobal'),
+    '/app/dashboard/me': t('shell.breadcrumbs.dashboardMe'),
     '/app/members': t('shell.breadcrumbs.members'),
     '/app/members/applications': t('shell.breadcrumbs.applications'),
     '/app/members/tiers': t('shell.breadcrumbs.tiers'),

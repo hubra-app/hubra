@@ -328,6 +328,100 @@ def create_member():
     return jsonify(result), 202
 
 
+# ── Open invitations ──────────────────────────────────────────────────────────
+
+
+def _club_invite(invite_id: int):
+    """An invite of this club that nobody accepted yet, or 404."""
+    from hubra.core.models.club_invite import ClubInvite
+    from hubra.core.tenant.context import current_tenant
+
+    tenant = current_tenant()
+    invite = db.session.get(ClubInvite, invite_id)
+    if (
+        tenant is None
+        or invite is None
+        or invite.tenant_id != tenant.id
+        or invite.accepted_at is not None
+    ):
+        raise_error(404, "NOT_FOUND", "Invite not found")
+    return tenant, invite
+
+
+def _invite_dict(invite) -> dict:
+    return {
+        "id": invite.id,
+        "email": invite.email,
+        "invitedBy": invite.invited_by,
+        "createdAt": invite.created_at.isoformat(),
+        "expiresAt": invite.expires_at.isoformat(),
+        "expired": not invite.is_open,
+    }
+
+
+@members_bp.get("/invites")
+@permission_required("members", "create", "Create members")
+def list_invites():
+    """Invites the club sent that nobody accepted yet, newest first."""
+    from sqlalchemy import select
+
+    from hubra.core.models.club_invite import ClubInvite
+    from hubra.core.tenant.context import current_tenant
+
+    tenant = current_tenant()
+    if tenant is None:
+        return jsonify({"invites": []}), 200
+    invites = db.session.scalars(
+        select(ClubInvite)
+        .where(ClubInvite.tenant_id == tenant.id, ClubInvite.accepted_at.is_(None))
+        .order_by(ClubInvite.created_at.desc())
+    ).all()
+    return jsonify({"invites": [_invite_dict(i) for i in invites]}), 200
+
+
+@members_bp.post("/invites/<int:invite_id>/resend")
+@permission_required("members", "create", "Create members")
+def resend_invite(invite_id: int):
+    """Send the invite again with a fresh link (the old link stops working)."""
+    from hubra.core.tenant.invites import send_invite
+
+    tenant, invite = _club_invite(invite_id)
+    actor = get_current_member()
+    fresh = send_invite(
+        tenant,
+        invite.email,
+        actor.name or tenant.name,
+        member_data=invite.member_data,
+    )
+    log_audit(
+        actor_id=actor.id,
+        action="resend_invite",
+        target_type="ClubInvite",
+        target_id=fresh.id,
+        target_label=fresh.email,
+    )
+    db.session.commit()
+    return jsonify(_invite_dict(fresh)), 200
+
+
+@members_bp.delete("/invites/<int:invite_id>")
+@permission_required("members", "create", "Create members")
+def cancel_invite(invite_id: int):
+    """Withdraw an invite; its link stops working."""
+    _tenant, invite = _club_invite(invite_id)
+    email = invite.email
+    db.session.delete(invite)
+    log_audit(
+        actor_id=get_current_member().id,
+        action="cancel_invite",
+        target_type="ClubInvite",
+        target_id=invite_id,
+        target_label=email,
+    )
+    db.session.commit()
+    return "", 204
+
+
 # ── PATCH /members/<id> ───────────────────────────────────────────────────────
 
 

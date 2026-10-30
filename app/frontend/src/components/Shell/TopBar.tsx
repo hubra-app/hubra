@@ -4,8 +4,6 @@ import {
   Text,
   Badge,
   Box,
-  HoverCard,
-  Stack,
   UnstyledButton,
 } from '@mantine/core'
 import {
@@ -13,18 +11,19 @@ import {
   IconLayoutSidebarLeftCollapse,
   IconChevronRight,
   IconBell,
-  IconLogout,
-  IconBolt,
+  IconSearch,
+  IconX,
 } from '@tabler/icons-react'
+import { useState } from 'react'
 import { useT } from '@/locales/i18n'
 import { useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useNav, useAuth } from '@/context/AppContext'
-import { getChangelog } from '@/api/system'
 import { listNotifications } from '@/api/notifications'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { GlobalSearch } from './GlobalSearch'
 import { UserMenu } from './UserMenu'
+import { WhatsNewModal } from './WhatsNew'
 import { getBreadcrumb, initials, contrastColor } from './nav'
 import { qk } from '@/data/keys'
 import { useClubColors } from '@/branding'
@@ -42,15 +41,9 @@ export function TopBar() {
     userMenuOpen,
     setUserMenuOpen,
   } = useNav()
-  const { setPhase, currentUser } = useAuth()
+  const { currentUser } = useAuth()
   const crumb = getBreadcrumb(location.pathname, t)
   const parts = crumb.split(' > ')
-
-  const { data: changelog } = useQuery({
-    queryKey: qk.changelog,
-    queryFn: getChangelog,
-  })
-  const latestEntries = changelog?.entries?.slice(0, 2) ?? []
 
   const { data: notifications = [] } = useQuery({
     queryKey: qk.notifications,
@@ -61,18 +54,40 @@ export function TopBar() {
   const { data: club } = useClubProfile()
   const { secondary } = useClubColors()
 
+  // Phones: the search takes over the bar while it is open.
+  const [mobileSearch, setMobileSearch] = useState(false)
+  const barStyle = {
+    background: 'var(--hb-surface)',
+    borderBottom: secondary
+      ? '3px solid var(--mantine-color-club2-6)'
+      : '1px solid var(--hb-border)',
+    flexWrap: 'nowrap' as const,
+  }
+
+  if (mobileSearch) {
+    return (
+      <Group h={64} gap="xs" px="md" style={barStyle} wrap="nowrap">
+        <GlobalSearch fullWidth onDone={() => setMobileSearch(false)} />
+        <ActionIcon
+          variant="subtle"
+          size="lg"
+          onClick={() => setMobileSearch(false)}
+          aria-label={t('common.close', 'Schliessen')}
+        >
+          <IconX size={20} />
+        </ActionIcon>
+      </Group>
+    )
+  }
+
   return (
+    <>
+    <WhatsNewModal />
     <Group
       h={64}
       gap="xs"
       px="md"
-      style={{
-        background: 'var(--hb-surface)',
-        borderBottom: secondary
-          ? '3px solid var(--mantine-color-club2-6)'
-          : '1px solid var(--hb-border)',
-        flexWrap: 'nowrap',
-      }}
+      style={barStyle}
       wrap="nowrap"
     >
       <ActionIcon
@@ -143,67 +158,20 @@ export function TopBar() {
       </Group>
 
       <GlobalSearch />
+      <ActionIcon
+        variant="subtle"
+        size="lg"
+        className="mantine-hidden-from-sm"
+        onClick={() => setMobileSearch(true)}
+        aria-label={t('shell.search.open', 'Suchen')}
+      >
+        <IconSearch size={18} />
+      </ActionIcon>
       <div className="mantine-visible-from-sm">
         <LanguageSwitcher />
       </div>
 
       <Group gap={4} style={{ flexShrink: 0 }} wrap="nowrap">
-        <HoverCard width={220} shadow="md" position="bottom-end">
-          <HoverCard.Target>
-            <ActionIcon
-              variant="subtle"
-              size="lg"
-              className="mantine-visible-from-sm"
-              aria-label={t('shell.whatsNew.title')}
-            >
-              <IconBolt size={18} />
-            </ActionIcon>
-          </HoverCard.Target>
-          <HoverCard.Dropdown p="md">
-            <Stack gap={8}>
-              <Text fz="sm" fw={600}>
-                {t('shell.whatsNew.title')}
-              </Text>
-              {latestEntries.length > 0 ? (
-                latestEntries.map((entry) => (
-                  <div key={entry.version}>
-                    <Text fz="xs" fw={600} c="var(--hb-text)">
-                      v{entry.version}
-                      {entry.date && (
-                        <Text component="span" fz="xs" c="dimmed" ml={6}>
-                          {entry.date}
-                        </Text>
-                      )}
-                    </Text>
-                    {Object.entries(entry.sections).map(([section, items]) =>
-                      items.length > 0 ? (
-                        <div key={section}>
-                          <Text fz="xs" fw={500} c="var(--hb-text-2)" mt={4}>
-                            {section}
-                          </Text>
-                          {items.map((item, i) => (
-                            <Text
-                              key={section + '-' + i}
-                              fz="xs"
-                              c="var(--hb-text-2)"
-                              ml={8}
-                            >
-                              {item}
-                            </Text>
-                          ))}
-                        </div>
-                      ) : null,
-                    )}
-                  </div>
-                ))
-              ) : (
-                <Text fz="xs" c="dimmed">
-                  {t('shell.whatsNew.changelogSoon')}
-                </Text>
-              )}
-            </Stack>
-          </HoverCard.Dropdown>
-        </HoverCard>
 
         <ActionIcon
           variant="subtle"
@@ -233,15 +201,6 @@ export function TopBar() {
               {unreadCount > 9 ? '9+' : unreadCount}
             </Badge>
           )}
-        </ActionIcon>
-
-        <ActionIcon
-          variant="subtle"
-          size="lg"
-          aria-label={t('shell.a11y.signOut', 'Abmelden')}
-          onClick={() => setPhase('login')}
-        >
-          <IconLogout size={18} />
         </ActionIcon>
 
         {/* The expanded sidebar already shows the user card with this menu;
@@ -289,5 +248,6 @@ export function TopBar() {
         )}
       </Group>
     </Group>
+    </>
   )
 }

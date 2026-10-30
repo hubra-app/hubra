@@ -239,9 +239,23 @@ export function PollsTab() {
       )}
       <Paper withBorder shadow="sm" radius="lg" style={{ marginBottom: 0 }}>
         <Pagination {...pg} top />
+        {pg.paged.length === 0 && (
+          <div
+            style={{ padding: '48px', textAlign: 'center', color: 'var(--hb-text-3)' }}
+          >
+            <div style={{ fontSize: 'var(--mantine-font-size-sm)', fontWeight: 500 }}>
+              {t('polls.empty', 'Noch keine Umfragen.')}
+            </div>
+            <div style={{ fontSize: 'var(--mantine-font-size-sm)', marginTop: 4 }}>
+              {canCreate
+                ? t('polls.emptyHint', 'Frag den Verein nach seiner Meinung, zum Beispiel zum nächsten Ausflug oder zu einem Termin.')
+                : t('polls.emptyMember', 'Sobald der Vorstand eine Umfrage startet, kannst du hier abstimmen.')}
+            </div>
+          </div>
+        )}
         <div
           style={{
-            display: "grid",
+            display: pg.paged.length === 0 ? "none" : "grid",
             gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))",
             gap: 14,
             padding: 16,

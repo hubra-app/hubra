@@ -44,14 +44,14 @@ export function GlobalOverviewScreen() {
           {canCreateEvent && (
             <Button
               variant="default"
-              onClick={() => go("/app/operations/events")}
+              onClick={() => go("/app/operations/events?new=1")}
             >
               {t("dashboard.buttons.newEvent")}
             </Button>
           )}
           {canAddMember && (
-            <Button variant="filled" onClick={() => go("/app/members")}>
-              {t("common.addMember")}
+            <Button variant="filled" onClick={() => go("/app/members?invite=1")}>
+              {t("members.invite.title", "Mitglied einladen")}
             </Button>
           )}
         </Group>

@@ -223,6 +223,7 @@ function PrivateRoutes() {
               <Routes>
                 <Route path="dashboard" element={<DashboardScreen />} />
                 <Route path="dashboard/global" element={<DashboardScreen />} />
+                <Route path="dashboard/me" element={<DashboardScreen />} />
                 <Route path="members" element={<MembersTabScreen />} />
                 <Route path="members/:id" element={<MemberDetailScreen />} />
                 <Route

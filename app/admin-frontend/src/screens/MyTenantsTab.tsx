@@ -13,7 +13,7 @@ import {
   ThemeIcon,
   Title,
 } from '@mantine/core'
-import { IconArrowRight, IconBuildingCommunity, IconPlus, IconSearch, IconUsers } from '@tabler/icons-react'
+import { IconArrowRight, IconBuildingCommunity, IconPlus, IconUsers } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { SSO_URL, clubLogoUrl } from '@hubra/api-client'
 import { PageHead } from '@/components/ui'
@@ -36,14 +36,6 @@ export function MyTenantsTab() {
 
   const actions = (
     <>
-      <Button
-        component="a"
-        href={`${SSO_URL}/clubs`}
-        variant="default"
-        leftSection={<IconSearch size={16} />}
-      >
-        {tr('Verein finden', 'Find a club')}
-      </Button>
       <Button component="a" href={`${SSO_URL}/start`} leftSection={<IconPlus size={16} />}>
         {tr('Verein gründen', 'Start a club')}
       </Button>
@@ -52,8 +44,11 @@ export function MyTenantsTab() {
 
   const head = (
     <PageHead
-      title={tr('Meine Vereine', 'My clubs')}
-      desc={tr('Die Vereine, in denen du Mitglied bist.', 'The clubs you are a member of.')}
+      title={tr('Deine Vereine verwalten', 'Clubs you run')}
+      desc={tr(
+        'Admins der Vereine, die du leitest. Alles andere stellst du im Verein selbst ein.',
+        'Admins of the clubs you run. Everything else is set inside the club.',
+      )}
       actions={actions}
     />
   )
@@ -69,7 +64,8 @@ export function MyTenantsTab() {
     )
   }
 
-  const tenants = data?.tenants ?? []
+  // Clubs someone is only a member of are opened from «Meine Vereine».
+  const tenants = (data?.tenants ?? []).filter((t) => t.admin_level)
 
   if (tenants.length === 0) {
     return (
@@ -80,11 +76,11 @@ export function MyTenantsTab() {
             <ThemeIcon size={52} radius="xl" variant="light">
               <IconBuildingCommunity size={26} />
             </ThemeIcon>
-            <Title order={3}>{tr('Noch kein Verein', 'No club yet')}</Title>
+            <Title order={3}>{tr('Du leitest noch keinen Verein', 'You do not run a club yet')}</Title>
             <Text c="dimmed" maw={420}>
               {tr(
-                'Tritt einem bestehenden Verein bei oder beantrage einen neuen Verein auf Hubra.',
-                'Join an existing club or request a new club on Hubra.',
+                'Gründe einen Verein auf Hubra. Vereine, in denen du Mitglied bist, öffnest du unter «Meine Vereine».',
+                'Start a club on Hubra. Clubs you are a member of open from «My clubs».',
               )}
             </Text>
           </Stack>
@@ -123,11 +119,6 @@ export function MyTenantsTab() {
                       </Badge>
                     )}
                   </Group>
-                  {t.tenant_slug && (
-                    <Text fz="sm" c="dimmed" className="num" truncate>
-                      {t.tenant_slug}
-                    </Text>
-                  )}
                 </div>
               </Group>
               <Group gap="xs" grow>

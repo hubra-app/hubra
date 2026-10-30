@@ -130,6 +130,12 @@ export function ApplicationsTab() {
                 'Keine offenen Anträge',
               )}
             </div>
+            <div style={{ fontSize: 'var(--mantine-font-size-sm)', marginTop: 4 }}>
+              {t(
+                'members.applications.emptyHint',
+                'Beitrittsanfragen erscheinen hier, bis du sie annimmst oder ablehnst.',
+              )}
+            </div>
           </div>
         ) : (
           apps.map((app) => (

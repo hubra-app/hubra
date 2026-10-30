@@ -17,7 +17,7 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { IconArrowRight, IconBuildingCommunity, IconPlus, IconSearch } from '@tabler/icons-react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { clubLogoUrl } from '@hubra/api-client'
 import { useSso } from '@/context/SsoContext'
 import { clubAppUrl } from '@/redirect'
@@ -86,6 +86,22 @@ export function ClubsScreen() {
     enabled: authed && (debounced.length >= 2 || isManager),
   })
 
+  // Right after signing in, someone with exactly one club goes straight into
+  // it; the picker is still one click away under «Meine Vereine».
+  const location = useLocation()
+  const justSignedIn = (location.state as { signedIn?: boolean } | null)?.signedIn === true
+  const [autoOpenFailed, setAutoOpenFailed] = useState(false)
+  const onlyClub =
+    justSignedIn && !isManager && mine.data?.tenants.length === 1 ? mine.data.tenants[0] : null
+  const autoOpening = onlyClub !== null && !autoOpenFailed
+  useEffect(() => {
+    if (!onlyClub || autoOpenFailed) return
+    authApi
+      .switchTenant(onlyClub.tenant_slug)
+      .then(() => window.location.assign(clubAppUrl(urls, onlyClub.tenant_slug)))
+      .catch(() => setAutoOpenFailed(true))
+  }, [onlyClub, autoOpenFailed, urls])
+
   const join = useMutation({
     mutationFn: (slug: string) => authApi.joinClub(slug),
     onSuccess: (res) => {
@@ -127,7 +143,7 @@ export function ClubsScreen() {
     }
   }
 
-  if (!authed)
+  if (!authed || autoOpening)
     return (
       <Center h="100vh">
         <Loader />
@@ -161,32 +177,6 @@ export function ClubsScreen() {
         </Button>
       </Group>
 
-      {(isManager || runsAClub) && (
-        <Paper withBorder p="md" mb="lg" style={{ background: '#f5f1ff', borderColor: '#d6c7ff' }}>
-          <Group justify="space-between" wrap="nowrap">
-            <Box style={{ minWidth: 0 }}>
-              <Text fw={700}>{tr('Verwaltung', 'Manager portal')}</Text>
-              <Text fz="sm" c="dimmed">
-                {isManager
-                  ? tr(
-                      'Vereine, Anfragen, Rollen und Plugins dieser Plattform',
-                      'Clubs, requests, roles and plugins of this platform',
-                    )
-                  : tr('Admins und Einstellungen deiner Vereine', 'Admins and settings of the clubs you run')}
-              </Text>
-            </Box>
-            <Button
-              component="a"
-              href={urls.manage}
-              style={{ flexShrink: 0 }}
-              rightSection={<IconArrowRight size={16} />}
-            >
-              {tr('Öffnen', 'Open')}
-            </Button>
-          </Group>
-        </Paper>
-      )}
-
       {mine.isLoading ? (
         <Loader size="sm" my="md" />
       ) : mine.isError ? (
@@ -216,9 +206,6 @@ export function ClubsScreen() {
                       {t.tenant_name}
                     </Text>
                     <Group gap={6} wrap="nowrap">
-                      <Text fz="sm" c="dimmed" truncate>
-                        {t.tenant_slug}
-                      </Text>
                       {t.admin_level && (
                         <Badge size="xs" variant="light">
                           {t.admin_level === 'owner' ? tr('Inhaber', 'Owner') : 'Admin'}
@@ -240,6 +227,34 @@ export function ClubsScreen() {
             </Paper>
           ))}
         </Stack>
+      )}
+
+      {/* Running a club comes after the clubs themselves. */}
+      {(isManager || runsAClub) && (
+        <Paper withBorder p="md" mb="xl">
+          <Group justify="space-between" wrap="nowrap">
+            <Box style={{ minWidth: 0 }}>
+              <Text fw={700}>{tr('Verwaltung', 'Manager portal')}</Text>
+              <Text fz="sm" c="dimmed">
+                {isManager
+                  ? tr(
+                      'Vereine, Anfragen, Rollen und Plugins dieser Plattform',
+                      'Clubs, requests, roles and plugins of this platform',
+                    )
+                  : tr('Admins und Einstellungen deiner Vereine', 'Admins and settings of the clubs you run')}
+              </Text>
+            </Box>
+            <Button
+              component="a"
+              href={urls.manage}
+              variant="default"
+              style={{ flexShrink: 0 }}
+              rightSection={<IconArrowRight size={16} />}
+            >
+              {tr('Öffnen', 'Open')}
+            </Button>
+          </Group>
+        </Paper>
       )}
 
       {pending.length > 0 && (
@@ -305,9 +320,6 @@ export function ClubsScreen() {
                 <Box style={{ minWidth: 0 }}>
                   <Text fw={700} truncate>
                     {c.name}
-                  </Text>
-                  <Text fz="sm" c="dimmed">
-                    {c.slug}
                   </Text>
                 </Box>
               </Group>
