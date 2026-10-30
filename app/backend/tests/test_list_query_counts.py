@@ -8,7 +8,9 @@ from contextlib import contextmanager
 from datetime import date
 
 import pytest
-from sqlalchemy import event
+from sqlalchemy import event, func, select
+
+from hubra.core.models.member import Member
 
 
 @contextmanager
@@ -213,6 +215,8 @@ def test_dashboard_growth_is_one_query(client, auth_headers, db, members):
     count, body = _queries(client, db, "/api/v1/dashboard/summary")
 
     assert len(body["growth"]) == 12
-    # Members without a join date are not counted in any month.
-    assert body["growth"][-1] == 0
+    # Every member gets a join date, so this month counts them all.
+    assert body["growth"][-1] == db.session.scalar(
+        select(func.count(Member.id)).where(Member.archived_at.is_(None))
+    )
     assert count < 20
