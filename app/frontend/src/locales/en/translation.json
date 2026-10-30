@@ -446,7 +446,8 @@
     "saved": "Code saved.",
     "searchPlaceholder": "Suchen …",
     "status": "Status",
-    "title": "Codes"
+    "title": "Codes",
+    "lengthHint": "Drag the slider to change the code length"
   },
   "common": {
     "actions": "Actions",
@@ -550,7 +551,8 @@
     "pageFirst": "First page",
     "pagePrevious": "Previous page",
     "pageNext": "Next page",
-    "pageLast": "Last page"
+    "pageLast": "Last page",
+    "more": "More"
   },
   "dashboard": {
     "activeMembers": "Active members",
@@ -1506,7 +1508,8 @@
     "allTypes": "All types",
     "state": "State",
     "allStates": "All states",
-    "syncLabel": "Sync"
+    "syncLabel": "Sync",
+    "customPasswordPlaceholder": "Custom password (optional)"
   },
   "members": {
     "active": "Active",
@@ -1730,7 +1733,20 @@
       "approved": "Leaving confirmed",
       "declined": "Request declined"
     },
-    "noMembersFilterHint": "Change the search or the filter."
+    "noMembersFilterHint": "Change the search or the filter.",
+    "invite": {
+      "title": "Invite member",
+      "subtitle": "The person gets a personal link, signs in or signs up with this address and accepts. Name, email and contact details stay theirs.",
+      "send": "Send invite",
+      "sentTitle": "Invite sent",
+      "sent": "{{email}} gets a link to join.",
+      "failed": "Invite failed",
+      "nameHint": "Only used to greet them in the mail"
+    },
+    "accountFieldsHint": "From the member's own account. Only they can change it.",
+    "import": {
+      "invitedMsg": "{{count}} invites sent, {{skipped}} already members."
+    }
   },
   "notifications": {
     "invoicePaid": "Invoice paid",
@@ -1809,7 +1825,8 @@
     "requiredBadge": "Required",
     "editTitle": "Edit poll",
     "remindersSentMsg_one": "{{count}} reminder sent.",
-    "remindersSentMsg_other": "{{count}} reminders sent."
+    "remindersSentMsg_other": "{{count}} reminders sent.",
+    "addOption": "+ Add option"
   },
   "posts": {
     "backToPosts": "Back to posts",
@@ -2069,6 +2086,9 @@
       "reason": "Reason: {{reason}}",
       "remaining": "{{min}} min remaining",
       "stop": "Stop impersonating"
+    },
+    "clubBanner": {
+      "dismiss": "Hide banner"
     }
   },
   "system": {
@@ -2354,7 +2374,10 @@
     "leaveRequiresApprovalHint": "On: members ask to leave and you approve it under Members › Applications. Off: members leave at once.",
     "loadFailed": "The settings could not be loaded.",
     "saveFailed": "Settings not saved",
-    "saved": "Settings saved"
+    "saved": "Settings saved",
+    "joinRequestsOpen": "Accept requests to join",
+    "joinRequestsOpenHint": "Off: new members join by invite only, and join.hubra.club shows “Invite only”.",
+    "inviteValidDays": "Invites valid for (days)"
   },
   "domains": {
     "added": "Domain added",
@@ -2579,8 +2602,12 @@
       "leave_requested": "Asked to leave",
       "leave_request_withdrawn": "Request to leave withdrawn",
       "leave_approved": "Leaving confirmed",
-      "leave_declined": "Request to leave declined"
-    }
+      "leave_declined": "Request to leave declined",
+      "approve_registration": "Registration approved",
+      "delete_application": "Application deleted",
+      "create_member": "Member created"
+    },
+    "systemActor": "System (automatic)"
   },
   "kv": {
     "required": "Required",
@@ -2681,7 +2708,9 @@
     "noSources": "No {{type}} records available.",
     "selectSource": "Select a record …",
     "currentValue": "Current value:",
-    "hidden": "(hidden)"
+    "hidden": "(hidden)",
+    "validationOk": "OK",
+    "validationFailed": "Failed"
   },
   "roles": {
     "hideFields": "Hide field permissions",
@@ -2731,7 +2760,10 @@
       "Member": "Member"
     },
     "assignTo": "Give members the role {{role}}",
-    "searchMembers": "Search members …"
+    "searchMembers": "Search members …",
+    "templateAdmin": "(all rights)",
+    "templatePermCount_one": "({{count}} permission)",
+    "templatePermCount_other": "({{count}} permissions)"
   },
   "modules": {
     "functions": {
@@ -2805,5 +2837,37 @@
       "description": "Roles and the permissions they grant"
     },
     "pluginFailed": "This extension could not be shown."
+  },
+  "roleTemplates": {
+    "roleNames": {
+      "boardmember": "Board Member",
+      "operator": "Operator"
+    },
+    "standard-club": {
+      "name": "Standard club",
+      "description": "A typical club setup with Admin, Board Member and Member roles.",
+      "roles": {
+        "admin": "Full system access, bypasses all permission checks",
+        "boardmember": "Elevated access: can manage members, groups, events and finances",
+        "member": "Basic read-only access to club resources"
+      }
+    },
+    "small-association": {
+      "name": "Small association",
+      "description": "Minimal setup for small associations: Admin and Member roles only.",
+      "roles": {
+        "admin": "Full system access",
+        "member": "Can view members and events, and vote in polls"
+      }
+    },
+    "makerspace": {
+      "name": "Makerspace",
+      "description": "Makerspace setup with Admin, Operator and Member roles.",
+      "roles": {
+        "admin": "Full system access",
+        "operator": "Can manage inventory, events and member access, but not finances",
+        "member": "Can view resources, use inventory and take part"
+      }
+    }
   }
 }

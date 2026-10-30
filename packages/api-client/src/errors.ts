@@ -189,6 +189,74 @@ const DE: Record<string, string> = {
     "Nimm den Schlüssel zuerst zurück, dann kannst du ihn ausmustern.",
   "Unknown language": "Diese Sprache gibt es nicht.",
   "An unexpected error occurred.": "Etwas ist schiefgelaufen. Bitte versuche es nochmals.",
+  "A value is too large or has the wrong format": "Ein Wert ist zu gross oder hat das falsche Format.",
+  "A value is too long or not valid for its field.": "Ein Wert ist zu lang oder passt nicht in sein Feld.",
+
+  // Clubs, joining and invites
+  "Open the club to continue": "Öffne den Verein, um weiterzumachen.",
+  "This club is not active": "Dieser Verein ist nicht aktiv.",
+  "Your membership in this club is switched off": "Deine Mitgliedschaft in diesem Verein ist ausgeschaltet.",
+  "Change email and password on your account page; they need your current password":
+    "E-Mail und Passwort änderst du auf deiner Kontoseite; dafür brauchst du dein aktuelles Passwort.",
+  "This club takes new members by invite only": "Dieser Verein nimmt neue Mitglieder nur auf Einladung auf.",
+  "This invite is invalid or has expired": "Diese Einladung ist ungültig oder abgelaufen.",
+  "This invite was sent to another email address": "Diese Einladung ging an eine andere E-Mail-Adresse.",
+  "name must be 1 to 255 characters": "Der Name braucht 1 bis 255 Zeichen.",
+  "name is longer than 255 characters": "Der Name ist länger als 255 Zeichen.",
+  "No club selected": "Kein Verein ausgewählt.",
+
+  // Members, roles and groups
+  "You cannot suspend yourself": "Du kannst dich nicht selbst pausieren.",
+  "Cannot suspend an Owner or Admin role member":
+    "Mitglieder mit der Rolle Inhaber/in oder Admin können nicht pausiert werden.",
+  "This member left the club; invite them to bring them back":
+    "Dieses Mitglied hat den Verein verlassen. Lade es ein, um es zurückzuholen.",
+  "The applicant has no account yet": "Die Person hat noch kein Konto.",
+  "Name, email and contact details belong to the member's own account; they change them themselves":
+    "Name, E-Mail und Kontaktangaben gehören zum eigenen Konto des Mitglieds; nur es selbst kann sie ändern.",
+  "Name is too long": "Der Name ist zu lang.",
+  "avatarColor must be #rrggbb": "Die Farbe muss die Form #rrggbb haben.",
+  "A group cannot be its own parent": "Eine Gruppe kann nicht in sich selbst liegen.",
+  "System role flags cannot be set via API": "Systemrollen lassen sich so nicht ändern.",
+
+  // Tiers, finance, events and polls
+  "color must look like #1a2b3c": "Die Farbe muss die Form #1a2b3c haben.",
+  "surcharge_pct must be 0 to 100": "Der Zuschlag muss zwischen 0 und 100 % liegen.",
+  "due is before issued": "Die Fälligkeit liegt vor dem Rechnungsdatum.",
+  "This sign-up is not waiting for approval": "Diese Anmeldung wartet nicht auf eine Bestätigung.",
+  "This proxy is no longer valid": "Diese Vollmacht gilt nicht mehr.",
+
+  // Settings, branding and mail
+  "This setting has no stored default value": "Für diese Einstellung ist kein Standardwert hinterlegt.",
+  "Mail prefix cannot be empty": "Der Mail-Präfix darf nicht leer sein.",
+  "Mail prefix must be 1-64 chars, alphanumeric with hyphens/dots, starting and ending with alphanumeric":
+    "Der Mail-Präfix braucht 1 bis 64 Zeichen: Buchstaben, Ziffern, Punkte und Bindestriche, am Anfang und Ende ein Buchstabe oder eine Ziffer.",
+  "mail.domain setting is not configured": "Für den Verein ist noch keine Mail-Domain eingerichtet.",
+  "Invalid 'to' email address": "Die Empfängeradresse ist ungültig.",
+  "The test email could not be sent": "Die Test-E-Mail konnte nicht gesendet werden.",
+  "Forwarding targets cannot be set on catch-all addresses":
+    "Eine Sammeladresse (Catch-all) kann keine Weiterleitungen haben.",
+  "Cannot delete address for group while the group exists.":
+    "Die Adresse einer Gruppe lässt sich erst löschen, wenn die Gruppe gelöscht ist.",
+  "Cannot delete address for function while the function exists.":
+    "Die Adresse eines Amts lässt sich erst löschen, wenn das Amt gelöscht ist.",
+  "Cannot delete address for member while the member exists.":
+    "Die Adresse eines Mitglieds lässt sich erst löschen, wenn das Mitglied gelöscht ist.",
+  "Group managed mail address could not be provisioned — check WildDuck connectivity":
+    "Die Mail-Adresse der Gruppe konnte nicht angelegt werden. Ist der Mailserver erreichbar?",
+  "This system address has no provisioned WildDuck mailbox":
+    "Zu dieser Systemadresse gibt es noch kein Postfach auf dem Mailserver.",
+
+  // Integrations (keys and bindings)
+  "Binding already exists": "Diese Verknüpfung gibt es schon.",
+  "Cannot delete a protected key": "Ein geschützter Schlüssel kann nicht gelöscht werden.",
+  "Cannot delete key with existing bindings. Remove bindings first.":
+    "Der Schlüssel hat noch Verknüpfungen. Entferne sie zuerst.",
+  "Cannot change allow_multiple while bindings exist":
+    "Solange es Verknüpfungen gibt, lässt sich «mehrere erlauben» nicht ändern.",
+  "Cannot change the key of a protected binding": "Bei einer geschützten Verknüpfung lässt sich der Schlüssel nicht ändern.",
+  "Cannot toggle a protected binding": "Eine geschützte Verknüpfung lässt sich nicht ein- oder ausschalten.",
+  "Cannot delete a protected binding": "Eine geschützte Verknüpfung kann nicht gelöscht werden.",
 };
 
 // Messages that carry a name or number.
@@ -255,6 +323,7 @@ const DE_FIELDS: Record<string, string> = {
   amount: "Betrag",
   price_chf: "Preis",
   description: "Beschreibung",
+  logo: "Logo",
   title: "Titel",
   body: "Text",
   category_id: "Kategorie",
@@ -280,6 +349,8 @@ function deProblem(problem: string): string {
   if (/^Not a valid (number|integer|decimal)/.test(problem)) return "ist keine gültige Zahl";
   if (/^Not a valid (date|datetime)/.test(problem)) return "ist kein gültiges Datum";
   if (/^Unknown field/.test(problem)) return "ist hier nicht erlaubt";
+  const tooLarge = problem.match(/too large \(max (\d+) ?MB\)/);
+  if (tooLarge) return `ist zu gross (höchstens ${tooLarge[1]} MB)`;
   if (/^Must be one of/.test(problem)) return "hat einen ungültigen Wert";
   if (/^(Shorter|Longer) than|^Length must be/.test(problem)) return "ist zu kurz oder zu lang";
   const min = problem.match(/^Must be greater than (?:or equal to )?(\d+(?:\.\d+)?)/);

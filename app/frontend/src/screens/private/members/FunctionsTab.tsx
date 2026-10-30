@@ -107,7 +107,7 @@ export function FunctionsTab() {
       notify(
         'error',
         t('common.error'),
-        err instanceof Error ? err.message : 'Unbekannter Fehler',
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -132,7 +132,7 @@ export function FunctionsTab() {
       notify(
         'error',
         t('common.error'),
-        err instanceof Error ? err.message : 'Unbekannter Fehler',
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -151,7 +151,7 @@ export function FunctionsTab() {
       notify(
         'error',
         t('common.error'),
-        err instanceof Error ? err.message : 'Unbekannter Fehler',
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
   }
@@ -423,7 +423,7 @@ function HolderPanel({
         notify(
           'error',
           t('common.error'),
-          err instanceof Error ? err.message : 'Unbekannter Fehler',
+          err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
         ),
       )
   }
@@ -442,7 +442,7 @@ function HolderPanel({
         notify(
           'error',
           t('common.error'),
-          err instanceof Error ? err.message : 'Unbekannter Fehler',
+          err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
         ),
       )
   }

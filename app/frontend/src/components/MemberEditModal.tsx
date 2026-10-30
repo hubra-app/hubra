@@ -115,7 +115,7 @@ export function MemberEditModal({
         notify(
           'error',
           t('common.error', 'Fehler'),
-          err instanceof Error ? err.message : 'Could not load lookups',
+          err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
         )
       })
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -530,7 +530,7 @@ export function PollsTab() {
                 </div>
               ))}
               <Button variant="subtle" size="sm" onClick={addOption}>
-                + Add option
+                {t('polls.addOption', '+ Option hinzufügen')}
               </Button>
             </div>
           </Field>

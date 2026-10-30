@@ -198,7 +198,7 @@ export function KeysTab() {
                     },
                   }}
                 >
-                  <IconLock size={10} /> protected
+                  <IconLock size={10} /> {t('bindings.protected', 'Geschützt')}
                 </Badge>
               ) : null,
           },
@@ -275,7 +275,7 @@ export function KeysTab() {
               onClick={() => setShowAdd(true)}
               style={{ display: 'flex', alignItems: 'center', gap: 6 }}
             >
-              <IconPlus size={16} /> Add key
+              <IconPlus size={16} /> {t('bindings.addKey', 'Internen Schlüssel hinzufügen')}
             </Button>
           )
         }
