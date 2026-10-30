@@ -291,6 +291,94 @@ def update_club_settings():
     return jsonify({"settings": branding}), 200
 
 
+# ── Bank details for QR invoices ─────────────────────────────────────────────
+
+# (field in the API, setting key, label)
+_BANK_FIELDS = (
+    ("iban", "Club.Banking.Iban", "IBAN / QR-IBAN"),
+    ("street", "Club.Banking.Street", "Street"),
+    ("houseNo", "Club.Banking.HouseNo", "House number"),
+    ("postalCode", "Club.Banking.PostalCode", "Postal code"),
+    ("city", "Club.Banking.City", "City"),
+    ("country", "Club.Banking.Country", "Country"),
+)
+
+
+def _bank_settings() -> dict:
+    from hubra.api.settings.services import SettingService
+
+    data = {f: SettingService.get(key, "") or "" for f, key, _ in _BANK_FIELDS}
+    data["country"] = data["country"] or "CH"
+    iban = data["iban"].replace(" ", "").upper()
+    # IID 30-31 marks a QR-IBAN: invoices then carry a QR reference that the
+    # bank import matches payments by.
+    data["isQrIban"] = len(iban) >= 6 and iban[4:6] in ("30", "31")
+    data["complete"] = bool(data["iban"] and data["postalCode"] and data["city"])
+    return data
+
+
+def _iban_error(value: str) -> str | None:
+    """None for a valid Swiss or Liechtenstein IBAN (what a QR bill takes)."""
+    import re
+
+    v = value.replace(" ", "").upper()
+    if not re.match(r"^(CH|LI)\d{7}[0-9A-Z]{12}$", v):
+        return "IBAN must be a Swiss or Liechtenstein IBAN (CH or LI, 21 characters)"
+    numeric = "".join(ch if ch.isdigit() else str(ord(ch) - 55) for ch in v[4:] + v[:4])
+    if int(numeric) % 97 != 1:
+        return "IBAN checksum is wrong"
+    return None
+
+
+@admin_bp.get("/bank-settings")
+@require_admin
+def get_bank_settings():
+    """The account and address the club's QR invoices are paid to."""
+    return jsonify(_bank_settings()), 200
+
+
+@admin_bp.put("/bank-settings")
+@require_admin
+def update_bank_settings():
+    """Save the club's IBAN and creditor address (Settings > Verein)."""
+    from hubra.api.settings.services import SettingService
+
+    body = request.get_json(silent=True) or {}
+    values = {}
+    for field, _key, _label in _BANK_FIELDS:
+        raw = body.get(field, "")
+        if raw is None:
+            raw = ""
+        if not isinstance(raw, str):
+            raise ApiError(400, "VALIDATION_ERROR", f"{field} must be text")
+        values[field] = raw.strip()[:70]
+    if values["iban"]:
+        values["iban"] = values["iban"].replace(" ", "").upper()
+        error = _iban_error(values["iban"])
+        if error:
+            raise ApiError(400, "VALIDATION_ERROR", error)
+    values["country"] = (values["country"] or "CH").upper()
+    if len(values["country"]) != 2 or not values["country"].isalpha():
+        raise ApiError(400, "VALIDATION_ERROR", "country must be a 2-letter code")
+
+    for field, key, label in _BANK_FIELDS:
+        SettingService.upsert(
+            key, {"value": values[field], "namespace": "club", "label": label}
+        )
+    tenant = current_tenant()
+    db.session.add(
+        GlobalAuditEntry(
+            tenant_id=tenant.id if tenant else None,
+            action="bank_settings.update",
+            target_type="Tenant",
+            target_id=str(tenant.id) if tenant else "",
+            details={"isQrIban": _bank_settings()["isQrIban"]},
+        )
+    )
+    db.session.commit()
+    return jsonify(_bank_settings()), 200
+
+
 # ── Helpers ─────────────────────────────────────────────────────────────────
 
 

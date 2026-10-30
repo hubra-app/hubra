@@ -2420,7 +2420,22 @@
     "logoTooLarge": "Das Logo ist grösser als 2 MB.",
     "logoWrongType": "Bitte ein PNG-, JPEG-, WebP-, GIF- oder SVG-Bild wählen.",
     "colorsHint": "Die Primärfarbe färbt Schaltflächen, Links und das aktive Menü, die Akzentfarbe das Ankündigungsbanner und die Sekundärfarbe den Streifen unter der Kopfzeile.",
-    "resetColors": "Standardfarben"
+    "resetColors": "Standardfarben",
+    "bank": {
+      "title": "Bank & QR-Rechnung",
+      "hint": "Auf dieses Konto zahlen Mitglieder ihre Rechnungen. Mit einer QR-IBAN bekommt jede Rechnung eine QR-Referenz, über die der Bankimport Zahlungen zuordnet.",
+      "incomplete": "Ohne IBAN, PLZ und Ort können Rechnungen keinen QR-Einzahlungsschein enthalten.",
+      "qrIban": "QR-IBAN: Rechnungen erhalten eine QR-Referenz.",
+      "plainIban": "Normale IBAN: Rechnungen haben einen QR-Einzahlungsschein ohne QR-Referenz.",
+      "iban": "IBAN oder QR-IBAN",
+      "street": "Strasse",
+      "houseNo": "Hausnummer",
+      "postalCode": "PLZ",
+      "city": "Ort",
+      "country": "Land (z. B. CH)",
+      "save": "Bankangaben speichern",
+      "saved": "Bankangaben gespeichert"
+    }
   },
   "domains": {
     "added": "Domain hinzugefügt",

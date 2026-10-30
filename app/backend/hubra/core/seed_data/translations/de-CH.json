@@ -2609,5 +2609,18 @@
   "members.invites.revokeTitle": "Einladung zurückziehen?",
   "members.invites.revokeBody": "Der Link an {{email}} funktioniert danach nicht mehr.",
   "polls.statusOpen": "Offen",
-  "polls.statusClosed": "Beendet"
+  "polls.statusClosed": "Beendet",
+  "clubSettings.bank.title": "Bank & QR-Rechnung",
+  "clubSettings.bank.hint": "Auf dieses Konto zahlen Mitglieder ihre Rechnungen. Mit einer QR-IBAN bekommt jede Rechnung eine QR-Referenz, über die der Bankimport Zahlungen zuordnet.",
+  "clubSettings.bank.incomplete": "Ohne IBAN, PLZ und Ort können Rechnungen keinen QR-Einzahlungsschein enthalten.",
+  "clubSettings.bank.qrIban": "QR-IBAN: Rechnungen erhalten eine QR-Referenz.",
+  "clubSettings.bank.plainIban": "Normale IBAN: Rechnungen haben einen QR-Einzahlungsschein ohne QR-Referenz.",
+  "clubSettings.bank.iban": "IBAN oder QR-IBAN",
+  "clubSettings.bank.street": "Strasse",
+  "clubSettings.bank.houseNo": "Hausnummer",
+  "clubSettings.bank.postalCode": "PLZ",
+  "clubSettings.bank.city": "Ort",
+  "clubSettings.bank.country": "Land (z. B. CH)",
+  "clubSettings.bank.save": "Bankangaben speichern",
+  "clubSettings.bank.saved": "Bankangaben gespeichert"
 }
