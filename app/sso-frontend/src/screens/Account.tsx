@@ -21,8 +21,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import { SignedInFrame } from '@/components/SignedInFrame'
+import { ThemeSwitch } from '@hubra/ui'
 import { LoadFailed } from '@/components/LoadFailed'
-import { getLang, setLang, tr, useLang } from '@/lang'
+import { getLang, setLang, themeLabels, tr, useLang } from '@/lang'
 import * as authApi from '@/api/auth'
 
 const TABS = [
@@ -417,6 +418,18 @@ function SettingsTab({ profile }: { profile: authApi.Profile }) {
             save.mutate({ language })
           }}
         />
+        <Text fw={600} mt="md">
+          {tr('Darstellung', 'Appearance')}
+        </Text>
+        <Text size="sm" c="dimmed">
+          {tr(
+            'Hell, dunkel oder wie dein Gerät. Gilt für Anmeldung, Vereine und Verwaltung, auf allen deinen Geräten.',
+            'Light, dark or like your device. For sign-in, your clubs and the manager portal, on all your devices.',
+          )}
+        </Text>
+        <Group mt="xs">
+          <ThemeSwitch labels={themeLabels(tr)} />
+        </Group>
       </Stack>
     </Paper>
   )

@@ -76,7 +76,7 @@ export function ForgotPassword() {
   return (
     <AuthFrame>
       <AuthIcon>
-        <IconMail size={24} color="#6131c4" />
+        <IconMail size={24} color="var(--mantine-color-acc-7)" />
       </AuthIcon>
       <Title order={1} fz={30} mb={6}>
         {tr('Passwort vergessen', 'Reset your password')}

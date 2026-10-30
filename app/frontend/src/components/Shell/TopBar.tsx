@@ -27,7 +27,7 @@ import { WhatsNewModal } from './WhatsNew'
 import { getBreadcrumb, initials, contrastColor } from './nav'
 import { qk } from '@/data/keys'
 import { useClubColors } from '@/branding'
-import { useClubLogo, useClubProfile } from '@/data/clubProfile'
+import { ClubMark } from './ClubMark'
 
 export function TopBar() {
   const { t } = useT()
@@ -51,8 +51,6 @@ export function TopBar() {
   })
   const unreadCount = notifications.filter((n) => !n.read).length
 
-  const { data: club } = useClubProfile()
-  const logo = useClubLogo()
   const { secondary } = useClubColors()
 
   // Phones: the search takes over the bar while it is open.
@@ -101,21 +99,7 @@ export function TopBar() {
         <IconMenu2 size={20} />
       </ActionIcon>
 
-      {club && logo ? (
-        <Group gap={10} wrap="nowrap" style={{ flexShrink: 1, minWidth: 0, maxWidth: 280 }}>
-          <img src={logo} alt="" className="club-logo" />
-          <Text fz="lg" fw={700} truncate className="mantine-visible-from-xs">
-            {club.club_name}
-          </Text>
-        </Group>
-      ) : (
-        <Group gap={8} wrap="nowrap" style={{ flexShrink: 0 }}>
-          <div className="logo-mark" />
-          <Text fz={22} className="wordmark mantine-visible-from-xs">
-            hubra
-          </Text>
-        </Group>
-      )}
+      <ClubMark nameFrom="xs" />
 
       <ActionIcon
         variant="subtle"

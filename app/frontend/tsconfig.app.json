@@ -23,7 +23,8 @@
       "@hubra/ui": ["../../packages/ui/src/index.ts"],
       "react": ["./node_modules/@types/react"],
       "react/*": ["./node_modules/@types/react/*"],
-      "@mantine/core": ["./node_modules/@mantine/core"]
+      "@mantine/core": ["./node_modules/@mantine/core"],
+      "@tabler/icons-react": ["./node_modules/@tabler/icons-react"]
     }
   },
   "include": ["src", "../../packages/api-client/src", "../../packages/ui/src"]

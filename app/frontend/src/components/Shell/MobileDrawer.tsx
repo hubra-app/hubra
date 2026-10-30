@@ -13,11 +13,11 @@ import { useLocation } from 'react-router-dom'
 import { useNav, useAuth, useData } from '@/context/AppContext'
 import { NavItemRow } from './NavItemRow'
 import { UserMenu } from './UserMenu'
+import { ClubMark } from './ClubMark'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { usePlugins } from '@/plugins/store'
 import { useNavCounts } from '@/data/lists'
 import { buildNav, filterNav, getParentPath, navPaths } from './nav'
-import { useClubLogo, useClubProfile } from '@/data/clubProfile'
 
 export function MobileDrawer() {
   const { t } = useT()
@@ -26,8 +26,6 @@ export function MobileDrawer() {
   const { hasPermission, currentUser } = useAuth()
   const { moduleList } = useData()
   const counts = useNavCounts()
-  const { data: club } = useClubProfile()
-  const logo = useClubLogo()
   usePlugins() // plugin icons arrive after the first render
   const nav = filterNav(
     buildNav(
@@ -65,21 +63,7 @@ export function MobileDrawer() {
         }}
         wrap="nowrap"
       >
-        {club && logo ? (
-          <Group gap={10} wrap="nowrap" style={{ minWidth: 0 }}>
-            <img src={logo} alt="" className="club-logo" />
-            <Text fz="lg" fw={700} truncate>
-              {club.club_name}
-            </Text>
-          </Group>
-        ) : (
-          <Group gap={10} wrap="nowrap">
-            <div className="logo-mark" />
-            <Text fz={22} className="wordmark">
-              hubra
-            </Text>
-          </Group>
-        )}
+        <ClubMark />
         <ActionIcon
           variant="subtle"
           size="lg"

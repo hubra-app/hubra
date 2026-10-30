@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Box, Group, SegmentedControl, Stack, Text, Title } from '@mantine/core'
-import { useLang, type Lang } from '@/lang'
+import { ThemeToggle } from '@hubra/ui'
+import { themeLabels, useLang, type Lang } from '@/lang'
 
 /**
  * Signed-out pages: the form on the left, the Hubra brand panel on the right
@@ -19,17 +20,20 @@ export function AuthFrame({ children, wide = false }: { children: ReactNode; wid
                 hubra
               </Text>
             </Group>
-            <SegmentedControl
-              size="xs"
-              radius="md"
-              value={lang}
-              onChange={(v) => setLang(v as Lang)}
-              data={[
-                { value: 'de', label: 'DE' },
-                { value: 'en', label: 'EN' },
-              ]}
-              aria-label={tr('Sprache', 'Language')}
-            />
+            <Group gap={4} wrap="nowrap">
+              <ThemeToggle labels={themeLabels(tr)} />
+              <SegmentedControl
+                size="xs"
+                radius="md"
+                value={lang}
+                onChange={(v) => setLang(v as Lang)}
+                data={[
+                  { value: 'de', label: 'DE' },
+                  { value: 'en', label: 'EN' },
+                ]}
+                aria-label={tr('Sprache', 'Language')}
+              />
+            </Group>
           </Group>
           {children}
         </Box>
@@ -70,7 +74,7 @@ function BrandPanel() {
 
 /** Round icon above a heading, e.g. the envelope on "Passwort vergessen". */
 export function AuthIcon({ children, tone = 'violet' }: { children: ReactNode; tone?: 'violet' | 'green' | 'red' }) {
-  const bg = { violet: '#f5f1ff', green: 'rgba(31,157,87,.12)', red: 'rgba(220,38,38,.10)' }[tone]
+  const bg = { violet: 'var(--mantine-color-acc-light)', green: 'rgba(31,157,87,.12)', red: 'rgba(220,38,38,.10)' }[tone]
   return (
     <div
       style={{

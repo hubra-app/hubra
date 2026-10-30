@@ -15,7 +15,12 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    // vite.config.ts imports packages/ui/vite-theme-script.ts, which has no
+    // node_modules of its own.
+    "paths": {
+      "vite": ["./node_modules/vite/dist/node/index.d.ts"]
+    }
   },
   "include": ["vite.config.ts", "vitest.config.ts"]
 }

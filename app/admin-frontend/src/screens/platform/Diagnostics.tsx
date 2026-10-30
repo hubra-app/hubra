@@ -61,7 +61,7 @@ function Dot({ ok }: { ok: boolean | null }) {
 
 function Row({ ok, label, children }: { ok: boolean | null; label: string; children: React.ReactNode }) {
   return (
-    <Group gap={12} wrap="nowrap" py={8} style={{ borderBottom: '1px solid #f0eef6' }}>
+    <Group gap={12} wrap="nowrap" py={8} style={{ borderBottom: '1px solid var(--hb-border)' }}>
       <Dot ok={ok} />
       <Text size="sm" c="dimmed" miw={160}>
         {label}

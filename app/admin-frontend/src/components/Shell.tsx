@@ -39,6 +39,7 @@ import {
 } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
 import { getProfile } from '@/api/auth'
+import { ThemeSwitch } from '@hubra/ui'
 import { useLang, type Lang } from '@/lang'
 
 // The same frame as the club app (components/Shell there): a white top bar
@@ -98,8 +99,8 @@ function NavRow({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
         width: 44,
         height: 44,
         borderRadius: 10,
-        color: active ? '#4d27a0' : '#5e5873',
-        background: active ? '#ebe3ff' : 'transparent',
+        color: active ? 'var(--mantine-color-acc-8)' : 'var(--hb-text-2)',
+        background: active ? 'var(--mantine-color-acc-1)' : 'transparent',
       }
     : {
         display: 'flex',
@@ -111,19 +112,19 @@ function NavRow({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
         textDecoration: 'none',
         fontSize: 'var(--mantine-font-size-sm)',
         fontWeight: active ? 700 : 500,
-        color: active ? '#4d27a0' : '#4a4560',
-        background: active ? '#ebe3ff' : 'transparent',
+        color: active ? 'var(--mantine-color-acc-8)' : 'var(--hb-text-2)',
+        background: active ? 'var(--mantine-color-acc-1)' : 'transparent',
         transition: 'background .15s, color .15s',
       }
   const body = collapsed ? (
     item.icon
   ) : (
     <>
-      <Box component="span" style={{ display: 'flex', color: active ? '#7441e0' : '#5e5873' }}>
+      <Box component="span" style={{ display: 'flex', color: active ? 'var(--mantine-color-acc-6)' : 'var(--hb-text-2)' }}>
         {item.icon}
       </Box>
       <span style={{ flex: 1 }}>{item.label}</span>
-      {item.href && <IconArrowUpRight size={14} color="#b7b0c9" />}
+      {item.href && <IconArrowUpRight size={14} color="var(--hb-text-3)" />}
     </>
   )
   return item.path ? (
@@ -230,8 +231,8 @@ function UserCard() {
             height: 52,
             padding: '0 10px',
             borderRadius: 12,
-            border: '1px solid var(--mantine-color-gray-3)',
-            background: 'var(--mantine-color-white)',
+            border: '1px solid var(--hb-border)',
+            background: 'var(--hb-surface)',
           }}
         >
           <Box
@@ -272,6 +273,16 @@ function UserCard() {
         >
           {lang === 'de' ? 'English' : 'Deutsch'}
         </Menu.Item>
+        <Group justify="space-between" px={12} py={6} wrap="nowrap">
+          <Text fz="sm">{tr('Darstellung', 'Appearance')}</Text>
+          <ThemeSwitch
+            labels={{
+              light: tr('Hell', 'Light'),
+              dark: tr('Dunkel', 'Dark'),
+              system: tr('Wie Gerät', 'Like device'),
+            }}
+          />
+        </Group>
         <Menu.Divider />
         <Menu.Item color="red" leftSection={<IconLogout size={16} />} onClick={logout}>
           {tr('Abmelden', 'Sign out')}
@@ -363,7 +374,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         collapsed: { mobile: true, desktop: false },
       }}
       padding={0}
-      styles={{ main: { background: '#f7f6fb' } }}
+      styles={{ main: { background: 'var(--hb-page)' } }}
     >
       <AppShell.Header>
         <Group
@@ -371,7 +382,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           gap="xs"
           px="md"
           wrap="nowrap"
-          style={{ background: 'var(--mantine-color-white)', borderBottom: '1px solid var(--mantine-color-gray-3)' }}
+          style={{ background: 'var(--hb-surface)', borderBottom: '1px solid var(--hb-border)' }}
         >
           <ActionIcon
             variant="subtle"
@@ -444,14 +455,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar style={{ background: '#fff' }}>
+      <AppShell.Navbar style={{ background: 'var(--hb-surface)' }}>
         <ScrollArea flex={1} type="auto" offsetScrollbars>
           <Box p={collapsed ? 10 : 'sm'} pt="md">
             <NavSections sections={sections} collapsed={collapsed} />
           </Box>
         </ScrollArea>
         {!collapsed && (
-          <Box p="xs" style={{ borderTop: '1px solid var(--mantine-color-gray-3)' }}>
+          <Box p="xs" style={{ borderTop: '1px solid var(--hb-border)' }}>
             <UserCard />
           </Box>
         )}
@@ -489,7 +500,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             px="md"
             py={8}
             wrap="wrap"
-            style={{ background: '#fffbeb', borderBottom: '1px solid #fce588' }}
+            style={{ background: 'var(--mantine-color-gold-light)', borderBottom: '1px solid var(--mantine-color-gold-4)' }}
           >
             <Badge color="gold" c="#1a1625" variant="filled" size="sm">
               {tr('Stellvertretung', 'Impersonating')}

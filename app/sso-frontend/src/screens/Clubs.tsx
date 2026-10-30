@@ -237,7 +237,7 @@ export function ClubsScreen() {
       ) : myClubs.length === 0 && invites.length === 0 ? (
         <Paper withBorder p="xl" mb="xl">
           <Stack align="center" gap="xs" ta="center">
-            <IconBuildingCommunity size={32} color="#7441e0" />
+            <IconBuildingCommunity size={32} color="var(--mantine-color-acc-6)" />
             <Text fw={700}>{tr('Noch kein Verein', 'No club yet')}</Text>
             <Text size="sm" c="dimmed" maw={380}>
               {tr(

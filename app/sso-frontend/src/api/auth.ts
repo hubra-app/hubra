@@ -230,6 +230,8 @@ export interface Profile {
   avatarColor: string
   profileNote: string | null
   language: string
+  /** light, dark or auto (like the device). */
+  theme: 'light' | 'dark' | 'auto'
   isSuperadmin: boolean
   mustChangePassword: boolean
 }

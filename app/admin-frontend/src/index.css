@@ -1,89 +1,8 @@
-html {
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
-}
-
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.12);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.2);
-}
-
-body {
-  margin: 0;
-  background: #f7f6fb;
-  font-family: 'Hanken Grotesk', system-ui, sans-serif;
-  color: #1a1625;
-}
-
-::selection {
-  background: #d6c7ff;
-}
+/* The shared base (tokens, body, brand marks, chips) is in
+   packages/ui/src/ui.css. */
 
 #root {
   min-height: 100vh;
-}
-
-.num {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-}
-
-.logo-mark {
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-  background: url("/hubra-mark.svg") center / contain no-repeat;
-}
-
-.wordmark {
-  font-family: "Bricolage Grotesque", "Hanken Grotesk", system-ui, sans-serif;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1;
-}
-
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  border-radius: 8px;
-  border: 1px solid #d6d2e3;
-  background: transparent;
-  color: #5e5873;
-  font-size: var(--mantine-font-size-sm);
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  white-space: nowrap;
-}
-
-.chip:hover {
-  border-color: #b7b0c9;
-  background: #f4f2f9;
-}
-
-.chip.on {
-  border-color: #7441e0;
-  background: #f5f1ff;
-  color: #4d27a0;
-  font-weight: 600;
 }
 
 .page-container {
@@ -103,6 +22,6 @@ body {
 }
 
 .manage-nav-row:not([aria-current='page']):hover {
-  background: #f4f2f9 !important;
-  color: #1a1625 !important;
+  background: var(--hb-surface-2) !important;
+  color: var(--hb-text) !important;
 }

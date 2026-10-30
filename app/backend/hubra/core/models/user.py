@@ -61,6 +61,10 @@ class User(db.Model):
     language: Mapped[str] = mapped_column(
         db.String(10), default="de-CH", nullable=False
     )
+    # light, dark or auto (follow the browser); see core/services/account.py.
+    theme: Mapped[str] = mapped_column(
+        db.String(10), default="auto", server_default="auto", nullable=False
+    )
 
     phone: Mapped[str | None] = mapped_column(db.String(50), nullable=True)
     mobile: Mapped[str | None] = mapped_column(db.String(50), nullable=True)

@@ -1,13 +1,14 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { themeScript } from '../../packages/ui/vite-theme-script'
 import { resolve } from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), themeScript()],
   resolve: {
     // packages/ui imports these; take them from this app's node_modules.
-    dedupe: ['react', 'react-dom', '@mantine/core'],
+    dedupe: ['react', 'react-dom', '@mantine/core', '@tabler/icons-react'],
     alias: {
       '@': resolve(__dirname, 'src'),
       '@hubra/api-client': resolve(__dirname, '../../packages/api-client/src'),

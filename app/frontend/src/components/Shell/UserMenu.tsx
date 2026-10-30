@@ -7,16 +7,12 @@ import {
   UnstyledButton,
   Stack,
   ScrollArea,
-  SegmentedControl,
-  useMantineColorScheme,
 } from '@mantine/core'
 import {
   IconLogout,
   IconBuilding,
-  IconSun,
-  IconMoon,
-  IconDeviceDesktop,
 } from '@tabler/icons-react'
+import { ThemeSwitch } from '@hubra/ui'
 import { useT } from '@/locales/i18n'
 import { useAuth, useNav, useData } from '@/context/AppContext'
 import { useInstance } from '@/context/InstanceContext'
@@ -35,7 +31,6 @@ export function UserMenu() {
   const email = currentUser?.publicEmail || currentUser?.email || ''
   const bg = currentUser?.avatarColor ?? '#ebe8f2'
   // Light, dark or the device's setting; Mantine keeps it in this browser.
-  const { colorScheme, setColorScheme } = useMantineColorScheme()
 
   return (
     <Box
@@ -160,26 +155,12 @@ export function UserMenu() {
         </Stack>
         <Group justify="space-between" px={10} py={6} wrap="nowrap">
           <Text fz="sm">{t('shell.userMenu.appearance', 'Darstellung')}</Text>
-          <SegmentedControl
-            size="xs"
-            value={colorScheme}
-            onChange={(v) => setColorScheme(v as 'light' | 'dark' | 'auto')}
-            data={[
-              {
-                value: 'light',
-                label: <IconSun size={14} aria-label={t('shell.userMenu.light', 'Hell')} />,
-              },
-              {
-                value: 'dark',
-                label: <IconMoon size={14} aria-label={t('shell.userMenu.dark', 'Dunkel')} />,
-              },
-              {
-                value: 'auto',
-                label: (
-                  <IconDeviceDesktop size={14} aria-label={t('shell.userMenu.system', 'Wie Gerät')} />
-                ),
-              },
-            ]}
+          <ThemeSwitch
+            labels={{
+              light: t('shell.userMenu.light', 'Hell'),
+              dark: t('shell.userMenu.dark', 'Dunkel'),
+              system: t('shell.userMenu.system', 'Wie Gerät'),
+            }}
           />
         </Group>
         <Divider my={6} />

@@ -6,7 +6,7 @@ import { MantineProvider } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
 import '@mantine/core/styles.css'
 import '@mantine/notifications/styles.css'
-import { cssVariablesResolver, theme } from '@hubra/ui'
+import { colorSchemeManager, cssVariablesResolver, theme } from '@hubra/ui'
 // Before the app's own styles, so those win.
 import '@hubra/ui/ui.css'
 import './index.css'
@@ -28,7 +28,12 @@ const queryClient = new QueryClient({
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <MantineProvider theme={theme} cssVariablesResolver={cssVariablesResolver}>
+    <MantineProvider
+      theme={theme}
+      cssVariablesResolver={cssVariablesResolver}
+      colorSchemeManager={colorSchemeManager}
+      defaultColorScheme="auto"
+    >
       <Notifications position="bottom-right" />
       <BrowserRouter>
         <QueryClientProvider client={queryClient}>
