@@ -244,45 +244,49 @@ export function TopBar() {
           <IconLogout size={18} />
         </ActionIcon>
 
-        <Box
-          className="mantine-visible-from-sm"
-          style={{ position: 'relative' }}
-        >
-          <UnstyledButton
-            onClick={() => setUserMenuOpen(!userMenuOpen)}
-            aria-label={t('shell.a11y.userMenu', 'Benutzermenü')}
+        {/* The expanded sidebar already shows the user card with this menu;
+            the avatar here only stands in for it while the sidebar is collapsed. */}
+        {sidebarCollapsed && (
+          <Box
+            className="mantine-visible-from-sm"
+            style={{ position: 'relative' }}
           >
-            <Box
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: '50%',
-                background: currentUser?.avatarColor ?? '#ebe8f2',
-                fontSize: 'var(--mantine-font-size-xs)',
-                fontWeight: 700,
-                color: contrastColor(currentUser?.avatarColor ?? '#ebe8f2'),
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
+            <UnstyledButton
+              onClick={() => setUserMenuOpen(!userMenuOpen)}
+              aria-label={t('shell.a11y.userMenu', 'Benutzermenü')}
             >
-              {initials(currentUser?.name ?? '')}
-            </Box>
-          </UnstyledButton>
-          {userMenuOpen && (
-            <Box
-              style={{
-                position: 'absolute',
-                right: 0,
-                top: '110%',
-                zIndex: 200,
-              }}
-            >
-              <UserMenu />
-            </Box>
-          )}
-        </Box>
+              <Box
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: '50%',
+                  background: currentUser?.avatarColor ?? '#ebe8f2',
+                  fontSize: 'var(--mantine-font-size-xs)',
+                  fontWeight: 700,
+                  color: contrastColor(currentUser?.avatarColor ?? '#ebe8f2'),
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                {initials(currentUser?.name ?? '')}
+              </Box>
+            </UnstyledButton>
+            {userMenuOpen && (
+              <Box
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: '110%',
+                  zIndex: 200,
+                }}
+              >
+                <UserMenu />
+              </Box>
+            )}
+          </Box>
+        )}
       </Group>
     </Group>
   )

@@ -5,7 +5,7 @@ failed until someone made one. ``transactions.category_id`` becomes
 nullable on the template table in public and on every club schema.
 
 Revision ID: b7d3f1a8c2e5
-Revises: a9c4e2f7d1b6
+Revises: c7e1a2b9d4f3
 Create Date: 2026-10-30 16:30:00.000000
 
 """
@@ -16,7 +16,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "b7d3f1a8c2e5"
-down_revision = "a9c4e2f7d1b6"
+down_revision = "c7e1a2b9d4f3"
 branch_labels = None
 depends_on = None
 

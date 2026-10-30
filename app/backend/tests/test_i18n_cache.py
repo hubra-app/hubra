@@ -93,7 +93,7 @@ def test_get_translations_dict_invalidated_on_write(app, db):
     i18n_services._mem_translations.clear()  # cleanup
 
 
-def test_report_keys_dispatches_async_task(client, auth_headers):
+def test_report_keys_dispatches_async_task(client, staff_headers):
     """/i18n/<locale>/report dispatches Celery task in production mode."""
     # In testing mode, the route runs synchronously — so we test the
     # non-testing path by patching TESTING config.
@@ -107,34 +107,11 @@ def test_report_keys_dispatches_async_task(client, auth_headers):
             resp = client.post(
                 "/api/v1/i18n/de-CH/report",
                 json={"keys": [{"key": "missing.key", "default_value": "Default"}]},
-                headers=auth_headers,
+                headers=staff_headers,
             )
             assert resp.status_code == 200
             assert resp.get_json()["flagged"] == 0
             mock_delay.assert_called_once()
-
-
-def test_club_translations_start_from_the_platform(app, db):
-    """A club sees the platform texts; its own empty rows don't hide them."""
-    from collections import namedtuple
-
-    Row = namedtuple("Row", "key value alias_for")
-    platform = [
-        Row("shell.nav.dashboard", "Dashboard", None),
-        Row("shell.nav.members", "Mitglieder", None),
-        Row("shell.nav.home", None, "shell.nav.dashboard"),
-    ]
-    _seed_translation("de-CH", "shell.nav.dashboard", "")  # reported missing
-    _seed_translation("de-CH", "shell.nav.members", "Leute")  # the club's own
-    i18n_services._mem_translations.clear()
-
-    with patch.object(i18n_services, "platform_rows", return_value=platform):
-        result = i18n_services.get_translations_dict("de-CH")
-
-    assert result["shell.nav.dashboard"] == "Dashboard"
-    assert result["shell.nav.members"] == "Leute"
-    assert result["shell.nav.home"] == "Dashboard"
-    i18n_services._mem_translations.clear()
 
 
 def test_dict_leaves_out_keys_without_text(app, db):

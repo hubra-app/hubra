@@ -109,7 +109,8 @@ layout in the Hubra brand: the club's logo and name on top, a white card with
 a violet button, and "Sent with hubra" at the bottom. The logo is the one a
 club sets in Settings › Verein (PNG, JPEG, GIF or WebP up to 256 KB; an SVG or
 bigger logo shows the Hubra mark instead). It is sent inside the mail, so it
-shows without "load images". The texts are translations a club can edit; the
+shows without "load images". The texts are the platform's translations
+(Manage › Platform settings › Übersetzungen; clubs can suggest changes); the
 layout is in `app/backend/hubra/templates/email/`.
 
 The round picture next to the sender in an inbox is not part of the mail. The

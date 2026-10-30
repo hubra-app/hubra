@@ -89,7 +89,7 @@ const SystemScreen = lazy(() =>
   })),
 )
 const TranslationsScreen = lazy(() =>
-  import('./screens/private/system/Translations').then((m) => ({
+  import('./screens/private/system/TranslationSuggestions').then((m) => ({
     default: m.TranslationsScreen,
   })),
 )
