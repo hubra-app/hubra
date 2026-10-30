@@ -267,3 +267,14 @@ def test_clubs_accept_join_requests_by_default(client, db):
     _club(db, "open-door", "Open Door")
     _signup(client, "welcome@test.ch")
     assert client.get("/api/v1/system/clubs/open-door").get_json()["acceptsRequests"]
+
+
+def test_directory_leaves_out_clubs_you_already_belong_to(client, db):
+    bern = _club(db, "chess-bern", "Chess Bern")
+    _club(db, "chess-biel", "Chess Biel")
+    _signup(client, "chess@test.ch")
+    db.session.add(UserTenant(user_id=_user(db, "chess@test.ch").id, tenant_id=bern.id))
+    db.session.commit()
+
+    body = client.get("/api/v1/system/clubs?search=chess").get_json()
+    assert [c["slug"] for c in body["clubs"]] == ["chess-biel"]
