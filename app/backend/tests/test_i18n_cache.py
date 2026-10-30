@@ -171,3 +171,17 @@ def test_dict_leaves_out_aliases_without_a_target(app, db):
     assert result["nav.start"] == "Start"
 
     i18n_services._mem_translations.clear()
+
+
+def test_lowercase_locale_is_the_shipped_one(client, app, db):
+    """"de-ch" reads the "de-CH" texts and is not listed as a second language."""
+    _seed_translation("de-CH", "nav.home", "Start")
+    _seed_translation("de-ch", "nav.home", "")
+    i18n_services._mem_translations.clear()
+    i18n_services._mem_locales.clear()
+
+    assert client.get("/api/v1/i18n/de-ch").get_json()["nav.home"] == "Start"
+    assert client.get("/api/v1/i18n/languages").get_json() == ["de-CH"]
+
+    i18n_services._mem_translations.clear()
+    i18n_services._mem_locales.clear()

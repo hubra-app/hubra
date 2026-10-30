@@ -252,6 +252,12 @@ def get_available_locales() -> list[str]:
         )
         locales = sorted(set(locales) | set(platform))
 
+    # Older databases may hold "de-ch" next to "de-CH"; the API reads both
+    # under the canonical code (see routes.canonical_locale).
+    from hubra.api.i18n.routes import canonical_locale
+
+    locales = sorted({canonical_locale(loc) for loc in locales})
+
     # Cache in Redis
     if client is not None:
         try:
