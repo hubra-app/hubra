@@ -42,6 +42,7 @@ from hubra.core.models.mail import MailboxFolder
 from hubra.core.models.setting import Setting
 from hubra.core.models.feature import Feature, TenantFeature
 from hubra.core.models.translation import Translation
+from hubra.core.models.translation_request import TranslationRequest
 from hubra.core.models.notification import Notification
 from hubra.core.models.audit import AuditEntry
 from hubra.core.models.token import TokenBlocklist
@@ -118,6 +119,7 @@ __all__ = [
     "Feature",
     "TenantFeature",
     "Translation",
+    "TranslationRequest",
     "Notification",
     "AuditEntry",
     "TokenBlocklist",

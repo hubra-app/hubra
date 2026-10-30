@@ -505,15 +505,12 @@ def refresh_shipped_translations(session, seeds_dir) -> None:
     """Bring stored translations up to date with the shipped ones.
 
     A stored value that still equals a value an earlier release shipped (listed
-    in superseded.json) was never edited by the club, so it is replaced with the
+    in superseded.json) was never edited by a platform admin, so it is replaced with the
     current value; retired keys are removed. Edited values are left alone.
-    Runs on the public schema and on every club schema.
     """
     import pathlib as _pathlib
 
-    from hubra.core.models.tenant import Tenant
     from hubra.core.models.translation import Translation
-    from hubra.core.tenant.context import reset_search_path, set_search_path
 
     path = _pathlib.Path(seeds_dir) / "superseded.json"
     if not path.exists():
@@ -557,12 +554,8 @@ def refresh_shipped_translations(session, seeds_dir) -> None:
                 changed += 1
         return changed
 
+    # Clubs have no translation table of their own: the platform's is all.
     total = refresh_schema()
     session.flush()
-    for tenant in session.scalars(select(Tenant)).all():
-        set_search_path(tenant.id)
-        total += refresh_schema()
-        session.flush()
-    reset_search_path()
     if total:
         click.echo(f"  Updated {total} translations to the current wording.")

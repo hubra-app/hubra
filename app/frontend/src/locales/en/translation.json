@@ -2878,5 +2878,26 @@
         "member": "Can view resources, use inventory and take part"
       }
     }
+  },
+  "suggest": {
+    "title": "Suggest a translation",
+    "desc": "The app's texts are the same for every club and are kept by the platform. Suggest a better wording here; the platform admins decide.",
+    "mine": "The club's suggestions",
+    "none": "No suggestions yet.",
+    "sent": "Suggestion sent",
+    "sentMsg": "The platform admins will review it.",
+    "new": "New suggestion",
+    "search": "Search for the text you want to change…",
+    "current": "Now",
+    "proposed": "Your suggestion",
+    "note": "Why? (optional)",
+    "send": "Send suggestion",
+    "status": {
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "pending": "Open"
+    },
+    "was": "Before",
+    "reason": "Reason"
   }
 }

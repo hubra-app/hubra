@@ -208,3 +208,57 @@ def mail_server_reconcile():
 
     reconcile_mail.delay()
     return jsonify({"ok": True, "task": "reconcile_mail"}), 202
+
+
+# ── Translation suggestions from clubs ──────────────────────────────────────
+
+
+@platform_bp.get("/translation-requests")
+@require_global_permission(_PERM)
+def list_translation_requests():
+    """Clubs' suggestions; ``?status=pending|accepted|rejected`` (all if left out)."""
+    from hubra.api.i18n import requests as suggestions
+
+    status = request.args.get("status") or None
+    if status and status not in suggestions.STATUSES:
+        return api_error("VALIDATION_ERROR", "Unknown status", 400)
+    return jsonify(suggestions.listing(status)), 200
+
+
+@platform_bp.post("/translation-requests/<int:request_id>")
+@require_global_permission(_PERM)
+def decide_translation_request(request_id: int):
+    """Body: ``{"accept": bool, "value"?: str, "note"?: str}``.
+
+    Accepting writes the text (``value`` if the admin reworded it) for every
+    club; rejecting keeps the text and tells the club why in ``note``.
+    """
+    from hubra.api.i18n import requests as suggestions
+    from hubra.core.models.translation_request import TranslationRequest
+
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body.get("accept"), bool):
+        return api_error("VALIDATION_ERROR", "accept must be true or false", 400)
+    value = body.get("value")
+    note = body.get("note")
+    if (value is not None and not isinstance(value, str)) or (
+        note is not None and not isinstance(note, str)
+    ):
+        return api_error("VALIDATION_ERROR", "value and note must be text", 400)
+    req = db.session.get(TranslationRequest, request_id)
+    if req is None:
+        return api_error("NOT_FOUND", "Translation request not found", 404)
+    actor = getattr(g, "system_user", None)
+    try:
+        suggestions.decide(req, body["accept"], getattr(actor, "id", None), value, note)
+    except suggestions.RequestError as exc:
+        db.session.rollback()
+        return api_error("CONFLICT", str(exc), 409)
+    _audit(
+        "accept_translation_request" if body["accept"] else "reject_translation_request",
+        "TranslationRequest",
+        str(req.id),
+        {"locale": req.locale, "key": req.key, "tenant_id": req.tenant_id},
+    )
+    db.session.commit()
+    return jsonify(req.to_dict()), 200

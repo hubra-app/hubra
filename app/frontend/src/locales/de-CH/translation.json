@@ -2878,5 +2878,26 @@
         "member": "Sieht Ressourcen, nutzt das Inventar und macht mit"
       }
     }
+  },
+  "suggest": {
+    "title": "Übersetzung vorschlagen",
+    "desc": "Die Texte der App gelten für alle Vereine und werden von der Plattform gepflegt. Schlage hier eine bessere Formulierung vor; die Plattform-Verwaltung entscheidet.",
+    "mine": "Vorschläge des Vereins",
+    "none": "Noch keine Vorschläge.",
+    "sent": "Vorschlag gesendet",
+    "sentMsg": "Die Plattform-Verwaltung prüft ihn.",
+    "new": "Neuer Vorschlag",
+    "search": "Text suchen, den du ändern möchtest …",
+    "current": "Heute",
+    "proposed": "Dein Vorschlag",
+    "note": "Warum? (optional)",
+    "send": "Vorschlag senden",
+    "status": {
+      "accepted": "Angenommen",
+      "rejected": "Abgelehnt",
+      "pending": "Offen"
+    },
+    "was": "Vorher",
+    "reason": "Begründung"
   }
 }

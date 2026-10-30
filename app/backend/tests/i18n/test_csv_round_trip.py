@@ -5,21 +5,21 @@ import io
 from hubra.api.i18n.services import get_translations
 
 
-def test_export_then_import_adds_no_header_row(client, auth_headers, seeded_db):
+def test_export_then_import_adds_no_header_row(client, staff_headers, seeded_db):
     client.patch(
         "/api/v1/i18n/de-CH",
         json=[{"key": "nav.home", "value": "Startseite"}],
-        headers=auth_headers,
+        headers=staff_headers,
     )
     exported = client.get(
-        "/api/v1/i18n/de-CH/export?format=csv", headers=auth_headers
+        "/api/v1/i18n/de-CH/export?format=csv", headers=staff_headers
     ).get_data()
 
     # As Excel saves it: with a byte order mark.
     resp = client.post(
         "/api/v1/i18n/de-CH/import?format=csv",
         data={"file": (io.BytesIO("﻿".encode() + exported), "de.csv")},
-        headers=auth_headers,
+        headers=staff_headers,
         content_type="multipart/form-data",
     )
     assert resp.status_code == 201, resp.get_json()
