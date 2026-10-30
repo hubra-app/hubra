@@ -35,10 +35,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Which parts the change touches. A pull request that only changes the
-  # frontends (app/*frontend/, packages/) skips the backend tests; one that
-  # only changes app/backend/ skips the frontend tests. Docs-only changes
-  # skip both.
+  # Which test jobs the change needs. Only these paths run tests:
+  #   backend tests    app/backend/, plugins/, settings.yaml, ci.yml
+  #   frontend tests   app/*frontend/, packages/, plugins/, ci.yml
+  # Everything else (other workflows, deploy/, modules/, scripts/, docs)
+  # runs lint only.
   changes:
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
@@ -62,13 +63,12 @@ jobs:
             exit 0
           fi
           echo "$files"
-          code=$(echo "$files" | grep -vE '^docs/|\.md$' || true)
-          if echo "$code" | grep -qvE '^(app/(frontend|admin-frontend|sso-frontend)/|packages/|$)'; then
+          if echo "$files" | grep -qE '^(app/backend/|plugins/|settings\.yaml$|\.github/workflows/ci\.yml$)'; then
             echo "backend=true" >> "$GITHUB_OUTPUT"
           else
             echo "backend=false" >> "$GITHUB_OUTPUT"
           fi
-          if echo "$code" | grep -qvE '^(app/backend/|$)'; then
+          if echo "$files" | grep -qE '^(app/(frontend|admin-frontend|sso-frontend)/|packages/|plugins/|\.github/workflows/ci\.yml$)'; then
             echo "frontends=true" >> "$GITHUB_OUTPUT"
           else
             echo "frontends=false" >> "$GITHUB_OUTPUT"
