@@ -39,6 +39,26 @@ logger = logging.getLogger(__name__)
 i18n_bp = Blueprint("i18n_bp", __name__)
 
 
+def canonical_locale(code: str) -> str:
+    """BCP 47 casing: "de-ch" and "DE-CH" are the shipped "de-CH".
+
+    Rows are stored under the exact code, and the club app reads them under
+    the canonical one, so a second spelling would be a language of its own
+    that the app never shows.
+    """
+    parts = code.replace("_", "-").split("-")
+    out = [parts[0].lower()]
+    for part in parts[1:]:
+        out.append(part.upper() if len(part) == 2 else part.title() if len(part) == 4 else part.lower())
+    return "-".join(out)
+
+
+@i18n_bp.url_value_preprocessor
+def _canonical_locale_arg(_endpoint, values):
+    if values and isinstance(values.get("locale"), str):
+        values["locale"] = canonical_locale(values["locale"])
+
+
 class TranslationWriteSchema(Schema):
     key = fields.String(required=True, validate=validate.Length(min=1))
     value = fields.String(required=True)
@@ -243,7 +263,7 @@ def duplicate_i18n(locale: str):
     except Exception as exc:
         return api_error("VALIDATION_ERROR", str(exc), 400)
 
-    source = data["source"]
+    source = canonical_locale(data["source"])
     copy_values = data.get("copy_values", False)
 
     if source == locale:

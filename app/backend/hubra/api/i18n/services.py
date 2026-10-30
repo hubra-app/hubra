@@ -205,11 +205,13 @@ def _resolve_alias_chain(
 ) -> str:
     if key in resolved:
         return resolved[key]
+    # A loop or a missing target has no text: "" leaves the app's own text
+    # (the key itself would be shown as the text).
     if key in visited:
-        return key
+        return ""
     row = alias_map.get(key)
     if not row:
-        return key
+        return ""
     if not row.alias_for:
         resolved[key] = row.value
         return row.value
@@ -249,6 +251,12 @@ def get_available_locales() -> list[str]:
             text("SELECT DISTINCT locale FROM public.translation")
         )
         locales = sorted(set(locales) | set(platform))
+
+    # Older databases may hold "de-ch" next to "de-CH"; the API reads both
+    # under the canonical code (see routes.canonical_locale).
+    from hubra.api.i18n.routes import canonical_locale
+
+    locales = sorted({canonical_locale(loc) for loc in locales})
 
     # Cache in Redis
     if client is not None:

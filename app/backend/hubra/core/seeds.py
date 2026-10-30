@@ -544,6 +544,12 @@ def refresh_shipped_translations(session, seeds_dir) -> None:
                 row.needs_attention = False
                 row.is_missing = False
                 changed += 1
+            elif new_value and (row.value or "").strip() == row.key:
+                # A text that is just its key shows the key in the app.
+                row.value = new_value
+                row.needs_attention = False
+                row.is_missing = False
+                changed += 1
             elif new_value and not row.value and row.is_missing:
                 row.value = new_value
                 row.needs_attention = False

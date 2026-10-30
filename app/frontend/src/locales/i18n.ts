@@ -18,6 +18,12 @@ export const resources = {
 
 const KNOWN_LANGUAGES = ["de-CH", "en-GB"];
 
+// i18next keeps working on the objects above, so the API texts end up in
+// them; this copy stays as shipped.
+const BUILT_IN: Record<string, unknown> = JSON.parse(
+  JSON.stringify({ "en-GB": en, "de-CH": deCH }),
+);
+
 // The club's languages, asked once per page load (loading and key reports
 // both need them).
 let apiLanguages: Promise<string[]> | null = null;
@@ -179,6 +185,33 @@ export async function loadAllTranslationsFromApi() {
   flushAccessedKeys();
 }
 
+/** The built-in text at a dotted key: a string, an object of texts, or undefined. */
+function builtIn(locale: string, key: string): unknown {
+  let node: unknown = BUILT_IN[locale];
+  for (const part of key.split(".")) {
+    if (typeof node !== "object" || node === null) return undefined;
+    node = (node as Record<string, unknown>)[part];
+  }
+  return node;
+}
+
+/**
+ * Whether a text from the API may go over the built-in ones. A row whose text
+ * is its own key would show that key, and a row that clashes with the
+ * built-in tree would hide a whole group of texts: "a.b" over the object
+ * "a.b.*" drops every child, and "a.b.c" under the text "a.b" drops "a.b".
+ * Old databases still hold such rows from earlier releases.
+ */
+function usableApiText(locale: string, key: string, value: unknown): boolean {
+  if (typeof value !== "string" || !value.trim() || value.trim() === key) return false;
+  if (typeof builtIn(locale, key) === "object") return false;
+  const parts = key.split(".");
+  for (let i = 1; i < parts.length; i++) {
+    if (typeof builtIn(locale, parts.slice(0, i).join(".")) === "string") return false;
+  }
+  return true;
+}
+
 export async function loadTranslationsFromApi(locale: string) {
   try {
     const data = await fetchTranslations(locale);
@@ -189,6 +222,7 @@ export async function loadTranslationsFromApi(locale: string) {
     // Parents before children: "a.b" after "a.b.c" would replace the
     // object that holds "a.b.c" with a string.
     for (const [key, value] of Object.entries(data).sort(([a], [b]) => (a < b ? -1 : 1))) {
+      if (!usableApiText(locale, key, value)) continue;
       i18n.addResource(locale, "translation", key, value, { silent: true });
     }
   } catch {
