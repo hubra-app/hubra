@@ -1,0 +1,5 @@
+{{ t('mail.email.club_request.approved_body', request_name=request_name) }}
+{% if clubs_url %}
+{{ t('mail.email.club_request.approved_cta_note') }}
+{{ clubs_url }}
+{% endif %}

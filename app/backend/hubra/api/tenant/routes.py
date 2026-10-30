@@ -10,6 +10,7 @@ caller's global roles (``user_id`` JWT claim).
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, current_app, jsonify, make_response, request
@@ -40,6 +41,8 @@ from hubra.core.tenant.service import TenantService, TenantProvisioningError
 from hubra.core.tenant.club_settings import accepts_join_requests
 
 tenant_admin_bp = Blueprint("tenant_admin", __name__)
+
+_log = logging.getLogger(__name__)
 
 
 def _body_text(body: dict, key: str) -> str:
@@ -567,6 +570,30 @@ def _tenant_request_to_dict(req: TenantRequest) -> dict:
     }
 
 
+def _notify_requester(req: TenantRequest) -> bool:
+    """Mail the requester that *req* was approved or rejected.  True when sent.
+
+    The decision is already committed: a mail failure is logged, never raised.
+    """
+    from hubra.core.services import email as email_svc
+
+    user = db.session.get(User, req.user_id)
+    if user is None or not user.email:
+        return False
+    lang = user.language or "de-CH"
+    try:
+        if req.status == "approved":
+            return email_svc.send_club_request_approved(
+                user.email, user.name, req.name, lang=lang
+            )
+        return email_svc.send_club_request_rejected(
+            user.email, user.name, req.name, req.slug, req.admin_note, lang=lang
+        )
+    except Exception:
+        _log.exception("tenant_request_mail_failed request_id=%s", req.id)
+        return False
+
+
 @tenant_admin_bp.route("/tenant-requests", methods=["POST"])
 @jwt_required()
 def submit_tenant_request():
@@ -683,10 +710,12 @@ def approve_tenant_request(req_id: int):
     req.status = "approved"
     req.reviewed_by = int(reviewer_id) if reviewer_id else None
     db.session.commit()
+    notified = _notify_requester(req)
 
     return jsonify(
         {
             "request": _tenant_request_to_dict(req),
+            "notified": notified,
             "tenant": {
                 "id": tenant.id,
                 "name": tenant.name,
@@ -719,8 +748,9 @@ def reject_tenant_request(req_id: int):
     req.admin_note = note
     req.reviewed_by = int(reviewer_id) if reviewer_id else None
     db.session.commit()
+    notified = _notify_requester(req)
 
-    return jsonify({"request": _tenant_request_to_dict(req)}), 200
+    return jsonify({"request": _tenant_request_to_dict(req), "notified": notified}), 200
 
 
 # ── Tenant member management ──────────────────────────────────────────────────

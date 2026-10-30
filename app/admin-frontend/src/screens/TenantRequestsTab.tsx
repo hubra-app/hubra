@@ -11,6 +11,7 @@ import {
   TextInput,
   Stack,
   Anchor,
+  SegmentedControl,
 } from '@mantine/core'
 import { SSO_URL } from '@hubra/api-client'
 import {
@@ -40,6 +41,23 @@ function requestStatus(status: string) {
   return l ? tr(l[0], l[1]) : status
 }
 
+type RequestView = 'open' | 'done' | 'all'
+
+function inView(r: TenantRequest, view: RequestView) {
+  if (view === 'all') return true
+  return (r.status === 'pending') === (view === 'open')
+}
+
+/** The toast text after a decision: whether the requester got an email. */
+function notifiedText(notified: boolean) {
+  return notified
+    ? tr('Die Person wurde per E-Mail benachrichtigt.', 'The requester was notified by email.')
+    : tr(
+        'Es wurde keine E-Mail gesendet (Mail-Relay prüfen).',
+        'No email was sent (check the mail relay).',
+      )
+}
+
 /**
  * New clubs people asked for, for platform staff to review. People ask for
  * a club on the SSO site (/start), not here.
@@ -49,6 +67,7 @@ export function TenantRequestsTab() {
   const queryClient = useQueryClient()
   const [rejectTarget, setRejectTarget] = useState<TenantRequest | null>(null)
   const [rejectNote, setRejectNote] = useState('')
+  const [view, setView] = useState<RequestView>('open')
   const canReview = hasGlobalPermission('requests.approve')
 
   const { data, isLoading } = useQuery({
@@ -58,10 +77,14 @@ export function TenantRequestsTab() {
 
   const approveMutation = useMutation({
     mutationFn: (id: number) => approveTenantRequest(id),
-    onSuccess: () => {
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['tenant-requests'] })
       queryClient.invalidateQueries({ queryKey: ['tenants'] })
-      notify('success', tr('Anfrage angenommen', 'Request approved'), tr('Der Verein ist eingerichtet.', 'The club has been set up.'))
+      notify(
+        'success',
+        tr('Anfrage angenommen', 'Request approved'),
+        `${tr('Der Verein ist eingerichtet.', 'The club has been set up.')} ${notifiedText(res.notified)}`,
+      )
     },
     onError: (err: Error) => {
       notify('error', tr('Annehmen fehlgeschlagen', 'Approval failed'), err.message)
@@ -71,9 +94,13 @@ export function TenantRequestsTab() {
   const rejectMutation = useMutation({
     mutationFn: ({ id, note }: { id: number; note?: string }) =>
       rejectTenantRequest(id, note),
-    onSuccess: () => {
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['tenant-requests'] })
-      notify('success', tr('Anfrage abgelehnt', 'Request rejected'), tr('Die Anfrage wurde abgelehnt.', 'The request has been rejected.'))
+      notify(
+        'success',
+        tr('Anfrage abgelehnt', 'Request rejected'),
+        `${tr('Die Anfrage wurde abgelehnt.', 'The request has been rejected.')} ${notifiedText(res.notified)}`,
+      )
       setRejectTarget(null)
       setRejectNote('')
     },
@@ -82,11 +109,23 @@ export function TenantRequestsTab() {
     },
   })
 
-  const requests = data?.requests ?? []
+  const all = data?.requests ?? []
+  const requests = all.filter((r) => inView(r, view))
+  const openCount = all.filter((r) => r.status === 'pending').length
 
   return (
     <div>
-      <Group justify="flex-end" mb="md">
+      <Group justify="space-between" mb="md" wrap="wrap">
+        <SegmentedControl
+          size="sm"
+          value={view}
+          onChange={(v) => setView(v as RequestView)}
+          data={[
+            { value: 'open', label: `${tr('Offen', 'Open')} (${openCount})` },
+            { value: 'done', label: `${tr('Erledigt', 'Completed')} (${all.length - openCount})` },
+            { value: 'all', label: tr('Alle', 'All') },
+          ]}
+        />
         <Anchor href={`${SSO_URL}/start`} size="sm" target="_blank" rel="noreferrer">
           {tr('Seite für neue Vereine', 'Request page')}
         </Anchor>
@@ -101,7 +140,11 @@ export function TenantRequestsTab() {
 
         {!isLoading && requests.length === 0 && (
           <Text p={40} ta="center" c="dimmed">
-            {tr('Noch keine Anfragen.', 'No requests yet.')}
+            {all.length === 0
+              ? tr('Noch keine Anfragen.', 'No requests yet.')
+              : view === 'open'
+                ? tr('Keine offenen Anfragen.', 'No open requests.')
+                : tr('Keine erledigten Anfragen.', 'No completed requests.')}
           </Text>
         )}
 
