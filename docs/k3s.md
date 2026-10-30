@@ -121,6 +121,10 @@ with SSL mode **Full (strict)**.
   (`sha-<commit>`) and push. `latest` follows the newest release, but
   Kubernetes doesn't notice a moved tag; with `latest`, run
   `kubectl -n hubra rollout restart deployment` after the workflow finishes.
+  With Flux image automation, point the ImagePolicy at the sortable
+  `main-<timestamp>-<commit>` tags that a manual run on `main` pushes
+  (`pattern: '^main-(?P<ts>[0-9]{14})-[a-f0-9]+$'`, `extract: '$ts'`,
+  numerical ascending); Flux then commits and rolls out each build itself.
 - **Change settings:** edit `settings.yaml` and push.
 - **Change secrets:** edit `.env`, re-run `create-secrets.sh`, then run
   `kubectl -n hubra rollout restart deployment`.
