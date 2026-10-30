@@ -14,14 +14,16 @@
 
 html:root[data-mantine-color-scheme="dark"] {
   color-scheme: dark;
-  --hb-page: #120f1a;
-  --hb-surface: #1b1726;
-  --hb-surface-2: #241f33;
-  --hb-border: #342d48;
-  --hb-text: #ece9f5;
-  --hb-text-2: #b8b1cc;
-  --hb-text-3: #8f88a6;
-  --hb-sidebar: color-mix(in srgb, var(--mantine-color-acc-9) 22%, #15121e);
+  /* Neutral greys: the club colour only marks buttons, links and the
+     active page. */
+  --hb-page: #111113;
+  --hb-surface: #19191c;
+  --hb-surface-2: #222226;
+  --hb-border: #2f2f34;
+  --hb-text: #ededef;
+  --hb-text-2: #a8a8b0;
+  --hb-text-3: #7c7c85;
+  --hb-sidebar: #151517;
   --mantine-color-body: var(--hb-surface);
   --mantine-color-text: var(--hb-text);
   --mantine-color-dimmed: var(--hb-text-3);
@@ -31,8 +33,8 @@ html:root[data-mantine-color-scheme="dark"] {
   --mantine-color-ink-8: var(--hb-text);
   --mantine-color-line-0: var(--hb-border);
   --mantine-color-surface-1: var(--hb-surface-2);
-  --mantine-color-acc-0: color-mix(in srgb, var(--mantine-color-acc-6) 14%, #1b1726);
-  --mantine-color-acc-1: color-mix(in srgb, var(--mantine-color-acc-6) 24%, #1b1726);
+  --mantine-color-acc-0: color-mix(in srgb, var(--mantine-color-acc-6) 12%, #19191c);
+  --mantine-color-acc-1: color-mix(in srgb, var(--mantine-color-acc-6) 20%, #19191c);
   --mantine-color-acc-7: color-mix(in srgb, var(--mantine-color-acc-4) 85%, #ffffff);
   --mantine-color-acc-8: color-mix(in srgb, var(--mantine-color-acc-3) 80%, #ffffff);
   --mantine-color-black: var(--hb-text);

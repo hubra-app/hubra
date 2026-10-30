@@ -21,18 +21,18 @@ export const theme = createTheme({
   },
 
   colors: {
-    // Dark mode surfaces with the same violet tint as the light neutrals.
+    // Dark mode: neutral greys, so only the club colour carries colour.
     dark: [
-      '#ece9f5',
-      '#cfc9de',
-      '#a9a2bd',
-      '#8f88a6',
-      '#463e5e',
-      '#342d48',
-      '#241f33',
-      '#1b1726',
-      '#15121e',
-      '#100d17',
+      '#ededef',
+      '#c8c8ce',
+      '#a8a8b0',
+      '#7c7c85',
+      '#45454c',
+      '#2f2f34',
+      '#222226',
+      '#19191c',
+      '#151517',
+      '#111113',
     ],
     acc: accColors,
     gold: goldColors,
