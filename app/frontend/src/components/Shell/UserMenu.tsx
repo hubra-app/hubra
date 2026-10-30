@@ -1,5 +1,22 @@
-import { Group, Text, Avatar, Divider, Box, UnstyledButton, Stack, ScrollArea } from '@mantine/core'
-import { IconLogout, IconBuilding } from '@tabler/icons-react'
+import {
+  Group,
+  Text,
+  Avatar,
+  Divider,
+  Box,
+  UnstyledButton,
+  Stack,
+  ScrollArea,
+  SegmentedControl,
+  useMantineColorScheme,
+} from '@mantine/core'
+import {
+  IconLogout,
+  IconBuilding,
+  IconSun,
+  IconMoon,
+  IconDeviceDesktop,
+} from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
 import { useAuth, useNav, useData } from '@/context/AppContext'
 import { useInstance } from '@/context/InstanceContext'
@@ -16,6 +33,8 @@ export function UserMenu() {
   const name = currentUser?.name ?? ''
   const email = currentUser?.publicEmail || currentUser?.email || ''
   const bg = currentUser?.avatarColor ?? '#ebe8f2'
+  // Light, dark or the device's setting; Mantine keeps it in this browser.
+  const { colorScheme, setColorScheme } = useMantineColorScheme()
 
   return (
     <Box
@@ -25,7 +44,7 @@ export function UserMenu() {
         left: 0,
         right: 0,
         marginBottom: 8,
-        background: 'var(--mantine-color-white)',
+        background: 'var(--hb-surface)',
         border: '1px solid var(--mantine-color-gray-5)',
         borderRadius: 13,
         boxShadow: '0 26px 64px -22px rgba(26,22,37,.28), 0 4px 14px -6px rgba(26,22,37,.15)',
@@ -33,7 +52,7 @@ export function UserMenu() {
         overflow: 'hidden',
       }}
     >
-      <Group gap="sm" p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}>
+      <Group gap="sm" p="md" style={{ borderBottom: '1px solid var(--hb-border)' }}>
         <Avatar
           size={38}
           radius="xl"
@@ -124,6 +143,30 @@ export function UserMenu() {
             {t('shell.userMenu.accountSettings')}
           </UnstyledButton>
         </Stack>
+        <Group justify="space-between" px={10} py={6} wrap="nowrap">
+          <Text fz="sm">{t('shell.userMenu.appearance', 'Darstellung')}</Text>
+          <SegmentedControl
+            size="xs"
+            value={colorScheme}
+            onChange={(v) => setColorScheme(v as 'light' | 'dark' | 'auto')}
+            data={[
+              {
+                value: 'light',
+                label: <IconSun size={14} aria-label={t('shell.userMenu.light', 'Hell')} />,
+              },
+              {
+                value: 'dark',
+                label: <IconMoon size={14} aria-label={t('shell.userMenu.dark', 'Dunkel')} />,
+              },
+              {
+                value: 'auto',
+                label: (
+                  <IconDeviceDesktop size={14} aria-label={t('shell.userMenu.system', 'Wie Gerät')} />
+                ),
+              },
+            ]}
+          />
+        </Group>
         <Divider my={6} />
         <UnstyledButton
           onClick={() => {

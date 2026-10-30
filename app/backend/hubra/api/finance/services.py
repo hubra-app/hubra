@@ -294,7 +294,7 @@ class TransactionService:
     @staticmethod
     def update(transaction: Transaction, data: dict, actor_id: int) -> Transaction:
         """Update allowed fields on a transaction."""
-        if "category_id" in data:
+        if data.get("category_id") is not None:
             category = db.session.get(TransactionCategory, data["category_id"])
             if category is None:
                 raise_error(
@@ -448,8 +448,9 @@ class TransactionsService:
                 )
 
         category_id = data.get("category_id")
-        category = db.session.get(TransactionCategory, category_id)
-        if not category:
+        if category_id is not None and not db.session.get(
+            TransactionCategory, category_id
+        ):
             raise_error(
                 404, "NOT_FOUND", f"Transaction category {category_id} not found"
             )

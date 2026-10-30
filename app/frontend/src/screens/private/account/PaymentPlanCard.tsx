@@ -43,7 +43,7 @@ export function PaymentPlanCard() {
 
   return (
     <Paper withBorder shadow="sm" radius="lg" mt="md">
-      <Group p="md" gap="sm" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}>
+      <Group p="md" gap="sm" style={{ borderBottom: '1px solid var(--hb-border)' }}>
         <IconCalendarRepeat size={16} style={{ color: 'var(--mantine-color-ink-4)' }} />
         <Text fw={700} fz="md">
           {t('account.plan.title', 'Wie du bezahlst')}

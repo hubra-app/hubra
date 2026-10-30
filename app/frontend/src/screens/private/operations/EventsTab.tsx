@@ -297,7 +297,7 @@ export function EventsTab() {
                   style={{
                     textAlign: 'center',
                     minWidth: 48,
-                    background: '#f4f2f9',
+                    background: 'var(--hb-surface-2)',
                     borderRadius: 10,
                     padding: '8px 0',
                   }}
@@ -307,7 +307,7 @@ export function EventsTab() {
                     style={{
                       fontSize: 'var(--mantine-font-size-xl)',
                       fontWeight: 700,
-                      color: '#1a1625',
+                      color: 'var(--hb-text)',
                       lineHeight: 1,
                     }}
                   >
@@ -317,7 +317,7 @@ export function EventsTab() {
                     style={{
                       fontSize: 'var(--mantine-font-size-xs)',
                       fontWeight: 600,
-                      color: '#8c86a0',
+                      color: 'var(--hb-text-3)',
                       letterSpacing: '0.08em',
                     }}
                   >
@@ -337,7 +337,7 @@ export function EventsTab() {
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
                   fontWeight: 600,
-                  color: '#1a1625',
+                  color: 'var(--hb-text)',
                 }}
               >
                 {ev.title}
@@ -351,7 +351,7 @@ export function EventsTab() {
               <span
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
-                  color: '#5e5873',
+                  color: 'var(--hb-text-2)',
                 }}
               >
                 {ev.time && <>{ev.time} · </>}
@@ -371,12 +371,12 @@ export function EventsTab() {
                   gap: 4,
                 }}
               >
-                <IconUserCheck size={13} style={{ color: '#5e5873' }} />
+                <IconUserCheck size={13} style={{ color: 'var(--hb-text-2)' }} />
                 <span
                   className="num"
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
-                    color: '#5e5873',
+                    color: 'var(--hb-text-2)',
                   }}
                 >
                   {ev.placesTaken ?? ev.attendees.length}

@@ -161,7 +161,7 @@ export function ItemDetailPanel({
         <div
           style={{
             padding: '20px 20px 14px',
-            borderBottom: '1px solid #d6d2e3',
+            borderBottom: '1px solid var(--hb-border)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
@@ -185,7 +185,7 @@ export function ItemDetailPanel({
                 style={{
                   fontSize: 'var(--mantine-font-size-md)',
                   fontWeight: 700,
-                  color: '#1a1625',
+                  color: 'var(--hb-text)',
                 }}
               >
                 {item.name}
@@ -231,13 +231,13 @@ export function ItemDetailPanel({
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {/* Details */}
           <div
-            style={{ padding: '14px 20px', borderBottom: '1px solid #e6e3ef' }}
+            style={{ padding: '14px 20px', borderBottom: '1px solid var(--hb-border)' }}
           >
             {item.description && (
               <p
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
-                  color: '#2e2940',
+                  color: 'var(--hb-text)',
                   lineHeight: 1.6,
                   margin: '0 0 12px',
                 }}
@@ -259,7 +259,7 @@ export function ItemDetailPanel({
                     style={{
                       fontSize: 'var(--mantine-font-size-xs)',
                       fontWeight: 600,
-                      color: '#8c86a0',
+                      color: 'var(--hb-text-3)',
                       textTransform: 'uppercase',
                       letterSpacing: '0.06em',
                       marginBottom: 2,
@@ -270,7 +270,7 @@ export function ItemDetailPanel({
                   <div
                     style={{
                       fontSize: 'var(--mantine-font-size-sm)',
-                      color: '#2e2940',
+                      color: 'var(--hb-text)',
                     }}
                   >
                     {item.ownerName}
@@ -283,7 +283,7 @@ export function ItemDetailPanel({
                     style={{
                       fontSize: 'var(--mantine-font-size-xs)',
                       fontWeight: 600,
-                      color: '#8c86a0',
+                      color: 'var(--hb-text-3)',
                       textTransform: 'uppercase',
                       letterSpacing: '0.06em',
                       marginBottom: 2,
@@ -294,7 +294,7 @@ export function ItemDetailPanel({
                   <div
                     style={{
                       fontSize: 'var(--mantine-font-size-sm)',
-                      color: '#2e2940',
+                      color: 'var(--hb-text)',
                     }}
                   >
                     {item.responsibleName}
@@ -307,7 +307,7 @@ export function ItemDetailPanel({
                     style={{
                       fontSize: 'var(--mantine-font-size-xs)',
                       fontWeight: 600,
-                      color: '#8c86a0',
+                      color: 'var(--hb-text-3)',
                       textTransform: 'uppercase',
                       letterSpacing: '0.06em',
                       marginBottom: 2,
@@ -319,7 +319,7 @@ export function ItemDetailPanel({
                     className="num"
                     style={{
                       fontSize: 'var(--mantine-font-size-sm)',
-                      color: '#2e2940',
+                      color: 'var(--hb-text)',
                     }}
                   >
                     CHF {item.cost}
@@ -331,7 +331,7 @@ export function ItemDetailPanel({
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
                     fontWeight: 600,
-                    color: '#8c86a0',
+                    color: 'var(--hb-text-3)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.06em',
                     marginBottom: 2,
@@ -342,7 +342,7 @@ export function ItemDetailPanel({
                 <div
                   style={{
                     fontSize: 'var(--mantine-font-size-sm)',
-                    color: '#2e2940',
+                    color: 'var(--hb-text)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 4,
@@ -364,14 +364,14 @@ export function ItemDetailPanel({
             <div
               style={{
                 padding: '14px 20px',
-                borderBottom: '1px solid #e6e3ef',
+                borderBottom: '1px solid var(--hb-border)',
               }}
             >
               <div
                 style={{
                   fontSize: 'var(--mantine-font-size-xs)',
                   fontWeight: 600,
-                  color: '#5e5873',
+                  color: 'var(--hb-text-2)',
                   textTransform: 'uppercase',
                   marginBottom: 8,
                 }}
@@ -409,7 +409,7 @@ export function ItemDetailPanel({
                 style={{
                   fontSize: 'var(--mantine-font-size-xs)',
                   fontWeight: 600,
-                  color: '#5e5873',
+                  color: 'var(--hb-text-2)',
                   textTransform: 'uppercase',
                   marginBottom: 10,
                 }}
@@ -462,7 +462,7 @@ export function ItemDetailPanel({
                 style={{
                   fontSize: 'var(--mantine-font-size-xs)',
                   fontWeight: 600,
-                  color: '#8c86a0',
+                  color: 'var(--hb-text-3)',
                   marginBottom: 6,
                 }}
               >
@@ -485,17 +485,17 @@ export function ItemDetailPanel({
                     left: 10,
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    color: '#8c86a0',
+                    color: 'var(--hb-text-3)',
                   }}
                 />
               </div>
               {addResults.length > 0 && (
                 <div
                   style={{
-                    border: '1px solid #d6d2e3',
+                    border: '1px solid var(--hb-border)',
                     borderRadius: 8,
                     overflow: 'hidden',
-                    background: 'white',
+                    background: 'var(--hb-surface)',
                     marginBottom: 10,
                   }}
                 >
@@ -508,7 +508,7 @@ export function ItemDetailPanel({
                         justifyContent: 'flex-start',
                         padding: '8px 12px',
                         borderRadius: 0,
-                        borderBottom: '1px solid #e6e3ef',
+                        borderBottom: '1px solid var(--hb-border)',
                         gap: 8,
                       }}
                       onClick={() => handleAddInstruction(Number(m.id), m.name)}
@@ -534,7 +534,7 @@ export function ItemDetailPanel({
                   style={{
                     padding: '16px 0',
                     textAlign: 'center',
-                    color: '#8c86a0',
+                    color: 'var(--hb-text-3)',
                     fontSize: 'var(--mantine-font-size-sm)',
                   }}
                 >
@@ -566,7 +566,7 @@ export function ItemDetailPanel({
                         style={{
                           flex: 1,
                           fontSize: 'var(--mantine-font-size-sm)',
-                          color: '#1a1625',
+                          color: 'var(--hb-text)',
                         }}
                       >
                         {name}
@@ -574,7 +574,7 @@ export function ItemDetailPanel({
                       <Button
                         size="sm"
                         variant="subtle"
-                        style={{ color: '#8c86a0', padding: '2px 6px' }}
+                        style={{ color: 'var(--hb-text-3)', padding: '2px 6px' }}
                         onClick={() =>
                           handleRemoveInstruction(
                             item.instructedMemberIds[i],
@@ -598,7 +598,7 @@ export function ItemDetailPanel({
                 alignItems: 'center',
                 gap: 8,
                 fontSize: 'var(--mantine-font-size-sm)',
-                color: '#8c86a0',
+                color: 'var(--hb-text-3)',
               }}
             >
               <IconInfoCircle size={16} />

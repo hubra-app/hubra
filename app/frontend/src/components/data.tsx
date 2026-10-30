@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import i18n from 'i18next'
 import {
   Table as MantineTable,
@@ -11,9 +11,20 @@ import {
   Group,
   Stack,
   Paper,
+  SegmentedControl,
+  SimpleGrid,
   Text,
 } from '@mantine/core'
-import { IconSearch, IconCheck, IconX, IconPencil, IconTrash, IconInbox } from '@tabler/icons-react'
+import {
+  IconSearch,
+  IconCheck,
+  IconX,
+  IconPencil,
+  IconTrash,
+  IconInbox,
+  IconLayoutGrid,
+  IconList,
+} from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 import { LoadingSpinner, EmptyState } from './feedback'
 import { Pagination } from './layout'
@@ -335,6 +346,30 @@ export interface DataTableFilterSlot {
   filters?: DataTableFilter[]
 }
 
+type TableView = 'cards' | 'table'
+
+/** The cards / list choice, kept per screen in this browser. */
+function useTableView(key: string | undefined, fallback: TableView) {
+  const storageKey = key ? `hubra.view.${key}` : null
+  const [view, setView] = useState<TableView>(() => {
+    try {
+      const saved = storageKey ? localStorage.getItem(storageKey) : null
+      return saved === 'cards' || saved === 'table' ? saved : fallback
+    } catch {
+      return fallback
+    }
+  })
+  const choose = (v: TableView) => {
+    setView(v)
+    try {
+      if (storageKey) localStorage.setItem(storageKey, v)
+    } catch {
+      // private mode: the choice lasts until reload
+    }
+  }
+  return [view, choose] as const
+}
+
 export function DataTable<T>({
   columns,
   data,
@@ -358,6 +393,8 @@ export function DataTable<T>({
   toolbar,
   getRowKey,
   breakpoint,
+  renderCard,
+  viewKey,
 }: {
   columns: DataColumn<T>[]
   data: T[]
@@ -386,7 +423,31 @@ export function DataTable<T>({
   toolbar?: ReactNode
   getRowKey?: (item: T, index: number) => string | number
   breakpoint?: string
+  /** Show the rows as cards, with a cards / list switch in the toolbar. */
+  renderCard?: (item: T) => ReactNode
+  /** Remembers the chosen view per screen, e.g. "codes". */
+  viewKey?: string
 }) {
+  const [view, setView] = useTableView(viewKey, renderCard ? 'cards' : 'table')
+  const showCards = !!renderCard && view === 'cards'
+  const viewSwitch = renderCard ? (
+    <SegmentedControl
+      size="xs"
+      value={view}
+      onChange={(v) => setView(v as TableView)}
+      data={[
+        {
+          value: 'cards',
+          label: <IconLayoutGrid size={16} aria-label={i18n.t('data.viewCards', 'Karten')} />,
+        },
+        {
+          value: 'table',
+          label: <IconList size={16} aria-label={i18n.t('data.viewList', 'Liste')} />,
+        },
+      ]}
+    />
+  ) : null
+
   const hasSearch = !!onSearchChange
   const hasFlatFilters = filters && filters.length > 0
   const hasFilterSlots = filterSlots && filterSlots.length > 0
@@ -445,11 +506,11 @@ export function DataTable<T>({
 
   return (
     <Paper withBorder shadow="sm" radius="lg">
-      {(hasSearch || hasFlatFilters || hasFilterSlots || toolbar) && (
+      {(hasSearch || hasFlatFilters || hasFilterSlots || toolbar || viewSwitch) && (
         <div
           style={{
             padding: '14px 16px',
-            borderBottom: '1px solid var(--mantine-color-gray-3)',
+            borderBottom: '1px solid var(--hb-border)',
             display: 'flex',
             gap: 10,
             flexWrap: 'wrap',
@@ -498,7 +559,7 @@ export function DataTable<T>({
                     alignItems: 'center',
                     paddingLeft: si > 0 ? 12 : 0,
                     marginLeft: si > 0 ? 12 : 0,
-                    borderLeft: si > 0 ? '1px solid #e6e3ef' : 'none',
+                    borderLeft: si > 0 ? '1px solid var(--hb-border)' : 'none',
                   }}
                 >
                   <span
@@ -536,7 +597,12 @@ export function DataTable<T>({
               ))}
             </div>
           )}
-          {toolbar && <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>{toolbar}</div>}
+          {(toolbar || viewSwitch) && (
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+              {toolbar}
+              {viewSwitch}
+            </div>
+          )}
         </div>
       )}
 
@@ -570,6 +636,12 @@ export function DataTable<T>({
         ) : (
           emptyMessage
         )
+      ) : showCards ? (
+        <SimpleGrid cols={{ base: 1, xs: 2, md: 3, xl: 4 }} spacing="md" p="md">
+          {data.map((item, i) => (
+            <div key={getRowKey ? getRowKey(item, i) : i}>{renderCard!(item)}</div>
+          ))}
+        </SimpleGrid>
       ) : grouped ? (
         <Accordion variant="separated" radius="lg" multiple defaultValue={Object.keys(grouped)}>
           {Object.entries(grouped)

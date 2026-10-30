@@ -187,7 +187,7 @@ export function InventoryScreen() {
                   <span style={{ color: CATEGORY_COLORS[item.category] }}>
                     {CATEGORY_ICONS[item.category]}
                   </span>
-                  <span style={{ fontWeight: 600, color: '#1a1625' }}>
+                  <span style={{ fontWeight: 600, color: 'var(--hb-text)' }}>
                     {item.name}
                   </span>
                 </div>
@@ -346,7 +346,7 @@ export function InventoryScreen() {
           <div
             style={{
               padding: '14px 16px',
-              borderBottom: '1px solid var(--mantine-color-gray-3)',
+              borderBottom: '1px solid var(--hb-border)',
               display: 'flex',
               gap: 10,
               flexWrap: 'wrap',

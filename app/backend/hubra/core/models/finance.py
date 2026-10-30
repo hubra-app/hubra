@@ -34,8 +34,8 @@ class Transaction(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     date: Mapped[date] = mapped_column(Date, nullable=False)
     description: Mapped[str] = mapped_column(db.String(255), nullable=False)
-    category_id: Mapped[int] = mapped_column(
-        db.Integer, ForeignKey("transaction_categories.id"), nullable=False
+    category_id: Mapped[int | None] = mapped_column(
+        db.Integer, ForeignKey("transaction_categories.id"), nullable=True
     )
     member_id: Mapped[int | None] = mapped_column(
         db.Integer, ForeignKey("members.id"), nullable=True
@@ -64,7 +64,7 @@ class Transaction(db.Model):
     )
 
     # Relationships
-    category: Mapped["TransactionCategory"] = relationship(
+    category: Mapped["TransactionCategory | None"] = relationship(
         "TransactionCategory", back_populates="transactions"
     )
     member: Mapped["Member | None"] = relationship(  # type: ignore[name-defined]  # noqa: F821

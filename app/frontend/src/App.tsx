@@ -89,7 +89,7 @@ const SystemScreen = lazy(() =>
   })),
 )
 const TranslationsScreen = lazy(() =>
-  import('./screens/private/system/Translations').then((m) => ({
+  import('./screens/private/system/TranslationSuggestions').then((m) => ({
     default: m.TranslationsScreen,
   })),
 )
@@ -220,13 +220,29 @@ function PrivateRoutes() {
                 <Route path="dashboard/global" element={<DashboardScreen />} />
                 <Route path="members" element={<MembersTabScreen />} />
                 <Route path="members/:id" element={<MemberDetailScreen />} />
-                <Route path="members/applications" element={<MembersTabScreen />} />
-                <Route path="members/tiers" element={<MembersTabScreen />} />
+                <Route
+                  path="members/applications"
+                  element={
+                    <RequirePermission permKey="applications.applications.read">
+                      <MembersTabScreen />
+                    </RequirePermission>
+                  }
+                />
+                <Route
+                  path="members/tiers"
+                  element={
+                    <RequirePermission permKey="tiers.tiers.read">
+                      <MembersTabScreen />
+                    </RequirePermission>
+                  }
+                />
                 <Route
                   path="members/functions"
                   element={
                     <RequireModule code="functions">
-                      <MembersTabScreen />
+                      <RequirePermission permKey="functions.functions.read">
+                        <MembersTabScreen />
+                      </RequirePermission>
                     </RequireModule>
                   }
                 />

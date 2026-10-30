@@ -31,12 +31,21 @@ module = Module(
             "shell.nav.members",
             "users",
             order=10,
-            perms=(
-                "members.members.read",
-                "functions.functions.read",
-                "applications.applications.read",
-                "tiers.tiers.read",
-            ),
+            perms=("members.members.read",),
+        ),
+        NavItem(
+            "/app/members/applications",
+            "shell.nav.applications",
+            "user-plus",
+            order=12,
+            perms=("applications.applications.read",),
+        ),
+        NavItem(
+            "/app/members/tiers",
+            "shell.nav.membershipTiers",
+            "stairs",
+            order=13,
+            perms=("tiers.tiers.read",),
         ),
     ),
     tables=(

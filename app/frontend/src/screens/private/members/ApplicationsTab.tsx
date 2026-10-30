@@ -117,7 +117,7 @@ export function ApplicationsTab() {
     <div>
       <Paper withBorder shadow="sm" radius="lg">
         {apps.length === 0 ? (
-          <div style={{ padding: 48, textAlign: 'center', color: '#8c86a0' }}>
+          <div style={{ padding: 48, textAlign: 'center', color: 'var(--hb-text-3)' }}>
             <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
             <div
               style={{
@@ -140,7 +140,7 @@ export function ApplicationsTab() {
                 alignItems: 'center',
                 gap: 14,
                 padding: '14px 20px',
-                borderBottom: '1px solid #e6e3ef',
+                borderBottom: '1px solid var(--hb-border)',
               }}
             >
               <Avatar name={app.name} color={app.avatarColor} size={38} />
@@ -149,7 +149,7 @@ export function ApplicationsTab() {
                   style={{
                     fontSize: 'var(--mantine-font-size-sm)',
                     fontWeight: 600,
-                    color: '#1a1625',
+                    color: 'var(--hb-text)',
                   }}
                 >
                   {app.name}
@@ -157,7 +157,7 @@ export function ApplicationsTab() {
                 <div
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
-                    color: '#5e5873',
+                    color: 'var(--hb-text-2)',
                   }}
                 >
                   {app.email}
@@ -173,7 +173,7 @@ export function ApplicationsTab() {
                 className="num"
                 style={{
                   fontSize: 'var(--mantine-font-size-xs)',
-                  color: '#8c86a0',
+                  color: 'var(--hb-text-3)',
                 }}
               >
                 {formatDateTime(app.appliedAt)}

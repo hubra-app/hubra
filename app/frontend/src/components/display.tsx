@@ -248,7 +248,7 @@ export function MemberSlideOver({
         <div
           style={{
             padding: '12px 0',
-            borderBottom: '1px solid #e6e3ef',
+            borderBottom: '1px solid var(--hb-border)',
           }}
         >
           {addLabel && (
@@ -287,10 +287,10 @@ export function MemberSlideOver({
             <div
               style={{
                 marginTop: 4,
-                border: '1px solid #d6d2e3',
+                border: '1px solid var(--hb-border)',
                 borderRadius: 8,
                 overflow: 'hidden',
-                background: 'white',
+                background: 'var(--hb-surface)',
               }}
             >
               {searchResults.slice(0, 6).map((m) => (
@@ -306,7 +306,7 @@ export function MemberSlideOver({
                     gap: 10,
                     width: '100%',
                     padding: '8px 12px',
-                    borderBottom: '1px solid #e6e3ef',
+                    borderBottom: '1px solid var(--hb-border)',
                   }}
                 >
                   <Avatar name={m.name} color={m.avatarColor} size={24} />
@@ -360,7 +360,7 @@ export function MemberSlideOver({
                 alignItems: 'center',
                 gap: 12,
                 padding: '12px 0',
-                borderBottom: '1px solid #e6e3ef',
+                borderBottom: '1px solid var(--hb-border)',
               }}
             >
               <Avatar name={m.name} color={m.avatarColor} size={32} />
@@ -402,7 +402,7 @@ export function MemberSlideOver({
         )}
       </div>
 
-      <div style={{ borderTop: '1px solid #e6e3ef' }}>
+      <div style={{ borderTop: '1px solid var(--hb-border)' }}>
         <div style={{ padding: '12px 0', position: 'relative' }}>
           <TextInput
             size="sm"

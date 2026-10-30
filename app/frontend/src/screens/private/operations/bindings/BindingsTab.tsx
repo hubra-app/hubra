@@ -165,7 +165,7 @@ export function BindingsTab() {
         renderKeyPrefix={(entry) => (
           <span
             style={{
-              color: '#8c86a0',
+              color: 'var(--hb-text-3)',
               fontSize: 'var(--mantine-font-size-xs)',
               flexShrink: 0,
             }}
@@ -182,7 +182,7 @@ export function BindingsTab() {
           <span
             style={{
               fontSize: 'var(--mantine-font-size-xs)',
-              color: '#8c86a0',
+              color: 'var(--hb-text-3)',
               textTransform: 'capitalize',
             }}
           >
@@ -209,7 +209,7 @@ export function BindingsTab() {
                   <span
                     style={{
                       fontFamily: 'monospace',
-                      color: '#2e2940',
+                      color: 'var(--hb-text)',
                       fontSize: 'var(--mantine-font-size-xs)',
                     }}
                   >
@@ -304,7 +304,7 @@ export function BindingsTab() {
                 style={{
                   padding: '3px 8px',
                   fontSize: 'var(--mantine-font-size-xs)',
-                  color: entry.enabled ? '#27ae60' : '#8c86a0',
+                  color: entry.enabled ? '#27ae60' : 'var(--hb-text-3)',
                   cursor: entry.is_protected ? 'not-allowed' : 'pointer',
                 }}
                 title={
@@ -328,7 +328,7 @@ export function BindingsTab() {
               entry.updated_at ? (
                 <span
                   style={{
-                    color: '#8c86a0',
+                    color: 'var(--hb-text-3)',
                     fontSize: 'var(--mantine-font-size-xs)',
                   }}
                 >

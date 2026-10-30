@@ -4,15 +4,20 @@ import {
   TextInput,
   Textarea,
   ActionIcon,
+  CopyButton,
+  Group,
+  Paper,
   PinInput,
   Slider,
+  Text,
+  Tooltip,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT, zmsg } from '@/locales/i18n'
-import { IconPlus, IconEye, IconEyeOff } from '@tabler/icons-react'
+import { IconPlus, IconEye, IconEyeOff, IconCopy, IconCheck } from '@tabler/icons-react'
 import { useToast, useAuth } from '@/context/AppContext'
 import {
   PageHead,
@@ -26,6 +31,7 @@ import {
 import type { Code } from '@/types'
 import { listCodes, createCode, updateCode, deleteCode } from '@/api/codes'
 import { qk } from '@/data/keys'
+import { formatDate } from '@/format'
 
 const codeSchema = z.object({
   name: z.string().min(1, zmsg('common.nameRequired', 'Name ist erforderlich')),
@@ -89,11 +95,7 @@ export function CodesScreen() {
       setAddOpen(false)
       notify('success', t('codes.saved'))
     } catch (err: unknown) {
-      notify(
-        'error',
-        t('common.error'),
-        err instanceof Error ? err.message : t('codes.saveError'),
-      )
+      notify('error', t('common.error'), err instanceof Error ? err.message : t('codes.saveError'))
     }
   }
   const [submitAdd, adding] = useSubmitOnce(saveAdd)
@@ -111,11 +113,7 @@ export function CodesScreen() {
       setEditTarget(null)
       notify('success', t('codes.saved'))
     } catch (err: unknown) {
-      notify(
-        'error',
-        t('common.error'),
-        err instanceof Error ? err.message : t('codes.saveError'),
-      )
+      notify('error', t('common.error'), err instanceof Error ? err.message : t('codes.saveError'))
     }
   }
 
@@ -144,10 +142,92 @@ export function CodesScreen() {
     })
   }
 
+  const renderCard = (c: Code) => {
+    const visible = visibleIds.has(c.id)
+    return (
+      <Paper
+        withBorder
+        radius="lg"
+        p="md"
+        h="100%"
+        style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+      >
+        <Group justify="space-between" wrap="nowrap" align="flex-start">
+          <Text fw={700} style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
+            {c.name}
+          </Text>
+          <span
+            className={`chip${c.isActive ? ' on' : ''}`}
+            style={{ fontSize: 'var(--mantine-font-size-xs)', flexShrink: 0 }}
+          >
+            {c.isActive ? t('codes.active') : t('codes.inactive')}
+          </span>
+        </Group>
+        <Group gap={6} wrap="nowrap">
+          <code
+            style={{
+              flex: 1,
+              minWidth: 0,
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: 'var(--mantine-font-size-xl)',
+              fontWeight: 700,
+              textAlign: 'center',
+              background: 'var(--hb-surface-2)',
+              padding: '10px 12px',
+              borderRadius: 10,
+              letterSpacing: visible ? '0.12em' : '0.2em',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {visible ? c.code : '\u2022'.repeat(c.code.length)}
+          </code>
+          <ActionIcon
+            variant="subtle"
+            onClick={() => toggleVisible(c.id)}
+            title={visible ? t('codes.codeHidden') : t('codes.codeVisible')}
+          >
+            {visible ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+          </ActionIcon>
+          <CopyButton value={c.code} timeout={1500}>
+            {({ copied, copy }) => (
+              <Tooltip
+                label={copied ? t('common.copied', 'Kopiert') : t('common.copy', 'Kopieren')}
+                withArrow
+              >
+                <ActionIcon variant="subtle" color={copied ? 'green' : undefined} onClick={copy}>
+                  {copied ? <IconCheck size={18} /> : <IconCopy size={18} />}
+                </ActionIcon>
+              </Tooltip>
+            )}
+          </CopyButton>
+        </Group>
+        {c.description && (
+          <Text size="sm" c="dimmed">
+            {c.description}
+          </Text>
+        )}
+        <Group
+          justify="space-between"
+          mt="auto"
+          pt={8}
+          style={{ borderTop: '1px solid var(--hb-border)' }}
+        >
+          <Text size="xs" c="dimmed" className="num">
+            {formatDate(c.updatedAt)}
+          </Text>
+          <ActionButtons
+            onEdit={canUpdate ? () => openEdit(c) : undefined}
+            onDelete={canDelete ? () => setDeleteTarget(c) : undefined}
+          />
+        </Group>
+      </Paper>
+    )
+  }
+
   const filtered = codes.filter((c) => {
     const q = search.toLowerCase()
-    const matchSearch =
-      !q || c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q)
+    const matchSearch = !q || c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q)
     const matchStatus =
       statusFilter === 'All' ||
       (statusFilter === 'Active' && c.isActive) ||
@@ -195,7 +275,7 @@ export function CodesScreen() {
                     style={{
                       fontFamily: '"JetBrains Mono", monospace',
                       fontSize: 'var(--mantine-font-size-sm)',
-                      background: '#f4f2f9',
+                      background: 'var(--hb-surface-2)',
                       padding: '2px 8px',
                       borderRadius: 4,
                       letterSpacing: visible ? '0.06em' : '0.15em',
@@ -207,9 +287,7 @@ export function CodesScreen() {
                     variant="subtle"
                     style={{ width: 28, height: 28, padding: 0 }}
                     onClick={() => toggleVisible(c.id)}
-                    title={
-                      visible ? t('codes.codeHidden') : t('codes.codeVisible')
-                    }
+                    title={visible ? t('codes.codeHidden') : t('codes.codeVisible')}
                   >
                     {visible ? <IconEyeOff size={16} /> : <IconEye size={16} />}
                   </ActionIcon>
@@ -220,9 +298,7 @@ export function CodesScreen() {
           {
             key: 'description',
             header: t('codes.description'),
-            render: (c) => (
-              <span style={{ color: '#5e5873' }}>{c.description ?? '—'}</span>
-            ),
+            render: (c) => <span style={{ color: 'var(--hb-text-2)' }}>{c.description ?? '—'}</span>,
           },
           {
             key: 'status',
@@ -243,11 +319,11 @@ export function CodesScreen() {
               <span
                 className="num"
                 style={{
-                  color: '#5e5873',
+                  color: 'var(--hb-text-2)',
                   fontSize: 'var(--mantine-font-size-xs)',
                 }}
               >
-                {new Date(c.updatedAt).toLocaleDateString()}
+                {formatDate(c.updatedAt)}
               </span>
             ),
           },
@@ -290,6 +366,8 @@ export function CodesScreen() {
           },
         ]}
         getRowKey={(c) => c.id}
+        renderCard={renderCard}
+        viewKey="codes"
       />
 
       {/* Add Modal */}
@@ -311,10 +389,7 @@ export function CodesScreen() {
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Field label={t('codes.name')}>
-            <TextInput
-              {...form.getInputProps('name')}
-              placeholder={t('codes.namePlaceholder')}
-            />
+            <TextInput {...form.getInputProps('name')} placeholder={t('codes.namePlaceholder')} />
           </Field>
           <Field
             label={t('codes.code')}
@@ -422,11 +497,7 @@ export function CodesScreen() {
       <ConfirmModal
         open={!!deleteTarget}
         title={t('codes.delete')}
-        body={
-          deleteTarget
-            ? t('codes.deleteConfirm', { name: deleteTarget.name })
-            : undefined
-        }
+        body={deleteTarget ? t('codes.deleteConfirm', { name: deleteTarget.name }) : undefined}
         onConfirm={handleDelete}
         onClose={() => setDeleteTarget(null)}
       />

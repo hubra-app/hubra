@@ -272,7 +272,7 @@ export function PollsTab() {
                     style={{
                       fontSize: "var(--mantine-font-size-sm)",
                       fontWeight: 600,
-                      color: "#1a1625",
+                      color: "var(--hb-text)",
                       display: "flex",
                       alignItems: "center",
                       gap: 6,
@@ -339,7 +339,7 @@ export function PollsTab() {
                             <span
                               style={{
                                 fontSize: "var(--mantine-font-size-sm)",
-                                color: isMyVote ? "var(--mantine-color-acc-7)" : "#2e2940",
+                                color: isMyVote ? "var(--mantine-color-acc-7)" : "var(--hb-text)",
                                 fontWeight: isMyVote ? 600 : 400,
                               }}
                             >
@@ -350,7 +350,7 @@ export function PollsTab() {
                               className="num"
                               style={{
                                 fontSize: "var(--mantine-font-size-sm)",
-                                color: isWinner ? "var(--mantine-color-acc-7)" : "#5e5873",
+                                color: isWinner ? "var(--mantine-color-acc-7)" : "var(--hb-text-2)",
                                 fontWeight: isWinner ? 700 : 400,
                               }}
                             >
@@ -383,19 +383,19 @@ export function PollsTab() {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    borderTop: "1px solid #e6e3ef",
+                    borderTop: "1px solid var(--hb-border)",
                     paddingTop: 12,
                   }}
                 >
                   <span
                     style={{
                       fontSize: "var(--mantine-font-size-xs)",
-                      color: "#5e5873",
+                      color: "var(--hb-text-2)",
                     }}
                   >
                     <span
                       className="num"
-                      style={{ fontWeight: 600, color: "#1a1625" }}
+                      style={{ fontWeight: 600, color: "var(--hb-text)" }}
                     >
                       {poll.totalVotes}
                     </span>{" "}

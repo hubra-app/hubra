@@ -38,4 +38,31 @@ describe('MemberPicker', () => {
       expect(screen.getByRole('combobox', { name: 'Mitglied' })).toHaveValue('Anna Muster'),
     )
   })
+
+  it('lists everyone when opened on "nobody", not only matches for that label', async () => {
+    renderWithProviders(
+      <MemberPicker
+        label="Eigentümer"
+        noneLabel="Keine Eigentümer:in"
+        value={null}
+        onChange={() => {}}
+      />,
+    )
+    const box = screen.getByRole('combobox', { name: 'Eigentümer' })
+    await waitFor(() => expect(box).toHaveValue('Keine Eigentümer:in'))
+    // Let the debounced search for the shown text settle first.
+    await new Promise((r) => setTimeout(r, 400))
+    await userEvent.click(box)
+    expect(await screen.findByRole('option', { name: 'Anna Muster' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Ben Beispiel' })).toBeInTheDocument()
+  })
+
+  it('lists everyone when opened on a chosen member', async () => {
+    renderWithProviders(<MemberPicker label="Mitglied" value="1" onChange={() => {}} />)
+    const box = screen.getByRole('combobox', { name: 'Mitglied' })
+    await waitFor(() => expect(box).toHaveValue('Anna Muster'))
+    await new Promise((r) => setTimeout(r, 400))
+    await userEvent.click(box)
+    expect(await screen.findByRole('option', { name: 'Ben Beispiel' })).toBeInTheDocument()
+  })
 })

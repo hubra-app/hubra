@@ -45,7 +45,7 @@ export function MobileDrawer() {
       size="min(300px, 85vw)"
       padding={0}
       withCloseButton={false}
-      styles={{ content: { background: 'var(--mantine-color-white)' } }}
+      styles={{ content: { background: 'var(--hb-sidebar)' } }}
     >
       <Group
         gap={10}
@@ -53,7 +53,7 @@ export function MobileDrawer() {
         h={56}
         justify="space-between"
         style={{
-          borderBottom: '1px solid var(--mantine-color-gray-3)',
+          borderBottom: '1px solid var(--hb-border)',
           flexShrink: 0,
         }}
         wrap="nowrap"
@@ -110,7 +110,7 @@ export function MobileDrawer() {
           <Box
             p="sm"
             style={{
-              borderTop: '1px solid var(--mantine-color-gray-3)',
+              borderTop: '1px solid var(--hb-border)',
             }}
           >
             <UserMenu />
@@ -120,7 +120,7 @@ export function MobileDrawer() {
         <Box
           p="sm"
           style={{
-            borderTop: '1px solid var(--mantine-color-gray-3)',
+            borderTop: '1px solid var(--hb-border)',
             display: 'flex',
             justifyContent: 'center',
           }}

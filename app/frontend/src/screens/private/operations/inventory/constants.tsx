@@ -56,7 +56,7 @@ export const STATUS_CONFIG: Record<
   },
   archived: {
     label: 'Archiviert',
-    color: '#8c86a0',
+    color: 'var(--hb-text-3)',
     icon: <IconArchive size={12} />,
   },
   checked_out: {
@@ -76,7 +76,7 @@ export const STATUS_CONFIG: Record<
   },
   retired: {
     label: 'Ausgemustert',
-    color: '#8c86a0',
+    color: 'var(--hb-text-3)',
     icon: <IconArchive size={12} />,
   },
 }

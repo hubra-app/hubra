@@ -93,8 +93,8 @@ def _bump_etag(locale: str) -> None:
 def get_etag(locale: str) -> str | None:
     """Return the current ETag string for *locale*, or None if not set.
 
-    A club's dictionary includes the platform's texts (platform_rows), so
-    its ETag also changes when the platform edits a text.
+    A club reads the platform's texts, so its ETag also changes when the
+    platform edits a text.
     """
     client = _get_redis_client()
     if client is None:
@@ -118,28 +118,6 @@ def get_translations(locale: str) -> list[Translation]:
     stmt = select(Translation).where(Translation.locale == locale)  # type: ignore[arg-type]
     stmt = stmt.order_by(Translation.key)
     return list(db.session.scalars(stmt).all())
-
-
-def platform_rows(locale: str) -> list:
-    """The platform's translations (public schema) under a club's own.
-
-    A club's schema has its own ``translation`` table, which hides
-    public.translation on the search_path, so a new club would otherwise
-    see no texts at all. Empty outside a club and on SQLite (no schemas).
-    """
-    from sqlalchemy import text
-
-    if _club() == 0 or db.session.get_bind().dialect.name != "postgresql":
-        return []
-    return list(
-        db.session.execute(
-            text(
-                "SELECT key, value, alias_for FROM public.translation"
-                " WHERE locale = :locale"
-            ),
-            {"locale": locale},
-        )
-    )
 
 
 def get_translations_dict(locale: str) -> dict[str, str]:
@@ -166,13 +144,9 @@ def get_translations_dict(locale: str) -> dict[str, str]:
             return data
         _mem_translations.pop(cache_key, None)
 
-    # DB query (uses index on locale). A club starts from the platform's
-    # translations; its own rows win where they hold a text or an alias
-    # (a key reported missing is stored empty and must not hide the default).
-    alias_map = {r.key: r for r in platform_rows(locale)}
-    for t in get_translations(locale):
-        if t.value or t.alias_for or t.key not in alias_map:
-            alias_map[t.key] = t
+    # DB query (uses index on locale). Clubs have no translation table of
+    # their own, so inside a club this reads the platform's (public) rows.
+    alias_map = {t.key: t for t in get_translations(locale)}
     resolved: dict[str, str] = {}
     for t in alias_map.values():
         if t.alias_for:
@@ -243,15 +217,6 @@ def get_available_locales() -> list[str]:
     # DB query (uses index on locale)
     stmt = select(Translation.locale).distinct().order_by(Translation.locale)  # type: ignore[call-overload]
     locales = list(db.session.scalars(stmt).all())
-    if _club() != 0 and db.session.get_bind().dialect.name == "postgresql":
-        from sqlalchemy import text
-
-        # A club also serves the platform's languages (see platform_rows).
-        platform = db.session.scalars(
-            text("SELECT DISTINCT locale FROM public.translation")
-        )
-        locales = sorted(set(locales) | set(platform))
-
     # Older databases may hold "de-ch" next to "de-CH"; the API reads both
     # under the canonical code (see routes.canonical_locale).
     from hubra.api.i18n.routes import canonical_locale

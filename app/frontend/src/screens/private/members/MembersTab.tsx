@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Button, Group, Menu, Select, Paper, TextInput, ActionIcon } from '@mantine/core'
+import { Button, Group, Menu, Select, Paper, Text, TextInput, ActionIcon } from '@mantine/core'
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT } from '@/locales/i18n'
 import {
   IconPlus,
-  IconSearch,
   IconUpload,
   IconPencil,
   IconTrash,
@@ -22,14 +21,11 @@ import {
   StatusBadge,
   Field,
   Modal,
-  Seg,
   Tag,
-  Pagination,
-  EmptyState,
-  LoadingSpinner,
   ConfirmModal,
   DataTable,
   ActionButtons,
+  clickableProps,
 } from '@/components/ui'
 import type { Member } from '@/types'
 import {
@@ -64,7 +60,7 @@ export function MembersTab() {
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [tierFilter, setTierFilter] = useState('All')
   const [showArchived, setShowArchived] = useState(false)
-  const [view, setView] = useState<'table' | 'cards'>('cards')
+  const [sort, setSort] = useState('')
   const [addOpen, setAddOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Member | null>(null)
   const [archiveTarget, setArchiveTarget] = useState<Member | null>(null)
@@ -85,15 +81,6 @@ export function MembersTab() {
       lookupsData ? [...lookupsData.tiersByName.keys()] : [],
     [lookupsData],
   )
-  const tierColors = useMemo(() => {
-    if (!lookupsData) return {}
-    const colors: Record<string, string> = {}
-    lookupsData.tiers.forEach((tier) => {
-      colors[tier.name] = tier.color
-    })
-    return colors
-  }, [lookupsData])
-
   const { data: bulkTiers = [] } = useQuery({
     queryKey: qk.tiers.all,
     queryFn: () => listTiers(),
@@ -106,14 +93,22 @@ export function MembersTab() {
   }, [search])
 
   // The API pages the list: ask for the page on screen, not for everything.
-  const paging = useServerPagination(`${debouncedSearch}|${tierFilter}|${showArchived}`)
+  const paging = useServerPagination(`${debouncedSearch}|${tierFilter}|${showArchived}|${sort}`)
   const { data: membersData, isLoading: membersLoading } = useQuery({
-    queryKey: qk.members.list(debouncedSearch, tierFilter, showArchived, paging.page, paging.perPage),
+    queryKey: qk.members.list(
+      debouncedSearch,
+      tierFilter,
+      showArchived,
+      paging.page,
+      paging.perPage,
+      sort,
+    ),
     queryFn: () =>
       listMembers({
         search: debouncedSearch,
         tier: tierFilter,
         archived: showArchived,
+        sort: sort || undefined,
         page: paging.page,
         pageSize: paging.perPage,
       }),
@@ -242,6 +237,109 @@ export function MembersTab() {
 
   const tiers = ['All', ...allTiers]
 
+  const sortOptions = [
+    { value: '', label: t('members.sort.nameAsc', 'Name A–Z') },
+    { value: '-name', label: t('members.sort.nameDesc', 'Name Z–A') },
+    { value: '-joined', label: t('members.sort.joinedNewest', 'Neueste zuerst') },
+    { value: 'joined', label: t('members.sort.joinedOldest', 'Älteste zuerst') },
+    { value: 'status', label: t('members.sort.status', 'Status') },
+  ]
+
+  // A simple card: who, tier and status, and the actions an admin has.
+  const renderMemberCard = (m: Member) => (
+    <Paper
+      withBorder
+      radius="lg"
+      p="md"
+      h="100%"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 12,
+        cursor: showArchived ? 'default' : 'pointer',
+      }}
+      {...clickableProps(showArchived ? undefined : () => go('/app/members/' + m.id, m))}
+    >
+      <Group gap={12} wrap="nowrap">
+        <Avatar name={m.name} color={m.avatarColor} size={44} lastSeen={m.lastSeen} />
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <Text fw={700} size="sm" truncate>
+            {m.name}
+          </Text>
+          <Text size="xs" c="dimmed" truncate>
+            {m.email}
+          </Text>
+        </div>
+      </Group>
+      <Group gap={6}>
+        <TierTag tier={m.tier} />
+        <StatusBadge status={m.status} />
+      </Group>
+      <Group
+        justify="space-between"
+        mt="auto"
+        pt={8}
+        style={{ borderTop: '1px solid var(--hb-border)' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Text size="xs" c="dimmed" className="num">
+          {m.joined}
+        </Text>
+        <Group gap={2}>
+          {showArchived ? (
+            <>
+              {canUnarchive && (
+                <ActionIcon
+                  variant="subtle"
+                  onClick={() => handleUnarchive(m)}
+                  title={t('members.restore')}
+                  aria-label={t('members.restore')}
+                >
+                  <IconArchive size={18} />
+                </ActionIcon>
+              )}
+              {canDelete && (
+                <ActionIcon
+                  variant="subtle"
+                  color="red"
+                  onClick={() => setHardDeleteTarget(m)}
+                  title={t('members.deletePermanently')}
+                  aria-label={t('members.deletePermanently')}
+                >
+                  <IconTrash size={18} />
+                </ActionIcon>
+              )}
+            </>
+          ) : (
+            <>
+              {canUpdate && (
+                <ActionIcon
+                  variant="subtle"
+                  onClick={(e) => openEdit(m, e)}
+                  title={t('members.editMember')}
+                  aria-label={t('members.editMember')}
+                >
+                  <IconPencil size={18} />
+                </ActionIcon>
+              )}
+              {m.id !== currentUser?.id && canArchive && (
+                <ActionIcon
+                  variant="subtle"
+                  color="red"
+                  onClick={() => setArchiveTarget(m)}
+                  title={t('members.archive', 'Archivieren')}
+                  aria-label={t('members.archive', 'Archivieren')}
+                >
+                  <IconUserX size={18} />
+                </ActionIcon>
+              )}
+            </>
+          )}
+        </Group>
+      </Group>
+    </Paper>
+  )
+
   return (
     <div>
       <Group justify="flex-end" mb={16} gap="xs" wrap="nowrap">
@@ -296,9 +394,8 @@ export function MembersTab() {
         )}
       </Group>
 
-      {view === 'table' ? (
-        <DataTable
-          breakpoint="wide"
+      <DataTable
+        breakpoint="wide"
           columns={[
             {
               key: 'member',
@@ -318,13 +415,13 @@ export function MembersTab() {
                     lastSeen={m.lastSeen}
                   />
                   <div>
-                    <div style={{ fontWeight: 600, color: '#1a1625' }}>
+                    <div style={{ fontWeight: 600, color: 'var(--hb-text)' }}>
                       {m.name}
                     </div>
                     <div
                       style={{
                         fontSize: 'var(--mantine-font-size-xs)',
-                        color: '#5e5873',
+                        color: 'var(--hb-text-2)',
                       }}
                     >
                       {m.email}
@@ -353,7 +450,7 @@ export function MembersTab() {
                   className="num"
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
-                    color: '#8c86a0',
+                    color: 'var(--hb-text-3)',
                   }}
                 >
                   {m.id}
@@ -383,7 +480,7 @@ export function MembersTab() {
                 <span
                   className="num"
                   style={{
-                    color: '#5e5873',
+                    color: 'var(--hb-text-2)',
                     fontSize: 'var(--mantine-font-size-sm)',
                   }}
                 >
@@ -447,6 +544,11 @@ export function MembersTab() {
           data={members}
           loading={membersLoading}
           emptyMessage={t('members.noMembers', 'Keine Mitglieder gefunden.')}
+          emptyDescription={
+            debouncedSearch || tierFilter !== 'All'
+              ? t('members.noMembersFilterHint', 'Ändere die Suche oder den Filter.')
+              : undefined
+          }
           searchValue={search}
           onSearchChange={setSearch}
           searchPlaceholder={t('members.search')}
@@ -465,7 +567,7 @@ export function MembersTab() {
                 ]
               : [
                   ...tiers.map((tier) => ({
-                    label: tier,
+                    label: tier === 'All' ? t('common.all', 'Alle') : tier,
                     value: tier.toLowerCase(),
                     active: tierFilter === tier,
                     onClick: () => setTierFilter(tier),
@@ -491,265 +593,20 @@ export function MembersTab() {
             !showArchived ? (m) => go('/app/members/' + m.id, m) : undefined
           }
           getRowKey={(m) => m.id}
+          renderCard={renderMemberCard}
+          viewKey="members"
           toolbar={
-            <Seg
-              options={[
-                {
-                  value: 'table',
-                  label: '≡ ' + t('members.tableView'),
-                },
-                {
-                  value: 'cards',
-                  label: '⊞ ' + t('members.cardsView'),
-                },
-              ]}
-              value={view}
-              onChange={(v) => setView(v as 'table' | 'cards')}
+            <Select
+              size="xs"
+              aria-label={t('members.sort.label', 'Sortieren')}
+              data={sortOptions}
+              value={sort}
+              onChange={(v) => setSort(v ?? '')}
+              allowDeselect={false}
+              w={170}
             />
           }
         />
-      ) : (
-        <Paper withBorder shadow="sm" radius="lg">
-          <div
-            style={{
-              padding: '14px 16px',
-              borderBottom: '1px solid #d6d2e3',
-              display: 'flex',
-              gap: 10,
-              flexWrap: 'wrap',
-              alignItems: 'center',
-            }}
-          >
-            <TextInput
-              style={{ flex: '1 1 220px' }}
-              leftSection={<IconSearch size={16} />}
-              placeholder={t('members.search')}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {!showArchived &&
-                tiers.map((tier) => (
-                  <button
-                    key={tier}
-                    className={`chip${tierFilter === tier ? ' on' : ''}`}
-                    onClick={() => setTierFilter(tier)}
-                  >
-                    {tier !== 'All' && (
-                      <span
-                        className="dot"
-                        style={{ background: tierColors[tier] ?? '#857f99' }}
-                      />
-                    )}
-                    {tier === 'All' ? t('common.all', 'Alle') : tier}
-                  </button>
-                ))}
-              <button
-                className={`chip${showArchived ? ' on' : ''}`}
-                style={
-                  showArchived
-                    ? {
-                        borderColor: '#ff4d3d',
-                        color: '#ff4d3d',
-                        background: '#fff1f0',
-                      }
-                    : {}
-                }
-                onClick={() => {
-                  setShowArchived((v) => !v)
-                  setTierFilter('All')
-                }}
-              >
-                <IconUserX size={16} />
-                {t('common.archived')}
-              </button>
-            </div>
-            <div
-              style={{
-                marginLeft: 'auto',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 'var(--mantine-font-size-sm)',
-                  color: '#5e5873',
-                }}
-              >
-                {t('members.shown', { count: pg.total })}
-              </span>
-              <Seg
-                options={[
-                  { value: 'table', label: '≡ ' + t('members.tableView') },
-                  { value: 'cards', label: '⊞ ' + t('members.cardsView') },
-                ]}
-                value={view}
-                onChange={(v) => setView(v as 'table' | 'cards')}
-              />
-            </div>
-          </div>
-
-          <>
-            <Pagination {...pg} top />
-            {membersLoading && <LoadingSpinner compact />}
-            {!membersLoading && members.length === 0 && (
-              <EmptyState
-                title={t('members.noMembers', 'Keine Mitglieder gefunden.')}
-                description={
-                  debouncedSearch || tierFilter !== 'All'
-                    ? t('members.noMembersFilterHint', 'Ändere die Suche oder den Filter.')
-                    : undefined
-                }
-              />
-            )}
-            <div
-              style={{
-                padding: 16,
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-                gap: 12,
-              }}
-            >
-              {members.map((m) => (
-                <Paper
-                  key={m.id}
-                  withBorder
-                  shadow="sm"
-                  radius="lg"
-                  style={{
-                    padding: 16,
-                    cursor: showArchived ? 'default' : 'pointer',
-                  }}
-                  onClick={() => !showArchived && go('/app/members/' + m.id, m)}
-                >
-                  <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-                    <Avatar
-                      name={m.name}
-                      color={m.avatarColor}
-                      size={40}
-                      lastSeen={m.lastSeen}
-                    />
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div
-                        style={{
-                          fontWeight: 600,
-                          color: '#1a1625',
-                          fontSize: 'var(--mantine-font-size-sm)',
-                        }}
-                      >
-                        {m.name}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 'var(--mantine-font-size-xs)',
-                          color: '#5e5873',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {m.email}
-                        {!m.privateEmailVerified && (
-                          <span
-                            title={t('members.privateEmailUnverified', 'Private E-Mail nicht bestätigt')}
-                            style={{
-                              color: '#f59e0b',
-                              marginLeft: 4,
-                              verticalAlign: 'middle',
-                            }}
-                          >
-                            <IconShieldCheckFilled size={13} />
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      gap: 6,
-                      flexWrap: 'wrap',
-                      marginBottom: 10,
-                    }}
-                  >
-                    <TierTag tier={m.tier} />
-                    <StatusBadge status={m.status} />
-                  </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      gap: 8,
-                      borderTop: '1px solid #e6e3ef',
-                      paddingTop: 10,
-                      marginTop: 2,
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {showArchived ? (
-                      <>
-                        {canUnarchive && (
-                          <Button
-                            size="sm"
-                            variant="subtle"
-                            style={{ flex: 1 }}
-                            onClick={() => handleUnarchive(m)}
-                          >
-                            <IconArchive size={16} />
-                            {t('members.restore')}
-                          </Button>
-                        )}
-                        {canDelete && (
-                          <Button
-                            size="sm"
-                            variant="subtle"
-                            style={{ color: '#ff4d3d' }}
-                            onClick={() => setHardDeleteTarget(m)}
-                            aria-label={t('members.deletePermanently')}
-                          >
-                            <IconTrash size={16} />
-                          </Button>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        {canUpdate && (
-                          <Button
-                            size="sm"
-                            variant="subtle"
-                            style={{ flex: 1 }}
-                            onClick={(e) => openEdit(m, e)}
-                          >
-                            <IconPencil size={16} />
-                            {t('members.editMember')}
-                          </Button>
-                        )}
-                        {m.id !== currentUser?.id && canArchive && (
-                          <Button
-                            size="sm"
-                            variant="subtle"
-                            style={{ color: '#ff4d3d' }}
-                            aria-label={t('members.archive', 'Archivieren')}
-                            title={t('members.archive', 'Archivieren')}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setArchiveTarget(m)
-                            }}
-                          >
-                            <IconUserX size={16} />
-                          </Button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </Paper>
-              ))}
-            </div>
-            <Pagination {...pg} />
-          </>
-        </Paper>
-      )}
 
       <Modal
         open={bulkInvoiceOpen}
@@ -817,8 +674,8 @@ export function MembersTab() {
           <div
             style={{
               fontSize: 'var(--mantine-font-size-sm)',
-              color: '#5e5873',
-              background: '#f4f2f9',
+              color: 'var(--hb-text-2)',
+              background: 'var(--hb-surface-2)',
               borderRadius: 8,
               padding: '10px 14px',
             }}

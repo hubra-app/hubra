@@ -1,3 +1,46 @@
+/* Colour tokens. Screens use these instead of hex values so the club app
+   works in light and dark mode. */
+:root {
+  --hb-page: #f7f6fb;
+  --hb-surface: #ffffff;
+  --hb-surface-2: #f4f2f9;
+  --hb-border: #e6e3ef;
+  --hb-text: #1a1625;
+  --hb-text-2: #5e5873;
+  --hb-text-3: #8c86a0;
+  /* The sidebar takes a light tint of the club colour. */
+  --hb-sidebar: color-mix(in srgb, var(--mantine-color-acc-0) 55%, #ffffff);
+}
+
+html:root[data-mantine-color-scheme="dark"] {
+  color-scheme: dark;
+  /* Neutral greys: the club colour only marks buttons, links and the
+     active page. */
+  --hb-page: #111113;
+  --hb-surface: #19191c;
+  --hb-surface-2: #222226;
+  --hb-border: #2f2f34;
+  --hb-text: #ededef;
+  --hb-text-2: #a8a8b0;
+  --hb-text-3: #7c7c85;
+  --hb-sidebar: #151517;
+  --mantine-color-body: var(--hb-surface);
+  --mantine-color-text: var(--hb-text);
+  --mantine-color-dimmed: var(--hb-text-3);
+  --mantine-color-default-border: var(--hb-border);
+  --mantine-color-ink-3: var(--hb-text-3);
+  --mantine-color-ink-4: var(--hb-text-2);
+  --mantine-color-ink-8: var(--hb-text);
+  --mantine-color-line-0: var(--hb-border);
+  --mantine-color-surface-1: var(--hb-surface-2);
+  --mantine-color-acc-0: color-mix(in srgb, var(--mantine-color-acc-6) 12%, #19191c);
+  --mantine-color-acc-1: color-mix(in srgb, var(--mantine-color-acc-6) 20%, #19191c);
+  --mantine-color-acc-7: color-mix(in srgb, var(--mantine-color-acc-4) 85%, #ffffff);
+  --mantine-color-acc-8: color-mix(in srgb, var(--mantine-color-acc-3) 80%, #ffffff);
+  --mantine-color-black: var(--hb-text);
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
 html {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -25,14 +68,14 @@ html {
 
 body {
   margin: 0;
-  background: #f7f6fb;
+  background: var(--hb-page);
   font-family: "Hanken Grotesk", system-ui, sans-serif;
-  color: #1a1625;
+  color: var(--hb-text);
 }
 
 ::selection {
   background: var(--mantine-color-acc-2);
-  color: #1a1625;
+  color: var(--hb-text);
 }
 
 #root {
@@ -48,7 +91,7 @@ body {
 }
 
 .graph-bg {
-  background-color: #f7f6fb;
+  background-color: var(--hb-surface-2);
 }
 
 .num {
@@ -125,8 +168,8 @@ body {
   top: 0;
   right: 0;
   height: 100%;
-  background: var(--mantine-color-white);
-  border-left: 1px solid var(--mantine-color-gray-3);
+  background: var(--hb-surface);
+  border-left: 1px solid var(--hb-border);
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -155,9 +198,9 @@ body {
   gap: 6px;
   padding: 5px 12px;
   border-radius: 8px;
-  border: 1px solid #d6d2e3;
+  border: 1px solid var(--hb-border);
   background: transparent;
-  color: #5e5873;
+  color: var(--hb-text-2);
   font-size: var(--mantine-font-size-sm);
   font-weight: 500;
   cursor: pointer;
@@ -167,7 +210,7 @@ body {
 
 .chip:hover {
   border-color: #b7b0c9;
-  background: #f4f2f9;
+  background: var(--hb-surface-2);
 }
 
 .chip.on {
@@ -231,9 +274,9 @@ body {
     display: flex;
     flex-direction: column;
     padding: 0;
-    border: 1px solid var(--mantine-color-gray-3);
+    border: 1px solid var(--hb-border);
     border-radius: 12px;
-    background: white;
+    background: var(--hb-surface);
     box-shadow: 0 1px 3px rgba(26, 22, 37, 0.04);
     overflow: hidden;
   }
@@ -243,7 +286,7 @@ body {
   .responsive-scroll-wrap[data-breakpoint~="small"]
     .responsive-table
     tr:last-child {
-    border-bottom: 1px solid var(--mantine-color-gray-3);
+    border-bottom: 1px solid var(--hb-border);
   }
   .responsive-scroll-wrap:not([data-breakpoint]) .responsive-table td,
   .responsive-scroll-wrap[data-breakpoint~="small"] .responsive-table td {
@@ -263,7 +306,7 @@ body {
     td:first-child {
     font-weight: 600;
     font-size: var(--mantine-font-size-md);
-    color: #1a1625;
+    color: var(--hb-text);
     padding-top: 14px;
     padding-bottom: 10px;
     border-bottom: 1px solid #f1eff7;
@@ -350,15 +393,15 @@ body {
     display: flex;
     flex-direction: column;
     padding: 0;
-    border: 1px solid var(--mantine-color-gray-3);
+    border: 1px solid var(--hb-border);
     border-radius: 12px;
-    background: white;
+    background: var(--hb-surface);
     box-shadow: 0 1px 3px rgba(26, 22, 37, 0.04);
     overflow: hidden;
   }
   .responsive-table:not(.responsive-scroll-wrap .responsive-table)
     tr:last-child {
-    border-bottom: 1px solid var(--mantine-color-gray-3);
+    border-bottom: 1px solid var(--hb-border);
   }
   .responsive-table:not(.responsive-scroll-wrap .responsive-table) td {
     display: flex;
@@ -373,7 +416,7 @@ body {
     td:first-child {
     font-weight: 600;
     font-size: var(--mantine-font-size-md);
-    color: #1a1625;
+    color: var(--hb-text);
     padding-top: 14px;
     padding-bottom: 10px;
     border-bottom: 1px solid #f1eff7;
@@ -431,16 +474,16 @@ body {
     display: flex;
     flex-direction: column;
     padding: 0;
-    border: 1px solid var(--mantine-color-gray-3);
+    border: 1px solid var(--hb-border);
     border-radius: 12px;
-    background: white;
+    background: var(--hb-surface);
     box-shadow: 0 1px 3px rgba(26, 22, 37, 0.04);
     overflow: hidden;
   }
   .responsive-scroll-wrap[data-breakpoint~="wide"]
     .responsive-table
     tr:last-child {
-    border-bottom: 1px solid var(--mantine-color-gray-3);
+    border-bottom: 1px solid var(--hb-border);
   }
   .responsive-scroll-wrap[data-breakpoint~="wide"] .responsive-table td {
     display: flex;
@@ -456,7 +499,7 @@ body {
     td:first-child {
     font-weight: 600;
     font-size: var(--mantine-font-size-md);
-    color: #1a1625;
+    color: var(--hb-text);
     padding-top: 14px;
     padding-bottom: 10px;
     border-bottom: 1px solid #f1eff7;
@@ -525,16 +568,16 @@ body {
     display: flex;
     flex-direction: column;
     padding: 0;
-    border: 1px solid var(--mantine-color-gray-3);
+    border: 1px solid var(--hb-border);
     border-radius: 12px;
-    background: white;
+    background: var(--hb-surface);
     box-shadow: 0 1px 3px rgba(26, 22, 37, 0.04);
     overflow: hidden;
   }
   .responsive-scroll-wrap[data-breakpoint~="xwide"]
     .responsive-table
     tr:last-child {
-    border-bottom: 1px solid var(--mantine-color-gray-3);
+    border-bottom: 1px solid var(--hb-border);
   }
   .responsive-scroll-wrap[data-breakpoint~="xwide"] .responsive-table td {
     display: flex;
@@ -550,7 +593,7 @@ body {
     td:first-child {
     font-weight: 600;
     font-size: var(--mantine-font-size-md);
-    color: #1a1625;
+    color: var(--hb-text);
     padding-top: 14px;
     padding-bottom: 10px;
     border-bottom: 1px solid #f1eff7;
@@ -657,7 +700,7 @@ table[style*="min-width"] td::before {
   position: sticky;
   left: 0;
   z-index: 2;
-  background: var(--mantine-color-white);
+  background: var(--hb-surface);
   box-shadow: 4px 0 6px -4px rgba(0, 0, 0, 0.1);
 }
 
@@ -675,7 +718,7 @@ table[style*="min-width"] td::before {
 /* Page content: one width and one gutter on every screen. */
 .page-container {
   width: 100%;
-  max-width: 1240px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 32px 32px 64px;
 }
@@ -696,7 +739,7 @@ table[style*="min-width"] td::before {
   background: #fffbeb;
   border-radius: 12px;
   margin-bottom: 24px;
-  color: #1a1625;
+  color: var(--hb-text);
 }
 
 .hubra-slideover .mantine-Drawer-content {
@@ -729,7 +772,7 @@ table[style*="min-width"] td::before {
   min-height: 100vh;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  background: #ffffff;
+  background: var(--hb-surface);
 }
 
 .auth-main {

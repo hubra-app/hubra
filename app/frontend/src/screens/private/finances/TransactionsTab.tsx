@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, Group, Badge, Select, ActionIcon, Text } from '@mantine/core'
 import { useT } from '@/locales/i18n'
@@ -57,6 +58,30 @@ export function TransactionsTab() {
   // The form: closed (null), a new transaction ('new') or one to change.
   const [formTarget, setFormTarget] = useState<Transaction | 'new' | null>(null)
   const [saving, setSaving] = useState(false)
+
+  // ?tx=<id> (e.g. from the finance overview) opens that transaction, or
+  // finds it in the list for people who can't edit.
+  const [params, setParams] = useSearchParams()
+  const linkedId = params.get('tx')
+  const [handledLink, setHandledLink] = useState<string | null>(null)
+  if (linkedId && linkedId !== handledLink && !loading) {
+    setHandledLink(linkedId)
+    const tx = transactions.find((x) => x.id === linkedId)
+    if (tx && canUpdate) setFormTarget(tx)
+    else if (tx) setSearch(tx.description)
+  }
+  const closeForm = () => {
+    setFormTarget(null)
+    if (linkedId) {
+      setParams(
+        (p) => {
+          p.delete('tx')
+          return p
+        },
+        { replace: true },
+      )
+    }
+  }
 
   const filtered = transactions.filter((t) => {
     const q = search.toLowerCase()
@@ -120,7 +145,7 @@ export function TransactionsTab() {
               description: values.description,
             }),
       )
-      setFormTarget(null)
+      closeForm()
     } catch (err: unknown) {
       notify(
         'error',
@@ -197,7 +222,7 @@ export function TransactionsTab() {
               <span
                 className="num"
                 style={{
-                  color: '#5e5873',
+                  color: 'var(--hb-text-2)',
                   fontSize: 'var(--mantine-font-size-sm)',
                   whiteSpace: 'nowrap',
                 }}
@@ -252,7 +277,7 @@ export function TransactionsTab() {
             key: 'method',
             header: t('finance.paymentMethod', 'Zahlungsart'),
             render: (tx) => (
-              <span style={{ color: '#5e5873', whiteSpace: 'nowrap' }}>
+              <span style={{ color: 'var(--hb-text-2)', whiteSpace: 'nowrap' }}>
                 {methodLabel(t, tx.method)}
               </span>
             ),
@@ -392,7 +417,7 @@ export function TransactionsTab() {
           transaction={formTarget === 'new' ? null : formTarget}
           categories={categories}
           saving={saving}
-          onClose={() => setFormTarget(null)}
+          onClose={closeForm}
           onSubmit={handleSave}
           onOpenCategories={() => {
             setFormTarget(null)

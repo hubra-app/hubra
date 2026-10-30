@@ -95,7 +95,7 @@ export function AccountSettingsClubTab() {
       </Paper>
 
       <Paper withBorder shadow="sm" radius="lg">
-        <Group p="md" gap="sm" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}>
+        <Group p="md" gap="sm" style={{ borderBottom: '1px solid var(--hb-border)' }}>
           <IconMail size={16} style={{ color: 'var(--mantine-color-ink-4)' }} />
           <Text fw={700} fz="md">
             {t('account.club.mailTitle', 'Vereins-Mail')}

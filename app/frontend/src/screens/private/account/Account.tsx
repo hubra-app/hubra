@@ -445,7 +445,7 @@ export function AccountDashboardScreen() {
                             <span
                               style={{
                                 fontSize: "var(--mantine-font-size-sm)",
-                                color: isMyVote ? "var(--mantine-color-acc-7)" : "#5e5873",
+                                color: isMyVote ? "var(--mantine-color-acc-7)" : "var(--hb-text-2)",
                                 fontWeight: isMyVote ? 600 : 400,
                               }}
                             >
@@ -456,7 +456,7 @@ export function AccountDashboardScreen() {
                               className="num"
                               style={{
                                 fontSize: "var(--mantine-font-size-sm)",
-                                color: isWinner ? "var(--mantine-color-acc-7)" : "#5e5873",
+                                color: isWinner ? "var(--mantine-color-acc-7)" : "var(--hb-text-2)",
                               }}
                             >
                               {pct}%
@@ -485,7 +485,7 @@ export function AccountDashboardScreen() {
                   <div
                     style={{
                       fontSize: "var(--mantine-font-size-xs)",
-                      color: "#8c86a0",
+                      color: "var(--hb-text-3)",
                       marginTop: 8,
                     }}
                   >

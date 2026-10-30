@@ -89,7 +89,7 @@ export function NotificationPanel() {
         px="lg"
         pt="lg"
         pb="sm"
-        style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}
+        style={{ borderBottom: '1px solid var(--hb-border)' }}
       >
         <Text fw={700} fz="md">
           {t('shell.notif.title')}
@@ -111,7 +111,7 @@ export function NotificationPanel() {
       <Box
         px="md"
         py="xs"
-        style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}
+        style={{ borderBottom: '1px solid var(--hb-border)' }}
       >
         <SegmentedControl
           size="xs"
@@ -138,7 +138,7 @@ export function NotificationPanel() {
               gap="md"
               p="md"
               style={{
-                borderBottom: '1px solid var(--mantine-color-gray-2)',
+                borderBottom: '1px solid var(--hb-border)',
                 background: n.read ? 'transparent' : 'rgba(116,65,224,.06)',
               }}
               align="flex-start"

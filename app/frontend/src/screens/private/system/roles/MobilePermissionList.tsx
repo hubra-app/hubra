@@ -40,12 +40,12 @@ export function MobilePermissionList({
               px={16}
               py={10}
               style={{
-                borderBottom: '1px solid #e6e3ef',
+                borderBottom: '1px solid var(--hb-border)',
                 background: '#f9f8fc',
                 alignItems: 'center',
               }}
             >
-              <Text fz="xs" fw={700} c="#857f99" tt="uppercase" style={{ letterSpacing: '0.06em' }}>
+              <Text fz="xs" fw={700} c="var(--hb-text-3)" tt="uppercase" style={{ letterSpacing: '0.06em' }}>
                 {blueprintLabel(bp)}
               </Text>
               <SectionToggle
@@ -75,12 +75,12 @@ export function MobilePermissionList({
                         px={16}
                         py={7}
                         style={{
-                          background: '#fdfcfe',
-                          borderBottom: '1px solid #e6e3ef',
+                          background: 'var(--hb-surface-2)',
+                          borderBottom: '1px solid var(--hb-border)',
                           alignItems: 'center',
                         }}
                       >
-                        <Text fz="xs" fw={600} c="#8c86a0">
+                        <Text fz="xs" fw={600} c="var(--hb-text-3)">
                           {ns}
                         </Text>
                         <SectionToggle
@@ -121,7 +121,7 @@ export function MobilePermissionList({
                             <div
                               style={{
                                 fontSize: 'var(--mantine-font-size-xs)',
-                                color: '#8c86a0',
+                                color: 'var(--hb-text-3)',
                                 fontFamily: "'JetBrains Mono', monospace",
                               }}
                             >
@@ -164,7 +164,7 @@ export function MobilePermissionList({
                                 <div
                                   style={{
                                     fontSize: 'var(--mantine-font-size-xs)',
-                                    color: '#8c86a0',
+                                    color: 'var(--hb-text-3)',
                                     fontFamily: "'JetBrains Mono', monospace",
                                   }}
                                 >
@@ -208,7 +208,7 @@ export function MobilePermissionList({
                                 padding: 0,
                                 display: 'flex',
                                 alignItems: 'center',
-                                color: '#5e5873',
+                                color: 'var(--hb-text-2)',
                                 flexShrink: 0,
                                 marginTop: 2,
                               }}
@@ -246,7 +246,7 @@ export function MobilePermissionList({
                             <div
                               style={{
                                 fontSize: 'var(--mantine-font-size-xs)',
-                                color: '#8c86a0',
+                                color: 'var(--hb-text-3)',
                                 fontFamily: "'JetBrains Mono', monospace",
                               }}
                             >
@@ -266,7 +266,7 @@ export function MobilePermissionList({
                               borderBottom: '1px solid #f1eff7',
                               alignItems: 'flex-start',
                               paddingLeft: 40,
-                              background: '#fdfcfe',
+                              background: 'var(--hb-surface-2)',
                             }}
                           >
                             <PermCheckbox
@@ -289,7 +289,7 @@ export function MobilePermissionList({
                               <div
                                 style={{
                                   fontSize: 'var(--mantine-font-size-xs)',
-                                  color: '#8c86a0',
+                                  color: 'var(--hb-text-3)',
                                   fontFamily: "'JetBrains Mono', monospace",
                                 }}
                               >

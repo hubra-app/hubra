@@ -206,7 +206,7 @@ export function FunctionsTab() {
                     width: 40,
                     height: 40,
                     borderRadius: 10,
-                    background: '#f4f2f9',
+                    background: 'var(--hb-surface-2)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -268,8 +268,8 @@ export function FunctionsTab() {
                         alignItems: 'center',
                         gap: 4,
                         fontSize: 'var(--mantine-font-size-xs)',
-                        color: '#2e2940',
-                        background: '#f4f2f9',
+                        color: 'var(--hb-text)',
+                        background: 'var(--hb-surface-2)',
                         borderRadius: 6,
                         padding: '3px 8px',
                       }}
@@ -282,7 +282,7 @@ export function FunctionsTab() {
                 <div
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
-                    color: '#8c86a0',
+                    color: 'var(--hb-text-3)',
                   }}
                 >
                   {t('functions.noHolder', 'Unbesetzt')}
@@ -461,7 +461,7 @@ function HolderPanel({
             width: 32,
             height: 32,
             borderRadius: 8,
-            background: '#f4f2f9',
+            background: 'var(--hb-surface-2)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -486,7 +486,7 @@ function HolderPanel({
           <div
             style={{
               padding: '12px 0',
-              borderTop: '1px solid #e6e3ef',
+              borderTop: '1px solid var(--hb-border)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -499,7 +499,7 @@ function HolderPanel({
                 gap: 6,
                 fontSize: 'var(--mantine-font-size-xs)',
                 fontWeight: 600,
-                color: '#5e5873',
+                color: 'var(--hb-text-2)',
               }}
             >
               <MailIcon size={13} />

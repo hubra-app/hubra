@@ -117,7 +117,7 @@ export function InvoiceDetailScreen() {
             <Group
               p="md"
               gap="sm"
-              style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}
+              style={{ borderBottom: '1px solid var(--hb-border)' }}
             >
               <Text fw={700} fz="md">
                 {t('finance.lineItems', 'Positionen')}
@@ -155,7 +155,7 @@ export function InvoiceDetailScreen() {
             <div
               style={{
                 padding: '12px 20px',
-                borderTop: '2px solid #e6e3ef',
+                borderTop: '2px solid var(--hb-border)',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
@@ -165,7 +165,7 @@ export function InvoiceDetailScreen() {
                 style={{
                   fontWeight: 700,
                   fontSize: 'var(--mantine-font-size-sm)',
-                  color: '#1a1625',
+                  color: 'var(--hb-text)',
                 }}
               >
                 {t('common.total', 'Total')}
@@ -175,7 +175,7 @@ export function InvoiceDetailScreen() {
                 style={{
                   fontWeight: 700,
                   fontSize: 'var(--mantine-font-size-md)',
-                  color: '#1a1625',
+                  color: 'var(--hb-text)',
                 }}
               >
                 CHF {formatCHF(inv.amount)}
@@ -187,9 +187,9 @@ export function InvoiceDetailScreen() {
             <Group
               p="md"
               gap="sm"
-              style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}
+              style={{ borderBottom: '1px solid var(--hb-border)' }}
             >
-              <IconBell size={16} style={{ color: '#5e5873' }} />
+              <IconBell size={16} style={{ color: 'var(--hb-text-2)' }} />
               <Text fw={700} fz="md">
                 {t('finance.reminder.history', 'Versendete Erinnerungen')}
               </Text>
@@ -209,7 +209,7 @@ export function InvoiceDetailScreen() {
                 style={{
                   padding: '24px',
                   textAlign: 'center',
-                  color: '#8c86a0',
+                  color: 'var(--hb-text-3)',
                   fontSize: 'var(--mantine-font-size-sm)',
                 }}
               >
@@ -236,7 +236,7 @@ export function InvoiceDetailScreen() {
                       <div
                         style={{
                           fontSize: 'var(--mantine-font-size-sm)',
-                          color: '#1a1625',
+                          color: 'var(--hb-text)',
                         }}
                       >
                         {t(
@@ -247,7 +247,7 @@ export function InvoiceDetailScreen() {
                       <div
                         style={{
                           fontSize: 'var(--mantine-font-size-xs)',
-                          color: '#5e5873',
+                          color: 'var(--hb-text-2)',
                         }}
                       >
                         {t('finance.to', 'An')}: {inv.member}
@@ -257,7 +257,7 @@ export function InvoiceDetailScreen() {
                       className="num"
                       style={{
                         fontSize: 'var(--mantine-font-size-xs)',
-                        color: '#8c86a0',
+                        color: 'var(--hb-text-3)',
                       }}
                     >
                       {ts}
@@ -333,7 +333,7 @@ export function InvoiceDetailScreen() {
               <span
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
-                  color: '#5e5873',
+                  color: 'var(--hb-text-2)',
                 }}
               >
                 {label}
@@ -343,7 +343,7 @@ export function InvoiceDetailScreen() {
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
                   fontWeight: 500,
-                  color: '#1a1625',
+                  color: 'var(--hb-text)',
                 }}
               >
                 {value}
