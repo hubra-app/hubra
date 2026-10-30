@@ -6,7 +6,7 @@ added by a platform manager) were made without ``members.joined``, so
 fills the gap for existing ones with the day their member row was made.
 
 Revision ID: a9c4e2f7d1b6
-Revises: e5a1c7f3b9d4
+Revises: a8c4e2f6b1d3
 Create Date: 2026-10-30 08:00:00.000000
 
 """
@@ -17,7 +17,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "a9c4e2f7d1b6"
-down_revision = "e5a1c7f3b9d4"
+down_revision = "a8c4e2f6b1d3"
 branch_labels = None
 depends_on = None
 
