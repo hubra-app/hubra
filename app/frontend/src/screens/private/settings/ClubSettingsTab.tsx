@@ -24,6 +24,7 @@ import { useT } from '@/locales/i18n'
 import { qk } from '@/data/keys'
 import { useToast } from '@/context/AppContext'
 import { ErrorBanner } from '@/components/ui'
+import { BankSettingsCard } from './BankSettingsCard'
 
 const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml']
 const LOGO_MAX_BYTES = 2 * 1024 * 1024
@@ -340,5 +341,10 @@ export function ClubSettingsTab() {
     )
   }
 
-  return <ClubSettingsForm initialData={data ?? {}} />
+  return (
+    <Stack gap={20}>
+      <ClubSettingsForm initialData={data ?? {}} />
+      <BankSettingsCard />
+    </Stack>
+  )
 }

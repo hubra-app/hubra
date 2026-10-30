@@ -1174,15 +1174,11 @@ def lookup_invite():
     )
 
 
-@tenant_admin_bp.route("/invites/accept", methods=["POST"])
-@jwt_required()
-def accept_invite():
-    """Accept an invite: the signed-in account with the invited address joins."""
+def _accept(invite, tenant: Tenant, user: User):
+    """``user`` joins ``tenant`` through ``invite`` (their address was invited)."""
     from hubra.api.members.services import MembersService
     from hubra.core.tenant.context import in_club
 
-    user = _calling_user()
-    invite, tenant = _invite_from_body()
     if user.email.lower() != invite.email:
         raise_error(
             403,
@@ -1206,6 +1202,64 @@ def accept_invite():
     )
     db.session.commit()
     return jsonify({"status": "joined", "club": club}), 200
+
+
+@tenant_admin_bp.route("/invites/accept", methods=["POST"])
+@jwt_required()
+def accept_invite():
+    """Accept an invite: the signed-in account with the invited address joins."""
+    user = _calling_user()
+    invite, tenant = _invite_from_body()
+    return _accept(invite, tenant, user)
+
+
+def _live_club(tenant_id: int) -> Tenant | None:
+    tenant = db.session.get(Tenant, tenant_id)
+    if tenant is None or tenant.status != "active" or tenant.deleted_at is not None:
+        return None
+    return tenant
+
+
+@tenant_admin_bp.route("/invites/mine", methods=["GET"])
+@jwt_required()
+def my_invites():
+    """Open invites to the signed-in account's confirmed address.
+
+    The club picker shows them, so an invite still gets accepted when its
+    link was lost on the way (signing up, then confirming the address in
+    another tab or on another device).
+    """
+    from hubra.core.tenant.invites import open_invites_for
+
+    user = _calling_user()
+    invites = []
+    for invite in open_invites_for(user):
+        tenant = _live_club(invite.tenant_id)
+        if tenant is None or _membership_in(tenant.id, user) == "member":
+            continue
+        invites.append(
+            {
+                "id": invite.id,
+                "club": {"slug": tenant.slug, "name": tenant.name},
+                "invitedBy": invite.invited_by,
+                "expiresAt": invite.expires_at.isoformat(),
+            }
+        )
+    return jsonify({"invites": invites})
+
+
+@tenant_admin_bp.route("/invites/<int:invite_id>/accept", methods=["POST"])
+@jwt_required()
+def accept_my_invite(invite_id: int):
+    """Accept one of :func:`my_invites` (no link needed: the address is confirmed)."""
+    from hubra.core.tenant.invites import open_invites_for
+
+    user = _calling_user()
+    invite = next((i for i in open_invites_for(user) if i.id == invite_id), None)
+    tenant = _live_club(invite.tenant_id) if invite else None
+    if invite is None or tenant is None:
+        raise_error(404, "INVITE_NOT_FOUND", "This invite is invalid or has expired")
+    return _accept(invite, tenant, user)  # type: ignore[arg-type]
 
 
 # ── Club admins (the club's own admins, and platform managers) ────────────────

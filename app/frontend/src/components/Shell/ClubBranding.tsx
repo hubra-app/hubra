@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useClubProfile } from '@/data/clubProfile'
+import { useClubLogo, useClubProfile } from '@/data/clubProfile'
 import { setClubColors } from '@/branding'
 import { setDateFormat } from '@/format'
 
@@ -21,6 +21,7 @@ function setFavicon(logo: string | null) {
 /** Puts the club's colours on the theme and its logo on the browser tab. */
 export function ClubBranding() {
   const { data } = useClubProfile()
+  const logo = useClubLogo()
   // Before the pages below render, so their dates use the club's format.
   setDateFormat(data?.date_format)
 
@@ -31,8 +32,8 @@ export function ClubBranding() {
       secondary: data.secondary_color,
       accent: data.accent_color,
     })
-    setFavicon(data.logo)
-  }, [data])
+    setFavicon(logo ?? null)
+  }, [data, logo])
 
   return null
 }

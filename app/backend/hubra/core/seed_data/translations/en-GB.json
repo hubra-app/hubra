@@ -2855,5 +2855,20 @@
   "roles.wholeClub": "Whole club",
   "roles.groupHolders": "For one group only",
   "roles.onlyGroup": "only {{group}}",
-  "members.roleForGroup": "{{role}} (only {{group}})"
+  "members.roleForGroup": "{{role}} (only {{group}})",
+  "polls.statusOpen": "Open",
+  "polls.statusClosed": "Closed",
+  "clubSettings.bank.title": "Bank & QR bill",
+  "clubSettings.bank.hint": "Members pay their invoices to this account. With a QR-IBAN every invoice gets a QR reference that the bank import matches payments by.",
+  "clubSettings.bank.incomplete": "Without IBAN, postal code and city, invoices can't carry a QR bill.",
+  "clubSettings.bank.qrIban": "QR-IBAN: invoices get a QR reference.",
+  "clubSettings.bank.plainIban": "Regular IBAN: invoices carry a QR bill without a QR reference.",
+  "clubSettings.bank.iban": "IBAN or QR-IBAN",
+  "clubSettings.bank.street": "Street",
+  "clubSettings.bank.houseNo": "House number",
+  "clubSettings.bank.postalCode": "Postal code",
+  "clubSettings.bank.city": "City",
+  "clubSettings.bank.country": "Country (e.g. CH)",
+  "clubSettings.bank.save": "Save bank details",
+  "clubSettings.bank.saved": "Bank details saved"
 }
