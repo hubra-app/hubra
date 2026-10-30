@@ -55,7 +55,7 @@ export function TransactionCategoriesTab() {
       { name: t('finance.starter.events', 'Anlässe'), color: '#2596be' },
       { name: t('finance.starter.material', 'Material'), color: '#f59e0b' },
       { name: t('finance.starter.rent', 'Miete'), color: '#ff4d3d' },
-      { name: t('finance.starter.other', 'Diverses'), color: '#8c86a0' },
+      { name: t('finance.starter.other', 'Diverses'), color: 'var(--hb-text-3)' },
     ]
     setStarting(true)
     try {
@@ -232,7 +232,7 @@ export function TransactionCategoriesTab() {
                       colSpan={3}
                       style={{
                         textAlign: 'center',
-                        color: '#8c86a0',
+                        color: 'var(--hb-text-3)',
                         padding: '24px',
                         fontSize: 'var(--mantine-font-size-sm)',
                       }}
@@ -246,7 +246,7 @@ export function TransactionCategoriesTab() {
                       colSpan={3}
                       style={{
                         textAlign: 'center',
-                        color: '#8c86a0',
+                        color: 'var(--hb-text-3)',
                         padding: '24px',
                         fontSize: 'var(--mantine-font-size-sm)',
                       }}
@@ -291,7 +291,7 @@ export function TransactionCategoriesTab() {
                           <span
                             style={{
                               fontSize: 'var(--mantine-font-size-xs)',
-                              color: '#8c86a0',
+                              color: 'var(--hb-text-3)',
                             }}
                           >
                             {t('finance.category.custom', 'Eigene')}
@@ -318,7 +318,7 @@ export function TransactionCategoriesTab() {
                               {c.isDefault ? (
                                 <IconLock
                                   size={16}
-                                  style={{ color: '#8c86a0' }}
+                                  style={{ color: 'var(--hb-text-3)' }}
                                 />
                               ) : (
                                 <IconPencil size={16} />

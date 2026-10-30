@@ -2577,5 +2577,17 @@
   "suggest.status.rejected": "Abgelehnt",
   "suggest.status.pending": "Offen",
   "suggest.was": "Vorher",
-  "suggest.reason": "Begründung"
+  "suggest.reason": "Begründung",
+  "data.viewCards": "Karten",
+  "data.viewList": "Liste",
+  "members.sort.label": "Sortieren",
+  "members.sort.nameAsc": "Name A–Z",
+  "members.sort.nameDesc": "Name Z–A",
+  "members.sort.joinedNewest": "Neueste zuerst",
+  "members.sort.joinedOldest": "Älteste zuerst",
+  "members.sort.status": "Status",
+  "shell.userMenu.appearance": "Darstellung",
+  "shell.userMenu.light": "Hell",
+  "shell.userMenu.dark": "Dunkel",
+  "shell.userMenu.system": "Wie Gerät"
 }

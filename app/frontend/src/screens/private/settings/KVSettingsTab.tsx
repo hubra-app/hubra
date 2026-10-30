@@ -200,7 +200,7 @@ export function KVSettingsTab() {
         renderKeySuffix={(entry) => (
           <>
             {entry.sensitive && (
-              <IconLock size={11} style={{ color: '#8c86a0', flexShrink: 0 }} />
+              <IconLock size={11} style={{ color: 'var(--hb-text-3)', flexShrink: 0 }} />
             )}
             {entry.restricted && (
               <Badge
@@ -260,7 +260,7 @@ export function KVSettingsTab() {
             <div
               style={{
                 fontSize: 'var(--mantine-font-size-xs)',
-                color: '#8c86a0',
+                color: 'var(--hb-text-3)',
                 marginTop: 2,
               }}
             >
@@ -526,7 +526,7 @@ export function KVSettingsTab() {
               <span style={{ fontWeight: 600 }}>{t('kv.sensitive', 'Vertraulich')}</span>
               <span
                 style={{
-                  color: '#5e5873',
+                  color: 'var(--hb-text-2)',
                   fontSize: 'var(--mantine-font-size-xs)',
                 }}
               >
@@ -551,7 +551,7 @@ export function KVSettingsTab() {
               <span style={{ fontWeight: 600 }}>{t('kv.required', 'Pflichtfeld')}</span>
               <span
                 style={{
-                  color: '#5e5873',
+                  color: 'var(--hb-text-2)',
                   fontSize: 'var(--mantine-font-size-xs)',
                 }}
               >
@@ -576,7 +576,7 @@ export function KVSettingsTab() {
               <span style={{ fontWeight: 600 }}>{t('kv.restricted', 'Gesperrt')}</span>
               <span
                 style={{
-                  color: '#5e5873',
+                  color: 'var(--hb-text-2)',
                   fontSize: 'var(--mantine-font-size-xs)',
                 }}
               >

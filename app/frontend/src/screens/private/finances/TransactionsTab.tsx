@@ -222,7 +222,7 @@ export function TransactionsTab() {
               <span
                 className="num"
                 style={{
-                  color: '#5e5873',
+                  color: 'var(--hb-text-2)',
                   fontSize: 'var(--mantine-font-size-sm)',
                   whiteSpace: 'nowrap',
                 }}
@@ -277,7 +277,7 @@ export function TransactionsTab() {
             key: 'method',
             header: t('finance.paymentMethod', 'Zahlungsart'),
             render: (tx) => (
-              <span style={{ color: '#5e5873', whiteSpace: 'nowrap' }}>
+              <span style={{ color: 'var(--hb-text-2)', whiteSpace: 'nowrap' }}>
                 {methodLabel(t, tx.method)}
               </span>
             ),

@@ -70,7 +70,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                   <IconShield
                     size={16}
                     style={{
-                      color: role.isAdmin ? 'var(--mantine-color-acc-9)' : role.isDefault ? 'var(--mantine-color-acc-6)' : '#5e5873',
+                      color: role.isAdmin ? 'var(--mantine-color-acc-9)' : role.isDefault ? 'var(--mantine-color-acc-6)' : 'var(--hb-text-2)',
                     }}
                   />
                   {roleLabel(role.name)}
@@ -96,7 +96,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                         background: 'none',
                         border: 'none',
                         cursor: 'pointer',
-                        color: '#8c86a0',
+                        color: 'var(--hb-text-3)',
                         padding: 0,
                         lineHeight: 1,
                       }}
@@ -134,7 +134,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                       background: 'none',
                       border: 'none',
                       cursor: 'pointer',
-                      color: '#5e5873',
+                      color: 'var(--hb-text-2)',
                       textDecoration: 'underline',
                       fontSize: 'var(--mantine-font-size-xs)',
                       padding: 0,
@@ -164,7 +164,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                     style={{
                       fontWeight: 700,
                       fontSize: 'var(--mantine-font-size-xs)',
-                      color: '#857f99',
+                      color: 'var(--hb-text-3)',
                       textTransform: 'uppercase',
                       letterSpacing: '0.06em',
                       padding: '10px 16px',
@@ -187,14 +187,14 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                 {isSettings && settingsNsGroups.length > 0
                   ? settingsNsGroups.map(([ns, nsPerms]) => (
                       <Fragment key={ns}>
-                        <Table.Tr style={{ background: '#fdfcfe' }}>
+                        <Table.Tr style={{ background: 'var(--hb-surface-2)' }}>
                           <Table.Td
                             style={{
                               fontWeight: 600,
                               fontSize: 'var(--mantine-font-size-xs)',
-                              color: '#8c86a0',
+                              color: 'var(--hb-text-3)',
                               padding: '6px 16px 6px 36px',
-                              borderBottom: '1px solid #e6e3ef',
+                              borderBottom: '1px solid var(--hb-border)',
                             }}
                           >
                             <span>-- {ns} --</span>
@@ -204,7 +204,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                               key={role.id}
                               style={{
                                 textAlign: 'center',
-                                borderBottom: '1px solid #e6e3ef',
+                                borderBottom: '1px solid var(--hb-border)',
                               }}
                             >
                               <SectionToggle
@@ -234,14 +234,14 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                                   <Table.Td
                                     style={{
                                       paddingLeft: 48,
-                                      color: '#2e2940',
+                                      color: 'var(--hb-text)',
                                     }}
                                   >
                                     <div style={{ fontWeight: 600 }}>{perm.display_name}</div>
                                     <div
                                       style={{
                                         fontSize: 'var(--mantine-font-size-xs)',
-                                        color: '#8c86a0',
+                                        color: 'var(--hb-text-3)',
                                         fontFamily: "'JetBrains Mono', monospace",
                                       }}
                                     >
@@ -276,14 +276,14 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                                       <Table.Td
                                         style={{
                                           paddingLeft: 64,
-                                          color: '#2e2940',
+                                          color: 'var(--hb-text)',
                                         }}
                                       >
                                         <div style={{ fontWeight: 600 }}>{perm.display_name}</div>
                                         <div
                                           style={{
                                             fontSize: 'var(--mantine-font-size-xs)',
-                                            color: '#8c86a0',
+                                            color: 'var(--hb-text-3)',
                                             fontFamily: "'JetBrains Mono', monospace",
                                           }}
                                         >
@@ -337,7 +337,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                               <Table.Td
                                 style={{
                                   paddingLeft: 28,
-                                  color: '#2e2940',
+                                  color: 'var(--hb-text)',
                                 }}
                               >
                                 <div
@@ -357,7 +357,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                                         padding: 0,
                                         display: 'flex',
                                         alignItems: 'center',
-                                        color: '#5e5873',
+                                        color: 'var(--hb-text-2)',
                                       }}
                                       title={
                                         isExpanded
@@ -379,7 +379,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                                     <div
                                       style={{
                                         fontSize: 'var(--mantine-font-size-xs)',
-                                        color: '#8c86a0',
+                                        color: 'var(--hb-text-3)',
                                         fontFamily: "'JetBrains Mono', monospace",
                                       }}
                                     >
@@ -410,11 +410,11 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                           ))}
                           {isExpanded &&
                             fieldItems.map((perm) => (
-                              <Table.Tr key={perm.key} style={{ background: '#fdfcfe' }}>
+                              <Table.Tr key={perm.key} style={{ background: 'var(--hb-surface-2)' }}>
                                 <Table.Td
                                   style={{
                                     paddingLeft: 56,
-                                    color: '#2e2940',
+                                    color: 'var(--hb-text)',
                                   }}
                                 >
                                   <div
@@ -428,7 +428,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                                   <div
                                     style={{
                                       fontSize: 'var(--mantine-font-size-xs)',
-                                      color: '#8c86a0',
+                                      color: 'var(--hb-text-3)',
                                       fontFamily: "'JetBrains Mono', monospace",
                                     }}
                                   >

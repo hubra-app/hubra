@@ -101,8 +101,8 @@ export function MemberDetailScreen({
             className="num"
             style={{
               fontSize: 'var(--mantine-font-size-xs)',
-              color: '#8c86a0',
-              background: '#ebe8f2',
+              color: 'var(--hb-text-3)',
+              background: 'var(--hb-surface-2)',
               borderRadius: 6,
               padding: '2px 8px',
             }}
@@ -167,7 +167,7 @@ export function MemberDetailScreen({
               style={{
                 fontSize: 'var(--mantine-font-size-md)',
                 fontWeight: 700,
-                color: '#1a1625',
+                color: 'var(--hb-text)',
                 marginBottom: 4,
               }}
             >
@@ -176,7 +176,7 @@ export function MemberDetailScreen({
             <div
               style={{
                 fontSize: 'var(--mantine-font-size-sm)',
-                color: '#5e5873',
+                color: 'var(--hb-text-2)',
                 marginBottom: 4,
               }}
             >
@@ -310,13 +310,13 @@ export function MemberDetailScreen({
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 padding: '10px 16px',
-                borderTop: '1px solid #e6e3ef',
+                borderTop: '1px solid var(--hb-border)',
               }}
             >
               <span
                 style={{
                   fontSize: 'var(--mantine-font-size-xs)',
-                  color: '#5e5873',
+                  color: 'var(--hb-text-2)',
                 }}
               >
                 {t('members.detail.groups')}
@@ -340,7 +340,7 @@ export function MemberDetailScreen({
         <Paper withBorder shadow="sm" radius="lg">
           <div
             style={{
-              borderBottom: '1px solid #d6d2e3',
+              borderBottom: '1px solid var(--hb-border)',
               display: 'flex',
               gap: 0,
             }}
@@ -356,7 +356,7 @@ export function MemberDetailScreen({
                   cursor: 'pointer',
                   border: 'none',
                   background: 'transparent',
-                  color: tab === tabKey ? 'var(--mantine-color-acc-7)' : '#5e5873',
+                  color: tab === tabKey ? 'var(--mantine-color-acc-7)' : 'var(--hb-text-2)',
                   borderBottom:
                     tab === tabKey
                       ? '2px solid var(--mantine-color-acc-7)'
@@ -375,7 +375,7 @@ export function MemberDetailScreen({
                   style={{
                     fontSize: 'var(--mantine-font-size-sm)',
                     fontWeight: 600,
-                    color: '#5e5873',
+                    color: 'var(--hb-text-2)',
                     marginBottom: 8,
                   }}
                 >
@@ -384,8 +384,8 @@ export function MemberDetailScreen({
                 <div
                   style={{
                     fontSize: 'var(--mantine-font-size-sm)',
-                    color: '#2e2940',
-                    background: '#f4f2f9',
+                    color: 'var(--hb-text)',
+                    background: 'var(--hb-surface-2)',
                     borderRadius: 9,
                     padding: '12px 14px',
                     lineHeight: 1.6,
@@ -398,7 +398,7 @@ export function MemberDetailScreen({
             {tab === 'payments' && (
               <div
                 style={{
-                  color: '#8c86a0',
+                  color: 'var(--hb-text-3)',
                   fontSize: 'var(--mantine-font-size-sm)',
                   padding: '20px 0',
                   textAlign: 'center',
@@ -410,7 +410,7 @@ export function MemberDetailScreen({
             {tab === 'activity' && (
               <div
                 style={{
-                  color: '#8c86a0',
+                  color: 'var(--hb-text-3)',
                   fontSize: 'var(--mantine-font-size-sm)',
                   padding: '20px 0',
                   textAlign: 'center',
@@ -464,11 +464,11 @@ function DetailRow({
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: '10px 16px',
-        borderBottom: borderless ? 'none' : '1px solid #e6e3ef',
+        borderBottom: borderless ? 'none' : '1px solid var(--hb-border)',
       }}
     >
       <span
-        style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#5e5873' }}
+        style={{ fontSize: 'var(--mantine-font-size-xs)', color: 'var(--hb-text-2)' }}
       >
         {label}
       </span>
@@ -476,7 +476,7 @@ function DetailRow({
         className={mono ? 'num' : ''}
         style={{
           fontSize: 'var(--mantine-font-size-sm)',
-          color: '#1a1625',
+          color: 'var(--hb-text)',
           fontWeight: 500,
         }}
       >

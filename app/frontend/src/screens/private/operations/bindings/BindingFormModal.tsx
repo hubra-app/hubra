@@ -24,12 +24,12 @@ export interface BindingInput {
 }
 
 const box = {
-  background: '#f4f2f9',
-  border: '1px solid #d6d2e3',
+  background: 'var(--hb-surface-2)',
+  border: '1px solid var(--hb-border)',
   borderRadius: 8,
 } as const
 const muted = {
-  color: '#8c86a0',
+  color: 'var(--hb-text-3)',
   fontSize: 'var(--mantine-font-size-sm)',
   padding: '8px 0',
 } as const
@@ -176,8 +176,8 @@ export function BindingFormModal({
               .filter(([k]) => !/password|secret|token|credential/i.test(k))
               .map(([k, v]) => (
                 <div key={k} style={{ display: 'contents' }}>
-                  <span style={{ color: '#5e5873', fontWeight: 500 }}>{k}</span>
-                  <span style={{ color: '#2e2940' }}>
+                  <span style={{ color: 'var(--hb-text-2)', fontWeight: 500 }}>{k}</span>
+                  <span style={{ color: 'var(--hb-text)' }}>
                     {v === null || v === undefined ? '—' : String(v)}
                   </span>
                 </div>
@@ -197,7 +197,7 @@ export function BindingFormModal({
         </Field>
         {sourceId && attribute && (
           <div style={{ ...box, padding: '10px 14px', fontSize: 'var(--mantine-font-size-sm)' }}>
-            <span style={{ color: '#5e5873', fontWeight: 500 }}>
+            <span style={{ color: 'var(--hb-text-2)', fontWeight: 500 }}>
               {t('bindings.currentValue', 'Aktueller Wert:')}{' '}
             </span>
             {preview?.masked ? (
@@ -206,7 +206,7 @@ export function BindingFormModal({
                 {t('bindings.hidden', '(verborgen)')}
               </span>
             ) : preview?.value ? (
-              <span style={{ color: '#2e2940' }}>{preview.value}</span>
+              <span style={{ color: 'var(--hb-text)' }}>{preview.value}</span>
             ) : (
               <em style={{ color: '#bbb' }}>
                 {'— '}
@@ -253,7 +253,7 @@ export function BindingFormModal({
               style={{ width: 16, height: 16, accentColor: 'var(--mantine-color-acc-6)' }}
             />
             <span style={{ fontWeight: 600 }}>{t('bindings.protected', 'Geschützt')}</span>
-            <span style={{ color: '#5e5873', fontSize: 'var(--mantine-font-size-xs)' }}>
+            <span style={{ color: 'var(--hb-text-2)', fontSize: 'var(--mantine-font-size-xs)' }}>
               {t('bindings.protectedHint', 'Kann nicht gelöscht oder ausgeschaltet werden')}
             </span>
           </label>

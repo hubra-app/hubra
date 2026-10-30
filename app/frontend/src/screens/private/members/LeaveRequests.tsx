@@ -55,17 +55,17 @@ export function LeaveRequests() {
             alignItems: 'center',
             gap: 14,
             padding: '14px 20px',
-            borderTop: '1px solid #e6e3ef',
+            borderTop: '1px solid var(--hb-border)',
           }}
         >
           <Avatar name={r.name} color={r.avatarColor} size={38} />
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 'var(--mantine-font-size-sm)', fontWeight: 600 }}>{r.name}</div>
-            <div style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#5e5873' }}>
+            <div style={{ fontSize: 'var(--mantine-font-size-xs)', color: 'var(--hb-text-2)' }}>
               {r.email} · {t('members.leave.wantsToLeave', 'möchte austreten')}
             </div>
           </div>
-          <span className="num" style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#8c86a0' }}>
+          <span className="num" style={{ fontSize: 'var(--mantine-font-size-xs)', color: 'var(--hb-text-3)' }}>
             {formatDateTime(r.requestedAt)}
           </span>
           <Button size="sm" variant="default" onClick={() => decide(r.id, r.name, false)}>

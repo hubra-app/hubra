@@ -409,7 +409,7 @@ export function GroupsScreen() {
         <div
           style={{
             padding: '14px 16px',
-            borderBottom: '1px solid #d6d2e3',
+            borderBottom: '1px solid var(--hb-border)',
             display: 'flex',
             gap: 10,
             flexWrap: 'wrap',
@@ -470,7 +470,7 @@ export function GroupsScreen() {
                       style={{
                         fontSize: 'var(--mantine-font-size-md)',
                         fontWeight: 700,
-                        color: '#1a1625',
+                        color: 'var(--hb-text)',
                       }}
                     >
                       {g.name}
@@ -479,7 +479,7 @@ export function GroupsScreen() {
                       <div
                         style={{
                           fontSize: 'var(--mantine-font-size-sm)',
-                          color: '#5e5873',
+                          color: 'var(--hb-text-2)',
                         }}
                       >
                         {t('groups.ledBy', 'Geleitet von')} {g.lead}
@@ -490,7 +490,7 @@ export function GroupsScreen() {
                 <p
                   style={{
                     fontSize: 'var(--mantine-font-size-sm)',
-                    color: '#5e5873',
+                    color: 'var(--hb-text-2)',
                     margin: '0 0 14px',
                     lineHeight: 1.5,
                   }}
@@ -563,7 +563,7 @@ export function GroupsScreen() {
               justifyContent: 'center',
               padding: 28,
               cursor: 'pointer',
-              border: '1.5px dashed #d6d2e3',
+              border: '1.5px dashed var(--hb-border)',
               background: 'transparent',
             }}
             onClick={openAdd}
@@ -572,7 +572,7 @@ export function GroupsScreen() {
             <span
               style={{
                 fontSize: 'var(--mantine-font-size-sm)',
-                color: '#8c86a0',
+                color: 'var(--hb-text-3)',
               }}
             >
               {t('groups.addGroup')}

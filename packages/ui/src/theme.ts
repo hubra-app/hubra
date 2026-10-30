@@ -21,6 +21,19 @@ export const theme = createTheme({
   },
 
   colors: {
+    // Dark mode surfaces with the same violet tint as the light neutrals.
+    dark: [
+      '#ece9f5',
+      '#cfc9de',
+      '#a9a2bd',
+      '#8f88a6',
+      '#463e5e',
+      '#342d48',
+      '#241f33',
+      '#1b1726',
+      '#15121e',
+      '#100d17',
+    ],
     acc: accColors,
     gold: goldColors,
     pink: pinkColors,

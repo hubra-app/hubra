@@ -84,7 +84,7 @@ export function FinanceOverviewTab() {
           <Group
             p="md"
             gap="sm"
-            style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}
+            style={{ borderBottom: '1px solid var(--hb-border)' }}
           >
             <Text fw={700} fz="md">
               {t('finance.overview12month', 'Letzte 12 Monate')}
@@ -147,7 +147,7 @@ export function FinanceOverviewTab() {
                     <div
                       style={{
                         fontSize: 10,
-                        color: '#8c86a0',
+                        color: 'var(--hb-text-3)',
                         marginTop: 4,
                       }}
                     >
@@ -175,7 +175,7 @@ export function FinanceOverviewTab() {
                 <span
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
-                    color: '#5e5873',
+                    color: 'var(--hb-text-2)',
                   }}
                 >
                   {t('finance.income', 'Einnahmen')}
@@ -193,7 +193,7 @@ export function FinanceOverviewTab() {
                 <span
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
-                    color: '#5e5873',
+                    color: 'var(--hb-text-2)',
                   }}
                 >
                   {t('finance.expenses', 'Ausgaben')}
@@ -208,7 +208,7 @@ export function FinanceOverviewTab() {
           <Group
             p="md"
             gap="sm"
-            style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}
+            style={{ borderBottom: '1px solid var(--hb-border)' }}
           >
             <Text fw={700} fz="md">
               {t('finance.recentTransactions', 'Letzte Buchungen')}
@@ -238,7 +238,7 @@ export function FinanceOverviewTab() {
                       colSpan={3}
                       style={{
                         textAlign: 'center',
-                        color: '#8c86a0',
+                        color: 'var(--hb-text-3)',
                         padding: '24px',
                         fontSize: 'var(--mantine-font-size-sm)',
                       }}
@@ -269,7 +269,7 @@ export function FinanceOverviewTab() {
                         <div
                           style={{
                             fontSize: 'var(--mantine-font-size-xs)',
-                            color: '#8c86a0',
+                            color: 'var(--hb-text-3)',
                           }}
                         >
                           {tx.category}
@@ -291,7 +291,7 @@ export function FinanceOverviewTab() {
                         <span
                           className="num"
                           style={{
-                            color: '#5e5873',
+                            color: 'var(--hb-text-2)',
                             fontSize: 'var(--mantine-font-size-xs)',
                           }}
                         >

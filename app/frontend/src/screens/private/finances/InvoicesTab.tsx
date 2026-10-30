@@ -331,7 +331,7 @@ export function InvoicesTab() {
               <span
                 className="num"
                 style={{
-                  color: '#5e5873',
+                  color: 'var(--hb-text-2)',
                   fontSize: 'var(--mantine-font-size-xs)',
                 }}
               >
@@ -350,7 +350,7 @@ export function InvoicesTab() {
                     style={{
                       display: 'block',
                       fontSize: 'var(--mantine-font-size-xs)',
-                      color: '#8c86a0',
+                      color: 'var(--hb-text-3)',
                     }}
                   >
                     {t('finance.recipientType.external', 'Externe Partei')}
@@ -366,7 +366,7 @@ export function InvoicesTab() {
               <span
                 style={{
                   fontSize: 'var(--mantine-font-size-xs)',
-                  color: inv.purpose === 'membership' ? '#2596be' : '#5e5873',
+                  color: inv.purpose === 'membership' ? '#2596be' : 'var(--hb-text-2)',
                 }}
               >
                 {inv.purpose === 'membership'
@@ -382,7 +382,7 @@ export function InvoicesTab() {
               <span
                 className="num"
                 style={{
-                  color: '#5e5873',
+                  color: 'var(--hb-text-2)',
                   fontSize: 'var(--mantine-font-size-sm)',
                 }}
               >
@@ -397,7 +397,7 @@ export function InvoicesTab() {
               <span
                 className="num"
                 style={{
-                  color: inv.status === 'Overdue' ? '#ff4d3d' : '#5e5873',
+                  color: inv.status === 'Overdue' ? '#ff4d3d' : 'var(--hb-text-2)',
                   fontSize: 'var(--mantine-font-size-sm)',
                 }}
               >
@@ -618,8 +618,8 @@ export function InvoicesTab() {
           <div
             style={{
               fontSize: 'var(--mantine-font-size-sm)',
-              color: '#5e5873',
-              background: '#f4f2f9',
+              color: 'var(--hb-text-2)',
+              background: 'var(--hb-surface-2)',
               borderRadius: 8,
               padding: '10px 14px',
             }}

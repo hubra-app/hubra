@@ -542,7 +542,7 @@ export function MailSettingsModal({
                     key={target}
                     style={{
                       fontSize: 'var(--mantine-font-size-sm)',
-                      color: '#5e5873',
+                      color: 'var(--hb-text-2)',
                       fontFamily: 'monospace',
                     }}
                   >
@@ -554,7 +554,7 @@ export function MailSettingsModal({
                   <span
                     style={{
                       fontSize: 'var(--mantine-font-size-sm)',
-                      color: '#8c86a0',
+                      color: 'var(--hb-text-3)',
                       fontStyle: 'italic',
                     }}
                   >
@@ -609,7 +609,7 @@ export function MailSettingsModal({
                 <div
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
-                    color: '#8c86a0',
+                    color: 'var(--hb-text-3)',
                     marginTop: 6,
                   }}
                 >
@@ -626,7 +626,7 @@ export function MailSettingsModal({
                 style={{
                   fontSize: 'var(--mantine-font-size-sm)',
                   fontWeight: 600,
-                  color: '#2e2940',
+                  color: 'var(--hb-text)',
                   marginBottom: 8,
                 }}
               >
@@ -636,7 +636,7 @@ export function MailSettingsModal({
                 <div
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
-                    color: '#8c86a0',
+                    color: 'var(--hb-text-3)',
                   }}
                 >
                   {t('mail.admin.noAliases', 'Keine weiteren Aliasse.')}
@@ -653,7 +653,7 @@ export function MailSettingsModal({
                         alignItems: 'center',
                         gap: 8,
                         padding: '6px 10px',
-                        background: '#f4f2f9',
+                        background: 'var(--hb-surface-2)',
                         borderRadius: 6,
                       }}
                     >

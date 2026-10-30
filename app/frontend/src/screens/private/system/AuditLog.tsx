@@ -56,7 +56,7 @@ function AuditEntryDetailPanel({
         <div
           style={{
             padding: '20px 20px 14px',
-            borderBottom: '1px solid #d6d2e3',
+            borderBottom: '1px solid var(--hb-border)',
             display: 'flex',
             alignItems: 'center',
             gap: 12,
@@ -67,7 +67,7 @@ function AuditEntryDetailPanel({
               style={{
                 fontSize: 'var(--mantine-font-size-md)',
                 fontWeight: 700,
-                color: '#1a1625',
+                color: 'var(--hb-text)',
               }}
             >
               {t('audit.entryTitle', 'Eintrag #{{id}}', { id: entryId })}
@@ -75,7 +75,7 @@ function AuditEntryDetailPanel({
             <div
               style={{
                 fontSize: 'var(--mantine-font-size-xs)',
-                color: '#5e5873',
+                color: 'var(--hb-text-2)',
               }}
             >
               {t('audit.fullDetails', 'Alle Details zum Ereignis')}
@@ -90,7 +90,7 @@ function AuditEntryDetailPanel({
           {loading && (
             <div
               style={{
-                color: '#8c86a0',
+                color: 'var(--hb-text-3)',
                 fontSize: 'var(--mantine-font-size-sm)',
               }}
             >
@@ -115,7 +115,7 @@ function AuditEntryDetailPanel({
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
                     fontWeight: 600,
-                    color: '#8c86a0',
+                    color: 'var(--hb-text-3)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.06em',
                     marginBottom: 6,
@@ -142,7 +142,7 @@ function AuditEntryDetailPanel({
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
                     fontWeight: 600,
-                    color: '#8c86a0',
+                    color: 'var(--hb-text-3)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.06em',
                     marginBottom: 6,
@@ -154,7 +154,7 @@ function AuditEntryDetailPanel({
                   className="num"
                   style={{
                     fontSize: 'var(--mantine-font-size-sm)',
-                    color: '#2e2940',
+                    color: 'var(--hb-text)',
                   }}
                 >
                   {formatTime(detail.time)}
@@ -167,7 +167,7 @@ function AuditEntryDetailPanel({
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
                     fontWeight: 600,
-                    color: '#8c86a0',
+                    color: 'var(--hb-text-3)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.06em',
                     marginBottom: 8,
@@ -189,7 +189,7 @@ function AuditEntryDetailPanel({
                         style={{
                           fontSize: 'var(--mantine-font-size-sm)',
                           fontWeight: 600,
-                          color: '#1a1625',
+                          color: 'var(--hb-text)',
                         }}
                       >
                         {detail.actorName}
@@ -198,7 +198,7 @@ function AuditEntryDetailPanel({
                         <div
                           style={{
                             fontSize: 'var(--mantine-font-size-xs)',
-                            color: '#8c86a0',
+                            color: 'var(--hb-text-3)',
                           }}
                         >
                           {t('audit.memberId', 'Mitglied #{{id}}', { id: detail.actorId })}
@@ -210,7 +210,7 @@ function AuditEntryDetailPanel({
                   <div
                     style={{
                       fontSize: 'var(--mantine-font-size-sm)',
-                      color: '#5e5873',
+                      color: 'var(--hb-text-2)',
                       fontStyle: 'italic',
                     }}
                   >
@@ -226,7 +226,7 @@ function AuditEntryDetailPanel({
                     style={{
                       fontSize: 'var(--mantine-font-size-xs)',
                       fontWeight: 600,
-                      color: '#8c86a0',
+                      color: 'var(--hb-text-3)',
                       textTransform: 'uppercase',
                       letterSpacing: '0.06em',
                       marginBottom: 8,
@@ -236,7 +236,7 @@ function AuditEntryDetailPanel({
                   </div>
                   <div
                     style={{
-                      background: '#f4f2f9',
+                      background: 'var(--hb-surface-2)',
                       borderRadius: 9,
                       padding: '12px 14px',
                       display: 'flex',
@@ -254,7 +254,7 @@ function AuditEntryDetailPanel({
                         <span
                           style={{
                             fontSize: 'var(--mantine-font-size-xs)',
-                            color: '#8c86a0',
+                            color: 'var(--hb-text-3)',
                           }}
                         >
                           {t('common.type', 'Typ')}
@@ -273,7 +273,7 @@ function AuditEntryDetailPanel({
                         <span
                           style={{
                             fontSize: 'var(--mantine-font-size-xs)',
-                            color: '#8c86a0',
+                            color: 'var(--hb-text-3)',
                           }}
                         >
                           {t('audit.label', 'Bezeichnung')}
@@ -282,7 +282,7 @@ function AuditEntryDetailPanel({
                           style={{
                             fontSize: 'var(--mantine-font-size-sm)',
                             fontWeight: 600,
-                            color: '#1a1625',
+                            color: 'var(--hb-text)',
                           }}
                         >
                           {detail.targetLabel}
@@ -300,7 +300,7 @@ function AuditEntryDetailPanel({
                         <span
                           style={{
                             fontSize: 'var(--mantine-font-size-xs)',
-                            color: '#8c86a0',
+                            color: 'var(--hb-text-3)',
                           }}
                         >
                           {t('audit.id', 'ID')}
@@ -309,7 +309,7 @@ function AuditEntryDetailPanel({
                           className="num"
                           style={{
                             fontSize: 'var(--mantine-font-size-xs)',
-                            color: '#5e5873',
+                            color: 'var(--hb-text-2)',
                           }}
                         >
                           {detail.targetId}
@@ -321,12 +321,12 @@ function AuditEntryDetailPanel({
               )}
 
               {/* Entry ID */}
-              <div style={{ borderTop: '1px solid #e6e3ef', paddingTop: 16 }}>
+              <div style={{ borderTop: '1px solid var(--hb-border)', paddingTop: 16 }}>
                 <div
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
                     fontWeight: 600,
-                    color: '#8c86a0',
+                    color: 'var(--hb-text-3)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.06em',
                     marginBottom: 4,
@@ -338,7 +338,7 @@ function AuditEntryDetailPanel({
                   className="num"
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
-                    color: '#8c86a0',
+                    color: 'var(--hb-text-3)',
                   }}
                 >
                   #{detail.id}
@@ -415,7 +415,7 @@ export function AuditLogScreen() {
                 className="num"
                 style={{
                   fontSize: 'var(--mantine-font-size-xs)',
-                  color: '#5e5873',
+                  color: 'var(--hb-text-2)',
                 }}
               >
                 {formatDateTime(entry.time)}
@@ -459,7 +459,7 @@ export function AuditLogScreen() {
             render: (entry) => (
               <span
                 style={{
-                  color: '#5e5873',
+                  color: 'var(--hb-text-2)',
                   fontSize: 'var(--mantine-font-size-sm)',
                 }}
               >

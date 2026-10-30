@@ -514,7 +514,7 @@ export function TiersTab() {
                 .length === 0 && (
                 <span
                   style={{
-                    color: '#8c86a0',
+                    color: 'var(--hb-text-3)',
                     fontSize: 'var(--mantine-font-size-xs)',
                   }}
                 >
@@ -531,15 +531,15 @@ export function TiersTab() {
           style={{
             padding: '10px 14px',
             borderRadius: 8,
-            background: '#f7f6fb',
+            background: 'var(--hb-surface-2)',
             fontSize: 'var(--mantine-font-size-sm)',
             fontWeight: 600,
-            color: '#1a1625',
+            color: 'var(--hb-text)',
           }}
         >
           {costSummary(t, costPreview)}
           {costPreview.members > 1 && (
-            <span style={{ fontWeight: 400, color: '#5e5873', marginLeft: 8 }}>
+            <span style={{ fontWeight: 400, color: 'var(--hb-text-2)', marginLeft: 8 }}>
               · {t('tiers.memberCount', '{{count}} Mitglieder', { count: costPreview.members })}
             </span>
           )}
@@ -601,7 +601,7 @@ export function TiersTab() {
                   style={{
                     fontSize: 'var(--mantine-font-size-md)',
                     fontWeight: 700,
-                    color: '#1a1625',
+                    color: 'var(--hb-text)',
                   }}
                 >
                   {tier.name}
@@ -617,7 +617,7 @@ export function TiersTab() {
                 <span
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
-                    color: '#5e5873',
+                    color: 'var(--hb-text-2)',
                   }}
                 >
                   {t('tiers.price', 'Preis')}
@@ -627,7 +627,7 @@ export function TiersTab() {
                   style={{
                     fontSize: 'var(--mantine-font-size-sm)',
                     fontWeight: 700,
-                    color: '#1a1625',
+                    color: 'var(--hb-text)',
                   }}
                 >
                   {costSummary(t, tierCosts[tier.id]) ??
@@ -653,8 +653,8 @@ export function TiersTab() {
                     style={{
                       fontSize: 'var(--mantine-font-size-xs)',
                       fontWeight: 600,
-                      color: '#5e5873',
-                      background: '#f7f6fb',
+                      color: 'var(--hb-text-2)',
+                      background: 'var(--hb-surface-2)',
                       borderRadius: 4,
                       padding: '2px 8px',
                     }}
@@ -667,8 +667,8 @@ export function TiersTab() {
                     style={{
                       fontSize: 'var(--mantine-font-size-xs)',
                       fontWeight: 600,
-                      color: '#5e5873',
-                      background: '#f7f6fb',
+                      color: 'var(--hb-text-2)',
+                      background: 'var(--hb-surface-2)',
                       borderRadius: 4,
                       padding: '2px 8px',
                     }}
@@ -725,7 +725,7 @@ export function TiersTab() {
               justifyContent: 'center',
               padding: 28,
               cursor: 'pointer',
-              border: '1.5px dashed #d6d2e3',
+              border: '1.5px dashed var(--hb-border)',
               background: 'transparent',
               minHeight: 200,
             }}
@@ -735,7 +735,7 @@ export function TiersTab() {
             <span
               style={{
                 fontSize: 'var(--mantine-font-size-sm)',
-                color: '#8c86a0',
+                color: 'var(--hb-text-3)',
               }}
             >
               {t('tiers.new', 'Neue Stufe')}

@@ -89,7 +89,7 @@ export function ModulesTab() {
         wrap="nowrap"
         style={{
           padding: '14px 0',
-          borderBottom: '1px solid var(--mantine-color-gray-2)',
+          borderBottom: '1px solid var(--hb-border)',
         }}
       >
         <Stack gap={4}>

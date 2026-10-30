@@ -272,7 +272,7 @@ export function ExternalPartiesTab() {
                     colSpan={4}
                     style={{
                       textAlign: 'center',
-                      color: '#8c86a0',
+                      color: 'var(--hb-text-3)',
                       padding: '24px',
                       fontSize: 'var(--mantine-font-size-sm)',
                     }}
@@ -286,7 +286,7 @@ export function ExternalPartiesTab() {
                     colSpan={4}
                     style={{
                       textAlign: 'center',
-                      color: '#8c86a0',
+                      color: 'var(--hb-text-3)',
                       padding: '24px',
                       fontSize: 'var(--mantine-font-size-sm)',
                     }}
@@ -307,7 +307,7 @@ export function ExternalPartiesTab() {
                       <span
                         style={{
                           fontSize: 'var(--mantine-font-size-sm)',
-                          color: '#5e5873',
+                          color: 'var(--hb-text-2)',
                         }}
                       >
                         {p.email ?? '—'}
@@ -317,7 +317,7 @@ export function ExternalPartiesTab() {
                       <span
                         style={{
                           fontSize: 'var(--mantine-font-size-sm)',
-                          color: '#5e5873',
+                          color: 'var(--hb-text-2)',
                         }}
                       >
                         {p.addressCity ?? '—'}

@@ -112,7 +112,7 @@ export function MarkdownRenderer({
             <hr
               style={{
                 border: 'none',
-                borderTop: '1px solid #e6e3ef',
+                borderTop: '1px solid var(--hb-border)',
                 margin: '1em 0',
               }}
               {...props}
