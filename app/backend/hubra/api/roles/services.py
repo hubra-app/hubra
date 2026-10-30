@@ -231,3 +231,92 @@ class RolesService:
         )
 
         return role  # type: ignore[return-value]
+
+
+class RoleScopeService:
+    """Roles held for one group only (``member_role_scopes``)."""
+
+    @staticmethod
+    def list(role: Role) -> list[dict]:
+        from hubra.core.models.group import Group
+        from hubra.core.models.member import Member
+        from hubra.core.models.role import MemberRoleScope
+
+        rows = db.session.execute(
+            select(MemberRoleScope, Member, Group)
+            .join(Member, Member.id == MemberRoleScope.member_id)
+            .join(Group, Group.id == MemberRoleScope.group_id)
+            .where(MemberRoleScope.role_id == role.id, Member.archived_at.is_(None))
+            .order_by(Group.name)
+        ).all()
+        return [
+            {
+                "id": scope.id,
+                "member_id": member.id,
+                "member_name": member.name,
+                "group_id": group.id,
+                "group_name": group.name,
+            }
+            for scope, member, group in rows
+        ]
+
+    @staticmethod
+    def add(role: Role, member_id, group_id, actor_id: int | None):
+        from hubra.api.permissions import check_grant, invalidate_member_permissions
+        from hubra.core.models.group import Group
+        from hubra.core.models.member import Member
+        from hubra.core.models.role import MemberRoleScope
+
+        if role.is_admin or role.is_owner:
+            # An admin role passes every check, whatever group it is for.
+            raise_error(400, "VALIDATION_ERROR", "Admin roles apply to the whole club")
+        member = db.session.get(Member, member_id) if isinstance(member_id, int) else None
+        if member is None or member.archived_at is not None:
+            raise_error(404, "NOT_FOUND", "Member not found")
+        group = db.session.get(Group, group_id) if isinstance(group_id, int) else None
+        if group is None:
+            raise_error(404, "NOT_FOUND", "Group not found")
+        check_grant(db.session.get(Member, actor_id) if actor_id else None, given=[role])
+
+        exists = db.session.scalar(
+            select(MemberRoleScope.id).where(
+                MemberRoleScope.member_id == member.id,
+                MemberRoleScope.role_id == role.id,
+                MemberRoleScope.group_id == group.id,
+            )
+        )
+        if exists is not None:
+            raise_error(409, "CONFLICT", "The member already has this role for the group")
+        scope = MemberRoleScope(member_id=member.id, role_id=role.id, group_id=group.id)
+        db.session.add(scope)
+        db.session.flush()
+        invalidate_member_permissions(member.id)
+        log_audit(
+            actor_id=actor_id,
+            action="give_group_role",
+            target_type="Member",
+            target_id=member.id,
+            target_label=f"{role.name} @ {group.name}",
+        )
+        return scope
+
+    @staticmethod
+    def remove(role: Role, scope_id: int, actor_id: int | None) -> None:
+        from hubra.api.permissions import check_grant, invalidate_member_permissions
+        from hubra.core.models.member import Member
+        from hubra.core.models.role import MemberRoleScope
+
+        scope = db.session.get(MemberRoleScope, scope_id)
+        if scope is None or scope.role_id != role.id:
+            raise_error(404, "NOT_FOUND", "Not found")
+        check_grant(db.session.get(Member, actor_id) if actor_id else None, taken=[role])
+        member_id = scope.member_id
+        log_audit(
+            actor_id=actor_id,
+            action="take_group_role",
+            target_type="Member",
+            target_id=member_id,
+            target_label=f"{role.name} @ {scope.group.name}",
+        )
+        db.session.delete(scope)
+        invalidate_member_permissions(member_id)

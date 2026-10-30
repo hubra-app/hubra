@@ -150,6 +150,8 @@ class MemberSchema(ma.SQLAlchemyAutoSchema):
     roles = fields.List(fields.Nested(_RoleStubSchema), dump_only=True, dump_default=[])
     # Roles that come with a function the member holds (Kassier -> Treasurer).
     function_roles = fields.Method("get_function_roles", dump_only=True)
+    # Roles held for one group only ("Event-Organisation for Jugend").
+    scoped_roles = fields.Method("get_scoped_roles", dump_only=True)
 
     # Computed list fields from M:N relationships
     group_ids = fields.Method("get_group_ids", dump_only=True)
@@ -240,6 +242,11 @@ class MemberSchema(ma.SQLAlchemyAutoSchema):
         from hubra.api.permissions import function_role_grants
 
         return function_role_grants().get(obj.id, [])
+
+    def get_scoped_roles(self, obj):
+        from hubra.api.permissions import scoped_role_grants
+
+        return scoped_role_grants().get(obj.id, [])
 
 
 # ── MemberCreateSchema ────────────────────────────────────────────────────────

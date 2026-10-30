@@ -40,7 +40,9 @@ from hubra.api.permissions import (
     require_password_changed,
     _get_member_permission_keys,
     member_is_admin,
+    held_roles,
     refuse_during_impersonation,
+    scoped_permission_keys,
 )
 from hubra.core.errors import ApiError, api_error, raise_error
 from hubra.core.extensions import db, limiter
@@ -852,13 +854,20 @@ def get_my_permissions():
                 "tenant_slug": claims.get("tenant_slug"),
             }
         ), 200
-    roles = getattr(member, "roles", None)
+    # Roles held for one group: their keys count on that group's routes only.
+    scoped = {
+        str(group_id): sorted(keys)
+        for group_id, keys in scoped_permission_keys(member).items()
+        if keys
+    }
+    roles = held_roles(member)
     if not roles:
         return jsonify(
             {
                 "is_admin": False,
                 "is_superadmin": is_superadmin,
                 "permissions": [],
+                "scoped_permissions": scoped,
                 "impersonation": impersonation,
                 "global_permissions": global_perms,
                 "global_roles": global_roles,
@@ -871,6 +880,7 @@ def get_my_permissions():
             "is_admin": False,
             "is_superadmin": is_superadmin,
             "permissions": sorted(keys),
+            "scoped_permissions": scoped,
             "impersonation": impersonation,
             "global_permissions": global_perms,
             "global_roles": global_roles,

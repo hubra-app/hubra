@@ -93,3 +93,32 @@ class RolePermission(db.Model):
 
     def __repr__(self) -> str:
         return f"<RolePermission role_id={self.role_id} permission_id={self.permission_id}>"
+
+
+class MemberRoleScope(db.Model):
+    """A role a member holds for one group only (\"Event-Organisation for
+    Jugend\"). Its permissions count on that group's own routes; a role in
+    ``member_roles`` counts club-wide."""
+
+    __tablename__ = "member_role_scopes"
+    __table_args__ = (UniqueConstraint("member_id", "role_id", "group_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    member_id: Mapped[int] = mapped_column(
+        db.ForeignKey("members.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    role_id: Mapped[int] = mapped_column(
+        db.ForeignKey("roles.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    group_id: Mapped[int] = mapped_column(
+        db.ForeignKey("groups.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    role: Mapped["Role"] = relationship("Role")
+    group: Mapped["Group"] = relationship("Group")  # type: ignore[name-defined]  # noqa: F821
+
+    def __repr__(self) -> str:
+        return (
+            f"<MemberRoleScope member_id={self.member_id} role_id={self.role_id} "
+            f"group_id={self.group_id}>"
+        )

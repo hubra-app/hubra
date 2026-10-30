@@ -1767,7 +1767,8 @@
     "roleViaFunction": "{{role}} (über {{fn}})",
     "roleFilter": "Nach Rolle filtern",
     "allRoles": "Alle Rollen",
-    "functionRolesHint": "Über Funktionen: {{roles}}. Diese ändern sich mit der Funktion."
+    "functionRolesHint": "Über Funktionen: {{roles}}. Diese ändern sich mit der Funktion.",
+    "roleForGroup": "{{role}} (nur {{group}})"
   },
   "notifications": {
     "invoicePaid": "Rechnung bezahlt",
@@ -3040,7 +3041,11 @@
     "showInList": "In der Mitgliederliste zeigen",
     "viaFunction": "über {{fn}}",
     "removeMember": "{{name}} die Rolle wegnehmen",
-    "noHolders": "Noch niemand hat diese Rolle."
+    "noHolders": "Noch niemand hat diese Rolle.",
+    "forScope": "Gilt für",
+    "wholeClub": "Ganzer Verein",
+    "groupHolders": "Nur für eine Gruppe",
+    "onlyGroup": "nur {{group}}"
   },
   "modules": {
     "backups": {
