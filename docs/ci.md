@@ -9,9 +9,11 @@ full set only when a release is being prepared.
 | `release-checks.yml` (Release checks) | `release/*` branches (create and push), pull requests into `release/*`, before every image build, by hand | all of `ci.yml` without the path filter, plus dependency audits (pip-audit, npm audit), the image builds and the Compose stack with the browser tests |
 | `images.yml` (Images) | GitHub release published, by hand | `release-checks.yml` first, then builds and pushes the images |
 
-On pull requests the test jobs skip the parts the change does not touch:
-frontend-only changes skip the backend tests, backend-only changes skip the
-frontend tests, and docs-only changes skip both. Draft pull requests run
+On pull requests the test jobs run only when the change touches their code:
+the backend tests for `app/backend/`, `plugins/` and `settings.yaml`, the
+frontend tests for `app/*frontend/`, `packages/` and `plugins/`, and both
+for a change to `ci.yml` itself. Anything else (other workflows, `deploy/`,
+`modules/`, `scripts/`, docs) runs `lint` only. Draft pull requests run
 nothing until they are marked ready for review.
 
 ## Required checks
