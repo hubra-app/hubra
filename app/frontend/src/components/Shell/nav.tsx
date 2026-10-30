@@ -73,14 +73,8 @@ export function initials(name: string): string {
   )
 }
 
-export function contrastColor(hex: string): string {
-  const h = hex.replace('#', '')
-  const r = parseInt(h.substring(0, 2), 16)
-  const g = parseInt(h.substring(2, 4), 16)
-  const b = parseInt(h.substring(4, 6), 16)
-  const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b
-  return lum > 140 ? '#1a1625' : '#ffffff'
-}
+// Dark or white initials, whichever reads better on the avatar colour.
+export { textOn as contrastColor } from '@hubra/ui'
 
 const NAV_ICONS: Record<string, ReactNode> = {
   dashboard: <IconLayoutDashboard size={24} />,
