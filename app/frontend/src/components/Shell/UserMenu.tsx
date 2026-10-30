@@ -18,6 +18,7 @@ import { useAuth, useNav, useData } from '@/context/AppContext'
 import { useInstance } from '@/context/InstanceContext'
 import { useMyTenants } from '@/data/lists'
 import { initials, contrastColor } from './nav'
+import { setWhatsNewOpen } from './whatsNewStore'
 
 export function UserMenu() {
   const { t } = useT()
@@ -136,6 +137,20 @@ export function UserMenu() {
             }}
           >
             {t('shell.userMenu.accountSettings')}
+          </UnstyledButton>
+          <UnstyledButton
+            onClick={() => {
+              setWhatsNewOpen(true)
+              setUserMenuOpen(false)
+            }}
+            style={{
+              height: 36,
+              padding: '0 10px',
+              fontSize: 'var(--mantine-font-size-sm)',
+              borderRadius: 8,
+            }}
+          >
+            {t('shell.whatsNew.title')}
           </UnstyledButton>
         </Stack>
         <Group justify="space-between" px={10} py={6} wrap="nowrap">

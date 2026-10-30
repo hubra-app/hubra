@@ -488,7 +488,8 @@
     "Sitzunge"
    ],
    "account.settings.title": [
-    "Konto-Iistellige"
+    "Konto-Iistellige",
+    "Kontoeinstellungen"
    ],
    "account.settingsTitle": [
     "Konto-Iistellige"
@@ -2247,7 +2248,8 @@
    ],
    "groups.selfJoinHint": [
     "For interest groups. Members find it under My account.",
-    "Für Interessegruppe. Mitglieder finded si under Mis Konto."
+    "Für Interessegruppe. Mitglieder finded si under Mis Konto.",
+    "Für Interessengruppen. Mitglieder finden sie unter «Mein Konto»."
    ],
    "groups.sessions": [
     "Sitzige"
@@ -4298,7 +4300,8 @@
     "Mis Konto"
    ],
    "shell.breadcrumbs.accountSettings": [
-    "Konto-Iistellige"
+    "Konto-Iistellige",
+    "Kontoeinstellungen"
    ],
    "shell.breadcrumbs.aliases": [
     "Mail › Alias"
@@ -4369,7 +4372,8 @@
     "Iistellige"
    ],
    "shell.breadcrumbs.system": [
-    "System › Berächtigunge"
+    "System › Berächtigunge",
+    "System › Berechtigungen"
    ],
    "shell.breadcrumbs.tiers": [
     "Mitglieder › Mitgliedsstufe"
@@ -4402,7 +4406,8 @@
     "Mis Konto"
    ],
    "shell.nav.accountSettings": [
-    "Konto-Iistellige"
+    "Konto-Iistellige",
+    "Kontoeinstellungen"
    ],
    "shell.nav.aliases": [
     "Alias"
@@ -4483,7 +4488,8 @@
     " Übersicht"
    ],
    "shell.nav.permissions": [
-    "Berächtigunge"
+    "Berächtigunge",
+    "Berechtigungen"
    ],
    "shell.nav.polls": [
     "Umfrage"
@@ -4551,7 +4557,8 @@
     "Kei Ergebnis für \"{{query}}\""
    ],
    "shell.search.placeholder": [
-    "Mitglieder, Rächnige, Inventar suche…"
+    "Mitglieder, Rächnige, Inventar suche…",
+    "Mitglieder, Rechnungen, Inventar suchen …"
    ],
    "shell.searchKind.audit": [
     "Audit"
@@ -4596,7 +4603,8 @@
     "Mis Konto"
    ],
    "shell.userMenu.accountSettings": [
-    "Konto-Iistellige"
+    "Konto-Iistellige",
+    "Kontoeinstellungen"
    ],
    "shell.userMenu.logout": [
     "Abmälden"
@@ -4940,6 +4948,12 @@
    ],
    "verifyEmail.verifying": [
     "Wird di E-Mail bestätigt..."
+   ],
+   "shell.sections.system": [
+    "System"
+   ],
+   "shell.breadcrumbs.roles": [
+    "System › Rollen"
    ]
   },
   "en-GB": {
@@ -5073,7 +5087,8 @@
     "Manage your active sessions. Revoking a session will immediately invalidate it."
    ],
    "account.settings.title": [
-    "Account settings title"
+    "Account settings title",
+    "Account settings"
    ],
    "account.settingsTitle": [
     "Account Settings"
@@ -6355,6 +6370,33 @@
    ],
    "verify.verifyingEmail": [
     "Verifying email"
+   ],
+   "shell.nav.permissions": [
+    "Permissions"
+   ],
+   "shell.nav.accountSettings": [
+    "Account Settings"
+   ],
+   "shell.userMenu.accountSettings": [
+    "Account Settings"
+   ],
+   "shell.breadcrumbs.accountSettings": [
+    "Account settings"
+   ],
+   "shell.search.placeholder": [
+    "Search members, invoices, inventory…"
+   ],
+   "groups.selfJoinHint": [
+    "For interest groups. Members find it under My account."
+   ],
+   "shell.sections.system": [
+    "System"
+   ],
+   "shell.breadcrumbs.system": [
+    "System › Permissions"
+   ],
+   "shell.breadcrumbs.roles": [
+    "System › Roles"
    ]
   }
  }

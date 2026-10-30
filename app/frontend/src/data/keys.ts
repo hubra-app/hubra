@@ -42,6 +42,7 @@ export const qk = {
     one: (id: string | undefined) => ['member', id] as const,
     search: (q: string) => ['members', 'search', q] as const,
     list: (...filters: unknown[]) => ['members', 'list', ...filters] as const,
+    invites: ['members', 'invites'] as const,
   },
   applications: ['applications'] as const,
   leaveRequests: ['leave-requests'] as const,

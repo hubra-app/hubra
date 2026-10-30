@@ -13,7 +13,7 @@ import { useAuth, useNav } from "@/context/AppContext";
 import { useEvents, useMyVotes, usePolls } from "@/data/lists";
 import { ErrorBanner, InvoicePill } from "@/components/ui";
 import { listMyInvoices, downloadInvoicePdf } from "@/api/finance";
-import { formatCHF } from "@/format";
+import { formatCHF, formatDate } from "@/format";
 import { useToggleJoinEvent } from "@/screens/private/operations/useEventActions";
 import { useModules } from "@/modules/useModules";
 import { MyGroupsCard } from "./MyGroupsCard";
@@ -138,7 +138,7 @@ export function AccountDashboardScreen() {
                       color: "var(--mantine-color-ink-4)",
                     }}
                   >
-                    {t("account.due", 'Fällig')} {inv.due} · CHF{" "}
+                    {t("account.due", 'Fällig')} {formatDate(inv.due)} · CHF{" "}
                     {formatCHF(inv.amount)}
                   </div>
                 </div>
@@ -172,8 +172,9 @@ export function AccountDashboardScreen() {
         </Paper>
       )}
 
-      {/* stats */}
+      {/* stats: three small tiles in a row on phones (index.css) */}
       <div
+        className="stat-tiles"
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
@@ -205,6 +206,7 @@ export function AccountDashboardScreen() {
             key={s.label}
             withBorder
             p="md"
+            className="stat-tile"
             style={{ display: "flex", alignItems: "center", gap: 14 }}
           >
             <ThemeIcon size={44} radius="md" variant="light" color={s.color}>

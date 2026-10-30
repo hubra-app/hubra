@@ -45,10 +45,10 @@ def auth_headers(client, seeded_db):
 
 
 def test_get_club_settings_empty(tenant_ctx, client, auth_headers):
-    """Getting settings on a new tenant returns empty dict."""
+    """A new tenant has no branding yet; the form still shows the club's name."""
     resp = client.get("/api/v1/admin/club-settings", headers=auth_headers)
     assert resp.status_code == 200
-    assert resp.get_json()["settings"] == {}
+    assert resp.get_json()["settings"] == {"club_name": "Test Club"}
 
 
 def test_update_club_settings_basic(tenant_ctx, client, auth_headers, db):
@@ -68,6 +68,18 @@ def test_update_club_settings_basic(tenant_ctx, client, auth_headers, db):
 
     tenant = db.session.get(Tenant, tenant_ctx.id)
     assert tenant.settings["branding"]["club_name"] == "My Awesome Club"
+    # The club list, invites and the manager portal read tenant.name.
+    assert tenant.name == "My Awesome Club"
+
+
+def test_blank_club_name_keeps_the_tenant_name(tenant_ctx, client, auth_headers, db):
+    resp = client.patch(
+        "/api/v1/admin/club-settings",
+        json={"club_name": "  "},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+    assert db.session.get(Tenant, tenant_ctx.id).name == "Test Club"
 
 
 def test_update_club_settings_colors(tenant_ctx, client, auth_headers):

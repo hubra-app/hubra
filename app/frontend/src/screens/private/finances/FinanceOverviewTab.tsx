@@ -5,7 +5,7 @@ import { useNav } from '@/context/AppContext'
 import { useInvoices } from '@/data/lists'
 import { StatTile } from '@/components/ui'
 import { getFinanceOverview, listTransactions } from '@/api/finance'
-import { formatCHF, formatCHFWhole } from '@/format'
+import { formatCHF, formatCHFWhole, formatDate } from '@/format'
 import { qk } from '@/data/keys'
 
 /* ── Finance Overview ────────────────────────── */
@@ -295,7 +295,7 @@ export function FinanceOverviewTab() {
                             fontSize: 'var(--mantine-font-size-xs)',
                           }}
                         >
-                          {tx.date}
+                          {formatDate(tx.date)}
                         </span>
                       </Table.Td>
                     </Table.Tr>

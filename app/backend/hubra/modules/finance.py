@@ -54,8 +54,7 @@ module = Module(
             "/app/finance",
             "shell.nav.finance",
             "wallet",
-            section="operations",
-            order=0,
+            order=50,
             perms=(
                 "finance.overview.read",
                 "finance.transactions.read",

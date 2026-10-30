@@ -716,3 +716,24 @@ table[style*="min-width"] td::before {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Personal dashboard tiles: on phones three compact tiles side by side
+   instead of a screen full of large ones. */
+@media (max-width: 575px) {
+  .stat-tiles {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+  .stat-tiles .stat-tile {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 4px !important;
+    padding: 10px 12px !important;
+  }
+  .stat-tiles .stat-tile .mantine-ThemeIcon-root {
+    display: none;
+  }
+  .stat-tiles .stat-tile .stat-value {
+    font-size: 20px !important;
+  }
+}

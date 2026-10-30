@@ -31,9 +31,7 @@ import {
   IconLayoutSidebarLeftCollapse,
   IconLogout,
   IconMenu2,
-  IconPlus,
   IconPuzzle,
-  IconSearch,
   IconSettings,
   IconShieldCheck,
   IconUserCircle,
@@ -350,9 +348,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
     {
       label: tr('Persönlich', 'Personal'),
       items: [
-        { path: '/app/my-tenants', label: tr('Meine Vereine', 'My clubs'), icon: <IconHome size={24} /> },
-        { href: `${SSO_URL}/start`, label: tr('Verein gründen', 'Start a club'), icon: <IconPlus size={24} /> },
-        { href: `${SSO_URL}/clubs`, label: tr('Verein finden', 'Find a club'), icon: <IconSearch size={24} /> },
+        // Joining and founding clubs live on the sign-in site («Meine Vereine»);
+        // here are only the clubs this person runs.
+        { path: '/app/my-tenants', label: tr('Deine Vereine verwalten', 'Clubs you run'), icon: <IconHome size={24} /> },
       ],
     },
     ...(platformItems.length > 0

@@ -174,7 +174,7 @@
     "sessionsInfo": "Where you are signed in. An ended session stops working immediately.",
     "sessionsTab": "Sessions",
     "settings": {
-      "title": "Account settings"
+      "title": "My club profile"
     },
     "settingsTitle": "Account settings",
     "settings_title": "Account settings",
@@ -1004,6 +1004,7 @@
     "protected": "Protected",
     "searchMembers": "Search members…",
     "title": "Functions",
+    "emptyHint": "Functions are the offices in your club, such as president or treasurer. Create them and assign members.",
     "grantsRole": "Gives the role",
     "grantsRoleHint": "Whoever holds the function has this role until the function ends.",
     "noRole": "No role",
@@ -1071,14 +1072,16 @@
     "search": "Search groups…",
     "searchMembersToAdd": "Search members…",
     "selfJoin": "Members can join and leave on their own",
-    "selfJoinHint": "For interest groups. Members find it under My account.",
+    "selfJoinHint": "For interest groups. Members join on their dashboard under Personal.",
     "sessions": "Sessions",
     "sessionsHint": "e.g. twice a week",
     "sessionsPlaceholder": "3 times a week",
     "title": "Groups",
     "tools": "Tools",
     "memberCount_one": "{{count}} member",
-    "memberCount_other": "{{count}} members"
+    "memberCount_other": "{{count}} members",
+    "empty": "No groups yet.",
+    "noMatch": "No groups found."
   },
   "inventory": {
     "addFirstItem": "Add the first item",
@@ -1541,7 +1544,8 @@
       "pendingDesc_one": "{{count}} pending application",
       "pendingDesc_other": "{{count}} pending applications",
       "title": "Applications",
-      "wants": "wants"
+      "wants": "wants",
+      "emptyHint": "Join requests show up here until you accept or decline them."
     },
     "archive": "Archive",
     "archiveFailed": "Archive failed",
@@ -1630,7 +1634,9 @@
       "toolHours": "Tool hours",
       "verifiedNo": "No",
       "verifiedYes": "Yes",
-      "notes": "Notes"
+      "notes": "Notes",
+      "number": "No. {{id}}",
+      "numberHint": "Member number"
     },
     "editMember": "Edit Member",
     "editMemberModalTitle": "Edit member",
@@ -1764,6 +1770,15 @@
       "joinedOldest": "Oldest first",
       "status": "Status"
     },
+    "since": "Since {{date}}",
+    "invites": {
+      "title": "Open invitations",
+      "expired": "Expired on {{date}}",
+      "sentOn": "Sent on {{date}}, valid until {{until}}",
+      "resend": "Send again",
+      "cancel": "Withdraw",
+      "cancelled": "Invitation withdrawn"
+    },
     "roleViaFunction": "{{role}} (through {{fn}})",
     "roleFilter": "Filter by role",
     "allRoles": "All roles",
@@ -1848,7 +1863,10 @@
     "editTitle": "Edit poll",
     "remindersSentMsg_one": "{{count}} reminder sent.",
     "remindersSentMsg_other": "{{count}} reminders sent.",
-    "addOption": "+ Add option"
+    "addOption": "+ Add option",
+    "empty": "No polls yet.",
+    "emptyHint": "Ask the club what it thinks, for example about the next outing or a date.",
+    "emptyMember": "Once the board starts a poll, you can vote here."
   },
   "posts": {
     "backToPosts": "Back to posts",
@@ -1961,7 +1979,7 @@
     "accessDenied": "Access denied",
     "breadcrumbs": {
       "account": "My account",
-      "accountSettings": "Account settings",
+      "accountSettings": "My club profile",
       "aliases": "Mail › Aliases",
       "applications": "Members › Applications",
       "auditLog": "Audit log",
@@ -1988,14 +2006,15 @@
       "polls": "Club life › Polls",
       "posts": "Club life › Posts",
       "settings": "Settings",
-      "system": "System › Permissions",
+      "system": "Administration › Roles",
       "tiers": "Members › Tiers",
       "tracking": "Mail › Delivery log",
       "transactions": "Finance › Income and expenses",
       "translations": "Translations",
       "txCategories": "Finance › Categories",
-      "roles": "System › Roles",
-      "health": "System › Health"
+      "roles": "Administration › Roles",
+      "health": "System › Health",
+      "dashboardMe": "Dashboard › Personal"
     },
     "emailVerify": {
       "banner": "Your private email address isn't verified yet. Some features are only available after that.",
@@ -2005,7 +2024,7 @@
     "goToDashboard": "Go to dashboard",
     "nav": {
       "account": "Account",
-      "accountSettings": "Account Settings",
+      "accountSettings": "My club profile",
       "aliases": "Aliases",
       "allMembers": "All members",
       "applications": "Applications",
@@ -2034,7 +2053,7 @@
       "messageLog": "Delivery log",
       "operations": "Club life",
       "overview": "Overview",
-      "permissions": "Permissions",
+      "permissions": "Roles",
       "polls": "Polls",
       "posts": "Posts",
       "settings": "Settings",
@@ -2044,7 +2063,8 @@
       "tracking": "Delivery log",
       "transactions": "Transactions",
       "translations": "Translations",
-      "txCategories": "Categories"
+      "txCategories": "Categories",
+      "activeMembersCount": "{{count}} active members"
     },
     "noPermission": "You don't have permission to view this page.",
     "notif": {
@@ -2063,10 +2083,11 @@
     },
     "search": {
       "noResults": "No results for \"{{query}}\"",
-      "placeholder": "Search members, invoices, inventory…",
+      "placeholder": "Search…",
       "pollOpen": "Open",
       "pollClosed": "Closed",
-      "invoice": "Invoice {{id}} – {{member}}"
+      "invoice": "Invoice {{id}} – {{member}}",
+      "open": "Search"
     },
     "searchKind": {
       "audit": "Audit",
@@ -2084,8 +2105,9 @@
       "management": "Club life",
       "me": "Personal",
       "operations": "Operations",
-      "system": "System",
-      "workspace": "Club"
+      "system": "Administration",
+      "workspace": "Club",
+      "activities": "Club life"
     },
     "tooltips": {
       "dismiss": "Dismiss",
@@ -2094,7 +2116,7 @@
     },
     "userMenu": {
       "account": "My Account",
-      "accountSettings": "Account Settings",
+      "accountSettings": "My club profile",
       "logout": "Sign out",
       "clubs": "Clubs",
       "appearance": "Appearance",

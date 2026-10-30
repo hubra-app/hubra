@@ -1,5 +1,6 @@
 import { EVENT_TYPE_COLORS } from '@/constants'
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Button, Group, TextInput, Select, Badge, Checkbox } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
@@ -12,7 +13,7 @@ import {
   IconLogin,
   IconLogout as Leave,
 } from '@tabler/icons-react'
-import { useToast, useAuth } from '@/context/AppContext'
+import { useToast, useAuth, useData } from '@/context/AppContext'
 import { qk } from '@/data/keys'
 import { useEvents, useListCache, useMyJoinedEvents } from '@/data/lists'
 import {
@@ -53,6 +54,15 @@ const limitOf = (value: string) => (value.trim() ? Number(value) : null)
 
 const EVENT_TYPES = ['Workshop', 'Social', 'Certification', 'Meeting']
 
+/** The club's own types (Events module setting), or the built-in four. */
+function clubEventTypes(raw: unknown): string[] {
+  const own = String(raw ?? '')
+    .split(',')
+    .map((x) => x.trim())
+    .filter(Boolean)
+  return own.length ? own : EVENT_TYPES
+}
+
 /** Stored event types are English keys; show them in the user's language. */
 function eventTypeLabel(type: string) {
   const defaults: Record<string, string> = {
@@ -75,6 +85,10 @@ export function EventsTab() {
   const { t, i18n } = useT()
   const joinEventMutation = useToggleJoinEvent()
   const canCreate = hasPermission('events.events.create')
+  const { moduleList } = useData()
+  const eventTypes = clubEventTypes(
+    moduleList.find((m) => m.code === 'events')?.config?.event_types,
+  )
   const canUpdate = hasPermission('events.events.update')
   const canDelete = hasPermission('events.events.delete')
   const canApprove = hasPermission('events.events.add_attendee')
@@ -91,13 +105,13 @@ export function EventsTab() {
       date: new Date().toISOString().slice(0, 10),
       time: '',
       location: '',
-      type: 'Workshop',
+      type: eventTypes[0],
       maxAttendees: '',
       requiresApproval: false,
     },
   })
 
-  const types = ['All', ...EVENT_TYPES]
+  const types = ['All', ...eventTypes]
   const filtered = events.filter((e) => {
     const matchType = typeFilter === 'All' || e.type === typeFilter
     const q = search.toLowerCase()
@@ -115,11 +129,33 @@ export function EventsTab() {
       date: new Date().toISOString().slice(0, 10),
       time: '',
       location: '',
-      type: 'Workshop',
+      type: eventTypes[0],
       maxAttendees: '',
       requiresApproval: false,
     })
     setAddOpen(true)
+  }
+  // ?new=1 (the dashboard's "Neuer Anlass") opens the form right away.
+  const [params, setParams] = useSearchParams()
+  const newLink = params.get('new') === '1'
+  const [handledNew, setHandledNew] = useState(false)
+  if (newLink && canCreate && !handledNew) {
+    setHandledNew(true)
+    setAddOpen(true) // the form still holds its fresh initial values
+  }
+  // Reset only once the URL has dropped ?new=1 (see MembersTab).
+  if (!newLink && handledNew) setHandledNew(false)
+  const closeAdd = () => {
+    setAddOpen(false)
+    if (newLink) {
+      setParams(
+        (p) => {
+          p.delete('new')
+          return p
+        },
+        { replace: true },
+      )
+    }
   }
   const openEdit = (ev: ClubEvent) => {
     setEditTarget(ev)
@@ -146,7 +182,7 @@ export function EventsTab() {
         requiresApproval: data.requiresApproval,
       })
       eventCache.append(ev)
-      setAddOpen(false)
+      closeAdd()
       notify(
         'success',
         t('events.event.saved'),
@@ -248,7 +284,8 @@ export function EventsTab() {
       </Field>
       <Field label={t('common.type', 'Typ')}>
         <Select
-          data={EVENT_TYPES.map((tp) => ({
+          // An event keeps a type the club no longer lists.
+          data={[...new Set([...eventTypes, form.values.type])].map((tp) => ({
             value: tp,
             label: eventTypeLabel(tp),
           }))}
@@ -487,11 +524,11 @@ export function EventsTab() {
       <Modal
         onSubmit={form.onSubmit(submitAdd)}
         open={addOpen}
-        onClose={() => setAddOpen(false)}
+        onClose={closeAdd}
         title={t('events.addEvent')}
         footer={
           <>
-            <Button variant="default" onClick={() => setAddOpen(false)}>
+            <Button variant="default" onClick={closeAdd}>
               {t('common.cancel')}
             </Button>
             <Button variant="filled" type="submit" loading={adding}>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Button, Paper, Title } from '@mantine/core'
+import { formatDate } from '@/format'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT } from '@/locales/i18n'
 import { useParams } from 'react-router-dom'
@@ -99,6 +100,7 @@ export function MemberDetailScreen({
           </Title>
           <span
             className="num"
+            title={t('members.detail.numberHint', 'Mitgliedernummer')}
             style={{
               fontSize: 'var(--mantine-font-size-xs)',
               color: 'var(--hb-text-3)',
@@ -107,7 +109,7 @@ export function MemberDetailScreen({
               padding: '2px 8px',
             }}
           >
-            {m.id}
+            {t('members.detail.number', 'Nr. {{id}}', { id: m.id })}
           </span>
           <div
             style={{
@@ -290,8 +292,8 @@ export function MemberDetailScreen({
                 .filter(Boolean)
                 .join(', ') || <Empty />}
             </DetailRow>
-            <DetailRow label={t('members.joined')} mono>
-              {m.joined || <Empty />}
+            <DetailRow label={t('members.joined')}>
+              {m.joined ? formatDate(m.joined) : <Empty />}
             </DetailRow>
             <DetailRow label={t('members.lastSeen')}>
               <LastSeenBadge lastSeen={m.lastSeen} />
@@ -301,11 +303,9 @@ export function MemberDetailScreen({
                 {m.toolHours}h
               </DetailRow>
             )}
-            <DetailRow
-              label={t('common.password')}
-              borderless={!m.mustChangePassword}
-            >
-              {m.mustChangePassword ? (
+            {/* Only worth a row while the member still has to set a new one. */}
+            {m.mustChangePassword && (
+              <DetailRow label={t('common.password')}>
                 <span
                   style={{
                     display: 'flex',
@@ -318,17 +318,14 @@ export function MemberDetailScreen({
                 >
                   <IconLock size={13} /> {t('members.detail.mustChange')}
                 </span>
-              ) : (
-                <Empty />
-              )}
-            </DetailRow>
+              </DetailRow>
+            )}
             <div
               style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 padding: '10px 16px',
-                borderTop: '1px solid var(--hb-border)',
               }}
             >
               <span
@@ -347,9 +344,7 @@ export function MemberDetailScreen({
                   justifyContent: 'flex-end',
                 }}
               >
-                {m.groups.map((g) => (
-                  <Tag key={g}>{g}</Tag>
-                ))}
+                {m.groups.length ? m.groups.map((g) => <Tag key={g}>{g}</Tag>) : <Empty />}
               </div>
             </div>
           </Paper>

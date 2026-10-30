@@ -7,6 +7,24 @@ from hubra.core.models.event import ClubEvent, EventRegistration
 from hubra.core.schemas.counts import cached_count, clear_counts, prime_counts
 
 _EVENT_TYPES = ["Workshop", "Social", "Certification", "Meeting"]
+
+
+def club_event_types() -> list[str]:
+    """The types this club picks from: its own list, or the built-in four."""
+    from hubra.core.modules.state import get_config
+
+    raw = str(get_config("events").get("event_types") or "")
+    own = [t.strip()[:50] for t in raw.split(",") if t.strip()]
+    return own or list(_EVENT_TYPES)
+
+
+def _valid_type(value: str) -> None:
+    # The built-in types stay valid, so older events still save after a club
+    # switched to its own list.
+    if value not in _EVENT_TYPES and value not in club_event_types():
+        from marshmallow import ValidationError
+
+        raise ValidationError("Unknown event type")
 _EVENT_CATEGORIES = ["general", "training", "social", "meeting", "competition"]
 # Registrations that hold a place.
 _ACTIVE_REGISTRATION = ["registered", "approved", "attended"]
@@ -188,7 +206,7 @@ class ClubEventCreateSchema(ma.Schema):
     date = fields.Date(required=True)
     time = fields.Str(allow_none=True, load_default=None)
     location = fields.Str(allow_none=True, load_default=None)
-    type = fields.Str(required=True, validate=validate.OneOf(_EVENT_TYPES))
+    type = fields.Str(required=True, validate=_valid_type)
     description = fields.Str(allow_none=True, load_default=None)
     meeting_url = fields.Str(allow_none=True, load_default=None)
     end_date = fields.Date(allow_none=True, load_default=None)
@@ -221,7 +239,7 @@ class ClubEventUpdateSchema(ma.Schema):
     date = fields.Date()
     time = fields.Str(allow_none=True)
     location = fields.Str(allow_none=True)
-    type = fields.Str(validate=validate.OneOf(_EVENT_TYPES))
+    type = fields.Str(validate=_valid_type)
     description = fields.Str(allow_none=True)
     meeting_url = fields.Str(allow_none=True)
     end_date = fields.Date(allow_none=True)

@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import delete, select, text
+from sqlalchemy import delete, func, select, text
 
 from hubra.core.extensions import db
 from hubra.core.models.tenant import Tenant, GlobalAuditEntry
@@ -550,6 +550,17 @@ def _seed_tenant(
             roles[rd["name"]] = role
 
         from hubra.api.roles.services import RoleService
+        from hubra.core.models.role import Permission
+
+        # The catalog is filled by `flask sync-permissions` (run on every
+        # deploy); without it the new club's roles would grant nothing and
+        # members would get "Kein Zugriff" everywhere.
+        if db.session.scalar(select(func.count(Permission.id))) == 0:
+            _log.warning(
+                "Provisioning %s with an empty permission catalog: run "
+                "'flask sync-permissions' first, its roles grant nothing",
+                tenant_id,
+            )
 
         for role_name, perm_keys in DEFAULT_ROLE_PERMISSIONS.items():
             role = roles.get(role_name)

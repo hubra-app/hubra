@@ -27,10 +27,10 @@ module = Module(
     nav=(
         NavItem(
             "/app/operations/polls",
-            "shell.nav.management",
-            "layout-list",
-            order=41,
-            group="management",
+            "shell.nav.polls",
+            "chart-bar",
+            section="activities",
+            order=31,
         ),
     ),
     tables=("polls", "poll_options", "poll_votes", "poll_proxies"),

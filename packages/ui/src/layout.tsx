@@ -209,6 +209,9 @@ export function Pagination({
       gap="xs"
       px="md"
       py="xs"
+      // Phones keep only the controls below the list, so the first rows
+      // are what the screen shows first.
+      visibleFrom={top ? 'sm' : undefined}
       style={{
         borderTop: top ? 'none' : '1px solid var(--mantine-color-default-border)',
         borderBottom: top ? '1px solid var(--mantine-color-default-border)' : 'none',
