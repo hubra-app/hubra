@@ -19,6 +19,7 @@ text the name is written Hubra.
 | `hubra-wordmark.svg` / `hubra-wordmark-white.svg` | Wordmark only. |
 | `hubra-icon-{32,192,512}.png`, `apple-touch-icon.png` | PNG icons. |
 | `hubra-og.png` | Link preview image (1200 × 630). |
+| `hubra-bimi.svg` | Sender logo in inboxes (BIMI, SVG Tiny PS). See the operator guide. |
 
 The wordmark is outlined from Bricolage Grotesque ExtraBold (opsz 96) with
 −2% tracking, so the SVGs need no font. Keep clear space around the lockup of

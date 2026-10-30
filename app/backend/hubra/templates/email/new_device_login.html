@@ -1,23 +1,16 @@
 {% extends "email/base.html" %}
+{% import "email/_ui.html" as ui with context %}
+{% block preheader %}{{ t('mail.email.new_device_login.body', club_name=club_name) | striptags }}{% endblock %}
 {% block content %}
-<p>{{ t('mail.email.new_device_login.body', club_name=club_name) }}</p>
-<table style="border-collapse: collapse; margin-bottom: 16px;">
-  <tr>
-    <td style="padding: 4px 12px 4px 0;"><strong>{{ t('mail.email.new_device_login.table_time') }}</strong></td>
-    <td style="padding: 4px 0;">{{ timestamp }} UTC</td>
-  </tr>
-  <tr>
-    <td style="padding: 4px 12px 4px 0;"><strong>{{ t('mail.email.new_device_login.table_ip') }}</strong></td>
-    <td style="padding: 4px 0;">{{ ip }}</td>
-  </tr>
-  <tr>
-    <td style="padding: 4px 12px 4px 0;"><strong>{{ t('mail.email.new_device_login.table_browser') }}</strong></td>
-    <td style="padding: 4px 0;">{{ user_agent }}</td>
-  </tr>
-</table>
-<p>{{ t('mail.email.new_device_login.was_you') }}</p>
-<p>
+{% call ui.p() %}{{ t('mail.email.new_device_login.body', club_name=club_name) }}{% endcall %}
+{{ ui.facts([
+  (t('mail.email.new_device_login.table_time'), timestamp ~ ' UTC', false),
+  (t('mail.email.new_device_login.table_ip'), ip, true),
+  (t('mail.email.new_device_login.table_browser'), user_agent, false),
+]) }}
+{% call ui.p() %}{{ t('mail.email.new_device_login.was_you') }}{% endcall %}
+{% call ui.p() %}
   {{ t('mail.email.new_device_login.not_you_prefix') }}
-  {% if support_url %}<a href="{{ support_url }}">{{ t('mail.email.new_device_login.change_password_link') }}</a>{% else %}{{ t('mail.email.new_device_login.change_password_link') }}{% endif %}.
-</p>
+  {% if support_url %}<a href="{{ support_url }}" style="color: #7441e0; font-weight: 600;">{{ t('mail.email.new_device_login.change_password_link') }}</a>{% else %}{{ t('mail.email.new_device_login.change_password_link') }}{% endif %}.
+{% endcall %}
 {% endblock %}

@@ -1,5 +1,7 @@
 {% extends "email/base.html" %}
+{% import "email/_ui.html" as ui with context %}
+{% block preheader %}{{ message }}{% endblock %}
 {% block content %}
-<p>{{ message }}</p>
-{% if portal_url %}<p><a href="{{ portal_url }}">{{ t('mail.email.notification.view_link') }}</a></p>{% endif %}
+{% call ui.p() %}{{ message }}{% endcall %}
+{% if portal_url %}{{ ui.button(portal_url, t('mail.email.notification.view_link')) }}{% endif %}
 {% endblock %}

@@ -1,6 +1,10 @@
 {% extends "email/base.html" %}
+{% import "email/_ui.html" as ui with context %}
+{% block preheader %}{{ t('mail.email.club_invite.intro', club_name=club_name, invited_by=invited_by) | striptags }}{% endblock %}
 {% block content %}
-<p>{{ t('mail.email.club_invite.intro', club_name=club_name, invited_by=invited_by) }}</p>
-<p>{{ t('mail.email.club_invite.cta', invite_url=invite_url) }}</p>
-<p>{{ t('mail.email.club_invite.ignore') }}</p>
+{% call ui.p() %}{{ t('mail.email.club_invite.intro', club_name=club_name, invited_by=invited_by) }}{% endcall %}
+{% call ui.p() %}{{ t('mail.email.club_invite.cta_text') }}{% endcall %}
+{{ ui.button(invite_url, t('mail.email.club_invite.button')) }}
+{% call ui.muted() %}{{ t('mail.email.club_invite.ignore') }}{% endcall %}
+{{ ui.fallback_link(invite_url) }}
 {% endblock %}

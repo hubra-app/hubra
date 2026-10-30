@@ -1,16 +1,17 @@
 {% extends "email/base.html" %}
+{% import "email/_ui.html" as ui with context %}
+{% block preheader %}{{ t('mail.email.welcome.intro', club_name=club_name) | striptags }}{% endblock %}
 {% block content %}
-<p>{{ t('mail.email.welcome.intro', club_name=club_name) }}</p>
-<table style="border-collapse: collapse; margin-bottom: 16px;">
-  <tr>
-    <td style="padding: 4px 12px 4px 0;"><strong>{{ t('mail.email.welcome.login_email') }}</strong></td>
-    <td style="padding: 4px 0;">{{ login_email }}</td>
-  </tr>
-  <tr>
-    <td style="padding: 4px 12px 4px 0;"><strong>{{ t('mail.email.welcome.login_password') }}</strong></td>
-    <td style="padding: 4px 0;">{{ temp_password }}</td>
-  </tr>
-</table>
-<p>{{ t('mail.email.welcome.cta', login_url=login_url) }}</p>
-<p>{{ t('mail.email.welcome.closing') }}</p>
+{% call ui.p() %}{{ t('mail.email.welcome.intro', club_name=club_name) }}{% endcall %}
+{{ ui.facts([
+  (t('mail.email.welcome.login_email'), login_email, false),
+  (t('mail.email.welcome.login_password'), temp_password, true),
+]) }}
+{% if login_url.startswith('http') %}
+{% call ui.p() %}{{ t('mail.email.welcome.cta_note') }}{% endcall %}
+{{ ui.button(login_url, t('mail.email.welcome.button')) }}
+{% else %}
+{% call ui.p() %}{{ t('mail.email.welcome.cta', login_url=login_url) }}{% endcall %}
+{% endif %}
+{% call ui.p() %}{{ t('mail.email.welcome.closing') }}{% endcall %}
 {% endblock %}

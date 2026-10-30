@@ -26,11 +26,14 @@ set in the manager portal, defaults from SMTP_* / MAIL_FROM in env):
 from __future__ import annotations
 
 import base64
+import hashlib
 import logging
+import re
 import smtplib
 import ssl
 from dataclasses import dataclass
 from email.mime.application import MIMEApplication
+from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formataddr
@@ -135,6 +138,46 @@ def _mailbox_route(platform, mailbox: tuple[str, str]) -> _Route:
 
 _SMTP_TIMEOUT = 30  # seconds
 
+_DATA_IMAGE = re.compile(
+    r'src="data:image/(png|jpeg|gif|webp);base64,([A-Za-z0-9+/=]+)"'
+)
+
+
+def _inline_images(body_html: str) -> tuple[str, list[MIMEImage]]:
+    """Move data-URL images (the header logo) into inline cid: parts.
+
+    Gmail, Outlook and most other mail apps don't show data URLs, but they
+    all show an image sent along in a multipart/related part.
+    """
+    images: dict[str, MIMEImage] = {}
+
+    def to_cid(match: re.Match) -> str:
+        raw = base64.b64decode(match.group(2))
+        cid = f"img-{hashlib.sha256(raw).hexdigest()[:16]}@hubra"
+        if cid not in images:
+            image = MIMEImage(raw, _subtype=match.group(1))
+            image.add_header("Content-ID", f"<{cid}>")
+            image.add_header("Content-Disposition", "inline")
+            images[cid] = image
+        return f'src="cid:{cid}"'
+
+    return _DATA_IMAGE.sub(to_cid, body_html), list(images.values())
+
+
+def _mail_body(body_html: str, body_text: str) -> MIMEMultipart:
+    """The text and HTML parts, with the HTML's inline images beside it."""
+    body_html, images = _inline_images(body_html)
+    alt = MIMEMultipart("alternative")
+    alt.attach(MIMEText(body_text, "plain"))
+    alt.attach(MIMEText(body_html, "html"))
+    if not images:
+        return alt
+    related = MIMEMultipart("related")
+    related.attach(alt)
+    for image in images:
+        related.attach(image)
+    return related
+
 
 def _send_via_smtp(
     to_email: str,
@@ -159,12 +202,10 @@ def _send_via_smtp(
     smtp_host = route.host or "localhost"
     smtp_port = route.port
 
+    body = _mail_body(body_html, body_text)
     if attachments:
         msg = MIMEMultipart("mixed")
-        alt = MIMEMultipart("alternative")
-        alt.attach(MIMEText(body_text, "plain"))
-        alt.attach(MIMEText(body_html, "html"))
-        msg.attach(alt)
+        msg.attach(body)
         for att in attachments:
             content = att["content"]
             if isinstance(content, str):  # base64, as sent through Celery
@@ -173,9 +214,7 @@ def _send_via_smtp(
             part.add_header("Content-Disposition", "attachment", filename=att["name"])
             msg.attach(part)
     else:
-        msg = MIMEMultipart("alternative")
-        msg.attach(MIMEText(body_text, "plain"))
-        msg.attach(MIMEText(body_html, "html"))
+        msg = body
     msg["Subject"] = subject
     # formataddr quotes and encodes names, so "Müller & Co." or a name
     # with <, > or a comma stays one display name.

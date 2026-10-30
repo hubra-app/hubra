@@ -3,6 +3,7 @@
   {{ t('mail.email.welcome.login_email') }}:    {{ login_email }}
   {{ t('mail.email.welcome.login_password') }}:  {{ temp_password }}
 
-{{ t('mail.email.welcome.cta', login_url=login_url) }}
+{% if login_url.startswith('http') %}{{ t('mail.email.welcome.cta_note') }}
+{{ login_url }}{% else %}{{ t('mail.email.welcome.cta', login_url=login_url) }}{% endif %}
 
 {{ t('mail.email.welcome.closing') }}

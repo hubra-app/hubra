@@ -2420,5 +2420,16 @@
   "groups.memberCount_one": "{{count}} Mitglied",
   "groups.memberCount_other": "{{count}} Mitglieder",
   "members.noMembersFilterHint": "Ändere die Suche oder den Filter.",
-  "tiers.noPrice": "Kein Beitrag"
+  "tiers.noPrice": "Kein Beitrag",
+  "mail.email.button_fallback": "Funktioniert der Button nicht? Kopiere diesen Link in deinen Browser:",
+  "mail.email.sent_with": "Gesendet mit",
+  "mail.email.password_reset.button": "Passwort zurücksetzen",
+  "mail.email.verify_email.button": "E-Mail-Adresse bestätigen",
+  "mail.email.club_invite.button": "Einladung annehmen",
+  "mail.email.welcome.button": "Anmelden",
+  "mail.email.invoice_generated.button": "Rechnung ansehen",
+  "mail.email.invoice_reminder.button": "Rechnung begleichen",
+  "mail.email.invoice.number": "Rechnung Nr.",
+  "mail.email.invoice.amount": "Betrag",
+  "mail.email.invoice.due": "Fällig am"
 }

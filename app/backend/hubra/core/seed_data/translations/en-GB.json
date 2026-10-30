@@ -2420,5 +2420,16 @@
   "groups.memberCount_one": "{{count}} member",
   "groups.memberCount_other": "{{count}} members",
   "members.noMembersFilterHint": "Change the search or the filter.",
-  "tiers.noPrice": "No fee"
+  "tiers.noPrice": "No fee",
+  "mail.email.button_fallback": "Button not working? Copy this link into your browser:",
+  "mail.email.sent_with": "Sent with",
+  "mail.email.password_reset.button": "Reset password",
+  "mail.email.verify_email.button": "Verify email address",
+  "mail.email.club_invite.button": "Accept the invite",
+  "mail.email.welcome.button": "Log in",
+  "mail.email.invoice_generated.button": "View invoice",
+  "mail.email.invoice_reminder.button": "Settle invoice",
+  "mail.email.invoice.number": "Invoice no.",
+  "mail.email.invoice.amount": "Amount",
+  "mail.email.invoice.due": "Due on"
 }

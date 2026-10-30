@@ -12,9 +12,11 @@ Fallback chain:
 
 from __future__ import annotations
 
+import base64
 import logging
 import re
 from datetime import datetime, timezone
+from pathlib import Path
 
 import nh3
 from flask import render_template
@@ -108,6 +110,47 @@ def _touch_last_used(locale: str, keys: set[str]) -> None:
         row.last_used_at = now
 
 
+# The mark in the mail header when a club has no logo of its own. Mail apps
+# don't show SVG, so this is the PNG app icon.
+_HUBRA_MARK = Path(__file__).resolve().parents[2] / "static" / "mail" / "hubra-mark.png"
+# A club logo is a data URL from Settings > Verein. Mail apps show raster
+# images only, and the logo travels in every mail, so a big one is left out.
+_LOGO_TYPES = ("image/png", "image/jpeg", "image/gif", "image/webp")
+_MAX_LOGO_BYTES = 256 * 1024
+
+
+def _club_logo() -> str | None:
+    try:
+        from hubra.core.tenant.context import current_tenant
+
+        tenant = current_tenant()
+    except Exception:
+        return None
+    if tenant is None:
+        return None
+    logo = ((tenant.settings or {}).get("branding") or {}).get("logo") or ""
+    head, _, data = logo.partition(",")
+    if not head.startswith("data:") or not head.endswith(";base64"):
+        return None
+    if head[5:-7] not in _LOGO_TYPES or len(data) * 3 // 4 > _MAX_LOGO_BYTES:
+        return None
+    return logo
+
+
+def mail_logo_src() -> str:
+    """The header logo as a data URL: the club's logo, else the Hubra mark.
+
+    The sender turns it into an inline (cid:) image, since most mail apps
+    don't show data URLs.
+    """
+    logo = _club_logo()
+    if logo:
+        return logo
+    return (
+        "data:image/png;base64," + base64.b64encode(_HUBRA_MARK.read_bytes()).decode()
+    )
+
+
 def render_mail_template(
     template_name: str, locale: str, **context
 ) -> tuple[str, str, str]:
@@ -117,7 +160,7 @@ def render_mail_template(
     ``email/<template_name>_subject.j2`` and stripped of whitespace.
     """
     t = get_mail_translator(locale)
-    shared_ctx = {"t": t, "locale": locale, **context}
+    shared_ctx = {"t": t, "locale": locale, "logo_src": mail_logo_src(), **context}
 
     html = render_template(f"email/{template_name}.html", **shared_ctx)
     # The texts carry simple HTML (<strong>, <br>) for the HTML part; the
