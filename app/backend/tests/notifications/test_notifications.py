@@ -151,3 +151,41 @@ def test_published_things_link_to_themselves(
         "New event": f"/app/operations/events?event={event['id']}",
         "New poll": f"/app/operations/polls?poll={poll['id']}",
     }
+
+
+# ── The account page: every club's notifications ─────────────────────────────
+
+
+def test_account_lists_and_clears_my_notifications(
+    client, auth_headers, db, seeded_db, other_member
+):
+    admin_id = seeded_db["admin"].id
+    db.session.query(Notification).delete()
+    notify_member(admin_id, "info", "Eins", "a", link="/app/members/1")
+    notify_member(admin_id, "info", "Zwei", "b")
+    notify_member(other_member.id, "info", "Fremd", "c")
+    db.session.commit()
+
+    body = client.get("/api/v1/account/notifications").get_json()
+    assert {n["title"] for n in body["data"]} == {"Eins", "Zwei"}
+    assert body["meta"]["unread"] == 2
+    first = next(n for n in body["data"] if n["title"] == "Eins")
+    assert first["link"] == "/app/members/1" and "club" in first
+
+    club = first["club"]["slug"] or "-"
+    assert client.patch(f"/api/v1/account/notifications/{club}/{first['id']}/read").status_code == 200
+    assert client.get("/api/v1/account/notifications").get_json()["meta"]["unread"] == 1
+
+    assert client.delete("/api/v1/account/notifications?read=1").get_json()["deleted"] == 1
+    assert client.post("/api/v1/account/notifications/read-all").status_code == 200
+    assert client.get("/api/v1/account/notifications").get_json()["meta"]["unread"] == 0
+    assert client.delete("/api/v1/account/notifications").get_json()["deleted"] == 1
+
+    # someone else's stays, and can't be reached through the account
+    other = db.session.query(Notification).filter_by(member_id=other_member.id).one()
+    assert client.delete(f"/api/v1/account/notifications/-/{other.id}").status_code == 404
+    assert db.session.get(Notification, other.id) is not None
+
+
+def test_account_notifications_need_a_sign_in(client):
+    assert client.get("/api/v1/account/notifications").status_code == 401
