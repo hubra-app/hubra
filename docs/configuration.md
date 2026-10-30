@@ -37,6 +37,7 @@ variable; a value saved there overrides env until you press "Reset to env".
 | Setting                                   | Env default                                  |
 | ----------------------------------------- | -------------------------------------------- |
 | Mail relay host, port, user, password     | `SMTP_HOST` (else `ZONEMTA_SMTP_HOST`), `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` |
+| Fallback relay host, port, user, password | `SMTP_FALLBACK_HOST` (empty = none), `SMTP_FALLBACK_PORT`, `SMTP_FALLBACK_USER`, `SMTP_FALLBACK_PASSWORD` |
 | System sender address and name            | `MAIL_FROM`, "Hubra"                         |
 | Backup storage (S3 endpoint, bucket, region, keys) | `BACKUP_S3_*`                        |
 
@@ -46,6 +47,17 @@ sender with the club's address as Reply-To, unless the club has its own
 sender mailbox from the mail module; that mailbox logs in to the mail
 module's server (`ZONEMTA_SMTP_HOST`), or to the relay without one.
 `BACKUP_ENCRYPTION_KEY` stays in env only.
+
+**Fallback relay.** When a fallback host is set and the relay refuses a
+mail (send quota reached, outage, bad login), the mail goes out again
+through the fallback, from the same sender. After such a switch the relay
+is skipped for 15 minutes (kept in Redis), so a quota does not cost a
+failed attempt per mail. A refused recipient also tries the fallback but
+does not start those 15 minutes, since one bad address says nothing about
+the relay. Club mailboxes from the mail module never use the
+fallback. For Brevo: host `smtp-relay.brevo.com`, port 587, your Brevo
+SMTP login and SMTP key, and verify the sender domain in Brevo (SPF/DKIM),
+or receivers will reject the mail.
 
 **Backups** are platform-only too: manage › Platform › Backups (global
 permission `backups.manage`; superadmins have it). There is no backup of the

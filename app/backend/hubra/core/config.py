@@ -144,6 +144,12 @@ class BaseConfig:
     # these (Platform > Mail relay).
     SMTP_USER: str = os.environ.get("SMTP_USER", "")
     SMTP_PASSWORD: str = os.environ.get("SMTP_PASSWORD", "")
+    # Second relay for when the first refuses a mail (e.g. a send quota);
+    # empty host = no fallback.  Also overridable in the manager portal.
+    SMTP_FALLBACK_HOST: str = os.environ.get("SMTP_FALLBACK_HOST", "")
+    SMTP_FALLBACK_PORT: int = int(os.environ.get("SMTP_FALLBACK_PORT", 587))
+    SMTP_FALLBACK_USER: str = os.environ.get("SMTP_FALLBACK_USER", "")
+    SMTP_FALLBACK_PASSWORD: str = os.environ.get("SMTP_FALLBACK_PASSWORD", "")
     IMAP_HOST: str = os.environ.get("IMAP_HOST", "localhost")
     IMAP_PORT: int = int(os.environ.get("IMAP_PORT", 143))
     MAIL_FROM: str = os.environ.get("MAIL_FROM", "")

@@ -229,16 +229,19 @@ function AppRoutes() {
             </RequireAuth>
           }
         />
-        <Route
-          path="/app/platform/settings"
-          element={
-            <RequireGlobalPermission perm="platform.settings">
-              <Shell>
-                <PlatformSettings />
-              </Shell>
-            </RequireGlobalPermission>
-          }
-        />
+        {['/app/platform/settings', '/app/platform/settings/:tab'].map((path) => (
+          <Route
+            key={path}
+            path={path}
+            element={
+              <RequireGlobalPermission perm="platform.settings">
+                <Shell>
+                  <PlatformSettings />
+                </Shell>
+              </RequireGlobalPermission>
+            }
+          />
+        ))}
         <Route
           path="/app/platform/mail"
           element={<Navigate to="/app/platform/settings" replace />}

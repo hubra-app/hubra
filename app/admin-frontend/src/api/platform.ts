@@ -29,10 +29,10 @@ export async function updatePlatformSettings(values: Record<string, string | nul
   ).settings
 }
 
-export async function sendPlatformTestMail(to: string) {
+export async function sendPlatformTestMail(to: string, via: 'relay' | 'fallback' = 'relay') {
   return apiFetch<{ ok: boolean; to: string }>(`${P}/mail/test`, {
     method: 'POST',
-    body: JSON.stringify({ to }),
+    body: JSON.stringify({ to, via }),
   })
 }
 
