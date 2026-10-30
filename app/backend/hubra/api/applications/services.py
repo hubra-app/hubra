@@ -2,31 +2,17 @@
 
 from __future__ import annotations
 
-import random
-
 from flask import current_app
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from hubra.api.utils import log_audit
+from hubra.core.avatar import random_avatar_color
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 from hubra.core.models.application import Application
 from hubra.core.models.member import Member
-
-_AVATAR_COLORS = [
-    "#2596be",
-    "#1f61d8",
-    "#fe64ac",
-    "#1c2740",
-    "#8e97a7",
-    "#ff4d3d",
-    "#1f9d57",
-    "#f39c12",
-    "#9b59b6",
-    "#fece2b",
-]
 
 
 class ApplicationService:
@@ -171,13 +157,11 @@ class ApplicationsService:
                 409, "CONFLICT", "An application from this email is already pending"
             )
 
-        color = random.choice(_AVATAR_COLORS)
-
         app = Application(
             name=f"{first_name} {last_name}",
             email=email,
             wants_tier_id=int(wants_tier_id) if wants_tier_id else None,
-            avatar_color=color,
+            avatar_color=random_avatar_color(),
         )
         db.session.add(app)
 

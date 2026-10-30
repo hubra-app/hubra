@@ -16,6 +16,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import JSON
 from sqlalchemy.orm import Mapped, mapped_column
 
+from hubra.core.avatar import random_avatar_color
 from hubra.core.extensions import db
 
 _ph = PasswordHasher()
@@ -31,7 +32,7 @@ class User(db.Model):
     last_name: Mapped[str] = mapped_column(db.String(255), nullable=False)
     avatar: Mapped[str | None] = mapped_column(Text, nullable=True)
     avatar_color: Mapped[str] = mapped_column(
-        db.String(7), default="#6366f1", nullable=False
+        db.String(7), default=random_avatar_color, nullable=False
     )
 
     is_superadmin: Mapped[bool] = mapped_column(
