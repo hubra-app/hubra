@@ -243,7 +243,7 @@ function ModuleSettingsModal({
   )
 }
 
-function SettingInput({
+export function SettingInput({
   field,
   value,
   onChange,

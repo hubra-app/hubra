@@ -445,6 +445,17 @@ function PrivateRoutes() {
                     </RequirePermission>
                   }
                 />
+                {['settings/membership', 'settings/bank'].map((path) => (
+                  <Route
+                    key={path}
+                    path={path}
+                    element={
+                      <RequirePermission permKey="settings.settings.read">
+                        <SettingsScreen />
+                      </RequirePermission>
+                    }
+                  />
+                ))}
                 <Route
                   path="settings/domains"
                   element={
