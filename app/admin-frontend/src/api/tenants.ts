@@ -177,14 +177,19 @@ export async function createTenantRequest(data: {
 
 export async function approveTenantRequest(
   id: number,
-): Promise<{ request: TenantRequest; tenant: { id: number; name: string; slug: string; plan: string; status: string } }> {
+): Promise<{
+  request: TenantRequest
+  tenant: { id: number; name: string; slug: string; plan: string; status: string }
+  /** Whether the requester was sent an email about the decision. */
+  notified: boolean
+}> {
   return apiFetch(`/system/tenant-requests/${id}/approve`, { method: 'POST' })
 }
 
 export async function rejectTenantRequest(
   id: number,
   note?: string,
-): Promise<{ request: TenantRequest }> {
+): Promise<{ request: TenantRequest; notified: boolean }> {
   return apiFetch(`/system/tenant-requests/${id}/reject`, {
     method: 'POST',
     body: JSON.stringify({ note }),

@@ -614,3 +614,108 @@ def test_suspended_club_is_not_offered_or_opened(client, db, seeded_db):
     resp = client.post("/api/v1/auth/switch-tenant", json={"tenantSlug": "club-two"})
     assert resp.status_code == 403
     assert resp.get_json()["error"] == "CLUB_INACTIVE"
+
+
+# ── Requester is mailed the decision ─────────────────────────────────────────
+
+
+def _request_and_sign_in_staff(client, db, slug):
+    """A user's pending request for *slug*, then a superadmin signed in."""
+    import json
+    from pathlib import Path
+
+    import hubra
+    from hubra.core.models.translation import Translation
+    from hubra.core.models.user import User
+
+    seed = Path(hubra.__file__).parent / "core/seed_data/translations/de-CH.json"
+    for key, value in json.loads(seed.read_text()).items():
+        if key.startswith("mail.email."):
+            db.session.add(Translation(locale="de-CH", key=key, value=value))
+
+    _signup_and_get_client(client, db, email=f"{slug}@test.ch")
+    resp = client.post(
+        "/api/v1/system/tenant-requests",
+        json={"name": "Chor <Nord>", "slug": slug},
+    )
+    req_id = resp.get_json()["request"]["id"]
+
+    admin = User(
+        email=f"staff-{slug}@test.ch",
+        first_name="Staff",
+        last_name="Admin",
+        is_superadmin=True,
+    )
+    admin.set_password("VeryStrongPass123!")
+    db.session.add(admin)
+    db.session.commit()
+    client.post(
+        "/api/v1/auth/login",
+        json={"email": f"staff-{slug}@test.ch", "password": "VeryStrongPass123!"},
+    )
+    return req_id
+
+
+def test_approving_a_request_mails_the_requester(client, db, app):
+    from unittest.mock import patch
+
+    app.config["SSO_BASE_URL"] = "https://sso.example.ch"
+    req_id = _request_and_sign_in_staff(client, db, "mail-ok")
+
+    with (
+        patch("hubra.core.tenant.service.create_tenant_schema"),
+        patch("hubra.core.tenant.context.set_search_path"),
+        patch("hubra.core.tenant.context.reset_search_path"),
+        patch("hubra.core.services.email._send", return_value=True) as send,
+    ):
+        resp = client.post(f"/api/v1/system/tenant-requests/{req_id}/approve")
+
+    assert resp.status_code == 200
+    assert resp.get_json()["notified"] is True
+    send.assert_called_once()
+    to, _name, subject, html, text = send.call_args.args
+    assert to == "mail-ok@test.ch"
+    assert send.call_args.kwargs["system"] is True
+    assert "Chor <Nord>" in subject
+    assert "Chor &lt;Nord&gt;" in html and "<Nord>" not in html
+    assert 'href="https://sso.example.ch/clubs"' in html
+    assert "https://sso.example.ch/clubs" in text
+
+
+def test_rejecting_a_request_mails_the_note(client, db, app):
+    from unittest.mock import patch
+
+    app.config["SSO_BASE_URL"] = "https://sso.example.ch"
+    req_id = _request_and_sign_in_staff(client, db, "mail-no")
+
+    with patch("hubra.core.services.email._send", return_value=True) as send:
+        resp = client.post(
+            f"/api/v1/system/tenant-requests/{req_id}/reject",
+            json={"note": "Name <b>schon vergeben</b>"},
+        )
+
+    assert resp.status_code == 200
+    assert resp.get_json()["notified"] is True
+    _to, _name, _subject, html, text = send.call_args.args
+    assert "mail-no" in html
+    assert "Name &lt;b&gt;schon vergeben&lt;/b&gt;" in html
+    assert "Name <b>schon vergeben</b>" in text
+    assert 'href="https://sso.example.ch/start"' in html
+
+
+def test_a_mail_failure_does_not_undo_the_decision(client, db):
+    from unittest.mock import patch
+
+    from hubra.core.models.tenant_request import TenantRequest
+
+    req_id = _request_and_sign_in_staff(client, db, "mail-down")
+
+    with patch(
+        "hubra.core.services.email.render_mail_template",
+        side_effect=RuntimeError("template broke"),
+    ):
+        resp = client.post(f"/api/v1/system/tenant-requests/{req_id}/reject")
+
+    assert resp.status_code == 200
+    assert resp.get_json()["notified"] is False
+    assert db.session.get(TenantRequest, req_id).status == "rejected"

@@ -549,3 +549,45 @@ def send_account_deleted(
         support_url=support_url,
     )
     _send(to_address, name, subject, body_html, body_text, system=True)
+
+
+def send_club_request_approved(
+    to_address: str, name: str, request_name: str, *, lang: str = DEFAULT_LANG
+) -> bool:
+    """Tell the requester that their new club is set up.  True when sent."""
+    sso = _get_sso_base_url()
+
+    body_html, body_text, subject = render_mail_template(
+        "club_request_approved",
+        locale=lang,
+        name=name,
+        club_name=club_display_name(),
+        request_name=request_name,
+        clubs_url=f"{sso}/clubs" if sso else "",
+    )
+    return _send(to_address, name, subject, body_html, body_text, system=True)
+
+
+def send_club_request_rejected(
+    to_address: str,
+    name: str,
+    request_name: str,
+    request_slug: str,
+    note: str | None,
+    *,
+    lang: str = DEFAULT_LANG,
+) -> bool:
+    """Tell the requester that their club request was turned down.  True when sent."""
+    sso = _get_sso_base_url()
+
+    body_html, body_text, subject = render_mail_template(
+        "club_request_rejected",
+        locale=lang,
+        name=name,
+        club_name=club_display_name(),
+        request_name=request_name,
+        request_slug=request_slug,
+        note=note or "",
+        start_url=f"{sso}/start" if sso else "",
+    )
+    return _send(to_address, name, subject, body_html, body_text, system=True)

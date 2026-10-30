@@ -1,0 +1,7 @@
+{{ t('mail.email.club_request.rejected_body', request_name=request_name, request_slug=request_slug) }}
+{% if note %}
+{{ t('mail.email.club_request.rejected_note', note=note) }}
+{% endif %}
+{{ t('mail.email.club_request.rejected_again') }}
+{% if start_url %}{{ start_url }}
+{% endif %}

@@ -1,0 +1,7 @@
+{% extends "email/base.html" %}
+{% block content %}
+<p>{{ t('mail.email.club_request.rejected_body', request_name=request_name, request_slug=request_slug) }}</p>
+{% if note %}<p>{{ t('mail.email.club_request.rejected_note', note=note) }}</p>{% endif %}
+<p>{{ t('mail.email.club_request.rejected_again') }}</p>
+{% if start_url %}<p>{{ t('mail.email.club_request.rejected_cta', start_url=start_url) }}</p>{% endif %}
+{% endblock %}
