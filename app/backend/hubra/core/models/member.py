@@ -140,7 +140,8 @@ class Member(db.Model):
         db.Integer, ForeignKey("payment_plans.id", ondelete="SET NULL"), nullable=True
     )
 
-    joined: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # The day they joined the club; every way into a club sets it.
+    joined: Mapped[date | None] = mapped_column(Date, default=date.today, nullable=True)
 
     # active | trial | inactive | suspended
     status: Mapped[str] = mapped_column(db.String(50), default="trial", nullable=False)
