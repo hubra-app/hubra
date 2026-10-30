@@ -339,7 +339,7 @@ export function PollsTab() {
                             <span
                               style={{
                                 fontSize: "var(--mantine-font-size-sm)",
-                                color: isMyVote ? "#6131c4" : "#2e2940",
+                                color: isMyVote ? "var(--mantine-color-acc-7)" : "#2e2940",
                                 fontWeight: isMyVote ? 600 : 400,
                               }}
                             >
@@ -350,7 +350,7 @@ export function PollsTab() {
                               className="num"
                               style={{
                                 fontSize: "var(--mantine-font-size-sm)",
-                                color: isWinner ? "#6131c4" : "#5e5873",
+                                color: isWinner ? "var(--mantine-color-acc-7)" : "#5e5873",
                                 fontWeight: isWinner ? 700 : 400,
                               }}
                             >
@@ -365,9 +365,9 @@ export function PollsTab() {
                             styles={{
                               section: {
                                 background: isMyVote
-                                  ? "#7441e0"
+                                  ? "var(--mantine-color-acc-6)"
                                   : isWinner
-                                    ? "#7441e088"
+                                    ? "var(--mantine-color-acc-3)"
                                     : "#ebe8f2",
                                 transition: "width .4s",
                               },

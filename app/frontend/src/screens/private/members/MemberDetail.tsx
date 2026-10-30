@@ -185,7 +185,7 @@ export function MemberDetailScreen({
             <div
               style={{
                 fontSize: 'var(--mantine-font-size-xs)',
-                color: '#6131c4',
+                color: 'var(--mantine-color-acc-7)',
                 fontFamily: '"JetBrains Mono"',
                 marginBottom: 12,
               }}
@@ -356,10 +356,10 @@ export function MemberDetailScreen({
                   cursor: 'pointer',
                   border: 'none',
                   background: 'transparent',
-                  color: tab === tabKey ? '#6131c4' : '#5e5873',
+                  color: tab === tabKey ? 'var(--mantine-color-acc-7)' : '#5e5873',
                   borderBottom:
                     tab === tabKey
-                      ? '2px solid #6131c4'
+                      ? '2px solid var(--mantine-color-acc-7)'
                       : '2px solid transparent',
                   transition: 'all .15s',
                 }}

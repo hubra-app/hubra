@@ -15,7 +15,7 @@ import {
 } from '@mantine/core'
 import { IconArrowRight, IconBuildingCommunity, IconPlus, IconSearch, IconUsers } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
-import { SSO_URL } from '@hubra/api-client'
+import { SSO_URL, clubLogoUrl } from '@hubra/api-client'
 import { PageHead } from '@/components/ui'
 import { getMyTenants, type MyTenant } from '@/api/tenants'
 import { useLang } from '@/lang'
@@ -101,7 +101,15 @@ export function MyTenantsTab() {
           <Paper key={t.tenant_id} withBorder p="lg">
             <Stack gap="lg">
               <Group gap="md" wrap="nowrap">
-                <Avatar size={48} radius="md" color="acc" variant="light">
+                <Avatar
+                  size={48}
+                  radius="md"
+                  color="acc"
+                  variant="light"
+                  src={clubLogoUrl(t.tenant_slug, t.logo_version)}
+                  alt=""
+                  styles={{ image: { objectFit: 'contain' } }}
+                >
                   {clubName(t).slice(0, 2).toUpperCase()}
                 </Avatar>
                 <div style={{ minWidth: 0, flex: 1 }}>

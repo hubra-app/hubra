@@ -500,6 +500,7 @@ class AuthService:
         ``admin_level`` ('owner', 'admin' or None) from user_tenants.
         """
         from hubra.core.models.tenant import Tenant
+        from hubra.core.tenant.club_settings import club_logo_version
         from hubra.core.tenant.context import set_search_path, reset_search_path
 
         records = list(
@@ -541,6 +542,7 @@ class AuthService:
                         "tenant_name": tenant.name,
                         "member_id": member_id,
                         "admin_level": admin_level,
+                        "logo_version": club_logo_version(tenant),
                     }
                 )
             return result
@@ -566,6 +568,7 @@ class AuthService:
                         "tenant_slug": tenant.slug,
                         "tenant_name": tenant.name,
                         "member_id": member.id,
+                        "logo_version": club_logo_version(tenant),
                     }
                 )
         if found:

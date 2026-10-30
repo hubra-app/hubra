@@ -67,7 +67,7 @@ export function FinanceOverviewTab() {
             overview ? formatCHFWhole(overview.netMTD, true) : '—'
           }
           sub={t('finance.incomeMinusExpenses', 'Einnahmen minus Ausgaben')}
-          accent="#6131c4"
+          accent="var(--mantine-color-acc-7)"
         />
         <StatTile
           label={t('common.openInvoices', 'Offene Rechnungen')}
@@ -216,7 +216,7 @@ export function FinanceOverviewTab() {
             <Button
               size="sm"
               variant="subtle"
-              style={{ marginLeft: 'auto', color: '#6131c4' }}
+              style={{ marginLeft: 'auto', color: 'var(--mantine-color-acc-7)' }}
               onClick={() => go('/app/finance/transactions')}
             >
               {t('finance.viewAll', 'Alle ansehen')}

@@ -18,6 +18,7 @@ import { useDebouncedValue } from '@mantine/hooks'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { IconArrowRight, IconBuildingCommunity, IconPlus, IconSearch } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
+import { clubLogoUrl } from '@hubra/api-client'
 import { useSso } from '@/context/SsoContext'
 import { clubAppUrl } from '@/redirect'
 import * as authApi from '@/api/auth'
@@ -30,6 +31,31 @@ import { useLang } from '@/lang'
  * (and the manager portal for platform managers), and lets them find another
  * club and ask to join it (platform managers join straight away).
  */
+/** The club's logo, or its initials when it has none. */
+function ClubAvatar({
+  slug,
+  name,
+  logoVersion,
+}: {
+  slug: string
+  name: string | null
+  logoVersion?: string | null
+}) {
+  return (
+    <Avatar
+      radius="md"
+      size={44}
+      color="acc"
+      variant="light"
+      src={clubLogoUrl(slug, logoVersion)}
+      alt=""
+      styles={{ image: { objectFit: 'contain' } }}
+    >
+      {(name ?? slug).slice(0, 2).toUpperCase()}
+    </Avatar>
+  )
+}
+
 export function ClubsScreen() {
   const { authStatus, isManager, urls, notify } = useSso()
   const navigate = useNavigate()
@@ -184,9 +210,7 @@ export function ClubsScreen() {
             <Paper key={t.tenant_slug} withBorder p="md">
               <Group justify="space-between" wrap="nowrap">
                 <Group gap="md" wrap="nowrap" style={{ minWidth: 0 }}>
-                  <Avatar radius="md" size={44} color="acc" variant="light">
-                    {(t.tenant_name ?? t.tenant_slug).slice(0, 2).toUpperCase()}
-                  </Avatar>
+                  <ClubAvatar slug={t.tenant_slug} name={t.tenant_name} logoVersion={t.logo_version} />
                   <Box style={{ minWidth: 0 }}>
                     <Text fw={700} truncate>
                       {t.tenant_name}
@@ -276,14 +300,17 @@ export function ClubsScreen() {
         {results.map((c) => (
           <Paper key={c.slug} withBorder p="md">
             <Group justify="space-between" wrap="nowrap">
-              <Box style={{ minWidth: 0 }}>
-                <Text fw={700} truncate>
-                  {c.name}
-                </Text>
-                <Text fz="sm" c="dimmed">
-                  {c.slug}
-                </Text>
-              </Box>
+              <Group gap="md" wrap="nowrap" style={{ minWidth: 0 }}>
+                <ClubAvatar slug={c.slug} name={c.name} logoVersion={c.logoVersion} />
+                <Box style={{ minWidth: 0 }}>
+                  <Text fw={700} truncate>
+                    {c.name}
+                  </Text>
+                  <Text fz="sm" c="dimmed">
+                    {c.slug}
+                  </Text>
+                </Box>
+              </Group>
               {c.membership === 'member' ? (
                 <Button
                   variant="light"

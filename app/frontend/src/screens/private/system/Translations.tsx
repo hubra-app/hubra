@@ -656,7 +656,7 @@ export function TranslationsScreen() {
           saving={saving}
           renderKeyPrefix={(entry) =>
             entry.alias_for ? (
-              <IconLink size={11} style={{ color: '#6131c4' }} />
+              <IconLink size={11} style={{ color: 'var(--mantine-color-acc-7)' }} />
             ) : null
           }
           renderKeyBelow={(entry) => (
@@ -686,7 +686,7 @@ export function TranslationsScreen() {
                     marginLeft: 6,
                     fontSize: 'var(--mantine-font-size-xs)',
                     fontWeight: 500,
-                    color: '#6131c4',
+                    color: 'var(--mantine-color-acc-7)',
                     background: '#fef9ef',
                     borderRadius: 4,
                     padding: '1px 4px',
@@ -797,7 +797,7 @@ export function TranslationsScreen() {
                 <Button
                   size="sm"
                   variant="subtle"
-                  style={{ color: '#6131c4' }}
+                  style={{ color: 'var(--mantine-color-acc-7)' }}
                   onClick={() => {
                     if (entry.alias_for) {
                       handleRemoveAlias(entry)

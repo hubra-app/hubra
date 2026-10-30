@@ -26,6 +26,8 @@ export interface TenantChoice {
   member_id: number | null
   /** 'owner' or 'admin' where the user runs the club, else null. */
   admin_level?: 'owner' | 'admin' | null
+  /** Changes with the club's logo; null without one. */
+  logo_version?: string | null
 }
 
 interface RawAuthResponse {
@@ -116,6 +118,8 @@ export interface ClubListing {
   membership: 'member' | 'pending' | null
   /** False when the club takes new members by invite only. */
   acceptsRequests?: boolean
+  /** Changes with the club's logo; null without one. */
+  logoVersion?: string | null
 }
 
 /**

@@ -54,7 +54,7 @@ export function MarkdownRenderer({
           blockquote: (props) => (
             <blockquote
               style={{
-                borderLeft: '3px solid #7441e0',
+                borderLeft: '3px solid var(--mantine-color-acc-6)',
                 paddingLeft: '12px',
                 marginLeft: 0,
                 marginBottom: '0.5em',

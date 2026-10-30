@@ -8,6 +8,7 @@ import { MobileDrawer } from './MobileDrawer'
 import { NotificationPanel } from './NotificationPanel'
 import { ImpersonationBanner } from './ImpersonationBanner'
 import { ClubBanner } from './ClubBanner'
+import { ClubBranding } from './ClubBranding'
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const { currentUser } = useAuth()
@@ -54,6 +55,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <div className="page-container">{children}</div>
       </AppShell.Main>
 
+      <ClubBranding />
       <NotificationPanel />
       {currentUser?.mustChangePassword && <ForcedPasswordChangeModal />}
     </AppShell>

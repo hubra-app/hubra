@@ -28,7 +28,7 @@ export function SectionToggle({
       style={{
         width: 14,
         height: 14,
-        accentColor: role.isAdmin ? '#3a1e78' : '#7441e0',
+        accentColor: role.isAdmin ? 'var(--mantine-color-acc-9)' : 'var(--mantine-color-acc-6)',
         cursor: disabled ? 'default' : 'pointer',
       }}
     />
@@ -62,7 +62,7 @@ export function PermCheckbox({
         height: size,
         flexShrink: 0,
         marginTop: 2,
-        accentColor: role.isAdmin ? '#3a1e78' : '#7441e0',
+        accentColor: role.isAdmin ? 'var(--mantine-color-acc-9)' : 'var(--mantine-color-acc-6)',
         cursor: disabled ? 'default' : 'pointer',
       }}
     />

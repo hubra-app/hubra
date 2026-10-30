@@ -1,9 +1,7 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { CloseButton, Group, Text } from '@mantine/core'
 import { IconSpeakerphone } from '@tabler/icons-react'
-import { qk } from '@/data/keys'
-import { getClubProfile } from '@/api/settings'
+import { useClubProfile } from '@/data/clubProfile'
 import { useT } from '@/locales/i18n'
 
 const DISMISSED_KEY = 'hubra.clubBanner.dismissed'
@@ -23,11 +21,7 @@ function readDismissed(): string | null {
 export function ClubBanner() {
   const { t } = useT()
   const [dismissed, setDismissed] = useState(readDismissed)
-  const { data } = useQuery({
-    queryKey: qk.settings.clubProfile,
-    queryFn: getClubProfile,
-    staleTime: 5 * 60_000,
-  })
+  const { data } = useClubProfile()
 
   const text = data?.banner
   if (!text || dismissed === text) return null
@@ -49,11 +43,11 @@ export function ClubBanner() {
       px={16}
       py={8}
       style={{
-        background: 'var(--mantine-color-violet-0)',
-        borderBottom: '1px solid var(--mantine-color-violet-2)',
+        background: 'var(--mantine-color-gold-0)',
+        borderBottom: '1px solid var(--mantine-color-gold-3)',
       }}
     >
-      <IconSpeakerphone size={18} color="var(--mantine-color-violet-7)" style={{ flexShrink: 0 }} />
+      <IconSpeakerphone size={18} color="var(--mantine-color-gold-8)" style={{ flexShrink: 0 }} />
       <Text fz="sm" fw={500} style={{ flex: 1 }}>
         {text}
       </Text>
