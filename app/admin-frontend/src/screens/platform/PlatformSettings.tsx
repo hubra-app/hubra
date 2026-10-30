@@ -156,8 +156,11 @@ export function PlatformSettings() {
       label,
       description: de ? tr(de[1], s.description) : s.description,
       value: draft[key] ?? s.value,
-      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-        setDraft((d) => ({ ...d, [key]: e.currentTarget.value })),
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+        // Read it now: the updater runs after React has cleared currentTarget.
+        const value = e.currentTarget.value
+        setDraft((d) => ({ ...d, [key]: value }))
+      },
     }
     return s.secret ? (
       <PasswordInput key={key} {...common} placeholder={s.isSet ? tr('•••••••• (unverändert)', '•••••••• (unchanged)') : ''} />
