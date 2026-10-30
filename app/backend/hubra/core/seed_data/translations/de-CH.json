@@ -2885,5 +2885,13 @@
   "roles.delete": "Rolle löschen",
   "roles.mayDo": "Darf",
   "roles.pageRoles": "Rollen",
-  "roles.pageCompare": "Vergleichen"
+  "roles.pageCompare": "Vergleichen",
+  "finance.settings.tab": "Einstellungen",
+  "finance.settings.saved": "Einstellungen gespeichert",
+  "finance.settings.invoicesTitle": "Rechnungen und Mahnungen",
+  "finance.settings.bankHint": "Das Konto und die Adresse auf den QR-Rechnungen stellst du in den Einstellungen des Vereins ein.",
+  "finance.settings.openBank": "Bankangaben öffnen",
+  "settings.tabs.membership": "Mitgliedschaft",
+  "settings.tabs.bank": "Bank & QR-Rechnung",
+  "shell.breadcrumbs.financeSettings": "Finanzen › Einstellungen"
 }

@@ -986,7 +986,14 @@
       "rent": "Rent"
     },
     "starterCreated": "Categories created",
-    "starterCreatedMsg": "You can rename or delete them at any time."
+    "starterCreatedMsg": "You can rename or delete them at any time.",
+    "settings": {
+      "tab": "Settings",
+      "saved": "Settings saved",
+      "invoicesTitle": "Invoices and reminders",
+      "bankHint": "The account and address on the QR invoices are set in the club settings.",
+      "openBank": "Open bank details"
+    }
   },
   "functions": {
     "assignHolder": "Assign person",
@@ -1962,7 +1969,9 @@
       "club": "Club",
       "domains": "Domains",
       "modules": "Modules & plugins",
-      "settings": "Advanced"
+      "settings": "Advanced",
+      "membership": "Membership",
+      "bank": "Bank & QR invoice"
     },
     "title": "Settings",
     "yourAccount": "Your Account",
@@ -2016,7 +2025,8 @@
       "txCategories": "Finance › Categories",
       "roles": "Administration › Roles",
       "health": "System › Health",
-      "dashboardMe": "Dashboard › Personal"
+      "dashboardMe": "Dashboard › Personal",
+      "financeSettings": "Finance › Settings"
     },
     "emailVerify": {
       "banner": "Your private email address isn't verified yet. Some features are only available after that.",

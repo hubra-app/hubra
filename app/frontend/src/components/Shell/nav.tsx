@@ -272,6 +272,7 @@ export function getBreadcrumb(
     '/app/finance/invoices': t('shell.breadcrumbs.invoices'),
     '/app/finance/categories': t('shell.breadcrumbs.txCategories'),
     '/app/finance/external-parties': t('shell.breadcrumbs.externalParties'),
+    '/app/finance/settings': t('shell.breadcrumbs.financeSettings'),
     '/app/mail': t('shell.breadcrumbs.mail'),
     '/app/operations/codes': t('shell.breadcrumbs.codes'),
     '/app/operations/bindings': t('shell.breadcrumbs.bindings'),

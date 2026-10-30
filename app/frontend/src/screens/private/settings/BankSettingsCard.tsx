@@ -120,7 +120,7 @@ function BankForm({ initial }: { initial: BankSettings }) {
   )
 }
 
-/** Settings › Verein: the account and address on the club's QR invoices. */
+/** Settings › Bank & QR-Rechnung: the account and address on the club's QR invoices. */
 export function BankSettingsCard() {
   const { data } = useQuery({ queryKey: qk.settings.bank, queryFn: getBankSettings })
   if (!data) return null

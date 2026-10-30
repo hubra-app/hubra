@@ -22,7 +22,20 @@ const DE: Record<string, { name: string; description: string; settings?: Record<
       ],
     },
   },
-  finance: { name: 'Finanzen', description: 'Buchungen, Rechnungen mit Schweizer QR-Rechnung und Mahnungen' },
+  finance: {
+    name: 'Finanzen',
+    description: 'Buchungen, Rechnungen mit Schweizer QR-Rechnung und Mahnungen',
+    settings: {
+      payment_term_days: [
+        'Zahlungsfrist (Tage)',
+        'Fälligkeit neuer Rechnungen und von Sammelrechnungen ohne Datum',
+      ],
+      email_new_invoices: ['Neue Rechnungen per E-Mail senden', 'Mit dem QR-Einzahlungsschein im Anhang'],
+      reminders_enabled: ['Zahlungserinnerungen senden', ''],
+      first_reminder_days: ['Erste Erinnerung (Tage nach Fälligkeit)', ''],
+      second_reminder_days: ['Zweite Erinnerung (Tage nach Fälligkeit)', ''],
+    },
+  },
   functions: { name: 'Funktionen', description: 'Vereinsämter und wer sie innehat' },
   groups: { name: 'Gruppen', description: 'Teams, Kommissionen und Interessengruppen' },
   inventory: {
