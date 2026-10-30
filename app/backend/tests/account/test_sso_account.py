@@ -84,6 +84,41 @@ def test_theme_follows_the_account(client, db):
     assert "hubra_theme=dark" in " ".join(resp.headers.getlist("Set-Cookie"))
 
 
+def test_sidebar_prefs_follow_the_account(client, db):
+    """Pinned and hidden sidebar entries are saved on the account."""
+    user = _user_without_club(db)
+    _login(client, "solo@test.ch")
+    prefs = client.get("/api/v1/account/profile").get_json()["navPrefs"]
+    assert prefs == {"pinned": [], "hidden": []}
+
+    resp = client.patch(
+        "/api/v1/account/profile",
+        json={
+            "navPrefs": {
+                "pinned": ["/app/finance", "/app/finance"],
+                "hidden": ["/app/groups"],
+            }
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.get_json()["navPrefs"] == {
+        "pinned": ["/app/finance"],
+        "hidden": ["/app/groups"],
+    }
+    db.session.refresh(user)
+    assert user.nav_prefs["hidden"] == ["/app/groups"]
+
+    for bad in (
+        "x",
+        {"pinned": "/app/finance"},
+        {"hidden": ["https://evil.test"]},
+        {"hidden": ["/app/" + "a" * 300]},
+        {"pinned": [f"/app/p{i}" for i in range(51)]},
+    ):
+        resp = client.patch("/api/v1/account/profile", json={"navPrefs": bad})
+        assert resp.status_code == 400, bad
+
+
 def test_profile_update_rejects_bad_values(client, db):
     _user_without_club(db)
     _login(client, "solo@test.ch")
