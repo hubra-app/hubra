@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { clubLogoUrl } from '@hubra/api-client'
+import { useAuth } from '@/context/AppContext'
 import { qk } from '@/data/keys'
 import { getClubProfile, type ClubProfile } from '@/api/settings'
 import { URL_CLUB } from '@/clubBase'
@@ -29,21 +30,21 @@ async function fetchClubProfile(): Promise<ClubProfile> {
 
 /** The club's name, look and banner (Settings > Verein), for every member. */
 export function useClubProfile() {
+  const { authStatus, tenantSlug } = useAuth()
   return useQuery({
-    queryKey: qk.settings.clubProfile,
+    // Per club, and only once signed in to it: asked earlier, the 403 stayed
+    // cached and the logo was missing until a full reload.
+    queryKey: [...qk.settings.clubProfile, tenantSlug],
     queryFn: fetchClubProfile,
     placeholderData: readStored,
+    enabled: authStatus === 'authed',
     staleTime: 5 * 60_000,
-    // Unlike other lists, also retry a 401/403: right after sign-in or a
-    // token refresh the first call can fail, and the shell would then show
-    // no logo until a reload.
     retry: 2,
-    retryDelay: (attempt) => 1000 * 2 ** attempt,
   })
 }
 
-/** The club's logo URL (browser-cached), or undefined without a logo. */
+/** The club logo's URL (cached by the browser), or undefined without one. */
 export function useClubLogo(): string | undefined {
   const { data } = useClubProfile()
-  return clubLogoUrl(URL_CLUB, data?.logo_version)
+  return clubLogoUrl(data?.slug, data?.logo_version)
 }

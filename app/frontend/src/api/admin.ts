@@ -85,3 +85,30 @@ export async function removeDomain(id: number): Promise<void> {
 export async function setPrimaryDomain(id: number): Promise<{ domain: Domain }> {
   return apiFetch(`/admin/domains/${id}/primary`, { method: 'PATCH' })
 }
+
+/** The account and address the club's QR invoices are paid to. */
+export interface BankSettings {
+  iban: string
+  street: string
+  houseNo: string
+  postalCode: string
+  city: string
+  country: string
+  /** A QR-IBAN: invoices get a QR reference the bank import matches. */
+  isQrIban: boolean
+  /** IBAN, postal code and city are set, so invoices can carry a QR bill. */
+  complete: boolean
+}
+
+export type BankSettingsInput = Omit<BankSettings, 'isQrIban' | 'complete'>
+
+export function getBankSettings(): Promise<BankSettings> {
+  return apiFetch<BankSettings>('/admin/bank-settings')
+}
+
+export function updateBankSettings(input: BankSettingsInput): Promise<BankSettings> {
+  return apiFetch<BankSettings>('/admin/bank-settings', {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  })
+}

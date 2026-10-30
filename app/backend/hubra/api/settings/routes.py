@@ -96,11 +96,13 @@ def get_club_profile():
     tenant = current_tenant()
     branding = dict((tenant.settings or {}).get("branding", {})) if tenant else {}
     profile = {k: branding.get(k) for k in _PUBLIC_CLUB_FIELDS}
+    # The logo itself (a data URL of up to 2 MB) slowed every page load and
+    # couldn't be cached; the app loads it from GET /system/clubs/<slug>/logo
+    # with this version in the link instead.
+    profile["slug"] = tenant.slug if tenant else None
+    profile["logo_version"] = club_logo_version(tenant)
     if not profile["club_name"] and tenant is not None:
         profile["club_name"] = tenant.name
-    # The logo itself comes from GET /system/clubs/<slug>/logo?v=<version>,
-    # which the browser caches; a data URL here made every load heavy.
-    profile["logo_version"] = club_logo_version(tenant)
     banner = (branding.get("announcement_banner_text") or "").strip()
     profile["banner"] = (
         banner if banner and branding.get("announcement_banner_active") else None

@@ -32,11 +32,8 @@ export function ClubBranding() {
       secondary: data.secondary_color,
       accent: data.accent_color,
     })
-  }, [data])
-
-  useEffect(() => {
     setFavicon(logo ?? null)
-  }, [logo])
+  }, [data, logo])
 
   return null
 }

@@ -249,7 +249,6 @@ def test_club_profile_for_members(tenant_ctx, client, auth_headers, db):
     tenant_ctx.settings = {
         "branding": {
             "primary_color": "#123456",
-            "logo": "data:image/png;base64,iVBORw0KGgo=",
             "announcement_banner_text": "  GV am Freitag  ",
             "announcement_banner_active": True,
             "join_requests_open": False,
@@ -262,9 +261,20 @@ def test_club_profile_for_members(tenant_ctx, client, auth_headers, db):
     assert body["primary_color"] == "#123456"
     assert body["banner"] == "GV am Freitag"
     assert "join_requests_open" not in body
-    # The logo is a cacheable URL away, not inlined.
+    assert body["logo_version"] is None
+
+
+def test_club_profile_links_the_logo_instead_of_embedding_it(
+    tenant_ctx, client, auth_headers, db
+):
+    logo = "data:image/png;base64," + "A" * 4000
+    tenant_ctx.settings = {"branding": {"logo": logo}}
+    db.session.commit()
+    with patch("hubra.core.tenant.context.current_tenant", return_value=tenant_ctx):
+        body = client.get("/api/v1/settings/club-profile").get_json()
     assert "logo" not in body
-    assert body["logo_version"] and len(body["logo_version"]) == 12
+    assert body["slug"] == tenant_ctx.slug
+    assert len(body["logo_version"]) == 12
 
     tenant_ctx.settings = {
         "branding": {

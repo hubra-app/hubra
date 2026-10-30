@@ -56,16 +56,19 @@ export function PollsTab() {
   const pollCache = useListCache<Poll>(qk.polls);
   const { hasPermission } = useAuth();
   const { t, i18n } = useT();
+  const canCreate = hasPermission("polls.polls.create");
+  const canUpdate = hasPermission("polls.polls.update");
+  // Only the poll form needs them (and members may not read functions).
   const { data: groups = [] } = useQuery({
     queryKey: qk.groups.all,
     queryFn: listGroups,
+    enabled: canCreate || canUpdate,
   });
   const { data: functions = [] } = useQuery({
     queryKey: qk.functions,
     queryFn: listFunctions,
+    enabled: canCreate || canUpdate,
   });
-  const canCreate = hasPermission("polls.polls.create");
-  const canUpdate = hasPermission("polls.polls.update");
   const canDelete = hasPermission("polls.polls.delete");
 
   const [addOpen, setAddOpen] = useState(false);
@@ -256,7 +259,7 @@ export function PollsTab() {
         <div
           style={{
             display: pg.paged.length === 0 ? "none" : "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fill, minmax(min(340px, 100%), 1fr))",
             gap: 14,
             padding: 16,
           }}
@@ -397,6 +400,8 @@ export function PollsTab() {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: 8,
                     borderTop: "1px solid var(--hb-border)",
                     paddingTop: 12,
                   }}
@@ -426,8 +431,10 @@ export function PollsTab() {
                   <div
                     style={{ display: "flex", gap: 6, alignItems: "center" }}
                   >
-                    <Badge variant="light" color="cyan" radius="xl">
-                      {poll.status}
+                    <Badge variant="light" color="cyan" radius="xl" style={{ flexShrink: 0 }}>
+                      {poll.status === "open"
+                        ? t("polls.statusOpen", "Offen")
+                        : t("polls.statusClosed", "Beendet")}
                     </Badge>
                     {poll.isRequired && canUpdate && (
                       <ActionIcon
