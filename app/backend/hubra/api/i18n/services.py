@@ -205,11 +205,13 @@ def _resolve_alias_chain(
 ) -> str:
     if key in resolved:
         return resolved[key]
+    # A loop or a missing target has no text: "" leaves the app's own text
+    # (the key itself would be shown as the text).
     if key in visited:
-        return key
+        return ""
     row = alias_map.get(key)
     if not row:
-        return key
+        return ""
     if not row.alias_for:
         resolved[key] = row.value
         return row.value

@@ -148,3 +148,26 @@ def test_dict_leaves_out_keys_without_text(app, db):
     assert result["shell.nav.home"] == "Start"
 
     i18n_services._mem_translations.clear()
+
+
+def test_dict_leaves_out_aliases_without_a_target(app, db):
+    """An alias to a missing key or in a loop has no text (not the key's name)."""
+    db.session.add_all(
+        [
+            Translation(locale="de-CH", key="nav.gone", value="", alias_for="nav.nothing"),
+            Translation(locale="de-CH", key="nav.loop1", value="", alias_for="nav.loop2"),
+            Translation(locale="de-CH", key="nav.loop2", value="", alias_for="nav.loop1"),
+            Translation(locale="de-CH", key="nav.home", value="Start"),
+            Translation(locale="de-CH", key="nav.start", value="", alias_for="nav.home"),
+        ]
+    )
+    db.session.commit()
+    i18n_services._mem_translations.clear()
+
+    result = i18n_services.get_translations_dict("de-CH")
+    assert "nav.gone" not in result
+    assert "nav.loop1" not in result
+    assert "nav.loop2" not in result
+    assert result["nav.start"] == "Start"
+
+    i18n_services._mem_translations.clear()
