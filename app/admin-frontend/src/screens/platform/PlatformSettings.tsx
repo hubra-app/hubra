@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Badge,
@@ -11,7 +12,7 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
-import { PageHead } from '@/components/ui'
+import { PageHead, Tabs } from '@/components/ui'
 import { useAdmin } from '@/context/AdminContext'
 import { useLang, tr } from '@/lang'
 import {
@@ -36,6 +37,9 @@ const BACKUP = [
   'backup.s3.access_key',
   'backup.s3.secret_key',
 ]
+
+const TABS = ['mail', 'sender', 'backups'] as const
+type Tab = (typeof TABS)[number]
 
 function SourceBadge({ s }: { s: PlatformSetting }) {
   return s.source === 'platform' ? (
@@ -81,6 +85,10 @@ export function PlatformSettings() {
   const { notify } = useAdmin()
   const { tr } = useLang()
   const queryClient = useQueryClient()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const last = location.pathname.split('/').pop() as Tab
+  const tab: Tab = TABS.includes(last) ? last : 'mail'
   const { data: settings = [], isLoading } = useQuery({
     queryKey: ['platform-settings'],
     queryFn: getPlatformSettings,
@@ -182,9 +190,20 @@ export function PlatformSettings() {
       <PageHead
         title={tr('Plattform-Einstellungen', 'Platform settings')}
         desc={tr(
-          'Gilt für alle Vereine. Jede Mail von Hubra geht über dieses Relay. Anmeldung, SSO und Plattform-Hinweise kommen vom Systemabsender. Vereinsmails kommen ebenfalls vom Systemabsender, mit der Vereinsadresse als Antwortadresse, ausser der Verein hat ein eigenes Absender-Postfach.',
-          "These apply to every club. Every mail Hubra sends goes through this relay. Sign-in, SSO and platform notices come from the system sender. Club mail comes from the system sender too, with the club's address as Reply-To, unless the club has its own sender mailbox.",
+          'Gilt für die ganze Plattform, für alle Vereine.',
+          'These apply to the whole platform, for every club.',
         )}
+      />
+      <Tabs
+        tabs={[
+          { id: 'mail', label: tr('Mail-Relay', 'Mail relay') },
+          { id: 'sender', label: tr('Systemabsender', 'System sender') },
+          { id: 'backups', label: tr('Backup-Speicher', 'Backup storage') },
+        ]}
+        activeTab={tab}
+        onTabChange={(id) =>
+          navigate(`/app/platform/settings${id === 'mail' ? '' : '/' + id}`)
+        }
       />
 
       {isLoading ? (
@@ -193,49 +212,63 @@ export function PlatformSettings() {
         </Text>
       ) : (
         <Stack gap={20} maw={720}>
-          <Paper withBorder shadow="sm" radius="lg" p="lg">
-            <Group justify="space-between" mb={12}>
-              <Title order={3}>{tr('Mail-Relay', 'Relay')}</Title>
-              {resetButton(RELAY)}
-            </Group>
-            <Stack gap="sm">{RELAY.map(field)}</Stack>
-          </Paper>
+          {tab === 'mail' && (
+            <Paper withBorder shadow="sm" radius="lg" p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Mail-Relay', 'Relay')}</Title>
+                {resetButton(RELAY)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Jede Mail von Hubra geht über dieses Relay. Anmeldung, SSO und Plattform-Hinweise kommen vom Systemabsender. Vereinsmails ebenfalls, mit der Vereinsadresse als Antwortadresse, ausser der Verein hat ein eigenes Absender-Postfach.',
+                  "Every mail Hubra sends goes through this relay. Sign-in, SSO and platform notices come from the system sender. Club mail does too, with the club's address as Reply-To, unless the club has its own sender mailbox.",
+                )}
+              </Text>
+              <Stack gap="sm">{RELAY.map(field)}</Stack>
+            </Paper>
+          )}
 
-          <Paper withBorder shadow="sm" radius="lg" p="lg">
-            <Group justify="space-between" mb={4}>
-              <Title order={3}>{tr('Fallback-Relay', 'Fallback relay')}</Title>
-              {resetButton(FALLBACK)}
-            </Group>
-            <Text size="xs" c="dimmed" mb={12}>
-              {tr(
-                'Lehnt das Relay eine Mail ab (Kontingent erreicht, Ausfall, Anmeldung), geht sie über diesen Server raus, vom selben Absender. Danach wird das Relay 15 Minuten übersprungen. Die Absenderdomain muss auch beim Fallback-Anbieter verifiziert sein (SPF/DKIM).',
-                'When the relay refuses a mail (quota reached, outage, login), it goes out through this server, from the same sender. The relay is then skipped for 15 minutes. The sender domain must be verified with the fallback provider too (SPF/DKIM).',
-              )}
-            </Text>
-            <Stack gap="sm">{FALLBACK.map(field)}</Stack>
-          </Paper>
+          {tab === 'mail' && (
+            <Paper withBorder shadow="sm" radius="lg" p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Fallback-Relay', 'Fallback relay')}</Title>
+                {resetButton(FALLBACK)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Lehnt das Relay eine Mail ab (Kontingent erreicht, Ausfall, Anmeldung), geht sie über diesen Server raus, vom selben Absender. Danach wird das Relay 15 Minuten übersprungen. Die Absenderdomain muss auch beim Fallback-Anbieter verifiziert sein (SPF/DKIM).',
+                  'When the relay refuses a mail (quota reached, outage, login), it goes out through this server, from the same sender. The relay is then skipped for 15 minutes. The sender domain must be verified with the fallback provider too (SPF/DKIM).',
+                )}
+              </Text>
+              <Stack gap="sm">{FALLBACK.map(field)}</Stack>
+            </Paper>
+          )}
 
-          <Paper withBorder shadow="sm" radius="lg" p="lg">
-            <Group justify="space-between" mb={12}>
-              <Title order={3}>{tr('Systemabsender', 'System sender')}</Title>
-              {resetButton(SENDER)}
-            </Group>
-            <Stack gap="sm">{SENDER.map(field)}</Stack>
-          </Paper>
+          {tab === 'sender' && (
+            <Paper withBorder shadow="sm" radius="lg" p="lg">
+              <Group justify="space-between" mb={12}>
+                <Title order={3}>{tr('Systemabsender', 'System sender')}</Title>
+                {resetButton(SENDER)}
+              </Group>
+              <Stack gap="sm">{SENDER.map(field)}</Stack>
+            </Paper>
+          )}
 
-          <Paper withBorder shadow="sm" radius="lg" p="lg">
-            <Group justify="space-between" mb={4}>
-              <Title order={3}>{tr('Backup-Speicher', 'Backup storage')}</Title>
-              {resetButton(BACKUP)}
-            </Group>
-            <Text size="xs" c="dimmed" mb={12}>
-              {tr(
-                'Hierhin gehen das globale Backup und die Backups jedes Vereins, verschlüsselt mit BACKUP_ENCRYPTION_KEY aus der Umgebung.',
-                'The global backup and every club backup go here, encrypted with BACKUP_ENCRYPTION_KEY from env.',
-              )}
-            </Text>
-            <Stack gap="sm">{BACKUP.map(field)}</Stack>
-          </Paper>
+          {tab === 'backups' && (
+            <Paper withBorder shadow="sm" radius="lg" p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Backup-Speicher', 'Backup storage')}</Title>
+                {resetButton(BACKUP)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Hierhin gehen das globale Backup und die Backups jedes Vereins, verschlüsselt mit BACKUP_ENCRYPTION_KEY aus der Umgebung.',
+                  'The global backup and every club backup go here, encrypted with BACKUP_ENCRYPTION_KEY from env.',
+                )}
+              </Text>
+              <Stack gap="sm">{BACKUP.map(field)}</Stack>
+            </Paper>
+          )}
 
           <Group>
             <Button
@@ -247,46 +280,48 @@ export function PlatformSettings() {
             </Button>
           </Group>
 
-          <Paper withBorder shadow="sm" radius="lg" p="lg">
-            <Title order={3} mb={12}>
-              {tr('Testmail', 'Test mail')}
-            </Title>
-            <Group align="flex-end">
-              <TextInput
-                label={tr('Senden an', 'Send to')}
-                placeholder={tr('du@beispiel.ch', 'you@example.com')}
-                value={testTo}
-                onChange={(e) => setTestTo(e.currentTarget.value)}
-                style={{ flex: 1, minWidth: 220 }}
-              />
-              <Button
-                variant="light"
-                loading={testing === 'relay'}
-                disabled={!testTo.includes('@') || changed.length > 0 || testing !== null}
-                onClick={() => sendTest('relay')}
-              >
-                {tr('Test über Relay', 'Test via relay')}
-              </Button>
-              {byKey['mail.fallback.host']?.isSet && (
+          {tab === 'mail' && (
+            <Paper withBorder shadow="sm" radius="lg" p="lg">
+              <Title order={3} mb={12}>
+                {tr('Testmail', 'Test mail')}
+              </Title>
+              <Group align="flex-end">
+                <TextInput
+                  label={tr('Senden an', 'Send to')}
+                  placeholder={tr('du@beispiel.ch', 'you@example.com')}
+                  value={testTo}
+                  onChange={(e) => setTestTo(e.currentTarget.value)}
+                  style={{ flex: 1, minWidth: 220 }}
+                />
                 <Button
                   variant="light"
-                  loading={testing === 'fallback'}
+                  loading={testing === 'relay'}
                   disabled={!testTo.includes('@') || changed.length > 0 || testing !== null}
-                  onClick={() => sendTest('fallback')}
+                  onClick={() => sendTest('relay')}
                 >
-                  {tr('Test über Fallback', 'Test via fallback')}
+                  {tr('Test über Relay', 'Test via relay')}
                 </Button>
-              )}
-            </Group>
-            {changed.length > 0 && (
-              <Text size="xs" c="dimmed" mt={6}>
-                {tr(
-                  'Speichere zuerst deine Änderungen; der Test nutzt die gespeicherten Einstellungen.',
-                  'Save your changes first; the test uses the saved settings.',
+                {byKey['mail.fallback.host']?.isSet && (
+                  <Button
+                    variant="light"
+                    loading={testing === 'fallback'}
+                    disabled={!testTo.includes('@') || changed.length > 0 || testing !== null}
+                    onClick={() => sendTest('fallback')}
+                  >
+                    {tr('Test über Fallback', 'Test via fallback')}
+                  </Button>
                 )}
-              </Text>
-            )}
-          </Paper>
+              </Group>
+              {changed.length > 0 && (
+                <Text size="xs" c="dimmed" mt={6}>
+                  {tr(
+                    'Speichere zuerst deine Änderungen; der Test nutzt die gespeicherten Einstellungen.',
+                    'Save your changes first; the test uses the saved settings.',
+                  )}
+                </Text>
+              )}
+            </Paper>
+          )}
         </Stack>
       )}
     </div>
