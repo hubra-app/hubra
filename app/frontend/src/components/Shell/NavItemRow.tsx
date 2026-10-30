@@ -8,14 +8,11 @@ export function NavItemRow({
   activePath,
   go,
   collapsed,
-  sub = false,
 }: {
   item: NavItem
   activePath: string
   go: (path: string) => void
   collapsed: boolean
-  /** An indented sub-page entry, without an icon. */
-  sub?: boolean
 }) {
   const active = activePath === item.path
 
@@ -63,8 +60,8 @@ export function NavItemRow({
           alignItems: 'center',
           gap: 12,
           borderRadius: 10,
-          padding: sub ? '6px 12px 6px 48px' : '8px 12px',
-          minHeight: sub ? 32 : 40,
+          padding: '8px 12px',
+          minHeight: 40,
           width: '100%',
           color: active ? 'var(--mantine-color-acc-8)' : 'var(--hb-text-2)',
           background: active ? 'var(--mantine-color-acc-1)' : undefined,
@@ -76,17 +73,15 @@ export function NavItemRow({
         data-active={active || undefined}
         aria-current={active ? 'page' : undefined}
       >
-        {!sub && (
-          <span
-            style={{
-              flexShrink: 0,
-              display: 'flex',
-              color: active ? 'var(--mantine-color-acc-6)' : 'var(--hb-text-2)',
-            }}
-          >
-            {item.icon}
-          </span>
-        )}
+        <span
+          style={{
+            flexShrink: 0,
+            display: 'flex',
+            color: active ? 'var(--mantine-color-acc-6)' : 'var(--hb-text-2)',
+          }}
+        >
+          {item.icon}
+        </span>
         <span style={{ flex: 1, fontSize: 'var(--mantine-font-size-sm)' }}>
           {item.label}
         </span>
@@ -104,16 +99,6 @@ export function NavItemRow({
           </Badge>
         )}
       </UnstyledButton>
-      {item.children?.map((child) => (
-        <NavItemRow
-          key={child.path}
-          item={child}
-          activePath={activePath}
-          go={go}
-          collapsed={false}
-          sub
-        />
-      ))}
     </Box>
   )
 }

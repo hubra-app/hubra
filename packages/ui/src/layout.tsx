@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import {
+  Badge,
   Box,
   Group,
   Pagination as MantinePagination,
@@ -125,6 +126,8 @@ export interface TabDef {
   id: string
   label: string
   icon?: ReactNode
+  /** A number shown after the label, such as open requests. */
+  count?: number
 }
 
 export function Tabs({
@@ -158,7 +161,18 @@ export function Tabs({
     >
       <MantineTabs.List>
         {tabs.map((t) => (
-          <MantineTabs.Tab key={t.id} value={t.id} leftSection={t.icon}>
+          <MantineTabs.Tab
+            key={t.id}
+            value={t.id}
+            leftSection={t.icon}
+            rightSection={
+              t.count ? (
+                <Badge variant="light" color="gray" size="sm" radius="xl">
+                  {t.count}
+                </Badge>
+              ) : undefined
+            }
+          >
             {t.label}
           </MantineTabs.Tab>
         ))}
