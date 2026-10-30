@@ -125,8 +125,8 @@ Component tests (Vitest and Testing Library) sit next to the code as
 `*.test.tsx` and run with `npm test`. Playwright tests live in
 `app/frontend/e2e/` and run against a real stack: they sign in on the SSO
 portal with the account in `e2e/env.ts` (or the `E2E_*` variables) and use the
-API as that user. CI runs both: the component tests in the `frontends` job,
-the browser tests in `compose-smoke` against the Compose stack.
+API as that user. CI runs both: the component tests in the `frontend-tests` job,
+the browser tests in `compose-smoke` (release-checks.yml, see docs/ci.md) against the Compose stack.
 
 ```bash
 cd app/frontend
