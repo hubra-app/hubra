@@ -1,4 +1,5 @@
-# Builds the container images and pushes them to GitHub Container Registry.
+# Builds the container images and pushes them to GitHub Container Registry,
+# after the full checks (release-checks.yml) have passed on the commit.
 # To save Actions minutes it runs only when a GitHub release is published,
 # or by hand (Actions > Images > Run workflow):
 #   ghcr.io/<owner>/<repo>/<image>:1.2.3         release v1.2.3
@@ -27,7 +28,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # The full checks (release-checks.yml) first: no image is published from a
+  # commit that fails them.
+  checks:
+    uses: ./.github/workflows/release-checks.yml
+
   build:
+    needs: checks
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

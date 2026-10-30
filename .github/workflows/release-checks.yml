@@ -1,0 +1,122 @@
+# The full checks: everything in ci.yml (lint and every unit test, whatever
+# the change touched), plus the dependency audits, the production builds of
+# the three frontends, and the Compose stack with the browser tests.
+#
+# Runs when a release/* branch is created or pushed to, on pull requests into
+# a release/* branch, and from images.yml before a release's images are
+# built, so no image is published from a commit that failed them. Run it by
+# hand from Actions > Release checks > Run workflow, for example on main
+# before cutting a release branch. docs/ci.md explains the release flow.
+#
+# Branch protection on release/* requires the check "release-checks".
+name: Release checks
+
+on:
+  push:
+    branches: ["release/**"]
+  pull_request:
+    branches: ["release/**"]
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    uses: ./.github/workflows/ci.yml
+    with:
+      full: true
+
+  # Known vulnerabilities in the locked dependencies. Every step runs even
+  # when an earlier one failed, so one run shows all findings.
+  audit:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: backend
+        if: ${{ !cancelled() }}
+        run: pipx run pip-audit==2.10.0 -r app/backend/requirements.lock --no-deps --disable-pip
+      # Runtime dependencies, high and critical.
+      - name: frontend
+        if: ${{ !cancelled() }}
+        working-directory: app/frontend
+        run: npm audit --omit=dev --audit-level=high
+      - name: admin-frontend
+        if: ${{ !cancelled() }}
+        working-directory: app/admin-frontend
+        run: npm audit --omit=dev --audit-level=high
+      - name: sso-frontend
+        if: ${{ !cancelled() }}
+        working-directory: app/sso-frontend
+        run: npm audit --omit=dev --audit-level=high
+
+  # Builds the images and runs the Compose stack end to end, with the
+  # browser tests of the three apps against it. The image builds also cover
+  # the production builds of the frontends.
+  compose-smoke:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Configure
+        run: scripts/init-env.sh
+      - run: docker compose build
+      - run: docker compose up -d
+      - run: scripts/smoke-test.sh
+      # Browser tests of the three apps against the same stack (app/frontend/e2e).
+      - name: Club and account for the browser tests
+        run: |
+          password="E2e-Test-$(date +%s)!"
+          echo "::add-mask::$password"
+          echo "E2E_PASSWORD=$password" >> "$GITHUB_ENV"
+          docker compose exec -T backend flask provision-tenant \
+            --name "E2E Club" --slug e2e --admin-email e2e@hubra.test --admin-password "$password"
+          docker compose exec -T -e SUPERADMIN_EMAILS=e2e@hubra.test backend flask ensure-superadmins
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: app/frontend/package-lock.json
+      - name: Browser tests
+        working-directory: app/frontend
+        env:
+          E2E_APP_URL: http://localhost:8080
+          E2E_MANAGE_URL: http://localhost:8081
+          E2E_SSO_URL: http://localhost:8082
+          E2E_CLUB: e2e
+          E2E_EMAIL: e2e@hubra.test
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npm run test:e2e
+      - if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: playwright-report
+          path: app/frontend/playwright-report/
+          retention-days: 7
+      - if: failure()
+        run: docker compose ps -a && docker compose logs --tail=200
+
+  # The one check branch protection on release/* requires, and the one
+  # images.yml waits for. Passes only when every job above passed.
+  release-checks:
+    needs: [ci, audit, compose-smoke]
+    if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "$RESULTS"
+          for r in $RESULTS; do
+            [ "$r" = success ] || exit 1
+          done
