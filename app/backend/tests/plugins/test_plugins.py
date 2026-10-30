@@ -264,7 +264,9 @@ def test_check_repository_downloads_and_verifies_every_archive(
     url = "https://plugins.example/index.json?v=1"
     assert publish.check_repository(url, doc["key_id"]) == (doc, [])
     _, problems = publish.check_repository(url)
-    assert problems == [f"the index is signed with key {doc['key_id']}, not b84edc01a8b17490"]
+    assert problems == [
+        f"the index is signed with key {doc['key_id']}, not b84edc01a8b17490"
+    ]
 
     # An archive changed after signing: re-zipped with a new checksum in a re-signed index.
     with zipfile.ZipFile(out / "hello-1.0.0.zip") as zf:
@@ -289,6 +291,45 @@ def test_check_repository_downloads_and_verifies_every_archive(
     assert problems == [
         "hello 1.0.0: files differ from what was signed: hubra_hello/__init__.py"
     ]
+
+
+def test_build_index_leaves_out_repositories_without_a_release(tmp_path, key):
+    pem, _pub = key
+    src = tmp_path / "src"
+    src.mkdir()
+    make_plugin(src)
+    built = tmp_path / "built"
+    publish.build_repository(src, built, pem, "Test plugins")
+    asset = "https://github.com/o/hubra-plugin-hello/releases/download/v1.0.0/hello-1.0.0.zip"
+    answers = {
+        "https://api.github.com/repos/o/hubra-plugin-hello/releases?per_page=100": [
+            {
+                "body": "",
+                "published_at": "2026-10-30T00:00:00Z",
+                "assets": [{"name": "hello-1.0.0.zip", "browser_download_url": asset}],
+            }
+        ],
+        "https://api.github.com/repos/o/hubra-plugin-new/releases?per_page=100": [],
+        asset: (built / "hello-1.0.0.zip").read_bytes(),
+    }
+    sources = {
+        "plugins": [{"repo": "o/hubra-plugin-hello"}, {"repo": "o/hubra-plugin-new"}]
+    }
+
+    def get(url, headers):
+        return answers[url]
+
+    out = tmp_path / "site"
+    doc = publish.build_index_from_sources(sources, out, pem, get=get)
+    assert [p["id"] for p in doc["plugins"]] == ["hello"]
+    assert doc["skipped"] == ["o/hubra-plugin-new"]
+    assert doc["problems"] == []
+
+    # Nothing released yet: an empty, signed index rather than an error.
+    del sources["plugins"][0]
+    doc = publish.build_index_from_sources(sources, out, pem, get=get)
+    assert doc["plugins"] == [] and doc["problems"] == []
+    assert json.loads((out / "index.json").read_text())["signature"]
 
 
 def test_an_older_index_than_seen_is_refused(tmp_path, key, db, monkeypatch):

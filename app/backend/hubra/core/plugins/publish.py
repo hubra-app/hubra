@@ -273,6 +273,7 @@ def build_index_from_sources(
     Every release asset named ``<id>-<version>.zip`` is downloaded and checked
     (checksum, SIGNATURE.json signed with this key, manifest id and version
     matching the name).  The index points at the assets where they are.
+    Repositories without a release are left out (``skipped``).
     """
     from cryptography.hazmat.primitives import serialization
 
@@ -294,7 +295,7 @@ def build_index_from_sources(
 
     key = serialization.load_pem_private_key(private_pem, password=None)
     mine = {key_id(key.public_key()): ("this repository", key.public_key())}
-    plugins, problems = [], []
+    plugins, problems, skipped = [], [], []
     listed = list(sources.get("plugins") or [])
     for d in sources.get("discover") or []:
         owner, prefix = (
@@ -375,7 +376,9 @@ def build_index_from_sources(
                 if top is None or _vkey(ver) > _vkey(top[0]["version"]):
                     top = (v, m)
         if top is None:
-            problems.append(f"{repo}: no release with a signed plugin")
+            # Not released yet: left out, not an error.  A release whose
+            # archive fails a check is a problem, reported above.
+            skipped.append(repo)
             continue
         v, m = top
         versions.sort(key=lambda x: _vkey(x["version"]), reverse=True)
@@ -398,7 +401,7 @@ def build_index_from_sources(
         private_pem,
     )
     (out / "index.json").write_text(json.dumps(doc, indent=2) + "\n")
-    return {**doc, "problems": problems}
+    return {**doc, "problems": problems, "skipped": skipped}
 
 
 def yank(out: Path, private_pem: bytes, pid: str, version: str, reason: str) -> dict:
@@ -471,7 +474,9 @@ def check_repository(url: str, expect_key: str = "") -> tuple[dict, list[str]]:
                     str(p.get("id")),
                     v["version"],
                 ):
-                    problems.append(f"{what}: the archive holds {m.get('id')} {m.get('version')}")
+                    problems.append(
+                        f"{what}: the archive holds {m.get('id')} {m.get('version')}"
+                    )
                 t = verify(pdir, m, signer)
                 if t["status"] not in ("official", "community") or t["key_id"] != kid:
                     problems.append(f"{what}: {t['detail']}")

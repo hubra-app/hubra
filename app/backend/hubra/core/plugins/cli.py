@@ -345,6 +345,8 @@ def register(app) -> None:
             click.echo(
                 f"  {p['id']:<20} {p['version']:<8} {len(p.get('versions') or [])} version(s)"
             )
+        for repo in doc["skipped"]:
+            click.echo(f"  - {repo}: no release yet, left out")
         for msg in doc["problems"]:
             click.echo(f"  ! {msg}", err=True)
         if doc["problems"] and not doc["plugins"]:
@@ -370,12 +372,16 @@ def register(app) -> None:
         except (InstallError, ValueError) as exc:
             _fail(exc)
         for p in doc["plugins"]:
-            click.echo(f"  {p['id']:<20} {p['version']:<8} {len(p.get('versions') or [p])} version(s)")
+            click.echo(
+                f"  {p['id']:<20} {p['version']:<8} {len(p.get('versions') or [p])} version(s)"
+            )
         if problems:
             for problem in problems:
                 click.echo(f"  ! {problem}", err=True)
             raise SystemExit(1)
-        click.echo(f"{url}: index and every archive signed with {doc['key_id']}, generated {doc['generated']}")
+        click.echo(
+            f"{url}: index and every archive signed with {doc['key_id']}, generated {doc['generated']}"
+        )
 
     @plugins_cli.command("yank")
     @click.argument("output", type=click.Path(file_okay=False, exists=True))
