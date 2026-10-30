@@ -2,21 +2,18 @@ import type { MouseEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { UnstyledButton, Badge, Box } from '@mantine/core'
 import type { NavItem } from './nav'
-import { getParentPath } from './nav'
 
 export function NavItemRow({
   item,
-  pathname,
+  active,
   go,
   collapsed,
 }: {
   item: NavItem
-  pathname: string
+  active: boolean
   go: (path: string) => void
   collapsed: boolean
 }) {
-  const parent = getParentPath(pathname)
-  const isActiveParent = parent === item.path
 
   // A real link, so it can be opened in a new tab; a plain click navigates
   // through `go`, which also closes the open menus.
@@ -40,11 +37,11 @@ export function NavItemRow({
           width: 44,
           height: 44,
           borderRadius: 10,
-          color: isActiveParent ? 'var(--mantine-color-acc-8)' : 'var(--hb-text-2)',
-          background: isActiveParent ? 'var(--mantine-color-acc-1)' : undefined,
+          color: active ? 'var(--mantine-color-acc-8)' : 'var(--hb-text-2)',
+          background: active ? 'var(--mantine-color-acc-1)' : undefined,
         }}
         className="nav-item"
-        data-active={isActiveParent || undefined}
+        data-active={active || undefined}
       >
         {item.icon}
       </UnstyledButton>
@@ -65,21 +62,21 @@ export function NavItemRow({
           padding: '8px 12px',
           minHeight: 40,
           width: '100%',
-          color: isActiveParent ? 'var(--mantine-color-acc-8)' : 'var(--hb-text-2)',
-          background: isActiveParent ? 'var(--mantine-color-acc-1)' : undefined,
+          color: active ? 'var(--mantine-color-acc-8)' : 'var(--hb-text-2)',
+          background: active ? 'var(--mantine-color-acc-1)' : undefined,
           fontSize: 'var(--mantine-font-size-sm)',
-          fontWeight: isActiveParent ? 700 : 500,
+          fontWeight: active ? 700 : 500,
           transition: 'background .15s, color .15s',
         }}
         className="nav-item"
-        data-active={isActiveParent || undefined}
-        aria-current={isActiveParent ? 'page' : undefined}
+        data-active={active || undefined}
+        aria-current={active ? 'page' : undefined}
       >
         <span
           style={{
             flexShrink: 0,
             display: 'flex',
-            color: isActiveParent ? 'var(--mantine-color-acc-6)' : 'var(--hb-text-2)',
+            color: active ? 'var(--mantine-color-acc-6)' : 'var(--hb-text-2)',
           }}
         >
           {item.icon}
@@ -89,9 +86,9 @@ export function NavItemRow({
         </span>
         {item.count !== undefined && (
           <Badge
-            variant={isActiveParent ? 'white' : 'light'}
+            variant={active ? 'white' : 'light'}
             size="sm"
-            color={isActiveParent ? 'acc' : 'gray'}
+            color={active ? 'acc' : 'gray'}
             radius="xl"
             ff="'JetBrains Mono', monospace"
           >

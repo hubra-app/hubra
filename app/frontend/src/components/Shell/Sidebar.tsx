@@ -7,7 +7,7 @@ import { NavItemRow } from './NavItemRow'
 import { UserMenu } from './UserMenu'
 import { usePlugins } from '@/plugins/store'
 import { useNavCounts } from '@/data/lists'
-import { buildNav, filterNav, initials, contrastColor } from './nav'
+import { buildNav, filterNav, getParentPath, initials, contrastColor } from './nav'
 import { roleLabels } from '@/roles'
 
 export function Sidebar() {
@@ -25,6 +25,10 @@ export function Sidebar() {
       moduleList,
     ),
     hasPermission,
+  )
+  const activePath = getParentPath(
+    location.pathname,
+    nav.flatMap((section) => section.items.map((item) => item.path)),
   )
   const userName = currentUser?.name ?? ''
   const userRole = roleLabels(currentUser?.roles)
@@ -75,7 +79,7 @@ export function Sidebar() {
                   <NavItemRow
                     key={item.path}
                     item={item}
-                    pathname={location.pathname}
+                    active={activePath === item.path}
                     go={go}
                     collapsed={sidebarCollapsed}
                   />
