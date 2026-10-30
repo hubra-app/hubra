@@ -218,7 +218,7 @@ export function KVSettingsTab() {
                   },
                 }}
               >
-                <IconLock size={10} /> restricted
+                <IconLock size={10} /> {t('kv.restricted', 'Gesperrt')}
               </Badge>
             )}
             {entry.required && (
@@ -234,7 +234,7 @@ export function KVSettingsTab() {
                   },
                 }}
               >
-                required
+                {t('kv.required', 'Pflichtfeld')}
               </Badge>
             )}
             {entry.validation_type && (
@@ -445,7 +445,7 @@ export function KVSettingsTab() {
 
       <Modal
         open={editingMeta !== null}
-        title={`Edit metadata: ${editingMeta?.key ?? ''}`}
+        title={`${t('kv.editMeta', 'Eigenschaften bearbeiten')}: ${editingMeta?.key ?? ''}`}
         onClose={() => setEditingMeta(null)}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

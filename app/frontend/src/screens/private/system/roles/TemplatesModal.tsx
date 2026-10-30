@@ -1,6 +1,7 @@
 import { Alert, Badge, Button, Group, Paper, Stack, Text } from '@mantine/core'
 import { Modal } from '@/components/ui'
-import { ROLE_TEMPLATES, type RoleTemplate } from '@/data/roleTemplates'
+import { ROLE_TEMPLATES, localizeTemplate, type RoleTemplate } from '@/data/roleTemplates'
+import { roleLabel } from '@/roles'
 import { useT } from '@/locales/i18n'
 
 export function TemplatesModal({
@@ -33,7 +34,7 @@ export function TemplatesModal({
             'Eine Vorlage legt fehlende Rollen an und setzt ihre Berechtigungen. Bei bestehenden Rollen mit gleichem Namen werden die Berechtigungen ersetzt.',
           )}
         </Alert>
-        {ROLE_TEMPLATES.map((template) => (
+        {ROLE_TEMPLATES.map(localizeTemplate).map((template) => (
           <Paper key={template.id} withBorder p="md" radius="md">
             <Group justify="space-between" align="flex-start">
               <Stack gap={4} style={{ flex: 1 }}>
@@ -49,8 +50,12 @@ export function TemplatesModal({
                       color={r.is_admin ? 'indigo' : 'gray'}
                       variant={r.is_admin ? 'light' : 'outline'}
                     >
-                      {r.name}
-                      {r.is_admin ? ' (admin)' : ` (${r.permissions.length} perms)`}
+                      {roleLabel(r.name)}{' '}
+                      {r.is_admin
+                        ? t('roles.templateAdmin', '(alle Rechte)')
+                        : t('roles.templatePermCount', '({{count}} Berechtigungen)', {
+                            count: r.permissions.length,
+                          })}
                     </Badge>
                   ))}
                 </Group>
