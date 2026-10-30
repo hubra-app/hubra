@@ -2405,16 +2405,21 @@
     "domain": "Domain",
     "primary": "Hauptdomain",
     "verify": "Bestätigen",
-    "txtHint": "Füge diesen TXT-Eintrag in deinem DNS hinzu:",
+    "txtHint": "Füge diesen TXT-Eintrag im DNS deiner Domain hinzu:",
     "removeTitle": "Domain entfernen",
     "remove": "Entfernen",
-    "txtAfter": "Sobald der Eintrag gesetzt ist, klicke auf «Bestätigen».",
+    "txtAfter": "Wir prüfen ihn 72 Stunden lang automatisch, oder klicke auf «Bestätigen». Eine Domain, die nicht innert 7 Tagen bestätigt ist, wird entfernt.",
     "removeConfirm": "Willst du {{domain}} wirklich entfernen?",
     "status": {
       "verified": "Bestätigt",
       "pending": "Ausstehend",
       "failed": "Fehlgeschlagen"
-    }
+    },
+    "recordName": "Name",
+    "recordType": "Typ",
+    "recordValue": "Wert",
+    "showRecord": "DNS-Eintrag",
+    "recordTitle": "DNS-Eintrag für {{domain}}"
   },
   "status": {
     "active": "Aktiv",

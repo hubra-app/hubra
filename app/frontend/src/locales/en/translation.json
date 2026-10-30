@@ -2405,16 +2405,21 @@
     "domain": "Domain",
     "primary": "Primary",
     "verify": "Verify",
-    "txtHint": "Add this TXT record to your DNS:",
+    "txtHint": "Add this TXT record to your domain's DNS:",
     "removeTitle": "Remove Domain",
     "remove": "Remove",
-    "txtAfter": "Once added, click \"Verify\" to check ownership.",
+    "txtAfter": "We check it automatically for 72 hours, or click \"Verify\". A domain that isn't verified within 7 days is removed.",
     "removeConfirm": "Do you really want to remove {{domain}}?",
     "status": {
       "verified": "Verified",
       "pending": "Pending",
       "failed": "Failed"
-    }
+    },
+    "recordName": "Name",
+    "recordType": "Type",
+    "recordValue": "Value",
+    "showRecord": "DNS record",
+    "recordTitle": "DNS record for {{domain}}"
   },
   "status": {
     "active": "Active",

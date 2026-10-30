@@ -11,6 +11,14 @@ _log = logging.getLogger(__name__)
 _VERIFICATION_PREFIX = "hubra-verify="
 # Records published before the rename still count.
 _LEGACY_PREFIXES = ("verevia-verify=",)
+# The record sits on its own label: a host that points at Hubra needs a
+# CNAME, and DNS allows no other record next to a CNAME.
+_RECORD_LABEL = "_hubra-verify"
+
+
+def verification_record_name(domain_name: str) -> str:
+    """The name the club publishes its TXT record under."""
+    return f"{_RECORD_LABEL}.{domain_name}"
 
 
 def generate_verification_token() -> str:
@@ -19,7 +27,10 @@ def generate_verification_token() -> str:
 
 
 def verify_domain(domain_name: str, expected_token: str) -> dict[str, Any]:
-    """Look up TXT records for *domain_name* and check for the verification token.
+    """Look for the verification token in the domain's TXT records.
+
+    Checks ``_hubra-verify.<domain>`` first, then the domain itself, where
+    records were published before the label existed.
 
     Returns a dict with:
       - ``verified``: True if the expected token was found in a TXT record
@@ -30,57 +41,49 @@ def verify_domain(domain_name: str, expected_token: str) -> dict[str, Any]:
         f"{prefix}{expected_token}"
         for prefix in (_VERIFICATION_PREFIX, *_LEGACY_PREFIXES)
     }
+    found_records: list[str] = []
+    error = None
+    for name in (verification_record_name(domain_name), domain_name):
+        records, error = _txt_records(name)
+        found_records.extend(records)
+        if any(r.strip() in expected_values for r in records):
+            _log.info("Domain %s verified (TXT record on %s)", domain_name, name)
+            return {"verified": True, "found_records": found_records, "error": None}
 
+    _log.info(
+        "Domain %s verification failed, token not in TXT records: %s",
+        domain_name,
+        found_records,
+    )
+    return {
+        "verified": False,
+        "found_records": found_records,
+        "error": "Verification token not found in TXT records"
+        if found_records
+        else error,
+    }
+
+
+def _txt_records(name: str) -> tuple[list[str], str | None]:
+    """Return the TXT strings published on *name*, and why there are none."""
+    import dns.resolver
+
+    resolver = dns.resolver.Resolver()
+    resolver.timeout = 10
+    resolver.lifetime = 15
     try:
-        import dns.resolver
-
-        resolver = dns.resolver.Resolver()
-        resolver.timeout = 10
-        resolver.lifetime = 15
-
-        answers = resolver.resolve(domain_name, "TXT")
-        found_records: list[str] = []
-        for rdata in answers:
-            for txt in rdata.strings:
-                decoded = txt.decode() if isinstance(txt, bytes) else txt
-                found_records.append(decoded)
-                if decoded.strip() in expected_values:
-                    _log.info(
-                        "Domain %s verified successfully (TXT record matched)",
-                        domain_name,
-                    )
-                    return {
-                        "verified": True,
-                        "found_records": found_records,
-                        "error": None,
-                    }
-
-        _log.info(
-            "Domain %s verification failed — token not found in TXT records: %s",
-            domain_name,
-            found_records,
-        )
-        return {
-            "verified": False,
-            "found_records": found_records,
-            "error": "Verification token not found in TXT records",
-        }
+        answers = resolver.resolve(name, "TXT")
     except dns.resolver.NXDOMAIN:
-        return {
-            "verified": False,
-            "found_records": [],
-            "error": "Domain does not exist (NXDOMAIN)",
-        }
+        return [], "Domain does not exist (NXDOMAIN)"
     except dns.resolver.NoAnswer:
-        return {
-            "verified": False,
-            "found_records": [],
-            "error": "No TXT records found for this domain",
-        }
+        return [], "No TXT records found for this domain"
     except Exception as exc:
-        _log.warning("DNS lookup failed for %s: %s", domain_name, exc)
-        return {
-            "verified": False,
-            "found_records": [],
-            "error": f"DNS lookup failed: {exc}",
-        }
+        _log.warning("DNS lookup failed for %s: %s", name, exc)
+        return [], f"DNS lookup failed: {exc}"
+    records: list[str] = []
+    for rdata in answers:
+        # A long value comes in 255-byte chunks that make up one string.
+        records.append(
+            "".join(t.decode() if isinstance(t, bytes) else t for t in rdata.strings)
+        )
+    return records, None

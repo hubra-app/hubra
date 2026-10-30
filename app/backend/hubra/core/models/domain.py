@@ -9,8 +9,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from hubra.core.extensions import db
 
-
-
 class Domain(db.Model):
     __tablename__ = "domains"
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -27,6 +25,13 @@ class Domain(db.Model):
     )
     is_primary: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     verified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # When the TXT record was last looked up, and last found.
+    last_checked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    last_seen_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(

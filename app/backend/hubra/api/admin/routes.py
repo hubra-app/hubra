@@ -22,7 +22,7 @@ from hubra.core.schemas.club_settings import ClubSettingsSchema
 from hubra.core.services.dns_verification import (
     _VERIFICATION_PREFIX,
     generate_verification_token,
-    verify_domain,
+    verification_record_name,
 )
 from hubra.core.tenant.context import current_tenant
 
@@ -101,21 +101,13 @@ def add_domain():
         db.session.flush()
 
     token = generate_verification_token()
-    is_first = (
-        db.session.scalar(
-            select(db.func.count())
-            .select_from(Domain)
-            .where(Domain.tenant_id == tenant.id)
-        )
-        == 0
-    )
-
     domain = Domain(
         tenant_id=tenant.id,
         domain=domain_name,
         verification_token=token,
         verification_status="pending",
-        is_primary=is_first,
+        # Only a verified domain can be the club's primary one.
+        is_primary=False,
     )
     db.session.add(domain)
     db.session.flush()
@@ -126,11 +118,7 @@ def add_domain():
         jsonify(
             {
                 "domain": _domain_to_dict(domain),
-                "txt_record": {
-                    "name": domain_name,
-                    "value": f"{_VERIFICATION_PREFIX}{token}",
-                    "instructions": f"Add a TXT record with value '{_VERIFICATION_PREFIX}{token}' to your DNS configuration for {domain_name}.",
-                },
+                "txt_record": _txt_record(domain),
             }
         ),
         201,
@@ -159,16 +147,12 @@ def verify_domain_endpoint(domain_id: int):
             {"error": "NO_TOKEN", "message": "No verification token for this domain"}
         ), 400
 
-    result = verify_domain(domain.domain, domain.verification_token)
+    from hubra.core.tasks.domain_tasks import check_domain
 
+    result = check_domain(domain)
     if result["verified"]:
-        from datetime import datetime, timezone
-
-        domain.verified = True
-        domain.verification_status = "verified"
-        domain.verified_at = datetime.now(timezone.utc)
         _audit_domain("verify_domain", domain)
-        db.session.commit()
+    db.session.commit()
 
     return jsonify(
         {
@@ -200,7 +184,7 @@ def remove_domain(domain_id: int):
     if was_primary:
         next_domain = db.session.scalar(
             select(Domain)
-            .where(Domain.tenant_id == tenant.id)
+            .where(Domain.tenant_id == tenant.id, Domain.verified.is_(True))
             .order_by(Domain.created_at)
             .limit(1)
         )
@@ -310,6 +294,16 @@ def update_club_settings():
 # ── Helpers ─────────────────────────────────────────────────────────────────
 
 
+def _txt_record(domain: Domain) -> dict:
+    name = verification_record_name(domain.domain)
+    value = f"{_VERIFICATION_PREFIX}{domain.verification_token}"
+    return {
+        "name": name,
+        "value": value,
+        "instructions": f"Add a TXT record named '{name}' with value '{value}' to your DNS.",
+    }
+
+
 def _domain_to_dict(domain: Domain) -> dict:
     return {
         "id": domain.id,
@@ -319,6 +313,10 @@ def _domain_to_dict(domain: Domain) -> dict:
         "verification_status": domain.verification_status,
         "is_primary": domain.is_primary,
         "verified_at": domain.verified_at.isoformat() if domain.verified_at else None,
+        "last_checked_at": domain.last_checked_at.isoformat()
+        if domain.last_checked_at
+        else None,
+        "txt_record": _txt_record(domain) if domain.verification_token else None,
         "created_at": domain.created_at.isoformat() if domain.created_at else None,
         "updated_at": domain.updated_at.isoformat() if domain.updated_at else None,
     }

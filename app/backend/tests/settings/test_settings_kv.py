@@ -39,13 +39,14 @@ def test_put_settings_creates_entry(client, db, auth_headers):
 def test_put_settings_with_validation_type(client, db, auth_headers):
     resp = client.put(
         "/api/v1/settings/mail.domain",
-        json={"value": "example.org", "validation_type": "domain"},
+        # Under the platform's mail domain, which needs no verified domain.
+        json={"value": "fcx.hubra.club", "validation_type": "domain"},
         headers=auth_headers,
     )
     assert resp.status_code == 200
     data = resp.get_json()
     assert data["key"] == "mail.domain"
-    assert data["value"] == "example.org"
+    assert data["value"] == "fcx.hubra.club"
     assert data["validation_type"] == "domain"
 
 
