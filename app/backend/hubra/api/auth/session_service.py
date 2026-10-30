@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import func, select
 
 from hubra.core.extensions import db
+from hubra.core.models.account_session import AccountSession
 from hubra.core.models.device_session import Device, Session
 from hubra.core.redis_client import get_redis_client as _get_redis_client
 from hubra.core.redis_client import mark_redis_down as _mark_redis_down
@@ -38,7 +39,16 @@ def _invalidate_session_cache(session_id: int) -> None:
 
 def is_session_revoked(session_id: int) -> bool:
     """Check if a session is revoked, using Redis cache (60s TTL) if available."""
-    cache_key = _cache_key(session_id)
+
+    def load() -> bool:
+        session = db.session.get(Session, session_id)
+        return session is not None and session.revoked_at is not None
+
+    return _cached_revoked(_cache_key(session_id), load)
+
+
+def _cached_revoked(cache_key: str, load) -> bool:
+    """*load()* answers whether a session is revoked; Redis keeps it 60s."""
     client = _get_redis_client()
     redis_read_ok = True
     if client is not None:
@@ -47,12 +57,11 @@ def is_session_revoked(session_id: int) -> bool:
             if cached is not None:
                 return cached == b"revoked" or cached == "revoked"
         except Exception:
-            _log.debug("Redis cache read failed for session %s", session_id)
+            _log.debug("Redis cache read failed for %s", cache_key)
             redis_read_ok = False
             _mark_redis_down()
 
-    session = db.session.get(Session, session_id)
-    revoked = session is not None and session.revoked_at is not None
+    revoked = load()
 
     # Only attempt the cache write if the read succeeded — avoids a second
     # timeout when Redis is already failing.
@@ -62,7 +71,7 @@ def is_session_revoked(session_id: int) -> bool:
                 cache_key, _SESSION_CACHE_TTL, "revoked" if revoked else "active"
             )
         except Exception:
-            _log.debug("Redis cache write failed for session %s", session_id)
+            _log.debug("Redis cache write failed for %s", cache_key)
             _mark_redis_down()
 
     return revoked
@@ -269,6 +278,158 @@ def serialize_session(session: Session) -> dict:
         "userAgent": device.user_agent if device else "",
         "ipAddress": session.ip_address or "",
         "createReason": session.create_reason,
+        "createdAt": session.created_at.isoformat() if session.created_at else None,
+        "lastActiveAt": session.last_active_at.isoformat()
+        if session.last_active_at
+        else None,
+        "revokedAt": session.revoked_at.isoformat() if session.revoked_at else None,
+        "revokedReason": session.revoked_reason,
+    }
+
+
+# ── Account sign-ins (SSO portal, no club) ──────────────────────────────────
+
+# A refresh token lives at most this long, so an older sign-in is over.
+_ACCOUNT_SESSION_MAX_IDLE = timedelta(days=30)
+
+
+def _account_cache_key(account_sid: int) -> str:
+    return f"account-session:{account_sid}"
+
+
+def record_account_login(
+    user_id: int,
+    ip: str,
+    ua: str,
+    fingerprint: str,
+    browser_family: str = "",
+    platform: str = "",
+) -> int:
+    """Record a sign-in without a club and return its id.  Does NOT commit.
+
+    Like club sign-ins, a browser that is still signed in keeps its row.
+    """
+    now = datetime.now(timezone.utc)
+    session = db.session.scalar(
+        select(AccountSession)
+        .where(AccountSession.user_id == user_id)
+        .where(AccountSession.fingerprint == fingerprint)
+        .where(AccountSession.revoked_at.is_(None))
+        .where(AccountSession.last_active_at >= now - _ACCOUNT_SESSION_MAX_IDLE)
+        .order_by(AccountSession.last_active_at.desc())
+        .limit(1)
+    )
+    if session is None:
+        session = AccountSession(
+            user_id=user_id,
+            fingerprint=fingerprint,
+            browser_family=browser_family or None,
+            platform=platform or None,
+            created_at=now,
+        )
+        db.session.add(session)
+    session.user_agent = ua[:512] or session.user_agent
+    session.ip_address = ip[:45] if ip else None
+    session.last_active_at = now
+    db.session.flush()
+    return session.id
+
+
+def is_account_session_revoked(account_sid: int) -> bool:
+    def load() -> bool:
+        session = db.session.get(AccountSession, account_sid)
+        return session is None or session.revoked_at is not None
+
+    return _cached_revoked(_account_cache_key(account_sid), load)
+
+
+def touch_account_session(account_sid: int) -> None:
+    """Mark the sign-in as active now (token refresh).  Does NOT commit."""
+    session = db.session.get(AccountSession, account_sid)
+    if session is not None and session.revoked_at is None:
+        session.last_active_at = datetime.now(timezone.utc)
+
+
+def list_account_sessions(user, keep_id: int | None = None) -> list[AccountSession]:
+    """The user's sign-ins that can still be in use, newest first.
+
+    Hidden: revoked ones, ones idle longer than a refresh token lives, and
+    ones from before the account ended all its sessions (password change),
+    except *keep_id*, the sign-in asking.
+    """
+    cutoff = datetime.now(timezone.utc) - _ACCOUNT_SESSION_MAX_IDLE
+    ended = user.tokens_valid_after
+    if ended is not None:
+        if ended.tzinfo is None:
+            ended = ended.replace(tzinfo=timezone.utc)
+        cutoff = max(cutoff, ended)
+    stmt = (
+        select(AccountSession)
+        .where(AccountSession.user_id == user.id)
+        .where(AccountSession.revoked_at.is_(None))
+        .where(
+            (AccountSession.last_active_at >= cutoff)
+            | (AccountSession.id == (keep_id if keep_id is not None else -1))
+        )
+        .order_by(AccountSession.last_active_at.desc())
+    )
+    return list(db.session.scalars(stmt).all())
+
+
+def revoke_account_session(
+    account_sid: int, user_id: int, reason: str = "user_revoke"
+) -> AccountSession | None:
+    """End one sign-in of *user_id*.  Does NOT commit."""
+    session = db.session.get(AccountSession, account_sid)
+    if session is None or session.user_id != user_id or session.revoked_at:
+        return None
+    session.revoked_at = datetime.now(timezone.utc)
+    session.revoked_reason = reason
+    _invalidate_account_session_cache(session.id)
+    return session
+
+
+def revoke_other_account_sessions(
+    user_id: int, keep_id: int | None, reason: str = "revoke_all"
+) -> int:
+    """End every sign-in of *user_id* except *keep_id*.  Does NOT commit."""
+    stmt = (
+        select(AccountSession)
+        .where(AccountSession.user_id == user_id)
+        .where(AccountSession.revoked_at.is_(None))
+    )
+    if keep_id is not None:
+        stmt = stmt.where(AccountSession.id != keep_id)
+    sessions = list(db.session.scalars(stmt).all())
+    now = datetime.now(timezone.utc)
+    for s in sessions:
+        s.revoked_at = now
+        s.revoked_reason = reason
+        _invalidate_account_session_cache(s.id)
+    return len(sessions)
+
+
+def _invalidate_account_session_cache(account_sid: int) -> None:
+    client = _get_redis_client()
+    if client is not None:
+        try:
+            client.delete(_account_cache_key(account_sid))
+        except Exception:
+            _log.debug("Redis cache invalidation failed for %s", account_sid)
+            _mark_redis_down()
+
+
+def serialize_account_session(session: AccountSession) -> dict:
+    """The same shape as a club session, without device or club."""
+    return {
+        "id": session.id,
+        "deviceId": None,
+        "deviceName": None,
+        "browserFamily": session.browser_family or "",
+        "platform": session.platform or "",
+        "userAgent": session.user_agent or "",
+        "ipAddress": session.ip_address or "",
+        "createReason": None,
         "createdAt": session.created_at.isoformat() if session.created_at else None,
         "lastActiveAt": session.last_active_at.isoformat()
         if session.last_active_at

@@ -218,7 +218,7 @@ export function KVSettingsTab() {
                   },
                 }}
               >
-                <IconLock size={10} /> restricted
+                <IconLock size={10} /> {t('kv.restricted', 'Gesperrt')}
               </Badge>
             )}
             {entry.required && (
@@ -234,7 +234,7 @@ export function KVSettingsTab() {
                   },
                 }}
               >
-                required
+                {t('kv.required', 'Pflichtfeld')}
               </Badge>
             )}
             {entry.validation_type && (
@@ -445,7 +445,7 @@ export function KVSettingsTab() {
 
       <Modal
         open={editingMeta !== null}
-        title={`Edit metadata: ${editingMeta?.key ?? ''}`}
+        title={`${t('kv.editMeta', 'Eigenschaften bearbeiten')}: ${editingMeta?.key ?? ''}`}
         onClose={() => setEditingMeta(null)}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -521,7 +521,7 @@ export function KVSettingsTab() {
                 type="checkbox"
                 checked={metaSensitive}
                 onChange={(e) => setMetaSensitive(e.target.checked)}
-                style={{ width: 16, height: 16, accentColor: '#7441e0' }}
+                style={{ width: 16, height: 16, accentColor: 'var(--mantine-color-acc-6)' }}
               />
               <span style={{ fontWeight: 600 }}>{t('kv.sensitive', 'Vertraulich')}</span>
               <span
@@ -546,7 +546,7 @@ export function KVSettingsTab() {
                 type="checkbox"
                 checked={metaRequired}
                 onChange={(e) => setMetaRequired(e.target.checked)}
-                style={{ width: 16, height: 16, accentColor: '#7441e0' }}
+                style={{ width: 16, height: 16, accentColor: 'var(--mantine-color-acc-6)' }}
               />
               <span style={{ fontWeight: 600 }}>{t('kv.required', 'Pflichtfeld')}</span>
               <span
@@ -571,7 +571,7 @@ export function KVSettingsTab() {
                 type="checkbox"
                 checked={metaRestricted}
                 onChange={(e) => setMetaRestricted(e.target.checked)}
-                style={{ width: 16, height: 16, accentColor: '#7441e0' }}
+                style={{ width: 16, height: 16, accentColor: 'var(--mantine-color-acc-6)' }}
               />
               <span style={{ fontWeight: 600 }}>{t('kv.restricted', 'Gesperrt')}</span>
               <span

@@ -228,6 +228,8 @@ export interface MyTenant {
   member_id: number | null
   /** Whether I administer this club. */
   admin_level: 'owner' | 'admin' | null
+  /** Changes with the club's logo; null without one. */
+  logo_version?: string | null
 }
 
 export async function getMyTenants(): Promise<{ tenants: MyTenant[] }> {

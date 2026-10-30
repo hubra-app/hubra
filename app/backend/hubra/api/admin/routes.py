@@ -269,7 +269,7 @@ def update_club_settings():
     """Update the current tenant's branding settings.
 
     Merges provided fields into the existing ``Tenant.settings['branding']``
-    dict. Only provided fields are updated.
+    dict. Only provided fields are updated; a field sent as null is removed.
     """
     tenant = current_tenant()
     if tenant is None:
@@ -284,7 +284,12 @@ def update_club_settings():
 
     settings = dict(tenant.settings or {})
     branding = dict(settings.get("branding", {}))
-    branding.update({k: v for k, v in validated.items() if v is not None})
+    for key, value in validated.items():
+        # null clears a field, so a club can take its logo or colours away.
+        if value is None:
+            branding.pop(key, None)
+        else:
+            branding[key] = value
     settings["branding"] = branding
     tenant.settings = settings
 

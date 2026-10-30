@@ -127,10 +127,19 @@ def register_jwt_callbacks(jwt_manager) -> None:
                 deadline = deadline.replace(tzinfo=timezone.utc)
             if datetime.now(timezone.utc) >= deadline:
                 return True
+        # The account sign-in this token comes from (SSO portal), if any:
+        # ending it ends the club tokens it led to as well.
+        account_sid = jwt_payload.get("account_sid")
+        if account_sid is not None and session_service.is_account_session_revoked(
+            int(account_sid)
+        ):
+            return True
         # Check Session by session ID (Redis-cached, covers access tokens)
         sid = jwt_payload.get("sid")
         if sid is not None:
             return session_service.is_session_revoked(int(sid))
+        if account_sid is not None:
+            return False
         # Fall back to TokenBlocklist for refresh tokens and legacy tokens
 
         jti = jwt_payload["jti"]
@@ -187,6 +196,18 @@ def _token_still_valid(user: User | None, jwt_data: dict) -> bool:
         cutoff = cutoff.replace(tzinfo=timezone.utc)
     issued = datetime.fromtimestamp(int(jwt_data.get("iat", 0)), timezone.utc)
     return issued >= cutoff.replace(microsecond=0)
+
+
+def _record_account_login(user: User) -> int:
+    """Record a sign-in without a club (SSO portal) for this browser."""
+    return session_service.record_account_login(
+        user.id,
+        request.remote_addr or "",
+        request.headers.get("User-Agent", "")[:512],
+        fingerprint=compute_fingerprint(request.headers),
+        browser_family=_extract_browser_family(request.headers),
+        platform=_extract_platform(request.headers),
+    )
 
 
 # ── POST /auth/login ──────────────────────────────────────────────────────────
@@ -246,7 +267,11 @@ def login():
         # A user-level session in both cases: the tenant picker then calls
         # /auth/switch-tenant, which needs this token to know the user.
         tenants = AuthService.find_user_tenants(user.id)
-        additional_claims = {"user_id": user.id}
+        additional_claims = {
+            "user_id": user.id,
+            "account_sid": _record_account_login(user),
+        }
+        db.session.commit()
         access_token = create_access_token(
             identity=f"user:{user.id}",
             additional_claims=additional_claims,
@@ -390,7 +415,8 @@ def signup():
     if email_verification.required(user):
         email_verification.send(user, _get_sso_base_url())
 
-    additional_claims = {"user_id": user.id}
+    additional_claims = {"user_id": user.id, "account_sid": _record_account_login(user)}
+    db.session.commit()
     access_token = create_access_token(
         identity=f"user:{user.id}",
         additional_claims=additional_claims,
@@ -420,6 +446,7 @@ def signup():
 # token minted from the same refresh token must keep.
 _SESSION_CLAIMS = (
     "sid",
+    "account_sid",
     "user_id",
     "tenant_slug",
     "impersonator_id",
@@ -434,6 +461,10 @@ def _renew_this_session(response) -> None:
     (password change, sign out everywhere): same identity and claims."""
     claims = get_jwt()
     kept = {k: claims[k] for k in _SESSION_CLAIMS if claims.get(k) is not None}
+    if kept.get("account_sid") is not None:
+        # Still listed after the account ended its other sessions.
+        session_service.touch_account_session(int(kept["account_sid"]))
+        db.session.commit()
     identity = get_jwt_identity()
     set_access_cookies(
         response, create_access_token(identity=identity, additional_claims=kept)
@@ -488,6 +519,11 @@ def refresh():
         else:
             update_session_activity.delay(int(sid))
 
+    account_sid = refresh_claims.get("account_sid")
+    if account_sid is not None:
+        session_service.touch_account_session(int(account_sid))
+        db.session.commit()
+
     additional_claims = {
         key: refresh_claims[key]
         for key in _SESSION_CLAIMS
@@ -518,7 +554,11 @@ def logout():
             session.revoked_at = datetime.now(timezone.utc)
             session.revoked_reason = "logout"
             session_service._invalidate_session_cache(session.id)
-    else:
+    if claims.get("account_sid") is not None:
+        session_service.revoke_account_session(
+            int(claims["account_sid"]), claims.get("user_id"), "logout"
+        )
+    if sid is None and claims.get("account_sid") is None:
         access_jti = claims["jti"]
         AuthService.block_token(access_jti, "access")
 
@@ -630,6 +670,8 @@ def switch_tenant():
     additional_claims = {"user_id": user_id, "tenant_slug": target_slug}
     if sid is not None:
         additional_claims["sid"] = sid
+    if claims.get("account_sid") is not None:
+        additional_claims["account_sid"] = claims["account_sid"]
 
     access_token = create_access_token(
         identity=str(member.id),
@@ -1332,13 +1374,27 @@ def _current_session_key() -> tuple[str | None, str | None]:
     return claims.get("tenant_slug"), str(sid) if sid is not None else None
 
 
+def _current_account_sid() -> int | None:
+    account_sid = get_jwt().get("account_sid")
+    return int(account_sid) if account_sid is not None else None
+
+
 @account_bp.get("/all-sessions")
 @jwt_required()
 def list_all_sessions():
-    """The account's sessions in every club, newest first."""
+    """The account's sessions: its own sign-ins (SSO portal, ``club`` null)
+    and those in every club, newest first."""
     user = _signed_in_user()
     current_slug, current_sid = _current_session_key()
-    out = []
+    current_account_sid = _current_account_sid()
+    out = [
+        {
+            **session_service.serialize_account_session(s),
+            "club": None,
+            "current": s.id == current_account_sid,
+        }
+        for s in session_service.list_account_sessions(user, current_account_sid)
+    ]
     for tenant, member in account_svc.memberships(user.id):
         for s in session_service.list_sessions(member.id):
             out.append(
@@ -1365,6 +1421,18 @@ def revoke_club_session(slug: str, session_id: int):
     return jsonify({"ok": True}), 200
 
 
+@account_bp.delete("/account-sessions/<int:account_sid>")
+@jwt_required()
+def revoke_account_sign_in(account_sid: int):
+    """End one of the account's own sign-ins (``club`` null in the list)."""
+    refuse_during_impersonation()
+    user = _signed_in_user()
+    if session_service.revoke_account_session(account_sid, user.id) is None:
+        raise_error(404, "NOT_FOUND", "Session not found or already revoked")
+    db.session.commit()
+    return jsonify({"ok": True}), 200
+
+
 @account_bp.post("/all-sessions/revoke-all")
 @jwt_required()
 def revoke_sessions_everywhere():
@@ -1381,7 +1449,10 @@ def revoke_sessions_everywhere():
         else:
             count += session_service.revoke_all_including_current(member.id)
         db.session.commit()
-    # Also the sign-ins without a session row (the SSO portal's own).
+    count += session_service.revoke_other_account_sessions(
+        user.id, _current_account_sid()
+    )
+    # Also the sign-ins without a session row (from before they were recorded).
     user.end_sessions()
     db.session.commit()
     response = make_response(jsonify({"ok": True, "revoked": count}), 200)

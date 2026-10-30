@@ -68,7 +68,7 @@ export function MobileDrawer() {
           variant="subtle"
           size="lg"
           onClick={() => setMobileDrawerOpen(false)}
-          aria-label="Close"
+          aria-label={t('common.close', 'Schliessen')}
         >
           <IconX size={20} />
         </ActionIcon>

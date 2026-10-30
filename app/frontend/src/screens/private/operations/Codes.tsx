@@ -318,7 +318,7 @@ export function CodesScreen() {
           </Field>
           <Field
             label={t('codes.code')}
-            hint="Drag the slider to change code length"
+            hint={t('codes.lengthHint', 'Mit dem Regler stellst du die Länge des Codes ein')}
           >
             <Slider
               value={codeLength}
@@ -372,7 +372,7 @@ export function CodesScreen() {
           </Field>
           <Field
             label={t('codes.code')}
-            hint="Drag the slider to change code length"
+            hint={t('codes.lengthHint', 'Mit dem Regler stellst du die Länge des Codes ein')}
           >
             <Slider
               value={codeLength}

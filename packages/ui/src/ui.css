@@ -13,7 +13,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #6131c4;
+  color: var(--mantine-color-acc-7);
 }
 
 .hubra-tabs .mantine-Tabs-list {
@@ -39,5 +39,5 @@
 }
 
 .hubra-tabs .mantine-Tabs-tab[data-active] {
-  color: #4d27a0;
+  color: var(--mantine-color-acc-8);
 }

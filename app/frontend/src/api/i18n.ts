@@ -13,7 +13,18 @@ export async function fetchTranslationsList(
 }
 
 export async function fetchLanguages(): Promise<string[]> {
-  return apiFetch(`/i18n/languages`);
+  const locales: string[] = await apiFetch(`/i18n/languages`);
+  // Older databases may also hold "de-ch" next to "de-CH": one language.
+  return [...new Set(locales.map(canonicalLocale))];
+}
+
+/** BCP 47 casing ("de-ch" → "de-CH"), the code the app's texts are filed under. */
+export function canonicalLocale(code: string): string {
+  try {
+    return Intl.getCanonicalLocales(code.replace(/_/g, "-"))[0] ?? code;
+  } catch {
+    return code;
+  }
 }
 
 export async function patchTranslations(

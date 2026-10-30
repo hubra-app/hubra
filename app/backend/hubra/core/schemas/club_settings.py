@@ -30,16 +30,24 @@ def _validate_hex_color(value: str) -> None:
         raise ValidationError(f"Invalid hex color: {value!r}")
 
 
-def _validate_logo_size(value: str) -> None:
-    """Validate that a base64 data URL is under 2MB.
+# Images a browser shows in <img>. SVG is safe there (no scripts run), and
+# the logo URL serves it with a sandboxing CSP for anyone who opens it directly.
+_LOGO_RE = re.compile(
+    r"^data:image/(png|jpeg|webp|gif|svg\+xml);base64,[A-Za-z0-9+/]+={0,2}$"
+)
 
-    Rough estimate: base64 encoding is ~4/3 of raw size.
-    Max 2MB raw = ~2.67MB base64. We check the string length.
+
+def _validate_logo(value: str) -> None:
+    """A base64 image data URL of at most 2 MB.
+
+    Base64 is about 4/3 of the raw size, so 2 MB raw is ~2.7 MB of text.
     """
-    if not value.startswith("data:"):
-        raise ValidationError("Logo must be a data URL starting with 'data:'")
     if len(value) > 2_700_000:
         raise ValidationError("Logo too large (max 2MB)")
+    if not _LOGO_RE.match(value):
+        raise ValidationError(
+            "Logo must be a PNG, JPEG, WebP, GIF or SVG image as a base64 data URL"
+        )
 
 
 class ClubSettingsSchema(Schema):
@@ -47,7 +55,7 @@ class ClubSettingsSchema(Schema):
 
     club_name = fields.Str(required=False, allow_none=True)
     club_description = fields.Str(required=False, allow_none=True)
-    logo = fields.Str(required=False, allow_none=True, validate=_validate_logo_size)
+    logo = fields.Str(required=False, allow_none=True, validate=_validate_logo)
 
     primary_color = fields.Str(
         required=False, allow_none=True, validate=_validate_hex_color

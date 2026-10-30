@@ -225,7 +225,7 @@ export function GlobalSearch() {
     member: { bg: '#fdf0f8', color: '#be185d' },
     group: { bg: '#eff6ff', color: '#1d4ed8' },
     event: { bg: '#f0fdf4', color: '#15803d' },
-    invoice: { bg: '#f5f1ff', color: '#b45309' },
+    invoice: { bg: 'var(--mantine-color-acc-0)', color: '#b45309' },
     transaction: { bg: '#f0fdfa', color: '#0f766e' },
     inventory: { bg: '#eef2ff', color: '#4338ca' },
     poll: { bg: '#fff7ed', color: '#c2410c' },

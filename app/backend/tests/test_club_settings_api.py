@@ -264,3 +264,62 @@ def test_club_profile_for_members(tenant_ctx, client, auth_headers, db):
 
 def test_club_profile_needs_sign_in(client, db):
     assert client.get("/api/v1/settings/club-profile").status_code == 401
+
+
+# ── Logo ────────────────────────────────────────────────────────────────────
+
+# A 1×1 transparent PNG.
+_PNG_B64 = (
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+)
+_PNG_URL = f"data:image/png;base64,{_PNG_B64}"
+
+
+def test_logo_must_be_an_image_data_url(tenant_ctx, client, auth_headers):
+    for bad in (
+        "https://example.com/logo.png",
+        "data:text/html;base64,PHNjcmlwdD4=",
+        "data:image/png,not-base64",
+    ):
+        resp = client.patch("/api/v1/admin/club-settings", json={"logo": bad})
+        assert resp.status_code == 422, bad
+
+    resp = client.patch("/api/v1/admin/club-settings", json={"logo": _PNG_URL})
+    assert resp.status_code == 200
+    assert resp.get_json()["settings"]["logo"] == _PNG_URL
+
+
+def test_null_clears_a_setting(tenant_ctx, client, auth_headers, db):
+    client.patch(
+        "/api/v1/admin/club-settings",
+        json={"logo": _PNG_URL, "primary_color": "#123456"},
+    )
+    resp = client.patch(
+        "/api/v1/admin/club-settings", json={"logo": None, "club_name": "Neu"}
+    )
+    assert resp.status_code == 200
+    settings = resp.get_json()["settings"]
+    assert "logo" not in settings
+    assert settings["primary_color"] == "#123456"
+    assert db.session.get(Tenant, tenant_ctx.id).settings["branding"].get("logo") is None
+
+
+def test_logo_is_served_as_an_image(client, db):
+    tenant = Tenant(
+        name="Logo Club",
+        slug="logo-club",
+        plan="starter",
+        settings={"branding": {"logo": _PNG_URL}},
+    )
+    db.session.add(tenant)
+    db.session.add(Tenant(name="Plain Club", slug="plain-club", plan="starter"))
+    db.session.commit()
+
+    resp = client.get("/api/v1/system/clubs/logo-club/logo")
+    assert resp.status_code == 200
+    assert resp.mimetype == "image/png"
+    assert resp.data[:8] == b"\x89PNG\r\n\x1a\n"
+    assert "sandbox" in resp.headers["Content-Security-Policy"]
+
+    assert client.get("/api/v1/system/clubs/plain-club/logo").status_code == 404
+    assert client.get("/api/v1/system/clubs/nope/logo").status_code == 404

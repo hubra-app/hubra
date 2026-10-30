@@ -1,6 +1,7 @@
 export {
   BASE,
   SSO_URL,
+  clubLogoUrl,
   getInstance,
   getCookie,
   hasTokens,

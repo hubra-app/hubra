@@ -7,6 +7,7 @@ import {
   Switch,
   NumberInput,
   ColorInput,
+  FileButton,
   Button,
   Stack,
   Group,
@@ -15,12 +16,19 @@ import {
   Text,
   Title,
   Divider,
+  Box,
 } from '@mantine/core'
+import { IconPhoto, IconTrash, IconUpload } from '@tabler/icons-react'
 import { getClubSettings, updateClubSettings, type ClubSettings } from '@/api/admin'
 import { useT } from '@/locales/i18n'
 import { qk } from '@/data/keys'
 import { useToast } from '@/context/AppContext'
 import { ErrorBanner } from '@/components/ui'
+
+const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml']
+const LOGO_MAX_BYTES = 2 * 1024 * 1024
+// What the app looks like without club colours (Hubra violet and gold).
+const DEFAULT_COLORS = { primary: '#7441e0', accent: '#ecbb00' }
 
 function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
   const { t } = useT()
@@ -29,8 +37,23 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
   const [form, setForm] = useState<ClubSettings>(initialData)
   const [saving, setSaving] = useState(false)
 
-  const update = (key: keyof ClubSettings, value: string | boolean | number) => {
+  const update = (key: keyof ClubSettings, value: string | boolean | number | null) => {
     setForm((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const pickLogo = (file: File | null) => {
+    if (!file) return
+    if (!LOGO_TYPES.includes(file.type)) {
+      notify('error', t('clubSettings.logoWrongType', 'Bitte ein PNG-, JPEG-, WebP-, GIF- oder SVG-Bild wählen.'))
+      return
+    }
+    if (file.size > LOGO_MAX_BYTES) {
+      notify('error', t('clubSettings.logoTooLarge', 'Das Logo ist grösser als 2 MB.'))
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => update('logo', reader.result as string)
+    reader.readAsDataURL(file)
   }
 
   const handleSave = async () => {
@@ -75,26 +98,112 @@ function ClubSettingsForm({ initialData }: { initialData: ClubSettings }) {
       <Paper withBorder p="lg">
         <Title order={3} mb="md">{t('clubSettings.branding', 'Erscheinungsbild')}</Title>
         <Stack gap={14}>
+          <div>
+            <Text fz="sm" fw={500} mb={6}>
+              {t('clubSettings.logo', 'Logo')}
+            </Text>
+            <Group gap="md" wrap="nowrap" align="center">
+              <Box
+                w={72}
+                h={72}
+                style={{
+                  flexShrink: 0,
+                  borderRadius: 'var(--mantine-radius-md)',
+                  border: '1px solid var(--mantine-color-gray-3)',
+                  background: 'var(--mantine-color-gray-0)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                }}
+              >
+                {form.logo ? (
+                  <img
+                    src={form.logo}
+                    alt=""
+                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                  />
+                ) : (
+                  <IconPhoto size={28} color="var(--mantine-color-gray-5)" />
+                )}
+              </Box>
+              <Stack gap={6} style={{ minWidth: 0 }}>
+                <Group gap="xs">
+                  <FileButton onChange={pickLogo} accept={LOGO_TYPES.join(',')}>
+                    {(props) => (
+                      <Button {...props} variant="light" leftSection={<IconUpload size={16} />}>
+                        {form.logo
+                          ? t('clubSettings.logoReplace', 'Logo ersetzen')
+                          : t('clubSettings.logoUpload', 'Logo hochladen')}
+                      </Button>
+                    )}
+                  </FileButton>
+                  {form.logo && (
+                    <Button
+                      variant="subtle"
+                      color="red"
+                      leftSection={<IconTrash size={16} />}
+                      onClick={() => update('logo', null)}
+                    >
+                      {t('clubSettings.logoRemove', 'Logo entfernen')}
+                    </Button>
+                  )}
+                </Group>
+                <Text fz="xs" c="dimmed">
+                  {t(
+                    'clubSettings.logoHint',
+                    'PNG, JPEG, WebP, GIF oder SVG, höchstens 2 MB. Erscheint oben in der App, im Browser-Tab und bei «Meine Vereine».',
+                  )}
+                </Text>
+              </Stack>
+            </Group>
+          </div>
           <SimpleGrid cols={{ base: 1, xs: 3 }} spacing={14}>
             <ColorInput
               label={t('clubSettings.primaryColor', 'Primärfarbe')}
-              value={form.primary_color ?? '#7441e0'}
-              onChange={(v) => update('primary_color', v)}
+              placeholder={DEFAULT_COLORS.primary}
+              value={form.primary_color ?? ''}
+              onChange={(v) => update('primary_color', v || null)}
               eyeDropperButtonProps={eyeDropperProps}
             />
             <ColorInput
               label={t('clubSettings.secondaryColor', 'Sekundärfarbe')}
-              value={form.secondary_color ?? '#2596be'}
-              onChange={(v) => update('secondary_color', v)}
+              placeholder={t('common.none', 'Keine')}
+              value={form.secondary_color ?? ''}
+              onChange={(v) => update('secondary_color', v || null)}
               eyeDropperButtonProps={eyeDropperProps}
             />
             <ColorInput
               label={t('clubSettings.accentColor', 'Akzentfarbe')}
-              value={form.accent_color ?? '#f59e0b'}
-              onChange={(v) => update('accent_color', v)}
+              placeholder={DEFAULT_COLORS.accent}
+              value={form.accent_color ?? ''}
+              onChange={(v) => update('accent_color', v || null)}
               eyeDropperButtonProps={eyeDropperProps}
             />
           </SimpleGrid>
+          <Group justify="space-between" align="flex-start" wrap="nowrap" gap="md">
+            <Text fz="xs" c="dimmed">
+              {t(
+                'clubSettings.colorsHint',
+                'Die Primärfarbe färbt Schaltflächen, Links und das aktive Menü, die Akzentfarbe das Ankündigungsbanner und die Sekundärfarbe den Streifen unter der Kopfzeile.',
+              )}
+            </Text>
+            <Button
+              variant="subtle"
+              size="xs"
+              style={{ flexShrink: 0 }}
+              onClick={() =>
+                setForm((prev) => ({
+                  ...prev,
+                  primary_color: null,
+                  secondary_color: null,
+                  accent_color: null,
+                }))
+              }
+            >
+              {t('clubSettings.resetColors', 'Standardfarben')}
+            </Button>
+          </Group>
         </Stack>
       </Paper>
 

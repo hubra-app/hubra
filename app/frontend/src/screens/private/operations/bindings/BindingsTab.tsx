@@ -262,7 +262,7 @@ export function BindingsTab() {
                     },
                   }}
                 >
-                  <IconLock size={10} /> protected
+                  <IconLock size={10} /> {t('bindings.protected', 'Geschützt')}
                 </Badge>
               ) : null,
           },
@@ -278,7 +278,7 @@ export function BindingsTab() {
                     fontSize: 'var(--mantine-font-size-xs)',
                   }}
                 >
-                  ok
+                  {t('bindings.validationOk', 'OK')}
                 </span>
               ) : (
                 <span
@@ -288,7 +288,7 @@ export function BindingsTab() {
                   }}
                   title={entry.validation_error ?? undefined}
                 >
-                  failed
+                  {t('bindings.validationFailed', 'Fehlgeschlagen')}
                 </span>
               ),
           },

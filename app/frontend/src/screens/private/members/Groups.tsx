@@ -539,7 +539,7 @@ export function GroupsScreen() {
                   <Button
                     size="sm"
                     variant="subtle"
-                    style={{ color: '#6131c4', marginLeft: 'auto' }}
+                    style={{ color: 'var(--mantine-color-acc-7)', marginLeft: 'auto' }}
                     onClick={() => setDetailGroup(g)}
                   >
                     {t('groups.memberCount', '{{count}} Mitglieder', { count: g.members })} →
