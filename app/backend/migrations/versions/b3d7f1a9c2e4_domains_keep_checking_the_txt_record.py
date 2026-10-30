@@ -5,7 +5,7 @@ verified, so a domain records when its TXT record was last looked up and
 last found. A domain nobody verified is no longer a club's primary one.
 
 Revision ID: b3d7f1a9c2e4
-Revises: a9c4e2f7d1b6
+Revises: b7d3f1a8c2e5
 Create Date: 2026-10-30 17:00:00.000000
 
 """
@@ -16,7 +16,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "b3d7f1a9c2e4"
-down_revision = "a9c4e2f7d1b6"
+down_revision = "b7d3f1a8c2e5"
 branch_labels = None
 depends_on = None
 
