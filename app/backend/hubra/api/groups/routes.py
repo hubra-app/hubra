@@ -175,7 +175,7 @@ def delete_group(id: int):
 
 
 @groups_bp.get("/<int:group_id>/members")
-@permission_required("groups", "read", "View group members")
+@permission_required("groups", "read", "View groups")
 def list_group_members(group_id: int):
     group = db.session.get(Group, group_id)
     if group is None:
@@ -253,7 +253,7 @@ def remove_group_member(group_id: int, member_id: int):
 
 
 @groups_bp.patch("/<int:group_id>/members/<int:member_id>")
-@permission_required("groups", "add_member", "Update group member role")
+@permission_required("groups", "add_member", "Add member to group")
 def update_group_member_role(group_id: int, member_id: int):
     body = request.get_json(silent=True) or {}
     try:
@@ -281,7 +281,7 @@ def update_group_member_role(group_id: int, member_id: int):
 
 
 @groups_bp.get("/<int:group_id>/mailing-list")
-@permission_required("groups", "read", "View group mailing list")
+@permission_required("groups", "read", "View groups")
 def get_mailing_list(group_id: int):
     """Return email addresses of all group members for mailing list export."""
     group = db.session.get(Group, group_id)

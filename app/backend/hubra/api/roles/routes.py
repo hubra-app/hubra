@@ -71,6 +71,11 @@ def update_role(role_id: int):
 
     is_admin = member_is_admin(_current_member())
 
+    if role.is_admin and not is_admin:
+        return api_error("ADMIN_ONLY", "Only an admin can change an admin role", 403)
+    # The edit form always sends the flag; unchanged, it is no admin change.
+    if body.get("is_admin") is role.is_admin:
+        body.pop("is_admin")
     if "is_admin" in body and not is_admin:
         return api_error("FORBIDDEN", "Only admins can change is_admin", 403)
 

@@ -3,6 +3,7 @@ import { Button, TextInput } from '@mantine/core'
 import type { Role } from '@/api/settings'
 import { Modal, Field } from '@/components/ui'
 import { useT } from '@/locales/i18n'
+import { roleDescription, roleLabel } from '@/roles'
 import type { RoleInput } from './useRoles'
 
 /**
@@ -22,7 +23,7 @@ export function RoleFormModal({
 }) {
   const { t } = useT()
   const [name, setName] = useState(role?.name ?? '')
-  const [description, setDescription] = useState(role?.description ?? '')
+  const [description, setDescription] = useState(role ? roleDescription(role) : '')
   const [isAdmin, setIsAdmin] = useState(role?.isAdmin ?? false)
   const [saving, setSaving] = useState(false)
 
@@ -47,7 +48,7 @@ export function RoleFormModal({
       title={role ? t('roles.edit', 'Rolle bearbeiten') : t('roles.new', 'Neue Rolle')}
       subtitle={
         role
-          ? role.name
+          ? roleLabel(role.name)
           : t(
               'roles.newSubtitle',
               'Startet ohne Berechtigungen. Lege sie danach in der Tabelle fest.',
@@ -67,11 +68,19 @@ export function RoleFormModal({
       }
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <Field label={t('roles.name', 'Name der Rolle')}>
+        <Field
+          label={t('roles.name', 'Name der Rolle')}
+          hint={
+            role?.isSystem
+              ? t('roles.systemNameHint', 'Systemrollen behalten ihren Namen; die App zeigt ihn übersetzt.')
+              : undefined
+          }
+        >
           <TextInput
             placeholder={role ? undefined : t('roles.namePlaceholder', 'z. B. Moderation')}
             value={name}
             onChange={(e) => setName(e.target.value)}
+            disabled={role?.isSystem}
           />
         </Field>
         <Field
@@ -88,26 +97,28 @@ export function RoleFormModal({
             onChange={(e) => setDescription(e.target.value)}
           />
         </Field>
-        <label
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            fontSize: 'var(--mantine-font-size-sm)',
-            cursor: 'pointer',
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={isAdmin}
-            onChange={(e) => setIsAdmin(e.target.checked)}
-            style={{ width: 16, height: 16, accentColor: 'var(--mantine-color-acc-9)' }}
-          />
-          <span style={{ fontWeight: 600 }}>{t('roles.adminRole', 'Admin-Rolle')}</span>
-          <span style={{ color: 'var(--hb-text-2)', fontSize: 'var(--mantine-font-size-xs)' }}>
-            {t('roles.adminHint', 'Umgeht alle Berechtigungsprüfungen')}
-          </span>
-        </label>
+        {!role?.isSystem && (
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              fontSize: 'var(--mantine-font-size-sm)',
+              cursor: 'pointer',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={isAdmin}
+              onChange={(e) => setIsAdmin(e.target.checked)}
+              style={{ width: 16, height: 16, accentColor: 'var(--mantine-color-acc-9)' }}
+            />
+            <span style={{ fontWeight: 600 }}>{t('roles.adminRole', 'Admin-Rolle')}</span>
+            <span style={{ color: 'var(--hb-text-2)', fontSize: 'var(--mantine-font-size-xs)' }}>
+              {t('roles.adminHint', 'Umgeht alle Berechtigungsprüfungen')}
+            </span>
+          </label>
+        )}
       </div>
     </Modal>
   )

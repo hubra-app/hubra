@@ -24,13 +24,16 @@ class RoleService:
 
     @staticmethod
     def update(role: Role, name: str, actor_id: int) -> Role:
-        """Update a role's name. Raises on conflict or if role is locked."""
+        """Rename a role. Raises on conflict or if the role is a system role.
+
+        Sending a system role's own name back is no rename: the edit form
+        always sends the name, also when only the description changed.
+        """
+        name = name.strip()
+        if name == role.name:
+            return role
         if role.is_system:
             raise_error(409, "ROLE_LOCKED", "Cannot modify a system role")
-        if role.is_admin:
-            raise_error(409, "ROLE_LOCKED", "Cannot modify an admin role")
-
-        name = name.strip()
 
         conflict = db.session.scalar(
             select(Role.id).where(Role.name == name).where(Role.id != role.id)
@@ -51,13 +54,18 @@ class RoleService:
 
     @staticmethod
     def delete(role_id: int, actor_id: int) -> None:
-        """Delete a role if it's not default/admin and not assigned to members."""
+        """Delete a role if it's not a system/default role and not assigned to members.
+
+        A club's own admin role can go too, but only an admin removes it.
+        """
         role = RoleService.get(role_id)
 
         if role.is_system:
             raise_error(409, "ROLE_LOCKED", "Cannot delete a system role")
         if role.is_admin:
-            raise_error(409, "ROLE_LOCKED", "Cannot delete an admin role")
+            from hubra.core.models.member import Member
+
+            check_grant(db.session.get(Member, actor_id), taken=[role])
         if role.is_default:
             raise_error(409, "CONFLICT", "Cannot delete a default role")
 
@@ -107,18 +115,22 @@ class RoleService:
         """Replace all permissions for a role. Returns sorted permission keys.
 
         Args:
-            _internal: When True, bypasses the is_system/is_admin lock check.
+            _internal: When True, bypasses the admin-role lock check.
                 Used only by _seed_tenant during tenant provisioning.
+
+        Admin roles hold every permission anyway, so theirs are locked. The
+        other system roles (Treasurer, Member) are starting points the club
+        adapts: they can't be renamed or deleted, but their permissions can
+        change, or no club could e.g. let its members sign up for events.
         """
-        if not _internal:
+        if not _internal and role.is_admin:
             if role.is_system:
                 raise_error(
                     409, "ROLE_LOCKED", "Cannot modify a system role's permissions"
                 )
-            if role.is_admin:
-                raise_error(
-                    409, "ROLE_LOCKED", "Cannot modify an admin role's permissions"
-                )
+            raise_error(
+                409, "ROLE_LOCKED", "Cannot modify an admin role's permissions"
+            )
 
         keys = [k for k in permission_keys if isinstance(k, str) and k.strip()]
         if not _internal:

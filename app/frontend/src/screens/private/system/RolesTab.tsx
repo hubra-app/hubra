@@ -246,7 +246,8 @@ export function RolesTab() {
             variant="subtle"
             size="xs"
             onClick={() => {
-              if (visibleRoles.length > 0) setRoleMembersOpen(visibleRoles[0])
+              const first = visibleRoles[0] ?? roles[0]
+              if (first) setRoleMembersOpen(first)
             }}
           >
             <IconUsers size={14} />
@@ -264,7 +265,7 @@ export function RolesTab() {
                   value: r.id,
                   label:
                     roleLabel(r.name) +
-                    (r.isAdmin ? ' (Admin)' : r.isDefault ? ' (System)' : ''),
+                    (r.isAdmin ? ' (Admin)' : r.isSystem ? ' (System)' : ''),
                 }))}
                 value={mobileSelectedRoleId}
                 onChange={(v) => v && setMobileSelectedRoleId(v)}
@@ -302,7 +303,7 @@ export function RolesTab() {
                   value: r.id,
                   label:
                     roleLabel(r.name) +
-                    (r.isAdmin ? ' (Admin)' : r.isDefault ? ' (System)' : ''),
+                    (r.isAdmin ? ' (Admin)' : r.isSystem ? ' (System)' : ''),
                 }))}
                 value={selectedRoleIds}
                 onChange={setSelectedRoleIds}
@@ -373,7 +374,7 @@ export function RolesTab() {
       />
       <RoleMembersModal
         role={roleMembersOpen}
-        roles={visibleRoles}
+        roles={roles}
         onRoleChange={setRoleMembersOpen}
         onClose={() => setRoleMembersOpen(null)}
       />

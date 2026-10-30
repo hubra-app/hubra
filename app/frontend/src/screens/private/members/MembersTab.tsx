@@ -54,7 +54,7 @@ export function MembersTab() {
   const canUnarchive = hasPermission('members.members.unarchive')
   const canDelete = hasPermission('members.members.delete')
   const canExport = hasPermission('members.members.export')
-  const canBulkInvoice = hasPermission('invoices.invoices.bulk_create')
+  const canBulkInvoice = hasPermission('finance.invoices.bulk_create')
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')

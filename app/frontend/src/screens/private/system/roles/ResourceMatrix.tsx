@@ -7,7 +7,7 @@ import { type PermissionEntry } from '@/api/system'
 import { roleLabel } from '@/roles'
 
 import { SectionToggle } from './PermissionControls'
-import { blueprintLabel } from './labels'
+import { blueprintLabel, permLabel, resourceLabel } from './labels'
 
 interface ResourceMatrixProps {
   visibleRoles: Role[]
@@ -93,7 +93,7 @@ export function ResourceMatrix(props: ResourceMatrixProps) {
                       padding: '10px 16px',
                     }}
                   >
-                    {blueprintLabel(entry.blueprint)} / {entry.resource}
+                    {blueprintLabel(entry.blueprint)} / {resourceLabel(entry.resource)}
                   </Table.Td>
                   {visibleRoles.map((role) => (
                     <Table.Td key={role.id} style={{ textAlign: 'center' }}>
@@ -107,7 +107,7 @@ export function ResourceMatrix(props: ResourceMatrixProps) {
                     </Table.Td>
                   ))}
                 </Table.Tr>
-                {actions.map(([action, perm]) => (
+                {actions.map(([, perm]) => (
                   <Table.Tr key={perm.key}>
                     <Table.Td
                       style={{
@@ -123,7 +123,7 @@ export function ResourceMatrix(props: ResourceMatrixProps) {
                           gap: 6,
                         }}
                       >
-                        {action}
+                        {permLabel(perm)}
                       </div>
                       <div
                         style={{
@@ -142,6 +142,7 @@ export function ResourceMatrix(props: ResourceMatrixProps) {
                           checked={role.isAdmin || (rolePerms[role.id]?.has(perm.key) ?? false)}
                           onChange={() => toggle(role, perm.key)}
                           disabled={role.isAdmin || !canSetPermissions}
+                          title={role.isAdmin ? t('roles.adminLocked', 'Admin-Rollen haben alle Rechte; die einzelnen Berechtigungen gelten für sie nicht.') : undefined}
                           style={{
                             width: 16,
                             height: 16,

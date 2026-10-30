@@ -127,13 +127,12 @@ export function useRoles() {
       let roleId: string
       if (existing) {
         roleId = existing.id
+        // An existing role keeps its admin flag: the system roles' flag is
+        // locked, and taking admin from a role the club uses is no template's job.
         if (tr.description && existing.description !== tr.description) {
-          await updateRole(roleId, {
-            name: tr.name,
-            description: tr.description,
-            is_admin: tr.is_admin,
-          })
+          await updateRole(roleId, { name: existing.name, description: tr.description })
         }
+        if (existing.isAdmin) continue
       } else {
         roleId = (await createRole(tr.name, tr.description)).id
         if (tr.is_admin) {
