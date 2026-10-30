@@ -3,6 +3,7 @@ import {
   Button,
   MultiSelect,
   Select,
+  SimpleGrid,
   TextInput,
   Textarea,
 } from '@mantine/core'
@@ -19,8 +20,9 @@ import { roleLabel } from '@/roles'
 
 const STATIC_STATUS = ['active', 'trial', 'inactive', 'suspended'] as const
 
-// Name, email and avatar come from the member's own account: shown, never
-// sent. A club invites by email and never sets a password.
+// Name, email and avatar come from the member's own account, so editing
+// shows only what the club can change (name and email sit in the subtitle).
+// A club invites by email and never sets a password.
 const memberSchema = z.object({
   firstName: z.string(),
   lastName: z.string(),
@@ -187,6 +189,7 @@ export function MemberEditModal({
     <Modal
       onSubmit={form.onSubmit(handleSave)}
       open={open}
+      wide
       onClose={onClose}
       title={
         mode === 'create'
@@ -195,7 +198,7 @@ export function MemberEditModal({
       }
       subtitle={
         mode === 'edit'
-          ? member?.name
+          ? [member?.name, member?.email].filter(Boolean).join(' · ')
           : t(
               'members.invite.subtitle',
               'Die Person erhält einen persönlichen Link, meldet sich mit dieser Adresse an oder erstellt ein Konto und nimmt an. Name, E-Mail und Kontaktangaben bleiben ihre eigenen.',
@@ -219,95 +222,90 @@ export function MemberEditModal({
       }
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <Field
-          label={t('members.privateEmail')}
-          hint={
-            mode === 'edit'
-              ? t(
-                  'members.accountFieldsHint',
-                  'Aus dem eigenen Konto des Mitglieds. Nur es selbst kann das ändern.',
-                )
-              : t('members.privateEmailHint')
-          }
-        >
-          <TextInput
-            type="email"
-            {...form.getInputProps('email')}
-            readOnly={mode === 'edit'}
-            disabled={mode === 'edit'}
-            placeholder="anna@example.com"
-          />
-        </Field>
-        <div
-          className="grid-2"
-          style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}
-        >
-          <Field
-            label={t('common.firstName')}
-            hint={
-              mode === 'create'
-                ? t('members.invite.nameHint', 'Nur für die Anrede in der E-Mail')
-                : undefined
-            }
-          >
-            <TextInput
-              {...form.getInputProps('firstName')}
-              readOnly={mode === 'edit'}
-              disabled={mode === 'edit'}
-              placeholder="Anna"
-            />
-          </Field>
-          <Field label={t('common.lastName')}>
-            <TextInput
-              {...form.getInputProps('lastName')}
-              readOnly={mode === 'edit'}
-              disabled={mode === 'edit'}
-              placeholder="Zimmermann"
-            />
-          </Field>
-        </div>
-        <Field label={t('common.status')}>
-          <Select
-            data={STATIC_STATUS.map((s) => ({
-              value: s,
-              label: t(`status.${s}`),
-            }))}
-            {...form.getInputProps('status')}
-          />
-        </Field>
-        <Field label={t('members.tier')}>
-          <Select
-            data={allTiers.map((tp) => ({ value: tp, label: tp }))}
-            searchable
-            {...form.getInputProps('tier')}
-          />
-        </Field>
-        {mode === 'edit' && (
-        <Field
-          label={t('common.roles', 'Rollen')}
-          hint={
-            member?.functionRoles?.length
-              ? t('members.functionRolesHint', 'Über Funktionen: {{roles}}. Diese ändern sich mit der Funktion.', {
-                  roles: member.functionRoles
-                    .map((fr) => `${roleLabel(fr.name)} (${fr.function})`)
-                    .join(', '),
-                })
-              : undefined
-          }
-        >
-          <MultiSelect
-            data={allRoles.map((r) => ({ value: r, label: roleLabel(r) }))}
-            value={watchedRoles}
-            onChange={(v) => form.setFieldValue('roles', v)}
-            placeholder={t('members.noRolesSelected', 'Rollen wählen …')}
-            searchable
-            clearable
-            hidePickedOptions
-            size="sm"
-            radius="md"
-          />
-        </Field>
+        {mode === 'create' && (
+          <>
+            <Field
+              label={t('members.privateEmail')}
+              hint={t('members.privateEmailHint')}
+            >
+              <TextInput
+                type="email"
+                {...form.getInputProps('email')}
+                placeholder="anna@example.com"
+              />
+            </Field>
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
+              <Field
+                label={t('common.firstName')}
+                hint={t('members.invite.nameHint', 'Nur für die Anrede in der E-Mail')}
+              >
+                <TextInput {...form.getInputProps('firstName')} placeholder="Anna" />
+              </Field>
+              <Field label={t('common.lastName')}>
+                <TextInput {...form.getInputProps('lastName')} placeholder="Zimmermann" />
+              </Field>
+            </SimpleGrid>
+          </>
         )}
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
+          <Field label={t('common.status')}>
+            <Select
+              data={STATIC_STATUS.map((s) => ({
+                value: s,
+                label: t(`status.${s}`),
+              }))}
+              {...form.getInputProps('status')}
+            />
+          </Field>
+          <Field label={t('members.tier')}>
+            <Select
+              data={allTiers.map((tp) => ({ value: tp, label: tp }))}
+              searchable
+              {...form.getInputProps('tier')}
+            />
+          </Field>
+        </SimpleGrid>
+        <SimpleGrid cols={{ base: 1, sm: mode === 'edit' ? 2 : 1 }} spacing={12}>
+          {mode === 'edit' && (
+            <Field
+              label={t('common.roles', 'Rollen')}
+              hint={
+                member?.functionRoles?.length
+                  ? t('members.functionRolesHint', 'Über Funktionen: {{roles}}. Diese ändern sich mit der Funktion.', {
+                      roles: member.functionRoles
+                        .map((fr) => `${roleLabel(fr.name)} (${fr.function})`)
+                        .join(', '),
+                    })
+                  : undefined
+              }
+            >
+              <MultiSelect
+                data={allRoles.map((r) => ({ value: r, label: roleLabel(r) }))}
+                value={watchedRoles}
+                onChange={(v) => form.setFieldValue('roles', v)}
+                placeholder={t('members.noRolesSelected', 'Rollen wählen …')}
+                searchable
+                clearable
+                hidePickedOptions
+                size="sm"
+                radius="md"
+              />
+            </Field>
+          )}
+          <Field label={t('members.groupsCol')}>
+            <MultiSelect
+              data={allGroups}
+              value={watchedGroups}
+              onChange={(v) => form.setFieldValue('groups', v)}
+              placeholder={t('members.noGroupsSelected')}
+              searchable
+              clearable
+              hidePickedOptions
+              size="sm"
+              radius="md"
+            />
+          </Field>
+        </SimpleGrid>
         {mode === 'edit' && (
           <Field
             label={t('members.clubUsername')}
@@ -333,19 +331,6 @@ export function MemberEditModal({
             )}
           </Field>
         )}
-        <Field label={t('members.groupsCol')}>
-          <MultiSelect
-            data={allGroups}
-            value={watchedGroups}
-            onChange={(v) => form.setFieldValue('groups', v)}
-            placeholder={t('members.noGroupsSelected')}
-            searchable
-            clearable
-            hidePickedOptions
-            size="sm"
-            radius="md"
-          />
-        </Field>
         <Field label={t('members.notes')}>
           <Textarea
             rows={3}

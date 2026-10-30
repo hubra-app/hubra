@@ -2885,5 +2885,13 @@
   "roles.delete": "Delete role",
   "roles.mayDo": "May do",
   "roles.pageRoles": "Roles",
-  "roles.pageCompare": "Compare"
+  "roles.pageCompare": "Compare",
+  "finance.settings.tab": "Settings",
+  "finance.settings.saved": "Settings saved",
+  "finance.settings.invoicesTitle": "Invoices and reminders",
+  "finance.settings.bankHint": "The account and address on the QR invoices are set in the club settings.",
+  "finance.settings.openBank": "Open bank details",
+  "settings.tabs.membership": "Membership",
+  "settings.tabs.bank": "Bank & QR invoice",
+  "shell.breadcrumbs.financeSettings": "Finance › Settings"
 }
