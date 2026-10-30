@@ -214,7 +214,7 @@ function AuditEntryDetailPanel({
                       fontStyle: 'italic',
                     }}
                   >
-                    System (no actor)
+                    {t('audit.systemActor', 'System (automatisch)')}
                   </div>
                 )}
               </div>

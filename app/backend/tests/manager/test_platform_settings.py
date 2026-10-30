@@ -274,3 +274,114 @@ def test_backup_storage_is_a_platform_setting(app, db):
 def test_clubs_no_longer_get_relay_or_backup_settings(db, seeded_db):
     keys = {s.key for s in db.session.query(Setting).all()}
     assert not {k for k in keys if k.startswith(("mail.smtp_", "backup.s3_"))}
+
+
+# ── Fallback relay ───────────────────────────────────────────────────────────
+
+
+class _FakeRedis:
+    def __init__(self):
+        self.keys = {}
+
+    def exists(self, key):
+        return key in self.keys
+
+    def set(self, key, value, ex=None):
+        self.keys[key] = value
+
+
+@pytest.fixture
+def fallback(db):
+    platform_settings.set_many(
+        {
+            "mail.relay.host": "mail.infomaniak.example",
+            "mail.fallback.host": "smtp-relay.brevo.example",
+            "mail.fallback.user": "brevo-login",
+            "mail.fallback.password": "brevo-key",
+        }
+    )
+    db.session.commit()
+    redis = _FakeRedis()
+    with patch("hubra.core.redis_client.get_redis_client", return_value=redis):
+        yield redis
+
+
+def _smtp_send(**kw):
+    return email._send_via_smtp(
+        "member@example.com",
+        "Alice",
+        "noreply@hubra.example",
+        "Hubra",
+        "Hi",
+        "<p>Hi</p>",
+        "Hi",
+        **kw,
+    )
+
+
+def test_no_fallback_without_a_host(db):
+    assert platform_settings.fallback_relay() is None
+
+
+def test_quota_on_the_relay_goes_out_through_the_fallback(fallback):
+    hosts = []
+
+    def deliver(route, *_):
+        hosts.append(route.host)
+        if route.host == "mail.infomaniak.example":
+            raise email.smtplib.SMTPSenderRefused(452, b"Sending quota exceeded", "x")
+
+    with patch.object(email, "_deliver", side_effect=deliver):
+        assert _smtp_send() is True
+        assert hosts == ["mail.infomaniak.example", "smtp-relay.brevo.example"]
+        assert email._PRIMARY_DOWN_KEY in fallback.keys
+
+        # While the relay is marked down, the fallback goes first.
+        hosts.clear()
+        assert _smtp_send() is True
+        assert hosts == ["smtp-relay.brevo.example"]
+
+
+def test_a_refused_recipient_does_not_mark_the_relay_down(fallback):
+    def deliver(route, *_):
+        if route.host == "mail.infomaniak.example":
+            raise email.smtplib.SMTPRecipientsRefused(
+                {"member@example.com": (550, b"no")}
+            )
+
+    with patch.object(email, "_deliver", side_effect=deliver):
+        assert _smtp_send() is True
+    assert email._PRIMARY_DOWN_KEY not in fallback.keys
+
+
+def test_both_relays_failing_raises(fallback):
+    with patch.object(email, "_deliver", side_effect=OSError("down")):
+        with pytest.raises(email.EmailDeliveryError):
+            _smtp_send()
+
+
+def test_club_mailbox_route_never_falls_back(fallback):
+    hosts = []
+
+    def deliver(route, *_):
+        hosts.append(route.host)
+        raise OSError("down")
+
+    with patch.object(email, "_deliver", side_effect=deliver):
+        with pytest.raises(email.EmailDeliveryError):
+            _smtp_send(route=email._Route("zonemta", 587, "club@x", "pw"))
+    assert hosts == ["zonemta"]
+
+
+def test_api_test_mail_via_fallback(client, superadmin, db, fallback):
+    platform_settings.set_many({"mail.system.sender_email": "noreply@hubra.example"})
+    db.session.commit()
+    with patch.object(email, "_deliver") as deliver:
+        resp = client.post(
+            "/api/v1/manager/platform/mail/test",
+            json={"to": "ops@example.com", "via": "fallback"},
+        )
+    assert resp.status_code == 200
+    assert [c.args[0].host for c in deliver.call_args_list] == [
+        "smtp-relay.brevo.example"
+    ]

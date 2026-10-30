@@ -264,7 +264,8 @@ export interface AccountSession {
   ipAddress: string
   createdAt: string | null
   lastActiveAt: string | null
-  club: { slug: string; name: string }
+  /** null: a sign-in to the account itself (this portal), not to a club. */
+  club: { slug: string; name: string } | null
   current: boolean
 }
 
@@ -272,10 +273,11 @@ export async function getSessions(): Promise<AccountSession[]> {
   return apiFetch<AccountSession[]>('/account/all-sessions')
 }
 
-export async function revokeSession(clubSlug: string, id: number): Promise<void> {
-  await apiFetch(`/account/all-sessions/${encodeURIComponent(clubSlug)}/${id}`, {
-    method: 'DELETE',
-  })
+export async function revokeSession(s: AccountSession): Promise<void> {
+  const path = s.club
+    ? `/account/all-sessions/${encodeURIComponent(s.club.slug)}/${s.id}`
+    : `/account/account-sessions/${s.id}`
+  await apiFetch(path, { method: 'DELETE' })
 }
 
 export async function revokeOtherSessions(): Promise<{ revoked: number }> {

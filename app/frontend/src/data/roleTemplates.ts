@@ -1,3 +1,6 @@
+import i18n from 'i18next'
+import { SYSTEM_ROLES } from '@/roles'
+
 export interface RoleTemplatePermission {
   key: string
 }
@@ -188,3 +191,23 @@ export const ROLE_TEMPLATES: RoleTemplate[] = [
     ],
   },
 ]
+
+const slug = (name: string) => name.toLowerCase().replace(/\s+/g, '')
+
+/** The template in the page language. System roles keep their English name:
+ * the backend looks them up by it, and roleLabel() shows them translated. */
+export function localizeTemplate(template: RoleTemplate): RoleTemplate {
+  const base = `roleTemplates.${template.id}`
+  return {
+    ...template,
+    name: i18n.t(`${base}.name`, template.name),
+    description: i18n.t(`${base}.description`, template.description),
+    roles: template.roles.map((role) => ({
+      ...role,
+      name: SYSTEM_ROLES.includes(role.name)
+        ? role.name
+        : i18n.t(`roleTemplates.roleNames.${slug(role.name)}`, role.name),
+      description: i18n.t(`${base}.roles.${slug(role.name)}`, role.description),
+    })),
+  }
+}

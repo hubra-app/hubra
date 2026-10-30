@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import delete
 
 from hubra.core.extensions import db
+from hubra.core.models.account_session import AccountSession
 from hubra.core.models.device_session import Device, Session
 from hubra.core.tasks import celery_app
 
@@ -20,7 +21,7 @@ _RETENTION_DAYS = 90
 def cleanup_revoked_sessions() -> int:
     """Delete Session rows that were revoked more than _RETENTION_DAYS ago,
     in the public schema and in every club's (club sign-ins are recorded
-    in the club schema).
+    in the club schema), and account sign-ins revoked or idle that long.
 
     Device rows are kept — they persist so the device history is retained.
     Returns the number of rows deleted.
@@ -43,6 +44,15 @@ def cleanup_revoked_sessions() -> int:
         return result.rowcount  # type: ignore[attr-defined]
 
     count = _clean()
+    # Account sign-ins (public only): ended ones, and idle ones long over.
+    result = db.session.execute(
+        delete(AccountSession).where(
+            (AccountSession.revoked_at < cutoff)
+            | (AccountSession.last_active_at < cutoff)
+        )
+    )
+    db.session.commit()
+    count += result.rowcount  # type: ignore[attr-defined]
     for tenant_id in db.session.scalars(select(Tenant.id)).all():
         try:
             set_search_path(tenant_id)

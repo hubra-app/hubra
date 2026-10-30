@@ -446,7 +446,8 @@
     "saved": "Code gespeichert.",
     "searchPlaceholder": "Suchen …",
     "status": "Status",
-    "title": "Codes"
+    "title": "Codes",
+    "lengthHint": "Mit dem Regler stellst du die Länge des Codes ein"
   },
   "common": {
     "actions": "Aktionen",
@@ -550,7 +551,8 @@
     "pageFirst": "Erste Seite",
     "pagePrevious": "Vorherige Seite",
     "pageNext": "Nächste Seite",
-    "pageLast": "Letzte Seite"
+    "pageLast": "Letzte Seite",
+    "more": "Mehr"
   },
   "dashboard": {
     "activeMembers": "Aktive Mitglieder",
@@ -1506,7 +1508,8 @@
     "allTypes": "Alle Typen",
     "state": "Zustand",
     "allStates": "Alle",
-    "syncLabel": "Abgleich"
+    "syncLabel": "Abgleich",
+    "customPasswordPlaceholder": "Eigenes Passwort (optional)"
   },
   "members": {
     "active": "Aktiv",
@@ -1730,7 +1733,20 @@
       "approved": "Austritt bestätigt",
       "declined": "Austritt abgelehnt"
     },
-    "noMembersFilterHint": "Ändere die Suche oder den Filter."
+    "noMembersFilterHint": "Ändere die Suche oder den Filter.",
+    "invite": {
+      "title": "Mitglied einladen",
+      "subtitle": "Die Person erhält einen persönlichen Link, meldet sich mit dieser Adresse an oder erstellt ein Konto und nimmt an. Name, E-Mail und Kontaktangaben bleiben ihre eigenen.",
+      "send": "Einladung senden",
+      "sentTitle": "Einladung gesendet",
+      "sent": "{{email}} erhält einen Link zum Beitreten.",
+      "failed": "Einladen fehlgeschlagen",
+      "nameHint": "Nur für die Anrede in der E-Mail"
+    },
+    "accountFieldsHint": "Aus dem eigenen Konto des Mitglieds. Nur es selbst kann das ändern.",
+    "import": {
+      "invitedMsg": "{{count}} Einladungen gesendet, {{skipped}} schon Mitglied."
+    }
   },
   "notifications": {
     "invoicePaid": "Rechnung bezahlt",
@@ -1809,7 +1825,8 @@
     "requiredBadge": "Pflicht",
     "editTitle": "Umfrage bearbeiten",
     "remindersSentMsg_one": "{{count}} Erinnerung gesendet.",
-    "remindersSentMsg_other": "{{count}} Erinnerungen gesendet."
+    "remindersSentMsg_other": "{{count}} Erinnerungen gesendet.",
+    "addOption": "+ Option hinzufügen"
   },
   "posts": {
     "backToPosts": "Zurück zu den Beiträgen",
@@ -2069,6 +2086,9 @@
       "reason": "Grund: {{reason}}",
       "remaining": "noch {{min}} Min.",
       "stop": "Fremdzugriff beenden"
+    },
+    "clubBanner": {
+      "dismiss": "Banner ausblenden"
     }
   },
   "system": {
@@ -2355,6 +2375,9 @@
     "loadFailed": "Die Einstellungen konnten nicht geladen werden.",
     "saveFailed": "Einstellungen nicht gespeichert",
     "saved": "Einstellungen gespeichert",
+    "joinRequestsOpen": "Beitrittsanfragen annehmen",
+    "joinRequestsOpenHint": "Aus: Neue Mitglieder kommen nur noch über eine Einladung dazu, und auf join.hubra.club steht «Nur auf Einladung».",
+    "inviteValidDays": "Einladungen gültig (Tage)",
     "logo": "Logo",
     "logoHint": "PNG, JPEG, WebP, GIF oder SVG, höchstens 2 MB. Erscheint oben in der App, im Browser-Tab und bei «Meine Vereine».",
     "logoUpload": "Logo hochladen",
@@ -2588,8 +2611,12 @@
       "leave_requested": "Austritt beantragt",
       "leave_request_withdrawn": "Austrittsgesuch zurückgezogen",
       "leave_approved": "Austritt bestätigt",
-      "leave_declined": "Austritt abgelehnt"
-    }
+      "leave_declined": "Austritt abgelehnt",
+      "approve_registration": "Anmeldung bestätigt",
+      "delete_application": "Antrag gelöscht",
+      "create_member": "Mitglied erstellt"
+    },
+    "systemActor": "System (automatisch)"
   },
   "kv": {
     "required": "Pflichtfeld",
@@ -2690,7 +2717,9 @@
     "noSources": "Keine Einträge vom Typ {{type}}.",
     "selectSource": "Eintrag wählen …",
     "currentValue": "Aktueller Wert:",
-    "hidden": "(verborgen)"
+    "hidden": "(verborgen)",
+    "validationOk": "OK",
+    "validationFailed": "Fehlgeschlagen"
   },
   "roles": {
     "hideFields": "Feldrechte ausblenden",
@@ -2740,7 +2769,10 @@
       "Member": "Mitglied"
     },
     "assignTo": "Mitgliedern die Rolle {{role}} geben",
-    "searchMembers": "Mitglied suchen …"
+    "searchMembers": "Mitglied suchen …",
+    "templateAdmin": "(alle Rechte)",
+    "templatePermCount_one": "({{count}} Berechtigung)",
+    "templatePermCount_other": "({{count}} Berechtigungen)"
   },
   "modules": {
     "backups": {
@@ -2814,5 +2846,37 @@
       "description": "Rollen und die Berechtigungen, die sie vergeben"
     },
     "pluginFailed": "Diese Erweiterung konnte nicht angezeigt werden."
+  },
+  "roleTemplates": {
+    "roleNames": {
+      "boardmember": "Vorstand",
+      "operator": "Betrieb"
+    },
+    "standard-club": {
+      "name": "Standardverein",
+      "description": "Eine übliche Aufstellung mit Administration, Vorstand und Mitgliedern.",
+      "roles": {
+        "admin": "Voller Zugriff, umgeht alle Berechtigungsprüfungen",
+        "boardmember": "Erweiterter Zugriff: verwaltet Mitglieder, Gruppen, Anlässe und Finanzen",
+        "member": "Grundlegender Lesezugriff auf die Vereinsdaten"
+      }
+    },
+    "small-association": {
+      "name": "Kleiner Verein",
+      "description": "Schlanke Aufstellung für kleine Vereine: nur Administration und Mitglieder.",
+      "roles": {
+        "admin": "Voller Zugriff",
+        "member": "Sieht Mitglieder und Anlässe und stimmt bei Umfragen ab"
+      }
+    },
+    "makerspace": {
+      "name": "Makerspace",
+      "description": "Für Makerspaces: Administration, Betrieb und Mitglieder.",
+      "roles": {
+        "admin": "Voller Zugriff",
+        "operator": "Verwaltet Inventar, Anlässe und Zugänge der Mitglieder, aber keine Finanzen",
+        "member": "Sieht Ressourcen, nutzt das Inventar und macht mit"
+      }
+    }
   }
 }

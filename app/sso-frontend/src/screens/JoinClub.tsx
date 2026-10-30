@@ -18,6 +18,7 @@ import { useSso } from '@/context/SsoContext'
 import { SignedInFrame } from '@/components/SignedInFrame'
 import { clubAppUrl } from '@/redirect'
 import * as authApi from '@/api/auth'
+import { useLang } from '@/lang'
 
 /**
  * A club's join page: what the club app's /apply sends people to. Signed in
@@ -30,6 +31,7 @@ export function JoinClubScreen() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [tierChoice, setTierChoice] = useState<string | null>(null)
+  const { tr } = useLang()
 
   useEffect(() => {
     if (authStatus === 'anon')
@@ -52,10 +54,13 @@ export function JoinClubScreen() {
       queryClient.invalidateQueries({ queryKey: ['join-requests'] })
       notify(
         'success',
-        res.status === 'joined' ? `Du bist jetzt bei ${res.club.name}` : 'Anfrage gesendet',
+        res.status === 'joined'
+          ? tr(`Du bist jetzt bei ${res.club.name}`, `You're now in ${res.club.name}`)
+          : tr('Anfrage gesendet', 'Request sent'),
       )
     },
-    onError: (err: Error) => notify('error', 'Anfrage fehlgeschlagen', err.message),
+    onError: (err: Error) =>
+      notify('error', tr('Anfrage fehlgeschlagen', 'Request failed'), err.message),
   })
 
   const openClub = async () => {
@@ -67,7 +72,11 @@ export function JoinClubScreen() {
         navigate('/verify')
         return
       }
-      notify('error', 'Der Verein konnte nicht geöffnet werden', err instanceof Error ? err.message : undefined)
+      notify(
+        'error',
+        tr('Der Verein konnte nicht geöffnet werden', 'The club could not be opened'),
+        err instanceof Error ? err.message : undefined,
+      )
     }
   }
 
@@ -85,15 +94,18 @@ export function JoinClubScreen() {
       leftSection={<IconArrowLeft size={16} />}
       onClick={() => navigate('/clubs')}
     >
-      Meine Vereine
+      {tr('Meine Vereine', 'My clubs')}
     </Button>
   )
 
   if (club.isError || !club.data)
     return (
       <SignedInFrame actions={back}>
-        <Alert color="red" title="Verein nicht gefunden">
-          Diesen Verein gibt es nicht oder er ist nicht aktiv. Suche ihn unter «Meine Vereine».
+        <Alert color="red" title={tr('Verein nicht gefunden', 'Club not found')}>
+          {tr(
+            'Diesen Verein gibt es nicht oder er ist nicht aktiv. Suche ihn unter «Meine Vereine».',
+            "This club doesn't exist or isn't active. Look for it under “My clubs”.",
+          )}
         </Alert>
       </SignedInFrame>
     )
@@ -108,7 +120,7 @@ export function JoinClubScreen() {
         <Stack gap="md">
           <div>
             <Text size="sm" c="dimmed">
-              Verein
+              {tr('Verein', 'Club')}
             </Text>
             <Title order={2}>{data.name}</Title>
           </div>
@@ -116,23 +128,30 @@ export function JoinClubScreen() {
           {data.membership === 'member' && (
             <>
               <Badge color="green" leftSection={<IconCheck size={12} />} w="fit-content">
-                Du bist Mitglied
+                {tr('Du bist Mitglied', "You're a member")}
               </Badge>
-              <Button onClick={openClub}>Verein öffnen</Button>
+              <Button onClick={openClub}>{tr('Verein öffnen', 'Open club')}</Button>
             </>
           )}
 
           {data.membership === 'pending' && (
-            <Alert color="yellow" title="Deine Anfrage ist unterwegs">
-              {data.name} prüft sie. Sobald sie angenommen ist, findest du den Verein unter «Meine
-              Vereine».
+            <Alert
+              color="yellow"
+              title={tr('Deine Anfrage ist unterwegs', 'Your request is on its way')}
+            >
+              {tr(
+                `${data.name} prüft sie. Sobald sie angenommen ist, findest du den Verein unter «Meine Vereine».`,
+                `${data.name} is reviewing it. Once it's accepted, you'll find the club under “My clubs”.`,
+              )}
             </Alert>
           )}
 
           {data.membership === null && !data.canJoinDirectly && data.acceptsRequests === false && (
-            <Alert color="gray" title="Nur auf Einladung">
-              {data.name} nimmt neue Mitglieder nur auf Einladung auf. Wenn du dabei sein möchtest,
-              frag jemanden aus dem Verein nach einer Einladung.
+            <Alert color="gray" title={tr('Nur auf Einladung', 'Invitation only')}>
+              {tr(
+                `${data.name} nimmt neue Mitglieder nur auf Einladung auf. Wenn du dabei sein möchtest, frag jemanden aus dem Verein nach einer Einladung.`,
+                `${data.name} only takes new members by invitation. If you'd like to join, ask someone in the club for an invitation.`,
+              )}
             </Alert>
           )}
 
@@ -140,12 +159,18 @@ export function JoinClubScreen() {
             <>
               <Text size="sm">
                 {data.canJoinDirectly
-                  ? 'Als Plattform-Verwaltung trittst du direkt bei.'
-                  : 'Schick dem Verein eine Beitrittsanfrage. Seine Verwaltung nimmt sie an oder lehnt sie ab; Name und E-Mail-Adresse aus deinem Konto gehen mit.'}
+                  ? tr(
+                      'Als Plattform-Verwaltung trittst du direkt bei.',
+                      'As a platform admin you join directly.',
+                    )
+                  : tr(
+                      'Schick dem Verein eine Beitrittsanfrage. Seine Verwaltung nimmt sie an oder lehnt sie ab; Name und E-Mail-Adresse aus deinem Konto gehen mit.',
+                      "Send the club a request to join. Its admins accept or decline it; your account's name and email address go with it.",
+                    )}
               </Text>
               {tiers.length > 0 && !data.canJoinDirectly && (
                 <Radio.Group
-                  label="Mitgliedschaft"
+                  label={tr('Mitgliedschaft', 'Membership')}
                   value={tierId}
                   onChange={setTierChoice}
                 >
@@ -158,9 +183,13 @@ export function JoinClubScreen() {
               )}
               <Button
                 loading={join.isPending}
-                onClick={() => join.mutate(tierId && !data.canJoinDirectly ? Number(tierId) : undefined)}
+                onClick={() =>
+                  join.mutate(tierId && !data.canJoinDirectly ? Number(tierId) : undefined)
+                }
               >
-                {data.canJoinDirectly ? 'Beitreten' : 'Beitritt anfragen'}
+                {data.canJoinDirectly
+                  ? tr('Beitreten', 'Join')
+                  : tr('Beitritt anfragen', 'Ask to join')}
               </Button>
             </>
           )}

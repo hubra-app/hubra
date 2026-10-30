@@ -247,10 +247,10 @@ export function FinanceOverviewTab() {
                     </Table.Td>
                   </Table.Tr>
                 ) : (
-                  recentTx.map((t) => (
-                    <Table.Tr key={t.id}>
+                  recentTx.map((tx) => (
+                    <Table.Tr key={tx.id}>
                       <Table.Td
-                        data-label="Beschribig"
+                        data-label={t('finance.description', 'Beschreibung')}
                         style={{ maxWidth: 200 }}
                       >
                         <div
@@ -260,7 +260,7 @@ export function FinanceOverviewTab() {
                             whiteSpace: 'nowrap',
                           }}
                         >
-                          {t.description}
+                          {tx.description}
                         </div>
                         <div
                           style={{
@@ -268,22 +268,22 @@ export function FinanceOverviewTab() {
                             color: '#8c86a0',
                           }}
                         >
-                          {t.category}
+                          {tx.category}
                         </div>
                       </Table.Td>
-                      <Table.Td data-label="Betrag">
+                      <Table.Td data-label={t('finance.amount', 'Betrag')}>
                         <span
                           className="num"
                           style={{
                             fontWeight: 700,
-                            color: t.type === 'income' ? '#1f9d57' : '#ff4d3d',
+                            color: tx.type === 'income' ? '#1f9d57' : '#ff4d3d',
                           }}
                         >
-                          {t.type === 'income' ? '+' : ''}CHF{' '}
-                          {formatCHF(Math.abs(t.amount))}
+                          {tx.type === 'income' ? '+' : ''}CHF{' '}
+                          {formatCHF(Math.abs(tx.amount))}
                         </span>
                       </Table.Td>
-                      <Table.Td data-label="Datum">
+                      <Table.Td data-label={t('finance.date', 'Datum')}>
                         <span
                           className="num"
                           style={{
@@ -291,7 +291,7 @@ export function FinanceOverviewTab() {
                             fontSize: 'var(--mantine-font-size-xs)',
                           }}
                         >
-                          {t.date}
+                          {tx.date}
                         </span>
                       </Table.Td>
                     </Table.Tr>

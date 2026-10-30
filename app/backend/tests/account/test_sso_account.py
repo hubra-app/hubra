@@ -113,13 +113,17 @@ def test_sessions_of_every_club(client, tenant_pair):
     assert resp.status_code == 200
     sessions = resp.get_json()
     assert sessions, "the sign-in should have recorded a session"
-    assert all(s["club"]["slug"] in {"tenant-a", "tenant-b"} for s in sessions)
+    assert all(
+        s["club"] is None or s["club"]["slug"] in {"tenant-a", "tenant-b"}
+        for s in sessions
+    )
 
 
-def test_sessions_without_a_club_are_empty(client, db):
+def test_sessions_without_a_club_list_the_account_sign_in(client, db):
     _user_without_club(db)
     _login(client, "solo@test.ch")
-    assert client.get("/api/v1/account/all-sessions").get_json() == []
+    sessions = client.get("/api/v1/account/all-sessions").get_json()
+    assert [(s["club"], s["current"]) for s in sessions] == [(None, True)]
 
 
 def test_revoke_session_in_an_unknown_club(client, tenant_pair):

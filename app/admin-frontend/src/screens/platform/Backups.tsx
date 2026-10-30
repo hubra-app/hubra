@@ -510,8 +510,8 @@ export function Backups() {
                   <Table.Td data-label="#" style={{ color: '#5e5873' }}>
                     {b.id}
                   </Table.Td>
-                  <Table.Td data-label="Date">{formatDate(b.created_at)}</Table.Td>
-                  <Table.Td data-label="Scope">
+                  <Table.Td data-label={tr('Datum', 'Date')}>{formatDate(b.created_at)}</Table.Td>
+                  <Table.Td data-label={tr('Bereich', 'Scope')}>
                     {b.scope === 'club' ? (
                       <span style={{ fontWeight: 600 }}>{b.tenant_slug ?? `#${b.tenant_id}`}</span>
                     ) : (
@@ -546,7 +546,7 @@ export function Backups() {
                       </div>
                     )}
                   </Table.Td>
-                  <Table.Td data-label="Type">
+                  <Table.Td data-label={tr('Art', 'Type')}>
                     <span
                       style={{
                         background: TYPE_COLORS[b.type] ?? '#5e5873',
@@ -561,7 +561,7 @@ export function Backups() {
                       {label(TYPE_LABELS, b.type)}
                     </span>
                   </Table.Td>
-                  <Table.Td data-label="Status">
+                  <Table.Td data-label={tr('Status', 'Status')}>
                     <span
                       style={{
                         color: STATUS_COLORS[b.status] ?? '#5e5873',
@@ -590,10 +590,10 @@ export function Backups() {
                       </div>
                     )}
                   </Table.Td>
-                  <Table.Td data-label="Size" style={{ color: '#5e5873' }}>
+                  <Table.Td data-label={tr('Grösse', 'Size')} style={{ color: '#5e5873' }}>
                     {formatSize(b.size_bytes)}
                   </Table.Td>
-                  <Table.Td data-label="Verified">
+                  <Table.Td data-label={tr('Geprüft', 'Verified')}>
                     {b.verified_ok === true && (
                       <span
                         style={{
@@ -621,10 +621,10 @@ export function Backups() {
                     )}
                     {b.verified_ok === null && <span style={{ color: '#bbb' }}>—</span>}
                   </Table.Td>
-                  <Table.Td data-label="Tables" style={{ color: '#5e5873' }}>
+                  <Table.Td data-label={tr('Tabellen', 'Tables')} style={{ color: '#5e5873' }}>
                     {b.table_count ?? '—'}
                   </Table.Td>
-                  <Table.Td data-label="Actions">
+                  <Table.Td data-label={tr('Aktionen', 'Actions')}>
                     <div style={{ display: 'flex', gap: 4 }}>
                       {b.status === 'completed' && b.verified_ok === null && (
                         <Button

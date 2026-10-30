@@ -715,7 +715,7 @@ export function MailSettingsModal({
                 <TextInput
                   value={customPassword}
                   onChange={(e) => setCustomPassword(e.target.value)}
-                  placeholder="Custom password (optional)"
+                  placeholder={t('mail.customPasswordPlaceholder', 'Eigenes Passwort (optional)')}
                   type="password"
                   disabled={busy}
                   style={{ flex: 1 }}

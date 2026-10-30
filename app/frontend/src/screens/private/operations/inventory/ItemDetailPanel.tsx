@@ -265,7 +265,7 @@ export function ItemDetailPanel({
                       marginBottom: 2,
                     }}
                   >
-                    Bsitzer
+                    {t('inventory.owner', 'Eigentümer:in')}
                   </div>
                   <div
                     style={{
@@ -289,7 +289,7 @@ export function ItemDetailPanel({
                       marginBottom: 2,
                     }}
                   >
-                    Verantwortlich
+                    {t('inventory.responsible', 'Verantwortlich')}
                   </div>
                   <div
                     style={{
@@ -313,7 +313,7 @@ export function ItemDetailPanel({
                       marginBottom: 2,
                     }}
                   >
-                    Cost
+                    {t('inventory.cost', 'Kosten')}
                   </div>
                   <div
                     className="num"
@@ -337,7 +337,7 @@ export function ItemDetailPanel({
                     marginBottom: 2,
                   }}
                 >
-                  Visibility
+                  {t('inventory.visibility', 'Sichtbarkeit')}
                 </div>
                 <div
                   style={{
@@ -372,10 +372,11 @@ export function ItemDetailPanel({
                   fontSize: 'var(--mantine-font-size-xs)',
                   fontWeight: 600,
                   color: '#5e5873',
+                  textTransform: 'uppercase',
                   marginBottom: 8,
                 }}
               >
-                LINKS
+                {t('inventory.links', 'Links')}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {item.links.map((link, i) => (
@@ -409,10 +410,11 @@ export function ItemDetailPanel({
                   fontSize: 'var(--mantine-font-size-xs)',
                   fontWeight: 600,
                   color: '#5e5873',
+                  textTransform: 'uppercase',
                   marginBottom: 10,
                 }}
               >
-                INSTRUKTION ERFORDERLICH
+                {t('inventory.instructionRequired', 'Einweisung nötig')}
               </div>
 
               {!isSelfInstructed && currentUserId !== null && (

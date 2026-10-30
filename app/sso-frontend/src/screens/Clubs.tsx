@@ -311,16 +311,7 @@ export function ClubsScreen() {
                   </Text>
                 </Box>
               </Group>
-              {c.membership === 'member' ? (
-                <Button
-                  variant="light"
-                  style={{ flexShrink: 0 }}
-                  loading={opening === c.slug}
-                  onClick={() => openClub(c.slug)}
-                >
-                  {tr('Öffnen', 'Open')}
-                </Button>
-              ) : c.membership === 'pending' ? (
+              {c.membership === 'pending' ? (
                 <Badge variant="light" color="gray" style={{ flexShrink: 0 }}>
                   {tr('Anfrage gesendet', 'Request sent')}
                 </Badge>
