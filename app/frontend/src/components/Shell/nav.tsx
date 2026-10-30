@@ -162,7 +162,12 @@ export function filterNav(
     .filter((section) => section.items.length > 0)
 }
 
-export function getParentPath(pathname: string): string {
+/**
+ * The sidebar entry a page belongs to: the longest prefix of the path wins.
+ * Built-in sub-pages map to their entry below; every other sidebar path
+ * (plugins and modules added later) highlights its own pages.
+ */
+export function getParentPath(pathname: string, navPaths: string[] = []): string {
   const prefixes: [string, string][] = [
     ['/app/dashboard', '/app/dashboard'],
     ['/app/dashboard/global', '/app/dashboard'],
@@ -190,11 +195,17 @@ export function getParentPath(pathname: string): string {
     ['/app/account', '/app/account/settings'],
     ['/app/account/settings', '/app/account/settings'],
   ]
+  const known = new Set(prefixes.map(([prefix]) => prefix))
+  for (const path of navPaths) {
+    if (!known.has(path)) prefixes.push([path, path])
+  }
   let best = '/app/dashboard'
+  let bestLength = 0
   for (const [prefix, parent] of prefixes) {
     if (pathname === prefix || pathname.startsWith(prefix + '/')) {
-      if (prefix.length > best.length || best === '/app/dashboard') {
+      if (prefix.length > bestLength) {
         best = parent
+        bestLength = prefix.length
       }
     }
   }
