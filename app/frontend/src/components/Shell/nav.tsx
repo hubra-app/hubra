@@ -14,6 +14,9 @@ import {
   IconLock,
   IconDevicesCog,
   IconLink,
+  IconUserPlus,
+  IconId,
+  IconStairs,
 } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 import type { ModuleInfo } from '@/api/modules'
@@ -88,6 +91,9 @@ const NAV_ICONS: Record<string, ReactNode> = {
   'devices-cog': <IconDevicesCog size={24} />,
   globe: <IconGlobe size={24} />,
   user: <IconUser size={24} />,
+  'user-plus': <IconUserPlus size={24} />,
+  'id-badge': <IconId size={24} />,
+  stairs: <IconStairs size={24} />,
 }
 
 /** An icon a plugin brought along, or a box. */
@@ -106,6 +112,7 @@ export function buildNav(
 ): NavSection[] {
   const counts: Record<string, number> = {
     '/app/members': c.members,
+    '/app/members/applications': c.applications,
     '/app/groups': c.groups,
   }
   const items = modules
@@ -160,9 +167,9 @@ export function getParentPath(pathname: string): string {
     ['/app/dashboard', '/app/dashboard'],
     ['/app/dashboard/global', '/app/dashboard'],
     ['/app/members', '/app/members'],
-    ['/app/members/functions', '/app/members'],
-    ['/app/members/applications', '/app/members'],
-    ['/app/members/tiers', '/app/members'],
+    ['/app/members/functions', '/app/members/functions'],
+    ['/app/members/applications', '/app/members/applications'],
+    ['/app/members/tiers', '/app/members/tiers'],
     ['/app/groups', '/app/groups'],
     ['/app/operations/events', '/app/operations/events'],
     ['/app/operations/polls', '/app/operations/events'],
