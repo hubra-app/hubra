@@ -225,6 +225,25 @@ def _apply_member_filters(query, args: dict[str, str]):
             MembershipTier.name == tier_name
         )
 
+    role_id = args.get("role_id", "").strip()
+    if role_id:
+        # Holding the role, yourself or through a function whose term runs.
+        from hubra.api.permissions import _active_term
+        from hubra.core.models.function import Function, FunctionHolder
+        from hubra.core.models.member import member_roles
+
+        try:
+            rid = int(role_id)
+        except ValueError:
+            raise_error(400, "VALIDATION_ERROR", "role_id must be a role id")
+        direct = select(member_roles.c.member_id).where(member_roles.c.role_id == rid)
+        through_function = (
+            select(FunctionHolder.member_id)
+            .join(Function, Function.id == FunctionHolder.function_id)
+            .where(Function.grants_tenant_role_id == rid, *_active_term(date.today()))
+        )
+        query = query.where(Member.id.in_(direct.union(through_function)))
+
     group_name = args.get("group", "").strip()
     if group_name:
         query = (
