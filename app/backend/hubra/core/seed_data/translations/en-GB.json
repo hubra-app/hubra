@@ -2830,5 +2830,10 @@
   "functions.grantsRole": "Gives the role",
   "functions.grantsRoleHint": "Whoever holds the function has this role until the function ends.",
   "functions.noRole": "No role",
-  "functions.givesRole": "Gives the role {{role}}"
+  "functions.givesRole": "Gives the role {{role}}",
+  "roles.forScope": "Applies to",
+  "roles.wholeClub": "Whole club",
+  "roles.groupHolders": "For one group only",
+  "roles.onlyGroup": "only {{group}}",
+  "members.roleForGroup": "{{role}} (only {{group}})"
 }

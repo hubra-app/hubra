@@ -77,6 +77,8 @@ export async function getMyPermissions(
   is_admin: boolean;
   is_superadmin: boolean;
   permissions: string[];
+  /** Group id -> keys held for that group only. */
+  scoped_permissions?: Record<string, string[]>;
   impersonation: {
     is_impersonating: boolean;
     impersonator_id: number;

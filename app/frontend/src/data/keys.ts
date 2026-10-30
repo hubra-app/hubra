@@ -96,6 +96,7 @@ export const qk = {
     clubProfile: ['club-profile'] as const,
     domains: ['domains'] as const,
     rolesPermissions: ['roles-permissions'] as const,
+    roleScopes: (roleId: unknown) => ['roles-permissions', 'scopes', roleId] as const,
   },
   audit: {
     log: (page: number, action: unknown, pageSize: number) => ['audit-log', page, action, pageSize] as const,

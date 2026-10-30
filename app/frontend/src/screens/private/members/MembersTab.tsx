@@ -508,6 +508,14 @@ export function MembersTab() {
                         })}
                       </Tag>
                     ))}
+                  {(m.scopedRoles ?? []).map((sr) => (
+                    <Tag key={`${sr.name}@${sr.group}`}>
+                      {t('members.roleForGroup', '{{role}} (nur {{group}})', {
+                        role: roleLabel(sr.name),
+                        group: sr.group,
+                      })}
+                    </Tag>
+                  ))}
                 </div>
               ),
             },

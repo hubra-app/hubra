@@ -15,6 +15,8 @@ interface BackendMember {
   roles: { id: number; name: string }[];
   /** Roles that come with a function the member holds. */
   function_roles?: { id: number; name: string; function: string }[];
+  /** Roles held for one group only. */
+  scoped_roles?: { id: number; name: string; group_id: number; group: string }[];
   group_ids: number[];
   joined: string | null;
   last_seen: string | null;
@@ -59,6 +61,7 @@ function adapt(
     groups: b.group_ids.map((id) => groupsById.get(id)?.name ?? String(id)),
     roles: b.roles?.map((r) => r.name) ?? ["Member"],
     functionRoles: (b.function_roles ?? []).map((r) => ({ name: r.name, function: r.function })),
+    scopedRoles: (b.scoped_roles ?? []).map((r) => ({ name: r.name, group: r.group })),
     joined: b.joined ?? "",
     lastSeen: b.last_seen ?? "",
     status: b.status,

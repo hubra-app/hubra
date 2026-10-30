@@ -248,3 +248,37 @@ export interface ClubProfile {
 export async function getClubProfile(): Promise<ClubProfile> {
   return apiFetch<ClubProfile>("/settings/club-profile");
 }
+
+// ── Roles held for one group ────────────────────────────────────────────────
+
+export interface RoleScope {
+  id: number;
+  memberId: string;
+  memberName: string;
+  groupId: number;
+  groupName: string;
+}
+
+export async function listRoleScopes(roleId: string): Promise<RoleScope[]> {
+  const data = await apiFetch<
+    { id: number; member_id: number; member_name: string; group_id: number; group_name: string }[]
+  >(`/roles/${roleId}/scopes`);
+  return data.map((s) => ({
+    id: s.id,
+    memberId: String(s.member_id),
+    memberName: s.member_name,
+    groupId: s.group_id,
+    groupName: s.group_name,
+  }));
+}
+
+export async function addRoleScope(roleId: string, memberId: string, groupId: number): Promise<void> {
+  await apiFetch(`/roles/${roleId}/scopes`, {
+    method: "POST",
+    body: JSON.stringify({ member_id: Number(memberId), group_id: groupId }),
+  });
+}
+
+export async function removeRoleScope(roleId: string, scopeId: number): Promise<void> {
+  await apiFetch(`/roles/${roleId}/scopes/${scopeId}`, { method: "DELETE" });
+}
