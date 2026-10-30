@@ -15,15 +15,15 @@ test('a new role can be created, given a permission and deleted', async ({ page 
   const role = roles.find((r) => r.name === name)
   expect(role).toBeTruthy()
   try {
-    // The new role starts without permissions; tick the first one it shows.
-    await page.getByRole('combobox', { name: 'Rollen' }).click()
-    await page.getByRole('option', { name }).click()
-    await page.keyboard.press('Escape')
-    const column = page.locator('th', { hasText: name })
-    await expect(column).toBeVisible()
-    const index = await column.evaluate((th) => Array.from(th.parentElement!.children).indexOf(th))
-    const box = page.locator(`tbody tr td:nth-child(${index + 1}) input[type=checkbox]`).first()
-    await box.check()
+    // The new role starts without permissions; open it and let it see the
+    // first area.
+    await page.getByRole('button', { name: new RegExp(`^${name}`) }).click()
+    await expect(page.getByRole('main').getByText(name, { exact: true })).toHaveCount(2)
+    await page
+      .getByRole('tabpanel', { name: 'Darf' })
+      .getByText('Ansehen', { exact: true })
+      .first()
+      .click()
     await expect
       .poll(
         async () =>
