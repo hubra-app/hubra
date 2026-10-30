@@ -2870,5 +2870,20 @@
   "clubSettings.bank.city": "City",
   "clubSettings.bank.country": "Country (e.g. CH)",
   "clubSettings.bank.save": "Save bank details",
-  "clubSettings.bank.saved": "Bank details saved"
+  "clubSettings.bank.saved": "Bank details saved",
+  "roles.level.none": "None",
+  "roles.level.view": "View",
+  "roles.level.edit": "Edit",
+  "roles.level.all": "All",
+  "roles.level.custom": "Custom",
+  "roles.adminAll": "This is an admin role and may do everything in the club.",
+  "roles.levelHint": "View: see and take part (sign up, vote, comment). Edit: also create and change. All: also delete and export.",
+  "roles.hideSingle": "Hide single permissions",
+  "roles.showSingle": "Show single permissions",
+  "roles.backToList": "Back to the roles",
+  "roles.systemRole": "System role",
+  "roles.delete": "Delete role",
+  "roles.mayDo": "May do",
+  "roles.pageRoles": "Roles",
+  "roles.pageCompare": "Compare"
 }

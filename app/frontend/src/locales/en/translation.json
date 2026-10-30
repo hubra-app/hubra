@@ -3084,7 +3084,24 @@
     "forScope": "Applies to",
     "wholeClub": "Whole club",
     "groupHolders": "For one group only",
-    "onlyGroup": "only {{group}}"
+    "onlyGroup": "only {{group}}",
+    "level": {
+      "none": "None",
+      "view": "View",
+      "edit": "Edit",
+      "all": "All",
+      "custom": "Custom"
+    },
+    "adminAll": "This is an admin role and may do everything in the club.",
+    "levelHint": "View: see and take part (sign up, vote, comment). Edit: also create and change. All: also delete and export.",
+    "hideSingle": "Hide single permissions",
+    "showSingle": "Show single permissions",
+    "backToList": "Back to the roles",
+    "systemRole": "System role",
+    "delete": "Delete role",
+    "mayDo": "May do",
+    "pageRoles": "Roles",
+    "pageCompare": "Compare"
   },
   "modules": {
     "functions": {

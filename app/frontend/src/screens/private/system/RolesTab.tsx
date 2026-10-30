@@ -9,6 +9,7 @@ import type { Role } from '@/api/settings'
 import { type PermissionEntry } from '@/api/system'
 import { type RoleTemplate } from '@/data/roleTemplates'
 import { roleLabel } from '@/roles'
+import { RolesOverview } from './roles/RolesOverview'
 import { MobilePermissionList } from './roles/MobilePermissionList'
 import { PermissionMatrix } from './roles/PermissionMatrix'
 import { ResourceMatrix } from './roles/ResourceMatrix'
@@ -39,6 +40,8 @@ export function RolesTab() {
   const [expandedResources, setExpandedResources] = useState<Set<string>>(
     new Set(),
   )
+  // 'roles': one role at a time in levels; the tables compare roles key by key.
+  const [page, setPage] = useState<'roles' | 'compare'>('roles')
   const [viewMode, setViewMode] = useState<'permission' | 'resource'>(
     'permission',
   )
@@ -157,6 +160,13 @@ export function RolesTab() {
     rolesApi.setPerms(role, keys, on).catch(fail(t('roles.permFailed', 'Berechtigung konnte nicht geändert werden')))
   }
 
+  const setArea = (role: Role, area: PermissionEntry[], keys: string[]) => {
+    if (role.isAdmin) return
+    rolesApi
+      .setAreaPerms(role, area.map((p) => p.key), keys)
+      .catch(fail(t('roles.permFailed', 'Berechtigung konnte nicht geändert werden')))
+  }
+
   const handleCreateRole = async (input: RoleInput) => {
     try {
       await rolesApi.create(input)
@@ -202,7 +212,15 @@ export function RolesTab() {
 
   return (
     <div>
-      <Group justify="flex-end" mb={16} className="page-actions">
+      <Group justify="space-between" mb={16} className="page-actions">
+        <SegmentedControl
+          value={page}
+          onChange={(v) => setPage(v as 'roles' | 'compare')}
+          data={[
+            { value: 'roles', label: t('roles.pageRoles', 'Rollen') },
+            { value: 'compare', label: t('roles.pageCompare', 'Vergleichen') },
+          ]}
+        />
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {canCreate && (
             <Button variant="default" onClick={() => setTemplateOpen(true)}>
@@ -218,149 +236,168 @@ export function RolesTab() {
           )}
         </div>
       </Group>
-      <Group justify="space-between" mb={12} align="center">
-        <SegmentedControl
-          size="xs"
-          value={viewMode}
-          onChange={(v) => setViewMode(v as 'permission' | 'resource')}
-          data={[
-            {
-              value: 'permission',
-              label: (
-                <Group gap={4} wrap="nowrap">
-                  <IconList size={14} />
-                  {t('roles.byPermission', 'Nach Berechtigung')}
-                </Group>
-              ),
-            },
-            {
-              value: 'resource',
-              label: (
-                <Group gap={4} wrap="nowrap">
-                  <IconGridDots size={14} />
-                  {t('roles.byResource', 'Nach Bereich')}
-                </Group>
-              ),
-            },
-          ]}
+      {page === 'roles' && (
+        <RolesOverview
+          roles={roles}
+          allPerms={allPerms}
+          rolePerms={rolePerms}
+          canUpdate={canUpdate}
+          canDelete={canDelete}
+          canSetPermissions={canSetPermissions}
+          canAssign={canAssign}
+          onEdit={openEdit}
+          onDelete={handleDeleteRole}
+          onToggle={toggle}
+          onSetKeys={setArea}
         />
-        {roles.length > 0 && (
-          <Button
-            variant="subtle"
-            size="xs"
-            onClick={() => {
-              const first = visibleRoles[0] ?? roles[0]
-              if (first) setRoleMembersOpen(first)
-            }}
-          >
-            <IconUsers size={14} />
-            {t('roles.members', 'Rollenmitglieder')}
-          </Button>
-        )}
-      </Group>
-      {viewMode === 'permission' && (
+      )}
+      {page === 'compare' && (
         <>
-          {isMobile ? (
-            <Stack gap={12} mb={16}>
-              <Select
-                label={t('roles.role', 'Rolle')}
-                data={roles.map((r) => ({
-                  value: r.id,
-                  label:
-                    roleLabel(r.name) +
-                    (r.isAdmin ? ' (Admin)' : r.isSystem ? ' (System)' : ''),
-                }))}
-                value={mobileSelectedRoleId}
-                onChange={(v) => v && setMobileSelectedRoleId(v)}
-                searchable
-                size="sm"
-              />
-              <Select
-                label={t('roles.namespace', 'Bereich')}
-                data={namespaces.map((ns) => ({
-                  value: ns,
-                  label: blueprintLabel(ns),
-                }))}
-                value={selectedNamespace}
-                onChange={(v) => v && setSelectedNamespace(v)}
-                searchable
-                size="sm"
-              />
-            </Stack>
-          ) : (
-            <Group gap={12} mb={16} grow align="flex-end">
-              <Select
-                label={t('roles.namespace', 'Bereich')}
-                data={namespaces.map((ns) => ({
-                  value: ns,
-                  label: blueprintLabel(ns),
-                }))}
-                value={selectedNamespace}
-                onChange={(v) => v && setSelectedNamespace(v)}
-                searchable
-                size="sm"
-              />
-              <MultiSelect
-                label={t('common.roles', 'Rollen')}
-                data={roles.map((r) => ({
-                  value: r.id,
-                  label:
-                    roleLabel(r.name) +
-                    (r.isAdmin ? ' (Admin)' : r.isSystem ? ' (System)' : ''),
-                }))}
-                value={selectedRoleIds}
-                onChange={setSelectedRoleIds}
-                placeholder={t('roles.selectDisplay', 'Rollen zur Anzeige wählen')}
-                searchable
-                clearable
-                hidePickedOptions
-                size="sm"
-              />
-            </Group>
-          )}
-          {isMobile && mobileSelectedRole ? (
-            <MobilePermissionList
-              role={mobileSelectedRole}
-              groupedPerms={filteredGroups}
-              settingsNsGroups={settingsNsGroups}
-              roleSet={rolePerms[mobileSelectedRole.id]}
-              onToggle={toggle}
-              onToggleAll={toggleAllInScope}
-              canSetPermissions={canSetPermissions}
-              expandedResources={expandedResources}
-              toggleResourceExpand={toggleResourceExpand}
+          <Group justify="space-between" mb={12} align="center">
+            <SegmentedControl
+              size="xs"
+              value={viewMode}
+              onChange={(v) => setViewMode(v as 'permission' | 'resource')}
+              data={[
+                {
+                  value: 'permission',
+                  label: (
+                    <Group gap={4} wrap="nowrap">
+                      <IconList size={14} />
+                      {t('roles.byPermission', 'Nach Berechtigung')}
+                    </Group>
+                  ),
+                },
+                {
+                  value: 'resource',
+                  label: (
+                    <Group gap={4} wrap="nowrap">
+                      <IconGridDots size={14} />
+                      {t('roles.byResource', 'Nach Bereich')}
+                    </Group>
+                  ),
+                },
+              ]}
             />
-          ) : (
-            <PermissionMatrix
+            {roles.length > 0 && (
+              <Button
+                variant="subtle"
+                size="xs"
+                onClick={() => {
+                  const first = visibleRoles[0] ?? roles[0]
+                  if (first) setRoleMembersOpen(first)
+                }}
+              >
+                <IconUsers size={14} />
+                {t('roles.members', 'Rollenmitglieder')}
+              </Button>
+            )}
+          </Group>
+          {viewMode === 'permission' && (
+            <>
+              {isMobile ? (
+                <Stack gap={12} mb={16}>
+                  <Select
+                    label={t('roles.role', 'Rolle')}
+                    data={roles.map((r) => ({
+                      value: r.id,
+                      label:
+                        roleLabel(r.name) +
+                        (r.isAdmin ? ' (Admin)' : r.isSystem ? ' (System)' : ''),
+                    }))}
+                    value={mobileSelectedRoleId}
+                    onChange={(v) => v && setMobileSelectedRoleId(v)}
+                    searchable
+                    size="sm"
+                  />
+                  <Select
+                    label={t('roles.namespace', 'Bereich')}
+                    data={namespaces.map((ns) => ({
+                      value: ns,
+                      label: blueprintLabel(ns),
+                    }))}
+                    value={selectedNamespace}
+                    onChange={(v) => v && setSelectedNamespace(v)}
+                    searchable
+                    size="sm"
+                  />
+                </Stack>
+              ) : (
+                <Group gap={12} mb={16} grow align="flex-end">
+                  <Select
+                    label={t('roles.namespace', 'Bereich')}
+                    data={namespaces.map((ns) => ({
+                      value: ns,
+                      label: blueprintLabel(ns),
+                    }))}
+                    value={selectedNamespace}
+                    onChange={(v) => v && setSelectedNamespace(v)}
+                    searchable
+                    size="sm"
+                  />
+                  <MultiSelect
+                    label={t('common.roles', 'Rollen')}
+                    data={roles.map((r) => ({
+                      value: r.id,
+                      label:
+                        roleLabel(r.name) +
+                        (r.isAdmin ? ' (Admin)' : r.isSystem ? ' (System)' : ''),
+                    }))}
+                    value={selectedRoleIds}
+                    onChange={setSelectedRoleIds}
+                    placeholder={t('roles.selectDisplay', 'Rollen zur Anzeige wählen')}
+                    searchable
+                    clearable
+                    hidePickedOptions
+                    size="sm"
+                  />
+                </Group>
+              )}
+              {isMobile && mobileSelectedRole ? (
+                <MobilePermissionList
+                  role={mobileSelectedRole}
+                  groupedPerms={filteredGroups}
+                  settingsNsGroups={settingsNsGroups}
+                  roleSet={rolePerms[mobileSelectedRole.id]}
+                  onToggle={toggle}
+                  onToggleAll={toggleAllInScope}
+                  canSetPermissions={canSetPermissions}
+                  expandedResources={expandedResources}
+                  toggleResourceExpand={toggleResourceExpand}
+                />
+              ) : (
+                <PermissionMatrix
+                  visibleRoles={visibleRoles}
+                  allPerms={allPerms}
+                  filteredGroups={filteredGroups}
+                  settingsNsGroups={settingsNsGroups}
+                  rolePerms={rolePerms}
+                  canSetPermissions={canSetPermissions}
+                  canUpdate={canUpdate}
+                  canDelete={canDelete}
+                  expandedResources={expandedResources}
+                  toggleResourceExpand={toggleResourceExpand}
+                  toggle={toggle}
+                  toggleAllInScope={toggleAllInScope}
+                  openEdit={openEdit}
+                  handleDeleteRole={handleDeleteRole}
+                  openMembers={setRoleMembersOpen}
+                />
+              )}
+            </>
+          )}
+
+          {viewMode === 'resource' && (
+            <ResourceMatrix
               visibleRoles={visibleRoles}
               allPerms={allPerms}
-              filteredGroups={filteredGroups}
-              settingsNsGroups={settingsNsGroups}
               rolePerms={rolePerms}
               canSetPermissions={canSetPermissions}
-              canUpdate={canUpdate}
-              canDelete={canDelete}
-              expandedResources={expandedResources}
-              toggleResourceExpand={toggleResourceExpand}
               toggle={toggle}
               toggleAllInScope={toggleAllInScope}
-              openEdit={openEdit}
-              handleDeleteRole={handleDeleteRole}
-              openMembers={setRoleMembersOpen}
             />
           )}
         </>
-      )}
-
-      {viewMode === 'resource' && (
-        <ResourceMatrix
-          visibleRoles={visibleRoles}
-          allPerms={allPerms}
-          rolePerms={rolePerms}
-          canSetPermissions={canSetPermissions}
-          toggle={toggle}
-          toggleAllInScope={toggleAllInScope}
-        />
       )}
 
       <RoleFormModal
