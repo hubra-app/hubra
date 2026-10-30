@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Badge, Button, TextInput } from '@mantine/core'
+import { Badge, Button, Checkbox, TextInput } from '@mantine/core'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { IconPlus, IconTrash, IconLock, IconPencil } from '@tabler/icons-react'
 import { useToast, useAuth } from '@/context/AppContext'
@@ -47,7 +47,7 @@ export function KeysTab() {
   }, [keys, search])
 
   const handleAdd = async () => {
-    if (!newKey.trim()) return
+    if (!newKey.trim() || addSaving) return
     setAddSaving(true)
     try {
       const ik = await createKey({
@@ -90,7 +90,7 @@ export function KeysTab() {
   }
 
   const handleEdit = async () => {
-    if (!editTarget) return
+    if (!editTarget || editSaving) return
     setEditSaving(true)
     try {
       const updated = await updateKey(editTarget.id, {
@@ -285,6 +285,24 @@ export function KeysTab() {
         open={showAdd}
         title={t('bindings.addKey', 'Internen Schlüssel hinzufügen')}
         onClose={() => setShowAdd(false)}
+        onSubmit={(e) => {
+          e?.preventDefault()
+          handleAdd()
+        }}
+        footer={
+          <>
+            <Button variant="default" onClick={() => setShowAdd(false)}>
+              {t('common.cancel', 'Abbrechen')}
+            </Button>
+            <Button
+              variant="filled"
+              type="submit"
+              disabled={addSaving || !newKey.trim()}
+            >
+              {addSaving ? t('common.saving', 'Wird gespeichert …') : t('common.save', 'Speichern')}
+            </Button>
+          </>
+        }
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Field label={t('data.key', 'Schlüssel')} hint={t('bindings.keyHint', 'z. B. internal.mail.sender.invoice')}>
@@ -301,75 +319,18 @@ export function KeysTab() {
               placeholder={t('bindings.labelPlaceholder', 'z. B. Absender für Rechnungen')}
             />
           </Field>
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              fontSize: 'var(--mantine-font-size-sm)',
-              cursor: 'pointer',
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={newAllowMultiple}
-              onChange={(e) => setNewAllowMultiple(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: 'var(--mantine-color-acc-6)' }}
-            />
-            <span style={{ fontWeight: 600 }}>{t('bindings.arrayKey', 'Listen-Schlüssel')}</span>
-            <span
-              style={{
-                color: 'var(--hb-text-2)',
-                fontSize: 'var(--mantine-font-size-xs)',
-              }}
-            >
-              {t('bindings.arrayKeyHint', 'Mehrere Verknüpfungen können Werte beisteuern')}
-            </span>
-          </label>
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              fontSize: 'var(--mantine-font-size-sm)',
-              cursor: 'pointer',
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={newIsProtected}
-              onChange={(e) => setNewIsProtected(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: 'var(--mantine-color-acc-6)' }}
-            />
-            <span style={{ fontWeight: 600 }}>{t('bindings.protected', 'Geschützt')}</span>
-            <span
-              style={{
-                color: 'var(--hb-text-2)',
-                fontSize: 'var(--mantine-font-size-xs)',
-              }}
-            >
-              {t('bindings.protectedHint', 'Verhindert Löschen und Typänderungen')}
-            </span>
-          </label>
-          <div
-            style={{
-              display: 'flex',
-              gap: 8,
-              justifyContent: 'flex-end',
-              marginTop: 4,
-            }}
-          >
-            <Button variant="subtle" onClick={() => setShowAdd(false)}>
-              {t('common.cancel', 'Abbrechen')}
-            </Button>
-            <Button
-              variant="filled"
-              onClick={handleAdd}
-              disabled={addSaving || !newKey.trim()}
-            >
-              {addSaving ? t('common.saving', 'Wird gespeichert …') : t('common.save', 'Speichern')}
-            </Button>
-          </div>
+          <Checkbox
+            checked={newAllowMultiple}
+            onChange={(e) => setNewAllowMultiple(e.currentTarget.checked)}
+            label={t('bindings.arrayKey', 'Listen-Schlüssel')}
+            description={t('bindings.arrayKeyHint', 'Mehrere Verknüpfungen können Werte beisteuern')}
+          />
+          <Checkbox
+            checked={newIsProtected}
+            onChange={(e) => setNewIsProtected(e.currentTarget.checked)}
+            label={t('bindings.protected', 'Geschützt')}
+            description={t('bindings.protectedHint', 'Verhindert Löschen und Typänderungen')}
+          />
         </div>
       </Modal>
 
@@ -377,6 +338,20 @@ export function KeysTab() {
         open={editTarget !== null}
         title={t('bindings.editKeyTitle', 'Bearbeiten: {{key}}', { key: editTarget?.key ?? '' })}
         onClose={() => setEditTarget(null)}
+        onSubmit={(e) => {
+          e?.preventDefault()
+          handleEdit()
+        }}
+        footer={
+          <>
+            <Button variant="default" onClick={() => setEditTarget(null)}>
+              {t('common.cancel', 'Abbrechen')}
+            </Button>
+            <Button variant="filled" type="submit" disabled={editSaving}>
+              {editSaving ? t('common.saving', 'Wird gespeichert …') : t('common.save', 'Speichern')}
+            </Button>
+          </>
+        }
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Field label={t('bindings.label', 'Bezeichnung')}>
@@ -386,75 +361,23 @@ export function KeysTab() {
               placeholder={t('common.displayName', 'Anzeigename')}
             />
           </Field>
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              fontSize: 'var(--mantine-font-size-sm)',
-              cursor: editIsProtected ? 'not-allowed' : 'pointer',
-              opacity: editIsProtected ? 0.6 : 1,
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={editAllowMultiple}
-              onChange={(e) => setEditAllowMultiple(e.target.checked)}
-              disabled={editIsProtected}
-              style={{ width: 16, height: 16, accentColor: 'var(--mantine-color-acc-6)' }}
-            />
-            <span style={{ fontWeight: 600 }}>{t('bindings.arrayKey', 'Listen-Schlüssel')}</span>
-            <span
-              style={{
-                color: 'var(--hb-text-2)',
-                fontSize: 'var(--mantine-font-size-xs)',
-              }}
-            >
-              {editIsProtected
+          <Checkbox
+            checked={editAllowMultiple}
+            onChange={(e) => setEditAllowMultiple(e.currentTarget.checked)}
+            disabled={editIsProtected}
+            label={t('bindings.arrayKey', 'Listen-Schlüssel')}
+            description={
+              editIsProtected
                 ? t('bindings.unprotectHint', 'Schutz aufheben, um den Typ zu ändern')
-                : t('bindings.arrayKeyHint', 'Mehrere Verknüpfungen können Werte beisteuern')}
-            </span>
-          </label>
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              fontSize: 'var(--mantine-font-size-sm)',
-              cursor: 'pointer',
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={editIsProtected}
-              onChange={(e) => setEditIsProtected(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: 'var(--mantine-color-acc-6)' }}
-            />
-            <span style={{ fontWeight: 600 }}>{t('bindings.protected', 'Geschützt')}</span>
-            <span
-              style={{
-                color: 'var(--hb-text-2)',
-                fontSize: 'var(--mantine-font-size-xs)',
-              }}
-            >
-              {t('bindings.protectedHint', 'Verhindert Löschen und Typänderungen')}
-            </span>
-          </label>
-          <div
-            style={{
-              display: 'flex',
-              gap: 8,
-              justifyContent: 'flex-end',
-              marginTop: 4,
-            }}
-          >
-            <Button variant="subtle" onClick={() => setEditTarget(null)}>
-              {t('common.cancel', 'Abbrechen')}
-            </Button>
-            <Button variant="filled" onClick={handleEdit} disabled={editSaving}>
-              {editSaving ? t('common.saving', 'Wird gespeichert …') : t('common.save', 'Speichern')}
-            </Button>
-          </div>
+                : t('bindings.arrayKeyHint', 'Mehrere Verknüpfungen können Werte beisteuern')
+            }
+          />
+          <Checkbox
+            checked={editIsProtected}
+            onChange={(e) => setEditIsProtected(e.currentTarget.checked)}
+            label={t('bindings.protected', 'Geschützt')}
+            description={t('bindings.protectedHint', 'Verhindert Löschen und Typänderungen')}
+          />
         </div>
       </Modal>
 
