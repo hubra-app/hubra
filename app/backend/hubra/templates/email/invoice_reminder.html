@@ -1,11 +1,17 @@
 {% extends "email/base.html" %}
+{% import "email/_ui.html" as ui with context %}
+{% block preheader %}{{ t('mail.email.invoice_reminder.body', invoice_id=invoice_id, amount=amount_formatted, due_date=due_date) | striptags }}{% endblock %}
 {% block content %}
-<p>
-  {{ t('mail.email.invoice_reminder.body', invoice_id=invoice_id, amount=amount_formatted, due_date=due_date) }}
-</p>
-<p>
-  {{ t('mail.email.invoice_reminder.cta_prefix') }}
-  {% if portal_url %}<a href="{{ portal_url }}">{{ t('mail.email.invoice_reminder.cta_link') }}</a>{% else %}{{ t('mail.email.invoice_reminder.cta_link') }}{% endif %}.
-</p>
-<p>{{ t('mail.email.invoice_reminder.paid_note') }}</p>
+{% call ui.p() %}{{ t('mail.email.invoice_reminder.body', invoice_id=invoice_id, amount=amount_formatted, due_date=due_date) }}{% endcall %}
+{{ ui.facts([
+  (t('mail.email.invoice.number'), invoice_id, false),
+  (t('mail.email.invoice.amount'), amount_formatted, false),
+  (t('mail.email.invoice.due'), due_date, false),
+]) }}
+{% if portal_url %}
+{{ ui.button(portal_url, t('mail.email.invoice_reminder.button')) }}
+{% else %}
+{% call ui.p() %}{{ t('mail.email.invoice_reminder.cta_note_no_url') }}{% endcall %}
+{% endif %}
+{% call ui.muted() %}{{ t('mail.email.invoice_reminder.paid_note') }}{% endcall %}
 {% endblock %}

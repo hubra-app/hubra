@@ -1,6 +1,10 @@
 {% extends "email/base.html" %}
+{% import "email/_ui.html" as ui with context %}
+{% block preheader %}{{ t('mail.email.verify_email.button') }}{% endblock %}
 {% block content %}
-<p>{{ t('mail.email.verify_email.body', club_name=club_name) }}</p>
-<p>{{ t('mail.email.verify_email.cta', verify_url=verify_url) }}</p>
-<p>{{ t('mail.email.verify_email.ignore') }}</p>
+{% call ui.p() %}{{ t('mail.email.verify_email.body', club_name=club_name) }}{% endcall %}
+{% call ui.p() %}{{ t('mail.email.verify_email.cta_note') }}.{% endcall %}
+{{ ui.button(verify_url, t('mail.email.verify_email.button')) }}
+{% call ui.muted() %}{{ t('mail.email.verify_email.ignore') }}{% endcall %}
+{{ ui.fallback_link(verify_url) }}
 {% endblock %}

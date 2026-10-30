@@ -1,13 +1,16 @@
 {% extends "email/base.html" %}
+{% import "email/_ui.html" as ui with context %}
+{% block preheader %}{{ t('mail.email.invoice_generated.invoice_id', invoice_id=invoice_id) }} · {{ amount_formatted }}{% endblock %}
 {% block content %}
-<p>{{ t('mail.email.invoice_generated.body', club_name=club_name) }}</p>
-<p>
-  <strong>{{ t('mail.email.invoice_generated.invoice_id') }} #{{ invoice_id }}</strong>
-  {{ t('mail.email.invoice_generated.for_amount', amount=amount_formatted) }}
-  {{ t('mail.email.invoice_generated.due_date', due_date=due_date) }}.
-</p>
-<p>
-  {{ t('mail.email.invoice_generated.cta_prefix') }}
-  {% if portal_url %}<a href="{{ portal_url }}">{{ t('mail.email.invoice_generated.cta_link') }}</a>{% else %}{{ t('mail.email.invoice_generated.cta_link') }}{% endif %}.
-</p>
+{% call ui.p() %}{{ t('mail.email.invoice_generated.body', club_name=club_name) }}{% endcall %}
+{{ ui.facts([
+  (t('mail.email.invoice.number'), invoice_id, false),
+  (t('mail.email.invoice.amount'), amount_formatted, false),
+  (t('mail.email.invoice.due'), due_date, false),
+]) }}
+{% if portal_url %}
+{{ ui.button(portal_url, t('mail.email.invoice_generated.button')) }}
+{% else %}
+{% call ui.p() %}{{ t('mail.email.invoice_generated.cta_note_no_url') }}{% endcall %}
+{% endif %}
 {% endblock %}

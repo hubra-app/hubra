@@ -102,6 +102,29 @@ So an upgrade is: take a backup, switch to the new images, restart.
 Pin a version for production. `latest` follows the newest release, and
 `sha-<commit>` is one exact build.
 
+## Mail look and sender logo
+
+Every mail Hubra sends (invites, password resets, invoices, ...) uses one
+layout in the Hubra brand: the club's logo and name on top, a white card with
+a violet button, and "Sent with hubra" at the bottom. The logo is the one a
+club sets in Settings › Verein (PNG, JPEG, GIF or WebP up to 256 KB; an SVG or
+bigger logo shows the Hubra mark instead). It is sent inside the mail, so it
+shows without "load images". The texts are translations a club can edit; the
+layout is in `app/backend/hubra/templates/email/`.
+
+The round picture next to the sender in an inbox is not part of the mail. The
+mail app takes it from the sending domain's **BIMI** record:
+
+1. The domain of the system sender needs DMARC with `p=quarantine` or
+   `p=reject` (`_dmarc.example.org TXT "v=DMARC1; p=quarantine; ..."`).
+2. Serve [`brand/hubra-bimi.svg`](../brand/hubra-bimi.svg) over HTTPS, e.g. at
+   `https://hubra.club/bimi.svg`.
+3. Add `default._bimi.example.org TXT "v=BIMI1; l=https://hubra.club/bimi.svg"`.
+
+Yahoo, AOL, Fastmail and others then show the logo. Gmail and Apple Mail also
+want a VMC or CMC certificate in the record's `a=` tag, which needs a
+registered trademark (VMC) or a logo in public use for a year (CMC).
+
 ## Backups and restore
 
 Backups are a platform task: manage › Platform › Backups, global permission
