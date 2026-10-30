@@ -30,6 +30,8 @@ export interface Member {
   roles: string[];
   /** Roles that come with a function the member holds (Kassier gives Treasurer). */
   functionRoles?: { name: string; function: string }[];
+  /** Roles held for one group only ("Gruppenleitung", nur Jugend). */
+  scopedRoles?: { name: string; group: string }[];
   joined: string;
   lastSeen: string;
   status: "active" | "trial" | "inactive" | "suspended";

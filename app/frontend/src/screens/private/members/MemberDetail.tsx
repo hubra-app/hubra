@@ -280,6 +280,12 @@ export function MemberDetailScreen({
                       fn: fr.function,
                     }),
                   ),
+                ...(m.scopedRoles ?? []).map((sr) =>
+                  t('members.roleForGroup', '{{role}} (nur {{group}})', {
+                    role: roleLabel(sr.name),
+                    group: sr.group,
+                  }),
+                ),
               ]
                 .filter(Boolean)
                 .join(', ') || <Empty />}

@@ -56,7 +56,8 @@ interface AuthState {
   /** Platform superadmin: sees tools that span every club. */
   isSuperadmin: boolean
   permissions: string[]
-  hasPermission: (key: string) => boolean
+  /** With `groupId`, a role held for that group only counts too. */
+  hasPermission: (key: string, groupId?: string | number) => boolean
   setPhase: (p: Phase) => void
   clearMustChangePassword: () => void
   /** Signed in, but the API answers nothing until the password is changed. */
@@ -126,6 +127,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [sessionCheckFailed, setSessionCheckFailed] = useState(false)
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
   const [permissions, setPermissions] = useState<string[]>([])
+  const [scopedPermissions, setScopedPermissions] = useState<Record<string, string[]>>({})
   const [impersonation, setImpersonation] = useState<AuthState['impersonation']>(null)
   const [isSuperadmin, setIsSuperadmin] = useState(false)
   const [passwordChangeRequired, setPasswordChangeRequired] = useState(false)
@@ -183,10 +185,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (cancelled) return
         if (permData) {
           setPermissions(permData.permissions)
+          setScopedPermissions(permData.scoped_permissions ?? {})
           setImpersonation(permData.impersonation ?? null)
           setIsSuperadmin(permData.is_superadmin === true)
         } else {
           setPermissions([])
+          setScopedPermissions({})
         }
         if (!cancelled) {
           setAuthStatus('authed')
@@ -273,6 +277,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       clearLookups()
       setCurrentUser(null)
       setPermissions([])
+      setScopedPermissions({})
       queryClient.clear()
       redirectToLogin()
     })
@@ -390,6 +395,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             clearLookups()
             setCurrentUser(null)
             setPermissions([])
+            setScopedPermissions({})
             queryClient.clear()
           })
         redirectToLogin()
@@ -459,11 +465,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const isAdmin = (currentUser?.roles?.includes('Admin') ?? false) || permissions.includes('*')
 
   const hasPermission = useCallback(
-    (key: string) => {
+    (key: string, groupId?: string | number) => {
       if (isAdmin) return true
-      return permissions.includes(key)
+      if (permissions.includes(key)) return true
+      return groupId != null && (scopedPermissions[String(groupId)] ?? []).includes(key)
     },
-    [isAdmin, permissions],
+    [isAdmin, permissions, scopedPermissions],
   )
 
   const clearMustChangePassword = useCallback(() => {
@@ -510,6 +517,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       isAdmin,
       isSuperadmin,
       permissions,
+      scopedPermissions,
       impersonation,
       passwordChangeRequired,
     ],

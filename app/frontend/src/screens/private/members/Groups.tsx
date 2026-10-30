@@ -55,8 +55,12 @@ function GroupDetailPanel({
   onClose: () => void
 }) {
   const { notify } = useToast()
+  const { hasPermission } = useAuth()
   const { t } = useT()
   const queryClient = useQueryClient()
+  // A role held for this group only counts here too.
+  const canAdd = hasPermission('groups.groups.add_member', group.id)
+  const canRemove = hasPermission('groups.groups.remove_member', group.id)
   const { data: members = [], isLoading: loading } = useQuery({
     queryKey: qk.groups.members(group.id),
     queryFn: () => listGroupMembers(group.id),
@@ -154,11 +158,11 @@ function GroupDetailPanel({
       loading={loading}
       addLabel={t('groups.addMember', 'Mitglied hinzufügen')}
       addPlaceholder={t('groups.searchMembersToAdd', 'Mitglieder suchen …')}
-      searchResults={searchResults}
-      onAdd={handleAdd}
-      onAddSearch={setSearchQuery}
-      onRemove={handleRemove}
-      showRemove
+      searchResults={canAdd ? searchResults : undefined}
+      onAdd={canAdd ? handleAdd : undefined}
+      onAddSearch={canAdd ? setSearchQuery : undefined}
+      onRemove={canRemove ? handleRemove : undefined}
+      showRemove={canRemove}
       onClose={onClose}
     />
   )
@@ -513,7 +517,7 @@ export function GroupsScreen() {
                   )}
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  {canUpdate && (
+                  {(canUpdate || hasPermission('groups.groups.update', g.id)) && (
                     <Button
                       size="sm"
                       variant="subtle"

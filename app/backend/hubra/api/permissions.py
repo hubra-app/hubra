@@ -211,6 +211,28 @@ def function_role_grants() -> dict[int, list[dict]]:
     return g._function_role_grants
 
 
+def scoped_role_grants() -> dict[int, list[dict]]:
+    """For the members list: member id -> the roles they hold for one group,
+    as ``{"id", "name", "group_id", "group"}``. One query per request."""
+    if "_scoped_role_grants" not in g:
+        from hubra.core.models.group import Group
+        from hubra.core.models.role import MemberRoleScope, Role
+
+        rows = db.session.execute(
+            select(MemberRoleScope.member_id, Role.id, Role.name, Group.id, Group.name)
+            .join(Role, Role.id == MemberRoleScope.role_id)
+            .join(Group, Group.id == MemberRoleScope.group_id)
+            .order_by(Group.name)
+        ).all()
+        grants: dict[int, list[dict]] = {}
+        for member_id, role_id, role_name, group_id, group_name in rows:
+            grants.setdefault(member_id, []).append(
+                {"id": role_id, "name": role_name, "group_id": group_id, "group": group_name}
+            )
+        g._scoped_role_grants = grants
+    return g._scoped_role_grants
+
+
 def held_roles(member) -> list:
     """The member's own roles and those of the functions they hold."""
     own = list(getattr(member, "roles", None) or [])
@@ -257,10 +279,42 @@ def _get_member_permission_keys(member) -> set[str]:
     return keys
 
 
+def scoped_permission_keys(member) -> dict[int, set[str]]:
+    """Group id -> the permission keys the member holds for that group only
+    (``member_role_scopes``). Admin roles are never held for one group."""
+    member_id = getattr(member, "id", None)
+    if member_id is None or not hasattr(member, "roles"):
+        return {}
+    memo = g.setdefault("_scoped_keys", {})
+    key = (_club_scope(), member_id)
+    if key not in memo:
+        from hubra.core.models.role import MemberRoleScope, Role
+
+        rows = db.session.execute(
+            select(MemberRoleScope.group_id, MemberRoleScope.role_id)
+            .join(Role, Role.id == MemberRoleScope.role_id)
+            .where(MemberRoleScope.member_id == member_id, Role.is_admin.is_(False))
+        ).all()
+        scoped: dict[int, set[str]] = {}
+        for group_id, role_id in rows:
+            scoped.setdefault(group_id, set()).update(_get_role_permission_keys(role_id))
+        memo[key] = scoped
+    return memo[key]
+
+
+def _scope_id(kwargs: dict, scope: str | None) -> int | None:
+    if scope is None:
+        return None
+    value = kwargs.get(scope)
+    return value if isinstance(value, int) else None
+
+
 def invalidate_member_permissions(member_id: int) -> None:
     """Delete the cached union permission set for a member."""
     g.pop("_function_roles", None)
     g.pop("_function_role_grants", None)
+    g.pop("_scoped_keys", None)
+    g.pop("_scoped_role_grants", None)
     client = _get_redis_client()
     if client is not None:
         try:
@@ -383,7 +437,13 @@ def invalidate_role_permissions(role_id: int) -> None:
         _mark_redis_down()
 
 
-def permission_required(resource: str, action: str, display_name: str | None = None):
+def permission_required(
+    resource: str,
+    action: str,
+    display_name: str | None = None,
+    *,
+    scope: str | None = None,
+):
     """Decorator: enforces RBAC check AND registers metadata for auto-discovery.
 
     Args:
@@ -391,6 +451,8 @@ def permission_required(resource: str, action: str, display_name: str | None = N
         action: The action being performed (e.g. "read", "create", "update").
         display_name: Human-readable label for the admin UI.
                       Defaults to "{action} {resource}".
+        scope: The route argument holding a group id (``"group_id"``). A role
+               held for that group only (``member_role_scopes``) passes too.
     """
     label = display_name or f"{action} {resource}"
 
@@ -414,21 +476,21 @@ def permission_required(resource: str, action: str, display_name: str | None = N
                 g.permission_scope = "tenant"
                 return fn(*args, **kwargs)
 
-            roles = held_roles(member)
-            if not roles:
-                return jsonify(
-                    {"error": "FORBIDDEN", "message": "Insufficient permissions"}
-                ), 403
-
             perm_key = _derive_perm_key(request.blueprint, resource, action)
-            allowed = _get_member_permission_keys(member)
-            if perm_key not in allowed:
-                return jsonify(
-                    {"error": "FORBIDDEN", "message": "Insufficient permissions"}
-                ), 403
+            if held_roles(member) and perm_key in _get_member_permission_keys(member):
+                g.permission_scope = "tenant"
+                return fn(*args, **kwargs)
 
-            g.permission_scope = "tenant"
-            return fn(*args, **kwargs)
+            group_id = _scope_id(kwargs, scope)
+            if group_id is not None and perm_key in scoped_permission_keys(member).get(
+                group_id, ()
+            ):
+                g.permission_scope = "group"
+                return fn(*args, **kwargs)
+
+            return jsonify(
+                {"error": "FORBIDDEN", "message": "Insufficient permissions"}
+            ), 403
 
         wrapper._perm_resource = resource
         wrapper._perm_action = action
@@ -438,7 +500,7 @@ def permission_required(resource: str, action: str, display_name: str | None = N
     return decorator
 
 
-def can_update(resource: str, display_name: str | None = None):
+def can_update(resource: str, display_name: str | None = None, *, scope: str | None = None):
     """Decorator: enforces field-level RBAC for PATCH/UPDATE routes.
 
     Behaviour:
@@ -449,7 +511,9 @@ def can_update(resource: str, display_name: str | None = None):
       - Otherwise → 403.
 
     Routes decorated with this should call ``filter_updatable_fields(data)``
-    on the validated body before passing it to the service layer.
+    on the validated body before passing it to the service layer. ``scope``
+    works as on ``permission_required``: a role held for that group adds its
+    keys.
     """
     label = display_name or f"Update {resource}"
 
@@ -473,13 +537,10 @@ def can_update(resource: str, display_name: str | None = None):
                 g.updatable_fields = None  # None = all fields allowed
                 return fn(*args, **kwargs)
 
-            roles = held_roles(member)
-            if not roles:
-                return jsonify(
-                    {"error": "FORBIDDEN", "message": "Insufficient permissions"}
-                ), 403
-
-            perms = _get_member_permission_keys(member)
+            perms = set(_get_member_permission_keys(member)) if held_roles(member) else set()
+            group_id = _scope_id(kwargs, scope)
+            if group_id is not None:
+                perms |= scoped_permission_keys(member).get(group_id, set())
             coarse_key = _derive_perm_key(request.blueprint, resource, "update")
 
             if coarse_key in perms:

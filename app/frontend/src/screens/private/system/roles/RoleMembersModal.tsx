@@ -3,7 +3,8 @@ import { ActionIcon, Anchor, Badge, Group, ScrollArea, Select, Stack, Text } fro
 import { IconX } from '@tabler/icons-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { listMembers, updateMember } from '@/api/members'
-import type { Role } from '@/api/settings'
+import { addRoleScope, listRoleScopes, removeRoleScope, type Role } from '@/api/settings'
+import { lookupsQuery } from '@/api/lookups'
 import { Modal, LoadingSpinner } from '@/components/ui'
 import { useNav, useToast } from '@/context/AppContext'
 import { qk } from '@/data/keys'
@@ -15,6 +16,7 @@ import type { Member } from '@/types'
 /**
  * Who holds a role, and giving it to members or taking it away. Members who
  * hold it through a function are listed too; that role goes with the function.
+ * A role can also be given for one group only.
  */
 export function RoleMembersModal({
   role,
@@ -35,6 +37,14 @@ export function RoleMembersModal({
   const { go } = useNav()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
+  // '' = the whole club, else a group id: the role then counts in that group only.
+  const [forGroup, setForGroup] = useState('')
+  const { data: lookups } = useQuery(lookupsQuery)
+  const { data: scopes } = useQuery({
+    queryKey: qk.settings.roleScopes(role?.id),
+    queryFn: () => listRoleScopes(role!.id),
+    enabled: !!role,
+  })
   const { data: holders } = useQuery({
     queryKey: qk.members.list('role', role?.id),
     queryFn: () => listMembers({ roleId: role!.id, pageSize: 500 }).then((r) => r.members),
@@ -61,7 +71,36 @@ export function RoleMembersModal({
     }
   }
 
-  const holderIds = new Set((holders ?? []).map((m) => m.id))
+  const changeScope = async (run: () => Promise<void>) => {
+    try {
+      await run()
+      await queryClient.invalidateQueries({ queryKey: qk.settings.roleScopes(role?.id) })
+      queryClient.invalidateQueries({ queryKey: qk.members.all })
+      setSearch('')
+    } catch (err: unknown) {
+      notify(
+        'error',
+        t('roles.assignFailed', 'Rolle konnte nicht zugewiesen werden'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
+      )
+    }
+  }
+
+  const add = (member: Member) =>
+    forGroup && role
+      ? changeScope(() => addRoleScope(role.id, member.id, Number(forGroup)))
+      : change(member, true)
+
+  // Admin roles pass every check, so they are only ever club-wide.
+  const groupOptions =
+    role && !role.isAdmin && lookups
+      ? [...lookups.groups.entries()].map(([id, g]) => ({ value: String(id), label: g.name }))
+      : []
+  const holderIds = new Set(
+    forGroup
+      ? (scopes ?? []).filter((sc) => String(sc.groupId) === forGroup).map((sc) => sc.memberId)
+      : (holders ?? []).map((m) => m.id),
+  )
   const candidates = (found?.members ?? []).filter((m) => !holderIds.has(m.id))
 
   return (
@@ -92,6 +131,16 @@ export function RoleMembersModal({
             size="sm"
           />
         )}
+        {role && canAssign && groupOptions.length > 0 && (
+          <Select
+            label={t('roles.forScope', 'Gilt für')}
+            data={[{ value: '', label: t('roles.wholeClub', 'Ganzer Verein') }, ...groupOptions]}
+            value={forGroup}
+            onChange={(v) => setForGroup(v ?? '')}
+            allowDeselect={false}
+            size="sm"
+          />
+        )}
         {role && canAssign && (
           <Select
             label={t('roles.addMember', 'Mitglied hinzufügen')}
@@ -103,7 +152,7 @@ export function RoleMembersModal({
             value={null}
             onChange={(id) => {
               const member = candidates.find((m) => m.id === id)
-              if (member) change(member, true)
+              if (member) add(member)
             }}
             nothingFoundMessage={t('roles.noMembers', 'Keine Mitglieder gefunden.')}
             filter={({ options }) => options}
@@ -202,6 +251,45 @@ export function RoleMembersModal({
               )}
             </Stack>
           </ScrollArea.Autosize>
+        )}
+        {role && (scopes ?? []).length > 0 && (
+          <Stack gap={0}>
+            <Text size="sm" fw={600} mb={4}>
+              {t('roles.groupHolders', 'Nur für eine Gruppe')}
+            </Text>
+            {(scopes ?? []).map((sc) => (
+              <Group
+                key={sc.id}
+                justify="space-between"
+                py={6}
+                px="xs"
+                wrap="nowrap"
+                style={{ borderBottom: '1px solid var(--hb-border)' }}
+              >
+                <div>
+                  <span style={{ fontWeight: 600 }}>{sc.memberName}</span>{' '}
+                  <Badge size="xs" variant="light">
+                    {t('roles.onlyGroup', 'nur {{group}}', { group: sc.groupName })}
+                  </Badge>
+                </div>
+                {canAssign && (
+                  <ActionIcon
+                    variant="subtle"
+                    color="red"
+                    aria-label={t('roles.removeMember', '{{name}} die Rolle wegnehmen', {
+                      name: sc.memberName,
+                    })}
+                    title={t('roles.removeMember', '{{name}} die Rolle wegnehmen', {
+                      name: sc.memberName,
+                    })}
+                    onClick={() => changeScope(() => removeRoleScope(role.id, sc.id))}
+                  >
+                    <IconX size={16} />
+                  </ActionIcon>
+                )}
+              </Group>
+            ))}
+          </Stack>
         )}
       </Stack>
     </Modal>
