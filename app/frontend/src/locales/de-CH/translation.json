@@ -992,7 +992,14 @@
       "rent": "Miete"
     },
     "starterCreated": "Kategorien angelegt",
-    "starterCreatedMsg": "Du kannst sie jederzeit umbenennen oder löschen."
+    "starterCreatedMsg": "Du kannst sie jederzeit umbenennen oder löschen.",
+    "settings": {
+      "tab": "Einstellungen",
+      "saved": "Einstellungen gespeichert",
+      "invoicesTitle": "Rechnungen und Mahnungen",
+      "bankHint": "Das Konto und die Adresse auf den QR-Rechnungen stellst du in den Einstellungen des Vereins ein.",
+      "openBank": "Bankangaben öffnen"
+    }
   },
   "functions": {
     "assignHolder": "Person zuweisen",
@@ -1971,7 +1978,9 @@
       "club": "Verein",
       "domains": "Domains",
       "modules": "Module & Plugins",
-      "settings": "Erweitert"
+      "settings": "Erweitert",
+      "membership": "Mitgliedschaft",
+      "bank": "Bank & QR-Rechnung"
     },
     "title": "Einstellungen",
     "yourAccount": "Dein Konto",
@@ -2026,7 +2035,8 @@
       "txCategories": "Finanzen › Kategorien",
       "roles": "Verwaltung › Rollen",
       "health": "System › Systemzustand",
-      "dashboardMe": "Dashboard › Persönlich"
+      "dashboardMe": "Dashboard › Persönlich",
+      "financeSettings": "Finanzen › Einstellungen"
     },
     "emailVerify": {
       "banner": "Deine private E-Mail-Adresse ist noch nicht bestätigt. Einige Funktionen sind erst danach verfügbar.",
