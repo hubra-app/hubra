@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from hubra.api.auth.helpers import get_current_member
 from hubra.core.extensions import db
@@ -78,6 +78,26 @@ def mark_all_read():
         raise
 
     return jsonify({"ok": True}), 200
+
+
+# ── DELETE /notifications ─────────────────────────────────────────────────────
+
+
+@notifications_bp.delete("/")
+@jwt_required()
+def delete_all_notifications():
+    """Clear the caller's own notifications; ``?read=1`` keeps unread ones."""
+    member_id = get_current_member().id
+    read_only = request.args.get("read") in ("1", "true")
+    deleted = NotificationsService.delete_all(member_id, read_only=read_only)
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+
+    return jsonify({"deleted": deleted}), 200
 
 
 # ── DELETE /notifications/<id> ────────────────────────────────────────────────

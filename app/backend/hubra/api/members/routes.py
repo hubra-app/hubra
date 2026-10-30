@@ -620,6 +620,7 @@ def leave_club():
             "Request to leave",
             member.name,
             skip_member_id=member.id,
+            link=f"/app/members/{member.id}",
         )
         db.session.commit()
     return jsonify({"status": "requested", **_leave_state(member)}), 200

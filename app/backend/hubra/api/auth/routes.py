@@ -365,6 +365,7 @@ def login():
             title="New device login",
             msg=f"Your account was accessed from a new device or location at {ts}. "
             f"If this wasn't you, go to Settings → Account → Sessions to revoke it.",
+            link="/app/account/settings/sessions",
         )
 
     session = db.session.get(Session, session_id)

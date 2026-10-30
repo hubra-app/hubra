@@ -12,7 +12,12 @@ from hubra.core.models.member import Member
 
 
 def notify_permitted(
-    perm_key: str, kind: str, title: str, msg: str, skip_member_id: int | None = None
+    perm_key: str,
+    kind: str,
+    title: str,
+    msg: str,
+    skip_member_id: int | None = None,
+    link: str | None = None,
 ) -> None:
     """Notify every active member who is an admin or holds ``perm_key``
     (e.g. ``"applications.applications.approve"``)."""
@@ -27,4 +32,4 @@ def notify_permitted(
         if member.id == skip_member_id or member.is_blocked:
             continue
         if member_is_admin(member) or perm_key in _get_member_permission_keys(member):
-            notify_member(member.id, kind, title, msg)
+            notify_member(member.id, kind, title, msg, link=link)

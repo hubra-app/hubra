@@ -27,6 +27,8 @@ class Notification(db.Model):
         nullable=False,
     )
     read: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
+    # Where clicking it goes in the club app, e.g. "/app/operations/posts/3".
+    link: Mapped[str | None] = mapped_column(db.String(255), nullable=True)
 
     # Relationships
     member: Mapped["Member"] = relationship("Member")  # type: ignore[name-defined]  # noqa: F821
