@@ -40,7 +40,7 @@ export function DomainsTab() {
   const [addOpen, setAddOpen] = useState(false)
   const [newDomain, setNewDomain] = useState('')
   const [adding, setAdding] = useState(false)
-  const [txtInstructions, setTxtInstructions] = useState<string | null>(null)
+  const [recordFor, setRecordFor] = useState<Domain | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Domain | null>(null)
 
   const { data: domains = [], isLoading } = useQuery({
@@ -55,7 +55,9 @@ export function DomainsTab() {
     setAdding(true)
     try {
       const result = await addDomain(newDomain.trim().toLowerCase())
-      setTxtInstructions(result.txt_record.instructions)
+      setAddOpen(false)
+      setNewDomain('')
+      setRecordFor({ ...result.domain, txt_record: result.txt_record })
       refresh()
       notify('success', t('domains.added', 'Domain hinzugefügt'), t('domains.addedMsg', 'Füge den TXT-Eintrag hinzu, um die Domain zu bestätigen.'))
     } catch (err) {
@@ -149,7 +151,12 @@ export function DomainsTab() {
                   </Table.Td>
                   <Table.Td>
                     <Group gap={6}>
-                      {d.verification_status !== 'verified' && (
+                      {!d.verified && d.txt_record && (
+                        <Button size="xs" variant="default" onClick={() => setRecordFor(d)}>
+                          {t('domains.showRecord', 'DNS-Eintrag')}
+                        </Button>
+                      )}
+                      {!d.verified && (
                         <Button size="xs" variant="light" onClick={() => handleVerify(d)}>
                           {t('domains.verify', 'Bestätigen')}
                         </Button>
@@ -171,48 +178,39 @@ export function DomainsTab() {
         )}
       </Paper>
 
-      <Modal opened={addOpen} onClose={() => { setAddOpen(false); setTxtInstructions(null); setNewDomain('') }} title={t('domains.add', 'Domain hinzufügen')}>
+      <Modal opened={addOpen} onClose={() => { setAddOpen(false); setNewDomain('') }} title={t('domains.add', 'Domain hinzufügen')}>
         <Stack gap={14}>
-          {txtInstructions ? (
-            <Alert icon={<IconCheck size={16} />} color="blue" variant="light">
-              <Stack gap={8}>
-                <Text fw={600}>{t('domains.txtHint', 'Füge diesen TXT-Eintrag in deinem DNS hinzu:')}</Text>
-                <Group gap={6}>
-                  <Text className="num" fz="sm" style={{ wordBreak: 'break-all' }}>
-                    {txtInstructions}
-                  </Text>
-                  <CopyButton value={txtInstructions} timeout={2000}>
-                    {({ copied, copy }) => (
-                      <ActionIcon
-                        color={copied ? 'teal' : 'gray'}
-                        onClick={copy}
-                        aria-label={copied ? t('common.copied') : t('common.copy')}
-                      >
-                        {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
-                      </ActionIcon>
-                    )}
-                  </CopyButton>
-                </Group>
-                <Text size="sm" c="dimmed">
-                  {t('domains.txtAfter', 'Sobald der Eintrag gesetzt ist, klicke auf «Bestätigen».')}
-                </Text>
-              </Stack>
-            </Alert>
-          ) : (
-            <>
-              <TextInput
-                label={t('domains.domain', 'Domain')}
-                placeholder="example.com"
-                value={newDomain}
-                onChange={(e) => setNewDomain(e.target.value)}
-              />
-              <Group justify="flex-end">
-                <Button variant="default" onClick={() => setAddOpen(false)}>{t('common.cancel', 'Abbrechen')}</Button>
-                <Button loading={adding} onClick={handleAdd}>{t('common.add', 'Hinzufügen')}</Button>
-              </Group>
-            </>
-          )}
+          <TextInput
+            label={t('domains.domain', 'Domain')}
+            placeholder="example.com"
+            value={newDomain}
+            onChange={(e) => setNewDomain(e.target.value)}
+          />
+          <Group justify="flex-end">
+            <Button variant="default" onClick={() => setAddOpen(false)}>{t('common.cancel', 'Abbrechen')}</Button>
+            <Button loading={adding} onClick={handleAdd}>{t('common.add', 'Hinzufügen')}</Button>
+          </Group>
         </Stack>
+      </Modal>
+
+      <Modal
+        opened={!!recordFor}
+        onClose={() => setRecordFor(null)}
+        title={t('domains.recordTitle', 'DNS-Eintrag für {{domain}}', { domain: recordFor?.domain ?? '' })}
+      >
+        {recordFor?.txt_record && (
+          <Alert icon={<IconCheck size={16} />} color="blue" variant="light">
+            <Stack gap={10}>
+              <Text fw={600}>{t('domains.txtHint', 'Füge diesen TXT-Eintrag im DNS deiner Domain hinzu:')}</Text>
+              <RecordField label={t('domains.recordType', 'Typ')} value="TXT" />
+              <RecordField label={t('domains.recordName', 'Name')} value={recordFor.txt_record.name} />
+              <RecordField label={t('domains.recordValue', 'Wert')} value={recordFor.txt_record.value} />
+              <Text size="sm" c="dimmed">
+                {t('domains.txtAfter', 'Wir prüfen ihn 72 Stunden lang automatisch, oder klicke auf «Bestätigen». Eine Domain, die nicht innert 7 Tagen bestätigt ist, wird entfernt.')}
+              </Text>
+            </Stack>
+          </Alert>
+        )}
       </Modal>
 
       <Modal
@@ -231,6 +229,32 @@ export function DomainsTab() {
           </Group>
         </Stack>
       </Modal>
+    </Stack>
+  )
+}
+
+function RecordField({ label, value }: { label: string; value: string }) {
+  const { t } = useT()
+  return (
+    <Stack gap={2}>
+      <Text size="xs" c="dimmed">{label}</Text>
+      <Group gap={6} wrap="nowrap">
+        <Text className="num" fz="sm" style={{ wordBreak: 'break-all' }}>
+          {value}
+        </Text>
+        <CopyButton value={value} timeout={2000}>
+          {({ copied, copy }) => (
+            <ActionIcon
+              color={copied ? 'teal' : 'gray'}
+              variant="subtle"
+              onClick={copy}
+              aria-label={copied ? t('common.copied') : t('common.copy')}
+            >
+              {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
+            </ActionIcon>
+          )}
+        </CopyButton>
+      </Group>
     </Stack>
   )
 }

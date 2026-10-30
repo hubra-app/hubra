@@ -71,10 +71,12 @@ def test_add_domain_success(tenant_ctx, client, auth_headers, db):
     assert body["domain"]["domain"] == "example.com"
     assert body["domain"]["verification_status"] == "pending"
     assert body["domain"]["verified"] is False
-    assert body["domain"]["is_primary"] is True
+    # Only a verified domain can be the primary one.
+    assert body["domain"]["is_primary"] is False
     assert body["domain"]["verification_token"] is not None
-    assert "txt_record" in body
+    assert body["txt_record"]["name"] == "_hubra-verify.example.com"
     assert body["txt_record"]["value"].startswith("hubra-verify=")
+    assert body["domain"]["txt_record"] == body["txt_record"]
 
 
 def test_add_domain_validation_error(tenant_ctx, client, auth_headers):
@@ -252,14 +254,23 @@ def test_remove_domain_not_found(tenant_ctx, client, auth_headers):
 
 
 def test_remove_primary_promotes_next(tenant_ctx, client, auth_headers, db):
-    """Removing the primary domain promotes the next oldest to primary."""
-    d1 = Domain(tenant_id=tenant_ctx.id, domain="first.com", verification_token="t1")
-    d2 = Domain(tenant_id=tenant_ctx.id, domain="second.com", verification_token="t2")
-    d1.is_primary = True
-    db.session.add_all([d1, d2])
+    """Removing the primary domain promotes the next verified one to primary."""
+    d1 = Domain(
+        tenant_id=tenant_ctx.id, domain="first.com", verification_token="t1",
+        verified=True, verification_status="verified", is_primary=True,
+    )
+    pending = Domain(
+        tenant_id=tenant_ctx.id, domain="pending.com", verification_token="tp"
+    )
+    d2 = Domain(
+        tenant_id=tenant_ctx.id, domain="second.com", verification_token="t2",
+        verified=True, verification_status="verified",
+    )
+    db.session.add_all([d1, pending, d2])
     db.session.commit()
     d1_id = d1.id
     d2_id = d2.id
+    pending_id = pending.id
 
     client.delete(
         f"/api/v1/admin/domains/{d1_id}",
@@ -268,6 +279,7 @@ def test_remove_primary_promotes_next(tenant_ctx, client, auth_headers, db):
 
     d2_refresh = db.session.get(Domain, d2_id)
     assert d2_refresh.is_primary is True
+    assert db.session.get(Domain, pending_id).is_primary is False
 
 
 def test_set_primary_domain(tenant_ctx, client, auth_headers, db):

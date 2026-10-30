@@ -149,6 +149,11 @@ def upsert_setting(key: str):
                 403,
             )
 
+    if key == "mail.domain":
+        err = _mail_domain_error(data.get("value"))
+        if err:
+            return api_error("DOMAIN_NOT_VERIFIED", err, 400)
+
     setting = SettingService.upsert(key, data)
 
     err = SettingService.validate_value(setting.validation_type, data.get("value", ""))
@@ -164,6 +169,42 @@ def upsert_setting(key: str):
         raise
 
     return jsonify(_setting_schema.dump(setting)), 200
+
+
+def _mail_domain_error(value) -> str | None:
+    """Why the club may not use *value* as its mail domain, if it may not.
+
+    Mailboxes of every club live on one mail server, so a club's own mail
+    domain has to be one it proved it owns (Settings › Domains). The
+    platform's mail domain and its subdomains need no proof.
+    """
+    from flask import current_app
+    from sqlalchemy import select
+
+    from hubra.core.models.domain import Domain
+    from hubra.core.tenant.context import current_tenant
+
+    domain = str(value or "").strip().lower()
+    current = str(SettingService.get("mail.domain") or "").strip().lower()
+    platform = (current_app.config.get("MAIL_DOMAIN") or "hubra.club").lower()
+    if not domain or domain == current:
+        return None
+    if domain == platform or domain.endswith(f".{platform}"):
+        return None
+    tenant = current_tenant()
+    verified = tenant is not None and db.session.scalar(
+        select(Domain.id).where(
+            Domain.tenant_id == tenant.id,
+            Domain.domain == domain,
+            Domain.verified.is_(True),
+        )
+    )
+    if verified:
+        return None
+    return (
+        f"{domain} is not a verified domain of this club. Add and verify it "
+        "under Settings › Domains first."
+    )
 
 
 # ── DELETE /settings/<key> ────────────────────────────────────────────────────

@@ -147,9 +147,28 @@ Settings › Modules & plugins lists everything the club can use.
 
 ### Domains
 
-Add a domain the club owns and confirm it with the DNS TXT record shown.
-Hubra records the confirmed domain; serving the club app or mail under it is
-not built yet.
+Add a domain the club owns, then publish the TXT record shown, for example:
+
+| Type | Name | Value |
+| ---- | ---- | ----- |
+| TXT | `_hubra-verify.fcx.ch` | `hubra-verify=3f9c…` |
+
+The record has its own name, so it also works for a host such as
+`members.fcx.ch` that points somewhere with a CNAME. A record on the domain
+itself (`fcx.ch`) from before still counts.
+
+- Hubra looks for the record every minute for the first 10 minutes, then
+  every hour for 72 hours. **Verify** checks right away. After 72 hours only
+  **Verify** checks; a domain that is not verified within 7 days is removed.
+- A domain nobody verified does nothing: it can't be the primary domain or
+  the club's mail domain, and after 72 hours another club may claim it.
+- A verified domain is checked again every week. Leave the record in place:
+  if it is gone for 14 days, the domain is no longer verified until you
+  verify it again.
+- The club's mail domain (**Advanced**, `mail.domain`) must be one of the
+  club's verified domains, or the platform's own mail domain.
+
+Serving the club app under a custom domain is not built yet.
 
 ### Advanced (Erweitert)
 

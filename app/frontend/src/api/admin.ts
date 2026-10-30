@@ -46,8 +46,16 @@ export interface Domain {
   verification_status: string
   is_primary: boolean
   verified_at: string | null
+  last_checked_at: string | null
+  txt_record: TxtRecord | null
   created_at: string | null
   updated_at: string | null
+}
+
+export interface TxtRecord {
+  name: string
+  value: string
+  instructions: string
 }
 
 export async function listDomains(): Promise<Domain[]> {
@@ -57,7 +65,7 @@ export async function listDomains(): Promise<Domain[]> {
 
 export async function addDomain(
   domain: string,
-): Promise<{ domain: Domain; txt_record: { name: string; value: string; instructions: string } }> {
+): Promise<{ domain: Domain; txt_record: TxtRecord }> {
   return apiFetch('/admin/domains', {
     method: 'POST',
     body: JSON.stringify({ domain }),
