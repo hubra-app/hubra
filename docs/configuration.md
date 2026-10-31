@@ -14,7 +14,7 @@ not using mail, leave the mail variables blank.
 | ----------- | -------------------------------------------------------------------------- | -------------------------------------------------------- |
 | Database    | `POSTGRES_*`, `DATABASE_URL`                                               | Always                                                   |
 | Auth        | `SECRET_KEY`, `JWT_SECRET_KEY`                                             | Always                                                   |
-| Encryption  | `FERNET_KEY`, `FERNET_OLD_KEYS` (old keys, still read during a rotation)   | Always in production, see [operator-guide.md](operator-guide.md#change-the-encryption-key) |
+| Encryption  | `FERNET_KEY`, `FERNET_OLD_KEYS` (old keys, still read during a rotation)   | Always in production, see [operator-guide.md](operator-guide.md#encryption-keys) |
 | Redis       | `REDIS_URL`, `RATE_LIMIT_STORAGE`                                          | Always (Celery broker + rate limiting)                   |
 | CORS        | `CORS_ORIGINS`                                                             | Always (comma-separated allowlist, no wildcards)         |
 | JWT cookies | `JWT_COOKIE_DOMAIN`, `JWT_COOKIE_SAMESITE`, `JWT_COOKIE_SECURE`            | Production (cross-subdomain auth)                        |

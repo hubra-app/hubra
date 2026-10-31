@@ -263,8 +263,8 @@ export function Backups() {
         desc={
           <>
             {tr(
-              'Das globale Backup enthält Konten, Vereine und Plattform-Einstellungen; jeder Verein hat eigene Backups und lässt sich einzeln wiederherstellen. Alles wird mit BACKUP_PUBLIC_KEY aus der Umgebung verschlüsselt; zum Öffnen braucht es den privaten Schlüssel, den nur du hast (ältere Backups: BACKUP_ENCRYPTION_KEY). Täglich, wöchentlich und monatlich laufen ein globales Backup und eines pro Verein von selbst; den Speicherort legst du unter ',
-              'The global backup holds accounts, clubs and platform settings; each club has its own backups and can be restored on its own. Everything is encrypted with BACKUP_PUBLIC_KEY from env; opening a backup takes the private key, which only you hold (older backups: BACKUP_ENCRYPTION_KEY). Daily, weekly and monthly, one global backup and one per club run on their own; the storage is set under ',
+              'Das globale Backup enthält Konten, Vereine und Plattform-Einstellungen; jeder Verein hat eigene Backups und lässt sich einzeln wiederherstellen. Alles wird mit dem öffentlichen Backup-Schlüssel verschlüsselt; zum Öffnen braucht es den privaten Schlüssel, den nur du hast (ältere Backups: BACKUP_ENCRYPTION_KEY). Täglich, wöchentlich und monatlich laufen ein globales Backup und eines pro Verein von selbst; den Speicherort legst du unter ',
+              'The global backup holds accounts, clubs and platform settings; each club has its own backups and can be restored on its own. Everything is encrypted to the backup public key; opening a backup takes the private key, which only you hold (older backups: BACKUP_ENCRYPTION_KEY). Daily, weekly and monthly, one global backup and one per club run on their own; the storage is set under ',
             )}
             <Anchor component={Link} to="/app/platform/settings" size="sm">
               {tr('Plattform-Einstellungen', 'Platform settings')}
@@ -459,8 +459,8 @@ export function Backups() {
               }}
             >
               {tr(
-                'Lege den Speicher unter Plattform-Einstellungen fest und setze BACKUP_PUBLIC_KEY in der .env (flask backups keygen), um Backups einzuschalten.',
-                'Set the storage under Platform settings and BACKUP_PUBLIC_KEY in .env (flask backups keygen) to enable backups.',
+                'Lege unter Plattform-Einstellungen den Speicher und den öffentlichen Backup-Schlüssel (flask backups keygen) fest, um Backups einzuschalten.',
+                'Set the storage under Platform settings and the backup public key (flask backups keygen) to enable backups.',
               )}
             </div>
           )}

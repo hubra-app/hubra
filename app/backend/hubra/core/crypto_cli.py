@@ -1,12 +1,16 @@
 """``flask crypto``: check and rotate the key for secrets at rest;
 ``flask backups``: backup key pairs.
 
-Changing ``FERNET_KEY``::
+Changing the master key ``FERNET_KEY``::
 
     FERNET_KEY=<new>  FERNET_OLD_KEYS=<old>   # restart with both
-    flask crypto rotate                       # re-encrypt with <new>
+    flask crypto rotate                       # rewrap the club keys with <new>
     flask crypto check                        # exit 0: nothing left on <old>
     # then remove <old> from FERNET_OLD_KEYS and restart
+
+New data keys (every club, or one)::
+
+    flask crypto rotate --new-keys [--club <slug>]
 """
 
 from __future__ import annotations
@@ -32,7 +36,7 @@ def register(app) -> None:
 
     @crypto_cli.command("check")
     def crypto_check():
-        """Exit 0 when the current FERNET_KEY opens every stored value."""
+        """Exit 0 when every stored value is on the current keys."""
         from hubra.core.services import secret_store
 
         report = secret_store.check()
@@ -45,17 +49,45 @@ def register(app) -> None:
         if report.unreadable:
             click.echo(
                 "Values no key opens were written with a key that is no "
-                "longer configured; put it back in FERNET_OLD_KEYS.",
+                "longer configured (put it back in FERNET_OLD_KEYS), or were "
+                "copied in from another club (they never open there).",
                 err=True,
             )
         raise SystemExit(1)
 
     @crypto_cli.command("rotate")
-    def crypto_rotate():
-        """Re-encrypt every stored value with the current FERNET_KEY."""
+    @click.option(
+        "--new-keys",
+        is_flag=True,
+        help="Also give each club a new data key and re-encrypt its values",
+    )
+    @click.option("--club", "slug", help="With --new-keys: only this club")
+    def crypto_rotate(new_keys: bool, slug: str | None):
+        """Move every stored value onto the current keys.
+
+        Rewraps the club data keys with the current FERNET_KEY and
+        re-encrypts values not on their club's newest data key yet.
+        """
+        from sqlalchemy import select
+
+        from hubra.core.extensions import db
+        from hubra.core.models.tenant import Tenant
         from hubra.core.services import secret_store
 
+        if slug and not new_keys:
+            raise click.UsageError("--club needs --new-keys")
         report = secret_store.rotate()
+        if new_keys:
+            if slug:
+                tenant = db.session.scalar(select(Tenant).where(Tenant.slug == slug))
+                if tenant is None:
+                    raise click.ClickException(f"Club '{slug}' not found")
+                scopes = {f"c{tenant.id}"}
+            else:
+                scopes = secret_store.scopes_in_use()
+            fresh = secret_store.new_keys(scopes)
+            report.rotated += fresh.rotated
+            click.echo(f"  {fresh.new_keys} new data keys")
         _print(report, rotated=True)
         if report.unreadable:
             raise SystemExit(1)

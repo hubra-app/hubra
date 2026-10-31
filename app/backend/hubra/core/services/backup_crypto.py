@@ -1,7 +1,7 @@
 """How backup files are encrypted and opened.
 
-New backups are encrypted with age to ``BACKUP_PUBLIC_KEY`` (the install's
-key) and, for a club backup, also to the club's own key when it has one
+New backups are encrypted with age to the install's public key (platform
+setting ``backup.public_key``, defaulting to ``BACKUP_PUBLIC_KEY``) and, for a club backup, also to the club's own key when it has one
 (``tenants.backup_public_key``).  The server holds only public keys, so it
 can write backups but not read them: verify and restore get the private key
 from the operator for that one call, or from ``BACKUP_PRIVATE_KEY`` when an
@@ -59,7 +59,10 @@ def private_keys_in(text: str | None) -> list[str]:
 
 
 def install_public_keys() -> list[str]:
-    return split_keys(current_app.config.get("BACKUP_PUBLIC_KEY"))
+    """Platform setting ``backup.public_key``, defaulting to BACKUP_PUBLIC_KEY."""
+    from hubra.core.services import platform_settings
+
+    return split_keys(platform_settings.get("backup.public_key"))
 
 
 def passphrase() -> str:

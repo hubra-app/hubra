@@ -103,37 +103,61 @@ So an upgrade is: take a backup, switch to the new images, restart.
 Pin a version for production. `latest` follows the newest release, and
 `sha-<commit>` is one exact build.
 
-## Change the encryption key
+## Encryption keys
 
-`FERNET_KEY` encrypts the secrets Hubra stores: door codes, binding values,
-mailbox passwords and the secret platform settings (relay passwords, backup
-storage key). Production does not start without it. Installs from before it
-was required used a key derived from `SECRET_KEY`; those values stay
-readable, so setting a fresh `FERNET_KEY` loses nothing.
+Hubra stores a few secrets encrypted: door codes, binding values, mailbox
+passwords and the secret platform settings (relay passwords, backup storage
+key). Every club has its **own data key** for its secrets, and the platform
+has one; a value carries its club and column, so it never opens in another
+club (a value copied across clubs reads as empty). The data keys live in the
+`data_keys` table, locked by the **master key** `FERNET_KEY` from env.
 
-To change the key (after a leak, or once a year), without downtime:
+The master key stays out of the database on purpose: anyone with a database
+dump or backup could otherwise open everything. Production does not start
+without it. Installs from before it was required used a key derived from
+`SECRET_KEY`; those values stay readable, so setting a fresh `FERNET_KEY`
+loses nothing.
+
+Manage › Platform settings › **Encryption** shows the state (master key set,
+old keys, values not on the current keys), and has the buttons for the
+steps below. The same works on the command line with `flask crypto check`
+and `flask crypto rotate`.
+
+**After upgrading to per-club keys**, press **Re-encrypt** once (or run
+`flask crypto rotate`): values stored before move onto their club's key.
+Until then they stay readable with the master key.
+
+**New key for a club** (someone who knew the codes left, or once a year):
+**New key** next to the club, or `flask crypto rotate --new-keys --club
+<slug>`. No restart, no env change. The club's values are re-encrypted; the
+older key version stays, so older backups still open. **New keys for every
+club** does it for all.
+
+**Change the master key** (after a leak of `.env` or the SOPS secret):
 
 1. Generate a new key:
    `python3 -c "import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())"`.
 2. Put the new key in `FERNET_KEY` and the old one in `FERNET_OLD_KEYS`
-   (comma-separated if there are several). Restart (on k3s, re-run
-   `deploy/create-secrets.sh` or update the SOPS secret, then
-   `kubectl -n hubra rollout restart deployment`). Everything stays
-   readable; new values use the new key.
-3. Re-encrypt what is stored: `flask crypto rotate` (Compose:
-   `docker compose exec backend flask crypto rotate`, k3s:
-   `kubectl -n hubra exec deploy/backend -- flask crypto rotate`).
-4. `flask crypto check` must end with `OK: old keys can be removed.` and
-   exit 0. If it lists values that no key opens, a key is missing from
-   `FERNET_OLD_KEYS`; nothing was overwritten, so add it back and run
-   step 3 again.
-5. Remove the old key from `FERNET_OLD_KEYS`, restart, and store the new
-   key in your password manager. Keep the old key there too until the
-   oldest backup made before the change has expired: restoring such a
-   backup brings back values encrypted with it.
+   (comma-separated if there are several). On k3s that is one commit to the
+   SOPS secret `hubra-env`; then
+   `kubectl -n hubra rollout restart deployment`. Everything stays readable.
+3. Press **Re-encrypt** (or `flask crypto rotate`). It rewraps the club keys
+   with the new master key, one row per club, so it takes seconds.
+4. The Encryption tab (or `flask crypto check`, exit 0) must show nothing on
+   an old key. If values no key opens are listed, a key is missing from
+   `FERNET_OLD_KEYS`; nothing was overwritten, so add it back and repeat 3.
+5. Remove the old key from `FERNET_OLD_KEYS`, commit, restart. Store the new
+   key in your password manager; keep the old one there until the oldest
+   backup from before the change has expired, because restoring such a
+   backup brings back club keys locked with it (run step 3 after such a
+   restore).
 
-The IMAP inbox plugin reads `FERNET_OLD_KEYS` too and re-encrypts each
-mailbox password on its next sync.
+**Deleting a club for good** also deletes its data keys, so its secrets are
+unreadable everywhere afterwards, in old backups too.
+
+The IMAP inbox plugin has its own key derived from `FERNET_KEY`, reads
+`FERNET_OLD_KEYS` too, and re-encrypts each mailbox password on its next
+sync.
 
 ## Mail look and sender logo
 
@@ -171,11 +195,13 @@ Backups are a platform task: manage › Platform › Backups, global permission
   7 daily, 4 weekly and 6 monthly backups per set. Manual backups are kept
   until you delete them.
 - Files are encrypted to `BACKUP_PUBLIC_KEY` ([age](https://age-encryption.org))
-  and stored in the S3 bucket from Platform › Settings › Backup storage. The
+  (platform setting, default from env) and stored in the S3 bucket from
+  Platform › Settings › Backup storage. The
   server only has the public key, so a break-in on the server cannot read
   the backups. The private key stays in your password manager; restore
   asks for it. Make the pair with `flask backups keygen`.
-- A club can get its own key: `flask backups club-key <club> age1…`. Its
+- A club can get its own key: Platform settings › Encryption, or
+  `flask backups club-key <club> age1…`. Its
   backups are then encrypted to both keys, so the club can open its own
   backups with its private key, and you still can with yours.
 - **Verify** without a key checks that the file in storage is complete and

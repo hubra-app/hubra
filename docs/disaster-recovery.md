@@ -11,6 +11,10 @@
    A club with its own backup key (`flask backups club-key`) can also open
    its own club backups with its private key.
 
+   **`FERNET_KEY`** too: restored data opens, but the stored secrets in it
+   (door codes, mailbox passwords, binding values) only open with the master
+   key that locked the club keys in the global backup.
+
 2. **S3 credentials** — Contabo S3 endpoint, bucket name, access key, and secret key.
    These come from `BACKUP_S3_*` in `.env` on the production server, unless a
    superadmin overrode them in manage under Platform › Platform Settings.
