@@ -49,10 +49,10 @@ class Code(db.Model):
         """The code in clear text, or "" when it no longer decrypts (the
         encryption key changed), so one bad row does not break the list."""
         try:
-            return decrypt_code(self.code)
+            return decrypt_code(self.code, "codes.code")
         except InvalidToken:
             logging.getLogger(__name__).warning(
-                "Code %s cannot be decrypted; was SECRET_KEY or FERNET_KEY changed?",
+                "Code %s cannot be decrypted; wrong club, or its key is missing from FERNET_OLD_KEYS?",
                 self.id,
             )
             return ""
