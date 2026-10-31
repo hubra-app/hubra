@@ -377,6 +377,31 @@ def _book_recurring_transactions() -> dict:
 
 
 @celery_app.task(
+    name="hubra.core.tasks.finance_tasks.send_account_statements_task",
+    bind=True,
+    acks_late=True,
+    reject_on_worker_lost=True,
+)
+def send_account_statements_task(self) -> dict:
+    """Mail last month's account statement in every club that asked for one."""
+    return _send_account_statements()
+
+
+@per_tenant_job("finance")
+def _send_account_statements(today: date | None = None) -> dict:
+    from hubra.api.finance.statement import send_statement, statement_settings
+
+    settings = statement_settings()
+    if not settings["enabled"]:
+        return {"sent": 0}
+    today = today or date.today()
+    last_month = (today.replace(day=1) - timedelta(days=1)).replace(day=1)
+    send_statement(last_month, settings["email"])
+    db.session.commit()
+    return {"sent": 1}
+
+
+@celery_app.task(
     name="hubra.core.tasks.finance_tasks.send_overdue_reminders_task",
     bind=True,
     acks_late=True,

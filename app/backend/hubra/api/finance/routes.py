@@ -499,3 +499,44 @@ def delete_recurring(id: int):
     RecurringTransactionService.delete(id, get_current_member().id)
     db.session.commit()
     return "", 204
+
+
+# ── Monthly account statement ─────────────────────────────────────────────────
+
+
+@finance_bp.get("/statement.pdf")
+@permission_required("overview", "read", "View finance overview")
+def download_statement():
+    """The account statement of ?month=YYYY-MM (last month by default)."""
+    from io import BytesIO
+
+    from hubra.api.finance.statement import month_of, statement_data, statement_pdf
+
+    start = month_of(request.args.get("month"))
+    pdf = statement_pdf(statement_data(start))
+    return send_file(
+        BytesIO(pdf),
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"kontoauszug-{start:%Y-%m}.pdf",
+    )
+
+
+@finance_bp.post("/statement/send")
+@permission_required("overview", "read", "View finance overview")
+def send_statement_now():
+    """Mail a month's statement to the club's statement address now."""
+    from hubra.api.finance.statement import month_of, send_statement, statement_settings
+
+    body = request.get_json(silent=True) or {}
+    email = statement_settings()["email"]
+    if "@" not in email:
+        return api_error(
+            "STATEMENT_EMAIL_MISSING",
+            "Set the address for the account statement first",
+            400,
+        )
+    month = body.get("month") if isinstance(body, dict) else None
+    result = send_statement(month_of(month if isinstance(month, str) else None), email)
+    db.session.commit()
+    return jsonify(result), 202

@@ -10,23 +10,27 @@ import {
   Stack,
   Switch,
   Text,
+  TextInput,
   Title,
 } from '@mantine/core'
 import { useT } from '@/locales/i18n'
 import { useAuth, useNav, useToast } from '@/context/AppContext'
 import { getModules, saveModuleSettings, type ModuleInfo } from '@/api/modules'
+import { downloadStatement, sendStatement } from '@/api/finance'
 import { localizeModule } from '@/modules/labels'
 import { qk } from '@/data/keys'
 import { SettingInput } from '@/screens/private/settings/ModulesTab'
 
 type FormValue = string | number | boolean | null
 
-/** The settings the membership fee card edits; the invoice card shows the rest. */
-const FEE_KEYS = new Set([
+/** The settings the fee and statement cards edit; the invoice card shows the rest. */
+const OWN_CARD_KEYS = new Set([
   'bill_on_join_date',
   'fee_anchor_month',
   'fee_anchor_day',
   'prorate_first_fee',
+  'statement_enabled',
+  'statement_email',
 ])
 
 function useSaveSettings(module: ModuleInfo) {
@@ -150,6 +154,106 @@ function FeeScheduleForm({ module }: { module: ModuleInfo }) {
   )
 }
 
+function StatementForm({ module }: { module: ModuleInfo }) {
+  const { t, i18n } = useT()
+  const { notify } = useToast()
+  const [save, busy] = useSaveSettings(module)
+  const [enabled, setEnabled] = useState(module.config.statement_enabled === true)
+  const [email, setEmail] = useState(String(module.config.statement_email ?? ''))
+  const [sending, setSending] = useState(false)
+  // This month so far, then the twelve before it.
+  const months = Array.from({ length: 13 }, (_, i) => {
+    const d = new Date()
+    d.setDate(1)
+    d.setMonth(d.getMonth() - i)
+    return {
+      value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+      label: d.toLocaleString(i18n.language, { month: 'long', year: 'numeric' }),
+    }
+  })
+  const [month, setMonth] = useState(months[1].value)
+  const saved = String(module.config.statement_email ?? '')
+
+  const sendNow = async () => {
+    setSending(true)
+    try {
+      const res = await sendStatement(month)
+      notify(
+        'success',
+        t('finance.statement.sent', 'Kontoauszug unterwegs'),
+        t('finance.statement.sentTo', 'An {{email}}', { email: res.to }),
+      )
+    } catch (err) {
+      notify('error', t('common.error', 'Fehler'), (err as Error).message)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <Paper withBorder p="lg">
+      <Title order={3} mb={4}>
+        {t('finance.statement.title', 'Monatlicher Kontoauszug')}
+      </Title>
+      <Text size="sm" c="dimmed" mb="md">
+        {t(
+          'finance.statement.intro',
+          'Am 1. jedes Monats ein PDF mit Saldo, Summen pro Kategorie, allen Buchungen und den offenen Rechnungen des Vormonats, zum Beispiel an die Kassierin oder die Revision.',
+        )}
+      </Text>
+      <Stack gap="md" maw={520}>
+        <Switch
+          label={t('finance.statement.enabled', 'Jeden Monat per E-Mail senden')}
+          checked={enabled}
+          onChange={(e) => setEnabled(e.currentTarget.checked)}
+        />
+        <TextInput
+          type="email"
+          label={t('finance.statement.email', 'An diese Adresse')}
+          placeholder="kasse@verein.ch"
+          value={email}
+          onChange={(e) => setEmail(e.currentTarget.value)}
+          error={
+            enabled && !email.includes('@')
+              ? t('finance.statement.emailNeeded', 'Eine E-Mail-Adresse ist nötig.')
+              : undefined
+          }
+        />
+      </Stack>
+      <Group justify="flex-end" mt="md">
+        <Button
+          loading={busy}
+          disabled={enabled && !email.includes('@')}
+          onClick={() => save({ statement_enabled: enabled, statement_email: email.trim() })}
+        >
+          {t('common.save', 'Speichern')}
+        </Button>
+      </Group>
+      <Group mt="lg" gap="sm" align="flex-end" wrap="wrap">
+        <Select
+          label={t('finance.statement.month', 'Monat')}
+          data={months}
+          value={month}
+          onChange={(v) => v && setMonth(v)}
+          allowDeselect={false}
+          w={200}
+        />
+        <Button variant="default" onClick={() => void downloadStatement(month)}>
+          {t('finance.statement.download', 'PDF herunterladen')}
+        </Button>
+        <Button
+          variant="default"
+          loading={sending}
+          disabled={!saved.includes('@')}
+          onClick={() => void sendNow()}
+        >
+          {t('finance.statement.sendNow', 'Jetzt senden')}
+        </Button>
+      </Group>
+    </Paper>
+  )
+}
+
 function InvoiceSettingsForm({ module }: { module: ModuleInfo }) {
   const { t } = useT()
   const [save, busy] = useSaveSettings(module)
@@ -162,7 +266,7 @@ function InvoiceSettingsForm({ module }: { module: ModuleInfo }) {
       </Title>
       <Stack gap="md" maw={480}>
         {module.settings
-          .filter((field) => !FEE_KEYS.has(field.key))
+          .filter((field) => !OWN_CARD_KEYS.has(field.key))
           .map((field) => (
             <SettingInput
               key={field.key}
@@ -196,6 +300,7 @@ export function FinanceSettingsTab() {
     <Stack gap={20}>
       {finance && <FeeScheduleForm key={`fees-${JSON.stringify(finance.config)}`} module={finance} />}
       {finance && <InvoiceSettingsForm key={JSON.stringify(finance.config)} module={finance} />}
+      {finance && <StatementForm key={`statement-${JSON.stringify(finance.config)}`} module={finance} />}
       {hasPermission('settings.settings.read') && (
         <Paper withBorder p="lg">
           <Group justify="space-between" align="center" wrap="wrap" gap="md">

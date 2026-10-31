@@ -587,3 +587,25 @@ export async function updateRecurring(
 export async function deleteRecurring(id: number): Promise<void> {
   await apiFetch(`/finance/recurring/${id}`, { method: 'DELETE' })
 }
+
+// ── Monthly account statement ──────────────────────────────────────────────
+
+/** Downloads the account statement of a month (YYYY-MM) as a PDF. */
+export async function downloadStatement(month: string): Promise<void> {
+  const res = await apiFetchRaw(`/finance/statement.pdf?month=${month}`)
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `kontoauszug-${month}.pdf`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+/** Mails the account statement of a month to the club's statement address. */
+export async function sendStatement(month: string): Promise<{ month: string; to: string }> {
+  return apiFetch('/finance/statement/send', {
+    method: 'POST',
+    body: JSON.stringify({ month }),
+  })
+}

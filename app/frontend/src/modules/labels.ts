@@ -44,6 +44,8 @@ const DE: Record<string, { name: string; description: string; settings?: Record<
         'Ersten Beitrag bei Eintritt während des Jahres kürzen',
         'Nach verbleibenden Monaten, der Eintrittsmonat zählt ganz',
       ],
+      statement_enabled: ['Jeden Monat einen Kontoauszug senden', 'Am 1. für den Vormonat, als PDF'],
+      statement_email: ['Kontoauszug an', ''],
     },
   },
   functions: { name: 'Funktionen', description: 'Vereinsämter und wer sie innehat' },

@@ -1042,7 +1042,19 @@
       "prorate": "Ersten Beitrag kürzen, wenn jemand während des Jahres eintritt",
       "prorateHint": "Nach den verbleibenden Monaten, der Eintrittsmonat zählt ganz. Beispiel: Eintritt im {{month}} bei CHF 120 im Jahr: 9 von 12 Monaten, CHF 90."
     },
-    "membershipFeePeriod": "Mitgliederbeitrag {{from}} – {{to}}"
+    "membershipFeePeriod": "Mitgliederbeitrag {{from}} – {{to}}",
+    "statement": {
+      "title": "Monatlicher Kontoauszug",
+      "intro": "Am 1. jedes Monats ein PDF mit Saldo, Summen pro Kategorie, allen Buchungen und den offenen Rechnungen des Vormonats, zum Beispiel an die Kassierin oder die Revision.",
+      "enabled": "Jeden Monat per E-Mail senden",
+      "email": "An diese Adresse",
+      "emailNeeded": "Eine E-Mail-Adresse ist nötig.",
+      "month": "Monat",
+      "download": "PDF herunterladen",
+      "sendNow": "Jetzt senden",
+      "sent": "Kontoauszug unterwegs",
+      "sentTo": "An {{email}}"
+    }
   },
   "functions": {
     "assignHolder": "Person zuweisen",

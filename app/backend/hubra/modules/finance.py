@@ -74,6 +74,19 @@ module = Module(
             label="Reduce the first fee for members who join during the year",
             description="By the months left, the join month counting in full",
         ),
+        SettingField(
+            "statement_enabled",
+            "bool",
+            default=False,
+            label="Mail an account statement every month",
+            description="On the 1st, for the month before, as a PDF",
+        ),
+        SettingField(
+            "statement_email",
+            "email",
+            default="",
+            label="Account statement goes to",
+        ),
     ),
     nav=(
         NavItem(
