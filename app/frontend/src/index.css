@@ -59,6 +59,27 @@
   background: rgba(26, 22, 37, 0.22);
 }
 
+/* Side panel rows (NotificationPanel, MemberAddSearch) */
+.hb-hover:hover,
+.hb-notif:hover {
+  background: var(--hb-surface-2);
+}
+.hb-notif[data-unread] {
+  background: color-mix(in srgb, var(--mantine-color-acc-6) 7%, transparent);
+}
+.hb-notif[data-unread]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--mantine-color-acc-6);
+}
+.hb-notif[data-unread]:hover {
+  background: color-mix(in srgb, var(--mantine-color-acc-6) 11%, transparent);
+}
+
 .notif-panel {
   position: fixed;
   top: 0;
