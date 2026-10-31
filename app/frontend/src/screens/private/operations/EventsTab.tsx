@@ -126,7 +126,7 @@ export function EventsTab() {
     const ev = events.find((e) => e.id === linked.id)
     if (ev) {
       setHandledPending(linked.id)
-      if (canApprove) setPendingFor(ev)
+      if (canApprove(ev)) setPendingFor(ev)
     }
   }
   const filtered = linked.id
