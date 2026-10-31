@@ -2927,5 +2927,16 @@
   "finance.recurring.deleteTitle": "«{{name}}» löschen?",
   "finance.recurring.deleteBody": "Bereits gebuchte Einträge bleiben erhalten.",
   "shell.nav.recurring": "Wiederkehrend",
-  "shell.breadcrumbs.recurring": "Finanzen › Wiederkehrend"
+  "shell.breadcrumbs.recurring": "Finanzen › Wiederkehrend",
+  "finance.fees.title": "Mitgliederbeiträge",
+  "finance.fees.intro": "Wann die jährlichen Beiträge verrechnet werden. Wie oft (jährlich, halbjährlich, …) bestimmen die Stufen und Zahlungspläne.",
+  "finance.fees.fixed": "Am Stichtag für alle",
+  "finance.fees.join": "Am Eintrittsdatum",
+  "finance.fees.joinHint": "Jedes Mitglied bekommt die Rechnung an seinem Eintrittstag und danach jedes Jahr am selben Tag. Mitglieder ohne Eintrittsdatum werden am Stichtag verrechnet.",
+  "finance.fees.day": "Tag",
+  "finance.fees.month": "Monat",
+  "finance.fees.prorate": "Ersten Beitrag kürzen, wenn jemand während des Jahres eintritt",
+  "finance.fees.prorateHint": "Nach den verbleibenden Monaten, der Eintrittsmonat zählt ganz. Beispiel: Eintritt im {{month}} bei CHF 120 im Jahr: 9 von 12 Monaten, CHF 90.",
+  "finance.invoice.period": "Zeitraum",
+  "finance.membershipFeePeriod": "Mitgliederbeitrag {{from}} – {{to}}"
 }

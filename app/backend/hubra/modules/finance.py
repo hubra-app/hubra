@@ -48,6 +48,32 @@ module = Module(
             default=14,
             label="Second reminder (days after due)",
         ),
+        SettingField(
+            "bill_on_join_date",
+            "bool",
+            default=False,
+            label="Bill each member on their join date",
+            description="Otherwise everyone is billed on the billing date below",
+        ),
+        SettingField(
+            "fee_anchor_month",
+            "int",
+            default=1,
+            label="Billing date: month",
+        ),
+        SettingField(
+            "fee_anchor_day",
+            "int",
+            default=1,
+            label="Billing date: day",
+        ),
+        SettingField(
+            "prorate_first_fee",
+            "bool",
+            default=True,
+            label="Reduce the first fee for members who join during the year",
+            description="By the months left, the join month counting in full",
+        ),
     ),
     nav=(
         NavItem(

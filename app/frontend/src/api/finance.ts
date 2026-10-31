@@ -282,6 +282,8 @@ interface BackendInvoice {
   amount: number;
   status: "Paid" | "Open" | "Overdue";
   description: string | null;
+  period_start?: string | null;
+  period_end?: string | null;
   created_at: string;
 }
 
@@ -304,6 +306,8 @@ function adaptInvoice(b: BackendInvoice): Invoice {
     amount: b.amount,
     status: b.status,
     description: b.description ?? null,
+    periodStart: b.period_start ?? null,
+    periodEnd: b.period_end ?? null,
     transactionId: b.transaction_id != null ? String(b.transaction_id) : null,
     createdAt: b.created_at ?? "",
   };

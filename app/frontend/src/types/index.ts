@@ -223,6 +223,9 @@ export interface Invoice {
   amount: number;
   status: "Paid" | "Open" | "Overdue";
   description: string | null;
+  /** What a membership invoice covers, when it was billed with a period. */
+  periodStart?: string | null;
+  periodEnd?: string | null;
   transactionId: string | null;
   createdAt: string;
   reminderSentAt?: string[];

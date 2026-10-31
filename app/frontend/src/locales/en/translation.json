@@ -824,7 +824,8 @@
       "issued": "Issued",
       "notFound": "Invoice not found",
       "number": "Invoice number",
-      "paid": "Invoice paid."
+      "paid": "Invoice paid.",
+      "period": "Period"
     },
     "invoiceAmount": "Amount",
     "invoiceDeleted": "Invoice deleted.",
@@ -1029,7 +1030,19 @@
       "startHint": "Later dates follow at the chosen interval.",
       "totalPerYear": "Total per year",
       "yearly": "Yearly"
-    }
+    },
+    "fees": {
+      "title": "Membership fees",
+      "intro": "When the yearly fees are billed. How often (yearly, half-yearly, …) is set by the tiers and payment plans.",
+      "fixed": "On a fixed date for everyone",
+      "join": "On the join date",
+      "joinHint": "Each member is billed on the day they joined and on the same day every year after. Members without a join date are billed on the fixed date.",
+      "day": "Day",
+      "month": "Month",
+      "prorate": "Reduce the first fee when someone joins during the year",
+      "prorateHint": "By the months left, the join month counting in full. Example: joining in {{month}} with CHF 120 a year: 9 of 12 months, CHF 90."
+    },
+    "membershipFeePeriod": "Membership fee {{from}} – {{to}}"
   },
   "functions": {
     "assignHolder": "Assign person",

@@ -16,8 +16,11 @@ from hubra.core.services.mail_format import mail_date
 from hubra.core.pricing import (
     billing_cycle_for,
     calculate_invoice_amount,
-    period_window,
     deductions_by_tier,
+    first_fee_share,
+    membership_period,
+    period_window,
+    prorate,
 )
 from hubra.core.services.email import DEFAULT_LANG
 from hubra.core.services.mail_i18n import render_mail_template
@@ -154,6 +157,30 @@ def _record_reminder_history(
     db.session.add(history)
 
 
+def _membership_invoice_in(
+    member_id: int, start: date, end: date, cycle: str | None
+) -> int | None:
+    """A membership invoice of the member, paid or not, that covers part of
+    the period start..end. One from before invoices kept their period covers
+    the calendar period it was issued in; so a club that moves its billing
+    date bills nobody twice for the same months."""
+    from sqlalchemy import select
+    from hubra.core.models.finance import Invoice
+
+    rows = db.session.execute(
+        select(Invoice.id, Invoice.issued, Invoice.period_start, Invoice.period_end)
+        .where(Invoice.member_id == member_id)
+        .where(Invoice.purpose == "membership")
+        .where(Invoice.issued >= start - timedelta(days=366))
+    ).all()
+    for invoice_id, issued, covered_from, covered_to in rows:
+        if covered_from is None or covered_to is None:
+            covered_from, covered_to = period_window(issued, cycle)
+        if covered_from <= end and covered_to >= start:
+            return invoice_id
+    return None
+
+
 @celery_app.task(
     name="hubra.core.tasks.finance_tasks.generate_invoices_task",
     bind=True,
@@ -166,7 +193,7 @@ def generate_invoices_task(self) -> dict:
 
 
 @per_tenant_job("finance")
-def _generate_invoices() -> dict:
+def _generate_invoices(today: date | None = None) -> dict:
     """Generate invoices for all active members whose tier has a billing cycle.
 
     Handles three price types:
@@ -175,9 +202,14 @@ def _generate_invoices() -> dict:
       - formula:    (baseline - coefficient * sum(deducted_tier_annual_fees)) / members_in_tier
                     per year, divided into periods, rounded up to round_to
 
+    Billing periods start on the club's billing date (finance setting
+    fee_anchor_month/fee_anchor_day, 1 January by default) or, with
+    fee_anchor "join_date", on the day and month each member joined. A
+    member who joined during a period pays the months left of it, the join
+    month counting in full (prorate_first_fee).
+
     Idempotency guard: skips a member if a membership invoice (in any status)
-    already exists for the current billing period (current month for
-    'monthly', current year for 'yearly').
+    already covers part of the current period.
 
     Sends an invoice_generated email for each created invoice and records the
     dispatch in InvoiceReminderHistory.
@@ -191,7 +223,7 @@ def _generate_invoices() -> dict:
     from hubra.core.services.email import _get_base_url
 
     billing = billing_settings()
-    today = date.today()
+    today = today or date.today()
     created = 0
     skipped = 0
     _base = _get_base_url()
@@ -219,19 +251,18 @@ def _generate_invoices() -> dict:
             skipped += 1
             continue
 
+        if member.joined is not None and member.joined > today:
+            logger.info(
+                "invoice_generation_skipped member_id=%s reason=not_joined_yet",
+                member.id,
+            )
+            skipped += 1
+            continue
+
         cycle = billing_cycle_for(member, tier)
-        period_start, period_end = period_window(today, cycle)
+        period_start, period_end = membership_period(member, today, cycle, billing)
 
-        # Any membership invoice of this period counts, paid or not: the
-        # task runs daily, and a paid fee must not be billed again.
-        existing = db.session.scalar(
-            select(Invoice.id)
-            .where(Invoice.member_id == member.id)
-            .where(Invoice.purpose == "membership")
-            .where(Invoice.issued >= period_start)
-            .where(Invoice.issued <= period_end)
-        )
-
+        existing = _membership_invoice_in(member.id, period_start, period_end, cycle)
         if existing is not None:
             logger.info(
                 "invoice_generation_skipped member_id=%s reason=invoice_exists_for_period invoice_id=%s",
@@ -242,6 +273,11 @@ def _generate_invoices() -> dict:
             continue
 
         amount = calculate_invoice_amount(member, tier, deducted_for(tier))
+        billed_from = period_start
+        share = first_fee_share(member, period_start, period_end, billing)
+        if share is not None:
+            billed_from, months = share
+            amount = prorate(amount, months)
         if amount <= 0:
             logger.info(
                 "invoice_generation_skipped member_id=%s reason=amount_zero_or_negative",
@@ -258,6 +294,8 @@ def _generate_invoices() -> dict:
             amount=amount,
             status="Open",
             purpose="membership",
+            period_start=billed_from,
+            period_end=period_end,
         )
         db.session.add(invoice)
         db.session.flush()

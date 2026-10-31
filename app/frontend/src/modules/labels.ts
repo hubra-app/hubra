@@ -34,6 +34,16 @@ const DE: Record<string, { name: string; description: string; settings?: Record<
       reminders_enabled: ['Zahlungserinnerungen senden', ''],
       first_reminder_days: ['Erste Erinnerung (Tage nach Fälligkeit)', ''],
       second_reminder_days: ['Zweite Erinnerung (Tage nach Fälligkeit)', ''],
+      bill_on_join_date: [
+        'Jedes Mitglied an seinem Eintrittsdatum verrechnen',
+        'Sonst werden alle am Stichtag unten verrechnet',
+      ],
+      fee_anchor_month: ['Stichtag: Monat', ''],
+      fee_anchor_day: ['Stichtag: Tag', ''],
+      prorate_first_fee: [
+        'Ersten Beitrag bei Eintritt während des Jahres kürzen',
+        'Nach verbleibenden Monaten, der Eintrittsmonat zählt ganz',
+      ],
     },
   },
   functions: { name: 'Funktionen', description: 'Vereinsämter und wer sie innehat' },

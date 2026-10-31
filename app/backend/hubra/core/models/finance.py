@@ -176,6 +176,10 @@ class Invoice(db.Model):
         db.String(20), default="membership", nullable=False
     )
     description: Mapped[str | None] = mapped_column(db.String(512), nullable=True)
+    # What a membership invoice covers: from the first day billed (a later
+    # one for a member who joined during the period) to the period's end.
+    period_start: Mapped[date | None] = mapped_column(Date, nullable=True)
+    period_end: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

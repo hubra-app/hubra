@@ -62,7 +62,12 @@ export function InvoiceDetailScreen() {
 
   const lineItemDesc =
     inv.description ||
-    (inv.purpose === 'membership'
+    (inv.purpose === 'membership' && inv.periodStart && inv.periodEnd
+      ? t('finance.membershipFeePeriod', 'Mitgliederbeitrag {{from}} – {{to}}', {
+          from: formatDate(inv.periodStart),
+          to: formatDate(inv.periodEnd),
+        })
+      : inv.purpose === 'membership'
       ? t('finance.monthlyMembershipFee', 'Mitgliederbeitrag {{month}}', {
           month: new Date(inv.issued).toLocaleString(i18n.language, {
             month: 'long',
@@ -294,6 +299,14 @@ export function InvoiceDetailScreen() {
               label: t('finance.invoice.number', 'Rechnungsnummer'),
               value: inv.id,
             },
+            ...(inv.periodStart && inv.periodEnd
+              ? [
+                  {
+                    label: t('finance.invoice.period', 'Zeitraum'),
+                    value: `${formatDate(inv.periodStart)} – ${formatDate(inv.periodEnd)}`,
+                  },
+                ]
+              : []),
             {
               label: t('finance.invoice.issued', 'Ausgestellt'),
               value: inv.issued ? formatDate(inv.issued) : '?',

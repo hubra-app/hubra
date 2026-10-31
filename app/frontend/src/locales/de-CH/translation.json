@@ -824,7 +824,8 @@
       "issued": "Ausgestellt",
       "notFound": "Rechnung nicht gefunden",
       "number": "Rechnungsnummer",
-      "paid": "Rechnung bezahlt."
+      "paid": "Rechnung bezahlt.",
+      "period": "Zeitraum"
     },
     "invoiceAmount": "Betrag",
     "invoiceDeleted": "Rechnung gelöscht.",
@@ -1029,7 +1030,19 @@
       "active": "Aktiv",
       "deleteTitle": "«{{name}}» löschen?",
       "deleteBody": "Bereits gebuchte Einträge bleiben erhalten."
-    }
+    },
+    "fees": {
+      "title": "Mitgliederbeiträge",
+      "intro": "Wann die jährlichen Beiträge verrechnet werden. Wie oft (jährlich, halbjährlich, …) bestimmen die Stufen und Zahlungspläne.",
+      "fixed": "Am Stichtag für alle",
+      "join": "Am Eintrittsdatum",
+      "joinHint": "Jedes Mitglied bekommt die Rechnung an seinem Eintrittstag und danach jedes Jahr am selben Tag. Mitglieder ohne Eintrittsdatum werden am Stichtag verrechnet.",
+      "day": "Tag",
+      "month": "Monat",
+      "prorate": "Ersten Beitrag kürzen, wenn jemand während des Jahres eintritt",
+      "prorateHint": "Nach den verbleibenden Monaten, der Eintrittsmonat zählt ganz. Beispiel: Eintritt im {{month}} bei CHF 120 im Jahr: 9 von 12 Monaten, CHF 90."
+    },
+    "membershipFeePeriod": "Mitgliederbeitrag {{from}} – {{to}}"
   },
   "functions": {
     "assignHolder": "Person zuweisen",

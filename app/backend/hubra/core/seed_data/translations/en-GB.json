@@ -2927,5 +2927,16 @@
   "finance.recurring.totalPerYear": "Total per year",
   "finance.recurring.yearly": "Yearly",
   "shell.nav.recurring": "Recurring",
-  "shell.breadcrumbs.recurring": "Finance › Recurring"
+  "shell.breadcrumbs.recurring": "Finance › Recurring",
+  "finance.fees.title": "Membership fees",
+  "finance.fees.intro": "When the yearly fees are billed. How often (yearly, half-yearly, …) is set by the tiers and payment plans.",
+  "finance.fees.fixed": "On a fixed date for everyone",
+  "finance.fees.join": "On the join date",
+  "finance.fees.joinHint": "Each member is billed on the day they joined and on the same day every year after. Members without a join date are billed on the fixed date.",
+  "finance.fees.day": "Day",
+  "finance.fees.month": "Month",
+  "finance.fees.prorate": "Reduce the first fee when someone joins during the year",
+  "finance.fees.prorateHint": "By the months left, the join month counting in full. Example: joining in {{month}} with CHF 120 a year: 9 of 12 months, CHF 90.",
+  "finance.invoice.period": "Period",
+  "finance.membershipFeePeriod": "Membership fee {{from}} – {{to}}"
 }

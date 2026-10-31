@@ -17,8 +17,12 @@ from hubra.core.models.finance import Invoice, Transaction, TransactionCategory
 from hubra.core.models.invoice_reminder import InvoiceReminderHistory
 from hubra.core.models.member import Member
 from hubra.core.pricing import (
+    billing_cycle_for,
     calculate_invoice_amount,
     deductions_by_tier,
+    first_fee_share,
+    membership_period,
+    prorate,
 )
 from hubra.core.services.email import club_display_name
 from hubra.core.services.mail_i18n import render_mail_template
@@ -37,12 +41,21 @@ def billing_settings() -> dict:
     term = max(1, int(config.get("payment_term_days") or 30))
     first = max(1, int(config.get("first_reminder_days") or 7))
     second = max(first, int(config.get("second_reminder_days") or 14))
+    month = min(max(int(config.get("fee_anchor_month") or 1), 1), 12)
+    # A day the month doesn't have is its last day (31 June: 30 June).
+    day = min(max(int(config.get("fee_anchor_day") or 1), 1), 31)
     return {
         "payment_term_days": term,
         "email_new_invoices": config.get("email_new_invoices", True) is not False,
         "reminders_enabled": config.get("reminders_enabled", True) is not False,
         "first_reminder_days": first,
         "second_reminder_days": second,
+        "fee_anchor": (
+            "join_date" if config.get("bill_on_join_date") is True else "fixed_date"
+        ),
+        "fee_anchor_month": month,
+        "fee_anchor_day": day,
+        "prorate_first_fee": config.get("prorate_first_fee", True) is not False,
     }
 
 
@@ -961,12 +974,22 @@ class InvoicesService:
         # Each formula tier deducts the yearly fees of its own deduct_tier_ids.
         deducted_for = deductions_by_tier(db.session)
 
+        billing = billing_settings()
         created = []
         for member in members:
             tier = member.tier
             if not tier:
                 continue
-            amount = float(calculate_invoice_amount(member, tier, deducted_for(tier)))
+            amount = calculate_invoice_amount(member, tier, deducted_for(tier))
+            # The period that contains the issue date, reduced as the daily
+            # run does for a member who joined during it.
+            start, end = membership_period(
+                member, issued_date, billing_cycle_for(member, tier), billing
+            )
+            share = first_fee_share(member, start, end, billing)
+            if share is not None:
+                start, months = share
+                amount = prorate(amount, months)
             if amount <= 0:
                 continue
 
@@ -974,10 +997,12 @@ class InvoicesService:
                 member_id=member.id,
                 issued=issued_date,
                 due=due_date,
-                amount=amount,
+                amount=float(amount),
                 status="Open",
                 purpose="membership",
                 description=description,
+                period_start=start,
+                period_end=end,
             )
             db.session.add(invoice)
             db.session.flush()
@@ -1170,9 +1195,7 @@ class FinanceSummaryService:
             .where(Transaction.date <= end)
             .group_by(Transaction.category_id)
         ).all()
-        names = {
-            c.id: c for c in db.session.scalars(select(TransactionCategory)).all()
-        }
+        names = {c.id: c for c in db.session.scalars(select(TransactionCategory)).all()}
 
         categories = []
         total_income = Decimal(0)
@@ -1195,9 +1218,7 @@ class FinanceSummaryService:
                 }
             )
         # Biggest movements first; uncategorised last among equals.
-        categories.sort(
-            key=lambda c: (-(c["income"] + c["expense"]), c["id"] is None)
-        )
+        categories.sort(key=lambda c: (-(c["income"] + c["expense"]), c["id"] is None))
         return {
             "from": start.isoformat(),
             "to": end.isoformat(),
