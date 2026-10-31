@@ -13,18 +13,19 @@ per active club.
 
 Flow:
     1. pg_dump --schema (custom format) → temp file
-    2. GPG symmetric encryption → .gpg file
+    2. Encrypt (``backup_crypto``): age to the install's public key and the
+       club's own key → .age file; or the older GPG passphrase → .gpg file
     3. SHA-256 checksum of encrypted file
     4. Upload to S3 (Contabo or any S3-compatible endpoint)
     5. Record metadata in BackupRecord table
 
 Verification:
-    1. Download .gpg from S3
-    2. GPG decrypt
+    1. Download from S3 and compare the SHA-256 checksum
+    2. Decrypt, when the private key is given (or on the server)
     3. pg_restore --list to confirm valid archive
 
 Club restore:
-    1. Download and decrypt
+    1. Download and decrypt (needs the private key for .age backups)
     2. Rename the club's schema to ``tenant_{id}_before_restore_{ts}`` (the
        safety copy, kept until someone drops it)
     3. pg_restore into a fresh ``tenant_{id}`` in one transaction; on failure
@@ -32,7 +33,7 @@ Club restore:
     4. Migrate the restored schema to the current code
 
 S3 settings are platform settings (``backup.s3.*``, defaulting to env); the
-encryption key only ever comes from env.
+encryption keys only ever come from env.
 """
 
 from __future__ import annotations
@@ -50,6 +51,7 @@ from sqlalchemy import select, text
 
 from hubra.core.extensions import db
 from hubra.core.models.backup import BackupRecord
+from hubra.core.services import backup_crypto
 from hubra.core.models.tenant import Tenant
 
 logger = logging.getLogger(__name__)
@@ -74,11 +76,6 @@ def _get_s3_config() -> dict[str, str]:
         "secret_key": platform_settings.get("backup.s3.secret_key"),
         "region": platform_settings.get("backup.s3.region") or "default",
     }
-
-
-def _get_encryption_key() -> str:
-    """Return the GPG encryption passphrase from env (never from DB)."""
-    return current_app.config.get("BACKUP_ENCRYPTION_KEY", "")
 
 
 def _get_s3_client():
@@ -162,45 +159,46 @@ def _drop_schema(name: str) -> None:
     db.session.commit()
 
 
-def _download_and_decrypt(record: BackupRecord, tmpdir: str) -> str:
-    """Fetch the record's object from S3 and decrypt it.  Returns the dump path."""
-    encryption_key = _get_encryption_key()
-    if not encryption_key:
-        raise RuntimeError("BACKUP_ENCRYPTION_KEY is not set")
+def _sha256(path: str) -> str:
+    hasher = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest()
 
+
+def _download(record: BackupRecord, tmpdir: str) -> str:
+    """Fetch the record's encrypted object from S3; check its checksum."""
     s3_client = _get_s3_client()
     if s3_client is None:
         raise RuntimeError("S3 is not configured")
 
     cfg = _get_s3_config()
-    gpg_path = os.path.join(tmpdir, "backup.dump.gpg")
-    dump_path = os.path.join(tmpdir, "backup.dump")
+    suffix = (
+        backup_crypto.AGE_SUFFIX
+        if record.s3_key.endswith(backup_crypto.AGE_SUFFIX)
+        else backup_crypto.GPG_SUFFIX
+    )
+    path = os.path.join(tmpdir, "backup" + suffix)
 
     logger.info("Downloading backup %s from S3", record.id)
-    s3_client.download_file(cfg["bucket"], record.s3_key, gpg_path)
+    s3_client.download_file(cfg["bucket"], record.s3_key, path)
+    if record.checksum and _sha256(path) != record.checksum:
+        raise RuntimeError("The backup file in storage does not match its checksum")
+    return path
 
-    gpg_cmd = [
-        "gpg",
-        "--batch",
-        "--yes",
-        "--quiet",
-        "--pinentry-mode",
-        "loopback",
-        "--passphrase-fd",
-        "0",
-        "--decrypt",
-        "--output",
-        dump_path,
-        gpg_path,
-    ]
-    gpg_result = subprocess.run(
-        gpg_cmd,
-        input=encryption_key.encode(),
-        capture_output=True,
-        timeout=300,
-    )
-    if gpg_result.returncode != 0:
-        raise RuntimeError(f"GPG decryption failed: {_stderr(gpg_result)}")
+
+def _download_and_decrypt(
+    record: BackupRecord, tmpdir: str, private_key: str | None = None
+) -> str:
+    """Fetch the record's object from S3 and decrypt it.  Returns the dump path."""
+    if backup_crypto.needs_private_key(record.s3_key) and not private_key:
+        raise backup_crypto.MissingPrivateKey(
+            "This backup needs the backup private key"
+        )
+    encrypted = _download(record, tmpdir)
+    dump_path = os.path.join(tmpdir, "backup.dump")
+    backup_crypto.decrypt(encrypted, dump_path, private_key)
     return dump_path
 
 
@@ -218,7 +216,7 @@ class BackupService:
         s3_configured = all(
             [cfg["endpoint"], cfg["bucket"], cfg["access_key"], cfg["secret_key"]]
         )
-        encryption_configured = bool(_get_encryption_key())
+        encryption_mode = backup_crypto.mode()
 
         s3_reachable = False
         s3_error = None
@@ -235,7 +233,9 @@ class BackupService:
             "s3_configured": s3_configured,
             "s3_reachable": s3_reachable,
             "s3_error": s3_error,
-            "encryption_configured": encryption_configured,
+            "encryption_configured": encryption_mode is not None,
+            "encryption_mode": encryption_mode,
+            "private_key_on_server": bool(backup_crypto.server_private_key()),
             "endpoint": cfg["endpoint"],
             "bucket": cfg["bucket"],
             "region": cfg["region"],
@@ -249,7 +249,7 @@ class BackupService:
         *,
         cleanup: bool = True,
     ) -> BackupRecord:
-        """Back up one schema: pg_dump → GPG encrypt → S3 upload.
+        """Back up one schema: pg_dump → encrypt → S3 upload.
 
         Args:
             backup_type: One of 'manual', 'scheduled_daily', 'scheduled_weekly',
@@ -287,11 +287,11 @@ class BackupService:
             db.session.commit()
 
             db_params = _parse_database_url()
-            encryption_key = _get_encryption_key()
 
-            if not encryption_key:
+            if backup_crypto.mode() is None:
                 raise RuntimeError(
-                    "BACKUP_ENCRYPTION_KEY is not set — cannot encrypt backup"
+                    "BACKUP_PUBLIC_KEY (or BACKUP_ENCRYPTION_KEY) is not set — "
+                    "cannot encrypt backup"
                 )
 
             s3_client = _get_s3_client()
@@ -303,12 +303,10 @@ class BackupService:
             cfg = _get_s3_config()
 
             timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M%S")
-            s3_key = f"{_s3_prefix(tenant)}/{timestamp}_{backup_type}.dump.gpg"
             schema = _club_schema(tenant.id) if tenant else "public"
 
             with tempfile.TemporaryDirectory(prefix="backup_") as tmpdir:
                 dump_path = os.path.join(tmpdir, "backup.dump")
-                gpg_path = os.path.join(tmpdir, "backup.dump.gpg")
 
                 # ── 1. pg_dump of one schema (custom format) ───────────────
                 pg_cmd = [
@@ -333,40 +331,20 @@ class BackupService:
                 with open(dump_path, "wb") as f:
                     f.write(result.stdout)
 
-                # ── 2. GPG symmetric encryption ────────────────────────────
-                gpg_cmd = [
-                    "gpg",
-                    "--batch",
-                    "--yes",
-                    "--quiet",
-                    "--pinentry-mode",
-                    "loopback",
-                    "--passphrase-fd",
-                    "0",
-                    "--symmetric",
-                    "--cipher-algo",
-                    "AES256",
-                    "--output",
-                    gpg_path,
-                    dump_path,
-                ]
-                logger.info("Encrypting backup %s with GPG", record.id)
-                gpg_result = subprocess.run(
-                    gpg_cmd,
-                    input=encryption_key.encode(),
-                    capture_output=True,
-                    timeout=300,
+                # ── 2. Encrypt ─────────────────────────────────────────────
+                logger.info("Encrypting backup %s", record.id)
+                club_keys = backup_crypto.split_keys(
+                    tenant.backup_public_key if tenant else None
                 )
-                if gpg_result.returncode != 0:
-                    raise RuntimeError(f"GPG encryption failed: {_stderr(gpg_result)}")
+                enc_path = backup_crypto.encrypt(
+                    dump_path, os.path.join(tmpdir, "backup"), club_keys
+                )
+                suffix = enc_path[len(os.path.join(tmpdir, "backup")) :]
+                s3_key = f"{_s3_prefix(tenant)}/{timestamp}_{backup_type}{suffix}"
 
                 # ── 3. SHA-256 checksum ────────────────────────────────────
-                hasher = hashlib.sha256()
-                with open(gpg_path, "rb") as f:
-                    for chunk in iter(lambda: f.read(65536), b""):
-                        hasher.update(chunk)
-                checksum = hasher.hexdigest()
-                size_bytes = os.path.getsize(gpg_path)
+                checksum = _sha256(enc_path)
+                size_bytes = os.path.getsize(enc_path)
 
                 # ── 4. Upload to S3 ────────────────────────────────────────
                 logger.info(
@@ -375,7 +353,7 @@ class BackupService:
                     cfg["bucket"],
                     s3_key,
                 )
-                s3_client.upload_file(gpg_path, cfg["bucket"], s3_key)
+                s3_client.upload_file(enc_path, cfg["bucket"], s3_key)
 
                 # ── 5. Update record ───────────────────────────────────────
                 record.status = "completed"
@@ -432,10 +410,13 @@ class BackupService:
         return records
 
     @staticmethod
-    def verify_backup(record_id: int) -> BackupRecord:
+    def verify_backup(record_id: int, private_key: str | None = None) -> BackupRecord:
         """Verify a backup: download from S3, decrypt, check with pg_restore --list.
 
-        Confirms: S3 object is retrievable, GPG decryption works, dump is valid.
+        Confirms: S3 object is retrievable and matches its checksum,
+        decryption works, dump is valid.  An age backup without its private
+        key (none given, none on the server) is only checked for the first
+        two; ``table_count`` then stays empty.
         """
         record = db.session.get(BackupRecord, record_id)
         if record is None:
@@ -443,14 +424,26 @@ class BackupService:
         if record.status != "completed" or not record.s3_key:
             raise ValueError(f"Backup {record_id} is not in a verifiable state")
 
-        if not _get_encryption_key():
-            raise RuntimeError("BACKUP_ENCRYPTION_KEY is not set")
         if _get_s3_client() is None:
             raise RuntimeError("S3 is not configured")
 
         try:
             with tempfile.TemporaryDirectory(prefix="verify_") as tmpdir:
-                dump_path = _download_and_decrypt(record, tmpdir)
+                if backup_crypto.needs_private_key(record.s3_key) and not private_key:
+                    encrypted = _download(record, tmpdir)
+                    if not backup_crypto.looks_like_age(encrypted):
+                        raise RuntimeError("The backup file is not an age file")
+                    record.verified_at = datetime.now(timezone.utc)
+                    record.verified_ok = True
+                    record.table_count = None
+                    record.verify_error = None
+                    db.session.commit()
+                    logger.info(
+                        "Backup %s intact (checksum); contents not opened", record_id
+                    )
+                    return record
+
+                dump_path = _download_and_decrypt(record, tmpdir, private_key)
 
                 # pg_restore --list to confirm a valid archive
                 restore_result = subprocess.run(
@@ -490,7 +483,7 @@ class BackupService:
         return record
 
     @staticmethod
-    def restore_club(record_id: int) -> BackupRecord:
+    def restore_club(record_id: int, private_key: str | None = None) -> BackupRecord:
         """Put one club back to the state of a club backup.
 
         The club's current schema is renamed to a safety copy first
@@ -516,7 +509,7 @@ class BackupService:
 
         try:
             with tempfile.TemporaryDirectory(prefix="restore_") as tmpdir:
-                dump_path = _download_and_decrypt(record, tmpdir)
+                dump_path = _download_and_decrypt(record, tmpdir, private_key)
 
                 if _schema_exists(schema):
                     logger.info(

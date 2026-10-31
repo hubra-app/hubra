@@ -2974,5 +2974,18 @@
   "apps.actions.disconnected": "Getrennt",
   "apps.actions.changed": "Geändert",
   "apps.actions.test": "Test",
-  "settings.tabs.apps": "Verbundene Apps"
+  "settings.tabs.apps": "Verbundene Apps",
+  "shell.sections.favourites": "Favoriten",
+  "shell.nav.more": "Weitere",
+  "shell.more.emptyTitle": "Hier ist noch nichts",
+  "shell.more.emptyDesc": "Seiten, die du in der Seitenleiste ausblendest, und Seiten von Plugins erscheinen hier.",
+  "shell.customize.title": "Seitenleiste anpassen",
+  "shell.customize.intro": "Mit dem Stern heftest du eine Seite oben unter Favoriten an. Ausgeblendete Seiten findest du weiterhin unter Weitere und mit der Suche (Ctrl+K).",
+  "shell.customize.pin": "Als Favorit anheften",
+  "shell.customize.unpin": "Nicht mehr anheften",
+  "shell.customize.hide": "Ausblenden",
+  "shell.customize.show": "Wieder anzeigen",
+  "shell.customize.reset": "Zurücksetzen",
+  "shell.customize.done": "Fertig",
+  "shell.searchKind.page": "Seite"
 }

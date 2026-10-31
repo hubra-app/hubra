@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- **`FERNET_KEY` is required in production** (`.env` change): the backend no longer starts without it. Values stored before were encrypted with a key derived from `SECRET_KEY` and stay readable, so set a fresh key and run `flask crypto rotate`.
+
+### Added
+
+- **Key rotation for secrets at rest**: `FERNET_OLD_KEYS` keeps old keys readable, `flask crypto rotate` re-encrypts every stored secret in every club schema, `flask crypto check` confirms nothing is left on an old key. See docs/operator-guide.md, "Change the encryption key".
+- **Public-key backups**: with `BACKUP_PUBLIC_KEY` (an age key from `flask backups keygen`) backups are encrypted so the server can write but not read them; restore and full verify ask for the private key, which is used once and never stored. A club can have its own key (`flask backups club-key`) and open its own backups. Verify without a key checks the file's checksum. `.dump.gpg` backups still open with `BACKUP_ENCRYPTION_KEY`. Migration `d1a7c3e9b5f2` adds `tenants.backup_public_key`; the backend image now ships `age`.
+- **Per-club encryption keys**: every club (and the platform) has its own random data key (`data_keys`, migration `e3b9d5f1a7c4`), wrapped by `FERNET_KEY`. Values are AES-256-GCM and bound to their club and column, so a value never opens in another club. Changing the master key only rewraps one row per club. New club keys from manage › Platform settings › Encryption or `flask crypto rotate --new-keys [--club <slug>]`; deleting a club for good deletes its keys. **After upgrading, press Re-encrypt there (or run `flask crypto rotate`) once.**
+- **Backup public key as a platform setting** (`backup.public_key`, default `BACKUP_PUBLIC_KEY`), and each club's backup key in the Encryption tab.
+
 ## [0.6.0] - 2026-07-13
 
 ### Added

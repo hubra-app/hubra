@@ -5,7 +5,7 @@ group card, linked to nothing. Dropped from the template table in public
 and from every club schema.
 
 Revision ID: f2c8a4d6b1e3
-Revises: c5e2a8d4f1b7
+Revises: d8f2b6a4c1e9
 Create Date: 2026-10-31 06:15:00.000000
 
 """
@@ -16,7 +16,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "f2c8a4d6b1e3"
-down_revision = "c5e2a8d4f1b7"
+down_revision = "d8f2b6a4c1e9"
 branch_labels = None
 depends_on = None
 

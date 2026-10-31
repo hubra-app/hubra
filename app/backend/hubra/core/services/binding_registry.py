@@ -482,7 +482,10 @@ def _resolve_mailbox_password(mma) -> str | None:
     if not mma.mailbox_password_encrypted:
         return None
     try:
-        return decrypt_code(mma.mailbox_password_encrypted)
+        return decrypt_code(
+            mma.mailbox_password_encrypted,
+            "managed_mail_addresses.mailbox_password_encrypted",
+        )
     except Exception:
         _log.warning("resolve_mailbox_password: failed to decrypt for MMA %s", mma.id)
         return None

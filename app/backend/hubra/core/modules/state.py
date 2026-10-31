@@ -158,8 +158,8 @@ def states(tenant_id=CURRENT) -> dict[str, ModuleState]:
         raw_config = (grant.config if grant is not None else None) or {}
         config = {
             s.key: (
-                reveal(raw_config.get(s.key))
-                if s.type == "secret"
+                reveal(raw_config.get(s.key), grant.tenant_id)
+                if s.type == "secret" and grant is not None
                 else raw_config.get(s.key, s.default)
             )
             for s in m.settings
@@ -210,32 +210,36 @@ def enabled_codes(tenant_id=CURRENT) -> list[str]:
 # Settings of type "secret" (webhook URLs, API keys) are stored encrypted in
 # tenant_features.config, so a database dump or backup doesn't hold them in
 # the clear. Values from before this was added are plaintext and still read;
-# ``flask modules seal-secrets`` encrypts them.
+# ``flask modules seal-secrets`` encrypts them. Each value is encrypted with
+# its club's data key (scope ``c<tenant id>``), so it only opens for that club.
 
 _SEALED = "enc:"
+_PURPOSE = "tenant_features.config"
 
 
 def _is_sealed(value: Any) -> bool:
     return isinstance(value, str) and value.startswith(_SEALED)
 
 
-def seal(value: Any) -> Any:
+def _scope(tenant_id: int) -> str:
+    return f"c{tenant_id}"
+
+
+def seal(value: Any, tenant_id: int) -> Any:
     if value in (None, "") or _is_sealed(value):
         return value
     from hubra.core.crypto import encrypt_code
 
-    return _SEALED + encrypt_code(str(value))
+    return _SEALED + encrypt_code(str(value), _PURPOSE, _scope(tenant_id))
 
 
-def reveal(value: Any) -> Any:
+def reveal(value: Any, tenant_id: int) -> Any:
     if not _is_sealed(value):
         return value
-    from cryptography.fernet import InvalidToken
-
-    from hubra.core.crypto import decrypt_code
+    from hubra.core.crypto import InvalidToken, decrypt_code
 
     try:
-        return decrypt_code(value[len(_SEALED) :])
+        return decrypt_code(value[len(_SEALED) :], _PURPOSE, _scope(tenant_id))
     except InvalidToken:
         _log.error("A secret module setting can't be decrypted (FERNET_KEY changed?)")
         return None
@@ -257,7 +261,7 @@ def seal_secrets() -> int:
         changed = False
         for key in keys:
             if config.get(key) not in (None, "") and not _is_sealed(config[key]):
-                config[key] = seal(config[key])
+                config[key] = seal(config[key], grant.tenant_id)
                 changed = True
                 count += 1
         if changed:
@@ -416,7 +420,7 @@ def set_config(code: str, config: dict, tenant_id=CURRENT) -> ModuleState:
     for s in m.settings:
         if s.type == "secret" and incoming.get(s.key) in (None, ""):
             if previous.get(s.key):
-                incoming[s.key] = reveal(previous[s.key])
+                incoming[s.key] = reveal(previous[s.key], tid)
                 kept.add(s.key)
     try:
         validated = m.validate_config(incoming)
@@ -428,7 +432,7 @@ def set_config(code: str, config: dict, tenant_id=CURRENT) -> ModuleState:
         if s.key in kept and _is_sealed(previous[s.key]):
             validated[s.key] = previous[s.key]
         else:
-            validated[s.key] = seal(validated[s.key])
+            validated[s.key] = seal(validated[s.key], tid)
     grant.config = validated
     db.session.flush()
     invalidate()

@@ -216,15 +216,18 @@ def has_scope(conn: ConnectedApp, scope: str) -> bool:
     return scope in (conn.scopes or [])
 
 
+# Connections live in public and are read from callbacks outside any club,
+# so their secrets use the platform's data key.
+_SECRET_PURPOSE = "connected_apps.secret_encrypted"
+
+
 def secret(conn: ConnectedApp) -> str | None:
     if not conn.secret_encrypted:
         return None
-    from cryptography.fernet import InvalidToken
-
-    from hubra.core.crypto import decrypt_code
+    from hubra.core.crypto import PLATFORM, InvalidToken, decrypt_code
 
     try:
-        return decrypt_code(conn.secret_encrypted)
+        return decrypt_code(conn.secret_encrypted, _SECRET_PURPOSE, PLATFORM)
     except InvalidToken:
         _log.error(
             "connected app %s: secret can't be decrypted (key changed?)", conn.id
@@ -233,9 +236,11 @@ def secret(conn: ConnectedApp) -> str | None:
 
 
 def set_secret(conn: ConnectedApp, value: str | None) -> None:
-    from hubra.core.crypto import encrypt_code
+    from hubra.core.crypto import PLATFORM, encrypt_code
 
-    conn.secret_encrypted = encrypt_code(value) if value else None
+    conn.secret_encrypted = (
+        encrypt_code(value, _SECRET_PURPOSE, PLATFORM) if value else None
+    )
 
 
 def create_pending(

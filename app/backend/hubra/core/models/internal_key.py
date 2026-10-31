@@ -17,7 +17,7 @@ from hubra.core.extensions import db
 class InternalKey(db.Model):
     """A key whose value is written by the binding engine.
 
-    ``value`` is ALWAYS encrypted at rest (Fernet / SECRET_KEY).
+    ``value`` is ALWAYS encrypted at rest (``hubra.core.crypto``).
     A scalar key (``allow_multiple=False``) holds ONE binding's value.
     An array key (``allow_multiple=True``) holds MANY bindings' values
     as a JSON array (deduped, stable-ordered).

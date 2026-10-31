@@ -35,13 +35,17 @@ class NavItem:
     path: str
     label_key: str
     icon: str
+    # Sidebar section; "more" puts the entry on the "Weitere" page instead,
+    # with the pages a person hid and the plugins' own pages.
     section: str = "workspace"
     order: int = 100
     perms: tuple[str, ...] = ()
     # Items sharing a group collapse into the first visible one, for
     # screens that host several modules as tabs (events, polls, posts).
     group: str | None = None
-    # Path of the entry this one sits under, indented (members' sub-pages).
+    # Path of the entry whose screen shows this one as a tab, instead of a
+    # sidebar row of its own (members' functions and tiers,
+    # the audit log and roles under settings).
     parent: str | None = None
 
 

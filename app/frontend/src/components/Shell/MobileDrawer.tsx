@@ -9,36 +9,18 @@ import {
 } from '@mantine/core'
 import { IconX } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
-import { useLocation } from 'react-router-dom'
-import { useNav, useAuth, useData } from '@/context/AppContext'
+import { useNav, useAuth } from '@/context/AppContext'
 import { NavItemRow } from './NavItemRow'
 import { UserMenu } from './UserMenu'
 import { ClubMark } from './ClubMark'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
-import { usePlugins } from '@/plugins/store'
-import { useNavCounts } from '@/data/lists'
-import { buildNav, filterNav, getParentPath, navPaths } from './nav'
+import { useSidebarNav } from './useSidebarNav'
 
 export function MobileDrawer() {
   const { t } = useT()
-  const location = useLocation()
   const { go, mobileDrawerOpen, setMobileDrawerOpen } = useNav()
-  const { hasPermission, currentUser } = useAuth()
-  const { moduleList } = useData()
-  const counts = useNavCounts()
-  usePlugins() // plugin icons arrive after the first render
-  const nav = filterNav(
-    buildNav(
-      counts,
-      t,
-      moduleList,
-    ),
-    hasPermission,
-  )
-  const activePath = getParentPath(
-    location.pathname,
-    navPaths(nav),
-  )
+  const { currentUser } = useAuth()
+  const { nav, activePath } = useSidebarNav()
 
   return (
     <Drawer

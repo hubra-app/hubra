@@ -1,35 +1,16 @@
 import { ScrollArea, Text, Box, UnstyledButton, Stack } from '@mantine/core'
 import { IconDotsVertical } from '@tabler/icons-react'
-import { useT } from '@/locales/i18n'
-import { useLocation } from 'react-router-dom'
-import { useNav, useAuth, useData } from '@/context/AppContext'
+import { useNav, useAuth } from '@/context/AppContext'
 import { NavItemRow } from './NavItemRow'
 import { UserMenu } from './UserMenu'
-import { usePlugins } from '@/plugins/store'
-import { useNavCounts } from '@/data/lists'
-import { buildNav, filterNav, getParentPath, navPaths, initials, contrastColor } from './nav'
+import { initials, contrastColor } from './nav'
+import { useSidebarNav } from './useSidebarNav'
 import { roleLabels } from '@/roles'
 
 export function Sidebar() {
-  const { t } = useT()
-  const location = useLocation()
   const { go, sidebarCollapsed, userMenuOpen, setUserMenuOpen } = useNav()
-  const { currentUser, hasPermission } = useAuth()
-  const { moduleList } = useData()
-  const counts = useNavCounts()
-  usePlugins() // plugin icons arrive after the first render
-  const nav = filterNav(
-    buildNav(
-      counts,
-      t,
-      moduleList,
-    ),
-    hasPermission,
-  )
-  const activePath = getParentPath(
-    location.pathname,
-    navPaths(nav),
-  )
+  const { currentUser } = useAuth()
+  const { nav, activePath } = useSidebarNav()
   const userName = currentUser?.name ?? ''
   const userRole = roleLabels(currentUser?.roles)
   const userBg = currentUser?.avatarColor ?? '#ebe8f2'
