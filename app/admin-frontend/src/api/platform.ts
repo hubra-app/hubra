@@ -109,3 +109,53 @@ export async function deleteMailServerOrphan(type: MailServerEntry['type'], id: 
 export async function reconcileMailServer() {
   await apiFetch(`${P}/mail-server/reconcile`, { method: 'POST' })
 }
+
+// ── Encryption keys (platform.settings) ─────────────────────────────────────
+
+export interface KeyReport {
+  total: number
+  current: number
+  /** Values (or club keys) still on an old key. */
+  old_key: number
+  /** Values no configured key opens: a key is missing from FERNET_OLD_KEYS. */
+  unreadable: number
+  rotated: number
+  new_keys: number
+  clean: boolean
+}
+
+export interface ClubKeys {
+  tenant_id: number
+  slug: string
+  name: string
+  /** Newest data key version; null until the club stores its first secret. */
+  key_version: number | null
+  key_created_at: string | null
+  backup_public_key: string | null
+}
+
+export interface EncryptionStatus {
+  master: { fernet_key_set: boolean; old_keys: number }
+  values: KeyReport
+  clubs: ClubKeys[]
+}
+
+export async function getEncryption() {
+  return apiFetch<EncryptionStatus>(`${P}/encryption`)
+}
+
+/** Without `newKeys`: move everything onto the current keys. With it, new data keys too. */
+export async function rotateEncryption(newKeys = false, tenantId?: number) {
+  return apiFetch<KeyReport>(`${P}/encryption/rotate`, {
+    method: 'POST',
+    body: JSON.stringify(newKeys ? { new_keys: true, tenant_id: tenantId } : {}),
+  })
+}
+
+/** `null` removes the club's own backup key. */
+export async function setClubBackupKey(tenantId: number, publicKey: string | null) {
+  return apiFetch<{ tenant_id: number; backup_public_key: string | null }>(
+    `${P}/clubs/${tenantId}/backup-key`,
+    { method: 'PUT', body: JSON.stringify({ public_key: publicKey }) },
+  )
+}

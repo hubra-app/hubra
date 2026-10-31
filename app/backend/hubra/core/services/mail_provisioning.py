@@ -672,7 +672,9 @@ def set_system_mailbox_password(mma: ManagedMailAddress, password: str) -> None:
     """
     from hubra.core.crypto import encrypt_code
 
-    mma.mailbox_password_encrypted = encrypt_code(password)
+    mma.mailbox_password_encrypted = encrypt_code(
+        password, "managed_mail_addresses.mailbox_password_encrypted"
+    )
 
     wd = try_get_client()
     if wd is None:

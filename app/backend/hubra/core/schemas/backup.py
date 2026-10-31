@@ -29,6 +29,13 @@ class BackupRecordSchema(ma.Schema):
     restored_at = fields.DateTime(allow_none=True)
     restore_error = fields.Str(allow_none=True)
     safety_schema = fields.Str(allow_none=True)
+    # True when verify (fully) and restore need the backup private key.
+    needs_private_key = fields.Method("_needs_private_key")
+
+    def _needs_private_key(self, record) -> bool:
+        from hubra.core.services.backup_crypto import needs_private_key
+
+        return needs_private_key(record.s3_key)
 
 
 class BackupConfigSchema(ma.Schema):
@@ -38,6 +45,8 @@ class BackupConfigSchema(ma.Schema):
     s3_reachable = fields.Bool()
     s3_error = fields.Str(allow_none=True)
     encryption_configured = fields.Bool()
+    encryption_mode = fields.Str(allow_none=True)
+    private_key_on_server = fields.Bool()
     endpoint = fields.Str()
     bucket = fields.Str()
     region = fields.Str()

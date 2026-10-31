@@ -9,6 +9,19 @@ from hubra.core.tasks import celery_app
 logger = logging.getLogger(__name__)
 
 
+def _unseal(sealed_key: str | None) -> str | None:
+    if not sealed_key:
+        return None
+    from hubra.core.crypto import InvalidToken, unseal
+
+    try:
+        return unseal(sealed_key)
+    except InvalidToken:
+        raise RuntimeError(
+            "The private key for this task expired; start it again"
+        ) from None
+
+
 @celery_app.task(
     bind=True,
     name="hubra.core.tasks.backup_tasks.create_backup",
@@ -42,11 +55,15 @@ def create_backup_task(
     bind=True,
     name="hubra.core.tasks.backup_tasks.verify_backup",
 )
-def verify_backup_task(self, record_id: int) -> dict:
-    """Verify a backup by downloading, decrypting, and checking with pg_restore."""
+def verify_backup_task(self, record_id: int, sealed_key: str | None = None) -> dict:
+    """Verify a backup by downloading, decrypting, and checking with pg_restore.
+
+    *sealed_key*: the backup private key, sealed by the request
+    (``hubra.core.crypto.seal``).
+    """
     from hubra.core.services.backup import BackupService
 
-    record = BackupService.verify_backup(record_id)
+    record = BackupService.verify_backup(record_id, _unseal(sealed_key))
     return {
         "id": record.id,
         "verified_ok": record.verified_ok,
@@ -76,12 +93,14 @@ def create_scheduled_backups_task(
     bind=True,
     name="hubra.core.tasks.backup_tasks.restore_club_backup",
 )
-def restore_club_backup_task(self, record_id: int) -> dict:
+def restore_club_backup_task(
+    self, record_id: int, sealed_key: str | None = None
+) -> dict:
     """Restore one club from a club backup, keeping its current data aside."""
     from hubra.core.services.backup import BackupService, RestoreError
 
     try:
-        record = BackupService.restore_club(record_id)
+        record = BackupService.restore_club(record_id, _unseal(sealed_key))
     except RestoreError as exc:
         return {"id": record_id, "ok": False, "error": str(exc)}
     return {"id": record.id, "ok": True, "safety_schema": record.safety_schema}

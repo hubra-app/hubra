@@ -66,6 +66,10 @@ class User(db.Model):
     theme: Mapped[str] = mapped_column(
         db.String(10), default="auto", server_default="auto", nullable=False
     )
+    # The person's own sidebar: {"pinned": [path, ...], "hidden": [path, ...]}.
+    nav_prefs: Mapped[dict | None] = mapped_column(
+        JSONB().with_variant(JSON, "sqlite"), nullable=True
+    )
 
     phone: Mapped[str | None] = mapped_column(db.String(50), nullable=True)
     mobile: Mapped[str | None] = mapped_column(db.String(50), nullable=True)

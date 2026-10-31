@@ -56,6 +56,7 @@ from hubra.core.models.code import Code
 from hubra.core.models.internal_key import InternalKey
 from hubra.core.models.binding import Binding
 from hubra.core.models.backup import BackupRecord
+from hubra.core.models.data_key import DataKey
 from hubra.core.models.qrr_reference import QrrReference
 from hubra.core.models.payment_plan import PaymentPlan
 from hubra.core.models.club_invite import ClubInvite
@@ -77,6 +78,7 @@ __all__ = [
     "PluginState",
     "TrustedKey",
     "Tenant",
+    "DataKey",
     "GlobalAuditEntry",
     "Domain",
     "User",
