@@ -29,8 +29,11 @@ scripts/init-env.sh
 ```
 
 This copies `.env.example` to `.env` and fills every secret with a random
-value. The defaults run everything on localhost over plain HTTP. Keep
-`BACKUP_ENCRYPTION_KEY` somewhere safe if you use backups.
+value. The defaults run everything on localhost over plain HTTP. If `age`
+is installed it also makes the backup key pair and prints the private key
+once: put it and `FERNET_KEY` in a password manager. Without `age`, run
+`docker compose exec backend flask backups keygen` later and set
+`BACKUP_PUBLIC_KEY`.
 
 ## 3. Start
 

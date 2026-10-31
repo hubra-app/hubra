@@ -16,6 +16,7 @@ import { PageHead, Tabs } from '@/components/ui'
 import { useAdmin } from '@/context/AdminContext'
 import { useLang, tr } from '@/lang'
 import { PlatformTranslations } from '@/screens/platform/Translations'
+import { PlatformEncryption } from '@/screens/platform/Encryption'
 import {
   getPlatformSettings,
   sendPlatformTestMail,
@@ -32,6 +33,7 @@ const FALLBACK = [
 ]
 const SENDER = ['mail.system.sender_email', 'mail.system.sender_name']
 const BACKUP = [
+  'backup.public_key',
   'backup.s3.endpoint',
   'backup.s3.bucket',
   'backup.s3.region',
@@ -39,7 +41,7 @@ const BACKUP = [
   'backup.s3.secret_key',
 ]
 
-const TABS = ['mail', 'sender', 'backups', 'translations'] as const
+const TABS = ['mail', 'sender', 'backups', 'encryption', 'translations'] as const
 type Tab = (typeof TABS)[number]
 
 function SourceBadge({ s }: { s: PlatformSetting }) {
@@ -75,6 +77,10 @@ const FIELD_DE: Record<string, [string, string]> = {
   'mail.fallback.password': ['Fallback-SMTP-Passwort', 'Wird verschlüsselt gespeichert'],
   'mail.system.sender_email': ['Absenderadresse des Systems', 'Absender für Anmelde-, SSO- und Plattform-Mails'],
   'mail.system.sender_name': ['Absendername des Systems', 'Angezeigter Name des Systemabsenders'],
+  'backup.public_key': [
+    'Öffentlicher Backup-Schlüssel',
+    'age-Schlüssel (age1…), mit dem jedes Backup verschlüsselt wird (flask backups keygen). Der private Schlüssel bleibt ausserhalb des Servers; die Wiederherstellung fragt danach',
+  ],
   'backup.s3.endpoint': ['S3-Endpunkt', 'S3-kompatible Adresse, z. B. https://eu2.contabostorage.com'],
   'backup.s3.bucket': ['S3-Bucket', 'Bucket, in den die verschlüsselten Backups gehen'],
   'backup.s3.region': ['S3-Region', "Bei Contabo meist 'default'"],
@@ -203,6 +209,7 @@ export function PlatformSettings() {
           { id: 'mail', label: tr('Mail-Relay', 'Mail relay') },
           { id: 'sender', label: tr('Systemabsender', 'System sender') },
           { id: 'backups', label: tr('Backup-Speicher', 'Backup storage') },
+          { id: 'encryption', label: tr('Verschlüsselung', 'Encryption') },
           { id: 'translations', label: tr('Übersetzungen', 'Translations') },
         ]}
         activeTab={tab}
@@ -213,6 +220,8 @@ export function PlatformSettings() {
 
       {tab === 'translations' ? (
         <PlatformTranslations />
+      ) : tab === 'encryption' ? (
+        <PlatformEncryption />
       ) : isLoading ? (
         <Text size="sm" c="dimmed">
           {tr('Wird geladen …', 'Loading…')}
@@ -269,8 +278,8 @@ export function PlatformSettings() {
               </Group>
               <Text size="xs" c="dimmed" mb={12}>
                 {tr(
-                  'Hierhin gehen das globale Backup und die Backups jedes Vereins, verschlüsselt mit BACKUP_ENCRYPTION_KEY aus der Umgebung.',
-                  'The global backup and every club backup go here, encrypted with BACKUP_ENCRYPTION_KEY from env.',
+                  'Hierhin gehen das globale Backup und die Backups jedes Vereins, verschlüsselt mit dem öffentlichen Backup-Schlüssel. Er ist nicht geheim; den privaten Schlüssel braucht es nur zum Öffnen, und er gehört nicht auf den Server.',
+                  'The global backup and every club backup go here, encrypted to the backup public key. It is not secret; the private key is only needed to open a backup and does not belong on the server.',
                 )}
               </Text>
               <Stack gap="sm">{BACKUP.map(field)}</Stack>
