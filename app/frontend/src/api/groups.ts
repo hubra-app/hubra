@@ -26,6 +26,7 @@ function adapt(b: BackendGroup): Group {
     id: String(b.id),
     name: b.name,
     lead: b.lead_name ?? "",
+    leadId: b.lead_id ?? null,
     description: b.description ?? "",
     color: b.color ?? "#7441e0",
     iconName: b.icon_name ?? "Zap",

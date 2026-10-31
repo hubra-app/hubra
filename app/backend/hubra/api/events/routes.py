@@ -8,9 +8,10 @@ from flask import Blueprint, Response, current_app, g, jsonify, request, url_for
 from itsdangerous import BadSignature, URLSafeSerializer
 from hubra.api.auth.helpers import get_current_member
 from marshmallow import ValidationError
-from hubra.api.permissions import permission_required, require_member
+from hubra.api.permissions import created_by, permission_required, require_member
 from hubra.core.errors import api_error, raise_error
 from hubra.core.extensions import db
+from hubra.core.models.event import ClubEvent
 from hubra.core.models.member import Member
 from hubra.core.schemas.event import (
     ClubEventCreateSchema,
@@ -27,6 +28,9 @@ _event_schema = ClubEventSchema()
 _events_schema = ClubEventSchema(many=True)
 _create_schema = ClubEventCreateSchema()
 _update_schema = ClubEventUpdateSchema()
+
+# Whoever put an event up runs it: edits, cancels, and handles its sign-ups.
+_own_event = created_by(ClubEvent, arg="event_id")
 
 
 # ── GET /events ───────────────────────────────────────────────────────────────
@@ -89,7 +93,7 @@ def create_event():
 
 
 @events_bp.patch("/<int:event_id>")
-@permission_required("events", "update", "Update events")
+@permission_required("events", "update", "Update events", allow=_own_event)
 def update_event(event_id: int):
     event = EventService.get(event_id)
 
@@ -115,7 +119,7 @@ def update_event(event_id: int):
 
 
 @events_bp.delete("/<int:event_id>")
-@permission_required("events", "delete", "Delete events")
+@permission_required("events", "delete", "Delete events", allow=_own_event)
 def delete_event(event_id: int):
     EventService.delete(event_id, get_current_member().id)
 
@@ -132,7 +136,7 @@ def delete_event(event_id: int):
 
 
 @events_bp.post("/<int:event_id>/attendees/<int:member_id>")
-@permission_required("events", "add_attendee", "Add event attendee")
+@permission_required("events", "add_attendee", "Add event attendee", allow=_own_event)
 def add_attendee(event_id: int, member_id: int):
     EventService.get(event_id)  # 404 if not found
 
@@ -156,7 +160,7 @@ def add_attendee(event_id: int, member_id: int):
 
 
 @events_bp.delete("/<int:event_id>/attendees/<int:member_id>")
-@permission_required("events", "remove_attendee", "Remove event attendee")
+@permission_required("events", "remove_attendee", "Remove event attendee", allow=_own_event)
 def remove_attendee(event_id: int, member_id: int):
     # Also ends their registration, so the place goes to the waitlist.
     EventService.cancel_registration(event_id, member_id)
@@ -204,7 +208,7 @@ def register_for_event(event_id: int):
 
 
 @events_bp.post("/<int:event_id>/register/<int:member_id>")
-@permission_required("events", "add_attendee", "Register member for event")
+@permission_required("events", "add_attendee", "Register member for event", allow=_own_event)
 def register_member_for_event(event_id: int, member_id: int):
     body = request.get_json(silent=True) or {}
     try:
@@ -252,7 +256,7 @@ def cancel_registration(event_id: int):
 
 
 @events_bp.get("/<int:event_id>/registrations")
-@permission_required("events", "add_attendee", "See and approve event sign-ups")
+@permission_required("events", "add_attendee", "See and approve event sign-ups", allow=_own_event)
 def list_registrations(event_id: int):
     status = request.args.get("status") or None
     registrations = EventService.registrations(event_id, status)
@@ -260,7 +264,7 @@ def list_registrations(event_id: int):
 
 
 @events_bp.post("/<int:event_id>/registrations/<int:member_id>/<any(approve, decline):decision>")
-@permission_required("events", "add_attendee", "See and approve event sign-ups")
+@permission_required("events", "add_attendee", "See and approve event sign-ups", allow=_own_event)
 def decide_registration(event_id: int, member_id: int, decision: str):
     registration = EventService.decide(
         event_id, member_id, decision == "approve", get_current_member().id
@@ -273,7 +277,7 @@ def decide_registration(event_id: int, member_id: int, decision: str):
 
 
 @events_bp.post("/<int:event_id>/attend/<int:member_id>")
-@permission_required("events", "add_attendee", "Mark event attendance")
+@permission_required("events", "add_attendee", "Mark event attendance", allow=_own_event)
 def mark_attendance(event_id: int, member_id: int):
     registration = EventService.mark_attendance(event_id, member_id)
 
@@ -319,14 +323,31 @@ def _feed_serializer() -> URLSafeSerializer:
 @require_member
 def calendar_feed_link():
     """The member's personal calendar subscription URL."""
+    return jsonify({"url": _feed_url(get_current_member())}), 200
+
+
+@events_bp.post("/calendar/feed/renew")
+@require_member
+def renew_calendar_feed_link():
+    """A new feed URL for the member; every older one stops working."""
+    member = get_current_member()
+    member.calendar_feed_version = (member.calendar_feed_version or 0) + 1
+    db.session.commit()
+    return jsonify({"url": _feed_url(member)}), 200
+
+
+def _feed_url(member: Member) -> str:
     from hubra.core.tenant.context import current_tenant
 
     tenant = current_tenant()
     token = _feed_serializer().dumps(
-        {"t": tenant.id if tenant else None, "m": get_current_member().id}
+        {
+            "t": tenant.id if tenant else None,
+            "m": member.id,
+            "v": member.calendar_feed_version or 0,
+        }
     )
-    url = url_for("events_bp.calendar_feed", token=token, _external=True)
-    return jsonify({"url": url}), 200
+    return url_for("events_bp.calendar_feed", token=token, _external=True)
 
 
 @events_bp.get("/calendar/<token>.ics")
@@ -353,6 +374,8 @@ def calendar_feed(token: str):
     member = db.session.get(Member, data.get("m"))
     if member is None or member.archived_at is not None or member.is_blocked:
         return api_error("NOT_FOUND", "Unknown calendar", 404)
+    if data.get("v", 0) != (member.calendar_feed_version or 0):
+        return api_error("NOT_FOUND", "Unknown calendar", 404)  # renewed since
 
     # The last 90 days and everything ahead.
     since = (date.today() - timedelta(days=90)).isoformat()

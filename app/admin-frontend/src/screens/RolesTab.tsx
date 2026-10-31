@@ -307,7 +307,7 @@ export function RolesTab() {
                 description={p.description ?? undefined}
                 checked={selectedPerms.includes(p.key)}
                 onChange={() => togglePerm(p.key)}
-                disabled={editRole?.is_system && editRole?.name === 'Superadmin'}
+                disabled={editRole?.is_system && editRole?.name === 'Platform admin'}
               />
             ))}
           </Stack>

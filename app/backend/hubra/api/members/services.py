@@ -12,7 +12,7 @@ from sqlalchemy import delete, func, insert, select
 from sqlalchemy.orm import selectinload
 
 from hubra.api.mail.services import MailboxService
-from hubra.api.permissions import check_grant, invalidate_member_permissions
+from hubra.api.permissions import check_grant, held_roles, invalidate_member_permissions
 from hubra.api.settings.services import SettingService
 from hubra.api.utils import csv_safe, escape_like, log_audit
 from hubra.core.errors import raise_error
@@ -40,12 +40,13 @@ from hubra.core.services.wildduck import (
 
 
 def _check_may_remove(member: Member, actor_id: int | None) -> None:
-    """403 unless the actor may take every role *member* holds (check_grant):
-    archiving or deleting someone takes their roles with them."""
+    """403 unless the actor may take every role *member* holds (check_grant),
+    their own and those of their functions: archiving or deleting someone
+    takes their roles with them."""
     actor = db.session.get(Member, actor_id) if actor_id is not None else None
     if actor_id is not None and actor is None:
         raise_error(403, "FORBIDDEN", "Insufficient permissions")
-    check_grant(actor, taken=list(member.roles or []))
+    check_grant(actor, taken=held_roles(member))
 
 
 def _check_last_owner(member: Member) -> None:
@@ -729,8 +730,9 @@ class MemberService:
             _check_last_owner(member)
             raise_error(409, "CONFLICT", "Cannot disable an Owner role member")
 
-        # Any admin role, whatever it is called: take the role away first.
-        if any(r.is_admin for r in (member.roles or [])):
+        # Any admin role, whatever it is called and however held (a function
+        # gives it too): take the role away first.
+        if any(r.is_admin for r in held_roles(member)):
             raise_error(409, "CONFLICT", "Cannot disable an Admin role member")
         _check_may_remove(member, actor_id)  # type: ignore[arg-type]
 
@@ -1233,7 +1235,7 @@ class MembersService:
         if validated.get("status") == "suspended" and member.status != "suspended":
             if member.id == actor_id:
                 raise_error(409, "CONFLICT", "You cannot suspend yourself")
-            if any(r.is_owner or r.is_admin for r in (member.roles or [])):
+            if any(r.is_owner or r.is_admin for r in held_roles(member)):
                 raise_error(
                     409, "CONFLICT", "Cannot suspend an Owner or Admin role member"
                 )

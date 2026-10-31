@@ -57,12 +57,13 @@ function GroupDetailPanel({
   onClose: () => void
 }) {
   const { notify } = useToast()
-  const { hasPermission } = useAuth()
+  const { currentUser, hasPermission } = useAuth()
   const { t } = useT()
   const queryClient = useQueryClient()
-  // A role held for this group only counts here too.
-  const canAdd = hasPermission('groups.groups.add_member', group.id)
-  const canRemove = hasPermission('groups.groups.remove_member', group.id)
+  // A role held for this group only counts here too, and so does leading it.
+  const leads = currentUser != null && group.leadId === Number(currentUser.id)
+  const canAdd = leads || hasPermission('groups.groups.add_member', group.id)
+  const canRemove = leads || hasPermission('groups.groups.remove_member', group.id)
   const { data: members = [], isLoading: loading } = useQuery({
     queryKey: qk.groups.members(group.id),
     queryFn: () => listGroupMembers(group.id),
@@ -183,11 +184,13 @@ type GroupForm = z.infer<typeof groupSchema>
 
 export function GroupsScreen() {
   const { notify } = useToast()
-  const { hasPermission } = useAuth()
+  const { currentUser, hasPermission } = useAuth()
   const { t } = useT()
   const queryClient = useQueryClient()
   const canCreate = hasPermission('groups.groups.create')
   const canUpdate = hasPermission('groups.groups.update')
+  const leads = (g: Group) =>
+    currentUser != null && g.leadId === Number(currentUser.id)
   const canDelete = hasPermission('groups.groups.delete')
   const { data: groups = [] } = useQuery({
     queryKey: qk.groups.all,
@@ -197,6 +200,13 @@ export function GroupsScreen() {
   const [editTarget, setEditTarget] = useState<Group | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Group | null>(null)
   const [detailGroup, setDetailGroup] = useState<Group | null>(null)
+  // A leader edits how the group presents itself; the API keeps its name and
+  // leader with the club.
+  const leaderOnly =
+    editTarget != null &&
+    !canUpdate &&
+    !hasPermission('groups.groups.update', editTarget.id) &&
+    leads(editTarget)
 
   const form = useForm<GroupForm>({
     validate: zod4Resolver(groupSchema),
@@ -333,6 +343,7 @@ export function GroupsScreen() {
           <Field label={t('groups.group.name', 'Name der Gruppe')}>
             <TextInput
               {...form.getInputProps('name')}
+              disabled={leaderOnly}
               placeholder={t('groups.group.namePlaceholder', 'z. B. Keramik')}
             />
           </Field>
@@ -348,6 +359,7 @@ export function GroupsScreen() {
           <MemberPicker
             noneLabel={t('groups.noLead', 'Keine Leitung')}
             {...form.getInputProps('leadId')}
+            disabled={leaderOnly}
             onChange={(id) => form.setFieldValue('leadId', id ?? '')}
           />
         </Field>
@@ -500,7 +512,7 @@ export function GroupsScreen() {
                   )}
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  {(canUpdate || hasPermission('groups.groups.update', g.id)) && (
+                  {(canUpdate || hasPermission('groups.groups.update', g.id) || leads(g)) && (
                     <Button
                       size="sm"
                       variant="subtle"
