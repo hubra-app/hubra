@@ -26,6 +26,7 @@ import { LoadFailed } from '@/components/LoadFailed'
 import { getLang, setLang, themeLabels, tr, useLang } from '@/lang'
 import * as authApi from '@/api/auth'
 import { TwoFactorTab } from './TwoFactor'
+import { NotificationsTab } from './NotificationsTab'
 
 const TABS = [
   { value: 'profil', label: () => tr('Profil', 'Profile') },
@@ -34,6 +35,7 @@ const TABS = [
   { value: 'zwei-faktor', label: () => tr('Zwei-Faktor', 'Two-factor') },
   { value: 'einstellungen', label: () => tr('Einstellungen', 'Settings') },
   { value: 'sitzungen', label: () => tr('Sitzungen', 'Sessions') },
+  { value: 'benachrichtigungen', label: () => tr('Benachrichtigungen', 'Notifications') },
 ] as const
 
 type Tab = (typeof TABS)[number]['value']
@@ -114,6 +116,9 @@ export function AccountScreen() {
         </Tabs.Panel>
         <Tabs.Panel value="sitzungen">
           <SessionsTab />
+        </Tabs.Panel>
+        <Tabs.Panel value="benachrichtigungen">
+          <NotificationsTab />
         </Tabs.Panel>
       </Tabs>
     </SignedInFrame>

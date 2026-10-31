@@ -12,13 +12,8 @@ import {
   ActionIcon,
   ThemeIcon,
 } from '@mantine/core'
-import {
-  IconX,
-  IconAlertTriangle,
-  IconRefresh,
-  IconInbox,
-  IconTrash,
-} from '@tabler/icons-react'
+import { IconX, IconAlertTriangle, IconRefresh, IconInbox, IconTrash } from '@tabler/icons-react'
+import { useMediaQuery } from '@mantine/hooks'
 import { useT } from '@/locales/i18n'
 import type { FormEvent, ReactNode } from 'react'
 
@@ -89,77 +84,231 @@ export function Modal({
   )
 }
 
+/**
+ * The one side panel layout (notifications, groups, functions, tiers,
+ * inventory items): a header with icon, title, subtitle and actions, a
+ * scrolling body and an optional footer. Full width on phones.
+ */
 export function SlideOver({
   title,
   subtitle,
   icon,
+  actions,
   width = 420,
+  opened = true,
+  padded = true,
   onClose,
   children,
+  footer,
 }: {
-  title: string
-  subtitle?: string
+  title: ReactNode
+  subtitle?: ReactNode
   icon?: ReactNode
+  /** Buttons shown in the header before the close button. */
+  actions?: ReactNode
   width?: number
+  opened?: boolean
+  /** false: the body's sections bring their own padding (PanelSection). */
+  padded?: boolean
   onClose: () => void
   children: ReactNode
+  footer?: ReactNode
 }) {
   const { t } = useT()
+  const phone = useMediaQuery('(max-width: 36em)')
   return (
-    <Drawer
-      opened
+    <Drawer.Root
+      opened={opened}
       onClose={onClose}
       position="right"
-      size={width}
-      withCloseButton={false}
+      size={phone ? '100%' : width}
       padding={0}
-    >
-      <div
-        style={{
+      styles={{
+        // Below the top bar, so the bell and the page title stay in view.
+        inner: { top: 'var(--hb-header-h, 0px)', height: 'calc(100% - var(--hb-header-h, 0px))' },
+        overlay: { top: 'var(--hb-header-h, 0px)' },
+        content: {
           display: 'flex',
           flexDirection: 'column',
-          height: '100vh',
-        }}
-      >
+          height: '100%',
+          borderLeft: '1px solid var(--hb-border)',
+          boxShadow: '-12px 0 32px -16px rgba(26, 22, 37, 0.28)',
+        },
+      }}
+    >
+      <Drawer.Overlay backgroundOpacity={0.18} />
+      <Drawer.Content>
         <div
           style={{
-            padding: 'var(--mantine-spacing-md)',
+            padding: '16px 20px',
             borderBottom: '1px solid var(--hb-border)',
             display: 'flex',
             alignItems: 'center',
-            gap: 'var(--mantine-spacing-sm)',
+            gap: 12,
             flexShrink: 0,
           }}
         >
-          {icon && <div style={{ flexShrink: 0 }}>{icon}</div>}
+          {icon && <div style={{ flexShrink: 0, display: 'flex' }}>{icon}</div>}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <Text fw={700} fz="md">
+            {/* Drawer.Title names the dialog for screen readers. */}
+            <Drawer.Title
+              fw={700}
+              fz="md"
+              lh={1.35}
+              style={{ color: 'var(--hb-text)', overflowWrap: 'anywhere' }}
+            >
               {title}
-            </Text>
+            </Drawer.Title>
             {subtitle && (
-              <Text size="sm" c="dimmed">
+              <div
+                style={{
+                  fontSize: 'var(--mantine-font-size-sm)',
+                  color: 'var(--hb-text-3)',
+                  marginTop: 2,
+                }}
+              >
                 {subtitle}
-              </Text>
+              </div>
             )}
           </div>
-          <ActionIcon variant="subtle" onClick={onClose} aria-label={t('common.close')}>
-            <IconX size={16} />
-          </ActionIcon>
+          <Group gap={4} wrap="nowrap" style={{ flexShrink: 0 }}>
+            {actions}
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              onClick={onClose}
+              aria-label={t('common.close')}
+            >
+              <IconX size={18} />
+            </ActionIcon>
+          </Group>
         </div>
         <div
           style={{
             flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            padding: '0 var(--mantine-spacing-md)',
             minHeight: 0,
+            overflowY: 'auto',
+            padding: padded ? '16px 20px' : 0,
           }}
         >
           {children}
         </div>
+        {footer && (
+          <div
+            style={{
+              padding: '12px 20px',
+              borderTop: '1px solid var(--hb-border)',
+              flexShrink: 0,
+            }}
+          >
+            {footer}
+          </div>
+        )}
+      </Drawer.Content>
+    </Drawer.Root>
+  )
+}
+
+/** Above a list that shows only the entry a link pointed at. */
+export function LinkedEntryBar({ label, onShowAll }: { label: string; onShowAll: () => void }) {
+  const { t } = useT()
+  return (
+    <Group
+      justify="space-between"
+      gap="sm"
+      wrap="nowrap"
+      mb="md"
+      px="md"
+      py={8}
+      style={{
+        borderRadius: 'var(--mantine-radius-md)',
+        background: 'var(--mantine-color-acc-light)',
+      }}
+    >
+      <Text fz="sm" style={{ color: 'var(--hb-text)' }}>
+        {label}
+      </Text>
+      <Button size="xs" variant="subtle" onClick={onShowAll} style={{ flexShrink: 0 }}>
+        {t('common.showAll', 'Alle anzeigen')}
+      </Button>
+    </Group>
+  )
+}
+
+/** A block of a side panel with an optional small heading. */
+export function PanelSection({
+  label,
+  right,
+  border = true,
+  children,
+}: {
+  label?: ReactNode
+  /** Shown at the end of the heading row (a count, a small button). */
+  right?: ReactNode
+  border?: boolean
+  children: ReactNode
+}) {
+  return (
+    <section
+      style={{
+        padding: '16px 20px',
+        borderBottom: border ? '1px solid var(--hb-border)' : undefined,
+      }}
+    >
+      {(label || right) && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 8,
+            marginBottom: 10,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 'var(--mantine-font-size-xs)',
+              fontWeight: 600,
+              color: 'var(--hb-text-3)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+            }}
+          >
+            {label}
+          </div>
+          {right}
+        </div>
+      )}
+      {children}
+    </section>
+  )
+}
+
+/** A label above a value, for the facts of an item. */
+export function PanelField({ label, children }: { label: ReactNode; children: ReactNode }) {
+  return (
+    <div style={{ minWidth: 0 }}>
+      <div
+        style={{
+          fontSize: 'var(--mantine-font-size-xs)',
+          color: 'var(--hb-text-3)',
+          marginBottom: 2,
+        }}
+      >
+        {label}
       </div>
-    </Drawer>
+      <div
+        style={{
+          fontSize: 'var(--mantine-font-size-sm)',
+          color: 'var(--hb-text)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+        }}
+      >
+        {children}
+      </div>
+    </div>
   )
 }
 
@@ -178,13 +327,7 @@ export function ConfirmModal({
 }) {
   const { t } = useT()
   return (
-    <MantineModal
-      opened={open}
-      onClose={onClose}
-      title={title}
-      size="sm"
-      centered
-    >
+    <MantineModal opened={open} onClose={onClose} title={title} size="sm" centered>
       {body && (
         <Text size="sm" c="dimmed" lh={1.6}>
           {body}
@@ -210,13 +353,7 @@ export function ConfirmModal({
   )
 }
 
-export function LoadingSpinner({
-  message,
-  compact,
-}: {
-  message?: string
-  compact?: boolean
-}) {
+export function LoadingSpinner({ message, compact }: { message?: string; compact?: boolean }) {
   return (
     <Center mih={compact ? 200 : '60vh'}>
       <Stack align="center" gap="xs">

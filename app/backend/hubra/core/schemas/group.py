@@ -74,7 +74,6 @@ class GroupCreateSchema(ma.Schema):
     )
     icon_name = fields.Str(allow_none=True, load_default=None)
     sessions = fields.Str(allow_none=True, load_default=None)
-    tools = fields.Int(load_default=0)
     type = fields.Str(
         load_default="interest_group",
         validate=validate.OneOf(
@@ -99,7 +98,6 @@ class GroupUpdateSchema(ma.Schema):
     color = fields.Str(allow_none=True, validate=validate.Regexp(r"^#[0-9A-Fa-f]{6}$"))
     icon_name = fields.Str(allow_none=True)
     sessions = fields.Str(allow_none=True)
-    tools = fields.Int()
     type = fields.Str(
         validate=validate.OneOf(
             ["board", "committee", "team", "interest_group", "mailing_list"]

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   Button,
+  Checkbox,
   TextInput,
   Textarea,
   ActionIcon,
@@ -378,10 +379,10 @@ export function CodesScreen() {
         title={t('codes.add')}
         footer={
           <>
-            <Button variant="subtle" onClick={() => setAddOpen(false)}>
+            <Button variant="default" onClick={() => setAddOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="default" type="submit" loading={adding}>
+            <Button variant="filled" type="submit" loading={adding}>
               {t('common.save')}
             </Button>
           </>
@@ -430,12 +431,13 @@ export function CodesScreen() {
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
         title={t('codes.edit')}
+        subtitle={editTarget?.name}
         footer={
           <>
-            <Button variant="subtle" onClick={() => setEditTarget(null)}>
+            <Button variant="default" onClick={() => setEditTarget(null)}>
               {t('common.cancel')}
             </Button>
-            <Button variant="default" type="submit">
+            <Button variant="filled" type="submit">
               {t('common.save')}
             </Button>
           </>
@@ -474,22 +476,10 @@ export function CodesScreen() {
               style={{ resize: 'vertical' }}
             />
           </Field>
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              fontSize: 'var(--mantine-font-size-sm)',
-              cursor: 'pointer',
-            }}
-          >
-            <input
-              type="checkbox"
-              {...form.getInputProps('isActive')}
-              style={{ width: 16, height: 16 }}
-            />
-            {t('codes.active')}
-          </label>
+          <Checkbox
+            label={t('codes.active')}
+            {...form.getInputProps('isActive', { type: 'checkbox' })}
+          />
         </div>
       </Modal>
 

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Button, Group, Select, Textarea, TextInput } from '@mantine/core'
+import { Button, Group, Select, SimpleGrid, Textarea, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
@@ -179,24 +179,26 @@ export function FunctionsTab() {
 
   const functionForm = (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <Field label={t('common.name', 'Name')}>
-        <TextInput
-          {...form.getInputProps('name')}
-          placeholder={t('common.namePlaceholder', 'Name')}
-        />
-      </Field>
+      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
+        <Field label={t('common.name', 'Name')}>
+          <TextInput
+            {...form.getInputProps('name')}
+            placeholder={t('common.namePlaceholder', 'Name')}
+          />
+        </Field>
+        <Field label={t('functions.maxHolders', 'Max. Anzahl Personen')}>
+          <TextInput
+            type="number"
+            min={1}
+            {...form.getInputProps('maxHolders', { valueAsNumber: true })}
+          />
+        </Field>
+      </SimpleGrid>
       <Field label={t('common.description', 'Beschreibung')}>
         <Textarea
           rows={2}
           {...form.getInputProps('description')}
           placeholder={t('functions.descPlaceholder', 'Kurze Beschreibung …')}
-        />
-      </Field>
-      <Field label={t('functions.maxHolders', 'Max. Anzahl Personen')}>
-        <TextInput
-          type="number"
-          min={1}
-          {...form.getInputProps('maxHolders', { valueAsNumber: true })}
         />
       </Field>
       <Field
@@ -350,6 +352,7 @@ export function FunctionsTab() {
         onSubmit={form.onSubmit(submitAdd)}
         open={addOpen}
         onClose={() => setAddOpen(false)}
+        wide
         title={t('common.add', 'Hinzufügen')}
         footer={
           <>
@@ -368,6 +371,7 @@ export function FunctionsTab() {
         onSubmit={form.onSubmit(saveEdit)}
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
+        wide
         title={t('common.edit', 'Bearbeiten')}
         subtitle={editTarget?.name}
         footer={
