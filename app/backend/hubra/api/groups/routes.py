@@ -27,7 +27,12 @@ from hubra.core.schemas.group import (
     GroupMembershipUpdateSchema,
 )
 from hubra.core.schemas.member import MemberSchema
-from hubra.api.groups.services import GroupService, GroupsService, SelfJoinService
+from hubra.api.groups.services import (
+    GroupService,
+    GroupsService,
+    GroupVisibility,
+    SelfJoinService,
+)
 from hubra.api.utils import log_audit
 
 
@@ -56,7 +61,8 @@ def count_groups():
 @groups_bp.get("/")
 @permission_required("groups", "read", "View groups")
 def list_groups():
-    groups = GroupsService.list()
+    hidden = GroupVisibility.hidden_ids(get_current_member())
+    groups = [g for g in GroupsService.list() if g.id not in hidden]
     return jsonify(_groups_schema.dump(groups)), 200
 
 
@@ -93,6 +99,7 @@ def leave_group(group_id: int):
 @permission_required("groups", "read", "View groups", scope="id")
 def get_group(id: int):
     group = GroupService.get_by_id(id)
+    GroupVisibility.require(get_current_member(), id)
 
     member_ids = db.session.scalars(
         select(member_groups.c.member_id).where(member_groups.c.group_id == id)
@@ -181,6 +188,7 @@ def list_group_members(group_id: int):
     if group is None:
         raise_error(404, "NOT_FOUND", f"Group {group_id} not found")
         return
+    GroupVisibility.require(get_current_member(), group_id)
 
     search = request.args.get("search", "").strip()
     members = GroupService.list_members(group_id, search)
@@ -290,6 +298,7 @@ def get_mailing_list(group_id: int):
     if group is None:
         raise_error(404, "NOT_FOUND", f"Group {group_id} not found")
         return
+    GroupVisibility.require(get_current_member(), group_id)
 
     emails = GroupService.get_mailing_list(group_id)
     return jsonify({"data": emails, "count": len(emails)}), 200
