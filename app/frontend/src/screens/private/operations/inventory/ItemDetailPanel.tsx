@@ -1,12 +1,9 @@
 import { useState, useMemo } from 'react'
-import { Button, TextInput, Badge, ActionIcon } from '@mantine/core'
+import { Anchor, Button, Badge, ActionIcon, Group, SimpleGrid, Stack, Text } from '@mantine/core'
 import { useT } from '@/locales/i18n'
-import ReactDOM from 'react-dom'
 import {
-  IconPlus,
   IconPencil,
   IconX,
-  IconSearch,
   IconEye,
   IconEyeOff,
   IconCircleCheck,
@@ -15,7 +12,8 @@ import {
   IconInfoCircle,
 } from '@tabler/icons-react'
 import { useToast } from '@/context/AppContext'
-import { Avatar } from '@/components/ui'
+import { SlideOver, PanelSection, PanelField } from '@/components/feedback'
+import { MemberAddSearch, PanelMemberRow } from '@/components/display'
 import type { InventoryItem } from '@/types'
 import { addInstruction, removeInstruction, addSelfInstruction } from '@/api/inventory'
 import { useMemberSearch } from '@/data/members'
@@ -152,466 +150,189 @@ export function ItemDetailPanel({
 
   const sc = STATUS_CONFIG[item.status]
   const cc = CATEGORY_COLORS[item.category]
+  const categoryLabel =
+    item.category === 'Tool'
+      ? t('inventory.tool', 'Werkzeug')
+      : item.category === 'Item'
+        ? t('inventory.itemLabel', 'Gegenstand')
+        : t('inventory.material', 'Material')
 
-  return ReactDOM.createPortal(
-    <>
-      <div className="scrim" onClick={onClose} />
-      <div className="notif-panel open" style={{ width: 440 }} role="dialog" aria-label={item.name}>
-        {/* Header */}
+  return (
+    <SlideOver
+      title={item.name}
+      width={440}
+      padded={false}
+      onClose={onClose}
+      icon={
         <div
           style={{
-            padding: '20px 20px 14px',
-            borderBottom: '1px solid var(--hb-border)',
+            width: 40,
+            height: 40,
+            borderRadius: 10,
+            background: cc + '22',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: cc,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 10,
-                background: cc + '22',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                color: cc,
-              }}
-            >
-              {CATEGORY_ICONS[item.category]}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  fontSize: 'var(--mantine-font-size-md)',
-                  fontWeight: 700,
-                  color: 'var(--hb-text)',
-                }}
-              >
-                {item.name}
-              </div>
-              <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
-                <Badge
-                  variant="light"
-                  style={{
-                    borderColor: cc + '55',
-                    color: cc,
-                    background: cc + '11',
-                  }}
-                >
-                  {item.category}
-                </Badge>
-                <Badge
-                  variant="light"
-                  style={{
-                    borderColor: sc.color + '55',
-                    color: sc.color,
-                    background: sc.color + '11',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                  }}
-                >
-                  {sc.icon}
-                  {t(`inventory.status_${item.status}`, sc.label)}
-                </Badge>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 4 }}>
-              <Button size="sm" variant="subtle" onClick={onEdit}>
-                <IconPencil size={16} />
-              </Button>
-              <ActionIcon variant="subtle" onClick={onClose} aria-label={t('common.close')}>
-                <IconX size={16} />
-              </ActionIcon>
-            </div>
-          </div>
+          {CATEGORY_ICONS[item.category]}
         </div>
-
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          {/* Details */}
-          <div
-            style={{ padding: '14px 20px', borderBottom: '1px solid var(--hb-border)' }}
+      }
+      subtitle={
+        <Group gap={6} mt={4}>
+          <Badge variant="light" style={{ color: cc, background: cc + '18' }}>
+            {categoryLabel}
+          </Badge>
+          <Badge
+            variant="light"
+            leftSection={sc.icon}
+            style={{ color: sc.color, background: sc.color + '18' }}
           >
-            {item.description && (
-              <p
-                style={{
-                  fontSize: 'var(--mantine-font-size-sm)',
-                  color: 'var(--hb-text)',
-                  lineHeight: 1.6,
-                  margin: '0 0 12px',
-                }}
-              >
-                {item.description}
-              </p>
-            )}
-            <div
-              className="grid-2"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: 10,
-              }}
-            >
-              {item.ownerName && (
-                <div>
-                  <div
-                    style={{
-                      fontSize: 'var(--mantine-font-size-xs)',
-                      fontWeight: 600,
-                      color: 'var(--hb-text-3)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.06em',
-                      marginBottom: 2,
-                    }}
-                  >
-                    {t('inventory.owner', 'Eigentümer:in')}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 'var(--mantine-font-size-sm)',
-                      color: 'var(--hb-text)',
-                    }}
-                  >
-                    {item.ownerName}
-                  </div>
-                </div>
-              )}
-              {item.responsibleName && (
-                <div>
-                  <div
-                    style={{
-                      fontSize: 'var(--mantine-font-size-xs)',
-                      fontWeight: 600,
-                      color: 'var(--hb-text-3)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.06em',
-                      marginBottom: 2,
-                    }}
-                  >
-                    {t('inventory.responsible', 'Verantwortlich')}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 'var(--mantine-font-size-sm)',
-                      color: 'var(--hb-text)',
-                    }}
-                  >
-                    {item.responsibleName}
-                  </div>
-                </div>
-              )}
-              {item.cost && (
-                <div>
-                  <div
-                    style={{
-                      fontSize: 'var(--mantine-font-size-xs)',
-                      fontWeight: 600,
-                      color: 'var(--hb-text-3)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.06em',
-                      marginBottom: 2,
-                    }}
-                  >
-                    {t('inventory.cost', 'Kosten')}
-                  </div>
-                  <div
-                    className="num"
-                    style={{
-                      fontSize: 'var(--mantine-font-size-sm)',
-                      color: 'var(--hb-text)',
-                    }}
-                  >
-                    CHF {item.cost}
-                  </div>
-                </div>
-              )}
-              <div>
-                <div
-                  style={{
-                    fontSize: 'var(--mantine-font-size-xs)',
-                    fontWeight: 600,
-                    color: 'var(--hb-text-3)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    marginBottom: 2,
-                  }}
-                >
-                  {t('inventory.visibility', 'Sichtbarkeit')}
-                </div>
-                <div
-                  style={{
-                    fontSize: 'var(--mantine-font-size-sm)',
-                    color: 'var(--hb-text)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                  }}
-                >
-                  {item.visibility === 'private' ? (
-                    <IconEyeOff size={16} />
-                  ) : (
-                    <IconEye size={16} />
-                  )}
-                  {item.visibility === 'private' ? t('inventory.private', 'Privat') : t('inventory.shared', 'Geteilt')}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Links */}
-          {item.links.length > 0 && (
-            <div
-              style={{
-                padding: '14px 20px',
-                borderBottom: '1px solid var(--hb-border)',
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 'var(--mantine-font-size-xs)',
-                  fontWeight: 600,
-                  color: 'var(--hb-text-2)',
-                  textTransform: 'uppercase',
-                  marginBottom: 8,
-                }}
-              >
-                {t('inventory.links', 'Links')}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {item.links.map((link, i) => (
-                  <a
-                    key={link.url + i}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      fontSize: 'var(--mantine-font-size-sm)',
-                      color: '#2596be',
-                      textDecoration: 'none',
-                    }}
-                  >
-                    <IconExternalLink size={16} style={{ flexShrink: 0 }} />
-                    {link.label || link.url}
-                  </a>
-                ))}
-              </div>
-            </div>
+            {t(`inventory.status_${item.status}`, sc.label)}
+          </Badge>
+        </Group>
+      }
+      actions={
+        <ActionIcon variant="subtle" onClick={onEdit} aria-label={t('common.edit', 'Bearbeiten')}>
+          <IconPencil size={18} />
+        </ActionIcon>
+      }
+    >
+      <PanelSection>
+        {item.description && (
+          <Text fz="sm" lh={1.6} mb="md" style={{ color: 'var(--hb-text)', whiteSpace: 'pre-line' }}>
+            {item.description}
+          </Text>
+        )}
+        <SimpleGrid cols={2} spacing="md" verticalSpacing="sm">
+          {item.ownerName && (
+            <PanelField label={t('inventory.owner', 'Eigentümer:in')}>{item.ownerName}</PanelField>
           )}
+          {item.responsibleName && (
+            <PanelField label={t('inventory.responsible', 'Verantwortlich')}>
+              {item.responsibleName}
+            </PanelField>
+          )}
+          {item.cost && (
+            <PanelField label={t('inventory.cost', 'Kosten')}>
+              <span className="num">CHF {item.cost}</span>
+            </PanelField>
+          )}
+          <PanelField label={t('inventory.visibility', 'Sichtbarkeit')}>
+            {item.visibility === 'private' ? <IconEyeOff size={16} /> : <IconEye size={16} />}
+            {item.visibility === 'private'
+              ? t('inventory.private', 'Privat')
+              : t('inventory.shared', 'Geteilt')}
+          </PanelField>
+        </SimpleGrid>
+      </PanelSection>
 
-          {/* Instruction tracking */}
-          {item.instructionRequired ? (
-            <div style={{ padding: '14px 20px' }}>
-              <div
-                style={{
-                  fontSize: 'var(--mantine-font-size-xs)',
-                  fontWeight: 600,
-                  color: 'var(--hb-text-2)',
-                  textTransform: 'uppercase',
-                  marginBottom: 10,
-                }}
+      {item.links.length > 0 && (
+        <PanelSection label={t('inventory.links', 'Links')}>
+          <Stack gap={6}>
+            {item.links.map((link, i) => (
+              <Anchor
+                key={link.url + i}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                fz="sm"
+                style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}
               >
-                {t('inventory.instructionRequired', 'Einweisung nötig')}
-              </div>
+                <IconExternalLink size={16} style={{ flexShrink: 0 }} />
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {link.label || link.url}
+                </span>
+              </Anchor>
+            ))}
+          </Stack>
+        </PanelSection>
+      )}
 
-              {!isSelfInstructed && currentUserId !== null && (
-                <Button
-                  variant="filled"
-                  style={{
-                    width: '100%',
-                    marginBottom: 12,
-                    justifyContent: 'center',
-                    fontSize: 'var(--mantine-font-size-sm)',
-                  }}
-                  onClick={handleSelfInstruct}
-                  disabled={loading}
-                >
-                  <IconUserCheck size={16} />
-                  {t(
-                    'inventory.markMyselfInstructed',
-                    'Mich als eingewiesen markieren',
-                  )}
-                </Button>
-              )}
-              {isSelfInstructed && (
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    fontSize: 'var(--mantine-font-size-sm)',
-                    color: '#1f9d57',
-                    marginBottom: 12,
-                    padding: '8px 12px',
-                    background: '#1f9d5711',
-                    borderRadius: 8,
-                  }}
-                >
-                  <IconCircleCheck size={16} />
-                  {t(
-                    'inventory.youAreInstructed',
-                    'Du bist für diesen Gegenstand eingewiesen',
-                  )}
-                </div>
-              )}
-
-              <div
-                style={{
-                  fontSize: 'var(--mantine-font-size-xs)',
-                  fontWeight: 600,
-                  color: 'var(--hb-text-3)',
-                  marginBottom: 6,
-                }}
-              >
-                {t('common.addMember', 'Mitglied hinzufügen')}
-              </div>
-              <div style={{ position: 'relative', marginBottom: 8 }}>
-                <TextInput
-                  style={{ paddingLeft: 32, height: 36 }}
-                  placeholder={t(
-                    'inventory.searchMembersPlaceholder',
-                    'Mitglieder suchen …',
-                  )}
-                  value={addSearch}
-                  onChange={(e) => setAddSearch(e.target.value)}
-                />
-                <IconSearch
-                  size={16}
-                  style={{
-                    position: 'absolute',
-                    left: 10,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: 'var(--hb-text-3)',
-                  }}
-                />
-              </div>
-              {addResults.length > 0 && (
-                <div
-                  style={{
-                    border: '1px solid var(--hb-border)',
-                    borderRadius: 8,
-                    overflow: 'hidden',
-                    background: 'var(--hb-surface)',
-                    marginBottom: 10,
-                  }}
-                >
-                  {addResults.map((m) => (
-                    <Button
-                      key={m.id}
-                      variant="subtle"
-                      style={{
-                        width: '100%',
-                        justifyContent: 'flex-start',
-                        padding: '8px 12px',
-                        borderRadius: 0,
-                        borderBottom: '1px solid var(--hb-border)',
-                        gap: 8,
-                      }}
-                      onClick={() => handleAddInstruction(Number(m.id), m.name)}
-                    >
-                      <Avatar name={m.name} color={m.avatarColor} size={24} />
-                      <span
-                        style={{
-                          fontSize: 'var(--mantine-font-size-sm)',
-                          flex: 1,
-                          textAlign: 'left',
-                        }}
-                      >
-                        {m.name}
-                      </span>
-                      <IconPlus size={16} style={{ color: '#1f9d57' }} />
-                    </Button>
-                  ))}
-                </div>
-              )}
-
-              {item.instructedMemberIds.length === 0 ? (
-                <div
-                  style={{
-                    padding: '16px 0',
-                    textAlign: 'center',
-                    color: 'var(--hb-text-3)',
-                    fontSize: 'var(--mantine-font-size-sm)',
-                  }}
-                >
-                  {t(
-                    'inventory.noMembersInstructed',
-                    'Noch niemand eingewiesen.',
-                  )}
-                </div>
-              ) : (
-                <div
-                  style={{ display: 'flex', flexDirection: 'column', gap: 2 }}
-                >
-                  {item.instructedMemberNames.map((name, i) => (
-                    <div
-                      key={item.instructedMemberIds[i]}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        padding: '8px 0',
-                        borderBottom: '1px solid #f1eff7',
-                      }}
-                    >
-                      <IconCircleCheck
-                        size={16}
-                        style={{ color: '#1f9d57', flexShrink: 0 }}
-                      />
-                      <span
-                        style={{
-                          flex: 1,
-                          fontSize: 'var(--mantine-font-size-sm)',
-                          color: 'var(--hb-text)',
-                        }}
-                      >
-                        {name}
-                      </span>
-                      <Button
-                        size="sm"
-                        variant="subtle"
-                        style={{ color: 'var(--hb-text-3)', padding: '2px 6px' }}
-                        onClick={() =>
-                          handleRemoveInstruction(
-                            item.instructedMemberIds[i],
-                            i,
-                          )
-                        }
-                        disabled={loading}
-                      >
-                        <IconX size={16} />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div
+      {item.instructionRequired ? (
+        <PanelSection
+          label={t('inventory.instructionRequired', 'Einweisung nötig')}
+          right={
+            <Text fz="xs" className="num" style={{ color: 'var(--hb-text-3)' }}>
+              {item.instructedMemberIds.length}
+            </Text>
+          }
+        >
+          {!isSelfInstructed && currentUserId !== null && (
+            <Button
+              fullWidth
+              mb="md"
+              leftSection={<IconUserCheck size={16} />}
+              onClick={handleSelfInstruct}
+              disabled={loading}
+            >
+              {t('inventory.markMyselfInstructed', 'Mich als eingewiesen markieren')}
+            </Button>
+          )}
+          {isSelfInstructed && (
+            <Group
+              gap={8}
+              mb="md"
+              px={12}
+              py={8}
               style={{
-                padding: '16px 20px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
                 fontSize: 'var(--mantine-font-size-sm)',
-                color: 'var(--hb-text-3)',
+                color: 'var(--mantine-color-green-7)',
+                background: 'var(--mantine-color-green-light)',
+                borderRadius: 8,
               }}
             >
-              <IconInfoCircle size={16} />
-              {t(
-                'inventory.noInstructionRequired',
-                'Für diesen Gegenstand ist keine Einweisung nötig.',
-              )}
+              <IconCircleCheck size={16} />
+              {t('inventory.youAreInstructed', 'Du bist für diesen Gegenstand eingewiesen')}
+            </Group>
+          )}
+
+          <MemberAddSearch
+            value={addSearch}
+            onChange={setAddSearch}
+            placeholder={t('inventory.searchMembersPlaceholder', 'Mitglieder suchen …')}
+            results={addResults}
+            onPick={(m) => handleAddInstruction(Number(m.id), m.name)}
+            disabled={loading}
+          />
+
+          {item.instructedMemberIds.length === 0 ? (
+            <Text fz="sm" ta="center" py="lg" style={{ color: 'var(--hb-text-3)' }}>
+              {t('inventory.noMembersInstructed', 'Noch niemand eingewiesen.')}
+            </Text>
+          ) : (
+            <div style={{ marginTop: 8 }}>
+              {item.instructedMemberNames.map((name, i) => (
+                <PanelMemberRow
+                  key={item.instructedMemberIds[i]}
+                  name={name}
+                  detail={t('inventory.instructed', 'Eingewiesen')}
+                  right={
+                    <ActionIcon
+                      variant="subtle"
+                      color="red"
+                      onClick={() => handleRemoveInstruction(item.instructedMemberIds[i], i)}
+                      disabled={loading}
+                      aria-label={t('common.remove', 'Entfernen')}
+                    >
+                      <IconX size={16} />
+                    </ActionIcon>
+                  }
+                />
+              ))}
             </div>
           )}
-          <PluginSlot name="inventory.item" props={{ itemId: Number(item.id) }} />
-        </div>
-      </div>
-    </>,
-    document.body,
+        </PanelSection>
+      ) : (
+        <PanelSection>
+          <Group gap={8} wrap="nowrap" style={{ fontSize: 'var(--mantine-font-size-sm)', color: 'var(--hb-text-3)' }}>
+            <IconInfoCircle size={16} style={{ flexShrink: 0 }} />
+            {t('inventory.noInstructionRequired', 'Für diesen Gegenstand ist keine Einweisung nötig.')}
+          </Group>
+        </PanelSection>
+      )}
+      <PluginSlot name="inventory.item" props={{ itemId: Number(item.id) }} />
+    </SlideOver>
   )
 }

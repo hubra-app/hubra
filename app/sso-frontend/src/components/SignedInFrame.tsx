@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
-import { ActionIcon, Box, Button, Group, Text } from '@mantine/core'
-import { IconBuildingCommunity, IconLogout, IconUserCircle } from '@tabler/icons-react'
+import { ActionIcon, Box, Button, Group, Indicator, Text } from '@mantine/core'
+import { useQuery } from '@tanstack/react-query'
+import { IconBell, IconBuildingCommunity, IconLogout, IconUserCircle } from '@tabler/icons-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { clearTokens } from '@hubra/api-client'
 import * as authApi from '@/api/auth'
@@ -30,6 +31,14 @@ export function SignedInFrame({
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const { tr } = useLang()
+  // Shares its query with the notifications tab, so both stay in step.
+  const notifications = useQuery({
+    queryKey: ['notifications'],
+    queryFn: authApi.getNotifications,
+    refetchInterval: 60_000,
+  })
+  const unread = notifications.data?.meta.unread ?? 0
+  const onNotifications = pathname === '/account/benachrichtigungen'
   const nav = [
     { path: '/clubs', label: tr('Meine Vereine', 'My clubs'), icon: <IconBuildingCommunity size={18} /> },
     { path: '/account', label: tr('Mein Konto', 'My account'), icon: <IconUserCircle size={18} /> },
@@ -76,6 +85,30 @@ export function SignedInFrame({
                 </Button>
               )
             })}
+            <ActionIcon
+              variant={onNotifications ? 'light' : 'subtle'}
+              color={onNotifications ? 'acc' : 'gray'}
+              size={36}
+              onClick={() => navigate('/account/benachrichtigungen')}
+              aria-label={
+                unread > 0
+                  ? tr(`Benachrichtigungen, ${unread} ungelesen`, `Notifications, ${unread} unread`)
+                  : tr('Benachrichtigungen', 'Notifications')
+              }
+              title={tr('Benachrichtigungen', 'Notifications')}
+            >
+              <Indicator
+                disabled={unread === 0}
+                label={unread > 99 ? '99+' : unread}
+                color="red"
+                size={16}
+                offset={2}
+                withBorder
+                styles={{ indicator: { fontSize: 10, fontWeight: 700, padding: '0 4px' } }}
+              >
+                <IconBell size={18} style={{ display: 'block' }} />
+              </Indicator>
+            </ActionIcon>
             <ThemeToggle labels={themeLabels(tr)} />
             <ActionIcon
               variant="subtle"

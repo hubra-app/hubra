@@ -4,10 +4,11 @@
 ``club_events.series_id`` and ``series_date``. ``club_events.group_id`` names
 the group an event is for. ``event_attendance`` records who was there per
 event, and is filled from registrations already marked "attended". Added to
-the template tables in public and to every club schema.
+the template tables in public and to every club schema. Also joins the two
+heads from #80 and #82.
 
 Revision ID: e7c3a9d1f5b2
-Revises: c5e2a8d4f1b7
+Revises: d8f2b6a4c1e9, f2c8a4d6b1e3
 Create Date: 2026-10-31 07:00:00.000000
 
 """
@@ -18,7 +19,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "e7c3a9d1f5b2"
-down_revision = "c5e2a8d4f1b7"
+down_revision = ("d8f2b6a4c1e9", "f2c8a4d6b1e3")
 branch_labels = None
 depends_on = None
 

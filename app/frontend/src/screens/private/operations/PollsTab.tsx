@@ -9,6 +9,7 @@ import {
   MultiSelect,
   ActionIcon,
   Group,
+  SimpleGrid,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -23,6 +24,8 @@ import {
   usePagination,
   Pagination,
   ConfirmModal,
+  useLinkedId,
+  LinkedEntryBar,
 } from "@/components/ui";
 import type { Poll } from "@/types";
 import {
@@ -91,7 +94,10 @@ export function PollsTab() {
     },
   });
 
-  const pg = usePagination(polls, 12);
+  // ?poll=<id> (from a notification) shows just that poll.
+  const linked = useLinkedId("poll");
+  const shownPolls = linked.id ? polls.filter((p) => p.id === linked.id) : polls;
+  const pg = usePagination(shownPolls, 12);
 
   const castVoteMutation = useMutation({
     mutationFn: ({ pollId, optIdx }: { pollId: string; optIdx: number }) =>
@@ -239,6 +245,16 @@ export function PollsTab() {
             {t("polls.createPoll", 'Neue Umfrage')}
           </Button>
         </Group>
+      )}
+      {linked.id && (
+        <LinkedEntryBar
+          label={
+            shownPolls.length
+              ? t("polls.linkedOne", "Du siehst die Umfrage aus deiner Benachrichtigung.")
+              : t("polls.linkedGone", "Diese Umfrage gibt es nicht mehr.")
+          }
+          onShowAll={linked.clear}
+        />
       )}
       <Paper withBorder shadow="sm" radius="lg" style={{ marginBottom: 0 }}>
         <Pagination {...pg} top />
@@ -493,7 +509,9 @@ export function PollsTab() {
           setAddOpen(false);
           resetForm();
         }}
+        wide
         title={editTarget ? t("polls.editTitle", "Umfrage bearbeiten") : t("polls.createPoll", "Neue Umfrage")}
+        subtitle={editTarget?.question}
         footer={
           <>
             <Button
@@ -568,27 +586,29 @@ export function PollsTab() {
             />
           </Field>
 
-          <Field label={t("polls.proxy.field", 'Stellvertretung')}>
-            <Switch
-              checked={allowProxy}
-              onChange={(e) => setAllowProxy(e.currentTarget.checked)}
-              label={t(
-                "polls.proxy.allow",
-                'Mitglieder dürfen ihre Stimme einem anderen Mitglied übertragen',
-              )}
-            />
-          </Field>
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
+            <Field label={t("polls.proxy.field", 'Stellvertretung')}>
+              <Switch
+                checked={allowProxy}
+                onChange={(e) => setAllowProxy(e.currentTarget.checked)}
+                label={t(
+                  "polls.proxy.allow",
+                  'Mitglieder dürfen ihre Stimme einem anderen Mitglied übertragen',
+                )}
+              />
+            </Field>
 
-          <Field label={t('polls.required', 'Pflicht-Umfrage')}>
-            <Switch
-              checked={isRequired}
-              onChange={(e) => setIsRequired(e.currentTarget.checked)}
-              label={t('polls.requiredHint', 'Mitglieder müssen an dieser Umfrage teilnehmen')}
-            />
-          </Field>
+            <Field label={t('polls.required', 'Pflicht-Umfrage')}>
+              <Switch
+                checked={isRequired}
+                onChange={(e) => setIsRequired(e.currentTarget.checked)}
+                label={t('polls.requiredHint', 'Mitglieder müssen an dieser Umfrage teilnehmen')}
+              />
+            </Field>
+          </SimpleGrid>
 
           {isRequired && (
-            <>
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
               <Field label={t('polls.requiredGroups', 'Pflicht für Gruppen')}>
                 <MultiSelect
                   data={groups.map((g) => ({
@@ -617,7 +637,7 @@ export function PollsTab() {
                   clearable
                 />
               </Field>
-            </>
+            </SimpleGrid>
           )}
         </div>
       </Modal>

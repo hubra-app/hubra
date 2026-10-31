@@ -39,7 +39,7 @@ import {
 } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
 import { getProfile } from '@/api/auth'
-import { ThemeSwitch } from '@hubra/ui'
+import { textOn as contrastColor, ThemeSwitch } from '@hubra/ui'
 import { useLang, type Lang } from '@/lang'
 
 // The same frame as the club app (components/Shell there): a white top bar
@@ -79,13 +79,6 @@ function initials(name: string) {
       .map((p) => p[0]?.toUpperCase())
       .join('') || '?'
   )
-}
-
-function contrastColor(hex: string) {
-  const h = hex.replace('#', '')
-  if (h.length !== 6) return '#1a1625'
-  const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16))
-  return r * 0.299 + g * 0.587 + b * 0.114 > 160 ? '#1a1625' : '#ffffff'
 }
 
 function NavRow({ item, collapsed }: { item: NavItem; collapsed: boolean }) {

@@ -182,7 +182,12 @@ class PostsService:
         db.session.flush()
 
         notify_on_publish(
-            "posts", "info", "New post", post.title, skip_member_id=author_id
+            "posts",
+            "info",
+            "New post",
+            post.title,
+            skip_member_id=author_id,
+            link=f"/app/operations/posts/{post.id}",
         )
         emit(POST_PUBLISHED, post_id=post.id)
 

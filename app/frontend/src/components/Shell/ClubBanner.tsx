@@ -43,11 +43,11 @@ export function ClubBanner() {
       px={16}
       py={8}
       style={{
-        background: 'var(--mantine-color-gold-0)',
-        borderBottom: '1px solid var(--mantine-color-gold-3)',
+        background: 'var(--hb-notice-bg)',
+        borderBottom: '1px solid var(--hb-notice-border)',
       }}
     >
-      <IconSpeakerphone size={18} color="var(--mantine-color-gold-8)" style={{ flexShrink: 0 }} />
+      <IconSpeakerphone size={18} color="var(--mantine-color-gold-text)" style={{ flexShrink: 0 }} />
       <Text fz="sm" fw={500} style={{ flex: 1 }}>
         {text}
       </Text>

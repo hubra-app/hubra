@@ -81,7 +81,7 @@ export function NavItemRow({
             style={{
               flexShrink: 0,
               display: 'flex',
-              color: active ? 'var(--mantine-color-acc-6)' : 'var(--hb-text-2)',
+              color: active ? 'var(--mantine-color-acc-text)' : 'var(--hb-text-2)',
             }}
           >
             {item.icon}
