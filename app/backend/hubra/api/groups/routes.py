@@ -45,7 +45,7 @@ _members_schema = MemberSchema(many=True)
 _leads = created_by(Group, column="lead_id", arg="group_id", reason="leader")
 _leads_this = created_by(Group, column="lead_id", arg="id", reason="leader")
 _LEADER_FIELDS = frozenset(
-    {"description", "color", "icon_name", "sessions", "tools", "is_public", "self_join"}
+    {"description", "color", "icon_name", "sessions", "is_public", "self_join"}
 )
 
 
