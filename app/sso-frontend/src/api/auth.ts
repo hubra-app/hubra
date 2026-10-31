@@ -370,3 +370,29 @@ export async function markAllNotificationsRead(): Promise<void> {
 export async function clearNotifications(readOnly = false): Promise<void> {
   await apiFetch(`/account/notifications${readOnly ? '?read=1' : ''}`, { method: 'DELETE' })
 }
+
+/** An outside account (Discord) linked to this account. */
+export interface LinkedAccount {
+  provider: string
+  externalId: string
+  username: string
+  linkedAt: string | null
+}
+
+export interface LinkedAccounts {
+  providers: { code: string; name: string; available: boolean }[]
+  accounts: LinkedAccount[]
+}
+
+export async function getLinkedAccounts(): Promise<LinkedAccounts> {
+  return apiFetch('/account/linked-accounts/')
+}
+
+/** Where to send the browser to sign in on the outside service. */
+export async function startLinkAccount(provider: string): Promise<{ url: string }> {
+  return apiFetch(`/account/linked-accounts/${provider}/start`, { method: 'POST' })
+}
+
+export async function unlinkAccount(provider: string): Promise<void> {
+  await apiFetch(`/account/linked-accounts/${provider}`, { method: 'DELETE' })
+}
