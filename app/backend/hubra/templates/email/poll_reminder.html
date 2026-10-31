@@ -1,0 +1,12 @@
+{% extends "email/base.html" %}
+{% import "email/_ui.html" as ui with context %}
+{% block preheader %}{{ t('mail.email.poll_reminder.body', question=question, when=when) | striptags }}{% endblock %}
+{% block content %}
+{% call ui.p() %}{{ t('mail.email.poll_reminder.body', question=question, when=when) }}{% endcall %}
+{{ ui.facts([
+  (t('mail.email.poll_reminder.question'), question, false),
+  (t('mail.email.poll_reminder.closes'), when, false),
+]) }}
+{% if portal_url %}{{ ui.button(portal_url, t('mail.email.poll_reminder.button')) }}{% endif %}
+{% call ui.muted() %}{{ t('mail.email.reminder.settings_note') }}{% endcall %}
+{% endblock %}

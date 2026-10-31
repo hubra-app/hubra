@@ -28,6 +28,9 @@ INVOICE_PAID = "invoice.paid"
 EVENT_PUBLISHED = "event.published"
 POST_PUBLISHED = "post.published"
 POLL_PUBLISHED = "poll.published"
+# Sent once when the reminder before an event / before a poll closes is due.
+EVENT_REMINDER = "event.reminder"
+POLL_CLOSING = "poll.closing"
 GROUP_MEMBERSHIP_CHANGED = "group.membership_changed"
 # A person linked or unlinked an outside account (provider, external_id),
 # emitted in each club they are a member of (member_id).

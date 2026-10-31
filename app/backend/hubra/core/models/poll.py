@@ -35,6 +35,11 @@ class Poll(db.Model):
     max_proxies_per_member: Mapped[int] = mapped_column(
         db.Integer, default=1, server_default="1", nullable=False
     )
+    # When the reminder before closing went out; cleared when closes_at
+    # changes.
+    reminder_sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

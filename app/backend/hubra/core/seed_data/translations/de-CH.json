@@ -3027,5 +3027,22 @@
   "members.detail.years_other": "{{count}} Jahre",
   "members.detail.months_one": "{{count}} Monat",
   "members.detail.months_other": "{{count}} Monate",
-  "members.detail.new": "neu"
+  "members.detail.new": "neu",
+  "mail.email.event_reminder.body": "Erinnerung: <strong>{{event_title}}</strong> findet am {{when}} statt. Du bist angemeldet.",
+  "mail.email.event_reminder.event": "Anlass",
+  "mail.email.event_reminder.when": "Wann",
+  "mail.email.event_reminder.where": "Wo",
+  "mail.email.event_reminder.button": "Anlass ansehen",
+  "mail.email.poll_reminder.body": "Die Umfrage <strong>{{question}}</strong> schliesst am {{when}}. Du hast noch nicht abgestimmt.",
+  "mail.email.poll_reminder.question": "Umfrage",
+  "mail.email.poll_reminder.closes": "Schliesst",
+  "mail.email.poll_reminder.button": "Jetzt abstimmen",
+  "mail.email.reminder.settings_note": "Erinnerungen per E-Mail kannst du in der App unter Konto › Mitgliedschaft ausschalten.",
+  "mail.email.subject.event_reminder": "[{{club_name}}] Erinnerung: {{event_title}}",
+  "mail.email.subject.poll_reminder": "[{{club_name}}] Bitte abstimmen: {{question}}",
+  "account.reminders.title": "Erinnerungen per E-Mail",
+  "account.reminders.hint": "Vor Anlässen, für die du angemeldet bist, und bevor eine Umfrage schliesst, in der du noch nicht abgestimmt hast. In der App erscheinen sie immer.",
+  "account.reminders.events": "Vor Anlässen",
+  "account.reminders.polls": "Vor dem Ende von Umfragen",
+  "shell.notif.text.eventReminder": "Erinnerung an einen Anlass"
 }

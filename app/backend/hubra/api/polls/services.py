@@ -65,6 +65,12 @@ def poll_link(poll_id: int) -> str:
     return f"/app/operations/polls?poll={poll_id}"
 
 
+def _utc(value: datetime | None) -> datetime | None:
+    if value is not None and value.tzinfo is None:  # SQLite: naive UTC
+        return value.replace(tzinfo=timezone.utc)
+    return value
+
+
 class PollService:
     """Operations on a single poll."""
 
@@ -161,6 +167,7 @@ class PollService:
     @staticmethod
     def update(poll: Poll, data: dict, actor_id: int) -> Poll:
         """Update allowed fields on a poll."""
+        closes_before = poll.closes_at
         for field in (
             "question",
             "closes_at",
@@ -170,6 +177,8 @@ class PollService:
         ):
             if field in data:
                 setattr(poll, field, data[field])
+        if _utc(poll.closes_at) != _utc(closes_before):
+            poll.reminder_sent_at = None  # the new closing time gets its reminder
         if "required_group_ids" in data:
             poll.required_group_ids = data["required_group_ids"]
         if "required_function_ids" in data:

@@ -17,6 +17,7 @@ from decimal import Decimal
 
 from sqlalchemy import Date, DateTime, ForeignKey, JSON, Numeric, Table, Text, Column
 from sqlalchemy.dialects.postgresql import JSONB
+import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from hubra.core.extensions import db
@@ -181,6 +182,14 @@ class Member(db.Model):
     # those who manage members always see everything.
     directory_shared: Mapped[list[str] | None] = mapped_column(
         JSONB().with_variant(JSON, "sqlite"), nullable=True
+    )
+    # Reminder mails before an event the member signed up for and before a
+    # poll they have not voted in closes (the bell gets them either way).
+    event_reminder_mail: Mapped[bool] = mapped_column(
+        db.Boolean, default=True, server_default=sa.true(), nullable=False
+    )
+    poll_reminder_mail: Mapped[bool] = mapped_column(
+        db.Boolean, default=True, server_default=sa.true(), nullable=False
     )
     # Part of the signed calendar feed link; raising it ends the old links.
     calendar_feed_version: Mapped[int] = mapped_column(

@@ -228,6 +228,12 @@
       "phone": "Phone and mobile",
       "address": "Address",
       "birthday": "Birthday"
+    },
+    "reminders": {
+      "title": "Reminders by e-mail",
+      "hint": "Before events you signed up for, and before a poll you have not voted in closes. They always show in the app.",
+      "events": "Before events",
+      "polls": "Before polls close"
     }
   },
   "app": {
@@ -2167,7 +2173,8 @@
         "castVote": "Please cast your vote before the poll closes.",
         "votedFor": "{{name}} voted for \"{{option}}\"",
         "askedProxy": "{{name}} asked you to vote for them.",
-        "aMember": "A member"
+        "aMember": "A member",
+        "eventReminder": "Event reminder"
       }
     },
     "notifPanel": {
