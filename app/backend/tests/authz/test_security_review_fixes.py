@@ -246,6 +246,17 @@ class TestSettingsNamespace:
         )
         assert resp.status_code == 403
 
+    def test_general_writer_cannot_create_the_finance_contact(self, client, seeded_db, db):
+        """Club.Contact.FinanceEmail is printed on QR bills: a new one lands
+        in the club namespace, not the one the request names."""
+        _settings_writer(db, seeded_db)
+        _login(client, "ed@test.ch")
+        resp = client.put(
+            "/api/v1/settings/Club.Contact.FinanceEmail",
+            json={"value": "pay@evil.example", "namespace": "general"},
+        )
+        assert resp.status_code == 403
+
     def test_writer_cannot_lock_a_setting(self, client, seeded_db, db):
         db.session.add(Setting(key="club.name", value="Club", namespace="general"))
         _settings_writer(db, seeded_db)
