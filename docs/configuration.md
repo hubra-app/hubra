@@ -23,7 +23,7 @@ not using mail, leave the mail variables blank.
 | Domain      | `MAIL_HOST`, `MAIL_FROM`, `MAIL_DOMAIN`                                    | Always (mail vars only when mail enabled)                |
 | Modules     | Per club in Settings › Modules & plugins, or `flask modules enable <code>` | Always                                                   |
 | SMTP/IMAP   | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `IMAP_HOST`, `IMAP_PORT` | Mail feature enabled (Infomaniak SMTP/IMAP)        |
-| Backups     | `BACKUP_S3_*`, `BACKUP_ENCRYPTION_KEY`                                     | Backups enabled                                          |
+| Backups     | `BACKUP_S3_*`, `BACKUP_PUBLIC_KEY` (`BACKUP_PRIVATE_KEY` optional, `BACKUP_ENCRYPTION_KEY` for older backups) | Backups enabled |
 | Plugins     | `HUBRA_PLUGIN_DIR`, `HUBRA_PLUGINS_RELOAD_POLL`, `HUBRA_OFFICIAL_INDEX`, `HUBRA_PLUGINS_ALLOW_PRIVATE` (1 = allow a repository on a private address) | Optional, see [plugins/README.md](../plugins/README.md)  |
 
 ## Platform settings and club settings
@@ -47,7 +47,7 @@ mail always comes from the system sender. Club mail comes from the system
 sender with the club's address as Reply-To, unless the club has its own
 sender mailbox from the mail module; that mailbox logs in to the mail
 module's server (`ZONEMTA_SMTP_HOST`), or to the relay without one.
-`BACKUP_ENCRYPTION_KEY` stays in env only.
+The backup keys stay in env only.
 
 **Fallback relay.** When a fallback host is set and the relay refuses a
 mail (send quota reached, outage, bad login), the mail goes out again

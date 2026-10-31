@@ -269,8 +269,8 @@ export function PlatformSettings() {
               </Group>
               <Text size="xs" c="dimmed" mb={12}>
                 {tr(
-                  'Hierhin gehen das globale Backup und die Backups jedes Vereins, verschlüsselt mit BACKUP_ENCRYPTION_KEY aus der Umgebung.',
-                  'The global backup and every club backup go here, encrypted with BACKUP_ENCRYPTION_KEY from env.',
+                  'Hierhin gehen das globale Backup und die Backups jedes Vereins, verschlüsselt mit BACKUP_PUBLIC_KEY aus der Umgebung.',
+                  'The global backup and every club backup go here, encrypted with BACKUP_PUBLIC_KEY from env.',
                 )}
               </Text>
               <Stack gap="sm">{BACKUP.map(field)}</Stack>

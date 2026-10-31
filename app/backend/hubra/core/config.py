@@ -64,6 +64,23 @@ def _validate_fernet_keys() -> None:
             ) from None
 
 
+def _validate_backup_keys() -> None:
+    """BACKUP_PUBLIC_KEY / BACKUP_PRIVATE_KEY, when set, must be age keys."""
+    import re
+
+    checks = (
+        ("BACKUP_PUBLIC_KEY", r"^age1[02-9ac-hj-np-z]{58}$"),
+        ("BACKUP_PRIVATE_KEY", r"^AGE-SECRET-KEY-1[02-9AC-HJ-NP-Z]{58}$"),
+    )
+    for name, pattern in checks:
+        for key in re.split(r"[\s,]+", os.environ.get(name, "")):
+            if key and not re.match(pattern, key):
+                raise RuntimeError(
+                    f"[Production] {name} holds a value that is not an age key. "
+                    "Generate a pair with `age-keygen` or `flask backups keygen`."
+                )
+
+
 def _dev_secret(env_key: str, length: int = 32) -> str:
     """Return env var value, or a random secret with a warning if unset."""
     val = os.environ.get(env_key)
@@ -227,6 +244,13 @@ class BaseConfig:
     BACKUP_S3_REGION: str = os.environ.get("BACKUP_S3_REGION", "default")
     # GPG encryption passphrase — .env ONLY, never stored in DB (DR safety).
     BACKUP_ENCRYPTION_KEY: str = os.environ.get("BACKUP_ENCRYPTION_KEY", "")
+    # age public key(s) new backups are encrypted to (`age-keygen`); the
+    # private key stays offline and is given at restore time. Takes over
+    # from BACKUP_ENCRYPTION_KEY, which still opens older .gpg backups.
+    BACKUP_PUBLIC_KEY: str = os.environ.get("BACKUP_PUBLIC_KEY", "")
+    # Optional: keeping the private key on the server lets verify and
+    # restore run without asking, but a server breach then opens backups.
+    BACKUP_PRIVATE_KEY: str = os.environ.get("BACKUP_PRIVATE_KEY", "")
 
     # ── Structured logging ──────────────────────────────────────────────────
     JSON_LOGGING: bool = os.environ.get("JSON_LOGGING", "true").lower() == "true"
@@ -277,6 +301,7 @@ class ProductionConfig(BaseConfig):
                 )
         _require_env("DATABASE_URL")
         _validate_fernet_keys()
+        _validate_backup_keys()
 
     # Override insecure BaseConfig fallbacks with env vars (no default).
     # Missing vars produce an empty string here; validate() catches them.
@@ -326,6 +351,8 @@ class TestingConfig(BaseConfig):
     BACKUP_S3_ACCESS_KEY: str = ""
     BACKUP_S3_SECRET_KEY: str = ""
     BACKUP_ENCRYPTION_KEY: str = ""
+    BACKUP_PUBLIC_KEY: str = ""
+    BACKUP_PRIVATE_KEY: str = ""
     FERNET_KEY: str = ""
     FERNET_OLD_KEYS: str = ""
     # Run Celery tasks synchronously so tests don't need a Redis broker

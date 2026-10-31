@@ -1,4 +1,5 @@
-"""``flask crypto``: check and rotate the key for secrets at rest.
+"""``flask crypto``: check and rotate the key for secrets at rest;
+``flask backups``: backup key pairs.
 
 Changing ``FERNET_KEY``::
 
@@ -59,3 +60,52 @@ def register(app) -> None:
         if report.unreadable:
             raise SystemExit(1)
         click.echo("Done. Run `flask crypto check`, then remove the old key.")
+
+    @app.cli.group("backups")
+    def backups_cli():
+        """Backup keys."""
+
+    @backups_cli.command("keygen")
+    def backups_keygen():
+        """Print a new age key pair for BACKUP_PUBLIC_KEY or a club."""
+        import subprocess
+
+        result = subprocess.run(["age-keygen"], capture_output=True, check=True)
+        click.echo(result.stdout.decode().strip())
+        click.echo(
+            "\nThe line `AGE-SECRET-KEY-1...` is the private key: keep it in a "
+            "password manager, never on the server. The public key "
+            "(age1...) goes in BACKUP_PUBLIC_KEY or `flask backups club-key`."
+        )
+
+    @backups_cli.command("club-key")
+    @click.argument("slug")
+    @click.argument("public_key", required=False)
+    @click.option("--clear", is_flag=True, help="Remove the club's key")
+    def backups_club_key(slug: str, public_key: str | None, clear: bool):
+        """Show, set or remove a club's own backup public key.
+
+        New backups of the club are encrypted to it as well as to
+        BACKUP_PUBLIC_KEY, so the club can open them with its private key.
+        """
+        from sqlalchemy import select
+
+        from hubra.core.extensions import db
+        from hubra.core.models.tenant import Tenant
+        from hubra.core.services.backup_crypto import split_keys, valid_public_key
+
+        tenant = db.session.scalar(select(Tenant).where(Tenant.slug == slug))
+        if tenant is None:
+            raise click.ClickException(f"Club '{slug}' not found")
+        if clear:
+            tenant.backup_public_key = None
+        elif public_key:
+            keys = split_keys(public_key)
+            if not keys or not all(valid_public_key(k) for k in keys):
+                raise click.ClickException("Not an age public key (age1...)")
+            tenant.backup_public_key = " ".join(keys)
+        else:
+            click.echo(tenant.backup_public_key or "(none)")
+            return
+        db.session.commit()
+        click.echo(f"{slug}: {tenant.backup_public_key or 'no club key'}")

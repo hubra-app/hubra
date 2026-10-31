@@ -12,6 +12,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - **Key rotation for secrets at rest**: `FERNET_OLD_KEYS` keeps old keys readable, `flask crypto rotate` re-encrypts every stored secret in every club schema, `flask crypto check` confirms nothing is left on an old key. See docs/operator-guide.md, "Change the encryption key".
+- **Public-key backups**: with `BACKUP_PUBLIC_KEY` (an age key from `flask backups keygen`) backups are encrypted so the server can write but not read them; restore and full verify ask for the private key, which is used once and never stored. A club can have its own key (`flask backups club-key`) and open its own backups. Verify without a key checks the file's checksum. `.dump.gpg` backups still open with `BACKUP_ENCRYPTION_KEY`. Migration `d1a7c3e9b5f2` adds `tenants.backup_public_key`; the backend image now ships `age`.
 
 ## [0.6.0] - 2026-07-13
 

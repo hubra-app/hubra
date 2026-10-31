@@ -2,9 +2,14 @@
 
 ## Prerequisites (keep these safe BEFORE disaster strikes)
 
-1. **Encryption key** — `BACKUP_ENCRYPTION_KEY` from `.env` on the production server.
-   Store this in a password manager (1Password, Bitwarden, etc.).
-   **If this key is lost, all backups are unrecoverable.**
+1. **Backup private key** — the `AGE-SECRET-KEY-1…` line that belongs to
+   `BACKUP_PUBLIC_KEY` (made with `flask backups keygen`). It is not on the
+   server: keep it in a password manager (1Password, Bitwarden, etc.) and on
+   paper. For backups from before `BACKUP_PUBLIC_KEY` (`.dump.gpg` files)
+   you need the old passphrase `BACKUP_ENCRYPTION_KEY` instead.
+   **If the key is lost, the backups made with it are unrecoverable.**
+   A club with its own backup key (`flask backups club-key`) can also open
+   its own club backups with its private key.
 
 2. **S3 credentials** — Contabo S3 endpoint, bucket name, access key, and secret key.
    These come from `BACKUP_S3_*` in `.env` on the production server, unless a
@@ -23,7 +28,8 @@
    brew install libpq && export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
    ```
 
-4. **`gpg`** — GnuPG must be installed (standard on most Linux/macOS systems).
+4. **`age`** — for `.dump.age` backups (`apt install age`, `brew install age`).
+   **`gpg`** for older `.dump.gpg` backups (standard on most Linux/macOS systems).
 
 5. **`aws-cli`** or **`s3cmd`** — for downloading from S3. Install with:
    ```sh
@@ -87,15 +93,22 @@ backups; restore those as one database (Step 3B, without the per-club part).
 
 ```sh
 # Download
-aws s3 cp s3://your-bucket-name/backups/global/2026-10-29_030000_scheduled_daily.dump.gpg \
-    ./global.dump.gpg \
+aws s3 cp s3://your-bucket-name/backups/global/2026-10-31_030000_scheduled_daily.dump.age \
+    ./global.dump.age \
     --endpoint-url="$AWS_ENDPOINT_URL"
 
-# Decrypt (will prompt for passphrase, or use --passphrase)
+# Decrypt with the backup private key (a file holding the AGE-SECRET-KEY-1… line)
+age --decrypt --identity backup-key.txt --output global.dump global.dump.age
+```
+
+Delete `backup-key.txt` when you are done. Older `.dump.gpg` backups use the
+passphrase instead (prompts for it):
+
+```sh
 gpg --decrypt --output global.dump global.dump.gpg
 ```
 
-If you want to provide the passphrase non-interactively:
+To give the passphrase non-interactively:
 
 ```sh
 gpg --batch --yes --passphrase "YOUR_BACKUP_ENCRYPTION_KEY" \
@@ -260,10 +273,16 @@ If all queries return expected results, the backup system is working correctly.
 
 ## Encryption key recovery
 
-**If `BACKUP_ENCRYPTION_KEY` is lost:**
+**If the backup private key (or, for `.dump.gpg` files, `BACKUP_ENCRYPTION_KEY`) is lost:**
 
-All encrypted backups are permanently unrecoverable. There is no backdoor,
-no key escrow, and no way to decrypt the files without the passphrase.
+The backups made with it are permanently unrecoverable. There is no backdoor,
+no key escrow, and no way to decrypt the files without the key. Make a new
+pair with `flask backups keygen`, put the public key in `BACKUP_PUBLIC_KEY`,
+restart, and take a fresh backup right away.
+
+**Changing the backup key pair:** new backups use the new public key at
+once. Keep the old private key until the last backup made with it has
+expired (6 months with the default retention).
 
 **Prevention:**
 

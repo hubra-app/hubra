@@ -24,6 +24,8 @@ __all__ = [
     "is_current",
     "old_keys",
     "rotate_code",
+    "seal",
+    "unseal",
 ]
 
 
@@ -74,3 +76,13 @@ def is_current(ciphertext: str) -> bool:
     except InvalidToken:
         return False
     return True
+
+
+def seal(plaintext: str) -> str:
+    """Encrypt a short-lived secret for a background task's arguments."""
+    return encrypt_code(plaintext)
+
+
+def unseal(token: str, max_age: int = 3600) -> str:
+    """Open a ``seal`` token; raises ``InvalidToken`` once *max_age* passed."""
+    return _keyring().decrypt(token.encode("utf-8"), ttl=max_age).decode("utf-8")

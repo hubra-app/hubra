@@ -10,6 +10,7 @@ import {
   Anchor,
   Select,
   TextInput,
+  PasswordInput,
 } from '@mantine/core'
 import { Link } from 'react-router-dom'
 import {
@@ -117,6 +118,8 @@ export function Backups() {
   const [filter, setFilter] = useState<string>(ALL)
   const [restoreTarget, setRestoreTarget] = useState<BackupRecord | null>(null)
   const [confirmSlug, setConfirmSlug] = useState('')
+  const [privateKey, setPrivateKey] = useState('')
+  const [verifyTarget, setVerifyTarget] = useState<BackupRecord | null>(null)
   const [restoring, setRestoring] = useState(false)
   const [watch, setWatch] = useState<RestoreWatch | null>(null)
 
@@ -186,10 +189,11 @@ export function Backups() {
     }
   }
 
-  const handleVerify = async (id: string) => {
+  const handleVerify = async (id: string, key?: string) => {
     setVerifyingId(id)
     try {
-      await verifyBackup(id)
+      await verifyBackup(id, key)
+      closeVerify()
       queryClient.invalidateQueries({ queryKey: ['backups'] })
       notify('success', tr('Prüfung gestartet', 'Verification started'), tr('Das Backup wird geprüft.', 'Backup verification is running.'))
     } catch (err: unknown) {
@@ -213,12 +217,18 @@ export function Backups() {
   const closeRestore = () => {
     setRestoreTarget(null)
     setConfirmSlug('')
+    setPrivateKey('')
+  }
+
+  const closeVerify = () => {
+    setVerifyTarget(null)
+    setPrivateKey('')
   }
 
   const handleRestore = async (record: BackupRecord) => {
     setRestoring(true)
     try {
-      await restoreBackup(record.id, confirmSlug.trim())
+      await restoreBackup(record.id, confirmSlug.trim(), privateKey.trim() || undefined)
       setWatch({ id: record.id, seen: restoreState(record) })
       queryClient.invalidateQueries({ queryKey: ['backups'] })
       closeRestore()
@@ -253,8 +263,8 @@ export function Backups() {
         desc={
           <>
             {tr(
-              'Das globale Backup enthält Konten, Vereine und Plattform-Einstellungen; jeder Verein hat eigene Backups und lässt sich einzeln wiederherstellen. Alles ist mit BACKUP_ENCRYPTION_KEY aus der Umgebung verschlüsselt. Täglich, wöchentlich und monatlich laufen ein globales Backup und eines pro Verein von selbst; den Speicherort legst du unter ',
-              'The global backup holds accounts, clubs and platform settings; each club has its own backups and can be restored on its own. Everything is encrypted with BACKUP_ENCRYPTION_KEY from env. Daily, weekly and monthly, one global backup and one per club run on their own; the storage is set under ',
+              'Das globale Backup enthält Konten, Vereine und Plattform-Einstellungen; jeder Verein hat eigene Backups und lässt sich einzeln wiederherstellen. Alles wird mit BACKUP_PUBLIC_KEY aus der Umgebung verschlüsselt; zum Öffnen braucht es den privaten Schlüssel, den nur du hast (ältere Backups: BACKUP_ENCRYPTION_KEY). Täglich, wöchentlich und monatlich laufen ein globales Backup und eines pro Verein von selbst; den Speicherort legst du unter ',
+              'The global backup holds accounts, clubs and platform settings; each club has its own backups and can be restored on its own. Everything is encrypted with BACKUP_PUBLIC_KEY from env; opening a backup takes the private key, which only you hold (older backups: BACKUP_ENCRYPTION_KEY). Daily, weekly and monthly, one global backup and one per club run on their own; the storage is set under ',
             )}
             <Anchor component={Link} to="/app/platform/settings" size="sm">
               {tr('Plattform-Einstellungen', 'Platform settings')}
@@ -449,8 +459,8 @@ export function Backups() {
               }}
             >
               {tr(
-                'Lege den Speicher unter Plattform-Einstellungen fest und setze BACKUP_ENCRYPTION_KEY in der .env, um Backups einzuschalten.',
-                'Set the storage under Platform settings and BACKUP_ENCRYPTION_KEY in .env to enable backups.',
+                'Lege den Speicher unter Plattform-Einstellungen fest und setze BACKUP_PUBLIC_KEY in der .env (flask backups keygen), um Backups einzuschalten.',
+                'Set the storage under Platform settings and BACKUP_PUBLIC_KEY in .env (flask backups keygen) to enable backups.',
               )}
             </div>
           )}
@@ -604,6 +614,17 @@ export function Backups() {
                         }}
                       >
                         <IconCheck size={14} /> {formatDate(b.verified_at)}
+                        {b.needs_private_key && b.table_count === null && (
+                          <span
+                            style={{ color: 'var(--hb-text-3)' }}
+                            title={tr(
+                              'Die Datei ist vollständig und unverändert. Den Inhalt prüft nur ein Test mit dem privaten Schlüssel.',
+                              'The file is complete and unchanged. Only a check with the private key opens the contents.',
+                            )}
+                          >
+                            {tr(' (Datei)', ' (file)')}
+                          </span>
+                        )}
                       </span>
                     )}
                     {b.verified_ok === false && (
@@ -626,11 +647,12 @@ export function Backups() {
                   </Table.Td>
                   <Table.Td data-label={tr('Aktionen', 'Actions')}>
                     <div style={{ display: 'flex', gap: 4 }}>
-                      {b.status === 'completed' && b.verified_ok === null && (
+                      {b.status === 'completed' &&
+                        (b.verified_ok === null || (b.needs_private_key && b.table_count === null)) && (
                         <Button
                           variant="subtle"
                           size="compact-sm"
-                          onClick={() => handleVerify(b.id)}
+                          onClick={() => (b.needs_private_key ? setVerifyTarget(b) : handleVerify(b.id))}
                           loading={verifyingId === b.id}
                           style={{ padding: '2px 6px' }}
                           title={tr('Backup prüfen', 'Verify backup')}
@@ -686,6 +708,19 @@ export function Backups() {
                 'The current data is kept as a safety copy in the database first. If the restore fails, the club stays as it is.',
               )}
             </Text>
+            {restoreTarget.needs_private_key && (
+              <PasswordInput
+                label={tr('Privater Backup-Schlüssel', 'Backup private key')}
+                description={tr(
+                  'AGE-SECRET-KEY-1… aus deinem Passwort-Manager. Er wird nur für diese Wiederherstellung verwendet und nicht gespeichert.',
+                  'AGE-SECRET-KEY-1… from your password manager. It is used for this restore only and not stored.',
+                )}
+                value={privateKey}
+                onChange={(e) => setPrivateKey(e.currentTarget.value)}
+                autoComplete="off"
+                mb="sm"
+              />
+            )}
             <TextInput
               label={tr(
                 `Zum Bestätigen die Adresse des Vereins eintippen: ${restoreTarget.tenant_slug}`,
@@ -703,10 +738,44 @@ export function Backups() {
               <Button
                 color="red"
                 loading={restoring}
-                disabled={confirmSlug.trim() !== restoreTarget.tenant_slug}
+                disabled={
+                  confirmSlug.trim() !== restoreTarget.tenant_slug ||
+                  (restoreTarget.needs_private_key && !privateKey.trim())
+                }
                 onClick={() => handleRestore(restoreTarget)}
               >
                 {tr('Wiederherstellen', 'Restore')}
+              </Button>
+            </Group>
+          </>
+        )}
+      </Modal>
+
+      <Modal opened={verifyTarget !== null} onClose={closeVerify} title={tr('Backup prüfen', 'Verify backup')}>
+        {verifyTarget && (
+          <>
+            <Text size="sm" mb="md">
+              {tr(
+                'Ohne Schlüssel wird geprüft, ob die Datei im Speicher vollständig und unverändert ist. Mit dem privaten Schlüssel wird sie zusätzlich geöffnet und der Inhalt gezählt; der Schlüssel wird nicht gespeichert.',
+                'Without a key, the check makes sure the file in storage is complete and unchanged. With the private key it is also opened and its contents counted; the key is not stored.',
+              )}
+            </Text>
+            <PasswordInput
+              label={tr('Privater Backup-Schlüssel (optional)', 'Backup private key (optional)')}
+              value={privateKey}
+              onChange={(e) => setPrivateKey(e.currentTarget.value)}
+              autoComplete="off"
+              mb="lg"
+            />
+            <Group justify="flex-end">
+              <Button variant="default" onClick={closeVerify}>
+                {tr('Abbrechen', 'Cancel')}
+              </Button>
+              <Button
+                loading={verifyingId === verifyTarget.id}
+                onClick={() => handleVerify(verifyTarget.id, privateKey.trim() || undefined)}
+              >
+                {privateKey.trim() ? tr('Öffnen und prüfen', 'Open and check') : tr('Datei prüfen', 'Check file')}
               </Button>
             </Group>
           </>

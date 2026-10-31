@@ -34,10 +34,11 @@ Both use the same images from `ghcr.io/hubra-app/hubra/*` and the same
 
 ### Checklist for a new installation
 
-1. **Secrets.** `SECRET_KEY`, `JWT_SECRET_KEY`, `FERNET_KEY` and
-   `BACKUP_ENCRYPTION_KEY` are set. Copy `BACKUP_ENCRYPTION_KEY` and
-   `FERNET_KEY` to a password manager now: without them, backups and stored
-   door codes cannot be read.
+1. **Secrets.** `SECRET_KEY`, `JWT_SECRET_KEY` and `FERNET_KEY` are set,
+   and `BACKUP_PUBLIC_KEY` holds the public half of a pair from
+   `flask backups keygen`. Put the backup private key and `FERNET_KEY` in a
+   password manager now: without them, backups and stored door codes
+   cannot be read. The private key does not go on the server.
 2. **Host names.** `FRONTEND_BASE_URL`, `MANAGE_BASE_URL`, `SSO_BASE_URL`,
    `CORS_ORIGINS` (all four app hosts, including the join host),
    `JWT_COOKIE_DOMAIN` and `JWT_COOKIE_SECURE=true`. See
@@ -169,12 +170,29 @@ Backups are a platform task: manage › Platform › Backups, global permission
 - Celery beat makes a scheduled set every day, week and month, and keeps
   7 daily, 4 weekly and 6 monthly backups per set. Manual backups are kept
   until you delete them.
-- Files are encrypted with `BACKUP_ENCRYPTION_KEY` (GPG) and stored in the
-  S3 bucket from Platform › Settings › Backup storage.
+- Files are encrypted to `BACKUP_PUBLIC_KEY` ([age](https://age-encryption.org))
+  and stored in the S3 bucket from Platform › Settings › Backup storage. The
+  server only has the public key, so a break-in on the server cannot read
+  the backups. The private key stays in your password manager; restore
+  asks for it. Make the pair with `flask backups keygen`.
+- A club can get its own key: `flask backups club-key <club> age1…`. Its
+  backups are then encrypted to both keys, so the club can open its own
+  backups with its private key, and you still can with yours.
+- **Verify** without a key checks that the file in storage is complete and
+  unchanged (checksum). Paste the private key to also open it and count the
+  tables; do that now and then as a test restore.
+- `BACKUP_PRIVATE_KEY` in `.env` lets verify and restore run without asking,
+  at the price that a break-in on the server then opens the backups too.
+- Installs without `BACKUP_PUBLIC_KEY` keep using the `BACKUP_ENCRYPTION_KEY`
+  passphrase (GPG). Older `.dump.gpg` backups always open with it, so keep
+  it until they have expired.
 
 **Restore one club** (the usual case: someone deleted the wrong thing):
 Platform › Backups, filter by the club, pick a backup from before the
-mistake, click the restore icon and type the club's address to confirm. The
+mistake, click the restore icon, paste the backup private key and type the club's
+address to confirm. The key is used for this restore only and not stored
+(on its way to the background worker it is encrypted with `FERNET_KEY` and
+expires after an hour). The
 current schema is kept as a safety copy (`tenant_<id>_before_restore_…`),
 the backup is restored and migrated to the running code, and the rest of the
 platform is untouched. If anything fails, the club stays as it was. Drop the
