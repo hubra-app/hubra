@@ -24,6 +24,8 @@ import {
   usePagination,
   Pagination,
   ConfirmModal,
+  useLinkedId,
+  LinkedEntryBar,
 } from "@/components/ui";
 import type { Poll } from "@/types";
 import {
@@ -92,7 +94,10 @@ export function PollsTab() {
     },
   });
 
-  const pg = usePagination(polls, 12);
+  // ?poll=<id> (from a notification) shows just that poll.
+  const linked = useLinkedId("poll");
+  const shownPolls = linked.id ? polls.filter((p) => p.id === linked.id) : polls;
+  const pg = usePagination(shownPolls, 12);
 
   const castVoteMutation = useMutation({
     mutationFn: ({ pollId, optIdx }: { pollId: string; optIdx: number }) =>
@@ -240,6 +245,16 @@ export function PollsTab() {
             {t("polls.createPoll", 'Neue Umfrage')}
           </Button>
         </Group>
+      )}
+      {linked.id && (
+        <LinkedEntryBar
+          label={
+            shownPolls.length
+              ? t("polls.linkedOne", "Du siehst die Umfrage aus deiner Benachrichtigung.")
+              : t("polls.linkedGone", "Diese Umfrage gibt es nicht mehr.")
+          }
+          onShowAll={linked.clear}
+        />
       )}
       <Paper withBorder shadow="sm" radius="lg" style={{ marginBottom: 0 }}>
         <Pagination {...pg} top />

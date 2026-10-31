@@ -330,3 +330,43 @@ export async function acceptMyInvite(
 ): Promise<{ status: 'joined'; club: { slug: string; name: string } }> {
   return apiFetch(`/system/invites/${id}/accept`, { method: 'POST' })
 }
+
+/** One of the person's notifications, from one of their clubs. */
+export interface AccountNotification {
+  id: number
+  kind: 'info' | 'success' | 'warning' | 'member'
+  title: string
+  msg: string
+  time: string
+  read: boolean
+  /** Club app path it is about, e.g. "/app/operations/posts/3". */
+  link: string | null
+  club: { slug: string | null; name: string | null }
+}
+
+export async function getNotifications(): Promise<{
+  data: AccountNotification[]
+  meta: { unread: number }
+}> {
+  return apiFetch('/account/notifications')
+}
+
+const notificationPath = (n: AccountNotification) =>
+  `/account/notifications/${encodeURIComponent(n.club.slug ?? '-')}/${n.id}`
+
+export async function markNotificationRead(n: AccountNotification): Promise<void> {
+  await apiFetch(`${notificationPath(n)}/read`, { method: 'PATCH' })
+}
+
+export async function deleteNotification(n: AccountNotification): Promise<void> {
+  await apiFetch(notificationPath(n), { method: 'DELETE' })
+}
+
+export async function markAllNotificationsRead(): Promise<void> {
+  await apiFetch('/account/notifications/read-all', { method: 'POST' })
+}
+
+/** Deletes the person's notifications in all clubs; ``readOnly`` keeps unread ones. */
+export async function clearNotifications(readOnly = false): Promise<void> {
+  await apiFetch(`/account/notifications${readOnly ? '?read=1' : ''}`, { method: 'DELETE' })
+}
