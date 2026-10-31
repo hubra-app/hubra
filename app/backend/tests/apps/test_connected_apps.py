@@ -219,6 +219,14 @@ def test_update_config_audits_changed_keys(client, db, club_auth):
     assert data["events"][0]["action"] == "changed"
 
 
+def test_options_come_from_the_provider(client, db, club_auth):
+    conn_id = int(_query(_connect(client))["confirm"][0])
+    url = f"/api/v1/apps/connections/{conn_id}/options"
+    assert client.get(url, headers=H).get_json() == {}  # not confirmed yet
+    client.post(f"/api/v1/apps/connections/{conn_id}/confirm", headers=H)
+    assert client.get(url, headers=H).get_json()["channels"][0]["id"] == "c42"
+
+
 def test_update_config_validation_error(client, db, club_auth):
     conn_id = int(_query(_connect(client))["confirm"][0])
     resp = client.patch(

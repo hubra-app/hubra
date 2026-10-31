@@ -19,6 +19,9 @@ service. Every hook is optional unless marked:
     the connection to confirm. Raises ``AppError`` with a message to show.
 ``confirmed(connection)``
     After the admin confirmed (register commands, post a hello).
+``options(connection) -> dict``
+    What the settings form can choose from (channels, roles on the service,
+    the club's groups); served at ``/connections/<id>/options``.
 ``update_config(connection, config) -> dict``
     Validates the provider's own settings (channel, role mapping); returns
     what to store. Raises ``AppError``.

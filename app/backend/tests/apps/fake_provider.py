@@ -30,6 +30,9 @@ class Handler:
     def confirmed(self, conn):
         calls.append(("confirmed", conn.id))
 
+    def options(self, conn):
+        return {"channels": [{"id": "c42", "name": "general"}]}
+
     def update_config(self, conn, config):
         if config.get("channel") == "bad":
             raise AppError("No such channel")

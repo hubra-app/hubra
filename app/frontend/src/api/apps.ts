@@ -74,3 +74,8 @@ export async function testConnection(id: number): Promise<{ ok: boolean; message
 export async function disconnect(id: number): Promise<void> {
   await apiFetch(`/apps/connections/${id}`, { method: 'DELETE' })
 }
+
+/** What a connection's settings can choose from; the shape is the provider's. */
+export async function getConnectionOptions<T = Record<string, unknown>>(id: number): Promise<T> {
+  return apiFetch(`/apps/connections/${id}/options`)
+}

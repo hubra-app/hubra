@@ -177,6 +177,21 @@ def get_connection(connection_id: int):
     return jsonify(apps.serialize(conn, with_events=True)), 200
 
 
+@apps_bp.get("/connections/<int:connection_id>/options")
+@permission_required("apps", "manage", "Manage connected apps")
+def connection_options(connection_id: int):
+    """What the connection's settings can choose from (provider-specific)."""
+    conn = _connection_or_404(connection_id)
+    found = apps.provider(conn.provider)
+    fn = apps.hook(found[1], "options") if found else None
+    if fn is None or conn.status != "active":
+        return jsonify({}), 200
+    try:
+        return jsonify(fn(conn)), 200
+    except apps.AppError as exc:
+        return api_error("APP_FAILED", str(exc), 502)
+
+
 @apps_bp.post("/connections/<int:connection_id>/confirm")
 @permission_required("apps", "manage", "Manage connected apps")
 def confirm_connection(connection_id: int):
