@@ -176,7 +176,6 @@ const groupSchema = z.object({
   description: z.string(),
   color: z.string(),
   sessions: z.string(),
-  tools: z.number(),
   leadId: z.string(),
   selfJoin: z.boolean(),
 })
@@ -206,7 +205,6 @@ export function GroupsScreen() {
       description: '',
       color: '#2596be',
       sessions: '',
-      tools: 0,
       leadId: '',
       selfJoin: false,
     },
@@ -229,7 +227,6 @@ export function GroupsScreen() {
       description: '',
       color: '#2596be',
       sessions: '',
-      tools: 0,
       leadId: '',
       selfJoin: false,
     })
@@ -242,7 +239,6 @@ export function GroupsScreen() {
       description: g.description,
       color: g.color,
       sessions: g.sessions,
-      tools: g.tools,
       leadId: '',
       selfJoin: g.selfJoin ?? false,
     })
@@ -255,7 +251,6 @@ export function GroupsScreen() {
         description: data.description,
         color: data.color,
         sessions: data.sessions,
-        tools: data.tools,
         leadId: data.leadId ? Number(data.leadId) : undefined,
         selfJoin: data.selfJoin,
       })
@@ -287,7 +282,6 @@ export function GroupsScreen() {
         description: data.description,
         color: data.color,
         sessions: data.sessions,
-        tools: data.tools,
         ...(data.leadId ? { leadId: Number(data.leadId) } : {}),
         selfJoin: data.selfJoin,
       })
@@ -376,14 +370,6 @@ export function GroupsScreen() {
           <TextInput
             {...form.getInputProps('sessions')}
             placeholder={t('groups.sessionsPlaceholder', '3× pro Woche')}
-          />
-        </Field>
-        <Field label={t('groups.tools', 'Werkzeuge')}>
-          <TextInput
-            type="number"
-            min={0}
-            {...form.getInputProps('tools', { valueAsNumber: true })}
-            placeholder="0"
           />
         </Field>
       </SimpleGrid>
@@ -510,12 +496,6 @@ export function GroupsScreen() {
                     <Badge variant="light">
                       <IconClock size={12} />
                       {g.sessions}
-                    </Badge>
-                  )}
-                  {g.tools > 0 && (
-                    <Badge variant="light">
-                      <IconBolt size={12} />
-                      {g.tools} {t('groups.tools', 'Werkzeuge')}
                     </Badge>
                   )}
                 </div>

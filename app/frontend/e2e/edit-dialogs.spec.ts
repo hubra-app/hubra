@@ -5,7 +5,7 @@ import { appUrl } from './env'
 // Edit dialogs follow the member form: a wide dialog with paired fields
 // side by side, one column on phones.
 const DIALOGS = [
-  { path: 'groups', button: 'Gruppe hinzufügen', pair: ['Treffen', 'Werkzeuge'] },
+  { path: 'groups', button: 'Gruppe hinzufügen', pair: ['Name der Gruppe', 'Gruppenleitung'] },
   { path: 'members/functions', button: 'Hinzufügen', pair: ['Name', 'Max. Anzahl Personen'] },
   { path: 'members/tiers', button: 'Neue Stufe', pair: ['Abrechnung', 'Preis (CHF)'] },
   { path: 'operations/events', module: 'events', button: 'Anlass hinzufügen', pair: ['Datum', 'Zeit (optional)'] },
