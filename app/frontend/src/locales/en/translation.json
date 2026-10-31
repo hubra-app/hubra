@@ -2021,7 +2021,8 @@
       "modules": "Modules & plugins",
       "settings": "Advanced",
       "membership": "Membership",
-      "bank": "Bank & QR invoice"
+      "bank": "Bank & QR invoice",
+      "apps": "Connected apps"
     },
     "title": "Settings",
     "yourAccount": "Your Account",
@@ -3125,7 +3126,8 @@
       "tiers_tiers_update_percentage_value": "Percentage value",
       "tiers_tiers_update_price_chf": "Price (CHF)",
       "tiers_tiers_update_price_type": "Pricing type",
-      "tiers_tiers_update_round_to": "Round to"
+      "tiers_tiers_update_round_to": "Round to",
+      "apps_apps_manage": "Manage connected apps"
     },
     "areas": {
       "applications": "Applications",
@@ -3340,5 +3342,51 @@
     },
     "was": "Before",
     "reason": "Reason"
+  },
+  "apps": {
+    "activity": "Recent activity",
+    "allowed": "May",
+    "available": "Available",
+    "confirm": "Confirm",
+    "confirmBody": "Connect {{provider}} “{{label}}” to the club?",
+    "confirmTitle": "Confirm connection",
+    "connect": "Connect",
+    "connectFailed": "Not connected",
+    "connectHint": "You'll sign in on the service and choose what to connect. Then you confirm the connection here.",
+    "connectTitle": "Connect {{name}}",
+    "connected": "Connected",
+    "connectedBy": "Connected by {{name}}",
+    "connectedOk": "Connected",
+    "continue": "Continue to {{name}}",
+    "details": "Details",
+    "disconnect": "Disconnect",
+    "disconnectBody": "The app can't do anything for the club afterwards. Where possible it is removed on the service too.",
+    "disconnectFailed": "Disconnecting failed",
+    "disconnectTitle": "Disconnect?",
+    "disconnected": "Disconnected",
+    "error": "Error",
+    "errors": {
+      "cancelled": "Connecting was cancelled.",
+      "disabled": "The module for this app is switched off.",
+      "expired": "The connection expired or was started in another browser. Please connect again.",
+      "failed": "Connecting failed. Please try again.",
+      "taken": "This is already connected to another club."
+    },
+    "intro": "Services outside Hubra the club is connected to, and what they may do. Every connection is recorded in the audit log and can be disconnected at any time.",
+    "lastUsed": "last active",
+    "mayDo": "What the app may do",
+    "noActivity": "No activity yet.",
+    "noProviders": "Switch on a module with an app under “Modules & plugins”, for example Discord.",
+    "none": "No app connected yet.",
+    "test": "Test",
+    "testFailed": "Test failed",
+    "testOk": "The connection works",
+    "actions": {
+      "connect_started": "Connecting started",
+      "connected": "Connected",
+      "disconnected": "Disconnected",
+      "changed": "Changed",
+      "test": "Test"
+    }
   }
 }

@@ -124,6 +124,43 @@ class Schedule:
 
 
 @dataclass(frozen=True)
+class AppScope:
+    """One thing a connected app may do, shown to the admin who connects it."""
+
+    key: str
+    label: str
+    description: str = ""
+
+
+@dataclass(frozen=True)
+class AppProvider:
+    """An outside service a club can connect (Einstellungen > Verbundene Apps).
+
+    ``handler`` is a dotted ``module.path:object`` with the provider's hooks;
+    see ``hubra.core.apps`` for which ones exist.
+    """
+
+    code: str
+    name: str
+    handler: str
+    description: str = ""
+    icon: str = "plug"
+    scopes: tuple[AppScope, ...] = ()
+
+    def to_dict(self) -> dict:
+        return {
+            "code": self.code,
+            "name": self.name,
+            "description": self.description,
+            "icon": self.icon,
+            "scopes": [
+                {"key": s.key, "label": s.label, "description": s.description}
+                for s in self.scopes
+            ],
+        }
+
+
+@dataclass(frozen=True)
 class Module:
     """A module manifest.
 
@@ -137,6 +174,7 @@ class Module:
     module enabled.
     ``tasks`` lists Python modules with Celery tasks for the worker to load.
     ``schedule`` lists periodic tasks for the beat scheduler.
+    ``apps`` lists outside services a club can connect through this module.
     ``plugin`` is the id of the plugin that brought the module (set by the
     plugin loader; ``None`` for modules built into Hubra).
     """
@@ -155,6 +193,7 @@ class Module:
     tables: tuple[str, ...] = ()
     tasks: tuple[str, ...] = ()
     schedule: tuple[Schedule, ...] = ()
+    apps: tuple[AppProvider, ...] = ()
     plugin: str | None = None
 
     def setting(self, key: str) -> SettingField | None:

@@ -337,6 +337,15 @@ def _register_cli(app: Flask) -> None:
         db.session.commit()
         click.echo(f"Module catalog synced ({created} new).")
 
+    @modules_cli.command("seal-secrets")
+    def modules_seal_secrets():
+        """Encrypt secret module settings still stored in the clear."""
+        from hubra.core.modules.state import seal_secrets
+
+        count = seal_secrets()
+        db.session.commit()
+        click.echo(f"Encrypted {count} secret setting(s).")
+
     @modules_cli.command("list")
     @click.option("--tenant", "slug", help="Tenant slug (default: no tenant)")
     def modules_list(slug: str | None):
