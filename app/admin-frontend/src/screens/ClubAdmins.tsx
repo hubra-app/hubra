@@ -36,6 +36,10 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
   })
   const [email, setEmail] = useState('')
   const [level, setLevel] = useState<'admin' | 'owner'>('admin')
+  // Platform staff say why they change a club's admins; the owners are told.
+  const [reason, setReason] = useState('')
+  const asStaff = data?.access === 'platform'
+  const staffReason = asStaff ? reason.trim() : undefined
   const [busy, setBusy] = useState(false)
   const [removing, setRemoving] = useState<number | null>(null)
 
@@ -44,7 +48,7 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
   const add = async () => {
     setBusy(true)
     try {
-      await addClubAdmin(tenantId, email.trim(), level)
+      await addClubAdmin(tenantId, email.trim(), level, staffReason)
       notify('success', level === 'owner' ? tr('Inhaber hinzugefügt', 'Owner added') : tr('Admin hinzugefügt', 'Admin added'), email.trim())
       setEmail('')
       await refresh()
@@ -59,7 +63,7 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
     if (removing !== null) return
     setRemoving(a.user_id)
     try {
-      await removeClubAdmin(tenantId, a.user_id)
+      await removeClubAdmin(tenantId, a.user_id, staffReason)
       notify('success', tr('Entfernt', 'Removed'), tr(`${a.email} bleibt Mitglied im Verein.`, `${a.email} stays a member of the club.`))
       await refresh()
     } catch (err) {
@@ -122,7 +126,7 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
                         variant="subtle"
                         color="red"
                         leftSection={<IconUserMinus size={14} />}
-                        disabled={locked}
+                        disabled={locked || (asStaff && !reason.trim())}
                         title={
                           locked
                             ? owners <= 1
@@ -142,6 +146,20 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
             </Table.Tbody>
           </Table>
 
+          {asStaff && (
+            <TextInput
+              mb="md"
+              required
+              label={tr('Grund', 'Reason')}
+              description={tr(
+                'Du änderst die Admins als Plattform-Team. Die Inhaber des Vereins erhalten eine Mitteilung mit diesem Grund.',
+                'You change the admins as platform staff. The club\'s owners get a notice with this reason.',
+              )}
+              placeholder={tr('Support-Ticket #12345', 'Support ticket #12345')}
+              value={reason}
+              onChange={(e) => setReason(e.currentTarget.value)}
+            />
+          )}
           <Group align="flex-end" wrap="wrap">
             <TextInput
               label={tr('Per E-Mail hinzufügen', 'Add by email')}
@@ -164,7 +182,7 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
             <Button
               leftSection={<IconUserPlus size={16} />}
               loading={busy}
-              disabled={!email.includes('@')}
+              disabled={!email.includes('@') || (asStaff && !reason.trim())}
               onClick={add}
             >
               {tr('Hinzufügen', 'Add')}

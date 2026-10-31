@@ -652,6 +652,12 @@ def require_member(fn):
     return wrapper
 
 
+# Platform rights that amount to control of the whole server: plugin code
+# runs inside the backend, and a restore overwrites every club. Only the
+# superadmin flag carries them; no global role can.
+SUPERADMIN_ONLY = frozenset({"plugins.manage", "backups.manage"})
+
+
 def get_user_global_permissions(user_id: int) -> set[str]:
     """Return the set of global permission keys for a user.
 
@@ -686,7 +692,7 @@ def get_user_global_permissions(user_id: int) -> set[str]:
         .all()
     )
 
-    return set(rows)
+    return set(rows) - SUPERADMIN_ONLY
 
 
 def require_global_permission(permission_key: str):

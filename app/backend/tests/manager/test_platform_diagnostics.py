@@ -108,7 +108,7 @@ def test_support_role_gets_diagnostics(db):
     from hubra.api.global_rbac_seed import _DEFAULT_ROLES
 
     roles = {name: perms for name, _desc, perms in _DEFAULT_ROLES}
-    assert "platform.diagnostics" in roles["Superadmin"]
+    assert "platform.diagnostics" in roles["Platform admin"]
     assert "platform.diagnostics" in roles["Support"]
     assert "platform.settings" not in roles["Support"]
 

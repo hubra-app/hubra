@@ -159,9 +159,37 @@ def test_platform_managers_manage_any_club(client, seeded_db, db):
 
     _login(client, "boss@test.ch")
     assert client.get(_url(club)).get_json()["access"] == "platform"
+    # Staff say why, as for impersonation.
     resp = client.post(_url(club), json={"email": "newowner@test.ch", "level": "owner"})
+    assert resp.status_code == 400
+    assert resp.get_json()["error"] == "REASON_REQUIRED"
+    resp = client.post(
+        _url(club),
+        json={"email": "newowner@test.ch", "level": "owner", "reason": "Ticket 7"},
+    )
     assert resp.status_code == 201
     assert resp.get_json()["admin"]["level"] == "owner"
+
+
+def test_managing_members_does_not_name_club_owners(client, seeded_db, db):
+    """tenants.members.write (the Manager role) no longer opens every club's
+    admin list: that takes tenants.admins.write."""
+    from hubra.api.global_rbac_seed import seed_global_rbac
+    from hubra.core.models.global_role import GlobalRole, UserGlobalRole
+
+    seed_global_rbac()
+    club = _club(db, "rowers-manager")
+    manager = _account(client, db, "manager@test.ch")
+    role = db.session.scalar(select(GlobalRole).where(GlobalRole.name == "Manager"))
+    db.session.add(UserGlobalRole(user_id=manager.id, role_id=role.id))
+    db.session.commit()
+
+    _login(client, "manager@test.ch")
+    assert client.get(_url(club)).status_code == 403
+    resp = client.post(
+        _url(club), json={"email": "manager@test.ch", "level": "owner", "reason": "x"}
+    )
+    assert resp.status_code == 403
 
 
 def test_my_clubs_say_where_i_am_admin(client, seeded_db, db):

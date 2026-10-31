@@ -173,7 +173,7 @@ class TestImpersonationIsBounded:
         from hubra.core.models.global_role import GlobalRole, UserGlobalRole
 
         club, target = self._setup(client, db, seeded_db)
-        boss = db.session.query(GlobalRole).filter_by(name="Superadmin").one()
+        boss = db.session.query(GlobalRole).filter_by(name="Platform admin").one()
         db.session.add(UserGlobalRole(user_id=target.id, role_id=boss.id))
         db.session.commit()
         resp = client.post(
