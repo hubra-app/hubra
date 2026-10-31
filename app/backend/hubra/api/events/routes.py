@@ -13,12 +13,14 @@ from hubra.core.errors import api_error, raise_error
 from hubra.core.extensions import db
 from hubra.core.models.member import Member
 from hubra.core.schemas.event import (
+    AttendanceRollSchema,
     ClubEventCreateSchema,
     ClubEventSchema,
     ClubEventUpdateSchema,
     EventRegistrationSchema,
     RegisterSchema,
 )
+from hubra.api.events import attendance, series
 from hubra.api.events.services import EventService, EventsService
 
 events_bp = Blueprint("events_bp", __name__)
@@ -99,7 +101,17 @@ def update_event(event_id: int):
     except ValidationError as exc:
         return api_error("VALIDATION_ERROR", str(exc.messages), 400)
 
-    EventService.update(event, data, get_current_member().id)
+    # A date of a series: ``?scope=following`` changes it and all later
+    # dates (and may give them a new rule); otherwise just this one.
+    if request.args.get("scope") == "following":
+        rule = data.pop("recurrence", None)
+        event = series.update_following(event, data, rule, get_current_member().id)
+    elif "recurrence" in data:
+        return api_error(
+            "VALIDATION_ERROR", "recurrence changes need scope=following", 400
+        )
+    else:
+        EventService.update(event, data, get_current_member().id)
 
     try:
         db.session.commit()
@@ -117,7 +129,8 @@ def update_event(event_id: int):
 @events_bp.delete("/<int:event_id>")
 @permission_required("events", "delete", "Delete events")
 def delete_event(event_id: int):
-    EventService.delete(event_id, get_current_member().id)
+    scope = "following" if request.args.get("scope") == "following" else "this"
+    EventService.delete(event_id, get_current_member().id, scope)
 
     try:
         db.session.commit()
@@ -276,6 +289,9 @@ def decide_registration(event_id: int, member_id: int, decision: str):
 @permission_required("events", "add_attendee", "Mark event attendance")
 def mark_attendance(event_id: int, member_id: int):
     registration = EventService.mark_attendance(event_id, member_id)
+    attendance.set_status(
+        EventService.get(event_id), member_id, "present", get_current_member().id
+    )
 
     try:
         db.session.commit()
@@ -284,6 +300,126 @@ def mark_attendance(event_id: int, member_id: int):
         raise
 
     return jsonify(EventRegistrationSchema().dump(registration)), 200
+
+
+# ── Attendance roll of one event ─────────────────────────────────────────────
+
+
+def _event_group(kwargs) -> int | None:
+    """The group an event is for: a role held for that group (the team's
+    trainer) may take its roll."""
+    from hubra.core.models.event import ClubEvent
+
+    event = db.session.get(ClubEvent, kwargs.get("event_id"))
+    return event.group_id if event else None
+
+
+@events_bp.get("/<int:event_id>/attendance")
+@permission_required(
+    "events", "add_attendee", "Mark event attendance", scope=_event_group
+)
+def get_roll(event_id: int):
+    return jsonify(attendance.roll(EventService.get(event_id))), 200
+
+
+@events_bp.put("/<int:event_id>/attendance")
+@permission_required(
+    "events", "add_attendee", "Mark event attendance", scope=_event_group
+)
+def save_roll(event_id: int):
+    try:
+        data = AttendanceRollSchema().load(request.get_json(silent=True) or {})
+    except ValidationError as exc:
+        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+    event = EventService.get(event_id)
+    attendance.save_roll(event, data["entries"], get_current_member().id)
+    db.session.commit()
+    return jsonify(attendance.roll(event)), 200
+
+
+# ── Attendance overview ──────────────────────────────────────────────────────
+
+
+def _period() -> tuple[date, date]:
+    """``from`` and ``to`` (ISO dates); by default this year until today."""
+    today = date.today()
+    try:
+        since = date.fromisoformat(request.args.get("from") or f"{today.year}-01-01")
+        until = date.fromisoformat(request.args.get("to") or today.isoformat())
+    except ValueError:
+        raise_error(400, "VALIDATION_ERROR", "Use ISO dates (YYYY-MM-DD) for from and to")
+    return since, until
+
+
+def _int_arg(name: str) -> int | None:
+    value = request.args.get(name)
+    if not value:
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        raise_error(400, "VALIDATION_ERROR", f"{name} must be a number")
+
+
+def _overview_response(group_id: int | None):
+    from hubra.api.permissions import member_has_permission
+
+    since, until = _period()
+    data = attendance.overview(
+        since,
+        until,
+        group_id=group_id,
+        series_id=_int_arg("series_id"),
+        category=request.args.get("category", "").strip(),
+        type_=request.args.get("type", "").strip(),
+    )
+    if request.args.get("format") != "csv":
+        return jsonify(data), 200
+    # Birthdays (J+S needs them) only for those who may export members.
+    with_birthday = member_has_permission(get_current_member(), "members.members.export")
+    return Response(
+        attendance.overview_csv(data, with_birthday),
+        status=200,
+        mimetype="text/csv",
+        headers={
+            "Content-Disposition": (
+                f"attachment; filename=attendance-{since.isoformat()}-{until.isoformat()}.csv"
+            )
+        },
+    )
+
+
+@events_bp.get("/attendance")
+@permission_required("events", "add_attendee", "Mark event attendance")
+def attendance_overview():
+    """Attendance per member over the events of a period (``?group_id``,
+    ``series_id``, ``category``, ``type``; ``format=csv`` for a sheet)."""
+    return _overview_response(_int_arg("group_id"))
+
+
+@events_bp.get("/attendance/groups/<int:group_id>")
+@permission_required(
+    "events", "add_attendee", "Mark event attendance", scope="group_id"
+)
+def group_attendance(group_id: int):
+    """The same for one group's events; a role held for that group is
+    enough (a trainer of the team)."""
+    return _overview_response(group_id)
+
+
+@events_bp.get("/attendance/members/<int:member_id>")
+@permission_required("events", "add_attendee", "Mark event attendance")
+def member_attendance(member_id: int):
+    since, until = _period()
+    return jsonify(attendance.member_history(member_id, since, until)), 200
+
+
+@events_bp.get("/attendance/me")
+@permission_required("events", "read", "View events")
+def my_attendance():
+    since, until = _period()
+    member = get_current_member()
+    return jsonify(attendance.member_history(member.id, since, until)), 200
 
 
 # ── GET /events/calendar — iCal format ───────────────────────────────────────

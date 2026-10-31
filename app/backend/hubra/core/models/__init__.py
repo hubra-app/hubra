@@ -33,7 +33,13 @@ from hubra.core.models.application import Application
 from hubra.core.models.group import Group, GroupMembership
 from hubra.core.models.function import Function, FunctionHolder
 from hubra.core.models.managed_mail import ManagedMailAddress
-from hubra.core.models.event import ClubEvent, event_attendees, EventRegistration
+from hubra.core.models.event import (
+    ClubEvent,
+    EventAttendance,
+    EventRegistration,
+    EventSeries,
+    event_attendees,
+)
 from hubra.core.models.poll import Poll, PollOption, PollVote, PollProxy
 from hubra.core.models.post import Post, PostLike, PostComment
 from hubra.core.models.finance import Transaction, Invoice, TransactionCategory
@@ -103,6 +109,8 @@ __all__ = [
     "ManagedMailAddress",
     "ClubEvent",
     "event_attendees",
+    "EventAttendance",
+    "EventSeries",
     "EventRegistration",
     "Poll",
     "PollOption",

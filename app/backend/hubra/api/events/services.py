@@ -71,8 +71,19 @@ class EventService:
         return event  # type: ignore[return-value]
 
     @staticmethod
-    def update(event: ClubEvent, data: dict, actor_id: int) -> ClubEvent:
-        """Update allowed fields on an event."""
+    def update(
+        event: ClubEvent,
+        data: dict,
+        actor_id: int,
+        quiet: bool = False,
+        audit: bool = True,
+    ) -> ClubEvent:
+        """Update allowed fields on an event.
+
+        ``quiet`` leaves telling those signed up to the caller (a series
+        change tells each member once); ``audit=False`` leaves the audit
+        entry to it.
+        """
         before = (event.date, event.time, event.end_date, event.location)
         for field in (
             "title",
@@ -92,12 +103,13 @@ class EventService:
             "is_public",
             "cover_image_url",
             "color",
+            "group_id",
         ):
             if field in data:
                 setattr(event, field, data[field])
         if "date" in data or "end_date" in data:
             _check_dates(event.date, event.end_date)
-        if (event.date, event.time, event.end_date, event.location) != before:
+        if not quiet and (event.date, event.time, event.end_date, event.location) != before:
             _tell_registered(event, "Event changed", skip_member_id=actor_id)
         if data.get("requires_approval") is False:
             # Approval switched off: whoever is waiting for it is let in, in
@@ -118,6 +130,8 @@ class EventService:
             db.session.flush()
             EventService._promote_waitlist(event)
 
+        if not audit:
+            return event
         log_audit(
             actor_id=actor_id,
             action="update_event",
@@ -128,9 +142,16 @@ class EventService:
         return event
 
     @staticmethod
-    def delete(event_id: int, actor_id: int) -> None:
-        """Delete an event."""
+    def delete(event_id: int, actor_id: int, scope: str = "this") -> None:
+        """Delete an event; ``scope="following"`` also the later dates of
+        its series."""
+        from hubra.api.events import series
+
         event = EventService.get(event_id)
+        if scope == "following":
+            series.delete_following(event, actor_id)
+            return
+        series.delete_one(event)
 
         log_audit(
             actor_id=actor_id,
@@ -682,10 +703,15 @@ class EventsService:
             is_public=data.get("is_public", False),
             cover_image_url=data.get("cover_image_url"),
             color=data.get("color"),
+            group_id=data.get("group_id"),
             created_by=actor_id,
         )
         db.session.add(event)
         db.session.flush()
+        if data.get("recurrence"):
+            from hubra.api.events.series import create_series
+
+            create_series(event, data["recurrence"], actor_id)
 
         notify_on_publish(
             "events", "info", "New event", event.title, skip_member_id=actor_id

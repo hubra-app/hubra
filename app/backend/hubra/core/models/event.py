@@ -1,10 +1,12 @@
-"""ClubEvent model, EventRegistration model, and event_attendees association table."""
+"""ClubEvent, EventSeries, EventRegistration and EventAttendance models, and
+the event_attendees association table."""
 
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
 
 from sqlalchemy import (
+    JSON,
     Column,
     Date,
     DateTime,
@@ -36,6 +38,41 @@ event_attendees = Table(
         primary_key=True,
     ),
 )
+
+
+# ── EventSeries ───────────────────────────────────────────────────────────────
+
+
+class EventSeries(db.Model):
+    """A weekly rule (a training every Tuesday until the summer holidays).
+
+    Each date of the rule is an ordinary event (``ClubEvent.series_id``), so
+    sign-ups and attendance work per date. The events carry the title, time
+    and the rest; the series holds only the rule.
+    """
+
+    __tablename__ = "event_series"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    until: Mapped[date] = mapped_column(Date, nullable=False)
+    # Every n-th week, counted from the week of start_date.
+    interval: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    # Weekdays as numbers, Monday 0 ... Sunday 6.
+    weekdays: Mapped[list[int]] = mapped_column(JSON, nullable=False)
+    # Dates the rule leaves out (holidays, a date deleted on its own).
+    skip_dates: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    created_by: Mapped[int | None] = mapped_column(
+        db.Integer, ForeignKey("members.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    def __repr__(self) -> str:
+        return f"<EventSeries id={self.id} {self.start_date}..{self.until}>"
 
 
 # ── ClubEvent ─────────────────────────────────────────────────────────────────
@@ -78,6 +115,20 @@ class ClubEvent(db.Model):
     created_by: Mapped[int | None] = mapped_column(
         db.Integer, ForeignKey("members.id", ondelete="SET NULL"), nullable=True
     )
+    # The group the event is for (a team's training): its members are
+    # expected, which the attendance overview counts against.
+    group_id: Mapped[int | None] = mapped_column(
+        db.Integer, ForeignKey("groups.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    # A date of a recurring series, and the date of the rule it stands for
+    # (it stays when this one date is moved).
+    series_id: Mapped[int | None] = mapped_column(
+        db.Integer,
+        ForeignKey("event_series.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    series_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -105,6 +156,7 @@ class ClubEvent(db.Model):
     creator: Mapped["Member | None"] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "Member", foreign_keys=[created_by]
     )
+    series: Mapped["EventSeries | None"] = relationship("EventSeries", lazy="selectin")
 
     def __repr__(self) -> str:
         return f"<ClubEvent id={self.id} title={self.title!r}>"
@@ -152,3 +204,43 @@ class EventRegistration(db.Model):
 
     def __repr__(self) -> str:
         return f"<EventRegistration event_id={self.event_id} member_id={self.member_id} status={self.status!r}>"
+
+
+class EventAttendance(db.Model):
+    """Who was there: taken by an organiser or trainer per event date.
+
+    Kept apart from the sign-up, as most come to a training without signing
+    up. ``present``, ``excused`` (told the trainer they could not come) or
+    ``absent``; no row means not recorded.
+    """
+
+    __tablename__ = "event_attendance"
+    __table_args__ = (
+        UniqueConstraint("event_id", "member_id", name="uq_event_attendance"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    event_id: Mapped[int] = mapped_column(
+        db.Integer,
+        ForeignKey("club_events.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    member_id: Mapped[int] = mapped_column(
+        db.Integer,
+        ForeignKey("members.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    status: Mapped[str] = mapped_column(db.String(20), nullable=False)
+    marked_by: Mapped[int | None] = mapped_column(
+        db.Integer, ForeignKey("members.id", ondelete="SET NULL"), nullable=True
+    )
+    marked_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    def __repr__(self) -> str:
+        return f"<EventAttendance event_id={self.event_id} member_id={self.member_id} status={self.status!r}>"
