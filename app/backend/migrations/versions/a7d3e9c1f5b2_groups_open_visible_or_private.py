@@ -6,7 +6,7 @@
 and group managers see it). Changed in public and in every club schema.
 
 Revision ID: a7d3e9c1f5b2
-Revises: f2c8a4d6b1e3
+Revises: d7f3b9a1c5e8, e3b9d5f1a7c4
 Create Date: 2026-10-31 06:30:00.000000
 
 """
@@ -16,7 +16,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "a7d3e9c1f5b2"
-down_revision = "f2c8a4d6b1e3"
+down_revision = ("d7f3b9a1c5e8", "e3b9d5f1a7c4")
 branch_labels = None
 depends_on = None
 
