@@ -8,6 +8,13 @@ interface BackendNotification {
   msg: string;
   time: string;
   read: boolean;
+  link?: string | null;
+}
+
+export interface NotificationList {
+  items: Notification[];
+  /** All unread ones, also those past the newest 100 the list holds. */
+  unread: number;
 }
 
 function adapt(b: BackendNotification): Notification {
@@ -18,13 +25,21 @@ function adapt(b: BackendNotification): Notification {
     msg: b.msg,
     time: b.time,
     read: b.read,
+    link: b.link ?? null,
   };
 }
 
-export async function listNotifications(): Promise<Notification[]> {
-  // The API answers { data, meta: { unread } }, not a bare list.
-  const { data } = await apiFetch<{ data: BackendNotification[] }>("/notifications/");
-  return data.map(adapt);
+export async function listNotifications(): Promise<NotificationList> {
+  const { data, meta } = await apiFetch<{
+    data: BackendNotification[];
+    meta?: { unread?: number };
+  }>("/notifications/");
+  const items = data.map(adapt);
+  return { items, unread: meta?.unread ?? items.filter((n) => !n.read).length };
+}
+
+export async function markNotificationRead(id: string): Promise<void> {
+  await apiFetch(`/notifications/${encodeURIComponent(id)}/read`, { method: "PATCH" });
 }
 
 export async function markAllNotificationsRead(): Promise<void> {
@@ -33,4 +48,9 @@ export async function markAllNotificationsRead(): Promise<void> {
 
 export async function deleteNotification(id: string): Promise<void> {
   await apiFetch(`/notifications/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+/** Delete the member's own notifications; ``readOnly`` keeps the unread ones. */
+export async function clearNotifications(readOnly = false): Promise<void> {
+  await apiFetch(`/notifications/${readOnly ? "?read=1" : ""}`, { method: "DELETE" });
 }

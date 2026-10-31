@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
@@ -22,7 +22,11 @@ def _fit(text: str) -> str:
 
 
 def notify_all_active(
-    kind: str, title: str, msg: str, skip_member_id: int | None = None
+    kind: str,
+    title: str,
+    msg: str,
+    skip_member_id: int | None = None,
+    link: str | None = None,
 ) -> None:
     """Create a notification for every active (non-archived) member."""
     members = db.session.scalars(
@@ -35,7 +39,11 @@ def notify_all_active(
             continue
         db.session.add(
             Notification(
-                member_id=member_id, kind=kind, title=_fit(title), msg=_fit(msg)
+                member_id=member_id,
+                kind=kind,
+                title=_fit(title),
+                msg=_fit(msg),
+                link=link,
             )
         )
 
@@ -46,6 +54,7 @@ def notify_on_publish(
     title: str,
     msg: str,
     skip_member_id: int | None = None,
+    link: str | None = None,
 ) -> None:
     """``notify_all_active`` unless the club switched the module's
     "notify members" setting off (posts, events, polls)."""
@@ -53,18 +62,26 @@ def notify_on_publish(
 
     if get_config(module_code).get("notify_members", True) is False:
         return
-    notify_all_active(kind, title, msg, skip_member_id=skip_member_id)
+    notify_all_active(kind, title, msg, skip_member_id=skip_member_id, link=link)
 
 
-def notify_member(member_id: int, kind: str, title: str, msg: str) -> None:
+def notify_member(
+    member_id: int, kind: str, title: str, msg: str, link: str | None = None
+) -> None:
     """Create a notification for a single member."""
     db.session.add(
-        Notification(member_id=member_id, kind=kind, title=_fit(title), msg=_fit(msg))
+        Notification(
+            member_id=member_id, kind=kind, title=_fit(title), msg=_fit(msg), link=link
+        )
     )
 
 
 def create_notification(
-    member_id: int, kind: str = "info", title: str = "", msg: str = ""
+    member_id: int,
+    kind: str = "info",
+    title: str = "",
+    msg: str = "",
+    link: str | None = None,
 ) -> Notification:
     """Create, flush and return an unread notification for one member."""
     notif = Notification(
@@ -74,6 +91,7 @@ def create_notification(
         msg=_fit(msg),
         time=datetime.now(timezone.utc),
         read=False,
+        link=link,
     )
     db.session.add(notif)
     db.session.flush()
@@ -151,3 +169,12 @@ class NotificationsService:
 
         for n in unread:
             n.read = True
+
+    @staticmethod
+    def delete_all(member_id: int, read_only: bool = False) -> int:
+        """Delete a member's notifications (only the read ones with
+        ``read_only``) and return how many went."""
+        query = delete(Notification).where(Notification.member_id == member_id)
+        if read_only:
+            query = query.where(Notification.read.is_(True))
+        return db.session.execute(query).rowcount or 0

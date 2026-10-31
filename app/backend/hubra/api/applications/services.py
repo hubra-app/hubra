@@ -168,6 +168,10 @@ class ApplicationsService:
         from hubra.api.notifications.staff import notify_permitted
 
         notify_permitted(
-            "applications.applications.approve", "info", "New application", app.name
+            "applications.applications.approve",
+            "info",
+            "New application",
+            app.name,
+            link="/app/members/applications",
         )
         return app  # type: ignore[return-value]

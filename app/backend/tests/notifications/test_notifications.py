@@ -85,3 +85,107 @@ def test_long_text_is_shortened_to_fit(db, seeded_db):
 
 def test_notifications_need_a_sign_in(client):
     assert client.get("/api/v1/notifications/").status_code == 401
+
+
+def test_clear_deletes_only_my_notifications(
+    client, auth_headers, db, seeded_db, other_member
+):
+    admin_id = seeded_db["admin"].id
+    db.session.query(Notification).delete()
+    notify_member(admin_id, "info", "Gelesen", "a")
+    notify_member(admin_id, "info", "Neu", "b")
+    notify_member(other_member.id, "info", "Fremd", "c")
+    db.session.commit()
+    read_id = next(n["id"] for n in _mine(client, auth_headers)["data"] if n["title"] == "Gelesen")
+    client.patch(f"/api/v1/notifications/{read_id}/read", headers=auth_headers)
+
+    # ?read=1 clears the read ones and keeps what is still unread
+    resp = client.delete("/api/v1/notifications/?read=1", headers=auth_headers)
+    assert resp.status_code == 200 and resp.get_json()["deleted"] == 1
+    assert [n["title"] for n in _mine(client, auth_headers)["data"]] == ["Neu"]
+
+    resp = client.delete("/api/v1/notifications/", headers=auth_headers)
+    assert resp.status_code == 200 and resp.get_json()["deleted"] == 1
+    body = _mine(client, auth_headers)
+    assert body["data"] == [] and body["meta"]["unread"] == 0
+
+    # another member's notifications stay
+    assert db.session.query(Notification).filter_by(member_id=other_member.id).count() == 1
+
+
+def test_list_carries_the_link(client, auth_headers, db, seeded_db):
+    db.session.query(Notification).delete()
+    notify_member(seeded_db["admin"].id, "info", "Mit Link", "a", link="/app/members/1")
+    notify_member(seeded_db["admin"].id, "info", "Ohne", "b")
+    db.session.commit()
+
+    links = {n["title"]: n["link"] for n in _mine(client, auth_headers)["data"]}
+    assert links == {"Mit Link": "/app/members/1", "Ohne": None}
+
+
+def test_published_things_link_to_themselves(
+    client, auth_headers, db, seeded_db, other_member
+):
+    """The other member hears about a new post, event and poll, and each
+    notification opens it."""
+    post = client.post(
+        "/api/v1/posts/", json={"title": "Hallo", "body": "x"}, headers=auth_headers
+    ).get_json()
+    event = client.post(
+        "/api/v1/events/",
+        json={"title": "Fest", "date": "2099-12-01", "type": "Social"},
+        headers=auth_headers,
+    ).get_json()
+    poll = client.post(
+        "/api/v1/polls/",
+        json={"question": "Wohin?", "options": [{"label": "a"}, {"label": "b"}]},
+        headers=auth_headers,
+    ).get_json()
+
+    links = {
+        n.title: n.link
+        for n in db.session.query(Notification).filter_by(member_id=other_member.id)
+    }
+    assert links == {
+        "New post": f"/app/operations/posts/{post['id']}",
+        "New event": f"/app/operations/events?event={event['id']}",
+        "New poll": f"/app/operations/polls?poll={poll['id']}",
+    }
+
+
+# ── The account page: every club's notifications ─────────────────────────────
+
+
+def test_account_lists_and_clears_my_notifications(
+    client, auth_headers, db, seeded_db, other_member
+):
+    admin_id = seeded_db["admin"].id
+    db.session.query(Notification).delete()
+    notify_member(admin_id, "info", "Eins", "a", link="/app/members/1")
+    notify_member(admin_id, "info", "Zwei", "b")
+    notify_member(other_member.id, "info", "Fremd", "c")
+    db.session.commit()
+
+    body = client.get("/api/v1/account/notifications").get_json()
+    assert {n["title"] for n in body["data"]} == {"Eins", "Zwei"}
+    assert body["meta"]["unread"] == 2
+    first = next(n for n in body["data"] if n["title"] == "Eins")
+    assert first["link"] == "/app/members/1" and "club" in first
+
+    club = first["club"]["slug"] or "-"
+    assert client.patch(f"/api/v1/account/notifications/{club}/{first['id']}/read").status_code == 200
+    assert client.get("/api/v1/account/notifications").get_json()["meta"]["unread"] == 1
+
+    assert client.delete("/api/v1/account/notifications?read=1").get_json()["deleted"] == 1
+    assert client.post("/api/v1/account/notifications/read-all").status_code == 200
+    assert client.get("/api/v1/account/notifications").get_json()["meta"]["unread"] == 0
+    assert client.delete("/api/v1/account/notifications").get_json()["deleted"] == 1
+
+    # someone else's stays, and can't be reached through the account
+    other = db.session.query(Notification).filter_by(member_id=other_member.id).one()
+    assert client.delete(f"/api/v1/account/notifications/-/{other.id}").status_code == 404
+    assert db.session.get(Notification, other.id) is not None
+
+
+def test_account_notifications_need_a_sign_in(client):
+    assert client.get("/api/v1/account/notifications").status_code == 401

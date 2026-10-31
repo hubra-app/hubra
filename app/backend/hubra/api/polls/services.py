@@ -34,6 +34,11 @@ def is_closed(poll: Poll) -> bool:
     return closes_at <= datetime.now(timezone.utc)
 
 
+def poll_link(poll_id: int) -> str:
+    """The polls page showing one poll."""
+    return f"/app/operations/polls?poll={poll_id}"
+
+
 class PollService:
     """Operations on a single poll."""
 
@@ -115,6 +120,7 @@ class PollService:
                 "info",
                 f"New vote: {poll.question}",
                 f"{voter_name} voted for {chosen_option.label}",
+                link=poll_link(poll.id),
             )
 
         return poll
@@ -243,6 +249,7 @@ class PollService:
                     "warning",
                     f"Reminder: {poll.question}",
                     "Please cast your vote before the poll closes.",
+                    link=poll_link(poll.id),
                 )
                 sent += 1
 
@@ -289,7 +296,12 @@ class PollsService:
             db.session.add(PollOption(poll_id=poll.id, label=opt["label"]))
 
         notify_on_publish(
-            "polls", "info", "New poll", poll.question, skip_member_id=actor_id
+            "polls",
+            "info",
+            "New poll",
+            poll.question,
+            skip_member_id=actor_id,
+            link=poll_link(poll.id),
         )
         emit(POLL_PUBLISHED, poll_id=poll.id)
 
@@ -381,6 +393,7 @@ class ProxyService:
             "info",
             f"Proxy vote: {poll.question}",
             f"{grantor.name if grantor else 'A member'} asked you to vote for them.",
+            link=poll_link(poll.id),
         )
         return proxy
 

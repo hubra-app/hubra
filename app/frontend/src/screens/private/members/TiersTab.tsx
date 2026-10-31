@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Button, Group, Select, Paper, TextInput } from '@mantine/core'
+import { Button, Checkbox, Group, Select, Paper, SimpleGrid, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
@@ -369,64 +369,64 @@ export function TiersTab() {
 
   const allTiers = tiers // local alias for tier select options
 
+  const otherTiers = allTiers.filter((ot) => ot.id !== (editTarget?.id ?? '-1'))
+
   const tierForm = (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div
-        style={{ display: 'grid', gridTemplateColumns: '1fr 72px', gap: 12 }}
-      >
-        <Field label={t('tiers.form.name', 'Name der Stufe')}>
-          <TextInput
-            {...form.getInputProps('name')}
-            placeholder={t('tiers.form.namePlaceholder', 'z. B. Vollzugang')}
+      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 72px', gap: 12 }}>
+          <Field label={t('tiers.form.name', 'Name der Stufe')}>
+            <TextInput
+              {...form.getInputProps('name')}
+              placeholder={t('tiers.form.namePlaceholder', 'z. B. Vollzugang')}
+            />
+          </Field>
+          <Field label={t('common.color', 'Farbe')}>
+            <TextInput
+              type="color"
+              {...form.getInputProps('color')}
+              style={{ height: 38, padding: '2px 6px', cursor: 'pointer' }}
+            />
+          </Field>
+        </div>
+
+        <Field label={t('tiers.form.priceType', 'Preisart')}>
+          <Select
+            data={[
+              { value: 'fixed', label: t('tiers.type.fixed', 'Fester Betrag') },
+              { value: 'percentage', label: t('tiers.type.percentage', 'Prozentual') },
+              { value: 'formula', label: t('tiers.type.formula', 'Formel') },
+            ]}
+            {...form.getInputProps('priceType')}
           />
         </Field>
-        <Field label={t('common.color', 'Farbe')}>
-          <TextInput
-            type="color"
-            {...form.getInputProps('color')}
-            style={{ height: 38, padding: '2px 6px', cursor: 'pointer' }}
+
+        <Field label={t('tiers.form.billingCycle', 'Abrechnung')}>
+          <Select
+            data={[
+              { value: '', label: t('tiers.cycle.none', 'Keine (manuell)') },
+              { value: 'monthly', label: t('tiers.cycle.monthly', 'Monatlich') },
+              { value: 'yearly', label: t('tiers.cycle.yearly', 'Jährlich') },
+            ]}
+            {...form.getInputProps('billingCycle')}
           />
         </Field>
-      </div>
 
-      <Field label={t('tiers.form.priceType', 'Preisart')}>
-        <Select
-          data={[
-            { value: 'fixed', label: t('tiers.type.fixed', 'Fester Betrag') },
-            { value: 'percentage', label: t('tiers.type.percentage', 'Prozentual') },
-            { value: 'formula', label: t('tiers.type.formula', 'Formel') },
-          ]}
-          {...form.getInputProps('priceType')}
-        />
-      </Field>
+        {watchedPriceType === 'fixed' && (
+          <Field
+            label={t('tiers.form.price', 'Preis (CHF)')}
+            hint={t('tiers.form.perPeriod', 'Pro {{period}}', { period: t(`tiers.per.${watchedBillingCycle || 'period'}`, watchedBillingCycle || 'Periode') })}
+          >
+            <TextInput
+              type="number"
+              min={0}
+              {...form.getInputProps('price')}
+              placeholder="80"
+            />
+          </Field>
+        )}
 
-      <Field label={t('tiers.form.billingCycle', 'Abrechnung')}>
-        <Select
-          data={[
-            { value: '', label: t('tiers.cycle.none', 'Keine (manuell)') },
-            { value: 'monthly', label: t('tiers.cycle.monthly', 'Monatlich') },
-            { value: 'yearly', label: t('tiers.cycle.yearly', 'Jährlich') },
-          ]}
-          {...form.getInputProps('billingCycle')}
-        />
-      </Field>
-
-      {watchedPriceType === 'fixed' && (
-        <Field
-          label={t('tiers.form.price', 'Preis (CHF)')}
-          hint={t('tiers.form.perPeriod', 'Pro {{period}}', { period: t(`tiers.per.${watchedBillingCycle || 'period'}`, watchedBillingCycle || 'Periode') })}
-        >
-          <TextInput
-            type="number"
-            min={0}
-            {...form.getInputProps('price')}
-            placeholder="80"
-          />
-        </Field>
-      )}
-
-      {watchedPriceType === 'percentage' && (
-        <>
+        {watchedPriceType === 'percentage' && (
           <Field
             label={t('tiers.form.percentage', 'Prozentsatz (%)')}
             hint={t('tiers.form.percentageHint', 'z. B. 2.5 heisst 2.5 % der jährlichen Ausgaben pro Mitglied und Jahr')}
@@ -439,91 +439,81 @@ export function TiersTab() {
               placeholder="2.5"
             />
           </Field>
-        </>
-      )}
+        )}
+
+        {watchedPriceType === 'formula' && (
+          <>
+            <Field
+              label={t('tiers.form.coefficient', 'Koeffizient')}
+              hint={t('tiers.form.coefficientHint', 'z. B. 0.70, um 70 % der Beiträge anderer Stufen abzuziehen')}
+            >
+              <TextInput
+                type="number"
+                min={0}
+                max={1}
+                step={0.01}
+                {...form.getInputProps('coefficient')}
+                placeholder="0.70"
+              />
+            </Field>
+            <Field
+              label={t('tiers.form.roundTo', 'Runden auf')}
+              hint={t('tiers.form.roundHint', 'Aufrunden auf (z. B. 5 → nächste 5 CHF)')}
+            >
+              <TextInput
+                type="number"
+                min={1}
+                {...form.getInputProps('roundTo')}
+                placeholder="5"
+              />
+            </Field>
+          </>
+        )}
+      </SimpleGrid>
 
       {watchedPriceType === 'formula' && (
-        <>
-          <Field
-            label={t('tiers.form.coefficient', 'Koeffizient')}
-            hint={t('tiers.form.coefficientHint', 'z. B. 0.70, um 70 % der Beiträge anderer Stufen abzuziehen')}
-          >
-            <TextInput
-              type="number"
-              min={0}
-              max={1}
-              step={0.01}
-              {...form.getInputProps('coefficient')}
-              placeholder="0.70"
-            />
-          </Field>
-          <Field
-            label={t('tiers.form.roundTo', 'Runden auf')}
-            hint={t('tiers.form.roundHint', 'Aufrunden auf (z. B. 5 → nächste 5 CHF)')}
-          >
-            <TextInput
-              type="number"
-              min={1}
-              {...form.getInputProps('roundTo')}
-              placeholder="5"
-            />
-          </Field>
-          <Field
-            label={t('tiers.form.deduct', 'Beiträge abziehen von')}
-            hint={t('tiers.form.deductHint', 'Stufen, deren Beiträge in der Formel abgezogen werden')}
-          >
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 6,
-                padding: '4px 0',
-              }}
-            >
-              {allTiers
-                .filter((ot) => ot.id !== (editTarget?.id ?? '-1'))
-                .map((ot) => (
-                  <label
-                    key={ot.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      fontSize: 'var(--mantine-font-size-sm)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={watchedDeductIds.includes(Number(ot.id))}
-                      onChange={(e) => {
-                        const id = Number(ot.id)
-                        form.setFieldValue(
-                          'deductIds',
-                          e.target.checked
-                            ? [...watchedDeductIds, id]
-                            : watchedDeductIds.filter((v: number) => v !== id),
-                        )
-                      }}
+        <Field
+          label={t('tiers.form.deduct', 'Beiträge abziehen von')}
+          hint={t('tiers.form.deductHint', 'Stufen, deren Beiträge in der Formel abgezogen werden')}
+        >
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={6} py={4}>
+            {otherTiers.map((ot) => (
+              <Checkbox
+                key={ot.id}
+                size="sm"
+                checked={watchedDeductIds.includes(Number(ot.id))}
+                onChange={(e) => {
+                  const id = Number(ot.id)
+                  form.setFieldValue(
+                    'deductIds',
+                    e.currentTarget.checked
+                      ? [...watchedDeductIds, id]
+                      : watchedDeductIds.filter((v: number) => v !== id),
+                  )
+                }}
+                label={
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <span
+                      aria-hidden
+                      style={{ width: 8, height: 8, borderRadius: 4, background: ot.color }}
                     />
-                    <span style={{ color: ot.color }}>?</span>
                     {ot.name}
-                  </label>
-                ))}
-              {allTiers.filter((ot) => ot.id !== (editTarget?.id ?? '-1'))
-                .length === 0 && (
-                <span
-                  style={{
-                    color: 'var(--hb-text-3)',
-                    fontSize: 'var(--mantine-font-size-xs)',
-                  }}
-                >
-                  {t('tiers.form.noOtherTiers', 'Keine anderen Stufen vorhanden')}
-                </span>
-              )}
-            </div>
-          </Field>
-        </>
+                  </span>
+                }
+              />
+            ))}
+            {otherTiers.length === 0 && (
+              <span
+                style={{
+                  color: 'var(--hb-text-3)',
+                  fontSize: 'var(--mantine-font-size-xs)',
+                }}
+              >
+                {t('tiers.form.noOtherTiers', 'Keine anderen Stufen vorhanden')}
+              </span>
+            )}
+          </SimpleGrid>
+        </Field>
       )}
 
       {costPreview && (
@@ -756,6 +746,7 @@ export function TiersTab() {
         onSubmit={form.onSubmit(saveAdd)}
         open={addOpen}
         onClose={() => setAddOpen(false)}
+        wide
         title={t('tiers.newTitle', 'Neue Mitgliedschaftsstufe')}
         footer={
           <>
@@ -778,6 +769,7 @@ export function TiersTab() {
         onSubmit={form.onSubmit(saveEdit)}
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
+        wide
         title={t('tiers.editTitle', 'Stufe bearbeiten')}
         subtitle={editTarget?.name}
         footer={
