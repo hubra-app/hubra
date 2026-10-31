@@ -4,7 +4,7 @@ import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, Group, Select, TextInput } from '@mantine/core'
+import { Button, Group, Select, SimpleGrid, TextInput } from '@mantine/core'
 import { useT, zmsg } from '@/locales/i18n'
 import { IconPlus } from '@tabler/icons-react'
 import { useToast, useNav, useAuth } from '@/context/AppContext'
@@ -565,6 +565,7 @@ export function InvoicesTab() {
         onSubmit={bulkForm.onSubmit(handleBulk)}
         open={bulkOpen}
         onClose={() => setBulkOpen(false)}
+        wide
         title={t('finance.bulk.createTitle', 'Rechnungen für mehrere Mitglieder erstellen')}
         footer={
           <>
@@ -584,32 +585,37 @@ export function InvoicesTab() {
         }
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Field
-            label={t('members.tier', 'Stufe')}
-            hint={t(
-              'finance.tierHint',
-              'Leer lassen, um allen aktiven Mitgliedern eine Rechnung zu stellen',
-            )}
-          >
-            <Select
-              data={[
-                {
-                  value: '',
-                  label: t('finance.allActiveMembers', 'Alle aktiven Mitglieder'),
-                },
-                ...tierOptions.map((tierItem) => ({
-                  value: tierItem.id,
-                  label: `${tierItem.name}${
-                    tierItem.priceChf != null
-                      ? ` — CHF ${formatCHF(tierItem.priceChf)}`
-                      : ` ${t('finance.noPrice', '(kein Preis)')}`
-                  }`,
-                })),
-              ]}
-              searchable
-              {...bulkForm.getInputProps('tierId')}
-            />
-          </Field>
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
+            <Field
+              label={t('members.tier', 'Stufe')}
+              hint={t(
+                'finance.tierHint',
+                'Leer lassen, um allen aktiven Mitgliedern eine Rechnung zu stellen',
+              )}
+            >
+              <Select
+                data={[
+                  {
+                    value: '',
+                    label: t('finance.allActiveMembers', 'Alle aktiven Mitglieder'),
+                  },
+                  ...tierOptions.map((tierItem) => ({
+                    value: tierItem.id,
+                    label: `${tierItem.name}${
+                      tierItem.priceChf != null
+                        ? ` — CHF ${formatCHF(tierItem.priceChf)}`
+                        : ` ${t('finance.noPrice', '(kein Preis)')}`
+                    }`,
+                  })),
+                ]}
+                searchable
+                {...bulkForm.getInputProps('tierId')}
+              />
+            </Field>
+            <Field label={t('finance.invoice.due', 'Fällig')}>
+              <TextInput type="date" {...bulkForm.getInputProps('due')} />
+            </Field>
+          </SimpleGrid>
           <Field
             label={t('common.description', 'Beschreibung')}
             hint={t(
@@ -624,9 +630,6 @@ export function InvoicesTab() {
               )}
               {...bulkForm.getInputProps('description')}
             />
-          </Field>
-          <Field label={t('finance.invoice.due', 'Fällig')}>
-            <TextInput type="date" {...bulkForm.getInputProps('due')} />
           </Field>
           <div
             style={{
@@ -649,6 +652,7 @@ export function InvoicesTab() {
         onSubmit={singleForm.onSubmit(handleCreate)}
         open={addOpen}
         onClose={() => setAddOpen(false)}
+        wide
         title={t('finance.issueInvoice', 'Rechnung ausstellen')}
         footer={
           <>
@@ -668,83 +672,85 @@ export function InvoicesTab() {
         }
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Field label={t('finance.recipientTypeLabel', 'Empfängertyp')}>
-            <Select
-              data={[
-                {
-                  value: 'member',
-                  label: t('finance.recipientType.member', 'Mitglied'),
-                },
-                {
-                  value: 'external',
-                  label: t('finance.recipientType.external', 'Externe Partei'),
-                },
-              ]}
-              {...singleForm.getInputProps('recipientType')}
-            />
-          </Field>
-
-          {watchedRecipientType === 'member' ? (
-            <>
-              <Field label={t('finance.recipientType.member', 'Mitglied')}>
-                <MemberPicker
-                  {...singleForm.getInputProps('memberId')}
-                  onChange={(id, m) => {
-                    singleForm.setFieldValue('memberId', id ?? '')
-                    setMemberTier(m?.tier ?? null)
-                  }}
-                />
-              </Field>
-              <Field label={t('finance.purposeLabel', 'Zweck')}>
-                <Select
-                  data={[
-                    {
-                      value: 'membership',
-                      label: t('finance.purpose.membership', 'Mitgliedschaft'),
-                    },
-                    {
-                      value: 'other',
-                      label: t('finance.purpose.other', 'Anderes'),
-                    },
-                  ]}
-                  {...singleForm.getInputProps('purpose')}
-                />
-              </Field>
-            </>
-          ) : (
-            <Field
-              label={t('finance.recipientType.external', 'Externe Partei')}
-              hint={
-                externalParties.length === 0
-                  ? t(
-                      'finance.externalParty.noneHint',
-                      'Externe Parteien erfasst du im Tab «Extern».',
-                    )
-                  : undefined
-              }
-            >
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
+            <Field label={t('finance.recipientTypeLabel', 'Empfängertyp')}>
               <Select
-                data={
-                  externalParties.length === 0
-                    ? [
-                        {
-                          value: '',
-                          label: t(
-                            'finance.externalParty.none',
-                            'Noch keine externen Parteien.',
-                          ),
-                        },
-                      ]
-                    : externalParties.map((p) => ({
-                        value: p.id,
-                        label: p.name,
-                      }))
-                }
-                searchable
-                {...singleForm.getInputProps('externalPartyId')}
+                data={[
+                  {
+                    value: 'member',
+                    label: t('finance.recipientType.member', 'Mitglied'),
+                  },
+                  {
+                    value: 'external',
+                    label: t('finance.recipientType.external', 'Externe Partei'),
+                  },
+                ]}
+                {...singleForm.getInputProps('recipientType')}
               />
             </Field>
-          )}
+
+            {watchedRecipientType === 'member' ? (
+              <>
+                <Field label={t('finance.recipientType.member', 'Mitglied')}>
+                  <MemberPicker
+                    {...singleForm.getInputProps('memberId')}
+                    onChange={(id, m) => {
+                      singleForm.setFieldValue('memberId', id ?? '')
+                      setMemberTier(m?.tier ?? null)
+                    }}
+                  />
+                </Field>
+                <Field label={t('finance.purposeLabel', 'Zweck')}>
+                  <Select
+                    data={[
+                      {
+                        value: 'membership',
+                        label: t('finance.purpose.membership', 'Mitgliedschaft'),
+                      },
+                      {
+                        value: 'other',
+                        label: t('finance.purpose.other', 'Anderes'),
+                      },
+                    ]}
+                    {...singleForm.getInputProps('purpose')}
+                  />
+                </Field>
+              </>
+            ) : (
+              <Field
+                label={t('finance.recipientType.external', 'Externe Partei')}
+                hint={
+                  externalParties.length === 0
+                    ? t(
+                        'finance.externalParty.noneHint',
+                        'Externe Parteien erfasst du im Tab «Extern».',
+                      )
+                    : undefined
+                }
+              >
+                <Select
+                  data={
+                    externalParties.length === 0
+                      ? [
+                          {
+                            value: '',
+                            label: t(
+                              'finance.externalParty.none',
+                              'Noch keine externen Parteien.',
+                            ),
+                          },
+                        ]
+                      : externalParties.map((p) => ({
+                          value: p.id,
+                          label: p.name,
+                        }))
+                  }
+                  searchable
+                  {...singleForm.getInputProps('externalPartyId')}
+                />
+              </Field>
+            )}
+          </SimpleGrid>
 
           <Field
             label={t('common.description', 'Beschreibung')}
@@ -762,10 +768,7 @@ export function InvoicesTab() {
             />
           </Field>
 
-          <div
-            className="grid-2"
-            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}
-          >
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
             <Field
               label={t('finance.amount', 'Betrag') + ' (CHF)'}
               hint={
@@ -790,7 +793,7 @@ export function InvoicesTab() {
             <Field label={t('finance.invoice.due', 'Fällig')}>
               <TextInput type="date" {...singleForm.getInputProps('due')} />
             </Field>
-          </div>
+          </SimpleGrid>
 
           {(watchedRecipientType === 'external' ||
             watchedPurpose === 'other') && (

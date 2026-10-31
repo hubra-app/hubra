@@ -1,6 +1,9 @@
 import { useSyncExternalStore } from 'react'
 import { mergeThemeOverrides, type MantineColorsTuple, type MantineThemeOverride } from '@mantine/core'
+import { mix, readableOn } from '@hubra/ui'
 import { URL_CLUB } from '@/clubBase'
+
+const WHITE = '#ffffff'
 
 /**
  * The club's own colours (Settings > Verein > Erscheinungsbild). The shell
@@ -64,30 +67,36 @@ export function useClubColors(): ClubColors {
   return useSyncExternalStore(subscribe, () => colors)
 }
 
-function mix(hex: string, target: number, amount: number): string {
-  const n = parseInt(hex.slice(1), 16)
-  const channel = (shift: number) => {
-    const c = (n >> shift) & 0xff
-    return Math.round(c + (target - c) * amount)
-  }
-  return (
-    '#' +
-    [channel(16), channel(8), channel(0)].map((c) => c.toString(16).padStart(2, '0')).join('')
-  )
-}
+// The surfaces the club colour sits on as text: white cards and the page
+// in light mode, the dark surface and its club-tinted fills (ui.css mixes
+// 12% and 20% of shade 6 into it) in dark mode.
+const DARK_SURFACE = '#19191c'
+const DARK_SURFACE_2 = '#222226'
 
 /**
  * A ten-shade Mantine scale with `hex` as shade 6, the shade the theme uses
  * for filled buttons in light mode (lighter shades towards 0, darker to 9).
+ *
+ * Shades 7 to 9 are the club colour as text in light mode (active menu
+ * item, tabs, eyebrows) and shades 3 and 4 in dark mode, so those are
+ * pushed darker or lighter until they read at 4.5:1, whatever colour the
+ * club picked. A yellow club gets ochre text, a navy one light blue.
  */
 export function colorScale(hex: string): MantineColorsTuple {
-  const tints = [0.92, 0.84, 0.68, 0.5, 0.32, 0.15]
-  const shades = [0.18, 0.36, 0.52]
-  return [
-    ...tints.map((a) => mix(hex, 255, a)),
-    hex.toLowerCase(),
-    ...shades.map((a) => mix(hex, 0, a)),
-  ] as unknown as MantineColorsTuple
+  const base = hex.toLowerCase()
+  const tints = [0.92, 0.84, 0.68, 0.5, 0.32, 0.15].map((a) => mix(base, WHITE, a))
+  const shades = [0.18, 0.36, 0.52].map((a) => mix(base, '#000000', a))
+  const scale = [...tints, base, ...shades]
+
+  const lightBgs = [WHITE, scale[0], scale[1]]
+  scale[7] = readableOn(scale[7], lightBgs)
+  scale[8] = readableOn(scale[8], lightBgs, 5.5)
+  scale[9] = readableOn(scale[9], lightBgs, 7)
+
+  const darkBgs = [DARK_SURFACE, DARK_SURFACE_2, mix(DARK_SURFACE, base, 0.2)]
+  scale[4] = readableOn(scale[4], darkBgs)
+  scale[3] = readableOn(scale[3], darkBgs, 5.5)
+  return scale as unknown as MantineColorsTuple
 }
 
 /** The Hubra theme with the club's colours laid over it. */

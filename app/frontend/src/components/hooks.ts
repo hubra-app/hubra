@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, type KeyboardEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 
 export function usePagination<T>(items: T[], defaultPerPage = 10) {
   const [page, setPage] = useState(1)
@@ -72,4 +73,24 @@ export function useSubmitOnce<A extends unknown[]>(
     [fn],
   )
   return [run, pending] as const
+}
+
+/**
+ * A list page opened on one of its entries (``?event=3`` from a
+ * notification): the linked id, and a function that drops it (and the
+ * ``extra`` params that came with it) from the URL again.
+ */
+export function useLinkedId(param: string, extra: string[] = []) {
+  const [params, setParams] = useSearchParams()
+  const id = params.get(param)
+  const clear = () =>
+    setParams(
+      (p) => {
+        p.delete(param)
+        for (const name of extra) p.delete(name)
+        return p
+      },
+      { replace: true },
+    )
+  return { id, params, clear }
 }

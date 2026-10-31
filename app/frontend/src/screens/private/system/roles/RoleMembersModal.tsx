@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { listMembers, updateMember } from '@/api/members'
 import { addRoleScope, listRoleScopes, removeRoleScope, type Role } from '@/api/settings'
 import { lookupsQuery } from '@/api/lookups'
+import { textOn } from '@hubra/ui'
 import { Modal, LoadingSpinner } from '@/components/ui'
 import { useNav, useToast } from '@/context/AppContext'
 import { qk } from '@/data/keys'
@@ -220,7 +221,7 @@ export function RoleMembersPanel({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: '#fff',
+                      color: textOn(member.avatarColor || '#3a1e78'),
                       fontWeight: 700,
                       fontSize: 13,
                       flexShrink: 0,
