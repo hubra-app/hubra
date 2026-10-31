@@ -89,11 +89,13 @@ export interface Group {
   sessions: string;
   type?: string;
   emailAlias?: string;
-  isPublic?: boolean;
-  selfJoin?: boolean;
+  /** open: members join on their own; private: only members, lead and managers see it. */
+  visibility?: GroupVisibility;
   parentGroupId?: number | null;
   parentGroupName?: string | null;
 }
+
+export type GroupVisibility = "open" | "visible" | "private";
 
 export interface MailMember {
   id: string;

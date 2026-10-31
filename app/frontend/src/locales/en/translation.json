@@ -1087,8 +1087,6 @@
     "removeFromGroup": "Remove from group",
     "search": "Search groups…",
     "searchMembersToAdd": "Search members…",
-    "selfJoin": "Members can join and leave on their own",
-    "selfJoinHint": "For interest groups. Members join on their dashboard under Personal.",
     "sessions": "Sessions",
     "sessionsHint": "e.g. twice a week",
     "sessionsPlaceholder": "3 times a week",
@@ -1096,7 +1094,17 @@
     "memberCount_one": "{{count}} member",
     "memberCount_other": "{{count}} members",
     "empty": "No groups yet.",
-    "noMatch": "No groups found."
+    "noMatch": "No groups found.",
+    "visibility": {
+      "label": "Visibility",
+      "all": "All",
+      "open": "Open",
+      "visible": "Visible",
+      "private": "Private",
+      "openHint": "Every member sees the group and joins or leaves it on their own, on their dashboard under Personal.",
+      "visibleHint": "Every member sees the group and who is in it. The lead or an admin adds members.",
+      "privateHint": "Only the group's members, its lead and those who manage groups see it."
+    }
   },
   "inventory": {
     "addFirstItem": "Add the first item",

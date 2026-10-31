@@ -1087,8 +1087,6 @@
     "removeFromGroup": "Aus der Gruppe entfernen",
     "search": "Gruppen suchen …",
     "searchMembersToAdd": "Mitglieder suchen …",
-    "selfJoin": "Mitglieder können selbst beitreten und austreten",
-    "selfJoinHint": "Für Interessengruppen. Mitglieder treten auf ihrem Dashboard unter «Persönlich» bei.",
     "sessions": "Treffen",
     "sessionsHint": "z. B. 2× pro Woche",
     "sessionsPlaceholder": "3× pro Woche",
@@ -1096,7 +1094,17 @@
     "memberCount_one": "{{count}} Mitglied",
     "memberCount_other": "{{count}} Mitglieder",
     "empty": "Noch keine Gruppen.",
-    "noMatch": "Keine Gruppen gefunden."
+    "noMatch": "Keine Gruppen gefunden.",
+    "visibility": {
+      "label": "Sichtbarkeit",
+      "all": "Alle",
+      "open": "Offen",
+      "visible": "Sichtbar",
+      "private": "Privat",
+      "openHint": "Alle Mitglieder sehen die Gruppe und treten selbst bei oder aus, auf ihrem Dashboard unter «Persönlich».",
+      "visibleHint": "Alle Mitglieder sehen die Gruppe und wer dabei ist. Mitglieder fügen die Leitung oder die Administration hinzu.",
+      "privateHint": "Nur die Mitglieder der Gruppe, die Leitung und wer Gruppen verwaltet, sehen sie."
+    }
   },
   "inventory": {
     "addFirstItem": "Ersten Gegenstand hinzufügen",
