@@ -116,7 +116,8 @@ def test_last_year_follows_the_billing_season(app, db, books):
     assert basis["total"] == 1000
 
 
-def test_budget_needs_the_plugin(app, db, books):
+def test_budget_needs_the_plugin(app, db, books, monkeypatch):
+    monkeypatch.setattr(fb, "_PLUGIN_SOURCES", {})
     with _config(fee_basis_source="budget", fee_basis_extra=100):
         basis = fee_basis(today=date(2026, 10, 31))
     assert "budget" not in basis["sources"]
@@ -177,7 +178,8 @@ def test_route_previews_a_choice_with_tier_effects(
     body = resp.get_json()
     assert body["source"] == "recurring"
     assert body["total"] == 13000
-    assert body["sources"] == ["manual", "recurring", "last_year"]
+    # and "budget" when the budgets plugin is on
+    assert body["sources"][:3] == ["manual", "recurring", "last_year"]
     (tier,) = body["tiers"]
     assert tier["name"] == "Anteil"
     assert tier["yearly_now"] == 70  # 1 % of the saved 7000
