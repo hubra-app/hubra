@@ -74,6 +74,10 @@ def test_to_defaults_to_end_of_the_from_year(client, auth_headers, db):
 
 
 def test_bad_range_is_refused(client, auth_headers, db):
-    for query in ("from=nope", "from=2026-05-01&to=2026-01-01", "from=2000-01-01&to=2026-01-01"):
+    for query in (
+        "from=nope",
+        "from=2026-05-01&to=2026-01-01",
+        "from=2000-01-01&to=2026-01-01",
+    ):
         resp = client.get(f"/api/v1/finance/summary?{query}", headers=auth_headers)
         assert resp.status_code == 400, query

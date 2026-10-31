@@ -318,6 +318,27 @@ def _generate_invoices() -> dict:
 
 
 @celery_app.task(
+    name="hubra.core.tasks.finance_tasks.book_recurring_transactions_task",
+    bind=True,
+    acks_late=True,
+    reject_on_worker_lost=True,
+)
+def book_recurring_transactions_task(self) -> dict:
+    """Book the due recurring transactions in every club with finance on."""
+    return _book_recurring_transactions()
+
+
+@per_tenant_job("finance")
+def _book_recurring_transactions() -> dict:
+    from hubra.api.finance.recurring import book_due
+
+    booked = book_due()
+    db.session.commit()
+    logger.info("recurring_transactions_booked count=%s", booked)
+    return {"booked": booked}
+
+
+@celery_app.task(
     name="hubra.core.tasks.finance_tasks.send_overdue_reminders_task",
     bind=True,
     acks_late=True,

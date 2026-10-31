@@ -37,6 +37,11 @@ from hubra.api.finance.services import (
     ExternalPartiesService,
 )
 
+from hubra.api.finance.recurring import (
+    RecurringTransactionService,
+    recurring_to_dict,
+)
+
 finance_bp = Blueprint("finance_bp", __name__)
 
 _category_schema = TransactionCategorySchema()
@@ -454,3 +459,43 @@ def finance_overview():
 @permission_required("overview", "read", "View finance overview")
 def finance_summary():
     return jsonify(FinanceSummaryService.get(request.args)), 200
+
+
+# ── Recurring transactions ────────────────────────────────────────────────────
+
+
+@finance_bp.get("/recurring")
+@permission_required("transactions", "read", "View transactions")
+def list_recurring():
+    rules = RecurringTransactionService.list()
+    return jsonify([recurring_to_dict(r) for r in rules]), 200
+
+
+@finance_bp.post("/recurring")
+@permission_required("transactions", "create", "Create transactions")
+def create_recurring():
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return api_error("VALIDATION_ERROR", "Expected a JSON object", 400)
+    rule = RecurringTransactionService.create(body, get_current_member().id)
+    db.session.commit()
+    return jsonify(recurring_to_dict(rule)), 201
+
+
+@finance_bp.patch("/recurring/<int:id>")
+@permission_required("transactions", "update", "Update transactions")
+def update_recurring(id: int):
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return api_error("VALIDATION_ERROR", "Expected a JSON object", 400)
+    rule = RecurringTransactionService.update(id, body, get_current_member().id)
+    db.session.commit()
+    return jsonify(recurring_to_dict(rule)), 200
+
+
+@finance_bp.delete("/recurring/<int:id>")
+@permission_required("transactions", "delete", "Delete transactions")
+def delete_recurring(id: int):
+    RecurringTransactionService.delete(id, get_current_member().id)
+    db.session.commit()
+    return "", 204

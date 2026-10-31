@@ -36,7 +36,12 @@ from hubra.core.models.managed_mail import ManagedMailAddress
 from hubra.core.models.event import ClubEvent, event_attendees, EventRegistration
 from hubra.core.models.poll import Poll, PollOption, PollVote, PollProxy
 from hubra.core.models.post import Post, PostLike, PostComment
-from hubra.core.models.finance import Transaction, Invoice, TransactionCategory
+from hubra.core.models.finance import (
+    Invoice,
+    RecurringTransaction,
+    Transaction,
+    TransactionCategory,
+)
 from hubra.core.models.external_party import ExternalParty
 from hubra.core.models.mail import MailboxFolder
 from hubra.core.models.setting import Setting
@@ -112,6 +117,7 @@ __all__ = [
     "PostLike",
     "PostComment",
     "Transaction",
+    "RecurringTransaction",
     "Invoice",
     "TransactionCategory",
     "ExternalParty",

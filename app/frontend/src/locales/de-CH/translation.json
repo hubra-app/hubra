@@ -1000,6 +1000,35 @@
       "uncategorized": "Ohne Kategorie",
       "total": "Total",
       "year": "Jahr"
+    },
+    "recurring": {
+      "monthly": "Monatlich",
+      "quarterly": "Vierteljährlich",
+      "halfYearly": "Halbjährlich",
+      "yearly": "Jährlich",
+      "required": "Beschreibung, Betrag und erstes Datum sind nötig.",
+      "saved": "Wiederkehrende Buchung gespeichert",
+      "deleted": "Wiederkehrende Buchung gelöscht",
+      "intro": "Miete, Versicherungen, Verbandsbeiträge: einmal erfassen, Hubra bucht sie an jedem Fälligkeitsdatum.",
+      "new": "Neue wiederkehrende Buchung",
+      "next": "Nächste Buchung",
+      "perYear": "Pro Jahr",
+      "none": "Noch keine wiederkehrenden Buchungen.",
+      "paused": "Pausiert",
+      "ended": "Beendet",
+      "totalPerYear": "Total pro Jahr",
+      "edit": "Wiederkehrende Buchung bearbeiten",
+      "descriptionPlaceholder": "z. B. Miete Vereinslokal",
+      "interval": "Wiederholung",
+      "start": "Erstes Datum",
+      "startHint": "Die Daten danach folgen im gewählten Abstand.",
+      "end": "Letztes Datum (optional)",
+      "bookCompleted": "Als bezahlt buchen (Dauerauftrag)",
+      "bookCompletedHint": "Sonst wird die Buchung als offen erfasst und du bestätigst sie, wenn das Geld geflossen ist.",
+      "countsForFees": "Zählt zu den Jahresausgaben für die Mitgliederbeiträge",
+      "active": "Aktiv",
+      "deleteTitle": "«{{name}}» löschen?",
+      "deleteBody": "Bereits gebuchte Einträge bleiben erhalten."
     }
   },
   "functions": {
@@ -2033,7 +2062,8 @@
       "roles": "Verwaltung › Rollen",
       "health": "System › Systemzustand",
       "dashboardMe": "Dashboard › Persönlich",
-      "financeSettings": "Finanzen › Einstellungen"
+      "financeSettings": "Finanzen › Einstellungen",
+      "recurring": "Finanzen › Wiederkehrend"
     },
     "emailVerify": {
       "banner": "Deine private E-Mail-Adresse ist noch nicht bestätigt. Einige Funktionen sind erst danach verfügbar.",
@@ -2083,7 +2113,8 @@
       "transactions": "Buchungen",
       "translations": "Übersetzungen",
       "txCategories": "Kategorien",
-      "activeMembersCount": "{{count}} aktive Mitglieder"
+      "activeMembersCount": "{{count}} aktive Mitglieder",
+      "recurring": "Wiederkehrend"
     },
     "noPermission": "Du hast keine Berechtigung für diese Seite.",
     "notif": {

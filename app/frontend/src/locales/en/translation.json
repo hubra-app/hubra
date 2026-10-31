@@ -1000,6 +1000,35 @@
       "uncategorized": "No category",
       "total": "Total",
       "year": "Year"
+    },
+    "recurring": {
+      "active": "Active",
+      "bookCompleted": "Book as paid (standing order)",
+      "bookCompletedHint": "Otherwise it is booked as open, and you confirm it once the money has moved.",
+      "countsForFees": "Counts towards the yearly expenses for membership fees",
+      "deleteBody": "Entries already booked are kept.",
+      "deleteTitle": "Delete «{{name}}»?",
+      "deleted": "Recurring transaction deleted",
+      "descriptionPlaceholder": "e.g. Clubhouse rent",
+      "edit": "Edit recurring transaction",
+      "end": "Last date (optional)",
+      "ended": "Ended",
+      "halfYearly": "Half-yearly",
+      "interval": "Repeats",
+      "intro": "Rent, insurance, association fees: enter them once, and Hubra books them on every due date.",
+      "monthly": "Monthly",
+      "new": "New recurring transaction",
+      "next": "Next booking",
+      "none": "No recurring transactions yet.",
+      "paused": "Paused",
+      "perYear": "Per year",
+      "quarterly": "Quarterly",
+      "required": "Description, amount and first date are required.",
+      "saved": "Recurring transaction saved",
+      "start": "First date",
+      "startHint": "Later dates follow at the chosen interval.",
+      "totalPerYear": "Total per year",
+      "yearly": "Yearly"
     }
   },
   "functions": {
@@ -2033,7 +2062,8 @@
       "roles": "Administration › Roles",
       "health": "System › Health",
       "dashboardMe": "Dashboard › Personal",
-      "financeSettings": "Finance › Settings"
+      "financeSettings": "Finance › Settings",
+      "recurring": "Finance › Recurring"
     },
     "emailVerify": {
       "banner": "Your private email address isn't verified yet. Some features are only available after that.",
@@ -2083,7 +2113,8 @@
       "transactions": "Transactions",
       "translations": "Translations",
       "txCategories": "Categories",
-      "activeMembersCount": "{{count}} active members"
+      "activeMembersCount": "{{count}} active members",
+      "recurring": "Recurring"
     },
     "noPermission": "You don't have permission to view this page.",
     "notif": {

@@ -70,5 +70,6 @@ module = Module(
         "external_parties",
         "invoice_reminder_history",
         "qrr_references",
+        "recurring_transactions",
     ),
 )

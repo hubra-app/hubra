@@ -452,3 +452,134 @@ export async function getFinanceSummary(
   const qs = new URLSearchParams({ from, to });
   return apiFetch<FinanceSummary>(`/finance/summary?${qs}`);
 }
+
+// ── Recurring transactions ─────────────────────────────────────────────────
+
+export type RecurringInterval = 'monthly' | 'quarterly' | 'half_yearly' | 'yearly'
+
+export interface RecurringTransaction {
+  id: number
+  description: string
+  type: 'income' | 'expense'
+  amount: number
+  categoryId: number | null
+  categoryName: string
+  payeeName: string | null
+  method: string
+  interval: RecurringInterval
+  startDate: string
+  endDate: string | null
+  /** null once the end date has passed */
+  nextDate: string | null
+  bookCompleted: boolean
+  countsForFees: boolean
+  active: boolean
+  yearlyAmount: number
+}
+
+export interface RecurringTransactionInput {
+  description: string
+  type: 'income' | 'expense'
+  amount: number
+  categoryId: number | null
+  payeeName: string | null
+  method: string
+  interval: RecurringInterval
+  startDate: string
+  endDate: string | null
+  bookCompleted: boolean
+  countsForFees: boolean
+  active: boolean
+}
+
+interface BackendRecurring {
+  id: number
+  description: string
+  type: 'income' | 'expense'
+  amount: number
+  category_id: number | null
+  category_name: string
+  payee_name: string | null
+  method: string
+  interval: RecurringInterval
+  start_date: string
+  end_date: string | null
+  next_date: string | null
+  book_completed: boolean
+  counts_for_fees: boolean
+  active: boolean
+  yearly_amount: number
+}
+
+function adaptRecurring(b: BackendRecurring): RecurringTransaction {
+  return {
+    id: b.id,
+    description: b.description,
+    type: b.type,
+    amount: b.amount,
+    categoryId: b.category_id,
+    categoryName: b.category_name,
+    payeeName: b.payee_name,
+    method: b.method,
+    interval: b.interval,
+    startDate: b.start_date,
+    endDate: b.end_date,
+    nextDate: b.next_date,
+    bookCompleted: b.book_completed,
+    countsForFees: b.counts_for_fees,
+    active: b.active,
+    yearlyAmount: b.yearly_amount,
+  }
+}
+
+function recurringBody(input: Partial<RecurringTransactionInput>) {
+  const keys: Record<keyof RecurringTransactionInput, string> = {
+    description: 'description',
+    type: 'type',
+    amount: 'amount',
+    categoryId: 'category_id',
+    payeeName: 'payee_name',
+    method: 'method',
+    interval: 'interval',
+    startDate: 'start_date',
+    endDate: 'end_date',
+    bookCompleted: 'book_completed',
+    countsForFees: 'counts_for_fees',
+    active: 'active',
+  }
+  const body: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(input)) {
+    body[keys[key as keyof RecurringTransactionInput]] = value
+  }
+  return JSON.stringify(body)
+}
+
+export async function listRecurring(): Promise<RecurringTransaction[]> {
+  const data = await apiFetch<BackendRecurring[]>('/finance/recurring')
+  return data.map(adaptRecurring)
+}
+
+export async function createRecurring(
+  input: RecurringTransactionInput,
+): Promise<RecurringTransaction> {
+  const b = await apiFetch<BackendRecurring>('/finance/recurring', {
+    method: 'POST',
+    body: recurringBody(input),
+  })
+  return adaptRecurring(b)
+}
+
+export async function updateRecurring(
+  id: number,
+  input: Partial<RecurringTransactionInput>,
+): Promise<RecurringTransaction> {
+  const b = await apiFetch<BackendRecurring>(`/finance/recurring/${id}`, {
+    method: 'PATCH',
+    body: recurringBody(input),
+  })
+  return adaptRecurring(b)
+}
+
+export async function deleteRecurring(id: number): Promise<void> {
+  await apiFetch(`/finance/recurring/${id}`, { method: 'DELETE' })
+}
