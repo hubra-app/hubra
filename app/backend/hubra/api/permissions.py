@@ -444,9 +444,10 @@ def invalidate_role_permissions(role_id: int) -> None:
         _mark_redis_down()
 
 
-def created_by(model, column: str = "created_by", arg: str = "id"):
-    """``allow`` for ``permission_required``: the member who created the row
-    in the route argument *arg* acts on it (their own event, their own poll)."""
+def created_by(model, column: str = "created_by", arg: str = "id", reason: str = "creator"):
+    """``allow`` for ``permission_required``: the member named in *column* of
+    the row in the route argument *arg* acts on it (their own event, their
+    own poll, the group they lead)."""
     col = getattr(model, column)
 
     def allow(member, **kwargs):
@@ -454,7 +455,7 @@ def created_by(model, column: str = "created_by", arg: str = "id"):
         if object_id is None:
             return None
         owner = db.session.scalar(select(col).where(model.id == object_id))
-        return "creator" if owner is not None and owner == member.id else None
+        return reason if owner is not None and owner == member.id else None
 
     return allow
 
@@ -535,7 +536,14 @@ def permission_required(
     return decorator
 
 
-def can_update(resource: str, display_name: str | None = None, *, scope: str | None = None):
+def can_update(
+    resource: str,
+    display_name: str | None = None,
+    *,
+    scope: str | None = None,
+    allow=None,
+    allow_fields: frozenset[str] = frozenset(),
+):
     """Decorator: enforces field-level RBAC for PATCH/UPDATE routes.
 
     Behaviour:
@@ -548,7 +556,7 @@ def can_update(resource: str, display_name: str | None = None, *, scope: str | N
     Routes decorated with this should call ``filter_updatable_fields(data)``
     on the validated body before passing it to the service layer. ``scope``
     works as on ``permission_required``: a role held for that group adds its
-    keys.
+    keys. ``allow`` too, and a member it lets in changes ``allow_fields``.
     """
     label = display_name or f"Update {resource}"
 
@@ -587,6 +595,12 @@ def can_update(resource: str, display_name: str | None = None, *, scope: str | N
             field_perms = {
                 p[len(field_prefix) :] for p in perms if p.startswith(field_prefix)
             }
+            if allow is not None and hasattr(member, "roles"):
+                reason = allow(member, **kwargs)
+                if reason:
+                    g.permission_scope = "object"
+                    g.object_access = reason
+                    field_perms |= set(allow_fields)
             if field_perms:
                 g.updatable_fields = field_perms
                 return fn(*args, **kwargs)

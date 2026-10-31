@@ -71,6 +71,8 @@ export interface Group {
   id: string;
   name: string;
   lead: string;
+  /** The group's leader runs it without the club-wide group rights. */
+  leadId?: number | null;
   description: string;
   color: string;
   iconName: string;

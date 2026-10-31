@@ -10,6 +10,7 @@ from marshmallow import ValidationError
 from sqlalchemy import select
 
 from hubra.api.permissions import (
+    created_by,
     permission_required,
     require_member,
     can_update,
@@ -38,6 +39,14 @@ _groups_schema = GroupSchema(many=True)
 _create_schema = GroupCreateSchema()
 _update_schema = GroupUpdateSchema()
 _members_schema = MemberSchema(many=True)
+
+# The group's leader runs it: who is in it, and how it presents itself. The
+# name, the leader, the mail alias and where it hangs stay with the club.
+_leads = created_by(Group, column="lead_id", arg="group_id", reason="leader")
+_leads_this = created_by(Group, column="lead_id", arg="id", reason="leader")
+_LEADER_FIELDS = frozenset(
+    {"description", "color", "icon_name", "sessions", "tools", "is_public", "self_join"}
+)
 
 
 # ── GET /groups/count ─────────────────────────────────────────────────────────
@@ -90,7 +99,7 @@ def leave_group(group_id: int):
 
 
 @groups_bp.get("/<int:id>")
-@permission_required("groups", "read", "View groups", scope="id")
+@permission_required("groups", "read", "View groups", scope="id", allow=_leads_this)
 def get_group(id: int):
     group = GroupService.get_by_id(id)
 
@@ -130,7 +139,9 @@ def create_group():
 
 
 @groups_bp.patch("/<int:id>")
-@can_update("groups", "Update groups", scope="id")
+@can_update(
+    "groups", "Update groups", scope="id", allow=_leads_this, allow_fields=_LEADER_FIELDS
+)
 def update_group(id: int):
     group = GroupService.get_by_id(id)
 
@@ -175,7 +186,7 @@ def delete_group(id: int):
 
 
 @groups_bp.get("/<int:group_id>/members")
-@permission_required("groups", "read", "View groups", scope="group_id")
+@permission_required("groups", "read", "View groups", scope="group_id", allow=_leads)
 def list_group_members(group_id: int):
     group = db.session.get(Group, group_id)
     if group is None:
@@ -193,7 +204,9 @@ def list_group_members(group_id: int):
 
 
 @groups_bp.post("/<int:group_id>/members/<int:member_id>")
-@permission_required("groups", "add_member", "Add member to group", scope="group_id")
+@permission_required(
+    "groups", "add_member", "Add member to group", scope="group_id", allow=_leads
+)
 def add_member_to_group(group_id: int, member_id: int):
     group = db.session.get(Group, group_id)
     if group is None:
@@ -228,7 +241,7 @@ def add_member_to_group(group_id: int, member_id: int):
 
 @groups_bp.delete("/<int:group_id>/members/<int:member_id>")
 @permission_required(
-    "groups", "remove_member", "Remove member from group", scope="group_id"
+    "groups", "remove_member", "Remove member from group", scope="group_id", allow=_leads
 )
 def remove_group_member(group_id: int, member_id: int):
     GroupService.remove_member(member_id, group_id)
@@ -255,7 +268,9 @@ def remove_group_member(group_id: int, member_id: int):
 
 
 @groups_bp.patch("/<int:group_id>/members/<int:member_id>")
-@permission_required("groups", "add_member", "Add member to group", scope="group_id")
+@permission_required(
+    "groups", "add_member", "Add member to group", scope="group_id", allow=_leads
+)
 def update_group_member_role(group_id: int, member_id: int):
     body = request.get_json(silent=True) or {}
     try:
@@ -283,7 +298,7 @@ def update_group_member_role(group_id: int, member_id: int):
 
 
 @groups_bp.get("/<int:group_id>/mailing-list")
-@permission_required("groups", "read", "View groups", scope="group_id")
+@permission_required("groups", "read", "View groups", scope="group_id", allow=_leads)
 def get_mailing_list(group_id: int):
     """Return email addresses of all group members for mailing list export."""
     group = db.session.get(Group, group_id)
