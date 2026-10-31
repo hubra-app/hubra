@@ -1687,6 +1687,7 @@
   "polls.deletePollTitle": "Umfrage löschen?",
   "polls.editTitle": "Umfrage bearbeiten",
   "polls.minOptions": "Es braucht mindestens 2 Optionen.",
+  "polls.notForYou": "Diese Abstimmung ist für bestimmte Gruppen oder Funktionen.",
   "polls.option.placeholder1": "z. B. Drehbank",
   "polls.option.placeholder2": "z. B. Plasmaschneider",
   "polls.option.placeholderOptional": "Optional",

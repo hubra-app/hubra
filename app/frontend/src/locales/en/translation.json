@@ -1813,6 +1813,7 @@
     "createPoll": "New poll",
     "deletePollBody": "All votes will be deleted permanently.",
     "deletePollTitle": "Delete poll?",
+    "notForYou": "This poll is for certain groups or functions.",
     "option": {
       "placeholder1": "e.g. Lathe",
       "placeholder2": "e.g. Plasma cutter",

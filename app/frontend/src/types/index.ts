@@ -147,6 +147,8 @@ export interface Poll {
   requiredFunctionIds?: number[];
   /** Option index the signed-in member chose; absent until they vote. */
   myVote?: number;
+  /** False when the poll is for groups or functions the member is not in. */
+  mayVote?: boolean;
 }
 
 export interface PostComment {

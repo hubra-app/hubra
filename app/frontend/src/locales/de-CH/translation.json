@@ -1813,6 +1813,7 @@
     "createPoll": "Neue Umfrage",
     "deletePollBody": "Alle Stimmen werden endgültig gelöscht.",
     "deletePollTitle": "Umfrage löschen?",
+    "notForYou": "Diese Abstimmung ist für bestimmte Gruppen oder Funktionen.",
     "option": {
       "placeholder1": "z. B. Drehbank",
       "placeholder2": "z. B. Plasmaschneider",

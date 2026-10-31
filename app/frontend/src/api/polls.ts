@@ -30,6 +30,7 @@ interface BackendPoll {
   required_group_ids: number[] | null;
   required_function_ids: number[] | null;
   my_vote?: number | null;
+  may_vote?: boolean;
 }
 
 function daysLeft(closesAt: string | null): number {
@@ -53,6 +54,7 @@ function adapt(b: BackendPoll): Poll {
     requiredGroupIds: b.required_group_ids ?? undefined,
     requiredFunctionIds: b.required_function_ids ?? undefined,
     myVote: b.my_vote ?? undefined,
+    mayVote: b.may_vote ?? true,
   };
 }
 

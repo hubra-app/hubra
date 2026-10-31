@@ -54,10 +54,13 @@ export function PollsTab() {
   const { polls } = usePolls();
   const myVotes = useMyVotes();
   const pollCache = useListCache<Poll>(qk.polls);
-  const { hasPermission } = useAuth();
+  const { currentUser, hasPermission } = useAuth();
   const { t, i18n } = useT();
   const canCreate = hasPermission("polls.polls.create");
   const canUpdate = hasPermission("polls.polls.update");
+  // Whoever asked the question runs the poll (the API checks the same).
+  const runs = (poll: Poll) =>
+    canUpdate || (currentUser != null && poll.createdById === String(currentUser.id));
   // Only the poll form needs them (and members may not read functions).
   const { data: groups = [] } = useQuery({
     queryKey: qk.groups.all,
@@ -339,9 +342,15 @@ export function PollsTab() {
                       <div key={opt.label}>
                         <button
                           onClick={() => handleVote(poll.id, i)}
+                          disabled={poll.mayVote === false}
+                          title={
+                            poll.mayVote === false
+                              ? t("polls.notForYou", "Diese Abstimmung ist für bestimmte Gruppen oder Funktionen.")
+                              : undefined
+                          }
                           style={{
                             all: "unset",
-                            cursor: "pointer",
+                            cursor: poll.mayVote === false ? "default" : "pointer",
                             display: "block",
                             width: "100%",
                           }}
@@ -436,7 +445,7 @@ export function PollsTab() {
                         ? t("polls.statusOpen", "Offen")
                         : t("polls.statusClosed", "Beendet")}
                     </Badge>
-                    {poll.isRequired && canUpdate && (
+                    {poll.isRequired && runs(poll) && (
                       <ActionIcon
                         size="md"
                         variant="subtle"
@@ -447,7 +456,7 @@ export function PollsTab() {
                         <IconBell size={18} />
                       </ActionIcon>
                     )}
-                    {canUpdate && (
+                    {runs(poll) && (
                       <ActionIcon
                         size="md"
                         variant="subtle"
@@ -471,7 +480,7 @@ export function PollsTab() {
                     )}
                   </div>
                 </div>
-                {poll.allowProxy && poll.status === "open" && (
+                {poll.allowProxy && poll.status === "open" && poll.mayVote !== false && (
                   <ProxyPanel
                     poll={poll}
                     hasVoted={hasVoted}
