@@ -1090,7 +1090,6 @@
     "sessionsHint": "e.g. twice a week",
     "sessionsPlaceholder": "3 times a week",
     "title": "Groups",
-    "tools": "Tools",
     "memberCount_one": "{{count}} member",
     "memberCount_other": "{{count}} members",
     "empty": "No groups yet.",

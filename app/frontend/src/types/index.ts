@@ -78,7 +78,6 @@ export interface Group {
   iconName: string;
   members: number;
   sessions: string;
-  tools: number;
   type?: string;
   emailAlias?: string;
   isPublic?: boolean;

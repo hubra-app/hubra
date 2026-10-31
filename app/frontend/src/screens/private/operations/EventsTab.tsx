@@ -1,7 +1,7 @@
 import { EVENT_TYPE_COLORS } from '@/constants'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Button, Group, TextInput, Select, Badge, Checkbox } from '@mantine/core'
+import { Button, Group, TextInput, Select, Badge, Checkbox, SimpleGrid } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
@@ -277,10 +277,7 @@ export function EventsTab() {
           )}
         />
       </Field>
-      <div
-        className="grid-2"
-        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}
-      >
+      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
         <Field label={t('common.date', 'Datum')}>
           <TextInput type="date" {...form.getInputProps('date')} />
         </Field>
@@ -290,30 +287,30 @@ export function EventsTab() {
             placeholder="14:00–18:00"
           />
         </Field>
-      </div>
-      <Field label={t('events.location', 'Ort') + ' (optional)'}>
-        <TextInput
-          {...form.getInputProps('location')}
-          placeholder={t('events.locationPlaceholder', 'z. B. Holzwerkstatt')}
-        />
-      </Field>
-      <Field label={t('common.type', 'Typ')}>
-        <Select
-          // An event keeps a type the club no longer lists.
-          data={[...new Set([...eventTypes, form.values.type])].map((tp) => ({
-            value: tp,
-            label: eventTypeLabel(tp),
-          }))}
-          {...form.getInputProps('type')}
-        />
-      </Field>
-      <Field label={t('events.maxAttendees', 'Plätze') + ' (optional)'}>
-        <TextInput
-          inputMode="numeric"
-          {...form.getInputProps('maxAttendees')}
-          placeholder={t('events.maxAttendeesPlaceholder', 'Leer: ohne Begrenzung')}
-        />
-      </Field>
+        <Field label={t('events.location', 'Ort') + ' (optional)'}>
+          <TextInput
+            {...form.getInputProps('location')}
+            placeholder={t('events.locationPlaceholder', 'z. B. Holzwerkstatt')}
+          />
+        </Field>
+        <Field label={t('common.type', 'Typ')}>
+          <Select
+            // An event keeps a type the club no longer lists.
+            data={[...new Set([...eventTypes, form.values.type])].map((tp) => ({
+              value: tp,
+              label: eventTypeLabel(tp),
+            }))}
+            {...form.getInputProps('type')}
+          />
+        </Field>
+        <Field label={t('events.maxAttendees', 'Plätze') + ' (optional)'}>
+          <TextInput
+            inputMode="numeric"
+            {...form.getInputProps('maxAttendees')}
+            placeholder={t('events.maxAttendeesPlaceholder', 'Leer: ohne Begrenzung')}
+          />
+        </Field>
+      </SimpleGrid>
       <Checkbox
         label={t(
           'events.requiresApproval',
@@ -550,6 +547,7 @@ export function EventsTab() {
         onSubmit={form.onSubmit(submitAdd)}
         open={addOpen}
         onClose={closeAdd}
+        wide
         title={t('events.addEvent')}
         footer={
           <>
@@ -568,6 +566,7 @@ export function EventsTab() {
         onSubmit={form.onSubmit(saveEdit)}
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
+        wide
         title={t('events.editEvent')}
         subtitle={editTarget?.title}
         footer={

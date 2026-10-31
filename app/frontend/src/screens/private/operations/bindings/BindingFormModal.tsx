@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Button, Select } from '@mantine/core'
+import { Button, Checkbox, Select } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import {
   getSources,
@@ -237,26 +237,12 @@ export function BindingFormModal({
           />
         </Field>
         {binding && (
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              fontSize: 'var(--mantine-font-size-sm)',
-              cursor: 'pointer',
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={isProtected}
-              onChange={(e) => setIsProtected(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: 'var(--mantine-color-acc-6)' }}
-            />
-            <span style={{ fontWeight: 600 }}>{t('bindings.protected', 'Geschützt')}</span>
-            <span style={{ color: 'var(--hb-text-2)', fontSize: 'var(--mantine-font-size-xs)' }}>
-              {t('bindings.protectedHint', 'Kann nicht gelöscht oder ausgeschaltet werden')}
-            </span>
-          </label>
+          <Checkbox
+            checked={isProtected}
+            onChange={(e) => setIsProtected(e.currentTarget.checked)}
+            label={t('bindings.protected', 'Geschützt')}
+            description={t('bindings.protectedHint', 'Kann nicht gelöscht oder ausgeschaltet werden')}
+          />
         )}
       </div>
     </Modal>
