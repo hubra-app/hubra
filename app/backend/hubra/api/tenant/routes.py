@@ -27,7 +27,9 @@ from sqlalchemy import func, select
 from hubra.api.permissions import (
     check_global_grant,
     check_impersonation_restriction,
+    SUPERADMIN_ONLY,
     get_user_global_permissions,
+    held_roles,
     invalidate_member_permissions,
     require_global_permission,
 )
@@ -355,6 +357,8 @@ def impersonate_tenant_user(tenant_id: int):
     data = request.get_json(silent=True) or {}
     reason = (data.get("reason") or "").strip()
     target_user_id = data.get("user_id")
+    # Looking is the default; changing anything as the member is asked for.
+    allow_changes = data.get("allow_changes") is True
 
     if not reason:
         return jsonify(
@@ -438,6 +442,7 @@ def impersonate_tenant_user(tenant_id: int):
         "impersonator_user_id": admin_user_id,
         "impersonation_reason": reason,
         "impersonation_expires_at": expires_at.isoformat(),
+        "impersonation_mode": "act" if allow_changes else "read",
         "tenant_slug": tenant.slug,
     }
     access_token = create_access_token(
@@ -462,6 +467,7 @@ def impersonate_tenant_user(tenant_id: int):
                 "reason": reason,
                 "tenant_slug": tenant.slug,
                 "target_user_id": target_user_id,
+                "allow_changes": allow_changes,
             },
         )
     )
@@ -474,6 +480,7 @@ def impersonate_tenant_user(tenant_id: int):
                 "tenant_slug": tenant.slug,
                 "member_id": target_member_id,
                 "expires_at": expires_at.isoformat(),
+                "read_only": not allow_changes,
             }
         ),
         200,
@@ -1289,7 +1296,7 @@ def _admin_level(member: Member | None) -> str | None:
     """'owner', 'admin' or None for a member of the current club."""
     if member is None:
         return None
-    roles = member.roles or []
+    roles = held_roles(member)  # an admin role through a function counts
     if any(r.is_owner for r in roles):
         return "owner"
     if any(r.is_admin for r in roles):
@@ -1297,9 +1304,38 @@ def _admin_level(member: Member | None) -> str | None:
     return None
 
 
+def _names_club_admins(user: User) -> bool:
+    """Platform staff who may name the owners and admins of any club. Not
+    part of tenants.members.write: being made a club's owner opens all its
+    data, so it is its own right (tenants.admins.write)."""
+    if user.is_superadmin:
+        return True
+    perms = get_user_global_permissions(user.id)
+    return "tenants.admins.write" in perms or "*" in perms
+
+
+def _platform_reason(access: str, body: dict) -> str | None:
+    """Staff acting on a club's admins say why, like for impersonation."""
+    if access != "platform":
+        return None
+    reason = str(body.get("reason") or "").strip()
+    if not reason:
+        raise_error(400, "REASON_REQUIRED", "Say why you change this club's admins")
+    return reason
+
+
+def _tell_owners(title: str, msg: str) -> None:
+    """In-app notice to the club's owners (search path already set)."""
+    from hubra.api.notifications.services import notify_member
+
+    for m in db.session.scalars(select(Member).where(Member.archived_at.is_(None))).all():
+        if _admin_level(m) == "owner":
+            notify_member(m.id, "warning", title, msg)
+
+
 def _club_admin_access(tenant: Tenant, user: User) -> str:
     """'platform', 'owner' or 'admin'; 403 for anyone else."""
-    if _can_add_members(user):
+    if _names_club_admins(user):
         return "platform"
     from hubra.core.tenant.context import reset_search_path, set_search_path
 
@@ -1386,6 +1422,7 @@ def add_club_admin(tenant_id: int):
         raise_error(400, "VALIDATION_ERROR", "level must be 'admin' or 'owner'")
     if level == "owner" and access == "admin":
         raise_error(403, "FORBIDDEN", "Only an owner can name another owner")
+    reason = _platform_reason(access, body)
 
     user = db.session.scalar(select(User).where(User.email == email))
     is_member = user is not None and _membership_in(tenant.id, user) == "member"
@@ -1430,6 +1467,11 @@ def add_club_admin(tenant_id: int):
         db.session.flush()
         invalidate_member_permissions(member.id)
         result = _admin_dict(member)
+        if reason is not None:
+            _tell_owners(
+                f"Platform staff named a club {level}",
+                f"{caller.email} made {email} {level} of the club. Reason: {reason}",
+            )
     finally:
         reset_search_path()
 
@@ -1440,7 +1482,7 @@ def add_club_admin(tenant_id: int):
             action=f"tenant.add_{level}",
             target_type="User",
             target_id=str(user.id),  # type: ignore[union-attr]
-            details={"email": email, "by": access},
+            details={"email": email, "by": access, "reason": reason},
             ip_address=request.remote_addr,
         )
     )
@@ -1459,6 +1501,7 @@ def remove_club_admin(tenant_id: int, user_id: int):
     tenant = _club_or_404(tenant_id)
     caller = _calling_user()
     access = _club_admin_access(tenant, caller)
+    reason = _platform_reason(access, request.get_json(silent=True) or {})
 
     try:
         set_search_path(tenant.id)
@@ -1485,6 +1528,17 @@ def remove_club_admin(tenant_id: int, user_id: int):
         ]
         db.session.flush()
         invalidate_member_permissions(member.id)  # type: ignore[union-attr]
+        if _admin_level(member) is not None:
+            raise_error(
+                409,
+                "ADMIN_BY_FUNCTION",
+                "This person is admin through a club function; take them out of it in the club",
+            )
+        if reason is not None:
+            _tell_owners(
+                f"Platform staff removed a club {level}",
+                f"{caller.email} took the {level} role from a member. Reason: {reason}",
+            )
     finally:
         reset_search_path()
 
@@ -1495,7 +1549,7 @@ def remove_club_admin(tenant_id: int, user_id: int):
             action=f"tenant.remove_{level}",
             target_type="User",
             target_id=str(user_id),
-            details={"by": access},
+            details={"by": access, "reason": reason},
             ip_address=request.remote_addr,
         )
     )
@@ -1554,7 +1608,10 @@ def _global_role_keys(role_id: int) -> set[str]:
                 GlobalRolePermission,
                 GlobalRolePermission.permission_id == GlobalPermission.id,
             )
-            .where(GlobalRolePermission.role_id == role_id)
+            .where(
+                GlobalRolePermission.role_id == role_id,
+                GlobalPermission.key.not_in(SUPERADMIN_ONLY),
+            )
         ).scalars()
     )
 
@@ -1590,6 +1647,7 @@ def create_global_role():
 
     if not name:
         raise_error(400, "VALIDATION_ERROR", "name is required")
+    permission_keys = [k for k in permission_keys if k not in SUPERADMIN_ONLY]
     check_global_grant(permission_keys)
 
     existing = db.session.scalar(select(GlobalRole).where(GlobalRole.name == name))
@@ -1648,9 +1706,10 @@ def update_global_role(role_id: int):
         role.description = _body_text(body, "description") or None
 
     if permission_keys is not None:
-        # Only what is added must be the actor's own; a role keeps rights the
-        # actor lacks when its form is sent back unchanged.
-        check_global_grant(set(permission_keys) - _global_role_keys(role.id))
+        # What is added or taken must be the actor's own; a role keeps rights
+        # the actor lacks when its form is sent back unchanged.
+        permission_keys = [k for k in permission_keys if k not in SUPERADMIN_ONLY]
+        check_global_grant(set(permission_keys) ^ _global_role_keys(role.id))
         # Replace all permissions
         db.session.query(GlobalRolePermission).filter(
             GlobalRolePermission.role_id == role_id
@@ -1703,7 +1762,9 @@ def list_global_permissions():
     from hubra.core.models.global_role import GlobalPermission
 
     perms = db.session.scalars(
-        select(GlobalPermission).order_by(GlobalPermission.key)
+        select(GlobalPermission)
+        .where(GlobalPermission.key.not_in(SUPERADMIN_ONLY))
+        .order_by(GlobalPermission.key)
     ).all()
     return jsonify(
         {

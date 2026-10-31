@@ -113,3 +113,14 @@ def test_event_uids_name_the_club(app, tenant_pair):
             ical = EventService.generate_ical([event])
         uids += [line for line in ical.splitlines() if line.startswith("UID:")]
     assert uids == ["UID:event-1@tenant-a.hubra", "UID:event-1@tenant-b.hubra"]
+
+
+def test_a_new_link_stops_the_old_one(client, auth_headers, events):
+    old = _feed_path(client)
+    url = client.post("/api/v1/events/calendar/feed/renew").get_json()["url"]
+    new = url[url.index("/api/") :]
+    assert new != old
+    assert _feed_path(client) == new
+    client.environ_base.pop("HTTP_AUTHORIZATION", None)
+    assert client.get(old, headers={"Authorization": ""}).status_code == 404
+    assert client.get(new, headers={"Authorization": ""}).status_code == 200

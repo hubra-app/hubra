@@ -19,10 +19,12 @@ import { addInstruction, removeInstruction, addSelfInstruction } from '@/api/inv
 import { useMemberSearch } from '@/data/members'
 import { PluginSlot } from '@/plugins'
 import { CATEGORY_COLORS, CATEGORY_ICONS, STATUS_CONFIG } from './constants'
+import type { ItemAccess } from './access'
 
 interface DetailPanelProps {
   item: InventoryItem
   onClose: () => void
+  access: ItemAccess
   onEdit: () => void
   currentUserId: number | null
   currentUserName: string
@@ -32,6 +34,7 @@ interface DetailPanelProps {
 export function ItemDetailPanel({
   item,
   onClose,
+  access,
   onEdit,
   currentUserId,
   currentUserName,
@@ -194,9 +197,11 @@ export function ItemDetailPanel({
         </Group>
       }
       actions={
-        <ActionIcon variant="subtle" onClick={onEdit} aria-label={t('common.edit', 'Bearbeiten')}>
-          <IconPencil size={18} />
-        </ActionIcon>
+        access.canEdit && (
+          <ActionIcon variant="subtle" onClick={onEdit} aria-label={t('common.edit', 'Bearbeiten')}>
+            <IconPencil size={18} />
+          </ActionIcon>
+        )
       }
     >
       <PanelSection>
@@ -219,11 +224,11 @@ export function ItemDetailPanel({
               <span className="num">CHF {item.cost}</span>
             </PanelField>
           )}
-          <PanelField label={t('inventory.visibility', 'Sichtbarkeit')}>
+          <PanelField label={t('inventory.visibility', 'Eigentum')}>
             {item.visibility === 'private' ? <IconEyeOff size={16} /> : <IconEye size={16} />}
             {item.visibility === 'private'
-              ? t('inventory.private', 'Privat')
-              : t('inventory.shared', 'Geteilt')}
+              ? t('inventory.private', 'Privatperson')
+              : t('inventory.shared', 'Verein')}
           </PanelField>
         </SimpleGrid>
       </PanelSection>
@@ -288,14 +293,16 @@ export function ItemDetailPanel({
             </Group>
           )}
 
-          <MemberAddSearch
-            value={addSearch}
-            onChange={setAddSearch}
-            placeholder={t('inventory.searchMembersPlaceholder', 'Mitglieder suchen …')}
-            results={addResults}
-            onPick={(m) => handleAddInstruction(Number(m.id), m.name)}
-            disabled={loading}
-          />
+          {access.canInstruct && (
+            <MemberAddSearch
+              value={addSearch}
+              onChange={setAddSearch}
+              placeholder={t('inventory.searchMembersPlaceholder', 'Mitglieder suchen …')}
+              results={addResults}
+              onPick={(m) => handleAddInstruction(Number(m.id), m.name)}
+              disabled={loading}
+            />
+          )}
 
           {item.instructedMemberIds.length === 0 ? (
             <Text fz="sm" ta="center" py="lg" style={{ color: 'var(--hb-text-3)' }}>
@@ -309,15 +316,17 @@ export function ItemDetailPanel({
                   name={name}
                   detail={t('inventory.instructed', 'Eingewiesen')}
                   right={
-                    <ActionIcon
-                      variant="subtle"
-                      color="red"
-                      onClick={() => handleRemoveInstruction(item.instructedMemberIds[i], i)}
-                      disabled={loading}
-                      aria-label={t('common.remove', 'Entfernen')}
-                    >
-                      <IconX size={16} />
-                    </ActionIcon>
+                    access.canInstruct && (
+                      <ActionIcon
+                        variant="subtle"
+                        color="red"
+                        onClick={() => handleRemoveInstruction(item.instructedMemberIds[i], i)}
+                        disabled={loading}
+                        aria-label={t('common.remove', 'Entfernen')}
+                      >
+                        <IconX size={16} />
+                      </ActionIcon>
+                    )
                   }
                 />
               ))}

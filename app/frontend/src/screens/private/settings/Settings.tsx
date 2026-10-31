@@ -7,6 +7,7 @@ import { ModulesTab } from '@/screens/private/settings/ModulesTab'
 import { ClubSettingsTab, MembershipSettingsTab } from '@/screens/private/settings/ClubSettingsTab'
 import { BankSettingsCard } from '@/screens/private/settings/BankSettingsCard'
 import { DomainsTab } from '@/screens/private/settings/DomainsTab'
+import { AppsTab } from '@/screens/private/settings/AppsTab'
 import { AuditLogScreen } from '@/screens/private/system/AuditLog'
 import { RolesTab } from '@/screens/private/system/RolesTab'
 
@@ -37,6 +38,12 @@ const TABS = [
     label: 'Module & Plugins',
     Component: ModulesTab,
   },
+  {
+    id: 'apps',
+    labelKey: 'settings.tabs.apps',
+    label: 'Verbundene Apps',
+    Component: AppsTab,
+  },
   { id: 'domains', labelKey: 'settings.tabs.domains', label: 'Domains', Component: DomainsTab },
   { id: 'roles', labelKey: 'shell.nav.permissions', label: 'Rollen', Component: RolesTab },
   { id: 'audit', labelKey: 'shell.nav.auditLog', label: 'Protokoll', Component: AuditLogTab },
@@ -60,16 +67,19 @@ export function SettingsScreen() {
   const { t } = useT()
 
   const canWriteModules = hasPermission('modules.modules.write')
+  const canManageApps = hasPermission('apps.apps.manage')
   // The API keeps the club settings to admin roles; a role may still switch modules.
   const canSettings = hasPermission('settings.settings.read')
   const tabs = TABS.filter((tab) =>
     tab.id === 'modules'
       ? canWriteModules
-      : tab.id === 'roles'
-        ? hasPermission('roles.roles.create')
-        : tab.id === 'audit'
-          ? hasPermission('audit.audit.read')
-          : canSettings,
+      : tab.id === 'apps'
+        ? canManageApps
+        : tab.id === 'roles'
+          ? hasPermission('roles.roles.create')
+          : tab.id === 'audit'
+            ? hasPermission('audit.audit.read')
+            : canSettings,
   )
 
   // The path may start with the club's slug: /<club>/app/settings/<tab>.

@@ -3,7 +3,7 @@ import { Button, CopyButton, Group, Modal, Text, TextInput } from '@mantine/core
 import { IconCalendarShare } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
 import { useToast } from '@/context/AppContext'
-import { getCalendarFeedUrl } from '@/api/events'
+import { getCalendarFeedUrl, renewCalendarFeedUrl } from '@/api/events'
 
 /** Shows the member's personal calendar feed URL to add in a calendar app. */
 export function CalendarSubscribeButton() {
@@ -11,6 +11,7 @@ export function CalendarSubscribeButton() {
   const { notify } = useToast()
   const [url, setUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [renewing, setRenewing] = useState(false)
 
   const open = async () => {
     setLoading(true)
@@ -24,6 +25,26 @@ export function CalendarSubscribeButton() {
       )
     } finally {
       setLoading(false)
+    }
+  }
+
+  const renew = async () => {
+    setRenewing(true)
+    try {
+      setUrl(await renewCalendarFeedUrl())
+      notify(
+        'success',
+        t('events.subscribe.renew', 'Neuen Link erstellen'),
+        t('events.subscribe.renewed', 'Neuer Link erstellt. Der alte funktioniert nicht mehr.'),
+      )
+    } catch (err) {
+      notify(
+        'error',
+        t('common.error'),
+        err instanceof Error ? err.message : t('common.unknownError'),
+      )
+    } finally {
+      setRenewing(false)
     }
   }
 
@@ -62,6 +83,15 @@ export function CalendarSubscribeButton() {
             )}
           </CopyButton>
         </Group>
+        <Text fz="xs" c="dimmed" mt="md">
+          {t(
+            'events.subscribe.renewHint',
+            'Hast du den Link weitergegeben oder verloren? Ein neuer Link macht den alten ungültig; trage ihn danach in deinem Kalender neu ein.',
+          )}
+        </Text>
+        <Button variant="subtle" size="xs" mt={4} px={0} onClick={renew} loading={renewing}>
+          {t('events.subscribe.renew', 'Neuen Link erstellen')}
+        </Button>
       </Modal>
     </>
   )

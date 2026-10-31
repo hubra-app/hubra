@@ -33,6 +33,12 @@ module = Module(
             "modules_bp",
             "/api/v1/modules",
         ),
+        Blueprint("hubra.api.apps.routes", "apps_bp", "/api/v1/apps"),
+        Blueprint(
+            "hubra.api.auth.linked_accounts",
+            "linked_accounts_bp",
+            "/api/v1/account/linked-accounts",
+        ),
         Blueprint(
             "hubra.api.dashboard.routes",
             "dashboard_bp",
@@ -104,8 +110,13 @@ module = Module(
             section="system",
             order=0,
             # settings.settings.read stands for an admin role (the API
-            # checks is_admin); a role that switches modules sees that tab.
-            perms=("settings.settings.read", "modules.modules.write"),
+            # checks is_admin); a role that switches modules or connects
+            # apps sees that tab.
+            perms=(
+                "settings.settings.read",
+                "modules.modules.write",
+                "apps.apps.manage",
+            ),
         ),
         NavItem(
             "/app/audit-log",

@@ -44,9 +44,13 @@ export function ImpersonationBanner() {
         {t('shell.impersonation.badge', 'Fremdzugriff')}
       </Badge>
       <Text fz="sm" fw={600}>
-        {t('shell.impersonation.actingAs', 'Du handelst im Verein {{club}}', {
-          club: impersonation.tenant_slug,
-        })}
+        {impersonation.read_only
+          ? t('shell.impersonation.lookingAt', 'Du siehst den Verein {{club}} nur an', {
+              club: impersonation.tenant_slug,
+            })
+          : t('shell.impersonation.actingAs', 'Du handelst im Verein {{club}}', {
+              club: impersonation.tenant_slug,
+            })}
       </Text>
       {impersonation.reason && (
         <Text fz="xs" c="dimmed">

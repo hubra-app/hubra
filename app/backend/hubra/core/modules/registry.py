@@ -14,7 +14,7 @@ import pkgutil
 
 from flask import Flask
 
-from .base import Module
+from .base import AppProvider, Module
 
 _log = logging.getLogger(__name__)
 
@@ -132,6 +132,12 @@ class ModuleRegistry:
 
     def subscribers(self, event: str) -> list[tuple[Module, str]]:
         return [(m, m.events[event]) for m in self.all() if event in m.events]
+
+    def app_providers(self) -> list[tuple[Module, AppProvider]]:
+        return [(m, a) for m in self.all() for a in m.apps]
+
+    def app_provider(self, code: str) -> tuple[Module, AppProvider] | None:
+        return next(((m, a) for m, a in self.app_providers() if a.code == code), None)
 
     def task_modules(self) -> list[str]:
         return [t for m in self.all() for t in m.tasks]

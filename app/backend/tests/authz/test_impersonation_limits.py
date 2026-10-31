@@ -15,6 +15,7 @@ IMPERSONATING = {
     "impersonator_user_id": 99,
     "impersonation_reason": "support",
     "impersonation_expires_at": "2099-01-01T00:00:00+00:00",
+    "impersonation_mode": "act",
 }
 
 
@@ -39,3 +40,14 @@ def test_sign_out_elsewhere_without_a_tracked_session(app, client, seeded_db):
     _sign_in(app, client, seeded_db["admin"])
     resp = client.post("/api/v1/account/sessions/revoke-all", json={})
     assert resp.status_code == 200
+
+
+def test_support_only_looks_unless_changes_were_allowed(app, client, seeded_db):
+    looking = {k: v for k, v in IMPERSONATING.items() if k != "impersonation_mode"}
+    _sign_in(app, client, seeded_db["admin"], **looking)
+    assert client.get("/api/v1/members/").status_code == 200
+    resp = client.post("/api/v1/groups/", json={"name": "Support was here"})
+    assert resp.status_code == 403
+    assert resp.get_json()["error"] == "IMPERSONATION_READ_ONLY"
+    body = client.get("/api/v1/account/permissions").get_json()
+    assert body["impersonation"]["read_only"] is True

@@ -2482,7 +2482,8 @@
     "Self instructed msg"
    ],
    "inventory.shared": [
-    "Gmeinsam"
+    "Gmeinsam",
+    "Geteilt"
    ],
    "inventory.tool": [
     "W\\u00e4rchzeug",
@@ -2493,7 +2494,8 @@
     "Try clearing filters"
    ],
    "inventory.visibility": [
-    "Sichtbarkait"
+    "Sichtbarkait",
+    "Sichtbarkeit"
    ],
    "inventory.youAreInstructed": [
     "Du bisch instruiert für das Item",
@@ -4954,6 +4956,9 @@
    ],
    "shell.breadcrumbs.roles": [
     "System › Rollen"
+   ],
+   "inventory.private": [
+    "Privat"
    ]
   },
   "en-GB": {
@@ -6397,6 +6402,15 @@
    ],
    "shell.breadcrumbs.roles": [
     "System › Roles"
+   ],
+   "inventory.visibility": [
+    "Visibility"
+   ],
+   "inventory.shared": [
+    "Shared"
+   ],
+   "inventory.private": [
+    "Private"
    ]
   }
  }

@@ -28,6 +28,7 @@ COLUMNS: tuple[tuple[str, str, str, str], ...] = (
     ("internal_keys", "id", "value", ""),
     ("managed_mail_addresses", "id", "mailbox_password_encrypted", ""),
     ("platform_settings", "key", "value", " AND secret"),
+    ("connected_apps", "id", "secret_encrypted", ""),
 )
 _DATA_KEYS = ("data_keys", "id", "wrapped_key", "")
 

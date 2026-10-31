@@ -85,7 +85,7 @@ def delete_function(function_id: int):
     fn = FunctionService.get_by_id(function_id)
     name = fn.name
 
-    FunctionService.delete(function_id)
+    FunctionService.delete(function_id, get_current_member().id)
     db.session.commit()
 
     log_audit(

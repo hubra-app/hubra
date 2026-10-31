@@ -1,7 +1,7 @@
 """Recurring transactions, and the transactions they booked
 
 Revision ID: 0ac79fcc9933
-Revises: d7f3b9a1c5e8, e3b9d5f1a7c4 (main had two heads)
+Revises: b8e4d2a6f1c3
 Create Date: 2026-10-31 06:01:26.329188
 
 """
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "0ac79fcc9933"
-down_revision = ("d7f3b9a1c5e8", "e3b9d5f1a7c4")
+down_revision = "b8e4d2a6f1c3"
 branch_labels = None
 depends_on = None
 

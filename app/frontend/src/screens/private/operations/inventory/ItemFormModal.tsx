@@ -17,23 +17,37 @@ import { LinkEditor } from './LinkEditor'
 /**
  * Adds an item, or edits `item` when one is given. Give it a `key` that
  * changes with the item, so the fields start from it.
+ *
+ * Without `canHandOn` (the responsible person, or a member adding their own
+ * item) the owner, responsible person and ownership stay as they are, and a
+ * new item belongs to `ownerIfFixed`. Without `canGiveAway` (a person's item,
+ * for anyone but its owner) the owner and ownership stay.
  */
 export function ItemFormModal({
   open,
   item,
+  canHandOn = true,
+  canGiveAway = canHandOn,
+  ownerIfFixed,
   onClose,
   onSubmit,
 }: {
   open: boolean
   item: InventoryItem | null
+  canHandOn?: boolean
+  canGiveAway?: boolean
+  ownerIfFixed?: number
   onClose: () => void
   onSubmit: (input: InventoryItemCreate) => Promise<unknown>
 }) {
   const { t } = useT()
+  const ownItem = !item && !canHandOn
   const [fName, setFName] = useState(item?.name ?? '')
   const [fCat, setFCat] = useState<InventoryCategory>(item?.category ?? 'Tool')
   const [fDesc, setFDesc] = useState(item?.description ?? '')
-  const [fOwner, setFOwner] = useState<number | undefined>(item?.ownerId ?? undefined)
+  const [fOwner, setFOwner] = useState<number | undefined>(
+    item?.ownerId ?? (ownItem ? ownerIfFixed : undefined),
+  )
   const [fResponsible, setFResponsible] = useState<number | undefined>(
     item?.responsibleId ?? undefined,
   )
@@ -141,6 +155,7 @@ export function ItemFormModal({
               noneLabel={t('inventory.noOwner', 'Keine Eigentümer:in')}
               value={fOwner}
               onChange={(v) => setFOwner(v ? Number(v) : undefined)}
+              disabled={!canGiveAway}
             />
           </Field>
           <Field label={t('inventory.responsible', 'Verantwortlich')}>
@@ -148,18 +163,20 @@ export function ItemFormModal({
               noneLabel={t('inventory.noOneAssigned', 'Niemand zugewiesen')}
               value={fResponsible}
               onChange={(v) => setFResponsible(v ? Number(v) : undefined)}
+              disabled={!canHandOn && !ownItem}
             />
           </Field>
         </SimpleGrid>
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
-          <Field label={t('inventory.visibility', 'Sichtbarkeit')}>
+          <Field label={t('inventory.visibility', 'Eigentum')}>
             <Select
               data={[
-                { value: 'shared', label: t('inventory.shared', 'Gemeinsam') },
-                { value: 'private', label: t('inventory.private', 'Privat') },
+                { value: 'shared', label: t('inventory.shared', 'Verein') },
+                { value: 'private', label: t('inventory.private', 'Privatperson') },
               ]}
               value={fVisibility}
               onChange={(v) => setFVisibility((v ?? 'shared') as InventoryVisibility)}
+              disabled={!canGiveAway && !ownItem}
             />
           </Field>
           <Field label={t('inventory.costOptional', 'Kosten (CHF, optional)')}>
