@@ -408,3 +408,34 @@ def test_bulk_invoices_bill_each_member_once(client, auth_headers, seeded_db, db
     yesterday = (date.today() - timedelta(days=1)).isoformat()
     resp = client.post(url, json={"due": yesterday}, headers=auth_headers)
     assert resp.status_code == 400
+
+
+def test_list_invoices_for_one_member(client, auth_headers, seeded_db, db):
+    """?member_id= lists only that member's invoices (the member page)."""
+    from hubra.core.models.finance import Invoice
+
+    from tests.audit.test_audit_log import _make_member
+
+    other = _make_member(db, seeded_db)
+    today = date.today()
+    for member_id in (seeded_db["admin"].id, other.id):
+        db.session.add(
+            Invoice(
+                member_id=member_id,
+                issued=today,
+                due=today + timedelta(days=30),
+                amount=Decimal("10.00"),
+                status="Open",
+            )
+        )
+    db.session.commit()
+
+    resp = client.get(
+        f"/api/v1/finance/invoices?member_id={other.id}", headers=auth_headers
+    )
+    assert resp.status_code == 200
+    rows = resp.get_json()["data"]
+    assert [r["member_id"] for r in rows] == [other.id]
+
+    bad = client.get("/api/v1/finance/invoices?member_id=x", headers=auth_headers)
+    assert bad.status_code == 400

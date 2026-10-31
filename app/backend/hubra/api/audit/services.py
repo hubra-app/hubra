@@ -52,6 +52,21 @@ class AuditsService:
                 raise_error(400, "VALIDATION_ERROR", "actorId must be an integer")
             query = query.where(AuditEntry.actor_id == actor_id)
 
+        # What one member did, and what was done to their membership.
+        member_id_raw = args.get("memberId")
+        if member_id_raw:
+            try:
+                member_id = int(member_id_raw)
+            except (TypeError, ValueError):
+                raise_error(400, "VALIDATION_ERROR", "memberId must be an integer")
+            query = query.where(
+                (AuditEntry.actor_id == member_id)
+                | (
+                    (AuditEntry.target_type == "Member")
+                    & (AuditEntry.target_id == member_id)
+                )
+            )
+
         from_raw = args.get("from")
         if from_raw:
             try:
