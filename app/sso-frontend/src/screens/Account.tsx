@@ -18,7 +18,7 @@ import {
   Title,
 } from '@mantine/core'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import { SignedInFrame } from '@/components/SignedInFrame'
 import { ThemeSwitch } from '@hubra/ui'
@@ -36,6 +36,7 @@ const TABS = [
   { value: 'einstellungen', label: () => tr('Einstellungen', 'Settings') },
   { value: 'sitzungen', label: () => tr('Sitzungen', 'Sessions') },
   { value: 'benachrichtigungen', label: () => tr('Benachrichtigungen', 'Notifications') },
+  { value: 'verknuepfungen', label: () => tr('Verknüpfungen', 'Linked accounts') },
 ] as const
 
 type Tab = (typeof TABS)[number]['value']
@@ -119,6 +120,9 @@ export function AccountScreen() {
         </Tabs.Panel>
         <Tabs.Panel value="benachrichtigungen">
           <NotificationsTab />
+        </Tabs.Panel>
+        <Tabs.Panel value="verknuepfungen">
+          <LinkedAccountsTab />
         </Tabs.Panel>
       </Tabs>
     </SignedInFrame>
@@ -544,6 +548,116 @@ function SessionsTab() {
           </Group>
         </Paper>
       ))}
+    </Stack>
+  )
+}
+
+const LINK_ERRORS: Record<string, () => string> = {
+  expired: () =>
+    tr(
+      'Abgelaufen oder in einem anderen Browser gestartet. Bitte nochmals verknüpfen.',
+      'Expired or started in another browser. Please link again.',
+    ),
+  cancelled: () => tr('Abgebrochen.', 'Cancelled.'),
+  signin: () => tr('Bitte melde dich an und versuche es nochmals.', 'Please sign in and try again.'),
+  taken: () =>
+    tr(
+      'Dieses Konto ist bereits mit einem anderen Hubra-Konto verknüpft.',
+      'This account is already linked to another Hubra account.',
+    ),
+  failed: () => tr('Verknüpfen fehlgeschlagen.', 'Linking failed.'),
+}
+
+/**
+ * Outside accounts the person links themselves (Discord), so a club's
+ * Discord bot can recognise them and give them their roles. Only the
+ * account's id and name are kept.
+ */
+function LinkedAccountsTab() {
+  const { notify } = useSso()
+  const queryClient = useQueryClient()
+  const [params, setParams] = useSearchParams()
+  const linked = useQuery({ queryKey: ['linked-accounts'], queryFn: authApi.getLinkedAccounts })
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ['linked-accounts'] })
+
+  useEffect(() => {
+    const error = params.get('error')
+    if (params.get('linked')) {
+      notify('success', tr('Konto verknüpft', 'Account linked'))
+    } else if (error) {
+      notify('error', tr('Nicht verknüpft', 'Not linked'), (LINK_ERRORS[error] ?? LINK_ERRORS.failed)())
+    } else {
+      return
+    }
+    setParams({}, { replace: true })
+  }, [params, setParams, notify])
+
+  const start = useMutation({
+    mutationFn: authApi.startLinkAccount,
+    onSuccess: ({ url }) => window.location.assign(url),
+    onError: (err) => notify('error', tr('Nicht verknüpft', 'Not linked'), errorText(err, '')),
+  })
+  const unlink = useMutation({
+    mutationFn: authApi.unlinkAccount,
+    onSuccess: () => {
+      refresh()
+      notify('success', tr('Verknüpfung entfernt', 'Link removed'))
+    },
+    onError: (err) => notify('error', tr('Entfernen fehlgeschlagen', 'Removing failed'), errorText(err, '')),
+  })
+
+  if (linked.isError) return <LoadFailed onRetry={() => linked.refetch()} />
+  if (!linked.data) return <Loader size="sm" />
+
+  return (
+    <Stack gap="sm">
+      <Text size="sm" c="dimmed">
+        {tr(
+          'Verknüpfe Konten bei anderen Diensten, damit deine Vereine dich dort erkennen, zum Beispiel für deine Rollen auf ihrem Discord-Server. Gespeichert werden nur der Name und die Nummer des Kontos.',
+          'Link accounts on other services so your clubs recognise you there, for example for your roles on their Discord server. Only the account name and number are kept.',
+        )}
+      </Text>
+      {linked.data.providers.map((p) => {
+        const acc = linked.data.accounts.find((a) => a.provider === p.code)
+        return (
+          <Paper key={p.code} withBorder radius="md" p="md">
+            <Group justify="space-between" wrap="nowrap">
+              <div style={{ minWidth: 0 }}>
+                <Text fw={600}>{p.name}</Text>
+                <Text size="xs" c="dimmed" truncate>
+                  {acc
+                    ? tr(`Verknüpft als ${acc.username}`, `Linked as ${acc.username}`)
+                    : p.available
+                      ? tr('Nicht verknüpft', 'Not linked')
+                      : tr('Auf dieser Plattform nicht eingerichtet', 'Not set up on this platform')}
+                </Text>
+              </div>
+              {acc ? (
+                <Button
+                  variant="subtle"
+                  color="red"
+                  size="xs"
+                  style={{ flexShrink: 0 }}
+                  loading={unlink.isPending}
+                  onClick={() => unlink.mutate(p.code)}
+                >
+                  {tr('Entfernen', 'Remove')}
+                </Button>
+              ) : (
+                <Button
+                  size="xs"
+                  style={{ flexShrink: 0 }}
+                  disabled={!p.available}
+                  loading={start.isPending}
+                  onClick={() => start.mutate(p.code)}
+                >
+                  {tr('Verknüpfen', 'Link')}
+                </Button>
+              )}
+            </Group>
+          </Paper>
+        )
+      })}
     </Stack>
   )
 }

@@ -339,6 +339,13 @@ EXTRA_PERMISSIONS = (
         "action": "moderate",
         "blueprint": "posts_bp",
     },
+    {
+        "key": "inventory.items.create_own",
+        "display_name": "Add own inventory items",
+        "resource": "items",
+        "action": "create_own",
+        "blueprint": "inventory_bp",
+    },
 )
 
 
@@ -378,7 +385,7 @@ def check_grant(actor, *, given=(), taken=(), keys=()) -> None:
         raise_error(
             403,
             "BEYOND_OWN_PERMISSIONS",
-            "You can only give permissions you have yourself: "
+            "You can only give or take permissions you have yourself: "
             + ", ".join(sorted(missing)[:5]),
         )
 
@@ -437,12 +444,29 @@ def invalidate_role_permissions(role_id: int) -> None:
         _mark_redis_down()
 
 
+def created_by(model, column: str = "created_by", arg: str = "id", reason: str = "creator"):
+    """``allow`` for ``permission_required``: the member named in *column* of
+    the row in the route argument *arg* acts on it (their own event, their
+    own poll, the group they lead)."""
+    col = getattr(model, column)
+
+    def allow(member, **kwargs):
+        object_id = kwargs.get(arg)
+        if object_id is None:
+            return None
+        owner = db.session.scalar(select(col).where(model.id == object_id))
+        return reason if owner is not None and owner == member.id else None
+
+    return allow
+
+
 def permission_required(
     resource: str,
     action: str,
     display_name: str | None = None,
     *,
     scope: str | None = None,
+    allow=None,
 ):
     """Decorator: enforces RBAC check AND registers metadata for auto-discovery.
 
@@ -453,6 +477,11 @@ def permission_required(
                       Defaults to "{action} {resource}".
         scope: The route argument holding a group id (``"group_id"``). A role
                held for that group only (``member_role_scopes``) passes too.
+        allow: Object-level access for members without the right, called as
+               ``allow(member, **kwargs)`` with the route arguments. When it
+               returns a reason (``"owner"``), the request passes with
+               ``g.permission_scope = "object"`` and ``g.object_access`` set
+               to that reason, and the route keeps to what the reason allows.
     """
     label = display_name or f"{action} {resource}"
 
@@ -488,6 +517,13 @@ def permission_required(
                 g.permission_scope = "group"
                 return fn(*args, **kwargs)
 
+            if allow is not None and hasattr(member, "roles"):
+                reason = allow(member, **kwargs)
+                if reason:
+                    g.permission_scope = "object"
+                    g.object_access = reason
+                    return fn(*args, **kwargs)
+
             return jsonify(
                 {"error": "FORBIDDEN", "message": "Insufficient permissions"}
             ), 403
@@ -500,7 +536,14 @@ def permission_required(
     return decorator
 
 
-def can_update(resource: str, display_name: str | None = None, *, scope: str | None = None):
+def can_update(
+    resource: str,
+    display_name: str | None = None,
+    *,
+    scope: str | None = None,
+    allow=None,
+    allow_fields: frozenset[str] = frozenset(),
+):
     """Decorator: enforces field-level RBAC for PATCH/UPDATE routes.
 
     Behaviour:
@@ -513,7 +556,7 @@ def can_update(resource: str, display_name: str | None = None, *, scope: str | N
     Routes decorated with this should call ``filter_updatable_fields(data)``
     on the validated body before passing it to the service layer. ``scope``
     works as on ``permission_required``: a role held for that group adds its
-    keys.
+    keys. ``allow`` too, and a member it lets in changes ``allow_fields``.
     """
     label = display_name or f"Update {resource}"
 
@@ -552,6 +595,12 @@ def can_update(resource: str, display_name: str | None = None, *, scope: str | N
             field_perms = {
                 p[len(field_prefix) :] for p in perms if p.startswith(field_prefix)
             }
+            if allow is not None and hasattr(member, "roles"):
+                reason = allow(member, **kwargs)
+                if reason:
+                    g.permission_scope = "object"
+                    g.object_access = reason
+                    field_perms |= set(allow_fields)
             if field_perms:
                 g.updatable_fields = field_perms
                 return fn(*args, **kwargs)
@@ -640,6 +689,12 @@ def staff_mfa_missing(user) -> bool:
     return mfa.required(user) and not mfa.enabled(user)
 
 
+# Platform rights that amount to control of the whole server: plugin code
+# runs inside the backend, and a restore overwrites every club. Only the
+# superadmin flag carries them; no global role can.
+SUPERADMIN_ONLY = frozenset({"plugins.manage", "backups.manage"})
+
+
 def get_user_global_permissions(user_id: int) -> set[str]:
     """Return the set of global permission keys for a user.
 
@@ -676,7 +731,7 @@ def get_user_global_permissions(user_id: int) -> set[str]:
         .all()
     )
 
-    return set(rows)
+    return set(rows) - SUPERADMIN_ONLY
 
 
 def require_global_permission(permission_key: str):
@@ -814,6 +869,41 @@ def require_password_changed(fn):
         return fn(*args, **kwargs)
 
     return wrapper
+
+
+# Requests a read-only impersonation may still make: ending it, and keeping
+# the session alive.
+_READ_ONLY_IMPERSONATION_ALLOWED = {
+    "tenant_admin.stop_impersonation",
+    "auth_bp.logout",
+    "auth_bp.refresh",
+}
+
+
+def read_only_impersonation():
+    """before_request: an impersonation started without "allow changes"
+    only looks. Every write is refused, whatever the member may do."""
+    if request.method in ("GET", "HEAD", "OPTIONS"):
+        return None
+    if request.endpoint in _READ_ONLY_IMPERSONATION_ALLOWED:
+        return None
+    try:
+        verify_jwt_in_request(optional=True)
+        from flask_jwt_extended import get_jwt
+
+        claims = get_jwt()
+    except Exception:  # noqa: BLE001 - the route's own check reports it
+        return None
+    if claims.get("impersonator_id") is None:
+        return None
+    if claims.get("impersonation_mode") == "act":
+        return None
+    return jsonify(
+        {
+            "error": "IMPERSONATION_READ_ONLY",
+            "message": "This support session can only look; start one that allows changes",
+        }
+    ), 403
 
 
 def refuse_during_impersonation() -> None:

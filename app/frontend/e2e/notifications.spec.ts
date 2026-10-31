@@ -7,7 +7,7 @@ test('a notification opens what it is about and can be deleted', async ({ page }
   // A poll reminder for a group the admin is in reaches the admin.
   const group = await api<{ id: number }>(page, 'POST', '/groups/', {
     name: unique('E2E Gruppe'),
-    self_join: true,
+    visibility: 'open',
   })
   const question = unique('E2E Erinnerung')
   let pollId: number | null = null

@@ -5,10 +5,11 @@ from __future__ import annotations
 from flask import Blueprint, jsonify, request
 from hubra.api.auth.helpers import get_current_member
 
-from hubra.api.permissions import permission_required
+from hubra.api.permissions import created_by, permission_required
 from marshmallow import ValidationError
 from hubra.core.errors import api_error
 from hubra.core.extensions import db
+from hubra.core.models.poll import Poll
 from hubra.core.schemas.poll import (
     PollCreateSchema,
     PollSchema,
@@ -18,6 +19,9 @@ from hubra.core.schemas.poll import (
 from hubra.api.polls.services import PollService, PollsService, ProxyService
 
 polls_bp = Blueprint("polls_bp", __name__)
+
+# Whoever asked the question runs the poll: edits, reminds and closes it.
+_own_poll = created_by(Poll, column="created_by_id", arg="poll_id")
 
 _poll_schema = PollSchema()
 _polls_schema = PollSchema(many=True)
@@ -134,7 +138,7 @@ def revoke_proxy(poll_id: int):
 
 
 @polls_bp.patch("/<int:poll_id>/close")
-@permission_required("polls", "close", "Close polls")
+@permission_required("polls", "close", "Close polls", allow=_own_poll)
 def close_poll(poll_id: int):
     poll = PollService.get(poll_id)
     PollService.close(poll, get_current_member().id)
@@ -170,7 +174,7 @@ def delete_poll(poll_id: int):
 
 
 @polls_bp.patch("/<int:poll_id>")
-@permission_required("polls", "update", "Update polls")
+@permission_required("polls", "update", "Update polls", allow=_own_poll)
 def update_poll(poll_id: int):
     poll = PollService.get(poll_id)
 
@@ -196,7 +200,7 @@ def update_poll(poll_id: int):
 
 
 @polls_bp.post("/<int:poll_id>/remind")
-@permission_required("polls", "update", "Update polls")
+@permission_required("polls", "update", "Update polls", allow=_own_poll)
 def remind_poll(poll_id: int):
     sent = PollService.remind(poll_id, get_current_member().id)
 

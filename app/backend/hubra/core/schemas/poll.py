@@ -52,6 +52,8 @@ class PollSchema(ma.SQLAlchemyAutoSchema):
     )
 
     my_vote = fields.Method("get_my_vote", dump_only=True)
+    # Whether the signed-in member is one of those the poll is for.
+    may_vote = fields.Method("get_may_vote", dump_only=True)
 
     def dump(self, obj, *, many=None):
         if not (self.many if many is None else many):
@@ -82,6 +84,19 @@ class PollSchema(ma.SQLAlchemyAutoSchema):
                 select(func.count()).where(PollVote.poll_id == obj.id)
             ),
         )
+
+    def get_may_vote(self, obj):
+        from hubra.api.polls.services import may_vote, member_circles
+
+        if not (obj.required_group_ids or obj.required_function_ids):
+            return True
+        member_id = _current_member_id()
+        if member_id is None:
+            return False
+        cached = g.get("poll_circles")
+        if cached is None or cached[0] != member_id:
+            cached = g.poll_circles = (member_id, member_circles(member_id))
+        return may_vote(obj, cached[1])
 
     def get_my_vote(self, obj):
         """Index of the option the signed-in member chose, or None."""
@@ -119,14 +134,22 @@ def _my_votes(polls) -> dict[int, int]:
 
 def _current_member_id() -> int | None:
     """The signed-in member's id, looked up once per request."""
-    if "poll_member_id" not in g:
-        from hubra.api.auth.helpers import get_current_member
+    from flask_jwt_extended import get_jwt_identity
 
+    from hubra.api.auth.helpers import get_current_member
+
+    try:
+        identity = get_jwt_identity()
+    except Exception:
+        identity = None
+    cached = g.get("poll_member_id")
+    if cached is None or cached[0] != identity:
         try:
-            g.poll_member_id = get_current_member().id
+            member_id = get_current_member().id
         except Exception:
-            g.poll_member_id = None
-    return g.poll_member_id
+            member_id = None
+        cached = g.poll_member_id = (identity, member_id)
+    return cached[1]
 
 
 # ── Write schemas ─────────────────────────────────────────────────────────────

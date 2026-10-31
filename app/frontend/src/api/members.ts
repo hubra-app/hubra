@@ -33,6 +33,13 @@ interface BackendMember {
   birthday: string | null;
   membership_type: string;
   membership_until: string | null;
+  /** null when the member keeps their address out of the club's directory */
+  address_street?: string | null;
+  address_house_no?: string | null;
+  address_postal_code?: string | null;
+  address_city?: string | null;
+  address_country?: string | null;
+  profile_note?: string | null;
   emergency_contact: { name?: string; phone?: string; relation?: string } | null;
   custom_fields: Record<string, unknown> | null;
   deleted_at: string | null;
@@ -77,6 +84,14 @@ function adapt(
     birthday: b.birthday ?? "",
     membershipType: b.membership_type ?? "regular",
     membershipUntil: b.membership_until ?? "",
+    address: {
+      street: b.address_street ?? "",
+      houseNo: b.address_house_no ?? "",
+      postalCode: b.address_postal_code ?? "",
+      city: b.address_city ?? "",
+      country: b.address_country ?? "",
+    },
+    profileNote: b.profile_note ?? null,
     emergencyContact: b.emergency_contact ?? null,
     customFields: b.custom_fields ?? null,
   };

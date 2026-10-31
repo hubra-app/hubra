@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import {
   Badge,
   Button,
-  Switch,
+  SegmentedControl,
   Text,
   Paper,
   SimpleGrid,
@@ -21,6 +21,9 @@ import {
   IconPencil,
   IconTrash,
   IconSearch,
+  IconWorld,
+  IconEye,
+  IconLock,
 } from '@tabler/icons-react'
 import { useToast, useAuth } from '@/context/AppContext'
 import {
@@ -34,7 +37,7 @@ import {
   Pagination,
   useSubmitOnce,
 } from '@/components/ui'
-import type { Group } from '@/types'
+import type { Group, GroupVisibility } from '@/types'
 import {
   listGroups,
   createGroup,
@@ -48,6 +51,25 @@ import { MemberPicker } from '@/components/MemberPicker'
 import { useMemberSearch } from '@/data/members'
 import { qk } from '@/data/keys'
 
+const VISIBILITIES: GroupVisibility[] = ['open', 'visible', 'private']
+const VISIBILITY_ICON = { open: IconWorld, visible: IconEye, private: IconLock }
+const VISIBILITY_COLOR = { open: 'green', visible: 'gray', private: 'grape' }
+
+function VisibilityBadge({ visibility }: { visibility: GroupVisibility }) {
+  const { t } = useT()
+  const Icon = VISIBILITY_ICON[visibility]
+  return (
+    <Badge
+      variant="light"
+      color={VISIBILITY_COLOR[visibility]}
+      leftSection={<Icon size={12} />}
+      title={t(`groups.visibility.${visibility}Hint`)}
+    >
+      {t(`groups.visibility.${visibility}`)}
+    </Badge>
+  )
+}
+
 /* ── Group Detail Panel ──────────────────────── */
 function GroupDetailPanel({
   group,
@@ -57,12 +79,13 @@ function GroupDetailPanel({
   onClose: () => void
 }) {
   const { notify } = useToast()
-  const { hasPermission } = useAuth()
+  const { currentUser, hasPermission } = useAuth()
   const { t } = useT()
   const queryClient = useQueryClient()
-  // A role held for this group only counts here too.
-  const canAdd = hasPermission('groups.groups.add_member', group.id)
-  const canRemove = hasPermission('groups.groups.remove_member', group.id)
+  // A role held for this group only counts here too, and so does leading it.
+  const leads = currentUser != null && group.leadId === Number(currentUser.id)
+  const canAdd = leads || hasPermission('groups.groups.add_member', group.id)
+  const canRemove = leads || hasPermission('groups.groups.remove_member', group.id)
   const { data: members = [], isLoading: loading } = useQuery({
     queryKey: qk.groups.members(group.id),
     queryFn: () => listGroupMembers(group.id),
@@ -177,17 +200,19 @@ const groupSchema = z.object({
   color: z.string(),
   sessions: z.string(),
   leadId: z.string(),
-  selfJoin: z.boolean(),
+  visibility: z.enum(['open', 'visible', 'private']),
 })
 type GroupForm = z.infer<typeof groupSchema>
 
 export function GroupsScreen() {
   const { notify } = useToast()
-  const { hasPermission } = useAuth()
+  const { currentUser, hasPermission } = useAuth()
   const { t } = useT()
   const queryClient = useQueryClient()
   const canCreate = hasPermission('groups.groups.create')
   const canUpdate = hasPermission('groups.groups.update')
+  const leads = (g: Group) =>
+    currentUser != null && g.leadId === Number(currentUser.id)
   const canDelete = hasPermission('groups.groups.delete')
   const { data: groups = [] } = useQuery({
     queryKey: qk.groups.all,
@@ -197,6 +222,13 @@ export function GroupsScreen() {
   const [editTarget, setEditTarget] = useState<Group | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Group | null>(null)
   const [detailGroup, setDetailGroup] = useState<Group | null>(null)
+  // A leader edits how the group presents itself; the API keeps its name and
+  // leader with the club.
+  const leaderOnly =
+    editTarget != null &&
+    !canUpdate &&
+    !hasPermission('groups.groups.update', editTarget.id) &&
+    leads(editTarget)
 
   const form = useForm<GroupForm>({
     validate: zod4Resolver(groupSchema),
@@ -206,17 +238,19 @@ export function GroupsScreen() {
       color: '#2596be',
       sessions: '',
       leadId: '',
-      selfJoin: false,
+      visibility: 'visible',
     },
   })
 
   const [search, setSearch] = useState('')
+  const [shown, setShown] = useState<'all' | GroupVisibility>('all')
   const filtered = groups.filter((g) => {
     const q = search.toLowerCase()
     return (
-      !q ||
-      g.name.toLowerCase().includes(q) ||
-      g.description.toLowerCase().includes(q)
+      (shown === 'all' || (g.visibility ?? 'visible') === shown) &&
+      (!q ||
+        g.name.toLowerCase().includes(q) ||
+        g.description.toLowerCase().includes(q))
     )
   })
   const pg = usePagination(filtered, 10)
@@ -228,7 +262,7 @@ export function GroupsScreen() {
       color: '#2596be',
       sessions: '',
       leadId: '',
-      selfJoin: false,
+      visibility: 'visible',
     })
     setAddOpen(true)
   }
@@ -240,7 +274,7 @@ export function GroupsScreen() {
       color: g.color,
       sessions: g.sessions,
       leadId: '',
-      selfJoin: g.selfJoin ?? false,
+      visibility: g.visibility ?? 'visible',
     })
   }
 
@@ -252,7 +286,7 @@ export function GroupsScreen() {
         color: data.color,
         sessions: data.sessions,
         leadId: data.leadId ? Number(data.leadId) : undefined,
-        selfJoin: data.selfJoin,
+        visibility: data.visibility,
       })
       queryClient.invalidateQueries({ queryKey: qk.groups.all })
       queryClient.invalidateQueries({ queryKey: qk.lookups })
@@ -283,7 +317,7 @@ export function GroupsScreen() {
         color: data.color,
         sessions: data.sessions,
         ...(data.leadId ? { leadId: Number(data.leadId) } : {}),
-        selfJoin: data.selfJoin,
+        visibility: data.visibility,
       })
       queryClient.invalidateQueries({ queryKey: qk.groups.all })
       queryClient.invalidateQueries({ queryKey: qk.lookups })
@@ -333,6 +367,7 @@ export function GroupsScreen() {
           <Field label={t('groups.group.name', 'Name der Gruppe')}>
             <TextInput
               {...form.getInputProps('name')}
+              disabled={leaderOnly}
               placeholder={t('groups.group.namePlaceholder', 'z. B. Keramik')}
             />
           </Field>
@@ -348,6 +383,7 @@ export function GroupsScreen() {
           <MemberPicker
             noneLabel={t('groups.noLead', 'Keine Leitung')}
             {...form.getInputProps('leadId')}
+            disabled={leaderOnly}
             onChange={(id) => form.setFieldValue('leadId', id ?? '')}
           />
         </Field>
@@ -373,14 +409,19 @@ export function GroupsScreen() {
           />
         </Field>
       </SimpleGrid>
-      <Switch
-        label={t('groups.selfJoin', 'Mitglieder können selbst beitreten und austreten')}
-        description={t(
-          'groups.selfJoinHint',
-          'Für Interessengruppen. Mitglieder finden sie unter «Mein Konto».',
-        )}
-        {...form.getInputProps('selfJoin', { type: 'checkbox' })}
-      />
+      <Field
+        label={t('groups.visibility.label', 'Sichtbarkeit')}
+        hint={t(`groups.visibility.${form.values.visibility}Hint`)}
+      >
+        <SegmentedControl
+          fullWidth
+          data={VISIBILITIES.map((v) => ({
+            value: v,
+            label: t(`groups.visibility.${v}`),
+          }))}
+          {...form.getInputProps('visibility')}
+        />
+      </Field>
     </div>
   )
 
@@ -415,6 +456,18 @@ export function GroupsScreen() {
             placeholder={t('groups.search', 'Gruppen suchen …')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+          />
+          <SegmentedControl
+            aria-label={t('groups.visibility.label', 'Sichtbarkeit')}
+            value={shown}
+            onChange={(v) => setShown(v as 'all' | GroupVisibility)}
+            data={[
+              { value: 'all', label: t('groups.visibility.all', 'Alle') },
+              ...VISIBILITIES.map((v) => ({
+                value: v,
+                label: t(`groups.visibility.${v}`),
+              })),
+            ]}
           />
         </div>
         <Pagination {...pg} top />
@@ -491,7 +544,8 @@ export function GroupsScreen() {
                   {g.description ||
                     t('groups.noDescription', 'Keine Beschreibung.')}
                 </p>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+                  <VisibilityBadge visibility={g.visibility ?? 'visible'} />
                   {g.sessions && (
                     <Badge variant="light">
                       <IconClock size={12} />
@@ -500,7 +554,7 @@ export function GroupsScreen() {
                   )}
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  {(canUpdate || hasPermission('groups.groups.update', g.id)) && (
+                  {(canUpdate || hasPermission('groups.groups.update', g.id) || leads(g)) && (
                     <Button
                       size="sm"
                       variant="subtle"

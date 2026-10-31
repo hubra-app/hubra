@@ -182,6 +182,10 @@ class Member(db.Model):
     directory_shared: Mapped[list[str] | None] = mapped_column(
         JSONB().with_variant(JSON, "sqlite"), nullable=True
     )
+    # Part of the signed calendar feed link; raising it ends the old links.
+    calendar_feed_version: Mapped[int] = mapped_column(
+        db.Integer, nullable=False, default=0, server_default="0"
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

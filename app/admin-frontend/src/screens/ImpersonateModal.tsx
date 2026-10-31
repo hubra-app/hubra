@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Modal, TextInput, Button, Stack, Group, Text, Alert } from '@mantine/core'
+import { Modal, TextInput, Button, Stack, Group, Text, Alert, Checkbox } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
@@ -12,6 +12,7 @@ const TENANT_APP_URL = import.meta.env.VITE_TENANT_APP_URL ?? 'https://app.hubra
 
 const schema = z.object({
   reason: z.string().min(1, tr('Bitte gib einen Grund an', 'Reason is required')),
+  allowChanges: z.boolean(),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -32,13 +33,16 @@ export function ImpersonateModal({
 
   const form = useForm<FormValues>({
     validate: zod4Resolver(schema),
-    initialValues: { reason: '' },
+    initialValues: { reason: '', allowChanges: false },
   })
 
   const handleSubmit = async (values: FormValues) => {
     setLoading(true)
     try {
-      const res = await impersonateTenant(tenantId, { reason: values.reason.trim() })
+      const res = await impersonateTenant(tenantId, {
+        reason: values.reason.trim(),
+        allow_changes: values.allowChanges,
+      })
       notify('success', tr('Stellvertretung gestartet', 'Impersonation started'), tr('Du wirst zum Verein weitergeleitet …', 'Redirecting to the club…'))
       // The club app's routes start with the club's slug.
       window.location.assign(
@@ -61,8 +65,8 @@ export function ImpersonateModal({
             variant="light"
           >
             {tr(
-              `Du öffnest «${tenantName}» mit Admin-Rechten. Alles, was du dort tust, wird mit deinem Namen protokolliert.`,
-              `You open "${tenantName}" with admin rights. Everything you do there is logged under your name.`,
+              `Du öffnest «${tenantName}» mit Admin-Rechten. Ohne «Änderungen erlauben» kannst du nur ansehen. Alles wird mit deinem Namen protokolliert.`,
+              `You open "${tenantName}" with admin rights. Without "Allow changes" you can only look. Everything is logged under your name.`,
             )}
           </Alert>
           <TextInput
@@ -71,6 +75,14 @@ export function ImpersonateModal({
             {...form.getInputProps('reason')}
             placeholder={tr('Support-Ticket #12345', 'Support ticket #12345')}
             description={tr('Pflichtfeld für das Audit-Log. Wird dauerhaft gespeichert.', 'Required for the audit log. It is stored permanently.')}
+          />
+          <Checkbox
+            label={tr('Änderungen erlauben', 'Allow changes')}
+            description={tr(
+              'Nur wenn du im Verein etwas ändern musst, z. B. eine Einstellung korrigieren.',
+              'Only when you need to change something in the club, e.g. fix a setting.',
+            )}
+            {...form.getInputProps('allowChanges', { type: 'checkbox' })}
           />
           <Text size="xs" c="dimmed">
             {tr(

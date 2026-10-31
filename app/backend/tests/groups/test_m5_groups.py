@@ -34,13 +34,13 @@ def test_create_group_with_new_fields(client, auth_headers, seeded_db):
         name="Board",
         type="board",
         email_alias="board@club.ch",
-        is_public=False,
+        visibility="private",
     )
     assert resp.status_code == 201
     body = resp.get_json()
     assert body["type"] == "board"
     assert body["email_alias"] == "board@club.ch"
-    assert body["is_public"] is False
+    assert body["visibility"] == "private"
 
 
 def test_create_group_type_validation(client, auth_headers, seeded_db):
@@ -68,7 +68,7 @@ def test_update_group_new_fields(client, auth_headers, seeded_db):
         json={
             "type": "committee",
             "email_alias": "committee@club.ch",
-            "is_public": False,
+            "visibility": "private",
         },
         headers=auth_headers,
     )
@@ -76,7 +76,7 @@ def test_update_group_new_fields(client, auth_headers, seeded_db):
     body = resp.get_json()
     assert body["type"] == "committee"
     assert body["email_alias"] == "committee@club.ch"
-    assert body["is_public"] is False
+    assert body["visibility"] == "private"
 
 
 # ── Nested groups ────────────────────────────────────────────────────────────

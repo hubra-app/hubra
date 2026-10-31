@@ -11,14 +11,14 @@ from hubra.core.models.group import Group
 
 @pytest.fixture
 def groups(db, seeded_db):
-    open_group = Group(name="Climbing", type="interest_group", self_join=True)
+    open_group = Group(name="Climbing", type="interest_group", visibility="open")
     closed = Group(name="Board", type="board")
     db.session.add_all([open_group, closed])
     db.session.commit()
     return open_group, closed
 
 
-def test_joinable_lists_only_self_join_groups(client, auth_headers, groups):
+def test_joinable_lists_only_open_groups(client, auth_headers, groups):
     listed = client.get("/api/v1/groups/joinable").get_json()
     assert [(g["name"], g["joined"]) for g in listed] == [("Climbing", False)]
 
@@ -44,8 +44,9 @@ def test_cannot_join_closed_group(client, auth_headers, groups):
     assert client.post("/api/v1/groups/9999/join").status_code == 404
 
 
-def test_self_join_flag_is_editable(client, auth_headers, groups):
+def test_visibility_is_editable(client, auth_headers, groups):
     _, closed = groups
-    resp = client.patch(f"/api/v1/groups/{closed.id}", json={"self_join": True})
+    resp = client.patch(f"/api/v1/groups/{closed.id}", json={"visibility": "open"})
     assert resp.status_code == 200
-    assert resp.get_json()["self_join"] is True
+    assert resp.get_json()["visibility"] == "open"
+    assert client.patch(f"/api/v1/groups/{closed.id}", json={"visibility": "secret"}).status_code == 400

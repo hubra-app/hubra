@@ -610,6 +610,7 @@ _SESSION_CLAIMS = (
     "impersonator_user_id",
     "impersonation_reason",
     "impersonation_expires_at",
+    "impersonation_mode",
 )
 
 
@@ -999,6 +1000,7 @@ def get_my_permissions():
             "tenant_slug": claims.get("tenant_slug"),
             "reason": claims.get("impersonation_reason"),
             "expires_at": claims.get("impersonation_expires_at"),
+            "read_only": claims.get("impersonation_mode") != "act",
             "restricted_actions": ["delete_tenant", "change_plan"],
         }
 

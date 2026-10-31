@@ -23,6 +23,7 @@ interface BackendEvent {
   places_taken?: number;
   pending_count?: number;
   my_status?: string | null;
+  created_by?: number | null;
 }
 
 function adapt(b: BackendEvent): ClubEvent {
@@ -48,6 +49,7 @@ function adapt(b: BackendEvent): ClubEvent {
     placesTaken: b.places_taken ?? b.registration_count ?? 0,
     pendingCount: b.pending_count ?? 0,
     myStatus: (b.my_status ?? null) as ClubEvent["myStatus"],
+    createdById: b.created_by ?? null,
   };
 }
 
@@ -238,5 +240,13 @@ export async function decideRegistration(
 
 export async function getCalendarFeedUrl(): Promise<string> {
   const data = await apiFetch<{ url: string }>("/events/calendar/feed");
+  return data.url;
+}
+
+/** Replaces the feed link; the old one stops working. */
+export async function renewCalendarFeedUrl(): Promise<string> {
+  const data = await apiFetch<{ url: string }>("/events/calendar/feed/renew", {
+    method: "POST",
+  });
   return data.url;
 }

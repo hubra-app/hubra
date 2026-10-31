@@ -37,6 +37,10 @@ _GLOBAL_ONLY_TABLES = frozenset(
         "known_devices",
         "passkeys",
         "club_invites",
+        # Outside services look a club up by their own id, across clubs.
+        "connected_apps",
+        "connected_app_events",
+        "external_accounts",
         "backup_record",
         # The permission catalog: a club copy would hide it inside the club.
         "permissions",

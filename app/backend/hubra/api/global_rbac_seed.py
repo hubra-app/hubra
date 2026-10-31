@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from hubra.core.extensions import db
 
@@ -26,6 +26,11 @@ _DEFAULT_PERMISSIONS = [
     ("tenants.delete", "Delete tenants", "Soft or hard delete tenants"),
     ("tenants.members.read", "View tenant members", "List members in a tenant"),
     ("tenants.members.write", "Manage tenant members", "Add or remove tenant members"),
+    (
+        "tenants.admins.write",
+        "Name club owners and admins",
+        "Make anyone owner or admin of any club (opens all its data); needs a reason",
+    ),
     ("requests.read.all", "View all requests", "List all tenant requests"),
     ("requests.approve", "Approve requests", "Approve or reject tenant requests"),
     ("audit.read", "View audit log", "Read global audit entries"),
@@ -60,8 +65,8 @@ _DEFAULT_PERMISSIONS = [
 # (role_name, description, [permission_keys])
 _DEFAULT_ROLES = [
     (
-        "Superadmin",
-        "Full platform access (bypasses all checks)",
+        "Platform admin",
+        "Every platform right a role can carry; plugins and backups stay with superadmins",
         [
             "tenants.read",
             "tenants.create",
@@ -69,14 +74,13 @@ _DEFAULT_ROLES = [
             "tenants.delete",
             "tenants.members.read",
             "tenants.members.write",
+            "tenants.admins.write",
             "requests.read.all",
             "requests.approve",
             "audit.read",
             "impersonate",
             "roles.manage",
-            "plugins.manage",
             "platform.settings",
-            "backups.manage",
             "platform.diagnostics",
         ],
     ),
@@ -131,6 +135,26 @@ def seed_global_rbac() -> None:
             _log.debug("Seeded global permission: %s", key)
         else:
             perm_map[key] = existing
+
+    # The role first shipped as "Superadmin", which it never was (the flag is).
+    old = db.session.scalar(select(GlobalRole).where(GlobalRole.name == "Superadmin"))
+    if old is not None and db.session.scalar(
+        select(GlobalRole.id).where(GlobalRole.name == "Platform admin")
+    ) is None:
+        old.name = "Platform admin"
+        old.description = _DEFAULT_ROLES[0][1]
+        db.session.flush()
+
+    # Rights only the superadmin flag carries never stay on a role.
+    from hubra.api.permissions import SUPERADMIN_ONLY
+
+    db.session.execute(
+        delete(GlobalRolePermission).where(
+            GlobalRolePermission.permission_id.in_(
+                select(GlobalPermission.id).where(GlobalPermission.key.in_(SUPERADMIN_ONLY))
+            )
+        )
+    )
 
     # 2. Seed roles + role-permission links
     for role_name, desc, perm_keys in _DEFAULT_ROLES:

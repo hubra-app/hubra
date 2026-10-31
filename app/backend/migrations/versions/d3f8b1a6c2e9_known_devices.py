@@ -8,7 +8,7 @@ Safe to run again per club (flask migrate-tenants): the table goes to
 public, once.
 
 Revision ID: d3f8b1a6c2e9
-Revises: d7f3b9a1c5e8, e3b9d5f1a7c4 (also joins the two heads on main)
+Revises: b8e4d2a6f1c3
 Create Date: 2026-10-31 07:00:00.000000
 
 """
@@ -19,7 +19,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "d3f8b1a6c2e9"
-down_revision = ("d7f3b9a1c5e8", "e3b9d5f1a7c4")
+down_revision = "b8e4d2a6f1c3"
 branch_labels = None
 depends_on = None
 

@@ -834,6 +834,14 @@ class InvoicesService:
         if purpose_filter:
             query = query.where(Invoice.purpose == purpose_filter)
 
+        member_id_raw = (args.get("member_id") or "").strip()
+        if member_id_raw:
+            try:
+                member_id = int(member_id_raw)
+            except ValueError:
+                raise_error(400, "VALIDATION_ERROR", "member_id must be an integer")
+            query = query.where(Invoice.member_id == member_id)
+
         recipient_search = (args.get("member") or "").strip()
         if recipient_search:
             like = f"%{escape_like(recipient_search)}%"

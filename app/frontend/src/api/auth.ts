@@ -85,6 +85,8 @@ export async function getMyPermissions(
     tenant_slug: string;
     reason: string | null;
     expires_at: string | null;
+    /** Support may only look (no "allow changes" when it started). */
+    read_only?: boolean;
     restricted_actions: string[];
   } | null;
 }> {
@@ -98,6 +100,8 @@ export async function getMyPermissions(
       tenant_slug: string;
       reason: string | null;
       expires_at: string | null;
+      /** Support may only look (no "allow changes" when it started). */
+      read_only?: boolean;
       restricted_actions: string[];
     } | null;
   }>("/account/permissions", { signal });
