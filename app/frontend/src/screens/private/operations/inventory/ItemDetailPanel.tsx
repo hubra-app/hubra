@@ -21,10 +21,12 @@ import { addInstruction, removeInstruction, addSelfInstruction } from '@/api/inv
 import { useMemberSearch } from '@/data/members'
 import { PluginSlot } from '@/plugins'
 import { CATEGORY_COLORS, CATEGORY_ICONS, STATUS_CONFIG } from './constants'
+import type { ItemAccess } from './access'
 
 interface DetailPanelProps {
   item: InventoryItem
   onClose: () => void
+  access: ItemAccess
   onEdit: () => void
   currentUserId: number | null
   currentUserName: string
@@ -34,6 +36,7 @@ interface DetailPanelProps {
 export function ItemDetailPanel({
   item,
   onClose,
+  access,
   onEdit,
   currentUserId,
   currentUserName,
@@ -218,9 +221,11 @@ export function ItemDetailPanel({
               </div>
             </div>
             <div style={{ display: 'flex', gap: 4 }}>
-              <Button size="sm" variant="subtle" onClick={onEdit}>
-                <IconPencil size={16} />
-              </Button>
+              {access.canEdit && (
+                <Button size="sm" variant="subtle" onClick={onEdit}>
+                  <IconPencil size={16} />
+                </Button>
+              )}
               <ActionIcon variant="subtle" onClick={onClose} aria-label={t('common.close')}>
                 <IconX size={16} />
               </ActionIcon>
@@ -458,6 +463,7 @@ export function ItemDetailPanel({
                 </div>
               )}
 
+              {access.canInstruct && (<>
               <div
                 style={{
                   fontSize: 'var(--mantine-font-size-xs)',
@@ -528,6 +534,7 @@ export function ItemDetailPanel({
                   ))}
                 </div>
               )}
+              </>)}
 
               {item.instructedMemberIds.length === 0 ? (
                 <div
@@ -571,6 +578,7 @@ export function ItemDetailPanel({
                       >
                         {name}
                       </span>
+                      {access.canInstruct && (
                       <Button
                         size="sm"
                         variant="subtle"
@@ -585,6 +593,7 @@ export function ItemDetailPanel({
                       >
                         <IconX size={16} />
                       </Button>
+                      )}
                     </div>
                   ))}
                 </div>

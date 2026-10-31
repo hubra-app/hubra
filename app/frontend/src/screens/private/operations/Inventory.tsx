@@ -36,15 +36,17 @@ import {
 } from './inventory/constants'
 import { ItemDetailPanel } from './inventory/ItemDetailPanel'
 import { ItemFormModal } from './inventory/ItemFormModal'
+import { useItemAccess } from './inventory/access'
 
 export function InventoryScreen() {
   const { t } = useT()
   const { notify } = useToast()
   const { currentUser, hasPermission } = useAuth()
   const queryClient = useQueryClient()
-  const canCreate = hasPermission('inventory.items.create')
-  const canUpdate = hasPermission('inventory.items.update')
-  const canDelete = hasPermission('inventory.items.delete')
+  // Without the club-wide right, members may still add their own items.
+  const canCreateAny = hasPermission('inventory.items.create')
+  const canCreate = canCreateAny || hasPermission('inventory.items.create_own')
+  const accessTo = useItemAccess()
   const {
     data: items = [],
     isLoading: loading,
@@ -260,9 +262,9 @@ export function InventoryScreen() {
               render: (item) => (
                 <div onClick={(e) => e.stopPropagation()}>
                   <ActionButtons
-                    onEdit={canUpdate ? () => setFormTarget(item) : undefined}
+                    onEdit={accessTo(item).canEdit ? () => setFormTarget(item) : undefined}
                     onDelete={
-                      canDelete ? () => setDeleteTarget(item) : undefined
+                      accessTo(item).canDelete ? () => setDeleteTarget(item) : undefined
                     }
                   />
                 </div>
@@ -477,10 +479,12 @@ export function InventoryScreen() {
                             <div onClick={(e) => e.stopPropagation()}>
                               <ActionButtons
                                 onEdit={
-                                  canUpdate ? () => setFormTarget(item) : undefined
+                                  accessTo(item).canEdit
+                                    ? () => setFormTarget(item)
+                                    : undefined
                                 }
                                 onDelete={
-                                  canDelete
+                                  accessTo(item).canDelete
                                     ? () => setDeleteTarget(item)
                                     : undefined
                                 }
@@ -525,6 +529,7 @@ export function InventoryScreen() {
         <ItemDetailPanel
           item={detailItem}
           onClose={() => setDetailItem(null)}
+          access={accessTo(detailItem)}
           onEdit={() => {
             setFormTarget(detailItem)
             setDetailItem(null)
@@ -539,6 +544,10 @@ export function InventoryScreen() {
         key={formTarget === 'new' ? 'new' : (formTarget?.id ?? 'closed')}
         open={formTarget !== null}
         item={formTarget === 'new' ? null : formTarget}
+        canHandOn={
+          formTarget === 'new' ? canCreateAny : !!formTarget && accessTo(formTarget).canHandOn
+        }
+        ownerIfFixed={currentUserId ?? undefined}
         onClose={() => setFormTarget(null)}
         onSubmit={(input) => saveItem(formTarget === 'new' ? null : formTarget, input)}
       />

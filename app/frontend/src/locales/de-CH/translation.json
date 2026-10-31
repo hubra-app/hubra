@@ -2935,6 +2935,7 @@
       "inventory_items_checkout": "Inventar ausleihen",
       "inventory_items_create": "Inventar erfassen",
       "inventory_items_delete": "Inventar löschen",
+      "inventory_items_create_own": "Eigene Gegenstände erfassen",
       "inventory_items_instruct_self": "Selbst-Einweisung bestätigen",
       "inventory_items_manage_instructions": "Einweisungen verwalten",
       "inventory_items_read": "Inventar ansehen",

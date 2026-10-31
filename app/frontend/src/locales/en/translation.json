@@ -2935,6 +2935,7 @@
       "inventory_items_checkout": "Check out inventory items",
       "inventory_items_create": "Create inventory items",
       "inventory_items_delete": "Delete inventory items",
+      "inventory_items_create_own": "Add own items",
       "inventory_items_instruct_self": "Confirm a self-instruction",
       "inventory_items_manage_instructions": "Manage item instructions",
       "inventory_items_read": "View inventory",

@@ -339,6 +339,13 @@ EXTRA_PERMISSIONS = (
         "action": "moderate",
         "blueprint": "posts_bp",
     },
+    {
+        "key": "inventory.items.create_own",
+        "display_name": "Add own inventory items",
+        "resource": "items",
+        "action": "create_own",
+        "blueprint": "inventory_bp",
+    },
 )
 
 
@@ -443,6 +450,7 @@ def permission_required(
     display_name: str | None = None,
     *,
     scope: str | None = None,
+    allow=None,
 ):
     """Decorator: enforces RBAC check AND registers metadata for auto-discovery.
 
@@ -453,6 +461,11 @@ def permission_required(
                       Defaults to "{action} {resource}".
         scope: The route argument holding a group id (``"group_id"``). A role
                held for that group only (``member_role_scopes``) passes too.
+        allow: Object-level access for members without the right, called as
+               ``allow(member, **kwargs)`` with the route arguments. When it
+               returns a reason (``"owner"``), the request passes with
+               ``g.permission_scope = "object"`` and ``g.object_access`` set
+               to that reason, and the route keeps to what the reason allows.
     """
     label = display_name or f"{action} {resource}"
 
@@ -487,6 +500,13 @@ def permission_required(
             ):
                 g.permission_scope = "group"
                 return fn(*args, **kwargs)
+
+            if allow is not None and hasattr(member, "roles"):
+                reason = allow(member, **kwargs)
+                if reason:
+                    g.permission_scope = "object"
+                    g.object_access = reason
+                    return fn(*args, **kwargs)
 
             return jsonify(
                 {"error": "FORBIDDEN", "message": "Insufficient permissions"}

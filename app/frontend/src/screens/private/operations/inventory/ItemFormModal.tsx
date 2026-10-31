@@ -17,23 +17,34 @@ import { LinkEditor } from './LinkEditor'
 /**
  * Adds an item, or edits `item` when one is given. Give it a `key` that
  * changes with the item, so the fields start from it.
+ *
+ * Without `canHandOn` (the responsible person, or a member adding their own
+ * item) the owner, responsible person and visibility stay as they are, and a
+ * new item belongs to `ownerIfFixed`.
  */
 export function ItemFormModal({
   open,
   item,
+  canHandOn = true,
+  ownerIfFixed,
   onClose,
   onSubmit,
 }: {
   open: boolean
   item: InventoryItem | null
+  canHandOn?: boolean
+  ownerIfFixed?: number
   onClose: () => void
   onSubmit: (input: InventoryItemCreate) => Promise<unknown>
 }) {
   const { t } = useT()
+  const ownItem = !item && !canHandOn
   const [fName, setFName] = useState(item?.name ?? '')
   const [fCat, setFCat] = useState<InventoryCategory>(item?.category ?? 'Tool')
   const [fDesc, setFDesc] = useState(item?.description ?? '')
-  const [fOwner, setFOwner] = useState<number | undefined>(item?.ownerId ?? undefined)
+  const [fOwner, setFOwner] = useState<number | undefined>(
+    item?.ownerId ?? (ownItem ? ownerIfFixed : undefined),
+  )
   const [fResponsible, setFResponsible] = useState<number | undefined>(
     item?.responsibleId ?? undefined,
   )
@@ -146,6 +157,7 @@ export function ItemFormModal({
               noneLabel={t('inventory.noOwner', 'Keine Eigentümer:in')}
               value={fOwner}
               onChange={(v) => setFOwner(v ? Number(v) : undefined)}
+              disabled={!canHandOn}
             />
           </Field>
           <Field label={t('inventory.responsible', 'Verantwortlich')}>
@@ -153,6 +165,7 @@ export function ItemFormModal({
               noneLabel={t('inventory.noOneAssigned', 'Niemand zugewiesen')}
               value={fResponsible}
               onChange={(v) => setFResponsible(v ? Number(v) : undefined)}
+              disabled={!canHandOn && !ownItem}
             />
           </Field>
         </div>
@@ -168,6 +181,7 @@ export function ItemFormModal({
               ]}
               value={fVisibility}
               onChange={(v) => setFVisibility((v ?? 'shared') as InventoryVisibility)}
+              disabled={!canHandOn && !ownItem}
             />
           </Field>
           <Field label={t('inventory.costOptional', 'Kosten (CHF, optional)')}>

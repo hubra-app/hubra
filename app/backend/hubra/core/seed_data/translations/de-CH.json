@@ -2694,6 +2694,7 @@
   "roles.perms.inventory_items_checkout": "Inventar ausleihen",
   "roles.perms.inventory_items_create": "Inventar erfassen",
   "roles.perms.inventory_items_delete": "Inventar löschen",
+  "roles.perms.inventory_items_create_own": "Eigene Gegenstände erfassen",
   "roles.perms.inventory_items_instruct_self": "Selbst-Einweisung bestätigen",
   "roles.perms.inventory_items_manage_instructions": "Einweisungen verwalten",
   "roles.perms.inventory_items_read": "Inventar ansehen",

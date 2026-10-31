@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import delete, func, insert, select
+from sqlalchemy import delete, func, insert, or_, select
 from sqlalchemy.orm import selectinload
 
 from hubra.api.utils import log_audit
@@ -37,6 +37,80 @@ def _has_overdue_invoice(member_id: int, grace_days: int = 7) -> bool:
     )
 
 
+# What the owner and the responsible person of an item may do with it
+# without the club-wide right (inventory.items.<action>). Admins and role
+# holders are not limited by this.
+ITEM_ACTIONS: dict[str, tuple[str, ...]] = {
+    "read": ("owner", "responsible"),
+    "update": ("owner", "responsible"),
+    "delete": ("owner",),
+    "manage_instructions": ("owner", "responsible"),
+    "checkout": ("owner", "responsible"),
+    "checkin": ("owner", "responsible"),
+}
+# Who has the item and who looks after it: only the owner hands these on.
+OWNER_FIELDS = ("owner_id", "responsible_id", "visibility")
+# Seeing everyone's private items goes with editing the whole inventory.
+_SEE_PRIVATE = "inventory.items.update"
+
+
+def item_relation(owner_id, responsible_id, member_id) -> str | None:
+    """``"owner"``, ``"responsible"`` or None for *member_id* on an item."""
+    if member_id is None:
+        return None
+    if owner_id == member_id:
+        return "owner"
+    if responsible_id == member_id:
+        return "responsible"
+    return None
+
+
+def item_access(action: str):
+    """``allow`` for ``permission_required``: lets the owner or the
+    responsible person of the item in the route's ``item_id`` do *action*."""
+    relations = ITEM_ACTIONS[action]
+
+    def allow(member, item_id=None, **_):
+        if item_id is None:
+            return None
+        row = db.session.execute(
+            select(InventoryItem.owner_id, InventoryItem.responsible_id).where(
+                InventoryItem.id == item_id
+            )
+        ).first()
+        if row is None:
+            return None
+        relation = item_relation(row.owner_id, row.responsible_id, member.id)
+        return relation if relation in relations else None
+
+    return allow
+
+
+def sees_private(member) -> bool:
+    from hubra.api.permissions import member_has_permission
+
+    return member_has_permission(member, _SEE_PRIVATE)
+
+
+def can_see(item: InventoryItem, member) -> bool:
+    """A private item is seen by its owner, its responsible person and
+    whoever edits the whole inventory; a shared one by everyone who may read."""
+    if item.visibility != "private":
+        return True
+    if item_relation(item.owner_id, item.responsible_id, member.id):
+        return True
+    return sees_private(member)
+
+
+def _visible_to(viewer):
+    """``can_see`` as a filter, for a viewer who doesn't see all private items."""
+    return or_(
+        InventoryItem.visibility != "private",
+        InventoryItem.owner_id == viewer.id,
+        InventoryItem.responsible_id == viewer.id,
+    )
+
+
 _LOAD_OPTS = [
     selectinload(InventoryItem.owner),
     selectinload(InventoryItem.responsible),
@@ -58,6 +132,29 @@ class InventoryService:
         if item is None:
             raise_error(404, "NOT_FOUND", f"Inventory item {item_id} not found")
         return item  # type: ignore[return-value]
+
+    @staticmethod
+    def get_visible(item_id: int, member) -> InventoryItem:
+        """``get``, but a private item someone may not see is not found."""
+        item = InventoryService.get(item_id)
+        if not can_see(item, member):
+            raise_error(404, "NOT_FOUND", f"Inventory item {item_id} not found")
+        return item
+
+    @staticmethod
+    def check_owner_fields(item: InventoryItem, data: dict) -> None:
+        """403 when the responsible person changes who owns or looks after
+        the item or whether it is private. Sending the current value back
+        (the edit form sends every field) is fine."""
+        changed = [
+            f for f in OWNER_FIELDS if f in data and data[f] != getattr(item, f)
+        ]
+        if changed:
+            raise_error(
+                403,
+                "OWNER_ONLY",
+                "Only the owner can change " + ", ".join(changed),
+            )
 
     @staticmethod
     def update(item: InventoryItem, data: dict, actor_id: int) -> InventoryItem:
@@ -313,11 +410,17 @@ class InventoryService:
         return checkout
 
     @staticmethod
-    def list_overdue() -> list[InventoryCheckout]:
-        """Return overdue checkouts (expected_return_at < now and not returned)."""
+    def list_overdue(viewer=None) -> list[InventoryCheckout]:
+        """Return overdue checkouts (expected_return_at < now and not returned),
+        with *viewer* only those of items they may see."""
         now = datetime.now(timezone.utc)
+        query = select(InventoryCheckout)
+        if viewer is not None and not sees_private(viewer):
+            query = query.join(
+                InventoryItem, InventoryItem.id == InventoryCheckout.item_id
+            ).where(_visible_to(viewer))
         return db.session.scalars(
-            select(InventoryCheckout)
+            query
             .where(InventoryCheckout.returned_at.is_(None))
             .where(InventoryCheckout.expected_return_at.isnot(None))
             .where(InventoryCheckout.expected_return_at < now)
@@ -336,9 +439,13 @@ class InventoryServiceItems:
         category: str = "",
         status: str = "",
         visibility: str = "",
+        viewer=None,
     ) -> list[InventoryItem]:
-        """Return inventory items with optional filters."""
+        """Return inventory items with optional filters. With *viewer*, only
+        the private items they may see (``can_see``)."""
         query = select(InventoryItem).options(*_LOAD_OPTS).order_by(InventoryItem.name)
+        if viewer is not None and not sees_private(viewer):
+            query = query.where(_visible_to(viewer))
 
         if category:
             query = query.where(InventoryItem.category == category)
