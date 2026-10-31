@@ -2135,7 +2135,8 @@
       "transactions": "Buchungen",
       "translations": "Übersetzungen",
       "txCategories": "Kategorien",
-      "activeMembersCount": "{{count}} aktive Mitglieder"
+      "activeMembersCount": "{{count}} aktive Mitglieder",
+      "more": "Weitere"
     },
     "noPermission": "Du hast keine Berechtigung für diese Seite.",
     "notif": {
@@ -2200,7 +2201,8 @@
       "invoice": "Rechnung",
       "member": "Mitglied",
       "poll": "Umfrage",
-      "transaction": "Buchung"
+      "transaction": "Buchung",
+      "page": "Seite"
     },
     "searchNoResults": "Keine Ergebnisse für «{{query}}»",
     "searchPlaceholder": "Mitglieder, Rechnungen, Inventar suchen …",
@@ -2210,7 +2212,8 @@
       "operations": "Betrieb",
       "system": "Verwaltung",
       "workspace": "Verein",
-      "activities": "Vereinsleben"
+      "activities": "Vereinsleben",
+      "favourites": "Favoriten"
     },
     "tooltips": {
       "dismiss": "Ausblenden",
@@ -2240,6 +2243,20 @@
     },
     "clubBanner": {
       "dismiss": "Banner ausblenden"
+    },
+    "more": {
+      "emptyTitle": "Hier ist noch nichts",
+      "emptyDesc": "Seiten, die du in der Seitenleiste ausblendest, und Seiten von Plugins erscheinen hier."
+    },
+    "customize": {
+      "title": "Seitenleiste anpassen",
+      "intro": "Mit dem Stern heftest du eine Seite oben unter Favoriten an. Ausgeblendete Seiten findest du weiterhin unter Weitere und mit der Suche (Ctrl+K).",
+      "pin": "Als Favorit anheften",
+      "unpin": "Nicht mehr anheften",
+      "hide": "Ausblenden",
+      "show": "Wieder anzeigen",
+      "reset": "Zurücksetzen",
+      "done": "Fertig"
     }
   },
   "system": {

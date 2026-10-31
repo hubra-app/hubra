@@ -22,6 +22,7 @@ export const qk = {
   account: {
     all: ['account'] as const,
     mailSettings: ['account', 'mail-settings'] as const,
+    navPrefs: ['account', 'nav-prefs'] as const,
     plan: ['my-plan'] as const,
     leave: ['my-leave'] as const,
     directory: ['my-directory'] as const,

@@ -20,7 +20,7 @@ module = Module(
             "/app/operations/codes",
             "shell.nav.codes",
             "lock",
-            section="operations",
+            section="more",
             order=20,
             perms=("codes.codes.read",),
         ),

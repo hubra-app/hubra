@@ -255,10 +255,142 @@ def decide_translation_request(request_id: int):
         db.session.rollback()
         return api_error("CONFLICT", str(exc), 409)
     _audit(
-        "accept_translation_request" if body["accept"] else "reject_translation_request",
+        "accept_translation_request"
+        if body["accept"]
+        else "reject_translation_request",
         "TranslationRequest",
         str(req.id),
         {"locale": req.locale, "key": req.key, "tenant_id": req.tenant_id},
     )
     db.session.commit()
     return jsonify(req.to_dict()), 200
+
+
+# ── Encryption keys ──────────────────────────────────────────────────────────
+
+
+def _report(report) -> dict:
+    return {
+        "total": report.total,
+        "current": report.current,
+        "old_key": report.old_key,
+        "unreadable": sum(report.unreadable.values()),
+        "rotated": report.rotated,
+        "new_keys": report.new_keys,
+        "clean": report.clean,
+    }
+
+
+@platform_bp.get("/encryption")
+@require_global_permission(_PERM)
+def encryption_status():
+    """The master key, each club's data key and backup key, and how many
+    stored values are not on the current keys yet."""
+    from flask import current_app
+    from sqlalchemy import func, select
+
+    from hubra.core.crypto import old_keys
+    from hubra.core.models.data_key import DataKey
+    from hubra.core.models.tenant import Tenant
+    from hubra.core.services import secret_store
+
+    newest = dict(
+        db.session.execute(
+            select(DataKey.scope, func.max(DataKey.version)).group_by(DataKey.scope)
+        ).all()
+    )
+    created = {
+        (k.scope, k.version): k.created_at
+        for k in db.session.scalars(select(DataKey)).all()
+    }
+    clubs = []
+    for t in db.session.scalars(
+        select(Tenant).where(Tenant.deleted_at.is_(None)).order_by(Tenant.name)
+    ).all():
+        version = newest.get(f"c{t.id}")
+        at = created.get((f"c{t.id}", version))
+        clubs.append(
+            {
+                "tenant_id": t.id,
+                "slug": t.slug,
+                "name": t.name,
+                "key_version": version,
+                "key_created_at": at.isoformat() if at else None,
+                "backup_public_key": t.backup_public_key,
+            }
+        )
+    return jsonify(
+        {
+            "master": {
+                "fernet_key_set": bool(current_app.config.get("FERNET_KEY")),
+                "old_keys": len(old_keys()),
+            },
+            "values": _report(secret_store.check()),
+            "clubs": clubs,
+        }
+    ), 200
+
+
+@platform_bp.post("/encryption/rotate")
+@require_global_permission(_PERM)
+def encryption_rotate():
+    """Move every stored value onto the current keys (after a master key
+    change).  Body ``{"new_keys": true, "tenant_id": <id>?}`` also makes new
+    data keys: for one club, or every club and the platform."""
+    from hubra.core.models.tenant import Tenant
+    from hubra.core.services import secret_store
+
+    body = request.get_json(silent=True) or {}
+    scopes = None
+    if body.get("new_keys"):
+        tenant_id = body.get("tenant_id")
+        if tenant_id is not None:
+            if db.session.get(Tenant, tenant_id) is None:
+                return api_error("NOT_FOUND", "Club not found", 404)
+            scopes = {f"c{int(tenant_id)}"}
+        else:
+            scopes = secret_store.scopes_in_use()
+    report = secret_store.rotate()
+    if scopes:
+        fresh = secret_store.new_keys(scopes)
+        report.rotated += fresh.rotated
+        report.new_keys = fresh.new_keys
+    _audit(
+        "platform.encryption.rotate",
+        "data_key",
+        ",".join(sorted(scopes)) if scopes else "all",
+        {"rotated": report.rotated, "new_keys": report.new_keys},
+    )
+    db.session.commit()
+    return jsonify(_report(report)), 200
+
+
+@platform_bp.put("/clubs/<int:tenant_id>/backup-key")
+@require_global_permission(_PERM)
+def set_club_backup_key(tenant_id: int):
+    """Body ``{"public_key": "age1..." | null}``: the club's own backup key.
+    Its next backups are encrypted to it as well as to the platform key."""
+    from hubra.core.models.tenant import Tenant
+    from hubra.core.services.backup_crypto import split_keys, valid_public_key
+
+    tenant = db.session.get(Tenant, tenant_id)
+    if tenant is None:
+        return api_error("NOT_FOUND", "Club not found", 404)
+    raw = (request.get_json(silent=True) or {}).get("public_key")
+    if raw in (None, ""):
+        tenant.backup_public_key = None
+    else:
+        keys = split_keys(raw) if isinstance(raw, str) else []
+        if not keys or not all(valid_public_key(k) for k in keys):
+            return api_error("VALIDATION_ERROR", "Not an age public key (age1...)", 400)
+        tenant.backup_public_key = " ".join(keys)
+    _audit(
+        "platform.backup_key.update",
+        "tenant",
+        str(tenant_id),
+        {"public_key": tenant.backup_public_key},
+    )
+    db.session.commit()
+    return jsonify(
+        {"tenant_id": tenant_id, "backup_public_key": tenant.backup_public_key}
+    ), 200

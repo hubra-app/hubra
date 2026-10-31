@@ -13,7 +13,8 @@ test('every sidebar entry opens its screen without an error', async ({ page }) =
 
   for (const href of hrefs) {
     await page.locator(`a.nav-item[href="${href}"]`).first().click()
-    await expect(page).toHaveURL(new RegExp(`${href}($|/|\\?)`))
+    // "Weitere" opens the first page behind it.
+    if (!href.endsWith('/app/more')) await expect(page).toHaveURL(new RegExp(`${href}($|/|\\?)`))
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
     await expect(page.getByText('Etwas ist schiefgelaufen')).toHaveCount(0)
   }

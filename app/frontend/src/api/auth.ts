@@ -159,3 +159,22 @@ export async function getMyGroups(): Promise<{ id: string; name: string }[]> {
     await apiFetch<{ id: string; name: string }[]>("/account/groups");
   return data;
 }
+
+/** The person's own sidebar: entries pinned to the top and entries hidden. */
+export interface NavPrefs {
+  pinned: string[];
+  hidden: string[];
+}
+
+export async function getNavPrefs(): Promise<NavPrefs> {
+  const body = await apiFetch<{ navPrefs?: NavPrefs }>("/account/profile");
+  return body.navPrefs ?? { pinned: [], hidden: [] };
+}
+
+export async function saveNavPrefs(navPrefs: NavPrefs): Promise<NavPrefs> {
+  const body = await apiFetch<{ navPrefs: NavPrefs }>("/account/profile", {
+    method: "PATCH",
+    body: JSON.stringify({ navPrefs }),
+  });
+  return body.navPrefs;
+}
