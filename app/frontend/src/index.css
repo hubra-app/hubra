@@ -41,7 +41,7 @@
 }
 
 .hi {
-  color: var(--mantine-color-acc-6);
+  color: var(--mantine-color-acc-text);
   font-weight: 600;
 }
 

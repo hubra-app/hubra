@@ -59,7 +59,7 @@ export function ResourceMatrix(props: ResourceMatrixProps) {
                   <IconShield
                     size={14}
                     style={{
-                      color: role.isAdmin ? 'var(--mantine-color-acc-9)' : role.isDefault ? 'var(--mantine-color-acc-6)' : 'var(--hb-text-2)',
+                      color: role.isAdmin ? 'var(--mantine-color-acc-9)' : role.isDefault ? 'var(--mantine-color-acc-text)' : 'var(--hb-text-2)',
                     }}
                   />
                   <Text size="sm" fw={600}>

@@ -13,21 +13,16 @@ import {
 } from '@mantine/core'
 
 import { IconSearch, IconPlus, IconX } from '@tabler/icons-react'
+import { textOn } from '@hubra/ui'
 import { useT } from '@/locales/i18n'
 import type { ReactNode } from 'react'
 import { SlideOver, LoadingSpinner, EmptyState } from './feedback'
 import { Pagination } from './layout'
 import { usePagination } from './hooks'
 
-function avatarContrast(hex: string): string {
-  const h = hex.replace('#', '')
-  const r = parseInt(h.substring(0, 2), 16)
-  const g = parseInt(h.substring(2, 4), 16)
-  const b = parseInt(h.substring(4, 6), 16)
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 140
-    ? 'var(--mantine-color-ink-8)'
-    : '#ffffff'
-}
+// Fixed ink, not a theme token: the avatar colour is the same in dark mode,
+// where the text tokens turn light.
+const avatarContrast = (color: string) => textOn(color)
 
 function statusDotColor(lastSeen: string): string {
   if (!lastSeen) return ''
