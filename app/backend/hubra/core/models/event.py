@@ -78,6 +78,11 @@ class ClubEvent(db.Model):
     created_by: Mapped[int | None] = mapped_column(
         db.Integer, ForeignKey("members.id", ondelete="SET NULL"), nullable=True
     )
+    # When the reminder before the start went out; cleared when the event
+    # moves, so the new time gets one.
+    reminder_sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

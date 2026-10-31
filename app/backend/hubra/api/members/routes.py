@@ -128,6 +128,43 @@ def set_my_directory():
     ), 200
 
 
+# ── GET/PUT /members/me/reminders ────────────────────────────────────────────
+
+
+def _reminders(member) -> dict:
+    return {
+        "events": bool(member.event_reminder_mail),
+        "polls": bool(member.poll_reminder_mail),
+    }
+
+
+@members_bp.get("/me/reminders")
+@jwt_required()
+def get_my_reminders():
+    """Whether the member gets reminder mails before events and polls."""
+    return jsonify(_reminders(get_current_member())), 200
+
+
+@members_bp.put("/me/reminders")
+@jwt_required()
+def set_my_reminders():
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict) or any(
+        key not in ("events", "polls") or not isinstance(value, bool)
+        for key, value in body.items()
+    ):
+        raise_error(
+            422, "VALIDATION_ERROR", "events and polls must be true or false"
+        )
+    member = get_current_member()
+    if "events" in body:
+        member.event_reminder_mail = body["events"]
+    if "polls" in body:
+        member.poll_reminder_mail = body["polls"]
+    db.session.commit()
+    return jsonify(_reminders(member)), 200
+
+
 # ── GET /members/count ───────────────────────────────────────────────────────
 
 

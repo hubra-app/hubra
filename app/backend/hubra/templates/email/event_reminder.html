@@ -1,0 +1,12 @@
+{% extends "email/base.html" %}
+{% import "email/_ui.html" as ui with context %}
+{% block preheader %}{{ t('mail.email.event_reminder.body', event_title=event_title, when=when) | striptags }}{% endblock %}
+{% block content %}
+{% call ui.p() %}{{ t('mail.email.event_reminder.body', event_title=event_title, when=when) }}{% endcall %}
+{{ ui.facts([
+  (t('mail.email.event_reminder.event'), event_title, false),
+  (t('mail.email.event_reminder.when'), when, false),
+] + ([(t('mail.email.event_reminder.where'), location, false)] if location else [])) }}
+{% if portal_url %}{{ ui.button(portal_url, t('mail.email.event_reminder.button')) }}{% endif %}
+{% call ui.muted() %}{{ t('mail.email.reminder.settings_note') }}{% endcall %}
+{% endblock %}

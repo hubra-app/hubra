@@ -2932,5 +2932,22 @@
   "events.linkedOne": "You are looking at the event from your notification.",
   "events.linkedGone": "This event no longer exists.",
   "polls.linkedOne": "You are looking at the poll from your notification.",
-  "polls.linkedGone": "This poll no longer exists."
+  "polls.linkedGone": "This poll no longer exists.",
+  "mail.email.event_reminder.body": "Reminder: <strong>{{event_title}}</strong> takes place on {{when}}. You are signed up.",
+  "mail.email.event_reminder.event": "Event",
+  "mail.email.event_reminder.when": "When",
+  "mail.email.event_reminder.where": "Where",
+  "mail.email.event_reminder.button": "View event",
+  "mail.email.poll_reminder.body": "The poll <strong>{{question}}</strong> closes on {{when}}. You have not voted yet.",
+  "mail.email.poll_reminder.question": "Poll",
+  "mail.email.poll_reminder.closes": "Closes",
+  "mail.email.poll_reminder.button": "Vote now",
+  "mail.email.reminder.settings_note": "You can switch reminder mails off in the app under Account › Membership.",
+  "mail.email.subject.event_reminder": "[{{club_name}}] Reminder: {{event_title}}",
+  "mail.email.subject.poll_reminder": "[{{club_name}}] Please vote: {{question}}",
+  "account.reminders.title": "Reminders by e-mail",
+  "account.reminders.hint": "Before events you signed up for, and before a poll you have not voted in closes. They always show in the app.",
+  "account.reminders.events": "Before events",
+  "account.reminders.polls": "Before polls close",
+  "shell.notif.text.eventReminder": "Event reminder"
 }

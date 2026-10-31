@@ -25,6 +25,7 @@ export const qk = {
     plan: ['my-plan'] as const,
     leave: ['my-leave'] as const,
     directory: ['my-directory'] as const,
+    reminders: ['my-reminders'] as const,
   },
 
   events: ['events'] as const,

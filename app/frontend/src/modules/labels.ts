@@ -20,6 +20,10 @@ const DE: Record<string, { name: string; description: string; settings?: Record<
         'Anlass-Typen',
         'Die Typen zur Auswahl, mit Komma getrennt (zum Beispiel Training, Match, Versammlung). Leer: Workshop, Geselliges, Einführung und Sitzung.',
       ],
+      reminder_hours: [
+        'Erinnerung vor dem Anlass (Stunden)',
+        'Angemeldete bekommen so lange vor Beginn eine Erinnerung, in der App und per E-Mail. 0: keine Erinnerungen',
+      ],
     },
   },
   finance: {
@@ -55,7 +59,20 @@ const DE: Record<string, { name: string; description: string; settings?: Record<
   },
   mail: { name: 'Mail', description: 'Vereinspostfächer und Aliasse (braucht den eigenen Mailserver)' },
   members: { name: 'Mitglieder', description: 'Mitgliederverzeichnis, Profile, Anträge und Mitgliedschaftsstufen' },
-  polls: { name: 'Umfragen', description: 'Umfragen und Abstimmungen unter Mitgliedern' },
+  polls: {
+    name: 'Umfragen',
+    description: 'Umfragen und Abstimmungen unter Mitgliedern',
+    settings: {
+      notify_members: [
+        'Mitglieder über neue Umfragen informieren',
+        'Eine Mitteilung in der App an alle Mitglieder, sobald eine Umfrage veröffentlicht ist',
+      ],
+      reminder_hours: [
+        'Erinnerung vor dem Ende (Stunden)',
+        'Wer noch nicht abgestimmt hat, bekommt so lange vor dem Ende eine Erinnerung, in der App und per E-Mail. 0: keine Erinnerungen',
+      ],
+    },
+  },
   posts: { name: 'Beiträge', description: 'Vereinsmitteilungen und Beiträge aus der Community' },
   roles: { name: 'Rollen und Berechtigungen', description: 'Rollen und die Berechtigungen, die sie vergeben' },
   // Plugins shipped with Hubra

@@ -341,6 +341,26 @@ export function setMyDirectory(shared: DirectoryChoice[]): Promise<DirectoryStat
   });
 }
 
+// ── Reminder mails ───────────────────────────────────────────────────────────
+
+export interface ReminderMails {
+  /** Before events the member signed up for */
+  events: boolean;
+  /** Before a poll the member has not voted in closes */
+  polls: boolean;
+}
+
+export function getMyReminders(): Promise<ReminderMails> {
+  return apiFetch<ReminderMails>("/members/me/reminders");
+}
+
+export function setMyReminders(change: Partial<ReminderMails>): Promise<ReminderMails> {
+  return apiFetch<ReminderMails>("/members/me/reminders", {
+    method: "PUT",
+    body: JSON.stringify(change),
+  });
+}
+
 // ── Leaving the club ──────────────────────────────────────────────────────────
 
 export interface LeaveState {

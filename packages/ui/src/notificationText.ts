@@ -15,6 +15,7 @@ const TITLES: Record<string, [string, string, string]> = {
   'New event': ['shell.notif.text.newEvent', 'Neuer Anlass', 'New event'],
   'New poll': ['shell.notif.text.newPoll', 'Neue Umfrage', 'New poll'],
   'Event changed': ['shell.notif.text.eventChanged', 'Anlass geändert', 'Event changed'],
+  'Event reminder': ['shell.notif.text.eventReminder', 'Erinnerung an einen Anlass', 'Event reminder'],
   'Event cancelled': ['shell.notif.text.eventCancelled', 'Anlass abgesagt', 'Event cancelled'],
   'Sign-up to approve': [
     'shell.notif.text.signUpToApprove',

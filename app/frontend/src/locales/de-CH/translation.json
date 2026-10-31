@@ -228,6 +228,12 @@
       "phone": "Telefon und Mobile",
       "address": "Adresse",
       "birthday": "Geburtstag"
+    },
+    "reminders": {
+      "title": "Erinnerungen per E-Mail",
+      "hint": "Vor Anlässen, für die du angemeldet bist, und bevor eine Umfrage schliesst, in der du noch nicht abgestimmt hast. In der App erscheinen sie immer.",
+      "events": "Vor Anlässen",
+      "polls": "Vor dem Ende von Umfragen"
     }
   },
   "app": {
@@ -2123,7 +2129,8 @@
         "castVote": "Bitte stimme ab, bevor die Umfrage schliesst.",
         "votedFor": "{{name}} hat für «{{option}}» gestimmt",
         "askedProxy": "{{name}} hat dir die Stimme übertragen.",
-        "aMember": "Ein Mitglied"
+        "aMember": "Ein Mitglied",
+        "eventReminder": "Erinnerung an einen Anlass"
       }
     },
     "notifPanel": {
