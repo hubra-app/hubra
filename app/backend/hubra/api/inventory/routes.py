@@ -55,7 +55,6 @@ def list_items():
         category=args.get("category", "").strip(),
         status=args.get("status", "").strip(),
         visibility=args.get("visibility", "").strip(),
-        viewer=get_current_member(),
     )
     return jsonify(_items_schema.dump(items)), 200
 
@@ -66,7 +65,7 @@ def list_items():
 @inventory_bp.get("/<int:item_id>")
 @permission_required("items", "read", "View inventory", allow=item_access("read"))
 def get_item(item_id: int):
-    item = InventoryService.get_visible(item_id, get_current_member())
+    item = InventoryService.get(item_id)
     return jsonify(_item_schema.dump(item)), 200
 
 
@@ -106,7 +105,7 @@ def create_item():
     "items", "update", "Update inventory items", allow=item_access("update")
 )
 def update_item(item_id: int):
-    item = InventoryService.get_visible(item_id, get_current_member())
+    item = InventoryService.get(item_id)
 
     body = request.get_json(silent=True) or {}
     try:
@@ -137,7 +136,6 @@ def update_item(item_id: int):
     "items", "delete", "Delete inventory items", allow=item_access("delete")
 )
 def delete_item(item_id: int):
-    InventoryService.get_visible(item_id, get_current_member())
     InventoryService.delete(item_id, get_current_member().id)
 
     try:
@@ -160,7 +158,7 @@ def delete_item(item_id: int):
     allow=item_access("manage_instructions"),
 )
 def add_instruction(item_id: int, member_id: int):
-    item = InventoryService.get_visible(item_id, get_current_member())
+    item = InventoryService.get(item_id)
 
     member = db.session.get(Member, member_id)
     if member is None:
@@ -186,7 +184,6 @@ def add_instruction(item_id: int, member_id: int):
     "items", "checkout", "Check out inventory items", allow=item_access("checkout")
 )
 def checkout_item(item_id: int):
-    InventoryService.get_visible(item_id, get_current_member())
     body = request.get_json(silent=True) or {}
     try:
         data = CheckoutCreateSchema().load(body)
@@ -218,7 +215,6 @@ def checkout_item(item_id: int):
     "items", "checkin", "Check in inventory items", allow=item_access("checkin")
 )
 def checkin_item(item_id: int):
-    InventoryService.get_visible(item_id, get_current_member())
     body = request.get_json(silent=True) or {}
     condition_notes = body.get("condition_notes")
     if condition_notes is not None and not isinstance(condition_notes, str):
@@ -245,7 +241,7 @@ def checkin_item(item_id: int):
 @inventory_bp.get("/overdue")
 @permission_required("items", "read", "View inventory")
 def list_overdue():
-    overdues = InventoryService.list_overdue(viewer=get_current_member())
+    overdues = InventoryService.list_overdue()
     return jsonify(InventoryCheckoutSchema(many=True).dump(overdues)), 200
 
 
@@ -260,7 +256,6 @@ def list_overdue():
     allow=item_access("manage_instructions"),
 )
 def remove_instruction(item_id: int, member_id: int):
-    InventoryService.get_visible(item_id, get_current_member())
     InventoryService.remove_instruction(item_id, member_id, get_current_member().id)
 
     try:
@@ -279,7 +274,7 @@ def remove_instruction(item_id: int, member_id: int):
 @permission_required("items", "instruct_self", "Add self-instruction for items")
 def add_self_instruction(item_id: int):
     member_id = get_current_member().id
-    item = InventoryService.get_visible(item_id, get_current_member())
+    item = InventoryService.get(item_id)
 
     from hubra.core.models.member import Member as MemberModel
 

@@ -173,11 +173,11 @@ export function ItemFormModal({
           className="grid-2"
           style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}
         >
-          <Field label={t('inventory.visibility', 'Sichtbarkeit')}>
+          <Field label={t('inventory.visibility', 'Eigentum')}>
             <Select
               data={[
-                { value: 'shared', label: t('inventory.shared', 'Gemeinsam') },
-                { value: 'private', label: t('inventory.private', 'Privat') },
+                { value: 'shared', label: t('inventory.shared', 'Verein') },
+                { value: 'private', label: t('inventory.private', 'Privatperson') },
               ]}
               value={fVisibility}
               onChange={(v) => setFVisibility((v ?? 'shared') as InventoryVisibility)}

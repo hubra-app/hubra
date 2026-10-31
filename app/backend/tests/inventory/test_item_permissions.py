@@ -1,6 +1,5 @@
 """Object-level inventory rights: the owner and the responsible person of an
-item act on it without the club-wide inventory rights, and a private item is
-seen only by them and by whoever edits the whole inventory."""
+item act on it without the club-wide inventory rights."""
 
 import pytest
 
@@ -135,44 +134,21 @@ def test_role_rights_still_cover_every_item(client, app, db, seeded_db, people):
     assert r.status_code == 200
 
 
-# ── private items ────────────────────────────────────────────────────────────
+# ── person-owned items ───────────────────────────────────────────────────────
 
 
-def test_private_items_are_seen_by_their_people_only(client, db, seeded_db, people):
-    _as(client, "tina")
+def test_a_person_owned_item_stays_in_the_inventory(client, people):
+    """A "private" item belongs to a person, not the club: everyone
+    still sees it, only the owner decides it is the club's after all."""
     url = f"{BASE}/{people['item']}"
-    assert client.patch(url, json={"visibility": "private"}).status_code == 200
-
-    def names():
-        return [i["name"] for i in client.get(f"{BASE}/").get_json()]
-
-    for who in ("tina", "rolf"):
-        _as(client, who)
-        assert "Drill" in names()
-        assert client.get(url).status_code == 200
-
-    _as(client, "otto")
-    assert "Drill" not in names()
-    assert client.get(url).status_code == 404
-
-    _as(client, "admin")
-    assert "Drill" in names()
-
-
-def test_a_private_item_cannot_be_borrowed_unseen(client, app, db, seeded_db, people):
     _as(client, "tina")
-    client.patch(f"{BASE}/{people['item']}", json={"visibility": "private"})
-    _make_role_and_member(
-        db,
-        seeded_db["tier"],
-        name="Lender",
-        permission_keys=_READ + ["inventory.items.checkout"],
-    )
-    _as(client, "lender")
-    r = client.post(
-        f"{BASE}/{people['item']}/checkout", json={"member_id": people["other"].id}
-    )
-    assert r.status_code == 404
+    assert client.patch(url, json={"visibility": "private"}).status_code == 200
+    _as(client, "otto")
+    assert "Drill" in [i["name"] for i in client.get(f"{BASE}/").get_json()]
+    assert client.get(url).status_code == 200
+    _as(client, "rolf")
+    r = client.patch(url, json={"visibility": "shared"})
+    assert r.status_code == 403
 
 
 # ── adding own items ─────────────────────────────────────────────────────────

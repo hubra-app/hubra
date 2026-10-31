@@ -342,7 +342,7 @@ export function ItemDetailPanel({
                     marginBottom: 2,
                   }}
                 >
-                  {t('inventory.visibility', 'Sichtbarkeit')}
+                  {t('inventory.visibility', 'Eigentum')}
                 </div>
                 <div
                   style={{
@@ -358,7 +358,7 @@ export function ItemDetailPanel({
                   ) : (
                     <IconEye size={16} />
                   )}
-                  {item.visibility === 'private' ? t('inventory.private', 'Privat') : t('inventory.shared', 'Geteilt')}
+                  {item.visibility === 'private' ? t('inventory.private', 'Privatperson') : t('inventory.shared', 'Verein')}
                 </div>
               </div>
             </div>
