@@ -19,6 +19,8 @@ from hubra.core.schemas.inventory import (
 from hubra.api.inventory.services import (
     InventoryService,
     InventoryServiceItems,
+    checkin_access,
+    checkout_access,
     item_access,
 )
 
@@ -114,6 +116,7 @@ def update_item(item_id: int):
         return api_error("VALIDATION_ERROR", str(exc.messages), 400)
     if _by_object() and g.object_access != "owner":
         InventoryService.check_owner_fields(item, data)
+    InventoryService.check_person_owned(item, get_current_member().id, data)
 
     InventoryService.update(item, data, get_current_member().id)
 
@@ -136,6 +139,9 @@ def update_item(item_id: int):
     "items", "delete", "Delete inventory items", allow=item_access("delete")
 )
 def delete_item(item_id: int):
+    InventoryService.check_person_owned(
+        InventoryService.get(item_id), get_current_member().id
+    )
     InventoryService.delete(item_id, get_current_member().id)
 
     try:
@@ -181,7 +187,7 @@ def add_instruction(item_id: int, member_id: int):
 
 @inventory_bp.post("/<int:item_id>/checkout")
 @permission_required(
-    "items", "checkout", "Check out inventory items", allow=item_access("checkout")
+    "items", "checkout", "Check out inventory items", allow=checkout_access
 )
 def checkout_item(item_id: int):
     body = request.get_json(silent=True) or {}
@@ -212,7 +218,7 @@ def checkout_item(item_id: int):
 
 @inventory_bp.post("/<int:item_id>/checkin")
 @permission_required(
-    "items", "checkin", "Check in inventory items", allow=item_access("checkin")
+    "items", "checkin", "Check in inventory items", allow=checkin_access
 )
 def checkin_item(item_id: int):
     body = request.get_json(silent=True) or {}

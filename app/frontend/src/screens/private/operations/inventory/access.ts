@@ -6,8 +6,10 @@ export interface ItemAccess {
   canEdit: boolean
   canDelete: boolean
   canInstruct: boolean
-  /** Change the owner, the responsible person and the visibility. */
+  /** Change the responsible person. */
   canHandOn: boolean
+  /** Change the owner and whether the club or a person owns it. */
+  canGiveAway: boolean
 }
 
 /**
@@ -25,11 +27,14 @@ export function useItemAccess(): (item: InventoryItem) => ItemAccess {
     (item: InventoryItem) => {
       const isOwner = me !== null && item.ownerId === me
       const isResponsible = me !== null && item.responsibleId === me
+      // A person's item stays theirs: only they give it away or delete it.
+      const someoneElses = item.visibility === 'private' && item.ownerId != null && !isOwner
       return {
         canEdit: update || isOwner || isResponsible,
-        canDelete: del || isOwner,
+        canDelete: (del || isOwner) && !someoneElses,
         canInstruct: instruct || isOwner || isResponsible,
         canHandOn: update || isOwner,
+        canGiveAway: (update || isOwner) && !someoneElses,
       }
     },
     [me, update, del, instruct],

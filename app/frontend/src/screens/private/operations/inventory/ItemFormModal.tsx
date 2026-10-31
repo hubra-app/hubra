@@ -19,13 +19,15 @@ import { LinkEditor } from './LinkEditor'
  * changes with the item, so the fields start from it.
  *
  * Without `canHandOn` (the responsible person, or a member adding their own
- * item) the owner, responsible person and visibility stay as they are, and a
- * new item belongs to `ownerIfFixed`.
+ * item) the owner, responsible person and ownership stay as they are, and a
+ * new item belongs to `ownerIfFixed`. Without `canGiveAway` (a person's item,
+ * for anyone but its owner) the owner and ownership stay.
  */
 export function ItemFormModal({
   open,
   item,
   canHandOn = true,
+  canGiveAway = canHandOn,
   ownerIfFixed,
   onClose,
   onSubmit,
@@ -33,6 +35,7 @@ export function ItemFormModal({
   open: boolean
   item: InventoryItem | null
   canHandOn?: boolean
+  canGiveAway?: boolean
   ownerIfFixed?: number
   onClose: () => void
   onSubmit: (input: InventoryItemCreate) => Promise<unknown>
@@ -157,7 +160,7 @@ export function ItemFormModal({
               noneLabel={t('inventory.noOwner', 'Keine Eigentümer:in')}
               value={fOwner}
               onChange={(v) => setFOwner(v ? Number(v) : undefined)}
-              disabled={!canHandOn}
+              disabled={!canGiveAway}
             />
           </Field>
           <Field label={t('inventory.responsible', 'Verantwortlich')}>
@@ -181,7 +184,7 @@ export function ItemFormModal({
               ]}
               value={fVisibility}
               onChange={(v) => setFVisibility((v ?? 'shared') as InventoryVisibility)}
-              disabled={!canHandOn && !ownItem}
+              disabled={!canGiveAway && !ownItem}
             />
           </Field>
           <Field label={t('inventory.costOptional', 'Kosten (CHF, optional)')}>

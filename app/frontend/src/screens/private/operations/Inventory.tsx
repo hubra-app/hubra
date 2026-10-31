@@ -547,6 +547,9 @@ export function InventoryScreen() {
         canHandOn={
           formTarget === 'new' ? canCreateAny : !!formTarget && accessTo(formTarget).canHandOn
         }
+        canGiveAway={
+          formTarget === 'new' ? canCreateAny : !!formTarget && accessTo(formTarget).canGiveAway
+        }
         ownerIfFixed={currentUserId ?? undefined}
         onClose={() => setFormTarget(null)}
         onSubmit={(input) => saveItem(formTarget === 'new' ? null : formTarget, input)}

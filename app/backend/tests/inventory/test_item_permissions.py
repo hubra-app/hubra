@@ -114,8 +114,6 @@ def test_owner_lends_the_item_out_and_takes_it_back(client, people):
     assert client.post(f"{BASE}/{item}/checkout", json=body).status_code == 403
     _as(client, "tina")
     assert client.post(f"{BASE}/{item}/checkout", json=body).status_code == 201
-    _as(client, "otto")
-    assert client.post(f"{BASE}/{item}/checkin", json={}).status_code == 403
     _as(client, "rolf")
     assert client.post(f"{BASE}/{item}/checkin", json={}).status_code == 200
 
@@ -190,3 +188,70 @@ def test_without_create_own_adding_stays_forbidden(client, people):
     _as(client, "otto")
     r = client.post(f"{BASE}/", json={"name": "Saw", "category": "Tool"})
     assert r.status_code == 403
+
+
+# ── borrowing ────────────────────────────────────────────────────────────────
+
+
+def test_an_inducted_member_borrows_a_club_item_themselves(client, people):
+    item = people["item"]
+    me = {"member_id": people["other"].id}
+    _as(client, "otto")
+    assert client.post(f"{BASE}/{item}/checkout", json=me).status_code == 403
+    _as(client, "rolf")
+    client.post(f"{BASE}/{item}/instructions/{people['other'].id}")
+    _as(client, "otto")
+    # Inducted: for themselves, not for someone else.
+    other = {"member_id": people["resp"].id}
+    assert client.post(f"{BASE}/{item}/checkout", json=other).status_code == 403
+    assert client.post(f"{BASE}/{item}/checkout", json=me).status_code == 201
+
+
+def test_induction_does_not_open_a_persons_item(client, people):
+    item = people["item"]
+    _as(client, "tina")
+    client.patch(f"{BASE}/{item}", json={"visibility": "private"})
+    client.post(f"{BASE}/{item}/instructions/{people['other'].id}")
+    _as(client, "otto")
+    r = client.post(f"{BASE}/{item}/checkout", json={"member_id": people["other"].id})
+    assert r.status_code == 403
+
+
+def test_the_borrower_brings_it_back(client, people):
+    item = people["item"]
+    _as(client, "tina")
+    client.post(f"{BASE}/{item}/checkout", json={"member_id": people["other"].id})
+    _as(client, "otto")
+    assert client.post(f"{BASE}/{item}/checkin", json={}).status_code == 200
+
+
+# ── person-owned items ───────────────────────────────────────────────────────
+
+
+def test_not_even_an_admin_gives_away_a_persons_item(client, people):
+    url = f"{BASE}/{people['item']}"
+    _as(client, "tina")
+    client.patch(url, json={"visibility": "private"})
+    _as(client, "admin")
+    for change in ({"owner_id": people["other"].id}, {"visibility": "shared"}):
+        r = client.patch(url, json=change)
+        assert r.status_code == 403, change
+        assert r.get_json()["error"] == "PERSON_OWNED"
+    assert client.delete(url).status_code == 403
+    # Looking after it stays the club's business.
+    r = client.patch(url, json={"responsible_id": people["other"].id, "status": "broken"})
+    assert r.status_code == 200
+    _as(client, "tina")
+    assert client.delete(url).status_code == 204
+
+
+def test_once_the_owner_left_the_club_decides(client, db, people):
+    from datetime import datetime, timezone
+
+    url = f"{BASE}/{people['item']}"
+    _as(client, "tina")
+    client.patch(url, json={"visibility": "private"})
+    people["owner"].archived_at = datetime.now(timezone.utc)
+    db.session.commit()
+    _as(client, "admin")
+    assert client.delete(url).status_code == 204
