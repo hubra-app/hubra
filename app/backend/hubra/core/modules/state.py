@@ -156,7 +156,14 @@ def states(tenant_id=CURRENT) -> dict[str, ModuleState]:
             d for d in m.depends_on if d not in result or not result[d].effective
         ]
         raw_config = (grant.config if grant is not None else None) or {}
-        config = {s.key: raw_config.get(s.key, s.default) for s in m.settings}
+        config = {
+            s.key: (
+                reveal(raw_config.get(s.key))
+                if s.type == "secret"
+                else raw_config.get(s.key, s.default)
+            )
+            for s in m.settings
+        }
         result[m.code] = ModuleState(
             module=m,
             enabled=enabled,
@@ -196,6 +203,68 @@ def get_config(code: str, tenant_id=CURRENT) -> dict[str, Any]:
 
 def enabled_codes(tenant_id=CURRENT) -> list[str]:
     return [c for c, s in states(tenant_id).items() if s.effective]
+
+
+# ── Secret settings ─────────────────────────────────────────────────────────
+#
+# Settings of type "secret" (webhook URLs, API keys) are stored encrypted in
+# tenant_features.config, so a database dump or backup doesn't hold them in
+# the clear. Values from before this was added are plaintext and still read;
+# ``flask modules seal-secrets`` encrypts them.
+
+_SEALED = "enc:"
+
+
+def _is_sealed(value: Any) -> bool:
+    return isinstance(value, str) and value.startswith(_SEALED)
+
+
+def seal(value: Any) -> Any:
+    if value in (None, "") or _is_sealed(value):
+        return value
+    from hubra.core.crypto import encrypt_code
+
+    return _SEALED + encrypt_code(str(value))
+
+
+def reveal(value: Any) -> Any:
+    if not _is_sealed(value):
+        return value
+    from cryptography.fernet import InvalidToken
+
+    from hubra.core.crypto import decrypt_code
+
+    try:
+        return decrypt_code(value[len(_SEALED) :])
+    except InvalidToken:
+        _log.error("A secret module setting can't be decrypted (FERNET_KEY changed?)")
+        return None
+
+
+def seal_secrets() -> int:
+    """Encrypt secret settings still stored in the clear. Returns how many."""
+    from hubra.core.models.feature import TenantFeature
+
+    registry.load()
+    secret_keys = {
+        m.code: {s.key for s in m.settings if s.type == "secret"}
+        for m in registry.all()
+    }
+    count = 0
+    for grant in db.session.scalars(select(TenantFeature)).all():
+        keys = secret_keys.get(grant.feature_code) or set()
+        config = dict(grant.config or {})
+        changed = False
+        for key in keys:
+            if config.get(key) not in (None, "") and not _is_sealed(config[key]):
+                config[key] = seal(config[key])
+                changed = True
+                count += 1
+        if changed:
+            grant.config = config
+    db.session.flush()
+    invalidate()
+    return count
 
 
 # ── Writes ───────────────────────────────────────────────────────────────────
@@ -343,14 +412,24 @@ def set_config(code: str, config: dict, tenant_id=CURRENT) -> ModuleState:
     grant = _grant(tid, code)
     previous = dict(grant.config or {})
     incoming = dict(config or {})
+    kept = set()
     for s in m.settings:
         if s.type == "secret" and incoming.get(s.key) in (None, ""):
             if previous.get(s.key):
-                incoming[s.key] = previous[s.key]
+                incoming[s.key] = reveal(previous[s.key])
+                kept.add(s.key)
     try:
-        grant.config = m.validate_config(incoming)
+        validated = m.validate_config(incoming)
     except ValueError as exc:
         raise_error(400, "VALIDATION_ERROR", str(exc))
+    for s in m.settings:
+        if s.type != "secret":
+            continue
+        if s.key in kept and _is_sealed(previous[s.key]):
+            validated[s.key] = previous[s.key]
+        else:
+            validated[s.key] = seal(validated[s.key])
+    grant.config = validated
     db.session.flush()
     invalidate()
     return states(tid)[code]
