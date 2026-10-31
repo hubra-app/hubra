@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, g, jsonify, request
 from hubra.api.auth.helpers import get_current_member
 from marshmallow import ValidationError
-from hubra.api.permissions import permission_required
+from hubra.api.permissions import member_has_permission, permission_required
 from hubra.core.errors import api_error, raise_error
 from hubra.core.extensions import db
 from hubra.core.models.member import Member
@@ -16,7 +16,13 @@ from hubra.core.schemas.inventory import (
     InventoryCheckoutSchema,
     CheckoutCreateSchema,
 )
-from hubra.api.inventory.services import InventoryService, InventoryServiceItems
+from hubra.api.inventory.services import (
+    InventoryService,
+    InventoryServiceItems,
+    checkin_access,
+    checkout_access,
+    item_access,
+)
 
 inventory_bp = Blueprint("inventory_bp", __name__)
 
@@ -24,6 +30,20 @@ _item_schema = InventoryItemSchema()
 _items_schema = InventoryItemSchema(many=True)
 _create_schema = InventoryItemCreateSchema()
 _update_schema = InventoryItemUpdateSchema()
+
+# Object-level rights: the owner or responsible person of an item passes
+# these routes without the club-wide right (see services.ITEM_ACTIONS).
+_CREATE_OWN = "inventory.items.create_own"
+
+
+def _by_object() -> bool:
+    """True when the request passed as the item's owner or responsible
+    person rather than through a role."""
+    return g.get("permission_scope") == "object"
+
+
+def _may_create_own(member, **_):
+    return "own" if member_has_permission(member, _CREATE_OWN) else None
 
 
 # ── GET /inventory ────────────────────────────────────────────────────────────
@@ -45,7 +65,7 @@ def list_items():
 
 
 @inventory_bp.get("/<int:item_id>")
-@permission_required("items", "read", "View inventory")
+@permission_required("items", "read", "View inventory", allow=item_access("read"))
 def get_item(item_id: int):
     item = InventoryService.get(item_id)
     return jsonify(_item_schema.dump(item)), 200
@@ -55,13 +75,18 @@ def get_item(item_id: int):
 
 
 @inventory_bp.post("/")
-@permission_required("items", "create", "Create inventory items")
+@permission_required(
+    "items", "create", "Create inventory items", allow=_may_create_own
+)
 def create_item():
     body = request.get_json(silent=True) or {}
     try:
         data = _create_schema.load(body)
     except ValidationError as exc:
         return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+    if _by_object():
+        # With only "add own items", the item is always the member's own.
+        data["owner_id"] = get_current_member().id
 
     item = InventoryServiceItems.create(data, get_current_member().id)
 
@@ -78,7 +103,9 @@ def create_item():
 
 
 @inventory_bp.patch("/<int:item_id>")
-@permission_required("items", "update", "Update inventory items")
+@permission_required(
+    "items", "update", "Update inventory items", allow=item_access("update")
+)
 def update_item(item_id: int):
     item = InventoryService.get(item_id)
 
@@ -87,6 +114,9 @@ def update_item(item_id: int):
         data = _update_schema.load(body)
     except ValidationError as exc:
         return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+    if _by_object() and g.object_access != "owner":
+        InventoryService.check_owner_fields(item, data)
+    InventoryService.check_person_owned(item, get_current_member().id, data)
 
     InventoryService.update(item, data, get_current_member().id)
 
@@ -105,8 +135,13 @@ def update_item(item_id: int):
 
 
 @inventory_bp.delete("/<int:item_id>")
-@permission_required("items", "delete", "Delete inventory items")
+@permission_required(
+    "items", "delete", "Delete inventory items", allow=item_access("delete")
+)
 def delete_item(item_id: int):
+    InventoryService.check_person_owned(
+        InventoryService.get(item_id), get_current_member().id
+    )
     InventoryService.delete(item_id, get_current_member().id)
 
     try:
@@ -122,7 +157,12 @@ def delete_item(item_id: int):
 
 
 @inventory_bp.post("/<int:item_id>/instructions/<int:member_id>")
-@permission_required("items", "manage_instructions", "Manage item instructions")
+@permission_required(
+    "items",
+    "manage_instructions",
+    "Manage item instructions",
+    allow=item_access("manage_instructions"),
+)
 def add_instruction(item_id: int, member_id: int):
     item = InventoryService.get(item_id)
 
@@ -146,7 +186,9 @@ def add_instruction(item_id: int, member_id: int):
 
 
 @inventory_bp.post("/<int:item_id>/checkout")
-@permission_required("items", "checkout", "Check out inventory items")
+@permission_required(
+    "items", "checkout", "Check out inventory items", allow=checkout_access
+)
 def checkout_item(item_id: int):
     body = request.get_json(silent=True) or {}
     try:
@@ -175,7 +217,9 @@ def checkout_item(item_id: int):
 
 
 @inventory_bp.post("/<int:item_id>/checkin")
-@permission_required("items", "checkin", "Check in inventory items")
+@permission_required(
+    "items", "checkin", "Check in inventory items", allow=checkin_access
+)
 def checkin_item(item_id: int):
     body = request.get_json(silent=True) or {}
     condition_notes = body.get("condition_notes")
@@ -211,7 +255,12 @@ def list_overdue():
 
 
 @inventory_bp.delete("/<int:item_id>/instructions/<int:member_id>")
-@permission_required("items", "manage_instructions", "Manage item instructions")
+@permission_required(
+    "items",
+    "manage_instructions",
+    "Manage item instructions",
+    allow=item_access("manage_instructions"),
+)
 def remove_instruction(item_id: int, member_id: int):
     InventoryService.remove_instruction(item_id, member_id, get_current_member().id)
 

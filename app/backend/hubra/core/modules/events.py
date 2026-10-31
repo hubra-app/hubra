@@ -29,6 +29,10 @@ EVENT_PUBLISHED = "event.published"
 POST_PUBLISHED = "post.published"
 POLL_PUBLISHED = "poll.published"
 GROUP_MEMBERSHIP_CHANGED = "group.membership_changed"
+# A person linked or unlinked an outside account (provider, external_id),
+# emitted in each club they are a member of (member_id).
+ACCOUNT_LINKED = "account.linked"
+ACCOUNT_UNLINKED = "account.unlinked"
 
 
 def _resolve(target: str):

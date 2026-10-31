@@ -103,12 +103,13 @@ export async function archiveTenant(id: number): Promise<{ tenant: Tenant }> {
 
 export async function impersonateTenant(
   id: number,
-  body: { reason: string; user_id?: number },
+  body: { reason: string; user_id?: number; allow_changes?: boolean },
 ): Promise<{
   impersonating: boolean
   tenant_slug: string
   member_id: number
   expires_at: string
+  read_only: boolean
 }> {
   return apiFetch(`/system/tenants/${id}/impersonate`, {
     method: 'POST',
@@ -294,13 +295,22 @@ export async function getClubAdmins(tenantId: number) {
   return apiFetch<ClubAdminsResponse>(`/system/tenants/${tenantId}/admins`)
 }
 
-export async function addClubAdmin(tenantId: number, email: string, level: 'owner' | 'admin') {
+/** `reason` is required when platform staff change a club's admins. */
+export async function addClubAdmin(
+  tenantId: number,
+  email: string,
+  level: 'owner' | 'admin',
+  reason?: string,
+) {
   return apiFetch<{ admin: ClubAdmin }>(`/system/tenants/${tenantId}/admins`, {
     method: 'POST',
-    body: JSON.stringify({ email, level }),
+    body: JSON.stringify({ email, level, reason }),
   })
 }
 
-export async function removeClubAdmin(tenantId: number, userId: number) {
-  return apiFetch(`/system/tenants/${tenantId}/admins/${userId}`, { method: 'DELETE' })
+export async function removeClubAdmin(tenantId: number, userId: number, reason?: string) {
+  return apiFetch(`/system/tenants/${tenantId}/admins/${userId}`, {
+    method: 'DELETE',
+    body: JSON.stringify({ reason }),
+  })
 }

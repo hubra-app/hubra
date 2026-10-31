@@ -10,6 +10,7 @@ from marshmallow import ValidationError
 from sqlalchemy import select
 
 from hubra.api.permissions import (
+    created_by,
     permission_required,
     require_member,
     can_update,
@@ -27,7 +28,12 @@ from hubra.core.schemas.group import (
     GroupMembershipUpdateSchema,
 )
 from hubra.core.schemas.member import MemberSchema
-from hubra.api.groups.services import GroupService, GroupsService, SelfJoinService
+from hubra.api.groups.services import (
+    GroupService,
+    GroupsService,
+    GroupVisibility,
+    SelfJoinService,
+)
 from hubra.api.utils import log_audit
 
 
@@ -38,6 +44,14 @@ _groups_schema = GroupSchema(many=True)
 _create_schema = GroupCreateSchema()
 _update_schema = GroupUpdateSchema()
 _members_schema = MemberSchema(many=True)
+
+# The group's leader runs it: who is in it, and how it presents itself. The
+# name, the leader, the mail alias and where it hangs stay with the club.
+_leads = created_by(Group, column="lead_id", arg="group_id", reason="leader")
+_leads_this = created_by(Group, column="lead_id", arg="id", reason="leader")
+_LEADER_FIELDS = frozenset(
+    {"description", "color", "icon_name", "sessions", "is_public", "self_join"}
+)
 
 
 # ── GET /groups/count ─────────────────────────────────────────────────────────
@@ -56,7 +70,8 @@ def count_groups():
 @groups_bp.get("/")
 @permission_required("groups", "read", "View groups")
 def list_groups():
-    groups = GroupsService.list()
+    hidden = GroupVisibility.hidden_ids(get_current_member())
+    groups = [g for g in GroupsService.list() if g.id not in hidden]
     return jsonify(_groups_schema.dump(groups)), 200
 
 
@@ -90,9 +105,10 @@ def leave_group(group_id: int):
 
 
 @groups_bp.get("/<int:id>")
-@permission_required("groups", "read", "View groups", scope="id")
+@permission_required("groups", "read", "View groups", scope="id", allow=_leads_this)
 def get_group(id: int):
     group = GroupService.get_by_id(id)
+    GroupVisibility.require(get_current_member(), id)
 
     member_ids = db.session.scalars(
         select(member_groups.c.member_id).where(member_groups.c.group_id == id)
@@ -130,7 +146,9 @@ def create_group():
 
 
 @groups_bp.patch("/<int:id>")
-@can_update("groups", "Update groups", scope="id")
+@can_update(
+    "groups", "Update groups", scope="id", allow=_leads_this, allow_fields=_LEADER_FIELDS
+)
 def update_group(id: int):
     group = GroupService.get_by_id(id)
 
@@ -175,12 +193,13 @@ def delete_group(id: int):
 
 
 @groups_bp.get("/<int:group_id>/members")
-@permission_required("groups", "read", "View groups", scope="group_id")
+@permission_required("groups", "read", "View groups", scope="group_id", allow=_leads)
 def list_group_members(group_id: int):
     group = db.session.get(Group, group_id)
     if group is None:
         raise_error(404, "NOT_FOUND", f"Group {group_id} not found")
         return
+    GroupVisibility.require(get_current_member(), group_id)
 
     search = request.args.get("search", "").strip()
     members = GroupService.list_members(group_id, search)
@@ -193,7 +212,9 @@ def list_group_members(group_id: int):
 
 
 @groups_bp.post("/<int:group_id>/members/<int:member_id>")
-@permission_required("groups", "add_member", "Add member to group", scope="group_id")
+@permission_required(
+    "groups", "add_member", "Add member to group", scope="group_id", allow=_leads
+)
 def add_member_to_group(group_id: int, member_id: int):
     group = db.session.get(Group, group_id)
     if group is None:
@@ -228,7 +249,7 @@ def add_member_to_group(group_id: int, member_id: int):
 
 @groups_bp.delete("/<int:group_id>/members/<int:member_id>")
 @permission_required(
-    "groups", "remove_member", "Remove member from group", scope="group_id"
+    "groups", "remove_member", "Remove member from group", scope="group_id", allow=_leads
 )
 def remove_group_member(group_id: int, member_id: int):
     GroupService.remove_member(member_id, group_id)
@@ -255,7 +276,9 @@ def remove_group_member(group_id: int, member_id: int):
 
 
 @groups_bp.patch("/<int:group_id>/members/<int:member_id>")
-@permission_required("groups", "add_member", "Add member to group", scope="group_id")
+@permission_required(
+    "groups", "add_member", "Add member to group", scope="group_id", allow=_leads
+)
 def update_group_member_role(group_id: int, member_id: int):
     body = request.get_json(silent=True) or {}
     try:
@@ -283,13 +306,14 @@ def update_group_member_role(group_id: int, member_id: int):
 
 
 @groups_bp.get("/<int:group_id>/mailing-list")
-@permission_required("groups", "read", "View groups", scope="group_id")
+@permission_required("groups", "read", "View groups", scope="group_id", allow=_leads)
 def get_mailing_list(group_id: int):
     """Return email addresses of all group members for mailing list export."""
     group = db.session.get(Group, group_id)
     if group is None:
         raise_error(404, "NOT_FOUND", f"Group {group_id} not found")
         return
+    GroupVisibility.require(get_current_member(), group_id)
 
     emails = GroupService.get_mailing_list(group_id)
     return jsonify({"data": emails, "count": len(emails)}), 200

@@ -27,6 +27,7 @@ interface BackendEvent {
   series_id?: number | null;
   series_date?: string | null;
   recurrence?: BackendRecurrence | null;
+  created_by?: number | null;
 }
 
 interface BackendRecurrence {
@@ -85,6 +86,7 @@ function adapt(b: BackendEvent): ClubEvent {
     seriesId: b.series_id != null ? String(b.series_id) : null,
     seriesDate: b.series_date ?? null,
     recurrence: b.recurrence ? adaptRecurrence(b.recurrence) : null,
+    createdById: b.created_by ?? null,
   };
 }
 
@@ -294,6 +296,14 @@ export async function decideRegistration(
 
 export async function getCalendarFeedUrl(): Promise<string> {
   const data = await apiFetch<{ url: string }>("/events/calendar/feed");
+  return data.url;
+}
+
+/** Replaces the feed link; the old one stops working. */
+export async function renewCalendarFeedUrl(): Promise<string> {
+  const data = await apiFetch<{ url: string }>("/events/calendar/feed/renew", {
+    method: "POST",
+  });
   return data.url;
 }
 

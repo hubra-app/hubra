@@ -318,6 +318,16 @@ export async function listInvoices(): Promise<Invoice[]> {
   return response.data.map(adaptInvoice);
 }
 
+/** One member's invoices, for their page in the member list. */
+export async function listMemberInvoices(memberId: string): Promise<Invoice[]> {
+  const response = await fetchPages<BackendInvoice>(
+    "/finance/invoices",
+    new URLSearchParams({ member_id: memberId }),
+    1000,
+  );
+  return response.data.map(adaptInvoice);
+}
+
 export async function listMyInvoices(): Promise<Invoice[]> {
   const response = await fetchPages<BackendInvoice>(
     "/finance/invoices/mine",

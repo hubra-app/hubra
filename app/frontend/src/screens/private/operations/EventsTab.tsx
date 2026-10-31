@@ -125,9 +125,13 @@ export function EventsTab() {
   const eventTypes = clubEventTypes(
     moduleList.find((m) => m.code === 'events')?.config?.event_types,
   )
-  const canUpdate = hasPermission('events.events.update')
-  const canDelete = hasPermission('events.events.delete')
-  const canApprove = hasPermission('events.events.add_attendee')
+  // Whoever put an event up runs it (the API checks the same).
+  const hosts = (ev: ClubEvent) =>
+    currentUser != null && ev.createdById === Number(currentUser.id)
+  const canUpdate = (ev: ClubEvent) => hasPermission('events.events.update') || hosts(ev)
+  const canDelete = (ev: ClubEvent) => hasPermission('events.events.delete') || hosts(ev)
+  const canApprove = (ev: ClubEvent) =>
+    hasPermission('events.events.add_attendee') || hosts(ev)
   const navigate = useNavigate()
   const mayGroups = moduleList.some((m) => m.code === 'groups')
   const { data: groups = [] } = useQuery({
@@ -139,7 +143,7 @@ export function EventsTab() {
   const canTakeRoll = (ev: ClubEvent) =>
     hasPermission('events.events.add_attendee', ev.groupId ?? undefined)
   const seesAttendance =
-    canApprove || groups.some((g) => hasPermission('events.events.add_attendee', g.id))
+    hasPermission('events.events.add_attendee') || groups.some((g) => hasPermission('events.events.add_attendee', g.id))
   const [rollFor, setRollFor] = useState<ClubEvent | null>(null)
   const [repeat, setRepeat] = useState<RepeatState>(() => defaultRepeat(''))
   const [ruleAtOpen, setRuleAtOpen] = useState<RepeatState | null>(null)
@@ -173,7 +177,7 @@ export function EventsTab() {
     const ev = events.find((e) => e.id === linked.id)
     if (ev) {
       setHandledPending(linked.id)
-      if (canApprove) setPendingFor(ev)
+      if (canApprove(ev)) setPendingFor(ev)
     }
   }
   const filtered = linked.id
@@ -627,7 +631,7 @@ export function EventsTab() {
                   {ev.placesTaken ?? ev.attendees.length}
                   {ev.maxAttendees ? ` / ${ev.maxAttendees}` : ''}
                 </span>
-                {canApprove && (ev.pendingCount ?? 0) > 0 && (
+                {canApprove(ev) && (ev.pendingCount ?? 0) > 0 && (
                   <Badge
                     variant="light"
                     color="orange"
@@ -715,8 +719,8 @@ export function EventsTab() {
                     </Tooltip>
                   )}
                   <ActionButtons
-                    onEdit={canUpdate ? () => openEdit(ev) : undefined}
-                    onDelete={canDelete ? () => setDeleteTarget(ev) : undefined}
+                    onEdit={canUpdate(ev) ? () => openEdit(ev) : undefined}
+                    onDelete={canDelete(ev) ? () => setDeleteTarget(ev) : undefined}
                   />
                 </div>
               )

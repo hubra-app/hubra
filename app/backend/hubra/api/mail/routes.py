@@ -16,7 +16,7 @@ from hubra.api.mail.services import (
     MailboxesService,
 )
 from hubra.core.extensions import db, limiter
-from hubra.api.permissions import permission_required
+from hubra.api.permissions import created_by, permission_required
 from hubra.api.settings.services import SettingService
 from hubra.api.utils import log_audit
 from hubra.core.errors import api_error, raise_error
@@ -683,11 +683,36 @@ def delete_function_mail(function_id: int):
     )
 
 
+# The leader of a group and whoever holds a function see their address and
+# switch it on or off. Its name and extra aliases stay with the club.
+_leads_group = created_by(Group, column="lead_id", arg="group_id", reason="leader")
+
+
+def _holds_function(member, function_id=None, **_):
+    from datetime import date
+
+    from sqlalchemy import select
+
+    from hubra.api.permissions import _active_term
+    from hubra.core.models.function import FunctionHolder
+
+    if function_id is None:
+        return None
+    held = db.session.scalar(
+        select(FunctionHolder.id).where(
+            FunctionHolder.function_id == function_id,
+            FunctionHolder.member_id == member.id,
+            *_active_term(date.today()),
+        )
+    )
+    return "holder" if held is not None else None
+
+
 # ── Group mail: toggle / prefix / aliases ─────────────────────────────────────
 
 
 @mail_bp.patch("/groups/<int:group_id>/toggle")
-@permission_required("aliases", "update", "Update aliases")
+@permission_required("aliases", "update", "Update aliases", allow=_leads_group)
 def toggle_group_mail(group_id: int):
     from sqlalchemy import select
 
@@ -767,7 +792,7 @@ def change_group_mail_prefix(group_id: int):
 
 
 @mail_bp.get("/groups/<int:group_id>/aliases")
-@permission_required("aliases", "read", "View aliases")
+@permission_required("aliases", "read", "View aliases", allow=_leads_group)
 def list_group_aliases(group_id: int):
     from sqlalchemy import select
 
@@ -946,7 +971,7 @@ def toggle_group_alias(group_id: int, alias_id: int):
 
 
 @mail_bp.patch("/functions/<int:function_id>/toggle")
-@permission_required("aliases", "update", "Update aliases")
+@permission_required("aliases", "update", "Update aliases", allow=_holds_function)
 def toggle_function_mail(function_id: int):
     from sqlalchemy import select
 
@@ -1032,7 +1057,7 @@ def change_function_mail_prefix(function_id: int):
 
 
 @mail_bp.get("/functions/<int:function_id>/aliases")
-@permission_required("aliases", "read", "View aliases")
+@permission_required("aliases", "read", "View aliases", allow=_holds_function)
 def list_function_aliases(function_id: int):
     from sqlalchemy import select
 

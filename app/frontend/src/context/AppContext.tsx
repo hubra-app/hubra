@@ -68,6 +68,7 @@ interface AuthState {
     tenant_slug: string
     reason: string | null
     expires_at: string | null
+    read_only?: boolean
     restricted_actions: string[]
   } | null
   stopImpersonation: () => void

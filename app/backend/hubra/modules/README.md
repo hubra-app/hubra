@@ -90,8 +90,21 @@ Run `flask sync-permissions` after adding routes.
 `settings=` declares the module's per-club settings. Values are validated
 against the field type, stored in `TenantFeature.config`, and read with
 `hubra.core.modules.get_config("<code>")`. Fields of type `secret` are
-never sent back to the browser, and saving an empty secret keeps the stored
-one. The settings page renders a form from the schema.
+never sent back to the browser, are stored encrypted (`enc:` + Fernet), and
+saving an empty secret keeps the stored one. The settings page renders a
+form from the schema.
+
+## Connected apps
+
+`apps=` lists outside services a club can connect through the module
+(Einstellungen › Verbundene Apps), as `AppProvider(code, name, handler,
+scopes=(AppScope(...),))`. Core does the parts every service shares: the
+`apps.manage` permission, the signed, browser-bound sign-in round trip, the
+admin's confirmation, encrypted secrets, disconnecting, the audit log and
+the activity list. The handler only supplies the service's own steps; the
+hooks are listed in `hubra/core/apps.py`. Look a connection up by the
+outside id with `apps.active(code, external_id)`, check `apps.has_scope()`
+before acting, and note what happened with `apps.record()`.
 
 ## Events
 

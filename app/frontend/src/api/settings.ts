@@ -192,6 +192,7 @@ function adaptAudit(b: BackendAuditEntry): AuditEntry {
     actor: b.actor_name ?? (b.actor_id != null ? String(b.actor_id) : "System"),
     action: b.action.replace(/_/g, " "),
     target: `${b.target_type}: ${b.target_label}`,
+    targetLabel: b.target_label ?? undefined,
     time: b.time,
     avatarColor: b.actor_avatar_color ?? "#857f99",
   };
@@ -207,8 +208,11 @@ export async function listAuditLog(params?: {
   page?: number;
   pageSize?: number;
   action?: string;
+  /** What this member did and what was done to their membership. */
+  memberId?: string;
 }): Promise<AuditLogPage> {
   const qs = new URLSearchParams();
+  if (params?.memberId) qs.set("memberId", params.memberId);
   if (params?.page !== undefined) qs.set("page", String(params.page));
   if (params?.pageSize !== undefined)
     qs.set("pageSize", String(params.pageSize));

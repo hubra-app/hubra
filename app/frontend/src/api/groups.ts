@@ -1,6 +1,6 @@
 import { apiFetch } from '@hubra/api-client';
 import { clearLookups } from "./lookups";
-import type { Group } from "../types";
+import type { Group, GroupVisibility } from "../types";
 
 interface BackendGroup {
   id: number;
@@ -15,8 +15,7 @@ interface BackendGroup {
   is_default: boolean;
   type: string;
   email_alias: string | null;
-  is_public: boolean;
-  self_join?: boolean;
+  visibility?: GroupVisibility;
   parent_group_id: number | null;
   parent_group_name: string | null;
 }
@@ -26,6 +25,7 @@ function adapt(b: BackendGroup): Group {
     id: String(b.id),
     name: b.name,
     lead: b.lead_name ?? "",
+    leadId: b.lead_id ?? null,
     description: b.description ?? "",
     color: b.color ?? "#7441e0",
     iconName: b.icon_name ?? "Zap",
@@ -33,8 +33,7 @@ function adapt(b: BackendGroup): Group {
     sessions: b.sessions ?? "",
     type: b.type ?? "interest_group",
     emailAlias: b.email_alias ?? "",
-    isPublic: b.is_public ?? true,
-    selfJoin: b.self_join ?? false,
+    visibility: b.visibility ?? "visible",
     parentGroupId: b.parent_group_id ?? null,
     parentGroupName: b.parent_group_name ?? null,
   };
@@ -53,8 +52,7 @@ export interface GroupCreate {
   sessions?: string;
   type?: string;
   emailAlias?: string;
-  isPublic?: boolean;
-  selfJoin?: boolean;
+  visibility?: GroupVisibility;
   parentGroupId?: number | null;
 }
 
@@ -66,8 +64,7 @@ export async function createGroup(input: GroupCreate): Promise<Group> {
   if (input.sessions !== undefined) body.sessions = input.sessions;
   if (input.type) body.type = input.type;
   if (input.emailAlias !== undefined) body.email_alias = input.emailAlias;
-  if (input.isPublic !== undefined) body.is_public = input.isPublic;
-  if (input.selfJoin !== undefined) body.self_join = input.selfJoin;
+  if (input.visibility !== undefined) body.visibility = input.visibility;
   if (input.parentGroupId !== undefined) body.parent_group_id = input.parentGroupId;
   const b = await apiFetch<BackendGroup>("/groups/", {
     method: "POST",
@@ -85,8 +82,7 @@ export interface GroupUpdate {
   sessions?: string;
   type?: string;
   emailAlias?: string;
-  isPublic?: boolean;
-  selfJoin?: boolean;
+  visibility?: GroupVisibility;
   parentGroupId?: number | null;
 }
 
@@ -102,8 +98,7 @@ export async function updateGroup(
   if (input.sessions !== undefined) body.sessions = input.sessions;
   if (input.type !== undefined) body.type = input.type;
   if (input.emailAlias !== undefined) body.email_alias = input.emailAlias;
-  if (input.isPublic !== undefined) body.is_public = input.isPublic;
-  if (input.selfJoin !== undefined) body.self_join = input.selfJoin;
+  if (input.visibility !== undefined) body.visibility = input.visibility;
   if (input.parentGroupId !== undefined) body.parent_group_id = input.parentGroupId;
   const b = await apiFetch<BackendGroup>(`/groups/${id}`, {
     method: "PATCH",
