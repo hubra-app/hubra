@@ -8,7 +8,7 @@ Safe to run again per club (flask migrate-tenants): the tables go to
 public, once.
 
 Revision ID: d3f7a1c9e5b2
-Revises: c5e2a8d4f1b7
+Revises: d8f2b6a4c1e9, f2c8a4d6b1e3
 Create Date: 2026-10-31 07:00:00.000000
 
 """
@@ -20,7 +20,8 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "d3f7a1c9e5b2"
-down_revision = "c5e2a8d4f1b7"
+# Also joins the two heads main had (notifications link, groups tools count).
+down_revision = ("d8f2b6a4c1e9", "f2c8a4d6b1e3")
 branch_labels = None
 depends_on = None
 
