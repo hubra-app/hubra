@@ -252,6 +252,9 @@ def create_app(config_name: str | None = None) -> Flask:
     registry.register_blueprints(app)
     # Registered after resolve_tenant, so g.tenant is known here.
     app.before_request(module_gate)
+    from hubra.api.permissions import read_only_impersonation
+
+    app.before_request(read_only_impersonation)
 
     # ── Root health endpoint (for Docker healthcheck) ──────────────────────────
     @app.get("/health")
@@ -333,6 +336,15 @@ def _register_cli(app: Flask) -> None:
         created = sync_catalog()
         db.session.commit()
         click.echo(f"Module catalog synced ({created} new).")
+
+    @modules_cli.command("seal-secrets")
+    def modules_seal_secrets():
+        """Encrypt secret module settings still stored in the clear."""
+        from hubra.core.modules.state import seal_secrets
+
+        count = seal_secrets()
+        db.session.commit()
+        click.echo(f"Encrypted {count} secret setting(s).")
 
     @modules_cli.command("list")
     @click.option("--tenant", "slug", help="Tenant slug (default: no tenant)")

@@ -125,6 +125,7 @@ class TestAccountChanges:
                     "impersonator_id": 99,
                     "impersonator_user_id": 99,
                     "impersonation_expires_at": until,
+                    "impersonation_mode": "act",
                 },
             )
         client.set_cookie("access_token_cookie", token)

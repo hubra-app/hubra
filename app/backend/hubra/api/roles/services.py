@@ -136,10 +136,12 @@ class RoleService:
         if not _internal:
             from hubra.core.models.member import Member
 
+            # Adding a right gives it to every holder, removing takes it
+            # away: either way only someone who holds it themselves.
             had = set(RoleService.get_permissions(role.id))
             check_grant(
                 db.session.get(Member, actor_id) if actor_id else None,
-                keys=[k for k in keys if k not in had],
+                keys=set(keys) ^ had,
             )
 
         db.session.query(RolePermission).filter_by(role_id=role.id).delete()

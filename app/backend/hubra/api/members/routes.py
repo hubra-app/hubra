@@ -858,7 +858,14 @@ def enable_member(member_id: int):
 def revoke_member_sessions(member_id: int):
     """Admin endpoint: revoke all sessions for a member (force logout)."""
     from hubra.api.auth import session_service
+    from hubra.api.members.services import _check_may_remove
+    from hubra.core.models.member import Member
 
+    # Signing someone out is for those who outrank them, as for disabling.
+    target = db.session.get(Member, member_id)
+    if target is None:
+        raise_error(404, "NOT_FOUND", f"Member {member_id} not found")
+    _check_may_remove(target, get_current_member().id)
     count = session_service.admin_revoke_all_sessions(member_id)
     db.session.commit()
 

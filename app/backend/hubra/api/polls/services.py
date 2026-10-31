@@ -14,12 +14,38 @@ from hubra.api.notifications.services import (
 from hubra.api.utils import log_audit
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
-from hubra.core.models.function import Function
+from hubra.core.models.function import Function, FunctionHolder
 from hubra.core.models.group import Group
-from hubra.core.models.member import Member
+from hubra.core.models.member import Member, member_groups
 from hubra.core.models.poll import Poll, PollOption, PollProxy, PollVote
 from hubra.core.modules import emit
 from hubra.core.modules.events import POLL_PUBLISHED
+
+
+def member_circles(member_id: int) -> tuple[set[int], set[int]]:
+    """The groups and functions *member_id* belongs to."""
+    groups = set(
+        db.session.scalars(
+            select(member_groups.c.group_id).where(member_groups.c.member_id == member_id)
+        )
+    )
+    functions = set(
+        db.session.scalars(
+            select(FunctionHolder.function_id).where(FunctionHolder.member_id == member_id)
+        )
+    )
+    return groups, functions
+
+
+def may_vote(poll: Poll, circles: tuple[set[int], set[int]]) -> bool:
+    """A poll for named groups or functions is theirs to vote on; one with
+    neither is open to every member with the vote right."""
+    group_ids = set(poll.required_group_ids or ())
+    function_ids = set(poll.required_function_ids or ())
+    if not group_ids and not function_ids:
+        return True
+    groups, functions = circles
+    return bool(group_ids & groups or function_ids & functions)
 
 
 def is_closed(poll: Poll) -> bool:
@@ -89,6 +115,13 @@ class PollService:
             .where(PollOption.poll_id == poll.id)
             .order_by(PollOption.id)
         ).all()
+
+        if not may_vote(poll, member_circles(member_id)):
+            raise_error(
+                403,
+                "NOT_ELIGIBLE",
+                "This poll is for the groups and functions it names",
+            )
 
         if option_index < 0 or option_index >= len(options):
             raise_error(
@@ -369,6 +402,10 @@ class ProxyService:
             raise_error(409, "CONFLICT", "This poll is closed")
         if holder_id == grantor_id:
             raise_error(400, "VALIDATION_ERROR", "You cannot be your own proxy")
+        if not may_vote(poll, member_circles(grantor_id)):
+            raise_error(
+                403, "NOT_ELIGIBLE", "This poll is for the groups and functions it names"
+            )
         holder = db.session.get(Member, holder_id)
         if holder is None or holder.archived_at is not None:
             raise_error(404, "NOT_FOUND", "Member not found")

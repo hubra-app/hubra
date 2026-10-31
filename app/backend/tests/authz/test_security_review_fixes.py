@@ -151,7 +151,7 @@ class TestImpersonationIsBounded:
         club, target = self._setup(client, db, seeded_db)
         resp = client.post(
             f"/api/v1/system/tenants/{club.id}/impersonate",
-            json={"reason": "ticket", "user_id": target.id},
+            json={"reason": "ticket", "user_id": target.id, "allow_changes": True},
         )
         assert resp.status_code == 200
         claims = decode_token(client.get_cookie("refresh_token_cookie").value)
@@ -173,7 +173,7 @@ class TestImpersonationIsBounded:
         from hubra.core.models.global_role import GlobalRole, UserGlobalRole
 
         club, target = self._setup(client, db, seeded_db)
-        boss = db.session.query(GlobalRole).filter_by(name="Superadmin").one()
+        boss = db.session.query(GlobalRole).filter_by(name="Platform admin").one()
         db.session.add(UserGlobalRole(user_id=target.id, role_id=boss.id))
         db.session.commit()
         resp = client.post(
@@ -243,6 +243,17 @@ class TestSettingsNamespace:
         resp = client.put(
             "/api/v1/settings/Club.Banking.Iban",
             json={"value": "CH5604835012345678009", "namespace": "general"},
+        )
+        assert resp.status_code == 403
+
+    def test_general_writer_cannot_create_the_finance_contact(self, client, seeded_db, db):
+        """Club.Contact.FinanceEmail is printed on QR bills: a new one lands
+        in the club namespace, not the one the request names."""
+        _settings_writer(db, seeded_db)
+        _login(client, "ed@test.ch")
+        resp = client.put(
+            "/api/v1/settings/Club.Contact.FinanceEmail",
+            json={"value": "pay@evil.example", "namespace": "general"},
         )
         assert resp.status_code == 403
 

@@ -29,6 +29,59 @@ def _check_parent(parent_id: int | None, group_id: int | None = None) -> None:
         parent_id = parent.parent_group_id
 
 
+# ── Visibility ─────────────────────────────────────────────────────────────────
+
+
+class GroupVisibility:
+    """Who sees a private group: its members, its lead, and members who may
+    update groups (for the whole club or for that group). Open and visible
+    groups are seen by everyone who may read groups."""
+
+    @staticmethod
+    def _manages_all(member) -> bool:
+        from hubra.api.permissions import member_has_permission
+
+        return member_has_permission(member, "groups.groups.update")
+
+    @staticmethod
+    def hidden_ids(member) -> set[int]:
+        """Ids of the private groups *member* may not see."""
+        if member is None:
+            return set()
+        if GroupVisibility._manages_all(member):
+            return set()
+        from hubra.api.permissions import scoped_permission_keys
+
+        private = db.session.execute(
+            select(Group.id, Group.lead_id).where(Group.visibility == "private")
+        ).all()
+        if not private:
+            return set()
+        mine = set(
+            db.session.scalars(
+                select(member_groups.c.group_id).where(
+                    member_groups.c.member_id == member.id
+                )
+            )
+        )
+        scoped = {
+            gid
+            for gid, keys in scoped_permission_keys(member).items()
+            if "groups.groups.update" in keys
+        }
+        return {
+            gid
+            for gid, lead_id in private
+            if gid not in mine and gid not in scoped and lead_id != member.id
+        }
+
+    @staticmethod
+    def require(member, group_id: int) -> None:
+        """404 when *member* may not see the group, as if it did not exist."""
+        if group_id in GroupVisibility.hidden_ids(member):
+            raise_error(404, "NOT_FOUND", f"Group {group_id} not found")
+
+
 # ── GroupService (singular) ────────────────────────────────────────────────────
 
 
@@ -85,8 +138,7 @@ class GroupService:
             "sessions",
             "type",
             "email_alias",
-            "is_public",
-            "self_join",
+            "visibility",
             "parent_group_id",
         ):
             if field in data:
@@ -371,8 +423,7 @@ class GroupsService:
             sessions=data.get("sessions"),
             type=data.get("type", "interest_group"),
             email_alias=data.get("email_alias"),
-            is_public=data.get("is_public", True),
-            self_join=data.get("self_join", False),
+            visibility=data.get("visibility", "visible"),
             parent_group_id=data.get("parent_group_id"),
         )
         db.session.add(group)
@@ -448,7 +499,7 @@ class SelfJoinService:
         groups = db.session.scalars(
             select(Group)
             .where(
-                Group.self_join.is_(True),
+                Group.visibility == "open",
                 Group.archived_at.is_(None),
                 Group.deleted_at.is_(None),
             )
@@ -487,7 +538,7 @@ class SelfJoinService:
         group = db.session.get(Group, group_id)
         if group is None or group.deleted_at is not None or group.archived_at:
             raise_error(404, "NOT_FOUND", "Group not found")
-        if not group.self_join:
+        if group.visibility != "open":
             raise_error(403, "GROUP_NOT_SELF_JOIN", "Ask a group lead to add you")
         return group
 

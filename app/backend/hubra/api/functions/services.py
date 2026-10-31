@@ -177,10 +177,14 @@ class FunctionService:
         return fn
 
     @staticmethod
-    def delete(function_id: int) -> None:
+    def delete(function_id: int, actor_id: int | None = None) -> None:
+        from hubra.api.permissions import invalidate_member_permissions
         from hubra.core.services.managed_mail import remove_for_function
 
         fn = FunctionService.get_by_id(function_id)
+        # The holders lose the role the function gives them.
+        _check_role_change(fn, actor_id, give=False)
+        holder_ids = [h.member_id for h in fn.holders]
 
         from hubra.core.services.binding_engine import (
             assert_source_deletable,
@@ -195,6 +199,8 @@ class FunctionService:
         db.session.delete(fn)
 
         cascade_delete_disabled("function", str(function_id))
+        for member_id in holder_ids:
+            invalidate_member_permissions(member_id)
 
     @staticmethod
     def assign_holder(

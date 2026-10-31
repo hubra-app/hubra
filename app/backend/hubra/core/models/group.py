@@ -5,7 +5,6 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from sqlalchemy import DateTime, ForeignKey, Text, UniqueConstraint
-import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from hubra.core.extensions import db
@@ -32,10 +31,11 @@ class Group(db.Model):
         db.String(50), default="interest_group", nullable=False
     )
     email_alias: Mapped[str | None] = mapped_column(db.String(255), nullable=True)
-    is_public: Mapped[bool] = mapped_column(db.Boolean, default=True, nullable=False)
-    # Members may join and leave on their own (interest groups).
-    self_join: Mapped[bool] = mapped_column(
-        db.Boolean, default=False, server_default=sa.false(), nullable=False
+    # Who sees the group: "open" (every member, and they join and leave on
+    # their own), "visible" (every member; leads and admins add people) or
+    # "private" (its members, its lead and those who manage groups).
+    visibility: Mapped[str] = mapped_column(
+        db.String(16), default="visible", server_default="visible", nullable=False
     )
     parent_group_id: Mapped[int | None] = mapped_column(
         db.Integer, ForeignKey("groups.id"), nullable=True

@@ -525,7 +525,9 @@ class AuthService:
                     # the club picker shouldn't offer it.
                     reset_search_path()
                     continue
-                roles = member.roles if member is not None else []
+                from hubra.api.permissions import held_roles
+
+                roles = held_roles(member) if member is not None else []
                 admin_level = (
                     "owner"
                     if any(r.is_owner for r in roles)

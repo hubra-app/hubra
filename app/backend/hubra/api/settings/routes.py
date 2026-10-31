@@ -32,6 +32,7 @@ _write_schema = SettingWriteSchema()
 # "general" settings can't create, say, the IBAN printed on QR bills.
 _RESERVED_NAMESPACES = {
     "Club.Banking.": "finance",
+    "Club.": "club",  # Club.Contact.FinanceEmail is printed on QR bills too
     "mail.": "mail",
     "I18n.": "I18n",
 }

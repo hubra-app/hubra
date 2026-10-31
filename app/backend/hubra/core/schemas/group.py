@@ -11,6 +11,9 @@ from hubra.core.schemas.counts import cached_count, clear_counts, prime_counts
 _MEMBER_COUNT = "_member_count"
 
 
+VISIBILITIES = ("open", "visible", "private")
+
+
 class GroupSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Group
@@ -27,8 +30,7 @@ class GroupSchema(ma.SQLAlchemyAutoSchema):
     # M5 new fields
     type = fields.Str(dump_default="interest_group")
     email_alias = fields.Str(allow_none=True, dump_default=None)
-    is_public = fields.Bool(dump_default=True)
-    self_join = fields.Bool(dump_default=False)
+    visibility = fields.Str(dump_default="visible")
     parent_group_id = fields.Int(allow_none=True, dump_default=None)
     deleted_at = fields.DateTime(allow_none=True, dump_only=True, dump_default=None)
 
@@ -81,8 +83,7 @@ class GroupCreateSchema(ma.Schema):
         ),
     )
     email_alias = fields.Str(allow_none=True, load_default=None)
-    is_public = fields.Bool(load_default=True)
-    self_join = fields.Bool(load_default=False)
+    visibility = fields.Str(load_default="visible", validate=validate.OneOf(VISIBILITIES))
     parent_group_id = fields.Int(allow_none=True, load_default=None)
 
 
@@ -104,8 +105,7 @@ class GroupUpdateSchema(ma.Schema):
         )
     )
     email_alias = fields.Str(allow_none=True)
-    is_public = fields.Bool()
-    self_join = fields.Bool()
+    visibility = fields.Str(validate=validate.OneOf(VISIBILITIES))
     parent_group_id = fields.Int(allow_none=True)
 
 

@@ -37,6 +37,104 @@ def _has_overdue_invoice(member_id: int, grace_days: int = 7) -> bool:
     )
 
 
+# What the owner and the responsible person of an item may do with it
+# without the club-wide right (inventory.items.<action>). Admins and role
+# holders are not limited by this.
+ITEM_ACTIONS: dict[str, tuple[str, ...]] = {
+    "read": ("owner", "responsible"),
+    "update": ("owner", "responsible"),
+    "delete": ("owner",),
+    "manage_instructions": ("owner", "responsible"),
+    "checkout": ("owner", "responsible"),
+    "checkin": ("owner", "responsible"),
+}
+# Who owns the item, who looks after it, and whether it is the club's or a
+# person's ("shared" / "private"): only the owner changes these.
+OWNER_FIELDS = ("owner_id", "responsible_id", "visibility")
+# A person's item ("private") stays theirs: nobody else, admins included,
+# deletes it or makes it someone else's while its owner is a member.
+PERSON_FIELDS = ("owner_id", "visibility")
+
+
+def item_relation(owner_id, responsible_id, member_id) -> str | None:
+    """``"owner"``, ``"responsible"`` or None for *member_id* on an item."""
+    if member_id is None:
+        return None
+    if owner_id == member_id:
+        return "owner"
+    if responsible_id == member_id:
+        return "responsible"
+    return None
+
+
+def item_access(action: str):
+    """``allow`` for ``permission_required``: lets the owner or the
+    responsible person of the item in the route's ``item_id`` do *action*."""
+    relations = ITEM_ACTIONS[action]
+
+    def allow(member, item_id=None, **_):
+        if item_id is None:
+            return None
+        row = db.session.execute(
+            select(InventoryItem.owner_id, InventoryItem.responsible_id).where(
+                InventoryItem.id == item_id
+            )
+        ).first()
+        if row is None:
+            return None
+        relation = item_relation(row.owner_id, row.responsible_id, member.id)
+        return relation if relation in relations else None
+
+    return allow
+
+
+def checkout_access(member, item_id=None, **_):
+    """``allow`` for checking out: the owner or responsible person lends the
+    item to anyone; a member inducted on a club item borrows it themselves."""
+    reason = item_access("checkout")(member, item_id=item_id)
+    if reason or item_id is None:
+        return reason
+    from flask import request
+
+    body = request.get_json(silent=True) or {}
+    if body.get("member_id") != member.id:
+        return None
+    item = db.session.get(InventoryItem, item_id)
+    if item is None or item.visibility == "private":
+        return None  # a person's item is lent by them
+    inducted = db.session.scalar(
+        select(func.count())
+        .select_from(item_instructions)
+        .where(
+            item_instructions.c.item_id == item_id,
+            item_instructions.c.member_id == member.id,
+        )
+    )
+    return "inducted" if inducted else None
+
+
+def checkin_access(member, item_id=None, **_):
+    """``allow`` for checking in: the owner or responsible person, or the
+    member who has the item."""
+    reason = item_access("checkin")(member, item_id=item_id)
+    if reason or item_id is None:
+        return reason
+    borrower = db.session.scalar(
+        select(InventoryCheckout.member_id).where(
+            InventoryCheckout.item_id == item_id,
+            InventoryCheckout.returned_at.is_(None),
+        )
+    )
+    return "borrower" if borrower == member.id else None
+
+
+def person_owner(item: InventoryItem) -> int | None:
+    """The member a person-owned item belongs to, while they are a member."""
+    if item.visibility != "private" or item.owner is None:
+        return None
+    return None if item.owner.archived_at is not None else item.owner_id
+
+
 _LOAD_OPTS = [
     selectinload(InventoryItem.owner),
     selectinload(InventoryItem.responsible),
@@ -58,6 +156,38 @@ class InventoryService:
         if item is None:
             raise_error(404, "NOT_FOUND", f"Inventory item {item_id} not found")
         return item  # type: ignore[return-value]
+
+    @staticmethod
+    def check_person_owned(item: InventoryItem, actor_id: int, data=None) -> None:
+        """403 when someone other than its owner deletes a person's item
+        (``data`` None) or changes whose it is."""
+        owner = person_owner(item)
+        if owner is None or owner == actor_id:
+            return
+        if data is not None and not any(
+            f in data and data[f] != getattr(item, f) for f in PERSON_FIELDS
+        ):
+            return
+        raise_error(
+            403,
+            "PERSON_OWNED",
+            "This item belongs to a person: only they can give it away or remove it",
+        )
+
+    @staticmethod
+    def check_owner_fields(item: InventoryItem, data: dict) -> None:
+        """403 when the responsible person changes who owns or looks after
+        the item or whether it is private. Sending the current value back
+        (the edit form sends every field) is fine."""
+        changed = [
+            f for f in OWNER_FIELDS if f in data and data[f] != getattr(item, f)
+        ]
+        if changed:
+            raise_error(
+                403,
+                "OWNER_ONLY",
+                "Only the owner can change " + ", ".join(changed),
+            )
 
     @staticmethod
     def update(item: InventoryItem, data: dict, actor_id: int) -> InventoryItem:

@@ -6,7 +6,7 @@ from __future__ import annotations
 from flask import Blueprint, jsonify, request, send_file
 from hubra.api.auth.helpers import get_current_member
 
-from hubra.api.permissions import permission_required, require_member
+from hubra.api.permissions import member_is_admin, permission_required, require_member
 from marshmallow import ValidationError
 from hubra.core.errors import api_error
 from hubra.core.extensions import db
@@ -413,7 +413,7 @@ def download_invoice_pdf(id: int):
     # 403 for a sign-in that is not a member of this club.
     member = get_current_member()
 
-    is_admin = any(r.is_admin for r in (member.roles or []))
+    is_admin = member_is_admin(member)
 
     if invoice.member_id is not None:
         is_owner = invoice.member_id == member.id

@@ -51,6 +51,13 @@ export interface Member {
   birthday?: string;
   membershipType?: string;
   membershipUntil?: string;
+  address?: {
+    street: string;
+    houseNo: string;
+    postalCode: string;
+    city: string;
+    country: string;
+  };
   emergencyContact?: { name?: string; phone?: string; relation?: string } | null;
   customFields?: Record<string, unknown> | null;
 }
@@ -73,6 +80,8 @@ export interface Group {
   id: string;
   name: string;
   lead: string;
+  /** The group's leader runs it without the club-wide group rights. */
+  leadId?: number | null;
   description: string;
   color: string;
   iconName: string;
@@ -80,11 +89,13 @@ export interface Group {
   sessions: string;
   type?: string;
   emailAlias?: string;
-  isPublic?: boolean;
-  selfJoin?: boolean;
+  /** open: members join on their own; private: only members, lead and managers see it. */
+  visibility?: GroupVisibility;
   parentGroupId?: number | null;
   parentGroupName?: string | null;
 }
+
+export type GroupVisibility = "open" | "visible" | "private";
 
 export interface MailMember {
   id: string;
@@ -120,6 +131,8 @@ export interface ClubEvent {
   placesTaken?: number;
   /** Sign-ups waiting for an organiser's approval. */
   pendingCount?: number;
+  /** Who put the event up; they run it without the club-wide rights. */
+  createdById?: number | null;
   /** The viewer's own sign-up, if any. */
   myStatus?:
     | "registered"
@@ -146,6 +159,8 @@ export interface Poll {
   requiredFunctionIds?: number[];
   /** Option index the signed-in member chose; absent until they vote. */
   myVote?: number;
+  /** False when the poll is for groups or functions the member is not in. */
+  mayVote?: boolean;
 }
 
 export interface PostComment {
@@ -243,6 +258,8 @@ export interface AuditEntry {
   actor: string;
   action: string;
   target: string;
+  /** What the entry is about, without its type ("Anna Muster"). */
+  targetLabel?: string;
   time: string;
   avatarColor: string;
 }
