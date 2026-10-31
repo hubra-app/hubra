@@ -256,3 +256,11 @@ def test_reset_mfa_command(app, db, enrolled):
     user = db.session.query(User).filter_by(email="solo@test.ch").one()
     db.session.refresh(user)
     assert not mfa.enabled(user)
+
+
+def test_flask_crypto_knows_the_secret(app, db, enrolled):
+    """The secret is on the platform data key, so key rotation covers it."""
+    from hubra.core.services import secret_store
+
+    report = secret_store.check()
+    assert report.current >= 1 and not report.unreadable

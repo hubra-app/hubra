@@ -26,7 +26,7 @@ from urllib.parse import quote, urlencode
 from flask import current_app
 from itsdangerous import BadSignature, URLSafeTimedSerializer
 
-from hubra.core.crypto import decrypt_code, encrypt_code
+from hubra.core.crypto import PLATFORM, decrypt_code, encrypt_code
 from hubra.core.models.user import User
 
 ISSUER = "Hubra"
@@ -38,6 +38,19 @@ _CHALLENGE_MAX_AGE = 5 * 60  # seconds
 
 
 # ── TOTP ─────────────────────────────────────────────────────────────────────
+
+# Accounts are the platform's: their secrets use the platform data key,
+# bound to their column (see hubra/core/crypto.py).
+_SECRET = "users.totp_secret"
+_PENDING = "users.totp_pending_secret"
+
+
+def _seal(secret: str, purpose: str) -> str:
+    return encrypt_code(secret, purpose, PLATFORM)
+
+
+def _open(token: str, purpose: str) -> str:
+    return decrypt_code(token, purpose, PLATFORM)
 
 
 def _new_secret() -> str:
@@ -164,7 +177,7 @@ def factor_removed(user: User) -> None:
 def start_setup(user: User) -> dict:
     """Keep a new pending secret and return what the app needs.  No commit."""
     secret = _new_secret()
-    user.totp_pending_secret = encrypt_code(secret)
+    user.totp_pending_secret = _seal(secret, _PENDING)
     uri = provisioning_uri(user, secret)
     return {"secret": secret, "uri": uri, "qrSvg": qr_svg(uri)}
 
@@ -178,11 +191,11 @@ def confirm_setup(user: User, code: str) -> list[str] | None:
     if not user.totp_pending_secret:
         return None
     was_enabled = enabled(user)
-    secret = decrypt_code(user.totp_pending_secret)
+    secret = _open(user.totp_pending_secret, _PENDING)
     step = _matching_step(secret, code)
     if step is None:
         return None
-    user.totp_secret = user.totp_pending_secret
+    user.totp_secret = _seal(secret, _SECRET)
     user.totp_pending_secret = None
     user.totp_enabled_at = datetime.now(timezone.utc)
     user.totp_last_step = step
@@ -247,7 +260,7 @@ def verify(user: User, code: str) -> str | None:
     if not enabled(user) or not code:
         return None
     step = (
-        _matching_step(decrypt_code(user.totp_secret), code)
+        _matching_step(_open(user.totp_secret, _SECRET), code)
         if totp_enabled(user)
         else None
     )
