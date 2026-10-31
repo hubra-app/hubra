@@ -5,6 +5,7 @@ import {
   Switch,
   Text,
   Paper,
+  SimpleGrid,
   Textarea,
   TextInput,
 } from '@mantine/core'
@@ -176,7 +177,6 @@ const groupSchema = z.object({
   description: z.string(),
   color: z.string(),
   sessions: z.string(),
-  tools: z.number(),
   leadId: z.string(),
   selfJoin: z.boolean(),
 })
@@ -215,7 +215,6 @@ export function GroupsScreen() {
       description: '',
       color: '#2596be',
       sessions: '',
-      tools: 0,
       leadId: '',
       selfJoin: false,
     },
@@ -238,7 +237,6 @@ export function GroupsScreen() {
       description: '',
       color: '#2596be',
       sessions: '',
-      tools: 0,
       leadId: '',
       selfJoin: false,
     })
@@ -251,7 +249,6 @@ export function GroupsScreen() {
       description: g.description,
       color: g.color,
       sessions: g.sessions,
-      tools: g.tools,
       leadId: '',
       selfJoin: g.selfJoin ?? false,
     })
@@ -264,7 +261,6 @@ export function GroupsScreen() {
         description: data.description,
         color: data.color,
         sessions: data.sessions,
-        tools: data.tools,
         leadId: data.leadId ? Number(data.leadId) : undefined,
         selfJoin: data.selfJoin,
       })
@@ -296,7 +292,6 @@ export function GroupsScreen() {
         description: data.description,
         color: data.color,
         sessions: data.sessions,
-        tools: data.tools,
         ...(data.leadId ? { leadId: Number(data.leadId) } : {}),
         selfJoin: data.selfJoin,
       })
@@ -343,13 +338,32 @@ export function GroupsScreen() {
 
   const groupForm = (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <Field label={t('groups.group.name', 'Name der Gruppe')}>
-        <TextInput
-          {...form.getInputProps('name')}
-          disabled={leaderOnly}
-          placeholder={t('groups.group.namePlaceholder', 'z. B. Keramik')}
-        />
-      </Field>
+      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 72px', gap: 12 }}>
+          <Field label={t('groups.group.name', 'Name der Gruppe')}>
+            <TextInput
+              {...form.getInputProps('name')}
+              disabled={leaderOnly}
+              placeholder={t('groups.group.namePlaceholder', 'z. B. Keramik')}
+            />
+          </Field>
+          <Field label={t('common.color', 'Farbe')}>
+            <TextInput
+              type="color"
+              {...form.getInputProps('color')}
+              style={{ height: 38, padding: '2px 6px', cursor: 'pointer' }}
+            />
+          </Field>
+        </div>
+        <Field label={t('groups.lead', 'Gruppenleitung')}>
+          <MemberPicker
+            noneLabel={t('groups.noLead', 'Keine Leitung')}
+            {...form.getInputProps('leadId')}
+            disabled={leaderOnly}
+            onChange={(id) => form.setFieldValue('leadId', id ?? '')}
+          />
+        </Field>
+      </SimpleGrid>
       <Field label={t('common.description', 'Beschreibung')}>
         <Textarea
           rows={3}
@@ -360,25 +374,7 @@ export function GroupsScreen() {
           )}
         />
       </Field>
-      <Field label={t('common.color', 'Farbe')}>
-        <TextInput
-          type="color"
-          {...form.getInputProps('color')}
-          style={{ height: 38, padding: '2px 6px', cursor: 'pointer' }}
-        />
-      </Field>
-      <Field label={t('groups.lead', 'Gruppenleitung')}>
-        <MemberPicker
-          noneLabel={t('groups.noLead', 'Keine Leitung')}
-          {...form.getInputProps('leadId')}
-          disabled={leaderOnly}
-          onChange={(id) => form.setFieldValue('leadId', id ?? '')}
-        />
-      </Field>
-      <div
-        className="grid-2"
-        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}
-      >
+      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
         <Field
           label={t('groups.sessions', 'Treffen')}
           hint={t('groups.sessionsHint', 'z. B. 2× pro Woche')}
@@ -388,15 +384,7 @@ export function GroupsScreen() {
             placeholder={t('groups.sessionsPlaceholder', '3× pro Woche')}
           />
         </Field>
-        <Field label={t('groups.tools', 'Werkzeuge')}>
-          <TextInput
-            type="number"
-            min={0}
-            {...form.getInputProps('tools', { valueAsNumber: true })}
-            placeholder="0"
-          />
-        </Field>
-      </div>
+      </SimpleGrid>
       <Switch
         label={t('groups.selfJoin', 'Mitglieder können selbst beitreten und austreten')}
         description={t(
@@ -522,12 +510,6 @@ export function GroupsScreen() {
                       {g.sessions}
                     </Badge>
                   )}
-                  {g.tools > 0 && (
-                    <Badge variant="light">
-                      <IconBolt size={12} />
-                      {g.tools} {t('groups.tools', 'Werkzeuge')}
-                    </Badge>
-                  )}
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   {(canUpdate || hasPermission('groups.groups.update', g.id) || leads(g)) && (
@@ -617,6 +599,7 @@ export function GroupsScreen() {
         onSubmit={form.onSubmit(submitAdd)}
         open={addOpen}
         onClose={() => setAddOpen(false)}
+        wide
         title={t('groups.addGroup')}
         footer={
           <>
@@ -635,6 +618,7 @@ export function GroupsScreen() {
         onSubmit={form.onSubmit(saveEdit)}
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
+        wide
         title={t('groups.editGroup')}
         subtitle={editTarget?.name}
         footer={

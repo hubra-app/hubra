@@ -236,6 +236,11 @@ class TenantService:
             )
         )
         drop_tenant_schema(tenant_id)
+        # Without its data keys the club's secrets stay unreadable, in old
+        # backups too.
+        from hubra.core.models.data_key import DataKey
+
+        db.session.execute(delete(DataKey).where(DataKey.scope == f"c{tenant_id}"))
         db.session.execute(delete(Tenant).where(Tenant.id == tenant_id))
         db.session.commit()
         _log.warning("Tenant '%s' (id=%d) deleted permanently", slug, tenant_id)

@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import ReactDOM from 'react-dom'
-import { IconX } from '@tabler/icons-react'
-import { Select, ActionIcon, Badge } from '@mantine/core'
+import { Select, Badge } from '@mantine/core'
 import { PageHead, Avatar, Tag, DataTable } from '@/components/ui'
+import { SlideOver } from '@/components/feedback'
 import { listAuditLog, getAuditEntry } from '@/api/settings'
 import { useT } from '@/locales/i18n'
 import { formatDateTime } from '@/format'
@@ -49,44 +48,12 @@ function AuditEntryDetailPanel({
     }
   }
 
-  return ReactDOM.createPortal(
-    <>
-      <div className="scrim" onClick={onClose} />
-      <div className="notif-panel open" style={{ width: 420 }}>
-        <div
-          style={{
-            padding: '20px 20px 14px',
-            borderBottom: '1px solid var(--hb-border)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-          }}
-        >
-          <div style={{ flex: 1 }}>
-            <div
-              style={{
-                fontSize: 'var(--mantine-font-size-md)',
-                fontWeight: 700,
-                color: 'var(--hb-text)',
-              }}
-            >
-              {t('audit.entryTitle', 'Eintrag #{{id}}', { id: entryId })}
-            </div>
-            <div
-              style={{
-                fontSize: 'var(--mantine-font-size-xs)',
-                color: 'var(--hb-text-2)',
-              }}
-            >
-              {t('audit.fullDetails', 'Alle Details zum Ereignis')}
-            </div>
-          </div>
-          <ActionIcon variant="subtle" onClick={onClose} aria-label={t('common.close')}>
-            <IconX size={16} />
-          </ActionIcon>
-        </div>
-
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 20px' }}>
+  return (
+    <SlideOver
+      title={t('audit.entryTitle', 'Eintrag #{{id}}', { id: entryId })}
+      subtitle={t('audit.fullDetails', 'Alle Details zum Ereignis')}
+      onClose={onClose}
+    >
           {loading && (
             <div
               style={{
@@ -346,10 +313,7 @@ function AuditEntryDetailPanel({
               </div>
             </div>
           )}
-        </div>
-      </div>
-    </>,
-    document.body,
+    </SlideOver>
   )
 }
 
@@ -367,7 +331,8 @@ const AUDIT_ACTIONS: [string, string][] = [
 ]
 const PAGE_SIZE = 25
 
-export function AuditLogScreen() {
+/** The audit log; `embedded` leaves out the heading, for a settings tab. */
+export function AuditLogScreen({ embedded = false }: { embedded?: boolean }) {
   const { t } = useT()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(PAGE_SIZE)
@@ -401,10 +366,12 @@ export function AuditLogScreen() {
 
   return (
     <div>
-      <PageHead
-        title={t('audit.title', 'Audit-Log')}
-        desc={t('audit.entryCount', '{{count}} Einträge', { count: total })}
-      />
+      {!embedded && (
+        <PageHead
+          title={t('audit.title', 'Audit-Log')}
+          desc={t('audit.entryCount', '{{count}} Einträge', { count: total })}
+        />
+      )}
       <DataTable
         columns={[
           {

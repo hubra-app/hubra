@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { AppShell } from '@mantine/core'
 import { useElementSize } from '@mantine/hooks'
 import { useAuth, useNav } from '@/context/AppContext'
@@ -9,6 +10,8 @@ import { NotificationPanel } from './NotificationPanel'
 import { ImpersonationBanner } from './ImpersonationBanner'
 import { ClubBanner } from './ClubBanner'
 import { ClubBranding } from './ClubBranding'
+import { MoreTabs } from './MoreScreen'
+import { CustomizeSidebarModal } from './CustomizeSidebar'
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const { currentUser } = useAuth()
@@ -17,6 +20,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
   // it doesn't cover the top of the page.
   const { ref: bannerRef, height: bannerHeight } = useElementSize()
   const headerHeight = 64 + Math.ceil(bannerHeight)
+  // Side panels (SlideOver) open below the top bar.
+  useEffect(() => {
+    document.documentElement.style.setProperty('--hb-header-h', `${headerHeight}px`)
+  }, [headerHeight])
 
   return (
     <AppShell
@@ -52,11 +59,15 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
       <AppShell.Main>
         <ClubBanner />
-        <div className="page-container">{children}</div>
+        <div className="page-container">
+          <MoreTabs />
+          {children}
+        </div>
       </AppShell.Main>
 
       <ClubBranding />
       <NotificationPanel />
+      <CustomizeSidebarModal />
       {currentUser?.mustChangePassword && <ForcedPasswordChangeModal />}
     </AppShell>
   )

@@ -78,7 +78,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                   <IconShield
                     size={16}
                     style={{
-                      color: role.isAdmin ? 'var(--mantine-color-acc-9)' : role.isDefault ? 'var(--mantine-color-acc-6)' : 'var(--hb-text-2)',
+                      color: role.isAdmin ? 'var(--mantine-color-acc-9)' : role.isDefault ? 'var(--mantine-color-acc-text)' : 'var(--hb-text-2)',
                     }}
                   />
                   <span title={roleDescription(role) || undefined}>{roleLabel(role.name)}</span>

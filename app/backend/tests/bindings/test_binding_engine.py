@@ -57,7 +57,7 @@ def _get_ik_value(ik):
     db.session.refresh(ik)
     if ik.value is None:
         return None
-    return decrypt_code(ik.value)
+    return decrypt_code(ik.value, "internal_keys.value")
 
 
 # ── 1. Scalar key sync ────────────────────────────────────────────────────────

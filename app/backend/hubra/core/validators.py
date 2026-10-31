@@ -51,6 +51,16 @@ def _validate_qr_iban(value: str) -> str | None:
     return None
 
 
+def _validate_age_public_keys(value: str) -> str | None:
+    """One or more age public keys (age1...), separated by spaces or commas."""
+    from hubra.core.services.backup_crypto import split_keys, valid_public_key
+
+    keys = split_keys(value)
+    if keys and all(valid_public_key(k) for k in keys):
+        return None
+    return "Not an age public key (age1...)"
+
+
 VALIDATORS: dict[str, Callable[[str], str | None]] = {
     "email": (
         lambda v: (
@@ -70,6 +80,7 @@ VALIDATORS: dict[str, Callable[[str], str | None]] = {
         )
     ),
     "number": lambda v: None if _is_numeric(v) else "Invalid number",
+    "age_public_keys": _validate_age_public_keys,
     "qr_iban": _validate_qr_iban,
     "text": lambda v: None,
     "non_empty": (

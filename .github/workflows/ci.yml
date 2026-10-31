@@ -161,6 +161,8 @@ jobs:
           cache-dependency-path: app/backend/requirements.lock
       - run: pip install --no-deps -r requirements.lock
       - run: pip install pytest pytest-flask
+      # age encrypts backups; tests/test_backup_age.py runs the real tool.
+      - run: sudo apt-get install -y --no-install-recommends age
       - run: pytest -q
 
   # Frontend unit tests (vitest in the club app, node --test in SSO).

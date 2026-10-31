@@ -2,7 +2,7 @@ import {
   Group,
   ActionIcon,
   Text,
-  Badge,
+  Indicator,
   Box,
   UnstyledButton,
 } from '@mantine/core'
@@ -45,11 +45,14 @@ export function TopBar() {
   const crumb = getBreadcrumb(location.pathname, t)
   const parts = crumb.split(' > ')
 
-  const { data: notifications = [] } = useQuery({
+  // The panel polls the same query; the server counts all unread ones,
+  // not just the newest 100 the list holds.
+  const { data: notifications } = useQuery({
     queryKey: qk.notifications,
     queryFn: listNotifications,
+    refetchInterval: 30_000,
   })
-  const unreadCount = notifications.filter((n) => !n.read).length
+  const unreadCount = notifications?.unread ?? 0
 
   const { secondary } = useClubColors()
 
@@ -161,31 +164,26 @@ export function TopBar() {
         <ActionIcon
           variant="subtle"
           size="lg"
-          aria-label={t('shell.a11y.notifications', 'Benachrichtigungen')}
-          style={{ position: 'relative' }}
+          aria-label={
+            unreadCount > 0
+              ? t('shell.a11y.notificationsUnread', 'Benachrichtigungen, {{count}} ungelesen', {
+                  count: unreadCount,
+                })
+              : t('shell.a11y.notifications', 'Benachrichtigungen')
+          }
           onClick={() => setNotifPanelOpen(!notifPanelOpen)}
         >
-          <IconBell size={18} />
-          {unreadCount > 0 && (
-            <Badge
-              color="red"
-              size="xs"
-              circle
-              pos="absolute"
-              top={4}
-              right={4}
-              styles={{
-                root: {
-                  minWidth: 16,
-                  height: 16,
-                  padding: 0,
-                  pointerEvents: 'none',
-                },
-              }}
-            >
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </Badge>
-          )}
+          <Indicator
+            disabled={unreadCount === 0}
+            label={unreadCount > 99 ? '99+' : unreadCount}
+            color="red"
+            size={16}
+            offset={2}
+            withBorder
+            styles={{ indicator: { fontSize: 10, fontWeight: 700, padding: '0 4px' } }}
+          >
+            <IconBell size={20} style={{ display: 'block' }} />
+          </Indicator>
         </ActionIcon>
 
         {/* The expanded sidebar already shows the user card with this menu;

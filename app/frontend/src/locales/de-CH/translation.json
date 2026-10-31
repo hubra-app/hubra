@@ -552,7 +552,11 @@
     "pagePrevious": "Vorherige Seite",
     "pageNext": "Nächste Seite",
     "pageLast": "Letzte Seite",
-    "more": "Mehr"
+    "more": "Mehr",
+    "searchMembers": "Mitglieder suchen …",
+    "noMembersYet": "Noch keine Mitglieder.",
+    "remove": "Entfernen",
+    "showAll": "Alle anzeigen"
   },
   "dashboard": {
     "activeMembers": "Aktive Mitglieder",
@@ -721,7 +725,9 @@
     "noPending": "Keine offenen Anmeldungen.",
     "guests": "{{count}} Gäste",
     "decline": "Ablehnen",
-    "approve": "Bestätigen"
+    "approve": "Bestätigen",
+    "linkedOne": "Du siehst den Anlass aus deiner Benachrichtigung.",
+    "linkedGone": "Diesen Anlass gibt es nicht mehr."
   },
   "finance": {
     "addCategory": "Kategorie hinzufügen",
@@ -1087,7 +1093,6 @@
     "sessionsHint": "z. B. 2× pro Woche",
     "sessionsPlaceholder": "3× pro Woche",
     "title": "Gruppen",
-    "tools": "Werkzeuge",
     "memberCount_one": "{{count}} Mitglied",
     "memberCount_other": "{{count}} Mitglieder",
     "empty": "Noch keine Gruppen.",
@@ -1186,7 +1191,8 @@
     "status_checked_out": "Ausgeliehen",
     "status_pending": "Ausstehend",
     "status_lost": "Verloren",
-    "status_retired": "Ausgemustert"
+    "status_retired": "Ausgemustert",
+    "instructed": "Eingewiesen"
   },
   "mail": {
     "action": "Aktion",
@@ -1879,7 +1885,9 @@
     "emptyHint": "Frag den Verein nach seiner Meinung, zum Beispiel zum nächsten Ausflug oder zu einem Termin.",
     "emptyMember": "Sobald der Vorstand eine Umfrage startet, kannst du hier abstimmen.",
     "statusOpen": "Offen",
-    "statusClosed": "Beendet"
+    "statusClosed": "Beendet",
+    "linkedOne": "Du siehst die Umfrage aus deiner Benachrichtigung.",
+    "linkedGone": "Diese Umfrage gibt es nicht mehr."
   },
   "posts": {
     "backToPosts": "Zurück zu den Beiträgen",
@@ -1989,7 +1997,8 @@
       "notifications": "Benachrichtigungen",
       "signOut": "Abmelden",
       "toggleSidebar": "Seitenleiste ein- oder ausblenden",
-      "userMenu": "Benutzermenü"
+      "userMenu": "Benutzermenü",
+      "notificationsUnread": "Benachrichtigungen, {{count}} ungelesen"
     },
     "accessDenied": "Kein Zugriff",
     "breadcrumbs": {
@@ -2080,14 +2089,47 @@
       "transactions": "Buchungen",
       "translations": "Übersetzungen",
       "txCategories": "Kategorien",
-      "activeMembersCount": "{{count}} aktive Mitglieder"
+      "activeMembersCount": "{{count}} aktive Mitglieder",
+      "more": "Weitere"
     },
     "noPermission": "Du hast keine Berechtigung für diese Seite.",
     "notif": {
       "markAllRead": "Alle als gelesen markieren",
       "noUnread": "Keine ungelesenen Benachrichtigungen.",
       "title": "Benachrichtigungen",
-      "unread": "Ungelesen"
+      "unread": "Ungelesen",
+      "unreadCount": "{{count}} ungelesen",
+      "allRead": "Alles gelesen",
+      "more": "Weitere Aktionen",
+      "deleteRead": "Gelesene löschen",
+      "deleteAll": "Alle löschen",
+      "deleteAllTitle": "Alle Benachrichtigungen löschen?",
+      "deleteAllBody": "Damit löschst du alle deine Benachrichtigungen, auch die ungelesenen. Andere Mitglieder sind nicht betroffen.",
+      "open": "Öffnen",
+      "delete": "Löschen",
+      "text": {
+        "newPost": "Neuer Beitrag",
+        "newEvent": "Neuer Anlass",
+        "newPoll": "Neue Umfrage",
+        "eventChanged": "Anlass geändert",
+        "eventCancelled": "Anlass abgesagt",
+        "signUpToApprove": "Anmeldung bestätigen",
+        "signUpConfirmed": "Anmeldung bestätigt",
+        "signUpWaitlist": "Anmeldung bestätigt, auf der Warteliste",
+        "signUpDeclined": "Anmeldung abgelehnt",
+        "gotAPlace": "Du hast einen Platz bekommen",
+        "requestToLeave": "Austrittsgesuch",
+        "newApplication": "Neuer Mitgliedschaftsantrag",
+        "newDevice": "Anmeldung von einem neuen Gerät",
+        "newVote": "Neue Stimme: {{subject}}",
+        "reminder": "Erinnerung: {{subject}}",
+        "proxyVote": "Vertretung: {{subject}}",
+        "newDeviceMsg": "Dein Konto wurde am {{time}} von einem neuen Gerät oder Ort aus benutzt. Warst du das nicht, beende die Sitzung im Konto unter Sitzungen.",
+        "castVote": "Bitte stimme ab, bevor die Umfrage schliesst.",
+        "votedFor": "{{name}} hat für «{{option}}» gestimmt",
+        "askedProxy": "{{name}} hat dir die Stimme übertragen.",
+        "aMember": "Ein Mitglied"
+      }
     },
     "notifPanel": {
       "all": "Alle",
@@ -2113,7 +2155,8 @@
       "invoice": "Rechnung",
       "member": "Mitglied",
       "poll": "Umfrage",
-      "transaction": "Buchung"
+      "transaction": "Buchung",
+      "page": "Seite"
     },
     "searchNoResults": "Keine Ergebnisse für «{{query}}»",
     "searchPlaceholder": "Mitglieder, Rechnungen, Inventar suchen …",
@@ -2123,7 +2166,8 @@
       "operations": "Betrieb",
       "system": "Verwaltung",
       "workspace": "Verein",
-      "activities": "Vereinsleben"
+      "activities": "Vereinsleben",
+      "favourites": "Favoriten"
     },
     "tooltips": {
       "dismiss": "Ausblenden",
@@ -2154,6 +2198,20 @@
     },
     "clubBanner": {
       "dismiss": "Banner ausblenden"
+    },
+    "more": {
+      "emptyTitle": "Hier ist noch nichts",
+      "emptyDesc": "Seiten, die du in der Seitenleiste ausblendest, und Seiten von Plugins erscheinen hier."
+    },
+    "customize": {
+      "title": "Seitenleiste anpassen",
+      "intro": "Mit dem Stern heftest du eine Seite oben unter Favoriten an. Ausgeblendete Seiten findest du weiterhin unter Weitere und mit der Suche (Ctrl+K).",
+      "pin": "Als Favorit anheften",
+      "unpin": "Nicht mehr anheften",
+      "hide": "Ausblenden",
+      "show": "Wieder anzeigen",
+      "reset": "Zurücksetzen",
+      "done": "Fertig"
     }
   },
   "system": {

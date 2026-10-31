@@ -552,7 +552,11 @@
     "pagePrevious": "Previous page",
     "pageNext": "Next page",
     "pageLast": "Last page",
-    "more": "More"
+    "more": "More",
+    "searchMembers": "Search members …",
+    "noMembersYet": "No members yet.",
+    "remove": "Remove",
+    "showAll": "Show all"
   },
   "dashboard": {
     "activeMembers": "Active members",
@@ -721,7 +725,9 @@
     "noPending": "No sign-ups waiting.",
     "guests": "{{count}} guests",
     "decline": "Decline",
-    "approve": "Confirm"
+    "approve": "Confirm",
+    "linkedOne": "You are looking at the event from your notification.",
+    "linkedGone": "This event no longer exists."
   },
   "finance": {
     "addCategory": "Add Category",
@@ -1087,7 +1093,6 @@
     "sessionsHint": "e.g. twice a week",
     "sessionsPlaceholder": "3 times a week",
     "title": "Groups",
-    "tools": "Tools",
     "memberCount_one": "{{count}} member",
     "memberCount_other": "{{count}} members",
     "empty": "No groups yet.",
@@ -1186,7 +1191,8 @@
     "status_checked_out": "Checked out",
     "status_pending": "Pending",
     "status_lost": "Lost",
-    "status_retired": "Retired"
+    "status_retired": "Retired",
+    "instructed": "Instructed"
   },
   "mail": {
     "action": "Action",
@@ -1879,7 +1885,9 @@
     "emptyHint": "Ask the club what it thinks, for example about the next outing or a date.",
     "emptyMember": "Once the board starts a poll, you can vote here.",
     "statusOpen": "Open",
-    "statusClosed": "Closed"
+    "statusClosed": "Closed",
+    "linkedOne": "You are looking at the poll from your notification.",
+    "linkedGone": "This poll no longer exists."
   },
   "posts": {
     "backToPosts": "Back to posts",
@@ -1989,7 +1997,8 @@
       "notifications": "Notifications",
       "signOut": "Sign out",
       "toggleSidebar": "Toggle sidebar",
-      "userMenu": "User menu"
+      "userMenu": "User menu",
+      "notificationsUnread": "Notifications, {{count}} unread"
     },
     "accessDenied": "Access denied",
     "breadcrumbs": {
@@ -2080,14 +2089,47 @@
       "transactions": "Transactions",
       "translations": "Translations",
       "txCategories": "Categories",
-      "activeMembersCount": "{{count}} active members"
+      "activeMembersCount": "{{count}} active members",
+      "more": "More"
     },
     "noPermission": "You don't have permission to view this page.",
     "notif": {
       "markAllRead": "Mark all as read",
       "noUnread": "No unread notifications.",
       "title": "Notifications",
-      "unread": "Unread"
+      "unread": "Unread",
+      "unreadCount": "{{count}} unread",
+      "allRead": "All read",
+      "more": "More actions",
+      "deleteRead": "Delete read",
+      "deleteAll": "Delete all",
+      "deleteAllTitle": "Delete all notifications?",
+      "deleteAllBody": "This deletes all your notifications, unread ones too. Other members keep theirs.",
+      "open": "Open",
+      "delete": "Delete",
+      "text": {
+        "newPost": "New post",
+        "newEvent": "New event",
+        "newPoll": "New poll",
+        "eventChanged": "Event changed",
+        "eventCancelled": "Event cancelled",
+        "signUpToApprove": "Sign-up to approve",
+        "signUpConfirmed": "Sign-up confirmed",
+        "signUpWaitlist": "Sign-up confirmed, on the waitlist",
+        "signUpDeclined": "Sign-up declined",
+        "gotAPlace": "You got a place",
+        "requestToLeave": "Request to leave",
+        "newApplication": "New application",
+        "newDevice": "New device login",
+        "newVote": "New vote: {{subject}}",
+        "reminder": "Reminder: {{subject}}",
+        "proxyVote": "Proxy vote: {{subject}}",
+        "newDeviceMsg": "Your account was used from a new device or location at {{time}}. If this wasn't you, end the session under Account › Sessions.",
+        "castVote": "Please cast your vote before the poll closes.",
+        "votedFor": "{{name}} voted for \"{{option}}\"",
+        "askedProxy": "{{name}} asked you to vote for them.",
+        "aMember": "A member"
+      }
     },
     "notifPanel": {
       "all": "All",
@@ -2113,7 +2155,8 @@
       "invoice": "Invoice",
       "member": "Member",
       "poll": "Poll",
-      "transaction": "Transaction"
+      "transaction": "Transaction",
+      "page": "Page"
     },
     "searchNoResults": "No results for \"{{query}}\"",
     "searchPlaceholder": "Search members, invoices, inventory…",
@@ -2123,7 +2166,8 @@
       "operations": "Operations",
       "system": "Administration",
       "workspace": "Club",
-      "activities": "Club life"
+      "activities": "Club life",
+      "favourites": "Favourites"
     },
     "tooltips": {
       "dismiss": "Dismiss",
@@ -2154,6 +2198,20 @@
     },
     "clubBanner": {
       "dismiss": "Hide banner"
+    },
+    "more": {
+      "emptyTitle": "Nothing here yet",
+      "emptyDesc": "Pages you hide in the sidebar and pages from plugins appear here."
+    },
+    "customize": {
+      "title": "Customise sidebar",
+      "intro": "Use the star to pin a page to the top under Favourites. Hidden pages are still under More and in the search (Ctrl+K).",
+      "pin": "Pin to favourites",
+      "unpin": "Unpin",
+      "hide": "Hide",
+      "show": "Show again",
+      "reset": "Reset",
+      "done": "Done"
     }
   },
   "system": {

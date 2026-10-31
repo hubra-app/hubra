@@ -62,6 +62,7 @@ from hubra.core.services import email_verification
 from hubra.core.services.email import _get_sso_base_url
 from hubra.api.auth.account_guard import club_member_only
 from hubra.api.notifications.services import create_notification
+from hubra.api.notifications import account as account_notifications
 from hubra.core.tenant.context import current_tenant
 
 _log = logging.getLogger(__name__)
@@ -365,6 +366,7 @@ def login():
             title="New device login",
             msg=f"Your account was accessed from a new device or location at {ts}. "
             f"If this wasn't you, go to Settings → Account → Sessions to revoke it.",
+            link="/app/account/settings/sessions",
         )
 
     session = db.session.get(Session, session_id)
@@ -1286,6 +1288,57 @@ def revoke_all_other_sessions():
     return jsonify({"ok": True, "revoked": count}), 200
 
 
+# ── /account/notifications (every club's, for the account page) ───────────────
+
+
+def _account_user_id() -> int:
+    user_id = get_jwt().get("user_id")
+    if not user_id:
+        raise_error(403, "FORBIDDEN", "No account in this session")
+    return int(user_id)
+
+
+@account_bp.get("/notifications")
+@jwt_required()
+def list_account_notifications():
+    return jsonify(account_notifications.list_all(_account_user_id())), 200
+
+
+@account_bp.post("/notifications/read-all")
+@jwt_required()
+def read_all_account_notifications():
+    account_notifications.mark_all_read(_account_user_id())
+    return jsonify({"ok": True}), 200
+
+
+@account_bp.delete("/notifications")
+@jwt_required()
+def delete_account_notifications():
+    """``?read=1`` keeps the unread ones."""
+    read_only = request.args.get("read") in ("1", "true")
+    deleted = account_notifications.delete_all(_account_user_id(), read_only)
+    return jsonify({"deleted": deleted}), 200
+
+
+def _slug(club: str) -> str | None:
+    # "-" stands for the club of a test setup without tenants.
+    return None if club == "-" else club
+
+
+@account_bp.patch("/notifications/<club>/<int:notification_id>/read")
+@jwt_required()
+def read_account_notification(club: str, notification_id: int):
+    account_notifications.mark_read(_account_user_id(), _slug(club), notification_id)
+    return jsonify({"ok": True}), 200
+
+
+@account_bp.delete("/notifications/<club>/<int:notification_id>")
+@jwt_required()
+def delete_account_notification(club: str, notification_id: int):
+    account_notifications.delete(_account_user_id(), _slug(club), notification_id)
+    return "", 204
+
+
 # ── GET /account/devices ──────────────────────────────────────────────────────
 
 
@@ -1352,6 +1405,7 @@ def update_account_profile():
         "profileNote",
         "language",
         "theme",
+        "navPrefs",
     }
     user = _signed_in_user()
     account_svc.update_profile(user, {k: v for k, v in body.items() if k in allowed})

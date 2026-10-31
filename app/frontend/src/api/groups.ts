@@ -12,7 +12,6 @@ interface BackendGroup {
   icon_name: string | null;
   member_count: number;
   sessions: string | null;
-  tools: number;
   is_default: boolean;
   type: string;
   email_alias: string | null;
@@ -33,7 +32,6 @@ function adapt(b: BackendGroup): Group {
     iconName: b.icon_name ?? "Zap",
     members: b.member_count,
     sessions: b.sessions ?? "",
-    tools: b.tools,
     type: b.type ?? "interest_group",
     emailAlias: b.email_alias ?? "",
     isPublic: b.is_public ?? true,
@@ -54,7 +52,6 @@ export interface GroupCreate {
   leadId?: number;
   color?: string;
   sessions?: string;
-  tools?: number;
   type?: string;
   emailAlias?: string;
   isPublic?: boolean;
@@ -68,7 +65,6 @@ export async function createGroup(input: GroupCreate): Promise<Group> {
   if (input.color) body.color = input.color;
   if (input.leadId !== undefined) body.lead_id = input.leadId;
   if (input.sessions !== undefined) body.sessions = input.sessions;
-  if (input.tools !== undefined) body.tools = input.tools;
   if (input.type) body.type = input.type;
   if (input.emailAlias !== undefined) body.email_alias = input.emailAlias;
   if (input.isPublic !== undefined) body.is_public = input.isPublic;
@@ -88,7 +84,6 @@ export interface GroupUpdate {
   color?: string;
   leadId?: number | null;
   sessions?: string;
-  tools?: number;
   type?: string;
   emailAlias?: string;
   isPublic?: boolean;
@@ -106,7 +101,6 @@ export async function updateGroup(
   if (input.color !== undefined) body.color = input.color;
   if ("leadId" in input) body.lead_id = input.leadId;
   if (input.sessions !== undefined) body.sessions = input.sessions;
-  if (input.tools !== undefined) body.tools = input.tools;
   if (input.type !== undefined) body.type = input.type;
   if (input.emailAlias !== undefined) body.email_alias = input.emailAlias;
   if (input.isPublic !== undefined) body.is_public = input.isPublic;

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, Select, TextInput, Textarea } from '@mantine/core'
+import { Button, Checkbox, Select, SimpleGrid, TextInput, Textarea } from '@mantine/core'
 import type { InventoryItemCreate } from '@/api/inventory'
 import { Modal, Field } from '@/components/ui'
 import { MemberPicker } from '@/components/MemberPicker'
@@ -85,6 +85,7 @@ export function ItemFormModal({
   return (
     <Modal
       open={open}
+      wide
       onClose={onClose}
       onSubmit={(e) => {
         e?.preventDefault()
@@ -117,10 +118,7 @@ export function ItemFormModal({
             placeholder={t('common.namePlaceholder', 'Name')}
           />
         </Field>
-        <div
-          className="grid-2"
-          style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}
-        >
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
           <Field label={t('inventory.category', 'Kategorie')}>
             <Select
               data={[
@@ -142,7 +140,7 @@ export function ItemFormModal({
               onChange={(v) => setFStatus((v ?? 'active') as InventoryStatus)}
             />
           </Field>
-        </div>
+        </SimpleGrid>
         <Field label={t('inventory.descriptionOptional', 'Beschreibung (optional)')}>
           <Textarea
             rows={2}
@@ -151,10 +149,7 @@ export function ItemFormModal({
             placeholder={t('common.descriptionPlaceholder', 'Kurze Beschreibung …')}
           />
         </Field>
-        <div
-          className="grid-2"
-          style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}
-        >
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
           <Field label={t('inventory.owner', 'Eigentümer:in')}>
             <MemberPicker
               noneLabel={t('inventory.noOwner', 'Keine Eigentümer:in')}
@@ -171,11 +166,8 @@ export function ItemFormModal({
               disabled={!canHandOn && !ownItem}
             />
           </Field>
-        </div>
-        <div
-          className="grid-2"
-          style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}
-        >
+        </SimpleGrid>
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
           <Field label={t('inventory.visibility', 'Eigentum')}>
             <Select
               data={[
@@ -197,27 +189,15 @@ export function ItemFormModal({
               placeholder="0.00"
             />
           </Field>
-        </div>
+        </SimpleGrid>
         <Field label={t('inventory.links', 'Links')}>
           <LinkEditor links={fLinks} onChange={setFLinks} />
         </Field>
-        <label
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            fontSize: 'var(--mantine-font-size-sm)',
-            color: 'var(--hb-text)',
-            cursor: 'pointer',
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={fInstructionRequired}
-            onChange={(e) => setFInstructionRequired(e.target.checked)}
-          />
-          {t('inventory.instruction.required', 'Einweisung vor Gebrauch nötig')}
-        </label>
+        <Checkbox
+          checked={fInstructionRequired}
+          onChange={(e) => setFInstructionRequired(e.currentTarget.checked)}
+          label={t('inventory.instruction.required', 'Einweisung vor Gebrauch nötig')}
+        />
       </div>
     </Modal>
   )
