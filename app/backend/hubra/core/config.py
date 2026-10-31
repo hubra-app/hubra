@@ -48,8 +48,8 @@ def _validate_fernet_keys() -> None:
     from cryptography.fernet import Fernet
 
     hint = (
-        "Generate one with `python3 -c \"import base64, os; "
-        "print(base64.urlsafe_b64encode(os.urandom(32)).decode())\"`."
+        'Generate one with `python3 -c "import base64, os; '
+        'print(base64.urlsafe_b64encode(os.urandom(32)).decode())"`.'
     )
     keys = [("FERNET_KEY", _require_env("FERNET_KEY"))]
     old = os.environ.get("FERNET_OLD_KEYS", "")
@@ -184,12 +184,6 @@ class BaseConfig:
     # Host a request came in on. Empty: the request's own host.
     API_PUBLIC_URL: str = os.environ.get("API_PUBLIC_URL", "")
 
-    # ── Discord (one Hubra bot for every club; see docs/discord.md) ─────────
-    DISCORD_CLIENT_ID: str = os.environ.get("DISCORD_CLIENT_ID", "")
-    DISCORD_CLIENT_SECRET: str = os.environ.get("DISCORD_CLIENT_SECRET", "")
-    DISCORD_BOT_TOKEN: str = os.environ.get("DISCORD_BOT_TOKEN", "")
-    DISCORD_PUBLIC_KEY: str = os.environ.get("DISCORD_PUBLIC_KEY", "")
-
     # ── Integrations ────────────────────────────────────────────────────────
     WILDDUCK_API_URL: str = os.environ.get("WILDDUCK_API_URL", "")
     WILDDUCK_API_TOKEN: str = os.environ.get("WILDDUCK_API_TOKEN", "")
@@ -226,8 +220,6 @@ class BaseConfig:
 
     # ── Discord / bot ───────────────────────────────────────────────────────
     API_BOT_KEY: str = os.environ.get("API_BOT_KEY", "")
-    DISCORD_CLIENT_ID: str = os.environ.get("DISCORD_CLIENT_ID", "")
-    DISCORD_CLIENT_SECRET: str = os.environ.get("DISCORD_CLIENT_SECRET", "")
     DISCORD_WEBHOOK_URL: str = os.environ.get("DISCORD_WEBHOOK_URL", "")
 
     # ── Redis / rate limiting ───────────────────────────────────────────────
@@ -308,7 +300,7 @@ class ProductionConfig(BaseConfig):
                 _cfg_log.warning(
                     "%s is shorter than 32 characters; tokens signed with it "
                     "can be brute-forced. Generate one with "
-                    "`python3 -c \"import secrets; print(secrets.token_hex(32))\"`.",
+                    '`python3 -c "import secrets; print(secrets.token_hex(32))"`.',
                     key,
                 )
         _require_env("DATABASE_URL")

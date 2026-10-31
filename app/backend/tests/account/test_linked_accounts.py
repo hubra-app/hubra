@@ -15,10 +15,18 @@ BASE = "/api/v1/account/linked-accounts"
 
 
 @pytest.fixture
-def discord_config(app):
-    app.config.update(DISCORD_CLIENT_ID="cid", DISCORD_CLIENT_SECRET="csecret")
+def discord_config(app, db):
+    from hubra.core.services import platform_settings
+
+    platform_settings.set_many(
+        {"discord.client_id": "123", "discord.client_secret": "csecret"}
+    )
+    db.session.commit()
     yield
-    app.config.update(DISCORD_CLIENT_ID="", DISCORD_CLIENT_SECRET="")
+    platform_settings.set_many(
+        {"discord.client_id": None, "discord.client_secret": None}
+    )
+    db.session.commit()
 
 
 def _start(client):

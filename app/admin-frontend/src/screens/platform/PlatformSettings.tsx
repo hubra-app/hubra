@@ -41,13 +41,24 @@ const BACKUP = [
   'backup.s3.secret_key',
 ]
 
-const TABS = ['mail', 'sender', 'backups', 'encryption', 'translations'] as const
+const DISCORD = [
+  'discord.client_id',
+  'discord.public_key',
+  'discord.client_secret',
+  'discord.bot_token',
+]
+
+const TABS = ['mail', 'sender', 'backups', 'discord', 'encryption', 'translations'] as const
 type Tab = (typeof TABS)[number]
 
 function SourceBadge({ s }: { s: PlatformSetting }) {
   return s.source === 'platform' ? (
     <Badge size="xs" variant="light">
       {tr('Hier gesetzt', 'Set here')}
+    </Badge>
+  ) : !s.isSet ? (
+    <Badge size="xs" variant="outline" color="gray">
+      {tr('Nicht gesetzt', 'Not set')}
     </Badge>
   ) : (
     <Badge size="xs" variant="outline" color="gray">
@@ -64,7 +75,10 @@ function SourceBadge({ s }: { s: PlatformSetting }) {
  */
 // The backend describes the settings in English; German first here.
 const FIELD_DE: Record<string, [string, string]> = {
-  'mail.relay.host': ['SMTP-Relay-Server', 'Ausgehender Mailserver für alle Mails, die Hubra verschickt'],
+  'mail.relay.host': [
+    'SMTP-Relay-Server',
+    'Ausgehender Mailserver für alle Mails, die Hubra verschickt',
+  ],
   'mail.relay.port': ['SMTP-Relay-Port', '587 für STARTTLS, 25 für ein internes Relay ohne TLS'],
   'mail.relay.user': ['SMTP-Benutzer', 'Leer lassen, wenn das Relay keine Anmeldung braucht'],
   'mail.relay.password': ['SMTP-Passwort', 'Wird verschlüsselt gespeichert'],
@@ -73,19 +87,41 @@ const FIELD_DE: Record<string, [string, string]> = {
     'Wird genutzt, wenn das Relay eine Mail ablehnt, z. B. weil das Sendekontingent erreicht ist (smtp-relay.brevo.com). Leer lassen für keinen Fallback',
   ],
   'mail.fallback.port': ['Fallback-Relay-Port', '587 für STARTTLS, 465 für TLS'],
-  'mail.fallback.user': ['Fallback-SMTP-Benutzer', 'Leer lassen, wenn der Fallback keine Anmeldung braucht'],
+  'mail.fallback.user': [
+    'Fallback-SMTP-Benutzer',
+    'Leer lassen, wenn der Fallback keine Anmeldung braucht',
+  ],
   'mail.fallback.password': ['Fallback-SMTP-Passwort', 'Wird verschlüsselt gespeichert'],
-  'mail.system.sender_email': ['Absenderadresse des Systems', 'Absender für Anmelde-, SSO- und Plattform-Mails'],
+  'mail.system.sender_email': [
+    'Absenderadresse des Systems',
+    'Absender für Anmelde-, SSO- und Plattform-Mails',
+  ],
   'mail.system.sender_name': ['Absendername des Systems', 'Angezeigter Name des Systemabsenders'],
   'backup.public_key': [
     'Öffentlicher Backup-Schlüssel',
     'age-Schlüssel (age1…), mit dem jedes Backup verschlüsselt wird (flask backups keygen). Der private Schlüssel bleibt ausserhalb des Servers; die Wiederherstellung fragt danach',
   ],
-  'backup.s3.endpoint': ['S3-Endpunkt', 'S3-kompatible Adresse, z. B. https://eu2.contabostorage.com'],
+  'backup.s3.endpoint': [
+    'S3-Endpunkt',
+    'S3-kompatible Adresse, z. B. https://eu2.contabostorage.com',
+  ],
   'backup.s3.bucket': ['S3-Bucket', 'Bucket, in den die verschlüsselten Backups gehen'],
   'backup.s3.region': ['S3-Region', "Bei Contabo meist 'default'"],
   'backup.s3.access_key': ['S3-Access-Key', 'Wird verschlüsselt gespeichert'],
   'backup.s3.secret_key': ['S3-Secret-Key', 'Wird verschlüsselt gespeichert'],
+  'discord.client_id': [
+    'Discord-Application-ID',
+    'Developer Portal › deine App › General Information › Application ID',
+  ],
+  'discord.public_key': [
+    'Discord-Public-Key',
+    'General Information › Public Key; prüft, dass Interaktionen von Discord kommen',
+  ],
+  'discord.client_secret': [
+    'Discord-Client-Secret',
+    'OAuth2 › Client Secret. Wird verschlüsselt gespeichert',
+  ],
+  'discord.bot_token': ['Discord-Bot-Token', 'Bot › Token. Wird verschlüsselt gespeichert'],
 }
 
 export function PlatformSettings() {
@@ -143,7 +179,11 @@ export function PlatformSettings() {
       await sendPlatformTestMail(testTo.trim(), via)
       notify('success', tr('Testmail gesendet', 'Test mail sent'), testTo.trim())
     } catch (err) {
-      notify('error', tr('Testmail fehlgeschlagen', 'Test mail failed'), err instanceof Error ? err.message : undefined)
+      notify(
+        'error',
+        tr('Testmail fehlgeschlagen', 'Test mail failed'),
+        err instanceof Error ? err.message : undefined,
+      )
     } finally {
       setTesting(null)
     }
@@ -170,7 +210,11 @@ export function PlatformSettings() {
       },
     }
     return s.secret ? (
-      <PasswordInput key={key} {...common} placeholder={s.isSet ? tr('•••••••• (unverändert)', '•••••••• (unchanged)') : ''} />
+      <PasswordInput
+        key={key}
+        {...common}
+        placeholder={s.isSet ? tr('•••••••• (unverändert)', '•••••••• (unchanged)') : ''}
+      />
     ) : (
       <TextInput key={key} {...common} />
     )
@@ -209,13 +253,12 @@ export function PlatformSettings() {
           { id: 'mail', label: tr('Mail-Relay', 'Mail relay') },
           { id: 'sender', label: tr('Systemabsender', 'System sender') },
           { id: 'backups', label: tr('Backup-Speicher', 'Backup storage') },
+          { id: 'discord', label: 'Discord' },
           { id: 'encryption', label: tr('Verschlüsselung', 'Encryption') },
           { id: 'translations', label: tr('Übersetzungen', 'Translations') },
         ]}
         activeTab={tab}
-        onTabChange={(id) =>
-          navigate(`/app/platform/settings${id === 'mail' ? '' : '/' + id}`)
-        }
+        onTabChange={(id) => navigate(`/app/platform/settings${id === 'mail' ? '' : '/' + id}`)}
       />
 
       {tab === 'translations' ? (
@@ -283,6 +326,22 @@ export function PlatformSettings() {
                 )}
               </Text>
               <Stack gap="sm">{BACKUP.map(field)}</Stack>
+            </Paper>
+          )}
+
+          {tab === 'discord' && (
+            <Paper withBorder shadow="sm" radius="lg" p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>Discord</Title>
+                {resetButton(DISCORD)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Die eine Hubra-App auf Discord: Vereine fügen damit den Bot zu ihrem Server hinzu, Mitglieder verknüpfen ihr Konto. Einrichtung in docs/discord.md. Ohne diese Werte ist Discord für Vereine nicht verfügbar.',
+                  'The one Hubra application on Discord: clubs add the bot to their server with it, members link their account. Setup in docs/discord.md. Without these values Discord is not available to clubs.',
+                )}
+              </Text>
+              <Stack gap="sm">{DISCORD.map(field)}</Stack>
             </Paper>
           )}
 
