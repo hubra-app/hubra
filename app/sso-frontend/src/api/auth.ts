@@ -38,6 +38,9 @@ interface RawAuthResponse {
   noTenant?: boolean
   tenant_slug?: string | null
   user?: { email: string; name: string }
+  /** Two-factor is on: send a code with this token to /auth/login/mfa. */
+  mfaRequired?: boolean
+  mfaToken?: string
 }
 
 export async function login(
@@ -48,6 +51,62 @@ export async function login(
   return apiFetch<RawAuthResponse>('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password, keepSignedIn }),
+  })
+}
+
+/** Second step of a sign-in with two-factor: an app or recovery code. */
+export async function loginMfa(mfaToken: string, code: string): Promise<RawAuthResponse> {
+  return apiFetch<RawAuthResponse>('/auth/login/mfa', {
+    method: 'POST',
+    body: JSON.stringify({ mfaToken, code }),
+  })
+}
+
+export interface MfaStatus {
+  enabled: boolean
+  enabledAt: string | null
+  recoveryCodesLeft: number
+  /** Platform staff have to turn it on before manage › Platform works. */
+  required: boolean
+}
+
+export interface TotpSetup {
+  secret: string
+  uri: string
+  qrSvg: string
+}
+
+export async function getMfa(): Promise<MfaStatus> {
+  return apiFetch<MfaStatus>('/account/mfa')
+}
+
+export async function startTotpSetup(currentPassword: string): Promise<TotpSetup> {
+  return apiFetch<TotpSetup>('/account/mfa/totp/setup', {
+    method: 'POST',
+    body: JSON.stringify({ currentPassword }),
+  })
+}
+
+export async function enableTotp(code: string): Promise<MfaStatus & { recoveryCodes: string[] }> {
+  return apiFetch('/account/mfa/totp/enable', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  })
+}
+
+export async function disableTotp(currentPassword: string): Promise<MfaStatus> {
+  return apiFetch<MfaStatus>('/account/mfa/totp/disable', {
+    method: 'POST',
+    body: JSON.stringify({ currentPassword }),
+  })
+}
+
+export async function renewRecoveryCodes(
+  currentPassword: string,
+): Promise<MfaStatus & { recoveryCodes: string[] }> {
+  return apiFetch('/account/mfa/recovery-codes', {
+    method: 'POST',
+    body: JSON.stringify({ currentPassword }),
   })
 }
 

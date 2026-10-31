@@ -153,7 +153,9 @@ pyyaml==6.0.3
 qrbill==1.2.0
     # via -r requirements.txt
 qrcode==8.2
-    # via qrbill
+    # via
+    #   -r requirements.txt
+    #   qrbill
 redis==6.4.0
     # via
     #   -r requirements.txt

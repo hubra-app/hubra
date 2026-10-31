@@ -28,6 +28,7 @@ from sqlalchemy import select
 
 from hubra.api.auth.services import (
     AuthService,
+    _count_failed_login,
     AccountService,
     compute_fingerprint,
     _enforce_password_strength,
@@ -35,7 +36,7 @@ from hubra.api.auth.services import (
     _extract_platform,
     _EMAIL_RE,
 )
-from hubra.api.auth import known_devices, session_service
+from hubra.api.auth import known_devices, mfa, session_service
 from hubra.api.permissions import (
     require_password_changed,
     _get_member_permission_keys,
@@ -266,27 +267,7 @@ def login():
     try:
         user = AuthService.authenticate_user(email, password)
         member = AuthService.resolve_member(user.id)
-
-        if user.is_disabled or (member is not None and member.is_disabled):
-            raise_error(
-                403,
-                "ACCOUNT_DISABLED",
-                "Account has been disabled by an administrator",
-            )
-        if member is not None and member.is_blocked:
-            raise_error(
-                403, "MEMBERSHIP_SUSPENDED", "Your membership in this club is suspended"
-            )
-        _locked = user.locked_until
-        if _locked is not None:
-            if _locked.tzinfo is None:
-                _locked = _locked.replace(tzinfo=timezone.utc)
-            if datetime.now(timezone.utc) < _locked:
-                raise_error(
-                    403,
-                    "ACCOUNT_LOCKED",
-                    "Account is temporarily locked due to too many failed login attempts. Try again later.",
-                )
+        _check_may_sign_in(user, member)
     except ApiError:
         # An account address answers for itself (wrong password, locked);
         # only a club address (a member's public email) falls through.
@@ -300,6 +281,72 @@ def login():
     if member is None and user is None:
         raise_error(401, "UNAUTHORIZED", "Invalid credentials")
 
+    if user is not None and mfa.enabled(user):
+        # The password was right; the tokens wait for the second factor.
+        db.session.commit()  # the reset failed-login count
+        return jsonify(
+            mfaRequired=True,
+            mfaToken=mfa.challenge_for(user, email, keep_signed_in),
+        ), 200
+
+    return _complete_login(user, member, email, keep_signed_in)
+
+
+def _check_may_sign_in(user: User, member: Member | None) -> None:
+    """Refuse a switched-off, suspended or locked account."""
+    if user.is_disabled or (member is not None and member.is_disabled):
+        raise_error(
+            403,
+            "ACCOUNT_DISABLED",
+            "Account has been disabled by an administrator",
+        )
+    if member is not None and member.is_blocked:
+        raise_error(
+            403, "MEMBERSHIP_SUSPENDED", "Your membership in this club is suspended"
+        )
+    _locked = user.locked_until
+    if _locked is not None:
+        if _locked.tzinfo is None:
+            _locked = _locked.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) < _locked:
+            raise_error(
+                403,
+                "ACCOUNT_LOCKED",
+                "Account is temporarily locked due to too many failed login attempts. Try again later.",
+            )
+
+
+@auth_bp.post("/login/mfa")
+@limiter.limit("10 per minute")
+def login_mfa():
+    """Second step of a sign-in with two-factor: the app or a recovery code."""
+    body = request.get_json(silent=True) or {}
+    challenge = mfa.read_challenge(str(body.get("mfaToken") or ""))
+    if challenge is None:
+        raise_error(400, "MFA_EXPIRED", "The sign-in took too long. Start again.")
+    user, email, keep_signed_in = challenge
+    member = AuthService.resolve_member(user.id)
+    _check_may_sign_in(user, member)
+
+    used = mfa.verify(user, str(body.get("code") or ""))
+    if used is None:
+        _count_failed_login(user)  # commits; five wrong codes lock the account
+        raise_error(400, "MFA_INVALID", "The code is not correct")
+    user.failed_login_count = 0
+    if used == "recovery":
+        _log.info(
+            "mfa_recovery_code_used user_id=%s left=%s",
+            user.id,
+            len(user.recovery_codes or []),
+        )
+    db.session.commit()
+    return _complete_login(user, member, email, keep_signed_in)
+
+
+def _complete_login(
+    user: User | None, member: Member | None, email: str, keep_signed_in: bool
+):
+    """Issue the tokens for a sign-in whose credentials are checked."""
     if user is not None and email_verification.auto_verify_superadmin(user):
         db.session.commit()
 
@@ -864,11 +911,16 @@ def get_my_permissions():
     # Check for superadmin via user_id claim
     user_id = claims.get("user_id")
     is_superadmin = False
+    mfa_setup_required = False
     if user_id:
         from hubra.core.models.user import User
 
         user = db.session.get(User, int(user_id))
         is_superadmin = user is not None and user.is_superadmin
+        if user is not None:
+            from hubra.api.permissions import staff_mfa_missing
+
+            mfa_setup_required = staff_mfa_missing(user)
 
     # Global permissions (manager portal RBAC)
     from hubra.api.permissions import get_user_global_permissions
@@ -912,6 +964,7 @@ def get_my_permissions():
                 "impersonation": impersonation,
                 "global_permissions": global_perms,
                 "global_roles": global_roles,
+                "mfa_setup_required": mfa_setup_required,
                 "tenant_slug": claims.get("tenant_slug"),
             }
         ), 200
@@ -932,6 +985,7 @@ def get_my_permissions():
                 "impersonation": impersonation,
                 "global_permissions": global_perms,
                 "global_roles": global_roles,
+                "mfa_setup_required": mfa_setup_required,
                 "tenant_slug": claims.get("tenant_slug"),
             }
         ), 200
@@ -945,6 +999,7 @@ def get_my_permissions():
             "impersonation": impersonation,
             "global_permissions": global_perms,
             "global_roles": global_roles,
+            "mfa_setup_required": mfa_setup_required,
             "tenant_slug": claims.get("tenant_slug"),
         }
     ), 200
@@ -1441,6 +1496,79 @@ def change_account_password():
     response = make_response(jsonify({"ok": True}), 200)
     _renew_this_session(response)
     return response
+
+
+# ── Two-factor sign-in (SSO › Konto › Zwei-Faktor) ────────────────────────────
+
+
+def _check_password(user: User, body: dict) -> None:
+    if not user.check_password(str(body.get("currentPassword") or "")):
+        raise_error(400, "INVALID_PASSWORD", "Current password is incorrect")
+
+
+@account_bp.get("/mfa")
+@jwt_required()
+def get_account_mfa():
+    return jsonify(mfa.status(_signed_in_user())), 200
+
+
+@account_bp.post("/mfa/totp/setup")
+@jwt_required()
+@limiter.limit("10 per minute")
+def start_account_totp():
+    """A new secret for the authenticator app; on only after /enable."""
+    _not_while_impersonating()
+    user = _signed_in_user()
+    _check_password(user, request.get_json(silent=True) or {})
+    if mfa.enabled(user):
+        raise_error(409, "MFA_ALREADY_ENABLED", "Two-factor sign-in is already on")
+    setup = mfa.start_setup(user)
+    db.session.commit()
+    return jsonify(setup), 200
+
+
+@account_bp.post("/mfa/totp/enable")
+@jwt_required()
+@limiter.limit("10 per minute")
+def enable_account_totp():
+    _not_while_impersonating()
+    user = _signed_in_user()
+    codes = mfa.confirm_setup(
+        user, str((request.get_json(silent=True) or {}).get("code") or "")
+    )
+    if codes is None:
+        raise_error(400, "MFA_INVALID", "The code is not correct")
+    db.session.commit()
+    _log.info("mfa_enabled user_id=%s", user.id)
+    return jsonify(recoveryCodes=codes, **mfa.status(user)), 200
+
+
+@account_bp.post("/mfa/totp/disable")
+@jwt_required()
+@limiter.limit("10 per minute")
+def disable_account_totp():
+    _not_while_impersonating()
+    user = _signed_in_user()
+    _check_password(user, request.get_json(silent=True) or {})
+    mfa.disable(user)
+    db.session.commit()
+    _log.info("mfa_disabled user_id=%s", user.id)
+    return jsonify(mfa.status(user)), 200
+
+
+@account_bp.post("/mfa/recovery-codes")
+@jwt_required()
+@limiter.limit("10 per minute")
+def renew_account_recovery_codes():
+    """New recovery codes; the old ones stop working."""
+    _not_while_impersonating()
+    user = _signed_in_user()
+    _check_password(user, request.get_json(silent=True) or {})
+    if not mfa.enabled(user):
+        raise_error(409, "MFA_NOT_ENABLED", "Two-factor sign-in is off")
+    codes = mfa.new_recovery_codes(user)
+    db.session.commit()
+    return jsonify(recoveryCodes=codes, **mfa.status(user)), 200
 
 
 def _current_session_key() -> tuple[str | None, str | None]:

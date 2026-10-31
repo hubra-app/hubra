@@ -250,6 +250,22 @@ upgrade, is learnt without a mail. Cleared cookies or a private window
 count as a new device. Times in the mail use `MAIL_TIMEZONE`
 (default `Europe/Zurich`).
 
+### Two-factor sign-in
+
+Everyone can turn on a second step at sign-in in SSO › Konto › Zwei-Faktor:
+a 6-digit code from an authenticator app (TOTP), plus ten one-time recovery
+codes for when the phone is gone. The secret is stored encrypted with
+`FERNET_KEY`.
+
+Platform staff (superadmins and holders of a global role) must turn it on:
+until they do, manage › Platform answers `MFA_SETUP_REQUIRED` and manage
+sends them to the setup page. `MFA_REQUIRED_FOR_STAFF=false` switches the
+rule off, for example while the relay or SSO is being set up.
+
+Someone who lost both the app and the recovery codes: check that it really
+is them, then run `flask reset-mfa --email them@example.org`. They sign in
+with the password alone and set it up again.
+
 ## Day to day
 
 ```sh

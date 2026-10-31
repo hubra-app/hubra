@@ -25,11 +25,13 @@ import { ThemeSwitch } from '@hubra/ui'
 import { LoadFailed } from '@/components/LoadFailed'
 import { getLang, setLang, themeLabels, tr, useLang } from '@/lang'
 import * as authApi from '@/api/auth'
+import { TwoFactorTab } from './TwoFactor'
 
 const TABS = [
   { value: 'profil', label: () => tr('Profil', 'Profile') },
   { value: 'email', label: () => tr('E-Mail', 'Email') },
   { value: 'passwort', label: () => tr('Passwort', 'Password') },
+  { value: 'zwei-faktor', label: () => tr('Zwei-Faktor', 'Two-factor') },
   { value: 'einstellungen', label: () => tr('Einstellungen', 'Settings') },
   { value: 'sitzungen', label: () => tr('Sitzungen', 'Sessions') },
 ] as const
@@ -103,6 +105,9 @@ export function AccountScreen() {
         </Tabs.Panel>
         <Tabs.Panel value="passwort">
           <PasswordTab />
+        </Tabs.Panel>
+        <Tabs.Panel value="zwei-faktor">
+          <TwoFactorTab />
         </Tabs.Panel>
         <Tabs.Panel value="einstellungen">
           <SettingsTab profile={profile.data} />

@@ -67,6 +67,19 @@ class User(db.Model):
         db.String(10), default="auto", server_default="auto", nullable=False
     )
 
+    # Two-factor sign-in (hubra/api/auth/mfa.py).  Secrets are Fernet
+    # encrypted; recovery codes are kept as SHA-256 hashes, used ones removed.
+    totp_secret: Mapped[str | None] = mapped_column(Text, nullable=True)
+    totp_pending_secret: Mapped[str | None] = mapped_column(Text, nullable=True)
+    totp_enabled_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # The last 30-second step a code was accepted for: a code works once.
+    totp_last_step: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    recovery_codes: Mapped[list | None] = mapped_column(
+        JSONB().with_variant(JSON, "sqlite"), nullable=True
+    )
+
     phone: Mapped[str | None] = mapped_column(db.String(50), nullable=True)
     mobile: Mapped[str | None] = mapped_column(db.String(50), nullable=True)
     birthday: Mapped[date | None] = mapped_column(Date, nullable=True)

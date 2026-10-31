@@ -45,6 +45,8 @@ nh3>=0.2
 
 # Swiss QR-bill PDF generation
 qrbill>=1.2
+# QR code for setting up two-factor sign-in
+qrcode>=8.0
 
 # PDF generation (HTML+CSS → PDF, requires GTK on Windows — use Docker for local dev)
 weasyprint>=70.0

@@ -137,6 +137,12 @@ class BaseConfig:
     # Time zone for times shown in mails (new-device sign-in).
     MAIL_TIMEZONE: str = os.environ.get("MAIL_TIMEZONE", "Europe/Zurich")
 
+    # Platform staff (superadmins, global roles) must turn on two-factor
+    # sign-in before manage › Platform answers them.
+    MFA_REQUIRED_FOR_STAFF: bool = os.environ.get(
+        "MFA_REQUIRED_FOR_STAFF", "true"
+    ).lower() in ("1", "true", "yes")
+
     # ── Integrations ────────────────────────────────────────────────────────
     WILDDUCK_API_URL: str = os.environ.get("WILDDUCK_API_URL", "")
     WILDDUCK_API_TOKEN: str = os.environ.get("WILDDUCK_API_TOKEN", "")
@@ -291,6 +297,9 @@ class TestingConfig(BaseConfig):
     BCRYPT_LOG_ROUNDS: int = 4
     # Disable JSON logging in tests for readable output
     JSON_LOGGING: bool = False
+    # The staff tests sign in with a password only; tests/auth/test_mfa.py
+    # turns this on.
+    MFA_REQUIRED_FOR_STAFF: bool = False
     # Force in-memory rate limiting so tests don't need a Redis instance
     RATELIMIT_STORAGE_URI: str = "memory://"
     # Disable rate limiting globally in tests to prevent spurious 429s;

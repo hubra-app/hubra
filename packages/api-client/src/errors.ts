@@ -15,6 +15,13 @@ const DE: Record<string, string> = {
   "Email already registered": "Diese E-Mail-Adresse ist schon registriert.",
   "Invalid email address": "Diese E-Mail-Adresse ist ungültig.",
   "Current password is incorrect": "Das aktuelle Passwort stimmt nicht.",
+  "The code is not correct": "Der Code stimmt nicht.",
+  "The sign-in took too long. Start again.":
+    "Die Anmeldung hat zu lange gedauert. Bitte beginne nochmals von vorn.",
+  "Turn on two-factor sign-in in your account first":
+    "Schalte zuerst in deinem Konto die Zwei-Faktor-Anmeldung ein.",
+  "Two-factor sign-in is already on": "Die Zwei-Faktor-Anmeldung ist schon eingeschaltet.",
+  "Two-factor sign-in is off": "Die Zwei-Faktor-Anmeldung ist ausgeschaltet.",
   "Password must be at least 8 characters": "Das Passwort braucht mindestens 8 Zeichen.",
   "Reset token is invalid or has expired": "Der Link zum Zurücksetzen ist ungültig oder abgelaufen.",
   "Verification link is invalid or has expired": "Der Bestätigungslink ist ungültig oder abgelaufen.",
