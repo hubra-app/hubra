@@ -546,8 +546,8 @@ def _register_cli(app: Flask) -> None:
     @app.cli.command("reset-mfa")
     @click.option("--email", required=True, help="Login email of the account")
     def reset_mfa(email: str):
-        """Turn two-factor sign-in off for an account that lost its app and
-        its recovery codes.  Check who is asking before running it."""
+        """Turn two-factor sign-in off (app and passkeys) for an account that lost
+        them and its recovery codes.  Check who is asking before running it."""
         from hubra.api.auth import mfa
         from hubra.core.models.user import User
 

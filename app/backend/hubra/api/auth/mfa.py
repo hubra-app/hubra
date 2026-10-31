@@ -1,4 +1,6 @@
-"""Two-factor sign-in: a code from an authenticator app (TOTP, RFC 6238).
+"""Two-factor sign-in: a code from an authenticator app (TOTP, RFC 6238)
+or a passkey (hubra/api/auth/passkeys.py).  Either one turns it on; the
+recovery codes belong to the account as long as one of them is set up.
 
 Setting it up: ``start_setup`` keeps a new secret as pending and returns it
 with an ``otpauth://`` link and its QR code; ``confirm_setup`` with a code
@@ -85,8 +87,25 @@ def qr_svg(data: str) -> str:
 # ── State ────────────────────────────────────────────────────────────────────
 
 
-def enabled(user: User) -> bool:
+def totp_enabled(user: User) -> bool:
     return user.totp_enabled_at is not None and bool(user.totp_secret)
+
+
+def has_passkeys(user: User) -> bool:
+    from sqlalchemy import select
+
+    from hubra.core.extensions import db
+    from hubra.core.models.passkey import Passkey
+
+    return (
+        db.session.scalar(select(Passkey.id).where(Passkey.user_id == user.id).limit(1))
+        is not None
+    )
+
+
+def enabled(user: User) -> bool:
+    """A second step is needed at sign-in: an app code or a passkey."""
+    return totp_enabled(user) or has_passkeys(user)
 
 
 def is_staff(user: User) -> bool:
@@ -112,12 +131,31 @@ def required(user: User) -> bool:
 
 
 def status(user: User) -> dict:
+    from hubra.api.auth import passkeys
+
+    on = enabled(user)
     return {
-        "enabled": enabled(user),
+        "enabled": on,
+        "totpEnabled": totp_enabled(user),
         "enabledAt": user.totp_enabled_at.isoformat() if user.totp_enabled_at else None,
-        "recoveryCodesLeft": len(user.recovery_codes or []) if enabled(user) else 0,
+        "passkeys": passkeys.list_for(user),
+        "passkeysAvailable": passkeys.available(),
+        "recoveryCodesLeft": len(user.recovery_codes or []) if on else 0,
         "required": required(user),
     }
+
+
+def first_factor_added(user: User, was_enabled: bool) -> list[str]:
+    """Recovery codes when the account just got its first second step."""
+    if was_enabled and user.recovery_codes:
+        return []
+    return new_recovery_codes(user)
+
+
+def factor_removed(user: User) -> None:
+    """Drop the recovery codes once no second step is left.  No commit."""
+    if not enabled(user):
+        user.recovery_codes = None
 
 
 # ── Setup ────────────────────────────────────────────────────────────────────
@@ -132,12 +170,14 @@ def start_setup(user: User) -> dict:
 
 
 def confirm_setup(user: User, code: str) -> list[str] | None:
-    """Turn two-factor on if *code* matches the pending secret.  No commit.
+    """Turn the app on if *code* matches the pending secret.  No commit.
 
-    Returns the new recovery codes, or None for a wrong code.
+    Returns new recovery codes (empty when the account already has them
+    from a passkey), or None for a wrong code.
     """
     if not user.totp_pending_secret:
         return None
+    was_enabled = enabled(user)
     secret = decrypt_code(user.totp_pending_secret)
     step = _matching_step(secret, code)
     if step is None:
@@ -146,11 +186,26 @@ def confirm_setup(user: User, code: str) -> list[str] | None:
     user.totp_pending_secret = None
     user.totp_enabled_at = datetime.now(timezone.utc)
     user.totp_last_step = step
-    return new_recovery_codes(user)
+    return first_factor_added(user, was_enabled)
+
+
+def disable_totp(user: User) -> None:
+    """Turn the app off; passkeys stay.  No commit."""
+    user.totp_secret = None
+    user.totp_pending_secret = None
+    user.totp_enabled_at = None
+    user.totp_last_step = None
+    factor_removed(user)
 
 
 def disable(user: User) -> None:
-    """Turn two-factor off.  No commit."""
+    """Turn every second step off: app and passkeys.  No commit."""
+    from sqlalchemy import delete
+
+    from hubra.core.extensions import db
+    from hubra.core.models.passkey import Passkey
+
+    db.session.execute(delete(Passkey).where(Passkey.user_id == user.id))
     user.totp_secret = None
     user.totp_pending_secret = None
     user.totp_enabled_at = None
@@ -191,7 +246,11 @@ def verify(user: User, code: str) -> str | None:
     """
     if not enabled(user) or not code:
         return None
-    step = _matching_step(decrypt_code(user.totp_secret), code)
+    step = (
+        _matching_step(decrypt_code(user.totp_secret), code)
+        if totp_enabled(user)
+        else None
+    )
     if step is not None:
         if user.totp_last_step is not None and step <= user.totp_last_step:
             return None

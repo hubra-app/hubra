@@ -22,6 +22,7 @@ import { getRememberedEmail } from '@hubra/api-client'
 import * as authApi from '@/api/auth'
 import { AuthFrame } from '@/components/AuthFrame'
 import { tr, useLang } from '@/lang'
+import { getPasskey, passkeyCancelled, passkeysSupported } from '@/webauthn'
 
 // Built per render so the messages follow the chosen language.
 const makeSchema = () =>
@@ -78,6 +79,32 @@ export function LoginScreen() {
     }
   }
 
+  /** Sign in with a passkey: on its own, or as the step after the password. */
+  const handlePasskey = async () => {
+    setError('')
+    setLoading(true)
+    try {
+      const start = await authApi.passkeyLoginOptions(mfaToken || undefined)
+      const credential = await getPasskey(start.options)
+      await authApi.passkeyLogin(start.state, credential, {
+        mfaToken: mfaToken || undefined,
+        keepSignedIn: form.values.keepSignedIn,
+      })
+      continueSignedIn()
+    } catch (err: unknown) {
+      if (passkeyCancelled(err)) return
+      const e2 = err as { code?: string; message?: string }
+      if (e2.code === 'MFA_EXPIRED') setMfaToken('')
+      setError(
+        e2.code === 'PASSKEY_INVALID'
+          ? tr('Dieser Passkey gehört zu keinem Konto hier.', 'This passkey belongs to no account here.')
+          : e2.message || tr('Anmeldung fehlgeschlagen', 'Login failed'),
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleCode = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -102,8 +129,8 @@ export function LoginScreen() {
         </Title>
         <Text c="dimmed" mb={28}>
           {tr(
-            'Gib den 6-stelligen Code aus deiner Authenticator-App ein. Ohne App geht auch einer deiner Wiederherstellungscodes.',
-            'Enter the 6-digit code from your authenticator app. Without the app, one of your recovery codes works too.',
+            'Gib den 6-stelligen Code aus deiner Authenticator-App ein, oder nimm deinen Passkey. Ohne beides geht auch ein Wiederherstellungscode.',
+            'Enter the 6-digit code from your authenticator app, or use your passkey. Without either, a recovery code works too.',
           )}
         </Text>
 
@@ -126,6 +153,11 @@ export function LoginScreen() {
             <Button type="submit" size="md" fullWidth loading={loading} disabled={!code.trim()}>
               {tr('Bestätigen', 'Verify')}
             </Button>
+            {passkeysSupported() && (
+              <Button variant="default" size="md" fullWidth onClick={handlePasskey} disabled={loading}>
+                {tr('Passkey verwenden', 'Use a passkey')}
+              </Button>
+            )}
             <Anchor
               size="sm"
               ta="center"
@@ -206,6 +238,11 @@ export function LoginScreen() {
       <Divider label={tr('oder', 'or')} labelPosition="center" my="lg" />
 
       <Stack gap="xs">
+        {passkeysSupported() && (
+          <Button variant="default" size="md" fullWidth onClick={handlePasskey} disabled={loading}>
+            {tr('Mit Passkey anmelden', 'Sign in with a passkey')}
+          </Button>
+        )}
         <Button variant="default" size="md" fullWidth onClick={() => navigate(`/signup${window.location.search}`)}>
           {tr('Konto erstellen', 'Create account')}
         </Button>

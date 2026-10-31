@@ -253,11 +253,21 @@ count as a new device. Times in the mail use `MAIL_TIMEZONE`
 ### Two-factor sign-in
 
 Everyone can turn on a second step at sign-in in SSO › Konto › Zwei-Faktor:
-a 6-digit code from an authenticator app (TOTP), plus ten one-time recovery
-codes for when the phone is gone. The secret is stored encrypted with
+a passkey (Face ID, fingerprint, device PIN or a security key) or a 6-digit
+code from an authenticator app (TOTP), plus ten one-time recovery codes for
+when the device is gone. The TOTP secret is stored encrypted with
 `FERNET_KEY`.
 
-Platform staff (superadmins and holders of a global role) must turn it on:
+A passkey also signs in on its own ("Mit Passkey anmelden"), without the
+password; it always asks for the device's fingerprint, face or PIN.
+Passkeys belong to the SSO host: the relying party is the host of
+`SSO_BASE_URL` (override with `WEBAUTHN_RP_ID`, and list extra origins in
+`WEBAUTHN_ORIGINS`). Changing the SSO host later makes existing passkeys
+stop working, so pick it before people add them. Without `SSO_BASE_URL`
+passkeys are off.
+
+Platform staff (superadmins and holders of a global role) must turn it on
+(a passkey or the app):
 until they do, manage › Platform answers `MFA_SETUP_REQUIRED` and manage
 sends them to the setup page. `MFA_REQUIRED_FOR_STAFF=false` switches the
 rule off, for example while the relay or SSO is being set up.

@@ -62,9 +62,21 @@ export async function loginMfa(mfaToken: string, code: string): Promise<RawAuthR
   })
 }
 
+export interface PasskeyInfo {
+  id: number
+  name: string
+  createdAt: string | null
+  lastUsedAt: string | null
+}
+
 export interface MfaStatus {
+  /** A second step is on: the app, a passkey or both. */
   enabled: boolean
+  totpEnabled: boolean
   enabledAt: string | null
+  passkeys: PasskeyInfo[]
+  /** False when the server does not know its SSO address. */
+  passkeysAvailable: boolean
   recoveryCodesLeft: number
   /** Platform staff have to turn it on before manage › Platform works. */
   required: boolean
@@ -98,6 +110,55 @@ export async function disableTotp(currentPassword: string): Promise<MfaStatus> {
   return apiFetch<MfaStatus>('/account/mfa/totp/disable', {
     method: 'POST',
     body: JSON.stringify({ currentPassword }),
+  })
+}
+
+interface PasskeyCeremony {
+  options: Record<string, unknown>
+  state: string
+}
+
+export async function passkeyRegisterOptions(currentPassword: string): Promise<PasskeyCeremony> {
+  return apiFetch<PasskeyCeremony>('/account/passkeys/options', {
+    method: 'POST',
+    body: JSON.stringify({ currentPassword }),
+  })
+}
+
+export async function addPasskey(
+  state: string,
+  credential: Record<string, unknown>,
+  name: string,
+): Promise<MfaStatus & { recoveryCodes: string[] }> {
+  return apiFetch('/account/passkeys', {
+    method: 'POST',
+    body: JSON.stringify({ state, credential, name }),
+  })
+}
+
+export async function removePasskey(id: number, currentPassword: string): Promise<MfaStatus> {
+  return apiFetch<MfaStatus>(`/account/passkeys/${id}/delete`, {
+    method: 'POST',
+    body: JSON.stringify({ currentPassword }),
+  })
+}
+
+/** Options for a passkey sign-in; with *mfaToken* only that account's passkeys. */
+export async function passkeyLoginOptions(mfaToken?: string): Promise<PasskeyCeremony> {
+  return apiFetch<PasskeyCeremony>('/auth/passkey/options', {
+    method: 'POST',
+    body: JSON.stringify(mfaToken ? { mfaToken } : {}),
+  })
+}
+
+export async function passkeyLogin(
+  state: string,
+  credential: Record<string, unknown>,
+  opts: { mfaToken?: string; keepSignedIn?: boolean } = {},
+): Promise<RawAuthResponse> {
+  return apiFetch<RawAuthResponse>('/auth/passkey/login', {
+    method: 'POST',
+    body: JSON.stringify({ state, credential, ...opts }),
   })
 }
 

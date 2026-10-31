@@ -139,6 +139,10 @@ class BaseConfig:
 
     # Platform staff (superadmins, global roles) must turn on two-factor
     # sign-in before manage › Platform answers them.
+    # Passkeys: the relying party is the SSO host unless set here
+    # (WEBAUTHN_RP_ID); origins default to SSO_BASE_URL (comma-separated).
+    WEBAUTHN_RP_ID: str = os.environ.get("WEBAUTHN_RP_ID", "")
+    WEBAUTHN_ORIGINS: str = os.environ.get("WEBAUTHN_ORIGINS", "")
     MFA_REQUIRED_FOR_STAFF: bool = os.environ.get(
         "MFA_REQUIRED_FOR_STAFF", "true"
     ).lower() in ("1", "true", "yes")

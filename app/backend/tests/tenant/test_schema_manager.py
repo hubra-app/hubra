@@ -34,6 +34,7 @@ _GLOBAL_ONLY_TABLES = frozenset(
         "email_verifications",
         "account_sessions",
         "known_devices",
+        "passkeys",
         "club_invites",
         "backup_record",
         # The permission catalog: a club copy would hide it inside the club.

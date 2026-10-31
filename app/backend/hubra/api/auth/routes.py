@@ -36,7 +36,8 @@ from hubra.api.auth.services import (
     _extract_platform,
     _EMAIL_RE,
 )
-from hubra.api.auth import known_devices, mfa, session_service
+from hubra.api.auth import known_devices, mfa, passkeys, session_service
+from hubra.core.models.passkey import Passkey
 from hubra.api.permissions import (
     require_password_changed,
     _get_member_permission_keys,
@@ -342,6 +343,50 @@ def login_mfa():
         )
     db.session.commit()
     return _complete_login(user, member, email, keep_signed_in)
+
+
+@auth_bp.post("/passkey/options")
+@limiter.limit("20 per minute")
+def passkey_login_options():
+    """Start a passkey sign-in: any passkey, or the challenged account's."""
+    if not passkeys.available():
+        raise_error(400, "PASSKEYS_UNAVAILABLE", "Passkeys are not set up here")
+    body = request.get_json(silent=True) or {}
+    user = None
+    if body.get("mfaToken"):
+        challenge = mfa.read_challenge(str(body["mfaToken"]))
+        if challenge is None:
+            raise_error(400, "MFA_EXPIRED", "The sign-in took too long. Start again.")
+        user = challenge[0]
+    return jsonify(passkeys.authentication_options(user)), 200
+
+
+@auth_bp.post("/passkey/login")
+@limiter.limit("10 per minute")
+def passkey_login():
+    """Sign in with a passkey, on its own or as the step after the password."""
+    body = request.get_json(silent=True) or {}
+    keep_signed_in = bool(body.get("keepSignedIn", True))
+    mfa_user = None
+    if body.get("mfaToken"):
+        challenge = mfa.read_challenge(str(body["mfaToken"]))
+        if challenge is None:
+            raise_error(400, "MFA_EXPIRED", "The sign-in took too long. Start again.")
+        mfa_user, _email, keep_signed_in = challenge
+    credential = body.get("credential")
+    if not isinstance(credential, dict):
+        raise_error(400, "VALIDATION_ERROR", "credential is required")
+    try:
+        passkey = passkeys.authenticate(str(body.get("state") or ""), credential)
+    except passkeys.PasskeyError:
+        raise_error(400, "PASSKEY_INVALID", "The passkey could not be checked")
+    user = db.session.get(User, passkey.user_id)
+    if user is None or (mfa_user is not None and mfa_user.id != user.id):
+        raise_error(400, "PASSKEY_INVALID", "The passkey could not be checked")
+    member = AuthService.resolve_member(user.id)
+    _check_may_sign_in(user, member)
+    db.session.commit()
+    return _complete_login(user, member, user.email, keep_signed_in)
 
 
 def _complete_login(
@@ -1573,7 +1618,7 @@ def start_account_totp():
     _not_while_impersonating()
     user = _signed_in_user()
     _check_password(user, request.get_json(silent=True) or {})
-    if mfa.enabled(user):
+    if mfa.totp_enabled(user):
         raise_error(409, "MFA_ALREADY_ENABLED", "Two-factor sign-in is already on")
     setup = mfa.start_setup(user)
     db.session.commit()
@@ -1603,9 +1648,82 @@ def disable_account_totp():
     _not_while_impersonating()
     user = _signed_in_user()
     _check_password(user, request.get_json(silent=True) or {})
-    mfa.disable(user)
+    mfa.disable_totp(user)
     db.session.commit()
-    _log.info("mfa_disabled user_id=%s", user.id)
+    _log.info("mfa_totp_disabled user_id=%s", user.id)
+    return jsonify(mfa.status(user)), 200
+
+
+@account_bp.post("/passkeys/options")
+@jwt_required()
+@limiter.limit("10 per minute")
+def passkey_register_options():
+    """Start adding a passkey; the password confirms it is the owner."""
+    _not_while_impersonating()
+    user = _signed_in_user()
+    _check_password(user, request.get_json(silent=True) or {})
+    if not passkeys.available():
+        raise_error(400, "PASSKEYS_UNAVAILABLE", "Passkeys are not set up here")
+    if len(mfa.status(user)["passkeys"]) >= passkeys.MAX_PER_ACCOUNT:
+        raise_error(400, "PASSKEY_LIMIT", "This account has the most passkeys allowed")
+    return jsonify(passkeys.registration_options(user)), 200
+
+
+@account_bp.post("/passkeys")
+@jwt_required()
+@limiter.limit("10 per minute")
+def add_passkey():
+    _not_while_impersonating()
+    user = _signed_in_user()
+    body = request.get_json(silent=True) or {}
+    credential = body.get("credential")
+    if not isinstance(credential, dict):
+        raise_error(400, "VALIDATION_ERROR", "credential is required")
+    was_enabled = mfa.enabled(user)
+    try:
+        passkeys.register(
+            user, str(body.get("state") or ""), credential, str(body.get("name") or "")
+        )
+    except passkeys.PasskeyError:
+        raise_error(400, "PASSKEY_INVALID", "The passkey could not be checked")
+    codes = mfa.first_factor_added(user, was_enabled)
+    db.session.commit()
+    _log.info("passkey_added user_id=%s", user.id)
+    return jsonify(recoveryCodes=codes, **mfa.status(user)), 201
+
+
+@account_bp.patch("/passkeys/<int:passkey_id>")
+@jwt_required()
+def rename_passkey(passkey_id: int):
+    _not_while_impersonating()
+    user = _signed_in_user()
+    passkey = db.session.get(Passkey, passkey_id)
+    if passkey is None or passkey.user_id != user.id:
+        raise_error(404, "NOT_FOUND", "Passkey not found")
+    name = str((request.get_json(silent=True) or {}).get("name") or "").strip()
+    if not name:
+        raise_error(400, "VALIDATION_ERROR", "name is required")
+    passkey.name = name[:100]
+    db.session.commit()
+    return jsonify(mfa.status(user)), 200
+
+
+@account_bp.post("/passkeys/<int:passkey_id>/delete")
+@jwt_required()
+@limiter.limit("10 per minute")
+def delete_passkey(passkey_id: int):
+    """Remove a passkey; the password confirms it is the owner."""
+    _not_while_impersonating()
+    user = _signed_in_user()
+    _check_password(user, request.get_json(silent=True) or {})
+    passkey = db.session.get(Passkey, passkey_id)
+    if passkey is None or passkey.user_id != user.id:
+        raise_error(404, "NOT_FOUND", "Passkey not found")
+    db.session.delete(passkey)
+    db.session.flush()
+    mfa.factor_removed(user)
+    db.session.commit()
+    _log.info("passkey_removed user_id=%s", user.id)
     return jsonify(mfa.status(user)), 200
 
 

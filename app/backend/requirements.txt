@@ -47,6 +47,8 @@ nh3>=0.2
 qrbill>=1.2
 # QR code for setting up two-factor sign-in
 qrcode>=8.0
+# Passkeys (WebAuthn) for signing in
+webauthn>=2.5
 
 # PDF generation (HTML+CSS → PDF, requires GTK on Windows — use Docker for local dev)
 weasyprint>=70.0
