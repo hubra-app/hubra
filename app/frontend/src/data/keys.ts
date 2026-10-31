@@ -30,6 +30,10 @@ export const qk = {
 
   events: ['events'] as const,
   eventPending: (id: string) => ['events', id, 'pending'] as const,
+  eventRoll: (id: string) => ['events', id, 'roll'] as const,
+  attendance: ['attendance'] as const,
+  attendanceOverview: (from: string, to: string, groupId: string) =>
+    ['attendance', from, to, groupId] as const,
   polls: ['polls'] as const,
   pollProxy: (id: string) => ['poll-proxy', id] as const,
   posts: {

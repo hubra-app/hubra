@@ -54,6 +54,12 @@ class ClubEventSchema(ma.SQLAlchemyAutoSchema):
     created_by = fields.Int(allow_none=True, dump_default=None)
     registration_deadline = fields.DateTime(allow_none=True, dump_default=None)
     cancellation_deadline = fields.DateTime(allow_none=True, dump_default=None)
+    group_id = fields.Int(allow_none=True, dump_default=None)
+    series_id = fields.Int(allow_none=True, dump_default=None)
+    series_date = fields.Date(allow_none=True, dump_default=None)
+    # The rule of the event's series: {start_date, until, interval,
+    # weekdays, skip_dates}, or None.
+    recurrence = fields.Method("get_recurrence", dump_only=True)
 
     # List of member IDs from the M:N relationship (backward compat)
     attendee_ids = fields.Method("get_attendee_ids", dump_only=True)
@@ -136,6 +142,18 @@ class ClubEventSchema(ma.SQLAlchemyAutoSchema):
     def get_my_status(self, obj):
         return _my_statuses().get(obj.id)
 
+    def get_recurrence(self, obj):
+        series = obj.series
+        if series is None:
+            return None
+        return {
+            "start_date": series.start_date.isoformat(),
+            "until": series.until.isoformat(),
+            "interval": series.interval,
+            "weekdays": list(series.weekdays or ()),
+            "skip_dates": list(series.skip_dates or ()),
+        }
+
 
 def _prime_places(events) -> None:
     """One grouped query for every event's places taken."""
@@ -198,6 +216,38 @@ def _my_statuses() -> dict[int, str]:
 from hubra.core.extensions import db  # noqa: E402 — needed by get_registration_count
 
 
+def _valid_group(value: int | None) -> None:
+    if value is None:
+        return
+    from marshmallow import ValidationError
+
+    from hubra.core.models.group import Group
+
+    group = db.session.get(Group, value)
+    if group is None or group.deleted_at is not None:
+        raise ValidationError("Unknown group")
+
+
+class RecurrenceSchema(ma.Schema):
+    """A weekly rule: every ``interval``-th week on ``weekdays`` (Monday 0;
+    empty: the weekday of the first date) until ``until``, without
+    ``skip_dates``."""
+
+    class Meta:
+        unknown = RAISE
+
+    until = fields.Date(required=True)
+    weekdays = fields.List(
+        fields.Int(validate=validate.Range(min=0, max=6)),
+        load_default=list,
+        validate=validate.Length(max=7),
+    )
+    interval = fields.Int(load_default=1, validate=validate.Range(min=1, max=8))
+    skip_dates = fields.List(
+        fields.Date(), load_default=list, validate=validate.Length(max=400)
+    )
+
+
 class ClubEventCreateSchema(ma.Schema):
     class Meta:
         unknown = RAISE
@@ -227,6 +277,9 @@ class ClubEventCreateSchema(ma.Schema):
         load_default=None,
         validate=validate.Regexp(r"^#[0-9A-Fa-f]{6}$"),
     )
+    group_id = fields.Int(allow_none=True, load_default=None, validate=_valid_group)
+    # Repeat the event weekly; each date becomes an event of its own.
+    recurrence = fields.Nested(RecurrenceSchema, allow_none=True, load_default=None)
 
 
 class ClubEventUpdateSchema(ma.Schema):
@@ -252,6 +305,33 @@ class ClubEventUpdateSchema(ma.Schema):
     is_public = fields.Bool()
     cover_image_url = fields.Str(allow_none=True)
     color = fields.Str(allow_none=True, validate=validate.Regexp(r"^#[0-9A-Fa-f]{6}$"))
+    group_id = fields.Int(allow_none=True, validate=_valid_group)
+    # A new rule from this date on (``scope=following`` only).
+    recurrence = fields.Nested(RecurrenceSchema)
+
+
+class AttendanceEntrySchema(ma.Schema):
+    class Meta:
+        unknown = RAISE
+
+    member_id = fields.Int(required=True)
+    # present | excused | absent; null clears it.
+    status = fields.Str(
+        required=True,
+        allow_none=True,
+        validate=validate.OneOf(["present", "excused", "absent"]),
+    )
+
+
+class AttendanceRollSchema(ma.Schema):
+    class Meta:
+        unknown = RAISE
+
+    entries = fields.List(
+        fields.Nested(AttendanceEntrySchema),
+        required=True,
+        validate=validate.Length(max=1000),
+    )
 
 
 class EventRegistrationSchema(ma.Schema):

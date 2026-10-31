@@ -302,9 +302,13 @@ def scoped_permission_keys(member) -> dict[int, set[str]]:
     return memo[key]
 
 
-def _scope_id(kwargs: dict, scope: str | None) -> int | None:
+def _scope_id(kwargs: dict, scope) -> int | None:
     if scope is None:
         return None
+    if callable(scope):
+        # The group of what the route acts on (an event's group).
+        value = scope(kwargs)
+        return value if isinstance(value, int) else None
     value = kwargs.get(scope)
     return value if isinstance(value, int) else None
 
@@ -475,8 +479,9 @@ def permission_required(
         action: The action being performed (e.g. "read", "create", "update").
         display_name: Human-readable label for the admin UI.
                       Defaults to "{action} {resource}".
-        scope: The route argument holding a group id (``"group_id"``). A role
-               held for that group only (``member_role_scopes``) passes too.
+        scope: The route argument holding a group id (``"group_id"``), or a
+               function of the route arguments returning one. A role held for
+               that group only (``member_role_scopes``) passes too.
         allow: Object-level access for members without the right, called as
                ``allow(member, **kwargs)`` with the route arguments. When it
                returns a reason (``"owner"``), the request passes with

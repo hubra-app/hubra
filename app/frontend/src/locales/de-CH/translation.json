@@ -727,7 +727,56 @@
     "decline": "Ablehnen",
     "approve": "Bestätigen",
     "linkedOne": "Du siehst den Anlass aus deiner Benachrichtigung.",
-    "linkedGone": "Diesen Anlass gibt es nicht mehr."
+    "linkedGone": "Diesen Anlass gibt es nicht mehr.",
+    "attendance": {
+      "absent": "Fehlt",
+      "allEvents": "Alle Anlässe",
+      "allPresent": "Übrige anwesend",
+      "average": "Ø Anwesenheit {{rate}}",
+      "count": "{{present}} von {{count}} anwesend",
+      "csv": "CSV für J+S",
+      "events": "{{count}} Anlässe",
+      "excused": "Entschuldigt",
+      "excusedShort": "Ent.",
+      "from": "Von",
+      "legend": "✓ anwesend · E entschuldigt · · gefehlt oder nicht erfasst · leer: nicht erwartet",
+      "noEvents": "Keine Anlässe in diesem Zeitraum",
+      "noEventsHint": "Gib Trainings eine Gruppe, dann zählen ihre Mitglieder hier.",
+      "nobody": "Niemand erwartet: gib dem Anlass eine Gruppe oder melde Mitglieder an.",
+      "overview": "Anwesenheit",
+      "present": "Da",
+      "presentShort": "Da",
+      "rate": "Quote",
+      "saved": "Anwesenheit gespeichert",
+      "take": "Anwesenheit erfassen",
+      "title": "Anwesenheit",
+      "to": "Bis"
+    },
+    "group": "Gruppe",
+    "groupHint": "Ihre Mitglieder werden bei der Anwesenheit erwartet (z. B. das Team eines Trainings).",
+    "noGroup": "Für alle",
+    "repeat": {
+      "dates": "{{count}} Termine",
+      "days": "An diesen Tagen",
+      "every": "Rhythmus",
+      "everyNWeeks": "Alle {{count}} Wochen",
+      "everyWeek": "Jede Woche",
+      "none": "Mit dieser Regel gibt es keinen Termin.",
+      "skipHint": "Tippe auf einen Termin, der ausfällt (Ferien, Feiertage).",
+      "skipped": "Fällt aus",
+      "takesPlace": "Findet statt",
+      "until": "Bis",
+      "weekly": "Wöchentlich wiederholen (z. B. Training)"
+    },
+    "series": {
+      "applyTo": "Ändern für",
+      "badge": "Wiederkehrender Termin",
+      "deleteBody": "Der Termin gehört zu einer Serie. Gelöschte Termine und ihre Anmeldungen sind endgültig weg.",
+      "deleteFollowing": "Diesen und alle folgenden",
+      "deleteThis": "Nur diesen Termin",
+      "following": "Diesen und alle folgenden",
+      "thisOne": "Nur diesen Termin"
+    }
   },
   "finance": {
     "addCategory": "Kategorie hinzufügen",
@@ -2078,7 +2127,8 @@
       "roles": "Verwaltung › Rollen",
       "health": "System › Systemzustand",
       "dashboardMe": "Dashboard › Persönlich",
-      "financeSettings": "Finanzen › Einstellungen"
+      "financeSettings": "Finanzen › Einstellungen",
+      "attendance": "Vereinsleben › Anwesenheit"
     },
     "emailVerify": {
       "banner": "Deine private E-Mail-Adresse ist noch nicht bestätigt. Einige Funktionen sind erst danach verfügbar.",
