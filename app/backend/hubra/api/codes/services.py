@@ -27,7 +27,7 @@ class CodeService:
         if "name" in data:
             code.name = data["name"]
         if "code" in data:
-            code.code = encrypt_code(data["code"])
+            code.code = encrypt_code(data["code"], "codes.code")
         if "description" in data:
             code.description = data["description"]
         if "is_active" in data:
@@ -78,7 +78,7 @@ class CodesService:
     def create(data: dict, actor_id: int) -> Code:
         code = Code(
             name=data["name"],
-            code=encrypt_code(data["code"]),
+            code=encrypt_code(data["code"], "codes.code"),
             description=data.get("description"),
             created_by_id=actor_id,
             updated_by_id=actor_id,

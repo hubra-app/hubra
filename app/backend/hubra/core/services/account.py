@@ -23,6 +23,8 @@ from hubra.core.tenant.context import in_club
 
 LANGUAGES = ("de-CH", "en-GB")
 THEMES = ("light", "dark", "auto")
+NAV_PREF_KEYS = ("pinned", "hidden")
+NAV_PREF_MAX = 50
 
 
 def memberships(user_id: int) -> Iterator[tuple[Tenant, Member]]:
@@ -80,9 +82,31 @@ def profile(user: User) -> dict:
         "profileNote": user.profile_note,
         "language": user.language,
         "theme": user.theme,
+        "navPrefs": _nav_prefs(user.nav_prefs),
         "isSuperadmin": user.is_superadmin,
         "mustChangePassword": user.must_change_password,
     }
+
+
+def _nav_prefs(value) -> dict:
+    value = value if isinstance(value, dict) else {}
+    return {key: list(value.get(key) or []) for key in NAV_PREF_KEYS}
+
+
+def _clean_nav_prefs(value) -> dict:
+    """Sidebar paths the person pinned or hid; the app checks permissions."""
+    if not isinstance(value, dict):
+        raise_error(400, "VALIDATION_ERROR", "navPrefs must be an object")
+    clean = {}
+    for key in NAV_PREF_KEYS:
+        paths = value.get(key) or []
+        if not isinstance(paths, list) or len(paths) > NAV_PREF_MAX:
+            raise_error(400, "VALIDATION_ERROR", f"navPrefs.{key} must be a short list")
+        for path in paths:
+            if not (isinstance(path, str) and path.startswith("/app/") and len(path) <= 200):
+                raise_error(400, "VALIDATION_ERROR", f"navPrefs.{key} holds an invalid path")
+        clean[key] = list(dict.fromkeys(paths))
+    return clean
 
 
 def update_profile(user: User, updates: dict) -> None:
@@ -121,6 +145,8 @@ def update_profile(user: User, updates: dict) -> None:
         if updates["theme"] not in THEMES:
             raise_error(400, "VALIDATION_ERROR", "Unknown theme")
         user.theme = updates["theme"]
+    if "navPrefs" in updates:
+        user.nav_prefs = _clean_nav_prefs(updates["navPrefs"])
 
 
 def change_password(user: User, current_password: str, new_password: str) -> None:

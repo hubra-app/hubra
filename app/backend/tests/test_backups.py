@@ -7,6 +7,7 @@ run without a real Postgres or S3 endpoint.
 from __future__ import annotations
 
 import os
+import hashlib
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -189,7 +190,7 @@ class TestBackupService:
             status="completed",
             s3_key="backups/test.dump.gpg",
             size_bytes=1024,
-            checksum="abc123",
+            checksum=hashlib.sha256(b"ENCRYPTED_DATA").hexdigest(),
         )
         db.session.add(record)
         db.session.commit()
@@ -778,7 +779,7 @@ class TestScopedBackupAPI:
         club = _club(db)
         record = _club_record(db, club)
 
-        def fake_restore(record_id):
+        def fake_restore(record_id, private_key=None):
             r = BackupService.get_backup(record_id)
             r.safety_schema = f"tenant_{club.id}_before_restore_1"
             return r
@@ -791,7 +792,7 @@ class TestScopedBackupAPI:
             )
 
         assert resp.status_code == 200
-        m.assert_called_once_with(record.id)
+        m.assert_called_once_with(record.id, None)
         assert resp.get_json()["safety_schema"].startswith(f"tenant_{club.id}_")
 
     def test_club_admins_cannot_restore(self, client, seeded_db, auth_headers, db):

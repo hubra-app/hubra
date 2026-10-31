@@ -10,6 +10,8 @@ import { NotificationPanel } from './NotificationPanel'
 import { ImpersonationBanner } from './ImpersonationBanner'
 import { ClubBanner } from './ClubBanner'
 import { ClubBranding } from './ClubBranding'
+import { MoreTabs } from './MoreScreen'
+import { CustomizeSidebarModal } from './CustomizeSidebar'
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const { currentUser } = useAuth()
@@ -57,11 +59,15 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
       <AppShell.Main>
         <ClubBanner />
-        <div className="page-container">{children}</div>
+        <div className="page-container">
+          <MoreTabs />
+          {children}
+        </div>
       </AppShell.Main>
 
       <ClubBranding />
       <NotificationPanel />
+      <CustomizeSidebarModal />
       {currentUser?.mustChangePassword && <ForcedPasswordChangeModal />}
     </AppShell>
   )

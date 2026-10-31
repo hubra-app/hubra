@@ -18,6 +18,8 @@ from hubra.core.models.internal_key import InternalKey
 
 _log = logging.getLogger(__name__)
 
+_PURPOSE = "internal_keys.value"
+
 
 class KeyService:
     """Access layer for InternalKey values."""
@@ -33,7 +35,7 @@ class KeyService:
         if ik is None or ik.value is None:
             return None
         try:
-            plaintext = decrypt_code(ik.value)
+            plaintext = decrypt_code(ik.value, _PURPOSE)
         except Exception:
             _log.warning("KeyService.get: failed to decrypt value for key %s", key)
             return None
@@ -64,7 +66,7 @@ class KeyService:
             plaintext = json.dumps(value, ensure_ascii=False)
         else:
             plaintext = value if isinstance(value, str) else str(value)
-        ik.value = encrypt_code(plaintext)
+        ik.value = encrypt_code(plaintext, _PURPOSE)
 
     @staticmethod
     def update(key: str, value: str | list[str] | None) -> None:
