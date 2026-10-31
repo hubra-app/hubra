@@ -2185,6 +2185,7 @@
       "translations": "Translations",
       "txCategories": "Categories",
       "activeMembersCount": "{{count}} active members",
+      "more": "More",
       "recurring": "Recurring",
       "feeBasis": "Fee basis"
     },
@@ -2251,7 +2252,8 @@
       "invoice": "Invoice",
       "member": "Member",
       "poll": "Poll",
-      "transaction": "Transaction"
+      "transaction": "Transaction",
+      "page": "Page"
     },
     "searchNoResults": "No results for \"{{query}}\"",
     "searchPlaceholder": "Search members, invoices, inventory…",
@@ -2261,7 +2263,8 @@
       "operations": "Operations",
       "system": "Administration",
       "workspace": "Club",
-      "activities": "Club life"
+      "activities": "Club life",
+      "favourites": "Favourites"
     },
     "tooltips": {
       "dismiss": "Dismiss",
@@ -2291,6 +2294,20 @@
     },
     "clubBanner": {
       "dismiss": "Hide banner"
+    },
+    "more": {
+      "emptyTitle": "Nothing here yet",
+      "emptyDesc": "Pages you hide in the sidebar and pages from plugins appear here."
+    },
+    "customize": {
+      "title": "Customise sidebar",
+      "intro": "Use the star to pin a page to the top under Favourites. Hidden pages are still under More and in the search (Ctrl+K).",
+      "pin": "Pin to favourites",
+      "unpin": "Unpin",
+      "hide": "Hide",
+      "show": "Show again",
+      "reset": "Reset",
+      "done": "Done"
     }
   },
   "system": {

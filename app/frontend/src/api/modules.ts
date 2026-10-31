@@ -8,7 +8,7 @@ export interface ModuleNavItem {
   order: number
   perms: string[]
   group: string | null
-  /** Path of the entry this one is indented under. */
+  /** Path of the entry whose screen shows this one as a tab. */
   parent?: string | null
 }
 

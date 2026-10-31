@@ -49,6 +49,9 @@ class Tenant(db.Model):
         nullable=True,
         default=None,
     )
+    # The club's own age public key: its backups are encrypted to it as
+    # well as to the install's BACKUP_PUBLIC_KEY.
+    backup_public_key: Mapped[str | None] = mapped_column(db.Text, nullable=True)
 
     def __repr__(self) -> str:
         return f"<Tenant id={self.id} slug={self.slug!r} status={self.status!r}>"

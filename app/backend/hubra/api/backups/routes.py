@@ -31,6 +31,23 @@ _backups_schema = BackupRecordSchema(many=True)
 _config_schema = BackupConfigSchema()
 
 
+def _private_key(data: dict) -> tuple[str | None, object | None]:
+    """The age private key the operator pasted, or an error response."""
+    from hubra.core.services.backup_crypto import private_keys_in, valid_private_key
+
+    raw = data.get("private_key")
+    if raw in (None, ""):
+        return None, None
+    keys = private_keys_in(raw) if isinstance(raw, str) else []
+    if not keys or not all(valid_private_key(k) for k in keys):
+        return None, api_error(
+            "VALIDATION_ERROR",
+            "That is not an age private key (AGE-SECRET-KEY-1...)",
+            400,
+        )
+    return raw, None
+
+
 def _actor():
     return getattr(g, "system_user", None)
 
@@ -79,7 +96,9 @@ def create_backup():
     details = {"tenant_id": tenant_id} if tenant_id is not None else {}
 
     actor = _actor()
-    triggered_by = (getattr(actor, "email", None) or "platform") if actor else "platform"
+    triggered_by = (
+        (getattr(actor, "email", None) or "platform") if actor else "platform"
+    )
 
     if current_app.config.get("TESTING"):
         from hubra.core.services.backup import BackupService
@@ -123,17 +142,23 @@ def verify_backup(record_id: int):
         return api_error("NOT_FOUND", "Backup record not found", 404)
     if record.status != "completed":
         return api_error("CONFLICT", "Only completed backups can be verified", 409)
+    private_key, error = _private_key(request.get_json(silent=True) or {})
+    if error:
+        return error
 
     if current_app.config.get("TESTING"):
         from hubra.core.services.backup import BackupService
 
-        updated = BackupService.verify_backup(record_id)
+        updated = BackupService.verify_backup(record_id, private_key)
         _audit("verify", record_id)
         return jsonify(_backup_schema.dump(updated)), 200
 
+    from hubra.core.crypto import seal
     from hubra.core.tasks.backup_tasks import verify_backup_task
 
-    task = verify_backup_task.delay(record_id)
+    task = verify_backup_task.delay(
+        record_id, seal(private_key) if private_key else None
+    )
     _audit("verify", record_id)
     return jsonify(
         {"task_id": task.id, "record_id": record_id, "status": "verifying"}
@@ -145,8 +170,12 @@ def verify_backup(record_id: int):
 def restore_backup(record_id: int):
     """Restore one club from a club backup.  Returns 202 (200 when TESTING).
 
-    Body ``{"confirm": "<club address>"}``: the club's current slug, typed
-    by hand.  The club's current data is kept as a safety copy schema.
+    Body ``{"confirm": "<club address>", "private_key": "AGE-SECRET-KEY-1..."}``:
+    the club's current slug, typed by hand, and for an age backup the backup
+    private key (unless it is on the server).  The key is used for this
+    restore only and never stored; on its way to the worker it is sealed
+    with the server key and expires after an hour.  The club's current data
+    is kept as a safety copy schema.
     """
     record = BackupServiceAPI.get(record_id)
     if record is None:
@@ -163,22 +192,36 @@ def restore_backup(record_id: int):
         return api_error(
             "VALIDATION_ERROR", "Type the club's address to confirm the restore", 400
         )
+    private_key, error = _private_key(data)
+    if error:
+        return error
+    from hubra.core.services.backup_crypto import needs_private_key
+
+    if needs_private_key(record.s3_key) and not private_key:
+        return api_error(
+            "PRIVATE_KEY_REQUIRED",
+            "This backup can only be opened with the backup private key",
+            400,
+        )
     details = {"tenant_id": tenant.id, "slug": tenant.slug}
 
     if current_app.config.get("TESTING"):
         from hubra.core.services.backup import BackupService, RestoreError
 
         try:
-            updated = BackupService.restore_club(record_id)
+            updated = BackupService.restore_club(record_id, private_key)
         except RestoreError as exc:
             _audit("restore_failed", record_id, {**details, "error": str(exc)})
             return api_error("RESTORE_FAILED", str(exc), 500)
         _audit("restore", record_id, details)
         return jsonify(_backup_schema.dump(updated)), 200
 
+    from hubra.core.crypto import seal
     from hubra.core.tasks.backup_tasks import restore_club_backup_task
 
-    task = restore_club_backup_task.delay(record_id)
+    task = restore_club_backup_task.delay(
+        record_id, seal(private_key) if private_key else None
+    )
     _audit("restore", record_id, {**details, "task_id": task.id})
     return jsonify(
         {"task_id": task.id, "record_id": record_id, "status": "restoring"}
