@@ -5,7 +5,7 @@ it makes every older link stop working. Added to the template table in
 public and to every club schema.
 
 Revision ID: f2c8a4e6b1d9
-Revises: c5e2a8d4f1b7
+Revises: d7f3b9a1c5e8, e3b9d5f1a7c4
 Create Date: 2026-10-31 07:00:00.000000
 
 """
@@ -16,7 +16,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "f2c8a4e6b1d9"
-down_revision = "c5e2a8d4f1b7"
+down_revision = ("d7f3b9a1c5e8", "e3b9d5f1a7c4")
 branch_labels = None
 depends_on = None
 
