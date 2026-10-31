@@ -89,9 +89,13 @@ export function EventsTab() {
   const eventTypes = clubEventTypes(
     moduleList.find((m) => m.code === 'events')?.config?.event_types,
   )
-  const canUpdate = hasPermission('events.events.update')
-  const canDelete = hasPermission('events.events.delete')
-  const canApprove = hasPermission('events.events.add_attendee')
+  // Whoever put an event up runs it (the API checks the same).
+  const hosts = (ev: ClubEvent) =>
+    currentUser != null && ev.createdById === Number(currentUser.id)
+  const canUpdate = (ev: ClubEvent) => hasPermission('events.events.update') || hosts(ev)
+  const canDelete = (ev: ClubEvent) => hasPermission('events.events.delete') || hosts(ev)
+  const canApprove = (ev: ClubEvent) =>
+    hasPermission('events.events.add_attendee') || hosts(ev)
   const [pendingFor, setPendingFor] = useState<ClubEvent | null>(null)
   const [typeFilter, setTypeFilter] = useState('All')
   const [search, setSearch] = useState('')
@@ -419,7 +423,7 @@ export function EventsTab() {
                   {ev.placesTaken ?? ev.attendees.length}
                   {ev.maxAttendees ? ` / ${ev.maxAttendees}` : ''}
                 </span>
-                {canApprove && (ev.pendingCount ?? 0) > 0 && (
+                {canApprove(ev) && (ev.pendingCount ?? 0) > 0 && (
                   <Badge
                     variant="light"
                     color="orange"
@@ -494,8 +498,8 @@ export function EventsTab() {
                     )}
                   </Button>
                   <ActionButtons
-                    onEdit={canUpdate ? () => openEdit(ev) : undefined}
-                    onDelete={canDelete ? () => setDeleteTarget(ev) : undefined}
+                    onEdit={canUpdate(ev) ? () => openEdit(ev) : undefined}
+                    onDelete={canDelete(ev) ? () => setDeleteTarget(ev) : undefined}
                   />
                 </div>
               )

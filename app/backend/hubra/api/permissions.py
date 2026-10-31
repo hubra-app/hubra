@@ -444,6 +444,21 @@ def invalidate_role_permissions(role_id: int) -> None:
         _mark_redis_down()
 
 
+def created_by(model, column: str = "created_by", arg: str = "id"):
+    """``allow`` for ``permission_required``: the member who created the row
+    in the route argument *arg* acts on it (their own event, their own poll)."""
+    col = getattr(model, column)
+
+    def allow(member, **kwargs):
+        object_id = kwargs.get(arg)
+        if object_id is None:
+            return None
+        owner = db.session.scalar(select(col).where(model.id == object_id))
+        return "creator" if owner is not None and owner == member.id else None
+
+    return allow
+
+
 def permission_required(
     resource: str,
     action: str,
