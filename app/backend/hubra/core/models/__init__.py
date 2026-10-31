@@ -48,6 +48,7 @@ from hubra.core.models.audit import AuditEntry
 from hubra.core.models.token import TokenBlocklist
 from hubra.core.models.device_session import Device, Session
 from hubra.core.models.account_session import AccountSession
+from hubra.core.models.known_device import KnownDevice
 from hubra.core.models.inventory import InventoryItem, item_instructions
 from hubra.core.models.password_reset import PasswordResetToken
 from hubra.core.models.email_verification import EmailVerificationToken
@@ -71,6 +72,7 @@ from hubra.core.models.plugin import (
 
 __all__ = [
     "AccountSession",
+    "KnownDevice",
     "InstalledPlugin",
     "PluginArchive",
     "PluginRepository",

@@ -1,10 +1,13 @@
-{{ t('mail.email.new_device_login.body', club_name=club_name) }}
+{%- set device = t('mail.email.new_device_login.device_value', browser=browser_family, platform=platform) if browser_family and platform else user_agent -%}
+{{ t('mail.email.new_device_login.intro', club_name=club_name) }}
 
-  {{ t('mail.email.new_device_login.table_time') }}:       {{ timestamp }} UTC
+  {{ t('mail.email.new_device_login.table_time') }}: {{ timestamp }}
+  {{ t('mail.email.new_device_login.table_device') }}: {{ device }}
   {{ t('mail.email.new_device_login.table_ip') }}: {{ ip }}
-  {{ t('mail.email.new_device_login.table_browser') }}:    {{ user_agent }}
 
 {{ t('mail.email.new_device_login.was_you') }}
-{% if support_url %}{{ t('mail.email.new_device_login.not_you_note', support_url=support_url) }}
-{% else %}{{ t('mail.email.new_device_login.not_you_note_no_url') }}
+{{ t('mail.email.new_device_login.not_you') }}
+{% if sessions_url %}
+{{ t('mail.email.new_device_login.button') }}: {{ sessions_url }}
+{{ t('mail.email.new_device_login.change_password') }}: {{ password_url }}
 {% endif %}

@@ -35,7 +35,7 @@ from hubra.api.auth.services import (
     _extract_platform,
     _EMAIL_RE,
 )
-from hubra.api.auth import session_service
+from hubra.api.auth import known_devices, session_service
 from hubra.api.permissions import (
     require_password_changed,
     _get_member_permission_keys,
@@ -230,6 +230,26 @@ def _record_account_login(user: User) -> int:
     )
 
 
+def _note_device(user: User) -> tuple[str, bool]:
+    """Remember this browser for *user*: (cookie token, new-device alert)."""
+    return known_devices.remember(
+        user,
+        request.cookies.get(known_devices.DEVICE_COOKIE),
+        browser_family=_extract_browser_family(request.headers),
+        platform=_extract_platform(request.headers),
+    )
+
+
+def _alert_new_device(user: User) -> None:
+    known_devices.send_alert(
+        user,
+        request.remote_addr or "",
+        _extract_browser_family(request.headers),
+        _extract_platform(request.headers),
+        request.headers.get("User-Agent", "")[:512],
+    )
+
+
 # ── POST /auth/login ──────────────────────────────────────────────────────────
 
 
@@ -291,7 +311,10 @@ def login():
             "user_id": user.id,
             "account_sid": _record_account_login(user),
         }
+        device_token, new_device = _note_device(user)
         db.session.commit()
+        if new_device:
+            _alert_new_device(user)
         access_token = create_access_token(
             identity=f"user:{user.id}",
             additional_claims=additional_claims,
@@ -311,6 +334,7 @@ def login():
         set_refresh_cookies(response, refresh_token, max_age=refresh_max_age)
         _set_remembered_email_cookie(response, email)
         _set_theme_cookie(response, user.theme)
+        known_devices.set_cookie(response, device_token)
         return response
 
     # The same gate as /auth/switch-tenant: no club opens before the address
@@ -337,6 +361,11 @@ def login():
         browser_family=_extract_browser_family(request.headers),
         platform=_extract_platform(request.headers),
     )
+    # With an account, "new device" means new to the account, not to this
+    # club, and the account's address hears about it.
+    device_token = None
+    if user is not None:
+        device_token, new_device = _note_device(user)
 
     try:
         db.session.commit()
@@ -345,14 +374,18 @@ def login():
         raise
 
     if new_device:
-        ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
-        if member.private_email_verified:
+        ts = known_devices.sign_in_time()
+        if user is not None:
+            _alert_new_device(user)
+        elif member.private_email_verified:
             email_svc.send_new_device_login(
                 member.email,
                 member.name,
-                request.remote_addr or "",
-                request.headers.get("User-Agent", "")[:512],
-                ts,
+                ip=request.remote_addr or "",
+                browser_family=_extract_browser_family(request.headers),
+                platform=_extract_platform(request.headers),
+                user_agent=request.headers.get("User-Agent", "")[:512],
+                timestamp=ts,
                 lang=getattr(member, "language", "de-CH") or "de-CH",
             )
         else:
@@ -398,6 +431,8 @@ def login():
     _set_remembered_email_cookie(response, email)
     if user is not None:
         _set_theme_cookie(response, user.theme)
+    if device_token is not None:
+        known_devices.set_cookie(response, device_token)
     return response
 
 
@@ -439,6 +474,7 @@ def signup():
         email_verification.send(user, _get_sso_base_url())
 
     additional_claims = {"user_id": user.id, "account_sid": _record_account_login(user)}
+    device_token, _ = _note_device(user)  # the account's first device
     db.session.commit()
     access_token = create_access_token(
         identity=f"user:{user.id}",
@@ -461,6 +497,8 @@ def signup():
     _set_remembered_email_cookie(response, email)
     if user is not None:
         _set_theme_cookie(response, user.theme)
+    if device_token is not None:
+        known_devices.set_cookie(response, device_token)
     return response
 
 

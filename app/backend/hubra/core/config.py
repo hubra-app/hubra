@@ -134,6 +134,8 @@ class BaseConfig:
     # (sso.hubra.club) rather than the COS frontend. Falls back to
     # FRONTEND_BASE_URL for backward compatibility when not set.
     SSO_BASE_URL: str = os.environ.get("SSO_BASE_URL", "")
+    # Time zone for times shown in mails (new-device sign-in).
+    MAIL_TIMEZONE: str = os.environ.get("MAIL_TIMEZONE", "Europe/Zurich")
 
     # ── Integrations ────────────────────────────────────────────────────────
     WILDDUCK_API_URL: str = os.environ.get("WILDDUCK_API_URL", "")

@@ -238,6 +238,18 @@ The full list is in [configuration.md](configuration.md) and `.env.example`.
 
 Everything staff do in manage is written to Platform › Audit log.
 
+### Sign-in alerts
+
+When an account signs in from a browser it has not used before, its
+(confirmed) address gets a mail with the time, IP address and browser, and
+a button to its sessions on the SSO portal. Each browser keeps a random
+token in the `hubra_device` cookie (HttpOnly, 400 days, survives sign-out);
+the database keeps only its hash, in `known_devices`. The first browser an
+account is seen with, including every account's first sign-in after the
+upgrade, is learnt without a mail. Cleared cookies or a private window
+count as a new device. Times in the mail use `MAIL_TIMEZONE`
+(default `Europe/Zurich`).
+
 ## Day to day
 
 ```sh
