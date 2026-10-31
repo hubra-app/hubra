@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { AppShell } from '@mantine/core'
 import { useElementSize } from '@mantine/hooks'
 import { useAuth, useNav } from '@/context/AppContext'
@@ -17,6 +18,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
   // it doesn't cover the top of the page.
   const { ref: bannerRef, height: bannerHeight } = useElementSize()
   const headerHeight = 64 + Math.ceil(bannerHeight)
+  // Side panels (SlideOver) open below the top bar.
+  useEffect(() => {
+    document.documentElement.style.setProperty('--hb-header-h', `${headerHeight}px`)
+  }, [headerHeight])
 
   return (
     <AppShell

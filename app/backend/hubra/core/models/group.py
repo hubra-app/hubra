@@ -25,7 +25,6 @@ class Group(db.Model):
     icon_name: Mapped[str | None] = mapped_column(db.String(255), nullable=True)
     # e.g. "3x/week"
     sessions: Mapped[str | None] = mapped_column(db.String(255), nullable=True)
-    tools: Mapped[int] = mapped_column(db.Integer, default=0, nullable=False)
     is_default: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     # M5 fields
     # board | committee | team | interest_group | mailing_list

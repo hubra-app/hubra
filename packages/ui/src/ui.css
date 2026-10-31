@@ -13,6 +13,9 @@
   --hb-text-3: #8c86a0;
   /* The sidebar takes a light tint of the club colour. */
   --hb-sidebar: color-mix(in srgb, var(--mantine-color-acc-0) 55%, #ffffff);
+  /* Announcement banner: a tint of the accent colour under normal text. */
+  --hb-notice-bg: var(--mantine-color-gold-0);
+  --hb-notice-border: var(--mantine-color-gold-3);
 }
 
 html:root[data-mantine-color-scheme="dark"] {
@@ -27,6 +30,8 @@ html:root[data-mantine-color-scheme="dark"] {
   --hb-text-2: #a8a8b0;
   --hb-text-3: #7c7c85;
   --hb-sidebar: #151517;
+  --hb-notice-bg: color-mix(in srgb, var(--mantine-color-gold-6) 14%, #19191c);
+  --hb-notice-border: color-mix(in srgb, var(--mantine-color-gold-6) 35%, #19191c);
   --mantine-color-body: var(--hb-surface);
   --mantine-color-text: var(--hb-text);
   --mantine-color-dimmed: var(--hb-text-3);

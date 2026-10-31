@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Table, Button, Group, Paper, TextInput } from '@mantine/core'
+import { Table, Button, Group, Paper, SimpleGrid, TextInput } from '@mantine/core'
 import { useT } from '@/locales/i18n'
 import { IconPlus, IconTrash, IconPencil } from '@tabler/icons-react'
 import { useToast, useAuth } from '@/context/AppContext'
@@ -173,23 +173,26 @@ export function ExternalPartiesTab() {
 
   const partyForm = (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <Field label={t('common.name', 'Name')}>
-        <TextInput
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          placeholder={t(
-            'finance.externalParty.namePlaceholder',
-            'z. B. Muster AG',
-          )}
-        />
-      </Field>
-      <Field label={t('common.email', 'E-Mail')}>
-        <TextInput
-          value={form.email}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
-          placeholder="billing@example.com"
-        />
-      </Field>
+      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
+        <Field label={t('common.name', 'Name')}>
+          <TextInput
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            placeholder={t(
+              'finance.externalParty.namePlaceholder',
+              'z. B. Muster AG',
+            )}
+          />
+        </Field>
+        <Field label={t('common.email', 'E-Mail')}>
+          <TextInput
+            type="email"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            placeholder="billing@example.com"
+          />
+        </Field>
+      </SimpleGrid>
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
         <Field label={t('common.street', 'Strasse')}>
           <TextInput
@@ -355,6 +358,11 @@ export function ExternalPartiesTab() {
       </Paper>
 
       <Modal
+        onSubmit={(e) => {
+          e?.preventDefault()
+          submitAdd()
+        }}
+        wide
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={t('finance.externalParty.new', 'Neue Partei')}
@@ -363,7 +371,7 @@ export function ExternalPartiesTab() {
             <Button variant="default" onClick={() => setAddOpen(false)}>
               {t('common.cancel', 'Abbrechen')}
             </Button>
-            <Button variant="filled" onClick={submitAdd} loading={adding}>
+            <Button variant="filled" type="submit" loading={adding}>
               {t('common.create', 'Erstellen')}
             </Button>
           </>
@@ -372,6 +380,11 @@ export function ExternalPartiesTab() {
         {partyForm}
       </Modal>
       <Modal
+        onSubmit={(e) => {
+          e?.preventDefault()
+          saveEdit()
+        }}
+        wide
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
         title={t('finance.externalParty.edit', 'Partei bearbeiten')}
@@ -381,7 +394,7 @@ export function ExternalPartiesTab() {
             <Button variant="default" onClick={() => setEditTarget(null)}>
               {t('common.cancel', 'Abbrechen')}
             </Button>
-            <Button variant="filled" onClick={saveEdit}>
+            <Button variant="filled" type="submit">
               {t('common.save', 'Speichern')}
             </Button>
           </>

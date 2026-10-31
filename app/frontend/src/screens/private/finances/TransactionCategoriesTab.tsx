@@ -360,6 +360,10 @@ export function TransactionCategoriesTab() {
       )}
 
       <Modal
+        onSubmit={(e) => {
+          e?.preventDefault()
+          saveAdd()
+        }}
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={t('finance.newCategory', 'Neue Kategorie')}
@@ -368,7 +372,7 @@ export function TransactionCategoriesTab() {
             <Button variant="default" onClick={() => setAddOpen(false)}>
               {t('common.cancel', 'Abbrechen')}
             </Button>
-            <Button variant="filled" onClick={saveAdd}>
+            <Button variant="filled" type="submit">
               {t('common.create', 'Erstellen')}
             </Button>
           </>
@@ -377,6 +381,10 @@ export function TransactionCategoriesTab() {
         {catForm}
       </Modal>
       <Modal
+        onSubmit={(e) => {
+          e?.preventDefault()
+          saveEdit()
+        }}
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
         title={t('finance.editCategory', 'Kategorie bearbeiten')}
@@ -386,7 +394,7 @@ export function TransactionCategoriesTab() {
             <Button variant="default" onClick={() => setEditTarget(null)}>
               {t('common.cancel', 'Abbrechen')}
             </Button>
-            <Button variant="filled" onClick={saveEdit}>
+            <Button variant="filled" type="submit">
               {t('common.save', 'Speichern')}
             </Button>
           </>
