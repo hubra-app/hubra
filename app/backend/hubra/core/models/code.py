@@ -52,7 +52,7 @@ class Code(db.Model):
             return decrypt_code(self.code)
         except InvalidToken:
             logging.getLogger(__name__).warning(
-                "Code %s cannot be decrypted; was SECRET_KEY or FERNET_KEY changed?",
+                "Code %s cannot be decrypted; is its key missing from FERNET_OLD_KEYS?",
                 self.id,
             )
             return ""

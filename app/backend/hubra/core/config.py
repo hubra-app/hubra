@@ -38,6 +38,32 @@ def _require_env(key: str) -> str:
     return value
 
 
+def _validate_fernet_keys() -> None:
+    """FERNET_KEY must be set and valid; so must every FERNET_OLD_KEYS entry.
+
+    Stored secrets written before FERNET_KEY existed were encrypted with a
+    key derived from SECRET_KEY, which stays readable, so setting a fresh
+    FERNET_KEY loses nothing (then run `flask crypto rotate`).
+    """
+    from cryptography.fernet import Fernet
+
+    hint = (
+        "Generate one with `python3 -c \"import base64, os; "
+        "print(base64.urlsafe_b64encode(os.urandom(32)).decode())\"`."
+    )
+    keys = [("FERNET_KEY", _require_env("FERNET_KEY"))]
+    old = os.environ.get("FERNET_OLD_KEYS", "")
+    keys += [("FERNET_OLD_KEYS", k.strip()) for k in old.split(",") if k.strip()]
+    for name, key in keys:
+        try:
+            Fernet(key.encode("utf-8"))
+        except ValueError:
+            raise RuntimeError(
+                f"[Production] {name} holds a value that is not a Fernet key "
+                f"(32 url-safe base64-encoded bytes). {hint}"
+            ) from None
+
+
 def _dev_secret(env_key: str, length: int = 32) -> str:
     """Return env var value, or a random secret with a warning if unset."""
     val = os.environ.get(env_key)
@@ -156,11 +182,13 @@ class BaseConfig:
     MAIL_HOST: str = os.environ.get("MAIL_HOST", "")
     MAIL_DOMAIN: str = os.environ.get("MAIL_DOMAIN", "")
 
-    # ── Fernet encryption key (codes at rest) ──────────────────────────────
-    # If not set, derived from SECRET_KEY (legacy behavior, not recommended
-    # for new deployments). Generate with:
+    # ── Fernet encryption key (secrets at rest, see hubra/core/crypto.py) ──
+    # Required in production; development falls back to a key derived from
+    # SECRET_KEY. FERNET_OLD_KEYS (comma-separated) still decrypt, for
+    # rotation with `flask crypto rotate`. Generate with:
     #   python -c "import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())"
     FERNET_KEY: str = os.environ.get("FERNET_KEY", "")
+    FERNET_OLD_KEYS: str = os.environ.get("FERNET_OLD_KEYS", "")
 
     # ── ZoneMTA SMTP fallback (independent of member IMAP/SMTP) ────────────
     # When set, these override SMTP_HOST/SMTP_PORT for transactional email.
@@ -248,13 +276,7 @@ class ProductionConfig(BaseConfig):
                     key,
                 )
         _require_env("DATABASE_URL")
-        if not os.environ.get("FERNET_KEY"):
-            _cfg_log.warning(
-                "FERNET_KEY is not set in production — falling back to "
-                "SECRET_KEY-derived key (legacy, not recommended). "
-                "Set FERNET_KEY independently for proper key separation "
-                "and rotation support."
-            )
+        _validate_fernet_keys()
 
     # Override insecure BaseConfig fallbacks with env vars (no default).
     # Missing vars produce an empty string here; validate() catches them.
@@ -305,6 +327,7 @@ class TestingConfig(BaseConfig):
     BACKUP_S3_SECRET_KEY: str = ""
     BACKUP_ENCRYPTION_KEY: str = ""
     FERNET_KEY: str = ""
+    FERNET_OLD_KEYS: str = ""
     # Run Celery tasks synchronously so tests don't need a Redis broker
     CELERY_TASK_ALWAYS_EAGER: bool = True
     CELERY_ALWAYS_EAGER: bool = True

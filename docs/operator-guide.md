@@ -102,6 +102,38 @@ So an upgrade is: take a backup, switch to the new images, restart.
 Pin a version for production. `latest` follows the newest release, and
 `sha-<commit>` is one exact build.
 
+## Change the encryption key
+
+`FERNET_KEY` encrypts the secrets Hubra stores: door codes, binding values,
+mailbox passwords and the secret platform settings (relay passwords, backup
+storage key). Production does not start without it. Installs from before it
+was required used a key derived from `SECRET_KEY`; those values stay
+readable, so setting a fresh `FERNET_KEY` loses nothing.
+
+To change the key (after a leak, or once a year), without downtime:
+
+1. Generate a new key:
+   `python3 -c "import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())"`.
+2. Put the new key in `FERNET_KEY` and the old one in `FERNET_OLD_KEYS`
+   (comma-separated if there are several). Restart (on k3s, re-run
+   `deploy/create-secrets.sh` or update the SOPS secret, then
+   `kubectl -n hubra rollout restart deployment`). Everything stays
+   readable; new values use the new key.
+3. Re-encrypt what is stored: `flask crypto rotate` (Compose:
+   `docker compose exec backend flask crypto rotate`, k3s:
+   `kubectl -n hubra exec deploy/backend -- flask crypto rotate`).
+4. `flask crypto check` must end with `OK: old keys can be removed.` and
+   exit 0. If it lists values that no key opens, a key is missing from
+   `FERNET_OLD_KEYS`; nothing was overwritten, so add it back and run
+   step 3 again.
+5. Remove the old key from `FERNET_OLD_KEYS`, restart, and store the new
+   key in your password manager. Keep the old key there too until the
+   oldest backup made before the change has expired: restoring such a
+   backup brings back values encrypted with it.
+
+The IMAP inbox plugin reads `FERNET_OLD_KEYS` too and re-encrypts each
+mailbox password on its next sync.
+
 ## Mail look and sender logo
 
 Every mail Hubra sends (invites, password resets, invoices, ...) uses one
