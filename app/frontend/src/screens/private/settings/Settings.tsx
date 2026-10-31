@@ -7,6 +7,7 @@ import { ModulesTab } from '@/screens/private/settings/ModulesTab'
 import { ClubSettingsTab, MembershipSettingsTab } from '@/screens/private/settings/ClubSettingsTab'
 import { BankSettingsCard } from '@/screens/private/settings/BankSettingsCard'
 import { DomainsTab } from '@/screens/private/settings/DomainsTab'
+import { AppsTab } from '@/screens/private/settings/AppsTab'
 
 // The club profile is what most admins come for, so it is the default tab;
 // the raw key/value store sits last under "Erweitert". The club settings are
@@ -31,6 +32,12 @@ const TABS = [
     label: 'Module & Plugins',
     Component: ModulesTab,
   },
+  {
+    id: 'apps',
+    labelKey: 'settings.tabs.apps',
+    label: 'Verbundene Apps',
+    Component: AppsTab,
+  },
   { id: 'domains', labelKey: 'settings.tabs.domains', label: 'Domains', Component: DomainsTab },
   {
     id: 'advanced',
@@ -47,9 +54,12 @@ export function SettingsScreen() {
   const { t } = useT()
 
   const canWriteModules = hasPermission('modules.modules.write')
+  const canManageApps = hasPermission('apps.apps.manage')
   // The API keeps the club settings to admin roles; a role may still switch modules.
   const canSettings = hasPermission('settings.settings.read')
-  const tabs = TABS.filter((tab) => (tab.id === 'modules' ? canWriteModules : canSettings))
+  const tabs = TABS.filter((tab) =>
+    tab.id === 'modules' ? canWriteModules : tab.id === 'apps' ? canManageApps : canSettings,
+  )
 
   const requested = location.pathname.replace('/app/settings', '').replace('/', '') || 'club'
   const activeTab = tabs.some((tab) => tab.id === requested) ? requested : (tabs[0]?.id ?? 'club')

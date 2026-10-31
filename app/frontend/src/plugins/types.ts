@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react'
+import type { Connection } from '@/api/apps'
 
 /** Shown only while `module` is on for the club and the user has `perm`. */
 interface Gated {
@@ -46,4 +47,6 @@ export interface SlotProps {
   'account.cards': Record<string, never>
   'inventory.item': { itemId: number }
   'settings.module.actions': { code: string; configured: boolean; name: string }
+  /** In a connected app's details (Einstellungen › Verbundene Apps); check `connection.provider`. */
+  'apps.connection': { connection: Connection; onChange: () => void }
 }
