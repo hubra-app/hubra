@@ -687,6 +687,9 @@
       "copied": "Copied",
       "copy": "Copy",
       "hint": "Add this address as a calendar subscription (Google Calendar: \"From URL\", Apple Calendar: \"New Calendar Subscription\"). New and changed events show up there on their own. The link is personal; do not share it.",
+      "renew": "Make a new link",
+      "renewHint": "Shared or lost the link? A new link stops the old one; add the new one to your calendar again.",
+      "renewed": "New link made. The old one no longer works.",
       "title": "Subscribe to club events"
     },
     "time": "Time",

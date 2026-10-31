@@ -319,14 +319,31 @@ def _feed_serializer() -> URLSafeSerializer:
 @require_member
 def calendar_feed_link():
     """The member's personal calendar subscription URL."""
+    return jsonify({"url": _feed_url(get_current_member())}), 200
+
+
+@events_bp.post("/calendar/feed/renew")
+@require_member
+def renew_calendar_feed_link():
+    """A new feed URL for the member; every older one stops working."""
+    member = get_current_member()
+    member.calendar_feed_version = (member.calendar_feed_version or 0) + 1
+    db.session.commit()
+    return jsonify({"url": _feed_url(member)}), 200
+
+
+def _feed_url(member: Member) -> str:
     from hubra.core.tenant.context import current_tenant
 
     tenant = current_tenant()
     token = _feed_serializer().dumps(
-        {"t": tenant.id if tenant else None, "m": get_current_member().id}
+        {
+            "t": tenant.id if tenant else None,
+            "m": member.id,
+            "v": member.calendar_feed_version or 0,
+        }
     )
-    url = url_for("events_bp.calendar_feed", token=token, _external=True)
-    return jsonify({"url": url}), 200
+    return url_for("events_bp.calendar_feed", token=token, _external=True)
 
 
 @events_bp.get("/calendar/<token>.ics")
@@ -353,6 +370,8 @@ def calendar_feed(token: str):
     member = db.session.get(Member, data.get("m"))
     if member is None or member.archived_at is not None or member.is_blocked:
         return api_error("NOT_FOUND", "Unknown calendar", 404)
+    if data.get("v", 0) != (member.calendar_feed_version or 0):
+        return api_error("NOT_FOUND", "Unknown calendar", 404)  # renewed since
 
     # The last 90 days and everything ahead.
     since = (date.today() - timedelta(days=90)).isoformat()

@@ -240,3 +240,11 @@ export async function getCalendarFeedUrl(): Promise<string> {
   const data = await apiFetch<{ url: string }>("/events/calendar/feed");
   return data.url;
 }
+
+/** Replaces the feed link; the old one stops working. */
+export async function renewCalendarFeedUrl(): Promise<string> {
+  const data = await apiFetch<{ url: string }>("/events/calendar/feed/renew", {
+    method: "POST",
+  });
+  return data.url;
+}
