@@ -14,23 +14,11 @@ logger = logging.getLogger(__name__)
 
 
 def _get_yearly_expenses() -> Decimal:
-    """Read the global Club.Finance.YearlyExpenses setting.
+    """The club's yearly expenses, from the source it picked in
+    Finanzen › Beitragsgrundlage (see hubra.api.finance.fee_basis)."""
+    from hubra.api.finance.fee_basis import yearly_expenses
 
-    Returns ``Decimal(0)`` on miss, empty, or error.
-    """
-    try:
-        from sqlalchemy import select
-        from hubra.core.extensions import db
-        from hubra.core.models.setting import Setting
-
-        s = db.session.scalar(
-            select(Setting).where(Setting.key == "Club.Finance.YearlyExpenses")  # type: ignore[arg-type]
-        )
-        if s is not None and s.value:
-            return Decimal(s.value)
-    except Exception as exc:
-        logger.warning("Could not load Club.Finance.YearlyExpenses: %s", exc)
-    return Decimal(0)
+    return yearly_expenses()
 
 
 _PERIODS = {"monthly": 12, "quarterly": 4, "half_yearly": 2, "yearly": 1}

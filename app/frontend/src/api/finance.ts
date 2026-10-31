@@ -609,3 +609,102 @@ export async function sendStatement(month: string): Promise<{ month: string; to:
     body: JSON.stringify({ month }),
   })
 }
+
+// ── Yearly expenses behind percentage and formula tiers ────────────────────
+
+export type FeeBasisSource = 'manual' | 'recurring' | 'last_year' | 'budget'
+
+export interface FeeBasisLine {
+  categoryId: number | null
+  name: string | null
+  color: string | null
+  amount: number
+  share: number
+  items: { id?: number; description: string; interval?: string; amount?: number; yearly?: number }[]
+}
+
+export interface FeeBasisTier {
+  id: number
+  name: string
+  priceType: 'percentage' | 'formula'
+  billingCycle: string | null
+  members: number
+  yearlyNow: number
+  yearly: number
+}
+
+export interface FeeBasis {
+  source: FeeBasisSource
+  sources: FeeBasisSource[]
+  total: number
+  extra: number
+  manual: number
+  period: { from?: string; to?: string; year?: number } | null
+  note: string | null
+  lines: FeeBasisLine[]
+  tiers: FeeBasisTier[]
+}
+
+export interface FeeBasisPreview {
+  source?: FeeBasisSource
+  extra?: number
+  manual?: number
+}
+
+/** How the yearly expenses come together; *preview* tries a choice unsaved. */
+export async function getFeeBasis(preview: FeeBasisPreview = {}): Promise<FeeBasis> {
+  const qs = new URLSearchParams()
+  for (const [k, v] of Object.entries(preview)) if (v !== undefined) qs.set(k, String(v))
+  const b = await apiFetch<{
+    source: FeeBasisSource
+    sources: FeeBasisSource[]
+    total: number
+    extra: number
+    manual: number
+    period: FeeBasis['period']
+    note: string | null
+    lines: {
+      category_id: number | null
+      name: string | null
+      color: string | null
+      amount: number
+      share: number
+      items: FeeBasisLine['items']
+    }[]
+    tiers: {
+      id: number
+      name: string
+      price_type: 'percentage' | 'formula'
+      billing_cycle: string | null
+      members: number
+      yearly_now: number
+      yearly: number
+    }[]
+  }>(`/finance/fee-basis${qs.size ? `?${qs}` : ''}`)
+  return {
+    source: b.source,
+    sources: b.sources,
+    total: b.total,
+    extra: b.extra,
+    manual: b.manual,
+    period: b.period,
+    note: b.note,
+    lines: b.lines.map((l) => ({
+      categoryId: l.category_id,
+      name: l.name,
+      color: l.color,
+      amount: l.amount,
+      share: l.share,
+      items: l.items,
+    })),
+    tiers: b.tiers.map((t) => ({
+      id: t.id,
+      name: t.name,
+      priceType: t.price_type,
+      billingCycle: t.billing_cycle,
+      members: t.members,
+      yearlyNow: t.yearly_now,
+      yearly: t.yearly,
+    })),
+  }
+}

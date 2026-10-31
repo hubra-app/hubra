@@ -461,6 +461,29 @@ def finance_summary():
     return jsonify(FinanceSummaryService.get(request.args)), 200
 
 
+@finance_bp.get("/fee-basis")
+@permission_required("overview", "read", "View finance overview")
+def get_fee_basis():
+    """How the yearly expenses behind percentage and formula tiers come
+    together; ?source=&extra=&manual= previews a choice before saving."""
+    from decimal import Decimal
+
+    from hubra.api.finance.fee_basis import fee_basis, tier_effects
+
+    overrides = {
+        key: request.args[arg]
+        for arg, key in (
+            ("source", "fee_basis_source"),
+            ("extra", "fee_basis_extra"),
+            ("manual", "fee_basis_manual"),
+        )
+        if arg in request.args
+    }
+    basis = fee_basis(overrides)
+    basis["tiers"] = tier_effects(Decimal(str(basis["total"])))
+    return jsonify(basis), 200
+
+
 # ── Recurring transactions ────────────────────────────────────────────────────
 
 

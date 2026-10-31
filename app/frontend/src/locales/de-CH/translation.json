@@ -1054,6 +1054,42 @@
       "sendNow": "Jetzt senden",
       "sent": "Kontoauszug unterwegs",
       "sentTo": "An {{email}}"
+    },
+    "feeBasis": {
+      "title": "Jährliche Ausgaben",
+      "intro": "Prozent- und Formel-Stufen verteilen die jährlichen Ausgaben des Vereins auf die Mitglieder. Hier legst du fest, woher diese Summe kommt.",
+      "sourceLabel": "Die Summe kommt aus",
+      "source": {
+        "recurring": "Wiederkehrende Ausgaben",
+        "recurringHint": "Alle laufenden wiederkehrenden Ausgaben, die zu den Jahresausgaben zählen, auf ein Jahr gerechnet.",
+        "lastYear": "Ausgaben des Vorjahres",
+        "lastYearHint": "Die bestätigten Ausgaben des letzten vollen Beitragsjahres.",
+        "budget": "Budget",
+        "budgetHint": "Die Ausgaben im genehmigten Budget des laufenden Jahres (Plugin Budgets).",
+        "manual": "Fester Betrag",
+        "manualHint": "Ein Betrag, den du selbst festlegst.",
+        "needsBudgets": "Braucht das Plugin Budgets."
+      },
+      "manual": "Jährliche Ausgaben (CHF)",
+      "extra": "Zusätzliche Kosten pro Jahr (CHF)",
+      "extraHint": "Für Kosten, die nicht darin enthalten sind, etwa Reparaturen.",
+      "reset": "Zurücksetzen",
+      "noTiers": "Noch keine Stufe mit Prozent oder Formel. Stufen mit festem Betrag hängen nicht von dieser Summe ab.",
+      "openTiers": "Stufen öffnen",
+      "breakdown": "So setzt sich die Summe zusammen",
+      "manualNoLines": "Ein fester Betrag hat keine Aufteilung.",
+      "noBudget": "Für dieses Jahr gibt es kein genehmigtes Budget.",
+      "noLines": "Keine Ausgaben gefunden.",
+      "share": "Anteil",
+      "perYear": "Pro Jahr",
+      "extraLine": "Zusätzliche Kosten",
+      "total": "Jährliche Ausgaben",
+      "tiersTitle": "Was das für die Stufen heisst",
+      "tiersHint": "Beitrag pro Mitglied und Jahr, ohne Kürzungen bei Eintritt.",
+      "tier": "Stufe",
+      "members": "Mitglieder",
+      "now": "Bisher",
+      "new": "Neu"
     }
   },
   "functions": {
@@ -2088,7 +2124,8 @@
       "health": "System › Systemzustand",
       "dashboardMe": "Dashboard › Persönlich",
       "financeSettings": "Finanzen › Einstellungen",
-      "recurring": "Finanzen › Wiederkehrend"
+      "recurring": "Finanzen › Wiederkehrend",
+      "feeBasis": "Finanzen › Beitragsgrundlage"
     },
     "emailVerify": {
       "banner": "Deine private E-Mail-Adresse ist noch nicht bestätigt. Einige Funktionen sind erst danach verfügbar.",
@@ -2139,7 +2176,8 @@
       "translations": "Übersetzungen",
       "txCategories": "Kategorien",
       "activeMembersCount": "{{count}} aktive Mitglieder",
-      "recurring": "Wiederkehrend"
+      "recurring": "Wiederkehrend",
+      "feeBasis": "Beitragsgrundlage"
     },
     "noPermission": "Du hast keine Berechtigung für diese Seite.",
     "notif": {

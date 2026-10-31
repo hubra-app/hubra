@@ -8,6 +8,7 @@ import { InvoicesTab } from '@/screens/private/finances/InvoicesTab'
 import { TransactionCategoriesTab } from '@/screens/private/finances/TransactionCategoriesTab'
 import { ExternalPartiesTab } from '@/screens/private/finances/ExternalPartiesTab'
 import { RecurringTab } from '@/screens/private/finances/RecurringTab'
+import { FeeBasisTab } from '@/screens/private/finances/FeeBasisTab'
 import { FinanceSettingsTab } from '@/screens/private/finances/FinanceSettingsTab'
 import { PluginBoundary, usePluginTabs } from '@/plugins'
 
@@ -31,6 +32,7 @@ export function FinanceTabScreen() {
     recurring: hasPermission('finance.transactions.read'),
     categories: hasPermission('finance.transaction_categories.read'),
     'external-parties': hasPermission('finance.external_parties.read'),
+    'fee-basis': hasPermission('finance.overview.read'),
     // The billing rules are the finance module's settings.
     settings: hasPermission('modules.modules.write'),
   }
@@ -45,6 +47,7 @@ export function FinanceTabScreen() {
       id: 'external-parties',
       label: t('shell.nav.externalParties', 'Extern'),
     },
+    { id: 'fee-basis', label: t('shell.nav.feeBasis', 'Beitragsgrundlage') },
     { id: 'settings', label: t('finance.settings.tab', 'Einstellungen') },
   ].filter((tb) => can[tb.id] ?? true)
   const pluginTab = pluginTabs.find((pt) => pt.id === tab)
@@ -63,6 +66,7 @@ export function FinanceTabScreen() {
       {tab === 'invoices' && <InvoicesTab />}
       {tab === 'categories' && <TransactionCategoriesTab />}
       {tab === 'external-parties' && <ExternalPartiesTab />}
+      {tab === 'fee-basis' && can['fee-basis'] && <FeeBasisTab />}
       {tab === 'settings' && can.settings && <FinanceSettingsTab />}
       {pluginTab && (
         <PluginBoundary key={pluginTab.id} plugin={pluginTab.plugin} notice>

@@ -87,6 +87,25 @@ module = Module(
             default="",
             label="Account statement goes to",
         ),
+        SettingField(
+            "fee_basis_source",
+            "choice",
+            default="manual",
+            label="Yearly expenses come from",
+            choices=("manual", "recurring", "last_year", "budget"),
+        ),
+        SettingField(
+            "fee_basis_extra",
+            "float",
+            default=0.0,
+            label="Extra yearly costs (CHF)",
+        ),
+        SettingField(
+            "fee_basis_manual",
+            "float",
+            default=None,
+            label="Yearly expenses (CHF)",
+        ),
     ),
     nav=(
         NavItem(

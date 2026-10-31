@@ -20,6 +20,8 @@ export interface ModuleSettingField {
   description: string
   required: boolean
   choices: string[]
+  /** Localized names of the choices, set by localizeModule */
+  choiceLabels?: Record<string, string>
 }
 
 export interface ModuleInfo {

@@ -1054,6 +1054,42 @@
       "sendNow": "Send now",
       "sent": "Account statement on its way",
       "sentTo": "To {{email}}"
+    },
+    "feeBasis": {
+      "title": "Yearly expenses",
+      "intro": "Percentage and formula tiers share the club's yearly expenses among the members. Choose where that sum comes from.",
+      "sourceLabel": "The sum comes from",
+      "source": {
+        "recurring": "Recurring expenses",
+        "recurringHint": "All running recurring expenses that count towards the yearly expenses, over one year.",
+        "lastYear": "Last year's expenses",
+        "lastYearHint": "The confirmed expenses of the last full billing year.",
+        "budget": "Budget",
+        "budgetHint": "The expenses in this year's approved budget (Budgets plugin).",
+        "manual": "Fixed amount",
+        "manualHint": "An amount you set yourself.",
+        "needsBudgets": "Needs the Budgets plugin."
+      },
+      "manual": "Yearly expenses (CHF)",
+      "extra": "Extra costs per year (CHF)",
+      "extraHint": "For costs not included, such as repairs.",
+      "reset": "Reset",
+      "noTiers": "No percentage or formula tier yet. Fixed-price tiers do not depend on this sum.",
+      "openTiers": "Open tiers",
+      "breakdown": "How the sum comes together",
+      "manualNoLines": "A fixed amount has no breakdown.",
+      "noBudget": "There is no approved budget for this year.",
+      "noLines": "No expenses found.",
+      "share": "Share",
+      "perYear": "Per year",
+      "extraLine": "Extra costs",
+      "total": "Yearly expenses",
+      "tiersTitle": "What it means for the tiers",
+      "tiersHint": "Fee per member and year, before reductions for joining mid-year.",
+      "tier": "Tier",
+      "members": "Members",
+      "now": "Before",
+      "new": "New"
     }
   },
   "functions": {
@@ -2088,7 +2124,8 @@
       "health": "System › Health",
       "dashboardMe": "Dashboard › Personal",
       "financeSettings": "Finance › Settings",
-      "recurring": "Finance › Recurring"
+      "recurring": "Finance › Recurring",
+      "feeBasis": "Finance › Fee basis"
     },
     "emailVerify": {
       "banner": "Your private email address isn't verified yet. Some features are only available after that.",
@@ -2139,7 +2176,8 @@
       "translations": "Translations",
       "txCategories": "Categories",
       "activeMembersCount": "{{count}} active members",
-      "recurring": "Recurring"
+      "recurring": "Recurring",
+      "feeBasis": "Fee basis"
     },
     "noPermission": "You don't have permission to view this page.",
     "notif": {
