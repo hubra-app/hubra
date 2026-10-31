@@ -393,6 +393,9 @@ def test_bulk_invoices_bill_each_member_once(client, auth_headers, seeded_db, db
     from hubra.core.models.finance import Invoice
 
     seeded_db["tier"].price_type = "fixed"
+    # A member since before this year pays the full fee (one who joined
+    # during it pays the months left: test_fee_schedule).
+    seeded_db["admin"].joined = date(date.today().year - 1, 6, 1)
     db.session.commit()
     url = "/api/v1/finance/invoices/bulk"
     due = (date.today() + timedelta(days=30)).isoformat()

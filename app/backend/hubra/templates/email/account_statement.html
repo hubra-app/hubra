@@ -1,0 +1,14 @@
+{% extends "email/base.html" %}
+{% import "email/_ui.html" as ui with context %}
+{% block preheader %}{{ t('mail.email.account_statement.preheader', month=month) }}{% endblock %}
+{% block content %}
+{% call ui.p() %}{{ t('mail.email.account_statement.body', club_name=club_name, month=month) }}{% endcall %}
+{{ ui.facts([
+  (t('mail.email.account_statement.opening'), opening, true),
+  (t('mail.email.account_statement.income'), income, true),
+  (t('mail.email.account_statement.expense'), expense, true),
+  (t('mail.email.account_statement.closing'), closing, true),
+  (t('mail.email.account_statement.open_invoices'), t('mail.email.account_statement.open_invoices_value', count=open_invoices, amount=open_amount), false),
+]) }}
+{% call ui.muted() %}{{ t('mail.email.account_statement.attached') }}{% endcall %}
+{% endblock %}

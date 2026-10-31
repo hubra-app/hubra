@@ -5,6 +5,7 @@ Shared between the periodic invoice generation task and the bulk invoice endpoin
 
 from __future__ import annotations
 
+import calendar
 import logging
 from datetime import date, timedelta
 from decimal import Decimal, ROUND_HALF_UP, ROUND_UP
@@ -13,23 +14,11 @@ logger = logging.getLogger(__name__)
 
 
 def _get_yearly_expenses() -> Decimal:
-    """Read the global Club.Finance.YearlyExpenses setting.
+    """The club's yearly expenses, from the source it picked in
+    Finanzen › Beitragsgrundlage (see hubra.api.finance.fee_basis)."""
+    from hubra.api.finance.fee_basis import yearly_expenses
 
-    Returns ``Decimal(0)`` on miss, empty, or error.
-    """
-    try:
-        from sqlalchemy import select
-        from hubra.core.extensions import db
-        from hubra.core.models.setting import Setting
-
-        s = db.session.scalar(
-            select(Setting).where(Setting.key == "Club.Finance.YearlyExpenses")  # type: ignore[arg-type]
-        )
-        if s is not None and s.value:
-            return Decimal(s.value)
-    except Exception as exc:
-        logger.warning("Could not load Club.Finance.YearlyExpenses: %s", exc)
-    return Decimal(0)
+    return yearly_expenses()
 
 
 _PERIODS = {"monthly": 12, "quarterly": 4, "half_yearly": 2, "yearly": 1}
@@ -40,15 +29,84 @@ def periods_per_year(billing_cycle: str | None) -> int:
 
 
 def period_window(today: date, billing_cycle: str | None):
-    """First and last day of the billing period that contains ``today``."""
+    """First and last day of the calendar billing period that contains ``today``."""
+    return billing_period(today, billing_cycle)
+
+
+def _add_months(day: date, months: int) -> date:
+    index = day.month - 1 + months
+    year, month = day.year + index // 12, index % 12 + 1
+    return date(year, month, min(day.day, calendar.monthrange(year, month)[1]))
+
+
+def _boundary(year: int, month: int, day: int, months: int) -> date:
+    """*months* after day.month of *year*, on *day* or the month's last day
+    (so a billing year from 29 February starts on the 28th in other years)."""
+    index = month - 1 + months
+    year, month = year + index // 12, index % 12 + 1
+    return date(year, month, min(day, calendar.monthrange(year, month)[1]))
+
+
+def billing_period(
+    day: date, billing_cycle: str | None, anchor_month: int = 1, anchor_day: int = 1
+):
+    """First and last day of the billing period that contains *day*, for a
+    billing year that starts on *anchor_day*.*anchor_month* (1 January: the
+    calendar year, its half-years, quarters or months)."""
     months = 12 // periods_per_year(billing_cycle)
-    first_month = (today.month - 1) // months * months + 1
-    start = today.replace(month=first_month, day=1)
-    last_month = first_month + months - 1
-    end = (start.replace(month=last_month, day=28) + timedelta(days=4)).replace(
-        day=1
-    ) - timedelta(days=1)
-    return start, end
+    year = day.year
+    if _boundary(year, anchor_month, anchor_day, 0) > day:
+        year -= 1
+    k = 0
+    while _boundary(year, anchor_month, anchor_day, (k + 1) * months) <= day:
+        k += 1
+    start = _boundary(year, anchor_month, anchor_day, k * months)
+    end = _boundary(year, anchor_month, anchor_day, (k + 1) * months)
+    return start, end - timedelta(days=1)
+
+
+def membership_period(member, day: date, billing_cycle: str | None, schedule: dict):
+    """The member's billing period containing *day*: from the club's fixed
+    billing date, or from the day and month the member joined."""
+    joined = getattr(member, "joined", None)
+    if schedule.get("fee_anchor") == "join_date" and joined is not None:
+        return billing_period(day, billing_cycle, joined.month, joined.day)
+    return billing_period(
+        day,
+        billing_cycle,
+        schedule.get("fee_anchor_month", 1),
+        schedule.get("fee_anchor_day", 1),
+    )
+
+
+def first_fee_share(member, start: date, end: date, schedule: dict):
+    """For a member who joined during the period start..end: the first day
+    billed and the share of the period's fee as (months left, months), the
+    join month counting in full. ``None`` when the whole period is billed."""
+    joined = getattr(member, "joined", None)
+    if (
+        not schedule.get("prorate_first_fee", True)
+        or joined is None
+        or joined <= start
+        or joined > end
+    ):
+        return None
+    months = 0
+    while _add_months(start, months) <= end:
+        months += 1
+    month = 0
+    while _add_months(start, month + 1) <= joined:
+        month += 1
+    if month == 0:
+        return None
+    return _add_months(start, month), (months - month, months)
+
+
+def prorate(amount: Decimal, share: tuple[int, int]) -> Decimal:
+    """*amount* times the share, rounded to 5 Rappen."""
+    left, months = share
+    value = Decimal(amount) * left / months
+    return (value * 20).quantize(Decimal(1), rounding=ROUND_HALF_UP) / 20
 
 
 def _plan_for(member, tier):

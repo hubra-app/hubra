@@ -48,6 +48,64 @@ module = Module(
             default=14,
             label="Second reminder (days after due)",
         ),
+        SettingField(
+            "bill_on_join_date",
+            "bool",
+            default=False,
+            label="Bill each member on their join date",
+            description="Otherwise everyone is billed on the billing date below",
+        ),
+        SettingField(
+            "fee_anchor_month",
+            "int",
+            default=1,
+            label="Billing date: month",
+        ),
+        SettingField(
+            "fee_anchor_day",
+            "int",
+            default=1,
+            label="Billing date: day",
+        ),
+        SettingField(
+            "prorate_first_fee",
+            "bool",
+            default=True,
+            label="Reduce the first fee for members who join during the year",
+            description="By the months left, the join month counting in full",
+        ),
+        SettingField(
+            "statement_enabled",
+            "bool",
+            default=False,
+            label="Mail an account statement every month",
+            description="On the 1st, for the month before, as a PDF",
+        ),
+        SettingField(
+            "statement_email",
+            "email",
+            default="",
+            label="Account statement goes to",
+        ),
+        SettingField(
+            "fee_basis_source",
+            "choice",
+            default="manual",
+            label="Yearly expenses come from",
+            choices=("manual", "recurring", "last_year", "budget"),
+        ),
+        SettingField(
+            "fee_basis_extra",
+            "float",
+            default=0.0,
+            label="Extra yearly costs (CHF)",
+        ),
+        SettingField(
+            "fee_basis_manual",
+            "float",
+            default=None,
+            label="Yearly expenses (CHF)",
+        ),
     ),
     nav=(
         NavItem(
@@ -70,5 +128,6 @@ module = Module(
         "external_parties",
         "invoice_reminder_history",
         "qrr_references",
+        "recurring_transactions",
     ),
 )

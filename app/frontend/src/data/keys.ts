@@ -74,6 +74,9 @@ export const qk = {
     categories: ['transaction-categories'] as const,
   },
   financeOverview: ['finance-overview'] as const,
+  financeSummary: (year: number) => ['finance-summary', year] as const,
+  recurring: ['finance-recurring'] as const,
+  feeBasis: (preview: string) => ['finance-fee-basis', preview] as const,
   externalParties: ['external-parties'] as const,
 
   inventory: ['inventory'] as const,

@@ -833,7 +833,8 @@
       "issued": "Ausgestellt",
       "notFound": "Rechnung nicht gefunden",
       "number": "Rechnungsnummer",
-      "paid": "Rechnung bezahlt."
+      "paid": "Rechnung bezahlt.",
+      "period": "Zeitraum"
     },
     "invoiceAmount": "Betrag",
     "invoiceDeleted": "Rechnung gelöscht.",
@@ -1002,6 +1003,102 @@
       "invoicesTitle": "Rechnungen und Mahnungen",
       "bankHint": "Das Konto und die Adresse auf den QR-Rechnungen stellst du in den Einstellungen des Vereins ein.",
       "openBank": "Bankangaben öffnen"
+    },
+    "summary": {
+      "title": "Nach Kategorie",
+      "category": "Kategorie",
+      "uncategorized": "Ohne Kategorie",
+      "total": "Total",
+      "year": "Jahr"
+    },
+    "recurring": {
+      "monthly": "Monatlich",
+      "quarterly": "Vierteljährlich",
+      "halfYearly": "Halbjährlich",
+      "yearly": "Jährlich",
+      "required": "Beschreibung, Betrag und erstes Datum sind nötig.",
+      "saved": "Wiederkehrende Buchung gespeichert",
+      "deleted": "Wiederkehrende Buchung gelöscht",
+      "intro": "Miete, Versicherungen, Verbandsbeiträge: einmal erfassen, Hubra bucht sie an jedem Fälligkeitsdatum.",
+      "new": "Neue wiederkehrende Buchung",
+      "next": "Nächste Buchung",
+      "perYear": "Pro Jahr",
+      "none": "Noch keine wiederkehrenden Buchungen.",
+      "paused": "Pausiert",
+      "ended": "Beendet",
+      "totalPerYear": "Total pro Jahr",
+      "edit": "Wiederkehrende Buchung bearbeiten",
+      "descriptionPlaceholder": "z. B. Miete Vereinslokal",
+      "interval": "Wiederholung",
+      "start": "Erstes Datum",
+      "startHint": "Die Daten danach folgen im gewählten Abstand.",
+      "end": "Letztes Datum (optional)",
+      "bookCompleted": "Als bezahlt buchen (Dauerauftrag)",
+      "bookCompletedHint": "Sonst wird die Buchung als offen erfasst und du bestätigst sie, wenn das Geld geflossen ist.",
+      "countsForFees": "Zählt zu den Jahresausgaben für die Mitgliederbeiträge",
+      "active": "Aktiv",
+      "deleteTitle": "«{{name}}» löschen?",
+      "deleteBody": "Bereits gebuchte Einträge bleiben erhalten."
+    },
+    "fees": {
+      "title": "Mitgliederbeiträge",
+      "intro": "Wann die jährlichen Beiträge verrechnet werden. Wie oft (jährlich, halbjährlich, …) bestimmen die Stufen und Zahlungspläne.",
+      "fixed": "Am Stichtag für alle",
+      "join": "Am Eintrittsdatum",
+      "joinHint": "Jedes Mitglied bekommt die Rechnung an seinem Eintrittstag und danach jedes Jahr am selben Tag. Mitglieder ohne Eintrittsdatum werden am Stichtag verrechnet.",
+      "day": "Tag",
+      "month": "Monat",
+      "prorate": "Ersten Beitrag kürzen, wenn jemand während des Jahres eintritt",
+      "prorateHint": "Nach den verbleibenden Monaten, der Eintrittsmonat zählt ganz. Beispiel: Eintritt im {{month}} bei CHF 120 im Jahr: 9 von 12 Monaten, CHF 90."
+    },
+    "membershipFeePeriod": "Mitgliederbeitrag {{from}} – {{to}}",
+    "statement": {
+      "title": "Monatlicher Kontoauszug",
+      "intro": "Am 1. jedes Monats ein PDF mit Saldo, Summen pro Kategorie, allen Buchungen und den offenen Rechnungen des Vormonats, zum Beispiel an die Kassierin oder die Revision.",
+      "enabled": "Jeden Monat per E-Mail senden",
+      "email": "An diese Adresse",
+      "emailNeeded": "Eine E-Mail-Adresse ist nötig.",
+      "month": "Monat",
+      "download": "PDF herunterladen",
+      "sendNow": "Jetzt senden",
+      "sent": "Kontoauszug unterwegs",
+      "sentTo": "An {{email}}"
+    },
+    "feeBasis": {
+      "title": "Jährliche Ausgaben",
+      "intro": "Prozent- und Formel-Stufen verteilen die jährlichen Ausgaben des Vereins auf die Mitglieder. Hier legst du fest, woher diese Summe kommt.",
+      "sourceLabel": "Die Summe kommt aus",
+      "source": {
+        "recurring": "Wiederkehrende Ausgaben",
+        "recurringHint": "Alle laufenden wiederkehrenden Ausgaben, die zu den Jahresausgaben zählen, auf ein Jahr gerechnet.",
+        "lastYear": "Ausgaben des Vorjahres",
+        "lastYearHint": "Die bestätigten Ausgaben des letzten vollen Beitragsjahres.",
+        "budget": "Budget",
+        "budgetHint": "Die Ausgaben im genehmigten Budget des laufenden Jahres (Plugin Budgets).",
+        "manual": "Fester Betrag",
+        "manualHint": "Ein Betrag, den du selbst festlegst.",
+        "needsBudgets": "Braucht das Plugin Budgets."
+      },
+      "manual": "Jährliche Ausgaben (CHF)",
+      "extra": "Zusätzliche Kosten pro Jahr (CHF)",
+      "extraHint": "Für Kosten, die nicht darin enthalten sind, etwa Reparaturen.",
+      "reset": "Zurücksetzen",
+      "noTiers": "Noch keine Stufe mit Prozent oder Formel. Stufen mit festem Betrag hängen nicht von dieser Summe ab.",
+      "openTiers": "Stufen öffnen",
+      "breakdown": "So setzt sich die Summe zusammen",
+      "manualNoLines": "Ein fester Betrag hat keine Aufteilung.",
+      "noBudget": "Für dieses Jahr gibt es kein genehmigtes Budget.",
+      "noLines": "Keine Ausgaben gefunden.",
+      "share": "Anteil",
+      "perYear": "Pro Jahr",
+      "extraLine": "Zusätzliche Kosten",
+      "total": "Jährliche Ausgaben",
+      "tiersTitle": "Was das für die Stufen heisst",
+      "tiersHint": "Beitrag pro Mitglied und Jahr, ohne Kürzungen bei Eintritt.",
+      "tier": "Stufe",
+      "members": "Mitglieder",
+      "now": "Bisher",
+      "new": "Neu"
     }
   },
   "functions": {
@@ -2078,7 +2175,9 @@
       "roles": "Verwaltung › Rollen",
       "health": "System › Systemzustand",
       "dashboardMe": "Dashboard › Persönlich",
-      "financeSettings": "Finanzen › Einstellungen"
+      "financeSettings": "Finanzen › Einstellungen",
+      "recurring": "Finanzen › Wiederkehrend",
+      "feeBasis": "Finanzen › Beitragsgrundlage"
     },
     "emailVerify": {
       "banner": "Deine private E-Mail-Adresse ist noch nicht bestätigt. Einige Funktionen sind erst danach verfügbar.",
@@ -2129,7 +2228,9 @@
       "translations": "Übersetzungen",
       "txCategories": "Kategorien",
       "activeMembersCount": "{{count}} aktive Mitglieder",
-      "more": "Weitere"
+      "more": "Weitere",
+      "recurring": "Wiederkehrend",
+      "feeBasis": "Beitragsgrundlage"
     },
     "noPermission": "Du hast keine Berechtigung für diese Seite.",
     "notif": {
