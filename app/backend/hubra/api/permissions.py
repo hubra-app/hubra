@@ -385,7 +385,7 @@ def check_grant(actor, *, given=(), taken=(), keys=()) -> None:
         raise_error(
             403,
             "BEYOND_OWN_PERMISSIONS",
-            "You can only give permissions you have yourself: "
+            "You can only give or take permissions you have yourself: "
             + ", ".join(sorted(missing)[:5]),
         )
 

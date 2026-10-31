@@ -71,3 +71,24 @@ def test_an_admin_still_signs_a_member_out(client, db, seeded_db):
     member = _make_role_and_member(db, seeded_db["tier"], name="Plain", permission_keys=[])
     _login(client, "admin@test.ch")
     assert client.delete(f"/api/v1/members/{member.id}/sessions").status_code == 200
+
+
+def test_role_managers_only_take_away_rights_they_hold(client, db, seeded_db, app):
+    from hubra.core.models.role import Role
+
+    app.test_cli_runner().invoke(args=["sync-permissions"])
+    treasurer = _make_role_and_member(
+        db, seeded_db["tier"], name="Kassier", permission_keys=["finance.invoices.read"]
+    )
+    role_id = treasurer.roles[0].id
+    _clerk(db, seeded_db, "roles.roles.set_permissions", "members.members.read")
+    _login(client, "clerk@test.ch")
+    url = f"/api/v1/roles/{role_id}/permissions"
+    r = client.put(url, json={"permissions": []})
+    assert r.status_code == 403
+    assert r.get_json()["error"] == "BEYOND_OWN_PERMISSIONS"
+    r = client.put(url, json={"permissions": ["finance.invoices.read", "members.members.read"]})
+    assert r.status_code == 200
+    r = client.put(url, json={"permissions": ["finance.invoices.read"]})
+    assert r.status_code == 200
+    assert db.session.get(Role, role_id) is not None
