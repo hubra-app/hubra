@@ -28,6 +28,7 @@ from hubra.api.permissions import (
     check_global_grant,
     check_impersonation_restriction,
     get_user_global_permissions,
+    held_roles,
     invalidate_member_permissions,
     require_global_permission,
 )
@@ -1289,7 +1290,7 @@ def _admin_level(member: Member | None) -> str | None:
     """'owner', 'admin' or None for a member of the current club."""
     if member is None:
         return None
-    roles = member.roles or []
+    roles = held_roles(member)  # an admin role through a function counts
     if any(r.is_owner for r in roles):
         return "owner"
     if any(r.is_admin for r in roles):
