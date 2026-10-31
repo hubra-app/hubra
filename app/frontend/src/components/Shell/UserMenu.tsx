@@ -19,6 +19,7 @@ import { useInstance } from '@/context/InstanceContext'
 import { useMyTenants } from '@/data/lists'
 import { initials, contrastColor } from './nav'
 import { setWhatsNewOpen } from './whatsNewStore'
+import { setCustomizeSidebarOpen } from './customizeSidebarStore'
 
 export function UserMenu() {
   const { t } = useT()
@@ -137,6 +138,20 @@ export function UserMenu() {
             }}
           >
             {t('shell.userMenu.accountSettings')}
+          </UnstyledButton>
+          <UnstyledButton
+            onClick={() => {
+              setCustomizeSidebarOpen(true)
+              setUserMenuOpen(false)
+            }}
+            style={{
+              height: 36,
+              padding: '0 10px',
+              fontSize: 'var(--mantine-font-size-sm)',
+              borderRadius: 8,
+            }}
+          >
+            {t('shell.customize.title')}
           </UnstyledButton>
           <UnstyledButton
             onClick={() => {

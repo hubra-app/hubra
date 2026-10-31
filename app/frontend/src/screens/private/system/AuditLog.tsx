@@ -367,7 +367,8 @@ const AUDIT_ACTIONS: [string, string][] = [
 ]
 const PAGE_SIZE = 25
 
-export function AuditLogScreen() {
+/** The audit log; `embedded` leaves out the heading, for a settings tab. */
+export function AuditLogScreen({ embedded = false }: { embedded?: boolean }) {
   const { t } = useT()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(PAGE_SIZE)
@@ -401,10 +402,12 @@ export function AuditLogScreen() {
 
   return (
     <div>
-      <PageHead
-        title={t('audit.title', 'Audit-Log')}
-        desc={t('audit.entryCount', '{{count}} Einträge', { count: total })}
-      />
+      {!embedded && (
+        <PageHead
+          title={t('audit.title', 'Audit-Log')}
+          desc={t('audit.entryCount', '{{count}} Einträge', { count: total })}
+        />
+      )}
       <DataTable
         columns={[
           {

@@ -2893,5 +2893,18 @@
   "finance.settings.openBank": "Open bank details",
   "settings.tabs.membership": "Membership",
   "settings.tabs.bank": "Bank & QR invoice",
-  "shell.breadcrumbs.financeSettings": "Finance › Settings"
+  "shell.breadcrumbs.financeSettings": "Finance › Settings",
+  "shell.sections.favourites": "Favourites",
+  "shell.nav.more": "More",
+  "shell.more.emptyTitle": "Nothing here yet",
+  "shell.more.emptyDesc": "Pages you hide in the sidebar and pages from plugins appear here.",
+  "shell.customize.title": "Customise sidebar",
+  "shell.customize.intro": "Use the star to pin a page to the top under Favourites. Hidden pages are still under More and in the search (Ctrl+K).",
+  "shell.customize.pin": "Pin to favourites",
+  "shell.customize.unpin": "Unpin",
+  "shell.customize.hide": "Hide",
+  "shell.customize.show": "Show again",
+  "shell.customize.reset": "Reset",
+  "shell.customize.done": "Done",
+  "shell.searchKind.page": "Page"
 }
