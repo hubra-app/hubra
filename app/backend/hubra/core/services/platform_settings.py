@@ -32,7 +32,7 @@ from typing import Callable
 
 from flask import current_app
 
-from hubra.core.crypto import decrypt_code, encrypt_code
+from hubra.core.crypto import PLATFORM, decrypt_code, encrypt_code
 from hubra.core.extensions import db
 from hubra.core.models.platform_setting import PlatformSetting
 from hubra.core.validators import validate_value
@@ -126,6 +126,14 @@ SPECS: tuple[Spec, ...] = (
         secret=True,
     ),
     Spec(
+        "backup.public_key",
+        "Backup public key",
+        "age public key every backup is encrypted to (flask backups keygen). "
+        "The private key stays off the server; restore asks for it",
+        lambda cfg: cfg.get("BACKUP_PUBLIC_KEY") or "",
+        "age_public_keys",
+    ),
+    Spec(
         "backup.s3.endpoint",
         "S3 endpoint",
         "S3-compatible endpoint URL, e.g. https://eu2.contabostorage.com",
@@ -161,6 +169,7 @@ SPECS: tuple[Spec, ...] = (
 )
 
 _BY_KEY = {s.key: s for s in SPECS}
+_PURPOSE = "platform_settings.value"
 
 
 class PlatformSettingError(ValueError):
@@ -183,7 +192,7 @@ def get(key: str) -> str:
     s = spec(key)
     row = _row(key)
     if row is not None and row.value is not None:
-        return decrypt_code(row.value) if s.secret else row.value
+        return decrypt_code(row.value, _PURPOSE, PLATFORM) if s.secret else row.value
     return str(s.default(current_app.config) or "")
 
 
@@ -216,7 +225,7 @@ def set_many(values: dict, actor_id: int | None = None) -> None:
                 db.session.delete(row)
             continue
         value = str(value).strip()
-        stored = encrypt_code(value) if s.secret and value else value
+        stored = encrypt_code(value, _PURPOSE, PLATFORM) if s.secret and value else value
         if row is None:
             row = PlatformSetting(key=key, secret=s.secret)
             db.session.add(row)

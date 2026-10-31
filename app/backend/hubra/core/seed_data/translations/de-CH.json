@@ -2932,5 +2932,18 @@
   "events.linkedOne": "Du siehst den Anlass aus deiner Benachrichtigung.",
   "events.linkedGone": "Diesen Anlass gibt es nicht mehr.",
   "polls.linkedOne": "Du siehst die Umfrage aus deiner Benachrichtigung.",
-  "polls.linkedGone": "Diese Umfrage gibt es nicht mehr."
+  "polls.linkedGone": "Diese Umfrage gibt es nicht mehr.",
+  "shell.sections.favourites": "Favoriten",
+  "shell.nav.more": "Weitere",
+  "shell.more.emptyTitle": "Hier ist noch nichts",
+  "shell.more.emptyDesc": "Seiten, die du in der Seitenleiste ausblendest, und Seiten von Plugins erscheinen hier.",
+  "shell.customize.title": "Seitenleiste anpassen",
+  "shell.customize.intro": "Mit dem Stern heftest du eine Seite oben unter Favoriten an. Ausgeblendete Seiten findest du weiterhin unter Weitere und mit der Suche (Ctrl+K).",
+  "shell.customize.pin": "Als Favorit anheften",
+  "shell.customize.unpin": "Nicht mehr anheften",
+  "shell.customize.hide": "Ausblenden",
+  "shell.customize.show": "Wieder anzeigen",
+  "shell.customize.reset": "Zurücksetzen",
+  "shell.customize.done": "Fertig",
+  "shell.searchKind.page": "Seite"
 }

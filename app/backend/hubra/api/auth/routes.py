@@ -1541,6 +1541,7 @@ def update_account_profile():
         "profileNote",
         "language",
         "theme",
+        "navPrefs",
     }
     user = _signed_in_user()
     account_svc.update_profile(user, {k: v for k, v in body.items() if k in allowed})

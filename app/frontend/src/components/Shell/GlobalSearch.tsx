@@ -12,6 +12,7 @@ import { listTransactions } from '@/api/finance'
 import { listInventory } from '@/api/inventory'
 import { listAuditLog } from '@/api/settings'
 import type { SearchResult } from './nav'
+import { useSidebarNav } from './useSidebarNav'
 import { qk } from '@/data/keys'
 
 // One shared empty list, so an unloaded query keeps the same value each render.
@@ -29,6 +30,8 @@ export function GlobalSearch({
   const { go } = useNav()
   // A switched-off module answers 403: only search what is on.
   const { modules, hasPermission } = useApp()
+  // Pages too, hidden ones included, so nothing is out of reach.
+  const { customizable: pages } = useSidebarNav()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [dropOpen, setDropOpen] = useState(false)
@@ -174,6 +177,10 @@ export function GlobalSearch({
         sub: item.category,
         path: `/app/inventory/${item.id}`,
       }))
+    const pageResults: SearchResult[] = pages
+      .filter((p) => p.label.toLowerCase().includes(lower))
+      .slice(0, 3)
+      .map((p) => ({ kind: 'page', id: p.path, label: p.label, path: p.path }))
     const auditResults: SearchResult[] = (auditPage?.entries ?? [])
       .filter(
         (e) =>
@@ -191,6 +198,7 @@ export function GlobalSearch({
       }))
 
     setResults([
+      ...pageResults,
       ...mResults,
       ...gResults,
       ...evResults,
@@ -255,6 +263,7 @@ export function GlobalSearch({
     inventory: t('shell.searchKind.inventory'),
     poll: t('shell.searchKind.poll'),
     audit: t('shell.searchKind.audit'),
+    page: t('shell.searchKind.page'),
   }
   const kindColors: Record<string, { bg: string; color: string }> = {
     member: { bg: '#fdf0f8', color: '#be185d' },
@@ -265,6 +274,7 @@ export function GlobalSearch({
     inventory: { bg: '#eef2ff', color: '#4338ca' },
     poll: { bg: '#fff7ed', color: '#c2410c' },
     audit: { bg: '#f1f5f9', color: '#475569' },
+    page: { bg: 'var(--hb-surface-2)', color: 'var(--hb-text-2)' },
   }
 
   return (

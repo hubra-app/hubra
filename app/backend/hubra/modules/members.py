@@ -39,7 +39,6 @@ module = Module(
             "user-plus",
             order=12,
             perms=("applications.applications.read",),
-            parent="/app/members",
         ),
         NavItem(
             "/app/members/tiers",

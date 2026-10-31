@@ -66,6 +66,10 @@ class User(db.Model):
     theme: Mapped[str] = mapped_column(
         db.String(10), default="auto", server_default="auto", nullable=False
     )
+    # The person's own sidebar: {"pinned": [path, ...], "hidden": [path, ...]}.
+    nav_prefs: Mapped[dict | None] = mapped_column(
+        JSONB().with_variant(JSON, "sqlite"), nullable=True
+    )
 
     # Two-factor sign-in (hubra/api/auth/mfa.py).  Secrets are Fernet
     # encrypted; recovery codes are kept as SHA-256 hashes, used ones removed.
