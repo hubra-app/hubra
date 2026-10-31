@@ -2893,5 +2893,10 @@
   "finance.settings.openBank": "Bankangaben öffnen",
   "settings.tabs.membership": "Mitgliedschaft",
   "settings.tabs.bank": "Bank & QR-Rechnung",
-  "shell.breadcrumbs.financeSettings": "Finanzen › Einstellungen"
+  "shell.breadcrumbs.financeSettings": "Finanzen › Einstellungen",
+  "finance.summary.title": "Nach Kategorie",
+  "finance.summary.category": "Kategorie",
+  "finance.summary.uncategorized": "Ohne Kategorie",
+  "finance.summary.total": "Total",
+  "finance.summary.year": "Jahr"
 }

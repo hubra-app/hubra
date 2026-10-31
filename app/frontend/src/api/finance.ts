@@ -423,3 +423,32 @@ export interface FinanceOverview {
 export async function getFinanceOverview(): Promise<FinanceOverview> {
   return apiFetch<FinanceOverview>("/finance/overview");
 }
+
+export interface CategorySum {
+  /** null: transactions without a category */
+  id: number | null;
+  name: string | null;
+  color: string | null;
+  income: number;
+  expense: number;
+  net: number;
+  count: number;
+}
+
+export interface FinanceSummary {
+  from: string;
+  to: string;
+  income: number;
+  expense: number;
+  net: number;
+  categories: CategorySum[];
+}
+
+/** Booked income and expenses per category between two dates. */
+export async function getFinanceSummary(
+  from: string,
+  to: string,
+): Promise<FinanceSummary> {
+  const qs = new URLSearchParams({ from, to });
+  return apiFetch<FinanceSummary>(`/finance/summary?${qs}`);
+}

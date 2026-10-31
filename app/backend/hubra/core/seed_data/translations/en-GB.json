@@ -2893,5 +2893,10 @@
   "finance.settings.openBank": "Open bank details",
   "settings.tabs.membership": "Membership",
   "settings.tabs.bank": "Bank & QR invoice",
-  "shell.breadcrumbs.financeSettings": "Finance › Settings"
+  "shell.breadcrumbs.financeSettings": "Finance › Settings",
+  "finance.summary.title": "By category",
+  "finance.summary.category": "Category",
+  "finance.summary.uncategorized": "No category",
+  "finance.summary.total": "Total",
+  "finance.summary.year": "Year"
 }

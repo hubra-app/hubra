@@ -32,6 +32,7 @@ from hubra.api.finance.services import (
     InvoicesService,
     InvoiceReminderHistoryService,
     FinanceOverviewService,
+    FinanceSummaryService,
     ExternalPartyService,
     ExternalPartiesService,
 )
@@ -447,3 +448,9 @@ def download_invoice_pdf(id: int):
 @permission_required("overview", "read", "View finance overview")
 def finance_overview():
     return jsonify(FinanceOverviewService.get()), 200
+
+
+@finance_bp.get("/summary")
+@permission_required("overview", "read", "View finance overview")
+def finance_summary():
+    return jsonify(FinanceSummaryService.get(request.args)), 200

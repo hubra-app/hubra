@@ -7,6 +7,7 @@ import { StatTile } from '@/components/ui'
 import { getFinanceOverview, listTransactions } from '@/api/finance'
 import { formatCHF, formatCHFWhole, formatDate } from '@/format'
 import { qk } from '@/data/keys'
+import { CategorySummaryCard } from './CategorySummaryCard'
 
 /* ── Finance Overview ────────────────────────── */
 export function FinanceOverviewTab() {
@@ -306,6 +307,8 @@ export function FinanceOverviewTab() {
           </div>
         </Paper>
       </SimpleGrid>
+
+      <CategorySummaryCard />
     </div>
   )
 }

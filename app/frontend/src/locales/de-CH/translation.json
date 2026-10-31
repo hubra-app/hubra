@@ -993,6 +993,13 @@
       "invoicesTitle": "Rechnungen und Mahnungen",
       "bankHint": "Das Konto und die Adresse auf den QR-Rechnungen stellst du in den Einstellungen des Vereins ein.",
       "openBank": "Bankangaben öffnen"
+    },
+    "summary": {
+      "title": "Nach Kategorie",
+      "category": "Kategorie",
+      "uncategorized": "Ohne Kategorie",
+      "total": "Total",
+      "year": "Jahr"
     }
   },
   "functions": {

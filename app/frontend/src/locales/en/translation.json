@@ -993,6 +993,13 @@
       "invoicesTitle": "Invoices and reminders",
       "bankHint": "The account and address on the QR invoices are set in the club settings.",
       "openBank": "Open bank details"
+    },
+    "summary": {
+      "title": "By category",
+      "category": "Category",
+      "uncategorized": "No category",
+      "total": "Total",
+      "year": "Year"
     }
   },
   "functions": {
