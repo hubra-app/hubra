@@ -16,6 +16,8 @@ export interface Notification {
   msg: string;
   time: string;
   read: boolean;
+  /** Club app path it is about, e.g. "/app/operations/posts/3". */
+  link?: string | null;
 }
 
 export interface Member {
@@ -83,7 +85,6 @@ export interface Group {
   iconName: string;
   members: number;
   sessions: string;
-  tools: number;
   type?: string;
   emailAlias?: string;
   isPublic?: boolean;

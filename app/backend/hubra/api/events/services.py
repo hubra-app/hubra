@@ -50,7 +50,16 @@ def _tell_registered(event, title: str, skip_member_id: int | None = None) -> No
         return
     for reg in event.registrations:
         if reg.status in _OPEN and reg.member_id != skip_member_id:
-            notify_member(reg.member_id, "info", title, event.title)
+            notify_member(
+                reg.member_id, "info", title, event.title, link=event_link(event.id)
+            )
+
+def event_link(event_id: int, pending: bool = False) -> str:
+    """The events page showing one event (``pending`` opens its sign-ups
+    waiting for approval)."""
+    link = f"/app/operations/events?event={event_id}"
+    return link + "&pending=1" if pending else link
+
 
 class EventService:
     """Operations on a single event."""
@@ -263,6 +272,7 @@ class EventService:
                 "Sign-up to approve",
                 f"{member.name}: {event.title}",
                 skip_member_id=member.id,
+                link=event_link(event_id, pending=True),
             )
 
         return registration
@@ -307,7 +317,7 @@ class EventService:
         else:
             registration.status = "declined"
             title = "Sign-up declined"
-        notify_member(member_id, "info", title, event.title)
+        notify_member(member_id, "info", title, event.title, link=event_link(event.id))
         log_audit(
             actor_id=actor_id,
             action="approve_registration" if approve else "decline_registration",
@@ -458,7 +468,13 @@ class EventService:
             # They may have given up on it; tell them they are in now.
             from hubra.api.notifications.services import notify_member
 
-            notify_member(nxt.member_id, "info", "You got a place", event.title)
+            notify_member(
+                nxt.member_id,
+                "info",
+                "You got a place",
+                event.title,
+                link=event_link(event.id),
+            )
 
     @staticmethod
     def mark_attendance(event_id: int, member_id: int) -> EventRegistration:
@@ -688,7 +704,12 @@ class EventsService:
         db.session.flush()
 
         notify_on_publish(
-            "events", "info", "New event", event.title, skip_member_id=actor_id
+            "events",
+            "info",
+            "New event",
+            event.title,
+            skip_member_id=actor_id,
+            link=event_link(event.id),
         )
         emit(EVENT_PUBLISHED, event_id=event.id)
 

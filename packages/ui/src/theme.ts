@@ -1,13 +1,40 @@
-import { createTheme, DEFAULT_THEME, rem, v8CssVariablesResolver } from '@mantine/core'
+import {
+  createTheme,
+  defaultVariantColorsResolver,
+  DEFAULT_THEME,
+  parseThemeColor,
+  rem,
+  v8CssVariablesResolver,
+  type CSSVariablesResolver,
+  type VariantColorsResolver,
+} from '@mantine/core'
 import { accColors, goldColors, grayColors, pinkColors } from './colors'
+import { readableOn, textOn, WHITE } from './contrast'
+
+// Filled buttons, badges and checkboxes: Mantine picks their text from the
+// light-mode shade and as var(--mantine-color-black), which ui.css turns
+// light in dark mode, so a yellow club got light text on a yellow button in
+// dark mode. Use the per-scheme --mantine-color-<name>-contrast instead,
+// which cssVariablesResolver below works out from the shade actually shown.
+const variantColorResolver: VariantColorsResolver = (input) => {
+  const result = defaultVariantColorsResolver(input)
+  if (input.variant !== 'filled' || input.autoContrast === false) return result
+  const parsed = parseThemeColor({ color: input.color || input.theme.primaryColor, theme: input.theme })
+  if (!parsed.isThemeColor) return { ...result, color: textOn(parsed.value) }
+  if (parsed.shade === undefined) return { ...result, color: `var(--mantine-color-${parsed.color}-contrast)` }
+  return { ...result, color: textOn(parsed.value) }
+}
 
 // Hubra brand theme (brand/README.md). The same file is used by the club app,
 // the manager portal and the sign-in portal so the three look like one product.
 export const theme = createTheme({
   primaryColor: 'acc',
   primaryShade: { light: 6, dark: 4 },
+  // Text on filled buttons and badges: dark or white, whichever has more
+  // contrast (0.179 is where the two are equal), the same rule as avatars.
   autoContrast: true,
-  luminanceThreshold: 0.3,
+  luminanceThreshold: 0.179,
+  variantColorResolver,
   black: '#1a1625',
 
   breakpoints: {
@@ -231,4 +258,32 @@ export const theme = createTheme({
 
 // Mantine 9 made the light variant solid colours, which turned avatars and
 // light buttons grey on our tinted backgrounds. Keep the 8.x see-through tints.
-export const cssVariablesResolver = v8CssVariablesResolver
+//
+// On top of that, text in the club colours (links, light and outline
+// buttons, badges) gets a shade that is readable on the page: Mantine uses
+// shade 6 as is, so a yellow club colour gave yellow text on white. The fill
+// itself stays the club's colour; autoContrast picks its text.
+export const cssVariablesResolver: CSSVariablesResolver = (t) => {
+  const result = v8CssVariablesResolver(t)
+  const shade = t.primaryShade as { light: number; dark: number }
+  for (const [name, scale] of Object.entries(t.colors)) {
+    if (!Array.isArray(scale) || !/^#[0-9a-f]{6}$/i.test(scale[shade.light])) continue
+    result.light[`--mantine-color-${name}-contrast`] = textOn(scale[shade.light])
+    result.dark[`--mantine-color-${name}-contrast`] = textOn(scale[shade.dark])
+  }
+  result.light['--mantine-primary-color-contrast'] = `var(--mantine-color-${t.primaryColor}-contrast)`
+  result.dark['--mantine-primary-color-contrast'] = `var(--mantine-color-${t.primaryColor}-contrast)`
+  for (const name of ['acc', 'gold']) {
+    const scale = t.colors[name]
+    if (!scale) continue
+    const ink = readableOn(scale[6], [WHITE, scale[1]])
+    result.light[`--mantine-color-${name}-text`] = ink
+    result.light[`--mantine-color-${name}-light-color`] = ink
+    result.light[`--mantine-color-${name}-outline`] = ink
+    // Dark mode: Mantine draws outline buttons in shade 0, which ui.css
+    // turns into a dark tint, so they vanished. Use the light text shade.
+    result.dark[`--mantine-color-${name}-outline`] = `var(--mantine-color-${name}-3)`
+  }
+  result.light['--mantine-color-anchor'] = 'var(--mantine-color-acc-text)'
+  return result
+}

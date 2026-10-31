@@ -76,7 +76,7 @@ export function StatTile({
           {label}
         </Text>
         {icon && (
-          <Box c="acc.6" style={{ lineHeight: 0 }}>
+          <Box c="acc" style={{ lineHeight: 0 }}>
             {icon}
           </Box>
         )}

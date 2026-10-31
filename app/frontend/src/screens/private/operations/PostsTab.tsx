@@ -627,6 +627,7 @@ export function PostsTab() {
         onSubmit={form.onSubmit(submitAdd)}
         open={addOpen}
         onClose={() => setAddOpen(false)}
+        wide
         title={t('posts.newPost', 'Neuer Beitrag')}
         footer={
           <>
@@ -645,6 +646,7 @@ export function PostsTab() {
         onSubmit={form.onSubmit(saveEdit)}
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
+        wide
         title={t('posts.editPost', 'Beitrag bearbeiten')}
         subtitle={editTarget?.title}
         footer={
