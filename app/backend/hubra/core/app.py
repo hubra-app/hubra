@@ -252,6 +252,9 @@ def create_app(config_name: str | None = None) -> Flask:
     registry.register_blueprints(app)
     # Registered after resolve_tenant, so g.tenant is known here.
     app.before_request(module_gate)
+    from hubra.api.permissions import read_only_impersonation
+
+    app.before_request(read_only_impersonation)
 
     # ── Root health endpoint (for Docker healthcheck) ──────────────────────────
     @app.get("/health")

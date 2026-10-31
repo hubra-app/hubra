@@ -2142,6 +2142,7 @@
     },
     "impersonation": {
       "badge": "Fremdzugriff",
+      "lookingAt": "Du siehst den Verein {{club}} nur an",
       "actingAs": "Du handelst im Verein {{club}}",
       "reason": "Grund: {{reason}}",
       "remaining": "noch {{min}} Min.",

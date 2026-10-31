@@ -103,12 +103,13 @@ export async function archiveTenant(id: number): Promise<{ tenant: Tenant }> {
 
 export async function impersonateTenant(
   id: number,
-  body: { reason: string; user_id?: number },
+  body: { reason: string; user_id?: number; allow_changes?: boolean },
 ): Promise<{
   impersonating: boolean
   tenant_slug: string
   member_id: number
   expires_at: string
+  read_only: boolean
 }> {
   return apiFetch(`/system/tenants/${id}/impersonate`, {
     method: 'POST',

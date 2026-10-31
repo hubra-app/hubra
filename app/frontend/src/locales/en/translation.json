@@ -2142,6 +2142,7 @@
     },
     "impersonation": {
       "badge": "Impersonating",
+      "lookingAt": "Viewing club {{club}}, read only",
       "actingAs": "Acting in club {{club}}",
       "reason": "Reason: {{reason}}",
       "remaining": "{{min}} min remaining",

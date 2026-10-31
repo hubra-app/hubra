@@ -818,6 +818,41 @@ def require_password_changed(fn):
     return wrapper
 
 
+# Requests a read-only impersonation may still make: ending it, and keeping
+# the session alive.
+_READ_ONLY_IMPERSONATION_ALLOWED = {
+    "tenant_admin.stop_impersonation",
+    "auth_bp.logout",
+    "auth_bp.refresh",
+}
+
+
+def read_only_impersonation():
+    """before_request: an impersonation started without "allow changes"
+    only looks. Every write is refused, whatever the member may do."""
+    if request.method in ("GET", "HEAD", "OPTIONS"):
+        return None
+    if request.endpoint in _READ_ONLY_IMPERSONATION_ALLOWED:
+        return None
+    try:
+        verify_jwt_in_request(optional=True)
+        from flask_jwt_extended import get_jwt
+
+        claims = get_jwt()
+    except Exception:  # noqa: BLE001 - the route's own check reports it
+        return None
+    if claims.get("impersonator_id") is None:
+        return None
+    if claims.get("impersonation_mode") == "act":
+        return None
+    return jsonify(
+        {
+            "error": "IMPERSONATION_READ_ONLY",
+            "message": "This support session can only look; start one that allows changes",
+        }
+    ), 403
+
+
 def refuse_during_impersonation() -> None:
     """Support sees a club as the member does, but doesn't end the member's
     membership or sessions for them."""

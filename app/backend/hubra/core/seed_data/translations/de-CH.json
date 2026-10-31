@@ -1905,6 +1905,7 @@
   "shell.goToDashboard": "Zum Dashboard",
   "shell.impersonation.actingAs": "Du handelst im Verein {{club}}",
   "shell.clubBanner.dismiss": "Banner ausblenden",
+  "shell.impersonation.lookingAt": "Du siehst den Verein {{club}} nur an",
   "shell.impersonation.badge": "Fremdzugriff",
   "shell.impersonation.reason": "Grund: {{reason}}",
   "shell.impersonation.remaining": "noch {{min}} Min.",

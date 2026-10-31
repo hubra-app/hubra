@@ -356,6 +356,8 @@ def impersonate_tenant_user(tenant_id: int):
     data = request.get_json(silent=True) or {}
     reason = (data.get("reason") or "").strip()
     target_user_id = data.get("user_id")
+    # Looking is the default; changing anything as the member is asked for.
+    allow_changes = data.get("allow_changes") is True
 
     if not reason:
         return jsonify(
@@ -439,6 +441,7 @@ def impersonate_tenant_user(tenant_id: int):
         "impersonator_user_id": admin_user_id,
         "impersonation_reason": reason,
         "impersonation_expires_at": expires_at.isoformat(),
+        "impersonation_mode": "act" if allow_changes else "read",
         "tenant_slug": tenant.slug,
     }
     access_token = create_access_token(
@@ -463,6 +466,7 @@ def impersonate_tenant_user(tenant_id: int):
                 "reason": reason,
                 "tenant_slug": tenant.slug,
                 "target_user_id": target_user_id,
+                "allow_changes": allow_changes,
             },
         )
     )
@@ -475,6 +479,7 @@ def impersonate_tenant_user(tenant_id: int):
                 "tenant_slug": tenant.slug,
                 "member_id": target_member_id,
                 "expires_at": expires_at.isoformat(),
+                "read_only": not allow_changes,
             }
         ),
         200,

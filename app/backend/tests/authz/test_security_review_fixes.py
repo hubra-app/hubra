@@ -151,7 +151,7 @@ class TestImpersonationIsBounded:
         club, target = self._setup(client, db, seeded_db)
         resp = client.post(
             f"/api/v1/system/tenants/{club.id}/impersonate",
-            json={"reason": "ticket", "user_id": target.id},
+            json={"reason": "ticket", "user_id": target.id, "allow_changes": True},
         )
         assert resp.status_code == 200
         claims = decode_token(client.get_cookie("refresh_token_cookie").value)
