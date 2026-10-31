@@ -135,6 +135,18 @@ class BaseConfig:
     # FRONTEND_BASE_URL for backward compatibility when not set.
     SSO_BASE_URL: str = os.environ.get("SSO_BASE_URL", "")
 
+    # ── API origin (for links outside services call back to) ────────────────
+    # e.g. https://api.hubra.club. Outside services (Discord) only accept
+    # the callback URLs registered with them, so this must not depend on the
+    # Host a request came in on. Empty: the request's own host.
+    API_PUBLIC_URL: str = os.environ.get("API_PUBLIC_URL", "")
+
+    # ── Discord (one Hubra bot for every club; see docs/discord.md) ─────────
+    DISCORD_CLIENT_ID: str = os.environ.get("DISCORD_CLIENT_ID", "")
+    DISCORD_CLIENT_SECRET: str = os.environ.get("DISCORD_CLIENT_SECRET", "")
+    DISCORD_BOT_TOKEN: str = os.environ.get("DISCORD_BOT_TOKEN", "")
+    DISCORD_PUBLIC_KEY: str = os.environ.get("DISCORD_PUBLIC_KEY", "")
+
     # ── Integrations ────────────────────────────────────────────────────────
     WILDDUCK_API_URL: str = os.environ.get("WILDDUCK_API_URL", "")
     WILDDUCK_API_TOKEN: str = os.environ.get("WILDDUCK_API_TOKEN", "")

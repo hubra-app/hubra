@@ -1979,7 +1979,8 @@
       "modules": "Module & Plugins",
       "settings": "Erweitert",
       "membership": "Mitgliedschaft",
-      "bank": "Bank & QR-Rechnung"
+      "bank": "Bank & QR-Rechnung",
+      "apps": "Verbundene Apps"
     },
     "title": "Einstellungen",
     "yourAccount": "Dein Konto",
@@ -3064,7 +3065,8 @@
       "tiers_tiers_update_percentage_value": "Prozentwert",
       "tiers_tiers_update_price_chf": "Preis (CHF)",
       "tiers_tiers_update_price_type": "Preisart",
-      "tiers_tiers_update_round_to": "Runden auf"
+      "tiers_tiers_update_round_to": "Runden auf",
+      "apps_apps_manage": "Verbundene Apps verwalten"
     },
     "areas": {
       "applications": "Anträge",
@@ -3279,5 +3281,51 @@
     },
     "was": "Vorher",
     "reason": "Begründung"
+  },
+  "apps": {
+    "connectFailed": "Nicht verbunden",
+    "disconnected": "Getrennt",
+    "disconnectFailed": "Trennen fehlgeschlagen",
+    "intro": "Dienste ausserhalb von Hubra, mit denen der Verein verbunden ist, und was sie dürfen. Jede Verbindung wird im Protokoll festgehalten und kann jederzeit getrennt werden.",
+    "connected": "Verbunden",
+    "none": "Noch keine App verbunden.",
+    "available": "Verfügbar",
+    "noProviders": "Schalte unter «Module & Plugins» ein Modul mit einer App ein, zum Beispiel Discord.",
+    "connect": "Verbinden",
+    "disconnectTitle": "Verbindung trennen?",
+    "disconnectBody": "Die App kann danach nichts mehr für den Verein tun. Wo möglich wird sie auch beim Dienst entfernt.",
+    "testOk": "Verbindung funktioniert",
+    "testFailed": "Test fehlgeschlagen",
+    "connectedBy": "Verbunden von {{name}}",
+    "lastUsed": "zuletzt aktiv",
+    "allowed": "Darf",
+    "details": "Details",
+    "test": "Testen",
+    "disconnect": "Trennen",
+    "activity": "Letzte Aktivität",
+    "noActivity": "Noch keine Aktivität.",
+    "error": "Fehler",
+    "connectTitle": "{{name}} verbinden",
+    "connectHint": "Du meldest dich gleich beim Dienst an und wählst aus, was verbunden wird. Danach bestätigst du die Verbindung hier.",
+    "mayDo": "Was die App darf",
+    "continue": "Weiter zu {{name}}",
+    "connectedOk": "Verbunden",
+    "confirmTitle": "Verbindung bestätigen",
+    "confirmBody": "{{provider}} «{{label}}» mit dem Verein verbinden?",
+    "confirm": "Bestätigen",
+    "errors": {
+      "expired": "Die Verbindung ist abgelaufen oder wurde in einem anderen Browser gestartet. Bitte nochmals verbinden.",
+      "cancelled": "Verbinden abgebrochen.",
+      "taken": "Das ist bereits mit einem anderen Verein verbunden.",
+      "failed": "Verbinden fehlgeschlagen. Bitte nochmals versuchen.",
+      "disabled": "Das Modul für diese App ist ausgeschaltet."
+    },
+    "actions": {
+      "connect_started": "Verbinden gestartet",
+      "connected": "Verbunden",
+      "disconnected": "Getrennt",
+      "changed": "Geändert",
+      "test": "Test"
+    }
   }
 }
