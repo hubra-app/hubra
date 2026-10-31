@@ -4,7 +4,7 @@
 Hidden entries move to the sidebar's "Weitere" page; pinned ones go to the top.
 
 Revision ID: d7f3b9a1c5e8
-Revises: c5e2a8d4f1b7
+Revises: f2c8a4d6b1e3
 Create Date: 2026-10-30 23:30:00.000000
 
 """
@@ -16,7 +16,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "d7f3b9a1c5e8"
-down_revision = "c5e2a8d4f1b7"
+down_revision = "f2c8a4d6b1e3"
 branch_labels = None
 depends_on = None
 
