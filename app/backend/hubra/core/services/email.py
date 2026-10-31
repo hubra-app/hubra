@@ -509,28 +509,35 @@ def send_password_changed(
 def send_new_device_login(
     to_address: str,
     name: str,
+    *,
     ip: str,
+    browser_family: str,
+    platform: str,
     user_agent: str,
     timestamp: str,
-    *,
     lang: str = DEFAULT_LANG,
-) -> None:
-    """Alert a member that their account was accessed from a new IP address."""
-    club_name = club_display_name()
-    base = _get_base_url()
-    support_url = f"{base}/contact" if base else ""
+) -> bool:
+    """Tell the account it was signed into from a new device.  True when sent.
+
+    The links go to the account on the SSO portal: its sessions, where the
+    sign-in can be ended, and its password.
+    """
+    sso = _get_sso_base_url()
 
     body_html, body_text, subject = render_mail_template(
         "new_device_login",
         locale=lang,
         name=name,
-        club_name=club_name,
+        club_name=club_display_name(),
         timestamp=timestamp,
-        ip=ip,
+        ip=ip or "?",
+        browser_family=browser_family or "",
+        platform=platform or "",
         user_agent=user_agent,
-        support_url=support_url,
+        sessions_url=f"{sso}/account/sitzungen" if sso else "",
+        password_url=f"{sso}/account/passwort" if sso else "",
     )
-    _send(to_address, name, subject, body_html, body_text, system=True)
+    return _send(to_address, name, subject, body_html, body_text, system=True)
 
 
 def send_account_deleted(

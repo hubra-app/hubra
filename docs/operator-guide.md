@@ -314,6 +314,44 @@ The full list is in [configuration.md](configuration.md) and `.env.example`.
 
 Everything staff do in manage is written to Platform › Audit log.
 
+### Sign-in alerts
+
+When an account signs in from a browser it has not used before, its
+(confirmed) address gets a mail with the time, IP address and browser, and
+a button to its sessions on the SSO portal. Each browser keeps a random
+token in the `hubra_device` cookie (HttpOnly, 400 days, survives sign-out);
+the database keeps only its hash, in `known_devices`. The first browser an
+account is seen with, including every account's first sign-in after the
+upgrade, is learnt without a mail. Cleared cookies or a private window
+count as a new device. Times in the mail use `MAIL_TIMEZONE`
+(default `Europe/Zurich`).
+
+### Two-factor sign-in
+
+Everyone can turn on a second step at sign-in in SSO › Konto › Zwei-Faktor:
+a passkey (Face ID, fingerprint, device PIN or a security key) or a 6-digit
+code from an authenticator app (TOTP), plus ten one-time recovery codes for
+when the device is gone. The TOTP secret is stored encrypted with
+`FERNET_KEY`.
+
+A passkey also signs in on its own ("Mit Passkey anmelden"), without the
+password; it always asks for the device's fingerprint, face or PIN.
+Passkeys belong to the SSO host: the relying party is the host of
+`SSO_BASE_URL` (override with `WEBAUTHN_RP_ID`, and list extra origins in
+`WEBAUTHN_ORIGINS`). Changing the SSO host later makes existing passkeys
+stop working, so pick it before people add them. Without `SSO_BASE_URL`
+passkeys are off.
+
+Platform staff (superadmins and holders of a global role) must turn it on
+(a passkey or the app):
+until they do, manage › Platform answers `MFA_SETUP_REQUIRED` and manage
+sends them to the setup page. `MFA_REQUIRED_FOR_STAFF=false` switches the
+rule off, for example while the relay or SSO is being set up.
+
+Someone who lost both the app and the recovery codes: check that it really
+is them, then run `flask reset-mfa --email them@example.org`. They sign in
+with the password alone and set it up again.
+
 ## Day to day
 
 ```sh
