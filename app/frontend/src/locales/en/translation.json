@@ -718,7 +718,56 @@
     "noPending": "No sign-ups waiting.",
     "guests": "{{count}} guests",
     "decline": "Decline",
-    "approve": "Confirm"
+    "approve": "Confirm",
+    "attendance": {
+      "absent": "Absent",
+      "allEvents": "All events",
+      "allPresent": "Rest present",
+      "average": "Average attendance {{rate}}",
+      "count": "{{present}} of {{count}} present",
+      "csv": "CSV for J+S",
+      "events": "{{count}} events",
+      "excused": "Excused",
+      "excusedShort": "Exc.",
+      "from": "From",
+      "legend": "✓ present · E excused · · absent or not recorded · empty: not expected",
+      "noEvents": "No events in this period",
+      "noEventsHint": "Give trainings a group, then its members count here.",
+      "nobody": "Nobody expected: give the event a group or sign members up.",
+      "overview": "Attendance",
+      "present": "Present",
+      "presentShort": "Pres.",
+      "rate": "Rate",
+      "saved": "Attendance saved",
+      "take": "Take attendance",
+      "title": "Attendance",
+      "to": "To"
+    },
+    "group": "Group",
+    "groupHint": "Its members are expected when attendance is taken (for example a training's team).",
+    "noGroup": "For everyone",
+    "repeat": {
+      "dates": "{{count}} dates",
+      "days": "On these days",
+      "every": "Repeats",
+      "everyNWeeks": "Every {{count}} weeks",
+      "everyWeek": "Every week",
+      "none": "This rule gives no dates.",
+      "skipHint": "Tap a date that is cancelled (holidays).",
+      "skipped": "Cancelled",
+      "takesPlace": "Takes place",
+      "until": "Until",
+      "weekly": "Repeat weekly (for example a training)"
+    },
+    "series": {
+      "applyTo": "Change for",
+      "badge": "Recurring date",
+      "deleteBody": "This date belongs to a series. Deleted dates and their sign-ups are gone for good.",
+      "deleteFollowing": "This and all following",
+      "deleteThis": "Only this date",
+      "following": "This and all following",
+      "thisOne": "Only this date"
+    }
   },
   "finance": {
     "addCategory": "Add Category",
@@ -2026,7 +2075,8 @@
       "roles": "Administration › Roles",
       "health": "System › Health",
       "dashboardMe": "Dashboard › Personal",
-      "financeSettings": "Finance › Settings"
+      "financeSettings": "Finance › Settings",
+      "attendance": "Club life › Attendance"
     },
     "emailVerify": {
       "banner": "Your private email address isn't verified yet. Some features are only available after that.",

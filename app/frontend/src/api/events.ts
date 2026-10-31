@@ -1,5 +1,5 @@
-import { apiFetch } from '@hubra/api-client';
-import type { ClubEvent } from "@/types";
+import { apiFetch, apiFetchRaw } from '@hubra/api-client';
+import type { ClubEvent, Recurrence } from "@/types";
 
 interface BackendEvent {
   id: number;
@@ -23,6 +23,39 @@ interface BackendEvent {
   places_taken?: number;
   pending_count?: number;
   my_status?: string | null;
+  group_id?: number | null;
+  series_id?: number | null;
+  series_date?: string | null;
+  recurrence?: BackendRecurrence | null;
+}
+
+interface BackendRecurrence {
+  start_date?: string;
+  until: string;
+  interval: number;
+  weekdays: number[];
+  skip_dates: string[];
+}
+
+export type { Recurrence };
+
+function adaptRecurrence(r: BackendRecurrence): Recurrence {
+  return {
+    startDate: r.start_date,
+    until: r.until,
+    interval: r.interval,
+    weekdays: r.weekdays,
+    skipDates: r.skip_dates,
+  };
+}
+
+function recurrenceBody(r: Recurrence) {
+  return {
+    until: r.until,
+    interval: r.interval,
+    weekdays: r.weekdays,
+    skip_dates: r.skipDates,
+  };
 }
 
 function adapt(b: BackendEvent): ClubEvent {
@@ -48,6 +81,10 @@ function adapt(b: BackendEvent): ClubEvent {
     placesTaken: b.places_taken ?? b.registration_count ?? 0,
     pendingCount: b.pending_count ?? 0,
     myStatus: (b.my_status ?? null) as ClubEvent["myStatus"],
+    groupId: b.group_id != null ? String(b.group_id) : null,
+    seriesId: b.series_id != null ? String(b.series_id) : null,
+    seriesDate: b.series_date ?? null,
+    recurrence: b.recurrence ? adaptRecurrence(b.recurrence) : null,
   };
 }
 
@@ -80,7 +117,14 @@ export interface EventCreate {
   isPublic?: boolean;
   coverImageUrl?: string;
   color?: string;
+  /** The group the event is for (its members are expected). */
+  groupId?: string | null;
+  /** Repeat weekly (new events; edits with scope "following"). */
+  recurrence?: Recurrence;
 }
+
+/** For a date of a series: just this one, or it and all later ones. */
+export type SeriesScope = "this" | "following";
 
 export async function createEvent(input: EventCreate): Promise<ClubEvent> {
   const body: Record<string, unknown> = {
@@ -100,6 +144,9 @@ export async function createEvent(input: EventCreate): Promise<ClubEvent> {
   if (input.isPublic !== undefined) body.is_public = input.isPublic;
   if (input.coverImageUrl !== undefined) body.cover_image_url = input.coverImageUrl;
   if (input.color !== undefined) body.color = input.color;
+  if (input.groupId !== undefined)
+    body.group_id = input.groupId ? Number(input.groupId) : null;
+  if (input.recurrence) body.recurrence = recurrenceBody(input.recurrence);
 
   const b = await apiFetch<BackendEvent>("/events/", {
     method: "POST",
@@ -113,6 +160,7 @@ export type EventUpdate = Partial<EventCreate>;
 export async function updateEvent(
   id: string,
   input: EventUpdate,
+  scope: SeriesScope = "this",
 ): Promise<ClubEvent> {
   const body: Record<string, unknown> = {};
   if (input.title !== undefined) body.title = input.title;
@@ -130,16 +178,24 @@ export async function updateEvent(
   if (input.isPublic !== undefined) body.is_public = input.isPublic;
   if (input.coverImageUrl !== undefined) body.cover_image_url = input.coverImageUrl;
   if (input.color !== undefined) body.color = input.color;
+  if (input.groupId !== undefined)
+    body.group_id = input.groupId ? Number(input.groupId) : null;
+  if (input.recurrence) body.recurrence = recurrenceBody(input.recurrence);
 
-  const b = await apiFetch<BackendEvent>(`/events/${id}`, {
+  const suffix = scope === "following" ? "?scope=following" : "";
+  const b = await apiFetch<BackendEvent>(`/events/${id}${suffix}`, {
     method: "PATCH",
     body: JSON.stringify(body),
   });
   return adapt(b);
 }
 
-export async function deleteEvent(id: string): Promise<void> {
-  await apiFetch(`/events/${id}`, { method: "DELETE" });
+export async function deleteEvent(
+  id: string,
+  scope: SeriesScope = "this",
+): Promise<void> {
+  const suffix = scope === "following" ? "?scope=following" : "";
+  await apiFetch(`/events/${id}${suffix}`, { method: "DELETE" });
 }
 
 // The signed-in member signs up or gives up their place. This goes through
@@ -239,4 +295,149 @@ export async function decideRegistration(
 export async function getCalendarFeedUrl(): Promise<string> {
   const data = await apiFetch<{ url: string }>("/events/calendar/feed");
   return data.url;
+}
+
+// ── Attendance ───────────────────────────────────────────────────────────────
+
+export type AttendanceStatus = "present" | "excused" | "absent";
+
+export interface RollEntry {
+  memberId: number;
+  memberName: string;
+  /** The member's sign-up, if any. */
+  registrationStatus: string | null;
+  /** What was recorded; null when nothing yet. */
+  status: AttendanceStatus | null;
+}
+
+interface BackendRollEntry {
+  member_id: number;
+  member_name: string;
+  registration_status: string | null;
+  status: AttendanceStatus | null;
+}
+
+const adaptRoll = (rows: BackendRollEntry[]): RollEntry[] =>
+  rows.map((r) => ({
+    memberId: r.member_id,
+    memberName: r.member_name,
+    registrationStatus: r.registration_status,
+    status: r.status,
+  }));
+
+/** The roll of one event: the group's members and whoever signed up. */
+export async function getRoll(eventId: string): Promise<RollEntry[]> {
+  return adaptRoll(
+    await apiFetch<BackendRollEntry[]>(`/events/${eventId}/attendance`),
+  );
+}
+
+export async function saveRoll(
+  eventId: string,
+  entries: { memberId: number; status: AttendanceStatus | null }[],
+): Promise<RollEntry[]> {
+  return adaptRoll(
+    await apiFetch<BackendRollEntry[]>(`/events/${eventId}/attendance`, {
+      method: "PUT",
+      body: JSON.stringify({
+        entries: entries.map((e) => ({ member_id: e.memberId, status: e.status })),
+      }),
+    }),
+  );
+}
+
+export interface AttendanceSummary {
+  present: number;
+  excused: number;
+  absent: number;
+  expected: number;
+  /** present / expected, or null when nobody was expected. */
+  rate: number | null;
+}
+
+export interface AttendanceOverview {
+  from: string;
+  to: string;
+  events: {
+    id: number;
+    title: string;
+    date: string;
+    time: string | null;
+    groupId: number | null;
+    seriesId: number | null;
+    recorded: boolean;
+    present: number;
+  }[];
+  members: (AttendanceSummary & {
+    memberId: number;
+    name: string;
+    birthday: string | null;
+    /** Per event id; events the member was not expected at are missing. */
+    statuses: Record<string, AttendanceStatus>;
+  })[];
+  total: AttendanceSummary;
+}
+
+export interface AttendanceFilter {
+  from: string;
+  to: string;
+  groupId?: string;
+  category?: string;
+}
+
+function overviewPath(f: AttendanceFilter, csv = false) {
+  const qs = new URLSearchParams({ from: f.from, to: f.to });
+  if (f.category) qs.set("category", f.category);
+  if (csv) qs.set("format", "csv");
+  return f.groupId
+    ? `/events/attendance/groups/${f.groupId}?${qs}`
+    : `/events/attendance?${qs}`;
+}
+
+/** Attendance per member over the events of a period. */
+export async function getAttendanceOverview(
+  f: AttendanceFilter,
+): Promise<AttendanceOverview> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const b = await apiFetch<any>(overviewPath(f));
+  return {
+    from: b.from,
+    to: b.to,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    events: b.events.map((e: any) => ({
+      id: e.id,
+      title: e.title,
+      date: e.date,
+      time: e.time,
+      groupId: e.group_id,
+      seriesId: e.series_id,
+      recorded: e.recorded,
+      present: e.present,
+    })),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    members: b.members.map((m: any) => ({
+      memberId: m.member_id,
+      name: m.name,
+      birthday: m.birthday,
+      statuses: m.statuses,
+      present: m.present,
+      excused: m.excused,
+      absent: m.absent,
+      expected: m.expected,
+      rate: m.rate,
+    })),
+    total: b.total,
+  };
+}
+
+/** The same as a sheet (semicolons, for Excel and J+S). */
+export async function downloadAttendanceCSV(f: AttendanceFilter): Promise<void> {
+  const res = await apiFetchRaw(overviewPath(f, true));
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `anwesenheit-${f.from}-${f.to}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }

@@ -128,6 +128,22 @@ export interface ClubEvent {
     | "attended"
     | "declined"
     | null;
+  /** The group the event is for. */
+  groupId?: string | null;
+  /** A date of a weekly series, and the rule's date it stands for. */
+  seriesId?: string | null;
+  seriesDate?: string | null;
+  recurrence?: Recurrence | null;
+}
+
+/** A weekly rule: every `interval`-th week on `weekdays` (Monday 0) until
+ * `until`, without `skipDates`. */
+export interface Recurrence {
+  startDate?: string;
+  until: string;
+  interval: number;
+  weekdays: number[];
+  skipDates: string[];
 }
 
 export interface Poll {
