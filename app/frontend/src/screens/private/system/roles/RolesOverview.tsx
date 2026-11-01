@@ -166,7 +166,7 @@ export function RolesOverview({
           )}
         </Group>
       </Group>
-      <Tabs value={tab} onChange={setTab} keepMounted={false}>
+      <Tabs value={tab} onChange={setTab} keepMounted={false} className="hubra-tabs">
         <Tabs.List mb={12}>
           <Tabs.Tab value="access">{t('roles.mayDo', 'Darf')}</Tabs.Tab>
           <Tabs.Tab value="members">

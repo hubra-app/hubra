@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ModuleInfo, ModuleNavItem } from '@/api/modules'
-import { buildNav, getParentPath, MORE_PATH, type NavSection } from './nav'
+import { buildNav, getParentPath, moveNavEntry, MORE_PATH, type NavSection } from './nav'
 
 const navItem = (
   path: string,
@@ -73,6 +73,32 @@ describe('buildNav', () => {
     const { nav, more } = buildNav(counts, t, [members, groups], () => false, prefs)
     expect(paths(nav)).toEqual(['/app/groups'])
     expect(more).toEqual([])
+  })
+
+  it('follows the person\'s order within a section, new entries last', () => {
+    const events = mod('events', [navItem('/app/events', [], { order: 30 })])
+    const prefs = { pinned: [], hidden: [], order: ['/app/groups', '/app/members'] }
+    const { nav } = buildNav(counts, t, [members, groups, events], () => true, prefs)
+    expect(paths(nav)).toEqual(['/app/groups', '/app/members', '/app/events'])
+  })
+
+  it('moves entries within their group of the customise dialog', () => {
+    const prefs = { pinned: ['/app/operations/codes', '/app/groups'], hidden: [], order: [] }
+    const { groups: dialog } = buildNav(counts, t, [members, groups, codes], () => true, prefs)
+    expect(dialog.map((g) => g.section)).toEqual(['favourites', 'workspace'])
+    const fav = moveNavEntry(prefs, dialog[0], '/app/groups', -1)
+    expect(fav.pinned).toEqual(['/app/groups', '/app/operations/codes'])
+    // The first entry can't move further up.
+    expect(moveNavEntry(prefs, dialog[0], '/app/operations/codes', -1)).toBe(prefs)
+
+    const plain = { pinned: [], hidden: [], order: [] }
+    const ws = buildNav(counts, t, [members, groups], () => true, plain).groups[0]
+    const moved = moveNavEntry(plain, ws, '/app/groups', -1)
+    expect(moved.order).toEqual(['/app/groups', '/app/members'])
+    expect(paths(buildNav(counts, t, [members, groups], () => true, moved).nav)).toEqual([
+      '/app/groups',
+      '/app/members',
+    ])
   })
 })
 

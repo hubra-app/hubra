@@ -164,15 +164,16 @@ export async function getMyGroups(): Promise<{ id: string; name: string }[]> {
   return data;
 }
 
-/** The person's own sidebar: entries pinned to the top and entries hidden. */
+/** The person's own sidebar: entries pinned to the top, hidden, and their order. */
 export interface NavPrefs {
   pinned: string[];
   hidden: string[];
+  order?: string[];
 }
 
 export async function getNavPrefs(): Promise<NavPrefs> {
   const body = await apiFetch<{ navPrefs?: NavPrefs }>("/account/profile");
-  return body.navPrefs ?? { pinned: [], hidden: [] };
+  return body.navPrefs ?? { pinned: [], hidden: [], order: [] };
 }
 
 export async function saveNavPrefs(navPrefs: NavPrefs): Promise<NavPrefs> {

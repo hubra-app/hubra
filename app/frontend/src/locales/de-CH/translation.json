@@ -2409,11 +2409,13 @@
     },
     "customize": {
       "title": "Seitenleiste anpassen",
-      "intro": "Mit dem Stern heftest du eine Seite oben unter Favoriten an. Ausgeblendete Seiten findest du weiterhin unter Weitere und mit der Suche (Ctrl+K).",
+      "intro": "Mit dem Stern heftest du eine Seite oben unter Favoriten an, mit den Pfeilen änderst du die Reihenfolge. Ausgeblendete Seiten findest du weiterhin unter Weitere und mit der Suche (Ctrl+K).",
       "pin": "Als Favorit anheften",
       "unpin": "Nicht mehr anheften",
       "hide": "Ausblenden",
       "show": "Wieder anzeigen",
+      "moveUp": "Nach oben",
+      "moveDown": "Nach unten",
       "reset": "Zurücksetzen",
       "done": "Fertig"
     }

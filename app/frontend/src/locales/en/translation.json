@@ -2409,11 +2409,13 @@
     },
     "customize": {
       "title": "Customise sidebar",
-      "intro": "Use the star to pin a page to the top under Favourites. Hidden pages are still under More and in the search (Ctrl+K).",
+      "intro": "Use the star to pin a page to the top under Favourites and the arrows to change the order. Hidden pages are still under More and in the search (Ctrl+K).",
       "pin": "Pin to favourites",
       "unpin": "Unpin",
       "hide": "Hide",
       "show": "Show again",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
       "reset": "Reset",
       "done": "Done"
     }
