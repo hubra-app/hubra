@@ -58,7 +58,7 @@ _DEFAULT_PERMISSIONS = [
     (
         "platform.diagnostics",
         "View platform diagnostics",
-        "System health, the shared mail server and the API permission table",
+        "System health, outbound mail and the event log, the shared mail server and the API permission table",
     ),
 ]
 

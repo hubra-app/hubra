@@ -302,6 +302,8 @@ const DE_STATUS: Record<number, string> = {
 };
 
 const DE_CODE: Record<string, string> = {
+  STEP_UP_REQUIRED: "Bestätige zuerst dein Passwort, um das zu tun.",
+  ACCOUNT_TOKEN_REQUIRED: "Dafür braucht es eine Konto-Anmeldung. Melde dich neu an.",
   MODULE_DISABLED: "Dieses Modul ist für den Verein ausgeschaltet.",
   REMINDER_NOT_SENT: "Die Erinnerung wurde nicht verschickt: Die Empfängerin oder der Empfänger hat keine (bestätigte) E-Mail-Adresse.",
   REGISTRATION_CLOSED: "Die Anmeldung für diesen Anlass ist geschlossen.",

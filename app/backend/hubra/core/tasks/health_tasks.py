@@ -26,9 +26,16 @@ def run_health_checks() -> dict:
 
     Returns the payload so the task result is inspectable.
     """
+    from hubra.core.services import platform_monitor
+
     checked_at = time.time()
+    previous = HealthCache.get()
     payload = HealthService.run_all_checks()
     payload["checked_at"] = checked_at
+    try:
+        platform_monitor.watch_services(previous, payload)
+    except Exception:
+        _logger.warning("health-check: watching services failed", exc_info=True)
     HealthCache.set(payload, ttl=_CACHE_TTL)
     _logger.info("health-check: status=%s", payload["status"])
     return payload

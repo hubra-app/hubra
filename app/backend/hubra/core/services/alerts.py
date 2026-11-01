@@ -21,12 +21,21 @@ def send_alert(
     description: str,
     color: int = COLOR_RED,
     fields: list[dict[str, Any]] | None = None,
+    *,
+    staff: bool = True,
 ) -> bool:
     """Post an alert embed to the platform Discord log.
 
     Returns True if the alert was sent successfully, False otherwise.
     Never raises — alerting failures are silently logged.
+
+    The alert also goes to the platform event log and, by mail, to platform
+    staff who want system alerts (``platform_monitor.system_alert``);
+    ``staff=False`` when platform_monitor itself posts here.
     """
+    if staff:
+        _to_platform_staff(title, description, fields, color)
+
     embed: dict[str, Any] = {
         "title": title,
         "description": description,
@@ -42,6 +51,19 @@ def send_alert(
     from hubra.core.services import platform_discord
 
     return platform_discord.post_alert(embed)
+
+
+def _to_platform_staff(title, description, fields, color) -> None:
+    try:
+        from flask import has_app_context
+
+        if not has_app_context():
+            return
+        from hubra.core.services import platform_monitor
+
+        platform_monitor.system_alert(title, description, fields, color)
+    except Exception:
+        _log.warning("Failed to log platform alert: %s", title, exc_info=True)
 
 
 def alert_error(

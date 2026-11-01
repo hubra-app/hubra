@@ -4,6 +4,7 @@ import { ErrorBoundary as RouteErrorBoundary } from 'react-error-boundary'
 import { Center, Loader, Paper, Stack, Text, Button } from '@mantine/core'
 import { IconAlertTriangle } from '@tabler/icons-react'
 import { AdminProvider, useAdmin } from '@/context/AdminContext'
+import { StepUpDialog } from '@/components/StepUpDialog'
 import { Shell } from '@/components/Shell'
 import { AdminPortal } from '@/screens/AdminPortal'
 import { MyTenantsTab } from '@/screens/MyTenantsTab'
@@ -11,6 +12,7 @@ import { TenantDetail } from '@/screens/TenantDetail'
 import { PlatformSettings } from '@/screens/platform/PlatformSettings'
 import { Backups } from '@/screens/platform/Backups'
 import { Diagnostics } from '@/screens/platform/Diagnostics'
+import { Alerts } from '@/screens/platform/Alerts'
 import { ClubAdmins } from '@/screens/ClubAdmins'
 import { SSO_URL } from '@hubra/api-client'
 import { useLang } from '@/lang'
@@ -269,6 +271,23 @@ function AppRoutes() {
             }
           />
         ))}
+        <Route
+          path="/app/platform/diagnostics/events"
+          element={<Navigate to="/app/platform/alerts/events" replace />}
+        />
+        {['/app/platform/alerts', '/app/platform/alerts/:tab'].map((path) => (
+          <Route
+            key={path}
+            path={path}
+            element={
+              <RequireGlobalPermission perm="platform.diagnostics">
+                <Shell>
+                  <Alerts />
+                </Shell>
+              </RequireGlobalPermission>
+            }
+          />
+        ))}
         <Route path="/" element={<DefaultRoute />} />
         <Route path="*" element={<DefaultRoute />} />
       </Routes>
@@ -281,6 +300,7 @@ export default function App() {
   const { lang } = useLang()
   return (
     <AdminProvider>
+      <StepUpDialog />
       <AppRoutes key={lang} />
     </AdminProvider>
   )

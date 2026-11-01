@@ -61,6 +61,31 @@ fallback. For Brevo: host `smtp-relay.brevo.com`, port 587, your Brevo
 SMTP login and SMTP key, and verify the sender domain in Brevo (SPF/DKIM),
 or receivers will reject the mail.
 
+**Monitoring the relays.** manage › Platform › Diagnostics › Outbound mail
+shows both relays: every 5 minutes Hubra connects and logs in to each
+(EHLO, STARTTLS, AUTH) without sending anything, and "Check now" does the
+same by hand. A relay counts as down after two failed checks in a row.
+
+**Platform alerts.** manage › Platform › Alerts shows the open problems
+(background jobs not running, the database, Redis or IMAP unreachable, a
+relay down, mail going through the fallback, undelivered mail, a failed or
+missing scheduled backup), the latest alerts and 24 hours of warnings and
+errors per area. Its Event log tab lists every mail handed to a relay (sent,
+sent through the fallback, or failed, with the relay and the error; never
+the body), relay and service outages, failed scheduled backups, plugin
+news, system alerts and the alerts themselves, for 30 days (table
+`platform_events`). Platform staff (superadmins and anyone with
+`platform.diagnostics`) get alert mails for: a relay down or back, the
+fallback taking over, undelivered mail (a refused recipient address does
+not count), a service down for a minute or back, a failed scheduled backup,
+plugin news (off by default) and the system alerts (disk, failed tasks, API
+error rate). Each type except outages, recoveries and plugin news goes out
+at most once an hour; each admin turns types on or off on the My alerts
+tab. Alerts go through the relays, so when both are down they only reach
+the event log (and Discord). A database outage is mailed once it is over,
+with how long it lasted. Stopped background jobs cannot report themselves:
+watch the public `/health` endpoint from outside for that.
+
 **Backups** are platform-only too: manage › Platform › Backups (global
 permission `backups.manage`; superadmins have it). There is no backup of the
 whole database: the global backup holds the public schema (accounts, clubs,

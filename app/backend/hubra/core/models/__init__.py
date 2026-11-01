@@ -16,6 +16,7 @@ from hubra.core.models.user import User
 from hubra.core.models.user_tenant import UserTenant
 from hubra.core.models.tenant_request import TenantRequest
 from hubra.core.models.platform_setting import PlatformSetting
+from hubra.core.models.platform_event import PlatformEvent
 from hubra.core.models.role import MemberRoleScope, Permission, Role, RolePermission
 from hubra.core.models.global_role import (
     GlobalRole,
@@ -61,6 +62,7 @@ from hubra.core.models.device_session import Device, Session
 from hubra.core.models.account_session import AccountSession
 from hubra.core.models.known_device import KnownDevice
 from hubra.core.models.passkey import Passkey
+from hubra.core.models.push_subscription import PushSubscription
 from hubra.core.models.connected_app import (
     ConnectedApp,
     ConnectedAppEvent,
@@ -89,9 +91,11 @@ from hubra.core.models.plugin import (
 # Plugins import their own models when they load (hubra.core.plugins).
 
 __all__ = [
+    "PlatformEvent",
     "AccountSession",
     "KnownDevice",
     "Passkey",
+    "PushSubscription",
     "ConnectedApp",
     "ConnectedAppEvent",
     "ExternalAccount",

@@ -3202,5 +3202,10 @@
   "events.series.deleteThis": "Nur diesen Termin",
   "events.series.following": "Diesen und alle folgenden",
   "events.series.thisOne": "Nur diesen Termin",
-  "shell.breadcrumbs.attendance": "Vereinsleben › Anwesenheit"
+  "shell.breadcrumbs.attendance": "Vereinsleben › Anwesenheit",
+  "account.push.title": "Mitteilungen auf diesem Gerät",
+  "account.push.hint": "Alles, was in der Glocke erscheint (Erinnerungen, neue Anlässe, Umfragen), auch als Mitteilung auf diesem Gerät, für alle deine Vereine.",
+  "account.push.switch": "Browser-Mitteilungen",
+  "account.push.needsInstall": "Auf iPhone und iPad zuerst Hubra zum Home-Bildschirm hinzufügen (Teilen › Zum Home-Bildschirm), dann hier einschalten.",
+  "account.push.denied": "Mitteilungen sind für diese Seite im Browser blockiert. Erlaube sie in den Website-Einstellungen des Browsers."
 }

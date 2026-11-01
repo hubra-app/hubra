@@ -234,6 +234,13 @@
       "hint": "Vor Anlässen, für die du angemeldet bist, und bevor eine Umfrage schliesst, in der du noch nicht abgestimmt hast. In der App erscheinen sie immer.",
       "events": "Vor Anlässen",
       "polls": "Vor dem Ende von Umfragen"
+    },
+    "push": {
+      "title": "Mitteilungen auf diesem Gerät",
+      "hint": "Alles, was in der Glocke erscheint (Erinnerungen, neue Anlässe, Umfragen), auch als Mitteilung auf diesem Gerät, für alle deine Vereine.",
+      "switch": "Browser-Mitteilungen",
+      "needsInstall": "Auf iPhone und iPad zuerst Hubra zum Home-Bildschirm hinzufügen (Teilen › Zum Home-Bildschirm), dann hier einschalten.",
+      "denied": "Mitteilungen sind für diese Seite im Browser blockiert. Erlaube sie in den Website-Einstellungen des Browsers."
     }
   },
   "app": {

@@ -30,12 +30,15 @@ _GLOBAL_ONLY_TABLES = frozenset(
         "plugin_repositories",
         "plugin_state",
         "platform_settings",
+        # The platform's monitoring log (mail sends, relays, alerts).
+        "platform_events",
         "data_keys",
         "plugin_trusted_keys",
         "email_verifications",
         "account_sessions",
         "known_devices",
         "passkeys",
+        "push_subscriptions",
         "club_invites",
         # Outside services look a club up by their own id, across clubs.
         "connected_apps",

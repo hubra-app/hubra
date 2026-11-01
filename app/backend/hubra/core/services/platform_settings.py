@@ -24,6 +24,10 @@ through the fallback, e.g. Brevo's SMTP relay, from the same sender.  See
 Backups (the global one and one per club) are the platform's, so where they
 are stored (``backup.s3.*``) is the platform's to decide, not a club's.
 
+Browser push (``push.*``): the VAPID key pair every push is signed with.
+Hubra makes one the first time a member turns push on; replacing it signs
+every device out of push (they have to turn it on again).
+
 Discord (``discord.*``): the one Hubra application every club's server and
 every linked account goes through (see docs/discord.md). Set here only, with
 no env fallback.  ``discord.log_*`` is the platform log: the bot posts
@@ -170,6 +174,19 @@ SPECS: tuple[Spec, ...] = (
         "S3 secret key",
         "Stored encrypted",
         lambda cfg: cfg.get("BACKUP_S3_SECRET_KEY") or "",
+        secret=True,
+    ),
+    Spec(
+        "push.vapid_public_key",
+        "Push public key",
+        "VAPID public key for browser notifications. Made automatically",
+        lambda cfg: "",
+    ),
+    Spec(
+        "push.vapid_private_key",
+        "Push private key",
+        "VAPID private key. Made automatically, stored encrypted",
+        lambda cfg: "",
         secret=True,
     ),
     Spec(
@@ -375,3 +392,25 @@ def discord() -> DiscordApp:
         bot_token=get("discord.bot_token"),
         public_key=get("discord.public_key"),
     )
+
+
+@dataclass(frozen=True)
+class PushKeys:
+    public_key: str  # base64url, uncompressed P-256 point (applicationServerKey)
+    private_key: str  # base64url raw private value
+    contact: str  # mailto: subject push services may write to
+
+
+def web_push(create: bool = False) -> PushKeys | None:
+    """The platform's VAPID keys; with *create*, made and stored (flushed,
+    not committed) when there are none yet."""
+    public, private = get("push.vapid_public_key"), get("push.vapid_private_key")
+    if not (public and private):
+        if not create:
+            return None
+        from hubra.core.services.web_push import generate_vapid_keys
+
+        public, private = generate_vapid_keys()
+        set_many({"push.vapid_public_key": public, "push.vapid_private_key": private})
+    sender = get("mail.system.sender_email") or "admin@hubra.club"
+    return PushKeys(public_key=public, private_key=private, contact=f"mailto:{sender}")

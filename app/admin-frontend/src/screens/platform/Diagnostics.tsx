@@ -27,6 +27,7 @@ import {
   reconcileMailServer,
   type MailServerEntry,
 } from '@/api/platform'
+import { OutboundMailPanel } from './MailMonitor'
 
 const MONO = "'JetBrains Mono', monospace"
 
@@ -573,7 +574,7 @@ function PermissionsPanel() {
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-const TABS = ['health', 'mail-server', 'permissions'] as const
+const TABS = ['health', 'outbound-mail', 'mail-server', 'permissions'] as const
 type Tab = (typeof TABS)[number]
 
 /** Diagnostics of the whole instance, for platform staff (platform.diagnostics). */
@@ -589,13 +590,14 @@ export function Diagnostics() {
       <PageHead
         title={tr('Diagnose', 'Diagnostics')}
         desc={tr(
-          'Zustand der Plattform für alle Vereine: Dienste, der gemeinsame Mailserver und die Berechtigungen der Vereins-API.',
-          'The state of the platform for every club: services, the shared mail server and the permissions of the club API.',
+          'Zustand der Plattform für alle Vereine: Dienste, Mail-Versand, der gemeinsame Mailserver und die Berechtigungen der Vereins-API.',
+          'The state of the platform for every club: services, outbound mail, the shared mail server and the permissions of the club API.',
         )}
       />
       <Tabs
         tabs={[
           { id: 'health', label: tr('Systemzustand', 'System health') },
+          { id: 'outbound-mail', label: tr('Mail-Versand', 'Outbound mail') },
           { id: 'mail-server', label: tr('Mailserver', 'Mail server') },
           { id: 'permissions', label: tr('API-Berechtigungen', 'API permissions') },
         ]}
@@ -603,6 +605,13 @@ export function Diagnostics() {
         onTabChange={(id) => navigate(`/app/platform/diagnostics/${id}`)}
       />
       {tab === 'health' && <HealthPanel />}
+      {tab === 'outbound-mail' && (
+        <OutboundMailPanel
+          onShowLog={(lvl) =>
+            navigate(`/app/platform/alerts/events${lvl ? `?level=${lvl}` : '?category=mail'}`)
+          }
+        />
+      )}
       {tab === 'mail-server' && <MailServerPanel />}
       {tab === 'permissions' && <PermissionsPanel />}
     </div>
