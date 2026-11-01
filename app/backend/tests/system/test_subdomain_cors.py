@@ -72,6 +72,27 @@ def test_preflight_options_returns_cors_headers(client):
     assert "Origin" in [v.strip() for v in resp.headers.get("Vary", "").split(",")]
 
 
+def test_preflight_allows_every_header_the_api_client_sends(client):
+    """The api-client sends these on every request once signed in; a header
+    missing here fails every preflight from a portal on another host."""
+    HealthCache.set({"status": "ok", "services": {}, "checked_at": 0})
+    sent = ["content-type", "x-csrf-token", "x-account-csrf", "x-tenant-slug"]
+    resp = client.options(
+        "/api/v1/account/permissions",
+        headers={
+            "Origin": _ALLOWED_ORIGIN,
+            "Access-Control-Request-Method": "GET",
+            "Access-Control-Request-Headers": ", ".join(sent),
+        },
+    )
+    allowed = [
+        h.strip().lower()
+        for h in resp.headers.get("Access-Control-Allow-Headers", "").split(",")
+    ]
+    for header in sent:
+        assert header in allowed, header
+
+
 def test_preflight_options_not_blocked_by_rate_limiter(app, client, seeded_db):
     """OPTIONS on a rate-limited endpoint is exempt from flask-limiter."""
     HealthCache.set({"status": "ok", "services": {}, "checked_at": 0})

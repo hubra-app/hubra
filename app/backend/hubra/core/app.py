@@ -234,6 +234,10 @@ def create_app(config_name: str | None = None) -> Flask:
             "X-CSRF-Token",
             # The SPA sends the active club on every request (api-client).
             "X-Tenant-Slug",
+            # Double-submit header of the account token (account_token.py),
+            # sent on every request once signed in. Without it here, every
+            # preflight from a portal on another host than the API failed.
+            "X-Account-CSRF",
         ],
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         expose_headers=[
