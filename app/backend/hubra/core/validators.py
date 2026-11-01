@@ -61,6 +61,15 @@ def _validate_age_public_keys(value: str) -> str | None:
     return "Not an age public key (age1...)"
 
 
+def _validate_log_events(value: str) -> str | None:
+    from hubra.core.services.platform_discord import CATEGORIES
+
+    unknown = [c.strip() for c in value.split(",") if c.strip() not in CATEGORIES]
+    if unknown:
+        return "Unknown categories: " + ", ".join(unknown)
+    return None
+
+
 VALIDATORS: dict[str, Callable[[str], str | None]] = {
     "email": (
         lambda v: (
@@ -82,6 +91,7 @@ VALIDATORS: dict[str, Callable[[str], str | None]] = {
     "number": lambda v: None if _is_numeric(v) else "Invalid number",
     "age_public_keys": _validate_age_public_keys,
     "qr_iban": _validate_qr_iban,
+    "discord_log_events": lambda v: _validate_log_events(v),
     "discord_public_key": lambda v: (
         None if re.fullmatch(r"[0-9a-fA-F]{64}", v) else "Must be 64 hex characters"
     ),

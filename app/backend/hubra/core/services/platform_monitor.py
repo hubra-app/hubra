@@ -11,12 +11,12 @@ alert mails to platform staff.
 * Alerts go by mail to platform staff (superadmins and everyone holding
   ``platform.diagnostics``), each of whom picks the types they get
   (``users.platform_alerts``).  Every type but the relay state changes is
-  sent at most once per ``ALERT_COOLDOWN``.  When the Discord webhook of
-  ``services/alerts.py`` is set, mail alerts go there too.
+  sent at most once per ``ALERT_COOLDOWN``.  When the platform Discord log
+  (``services/platform_discord.py``) is set up, mail alerts go there too.
 
 An alert about the relays is sent through the relays, so when both are down
 it cannot reach anyone by mail: it is still in the event log, and on Discord
-when the webhook is set.
+when the platform log is set up.
 
 Writing the log must never stop a mail or a request: every write is caught
 and logged, and on Postgres it uses its own connection, so it is kept even
@@ -593,8 +593,8 @@ def _alert_body(alert_type: str, subject: str, lines: list[str]) -> tuple[str, s
 
 
 def deliver_alert(alert_type: str, subject: str, lines: list[str], level: str) -> int:
-    """Mail the alert to every recipient (and post it to the Discord webhook
-    when one is set).  Returns how many mails went out."""
+    """Mail the alert to every recipient (and post it to the platform Discord
+    log when it is set up).  Returns how many mails went out."""
     from hubra.core.services import email, platform_settings
     from hubra.core.services.alerts import (
         COLOR_GREEN,
