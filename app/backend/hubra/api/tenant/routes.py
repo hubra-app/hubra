@@ -24,6 +24,7 @@ from flask_jwt_extended import (
 )
 from sqlalchemy import func, select
 
+from hubra.api.auth.account_token import require_step_up
 from hubra.api.permissions import (
     check_global_grant,
     check_impersonation_restriction,
@@ -335,6 +336,7 @@ _IMPERSONATION_TIMEOUT_MINUTES = 30
 
 @tenant_admin_bp.route("/tenants/<int:tenant_id>/impersonate", methods=["POST"])
 @require_global_permission("impersonate")
+@require_step_up
 def impersonate_tenant_user(tenant_id: int):
     """Start impersonating a user within a tenant.
 
@@ -606,6 +608,21 @@ def _notify_requester(req: TenantRequest) -> bool:
         return False
 
 
+def _audit_tenant_request(action: str, req: TenantRequest, actor_id, **details):
+    """Club requests are platform events too (and go to the platform log)."""
+    db.session.add(
+        GlobalAuditEntry(
+            tenant_id=None,
+            actor_id=int(actor_id) if actor_id else None,
+            action=f"tenant_request.{action}",
+            target_type="TenantRequest",
+            target_id=str(req.id),
+            details={"name": req.name, "slug": req.slug, "plan": req.plan, **details},
+            ip_address=request.remote_addr,
+        )
+    )
+
+
 @tenant_admin_bp.route("/tenant-requests", methods=["POST"])
 @jwt_required()
 def submit_tenant_request():
@@ -658,6 +675,8 @@ def submit_tenant_request():
         status="pending",
     )
     db.session.add(req)
+    db.session.flush()
+    _audit_tenant_request("submit", req, user_id)
     db.session.commit()
 
     return jsonify({"request": _tenant_request_to_dict(req)}), 201
@@ -721,6 +740,7 @@ def approve_tenant_request(req_id: int):
 
     req.status = "approved"
     req.reviewed_by = int(reviewer_id) if reviewer_id else None
+    _audit_tenant_request("approve", req, reviewer_id, tenantId=tenant.id)
     db.session.commit()
     notified = _notify_requester(req)
 
@@ -759,6 +779,7 @@ def reject_tenant_request(req_id: int):
     req.status = "rejected"
     req.admin_note = note
     req.reviewed_by = int(reviewer_id) if reviewer_id else None
+    _audit_tenant_request("reject", req, reviewer_id, note=note)
     db.session.commit()
     notified = _notify_requester(req)
 
@@ -1328,7 +1349,9 @@ def _tell_owners(title: str, msg: str) -> None:
     """In-app notice to the club's owners (search path already set)."""
     from hubra.api.notifications.services import notify_member
 
-    for m in db.session.scalars(select(Member).where(Member.archived_at.is_(None))).all():
+    for m in db.session.scalars(
+        select(Member).where(Member.archived_at.is_(None))
+    ).all():
         if _admin_level(m) == "owner":
             notify_member(m.id, "warning", title, msg)
 

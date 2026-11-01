@@ -48,6 +48,11 @@ class AccountSession(db.Model):
         DateTime(timezone=True), nullable=True
     )
     revoked_reason: Mapped[str | None] = mapped_column(db.String(50), nullable=True)
+    # Until when this sign-in counts as stepped-up (password re-confirmed)
+    # for the destructive platform actions. See api/auth/account_token.py.
+    sudo_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     def __repr__(self) -> str:
         return f"<AccountSession id={self.id} user_id={self.user_id}>"

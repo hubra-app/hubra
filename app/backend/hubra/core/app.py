@@ -158,6 +158,9 @@ def create_app(config_name: str | None = None) -> Flask:
     # ── Import all models so SQLAlchemy can configure mappers ─────────────────
     import hubra.core.models  # noqa: F401
 
+    # Posts platform audit entries to the platform Discord log (after_insert).
+    import hubra.core.services.platform_discord  # noqa: F401
+
     # ── Register JWT callbacks (blocklist + user lookup) ──────────────────────
     try:
         from hubra.api.auth.routes import register_jwt_callbacks

@@ -15,6 +15,7 @@ import time
 
 from flask import Blueprint, g, jsonify, request
 
+from hubra.api.auth.account_token import require_step_up
 from hubra.api.permissions import require_global_permission
 from hubra.core.errors import api_error
 from hubra.core.extensions import db, limiter
@@ -133,6 +134,30 @@ def send_test_mail():
     except email.EmailDeliveryError as exc:
         return api_error("SMTP_ERROR", f"The relay refused the mail: {exc}", 502)
     return jsonify({"ok": True, "to": to}), 200
+
+
+@platform_bp.post("/discord/test")
+@require_global_permission(_PERM)
+@limiter.limit("10 per hour")
+def send_test_discord():
+    """Post a test message to the platform log channel with the bot."""
+    from hubra.core.services import platform_discord
+
+    actor = getattr(g, "system_user", None)
+    try:
+        platform_discord.post(
+            {
+                "title": "Hubra platform log",
+                "description": "Test message: the bot can post here.",
+                "color": platform_discord.COLOR_INFO,
+                "footer": {
+                    "text": f"Sent by {getattr(actor, 'email', 'a platform admin')}"
+                },
+            }
+        )
+    except platform_discord.DiscordPostError as exc:
+        return api_error("DISCORD_ERROR", str(exc), 502)
+    return jsonify({"ok": True}), 200
 
 
 # ── Diagnostics ───────────────────────────────────────────────────────────────
@@ -275,7 +300,8 @@ def mail_relay_use_main():
 def list_platform_events():
     """The platform event log, newest first.
 
-    Query: ``category`` (mail, relay, system, alert), ``level`` (info,
+    Query: ``category`` (mail, relay, service, backup, plugin, system,
+    alert), ``level`` (info,
     warning, error), ``kind``, ``q`` (text in the message), ``page``,
     ``per_page`` (max 100).
     """
@@ -336,6 +362,43 @@ def list_platform_events():
             "page": page,
             "per_page": per_page,
             "retention_days": platform_monitor.RETENTION_DAYS,
+        }
+    ), 200
+
+
+@platform_bp.get("/alerts/overview")
+@require_global_permission(_DIAGNOSTICS)
+def alerts_overview():
+    """What is wrong right now, the latest alerts, and 24 h of warnings and
+    errors per area, for manage › Platform › Alerts."""
+    from datetime import datetime, timedelta, timezone
+
+    from sqlalchemy import func, select
+
+    from hubra.core.models.platform_event import PlatformEvent
+
+    since = datetime.now(timezone.utc) - timedelta(hours=24)
+    rows = db.session.execute(
+        select(PlatformEvent.category, PlatformEvent.level, func.count())
+        .where(PlatformEvent.created_at >= since)
+        .where(PlatformEvent.level.in_(("warning", "error")))
+        .where(PlatformEvent.category != "alert")
+        .group_by(PlatformEvent.category, PlatformEvent.level)
+    ).all()
+    counts: dict[str, dict[str, int]] = {}
+    for category, level, n in rows:
+        counts.setdefault(category, {"warning": 0, "error": 0})[level] = n
+    recent = db.session.scalars(
+        select(PlatformEvent)
+        .where(PlatformEvent.category == "alert")
+        .order_by(PlatformEvent.created_at.desc(), PlatformEvent.id.desc())
+        .limit(10)
+    ).all()
+    return jsonify(
+        {
+            "problems": platform_monitor.open_problems(),
+            "recent": [r.to_dict() for r in recent],
+            "counts": counts,
         }
     ), 200
 
@@ -496,6 +559,7 @@ def encryption_status():
 
 @platform_bp.post("/encryption/rotate")
 @require_global_permission(_PERM)
+@require_step_up
 def encryption_rotate():
     """Move every stored value onto the current keys (after a master key
     change).  Body ``{"new_keys": true, "tenant_id": <id>?}`` also makes new
@@ -530,6 +594,7 @@ def encryption_rotate():
 
 @platform_bp.put("/clubs/<int:tenant_id>/backup-key")
 @require_global_permission(_PERM)
+@require_step_up
 def set_club_backup_key(tenant_id: int):
     """Body ``{"public_key": "age1..." | null}``: the club's own backup key.
     Its next backups are encrypted to it as well as to the platform key."""

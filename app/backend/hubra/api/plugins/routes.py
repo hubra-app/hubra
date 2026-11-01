@@ -13,6 +13,7 @@ from __future__ import annotations
 from flask import Blueprint, jsonify, request, send_file
 from sqlalchemy import select
 
+from hubra.api.auth.account_token import require_step_up
 from hubra.api.permissions import require_global_permission
 from hubra.core.errors import api_error
 from hubra.core.extensions import db, limiter
@@ -67,6 +68,7 @@ def marketplace():
 
 @plugins_bp.post("/upload")
 @require_global_permission(_PERM)
+@require_step_up
 def upload():
     """Check an uploaded .zip; answers what would be installed (confirm next)."""
     f = request.files.get("file")
@@ -83,6 +85,7 @@ def upload():
 
 @plugins_bp.post("/stage/<string:token>/confirm")
 @require_global_permission(_PERM)
+@require_step_up
 def confirm(token: str):
     body = request.get_json(silent=True) or {}
     try:
@@ -105,6 +108,7 @@ def discard(token: str):
 
 @plugins_bp.post("/<string:plugin_id>/install")
 @require_global_permission(_PERM)
+@require_step_up
 def install(plugin_id: str):
     """Install or update *plugin_id*.
 
@@ -134,6 +138,7 @@ def install(plugin_id: str):
 
 @plugins_bp.post("/<string:plugin_id>/rollback")
 @require_global_permission(_PERM)
+@require_step_up
 def rollback(plugin_id: str):
     try:
         return jsonify(installer.rollback(plugin_id)), 200
@@ -154,6 +159,7 @@ def hold(plugin_id: str):
 
 @plugins_bp.delete("/<string:plugin_id>")
 @require_global_permission(_PERM)
+@require_step_up
 def uninstall(plugin_id: str):
     delete_data = request.args.get("deleteData") in ("1", "true")
     try:
@@ -185,6 +191,7 @@ def status():
 
 @plugins_bp.put("/updates")
 @require_global_permission(_PERM)
+@require_step_up
 def set_update_mode():
     from hubra.core.plugins.updates import set_mode
 
@@ -233,6 +240,7 @@ def preview_repository():
 
 @plugins_bp.post("/repositories")
 @require_global_permission(_PERM)
+@require_step_up
 def add_repository():
     """Add a repository; ``keyId`` is the key the manager compared."""
     body = request.get_json(silent=True) or {}
@@ -249,6 +257,7 @@ def add_repository():
 
 @plugins_bp.put("/repositories/<int:repo_id>")
 @require_global_permission(_PERM)
+@require_step_up
 def update_repository(repo_id: int):
     from hubra.core.models.plugin import PluginRepository
 
@@ -264,6 +273,7 @@ def update_repository(repo_id: int):
 
 @plugins_bp.delete("/repositories/<int:repo_id>")
 @require_global_permission(_PERM)
+@require_step_up
 def delete_repository(repo_id: int):
     """Remove a repository.  Plugins installed from it stay installed."""
     from hubra.core.models.plugin import PluginRepository
@@ -352,6 +362,7 @@ def list_keys():
 
 @plugins_bp.post("/keys")
 @require_global_permission(_PERM)
+@require_step_up
 def add_key():
     """Trust an author's public key (their plugins then install as community)."""
     from hubra.core.models.plugin import TrustedKey
@@ -408,6 +419,7 @@ def add_key():
 
 @plugins_bp.delete("/keys/<int:key_pk>")
 @require_global_permission(_PERM)
+@require_step_up
 def delete_key(key_pk: int):
     from hubra.core.models.plugin import TrustedKey
 

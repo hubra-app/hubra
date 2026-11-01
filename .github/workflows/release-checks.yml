@@ -72,6 +72,7 @@ jobs:
         run: |
           scripts/init-env.sh
           echo "MFA_REQUIRED_FOR_STAFF=false" >> .env
+          echo "STEP_UP_ENFORCED=false" >> .env
       - run: docker compose build
       - run: docker compose up -d
       - run: scripts/smoke-test.sh

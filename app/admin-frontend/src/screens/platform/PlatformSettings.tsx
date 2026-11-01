@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  Anchor,
   Badge,
   Button,
+  Checkbox,
   Group,
   Paper,
   PasswordInput,
@@ -19,6 +21,7 @@ import { PlatformTranslations } from '@/screens/platform/Translations'
 import { PlatformEncryption } from '@/screens/platform/Encryption'
 import {
   getPlatformSettings,
+  sendPlatformTestDiscord,
   sendPlatformTestMail,
   updatePlatformSettings,
   type PlatformSetting,
@@ -47,6 +50,55 @@ const DISCORD = [
   'discord.client_secret',
   'discord.bot_token',
 ]
+
+const DISCORD_LOG = ['discord.log_channel_id', 'discord.log_events']
+
+// Categories of platform events the bot posts (services/platform_discord.py).
+const LOG_CATEGORIES: [string, string, string][] = [
+  [
+    'clubs',
+    'Vereine erstellt, geändert, gesperrt, gelöscht; Module; Domains',
+    'Clubs created, changed, suspended, deleted; modules; domains',
+  ],
+  [
+    'requests',
+    'Vereinsanfragen eingereicht, angenommen, abgelehnt',
+    'Club requests submitted, approved, rejected',
+  ],
+  [
+    'access',
+    'Plattformrollen, Vereinsinhaber/-admins, Impersonation',
+    'Platform roles, club owners/admins, impersonation',
+  ],
+  [
+    'members',
+    'Mitglieder kommen zu einem Verein (viele Meldungen)',
+    'Members joining a club (many posts)',
+  ],
+  [
+    'plugins',
+    'Plugins installiert, aktualisiert, entfernt; Quellen',
+    'Plugins installed, updated, removed; repositories',
+  ],
+  [
+    'backups',
+    'Backups erstellt, geprüft, wiederhergestellt, gelöscht',
+    'Backups created, verified, restored, deleted',
+  ],
+  [
+    'platform',
+    'Plattform-Einstellungen, Schlüssel, Mailserver, Übersetzungen',
+    'Platform settings, keys, mail server, translations',
+  ],
+  [
+    'alerts',
+    'Systemwarnungen: fehlgeschlagene Tasks, Fehlerrate, Infrastruktur',
+    'System alerts: failed tasks, error rate, infrastructure',
+  ],
+]
+
+// View Channel + Send Messages + Embed Links
+const LOG_BOT_PERMISSIONS = (1 << 10) | (1 << 11) | (1 << 14)
 
 const TABS = ['mail', 'sender', 'backups', 'discord', 'encryption', 'translations'] as const
 type Tab = (typeof TABS)[number]
@@ -122,6 +174,10 @@ const FIELD_DE: Record<string, [string, string]> = {
     'OAuth2 › Client Secret. Wird verschlüsselt gespeichert',
   ],
   'discord.bot_token': ['Discord-Bot-Token', 'Bot › Token. Wird verschlüsselt gespeichert'],
+  'discord.log_channel_id': [
+    'Kanal für das Plattform-Log',
+    'Kanal-ID auf dem Discord-Server der Plattform (Rechtsklick auf den Kanal › Kanal-ID kopieren, Entwicklermodus nötig). Leer: keine Meldungen',
+  ],
 }
 
 export function PlatformSettings() {
@@ -141,6 +197,7 @@ export function PlatformSettings() {
   const [saving, setSaving] = useState(false)
   const [testTo, setTestTo] = useState('')
   const [testing, setTesting] = useState<'relay' | 'fallback' | null>(null)
+  const [testingDiscord, setTestingDiscord] = useState(false)
 
   const byKey = Object.fromEntries(settings.map((s) => [s.key, s]))
   // A secret field left empty keeps the stored value.
@@ -188,6 +245,29 @@ export function PlatformSettings() {
       setTesting(null)
     }
   }
+
+  const sendDiscordTest = async () => {
+    setTestingDiscord(true)
+    try {
+      await sendPlatformTestDiscord()
+      notify('success', tr('Testnachricht gesendet', 'Test message sent'))
+    } catch (err) {
+      notify(
+        'error',
+        tr('Testnachricht fehlgeschlagen', 'Test message failed'),
+        err instanceof Error ? err.message : undefined,
+      )
+    } finally {
+      setTestingDiscord(false)
+    }
+  }
+
+  const logEvents = (draft['discord.log_events'] ?? byKey['discord.log_events']?.value ?? '')
+    .split(',')
+    .map((c) => c.trim())
+    .filter(Boolean)
+  const clientId = byKey['discord.client_id']?.value ?? ''
+  const logChanged = changed.some((s) => DISCORD_LOG.includes(s.key))
 
   const field = (key: string) => {
     const s = byKey[key]
@@ -342,6 +422,85 @@ export function PlatformSettings() {
                 )}
               </Text>
               <Stack gap="sm">{DISCORD.map(field)}</Stack>
+            </Paper>
+          )}
+
+          {tab === 'discord' && (
+            <Paper withBorder shadow="sm" radius="lg" p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Plattform-Log', 'Platform log')}</Title>
+                {resetButton(DISCORD_LOG)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Der Hubra-Bot meldet Plattform-Ereignisse in einen Kanal auf dem Discord-Server der Plattform: neue Vereine und Anfragen, Rollen, Plugins, Backups, Einstellungen und Systemwarnungen. Braucht den Bot-Token oben.',
+                  "The Hubra bot posts platform events to a channel on the platform's own Discord server: new clubs and requests, roles, plugins, backups, settings and system alerts. Needs the bot token above.",
+                )}
+              </Text>
+              <Stack gap="sm">
+                {clientId ? (
+                  <Text size="sm">
+                    <Anchor
+                      href={`https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&scope=bot&permissions=${LOG_BOT_PERMISSIONS}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {tr(
+                        'Bot zum Plattform-Server hinzufügen',
+                        'Add the bot to the platform server',
+                      )}
+                    </Anchor>
+                  </Text>
+                ) : (
+                  <Text size="sm" c="dimmed">
+                    {tr(
+                      'Zuerst die Discord-Anwendungs-ID oben eintragen.',
+                      'Set the Discord application ID above first.',
+                    )}
+                  </Text>
+                )}
+                {field('discord.log_channel_id')}
+                <Checkbox.Group
+                  label={
+                    <Group gap={6} component="span">
+                      {tr('Was gemeldet wird', 'What is posted')}
+                      {byKey['discord.log_events'] && (
+                        <SourceBadge s={byKey['discord.log_events']} />
+                      )}
+                    </Group>
+                  }
+                  value={logEvents}
+                  onChange={(v) =>
+                    setDraft((d) => ({
+                      ...d,
+                      'discord.log_events': LOG_CATEGORIES.map(([c]) => c)
+                        .filter((c) => v.includes(c))
+                        .join(','),
+                    }))
+                  }
+                >
+                  <Stack gap={6} mt={6}>
+                    {LOG_CATEGORIES.map(([id, de, en]) => (
+                      <Checkbox key={id} value={id} label={tr(de, en)} />
+                    ))}
+                  </Stack>
+                </Checkbox.Group>
+                <Group>
+                  <Button
+                    variant="light"
+                    loading={testingDiscord}
+                    disabled={logChanged || !byKey['discord.log_channel_id']?.value}
+                    onClick={sendDiscordTest}
+                  >
+                    {tr('Testnachricht senden', 'Send test message')}
+                  </Button>
+                  {logChanged && (
+                    <Text size="xs" c="dimmed">
+                      {tr('Zuerst speichern.', 'Save first.')}
+                    </Text>
+                  )}
+                </Group>
+              </Stack>
             </Paper>
           )}
 

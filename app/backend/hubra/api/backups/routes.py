@@ -14,6 +14,7 @@ import logging
 from flask import Blueprint, current_app, g, jsonify, request
 
 from hubra.api.backups.services import BackupsService, BackupServiceAPI
+from hubra.api.auth.account_token import require_step_up
 from hubra.api.permissions import require_global_permission
 from hubra.core.errors import api_error
 from hubra.core.extensions import db
@@ -167,6 +168,7 @@ def verify_backup(record_id: int):
 
 @platform_backups_bp.post("/<int:record_id>/restore")
 @require_global_permission(_PERM)
+@require_step_up
 def restore_backup(record_id: int):
     """Restore one club from a club backup.  Returns 202 (200 when TESTING).
 
@@ -230,6 +232,7 @@ def restore_backup(record_id: int):
 
 @platform_backups_bp.delete("/<int:record_id>")
 @require_global_permission(_PERM)
+@require_step_up
 def delete_backup(record_id: int):
     """Delete a backup (S3 object and record)."""
     record = BackupServiceAPI.get(record_id)

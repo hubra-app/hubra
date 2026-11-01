@@ -1,3 +1,4 @@
+import { withStepUp } from '@/api/stepUp'
 import { apiFetch } from '@hubra/api-client'
 
 const P = '/manager/platform'
@@ -34,6 +35,10 @@ export async function sendPlatformTestMail(to: string, via: 'relay' | 'fallback'
     method: 'POST',
     body: JSON.stringify({ to, via }),
   })
+}
+
+export async function sendPlatformTestDiscord() {
+  return apiFetch<{ ok: boolean }>(`${P}/discord/test`, { method: 'POST' })
 }
 
 // ── Diagnostics (platform.diagnostics; changes need platform.settings) ──────
@@ -166,7 +171,7 @@ export async function resumeMainRelay() {
   })
 }
 
-export type EventCategory = 'mail' | 'relay' | 'system' | 'alert'
+export type EventCategory = 'mail' | 'relay' | 'service' | 'backup' | 'plugin' | 'system' | 'alert'
 export type EventLevel = 'info' | 'warning' | 'error'
 
 export interface PlatformEvent {
@@ -201,7 +206,34 @@ export async function getPlatformEvents(params: {
   }>(`${P}/events?${qs}`)
 }
 
-export type AlertType = 'relay_down' | 'fallback_used' | 'delivery_failed' | 'system'
+export type AlertType =
+  | 'relay_down'
+  | 'fallback_used'
+  | 'delivery_failed'
+  | 'service_down'
+  | 'backup_failed'
+  | 'plugin_updates'
+  | 'system'
+
+export interface OpenProblem {
+  id: string
+  level: EventLevel
+  area: EventCategory
+  title: string
+  detail: string
+  /** Unix seconds. */
+  since: number | null
+  /** A manage path. */
+  link: string
+}
+
+export async function getAlertsOverview() {
+  return apiFetch<{
+    problems: OpenProblem[]
+    recent: PlatformEvent[]
+    counts: Partial<Record<EventCategory, { warning: number; error: number }>>
+  }>(`${P}/alerts/overview`)
+}
 
 export async function getMyAlerts() {
   return apiFetch<{ alerts: Record<AlertType, boolean>; email: string }>(`${P}/alerts/me`)
@@ -252,16 +284,20 @@ export async function getEncryption() {
 
 /** Without `newKeys`: move everything onto the current keys. With it, new data keys too. */
 export async function rotateEncryption(newKeys = false, tenantId?: number) {
-  return apiFetch<KeyReport>(`${P}/encryption/rotate`, {
-    method: 'POST',
-    body: JSON.stringify(newKeys ? { new_keys: true, tenant_id: tenantId } : {}),
-  })
+  return withStepUp(() =>
+    apiFetch<KeyReport>(`${P}/encryption/rotate`, {
+      method: 'POST',
+      body: JSON.stringify(newKeys ? { new_keys: true, tenant_id: tenantId } : {}),
+    }),
+  )
 }
 
 /** `null` removes the club's own backup key. */
 export async function setClubBackupKey(tenantId: number, publicKey: string | null) {
-  return apiFetch<{ tenant_id: number; backup_public_key: string | null }>(
-    `${P}/clubs/${tenantId}/backup-key`,
-    { method: 'PUT', body: JSON.stringify({ public_key: publicKey }) },
+  return withStepUp(() =>
+    apiFetch<{ tenant_id: number; backup_public_key: string | null }>(
+      `${P}/clubs/${tenantId}/backup-key`,
+      { method: 'PUT', body: JSON.stringify({ public_key: publicKey }) },
+    ),
   )
 }

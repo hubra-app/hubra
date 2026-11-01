@@ -189,6 +189,13 @@ class BaseConfig:
     MFA_REQUIRED_FOR_STAFF: bool = os.environ.get(
         "MFA_REQUIRED_FOR_STAFF", "true"
     ).lower() in ("1", "true", "yes")
+    # Destructive platform actions (plugin install, restore, key rotation,
+    # impersonation) need a fresh password/code (POST /account/step-up).
+    STEP_UP_ENFORCED: bool = os.environ.get("STEP_UP_ENFORCED", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
 
     # ── API origin (for links outside services call back to) ────────────────
     # e.g. https://api.hubra.club. Outside services (Discord) only accept
@@ -232,7 +239,6 @@ class BaseConfig:
 
     # ── Discord / bot ───────────────────────────────────────────────────────
     API_BOT_KEY: str = os.environ.get("API_BOT_KEY", "")
-    DISCORD_WEBHOOK_URL: str = os.environ.get("DISCORD_WEBHOOK_URL", "")
 
     # ── Redis / rate limiting ───────────────────────────────────────────────
     REDIS_URL: str = os.environ.get("REDIS_URL", "")
@@ -355,6 +361,8 @@ class TestingConfig(BaseConfig):
     # The staff tests sign in with a password only; tests/auth/test_mfa.py
     # turns this on.
     MFA_REQUIRED_FOR_STAFF: bool = False
+    # tests/system/test_account_token.py turns this on.
+    STEP_UP_ENFORCED: bool = False
     # Force in-memory rate limiting so tests don't need a Redis instance
     RATELIMIT_STORAGE_URI: str = "memory://"
     # Disable rate limiting globally in tests to prevent spurious 429s;

@@ -7,10 +7,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **System alerts go to the platform Discord log** instead of a webhook: `DISCORD_WEBHOOK_URL` is gone. Set the log channel in manage › Platform settings › Discord.
+
 - **`FERNET_KEY` is required in production** (`.env` change): the backend no longer starts without it. Values stored before were encrypted with a key derived from `SECRET_KEY` and stay readable, so set a fresh key and run `flask crypto rotate`.
 
 ### Added
 
+- **Platform log on Discord**: the Hubra bot posts platform events (clubs, club requests, roles and impersonation, plugins, backups, platform settings, system alerts) to a channel on the platform's own Discord server. Platform settings `discord.log_channel_id` and `discord.log_events`, a test button and an invite link in manage › Platform settings › Discord. Club requests submitted, approved and rejected are now in the platform audit log. See docs/discord.md, "Platform log".
+
+- **Platform alerts page** (manage › Platform › Alerts): open problems right now, latest alerts, 24 h counts per area, the event log (moved from Diagnostics) and each admin's alert mail choices. New alert sources: database/Redis/IMAP outages and recoveries (from the 20 s health check, after a minute down), failed scheduled backups, plugin updates (off by default). Merge migration `a6e2c8f4b1d7` joins the two heads left by #97 and #98.
 - **Outbound mail monitoring**: manage › Diagnostics has an Outbound mail tab (main and fallback relay checked every 5 minutes by logging in, "Check now", sent/fallback/failed counts for 24 hours, "Use the main relay again now") and an Event log tab (every mail sent or failed, relay outages, system alerts; 30 days). Platform staff get alert mails when a relay goes down or comes back, the fallback takes over, a mail cannot be delivered, or a system alert fires, and choose which ones they get. Migration `b5d9e3f7a1c6` adds `platform_events` and `users.platform_alerts`.
 - **Key rotation for secrets at rest**: `FERNET_OLD_KEYS` keeps old keys readable, `flask crypto rotate` re-encrypts every stored secret in every club schema, `flask crypto check` confirms nothing is left on an old key. See docs/operator-guide.md, "Change the encryption key".
 - **Public-key backups**: with `BACKUP_PUBLIC_KEY` (an age key from `flask backups keygen`) backups are encrypted so the server can write but not read them; restore and full verify ask for the private key, which is used once and never stored. A club can have its own key (`flask backups club-key`) and open its own backups. Verify without a key checks the file's checksum. `.dump.gpg` backups still open with `BACKUP_ENCRYPTION_KEY`. Migration `d1a7c3e9b5f2` adds `tenants.backup_public_key`; the backend image now ships `age`.
