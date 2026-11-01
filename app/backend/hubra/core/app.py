@@ -559,6 +559,21 @@ def _register_cli(app: Flask) -> None:
                 click.echo(f"  {email} is now superadmin.")
         db.session.commit()
 
+    @app.cli.command("reset-mfa")
+    @click.option("--email", required=True, help="Login email of the account")
+    def reset_mfa(email: str):
+        """Turn two-factor sign-in off (app and passkeys) for an account that lost
+        them and its recovery codes.  Check who is asking before running it."""
+        from hubra.api.auth import mfa
+        from hubra.core.models.user import User
+
+        user = db.session.scalar(select(User).where(User.email == email.lower()))
+        if user is None:
+            raise click.ClickException(f"No account for {email}.")
+        mfa.disable(user)
+        db.session.commit()
+        click.echo(f"Two-factor sign-in is off for {email}; it can be set up again.")
+
     @app.cli.command("apply-tenant-migrations")
     @click.option(
         "--slug",

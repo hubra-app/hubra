@@ -34,6 +34,21 @@ const DE: Record<string, { name: string; description: string; settings?: Record<
       reminders_enabled: ['Zahlungserinnerungen senden', ''],
       first_reminder_days: ['Erste Erinnerung (Tage nach Fälligkeit)', ''],
       second_reminder_days: ['Zweite Erinnerung (Tage nach Fälligkeit)', ''],
+      bill_on_join_date: [
+        'Jedes Mitglied an seinem Eintrittsdatum verrechnen',
+        'Sonst werden alle am Stichtag unten verrechnet',
+      ],
+      fee_anchor_month: ['Stichtag: Monat', ''],
+      fee_anchor_day: ['Stichtag: Tag', ''],
+      prorate_first_fee: [
+        'Ersten Beitrag bei Eintritt während des Jahres kürzen',
+        'Nach verbleibenden Monaten, der Eintrittsmonat zählt ganz',
+      ],
+      statement_enabled: ['Jeden Monat einen Kontoauszug senden', 'Am 1. für den Vormonat, als PDF'],
+      statement_email: ['Kontoauszug an', ''],
+      fee_basis_source: ['Jährliche Ausgaben aus', 'Grundlage der Prozent- und Formel-Stufen'],
+      fee_basis_extra: ['Zusätzliche Kosten pro Jahr (CHF)', ''],
+      fee_basis_manual: ['Jährliche Ausgaben (CHF)', ''],
     },
   },
   functions: { name: 'Funktionen', description: 'Vereinsämter und wer sie innehat' },
@@ -87,6 +102,18 @@ const DE: Record<string, { name: string; description: string; settings?: Record<
   },
 }
 
+// Names of choice values, under modules.<code>.choices.<field>.<value>.
+const CHOICES: Record<string, Record<string, Record<string, string>>> = {
+  finance: {
+    fee_basis_source: {
+      manual: 'Fester Betrag',
+      recurring: 'Wiederkehrende Ausgaben',
+      last_year: 'Ausgaben des Vorjahres',
+      budget: 'Budget',
+    },
+  },
+}
+
 export function localizeModule(m: ModuleInfo): ModuleInfo {
   const de = DE[m.code]
   if (!de) return m
@@ -98,8 +125,17 @@ export function localizeModule(m: ModuleInfo): ModuleInfo {
     settings: m.settings.map((f) => {
       const s = de.settings?.[f.key]
       if (!s) return f
+      const choices = CHOICES[m.code]?.[f.key]
       return {
         ...f,
+        ...(choices && {
+          choiceLabels: Object.fromEntries(
+            Object.entries(choices).map(([v, label]) => [
+              v,
+              i18n.t(`${key}.choices.${f.key}.${v}`, label),
+            ]),
+          ),
+        }),
         label: i18n.t(`${key}.settings.${f.key}.label`, s[0]),
         description: f.description ? i18n.t(`${key}.settings.${f.key}.description`, s[1]) : f.description,
       }

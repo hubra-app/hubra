@@ -36,7 +36,12 @@ from hubra.core.models.managed_mail import ManagedMailAddress
 from hubra.core.models.event import ClubEvent, event_attendees, EventRegistration
 from hubra.core.models.poll import Poll, PollOption, PollVote, PollProxy
 from hubra.core.models.post import Post, PostLike, PostComment
-from hubra.core.models.finance import Transaction, Invoice, TransactionCategory
+from hubra.core.models.finance import (
+    Invoice,
+    RecurringTransaction,
+    Transaction,
+    TransactionCategory,
+)
 from hubra.core.models.external_party import ExternalParty
 from hubra.core.models.mail import MailboxFolder
 from hubra.core.models.setting import Setting
@@ -48,6 +53,8 @@ from hubra.core.models.audit import AuditEntry
 from hubra.core.models.token import TokenBlocklist
 from hubra.core.models.device_session import Device, Session
 from hubra.core.models.account_session import AccountSession
+from hubra.core.models.known_device import KnownDevice
+from hubra.core.models.passkey import Passkey
 from hubra.core.models.connected_app import (
     ConnectedApp,
     ConnectedAppEvent,
@@ -77,6 +84,8 @@ from hubra.core.models.plugin import (
 
 __all__ = [
     "AccountSession",
+    "KnownDevice",
+    "Passkey",
     "ConnectedApp",
     "ConnectedAppEvent",
     "ExternalAccount",
@@ -122,6 +131,7 @@ __all__ = [
     "PostLike",
     "PostComment",
     "Transaction",
+    "RecurringTransaction",
     "Invoice",
     "TransactionCategory",
     "ExternalParty",

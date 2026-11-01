@@ -57,6 +57,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [authStatus, setAuthStatus] = useState<AuthStatus>(() => (hasTokens() ? 'loading' : 'anon'))
   const [permData, setPermData] = useState<PermissionsResponse | null>(null)
   const [offline, setOffline] = useState(false)
+  const [mfaLater, setMfaLater] = useState(false)
 
   useEffect(() => {
     if (!hasTokens()) {
@@ -152,6 +153,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const impersonating = permData?.impersonation?.is_impersonating ? permData.impersonation : null
   if (impersonating) return <ImpersonatingScreen slug={impersonating.tenant_slug} />
 
+  if (permData?.mfa_setup_required && !mfaLater)
+    return <MfaRequiredScreen onLater={() => setMfaLater(true)} />
+
   if (offline)
     return (
       <Center h="100vh" p="md">
@@ -176,6 +180,31 @@ export function useAdmin(): AdminAppState {
   const ctx = useContext(AdminContext)
   if (!ctx) throw new Error('useAdmin must be used within AdminProvider')
   return ctx
+}
+
+/** Platform staff without two-factor sign-in: manage › Platform stays locked. */
+function MfaRequiredScreen({ onLater }: { onLater: () => void }) {
+  return (
+    <Center h="100vh" p="md">
+      <Stack align="center" gap="md" maw={440} ta="center">
+        <Text fz={18} fw={600}>
+          {tr('Zwei-Faktor-Anmeldung einschalten', 'Turn on two-factor sign-in')}
+        </Text>
+        <Text size="sm" c="dimmed">
+          {tr(
+            'Als Plattform-Admin meldest du dich mit Passwort und einem Code aus einer Authenticator-App an. Bis das eingerichtet ist, bleibt der Plattform-Bereich gesperrt.',
+            'As a platform admin you sign in with your password and a code from an authenticator app. Until that is set up, the platform area stays locked.',
+          )}
+        </Text>
+        <Button onClick={() => window.location.assign(`${SSO_URL}/account/zwei-faktor`)}>
+          {tr('Jetzt einrichten', 'Set it up now')}
+        </Button>
+        <Button variant="subtle" onClick={onLater}>
+          {tr('Später', 'Later')}
+        </Button>
+      </Stack>
+    </Center>
+  )
 }
 
 const TENANT_APP_URL = import.meta.env.VITE_TENANT_APP_URL ?? 'https://app.hubra.club'
