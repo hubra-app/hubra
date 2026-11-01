@@ -99,6 +99,11 @@ const BindingsScreen = lazy(() =>
     default: m.BindingsScreen,
   })),
 )
+const AttendanceScreen = lazy(() =>
+  import('./screens/private/operations/AttendanceScreen').then((m) => ({
+    default: m.AttendanceScreen,
+  })),
+)
 const PostDetailScreen = lazy(() =>
   import('./screens/private/operations/PostDetailScreen').then((m) => ({
     default: m.PostDetailScreen,
@@ -250,6 +255,14 @@ function PrivateRoutes() {
                   element={
                     <RequireModule code="groups">
                       <GroupsScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="operations/events/attendance"
+                  element={
+                    <RequireModule code="events">
+                      <AttendanceScreen />
                     </RequireModule>
                   }
                 />

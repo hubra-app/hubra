@@ -1,7 +1,20 @@
 import { EVENT_TYPE_COLORS } from '@/constants'
 import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { Button, Group, TextInput, Select, Badge, Checkbox, SimpleGrid } from '@mantine/core'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import {
+  Button,
+  Group,
+  TextInput,
+  Select,
+  Badge,
+  Checkbox,
+  SimpleGrid,
+  SegmentedControl,
+  Divider,
+  ActionIcon,
+  Tooltip,
+} from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
@@ -12,6 +25,9 @@ import {
   IconUserCheck,
   IconLogin,
   IconLogout as Leave,
+  IconRepeat,
+  IconClipboardCheck,
+  IconChartBar,
 } from '@tabler/icons-react'
 import { useToast, useAuth, useData } from '@/context/AppContext'
 import { qk } from '@/data/keys'
@@ -28,13 +44,23 @@ import {
   LinkedEntryBar,
 } from '@/components/ui'
 import type { ClubEvent } from '@/types'
-import { createEvent, updateEvent, deleteEvent } from '@/api/events'
+import {
+  createEvent,
+  updateEvent,
+  deleteEvent,
+  type EventUpdate,
+  type SeriesScope,
+} from '@/api/events'
+import { listGroups } from '@/api/groups'
 import {
   hasOpenSignUp,
   useToggleJoinEvent,
 } from '@/screens/private/operations/useEventActions'
 import { CalendarSubscribeButton } from './CalendarSubscribeButton'
 import { PendingSignUpsModal } from './PendingSignUpsModal'
+import { AttendanceModal } from './AttendanceModal'
+import { RecurrenceFields } from './RecurrenceFields'
+import { defaultRepeat, type RepeatState } from './recurrence'
 
 /* ── Events ─────────────────────────────────── */
 const eventSchema = z.object({
@@ -48,10 +74,18 @@ const eventSchema = z.object({
     .string()
     .regex(/^\d*$/, zmsg('validation.wholeNumber', 'Bitte eine ganze Zahl eingeben')),
   requiresApproval: z.boolean(),
+  // Empty: for everyone.
+  groupId: z.string(),
 })
 type EventForm = z.infer<typeof eventSchema>
 
 const limitOf = (value: string) => (value.trim() ? Number(value) : null)
+
+const sameRule = (a: RepeatState, b: RepeatState) =>
+  a.until === b.until &&
+  a.interval === b.interval &&
+  a.weekdays.join() === b.weekdays.join() &&
+  a.skipDates.join() === b.skipDates.join()
 
 
 const EVENT_TYPES = ['Workshop', 'Social', 'Certification', 'Meeting']
@@ -98,6 +132,22 @@ export function EventsTab() {
   const canDelete = (ev: ClubEvent) => hasPermission('events.events.delete') || hosts(ev)
   const canApprove = (ev: ClubEvent) =>
     hasPermission('events.events.add_attendee') || hosts(ev)
+  const navigate = useNavigate()
+  const mayGroups = moduleList.some((m) => m.code === 'groups')
+  const { data: groups = [] } = useQuery({
+    queryKey: qk.groups.all,
+    queryFn: listGroups,
+    enabled: mayGroups,
+  })
+  // Club-wide, or a trainer holding the right for one group.
+  const canTakeRoll = (ev: ClubEvent) =>
+    hasPermission('events.events.add_attendee', ev.groupId ?? undefined)
+  const seesAttendance =
+    hasPermission('events.events.add_attendee') || groups.some((g) => hasPermission('events.events.add_attendee', g.id))
+  const [rollFor, setRollFor] = useState<ClubEvent | null>(null)
+  const [repeat, setRepeat] = useState<RepeatState>(() => defaultRepeat(''))
+  const [ruleAtOpen, setRuleAtOpen] = useState<RepeatState | null>(null)
+  const [editScope, setEditScope] = useState<SeriesScope>('this')
   const [pendingFor, setPendingFor] = useState<ClubEvent | null>(null)
   const [typeFilter, setTypeFilter] = useState('All')
   const [search, setSearch] = useState('')
@@ -114,6 +164,7 @@ export function EventsTab() {
       type: eventTypes[0],
       maxAttendees: '',
       requiresApproval: false,
+      groupId: '',
     },
   })
 
@@ -151,7 +202,9 @@ export function EventsTab() {
       type: eventTypes[0],
       maxAttendees: '',
       requiresApproval: false,
+      groupId: '',
     })
+    setRepeat(defaultRepeat(new Date().toISOString().slice(0, 10)))
     setAddOpen(true)
   }
   // ?new=1 (the dashboard's "Neuer Anlass") opens the form right away.
@@ -186,7 +239,18 @@ export function EventsTab() {
       type: ev.type,
       maxAttendees: ev.maxAttendees ? String(ev.maxAttendees) : '',
       requiresApproval: ev.requiresApproval ?? false,
+      groupId: ev.groupId ?? '',
     })
+    setEditScope('this')
+    // The rule as it stands from this date on.
+    const rule = ev.recurrence
+      ? defaultRepeat(ev.seriesDate ?? ev.date, {
+          ...ev.recurrence,
+          skipDates: ev.recurrence.skipDates.filter((d) => d >= (ev.seriesDate ?? ev.date)),
+        })
+      : null
+    setRuleAtOpen(rule)
+    if (rule) setRepeat(rule)
   }
 
   const saveAdd = async (data: EventForm) => {
@@ -199,8 +263,22 @@ export function EventsTab() {
         type: data.type,
         maxAttendees: limitOf(data.maxAttendees),
         requiresApproval: data.requiresApproval,
+        groupId: data.groupId || null,
+        recurrence: repeat.on
+          ? {
+              until: repeat.until,
+              interval: repeat.interval,
+              weekdays: repeat.weekdays,
+              skipDates: repeat.skipDates,
+            }
+          : undefined,
       })
-      eventCache.append(ev)
+      if (repeat.on) {
+        // The other dates of the series come with the list.
+        await eventCache.invalidate()
+      } else {
+        eventCache.append(ev)
+      }
       closeAdd()
       notify(
         'success',
@@ -221,17 +299,51 @@ export function EventsTab() {
 
   const saveEdit = async (data: EventForm) => {
     if (!editTarget) return
+    const all: EventUpdate = {
+      title: data.title,
+      date: data.date,
+      time: data.time || undefined,
+      location: data.location || undefined,
+      type: data.type,
+      maxAttendees: limitOf(data.maxAttendees),
+      requiresApproval: data.requiresApproval,
+      groupId: data.groupId || null,
+    }
+    const following = editScope === 'following' && !!editTarget.seriesId
+    let input = all
+    if (following) {
+      // Only what was changed goes to the later dates, so one date's own
+      // location or time stays; dates move with the rule.
+      const was: EventUpdate = {
+        title: editTarget.title,
+        time: editTarget.time || undefined,
+        location: editTarget.location || undefined,
+        type: editTarget.type,
+        maxAttendees: editTarget.maxAttendees ?? null,
+        requiresApproval: editTarget.requiresApproval ?? false,
+        groupId: editTarget.groupId ?? null,
+      }
+      input = Object.fromEntries(
+        (Object.keys(was) as (keyof EventUpdate)[])
+          .filter((k) => all[k] !== was[k])
+          .map((k) => [k, all[k] ?? (k === 'time' || k === 'location' ? '' : all[k])]),
+      ) as EventUpdate
+      if (ruleAtOpen && !sameRule(repeat, ruleAtOpen)) {
+        input.recurrence = {
+          until: repeat.until,
+          interval: repeat.interval,
+          weekdays: repeat.weekdays,
+          skipDates: repeat.skipDates,
+        }
+      }
+    }
     try {
-      const ev = await updateEvent(editTarget.id, {
-        title: data.title,
-        date: data.date,
-        time: data.time || undefined,
-        location: data.location || undefined,
-        type: data.type,
-        maxAttendees: limitOf(data.maxAttendees),
-        requiresApproval: data.requiresApproval,
-      })
-      eventCache.replace(ev)
+      const ev = await updateEvent(editTarget.id, input, following ? 'following' : 'this')
+      if (following) {
+        await eventCache.invalidate()
+      } else {
+        eventCache.replace(ev)
+      }
       setEditTarget(null)
       notify(
         'success',
@@ -249,11 +361,15 @@ export function EventsTab() {
     }
   }
 
-  const confirmDelete = async () => {
+  const confirmDelete = async (scope: SeriesScope = 'this') => {
     if (!deleteTarget) return
     try {
-      await deleteEvent(deleteTarget.id)
-      eventCache.remove(deleteTarget.id)
+      await deleteEvent(deleteTarget.id, scope)
+      if (scope === 'following') {
+        await eventCache.invalidate()
+      } else {
+        eventCache.remove(deleteTarget.id)
+      }
       notify(
         'info',
         t('events.event.deleted'),
@@ -270,8 +386,26 @@ export function EventsTab() {
     }
   }
 
+  const editingSeries = !!editTarget?.seriesId
+  const followingScope = editingSeries && editScope === 'following'
   const eventForm = (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {editingSeries && (
+        <Field label={t('events.series.applyTo', 'Ändern für')}>
+          <SegmentedControl
+            fullWidth
+            value={editScope}
+            onChange={(v) => setEditScope(v as SeriesScope)}
+            data={[
+              { value: 'this', label: t('events.series.thisOne', 'Nur diesen Termin') },
+              {
+                value: 'following',
+                label: t('events.series.following', 'Diesen und alle folgenden'),
+              },
+            ]}
+          />
+        </Field>
+      )}
       <Field label={t('events.event.title', 'Titel')}>
         <TextInput
           {...form.getInputProps('title')}
@@ -283,7 +417,11 @@ export function EventsTab() {
       </Field>
       <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
         <Field label={t('common.date', 'Datum')}>
-          <TextInput type="date" {...form.getInputProps('date')} />
+          <TextInput
+            type="date"
+            {...form.getInputProps('date')}
+            disabled={followingScope}
+          />
         </Field>
         <Field label={t('events.time', 'Zeit') + ' (optional)'}>
           <TextInput
@@ -315,6 +453,25 @@ export function EventsTab() {
           />
         </Field>
       </SimpleGrid>
+      {mayGroups && (
+        <Field
+          label={t('events.group', 'Gruppe') + ' (optional)'}
+          hint={t(
+            'events.groupHint',
+            'Ihre Mitglieder werden bei der Anwesenheit erwartet (z. B. das Team eines Trainings).',
+          )}
+        >
+          <Select
+            data={[
+              { value: '', label: t('events.noGroup', 'Für alle') },
+              ...groups.map((g) => ({ value: g.id, label: g.name })),
+            ]}
+            searchable
+            allowDeselect={false}
+            {...form.getInputProps('groupId')}
+          />
+        </Field>
+      )}
       <Checkbox
         label={t(
           'events.requiresApproval',
@@ -322,6 +479,17 @@ export function EventsTab() {
         )}
         {...form.getInputProps('requiresApproval', { type: 'checkbox' })}
       />
+      {(!editTarget || followingScope) && (
+        <>
+          <Divider />
+          <RecurrenceFields
+            start={editTarget ? (editTarget.seriesDate ?? editTarget.date) : form.values.date}
+            value={repeat}
+            onChange={setRepeat}
+            toggle={!editTarget}
+          />
+        </>
+      )}
     </div>
   )
 
@@ -329,6 +497,12 @@ export function EventsTab() {
     <div>
       <Group justify="flex-end" mb={16} gap="xs" className="page-actions">
         <CalendarSubscribeButton />
+        {seesAttendance && (
+          <Button variant="default" onClick={() => navigate('/app/operations/events/attendance')}>
+            <IconChartBar size={16} />
+            {t('events.attendance.overview', 'Anwesenheit')}
+          </Button>
+        )}
         {canCreate && (
           <Button variant="filled" onClick={openAdd}>
             <IconPlus size={16} />
@@ -401,9 +575,21 @@ export function EventsTab() {
                   fontSize: 'var(--mantine-font-size-sm)',
                   fontWeight: 600,
                   color: 'var(--hb-text)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
                 }}
               >
                 {ev.title}
+                {ev.seriesId && (
+                  <Tooltip label={t('events.series.badge', 'Wiederkehrender Termin')}>
+                    <IconRepeat
+                      size={14}
+                      aria-label={t('events.series.badge', 'Wiederkehrender Termin')}
+                      style={{ color: 'var(--hb-text-3)' }}
+                    />
+                  </Tooltip>
+                )}
               </span>
             ),
           },
@@ -519,6 +705,19 @@ export function EventsTab() {
                       </>
                     )}
                   </Button>
+                  {canTakeRoll(ev) && (
+                    <Tooltip label={t('events.attendance.take', 'Anwesenheit erfassen')}>
+                      <ActionIcon
+                        variant="subtle"
+                        color="gray"
+                        size="lg"
+                        aria-label={t('events.attendance.take', 'Anwesenheit erfassen')}
+                        onClick={() => setRollFor(ev)}
+                      >
+                        <IconClipboardCheck size={18} />
+                      </ActionIcon>
+                    </Tooltip>
+                  )}
                   <ActionButtons
                     onEdit={canUpdate(ev) ? () => openEdit(ev) : undefined}
                     onDelete={canDelete(ev) ? () => setDeleteTarget(ev) : undefined}
@@ -593,8 +792,49 @@ export function EventsTab() {
           eventCache.patch(ev.id, () => ev)
         }
       />
+      <AttendanceModal event={rollFor} onClose={() => setRollFor(null)} />
+      <Modal
+        open={!!deleteTarget?.seriesId}
+        onClose={() => setDeleteTarget(null)}
+        title={t('events.deleteEventTitle', '{{title}} löschen?', {
+          title: deleteTarget?.title ?? '',
+        })}
+        subtitle={deleteTarget?.date}
+        footer={
+          <>
+            <Button variant="default" onClick={() => setDeleteTarget(null)}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="light"
+              color="red"
+              onClick={() => {
+                void confirmDelete('this')
+                setDeleteTarget(null)
+              }}
+            >
+              {t('events.series.deleteThis', 'Nur diesen Termin')}
+            </Button>
+            <Button
+              variant="filled"
+              color="red"
+              onClick={() => {
+                void confirmDelete('following')
+                setDeleteTarget(null)
+              }}
+            >
+              {t('events.series.deleteFollowing', 'Diesen und alle folgenden')}
+            </Button>
+          </>
+        }
+      >
+        {t(
+          'events.series.deleteBody',
+          'Der Termin gehört zu einer Serie. Gelöschte Termine und ihre Anmeldungen sind endgültig weg.',
+        )}
+      </Modal>
       <ConfirmModal
-        open={!!deleteTarget}
+        open={!!deleteTarget && !deleteTarget.seriesId}
         onClose={() => setDeleteTarget(null)}
         title={t('events.deleteEventTitle', '{{title}} löschen?', {
           title: deleteTarget?.title ?? '',
@@ -603,7 +843,7 @@ export function EventsTab() {
           'events.deleteEventBody',
           'Der Anlass und seine Teilnehmerliste werden endgültig gelöscht.',
         )}
-        onConfirm={confirmDelete}
+        onConfirm={() => confirmDelete()}
       />
     </div>
   )
