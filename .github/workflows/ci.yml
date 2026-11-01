@@ -159,7 +159,7 @@ jobs:
           python-version: "3.13"
           cache: pip
           cache-dependency-path: app/backend/requirements.lock
-      - run: pip install --no-deps -r requirements.lock
+      - run: pip install --no-deps --require-hashes -r requirements.lock
       - run: pip install pytest pytest-flask
       # age encrypts backups; tests/test_backup_age.py runs the real tool.
       - run: sudo apt-get install -y --no-install-recommends age

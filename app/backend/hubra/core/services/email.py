@@ -226,6 +226,10 @@ def _deliver(route: _Route, sender_email: str, to_email: str, message: str) -> N
     smtp_port = route.port
     _smtp_context = ssl.create_default_context()
     if current_app.config.get("SMTP_TLS_VERIFY", True) is False:
+        logger.warning(
+            "SMTP_TLS_VERIFY is off: the relay's certificate is not checked. "
+            "Never run production this way."
+        )
         _smtp_context.check_hostname = False
         _smtp_context.verify_mode = ssl.CERT_NONE
     # A timeout, so a relay that stops answering fails the send (and
@@ -240,6 +244,11 @@ def _deliver(route: _Route, sender_email: str, to_email: str, message: str) -> N
     with connection as server:
         server.ehlo()
         if smtp_port not in (25, 465):
+            server.starttls(context=_smtp_context)
+            server.ehlo()
+        elif smtp_port == 25 and server.has_extn("starttls"):
+            # Port 25 is meant for a local relay, but when it offers TLS,
+            # take it rather than talk in the clear.
             server.starttls(context=_smtp_context)
             server.ehlo()
         if route.user and route.password:
@@ -575,6 +584,25 @@ def send_new_device_login(
         user_agent=user_agent,
         sessions_url=f"{sso}/account/sitzungen" if sso else "",
         password_url=f"{sso}/account/passwort" if sso else "",
+    )
+    return _send(to_address, name, subject, body_html, body_text, system=True)
+
+
+def send_signup_existing_account(
+    to_address: str, name: str, *, lang: str = DEFAULT_LANG
+) -> bool:
+    """Someone signed up with an address that already has an account: the
+    owner hears about it, the requester learns nothing (no enumeration).
+    True when sent."""
+    sso = _get_sso_base_url()
+
+    body_html, body_text, subject = render_mail_template(
+        "signup_existing",
+        locale=lang,
+        name=name,
+        club_name=club_display_name(),
+        login_url=f"{sso}/login" if sso else "",
+        reset_url=f"{sso}/forgot-password" if sso else "",
     )
     return _send(to_address, name, subject, body_html, body_text, system=True)
 

@@ -22,7 +22,9 @@ x-backend-app: &backend-app
     dockerfile: app/backend/Dockerfile
   env_file: .env
   environment:
-    - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/${POSTGRES_DB}
+    # The app's own role (scripts/pg-init); falls back to the postgres
+    # superuser on stacks from before it existed.
+    - DATABASE_URL=postgresql://${POSTGRES_APP_USER:-${POSTGRES_USER}}:${POSTGRES_APP_PASSWORD:-${POSTGRES_PASSWORD}}@postgres:${POSTGRES_PORT}/${POSTGRES_DB}
   security_opt:
     - no-new-privileges:true
   networks:
@@ -218,8 +220,13 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      # The unprivileged role the app connects as, made by scripts/pg-init
+      # when the data volume is first initialised.
+      - POSTGRES_APP_USER=${POSTGRES_APP_USER:-}
+      - POSTGRES_APP_PASSWORD=${POSTGRES_APP_PASSWORD:-}
     volumes:
       - pg_data:/var/lib/postgresql/data
+      - ./scripts/pg-init:/docker-entrypoint-initdb.d:ro
     expose:
       - "5432"
     networks:

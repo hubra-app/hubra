@@ -8,7 +8,7 @@ Registered in create_app() under:
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from argon2 import PasswordHasher as _PasswordHasher
 from argon2.exceptions import VerifyMismatchError as _VerifyMismatchError
@@ -25,6 +25,7 @@ from flask_jwt_extended import (
     unset_jwt_cookies,
 )
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from hubra.api.auth.services import (
     AuthService,
@@ -150,6 +151,23 @@ def register_jwt_callbacks(jwt_manager) -> None:
                 deadline = deadline.replace(tzinfo=timezone.utc)
             if datetime.now(timezone.utc) >= deadline:
                 return True
+        # A refresh token that was rotated or revoked is refused even while
+        # its session is alive. Rotated ones get a minute of grace so that
+        # parallel tabs which refreshed together settle on their new tokens.
+        if jwt_payload.get("type") == "refresh":
+            row = db.session.execute(
+                select(TokenBlocklist.type, TokenBlocklist.created_at).where(
+                    TokenBlocklist.jti == jwt_payload["jti"]
+                )
+            ).first()
+            if row is not None:
+                if row.type != "refresh-rotated":
+                    return True
+                created = row.created_at
+                if created.tzinfo is None:
+                    created = created.replace(tzinfo=timezone.utc)
+                if datetime.now(timezone.utc) >= created + timedelta(seconds=60):
+                    return True
         # The account sign-in this token comes from (SSO portal), if any:
         # ending it ends the club tokens it led to as well.
         account_sid = jwt_payload.get("account_sid")
@@ -163,8 +181,10 @@ def register_jwt_callbacks(jwt_manager) -> None:
             return session_service.is_session_revoked(int(sid))
         if account_sid is not None:
             return False
-        # Fall back to TokenBlocklist for refresh tokens and legacy tokens
-
+        # Fall back to TokenBlocklist for legacy tokens. Refresh tokens were
+        # already checked above, grace and all.
+        if jwt_payload.get("type") == "refresh":
+            return False
         jti = jwt_payload["jti"]
         return (
             db.session.scalar(
@@ -403,6 +423,7 @@ def _complete_login(
         additional_claims = {
             "user_id": user.id,
             "account_sid": _record_account_login(user),
+            "keep": keep_signed_in,
         }
         device_token, new_device = _note_device(user)
         db.session.commit()
@@ -504,6 +525,7 @@ def _complete_login(
     session = db.session.get(Session, session_id)
     tenant = current_tenant()
     additional_claims = {"sid": session_id} if session else {}
+    additional_claims["keep"] = keep_signed_in
     if user:
         additional_claims["user_id"] = user.id
     if account_sid is not None:
@@ -568,6 +590,14 @@ def signup():
 
     existing = db.session.scalar(select(User).where(User.email == email))
     if existing is not None:
+        # Whether an address has an account stays private: the owner gets a
+        # mail, and the response looks like a fresh sign-up (just without
+        # session cookies). Only without mail does the error name the cause.
+        if email_verification.mail_configured():
+            email_svc.send_signup_existing_account(existing.email, existing.name)
+            return make_response(
+                jsonify(noTenant=True, user={"email": email, "name": name}), 201
+            )
         raise_error(409, "CONFLICT", "An account with this email already exists")
 
     user = User(email=email, name=name)
@@ -578,7 +608,11 @@ def signup():
     if email_verification.required(user):
         email_verification.send(user, _get_sso_base_url())
 
-    additional_claims = {"user_id": user.id, "account_sid": _record_account_login(user)}
+    additional_claims = {
+        "user_id": user.id,
+        "account_sid": _record_account_login(user),
+        "keep": keep_signed_in,
+    }
     device_token, _ = _note_device(user)  # the account's first device
     db.session.commit()
     access_token = create_access_token(
@@ -623,6 +657,9 @@ _SESSION_CLAIMS = (
     "impersonation_reason",
     "impersonation_expires_at",
     "impersonation_mode",
+    # Whether "keep me signed in" was ticked: rotated refresh cookies keep
+    # the lifetime the sign-in chose.
+    "keep",
 )
 
 
@@ -703,8 +740,27 @@ def refresh():
         identity=identity,
         additional_claims=additional_claims,
     )
+
+    # Rotation: every refresh hands out a fresh refresh token, and the one
+    # just used stops working after a minute of grace (check_if_token_revoked
+    # above). A stolen refresh token stays usable at most until the owner's
+    # browser next refreshes, instead of for its whole 30 days.
+    try:
+        AuthService.block_token(refresh_claims["jti"], "refresh-rotated")
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()  # a parallel tab rotated this token just now
+
     response = make_response(jsonify(ok=True), 200)
     set_access_cookies(response, access_token)
+    refresh_max_age = (
+        24 * 3600 if refresh_claims.get("keep") is False else 30 * 24 * 3600
+    )
+    set_refresh_cookies(
+        response,
+        create_refresh_token(identity=identity, additional_claims=additional_claims),
+        max_age=refresh_max_age,
+    )
     return response
 
 
@@ -854,6 +910,8 @@ def switch_tenant():
         additional_claims["sid"] = sid
     if claims.get("account_sid") is not None:
         additional_claims["account_sid"] = claims["account_sid"]
+    if claims.get("keep") is not None:
+        additional_claims["keep"] = claims["keep"]
 
     access_token = create_access_token(
         identity=str(member.id),

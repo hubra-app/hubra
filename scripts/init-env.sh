@@ -30,6 +30,7 @@ while IFS= read -r line || [ -n "$line" ]; do
   case "$line" in
     SECRET_KEY= | JWT_SECRET_KEY= | POSTGRES_PASSWORD= | REDIS_PASSWORD= | \
     MONGO_PASSWORD= | WILDDUCK_API_TOKEN= | LOOP_SECRET= | SRS_SECRET= | \
+    POSTGRES_APP_PASSWORD= | \
     API_BOT_KEY= | BACKUP_ENCRYPTION_KEY=)
       printf '%s%s\n' "$line" "$(hex)" ;;
     FERNET_KEY=)
