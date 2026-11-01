@@ -32,8 +32,14 @@ from hubra.api.finance.services import (
     InvoicesService,
     InvoiceReminderHistoryService,
     FinanceOverviewService,
+    FinanceSummaryService,
     ExternalPartyService,
     ExternalPartiesService,
+)
+
+from hubra.api.finance.recurring import (
+    RecurringTransactionService,
+    recurring_to_dict,
 )
 
 finance_bp = Blueprint("finance_bp", __name__)
@@ -447,3 +453,113 @@ def download_invoice_pdf(id: int):
 @permission_required("overview", "read", "View finance overview")
 def finance_overview():
     return jsonify(FinanceOverviewService.get()), 200
+
+
+@finance_bp.get("/summary")
+@permission_required("overview", "read", "View finance overview")
+def finance_summary():
+    return jsonify(FinanceSummaryService.get(request.args)), 200
+
+
+@finance_bp.get("/fee-basis")
+@permission_required("overview", "read", "View finance overview")
+def get_fee_basis():
+    """How the yearly expenses behind percentage and formula tiers come
+    together; ?source=&extra=&manual= previews a choice before saving."""
+    from decimal import Decimal
+
+    from hubra.api.finance.fee_basis import fee_basis, tier_effects
+
+    overrides = {
+        key: request.args[arg]
+        for arg, key in (
+            ("source", "fee_basis_source"),
+            ("extra", "fee_basis_extra"),
+            ("manual", "fee_basis_manual"),
+        )
+        if arg in request.args
+    }
+    basis = fee_basis(overrides)
+    basis["tiers"] = tier_effects(Decimal(str(basis["total"])))
+    return jsonify(basis), 200
+
+
+# ── Recurring transactions ────────────────────────────────────────────────────
+
+
+@finance_bp.get("/recurring")
+@permission_required("transactions", "read", "View transactions")
+def list_recurring():
+    rules = RecurringTransactionService.list()
+    return jsonify([recurring_to_dict(r) for r in rules]), 200
+
+
+@finance_bp.post("/recurring")
+@permission_required("transactions", "create", "Create transactions")
+def create_recurring():
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return api_error("VALIDATION_ERROR", "Expected a JSON object", 400)
+    rule = RecurringTransactionService.create(body, get_current_member().id)
+    db.session.commit()
+    return jsonify(recurring_to_dict(rule)), 201
+
+
+@finance_bp.patch("/recurring/<int:id>")
+@permission_required("transactions", "update", "Update transactions")
+def update_recurring(id: int):
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return api_error("VALIDATION_ERROR", "Expected a JSON object", 400)
+    rule = RecurringTransactionService.update(id, body, get_current_member().id)
+    db.session.commit()
+    return jsonify(recurring_to_dict(rule)), 200
+
+
+@finance_bp.delete("/recurring/<int:id>")
+@permission_required("transactions", "delete", "Delete transactions")
+def delete_recurring(id: int):
+    RecurringTransactionService.delete(id, get_current_member().id)
+    db.session.commit()
+    return "", 204
+
+
+# ── Monthly account statement ─────────────────────────────────────────────────
+
+
+@finance_bp.get("/statement.pdf")
+@permission_required("overview", "read", "View finance overview")
+def download_statement():
+    """The account statement of ?month=YYYY-MM (last month by default)."""
+    from io import BytesIO
+
+    from hubra.api.finance.statement import month_of, statement_data, statement_pdf
+
+    start = month_of(request.args.get("month"))
+    pdf = statement_pdf(statement_data(start))
+    return send_file(
+        BytesIO(pdf),
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"kontoauszug-{start:%Y-%m}.pdf",
+    )
+
+
+@finance_bp.post("/statement/send")
+@permission_required("overview", "read", "View finance overview")
+def send_statement_now():
+    """Mail a month's statement to the club's statement address now."""
+    from hubra.api.finance.statement import month_of, send_statement, statement_settings
+
+    body = request.get_json(silent=True) or {}
+    email = statement_settings()["email"]
+    if "@" not in email:
+        return api_error(
+            "STATEMENT_EMAIL_MISSING",
+            "Set the address for the account statement first",
+            400,
+        )
+    month = body.get("month") if isinstance(body, dict) else None
+    result = send_statement(month_of(month if isinstance(month, str) else None), email)
+    db.session.commit()
+    return jsonify(result), 202

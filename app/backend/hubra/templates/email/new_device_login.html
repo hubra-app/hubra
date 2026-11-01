@@ -1,16 +1,19 @@
 {% extends "email/base.html" %}
 {% import "email/_ui.html" as ui with context %}
-{% block preheader %}{{ t('mail.email.new_device_login.body', club_name=club_name) | striptags }}{% endblock %}
+{% block preheader %}{{ t('mail.email.new_device_login.intro', club_name=club_name) | striptags }}{% endblock %}
 {% block content %}
-{% call ui.p() %}{{ t('mail.email.new_device_login.body', club_name=club_name) }}{% endcall %}
+{%- set device = t('mail.email.new_device_login.device_value', browser=browser_family, platform=platform) if browser_family and platform else user_agent -%}
+{% call ui.p() %}{{ t('mail.email.new_device_login.intro', club_name=club_name) }}{% endcall %}
 {{ ui.facts([
-  (t('mail.email.new_device_login.table_time'), timestamp ~ ' UTC', false),
+  (t('mail.email.new_device_login.table_time'), timestamp, false),
+  (t('mail.email.new_device_login.table_device'), device, false),
   (t('mail.email.new_device_login.table_ip'), ip, true),
-  (t('mail.email.new_device_login.table_browser'), user_agent, false),
 ]) }}
 {% call ui.p() %}{{ t('mail.email.new_device_login.was_you') }}{% endcall %}
-{% call ui.p() %}
-  {{ t('mail.email.new_device_login.not_you_prefix') }}
-  {% if support_url %}<a href="{{ support_url }}" style="color: #7441e0; font-weight: 600;">{{ t('mail.email.new_device_login.change_password_link') }}</a>{% else %}{{ t('mail.email.new_device_login.change_password_link') }}{% endif %}.
-{% endcall %}
+{% call ui.p() %}{{ t('mail.email.new_device_login.not_you') }}{% endcall %}
+{% if sessions_url %}
+{{ ui.button(sessions_url, t('mail.email.new_device_login.button')) }}
+{% call ui.muted() %}<a href="{{ password_url }}" target="_blank" style="color: #7441e0; font-weight: 600;">{{ t('mail.email.new_device_login.change_password') }}</a>{% endcall %}
+{{ ui.fallback_link(sessions_url) }}
+{% endif %}
 {% endblock %}
