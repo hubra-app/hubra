@@ -143,18 +143,6 @@ export function Tabs({
       mb={24}
       variant="default"
       className="hubra-tabs"
-      styles={{
-        tab: {
-          paddingTop: 12,
-          paddingBottom: 12,
-          paddingLeft: 14,
-          paddingRight: 14,
-          fontSize: 'var(--mantine-font-size-sm)',
-        },
-        list: {
-          gap: 4,
-        },
-      }}
     >
       <MantineTabs.List>
         {tabs.map((t) => (

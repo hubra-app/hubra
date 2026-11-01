@@ -21,7 +21,11 @@ import { initials, contrastColor } from './nav'
 import { setWhatsNewOpen } from './whatsNewStore'
 import { setCustomizeSidebarOpen } from './customizeSidebarStore'
 
-export function UserMenu() {
+/**
+ * The account menu. It opens as a pop-over above the sidebar's user card; in
+ * the phone menu it sits `inline` at the bottom, always open.
+ */
+export function UserMenu({ inline = false }: { inline?: boolean } = {}) {
   const { t } = useT()
   const { setPhase, currentUser } = useAuth()
   const { go, setUserMenuOpen } = useNav()
@@ -35,19 +39,30 @@ export function UserMenu() {
 
   return (
     <Box
-      style={{
-        position: 'absolute',
-        bottom: '100%',
-        left: 0,
-        right: 0,
-        marginBottom: 8,
-        background: 'var(--hb-surface)',
-        border: '1px solid var(--mantine-color-gray-5)',
-        borderRadius: 13,
-        boxShadow: '0 26px 64px -22px rgba(26,22,37,.28), 0 4px 14px -6px rgba(26,22,37,.15)',
-        zIndex: 60,
-        overflow: 'hidden',
-      }}
+      data-testid="user-menu"
+      style={
+        inline
+          ? {
+              background: 'var(--hb-surface)',
+              border: '1px solid var(--hb-border)',
+              borderRadius: 13,
+              overflow: 'hidden',
+            }
+          : {
+              position: 'absolute',
+              bottom: '100%',
+              left: 0,
+              right: 0,
+              marginBottom: 8,
+              background: 'var(--hb-surface)',
+              border: '1px solid var(--mantine-color-gray-5)',
+              borderRadius: 13,
+              boxShadow:
+                '0 26px 64px -22px rgba(26,22,37,.28), 0 4px 14px -6px rgba(26,22,37,.15)',
+              zIndex: 60,
+              overflow: 'hidden',
+            }
+      }
     >
       <Group gap="sm" p="md" style={{ borderBottom: '1px solid var(--hb-border)' }}>
         <Avatar

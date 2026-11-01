@@ -92,8 +92,13 @@ export function AccountScreen() {
           'Applies to all your clubs. Membership and club mail are in each club.',
         )}
       </Text>
-      <Tabs value={tab} onChange={(v) => v && navigate(`/account/${v}`)} keepMounted={false}>
-        <Tabs.List mb="lg" style={{ flexWrap: 'nowrap', overflowX: 'auto' }}>
+      <Tabs
+        value={tab}
+        onChange={(v) => v && navigate(`/account/${v}`)}
+        keepMounted={false}
+        className="hubra-tabs"
+      >
+        <Tabs.List mb="lg">
           {TABS.map((t) => (
             <Tabs.Tab key={t.value} value={t.value}>
               {t.label()}

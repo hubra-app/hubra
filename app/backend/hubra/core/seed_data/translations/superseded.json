@@ -4965,6 +4965,9 @@
    ],
    "inventory.private": [
     "Privat"
+   ],
+   "shell.customize.intro": [
+    "Mit dem Stern heftest du eine Seite oben unter Favoriten an. Ausgeblendete Seiten findest du weiterhin unter Weitere und mit der Suche (Ctrl+K)."
    ]
   },
   "en-GB": {
@@ -6417,6 +6420,9 @@
    ],
    "inventory.private": [
     "Private"
+   ],
+   "shell.customize.intro": [
+    "Use the star to pin a page to the top under Favourites. Hidden pages are still under More and in the search (Ctrl+K)."
    ]
   }
  }

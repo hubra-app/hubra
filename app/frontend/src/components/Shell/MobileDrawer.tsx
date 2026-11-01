@@ -94,8 +94,13 @@ export function MobileDrawer() {
             style={{
               borderTop: '1px solid var(--hb-border)',
             }}
+            // Every entry of the menu leads somewhere else, so close the menu
+            // with it (the theme switch is radios, not buttons, and stays).
+            onClick={(e) => {
+              if ((e.target as HTMLElement).closest('button')) setMobileDrawerOpen(false)
+            }}
           >
-            <UserMenu />
+            <UserMenu inline />
           </Box>
         )}
 

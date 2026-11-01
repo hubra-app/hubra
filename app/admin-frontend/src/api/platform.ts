@@ -37,6 +37,10 @@ export async function sendPlatformTestMail(to: string, via: 'relay' | 'fallback'
   })
 }
 
+export async function sendPlatformTestDiscord() {
+  return apiFetch<{ ok: boolean }>(`${P}/discord/test`, { method: 'POST' })
+}
+
 // ── Diagnostics (platform.diagnostics; changes need platform.settings) ──────
 
 export interface ServiceStatus {

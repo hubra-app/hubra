@@ -111,9 +111,15 @@ const SECTION_ORDER = ['favourites', 'workspace', 'activities', 'operations', 's
 /** Where the "Weitere" entry lists the pages that have no sidebar row. */
 export const MORE_PATH = '/app/more'
 
-/** The person's own sidebar: entries pinned to the top and entries hidden. */
-export type NavPrefs = { pinned: string[]; hidden: string[] }
-const NO_PREFS: NavPrefs = { pinned: [], hidden: [] }
+/**
+ * The person's own sidebar: entries pinned to the top (in this order), entries
+ * hidden, and the order of entries within each section.
+ */
+export type NavPrefs = { pinned: string[]; hidden: string[]; order?: string[] }
+const NO_PREFS: NavPrefs = { pinned: [], hidden: [], order: [] }
+
+/** One group of entries in the customise dialog, as the sidebar shows them. */
+export type NavGroup = { section: string; label: string; items: NavItem[] }
 
 type NavEntry = { item: NavItem; section: string }
 
@@ -181,10 +187,21 @@ export function buildNav(
   modules: ModuleInfo[],
   hasPerm: (key: string) => boolean = () => true,
   prefs: NavPrefs = NO_PREFS,
-): { nav: NavSection[]; more: NavItem[]; customizable: NavItem[] } {
-  const entries = navEntries(c, t, modules).filter(
+): { nav: NavSection[]; more: NavItem[]; customizable: NavItem[]; groups: NavGroup[] } {
+  const visible = navEntries(c, t, modules).filter(
     ({ item }) => !item.permKeys || item.permKeys.some(hasPerm),
   )
+  // The person's own order within a section; entries they never moved (new
+  // modules, say) keep the default order after the ones they placed.
+  const order = prefs.order ?? []
+  const rankOf = (path: string) => {
+    const i = order.indexOf(path)
+    return i < 0 ? Number.MAX_SAFE_INTEGER : i
+  }
+  const entries = visible
+    .map((e, i) => ({ e, i }))
+    .sort((a, b) => rankOf(a.e.item.path) - rankOf(b.e.item.path) || a.i - b.i)
+    .map(({ e }) => e)
   const hidden = new Set(prefs.hidden)
   const pinned = prefs.pinned.filter((path) =>
     entries.some((e) => e.item.path === path && e.section !== 'me'),
@@ -217,11 +234,55 @@ export function buildNav(
     }))
   // In sidebar order, with the "Weitere" pages last.
   const rank = (section: string) => SECTION_ORDER.indexOf(section) + 1 || 99
-  const customizable = entries
+  const ordered = entries
     .filter((e) => e.section !== 'me')
-    .sort((a, b) => rank(a.section) - rank(b.section))
-    .map((e) => e.item)
-  return { nav, more, customizable }
+    .map((e, i) => ({ e, i }))
+    .sort((a, b) => rank(a.e.section) - rank(b.e.section) || a.i - b.i)
+    .map(({ e }) => e)
+  const customizable = ordered.map((e) => e.item)
+  // The customise dialog: favourites first, then each section with its
+  // hidden entries in place, then the pages that only live under "Weitere".
+  const groups: NavGroup[] = []
+  const pinnedItems = pinned.map((path) => entries.find((e) => e.item.path === path)!.item)
+  if (pinnedItems.length) {
+    groups.push({ section: 'favourites', label: t('shell.sections.favourites'), items: pinnedItems })
+  }
+  for (const e of ordered) {
+    if (pinned.includes(e.item.path)) continue
+    const last = groups[groups.length - 1]
+    if (last?.section === e.section) last.items.push(e.item)
+    else
+      groups.push({
+        section: e.section,
+        label: e.section === 'more' ? t('shell.nav.more') : t(`shell.sections.${e.section}`),
+        items: [e.item],
+      })
+  }
+  return { nav, more, customizable, groups }
+}
+
+/**
+ * New prefs after moving `path` one step up (-1) or down (+1) within its
+ * group of the customise dialog. Favourites follow the pinned list; other
+ * groups are written in full to `order`.
+ */
+export function moveNavEntry(
+  prefs: NavPrefs,
+  group: NavGroup,
+  path: string,
+  step: -1 | 1,
+): NavPrefs {
+  const paths = group.items.map((item) => item.path)
+  const i = paths.indexOf(path)
+  const j = i + step
+  if (i < 0 || j < 0 || j >= paths.length) return prefs
+  ;[paths[i], paths[j]] = [paths[j], paths[i]]
+  if (group.section === 'favourites') {
+    // Pinned entries the person can't see right now keep their place at the end.
+    return { ...prefs, pinned: [...paths, ...prefs.pinned.filter((p) => !paths.includes(p))] }
+  }
+  const order = (prefs.order ?? []).filter((p) => !paths.includes(p))
+  return { ...prefs, order: [...order, ...paths] }
 }
 
 /** Every path in the sidebar. */
