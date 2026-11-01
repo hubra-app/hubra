@@ -83,3 +83,49 @@ test.describe('own sidebar', () => {
     await expect(entry(page, '/app/finance')).toHaveCount(0)
   })
 })
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  const drawer = (page: Page) => page.getByRole('dialog').filter({ has: page.locator('a.nav-item') })
+
+  test('page tabs wrap instead of scrolling sideways', async ({ page }) => {
+    await page.goto(appUrl('finance'))
+    const list = page.locator('.hubra-tabs .mantine-Tabs-list').first()
+    await expect(list).toBeVisible()
+    const [scroll, client] = await list.evaluate((el) => [el.scrollWidth, el.clientWidth])
+    expect(scroll).toBeLessThanOrEqual(client)
+    await expect(page.getByRole('tab', { name: 'Einstellungen' })).toBeInViewport()
+  })
+
+  test('the phone menu reorders sidebar entries', async ({ page }) => {
+    const menu = page.getByRole('button', { name: 'Menü', exact: true })
+    const order = () =>
+      drawer(page)
+        .locator('a.nav-item')
+        .evaluateAll((links) => links.map((a) => a.getAttribute('href')?.replace(/.*\/app\//, '')))
+    const customize = async () => {
+      await drawer(page).getByTestId('user-menu').getByText('Seitenleiste anpassen').click()
+      return page.getByRole('dialog', { name: 'Seitenleiste anpassen' })
+    }
+
+    await page.goto(appUrl('dashboard'))
+    await menu.click()
+    const before = await order()
+    const at = before.indexOf('groups')
+    expect(at).toBeGreaterThan(0)
+    let dialog = await customize()
+    await dialog.getByRole('button', { name: 'Nach oben: Gruppen' }).click()
+    await dialog.getByRole('button', { name: 'Fertig' }).click()
+
+    await menu.click()
+    const after = await order()
+    expect(after.indexOf('groups')).toBe(at - 1)
+    expect(after[at]).toBe(before[at - 1])
+
+    // Back to the default order.
+    dialog = await customize()
+    await dialog.getByRole('button', { name: 'Zurücksetzen' }).click()
+    await dialog.getByRole('button', { name: 'Fertig' }).click()
+  })
+})

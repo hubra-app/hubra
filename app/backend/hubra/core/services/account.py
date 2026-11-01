@@ -23,8 +23,8 @@ from hubra.core.tenant.context import in_club
 
 LANGUAGES = ("de-CH", "en-GB")
 THEMES = ("light", "dark", "auto")
-NAV_PREF_KEYS = ("pinned", "hidden")
-NAV_PREF_MAX = 50
+NAV_PREF_KEYS = ("pinned", "hidden", "order")
+NAV_PREF_MAX = 100
 
 
 def memberships(user_id: int) -> Iterator[tuple[Tenant, Member]]:
@@ -94,7 +94,7 @@ def _nav_prefs(value) -> dict:
 
 
 def _clean_nav_prefs(value) -> dict:
-    """Sidebar paths the person pinned or hid; the app checks permissions."""
+    """Sidebar paths the person pinned, hid or reordered; the app checks permissions."""
     if not isinstance(value, dict):
         raise_error(400, "VALIDATION_ERROR", "navPrefs must be an object")
     clean = {}
