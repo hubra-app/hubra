@@ -53,6 +53,20 @@ def _mock_health_checks():
 
 
 @pytest.fixture(autouse=True)
+def _platform_alerts_inline():
+    """Alert mails to platform staff are a Celery task, which in tests would
+    run against the worker's own app and database: send them here instead."""
+    from hubra.core.services import platform_monitor
+    from hubra.core.tasks.mail_monitor_tasks import send_platform_alert
+
+    def inline(args=(), retry=False, **_kw):
+        platform_monitor.deliver_alert(*args)
+
+    with patch.object(send_platform_alert, "apply_async", side_effect=inline):
+        yield
+
+
+@pytest.fixture(autouse=True)
 def _fast_argon2():
     """Use low-cost argon2 parameters in tests for faster password hashing."""
     from hubra.core.models import user as user_module
