@@ -1,11 +1,10 @@
-"""account_sessions.sudo_until (step-up for destructive platform actions);
-also joins main's two heads (plugin key purposes, mail monitoring).
+"""account_sessions.sudo_until (step-up for destructive platform actions).
 
 Safe to run again per club (flask apply-tenant-migrations): the column goes
 to the public table, once.
 
 Revision ID: a7c4e9f2b6d1
-Revises: b3f8d2a6c9e1, b5d9e3f7a1c6
+Revises: f4a8c2e6b9d1
 Create Date: 2026-11-01
 
 """
@@ -16,7 +15,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "a7c4e9f2b6d1"
-down_revision = ("b3f8d2a6c9e1", "b5d9e3f7a1c6")
+down_revision = "f4a8c2e6b9d1"
 branch_labels = None
 depends_on = None
 
