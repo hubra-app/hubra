@@ -40,17 +40,28 @@ database into its own `HUBRA_PLUGIN_DIR`, so no shared volume is needed.
 | Badge              | Meaning                                                              |
 | ------------------ | -------------------------------------------------------------------- |
 | Shipped with Hubra | In `HUBRA_BUNDLED_PLUGINS` (development checkouts only)              |
-| Official           | Signed with a key in `app/backend/hubra/core/plugins/keys/official/` |
-| Community          | Signed with a key you trusted (Plugins › Signing keys)               |
+| Official           | Signed with a plugin key in `app/backend/hubra/core/plugins/keys/official/` |
+| Community          | Signed with a plugin key you trusted (Plugins › Signing keys) or one a repository you added lists |
 | Unsigned           | Installs only after you tick "I trust this code"                     |
 | Invalid signature  | Files changed after signing; refused                                 |
 
 A plugin runs with full access to every club's data. Only the global
 permission `plugins.manage` (Superadmin) can install one.
 
-**Repositories.** Add the URL of a signed `index.json` and type the key id
-the publisher gave you. The key is pinned: an index later signed with
-another key is refused.
+**Keys have a purpose.** A key signs either plugins or a repository's
+index, not both. An index lists its plugin keys (`plugin_keys`, covered by
+the index signature), so the job that rebuilds an index never holds a key
+whose signature runs code. Plugins › Signing keys shows every key with its
+purpose (Plugins, Index, or Index + plugins for an index in the old format,
+which has no `plugin_keys` and signs its plugins with the index key). Only
+plugin keys can be added by hand; a key that signs an index can't be
+trusted for plugins as well.
+
+**Repositories.** Add the URL of a signed `index.json` and type the index
+key id the publisher gave you. The index key and the plugin keys it lists
+are pinned: an index later signed with another key, or listing other
+plugin keys, is refused until you remove the repository and add it again.
+Plugins from a repository must be signed with one of its plugin keys.
 
 **Updates.** Plugins › Updates: _tell me_ (default) checks every six hours
 and notes new and withdrawn versions in the audit log; _install official_
@@ -217,7 +228,10 @@ zips it and writes a signed `index.json` that keeps earlier versions. Serve
 of `index.json` and your key id. `check` downloads the published index and
 every archive and verifies them the way a Hubra will. For plugins in their
 own repositories, `flask plugins build-index sources.yaml ./public --key
-me.pem` builds the index from their GitHub releases instead.
+me.pem` builds the index from their GitHub releases instead. Give the
+plugins their own key: `flask plugins repo … --key index.pem --plugin-key
+plugins.pem`, or `flask plugins build-index … --key index.pem --plugin-key
+plugins.pem.pub`.
 
 **The official marketplace** works like labdex's. Every official plugin is
 its own repository, `hubra-app/hubra-plugin-<id>`; publishing a GitHub
@@ -231,9 +245,14 @@ URL serves (`flask plugins check`). To release a plugin, bump `version` in
 its `plugin.yaml`, add a `CHANGELOG.md` entry, push, and publish the release.
 For a new plugin, `python3 tools/plugin_repo/make_plugin_repo.py
 <plugin folder> ../hubra-plugin-<id>` writes the repository around it
-(README, LICENSE, workflow). The workflows need the secret
-`HUBRA_SIGNING_KEY` (the private key of `keys/official/Hubra.pub`) and, while
-hubra-app/hubra is private, `HUBRA_READ_TOKEN`, a token that can read it.
+(README, LICENSE, workflow). The plugin repositories need the secret
+`HUBRA_SIGNING_KEY` (the private key of the plugin key
+`keys/official/Hubra.pub`) and, while hubra-app/hubra is private,
+`HUBRA_READ_TOKEN`, a token that can read it. hubra-plugins signs the index
+with its own key: the private key of `keys/official/index/*.pub`, passed
+with `--plugin-key keys/official/Hubra.pub` so the index lists the plugin
+key. Until a key is in `keys/official/index/`, the plugin key signs the
+official index too (the old format).
 
 Single archives: `flask plugins sign ./my-plugin --key me.pem --signer "Your
 Name"`, then `flask plugins pack ./my-plugin -o my-plugin-1.0.0.zip`.
