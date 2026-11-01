@@ -34,6 +34,7 @@ import {
   type RelayCheck,
   type RelaySummary,
 } from '@/api/platform'
+import { LEVEL_COLOR, categoryLabel, eventText, levelLabel } from './eventLabels'
 
 const MONO = "'JetBrains Mono', monospace"
 
@@ -161,9 +162,15 @@ function RelayCard({
   )
 }
 
-const ALERT_TYPES: { id: AlertType; label: () => string; desc: () => string }[] = [
+const ALERT_TYPES: {
+  id: AlertType
+  group: 'mail' | 'platform'
+  label: () => string
+  desc: () => string
+}[] = [
   {
     id: 'relay_down',
+    group: 'mail',
     label: () => tr('Relay ausgefallen / wieder da', 'Relay down / back'),
     desc: () =>
       tr(
@@ -173,6 +180,7 @@ const ALERT_TYPES: { id: AlertType; label: () => string; desc: () => string }[] 
   },
   {
     id: 'fallback_used',
+    group: 'mail',
     label: () => tr('Fallback benutzt', 'Fallback used'),
     desc: () =>
       tr(
@@ -182,6 +190,7 @@ const ALERT_TYPES: { id: AlertType; label: () => string; desc: () => string }[] 
   },
   {
     id: 'delivery_failed',
+    group: 'mail',
     label: () => tr('Mail nicht zugestellt', 'Mail not delivered'),
     desc: () =>
       tr(
@@ -190,17 +199,48 @@ const ALERT_TYPES: { id: AlertType; label: () => string; desc: () => string }[] 
       ),
   },
   {
+    id: 'service_down',
+    group: 'platform',
+    label: () => tr('Dienst ausgefallen / wieder da', 'Service down / back'),
+    desc: () =>
+      tr(
+        'Datenbank, Redis oder IMAP antworten eine Minute lang nicht, und wenn sie wieder gehen. Einen Datenbank-Ausfall meldet die Mail erst danach, mit seiner Dauer.',
+        'The database, Redis or IMAP do not answer for a minute, and when they work again. A database outage is mailed once it is over, with how long it lasted.',
+      ),
+  },
+  {
+    id: 'backup_failed',
+    group: 'platform',
+    label: () => tr('Backup fehlgeschlagen', 'Backup failed'),
+    desc: () =>
+      tr(
+        'Ein geplantes Backup (global oder eines Vereins) ist fehlgeschlagen.',
+        'A scheduled backup (global or a club’s) failed.',
+      ),
+  },
+  {
+    id: 'plugin_updates',
+    group: 'platform',
+    label: () => tr('Plugin-Neuigkeiten', 'Plugin news'),
+    desc: () =>
+      tr(
+        'Neue Plugin-Versionen, automatische Updates und zurückgezogene Plugins. Standardmässig aus.',
+        'New plugin versions, automatic updates and withdrawn plugins. Off by default.',
+      ),
+  },
+  {
     id: 'system',
+    group: 'platform',
     label: () => tr('Systemwarnungen', 'System alerts'),
     desc: () =>
       tr(
-        'Redis, Datenbank, Speicherplatz, fehlgeschlagene Hintergrundaufgaben und hohe API-Fehlerraten.',
-        'Redis, database, disk space, failed background tasks and high API error rates.',
+        'Speicherplatz, fehlgeschlagene Hintergrundaufgaben und hohe API-Fehlerraten.',
+        'Disk space, failed background tasks and high API error rates.',
       ),
   },
 ]
 
-function MyAlertsCard() {
+export function MyAlertsCard() {
   const { notify } = useAdmin()
   const queryClient = useQueryClient()
   const query = useQuery({ queryKey: ['my-platform-alerts'], queryFn: getMyAlerts })
@@ -224,24 +264,29 @@ function MyAlertsCard() {
       <Text size="sm" c="dimmed" mb={12}>
         {query.data
           ? tr(
-              `Gehen an ${query.data.email}. Jede Art kommt höchstens einmal pro Stunde, ausser Ausfall und Wiederherstellung eines Relays.`,
-              `Sent to ${query.data.email}. Each type comes at most once an hour, except a relay going down and coming back.`,
+              `Gehen an ${query.data.email}. Jede Art kommt höchstens einmal pro Stunde, ausser Ausfälle, Wiederherstellungen und Plugin-Neuigkeiten.`,
+              `Sent to ${query.data.email}. Each type comes at most once an hour, except outages, recoveries and plugin news.`,
             )
           : ' '}
       </Text>
       {query.isError && <Text c="red">{failureText(query.error)}</Text>}
-      <Stack gap={12}>
-        {ALERT_TYPES.map((t) => (
-          <Switch
-            key={t.id}
-            checked={query.data?.alerts[t.id] ?? true}
-            disabled={!query.data}
-            onChange={(e) => toggle(t.id, e.currentTarget.checked)}
-            label={t.label()}
-            description={t.desc()}
-          />
-        ))}
-      </Stack>
+      {(['mail', 'platform'] as const).map((group) => (
+        <Stack key={group} gap={12} mb={16}>
+          <Text size="xs" fw={700} c="dimmed" tt="uppercase">
+            {group === 'mail' ? tr('Mail-Versand', 'Outbound mail') : tr('Plattform', 'Platform')}
+          </Text>
+          {ALERT_TYPES.filter((t) => t.group === group).map((t) => (
+            <Switch
+              key={t.id}
+              checked={query.data?.alerts[t.id] ?? t.id !== 'plugin_updates'}
+              disabled={!query.data}
+              onChange={(e) => toggle(t.id, e.currentTarget.checked)}
+              label={t.label()}
+              description={t.desc()}
+            />
+          ))}
+        </Stack>
+      ))}
     </Paper>
   )
 }
@@ -355,47 +400,17 @@ export function OutboundMailPanel({ onShowLog }: { onShowLog: (level?: EventLeve
         ))}
       </SimpleGrid>
 
-      <MyAlertsCard />
+      <Text size="sm" c="dimmed">
+        {tr(
+          'Welche Warnungen du per Mail bekommst, stellst du unter Plattform › Warnungen ein.',
+          'Choose which alerts you get by mail under Platform › Alerts.',
+        )}
+      </Text>
     </Stack>
   )
 }
 
 // ── Event log ────────────────────────────────────────────────────────────────
-
-const categoryLabel = (c: EventCategory): string =>
-  ({
-    mail: tr('Mail', 'Mail'),
-    relay: 'Relay',
-    system: 'System',
-    alert: tr('Alarm', 'Alert'),
-  })[c] ?? c
-
-/** The log's messages are stored in English; known kinds are told in the
- * chosen language from their details. */
-function eventText(e: PlatformEvent): string {
-  const d = e.details as Record<string, string | undefined>
-  const relay = d.host ?? ''
-  const name = d.relay === 'fallback' ? tr('Fallback-Relay', 'Fallback relay') : tr('Haupt-Relay', 'Main relay')
-  switch (e.kind) {
-    case 'mail.sent':
-      return tr(`Gesendet an ${d.to}: ${d.subject}`, e.message)
-    case 'mail.fallback':
-      return tr(`Über das Fallback-Relay an ${d.to} gesendet: ${d.subject}`, e.message)
-    case 'mail.failed':
-      return tr(`Nicht zugestellt an ${d.to}: ${d.subject}`, e.message)
-    case 'relay.down':
-      return tr(`${name} ${relay} ist ausgefallen`, e.message)
-    case 'relay.up':
-      return tr(`${name} ${relay} geht wieder`, e.message)
-    default:
-      return e.message
-  }
-}
-
-const LEVEL_COLOR: Record<EventLevel, string> = { info: 'gray', warning: 'orange', error: 'red' }
-
-const levelLabel = (l: EventLevel): string =>
-  ({ info: 'Info', warning: tr('Warnung', 'Warning'), error: tr('Fehler', 'Error') })[l] ?? l
 
 function EventDetails({ event }: { event: PlatformEvent }) {
   const entries = Object.entries(event.details).filter(([k]) => k !== 'steps')
@@ -450,8 +465,8 @@ export function EventLogPanel({
     <Stack gap={16}>
       <Text c="dimmed" size="sm" maw={720}>
         {tr(
-          `Was der Plattform passiert ist: jede gesendete und fehlgeschlagene Mail, Ausfälle der Relays, Systemwarnungen und die Warnmails an Plattform-Admins. Einträge bleiben ${query.data?.retention_days ?? 30} Tage. Was Personen geändert haben, steht im Audit-Log.`,
-          `What happened to the platform: every sent and failed mail, relay outages, system alerts and the alert mails to platform admins. Entries are kept for ${query.data?.retention_days ?? 30} days. What people changed is in the audit log.`,
+          `Was der Plattform passiert ist: jede gesendete und fehlgeschlagene Mail, Ausfälle von Relays und Diensten, fehlgeschlagene Backups, Plugin-Neuigkeiten, Systemwarnungen und die Warnungen an Plattform-Admins. Einträge bleiben ${query.data?.retention_days ?? 30} Tage. Was Personen geändert haben, steht im Audit-Log.`,
+          `What happened to the platform: every sent and failed mail, relay and service outages, failed backups, plugin news, system alerts and the alerts to platform admins. Entries are kept for ${query.data?.retention_days ?? 30} days. What people changed is in the audit log.`,
         )}
       </Text>
       <Group gap="xs" wrap="wrap">
@@ -465,7 +480,7 @@ export function EventLogPanel({
           }}
           w={240}
         />
-        {(['', 'mail', 'relay', 'system', 'alert'] as const).map((c) => (
+        {(['', 'mail', 'relay', 'service', 'backup', 'plugin', 'system', 'alert'] as const).map((c) => (
           <Button
             key={c || 'all'}
             size="xs"

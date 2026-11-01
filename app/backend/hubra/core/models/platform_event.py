@@ -2,8 +2,9 @@
 
 One row per thing that happened to the instance rather than to a club's
 data: every mail handed to the relay (sent, sent through the fallback,
-failed), relay checks that changed state, system alerts (Redis, database,
-disk, failing tasks) and the alert mails sent to platform staff.  People's
+failed), relay checks that changed state, outages of the database, Redis
+or IMAP, failed scheduled backups, plugin updates, system alerts (disk,
+failing tasks, API error rate) and the alerts sent to platform staff.  People's
 actions stay in ``global_audit_logs``; this is the monitoring side.
 
 Shown in manage › Diagnostics › Event log, kept for ``RETENTION_DAYS``.
@@ -19,7 +20,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from hubra.core.extensions import db
 
-CATEGORIES = ("mail", "relay", "system", "alert")
+CATEGORIES = ("mail", "relay", "service", "backup", "plugin", "system", "alert")
 LEVELS = ("info", "warning", "error")
 
 

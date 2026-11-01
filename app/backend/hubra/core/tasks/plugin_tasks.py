@@ -11,6 +11,10 @@ def check_plugin_updates() -> dict:
     from hubra.core.plugins.installer import cleanup_archives
     from hubra.core.plugins.updates import check
 
+    from hubra.core.services import platform_monitor
+
     cleanup_archives()
     db.session.commit()
-    return check()
+    result = check()
+    platform_monitor.plugin_news(result)
+    return result

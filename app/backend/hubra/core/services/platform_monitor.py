@@ -48,7 +48,17 @@ CHECK_TIMEOUT = 10  # seconds per relay check
 # slow answer does not wake anybody.
 DOWN_AFTER = 2
 
-ALERT_TYPES = ("relay_down", "fallback_used", "delivery_failed", "system")
+ALERT_TYPES = (
+    "relay_down",
+    "fallback_used",
+    "delivery_failed",
+    "service_down",
+    "backup_failed",
+    "plugin_updates",
+    "system",
+)
+# Off unless the admin turns them on: news, not trouble.
+_OFF_BY_DEFAULT = frozenset({"plugin_updates"})
 RELAYS = ("relay", "fallback")
 
 _CHECK_KEY = "mail:monitor:check:{}"
@@ -473,12 +483,13 @@ def clear_primary_down() -> None:
 
 
 def default_prefs() -> dict[str, bool]:
-    return {t: True for t in ALERT_TYPES}
+    return {t: t not in _OFF_BY_DEFAULT for t in ALERT_TYPES}
 
 
 def prefs_for(user) -> dict[str, bool]:
     stored = user.platform_alerts or {}
-    return {t: bool(stored.get(t, True)) for t in ALERT_TYPES}
+    defaults = default_prefs()
+    return {t: bool(stored.get(t, defaults[t])) for t in ALERT_TYPES}
 
 
 def recipients(alert_type: str) -> list:
@@ -507,7 +518,7 @@ def recipients(alert_type: str) -> list:
         .where((User.is_superadmin.is_(True)) | (User.id.in_(staff_ids)))
         .order_by(User.id)
     ).all()
-    return [u for u in users if prefs_for(u).get(alert_type, True)]
+    return [u for u in users if prefs_for(u).get(alert_type, False)]
 
 
 def alert(
@@ -555,6 +566,9 @@ _TYPE_LABEL = {
     "relay_down": "Mail relay down or back",
     "fallback_used": "Fallback relay used",
     "delivery_failed": "Mail not delivered",
+    "service_down": "Service down or back",
+    "backup_failed": "Backup failed",
+    "plugin_updates": "Plugin updates",
     "system": "System alert",
 }
 
@@ -567,8 +581,7 @@ def _alert_body(alert_type: str, subject: str, lines: list[str]) -> tuple[str, s
     label = _TYPE_LABEL.get(alert_type, alert_type)
     footer = (
         "You get this mail as a platform admin. Details are in manage under "
-        "Diagnostics › Event log; choose which alerts you get under "
-        "Diagnostics › Outbound mail."
+        "Platform › Alerts, where you also choose which alerts you get."
     )
     text = "\n".join([subject, "", *lines, "", f"{label}. {footer}"])
     html = (
@@ -637,3 +650,284 @@ def system_alert(title: str, description: str, fields: list | None, color: int) 
     # an hour per task), so no cooldown here: a recovery must not be eaten
     # by the alert before it.
     alert("system", title, lines, level=level, throttle=False)
+
+
+# ── Other platform events ─────────────────────────────────────────────────────
+
+# Health checks run every 20 s with a 1 s timeout: a service counts as down
+# after this many failures in a row (about a minute), so a blip stays quiet.
+SERVICE_DOWN_AFTER = 3
+SERVICE_NAMES = {"db": "Database", "redis": "Redis", "imap": "IMAP"}
+
+
+def watch_services(previous: dict | None, payload: dict) -> dict:
+    """Compare a health run with the one before; log and alert outages.
+
+    Keeps ``{"<service>": {"fails": n, "down_since": ts | None}}`` under
+    ``payload["watch"]``, carried over from *previous* (the cached run).
+    SMTP is left to the relay checks.  IMAP only counts with the mail module.
+
+    The database cannot report its own outage by mail (the recipients, the
+    relay and the log all live in it), so a database outage reaches Discord
+    at once and everybody by mail when it is over, with how long it lasted.
+    """
+    from hubra.core.modules import is_enabled
+
+    before = (previous or {}).get("watch") or {}
+    watch: dict[str, dict] = {}
+    now = time.time()
+    for key, name in SERVICE_NAMES.items():
+        svc = (payload.get("services") or {}).get(key)
+        if svc is None or (key == "imap" and not is_enabled("mail")):
+            continue
+        state = dict(before.get(key) or {"fails": 0, "down_since": None})
+        if svc.get("ok"):
+            if state.get("down_since"):
+                minutes = max(1, round((now - state["down_since"]) / 60))
+                record(
+                    "service",
+                    "service.up",
+                    f"{name} is reachable again after {minutes} min",
+                    level="warning",
+                    details={"service": key, "minutes": minutes},
+                )
+                alert(
+                    "service_down",
+                    f"{name} is reachable again",
+                    [f"{name} was unreachable for about {minutes} minutes."],
+                    level="warning",
+                    throttle=False,
+                )
+            state = {"fails": 0, "down_since": None}
+        else:
+            state["fails"] = int(state.get("fails") or 0) + 1
+            if state["fails"] == SERVICE_DOWN_AFTER and not state.get("down_since"):
+                state["down_since"] = now
+                error = svc.get("error") or "no answer"
+                record(
+                    "service",
+                    "service.down",
+                    f"{name} is unreachable: {error}",
+                    level="error",
+                    details={"service": key, "error": str(error)[:300]},
+                )
+                alert(
+                    "service_down",
+                    f"{name} is unreachable",
+                    [
+                        f"{SERVICE_DOWN_AFTER} health checks in a row failed.",
+                        f"Error: {error}",
+                    ],
+                    throttle=False,
+                )
+        watch[key] = state
+    payload["watch"] = watch
+    return payload
+
+
+def backups_failed(backup_type: str, records) -> None:
+    """After a scheduled run: log and alert the scopes whose backup failed."""
+    failed = [r for r in records if r.status != "completed"]
+    if not failed:
+        return
+    names = [r.tenant_slug or "global" for r in failed]
+    lines = [
+        f"{r.tenant_slug or 'global'}: {(r.error_message or 'failed')[:300]}"
+        for r in failed
+    ]
+    record(
+        "backup",
+        "backup.failed",
+        f"Scheduled {backup_type} backup failed for {', '.join(names)}",
+        level="error",
+        details={"type": backup_type, "failed": names, "lines": lines},
+    )
+    alert(
+        "backup_failed",
+        f"{len(failed)} of {len(list(records))} scheduled backups failed",
+        lines + ["See manage › Platform › Backups."],
+    )
+
+
+def plugin_news(result: dict) -> None:
+    """After the plugin update check: log and announce what is new."""
+    announced = result.get("announced") or []
+    failed = result.get("failed") or []
+    withdrawn = result.get("withdrawn") or []
+    installed = result.get("installed") or []
+    if not (announced or failed or withdrawn or installed):
+        return
+    lines = []
+    if announced:
+        lines.append("Update available: " + ", ".join(announced))
+    if installed:
+        lines.append("Updated automatically: " + ", ".join(installed))
+    if failed:
+        lines.append("Automatic update failed: " + ", ".join(failed))
+    if withdrawn:
+        lines.append("Withdrawn by its publisher: " + ", ".join(withdrawn))
+    level = "warning" if failed or withdrawn else "info"
+    record(
+        "plugin",
+        "plugin.updates",
+        "; ".join(lines),
+        level=level,
+        details={
+            "announced": announced,
+            "installed": installed,
+            "failed": failed,
+            "withdrawn": withdrawn,
+        },
+    )
+    alert(
+        "plugin_updates",
+        "Plugin updates",
+        lines + ["See manage › Plugin catalogue."],
+        level=level,
+        throttle=False,
+    )
+
+
+# ── Open problems (the alerts overview) ───────────────────────────────────────
+
+
+def open_problems() -> list[dict]:
+    """What is wrong right now, worst first, for manage › Platform › Alerts.
+
+    Each: ``{"id", "level", "area", "title", "detail", "since"?, "link"}``.
+    """
+    from hubra.api.health.cache import HealthCache
+
+    problems: list[dict] = []
+
+    def add(pid, level, area, title, detail="", since=None, link=""):
+        problems.append(
+            {
+                "id": pid,
+                "level": level,
+                "area": area,
+                "title": title,
+                "detail": detail,
+                "since": since,
+                "link": link,
+            }
+        )
+
+    # Background jobs: nothing below is checked while they stand still.
+    cached = HealthCache.get()
+    if cached is None or time.time() - float(cached.get("checked_at") or 0) > 60:
+        add(
+            "jobs",
+            "error",
+            "service",
+            "Background jobs are not running",
+            "Celery beat or the worker has not run the health check for over a "
+            "minute: relay checks, backups, reminders and alert mails stand still.",
+            link="/app/platform/diagnostics/health",
+        )
+    else:
+        for key, state in (cached.get("watch") or {}).items():
+            if state.get("down_since"):
+                add(
+                    f"service:{key}",
+                    "error",
+                    "service",
+                    f"{SERVICE_NAMES.get(key, key)} is unreachable",
+                    ((cached.get("services") or {}).get(key) or {}).get("error") or "",
+                    since=state["down_since"],
+                    link="/app/platform/diagnostics/health",
+                )
+
+    for which in RELAYS:
+        check = last_check(which)
+        if check and check.get("down"):
+            add(
+                f"relay:{which}",
+                "error",
+                "mail",
+                ("Main relay" if which == "relay" else "Fallback relay") + " is down",
+                check.get("error") or "",
+                since=check.get("checked_at"),
+                link="/app/platform/diagnostics/outbound-mail",
+            )
+    down = primary_down()
+    if down["active"]:
+        add(
+            "relay:skipped",
+            "warning",
+            "mail",
+            "Mail goes through the fallback relay",
+            f"The main relay refused mail; it is tried again in "
+            f"{max(1, down['seconds_left'] // 60)} min.",
+            link="/app/platform/diagnostics/outbound-mail",
+        )
+    counts = stats(24)
+    if counts["failed"]:
+        add(
+            "mail:failed",
+            "warning",
+            "mail",
+            f"{counts['failed']} mails not delivered in 24 hours",
+            "Refused addresses count too; the event log has each one.",
+            link="/app/platform/alerts/events?category=mail&level=error",
+        )
+
+    problems.extend(_backup_problems())
+
+    order = {"error": 0, "warning": 1, "info": 2}
+    problems.sort(key=lambda p: order.get(p["level"], 3))
+    return problems
+
+
+def _backup_problems() -> list[dict]:
+    """The newest scheduled backup of each scope failed, or none for 2 days."""
+    from hubra.core.models.backup import BackupRecord
+    from hubra.core.services import platform_settings
+
+    if not platform_settings.get("backup.s3.bucket"):
+        return []
+    rows = db.session.scalars(
+        select(BackupRecord)
+        .where(BackupRecord.type.like("scheduled_%"))
+        .where(
+            BackupRecord.created_at >= datetime.now(timezone.utc) - timedelta(days=7)
+        )
+        .order_by(BackupRecord.created_at.desc())
+    ).all()
+    newest: dict[str, object] = {}
+    for r in rows:
+        newest.setdefault(r.tenant_slug or "global", r)
+    out = []
+    failed = [s for s, r in newest.items() if r.status == "failed"]
+    if failed:
+        out.append(
+            {
+                "id": "backup:failed",
+                "level": "error",
+                "area": "backup",
+                "title": "Last scheduled backup failed for "
+                + ", ".join(failed[:5])
+                + ("…" if len(failed) > 5 else ""),
+                "detail": (newest[failed[0]].error_message or "")[:300],
+                "since": newest[failed[0]].created_at.timestamp(),
+                "link": "/app/platform/backups",
+            }
+        )
+    latest_ok = max(
+        (r.created_at for r in rows if r.status == "completed"), default=None
+    )
+    if latest_ok is not None and latest_ok.tzinfo is None:
+        latest_ok = latest_ok.replace(tzinfo=timezone.utc)
+    if latest_ok is None or latest_ok < datetime.now(timezone.utc) - timedelta(days=2):
+        out.append(
+            {
+                "id": "backup:none",
+                "level": "warning",
+                "area": "backup",
+                "title": "No successful scheduled backup in 2 days",
+                "detail": "Backups run daily at 03:00 UTC.",
+                "since": None,
+                "link": "/app/platform/backups",
+            }
+        )
+    return out

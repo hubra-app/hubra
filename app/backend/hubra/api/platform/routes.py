@@ -275,7 +275,8 @@ def mail_relay_use_main():
 def list_platform_events():
     """The platform event log, newest first.
 
-    Query: ``category`` (mail, relay, system, alert), ``level`` (info,
+    Query: ``category`` (mail, relay, service, backup, plugin, system,
+    alert), ``level`` (info,
     warning, error), ``kind``, ``q`` (text in the message), ``page``,
     ``per_page`` (max 100).
     """
@@ -336,6 +337,43 @@ def list_platform_events():
             "page": page,
             "per_page": per_page,
             "retention_days": platform_monitor.RETENTION_DAYS,
+        }
+    ), 200
+
+
+@platform_bp.get("/alerts/overview")
+@require_global_permission(_DIAGNOSTICS)
+def alerts_overview():
+    """What is wrong right now, the latest alerts, and 24 h of warnings and
+    errors per area, for manage › Platform › Alerts."""
+    from datetime import datetime, timedelta, timezone
+
+    from sqlalchemy import func, select
+
+    from hubra.core.models.platform_event import PlatformEvent
+
+    since = datetime.now(timezone.utc) - timedelta(hours=24)
+    rows = db.session.execute(
+        select(PlatformEvent.category, PlatformEvent.level, func.count())
+        .where(PlatformEvent.created_at >= since)
+        .where(PlatformEvent.level.in_(("warning", "error")))
+        .where(PlatformEvent.category != "alert")
+        .group_by(PlatformEvent.category, PlatformEvent.level)
+    ).all()
+    counts: dict[str, dict[str, int]] = {}
+    for category, level, n in rows:
+        counts.setdefault(category, {"warning": 0, "error": 0})[level] = n
+    recent = db.session.scalars(
+        select(PlatformEvent)
+        .where(PlatformEvent.category == "alert")
+        .order_by(PlatformEvent.created_at.desc(), PlatformEvent.id.desc())
+        .limit(10)
+    ).all()
+    return jsonify(
+        {
+            "problems": platform_monitor.open_problems(),
+            "recent": [r.to_dict() for r in recent],
+            "counts": counts,
         }
     ), 200
 
