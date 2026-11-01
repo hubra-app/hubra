@@ -1477,6 +1477,69 @@ def delete_account_notification(club: str, notification_id: int):
     return "", 204
 
 
+# ── /account/push (browser notifications on this device) ─────────────────────
+
+
+@account_bp.get("/push")
+@jwt_required()
+def get_push_setup():
+    """The key a browser subscribes with (made on first use), and whether
+    the browser sending ``?endpoint=`` already gets pushes."""
+    from hubra.api.notifications import push
+    from hubra.core.services import platform_settings
+
+    user_id = _account_user_id()
+    keys = platform_settings.web_push(create=True)
+    db.session.commit()
+    endpoint = request.args.get("endpoint") or ""
+    return jsonify(
+        {
+            "public_key": keys.public_key,
+            "subscribed": bool(endpoint) and push.is_subscribed(user_id, endpoint),
+        }
+    ), 200
+
+
+@account_bp.post("/push")
+@jwt_required()
+def subscribe_push():
+    """Body: the browser's PushSubscription JSON (endpoint, keys.p256dh,
+    keys.auth)."""
+    from hubra.api.notifications import push
+    from hubra.core.services.web_push import is_push_endpoint, valid_keys
+
+    body = request.get_json(silent=True) or {}
+    endpoint = body.get("endpoint") if isinstance(body, dict) else None
+    keys = body.get("keys") if isinstance(body, dict) else None
+    keys = keys if isinstance(keys, dict) else {}
+    if not is_push_endpoint(endpoint):
+        raise_error(422, "VALIDATION_ERROR", "Not a browser push service address")
+    if not valid_keys(keys.get("p256dh"), keys.get("auth")):
+        raise_error(422, "VALIDATION_ERROR", "Invalid push subscription keys")
+    push.subscribe(
+        _account_user_id(),
+        endpoint,
+        keys["p256dh"],
+        keys["auth"],
+        request.headers.get("User-Agent"),
+    )
+    db.session.commit()
+    return jsonify({"subscribed": True}), 201
+
+
+@account_bp.delete("/push")
+@jwt_required()
+def unsubscribe_push():
+    from hubra.api.notifications import push
+
+    body = request.get_json(silent=True) or {}
+    endpoint = body.get("endpoint") if isinstance(body, dict) else None
+    if isinstance(endpoint, str) and endpoint:
+        push.unsubscribe(_account_user_id(), endpoint)
+        db.session.commit()
+    return "", 204
+
+
 # ── GET /account/devices ──────────────────────────────────────────────────────
 
 

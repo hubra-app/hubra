@@ -10,6 +10,7 @@ import { PaymentPlanCard } from './PaymentPlanCard'
 import { LeaveClubCard } from './LeaveClubCard'
 import { DirectoryCard } from './DirectoryCard'
 import { RemindersCard } from './RemindersCard'
+import { PushCard } from './PushCard'
 import { roleLabels } from '@/roles'
 import { qk } from '@/data/keys'
 
@@ -198,6 +199,8 @@ export function AccountSettingsMembershipTab() {
       <DirectoryCard />
 
       <RemindersCard />
+
+      <PushCard />
 
       <LeaveClubCard />
     </>

@@ -3202,5 +3202,10 @@
   "events.series.deleteThis": "Only this date",
   "events.series.following": "This and all following",
   "events.series.thisOne": "Only this date",
-  "shell.breadcrumbs.attendance": "Club life › Attendance"
+  "shell.breadcrumbs.attendance": "Club life › Attendance",
+  "account.push.title": "Notifications on this device",
+  "account.push.hint": "Everything that shows in the bell (reminders, new events, polls) also as a notification on this device, for all your clubs.",
+  "account.push.switch": "Browser notifications",
+  "account.push.needsInstall": "On iPhone and iPad, first add Hubra to the home screen (Share › Add to Home Screen), then switch this on.",
+  "account.push.denied": "Notifications are blocked for this site in the browser. Allow them in the browser's site settings."
 }
