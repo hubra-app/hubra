@@ -29,6 +29,7 @@ class QRBillNotConfigured(ValueError):
 def _fit(text: str, limit: int) -> str:
     return text if len(text) <= limit else text[: limit - 1] + "…"
 
+
 # ── Setting helpers (same pattern as email.py) ─────────────────────────────
 
 _DEFAULT_LANG = "de-CH"
@@ -237,10 +238,18 @@ def _no_fetch():
 
 
 def _description_for(invoice: Invoice, lang: str = _DEFAULT_LANG) -> str:
-    """Return a human-readable description for the invoice."""
+    """Return a human-readable description for the invoice: the period it
+    covers when it has one (a reduced first fee shows from which month)."""
+    what = invoice.issued.year
+    start, end = (
+        getattr(invoice, "period_start", None),
+        getattr(invoice, "period_end", None),
+    )
+    if start and end:
+        what = f"{start:%d.%m.%Y}–{end:%d.%m.%Y}"
     if lang and lang.startswith("de"):
-        return f"Mitgliederbeitrag {invoice.issued.year}"
-    return f"Membership fee {invoice.issued.year}"
+        return f"Mitgliederbeitrag {what}"
+    return f"Membership fee {what}"
 
 
 def _ensure_dependencies() -> None:

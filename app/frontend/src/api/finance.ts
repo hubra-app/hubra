@@ -282,6 +282,8 @@ interface BackendInvoice {
   amount: number;
   status: "Paid" | "Open" | "Overdue";
   description: string | null;
+  period_start?: string | null;
+  period_end?: string | null;
   created_at: string;
 }
 
@@ -304,6 +306,8 @@ function adaptInvoice(b: BackendInvoice): Invoice {
     amount: b.amount,
     status: b.status,
     description: b.description ?? null,
+    periodStart: b.period_start ?? null,
+    periodEnd: b.period_end ?? null,
     transactionId: b.transaction_id != null ? String(b.transaction_id) : null,
     createdAt: b.created_at ?? "",
   };
@@ -432,4 +436,285 @@ export interface FinanceOverview {
 
 export async function getFinanceOverview(): Promise<FinanceOverview> {
   return apiFetch<FinanceOverview>("/finance/overview");
+}
+
+export interface CategorySum {
+  /** null: transactions without a category */
+  id: number | null;
+  name: string | null;
+  color: string | null;
+  income: number;
+  expense: number;
+  net: number;
+  count: number;
+}
+
+export interface FinanceSummary {
+  from: string;
+  to: string;
+  income: number;
+  expense: number;
+  net: number;
+  categories: CategorySum[];
+}
+
+/** Booked income and expenses per category between two dates. */
+export async function getFinanceSummary(
+  from: string,
+  to: string,
+): Promise<FinanceSummary> {
+  const qs = new URLSearchParams({ from, to });
+  return apiFetch<FinanceSummary>(`/finance/summary?${qs}`);
+}
+
+// ── Recurring transactions ─────────────────────────────────────────────────
+
+export type RecurringInterval = 'monthly' | 'quarterly' | 'half_yearly' | 'yearly'
+
+export interface RecurringTransaction {
+  id: number
+  description: string
+  type: 'income' | 'expense'
+  amount: number
+  categoryId: number | null
+  categoryName: string
+  payeeName: string | null
+  method: string
+  interval: RecurringInterval
+  startDate: string
+  endDate: string | null
+  /** null once the end date has passed */
+  nextDate: string | null
+  bookCompleted: boolean
+  countsForFees: boolean
+  active: boolean
+  yearlyAmount: number
+}
+
+export interface RecurringTransactionInput {
+  description: string
+  type: 'income' | 'expense'
+  amount: number
+  categoryId: number | null
+  payeeName: string | null
+  method: string
+  interval: RecurringInterval
+  startDate: string
+  endDate: string | null
+  bookCompleted: boolean
+  countsForFees: boolean
+  active: boolean
+}
+
+interface BackendRecurring {
+  id: number
+  description: string
+  type: 'income' | 'expense'
+  amount: number
+  category_id: number | null
+  category_name: string
+  payee_name: string | null
+  method: string
+  interval: RecurringInterval
+  start_date: string
+  end_date: string | null
+  next_date: string | null
+  book_completed: boolean
+  counts_for_fees: boolean
+  active: boolean
+  yearly_amount: number
+}
+
+function adaptRecurring(b: BackendRecurring): RecurringTransaction {
+  return {
+    id: b.id,
+    description: b.description,
+    type: b.type,
+    amount: b.amount,
+    categoryId: b.category_id,
+    categoryName: b.category_name,
+    payeeName: b.payee_name,
+    method: b.method,
+    interval: b.interval,
+    startDate: b.start_date,
+    endDate: b.end_date,
+    nextDate: b.next_date,
+    bookCompleted: b.book_completed,
+    countsForFees: b.counts_for_fees,
+    active: b.active,
+    yearlyAmount: b.yearly_amount,
+  }
+}
+
+function recurringBody(input: Partial<RecurringTransactionInput>) {
+  const keys: Record<keyof RecurringTransactionInput, string> = {
+    description: 'description',
+    type: 'type',
+    amount: 'amount',
+    categoryId: 'category_id',
+    payeeName: 'payee_name',
+    method: 'method',
+    interval: 'interval',
+    startDate: 'start_date',
+    endDate: 'end_date',
+    bookCompleted: 'book_completed',
+    countsForFees: 'counts_for_fees',
+    active: 'active',
+  }
+  const body: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(input)) {
+    body[keys[key as keyof RecurringTransactionInput]] = value
+  }
+  return JSON.stringify(body)
+}
+
+export async function listRecurring(): Promise<RecurringTransaction[]> {
+  const data = await apiFetch<BackendRecurring[]>('/finance/recurring')
+  return data.map(adaptRecurring)
+}
+
+export async function createRecurring(
+  input: RecurringTransactionInput,
+): Promise<RecurringTransaction> {
+  const b = await apiFetch<BackendRecurring>('/finance/recurring', {
+    method: 'POST',
+    body: recurringBody(input),
+  })
+  return adaptRecurring(b)
+}
+
+export async function updateRecurring(
+  id: number,
+  input: Partial<RecurringTransactionInput>,
+): Promise<RecurringTransaction> {
+  const b = await apiFetch<BackendRecurring>(`/finance/recurring/${id}`, {
+    method: 'PATCH',
+    body: recurringBody(input),
+  })
+  return adaptRecurring(b)
+}
+
+export async function deleteRecurring(id: number): Promise<void> {
+  await apiFetch(`/finance/recurring/${id}`, { method: 'DELETE' })
+}
+
+// ── Monthly account statement ──────────────────────────────────────────────
+
+/** Downloads the account statement of a month (YYYY-MM) as a PDF. */
+export async function downloadStatement(month: string): Promise<void> {
+  const res = await apiFetchRaw(`/finance/statement.pdf?month=${month}`)
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `kontoauszug-${month}.pdf`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+/** Mails the account statement of a month to the club's statement address. */
+export async function sendStatement(month: string): Promise<{ month: string; to: string }> {
+  return apiFetch('/finance/statement/send', {
+    method: 'POST',
+    body: JSON.stringify({ month }),
+  })
+}
+
+// ── Yearly expenses behind percentage and formula tiers ────────────────────
+
+export type FeeBasisSource = 'manual' | 'recurring' | 'last_year' | 'budget'
+
+export interface FeeBasisLine {
+  categoryId: number | null
+  name: string | null
+  color: string | null
+  amount: number
+  share: number
+  items: { id?: number; description: string; interval?: string; amount?: number; yearly?: number }[]
+}
+
+export interface FeeBasisTier {
+  id: number
+  name: string
+  priceType: 'percentage' | 'formula'
+  billingCycle: string | null
+  members: number
+  yearlyNow: number
+  yearly: number
+}
+
+export interface FeeBasis {
+  source: FeeBasisSource
+  sources: FeeBasisSource[]
+  total: number
+  extra: number
+  manual: number
+  period: { from?: string; to?: string; year?: number } | null
+  note: string | null
+  lines: FeeBasisLine[]
+  tiers: FeeBasisTier[]
+}
+
+export interface FeeBasisPreview {
+  source?: FeeBasisSource
+  extra?: number
+  manual?: number
+}
+
+/** How the yearly expenses come together; *preview* tries a choice unsaved. */
+export async function getFeeBasis(preview: FeeBasisPreview = {}): Promise<FeeBasis> {
+  const qs = new URLSearchParams()
+  for (const [k, v] of Object.entries(preview)) if (v !== undefined) qs.set(k, String(v))
+  const b = await apiFetch<{
+    source: FeeBasisSource
+    sources: FeeBasisSource[]
+    total: number
+    extra: number
+    manual: number
+    period: FeeBasis['period']
+    note: string | null
+    lines: {
+      category_id: number | null
+      name: string | null
+      color: string | null
+      amount: number
+      share: number
+      items: FeeBasisLine['items']
+    }[]
+    tiers: {
+      id: number
+      name: string
+      price_type: 'percentage' | 'formula'
+      billing_cycle: string | null
+      members: number
+      yearly_now: number
+      yearly: number
+    }[]
+  }>(`/finance/fee-basis${qs.size ? `?${qs}` : ''}`)
+  return {
+    source: b.source,
+    sources: b.sources,
+    total: b.total,
+    extra: b.extra,
+    manual: b.manual,
+    period: b.period,
+    note: b.note,
+    lines: b.lines.map((l) => ({
+      categoryId: l.category_id,
+      name: l.name,
+      color: l.color,
+      amount: l.amount,
+      share: l.share,
+      items: l.items,
+    })),
+    tiers: b.tiers.map((t) => ({
+      id: t.id,
+      name: t.name,
+      priceType: t.price_type,
+      billingCycle: t.billing_cycle,
+      members: t.members,
+      yearlyNow: t.yearly_now,
+      yearly: t.yearly,
+    })),
+  }
 }

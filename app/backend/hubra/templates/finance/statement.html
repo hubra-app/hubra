@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="{{ 'en' if lang.startswith('en') else 'de' }}">
+<head>
+<meta charset="utf-8">
+<style>
+  @page {
+    size: A4;
+    margin: 16mm 15mm 18mm;
+    @bottom-right {
+      content: counter(page) " / " counter(pages);
+      font-size: 8pt;
+      color: #6b7480;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 9.5pt;
+    color: #181818;
+    margin: 0;
+  }
+  .header {
+    border-bottom: 2px solid #e3eae6;
+    padding-bottom: 5mm;
+    margin-bottom: 6mm;
+  }
+  h1 { font-size: 17pt; margin: 0 0 1.5mm; }
+  .sub { color: #6b7480; font-size: 10pt; margin: 0; }
+  h2 { font-size: 11pt; margin: 7mm 0 2.5mm; }
+  .tiles { display: flex; gap: 3mm; }
+  .tile {
+    flex: 1;
+    background: #f5f1ff;
+    border-radius: 2.5mm;
+    padding: 3mm 3.5mm;
+  }
+  .tile .label { color: #5e5873; font-size: 8pt; }
+  .tile .value { font-size: 12pt; font-weight: 700; margin-top: 1mm; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left;
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6b7480;
+    border-bottom: 1px solid #d9dde3;
+    padding: 1.8mm 2mm 1.8mm 0;
+  }
+  td {
+    border-bottom: 1px solid #eef0f3;
+    padding: 1.6mm 2mm 1.6mm 0;
+    vertical-align: top;
+  }
+  tr { page-break-inside: avoid; }
+  .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .neg { color: #c92a2a; }
+  .pos { color: #1f7a45; }
+  .muted { color: #6b7480; }
+  tfoot td { font-weight: 700; border-bottom: none; border-top: 1px solid #d9dde3; }
+  .dot {
+    display: inline-block;
+    width: 2.2mm;
+    height: 2.2mm;
+    border-radius: 0.6mm;
+    margin-right: 1.5mm;
+  }
+  .footer { margin-top: 8mm; color: #6b7480; font-size: 8pt; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>{{ t('mail.email.account_statement.title') }} {{ month }}</h1>
+    <p class="sub">{{ d.club_name }} · {{ fmt_date(d.start) }} – {{ fmt_date(d.end) }}</p>
+  </div>
+
+  <div class="tiles">
+    <div class="tile">
+      <div class="label">{{ t('mail.email.account_statement.opening') }}</div>
+      <div class="value">CHF {{ chf(d.opening) }}</div>
+    </div>
+    <div class="tile">
+      <div class="label">{{ t('mail.email.account_statement.income') }}</div>
+      <div class="value pos">CHF {{ chf(d.income) }}</div>
+    </div>
+    <div class="tile">
+      <div class="label">{{ t('mail.email.account_statement.expense') }}</div>
+      <div class="value neg">CHF {{ chf(-d.expense) }}</div>
+    </div>
+    <div class="tile">
+      <div class="label">{{ t('mail.email.account_statement.closing') }}</div>
+      <div class="value">CHF {{ chf(d.closing) }}</div>
+    </div>
+  </div>
+
+  <h2>{{ t('mail.email.account_statement.by_category') }}</h2>
+  {% if d.categories %}
+  <table>
+    <thead>
+      <tr>
+        <th>{{ t('mail.email.account_statement.category') }}</th>
+        <th class="num">{{ t('mail.email.account_statement.income') }}</th>
+        <th class="num">{{ t('mail.email.account_statement.expense') }}</th>
+        <th class="num">{{ t('mail.email.account_statement.net') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in d.categories %}
+      <tr>
+        <td><span class="dot" style="background: {{ c.color or '#adb5bd' }}"></span>{{ c.name or t('mail.email.account_statement.no_category') }}</td>
+        <td class="num">{{ chf(c.income) if c.income else '–' }}</td>
+        <td class="num">{{ chf(-c.expense) if c.expense else '–' }}</td>
+        <td class="num {{ 'neg' if c.net < 0 else '' }}">{{ chf(c.net) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td>{{ t('mail.email.account_statement.total') }}</td>
+        <td class="num">{{ chf(d.income) }}</td>
+        <td class="num">{{ chf(-d.expense) }}</td>
+        <td class="num {{ 'neg' if d.net < 0 else '' }}">{{ chf(d.net) }}</td>
+      </tr>
+    </tfoot>
+  </table>
+  {% else %}
+  <p class="muted">{{ t('mail.email.account_statement.no_bookings') }}</p>
+  {% endif %}
+
+  <h2>{{ t('mail.email.account_statement.bookings') }}</h2>
+  {% if d.transactions %}
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 18mm">{{ t('mail.email.account_statement.date') }}</th>
+        <th>{{ t('mail.email.account_statement.description') }}</th>
+        <th>{{ t('mail.email.account_statement.category') }}</th>
+        <th class="num">{{ t('mail.email.account_statement.amount') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for tx in d.transactions %}
+      <tr>
+        <td class="muted">{{ fmt_date(tx.date) }}</td>
+        <td>{{ tx.description }}{% if tx.payee %}<br><span class="muted">{{ tx.payee }}</span>{% endif %}</td>
+        <td class="muted">{{ tx.category }}</td>
+        <td class="num {{ 'neg' if tx.amount < 0 else 'pos' }}">{{ chf(tx.amount) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">{{ t('mail.email.account_statement.no_bookings') }}</p>
+  {% endif %}
+
+  <h2>{{ t('mail.email.account_statement.open_items') }}</h2>
+  <table>
+    <tbody>
+      <tr>
+        <td>{{ t('mail.email.account_statement.open_invoices') }}</td>
+        <td class="num">{{ d.open_invoices.count }}</td>
+        <td class="num">CHF {{ chf(d.open_invoices.amount) }}</td>
+      </tr>
+      <tr>
+        <td>{{ t('mail.email.account_statement.overdue_invoices') }}</td>
+        <td class="num">{{ d.open_invoices.overdue }}</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>{{ t('mail.email.account_statement.pending') }}</td>
+        <td class="num">{{ d.pending.count }}</td>
+        <td class="num">CHF {{ chf(d.pending.amount) }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p class="footer">{{ t('mail.email.account_statement.footer', date=created) }}</p>
+</body>
+</html>

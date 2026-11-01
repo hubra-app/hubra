@@ -1,0 +1,9 @@
+{{ t('mail.email.account_statement.body', club_name=club_name, month=month) }}
+
+{{ t('mail.email.account_statement.opening') }}: {{ opening }}
+{{ t('mail.email.account_statement.income') }}: {{ income }}
+{{ t('mail.email.account_statement.expense') }}: {{ expense }}
+{{ t('mail.email.account_statement.closing') }}: {{ closing }}
+{{ t('mail.email.account_statement.open_invoices') }}: {{ t('mail.email.account_statement.open_invoices_value', count=open_invoices, amount=open_amount) }}
+
+{{ t('mail.email.account_statement.attached') }}

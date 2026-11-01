@@ -23,6 +23,10 @@ def test_defaults_match_the_old_fixed_values(app):
             "reminders_enabled": True,
             "first_reminder_days": 7,
             "second_reminder_days": 14,
+            "fee_anchor": "fixed_date",
+            "fee_anchor_month": 1,
+            "fee_anchor_day": 1,
+            "prorate_first_fee": True,
         }
 
 
