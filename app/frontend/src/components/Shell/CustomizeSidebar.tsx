@@ -11,7 +11,7 @@ import {
 } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
 import { useNavPrefs, useSidebarNav } from './useSidebarNav'
-import { moveNavEntry } from './nav'
+import { moveNavEntry, toggleNavMore } from './nav'
 import {
   customizeSidebarOpen,
   setCustomizeSidebarOpen,
@@ -19,31 +19,41 @@ import {
 } from './customizeSidebarStore'
 
 /**
- * Pin entries to the top of the sidebar, hide them, or move them up and down
- * within their section. Hidden entries stay one click away under "Weitere";
- * changes are saved on the account at once. Arrow buttons rather than drag
+ * Pin entries to the top of the sidebar, move them up and down (past the
+ * end of a section into the next one), or put them under "Weitere" and back.
+ * Changes are saved on the account at once. Arrow buttons rather than drag
  * and drop, so it works the same with a finger on a phone.
  */
 export function CustomizeSidebarModal() {
   const { t } = useT()
   const opened = useSyncExternalStore(subscribeCustomizeSidebar, customizeSidebarOpen)
   const phone = useMediaQuery('(max-width: 47.99em)')
-  const { groups } = useSidebarNav()
+  const { groups, homes } = useSidebarNav()
   const { prefs, save } = useNavPrefs()
   const iconSize = phone ? 'lg' : 'md'
 
-  const toggle = (path: string, key: 'pinned' | 'hidden') => {
-    // An entry is either pinned or hidden, not both.
-    const next = {
+  const togglePin = (path: string) => {
+    // A pinned entry is shown under Favoriten, so it leaves Weitere.
+    const pinned = prefs.pinned.includes(path)
+    save({
       ...prefs,
-      pinned: prefs.pinned.filter((p) => p !== path),
-      hidden: prefs.hidden.filter((p) => p !== path),
-    }
-    if (!prefs[key].includes(path)) next[key].push(path)
-    save(next)
+      pinned: pinned ? prefs.pinned.filter((p) => p !== path) : [...prefs.pinned, path],
+      hidden: pinned ? prefs.hidden : prefs.hidden.filter((p) => p !== path),
+    })
   }
 
-  const touched = prefs.pinned.length + prefs.hidden.length + (prefs.order?.length ?? 0) > 0
+  const toggleMore = (path: string, inMore: boolean) => {
+    const next = toggleNavMore(prefs, homes, path, inMore)
+    // Put under Weitere, an entry is no longer a favourite.
+    save(inMore ? next : { ...next, pinned: next.pinned.filter((p) => p !== path) })
+  }
+
+  const touched =
+    prefs.pinned.length +
+      prefs.hidden.length +
+      (prefs.order?.length ?? 0) +
+      Object.keys(prefs.sections ?? {}).length >
+    0
 
   return (
     <Modal
@@ -57,7 +67,7 @@ export function CustomizeSidebarModal() {
         {t('shell.customize.intro')}
       </Text>
       <Stack gap="md">
-        {groups.map((group) => (
+        {groups.map((group, g) => (
           <Box key={group.section} data-testid="customize-group">
             <Text
               fz={11}
@@ -73,9 +83,16 @@ export function CustomizeSidebarModal() {
             <Stack gap={2}>
               {group.items.map((item, index) => {
                 const pinned = prefs.pinned.includes(item.path)
-                const hidden = prefs.hidden.includes(item.path)
+                const inMore = group.section === 'more'
                 const pinLabel = t(pinned ? 'shell.customize.unpin' : 'shell.customize.pin')
-                const hideLabel = t(hidden ? 'shell.customize.show' : 'shell.customize.hide')
+                const moreLabel = t(inMore ? 'shell.customize.show' : 'shell.customize.hide')
+                // Past the end of a section the arrows move into the next
+                // one; favourites stay among themselves.
+                const fav = group.section === 'favourites'
+                const prev = groups[g - 1]
+                const next = groups[g + 1]
+                const canUp = index > 0 || (!fav && !!prev && prev.section !== 'favourites')
+                const canDown = index < group.items.length - 1 || (!fav && !!next)
                 const upLabel = t('shell.customize.moveUp')
                 const downLabel = t('shell.customize.moveDown')
                 return (
@@ -91,7 +108,7 @@ export function CustomizeSidebarModal() {
                     <Group
                       gap={10}
                       wrap="nowrap"
-                      style={{ minWidth: 0, opacity: hidden ? 0.55 : 1 }}
+                      style={{ minWidth: 0, opacity: inMore ? 0.7 : 1 }}
                     >
                       <span style={{ display: 'flex', color: 'var(--hb-text-2)' }}>
                         {item.icon}
@@ -107,9 +124,9 @@ export function CustomizeSidebarModal() {
                           color="gray"
                           size={iconSize}
                           aria-label={`${upLabel}: ${item.label}`}
-                          disabled={index === 0}
-                          style={{ visibility: index === 0 ? 'hidden' : undefined }}
-                          onClick={() => save(moveNavEntry(prefs, group, item.path, -1))}
+                          disabled={!canUp}
+                          style={{ visibility: canUp ? undefined : 'hidden' }}
+                          onClick={() => save(moveNavEntry(prefs, groups, homes, item.path, -1))}
                         >
                           <IconArrowUp size={18} />
                         </ActionIcon>
@@ -120,11 +137,9 @@ export function CustomizeSidebarModal() {
                           color="gray"
                           size={iconSize}
                           aria-label={`${downLabel}: ${item.label}`}
-                          disabled={index === group.items.length - 1}
-                          style={{
-                            visibility: index === group.items.length - 1 ? 'hidden' : undefined,
-                          }}
-                          onClick={() => save(moveNavEntry(prefs, group, item.path, 1))}
+                          disabled={!canDown}
+                          style={{ visibility: canDown ? undefined : 'hidden' }}
+                          onClick={() => save(moveNavEntry(prefs, groups, homes, item.path, 1))}
                         >
                           <IconArrowDown size={18} />
                         </ActionIcon>
@@ -136,21 +151,21 @@ export function CustomizeSidebarModal() {
                           size={iconSize}
                           aria-label={`${pinLabel}: ${item.label}`}
                           aria-pressed={pinned}
-                          onClick={() => toggle(item.path, 'pinned')}
+                          onClick={() => togglePin(item.path)}
                         >
                           {pinned ? <IconStarFilled size={18} /> : <IconStar size={18} />}
                         </ActionIcon>
                       </Tooltip>
-                      <Tooltip label={hideLabel} disabled={phone}>
+                      <Tooltip label={moreLabel} disabled={phone}>
                         <ActionIcon
                           variant="subtle"
                           color="gray"
                           size={iconSize}
-                          aria-label={`${hideLabel}: ${item.label}`}
-                          aria-pressed={hidden}
-                          onClick={() => toggle(item.path, 'hidden')}
+                          aria-label={`${moreLabel}: ${item.label}`}
+                          aria-pressed={inMore}
+                          onClick={() => toggleMore(item.path, inMore)}
                         >
-                          {hidden ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+                          {inMore ? <IconEyeOff size={18} /> : <IconEye size={18} />}
                         </ActionIcon>
                       </Tooltip>
                     </Group>
@@ -166,7 +181,7 @@ export function CustomizeSidebarModal() {
           variant="subtle"
           color="gray"
           disabled={!touched}
-          onClick={() => save({ pinned: [], hidden: [], order: [] })}
+          onClick={() => save({ pinned: [], hidden: [], order: [], sections: {} })}
         >
           {t('shell.customize.reset')}
         </Button>

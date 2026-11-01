@@ -1,7 +1,8 @@
 import { ScrollArea, Text, Box, UnstyledButton, Stack } from '@mantine/core'
 import { IconDotsVertical } from '@tabler/icons-react'
 import { useNav, useAuth } from '@/context/AppContext'
-import { NavItemRow } from './NavItemRow'
+import { NavItemRow, NavMoreRow, NavSectionLabel } from './NavItemRow'
+import { setCustomizeSidebarOpen } from './customizeSidebarStore'
 import { UserMenu } from './UserMenu'
 import { initials, contrastColor } from './nav'
 import { useSidebarNav } from './useSidebarNav'
@@ -10,7 +11,7 @@ import { roleLabels } from '@/roles'
 export function Sidebar() {
   const { go, sidebarCollapsed, userMenuOpen, setUserMenuOpen } = useNav()
   const { currentUser } = useAuth()
-  const { nav, activePath } = useSidebarNav()
+  const { nav, activePath, currentMore } = useSidebarNav()
   const userName = currentUser?.name ?? ''
   const userRole = roleLabels(currentUser?.roles)
   const userBg = currentUser?.avatarColor ?? '#ebe8f2'
@@ -37,34 +38,39 @@ export function Sidebar() {
             : undefined
         }
       >
-        <Stack gap={sidebarCollapsed ? 12 : 20} p={sidebarCollapsed ? 0 : 'sm'} pt={sidebarCollapsed ? 0 : 'md'}>
-          {nav.map((section) => (
+        <Stack
+          gap={sidebarCollapsed ? 12 : 20}
+          p={sidebarCollapsed ? 0 : 'sm'}
+          pt={sidebarCollapsed ? 0 : 'md'}
+        >
+          {nav.map((section, s) => (
             <Box key={section.label}>
               {!sidebarCollapsed && (
-                <Text
-                  fz={11}
-                  fw={700}
-                  c="gray.6"
-                  tt="uppercase"
-                  style={{
-                    letterSpacing: '0.08em',
-                    padding: '0 12px',
-                    marginBottom: 6,
-                  }}
-                >
-                  {section.label}
-                </Text>
+                <NavSectionLabel
+                  label={section.label}
+                  onEdit={s === 0 ? () => setCustomizeSidebarOpen(true) : undefined}
+                />
               )}
               <Stack gap={sidebarCollapsed ? 8 : 2}>
-                {section.items.map((item) => (
-                  <NavItemRow
-                    key={item.path}
-                    item={item}
-                    activePath={activePath}
-                    go={go}
-                    collapsed={sidebarCollapsed}
-                  />
-                ))}
+                {section.items.map((item) =>
+                  item.children && !sidebarCollapsed ? (
+                    <NavMoreRow
+                      key={item.path}
+                      item={item}
+                      activePath={activePath}
+                      currentMore={currentMore}
+                      go={go}
+                    />
+                  ) : (
+                    <NavItemRow
+                      key={item.path}
+                      item={item}
+                      activePath={activePath}
+                      go={go}
+                      collapsed={sidebarCollapsed}
+                    />
+                  ),
+                )}
               </Stack>
             </Box>
           ))}

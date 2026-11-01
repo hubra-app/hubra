@@ -25,6 +25,8 @@ LANGUAGES = ("de-CH", "en-GB")
 THEMES = ("light", "dark", "auto")
 NAV_PREF_KEYS = ("pinned", "hidden", "order")
 NAV_PREF_MAX = 100
+# Sidebar sections a person may move an entry into ("more" is `hidden`).
+NAV_SECTIONS = ("workspace", "activities", "operations", "system")
 
 
 def memberships(user_id: int) -> Iterator[tuple[Tenant, Member]]:
@@ -90,11 +92,19 @@ def profile(user: User) -> dict:
 
 def _nav_prefs(value) -> dict:
     value = value if isinstance(value, dict) else {}
-    return {key: list(value.get(key) or []) for key in NAV_PREF_KEYS}
+    prefs = {key: list(value.get(key) or []) for key in NAV_PREF_KEYS}
+    sections = value.get("sections")
+    prefs["sections"] = dict(sections) if isinstance(sections, dict) else {}
+    return prefs
+
+
+def _valid_nav_path(path) -> bool:
+    return isinstance(path, str) and path.startswith("/app/") and len(path) <= 200
 
 
 def _clean_nav_prefs(value) -> dict:
-    """Sidebar paths the person pinned, hid or reordered; the app checks permissions."""
+    """Sidebar paths the person pinned, hid, reordered or moved to another
+    section; the app checks permissions."""
     if not isinstance(value, dict):
         raise_error(400, "VALIDATION_ERROR", "navPrefs must be an object")
     clean = {}
@@ -103,9 +113,16 @@ def _clean_nav_prefs(value) -> dict:
         if not isinstance(paths, list) or len(paths) > NAV_PREF_MAX:
             raise_error(400, "VALIDATION_ERROR", f"navPrefs.{key} must be a short list")
         for path in paths:
-            if not (isinstance(path, str) and path.startswith("/app/") and len(path) <= 200):
+            if not _valid_nav_path(path):
                 raise_error(400, "VALIDATION_ERROR", f"navPrefs.{key} holds an invalid path")
         clean[key] = list(dict.fromkeys(paths))
+    sections = value.get("sections") or {}
+    if not isinstance(sections, dict) or len(sections) > NAV_PREF_MAX:
+        raise_error(400, "VALIDATION_ERROR", "navPrefs.sections must be a short object")
+    for path, section in sections.items():
+        if not _valid_nav_path(path) or section not in NAV_SECTIONS:
+            raise_error(400, "VALIDATION_ERROR", "navPrefs.sections holds an invalid entry")
+    clean["sections"] = dict(sections)
     return clean
 
 

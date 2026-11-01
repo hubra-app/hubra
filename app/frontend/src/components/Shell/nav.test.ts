@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { ModuleInfo, ModuleNavItem } from '@/api/modules'
-import { buildNav, getParentPath, moveNavEntry, MORE_PATH, type NavSection } from './nav'
+import {
+  buildNav,
+  getParentPath,
+  moveNavEntry,
+  MORE_PATH,
+  toggleNavMore,
+  type NavSection,
+} from './nav'
 
 const navItem = (
   path: string,
@@ -75,7 +82,7 @@ describe('buildNav', () => {
     expect(more).toEqual([])
   })
 
-  it('follows the person\'s order within a section, new entries last', () => {
+  it("follows the person's order within a section, new entries last", () => {
     const events = mod('events', [navItem('/app/events', [], { order: 30 })])
     const prefs = { pinned: [], hidden: [], order: ['/app/groups', '/app/members'] }
     const { nav } = buildNav(counts, t, [members, groups, events], () => true, prefs)
@@ -84,21 +91,68 @@ describe('buildNav', () => {
 
   it('moves entries within their group of the customise dialog', () => {
     const prefs = { pinned: ['/app/operations/codes', '/app/groups'], hidden: [], order: [] }
-    const { groups: dialog } = buildNav(counts, t, [members, groups, codes], () => true, prefs)
+    const { groups: dialog, homes } = buildNav(
+      counts,
+      t,
+      [members, groups, codes],
+      () => true,
+      prefs,
+    )
     expect(dialog.map((g) => g.section)).toEqual(['favourites', 'workspace'])
-    const fav = moveNavEntry(prefs, dialog[0], '/app/groups', -1)
+    const fav = moveNavEntry(prefs, dialog, homes, '/app/groups', -1)
     expect(fav.pinned).toEqual(['/app/groups', '/app/operations/codes'])
-    // The first entry can't move further up.
-    expect(moveNavEntry(prefs, dialog[0], '/app/operations/codes', -1)).toBe(prefs)
+    // The first entry can't move further up, and favourites stay together.
+    expect(moveNavEntry(prefs, dialog, homes, '/app/operations/codes', -1)).toBe(prefs)
+    expect(moveNavEntry(prefs, dialog, homes, '/app/groups', 1)).toBe(prefs)
 
     const plain = { pinned: [], hidden: [], order: [] }
-    const ws = buildNav(counts, t, [members, groups], () => true, plain).groups[0]
-    const moved = moveNavEntry(plain, ws, '/app/groups', -1)
+    const built = buildNav(counts, t, [members, groups], () => true, plain)
+    const moved = moveNavEntry(plain, built.groups, built.homes, '/app/groups', -1)
     expect(moved.order).toEqual(['/app/groups', '/app/members'])
     expect(paths(buildNav(counts, t, [members, groups], () => true, moved).nav)).toEqual([
       '/app/groups',
       '/app/members',
     ])
+  })
+
+  it('moves entries across sections and in and out of Weitere', () => {
+    const events = mod('events', [navItem('/app/events', [], { section: 'activities' })])
+    const all = [members, groups, events, codes]
+    const plain = { pinned: [], hidden: [], order: [], sections: {} }
+    let built = buildNav(counts, t, all, () => true, plain)
+    expect(built.groups.map((g) => g.section)).toEqual(['workspace', 'activities', 'more'])
+
+    // Down past the end of Verein: to the top of Vereinsleben.
+    let prefs = moveNavEntry(plain, built.groups, built.homes, '/app/groups', 1)
+    expect(prefs.sections).toEqual({ '/app/groups': 'activities' })
+    built = buildNav(counts, t, all, () => true, prefs)
+    expect(built.nav[1].items.map((i) => i.path)).toEqual(['/app/groups', '/app/events'])
+
+    // Down past the end of Vereinsleben: under Weitere, which lists its pages.
+    prefs = moveNavEntry(prefs, built.groups, built.homes, '/app/events', 1)
+    built = buildNav(counts, t, all, () => true, prefs)
+    expect(built.more.map((i) => i.path)).toEqual(['/app/events', '/app/operations/codes'])
+    const weitere = built.nav.flatMap((s) => s.items).find((i) => i.path === MORE_PATH)
+    expect(weitere?.children?.map((i) => i.path)).toEqual(['/app/events', '/app/operations/codes'])
+
+    // A page that starts under Weitere comes out to Betrieb, and goes back.
+    prefs = toggleNavMore(prefs, built.homes, '/app/operations/codes', true)
+    built = buildNav(counts, t, all, () => true, prefs)
+    expect(built.groups.find((g) => g.section === 'operations')?.items[0].path).toBe(
+      '/app/operations/codes',
+    )
+    prefs = toggleNavMore(prefs, built.homes, '/app/operations/codes', false)
+    built = buildNav(counts, t, all, () => true, prefs)
+    expect(built.more.map((i) => i.path)).toContain('/app/operations/codes')
+    // ... and out again to where it was before.
+    prefs = toggleNavMore(prefs, built.homes, '/app/operations/codes', true)
+    expect(prefs.hidden).not.toContain('/app/operations/codes')
+    expect(prefs.sections?.['/app/operations/codes']).toBe('operations')
+
+    // Moving back into its own section drops the override.
+    built = buildNav(counts, t, all, () => true, prefs)
+    prefs = moveNavEntry(prefs, built.groups, built.homes, '/app/groups', -1)
+    expect(prefs.sections?.['/app/groups']).toBeUndefined()
   })
 })
 

@@ -1,16 +1,9 @@
-import {
-  Drawer,
-  ScrollArea,
-  Group,
-  Text,
-  Box,
-  Stack,
-  ActionIcon,
-} from '@mantine/core'
+import { Drawer, ScrollArea, Group, Box, Stack, ActionIcon } from '@mantine/core'
 import { IconX } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
 import { useNav, useAuth } from '@/context/AppContext'
-import { NavItemRow } from './NavItemRow'
+import { NavItemRow, NavMoreRow, NavSectionLabel } from './NavItemRow'
+import { setCustomizeSidebarOpen } from './customizeSidebarStore'
 import { UserMenu } from './UserMenu'
 import { ClubMark } from './ClubMark'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
@@ -20,7 +13,7 @@ export function MobileDrawer() {
   const { t } = useT()
   const { go, mobileDrawerOpen, setMobileDrawerOpen } = useNav()
   const { currentUser } = useAuth()
-  const { nav, activePath } = useSidebarNav()
+  const { nav, activePath, currentMore } = useSidebarNav()
 
   return (
     <Drawer
@@ -58,31 +51,39 @@ export function MobileDrawer() {
 
       <ScrollArea h="calc(100vh - 56px)" type="auto">
         <Stack gap={16} p="sm">
-          {nav.map((section) => (
+          {nav.map((section, s) => (
             <Box key={section.label}>
-              <Text
-                fz={11}
-                fw={700}
-                c="gray.6"
-                tt="uppercase"
-                style={{
-                  letterSpacing: '0.08em',
-                  padding: '0 12px',
-                  marginBottom: 6,
-                }}
-              >
-                {section.label}
-              </Text>
+              <NavSectionLabel
+                label={section.label}
+                onEdit={
+                  s === 0 && currentUser
+                    ? () => {
+                        setMobileDrawerOpen(false)
+                        setCustomizeSidebarOpen(true)
+                      }
+                    : undefined
+                }
+              />
               <Stack gap={2}>
-                {section.items.map((item) => (
-                  <NavItemRow
-                    key={item.path}
-                    item={item}
-                    activePath={activePath}
-                    go={go}
-                    collapsed={false}
-                  />
-                ))}
+                {section.items.map((item) =>
+                  item.children ? (
+                    <NavMoreRow
+                      key={item.path}
+                      item={item}
+                      activePath={activePath}
+                      currentMore={currentMore}
+                      go={go}
+                    />
+                  ) : (
+                    <NavItemRow
+                      key={item.path}
+                      item={item}
+                      activePath={activePath}
+                      go={go}
+                      collapsed={false}
+                    />
+                  ),
+                )}
               </Stack>
             </Box>
           ))}

@@ -89,7 +89,7 @@ def test_sidebar_prefs_follow_the_account(client, db):
     user = _user_without_club(db)
     _login(client, "solo@test.ch")
     prefs = client.get("/api/v1/account/profile").get_json()["navPrefs"]
-    assert prefs == {"pinned": [], "hidden": [], "order": []}
+    assert prefs == {"pinned": [], "hidden": [], "order": [], "sections": {}}
 
     resp = client.patch(
         "/api/v1/account/profile",
@@ -98,6 +98,7 @@ def test_sidebar_prefs_follow_the_account(client, db):
                 "pinned": ["/app/finance", "/app/finance"],
                 "hidden": ["/app/groups"],
                 "order": ["/app/groups", "/app/members"],
+                "sections": {"/app/operations/codes": "operations"},
             }
         },
     )
@@ -106,6 +107,7 @@ def test_sidebar_prefs_follow_the_account(client, db):
         "pinned": ["/app/finance"],
         "hidden": ["/app/groups"],
         "order": ["/app/groups", "/app/members"],
+        "sections": {"/app/operations/codes": "operations"},
     }
     db.session.refresh(user)
     assert user.nav_prefs["hidden"] == ["/app/groups"]
@@ -117,6 +119,9 @@ def test_sidebar_prefs_follow_the_account(client, db):
         {"hidden": ["/app/" + "a" * 300]},
         {"pinned": [f"/app/p{i}" for i in range(101)]},
         {"order": ["/elsewhere"]},
+        {"sections": ["/app/groups"]},
+        {"sections": {"/app/groups": "more"}},
+        {"sections": {"/elsewhere": "system"}},
     ):
         resp = client.patch("/api/v1/account/profile", json={"navPrefs": bad})
         assert resp.status_code == 400, bad
