@@ -27,7 +27,7 @@ import {
   reconcileMailServer,
   type MailServerEntry,
 } from '@/api/platform'
-import { EventLogPanel, OutboundMailPanel } from './MailMonitor'
+import { OutboundMailPanel } from './MailMonitor'
 
 const MONO = "'JetBrains Mono', monospace"
 
@@ -574,7 +574,7 @@ function PermissionsPanel() {
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-const TABS = ['health', 'outbound-mail', 'events', 'mail-server', 'permissions'] as const
+const TABS = ['health', 'outbound-mail', 'mail-server', 'permissions'] as const
 type Tab = (typeof TABS)[number]
 
 /** Diagnostics of the whole instance, for platform staff (platform.diagnostics). */
@@ -584,24 +584,20 @@ export function Diagnostics() {
   const navigate = useNavigate()
   const last = location.pathname.split('/').pop() as Tab
   const tab: Tab = TABS.includes(last) ? last : 'health'
-  const search = new URLSearchParams(location.search)
-  const level = search.get('level')
-  const category = search.get('category')
 
   return (
     <div>
       <PageHead
         title={tr('Diagnose', 'Diagnostics')}
         desc={tr(
-          'Zustand der Plattform für alle Vereine: Dienste, Mail-Versand, Ereignisse, der gemeinsame Mailserver und die Berechtigungen der Vereins-API.',
-          'The state of the platform for every club: services, outbound mail, events, the shared mail server and the permissions of the club API.',
+          'Zustand der Plattform für alle Vereine: Dienste, Mail-Versand, der gemeinsame Mailserver und die Berechtigungen der Vereins-API.',
+          'The state of the platform for every club: services, outbound mail, the shared mail server and the permissions of the club API.',
         )}
       />
       <Tabs
         tabs={[
           { id: 'health', label: tr('Systemzustand', 'System health') },
           { id: 'outbound-mail', label: tr('Mail-Versand', 'Outbound mail') },
-          { id: 'events', label: tr('Ereignisse', 'Event log') },
           { id: 'mail-server', label: tr('Mailserver', 'Mail server') },
           { id: 'permissions', label: tr('API-Berechtigungen', 'API permissions') },
         ]}
@@ -612,18 +608,7 @@ export function Diagnostics() {
       {tab === 'outbound-mail' && (
         <OutboundMailPanel
           onShowLog={(lvl) =>
-            navigate(`/app/platform/diagnostics/events${lvl ? `?level=${lvl}` : '?category=mail'}`)
-          }
-        />
-      )}
-      {tab === 'events' && (
-        <EventLogPanel
-          key={location.search}
-          initialLevel={level === 'warning' || level === 'error' ? level : undefined}
-          initialCategory={
-            category === 'mail' || category === 'relay' || category === 'system' || category === 'alert'
-              ? category
-              : undefined
+            navigate(`/app/platform/alerts/events${lvl ? `?level=${lvl}` : '?category=mail'}`)
           }
         />
       )}

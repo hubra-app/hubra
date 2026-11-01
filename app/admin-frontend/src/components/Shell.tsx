@@ -26,6 +26,7 @@ import {
   IconDatabase,
   IconDotsVertical,
   IconHeartbeat,
+  IconBell,
   IconHome,
   IconKey,
   IconLayoutSidebarLeftCollapse,
@@ -324,7 +325,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
       ? [{ path: '/app/platform/backups', label: tr('Backups', 'Backups'), icon: <IconDatabase size={24} /> }]
       : []),
     ...(hasGlobalPermission('platform.diagnostics')
-      ? [{ path: '/app/platform/diagnostics', label: tr('Diagnose', 'Diagnostics'), icon: <IconHeartbeat size={24} /> }]
+      ? [
+          { path: '/app/platform/alerts', label: tr('Warnungen', 'Alerts'), icon: <IconBell size={24} /> },
+          { path: '/app/platform/diagnostics', label: tr('Diagnose', 'Diagnostics'), icon: <IconHeartbeat size={24} /> },
+        ]
       : []),
     ...(hasGlobalPermission('plugins.manage')
       ? [{ path: '/app/plugins', label: tr('Plugin-Katalog', 'Plugin catalogue'), icon: <IconPuzzle size={24} /> }]

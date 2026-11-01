@@ -166,7 +166,7 @@ export async function resumeMainRelay() {
   })
 }
 
-export type EventCategory = 'mail' | 'relay' | 'system' | 'alert'
+export type EventCategory = 'mail' | 'relay' | 'service' | 'backup' | 'plugin' | 'system' | 'alert'
 export type EventLevel = 'info' | 'warning' | 'error'
 
 export interface PlatformEvent {
@@ -201,7 +201,34 @@ export async function getPlatformEvents(params: {
   }>(`${P}/events?${qs}`)
 }
 
-export type AlertType = 'relay_down' | 'fallback_used' | 'delivery_failed' | 'system'
+export type AlertType =
+  | 'relay_down'
+  | 'fallback_used'
+  | 'delivery_failed'
+  | 'service_down'
+  | 'backup_failed'
+  | 'plugin_updates'
+  | 'system'
+
+export interface OpenProblem {
+  id: string
+  level: EventLevel
+  area: EventCategory
+  title: string
+  detail: string
+  /** Unix seconds. */
+  since: number | null
+  /** A manage path. */
+  link: string
+}
+
+export async function getAlertsOverview() {
+  return apiFetch<{
+    problems: OpenProblem[]
+    recent: PlatformEvent[]
+    counts: Partial<Record<EventCategory, { warning: number; error: number }>>
+  }>(`${P}/alerts/overview`)
+}
 
 export async function getMyAlerts() {
   return apiFetch<{ alerts: Record<AlertType, boolean>; email: string }>(`${P}/alerts/me`)

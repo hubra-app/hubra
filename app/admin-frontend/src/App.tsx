@@ -11,6 +11,7 @@ import { TenantDetail } from '@/screens/TenantDetail'
 import { PlatformSettings } from '@/screens/platform/PlatformSettings'
 import { Backups } from '@/screens/platform/Backups'
 import { Diagnostics } from '@/screens/platform/Diagnostics'
+import { Alerts } from '@/screens/platform/Alerts'
 import { ClubAdmins } from '@/screens/ClubAdmins'
 import { SSO_URL } from '@hubra/api-client'
 import { useLang } from '@/lang'
@@ -264,6 +265,23 @@ function AppRoutes() {
               <RequireGlobalPermission perm="platform.diagnostics">
                 <Shell>
                   <Diagnostics />
+                </Shell>
+              </RequireGlobalPermission>
+            }
+          />
+        ))}
+        <Route
+          path="/app/platform/diagnostics/events"
+          element={<Navigate to="/app/platform/alerts/events" replace />}
+        />
+        {['/app/platform/alerts', '/app/platform/alerts/:tab'].map((path) => (
+          <Route
+            key={path}
+            path={path}
+            element={
+              <RequireGlobalPermission perm="platform.diagnostics">
+                <Shell>
+                  <Alerts />
                 </Shell>
               </RequireGlobalPermission>
             }

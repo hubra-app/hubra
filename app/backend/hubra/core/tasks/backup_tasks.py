@@ -86,6 +86,9 @@ def create_scheduled_backups_task(
     failed = [r.tenant_slug or "global" for r in records if r.status != "completed"]
     if failed:
         logger.error("Scheduled %s backups failed for: %s", backup_type, failed)
+        from hubra.core.services import platform_monitor
+
+        platform_monitor.backups_failed(backup_type, records)
     return {"count": len(records), "failed": failed}
 
 
