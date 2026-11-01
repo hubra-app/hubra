@@ -16,6 +16,8 @@ from __future__ import annotations
 from celery import Celery, Task
 from flask import Flask
 
+from . import scheduling
+
 
 def make_celery(app: Flask) -> Celery:
     """Create and configure a Celery instance bound to a Flask application.
@@ -53,33 +55,46 @@ def make_celery(app: Flask) -> Celery:
                 options["headers"] = headers
             return super().apply_async(args, kwargs, **options)
 
+        def _header(self, name: str):
+            return getattr(self.request, name, None) or (
+                getattr(self.request, "headers", None) or {}
+            ).get(name)
+
         def __call__(self, *args: object, **kwargs: object) -> object:
             with app.app_context():
-                tenant_id = getattr(self.request, "tenant_id", None) or (
-                    getattr(self.request, "headers", None) or {}
-                ).get("tenant_id")
-                if tenant_id is None:
-                    return self.run(*args, **kwargs)
+                job = self._header(scheduling.HEADER)
+                if job:
+                    # Sent by beat: one run of this schedule entry at a time,
+                    # however many workers there are.
+                    return scheduling.run_exclusive(
+                        job, self._run_in_tenant, *args, **kwargs
+                    )
+                return self._run_in_tenant(*args, **kwargs)
 
-                from flask import g
+        def _run_in_tenant(self, *args: object, **kwargs: object) -> object:
+            tenant_id = self._header("tenant_id")
+            if tenant_id is None:
+                return self.run(*args, **kwargs)
 
-                from hubra.core.extensions import db
-                from hubra.core.models.tenant import Tenant
-                from hubra.core.tenant.context import (
-                    reset_search_path,
-                    set_search_path,
-                )
+            from flask import g
 
-                g.tenant = db.session.get(Tenant, int(tenant_id))
-                set_search_path(int(tenant_id))
-                try:
-                    return self.run(*args, **kwargs)
-                finally:
-                    # A failed task leaves the transaction aborted; SET
-                    # search_path would then fail and hide the real error.
-                    db.session.rollback()
-                    reset_search_path()
-                    g.tenant = None
+            from hubra.core.extensions import db
+            from hubra.core.models.tenant import Tenant
+            from hubra.core.tenant.context import (
+                reset_search_path,
+                set_search_path,
+            )
+
+            g.tenant = db.session.get(Tenant, int(tenant_id))
+            set_search_path(int(tenant_id))
+            try:
+                return self.run(*args, **kwargs)
+            finally:
+                # A failed task leaves the transaction aborted; SET
+                # search_path would then fail and hide the real error.
+                db.session.rollback()
+                reset_search_path()
+                g.tenant = None
 
     testing = app.config.get("TESTING", False)
     broker = (
@@ -224,6 +239,8 @@ def make_celery(app: Flask) -> Celery:
         },
         broker_connection_retry_on_startup=False,
         timezone="UTC",
+        # One send per schedule slot even with several beats; see scheduling.py.
+        beat_scheduler="hubra.core.tasks.scheduling:HubraScheduler",
     )
     conf["beat_schedule"].update(_module_schedules())
     if testing:

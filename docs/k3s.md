@@ -128,6 +128,8 @@ with SSL mode **Full (strict)**.
 - **Change settings:** edit `settings.yaml` and push.
 - **Change secrets:** edit `.env`, re-run `create-secrets.sh`, then run
   `kubectl -n hubra rollout restart deployment`.
+- **Scale out:** `backend` and `celery-worker` can run several replicas;
+  keep `celery-beat` at one. See [Running more than one replica](scaling.md).
 - **Logs:** `kubectl -n hubra logs deploy/backend -c flask-init` shows migrations.
 
 ## Moving data from Compose

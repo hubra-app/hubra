@@ -4,6 +4,11 @@ from logging.config import fileConfig
 from flask import current_app
 
 from alembic import context
+from sqlalchemy import text
+
+# pg_advisory_lock key for `flask db upgrade` ("hubra-db-upgrade" as ASCII
+# bytes, truncated to fit a bigint); plugins use their own key.
+MIGRATION_LOCK_KEY = 0x6875627261646275
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -120,12 +125,31 @@ def run_migrations_online():
     connectable = get_engine()
 
     with connectable.connect() as connection:
+        # Two pods starting at once (several API replicas, or an init
+        # container racing a manual `flask db upgrade`) take turns: the
+        # second waits here, then finds the database already at head.
+        # Session-level, so it outlives the migration's own transaction.
+        postgres = connection.dialect.name == "postgresql"
+        if postgres:
+            connection.execute(
+                text("SELECT pg_advisory_lock(:k)"), {"k": MIGRATION_LOCK_KEY}
+            )
+            connection.commit()
+
         context.configure(
             connection=connection, target_metadata=get_metadata(), **conf_args
         )
 
-        with context.begin_transaction():
-            context.run_migrations()
+        try:
+            with context.begin_transaction():
+                context.run_migrations()
+        finally:
+            if postgres:
+                connection.rollback()
+                connection.execute(
+                    text("SELECT pg_advisory_unlock(:k)"), {"k": MIGRATION_LOCK_KEY}
+                )
+                connection.commit()
 
 
 if context.is_offline_mode():
