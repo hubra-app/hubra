@@ -833,7 +833,8 @@
       "issued": "Issued",
       "notFound": "Invoice not found",
       "number": "Invoice number",
-      "paid": "Invoice paid."
+      "paid": "Invoice paid.",
+      "period": "Period"
     },
     "invoiceAmount": "Amount",
     "invoiceDeleted": "Invoice deleted.",
@@ -1002,6 +1003,102 @@
       "invoicesTitle": "Invoices and reminders",
       "bankHint": "The account and address on the QR invoices are set in the club settings.",
       "openBank": "Open bank details"
+    },
+    "summary": {
+      "title": "By category",
+      "category": "Category",
+      "uncategorized": "No category",
+      "total": "Total",
+      "year": "Year"
+    },
+    "recurring": {
+      "active": "Active",
+      "bookCompleted": "Book as paid (standing order)",
+      "bookCompletedHint": "Otherwise it is booked as open, and you confirm it once the money has moved.",
+      "countsForFees": "Counts towards the yearly expenses for membership fees",
+      "deleteBody": "Entries already booked are kept.",
+      "deleteTitle": "Delete «{{name}}»?",
+      "deleted": "Recurring transaction deleted",
+      "descriptionPlaceholder": "e.g. Clubhouse rent",
+      "edit": "Edit recurring transaction",
+      "end": "Last date (optional)",
+      "ended": "Ended",
+      "halfYearly": "Half-yearly",
+      "interval": "Repeats",
+      "intro": "Rent, insurance, association fees: enter them once, and Hubra books them on every due date.",
+      "monthly": "Monthly",
+      "new": "New recurring transaction",
+      "next": "Next booking",
+      "none": "No recurring transactions yet.",
+      "paused": "Paused",
+      "perYear": "Per year",
+      "quarterly": "Quarterly",
+      "required": "Description, amount and first date are required.",
+      "saved": "Recurring transaction saved",
+      "start": "First date",
+      "startHint": "Later dates follow at the chosen interval.",
+      "totalPerYear": "Total per year",
+      "yearly": "Yearly"
+    },
+    "fees": {
+      "title": "Membership fees",
+      "intro": "When the yearly fees are billed. How often (yearly, half-yearly, …) is set by the tiers and payment plans.",
+      "fixed": "On a fixed date for everyone",
+      "join": "On the join date",
+      "joinHint": "Each member is billed on the day they joined and on the same day every year after. Members without a join date are billed on the fixed date.",
+      "day": "Day",
+      "month": "Month",
+      "prorate": "Reduce the first fee when someone joins during the year",
+      "prorateHint": "By the months left, the join month counting in full. Example: joining in {{month}} with CHF 120 a year: 9 of 12 months, CHF 90."
+    },
+    "membershipFeePeriod": "Membership fee {{from}} – {{to}}",
+    "statement": {
+      "title": "Monthly account statement",
+      "intro": "On the 1st of every month, a PDF with the balance, sums per category, every booking and the open invoices of the month before, for example for the treasurer or the auditors.",
+      "enabled": "Send by email every month",
+      "email": "To this address",
+      "emailNeeded": "An email address is needed.",
+      "month": "Month",
+      "download": "Download PDF",
+      "sendNow": "Send now",
+      "sent": "Account statement on its way",
+      "sentTo": "To {{email}}"
+    },
+    "feeBasis": {
+      "title": "Yearly expenses",
+      "intro": "Percentage and formula tiers share the club's yearly expenses among the members. Choose where that sum comes from.",
+      "sourceLabel": "The sum comes from",
+      "source": {
+        "recurring": "Recurring expenses",
+        "recurringHint": "All running recurring expenses that count towards the yearly expenses, over one year.",
+        "lastYear": "Last year's expenses",
+        "lastYearHint": "The confirmed expenses of the last full billing year.",
+        "budget": "Budget",
+        "budgetHint": "The expenses in this year's approved budget (Budgets plugin).",
+        "manual": "Fixed amount",
+        "manualHint": "An amount you set yourself.",
+        "needsBudgets": "Needs the Budgets plugin."
+      },
+      "manual": "Yearly expenses (CHF)",
+      "extra": "Extra costs per year (CHF)",
+      "extraHint": "For costs not included, such as repairs.",
+      "reset": "Reset",
+      "noTiers": "No percentage or formula tier yet. Fixed-price tiers do not depend on this sum.",
+      "openTiers": "Open tiers",
+      "breakdown": "How the sum comes together",
+      "manualNoLines": "A fixed amount has no breakdown.",
+      "noBudget": "There is no approved budget for this year.",
+      "noLines": "No expenses found.",
+      "share": "Share",
+      "perYear": "Per year",
+      "extraLine": "Extra costs",
+      "total": "Yearly expenses",
+      "tiersTitle": "What it means for the tiers",
+      "tiersHint": "Fee per member and year, before reductions for joining mid-year.",
+      "tier": "Tier",
+      "members": "Members",
+      "now": "Before",
+      "new": "New"
     }
   },
   "functions": {
@@ -2078,7 +2175,9 @@
       "roles": "Administration › Roles",
       "health": "System › Health",
       "dashboardMe": "Dashboard › Personal",
-      "financeSettings": "Finance › Settings"
+      "financeSettings": "Finance › Settings",
+      "recurring": "Finance › Recurring",
+      "feeBasis": "Finance › Fee basis"
     },
     "emailVerify": {
       "banner": "Your private email address isn't verified yet. Some features are only available after that.",
@@ -2129,7 +2228,9 @@
       "translations": "Translations",
       "txCategories": "Categories",
       "activeMembersCount": "{{count}} active members",
-      "more": "More"
+      "more": "More",
+      "recurring": "Recurring",
+      "feeBasis": "Fee basis"
     },
     "noPermission": "You don't have permission to view this page.",
     "notif": {

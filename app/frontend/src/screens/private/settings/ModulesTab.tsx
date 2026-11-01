@@ -281,7 +281,7 @@ export function SettingInput({
       return (
         <Select
           {...common}
-          data={field.choices}
+          data={field.choices.map((c) => ({ value: c, label: field.choiceLabels?.[c] ?? c }))}
           value={typeof value === 'string' ? value : null}
           onChange={(v) => onChange(v)}
         />

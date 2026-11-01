@@ -26,7 +26,10 @@ test('the payment term is set under Finanzen › Einstellungen', async ({ page }
 
   const term = page.getByLabel('Zahlungsfrist (Tage)')
   await term.fill('21')
-  await page.getByRole('button', { name: 'Speichern' }).click()
+  const invoiceCard = page
+    .locator('.mantine-Paper-root')
+    .filter({ has: page.getByRole('heading', { name: 'Rechnungen und Mahnungen' }) })
+  await invoiceCard.getByRole('button', { name: 'Speichern' }).click()
   await expect(page.getByText('Einstellungen gespeichert').first()).toBeVisible()
   try {
     await page.reload()
@@ -39,6 +42,37 @@ test('the payment term is set under Finanzen › Einstellungen', async ({ page }
   await page.getByRole('button', { name: 'Bankangaben öffnen' }).click()
   await expect(page).toHaveURL(/\/app\/settings\/bank$/)
   await expect(page.getByLabel('IBAN oder QR-IBAN')).toBeVisible()
+})
+
+test('membership fees are billed on a fixed date or the join date', async ({ page }) => {
+  await page.goto(appUrl('finance/settings'))
+  const before = (await api<Module[]>(page, 'GET', '/modules/')).find((m) => m.code === 'finance')!
+  const card = page
+    .locator('.mantine-Paper-root')
+    .filter({ has: page.getByRole('heading', { name: 'Mitgliederbeiträge' }) })
+  try {
+    await card.getByLabel('Tag', { exact: true }).fill('15')
+    await card.getByRole('switch', { name: /Ersten Beitrag kürzen/ }).click({ force: true })
+    await card.getByRole('button', { name: 'Speichern' }).click()
+    await expect(page.getByText('Einstellungen gespeichert').first()).toBeVisible()
+    const after = (await api<Module[]>(page, 'GET', '/modules/')).find((m) => m.code === 'finance')!
+    expect(after.config).toMatchObject({
+      fee_anchor_day: 15,
+      prorate_first_fee: !(before.config.prorate_first_fee ?? true),
+      bill_on_join_date: false,
+      // The other card's settings are kept.
+      payment_term_days: before.config.payment_term_days ?? 30,
+    })
+
+    await card.getByText('Am Eintrittsdatum', { exact: true }).click()
+    await expect(card.getByLabel('Tag', { exact: true })).toBeHidden()
+    await card.getByRole('button', { name: 'Speichern' }).click()
+    await expect
+      .poll(async () => (await api<Module[]>(page, 'GET', '/modules/')).find((m) => m.code === 'finance')!.config.bill_on_join_date)
+      .toBe(true)
+  } finally {
+    await api(page, 'PUT', '/modules/finance/settings', { config: before.config })
+  }
 })
 
 test('club settings are split into Verein, Mitgliedschaft and Bank tabs', async ({ page }) => {
