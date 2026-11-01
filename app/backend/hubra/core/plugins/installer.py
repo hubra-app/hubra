@@ -58,16 +58,50 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def pinned_plugin_keys(repo) -> dict:
+    """The plugin keys pinned for *repo* when it was added ({} = old format)."""
+    from .trust import plugin_keys_of
+
+    try:
+        return plugin_keys_of({"plugin_keys": json.loads(repo.plugin_keys or "[]")})
+    except (ValueError, TypeError):
+        return {}
+
+
+def repository_plugin_keys(repo) -> dict:
+    """The keys plugins from *repo* may be signed with: the project's plugin
+    keys for the official repository, else the pinned ones, else (old format)
+    its index key."""
+    from .trust import official_keys
+
+    if repo.official:
+        return official_keys("plugins")
+    pinned = pinned_plugin_keys(repo)
+    if pinned:
+        return pinned
+    try:
+        return {repo.key_id: (repo.name, load_public(repo.public_key))}
+    except (ValueError, TypeError):
+        return {}
+
+
 def community_keys() -> dict:
-    """Keys trusted besides the official ones: added by hand, and those of the repositories."""
+    """Plugin keys trusted besides the official ones: added by hand, and the
+    plugin keys of the repositories.  An index key isn't one, unless its
+    repository is in the old format."""
     from hubra.core.models.plugin import PluginRepository, TrustedKey
 
     out = {}
     try:
-        keys = list(db.session.scalars(select(TrustedKey)))
+        keys = list(
+            db.session.scalars(select(TrustedKey).where(TrustedKey.purpose == "plugins"))
+        )
         repos = list(
             db.session.scalars(
-                select(PluginRepository).where(PluginRepository.enabled.is_(True))
+                select(PluginRepository).where(
+                    PluginRepository.enabled.is_(True),
+                    PluginRepository.official.is_(False),
+                )
             )
         )
     except Exception:
@@ -79,11 +113,41 @@ def community_keys() -> dict:
         except (ValueError, TypeError):
             continue
     for r in repos:
-        try:
-            out.setdefault(r.key_id, (r.name, load_public(r.public_key)))
-        except (ValueError, TypeError):
-            continue
+        for kid, entry in repository_plugin_keys(r).items():
+            out.setdefault(kid, entry)
     return out
+
+
+def index_key_ids(exclude_repo_id: int | None = None) -> set[str]:
+    """Keys that sign an index and nothing else: the official index keys (when
+    they are separate) and those of repositories with their own plugin keys."""
+    from hubra.core.models.plugin import PluginRepository
+
+    from .trust import official_keys
+
+    ids = set(official_keys("index")) - set(official_keys("plugins"))
+    for r in db.session.scalars(select(PluginRepository)):
+        if r.id != exclude_repo_id and (r.official or pinned_plugin_keys(r)):
+            if r.key_id not in official_keys("plugins"):
+                ids.add(r.key_id)
+    return ids
+
+
+def plugin_key_ids() -> set[str]:
+    """Keys that sign plugins: official, added by hand, and pinned by repositories."""
+    from hubra.core.models.plugin import PluginRepository, TrustedKey
+
+    from .trust import official_keys
+
+    ids = set(official_keys("plugins"))
+    ids |= set(
+        db.session.scalars(
+            select(TrustedKey.key_id).where(TrustedKey.purpose == "plugins")
+        )
+    )
+    for r in db.session.scalars(select(PluginRepository)):
+        ids |= set(pinned_plugin_keys(r))
+    return ids
 
 
 # ── Archives ─────────────────────────────────────────────────────────────────
@@ -649,8 +713,9 @@ def _get_index(url: str) -> dict:
 
 
 def preview_repository(url: str) -> dict:
-    """What adding this repository would trust: its name and key (from the index, checked against itself)."""
-    from .trust import key_id, official_keys, verify_index
+    """What adding this repository would trust: its name, its index key and its
+    plugin keys (from the index, checked against itself)."""
+    from .trust import key_entry, key_id, official_keys, plugin_keys_of, verify_index
 
     if not url.startswith("https://"):
         raise InstallError("the index URL starts with https://")
@@ -658,16 +723,45 @@ def preview_repository(url: str) -> dict:
     try:
         pub = load_public(str(doc.get("public_key", "")))
         verify_index(doc, pub)
+        listed = plugin_keys_of(doc)
     except (ValueError, TypeError) as exc:
         raise InstallError(f"{url}: {exc}") from exc
     kid = key_id(pub)
+    official = kid in official_keys("index")
+    if official:
+        stray = set(listed) - set(official_keys("plugins"))
+        if stray:
+            raise InstallError(
+                f"{url}: the official index lists plugin keys Hubra doesn't ship: {', '.join(sorted(stray))}"
+            )
+    elif listed:
+        # A key has one purpose: this index key can't be a known plugin key,
+        # and its plugin keys can't be known index keys.
+        if kid in plugin_key_ids():
+            raise InstallError(
+                f"{url}: its index key {kid} is already trusted for plugins; "
+                "an index key signs only the index"
+            )
+        clash = set(listed) & index_key_ids()
+        if clash:
+            raise InstallError(
+                f"{url}: {', '.join(sorted(clash))} signs another repository's index, "
+                "not plugins"
+            )
+    plugin_keys = official_keys("plugins") if official else listed
     return {
         "url": url,
         "name": str(doc.get("name") or url)[:64],
         "description": str(doc.get("description") or ""),
         "keyId": kid,
         "publicKey": doc["public_key"],
-        "official": kid in official_keys(),
+        "official": official,
+        # False: the old format, the index key signs the plugins too.
+        "separateKeys": bool(plugin_keys) and kid not in plugin_keys,
+        "pluginKeys": [
+            {"name": n, "keyId": k} for k, (n, _p) in sorted(plugin_keys.items())
+        ],
+        "pluginKeyEntries": [key_entry(n, p) for k, (n, p) in sorted(listed.items())],
         "plugins": len(doc["plugins"]),
         "generated": doc.get("generated"),
     }
@@ -692,11 +786,23 @@ def add_repository(url: str, key_id: str) -> object:
         url=url,
         key_id=info["keyId"],
         public_key=info["publicKey"],
+        # The official repository's plugin keys come from the image.
+        plugin_keys=""
+        if info["official"]
+        else json.dumps(info["pluginKeyEntries"], sort_keys=True),
         official=info["official"],
         added_by=_actor(),
     )
     db.session.add(repo)
-    _audit("add_plugin_repository", name, {"url": url, "keyId": info["keyId"]})
+    _audit(
+        "add_plugin_repository",
+        name,
+        {
+            "url": url,
+            "keyId": info["keyId"],
+            "pluginKeys": [k["keyId"] for k in info["pluginKeys"]],
+        },
+    )
     db.session.commit()
     _index_cache.pop(url, None)
     return repo
@@ -718,6 +824,7 @@ def fetch_repository(repo, force: bool = False) -> dict:
     try:
         doc = _get_index(repo.url)
         verify_index(doc, load_public(repo.public_key))
+        _check_plugin_keys(repo, doc)
         generated = _index_time(doc.get("generated"))
         if repo.index_generated and generated < _index_time(repo.index_generated):
             raise InstallError(
@@ -735,6 +842,28 @@ def fetch_repository(repo, force: bool = False) -> dict:
     return doc
 
 
+def _check_plugin_keys(repo, doc: dict) -> None:
+    """The index must list the plugin keys pinned when *repo* was added."""
+    from .trust import official_keys, plugin_keys_of
+
+    listed = set(plugin_keys_of(doc))
+    if repo.official:
+        stray = listed - set(official_keys("plugins"))
+        if stray:
+            raise InstallError(
+                f"the index lists plugin keys Hubra doesn't ship: {', '.join(sorted(stray))}"
+            )
+        return
+    pinned = set(pinned_plugin_keys(repo))
+    if listed != pinned:
+        raise InstallError(
+            "the index now lists other plugin keys "
+            f"({', '.join(sorted(listed)) or 'none'} instead of "
+            f"{', '.join(sorted(pinned)) or 'none'}); remove the repository "
+            "and add it again to trust them"
+        )
+
+
 OFFICIAL_SEEDED = "official_repo_seeded"
 OFFICIAL_NAME = "Hubra official"
 
@@ -747,7 +876,7 @@ def ensure_official_repository() -> None:
     from .trust import official_index_url, official_keys, public_b64
 
     url = official_index_url()
-    keys = official_keys()
+    keys = official_keys("index")
     if not url or not keys:
         return
     kid, (_, pub) = next(iter(keys.items()))
@@ -862,12 +991,11 @@ def install_from_repository(repo, pid: str, version: str | None = None) -> dict:
     if hashlib.sha256(blob).hexdigest() != entry["sha256"]:
         raise InstallError("download doesn't match the checksum in the index")
     info = stage(blob, source=f"{repo.name}: {zurl}", repository_id=repo.id)
-    if info["trust"].get("key_id") != repo.key_id or info["trust"]["status"] not in (
-        "official",
-        "community",
-    ):
+    if info["trust"].get("key_id") not in repository_plugin_keys(repo) or info[
+        "trust"
+    ]["status"] not in ("official", "community"):
         discard_stage(info["token"])
-        raise InstallError(f"'{pid}' isn't signed with {repo.name}'s key")
+        raise InstallError(f"'{pid}' isn't signed with one of {repo.name}'s plugin keys")
     return info
 
 

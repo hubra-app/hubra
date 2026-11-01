@@ -8,10 +8,21 @@ A signed plugin carries SIGNATURE.json next to plugin.yaml:
 
 Trust levels:
     bundled    shipped in the image (plugins/ in the repository)
-    official   signed with a key in hubra/core/plugins/keys/official/ (the project's key)
-    community  signed with a key an administrator added under Marketplace › Signing keys
+    official   signed with a plugin key in hubra/core/plugins/keys/official/ (the project's key)
+    community  signed with a plugin key an administrator added under Marketplace › Signing keys,
+               or one a trusted repository lists as its plugin key
     unsigned   no SIGNATURE.json: installs only after an administrator confirms
     invalid    signature doesn't verify, unknown key, or files were changed: never loaded
+
+Every key has one purpose:
+    plugins    signs plugin archives (SIGNATURE.json)
+    index      signs a repository's index.json
+
+A repository's index names its plugin keys (``plugin_keys``), and Hubra pins
+them with the index key when the repository is added.  Then the index key
+can't sign plugins: the job that rebuilds the index every hour never holds a
+key whose signature runs code.  An index without ``plugin_keys`` (the old
+format) uses one key for both.
 """
 
 from __future__ import annotations
@@ -30,6 +41,9 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
 
 SIGFILE = "SIGNATURE.json"
 OFFICIAL_DIR = Path(__file__).parent / "keys" / "official"
+# keys/official/*.pub sign plugins; keys/official/index/*.pub sign the official index.
+OFFICIAL_INDEX_DIR = OFFICIAL_DIR / "index"
+PURPOSES = ("plugins", "index")
 SKIP_DIRS = {"__pycache__", ".git", "node_modules"}
 
 
@@ -67,15 +81,51 @@ def official_index_url() -> str:
     return "" if "OWNER" in url else url.strip()
 
 
-def official_keys() -> dict[str, tuple[str, Ed25519PublicKey]]:
+def _keys_in(folder: Path) -> dict[str, tuple[str, Ed25519PublicKey]]:
     out = {}
-    if OFFICIAL_DIR.is_dir():
-        for f in sorted(OFFICIAL_DIR.glob("*.pub")):
+    if folder.is_dir():
+        for f in sorted(folder.glob("*.pub")):
             try:
                 k = load_public(f.read_text())
                 out[key_id(k)] = (f.stem, k)
             except (ValueError, TypeError):
                 continue
+    return out
+
+
+def official_keys(purpose: str = "plugins") -> dict[str, tuple[str, Ed25519PublicKey]]:
+    """The project's keys for *purpose*.  Without a key in keys/official/index/
+    the plugin key signs the index too (how it was before keys had a purpose)."""
+    if purpose not in PURPOSES:
+        raise ValueError(f"purpose is one of {', '.join(PURPOSES)}")
+    plugins = _keys_in(OFFICIAL_DIR)
+    if purpose == "plugins":
+        return plugins
+    return _keys_in(OFFICIAL_INDEX_DIR) or plugins
+
+
+def key_entry(name: str, pub: Ed25519PublicKey) -> dict:
+    """How an index lists one of its plugin keys."""
+    return {"name": name, "key_id": key_id(pub), "public_key": public_b64(pub)}
+
+
+def plugin_keys_of(doc: dict) -> dict[str, tuple[str, Ed25519PublicKey]]:
+    """The plugin keys an index lists ({} = the old format: its index key signs plugins).
+    Raises ValueError on a malformed entry or one whose id isn't its key's."""
+    raw = doc.get("plugin_keys") if isinstance(doc, dict) else None
+    if not raw:
+        return {}
+    if not isinstance(raw, list):
+        raise ValueError("plugin_keys is not a list")
+    out = {}
+    for e in raw:
+        if not isinstance(e, dict):
+            raise ValueError("plugin_keys holds something that isn't a key")
+        pub = load_public(str(e.get("public_key", "")))
+        kid = key_id(pub)
+        if str(e.get("key_id", kid)) != kid:
+            raise ValueError(f"plugin key {e.get('key_id')} is really {kid}")
+        out[kid] = (str(e.get("name") or kid)[:64], pub)
     return out
 
 
@@ -166,7 +216,7 @@ def verify(
             "key_id": "",
             "detail": f"unreadable signature: {exc}",
         }
-    keys = {k: ("official", n, pub) for k, (n, pub) in official_keys().items()}
+    keys = {k: ("official", n, pub) for k, (n, pub) in official_keys("plugins").items()}
     keys.update(
         {
             k: ("community", n, pub)
@@ -231,18 +281,31 @@ INDEX_FIELDS = ("name", "description", "key_id", "public_key", "generated", "plu
 
 
 def _index_payload(doc: dict) -> bytes:
-    return json.dumps(
-        {k: doc.get(k) for k in INDEX_FIELDS}, sort_keys=True, separators=(",", ":")
-    ).encode()
+    fields = {k: doc.get(k) for k in INDEX_FIELDS}
+    # Signed only when present, so an index in the old format verifies as before.
+    if doc.get("plugin_keys"):
+        fields["plugin_keys"] = doc["plugin_keys"]
+    return json.dumps(fields, sort_keys=True, separators=(",", ":")).encode()
 
 
-def sign_index(doc: dict, private_pem: bytes) -> dict:
-    """Add key_id, public_key and the signature to a repository index."""
+def sign_index(doc: dict, private_pem: bytes, plugin_keys: list | None = None) -> dict:
+    """Add key_id, public_key and the signature to a repository index.
+
+    *plugin_keys* (``key_entry`` dicts) are the keys its plugins are signed
+    with; the index key can't be one of them."""
     key = serialization.load_pem_private_key(private_pem, password=None)
     if not isinstance(key, Ed25519PrivateKey):
         raise ValueError("not an Ed25519 private key")
     pub = key.public_key()
     doc = {**doc, "key_id": key_id(pub), "public_key": public_b64(pub)}
+    if plugin_keys is not None:
+        doc["plugin_keys"] = sorted(plugin_keys, key=lambda e: e["key_id"])
+    if not doc.get("plugin_keys"):
+        doc.pop("plugin_keys", None)
+    if doc["key_id"] in plugin_keys_of(doc):
+        raise ValueError(
+            f"key {doc['key_id']} is listed as a plugin key; an index key signs only the index"
+        )
     doc["signature"] = base64.b64encode(key.sign(_index_payload(doc))).decode()
     return doc
 
@@ -259,3 +322,5 @@ def verify_index(doc: dict, pub: Ed25519PublicKey) -> None:
         pub.verify(base64.b64decode(doc["signature"]), _index_payload(doc))
     except (InvalidSignature, ValueError, TypeError) as exc:
         raise ValueError("bad index signature") from exc
+    if str(doc.get("key_id")) in plugin_keys_of(doc):
+        raise ValueError("the index key is also listed as a plugin key")
