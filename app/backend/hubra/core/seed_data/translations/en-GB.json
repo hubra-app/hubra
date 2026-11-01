@@ -3207,5 +3207,20 @@
   "account.push.hint": "Everything that shows in the bell (reminders, new events, polls) also as a notification on this device, for all your clubs.",
   "account.push.switch": "Browser notifications",
   "account.push.needsInstall": "On iPhone and iPad, first add Hubra to the home screen (Share › Add to Home Screen), then switch this on.",
-  "account.push.denied": "Notifications are blocked for this site in the browser. Allow them in the browser's site settings."
+  "account.push.denied": "Notifications are blocked for this site in the browser. Allow them in the browser's site settings.",
+  "mail.email.platform_alert.intro": "Something happened on the platform that you should look at:",
+  "mail.email.platform_alert.level_error": "Error",
+  "mail.email.platform_alert.level_warning": "Warning",
+  "mail.email.platform_alert.level_info": "Info",
+  "mail.email.platform_alert.when": "Time",
+  "mail.email.platform_alert.instance": "Instance",
+  "mail.email.platform_alert.button": "Open alerts",
+  "mail.email.platform_alert.why": "You get this mail as a platform admin. Choose which alerts you get by mail in manage under Platform › Alerts › My alerts.",
+  "mail.email.platform_alert.type.relay_down": "Mail relay",
+  "mail.email.platform_alert.type.fallback_used": "Fallback relay",
+  "mail.email.platform_alert.type.delivery_failed": "Mail delivery",
+  "mail.email.platform_alert.type.service_down": "Service",
+  "mail.email.platform_alert.type.backup_failed": "Backup",
+  "mail.email.platform_alert.type.plugin_updates": "Plugins",
+  "mail.email.platform_alert.type.system": "System"
 }

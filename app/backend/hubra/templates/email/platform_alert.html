@@ -1,0 +1,34 @@
+{% extends "email/base.html" %}
+{% import "email/_ui.html" as ui with context %}
+{% block preheader %}{{ alert_subject }}{% endblock %}
+{% block content %}
+{%- set tone = {
+  'error': ('#c0392b', '#fdecea', t('mail.email.platform_alert.level_error')),
+  'warning': ('#a15c07', '#fdf3e2', t('mail.email.platform_alert.level_warning')),
+  'info': ('#1f7a4d', '#e6f6ee', t('mail.email.platform_alert.level_info')),
+}[level] if level in ('error', 'warning', 'info') else ('#c0392b', '#fdecea', t('mail.email.platform_alert.level_error')) %}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 16px;">
+  <tr>
+    <td bgcolor="{{ tone[1] }}" style="background: {{ tone[1] }}; border-radius: 999px; padding: 4px 12px; font-family: {{ ui.font_body }}; font-size: 12px; font-weight: 700; line-height: 18px; letter-spacing: 0.4px; text-transform: uppercase; color: {{ tone[0] }};">{{ tone[2] }} &middot; {{ type_label }}</td>
+  </tr>
+</table>
+{% call ui.p() %}{{ t('mail.email.platform_alert.intro') }}{% endcall %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 20px;">
+  <tr>
+    <td style="border-left: 4px solid {{ tone[0] }}; padding: 4px 0 4px 16px;">
+      <p style="margin: 0 0 8px; font-family: 'Bricolage Grotesque', {{ ui.font_body }}; font-size: 18px; font-weight: 700; line-height: 24px; color: #1a1625;">{{ alert_subject }}</p>
+      {%- for line in lines %}
+      <p style="margin: 0 0 6px; font-family: {{ ui.font_body }}; font-size: 14px; line-height: 21px; color: #3d3750; overflow-wrap: anywhere;">{{ line }}</p>
+      {%- endfor %}
+    </td>
+  </tr>
+</table>
+{{ ui.facts([
+  (t('mail.email.platform_alert.when'), when, False),
+  (t('mail.email.platform_alert.instance'), instance, True),
+]) }}
+{% if alerts_url %}
+{{ ui.button(alerts_url, t('mail.email.platform_alert.button')) }}
+{% endif %}
+{% call ui.muted() %}{{ t('mail.email.platform_alert.why') }}{% endcall %}
+{% endblock %}
