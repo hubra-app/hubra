@@ -1,12 +1,11 @@
-"""Discord webhook alerting for infrastructure monitoring.
+"""System alerts for infrastructure monitoring.
 
-Uses urllib.request (no new dependencies). Configurable via DISCORD_WEBHOOK_URL.
+Alerts are posted by the Hubra bot to the platform Discord log channel
+(manage › Platform settings › Discord, category ``alerts``); see
+``services.platform_discord``.  Nothing is sent while that is not set up.
 """
 
-import json
 import logging
-import os
-import urllib.request
 from typing import Any
 
 _log = logging.getLogger(__name__)
@@ -17,16 +16,6 @@ COLOR_ORANGE = 0xF39C12  # Warning
 COLOR_GREEN = 0x2ECC71  # Resolved / OK
 
 
-def _get_webhook_url() -> str:
-    """Return the Discord webhook URL from config or environment."""
-    try:
-        from flask import current_app
-
-        return current_app.config.get("DISCORD_WEBHOOK_URL", "")
-    except RuntimeError:
-        return os.environ.get("DISCORD_WEBHOOK_URL", "")
-
-
 def send_alert(
     title: str,
     description: str,
@@ -35,7 +24,7 @@ def send_alert(
     *,
     staff: bool = True,
 ) -> bool:
-    """Send a Discord embed alert via webhook.
+    """Post an alert embed to the platform Discord log.
 
     Returns True if the alert was sent successfully, False otherwise.
     Never raises — alerting failures are silently logged.
@@ -46,10 +35,6 @@ def send_alert(
     """
     if staff:
         _to_platform_staff(title, description, fields, color)
-    url = _get_webhook_url()
-    if not url:
-        _log.debug("DISCORD_WEBHOOK_URL not configured, skipping alert")
-        return False
 
     embed: dict[str, Any] = {
         "title": title,
@@ -63,21 +48,9 @@ def send_alert(
             for f in fields
         ]
 
-    payload = json.dumps({"embeds": [embed]}).encode("utf-8")
+    from hubra.core.services import platform_discord
 
-    try:
-        req = urllib.request.Request(
-            url,
-            data=payload,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            # Discord returns 204 No Content on success
-            return resp.status in (200, 204)
-    except Exception:
-        _log.warning("Failed to send Discord alert: %s", title, exc_info=True)
-        return False
+    return platform_discord.post_alert(embed)
 
 
 def _to_platform_staff(title, description, fields, color) -> None:
