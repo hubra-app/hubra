@@ -1,0 +1,13 @@
+{% extends "email/base.html" %}
+{% import "email/_ui.html" as ui with context %}
+{% block preheader %}{{ t('mail.email.signup_existing.intro', club_name=club_name) | striptags }}{% endblock %}
+{% block content %}
+{% call ui.p() %}{{ t('mail.email.signup_existing.intro', club_name=club_name) }}{% endcall %}
+{% call ui.p() %}{{ t('mail.email.signup_existing.was_you') }}{% endcall %}
+{% call ui.p() %}{{ t('mail.email.signup_existing.not_you') }}{% endcall %}
+{% if login_url %}
+{{ ui.button(login_url, t('mail.email.signup_existing.button')) }}
+{% call ui.muted() %}<a href="{{ reset_url }}" target="_blank" style="color: #7441e0; font-weight: 600;">{{ t('mail.email.signup_existing.reset') }}</a>{% endcall %}
+{{ ui.fallback_link(login_url) }}
+{% endif %}
+{% endblock %}

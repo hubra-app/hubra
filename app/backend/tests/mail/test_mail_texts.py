@@ -80,6 +80,9 @@ def test_names_with_special_characters_stay_one_address(app, db):
         def ehlo(self):
             pass
 
+        def has_extn(self, name):
+            return False
+
         def sendmail(self, sender, rcpts, raw):
             sent["raw"] = raw
 

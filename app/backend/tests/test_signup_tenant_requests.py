@@ -719,3 +719,32 @@ def test_a_mail_failure_does_not_undo_the_decision(client, db):
     assert resp.status_code == 200
     assert resp.get_json()["notified"] is False
     assert db.session.get(TenantRequest, req_id).status == "rejected"
+
+
+def test_signup_existing_email_is_neutral_with_mail(client, db, monkeypatch):
+    """With mail configured, a taken address gets the same 201 as a fresh
+    sign-up (no cookies), and the owner gets a mail — no enumeration."""
+    from hubra.core.services import email as email_svc
+    from hubra.core.services import email_verification
+
+    client.post(
+        "/api/v1/auth/signup",
+        json={"name": "First", "email": "dup2@example.com", "password": "Str0ng!Passw0rd"},
+    )
+    monkeypatch.setattr(email_verification, "mail_configured", lambda: True)
+    sent = []
+    monkeypatch.setattr(
+        email_svc, "send_signup_existing_account", lambda to, name, **kw: sent.append(to)
+    )
+    resp = client.post(
+        "/api/v1/auth/signup",
+        json={"name": "Again", "email": "dup2@example.com", "password": "Str0ng!Passw0rd"},
+    )
+    assert resp.status_code == 201
+    assert resp.get_json().get("noTenant") is True
+    assert sent == ["dup2@example.com"]
+    # No session for the requester.
+    assert not any(
+        c.startswith("access_token_cookie=") and "=;" not in c.split(";")[0]
+        for c in resp.headers.getlist("Set-Cookie")
+    )

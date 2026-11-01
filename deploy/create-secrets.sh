@@ -32,7 +32,9 @@ trap 'rm -rf "$tmp"' EXIT INT TERM
 env_out="$tmp/env"
 sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' "$ENV_FILE" | sort -u | grep -vx DATABASE_URL |
   while read -r key; do printf '%s=%s\n' "$key" "$(printenv "$key" || true)"; done > "$env_out"
-echo "DATABASE_URL=postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/$POSTGRES_DB" >> "$env_out"
+# The app connects as its own unprivileged role where one is configured
+# (scripts/pg-app-role-upgrade.sh creates it on an existing database).
+echo "DATABASE_URL=postgresql://${POSTGRES_APP_USER:-$POSTGRES_USER}:${POSTGRES_APP_PASSWORD:-$POSTGRES_PASSWORD}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/$POSTGRES_DB" >> "$env_out"
 apply create secret generic hubra-env --from-env-file="$env_out"
 
 if [ -n "${POSTGRES_HOST:-}" ]; then
