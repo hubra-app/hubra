@@ -1,3 +1,4 @@
+import { withStepUp } from '@/api/stepUp'
 import { apiFetch, apiFetchRaw } from '@hubra/api-client'
 
 const P = '/manager/plugins'
@@ -162,7 +163,7 @@ export const getPluginStatus = () =>
 export async function uploadPlugin(file: File): Promise<StagedPlugin> {
   const form = new FormData()
   form.append('file', file)
-  const res = await apiFetchRaw(`${P}/upload`, { method: 'POST', body: form })
+  const res = await withStepUp(() => apiFetchRaw(`${P}/upload`, { method: 'POST', body: form }))
   return res.json()
 }
 
@@ -171,9 +172,11 @@ export const confirmStaged = (
   acceptUnsigned: boolean,
   repositoryId: number | null,
 ) =>
-  apiFetch<PluginChange>(
-    `${P}/stage/${token}/confirm`,
-    json('POST', { acceptUnsigned, repositoryId }),
+  withStepUp(() =>
+    apiFetch<PluginChange>(
+      `${P}/stage/${token}/confirm`,
+      json('POST', { acceptUnsigned, repositoryId }),
+    ),
   )
 
 export const discardStaged = (token: string) =>
@@ -183,21 +186,26 @@ export const installPlugin = (
   id: string,
   body: { version?: string; repositoryId?: number | null },
 ) =>
-  apiFetch<{ installed?: PluginChange; staged?: StagedPlugin }>(
-    `${P}/${id}/install`,
-    json('POST', body),
+  withStepUp(() =>
+    apiFetch<{ installed?: PluginChange; staged?: StagedPlugin }>(
+      `${P}/${id}/install`,
+      json('POST', body),
+    ),
   )
 
 export const rollbackPlugin = (id: string) =>
-  apiFetch<PluginChange>(`${P}/${id}/rollback`, json('POST'))
+  withStepUp(() => apiFetch<PluginChange>(`${P}/${id}/rollback`, json('POST')))
 
 export const holdPlugin = (id: string, version: string | null) =>
   apiFetch<{ held: string }>(`${P}/${id}/hold`, json('PUT', { version }))
 
 export const uninstallPlugin = (id: string, deleteData: boolean) =>
-  apiFetch<PluginChange>(`${P}/${id}${deleteData ? '?deleteData=1' : ''}`, json('DELETE'))
+  withStepUp(() =>
+    apiFetch<PluginChange>(`${P}/${id}${deleteData ? '?deleteData=1' : ''}`, json('DELETE')),
+  )
 
-export const setUpdateMode = (mode: UpdateMode) => apiFetch(`${P}/updates`, json('PUT', { mode }))
+export const setUpdateMode = (mode: UpdateMode) =>
+  withStepUp(() => apiFetch(`${P}/updates`, json('PUT', { mode })))
 
 export const checkUpdates = () => apiFetch<unknown>(`${P}/updates/check`, json('POST'))
 
@@ -207,17 +215,20 @@ export const previewRepository = (url: string) =>
   apiFetch<RepositoryPreview>(`${P}/repositories/preview`, json('POST', { url }))
 
 export const addRepository = (url: string, keyId: string) =>
-  apiFetch<PluginRepository>(`${P}/repositories`, json('POST', { url, keyId }))
+  withStepUp(() => apiFetch<PluginRepository>(`${P}/repositories`, json('POST', { url, keyId })))
 
 export const setRepositoryEnabled = (id: number, enabled: boolean) =>
-  apiFetch<PluginRepository>(`${P}/repositories/${id}`, json('PUT', { enabled }))
+  withStepUp(() => apiFetch<PluginRepository>(`${P}/repositories/${id}`, json('PUT', { enabled })))
 
 export const deleteRepository = (id: number) =>
-  apiFetch<void>(`${P}/repositories/${id}`, json('DELETE'))
+  withStepUp(() => apiFetch<void>(`${P}/repositories/${id}`, json('DELETE')))
 
 export const listTrustedKeys = () => apiFetch<TrustedKey[]>(`${P}/keys`)
 
 export const addTrustedKey = (name: string, publicKey: string) =>
-  apiFetch<TrustedKey>(`${P}/keys`, json('POST', { name, publicKey, purpose: 'plugins' }))
+  withStepUp(() =>
+    apiFetch<TrustedKey>(`${P}/keys`, json('POST', { name, publicKey, purpose: 'plugins' })),
+  )
 
-export const deleteTrustedKey = (id: number) => apiFetch<void>(`${P}/keys/${id}`, json('DELETE'))
+export const deleteTrustedKey = (id: number) =>
+  withStepUp(() => apiFetch<void>(`${P}/keys/${id}`, json('DELETE')))

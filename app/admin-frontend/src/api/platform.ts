@@ -1,3 +1,4 @@
+import { withStepUp } from '@/api/stepUp'
 import { apiFetch } from '@hubra/api-client'
 
 const P = '/manager/platform'
@@ -279,16 +280,20 @@ export async function getEncryption() {
 
 /** Without `newKeys`: move everything onto the current keys. With it, new data keys too. */
 export async function rotateEncryption(newKeys = false, tenantId?: number) {
-  return apiFetch<KeyReport>(`${P}/encryption/rotate`, {
-    method: 'POST',
-    body: JSON.stringify(newKeys ? { new_keys: true, tenant_id: tenantId } : {}),
-  })
+  return withStepUp(() =>
+    apiFetch<KeyReport>(`${P}/encryption/rotate`, {
+      method: 'POST',
+      body: JSON.stringify(newKeys ? { new_keys: true, tenant_id: tenantId } : {}),
+    }),
+  )
 }
 
 /** `null` removes the club's own backup key. */
 export async function setClubBackupKey(tenantId: number, publicKey: string | null) {
-  return apiFetch<{ tenant_id: number; backup_public_key: string | null }>(
-    `${P}/clubs/${tenantId}/backup-key`,
-    { method: 'PUT', body: JSON.stringify({ public_key: publicKey }) },
+  return withStepUp(() =>
+    apiFetch<{ tenant_id: number; backup_public_key: string | null }>(
+      `${P}/clubs/${tenantId}/backup-key`,
+      { method: 'PUT', body: JSON.stringify({ public_key: publicKey }) },
+    ),
   )
 }

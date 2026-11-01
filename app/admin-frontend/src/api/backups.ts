@@ -1,3 +1,4 @@
+import { withStepUp } from '@/api/stepUp'
 import { apiFetch } from '@hubra/api-client'
 
 // Backups are the platform's (backups.manage): one global backup of the
@@ -65,10 +66,12 @@ export async function restoreBackup(
   confirm: string,
   privateKey?: string,
 ): Promise<{ task_id: string; status: string }> {
-  return apiFetch<{ task_id: string; status: string }>(`${B}/${id}/restore`, {
-    method: 'POST',
-    body: JSON.stringify(privateKey ? { confirm, private_key: privateKey } : { confirm }),
-  })
+  return withStepUp(() =>
+    apiFetch<{ task_id: string; status: string }>(`${B}/${id}/restore`, {
+      method: 'POST',
+      body: JSON.stringify(privateKey ? { confirm, private_key: privateKey } : { confirm }),
+    }),
+  )
 }
 
 export async function getBackupConfig(): Promise<BackupConfigStatus> {
@@ -87,5 +90,5 @@ export async function verifyBackup(
 }
 
 export async function deleteBackup(id: string): Promise<void> {
-  await apiFetch(`${B}/${id}`, { method: 'DELETE' })
+  await withStepUp(() => apiFetch(`${B}/${id}`, { method: 'DELETE' }))
 }

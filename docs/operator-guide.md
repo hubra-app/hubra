@@ -352,6 +352,16 @@ Someone who lost both the app and the recovery codes: check that it really
 is them, then run `flask reset-mfa --email them@example.org`. They sign in
 with the password alone and set it up again.
 
+The platform API itself runs only on an *account* sign-in: a club session's
+token is refused there (`ACCOUNT_TOKEN_REQUIRED`), so a script in the club
+app can never drive manage with a staff member's session. Sign-ins from
+before this rule lack the account cookie; signing in again fixes a manage
+that suddenly asks for it. The destructive actions — installing or removing
+plugins, restoring or deleting backups, rotating encryption keys, opening a
+club as a member — additionally ask for the password (and the code, with
+two-factor on) again and hold that for ten minutes (`STEP_UP_REQUIRED`;
+`STEP_UP_ENFORCED=false` switches the rule off).
+
 ## Day to day
 
 ```sh

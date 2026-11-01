@@ -15,6 +15,7 @@ import time
 
 from flask import Blueprint, g, jsonify, request
 
+from hubra.api.auth.account_token import require_step_up
 from hubra.api.permissions import require_global_permission
 from hubra.core.errors import api_error
 from hubra.core.extensions import db, limiter
@@ -534,6 +535,7 @@ def encryption_status():
 
 @platform_bp.post("/encryption/rotate")
 @require_global_permission(_PERM)
+@require_step_up
 def encryption_rotate():
     """Move every stored value onto the current keys (after a master key
     change).  Body ``{"new_keys": true, "tenant_id": <id>?}`` also makes new
@@ -568,6 +570,7 @@ def encryption_rotate():
 
 @platform_bp.put("/clubs/<int:tenant_id>/backup-key")
 @require_global_permission(_PERM)
+@require_step_up
 def set_club_backup_key(tenant_id: int):
     """Body ``{"public_key": "age1..." | null}``: the club's own backup key.
     Its next backups are encrypted to it as well as to the platform key."""

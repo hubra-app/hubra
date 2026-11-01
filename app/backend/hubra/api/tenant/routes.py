@@ -24,6 +24,7 @@ from flask_jwt_extended import (
 )
 from sqlalchemy import func, select
 
+from hubra.api.auth.account_token import require_step_up
 from hubra.api.permissions import (
     check_global_grant,
     check_impersonation_restriction,
@@ -335,6 +336,7 @@ _IMPERSONATION_TIMEOUT_MINUTES = 30
 
 @tenant_admin_bp.route("/tenants/<int:tenant_id>/impersonate", methods=["POST"])
 @require_global_permission("impersonate")
+@require_step_up
 def impersonate_tenant_user(tenant_id: int):
     """Start impersonating a user within a tenant.
 
