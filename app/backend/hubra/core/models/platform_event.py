@@ -7,7 +7,7 @@ or IMAP, failed scheduled backups, plugin updates, system alerts (disk,
 failing tasks, API error rate) and the alerts sent to platform staff.  People's
 actions stay in ``global_audit_logs``; this is the monitoring side.
 
-Shown in manage › Diagnostics › Event log, kept for ``RETENTION_DAYS``.
+Shown in manage › Diagnostics › Event log, kept for the platform setting ``alerts.retention_days`` (30 by default).
 """
 
 from __future__ import annotations

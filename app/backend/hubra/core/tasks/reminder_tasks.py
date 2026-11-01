@@ -42,9 +42,11 @@ def club_zone() -> ZoneInfo:
     from hubra.core.tenant.context import current_tenant
 
     tenant = current_tenant()
-    name = ((tenant.settings or {}).get("branding") or {}).get(
-        "timezone"
-    ) if tenant else None
+    name = (
+        ((tenant.settings or {}).get("branding") or {}).get("timezone")
+        if tenant
+        else None
+    )
     try:
         return ZoneInfo(name or DEFAULT_TZ)
     except Exception:
@@ -110,7 +112,9 @@ def _mail(member, template: str, **context) -> bool:
     if not member.email or not member.private_email_verified:
         return False
     lang = member.language or DEFAULT_LANG
-    ctx = {key: value(lang) if callable(value) else value for key, value in context.items()}
+    ctx = {
+        key: value(lang) if callable(value) else value for key, value in context.items()
+    }
     body_html, body_text, subject = render_mail_template(
         template,
         locale=lang,
@@ -206,7 +210,14 @@ def _send_event_reminders(now: datetime | None = None) -> dict:
         path = event_link(event.id)
         link = _club_url(path)
         for member in event_recipients(event):
-            notify_member(member.id, "info", "Event reminder", event.title, link=path)
+            notify_member(
+                member.id,
+                "info",
+                "Event reminder",
+                event.title,
+                link=path,
+                topic="event_reminders",
+            )
             summary["notified"] += 1
             if member.event_reminder_mail and _mail(
                 member,
@@ -308,6 +319,7 @@ def _send_poll_reminders(now: datetime | None = None) -> dict:
                 f"Reminder: {poll.question}",
                 "Please cast your vote before the poll closes.",
                 link=path,
+                topic="poll_reminders",
             )
             summary["notified"] += 1
             if member.poll_reminder_mail and _mail(

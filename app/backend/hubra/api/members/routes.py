@@ -165,6 +165,34 @@ def set_my_reminders():
     return jsonify(_reminders(member)), 200
 
 
+# ── GET/PUT /members/me/notifications ───────────────────────────────────────
+
+
+@members_bp.get("/me/notifications")
+@jwt_required()
+def get_my_notifications():
+    """Per topic, whether the member gets it in the bell, by browser push
+    and (reminders only) by mail."""
+    from hubra.api.notifications import prefs
+
+    return jsonify({"topics": prefs.prefs_for(get_current_member())}), 200
+
+
+@members_bp.put("/me/notifications")
+@jwt_required()
+def set_my_notifications():
+    """Body ``{topic: {channel: bool}}``; what is left out keeps its value."""
+    from hubra.api.notifications import prefs
+
+    body = request.get_json(silent=True)
+    if err := prefs.validate(body):
+        raise_error(422, "VALIDATION_ERROR", err)
+    member = get_current_member()
+    prefs.apply(member, body)
+    db.session.commit()
+    return jsonify({"topics": prefs.prefs_for(member)}), 200
+
+
 # ── GET /members/count ───────────────────────────────────────────────────────
 
 

@@ -239,10 +239,17 @@ def _smtp(fail_login=False):
 
 def test_check_relay_logs_in_without_sending(db, relays):
     server = _smtp()
-    with patch("hubra.core.services.platform_monitor.smtplib.SMTP", return_value=server):
+    with patch(
+        "hubra.core.services.platform_monitor.smtplib.SMTP", return_value=server
+    ):
         result = platform_monitor.check_relay("relay")
     assert result["ok"] is True
-    assert [s["step"] for s in result["steps"]] == ["connect", "ehlo", "starttls", "login"]
+    assert [s["step"] for s in result["steps"]] == [
+        "connect",
+        "ehlo",
+        "starttls",
+        "login",
+    ]
     server.login.assert_called_once_with("infomaniak-login", "secret")
     server.sendmail.assert_not_called()
 
@@ -326,7 +333,9 @@ def test_check_now_and_use_main(client, staff_headers, db, relays):
     assert [r["which"] for r in resp.get_json()["results"]] == ["fallback"]
     assert client.get(f"{BASE}/mail-relay").get_json()["relays"][1]["last_check"]["ok"]
 
-    assert client.post(f"{BASE}/mail-relay/check", json={"which": "x"}).status_code == 400
+    assert (
+        client.post(f"{BASE}/mail-relay/check", json={"which": "x"}).status_code == 400
+    )
 
     relays.keys[email._PRIMARY_DOWN_KEY] = "1"
     resp = client.post(f"{BASE}/mail-relay/use-main")
@@ -363,3 +372,68 @@ def test_my_alert_choices(client, staff_headers, db, seeded_db):
 
     assert client.put(f"{BASE}/alerts/me", json={"nope": True}).status_code == 400
     assert client.put(f"{BASE}/alerts/me", json={"system": "yes"}).status_code == 400
+
+
+def test_support_sees_alerts_but_gets_no_mail(db, seeded_db, staff):
+    from hubra.api.global_rbac_seed import seed_global_rbac
+    from hubra.core.models.global_role import GlobalRole, UserGlobalRole
+    from hubra.core.models.user import User
+
+    seed_global_rbac()
+    roles = {r.name: r for r in db.session.query(GlobalRole).all()}
+    support = User(email="support@example.com", first_name="Su", last_name="P")
+    admin = User(email="admin@example.com", first_name="Ad", last_name="M")
+    for u in (support, admin):
+        u.set_password("password123")
+    db.session.add_all([support, admin])
+    db.session.flush()
+    db.session.add_all(
+        [
+            UserGlobalRole(user_id=support.id, role_id=roles["Support"].id),
+            UserGlobalRole(user_id=admin.id, role_id=roles["Platform admin"].id),
+        ]
+    )
+    db.session.commit()
+
+    emails = {u.email for u in platform_monitor.recipients("delivery_failed")}
+    assert "admin@example.com" in emails
+    assert "support@example.com" not in emails
+    assert platform_monitor.gets_alert_mails(support) is False
+    assert platform_monitor.gets_alert_mails(admin) is True
+
+
+def test_cooldown_and_retention_are_platform_settings(db, relays, staff):
+    from hubra.core.services import platform_settings
+
+    platform_settings.set_many(
+        {"alerts.cooldown_minutes": "0", "alerts.retention_days": "7"}
+    )
+    db.session.commit()
+    with patch.object(email, "_deliver", side_effect=OSError("down")):
+        for _ in range(2):
+            with pytest.raises(email.EmailDeliveryError):
+                _send()
+    assert len(_events(db, category="alert", kind="delivery_failed")) == 2
+
+    old = _events(db, kind="mail.failed")[0]
+    old.created_at = datetime.now(timezone.utc) - timedelta(days=8)
+    db.session.commit()
+    assert platform_monitor.prune() == 1
+
+
+def test_alert_settings_are_validated(db):
+    from hubra.core.services import platform_settings
+
+    for key, value in (
+        ("alerts.cooldown_minutes", "-5"),
+        ("alerts.cooldown_minutes", "2000"),
+        ("alerts.retention_days", "0"),
+        ("alerts.retention_days", "400"),
+        ("alerts.manage_url", "not a url"),
+    ):
+        with pytest.raises(platform_settings.PlatformSettingError):
+            platform_settings.set_many({key: value})
+
+
+def test_my_alerts_says_whether_mails_come(client, staff_headers):
+    assert client.get(f"{BASE}/alerts/me").get_json()["receives"] is True

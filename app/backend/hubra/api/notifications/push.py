@@ -77,14 +77,19 @@ def is_subscribed(user_id: int, endpoint: str) -> bool:
 def _queue_push(mapper, connection, target: Notification) -> None:
     """Queue the push for a new notification if its person has a device."""
     # One query: the person's account, only if it has a device.
-    user_id = connection.execute(
-        select(Member.user_id)
+    row = connection.execute(
+        select(Member.user_id, Member.notify_prefs)
         .join(PushSubscription, PushSubscription.user_id == Member.user_id)
         .where(Member.id == target.member_id)
         .limit(1)
-    ).scalar()
-    if user_id is None:
+    ).first()
+    if row is None or row.user_id is None:
         return
+    from hubra.api.notifications.prefs import wants
+
+    if not wants(row.notify_prefs, getattr(target, "topic", None), "push"):
+        return
+    user_id = row.user_id
     from hubra.core.tasks.after_commit import delay_after_commit
     from hubra.core.tasks.push_tasks import send_push_task
     from hubra.core.tenant.context import current_tenant

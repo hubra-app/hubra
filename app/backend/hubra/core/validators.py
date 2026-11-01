@@ -89,6 +89,12 @@ VALIDATORS: dict[str, Callable[[str], str | None]] = {
         )
     ),
     "number": lambda v: None if _is_numeric(v) else "Invalid number",
+    "minutes": lambda v: (
+        None if v.isdigit() and int(v) <= 1440 else "Whole minutes, 0 to 1440"
+    ),
+    "retention_days": lambda v: (
+        None if v.isdigit() and 1 <= int(v) <= 365 else "Whole days, 1 to 365"
+    ),
     "age_public_keys": _validate_age_public_keys,
     "qr_iban": _validate_qr_iban,
     "discord_log_events": lambda v: _validate_log_events(v),

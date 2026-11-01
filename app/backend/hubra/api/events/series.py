@@ -166,7 +166,9 @@ def _has_attendance(event_id: int) -> bool:
     """Whether anything was recorded on the date that a delete would lose."""
     return (
         db.session.scalar(
-            select(EventAttendance.id).where(EventAttendance.event_id == event_id).limit(1)
+            select(EventAttendance.id)
+            .where(EventAttendance.event_id == event_id)
+            .limit(1)
         )
         is not None
         or db.session.scalar(
@@ -215,7 +217,9 @@ def _tell_once(events: list[ClubEvent], title: str, skip_member_id: int) -> None
         if reg.member_id in told or reg.member_id == skip_member_id:
             continue
         told.add(reg.member_id)
-        notify_member(reg.member_id, "info", title, upcoming[0].title)
+        notify_member(
+            reg.member_id, "info", title, upcoming[0].title, topic="my_events"
+        )
 
 
 def update_following(

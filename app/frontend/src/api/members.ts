@@ -356,21 +356,32 @@ export function setMyDirectory(shared: DirectoryChoice[]): Promise<DirectoryStat
   });
 }
 
-// ── Reminder mails ───────────────────────────────────────────────────────────
+// ── Notification choices ─────────────────────────────────────────────────────
 
-export interface ReminderMails {
-  /** Before events the member signed up for */
-  events: boolean;
-  /** Before a poll the member has not voted in closes */
-  polls: boolean;
+export type NotifyTopic =
+  | "posts"
+  | "events"
+  | "polls"
+  | "event_reminders"
+  | "poll_reminders"
+  | "my_events"
+  | "my_polls"
+  | "tasks";
+export type NotifyChannel = "bell" | "push" | "mail";
+
+export interface NotificationChoices {
+  /** Per topic and channel; "mail" only where Hubra mails the topic */
+  topics: Record<NotifyTopic, Partial<Record<NotifyChannel, boolean>>>;
 }
 
-export function getMyReminders(): Promise<ReminderMails> {
-  return apiFetch<ReminderMails>("/members/me/reminders");
+export function getMyNotifications(): Promise<NotificationChoices> {
+  return apiFetch<NotificationChoices>("/members/me/notifications");
 }
 
-export function setMyReminders(change: Partial<ReminderMails>): Promise<ReminderMails> {
-  return apiFetch<ReminderMails>("/members/me/reminders", {
+export function setMyNotifications(
+  change: Partial<Record<NotifyTopic, Partial<Record<NotifyChannel, boolean>>>>,
+): Promise<NotificationChoices> {
+  return apiFetch<NotificationChoices>("/members/me/notifications", {
     method: "PUT",
     body: JSON.stringify(change),
   });

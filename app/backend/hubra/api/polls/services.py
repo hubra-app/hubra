@@ -26,12 +26,16 @@ def member_circles(member_id: int) -> tuple[set[int], set[int]]:
     """The groups and functions *member_id* belongs to."""
     groups = set(
         db.session.scalars(
-            select(member_groups.c.group_id).where(member_groups.c.member_id == member_id)
+            select(member_groups.c.group_id).where(
+                member_groups.c.member_id == member_id
+            )
         )
     )
     functions = set(
         db.session.scalars(
-            select(FunctionHolder.function_id).where(FunctionHolder.member_id == member_id)
+            select(FunctionHolder.function_id).where(
+                FunctionHolder.member_id == member_id
+            )
         )
     )
     return groups, functions
@@ -160,6 +164,7 @@ class PollService:
                 f"New vote: {poll.question}",
                 f"{voter_name} voted for {chosen_option.label}",
                 link=poll_link(poll.id),
+                topic="my_polls",
             )
 
         return poll
@@ -292,6 +297,7 @@ class PollService:
                     f"Reminder: {poll.question}",
                     "Please cast your vote before the poll closes.",
                     link=poll_link(poll.id),
+                    topic="poll_reminders",
                 )
                 sent += 1
 
@@ -404,7 +410,9 @@ class ProxyService:
             raise_error(400, "VALIDATION_ERROR", "You cannot be your own proxy")
         if not may_vote(poll, member_circles(grantor_id)):
             raise_error(
-                403, "NOT_ELIGIBLE", "This poll is for the groups and functions it names"
+                403,
+                "NOT_ELIGIBLE",
+                "This poll is for the groups and functions it names",
             )
         holder = db.session.get(Member, holder_id)
         if holder is None or holder.archived_at is not None:
@@ -440,6 +448,7 @@ class ProxyService:
             f"Proxy vote: {poll.question}",
             f"{grantor.name if grantor else 'A member'} asked you to vote for them.",
             link=poll_link(poll.id),
+            topic="my_polls",
         )
         return proxy
 

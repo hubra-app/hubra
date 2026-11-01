@@ -183,8 +183,13 @@ class Member(db.Model):
     directory_shared: Mapped[list[str] | None] = mapped_column(
         JSONB().with_variant(JSON, "sqlite"), nullable=True
     )
+    # Notifications the member turned off, per topic and channel:
+    # {"posts": {"push": false}}.  See hubra.api.notifications.prefs.
+    notify_prefs: Mapped[dict | None] = mapped_column(
+        JSONB().with_variant(JSON, "sqlite"), nullable=True
+    )
     # Reminder mails before an event the member signed up for and before a
-    # poll they have not voted in closes (the bell gets them either way).
+    # poll they have not voted in closes.
     event_reminder_mail: Mapped[bool] = mapped_column(
         db.Boolean, default=True, server_default=sa.true(), nullable=False
     )

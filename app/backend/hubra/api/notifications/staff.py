@@ -32,4 +32,4 @@ def notify_permitted(
         if member.id == skip_member_id or member.is_blocked:
             continue
         if member_is_admin(member) or perm_key in _get_member_permission_keys(member):
-            notify_member(member.id, kind, title, msg, link=link)
+            notify_member(member.id, kind, title, msg, link=link, topic="tasks")
