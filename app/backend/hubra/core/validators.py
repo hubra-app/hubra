@@ -82,6 +82,9 @@ VALIDATORS: dict[str, Callable[[str], str | None]] = {
     "number": lambda v: None if _is_numeric(v) else "Invalid number",
     "age_public_keys": _validate_age_public_keys,
     "qr_iban": _validate_qr_iban,
+    "discord_public_key": lambda v: (
+        None if re.fullmatch(r"[0-9a-fA-F]{64}", v) else "Must be 64 hex characters"
+    ),
     "text": lambda v: None,
     "non_empty": (
         lambda v: (

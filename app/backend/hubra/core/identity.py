@@ -14,7 +14,6 @@ import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 
-from flask import current_app
 
 _log = logging.getLogger(__name__)
 
@@ -35,10 +34,10 @@ class DiscordIdentity:
     api = "https://discord.com/api/v10"
 
     def _client(self) -> tuple[str, str]:
-        return (
-            current_app.config.get("DISCORD_CLIENT_ID", ""),
-            current_app.config.get("DISCORD_CLIENT_SECRET", ""),
-        )
+        from hubra.core.services.platform_settings import discord
+
+        app = discord()
+        return app.client_id, app.client_secret
 
     def available(self) -> bool:
         return all(self._client())

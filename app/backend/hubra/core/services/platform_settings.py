@@ -23,6 +23,10 @@ through the fallback, e.g. Brevo's SMTP relay, from the same sender.  See
 
 Backups (the global one and one per club) are the platform's, so where they
 are stored (``backup.s3.*``) is the platform's to decide, not a club's.
+
+Discord (``discord.*``): the one Hubra application every club's server and
+every linked account goes through (see docs/discord.md). Set here only, with
+no env fallback.
 """
 
 from __future__ import annotations
@@ -166,6 +170,34 @@ SPECS: tuple[Spec, ...] = (
         lambda cfg: cfg.get("BACKUP_S3_SECRET_KEY") or "",
         secret=True,
     ),
+    Spec(
+        "discord.client_id",
+        "Discord application ID",
+        "Developer Portal › your app › General Information › Application ID",
+        lambda cfg: "",
+        "number",
+    ),
+    Spec(
+        "discord.public_key",
+        "Discord public key",
+        "General Information › Public Key; checks that interactions come from Discord",
+        lambda cfg: "",
+        "discord_public_key",
+    ),
+    Spec(
+        "discord.client_secret",
+        "Discord client secret",
+        "OAuth2 › Client Secret. Stored encrypted",
+        lambda cfg: "",
+        secret=True,
+    ),
+    Spec(
+        "discord.bot_token",
+        "Discord bot token",
+        "Bot › Token. Stored encrypted",
+        lambda cfg: "",
+        secret=True,
+    ),
 )
 
 _BY_KEY = {s.key: s for s in SPECS}
@@ -225,7 +257,9 @@ def set_many(values: dict, actor_id: int | None = None) -> None:
                 db.session.delete(row)
             continue
         value = str(value).strip()
-        stored = encrypt_code(value, _PURPOSE, PLATFORM) if s.secret and value else value
+        stored = (
+            encrypt_code(value, _PURPOSE, PLATFORM) if s.secret and value else value
+        )
         if row is None:
             row = PlatformSetting(key=key, secret=s.secret)
             db.session.add(row)
@@ -304,4 +338,22 @@ def fallback_relay() -> FallbackRelay | None:
         port=port,
         user=get("mail.fallback.user"),
         password=get("mail.fallback.password"),
+    )
+
+
+@dataclass(frozen=True)
+class DiscordApp:
+    client_id: str
+    client_secret: str
+    bot_token: str
+    public_key: str
+
+
+def discord() -> DiscordApp:
+    """The platform's Discord application (empty strings when not set up)."""
+    return DiscordApp(
+        client_id=get("discord.client_id"),
+        client_secret=get("discord.client_secret"),
+        bot_token=get("discord.bot_token"),
+        public_key=get("discord.public_key"),
     )
