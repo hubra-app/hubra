@@ -104,8 +104,14 @@ export function ClubsScreen() {
     authApi
       .switchTenant(onlyClub.tenant_slug)
       .then(() => window.location.assign(clubAppUrl(urls, onlyClub.tenant_slug)))
-      .catch(() => setAutoOpenFailed(true))
-  }, [onlyClub, autoOpenFailed, urls])
+      .catch((err: { code?: string }) => {
+        if (err?.code === 'MFA_REQUIRED_BY_CLUB') {
+          navigate('/account/zwei-faktor', { state: { club: onlyClub.tenant_slug } })
+          return
+        }
+        setAutoOpenFailed(true)
+      })
+  }, [onlyClub, autoOpenFailed, urls, navigate])
 
   const join = useMutation({
     mutationFn: (slug: string) => authApi.joinClub(slug),
@@ -148,6 +154,10 @@ export function ClubsScreen() {
       setOpening(null)
       if ((err as { code?: string }).code === 'EMAIL_NOT_VERIFIED') {
         navigate('/verify')
+        return
+      }
+      if ((err as { code?: string }).code === 'MFA_REQUIRED_BY_CLUB') {
+        navigate('/account/zwei-faktor', { state: { club: slug } })
         return
       }
       notify(

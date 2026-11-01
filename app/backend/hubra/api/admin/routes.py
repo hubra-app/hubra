@@ -234,6 +234,47 @@ def set_primary_domain(domain_id: int):
 _club_settings_schema = ClubSettingsSchema()
 
 
+def _check_mfa_rule(tenant, validated: dict) -> None:
+    """Whoever turns "two-factor required" on has it, so they don't lock
+    themselves out of the club they are setting up."""
+    from hubra.api.auth import mfa
+    from hubra.api.auth.helpers import get_current_user_id
+    from hubra.core.errors import raise_error
+    from hubra.core.models.user import User
+
+    scope = validated.get("mfa_required")
+    if scope in (None, "off") or scope == mfa.club_scope(tenant):
+        return
+    user = db.session.get(User, get_current_user_id())
+    if user is None or not mfa.enabled(user):
+        raise_error(
+            400,
+            "MFA_SETUP_FIRST",
+            "Turn on two-factor sign-in for your own account first",
+        )
+
+
+def _mfa_overview(tenant) -> dict:
+    """How many members still sign in without two-factor, for each scope."""
+    from hubra.api.auth import mfa
+    from hubra.api.permissions import held_roles
+    from hubra.core.models.member import Member
+    from hubra.core.models.passkey import Passkey
+
+    members = db.session.scalars(
+        select(Member).where(Member.archived_at.is_(None), Member.user_id.is_not(None))
+    ).all()
+    with_passkey = set(db.session.scalars(select(Passkey.user_id).distinct()))
+    missing = {"admins": 0, "all": 0}
+    for m in members:
+        if m.user is None or mfa.totp_enabled(m.user) or m.user_id in with_passkey:
+            continue
+        missing["all"] += 1
+        if any(r.is_admin or r.is_owner for r in held_roles(m)):
+            missing["admins"] += 1
+    return {"membersWithout": missing["all"], "adminsWithout": missing["admins"]}
+
+
 @admin_bp.get("/club-settings")
 @require_admin
 def get_club_settings():
@@ -247,7 +288,7 @@ def get_club_settings():
     # The form shows the club's name even before anyone saved one here.
     if not branding.get("club_name"):
         branding["club_name"] = tenant.name
-    return jsonify({"settings": branding}), 200
+    return jsonify({"settings": branding, "mfa": _mfa_overview(tenant)}), 200
 
 
 @admin_bp.patch("/club-settings")
@@ -268,6 +309,8 @@ def update_club_settings():
         validated = _club_settings_schema.load(body)
     except ValidationError as exc:
         return jsonify({"error": "VALIDATION_ERROR", "message": str(exc.messages)}), 422
+
+    _check_mfa_rule(tenant, validated)
 
     settings = dict(tenant.settings or {})
     branding = dict(settings.get("branding", {}))

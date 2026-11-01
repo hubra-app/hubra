@@ -536,6 +536,9 @@ class AuthService:
                     else None
                 )
                 member_id = member.id if member is not None else None
+                from hubra.api.auth import mfa
+
+                mfa_required = member is not None and mfa.club_requires(tenant, member)
                 reset_search_path()
                 result.append(
                     {
@@ -545,6 +548,8 @@ class AuthService:
                         "member_id": member_id,
                         "admin_level": admin_level,
                         "logo_version": club_logo_version(tenant),
+                        # The club asks this member for two-factor sign-in.
+                        "mfa_required": mfa_required,
                     }
                 )
             return result

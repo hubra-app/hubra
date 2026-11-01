@@ -3230,5 +3230,13 @@
   "mail.email.platform_alert.type.service_down": "Service",
   "mail.email.platform_alert.type.backup_failed": "Backup",
   "mail.email.platform_alert.type.plugin_updates": "Plugins",
-  "mail.email.platform_alert.type.system": "System"
+  "mail.email.platform_alert.type.system": "System",
+  "clubSettings.mfaTitle": "Two-factor sign-in",
+  "clubSettings.mfaRequired": "Require two-factor",
+  "clubSettings.mfaOff": "Optional",
+  "clubSettings.mfaAdmins": "For admins",
+  "clubSettings.mfaAll": "For all members",
+  "clubSettings.mfaHint": "Those it applies to can open the club only once a passkey or an authenticator app is set up, in their account under Two-factor. Admins means owners and admins, also through a function.",
+  "clubSettings.mfaMissing": "{{n}} of them have no two-factor sign-in yet and can't open the club until they set it up. Let them know first.",
+  "clubSettings.mfaMissingNone": "Everyone it applies to has two-factor set up."
 }

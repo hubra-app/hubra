@@ -83,6 +83,12 @@ class ClubSettingsSchema(Schema):
     leave_requires_approval = fields.Bool(required=False, allow_none=True)
     # Off: the club takes new members by invite only (no "ask to join").
     join_requests_open = fields.Bool(required=False, allow_none=True)
+    # Two-factor sign-in: "off", "admins" (owners and admins) or "all".
+    mfa_required = fields.Str(
+        required=False,
+        allow_none=True,
+        validate=validate.OneOf(("off", "admins", "all")),
+    )
     # How long an invite link works.
     invite_valid_days = fields.Int(
         required=False, allow_none=True, validate=validate.Range(min=1, max=60)

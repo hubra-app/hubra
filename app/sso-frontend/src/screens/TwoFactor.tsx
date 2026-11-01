@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   Alert,
   Badge,
@@ -19,6 +20,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSso } from '@/context/SsoContext'
 import { LoadFailed } from '@/components/LoadFailed'
 import { tr } from '@/lang'
+import { clubAppUrl } from '@/redirect'
 import * as authApi from '@/api/auth'
 import { createPasskey, passkeyCancelled, passkeysSupported } from '@/webauthn'
 
@@ -522,6 +524,11 @@ function RecoveryCard({ s, showCodes }: { s: authApi.MfaStatus; showCodes: ShowC
 export function TwoFactorTab() {
   const status = useQuery({ queryKey: ['mfa'], queryFn: authApi.getMfa })
   const [codes, setCodes] = useState<string[]>([])
+  const { redirectTarget, urls } = useSso()
+  // A club that refused to open sends the person here (?redirect= from the
+  // club app, or the club picker's state) and gets them back afterwards.
+  const stateClub = (useLocation().state as { club?: string } | null)?.club
+  const back = redirectTarget ?? (stateClub ? clubAppUrl(urls, stateClub) : null)
 
   if (status.isError) return <LoadFailed onRetry={() => status.refetch()} />
   if (!status.data) return <Loader size="sm" />
@@ -542,6 +549,26 @@ export function TwoFactorTab() {
             'Als Plattform-Admin brauchst du einen Passkey oder die Authenticator-App. Bis eines davon eingerichtet ist, bleibt der Plattform-Bereich in der Verwaltung gesperrt.',
             'As a platform admin you need a passkey or the authenticator app. Until one is set up, the platform area in manage stays locked.',
           )}
+        </Alert>
+      )}
+      {s.clubsRequiring.length > 0 && !s.enabled && (
+        <Alert color="orange" variant="light">
+          {tr(
+            `${s.clubsRequiring.map((c) => c.name).join(', ')} verlangt die Zwei-Faktor-Anmeldung. Richte einen Passkey oder die Authenticator-App ein, dann kannst du den Verein öffnen.`,
+            `${s.clubsRequiring.map((c) => c.name).join(', ')} requires two-factor sign-in. Set up a passkey or the authenticator app, then you can open the club.`,
+          )}
+        </Alert>
+      )}
+      {s.enabled && back && (
+        <Alert color="green" variant="light">
+          <Group justify="space-between" gap="sm">
+            <Text size="sm">
+              {tr('Zwei-Faktor ist eingerichtet.', 'Two-factor is set up.')}
+            </Text>
+            <Button size="xs" onClick={() => window.location.assign(back)}>
+              {tr('Weiter zum Verein', 'Continue to the club')}
+            </Button>
+          </Group>
         </Alert>
       )}
       <PasskeysCard s={s} showCodes={setCodes} />
