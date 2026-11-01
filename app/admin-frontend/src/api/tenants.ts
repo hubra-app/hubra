@@ -1,3 +1,4 @@
+import { withStepUp } from '@/api/stepUp'
 import { apiFetch } from '@hubra/api-client'
 
 export interface Tenant {
@@ -111,10 +112,12 @@ export async function impersonateTenant(
   expires_at: string
   read_only: boolean
 }> {
-  return apiFetch(`/system/tenants/${id}/impersonate`, {
-    method: 'POST',
-    body: JSON.stringify(body),
-  })
+  return withStepUp(() =>
+    apiFetch(`/system/tenants/${id}/impersonate`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  )
 }
 
 export interface GlobalAuditEntry {

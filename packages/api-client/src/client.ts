@@ -59,7 +59,7 @@ export function clearTokens(): void {
   // app.hubra.club), so expire the cookies there as well.
   const labels = window.location.hostname.split(".");
   const parentDomain = labels.length > 2 ? labels.slice(1).join(".") : "";
-  for (const name of ["csrf_access_token", "csrf_refresh_token"]) {
+  for (const name of ["csrf_access_token", "csrf_refresh_token", "csrf_account_token"]) {
     document.cookie = `${name}=; Max-Age=0; path=/`;
     if (parentDomain) document.cookie = `${name}=; Max-Age=0; path=/; domain=.${parentDomain}`;
   }
@@ -112,6 +112,25 @@ async function refreshAccess(): Promise<boolean> {
   return refreshPromise;
 }
 
+/** Double-submit header for the account token cookie (manager portal).
+ * See backend hubra/api/auth/account_token.py. */
+function accountCsrfHeader(): Record<string, string> {
+  const csrf = getCookie("csrf_account_token");
+  return csrf ? { "X-Account-CSRF": csrf } : {};
+}
+
+/** A 401 that survives a refresh and says the club session can't open
+ * platform routes: the person has to sign in again. */
+async function accountSignInNeeded(res: Response): Promise<boolean> {
+  if (res.status !== 401) return false;
+  try {
+    const body = await res.clone().json();
+    return body?.error === "ACCOUNT_TOKEN_REQUIRED";
+  } catch {
+    return false;
+  }
+}
+
 export async function apiFetch<T = unknown>(
   path: string,
   init: RequestInit = {},
@@ -125,6 +144,7 @@ export async function apiFetch<T = unknown>(
       headers: {
         "Content-Type": "application/json",
         "X-CSRF-TOKEN": getCookie("csrf_access_token"),
+        ...accountCsrfHeader(),
         ...(_tenantSlug ? { "X-Tenant-Slug": _tenantSlug } : {}),
         ...(init.headers ?? {}),
       },
@@ -141,6 +161,12 @@ export async function apiFetch<T = unknown>(
       onAuthFailure();
       return _pendingPromise as Promise<T>;
     }
+  }
+
+  if ((await accountSignInNeeded(res)) && !_authFailed && onAuthFailure) {
+    _authFailed = true;
+    onAuthFailure();
+    return _pendingPromise as Promise<T>;
   }
 
   if (!res.ok) {
@@ -185,6 +211,7 @@ export async function apiFetchRaw(
       credentials: "include",
       headers: {
         "X-CSRF-TOKEN": getCookie("csrf_access_token"),
+        ...accountCsrfHeader(),
         ...(_tenantSlug ? { "X-Tenant-Slug": _tenantSlug } : {}),
         ...(init.headers ?? {}),
       },
@@ -201,6 +228,12 @@ export async function apiFetchRaw(
       onAuthFailure();
       return _pendingPromise as unknown as Promise<Response>;
     }
+  }
+
+  if ((await accountSignInNeeded(res)) && !_authFailed && onAuthFailure) {
+    _authFailed = true;
+    onAuthFailure();
+    return _pendingPromise as unknown as Promise<Response>;
   }
 
   if (!res.ok) {

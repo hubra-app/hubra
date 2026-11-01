@@ -740,9 +740,15 @@ def get_user_global_permissions(user_id: int) -> set[str]:
 
 
 def require_global_permission(permission_key: str):
-    """Decorator: verifies JWT and checks the user has a global permission.
+    """Decorator: verifies the ACCOUNT identity and a global permission.
 
-    Superadmins (is_superadmin=True) bypass all checks for backward compat.
+    Only an account token counts (the standard cookie with a ``user:<id>``
+    identity, or the dedicated ``account_token`` cookie): a club token is
+    refused with 401 ACCOUNT_TOKEN_REQUIRED, so scripts running in the club
+    app (plugin frontends, an XSS) can never drive the platform API with a
+    staff member's club session. See hubra/api/auth/account_token.py.
+
+    Superadmins (is_superadmin=True) bypass the permission check.
     Otherwise queries UserGlobalRole -> GlobalRolePermission -> GlobalPermission
     for the user's effective permission set.
     """
@@ -750,29 +756,13 @@ def require_global_permission(permission_key: str):
     def decorator(fn):
         @wraps(fn)
         def wrapper(*args, **kwargs):
+            from hubra.api.auth.account_token import verify_account_token
+            from hubra.core.errors import ApiError
+
             try:
-                verify_jwt_in_request()
-            except Exception:
-                return jsonify(
-                    {"error": "UNAUTHORIZED", "message": "Token invalid or expired"}
-                ), 401
-
-            from flask_jwt_extended import get_jwt
-
-            claims = get_jwt()
-            user_id = claims.get("user_id")
-            if user_id is None:
-                return jsonify(
-                    {"error": "FORBIDDEN", "message": "Authentication required"}
-                ), 403
-
-            from hubra.core.models.user import User
-
-            user = db.session.get(User, int(user_id))
-            if user is None:
-                return jsonify(
-                    {"error": "UNAUTHORIZED", "message": "Token invalid or expired"}
-                ), 401
+                user, _claims = verify_account_token()
+            except ApiError as exc:
+                return jsonify({"error": exc.code, "message": exc.message}), exc.status
 
             if staff_mfa_missing(user):
                 return jsonify(
@@ -787,7 +777,7 @@ def require_global_permission(permission_key: str):
                 g.permission_scope = "global"
                 return fn(*args, **kwargs)
 
-            perms = get_user_global_permissions(int(user_id))
+            perms = get_user_global_permissions(user.id)
             if permission_key not in perms and "*" not in perms:
                 return jsonify(
                     {

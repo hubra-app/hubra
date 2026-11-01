@@ -36,7 +36,7 @@ from hubra.api.auth.services import (
     _extract_platform,
     _EMAIL_RE,
 )
-from hubra.api.auth import known_devices, mfa, passkeys, session_service
+from hubra.api.auth import account_token, known_devices, mfa, passkeys, session_service
 from hubra.core.models.passkey import Passkey
 from hubra.api.permissions import (
     require_password_changed,
@@ -428,6 +428,9 @@ def _complete_login(
         _set_remembered_email_cookie(response, email)
         _set_theme_cookie(response, user.theme)
         known_devices.set_cookie(response, device_token)
+        # The account token the manager portal runs on: /auth/switch-tenant
+        # replaces the standard cookie with a club token, this one it keeps.
+        account_token.issue(response, user, additional_claims["account_sid"])
         return response
 
     # The same gate as /auth/switch-tenant: no club opens before the address
@@ -457,8 +460,12 @@ def _complete_login(
     # With an account, "new device" means new to the account, not to this
     # club, and the account's address hears about it.
     device_token = None
+    account_sid = None
     if user is not None:
         device_token, new_device = _note_device(user)
+        # A club sign-in is an account sign-in too: the account token below
+        # needs a session the person (or an admin) can end.
+        account_sid = _record_account_login(user)
 
     try:
         db.session.commit()
@@ -499,6 +506,9 @@ def _complete_login(
     additional_claims = {"sid": session_id} if session else {}
     if user:
         additional_claims["user_id"] = user.id
+    if account_sid is not None:
+        # Ending the account sign-in ends this club session too.
+        additional_claims["account_sid"] = account_sid
     if tenant:
         additional_claims["tenant_slug"] = tenant.slug
 
@@ -525,6 +535,7 @@ def _complete_login(
     _set_remembered_email_cookie(response, email)
     if user is not None:
         _set_theme_cookie(response, user.theme)
+        account_token.issue(response, user, account_sid)
     if device_token is not None:
         known_devices.set_cookie(response, device_token)
     return response
@@ -591,6 +602,7 @@ def signup():
     _set_remembered_email_cookie(response, email)
     if user is not None:
         _set_theme_cookie(response, user.theme)
+        account_token.issue(response, user, additional_claims["account_sid"])
     if device_token is not None:
         known_devices.set_cookie(response, device_token)
     return response
@@ -716,6 +728,17 @@ def logout():
         session_service.revoke_account_session(
             int(claims["account_sid"]), claims.get("user_id"), "logout"
         )
+    # The dedicated account cookie may carry a different (or the only)
+    # account session: end that one as well.
+    acct = account_token.read_claims()
+    if (
+        acct is not None
+        and acct.get("account_sid") is not None
+        and acct.get("account_sid") != claims.get("account_sid")
+    ):
+        session_service.revoke_account_session(
+            int(acct["account_sid"]), acct.get("user_id"), "logout"
+        )
     if sid is None and claims.get("account_sid") is None:
         access_jti = claims["jti"]
         AuthService.block_token(access_jti, "access")
@@ -737,6 +760,7 @@ def logout():
     db.session.commit()
     response = make_response("", 204)
     unset_jwt_cookies(response)
+    account_token.clear(response)
     _clear_remembered_email_cookie(response)
     return response
 
@@ -1605,6 +1629,30 @@ def change_account_password():
 def _check_password(user: User, body: dict) -> None:
     if not user.check_password(str(body.get("currentPassword") or "")):
         raise_error(400, "INVALID_PASSWORD", "Current password is incorrect")
+
+
+@account_bp.post("/step-up")
+@limiter.limit("5 per minute")
+def step_up():
+    """Confirm the password (and the code, with two-factor on) for the
+    platform actions that run code or open every club: installing plugins,
+    restoring backups, rotating keys, impersonating.  Holds for a few
+    minutes on this account session (``sudo_until``)."""
+    user, claims = account_token.verify_account_token()
+    body = request.get_json(silent=True) or {}
+    if not user.check_password(str(body.get("password") or "")):
+        _count_failed_login(user)  # commits; the usual lockout applies
+        raise_error(400, "INVALID_PASSWORD", "The password is not correct")
+    if mfa.enabled(user):
+        used = mfa.verify(user, str(body.get("code") or ""))
+        if used is None:
+            _count_failed_login(user)
+            raise_error(400, "MFA_INVALID", "The code is not correct")
+    user.failed_login_count = 0
+    until = account_token.grant_sudo(claims)
+    db.session.commit()
+    _log.info("step_up user_id=%s until=%s", user.id, until.isoformat())
+    return jsonify({"sudoUntil": until.isoformat()}), 200
 
 
 @account_bp.get("/mfa")

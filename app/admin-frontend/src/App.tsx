@@ -4,6 +4,7 @@ import { ErrorBoundary as RouteErrorBoundary } from 'react-error-boundary'
 import { Center, Loader, Paper, Stack, Text, Button } from '@mantine/core'
 import { IconAlertTriangle } from '@tabler/icons-react'
 import { AdminProvider, useAdmin } from '@/context/AdminContext'
+import { StepUpDialog } from '@/components/StepUpDialog'
 import { Shell } from '@/components/Shell'
 import { AdminPortal } from '@/screens/AdminPortal'
 import { MyTenantsTab } from '@/screens/MyTenantsTab'
@@ -281,6 +282,7 @@ export default function App() {
   const { lang } = useLang()
   return (
     <AdminProvider>
+      <StepUpDialog />
       <AppRoutes key={lang} />
     </AdminProvider>
   )
