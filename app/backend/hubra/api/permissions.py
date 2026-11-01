@@ -681,6 +681,14 @@ def require_member(fn):
     return wrapper
 
 
+def staff_mfa_missing(user) -> bool:
+    """Platform staff without two-factor sign-in, while it is required:
+    their platform permissions wait until they turn it on."""
+    from hubra.api.auth import mfa
+
+    return mfa.required(user) and not mfa.enabled(user)
+
+
 # Platform rights that amount to control of the whole server: plugin code
 # runs inside the backend, and a restore overwrites every club. Only the
 # superadmin flag carries them; no global role can.
@@ -696,6 +704,8 @@ def get_user_global_permissions(user_id: int) -> set[str]:
     from hubra.core.models.user import User
 
     user = db.session.get(User, user_id)
+    if user is not None and staff_mfa_missing(user):
+        return set()
     if user is not None and user.is_superadmin:
         return {"*"}
 
@@ -758,6 +768,14 @@ def require_global_permission(permission_key: str):
                 return jsonify(
                     {"error": "UNAUTHORIZED", "message": "Token invalid or expired"}
                 ), 401
+
+            if staff_mfa_missing(user):
+                return jsonify(
+                    {
+                        "error": "MFA_SETUP_REQUIRED",
+                        "message": "Turn on two-factor sign-in in your account first",
+                    }
+                ), 403
 
             if user.is_superadmin:
                 g.system_user = user

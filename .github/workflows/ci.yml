@@ -203,7 +203,11 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Configure
-        run: scripts/init-env.sh
+        # The e2e account is a platform admin that signs in with a password
+        # only, so the two-factor rule for staff is off for this stack.
+        run: |
+          scripts/init-env.sh
+          echo "MFA_REQUIRED_FOR_STAFF=false" >> .env
       - run: docker compose build
       - run: docker compose up -d
       - run: scripts/smoke-test.sh

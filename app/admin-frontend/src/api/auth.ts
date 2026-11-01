@@ -6,6 +6,8 @@ export interface PermissionsResponse {
   permissions: string[]
   global_permissions: string[]
   global_roles: string[]
+  /** Platform staff who must turn on two-factor sign-in first (on SSO). */
+  mfa_setup_required?: boolean
   impersonation: {
     is_impersonating: boolean
     impersonator_id: number
