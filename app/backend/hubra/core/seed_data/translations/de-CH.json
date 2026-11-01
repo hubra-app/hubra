@@ -3224,5 +3224,13 @@
   "mail.email.platform_alert.type.service_down": "Dienst",
   "mail.email.platform_alert.type.backup_failed": "Backup",
   "mail.email.platform_alert.type.plugin_updates": "Plugins",
-  "mail.email.platform_alert.type.system": "System"
+  "mail.email.platform_alert.type.system": "System",
+  "clubSettings.mfaTitle": "Zwei-Faktor-Anmeldung",
+  "clubSettings.mfaRequired": "Zwei-Faktor verlangen",
+  "clubSettings.mfaOff": "Freiwillig",
+  "clubSettings.mfaAdmins": "Für Admins",
+  "clubSettings.mfaAll": "Für alle Mitglieder",
+  "clubSettings.mfaHint": "Wer es braucht, öffnet den Verein erst, wenn ein Passkey oder eine Authenticator-App eingerichtet ist. Das geht im Konto unter Zwei-Faktor. Admins sind Inhaber und Admins, auch über eine Funktion.",
+  "clubSettings.mfaMissing": "{{n}} von ihnen haben noch keine Zwei-Faktor-Anmeldung und kommen erst wieder in den Verein, wenn sie es eingerichtet haben. Sag ihnen vorher Bescheid.",
+  "clubSettings.mfaMissingNone": "Alle, die es betrifft, haben Zwei-Faktor eingerichtet."
 }

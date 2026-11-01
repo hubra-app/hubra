@@ -352,6 +352,17 @@ Someone who lost both the app and the recovery codes: check that it really
 is them, then run `flask reset-mfa --email them@example.org`. They sign in
 with the password alone and set it up again.
 
+Clubs can require it too: Settings › Mitgliedschaft › Zwei-Faktor-Anmeldung
+is *Freiwillig* (default), *Für Admins* (owners and admins, also through a
+function) or *Für alle Mitglieder*. Whoever it applies to and has neither a
+passkey nor the app can't open the club (`403 MFA_REQUIRED_BY_CLUB` on
+`/auth/switch-tenant` and on a club sign-in). A club session from before the
+rule gets the same answer on its next request and is turned back into a
+plain account session, so the club app sends the person to SSO › Konto ›
+Zwei-Faktor and back into the club afterwards. Only someone who has
+two-factor themselves can turn the rule on (`MFA_SETUP_FIRST`). The rule is
+stored as `mfa_required` in the club's settings.
+
 The platform API itself runs only on an *account* sign-in: a club session's
 token is refused there (`ACCOUNT_TOKEN_REQUIRED`), so a script in the club
 app can never drive manage with a staff member's session. Sign-ins from

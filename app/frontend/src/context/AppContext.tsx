@@ -163,7 +163,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // the URL first, then read the account and permissions there.
           await apiSwitchTenant(URL_CLUB).catch((err: { status?: number; code?: string }) => {
             // Not a member of this club (or it does not exist): as without a club.
-            if ((err?.status === 403 || err?.status === 404) && err.code !== 'EMAIL_NOT_VERIFIED') {
+            if (
+              (err?.status === 403 || err?.status === 404) &&
+              err.code !== 'EMAIL_NOT_VERIFIED' &&
+              err.code !== 'MFA_REQUIRED_BY_CLUB'
+            ) {
               throw Object.assign(new Error('noTenant'), { noTenant: true })
             }
             throw err
@@ -214,6 +218,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // The email step after sign-in is still open: do it on SSO first.
           const back = encodeURIComponent(window.location.href)
           window.location.assign(`${ssoUrl}/verify?redirect=${back}`)
+          return
+        }
+        if (code === 'MFA_REQUIRED_BY_CLUB') {
+          // The club asks for two-factor sign-in: set it up on SSO first.
+          const back = encodeURIComponent(window.location.href)
+          window.location.assign(`${ssoUrl}/account/zwei-faktor?redirect=${back}`)
           return
         }
         if (status === 403 && code === 'MUST_CHANGE_PASSWORD') {
@@ -324,6 +334,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (err?.code === 'EMAIL_NOT_VERIFIED') {
             const back = encodeURIComponent(window.location.href)
             window.location.assign(`${ssoUrl}/verify?redirect=${back}`)
+          }
+          if (err?.code === 'MFA_REQUIRED_BY_CLUB') {
+            const back = encodeURIComponent(`${window.location.origin}/${encodeURIComponent(slug)}/app/dashboard`)
+            window.location.assign(`${ssoUrl}/account/zwei-faktor?redirect=${back}`)
           }
         })
     },
