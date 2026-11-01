@@ -117,9 +117,9 @@ def test_invoice_generation_uses_plan(app, db, tier, seeded_db):
     member = seeded_db["admin"]
     member.status = "active"
     member.payment_plan_id = plan.id
-    # Joined long ago: a member who joins in this quarter pays only its
-    # remaining months (#85), so a join date of today fails after a
-    # quarter's first month.
+    # Joined long before this quarter: a member who joined during the quarter
+    # pays only its remaining months (first_fee_share), so with the seeded
+    # join date of today the amount depended on the calendar.
     member.joined = date(2020, 1, 1)
     db.session.commit()
 
