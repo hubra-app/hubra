@@ -28,6 +28,7 @@ from sqlalchemy import select
 
 from hubra.api.auth.services import (
     AuthService,
+    _count_failed_login,
     AccountService,
     compute_fingerprint,
     _enforce_password_strength,
@@ -35,7 +36,8 @@ from hubra.api.auth.services import (
     _extract_platform,
     _EMAIL_RE,
 )
-from hubra.api.auth import session_service
+from hubra.api.auth import known_devices, mfa, passkeys, session_service
+from hubra.core.models.passkey import Passkey
 from hubra.api.permissions import (
     require_password_changed,
     _get_member_permission_keys,
@@ -231,6 +233,26 @@ def _record_account_login(user: User) -> int:
     )
 
 
+def _note_device(user: User) -> tuple[str, bool]:
+    """Remember this browser for *user*: (cookie token, new-device alert)."""
+    return known_devices.remember(
+        user,
+        request.cookies.get(known_devices.DEVICE_COOKIE),
+        browser_family=_extract_browser_family(request.headers),
+        platform=_extract_platform(request.headers),
+    )
+
+
+def _alert_new_device(user: User) -> None:
+    known_devices.send_alert(
+        user,
+        request.remote_addr or "",
+        _extract_browser_family(request.headers),
+        _extract_platform(request.headers),
+        request.headers.get("User-Agent", "")[:512],
+    )
+
+
 # ── POST /auth/login ──────────────────────────────────────────────────────────
 
 
@@ -247,27 +269,7 @@ def login():
     try:
         user = AuthService.authenticate_user(email, password)
         member = AuthService.resolve_member(user.id)
-
-        if user.is_disabled or (member is not None and member.is_disabled):
-            raise_error(
-                403,
-                "ACCOUNT_DISABLED",
-                "Account has been disabled by an administrator",
-            )
-        if member is not None and member.is_blocked:
-            raise_error(
-                403, "MEMBERSHIP_SUSPENDED", "Your membership in this club is suspended"
-            )
-        _locked = user.locked_until
-        if _locked is not None:
-            if _locked.tzinfo is None:
-                _locked = _locked.replace(tzinfo=timezone.utc)
-            if datetime.now(timezone.utc) < _locked:
-                raise_error(
-                    403,
-                    "ACCOUNT_LOCKED",
-                    "Account is temporarily locked due to too many failed login attempts. Try again later.",
-                )
+        _check_may_sign_in(user, member)
     except ApiError:
         # An account address answers for itself (wrong password, locked);
         # only a club address (a member's public email) falls through.
@@ -281,6 +283,116 @@ def login():
     if member is None and user is None:
         raise_error(401, "UNAUTHORIZED", "Invalid credentials")
 
+    if user is not None and mfa.enabled(user):
+        # The password was right; the tokens wait for the second factor.
+        db.session.commit()  # the reset failed-login count
+        return jsonify(
+            mfaRequired=True,
+            mfaToken=mfa.challenge_for(user, email, keep_signed_in),
+        ), 200
+
+    return _complete_login(user, member, email, keep_signed_in)
+
+
+def _check_may_sign_in(user: User, member: Member | None) -> None:
+    """Refuse a switched-off, suspended or locked account."""
+    if user.is_disabled or (member is not None and member.is_disabled):
+        raise_error(
+            403,
+            "ACCOUNT_DISABLED",
+            "Account has been disabled by an administrator",
+        )
+    if member is not None and member.is_blocked:
+        raise_error(
+            403, "MEMBERSHIP_SUSPENDED", "Your membership in this club is suspended"
+        )
+    _locked = user.locked_until
+    if _locked is not None:
+        if _locked.tzinfo is None:
+            _locked = _locked.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) < _locked:
+            raise_error(
+                403,
+                "ACCOUNT_LOCKED",
+                "Account is temporarily locked due to too many failed login attempts. Try again later.",
+            )
+
+
+@auth_bp.post("/login/mfa")
+@limiter.limit("10 per minute")
+def login_mfa():
+    """Second step of a sign-in with two-factor: the app or a recovery code."""
+    body = request.get_json(silent=True) or {}
+    challenge = mfa.read_challenge(str(body.get("mfaToken") or ""))
+    if challenge is None:
+        raise_error(400, "MFA_EXPIRED", "The sign-in took too long. Start again.")
+    user, email, keep_signed_in = challenge
+    member = AuthService.resolve_member(user.id)
+    _check_may_sign_in(user, member)
+
+    used = mfa.verify(user, str(body.get("code") or ""))
+    if used is None:
+        _count_failed_login(user)  # commits; five wrong codes lock the account
+        raise_error(400, "MFA_INVALID", "The code is not correct")
+    user.failed_login_count = 0
+    if used == "recovery":
+        _log.info(
+            "mfa_recovery_code_used user_id=%s left=%s",
+            user.id,
+            len(user.recovery_codes or []),
+        )
+    db.session.commit()
+    return _complete_login(user, member, email, keep_signed_in)
+
+
+@auth_bp.post("/passkey/options")
+@limiter.limit("20 per minute")
+def passkey_login_options():
+    """Start a passkey sign-in: any passkey, or the challenged account's."""
+    if not passkeys.available():
+        raise_error(400, "PASSKEYS_UNAVAILABLE", "Passkeys are not set up here")
+    body = request.get_json(silent=True) or {}
+    user = None
+    if body.get("mfaToken"):
+        challenge = mfa.read_challenge(str(body["mfaToken"]))
+        if challenge is None:
+            raise_error(400, "MFA_EXPIRED", "The sign-in took too long. Start again.")
+        user = challenge[0]
+    return jsonify(passkeys.authentication_options(user)), 200
+
+
+@auth_bp.post("/passkey/login")
+@limiter.limit("10 per minute")
+def passkey_login():
+    """Sign in with a passkey, on its own or as the step after the password."""
+    body = request.get_json(silent=True) or {}
+    keep_signed_in = bool(body.get("keepSignedIn", True))
+    mfa_user = None
+    if body.get("mfaToken"):
+        challenge = mfa.read_challenge(str(body["mfaToken"]))
+        if challenge is None:
+            raise_error(400, "MFA_EXPIRED", "The sign-in took too long. Start again.")
+        mfa_user, _email, keep_signed_in = challenge
+    credential = body.get("credential")
+    if not isinstance(credential, dict):
+        raise_error(400, "VALIDATION_ERROR", "credential is required")
+    try:
+        passkey = passkeys.authenticate(str(body.get("state") or ""), credential)
+    except passkeys.PasskeyError:
+        raise_error(400, "PASSKEY_INVALID", "The passkey could not be checked")
+    user = db.session.get(User, passkey.user_id)
+    if user is None or (mfa_user is not None and mfa_user.id != user.id):
+        raise_error(400, "PASSKEY_INVALID", "The passkey could not be checked")
+    member = AuthService.resolve_member(user.id)
+    _check_may_sign_in(user, member)
+    db.session.commit()
+    return _complete_login(user, member, user.email, keep_signed_in)
+
+
+def _complete_login(
+    user: User | None, member: Member | None, email: str, keep_signed_in: bool
+):
+    """Issue the tokens for a sign-in whose credentials are checked."""
     if user is not None and email_verification.auto_verify_superadmin(user):
         db.session.commit()
 
@@ -292,7 +404,10 @@ def login():
             "user_id": user.id,
             "account_sid": _record_account_login(user),
         }
+        device_token, new_device = _note_device(user)
         db.session.commit()
+        if new_device:
+            _alert_new_device(user)
         access_token = create_access_token(
             identity=f"user:{user.id}",
             additional_claims=additional_claims,
@@ -312,6 +427,7 @@ def login():
         set_refresh_cookies(response, refresh_token, max_age=refresh_max_age)
         _set_remembered_email_cookie(response, email)
         _set_theme_cookie(response, user.theme)
+        known_devices.set_cookie(response, device_token)
         return response
 
     # The same gate as /auth/switch-tenant: no club opens before the address
@@ -338,6 +454,11 @@ def login():
         browser_family=_extract_browser_family(request.headers),
         platform=_extract_platform(request.headers),
     )
+    # With an account, "new device" means new to the account, not to this
+    # club, and the account's address hears about it.
+    device_token = None
+    if user is not None:
+        device_token, new_device = _note_device(user)
 
     try:
         db.session.commit()
@@ -346,14 +467,18 @@ def login():
         raise
 
     if new_device:
-        ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
-        if member.private_email_verified:
+        ts = known_devices.sign_in_time()
+        if user is not None:
+            _alert_new_device(user)
+        elif member.private_email_verified:
             email_svc.send_new_device_login(
                 member.email,
                 member.name,
-                request.remote_addr or "",
-                request.headers.get("User-Agent", "")[:512],
-                ts,
+                ip=request.remote_addr or "",
+                browser_family=_extract_browser_family(request.headers),
+                platform=_extract_platform(request.headers),
+                user_agent=request.headers.get("User-Agent", "")[:512],
+                timestamp=ts,
                 lang=getattr(member, "language", "de-CH") or "de-CH",
             )
         else:
@@ -400,6 +525,8 @@ def login():
     _set_remembered_email_cookie(response, email)
     if user is not None:
         _set_theme_cookie(response, user.theme)
+    if device_token is not None:
+        known_devices.set_cookie(response, device_token)
     return response
 
 
@@ -441,6 +568,7 @@ def signup():
         email_verification.send(user, _get_sso_base_url())
 
     additional_claims = {"user_id": user.id, "account_sid": _record_account_login(user)}
+    device_token, _ = _note_device(user)  # the account's first device
     db.session.commit()
     access_token = create_access_token(
         identity=f"user:{user.id}",
@@ -463,6 +591,8 @@ def signup():
     _set_remembered_email_cookie(response, email)
     if user is not None:
         _set_theme_cookie(response, user.theme)
+    if device_token is not None:
+        known_devices.set_cookie(response, device_token)
     return response
 
 
@@ -829,11 +959,16 @@ def get_my_permissions():
     # Check for superadmin via user_id claim
     user_id = claims.get("user_id")
     is_superadmin = False
+    mfa_setup_required = False
     if user_id:
         from hubra.core.models.user import User
 
         user = db.session.get(User, int(user_id))
         is_superadmin = user is not None and user.is_superadmin
+        if user is not None:
+            from hubra.api.permissions import staff_mfa_missing
+
+            mfa_setup_required = staff_mfa_missing(user)
 
     # Global permissions (manager portal RBAC)
     from hubra.api.permissions import get_user_global_permissions
@@ -878,6 +1013,7 @@ def get_my_permissions():
                 "impersonation": impersonation,
                 "global_permissions": global_perms,
                 "global_roles": global_roles,
+                "mfa_setup_required": mfa_setup_required,
                 "tenant_slug": claims.get("tenant_slug"),
             }
         ), 200
@@ -898,6 +1034,7 @@ def get_my_permissions():
                 "impersonation": impersonation,
                 "global_permissions": global_perms,
                 "global_roles": global_roles,
+                "mfa_setup_required": mfa_setup_required,
                 "tenant_slug": claims.get("tenant_slug"),
             }
         ), 200
@@ -911,6 +1048,7 @@ def get_my_permissions():
             "impersonation": impersonation,
             "global_permissions": global_perms,
             "global_roles": global_roles,
+            "mfa_setup_required": mfa_setup_required,
             "tenant_slug": claims.get("tenant_slug"),
         }
     ), 200
@@ -1459,6 +1597,152 @@ def change_account_password():
     response = make_response(jsonify({"ok": True}), 200)
     _renew_this_session(response)
     return response
+
+
+# ── Two-factor sign-in (SSO › Konto › Zwei-Faktor) ────────────────────────────
+
+
+def _check_password(user: User, body: dict) -> None:
+    if not user.check_password(str(body.get("currentPassword") or "")):
+        raise_error(400, "INVALID_PASSWORD", "Current password is incorrect")
+
+
+@account_bp.get("/mfa")
+@jwt_required()
+def get_account_mfa():
+    return jsonify(mfa.status(_signed_in_user())), 200
+
+
+@account_bp.post("/mfa/totp/setup")
+@jwt_required()
+@limiter.limit("10 per minute")
+def start_account_totp():
+    """A new secret for the authenticator app; on only after /enable."""
+    _not_while_impersonating()
+    user = _signed_in_user()
+    _check_password(user, request.get_json(silent=True) or {})
+    if mfa.totp_enabled(user):
+        raise_error(409, "MFA_ALREADY_ENABLED", "Two-factor sign-in is already on")
+    setup = mfa.start_setup(user)
+    db.session.commit()
+    return jsonify(setup), 200
+
+
+@account_bp.post("/mfa/totp/enable")
+@jwt_required()
+@limiter.limit("10 per minute")
+def enable_account_totp():
+    _not_while_impersonating()
+    user = _signed_in_user()
+    codes = mfa.confirm_setup(
+        user, str((request.get_json(silent=True) or {}).get("code") or "")
+    )
+    if codes is None:
+        raise_error(400, "MFA_INVALID", "The code is not correct")
+    db.session.commit()
+    _log.info("mfa_enabled user_id=%s", user.id)
+    return jsonify(recoveryCodes=codes, **mfa.status(user)), 200
+
+
+@account_bp.post("/mfa/totp/disable")
+@jwt_required()
+@limiter.limit("10 per minute")
+def disable_account_totp():
+    _not_while_impersonating()
+    user = _signed_in_user()
+    _check_password(user, request.get_json(silent=True) or {})
+    mfa.disable_totp(user)
+    db.session.commit()
+    _log.info("mfa_totp_disabled user_id=%s", user.id)
+    return jsonify(mfa.status(user)), 200
+
+
+@account_bp.post("/passkeys/options")
+@jwt_required()
+@limiter.limit("10 per minute")
+def passkey_register_options():
+    """Start adding a passkey; the password confirms it is the owner."""
+    _not_while_impersonating()
+    user = _signed_in_user()
+    _check_password(user, request.get_json(silent=True) or {})
+    if not passkeys.available():
+        raise_error(400, "PASSKEYS_UNAVAILABLE", "Passkeys are not set up here")
+    if len(mfa.status(user)["passkeys"]) >= passkeys.MAX_PER_ACCOUNT:
+        raise_error(400, "PASSKEY_LIMIT", "This account has the most passkeys allowed")
+    return jsonify(passkeys.registration_options(user)), 200
+
+
+@account_bp.post("/passkeys")
+@jwt_required()
+@limiter.limit("10 per minute")
+def add_passkey():
+    _not_while_impersonating()
+    user = _signed_in_user()
+    body = request.get_json(silent=True) or {}
+    credential = body.get("credential")
+    if not isinstance(credential, dict):
+        raise_error(400, "VALIDATION_ERROR", "credential is required")
+    was_enabled = mfa.enabled(user)
+    try:
+        passkeys.register(
+            user, str(body.get("state") or ""), credential, str(body.get("name") or "")
+        )
+    except passkeys.PasskeyError:
+        raise_error(400, "PASSKEY_INVALID", "The passkey could not be checked")
+    codes = mfa.first_factor_added(user, was_enabled)
+    db.session.commit()
+    _log.info("passkey_added user_id=%s", user.id)
+    return jsonify(recoveryCodes=codes, **mfa.status(user)), 201
+
+
+@account_bp.patch("/passkeys/<int:passkey_id>")
+@jwt_required()
+def rename_passkey(passkey_id: int):
+    _not_while_impersonating()
+    user = _signed_in_user()
+    passkey = db.session.get(Passkey, passkey_id)
+    if passkey is None or passkey.user_id != user.id:
+        raise_error(404, "NOT_FOUND", "Passkey not found")
+    name = str((request.get_json(silent=True) or {}).get("name") or "").strip()
+    if not name:
+        raise_error(400, "VALIDATION_ERROR", "name is required")
+    passkey.name = name[:100]
+    db.session.commit()
+    return jsonify(mfa.status(user)), 200
+
+
+@account_bp.post("/passkeys/<int:passkey_id>/delete")
+@jwt_required()
+@limiter.limit("10 per minute")
+def delete_passkey(passkey_id: int):
+    """Remove a passkey; the password confirms it is the owner."""
+    _not_while_impersonating()
+    user = _signed_in_user()
+    _check_password(user, request.get_json(silent=True) or {})
+    passkey = db.session.get(Passkey, passkey_id)
+    if passkey is None or passkey.user_id != user.id:
+        raise_error(404, "NOT_FOUND", "Passkey not found")
+    db.session.delete(passkey)
+    db.session.flush()
+    mfa.factor_removed(user)
+    db.session.commit()
+    _log.info("passkey_removed user_id=%s", user.id)
+    return jsonify(mfa.status(user)), 200
+
+
+@account_bp.post("/mfa/recovery-codes")
+@jwt_required()
+@limiter.limit("10 per minute")
+def renew_account_recovery_codes():
+    """New recovery codes; the old ones stop working."""
+    _not_while_impersonating()
+    user = _signed_in_user()
+    _check_password(user, request.get_json(silent=True) or {})
+    if not mfa.enabled(user):
+        raise_error(409, "MFA_NOT_ENABLED", "Two-factor sign-in is off")
+    codes = mfa.new_recovery_codes(user)
+    db.session.commit()
+    return jsonify(recoveryCodes=codes, **mfa.status(user)), 200
 
 
 def _current_session_key() -> tuple[str | None, str | None]:

@@ -6,7 +6,7 @@ from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from math import ceil
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import case, delete, func, select
 from sqlalchemy.orm import selectinload
 
 from hubra.api.utils import escape_like, id_from_body, log_audit
@@ -17,8 +17,12 @@ from hubra.core.models.finance import Invoice, Transaction, TransactionCategory
 from hubra.core.models.invoice_reminder import InvoiceReminderHistory
 from hubra.core.models.member import Member
 from hubra.core.pricing import (
+    billing_cycle_for,
     calculate_invoice_amount,
     deductions_by_tier,
+    first_fee_share,
+    membership_period,
+    prorate,
 )
 from hubra.core.services.email import club_display_name
 from hubra.core.services.mail_i18n import render_mail_template
@@ -37,12 +41,21 @@ def billing_settings() -> dict:
     term = max(1, int(config.get("payment_term_days") or 30))
     first = max(1, int(config.get("first_reminder_days") or 7))
     second = max(first, int(config.get("second_reminder_days") or 14))
+    month = min(max(int(config.get("fee_anchor_month") or 1), 1), 12)
+    # A day the month doesn't have is its last day (31 June: 30 June).
+    day = min(max(int(config.get("fee_anchor_day") or 1), 1), 31)
     return {
         "payment_term_days": term,
         "email_new_invoices": config.get("email_new_invoices", True) is not False,
         "reminders_enabled": config.get("reminders_enabled", True) is not False,
         "first_reminder_days": first,
         "second_reminder_days": second,
+        "fee_anchor": (
+            "join_date" if config.get("bill_on_join_date") is True else "fixed_date"
+        ),
+        "fee_anchor_month": month,
+        "fee_anchor_day": day,
+        "prorate_first_fee": config.get("prorate_first_fee", True) is not False,
     }
 
 
@@ -969,12 +982,22 @@ class InvoicesService:
         # Each formula tier deducts the yearly fees of its own deduct_tier_ids.
         deducted_for = deductions_by_tier(db.session)
 
+        billing = billing_settings()
         created = []
         for member in members:
             tier = member.tier
             if not tier:
                 continue
-            amount = float(calculate_invoice_amount(member, tier, deducted_for(tier)))
+            amount = calculate_invoice_amount(member, tier, deducted_for(tier))
+            # The period that contains the issue date, reduced as the daily
+            # run does for a member who joined during it.
+            start, end = membership_period(
+                member, issued_date, billing_cycle_for(member, tier), billing
+            )
+            share = first_fee_share(member, start, end, billing)
+            if share is not None:
+                start, months = share
+                amount = prorate(amount, months)
             if amount <= 0:
                 continue
 
@@ -982,10 +1005,12 @@ class InvoicesService:
                 member_id=member.id,
                 issued=issued_date,
                 due=due_date,
-                amount=amount,
+                amount=float(amount),
                 status="Open",
                 purpose="membership",
                 description=description,
+                period_start=start,
+                period_end=end,
             )
             db.session.add(invoice)
             db.session.flush()
@@ -1136,6 +1161,79 @@ class FinanceOverviewService:
                 "count": open_count,
                 "amount": float(open_amount),
             },
+        }
+
+
+# ── FinanceSummaryService ─────────────────────────────────────────────────────
+
+
+def _summary_range(args) -> tuple[date, date]:
+    """The from/to dates of a summary; the current calendar year by default."""
+    today = date.today()
+    try:
+        start = date.fromisoformat(args.get("from") or f"{today.year}-01-01")
+        end = date.fromisoformat(args.get("to") or f"{start.year}-12-31")
+    except (TypeError, ValueError):
+        raise_error(400, "VALIDATION_ERROR", "from and to must be ISO dates")
+    if end < start:
+        raise_error(400, "VALIDATION_ERROR", "to is before from")
+    if (end - start).days > 366 * 5:
+        raise_error(400, "VALIDATION_ERROR", "The range can be at most 5 years")
+    return start, end
+
+
+class FinanceSummaryService:
+    """Income and expenses per category over a date range."""
+
+    @staticmethod
+    def get(args) -> dict:
+        start, end = _summary_range(args)
+        income = func.coalesce(
+            func.sum(case((Transaction.amount > 0, Transaction.amount), else_=0)),
+            0,
+        )
+        expense = func.coalesce(
+            func.sum(case((Transaction.amount < 0, Transaction.amount), else_=0)),
+            0,
+        )
+        rows = db.session.execute(
+            select(Transaction.category_id, income, expense, func.count(Transaction.id))
+            .where(Transaction.status == "Completed")
+            .where(Transaction.date >= start)
+            .where(Transaction.date <= end)
+            .group_by(Transaction.category_id)
+        ).all()
+        names = {c.id: c for c in db.session.scalars(select(TransactionCategory)).all()}
+
+        categories = []
+        total_income = Decimal(0)
+        total_expense = Decimal(0)
+        for category_id, inc, exp, count in rows:
+            inc = Decimal(str(inc))
+            exp = abs(Decimal(str(exp)))
+            total_income += inc
+            total_expense += exp
+            category = names.get(category_id)
+            categories.append(
+                {
+                    "id": category_id,
+                    "name": category.name if category else None,
+                    "color": category.color if category else None,
+                    "income": float(inc),
+                    "expense": float(exp),
+                    "net": float(inc - exp),
+                    "count": count,
+                }
+            )
+        # Biggest movements first; uncategorised last among equals.
+        categories.sort(key=lambda c: (-(c["income"] + c["expense"]), c["id"] is None))
+        return {
+            "from": start.isoformat(),
+            "to": end.isoformat(),
+            "income": float(total_income),
+            "expense": float(total_expense),
+            "net": float(total_income - total_expense),
+            "categories": categories,
         }
 
 
