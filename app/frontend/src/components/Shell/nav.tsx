@@ -34,6 +34,8 @@ export type NavItem = {
   /** What the count means, shown on hover. */
   countTitle?: string
   permKeys?: string[]
+  /** The "Weitere" entry: the pages behind it, shown when it is opened. */
+  children?: NavItem[]
 }
 export type NavSection = { label: string; items: NavItem[] }
 
@@ -111,15 +113,27 @@ const SECTION_ORDER = ['favourites', 'workspace', 'activities', 'operations', 's
 /** Where the "Weitere" entry lists the pages that have no sidebar row. */
 export const MORE_PATH = '/app/more'
 
+/** Sections a person can move entries between (besides "Weitere"). */
+const MOVABLE_SECTIONS = ['workspace', 'activities', 'operations', 'system']
+
 /**
  * The person's own sidebar: entries pinned to the top (in this order), entries
- * hidden, and the order of entries within each section.
+ * put under "Weitere" (`hidden`), the order of entries, and entries moved to
+ * another section than their module's.
  */
-export type NavPrefs = { pinned: string[]; hidden: string[]; order?: string[] }
-const NO_PREFS: NavPrefs = { pinned: [], hidden: [], order: [] }
+export type NavPrefs = {
+  pinned: string[]
+  hidden: string[]
+  order?: string[]
+  sections?: Record<string, string>
+}
+const NO_PREFS: NavPrefs = { pinned: [], hidden: [], order: [], sections: {} }
 
 /** One group of entries in the customise dialog, as the sidebar shows them. */
 export type NavGroup = { section: string; label: string; items: NavItem[] }
+
+/** Where each entry sits by default, before the person moved it. */
+export type NavHomes = Record<string, string>
 
 type NavEntry = { item: NavItem; section: string }
 
@@ -178,8 +192,9 @@ function navEntries(
 
 /**
  * The sidebar a person sees: what they may open, their pinned entries on top
- * as "Favoriten", and everything hidden or secondary on the "Weitere" page.
- * `more` lists those pages; the sidebar shows one "Weitere" entry for them.
+ * as "Favoriten", entries in the sections they put them in, and everything
+ * else under "Weitere". `more` lists those pages; the sidebar shows one
+ * "Weitere" entry that opens to list them.
  */
 export function buildNav(
   c: NavCounts,
@@ -187,22 +202,38 @@ export function buildNav(
   modules: ModuleInfo[],
   hasPerm: (key: string) => boolean = () => true,
   prefs: NavPrefs = NO_PREFS,
-): { nav: NavSection[]; more: NavItem[]; customizable: NavItem[]; groups: NavGroup[] } {
+): {
+  nav: NavSection[]
+  more: NavItem[]
+  customizable: NavItem[]
+  groups: NavGroup[]
+  homes: NavHomes
+} {
   const visible = navEntries(c, t, modules).filter(
     ({ item }) => !item.permKeys || item.permKeys.some(hasPerm),
   )
-  // The person's own order within a section; entries they never moved (new
-  // modules, say) keep the default order after the ones they placed.
+  // The person's own order; entries they never moved (new modules, say) keep
+  // the default order after the ones they placed.
   const order = prefs.order ?? []
   const rankOf = (path: string) => {
     const i = order.indexOf(path)
     return i < 0 ? Number.MAX_SAFE_INTEGER : i
   }
-  const entries = visible
-    .map((e, i) => ({ e, i }))
-    .sort((a, b) => rankOf(a.e.item.path) - rankOf(b.e.item.path) || a.i - b.i)
-    .map(({ e }) => e)
   const hidden = new Set(prefs.hidden)
+  const moved = prefs.sections ?? {}
+  const homes: NavHomes = {}
+  const placed = visible.map(({ item, section }, i) => {
+    homes[item.path] = section
+    let where = section
+    if (section !== 'me') {
+      if (hidden.has(item.path)) where = 'more'
+      else if (MOVABLE_SECTIONS.includes(moved[item.path])) where = moved[item.path]
+    }
+    return { item, section: where, i }
+  })
+  const entries = placed
+    .sort((a, b) => rankOf(a.item.path) - rankOf(b.item.path) || a.i - b.i)
+    .map(({ item, section }) => ({ item, section }))
   const pinned = prefs.pinned.filter((path) =>
     entries.some((e) => e.item.path === path && e.section !== 'me'),
   )
@@ -213,7 +244,7 @@ export function buildNav(
   for (const path of pinned) add('favourites', entries.find((e) => e.item.path === path)!.item)
   for (const { item, section } of entries) {
     if (pinned.includes(item.path)) continue
-    if (section === 'more' || (section !== 'me' && hidden.has(item.path))) more.push(item)
+    if (section === 'more') more.push(item)
     else add(section, item)
   }
   if (more.length > 0) {
@@ -221,27 +252,25 @@ export function buildNav(
       path: MORE_PATH,
       label: t('shell.nav.more'),
       icon: <IconDots size={24} />,
+      children: more,
     })
   }
+  const rank = (section: string) => SECTION_ORDER.indexOf(section) + 1 || 99
   const nav = [...sections.entries()]
-    .sort(
-      ([a], [b]) =>
-        (SECTION_ORDER.indexOf(a) + 1 || 99) - (SECTION_ORDER.indexOf(b) + 1 || 99),
-    )
+    .sort(([a], [b]) => rank(a) - rank(b))
     .map(([section, list]) => ({
       label: t(`shell.sections.${section}`),
       items: list,
     }))
   // In sidebar order, with the "Weitere" pages last.
-  const rank = (section: string) => SECTION_ORDER.indexOf(section) + 1 || 99
   const ordered = entries
     .filter((e) => e.section !== 'me')
     .map((e, i) => ({ e, i }))
     .sort((a, b) => rank(a.e.section) - rank(b.e.section) || a.i - b.i)
     .map(({ e }) => e)
   const customizable = ordered.map((e) => e.item)
-  // The customise dialog: favourites first, then each section with its
-  // hidden entries in place, then the pages that only live under "Weitere".
+  // The customise dialog shows the sidebar as it is: favourites, each
+  // section, then "Weitere".
   const groups: NavGroup[] = []
   const pinnedItems = pinned.map((path) => entries.find((e) => e.item.path === path)!.item)
   if (pinnedItems.length) {
@@ -258,31 +287,76 @@ export function buildNav(
         items: [e.item],
       })
   }
-  return { nav, more, customizable, groups }
+  return { nav, more, customizable, groups, homes }
+}
+
+/** Prefs with `path` placed in `section` ("more" puts it under Weitere). */
+function placeIn(prefs: NavPrefs, homes: NavHomes, path: string, section: string): NavPrefs {
+  const hidden = prefs.hidden.filter((p) => p !== path)
+  const sections = { ...(prefs.sections ?? {}) }
+  if (section === 'more') {
+    // Under Weitere; where it sat before stays known for the way back.
+    return { ...prefs, hidden: [...hidden, path], sections }
+  }
+  if (homes[path] === section) delete sections[path]
+  else sections[path] = section
+  return { ...prefs, hidden, sections }
+}
+
+/** Prefs that keep `paths` in this order, in front of everything else. */
+function withOrder(prefs: NavPrefs, paths: string[]): NavPrefs {
+  const order = (prefs.order ?? []).filter((p) => !paths.includes(p))
+  return { ...prefs, order: [...order, ...paths] }
 }
 
 /**
- * New prefs after moving `path` one step up (-1) or down (+1) within its
- * group of the customise dialog. Favourites follow the pinned list; other
- * groups are written in full to `order`.
+ * New prefs after moving `path` one step up (-1) or down (+1) in the
+ * customise dialog. Within a group it swaps with its neighbour; past the
+ * first or last entry it moves into the section above or below, "Weitere"
+ * included. Favourites follow the pinned list and stay among themselves.
  */
 export function moveNavEntry(
   prefs: NavPrefs,
-  group: NavGroup,
+  groups: NavGroup[],
+  homes: NavHomes,
   path: string,
   step: -1 | 1,
 ): NavPrefs {
+  const g = groups.findIndex((group) => group.items.some((item) => item.path === path))
+  if (g < 0) return prefs
+  const group = groups[g]
   const paths = group.items.map((item) => item.path)
   const i = paths.indexOf(path)
   const j = i + step
-  if (i < 0 || j < 0 || j >= paths.length) return prefs
-  ;[paths[i], paths[j]] = [paths[j], paths[i]]
-  if (group.section === 'favourites') {
-    // Pinned entries the person can't see right now keep their place at the end.
-    return { ...prefs, pinned: [...paths, ...prefs.pinned.filter((p) => !paths.includes(p))] }
+  if (j >= 0 && j < paths.length) {
+    ;[paths[i], paths[j]] = [paths[j], paths[i]]
+    if (group.section === 'favourites') {
+      // Pinned entries the person can't see right now keep their place at the end.
+      return { ...prefs, pinned: [...paths, ...prefs.pinned.filter((p) => !paths.includes(p))] }
+    }
+    return withOrder(prefs, paths)
   }
-  const order = (prefs.order ?? []).filter((p) => !paths.includes(p))
-  return { ...prefs, order: [...order, ...paths] }
+  const target = groups[g + step]
+  if (!target || group.section === 'favourites' || target.section === 'favourites') return prefs
+  const into = target.items.map((item) => item.path)
+  // Moving down lands at the top of the next section, moving up at the bottom.
+  const next = step > 0 ? [path, ...into] : [...into, path]
+  return withOrder(placeIn(prefs, homes, path, target.section), next)
+}
+
+/**
+ * New prefs with `path` moved under "Weitere", or out of it again: back to
+ * the section it came from, or "Betrieb" for pages that start under Weitere.
+ */
+export function toggleNavMore(
+  prefs: NavPrefs,
+  homes: NavHomes,
+  path: string,
+  inMore: boolean,
+): NavPrefs {
+  if (!inMore) return placeIn(prefs, homes, path, 'more')
+  const back = prefs.sections?.[path] ?? homes[path]
+  return placeIn(prefs, homes, path, back && back !== 'more' ? back : 'operations')
 }
 
 /** Every path in the sidebar. */

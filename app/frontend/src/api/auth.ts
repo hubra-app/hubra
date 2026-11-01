@@ -169,11 +169,13 @@ export interface NavPrefs {
   pinned: string[];
   hidden: string[];
   order?: string[];
+  /** Entries moved to another sidebar section than their module's. */
+  sections?: Record<string, string>;
 }
 
 export async function getNavPrefs(): Promise<NavPrefs> {
   const body = await apiFetch<{ navPrefs?: NavPrefs }>("/account/profile");
-  return body.navPrefs ?? { pinned: [], hidden: [], order: [] };
+  return body.navPrefs ?? { pinned: [], hidden: [], order: [], sections: {} };
 }
 
 export async function saveNavPrefs(navPrefs: NavPrefs): Promise<NavPrefs> {

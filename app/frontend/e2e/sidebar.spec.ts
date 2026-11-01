@@ -2,8 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { appUrl } from './env'
 
 const sidebar = (page: Page) => page.locator('.mantine-AppShell-navbar')
-const entry = (page: Page, path: string) =>
-  sidebar(page).locator(`a.nav-item[href$="${path}"]`)
+const entry = (page: Page, path: string) => sidebar(page).locator(`a.nav-item[href$="${path}"]`)
 
 async function openCustomize(page: Page) {
   // The user card at the foot of the sidebar opens the user menu.
@@ -39,12 +38,19 @@ test.describe('settings tabs', () => {
 })
 
 test.describe('Weitere', () => {
-  test('opens the first page behind it, with tabs for the others', async ({ page }) => {
+  test('opens in the sidebar to list its pages', async ({ page }) => {
     await page.goto(appUrl('dashboard'))
-    await entry(page, '/app/more').click()
-    await expect(page).not.toHaveURL(/\/app\/more$/)
+    const more = sidebar(page).getByTestId('nav-more')
+    await more.click()
+    await expect(more).toHaveAttribute('aria-expanded', 'true')
+    const first = sidebar(page).getByTestId('nav-more-items').locator('a.nav-item').first()
+    const href = await first.getAttribute('href')
+    await first.click()
+    await expect(page).toHaveURL(new RegExp(`${href}$`))
+    // On one of its pages it stays open with that page highlighted, and the
+    // tabs above the page switch between them.
+    await expect(first).toHaveAttribute('data-active', 'true')
     await expect(page.getByRole('tab').first()).toHaveAttribute('aria-selected', 'true')
-    await expect(entry(page, '/app/more')).toHaveAttribute('data-active', 'true')
   })
 })
 
@@ -57,7 +63,7 @@ test.describe('own sidebar', () => {
     await page.goto(appUrl('dashboard'))
     const dialog = await openCustomize(page)
     await dialog.getByRole('button', { name: 'Als Favorit anheften: Gruppen' }).click()
-    await dialog.getByRole('button', { name: 'Ausblenden: Finanzen' }).click()
+    await dialog.getByRole('button', { name: 'Unter Weitere verschieben: Finanzen' }).click()
     await dialog.getByRole('button', { name: 'Fertig' }).click()
 
     await expect(sidebar(page).getByText('Favoriten')).toBeVisible()
@@ -67,11 +73,10 @@ test.describe('own sidebar', () => {
     )
     await expect(entry(page, '/app/finance')).toHaveCount(0)
 
-    // Hidden, but one click away under Weitere and found by the search.
-    await entry(page, '/app/more').click()
-    await page.getByRole('tab', { name: 'Finanzen' }).click()
+    // Under Weitere, which lists it, and found by the search.
+    await sidebar(page).getByTestId('nav-more').click()
+    await sidebar(page).getByTestId('nav-more-items').getByText('Finanzen').click()
     await expect(page).toHaveURL(/\/app\/finance$/)
-    await expect(entry(page, '/app/more')).toHaveAttribute('data-active', 'true')
 
     await page.goto(appUrl('dashboard'))
     await page.getByPlaceholder(/suchen/i).fill('Finanz')
@@ -80,14 +85,30 @@ test.describe('own sidebar', () => {
 
     // Saved on the account: a reload keeps it.
     await page.reload()
-    await expect(entry(page, '/app/finance')).toHaveCount(0)
+    await expect(sidebar(page).getByTestId('nav-more-items').getByText('Finanzen')).toBeVisible()
+  })
+
+  test('the arrows move an entry into the next section', async ({ page }) => {
+    await page.goto(appUrl('dashboard'))
+    // The pencil next to the first heading opens the dialog.
+    await sidebar(page).getByTestId('nav-edit').click()
+    const dialog = page.getByRole('dialog', { name: 'Seitenleiste anpassen' })
+    await dialog.getByRole('button', { name: 'Nach unten: Finanzen' }).click()
+    await dialog.getByRole('button', { name: 'Fertig' }).click()
+    // The section is the heading's box: its first entry is now Finanzen.
+    const vereinsleben = sidebar(page).locator('xpath=.//p[normalize-space()="Vereinsleben"]/../..')
+    await expect(vereinsleben.locator('a.nav-item').first()).toHaveAttribute(
+      'href',
+      /\/app\/finance$/,
+    )
   })
 })
 
 test.describe('on a phone', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
-  const drawer = (page: Page) => page.getByRole('dialog').filter({ has: page.locator('a.nav-item') })
+  const drawer = (page: Page) =>
+    page.getByRole('dialog').filter({ has: page.locator('a.nav-item') })
 
   test('page tabs wrap instead of scrolling sideways', async ({ page }) => {
     await page.goto(appUrl('finance'))
@@ -105,7 +126,8 @@ test.describe('on a phone', () => {
         .locator('a.nav-item')
         .evaluateAll((links) => links.map((a) => a.getAttribute('href')?.replace(/.*\/app\//, '')))
     const customize = async () => {
-      await drawer(page).getByTestId('user-menu').getByText('Seitenleiste anpassen').click()
+      // The pencil next to the first heading of the phone menu.
+      await drawer(page).getByTestId('nav-edit').click()
       return page.getByRole('dialog', { name: 'Seitenleiste anpassen' })
     }
 

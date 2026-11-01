@@ -4967,7 +4967,14 @@
     "Privat"
    ],
    "shell.customize.intro": [
-    "Mit dem Stern heftest du eine Seite oben unter Favoriten an. Ausgeblendete Seiten findest du weiterhin unter Weitere und mit der Suche (Ctrl+K)."
+    "Mit dem Stern heftest du eine Seite oben unter Favoriten an. Ausgeblendete Seiten findest du weiterhin unter Weitere und mit der Suche (Ctrl+K).",
+    "Mit dem Stern heftest du eine Seite oben unter Favoriten an, mit den Pfeilen änderst du die Reihenfolge. Ausgeblendete Seiten findest du weiterhin unter Weitere und mit der Suche (Ctrl+K)."
+   ],
+   "shell.customize.hide": [
+    "Ausblenden"
+   ],
+   "shell.customize.show": [
+    "Wieder anzeigen"
    ]
   },
   "en-GB": {
@@ -6422,7 +6429,14 @@
     "Private"
    ],
    "shell.customize.intro": [
-    "Use the star to pin a page to the top under Favourites. Hidden pages are still under More and in the search (Ctrl+K)."
+    "Use the star to pin a page to the top under Favourites. Hidden pages are still under More and in the search (Ctrl+K).",
+    "Use the star to pin a page to the top under Favourites and the arrows to change the order. Hidden pages are still under More and in the search (Ctrl+K)."
+   ],
+   "shell.customize.hide": [
+    "Hide"
+   ],
+   "shell.customize.show": [
+    "Show again"
    ]
   }
  }
