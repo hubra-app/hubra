@@ -232,7 +232,6 @@ class BaseConfig:
 
     # ── Discord / bot ───────────────────────────────────────────────────────
     API_BOT_KEY: str = os.environ.get("API_BOT_KEY", "")
-    DISCORD_WEBHOOK_URL: str = os.environ.get("DISCORD_WEBHOOK_URL", "")
 
     # ── Redis / rate limiting ───────────────────────────────────────────────
     REDIS_URL: str = os.environ.get("REDIS_URL", "")

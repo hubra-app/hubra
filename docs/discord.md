@@ -37,6 +37,38 @@ channel, role mapping).
 Without them the Discord app shows as "not set up on this platform"
 and nothing else changes.
 
+## Platform log (the platform's own server)
+
+The same bot can post platform events to a channel on the platform's own
+Discord server. Set it up in manage › Platform settings › Discord ›
+Platform log:
+
+1. Click **Add the bot to the platform server** (it asks only for View
+   Channels, Send Messages and Embed Links) and pick your server.
+2. In Discord, turn on Developer Mode (User Settings › Advanced), right-click
+   the log channel › **Copy Channel ID**, and paste it into **Platform log
+   channel**. Save.
+3. Pick what is posted and click **Send test message**.
+
+Categories:
+
+| Category | What |
+| --- | --- |
+| clubs | Club created, changed, suspended, deleted; modules turned on or off; custom domains unverified or expired |
+| requests | Club requests submitted, approved, rejected |
+| access | Platform roles, club owners and admins added or removed, impersonation |
+| members | Members added to a club or accepting an invite (off by default: one post per member) |
+| plugins | Plugins installed, updated, rolled back, removed; plugin repositories |
+| backups | Backups created, verified, restored, deleted |
+| platform | Platform settings, encryption keys, mail server, translations |
+| alerts | System alerts: failed Celery tasks, API error rate, disk/Redis/Postgres checks |
+
+Every platform audit entry (`global_audit_logs`) is posted after its change
+is committed, by a Celery task, with the club, who did it, the target and the
+entry's details. Values whose key looks like a secret (password, token, key,
+secret, code) are shown as `***`. Alerts replace the old
+`DISCORD_WEBHOOK_URL` setting, which is gone.
+
 ## What the bot may do on a club's server
 
 It asks for View Channels, Send Messages, Embed Links and Manage Roles, plus

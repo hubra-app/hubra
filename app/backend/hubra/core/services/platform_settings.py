@@ -26,7 +26,9 @@ are stored (``backup.s3.*``) is the platform's to decide, not a club's.
 
 Discord (``discord.*``): the one Hubra application every club's server and
 every linked account goes through (see docs/discord.md). Set here only, with
-no env fallback.
+no env fallback.  ``discord.log_*`` is the platform log: the bot posts
+platform events to a channel on the platform's own server
+(``services.platform_discord``).
 """
 
 from __future__ import annotations
@@ -197,6 +199,22 @@ SPECS: tuple[Spec, ...] = (
         "Bot › Token. Stored encrypted",
         lambda cfg: "",
         secret=True,
+    ),
+    Spec(
+        "discord.log_channel_id",
+        "Platform log channel",
+        "Channel ID on the platform's Discord server where the bot posts "
+        "platform events. Empty: no posts",
+        lambda cfg: "",
+        "number",
+    ),
+    Spec(
+        "discord.log_events",
+        "Platform log events",
+        "Comma-separated categories to post: clubs, requests, access, members, "
+        "plugins, backups, platform, alerts",
+        lambda cfg: "clubs,requests,access,plugins,backups,platform,alerts",
+        "discord_log_events",
     ),
 )
 

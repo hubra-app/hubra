@@ -134,6 +134,30 @@ def send_test_mail():
     return jsonify({"ok": True, "to": to}), 200
 
 
+@platform_bp.post("/discord/test")
+@require_global_permission(_PERM)
+@limiter.limit("10 per hour")
+def send_test_discord():
+    """Post a test message to the platform log channel with the bot."""
+    from hubra.core.services import platform_discord
+
+    actor = getattr(g, "system_user", None)
+    try:
+        platform_discord.post(
+            {
+                "title": "Hubra platform log",
+                "description": "Test message: the bot can post here.",
+                "color": platform_discord.COLOR_INFO,
+                "footer": {
+                    "text": f"Sent by {getattr(actor, 'email', 'a platform admin')}"
+                },
+            }
+        )
+    except platform_discord.DiscordPostError as exc:
+        return api_error("DISCORD_ERROR", str(exc), 502)
+    return jsonify({"ok": True}), 200
+
+
 # ── Diagnostics ───────────────────────────────────────────────────────────────
 
 

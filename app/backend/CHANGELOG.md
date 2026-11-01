@@ -7,9 +7,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **System alerts go to the platform Discord log** instead of a webhook: `DISCORD_WEBHOOK_URL` is gone. Set the log channel in manage › Platform settings › Discord.
+
 - **`FERNET_KEY` is required in production** (`.env` change): the backend no longer starts without it. Values stored before were encrypted with a key derived from `SECRET_KEY` and stay readable, so set a fresh key and run `flask crypto rotate`.
 
 ### Added
+
+- **Platform log on Discord**: the Hubra bot posts platform events (clubs, club requests, roles and impersonation, plugins, backups, platform settings, system alerts) to a channel on the platform's own Discord server. Platform settings `discord.log_channel_id` and `discord.log_events`, a test button and an invite link in manage › Platform settings › Discord. Club requests submitted, approved and rejected are now in the platform audit log. See docs/discord.md, "Platform log".
 
 - **Key rotation for secrets at rest**: `FERNET_OLD_KEYS` keeps old keys readable, `flask crypto rotate` re-encrypts every stored secret in every club schema, `flask crypto check` confirms nothing is left on an old key. See docs/operator-guide.md, "Change the encryption key".
 - **Public-key backups**: with `BACKUP_PUBLIC_KEY` (an age key from `flask backups keygen`) backups are encrypted so the server can write but not read them; restore and full verify ask for the private key, which is used once and never stored. A club can have its own key (`flask backups club-key`) and open its own backups. Verify without a key checks the file's checksum. `.dump.gpg` backups still open with `BACKUP_ENCRYPTION_KEY`. Migration `d1a7c3e9b5f2` adds `tenants.backup_public_key`; the backend image now ships `age`.
