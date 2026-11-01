@@ -1,0 +1,8 @@
+{{ t('mail.email.signup_existing.intro', club_name=club_name) }}
+
+{{ t('mail.email.signup_existing.was_you') }}
+{{ t('mail.email.signup_existing.not_you') }}
+{% if login_url %}
+{{ t('mail.email.signup_existing.button') }}: {{ login_url }}
+{{ t('mail.email.signup_existing.reset') }}: {{ reset_url }}
+{% endif %}

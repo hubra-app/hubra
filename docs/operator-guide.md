@@ -103,6 +103,27 @@ So an upgrade is: take a backup, switch to the new images, restart.
 Pin a version for production. `latest` follows the newest release, and
 `sha-<commit>` is one exact build.
 
+### The app's database role
+
+New stacks connect to Postgres as `POSTGRES_APP_USER` (default `hubra_app`),
+an unprivileged role that owns only Hubra's data — a compromised backend or
+plugin then cannot reach beyond it. A fresh data volume creates the role by
+itself (`scripts/pg-init`). A stack from before this role exists keeps
+running as the superuser until you run the one-time upgrade:
+
+```sh
+docker compose cp scripts/pg-app-role-upgrade.sh postgres:/tmp/
+docker compose exec \
+  -e POSTGRES_APP_USER=hubra_app \
+  -e POSTGRES_APP_PASSWORD=<new strong password> \
+  postgres sh /tmp/pg-app-role-upgrade.sh
+```
+
+Then put the same `POSTGRES_APP_USER` and `POSTGRES_APP_PASSWORD` in `.env`
+and `docker compose up -d` (on k3s, run `deploy/create-secrets.sh` again and
+restart). The script also hands the role ownership of the existing schemas
+and tables, which later migrations need.
+
 ## Encryption keys
 
 Hubra stores a few secrets encrypted: door codes, binding values, mailbox

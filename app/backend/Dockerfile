@@ -9,7 +9,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /app
 
 COPY app/backend/requirements.lock app/backend/requirements.txt .
-RUN pip install --no-cache-dir --no-deps -r requirements.lock
+RUN pip install --no-cache-dir --no-deps --require-hashes -r requirements.lock
 
 # PostgreSQL 16 client tools (pg_dump/pg_restore) + GnuPG for backup encryption.
 # Bookworm ships PG 15 client which cannot dump from a PG 16 server.

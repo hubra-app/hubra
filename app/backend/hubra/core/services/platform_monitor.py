@@ -334,6 +334,10 @@ def check_relay(which: str) -> dict:
         if cfg.port not in (25, 465):
             step("starttls", lambda: server.starttls(context=context))
             server.ehlo()
+        elif cfg.port == 25 and server.has_extn("starttls"):
+            # The sender takes TLS on port 25 when offered; check the same way.
+            step("starttls", lambda: server.starttls(context=context))
+            server.ehlo()
         if cfg.user and cfg.password:
             step("login", lambda: server.login(cfg.user, cfg.password))
     except Exception as exc:
@@ -357,6 +361,8 @@ def check_relay(which: str) -> dict:
     }
     if error:
         result["error"] = error
+    if current_app.config.get("SMTP_TLS_VERIFY", True) is False:
+        result["tlsVerifyOff"] = True
     return result
 
 
