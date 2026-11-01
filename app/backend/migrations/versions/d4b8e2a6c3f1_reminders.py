@@ -10,7 +10,7 @@ Also joins the two heads that #80 (notifications.link) and #82 (groups
 tools count) left on main.
 
 Revision ID: d4b8e2a6c3f1
-Revises: b4e8c2a6d0f3
+Revises: c9d1e5a3f7b2
 Create Date: 2026-10-31 07:00:00.000000
 
 """
@@ -21,7 +21,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "d4b8e2a6c3f1"
-down_revision = "b4e8c2a6d0f3"
+down_revision = "c9d1e5a3f7b2"
 branch_labels = None
 depends_on = None
 
