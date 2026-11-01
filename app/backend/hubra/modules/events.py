@@ -1,6 +1,6 @@
 """Events: club events, registrations and attendance."""
 
-from hubra.core.modules import Blueprint, Module, NavItem, SettingField
+from hubra.core.modules import Blueprint, Module, NavItem, Schedule, SettingField
 
 module = Module(
     code="events",
@@ -22,6 +22,13 @@ module = Module(
             default=True,
             label="Notify members about new events",
             description="An in-app notification for every member when an event is published",
+        ),
+        SettingField(
+            "reminder_hours",
+            "int",
+            default=24,
+            label="Reminder before an event (hours)",
+            description="Members who signed up get a reminder this long before the start, in the app and by mail. 0: no reminders",
         ),
         SettingField(
             "event_types",
@@ -52,5 +59,13 @@ module = Module(
         "event_attendees",
         "event_registrations",
         "event_attendance",
+    ),
+    tasks=("hubra.core.tasks.reminder_tasks",),
+    schedule=(
+        Schedule(
+            "event-reminders",
+            "hubra.core.tasks.reminder_tasks.send_event_reminders_task",
+            900,
+        ),
     ),
 )

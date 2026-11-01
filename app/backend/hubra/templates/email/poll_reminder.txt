@@ -1,0 +1,6 @@
+{{ t('mail.email.poll_reminder.body', question=question, when=when) }}
+{% if portal_url %}
+{{ t('mail.email.poll_reminder.button') }}: {{ portal_url }}
+{% endif %}
+
+{{ t('mail.email.reminder.settings_note') }}

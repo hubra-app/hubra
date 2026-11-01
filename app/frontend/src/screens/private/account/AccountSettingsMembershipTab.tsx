@@ -9,6 +9,7 @@ import { formatDate } from '@/format'
 import { PaymentPlanCard } from './PaymentPlanCard'
 import { LeaveClubCard } from './LeaveClubCard'
 import { DirectoryCard } from './DirectoryCard'
+import { RemindersCard } from './RemindersCard'
 import { roleLabels } from '@/roles'
 import { qk } from '@/data/keys'
 
@@ -195,6 +196,8 @@ export function AccountSettingsMembershipTab() {
       </div>
 
       <DirectoryCard />
+
+      <RemindersCard />
 
       <LeaveClubCard />
     </>

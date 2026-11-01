@@ -94,6 +94,7 @@ class EventService:
         entry to it.
         """
         before = (event.date, event.time, event.end_date, event.location)
+        before_start = (event.date, event.time, event.all_day)
         for field in (
             "title",
             "date",
@@ -120,6 +121,8 @@ class EventService:
             _check_dates(event.date, event.end_date)
         if not quiet and (event.date, event.time, event.end_date, event.location) != before:
             _tell_registered(event, "Event changed", skip_member_id=actor_id)
+        if (event.date, event.time, event.all_day) != before_start:
+            event.reminder_sent_at = None  # the new start gets its reminder
         if data.get("requires_approval") is False:
             # Approval switched off: whoever is waiting for it is let in, in
             # the order they asked (or put on the waitlist if it is full).

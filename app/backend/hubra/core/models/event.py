@@ -129,6 +129,11 @@ class ClubEvent(db.Model):
         index=True,
     )
     series_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # When the reminder before the start went out; cleared when the event
+    # moves, so the new time gets one.
+    reminder_sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

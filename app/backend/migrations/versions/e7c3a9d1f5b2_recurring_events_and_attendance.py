@@ -8,7 +8,7 @@ the template tables in public and to every club schema. Also joins the two
 heads on main (#77 and #86).
 
 Revision ID: e7c3a9d1f5b2
-Revises: c9d1e5a3f7b2
+Revises: d4b8e2a6c3f1
 Create Date: 2026-10-31 07:00:00.000000
 
 """
@@ -19,7 +19,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "e7c3a9d1f5b2"
-down_revision = "c9d1e5a3f7b2"
+down_revision = "d4b8e2a6c3f1"
 branch_labels = None
 depends_on = None
 
