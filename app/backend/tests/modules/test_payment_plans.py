@@ -117,6 +117,10 @@ def test_invoice_generation_uses_plan(app, db, tier, seeded_db):
     member = seeded_db["admin"]
     member.status = "active"
     member.payment_plan_id = plan.id
+    # Joined long before this quarter: a member who joined during the quarter
+    # pays only its remaining months (first_fee_share), so with the seeded
+    # join date of today the amount depended on the calendar.
+    member.joined = date(2020, 1, 1)
     db.session.commit()
 
     with patch("hubra.core.tasks.email_tasks.send_email_task.delay"):
