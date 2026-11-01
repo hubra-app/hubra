@@ -233,6 +233,30 @@ SPECS: tuple[Spec, ...] = (
         lambda cfg: "clubs,requests,access,plugins,backups,platform,alerts",
         "discord_log_events",
     ),
+    Spec(
+        "alerts.cooldown_minutes",
+        "Alert cooldown",
+        "Minutes before the same kind of alert is mailed again. 0: every time. "
+        "Outages and recoveries always go out",
+        lambda cfg: "60",
+        "minutes",
+    ),
+    Spec(
+        "alerts.retention_days",
+        "Event log retention",
+        "Days the platform event log keeps sent and failed mails, outages and "
+        "alerts (1 to 365)",
+        lambda cfg: "30",
+        "retention_days",
+    ),
+    Spec(
+        "alerts.manage_url",
+        "Manage address",
+        "Address of the manage portal, for the button in alert mails "
+        "(https://manage.hubra.club). Empty: no button",
+        lambda cfg: cfg.get("MANAGE_BASE_URL") or "",
+        "url",
+    ),
 )
 
 _BY_KEY = {s.key: s for s in SPECS}
@@ -323,6 +347,15 @@ def as_list() -> list[dict]:
             }
         )
     return out
+
+
+def int_setting(key: str, fallback: int) -> int:
+    """A whole-number setting, or *fallback* when it is empty or unreadable
+    (a database hiccup must not stop an alert)."""
+    try:
+        return int(get(key))
+    except Exception:  # noqa: BLE001
+        return fallback
 
 
 @dataclass(frozen=True)

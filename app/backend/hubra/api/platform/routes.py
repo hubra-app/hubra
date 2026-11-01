@@ -409,7 +409,13 @@ def my_alerts():
     """Which alert mails the signed-in platform admin gets."""
     user = g.system_user
     return jsonify(
-        {"alerts": platform_monitor.prefs_for(user), "email": user.email}
+        {
+            "alerts": platform_monitor.prefs_for(user),
+            "email": user.email,
+            # Support sees the alerts page but is not mailed.
+            "receives": platform_monitor.gets_alert_mails(user),
+            "cooldownMinutes": int(platform_monitor.cooldown().total_seconds() // 60),
+        }
     ), 200
 
 

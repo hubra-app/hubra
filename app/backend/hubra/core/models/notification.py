@@ -30,6 +30,10 @@ class Notification(db.Model):
     # Where clicking it goes in the club app, e.g. "/app/operations/posts/3".
     link: Mapped[str | None] = mapped_column(db.String(255), nullable=True)
 
+    # The member's topic (hubra.api.notifications.prefs) of a new
+    # notification; not stored, read when its push is queued.
+    topic = None
+
     # Relationships
     member: Mapped["Member"] = relationship("Member")  # type: ignore[name-defined]  # noqa: F821
 

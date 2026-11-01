@@ -52,6 +52,9 @@ const DISCORD = [
 ]
 
 const DISCORD_LOG = ['discord.log_channel_id', 'discord.log_events']
+// Defaults built into Hubra, not read from the environment.
+const BUILT_IN = ['alerts.cooldown_minutes', 'alerts.retention_days']
+const ALERTS = ['alerts.cooldown_minutes', 'alerts.retention_days', 'alerts.manage_url']
 
 // Categories of platform events the bot posts (services/platform_discord.py).
 const LOG_CATEGORIES: [string, string, string][] = [
@@ -100,7 +103,7 @@ const LOG_CATEGORIES: [string, string, string][] = [
 // View Channel + Send Messages + Embed Links
 const LOG_BOT_PERMISSIONS = (1 << 10) | (1 << 11) | (1 << 14)
 
-const TABS = ['mail', 'sender', 'backups', 'discord', 'encryption', 'translations'] as const
+const TABS = ['mail', 'sender', 'backups', 'discord', 'alerts', 'encryption', 'translations'] as const
 type Tab = (typeof TABS)[number]
 
 function SourceBadge({ s }: { s: PlatformSetting }) {
@@ -111,6 +114,10 @@ function SourceBadge({ s }: { s: PlatformSetting }) {
   ) : !s.isSet ? (
     <Badge size="xs" variant="outline" color="gray">
       {tr('Nicht gesetzt', 'Not set')}
+    </Badge>
+  ) : BUILT_IN.includes(s.key) ? (
+    <Badge size="xs" variant="outline" color="gray">
+      {tr('Standard', 'Default')}
     </Badge>
   ) : (
     <Badge size="xs" variant="outline" color="gray">
@@ -174,6 +181,18 @@ const FIELD_DE: Record<string, [string, string]> = {
     'OAuth2 › Client Secret. Wird verschlüsselt gespeichert',
   ],
   'discord.bot_token': ['Discord-Bot-Token', 'Bot › Token. Wird verschlüsselt gespeichert'],
+  'alerts.cooldown_minutes': [
+    'Pause zwischen Warnmails (Minuten)',
+    'So lange kommt dieselbe Art Warnung nicht noch einmal per Mail. 0: jedes Mal. Ausfälle und Wiederherstellungen kommen immer',
+  ],
+  'alerts.retention_days': [
+    'Ereignisprotokoll aufbewahren (Tage)',
+    'So lange bleiben gesendete und fehlgeschlagene Mails, Ausfälle und Warnungen im Protokoll (1 bis 365)',
+  ],
+  'alerts.manage_url': [
+    'Adresse von manage',
+    'Für den Knopf «Warnungen öffnen» in Warnmails, z. B. https://manage.hubra.club. Leer: kein Knopf',
+  ],
   'discord.log_channel_id': [
     'Kanal für das Plattform-Log',
     'Kanal-ID auf dem Discord-Server der Plattform (Rechtsklick auf den Kanal › Kanal-ID kopieren, Entwicklermodus nötig). Leer: keine Meldungen',
@@ -334,6 +353,7 @@ export function PlatformSettings() {
           { id: 'sender', label: tr('Systemabsender', 'System sender') },
           { id: 'backups', label: tr('Backup-Speicher', 'Backup storage') },
           { id: 'discord', label: 'Discord' },
+          { id: 'alerts', label: tr('Warnungen', 'Alerts') },
           { id: 'encryption', label: tr('Verschlüsselung', 'Encryption') },
           { id: 'translations', label: tr('Übersetzungen', 'Translations') },
         ]}
@@ -390,6 +410,22 @@ export function PlatformSettings() {
                 {resetButton(SENDER)}
               </Group>
               <Stack gap="sm">{SENDER.map(field)}</Stack>
+            </Paper>
+          )}
+
+          {tab === 'alerts' && (
+            <Paper withBorder shadow="sm" radius="lg" p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Warnungen', 'Alerts')}</Title>
+                {resetButton(ALERTS)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Warnmails gehen an Plattform-Admins (Superadmins und Rollen mit Plattform-Einstellungen), nicht an Support. Jede Person wählt unter Plattform › Warnungen › Meine Warnungen, welche sie bekommt.',
+                  'Alert mails go to platform admins (superadmins and roles with platform settings), not to Support. Each person picks which ones they get under Platform › Alerts › My alerts.',
+                )}
+              </Text>
+              <Stack gap="sm">{ALERTS.map(field)}</Stack>
             </Paper>
           )}
 

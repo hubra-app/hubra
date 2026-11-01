@@ -236,7 +236,12 @@ export async function getAlertsOverview() {
 }
 
 export async function getMyAlerts() {
-  return apiFetch<{ alerts: Record<AlertType, boolean>; email: string }>(`${P}/alerts/me`)
+  return apiFetch<{
+    alerts: Record<AlertType, boolean>
+    email: string
+    receives: boolean
+    cooldownMinutes: number
+  }>(`${P}/alerts/me`)
 }
 
 export async function updateMyAlerts(values: Partial<Record<AlertType, boolean>>) {

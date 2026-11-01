@@ -10,6 +10,7 @@ from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 from hubra.core.models.member import Member
 from hubra.core.models.notification import Notification
+from hubra.api.notifications.prefs import wants
 
 _MAX_TEXT = 255  # title and msg columns
 LIST_LIMIT = 100  # newest notifications the bell gets
@@ -21,31 +22,45 @@ def _fit(text: str) -> str:
     return text if len(text) <= _MAX_TEXT else text[: _MAX_TEXT - 1] + "…"
 
 
+def _new(member_id: int, kind: str, title: str, msg: str, link, topic) -> Notification:
+    notif = Notification(
+        member_id=member_id, kind=kind, title=_fit(title), msg=_fit(msg), link=link
+    )
+    # Not stored: the push listener reads it to honour the member's choice.
+    notif.topic = topic
+    return notif
+
+
+def _wants_bell(member_id: int, topic: str | None) -> bool:
+    if not topic:
+        return True
+    stored = db.session.scalar(
+        select(Member.notify_prefs).where(Member.id == member_id)
+    )
+    return wants(stored, topic, "bell")
+
+
 def notify_all_active(
     kind: str,
     title: str,
     msg: str,
     skip_member_id: int | None = None,
     link: str | None = None,
+    topic: str | None = None,
 ) -> None:
-    """Create a notification for every active (non-archived) member."""
-    members = db.session.scalars(
-        select(Member.id)
+    """Create a notification for every active (non-archived) member who did
+    not turn *topic* off in the bell."""
+    members = db.session.execute(
+        select(Member.id, Member.notify_prefs)
         .where(Member.status == "active")
         .where(Member.archived_at.is_(None))
     ).all()
-    for member_id in members:
+    for member_id, stored in members:
         if skip_member_id is not None and member_id == skip_member_id:
             continue
-        db.session.add(
-            Notification(
-                member_id=member_id,
-                kind=kind,
-                title=_fit(title),
-                msg=_fit(msg),
-                link=link,
-            )
-        )
+        if not wants(stored, topic, "bell"):
+            continue
+        db.session.add(_new(member_id, kind, title, msg, link, topic))
 
 
 def notify_on_publish(
@@ -57,23 +72,29 @@ def notify_on_publish(
     link: str | None = None,
 ) -> None:
     """``notify_all_active`` unless the club switched the module's
-    "notify members" setting off (posts, events, polls)."""
+    "notify members" setting off (posts, events, polls).  The topic is the
+    module: a member can turn new posts, events or polls off."""
     from hubra.core.modules import get_config
 
     if get_config(module_code).get("notify_members", True) is False:
         return
-    notify_all_active(kind, title, msg, skip_member_id=skip_member_id, link=link)
+    notify_all_active(
+        kind, title, msg, skip_member_id=skip_member_id, link=link, topic=module_code
+    )
 
 
 def notify_member(
-    member_id: int, kind: str, title: str, msg: str, link: str | None = None
+    member_id: int,
+    kind: str,
+    title: str,
+    msg: str,
+    link: str | None = None,
+    topic: str | None = None,
 ) -> None:
-    """Create a notification for a single member."""
-    db.session.add(
-        Notification(
-            member_id=member_id, kind=kind, title=_fit(title), msg=_fit(msg), link=link
-        )
-    )
+    """Create a notification for a single member, unless they turned *topic*
+    off in the bell (see ``prefs``)."""
+    if _wants_bell(member_id, topic):
+        db.session.add(_new(member_id, kind, title, msg, link, topic))
 
 
 def create_notification(

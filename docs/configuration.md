@@ -20,7 +20,7 @@ not using mail, leave the mail variables blank.
 | JWT cookies | `JWT_COOKIE_DOMAIN`, `JWT_COOKIE_SAMESITE`, `JWT_COOKIE_SECURE`            | Production (cross-subdomain auth)                        |
 | Frontend    | `FRONTEND_BASE_URL`                                                        | Production (email link generation — points at the SPA)   |
 | API origin  | `API_PUBLIC_URL`                                                           | Production with outside services (callback URLs they call, e.g. `https://api.hubra.club`) |
-| Manage      | `MANAGE_BASE_URL`                                                          | Optional (the "Open alerts" button in platform alert mails, e.g. `https://manage.hubra.club`) |
+| Manage      | `MANAGE_BASE_URL`                                                          | Optional fallback for the platform setting `alerts.manage_url` (the "Open alerts" button in alert mails) |
 | Superadmins | `SUPERADMIN_EMAILS` (comma-separated; promoted on every start, never demoted) | Optional; or `flask make-admin --email <email>` |
 | Domain      | `MAIL_HOST`, `MAIL_FROM`, `MAIL_DOMAIN`                                    | Always (mail vars only when mail enabled)                |
 | Modules     | Per club in Settings › Modules & plugins, or `flask modules enable <code>` | Always                                                   |

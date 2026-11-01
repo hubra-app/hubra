@@ -240,6 +240,23 @@ const ALERT_TYPES: {
   },
 ]
 
+function cooldownText(email: string, minutes: number): string {
+  const sentTo = tr(`Gehen an ${email}.`, `Sent to ${email}.`)
+  if (minutes <= 0)
+    return `${sentTo} ${tr('Jede Warnung kommt sofort.', 'Every alert comes right away.')}`
+  const every =
+    minutes % 60 === 0
+      ? tr(
+          minutes === 60 ? 'einmal pro Stunde' : `einmal alle ${minutes / 60} Stunden`,
+          minutes === 60 ? 'once an hour' : `once every ${minutes / 60} hours`,
+        )
+      : tr(`einmal alle ${minutes} Minuten`, `once every ${minutes} minutes`)
+  return `${sentTo} ${tr(
+    `Jede Art kommt höchstens ${every}, ausser Ausfälle, Wiederherstellungen und Plugin-Neuigkeiten.`,
+    `Each type comes at most ${every}, except outages, recoveries and plugin news.`,
+  )}`
+}
+
 export function MyAlertsCard() {
   const { notify } = useAdmin()
   const queryClient = useQueryClient()
@@ -262,13 +279,16 @@ export function MyAlertsCard() {
         {tr('Meine Warnungen per Mail', 'My alert mails')}
       </Title>
       <Text size="sm" c="dimmed" mb={12}>
-        {query.data
-          ? tr(
-              `Gehen an ${query.data.email}. Jede Art kommt höchstens einmal pro Stunde, ausser Ausfälle, Wiederherstellungen und Plugin-Neuigkeiten.`,
-              `Sent to ${query.data.email}. Each type comes at most once an hour, except outages, recoveries and plugin news.`,
-            )
-          : ' '}
+        {query.data ? cooldownText(query.data.email, query.data.cooldownMinutes) : ' '}
       </Text>
+      {query.data && !query.data.receives && (
+        <Alert color="gray" variant="light" mb={12}>
+          {tr(
+            'Warnmails gehen nur an Plattform-Admins. Mit deiner Rolle siehst du die Warnungen hier, bekommst aber keine Mails.',
+            'Alert mails only go to platform admins. With your role you see the alerts here but get no mail.',
+          )}
+        </Alert>
+      )}
       {query.isError && <Text c="red">{failureText(query.error)}</Text>}
       {(['mail', 'platform'] as const).map((group) => (
         <Stack key={group} gap={12} mb={16}>

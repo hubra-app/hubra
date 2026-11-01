@@ -3224,5 +3224,20 @@
   "mail.email.platform_alert.type.service_down": "Service",
   "mail.email.platform_alert.type.backup_failed": "Backup",
   "mail.email.platform_alert.type.plugin_updates": "Plugins",
-  "mail.email.platform_alert.type.system": "System"
+  "mail.email.platform_alert.type.system": "System",
+  "account.notify.title": "Notifications",
+  "account.notify.hint": "Choose per topic where you get it: in the bell in Hubra, as a browser push or by e-mail. Notices about your account's security always come.",
+  "account.notify.topic": "Topic",
+  "account.notify.bell": "Bell",
+  "account.notify.push": "Push",
+  "account.notify.mail": "E-mail",
+  "account.notify.topics.posts": "New posts",
+  "account.notify.topics.events": "New events",
+  "account.notify.topics.polls": "New polls",
+  "account.notify.topics.event_reminders": "Reminder before events",
+  "account.notify.topics.poll_reminders": "Reminder before a poll closes",
+  "account.notify.topics.my_events": "My sign-ups",
+  "account.notify.topics.my_polls": "Votes in my polls, proxies",
+  "account.notify.topics.tasks": "Tasks for me (applications, sign-ups to approve)",
+  "account.notify.pushHint": "Push only reaches devices where you turned push on below."
 }

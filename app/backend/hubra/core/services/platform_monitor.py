@@ -8,10 +8,11 @@ alert mails to platform staff.
   STARTTLS, AUTH) without sending anything.  The beat task
   ``mail_monitor_tasks.check_mail_relays`` runs it every few minutes and logs
   a ``relay`` event when a relay goes down or comes back.
-* Alerts go by mail to platform staff (superadmins and everyone holding
-  ``platform.diagnostics``), each of whom picks the types they get
-  (``users.platform_alerts``).  Every type but the relay state changes is
-  sent at most once per ``ALERT_COOLDOWN``.  When the platform Discord log
+* Alerts go by mail to platform admins (superadmins and everyone holding
+  ``platform.settings``; not Support, which only looks), each of whom picks
+  the types they get (``users.platform_alerts``).  Every type but the state
+  changes is sent at most once per cooldown (platform setting
+  ``alerts.cooldown_minutes``).  The log keeps ``alerts.retention_days``.  When the platform Discord log
   (``services/platform_discord.py``) is set up, mail alerts go there too.
 
 An alert about the relays is sent through the relays, so when both are down
@@ -41,12 +42,16 @@ from hubra.core.models.platform_event import PlatformEvent
 
 logger = logging.getLogger(__name__)
 
+# Defaults of the platform settings alerts.retention_days / cooldown_minutes.
 RETENTION_DAYS = 30
-ALERT_COOLDOWN = timedelta(hours=1)
+COOLDOWN_MINUTES = 60
 CHECK_TIMEOUT = 10  # seconds per relay check
 # A relay counts as down after this many failed checks in a row, so one
 # slow answer does not wake anybody.
 DOWN_AFTER = 2
+
+# Who counts as a platform admin for alert mails.
+ADMIN_PERMISSIONS = ("platform.settings", "*")
 
 ALERT_TYPES = (
     "relay_down",
@@ -152,8 +157,25 @@ def stats(hours: int = 24) -> dict:
     }
 
 
-def prune(days: int = RETENTION_DAYS) -> int:
-    """Delete events older than *days*.  Returns how many went."""
+def retention_days() -> int:
+    from hubra.core.services import platform_settings
+
+    return max(
+        1, platform_settings.int_setting("alerts.retention_days", RETENTION_DAYS)
+    )
+
+
+def cooldown() -> timedelta:
+    from hubra.core.services import platform_settings
+
+    minutes = platform_settings.int_setting("alerts.cooldown_minutes", COOLDOWN_MINUTES)
+    return timedelta(minutes=max(0, minutes))
+
+
+def prune(days: int | None = None) -> int:
+    """Delete events older than *days* (default: the retention setting).
+    Returns how many went."""
+    days = days if days is not None else retention_days()
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
     result = db.session.execute(
         PlatformEvent.__table__.delete().where(PlatformEvent.created_at < cutoff)
@@ -493,32 +515,44 @@ def prefs_for(user) -> dict[str, bool]:
 
 
 def recipients(alert_type: str) -> list:
-    """Platform staff who get *alert_type*: superadmins and holders of
-    ``platform.diagnostics``, active, who did not turn it off."""
+    """Platform admins who get *alert_type*: superadmins and holders of
+    ``platform.settings``, active, who did not turn it off.  Support (only
+    ``platform.diagnostics``) sees the alerts page but gets no mail."""
+    from hubra.core.models.user import User
+
+    users = db.session.scalars(
+        select(User)
+        .where(User.is_disabled.is_(False))
+        .where((User.is_superadmin.is_(True)) | (User.id.in_(_admin_ids())))
+        .order_by(User.id)
+    ).all()
+    return [u for u in users if prefs_for(u).get(alert_type, False)]
+
+
+def gets_alert_mails(user) -> bool:
+    """Whether *user* is a platform admin alert mails go to."""
+    if user.is_superadmin:
+        return True
+    return user.id in set(db.session.scalars(_admin_ids()).all())
+
+
+def _admin_ids():
     from hubra.core.models.global_role import (
         GlobalPermission,
         GlobalRolePermission,
         UserGlobalRole,
     )
-    from hubra.core.models.user import User
 
-    staff_ids = select(UserGlobalRole.user_id).where(
+    return select(UserGlobalRole.user_id).where(
         UserGlobalRole.role_id.in_(
             select(GlobalRolePermission.role_id)
             .join(
                 GlobalPermission,
                 GlobalPermission.id == GlobalRolePermission.permission_id,
             )
-            .where(GlobalPermission.key.in_(("platform.diagnostics", "*")))
+            .where(GlobalPermission.key.in_(ADMIN_PERMISSIONS))
         )
     )
-    users = db.session.scalars(
-        select(User)
-        .where(User.is_disabled.is_(False))
-        .where((User.is_superadmin.is_(True)) | (User.id.in_(staff_ids)))
-        .order_by(User.id)
-    ).all()
-    return [u for u in users if prefs_for(u).get(alert_type, False)]
 
 
 def alert(
@@ -531,13 +565,14 @@ def alert(
 ) -> bool:
     """Log an alert and have it mailed to platform staff.  Never raises.
 
-    With *throttle*, an alert type that went out within ``ALERT_COOLDOWN``
+    With *throttle*, an alert type that went out within the cooldown
     is not sent again (the event that caused it is in the log anyway).
     Returns True when the alert was sent off.
     """
     try:
         now = datetime.now(timezone.utc)
-        if throttle and _recent(alert_type, now - ALERT_COOLDOWN):
+        wait = cooldown() if throttle else timedelta(0)
+        if wait and _recent(alert_type, now - wait):
             return False
         record(
             "alert",
@@ -562,12 +597,21 @@ def alert(
         return False
 
 
+def _manage_url() -> str:
+    from hubra.core.services import platform_settings
+
+    try:
+        return platform_settings.get("alerts.manage_url").rstrip("/")
+    except Exception:  # noqa: BLE001
+        return str(current_app.config.get("MANAGE_BASE_URL") or "").rstrip("/")
+
+
 def _instance_name() -> str:
     from urllib.parse import urlparse
 
     cfg = current_app.config
-    for key in ("MANAGE_BASE_URL", "FRONTEND_BASE_URL", "API_PUBLIC_URL"):
-        host = urlparse(str(cfg.get(key) or "")).netloc
+    for url in (_manage_url(), cfg.get("FRONTEND_BASE_URL"), cfg.get("API_PUBLIC_URL")):
+        host = urlparse(str(url or "")).netloc
         if host:
             return host
     import socket
@@ -593,7 +637,7 @@ def _alert_body(
         zone = ZoneInfo(str(cfg.get("MAIL_TIMEZONE") or "Europe/Zurich"))
     except Exception:
         zone = ZoneInfo("Europe/Zurich")
-    manage = str(cfg.get("MANAGE_BASE_URL") or "").rstrip("/")
+    manage = _manage_url()
     level = level if level in ("error", "warning", "info") else "error"
     from hubra.core.services.mail_i18n import get_mail_translator
 

@@ -35,7 +35,6 @@ def _passed(deadline: datetime | None) -> bool:
     return deadline < datetime.now(timezone.utc)
 
 
-
 def _check_dates(start, end) -> None:
     """An event cannot end before it starts (calendar apps drop it)."""
     if start is not None and end is not None and end < start:
@@ -51,8 +50,14 @@ def _tell_registered(event, title: str, skip_member_id: int | None = None) -> No
     for reg in event.registrations:
         if reg.status in _OPEN and reg.member_id != skip_member_id:
             notify_member(
-                reg.member_id, "info", title, event.title, link=event_link(event.id)
+                reg.member_id,
+                "info",
+                title,
+                event.title,
+                link=event_link(event.id),
+                topic="my_events",
             )
+
 
 def event_link(event_id: int, pending: bool = False) -> str:
     """The events page showing one event (``pending`` opens its sign-ups
@@ -119,7 +124,10 @@ class EventService:
                 setattr(event, field, data[field])
         if "date" in data or "end_date" in data:
             _check_dates(event.date, event.end_date)
-        if not quiet and (event.date, event.time, event.end_date, event.location) != before:
+        if (
+            not quiet
+            and (event.date, event.time, event.end_date, event.location) != before
+        ):
             _tell_registered(event, "Event changed", skip_member_id=actor_id)
         if (event.date, event.time, event.all_day) != before_start:
             event.reminder_sent_at = None  # the new start gets its reminder
@@ -341,7 +349,14 @@ class EventService:
         else:
             registration.status = "declined"
             title = "Sign-up declined"
-        notify_member(member_id, "info", title, event.title, link=event_link(event.id))
+        notify_member(
+            member_id,
+            "info",
+            title,
+            event.title,
+            link=event_link(event.id),
+            topic="my_events",
+        )
         log_audit(
             actor_id=actor_id,
             action="approve_registration" if approve else "decline_registration",
@@ -498,6 +513,7 @@ class EventService:
                 "You got a place",
                 event.title,
                 link=event_link(event.id),
+                topic="my_events",
             )
 
     @staticmethod
