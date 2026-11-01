@@ -3209,5 +3209,20 @@
   "account.push.hint": "Alles, was in der Glocke erscheint (Erinnerungen, neue Anlässe, Umfragen), auch als Mitteilung auf diesem Gerät, für alle deine Vereine.",
   "account.push.switch": "Browser-Mitteilungen",
   "account.push.needsInstall": "Auf iPhone und iPad zuerst Hubra zum Home-Bildschirm hinzufügen (Teilen › Zum Home-Bildschirm), dann hier einschalten.",
-  "account.push.denied": "Mitteilungen sind für diese Seite im Browser blockiert. Erlaube sie in den Website-Einstellungen des Browsers."
+  "account.push.denied": "Mitteilungen sind für diese Seite im Browser blockiert. Erlaube sie in den Website-Einstellungen des Browsers.",
+  "mail.email.platform_alert.intro": "Auf der Plattform ist etwas passiert, das du dir ansehen solltest:",
+  "mail.email.platform_alert.level_error": "Fehler",
+  "mail.email.platform_alert.level_warning": "Warnung",
+  "mail.email.platform_alert.level_info": "Info",
+  "mail.email.platform_alert.when": "Zeit",
+  "mail.email.platform_alert.instance": "Instanz",
+  "mail.email.platform_alert.button": "Warnungen öffnen",
+  "mail.email.platform_alert.why": "Du bekommst diese Mail als Plattform-Admin. Welche Warnungen du per Mail bekommst, stellst du in manage unter Plattform › Warnungen › Meine Warnungen ein.",
+  "mail.email.platform_alert.type.relay_down": "Mail-Relay",
+  "mail.email.platform_alert.type.fallback_used": "Fallback-Relay",
+  "mail.email.platform_alert.type.delivery_failed": "Mail-Zustellung",
+  "mail.email.platform_alert.type.service_down": "Dienst",
+  "mail.email.platform_alert.type.backup_failed": "Backup",
+  "mail.email.platform_alert.type.plugin_updates": "Plugins",
+  "mail.email.platform_alert.type.system": "System"
 }

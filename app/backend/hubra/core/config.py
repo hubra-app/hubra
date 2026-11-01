@@ -177,6 +177,9 @@ class BaseConfig:
     # (sso.hubra.club) rather than the COS frontend. Falls back to
     # FRONTEND_BASE_URL for backward compatibility when not set.
     SSO_BASE_URL: str = os.environ.get("SSO_BASE_URL", "")
+    # The manager portal (manage.hubra.club), for links in mails to platform
+    # admins. Already in .env for the frontend build (VITE_MANAGE_URL).
+    MANAGE_BASE_URL: str = os.environ.get("MANAGE_BASE_URL", "")
     # Time zone for times shown in mails (new-device sign-in).
     MAIL_TIMEZONE: str = os.environ.get("MAIL_TIMEZONE", "Europe/Zurich")
 

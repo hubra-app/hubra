@@ -208,7 +208,9 @@ def test_all_quiet_means_no_problems(db):
 
 
 def test_overview_endpoint(client, staff_headers, db):
-    platform_monitor.record("alert", "backup_failed", "1 of 2 backups failed", level="error")
+    platform_monitor.record(
+        "alert", "backup_failed", "1 of 2 backups failed", level="error"
+    )
     platform_monitor.record("backup", "backup.failed", "x", level="error")
     platform_monitor.record("mail", "mail.fallback", "y", level="warning")
     db.session.commit()
@@ -224,3 +226,43 @@ def test_overview_endpoint(client, staff_headers, db):
 
 def test_overview_is_staff_only(client, auth_headers):
     assert client.get(f"{BASE}/alerts/overview").status_code == 403
+
+
+# ── Alert mail layout ─────────────────────────────────────────────────────────
+
+
+def test_alert_mail_uses_the_hubra_layout(db, staff, deliver):
+    import json
+    from email import message_from_string
+    from pathlib import Path
+
+    from hubra.core.models.translation import Translation
+
+    seeds = Path(__file__).resolve().parents[2] / "hubra/core/seed_data/translations"
+    texts = json.loads((seeds / "de-CH.json").read_text(encoding="utf-8"))
+    for key, value in texts.items():
+        if key.startswith("mail.email.platform_alert.") or key in {
+            "mail.email.greeting",
+            "mail.email.footer",
+            "mail.email.sent_with",
+        }:
+            db.session.add(Translation(locale="de-CH", key=key, value=value))
+    db.session.commit()
+
+    platform_monitor.backups_failed(
+        "scheduled_daily",
+        [
+            SimpleNamespace(
+                status="failed", tenant_slug="fc-test", error_message="S3 403"
+            )
+        ],
+    )
+    (call,) = [c for c in deliver.call_args_list if "[Hubra]" in c.args[3]]
+    msg = message_from_string(call.args[3])
+    html = next(p for p in msg.walk() if p.get_content_type() == "text/html")
+    body = html.get_payload(decode=True).decode()
+    assert "<html" in body.lower()
+    assert "1 of 1 scheduled backups failed" in body
+    assert "S3 403" in body
+    assert "[mail." not in body  # every text is translated
+    assert texts["mail.email.platform_alert.type.backup_failed"] in body

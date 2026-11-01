@@ -562,34 +562,72 @@ def alert(
         return False
 
 
-_TYPE_LABEL = {
-    "relay_down": "Mail relay down or back",
-    "fallback_used": "Fallback relay used",
-    "delivery_failed": "Mail not delivered",
-    "service_down": "Service down or back",
-    "backup_failed": "Backup failed",
-    "plugin_updates": "Plugin updates",
-    "system": "System alert",
-}
+def _instance_name() -> str:
+    from urllib.parse import urlparse
+
+    cfg = current_app.config
+    for key in ("MANAGE_BASE_URL", "FRONTEND_BASE_URL", "API_PUBLIC_URL"):
+        host = urlparse(str(cfg.get(key) or "")).netloc
+        if host:
+            return host
+    import socket
+
+    return socket.gethostname()
 
 
-def _alert_body(alert_type: str, subject: str, lines: list[str]) -> tuple[str, str]:
-    """In English, like the system alerts and their causes (SMTP errors,
-    task names) that fill most of it."""
+def _alert_body(
+    user, alert_type: str, subject: str, lines: list[str], level: str
+) -> tuple[str, str, str]:
+    """The alert in the Hubra mail layout, in the admin's language.  The
+    subject and lines stay as written (English, like the SMTP errors and
+    task names in them).  Returns ``(html, text, subject)``."""
+    from zoneinfo import ZoneInfo
+
+    from hubra.core.services.mail_i18n import _HUBRA_MARK, render_mail_template
+
+    import base64
+
+    cfg = current_app.config
+    locale = "en-GB" if (user.language or "").lower().startswith("en") else "de-CH"
+    try:
+        zone = ZoneInfo(str(cfg.get("MAIL_TIMEZONE") or "Europe/Zurich"))
+    except Exception:
+        zone = ZoneInfo("Europe/Zurich")
+    manage = str(cfg.get("MANAGE_BASE_URL") or "").rstrip("/")
+    level = level if level in ("error", "warning", "info") else "error"
+    from hubra.core.services.mail_i18n import get_mail_translator
+
+    t = get_mail_translator(locale)
+    return render_mail_template(
+        "platform_alert",
+        locale=locale,
+        name=user.first_name or user.name or user.email,
+        club_name="Hubra",
+        # Always the Hubra mark: an alert is the platform's, even when a
+        # club's request raised it.
+        logo_src="data:image/png;base64,"
+        + base64.b64encode(_HUBRA_MARK.read_bytes()).decode(),
+        alert_subject=subject,
+        lines=lines,
+        level=level,
+        level_label=t(f"mail.email.platform_alert.level_{level}"),
+        type_label=t(f"mail.email.platform_alert.type.{alert_type}"),
+        when=datetime.now(zone).strftime("%d.%m.%Y, %H:%M"),
+        instance=_instance_name(),
+        alerts_url=f"{manage}/app/platform/alerts/overview" if manage else "",
+    )
+
+
+def _plain_alert(subject: str, lines: list[str]) -> tuple[str, str, str]:
+    """When the template cannot be rendered (no translations, a broken
+    database): the bare facts still go out."""
     from markupsafe import escape
 
-    label = _TYPE_LABEL.get(alert_type, alert_type)
-    footer = (
-        "You get this mail as a platform admin. Details are in manage under "
-        "Platform › Alerts, where you also choose which alerts you get."
+    text = "\n".join([subject, "", *lines])
+    html = f"<p><strong>{escape(subject)}</strong></p>" + "".join(
+        f"<p>{escape(line)}</p>" for line in lines
     )
-    text = "\n".join([subject, "", *lines, "", f"{label}. {footer}"])
-    html = (
-        f"<p><strong>{escape(subject)}</strong></p>"
-        + "".join(f"<p>{escape(line)}</p>" for line in lines)
-        + f'<p style="color:#666;font-size:12px">{escape(label)}. {escape(footer)}</p>'
-    )
-    return html, text
+    return html, text, f"[Hubra] {subject}"
 
 
 def deliver_alert(alert_type: str, subject: str, lines: list[str], level: str) -> int:
@@ -613,14 +651,20 @@ def deliver_alert(alert_type: str, subject: str, lines: list[str], level: str) -
         return 0
     sent = 0
     for user in recipients(alert_type):
-        html, text = _alert_body(alert_type, subject, lines)
+        try:
+            html, text, mail_subject = _alert_body(
+                user, alert_type, subject, lines, level
+            )
+        except Exception:
+            logger.warning("platform_alert_template_failed", exc_info=True)
+            html, text, mail_subject = _plain_alert(subject, lines)
         try:
             email._send_via_smtp(
                 user.email,
                 user.name or user.email,
                 relay.sender_email,
                 relay.sender_name,
-                f"[Hubra] {subject}",
+                mail_subject,
                 html,
                 text,
                 notify=False,
