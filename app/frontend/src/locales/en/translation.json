@@ -234,6 +234,13 @@
       "hint": "Before events you signed up for, and before a poll you have not voted in closes. They always show in the app.",
       "events": "Before events",
       "polls": "Before polls close"
+    },
+    "push": {
+      "title": "Notifications on this device",
+      "hint": "Everything that shows in the bell (reminders, new events, polls) also as a notification on this device, for all your clubs.",
+      "switch": "Browser notifications",
+      "needsInstall": "On iPhone and iPad, first add Hubra to the home screen (Share › Add to Home Screen), then switch this on.",
+      "denied": "Notifications are blocked for this site in the browser. Allow them in the browser's site settings."
     }
   },
   "app": {

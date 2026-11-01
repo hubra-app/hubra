@@ -178,3 +178,7 @@ class NotificationsService:
         if read_only:
             query = query.where(Notification.read.is_(True))
         return db.session.execute(query).rowcount or 0
+
+
+# Bell notifications also go out as browser pushes (registers its listener).
+from hubra.api.notifications import push as _push  # noqa: E402,F401
