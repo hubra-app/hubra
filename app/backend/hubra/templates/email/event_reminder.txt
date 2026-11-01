@@ -1,0 +1,9 @@
+{{ t('mail.email.event_reminder.body', event_title=event_title, when=when) }}
+{% if location %}
+{{ t('mail.email.event_reminder.where') }}: {{ location }}
+{% endif %}
+{% if portal_url %}
+{{ t('mail.email.event_reminder.button') }}: {{ portal_url }}
+{% endif %}
+
+{{ t('mail.email.reminder.settings_note') }}
