@@ -62,6 +62,7 @@ from hubra.core.models.device_session import Device, Session
 from hubra.core.models.account_session import AccountSession
 from hubra.core.models.known_device import KnownDevice
 from hubra.core.models.passkey import Passkey
+from hubra.core.models.push_subscription import PushSubscription
 from hubra.core.models.connected_app import (
     ConnectedApp,
     ConnectedAppEvent,
@@ -94,6 +95,7 @@ __all__ = [
     "AccountSession",
     "KnownDevice",
     "Passkey",
+    "PushSubscription",
     "ConnectedApp",
     "ConnectedAppEvent",
     "ExternalAccount",
