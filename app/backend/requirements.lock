@@ -47,6 +47,8 @@ click-repl==0.3.0
 cryptography==50.0.2
     # via
     #   -r requirements.txt
+    #   http-ece
+    #   py-vapid
     #   pyopenssl
     #   webauthn
 cssselect2==0.9.0
@@ -83,6 +85,8 @@ fonttools[woff]==4.63.0
 greenlet==3.5.3
     # via sqlalchemy
 gunicorn==26.0.0
+    # via -r requirements.txt
+http-ece==1.2.1
     # via -r requirements.txt
 iso3166==2.1.1
     # via qrbill
@@ -126,6 +130,8 @@ pillow==13.0.0
 prompt-toolkit==3.0.52
     # via click-repl
 psycopg2-binary==2.9.12
+    # via -r requirements.txt
+py-vapid==1.9.6
     # via -r requirements.txt
 pyasn1==0.6.5
     # via

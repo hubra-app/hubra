@@ -26,6 +26,10 @@ gunicorn>=21.0
 # Rate limiting
 flask-limiter[redis]>=3.5
 
+# Browser push notifications (Web Push: VAPID and aes128gcm)
+py-vapid>=1.9
+http-ece>=1.2
+
 # Background tasks
 celery[redis]>=5.3
 

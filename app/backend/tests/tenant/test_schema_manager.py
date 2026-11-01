@@ -38,6 +38,7 @@ _GLOBAL_ONLY_TABLES = frozenset(
         "account_sessions",
         "known_devices",
         "passkeys",
+        "push_subscriptions",
         "club_invites",
         # Outside services look a club up by their own id, across clubs.
         "connected_apps",
