@@ -4,7 +4,7 @@
 notifications as pushes, in the public schema (per account, every club).
 
 Revision ID: f4a8c2e6b9d1
-Revises: e7c3a9d1f5b2
+Revises: b3f8d2a6c9e1, b5d9e3f7a1c6 (also joins main's two heads after #97 and #98)
 Create Date: 2026-11-01 10:00:00.000000
 
 """
@@ -15,7 +15,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "f4a8c2e6b9d1"
-down_revision = "e7c3a9d1f5b2"
+down_revision = ("b3f8d2a6c9e1", "b5d9e3f7a1c6")
 branch_labels = None
 depends_on = None
 

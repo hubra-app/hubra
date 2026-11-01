@@ -26,7 +26,7 @@ from .installer import (
     versions_of,
 )
 from .spec import read_manifest, validate
-from .trust import key_id, sign, sign_index, verify
+from .trust import key_entry, key_id, load_public, sign, sign_index, verify
 
 RELEASEIGNORE = ".releaseignore"
 ALWAYS_LEFT_OUT = (
@@ -125,6 +125,30 @@ def release(src: Path, private_pem: bytes, signer: str) -> tuple[dict, bytes]:
         return m, pack(work)
 
 
+def _public_of(private_pem: bytes):
+    from cryptography.hazmat.primitives import serialization
+
+    return serialization.load_pem_private_key(private_pem, password=None).public_key()
+
+
+def plugin_key_entries(public_keys: list[str], index_pem: bytes) -> list[dict] | None:
+    """``plugin_keys`` for an index from public key texts (None = none given).
+    The index key can't be one of them."""
+    if not public_keys:
+        return None
+    index_id = key_id(_public_of(index_pem))
+    out = []
+    for text in public_keys:
+        pub = load_public(text)
+        if key_id(pub) == index_id:
+            raise InstallError(
+                f"key {index_id} can't sign both the index and the plugins; "
+                "use a separate index key"
+            )
+        out.append(key_entry(key_id(pub), pub))
+    return out
+
+
 def build_repository(
     src: Path,
     out: Path,
@@ -132,12 +156,22 @@ def build_repository(
     name: str,
     description: str = "",
     only: list[str] | None = None,
+    plugin_pem: bytes | None = None,
 ) -> dict:
     """Sign every plugin folder in *src*, zip it into *out*, write a signed index.json.
 
-    Older versions whose archives are still in *out* stay offered, so
-    people can go back to them.  *src* is not modified.
+    *private_pem* signs the index; *plugin_pem*, when given, signs the
+    plugins and is listed in the index as its plugin key (else
+    *private_pem* signs both, the old format).  Older versions whose
+    archives are still in *out* stay offered, so people can go back to
+    them.  *src* is not modified.
     """
+    plugin_keys = None
+    if plugin_pem is not None:
+        pub = _public_of(plugin_pem)
+        if key_id(pub) == key_id(_public_of(private_pem)):
+            raise InstallError("the index key and the plugin key are the same key")
+        plugin_keys = [key_entry(name, pub)]
     out.mkdir(parents=True, exist_ok=True)
     plugins = []
     old: dict = {}
@@ -160,7 +194,7 @@ def build_repository(
         m = read_manifest(d)
         if only and str(m.get("id")) not in only:
             continue
-        m, blob = release(d, private_pem, name)
+        m, blob = release(d, plugin_pem or private_pem, name)
         ver = str(m.get("version", ""))
         zname = f"{m['id']}-{ver}.zip"
         (out / zname).write_bytes(blob)
@@ -230,6 +264,7 @@ def build_repository(
             "plugins": sorted(plugins, key=lambda p: p["id"]),
         },
         private_pem,
+        plugin_keys,
     )
     (out / "index.json").write_text(json.dumps(doc, indent=2) + "\n")
     return doc
@@ -259,6 +294,7 @@ def build_index_from_sources(
     token: str = "",
     api: str = "https://api.github.com",
     get=None,
+    plugin_keys: list[str] | None = None,
 ) -> dict:
     """A Marketplace whose plugins live in their own git repositories (sources.yaml)::
 
@@ -271,9 +307,14 @@ def build_index_from_sources(
           - {owner: hubra-app, prefix: hubra-plugin-}
 
     Every release asset named ``<id>-<version>.zip`` is downloaded and checked
-    (checksum, SIGNATURE.json signed with this key, manifest id and version
-    matching the name).  The index points at the assets where they are.
-    Repositories without a release are left out (``skipped``).
+    (checksum, SIGNATURE.json signed with one of the plugin keys, manifest id
+    and version matching the name).  The index points at the assets where
+    they are.  Repositories without a release are left out (``skipped``).
+
+    *plugin_keys* (public key texts, or ``plugin_keys`` in *sources*) are
+    the keys the plugins are signed with; they are listed in the index, and
+    *private_pem* then signs only the index.  Without them *private_pem*
+    must have signed the plugins too (the old format).
     """
     from cryptography.hazmat.primitives import serialization
 
@@ -294,7 +335,13 @@ def build_index_from_sources(
         return get(url, None) if get is not None else http_get(url, timeout=60)
 
     key = serialization.load_pem_private_key(private_pem, password=None)
-    mine = {key_id(key.public_key()): ("this repository", key.public_key())}
+    entries = plugin_key_entries(
+        list(plugin_keys or sources.get("plugin_keys") or []), private_pem
+    )
+    if entries:
+        mine = {e["key_id"]: (e["name"], load_public(e["public_key"])) for e in entries}
+    else:
+        mine = {key_id(key.public_key()): ("this repository", key.public_key())}
     plugins, problems, skipped = [], [], []
     listed = list(sources.get("plugins") or [])
     for d in sources.get("discover") or []:
@@ -354,7 +401,7 @@ def build_index_from_sources(
                             or t.get("key_id") not in mine
                         ):
                             raise InstallError(
-                                f"not signed with this repository's key ({t['detail']})"
+                                f"not signed with this repository's plugin key ({t['detail']})"
                             )
                         problem = validate(m, pdir)
                         if problem:
@@ -399,6 +446,7 @@ def build_index_from_sources(
             "plugins": sorted(plugins, key=lambda p: p["id"]),
         },
         private_pem,
+        entries,
     )
     (out / "index.json").write_text(json.dumps(doc, indent=2) + "\n")
     return {**doc, "problems": problems, "skipped": skipped}
@@ -432,23 +480,30 @@ def check_repository(url: str, expect_key: str = "") -> tuple[dict, list[str]]:
     """Download a published repository the way a Hubra does and check it.
 
     The index must verify against its own key (and be *expect_key*, default
-    the official key), and every archive it offers must match its checksum,
-    unpack safely, and carry a SIGNATURE.json from that key for that id and
-    version.  Returns the index and the problems found ([] = all good).
+    the official index key), and every archive it offers must match its
+    checksum, unpack safely, and carry a SIGNATURE.json from one of its
+    plugin keys (the official ones for the official index; the index key in
+    the old format) for that id and version.  Returns the index and the
+    problems found ([] = all good).
     """
     from urllib.parse import urljoin
 
     from .installer import preview_repository
-    from .trust import load_public, official_keys
+    from .trust import official_keys, plugin_keys_of
 
     info = preview_repository(url)
     kid = info["keyId"]
-    wanted = expect_key or next(iter(official_keys()), "")
+    wanted = expect_key or next(iter(official_keys("index")), "")
     problems = []
     if wanted and kid != wanted:
         problems.append(f"the index is signed with key {kid}, not {wanted}")
     doc = json.loads(http_get(url, timeout=15, limit=10 * 1024 * 1024))
-    signer = {kid: (info["name"], load_public(info["publicKey"]))}
+    if info["official"]:
+        signer = official_keys("plugins")
+    else:
+        signer = plugin_keys_of(doc) or {
+            kid: (info["name"], load_public(info["publicKey"]))
+        }
     for p in doc["plugins"]:
         for v in versions_of(p):
             what = f"{p.get('id')} {v['version']}"
@@ -478,6 +533,8 @@ def check_repository(url: str, expect_key: str = "") -> tuple[dict, list[str]]:
                         f"{what}: the archive holds {m.get('id')} {m.get('version')}"
                     )
                 t = verify(pdir, m, signer)
-                if t["status"] not in ("official", "community") or t["key_id"] != kid:
+                if t["status"] not in ("official", "community") or t[
+                    "key_id"
+                ] not in signer:
                     problems.append(f"{what}: {t['detail']}")
     return doc, problems

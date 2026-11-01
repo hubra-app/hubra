@@ -47,6 +47,9 @@ import {
   type PluginChange,
   type StagedPlugin,
   type UpdateMode,
+  type KeyPurpose,
+  type KeyRef,
+  type RepositoryPreview,
 } from '@/api/plugins'
 import { tr } from '@/lang'
 import { PLUGIN_DE } from '@/moduleLabels'
@@ -694,12 +697,64 @@ function UninstallModal({
 
 // ── Repositories ────────────────────────────────────────────────────────────
 
+function PurposeBadge({ purpose }: { purpose: KeyPurpose }) {
+  if (purpose === 'both')
+    return (
+      <Badge size="xs" variant="light" color="orange">
+        {tr('Index + Plugins', 'Index + plugins')}
+      </Badge>
+    )
+  return (
+    <Badge size="xs" variant="light" color={purpose === 'index' ? 'blue' : 'violet'}>
+      {purpose === 'index' ? tr('Index', 'Index') : tr('Plugins', 'Plugins')}
+    </Badge>
+  )
+}
+
+/** Index key and plugin keys of a repository, one line each. */
+function RepositoryKeys({
+  keyId,
+  separateKeys,
+  pluginKeys,
+}: {
+  keyId: string
+  separateKeys: boolean
+  pluginKeys: KeyRef[]
+}) {
+  return (
+    <Stack gap={2}>
+      <Group gap={6}>
+        <PurposeBadge purpose={separateKeys ? 'index' : 'both'} />
+        <Code fz="xs">{keyId}</Code>
+      </Group>
+      {separateKeys &&
+        pluginKeys.map((k) => (
+          <Group gap={6} key={k.keyId}>
+            <PurposeBadge purpose="plugins" />
+            <Code fz="xs">{k.keyId}</Code>
+            <Text size="xs" c="dimmed">
+              {k.name}
+            </Text>
+          </Group>
+        ))}
+      {!separateKeys && (
+        <Text size="xs" c="orange">
+          {tr(
+            'Ein Schlüssel signiert die Liste und die Plugins (altes Format).',
+            'One key signs the index and the plugins (old format).',
+          )}
+        </Text>
+      )}
+    </Stack>
+  )
+}
+
 function RepositoriesView() {
   const { notify } = useAdmin()
   const queryClient = useQueryClient()
   const { data: repos = [] } = useQuery({ queryKey: ['plugin-repos'], queryFn: listRepositories })
   const [url, setUrl] = useState('')
-  const [preview, setPreview] = useState<Awaited<ReturnType<typeof previewRepository>> | null>(null)
+  const [preview, setPreview] = useState<RepositoryPreview | null>(null)
   const [keyId, setKeyId] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -726,8 +781,8 @@ function RepositoriesView() {
         </Text>
         <Text size="xs" c="dimmed" mb="sm">
           {tr(
-            'Die Adresse einer signierten index.json. Ihr Schlüssel wird beim Hinzufügen festgehalten, ein geänderter Schlüssel wird später abgelehnt.',
-            'The address of a signed index.json. Its signing key is pinned when you add it, so a changed key is refused later.',
+            'Die Adresse einer signierten index.json. Ihr Index-Schlüssel und ihre Plugin-Schlüssel werden beim Hinzufügen festgehalten, geänderte Schlüssel werden später abgelehnt.',
+            'The address of a signed index.json. Its index key and plugin keys are pinned when you add it, so changed keys are refused later.',
           )}
         </Text>
         <Group align="flex-end" gap="sm">
@@ -751,11 +806,18 @@ function RepositoriesView() {
         {preview && (
           <Stack gap="xs" mt="md">
             <Text size="sm">
-              <b>{preview.name}</b>: {preview.plugins} {tr('Plugin(s), signiert mit Schlüssel', 'plugin(s), signed with key')}{' '}
-              <Code>{preview.keyId}</Code>
+              <b>{preview.name}</b>: {preview.plugins} {tr('Plugin(s)', 'plugin(s)')}
             </Text>
+            <RepositoryKeys
+              keyId={preview.keyId}
+              separateKeys={preview.separateKeys}
+              pluginKeys={preview.pluginKeys}
+            />
             <TextInput
-              label={tr('Gib die Schlüssel-ID ein, die du vom Herausgeber erhalten hast', 'Type the key id the publisher gave you')}
+              label={tr(
+                'Gib die ID des Index-Schlüssels ein, die du vom Herausgeber erhalten hast',
+                'Type the index key id the publisher gave you',
+              )}
               description={tr('So weisst du, dass die Liste wirklich von ihm stammt.', 'This is how you know the index really comes from them.')}
               value={keyId}
               onChange={(e) => setKeyId(e.currentTarget.value)}
@@ -803,9 +865,10 @@ function RepositoriesView() {
                       </Badge>
                     )}
                   </Group>
-                  <Text size="xs" c="dimmed">
-                    {r.url} · {tr('Schlüssel', 'key')} {r.keyId}
+                  <Text size="xs" c="dimmed" mb={4}>
+                    {r.url}
                   </Text>
+                  <RepositoryKeys keyId={r.keyId} separateKeys={r.separateKeys} pluginKeys={r.pluginKeys} />
                   {r.error && (
                     <Text size="xs" c="red">
                       {r.error}
@@ -880,14 +943,18 @@ function KeysView() {
         </Text>
         <Text size="xs" c="dimmed" mb="sm">
           {tr(
-            'Plugins mit einer Signatur von einem dieser Schlüssel werden als Community installiert. Autoren erstellen einen Schlüssel mit',
-            'Plugins uploaded with a signature from a key here install as Community. Authors create a key with',
+            'Jeder Schlüssel hat einen Zweck: Plugins oder Index. Hier fügst du Plugin-Schlüssel hinzu; Plugins mit ihrer Signatur werden als Community installiert. Index-Schlüssel kommen mit ihrer Quelle. Autoren erstellen einen Schlüssel mit',
+            'Every key has one purpose: plugins or index. Here you add plugin keys; plugins signed with one install as Community. Index keys come with their repository. Authors create a key with',
           )}{' '}
           <Code>flask plugins keygen</Code>{' '}
           {tr('und schicken dir die .pub-Datei.', 'and send you the .pub file.')}
         </Text>
         <Stack gap="sm">
           <TextInput label={tr('Name', 'Name')} value={name} onChange={(e) => setName(e.currentTarget.value)} />
+          <Group gap={6}>
+            <Text size="sm">{tr('Zweck', 'Purpose')}:</Text>
+            <PurposeBadge purpose="plugins" />
+          </Group>
           <Textarea
             label={tr('Öffentlicher Schlüssel', 'Public key')}
             placeholder="-----BEGIN PUBLIC KEY-----"
@@ -924,6 +991,7 @@ function KeysView() {
                     <Text size="sm" fw={600}>
                       {k.name}
                     </Text>
+                    <PurposeBadge purpose={k.purpose} />
                     {k.official && (
                       <Badge size="xs" variant="light" color="green">
                         {tr('Offiziell', 'Official')}
@@ -932,6 +1000,9 @@ function KeysView() {
                   </Group>
                   <Text size="xs" c="dimmed">
                     {k.keyId}
+                    {k.source === 'repository' && k.repository
+                      ? ` · ${tr('von der Quelle', 'from repository')} ${k.repository}`
+                      : ''}
                     {k.addedBy ? ` · ${tr('hinzugefügt von', 'added by')} ${k.addedBy}` : ''}
                   </Text>
                 </Table.Td>

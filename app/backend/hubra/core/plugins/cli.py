@@ -16,8 +16,8 @@ Authors and publishers::
     flask plugins keygen my.pem
     flask plugins sign ./keys --key my.pem --signer "Your Name"
     flask plugins pack ./keys -o keys-1.0.0.zip
-    flask plugins repo ../../plugins ./public --key my.pem --name "My plugins"
-    flask plugins build-index sources.yaml ./public --key my.pem
+    flask plugins repo ../../plugins ./public --key index.pem --plugin-key my.pem --name "My plugins"
+    flask plugins build-index sources.yaml ./public --key index.pem --plugin-key my.pem.pub
     flask plugins yank ./public keys 1.0.1 --key my.pem --reason "..."
     flask plugins check https://plugins.hubra.club/index.json
     flask plugins revision keys -m "add a column" --autogenerate
@@ -292,11 +292,20 @@ def register(app) -> None:
     )
     @click.option("--description", default="")
     @click.option("--only", multiple=True, help="Only these plugin ids (repeatable).")
-    def plugins_repo(source, output, key_path, name, description, only):
+    @click.option(
+        "--plugin-key",
+        "plugin_key_path",
+        type=click.Path(dir_okay=False, exists=True),
+        default=None,
+        help="Private key that signs the plugins; --key then signs only the index.",
+    )
+    def plugins_repo(source, output, key_path, name, description, only, plugin_key_path):
         """Build a signed repository from the plugin folders in SOURCE into OUTPUT.
 
         Each plugin is copied, pruned (.releaseignore), signed and zipped;
-        SOURCE is not changed.  Publish OUTPUT on any web server.
+        SOURCE is not changed.  Publish OUTPUT on any web server.  Give the
+        plugins their own key with --plugin-key, so the index key can't
+        sign code.
         """
         from .installer import InstallError
         from .publish import build_repository
@@ -309,6 +318,7 @@ def register(app) -> None:
                 name,
                 description,
                 list(only),
+                Path(plugin_key_path).read_bytes() if plugin_key_path else None,
             )
         except (InstallError, ValueError) as exc:
             _fail(exc)
@@ -325,7 +335,15 @@ def register(app) -> None:
         "--key", "key_path", type=click.Path(dir_okay=False, exists=True), required=True
     )
     @click.option("--token", envvar="GITHUB_TOKEN", default="")
-    def plugins_build_index(sources, output, key_path, token):
+    @click.option(
+        "--plugin-key",
+        "plugin_keys",
+        multiple=True,
+        type=click.Path(dir_okay=False, exists=True),
+        help="Public key the plugins are signed with (repeatable); listed in the "
+        "index, and --key then signs only the index.",
+    )
+    def plugins_build_index(sources, output, key_path, token, plugin_keys):
         """Build a signed index from SOURCES (plugin git repositories and their releases)."""
         import yaml
 
@@ -338,6 +356,7 @@ def register(app) -> None:
                 Path(output),
                 Path(key_path).read_bytes(),
                 token=token,
+                plugin_keys=[Path(p).read_text() for p in plugin_keys] or None,
             )
         except (InstallError, ValueError) as exc:
             _fail(exc)

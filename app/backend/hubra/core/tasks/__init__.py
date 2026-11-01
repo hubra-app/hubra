@@ -108,6 +108,7 @@ def make_celery(app: Flask) -> Celery:
             "hubra.core.tasks.infra_checks",
             "hubra.core.tasks.plugin_tasks",
             "hubra.core.tasks.push_tasks",
+            "hubra.core.tasks.mail_monitor_tasks",
             *_module_task_imports(),
         ],
     )
@@ -206,6 +207,14 @@ def make_celery(app: Flask) -> Celery:
             "check-domains-every-minute": {
                 "task": "hubra.core.tasks.domain_tasks.check_domains",
                 "schedule": 60.0,
+            },
+            "check-mail-relays-5min": {
+                "task": "hubra.core.tasks.mail_monitor_tasks.check_mail_relays",
+                "schedule": crontab(minute="*/5"),
+            },
+            "prune-platform-events-daily": {
+                "task": "hubra.core.tasks.mail_monitor_tasks.prune_platform_events",
+                "schedule": crontab(hour=2, minute=30),
             },
             "plugin-updates": {
                 "task": "hubra.core.tasks.plugin_tasks.check_plugin_updates",

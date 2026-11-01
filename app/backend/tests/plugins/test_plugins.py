@@ -664,3 +664,227 @@ def test_a_plugin_cannot_shadow_another_package(tmp_path):
     finally:
         if str(spec.path) in sys.path:
             sys.path.remove(str(spec.path))
+
+
+# ── Key purposes: one key for the index, others for the plugins ──────────────
+
+
+def _serve(monkeypatch, out: Path):
+    def fake_get(url, timeout=30, limit=0):
+        return (out / url.split("?")[0].rsplit("/", 1)[-1]).read_bytes()
+
+    monkeypatch.setattr(installer, "http_get", fake_get)
+    monkeypatch.setattr(publish, "http_get", fake_get)
+
+
+def test_index_without_plugin_keys_signs_as_before(key):
+    pem, pub = key
+    doc = trust.sign_index({"name": "x", "generated": "2026-01-01", "plugins": []}, pem)
+    assert "plugin_keys" not in doc
+    trust.verify_index(doc, trust.load_public(pub))
+    assert trust.plugin_keys_of(doc) == {}
+
+
+def test_an_index_key_cant_be_listed_as_a_plugin_key(key):
+    pem, pub = key
+    me = trust.key_entry("me", trust.load_public(pub))
+    with pytest.raises(ValueError, match="signs only the index"):
+        trust.sign_index({"name": "x", "plugins": []}, pem, [me])
+    with pytest.raises(InstallError, match="both the index and the plugins"):
+        publish.plugin_key_entries([pub], pem)
+
+
+def test_plugin_keys_are_signed_with_the_index(key):
+    pem, pub = key
+    plugin_pem, plugin_pub = trust.keygen()
+    entry = trust.key_entry("plugins", trust.load_public(plugin_pub))
+    doc = trust.sign_index({"name": "x", "generated": "t", "plugins": []}, pem, [entry])
+    trust.verify_index(doc, trust.load_public(pub))
+    assert set(trust.plugin_keys_of(doc)) == {entry["key_id"]}
+    # Swapping in another plugin key breaks the index signature.
+    _other_pem, other_pub = trust.keygen()
+    doc["plugin_keys"] = [trust.key_entry("evil", trust.load_public(other_pub))]
+    with pytest.raises(ValueError, match="bad index signature"):
+        trust.verify_index(doc, trust.load_public(pub))
+
+
+def test_separate_keys_pin_install_and_refuse_the_index_key(
+    tmp_path, key, db, seeded_db, plugin_dir, monkeypatch
+):
+    index_pem, _ = key
+    plugin_pem, plugin_pub = trust.keygen()
+    plugin_kid = trust.key_id(trust.load_public(plugin_pub))
+    src = tmp_path / "src"
+    src.mkdir()
+    d = make_plugin(src)
+    out = tmp_path / "public"
+    doc = publish.build_repository(
+        src, out, index_pem, "Test plugins", plugin_pem=plugin_pem
+    )
+    index_kid = doc["key_id"]
+    assert [k["key_id"] for k in doc["plugin_keys"]] == [plugin_kid]
+    _serve(monkeypatch, out)
+    url = "https://plugins.example/index.json"
+
+    info = installer.preview_repository(url)
+    assert info["separateKeys"] is True
+    assert [k["keyId"] for k in info["pluginKeys"]] == [plugin_kid]
+    repo = installer.add_repository(url, index_kid)
+    assert set(installer.pinned_plugin_keys(repo)) == {plugin_kid}
+
+    # The plugin key is trusted for plugins; the index key is not.
+    keys = installer.community_keys()
+    assert plugin_kid in keys and index_kid not in keys
+    assert index_kid in installer.index_key_ids()
+
+    info = installer.install_from_repository(repo, "hello")
+    assert info["trust"] == {**info["trust"], "status": "community", "key_id": plugin_kid}
+    installer.discard_stage(info["token"])
+    assert publish.check_repository(url, index_kid)[1] == []
+
+    # A plugin signed with the index key doesn't install, even if the index lists it.
+    import yaml
+
+    m = yaml.safe_load((d / "plugin.yaml").read_text())
+    m["version"] = "1.1.0"
+    (d / "plugin.yaml").write_text(yaml.safe_dump(m))
+    _m, blob = publish.release(d, index_pem, "Index key")
+    (out / "hello-1.1.0.zip").write_bytes(blob)
+    idx = json.loads((out / "index.json").read_text())
+    import hashlib
+
+    v = {"version": "1.1.0", "url": "hello-1.1.0.zip", "sha256": hashlib.sha256(blob).hexdigest()}
+    idx["plugins"][0].update(v)
+    idx["plugins"][0]["versions"].insert(0, v)
+    idx["generated"] = "2099-01-01T00:00:00+00:00"
+    for k in ("signature", "key_id", "public_key"):
+        idx.pop(k)
+    (out / "index.json").write_text(json.dumps(trust.sign_index(idx, index_pem)))
+    installer._index_cache.clear()
+    with pytest.raises(InstallError, match="signed with a key you don't trust|plugin keys"):
+        installer.install_from_repository(repo, "hello", "1.1.0")
+    _, problems = publish.check_repository(url, index_kid)
+    assert problems and "hello 1.1.0" in problems[0]
+
+
+def test_changed_plugin_keys_are_refused(tmp_path, key, db, monkeypatch):
+    index_pem, _ = key
+    plugin_pem, _ = trust.keygen()
+    src = tmp_path / "src"
+    src.mkdir()
+    make_plugin(src)
+    out = tmp_path / "public"
+    publish.build_repository(src, out, index_pem, "Test plugins", plugin_pem=plugin_pem)
+    _serve(monkeypatch, out)
+    url = "https://plugins.example/index.json"
+    repo = installer.add_repository(url, installer.preview_repository(url)["keyId"])
+
+    # Same index key, but the plugins now come with another key.
+    new_plugin_pem, _ = trust.keygen()
+    publish.build_repository(
+        src, out, index_pem, "Test plugins", plugin_pem=new_plugin_pem
+    )
+    installer._index_cache.clear()
+    with pytest.raises(InstallError, match="other plugin keys"):
+        installer.fetch_repository(repo, force=True)
+
+    # An old-format repository that starts listing plugin keys is refused too.
+    out2 = tmp_path / "public2"
+    publish.build_repository(src, out2, plugin_pem, "Old format")
+    _serve(monkeypatch, out2)
+    url2 = "https://other.example/index.json"
+    old = installer.add_repository(url2, installer.preview_repository(url2)["keyId"])
+    assert installer.pinned_plugin_keys(old) == {}
+    publish.build_repository(
+        src, out2, plugin_pem, "Old format", plugin_pem=new_plugin_pem
+    )
+    installer._index_cache.clear()
+    with pytest.raises(InstallError, match="other plugin keys"):
+        installer.fetch_repository(old, force=True)
+
+
+def test_build_index_from_sources_with_a_plugin_key(tmp_path, key):
+    index_pem, _ = key
+    plugin_pem, plugin_pub = trust.keygen()
+    src = tmp_path / "src"
+    src.mkdir()
+    make_plugin(src)
+    built = tmp_path / "built"
+    publish.build_repository(src, built, index_pem, "T", plugin_pem=plugin_pem)
+    asset = "https://github.com/o/hubra-plugin-hello/releases/download/v1.0.0/hello-1.0.0.zip"
+    answers = {
+        "https://api.github.com/repos/o/hubra-plugin-hello/releases?per_page=100": [
+            {
+                "body": "",
+                "published_at": "2026-10-30T00:00:00Z",
+                "assets": [{"name": "hello-1.0.0.zip", "browser_download_url": asset}],
+            }
+        ],
+        asset: (built / "hello-1.0.0.zip").read_bytes(),
+    }
+    sources = {"plugins": [{"repo": "o/hubra-plugin-hello"}]}
+
+    def get(url, headers):
+        return answers[url]
+
+    # Without the plugin key the archive isn't signed with the index key: a problem.
+    doc = publish.build_index_from_sources(sources, tmp_path / "a", index_pem, get=get)
+    assert doc["plugins"] == [] and "plugin key" in doc["problems"][0]
+    doc = publish.build_index_from_sources(
+        sources, tmp_path / "b", index_pem, get=get, plugin_keys=[plugin_pub]
+    )
+    assert [p["id"] for p in doc["plugins"]] == ["hello"] and doc["problems"] == []
+    assert [k["key_id"] for k in doc["plugin_keys"]] == [
+        trust.key_id(trust.load_public(plugin_pub))
+    ]
+
+
+def test_official_index_key_is_separate_when_shipped(tmp_path, monkeypatch):
+    plugin_dir_ = tmp_path / "official"
+    (plugin_dir_ / "index").mkdir(parents=True)
+    _p, plugin_pub = trust.keygen()
+    (plugin_dir_ / "Hubra.pub").write_text(plugin_pub)
+    monkeypatch.setattr(trust, "OFFICIAL_DIR", plugin_dir_)
+    monkeypatch.setattr(trust, "OFFICIAL_INDEX_DIR", plugin_dir_ / "index")
+    # No index key shipped: the plugin key signs the index too (as before).
+    assert trust.official_keys("index") == trust.official_keys("plugins")
+    _i, index_pub = trust.keygen()
+    (plugin_dir_ / "index" / "Hubra index.pub").write_text(index_pub)
+    index_kid = trust.key_id(trust.load_public(index_pub))
+    assert set(trust.official_keys("index")) == {index_kid}
+    assert index_kid not in trust.official_keys("plugins")
+
+
+def test_keys_api_shows_purposes_and_refuses_index_keys(
+    client, superadmin, key, tmp_path, monkeypatch
+):
+    index_pem, index_pub = key
+    plugin_pem, _ = trust.keygen()
+    src = tmp_path / "src"
+    src.mkdir()
+    make_plugin(src)
+    out = tmp_path / "public"
+    doc = publish.build_repository(src, out, index_pem, "Test plugins", plugin_pem=plugin_pem)
+    _serve(monkeypatch, out)
+    url = "https://plugins.example/index.json"
+    resp = client.post(
+        "/api/v1/manager/plugins/repositories", json={"url": url, "keyId": doc["key_id"]}
+    )
+    assert resp.status_code == 201
+    body = resp.get_json()
+    assert body["separateKeys"] is True and len(body["pluginKeys"]) == 1
+
+    keys = {k["keyId"]: k for k in client.get("/api/v1/manager/plugins/keys").get_json()}
+    assert keys[doc["key_id"]]["purpose"] == "index"
+    assert keys[doc["plugin_keys"][0]["key_id"]]["purpose"] == "plugins"
+    assert keys["b84edc01a8b17490"] == {**keys["b84edc01a8b17490"], "source": "official"}
+
+    resp = client.post(
+        "/api/v1/manager/plugins/keys", json={"name": "Index", "publicKey": index_pub}
+    )
+    assert resp.status_code == 400 and "one purpose" in resp.get_json()["message"]
+    resp = client.post(
+        "/api/v1/manager/plugins/keys",
+        json={"name": "X", "publicKey": index_pub, "purpose": "index"},
+    )
+    assert resp.status_code == 400

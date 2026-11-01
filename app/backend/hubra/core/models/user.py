@@ -70,6 +70,11 @@ class User(db.Model):
     nav_prefs: Mapped[dict | None] = mapped_column(
         JSONB().with_variant(JSON, "sqlite"), nullable=True
     )
+    # Platform staff only: which alert mails they get, {"<type>": bool}.
+    # A type left out is on (see core/services/platform_monitor.py).
+    platform_alerts: Mapped[dict | None] = mapped_column(
+        JSONB().with_variant(JSON, "sqlite"), nullable=True
+    )
 
     # Two-factor sign-in (hubra/api/auth/mfa.py).  Secrets are Fernet
     # encrypted; recovery codes are kept as SHA-256 hashes, used ones removed.

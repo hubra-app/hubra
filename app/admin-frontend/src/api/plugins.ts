@@ -94,11 +94,27 @@ export interface PluginChange {
   generation: number
 }
 
+/**
+ * What a key may sign: plugins, a repository index, or both (an index in the
+ * old format, where one key signs the index and the plugins).
+ */
+export type KeyPurpose = 'plugins' | 'index' | 'both'
+
+export interface KeyRef {
+  name: string
+  keyId: string
+}
+
 export interface PluginRepository {
   id: number
   name: string
   url: string
+  /** The index key. */
   keyId: string
+  /** False: the old format, the index key signs the plugins too. */
+  separateKeys: boolean
+  /** The keys its plugins may be signed with. */
+  pluginKeys: KeyRef[]
   official: boolean
   enabled: boolean
   addedBy: string | null
@@ -107,11 +123,27 @@ export interface PluginRepository {
 }
 
 export interface TrustedKey {
+  /** Set for keys added by hand (those can be removed). */
   id: number | null
   name: string
   keyId: string
+  purpose: KeyPurpose
+  /** official (ships with Hubra), repository (pinned with one) or manual */
+  source: 'official' | 'repository' | 'manual'
+  repository?: string
   official: boolean
   addedBy?: string
+}
+
+export interface RepositoryPreview {
+  name: string
+  description?: string
+  keyId: string
+  official: boolean
+  separateKeys: boolean
+  pluginKeys: KeyRef[]
+  plugins: number
+  url: string
 }
 
 const json = (method: string, body?: unknown): RequestInit => ({
@@ -172,10 +204,7 @@ export const checkUpdates = () => apiFetch<unknown>(`${P}/updates/check`, json('
 export const listRepositories = () => apiFetch<PluginRepository[]>(`${P}/repositories`)
 
 export const previewRepository = (url: string) =>
-  apiFetch<{ name: string; description?: string; keyId: string; plugins: number; url: string }>(
-    `${P}/repositories/preview`,
-    json('POST', { url }),
-  )
+  apiFetch<RepositoryPreview>(`${P}/repositories/preview`, json('POST', { url }))
 
 export const addRepository = (url: string, keyId: string) =>
   apiFetch<PluginRepository>(`${P}/repositories`, json('POST', { url, keyId }))
@@ -189,6 +218,6 @@ export const deleteRepository = (id: number) =>
 export const listTrustedKeys = () => apiFetch<TrustedKey[]>(`${P}/keys`)
 
 export const addTrustedKey = (name: string, publicKey: string) =>
-  apiFetch<TrustedKey>(`${P}/keys`, json('POST', { name, publicKey }))
+  apiFetch<TrustedKey>(`${P}/keys`, json('POST', { name, publicKey, purpose: 'plugins' }))
 
 export const deleteTrustedKey = (id: number) => apiFetch<void>(`${P}/keys/${id}`, json('DELETE'))

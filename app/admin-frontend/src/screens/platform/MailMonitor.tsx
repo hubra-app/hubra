@@ -1,0 +1,564 @@
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  Alert,
+  Badge,
+  Button,
+  Code,
+  Group,
+  Paper,
+  SimpleGrid,
+  Stack,
+  Switch,
+  Table,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core'
+import { IconAlertTriangle, IconPlugConnected, IconRefresh, IconSearch } from '@tabler/icons-react'
+import { useAdmin } from '@/context/AdminContext'
+import { Pagination, StatGrid, StatTile } from '@/components/ui'
+import { formatDateTime } from '@/format'
+import { tr } from '@/lang'
+import {
+  checkMailRelay,
+  getMailRelayStatus,
+  getMyAlerts,
+  getPlatformEvents,
+  resumeMainRelay,
+  updateMyAlerts,
+  type AlertType,
+  type EventCategory,
+  type EventLevel,
+  type PlatformEvent,
+  type RelayCheck,
+  type RelaySummary,
+} from '@/api/platform'
+
+const MONO = "'JetBrains Mono', monospace"
+
+function failureText(err: unknown) {
+  return err instanceof Error ? err.message : tr('Unbekannter Fehler', 'Unknown error')
+}
+
+function Dot({ ok }: { ok: boolean | null }) {
+  const color = ok === null ? '#c2870f' : ok ? '#1f9d57' : '#c0392b'
+  return (
+    <span
+      style={{ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0 }}
+    />
+  )
+}
+
+const stepLabel = (step: string): string =>
+  ({
+    connect: tr('Verbinden', 'Connect'),
+    ehlo: 'EHLO',
+    starttls: 'STARTTLS',
+    login: tr('Anmelden', 'Log in'),
+  })[step] ?? step
+
+function since(seconds: number) {
+  return formatDateTime(new Date(seconds * 1000).toISOString())
+}
+
+// ── Outbound mail ────────────────────────────────────────────────────────────
+
+function RelayCard({
+  relay,
+  checking,
+  onCheck,
+}: {
+  relay: RelaySummary
+  checking: boolean
+  onCheck: () => void
+}) {
+  const check: RelayCheck | null = relay.last_check
+  const title =
+    relay.which === 'relay' ? tr('Haupt-Relay', 'Main relay') : tr('Fallback-Relay', 'Fallback relay')
+  const state: boolean | null = !relay.configured ? null : check ? (check.down ? false : check.ok) : null
+
+  return (
+    <Paper withBorder shadow="sm" radius="lg" p="lg">
+      <Group justify="space-between" mb={8} wrap="nowrap">
+        <Group gap={10} wrap="nowrap">
+          <Dot ok={state} />
+          <Title order={4}>{title}</Title>
+        </Group>
+        {relay.configured && (
+          <Button
+            variant="default"
+            size="xs"
+            leftSection={<IconPlugConnected size={14} />}
+            loading={checking}
+            onClick={onCheck}
+          >
+            {tr('Jetzt prüfen', 'Check now')}
+          </Button>
+        )}
+      </Group>
+
+      {!relay.configured ? (
+        <Text size="sm" c="dimmed">
+          {relay.which === 'fallback'
+            ? tr(
+                'Kein Fallback eingerichtet. Unter Plattform-Einstellungen › Mail-Relay lässt sich eins hinterlegen.',
+                'No fallback set up. Add one under Platform settings › Mail relay.',
+              )
+            : tr(
+                'Kein Relay eingerichtet: Hubra kann keine Mails senden.',
+                'No relay set up: Hubra cannot send mail.',
+              )}
+        </Text>
+      ) : (
+        <Stack gap={6}>
+          <Text size="sm" ff={MONO} style={{ wordBreak: 'break-all' }}>
+            {relay.host}:{relay.port}
+            {relay.login ? '' : tr(' (ohne Anmeldung)', ' (no login)')}
+          </Text>
+          {!check && (
+            <Text size="sm" c="dimmed">
+              {tr('Noch nicht geprüft.', 'Not checked yet.')}
+            </Text>
+          )}
+          {check && (
+            <>
+              <Text size="sm" fw={600} c={check.ok ? 'green.8' : 'red.8'}>
+                {check.ok
+                  ? tr(`OK, ${check.latency_ms} ms`, `OK, ${check.latency_ms} ms`)
+                  : check.down
+                    ? tr('Ausgefallen', 'Down')
+                    : tr('Letzte Prüfung fehlgeschlagen', 'Last check failed')}
+              </Text>
+              {check.error && (
+                <Text size="xs" c="red.8" style={{ wordBreak: 'break-word' }}>
+                  {check.error}
+                </Text>
+              )}
+              <Group gap={6} wrap="wrap">
+                {check.steps.map((s) => (
+                  <Badge
+                    key={s.step}
+                    variant="light"
+                    color={s.ok ? 'green' : 'red'}
+                    title={s.error ?? `${s.ms} ms`}
+                  >
+                    {stepLabel(s.step)}
+                  </Badge>
+                ))}
+              </Group>
+              <Text size="xs" c="dimmed">
+                {check.scheduled
+                  ? tr('Automatisch geprüft', 'Checked automatically')
+                  : tr('Von Hand geprüft', 'Checked by hand')}{' '}
+                {since(check.checked_at)}
+              </Text>
+            </>
+          )}
+        </Stack>
+      )}
+    </Paper>
+  )
+}
+
+const ALERT_TYPES: { id: AlertType; label: () => string; desc: () => string }[] = [
+  {
+    id: 'relay_down',
+    label: () => tr('Relay ausgefallen / wieder da', 'Relay down / back'),
+    desc: () =>
+      tr(
+        'Wenn die automatische Prüfung ein Relay zweimal hintereinander nicht erreicht, und wenn es wieder geht.',
+        'When the automatic check fails to reach a relay twice in a row, and when it works again.',
+      ),
+  },
+  {
+    id: 'fallback_used',
+    label: () => tr('Fallback benutzt', 'Fallback used'),
+    desc: () =>
+      tr(
+        'Das Haupt-Relay hat eine Mail abgelehnt (z. B. Kontingent erreicht) und das Fallback hat sie zugestellt.',
+        'The main relay refused a mail (e.g. its quota is reached) and the fallback delivered it.',
+      ),
+  },
+  {
+    id: 'delivery_failed',
+    label: () => tr('Mail nicht zugestellt', 'Mail not delivered'),
+    desc: () =>
+      tr(
+        'Keines der Relays hat eine Mail angenommen. Abgelehnte Empfängeradressen lösen keine Warnung aus.',
+        'No relay accepted a mail. Refused recipient addresses raise no alert.',
+      ),
+  },
+  {
+    id: 'system',
+    label: () => tr('Systemwarnungen', 'System alerts'),
+    desc: () =>
+      tr(
+        'Redis, Datenbank, Speicherplatz, fehlgeschlagene Hintergrundaufgaben und hohe API-Fehlerraten.',
+        'Redis, database, disk space, failed background tasks and high API error rates.',
+      ),
+  },
+]
+
+function MyAlertsCard() {
+  const { notify } = useAdmin()
+  const queryClient = useQueryClient()
+  const query = useQuery({ queryKey: ['my-platform-alerts'], queryFn: getMyAlerts })
+
+  const toggle = async (id: AlertType, on: boolean) => {
+    try {
+      const alerts = await updateMyAlerts({ [id]: on })
+      queryClient.setQueryData(['my-platform-alerts'], (old: typeof query.data) =>
+        old ? { ...old, alerts } : old,
+      )
+    } catch (err) {
+      notify('error', tr('Nicht gespeichert', 'Not saved'), failureText(err))
+    }
+  }
+
+  return (
+    <Paper withBorder shadow="sm" radius="lg" p="lg">
+      <Title order={4} mb={4}>
+        {tr('Meine Warnungen per Mail', 'My alert mails')}
+      </Title>
+      <Text size="sm" c="dimmed" mb={12}>
+        {query.data
+          ? tr(
+              `Gehen an ${query.data.email}. Jede Art kommt höchstens einmal pro Stunde, ausser Ausfall und Wiederherstellung eines Relays.`,
+              `Sent to ${query.data.email}. Each type comes at most once an hour, except a relay going down and coming back.`,
+            )
+          : ' '}
+      </Text>
+      {query.isError && <Text c="red">{failureText(query.error)}</Text>}
+      <Stack gap={12}>
+        {ALERT_TYPES.map((t) => (
+          <Switch
+            key={t.id}
+            checked={query.data?.alerts[t.id] ?? true}
+            disabled={!query.data}
+            onChange={(e) => toggle(t.id, e.currentTarget.checked)}
+            label={t.label()}
+            description={t.desc()}
+          />
+        ))}
+      </Stack>
+    </Paper>
+  )
+}
+
+export function OutboundMailPanel({ onShowLog }: { onShowLog: (level?: EventLevel) => void }) {
+  const { notify, hasGlobalPermission } = useAdmin()
+  const queryClient = useQueryClient()
+  const canChange = hasGlobalPermission('platform.settings')
+  const query = useQuery({
+    queryKey: ['mail-relay'],
+    queryFn: getMailRelayStatus,
+    refetchInterval: 60_000,
+  })
+  const [checking, setChecking] = useState<string | null>(null)
+  const data = query.data
+
+  const check = async (which: 'relay' | 'fallback') => {
+    setChecking(which)
+    try {
+      const [result] = await checkMailRelay(which)
+      queryClient.invalidateQueries({ queryKey: ['mail-relay'] })
+      if (result && result.ok === false) {
+        notify('error', tr('Prüfung fehlgeschlagen', 'Check failed'), result.error)
+      }
+    } catch (err) {
+      notify('error', tr('Prüfung fehlgeschlagen', 'Check failed'), failureText(err))
+    } finally {
+      setChecking(null)
+    }
+  }
+
+  const resume = async () => {
+    try {
+      await resumeMainRelay()
+      queryClient.invalidateQueries({ queryKey: ['mail-relay'] })
+      notify('success', tr('Haupt-Relay wieder aktiv', 'Main relay back in use'))
+    } catch (err) {
+      notify('error', tr('Fehlgeschlagen', 'Failed'), failureText(err))
+    }
+  }
+
+  return (
+    <Stack gap={16}>
+      <Group justify="space-between" wrap="wrap">
+        <Text c="dimmed" size="sm" maw={720}>
+          {tr(
+            `Hubra meldet sich alle ${data?.check_every_minutes ?? 5} Minuten bei beiden Relays an, ohne etwas zu senden. Jede gesendete und jede fehlgeschlagene Mail steht im Ereignisprotokoll.`,
+            `Hubra logs in to both relays every ${data?.check_every_minutes ?? 5} minutes, without sending anything. Every sent and every failed mail is in the event log.`,
+          )}
+        </Text>
+        <Button
+          variant="default"
+          leftSection={<IconRefresh size={16} />}
+          onClick={() => query.refetch()}
+          loading={query.isFetching}
+        >
+          {tr('Aktualisieren', 'Refresh')}
+        </Button>
+      </Group>
+
+      {query.isError && <Text c="red">{failureText(query.error)}</Text>}
+
+      {data?.primary_down.active && (
+        <Alert color="orange" icon={<IconAlertTriangle size={18} />}>
+          <Group justify="space-between" wrap="wrap" gap={8}>
+            <Text size="sm">
+              {tr(
+                `Das Haupt-Relay hat zuletzt Mails abgelehnt. Mails gehen noch ${Math.ceil(data.primary_down.seconds_left / 60)} Minuten über das Fallback.`,
+                `The main relay refused mail recently. Mail goes through the fallback for ${Math.ceil(data.primary_down.seconds_left / 60)} more minutes.`,
+              )}
+            </Text>
+            {canChange && (
+              <Button size="xs" variant="white" color="orange" onClick={resume}>
+                {tr('Haupt-Relay jetzt wieder nutzen', 'Use the main relay again now')}
+              </Button>
+            )}
+          </Group>
+        </Alert>
+      )}
+
+      {data && (
+        <StatGrid columns={3} style={{ marginBottom: 0 }}>
+          <StatTile
+            label={tr('Gesendet (24 h)', 'Sent (24 h)')}
+            value={data.stats.sent}
+            onClick={() => onShowLog()}
+          />
+          <StatTile
+            label={tr('Über Fallback (24 h)', 'Via fallback (24 h)')}
+            value={data.stats.fallback}
+            accent={data.stats.fallback ? '#c2870f' : undefined}
+            onClick={() => onShowLog('warning')}
+          />
+          <StatTile
+            label={tr('Fehlgeschlagen (24 h)', 'Failed (24 h)')}
+            value={data.stats.failed}
+            accent={data.stats.failed ? '#c0392b' : undefined}
+            onClick={() => onShowLog('error')}
+          />
+        </StatGrid>
+      )}
+
+      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+        {(data?.relays ?? []).map((r) => (
+          <RelayCard
+            key={r.which}
+            relay={r}
+            checking={checking === r.which}
+            onCheck={() => check(r.which)}
+          />
+        ))}
+      </SimpleGrid>
+
+      <MyAlertsCard />
+    </Stack>
+  )
+}
+
+// ── Event log ────────────────────────────────────────────────────────────────
+
+const categoryLabel = (c: EventCategory): string =>
+  ({
+    mail: tr('Mail', 'Mail'),
+    relay: 'Relay',
+    system: 'System',
+    alert: tr('Alarm', 'Alert'),
+  })[c] ?? c
+
+/** The log's messages are stored in English; known kinds are told in the
+ * chosen language from their details. */
+function eventText(e: PlatformEvent): string {
+  const d = e.details as Record<string, string | undefined>
+  const relay = d.host ?? ''
+  const name = d.relay === 'fallback' ? tr('Fallback-Relay', 'Fallback relay') : tr('Haupt-Relay', 'Main relay')
+  switch (e.kind) {
+    case 'mail.sent':
+      return tr(`Gesendet an ${d.to}: ${d.subject}`, e.message)
+    case 'mail.fallback':
+      return tr(`Über das Fallback-Relay an ${d.to} gesendet: ${d.subject}`, e.message)
+    case 'mail.failed':
+      return tr(`Nicht zugestellt an ${d.to}: ${d.subject}`, e.message)
+    case 'relay.down':
+      return tr(`${name} ${relay} ist ausgefallen`, e.message)
+    case 'relay.up':
+      return tr(`${name} ${relay} geht wieder`, e.message)
+    default:
+      return e.message
+  }
+}
+
+const LEVEL_COLOR: Record<EventLevel, string> = { info: 'gray', warning: 'orange', error: 'red' }
+
+const levelLabel = (l: EventLevel): string =>
+  ({ info: 'Info', warning: tr('Warnung', 'Warning'), error: tr('Fehler', 'Error') })[l] ?? l
+
+function EventDetails({ event }: { event: PlatformEvent }) {
+  const entries = Object.entries(event.details).filter(([k]) => k !== 'steps')
+  if (entries.length === 0) return null
+  return (
+    <Stack gap={2} mt={4}>
+      {entries.map(([k, v]) => (
+        <Text key={k} size="xs" c="dimmed" style={{ wordBreak: 'break-word' }}>
+          <Code>{k}</Code> {Array.isArray(v) ? v.join(' · ') : String(v)}
+        </Text>
+      ))}
+    </Stack>
+  )
+}
+
+export function EventLogPanel({
+  initialCategory,
+  initialLevel,
+}: {
+  initialCategory?: EventCategory
+  initialLevel?: EventLevel
+}) {
+  const [category, setCategory] = useState<EventCategory | ''>(
+    initialCategory ?? (initialLevel ? 'mail' : ''),
+  )
+  const [level, setLevel] = useState<EventLevel | ''>(initialLevel ?? '')
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(25)
+  const [open, setOpen] = useState<number | null>(null)
+
+  const query = useQuery({
+    queryKey: ['platform-events', category, level, search, page, perPage],
+    queryFn: () =>
+      getPlatformEvents({ category, level, q: search.trim(), page, per_page: perPage }),
+  })
+  const entries = query.data?.entries ?? []
+  const total = query.data?.total ?? 0
+  const pager = {
+    page,
+    perPage,
+    total,
+    totalPages: Math.max(1, Math.ceil(total / perPage)),
+    goPage: setPage,
+    setPerPage: (n: number) => {
+      setPerPage(n)
+      setPage(1)
+    },
+  }
+
+  return (
+    <Stack gap={16}>
+      <Text c="dimmed" size="sm" maw={720}>
+        {tr(
+          `Was der Plattform passiert ist: jede gesendete und fehlgeschlagene Mail, Ausfälle der Relays, Systemwarnungen und die Warnmails an Plattform-Admins. Einträge bleiben ${query.data?.retention_days ?? 30} Tage. Was Personen geändert haben, steht im Audit-Log.`,
+          `What happened to the platform: every sent and failed mail, relay outages, system alerts and the alert mails to platform admins. Entries are kept for ${query.data?.retention_days ?? 30} days. What people changed is in the audit log.`,
+        )}
+      </Text>
+      <Group gap="xs" wrap="wrap">
+        <TextInput
+          leftSection={<IconSearch size={16} />}
+          placeholder={tr('Adresse oder Betreff', 'Address or subject')}
+          value={search}
+          onChange={(e) => {
+            setSearch(e.currentTarget.value)
+            setPage(1)
+          }}
+          w={240}
+        />
+        {(['', 'mail', 'relay', 'system', 'alert'] as const).map((c) => (
+          <Button
+            key={c || 'all'}
+            size="xs"
+            variant={category === c ? 'filled' : 'default'}
+            onClick={() => {
+              setCategory(c)
+              setPage(1)
+            }}
+          >
+            {c ? categoryLabel(c) : tr('Alle', 'All')}
+          </Button>
+        ))}
+        <span style={{ width: 8 }} />
+        {(['', 'warning', 'error'] as const).map((l) => (
+          <Button
+            key={l || 'any'}
+            size="xs"
+            variant={level === l ? 'filled' : 'default'}
+            color={l ? LEVEL_COLOR[l] : undefined}
+            onClick={() => {
+              setLevel(l)
+              setPage(1)
+            }}
+          >
+            {l ? levelLabel(l) : tr('Jede Stufe', 'Any level')}
+          </Button>
+        ))}
+        <Button
+          variant="subtle"
+          size="xs"
+          ml="auto"
+          leftSection={<IconRefresh size={14} />}
+          onClick={() => query.refetch()}
+          loading={query.isFetching}
+        >
+          {tr('Aktualisieren', 'Refresh')}
+        </Button>
+      </Group>
+
+      {query.isError && <Text c="red">{failureText(query.error)}</Text>}
+
+      <Paper withBorder shadow="sm" radius="lg">
+        <Pagination {...pager} />
+        <Table.ScrollContainer minWidth={640}>
+          <Table highlightOnHover>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th w={150}>{tr('Zeit', 'Time')}</Table.Th>
+                <Table.Th w={110}>{tr('Stufe', 'Level')}</Table.Th>
+                <Table.Th w={90}>{tr('Art', 'Type')}</Table.Th>
+                <Table.Th>{tr('Ereignis', 'Event')}</Table.Th>
+                <Table.Th w={140}>{tr('Verein', 'Club')}</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {!query.isLoading && entries.length === 0 && (
+                <Table.Tr>
+                  <Table.Td colSpan={5}>
+                    <Text c="dimmed" size="sm">
+                      {tr('Keine Einträge.', 'No entries.')}
+                    </Text>
+                  </Table.Td>
+                </Table.Tr>
+              )}
+              {entries.map((e) => (
+                <Table.Tr
+                  key={e.id}
+                  style={{ cursor: 'pointer', verticalAlign: 'top' }}
+                  onClick={() => setOpen(open === e.id ? null : e.id)}
+                >
+                  <Table.Td fz="sm" c="dimmed">
+                    {formatDateTime(e.time)}
+                  </Table.Td>
+                  <Table.Td>
+                    <Badge variant="light" color={LEVEL_COLOR[e.level]} size="sm">
+                      {levelLabel(e.level)}
+                    </Badge>
+                  </Table.Td>
+                  <Table.Td fz="sm">{categoryLabel(e.category)}</Table.Td>
+                  <Table.Td>
+                    <Text size="sm" style={{ wordBreak: 'break-word' }}>
+                      {eventText(e)}
+                    </Text>
+                    {open === e.id && <EventDetails event={e} />}
+                  </Table.Td>
+                  <Table.Td fz="sm">{e.club ?? '–'}</Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+        <Pagination {...pager} />
+      </Paper>
+    </Stack>
+  )
+}

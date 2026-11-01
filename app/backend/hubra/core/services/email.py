@@ -260,10 +260,16 @@ def _send_via_smtp(
     reply_to: str | None = None,
     route: _Route | None = None,
     via: str | None = None,
+    notify: bool = True,
 ) -> bool:
     """Send one email over SMTP.  *route* defaults to the platform relay,
     with the fallback relay behind it.  ``via="relay"`` or ``"fallback"``
     uses only that one (the manager portal's test mail).
+
+    Every attempt is written to the platform event log, and a failure or a
+    switch to the fallback alerts platform staff
+    (``platform_monitor.record_mail``); ``notify=False`` (the alert mails
+    themselves) logs without alerting.  Test mails never alert either.
 
     Returns True on success, raises EmailDeliveryError on failure.
     """
@@ -308,6 +314,7 @@ def _send_via_smtp(
 
     primary_error: Exception | None = None
     last_error: Exception | None = None
+    tried_primary = False
     for current in routes:
         is_fallback = current is fallback
         try:
@@ -316,6 +323,7 @@ def _send_via_smtp(
             last_error = exc
             if not is_fallback:
                 primary_error = exc
+                tried_primary = True
             logger.error(
                 "smtp_fallback_error to_email=%s subject=%s relay=%s error=%s",
                 to_email,
@@ -338,8 +346,39 @@ def _send_via_smtp(
                 current.host,
             )
         logger.info("smtp_fallback_sent to_email=%s subject=%s", to_email, subject)
+        _monitor(
+            to_email=to_email,
+            subject=subject,
+            relay_host=current.host,
+            error=None,
+            primary_host=route.host if is_fallback else None,
+            primary_error=primary_error,
+            fallback=is_fallback or via == "fallback",
+            notify=notify and via is None,
+            test=via is not None,
+        )
         return True
+    _monitor(
+        to_email=to_email,
+        subject=subject,
+        relay_host=routes[-1].host,
+        error=last_error,
+        primary_host=route.host if tried_primary and fallback is not None else None,
+        primary_error=primary_error,
+        notify=notify and via is None,
+        test=via is not None,
+    )
     raise EmailDeliveryError(str(last_error)) from last_error
+
+
+def _monitor(**kwargs) -> None:
+    """The platform event log and alerts; a problem there never fails a send."""
+    try:
+        from hubra.core.services import platform_monitor
+
+        platform_monitor.record_mail(**kwargs)
+    except Exception:
+        logger.warning("mail_monitor_failed", exc_info=True)
 
 
 def _send(

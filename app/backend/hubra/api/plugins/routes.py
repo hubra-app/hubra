@@ -31,11 +31,17 @@ def _error(exc: InstallError, status: int = 400):
 
 
 def _repo_dict(r) -> dict:
+    plugin_keys = installer.repository_plugin_keys(r)
     return {
         "id": r.id,
         "name": r.name,
         "url": r.url,
         "keyId": r.key_id,
+        # False: the old format, its index key signs the plugins too.
+        "separateKeys": bool(plugin_keys) and r.key_id not in plugin_keys,
+        "pluginKeys": [
+            {"name": n, "keyId": k} for k, (n, _p) in sorted(plugin_keys.items())
+        ],
         "official": r.official,
         "enabled": r.enabled,
         "addedBy": r.added_by,
@@ -277,18 +283,65 @@ def delete_repository(repo_id: int):
 @plugins_bp.get("/keys")
 @require_global_permission(_PERM)
 def list_keys():
-    from hubra.core.models.plugin import TrustedKey
+    """Every key this platform trusts, with its purpose: "plugins" (signs
+    plugins), "index" (signs a repository index) or "both" (an index in the
+    old format), and where it comes from (official, repository, manual)."""
+    from hubra.core.models.plugin import PluginRepository, TrustedKey
     from hubra.core.plugins.trust import official_keys
 
+    plugins, index = official_keys("plugins"), official_keys("index")
     keys = [
-        {"id": None, "name": name, "keyId": kid, "official": True}
-        for kid, (name, _pub) in official_keys().items()
+        {
+            "id": None,
+            "name": name,
+            "keyId": kid,
+            "purpose": "both" if kid in index else "plugins",
+            "source": "official",
+            "official": True,
+        }
+        for kid, (name, _pub) in plugins.items()
     ]
+    keys += [
+        {
+            "id": None,
+            "name": name,
+            "keyId": kid,
+            "purpose": "index",
+            "source": "official",
+            "official": True,
+        }
+        for kid, (name, _pub) in index.items()
+        if kid not in plugins
+    ]
+    seen = {k["keyId"] for k in keys}
+    for r in db.session.scalars(
+        select(PluginRepository).where(PluginRepository.official.is_(False))
+    ):
+        pk = installer.repository_plugin_keys(r)
+        rows = [(r.key_id, r.name, "both" if r.key_id in pk else "index")]
+        rows += [(k, n, "plugins") for k, (n, _p) in sorted(pk.items()) if k != r.key_id]
+        for kid, name, purpose in rows:
+            if kid in seen:
+                continue
+            seen.add(kid)
+            keys.append(
+                {
+                    "id": None,
+                    "name": name,
+                    "keyId": kid,
+                    "purpose": purpose,
+                    "source": "repository",
+                    "repository": r.name,
+                    "official": False,
+                }
+            )
     keys += [
         {
             "id": k.id,
             "name": k.name,
             "keyId": k.key_id,
+            "purpose": k.purpose,
+            "source": "manual",
             "official": False,
             "addedBy": k.added_by,
         }
@@ -306,6 +359,13 @@ def add_key():
 
     body = request.get_json(silent=True) or {}
     name = str(body.get("name", "")).strip()[:64]
+    purpose = str(body.get("purpose") or "plugins")
+    if purpose != "plugins":
+        return api_error(
+            "VALIDATION_ERROR",
+            "only plugin keys can be added here; an index key comes with its repository",
+            400,
+        )
     try:
         pub = load_public(str(body.get("publicKey", "")))
     except (ValueError, TypeError):
@@ -317,13 +377,33 @@ def add_key():
         return api_error("VALIDATION_ERROR", "name is required", 400)
     if db.session.scalar(select(TrustedKey).where(TrustedKey.key_id == kid)):
         return api_error("CONFLICT", f"key {kid} is trusted already", 409)
+    if kid in installer.index_key_ids():
+        return api_error(
+            "VALIDATION_ERROR",
+            f"key {kid} signs a repository index; a key has one purpose, so it "
+            "can't be trusted for plugins too",
+            400,
+        )
     key = TrustedKey(
-        name=name, key_id=kid, public_key=public_b64(pub), added_by=installer._actor()
+        name=name,
+        key_id=kid,
+        public_key=public_b64(pub),
+        purpose=purpose,
+        added_by=installer._actor(),
     )
     db.session.add(key)
-    installer._audit("trust_plugin_key", kid, {"name": name})
+    installer._audit("trust_plugin_key", kid, {"name": name, "purpose": purpose})
     db.session.commit()
-    return jsonify({"id": key.id, "name": name, "keyId": kid, "official": False}), 201
+    return jsonify(
+        {
+            "id": key.id,
+            "name": name,
+            "keyId": kid,
+            "purpose": purpose,
+            "source": "manual",
+            "official": False,
+        }
+    ), 201
 
 
 @plugins_bp.delete("/keys/<int:key_pk>")

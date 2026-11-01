@@ -34,8 +34,11 @@ def _now() -> datetime:
 
 
 class PluginRepository(db.Model):
-    """A signed plugin index.  Its key signs the index and every plugin in it;
-    trusting the repository trusts that key.  The key is pinned when added."""
+    """A signed plugin index.  ``key_id``/``public_key`` is its index key;
+    ``plugin_keys`` (JSON, the index's ``plugin_keys``) the keys its plugins
+    are signed with.  Both are pinned when it is added.  An empty
+    ``plugin_keys`` is the old format: the index key signs the plugins too.
+    The official repository takes its keys from the image instead."""
 
     __tablename__ = "plugin_repositories"
 
@@ -60,14 +63,23 @@ class PluginRepository(db.Model):
     index_generated: Mapped[str] = mapped_column(
         String(40), default="", server_default="", nullable=False
     )
+    plugin_keys: Mapped[str] = mapped_column(
+        Text, default="", server_default="", nullable=False
+    )
 
 
 class TrustedKey(db.Model):
-    """An author's signing key a platform manager chose to trust (community)."""
+    """A signing key a platform manager chose to trust (community).
+
+    ``purpose`` is what the key may sign; only "plugins" can be added by
+    hand, since an index key belongs to its repository."""
 
     __tablename__ = "plugin_trusted_keys"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    purpose: Mapped[str] = mapped_column(
+        String(16), default="plugins", server_default="plugins", nullable=False
+    )
     name: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     key_id: Mapped[str] = mapped_column(String(16), unique=True, nullable=False)
     public_key: Mapped[str] = mapped_column(Text, nullable=False)

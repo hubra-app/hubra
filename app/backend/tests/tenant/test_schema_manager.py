@@ -30,6 +30,8 @@ _GLOBAL_ONLY_TABLES = frozenset(
         "plugin_repositories",
         "plugin_state",
         "platform_settings",
+        # The platform's monitoring log (mail sends, relays, alerts).
+        "platform_events",
         "data_keys",
         "plugin_trusted_keys",
         "email_verifications",
