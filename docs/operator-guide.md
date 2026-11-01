@@ -252,6 +252,13 @@ the id sequences up. The commands are in
 [disaster-recovery.md](disaster-recovery.md), Step 3 Option B. Practise it on
 a throwaway database once a quarter (Step 5 there).
 
+**PostgreSQL version.** `pg_dump` refuses a server with a newer major
+version than its own. The backend image has the PostgreSQL 16, 17 and 18
+clients and backups use the one matching the server, so a Compose or k3s
+install can run its own (or a managed) PostgreSQL up to 18. The Backups page
+shows an error, and `flask backups check-client` exits non-zero, when the
+server is newer than every client in the image.
+
 A plain `pg_dump` of the whole database also works as an extra copy, for
 example before an upgrade on Compose:
 `docker compose exec postgres pg_dump -U hubra -Fc hubra > hubra.dump`.

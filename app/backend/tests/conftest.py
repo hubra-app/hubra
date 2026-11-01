@@ -2,6 +2,9 @@ import os
 from pathlib import Path
 
 os.environ.setdefault("FLASK_ENV", "testing")
+# Backups run "pg_dump" from PATH in tests (the fakes match on that name),
+# not the versioned clients a developer machine may have installed.
+os.environ.setdefault("HUBRA_PG_LIB_DIR", "/nonexistent-hubra-pg-lib")
 
 # The plugins Hubra's own tests load (tests/plugins/bundled), next to plugins/,
 # where a plugin's repository puts itself to run its tests with Hubra's.

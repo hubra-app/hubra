@@ -37,6 +37,14 @@ export interface BackupConfigStatus {
   /** 'age': public-key backups; 'gpg': the older passphrase. */
   encryption_mode: 'age' | 'gpg' | null
   private_key_on_server: boolean
+  /** PostgreSQL server major version, null when unknown. */
+  pg_server_major: number | null
+  /** The pg_dump major a backup uses (null: the one on PATH). */
+  pg_client_major: number | null
+  pg_client_majors: number[]
+  /** False when the server is newer than every pg_dump in the image. */
+  pg_client_ok: boolean
+  pg_client_error: string | null
   endpoint: string
   bucket: string
   region: string
