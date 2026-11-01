@@ -12,6 +12,7 @@ import { formatDateTime } from '@/format'
 import { tr, useLang } from '@/lang'
 import { getAlertsOverview, type EventCategory, type OpenProblem } from '@/api/platform'
 import { EventLogPanel, MyAlertsCard } from './MailMonitor'
+import { PerformancePanel } from './Performance'
 import { LEVEL_COLOR, categoryLabel, eventText, levelLabel } from './eventLabels'
 
 // The server names problems in English; the known ones are told here.
@@ -28,6 +29,10 @@ function problemTitle(p: OpenProblem): string {
       return tr(which === 'fallback' ? 'Fallback-Relay ausgefallen' : 'Haupt-Relay ausgefallen', p.title)
     case 'mail':
       return tr(p.title.replace(/^(\d+) mails not delivered in 24 hours$/, '$1 Mails in 24 Stunden nicht zugestellt'), p.title)
+    case 'perf':
+      return which === 'slow'
+        ? tr(p.title.replace(/^API is slow: p95 (\d+) ms in the last hour$/, 'API ist langsam: p95 $1 ms in der letzten Stunde'), p.title)
+        : tr(p.title.replace(/^(\d+) server errors in the last hour$/, '$1 Serverfehler in der letzten Stunde'), p.title)
     case 'backup':
       return which === 'none'
         ? tr('Seit 2 Tagen kein erfolgreiches geplantes Backup', p.title)
@@ -46,6 +51,8 @@ function problemDetail(p: OpenProblem): string {
   if (p.id === 'mail:failed')
     return tr('Abgelehnte Adressen zählen mit; das Ereignisprotokoll zeigt jede einzelne.', p.detail)
   if (p.id === 'backup:none') return tr('Backups laufen täglich um 03:00 UTC.', p.detail)
+  if (p.id === 'perf:slow' || p.id === 'perf:errors')
+    return tr('Der Tab «Leistung» zeigt, welche Routen langsam sind oder Fehler liefern.', p.detail)
   return p.detail
 }
 
@@ -210,7 +217,7 @@ function OverviewPanel() {
   )
 }
 
-const TABS = ['overview', 'events', 'settings'] as const
+const TABS = ['overview', 'performance', 'events', 'settings'] as const
 type Tab = (typeof TABS)[number]
 const CATEGORIES = ['mail', 'relay', 'service', 'backup', 'plugin', 'system', 'alert']
 
@@ -231,13 +238,14 @@ export function Alerts() {
       <PageHead
         title={tr('Warnungen', 'Alerts')}
         desc={tr(
-          'Probleme der Plattform, das Ereignisprotokoll und welche Warnungen du per Mail bekommst.',
-          'Problems on the platform, the event log and which alerts you get by mail.',
+          'Probleme der Plattform, wie schnell die API antwortet, das Ereignisprotokoll und welche Warnungen du per Mail bekommst.',
+          'Problems on the platform, how fast the API answers, the event log and which alerts you get by mail.',
         )}
       />
       <Tabs
         tabs={[
           { id: 'overview', label: tr('Übersicht', 'Overview') },
+          { id: 'performance', label: tr('Leistung', 'Performance') },
           { id: 'events', label: tr('Ereignisse', 'Event log') },
           { id: 'settings', label: tr('Meine Warnungen', 'My alerts') },
         ]}
@@ -245,6 +253,7 @@ export function Alerts() {
         onTabChange={(id) => navigate(`/app/platform/alerts/${id}`)}
       />
       {tab === 'overview' && <OverviewPanel />}
+      {tab === 'performance' && <PerformancePanel />}
       {tab === 'events' && (
         <EventLogPanel
           key={location.search}

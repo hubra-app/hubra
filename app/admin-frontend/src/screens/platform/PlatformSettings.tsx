@@ -53,7 +53,8 @@ const DISCORD = [
 
 const DISCORD_LOG = ['discord.log_channel_id', 'discord.log_events']
 // Defaults built into Hubra, not read from the environment.
-const BUILT_IN = ['alerts.cooldown_minutes', 'alerts.retention_days']
+const PERF = ['perf.slow_request_ms', 'perf.slow_query_ms', 'perf.p95_warning_ms']
+const BUILT_IN = ['alerts.cooldown_minutes', 'alerts.retention_days', ...PERF]
 const ALERTS = ['alerts.cooldown_minutes', 'alerts.retention_days', 'alerts.manage_url']
 
 // Categories of platform events the bot posts (services/platform_discord.py).
@@ -192,6 +193,18 @@ const FIELD_DE: Record<string, [string, string]> = {
   'alerts.manage_url': [
     'Adresse von manage',
     'Für den Knopf «Warnungen öffnen» in Warnmails, z. B. https://manage.hubra.club. Leer: kein Knopf',
+  ],
+  'perf.slow_request_ms': [
+    'Langsame Anfrage (ms)',
+    'API-Anfragen ab dieser Dauer zählen als langsam und kommen ins Log, nur mit der Route. 0: aus',
+  ],
+  'perf.slow_query_ms': [
+    'Langsame Datenbankabfrage (ms)',
+    'Abfragen ab dieser Dauer werden gezählt und ins Log geschrieben, ohne ihre Werte. 0: aus',
+  ],
+  'perf.p95_warning_ms': [
+    'Warnung bei langsamer API (ms)',
+    'Offenes Problem unter Warnungen, wenn 95 % der Anfragen der letzten Stunde nicht schneller sind. 0: aus',
   ],
   'discord.log_channel_id': [
     'Kanal für das Plattform-Log',
@@ -426,6 +439,22 @@ export function PlatformSettings() {
                 )}
               </Text>
               <Stack gap="sm">{ALERTS.map(field)}</Stack>
+            </Paper>
+          )}
+
+          {tab === 'alerts' && (
+            <Paper withBorder shadow="sm" radius="lg" p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Leistung', 'Performance')}</Title>
+                {resetButton(PERF)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Grenzwerte für Plattform › Warnungen › Leistung. Gemessen werden nur Routenmuster und die Form der Abfragen, keine Pfade, Werte oder Personen.',
+                  'Thresholds for Platform › Alerts › Performance. Only route patterns and query shapes are measured, no paths, values or people.',
+                )}
+              </Text>
+              <Stack gap="sm">{PERF.map(field)}</Stack>
             </Paper>
           )}
 
