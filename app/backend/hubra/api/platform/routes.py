@@ -2,9 +2,10 @@
 
 ``platform_bp`` (``/api/v1/manager/platform``): instance-wide settings such as the outbound
 mail relay, which need the global permission ``platform.settings``, and the
-diagnostics of the whole instance (system health, the shared mail server,
-the API permission table), which need ``platform.diagnostics`` to look at
-and ``platform.settings`` to change anything.
+diagnostics of the whole instance (system health, the outbound mail relays
+and the platform event log, the shared mail server, the API permission
+table), which need ``platform.diagnostics`` to look at and
+``platform.settings`` to change anything.
 """
 
 from __future__ import annotations
@@ -18,7 +19,7 @@ from hubra.api.permissions import require_global_permission
 from hubra.core.errors import api_error
 from hubra.core.extensions import db, limiter
 from hubra.core.models.tenant import GlobalAuditEntry
-from hubra.core.services import email, mail_server, platform_settings
+from hubra.core.services import email, mail_server, platform_monitor, platform_settings
 from hubra.core.services.platform_settings import PlatformSettingError
 
 platform_bp = Blueprint("platform_bp", __name__)
@@ -208,6 +209,168 @@ def mail_server_reconcile():
 
     reconcile_mail.delay()
     return jsonify({"ok": True, "task": "reconcile_mail"}), 202
+
+
+# ── Outbound mail: relay checks, the event log, alert choices ──────────────
+
+
+def _relay_summary(which: str) -> dict:
+    if which == "fallback":
+        cfg = platform_settings.fallback_relay()
+    else:
+        cfg = platform_settings.relay()
+        cfg = cfg if cfg.host else None
+    return {
+        "which": which,
+        "configured": cfg is not None,
+        "host": getattr(cfg, "host", ""),
+        "port": getattr(cfg, "port", None),
+        "login": bool(cfg and cfg.user and cfg.password),
+        "last_check": platform_monitor.last_check(which),
+    }
+
+
+@platform_bp.get("/mail-relay")
+@require_global_permission(_DIAGNOSTICS)
+def mail_relay_status():
+    """Both relays with their last check, whether mail skips the main relay
+    right now, and the last 24 hours of sent, fallback and failed mail."""
+    return jsonify(
+        {
+            "relays": [_relay_summary(w) for w in platform_monitor.RELAYS],
+            "primary_down": platform_monitor.primary_down(),
+            "stats": platform_monitor.stats(24),
+            "check_every_minutes": 5,
+        }
+    ), 200
+
+
+@platform_bp.post("/mail-relay/check")
+@require_global_permission(_DIAGNOSTICS)
+@limiter.limit("30 per hour")
+def mail_relay_check():
+    """Body ``{"which": "relay" | "fallback"}`` (both if left out): log in to
+    the relay now, without sending a mail."""
+    which = (request.get_json(silent=True) or {}).get("which")
+    if which is not None and which not in platform_monitor.RELAYS:
+        return api_error("VALIDATION_ERROR", "'which' must be relay or fallback", 400)
+    targets = [which] if which else list(platform_monitor.RELAYS)
+    results = [platform_monitor.run_check(w) for w in targets]
+    return jsonify({"results": results}), 200
+
+
+@platform_bp.post("/mail-relay/use-main")
+@require_global_permission(_PERM)
+def mail_relay_use_main():
+    """Try the main relay again for the next mail, instead of waiting for
+    the 15 minutes after a fallback to run out (e.g. after fixing a quota)."""
+    platform_monitor.clear_primary_down()
+    _audit("platform.mail_relay.use_main", "platform_setting", "mail.relay")
+    db.session.commit()
+    return jsonify({"primary_down": platform_monitor.primary_down()}), 200
+
+
+@platform_bp.get("/events")
+@require_global_permission(_DIAGNOSTICS)
+def list_platform_events():
+    """The platform event log, newest first.
+
+    Query: ``category`` (mail, relay, system, alert), ``level`` (info,
+    warning, error), ``kind``, ``q`` (text in the message), ``page``,
+    ``per_page`` (max 100).
+    """
+    from sqlalchemy import func, select
+
+    from hubra.core.models.platform_event import CATEGORIES, LEVELS, PlatformEvent
+
+    args = request.args
+    query = select(PlatformEvent)
+    category = args.get("category") or None
+    level = args.get("level") or None
+    if category and category not in CATEGORIES:
+        return api_error("VALIDATION_ERROR", "Unknown category", 400)
+    if level and level not in LEVELS:
+        return api_error("VALIDATION_ERROR", "Unknown level", 400)
+    if category:
+        query = query.where(PlatformEvent.category == category)
+    if level:
+        query = query.where(PlatformEvent.level == level)
+    if kind := args.get("kind"):
+        query = query.where(PlatformEvent.kind == kind)
+    if q := (args.get("q") or "").strip():
+        query = query.where(PlatformEvent.message.ilike(f"%{q[:100]}%"))
+    try:
+        page = max(1, int(args.get("page", 1)))
+        per_page = min(100, max(1, int(args.get("per_page", 25))))
+    except ValueError:
+        return api_error("VALIDATION_ERROR", "page and per_page must be numbers", 400)
+
+    total = db.session.scalar(select(func.count()).select_from(query.subquery()))
+    rows = db.session.scalars(
+        query.order_by(PlatformEvent.created_at.desc(), PlatformEvent.id.desc())
+        .limit(per_page)
+        .offset((page - 1) * per_page)
+    ).all()
+
+    from hubra.core.models.tenant import Tenant
+
+    ids = {r.tenant_id for r in rows if r.tenant_id}
+    names = (
+        dict(
+            db.session.execute(
+                select(Tenant.id, Tenant.name).where(Tenant.id.in_(ids))
+            ).all()
+        )
+        if ids
+        else {}
+    )
+    entries = []
+    for r in rows:
+        item = r.to_dict()
+        item["club"] = names.get(r.tenant_id) if r.tenant_id else None
+        entries.append(item)
+    return jsonify(
+        {
+            "entries": entries,
+            "total": total or 0,
+            "page": page,
+            "per_page": per_page,
+            "retention_days": platform_monitor.RETENTION_DAYS,
+        }
+    ), 200
+
+
+@platform_bp.get("/alerts/me")
+@require_global_permission(_DIAGNOSTICS)
+def my_alerts():
+    """Which alert mails the signed-in platform admin gets."""
+    user = g.system_user
+    return jsonify(
+        {"alerts": platform_monitor.prefs_for(user), "email": user.email}
+    ), 200
+
+
+@platform_bp.put("/alerts/me")
+@require_global_permission(_DIAGNOSTICS)
+def update_my_alerts():
+    """Body ``{"<type>": bool, ...}`` for the types in
+    ``platform_monitor.ALERT_TYPES``; types left out keep their value."""
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict) or not body:
+        return api_error("VALIDATION_ERROR", "Expected an object of alert types", 400)
+    unknown = [k for k in body if k not in platform_monitor.ALERT_TYPES]
+    if unknown or not all(isinstance(v, bool) for v in body.values()):
+        return api_error(
+            "VALIDATION_ERROR",
+            "Alert types are "
+            + ", ".join(platform_monitor.ALERT_TYPES)
+            + " and each is true or false",
+            400,
+        )
+    user = g.system_user
+    user.platform_alerts = {**platform_monitor.prefs_for(user), **body}
+    db.session.commit()
+    return jsonify({"alerts": platform_monitor.prefs_for(user)}), 200
 
 
 # ── Translation suggestions from clubs ──────────────────────────────────────

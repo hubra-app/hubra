@@ -110,6 +110,112 @@ export async function reconcileMailServer() {
   await apiFetch(`${P}/mail-server/reconcile`, { method: 'POST' })
 }
 
+// ── Outbound mail: relay checks, event log, alert choices ──────────────────
+
+export type RelayWhich = 'relay' | 'fallback'
+
+export interface RelayCheck {
+  which: RelayWhich
+  configured: boolean
+  /** null when the relay is not set up. */
+  ok: boolean | null
+  host?: string
+  port?: number
+  latency_ms?: number
+  steps: { step: string; ok: boolean; ms: number; error?: string }[]
+  error?: string
+  /** Unix seconds. */
+  checked_at: number
+  failures?: number
+  down?: boolean
+  scheduled?: boolean
+}
+
+export interface RelaySummary {
+  which: RelayWhich
+  configured: boolean
+  host: string
+  port: number | null
+  login: boolean
+  last_check: RelayCheck | null
+}
+
+export interface MailRelayStatus {
+  relays: RelaySummary[]
+  primary_down: { active: boolean; seconds_left: number }
+  stats: { hours: number; sent: number; fallback: number; failed: number }
+  check_every_minutes: number
+}
+
+export async function getMailRelayStatus() {
+  return apiFetch<MailRelayStatus>(`${P}/mail-relay`)
+}
+
+export async function checkMailRelay(which?: RelayWhich) {
+  return (
+    await apiFetch<{ results: RelayCheck[] }>(`${P}/mail-relay/check`, {
+      method: 'POST',
+      body: JSON.stringify(which ? { which } : {}),
+    })
+  ).results
+}
+
+export async function resumeMainRelay() {
+  return apiFetch<{ primary_down: MailRelayStatus['primary_down'] }>(`${P}/mail-relay/use-main`, {
+    method: 'POST',
+  })
+}
+
+export type EventCategory = 'mail' | 'relay' | 'system' | 'alert'
+export type EventLevel = 'info' | 'warning' | 'error'
+
+export interface PlatformEvent {
+  id: number
+  time: string
+  category: EventCategory
+  kind: string
+  level: EventLevel
+  tenant_id: number | null
+  club: string | null
+  message: string
+  details: Record<string, unknown>
+}
+
+export async function getPlatformEvents(params: {
+  category?: EventCategory | ''
+  level?: EventLevel | ''
+  q?: string
+  page: number
+  per_page: number
+}) {
+  const qs = new URLSearchParams()
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== '') qs.set(k, String(v))
+  })
+  return apiFetch<{
+    entries: PlatformEvent[]
+    total: number
+    page: number
+    per_page: number
+    retention_days: number
+  }>(`${P}/events?${qs}`)
+}
+
+export type AlertType = 'relay_down' | 'fallback_used' | 'delivery_failed' | 'system'
+
+export async function getMyAlerts() {
+  return apiFetch<{ alerts: Record<AlertType, boolean>; email: string }>(`${P}/alerts/me`)
+}
+
+export async function updateMyAlerts(values: Partial<Record<AlertType, boolean>>) {
+  return (
+    await apiFetch<{ alerts: Record<AlertType, boolean> }>(`${P}/alerts/me`, {
+      method: 'PUT',
+      body: JSON.stringify(values),
+    })
+  ).alerts
+}
+
 // ── Encryption keys (platform.settings) ─────────────────────────────────────
 
 export interface KeyReport {

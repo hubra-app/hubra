@@ -1,0 +1,639 @@
+"""Platform monitoring: the outbound mail relays, the platform event log and
+alert mails to platform staff.
+
+* Every mail ``email._send_via_smtp`` hands to a relay is written to the
+  event log (``platform_events``, category ``mail``): sent, sent through the
+  fallback relay, or failed, with the relay and the error.  Never the body.
+* ``check_relay`` logs in to the main or the fallback relay (connect, EHLO,
+  STARTTLS, AUTH) without sending anything.  The beat task
+  ``mail_monitor_tasks.check_mail_relays`` runs it every few minutes and logs
+  a ``relay`` event when a relay goes down or comes back.
+* Alerts go by mail to platform staff (superadmins and everyone holding
+  ``platform.diagnostics``), each of whom picks the types they get
+  (``users.platform_alerts``).  Every type but the relay state changes is
+  sent at most once per ``ALERT_COOLDOWN``.  When the Discord webhook of
+  ``services/alerts.py`` is set, mail alerts go there too.
+
+An alert about the relays is sent through the relays, so when both are down
+it cannot reach anyone by mail: it is still in the event log, and on Discord
+when the webhook is set.
+
+Writing the log must never stop a mail or a request: every write is caught
+and logged, and on Postgres it uses its own connection, so it is kept even
+when the caller's transaction is rolled back.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+import smtplib
+import ssl
+import time
+from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone
+
+from flask import current_app
+from sqlalchemy import func, insert, select
+
+from hubra.core.extensions import db
+from hubra.core.models.platform_event import PlatformEvent
+
+logger = logging.getLogger(__name__)
+
+RETENTION_DAYS = 30
+ALERT_COOLDOWN = timedelta(hours=1)
+CHECK_TIMEOUT = 10  # seconds per relay check
+# A relay counts as down after this many failed checks in a row, so one
+# slow answer does not wake anybody.
+DOWN_AFTER = 2
+
+ALERT_TYPES = ("relay_down", "fallback_used", "delivery_failed", "system")
+RELAYS = ("relay", "fallback")
+
+_CHECK_KEY = "mail:monitor:check:{}"
+# Without Redis (tests, a broken Redis) the last checks live here, per process.
+_local_checks: dict[str, dict] = {}
+
+
+# ── Event log ─────────────────────────────────────────────────────────────────
+
+
+@contextmanager
+def _connection():
+    """A connection for log writes: the session's on SQLite (tests share one
+    in-memory database), a separate one in its own transaction elsewhere."""
+    if db.engine.dialect.name == "sqlite":
+        yield db.session
+        return
+    with db.engine.begin() as conn:
+        yield conn
+
+
+def _tenant_id() -> int | None:
+    try:
+        from hubra.core.tenant.context import current_tenant
+
+        tenant = current_tenant()
+    except Exception:
+        return None
+    return getattr(tenant, "id", None)
+
+
+def record(
+    category: str,
+    kind: str,
+    message: str,
+    *,
+    level: str = "info",
+    details: dict | None = None,
+    tenant_id: int | None = None,
+) -> None:
+    """Add one event to the log.  Never raises."""
+    try:
+        with _connection() as conn:
+            conn.execute(
+                insert(PlatformEvent).values(
+                    created_at=datetime.now(timezone.utc),
+                    category=category,
+                    kind=kind,
+                    level=level,
+                    tenant_id=tenant_id,
+                    message=message[:2000],
+                    details=details or {},
+                )
+            )
+    except Exception:
+        logger.warning("platform_event_write_failed kind=%s", kind, exc_info=True)
+
+
+def _recent(kind: str, since: datetime) -> bool:
+    try:
+        with _connection() as conn:
+            return (
+                conn.execute(
+                    select(PlatformEvent.id)
+                    .where(PlatformEvent.category == "alert")
+                    .where(PlatformEvent.kind == kind)
+                    .where(PlatformEvent.created_at >= since)
+                    .limit(1)
+                ).first()
+                is not None
+            )
+    except Exception:
+        return False
+
+
+def stats(hours: int = 24) -> dict:
+    """How many mails were sent, sent through the fallback and failed."""
+    since = datetime.now(timezone.utc) - timedelta(hours=hours)
+    rows = db.session.execute(
+        select(PlatformEvent.kind, func.count())
+        .where(PlatformEvent.category == "mail")
+        .where(PlatformEvent.created_at >= since)
+        .group_by(PlatformEvent.kind)
+    ).all()
+    counts = dict(rows)
+    return {
+        "hours": hours,
+        "sent": counts.get("mail.sent", 0),
+        "fallback": counts.get("mail.fallback", 0),
+        "failed": counts.get("mail.failed", 0),
+    }
+
+
+def prune(days: int = RETENTION_DAYS) -> int:
+    """Delete events older than *days*.  Returns how many went."""
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    result = db.session.execute(
+        PlatformEvent.__table__.delete().where(PlatformEvent.created_at < cutoff)
+    )
+    db.session.commit()
+    return result.rowcount or 0
+
+
+# ── Mail sends ────────────────────────────────────────────────────────────────
+
+
+def _is_recipient_problem(exc: Exception | None) -> bool:
+    """A refused address says nothing about the relay."""
+    return isinstance(exc, smtplib.SMTPRecipientsRefused)
+
+
+def record_mail(
+    *,
+    to_email: str,
+    subject: str,
+    relay_host: str,
+    error: Exception | None,
+    primary_host: str | None = None,
+    primary_error: Exception | None = None,
+    fallback: bool = False,
+    notify: bool = True,
+    test: bool = False,
+) -> None:
+    """Log one mail and raise an alert when the relays are in trouble.
+
+    *error* set: every route failed.  *fallback*: the fallback relay
+    delivered it (after *primary_error*, or because the main relay was
+    marked down).  ``notify=False`` for the alert mails themselves and test
+    mails, which are logged but never raise another alert.
+    """
+    details = {"to": to_email, "subject": subject[:300], "relay": relay_host}
+    if test:
+        details["test"] = True
+    tenant_id = _tenant_id()
+
+    if error is not None:
+        details["error"] = str(error)[:500]
+        if primary_error is not None and primary_error is not error:
+            details["primary"] = primary_host
+            details["primary_error"] = str(primary_error)[:500]
+        recipient = _is_recipient_problem(error)
+        record(
+            "mail",
+            "mail.failed",
+            f"Not delivered to {to_email}: {subject}",
+            level="warning" if recipient else "error",
+            details=details,
+            tenant_id=tenant_id,
+        )
+        if notify and not recipient:
+            alert(
+                "delivery_failed",
+                "Mail could not be delivered",
+                [
+                    f"A mail to {to_email} ({subject!r}) could not be sent.",
+                    f"Error: {error}",
+                    "Check the relays in manage › Diagnostics › Outbound mail.",
+                ],
+            )
+        return
+
+    if fallback:
+        if primary_error is not None:
+            details["primary"] = primary_host
+            details["primary_error"] = str(primary_error)[:500]
+        record(
+            "mail",
+            "mail.fallback",
+            f"Sent to {to_email} through the fallback relay: {subject}",
+            level="warning",
+            details=details,
+            tenant_id=tenant_id,
+        )
+        if (
+            notify
+            and primary_error is not None
+            and not _is_recipient_problem(primary_error)
+        ):
+            alert(
+                "fallback_used",
+                "The main mail relay refused a mail; the fallback took over",
+                [
+                    f"Main relay {primary_host}: {primary_error}",
+                    f"The fallback relay {relay_host} delivered it. Mail keeps "
+                    "going through the fallback for 15 minutes before the "
+                    "main relay is tried again.",
+                ],
+                level="warning",
+            )
+        return
+
+    record(
+        "mail",
+        "mail.sent",
+        f"Sent to {to_email}: {subject}",
+        details=details,
+        tenant_id=tenant_id,
+    )
+
+
+# ── Relay checks ──────────────────────────────────────────────────────────────
+
+
+def _relay_config(which: str):
+    from hubra.core.services import platform_settings
+
+    if which == "fallback":
+        return platform_settings.fallback_relay()
+    r = platform_settings.relay()
+    return r if r.host else None
+
+
+def check_relay(which: str) -> dict:
+    """Log in to the main relay or the fallback without sending a mail.
+
+    Returns ``{"which", "configured", "ok", "host", "port", "latency_ms",
+    "steps": [{"step", "ok", "ms", "error"?}], "error"?, "checked_at"}``.
+    """
+    cfg = _relay_config(which)
+    now = time.time()
+    if cfg is None:
+        return {
+            "which": which,
+            "configured": False,
+            "ok": None,
+            "steps": [],
+            "checked_at": now,
+        }
+
+    steps: list[dict] = []
+    start = time.monotonic()
+
+    def step(name: str, fn):
+        t = time.monotonic()
+        try:
+            out = fn()
+        except Exception as exc:
+            steps.append(
+                {
+                    "step": name,
+                    "ok": False,
+                    "ms": int((time.monotonic() - t) * 1000),
+                    "error": str(exc)[:300] or exc.__class__.__name__,
+                }
+            )
+            raise
+        steps.append(
+            {"step": name, "ok": True, "ms": int((time.monotonic() - t) * 1000)}
+        )
+        return out
+
+    context = ssl.create_default_context()
+    if current_app.config.get("SMTP_TLS_VERIFY", True) is False:
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+
+    error = None
+    server = None
+    try:
+        if cfg.port == 465:
+            server = step(
+                "connect",
+                lambda: smtplib.SMTP_SSL(
+                    cfg.host, cfg.port, timeout=CHECK_TIMEOUT, context=context
+                ),
+            )
+        else:
+            server = step(
+                "connect",
+                lambda: smtplib.SMTP(cfg.host, cfg.port, timeout=CHECK_TIMEOUT),
+            )
+        step("ehlo", server.ehlo)
+        if cfg.port not in (25, 465):
+            step("starttls", lambda: server.starttls(context=context))
+            server.ehlo()
+        if cfg.user and cfg.password:
+            step("login", lambda: server.login(cfg.user, cfg.password))
+    except Exception as exc:
+        error = str(exc)[:300] or exc.__class__.__name__
+    finally:
+        if server is not None:
+            try:
+                server.quit()
+            except Exception:
+                pass
+
+    result = {
+        "which": which,
+        "configured": True,
+        "ok": error is None,
+        "host": cfg.host,
+        "port": cfg.port,
+        "latency_ms": int((time.monotonic() - start) * 1000),
+        "steps": steps,
+        "checked_at": now,
+    }
+    if error:
+        result["error"] = error
+    return result
+
+
+def _redis():
+    from hubra.core.redis_client import get_redis_client
+
+    return get_redis_client()
+
+
+def last_check(which: str) -> dict | None:
+    client = _redis()
+    if client is not None:
+        try:
+            raw = client.get(_CHECK_KEY.format(which))
+            return json.loads(raw) if raw else None
+        except Exception:
+            pass
+    return _local_checks.get(which)
+
+
+def _store_check(which: str, result: dict) -> None:
+    _local_checks[which] = result
+    client = _redis()
+    if client is not None:
+        try:
+            client.set(_CHECK_KEY.format(which), json.dumps(result), ex=24 * 3600)
+        except Exception:
+            pass
+
+
+def run_check(which: str, *, scheduled: bool = False) -> dict:
+    """Check one relay, remember the result and log a change of state.
+
+    The failure count carries over from the last check, so a relay counts
+    as down (and the ``relay_down`` alert goes out) only after
+    ``DOWN_AFTER`` failures in a row, and as back on its first good check.
+    """
+    previous = last_check(which) or {}
+    result = check_relay(which)
+    if not result["configured"]:
+        _store_check(which, result)
+        return result
+
+    was_down = bool(previous.get("down"))
+    failures = 0 if result["ok"] else int(previous.get("failures") or 0) + 1
+    down = failures >= DOWN_AFTER or (was_down and not result["ok"])
+    result["failures"] = failures
+    result["down"] = down
+    result["scheduled"] = scheduled
+    _store_check(which, result)
+
+    name = "Main relay" if which == "relay" else "Fallback relay"
+    where = f"{result['host']}:{result['port']}"
+    if down and not was_down:
+        record(
+            "relay",
+            "relay.down",
+            f"{name} {where} is down: {result.get('error')}",
+            level="error",
+            details={
+                "relay": which,
+                "host": result["host"],
+                "error": result.get("error"),
+                "steps": result["steps"],
+            },
+        )
+        alert(
+            "relay_down",
+            f"{name} {where} is down",
+            [
+                f"{failures} checks in a row failed.",
+                f"Error: {result.get('error')}",
+                (
+                    "Mail goes through the fallback relay while this lasts."
+                    if which == "relay" and _relay_config("fallback")
+                    else "Mail that needs this relay is not delivered."
+                ),
+            ],
+            throttle=False,
+        )
+    elif was_down and not down:
+        record(
+            "relay",
+            "relay.up",
+            f"{name} {where} is working again",
+            details={"relay": which, "host": result["host"]},
+        )
+        alert(
+            "relay_down",
+            f"{name} {where} is working again",
+            [f"The check just logged in after {previous.get('failures')} failures."],
+            level="info",
+            throttle=False,
+        )
+    return result
+
+
+def primary_down() -> dict:
+    """Whether mail skips the main relay right now, and for how much longer."""
+    from hubra.core.services.email import _PRIMARY_DOWN_KEY
+
+    client = _redis()
+    if client is None:
+        return {"active": False, "seconds_left": 0}
+    try:
+        ttl = int(client.ttl(_PRIMARY_DOWN_KEY))
+    except Exception:
+        return {"active": False, "seconds_left": 0}
+    return {"active": ttl > 0, "seconds_left": max(ttl, 0)}
+
+
+def clear_primary_down() -> None:
+    from hubra.core.services.email import _PRIMARY_DOWN_KEY
+
+    client = _redis()
+    if client is not None:
+        try:
+            client.delete(_PRIMARY_DOWN_KEY)
+        except Exception:
+            pass
+
+
+# ── Alerts ────────────────────────────────────────────────────────────────────
+
+
+def default_prefs() -> dict[str, bool]:
+    return {t: True for t in ALERT_TYPES}
+
+
+def prefs_for(user) -> dict[str, bool]:
+    stored = user.platform_alerts or {}
+    return {t: bool(stored.get(t, True)) for t in ALERT_TYPES}
+
+
+def recipients(alert_type: str) -> list:
+    """Platform staff who get *alert_type*: superadmins and holders of
+    ``platform.diagnostics``, active, who did not turn it off."""
+    from hubra.core.models.global_role import (
+        GlobalPermission,
+        GlobalRolePermission,
+        UserGlobalRole,
+    )
+    from hubra.core.models.user import User
+
+    staff_ids = select(UserGlobalRole.user_id).where(
+        UserGlobalRole.role_id.in_(
+            select(GlobalRolePermission.role_id)
+            .join(
+                GlobalPermission,
+                GlobalPermission.id == GlobalRolePermission.permission_id,
+            )
+            .where(GlobalPermission.key.in_(("platform.diagnostics", "*")))
+        )
+    )
+    users = db.session.scalars(
+        select(User)
+        .where(User.is_disabled.is_(False))
+        .where((User.is_superadmin.is_(True)) | (User.id.in_(staff_ids)))
+        .order_by(User.id)
+    ).all()
+    return [u for u in users if prefs_for(u).get(alert_type, True)]
+
+
+def alert(
+    alert_type: str,
+    subject: str,
+    lines: list[str],
+    *,
+    level: str = "error",
+    throttle: bool = True,
+) -> bool:
+    """Log an alert and have it mailed to platform staff.  Never raises.
+
+    With *throttle*, an alert type that went out within ``ALERT_COOLDOWN``
+    is not sent again (the event that caused it is in the log anyway).
+    Returns True when the alert was sent off.
+    """
+    try:
+        now = datetime.now(timezone.utc)
+        if throttle and _recent(alert_type, now - ALERT_COOLDOWN):
+            return False
+        record(
+            "alert",
+            alert_type,
+            subject,
+            level=level,
+            details={"lines": lines},
+        )
+        from hubra.core.tasks.mail_monitor_tasks import send_platform_alert
+
+        try:
+            send_platform_alert.apply_async(
+                args=(alert_type, subject, lines, level), retry=False
+            )
+        except Exception:
+            # No broker: send it here rather than not at all.
+            logger.warning("platform_alert_queue_failed", exc_info=True)
+            deliver_alert(alert_type, subject, lines, level)
+        return True
+    except Exception:
+        logger.warning("platform_alert_failed type=%s", alert_type, exc_info=True)
+        return False
+
+
+_TYPE_LABEL = {
+    "relay_down": "Mail relay down or back",
+    "fallback_used": "Fallback relay used",
+    "delivery_failed": "Mail not delivered",
+    "system": "System alert",
+}
+
+
+def _alert_body(alert_type: str, subject: str, lines: list[str]) -> tuple[str, str]:
+    """In English, like the system alerts and their causes (SMTP errors,
+    task names) that fill most of it."""
+    from markupsafe import escape
+
+    label = _TYPE_LABEL.get(alert_type, alert_type)
+    footer = (
+        "You get this mail as a platform admin. Details are in manage under "
+        "Diagnostics › Event log; choose which alerts you get under "
+        "Diagnostics › Outbound mail."
+    )
+    text = "\n".join([subject, "", *lines, "", f"{label}. {footer}"])
+    html = (
+        f"<p><strong>{escape(subject)}</strong></p>"
+        + "".join(f"<p>{escape(line)}</p>" for line in lines)
+        + f'<p style="color:#666;font-size:12px">{escape(label)}. {escape(footer)}</p>'
+    )
+    return html, text
+
+
+def deliver_alert(alert_type: str, subject: str, lines: list[str], level: str) -> int:
+    """Mail the alert to every recipient (and post it to the Discord webhook
+    when one is set).  Returns how many mails went out."""
+    from hubra.core.services import email, platform_settings
+    from hubra.core.services.alerts import (
+        COLOR_GREEN,
+        COLOR_ORANGE,
+        COLOR_RED,
+        send_alert,
+    )
+
+    color = {"info": COLOR_GREEN, "warning": COLOR_ORANGE}.get(level, COLOR_RED)
+    if alert_type != "system":  # system alerts came from send_alert already
+        send_alert(f"Hubra: {subject}", "\n".join(lines), color=color, staff=False)
+
+    relay = platform_settings.relay()
+    if not relay.sender_email:
+        logger.warning("platform_alert_no_sender type=%s", alert_type)
+        return 0
+    sent = 0
+    for user in recipients(alert_type):
+        html, text = _alert_body(alert_type, subject, lines)
+        try:
+            email._send_via_smtp(
+                user.email,
+                user.name or user.email,
+                relay.sender_email,
+                relay.sender_name,
+                f"[Hubra] {subject}",
+                html,
+                text,
+                notify=False,
+            )
+            sent += 1
+        except email.EmailDeliveryError:
+            pass  # logged as mail.failed
+    return sent
+
+
+def system_alert(title: str, description: str, fields: list | None, color: int) -> None:
+    """From ``services/alerts.py``: Redis, database, disk, failing tasks."""
+    from hubra.core.services.alerts import COLOR_GREEN, COLOR_ORANGE
+
+    level = (
+        "info"
+        if color == COLOR_GREEN
+        else "warning"
+        if color == COLOR_ORANGE
+        else "error"
+    )
+    lines = [description] + [
+        f"{f.get('name')}: {f.get('value')}" for f in (fields or [])
+    ]
+    record("system", "system.alert", title, level=level, details={"lines": lines})
+    # Their own code already keeps them from repeating (state changes,
+    # an hour per task), so no cooldown here: a recovery must not be eaten
+    # by the alert before it.
+    alert("system", title, lines, level=level, throttle=False)
