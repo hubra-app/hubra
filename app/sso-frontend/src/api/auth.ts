@@ -80,6 +80,8 @@ export interface MfaStatus {
   recoveryCodesLeft: number
   /** Platform staff have to turn it on before manage › Platform works. */
   required: boolean
+  /** The person's clubs that ask them for two-factor sign-in. */
+  clubsRequiring: { slug: string; name: string }[]
 }
 
 export interface TotpSetup {

@@ -8,6 +8,8 @@ export interface ClubSettings {
   join_requests_open?: boolean
   /** How many days an invite link works (1–60). */
   invite_valid_days?: number
+  /** Who needs two-factor sign-in to open the club. */
+  mfa_required?: 'off' | 'admins' | 'all'
   club_description?: string
   /** A base64 image data URL; null removes it on save. */
   logo?: string | null
@@ -26,6 +28,17 @@ export interface ClubSettings {
 export async function getClubSettings(): Promise<ClubSettings> {
   const data = await apiFetch<{ settings: ClubSettings }>('/admin/club-settings')
   return data.settings
+}
+
+/** How many members (and admins) still sign in without two-factor. */
+export interface ClubMfaOverview {
+  membersWithout: number
+  adminsWithout: number
+}
+
+export async function getClubMfaOverview(): Promise<ClubMfaOverview> {
+  const data = await apiFetch<{ mfa: ClubMfaOverview }>('/admin/club-settings')
+  return data.mfa
 }
 
 export async function updateClubSettings(

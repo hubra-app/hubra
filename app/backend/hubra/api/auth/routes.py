@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 
 from argon2 import PasswordHasher as _PasswordHasher
 from argon2.exceptions import VerifyMismatchError as _VerifyMismatchError
-from flask import Blueprint, current_app, jsonify, make_response, request
+from flask import Blueprint, current_app, g, jsonify, make_response, request
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
@@ -211,7 +211,13 @@ def register_jwt_callbacks(jwt_manager) -> None:
             return None
         if member.user is None:  # members from before accounts existed
             return member
-        return member if _token_still_valid(member.user, jwt_data) else None
+        if not _token_still_valid(member.user, jwt_data):
+            return None
+        # The club turned on "two-factor required" after this sign-in.
+        if mfa.club_blocks(tenant, member, member.user):
+            g.mfa_required_by_club = (member.user_id, jwt_data.get("account_sid"))
+            return None
+        return member
 
     @jwt_manager.user_lookup_error_loader
     def user_lookup_error_callback(_jwt_header, jwt_data):
@@ -223,6 +229,57 @@ def register_jwt_callbacks(jwt_manager) -> None:
         )
         unset_jwt_cookies(response)
         return response
+
+
+@auth_bp.after_app_request
+def _club_requires_mfa(response):
+    """A club session the club's two-factor rule now refuses.
+
+    403 with its own code instead of a 401 (which the app answers with a
+    refresh and a sign-out), and the club token is swapped for an account
+    token: the person stays signed in on SSO, where the club app sends them
+    to set two-factor up, and opens the club again afterwards.
+    """
+    blocked = g.get("mfa_required_by_club")
+    if response.status_code != 401 or not blocked:
+        return response
+    user_id, account_sid = blocked
+    refused = make_response(
+        jsonify(
+            {
+                "error": "MFA_REQUIRED_BY_CLUB",
+                "message": "This club requires two-factor sign-in. "
+                "Turn it on in your account first.",
+            }
+        ),
+        403,
+    )
+    claims = {"user_id": user_id}
+    if account_sid is not None:
+        claims["account_sid"] = account_sid
+    set_access_cookies(
+        refused,
+        create_access_token(identity=f"user:{user_id}", additional_claims=claims),
+    )
+    set_refresh_cookies(
+        refused,
+        create_refresh_token(identity=f"user:{user_id}", additional_claims=claims),
+        max_age=_refresh_left(),
+    )
+    return refused
+
+
+def _refresh_left() -> int:
+    """Seconds the browser's refresh cookie still has, so the swapped
+    account session ends when the club one would have (one day if unknown)."""
+    from flask_jwt_extended import decode_token
+
+    name = current_app.config.get("JWT_REFRESH_COOKIE_NAME", "refresh_token_cookie")
+    try:
+        exp = int(decode_token(request.cookies.get(name, ""))["exp"])
+    except Exception:
+        return 24 * 3600
+    return max(60, exp - int(datetime.now(timezone.utc).timestamp()))
 
 
 def _token_still_valid(user: User | None, jwt_data: dict) -> bool:
@@ -467,6 +524,8 @@ def _complete_login(
             "EMAIL_NOT_VERIFIED",
             "Confirm your email address before opening a club",
         )
+    if current_tenant() is not None and mfa.club_blocks(current_tenant(), member, user):
+        mfa.club_refusal()
 
     raw_ua = request.headers.get("User-Agent", "")[:512]
     fp = compute_fingerprint(request.headers)
@@ -892,6 +951,12 @@ def switch_tenant():
     if member.is_blocked:
         return api_error(
             "MEMBERSHIP_SUSPENDED", "Your membership in this club is suspended", 403
+        )
+    if mfa.club_blocks(tenant, member, db.session.get(User, int(user_id))):
+        return api_error(
+            "MFA_REQUIRED_BY_CLUB",
+            "This club requires two-factor sign-in. Turn it on in your account first.",
+            403,
         )
 
     # A session in the club, so "sign out everywhere" and an admin's

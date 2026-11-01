@@ -2749,7 +2749,15 @@
       "country": "Land (z. B. CH)",
       "save": "Bankangaben speichern",
       "saved": "Bankangaben gespeichert"
-    }
+    },
+    "mfaTitle": "Zwei-Faktor-Anmeldung",
+    "mfaRequired": "Zwei-Faktor verlangen",
+    "mfaOff": "Freiwillig",
+    "mfaAdmins": "Für Admins",
+    "mfaAll": "Für alle Mitglieder",
+    "mfaHint": "Wer es braucht, öffnet den Verein erst, wenn ein Passkey oder eine Authenticator-App eingerichtet ist. Das geht im Konto unter Zwei-Faktor. Admins sind Inhaber und Admins, auch über eine Funktion.",
+    "mfaMissing": "{{n}} von ihnen haben noch keine Zwei-Faktor-Anmeldung und kommen erst wieder in den Verein, wenn sie es eingerichtet haben. Sag ihnen vorher Bescheid.",
+    "mfaMissingNone": "Alle, die es betrifft, haben Zwei-Faktor eingerichtet."
   },
   "domains": {
     "added": "Domain hinzugefügt",

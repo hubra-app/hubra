@@ -319,6 +319,10 @@ const DE_CODE: Record<string, string> = {
   BEYOND_OWN_PERMISSIONS: "Du kannst nur Rechte vergeben, die du selbst hast.",
   OWNER_ONLY: "Nur eine Inhaberin oder ein Inhaber kann die Inhaber-Rolle vergeben oder entziehen.",
   ADMIN_ONLY: "Nur Admins können eine Admin-Rolle vergeben oder entziehen.",
+  MFA_REQUIRED_BY_CLUB:
+    "Dieser Verein verlangt die Zwei-Faktor-Anmeldung. Richte im Konto unter Zwei-Faktor einen Passkey oder die Authenticator-App ein.",
+  MFA_SETUP_FIRST:
+    "Richte zuerst für dein eigenes Konto die Zwei-Faktor-Anmeldung ein, sonst sperrst du dich selbst aus.",
 };
 
 // Field checks arrive as the API's validation dict, e.g.

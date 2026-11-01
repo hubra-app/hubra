@@ -17,9 +17,16 @@ import {
   Title,
   Divider,
   Box,
+  SegmentedControl,
+  Alert,
 } from '@mantine/core'
 import { IconPhoto, IconTrash, IconUpload } from '@tabler/icons-react'
-import { getClubSettings, updateClubSettings, type ClubSettings } from '@/api/admin'
+import {
+  getClubMfaOverview,
+  getClubSettings,
+  updateClubSettings,
+  type ClubSettings,
+} from '@/api/admin'
 import { useT } from '@/locales/i18n'
 import { qk } from '@/data/keys'
 import { useToast } from '@/context/AppContext'
@@ -343,6 +350,11 @@ function ClubSettingsForm({
               onChange={(v) => typeof v === 'number' && update('invite_valid_days', v)}
             />
           </Paper>
+
+          <MfaRuleCard
+            value={form.mfa_required ?? 'off'}
+            onChange={(v) => update('mfa_required', v)}
+          />
         </>
       )}
 
@@ -353,6 +365,66 @@ function ClubSettingsForm({
         </Button>
       </Group>
     </Stack>
+  )
+}
+
+type MfaScope = NonNullable<ClubSettings['mfa_required']>
+
+/** Settings › Mitgliedschaft: who needs two-factor sign-in to open the club. */
+function MfaRuleCard({ value, onChange }: { value: MfaScope; onChange: (v: MfaScope) => void }) {
+  const { t } = useT()
+  const overview = useQuery({ queryKey: qk.settings.clubMfa, queryFn: getClubMfaOverview })
+  const missing =
+    value === 'all'
+      ? overview.data?.membersWithout
+      : value === 'admins'
+        ? overview.data?.adminsWithout
+        : undefined
+
+  return (
+    <Paper withBorder p="lg">
+      <Title order={3} mb="md">
+        {t('clubSettings.mfaTitle', 'Zwei-Faktor-Anmeldung')}
+      </Title>
+      <Stack gap={10}>
+        <Text size="sm" fw={500}>
+          {t('clubSettings.mfaRequired', 'Zwei-Faktor verlangen')}
+        </Text>
+        <SegmentedControl
+          value={value}
+          onChange={(v) => onChange(v as MfaScope)}
+          data={[
+            { value: 'off', label: t('clubSettings.mfaOff', 'Freiwillig') },
+            { value: 'admins', label: t('clubSettings.mfaAdmins', 'Für Admins') },
+            { value: 'all', label: t('clubSettings.mfaAll', 'Für alle Mitglieder') },
+          ]}
+          style={{ alignSelf: 'flex-start', maxWidth: '100%' }}
+        />
+        <Text size="sm" c="dimmed">
+          {t(
+            'clubSettings.mfaHint',
+            'Wer es braucht, öffnet den Verein erst, wenn ein Passkey oder eine Authenticator-App eingerichtet ist. Das geht im Konto unter Zwei-Faktor. Admins sind Inhaber und Admins, auch über eine Funktion.',
+          )}
+        </Text>
+        {missing !== undefined &&
+          (missing > 0 ? (
+            <Alert color="orange" variant="light">
+              {t(
+                'clubSettings.mfaMissing',
+                '{{n}} von ihnen haben noch keine Zwei-Faktor-Anmeldung und kommen erst wieder in den Verein, wenn sie es eingerichtet haben. Sag ihnen vorher Bescheid.',
+                { n: missing },
+              )}
+            </Alert>
+          ) : (
+            <Text size="sm" c="dimmed">
+              {t(
+                'clubSettings.mfaMissingNone',
+                'Alle, die es betrifft, haben Zwei-Faktor eingerichtet.',
+              )}
+            </Text>
+          ))}
+      </Stack>
+    </Paper>
   )
 }
 

@@ -143,10 +143,60 @@ def required(user: User) -> bool:
     return bool(current_app.config.get("MFA_REQUIRED_FOR_STAFF")) and is_staff(user)
 
 
+# ── Clubs that require it ──────────────────────────────────────────────────
+
+# Settings › Verein › Mitgliedschaft: "off", "admins" (owners and admins,
+# also through a function) or "all" members.
+CLUB_SCOPES = ("off", "admins", "all")
+
+
+def club_scope(tenant) -> str:
+    from hubra.core.tenant.club_settings import club_setting
+
+    value = club_setting(tenant, "mfa_required", "off")
+    return value if value in CLUB_SCOPES else "off"
+
+
+def club_requires(tenant, member) -> bool:
+    """Whether *tenant* asks this member for two-factor sign-in.  Needs the
+    club's schema on the search path (the member's roles live there)."""
+    scope = club_scope(tenant)
+    if scope == "all":
+        return True
+    if scope == "admins" and member is not None:
+        from hubra.api.permissions import held_roles
+
+        return any(r.is_admin or r.is_owner for r in held_roles(member))
+    return False
+
+
+def club_blocks(tenant, member, user: User | None) -> bool:
+    """The club requires two-factor of this member and the account has none."""
+    if user is None or totp_enabled(user) or club_scope(tenant) == "off":
+        return False
+    return club_requires(tenant, member) and not has_passkeys(user)
+
+
+def club_refusal():
+    from hubra.core.errors import raise_error
+
+    raise_error(
+        403,
+        "MFA_REQUIRED_BY_CLUB",
+        "This club requires two-factor sign-in. Turn it on in your account first.",
+    )
+
+
 def status(user: User) -> dict:
     from hubra.api.auth import passkeys
+    from hubra.api.auth.services import AuthService
 
     on = enabled(user)
+    clubs = [
+        {"slug": t["tenant_slug"], "name": t["tenant_name"]}
+        for t in AuthService.find_user_tenants(user.id)
+        if t.get("mfa_required")
+    ]
     return {
         "enabled": on,
         "totpEnabled": totp_enabled(user),
@@ -155,6 +205,7 @@ def status(user: User) -> dict:
         "passkeysAvailable": passkeys.available(),
         "recoveryCodesLeft": len(user.recovery_codes or []) if on else 0,
         "required": required(user),
+        "clubsRequiring": clubs,
     }
 
 

@@ -3245,5 +3245,13 @@
   "account.notify.topics.my_events": "Meine Anmeldungen",
   "account.notify.topics.my_polls": "Stimmen in meinen Umfragen, Vollmachten",
   "account.notify.topics.tasks": "Aufgaben für mich (Gesuche, Anmeldungen zum Bestätigen)",
-  "account.notify.pushHint": "Push kommt nur auf Geräte, auf denen du Push unten eingeschaltet hast."
+  "account.notify.pushHint": "Push kommt nur auf Geräte, auf denen du Push unten eingeschaltet hast.",
+  "clubSettings.mfaTitle": "Zwei-Faktor-Anmeldung",
+  "clubSettings.mfaRequired": "Zwei-Faktor verlangen",
+  "clubSettings.mfaOff": "Freiwillig",
+  "clubSettings.mfaAdmins": "Für Admins",
+  "clubSettings.mfaAll": "Für alle Mitglieder",
+  "clubSettings.mfaHint": "Wer es braucht, öffnet den Verein erst, wenn ein Passkey oder eine Authenticator-App eingerichtet ist. Das geht im Konto unter Zwei-Faktor. Admins sind Inhaber und Admins, auch über eine Funktion.",
+  "clubSettings.mfaMissing": "{{n}} von ihnen haben noch keine Zwei-Faktor-Anmeldung und kommen erst wieder in den Verein, wenn sie es eingerichtet haben. Sag ihnen vorher Bescheid.",
+  "clubSettings.mfaMissingNone": "Alle, die es betrifft, haben Zwei-Faktor eingerichtet."
 }
