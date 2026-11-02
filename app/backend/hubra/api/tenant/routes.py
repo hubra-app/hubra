@@ -11,9 +11,10 @@ caller's global roles (``user_id`` JWT claim).
 from __future__ import annotations
 
 import logging
+import uuid
 from datetime import datetime, timedelta, timezone
 
-from flask import Blueprint, current_app, jsonify, make_response, request
+from flask import Blueprint, current_app, g, jsonify, make_response, request
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
@@ -332,6 +333,8 @@ def get_provisioning_status(tenant_id: int):
 # ── Impersonation ───────────────────────────────────────────────────────────
 
 _IMPERSONATION_TIMEOUT_MINUTES = 30
+# How long a support session may last, chosen when it starts.
+_SUPPORT_MINUTES = (15, 30, 60, 120)
 
 
 @tenant_admin_bp.route("/tenants/<int:tenant_id>/impersonate", methods=["POST"])
@@ -361,6 +364,15 @@ def impersonate_tenant_user(tenant_id: int):
     target_user_id = data.get("user_id")
     # Looking is the default; changing anything as the member is asked for.
     allow_changes = data.get("allow_changes") is True
+    minutes = data.get("minutes", _IMPERSONATION_TIMEOUT_MINUTES)
+    if minutes not in _SUPPORT_MINUTES or isinstance(minutes, bool):
+        return jsonify(
+            {
+                "error": "VALIDATION_ERROR",
+                "message": "minutes must be one of "
+                + ", ".join(str(m) for m in _SUPPORT_MINUTES),
+            }
+        ), 422
 
     if not reason:
         return jsonify(
@@ -370,11 +382,13 @@ def impersonate_tenant_user(tenant_id: int):
             }
         ), 422
 
-    claims = get_jwt()
-    admin_user_id = claims.get("user_id")
-    from hubra.api.auth.helpers import parse_identity
-
-    admin_member_id = parse_identity(claims.get("sub", "0"))
+    # The platform user from the account token (require_global_permission).
+    # get_jwt() only works when a standard access cookie came along too,
+    # which a manage session signed in through SSO does not always send.
+    admin_user_id = g.system_user.id
+    # Account identities are "user:<id>"; this is what the token's ``sub``
+    # gave before, kept so /impersonation/stop works as it did.
+    admin_member_id = admin_user_id
 
     # Find the target member: either a specific user_id or the tenant's admin
     target_member = None
@@ -433,8 +447,11 @@ def impersonate_tenant_user(tenant_id: int):
     target_member_id = target_member.id
     target_user_id = target_member.user_id
 
-    timeout = timedelta(minutes=_IMPERSONATION_TIMEOUT_MINUTES)
+    timeout = timedelta(minutes=minutes)
     expires_at = datetime.now(timezone.utc) + timeout
+    # Names this support session, so platform staff can end it from manage
+    # (check_if_token_revoked) and the log can pair its start and end.
+    session_id = uuid.uuid4().hex
 
     # The member in this one club, nothing more: no user_id, so no other
     # club, no club switch and none of the person's platform rights. The
@@ -445,6 +462,7 @@ def impersonate_tenant_user(tenant_id: int):
         "impersonation_reason": reason,
         "impersonation_expires_at": expires_at.isoformat(),
         "impersonation_mode": "act" if allow_changes else "read",
+        "impersonation_session": session_id,
         "tenant_slug": tenant.slug,
     }
     access_token = create_access_token(
@@ -470,6 +488,9 @@ def impersonate_tenant_user(tenant_id: int):
                 "tenant_slug": tenant.slug,
                 "target_user_id": target_user_id,
                 "allow_changes": allow_changes,
+                "session": session_id,
+                "minutes": minutes,
+                "expires_at": expires_at.isoformat(),
             },
         )
     )
@@ -483,14 +504,14 @@ def impersonate_tenant_user(tenant_id: int):
                 "member_id": target_member_id,
                 "expires_at": expires_at.isoformat(),
                 "read_only": not allow_changes,
+                "session": session_id,
+                "minutes": minutes,
             }
         ),
         200,
     )
     set_access_cookies(response, access_token)
-    set_refresh_cookies(
-        response, refresh_token, max_age=_IMPERSONATION_TIMEOUT_MINUTES * 60
-    )
+    set_refresh_cookies(response, refresh_token, max_age=minutes * 60)
     return response
 
 
@@ -547,7 +568,10 @@ def stop_impersonation():
                 action="impersonation.end",
                 target_type="Member",
                 target_id=str(impersonator_member_id),
-                details={"tenant_slug": tenant.slug},
+                details={
+                    "tenant_slug": tenant.slug,
+                    "session": claims.get("impersonation_session"),
+                },
             )
         )
         db.session.commit()
@@ -564,6 +588,222 @@ def stop_impersonation():
     set_access_cookies(response, access_token)
     set_refresh_cookies(response, refresh_token, max_age=30 * 24 * 3600)
     return response
+
+
+# ── Support sessions (the impersonation log) ────────────────────────────────
+
+_SUPPORT_ACTIONS = ("impersonation.start", "impersonation.end", "impersonation.revoked")
+
+
+def _session_state(start: GlobalAuditEntry, closing: GlobalAuditEntry | None) -> dict:
+    d = start.details or {}
+    started = (
+        start.time if start.time.tzinfo else start.time.replace(tzinfo=timezone.utc)
+    )
+    minutes = int(d.get("minutes") or _IMPERSONATION_TIMEOUT_MINUTES)
+    try:
+        expires = datetime.fromisoformat(str(d["expires_at"]))
+    except (KeyError, ValueError):
+        expires = started + timedelta(minutes=minutes)
+    if expires.tzinfo is None:
+        expires = expires.replace(tzinfo=timezone.utc)
+    now = datetime.now(timezone.utc)
+    if closing is not None:
+        ended = (
+            closing.time
+            if closing.time.tzinfo
+            else closing.time.replace(tzinfo=timezone.utc)
+        )
+        ended = min(ended, expires)
+        status = "revoked" if closing.action == "impersonation.revoked" else "ended"
+    elif expires <= now:
+        ended, status = expires, "expired"
+    else:
+        ended, status = None, "active"
+    return {
+        "status": status,
+        "started_at": started.isoformat(),
+        "expires_at": expires.isoformat(),
+        "ended_at": ended.isoformat() if ended else None,
+        "minutes": minutes,
+        "seconds": int(((ended or now) - started).total_seconds()),
+    }
+
+
+@tenant_admin_bp.route("/support-sessions", methods=["GET"])
+@require_global_permission("audit.read")
+def list_support_sessions():
+    """Every time platform staff opened a club as one of its members, newest
+    first: who, which club and member, why, looking or changing, how long,
+    and whether it is still running.
+
+    Query: ``status`` (active), ``tenant_id``, ``page``, ``per_page``.
+    """
+    page, per_page = _page_args()
+    query = select(GlobalAuditEntry).where(
+        GlobalAuditEntry.action == "impersonation.start"
+    )
+    if tid := request.args.get("tenant_id"):
+        if not tid.isdigit():
+            raise_error(400, "VALIDATION_ERROR", "tenant_id must be a number")
+        query = query.where(GlobalAuditEntry.tenant_id == int(tid))
+    only_active = request.args.get("status") == "active"
+    if only_active:
+        # Nothing runs longer than the longest choice.
+        since = datetime.now(timezone.utc) - timedelta(minutes=max(_SUPPORT_MINUTES))
+        query = query.where(GlobalAuditEntry.time >= since)
+    starts = list(
+        db.session.scalars(
+            query.order_by(GlobalAuditEntry.time.desc(), GlobalAuditEntry.id.desc())
+        ).all()
+    )
+    if not starts:
+        return jsonify(
+            {
+                "sessions": [],
+                "total": 0,
+                "page": page,
+                "per_page": per_page,
+                "active": 0,
+            }
+        )
+
+    oldest = min(e.time for e in starts)
+    closings = db.session.scalars(
+        select(GlobalAuditEntry)
+        .where(
+            GlobalAuditEntry.action.in_(_SUPPORT_ACTIONS[1:]),
+            GlobalAuditEntry.time >= oldest,
+        )
+        .order_by(GlobalAuditEntry.time.asc())
+    ).all()
+    by_session: dict[str, GlobalAuditEntry] = {}
+    for c in closings:
+        sid = (c.details or {}).get("session")
+        if sid and sid not in by_session:
+            by_session[sid] = c
+
+    rows = []
+    for e in starts:
+        d = e.details or {}
+        state = _session_state(
+            e, by_session.get(d.get("session")) if d.get("session") else None
+        )
+        if only_active and state["status"] != "active":
+            continue
+        rows.append((e, state, by_session.get(d.get("session"))))
+    active = sum(1 for _, st, _ in rows if st["status"] == "active")
+    total = len(rows)
+    rows = rows[(page - 1) * per_page : page * per_page]
+
+    user_ids = {e.actor_id for e, _, _ in rows if e.actor_id}
+    user_ids |= {c.actor_id for _, _, c in rows if c is not None and c.actor_id}
+    user_ids |= {
+        int((e.details or {})["target_user_id"])
+        for e, _, _ in rows
+        if str((e.details or {}).get("target_user_id") or "").isdigit()
+    }
+    users = (
+        {
+            u.id: u
+            for u in db.session.scalars(select(User).where(User.id.in_(user_ids))).all()
+        }
+        if user_ids
+        else {}
+    )
+    tenant_ids = {e.tenant_id for e, _, _ in rows if e.tenant_id}
+    clubs = (
+        dict(
+            db.session.execute(
+                select(Tenant.id, Tenant.name).where(Tenant.id.in_(tenant_ids))
+            ).all()
+        )
+        if tenant_ids
+        else {}
+    )
+
+    def person(uid):
+        u = users.get(uid)
+        if u is None:
+            return None
+        return {
+            "id": u.id,
+            "name": f"{u.first_name or ''} {u.last_name or ''}".strip(),
+            "email": u.email,
+        }
+
+    out = []
+    for e, state, closing in rows:
+        d = e.details or {}
+        target = d.get("target_user_id")
+        out.append(
+            {
+                "id": e.id,
+                "session": d.get("session"),
+                "tenant_id": e.tenant_id,
+                "club": clubs.get(e.tenant_id) or d.get("tenant_slug"),
+                "staff": person(e.actor_id),
+                "member": person(int(target)) if str(target or "").isdigit() else None,
+                "member_id": e.target_id,
+                "reason": d.get("reason"),
+                "mode": "act" if d.get("allow_changes") else "read",
+                "ended_by": person(closing.actor_id)
+                if closing is not None and closing.action == "impersonation.revoked"
+                else None,
+                **state,
+            }
+        )
+    return jsonify(
+        {
+            "sessions": out,
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "active": active,
+        }
+    )
+
+
+@tenant_admin_bp.route("/support-sessions/<session_id>/end", methods=["POST"])
+@require_global_permission("impersonate")
+def end_support_session(session_id: str):
+    """End someone's running support session now: its tokens are refused
+    from the next request on."""
+    from hubra.core.models.token import TokenBlocklist
+
+    if not session_id.isalnum() or len(session_id) > 64:
+        raise_error(400, "VALIDATION_ERROR", "Unknown session")
+    start = None
+    for e in db.session.scalars(
+        select(GlobalAuditEntry)
+        .where(GlobalAuditEntry.action == "impersonation.start")
+        .where(
+            GlobalAuditEntry.time
+            >= datetime.now(timezone.utc) - timedelta(minutes=max(_SUPPORT_MINUTES))
+        )
+    ).all():
+        if (e.details or {}).get("session") == session_id:
+            start = e
+            break
+    if start is None:
+        raise_error(404, "NOT_FOUND", "No running support session with this id")
+    jti = f"support:{session_id}"
+    if db.session.scalar(select(TokenBlocklist.id).where(TokenBlocklist.jti == jti)):
+        raise_error(409, "ALREADY_ENDED", "This support session has already ended")
+    db.session.add(TokenBlocklist(jti=jti, type="support"))
+    db.session.add(
+        GlobalAuditEntry(
+            tenant_id=start.tenant_id,
+            actor_id=g.system_user.id,
+            action="impersonation.revoked",
+            target_type="Member",
+            target_id=start.target_id,
+            details={"session": session_id, "started_by": start.actor_id},
+            ip_address=request.remote_addr,
+        )
+    )
+    db.session.commit()
+    return jsonify({"ended": session_id})
 
 
 # ── Tenant Requests ──────────────────────────────────────────────────────────

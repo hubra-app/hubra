@@ -151,6 +151,15 @@ def register_jwt_callbacks(jwt_manager) -> None:
                 deadline = deadline.replace(tzinfo=timezone.utc)
             if datetime.now(timezone.utc) >= deadline:
                 return True
+            # Platform staff can end a support session early (manage ›
+            # Support-Zugriffe).
+            support = jwt_payload.get("impersonation_session")
+            if support and db.session.scalar(
+                select(TokenBlocklist.id).where(
+                    TokenBlocklist.jti == f"support:{support}"
+                )
+            ):
+                return True
         # A refresh token that was rotated or revoked is refused even while
         # its session is alive. Rotated ones get a minute of grace so that
         # parallel tabs which refreshed together settle on their new tokens.
@@ -716,6 +725,7 @@ _SESSION_CLAIMS = (
     "impersonation_reason",
     "impersonation_expires_at",
     "impersonation_mode",
+    "impersonation_session",
     # Whether "keep me signed in" was ticked: rotated refresh cookies keep
     # the lifetime the sign-in chose.
     "keep",

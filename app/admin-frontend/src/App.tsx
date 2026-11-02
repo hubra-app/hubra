@@ -188,6 +188,16 @@ function AppRoutes() {
           }
         />
         <Route
+          path="/app/support"
+          element={
+            <RequireGlobalPermission perm="audit.read">
+              <Shell>
+                <AdminPortal />
+              </Shell>
+            </RequireGlobalPermission>
+          }
+        />
+        <Route
           path="/app/audit"
           element={
             <RequireGlobalPermission perm="audit.read">
