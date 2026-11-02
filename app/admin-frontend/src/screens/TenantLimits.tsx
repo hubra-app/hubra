@@ -80,7 +80,7 @@ function LimitMeter({ kind, row }: { kind: LimitKind; row: LimitRow }) {
 
 /**
  * The club's members, mails this month and storage against its limits, and
- * its own limits on top of the plan's (Platform settings › Limits).
+ * its own limits on top of the plan's (All clubs › Plan limits).
  */
 export function TenantLimits({ tenantId }: { tenantId: number }) {
   const { notify } = useAdmin()
@@ -114,8 +114,8 @@ export function TenantLimits({ tenantId }: { tenantId: number }) {
               `${planLabel(data.plan, tr)} plan. The owners are told at ${data.warn_percent} % and at 100 %. At the member limit nobody new can join; mail and storage are only reported.`,
             )
           : tr(
-              `Tarif ${planLabel(data.plan, tr)}, ohne Limits. Limits pro Tarif unter Plattform-Einstellungen › Limits.`,
-              `${planLabel(data.plan, tr)} plan, no limits. Limits per plan are under Platform settings › Limits.`,
+              `Tarif ${planLabel(data.plan, tr)}, ohne Limits. Limits pro Tarif unter Alle Vereine › Limits pro Tarif.`,
+              `${planLabel(data.plan, tr)} plan, no limits. Limits per plan are under All clubs › Plan limits.`,
             )}
       </Text>
       <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="lg">

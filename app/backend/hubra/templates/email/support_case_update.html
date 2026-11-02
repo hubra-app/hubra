@@ -1,0 +1,21 @@
+{% extends "email/base.html" %}
+{% import "email/_ui.html" as ui with context %}
+{% block preheader %}{{ t('mail.email.support_case.intro', kind=case_kind, case_id=case_id) | striptags }}{% endblock %}
+{% block content %}
+{% call ui.p() %}{{ t('mail.email.support_case.intro', kind=case_kind, case_id=case_id) }}{% endcall %}
+{{ ui.facts([
+  (t('mail.email.support_case.table_title'), case_title, false),
+  (t('mail.email.support_case.table_status'), status_label, false),
+]) }}
+{% if merged_into %}
+{% call ui.p() %}{{ t('mail.email.support_case.merged', target=merged_into) }}{% endcall %}
+{% endif %}
+{% if comment %}
+{% call ui.p() %}<strong>{{ t('mail.email.support_case.answer') }}</strong>{% endcall %}
+<div style="margin: 0 0 20px; padding: 14px 18px; border-left: 3px solid #7441e0; font-family: {{ ui.font_body }}; font-size: 15px; line-height: 24px; color: #1a1625; white-space: pre-wrap;">{{ comment }}</div>
+{% endif %}
+{% if cases_url %}
+{{ ui.button(cases_url, t('mail.email.support_case.button')) }}
+{{ ui.fallback_link(cases_url) }}
+{% endif %}
+{% endblock %}

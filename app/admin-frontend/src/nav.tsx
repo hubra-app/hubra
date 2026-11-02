@@ -8,6 +8,7 @@ import {
   IconHome,
   IconKey,
   IconLanguage,
+  IconLifebuoy,
   IconLock,
   IconMail,
   IconPuzzle,
@@ -39,6 +40,7 @@ import { DiscordPanel } from '@/screens/platform/DiscordStatus'
 import { SettingsSection } from '@/screens/platform/SettingsSection'
 import { PlatformTranslations } from '@/screens/platform/Translations'
 import { PlatformEncryption } from '@/screens/platform/Encryption'
+import { SupportCases } from '@/screens/platform/Support'
 
 // The whole manage navigation in one place: sidebar sections, the pages in
 // them and each page's tabs. A tab is its own URL; App.tsx makes a route for
@@ -128,6 +130,21 @@ export function navSections(): NavSection[] {
                 'How many members, mails and storage each plan has. Limits for one club are set on its page.',
               ),
               render: () => <SettingsSection section="limits" />,
+            },
+          ],
+        },
+        {
+          id: 'reports',
+          label: tr('Meldungen & Ideen', 'Reports & ideas'),
+          icon: icon(IconLifebuoy),
+          ownHead: true,
+          tabs: [
+            {
+              id: 'list',
+              path: '/app/reports',
+              label: '',
+              perm: 'support.cases',
+              render: () => <SupportCases />,
             },
           ],
         },

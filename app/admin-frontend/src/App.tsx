@@ -9,6 +9,7 @@ import { Shell } from '@/components/Shell'
 import { TabbedPage } from '@/components/TabbedPage'
 import { TenantDetail } from '@/screens/TenantDetail'
 import { ClubAdmins } from '@/screens/ClubAdmins'
+import { SupportCases } from '@/screens/platform/Support'
 import { LEGACY_REDIRECTS, navSections } from '@/nav'
 import { SSO_URL, redirectTo } from '@hubra/api-client'
 import { useLang } from '@/lang'
@@ -182,6 +183,16 @@ function AppRoutes() {
             <RequireGlobalPermission perm="tenants.read">
               <Shell>
                 <TenantDetail />
+              </Shell>
+            </RequireGlobalPermission>
+          }
+        />
+        <Route
+          path="/app/reports/:id"
+          element={
+            <RequireGlobalPermission perm="support.cases">
+              <Shell>
+                <SupportCases />
               </Shell>
             </RequireGlobalPermission>
           }

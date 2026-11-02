@@ -177,4 +177,14 @@ export const ALERT_TYPES: {
         'Disk space, failed background tasks and high API error rates.',
       ),
   },
+  {
+    id: 'support_cases',
+    group: 'platform',
+    label: () => tr('Neue Meldungen und Ideen', 'New reports and ideas'),
+    desc: () =>
+      tr(
+        'Jemand hat in der App ein Problem gemeldet oder eine Idee vorgeschlagen. Bearbeitet werden sie unter Support.',
+        'Someone reported a problem or suggested an idea in the app. Handled under Support.',
+      ),
+  },
 ]
