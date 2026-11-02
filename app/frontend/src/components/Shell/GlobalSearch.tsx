@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQueries, useQuery } from '@tanstack/react-query'
 import { TextInput, Box, Text, Stack, Kbd } from '@mantine/core'
 import { useHotkeys } from '@mantine/hooks'
 import { IconSearch } from '@tabler/icons-react'
@@ -9,11 +9,11 @@ import { useEvents, useInvoices, usePolls } from '@/data/lists'
 import { listMembers } from '@/api/members'
 import { listGroups } from '@/api/groups'
 import { listTransactions } from '@/api/finance'
-import { listInventory } from '@/api/inventory'
 import { listAuditLog } from '@/api/settings'
 import type { SearchResult } from './nav'
 import { useSidebarNav } from './useSidebarNav'
 import { qk } from '@/data/keys'
+import { usePluginSearches } from '@/plugins'
 
 // One shared empty list, so an unloaded query keeps the same value each render.
 const NONE: never[] = []
@@ -66,12 +66,17 @@ export function GlobalSearch({
     queryFn: () => listTransactions({ pageSize: 200 }),
     staleTime: 60_000,
   })
-  const { data: inventoryList = NONE } = useQuery({
-    queryKey: qk.search.inventory,
-    enabled: used && modules.inventory === true,
-    queryFn: () => listInventory(),
-    staleTime: 60_000,
+  // Lists plugins add (Inventory, …), each loaded like the ones above.
+  const pluginSearches = usePluginSearches()
+  const pluginLists = useQueries({
+    queries: pluginSearches.map((s) => ({
+      queryKey: [...qk.search.plugin, s.plugin, s.id],
+      enabled: used,
+      queryFn: s.load,
+      staleTime: 60_000,
+    })),
   })
+  const pluginData = pluginLists.map((q) => q.data)
   const { data: auditPage } = useQuery({
     queryKey: qk.search.audit,
     enabled: used && hasPermission('audit.audit.read'),
@@ -162,21 +167,20 @@ export function GlobalSearch({
         sub: `${tx.type} · CHF ${tx.amount}`,
         path: `/app/finance/transactions?tx=${tx.id}`,
       }))
-    const inventoryResults: SearchResult[] = inventoryList
-      .filter(
-        (item) =>
-          item.name.toLowerCase().includes(lower) ||
-          item.description?.toLowerCase().includes(lower) ||
-          item.category.toLowerCase().includes(lower),
-      )
-      .slice(0, 3)
-      .map((item) => ({
-        kind: 'inventory',
-        id: item.id,
-        label: item.name,
-        sub: item.category,
-        path: `/app/inventory/${item.id}`,
-      }))
+    const pluginResults: SearchResult[] = pluginSearches.flatMap((s, i) =>
+      (pluginData[i] ?? NONE)
+        .filter((hit) =>
+          [hit.label, hit.sub, hit.keywords].some((v) => v?.toLowerCase().includes(lower)),
+        )
+        .slice(0, 3)
+        .map((hit) => ({
+          kind: `${s.plugin}:${s.id}` as const,
+          id: String(hit.id),
+          label: hit.label,
+          sub: hit.sub,
+          path: hit.path,
+        })),
+    )
     const pageResults: SearchResult[] = pages
       .filter((p) => p.label.toLowerCase().includes(lower))
       .slice(0, 3)
@@ -205,7 +209,7 @@ export function GlobalSearch({
       ...pollResults,
       ...invoiceResults,
       ...txResults,
-      ...inventoryResults,
+      ...pluginResults,
       ...auditResults,
     ])
     setActive(0)
@@ -216,7 +220,7 @@ export function GlobalSearch({
   // after the first letters are typed, so search again once they arrive
   // instead of keeping "no results".
   const [term, setTerm] = useState('')
-  const sources = [term, memberResp, groupList, txList, inventoryList, auditPage, events, polls, invoices]
+  const sources = [term, memberResp, groupList, txList, auditPage, events, polls, invoices, ...pluginData]
   const [searched, setSearched] = useState(sources)
   if (sources.some((s, i) => s !== searched[i])) {
     setSearched(sources)
@@ -260,22 +264,22 @@ export function GlobalSearch({
     event: t('shell.searchKind.event'),
     invoice: t('shell.searchKind.invoice'),
     transaction: t('shell.searchKind.transaction'),
-    inventory: t('shell.searchKind.inventory'),
     poll: t('shell.searchKind.poll'),
     audit: t('shell.searchKind.audit'),
     page: t('shell.searchKind.page'),
   }
+  for (const s of pluginSearches) kindLabel[`${s.plugin}:${s.id}`] = t(s.label)
   const kindColors: Record<string, { bg: string; color: string }> = {
     member: { bg: '#fdf0f8', color: '#be185d' },
     group: { bg: '#eff6ff', color: '#1d4ed8' },
     event: { bg: '#f0fdf4', color: '#15803d' },
     invoice: { bg: 'var(--mantine-color-acc-0)', color: '#b45309' },
     transaction: { bg: '#f0fdfa', color: '#0f766e' },
-    inventory: { bg: '#eef2ff', color: '#4338ca' },
     poll: { bg: '#fff7ed', color: '#c2410c' },
     audit: { bg: '#f1f5f9', color: '#475569' },
     page: { bg: 'var(--hb-surface-2)', color: 'var(--hb-text-2)' },
   }
+  for (const s of pluginSearches) if (s.color) kindColors[`${s.plugin}:${s.id}`] = s.color
 
   return (
     <Box

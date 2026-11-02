@@ -162,6 +162,9 @@ export const ROLE_TEMPLATES: RoleTemplate[] = [
           'inventory.items.update',
           'inventory.items.delete',
           'inventory.items.manage_instructions',
+          'codes.codes.read',
+          'codes.codes.create',
+          'codes.codes.update',
         ],
       },
       {
@@ -182,6 +185,7 @@ export const ROLE_TEMPLATES: RoleTemplate[] = [
           'posts.posts.like',
           'inventory.items.read',
           'inventory.items.instruct_self',
+          'codes.codes.read',
         ],
       },
     ],

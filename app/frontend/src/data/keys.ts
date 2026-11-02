@@ -91,7 +91,6 @@ export const qk = {
   feeBasis: (preview: string) => ['finance-fee-basis', preview] as const,
   externalParties: ['external-parties'] as const,
 
-  inventory: ['inventory'] as const,
   keys: ['keys'] as const,
   bindings: {
     all: ['bindings'] as const,
@@ -131,7 +130,7 @@ export const qk = {
     members: ['search-members'] as const,
     groups: ['search-groups'] as const,
     transactions: ['search-transactions'] as const,
-    inventory: ['search-inventory'] as const,
+    plugin: ['search-plugin'] as const,
     audit: ['search-audit'] as const,
   },
 }
