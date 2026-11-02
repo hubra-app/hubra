@@ -372,8 +372,8 @@ function SetupCard({ s }: { s: DiscordStatus }) {
           </Text>
           <Text size="sm">
             {tr(
-              'Hubra fragt sie beim Hinzufügen selbst an, nie Administrator: Kanäle ansehen, Nachrichten senden, Links einbetten, dazu Rollen verwalten nur wenn der Verein Rollen freigibt.',
-              'Hubra asks for them itself when the bot is added, never Administrator: View Channels, Send Messages, Embed Links, plus Manage Roles only when a club allows roles.',
+              'Hubra fragt sie beim Hinzufügen selbst an, nie Administrator: Nickname ändern, Kanäle ansehen, Nachrichten senden, Links einbetten, dazu Rollen verwalten nur wenn der Verein Rollen freigibt.',
+              'Hubra asks for them itself when the bot is added, never Administrator: Change Nickname, View Channels, Send Messages, Embed Links, plus Manage Roles only when a club allows roles.',
             )}
           </Text>
         </div>

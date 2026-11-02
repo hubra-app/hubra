@@ -117,6 +117,8 @@ Open manage › **Diagnostics › Discord** and click **Check now**. It shows:
 
 A failing check also shows on manage › Alerts.
 
+![manage › Diagnostics › Discord](screenshots/discord/diagnostics-discord-desktop.png)
+
 Without the application ID and bot token, the Discord app shows as "not set
 up on this platform" to clubs, and nothing else changes.
 
