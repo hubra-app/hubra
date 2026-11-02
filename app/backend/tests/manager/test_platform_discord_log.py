@@ -276,7 +276,7 @@ def test_audit_channel_follows_the_categories(db, audit_on, discord_api):
     discord_api.assert_not_called()
 
 
-def test_audit_entries_go_only_to_the_audit_channel(db, log_on, audit_on, discord_api):
+def test_audit_entries_go_only_to_the_audit_channel(db, log_on, audit_on, discord_api, queued):
     entry = _entry(db, "tenant.provision")
     assert platform_discord.post_audit_entry(entry.id) is True
     assert _channels(discord_api) == [AUDIT]
@@ -289,7 +289,7 @@ def test_alerts_stay_in_the_log_with_an_audit_channel(
     assert _channels(discord_api) == [CHANNEL]
 
 
-def test_without_audit_channel_entries_go_to_the_log(db, log_on, discord_api):
+def test_without_audit_channel_entries_go_to_the_log(db, log_on, discord_api, queued):
     entry = _entry(db, "tenant.provision")
     platform_discord.post_audit_entry(entry.id)
     assert _channels(discord_api) == [CHANNEL]

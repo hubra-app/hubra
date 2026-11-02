@@ -5,7 +5,6 @@ from __future__ import annotations
 import re
 
 
-from flask import jsonify
 
 from hubra.core.extensions import db
 from hubra.core.models.audit import AuditEntry
@@ -28,11 +27,6 @@ def id_from_body(value, field: str) -> int | None:
     if isinstance(value, str) and value.strip().isdigit():
         return int(value)
     raise_error(400, "VALIDATION_ERROR", f"{field} must be an id")
-
-
-def success_response(data, meta=None, status=200):
-    """Return a standardized JSON envelope: {"data": ..., "meta": ...}."""
-    return jsonify({"data": data, "meta": meta or {}}), status
 
 
 def log_audit(actor_id, action, target_type, target_id, target_label, color=None):

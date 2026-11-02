@@ -166,7 +166,7 @@ def test_real_backup_uses_a_client_matching_the_server(app, db, tmp_path):
 
     uploaded = tmp_path / "uploaded.dump"
 
-    def fake_encrypt(src, dst_base, _keys):
+    def fake_encrypt(src, dst_base, _keys, **_kw):
         shutil.copy(src, dst_base + ".plain")
         return dst_base + ".plain"
 

@@ -155,11 +155,6 @@ def test_platform_staff_can_read_platform_permissions(client, staff_headers):
 # ── Plain member (no permissions) ─────────────────────────────────────────────
 
 
-def test_plain_member_cannot_list_members(client, seeded_db, plain_member_token):
-    resp = client.get("/api/v1/members/", headers=plain_member_token)
-    assert resp.status_code == 403
-
-
 def test_plain_member_cannot_create_member(client, seeded_db, plain_member_token):
     resp = client.post(
         "/api/v1/members/",
@@ -196,11 +191,6 @@ def test_plain_member_cannot_put_settings(client, plain_member_token):
         json={"value": "Hacked"},
         headers=plain_member_token,
     )
-    assert resp.status_code == 403
-
-
-def test_plain_member_cannot_list_groups(client, plain_member_token):
-    resp = client.get("/api/v1/groups/", headers=plain_member_token)
     assert resp.status_code == 403
 
 

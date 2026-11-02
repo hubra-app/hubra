@@ -38,7 +38,10 @@ def email_app():
             _db.session.add(Setting(key=key, value=value))
         _db.session.commit()
         yield app
-        _db.drop_all()
+        # Not on Postgres: this app shares the database with the session app,
+        # whose open transaction DROP would wait on (see conftest.app).
+        if _db.engine.dialect.name != "postgresql":
+            _db.drop_all()
 
 
 @pytest.fixture

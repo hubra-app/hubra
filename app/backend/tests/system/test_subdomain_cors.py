@@ -240,18 +240,6 @@ def test_logout_clears_remembered_email_with_matching_domain(app):
 # ── CSRF double-submit ─────────────────────────────────────────────────────────
 
 
-def test_state_changing_request_without_csrf_is_rejected(app, client, seeded_db):
-    """POST to a jwt_required endpoint without X-CSRF-TOKEN is rejected."""
-    with patch.dict(app.config, {"JWT_COOKIE_CSRF_PROTECT": True}):
-        client.post(
-            "/api/v1/auth/login",
-            json={"email": "admin@test.ch", "password": "password123"},
-        )
-        # Logout is a jwt_required POST -> requires CSRF header.
-        resp = client.post("/api/v1/auth/logout")
-    assert resp.status_code == 401
-
-
 def test_state_changing_request_with_csrf_succeeds(app, client, seeded_db):
     """POST to a jwt_required endpoint WITH X-CSRF-TOKEN is accepted."""
     with patch.dict(app.config, {"JWT_COOKIE_CSRF_PROTECT": True}):

@@ -5,8 +5,8 @@ full set only when a release is being prepared.
 
 | Workflow | Runs on | What it runs |
 | --- | --- | --- |
-| `ci.yml` (CI) | pull requests into `main`, pushes to `main` | `lint` (ruff, eslint and `tsc` in the three frontends, Compose files, Kustomize + kubeconform, shellcheck), backend unit tests, frontend unit tests, and on pull requests that change a frontend the Compose stack with the browser tests |
-| `release-checks.yml` (Release checks) | `release/*` branches (create and push), pull requests into `release/*`, before every image build, by hand | all of `ci.yml` without the path filter, plus dependency audits (pip-audit, npm audit), the image builds and the Compose stack with the browser tests |
+| `ci.yml` (CI) | pull requests into `main`, pushes to `main` | `lint` (ruff, eslint and `tsc` in the three frontends, Compose files, Kustomize + kubeconform, shellcheck), backend unit tests (SQLite, in parallel with `pytest -n auto`), frontend unit tests, and on pull requests that change a frontend the Compose stack with the browser tests |
+| `release-checks.yml` (Release checks) | `release/*` branches (create and push), pull requests into `release/*`, before every image build, by hand | all of `ci.yml` without the path filter, plus the backend tests on Postgres 18 (`backend-postgres`, which also runs the tests SQLite skips), dependency audits (pip-audit, npm audit), the image builds and the Compose stack with the browser tests |
 | `images.yml` (Images) | GitHub release published, by hand | `release-checks.yml` first, then builds and pushes the images |
 | `release-branch.yml` (Release branch) | GitHub release published (not pre-releases) | creates `release/X.Y` at the release's commit if it does not exist yet |
 

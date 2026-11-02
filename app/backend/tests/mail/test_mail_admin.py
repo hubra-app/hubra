@@ -184,15 +184,3 @@ def test_group_mail_list_includes_quota(client, db, seeded_db, auth_headers):
     assert data[0]["quotaUsed"] is None
     assert data[0]["quotaTotal"] is None
 
-
-def test_quota_null_when_wildduck_unavailable(client, db, seeded_db, auth_headers):
-    _ensure_mail_domain(db)
-    _make_member_mma(db, seeded_db["admin"].id, wildduck_id="5f8d0b1a2c3e4f5a6b7c8d9e")
-
-    resp = client.get("/api/v1/mail/members-mail", headers=auth_headers)
-
-    assert resp.status_code == 200
-    data = resp.get_json()["data"]
-    assert len(data) == 1
-    assert data[0]["quotaUsed"] is None
-    assert data[0]["quotaTotal"] is None

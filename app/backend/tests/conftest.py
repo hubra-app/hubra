@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from tests.xdist_postgres import database_for_worker
+
 os.environ.setdefault("FLASK_ENV", "testing")
 # Backups run "pg_dump" from PATH in tests (the fakes match on that name),
 # not the versioned clients a developer machine may have installed.
@@ -17,6 +19,12 @@ os.environ.setdefault(
         ]
     ),
 )
+
+# On Postgres with pytest -n, each worker gets its own database.
+if os.environ.get("TEST_DATABASE_URL"):
+    os.environ["TEST_DATABASE_URL"] = database_for_worker(
+        os.environ["TEST_DATABASE_URL"]
+    )
 
 from unittest.mock import patch
 
@@ -53,6 +61,28 @@ def _mock_health_checks():
         patch.object(HealthService, "check_imap", return_value=_NOT_CONFIGURED),
     ):
         yield
+
+
+@pytest.fixture(autouse=True)
+def _end_open_transaction(request):
+    """Requests in tests run in the session-wide app context, so their
+    session is never removed. A test without the db fixture (which rolls
+    back) left its transaction open, e.g. the default plans GET /public/pricing
+    adds; on Postgres the next test inserting them waited on it forever."""
+    yield
+    remove = getattr(_db.session, "remove", None)  # some tests fake the session
+    if "app" in request.fixturenames and remove is not None:
+        remove()
+
+
+@pytest.fixture(autouse=True)
+def _clear_health_cache():
+    """A cached "error" status from one test turned /health into a 503 for
+    whichever test came next in the same worker."""
+    from hubra.api.health.cache import HealthCache
+
+    yield
+    HealthCache.clear()
 
 
 @pytest.fixture(autouse=True)
@@ -327,3 +357,11 @@ def tenant_pair(db, seeded_db):
         "role_a": role_a,
         "role_b": role_b,
     }
+
+
+@pytest.fixture
+def sqlite_only(db):
+    """Skip on Postgres: the test keeps a club's data in the public schema,
+    which only matches what the code reads on SQLite (no club schemas)."""
+    if db.engine.dialect.name == "postgresql":
+        pytest.skip("club data in the public schema; needs SQLite")

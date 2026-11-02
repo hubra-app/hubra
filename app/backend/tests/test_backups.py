@@ -14,14 +14,21 @@ import pytest
 
 
 @pytest.fixture
-def backup_config(app):
-    """Set backup env vars so BackupService sees them as configured."""
-    app.config["BACKUP_ENCRYPTION_KEY"] = "test-encryption-key"
-    app.config["BACKUP_S3_ENDPOINT"] = "https://s3.test.example.com"
-    app.config["BACKUP_S3_BUCKET"] = "test-bucket"
-    app.config["BACKUP_S3_ACCESS_KEY"] = "test-access-key"
-    app.config["BACKUP_S3_SECRET_KEY"] = "test-secret-key"
-    app.config["BACKUP_S3_REGION"] = "default"
+def backup_config(app, monkeypatch):
+    """Set backup env vars so BackupService sees them as configured.
+
+    monkeypatch puts them back afterwards: left set, later tests saw S3 as
+    configured and tried to reach s3.test.example.com (seconds of retries).
+    """
+    for key, value in {
+        "BACKUP_ENCRYPTION_KEY": "test-encryption-key",
+        "BACKUP_S3_ENDPOINT": "https://s3.test.example.com",
+        "BACKUP_S3_BUCKET": "test-bucket",
+        "BACKUP_S3_ACCESS_KEY": "test-access-key",
+        "BACKUP_S3_SECRET_KEY": "test-secret-key",
+        "BACKUP_S3_REGION": "default",
+    }.items():
+        monkeypatch.setitem(app.config, key, value)
     yield
 
 
