@@ -34,7 +34,7 @@ from hubra.api.permissions import (
     invalidate_member_permissions,
     require_global_permission,
 )
-from hubra.core.errors import raise_error
+from hubra.core.errors import error_message, raise_error
 from hubra.core.extensions import db
 from hubra.core.models.member import Member
 from hubra.core.models.tenant import GlobalAuditEntry, Tenant
@@ -123,7 +123,9 @@ _HEALTH_SORTS = {
     "name": lambda t, h: t.name.lower(),
     "created_at": lambda t, h: t.created_at,
     "members": lambda t, h: h["members"],
-    "last_activity": lambda t, h: h["last_activity"] or datetime.min.replace(tzinfo=timezone.utc),
+    "last_activity": lambda t, h: (
+        h["last_activity"] or datetime.min.replace(tzinfo=timezone.utc)
+    ),
     "storage": lambda t, h: h["storage_bytes"],
     "mail": lambda t, h: h["mail"]["sent"] + h["mail"]["failed"],
     "plugins": lambda t, h: h["plugins"],
@@ -171,7 +173,9 @@ def list_tenants_health():
     key = _HEALTH_SORTS.get(sort_by)
     if key is None:
         raise_error(400, "VALIDATION_ERROR", "Unknown sort field")
-    tenants.sort(key=lambda t: key(t, health[t.id]), reverse=args.get("sort_dir") == "desc")
+    tenants.sort(
+        key=lambda t: key(t, health[t.id]), reverse=args.get("sort_dir") == "desc"
+    )
 
     try:
         page = max(1, int(args.get("page", 1)))
@@ -252,7 +256,9 @@ def provision_tenant():
             201,
         )
     except TenantProvisioningError as exc:
-        return jsonify({"error": "PROVISION_FAILED", "message": str(exc)}), 422
+        return jsonify(
+            {"error": "PROVISION_FAILED", "message": error_message(exc)}
+        ), 422
 
 
 @tenant_admin_bp.route("/tenants/<int:tenant_id>", methods=["GET"])
@@ -815,7 +821,7 @@ def approve_tenant_request(req_id: int):
             admin_user_id=req.user_id,
         )
     except TenantProvisioningError as exc:
-        raise_error(422, "PROVISION_FAILED", str(exc))
+        raise_error(422, "PROVISION_FAILED", error_message(exc))
 
     req.status = "approved"
     req.reviewed_by = int(reviewer_id) if reviewer_id else None

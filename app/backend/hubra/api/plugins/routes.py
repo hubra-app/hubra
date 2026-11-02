@@ -15,7 +15,7 @@ from sqlalchemy import select
 
 from hubra.api.auth.account_token import require_step_up
 from hubra.api.permissions import require_global_permission
-from hubra.core.errors import api_error
+from hubra.core.errors import api_error, error_message
 from hubra.core.extensions import db, limiter
 from hubra.core.plugins import current
 from hubra.core.plugins import installer
@@ -28,7 +28,7 @@ _PERM = "plugins.manage"
 
 
 def _error(exc: InstallError, status: int = 400):
-    return api_error("PLUGIN_ERROR", str(exc), status)
+    return api_error("PLUGIN_ERROR", error_message(exc), status)
 
 
 def _repo_dict(r) -> dict:
@@ -199,7 +199,7 @@ def set_update_mode():
     try:
         set_mode(str(body.get("mode", "")))
     except ValueError as exc:
-        return api_error("VALIDATION_ERROR", f"mode: {exc}", 400)
+        return api_error("VALIDATION_ERROR", f"mode: {error_message(exc)}", 400)
     return jsonify({"mode": body["mode"]}), 200
 
 
@@ -329,7 +329,9 @@ def list_keys():
     ):
         pk = installer.repository_plugin_keys(r)
         rows = [(r.key_id, r.name, "both" if r.key_id in pk else "index")]
-        rows += [(k, n, "plugins") for k, (n, _p) in sorted(pk.items()) if k != r.key_id]
+        rows += [
+            (k, n, "plugins") for k, (n, _p) in sorted(pk.items()) if k != r.key_id
+        ]
         for kid, name, purpose in rows:
             if kid in seen:
                 continue

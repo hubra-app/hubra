@@ -16,7 +16,7 @@ from flask import Blueprint, current_app, g, jsonify, request
 from hubra.api.backups.services import BackupsService, BackupServiceAPI
 from hubra.api.auth.account_token import require_step_up
 from hubra.api.permissions import require_global_permission
-from hubra.core.errors import api_error
+from hubra.core.errors import api_error, error_message
 from hubra.core.extensions import db
 from hubra.core.models.tenant import GlobalAuditEntry, Tenant
 from hubra.core.schemas.backup import BackupConfigSchema, BackupRecordSchema
@@ -213,8 +213,10 @@ def restore_backup(record_id: int):
         try:
             updated = BackupService.restore_club(record_id, private_key)
         except RestoreError as exc:
-            _audit("restore_failed", record_id, {**details, "error": str(exc)})
-            return api_error("RESTORE_FAILED", str(exc), 500)
+            _audit(
+                "restore_failed", record_id, {**details, "error": error_message(exc)}
+            )
+            return api_error("RESTORE_FAILED", error_message(exc), 500)
         _audit("restore", record_id, details)
         return jsonify(_backup_schema.dump(updated)), 200
 
@@ -242,7 +244,7 @@ def delete_backup(record_id: int):
     try:
         BackupServiceAPI.delete(record_id)
     except ValueError as exc:
-        return api_error("NOT_FOUND", str(exc), 404)
+        return api_error("NOT_FOUND", error_message(exc), 404)
 
     _audit("delete", record_id)
     return "", 204

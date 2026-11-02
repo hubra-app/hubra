@@ -44,6 +44,7 @@ from flask import current_app
 from itsdangerous import BadSignature, URLSafeTimedSerializer
 from sqlalchemy import delete, select
 
+from hubra.core.errors import error_message
 from hubra.core.extensions import db
 from hubra.core.models.connected_app import ConnectedApp, ConnectedAppEvent
 from hubra.core.modules import AppProvider, Module, is_enabled, registry
@@ -305,7 +306,7 @@ def confirm(conn: ConnectedApp) -> ConnectedApp:
         try:
             fn(conn)
         except AppError as exc:
-            record(conn, "connected", False, str(exc))
+            record(conn, "connected", False, error_message(exc))
         except Exception:
             _log.exception("connected app %s: confirmed hook failed", conn.id)
     return conn
@@ -324,7 +325,10 @@ def revoke(conn: ConnectedApp, by_name: str) -> ConnectedApp:
                 "connected app %s: revoke on the service failed: %s", conn.id, exc
             )
             record(
-                conn, "disconnected", False, f"Not undone on the service: {exc}"[:500]
+                conn,
+                "disconnected",
+                False,
+                f"Not undone on the service: {error_message(exc)}"[:500],
             )
     conn.status = "revoked"
     conn.revoked_at = _now()
