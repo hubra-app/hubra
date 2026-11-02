@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, searchForWorkspaceRoot } from 'vite'
 import react from '@vitejs/plugin-react'
 import { themeScript } from '../../packages/ui/vite-theme-script'
 import { resolve } from 'path'
@@ -15,6 +15,8 @@ export default defineConfig({
     },
   },
   server: {
+    // The shared fonts in packages/ui/fonts are served from outside the app.
+    fs: { allow: [searchForWorkspaceRoot(process.cwd()), resolve(__dirname, '../../packages')] },
     host: '0.0.0.0',
     port: 5174,
     proxy: {
