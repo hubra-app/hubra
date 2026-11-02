@@ -601,6 +601,10 @@ def channels(alert_type: str) -> dict:
     try:
         if maintenance.is_active():
             return {"mail": False, "discord": False, "reason": "maintenance"}
+        from hubra.core.services import platform_bot
+
+        if platform_bot.muted_until(alert_type):
+            return {"mail": False, "discord": False, "reason": "muted"}
         if platform_settings.get("alerts.enabled") == "off":
             return {"mail": False, "discord": False, "reason": "alerts_off"}
         mail_off = {
@@ -753,7 +757,13 @@ def deliver_alert(alert_type: str, subject: str, lines: list[str], level: str) -
     route = channels(alert_type)
     # System alerts came from send_alert, which posted them already.
     if alert_type != "system" and route["discord"]:
-        send_alert(f"Hubra: {subject}", "\n".join(lines), color=color, staff=False)
+        send_alert(
+            f"Hubra: {subject}",
+            "\n".join(lines),
+            color=color,
+            staff=False,
+            alert_type=alert_type,
+        )
     if not route["mail"]:
         return 0
 

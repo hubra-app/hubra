@@ -380,6 +380,21 @@ def _count_failed_login(user: User) -> None:
     db.session.commit()
 
 
+def _failed_from_address(email: str) -> None:
+    """Count a failed sign-in per IP address; many from one address are a
+    security ping in the platform's Discord log (``platform_bot``)."""
+    from flask import has_request_context, request
+
+    if not has_request_context():
+        return
+    try:
+        from hubra.core.services import platform_bot
+
+        platform_bot.failed_login(request.remote_addr, email)
+    except Exception:  # noqa: BLE001
+        _log.debug("failed-login count skipped", exc_info=True)
+
+
 class AuthService:
     """Authentication business logic."""
 
@@ -397,6 +412,7 @@ class AuthService:
         )
 
         if member is None:
+            _failed_from_address(email)
             raise_error(401, "UNAUTHORIZED", "Invalid credentials")
 
         if member.is_disabled:
@@ -425,6 +441,7 @@ class AuthService:
         if not member.check_password(password):
             if member.user is not None:
                 _count_failed_login(member.user)
+            _failed_from_address(email)
             raise_error(401, "UNAUTHORIZED", "Invalid credentials")
 
         member.failed_login_count = 0
@@ -444,6 +461,7 @@ class AuthService:
         user = db.session.scalar(select(User).where(User.email == email))
 
         if user is None:
+            _failed_from_address(email)
             raise_error(401, "UNAUTHORIZED", "Invalid credentials")
 
         locked = user.locked_until
@@ -458,6 +476,7 @@ class AuthService:
 
         if not user.check_password(password):
             _count_failed_login(user)
+            _failed_from_address(email)
             raise_error(401, "UNAUTHORIZED", "Invalid credentials")
 
         if user.failed_login_count or user.locked_until:

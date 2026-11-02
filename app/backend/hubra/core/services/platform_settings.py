@@ -247,9 +247,21 @@ SPECS: tuple[Spec, ...] = (
         "discord.log_events",
         "Platform log events",
         "Comma-separated categories to post: clubs, requests, access, members, "
-        "plugins, backups, platform, alerts",
-        lambda cfg: "clubs,requests,access,plugins,backups,platform,alerts",
+        "plugins, backups, platform, alerts, digest, releases, security",
+        lambda cfg: (
+            "clubs,requests,access,plugins,backups,platform,alerts,"
+            "digest,releases,security"
+        ),
         "discord_log_events",
+    ),
+    Spec(
+        "discord.platform_roles",
+        "Roles on the platform server",
+        "on: the bot gives everyone who linked Discord the roles Plattform-Admin, "
+        "Vereinsinhaber, Vereinsadmin and Vereinsmitglied on the platform server. "
+        "off deletes these roles again",
+        lambda cfg: "off",
+        "on_off",
     ),
     Spec(
         "alerts.cooldown_minutes",

@@ -27,9 +27,9 @@ from sqlalchemy import func, select
 
 from hubra.api.auth.account_token import require_step_up
 from hubra.api.permissions import (
+    SUPERADMIN_ONLY,
     check_global_grant,
     check_impersonation_restriction,
-    SUPERADMIN_ONLY,
     get_user_global_permissions,
     held_roles,
     invalidate_member_permissions,
@@ -41,13 +41,13 @@ from hubra.core.models.member import Member
 from hubra.core.models.tenant import GlobalAuditEntry, Tenant
 from hubra.core.models.tenant_request import TenantRequest
 from hubra.core.models.user import User
-from hubra.core.services import email_verification, tenant_health
-from hubra.core.tenant.service import TenantService, TenantProvisioningError
+from hubra.core.services import club_requests, email_verification, tenant_health
 from hubra.core.tenant.club_settings import (
     accepts_join_requests,
     club_logo,
     club_logo_version,
 )
+from hubra.core.tenant.service import TenantProvisioningError, TenantService
 
 tenant_admin_bp = Blueprint("tenant_admin", __name__)
 
@@ -1013,43 +1013,8 @@ def _tenant_request_to_dict(req: TenantRequest) -> dict:
     }
 
 
-def _notify_requester(req: TenantRequest) -> bool:
-    """Mail the requester that *req* was approved or rejected.  True when sent.
-
-    The decision is already committed: a mail failure is logged, never raised.
-    """
-    from hubra.core.services import email as email_svc
-
-    user = db.session.get(User, req.user_id)
-    if user is None or not user.email:
-        return False
-    lang = user.language or "de-CH"
-    try:
-        if req.status == "approved":
-            return email_svc.send_club_request_approved(
-                user.email, user.name, req.name, lang=lang
-            )
-        return email_svc.send_club_request_rejected(
-            user.email, user.name, req.name, req.slug, req.admin_note, lang=lang
-        )
-    except Exception:
-        _log.exception("tenant_request_mail_failed request_id=%s", req.id)
-        return False
-
-
 def _audit_tenant_request(action: str, req: TenantRequest, actor_id, **details):
-    """Club requests are platform events too (and go to the platform log)."""
-    db.session.add(
-        GlobalAuditEntry(
-            tenant_id=None,
-            actor_id=int(actor_id) if actor_id else None,
-            action=f"tenant_request.{action}",
-            target_type="TenantRequest",
-            target_id=str(req.id),
-            details={"name": req.name, "slug": req.slug, "plan": req.plan, **details},
-            ip_address=request.remote_addr,
-        )
-    )
+    club_requests.audit(action, req, actor_id, request.remote_addr, **details)
 
 
 @tenant_admin_bp.route("/tenant-requests", methods=["POST"])
@@ -1145,33 +1110,13 @@ def list_my_tenant_requests():
 @require_global_permission("requests.approve")
 def approve_tenant_request(req_id: int):
     """Approve a tenant request and provision the tenant (superadmin only)."""
-    req = db.session.get(TenantRequest, req_id)
-    if req is None:
-        raise_error(404, "NOT_FOUND", "Tenant request not found")
-
-    if req.status != "pending":
-        raise_error(409, "CONFLICT", f"Request is already {req.status}")
-
-    claims = get_jwt()
-    reviewer_id = claims.get("user_id")
-
+    reviewer_id = get_jwt().get("user_id")
     try:
-        tenant = TenantService.provision_tenant(
-            name=req.name,
-            slug=req.slug,
-            plan=req.plan,
-            admin_email=None,
-            admin_password=None,
-            admin_user_id=req.user_id,
+        req, tenant, notified = club_requests.approve(
+            req_id, reviewer_id, request.remote_addr
         )
-    except TenantProvisioningError as exc:
-        raise_error(422, "PROVISION_FAILED", error_message(exc))
-
-    req.status = "approved"
-    req.reviewed_by = int(reviewer_id) if reviewer_id else None
-    _audit_tenant_request("approve", req, reviewer_id, tenantId=tenant.id)
-    db.session.commit()
-    notified = _notify_requester(req)
+    except club_requests.RequestDecisionError as exc:
+        raise_error(exc.status, exc.code, error_message(exc))
 
     return jsonify(
         {
@@ -1195,22 +1140,13 @@ def reject_tenant_request(req_id: int):
     body = request.get_json(silent=True) or {}
     note = (body.get("note") or "").strip() or None
 
-    req = db.session.get(TenantRequest, req_id)
-    if req is None:
-        raise_error(404, "NOT_FOUND", "Tenant request not found")
-
-    if req.status != "pending":
-        raise_error(409, "CONFLICT", f"Request is already {req.status}")
-
-    claims = get_jwt()
-    reviewer_id = claims.get("user_id")
-
-    req.status = "rejected"
-    req.admin_note = note
-    req.reviewed_by = int(reviewer_id) if reviewer_id else None
-    _audit_tenant_request("reject", req, reviewer_id, note=note)
-    db.session.commit()
-    notified = _notify_requester(req)
+    reviewer_id = get_jwt().get("user_id")
+    try:
+        req, notified = club_requests.reject(
+            req_id, reviewer_id, note, request.remote_addr
+        )
+    except club_requests.RequestDecisionError as exc:
+        raise_error(exc.status, exc.code, error_message(exc))
 
     return jsonify({"request": _tenant_request_to_dict(req), "notified": notified}), 200
 
@@ -1226,7 +1162,7 @@ def list_tenant_members(tenant_id: int):
     if tenant is None:
         raise_error(404, "NOT_FOUND", "Tenant not found")
 
-    from hubra.core.tenant.context import set_search_path, reset_search_path
+    from hubra.core.tenant.context import reset_search_path, set_search_path
 
     try:
         set_search_path(tenant_id)
@@ -2017,9 +1953,9 @@ def remove_club_admin(tenant_id: int, user_id: int):
 def list_global_roles():
     """List all global roles with their permissions."""
     from hubra.core.models.global_role import (
+        GlobalPermission,
         GlobalRole,
         GlobalRolePermission,
-        GlobalPermission,
     )
 
     roles = db.session.scalars(select(GlobalRole).order_by(GlobalRole.id)).all()
@@ -2141,9 +2077,9 @@ def create_global_role():
 def update_global_role(role_id: int):
     """Update a global role's permissions."""
     from hubra.core.models.global_role import (
+        GlobalPermission,
         GlobalRole,
         GlobalRolePermission,
-        GlobalPermission,
     )
 
     role = db.session.get(GlobalRole, role_id)
@@ -2600,7 +2536,7 @@ def _find_member_in_tenant(tenant_id: int, user_id: int | None) -> Member | None
     On SQLite (tests), falls back to a simple query since all tables
     are in the single schema.
     """
-    from hubra.core.tenant.context import set_search_path, reset_search_path
+    from hubra.core.tenant.context import reset_search_path, set_search_path
 
     try:
         set_search_path(tenant_id)
