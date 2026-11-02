@@ -337,7 +337,7 @@ def test_embed_links_to_manage(db, audit_on, discord_api):
 @pytest.mark.parametrize(
     "action,path",
     [
-        ("tenant_request.approve", "/app/requests"),
+        ("tenant_request.approve", "/app/tenants/requests"),
         ("impersonation.start", "/app/support"),
         ("global_role.assign", "/app/roles"),
         ("backup.delete", "/app/platform/backups"),

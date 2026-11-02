@@ -1,20 +1,15 @@
 import { useEffect } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { ErrorBoundary as RouteErrorBoundary } from 'react-error-boundary'
 import { Center, Loader, Paper, Stack, Text, Button } from '@mantine/core'
 import { IconAlertTriangle } from '@tabler/icons-react'
 import { AdminProvider, useAdmin } from '@/context/AdminContext'
 import { StepUpDialog } from '@/components/StepUpDialog'
 import { Shell } from '@/components/Shell'
-import { AdminPortal } from '@/screens/AdminPortal'
-import { MyTenantsTab } from '@/screens/MyTenantsTab'
+import { TabbedPage } from '@/components/TabbedPage'
 import { TenantDetail } from '@/screens/TenantDetail'
-import { PlatformSettings } from '@/screens/platform/PlatformSettings'
-import { Backups } from '@/screens/platform/Backups'
-import { Diagnostics } from '@/screens/platform/Diagnostics'
-import { Alerts } from '@/screens/platform/Alerts'
 import { ClubAdmins } from '@/screens/ClubAdmins'
-import { Releases } from '@/screens/Releases'
+import { LEGACY_REDIRECTS, navSections } from '@/nav'
 import { SSO_URL, redirectTo } from '@hubra/api-client'
 import { useLang } from '@/lang'
 
@@ -78,9 +73,10 @@ function RequireGlobalPermission({ perm, children }: { perm: string; children: R
 }
 
 // Club requests used to be asked for here; people now do that on SSO
-// (/start), and only staff review them here.
+// (/start), and staff review them under All clubs › Requests.
 function ClubRequestsRoute() {
   const { hasGlobalPermission } = useAdmin()
+  const location = useLocation()
   const staff = hasGlobalPermission('requests.read.all')
   useEffect(() => {
     if (!staff) redirectTo(`${SSO_URL}/start`, 'not-staff')
@@ -91,11 +87,13 @@ function ClubRequestsRoute() {
         <Loader />
       </Center>
     )
-  return (
-    <Shell>
-      <AdminPortal />
-    </Shell>
-  )
+  return <Navigate to={`/app/tenants/requests${location.search}`} replace />
+}
+
+/** An old URL: go to where the page lives now, keeping ?filters. */
+function LegacyRedirect({ to }: { to: string }) {
+  const location = useLocation()
+  return <Navigate to={`${to}${location.search}${location.hash}`} replace />
 }
 
 function SsoLoginRedirect() {
@@ -150,24 +148,32 @@ function AppRoutes() {
     >
       <Routes>
         <Route path="/login" element={<SsoLoginRedirect />} />
+        {navSections().flatMap((section) =>
+          section.pages.flatMap((page) =>
+            page.tabs.map((tab) => (
+              <Route
+                key={tab.path}
+                path={tab.path}
+                element={
+                  <RequireAuth>
+                    <Shell>
+                      <TabbedPage page={page} tab={tab} />
+                    </Shell>
+                  </RequireAuth>
+                }
+              />
+            )),
+          ),
+        )}
+        {Object.entries(LEGACY_REDIRECTS).map(([from, to]) => (
+          <Route key={from} path={from} element={<LegacyRedirect to={to} />} />
+        ))}
         <Route
-          path="/app/my-tenants"
+          path="/app/requests"
           element={
             <RequireAuth>
-              <Shell>
-                <MyTenantsTab />
-              </Shell>
+              <ClubRequestsRoute />
             </RequireAuth>
-          }
-        />
-        <Route
-          path="/app/tenants"
-          element={
-            <RequireGlobalPermission perm="tenants.read">
-              <Shell>
-                <AdminPortal />
-              </Shell>
-            </RequireGlobalPermission>
           }
         />
         <Route
@@ -181,67 +187,6 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/app/requests"
-          element={
-            <RequireAuth>
-              <ClubRequestsRoute />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/app/support"
-          element={
-            <RequireGlobalPermission perm="audit.read">
-              <Shell>
-                <AdminPortal />
-              </Shell>
-            </RequireGlobalPermission>
-          }
-        />
-        <Route
-          path="/app/audit"
-          element={
-            <RequireGlobalPermission perm="audit.read">
-              <Shell>
-                <AdminPortal />
-              </Shell>
-            </RequireGlobalPermission>
-          }
-        />
-        <Route
-          path="/app/roles"
-          element={
-            <RequireGlobalPermission perm="roles.manage">
-              <Shell>
-                <AdminPortal />
-              </Shell>
-            </RequireGlobalPermission>
-          }
-        />
-        <Route
-          path="/app/plugins"
-          element={
-            <RequireGlobalPermission perm="plugins.manage">
-              <Shell>
-                <AdminPortal />
-              </Shell>
-            </RequireGlobalPermission>
-          }
-        />
-        {['/app/whats-new', '/app/whats-new/:tab'].map((path) => (
-          <Route
-            key={path}
-            path={path}
-            element={
-              <RequireAuth>
-                <Shell>
-                  <Releases />
-                </Shell>
-              </RequireAuth>
-            }
-          />
-        ))}
-        <Route
           path="/app/clubs/:id/admins"
           element={
             <RequireAuth>
@@ -251,63 +196,6 @@ function AppRoutes() {
             </RequireAuth>
           }
         />
-        {['/app/platform/settings', '/app/platform/settings/:tab'].map((path) => (
-          <Route
-            key={path}
-            path={path}
-            element={
-              <RequireGlobalPermission perm="platform.settings">
-                <Shell>
-                  <PlatformSettings />
-                </Shell>
-              </RequireGlobalPermission>
-            }
-          />
-        ))}
-        <Route
-          path="/app/platform/mail"
-          element={<Navigate to="/app/platform/settings" replace />}
-        />
-        <Route
-          path="/app/platform/backups"
-          element={
-            <RequireGlobalPermission perm="backups.manage">
-              <Shell>
-                <Backups />
-              </Shell>
-            </RequireGlobalPermission>
-          }
-        />
-        {['/app/platform/diagnostics', '/app/platform/diagnostics/:tab'].map((path) => (
-          <Route
-            key={path}
-            path={path}
-            element={
-              <RequireGlobalPermission perm="platform.diagnostics">
-                <Shell>
-                  <Diagnostics />
-                </Shell>
-              </RequireGlobalPermission>
-            }
-          />
-        ))}
-        <Route
-          path="/app/platform/diagnostics/events"
-          element={<Navigate to="/app/platform/alerts/events" replace />}
-        />
-        {['/app/platform/alerts', '/app/platform/alerts/:tab'].map((path) => (
-          <Route
-            key={path}
-            path={path}
-            element={
-              <RequireGlobalPermission perm="platform.diagnostics">
-                <Shell>
-                  <Alerts />
-                </Shell>
-              </RequireGlobalPermission>
-            }
-          />
-        ))}
         <Route path="/" element={<DefaultRoute />} />
         <Route path="*" element={<DefaultRoute />} />
       </Routes>

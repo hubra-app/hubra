@@ -1,7 +1,7 @@
 """System alerts for infrastructure monitoring.
 
 Alerts are posted by the Hubra bot to the platform Discord log channel
-(manage › Platform settings › Discord, category ``alerts``); see
+(manage › Discord › Setup, category ``alerts``); see
 ``services.platform_discord``.  Nothing is sent while that is not set up.
 """
 

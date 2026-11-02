@@ -11,9 +11,9 @@ by itself at ``maintenance.until``):
   every event), and server errors are not counted for the error-rate alert.
 
 Turn it on around a release with ``flask maintenance on --minutes 15`` and off
-with ``flask maintenance off``, or in manage › Platform › Alerts.
+with ``flask maintenance off``, or in manage › Alerts.
 
-Planned maintenance (``MaintenanceWindow``, manage › Platform › Alerts ›
+Planned maintenance (``MaintenanceWindow``, manage › Maintenance ›
 Geplante Wartungen): a start and end for every club or for some clubs.
 While a window runs, the clubs it covers get the same 503 and page; a window
 for every club counts as maintenance mode (alerts pause too).  From

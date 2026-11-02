@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Badge,
@@ -15,8 +15,8 @@ import {
 } from '@mantine/core'
 import { IconBolt, IconRefresh, IconSearch, IconTrash } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
-import { PageHead, Pagination, Tabs } from '@/components/ui'
-import { useLang, tr } from '@/lang'
+import { Pagination } from '@/components/ui'
+import { tr } from '@/lang'
 import {
   deleteMailServerOrphan,
   getApiPermissions,
@@ -25,9 +25,6 @@ import {
   reconcileMailServer,
   type MailServerEntry,
 } from '@/api/platform'
-import { OutboundMailPanel } from './MailMonitor'
-import { DiscordPanel } from './DiscordStatus'
-import { JobsPanel } from './Jobs'
 import { Row } from './StatusRow'
 import { BuildsPanel } from './Builds'
 
@@ -48,7 +45,7 @@ function failureText(err: unknown) {
 
 // ── System health ────────────────────────────────────────────────────────────
 
-function HealthPanel() {
+export function HealthPanel() {
   const healthQuery = useQuery({ queryKey: ['platform-health'], queryFn: getPlatformHealth })
   const navigate = useNavigate()
   const health = healthQuery.data
@@ -133,7 +130,7 @@ function formatQuota(used: number | null, total: number | null) {
   return `${mb(used)} / ${mb(total)}`
 }
 
-function MailServerPanel() {
+export function MailServerPanel() {
   const { notify, hasGlobalPermission } = useAdmin()
   const queryClient = useQueryClient()
   const canChange = hasGlobalPermission('platform.settings')
@@ -358,7 +355,7 @@ const METHOD_COLORS: Record<string, string> = {
   DELETE: 'red',
 }
 
-function PermissionsPanel() {
+export function PermissionsPanel() {
   const query = useQuery({ queryKey: ['api-permissions'], queryFn: getApiPermissions })
   const [search, setSearch] = useState('')
   const [method, setMethod] = useState('')
@@ -468,55 +465,5 @@ function PermissionsPanel() {
         <Pagination {...pager} />
       </Paper>
     </Stack>
-  )
-}
-
-// ── Page ─────────────────────────────────────────────────────────────────────
-
-const TABS = ['health', 'jobs', 'outbound-mail', 'discord', 'mail-server', 'permissions'] as const
-type Tab = (typeof TABS)[number]
-
-/** Diagnostics of the whole instance, for platform staff (platform.diagnostics). */
-export function Diagnostics() {
-  const { tr } = useLang()
-  const location = useLocation()
-  const navigate = useNavigate()
-  const last = location.pathname.split('/').pop() as Tab
-  const tab: Tab = TABS.includes(last) ? last : 'health'
-
-  return (
-    <div>
-      <PageHead
-        title={tr('Diagnose', 'Diagnostics')}
-        desc={tr(
-          'Zustand der Plattform für alle Vereine: Dienste, Mail-Versand, der gemeinsame Mailserver und die Berechtigungen der Vereins-API.',
-          'The state of the platform for every club: services, outbound mail, the shared mail server and the permissions of the club API.',
-        )}
-      />
-      <Tabs
-        tabs={[
-          { id: 'health', label: tr('Systemzustand', 'System health') },
-          { id: 'jobs', label: tr('Hintergrundjobs', 'Background jobs') },
-          { id: 'outbound-mail', label: tr('Mail-Versand', 'Outbound mail') },
-          { id: 'discord', label: 'Discord' },
-          { id: 'mail-server', label: tr('Mailserver', 'Mail server') },
-          { id: 'permissions', label: tr('API-Berechtigungen', 'API permissions') },
-        ]}
-        activeTab={tab}
-        onTabChange={(id) => navigate(`/app/platform/diagnostics/${id}`)}
-      />
-      {tab === 'health' && <HealthPanel />}
-      {tab === 'jobs' && <JobsPanel />}
-      {tab === 'outbound-mail' && (
-        <OutboundMailPanel
-          onShowLog={(lvl) =>
-            navigate(`/app/platform/alerts/events${lvl ? `?level=${lvl}` : '?category=mail'}`)
-          }
-        />
-      )}
-      {tab === 'discord' && <DiscordPanel />}
-      {tab === 'mail-server' && <MailServerPanel />}
-      {tab === 'permissions' && <PermissionsPanel />}
-    </div>
   )
 }
