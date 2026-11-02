@@ -43,6 +43,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 from flask import current_app
+from sqlalchemy import text
 
 from hubra.core.crypto import PLATFORM, decrypt_code, encrypt_code
 from hubra.core.extensions import db
@@ -453,6 +454,9 @@ def discord() -> DiscordApp:
     )
 
 
+_VAPID_LOCK_KEY = 0x6875627261766170  # "hubravap"
+
+
 @dataclass(frozen=True)
 class PushKeys:
     public_key: str  # base64url, uncompressed P-256 point (applicationServerKey)
@@ -467,6 +471,18 @@ def web_push(create: bool = False) -> PushKeys | None:
     if not (public and private):
         if not create:
             return None
+        # Two API processes asking at once must not each store a key pair:
+        # browsers that subscribed with the losing key would get no pushes.
+        # Wait for the other, then look again (held until the commit).
+        if db.session.get_bind().dialect.name == "postgresql":
+            db.session.execute(
+                text("SELECT pg_advisory_xact_lock(:k)"), {"k": _VAPID_LOCK_KEY}
+            )
+            public, private = (
+                get("push.vapid_public_key"),
+                get("push.vapid_private_key"),
+            )
+    if not (public and private):
         from hubra.core.services.web_push import generate_vapid_keys
 
         public, private = generate_vapid_keys()
