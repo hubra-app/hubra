@@ -5,7 +5,7 @@ club app; platform staff answer, close, merge and publish them in manage.
 Feature requests on the public roadmap get votes.
 
 Revision ID: f2b7d4a9c3e1
-Revises: e7b3d9f1a2c4
+Revises: c4f8a2d6e9b1
 Create Date: 2026-11-02 09:00:00.000000
 
 """
@@ -16,7 +16,7 @@ from sqlalchemy.dialects import postgresql
 
 
 revision = "f2b7d4a9c3e1"
-down_revision = "e7b3d9f1a2c4"
+down_revision = "c4f8a2d6e9b1"
 branch_labels = None
 depends_on = None
 
