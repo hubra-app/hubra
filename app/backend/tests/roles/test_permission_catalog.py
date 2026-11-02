@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 from hubra.api.fields import iter_field_perms
-from hubra.api.permissions import EXTRA_PERMISSIONS, _derive_perm_key
+from hubra.api.permissions import _derive_perm_key, extra_permissions
 
 REPO = Path(__file__).resolve().parents[4]
 FRONTEND = REPO / "app/frontend/src"
@@ -35,7 +35,7 @@ def _catalog(app) -> set[str]:
             keys.add(_derive_perm_key(bp, resource, action))
     with app.app_context():
         keys |= {m["key"] for m in iter_field_perms()}
-    keys |= {m["key"] for m in EXTRA_PERMISSIONS}
+        keys |= {m["key"] for m in extra_permissions()}
     return keys
 
 

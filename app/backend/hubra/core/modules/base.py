@@ -197,6 +197,12 @@ class Module:
     # Encrypted columns this module stores, (table, primary key, column,
     # extra WHERE), so key checks and FERNET_KEY rotation re-encrypt them.
     encrypted_columns: tuple[tuple[str, str, str, str], ...] = ()
+    # Rights no single route stands for (a route checks them itself), as
+    # (key, display name), e.g. ("inventory.items.create_own", "Add own items").
+    permissions: tuple[tuple[str, str], ...] = ()
+    # Fields a role may be allowed to update one by one, as (blueprint,
+    # resource, field, display name); the key is <bp>.<resource>.update.<field>.
+    field_permissions: tuple[tuple[str, str, str, str], ...] = ()
     tasks: tuple[str, ...] = ()
     schedule: tuple[Schedule, ...] = ()
     apps: tuple[AppProvider, ...] = ()

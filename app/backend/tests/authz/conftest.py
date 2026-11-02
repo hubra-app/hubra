@@ -145,8 +145,6 @@ def board_member_token(client, seeded_db):
         "posts.posts.create",
         "posts.posts.comment",
         "posts.posts.like",
-        "inventory.items.read",
-        "inventory.items.instruct_self",
     ]
     _create_member_with_role(
         "board@test.ch", "BoardMember", tier.id, permission_keys=keys

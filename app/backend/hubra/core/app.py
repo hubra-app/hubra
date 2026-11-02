@@ -705,7 +705,7 @@ def _register_cli(app: Flask) -> None:
     @app.cli.command("sync-permissions")
     def sync_permissions():
         """Sync the Permission table with all @permission_required-decorated routes."""
-        from hubra.api.permissions import EXTRA_PERMISSIONS, _derive_perm_key
+        from hubra.api.permissions import _derive_perm_key, extra_permissions
         from hubra.api.fields import iter_field_perms
         from hubra.core.models.role import Permission
 
@@ -734,8 +734,8 @@ def _register_cli(app: Flask) -> None:
         # Add field-level perms to discovered so they aren't marked as orphaned
         for meta in iter_field_perms():
             discovered[meta["key"]] = meta
-        for meta in EXTRA_PERMISSIONS:
-            discovered[meta["key"]] = dict(meta)
+        for meta in extra_permissions():
+            discovered[meta["key"]] = meta
 
         created = 0
         updated = 0
