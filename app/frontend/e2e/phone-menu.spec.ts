@@ -3,8 +3,7 @@ import { appUrl } from './env'
 
 const drawer = (page: Page) => page.locator('.mantine-Drawer-content')
 const card = (page: Page) => drawer(page).getByTestId('user-card')
-const navViewport = (page: Page) =>
-  drawer(page).locator('.mantine-ScrollArea-viewport').first()
+const navViewport = (page: Page) => drawer(page).locator('.mantine-ScrollArea-viewport').first()
 
 /** Fully on screen: not cut off by the bottom (or top) of the window. */
 async function expectOnScreen(page: Page, el: Locator) {
@@ -66,20 +65,28 @@ test.describe('phone menu account card', () => {
   test('an account menu entry closes the phone menu', async ({ page }) => {
     await openMenu(page)
     await card(page).tap()
-    await drawer(page)
-      .getByTestId('user-menu')
-      .getByRole('button', { name: 'Seitenleiste anpassen' })
-      .tap()
+    await drawer(page).getByTestId('user-menu').getByRole('button', { name: 'Neuigkeiten' }).tap()
     await expect(drawer(page)).toHaveCount(0)
-    const dialog = page.getByRole('dialog', { name: 'Seitenleiste anpassen' })
+    const dialog = page.getByRole('dialog', { name: 'Neuigkeiten' })
     await expect(dialog).toBeVisible()
-    await dialog.getByRole('button', { name: 'Fertig' }).click()
+    await page.keyboard.press('Escape')
+    await expect(dialog).toHaveCount(0)
 
     // Next time the menu opens with the account menu folded.
     await page.getByRole('button', { name: 'Menü' }).click()
     await expectOnScreen(page, card(page))
     await expect(drawer(page).getByTestId('user-menu')).toHaveCount(0)
   })
+})
+
+test('the account menu only holds what the card and sidebar do not', async ({ page }) => {
+  await page.goto(appUrl('dashboard'))
+  const sidebar = page.locator('.mantine-AppShell-navbar')
+  await sidebar.getByTestId('user-card').click()
+  const menu = sidebar.getByTestId('user-menu')
+  await expect(menu.getByRole('button')).toHaveText(['Mein Konto', 'Neuigkeiten', 'Abmelden'])
+  // The card already names who is signed in.
+  await expect(menu.getByText('admin@demo.test')).toHaveCount(0)
 })
 
 test('the sidebar account menu closes on a click beside it', async ({ page }) => {
