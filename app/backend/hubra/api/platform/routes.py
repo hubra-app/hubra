@@ -546,10 +546,19 @@ def get_maintenance():
 @platform_bp.put("/maintenance")
 @require_global_permission(_PERM)
 def set_maintenance():
-    """Body ``{"on": bool, "message": str, "minutes": int | null}``."""
+    """Body ``{"on": bool, "message": str, "minutes": int | null}``.
+
+    With ``"start"`` (ISO time in the future) and ``on: true`` the maintenance
+    is planned instead: the club apps show a banner and it begins by itself.
+    ``{"cancelPlan": true}`` drops a planned one.
+    """
+    from datetime import datetime, timezone
+
     from hubra.core.services import maintenance
 
     body = request.get_json(silent=True) or {}
+    if body.get("cancelPlan") is True:
+        return jsonify(maintenance.cancel_plan(actor_id=g.system_user.id)), 200
     if not isinstance(body.get("on"), bool):
         return api_error("VALIDATION_ERROR", "on is true or false", 400)
     if not body["on"]:
@@ -566,6 +575,23 @@ def set_maintenance():
         return api_error(
             "VALIDATION_ERROR", "message is text up to 500 characters", 400
         )
+    start = body.get("start")
+    if start is not None:
+        try:
+            at = datetime.fromisoformat(str(start).replace("Z", "+00:00"))
+        except ValueError:
+            return api_error("VALIDATION_ERROR", "start is an ISO time", 400)
+        if at.tzinfo is None:
+            at = at.replace(tzinfo=timezone.utc)
+        if at <= datetime.now(timezone.utc):
+            return api_error("VALIDATION_ERROR", "start is in the past", 400)
+        if minutes is None:
+            return api_error(
+                "VALIDATION_ERROR", "planned maintenance needs minutes", 400
+            )
+        return jsonify(
+            maintenance.plan(at, minutes, message.strip(), actor_id=g.system_user.id)
+        ), 200
     return jsonify(
         maintenance.turn_on(message.strip(), minutes, actor_id=g.system_user.id)
     ), 200

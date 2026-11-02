@@ -3261,6 +3261,9 @@
   "app.maintenance.title": "Wartungsarbeiten",
   "app.maintenance.text": "Hubra wird gerade aktualisiert. In wenigen Minuten geht es weiter.",
   "app.maintenance.until": "Voraussichtlich zurück um {{time}} Uhr.",
+  "app.maintenance.planned": "Wartung am {{date}} ab {{time}} Uhr",
+  "app.maintenance.plannedFor": "etwa {{minutes}} Minuten",
+  "app.maintenance.plannedText": "Hubra ist dann kurz nicht erreichbar.",
   "app.maintenance.reload": "Diese Seite lädt sich von selbst neu.",
   "account.notify.discord": "Discord",
   "account.notify.discordHint": "Discord schickt dir eine Direktnachricht vom Bot des Vereins. Dafür müssen Direktnachrichten von Mitgliedern des Servers erlaubt sein (Discord › Privatsphäre-Einstellungen des Servers)."

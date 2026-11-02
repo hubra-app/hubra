@@ -39,7 +39,10 @@ ALLOWED_PREFIXES = (
     "/api/v1/system",
     "/api/v1/auth",
     "/api/v1/account",
-    "/api/v1/apps",  # outside callbacks (Discord interactions, OAuth)
+    "/api/v1/apps",  # outside callbacks (OAuth)
+    # Discord: /wartung ende must work during maintenance; club commands
+    # answer with the maintenance notice themselves.
+    "/api/v1/discord/interactions",
     "/api/v1/i18n",
     "/api/v1/instance",  # public instance info the apps need to start
 )
@@ -56,8 +59,12 @@ def _parse(value: str) -> datetime | None:
 
 
 def state(fresh: bool = False) -> dict:
-    """``{"active", "message", "until"}``.  Never raises: without the
-    database the platform is not in maintenance."""
+    """``{"active", "message", "until", "planned"}``.  Never raises: without
+    the database the platform is not in maintenance.
+
+    ``planned`` is ``{"start", "minutes", "message"}`` while maintenance is
+    announced but has not started (the club apps show a banner), else None.
+    """
     now = time.monotonic()
     if (
         not fresh
@@ -71,14 +78,30 @@ def state(fresh: bool = False) -> dict:
         enabled = platform_settings.get("maintenance.enabled") == "on"
         until = _parse(platform_settings.get("maintenance.until"))
         message = platform_settings.get("maintenance.message")
+        planned_start = _parse(platform_settings.get("maintenance.planned_start"))
+        planned_minutes = platform_settings.get("maintenance.planned_minutes")
+        planned_message = platform_settings.get("maintenance.planned_message")
     except Exception:  # noqa: BLE001
         logger.debug("maintenance state unreadable", exc_info=True)
         enabled, until, message = False, None, ""
+        planned_start, planned_minutes, planned_message = None, "", ""
     active = enabled and (until is None or until > datetime.now(timezone.utc))
+    planned = None
+    if planned_start is not None and not active:
+        try:
+            minutes = int(planned_minutes) if planned_minutes else None
+        except ValueError:
+            minutes = None
+        planned = {
+            "start": planned_start.isoformat(),
+            "minutes": minutes,
+            "message": planned_message or "",
+        }
     result = {
         "active": active,
         "message": message if active else "",
         "until": until.isoformat() if active and until else None,
+        "planned": planned,
     }
     _cache.update(at=now, state=result)
     return result
@@ -108,18 +131,26 @@ def turn_on(message: str = "", minutes: int | None = None, actor_id=None) -> dic
             "maintenance.enabled": "on",
             "maintenance.message": message or None,
             "maintenance.until": until,
+            # Planned maintenance has begun (or was overtaken).
+            "maintenance.planned_start": None,
+            "maintenance.planned_minutes": None,
+            "maintenance.planned_message": None,
         },
         actor_id=actor_id,
     )
     db.session.commit()
     clear_cache()
     _log_event(f"Maintenance mode on{' until ' + until if until else ''}")
-    return state(fresh=True)
+    current = state(fresh=True)
+    _notify_clubs("maintenance_started", current)
+    return current
 
 
 def turn_off(actor_id=None) -> dict:
     from hubra.core.extensions import db
     from hubra.core.services import platform_settings
+
+    was_active = state(fresh=True)["active"]
 
     platform_settings.set_many(
         {"maintenance.enabled": None, "maintenance.until": None}, actor_id=actor_id
@@ -127,7 +158,98 @@ def turn_off(actor_id=None) -> dict:
     db.session.commit()
     clear_cache()
     _log_event("Maintenance mode off")
+    if was_active:
+        _notify_clubs("maintenance_ended", {})
     return state(fresh=True)
+
+
+def plan(start: datetime, minutes: int, message: str = "", actor_id=None) -> dict:
+    """Announce maintenance from *start* for *minutes*.  It begins by itself
+    (``start_due``, every minute); until then the club apps show a banner."""
+    from hubra.core.extensions import db
+    from hubra.core.services import platform_settings
+
+    platform_settings.set_many(
+        {
+            "maintenance.planned_start": start.astimezone(timezone.utc).isoformat(
+                timespec="minutes"
+            ),
+            "maintenance.planned_minutes": str(int(minutes)),
+            "maintenance.planned_message": message or None,
+        },
+        actor_id=actor_id,
+    )
+    db.session.commit()
+    clear_cache()
+    _log_event(f"Maintenance planned from {start.isoformat(timespec='minutes')}")
+    current = state(fresh=True)
+    _notify_clubs("maintenance_planned", current)
+    return current
+
+
+def cancel_plan(actor_id=None, *, notify: bool = True) -> dict:
+    from hubra.core.extensions import db
+    from hubra.core.services import platform_settings
+
+    was_planned = bool(state(fresh=True).get("planned"))
+
+    platform_settings.set_many(
+        {
+            "maintenance.planned_start": None,
+            "maintenance.planned_minutes": None,
+            "maintenance.planned_message": None,
+        },
+        actor_id=actor_id,
+    )
+    db.session.commit()
+    clear_cache()
+    _log_event("Planned maintenance cancelled")
+    if was_planned and notify:
+        _notify_clubs("maintenance_cancelled", {})
+    return state(fresh=True)
+
+
+def start_due(now: datetime | None = None) -> dict | None:
+    """Begin planned maintenance whose start has come.  Returns the new
+    state, or None when nothing started."""
+    current = state(fresh=True)
+    planned = current.get("planned")
+    if not planned:
+        return None
+    now = now or datetime.now(timezone.utc)
+    start = _parse(planned["start"])
+    if start is None or start > now:
+        return None
+    minutes = planned["minutes"]
+    if minutes and start + timedelta(minutes=minutes) <= now:
+        # The whole window passed without a start (jobs were down): drop it.
+        cancel_plan(notify=False)
+        return None
+    left = (
+        max(1, minutes - int((now - start).total_seconds() // 60)) if minutes else None
+    )
+    return turn_on(planned["message"], left)
+
+
+def notice_payload(current: dict) -> dict:
+    """What the clubs' Discord servers are told (``platform_notice``)."""
+    planned = current.get("planned") or {}
+    return {
+        "message": current.get("message") or planned.get("message") or "",
+        "until": current.get("until"),
+        "start": planned.get("start"),
+        "minutes": planned.get("minutes"),
+    }
+
+
+def _notify_clubs(kind: str, current: dict) -> None:
+    """Club Discord servers that opted in hear about maintenance."""
+    try:
+        from hubra.core.services import platform_bot
+
+        platform_bot.notify_clubs(kind, notice_payload(current) if current else {})
+    except Exception:  # noqa: BLE001
+        logger.debug("maintenance club notice skipped", exc_info=True)
 
 
 def _log_event(message: str) -> None:

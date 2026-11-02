@@ -232,8 +232,11 @@ SPECS: tuple[Spec, ...] = (
         "discord.log_events",
         "Platform log events",
         "Comma-separated categories to post: clubs, requests, access, members, "
-        "plugins, backups, platform, alerts",
-        lambda cfg: "clubs,requests,access,plugins,backups,platform,alerts",
+        "plugins, backups, platform, alerts, digest, releases, security",
+        lambda cfg: (
+            "clubs,requests,access,plugins,backups,platform,alerts,"
+            "digest,releases,security"
+        ),
         "discord_log_events",
     ),
     Spec(
@@ -293,6 +296,27 @@ SPECS: tuple[Spec, ...] = (
         "When maintenance ends by itself (ISO time, UTC). Empty: until turned off",
         lambda cfg: "",
         "iso_datetime",
+    ),
+    Spec(
+        "maintenance.planned_start",
+        "Planned maintenance",
+        "When announced maintenance starts by itself (ISO time, UTC). Club apps "
+        "show a banner until then. Empty: none planned",
+        lambda cfg: "",
+        "iso_datetime",
+    ),
+    Spec(
+        "maintenance.planned_minutes",
+        "Planned maintenance length",
+        "Expected minutes of the planned maintenance",
+        lambda cfg: "",
+        "minutes",
+    ),
+    Spec(
+        "maintenance.planned_message",
+        "Planned maintenance message",
+        "Shown in the banner before and during the planned maintenance",
+        lambda cfg: "",
     ),
     Spec(
         "alerts.manage_url",

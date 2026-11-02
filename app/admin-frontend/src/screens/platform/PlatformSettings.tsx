@@ -67,8 +67,8 @@ const LOG_CATEGORIES: [string, string, string][] = [
   ],
   [
     'requests',
-    'Vereinsanfragen eingereicht, angenommen, abgelehnt',
-    'Club requests submitted, approved, rejected',
+    'Vereinsanfragen eingereicht, angenommen, abgelehnt (mit Knöpfen Annehmen / Ablehnen)',
+    'Club requests submitted, approved, rejected (with Approve / Reject buttons)',
   ],
   [
     'access',
@@ -100,12 +100,35 @@ const LOG_CATEGORIES: [string, string, string][] = [
     'Systemwarnungen: fehlgeschlagene Tasks, Fehlerrate, Infrastruktur',
     'System alerts: failed tasks, error rate, infrastructure',
   ],
+  [
+    'digest',
+    'Tagesübersicht um 08:00: neue Vereine, Konten, Mails, offene Probleme',
+    'Daily overview at 08:00: new clubs, sign-ups, mail, open problems',
+  ],
+  [
+    'releases',
+    'Neue Hubra-Version läuft, mit den Neuerungen',
+    'A new Hubra version is running, with its release notes',
+  ],
+  [
+    'security',
+    'Sicherheit: Admins auf neuem Gerät oder ohne Zwei-Faktor, viele Fehlanmeldungen, alte Schlüssel',
+    'Security: admins on new devices or without two-factor, many failed sign-ins, old keys',
+  ],
 ]
 
 // View Channel + Send Messages + Embed Links
 const LOG_BOT_PERMISSIONS = (1 << 10) | (1 << 11) | (1 << 14)
 
-const TABS = ['mail', 'sender', 'backups', 'discord', 'alerts', 'encryption', 'translations'] as const
+const TABS = [
+  'mail',
+  'sender',
+  'backups',
+  'discord',
+  'alerts',
+  'encryption',
+  'translations',
+] as const
 type Tab = (typeof TABS)[number]
 
 function SourceBadge({ s }: { s: PlatformSetting }) {

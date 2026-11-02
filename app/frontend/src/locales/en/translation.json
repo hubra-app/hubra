@@ -269,7 +269,10 @@
       "title": "Maintenance",
       "text": "Hubra is being updated. It will be back in a few minutes.",
       "until": "Expected back at {{time}}.",
-      "reload": "This page reloads by itself."
+      "reload": "This page reloads by itself.",
+      "planned": "Maintenance on {{date}} from {{time}}",
+      "plannedFor": "about {{minutes}} minutes",
+      "plannedText": "Hubra will be briefly unavailable."
     },
     "backend": {
       "unreachable": "Server unreachable",

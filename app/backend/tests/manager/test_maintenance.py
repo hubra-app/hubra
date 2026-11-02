@@ -51,7 +51,12 @@ def test_club_api_answers_503_while_manage_keeps_working(client, staff_headers, 
     assert club.headers["Retry-After"]
 
     public = client.get("/api/v1/maintenance").get_json()
-    assert public == {"active": True, "message": "Update", "until": public["until"]}
+    assert public == {
+        "active": True,
+        "message": "Update",
+        "until": public["until"],
+        "planned": None,
+    }
     assert client.get(f"{BASE}/alerts/overview").status_code == 200
     assert client.get("/api/v1/health").status_code != 503
 

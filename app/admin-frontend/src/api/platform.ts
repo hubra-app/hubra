@@ -329,6 +329,8 @@ export interface Maintenance {
   message: string
   /** ISO time it ends by itself, or null (until turned off). */
   until: string | null
+  /** Announced maintenance that has not started yet. */
+  planned?: { start: string; minutes: number | null; message: string } | null
 }
 
 export interface AlertSwitches {
@@ -363,11 +365,17 @@ export async function updateAlertSwitches(change: {
   })
 }
 
-export async function setMaintenance(body: {
-  on: boolean
-  message?: string
-  minutes?: number | null
-}) {
+export async function setMaintenance(
+  body:
+    | {
+        on: boolean
+        message?: string
+        minutes?: number | null
+        /** ISO time: plan it instead of starting now. */
+        start?: string
+      }
+    | { cancelPlan: true },
+) {
   return apiFetch<Maintenance>(`${P}/maintenance`, {
     method: 'PUT',
     body: JSON.stringify(body),

@@ -209,13 +209,52 @@ Categories:
 | plugins | Plugins installed, updated, rolled back, removed; plugin repositories |
 | backups | Backups created, verified, restored, deleted |
 | platform | Platform settings, encryption keys, mail server, translations |
-| alerts | System alerts: failed Celery tasks, API error rate, disk/Redis/Postgres checks |
+| alerts | System alerts: failed Celery tasks, API error rate, disk/Redis/Postgres checks, with buttons (below) |
+| digest | Daily overview at 08:00 (`MAIL_TIMEZONE`, default Europe/Zurich): new clubs, new accounts, open club requests, mail sent/fallback/failed, open problems, slow endpoints, plugin updates |
+| releases | Once per version, when a new Hubra version runs: its release notes (German) |
+| security | Platform admins signing in on a new device or losing their two-factor sign-in, 20 failed sign-ins from one IP address within 10 minutes, encryption keys older than a year (once a month) |
 
 Every platform audit entry (`global_audit_logs`) is posted after its change
 is committed, by a Celery task, with the club, who did it, the target and the
 entry's details. Values whose key looks like a secret (password, token, key,
 secret, code) are shown as `***`. Alerts replace the old
 `DISCORD_WEBHOOK_URL` setting, which is gone.
+
+Installs that saved their categories before digest, releases and security
+existed keep their list: tick the new ones in manage › Platform settings ›
+Discord.
+
+### Platform admins in Discord
+
+On the platform server the bot also takes clicks and commands from platform
+admins. Whoever clicks must have linked their Discord account to their Hubra
+account (SSO › Konto › Verknüpfungen), that account needs two-factor sign-in
+(an app or a passkey), and it needs the same platform permission as in
+manage. Anyone else gets a private "not allowed" answer.
+
+| Where | What | Permission |
+| --- | --- | --- |
+| Club request message | **Annehmen** sets the club up (in a background job; the answer follows), **Ablehnen** asks for a reason that goes to the requester. Decided requests show the outcome and lose their buttons, also when decided in manage. | `requests.approve` |
+| Alert message | **Bestätigen** notes who saw it. **1 h stumm** silences that alert type (mail and Discord) for an hour. **In manage öffnen** links to manage › Alerts (set `alerts.manage_url`). When the problem behind a relay, service, backup or mail alert is gone, the message turns green with "Behoben". | `platform.diagnostics` / `platform.settings` |
+| `/plattform status` | Version, active clubs, maintenance, open problems, silenced alert types | `platform.diagnostics` |
+| `/plattform verein <name>` | One club's health: members, last activity, storage, mail, plugins, warnings (name or slug, with suggestions) | `tenants.read` |
+| `/plattform backup [verein]` | Start a backup of the platform or one club | superadmin (`backups.manage`) |
+| `/wartung jetzt [minuten] [text]` | Maintenance mode on now | `platform.settings` |
+| `/wartung planen <start> <minuten> [text]` | Announce maintenance (`22:00`, `2026-11-05 22:00` or `05.11.2026 22:00`, platform time zone). The club apps show a banner until it starts; it starts by itself. | `platform.settings` |
+| `/wartung ende`, `/wartung abbrechen` | End maintenance; cancel a planned one | `platform.settings` |
+
+The commands are installed on the platform server only (the server of the
+log channel), within a minute of setting the channel, and are shown to
+members with "Manage Server" by default (Server Settings › Integrations ›
+Hubra can narrow that further). Planned maintenance can also be set in
+manage › Alerts › Overview (start field). Discord interactions keep working
+during maintenance so `/wartung ende` does; club commands answer that Hubra
+is being updated.
+
+Clubs can opt in to hear about it on their own server (Settings › Verbundene
+Apps › Discord: **Neue Hubra-Versionen ankündigen**, **Wartungen
+ankündigen**, both off by default): new versions with their main changes,
+and planned, started, ended or cancelled maintenance, in the main channel.
 
 ## What the bot may do on a club's server
 

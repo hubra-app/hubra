@@ -9,6 +9,7 @@ import { MobileDrawer } from './MobileDrawer'
 import { NotificationPanel } from './NotificationPanel'
 import { ImpersonationBanner } from './ImpersonationBanner'
 import { ClubBanner } from './ClubBanner'
+import { MaintenanceBanner } from './MaintenanceBanner'
 import { ClubBranding } from './ClubBranding'
 import { MoreTabs } from './MoreScreen'
 import { CustomizeSidebarModal } from './CustomizeSidebar'
@@ -58,6 +59,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <MobileDrawer />
 
       <AppShell.Main>
+        <MaintenanceBanner />
         <ClubBanner />
         <div className="page-container">
           <MoreTabs />

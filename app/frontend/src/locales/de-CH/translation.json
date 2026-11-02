@@ -269,7 +269,10 @@
       "title": "Wartungsarbeiten",
       "text": "Hubra wird gerade aktualisiert. In wenigen Minuten geht es weiter.",
       "until": "Voraussichtlich zurück um {{time}} Uhr.",
-      "reload": "Diese Seite lädt sich von selbst neu."
+      "reload": "Diese Seite lädt sich von selbst neu.",
+      "planned": "Wartung am {{date}} ab {{time}} Uhr",
+      "plannedFor": "etwa {{minutes}} Minuten",
+      "plannedText": "Hubra ist dann kurz nicht erreichbar."
     },
     "backend": {
       "unreachable": "Server nicht erreichbar",

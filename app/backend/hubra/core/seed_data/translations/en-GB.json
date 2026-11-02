@@ -3261,6 +3261,9 @@
   "app.maintenance.title": "Maintenance",
   "app.maintenance.text": "Hubra is being updated. It will be back in a few minutes.",
   "app.maintenance.until": "Expected back at {{time}}.",
+  "app.maintenance.planned": "Maintenance on {{date}} from {{time}}",
+  "app.maintenance.plannedFor": "about {{minutes}} minutes",
+  "app.maintenance.plannedText": "Hubra will be briefly unavailable.",
   "app.maintenance.reload": "This page reloads by itself.",
   "account.notify.discord": "Discord",
   "account.notify.discordHint": "Discord sends you a direct message from the club's bot. Direct messages from server members must be allowed (Discord › the server's privacy settings)."

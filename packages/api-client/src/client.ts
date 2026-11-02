@@ -75,6 +75,8 @@ export interface MaintenanceState {
   active: boolean;
   message: string;
   until: string | null;
+  /** Announced maintenance that has not started yet (a banner shows). */
+  planned?: { start: string; minutes: number | null; message: string } | null;
 }
 
 let onMaintenance: ((state: MaintenanceState) => void) | null = null;
