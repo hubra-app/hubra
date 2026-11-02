@@ -40,6 +40,8 @@ _GLOBAL_ONLY_TABLES = frozenset(
         "error_groups",
         # Planned maintenance for every club or some clubs.
         "maintenance_windows",
+        # Data protection requests per club and when they were handled.
+        "data_requests",
         "data_keys",
         "plugin_trusted_keys",
         "email_verifications",

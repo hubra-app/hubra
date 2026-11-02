@@ -13,6 +13,7 @@ import {
   IconMail,
   IconPuzzle,
   IconShieldCheck,
+  IconShieldLock,
   IconSparkles,
   IconTool,
 } from '@tabler/icons-react'
@@ -22,6 +23,7 @@ import { TenantsTab } from '@/screens/TenantsTab'
 import { TenantRequestsTab } from '@/screens/TenantRequestsTab'
 import { GlobalAuditTab } from '@/screens/GlobalAuditTab'
 import { SupportSessionsTab } from '@/screens/SupportSessionsTab'
+import { DataRequestsPanel } from '@/screens/DataRequests'
 import { RolesTab } from '@/screens/RolesTab'
 import { MarketplaceTab } from '@/screens/MarketplaceTab'
 import { ChangelogPanel, RoadmapPanel } from '@/screens/Releases'
@@ -473,6 +475,24 @@ export function navSections(): NavSection[] {
                 'When platform admins opened a club as one of its members: who, why and for how long. Running sessions can be ended here.',
               ),
               render: () => <SupportSessionsTab />,
+            },
+          ],
+        },
+        {
+          id: 'privacy',
+          label: tr('Datenschutz', 'Data protection'),
+          icon: icon(IconShieldLock),
+          desc: tr(
+            'Wenn jemand eine Kopie seiner Daten in einem Verein will oder sie gelöscht haben möchte. Frist 30 Tage; hier steht, wer jede Anfrage wann erledigt hat.',
+            'When someone wants a copy of their data in a club, or wants it deleted. 30-day deadline; this records who handled each request and when.',
+          ),
+          tabs: [
+            {
+              id: 'requests',
+              path: '/app/privacy',
+              label: '',
+              perm: 'privacy.requests',
+              render: () => <DataRequestsPanel />,
             },
           ],
         },
