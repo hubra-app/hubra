@@ -203,7 +203,7 @@ function PrivateRoutes() {
               <Center h="100vh" p="lg">
                 <Paper shadow="lg" p="xl" maw={460}>
                   <Stack gap="sm" align="center">
-                    <IconAlertTriangle size={40} color="#dc2626" />
+                    <IconAlertTriangle size={40} color="var(--mantine-color-red-text)" />
                     <Text fz={18} fw={700} c="red">
                       {i18n.t('app.errorTitle', 'Etwas ist schiefgelaufen')}
                     </Text>
@@ -639,9 +639,9 @@ function BackendBanner() {
   return (
     <Overlay fixed color="#000" backgroundOpacity={0.4} blur={4} zIndex={9999}>
       <Center h="100vh">
-        <Paper bg="#fef3cd" c="#856404" radius="lg" shadow="xl" p="xl" maw={420} ta="center">
+        <Paper bg="var(--hb-surface)" shadow="xl" p="xl" maw={420} ta="center">
           <Stack align="center" gap="md">
-            <IconAlertTriangle size={40} />
+            <IconAlertTriangle size={40} color="var(--mantine-color-orange-text)" />
             <Text fz={18} fw={600}>
               {t('app.backendUnreachable')}
             </Text>

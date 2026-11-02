@@ -38,7 +38,7 @@ function AppRoutes() {
         <Center h="100vh" p="lg">
           <Paper shadow="lg" p="xl" maw={460}>
             <Stack gap="sm" align="center">
-              <IconAlertTriangle size={40} color="#dc2626" />
+              <IconAlertTriangle size={40} color="var(--mantine-color-red-text)" />
               <Text fz={18} fw={700} c="red">
                 {tr('Etwas ist schiefgelaufen', 'Something went wrong')}
               </Text>

@@ -53,3 +53,62 @@ export const pinkColors = [
   '#9c2a60',
   '#7a2149',
 ] as const
+
+// Success: paid, active, passed. Shade 6 is the brand value (brand/README.md).
+export const greenColors = [
+  '#edf4f1',
+  '#d5e7df',
+  '#accfbf',
+  '#82b79f',
+  '#599f80',
+  '#348963',
+  '#18794e',
+  '#146742',
+  '#115537',
+  '#0d432b',
+] as const
+
+// Warning: due, needs a look. Dark text on fills (autoContrast). Shade 6 is the brand value (brand/README.md).
+export const orangeColors = [
+  '#fdf8ec',
+  '#fbeed5',
+  '#f7deab',
+  '#f3cd82',
+  '#eebd58',
+  '#ebae33',
+  '#e8a317',
+  '#c58b14',
+  '#a27210',
+  '#805a0d',
+] as const
+
+// Danger: overdue, failed, delete. Shade 6 is the brand value (brand/README.md).
+export const redColors = [
+  '#fbeff1',
+  '#f5dbe0',
+  '#ebb6c0',
+  '#e192a0',
+  '#d76e81',
+  '#ce4d65',
+  '#c73550',
+  '#a92d44',
+  '#8b2538',
+  '#6d1d2c',
+] as const
+
+// Category colours: tags, tiers, event types, inventory types, search result
+// types. The same palette new accounts get their avatar colour from
+// (app/backend/hubra/core/avatar.py). Clubs can pick their own colours for
+// tiers, groups and finance categories; these are the defaults.
+export const categoryColors = {
+  blue: '#2596be',
+  royal: '#1f61d8',
+  pink: '#fe64ac',
+  navy: '#1c2740',
+  slate: '#8e97a7',
+  red: '#ff4d3d',
+  green: '#1f9d57',
+  orange: '#f39c12',
+  purple: '#9b59b6',
+  yellow: '#fece2b',
+} as const

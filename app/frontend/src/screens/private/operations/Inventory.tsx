@@ -1,3 +1,4 @@
+import { colorText } from '@hubra/ui'
 import { useState } from 'react'
 import { Button, TextInput, Select, Badge, Paper, Text } from '@mantine/core'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -186,7 +187,7 @@ export function InventoryScreen() {
                     className="dot"
                     style={{ background: CATEGORY_COLORS[item.category] }}
                   />
-                  <span style={{ color: CATEGORY_COLORS[item.category] }}>
+                  <span style={{ color: colorText(CATEGORY_COLORS[item.category]) }}>
                     {CATEGORY_ICONS[item.category]}
                   </span>
                   <span style={{ fontWeight: 600, color: 'var(--hb-text)' }}>
@@ -204,9 +205,9 @@ export function InventoryScreen() {
                   variant="light"
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
-                    borderColor: CATEGORY_COLORS[item.category] + '44',
-                    color: CATEGORY_COLORS[item.category],
-                    background: CATEGORY_COLORS[item.category] + '11',
+                    borderColor: `color-mix(in srgb, ${CATEGORY_COLORS[item.category]} 27%, transparent)`,
+                    color: colorText(CATEGORY_COLORS[item.category]),
+                    background: `color-mix(in srgb, ${CATEGORY_COLORS[item.category]} 7%, transparent)`,
                   }}
                 >
                   {item.category === 'Tool'
@@ -228,9 +229,9 @@ export function InventoryScreen() {
                     variant="light"
                     style={{
                       fontSize: 'var(--mantine-font-size-xs)',
-                      borderColor: sc.color + '44',
+                      borderColor: `color-mix(in srgb, ${sc.color} 27%, transparent)`,
                       color: sc.color,
-                      background: sc.color + '11',
+                      background: `color-mix(in srgb, ${sc.color} 7%, transparent)`,
                       display: 'flex',
                       alignItems: 'center',
                       gap: 3,
@@ -248,7 +249,7 @@ export function InventoryScreen() {
               render: (item) => (
                 <span
                   style={{
-                    color: item.ownerName ? '#2e2940' : '#c2c9d0',
+                    color: item.ownerName ? 'var(--hb-text)' : 'var(--hb-text-3)',
                     fontSize: 'var(--mantine-font-size-sm)',
                   }}
                 >
@@ -344,7 +345,7 @@ export function InventoryScreen() {
           getRowKey={(item) => item.id}
         />
       ) : (
-        <Paper withBorder shadow="sm" radius="lg">
+        <Paper withBorder>
           <div
             style={{
               padding: '14px 16px',
@@ -441,11 +442,11 @@ export function InventoryScreen() {
                               width: 36,
                               height: 36,
                               borderRadius: 8,
-                              background: cc + '22',
+                              background: `color-mix(in srgb, ${cc} 13%, transparent)`,
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              color: cc,
+                              color: colorText(cc),
                             }}
                           >
                             {CATEGORY_ICONS[item.category]}
@@ -469,9 +470,9 @@ export function InventoryScreen() {
                               variant="light"
                               size="sm"
                               style={{
-                                borderColor: sc.color + '44',
+                                borderColor: `color-mix(in srgb, ${sc.color} 27%, transparent)`,
                                 color: sc.color,
-                                background: sc.color + '11',
+                                background: `color-mix(in srgb, ${sc.color} 7%, transparent)`,
                               }}
                             >
                               {t(`inventory.status_${item.status}`, sc.label)}

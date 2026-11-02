@@ -109,7 +109,7 @@ export function BuildsPanel({ health }: { health: HealthDetail }) {
   const upgrade = health.last_upgrade
 
   return (
-    <Paper withBorder shadow="sm" radius="lg" p="lg">
+    <Paper withBorder p="lg">
       <Title order={3} mb={4}>
         Builds
       </Title>
@@ -143,7 +143,7 @@ export function BuildsPanel({ health }: { health: HealthDetail }) {
                 </Text>
               )}
               {differs && (
-                <Badge variant="light" color="yellow" size="sm">
+                <Badge variant="light" color="orange" size="sm">
                   {tr('Weicht ab', 'Differs')}
                 </Badge>
               )}

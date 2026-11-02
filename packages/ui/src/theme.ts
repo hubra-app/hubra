@@ -8,7 +8,7 @@ import {
   type CSSVariablesResolver,
   type VariantColorsResolver,
 } from '@mantine/core'
-import { accColors, goldColors, grayColors, pinkColors } from './colors'
+import { accColors, goldColors, grayColors, greenColors, orangeColors, pinkColors, redColors } from './colors'
 import { readableOn, textOn, WHITE } from './contrast'
 
 // Filled buttons, badges and checkboxes: Mantine picks their text from the
@@ -63,6 +63,10 @@ export const theme = createTheme({
     ],
     acc: accColors,
     gold: goldColors,
+    // Status colours (docs/design-spec.md): success, warning, danger.
+    green: greenColors,
+    orange: orangeColors,
+    red: redColors,
     pink: pinkColors,
     // Brand neutrals with a violet tint. Mantine uses gray for borders,
     // hover fills and dimmed text, so this one scale restyles all of them.
@@ -273,7 +277,10 @@ export const cssVariablesResolver: CSSVariablesResolver = (t) => {
   }
   result.light['--mantine-primary-color-contrast'] = `var(--mantine-color-${t.primaryColor}-contrast)`
   result.dark['--mantine-primary-color-contrast'] = `var(--mantine-color-${t.primaryColor}-contrast)`
-  for (const name of ['acc', 'gold']) {
+  // Text in these colours (light buttons, badges, alerts, links) must read
+  // on white and on the colour's own light tint; the warning orange and
+  // gold would not, so they get a deeper shade for text.
+  for (const name of ['acc', 'gold', 'green', 'orange', 'red']) {
     const scale = t.colors[name]
     if (!scale) continue
     const ink = readableOn(scale[6], [WHITE, scale[1]])

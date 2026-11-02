@@ -151,7 +151,7 @@ function ClubSettingsForm({
                         style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
                       />
                     ) : (
-                      <IconPhoto size={28} color="var(--mantine-color-gray-5)" />
+                      <IconPhoto size={24} color="var(--mantine-color-gray-5)" />
                     )}
                   </Box>
                   <Stack gap={6} style={{ minWidth: 0 }}>

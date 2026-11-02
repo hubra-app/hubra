@@ -15,7 +15,6 @@ import {
   Title,
   UnstyledButton,
 } from '@mantine/core'
-import { notifications } from '@mantine/notifications'
 import { IconArrowBigUp, IconArrowBigUpFilled } from '@tabler/icons-react'
 import { ThemeToggle } from '@hubra/ui'
 import { useSso } from '@/context/SsoContext'
@@ -24,8 +23,8 @@ import { myRoadmap, publicRoadmap, setVote, type RoadmapItem, type RoadmapStatus
 
 const COLUMNS: { status: RoadmapStatus; color: string; de: string; en: string }[] = [
   { status: 'in_progress', color: 'orange', de: 'In Arbeit', en: 'In progress' },
-  { status: 'planned', color: 'violet', de: 'Geplant', en: 'Planned' },
-  { status: 'open', color: 'blue', de: 'Vorgeschlagen', en: 'Suggested' },
+  { status: 'planned', color: 'acc', de: 'Geplant', en: 'Planned' },
+  { status: 'open', color: 'gray', de: 'Vorgeschlagen', en: 'Suggested' },
   { status: 'done', color: 'green', de: 'Erledigt', en: 'Done' },
 ]
 
@@ -140,6 +139,7 @@ export function RoadmapScreen() {
 
 function Card({ item, signedIn }: { item: RoadmapItem; signedIn: boolean }) {
   const { tr } = useLang()
+  const { notify } = useSso()
   const queryClient = useQueryClient()
   const [busy, setBusy] = useState(false)
   const done = item.status === 'done'
@@ -156,18 +156,14 @@ function Card({ item, signedIn }: { item: RoadmapItem; signedIn: boolean }) {
         old?.map((i) => (i.id === item.id ? { ...i, votes: res.votes, voted: res.voted } : i)),
       )
     } catch (err) {
-      notifications.show({
-        color: 'red',
-        title: tr('Abstimmen fehlgeschlagen', 'Voting failed'),
-        message: (err as Error).message,
-      })
+      notify('error', tr('Abstimmen fehlgeschlagen', 'Voting failed'), (err as Error).message)
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <Paper withBorder radius="lg" p="md">
+    <Paper withBorder p="md">
       <Group gap="sm" wrap="nowrap" align="flex-start">
         <UnstyledButton
           onClick={() => void toggle()}

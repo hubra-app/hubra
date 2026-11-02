@@ -257,7 +257,7 @@ export function ExternalPartiesTab() {
           </Button>
         </Group>
       )}
-      <Paper withBorder shadow="sm" radius="lg">
+      <Paper withBorder>
         <div style={{ overflowX: 'auto' }}>
           <Table highlightOnHover className="responsive-table">
             <Table.Thead>
@@ -341,7 +341,7 @@ export function ExternalPartiesTab() {
                           <Button
                             size="sm"
                             variant="subtle"
-                            style={{ color: '#ff4d3d' }}
+                            style={{ color: 'var(--mantine-color-red-text)' }}
                             onClick={() => setDeleteTarget(p)}
                           >
                             <IconTrash size={16} />

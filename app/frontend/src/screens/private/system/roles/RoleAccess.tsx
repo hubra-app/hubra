@@ -68,7 +68,7 @@ export function RoleAccess({
   // Admin roles pass every check, so there is nothing to choose.
   if (role.isAdmin) {
     return (
-      <Alert color="violet" variant="light" icon={<IconShieldCheck size={18} />}>
+      <Alert color="acc" variant="light" icon={<IconShieldCheck size={18} />}>
         {t('roles.adminAll', 'Diese Rolle ist eine Admin-Rolle und darf im Verein alles.')}
       </Alert>
     )
@@ -82,7 +82,7 @@ export function RoleAccess({
           'Ansehen: sehen und mitmachen (anmelden, abstimmen, kommentieren). Bearbeiten: auch erstellen und ändern. Alles: auch löschen und exportieren.',
         )}
       </Text>
-      <Paper withBorder radius="lg" p={0} style={{ overflow: 'hidden' }}>
+      <Paper withBorder p={0} style={{ overflow: 'hidden' }}>
         {byBlueprint.map(([bp, list], bpIndex) => (
           <Fragment key={bp}>
             {/* An area with several parts (Finanzen) gets a heading over them. */}

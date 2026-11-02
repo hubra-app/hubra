@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, searchForWorkspaceRoot } from 'vite'
 import react from '@vitejs/plugin-react'
 import { themeScript } from '../../packages/ui/vite-theme-script'
 import { resolve } from 'path'
@@ -15,6 +15,8 @@ export default defineConfig({
     },
   },
   server: {
+    // packages/ui (shared CSS and fonts) lives outside the app root.
+    fs: { allow: [searchForWorkspaceRoot(process.cwd()), resolve(__dirname, '../../packages')] },
     host: '0.0.0.0',
     port: 5174,
     proxy: {

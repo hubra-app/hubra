@@ -1,3 +1,4 @@
+import { categoryColors, colorText } from '@hubra/ui'
 import { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { TextInput, Box, Text, Stack, Kbd } from '@mantine/core'
@@ -266,14 +267,14 @@ export function GlobalSearch({
     page: t('shell.searchKind.page'),
   }
   const kindColors: Record<string, { bg: string; color: string }> = {
-    member: { bg: '#fdf0f8', color: '#be185d' },
-    group: { bg: '#eff6ff', color: '#1d4ed8' },
-    event: { bg: '#f0fdf4', color: '#15803d' },
-    invoice: { bg: 'var(--mantine-color-acc-0)', color: '#b45309' },
-    transaction: { bg: '#f0fdfa', color: '#0f766e' },
-    inventory: { bg: '#eef2ff', color: '#4338ca' },
-    poll: { bg: '#fff7ed', color: '#c2410c' },
-    audit: { bg: '#f1f5f9', color: '#475569' },
+    member: { bg: `color-mix(in srgb, ${categoryColors.pink} 12%, var(--hb-surface))`, color: colorText(categoryColors.pink) },
+    group: { bg: `color-mix(in srgb, ${categoryColors.royal} 12%, var(--hb-surface))`, color: colorText(categoryColors.royal) },
+    event: { bg: `color-mix(in srgb, ${categoryColors.green} 12%, var(--hb-surface))`, color: colorText(categoryColors.green) },
+    invoice: { bg: `color-mix(in srgb, ${categoryColors.orange} 12%, var(--hb-surface))`, color: colorText(categoryColors.orange) },
+    transaction: { bg: `color-mix(in srgb, ${categoryColors.blue} 12%, var(--hb-surface))`, color: colorText(categoryColors.blue) },
+    inventory: { bg: `color-mix(in srgb, ${categoryColors.purple} 12%, var(--hb-surface))`, color: colorText(categoryColors.purple) },
+    poll: { bg: `color-mix(in srgb, ${categoryColors.red} 12%, var(--hb-surface))`, color: colorText(categoryColors.red) },
+    audit: { bg: `color-mix(in srgb, ${categoryColors.slate} 12%, var(--hb-surface))`, color: colorText(categoryColors.slate) },
     page: { bg: 'var(--hb-surface-2)', color: 'var(--hb-text-2)' },
   }
 

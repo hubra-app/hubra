@@ -48,7 +48,7 @@ export function ResourceMatrix(props: ResourceMatrixProps) {
       .sort((a, b) => `${a.blueprint}.${a.resource}`.localeCompare(`${b.blueprint}.${b.resource}`))
   }, [allPerms])
   return (
-    <Paper withBorder shadow="sm" radius="lg" style={{ overflowX: 'auto' }}>
+    <Paper withBorder style={{ overflowX: 'auto' }}>
       <Table highlightOnHover style={{ minWidth: 520 }}>
         <Table.Thead>
           <Table.Tr>
@@ -66,7 +66,7 @@ export function ResourceMatrix(props: ResourceMatrixProps) {
                     {roleLabel(role.name)}
                   </Text>
                   {role.isAdmin && (
-                    <Badge size="xs" color="indigo" variant="light">
+                    <Badge size="xs" color="acc" variant="light">
                       ADMIN
                     </Badge>
                   )}
@@ -82,7 +82,7 @@ export function ResourceMatrix(props: ResourceMatrixProps) {
             )
             return (
               <Fragment key={entry.key}>
-                <Table.Tr style={{ background: '#f9f8fc' }}>
+                <Table.Tr style={{ background: 'var(--hb-surface-2)' }}>
                   <Table.Td
                     style={{
                       fontWeight: 700,

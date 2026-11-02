@@ -72,6 +72,8 @@ import {
   type RepositoryPreview,
 } from '@/api/plugins'
 import { tr } from '@/lang'
+import { EmptyState } from '@/components/ui'
+import { useConfirm } from '@/components/useConfirm'
 import { PLUGIN_DE } from '@/moduleLabels'
 
 const TRUST: Record<string, { color: string; label: () => string }> = {
@@ -137,7 +139,7 @@ function PluginIcon({ p }: { p: MarketplacePlugin }) {
             ? IconMessages
             : IconPuzzle
   return (
-    <ThemeIcon size={52} radius="md" variant="light" color={p.installed ? 'violet' : 'gray'} aria-hidden>
+    <ThemeIcon size={52} radius="md" variant="light" color={p.installed ? 'acc' : 'gray'} aria-hidden>
       <Icon size={28} stroke={1.6} />
     </ThemeIcon>
   )
@@ -266,7 +268,7 @@ function PluginsView() {
   return (
     <Stack gap="lg">
       {waitFor !== null && (
-        <Alert color="blue" variant="light" icon={<Loader size={16} />}>
+        <Alert color="acc" variant="light" icon={<Loader size={16} />}>
           {tr('Die Server laden die Änderung. Das dauert bis zu einer Minute.', 'Servers are loading the change. This takes up to a minute.')}
         </Alert>
       )}
@@ -276,7 +278,7 @@ function PluginsView() {
         </Alert>
       ))}
 
-      <Paper withBorder radius="md" p="md">
+      <Paper withBorder p="md">
         <Stack gap="sm">
           <Group justify="space-between" wrap="wrap" gap="sm">
             <Group gap="lg">
@@ -358,10 +360,8 @@ function PluginsView() {
           {errorText(error)}
         </Alert>
       ) : plugins.length === 0 ? (
-        <Paper withBorder radius="md" p="xl">
-          <Text size="sm" c="dimmed" ta="center">
-            {tr('Keine passenden Plugins.', 'No plugins match.')}
-          </Text>
+        <Paper withBorder>
+          <EmptyState title={tr('Keine passenden Plugins.', 'No plugins match.')} />
         </Paper>
       ) : filter === 'all' ? (
         <>
@@ -553,7 +553,7 @@ function PluginCard({
               </Button>
             )}
             {p.update && (
-              <Button size="xs" color="gold" c="#1a1625" loading={busy} onClick={onInstall} leftSection={<IconArrowUp size={14} />}>
+              <Button size="xs" color="gold" loading={busy} onClick={onInstall} leftSection={<IconArrowUp size={14} />}>
                 {tr(`Auf ${p.repoVersion}`, `To ${p.repoVersion}`)}
               </Button>
             )}
@@ -868,7 +868,7 @@ function PurposeBadge({ purpose }: { purpose: KeyPurpose }) {
       </Badge>
     )
   return (
-    <Badge size="xs" variant="light" color={purpose === 'index' ? 'blue' : 'violet'}>
+    <Badge size="xs" variant="light" color={purpose === 'index' ? 'acc' : 'gray'}>
       {purpose === 'index' ? tr('Index', 'Index') : tr('Plugins', 'Plugins')}
     </Badge>
   )
@@ -936,8 +936,10 @@ function RepositoriesView() {
     }
   }
 
+  const [confirm, confirmDialog] = useConfirm()
   return (
     <Stack gap="md">
+      {confirmDialog}
       <Paper withBorder p="lg">
         <Text fw={600} size="sm" mb={4}>
           {tr('Quelle hinzufügen', 'Add a repository')}
@@ -1057,9 +1059,15 @@ function RepositoriesView() {
                       variant="subtle"
                       color="red"
                       onClick={() =>
-                        act(async () => {
-                          await deleteRepository(r.id)
-                          refresh()
+                        confirm({
+                          title: tr(`Quelle «${r.name}» entfernen?`, `Remove the repository "${r.name}"?`),
+                          body: tr('Installierte Plugins bleiben, bekommen aber keine Updates mehr aus dieser Quelle.', 'Installed plugins stay but get no more updates from it.'),
+                          confirmLabel: tr('Entfernen', 'Remove'),
+                          run: () =>
+                            act(async () => {
+                              await deleteRepository(r.id)
+                              refresh()
+                            }),
                         })
                       }
                     >
@@ -1098,8 +1106,10 @@ function KeysView() {
     }
   }
 
+  const [confirm, confirmDialog] = useConfirm()
   return (
     <Stack gap="md">
+      {confirmDialog}
       <Paper withBorder p="lg">
         <Text fw={600} size="sm" mb={4}>
           {tr('Einem Autor vertrauen', 'Trust an author')}
@@ -1175,7 +1185,14 @@ function KeysView() {
                       size="xs"
                       variant="subtle"
                       color="red"
-                      onClick={() => act(() => deleteTrustedKey(k.id!))}
+                      onClick={() =>
+                        confirm({
+                          title: tr(`Schlüssel «${k.name}» entfernen?`, `Remove the key "${k.name}"?`),
+                          body: tr('Plugins und Listen, die nur mit diesem Schlüssel signiert sind, gelten dann nicht mehr als vertrauenswürdig.', 'Plugins and indexes signed only with this key are no longer trusted.'),
+                          confirmLabel: tr('Entfernen', 'Remove'),
+                          run: () => act(() => deleteTrustedKey(k.id!)),
+                        })
+                      }
                     >
                       {tr('Entfernen', 'Remove')}
                     </Button>

@@ -29,7 +29,7 @@ const SORTS: Record<Sort, (r: PerfRoute) => number> = {
 }
 
 function StatusBadges({ status }: { status: PerfRoute['status'] }) {
-  const color = { '2xx': 'green', '3xx': 'blue', '4xx': 'orange', '5xx': 'red' } as const
+  const color = { '2xx': 'green', '3xx': 'acc', '4xx': 'orange', '5xx': 'red' } as const
   return (
     <Group gap={4} wrap="nowrap">
       {(['2xx', '3xx', '4xx', '5xx'] as const)
@@ -106,7 +106,7 @@ export function PerformancePanel() {
             label={tr('p95 letzte Stunde', 'p95 last hour')}
             value={ms(last.p95)}
             sub={tr(`p50 ${ms(last.p50)} · ${last.requests} Anfragen`, `p50 ${ms(last.p50)} · ${last.requests} requests`)}
-            accent={p95Limit && (last.p95 ?? 0) > p95Limit ? '#c2870f' : undefined}
+            accent={p95Limit && (last.p95 ?? 0) > p95Limit ? 'var(--mantine-color-orange-text)' : undefined}
           />
           <StatTile
             label={tr(`p95 (${data.hours} h)`, `p95 (${data.hours} h)`)}
@@ -128,12 +128,12 @@ export function PerformancePanel() {
               `${t.status['4xx'] ?? 0} Client-Fehler (4xx)`,
               `${t.status['4xx'] ?? 0} client errors (4xx)`,
             )}
-            accent={errors5 ? '#c0392b' : undefined}
+            accent={errors5 ? 'var(--mantine-color-red-text)' : undefined}
           />
         </StatGrid>
       )}
 
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
+      <Paper withBorder p="lg">
         <Group justify="space-between" mb={12} wrap="wrap">
           <Title order={4}>{tr('Routen', 'Routes')}</Title>
           <SegmentedControl
@@ -212,7 +212,7 @@ export function PerformancePanel() {
         )}
       </Paper>
 
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
+      <Paper withBorder p="lg">
         <Group justify="space-between" mb={4} wrap="wrap">
           <Title order={4}>{tr('Langsame Datenbankabfragen', 'Slow database queries')}</Title>
         </Group>
@@ -230,7 +230,7 @@ export function PerformancePanel() {
         )}
         <Stack gap={10}>
           {(data?.queries ?? []).map((q) => (
-            <Paper key={q.id} withBorder radius="md" p="sm">
+            <Paper key={q.id} withBorder p="sm">
               <Group gap={12} mb={6} wrap="wrap">
                 <Text size="sm" fw={600}>
                   {tr(`${q.count}×`, `${q.count}×`)}

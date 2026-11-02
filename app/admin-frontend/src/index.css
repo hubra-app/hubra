@@ -5,18 +5,6 @@
   min-height: 100vh;
 }
 
-.page-container {
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 32px 32px 64px;
-}
-
-@media (max-width: 48em) {
-  .page-container {
-    padding: 20px 16px 48px;
-  }
-}
-
 .manage-nav-row {
   transition: background 0.12s ease, color 0.12s ease;
 }

@@ -18,7 +18,7 @@ const PERM = 'events.events.add_attendee'
 
 const CELL: Record<AttendanceStatus, { label: string; color: string }> = {
   present: { label: '✓', color: 'var(--mantine-color-green-text)' },
-  excused: { label: 'E', color: 'var(--mantine-color-yellow-text)' },
+  excused: { label: 'E', color: 'var(--mantine-color-orange-text)' },
   absent: { label: '·', color: 'var(--hb-text-3)' },
 }
 

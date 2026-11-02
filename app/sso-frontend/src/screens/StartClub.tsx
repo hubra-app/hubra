@@ -22,7 +22,7 @@ import { SignedInFrame } from '@/components/SignedInFrame'
 import { useLang } from '@/lang'
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: 'yellow',
+  pending: 'orange',
   approved: 'green',
   rejected: 'red',
 }

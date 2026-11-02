@@ -467,7 +467,7 @@ export function MailSettingsModal({
                 <div
                   style={{
                     fontSize: 'var(--mantine-font-size-xs)',
-                    color: '#2596be',
+                    color: 'var(--mantine-color-acc-text)',
                     marginTop: 4,
                   }}
                 >
@@ -738,10 +738,10 @@ export function MailSettingsModal({
             <div
               style={{
                 padding: 10,
-                background: '#fff3e0',
+                background: 'var(--mantine-color-orange-light)',
                 borderRadius: 6,
                 fontSize: 'var(--mantine-font-size-xs)',
-                color: '#e65100',
+                color: 'var(--mantine-color-orange-text)',
               }}
             >
               <strong>{t('mail.admin.syncError', 'Fehler')}:</strong>{' '}

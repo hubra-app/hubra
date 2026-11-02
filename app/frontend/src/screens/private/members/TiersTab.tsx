@@ -576,7 +576,7 @@ export function TiersTab() {
                     width: 36,
                     height: 36,
                     borderRadius: 9,
-                    background: tier.color + '22',
+                    background: `color-mix(in srgb, ${tier.color} 13%, transparent)`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -721,7 +721,7 @@ export function TiersTab() {
             }}
             onClick={openAdd}
           >
-            <IconPlus size={22} style={{ color: '#b7b0c9', marginBottom: 8 }} />
+            <IconPlus size={24} style={{ color: 'var(--hb-text-3)', marginBottom: 8 }} />
             <span
               style={{
                 fontSize: 'var(--mantine-font-size-sm)',

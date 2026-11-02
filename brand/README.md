@@ -44,11 +44,15 @@ It always carries ink text and never covers large areas.
 
 | Role | Light | Dark |
 | --- | --- | --- |
-| Page background | `#f7f6fb` | `#14111c` |
-| Surface | `#ffffff` | `#1e1a2a` |
-| Lines | `#e6e3ef` | `#2e2840` |
-| Secondary text | `#5e5873` | `#a39db8` |
-| Ink | `#1a1625` | `#ece9f5` |
+| Page background | `#f7f6fb` | `#111113` |
+| Surface | `#ffffff` | `#19191c` |
+| Lines | `#e6e3ef` | `#2f2f34` |
+| Secondary text | `#5e5873` | `#a8a8b0` |
+| Ink | `#1a1625` | `#ededef` |
+
+Light neutrals carry a violet tint. Dark mode is neutral grey, so the club
+colour is the only colour on the page. The tokens are `--hb-*` in
+`packages/ui/src/ui.css`; the full rules are in `docs/design-spec.md`.
 
 Status colours: success `#18794e`, warning `#e8a317` (ink text), danger
 `#c73550`. All text pairs meet WCAG AA (4.5 : 1).

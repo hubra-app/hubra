@@ -195,7 +195,7 @@ function LanguageMenu() {
           color="gray"
           size="sm"
           px={10}
-          leftSection={<IconWorld size={17} />}
+          leftSection={<IconWorld size={16} />}
           aria-label={labels[lang]}
         >
           {lang.toUpperCase()}
@@ -445,7 +445,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar style={{ background: 'var(--hb-surface)' }}>
+      <AppShell.Navbar style={{ background: 'var(--hb-sidebar)' }}>
         <ScrollArea flex={1} type="auto" offsetScrollbars>
           <Box p={collapsed ? 10 : 'sm'} pt="md">
             <NavSections sections={sections} collapsed={collapsed} />
@@ -492,7 +492,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             wrap="wrap"
             style={{ background: 'var(--mantine-color-gold-light)', borderBottom: '1px solid var(--mantine-color-gold-4)' }}
           >
-            <Badge color="gold" c="#1a1625" variant="filled" size="sm">
+            <Badge color="gold" variant="filled" size="sm">
               {tr('Stellvertretung', 'Impersonating')}
             </Badge>
             <Text fz="sm" fw={600}>

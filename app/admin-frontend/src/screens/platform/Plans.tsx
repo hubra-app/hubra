@@ -102,7 +102,7 @@ export function PlatformPlans() {
 
   return (
     <Stack gap={20} maw={960}>
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
+      <Paper withBorder p="lg">
         <Group justify="space-between" mb={4}>
           <Title order={3}>{tr('Tarife', 'Plans')}</Title>
           <Button size="xs" leftSection={<IconPlus size={16} />} onClick={() => setEditing('new')}>
@@ -120,7 +120,6 @@ export function PlatformPlans() {
             <Paper
               key={p.key}
               withBorder
-              radius="md"
               p="md"
               style={p.hidden ? { opacity: 0.6 } : undefined}
             >
@@ -171,7 +170,7 @@ export function PlatformPlans() {
                   </Badge>
                 )}
                 {p.highlighted && (
-                  <Badge size="sm" variant="light" color="violet">
+                  <Badge size="sm" variant="light" color="acc">
                     {tr('Hervorgehoben', 'Highlighted')}
                   </Badge>
                 )}
@@ -220,7 +219,7 @@ export function PlatformPlans() {
         </SimpleGrid>
       </Paper>
 
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
+      <Paper withBorder p="lg">
         <Title order={3} mb={4}>
           {tr('Zusatzmodule', 'Add-ons')}
         </Title>
@@ -290,7 +289,7 @@ export function PlatformPlans() {
         </Table.ScrollContainer>
       </Paper>
 
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
+      <Paper withBorder p="lg">
         <Title order={3} mb={4}>
           {tr('Öffentliche API', 'Public API')}
         </Title>

@@ -4,89 +4,14 @@
   min-height: 100vh;
 }
 
-.eyebrow {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: var(--mantine-font-size-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--mantine-color-acc-7);
-}
-
-.eyebrow::before {
-  content: '// ';
-  color: var(--mantine-color-acc-5);
-}
-
 /* Signed-in SSO pages (club picker, account, verification). */
 .graph-bg {
   background-color: var(--hb-page);
 }
 
-.auth-layout {
-  min-height: 100vh;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  background: var(--hb-surface);
-}
-
-.auth-main {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 32px;
-}
-
-.auth-brand {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(155deg, #7441e0 0%, #6131c4 45%, #3a1e78 100%);
-  display: flex;
-  align-items: center;
-  padding: 64px;
-}
-
-.auth-brand::after {
-  /* the doorway of the mark, very large and faint */
-  content: "";
-  position: absolute;
-  right: -120px;
-  bottom: -140px;
-  width: 520px;
-  height: 520px;
-  background: url("/hubra-mark-white.svg") center / contain no-repeat;
-  opacity: 0.07;
-  pointer-events: none;
-}
-
-.auth-brand-inner {
-  position: relative;
-  z-index: 1;
-}
-
-.auth-brand-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #fece2b;
-  flex-shrink: 0;
-}
-
-@media (max-width: 62em) {
-  .auth-layout {
-    grid-template-columns: 1fr;
-  }
-  .auth-brand {
-    display: none;
-  }
-  .auth-main {
-    align-items: flex-start;
-    padding: 40px 20px;
-  }
-}
-
 /* Top bar of the signed-in SSO pages. */
 .sso-topbar {
-  height: 60px;
+  height: 64px;
   background: var(--hb-surface);
   border-bottom: 1px solid var(--hb-border);
   position: sticky;
@@ -105,7 +30,7 @@
   flex: 0 0 220px;
   gap: 2px;
   position: sticky;
-  top: 84px;
+  top: 88px;
 }
 
 .sso-side-tabs .mantine-Tabs-tab {

@@ -34,14 +34,14 @@ export function MobilePermissionList({
       {groupedPerms.map(([bp, items]) => {
         const isSettings = bp === 'settings_bp' || bp === 'settings'
         return (
-          <Paper key={bp} withBorder radius="md" p={0} style={{ overflow: 'hidden' }}>
+          <Paper key={bp} withBorder p={0} style={{ overflow: 'hidden' }}>
             <Group
               justify="space-between"
               px={16}
               py={10}
               style={{
                 borderBottom: '1px solid var(--hb-border)',
-                background: '#f9f8fc',
+                background: 'var(--hb-surface-2)',
                 alignItems: 'center',
               }}
             >
@@ -98,7 +98,7 @@ export function MobilePermissionList({
                           px={16}
                           py={10}
                           style={{
-                            borderBottom: '1px solid #f1eff7',
+                            borderBottom: '1px solid var(--hb-border)',
                             alignItems: 'flex-start',
                           }}
                         >
@@ -139,7 +139,7 @@ export function MobilePermissionList({
                               px={16}
                               py={8}
                               style={{
-                                borderBottom: '1px solid #f1eff7',
+                                borderBottom: '1px solid var(--hb-border)',
                                 alignItems: 'flex-start',
                                 paddingLeft: 32,
                               }}
@@ -194,7 +194,7 @@ export function MobilePermissionList({
                           px={16}
                           py={10}
                           style={{
-                            borderBottom: '1px solid #f1eff7',
+                            borderBottom: '1px solid var(--hb-border)',
                             alignItems: 'flex-start',
                           }}
                         >
@@ -263,7 +263,7 @@ export function MobilePermissionList({
                             px={16}
                             py={8}
                             style={{
-                              borderBottom: '1px solid #f1eff7',
+                              borderBottom: '1px solid var(--hb-border)',
                               alignItems: 'flex-start',
                               paddingLeft: 40,
                               background: 'var(--hb-surface-2)',

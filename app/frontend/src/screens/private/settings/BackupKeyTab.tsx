@@ -254,7 +254,7 @@ function KeyWizard({ onDone, onCancel, replacing }: { onDone: () => void; onCanc
   return (
     <Paper withBorder p="lg">
       <Group gap="xs" mb="md" wrap="nowrap">
-        <IconKey size={22} style={{ flexShrink: 0 }} />
+        <IconKey size={24} style={{ flexShrink: 0 }} />
         <Title order={3}>
           {replacing
             ? t('backupKey.wizard.replaceTitle', 'Neuen Backup-Schlüssel einrichten')
@@ -276,7 +276,7 @@ function KeyWizard({ onDone, onCancel, replacing }: { onDone: () => void; onCanc
           <Stack gap="md" mt="md">
             <WhatItIs />
             {replacing && (
-              <Alert color="yellow" icon={<IconAlertTriangle size={18} />}>
+              <Alert color="orange" icon={<IconAlertTriangle size={18} />}>
                 {t(
                   'backupKey.wizard.replaceHint',
                   'Backups, die schon gemacht wurden, öffnen weiterhin mit dem bisherigen Schlüssel. Bewahrt ihn deshalb auf, bis diese Backups abgelaufen sind.',
@@ -695,7 +695,7 @@ function KeyStatus({
       <Paper withBorder p="lg">
         <Group justify="space-between" mb="md" wrap="wrap" gap="xs">
           <Group gap="xs">
-            <IconShieldCheck size={22} color="var(--mantine-color-green-6)" />
+            <IconShieldCheck size={24} color="var(--mantine-color-green-6)" />
             <Title order={3}>{t('backupKey.status.title', 'Eigener Backup-Schlüssel')}</Title>
           </Group>
           <Badge color="green" variant="light">
@@ -720,7 +720,7 @@ function KeyStatus({
             </Text>
           )}
           {!state.backups_use_key ? (
-            <Alert color="yellow" icon={<IconAlertTriangle size={18} />}>
+            <Alert color="orange" icon={<IconAlertTriangle size={18} />}>
               {t(
                 'backupKey.status.notYet',
                 'Dieser Server verschlüsselt Backups noch nicht mit öffentlichen Schlüsseln. Euer Schlüssel ist gespeichert und gilt, sobald der Betreiber das umstellt.',

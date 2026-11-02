@@ -439,7 +439,7 @@ export function GroupsScreen() {
           )
         }
       />
-      <Paper withBorder shadow="sm" radius="lg" style={{ marginBottom: 0 }}>
+      <Paper withBorder style={{ marginBottom: 0 }}>
         <div
           style={{
             padding: '14px 16px',
@@ -483,8 +483,6 @@ export function GroupsScreen() {
             <Paper
               key={g.id}
               withBorder
-              shadow="sm"
-              radius="lg"
               style={{ overflow: 'hidden' }}
             >
               <div style={{ height: 4, background: g.color }} />
@@ -569,7 +567,7 @@ export function GroupsScreen() {
                     <Button
                       size="sm"
                       variant="subtle"
-                      style={{ color: '#ff4d3d' }}
+                      style={{ color: 'var(--mantine-color-red-text)' }}
                       aria-label={t('common.delete', 'Löschen')}
                       title={t('common.delete', 'Löschen')}
                       onClick={() => setDeleteTarget(g)}
@@ -601,8 +599,6 @@ export function GroupsScreen() {
             component="button"
             type="button"
             withBorder
-            shadow="sm"
-            radius="lg"
             style={{
               font: 'inherit',
               display: 'flex',
@@ -616,7 +612,7 @@ export function GroupsScreen() {
             }}
             onClick={openAdd}
           >
-            <IconPlus size={22} style={{ color: '#b7b0c9', marginBottom: 8 }} />
+            <IconPlus size={24} style={{ color: 'var(--hb-text-3)', marginBottom: 8 }} />
             <span
               style={{
                 fontSize: 'var(--mantine-font-size-sm)',

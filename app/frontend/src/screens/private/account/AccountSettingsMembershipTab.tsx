@@ -25,7 +25,7 @@ export function AccountSettingsMembershipTab() {
 
   return (
     <>
-      <Paper withBorder shadow="sm" radius="lg">
+      <Paper withBorder>
         <Group
           p="md"
           gap="sm"
@@ -74,7 +74,7 @@ export function AccountSettingsMembershipTab() {
                 display: 'flex',
                 justifyContent: 'space-between',
                 padding: '13px 24px',
-                borderBottom: '1px solid #f1eff7',
+                borderBottom: '1px solid var(--hb-border)',
               }}
             >
               <span
@@ -124,7 +124,7 @@ export function AccountSettingsMembershipTab() {
         </div>
       </Paper>
 
-      <Paper withBorder shadow="sm" radius="lg">
+      <Paper withBorder>
         <Group
           p="md"
           gap="sm"

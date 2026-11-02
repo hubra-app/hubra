@@ -23,11 +23,11 @@ const OWNER_LABELS: Record<string, [string, string]> = {
 }
 
 const OWNER_COLORS: Record<string, string> = {
-  member: '#1f9d57',
-  group: '#2596be',
-  function: '#7c4dcc',
-  mail_address: '#c2870f',
-  system: '#e65100',
+  member: 'var(--mantine-color-green-text)',
+  group: 'var(--mantine-color-acc-text)',
+  function: 'var(--mantine-color-acc-light-color)',
+  mail_address: 'var(--mantine-color-orange-text)',
+  system: 'var(--mantine-color-orange-text)',
 }
 
 /**
@@ -87,10 +87,10 @@ export function AddressesTab({ scope }: { scope: 'owned' | 'all' }) {
         color = OWNER_COLORS.mail_address
       } else if (entry.ownerType && OWNER_LABELS[entry.ownerType]) {
         label = ownerLabel(entry.ownerType)
-        color = OWNER_COLORS[entry.ownerType] ?? '#5e5873'
+        color = OWNER_COLORS[entry.ownerType] ?? 'var(--hb-text-2)'
       } else {
         label = entry.kind ?? t('mail.owner.other', 'Andere')
-        color = '#5e5873'
+        color = 'var(--hb-text-2)'
       }
       return (
         <span
@@ -98,7 +98,7 @@ export function AddressesTab({ scope }: { scope: 'owned' | 'all' }) {
             fontSize: 'var(--mantine-font-size-xs)',
             fontWeight: 600,
             color,
-            background: color + '15',
+            background: `color-mix(in srgb, ${color} 8%, transparent)`,
             padding: '2px 8px',
             borderRadius: 10,
           }}

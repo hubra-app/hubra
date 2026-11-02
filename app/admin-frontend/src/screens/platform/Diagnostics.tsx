@@ -52,7 +52,7 @@ export function HealthPanel() {
 
   return (
     <Stack gap={16}>
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
+      <Paper withBorder p="lg">
         <Group justify="space-between" mb={8}>
           <Title order={3}>{tr('Systemzustand', 'System health')}</Title>
           <Button
@@ -222,7 +222,7 @@ export function MailServerPanel() {
 
       {query.isError && <Text c="red">{failureText(query.error)}</Text>}
 
-      <Paper withBorder shadow="sm" radius="lg">
+      <Paper withBorder>
         <div style={{ overflowX: 'auto' }}>
           <Table highlightOnHover>
             <Table.Thead>
@@ -258,7 +258,7 @@ export function MailServerPanel() {
               {filtered.map((e) => (
                 <Table.Tr key={`${e.type}-${e.id}`}>
                   <Table.Td>
-                    <Badge variant="light" color={e.type === 'mailbox' ? 'green' : 'blue'}>
+                    <Badge variant="light" color={e.type === 'mailbox' ? 'green' : 'acc'}>
                       {e.type === 'mailbox' ? tr('Postfach', 'Mailbox') : 'Alias'}
                     </Badge>
                   </Table.Td>
@@ -349,9 +349,9 @@ export function MailServerPanel() {
 
 const METHOD_COLORS: Record<string, string> = {
   GET: 'green',
-  POST: 'blue',
-  PATCH: 'yellow',
-  PUT: 'yellow',
+  POST: 'acc',
+  PATCH: 'orange',
+  PUT: 'orange',
   DELETE: 'red',
 }
 
@@ -425,7 +425,7 @@ export function PermissionsPanel() {
         </Text>
       </Group>
       {query.isError && <Text c="red">{failureText(query.error)}</Text>}
-      <Paper withBorder shadow="sm" radius="lg">
+      <Paper withBorder>
         <Pagination {...pager} />
         <div style={{ overflowX: 'auto' }}>
           <Table highlightOnHover>

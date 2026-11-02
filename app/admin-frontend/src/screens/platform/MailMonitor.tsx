@@ -45,7 +45,7 @@ function failureText(err: unknown) {
 }
 
 function Dot({ ok }: { ok: boolean | null }) {
-  const color = ok === null ? '#c2870f' : ok ? '#1f9d57' : '#c0392b'
+  const color = ok === null ? 'var(--mantine-color-orange-text)' : ok ? 'var(--mantine-color-green-text)' : 'var(--mantine-color-red-text)'
   return (
     <span
       style={{ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0 }}
@@ -82,7 +82,7 @@ function RelayCard({
   const state: boolean | null = !relay.configured ? null : check ? (check.down ? false : check.ok) : null
 
   return (
-    <Paper withBorder shadow="sm" radius="lg" p="lg">
+    <Paper withBorder p="lg">
       <Group justify="space-between" mb={8} wrap="nowrap">
         <Group gap={10} wrap="nowrap">
           <Dot ok={state} />
@@ -199,7 +199,7 @@ export function MyAlertsCard() {
   }
 
   return (
-    <Paper withBorder shadow="sm" radius="lg" p="lg">
+    <Paper withBorder p="lg">
       <Title order={4} mb={4}>
         {tr('Meine Warnungen per Mail', 'My alert mails')}
       </Title>
@@ -334,13 +334,13 @@ export function OutboundMailPanel({ onShowLog }: { onShowLog: (level?: EventLeve
           <StatTile
             label={tr('Über Fallback (24 h)', 'Via fallback (24 h)')}
             value={data.stats.fallback}
-            accent={data.stats.fallback ? '#c2870f' : undefined}
+            accent={data.stats.fallback ? 'var(--mantine-color-orange-text)' : undefined}
             onClick={() => onShowLog('warning')}
           />
           <StatTile
             label={tr('Fehlgeschlagen (24 h)', 'Failed (24 h)')}
             value={data.stats.failed}
-            accent={data.stats.failed ? '#c0392b' : undefined}
+            accent={data.stats.failed ? 'var(--mantine-color-red-text)' : undefined}
             onClick={() => onShowLog('error')}
           />
         </StatGrid>
@@ -512,7 +512,7 @@ export function EventLogPanel({
 
       {query.isError && <Text c="red">{failureText(query.error)}</Text>}
 
-      <Paper withBorder shadow="sm" radius="lg">
+      <Paper withBorder>
         <Pagination {...pager} />
         <Table.ScrollContainer minWidth={640}>
           <Table highlightOnHover>

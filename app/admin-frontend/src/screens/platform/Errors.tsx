@@ -334,7 +334,7 @@ export function ErrorsPanel() {
 
       {query.isError && <Text c="red">{failureText(query.error)}</Text>}
 
-      <Paper withBorder radius="lg" p="md">
+      <Paper withBorder p="md">
         <Title order={4} mb="sm">
           {t('Fehlergruppen', 'Error groups')}
         </Title>

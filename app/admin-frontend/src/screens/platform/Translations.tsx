@@ -39,7 +39,7 @@ export function PlatformTranslations() {
   return (
     <Stack gap={20}>
       <Suggestions />
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
+      <Paper withBorder p="lg">
         <Title order={3} mb={4}>
           {tr('Texte', 'Texts')}
         </Title>
@@ -229,12 +229,12 @@ function Suggestions() {
   const shown = view === 'pending' ? pending : data.filter((r) => r.status !== 'pending')
 
   return (
-    <Paper withBorder shadow="sm" radius="lg" p="lg">
+    <Paper withBorder p="lg">
       <Group justify="space-between" mb={4}>
         <Title order={3}>
           {tr('Vorschläge der Vereine', 'Suggestions from clubs')}
           {pending.length > 0 && (
-            <Badge ml={8} color="yellow" variant="light">
+            <Badge ml={8} color="orange" variant="light">
               {pending.length}
             </Badge>
           )}
@@ -309,7 +309,7 @@ function SuggestionCard({ r }: { r: TranslationRequest }) {
   }
 
   return (
-    <Paper withBorder radius="md" p="md">
+    <Paper withBorder p="md">
       <Group justify="space-between" mb={6} wrap="wrap" gap={6}>
         <Group gap={8}>
           <Text size="xs" ff="monospace">

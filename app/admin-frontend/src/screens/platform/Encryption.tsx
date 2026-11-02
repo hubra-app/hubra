@@ -77,7 +77,7 @@ export function PlatformEncryption() {
   const v = data.values
   return (
     <Stack gap={20} maw={960}>
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
+      <Paper withBorder p="lg">
         <Title order={3} mb={4}>
           {tr('Hauptschlüssel', 'Master key')}
         </Title>
@@ -98,7 +98,7 @@ export function PlatformEncryption() {
             </Badge>
           )}
           {data.master.old_keys > 0 && (
-            <Badge color="yellow" variant="light">
+            <Badge color="orange" variant="light">
               {tr(`${data.master.old_keys} alte Schlüssel`, `${data.master.old_keys} old keys`)}
             </Badge>
           )}
@@ -107,7 +107,7 @@ export function PlatformEncryption() {
               {tr(`Alle ${v.total} Werte aktuell`, `All ${v.total} values current`)}
             </Badge>
           ) : (
-            <Badge color="yellow" variant="light">
+            <Badge color="orange" variant="light">
               {tr(`${v.old_key} auf altem Schlüssel`, `${v.old_key} on an old key`)}
             </Badge>
           )}
@@ -139,7 +139,7 @@ export function PlatformEncryption() {
         </Group>
       </Paper>
 
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
+      <Paper withBorder p="lg">
         <Title order={3} mb={4}>
           {tr('Vereine', 'Clubs')}
         </Title>

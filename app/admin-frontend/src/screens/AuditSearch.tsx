@@ -58,7 +58,7 @@ function Row({ entry }: { entry: AuditSearchEntry }) {
             <Badge variant="light" color={actionColor(entry.action)} size="sm" tt="none">
               {actionLabel(entry.action)}
             </Badge>
-            <Badge variant="outline" color={entry.source === 'platform' ? 'violet' : 'gray'} size="xs">
+            <Badge variant="outline" color={entry.source === 'platform' ? 'acc' : 'gray'} size="xs">
               {entry.source === 'platform' ? tr('Plattform', 'Platform') : tr('Verein', 'Club')}
             </Badge>
           </Group>

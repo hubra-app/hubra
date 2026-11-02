@@ -116,7 +116,7 @@ export function JoinClubScreen() {
 
   return (
     <SignedInFrame actions={back}>
-      <Paper withBorder radius="md" p="xl">
+      <Paper withBorder p="xl">
         <Stack gap="md">
           <div>
             <Text size="sm" c="dimmed">
@@ -136,7 +136,7 @@ export function JoinClubScreen() {
 
           {data.membership === 'pending' && (
             <Alert
-              color="yellow"
+              color="orange"
               title={tr('Deine Anfrage ist unterwegs', 'Your request is on its way')}
             >
               {tr(

@@ -447,8 +447,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         : kind === 'error'
           ? 'red'
           : kind === 'warning'
-            ? 'yellow'
-            : 'blue'
+            ? 'orange'
+            : 'acc'
     mantineNotifications.show({
       title,
       message: msg,

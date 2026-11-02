@@ -145,7 +145,6 @@ function Columns({ trends, metric, note }: { trends: Trends; metric: TrendMetric
       {hover !== null && width > 0 && (
         <Paper
           withBorder
-          shadow="sm"
           px={8}
           py={4}
           radius="sm"

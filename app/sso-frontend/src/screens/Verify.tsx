@@ -129,10 +129,10 @@ export function VerifyScreen() {
 
   return (
     <SignedInFrame width={460}>
-      <Paper withBorder radius="md" p="xl">
+      <Paper withBorder p="xl">
         <Stack gap="md">
           <ThemeIcon size={48} radius="xl" variant="light">
-            <IconMailCheck size={26} />
+            <IconMailCheck size={24} />
           </ThemeIcon>
           <div>
             <Title order={2} mb={6}>

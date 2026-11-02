@@ -199,7 +199,7 @@ export function RecurringTab() {
           </Button>
         )}
       </Group>
-      <Paper withBorder shadow="sm" radius="lg">
+      <Paper withBorder>
         <div style={{ overflowX: 'auto' }}>
           <Table highlightOnHover className="responsive-table">
             <Table.Thead>
@@ -245,7 +245,7 @@ export function RecurringTab() {
                               className="num"
                               style={{
                                 fontWeight: 700,
-                                color: r.type === 'income' ? '#1f9d57' : '#ff4d3d',
+                                color: r.type === 'income' ? 'var(--mantine-color-green-text)' : 'var(--mantine-color-red-text)',
                               }}
                             >
                               {r.type === 'income' ? '+' : '−'}
@@ -295,7 +295,7 @@ export function RecurringTab() {
                                 <Button
                                   size="sm"
                                   variant="subtle"
-                                  style={{ color: '#ff4d3d' }}
+                                  style={{ color: 'var(--mantine-color-red-text)' }}
                                   aria-label={t('common.delete', 'Löschen')}
                                   onClick={() => setDeleteTarget(r)}
                                 >
@@ -315,11 +315,11 @@ export function RecurringTab() {
                     {t('finance.recurring.totalPerYear', 'Total pro Jahr')}
                   </Table.Td>
                   <Table.Td style={{ textAlign: 'right' }}>
-                    <div className="num" style={{ color: '#ff4d3d', fontWeight: 700 }}>
+                    <div className="num" style={{ color: 'var(--mantine-color-red-text)', fontWeight: 700 }}>
                       −{formatCHF(yearlyExpenses)}
                     </div>
                     {yearlyIncome > 0 && (
-                      <div className="num" style={{ color: '#1f9d57', fontWeight: 700 }}>
+                      <div className="num" style={{ color: 'var(--mantine-color-green-text)', fontWeight: 700 }}>
                         +{formatCHF(yearlyIncome)}
                       </div>
                     )}

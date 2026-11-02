@@ -371,7 +371,7 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
       ) : (
         <Stack gap={20} maw={720}>
           {section === 'relay' && (
-            <Paper withBorder shadow="sm" radius="lg" p="lg">
+            <Paper withBorder p="lg">
               <Group justify="space-between" mb={4}>
                 <Title order={3}>{tr('Mail-Relay', 'Relay')}</Title>
                 {resetButton(RELAY)}
@@ -387,7 +387,7 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
           )}
 
           {section === 'relay' && (
-            <Paper withBorder shadow="sm" radius="lg" p="lg">
+            <Paper withBorder p="lg">
               <Group justify="space-between" mb={4}>
                 <Title order={3}>{tr('Fallback-Relay', 'Fallback relay')}</Title>
                 {resetButton(FALLBACK)}
@@ -403,7 +403,7 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
           )}
 
           {section === 'sender' && (
-            <Paper withBorder shadow="sm" radius="lg" p="lg">
+            <Paper withBorder p="lg">
               <Group justify="space-between" mb={12}>
                 <Title order={3}>{tr('Systemabsender', 'System sender')}</Title>
                 {resetButton(SENDER)}
@@ -413,7 +413,7 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
           )}
 
           {section === 'alerts' && (
-            <Paper withBorder shadow="sm" radius="lg" p="lg">
+            <Paper withBorder p="lg">
               <Group justify="space-between" mb={4}>
                 <Title order={3}>{tr('Versand der Warnungen', 'Alert delivery')}</Title>
                 {resetButton(ALERTS)}
@@ -429,7 +429,7 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
           )}
 
           {section === 'performance' && (
-            <Paper withBorder shadow="sm" radius="lg" p="lg">
+            <Paper withBorder p="lg">
               <Group justify="space-between" mb={4}>
                 <Title order={3}>{tr('Grenzwerte', 'Thresholds')}</Title>
                 {resetButton(PERF)}
@@ -445,7 +445,7 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
           )}
 
           {section === 'limits' && (
-            <Paper withBorder shadow="sm" radius="lg" p="lg">
+            <Paper withBorder p="lg">
               <Group justify="space-between" mb={4}>
                 <Title order={3}>{tr('Limit-Warnungen', 'Limit warnings')}</Title>
                 {resetButton(LIMITS)}
@@ -461,7 +461,7 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
           )}
 
           {section === 'backups' && (
-            <Paper withBorder shadow="sm" radius="lg" p="lg">
+            <Paper withBorder p="lg">
               <Group justify="space-between" mb={4}>
                 <Title order={3}>{tr('Backup-Speicher', 'Backup storage')}</Title>
                 {resetButton(BACKUP)}
@@ -477,7 +477,7 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
           )}
 
           {section === 'discord-app' && (
-            <Paper withBorder shadow="sm" radius="lg" p="lg">
+            <Paper withBorder p="lg">
               <Group justify="space-between" mb={4}>
                 <Title order={3}>{tr('Discord-App', 'Discord app')}</Title>
                 {resetButton(DISCORD)}
@@ -493,7 +493,7 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
           )}
 
           {section === 'discord-channels' && (
-            <Paper withBorder shadow="sm" radius="lg" p="lg">
+            <Paper withBorder p="lg">
               <Group justify="space-between" mb={4}>
                 <Title order={3}>{tr('Plattform-Log', 'Platform log')}</Title>
                 {resetButton(DISCORD_LOG)}
@@ -589,7 +589,7 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
           )}
 
           {section === 'discord-channels' && byKey['discord.platform_roles'] && (
-            <Paper withBorder shadow="sm" radius="lg" p="lg">
+            <Paper withBorder p="lg">
               <Group justify="space-between" mb={4}>
                 <Title order={3}>
                   {tr('Rollen auf dem Plattform-Server', 'Roles on the platform server')}
@@ -630,7 +630,7 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
           </Group>
 
           {section === 'relay' && (
-            <Paper withBorder shadow="sm" radius="lg" p="lg">
+            <Paper withBorder p="lg">
               <Title order={3} mb={12}>
                 {tr('Testmail', 'Test mail')}
               </Title>

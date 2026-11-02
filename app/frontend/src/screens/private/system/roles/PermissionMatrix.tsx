@@ -56,8 +56,6 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
   return (
     <Paper
       withBorder
-      shadow="sm"
-      radius="lg"
       className="table-matrix-wrap"
       style={{ overflowX: 'auto' }}
     >
@@ -88,7 +86,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                         fontSize: 'var(--mantine-font-size-xs)',
                         fontWeight: 600,
                         color: 'var(--mantine-color-acc-9)',
-                        background: '#eef2ff',
+                        background: 'var(--mantine-color-acc-light)',
                         borderRadius: 4,
                         padding: '1px 6px',
                       }}
@@ -96,7 +94,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                       ADMIN
                     </span>
                   )}
-                  {role.isSystem && <IconLock size={11} style={{ color: 'var(--mantine-color-acc-9)' }} />}
+                  {role.isSystem && <IconLock size={12} style={{ color: 'var(--mantine-color-acc-9)' }} />}
                   {mayEdit(role) && (
                     <button
                       onClick={() => openEdit(role)}
@@ -110,7 +108,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                       }}
                       title={`Edit ${role.name}`}
                     >
-                      <IconPencil size={11} />
+                      <IconPencil size={12} />
                     </button>
                   )}
                   {mayDelete(role) && (
@@ -120,7 +118,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                         background: 'none',
                         border: 'none',
                         cursor: 'pointer',
-                        color: '#ff4d3d',
+                        color: 'var(--mantine-color-red-text)',
                         padding: 0,
                         lineHeight: 1,
                       }}
@@ -182,7 +180,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
             const isSettings = bp === 'settings_bp' || bp === 'settings'
             return (
               <Fragment key={bp}>
-                <Table.Tr style={{ background: '#f9f8fc' }}>
+                <Table.Tr style={{ background: 'var(--hb-surface-2)' }}>
                   <Table.Td
                     style={{
                       fontWeight: 700,

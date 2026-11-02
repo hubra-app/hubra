@@ -155,7 +155,7 @@ export function PostDetailScreen() {
           </Button>
         }
       />
-      <Paper withBorder shadow="sm" radius="lg" style={{ padding: '24px' }}>
+      <Paper withBorder style={{ padding: '24px' }}>
         <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
           <Avatar name={post.author} color={post.avatarColor} size={38} />
           <div>
@@ -201,12 +201,12 @@ export function PostDetailScreen() {
             <Button
               size="sm"
               variant="subtle"
-              style={{ color: liked ? '#ff4d3d' : 'var(--hb-text-2)' }}
+              style={{ color: liked ? 'var(--mantine-color-red-text)' : 'var(--hb-text-2)' }}
               onClick={toggleLike}
             >
               <IconHeart
                 size={16}
-                style={{ fill: liked ? '#ff4d3d' : 'none' }}
+                style={{ fill: liked ? 'var(--mantine-color-red-text)' : 'none' }}
               />
               {post.likes}
             </Button>
@@ -220,8 +220,6 @@ export function PostDetailScreen() {
 
       <Paper
         withBorder
-        shadow="sm"
-        radius="lg"
         style={{ marginTop: 16, padding: '24px' }}
       >
         <div
@@ -293,7 +291,7 @@ export function PostDetailScreen() {
                       <Button
                         size="compact-xs"
                         variant="subtle"
-                        style={{ color: '#ff4d3d', marginLeft: 'auto' }}
+                        style={{ color: 'var(--mantine-color-red-text)', marginLeft: 'auto' }}
                         onClick={() => removeComment(comment.id)}
                       >
                         <IconTrash size={12} />

@@ -61,7 +61,7 @@ export function ResetPassword() {
     return (
       <AuthFrame>
         <AuthIcon tone="red">
-          <IconLinkOff size={24} color="#b91c1c" />
+          <IconLinkOff size={24} color="var(--mantine-color-red-text)" />
         </AuthIcon>
         <Title order={1} fz={30} mb={8}>
           {tr('Link ungültig', 'Link not valid')}
@@ -82,7 +82,7 @@ export function ResetPassword() {
     return (
       <AuthFrame>
         <AuthIcon tone="green">
-          <IconCheck size={26} color="#1f9d57" />
+          <IconCheck size={24} color="var(--mantine-color-green-text)" />
         </AuthIcon>
         <Title order={1} fz={30} mb={8}>
           {tr('Passwort geändert', 'Password updated')}

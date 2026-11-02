@@ -505,7 +505,7 @@ export function DataTable<T>({
   )
 
   return (
-    <Paper withBorder shadow="sm" radius="lg">
+    <Paper withBorder>
       {(hasSearch || hasFlatFilters || hasFilterSlots || toolbar || viewSwitch) && (
         <div
           style={{

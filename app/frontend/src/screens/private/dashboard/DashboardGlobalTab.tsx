@@ -184,7 +184,7 @@ export function GlobalOverviewScreen() {
                 summary?.stats ? fmtNet(summary.stats.netMonth ?? 0) : "\u2014"
               }
               sub={t("dashboard.incomeMinusExpenses")}
-              accent="#1f9d57"
+              accent="var(--mantine-color-green-text)"
               onClick={() => go("/app/finance")}
             />
             <StatTile
@@ -214,7 +214,7 @@ export function GlobalOverviewScreen() {
               ? t("dashboard.nextEvent", { title: nextEventTitle })
               : t("dashboard.noneScheduled")
           }
-          accent="#2596be"
+          accent="var(--mantine-color-acc-text)"
           onClick={() => go("/app/operations/events")}
         />
       </StatGrid>

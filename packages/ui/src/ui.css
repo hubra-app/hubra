@@ -6,6 +6,7 @@
    join). Screens use these instead of hex values so they work in light and
    dark mode; packages/ui/theme.js picks the scheme before the first paint. */
 :root {
+  color-scheme: light;
   --hb-page: #f7f6fb;
   --hb-surface: #ffffff;
   --hb-surface-2: #f4f2f9;
@@ -158,6 +159,121 @@ body {
   background: var(--mantine-color-acc-1);
   color: var(--mantine-color-acc-8);
   font-weight: 600;
+}
+
+/* Log and command output (diagnostics, mail checks). */
+.terminal-block {
+  /* Dark in both schemes, like a terminal. */
+  background: #1c1a22;
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--mantine-font-size-xs);
+  color: #d6d2e3;
+  line-height: 1.7;
+  overflow-x: auto;
+}
+
+.terminal-block .ok-line {
+  color: #5fca85;
+}
+
+.terminal-block .err-line {
+  color: #ff7a6b;
+}
+
+.terminal-block .warn-line {
+  color: #fece2b;
+}
+
+/* Page content: one width and one gutter on every screen. */
+.page-container {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 32px 32px 64px;
+}
+
+@media (max-width: 48em) {
+  .page-container {
+    padding: 20px 16px 48px;
+  }
+}
+
+/* Signed-out pages (sign-in, reset, invite, apply): form beside the
+   violet brand panel, form only below 62em. */
+.auth-layout {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  background: var(--hb-surface);
+}
+
+.auth-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+}
+
+.auth-brand {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(155deg, var(--mantine-color-acc-6) 0%, var(--mantine-color-acc-7) 45%, var(--mantine-color-acc-9) 100%);
+  display: flex;
+  align-items: center;
+  padding: 64px;
+}
+
+.auth-brand::after {
+  /* the doorway of the mark, very large and faint */
+  content: "";
+  position: absolute;
+  right: -120px;
+  bottom: -140px;
+  width: 520px;
+  height: 520px;
+  background: url("/hubra-mark-white.svg") center / contain no-repeat;
+  opacity: 0.07;
+  pointer-events: none;
+}
+
+.auth-brand-inner {
+  position: relative;
+  z-index: 1;
+}
+
+.auth-brand-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--mantine-color-gold-4);
+  flex-shrink: 0;
+}
+
+@media (max-width: 62em) {
+  .auth-layout {
+    grid-template-columns: 1fr;
+  }
+  .auth-brand {
+    display: none;
+  }
+  .auth-main {
+    align-items: flex-start;
+    padding: 40px 20px;
+  }
+}
+
+/* Motion off for everyone who asks for it, on every portal. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Styles for the shared page blocks in layout.tsx. */

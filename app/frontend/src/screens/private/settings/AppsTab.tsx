@@ -116,7 +116,7 @@ export function AppsTab() {
           </Text>
         )}
         {data.providers.map((p) => (
-          <Paper key={p.code} withBorder radius="md" p="md">
+          <Paper key={p.code} withBorder p="md">
             <Group justify="space-between" wrap="nowrap" align="flex-start">
               <div style={{ minWidth: 0 }}>
                 <Text fw={600}>{p.name}</Text>
@@ -215,7 +215,7 @@ function ConnectionCard({
   }
 
   return (
-    <Paper withBorder radius="md" p="md">
+    <Paper withBorder p="md">
       <Group justify="space-between" wrap="wrap" gap="sm">
         <div style={{ minWidth: 0 }}>
           <Group gap="xs">

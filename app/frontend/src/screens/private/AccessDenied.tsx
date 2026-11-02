@@ -11,7 +11,7 @@ export function AccessDeniedScreen() {
     <div style={{ padding: 48, textAlign: 'center' }}>
       <IconShieldCheckFilled
         size={40}
-        style={{ color: '#ff4d3d', marginBottom: 16 }}
+        style={{ color: 'var(--mantine-color-red-text)', marginBottom: 16 }}
       />
       <div
         style={{

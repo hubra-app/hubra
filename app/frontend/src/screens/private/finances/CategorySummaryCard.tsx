@@ -20,7 +20,7 @@ export function CategorySummaryCard() {
   const years = Array.from({ length: 6 }, (_, i) => String(thisYear - i))
 
   return (
-    <Paper withBorder shadow="sm" radius="lg" mt="md">
+    <Paper withBorder mt="md">
       <Group p="md" gap="sm" style={{ borderBottom: '1px solid var(--hb-border)' }}>
         <Text fw={700} fz="md">
           {t('finance.summary.title', 'Nach Kategorie')}
@@ -90,14 +90,14 @@ export function CategorySummaryCard() {
                       <div
                         style={{
                           width: `${(c.income / largest) * 50}%`,
-                          background: '#1f9d57',
+                          background: 'var(--mantine-color-green-6)',
                           borderRadius: 2,
                         }}
                       />
                       <div
                         style={{
                           width: `${(c.expense / largest) * 50}%`,
-                          background: '#ff4d3d',
+                          background: 'var(--mantine-color-red-6)',
                           borderRadius: 2,
                         }}
                       />
@@ -112,7 +112,7 @@ export function CategorySummaryCard() {
                   <Table.Td data-label={t('finance.net', 'Netto')} style={{ textAlign: 'right' }}>
                     <span
                       className="num"
-                      style={{ fontWeight: 700, color: c.net < 0 ? '#ff4d3d' : '#1f9d57' }}
+                      style={{ fontWeight: 700, color: c.net < 0 ? 'var(--mantine-color-red-text)' : 'var(--mantine-color-green-text)' }}
                     >
                       {formatCHF(c.net)}
                     </span>

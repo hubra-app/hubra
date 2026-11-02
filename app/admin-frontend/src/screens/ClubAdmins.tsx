@@ -17,6 +17,7 @@ import {
 } from '@mantine/core'
 import { IconArrowLeft, IconUserMinus, IconUserPlus } from '@tabler/icons-react'
 import { PageHead } from '@/components/ui'
+import { useConfirm } from '@/components/useConfirm'
 import { useAdmin } from '@/context/AdminContext'
 import { useLang } from '@/lang'
 import { addClubAdmin, getClubAdmins, removeClubAdmin, type ClubAdmin } from '@/api/tenants'
@@ -74,9 +75,11 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
   }
 
   const owners = data?.admins.filter((a) => a.level === 'owner').length ?? 0
+  const [confirm, confirmDialog] = useConfirm()
 
   return (
-    <Paper withBorder shadow="sm" radius="lg" p="lg" mb={20}>
+    <Paper withBorder p="lg" mb={20}>
+      {confirmDialog}
       <Stack gap={4} mb={12}>
         <Title order={3}>{tr('Admins', 'Admins')}</Title>
         <Text size="sm" c="dimmed">
@@ -115,7 +118,7 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
                       <Badge
                         size="sm"
                         variant={a.level === 'owner' ? 'filled' : 'light'}
-                        color="violet"
+                        color="acc"
                       >
                         {a.level === 'owner' ? tr('Inhaber', 'Owner') : tr('Admin', 'Admin')}
                       </Badge>
@@ -134,7 +137,14 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
                               : tr('Nur Inhaber können Inhaber entfernen', 'Only an owner can remove an owner')
                             : undefined
                         }
-                        onClick={() => remove(a)}
+                        onClick={() =>
+                          confirm({
+                            title: tr(`${a.name || a.email} als Admin entfernen?`, `Remove ${a.name || a.email} as admin?`),
+                            body: tr('Die Person bleibt Mitglied im Verein.', 'They stay a member of the club.'),
+                            confirmLabel: tr('Entfernen', 'Remove'),
+                            run: () => remove(a),
+                          })
+                        }
                         loading={removing === a.user_id}
                       >
                         {tr('Entfernen', 'Remove')}

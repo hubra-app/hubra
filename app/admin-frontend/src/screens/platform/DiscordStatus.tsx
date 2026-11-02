@@ -8,6 +8,7 @@ import { formatDateTime } from '@/format'
 import { tr } from '@/lang'
 import { checkDiscordNow, getDiscordStatus, type DiscordStatus } from '@/api/platform'
 import { Row } from './StatusRow'
+import { EmptyState } from '@/components/ui'
 
 const MONO = "'JetBrains Mono', monospace"
 
@@ -55,7 +56,7 @@ function BotCard({
       : interactions.actual === interactions.expected
 
   return (
-    <Paper withBorder shadow="sm" radius="lg" p="lg">
+    <Paper withBorder p="lg">
       <Group justify="space-between" mb={8} wrap="wrap">
         <Title order={3}>{tr('Discord-Bot', 'Discord bot')}</Title>
         <Group gap={8}>
@@ -189,7 +190,7 @@ function PlatformLogCard({ s }: { s: DiscordStatus }) {
   const log = s.platformLog
   const failing = !!log.lastErrorAt && log.lastErrorAt > (log.lastOkAt ?? '')
   return (
-    <Paper withBorder shadow="sm" radius="lg" p="lg">
+    <Paper withBorder p="lg">
       <Group justify="space-between" mb={8} wrap="wrap">
         <Title order={3}>{tr('Plattform-Log', 'Platform log')}</Title>
         <Anchor size="sm" onClick={() => navigate('/app/platform/discord/channels')}>
@@ -245,7 +246,7 @@ function PlatformLogCard({ s }: { s: DiscordStatus }) {
 
 function ServersCard({ s }: { s: DiscordStatus }) {
   return (
-    <Paper withBorder shadow="sm" radius="lg" p="lg">
+    <Paper withBorder p="lg">
       <Title order={3} mb={4}>
         {tr('Vereinsserver', 'Club servers')}
       </Title>
@@ -256,9 +257,7 @@ function ServersCard({ s }: { s: DiscordStatus }) {
         )}
       </Text>
       {s.servers.length === 0 ? (
-        <Text size="sm" c="dimmed">
-          {tr('Noch kein Verein hat Discord verbunden.', 'No club has connected Discord yet.')}
-        </Text>
+        <EmptyState title={tr('Noch kein Verein hat Discord verbunden.', 'No club has connected Discord yet.')} />
       ) : (
         <Table.ScrollContainer minWidth={640}>
           <Table verticalSpacing="xs" fz="sm">
@@ -327,7 +326,7 @@ function SetupCard({ s }: { s: DiscordStatus }) {
     </Code>
   )
   return (
-    <Paper withBorder shadow="sm" radius="lg" p="lg">
+    <Paper withBorder p="lg">
       <Title order={3} mb={4}>
         {tr('Werte für das Developer Portal', 'Values for the Developer Portal')}
       </Title>
@@ -427,7 +426,7 @@ export function DiscordPanel() {
   return (
     <Stack gap={16}>
       {!s.configured && (
-        <Paper withBorder radius="lg" p="md">
+        <Paper withBorder p="md">
           <Text size="sm">
             {tr(
               'Discord ist auf dieser Plattform nicht eingerichtet. Die Schritte stehen in ',

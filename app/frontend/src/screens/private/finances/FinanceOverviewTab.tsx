@@ -52,7 +52,7 @@ export function FinanceOverviewTab() {
             overview ? formatCHFWhole(overview.incomeMTD, true) : '—'
           }
           sub={t('dashboard.thisMonth', 'Diesen Monat')}
-          accent="#1f9d57"
+          accent="var(--mantine-color-green-text)"
         />
         <StatTile
           label={t('finance.expensesMtd', 'Ausgaben diesen Monat')}
@@ -60,7 +60,7 @@ export function FinanceOverviewTab() {
             overview ? formatCHFWhole(-Math.abs(overview.expensesMTD)) : '—'
           }
           sub={t('dashboard.thisMonth', 'Diesen Monat')}
-          accent="#ff4d3d"
+          accent="var(--mantine-color-red-text)"
         />
         <StatTile
           label={t('finance.net', 'Netto')}
@@ -74,14 +74,14 @@ export function FinanceOverviewTab() {
           label={t('common.openInvoices', 'Offene Rechnungen')}
           value={String(openInvoiceCount)}
           sub={t('finance.awaitingPayment', 'Zahlung ausstehend')}
-          accent={openInvoiceCount > 0 ? '#ff4d3d' : '#1f9d57'}
+          accent={openInvoiceCount > 0 ? 'var(--mantine-color-red-text)' : 'var(--mantine-color-green-text)'}
           onClick={() => go('/app/finance/invoices')}
         />
       </div>
 
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
         {/* Bar chart */}
-        <Paper withBorder shadow="sm" radius="lg">
+        <Paper withBorder>
           <Group
             p="md"
             gap="sm"
@@ -128,7 +128,7 @@ export function FinanceOverviewTab() {
                       <div
                         style={{
                           width: '100%',
-                          background: '#1f9d57',
+                          background: 'var(--mantine-color-green-6)',
                           borderRadius: '3px 3px 0 0',
                           height: inH,
                           opacity: 0.85,
@@ -137,7 +137,7 @@ export function FinanceOverviewTab() {
                       <div
                         style={{
                           width: '100%',
-                          background: '#ff4d3d',
+                          background: 'var(--mantine-color-red-6)',
                           borderRadius: 0,
                           height: exH,
                           opacity: 0.7,
@@ -170,7 +170,7 @@ export function FinanceOverviewTab() {
                     width: 10,
                     height: 10,
                     borderRadius: 2,
-                    background: '#1f9d57',
+                    background: 'var(--mantine-color-green-6)',
                   }}
                 />
                 <span
@@ -188,7 +188,7 @@ export function FinanceOverviewTab() {
                     width: 10,
                     height: 10,
                     borderRadius: 2,
-                    background: '#ff4d3d',
+                    background: 'var(--mantine-color-red-6)',
                   }}
                 />
                 <span
@@ -205,7 +205,7 @@ export function FinanceOverviewTab() {
         </Paper>
 
         {/* Recent transactions */}
-        <Paper withBorder shadow="sm" radius="lg">
+        <Paper withBorder>
           <Group
             p="md"
             gap="sm"
@@ -281,7 +281,7 @@ export function FinanceOverviewTab() {
                           className="num"
                           style={{
                             fontWeight: 700,
-                            color: tx.type === 'income' ? '#1f9d57' : '#ff4d3d',
+                            color: tx.type === 'income' ? 'var(--mantine-color-green-text)' : 'var(--mantine-color-red-text)',
                           }}
                         >
                           {tx.type === 'income' ? '+' : ''}CHF{' '}

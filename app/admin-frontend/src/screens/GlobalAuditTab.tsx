@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Table, Paper, Text, Badge, Group, Anchor, Code } from '@mantine/core'
 import { listGlobalAudit, type GlobalAuditEntry } from '@/api/tenants'
-import { Pagination } from '@/components/ui'
+import { EmptyState, Pagination } from '@/components/ui'
 import { formatDateTime } from '@/format'
 import { tr } from '@/lang'
 import { AuditSearch } from './AuditSearch'
@@ -62,9 +62,7 @@ function EntryView() {
       )}
 
       {!isLoading && entries.length === 0 && (
-        <Text p={40} ta="center" c="dimmed">
-          {tr('Keine Einträge gefunden.', 'No entries found.')}
-        </Text>
+        <EmptyState title={tr('Keine Einträge gefunden.', 'No entries found.')} />
       )}
 
       {entries.length > 0 && (

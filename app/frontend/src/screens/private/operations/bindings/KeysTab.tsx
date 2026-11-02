@@ -132,7 +132,7 @@ export function KeysTab() {
         isValueClickable={() => false}
         renderKeySuffix={(entry) =>
           entry.is_protected ? (
-            <IconLock size={11} style={{ color: '#e65100', flexShrink: 0 }} />
+            <IconLock size={12} style={{ color: 'var(--mantine-color-orange-text)', flexShrink: 0 }} />
           ) : null
         }
         renderValue={(entry) =>
@@ -141,7 +141,7 @@ export function KeysTab() {
               {entry.masked_value}
             </span>
           ) : (
-            <em style={{ color: '#bbb' }}>{t('bindings.empty', 'leer')}</em>
+            <em style={{ color: 'var(--hb-text-3)' }}>{t('bindings.empty', 'leer')}</em>
           )
         }
         extraColumns={[
@@ -153,7 +153,7 @@ export function KeysTab() {
               entry.label ? (
                 <span style={{ color: 'var(--hb-text-2)' }}>{entry.label}</span>
               ) : (
-                <em style={{ color: '#bbb' }}>{'\u2014'}</em>
+                <em style={{ color: 'var(--hb-text-3)' }}>{'\u2014'}</em>
               ),
           },
           {
@@ -168,8 +168,8 @@ export function KeysTab() {
                   root: {
                     fontSize: 'var(--mantine-font-size-xs)',
                     padding: '1px 6px',
-                    background: entry.allow_multiple ? '#e8f5e9' : '#e3f2fd',
-                    color: entry.allow_multiple ? '#2e7d32' : '#1565c0',
+                    background: entry.allow_multiple ? 'var(--mantine-color-green-light)' : 'var(--mantine-color-acc-light)',
+                    color: entry.allow_multiple ? 'var(--mantine-color-green-text)' : 'var(--mantine-color-acc-light-color)',
                   },
                 }}
               >
@@ -190,8 +190,8 @@ export function KeysTab() {
                     root: {
                       fontSize: 'var(--mantine-font-size-xs)',
                       padding: '1px 6px',
-                      background: '#fff3e0',
-                      color: '#e65100',
+                      background: 'var(--mantine-color-orange-light)',
+                      color: 'var(--mantine-color-orange-text)',
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: 3,
@@ -217,7 +217,7 @@ export function KeysTab() {
                   {formatRelative(entry.updated_at)}
                 </span>
               ) : (
-                <em style={{ color: '#bbb' }}>{'\u2014'}</em>
+                <em style={{ color: 'var(--hb-text-3)' }}>{'\u2014'}</em>
               ),
           },
         ]}
@@ -259,7 +259,7 @@ export function KeysTab() {
                 <Button
                   variant="subtle"
                   onClick={() => setDeleteTarget(entry)}
-                  style={{ padding: '4px 7px', color: '#c0392b' }}
+                  style={{ padding: '4px 7px', color: 'var(--mantine-color-red-text)' }}
                   title={t('common.delete', 'Löschen')}
                 >
                   <IconTrash size={16} />
