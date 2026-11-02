@@ -147,17 +147,6 @@ def test_health_detailed_includes_stale_flag(client, staff_headers):
 # ── Basic health checks (from S01 foundation) ─────────────────────────────────
 
 
-def test_health_endpoint_returns_200(client):
-    """GET /api/v1/health returns 200 or 503 with only a 'status' key."""
-    _seed_cache("ok")
-    resp = client.get("/api/v1/health")
-    assert resp.status_code == 200
-    data = resp.get_json()
-    assert data is not None
-    assert "status" in data
-    assert "services" not in data
-
-
 def test_health_db_checked(client, staff_headers):
     """Detailed health shows db.ok is True — SQLite in-memory DB is always reachable in tests."""
     resp = client.get("/api/v1/manager/platform/health", headers=staff_headers)

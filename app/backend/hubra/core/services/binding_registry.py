@@ -261,11 +261,6 @@ def build_attribute_registry() -> dict[str, dict[str, str]]:
     return registry
 
 
-def get_attributes_for_type(binding_type: str) -> dict[str, str]:
-    """Return the attribute -> label map for the given type."""
-    return build_attribute_registry().get(binding_type, {})
-
-
 def is_valid_attribute(binding_type: str, attribute: str) -> bool:
     """Check if an attribute is valid for the given type.
 

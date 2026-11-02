@@ -109,18 +109,6 @@ def downgrade_everywhere(spec: Spec) -> list[str | None]:
     return done
 
 
-def upgrade_schema(spec: Spec, schema: str) -> None:
-    """Migrate one club's schema (a club created after the install)."""
-    conn = db.session.connection()
-    if spec.migrations_dir is None:
-        return
-    conn.execute(text(f'SET search_path TO "{schema}", public'))
-    try:
-        command.upgrade(_config(spec, conn, schema), "heads")
-    finally:
-        conn.execute(text("SET search_path TO public"))
-
-
 def revision(spec: Spec, message: str, autogenerate: bool) -> None:
     """``flask plugins revision``: a new migration in the plugin's folder."""
     if spec.migrations_dir is None:

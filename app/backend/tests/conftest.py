@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from tests.xdist_postgres import database_for_worker
+
 os.environ.setdefault("FLASK_ENV", "testing")
 # Backups run "pg_dump" from PATH in tests (the fakes match on that name),
 # not the versioned clients a developer machine may have installed.
@@ -17,6 +19,12 @@ os.environ.setdefault(
         ]
     ),
 )
+
+# On Postgres with pytest -n, each worker gets its own database.
+if os.environ.get("TEST_DATABASE_URL"):
+    os.environ["TEST_DATABASE_URL"] = database_for_worker(
+        os.environ["TEST_DATABASE_URL"]
+    )
 
 from unittest.mock import patch
 

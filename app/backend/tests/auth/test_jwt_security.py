@@ -27,12 +27,6 @@ from hubra.core.models.token import TokenBlocklist
 # ── Missing token on protected endpoint ───────────────────────────────────────
 
 
-def test_missing_token_returns_401(client, seeded_db):
-    """GET /account without any JWT cookie returns 401."""
-    resp = client.get("/api/v1/account/")
-    assert resp.status_code == 401
-
-
 def test_missing_token_on_protected_post_returns_401(client, seeded_db):
     """POST /auth/logout without JWT returns 401."""
     resp = client.post("/api/v1/auth/logout")

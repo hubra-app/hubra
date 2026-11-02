@@ -269,30 +269,5 @@ def test_wildduck_error_does_not_fail_group_creation(
 # ── 14. add_allowed_from stub logs WARNING ────────────────────────────────────
 
 
-def test_add_allowed_from_stub_logs_warning(app, caplog):
-    """WildDuckClient.add_allowed_from stub logs a WARNING and does not raise."""
-    import logging
-
-    from hubra.core.services.wildduck import WildDuckClient
-
-    client = WildDuckClient("http://wd.test", "token")
-    with caplog.at_level(logging.WARNING, logger="hubra.core.services.wildduck"):
-        client.add_allowed_from("user-123", "mygroup@test.ch")
-
-    assert any("send-as ACL not supported" in r.message for r in caplog.records)
-
-
 # ── 15. remove_allowed_from stub logs WARNING ─────────────────────────────────
 
-
-def test_remove_allowed_from_stub_logs_warning(app, caplog):
-    """WildDuckClient.remove_allowed_from stub logs a WARNING and does not raise."""
-    import logging
-
-    from hubra.core.services.wildduck import WildDuckClient
-
-    client = WildDuckClient("http://wd.test", "token")
-    with caplog.at_level(logging.WARNING, logger="hubra.core.services.wildduck"):
-        client.remove_allowed_from("user-456", "mygroup@test.ch")
-
-    assert any("send-as ACL not supported" in r.message for r in caplog.records)

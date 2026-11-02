@@ -449,31 +449,6 @@ def _send(
         return False
 
 
-def send_welcome(
-    to_address: str,
-    name: str,
-    login_email: str,
-    temp_password: str,
-    *,
-    lang: str = DEFAULT_LANG,
-) -> None:
-    """Send new-member welcome email with temporary credentials."""
-    club_name = club_display_name()
-    base = _get_base_url()
-    login_url = f"{base}/login" if base else "the member portal"
-
-    body_html, body_text, subject = render_mail_template(
-        "welcome",
-        locale=lang,
-        name=name,
-        club_name=club_name,
-        login_email=login_email,
-        temp_password=temp_password,
-        login_url=login_url,
-    )
-    _send(to_address, name, subject, body_html, body_text)
-
-
 def send_club_invite(
     to_address: str,
     name: str,

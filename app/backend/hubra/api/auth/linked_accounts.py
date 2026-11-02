@@ -247,12 +247,3 @@ def unlink(code: str):
     db.session.commit()
     return jsonify({"ok": True}), 200
 
-
-def linked_user_id(code: str, external_id: str) -> int | None:
-    """The Hubra account an outside account belongs to, for providers."""
-    return db.session.scalar(
-        select(ExternalAccount.user_id).where(
-            ExternalAccount.provider == code,
-            ExternalAccount.external_id == str(external_id),
-        )
-    )

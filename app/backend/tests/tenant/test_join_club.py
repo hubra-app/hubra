@@ -4,7 +4,6 @@ SQLite has no schemas, so every "club" here shares one members table; each
 test uses its own users and club slugs.
 """
 
-from unittest.mock import patch
 
 from flask import g
 from sqlalchemy import select
@@ -157,27 +156,6 @@ def test_approving_links_the_existing_account(app, db):
             UserTenant.user_id == user.id, UserTenant.tenant_id == tenant.id
         )
     ) is not None
-
-
-def test_approve_skips_the_temp_password_mail_for_existing_accounts(
-    client, db, seeded_db
-):
-    """The welcome mail carries a temporary password that a join request doesn't have."""
-    user = User(email="known@test.ch", first_name="Kim", last_name="Known")
-    user.set_password(PASSWORD)
-    db.session.add(user)
-    application = Application(name="Kim Known", email="known@test.ch")
-    db.session.add(application)
-    db.session.commit()
-
-    client.post(
-        "/api/v1/auth/login",
-        json={"email": "admin@test.ch", "password": "password123"},
-    )
-    with patch("hubra.core.services.email.send_welcome") as send_welcome:
-        resp = client.post(f"/api/v1/applications/{application.id}/approve")
-    assert resp.status_code == 201, resp.get_json()
-    send_welcome.assert_not_called()
 
 
 # ── The club's join page on SSO (replaces the club app's /apply form) ─────────

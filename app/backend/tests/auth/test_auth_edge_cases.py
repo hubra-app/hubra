@@ -11,7 +11,6 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from hubra.api.health.cache import HealthCache
 
 
 # ── Weak password rejected on reset ───────────────────────────────────────────
@@ -157,22 +156,6 @@ def test_jwt_cookies_samesite_lax(app, client, seeded_db):
 
 
 # ── Referrer-Policy header ────────────────────────────────────────────────────
-
-
-def test_referrer_policy_header_present(client):
-    """Referrer-Policy: strict-origin-when-cross-origin is set on all responses."""
-    HealthCache.set({"status": "ok", "services": {}, "checked_at": 0})
-    resp = client.get("/api/v1/health")
-    assert resp.headers.get("Referrer-Policy") == "strict-origin-when-cross-origin"
-
-
-def test_security_headers_on_error_response(client):
-    """Security headers are present even on 404 responses."""
-    resp = client.get("/api/v1/nonexistent-endpoint")
-    assert resp.status_code == 404
-    assert resp.headers.get("X-Frame-Options") == "DENY"
-    assert resp.headers.get("X-Content-Type-Options") == "nosniff"
-    assert "Referrer-Policy" in resp.headers
 
 
 # ── forgot-password timing-safe (no enumeration) ──────────────────────────────

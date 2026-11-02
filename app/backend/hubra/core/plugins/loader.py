@@ -59,13 +59,6 @@ class PluginSet:
     def get(self, pid: str) -> Spec | None:
         return self.specs.get(pid)
 
-    def for_module(self, code: str) -> Spec | None:
-        for s in self.specs.values():
-            if s.loaded and code in s.module_codes:
-                return s
-        return None
-
-
 # One per process, like the module registry it feeds.
 _current = PluginSet()
 

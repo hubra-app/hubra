@@ -1,12 +1,11 @@
-"""Tenant context helpers — current_tenant, search_path, tenant_required."""
+"""Tenant context helpers — current_tenant and search_path."""
 
 from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
-from functools import wraps
 
-from flask import g, has_app_context, jsonify
+from flask import g, has_app_context
 from sqlalchemy import event, text
 
 from hubra.core.extensions import db
@@ -83,20 +82,3 @@ def install_search_path_guard() -> None:
     if not event.contains(db.session, "after_begin", _restore_search_path):
         event.listen(db.session, "after_begin", _restore_search_path)
 
-
-def tenant_required(fn):
-    """Decorator: reject the request if no tenant was resolved.
-
-    Returns 404 with NO_TENANT error when the tenant slug is unknown
-    or the tenant is not active.
-    """
-
-    @wraps(fn)
-    def wrapper(*args, **kwargs):
-        if current_tenant() is None:
-            return jsonify(
-                {"error": "NO_TENANT", "message": "Unknown or inactive tenant"}
-            ), 404
-        return fn(*args, **kwargs)
-
-    return wrapper

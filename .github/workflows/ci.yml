@@ -191,6 +191,9 @@ jobs:
         run: shellcheck deploy/create-secrets.sh scripts/init-env.sh scripts/smoke-test.sh scripts/image-reuse.sh app/deploy/nginx/40-hubra-runtime.sh
 
   # Backend unit tests on in-memory SQLite (TestingConfig); no services needed.
+  # pytest -n auto runs them on every CPU of the runner (pytest-xdist); each
+  # worker has its own in-memory database. release-checks.yml runs the same
+  # suite once more on Postgres.
   backend-tests:
     needs: changes
     if: needs.changes.outputs.backend == 'true'
@@ -206,10 +209,10 @@ jobs:
           cache: pip
           cache-dependency-path: app/backend/requirements.lock
       - run: pip install --no-deps --require-hashes -r requirements.lock
-      - run: pip install pytest pytest-flask
+      - run: pip install pytest pytest-flask pytest-xdist
       # age encrypts backups; tests/test_backup_age.py runs the real tool.
       - run: sudo apt-get install -y --no-install-recommends age
-      - run: pytest -q
+      - run: pytest -q -n auto
 
   # Frontend unit tests (vitest in the club app, node --test in SSO).
   frontend-tests:
