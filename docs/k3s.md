@@ -119,7 +119,9 @@ with SSL mode **Full (strict)**.
 - **Deploy a new build:** publish a GitHub release (or run the Images
   workflow by hand), then pin `newTag` in `deploy/app/kustomization.yaml`
   (or your overlay) to the release (`1.2.3`) or the build tag
-  (`sha-<commit>`) and push. `latest` follows the newest release, but
+  (`sha-<commit>`) and push. Better, paste the digest block from the end of
+  the Images run summary: images that did not change keep their digest, so
+  only the rebuilt ones restart. `latest` follows the newest build, but
   Kubernetes doesn't notice a moved tag; with `latest`, run
   `kubectl -n hubra rollout restart deployment` after the workflow finishes.
   With Flux image automation, point the ImagePolicy at the sortable

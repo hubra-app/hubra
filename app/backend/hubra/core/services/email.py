@@ -665,3 +665,37 @@ def send_club_request_rejected(
         start_url=f"{sso}/start" if sso else "",
     )
     return _send(to_address, name, subject, body_html, body_text, system=True)
+
+
+def send_support_case_update(
+    to_address: str,
+    name: str,
+    *,
+    case_id: int,
+    kind: str,
+    title: str,
+    status: str,
+    comment: str | None = None,
+    merged_into: str | None = None,
+    lang: str = DEFAULT_LANG,
+) -> bool:
+    """Tell a reporter that the Hubra team answered their problem report or
+    feature request, changed its status or merged it.  True when sent."""
+    from hubra.core.services.mail_i18n import get_mail_translator
+
+    t = get_mail_translator(lang)
+    base = _get_base_url()
+    body_html, body_text, subject = render_mail_template(
+        "support_case_update",
+        locale=lang,
+        name=name,
+        club_name="Hubra",
+        case_id=case_id,
+        case_kind=t(f"mail.email.support_case.kind_{kind}"),
+        case_title=title,
+        status_label=t(f"mail.email.support_case.status_{status}"),
+        comment=comment or "",
+        merged_into=merged_into or "",
+        cases_url=f"{base}/app/feedback" if base else "",
+    )
+    return _send(to_address, name, subject, body_html, body_text, system=True)

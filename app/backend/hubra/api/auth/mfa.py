@@ -220,6 +220,20 @@ def factor_removed(user: User) -> None:
     """Drop the recovery codes once no second step is left.  No commit."""
     if not enabled(user):
         user.recovery_codes = None
+        _staff_lost_mfa(user)
+
+
+def _staff_lost_mfa(user: User) -> None:
+    """Platform staff without a second step: a ping in the platform log
+    (sent after the commit)."""
+    try:
+        from hubra.core.services import platform_bot
+
+        platform_bot.staff_mfa_off(user)
+    except Exception:  # noqa: BLE001
+        import logging
+
+        logging.getLogger(__name__).debug("staff 2FA ping skipped", exc_info=True)
 
 
 # ── Setup ────────────────────────────────────────────────────────────────────
@@ -275,6 +289,7 @@ def disable(user: User) -> None:
     user.totp_enabled_at = None
     user.totp_last_step = None
     user.recovery_codes = None
+    _staff_lost_mfa(user)
 
 
 # ── Recovery codes ───────────────────────────────────────────────────────────

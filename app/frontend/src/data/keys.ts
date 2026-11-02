@@ -19,6 +19,12 @@ export const qk = {
   notifications: ['notifications'] as const,
   changelog: (lang: string) => ['changelog', lang] as const,
   roadmap: ['roadmap'] as const,
+  support: {
+    all: ['support'] as const,
+    mine: ['support', 'mine'] as const,
+    case: (id: number) => ['support', 'case', id] as const,
+    roadmap: ['support', 'roadmap'] as const,
+  },
 
   account: {
     all: ['account'] as const,

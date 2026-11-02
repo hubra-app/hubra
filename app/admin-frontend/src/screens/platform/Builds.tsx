@@ -31,7 +31,7 @@ async function frontendCommit(base: string): Promise<string | undefined> {
 }
 
 /** Short hash linked to the commit, or "dev" for a build without one. */
-function CommitLink({ sha }: { sha: string | null }) {
+export function CommitLink({ sha }: { sha: string | null }) {
   if (!sha) {
     return (
       <Badge variant="light" color="gray" size="sm">

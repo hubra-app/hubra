@@ -60,6 +60,12 @@ _DEFAULT_PERMISSIONS = [
         "View platform diagnostics",
         "System health, outbound mail and the event log, the shared mail server and the API permission table",
     ),
+    (
+        "support.cases",
+        "Handle support cases",
+        "Read problem reports and feature requests, answer, close and merge them, "
+        "and put ideas on the public roadmap",
+    ),
 ]
 
 # (role_name, description, [permission_keys])
@@ -82,6 +88,7 @@ _DEFAULT_ROLES = [
             "roles.manage",
             "platform.settings",
             "platform.diagnostics",
+            "support.cases",
         ],
     ),
     (
@@ -105,6 +112,7 @@ _DEFAULT_ROLES = [
             "audit.read",
             "impersonate",
             "platform.diagnostics",
+            "support.cases",
         ],
     ),
     ("Requester", "Any authenticated user — can submit tenant requests", []),

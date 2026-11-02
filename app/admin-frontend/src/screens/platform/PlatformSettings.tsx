@@ -10,6 +10,7 @@ import {
   Paper,
   PasswordInput,
   Stack,
+  Switch,
   Table,
   Text,
   TextInput,
@@ -54,8 +55,8 @@ const DISCORD = [
   'discord.bot_token',
 ]
 
-const DISCORD_LOG = ['discord.log_channel_id', 'discord.log_events']
-const DISCORD_AUDIT = ['discord.audit_channel_id']
+const DISCORD_LOG = ['discord.log_channel_id', 'discord.audit_channel_id', 'discord.log_events']
+const DISCORD_ROLES = ['discord.platform_roles']
 // Defaults built into Hubra, not read from the environment.
 const PERF = ['perf.slow_request_ms', 'perf.slow_query_ms', 'perf.p95_warning_ms']
 const PLANS = ['starter', 'growth', 'enterprise'] as const
@@ -76,8 +77,8 @@ const LOG_CATEGORIES: [string, string, string][] = [
   ],
   [
     'requests',
-    'Vereinsanfragen eingereicht, angenommen, abgelehnt',
-    'Club requests submitted, approved, rejected',
+    'Vereinsanfragen eingereicht, angenommen, abgelehnt (mit Knöpfen Annehmen / Ablehnen)',
+    'Club requests submitted, approved, rejected (with Approve / Reject buttons)',
   ],
   [
     'access',
@@ -109,10 +110,27 @@ const LOG_CATEGORIES: [string, string, string][] = [
     'Systemwarnungen: fehlgeschlagene Tasks, Fehlerrate, Infrastruktur',
     'System alerts: failed tasks, error rate, infrastructure',
   ],
+  [
+    'digest',
+    'Tagesübersicht um 08:00: neue Vereine, Konten, Mails, offene Probleme',
+    'Daily overview at 08:00: new clubs, sign-ups, mail, open problems',
+  ],
+  [
+    'releases',
+    'Neue Hubra-Version läuft, mit den Neuerungen',
+    'A new Hubra version is running, with its release notes',
+  ],
+  [
+    'security',
+    'Sicherheit: Admins auf neuem Gerät oder ohne Zwei-Faktor, viele Fehlanmeldungen, alte Schlüssel',
+    'Security: admins on new devices or without two-factor, many failed sign-ins, old keys',
+  ],
 ]
 
 // View Channel + Send Messages + Embed Links
 const LOG_BOT_PERMISSIONS = (1 << 10) | (1 << 11) | (1 << 14)
+// Manage Roles, only asked for when the bot keeps the platform server's roles.
+const MANAGE_ROLES = 1 << 28
 
 const TABS = [
   'mail',
@@ -327,29 +345,30 @@ export function PlatformSettings() {
     .filter(Boolean)
   const clientId = byKey['discord.client_id']?.value ?? ''
   const logChanged = changed.some((s) => DISCORD_LOG.includes(s.key))
-  const auditChanged = changed.some((s) => DISCORD_AUDIT.includes(s.key))
+  const logChannel =
+    draft['discord.log_channel_id'] ?? byKey['discord.log_channel_id']?.value ?? ''
+  const auditChannel =
+    draft['discord.audit_channel_id'] ?? byKey['discord.audit_channel_id']?.value ?? ''
   const manageUrl = byKey['alerts.manage_url']?.value ?? ''
 
-  const botAddLink =
-    clientId ? (
-      <Anchor
-        href={`https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&scope=bot&permissions=${LOG_BOT_PERMISSIONS}`}
-        target="_blank"
-        rel="noreferrer"
-      >
-        {tr(
-          'Bot zum Plattform-Server hinzufügen',
-          'Add the bot to the platform server',
-        )}
-      </Anchor>
-    ) : (
-      <Text span size="sm" c="dimmed">
-        {tr(
-          'Zuerst die Discord-Anwendungs-ID oben eintragen.',
-          'Set the Discord application ID above first.',
-        )}
-      </Text>
-    )
+  const rolesOn =
+    (draft['discord.platform_roles'] ?? byKey['discord.platform_roles']?.value) === 'on'
+  const botAddLink = clientId ? (
+    <Anchor
+      href={`https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&scope=bot&permissions=${LOG_BOT_PERMISSIONS | (rolesOn ? MANAGE_ROLES : 0)}`}
+      target="_blank"
+      rel="noreferrer"
+    >
+      {tr('Bot zum Plattform-Server hinzufügen', 'Add the bot to the platform server')}
+    </Anchor>
+  ) : (
+    <Text span size="sm" c="dimmed">
+      {tr(
+        'Zuerst die Discord-Anwendungs-ID oben eintragen.',
+        'Set the Discord application ID above first.',
+      )}
+    </Text>
+  )
 
   const field = (key: string) => {
     const s = byKey[key]
@@ -603,19 +622,36 @@ export function PlatformSettings() {
               </Group>
               <Text size="xs" c="dimmed" mb={12}>
                 {tr(
-                  'Der Hubra-Bot meldet Plattform-Ereignisse in einen Kanal auf dem Discord-Server der Plattform: neue Vereine und Anfragen, Rollen, Plugins, Backups, Einstellungen und Systemwarnungen. Braucht den Bot-Token oben.',
-                  "The Hubra bot posts platform events to a channel on the platform's own Discord server: new clubs and requests, roles, plugins, backups, settings and system alerts. Needs the bot token above.",
+                  'Der Hubra-Bot meldet Plattform-Ereignisse auf dem Discord-Server der Plattform: neue Vereine und Anfragen, Rollen, Plugins, Backups, Einstellungen und Systemwarnungen. Mit einem Audit-Kanal gehen die Audit-Einträge dorthin und das Plattform-Log behält die Warnungen; jede Meldung kommt nur einmal. Braucht den Bot-Token oben.',
+                  "The Hubra bot posts platform events on the platform's own Discord server: new clubs and requests, roles, plugins, backups, settings and system alerts. With an audit channel, audit entries go there and the platform log keeps the alerts; each post goes out once. Needs the bot token above.",
                 )}
               </Text>
               <Stack gap="sm">
                 <DiscordLogPicker
-                  channelId={
-                    draft['discord.log_channel_id'] ?? byKey['discord.log_channel_id']?.value ?? ''
-                  }
-                  onChange={(id) => setDraft((d) => ({ ...d, 'discord.log_channel_id': id }))}
                   botTokenSet={!!byKey['discord.bot_token']?.isSet}
                   addLink={botAddLink}
-                  fallback={field('discord.log_channel_id')}
+                  slots={[
+                    {
+                      label: tr('Kanal für das Plattform-Log', 'Channel for the platform log'),
+                      description: tr(
+                        'Systemwarnungen, und alles Angehakte, solange es keinen Audit-Kanal gibt.',
+                        'System alerts, and everything ticked while there is no audit channel.',
+                      ),
+                      channelId: logChannel,
+                      onChange: (id) => setDraft((d) => ({ ...d, 'discord.log_channel_id': id })),
+                      fallback: field('discord.log_channel_id'),
+                    },
+                    {
+                      label: tr('Audit-Kanal (optional)', 'Audit channel (optional)'),
+                      description: tr(
+                        'Gewählt: Die Einträge aus dem Audit-Log gehen nur hierhin, mit Links in manage. Leer: aus.',
+                        'Picked: audit log entries go here only, with links into manage. Empty: off.',
+                      ),
+                      channelId: auditChannel,
+                      onChange: (id) => setDraft((d) => ({ ...d, 'discord.audit_channel_id': id })),
+                      fallback: field('discord.audit_channel_id'),
+                    },
+                  ]}
                 />
                 <Checkbox.Group
                   label={
@@ -642,50 +678,6 @@ export function PlatformSettings() {
                     ))}
                   </Stack>
                 </Checkbox.Group>
-                <Group>
-                  <Button
-                    variant="light"
-                    loading={testingDiscord === 'log'}
-                    disabled={logChanged || !byKey['discord.log_channel_id']?.value}
-                    onClick={() => sendDiscordTest('log')}
-                  >
-                    {tr('Testnachricht senden', 'Send test message')}
-                  </Button>
-                  {logChanged && (
-                    <Text size="xs" c="dimmed">
-                      {tr('Zuerst speichern.', 'Save first.')}
-                    </Text>
-                  )}
-                </Group>
-              </Stack>
-            </Paper>
-          )}
-
-          {tab === 'discord' && (
-            <Paper withBorder shadow="sm" radius="lg" p="lg">
-              <Group justify="space-between" mb={4}>
-                <Title order={3}>{tr('Audit-Kanal', 'Audit channel')}</Title>
-                {resetButton(DISCORD_AUDIT)}
-              </Group>
-              <Text size="xs" c="dimmed" mb={12}>
-                {tr(
-                  'Optional: Ein zweiter Kanal bekommt jeden Eintrag im Audit-Log, egal was oben angehakt ist, mit Links zum Eintrag, zum Verein und zur passenden Seite in manage. Systemwarnungen bleiben im Plattform-Log. Ohne Kanal ist er aus.',
-                  'Optional: a second channel gets every entry of the audit log, whatever is ticked above, with links to the entry, the club and the matching page in manage. System alerts stay in the platform log. Off until you pick a channel.',
-                )}
-              </Text>
-              <Stack gap="sm">
-                <DiscordLogPicker
-                  channelLabel={tr('Kanal für das Audit-Log', 'Channel for the audit log')}
-                  channelId={
-                    draft['discord.audit_channel_id'] ??
-                    byKey['discord.audit_channel_id']?.value ??
-                    ''
-                  }
-                  onChange={(id) => setDraft((d) => ({ ...d, 'discord.audit_channel_id': id }))}
-                  botTokenSet={!!byKey['discord.bot_token']?.isSet}
-                  addLink={botAddLink}
-                  fallback={field('discord.audit_channel_id')}
-                />
                 {!manageUrl && (
                   <Text size="xs" c="orange">
                     {tr(
@@ -705,19 +697,60 @@ export function PlatformSettings() {
                 <Group>
                   <Button
                     variant="light"
-                    loading={testingDiscord === 'audit'}
-                    disabled={auditChanged || !byKey['discord.audit_channel_id']?.value}
-                    onClick={() => sendDiscordTest('audit')}
+                    loading={testingDiscord === 'log'}
+                    disabled={logChanged || !byKey['discord.log_channel_id']?.value}
+                    onClick={() => sendDiscordTest('log')}
                   >
-                    {tr('Testnachricht senden', 'Send test message')}
+                    {tr('Test ins Plattform-Log', 'Test the platform log')}
                   </Button>
-                  {auditChanged && (
+                  {byKey['discord.audit_channel_id']?.value && (
+                    <Button
+                      variant="light"
+                      loading={testingDiscord === 'audit'}
+                      disabled={logChanged}
+                      onClick={() => sendDiscordTest('audit')}
+                    >
+                      {tr('Test in den Audit-Kanal', 'Test the audit channel')}
+                    </Button>
+                  )}
+                  {logChanged && (
                     <Text size="xs" c="dimmed">
                       {tr('Zuerst speichern.', 'Save first.')}
                     </Text>
                   )}
                 </Group>
               </Stack>
+            </Paper>
+          )}
+
+          {tab === 'discord' && byKey['discord.platform_roles'] && (
+            <Paper withBorder shadow="sm" radius="lg" p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>
+                  {tr('Rollen auf dem Plattform-Server', 'Roles on the platform server')}
+                </Title>
+                {resetButton(DISCORD_ROLES)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Wer sein Discord-Konto verknüpft hat, bekommt auf dem Server des Plattform-Logs automatisch die passenden Rollen: Plattform-Admin (mit Zwei-Faktor), Vereinsinhaber, Vereinsadmin und Vereinsmitglied. Der Bot macht die Rollen selbst, ohne Rechte; was sie sehen dürfen, stellst du in Discord ein. Andere Rollen fasst er nie an. Ausschalten löscht diese Rollen wieder.',
+                  'Everyone who linked their Discord account gets the matching roles on the platform log’s server: Plattform-Admin (with two-factor), Vereinsinhaber (club owner), Vereinsadmin (club admin) and Vereinsmitglied (club member). The bot makes these roles itself, without permissions; what they may see is set in Discord. It never touches other roles. Turning this off deletes the roles again.',
+                )}
+              </Text>
+              <Switch
+                label={tr('Rollen automatisch vergeben', 'Give roles automatically')}
+                checked={rolesOn}
+                onChange={(e) => {
+                  const on = e.currentTarget.checked
+                  setDraft((d) => ({ ...d, 'discord.platform_roles': on ? 'on' : 'off' }))
+                }}
+              />
+              <Text size="xs" c="dimmed" mt={8}>
+                {tr(
+                  'Braucht das Recht «Rollen verwalten» für den Bot auf diesem Server. Änderungen kommen innert zehn Minuten an.',
+                  'The bot needs the “Manage Roles” permission on this server. Changes arrive within ten minutes.',
+                )}
+              </Text>
             </Paper>
           )}
 

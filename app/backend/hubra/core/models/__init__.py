@@ -17,6 +17,7 @@ from hubra.core.models.user_tenant import UserTenant
 from hubra.core.models.tenant_request import TenantRequest
 from hubra.core.models.platform_setting import PlatformSetting
 from hubra.core.models.platform_event import PlatformEvent
+from hubra.core.models.error_group import ErrorGroup
 from hubra.core.models.maintenance_window import MaintenanceWindow
 from hubra.core.models.role import MemberRoleScope, Permission, Role, RolePermission
 from hubra.core.models.global_role import (
@@ -56,6 +57,11 @@ from hubra.core.models.setting import Setting
 from hubra.core.models.feature import Feature, TenantFeature
 from hubra.core.models.translation import Translation
 from hubra.core.models.translation_request import TranslationRequest
+from hubra.core.models.support_case import (
+    SupportCase,
+    SupportCaseComment,
+    SupportCaseVote,
+)
 from hubra.core.models.notification import Notification
 from hubra.core.models.audit import AuditEntry
 from hubra.core.models.token import TokenBlocklist
@@ -93,6 +99,7 @@ from hubra.core.models.plugin import (
 
 __all__ = [
     "PlatformEvent",
+    "ErrorGroup",
     "MaintenanceWindow",
     "AccountSession",
     "KnownDevice",
@@ -155,6 +162,9 @@ __all__ = [
     "TenantFeature",
     "Translation",
     "TranslationRequest",
+    "SupportCase",
+    "SupportCaseComment",
+    "SupportCaseVote",
     "Notification",
     "AuditEntry",
     "TokenBlocklist",
