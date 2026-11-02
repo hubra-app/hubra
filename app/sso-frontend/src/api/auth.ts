@@ -518,3 +518,36 @@ export async function startLinkAccount(provider: string): Promise<{ url: string 
 export async function unlinkAccount(provider: string): Promise<void> {
   await apiFetch(`/account/linked-accounts/${provider}`, { method: 'DELETE' })
 }
+
+// ── Confirming a platform action (manage's step-up) ─────────────────────────
+
+export interface StepUpStatus {
+  /** Until when this sign-in counts as confirmed, or null. */
+  sudoUntil: string | null
+  /** The account has a passkey (and passkeys work here). */
+  passkey: boolean
+  /** The account has the authenticator app on. */
+  code: boolean
+}
+
+export async function getStepUpStatus(signal?: AbortSignal): Promise<StepUpStatus> {
+  return apiFetch<StepUpStatus>('/account/step-up', { signal })
+}
+
+/** A challenge tied to this account and this sign-in. */
+export async function stepUpPasskeyOptions(): Promise<PasskeyCeremony> {
+  return apiFetch<PasskeyCeremony>('/account/step-up/passkey/options', {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
+
+export async function stepUpWithPasskey(
+  state: string,
+  credential: Record<string, unknown>,
+): Promise<{ sudoUntil: string }> {
+  return apiFetch('/account/step-up/passkey', {
+    method: 'POST',
+    body: JSON.stringify({ state, credential }),
+  })
+}
