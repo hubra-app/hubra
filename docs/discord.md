@@ -78,10 +78,18 @@ It never asks for Administrator.
 
 | Server | OAuth2 scopes | Permissions | When |
 | --- | --- | --- | --- |
-| A club's server | `bot`, `applications.commands` | View Channels, Send Messages, Embed Links | the club allows "announce" or "commands" |
+| A club's server | `bot`, `applications.commands` | Change Nickname | always (the bot takes the club's name) |
+| | | View Channels, Send Messages, Embed Links | the club allows "announce" or "commands" |
 | | | Manage Roles | the club allows "roles" |
 | The platform's own server (platform log) | `bot` | View Channels, Send Messages, Embed Links (`19456`) | always |
 | Member account link | `identify` | none | a member links their account |
+
+On a club's server the bot shows the club's name, logo and a short bio
+(plugin 2.1+, per server, so other servers still see Hubra). The app's own
+name, icon and description in the Developer Portal are what every other
+place shows: give it the Hubra mark (square PNG, 512 px or more) and a line
+such as "The Hubra bot for your club: events, posts, polls, reminders,
+sign-ups and roles that follow your groups."
 
 Manage Roles only works on roles **below the bot's own role** in the server's
 role list. Drag the Hubra role above the roles the club maps.
