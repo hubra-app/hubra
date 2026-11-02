@@ -28,7 +28,9 @@ commit, with every image built from source. Then, per image,
 `scripts/image-reuse.sh` reads the image's `last-build` tag on GHCR and the
 commit it was built from (the `org.opencontainers.image.revision` label):
 
-- **Files changed since then:** build, push and scan, as before.
+- **Files changed since then:** build, push and scan, as before. Text files
+  (Markdown, `README`, `.gitignore`) do not count, except `CHANGELOG.md` and
+  `CHANGELOG.de.md`, which the backend image serves as "What's new".
 - **Unchanged:** no build. The last build gets this run's tags with
   `docker buildx imagetools create`, which copies tags in the registry and
   keeps the digest. Trivy still scans it.

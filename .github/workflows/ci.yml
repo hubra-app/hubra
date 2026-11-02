@@ -49,6 +49,10 @@ jobs:
   #   backend tests      app/backend/, plugins/, settings.yaml
   #   frontend tests     app/*frontend/, packages/, plugins/
   #   browser tests      the same paths, on pull requests only
+  # Text files are left out wherever they are: Markdown (*.md, so also
+  # CHANGELOG.md and CHANGELOG.de.md), README files and .gitignore files. They
+  # do not change what the code does; release-checks.yml (full: true) still
+  # runs every test, including the changelog checks, before a release.
   # Everything else (docs, the other workflows, brand/, tools/, ...) runs
   # nothing: "lint" and "tests" then report as skipped, which branch
   # protection counts as passed.
@@ -82,6 +86,8 @@ jobs:
             exit 0
           fi
           echo "$files"
+          # Text files never run anything (see the list above).
+          files=$(echo "$files" | grep -vE '(\.md|(^|/)README|(^|/)\.gitignore)$' || true)
           # out NAME REGEX: NAME=true when a changed file matches REGEX or is
           # ci.yml itself. lint=true when any lint_* output is true.
           lint=false

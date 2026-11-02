@@ -9,8 +9,9 @@
 #
 # The image is reused when none of those paths (nor .dockerignore or
 # images.yml) changed between the commit the last build was made from (its
-# org.opencontainers.image.revision label) and HEAD. git diff compares file
-# contents, so the two commits may be on different branches. When in doubt
+# org.opencontainers.image.revision label) and HEAD. Text files (Markdown
+# other than the changelogs, README, .gitignore) do not count. git diff
+# compares file contents, so the two commits may be on different branches. When in doubt
 # (no earlier build, no label, commit not in this history, BUILD_ALL=true)
 # the answer is build.
 #
@@ -42,9 +43,12 @@ from="$(docker buildx imagetools inspect "$image@$digest" --format '{{json .Imag
 
 git cat-file -e "$from^{commit}" 2>/dev/null || build "commit ${from:0:7} of the last build is not in this history"
 
-if ! git diff --quiet "$from" HEAD -- "${paths[@]}"; then
-  changed="$(git diff --name-only "$from" HEAD -- "${paths[@]}" | head -n 5 | paste -sd ' ' -)"
-  build "changed since ${from:0:7}: $changed"
+# Text files (Markdown, README, .gitignore) need no new image. The changelogs
+# are the exception: the backend image serves them as "What's new".
+changed="$(git diff --name-only "$from" HEAD -- "${paths[@]}" |
+  awk -F/ '$NF ~ /^CHANGELOG.*\.md$/ || ($NF !~ /\.md$/ && $NF != "README" && $NF != ".gitignore")')"
+if [ -n "$changed" ]; then
+  build "changed since ${from:0:7}: $(echo "$changed" | head -n 5 | paste -sd ' ' -)"
 fi
 
 printf 'build=false\ndigest=%s\nfrom=%s\nreason=%s\n' "$digest" "$from" "unchanged since ${from:0:7}, reusing that image"

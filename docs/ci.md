@@ -24,7 +24,10 @@ A change to `ci.yml` itself runs everything, and so does a push whose base
 is unknown (new branch, force push). The browser tests run on pull requests
 so a screen change that breaks them fails its own pull request instead of
 the next image build. Anything else (docs, the other workflows, `brand/`,
-`tools/`) runs nothing: `lint` and `tests` report as skipped. Draft pull
+`tools/`) runs nothing: `lint` and `tests` report as skipped. Text files
+run nothing wherever they are: Markdown files (so also `CHANGELOG.md` and
+`CHANGELOG.de.md`), `README` files and `.gitignore` files. The changelog
+checks in the backend tests still run in release-checks before a release. Draft pull
 requests run nothing until they are marked ready for review.
 
 ## Required checks
