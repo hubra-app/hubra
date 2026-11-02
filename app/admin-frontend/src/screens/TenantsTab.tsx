@@ -28,7 +28,7 @@ import {
   type TenantHealth,
   type TenantWithHealth,
 } from '@/api/tenants'
-import { Pagination } from '@/components/ui'
+import { EmptyState, Pagination } from '@/components/ui'
 import { CreateTenantModal } from '@/screens/CreateTenantModal'
 import { useAdmin } from '@/context/AdminContext'
 import { useLang } from '@/lang'
@@ -319,9 +319,7 @@ export function TenantsTab() {
         )}
 
         {!isLoading && tenants.length === 0 && (
-          <Text p={40} ta="center" c="dimmed">
-            {tr('Keine Vereine gefunden.', 'No clubs found.')}
-          </Text>
+          <EmptyState title={tr('Keine Vereine gefunden.', 'No clubs found.')} />
         )}
 
         {tenants.length > 0 && (

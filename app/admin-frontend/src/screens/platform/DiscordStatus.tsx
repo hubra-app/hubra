@@ -8,6 +8,7 @@ import { formatDateTime } from '@/format'
 import { tr } from '@/lang'
 import { checkDiscordNow, getDiscordStatus, type DiscordStatus } from '@/api/platform'
 import { Row } from './StatusRow'
+import { EmptyState } from '@/components/ui'
 
 const MONO = "'JetBrains Mono', monospace"
 
@@ -256,9 +257,7 @@ function ServersCard({ s }: { s: DiscordStatus }) {
         )}
       </Text>
       {s.servers.length === 0 ? (
-        <Text size="sm" c="dimmed">
-          {tr('Noch kein Verein hat Discord verbunden.', 'No club has connected Discord yet.')}
-        </Text>
+        <EmptyState title={tr('Noch kein Verein hat Discord verbunden.', 'No club has connected Discord yet.')} />
       ) : (
         <Table.ScrollContainer minWidth={640}>
           <Table verticalSpacing="xs" fz="sm">

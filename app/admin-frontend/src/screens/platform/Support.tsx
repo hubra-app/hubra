@@ -33,7 +33,7 @@ import {
   IconPencil,
   IconSearch,
 } from '@tabler/icons-react'
-import { PageHead, Pagination, Tabs } from '@/components/ui'
+import { EmptyState, PageHead, Pagination, Tabs } from '@/components/ui'
 import { useAdmin } from '@/context/AdminContext'
 import { formatDate, formatDateTime } from '@/format'
 import { tr } from '@/lang'
@@ -199,10 +199,8 @@ function CaseList() {
       {query.isLoading ? (
         <Loader size="sm" />
       ) : items.length === 0 ? (
-        <Paper withBorder radius="lg" p="xl">
-          <Text size="sm" c="dimmed" ta="center">
-            {tr('Keine Fälle für diese Auswahl.', 'No cases for this selection.')}
-          </Text>
+        <Paper withBorder>
+          <EmptyState title={tr('Keine Fälle für diese Auswahl.', 'No cases for this selection.')} />
         </Paper>
       ) : (
         <Stack gap={8}>

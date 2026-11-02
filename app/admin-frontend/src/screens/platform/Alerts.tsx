@@ -7,7 +7,7 @@ import {
   IconCircleCheck,
   IconRefresh,
 } from '@tabler/icons-react'
-import { StatGrid, StatTile } from '@/components/ui'
+import { EmptyState, StatGrid, StatTile } from '@/components/ui'
 import { useAdmin } from '@/context/AdminContext'
 import { formatDateTime } from '@/format'
 import { tr } from '@/lang'
@@ -277,9 +277,7 @@ export function OverviewPanel() {
           </Button>
         </Group>
         {data && data.recent.length === 0 && (
-          <Text size="sm" c="dimmed">
-            {tr('Noch keine Warnungen.', 'No alerts yet.')}
-          </Text>
+          <EmptyState title={tr('Noch keine Warnungen.', 'No alerts yet.')} />
         )}
         <Stack gap={0}>
           {(data?.recent ?? []).map((e) => (

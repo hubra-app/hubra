@@ -1,63 +1,11 @@
-import { Text, Group, Box, Paper, SimpleGrid } from '@mantine/core'
+import { Text, Group, Box, Paper } from '@mantine/core'
 import type { ComponentProps, ReactNode } from 'react'
 import { Pagination as SharedPagination } from '@hubra/ui'
 import { useT } from '@/locales/i18n'
 import { clickableProps } from './hooks'
 export { PageHead, StatGrid, StatTile } from '@hubra/ui'
 
-/* ── Card ───────────────────────────────────── */
-
-export function Card({ children, style }: { children: ReactNode; style?: React.CSSProperties }) {
-  return (
-    <Paper withBorder style={{ overflow: 'hidden', ...style }}>
-      {children}
-    </Paper>
-  )
-}
-
-function CardHeader({
-  title,
-  children,
-  style,
-}: {
-  title?: ReactNode
-  children?: ReactNode
-  style?: React.CSSProperties
-}) {
-  return (
-    <Group
-      justify="space-between"
-      align="center"
-      gap="sm"
-      px="lg"
-      py="md"
-      wrap="wrap"
-      style={{
-        borderBottom: '1px solid var(--hb-border)',
-        ...style,
-      }}
-    >
-      {title && (
-        <Text fw={700} fz="md" ff="heading">
-          {title}
-        </Text>
-      )}
-      {children}
-    </Group>
-  )
-}
-
-Card.Header = CardHeader
-
-/* ── CardGrid + CardItem ─────────────────────── */
-
-export function CardGrid({ children, columns = 3 }: { children: ReactNode; columns?: number }) {
-  return (
-    <SimpleGrid cols={{ base: 1, xs: 2, md: columns }} spacing="md">
-      {children}
-    </SimpleGrid>
-  )
-}
+export { Card, CardGrid } from '@hubra/ui'
 
 export function CardItem({
   colorBar,

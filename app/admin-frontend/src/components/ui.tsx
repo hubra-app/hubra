@@ -1,8 +1,16 @@
 import type { ComponentProps } from 'react'
-import { Pagination as SharedPagination } from '@hubra/ui'
+import {
+  ConfirmModal as SharedConfirmModal,
+  ErrorBanner as SharedErrorBanner,
+  Pagination as SharedPagination,
+  SlideOver as SharedSlideOver,
+} from '@hubra/ui'
 import { tr } from '@/lang'
 
 export { PageHead, StatGrid, StatTile, Tabs, type TabDef } from '@hubra/ui'
+// The shared dialogs and states (docs/design-spec.md); the wrappers below
+// only add manage's tr() texts.
+export { Card, CardGrid, EmptyState, LoadingSpinner, Modal, PanelField, PanelSection } from '@hubra/ui'
 
 export function Pagination(props: ComponentProps<typeof SharedPagination>) {
   return (
@@ -18,4 +26,18 @@ export function Pagination(props: ComponentProps<typeof SharedPagination>) {
       {...props}
     />
   )
+}
+
+export function SlideOver(props: ComponentProps<typeof SharedSlideOver>) {
+  return <SharedSlideOver closeLabel={tr('Schliessen', 'Close')} {...props} />
+}
+
+export function ConfirmModal(props: ComponentProps<typeof SharedConfirmModal>) {
+  return (
+    <SharedConfirmModal confirmLabel={tr('Löschen', 'Delete')} cancelLabel={tr('Abbrechen', 'Cancel')} {...props} />
+  )
+}
+
+export function ErrorBanner(props: ComponentProps<typeof SharedErrorBanner>) {
+  return <SharedErrorBanner retryLabel={tr('Nochmals versuchen', 'Try again')} {...props} />
 }

@@ -15,7 +15,7 @@ import {
 } from '@mantine/core'
 import { IconPlayerPlay, IconRefresh, IconTrash } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
-import { StatGrid, StatTile } from '@/components/ui'
+import { EmptyState, StatGrid, StatTile } from '@/components/ui'
 import { formatDateTime } from '@/format'
 import { tr, useLang } from '@/lang'
 import { dismissJob, getJobs, retryJob, type FailedJob } from '@/api/platform'
@@ -235,9 +235,7 @@ export function JobsPanel() {
           </Title>
         </Group>
         {data && data.failed.length === 0 ? (
-          <Text c="dimmed" size="sm">
-            {tr('Keine fehlgeschlagenen Jobs.', 'No failed jobs.')}
-          </Text>
+          <EmptyState title={tr('Keine fehlgeschlagenen Jobs.', 'No failed jobs.')} />
         ) : (
           <Table.ScrollContainer minWidth={640}>
             <Table highlightOnHover>

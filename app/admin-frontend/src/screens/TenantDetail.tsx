@@ -36,7 +36,7 @@ import {
   addTenantMember,
 } from '@/api/tenants'
 import { useAdmin } from '@/context/AdminContext'
-import { StatTile, StatGrid } from '@/components/ui'
+import { EmptyState, StatGrid, StatTile } from '@/components/ui'
 import { ImpersonateModal } from '@/screens/ImpersonateModal'
 import { TenantModules } from '@/screens/TenantModules'
 import { ClubAdminsPanel } from '@/screens/ClubAdmins'
@@ -306,9 +306,7 @@ export function TenantDetail() {
           </Button>
         </Group>
         {members.length === 0 ? (
-          <Text p={20} ta="center" c="dimmed">
-            {tr('Noch keine Mitglieder.', 'No members yet.')}
-          </Text>
+          <EmptyState title={tr('Noch keine Mitglieder.', 'No members yet.')} />
         ) : (
           <Table.ScrollContainer minWidth={560}>
           <Table highlightOnHover>
