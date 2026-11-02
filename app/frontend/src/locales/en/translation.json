@@ -2438,6 +2438,13 @@
     "clubBanner": {
       "dismiss": "Hide banner"
     },
+    "maintenanceNotice": {
+      "title": "Planned maintenance",
+      "sameDay": "{{day}}, {{from}} to {{to}}",
+      "days": "{{fromDay}}, {{from}} to {{toDay}}, {{to}}",
+      "default": "The app is not available during this time.",
+      "dismiss": "Hide notice"
+    },
     "more": {
       "emptyTitle": "Nothing here yet",
       "emptyDesc": "Pages you hide in the sidebar and pages from plugins appear here."

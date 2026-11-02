@@ -586,6 +586,144 @@ def set_maintenance():
     ), 200
 
 
+def _parse_when(value, field: str):
+    from datetime import datetime, timezone
+
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{field} is an ISO time")
+    try:
+        at = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        raise ValueError(f"{field} is an ISO time") from None
+    return at if at.tzinfo else at.replace(tzinfo=timezone.utc)
+
+
+def _club_names(windows) -> dict[int, str]:
+    from sqlalchemy import select
+
+    from hubra.core.models.tenant import Tenant
+
+    ids = {i for w in windows for i in (w.tenant_ids or [])}
+    if not ids:
+        return {}
+    return dict(
+        db.session.execute(
+            select(Tenant.id, Tenant.name).where(Tenant.id.in_(ids))
+        ).all()
+    )
+
+
+@platform_bp.get("/maintenance/windows")
+@require_global_permission(_DIAGNOSTICS)
+def list_maintenance_windows():
+    """Planned, running and the last 20 past windows (newest first)."""
+    from datetime import datetime, timezone
+
+    from sqlalchemy import or_, select
+
+    from hubra.core.models.maintenance_window import MaintenanceWindow
+    from hubra.core.services import maintenance
+
+    now = datetime.now(timezone.utc)
+    live = MaintenanceWindow.cancelled_at.is_(None) & (MaintenanceWindow.ends_at > now)
+    current = db.session.scalars(
+        select(MaintenanceWindow).where(live).order_by(MaintenanceWindow.starts_at)
+    ).all()
+    past = db.session.scalars(
+        select(MaintenanceWindow)
+        .where(
+            or_(
+                MaintenanceWindow.cancelled_at.isnot(None),
+                MaintenanceWindow.ends_at <= now,
+            )
+        )
+        .order_by(MaintenanceWindow.starts_at.desc())
+        .limit(20)
+    ).all()
+    names = _club_names([*current, *past])
+    return jsonify(
+        {
+            "current": [maintenance.window_json(w, names) for w in current],
+            "past": [maintenance.window_json(w, names) for w in past],
+            "notice_hours": list(maintenance.NOTICE_HOURS),
+        }
+    ), 200
+
+
+@platform_bp.post("/maintenance/windows")
+@require_global_permission(_PERM)
+def create_maintenance_window():
+    """Body ``{"starts_at", "ends_at", "message", "tenant_ids": [..] | null,
+    "notice_hours"}``; ``tenant_ids`` null means every club."""
+    from hubra.core.services import maintenance
+
+    body = request.get_json(silent=True) or {}
+    try:
+        starts_at = _parse_when(body.get("starts_at"), "starts_at")
+        ends_at = _parse_when(body.get("ends_at"), "ends_at")
+    except ValueError as exc:
+        return api_error("VALIDATION_ERROR", str(exc), 400)
+    message = body.get("message") or ""
+    tenant_ids = body.get("tenant_ids")
+    notice = body.get("notice_hours", 24)
+    if not isinstance(message, str):
+        return api_error("VALIDATION_ERROR", "message is text", 400)
+    if tenant_ids is not None and (
+        not isinstance(tenant_ids, list)
+        or not all(isinstance(i, int) and not isinstance(i, bool) for i in tenant_ids)
+    ):
+        return api_error(
+            "VALIDATION_ERROR", "tenant_ids is a list of ids, or null", 400
+        )
+    if not isinstance(notice, int) or isinstance(notice, bool):
+        return api_error("VALIDATION_ERROR", "notice_hours is a number", 400)
+    try:
+        window = maintenance.schedule(
+            starts_at,
+            ends_at,
+            message.strip(),
+            tenant_ids,
+            notice,
+            actor_id=g.system_user.id,
+        )
+    except maintenance.WindowError as exc:
+        return api_error("VALIDATION_ERROR", str(exc), 400)
+    _audit(
+        "platform.maintenance.scheduled",
+        "MaintenanceWindow",
+        str(window.id),
+        {
+            "starts_at": window.starts_at.isoformat(),
+            "ends_at": window.ends_at.isoformat(),
+            "tenant_ids": window.tenant_ids,
+            "notice_hours": window.notice_hours,
+        },
+    )
+    db.session.commit()
+    return jsonify(
+        {"window": maintenance.window_json(window, _club_names([window]))}
+    ), 201
+
+
+@platform_bp.post("/maintenance/windows/<int:window_id>/cancel")
+@require_global_permission(_PERM)
+def cancel_maintenance_window(window_id: int):
+    """Cancel a planned window, or end a running one now."""
+    from hubra.core.services import maintenance
+
+    try:
+        window = maintenance.cancel(window_id, actor_id=g.system_user.id)
+    except LookupError:
+        return api_error("NOT_FOUND", "No such window", 404)
+    except maintenance.WindowError as exc:
+        return api_error("CONFLICT", str(exc), 409)
+    _audit("platform.maintenance.cancelled", "MaintenanceWindow", str(window.id))
+    db.session.commit()
+    return jsonify(
+        {"window": maintenance.window_json(window, _club_names([window]))}
+    ), 200
+
+
 @platform_bp.get("/alerts/performance")
 @require_global_permission(_DIAGNOSTICS)
 def alerts_performance():
