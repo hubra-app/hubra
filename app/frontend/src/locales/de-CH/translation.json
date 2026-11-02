@@ -3611,8 +3611,27 @@
       "connected": "Verbunden",
       "disconnected": "Getrennt",
       "changed": "Geändert",
-      "test": "Test"
-    }
+      "test": "Test",
+      "announced": "Gepostet",
+      "skipped": "Nicht gepostet",
+      "roles": "Rollen",
+      "events": "Discord-Events",
+      "profile": "Bot-Profil",
+      "joined": "Server beigetreten",
+      "dm": "Direktnachricht",
+      "registration": "Anmeldung",
+      "voted": "Abstimmung",
+      "attendance": "Anwesenheit",
+      "command": "Befehl",
+      "log": "Protokoll-Kanal",
+      "notified": "Benachrichtigung"
+    },
+    "logAll": "Alles",
+    "logErrors": "Fehler",
+    "logErrorsCount": "Fehler ({{n}})",
+    "logSkipped": "Ausgelassen",
+    "skipped": "Ausgelassen",
+    "noneInFilter": "Nichts in dieser Auswahl."
   },
   "support": {
     "form": {
