@@ -345,7 +345,8 @@ export interface AlertSwitches {
   channels: NotifyChannel[]
   types: Record<AlertType, Record<NotifyChannel, boolean>>
   /** Platform events (audit log categories) per channel. */
-  events: Record<string, Record<NotifyChannel, boolean>>
+  /** null: that channel doesn't exist for the row (Discord-only bot posts). */
+  events: Record<string, Record<NotifyChannel, boolean | null>>
 }
 
 export type NotifyChannel = 'mail' | 'discord'

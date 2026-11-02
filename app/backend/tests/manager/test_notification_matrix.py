@@ -137,3 +137,17 @@ def test_mail_events_queue_without_discord(db):
         db.session.add(entry)
         db.session.commit()
     assert delay.call_args.args[1] == entry.id
+
+
+def test_bot_posts_are_discord_only(client, staff_headers):
+    data = _matrix(client)
+    assert data["events"]["digest"]["mail"] is None
+    resp = client.put(
+        f"{BASE}/alerts/switches", json={"events": {"digest": {"mail": True}}}
+    )
+    assert resp.status_code == 400
+    resp = client.put(
+        f"{BASE}/alerts/switches", json={"events": {"digest": {"discord": False}}}
+    )
+    assert resp.status_code == 200
+    assert "digest" not in platform_discord.enabled_categories()

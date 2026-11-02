@@ -518,7 +518,12 @@ def _alert_switches() -> dict:
             for t in platform_monitor.ALERT_TYPES
         },
         "events": {
-            c: {"mail": c in mail_on, "discord": c in discord_on}
+            # None: the channel does not exist for this row (Discord-only
+            # posts of the platform bot).
+            c: {
+                "mail": None if c in platform_discord.DISCORD_ONLY else c in mail_on,
+                "discord": c in discord_on,
+            }
             for c in platform_discord.CATEGORIES
             if c != "alerts"
         },
@@ -573,6 +578,8 @@ def update_alert_switches():
                 return api_error(
                     "VALIDATION_ERROR", f"{c}: mail and discord are true or false", 400
                 )
+            if merged_events[c][ch] is None:
+                return api_error("VALIDATION_ERROR", f"{c} has no {ch}", 400)
             merged_events[c][ch] = on
     if types:
         for ch in ("mail", "discord"):
@@ -589,7 +596,7 @@ def update_alert_switches():
             discord.append("alerts")
         values["discord.log_events"] = ",".join(discord)
         values["notify.mail_events"] = (
-            ",".join(c for c in cats if merged_events[c]["mail"]) or None
+            ",".join(c for c in cats if merged_events[c]["mail"] is True) or None
         )
     platform_settings.set_many(values, actor_id=g.system_user.id)
     db.session.commit()

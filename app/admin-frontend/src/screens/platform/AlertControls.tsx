@@ -252,6 +252,11 @@ export function AlertRulesPanel() {
                   </Table.Td>
                   {channels.map((ch) => (
                     <Table.Td key={ch} ta="center">
+                      {row?.[ch] === null ? (
+                        <Text size="sm" c="dimmed" aria-label={tr('Nicht verfügbar', 'Not available')}>
+                          –
+                        </Text>
+                      ) : (
                       <Checkbox
                         checked={row?.[ch] ?? false}
                         disabled={cellDisabled(ch)}
@@ -259,6 +264,7 @@ export function AlertRulesPanel() {
                         onChange={(e) => setEvent(ev.id, ch, e.currentTarget.checked)}
                         style={{ display: 'inline-block' }}
                       />
+                      )}
                     </Table.Td>
                   ))}
                 </Table.Tr>
