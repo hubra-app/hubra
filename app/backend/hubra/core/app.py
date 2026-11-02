@@ -261,6 +261,8 @@ def create_app(config_name: str | None = None) -> Flask:
         expose_headers=[
             "Content-Disposition",
             "X-Total-Count",
+            "X-Rows",
+            "X-Truncated",
         ],
         max_age=600,
     )

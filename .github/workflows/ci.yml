@@ -6,9 +6,11 @@
 # explains the split and the branch protection rules that go with it.
 #
 # Branch protection requires two checks from this file: "lint" and "tests".
-# Both always report, even for a docs-only change, so a required check is
-# never left waiting. "tests" passes when the test jobs it waits for were
-# skipped because the change did not touch their part of the code.
+# Both always report, so a required check is never left waiting. "lint" is
+# skipped when the change touches nothing it checks (a docs-only change, for
+# example), and GitHub counts a skipped job as passed. "tests" passes when the
+# test jobs it waits for were skipped because the change did not touch their
+# part of the code.
 #
 # Draft pull requests run nothing; the checks start when the PR is marked
 # ready for review.
@@ -36,18 +38,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Which test jobs the change needs. Only these paths run tests:
-  #   backend tests    app/backend/, plugins/, settings.yaml, ci.yml
-  #   frontend tests   app/*frontend/, packages/, plugins/, ci.yml
-  #   browser tests    the same paths, on pull requests only
-  # Everything else (other workflows, deploy/, modules/, scripts/, docs)
-  # runs lint only.
+  # Which lint steps and test jobs the change needs. Only these paths run
+  # them, and a change to ci.yml itself runs everything:
+  #   backend lint       app/backend/, plugins/
+  #   club app lint      app/frontend/, packages/, plugins/
+  #   manage lint        app/admin-frontend/, packages/, plugins/
+  #   SSO lint           app/sso-frontend/, packages/, plugins/
+  #   deploy lint        docker-compose*.yml, .env.example, settings.yaml,
+  #                      deploy/, modules/, scripts/, app/deploy/
+  #   backend tests      app/backend/, plugins/, settings.yaml
+  #   frontend tests     app/*frontend/, packages/, plugins/
+  #   browser tests      the same paths, on pull requests only
+  # Everything else (docs, the other workflows, brand/, tools/, ...) runs
+  # nothing: "lint" and "tests" then report as skipped, which branch
+  # protection counts as passed.
   changes:
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
     outputs:
       backend: ${{ steps.diff.outputs.backend }}
       frontends: ${{ steps.diff.outputs.frontends }}
+      lint: ${{ steps.diff.outputs.lint }}
+      lint_backend: ${{ steps.diff.outputs.lint_backend }}
+      lint_frontend: ${{ steps.diff.outputs.lint_frontend }}
+      lint_admin: ${{ steps.diff.outputs.lint_admin }}
+      lint_sso: ${{ steps.diff.outputs.lint_sso }}
+      lint_deploy: ${{ steps.diff.outputs.lint_deploy }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -60,31 +76,55 @@ jobs:
         run: |
           if [ "$FULL" = true ] || ! files=$(git diff --name-only "$BASE...$HEAD" 2>/dev/null); then
             # Full run, or unknown base (new branch, force push): run everything.
-            echo "backend=true" >> "$GITHUB_OUTPUT"
-            echo "frontends=true" >> "$GITHUB_OUTPUT"
+            for o in backend frontends lint lint_backend lint_frontend lint_admin lint_sso lint_deploy; do
+              echo "$o=true" >> "$GITHUB_OUTPUT"
+            done
             exit 0
           fi
           echo "$files"
-          if echo "$files" | grep -qE '^(app/backend/|plugins/|settings\.yaml$|\.github/workflows/ci\.yml$)'; then
-            echo "backend=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "backend=false" >> "$GITHUB_OUTPUT"
-          fi
-          if echo "$files" | grep -qE '^(app/(frontend|admin-frontend|sso-frontend)/|packages/|plugins/|\.github/workflows/ci\.yml$)'; then
-            echo "frontends=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "frontends=false" >> "$GITHUB_OUTPUT"
-          fi
+          # out NAME REGEX: NAME=true when a changed file matches REGEX or is
+          # ci.yml itself. lint=true when any lint_* output is true.
+          lint=false
+          out() {
+            if echo "$files" | grep -qE "^($2|\.github/workflows/ci\.yml$)"; then
+              echo "$1=true" >> "$GITHUB_OUTPUT"
+              case "$1" in lint_*) lint=true ;; esac
+            else
+              echo "$1=false" >> "$GITHUB_OUTPUT"
+            fi
+          }
+          out backend       'app/backend/|plugins/|settings\.yaml$'
+          out frontends     'app/(frontend|admin-frontend|sso-frontend)/|packages/|plugins/'
+          out lint_backend  'app/backend/|plugins/'
+          out lint_frontend 'app/frontend/|packages/|plugins/'
+          out lint_admin    'app/admin-frontend/|packages/|plugins/'
+          out lint_sso      'app/sso-frontend/|packages/|plugins/'
+          out lint_deploy   'docker-compose[^/]*\.yml$|\.env\.example$|settings\.yaml$|deploy/|modules/|scripts/|app/deploy/'
+          echo "lint=$lint" >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
 
-  # Every linter and type check, on every change. Required on main.
-  # Every step runs even when an earlier one failed, so one run shows all
-  # failures.
+  # The linters and type checks for the parts of the code the change touched
+  # (see "changes" above). Required on main: a change with nothing to lint
+  # skips the job, which branch protection counts as passed. If "changes"
+  # failed, its outputs are empty, so the job and every step run: a broken
+  # diff never skips lint. Every step runs even when an earlier one failed,
+  # so one run shows all failures.
   lint:
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    needs: changes
+    if: >-
+      !cancelled()
+      && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
+      && needs.changes.outputs.lint != 'false'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Only when a frontend is linted: with no npm install, the cache save
+      # at the end of the job fails.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: >-
+          needs.changes.outputs.lint_frontend != 'false'
+          || needs.changes.outputs.lint_admin != 'false'
+          || needs.changes.outputs.lint_sso != 'false'
         with:
           node-version: "22"
           cache: npm
@@ -93,40 +133,40 @@ jobs:
             app/admin-frontend/package-lock.json
             app/sso-frontend/package-lock.json
       - name: "backend: ruff"
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && needs.changes.outputs.lint_backend != 'false' }}
         working-directory: app/backend
         run: |
           pipx run ruff==0.15.17 check .
       - name: "frontend: eslint and tsc"
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && needs.changes.outputs.lint_frontend != 'false' }}
         working-directory: app/frontend
         run: |
           npm ci
           npm run lint
           npx tsc -b
       - name: "admin-frontend: eslint and tsc"
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && needs.changes.outputs.lint_admin != 'false' }}
         working-directory: app/admin-frontend
         run: |
           npm ci
           npm run lint
           npx tsc -b
       - name: "sso-frontend: eslint and tsc"
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && needs.changes.outputs.lint_sso != 'false' }}
         working-directory: app/sso-frontend
         run: |
           npm ci
           npm run lint
           npx tsc -b
       - name: Compose files
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && needs.changes.outputs.lint_deploy != 'false' }}
         run: |
           scripts/init-env.sh
           docker compose config -q
           docker compose -f docker-compose.yml -f docker-compose.traefik.yml config -q
           docker compose -f docker-compose.yml -f modules/mail/docker-compose.mail.yml config -q
       - name: Kustomize and kubeconform
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && needs.changes.outputs.lint_deploy != 'false' }}
         run: |
           set -e
           curl -sSL -o kubeconform.tar.gz https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
@@ -141,7 +181,7 @@ jobs:
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             /tmp/app.yaml /tmp/vollbuild-ch.yaml /tmp/contabo.yaml /tmp/k8s.yaml
       - name: Shell scripts
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && needs.changes.outputs.lint_deploy != 'false' }}
         run: shellcheck deploy/create-secrets.sh scripts/init-env.sh scripts/smoke-test.sh app/deploy/nginx/40-hubra-runtime.sh
 
   # Backend unit tests on in-memory SQLite (TestingConfig); no services needed.

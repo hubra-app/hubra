@@ -2311,6 +2311,73 @@ def list_global_audit():
     ), 200
 
 
+@tenant_admin_bp.route("/audit/search", methods=["GET"])
+@require_global_permission("audit.read")
+def search_audit():
+    """The platform log and every club's audit log in one list, newest
+    first.  ``q`` searches action, people, target, details and IP;
+    ``source``: all, platform or club; ``tenant_id``, ``action`` (prefix),
+    ``from`` and ``to`` (dates, both inclusive); ``hide_logins=1``."""
+    from hubra.core.services import audit_search
+
+    f = audit_search.parse(request.args)
+    if f.errors:
+        raise_error(400, "VALIDATION_ERROR", "; ".join(f.errors))
+    page, per_page = _page_args()
+    return jsonify(audit_search.search(f, page, per_page)), 200
+
+
+@tenant_admin_bp.route("/audit/export", methods=["GET"])
+@require_global_permission("audit.read")
+def export_audit():
+    """The same search as CSV, at most 10 000 rows.  The export itself is
+    written to the platform log."""
+    from flask import Response
+
+    from hubra.core.services import audit_search
+
+    f = audit_search.parse(request.args)
+    if f.errors:
+        raise_error(400, "VALIDATION_ERROR", "; ".join(f.errors))
+    body, rows, truncated = audit_search.export_csv(f)
+    db.session.add(
+        GlobalAuditEntry(
+            tenant_id=f.tenant_id,
+            actor_id=g.system_user.id,
+            action="audit.export",
+            target_type="AuditLog",
+            target_id=None,
+            details={
+                "rows": rows,
+                "truncated": truncated,
+                "filters": {
+                    k: v
+                    for k, v in {
+                        "q": f.q,
+                        "source": f.source,
+                        "tenant_id": f.tenant_id,
+                        "action": f.action,
+                        "from": f.date_from and f.date_from.isoformat(),
+                        "to": f.date_to and f.date_to.isoformat(),
+                        "hide_logins": f.hide_logins or None,
+                    }.items()
+                    if v not in (None, "", "all")
+                },
+            },
+            ip_address=request.remote_addr,
+        )
+    )
+    db.session.commit()
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    headers = {
+        "Content-Disposition": f"attachment; filename=hubra-audit-{stamp}.csv",
+        "X-Rows": str(rows),
+    }
+    if truncated:
+        headers["X-Truncated"] = "true"
+    return Response(body, status=200, mimetype="text/csv", headers=headers)
+
+
 # ── Platform metrics ────────────────────────────────────────────────────────
 
 
