@@ -1841,6 +1841,78 @@ def step_up():
     return jsonify({"sudoUntil": until.isoformat()}), 200
 
 
+def _step_up_sid(claims: dict) -> int:
+    sid = claims.get("account_sid")
+    if sid is None:
+        raise_error(
+            403,
+            "STEP_UP_REQUIRED",
+            "This sign-in is too old for this action. Sign in again.",
+        )
+    return int(sid)
+
+
+@account_bp.get("/step-up")
+def step_up_status():
+    """What the confirm dialog offers, and whether this sign-in is confirmed
+    right now (manage asks while the passkey window on SSO is open)."""
+    user, claims = account_token.verify_account_token()
+    until = None
+    if account_token.sudo_active(claims):
+        from hubra.core.models.account_session import AccountSession
+
+        session = db.session.get(AccountSession, int(claims["account_sid"]))
+        until = session.sudo_until.isoformat() if session else None
+    return jsonify(
+        {
+            "sudoUntil": until,
+            "passkey": passkeys.available() and mfa.has_passkeys(user),
+            "code": mfa.totp_enabled(user),
+        }
+    ), 200
+
+
+@account_bp.post("/step-up/passkey/options")
+@limiter.limit("20 per minute")
+def step_up_passkey_options():
+    """Start confirming a platform action with a passkey of this account.
+    The challenge is tied to this account and this sign-in."""
+    user, claims = account_token.verify_account_token()
+    sid = _step_up_sid(claims)
+    if not passkeys.available() or not mfa.has_passkeys(user):
+        raise_error(400, "PASSKEYS_UNAVAILABLE", "This account has no passkey")
+    return jsonify(passkeys.step_up_options(user, sid)), 200
+
+
+@account_bp.post("/step-up/passkey")
+@limiter.limit("10 per minute")
+def step_up_passkey():
+    """Confirm with a passkey instead of the password.  A passkey checks the
+    person (user verification is required), so it stands for password and
+    code; the window is the same ``sudo_until`` as with the password."""
+    user, claims = account_token.verify_account_token()
+    sid = _step_up_sid(claims)
+    body = request.get_json(silent=True) or {}
+    credential = body.get("credential")
+    if not isinstance(credential, dict):
+        raise_error(400, "VALIDATION_ERROR", "credential is required")
+    try:
+        passkey = passkeys.verify_step_up(
+            user, sid, str(body.get("state") or ""), credential
+        )
+    except passkeys.PasskeyError:
+        raise_error(400, "PASSKEY_INVALID", "The passkey could not be checked")
+    until = account_token.grant_sudo(claims)
+    db.session.commit()
+    _log.info(
+        "step_up user_id=%s passkey_id=%s until=%s",
+        user.id,
+        passkey.id,
+        until.isoformat(),
+    )
+    return jsonify({"sudoUntil": until.isoformat()}), 200
+
+
 @account_bp.get("/mfa")
 @jwt_required()
 def get_account_mfa():
