@@ -17,7 +17,7 @@ from flask import Blueprint, g, jsonify, request
 
 from hubra.api.auth.account_token import require_step_up
 from hubra.api.permissions import require_global_permission
-from hubra.core.errors import api_error
+from hubra.core.errors import api_error, error_message
 from hubra.core.extensions import db, limiter
 from hubra.core.models.tenant import GlobalAuditEntry
 from hubra.core.services import email, mail_server, platform_monitor, platform_settings
@@ -132,7 +132,9 @@ def send_test_mail():
             via=via,
         )
     except email.EmailDeliveryError as exc:
-        return api_error("SMTP_ERROR", f"The relay refused the mail: {exc}", 502)
+        return api_error(
+            "SMTP_ERROR", f"The relay refused the mail: {error_message(exc)}", 502
+        )
     return jsonify({"ok": True, "to": to}), 200
 
 
@@ -140,23 +142,36 @@ def send_test_mail():
 @require_global_permission(_PERM)
 @limiter.limit("10 per hour")
 def send_test_discord():
-    """Post a test message to the platform log channel with the bot."""
+    """Post a test message with the bot to the platform log channel, or with
+    ``{"channel": "audit"}`` to the audit channel."""
     from hubra.core.services import platform_discord
 
     actor = getattr(g, "system_user", None)
+    body = request.get_json(silent=True) or {}
+    to_audit = body.get("channel") == "audit"
+    kwargs = {}
+    if to_audit:
+        channel_id = platform_discord.audit_channel()
+        if not channel_id:
+            return api_error("DISCORD_ERROR", "Set the audit channel first", 400)
+        kwargs = {
+            "channel_id": channel_id,
+            "token": platform_settings.discord().bot_token,
+        }
     try:
         platform_discord.post(
             {
-                "title": "Hubra platform log",
+                "title": "Hubra audit channel" if to_audit else "Hubra platform log",
                 "description": "Test message: the bot can post here.",
                 "color": platform_discord.COLOR_INFO,
                 "footer": {
                     "text": f"Sent by {getattr(actor, 'email', 'a platform admin')}"
                 },
-            }
+            },
+            **kwargs,
         )
     except platform_discord.DiscordPostError as exc:
-        return api_error("DISCORD_ERROR", str(exc), 502)
+        return api_error("DISCORD_ERROR", error_message(exc), 502)
     return jsonify({"ok": True}), 200
 
 
@@ -224,7 +239,7 @@ def discord_servers():
     try:
         return jsonify(svc.servers()), 200
     except svc.PickerError as exc:
-        return api_error("DISCORD_UNAVAILABLE", str(exc), 409)
+        return api_error("DISCORD_UNAVAILABLE", error_message(exc), 409)
 
 
 @platform_bp.get("/discord/servers/<string:guild_id>/channels")
@@ -236,7 +251,7 @@ def discord_server_channels(guild_id: str):
     try:
         return jsonify({"channels": svc.channels(guild_id)}), 200
     except svc.PickerError as exc:
-        return api_error("DISCORD_UNAVAILABLE", str(exc), 409)
+        return api_error("DISCORD_UNAVAILABLE", error_message(exc), 409)
 
 
 @platform_bp.get("/permissions")
@@ -758,7 +773,7 @@ def decide_translation_request(request_id: int):
         suggestions.decide(req, body["accept"], getattr(actor, "id", None), value, note)
     except suggestions.RequestError as exc:
         db.session.rollback()
-        return api_error("CONFLICT", str(exc), 409)
+        return api_error("CONFLICT", error_message(exc), 409)
     _audit(
         "accept_translation_request"
         if body["accept"]

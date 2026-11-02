@@ -133,9 +133,10 @@ export interface GlobalAuditEntry {
 }
 
 export async function listGlobalAudit(
-  params: { page?: number; per_page?: number } = {},
+  params: { page?: number; per_page?: number; id?: number } = {},
 ): Promise<{ entries: GlobalAuditEntry[]; total: number }> {
   const qs = new URLSearchParams()
+  if (params.id) qs.set('id', String(params.id))
   if (params.page) qs.set('page', String(params.page))
   if (params.per_page) qs.set('per_page', String(params.per_page))
   const s = qs.toString()
@@ -438,4 +439,40 @@ export interface TenantTrends {
 
 export async function getTenantTrends(tenantId: number, range: TrendRange) {
   return apiFetch<TenantTrends>(`/system/tenants/${tenantId}/trends?range=${range}`)
+}
+
+// ── Limits (members, mails per month, storage) ───────────────────────────────
+
+export type LimitKind = 'members' | 'mail_month' | 'storage_mb'
+
+export interface LimitRow {
+  used: number
+  /** null: no limit. */
+  limit: number | null
+  plan_limit: number | null
+  /** The club has its own limit (or its own "no limit"). */
+  custom: boolean
+  percent: number | null
+  level: 'ok' | 'warning' | 'over'
+}
+
+export interface TenantLimits {
+  plan: string
+  warn_percent: number
+  limits: Record<LimitKind, LimitRow>
+}
+
+export async function getTenantLimits(tenantId: number) {
+  return apiFetch<TenantLimits>(`/system/tenants/${tenantId}/limits`)
+}
+
+/** A number, null for no limit, or "plan" to follow the plan again. */
+export async function setTenantLimits(
+  tenantId: number,
+  values: Partial<Record<LimitKind, number | null | 'plan'>>,
+) {
+  return apiFetch<TenantLimits>(`/system/tenants/${tenantId}/limits`, {
+    method: 'PUT',
+    body: JSON.stringify(values),
+  })
 }

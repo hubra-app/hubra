@@ -117,6 +117,12 @@ VALIDATORS: dict[str, Callable[[str], str | None]] = {
     "on_off": lambda v: None if v in ("on", "off") else "on or off",
     "alert_types": lambda v: _validate_alert_types(v),
     "iso_datetime": lambda v: _validate_iso_datetime(v),
+    "percent": lambda v: (
+        None if v.isdigit() and 1 <= int(v) <= 100 else "Whole percent, 1 to 100"
+    ),
+    "count": lambda v: (
+        None if v.isdigit() and int(v) <= 10**9 else "A whole number, or empty"
+    ),
     "retention_days": lambda v: (
         None if v.isdigit() and 1 <= int(v) <= 365 else "Whole days, 1 to 365"
     ),

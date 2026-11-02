@@ -41,6 +41,12 @@ const TITLES: Record<string, [string, string, string]> = {
     'Anmeldung von einem neuen Gerät',
     'New device login',
   ],
+  'Club limit almost reached': [
+    'shell.notif.text.quotaNear',
+    'Vereinslimit fast erreicht',
+    'Club limit almost reached',
+  ],
+  'Club limit reached': ['shell.notif.text.quotaOver', 'Vereinslimit erreicht', 'Club limit reached'],
 }
 
 const PREFIXES: [string, string, string, string][] = [
@@ -91,6 +97,33 @@ export function notificationMessageText(msg: string): NotificationText | null {
       de: '{{name}} hat dir die Stimme übertragen.',
       en: '{{name}} asked you to vote for them.',
       vars: { name: m[1] },
+    }
+  }
+  m = msg.match(/^Members: (\d+) of (\d+)\.$/)
+  if (m) {
+    return {
+      key: 'shell.notif.text.quotaMembers',
+      de: 'Mitglieder: {{used}} von {{limit}}.',
+      en: 'Members: {{used}} of {{limit}}.',
+      vars: { used: m[1], limit: m[2] },
+    }
+  }
+  m = msg.match(/^Mails this month: (\d+) of (\d+)\.$/)
+  if (m) {
+    return {
+      key: 'shell.notif.text.quotaMail',
+      de: 'Mails diesen Monat: {{used}} von {{limit}}.',
+      en: 'Mails this month: {{used}} of {{limit}}.',
+      vars: { used: m[1], limit: m[2] },
+    }
+  }
+  m = msg.match(/^Storage: (\d+) MB of (\d+) MB\.$/)
+  if (m) {
+    return {
+      key: 'shell.notif.text.quotaStorage',
+      de: 'Speicher: {{used}} MB von {{limit}} MB.',
+      en: 'Storage: {{used}} MB of {{limit}} MB.',
+      vars: { used: m[1], limit: m[2] },
     }
   }
   return null
