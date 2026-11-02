@@ -66,6 +66,26 @@ def test_events_by_mail_and_discord(client, staff_headers, db):
     assert "alerts" in platform_discord.enabled_categories()
 
 
+def test_discord_only_categories_have_no_mail(client, staff_headers, db):
+    """digest / releases / security are the bot's own posts: Discord only."""
+    data = _matrix(client)
+    for c in platform_discord.DISCORD_ONLY:
+        assert set(data["events"][c]) == {"discord"}
+    resp = client.put(
+        f"{BASE}/alerts/switches", json={"events": {"digest": {"mail": True}}}
+    )
+    assert resp.status_code == 400
+    resp = client.put(
+        f"{BASE}/alerts/switches", json={"events": {"digest": {"discord": False}}}
+    )
+    assert resp.status_code == 200, resp.get_json()
+    assert "digest" not in platform_discord.enabled_categories()
+    # Even a hand-set value never mails them.
+    platform_settings.set_many({"notify.mail_events": "digest,clubs"})
+    db.session.commit()
+    assert platform_discord.mail_categories() == {"clubs"}
+
+
 def test_all_discord_off_is_stored_empty(client, staff_headers, db):
     data = _matrix(client)
     body = {
@@ -137,17 +157,3 @@ def test_mail_events_queue_without_discord(db):
         db.session.add(entry)
         db.session.commit()
     assert delay.call_args.args[1] == entry.id
-
-
-def test_bot_posts_are_discord_only(client, staff_headers):
-    data = _matrix(client)
-    assert data["events"]["digest"]["mail"] is None
-    resp = client.put(
-        f"{BASE}/alerts/switches", json={"events": {"digest": {"mail": True}}}
-    )
-    assert resp.status_code == 400
-    resp = client.put(
-        f"{BASE}/alerts/switches", json={"events": {"digest": {"discord": False}}}
-    )
-    assert resp.status_code == 200
-    assert "digest" not in platform_discord.enabled_categories()

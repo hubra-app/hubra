@@ -252,8 +252,8 @@ export function AlertRulesPanel() {
                   </Table.Td>
                   {channels.map((ch) => (
                     <Table.Td key={ch} ta="center">
-                      {row?.[ch] === null ? (
-                        <Text size="sm" c="dimmed" aria-label={tr('Nicht verfügbar', 'Not available')}>
+                      {row && !(ch in row) ? (
+                        <Text span size="sm" c="dimmed" aria-label={tr('nicht verfügbar', 'not available')}>
                           –
                         </Text>
                       ) : (

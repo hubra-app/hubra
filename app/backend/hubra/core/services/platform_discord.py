@@ -68,6 +68,11 @@ CATEGORIES: dict[str, str] = {
     "many failed sign-ins from one address, old encryption keys",
 }
 
+# Posted by the platform bot itself (daily digest, release notes, security
+# pings), not from audit entries, so these go to Discord only: the
+# notification matrix shows no mail switch for them.
+DISCORD_ONLY: frozenset[str] = frozenset({"digest", "releases", "security"})
+
 # Bot permissions the platform server needs: view channel, send messages,
 # embed links.
 BOT_PERMISSIONS = (1 << 10) | (1 << 11) | (1 << 14)
@@ -116,8 +121,6 @@ def _color(action: str) -> int:
 
 
 MAIL_EVENTS_KEY = "notify.mail_events"
-# Posted by the platform bot itself, not audit entries: Discord only.
-DISCORD_ONLY = frozenset({"digest", "releases", "security"})
 
 
 def mail_categories() -> set[str]:
