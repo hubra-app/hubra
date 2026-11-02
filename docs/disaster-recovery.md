@@ -17,7 +17,7 @@
 
 2. **S3 credentials** — Contabo S3 endpoint, bucket name, access key, and secret key.
    These come from `BACKUP_S3_*` in `.env` on the production server, unless a
-   superadmin overrode them in manage under Platform › Platform Settings.
+   superadmin overrode them in manage under the matching page (Mail › Relay, Backups › Storage, …).
 
 3. **`pg_restore`** — PostgreSQL client tools at least as new as the server
    the backup came from (and the one you restore into) must be installed on
@@ -129,7 +129,7 @@ Do the same for each club you need (`club-<id>.dump`).
 
 ### Option A: One club, from manage (the usual case)
 
-manage › Platform › Backups, filter by the club, pick the backup and click
+manage › Backups, filter by the club, pick the backup and click
 the restore icon. Type the club's address to confirm.
 
 What happens:
@@ -259,7 +259,7 @@ This procedure tests the entire backup→restore pipeline without touching
 production:
 
 ```sh
-# 1. Take the latest scheduled set, or make one: manage › Platform › Backups,
+# 1. Take the latest scheduled set, or make one: manage › Backups,
 #    "Create backup now" once for Global and once per club to test
 
 # 2. Download and decrypt the global backup and a club's (Steps 1–2)

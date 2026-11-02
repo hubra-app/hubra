@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Center, Overlay, Paper, Stack, Text } from '@mantine/core'
+import { Anchor, Center, Overlay, Paper, Stack, Text } from '@mantine/core'
 import { IconTool } from '@tabler/icons-react'
 import { getMaintenance, setMaintenanceHandler, type MaintenanceState } from '@hubra/api-client'
 import { useT } from '@/locales/i18n'
+import { useInstance } from '@/context/InstanceContext'
+import { URL_CLUB } from '@/clubBase'
 
 const POLL_MS = 30_000
 
@@ -10,6 +12,7 @@ const POLL_MS = 30_000
  * covers the app, says when it should be back and reloads once it is. */
 export function MaintenanceScreen() {
   const { t, i18n } = useT()
+  const { ssoUrl } = useInstance()
   const [state, setState] = useState<MaintenanceState | null>(null)
 
   useEffect(() => {
@@ -73,6 +76,12 @@ export function MaintenanceScreen() {
             <Text size="xs" c="dimmed">
               {t('app.maintenance.reload', 'Diese Seite lädt sich von selbst neu.')}
             </Text>
+            <Anchor
+              size="sm"
+              href={`${ssoUrl}/status${URL_CLUB ? `?club=${encodeURIComponent(URL_CLUB)}` : ''}`}
+            >
+              {t('app.maintenance.status', 'Systemstatus')}
+            </Anchor>
           </Stack>
         </Paper>
       </Center>

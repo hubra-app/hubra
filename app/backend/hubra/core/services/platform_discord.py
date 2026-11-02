@@ -9,7 +9,7 @@ What is posted:
   * system alerts from ``services.alerts`` (failed tasks, API error rate,
     infrastructure checks), category ``alerts``.
 
-Set up in manage › Platform settings › Discord: the bot token from the
+Set up in manage › Discord › Setup: the bot token from the
 Discord application (``discord.bot_token``), the bot added to the platform
 server, and the channel ID (``discord.log_channel_id``).  No channel, no
 posts.
@@ -154,7 +154,7 @@ def post(
 
     *components*: buttons under the message (``platform_bot``).  Returns
     Discord's message (``id``, ``channel_id``), or ``{}``.  The outcome is
-    remembered for manage › Diagnostics › Discord.
+    remembered for manage › Discord › Status.
     """
     try:
         message = _post(
@@ -326,7 +326,7 @@ def _area(entry: GlobalAuditEntry) -> tuple[str, str] | None:
     """(label, manage path) of the page the change belongs to, if any."""
     a = entry.action or ""
     if a.startswith("tenant_request."):
-        return "Club requests", "/app/requests"
+        return "Club requests", "/app/tenants/requests"
     if a.startswith("impersonation."):
         return "Support access", "/app/support"
     if a.startswith("global_role."):
