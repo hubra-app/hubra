@@ -16,7 +16,7 @@
 - **zod** + `mantine-form-zod-resolver` — schema-based form validation
 - **React Router 7** for client-side routing
 - **Playwright** for E2E tests
-- Custom CSS design system (`src/index.css`) — no Tailwind
+- Custom CSS on top of the shared theme (`packages/ui`) — no Tailwind. Design rules for every app: [design-spec.md](design-spec.md)
 
 ## Project structure
 
