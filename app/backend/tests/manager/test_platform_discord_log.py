@@ -270,46 +270,29 @@ def test_audit_channel_alone_queues(db, audit_on, queued):
     assert queued.call_args.args[1] == entry.id
 
 
-def test_audit_channel_gets_every_entry(db, audit_on, discord_api):
-    # members is off for the log, but the audit channel is the full trail.
-    entry = _entry(db, "tenant.add_member")
+def test_audit_channel_follows_the_categories(db, audit_on, discord_api):
+    entry = _entry(db, "tenant.add_member")  # members is off by default
+    assert platform_discord.post_audit_entry(entry.id) is False
+    discord_api.assert_not_called()
+
+
+def test_audit_entries_go_only_to_the_audit_channel(db, log_on, audit_on, discord_api):
+    entry = _entry(db, "tenant.provision")
     assert platform_discord.post_audit_entry(entry.id) is True
     assert _channels(discord_api) == [AUDIT]
 
 
-def test_both_channels(db, log_on, audit_on, discord_api):
-    entry = _entry(db, "tenant.provision")
-    assert platform_discord.post_audit_entry(entry.id) is True
-    assert _channels(discord_api) == [CHANNEL, AUDIT]
-
-
-def test_same_channel_twice_posts_once(db, log_on, discord_api):
-    platform_settings.set_many({"discord.audit_channel_id": CHANNEL})
-    db.session.commit()
-    entry = _entry(db, "tenant.provision")
-    platform_discord.post_audit_entry(entry.id)
+def test_alerts_stay_in_the_log_with_an_audit_channel(
+    db, log_on, audit_on, discord_api
+):
+    assert alerts.alert_error("Task failed", "boom") is True
     assert _channels(discord_api) == [CHANNEL]
 
 
-def test_alerts_never_go_to_the_audit_channel(db, audit_on, discord_api):
-    assert alerts.alert_error("Task failed", "boom") is False
-    discord_api.assert_not_called()
-
-
-def test_one_failing_channel_does_not_stop_the_other(db, log_on, audit_on):
-    from urllib.error import HTTPError
-
-    ok = MagicMock(status=200)
-    ok.__enter__ = MagicMock(return_value=ok)
-    ok.__exit__ = MagicMock(return_value=False)
+def test_without_audit_channel_entries_go_to_the_log(db, log_on, discord_api):
     entry = _entry(db, "tenant.provision")
-    with patch(
-        "hubra.core.services.platform_discord.urllib.request.urlopen",
-        side_effect=[HTTPError("u", 403, "Forbidden", {}, None), ok],
-    ) as urlopen:
-        with pytest.raises(platform_discord.DiscordPostError):
-            platform_discord.post_audit_entry(entry.id)
-    assert _channels(urlopen) == [CHANNEL, AUDIT]
+    platform_discord.post_audit_entry(entry.id)
+    assert _channels(discord_api) == [CHANNEL]
 
 
 def test_embed_links_to_manage(db, audit_on, discord_api):
@@ -337,7 +320,7 @@ def test_embed_links_to_manage(db, audit_on, discord_api):
 @pytest.mark.parametrize(
     "action,path",
     [
-        ("tenant_request.approve", "/app/requests"),
+        ("tenant_request.approve", "/app/tenants/requests"),
         ("impersonation.start", "/app/support"),
         ("global_role.assign", "/app/roles"),
         ("backup.delete", "/app/platform/backups"),

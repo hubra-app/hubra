@@ -38,7 +38,7 @@ every linked account goes through (see docs/discord.md). Set here only, with
 no env fallback.  ``discord.log_*`` is the platform log: the bot posts
 platform events to a channel on the platform's own server
 (``services.platform_discord``); ``discord.audit_channel_id`` is an optional
-second channel with every audit entry.
+channel that takes the audit entries off the log.
 """
 
 from __future__ import annotations
@@ -235,8 +235,8 @@ SPECS: tuple[Spec, ...] = (
     Spec(
         "discord.audit_channel_id",
         "Audit channel",
-        "Channel ID where the bot posts every platform audit entry, with links "
-        "to manage. Alerts stay in the platform log. Empty: off",
+        "Channel ID on the same server for the audit entries. Set: they go "
+        "there instead of the platform log, which keeps the alerts. Empty: off",
         lambda cfg: "",
         "number",
     ),
@@ -244,9 +244,21 @@ SPECS: tuple[Spec, ...] = (
         "discord.log_events",
         "Platform log events",
         "Comma-separated categories to post: clubs, requests, access, members, "
-        "plugins, backups, platform, alerts",
-        lambda cfg: "clubs,requests,access,plugins,backups,platform,alerts",
+        "plugins, backups, platform, alerts, digest, releases, security",
+        lambda cfg: (
+            "clubs,requests,access,plugins,backups,platform,alerts,"
+            "digest,releases,security"
+        ),
         "discord_log_events",
+    ),
+    Spec(
+        "discord.platform_roles",
+        "Roles on the platform server",
+        "on: the bot gives everyone who linked Discord the roles Plattform-Admin, "
+        "Vereinsinhaber, Vereinsadmin and Vereinsmitglied on the platform server. "
+        "off deletes these roles again",
+        lambda cfg: "off",
+        "on_off",
     ),
     Spec(
         "alerts.cooldown_minutes",
@@ -270,6 +282,15 @@ SPECS: tuple[Spec, ...] = (
         "off: no alert goes out by mail or Discord; the event log still keeps them",
         lambda cfg: "on",
         "on_off",
+    ),
+    Spec(
+        "notify.mail_events",
+        "Platform events by mail",
+        "Comma-separated platform event categories mailed to platform admins "
+        "(clubs, requests, access, members, plugins, backups, platform). "
+        "Empty: none",
+        lambda cfg: "",
+        "discord_log_events",
     ),
     Spec(
         "alerts.mail_off",

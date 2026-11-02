@@ -315,6 +315,7 @@ export type AlertType =
   | 'plugin_updates'
   | 'upgrades'
   | 'system'
+  | 'support_cases'
 
 export interface OpenProblem {
   id: string
@@ -340,8 +341,14 @@ export interface AlertSwitches {
   enabled: boolean
   /** The platform Discord log is set up with the alerts category. */
   discordReady: boolean
-  types: Record<AlertType, { mail: boolean; discord: boolean }>
+  /** The matrix columns, in order. */
+  channels: NotifyChannel[]
+  types: Record<AlertType, Record<NotifyChannel, boolean>>
+  /** Platform events (audit log categories) per channel; a channel left out is not offered (Discord-only categories have no mail). */
+  events: Record<string, Partial<Record<NotifyChannel, boolean>>>
 }
+
+export type NotifyChannel = 'mail' | 'discord'
 
 export async function getAlertsOverview() {
   return apiFetch<{
@@ -359,7 +366,8 @@ export async function getAlertSwitches() {
 
 export async function updateAlertSwitches(change: {
   enabled?: boolean
-  types?: Partial<Record<AlertType, Partial<{ mail: boolean; discord: boolean }>>>
+  types?: Partial<Record<AlertType, Partial<Record<NotifyChannel, boolean>>>>
+  events?: Record<string, Partial<Record<NotifyChannel, boolean>>>
 }) {
   return apiFetch<AlertSwitches>(`${P}/alerts/switches`, {
     method: 'PUT',
@@ -603,4 +611,105 @@ export async function dismissJob(id: string) {
   return apiFetch<{ removed: string }>(`${P}/jobs/failed/${encodeURIComponent(id)}`, {
     method: 'DELETE',
   })
+}
+
+// ── Early access (Einstellungen › Früher Zugang) ─────────────────────────────
+
+export type FeatureStage = 'off' | 'early' | 'all'
+
+export interface FeatureFlag {
+  key: string
+  title_de: string
+  title_en: string
+  description_de: string
+  description_en: string
+  stage: FeatureStage
+  clubs_on: number
+  /** Clubs that have it forced on / off for themselves. */
+  forced_on: number[]
+  forced_off: number[]
+}
+
+export interface FeaturesOverview {
+  flags: FeatureFlag[]
+  early_access: { id: number; name: string; slug: string }[]
+  clubs_total: number
+}
+
+export async function getFeatures() {
+  return apiFetch<FeaturesOverview>(`${P}/features`)
+}
+
+export async function setFeatureStage(key: string, stage: FeatureStage) {
+  return apiFetch<FeaturesOverview>(`${P}/features/${encodeURIComponent(key)}`, {
+    method: 'PUT',
+    body: JSON.stringify({ stage }),
+  })
+}
+
+// ── Errors grouped by route and build (Diagnose › Fehler) ────────────────────
+
+export type ErrorStatus = 'open' | 'resolved'
+
+export interface ErrorGroupRow {
+  id: number
+  exc_type: string
+  route: string
+  location: string
+  message: string
+  count: number
+  first_seen: string
+  last_seen: string
+  /** "1.4.0 (abc1234)": the build it first happened on. */
+  first_build: string
+  first_commit: string | null
+  last_build: string
+  /** Occurrences per build label. */
+  builds: Record<string, number>
+  status: ErrorStatus
+  resolved_at: string | null
+  reopened_at: string | null
+  last_tenant_id: number | null
+  /** First seen on the build running now. */
+  new_in_current: boolean
+}
+
+export interface ErrorGroupDetail extends ErrorGroupRow {
+  traceback: string
+  /** The upgrade that brought the first build, if the event log has it. */
+  release: { kind: string; at: string; message: string } | null
+  last_club: { id: number; name: string } | null
+}
+
+export interface ErrorList {
+  errors: ErrorGroupRow[]
+  total: number
+  page: number
+  per_page: number
+  counts: Record<ErrorStatus, number>
+  current_build: string
+  builds: Record<string, number>
+}
+
+export async function getErrors(params: {
+  status: ErrorStatus | 'all'
+  q?: string
+  sort?: 'last_seen' | 'count' | 'first_seen'
+  build?: string
+  page?: number
+  per_page?: number
+}) {
+  const qs = new URLSearchParams()
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== '') qs.set(k, String(v))
+  }
+  return apiFetch<ErrorList>(`${P}/errors?${qs}`)
+}
+
+export async function getError(id: number) {
+  return apiFetch<{ error: ErrorGroupDetail }>(`${P}/errors/${id}`)
+}
+
+export async function setErrorStatus(id: number, action: 'resolve' | 'reopen') {
+  return apiFetch<{ error: ErrorGroupRow }>(`${P}/errors/${id}/${action}`, { method: 'POST' })
 }

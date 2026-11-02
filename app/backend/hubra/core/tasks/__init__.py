@@ -127,6 +127,7 @@ def make_celery(app: Flask) -> Celery:
             "hubra.core.tasks.infra_checks",
             "hubra.core.tasks.plugin_tasks",
             "hubra.core.tasks.platform_discord_tasks",
+            "hubra.core.tasks.platform_bot_tasks",
             "hubra.core.tasks.push_tasks",
             "hubra.core.tasks.mail_monitor_tasks",
             "hubra.core.tasks.connected_app_tasks",
@@ -249,6 +250,11 @@ def make_celery(app: Flask) -> Celery:
                 "task": "hubra.core.tasks.upgrade_tasks.check_upgrades",
                 "schedule": 60.0,
             },
+            # Planned maintenance, resolved alerts, releases, 08:00 digest.
+            "platform-bot-every-minute": {
+                "task": "hubra.core.tasks.platform_bot_tasks.tick",
+                "schedule": 60.0,
+            },
             "plugin-updates": {
                 "task": "hubra.core.tasks.plugin_tasks.check_plugin_updates",
                 "schedule": crontab(hour="*/6", minute=40),
@@ -265,6 +271,11 @@ def make_celery(app: Flask) -> Celery:
         beat_scheduler="hubra.core.tasks.scheduling:HubraScheduler",
     )
     conf["beat_schedule"].update(_module_schedules())
+    # Platform tasks on their own queue when a platform worker runs them
+    # (HUBRA_PLATFORM_QUEUE; hubra.core.roles).
+    from hubra.core.roles import task_routes
+
+    conf["task_routes"] = task_routes()
     if testing:
         conf["task_always_eager"] = True
         conf["task_eager_propagates"] = True
@@ -338,7 +349,9 @@ def _report_build(component: str):
     def handler(**_kwargs) -> None:
         from hubra.core.build_info import start_heartbeat
 
-        start_heartbeat(component, celery_app.flask_app)
+        from hubra.core.roles import build_component
+
+        start_heartbeat(build_component(component), celery_app.flask_app)
 
     return handler
 
@@ -346,5 +359,5 @@ def _report_build(component: str):
 signals.worker_ready.connect(_report_build("worker"), weak=False)
 signals.beat_init.connect(_report_build("beat"), weak=False)
 
-# The background job dashboard (manage › Diagnose › Hintergrundjobs).
+# The background job dashboard (manage › Diagnostics › Background jobs).
 from hubra.core.tasks import job_signals  # noqa: E402,F401

@@ -1,4 +1,4 @@
-"""The Discord bot's state for manage › Diagnostics › Discord.
+"""The Discord bot's state for manage › Discord › Status.
 
 What it checks:
   * the application settings (ID, public key, client secret, bot token);
@@ -55,7 +55,7 @@ def _error_text(exc: Exception) -> str:
     if isinstance(exc, urllib.error.HTTPError):
         return {
             401: "Discord refused the bot token (401): reset it in the Developer "
-            "Portal and save the new one in Platform settings › Discord",
+            "Portal and save the new one in Discord › Setup",
             403: "Discord refused access (403)",
             404: "Not found (404)",
             429: "Rate limited by Discord (429); try again in a minute",
@@ -212,7 +212,7 @@ def _iso(value: datetime | None) -> str | None:
 
 
 def status(refresh: bool = False) -> dict:
-    """Everything the Diagnostics › Discord tab shows."""
+    """Everything the Discord › Status tab shows."""
     from hubra.core.models.connected_app import ConnectedApp, ExternalAccount
     from hubra.core.models.plugin import InstalledPlugin
     from hubra.core.models.tenant import Tenant
@@ -371,7 +371,10 @@ def servers() -> dict:
     token = _token()
     guilds = _call("/users/@me/guilds?limit=200", token) or []
     current = None
-    channel_id = platform_settings.get("discord.log_channel_id")
+    # Log and audit channel share one server: preselect it from either.
+    channel_id = platform_settings.get(
+        "discord.log_channel_id"
+    ) or platform_settings.get("discord.audit_channel_id")
     if channel_id:
         try:
             current = (_api(f"/channels/{channel_id}", token) or {}).get("guild_id")

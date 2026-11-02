@@ -443,7 +443,7 @@ def list_platform_events():
 @require_global_permission(_DIAGNOSTICS)
 def alerts_overview():
     """What is wrong right now, the latest alerts, and 24 h of warnings and
-    errors per area, for manage › Platform › Alerts."""
+    errors per area, for manage › Alerts."""
     from datetime import datetime, timedelta, timezone
 
     from sqlalchemy import func, select
@@ -481,27 +481,51 @@ def alerts_overview():
 
 
 def _alert_switches() -> dict:
-    """The platform-wide alert switches: all on/off, and per type mail and
-    Discord.  ``discordReady``: the platform Discord log is set up."""
+    """The notification matrix: what goes where.
+
+    ``types``: alert types × mail / Discord.  ``events``: platform audit
+    categories × mail / Discord.  ``channels``: the columns, so a new
+    channel is one more entry.  ``enabled``: alerts on at all.
+    ``discordReady``: the bot token and a platform log channel are set.
+
+    Stored as ``alerts.mail_off`` / ``alerts.discord_off`` (alert types
+    off), ``notify.mail_events`` and ``discord.log_events`` (categories on;
+    ``alerts`` in there lets alerts reach Discord at all).
+    """
     from hubra.core.services import platform_discord, platform_settings
 
     def _off(key: str) -> set[str]:
         return {t.strip() for t in platform_settings.get(key).split(",") if t.strip()}
 
     mail_off, discord_off = _off("alerts.mail_off"), _off("alerts.discord_off")
+    discord_on = platform_discord.enabled_categories()
+    mail_on = platform_discord.mail_categories()
     try:
         channel_id, token = platform_discord._settings()
-        discord_ready = bool(channel_id and token) and (
-            "alerts" in platform_discord.enabled_categories()
-        )
+        discord_ready = bool(token and channel_id)
     except Exception:  # noqa: BLE001
         discord_ready = False
+    alerts_to_discord = "alerts" in discord_on
     return {
         "enabled": platform_settings.get("alerts.enabled") != "off",
         "discordReady": discord_ready,
+        "channels": ["mail", "discord"],
         "types": {
-            t: {"mail": t not in mail_off, "discord": t not in discord_off}
+            t: {
+                "mail": t not in mail_off,
+                "discord": alerts_to_discord and t not in discord_off,
+            }
             for t in platform_monitor.ALERT_TYPES
+        },
+        # Discord-only categories (the bot's own posts) have no mail key.
+        "events": {
+            c: (
+                {"discord": c in discord_on}
+                if c in platform_discord.DISCORD_ONLY
+                else {"mail": c in mail_on, "discord": c in discord_on}
+            )
+            for c in platform_discord.CATEGORIES
+            if c != "alerts"
         },
     }
 
@@ -516,7 +540,8 @@ def get_alert_switches():
 @require_global_permission(_PERM)
 def update_alert_switches():
     """Body ``{"enabled": bool, "types": {"<type>": {"mail": bool,
-    "discord": bool}}}``; what is left out keeps its value."""
+    "discord": bool}}, "events": {"<category>": {"mail": bool, "discord":
+    bool}}}``; what is left out keeps its value."""
     from hubra.core.services import platform_settings
 
     body = request.get_json(silent=True)
@@ -541,10 +566,38 @@ def update_alert_switches():
                     "VALIDATION_ERROR", f"{t}: mail and discord are true or false", 400
                 )
             merged[t][ch] = on
+    events = body.get("events", {})
+    if not isinstance(events, dict):
+        return api_error("VALIDATION_ERROR", "events is an object", 400)
+    merged_events = {c: dict(v) for c, v in current["events"].items()}
+    for c, chans in events.items():
+        if c not in merged_events or not isinstance(chans, dict):
+            return api_error("VALIDATION_ERROR", f"Unknown event category: {c}", 400)
+        for ch, on in chans.items():
+            if ch not in merged_events[c] or not isinstance(on, bool):
+                return api_error(
+                    "VALIDATION_ERROR",
+                    f"{c}: {' and '.join(merged_events[c])} are true or false",
+                    400,
+                )
+            merged_events[c][ch] = on
     if types:
         for ch in ("mail", "discord"):
             off = [t for t, v in merged.items() if not v[ch]]
             values[f"alerts.{ch}_off"] = ",".join(off) or None
+    if types or events:
+        from hubra.core.services import platform_discord
+
+        cats = [c for c in platform_discord.CATEGORIES if c != "alerts"]
+        discord = [c for c in cats if merged_events[c]["discord"]]
+        # Alerts reach Discord only with "alerts" in the list; the per-type
+        # switches above say which ones.
+        if any(v["discord"] for v in merged.values()):
+            discord.append("alerts")
+        values["discord.log_events"] = ",".join(discord)
+        values["notify.mail_events"] = (
+            ",".join(c for c in cats if merged_events[c].get("mail")) or None
+        )
     platform_settings.set_many(values, actor_id=g.system_user.id)
     db.session.commit()
     return jsonify(_alert_switches()), 200
@@ -724,10 +777,168 @@ def cancel_maintenance_window(window_id: int):
     ), 200
 
 
+@platform_bp.get("/features")
+@require_global_permission(_PERM)
+def list_features():
+    """Early-access flags: stage, how many clubs have each, the group."""
+    from hubra.core.services import feature_flags
+
+    return jsonify(feature_flags.overview()), 200
+
+
+@platform_bp.put("/features/<key>")
+@require_global_permission(_PERM)
+def set_feature_stage(key: str):
+    """``{"stage": "off" | "early" | "all"}``."""
+    from hubra.core.services import feature_flags
+
+    body = request.get_json(silent=True) or {}
+    before = feature_flags.stages().get(key)
+    feature_flags.set_stage(key, body.get("stage"), actor_id=g.system_user.id)
+    _audit(
+        "platform.feature.stage",
+        "feature",
+        key,
+        {"before": before, "after": body.get("stage")},
+    )
+    db.session.commit()
+    return jsonify(feature_flags.overview()), 200
+
+
+@platform_bp.get("/errors")
+@require_global_permission(_DIAGNOSTICS)
+def list_errors():
+    """Grouped API errors.  ``status``: open (default), resolved or all;
+    ``q`` searches type, message, route and location; ``sort``: last_seen
+    (default), count or first_seen; ``build`` only groups seen on it."""
+    from sqlalchemy import func, or_, select
+
+    from hubra.core.models.error_group import ErrorGroup
+    from hubra.core.services import error_tracker
+
+    status = request.args.get("status", "open")
+    if status not in ("open", "resolved", "all"):
+        return api_error("VALIDATION_ERROR", "status is open, resolved or all", 400)
+    sort = request.args.get("sort", "last_seen")
+    order = {
+        "last_seen": ErrorGroup.last_seen.desc(),
+        "count": ErrorGroup.count.desc(),
+        "first_seen": ErrorGroup.first_seen.desc(),
+    }.get(sort)
+    if order is None:
+        return api_error(
+            "VALIDATION_ERROR", "sort is last_seen, count or first_seen", 400
+        )
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+        per_page = min(100, max(1, int(request.args.get("per_page", 25))))
+    except ValueError:
+        return api_error("VALIDATION_ERROR", "page and per_page are numbers", 400)
+
+    query = select(ErrorGroup)
+    if status != "all":
+        query = query.where(ErrorGroup.status == status)
+    if q := (request.args.get("q") or "").strip()[:100]:
+        like = f"%{q.lower()}%"
+        query = query.where(
+            or_(
+                func.lower(ErrorGroup.exc_type).like(like),
+                func.lower(ErrorGroup.message).like(like),
+                func.lower(ErrorGroup.route).like(like),
+                func.lower(ErrorGroup.location).like(like),
+            )
+        )
+    groups = db.session.scalars(query.order_by(order, ErrorGroup.id.desc())).all()
+    if build := request.args.get("build"):
+        groups = [g for g in groups if build in (g.builds or {})]
+    total = len(groups)
+    shown = groups[(page - 1) * per_page : page * per_page]
+    current = error_tracker.current_build()
+    counts = dict(
+        db.session.execute(
+            select(ErrorGroup.status, func.count()).group_by(ErrorGroup.status)
+        ).all()
+    )
+    builds: dict[str, int] = {}
+    for group in db.session.scalars(select(ErrorGroup)).all():
+        for label, n in (group.builds or {}).items():
+            builds[label] = builds.get(label, 0) + int(n)
+    return jsonify(
+        {
+            "errors": [error_tracker.group_json(g, current=current) for g in shown],
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "counts": {
+                "open": counts.get("open", 0),
+                "resolved": counts.get("resolved", 0),
+            },
+            "current_build": current,
+            "builds": builds,
+        }
+    ), 200
+
+
+@platform_bp.get("/errors/<int:group_id>")
+@require_global_permission(_DIAGNOSTICS)
+def get_error(group_id: int):
+    from hubra.core.models.error_group import ErrorGroup
+    from hubra.core.models.tenant import Tenant
+    from hubra.core.services import error_tracker
+
+    group = db.session.get(ErrorGroup, group_id)
+    if group is None:
+        return api_error("NOT_FOUND", "No such error", 404)
+    out = error_tracker.group_json(
+        group, full=True, current=error_tracker.current_build()
+    )
+    club = (
+        db.session.get(Tenant, group.last_tenant_id) if group.last_tenant_id else None
+    )
+    out["last_club"] = {"id": club.id, "name": club.name} if club else None
+    return jsonify({"error": out}), 200
+
+
+@platform_bp.post("/errors/<int:group_id>/<any(resolve, reopen):action>")
+@require_global_permission(_PERM)
+def change_error(group_id: int, action: str):
+    """Mark a group resolved (it opens again if it happens again), or open."""
+    from datetime import datetime, timezone
+
+    from hubra.core.models.error_group import ErrorGroup
+    from hubra.core.services import error_tracker
+
+    group = db.session.get(ErrorGroup, group_id)
+    if group is None:
+        return api_error("NOT_FOUND", "No such error", 404)
+    if action == "resolve":
+        group.status = "resolved"
+        group.resolved_at = datetime.now(timezone.utc)
+        group.resolved_by = g.system_user.id
+    else:
+        group.status = "open"
+        group.resolved_at = None
+        group.resolved_by = None
+    _audit(
+        f"platform.error.{action}",
+        "ErrorGroup",
+        str(group.id),
+        {"type": group.exc_type},
+    )
+    db.session.commit()
+    return jsonify(
+        {
+            "error": error_tracker.group_json(
+                group, current=error_tracker.current_build()
+            )
+        }
+    ), 200
+
+
 @platform_bp.get("/alerts/performance")
 @require_global_permission(_DIAGNOSTICS)
 def alerts_performance():
-    """API timing per route and slow queries, for manage › Platform › Alerts
+    """API timing per route and slow queries, for manage › Alerts
     › Performance.  ``hours``: 1 to 24 clock hours, the current one included."""
     from hubra.core.services import perf_monitor
 
@@ -744,7 +955,7 @@ def alerts_performance():
 @platform_bp.get("/jobs")
 @require_global_permission(_DIAGNOSTICS)
 def jobs_overview():
-    """Background jobs for manage › Diagnose › Hintergrundjobs: queued and
+    """Background jobs for manage › Diagnostics › Background jobs: queued and
     running jobs, per-task counts for ``hours`` (1 to 48) and the failed
     jobs that can be run again."""
     from sqlalchemy import select

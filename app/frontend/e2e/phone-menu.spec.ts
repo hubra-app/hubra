@@ -87,7 +87,13 @@ test('the account menu only holds what the card and sidebar do not', async ({ pa
   const sidebar = page.locator('.mantine-AppShell-navbar')
   await sidebar.getByTestId('user-card').click()
   const menu = sidebar.getByTestId('user-menu')
-  await expect(menu.getByRole('button')).toHaveText(['Mein Konto', 'Neuigkeiten', 'Abmelden'])
+  await expect(menu.getByRole('button')).toHaveText([
+    'Mein Konto',
+    'Neuigkeiten',
+    'Problem melden',
+    'Idee vorschlagen',
+    'Abmelden',
+  ])
   // The card already names who is signed in.
   await expect(menu.getByText('admin@demo.test')).toHaveCount(0)
 })

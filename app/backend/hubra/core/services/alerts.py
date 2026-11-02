@@ -1,7 +1,7 @@
 """System alerts for infrastructure monitoring.
 
 Alerts are posted by the Hubra bot to the platform Discord log channel
-(manage › Platform settings › Discord, category ``alerts``); see
+(manage › Discord › Setup, category ``alerts``); see
 ``services.platform_discord``.  Nothing is sent while that is not set up.
 """
 
@@ -23,6 +23,7 @@ def send_alert(
     fields: list[dict[str, Any]] | None = None,
     *,
     staff: bool = True,
+    alert_type: str = "system",
 ) -> bool:
     """Post an alert embed to the platform Discord log.
 
@@ -52,7 +53,7 @@ def send_alert(
 
     from hubra.core.services import platform_discord
 
-    return platform_discord.post_alert(embed)
+    return platform_discord.post_alert(embed, alert_type)
 
 
 def _to_platform_staff(title, description, fields, color) -> None:

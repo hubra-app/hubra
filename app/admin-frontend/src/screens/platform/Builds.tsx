@@ -31,7 +31,7 @@ async function frontendCommit(base: string): Promise<string | undefined> {
 }
 
 /** Short hash linked to the commit, or "dev" for a build without one. */
-function CommitLink({ sha }: { sha: string | null }) {
+export function CommitLink({ sha }: { sha: string | null }) {
   if (!sha) {
     return (
       <Badge variant="light" color="gray" size="sm">
@@ -75,6 +75,9 @@ export function BuildsPanel({ health }: { health: HealthDetail }) {
     worker: tr('Hintergrund-Worker', 'Background worker'),
     beat: tr('Zeitplaner (Beat)', 'Scheduler (beat)'),
     'discord-gateway': 'Discord-Gateway',
+    // A split install (docs/platform-backend.md) runs these as well.
+    'platform-api': tr('Plattform-Backend (API)', 'Platform backend (API)'),
+    'platform-worker': tr('Plattform-Worker', 'Platform worker'),
   }
   const byComponent = new Map<string, BuildReport[]>()
   for (const r of reports) byComponent.set(r.component, [...(byComponent.get(r.component) ?? []), r])

@@ -1,5 +1,5 @@
 import { withStepUp } from '@/api/stepUp'
-import { apiFetch } from '@hubra/api-client'
+import { apiFetch, apiFetchRaw } from '@hubra/api-client'
 
 export interface Tenant {
   id: number
@@ -141,6 +141,87 @@ export async function listGlobalAudit(
   if (params.per_page) qs.set('per_page', String(params.per_page))
   const s = qs.toString()
   return apiFetch(`/system/audit${s ? `?${s}` : ''}`)
+}
+
+// ── Audit search across the platform and every club ─────────────────────────
+
+export type AuditSource = 'all' | 'platform' | 'club'
+
+export interface AuditSearchParams {
+  q?: string
+  source?: AuditSource
+  tenant_id?: number
+  action?: string
+  /** YYYY-MM-DD, inclusive. */
+  from?: string
+  to?: string
+  hide_logins?: boolean
+  page?: number
+  per_page?: number
+}
+
+export interface AuditSearchEntry {
+  /** Unique across both logs. */
+  key: string
+  source: 'platform' | 'club'
+  id: number
+  tenant_id: number | null
+  club: string | null
+  time: string | null
+  action: string
+  actor_id: number | null
+  actor: string | null
+  actor_email: string | null
+  target_type: string | null
+  target_id: string | null
+  target_label: string | null
+  details: unknown
+  ip_address: string | null
+}
+
+function auditQuery(params: AuditSearchParams) {
+  const qs = new URLSearchParams()
+  for (const [k, v] of Object.entries(params)) {
+    if (v === undefined || v === '' || v === false || v === 'all') continue
+    qs.set(k, v === true ? '1' : String(v))
+  }
+  const s = qs.toString()
+  return s ? `?${s}` : ''
+}
+
+export async function searchAudit(params: AuditSearchParams) {
+  return apiFetch<{ entries: AuditSearchEntry[]; total: number; page: number; per_page: number }>(
+    `/system/audit/search${auditQuery(params)}`,
+  )
+}
+
+/** Downloads the search as CSV; returns the rows and whether it was cut. */
+export async function exportAudit(params: Omit<AuditSearchParams, 'page' | 'per_page'>) {
+  const res = await apiFetchRaw(`/system/audit/export${auditQuery(params)}`)
+  if (!res.ok) {
+    let message = `HTTP ${res.status}`
+    try {
+      message = ((await res.json()) as { message?: string }).message ?? message
+    } catch {
+      /* not JSON */
+    }
+    throw new Error(message)
+  }
+  const blob = await res.blob()
+  const name =
+    /filename=([^;]+)/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? 'hubra-audit.csv'
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = name
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+  return {
+    rows: Number(res.headers.get('X-Rows') ?? 0),
+    truncated: res.headers.get('X-Truncated') === 'true',
+  }
 }
 
 export interface TenantRequest {
@@ -474,5 +555,34 @@ export async function setTenantLimits(
   return apiFetch<TenantLimits>(`/system/tenants/${tenantId}/limits`, {
     method: 'PUT',
     body: JSON.stringify(values),
+  })
+}
+
+// ── Early access per club ────────────────────────────────────────────────────
+
+export interface TenantEarlyAccess {
+  early_access: boolean
+  features: {
+    key: string
+    title_de: string
+    title_en: string
+    stage: 'off' | 'early' | 'all'
+    /** The club's own choice; null follows the stage. */
+    override: boolean | null
+    on: boolean
+  }[]
+}
+
+export async function getTenantEarlyAccess(tenantId: number) {
+  return apiFetch<TenantEarlyAccess>(`/system/tenants/${tenantId}/early-access`)
+}
+
+export async function setTenantEarlyAccess(
+  tenantId: number,
+  body: { early_access?: boolean; features?: Record<string, boolean | null> },
+) {
+  return apiFetch<TenantEarlyAccess>(`/system/tenants/${tenantId}/early-access`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
   })
 }

@@ -1,26 +1,23 @@
 import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Anchor,
   Badge,
   Button,
-  Checkbox,
   Group,
   Paper,
   PasswordInput,
   Stack,
+  Switch,
   Table,
   Text,
   TextInput,
   Title,
 } from '@mantine/core'
-import { PageHead, Tabs } from '@/components/ui'
 import { useAdmin } from '@/context/AdminContext'
 import { useLang, tr } from '@/lang'
 import { planLabel } from '@/labels'
-import { PlatformTranslations } from '@/screens/platform/Translations'
-import { PlatformEncryption } from '@/screens/platform/Encryption'
 import { DiscordLogPicker } from '@/screens/platform/DiscordLogPicker'
 import {
   getPlatformSettings,
@@ -54,8 +51,8 @@ const DISCORD = [
   'discord.bot_token',
 ]
 
-const DISCORD_LOG = ['discord.log_channel_id', 'discord.log_events']
-const DISCORD_AUDIT = ['discord.audit_channel_id']
+const DISCORD_LOG = ['discord.log_channel_id', 'discord.audit_channel_id']
+const DISCORD_ROLES = ['discord.platform_roles']
 // Defaults built into Hubra, not read from the environment.
 const PERF = ['perf.slow_request_ms', 'perf.slow_query_ms', 'perf.p95_warning_ms']
 const PLANS = ['starter', 'growth', 'enterprise'] as const
@@ -67,64 +64,33 @@ const LIMITS = [
 const BUILT_IN = ['alerts.cooldown_minutes', 'alerts.retention_days', ...PERF, ...LIMITS]
 const ALERTS = ['alerts.cooldown_minutes', 'alerts.retention_days', 'alerts.manage_url']
 
-// Categories of platform events the bot posts (services/platform_discord.py).
-const LOG_CATEGORIES: [string, string, string][] = [
-  [
-    'clubs',
-    'Vereine erstellt, geändert, gesperrt, gelöscht; Module; Domains',
-    'Clubs created, changed, suspended, deleted; modules; domains',
-  ],
-  [
-    'requests',
-    'Vereinsanfragen eingereicht, angenommen, abgelehnt',
-    'Club requests submitted, approved, rejected',
-  ],
-  [
-    'access',
-    'Plattformrollen, Vereinsinhaber/-admins, Impersonation',
-    'Platform roles, club owners/admins, impersonation',
-  ],
-  [
-    'members',
-    'Mitglieder kommen zu einem Verein (viele Meldungen)',
-    'Members joining a club (many posts)',
-  ],
-  [
-    'plugins',
-    'Plugins installiert, aktualisiert, entfernt; Quellen',
-    'Plugins installed, updated, removed; repositories',
-  ],
-  [
-    'backups',
-    'Backups erstellt, geprüft, wiederhergestellt, gelöscht',
-    'Backups created, verified, restored, deleted',
-  ],
-  [
-    'platform',
-    'Plattform-Einstellungen, Schlüssel, Mailserver, Übersetzungen',
-    'Platform settings, keys, mail server, translations',
-  ],
-  [
-    'alerts',
-    'Systemwarnungen: fehlgeschlagene Tasks, Fehlerrate, Infrastruktur',
-    'System alerts: failed tasks, error rate, infrastructure',
-  ],
-]
 
 // View Channel + Send Messages + Embed Links
 const LOG_BOT_PERMISSIONS = (1 << 10) | (1 << 11) | (1 << 14)
+// Manage Roles, only asked for when the bot keeps the platform server's roles.
+const MANAGE_ROLES = 1 << 28
 
-const TABS = [
-  'mail',
-  'sender',
-  'backups',
-  'discord',
-  'alerts',
-  'limits',
-  'encryption',
-  'translations',
-] as const
-type Tab = (typeof TABS)[number]
+/** One group of platform settings; each is shown on the page it configures. */
+export type SettingsSectionId =
+  | 'relay'
+  | 'sender'
+  | 'backups'
+  | 'discord-app'
+  | 'discord-channels'
+  | 'alerts'
+  | 'performance'
+  | 'limits'
+/** The keys each section saves. */
+const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
+  relay: [...RELAY, ...FALLBACK],
+  sender: SENDER,
+  backups: BACKUP,
+  'discord-app': DISCORD,
+  'discord-channels': [...DISCORD_LOG, ...DISCORD_ROLES],
+  alerts: ALERTS,
+  performance: PERF,
+  limits: LIMITS,
+}
 
 function SourceBadge({ s }: { s: PlatformSetting }) {
   return s.source === 'platform' ? (
@@ -239,14 +205,16 @@ const FIELD_DE: Record<string, [string, string]> = {
   ],
 }
 
-export function PlatformSettings() {
+/**
+ * One group of platform settings (not of one club), shown on the page it
+ * belongs to: the mail relay under Mail, the backup storage under Backups,
+ * plan limits under All clubs, and so on. Each section saves on its own.
+ */
+export function SettingsSection({ section }: { section: SettingsSectionId }) {
   const { notify } = useAdmin()
   const { tr } = useLang()
   const queryClient = useQueryClient()
-  const location = useLocation()
   const navigate = useNavigate()
-  const last = location.pathname.split('/').pop() as Tab
-  const tab: Tab = TABS.includes(last) ? last : 'mail'
   const { data: settings = [], isLoading } = useQuery({
     queryKey: ['platform-settings'],
     queryFn: getPlatformSettings,
@@ -259,9 +227,12 @@ export function PlatformSettings() {
   const [testingDiscord, setTestingDiscord] = useState<'log' | 'audit' | null>(null)
 
   const byKey = Object.fromEntries(settings.map((s) => [s.key, s]))
-  // A secret field left empty keeps the stored value.
-  const changed = settings.filter((s) =>
-    s.secret ? !!draft[s.key] : s.key in draft && draft[s.key] !== s.value,
+  // A secret field left empty keeps the stored value. Only this section's
+  // fields count, so a half-edited field elsewhere is never saved here.
+  const changed = settings.filter(
+    (s) =>
+      SECTION_KEYS[section].includes(s.key) &&
+      (s.secret ? !!draft[s.key] : s.key in draft && draft[s.key] !== s.value),
   )
 
   const save = async (values: Record<string, string | null>) => {
@@ -321,35 +292,32 @@ export function PlatformSettings() {
     }
   }
 
-  const logEvents = (draft['discord.log_events'] ?? byKey['discord.log_events']?.value ?? '')
-    .split(',')
-    .map((c) => c.trim())
-    .filter(Boolean)
   const clientId = byKey['discord.client_id']?.value ?? ''
   const logChanged = changed.some((s) => DISCORD_LOG.includes(s.key))
-  const auditChanged = changed.some((s) => DISCORD_AUDIT.includes(s.key))
+  const logChannel =
+    draft['discord.log_channel_id'] ?? byKey['discord.log_channel_id']?.value ?? ''
+  const auditChannel =
+    draft['discord.audit_channel_id'] ?? byKey['discord.audit_channel_id']?.value ?? ''
   const manageUrl = byKey['alerts.manage_url']?.value ?? ''
 
-  const botAddLink =
-    clientId ? (
-      <Anchor
-        href={`https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&scope=bot&permissions=${LOG_BOT_PERMISSIONS}`}
-        target="_blank"
-        rel="noreferrer"
-      >
-        {tr(
-          'Bot zum Plattform-Server hinzufügen',
-          'Add the bot to the platform server',
-        )}
-      </Anchor>
-    ) : (
-      <Text span size="sm" c="dimmed">
-        {tr(
-          'Zuerst die Discord-Anwendungs-ID oben eintragen.',
-          'Set the Discord application ID above first.',
-        )}
-      </Text>
-    )
+  const rolesOn =
+    (draft['discord.platform_roles'] ?? byKey['discord.platform_roles']?.value) === 'on'
+  const botAddLink = clientId ? (
+    <Anchor
+      href={`https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&scope=bot&permissions=${LOG_BOT_PERMISSIONS | (rolesOn ? MANAGE_ROLES : 0)}`}
+      target="_blank"
+      rel="noreferrer"
+    >
+      {tr('Bot zum Plattform-Server hinzufügen', 'Add the bot to the platform server')}
+    </Anchor>
+  ) : (
+    <Text span size="sm" c="dimmed">
+      {tr(
+        'Zuerst die Discord-Anwendungs-ID unter Einrichtung eintragen.',
+        'Set the Discord application ID under Setup first.',
+      )}
+    </Text>
+  )
 
   const field = (key: string) => {
     const s = byKey[key]
@@ -403,39 +371,13 @@ export function PlatformSettings() {
 
   return (
     <div>
-      <PageHead
-        title={tr('Plattform-Einstellungen', 'Platform settings')}
-        desc={tr(
-          'Gilt für die ganze Plattform, für alle Vereine.',
-          'These apply to the whole platform, for every club.',
-        )}
-      />
-      <Tabs
-        tabs={[
-          { id: 'mail', label: tr('Mail-Relay', 'Mail relay') },
-          { id: 'sender', label: tr('Systemabsender', 'System sender') },
-          { id: 'backups', label: tr('Backup-Speicher', 'Backup storage') },
-          { id: 'discord', label: 'Discord' },
-          { id: 'alerts', label: tr('Warnungen', 'Alerts') },
-          { id: 'limits', label: tr('Limits', 'Limits') },
-          { id: 'encryption', label: tr('Verschlüsselung', 'Encryption') },
-          { id: 'translations', label: tr('Übersetzungen', 'Translations') },
-        ]}
-        activeTab={tab}
-        onTabChange={(id) => navigate(`/app/platform/settings${id === 'mail' ? '' : '/' + id}`)}
-      />
-
-      {tab === 'translations' ? (
-        <PlatformTranslations />
-      ) : tab === 'encryption' ? (
-        <PlatformEncryption />
-      ) : isLoading ? (
+      {isLoading ? (
         <Text size="sm" c="dimmed">
           {tr('Wird geladen …', 'Loading…')}
         </Text>
       ) : (
         <Stack gap={20} maw={720}>
-          {tab === 'mail' && (
+          {section === 'relay' && (
             <Paper withBorder shadow="sm" radius="lg" p="lg">
               <Group justify="space-between" mb={4}>
                 <Title order={3}>{tr('Mail-Relay', 'Relay')}</Title>
@@ -451,7 +393,7 @@ export function PlatformSettings() {
             </Paper>
           )}
 
-          {tab === 'mail' && (
+          {section === 'relay' && (
             <Paper withBorder shadow="sm" radius="lg" p="lg">
               <Group justify="space-between" mb={4}>
                 <Title order={3}>{tr('Fallback-Relay', 'Fallback relay')}</Title>
@@ -467,7 +409,7 @@ export function PlatformSettings() {
             </Paper>
           )}
 
-          {tab === 'sender' && (
+          {section === 'sender' && (
             <Paper withBorder shadow="sm" radius="lg" p="lg">
               <Group justify="space-between" mb={12}>
                 <Title order={3}>{tr('Systemabsender', 'System sender')}</Title>
@@ -477,39 +419,39 @@ export function PlatformSettings() {
             </Paper>
           )}
 
-          {tab === 'alerts' && (
+          {section === 'alerts' && (
             <Paper withBorder shadow="sm" radius="lg" p="lg">
               <Group justify="space-between" mb={4}>
-                <Title order={3}>{tr('Warnungen', 'Alerts')}</Title>
+                <Title order={3}>{tr('Versand der Warnungen', 'Alert delivery')}</Title>
                 {resetButton(ALERTS)}
               </Group>
               <Text size="xs" c="dimmed" mb={12}>
                 {tr(
-                  'Warnmails gehen an Plattform-Admins (Superadmins und Rollen mit Plattform-Einstellungen), nicht an Support. Jede Person wählt unter Plattform › Warnungen › Meine Warnungen, welche sie bekommt.',
-                  'Alert mails go to platform admins (superadmins and roles with platform settings), not to Support. Each person picks which ones they get under Platform › Alerts › My alerts.',
+                  'Warnmails gehen an Plattform-Admins (Superadmins und Rollen mit Plattform-Einstellungen), nicht an Support. Jede Person wählt unter Warnungen › Meine Warnungen, welche sie bekommt.',
+                  'Alert mails go to platform admins (superadmins and roles with platform settings), not to Support. Each person picks which ones they get under Alerts › My alerts.',
                 )}
               </Text>
               <Stack gap="sm">{ALERTS.map(field)}</Stack>
             </Paper>
           )}
 
-          {tab === 'alerts' && (
+          {section === 'performance' && (
             <Paper withBorder shadow="sm" radius="lg" p="lg">
               <Group justify="space-between" mb={4}>
-                <Title order={3}>{tr('Leistung', 'Performance')}</Title>
+                <Title order={3}>{tr('Grenzwerte', 'Thresholds')}</Title>
                 {resetButton(PERF)}
               </Group>
               <Text size="xs" c="dimmed" mb={12}>
                 {tr(
-                  'Grenzwerte für Plattform › Warnungen › Leistung. Gemessen werden nur Routenmuster und die Form der Abfragen, keine Pfade, Werte oder Personen.',
-                  'Thresholds for Platform › Alerts › Performance. Only route patterns and query shapes are measured, no paths, values or people.',
+                  'Grenzwerte für diese Seite und die Warnung bei langsamer API. Gemessen werden nur Routenmuster und die Form der Abfragen, keine Pfade, Werte oder Personen.',
+                  'Thresholds for this page and the slow-API alert. Only route patterns and query shapes are measured, no paths, values or people.',
                 )}
               </Text>
               <Stack gap="sm">{PERF.map(field)}</Stack>
             </Paper>
           )}
 
-          {tab === 'limits' && (
+          {section === 'limits' && (
             <Paper withBorder shadow="sm" radius="lg" p="lg">
               <Group justify="space-between" mb={4}>
                 <Title order={3}>{tr('Limits pro Tarif', 'Limits per plan')}</Title>
@@ -563,7 +505,7 @@ export function PlatformSettings() {
             </Paper>
           )}
 
-          {tab === 'backups' && (
+          {section === 'backups' && (
             <Paper withBorder shadow="sm" radius="lg" p="lg">
               <Group justify="space-between" mb={4}>
                 <Title order={3}>{tr('Backup-Speicher', 'Backup storage')}</Title>
@@ -579,10 +521,10 @@ export function PlatformSettings() {
             </Paper>
           )}
 
-          {tab === 'discord' && (
+          {section === 'discord-app' && (
             <Paper withBorder shadow="sm" radius="lg" p="lg">
               <Group justify="space-between" mb={4}>
-                <Title order={3}>Discord</Title>
+                <Title order={3}>{tr('Discord-App', 'Discord app')}</Title>
                 {resetButton(DISCORD)}
               </Group>
               <Text size="xs" c="dimmed" mb={12}>
@@ -595,7 +537,7 @@ export function PlatformSettings() {
             </Paper>
           )}
 
-          {tab === 'discord' && (
+          {section === 'discord-channels' && (
             <Paper withBorder shadow="sm" radius="lg" p="lg">
               <Group justify="space-between" mb={4}>
                 <Title order={3}>{tr('Plattform-Log', 'Platform log')}</Title>
@@ -603,89 +545,49 @@ export function PlatformSettings() {
               </Group>
               <Text size="xs" c="dimmed" mb={12}>
                 {tr(
-                  'Der Hubra-Bot meldet Plattform-Ereignisse in einen Kanal auf dem Discord-Server der Plattform: neue Vereine und Anfragen, Rollen, Plugins, Backups, Einstellungen und Systemwarnungen. Braucht den Bot-Token oben.',
-                  "The Hubra bot posts platform events to a channel on the platform's own Discord server: new clubs and requests, roles, plugins, backups, settings and system alerts. Needs the bot token above.",
+                  'Der Hubra-Bot meldet Plattform-Ereignisse auf dem Discord-Server der Plattform: neue Vereine und Anfragen, Rollen, Plugins, Backups, Einstellungen und Systemwarnungen. Mit einem Audit-Kanal gehen die Audit-Einträge dorthin und das Plattform-Log behält die Warnungen; jede Meldung kommt nur einmal. Braucht den Bot-Token unter Einrichtung.',
+                  "The Hubra bot posts platform events on the platform's own Discord server: new clubs and requests, roles, plugins, backups, settings and system alerts. With an audit channel, audit entries go there and the platform log keeps the alerts; each post goes out once. Needs the bot token under Setup.",
                 )}
               </Text>
               <Stack gap="sm">
                 <DiscordLogPicker
-                  channelId={
-                    draft['discord.log_channel_id'] ?? byKey['discord.log_channel_id']?.value ?? ''
-                  }
-                  onChange={(id) => setDraft((d) => ({ ...d, 'discord.log_channel_id': id }))}
                   botTokenSet={!!byKey['discord.bot_token']?.isSet}
                   addLink={botAddLink}
-                  fallback={field('discord.log_channel_id')}
+                  slots={[
+                    {
+                      label: tr('Kanal für das Plattform-Log', 'Channel for the platform log'),
+                      description: tr(
+                        'Systemwarnungen, und die Plattform-Ereignisse, solange es keinen Audit-Kanal gibt.',
+                        'System alerts, and the platform events while there is no audit channel.',
+                      ),
+                      channelId: logChannel,
+                      onChange: (id) => setDraft((d) => ({ ...d, 'discord.log_channel_id': id })),
+                      fallback: field('discord.log_channel_id'),
+                    },
+                    {
+                      label: tr('Audit-Kanal (optional)', 'Audit channel (optional)'),
+                      description: tr(
+                        'Gewählt: Die Einträge aus dem Audit-Log gehen nur hierhin, mit Links in manage. Leer: aus.',
+                        'Picked: audit log entries go here only, with links into manage. Empty: off.',
+                      ),
+                      channelId: auditChannel,
+                      onChange: (id) => setDraft((d) => ({ ...d, 'discord.audit_channel_id': id })),
+                      fallback: field('discord.audit_channel_id'),
+                    },
+                  ]}
                 />
-                <Checkbox.Group
-                  label={
-                    <Group gap={6} component="span">
-                      {tr('Was gemeldet wird', 'What is posted')}
-                      {byKey['discord.log_events'] && (
-                        <SourceBadge s={byKey['discord.log_events']} />
-                      )}
-                    </Group>
-                  }
-                  value={logEvents}
-                  onChange={(v) =>
-                    setDraft((d) => ({
-                      ...d,
-                      'discord.log_events': LOG_CATEGORIES.map(([c]) => c)
-                        .filter((c) => v.includes(c))
-                        .join(','),
-                    }))
-                  }
-                >
-                  <Stack gap={6} mt={6}>
-                    {LOG_CATEGORIES.map(([id, de, en]) => (
-                      <Checkbox key={id} value={id} label={tr(de, en)} />
-                    ))}
-                  </Stack>
-                </Checkbox.Group>
-                <Group>
-                  <Button
-                    variant="light"
-                    loading={testingDiscord === 'log'}
-                    disabled={logChanged || !byKey['discord.log_channel_id']?.value}
-                    onClick={() => sendDiscordTest('log')}
+                <Text size="sm">
+                  {tr('Was wohin gemeldet wird, steht in der ', 'What is posted where is set in the ')}
+                  <Anchor
+                    component="button"
+                    type="button"
+                    size="sm"
+                    onClick={() => navigate('/app/platform/alerts/rules')}
                   >
-                    {tr('Testnachricht senden', 'Send test message')}
-                  </Button>
-                  {logChanged && (
-                    <Text size="xs" c="dimmed">
-                      {tr('Zuerst speichern.', 'Save first.')}
-                    </Text>
-                  )}
-                </Group>
-              </Stack>
-            </Paper>
-          )}
-
-          {tab === 'discord' && (
-            <Paper withBorder shadow="sm" radius="lg" p="lg">
-              <Group justify="space-between" mb={4}>
-                <Title order={3}>{tr('Audit-Kanal', 'Audit channel')}</Title>
-                {resetButton(DISCORD_AUDIT)}
-              </Group>
-              <Text size="xs" c="dimmed" mb={12}>
-                {tr(
-                  'Optional: Ein zweiter Kanal bekommt jeden Eintrag im Audit-Log, egal was oben angehakt ist, mit Links zum Eintrag, zum Verein und zur passenden Seite in manage. Systemwarnungen bleiben im Plattform-Log. Ohne Kanal ist er aus.',
-                  'Optional: a second channel gets every entry of the audit log, whatever is ticked above, with links to the entry, the club and the matching page in manage. System alerts stay in the platform log. Off until you pick a channel.',
-                )}
-              </Text>
-              <Stack gap="sm">
-                <DiscordLogPicker
-                  channelLabel={tr('Kanal für das Audit-Log', 'Channel for the audit log')}
-                  channelId={
-                    draft['discord.audit_channel_id'] ??
-                    byKey['discord.audit_channel_id']?.value ??
-                    ''
-                  }
-                  onChange={(id) => setDraft((d) => ({ ...d, 'discord.audit_channel_id': id }))}
-                  botTokenSet={!!byKey['discord.bot_token']?.isSet}
-                  addLink={botAddLink}
-                  fallback={field('discord.audit_channel_id')}
-                />
+                    {tr('Benachrichtigungs-Matrix unter Warnungen', 'notification matrix under Alerts')}
+                  </Anchor>
+                  .
+                </Text>
                 {!manageUrl && (
                   <Text size="xs" c="orange">
                     {tr(
@@ -696,7 +598,7 @@ export function PlatformSettings() {
                       component="button"
                       type="button"
                       size="xs"
-                      onClick={() => navigate('/app/platform/settings/alerts')}
+                      onClick={() => navigate('/app/platform/alerts/rules')}
                     >
                       {tr('Unter Warnungen eintragen', 'Set it under Alerts')}
                     </Anchor>
@@ -705,19 +607,60 @@ export function PlatformSettings() {
                 <Group>
                   <Button
                     variant="light"
-                    loading={testingDiscord === 'audit'}
-                    disabled={auditChanged || !byKey['discord.audit_channel_id']?.value}
-                    onClick={() => sendDiscordTest('audit')}
+                    loading={testingDiscord === 'log'}
+                    disabled={logChanged || !byKey['discord.log_channel_id']?.value}
+                    onClick={() => sendDiscordTest('log')}
                   >
-                    {tr('Testnachricht senden', 'Send test message')}
+                    {tr('Test ins Plattform-Log', 'Test the platform log')}
                   </Button>
-                  {auditChanged && (
+                  {byKey['discord.audit_channel_id']?.value && (
+                    <Button
+                      variant="light"
+                      loading={testingDiscord === 'audit'}
+                      disabled={logChanged}
+                      onClick={() => sendDiscordTest('audit')}
+                    >
+                      {tr('Test in den Audit-Kanal', 'Test the audit channel')}
+                    </Button>
+                  )}
+                  {logChanged && (
                     <Text size="xs" c="dimmed">
                       {tr('Zuerst speichern.', 'Save first.')}
                     </Text>
                   )}
                 </Group>
               </Stack>
+            </Paper>
+          )}
+
+          {section === 'discord-channels' && byKey['discord.platform_roles'] && (
+            <Paper withBorder shadow="sm" radius="lg" p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>
+                  {tr('Rollen auf dem Plattform-Server', 'Roles on the platform server')}
+                </Title>
+                {resetButton(DISCORD_ROLES)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Wer sein Discord-Konto verknüpft hat, bekommt auf dem Server des Plattform-Logs automatisch die passenden Rollen: Plattform-Admin (mit Zwei-Faktor), Vereinsinhaber, Vereinsadmin und Vereinsmitglied. Der Bot macht die Rollen selbst, ohne Rechte; was sie sehen dürfen, stellst du in Discord ein. Andere Rollen fasst er nie an. Ausschalten löscht diese Rollen wieder.',
+                  'Everyone who linked their Discord account gets the matching roles on the platform log’s server: Plattform-Admin (with two-factor), Vereinsinhaber (club owner), Vereinsadmin (club admin) and Vereinsmitglied (club member). The bot makes these roles itself, without permissions; what they may see is set in Discord. It never touches other roles. Turning this off deletes the roles again.',
+                )}
+              </Text>
+              <Switch
+                label={tr('Rollen automatisch vergeben', 'Give roles automatically')}
+                checked={rolesOn}
+                onChange={(e) => {
+                  const on = e.currentTarget.checked
+                  setDraft((d) => ({ ...d, 'discord.platform_roles': on ? 'on' : 'off' }))
+                }}
+              />
+              <Text size="xs" c="dimmed" mt={8}>
+                {tr(
+                  'Braucht das Recht «Rollen verwalten» für den Bot auf diesem Server. Änderungen kommen innert zehn Minuten an.',
+                  'The bot needs the “Manage Roles” permission on this server. Changes arrive within ten minutes.',
+                )}
+              </Text>
             </Paper>
           )}
 
@@ -731,7 +674,7 @@ export function PlatformSettings() {
             </Button>
           </Group>
 
-          {tab === 'mail' && (
+          {section === 'relay' && (
             <Paper withBorder shadow="sm" radius="lg" p="lg">
               <Title order={3} mb={12}>
                 {tr('Testmail', 'Test mail')}

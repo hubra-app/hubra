@@ -4,17 +4,33 @@
 # or by hand (Actions > Images > Run workflow):
 #   ghcr.io/<owner>/<repo>/<image>:1.2.3         release v1.2.3
 #   ghcr.io/<owner>/<repo>/<image>:1.2           release v1.2.3 (not pre-releases)
-#   ghcr.io/<owner>/<repo>/<image>:latest        newest release (not pre-releases)
+#   ghcr.io/<owner>/<repo>/<image>:latest        newest build: releases (not
+#                                                 pre-releases) and manual runs on main
 #   ghcr.io/<owner>/<repo>/<image>:sha-<commit>  every build, releases and manual runs
 #   ghcr.io/<owner>/<repo>/<image>:main-<timestamp>-<commit>
 #                                                 manual runs on main, sortable, for Flux
 #                                                 image automation (ImagePolicy on main-*)
+#   ghcr.io/<owner>/<repo>/<image>:last-build    every run; how the next run finds
+#                                                 this image's last build
+#
+# Only images whose files changed are built. An image whose files (its paths
+# below, .dockerignore, this workflow) are the same as at its last build gets
+# this run's tags on that same image (same digest), so a deploy pinned by
+# digest does not restart it (scripts/image-reuse.sh, docs/release-guidelines.md).
+# Run by hand with "Build every image" to rebuild them all.
+#
+# All seven images always carry every tag of the run, so one version names
+# them all. The digest block at the end of the run summary is what an overlay
+# such as deploy/clusters/contabo pins.
 #
 # So to deploy main between releases, run Images by hand on main: Flux picks
 # up the main-<timestamp>-<commit> build and commits it to the GitOps repo.
 #
 # Publishing a release on GitHub also creates its v* tag, which the GitLab
 # mirror turns into a GitLab Release (docs/gitlab.md).
+#
+# backend is also published as platform-backend (same digest), for the
+# platform Deployment of a split install (docs/platform-backend.md).
 #
 # The frontend images carry no host names; they are set at container start
 # (app/deploy/nginx/40-hubra-runtime.sh), so one image fits every install.
@@ -24,6 +40,11 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      build_all:
+        description: Build every image, even the ones whose files did not change
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -46,32 +67,43 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # paths: what goes into the image; a change there means a new build.
           - image: backend
             context: .
             dockerfile: app/backend/Dockerfile
+            paths: app/backend
           - image: frontend
             context: .
             dockerfile: app/frontend/Dockerfile
             target: production
+            paths: app/frontend packages app/deploy/nginx
           - image: admin-frontend
             context: .
             dockerfile: app/admin-frontend/Dockerfile
             target: production
+            paths: app/admin-frontend packages app/deploy/nginx
           - image: sso-frontend
             context: .
             dockerfile: app/sso-frontend/Dockerfile
             target: production
+            paths: app/sso-frontend packages app/deploy/nginx
           - image: haraka
             context: modules/mail/haraka
             dockerfile: modules/mail/haraka/Dockerfile
+            paths: modules/mail/haraka
           - image: zonemta
             context: modules/mail/zonemta
             dockerfile: modules/mail/zonemta/Dockerfile
+            paths: modules/mail/zonemta
           - image: cert-watcher
             context: modules/mail/cert-watcher
             dockerfile: modules/mail/cert-watcher/Dockerfile
+            paths: modules/mail/cert-watcher
     steps:
+      # Full history: the last build's commit may be anywhere in it.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
 
       - name: Image name
         id: name
@@ -89,17 +121,33 @@ jobs:
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ${{ steps.name.outputs.image }}
-          # latest comes with the semver tags of a release that is not a
-          # pre-release (flavor latest=auto).
+          # latest: releases that are not pre-releases, and manual runs on
+          # the default branch (not manual runs on other branches).
+          flavor: |
+            latest=false
           tags: |
             type=sha,format=short
             type=raw,value=main-{{date 'YYYYMMDDHHmmss'}}-{{sha}},enable={{is_default_branch}}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ (github.event_name == 'release' && !github.event.release.prerelease) || (github.event_name == 'workflow_dispatch' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)) }}
+            type=raw,value=last-build
+
+      # Build, or reuse the last build when none of this image's files changed.
+      - name: Changed since the last build?
+        id: plan
+        env:
+          BUILD_ALL: ${{ inputs.build_all || false }}
+          IMAGE: ${{ steps.name.outputs.image }}
+          PATHS: ${{ matrix.paths }}
+        run: |
+          # shellcheck disable=SC2086 # PATHS is a space-separated list
+          scripts/image-reuse.sh "$IMAGE" $PATHS | tee -a "$GITHUB_OUTPUT"
 
       # Add linux/arm64 to platforms for Raspberry Pi / Ampere clusters
       # (slower: builds under QEMU).
       - id: build
+        if: steps.plan.outputs.build == 'true'
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: ${{ matrix.context }}
@@ -115,11 +163,54 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
 
-      # Fixable HIGH/CRITICAL CVEs go to the job summary. Report only for now;
+      # Same image, new tags: the registry copies the tags, nothing is pulled
+      # or pushed and the digest stays. Its build commit (Diagnose > Builds)
+      # stays the commit it was built from.
+      - name: Reuse the last build
+        if: steps.plan.outputs.build == 'false'
+        env:
+          REF: ${{ steps.name.outputs.image }}@${{ steps.plan.outputs.digest }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          args=()
+          while IFS= read -r tag; do
+            if [ -n "$tag" ]; then args+=(-t "$tag"); fi
+          done <<< "$TAGS"
+          docker buildx imagetools create "${args[@]}" "$REF"
+
+      - name: Summary
+        id: result
+        env:
+          IMAGE: ${{ matrix.image }}
+          BUILT: ${{ steps.build.outputs.digest }}
+          REUSED: ${{ steps.plan.outputs.digest }}
+          REASON: ${{ steps.plan.outputs.reason }}
+        run: |
+          if [ -n "$BUILT" ]; then digest="$BUILT"; what="built"; else digest="$REUSED"; what="reused"; fi
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          echo "**$IMAGE**: $what ($REASON), \`$digest\`" >> "$GITHUB_STEP_SUMMARY"
+
+      # The platform backend (docs/platform-backend.md) runs the same image
+      # under its own name, so a cluster can pin and roll it on its own. A
+      # copy of the manifest, no second build; a reused backend is copied too.
+      - name: Publish the backend as platform-backend too
+        if: matrix.image == 'backend'
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+          SOURCE: ${{ steps.name.outputs.image }}@${{ steps.result.outputs.digest }}
+        run: |
+          args=()
+          while IFS= read -r tag; do
+            if [ -n "$tag" ]; then args+=(--tag "${tag/\/backend:/\/platform-backend:}"); fi
+          done <<< "$TAGS"
+          docker buildx imagetools create "${args[@]}" "$SOURCE"
+
+      # Fixable HIGH/CRITICAL CVEs go to the job summary, for reused images too
+      # (new CVEs turn up in old images). Report only for now;
       # set TRIVY_EXIT_CODE=1 once the images are clean to fail the build.
       - name: Scan the image (Trivy)
         env:
-          REF: ${{ steps.name.outputs.image }}@${{ steps.build.outputs.digest }}
+          REF: ${{ steps.name.outputs.image }}@${{ steps.result.outputs.digest }}
           TRIVY_EXIT_CODE: "0"
         run: |
           docker run --rm \
@@ -133,5 +224,43 @@ jobs:
             echo "### ${{ matrix.image }}: fixable HIGH/CRITICAL vulnerabilities"
             echo '```'
             cat trivy.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # One images: block with every image of this run pinned by digest, for an
+  # overlay such as deploy/clusters/contabo. Unchanged images keep their
+  # digest, so pinning this block restarts only what was rebuilt.
+  digests:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Digest block
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          repo="ghcr.io/${GITHUB_REPOSITORY,,}"
+          tag="${RELEASE_TAG#v}"
+          tag="${tag:-sha-${GITHUB_SHA::7}}"
+          {
+            echo "### Images pinned by digest"
+            echo
+            echo "For the \`images:\` block of an overlay such as \`deploy/clusters/contabo\`:"
+            echo
+            echo '```yaml'
+            echo "images:"
+            for image in backend platform-backend frontend admin-frontend sso-frontend haraka zonemta cert-watcher; do
+              digest="$(docker buildx imagetools inspect "$repo/$image:$tag" --format '{{json .Manifest}}' | jq -r .digest)"
+              echo "  - name: $repo/$image"
+              echo "    newTag: \"$tag\""
+              echo "    digest: $digest"
+            done
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"

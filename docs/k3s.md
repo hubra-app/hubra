@@ -30,8 +30,9 @@ modules/mail/k8s/             # the opt-in mail stack, see modules/mail/README.m
 | Compose                                       | Kubernetes (`deploy/app`)                                        |
 | --------------------------------------------- | ---------------------------------------------------------------- |
 | `postgres`, `redis` + volumes                 | StatefulSets on the default storage class                        |
-| `flask-init`                                  | initContainer on `backend` (migrate, sync-permissions, seed)     |
-| `backend`, `celery-worker`, `celery-beat`     | Deployments (`backend.yaml`)                                     |
+| `flask-init`                                  | initContainer on `platform-backend` (migrate, sync-permissions, seed); `backend` waits for the schema |
+| `backend`, `celery-worker`, `celery-beat`     | Deployments (`backend.yaml`); beat runs the platform image       |
+| `platform-backend`, `platform-worker` (`docker-compose.platform.yml`) | Deployments (`platform-backend.yaml`), see [platform-backend.md](platform-backend.md) |
 | `frontend`, `admin-frontend`, `sso-frontend`  | nginx Deployments, host names from ConfigMap `hubra-frontend`    |
 | Traefik labels in the override file           | one `Ingress`, cert from cert-manager                            |
 | `env_file: .env`                              | Secret `hubra-env` (`create-secrets.sh`)                          |
@@ -118,7 +119,9 @@ with SSL mode **Full (strict)**.
 - **Deploy a new build:** publish a GitHub release (or run the Images
   workflow by hand), then pin `newTag` in `deploy/app/kustomization.yaml`
   (or your overlay) to the release (`1.2.3`) or the build tag
-  (`sha-<commit>`) and push. `latest` follows the newest release, but
+  (`sha-<commit>`) and push. Better, paste the digest block from the end of
+  the Images run summary: images that did not change keep their digest, so
+  only the rebuilt ones restart. `latest` follows the newest build, but
   Kubernetes doesn't notice a moved tag; with `latest`, run
   `kubectl -n hubra rollout restart deployment` after the workflow finishes.
   With Flux image automation, point the ImagePolicy at the sortable
@@ -130,7 +133,11 @@ with SSL mode **Full (strict)**.
   `kubectl -n hubra rollout restart deployment`.
 - **Scale out:** `backend` and `celery-worker` can run several replicas;
   keep `celery-beat` at one. See [Running more than one replica](scaling.md).
-- **Logs:** `kubectl -n hubra logs deploy/backend -c flask-init` shows migrations.
+- **Logs:** `kubectl -n hubra logs deploy/platform-backend -c flask-init` shows
+  migrations; `kubectl -n hubra logs deploy/backend -c schema-wait` shows a
+  club pod waiting for them.
+- **Platform-only update:** bump only the `platform-backend` tag; the club pods
+  keep running. See [platform-backend.md](platform-backend.md).
 
 ## Moving data from Compose
 

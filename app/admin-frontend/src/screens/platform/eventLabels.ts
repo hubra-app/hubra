@@ -61,6 +61,10 @@ export function eventText(e: PlatformEvent): string {
       const n = Object.values((e.details.deleted as Record<string, number> | undefined) ?? {}).reduce((a, b) => a + b, 0)
       return tr(`Aufbewahrung hat ${n} alte Backups entfernt`, e.message)
     }
+    case 'error.new':
+      return tr(`Neuer Fehler: ${d.type} in ${d.route} (${d.build})`, e.message)
+    case 'error.regressed':
+      return tr(`Behobener Fehler wieder da: ${d.type} in ${d.route} (${d.build})`, e.message)
     case 'upgrade.baseline':
       return tr(`Läuft: ${buildLabel(e.details.to)}`, e.message)
     case 'upgrade.started':
@@ -177,4 +181,28 @@ export const ALERT_TYPES: {
         'Disk space, failed background tasks and high API error rates.',
       ),
   },
+  {
+    id: 'support_cases',
+    group: 'platform',
+    label: () => tr('Neue Meldungen und Ideen', 'New reports and ideas'),
+    desc: () =>
+      tr(
+        'Jemand hat in der App ein Problem gemeldet oder eine Idee vorgeschlagen. Bearbeitet werden sie unter Support.',
+        'Someone reported a problem or suggested an idea in the app. Handled under Support.',
+      ),
+  },
+]
+
+/** Platform events: the audit log categories (services/platform_discord.py). */
+export const PLATFORM_EVENTS: { id: string; label: () => string }[] = [
+  { id: 'clubs', label: () => tr('Vereine erstellt, geändert, gesperrt, gelöscht; Module; Domains', 'Clubs created, changed, suspended, deleted; modules; domains') },
+  { id: 'requests', label: () => tr('Vereinsanfragen eingereicht, angenommen, abgelehnt (in Discord mit Knöpfen Annehmen / Ablehnen)', 'Club requests submitted, approved, rejected (in Discord with Approve / Reject buttons)') },
+  { id: 'access', label: () => tr('Plattformrollen, Vereinsinhaber/-admins, Impersonation', 'Platform roles, club owners/admins, impersonation') },
+  { id: 'members', label: () => tr('Mitglieder kommen zu einem Verein (viele Meldungen)', 'Members joining a club (many posts)') },
+  { id: 'plugins', label: () => tr('Plugins installiert, aktualisiert, entfernt; Quellen', 'Plugins installed, updated, removed; repositories') },
+  { id: 'backups', label: () => tr('Backups erstellt, geprüft, wiederhergestellt, gelöscht', 'Backups created, verified, restored, deleted') },
+  { id: 'platform', label: () => tr('Plattform-Einstellungen, Schlüssel, Mailserver, Übersetzungen', 'Platform settings, keys, mail server, translations') },
+  { id: 'digest', label: () => tr('Tagesübersicht um 08:00: neue Vereine, Konten, Mails, offene Probleme (nur Discord)', 'Daily overview at 08:00: new clubs, sign-ups, mail, open problems (Discord only)') },
+  { id: 'releases', label: () => tr('Neue Hubra-Version läuft, mit den Neuerungen (nur Discord)', 'A new Hubra version is running, with its release notes (Discord only)') },
+  { id: 'security', label: () => tr('Sicherheit: Admins auf neuem Gerät oder ohne Zwei-Faktor, viele Fehlanmeldungen, alte Schlüssel (nur Discord)', 'Security: admins on new devices or without two-factor, many failed sign-ins, old keys (Discord only)') },
 ]

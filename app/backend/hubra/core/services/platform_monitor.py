@@ -64,6 +64,7 @@ ALERT_TYPES = (
     "plugin_updates",
     "upgrades",
     "system",
+    "support_cases",
 )
 # Off unless the admin turns them on: news, not trouble.
 _OFF_BY_DEFAULT = frozenset({"plugin_updates"})
@@ -240,7 +241,7 @@ def record_mail(
                 [
                     f"A mail to {to_email} ({subject!r}) could not be sent.",
                     f"Error: {error}",
-                    "Check the relays in manage › Diagnostics › Outbound mail.",
+                    "Check the relays in manage › Mail › Outbound.",
                 ],
             )
         return
@@ -600,6 +601,10 @@ def channels(alert_type: str) -> dict:
     try:
         if maintenance.is_active():
             return {"mail": False, "discord": False, "reason": "maintenance"}
+        from hubra.core.services import platform_bot
+
+        if platform_bot.muted_until(alert_type):
+            return {"mail": False, "discord": False, "reason": "muted"}
         if platform_settings.get("alerts.enabled") == "off":
             return {"mail": False, "discord": False, "reason": "alerts_off"}
         mail_off = {
@@ -683,7 +688,14 @@ def _instance_name() -> str:
 
 
 def _alert_body(
-    user, alert_type: str, subject: str, lines: list[str], level: str
+    user,
+    alert_type: str,
+    subject: str,
+    lines: list[str],
+    level: str,
+    *,
+    button_url: str | None = None,
+    button_key: str = "",
 ) -> tuple[str, str, str]:
     """The alert in the Hubra mail layout, in the admin's language.  The
     subject and lines stay as written (English, like the SMTP errors and
@@ -721,7 +733,10 @@ def _alert_body(
         type_label=t(f"mail.email.platform_alert.type.{alert_type}"),
         when=datetime.now(zone).strftime("%d.%m.%Y, %H:%M"),
         instance=_instance_name(),
-        alerts_url=f"{manage}/app/platform/alerts/overview" if manage else "",
+        alerts_url=button_url
+        if button_url is not None
+        else (f"{manage}/app/platform/alerts" if manage else ""),
+        button_key=button_key,
     )
 
 
@@ -752,7 +767,13 @@ def deliver_alert(alert_type: str, subject: str, lines: list[str], level: str) -
     route = channels(alert_type)
     # System alerts came from send_alert, which posted them already.
     if alert_type != "system" and route["discord"]:
-        send_alert(f"Hubra: {subject}", "\n".join(lines), color=color, staff=False)
+        send_alert(
+            f"Hubra: {subject}",
+            "\n".join(lines),
+            color=color,
+            staff=False,
+            alert_type=alert_type,
+        )
     if not route["mail"]:
         return 0
 
@@ -768,6 +789,87 @@ def deliver_alert(alert_type: str, subject: str, lines: list[str], level: str) -
             )
         except Exception:
             logger.warning("platform_alert_template_failed", exc_info=True)
+            html, text, mail_subject = _plain_alert(subject, lines)
+        try:
+            email._send_via_smtp(
+                user.email,
+                user.name or user.email,
+                relay.sender_email,
+                relay.sender_name,
+                mail_subject,
+                html,
+                text,
+                notify=False,
+            )
+            sent += 1
+        except email.EmailDeliveryError:
+            pass  # logged as mail.failed
+    return sent
+
+
+def admins() -> list:
+    """Active platform admins (superadmins and ``platform.settings``)."""
+    from hubra.core.models.user import User
+
+    return list(
+        db.session.scalars(
+            select(User)
+            .where(User.is_disabled.is_(False))
+            .where((User.is_superadmin.is_(True)) | (User.id.in_(_admin_ids())))
+            .order_by(User.id)
+        ).all()
+    )
+
+
+def deliver_audit_mail(entry) -> int:
+    """Mail one platform audit entry to the platform admins, when its
+    category is ticked under Mail in the notification matrix
+    (``notify.mail_events``).  Not during maintenance.  Returns the number
+    of mails sent."""
+    from hubra.core.services import (
+        email,
+        maintenance,
+        platform_discord,
+        platform_settings,
+    )
+
+    if (
+        platform_discord.category(entry.action)
+        not in platform_discord.mail_categories()
+    ):
+        return 0
+    try:
+        if maintenance.is_active():
+            return 0
+    except Exception:  # noqa: BLE001
+        pass
+    relay = platform_settings.relay()
+    if not relay.sender_email:
+        logger.warning("platform_audit_mail_no_sender action=%s", entry.action)
+        return 0
+    embed = platform_discord.audit_embed(entry)
+    lines = [
+        f"{f['name']}: {f['value']}"
+        for f in embed.get("fields", [])
+        if f["name"] != "Links"
+    ]
+    links = platform_discord.audit_links(entry)
+    button = links[0][1] if links else ""
+    subject = f"{entry.action}"
+    sent = 0
+    for user in admins():
+        try:
+            html, text, mail_subject = _alert_body(
+                user,
+                "audit",
+                subject,
+                lines,
+                "info",
+                button_url=button,
+                button_key="mail.email.platform_alert.button_entry",
+            )
+        except Exception:
+            logger.warning("platform_audit_template_failed", exc_info=True)
             html, text, mail_subject = _plain_alert(subject, lines)
         try:
             email._send_via_smtp(
@@ -900,7 +1002,7 @@ def backups_failed(backup_type: str, records) -> None:
     alert(
         "backup_failed",
         f"{len(failed)} of {len(list(records))} scheduled backups failed",
-        lines + ["See manage › Platform › Backups."],
+        lines + ["See manage › Backups."],
     )
 
 
@@ -939,7 +1041,7 @@ def backup_failed(action: str, backup, error: str | None) -> None:
     alert(
         "backup_failed",
         f"{title}: {scope}",
-        [record_line, f"Error: {error}", "See manage › Platform › Backups."],
+        [record_line, f"Error: {error}", "See manage › Backups."],
         throttle=False,
     )
 
@@ -963,7 +1065,7 @@ def backup_deleted(
             f"The file could not be removed from storage and is still there: "
             f"{storage_error[:300]}"
         )
-    lines.append("See manage › Platform › Backups.")
+    lines.append("See manage › Backups.")
     record(
         "backup",
         "backup.deleted",
@@ -1037,7 +1139,7 @@ def plugin_news(result: dict) -> None:
 
 
 def open_problems() -> list[dict]:
-    """What is wrong right now, worst first, for manage › Platform › Alerts.
+    """What is wrong right now, worst first, for manage › Alerts.
 
     Each: ``{"id", "level", "area", "title", "detail", "since"?, "link"}``.
     """
@@ -1068,7 +1170,7 @@ def open_problems() -> list[dict]:
             "Background jobs are not running",
             "Celery beat or the worker has not run the health check for over a "
             "minute: relay checks, backups, reminders and alert mails stand still.",
-            link="/app/platform/diagnostics/health",
+            link="/app/platform/diagnostics",
         )
     else:
         for key, state in (cached.get("watch") or {}).items():
@@ -1080,7 +1182,7 @@ def open_problems() -> list[dict]:
                     f"{SERVICE_NAMES.get(key, key)} is unreachable",
                     ((cached.get("services") or {}).get(key) or {}).get("error") or "",
                     since=state["down_since"],
-                    link="/app/platform/diagnostics/health",
+                    link="/app/platform/diagnostics",
                 )
 
     for which in RELAYS:
@@ -1093,7 +1195,7 @@ def open_problems() -> list[dict]:
                 ("Main relay" if which == "relay" else "Fallback relay") + " is down",
                 check.get("error") or "",
                 since=check.get("checked_at"),
-                link="/app/platform/diagnostics/outbound-mail",
+                link="/app/platform/mail",
             )
     down = primary_down()
     if down["active"]:
@@ -1104,7 +1206,7 @@ def open_problems() -> list[dict]:
             "Mail goes through the fallback relay",
             f"The main relay refused mail; it is tried again in "
             f"{max(1, down['seconds_left'] // 60)} min.",
-            link="/app/platform/diagnostics/outbound-mail",
+            link="/app/platform/mail",
         )
     counts = stats(24)
     if counts["failed"]:
@@ -1130,7 +1232,7 @@ def open_problems() -> list[dict]:
                 p["title"],
                 p["detail"],
                 since=p.get("since"),
-                link="/app/platform/diagnostics/discord",
+                link="/app/platform/discord",
             )
     except Exception:
         logger.warning("discord_problems_failed", exc_info=True)

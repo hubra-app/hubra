@@ -269,7 +269,8 @@
       "title": "Maintenance",
       "text": "Hubra is being updated. It will be back in a few minutes.",
       "until": "Expected back at {{time}}.",
-      "reload": "This page reloads by itself."
+      "reload": "This page reloads by itself.",
+      "status": "System status"
     },
     "backend": {
       "unreachable": "Server unreachable",
@@ -3610,6 +3611,124 @@
       "disconnected": "Disconnected",
       "changed": "Changed",
       "test": "Test"
+    }
+  },
+  "support": {
+    "detail": {
+      "conversation": "Conversation",
+      "device": "Sent along",
+      "merged": "Merged with #{{id}} “{{title}}”: it carries on there ({{status}}).",
+      "noAnswers": "No answer yet. You get a mail as soon as something happens.",
+      "onRoadmap": "On the roadmap",
+      "reply": "Reply",
+      "replyPh": "Reply to the Hubra team…",
+      "status": "Status",
+      "team": "Hubra team",
+      "you": "You"
+    },
+    "device": {
+      "browser": "Browser",
+      "language": "Language",
+      "only": "Only this. No address, no other traits of the device.",
+      "os": "Operating system",
+      "page": "Page",
+      "screen": "Screen",
+      "sent": "Sent along: browser, device and screen size",
+      "theme": "Appearance",
+      "type": "Device",
+      "window": "Window",
+      "phone": "Phone",
+      "tablet": "Tablet",
+      "desktop": "Computer",
+      "theme_light": "Light",
+      "theme_dark": "Dark"
+    },
+    "form": {
+      "area": "Area",
+      "areaPh": "Optional",
+      "bugSub": "Something does not work as expected? The Hubra team will look into it.",
+      "bugTitle": "Report a problem",
+      "expected": "What did you expect?",
+      "idea": "What would you like?",
+      "ideaPh": "Describe what Hubra should be able to do.",
+      "ideaRequired": "Please describe your idea.",
+      "ideaSub": "What would make the work easier for you or your club?",
+      "ideaTitle": "Suggest an idea",
+      "myReports": "My reports",
+      "send": "Send",
+      "sendFailed": "Sending failed",
+      "sentBug": "Problem reported",
+      "sentIdea": "Idea sent",
+      "sentMsg": "Thank you! You find it under reports as #{{id}}.",
+      "severity": "How bad is it?",
+      "steps": "How do you get there?",
+      "stepsHint": "The steps one after the other, so we can do the same.",
+      "stepsPh": "1. Open Finances\n2. New invoice\n3. Save",
+      "title": "Title",
+      "titlePhBug": "e.g. Invoice cannot be saved",
+      "titlePhIdea": "e.g. Subscribe to events as a calendar",
+      "titleRequired": "Please enter a short title.",
+      "useCase": "What do you need it for?",
+      "useCaseHint": "The problem behind it helps us find the best solution.",
+      "whatHappened": "What happened?",
+      "whatHappenedPh": "Describe the error and an error message, if one came up.",
+      "whatHappenedRequired": "Please describe what happened."
+    },
+    "kind": {
+      "bug": "Problem",
+      "feature": "Idea"
+    },
+    "menu": {
+      "bug": "Report a problem",
+      "feature": "Suggest an idea"
+    },
+    "page": {
+      "answers": "Answers: {{count}}",
+      "desc": "Report problems and suggest ideas. The Hubra team answers here and by mail.",
+      "mergedShort": "merged with #{{id}}",
+      "noneDesc": "When something does not work or you miss something: the Hubra team reads every report.",
+      "noneTitle": "No reports yet",
+      "tabMine": "My reports",
+      "tabRoadmap": "Roadmap",
+      "title": "Reports and ideas"
+    },
+    "roadmap": {
+      "emptyDesc": "Ideas the Hubra team made public show here. Vote for the ones that help you most.",
+      "emptyTitle": "The roadmap is still empty",
+      "intro": "Ideas the Hubra team is working on or looking at. Your vote helps decide what comes first.",
+      "none": "Nothing here.",
+      "unvote": "Take back your vote",
+      "vote": "Vote for it",
+      "voteFailed": "Voting failed",
+      "inProgress": "In progress",
+      "planned": "Planned",
+      "open": "Suggested",
+      "done": "Done"
+    },
+    "severity": {
+      "annoying": "Gets in the way",
+      "blocking": "I cannot go on",
+      "minor": "Minor"
+    },
+    "status": {
+      "open": "Open",
+      "planned": "Planned",
+      "in_progress": "In progress",
+      "done": "Done",
+      "closed": "Closed"
+    },
+    "area": {
+      "members": "Members",
+      "finance": "Finances",
+      "events": "Events",
+      "posts": "Posts",
+      "polls": "Polls",
+      "groups": "Groups",
+      "inventory": "Inventory",
+      "mail": "Mail",
+      "settings": "Settings",
+      "account": "Account and sign-in",
+      "other": "Other"
     }
   }
 }

@@ -100,6 +100,13 @@ module = Module(
             "platform_bp",
             "/api/v1/manager/platform",
         ),
+        Blueprint("hubra.api.support.routes", "support_bp", "/api/v1/support"),
+        Blueprint("hubra.api.support.routes", "roadmap_bp", "/api/v1/roadmap"),
+        Blueprint(
+            "hubra.api.support.routes",
+            "support_admin_bp",
+            "/api/v1/manager/support",
+        ),
         Blueprint(
             "hubra.api.backups.routes",
             "platform_backups_bp",
