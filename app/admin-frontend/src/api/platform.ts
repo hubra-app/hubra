@@ -532,6 +532,9 @@ export async function createMaintenanceWindow(body: {
 export async function cancelMaintenanceWindow(id: number) {
   return apiFetch<{ window: MaintenanceWindow }>(`${P}/maintenance/windows/${id}/cancel`, {
     method: 'POST',
+  })
+}
+
 // ── Background jobs (Diagnose › Hintergrundjobs) ─────────────────────────────
 
 export interface JobCounts {
