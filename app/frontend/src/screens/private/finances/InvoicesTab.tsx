@@ -379,7 +379,7 @@ export function InvoicesTab() {
               <span
                 style={{
                   fontSize: 'var(--mantine-font-size-xs)',
-                  color: inv.purpose === 'membership' ? '#2596be' : 'var(--hb-text-2)',
+                  color: inv.purpose === 'membership' ? 'var(--mantine-color-acc-text)' : 'var(--hb-text-2)',
                 }}
               >
                 {inv.purpose === 'membership'
@@ -410,7 +410,7 @@ export function InvoicesTab() {
               <span
                 className="num"
                 style={{
-                  color: inv.status === 'Overdue' ? '#ff4d3d' : 'var(--hb-text-2)',
+                  color: inv.status === 'Overdue' ? 'var(--mantine-color-red-text)' : 'var(--hb-text-2)',
                   fontSize: 'var(--mantine-font-size-sm)',
                 }}
               >

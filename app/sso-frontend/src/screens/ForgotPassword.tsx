@@ -58,7 +58,7 @@ export function ForgotPassword() {
     return (
       <AuthFrame>
         <AuthIcon tone="green">
-          <IconCheck size={26} color="#1f9d57" />
+          <IconCheck size={26} color="var(--mantine-color-green-text)" />
         </AuthIcon>
         <Title order={1} fz={30} mb={8}>
           {tr('Schau in dein Postfach', 'Check your inbox')}

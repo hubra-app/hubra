@@ -67,7 +67,7 @@ function AuditEntryDetailPanel({
           {error && (
             <div
               style={{
-                color: '#c0392b',
+                color: 'var(--mantine-color-red-text)',
                 fontSize: 'var(--mantine-font-size-sm)',
               }}
             >

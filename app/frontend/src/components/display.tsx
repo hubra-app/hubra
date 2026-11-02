@@ -13,7 +13,7 @@ import {
 } from '@mantine/core'
 
 import { IconSearch, IconPlus, IconX } from '@tabler/icons-react'
-import { textOn } from '@hubra/ui'
+import { categoryColors, colorText, textOn } from '@hubra/ui'
 import { useT } from '@/locales/i18n'
 import type { ReactNode } from 'react'
 import { SlideOver, PanelSection, LoadingSpinner } from './feedback'
@@ -100,9 +100,9 @@ export function Tag({
         color
           ? {
               root: {
-                backgroundColor: color + '1a',
-                color,
-                borderColor: color + '66',
+                backgroundColor: `color-mix(in srgb, ${color} 10%, transparent)`,
+                color: colorText(color),
+                borderColor: `color-mix(in srgb, ${color} 40%, transparent)`,
               },
             }
           : undefined
@@ -114,13 +114,13 @@ export function Tag({
 }
 
 const TIER_COLORS: Record<string, string> = {
-  Maker: '#2596be',
-  Pro: '#1f61d8',
-  Student: '#fe64ac',
-  Workshop: '#fece2b',
+  Maker: categoryColors.blue,
+  Pro: categoryColors.royal,
+  Student: categoryColors.pink,
+  Workshop: categoryColors.yellow,
 }
 export function TierTag({ tier }: { tier: string }) {
-  const c = TIER_COLORS[tier] || '#857f99'
+  const c = TIER_COLORS[tier] || categoryColors.slate
   return <Tag color={c}>{tier}</Tag>
 }
 

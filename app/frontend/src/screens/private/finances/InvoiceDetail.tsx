@@ -229,13 +229,13 @@ export function InvoiceDetailScreen() {
                       display: 'flex',
                       gap: 12,
                       padding: '12px 20px',
-                      borderBottom: '1px solid #f1eff7',
+                      borderBottom: '1px solid var(--hb-border)',
                       alignItems: 'center',
                     }}
                   >
                     <IconBell
                       size={16}
-                      style={{ color: '#2596be', flexShrink: 0 }}
+                      style={{ color: 'var(--mantine-color-acc-text)', flexShrink: 0 }}
                     />
                     <div style={{ flex: 1 }}>
                       <div
@@ -334,7 +334,7 @@ export function InvoiceDetailScreen() {
                 display: 'flex',
                 justifyContent: 'space-between',
                 padding: '10px 0',
-                borderBottom: '1px solid #f1eff7',
+                borderBottom: '1px solid var(--hb-border)',
               }}
             >
               <span

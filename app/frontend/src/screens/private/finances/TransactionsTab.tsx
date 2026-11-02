@@ -265,7 +265,7 @@ export function TransactionsTab() {
                 style={{
                   fontWeight: 700,
                   whiteSpace: 'nowrap',
-                  color: tx.type === 'income' ? '#1f9d57' : '#ff4d3d',
+                  color: tx.type === 'income' ? 'var(--mantine-color-green-text)' : 'var(--mantine-color-red-text)',
                 }}
               >
                 {tx.type === 'income' ? '+' : '−'}CHF{'\u00a0'}
@@ -312,7 +312,7 @@ export function TransactionsTab() {
                     >
                       <IconExternalLink
                         size={18}
-                        style={{ color: '#2596be' }}
+                        style={{ color: 'var(--mantine-color-acc-text)' }}
                       />
                     </ActionIcon>
                   ) : undefined

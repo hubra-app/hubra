@@ -492,7 +492,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             wrap="wrap"
             style={{ background: 'var(--mantine-color-gold-light)', borderBottom: '1px solid var(--mantine-color-gold-4)' }}
           >
-            <Badge color="gold" c="#1a1625" variant="filled" size="sm">
+            <Badge color="gold" variant="filled" size="sm">
               {tr('Stellvertretung', 'Impersonating')}
             </Badge>
             <Text fz="sm" fw={600}>

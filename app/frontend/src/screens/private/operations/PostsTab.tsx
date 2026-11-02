@@ -466,14 +466,14 @@ export function PostsTab() {
                       size="sm"
                       variant="subtle"
                       style={{
-                        color: liked ? '#ff4d3d' : 'var(--hb-text-2)',
+                        color: liked ? 'var(--mantine-color-red-text)' : 'var(--hb-text-2)',
                       }}
                       onClick={() => toggleLike(post)}
                     >
                       <IconHeart
                         size={16}
                         style={{
-                          fill: liked ? '#ff4d3d' : 'none',
+                          fill: liked ? 'var(--mantine-color-red-text)' : 'none',
                         }}
                       />
                       {post.likes}
@@ -562,7 +562,7 @@ export function PostsTab() {
                                     size="compact-xs"
                                     variant="subtle"
                                     style={{
-                                      color: '#ff4d3d',
+                                      color: 'var(--mantine-color-red-text)',
                                       marginLeft: 'auto',
                                     }}
                                     onClick={() =>

@@ -17,29 +17,6 @@
   background-color: var(--hb-surface-2);
 }
 
-.terminal-block {
-  background: #221c33;
-  border-radius: 8px;
-  padding: 14px 16px;
-  font-family: "JetBrains Mono", monospace;
-  font-size: var(--mantine-font-size-xs);
-  color: #d6d2e3;
-  line-height: 1.7;
-  overflow-x: auto;
-}
-
-.terminal-block .ok-line {
-  color: #5fca85;
-}
-
-.terminal-block .err-line {
-  color: #ff7a6b;
-}
-
-.terminal-block .warn-line {
-  color: #fece2b;
-}
-
 .hi {
   color: var(--mantine-color-acc-text);
   font-weight: 600;
@@ -614,9 +591,9 @@ table[style*="min-width"] td::before {
   gap: 12px;
   flex-wrap: wrap;
   padding: 12px 16px;
-  border: 1px solid #fce588;
-  background: #fffbeb;
-  border-radius: 12px;
+  border: 1px solid var(--hb-notice-border);
+  background: var(--hb-notice-bg);
+  border-radius: var(--mantine-radius-md);
   margin-bottom: 24px;
   color: var(--hb-text);
 }

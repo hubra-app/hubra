@@ -90,14 +90,14 @@ export function CategorySummaryCard() {
                       <div
                         style={{
                           width: `${(c.income / largest) * 50}%`,
-                          background: '#1f9d57',
+                          background: 'var(--mantine-color-green-6)',
                           borderRadius: 2,
                         }}
                       />
                       <div
                         style={{
                           width: `${(c.expense / largest) * 50}%`,
-                          background: '#ff4d3d',
+                          background: 'var(--mantine-color-red-6)',
                           borderRadius: 2,
                         }}
                       />
@@ -112,7 +112,7 @@ export function CategorySummaryCard() {
                   <Table.Td data-label={t('finance.net', 'Netto')} style={{ textAlign: 'right' }}>
                     <span
                       className="num"
-                      style={{ fontWeight: 700, color: c.net < 0 ? '#ff4d3d' : '#1f9d57' }}
+                      style={{ fontWeight: 700, color: c.net < 0 ? 'var(--mantine-color-red-text)' : 'var(--mantine-color-green-text)' }}
                     >
                       {formatCHF(c.net)}
                     </span>

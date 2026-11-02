@@ -257,7 +257,7 @@ export function OverviewPanel() {
                   `${c.error} Fehler, ${c.warning} Warnungen`,
                   `${c.error} errors, ${c.warning} warnings`,
                 )}
-                accent={c.error ? '#c0392b' : c.warning ? '#c2870f' : undefined}
+                accent={c.error ? 'var(--mantine-color-red-text)' : c.warning ? 'var(--mantine-color-orange-text)' : undefined}
                 onClick={() => navigate(`/app/platform/alerts/events?category=${area}`)}
               />
             )

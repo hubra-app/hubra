@@ -1,3 +1,4 @@
+import { colorText } from '@hubra/ui'
 import { EVENT_TYPE_COLORS } from '@/constants'
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -654,9 +655,9 @@ export function EventsTab() {
               <Badge
                 variant="light"
                 style={{
-                  borderColor: EVENT_TYPE_COLORS[ev.type] + '66',
-                  color: EVENT_TYPE_COLORS[ev.type],
-                  background: EVENT_TYPE_COLORS[ev.type] + '1a',
+                  borderColor: `color-mix(in srgb, ${EVENT_TYPE_COLORS[ev.type]} 40%, transparent)`,
+                  color: colorText(EVENT_TYPE_COLORS[ev.type]),
+                  background: `color-mix(in srgb, ${EVENT_TYPE_COLORS[ev.type]} 10%, transparent)`,
                 }}
               >
                 {eventTypeLabel(ev.type)}

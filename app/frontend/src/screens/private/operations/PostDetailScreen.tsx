@@ -201,12 +201,12 @@ export function PostDetailScreen() {
             <Button
               size="sm"
               variant="subtle"
-              style={{ color: liked ? '#ff4d3d' : 'var(--hb-text-2)' }}
+              style={{ color: liked ? 'var(--mantine-color-red-text)' : 'var(--hb-text-2)' }}
               onClick={toggleLike}
             >
               <IconHeart
                 size={16}
-                style={{ fill: liked ? '#ff4d3d' : 'none' }}
+                style={{ fill: liked ? 'var(--mantine-color-red-text)' : 'none' }}
               />
               {post.likes}
             </Button>
@@ -293,7 +293,7 @@ export function PostDetailScreen() {
                       <Button
                         size="compact-xs"
                         variant="subtle"
-                        style={{ color: '#ff4d3d', marginLeft: 'auto' }}
+                        style={{ color: 'var(--mantine-color-red-text)', marginLeft: 'auto' }}
                         onClick={() => removeComment(comment.id)}
                       >
                         <IconTrash size={12} />

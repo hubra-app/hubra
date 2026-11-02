@@ -44,7 +44,7 @@ export function LinkEditor({
           <Button
             size="sm"
             variant="subtle"
-            style={{ color: '#ff4d3d' }}
+            style={{ color: 'var(--mantine-color-red-text)' }}
             onClick={() => remove(i)}
           >
             <IconX size={16} />
@@ -55,7 +55,7 @@ export function LinkEditor({
         size="sm"
         variant="subtle"
         onClick={add}
-        style={{ fontSize: 'var(--mantine-font-size-xs)', color: '#2596be' }}
+        style={{ fontSize: 'var(--mantine-font-size-xs)', color: 'var(--mantine-color-acc-text)' }}
       >
         <IconPlus size={16} />
         {t('inventory.addLink', 'Link hinzufügen')}

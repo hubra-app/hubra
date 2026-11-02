@@ -12,7 +12,7 @@ export function AccessDenied() {
     <Center py={80}>
       <Paper shadow="lg" p="xl" maw={400}>
         <Stack gap="sm" align="center" ta="center">
-          <IconAlertTriangle size={40} color="#dc2626" />
+          <IconAlertTriangle size={40} color="var(--mantine-color-red-text)" />
           <Text fw={700} c="red">
             {tr('Kein Zugriff', 'Access denied')}
           </Text>

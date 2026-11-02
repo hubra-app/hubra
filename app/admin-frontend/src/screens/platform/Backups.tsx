@@ -1,3 +1,4 @@
+import { categoryColors, tagStyle } from '@hubra/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
@@ -59,16 +60,16 @@ function label(map: Record<string, [string, string]>, key: string): string {
 
 const TYPE_COLORS: Record<string, string> = {
   manual: 'var(--hb-text-2)',
-  scheduled_daily: '#2596be',
-  scheduled_weekly: '#27ae60',
-  scheduled_monthly: '#9b59b6',
+  scheduled_daily: categoryColors.blue,
+  scheduled_weekly: categoryColors.green,
+  scheduled_monthly: categoryColors.purple,
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: '#c2870f',
-  running: '#2596be',
-  completed: '#1f9d57',
-  failed: '#c0392b',
+  pending: 'var(--mantine-color-orange-text)',
+  running: 'var(--mantine-color-acc-text)',
+  completed: 'var(--mantine-color-green-text)',
+  failed: 'var(--mantine-color-red-text)',
 }
 
 function formatSize(bytes: number | null): string {
@@ -575,8 +576,8 @@ export function Backups() {
                   <Table.Td data-label={tr('Art', 'Type')}>
                     <span
                       style={{
-                        background: TYPE_COLORS[b.type] ?? 'var(--hb-text-2)',
-                        color: '#fff',
+                        ...tagStyle(TYPE_COLORS[b.type] ?? categoryColors.slate),
+                        border: '1px solid',
                         fontSize: 'var(--mantine-font-size-xs)',
                         fontWeight: 600,
                         padding: '2px 8px',

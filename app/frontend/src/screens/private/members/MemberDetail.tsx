@@ -207,7 +207,7 @@ export function MemberDetailScreen({
               <StatusBadge status={m.status} />
               {m.tier && <TierTag tier={m.tier} />}
               {functions.map((f) => (
-                <Tag key={f.id} color="#6d4aff">
+                <Tag key={f.id} color="var(--mantine-color-acc-text)">
                   {f.name}
                 </Tag>
               ))}
@@ -222,7 +222,7 @@ export function MemberDetailScreen({
                     alignItems: 'center',
                     gap: 4,
                     fontSize: 'var(--mantine-font-size-xs)',
-                    color: '#b91c1c',
+                    color: 'var(--mantine-color-red-text)',
                   }}
                 >
                   <IconLock size={12} />
@@ -254,7 +254,7 @@ export function MemberDetailScreen({
             {((m.isDisabled && canEnable) || (!m.isDisabled && canDisable)) && (
               <Button
                 variant="default"
-                style={{ color: m.isDisabled ? '#1f9d57' : '#b91c1c' }}
+                style={{ color: m.isDisabled ? 'var(--mantine-color-green-text)' : 'var(--mantine-color-red-text)' }}
                 onClick={toggleDisable}
                 disabled={togglingDisable}
               >
@@ -285,7 +285,7 @@ export function MemberDetailScreen({
             <Fact label={t('members.detail.openAmount', 'Offen')}>
               <span
                 className="num"
-                style={{ color: overdue ? '#b91c1c' : undefined }}
+                style={{ color: overdue ? 'var(--mantine-color-red-text)' : undefined }}
               >
                 {invoicesQ.isLoading ? '…' : `CHF ${formatCHF(openAmount)}`}
               </span>
@@ -353,12 +353,12 @@ export function MemberDetailScreen({
             </DetailRow>
             <DetailRow label={t('members.emailVerified')}>
               {m.privateEmailVerified ? (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#1f9d57' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--mantine-color-green-text)' }}>
                   <IconCircleCheck size={14} />
                   {t('common.yes')}
                 </span>
               ) : (
-                <span style={{ color: '#b91c1c' }}>{t('common.no')}</span>
+                <span style={{ color: 'var(--mantine-color-red-text)' }}>{t('common.no')}</span>
               )}
             </DetailRow>
             {/* Only worth a row while the member still has to set a new one. */}
@@ -369,7 +369,7 @@ export function MemberDetailScreen({
                     display: 'flex',
                     alignItems: 'center',
                     gap: 5,
-                    color: '#b91c1c',
+                    color: 'var(--mantine-color-red-text)',
                   }}
                 >
                   <IconLock size={13} /> {t('members.detail.mustChange')}
@@ -499,7 +499,7 @@ export function MemberDetailScreen({
                   <span className="num">CHF {formatCHF(openAmount)}</span>
                 </Fact>
                 <Fact label={t('members.detail.overdue', 'Überfällig')}>
-                  <span className="num" style={{ color: overdue ? '#b91c1c' : undefined }}>
+                  <span className="num" style={{ color: overdue ? 'var(--mantine-color-red-text)' : undefined }}>
                     {overdue}
                   </span>
                 </Fact>

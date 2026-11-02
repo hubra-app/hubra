@@ -1,3 +1,4 @@
+import { colorText } from '@hubra/ui'
 import { useState, useMemo } from 'react'
 import { Anchor, Button, Badge, ActionIcon, Group, SimpleGrid, Stack, Text } from '@mantine/core'
 import { useT } from '@/locales/i18n'
@@ -172,11 +173,11 @@ export function ItemDetailPanel({
             width: 40,
             height: 40,
             borderRadius: 10,
-            background: cc + '22',
+            background: `color-mix(in srgb, ${cc} 13%, transparent)`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: cc,
+            color: colorText(cc),
           }}
         >
           {CATEGORY_ICONS[item.category]}
@@ -184,13 +185,13 @@ export function ItemDetailPanel({
       }
       subtitle={
         <Group gap={6} mt={4}>
-          <Badge variant="light" style={{ color: cc, background: cc + '18' }}>
+          <Badge variant="light" style={{ color: colorText(cc), background: `color-mix(in srgb, ${cc} 9%, transparent)` }}>
             {categoryLabel}
           </Badge>
           <Badge
             variant="light"
             leftSection={sc.icon}
-            style={{ color: sc.color, background: sc.color + '18' }}
+            style={{ color: sc.color, background: `color-mix(in srgb, ${sc.color} 9%, transparent)` }}
           >
             {t(`inventory.status_${item.status}`, sc.label)}
           </Badge>

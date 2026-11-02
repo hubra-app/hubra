@@ -106,7 +106,7 @@ export function PerformancePanel() {
             label={tr('p95 letzte Stunde', 'p95 last hour')}
             value={ms(last.p95)}
             sub={tr(`p50 ${ms(last.p50)} · ${last.requests} Anfragen`, `p50 ${ms(last.p50)} · ${last.requests} requests`)}
-            accent={p95Limit && (last.p95 ?? 0) > p95Limit ? '#c2870f' : undefined}
+            accent={p95Limit && (last.p95 ?? 0) > p95Limit ? 'var(--mantine-color-orange-text)' : undefined}
           />
           <StatTile
             label={tr(`p95 (${data.hours} h)`, `p95 (${data.hours} h)`)}
@@ -128,7 +128,7 @@ export function PerformancePanel() {
               `${t.status['4xx'] ?? 0} Client-Fehler (4xx)`,
               `${t.status['4xx'] ?? 0} client errors (4xx)`,
             )}
-            accent={errors5 ? '#c0392b' : undefined}
+            accent={errors5 ? 'var(--mantine-color-red-text)' : undefined}
           />
         </StatGrid>
       )}

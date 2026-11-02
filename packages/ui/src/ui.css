@@ -161,6 +161,31 @@ body {
   font-weight: 600;
 }
 
+/* Log and command output (diagnostics, mail checks). */
+.terminal-block {
+  /* Dark in both schemes, like a terminal. */
+  background: #1c1a22;
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--mantine-font-size-xs);
+  color: #d6d2e3;
+  line-height: 1.7;
+  overflow-x: auto;
+}
+
+.terminal-block .ok-line {
+  color: #5fca85;
+}
+
+.terminal-block .err-line {
+  color: #ff7a6b;
+}
+
+.terminal-block .warn-line {
+  color: #fece2b;
+}
+
 /* Styles for the shared page blocks in layout.tsx. */
 
 /* Big figures in stat tiles: brand heading face, digits lined up. */

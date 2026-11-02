@@ -82,7 +82,7 @@ export function ResourceMatrix(props: ResourceMatrixProps) {
             )
             return (
               <Fragment key={entry.key}>
-                <Table.Tr style={{ background: '#f9f8fc' }}>
+                <Table.Tr style={{ background: 'var(--hb-surface-2)' }}>
                   <Table.Td
                     style={{
                       fontWeight: 700,

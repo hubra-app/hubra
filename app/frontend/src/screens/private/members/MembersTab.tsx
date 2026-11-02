@@ -499,7 +499,7 @@ export function MembersTab() {
                         <span
                           title={t('members.privateEmailUnverified', 'Private E-Mail nicht bestätigt')}
                           style={{
-                            color: '#f59e0b',
+                            color: 'var(--mantine-color-orange-text)',
                             marginLeft: 4,
                             verticalAlign: 'middle',
                           }}

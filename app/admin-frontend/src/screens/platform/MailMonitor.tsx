@@ -45,7 +45,7 @@ function failureText(err: unknown) {
 }
 
 function Dot({ ok }: { ok: boolean | null }) {
-  const color = ok === null ? '#c2870f' : ok ? '#1f9d57' : '#c0392b'
+  const color = ok === null ? 'var(--mantine-color-orange-text)' : ok ? 'var(--mantine-color-green-text)' : 'var(--mantine-color-red-text)'
   return (
     <span
       style={{ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0 }}
@@ -334,13 +334,13 @@ export function OutboundMailPanel({ onShowLog }: { onShowLog: (level?: EventLeve
           <StatTile
             label={tr('Über Fallback (24 h)', 'Via fallback (24 h)')}
             value={data.stats.fallback}
-            accent={data.stats.fallback ? '#c2870f' : undefined}
+            accent={data.stats.fallback ? 'var(--mantine-color-orange-text)' : undefined}
             onClick={() => onShowLog('warning')}
           />
           <StatTile
             label={tr('Fehlgeschlagen (24 h)', 'Failed (24 h)')}
             value={data.stats.failed}
-            accent={data.stats.failed ? '#c0392b' : undefined}
+            accent={data.stats.failed ? 'var(--mantine-color-red-text)' : undefined}
             onClick={() => onShowLog('error')}
           />
         </StatGrid>

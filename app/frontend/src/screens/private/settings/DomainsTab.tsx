@@ -137,12 +137,12 @@ export function DomainsTab() {
                   </Table.Td>
                   <Table.Td>
                     {d.is_primary ? (
-                      <IconStar size={16} fill="#fece2b" color="#fece2b" />
+                      <IconStar size={16} fill="var(--mantine-color-gold-4)" color="var(--mantine-color-gold-4)" />
                     ) : (
                       d.verified && (
                         <IconStar
                           size={16}
-                          color="#8c86a0"
+                          color="var(--hb-text-3)"
                           style={{ cursor: 'pointer' }}
                           onClick={() => handleSetPrimary(d)}
                         />

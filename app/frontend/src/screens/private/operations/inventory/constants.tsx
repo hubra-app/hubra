@@ -1,3 +1,4 @@
+import { categoryColors } from '@hubra/ui'
 import {
   IconTool,
   IconBox,
@@ -25,9 +26,9 @@ export const CATEGORY_ICONS: Record<InventoryCategory, React.ReactNode> = {
 }
 
 export const CATEGORY_COLORS: Record<InventoryCategory, string> = {
-  Tool: '#2596be',
-  Item: '#1f9d57',
-  Material: '#c2870f',
+  Tool: categoryColors.blue,
+  Item: categoryColors.green,
+  Material: categoryColors.orange,
 }
 
 export const STATUS_CONFIG: Record<
@@ -36,22 +37,22 @@ export const STATUS_CONFIG: Record<
 > = {
   available: {
     label: 'Verfügbar',
-    color: '#1f9d57',
+    color: 'var(--mantine-color-green-text)',
     icon: <IconCircleCheck size={12} />,
   },
   in_use: {
     label: 'In Gebrauch',
-    color: '#2596be',
+    color: 'var(--mantine-color-acc-text)',
     icon: <IconClock size={12} />,
   },
   maintenance: {
     label: 'Wartung',
-    color: '#c2870f',
+    color: 'var(--mantine-color-orange-text)',
     icon: <IconAlertCircle size={12} />,
   },
   broken: {
     label: 'Defekt',
-    color: '#ff4d3d',
+    color: 'var(--mantine-color-red-text)',
     icon: <IconAlertCircle size={12} />,
   },
   archived: {
@@ -61,17 +62,17 @@ export const STATUS_CONFIG: Record<
   },
   checked_out: {
     label: 'Ausgeliehen',
-    color: '#2596be',
+    color: 'var(--mantine-color-acc-text)',
     icon: <IconClock size={12} />,
   },
   pending: {
     label: 'Ausstehend',
-    color: '#c2870f',
+    color: 'var(--mantine-color-orange-text)',
     icon: <IconAlertCircle size={12} />,
   },
   lost: {
     label: 'Verloren',
-    color: '#ff4d3d',
+    color: 'var(--mantine-color-red-text)',
     icon: <IconAlertCircle size={12} />,
   },
   retired: {

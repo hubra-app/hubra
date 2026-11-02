@@ -1,3 +1,4 @@
+import { categoryColors } from '@hubra/ui'
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Table, Button, Group, Paper, TextInput, Badge } from '@mantine/core'
@@ -39,22 +40,22 @@ export function TransactionCategoriesTab() {
     null,
   )
   const [cName, setCName] = useState('')
-  const [cColor, setCColor] = useState('#2596be')
+  const [cColor, setCColor] = useState<string>(categoryColors.blue)
 
   const openAdd = () => {
     setCName('')
-    setCColor('#2596be')
+    setCColor(categoryColors.blue)
     setAddOpen(true)
   }
   // A new club has no categories: offer the usual ones in one go.
   const [starting, setStarting] = useState(false)
   const createStarterSet = async () => {
     const starter = [
-      { name: t('finance.starter.fees', 'Mitgliederbeiträge'), color: '#7441e0' },
-      { name: t('finance.starter.donations', 'Spenden'), color: '#1f9d57' },
-      { name: t('finance.starter.events', 'Anlässe'), color: '#2596be' },
-      { name: t('finance.starter.material', 'Material'), color: '#f59e0b' },
-      { name: t('finance.starter.rent', 'Miete'), color: '#ff4d3d' },
+      { name: t('finance.starter.fees', 'Mitgliederbeiträge'), color: categoryColors.purple },
+      { name: t('finance.starter.donations', 'Spenden'), color: categoryColors.green },
+      { name: t('finance.starter.events', 'Anlässe'), color: categoryColors.blue },
+      { name: t('finance.starter.material', 'Material'), color: categoryColors.orange },
+      { name: t('finance.starter.rent', 'Miete'), color: categoryColors.red },
       { name: t('finance.starter.other', 'Diverses'), color: 'var(--hb-text-3)' },
     ]
     setStarting(true)
@@ -330,7 +331,7 @@ export function TransactionCategoriesTab() {
                               size="sm"
                               variant="subtle"
                               style={{
-                                color: c.isDefault ? '#8c86a0' : '#ff4d3d',
+                                color: c.isDefault ? 'var(--hb-text-3)' : 'var(--mantine-color-red-text)',
                               }}
                               onClick={() => {
                                 if (!c.isDefault) setDeleteTarget(c)

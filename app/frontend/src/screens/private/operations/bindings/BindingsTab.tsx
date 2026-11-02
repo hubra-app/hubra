@@ -175,7 +175,7 @@ export function BindingsTab() {
         )}
         renderKeySuffix={(entry) =>
           entry.is_protected ? (
-            <IconLock size={11} style={{ color: '#e65100', flexShrink: 0 }} />
+            <IconLock size={11} style={{ color: 'var(--mantine-color-orange-text)', flexShrink: 0 }} />
           ) : null
         }
         renderKeyBelow={(entry) => (
@@ -202,7 +202,7 @@ export function BindingsTab() {
             render: (entry) =>
               entry.resolved_value ? (
                 entry.resolved_sensitive ? (
-                  <span style={{ color: '#bbb', fontStyle: 'italic' }}>
+                  <span style={{ color: 'var(--hb-text-3)', fontStyle: 'italic' }}>
                     {'\u2022\u2022\u2022\u2022\u2022'}
                   </span>
                 ) : (
@@ -217,7 +217,7 @@ export function BindingsTab() {
                   </span>
                 )
               ) : (
-                <em style={{ color: '#bbb' }}>{'\u2014'}</em>
+                <em style={{ color: 'var(--hb-text-3)' }}>{'\u2014'}</em>
               ),
           },
           {
@@ -232,8 +232,8 @@ export function BindingsTab() {
                   root: {
                     fontSize: 'var(--mantine-font-size-xs)',
                     padding: '1px 6px',
-                    background: '#f4f0ff',
-                    color: '#7c4dcc',
+                    background: 'var(--mantine-color-acc-light)',
+                    color: 'var(--mantine-color-acc-light-color)',
                   },
                 }}
               >
@@ -254,8 +254,8 @@ export function BindingsTab() {
                     root: {
                       fontSize: 'var(--mantine-font-size-xs)',
                       padding: '1px 6px',
-                      background: '#fff3e0',
-                      color: '#e65100',
+                      background: 'var(--mantine-color-orange-light)',
+                      color: 'var(--mantine-color-orange-text)',
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: 3,
@@ -274,7 +274,7 @@ export function BindingsTab() {
               entry.validation_status === 'ok' ? (
                 <span
                   style={{
-                    color: '#27ae60',
+                    color: 'var(--mantine-color-green-text)',
                     fontSize: 'var(--mantine-font-size-xs)',
                   }}
                 >
@@ -283,7 +283,7 @@ export function BindingsTab() {
               ) : (
                 <span
                   style={{
-                    color: '#e74c3c',
+                    color: 'var(--mantine-color-red-text)',
                     fontSize: 'var(--mantine-font-size-xs)',
                   }}
                   title={entry.validation_error ?? undefined}
@@ -304,7 +304,7 @@ export function BindingsTab() {
                 style={{
                   padding: '3px 8px',
                   fontSize: 'var(--mantine-font-size-xs)',
-                  color: entry.enabled ? '#27ae60' : 'var(--hb-text-3)',
+                  color: entry.enabled ? 'var(--mantine-color-green-text)' : 'var(--hb-text-3)',
                   cursor: entry.is_protected ? 'not-allowed' : 'pointer',
                 }}
                 title={
@@ -335,7 +335,7 @@ export function BindingsTab() {
                   {formatRelative(entry.updated_at)}
                 </span>
               ) : (
-                <em style={{ color: '#bbb' }}>{'\u2014'}</em>
+                <em style={{ color: 'var(--hb-text-3)' }}>{'\u2014'}</em>
               ),
           },
         ]}
@@ -367,7 +367,7 @@ export function BindingsTab() {
                 <Button
                   variant="subtle"
                   onClick={() => setDeleteTarget(entry)}
-                  style={{ padding: '4px 7px', color: '#c0392b' }}
+                  style={{ padding: '4px 7px', color: 'var(--mantine-color-red-text)' }}
                   title={t('common.delete', 'Löschen')}
                 >
                   <IconTrash size={16} />

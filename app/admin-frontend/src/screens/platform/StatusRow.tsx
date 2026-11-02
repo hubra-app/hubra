@@ -2,7 +2,7 @@ import { Group, Text } from '@mantine/core'
 
 /** Green (ok), red (failed) or amber (null: not checked / not set up). */
 export function Dot({ ok }: { ok: boolean | null }) {
-  const color = ok === null ? '#c2870f' : ok ? '#1f9d57' : '#c0392b'
+  const color = ok === null ? 'var(--mantine-color-orange-text)' : ok ? 'var(--mantine-color-green-text)' : 'var(--mantine-color-red-text)'
   return (
     <span
       style={{ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0 }}
