@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   Badge,
@@ -13,7 +12,7 @@ import {
   Text,
   Title,
 } from '@mantine/core'
-import { IconRefresh, IconSettings } from '@tabler/icons-react'
+import { IconRefresh } from '@tabler/icons-react'
 import { StatGrid, StatTile } from '@/components/ui'
 import { tr } from '@/lang'
 import { getPerformance, type PerfRoute } from '@/api/platform'
@@ -48,7 +47,6 @@ function StatusBadges({ status }: { status: PerfRoute['status'] }) {
  * Only route patterns and query shapes are kept, never paths, values or who
  * asked (services/perf_monitor.py). */
 export function PerformancePanel() {
-  const navigate = useNavigate()
   const [hours, setHours] = useState('24')
   const [sort, setSort] = useState<Sort>('total')
   const query = useQuery({
@@ -217,14 +215,6 @@ export function PerformancePanel() {
       <Paper withBorder shadow="sm" radius="lg" p="lg">
         <Group justify="space-between" mb={4} wrap="wrap">
           <Title order={4}>{tr('Langsame Datenbankabfragen', 'Slow database queries')}</Title>
-          <Button
-            variant="subtle"
-            size="compact-sm"
-            leftSection={<IconSettings size={14} />}
-            onClick={() => navigate('/app/platform/settings/alerts')}
-          >
-            {tr('Grenzwerte', 'Thresholds')}
-          </Button>
         </Group>
         <Text size="xs" c="dimmed" mb={12}>
           {data &&

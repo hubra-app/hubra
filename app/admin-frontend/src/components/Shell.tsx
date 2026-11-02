@@ -19,25 +19,12 @@ import { useQuery } from '@tanstack/react-query'
 import { SSO_URL } from '@hubra/api-client'
 import {
   IconArrowUpRight,
-  IconBuildingCommunity,
   IconCheck,
   IconChevronRight,
-  IconClipboardList,
-  IconDatabase,
   IconDotsVertical,
-  IconHeartbeat,
-  IconBell,
-  IconHome,
-  IconKey,
   IconLayoutSidebarLeftCollapse,
-  IconLifebuoy,
   IconLogout,
   IconMenu2,
-  IconPuzzle,
-  IconSettings,
-  IconShieldCheck,
-  IconHeadset,
-  IconSparkles,
   IconUserCircle,
   IconWorld,
 } from '@tabler/icons-react'
@@ -45,6 +32,7 @@ import { useAdmin } from '@/context/AdminContext'
 import { getProfile } from '@/api/auth'
 import { textOn as contrastColor, ThemeSwitch } from '@hubra/ui'
 import { useLang, type Lang } from '@/lang'
+import { navSections, visibleTabs, type NavPage, type PageTab } from '@/nav'
 
 // The same frame as the club app (components/Shell there): a white top bar
 // with logo, breadcrumb, language and account, a collapsible sidebar with
@@ -57,6 +45,8 @@ interface NavItem {
   path?: string
   /** …or a page of another Hubra app. */
   href?: string
+  /** Every URL of the page (one per tab); any of them marks it active. */
+  match?: string[]
 }
 
 interface NavSection {
@@ -85,9 +75,29 @@ function initials(name: string) {
   )
 }
 
+function isUnder(pathname: string, path: string) {
+  return pathname === path || pathname.startsWith(path + '/')
+}
+
+/** The page and tab the URL is on: the longest matching tab path wins. */
+function currentTab(
+  pages: { pages: { page: NavPage; tabs: PageTab[] }[] }[],
+  pathname: string,
+) {
+  let best: { page: NavPage; tabs: PageTab[]; tab: PageTab } | undefined
+  for (const s of pages)
+    for (const { page, tabs } of s.pages)
+      for (const tab of tabs)
+        if (isUnder(pathname, tab.path) && (!best || tab.path.length > best.tab.path.length))
+          best = { page, tabs, tab }
+  return best
+}
+
 function NavRow({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
   const location = useLocation()
-  const active = !!item.path && location.pathname.startsWith(item.path)
+  const active = (item.match ?? (item.path ? [item.path] : [])).some((p) =>
+    isUnder(location.pathname, p),
+  )
   const style: React.CSSProperties = collapsed
     ? {
         display: 'flex',
@@ -314,68 +324,33 @@ export function Shell({ children }: { children: React.ReactNode }) {
     })
   }
 
-  const platformItems: NavItem[] = [
-    ...(hasGlobalPermission('tenants.read')
-      ? [{ path: '/app/tenants', label: tr('Alle Vereine', 'All clubs'), icon: <IconBuildingCommunity size={24} /> }]
-      : []),
-    ...(hasGlobalPermission('requests.read.all')
-      ? [{ path: '/app/requests', label: tr('Vereinsanfragen', 'Club requests'), icon: <IconClipboardList size={24} /> }]
-      : []),
-    ...(hasGlobalPermission('support.cases')
-      ? [{ path: '/app/reports', label: tr('Meldungen & Ideen', 'Reports & ideas'), icon: <IconLifebuoy size={24} /> }]
-      : []),
-    ...(hasGlobalPermission('platform.settings')
-      ? [{ path: '/app/platform/settings', label: tr('Einstellungen', 'Settings'), icon: <IconSettings size={24} /> }]
-      : []),
-    ...(hasGlobalPermission('backups.manage')
-      ? [{ path: '/app/platform/backups', label: tr('Backups', 'Backups'), icon: <IconDatabase size={24} /> }]
-      : []),
-    ...(hasGlobalPermission('platform.diagnostics')
-      ? [
-          { path: '/app/platform/alerts', label: tr('Warnungen', 'Alerts'), icon: <IconBell size={24} /> },
-          { path: '/app/platform/diagnostics', label: tr('Diagnose', 'Diagnostics'), icon: <IconHeartbeat size={24} /> },
-        ]
-      : []),
-    ...(hasGlobalPermission('plugins.manage')
-      ? [{ path: '/app/plugins', label: tr('Plugin-Katalog', 'Plugin catalogue'), icon: <IconPuzzle size={24} /> }]
-      : []),
-    ...(hasGlobalPermission('roles.manage')
-      ? [{ path: '/app/roles', label: tr('Rollen', 'Roles'), icon: <IconKey size={24} /> }]
-      : []),
-    ...(hasGlobalPermission('audit.read')
-      ? [
-          { path: '/app/support', label: tr('Support-Zugriffe', 'Support access'), icon: <IconHeadset size={24} /> },
-          { path: '/app/audit', label: tr('Audit-Log', 'Audit log'), icon: <IconShieldCheck size={24} /> },
-        ]
-      : []),
-  ]
+  // The sidebar is nav.tsx: each page links to its first tab this person
+  // may open; pages without any are left out, and so are empty sections.
+  const pages = navSections().map((section) => ({
+    section,
+    pages: section.pages
+      .map((page) => ({ page, tabs: visibleTabs(page, hasGlobalPermission) }))
+      .filter((p) => p.tabs.length > 0),
+  }))
+  const sections: NavSection[] = pages
+    .filter((s) => s.pages.length > 0)
+    .map(({ section, pages }) => ({
+      label: section.label,
+      items: pages.map(({ page, tabs }) => ({
+        label: page.label,
+        icon: page.icon,
+        path: tabs[0].path,
+        match: tabs.map((t) => t.path),
+      })),
+    }))
 
-  const sections: NavSection[] = [
-    {
-      label: tr('Persönlich', 'Personal'),
-      items: [
-        // Joining and founding clubs live on the sign-in site («Meine Vereine»);
-        // here are only the clubs this person runs.
-        { path: '/app/my-tenants', label: tr('Deine Vereine verwalten', 'Clubs you run'), icon: <IconHome size={24} /> },
-      ],
-    },
-    ...(platformItems.length > 0
-      ? [{ label: tr('Plattform', 'Platform'), items: platformItems }]
-      : []),
-    {
-      label: 'Hubra',
-      items: [
-        { path: '/app/whats-new', label: tr('Neuigkeiten & Roadmap', 'Changelog & roadmap'), icon: <IconSparkles size={24} /> },
-      ],
-    },
+  // Breadcrumb: "Verwaltung › <page> › <tab>", like the club app's top bar.
+  const here = currentTab(pages, location.pathname)
+  const crumbs = [
+    tr('Verwaltung', 'Manage'),
+    ...(here ? [here.page.label] : []),
+    ...(here && here.tabs.length > 1 && here.tab.label ? [here.tab.label] : []),
   ]
-
-  // Breadcrumb: "Verwaltung › <page>", like the club app's top bar.
-  const current = sections
-    .flatMap((s) => s.items)
-    .filter((i) => i.path && location.pathname.startsWith(i.path))
-    .sort((a, b) => (b.path?.length ?? 0) - (a.path?.length ?? 0))[0]
-  const crumbs = [tr('Verwaltung', 'Manage'), ...(current ? [current.label] : [])]
 
   return (
     <AppShell
@@ -426,7 +401,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 {i > 0 && <IconChevronRight size={14} color="var(--mantine-color-dimmed)" style={{ flexShrink: 0 }} />}
                 <Text
                   fz="sm"
-                  c={i === crumbs.length - 1 ? 'dark' : 'dimmed'}
+                  c={i === crumbs.length - 1 ? undefined : 'dimmed'}
                   fw={i === crumbs.length - 1 ? 600 : 400}
                   truncate
                 >
@@ -484,7 +459,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         opened={menuOpen}
         onClose={closeMenu}
         position="left"
-        size="min(300px, 85vw)"
+        size="100%"
         padding="md"
         hiddenFrom="sm"
         title={

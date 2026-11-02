@@ -247,6 +247,11 @@ export function LoginScreen() {
           {tr('Konto erstellen', 'Create account')}
         </Button>
       </Stack>
+      <Text size="xs" c="dimmed" ta="center" mt="lg">
+        <Anchor size="xs" c="dimmed" onClick={() => navigate('/status')}>
+          {tr('Systemstatus', 'System status')}
+        </Anchor>
+      </Text>
     </AuthFrame>
   )
 }

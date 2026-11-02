@@ -241,7 +241,7 @@ def record_mail(
                 [
                     f"A mail to {to_email} ({subject!r}) could not be sent.",
                     f"Error: {error}",
-                    "Check the relays in manage › Diagnostics › Outbound mail.",
+                    "Check the relays in manage › Mail › Outbound.",
                 ],
             )
         return
@@ -726,7 +726,7 @@ def _alert_body(
         type_label=t(f"mail.email.platform_alert.type.{alert_type}"),
         when=datetime.now(zone).strftime("%d.%m.%Y, %H:%M"),
         instance=_instance_name(),
-        alerts_url=f"{manage}/app/platform/alerts/overview" if manage else "",
+        alerts_url=f"{manage}/app/platform/alerts" if manage else "",
     )
 
 
@@ -911,7 +911,7 @@ def backups_failed(backup_type: str, records) -> None:
     alert(
         "backup_failed",
         f"{len(failed)} of {len(list(records))} scheduled backups failed",
-        lines + ["See manage › Platform › Backups."],
+        lines + ["See manage › Backups."],
     )
 
 
@@ -950,7 +950,7 @@ def backup_failed(action: str, backup, error: str | None) -> None:
     alert(
         "backup_failed",
         f"{title}: {scope}",
-        [record_line, f"Error: {error}", "See manage › Platform › Backups."],
+        [record_line, f"Error: {error}", "See manage › Backups."],
         throttle=False,
     )
 
@@ -974,7 +974,7 @@ def backup_deleted(
             f"The file could not be removed from storage and is still there: "
             f"{storage_error[:300]}"
         )
-    lines.append("See manage › Platform › Backups.")
+    lines.append("See manage › Backups.")
     record(
         "backup",
         "backup.deleted",
@@ -1048,7 +1048,7 @@ def plugin_news(result: dict) -> None:
 
 
 def open_problems() -> list[dict]:
-    """What is wrong right now, worst first, for manage › Platform › Alerts.
+    """What is wrong right now, worst first, for manage › Alerts.
 
     Each: ``{"id", "level", "area", "title", "detail", "since"?, "link"}``.
     """
@@ -1079,7 +1079,7 @@ def open_problems() -> list[dict]:
             "Background jobs are not running",
             "Celery beat or the worker has not run the health check for over a "
             "minute: relay checks, backups, reminders and alert mails stand still.",
-            link="/app/platform/diagnostics/health",
+            link="/app/platform/diagnostics",
         )
     else:
         for key, state in (cached.get("watch") or {}).items():
@@ -1091,7 +1091,7 @@ def open_problems() -> list[dict]:
                     f"{SERVICE_NAMES.get(key, key)} is unreachable",
                     ((cached.get("services") or {}).get(key) or {}).get("error") or "",
                     since=state["down_since"],
-                    link="/app/platform/diagnostics/health",
+                    link="/app/platform/diagnostics",
                 )
 
     for which in RELAYS:
@@ -1104,7 +1104,7 @@ def open_problems() -> list[dict]:
                 ("Main relay" if which == "relay" else "Fallback relay") + " is down",
                 check.get("error") or "",
                 since=check.get("checked_at"),
-                link="/app/platform/diagnostics/outbound-mail",
+                link="/app/platform/mail",
             )
     down = primary_down()
     if down["active"]:
@@ -1115,7 +1115,7 @@ def open_problems() -> list[dict]:
             "Mail goes through the fallback relay",
             f"The main relay refused mail; it is tried again in "
             f"{max(1, down['seconds_left'] // 60)} min.",
-            link="/app/platform/diagnostics/outbound-mail",
+            link="/app/platform/mail",
         )
     counts = stats(24)
     if counts["failed"]:
@@ -1141,7 +1141,7 @@ def open_problems() -> list[dict]:
                 p["title"],
                 p["detail"],
                 since=p.get("since"),
-                link="/app/platform/diagnostics/discord",
+                link="/app/platform/discord",
             )
     except Exception:
         logger.warning("discord_problems_failed", exc_info=True)

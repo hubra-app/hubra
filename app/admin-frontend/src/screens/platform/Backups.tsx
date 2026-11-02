@@ -25,7 +25,6 @@ import {
   IconWorld,
 } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
-import { PageHead } from '@/components/ui'
 import { useLang, tr } from '@/lang'
 import { useState } from 'react'
 import {
@@ -107,6 +106,22 @@ const restoreState = (b: BackupRecord | undefined) =>
  * can be restored without touching the others. Where they go is set under
  * Platform Settings; the passphrase stays in env.
  */
+/** The page intro, with a link to the storage tab. */
+export function BackupsDesc() {
+  return (
+    <>
+      {tr(
+        'Das globale Backup enthält Konten, Vereine und Plattform-Einstellungen; jeder Verein hat eigene Backups und lässt sich einzeln wiederherstellen. Alles wird mit dem öffentlichen Backup-Schlüssel verschlüsselt; zum Öffnen braucht es den privaten Schlüssel, den nur du hast (ältere Backups: BACKUP_ENCRYPTION_KEY). Täglich, wöchentlich und monatlich laufen ein globales Backup und eines pro Verein von selbst; den Speicherort legst du unter ',
+        'The global backup holds accounts, clubs and platform settings; each club has its own backups and can be restored on its own. Everything is encrypted to the backup public key; opening a backup takes the private key, which only you hold (older backups: BACKUP_ENCRYPTION_KEY). Daily, weekly and monthly, one global backup and one per club run on their own; the storage is set under ',
+      )}
+      <Anchor component={Link} to="/app/platform/backups/storage" size="md">
+        {tr('Speicher', 'Storage')}
+      </Anchor>
+      {tr(' fest.', '.')}
+    </>
+  )
+}
+
 export function Backups() {
   const { notify } = useAdmin()
   const { tr } = useLang()
@@ -262,21 +277,6 @@ export function Backups() {
         gap: 16,
       }}
     >
-      <PageHead
-        title={tr('Backups', 'Backups')}
-        desc={
-          <>
-            {tr(
-              'Das globale Backup enthält Konten, Vereine und Plattform-Einstellungen; jeder Verein hat eigene Backups und lässt sich einzeln wiederherstellen. Alles wird mit dem öffentlichen Backup-Schlüssel verschlüsselt; zum Öffnen braucht es den privaten Schlüssel, den nur du hast (ältere Backups: BACKUP_ENCRYPTION_KEY). Täglich, wöchentlich und monatlich laufen ein globales Backup und eines pro Verein von selbst; den Speicherort legst du unter ',
-              'The global backup holds accounts, clubs and platform settings; each club has its own backups and can be restored on its own. Everything is encrypted to the backup public key; opening a backup takes the private key, which only you hold (older backups: BACKUP_ENCRYPTION_KEY). Daily, weekly and monthly, one global backup and one per club run on their own; the storage is set under ',
-            )}
-            <Anchor component={Link} to="/app/platform/settings" size="sm">
-              {tr('Plattform-Einstellungen', 'Platform settings')}
-            </Anchor>
-            {tr(' fest.', '.')}
-          </>
-        }
-      />
       {/* ── Config status banner ─────────────────────────────────────── */}
       {configQuery.isLoading && (
         <div style={{ color: 'var(--hb-text-3)', fontSize: 'var(--mantine-font-size-sm)' }}>

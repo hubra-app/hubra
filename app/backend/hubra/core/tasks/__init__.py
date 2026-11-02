@@ -359,5 +359,5 @@ def _report_build(component: str):
 signals.worker_ready.connect(_report_build("worker"), weak=False)
 signals.beat_init.connect(_report_build("beat"), weak=False)
 
-# The background job dashboard (manage › Diagnose › Hintergrundjobs).
+# The background job dashboard (manage › Diagnostics › Background jobs).
 from hubra.core.tasks import job_signals  # noqa: E402,F401
