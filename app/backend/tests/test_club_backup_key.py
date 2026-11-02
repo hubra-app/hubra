@@ -133,3 +133,42 @@ def test_key_set_elsewhere_has_no_stale_note(tenant, client, admin, db):
 def test_members_cannot_set_the_key(tenant, client, seeded_db):
     resp = client.put(URL, json={"public_key": PUB})
     assert resp.status_code in (401, 403)
+
+
+def _age_backups(app):
+    return patch("hubra.core.services.backup_crypto.mode", return_value="age")
+
+
+def test_club_only_needs_a_key_and_the_slug(tenant, client, admin, app):
+    with _age_backups(app):
+        no_key = client.patch(URL, json={"club_only": True, "confirm": "key-club"})
+        assert no_key.get_json()["error"] == "NO_BACKUP_KEY"
+
+        client.put(URL, json={"public_key": PUB})
+        unconfirmed = client.patch(URL, json={"club_only": True})
+        assert unconfirmed.get_json()["error"] == "CONFIRMATION_REQUIRED"
+
+        on = client.patch(URL, json={"club_only": True, "confirm": "key-club"})
+        assert on.status_code == 200
+        assert on.get_json()["club_only"] is True
+
+        off = client.patch(URL, json={"club_only": False})
+        assert off.get_json()["club_only"] is False
+
+
+def test_club_only_needs_public_key_backups(tenant, client, admin):
+    client.put(URL, json={"public_key": PUB})
+    with patch("hubra.core.services.backup_crypto.mode", return_value="gpg"):
+        resp = client.patch(URL, json={"club_only": True, "confirm": "key-club"})
+    assert resp.get_json()["error"] == "BACKUP_KEYS_UNSUPPORTED"
+
+
+def test_removing_the_key_turns_club_only_off(tenant, client, admin, db):
+    client.put(URL, json={"public_key": PUB})
+    with _age_backups(None):
+        client.patch(URL, json={"club_only": True, "confirm": "key-club"})
+    client.delete(URL)
+    db.session.refresh(tenant)
+    assert "backup_club_only" not in (tenant.settings or {})
+    client.put(URL, json={"public_key": PUB})
+    assert client.get(URL).get_json()["club_only"] is False

@@ -263,6 +263,10 @@ const DE: Record<string, string> = {
   "That is the private key. Keep it to yourself and send only the public key (age1...).":
     "Das ist der private Schlüssel. Behalte ihn für dich; hier gehört nur der öffentliche Schlüssel (age1…) hin.",
   "A public key is required": "Bitte gib den öffentlichen Schlüssel an.",
+  "Set up the club's backup key first": "Richte zuerst den Backup-Schlüssel des Vereins ein.",
+  "Backups on this server do not use public keys yet":
+    "Backups auf diesem Server verwenden noch keine öffentlichen Schlüssel.",
+  "Type the club's short name to confirm": "Gib zur Bestätigung den Kurznamen des Vereins ein.",
   // Integrations (keys and bindings)
   "Binding already exists": "Diese Verknüpfung gibt es schon.",
   "Cannot delete a protected key": "Ein geschützter Schlüssel kann nicht gelöscht werden.",

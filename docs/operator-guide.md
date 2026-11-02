@@ -235,6 +235,12 @@ Backups are a platform task: manage › Backups, global permission
   `flask backups club-key <club> age1…`. Its
   backups are then encrypted to both keys, so the club can open its own
   backups with its private key, and you still can with yours.
+- A club admin can also turn on **Only our key** there (they type the
+  club's short name to confirm). New backups of that club are then
+  encrypted to the club key alone: you can no longer verify-open or
+  restore them unless the club gives you its private key. Manage ›
+  Encryption marks such clubs "Club key only". It only works with age
+  backups and a club key; removing the club key turns it off.
 - **Verify** without a key checks that the file in storage is complete and
   unchanged (checksum). Paste the private key to also open it and count the
   tables; do that now and then as a test restore.

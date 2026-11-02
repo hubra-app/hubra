@@ -460,6 +460,8 @@ export interface ClubKeys {
   key_version: number | null
   key_created_at: string | null
   backup_public_key: string | null
+  /** The club chose "only our key": new backups don't open with the platform key. */
+  backup_club_only: boolean
 }
 
 export interface EncryptionStatus {

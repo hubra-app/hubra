@@ -130,6 +130,35 @@ def test_club_backup_opens_with_install_or_club_key_only(age_config, db, s3, tmp
         _open(blob, "", tmp_path)
 
 
+def test_club_only_backup_opens_with_the_club_key_alone(age_config, db, s3, tmp_path):
+    from hubra.core.services.backup import BackupService
+
+    club = _club(db, CLUB_PUB)
+    club.settings = {"backup_club_only": True}
+    db.session.commit()
+    record = BackupService.create_backup("manual", "t", club.id)
+    assert record.status == "completed", record.error_message
+    blob = s3.objects[record.s3_key]
+
+    assert _open(blob, CLUB_PRIV, tmp_path) == b"PGDMP-club-data"
+    with pytest.raises(RuntimeError, match="age decryption failed"):
+        _open(blob, INSTALL_PRIV, tmp_path)
+
+
+def test_club_only_without_a_club_key_still_uses_the_install_key(
+    age_config, db, s3, tmp_path
+):
+    from hubra.core.services.backup import BackupService
+
+    club = _club(db, None)
+    club.settings = {"backup_club_only": True}
+    db.session.commit()
+    assert not backup_crypto.club_only(club)
+    record = BackupService.create_backup("manual", "t", club.id)
+    assert record.status == "completed", record.error_message
+    assert _open(s3.objects[record.s3_key], INSTALL_PRIV, tmp_path) == b"PGDMP-club-data"
+
+
 def test_global_backup_is_not_encrypted_to_club_keys(age_config, db, s3, tmp_path):
     from hubra.core.services.backup import BackupService
 

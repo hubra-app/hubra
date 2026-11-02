@@ -3742,14 +3742,14 @@
       "p2": "Mit einem eigenen Schlüssel wird jedes neue Backup zusätzlich für euch verschlüsselt. Dann könnt ihr eure Backups selbst öffnen, zum Beispiel wenn ihr Hubra einmal verlasst oder eine Kopie eurer Daten ausserhalb von Hubra aufbewahren wollt.",
       "pair": "Der Schlüssel besteht aus zwei Teilen: Den öffentlichen Schlüssel (age1…) bekommt Hubra, damit es Backups für euch verschliessen kann. Den privaten Schlüssel (AGE-SECRET-KEY-1…) behaltet nur ihr; nur er öffnet die Backups.",
       "browser": "Der Schlüssel wird hier in deinem Browser erzeugt. Der private Teil wird nie an Hubra gesendet, und Hubra kann ihn nicht wiederherstellen.",
-      "loss": "Geht der private Schlüssel verloren, verliert ihr keine Daten: Hubra kann eure Backups weiterhin mit dem eigenen Schlüssel wiederherstellen. Ihr könnt sie nur nicht mehr selbst öffnen."
+      "loss": "Geht der private Schlüssel verloren, verliert ihr keine Daten: Hubra kann eure Backups weiterhin mit dem eigenen Schlüssel wiederherstellen. Ihr könnt sie nur nicht mehr selbst öffnen. Das gilt, solange ihr nicht «Nur unser Schlüssel» einschaltet."
     },
     "activated": "Backup-Schlüssel aktiviert",
     "activateFailed": "Schlüssel konnte nicht gespeichert werden",
     "wizard": {
       "replaceTitle": "Neuen Backup-Schlüssel einrichten",
       "title": "Eigenen Backup-Schlüssel einrichten",
-      "replaceHint": "Backups, die schon gemacht wurden, öffnen weiterhin nur mit dem bisherigen Schlüssel. Bewahrt ihn deshalb auf, bis diese Backups abgelaufen sind."
+      "replaceHint": "Backups, die schon gemacht wurden, öffnen weiterhin mit dem bisherigen Schlüssel. Bewahrt ihn deshalb auf, bis diese Backups abgelaufen sind."
     },
     "step": {
       "about": "Worum es geht",
@@ -3814,8 +3814,23 @@
       "file": "Eine Backup-Datei (endet auf .dump.age) bekommt ihr vom Betreiber eurer Hubra-Installation. Geöffnet wird sie mit dem kostenlosen Programm age (age-encryption.org):",
       "restore": "Die entschlüsselte Datei ist ein PostgreSQL-Dump; mit pg_restore lässt sie sich in eine eigene Datenbank einspielen."
     },
-    "removeConfirm": "Neue Backups werden dann nur noch mit dem Schlüssel des Betreibers verschlüsselt. Backups, die schon gemacht wurden, öffnen weiterhin mit eurem privaten Schlüssel; bewahrt ihn also auf.",
+    "removeConfirm": "Neue Backups werden dann nur noch mit dem Schlüssel des Betreibers verschlüsselt, und «Nur unser Schlüssel» wird ausgeschaltet. Backups, die schon gemacht wurden, öffnen weiterhin mit eurem privaten Schlüssel; bewahrt ihn also auf.",
     "loadFailed": "Der Backup-Schlüssel konnte nicht geladen werden.",
-    "stepOf": "Schritt {{n}} von 4: {{label}}"
+    "stepOf": "Schritt {{n}} von 4: {{label}}",
+    "clubOnly": {
+      "onDone": "Nur noch euer Schlüssel öffnet neue Backups",
+      "offDone": "Hubra kann neue Backups wieder öffnen",
+      "failed": "Einstellung konnte nicht gespeichert werden",
+      "title": "Nur unser Schlüssel",
+      "hint": "Neue Backups werden dann nur noch mit eurem Schlüssel verschlüsselt, nicht mehr zusätzlich mit dem Schlüssel von Hubra. Niemand ausser euch kann sie öffnen, auch Hubra nicht.",
+      "active": "Eingeschaltet: Hubra kann neue Backups eures Vereins nicht wiederherstellen. Geht euer privater Schlüssel verloren, sind diese Backups verloren. Die Daten in Hubra selbst bleiben davon unberührt.",
+      "confirmTitle": "Nur euren Schlüssel verwenden?",
+      "risk1": "Hubra kann neue Backups eures Vereins nicht mehr öffnen und nicht wiederherstellen, auch nicht, wenn ihr darum bittet.",
+      "risk2": "Für eine Wiederherstellung müsst ihr euren privaten Schlüssel selbst bereitstellen. Geht er verloren, gibt es keinen Weg zurück.",
+      "risk3": "Backups, die schon gemacht wurden, bleiben, wie sie sind. Ihr könnt die Einstellung jederzeit wieder ausschalten; das gilt dann ab dem nächsten Backup.",
+      "ack": "Ich habe unseren privaten Schlüssel an mindestens zwei sicheren Orten und verstehe, dass Hubra nicht helfen kann, wenn er fehlt.",
+      "slug": "Zur Bestätigung den Kurznamen des Vereins eingeben: {{slug}}",
+      "turnOn": "Nur unseren Schlüssel verwenden"
+    }
   }
 }

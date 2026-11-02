@@ -15,8 +15,10 @@ import {
   PasswordInput,
   Stack,
   Stepper,
+  Switch,
   Text,
   Textarea,
+  TextInput,
   Title,
 } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
@@ -32,7 +34,13 @@ import {
 } from '@tabler/icons-react'
 import { generateX25519Identity, identityToRecipient } from 'age-encryption'
 import { PUBLIC_RE, keyFile, keyFileMatches } from '@/screens/private/settings/backupKey'
-import { getBackupKey, removeBackupKey, setBackupKey, type BackupKeyState } from '@/api/admin'
+import {
+  getBackupKey,
+  removeBackupKey,
+  setBackupKey,
+  setBackupKeyClubOnly,
+  type BackupKeyState,
+} from '@/api/admin'
 import { useAuth, useToast } from '@/context/AppContext'
 import { useT } from '@/locales/i18n'
 import { qk } from '@/data/keys'
@@ -175,7 +183,7 @@ function WhatItIs() {
         <List.Item>
           {t(
             'backupKey.intro.loss',
-            'Geht der private Schlüssel verloren, verliert ihr keine Daten: Hubra kann eure Backups weiterhin mit dem eigenen Schlüssel wiederherstellen. Ihr könnt sie nur nicht mehr selbst öffnen.',
+            'Geht der private Schlüssel verloren, verliert ihr keine Daten: Hubra kann eure Backups weiterhin mit dem eigenen Schlüssel wiederherstellen. Ihr könnt sie nur nicht mehr selbst öffnen. Das gilt, solange ihr nicht «Nur unser Schlüssel» einschaltet.',
           )}
         </List.Item>
       </List>
@@ -271,7 +279,7 @@ function KeyWizard({ onDone, onCancel, replacing }: { onDone: () => void; onCanc
               <Alert color="yellow" icon={<IconAlertTriangle size={18} />}>
                 {t(
                   'backupKey.wizard.replaceHint',
-                  'Backups, die schon gemacht wurden, öffnen weiterhin nur mit dem bisherigen Schlüssel. Bewahrt ihn deshalb auf, bis diese Backups abgelaufen sind.',
+                  'Backups, die schon gemacht wurden, öffnen weiterhin mit dem bisherigen Schlüssel. Bewahrt ihn deshalb auf, bis diese Backups abgelaufen sind.',
                 )}
               </Alert>
             )}
@@ -526,6 +534,134 @@ function KeyWizard({ onDone, onCancel, replacing }: { onDone: () => void; onCanc
   )
 }
 
+/** "Only our key": new backups are no longer encrypted to the platform key. */
+function ClubOnlyCard({ state }: { state: BackupKeyState }) {
+  const { t } = useT()
+  const { notify } = useToast()
+  const { tenantSlug } = useAuth()
+  const queryClient = useQueryClient()
+  const [open, setOpen] = useState(false)
+  const [understood, setUnderstood] = useState(false)
+  const [confirm, setConfirm] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const save = async (on: boolean) => {
+    setSaving(true)
+    try {
+      await setBackupKeyClubOnly(on, on ? confirm.trim() : undefined)
+      notify(
+        'success',
+        on
+          ? t('backupKey.clubOnly.onDone', 'Nur noch euer Schlüssel öffnet neue Backups')
+          : t('backupKey.clubOnly.offDone', 'Hubra kann neue Backups wieder öffnen'),
+      )
+      setOpen(false)
+      setConfirm('')
+      setUnderstood(false)
+      void queryClient.invalidateQueries({ queryKey: qk.settings.backupKey })
+    } catch (err) {
+      notify(
+        'error',
+        t('backupKey.clubOnly.failed', 'Einstellung konnte nicht gespeichert werden'),
+        err instanceof Error ? err.message : undefined,
+      )
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Paper withBorder p="lg">
+      <Group justify="space-between" align="flex-start" wrap="nowrap" gap="md">
+        <div style={{ minWidth: 0 }}>
+          <Title order={4} mb={4}>
+            {t('backupKey.clubOnly.title', 'Nur unser Schlüssel')}
+          </Title>
+          <Text fz="sm" c="dimmed">
+            {t(
+              'backupKey.clubOnly.hint',
+              'Neue Backups werden dann nur noch mit eurem Schlüssel verschlüsselt, nicht mehr zusätzlich mit dem Schlüssel von Hubra. Niemand ausser euch kann sie öffnen, auch Hubra nicht.',
+            )}
+          </Text>
+        </div>
+        <Switch
+          checked={state.club_only}
+          disabled={!state.backups_use_key || saving}
+          onChange={(e) => (e.currentTarget.checked ? setOpen(true) : void save(false))}
+          aria-label={t('backupKey.clubOnly.title', 'Nur unser Schlüssel')}
+          size="md"
+        />
+      </Group>
+      {state.club_only && (
+        <Alert color="red" icon={<IconAlertTriangle size={18} />} mt="md">
+          {t(
+            'backupKey.clubOnly.active',
+            'Eingeschaltet: Hubra kann neue Backups eures Vereins nicht wiederherstellen. Geht euer privater Schlüssel verloren, sind diese Backups verloren. Die Daten in Hubra selbst bleiben davon unberührt.',
+          )}
+        </Alert>
+      )}
+
+      <Modal
+        opened={open}
+        onClose={() => setOpen(false)}
+        title={t('backupKey.clubOnly.confirmTitle', 'Nur euren Schlüssel verwenden?')}
+      >
+        <Stack gap="md">
+          <List spacing={6} size="sm">
+            <List.Item>
+              {t(
+                'backupKey.clubOnly.risk1',
+                'Hubra kann neue Backups eures Vereins nicht mehr öffnen und nicht wiederherstellen, auch nicht, wenn ihr darum bittet.',
+              )}
+            </List.Item>
+            <List.Item>
+              {t(
+                'backupKey.clubOnly.risk2',
+                'Für eine Wiederherstellung müsst ihr euren privaten Schlüssel selbst bereitstellen. Geht er verloren, gibt es keinen Weg zurück.',
+              )}
+            </List.Item>
+            <List.Item>
+              {t(
+                'backupKey.clubOnly.risk3',
+                'Backups, die schon gemacht wurden, bleiben, wie sie sind. Ihr könnt die Einstellung jederzeit wieder ausschalten; das gilt dann ab dem nächsten Backup.',
+              )}
+            </List.Item>
+          </List>
+          <Checkbox
+            checked={understood}
+            onChange={(e) => setUnderstood(e.currentTarget.checked)}
+            label={t(
+              'backupKey.clubOnly.ack',
+              'Ich habe unseren privaten Schlüssel an mindestens zwei sicheren Orten und verstehe, dass Hubra nicht helfen kann, wenn er fehlt.',
+            )}
+          />
+          <TextInput
+            label={t('backupKey.clubOnly.slug', 'Zur Bestätigung den Kurznamen des Vereins eingeben: {{slug}}', {
+              slug: tenantSlug ?? '',
+            })}
+            value={confirm}
+            onChange={(e) => setConfirm(e.currentTarget.value)}
+            autoComplete="off"
+          />
+          <Group justify="flex-end">
+            <Button variant="default" onClick={() => setOpen(false)}>
+              {t('common.cancel', 'Abbrechen')}
+            </Button>
+            <Button
+              color="red"
+              loading={saving}
+              disabled={!understood || confirm.trim() !== tenantSlug}
+              onClick={() => void save(true)}
+            >
+              {t('backupKey.clubOnly.turnOn', 'Nur unseren Schlüssel verwenden')}
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+    </Paper>
+  )
+}
+
 function KeyStatus({
   state,
   onReplace,
@@ -615,6 +751,8 @@ function KeyStatus({
         </Stack>
       </Paper>
 
+      <ClubOnlyCard state={state} />
+
       <Paper withBorder p="lg">
         <Title order={4} mb="sm">
           {t('backupKey.open.title', 'So öffnet ihr ein Backup')}
@@ -662,7 +800,7 @@ function KeyStatus({
           <Text fz="sm">
             {t(
               'backupKey.removeConfirm',
-              'Neue Backups werden dann nur noch mit dem Schlüssel des Betreibers verschlüsselt. Backups, die schon gemacht wurden, öffnen weiterhin mit eurem privaten Schlüssel; bewahrt ihn also auf.',
+              'Neue Backups werden dann nur noch mit dem Schlüssel des Betreibers verschlüsselt, und «Nur unser Schlüssel» wird ausgeschaltet. Backups, die schon gemacht wurden, öffnen weiterhin mit eurem privaten Schlüssel; bewahrt ihn also auf.',
             )}
           </Text>
           <Group justify="flex-end">

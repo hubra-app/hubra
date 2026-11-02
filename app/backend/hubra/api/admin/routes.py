@@ -503,6 +503,8 @@ def _backup_key_state(tenant) -> dict:
         # Only age (public-key) backups use club keys; a server still on the
         # older passphrase backups stores the key for later.
         "backups_use_key": backup_crypto.mode() == "age",
+        # Only the club's key opens its backups: Hubra cannot restore them.
+        "club_only": backup_crypto.club_only(tenant),
         "last_backup_with_key": latest,
     }
 
@@ -592,7 +594,70 @@ def remove_backup_key():
     tenant.backup_public_key = None
     settings = dict(tenant.settings or {})
     settings.pop("backup_key", None)
+    settings.pop("backup_club_only", None)
     tenant.settings = settings
     log_audit(actor_id, "remove_backup_key", "Tenant", tenant.id, None)
+    db.session.commit()
+    return jsonify(_backup_key_state(tenant)), 200
+
+
+@admin_bp.patch("/backup-key")
+@require_admin
+def update_backup_key_options():
+    """Body ``{"club_only": bool}``: whether only the club's own key opens
+    its new backups.  Turning it on needs ``"confirm": "<club slug>"``,
+    because Hubra can then no longer restore those backups."""
+    from hubra.api.auth.helpers import get_current_member
+    from hubra.api.utils import log_audit
+    from hubra.core.services import backup_crypto
+
+    tenant = current_tenant()
+    if tenant is None:
+        return jsonify({"error": "NO_TENANT", "message": "No tenant context"}), 400
+    data = request.get_json(silent=True) or {}
+    club_only = data.get("club_only")
+    if not isinstance(club_only, bool):
+        return jsonify(
+            {"error": "VALIDATION_ERROR", "message": "club_only must be true or false"}
+        ), 422
+    if club_only:
+        if not backup_crypto.split_keys(tenant.backup_public_key):
+            return jsonify(
+                {
+                    "error": "NO_BACKUP_KEY",
+                    "message": "Set up the club's backup key first",
+                }
+            ), 422
+        if backup_crypto.mode() != "age":
+            return jsonify(
+                {
+                    "error": "BACKUP_KEYS_UNSUPPORTED",
+                    "message": "Backups on this server do not use public keys yet",
+                }
+            ), 422
+        if data.get("confirm") != tenant.slug:
+            return jsonify(
+                {
+                    "error": "CONFIRMATION_REQUIRED",
+                    "message": "Type the club's short name to confirm",
+                }
+            ), 422
+    try:
+        actor_id = get_current_member().id
+    except ApiError:
+        actor_id = None
+    settings = dict(tenant.settings or {})
+    if club_only:
+        settings["backup_club_only"] = True
+    else:
+        settings.pop("backup_club_only", None)
+    tenant.settings = settings
+    log_audit(
+        actor_id,
+        "backup_key_club_only_on" if club_only else "backup_key_club_only_off",
+        "Tenant",
+        tenant.id,
+        None,
+    )
     db.session.commit()
     return jsonify(_backup_key_state(tenant)), 200
