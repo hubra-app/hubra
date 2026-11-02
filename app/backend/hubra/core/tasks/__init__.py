@@ -130,6 +130,7 @@ def make_celery(app: Flask) -> Celery:
             "hubra.core.tasks.push_tasks",
             "hubra.core.tasks.mail_monitor_tasks",
             "hubra.core.tasks.connected_app_tasks",
+            "hubra.core.tasks.quota_tasks",
             "hubra.core.tasks.upgrade_tasks",
             *_module_task_imports(),
         ],
@@ -252,6 +253,11 @@ def make_celery(app: Flask) -> Celery:
                 "task": "hubra.core.tasks.plugin_tasks.check_plugin_updates",
                 "schedule": crontab(hour="*/6", minute=40),
             },
+            # Club limits: warn owners at limits.warn_percent and at 100 %.
+            "check-club-limits-hourly": {
+                "task": "hubra.core.tasks.quota_tasks.check_quotas",
+                "schedule": crontab(minute=25),
+            },
         },
         broker_connection_retry_on_startup=False,
         timezone="UTC",
@@ -339,3 +345,6 @@ def _report_build(component: str):
 
 signals.worker_ready.connect(_report_build("worker"), weak=False)
 signals.beat_init.connect(_report_build("beat"), weak=False)
+
+# The background job dashboard (manage › Diagnose › Hintergrundjobs).
+from hubra.core.tasks import job_signals  # noqa: E402,F401

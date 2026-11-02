@@ -17,7 +17,7 @@ from flask import Blueprint, Response, jsonify, request
 from marshmallow import Schema, ValidationError, fields, validate
 
 from hubra.api.permissions import permission_required, require_global_permission
-from hubra.core.errors import api_error
+from hubra.core.errors import api_error, error_message
 from hubra.core.extensions import db
 from hubra.api.i18n.services import (
     bulk_upsert,
@@ -402,7 +402,11 @@ def import_i18n(locale: str):
         try:
             parsed = json.loads(file_content)
         except json.JSONDecodeError as exc:
-            return api_error("VALIDATION_ERROR", f"Invalid JSON: {exc}", 400)
+            return api_error(
+                "VALIDATION_ERROR",
+                f"Invalid JSON: {exc.msg} (line {exc.lineno}, column {exc.colno})",
+                400,
+            )
 
         if not isinstance(parsed, dict):
             return api_error(
@@ -578,5 +582,5 @@ def create_club_request():
         db.session.commit()
     except suggestions.RequestError as exc:
         db.session.rollback()
-        return api_error("VALIDATION_ERROR", str(exc), 400)
+        return api_error("VALIDATION_ERROR", error_message(exc), 400)
     return jsonify(req.to_dict()), 201

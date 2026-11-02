@@ -324,7 +324,7 @@ def _record_account_login(user: User) -> int:
     )
 
 
-def _note_device(user: User) -> tuple[str, bool]:
+def _note_device(user: User) -> tuple[str | None, bool]:
     """Remember this browser for *user*: (cookie token, new-device alert)."""
     return known_devices.remember(
         user,
@@ -517,9 +517,10 @@ def _complete_login(
         set_access_cookies(response, access_token)
         refresh_max_age = 30 * 24 * 3600 if keep_signed_in else 24 * 3600
         set_refresh_cookies(response, refresh_token, max_age=refresh_max_age)
-        _set_remembered_email_cookie(response, email)
+        _set_remembered_email_cookie(response, user.email)
         _set_theme_cookie(response, user.theme)
-        known_devices.set_cookie(response, device_token)
+        if device_token is not None:
+            known_devices.set_cookie(response, device_token)
         # The account token the manager portal runs on: /auth/switch-tenant
         # replaces the standard cookie with a club token, this one it keeps.
         account_token.issue(response, user, additional_claims["account_sid"])
@@ -627,7 +628,7 @@ def _complete_login(
     set_access_cookies(response, access_token)
     refresh_max_age = 30 * 24 * 3600 if keep_signed_in else 24 * 3600
     set_refresh_cookies(response, refresh_token, max_age=refresh_max_age)
-    _set_remembered_email_cookie(response, email)
+    _set_remembered_email_cookie(response, user.email if user else member.email)
     if user is not None:
         _set_theme_cookie(response, user.theme)
         account_token.issue(response, user, account_sid)
@@ -706,7 +707,7 @@ def signup():
     set_access_cookies(response, access_token)
     refresh_max_age = 30 * 24 * 3600 if keep_signed_in else 24 * 3600
     set_refresh_cookies(response, refresh_token, max_age=refresh_max_age)
-    _set_remembered_email_cookie(response, email)
+    _set_remembered_email_cookie(response, user.email)
     if user is not None:
         _set_theme_cookie(response, user.theme)
         account_token.issue(response, user, additional_claims["account_sid"])

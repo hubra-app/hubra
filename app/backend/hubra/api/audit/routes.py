@@ -5,7 +5,7 @@ from __future__ import annotations
 from flask import Blueprint, jsonify, request
 from hubra.api.permissions import permission_required
 
-from hubra.core.errors import api_error
+from hubra.core.errors import api_error, error_message
 from hubra.core.schemas.audit import AuditEntrySchema
 from hubra.api.audit.services import AuditService, AuditsService
 
@@ -24,7 +24,7 @@ def list_audit():
     try:
         result = AuditsService.list(request.args, _schema)
     except ValueError as exc:
-        return api_error("VALIDATION_ERROR", str(exc), 400)
+        return api_error("VALIDATION_ERROR", error_message(exc), 400)
 
     return jsonify(result), 200
 

@@ -2358,6 +2358,11 @@
         "castVote": "Bitte stimme ab, bevor die Umfrage schliesst.",
         "votedFor": "{{name}} hat für «{{option}}» gestimmt",
         "askedProxy": "{{name}} hat dir die Stimme übertragen.",
+        "quotaNear": "Vereinslimit fast erreicht",
+        "quotaOver": "Vereinslimit erreicht",
+        "quotaMembers": "Mitglieder: {{used}} von {{limit}}.",
+        "quotaMail": "Mails diesen Monat: {{used}} von {{limit}}.",
+        "quotaStorage": "Speicher: {{used}} MB von {{limit}} MB.",
         "aMember": "Ein Mitglied",
         "eventReminder": "Erinnerung an einen Anlass"
       }
@@ -2432,6 +2437,13 @@
     },
     "clubBanner": {
       "dismiss": "Banner ausblenden"
+    },
+    "maintenanceNotice": {
+      "title": "Geplante Wartung",
+      "sameDay": "{{day}}, {{from}} bis {{to}} Uhr",
+      "days": "{{fromDay}}, {{from}} bis {{toDay}}, {{to}} Uhr",
+      "default": "In dieser Zeit ist die App nicht erreichbar.",
+      "dismiss": "Hinweis ausblenden"
     },
     "more": {
       "emptyTitle": "Hier ist noch nichts",

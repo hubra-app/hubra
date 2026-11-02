@@ -49,6 +49,18 @@ export function eventText(e: PlatformEvent): string {
       const failed = (e.details.failed as string[] | undefined) ?? []
       return tr(`Geplantes Backup fehlgeschlagen: ${failed.join(', ')}`, e.message)
     }
+    case 'backup.manual_failed':
+      return tr(`Backup #${d.id} (${d.scope}) fehlgeschlagen: ${d.error}`, e.message)
+    case 'backup.verify_failed':
+      return tr(`Prüfung von Backup #${d.id} (${d.scope}) fehlgeschlagen: ${d.error}`, e.message)
+    case 'backup.restore_failed':
+      return tr(`Wiederherstellung von ${d.scope} aus Backup #${d.id} fehlgeschlagen: ${d.error}`, e.message)
+    case 'backup.deleted':
+      return tr(`Backup #${d.id} (${d.scope}) gelöscht von ${d.by}`, e.message)
+    case 'backup.pruned': {
+      const n = Object.values((e.details.deleted as Record<string, number> | undefined) ?? {}).reduce((a, b) => a + b, 0)
+      return tr(`Aufbewahrung hat ${n} alte Backups entfernt`, e.message)
+    }
     case 'upgrade.baseline':
       return tr(`Läuft: ${buildLabel(e.details.to)}`, e.message)
     case 'upgrade.started':
@@ -121,8 +133,18 @@ export const ALERT_TYPES: {
     label: () => tr('Backup fehlgeschlagen', 'Backup failed'),
     desc: () =>
       tr(
-        'Ein geplantes Backup (global oder eines Vereins) ist fehlgeschlagen.',
-        'A scheduled backup (global or a club’s) failed.',
+        'Ein Backup (geplant oder von Hand, global oder eines Vereins), seine Prüfung oder eine Wiederherstellung ist fehlgeschlagen.',
+        'A backup (scheduled or by hand, global or a club’s), its check or a club restore failed.',
+      ),
+  },
+  {
+    id: 'backup_deleted',
+    group: 'platform',
+    label: () => tr('Backup gelöscht', 'Backup deleted'),
+    desc: () =>
+      tr(
+        'Jemand hat ein Backup von Hand gelöscht; die Meldung sagt, wer und welches. Was die Aufbewahrung automatisch entfernt, steht nur im Ereignisprotokoll.',
+        'Someone deleted a backup by hand; the alert says who and which one. What retention removes on its own is only logged.',
       ),
   },
   {

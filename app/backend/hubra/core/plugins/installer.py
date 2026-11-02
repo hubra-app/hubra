@@ -24,6 +24,7 @@ import ipaddress
 import json
 import logging
 import os
+import re
 import shutil
 import socket
 import tempfile
@@ -37,6 +38,7 @@ from pathlib import Path
 
 from sqlalchemy import select
 
+from hubra.core.errors import error_message
 from hubra.core.extensions import db
 
 from .spec import MANIFEST, Spec, compatibility, read_manifest, validate
@@ -693,7 +695,14 @@ class _CheckedRedirects(urllib.request.HTTPRedirectHandler):
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
+# https, a plain host name or address, an optional port, then the path: no
+# user:password@ part and nothing that is not a web address.
+_HTTPS_URL_RE = re.compile(r"https://[A-Za-z0-9.\-]+(?::[0-9]{1,5})?(?:/[^\s#]*)?")
+
+
 def http_get(url: str, timeout: int = 30, limit: int = MAX_ZIP) -> bytes:
+    if not _HTTPS_URL_RE.fullmatch(url):
+        raise InstallError(f"{url}: only plain https:// addresses")
     _check_url(url)
     req = urllib.request.Request(url, headers={"User-Agent": "Hubra plugin installer"})
     opener = urllib.request.build_opener(_CheckedRedirects)
@@ -1105,7 +1114,7 @@ def marketplace(fetch: bool = True) -> dict:
         try:
             idx = fetch_repository(repo)
         except InstallError as exc:
-            errors.append(str(exc))
+            errors.append(error_message(exc))
             continue
         for p in idx["plugins"]:
             if not isinstance(p, dict) or not p.get("id"):

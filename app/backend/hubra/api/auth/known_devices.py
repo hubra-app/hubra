@@ -39,26 +39,30 @@ def _hash(token: str) -> str:
 
 def remember(
     user: User, token: str | None, browser_family: str = "", platform: str = ""
-) -> tuple[str, bool]:
+) -> tuple[str | None, bool]:
     """Note this sign-in's browser for *user*.  Does NOT commit.
 
-    Returns ``(token, alert)``: the token to keep in the cookie, and whether
-    the account should hear about a sign-in from a new device.
+    Returns ``(token, alert)``: a freshly made token to set as the cookie
+    (None when the browser is known already and keeps its cookie), and
+    whether the account should hear about a sign-in from a new device.
     """
-    if not token or not _TOKEN_RE.fullmatch(token):
-        # Only a token we could have made goes back into the cookie.
-        token = secrets.token_urlsafe(32)
-    token_hash = _hash(token)
     now = datetime.now(timezone.utc)
-
-    known = db.session.scalar(
-        select(KnownDevice).where(
-            KnownDevice.user_id == user.id, KnownDevice.token_hash == token_hash
+    if token and _TOKEN_RE.fullmatch(token):
+        # The browser keeps the cookie it has; it is only looked up here and
+        # never written back, so the cookie value is always one of ours.
+        token_hash = _hash(token)
+        known = db.session.scalar(
+            select(KnownDevice).where(
+                KnownDevice.user_id == user.id, KnownDevice.token_hash == token_hash
+            )
         )
-    )
-    if known is not None:
-        known.last_seen_at = now
-        return token, False
+        if known is not None:
+            known.last_seen_at = now
+            return None, False
+        new_token = None
+    else:
+        new_token = secrets.token_urlsafe(32)
+        token_hash = _hash(new_token)
 
     first = (
         db.session.scalar(
@@ -77,7 +81,7 @@ def remember(
         )
     )
     db.session.flush()
-    return token, not first
+    return new_token, not first
 
 
 def set_cookie(response, token: str) -> None:
