@@ -33,6 +33,9 @@ Performance (``perf.*``): the thresholds of ``services.perf_monitor``.
 Limits (``limits.*``): what each plan allows a club (``services.quotas``);
 a club can have its own limits on top, set in manage on the club.
 
+Billing (``billing.price.<plan>``): each plan's list price per month in
+CHF (``services.club_billing``), shown in manage only until Hubra charges.
+
 Discord (``discord.*``): the one Hubra application every club's server and
 every linked account goes through (see docs/discord.md). Set here only, with
 no env fallback.  ``discord.log_*`` is the platform log: the bot posts
@@ -360,6 +363,17 @@ SPECS: tuple[Spec, ...] = (
             ("mail_month", "mails per month", "Mails a club sends per month"),
             ("storage_mb", "storage (MB)", "Storage a club uses, in MB,"),
         )
+    ),
+    *(
+        Spec(
+            f"billing.price.{plan}",
+            f"{plan.title()}: price per month (CHF)",
+            f"List price per month of the {plan.title()} plan, in CHF. Shown "
+            "in manage only; nothing is charged yet. Empty: no price",
+            lambda cfg: "",
+            "chf",
+        )
+        for plan in ("starter", "growth", "enterprise")
     ),
 )
 

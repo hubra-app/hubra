@@ -108,6 +108,11 @@ VALIDATORS: dict[str, Callable[[str], str | None]] = {
         )
     ),
     "number": lambda v: None if _is_numeric(v) else "Invalid number",
+    "chf": lambda v: (
+        None
+        if re.fullmatch(r"\d{1,6}(\.\d{1,2})?", v) and float(v) <= 100000
+        else "An amount in CHF, 0 to 100000, at most 2 decimals"
+    ),
     "minutes": lambda v: (
         None if v.isdigit() and int(v) <= 1440 else "Whole minutes, 0 to 1440"
     ),

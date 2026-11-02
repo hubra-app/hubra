@@ -64,6 +64,7 @@ const LIMITS = [
   'limits.warn_percent',
   ...PLANS.flatMap((p) => LIMIT_KINDS.map((k) => `limits.${p}.${k}`)),
 ]
+const PRICES = PLANS.map((p) => `billing.price.${p}`)
 const BUILT_IN = ['alerts.cooldown_minutes', 'alerts.retention_days', ...PERF, ...LIMITS]
 const ALERTS = ['alerts.cooldown_minutes', 'alerts.retention_days', 'alerts.manage_url']
 
@@ -121,6 +122,7 @@ const TABS = [
   'discord',
   'alerts',
   'limits',
+  'prices',
   'encryption',
   'translations',
 ] as const
@@ -418,6 +420,7 @@ export function PlatformSettings() {
           { id: 'discord', label: 'Discord' },
           { id: 'alerts', label: tr('Warnungen', 'Alerts') },
           { id: 'limits', label: tr('Limits', 'Limits') },
+          { id: 'prices', label: tr('Preise', 'Prices') },
           { id: 'encryption', label: tr('Verschlüsselung', 'Encryption') },
           { id: 'translations', label: tr('Übersetzungen', 'Translations') },
         ]}
@@ -560,6 +563,53 @@ export function PlatformSettings() {
                   </Table>
                 </Table.ScrollContainer>
               </Stack>
+            </Paper>
+          )}
+
+          {tab === 'prices' && (
+            <Paper withBorder shadow="sm" radius="lg" p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Preise pro Tarif', 'Prices per plan')}</Title>
+                {resetButton(PRICES)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Listenpreis pro Monat in CHF. Er wird nur in manage gezeigt, es wird noch nichts verrechnet. Ein Verein kann auf seiner Seite unter Alle Vereine einen eigenen Preis, Rabatt, Sponsor und bezahlte Zusatzmodule haben.',
+                  'List price per month in CHF. It is only shown in manage; nothing is charged yet. A club can have its own price, discount, sponsor and paid add-ons on its page under All clubs.',
+                )}
+              </Text>
+              <Table verticalSpacing={6}>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>{tr('Tarif', 'Plan')}</Table.Th>
+                    <Table.Th>{tr('Preis pro Monat (CHF)', 'Price per month (CHF)')}</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {PLANS.map((p) => {
+                    const key = `billing.price.${p}`
+                    return (
+                      <Table.Tr key={p}>
+                        <Table.Td fw={600}>{planLabel(p, tr)}</Table.Td>
+                        <Table.Td>
+                          <TextInput
+                            aria-label={`${planLabel(p, tr)}: CHF`}
+                            inputMode="decimal"
+                            placeholder={tr('kein Preis', 'no price')}
+                            leftSection={<Text size="xs">CHF</Text>}
+                            leftSectionWidth={44}
+                            value={draft[key] ?? byKey[key]?.value ?? ''}
+                            onChange={(e) => {
+                              const value = e.currentTarget.value
+                              setDraft((d) => ({ ...d, [key]: value }))
+                            }}
+                          />
+                        </Table.Td>
+                      </Table.Tr>
+                    )
+                  })}
+                </Table.Tbody>
+              </Table>
             </Paper>
           )}
 
