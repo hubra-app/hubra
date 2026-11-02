@@ -58,6 +58,17 @@ If one is missing, Discord shows "Invalid OAuth2 redirect_uri" at that step.
 | Server Members Intent | **off** | the bot never reads member lists |
 | Message Content Intent | **off** | the bot never reads messages |
 
+On the **Installation** page set *Install Link* to **None** and leave
+only **Guild Install** ticked: clubs add the bot through Hubra's own link,
+which carries the club and the permissions it allowed.
+
+Ready-made assets: a full-bleed app icon (Discord crops it to a circle) and
+a banner can be rendered from `brand/hubra-mark.svg` and
+`brand/hubra-wordmark-white.svg`; suggested description: "The Hubra bot for
+your club: new events, posts and polls in your channels, reminders, sign-ups
+with /events, and Discord roles that follow your groups. Connect it in Hubra
+under Einstellungen › Verbundene Apps."
+
 The bot uses no gateway connection. It answers over HTTP (step 5) and calls
 the REST API, so it never shows as "online" in Discord, and that is normal.
 
