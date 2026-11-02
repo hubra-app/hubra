@@ -68,7 +68,7 @@ export function RoleAccess({
   // Admin roles pass every check, so there is nothing to choose.
   if (role.isAdmin) {
     return (
-      <Alert color="violet" variant="light" icon={<IconShieldCheck size={18} />}>
+      <Alert color="acc" variant="light" icon={<IconShieldCheck size={18} />}>
         {t('roles.adminAll', 'Diese Rolle ist eine Admin-Rolle und darf im Verein alles.')}
       </Alert>
     )

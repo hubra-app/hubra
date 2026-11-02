@@ -199,7 +199,7 @@ export function DomainsTab() {
         title={t('domains.recordTitle', 'DNS-Eintrag für {{domain}}', { domain: recordFor?.domain ?? '' })}
       >
         {recordFor?.txt_record && (
-          <Alert icon={<IconCheck size={16} />} color="blue" variant="light">
+          <Alert icon={<IconCheck size={16} />} color="acc" variant="light">
             <Stack gap={10}>
               <Text fw={600}>{t('domains.txtHint', 'Füge diesen TXT-Eintrag im DNS deiner Domain hinzu:')}</Text>
               <RecordField label={t('domains.recordType', 'Typ')} value="TXT" />

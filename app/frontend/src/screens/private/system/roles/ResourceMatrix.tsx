@@ -66,7 +66,7 @@ export function ResourceMatrix(props: ResourceMatrixProps) {
                     {roleLabel(role.name)}
                   </Text>
                   {role.isAdmin && (
-                    <Badge size="xs" color="indigo" variant="light">
+                    <Badge size="xs" color="acc" variant="light">
                       ADMIN
                     </Badge>
                   )}

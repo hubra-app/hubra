@@ -184,7 +184,7 @@ export function StepUpDialog() {
         {passkey && (
           <>
             {waiting ? (
-              <Alert color="blue" py="xs" icon={<Loader size={16} />}>
+              <Alert color="acc" py="xs" icon={<Loader size={16} />}>
                 <Group justify="space-between" gap="xs" wrap="nowrap">
                   <Text size="sm">
                     {tr('Bestätige im Passkey-Fenster …', 'Confirm in the passkey window …')}

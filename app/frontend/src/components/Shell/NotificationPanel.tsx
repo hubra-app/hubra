@@ -43,7 +43,7 @@ import { notificationMessage, notificationTitle, safeLink } from './notification
 const EMPTY: NotificationList = { items: [], unread: 0 }
 
 const KIND: Record<Notification['kind'], { color: string; icon: React.ReactNode }> = {
-  info: { color: 'blue', icon: <IconInfoCircle size={16} /> },
+  info: { color: 'acc', icon: <IconInfoCircle size={16} /> },
   success: { color: 'green', icon: <IconCircleCheck size={16} /> },
   warning: { color: 'orange', icon: <IconAlertTriangle size={16} /> },
   member: { color: 'pink', icon: <IconUsers size={16} /> },

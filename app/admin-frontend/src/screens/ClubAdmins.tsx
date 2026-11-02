@@ -115,7 +115,7 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
                       <Badge
                         size="sm"
                         variant={a.level === 'owner' ? 'filled' : 'light'}
-                        color="violet"
+                        color="acc"
                       >
                         {a.level === 'owner' ? tr('Inhaber', 'Owner') : tr('Admin', 'Admin')}
                       </Badge>

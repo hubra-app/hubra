@@ -456,7 +456,7 @@ export function PollsTab() {
                   <div
                     style={{ display: "flex", gap: 6, alignItems: "center" }}
                   >
-                    <Badge variant="light" color="cyan" radius="xl" style={{ flexShrink: 0 }}>
+                    <Badge variant="light" color="acc" radius="xl" style={{ flexShrink: 0 }}>
                       {poll.status === "open"
                         ? t("polls.statusOpen", "Offen")
                         : t("polls.statusClosed", "Beendet")}

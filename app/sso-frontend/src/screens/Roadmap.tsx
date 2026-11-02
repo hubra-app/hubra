@@ -24,8 +24,8 @@ import { myRoadmap, publicRoadmap, setVote, type RoadmapItem, type RoadmapStatus
 
 const COLUMNS: { status: RoadmapStatus; color: string; de: string; en: string }[] = [
   { status: 'in_progress', color: 'orange', de: 'In Arbeit', en: 'In progress' },
-  { status: 'planned', color: 'violet', de: 'Geplant', en: 'Planned' },
-  { status: 'open', color: 'blue', de: 'Vorgeschlagen', en: 'Suggested' },
+  { status: 'planned', color: 'acc', de: 'Geplant', en: 'Planned' },
+  { status: 'open', color: 'gray', de: 'Vorgeschlagen', en: 'Suggested' },
   { status: 'done', color: 'green', de: 'Erledigt', en: 'Done' },
 ]
 

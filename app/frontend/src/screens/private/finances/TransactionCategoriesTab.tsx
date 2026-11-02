@@ -281,7 +281,7 @@ export function TransactionCategoriesTab() {
                         {c.isDefault ? (
                           <Badge
                             variant="light"
-                            color="cyan"
+                            color="acc"
                             radius="xl"
                             style={{ fontSize: 'var(--mantine-font-size-xs)' }}
                           >

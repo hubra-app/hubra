@@ -28,7 +28,7 @@ export function TemplatesModal({
       wide
     >
       <Stack gap={16}>
-        <Alert color="blue" variant="light">
+        <Alert color="acc" variant="light">
           {t(
             'roles.templateWarning',
             'Eine Vorlage legt fehlende Rollen an und setzt ihre Berechtigungen. Bei bestehenden Rollen mit gleichem Namen werden die Berechtigungen ersetzt.',
@@ -47,7 +47,7 @@ export function TemplatesModal({
                     <Badge
                       key={r.name}
                       size="sm"
-                      color={r.is_admin ? 'indigo' : 'gray'}
+                      color={r.is_admin ? 'acc' : 'gray'}
                       variant={r.is_admin ? 'light' : 'outline'}
                     >
                       {roleLabel(r.name)}{' '}

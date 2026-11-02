@@ -29,7 +29,7 @@ const SORTS: Record<Sort, (r: PerfRoute) => number> = {
 }
 
 function StatusBadges({ status }: { status: PerfRoute['status'] }) {
-  const color = { '2xx': 'green', '3xx': 'blue', '4xx': 'orange', '5xx': 'red' } as const
+  const color = { '2xx': 'green', '3xx': 'acc', '4xx': 'orange', '5xx': 'red' } as const
   return (
     <Group gap={4} wrap="nowrap">
       {(['2xx', '3xx', '4xx', '5xx'] as const)

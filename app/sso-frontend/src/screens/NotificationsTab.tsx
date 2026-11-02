@@ -44,7 +44,7 @@ import type { AccountNotification } from '@/api/auth'
 type List = Awaited<ReturnType<typeof authApi.getNotifications>>
 
 const KIND = {
-  info: { color: 'blue', icon: <IconInfoCircle size={16} /> },
+  info: { color: 'acc', icon: <IconInfoCircle size={16} /> },
   success: { color: 'green', icon: <IconCircleCheck size={16} /> },
   warning: { color: 'orange', icon: <IconAlertTriangle size={16} /> },
   member: { color: 'pink', icon: <IconUsers size={16} /> },

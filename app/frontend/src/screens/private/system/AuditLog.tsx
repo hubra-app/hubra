@@ -407,9 +407,9 @@ export function AuditLogScreen({ embedded = false }: { embedded?: boolean }) {
                 action.includes('archive')
                   ? 'red'
                   : action.includes('update') || action.includes('rename')
-                    ? 'cyan'
+                    ? 'acc'
                     : action.includes('login') || action.includes('logout')
-                      ? 'blue'
+                      ? 'gray'
                       : action.includes('create') || action.includes('approve')
                         ? 'green'
                         : 'gray'

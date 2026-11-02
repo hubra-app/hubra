@@ -266,7 +266,7 @@ function PluginsView() {
   return (
     <Stack gap="lg">
       {waitFor !== null && (
-        <Alert color="blue" variant="light" icon={<Loader size={16} />}>
+        <Alert color="acc" variant="light" icon={<Loader size={16} />}>
           {tr('Die Server laden die Änderung. Das dauert bis zu einer Minute.', 'Servers are loading the change. This takes up to a minute.')}
         </Alert>
       )}
@@ -868,7 +868,7 @@ function PurposeBadge({ purpose }: { purpose: KeyPurpose }) {
       </Badge>
     )
   return (
-    <Badge size="xs" variant="light" color={purpose === 'index' ? 'blue' : 'violet'}>
+    <Badge size="xs" variant="light" color={purpose === 'index' ? 'acc' : 'gray'}>
       {purpose === 'index' ? tr('Index', 'Index') : tr('Plugins', 'Plugins')}
     </Badge>
   )

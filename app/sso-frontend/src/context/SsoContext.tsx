@@ -180,7 +180,7 @@ export function SsoProvider({ children }: { children: ReactNode }) {
     notifications.show({
       title,
       message: msg,
-      color: kind === 'error' ? 'red' : kind === 'success' ? 'green' : 'blue',
+      color: kind === 'error' ? 'red' : kind === 'success' ? 'green' : 'acc',
     })
   }, [])
 

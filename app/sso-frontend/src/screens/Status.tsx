@@ -51,7 +51,7 @@ const COLOR: Record<Level | 'maintenance', string> = {
   operational: 'green',
   degraded: 'orange',
   down: 'red',
-  maintenance: 'blue',
+  maintenance: 'acc',
 }
 
 function LevelIcon({ level, size = 22 }: { level: Level | 'maintenance'; size?: number }) {
@@ -154,7 +154,7 @@ export function StatusScreen() {
           </Paper>
 
           {data.maintenance.upcoming && !data.maintenance.active && (
-            <Alert color="blue" variant="light" icon={<IconTool size={18} />}>
+            <Alert color="acc" variant="light" icon={<IconTool size={18} />}>
               {tr(
                 `Geplante Wartung ${when(data.maintenance.upcoming.starts_at)} bis ${when(data.maintenance.upcoming.ends_at)}.`,
                 `Planned maintenance ${when(data.maintenance.upcoming.starts_at)} to ${when(data.maintenance.upcoming.ends_at)}.`,

@@ -258,7 +258,7 @@ export function MailServerPanel() {
               {filtered.map((e) => (
                 <Table.Tr key={`${e.type}-${e.id}`}>
                   <Table.Td>
-                    <Badge variant="light" color={e.type === 'mailbox' ? 'green' : 'blue'}>
+                    <Badge variant="light" color={e.type === 'mailbox' ? 'green' : 'acc'}>
                       {e.type === 'mailbox' ? tr('Postfach', 'Mailbox') : 'Alias'}
                     </Badge>
                   </Table.Td>
@@ -349,7 +349,7 @@ export function MailServerPanel() {
 
 const METHOD_COLORS: Record<string, string> = {
   GET: 'green',
-  POST: 'blue',
+  POST: 'acc',
   PATCH: 'orange',
   PUT: 'orange',
   DELETE: 'red',

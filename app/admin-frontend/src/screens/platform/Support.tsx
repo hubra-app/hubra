@@ -52,8 +52,8 @@ import {
 const STATUSES: CaseStatus[] = ['open', 'planned', 'in_progress', 'done', 'closed']
 
 const STATUS_COLOR: Record<CaseStatus, string> = {
-  open: 'blue',
-  planned: 'violet',
+  open: 'gray',
+  planned: 'acc',
   in_progress: 'orange',
   done: 'green',
   closed: 'gray',
