@@ -752,6 +752,136 @@ def set_feature_stage(key: str):
     return jsonify(feature_flags.overview()), 200
 
 
+@platform_bp.get("/errors")
+@require_global_permission(_DIAGNOSTICS)
+def list_errors():
+    """Grouped API errors.  ``status``: open (default), resolved or all;
+    ``q`` searches type, message, route and location; ``sort``: last_seen
+    (default), count or first_seen; ``build`` only groups seen on it."""
+    from sqlalchemy import func, or_, select
+
+    from hubra.core.models.error_group import ErrorGroup
+    from hubra.core.services import error_tracker
+
+    status = request.args.get("status", "open")
+    if status not in ("open", "resolved", "all"):
+        return api_error("VALIDATION_ERROR", "status is open, resolved or all", 400)
+    sort = request.args.get("sort", "last_seen")
+    order = {
+        "last_seen": ErrorGroup.last_seen.desc(),
+        "count": ErrorGroup.count.desc(),
+        "first_seen": ErrorGroup.first_seen.desc(),
+    }.get(sort)
+    if order is None:
+        return api_error(
+            "VALIDATION_ERROR", "sort is last_seen, count or first_seen", 400
+        )
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+        per_page = min(100, max(1, int(request.args.get("per_page", 25))))
+    except ValueError:
+        return api_error("VALIDATION_ERROR", "page and per_page are numbers", 400)
+
+    query = select(ErrorGroup)
+    if status != "all":
+        query = query.where(ErrorGroup.status == status)
+    if q := (request.args.get("q") or "").strip()[:100]:
+        like = f"%{q.lower()}%"
+        query = query.where(
+            or_(
+                func.lower(ErrorGroup.exc_type).like(like),
+                func.lower(ErrorGroup.message).like(like),
+                func.lower(ErrorGroup.route).like(like),
+                func.lower(ErrorGroup.location).like(like),
+            )
+        )
+    groups = db.session.scalars(query.order_by(order, ErrorGroup.id.desc())).all()
+    if build := request.args.get("build"):
+        groups = [g for g in groups if build in (g.builds or {})]
+    total = len(groups)
+    shown = groups[(page - 1) * per_page : page * per_page]
+    current = error_tracker.current_build()
+    counts = dict(
+        db.session.execute(
+            select(ErrorGroup.status, func.count()).group_by(ErrorGroup.status)
+        ).all()
+    )
+    builds: dict[str, int] = {}
+    for group in db.session.scalars(select(ErrorGroup)).all():
+        for label, n in (group.builds or {}).items():
+            builds[label] = builds.get(label, 0) + int(n)
+    return jsonify(
+        {
+            "errors": [error_tracker.group_json(g, current=current) for g in shown],
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "counts": {
+                "open": counts.get("open", 0),
+                "resolved": counts.get("resolved", 0),
+            },
+            "current_build": current,
+            "builds": builds,
+        }
+    ), 200
+
+
+@platform_bp.get("/errors/<int:group_id>")
+@require_global_permission(_DIAGNOSTICS)
+def get_error(group_id: int):
+    from hubra.core.models.error_group import ErrorGroup
+    from hubra.core.models.tenant import Tenant
+    from hubra.core.services import error_tracker
+
+    group = db.session.get(ErrorGroup, group_id)
+    if group is None:
+        return api_error("NOT_FOUND", "No such error", 404)
+    out = error_tracker.group_json(
+        group, full=True, current=error_tracker.current_build()
+    )
+    club = (
+        db.session.get(Tenant, group.last_tenant_id) if group.last_tenant_id else None
+    )
+    out["last_club"] = {"id": club.id, "name": club.name} if club else None
+    return jsonify({"error": out}), 200
+
+
+@platform_bp.post("/errors/<int:group_id>/<any(resolve, reopen):action>")
+@require_global_permission(_PERM)
+def change_error(group_id: int, action: str):
+    """Mark a group resolved (it opens again if it happens again), or open."""
+    from datetime import datetime, timezone
+
+    from hubra.core.models.error_group import ErrorGroup
+    from hubra.core.services import error_tracker
+
+    group = db.session.get(ErrorGroup, group_id)
+    if group is None:
+        return api_error("NOT_FOUND", "No such error", 404)
+    if action == "resolve":
+        group.status = "resolved"
+        group.resolved_at = datetime.now(timezone.utc)
+        group.resolved_by = g.system_user.id
+    else:
+        group.status = "open"
+        group.resolved_at = None
+        group.resolved_by = None
+    _audit(
+        f"platform.error.{action}",
+        "ErrorGroup",
+        str(group.id),
+        {"type": group.exc_type},
+    )
+    db.session.commit()
+    return jsonify(
+        {
+            "error": error_tracker.group_json(
+                group, current=error_tracker.current_build()
+            )
+        }
+    ), 200
+
+
 @platform_bp.get("/alerts/performance")
 @require_global_permission(_DIAGNOSTICS)
 def alerts_performance():

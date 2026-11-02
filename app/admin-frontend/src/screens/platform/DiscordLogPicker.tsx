@@ -5,25 +5,30 @@ import { IconRefresh } from '@tabler/icons-react'
 import { tr } from '@/lang'
 import { getDiscordServerChannels, getDiscordServers } from '@/api/platform'
 
-/** Pick the platform log server and channel from the bot's own lists.
- *
- * The server list is what the bot is on (so: add it first, then reload);
- * the channels are the text channels it can post in. The channel ID field
- * stays as a fallback (`fallback`), e.g. while Discord can't be reached. */
-export function DiscordLogPicker({
-  channelId,
-  onChange,
-  botTokenSet,
-  addLink,
-  fallback,
-  channelLabel,
-}: {
-  channelLabel?: string
+/** One channel to pick on the shared server. */
+export interface DiscordChannelSlot {
+  label: string
+  description: string
   channelId: string
   onChange: (id: string) => void
+  /** The channel ID field, e.g. while Discord can't be reached. */
+  fallback: React.ReactNode
+}
+
+/** Pick the platform server once and one channel per slot (platform log,
+ * audit channel) from the bot's own lists.
+ *
+ * The server list is what the bot is on (so: add it first, then reload);
+ * the channels are the text channels it can post in. The channel ID fields
+ * stay as a fallback. */
+export function DiscordLogPicker({
+  slots,
+  botTokenSet,
+  addLink,
+}: {
+  slots: DiscordChannelSlot[]
   botTokenSet: boolean
   addLink: React.ReactNode
-  fallback: React.ReactNode
 }) {
   const [picked, setPicked] = useState<string | null>(null)
   const [manual, setManual] = useState(false)
@@ -52,13 +57,19 @@ export function DiscordLogPicker({
             'Save the bot token above first; then you can pick the server and channel here.',
           )}
         </Text>
-        {fallback}
+        {slots.map((slot) => (
+          <div key={slot.label}>{slot.fallback}</div>
+        ))}
       </Stack>
     )
   }
 
   const server = servers.data?.servers.find((s) => s.id === serverId)
-  const channelKnown = channels.data?.channels.some((c) => c.id === channelId)
+  const known = (id: string) => !!channels.data?.channels.some((c) => c.id === id)
+  const options = (channels.data?.channels ?? []).map((c) => ({
+    value: c.id,
+    label: c.category ? `#${c.name} · ${c.category}` : `#${c.name}`,
+  }))
 
   return (
     <Stack gap="sm">
@@ -83,7 +94,8 @@ export function DiscordLogPicker({
           value={serverId}
           onChange={(v) => {
             setPicked(v)
-            if (v !== serverId) onChange('')
+            // Both channels live on this server: a new server clears them.
+            if (v !== serverId) slots.forEach((slot) => slot.onChange(''))
           }}
           leftSection={
             server?.icon ? <Avatar src={server.icon} size={20} radius="sm" /> : undefined
@@ -102,45 +114,43 @@ export function DiscordLogPicker({
         </Button>
       </Group>
       <Text size="sm">{addLink}</Text>
-      <Select
-        label={channelLabel ?? tr('Kanal für das Plattform-Log', 'Channel for the platform log')}
-        description={tr(
-          'Nur Textkanäle, in denen der Bot lesen, schreiben und Links einbetten darf.',
-          'Only text channels where the bot may view, send and embed links.',
-        )}
-        placeholder={
-          !serverId
-            ? tr('Zuerst einen Server wählen', 'Pick a server first')
-            : channels.isLoading
-              ? tr('Lädt …', 'Loading …')
-              : tr('Kanal wählen', 'Pick a channel')
-        }
-        disabled={!serverId}
-        data={(channels.data?.channels ?? []).map((c) => ({
-          value: c.id,
-          label: c.category ? `#${c.name} · ${c.category}` : `#${c.name}`,
-        }))}
-        value={channelKnown ? channelId : null}
-        onChange={(v) => onChange(v ?? '')}
-        searchable
-        clearable
-        nothingFoundMessage={tr(
-          'Kein Kanal, in den der Bot schreiben darf',
-          'No channel the bot may post in',
-        )}
-      />
+      {slots.map((slot) => (
+        <Stack key={slot.label} gap={4}>
+          <Select
+            label={slot.label}
+            description={slot.description}
+            placeholder={
+              !serverId
+                ? tr('Zuerst einen Server wählen', 'Pick a server first')
+                : channels.isLoading
+                  ? tr('Lädt …', 'Loading …')
+                  : tr('Kanal wählen', 'Pick a channel')
+            }
+            disabled={!serverId}
+            data={options}
+            value={known(slot.channelId) ? slot.channelId : null}
+            onChange={(v) => slot.onChange(v ?? '')}
+            searchable
+            clearable
+            nothingFoundMessage={tr(
+              'Kein Kanal, in den der Bot schreiben darf',
+              'No channel the bot may post in',
+            )}
+          />
+          {slot.channelId && channels.data && !known(slot.channelId) && (
+            <Text size="xs" c="orange">
+              {tr(
+                `Der gespeicherte Kanal ${slot.channelId} ist nicht in der Liste: Der Bot sieht ihn nicht oder darf dort nicht schreiben.`,
+                `The saved channel ${slot.channelId} is not in the list: the bot can't see it or may not post there.`,
+              )}
+            </Text>
+          )}
+        </Stack>
+      ))}
       {channels.isError && (
         <Alert color="orange" variant="light">
           {(channels.error as Error).message}
         </Alert>
-      )}
-      {channelId && channels.data && !channelKnown && (
-        <Text size="xs" c="orange">
-          {tr(
-            `Der gespeicherte Kanal ${channelId} ist nicht in der Liste: Der Bot sieht ihn nicht oder darf dort nicht schreiben.`,
-            `The saved channel ${channelId} is not in the list: the bot can't see it or may not post there.`,
-          )}
-        </Text>
       )}
       <Anchor
         component="button"
@@ -150,10 +160,11 @@ export function DiscordLogPicker({
         onClick={() => setManual((m) => !m)}
       >
         {manual
-          ? tr('Kanal-ID ausblenden', 'Hide the channel ID')
-          : tr('Kanal-ID selbst eintragen', 'Enter the channel ID yourself')}
+          ? tr('Kanal-IDs ausblenden', 'Hide the channel IDs')
+          : tr('Kanal-IDs selbst eintragen', 'Enter the channel IDs yourself')}
       </Anchor>
-      {manual && fallback}
+      {manual &&
+        slots.map((slot) => <div key={slot.label}>{slot.fallback}</div>)}
     </Stack>
   )
 }

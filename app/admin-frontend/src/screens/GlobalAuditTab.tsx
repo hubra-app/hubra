@@ -6,8 +6,17 @@ import { listGlobalAudit, type GlobalAuditEntry } from '@/api/tenants'
 import { Pagination } from '@/components/ui'
 import { formatDateTime } from '@/format'
 import { tr } from '@/lang'
+import { AuditSearch } from './AuditSearch'
+import { actionColor, actionLabel } from './auditLabels'
 
+/** Manage › Audit-Log: the search over every log, or one platform entry
+ * (``?entry=<id>``, e.g. from a Discord audit post). */
 export function GlobalAuditTab() {
+  const [params] = useSearchParams()
+  return /^\d+$/.test(params.get('entry') ?? '') ? <EntryView /> : <AuditSearch />
+}
+
+function EntryView() {
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(25)
   // ?entry=<id>: one entry with its details, e.g. from a Discord audit post.
@@ -24,33 +33,6 @@ export function GlobalAuditTab() {
   const entries = data?.entries ?? []
   const total = data?.total ?? 0
   const totalPages = Math.max(1, Math.ceil(total / perPage))
-
-  const actionLabel = (action: string): string => {
-    const de: Record<string, string> = {
-      'tenant.provision': 'Verein eingerichtet',
-      'tenant.update': 'Verein geändert',
-      'tenant.soft_delete': 'Verein archiviert',
-      'tenant.delete': 'Verein gelöscht',
-      'tenant.add_member': 'Mitglied hinzugefügt',
-      'club_settings.update': 'Vereinseinstellungen geändert',
-      'platform.settings.update': 'Plattform-Einstellungen geändert',
-      'impersonation.start': 'Als Admin geöffnet',
-      'impersonation.end': 'Admin-Ansicht beendet',
-      'global_role.create': 'Plattform-Rolle erstellt',
-      'global_role.update': 'Plattform-Rolle geändert',
-      'global_role.assign': 'Plattform-Rolle vergeben',
-      'global_role.remove': 'Plattform-Rolle entzogen',
-    }
-    return de[action] ? tr(de[action], action) : action
-  }
-
-  const actionColor = (action: string): string => {
-    if (action.includes('delete')) return 'red'
-    if (action.includes('suspend') || action.includes('disable')) return 'orange'
-    if (action.includes('provision')) return 'green'
-    if (action.includes('impersonation')) return 'grape'
-    return 'gray'
-  }
 
   return (
     <Paper withBorder style={{ overflow: 'hidden' }}>

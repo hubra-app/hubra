@@ -36,6 +36,8 @@ _GLOBAL_ONLY_TABLES = frozenset(
         "platform_settings",
         # The platform's monitoring log (mail sends, relays, alerts).
         "platform_events",
+        # Unexpected API errors, grouped (manage › Diagnose › Fehler).
+        "error_groups",
         # Planned maintenance for every club or some clubs.
         "maintenance_windows",
         "data_keys",

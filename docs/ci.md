@@ -9,21 +9,33 @@ full set only when a release is being prepared.
 | `release-checks.yml` (Release checks) | `release/*` branches (create and push), pull requests into `release/*`, before every image build, by hand | all of `ci.yml` without the path filter, plus dependency audits (pip-audit, npm audit), the image builds and the Compose stack with the browser tests |
 | `images.yml` (Images) | GitHub release published, by hand | `release-checks.yml` first, then builds and pushes the images |
 
-On pull requests the test jobs run only when the change touches their code:
-the backend tests for `app/backend/`, `plugins/` and `settings.yaml`, the
-frontend tests and the browser tests (`browser-tests`, about five minutes)
-for `app/*frontend/`, `packages/` and `plugins/`, and all of them for a
-change to `ci.yml` itself. The browser tests run there so a screen change
-that breaks them fails its own pull request instead of the next image build. Anything else (other workflows, `deploy/`,
-`modules/`, `scripts/`, docs) runs `lint` only. Draft pull requests run
-nothing until they are marked ready for review.
+On pull requests and pushes to `main`, lint and the test jobs run only for
+the parts of the code the change touches (the `changes` job decides):
+
+| Part | Paths |
+| --- | --- |
+| ruff | `app/backend/`, `plugins/` |
+| eslint + `tsc`, per frontend | that frontend's `app/*frontend/` folder, `packages/`, `plugins/` |
+| Compose, Kustomize + kubeconform, shellcheck | `docker-compose*.yml`, `.env.example`, `settings.yaml`, `deploy/`, `modules/`, `scripts/`, `app/deploy/` |
+| backend tests | `app/backend/`, `plugins/`, `settings.yaml` |
+| frontend tests, browser tests (`browser-tests`, about five minutes, pull requests only) | `app/*frontend/`, `packages/`, `plugins/` |
+
+A change to `ci.yml` itself runs everything, and so does a push whose base
+is unknown (new branch, force push). The browser tests run on pull requests
+so a screen change that breaks them fails its own pull request instead of
+the next image build. Anything else (docs, the other workflows, `brand/`,
+`tools/`) runs nothing: `lint` and `tests` report as skipped. Draft pull
+requests run nothing until they are marked ready for review.
 
 ## Required checks
 
 A required check that never reports blocks the merge forever, so the
-required checks are jobs that always run:
+required checks are jobs that always report. A job skipped by its `if`
+reports as skipped, which GitHub counts as passed:
 
-- `lint` runs on every pull request into `main`.
+- `lint` runs when the change touches code it checks and is skipped
+  otherwise. If the `changes` job fails, `lint` runs every step rather than
+  being skipped.
 - `tests` is an aggregate job. It waits for the test jobs and passes when
   each passed or was skipped. Add a new test job to its `needs` list, not to
   branch protection.

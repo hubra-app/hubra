@@ -200,10 +200,12 @@ Platform log:
 
 ### Audit channel (optional)
 
-A second channel, set in the **Audit channel** card below the platform log,
-gets every entry of the platform audit log (manage › Audit-Log), whatever
-categories the platform log has ticked. System alerts never go there. It is
-off until a channel is picked (`discord.audit_channel_id`).
+The platform log card has one **Server** picker and two channel pickers on
+that server: the **platform log** and an optional **audit channel**
+(`discord.audit_channel_id`). Without an audit channel, everything ticked
+goes to the platform log. With one, the audit log entries go to the audit
+channel only and the platform log keeps the system alerts, so nothing is
+posted twice. The categories decide what is posted either way.
 
 Each post links back to manage when the manage address is set (Platform
 settings › Alerts): the title opens the entry in the audit log
@@ -212,7 +214,7 @@ the club and the page the change belongs to (club admins, club requests,
 roles, support access, plugins, backups or platform settings). These links
 also appear in platform log posts.
 
-![Audit channel settings](screenshots/discord-audit/audit-channel-desktop.png)
+![Platform log and audit channel](screenshots/discord-audit/platform-log-two-channels-desktop.png)
 ![An audit post](screenshots/discord-audit/audit-embed-example.png)
 
 Categories:
@@ -226,13 +228,79 @@ Categories:
 | plugins | Plugins installed, updated, rolled back, removed; plugin repositories |
 | backups | Backups created, verified, restored, deleted |
 | platform | Platform settings, encryption keys, mail server, translations |
-| alerts | System alerts: failed Celery tasks, API error rate, disk/Redis/Postgres checks |
+| alerts | System alerts: failed Celery tasks, API error rate, disk/Redis/Postgres checks, with buttons (below) |
+| digest | Daily overview at 08:00 (`MAIL_TIMEZONE`, default Europe/Zurich): new clubs, new accounts, open club requests, mail sent/fallback/failed, open problems, slow endpoints, plugin updates |
+| releases | Once per version, when a new Hubra version runs: its release notes (German) |
+| security | Platform admins signing in on a new device or losing their two-factor sign-in, 20 failed sign-ins from one IP address within 10 minutes, encryption keys older than a year (once a month) |
 
 Every platform audit entry (`global_audit_logs`) is posted after its change
 is committed, by a Celery task, with the club, who did it, the target and the
 entry's details. Values whose key looks like a secret (password, token, key,
 secret, code) are shown as `***`. Alerts replace the old
 `DISCORD_WEBHOOK_URL` setting, which is gone.
+
+Installs that saved their categories before digest, releases and security
+existed keep their list: tick the new ones in manage › Platform settings ›
+Discord.
+
+### Platform admins in Discord
+
+On the platform server the bot also takes clicks and commands from platform
+admins. Whoever clicks must have linked their Discord account to their Hubra
+account (SSO › Konto › Verknüpfungen), that account needs two-factor sign-in
+(an app or a passkey), and it needs the same platform permission as in
+manage. Anyone else gets a private "not allowed" answer.
+
+| Where | What | Permission |
+| --- | --- | --- |
+| Club request message | **Annehmen** sets the club up (in a background job; the answer follows), **Ablehnen** asks for a reason that goes to the requester. Decided requests show the outcome and lose their buttons, also when decided in manage. | `requests.approve` |
+| Alert message | **Bestätigen** notes who saw it. **1 h stumm** silences that alert type (mail and Discord) for an hour. **In manage öffnen** links to manage › Alerts (set `alerts.manage_url`). When the problem behind a relay, service, backup or mail alert is gone, the message turns green with "Behoben". | `platform.diagnostics` / `platform.settings` |
+| `/plattform status` | Version, active clubs, maintenance, open problems, silenced alert types | `platform.diagnostics` |
+| `/plattform verein <name>` | One club's health: members, last activity, storage, mail, plugins, warnings (name or slug, with suggestions) | `tenants.read` |
+| `/plattform backup [verein]` | Start a backup of the platform or one club | superadmin (`backups.manage`) |
+| `/wartung jetzt [minuten] [text]` | Maintenance mode on now | `platform.settings` |
+| `/wartung planen <start> <minuten> [text]` | Announce maintenance (`22:00`, `2026-11-05 22:00` or `05.11.2026 22:00`, platform time zone) as a planned window for every club (manage › Alerts › Geplante Wartungen). The club apps show the notice from 24 hours before; it starts and ends by itself. `abbrechen` cancels the next one. | `platform.settings` |
+| `/wartung ende`, `/wartung abbrechen` | End maintenance; cancel a planned one | `platform.settings` |
+
+The commands are installed on the platform server only (the server of the
+log channel), within a minute of setting the channel, and are shown to
+members with "Manage Server" by default (Server Settings › Integrations ›
+Hubra can narrow that further). Discord interactions keep working
+during maintenance so `/wartung ende` does; club commands answer that Hubra
+is being updated.
+
+Clubs can opt in to hear about it on their own server (Settings › Verbundene
+Apps › Discord: **Neue Hubra-Versionen ankündigen**, **Wartungen
+ankündigen**, both off by default): new versions with their main changes,
+and planned, started, ended or cancelled maintenance, in the main channel.
+
+### Roles on the platform server
+
+manage › Platform settings › Discord › **Rollen auf dem Plattform-Server**
+(`discord.platform_roles`, off by default). When on, the bot gives everyone
+who linked their Discord account these roles on the platform log's server:
+
+| Role | Who |
+| --- | --- |
+| Plattform-Admin | Platform staff (superadmin or a global role) with two-factor, the same people the buttons above accept |
+| Vereinsinhaber | Owner of at least one active club |
+| Vereinsadmin | Admin, not owner, of at least one active club |
+| Vereinsmitglied | Active member of at least one club |
+
+- The bot makes the roles itself with **no permissions**, not mentionable.
+  What they may see is up to you (channel permissions on Discord). An
+  existing role with the same name is only taken over when it has no
+  permissions either.
+- It only gives or takes these four roles, never one a person made, and
+  only for people who linked Discord. Disabled accounts, people who turn off
+  two-factor (Plattform-Admin) or leave their clubs, and people who unlink
+  lose them.
+- Updated every ten minutes (only people whose roles should change cost a
+  Discord call), right after someone links Discord, when someone joins the
+  server (with the gateway process running), and in full once a day.
+- Turning it off deletes the four roles.
+- The bot needs **Manage Roles** on the platform server, and its own role
+  must be above these roles (it is, for roles it made itself).
 
 ## What the bot may do on a club's server
 
