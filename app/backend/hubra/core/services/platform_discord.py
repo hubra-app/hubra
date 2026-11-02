@@ -62,6 +62,10 @@ CATEGORIES: dict[str, str] = {
     "backups": "Backups created, verified, restored or deleted",
     "platform": "Platform settings, encryption keys, mail server, translations",
     "alerts": "System alerts: failed tasks, error rate, infrastructure checks",
+    "digest": "Daily overview at 08:00: new clubs, sign-ups, mail, open problems",
+    "releases": "A new Hubra version is running, with its release notes",
+    "security": "Platform admins on new devices or without two-factor, "
+    "many failed sign-ins from one address, old encryption keys",
 }
 
 # Bot permissions the platform server needs: view channel, send messages,
@@ -139,27 +143,47 @@ class DiscordPostError(RuntimeError):
     pass
 
 
-def post(embed: dict, *, channel_id: str = "", token: str = "") -> None:
+def post(
+    embed: dict,
+    *,
+    channel_id: str = "",
+    token: str = "",
+    components: list | None = None,
+) -> dict:
     """Post one embed to the platform log channel.  Raises DiscordPostError.
 
-    The outcome is remembered for manage › Discord › Status.
+    *components*: buttons under the message (``platform_bot``).  Returns
+    Discord's message (``id``, ``channel_id``), or ``{}``.  The outcome is
+    remembered for manage › Discord › Status.
     """
     try:
-        _post(embed, channel_id=channel_id, token=token)
+        message = _post(
+            embed, channel_id=channel_id, token=token, components=components
+        )
     except DiscordPostError as exc:
         _remember_post(False, str(exc))
         raise
     _remember_post(True, "")
+    return message
 
 
-def _post(embed: dict, *, channel_id: str = "", token: str = "") -> None:
-    if not channel_id and not token:
-        channel_id, token = _settings()
+def _post(
+    embed: dict,
+    *,
+    channel_id: str = "",
+    token: str = "",
+    components: list | None = None,
+) -> dict:
+    if not channel_id or not token:
+        default_channel, default_token = _settings()
+        channel_id = channel_id or default_channel
+        token = token or default_token
     if not channel_id or not token:
         raise DiscordPostError("Set the bot token and the log channel first")
-    body = json.dumps({"embeds": [embed], "allowed_mentions": {"parse": []}}).encode(
-        "utf-8"
-    )
+    payload: dict[str, Any] = {"embeds": [embed], "allowed_mentions": {"parse": []}}
+    if components:
+        payload["components"] = components
+    body = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
         f"{API}/channels/{channel_id}/messages",
         data=body,
@@ -174,6 +198,11 @@ def _post(embed: dict, *, channel_id: str = "", token: str = "") -> None:
         with urllib.request.urlopen(req, timeout=10) as resp:  # noqa: S310
             if resp.status not in (200, 201):
                 raise DiscordPostError(f"Discord answered {resp.status}")
+            try:
+                message = json.loads(resp.read() or b"{}")
+            except (TypeError, ValueError):
+                return {}
+            return message if isinstance(message, dict) else {}
     except urllib.error.HTTPError as exc:
         hint = {
             401: "the bot token is wrong",
@@ -229,10 +258,10 @@ def last_post_state() -> dict:
     return dict(_local_last.get("state") or {})
 
 
-def post_alert(embed: dict) -> bool:
-    """Post a system alert if the log is set up and ``alerts`` is on.
-
-    Never raises: alerts run from failure handlers.
+def post_alert(embed: dict, alert_type: str = "system") -> bool:
+    """Post a system alert if the log is set up and ``alerts`` is on, with
+    buttons to acknowledge it, silence its type for an hour and open manage
+    (``platform_bot``).  Never raises: alerts run from failure handlers.
     """
     try:
         from flask import has_app_context
@@ -242,7 +271,15 @@ def post_alert(embed: dict) -> bool:
         channel_id, token = _settings()
         if not channel_id or not token or "alerts" not in enabled_categories():
             return False
-        post(embed, channel_id=channel_id, token=token)
+        from hubra.core.services import platform_bot
+
+        message = post(
+            embed,
+            channel_id=channel_id,
+            token=token,
+            components=platform_bot.alert_buttons(alert_type),
+        )
+        platform_bot.track_alert(message, alert_type)
         return True
     except Exception:
         _log.warning("Platform Discord alert failed", exc_info=True)
@@ -394,9 +431,19 @@ def post_audit_entry(entry_id: int) -> bool:
     channel_id = audit_target()
     if not channel_id or not token:
         return False
+    from hubra.core.services import platform_bot
+
+    # A decision on a club request also updates the request's own message.
+    platform_bot.request_decided(entry)
     if category(entry.action) not in enabled_categories():
         return False
-    post(audit_embed(entry), channel_id=channel_id, token=token)
+    # Approve / Reject on the request's message (one message per request).
+    buttons = platform_bot.request_buttons(entry)
+    message = post(
+        audit_embed(entry), channel_id=channel_id, token=token, components=buttons
+    )
+    if buttons:
+        platform_bot.track_request(entry, message)
     return True
 
 

@@ -90,8 +90,9 @@ go out. `flask maintenance off` afterwards; it also ends on its own.
 3. **Switch the version.**
    - Compose: set `HUBRA_VERSION` in `.env` to the release (`1.2.3`), then
      `docker compose pull && docker compose up -d`.
-   - k3s: set `newTag` in `deploy/app/kustomization.yaml` (or your overlay)
-     and push or apply. With `latest`, also run
+   - k3s: set `newTag` in `deploy/app/kustomization.yaml` (or your overlay),
+     or paste the digest block from the Images run summary, and push or
+     apply. With `latest`, also run
      `kubectl -n hubra rollout restart deployment`.
 4. **Watch the migrations.**
    - Compose: `docker compose logs flask-init` must end with exit code 0

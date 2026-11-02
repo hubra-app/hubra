@@ -10,6 +10,7 @@ import {
   Paper,
   PasswordInput,
   Stack,
+  Switch,
   Table,
   Text,
   TextInput,
@@ -52,6 +53,7 @@ const DISCORD = [
 ]
 
 const DISCORD_LOG = ['discord.log_channel_id', 'discord.audit_channel_id', 'discord.log_events']
+const DISCORD_ROLES = ['discord.platform_roles']
 // Defaults built into Hubra, not read from the environment.
 const PERF = ['perf.slow_request_ms', 'perf.slow_query_ms', 'perf.p95_warning_ms']
 const PLANS = ['starter', 'growth', 'enterprise'] as const
@@ -72,8 +74,8 @@ const LOG_CATEGORIES: [string, string, string][] = [
   ],
   [
     'requests',
-    'Vereinsanfragen eingereicht, angenommen, abgelehnt',
-    'Club requests submitted, approved, rejected',
+    'Vereinsanfragen eingereicht, angenommen, abgelehnt (mit Knöpfen Annehmen / Ablehnen)',
+    'Club requests submitted, approved, rejected (with Approve / Reject buttons)',
   ],
   [
     'access',
@@ -105,10 +107,27 @@ const LOG_CATEGORIES: [string, string, string][] = [
     'Systemwarnungen: fehlgeschlagene Tasks, Fehlerrate, Infrastruktur',
     'System alerts: failed tasks, error rate, infrastructure',
   ],
+  [
+    'digest',
+    'Tagesübersicht um 08:00: neue Vereine, Konten, Mails, offene Probleme',
+    'Daily overview at 08:00: new clubs, sign-ups, mail, open problems',
+  ],
+  [
+    'releases',
+    'Neue Hubra-Version läuft, mit den Neuerungen',
+    'A new Hubra version is running, with its release notes',
+  ],
+  [
+    'security',
+    'Sicherheit: Admins auf neuem Gerät oder ohne Zwei-Faktor, viele Fehlanmeldungen, alte Schlüssel',
+    'Security: admins on new devices or without two-factor, many failed sign-ins, old keys',
+  ],
 ]
 
 // View Channel + Send Messages + Embed Links
 const LOG_BOT_PERMISSIONS = (1 << 10) | (1 << 11) | (1 << 14)
+// Manage Roles, only asked for when the bot keeps the platform server's roles.
+const MANAGE_ROLES = 1 << 28
 
 /** One group of platform settings; each is shown on the page it configures. */
 export type SettingsSectionId =
@@ -126,7 +145,7 @@ const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
   sender: SENDER,
   backups: BACKUP,
   'discord-app': DISCORD,
-  'discord-channels': DISCORD_LOG,
+  'discord-channels': [...DISCORD_LOG, ...DISCORD_ROLES],
   alerts: ALERTS,
   performance: PERF,
   limits: LIMITS,
@@ -344,26 +363,24 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
     draft['discord.audit_channel_id'] ?? byKey['discord.audit_channel_id']?.value ?? ''
   const manageUrl = byKey['alerts.manage_url']?.value ?? ''
 
-  const botAddLink =
-    clientId ? (
-      <Anchor
-        href={`https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&scope=bot&permissions=${LOG_BOT_PERMISSIONS}`}
-        target="_blank"
-        rel="noreferrer"
-      >
-        {tr(
-          'Bot zum Plattform-Server hinzufügen',
-          'Add the bot to the platform server',
-        )}
-      </Anchor>
-    ) : (
-      <Text span size="sm" c="dimmed">
-        {tr(
-          'Zuerst die Discord-Anwendungs-ID unter Einrichtung eintragen.',
-          'Set the Discord application ID under Setup first.',
-        )}
-      </Text>
-    )
+  const rolesOn =
+    (draft['discord.platform_roles'] ?? byKey['discord.platform_roles']?.value) === 'on'
+  const botAddLink = clientId ? (
+    <Anchor
+      href={`https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&scope=bot&permissions=${LOG_BOT_PERMISSIONS | (rolesOn ? MANAGE_ROLES : 0)}`}
+      target="_blank"
+      rel="noreferrer"
+    >
+      {tr('Bot zum Plattform-Server hinzufügen', 'Add the bot to the platform server')}
+    </Anchor>
+  ) : (
+    <Text span size="sm" c="dimmed">
+      {tr(
+        'Zuerst die Discord-Anwendungs-ID unter Einrichtung eintragen.',
+        'Set the Discord application ID under Setup first.',
+      )}
+    </Text>
+  )
 
   const field = (key: string) => {
     const s = byKey[key]
@@ -689,6 +706,37 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
                   )}
                 </Group>
               </Stack>
+            </Paper>
+          )}
+
+          {section === 'discord-channels' && byKey['discord.platform_roles'] && (
+            <Paper withBorder shadow="sm" radius="lg" p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>
+                  {tr('Rollen auf dem Plattform-Server', 'Roles on the platform server')}
+                </Title>
+                {resetButton(DISCORD_ROLES)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Wer sein Discord-Konto verknüpft hat, bekommt auf dem Server des Plattform-Logs automatisch die passenden Rollen: Plattform-Admin (mit Zwei-Faktor), Vereinsinhaber, Vereinsadmin und Vereinsmitglied. Der Bot macht die Rollen selbst, ohne Rechte; was sie sehen dürfen, stellst du in Discord ein. Andere Rollen fasst er nie an. Ausschalten löscht diese Rollen wieder.',
+                  'Everyone who linked their Discord account gets the matching roles on the platform log’s server: Plattform-Admin (with two-factor), Vereinsinhaber (club owner), Vereinsadmin (club admin) and Vereinsmitglied (club member). The bot makes these roles itself, without permissions; what they may see is set in Discord. It never touches other roles. Turning this off deletes the roles again.',
+                )}
+              </Text>
+              <Switch
+                label={tr('Rollen automatisch vergeben', 'Give roles automatically')}
+                checked={rolesOn}
+                onChange={(e) => {
+                  const on = e.currentTarget.checked
+                  setDraft((d) => ({ ...d, 'discord.platform_roles': on ? 'on' : 'off' }))
+                }}
+              />
+              <Text size="xs" c="dimmed" mt={8}>
+                {tr(
+                  'Braucht das Recht «Rollen verwalten» für den Bot auf diesem Server. Änderungen kommen innert zehn Minuten an.',
+                  'The bot needs the “Manage Roles” permission on this server. Changes arrive within ten minutes.',
+                )}
+              </Text>
             </Paper>
           )}
 

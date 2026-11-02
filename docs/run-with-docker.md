@@ -90,7 +90,7 @@ docker compose up -d
 ```
 
 Pin a version with `HUBRA_VERSION` in `.env`: `latest` is the newest
-release, release tags (`v1.2.3`) give `1.2.3`, and `sha-<commit>` is one exact
+build (a release or a manual build of `main`), release tags (`v1.2.3`) give `1.2.3`, and `sha-<commit>` is one exact
 build.
 
 ## Real host names (production)

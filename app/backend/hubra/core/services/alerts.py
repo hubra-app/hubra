@@ -23,6 +23,7 @@ def send_alert(
     fields: list[dict[str, Any]] | None = None,
     *,
     staff: bool = True,
+    alert_type: str = "system",
 ) -> bool:
     """Post an alert embed to the platform Discord log.
 
@@ -52,7 +53,7 @@ def send_alert(
 
     from hubra.core.services import platform_discord
 
-    return platform_discord.post_alert(embed)
+    return platform_discord.post_alert(embed, alert_type)
 
 
 def _to_platform_staff(title, description, fields, color) -> None:
