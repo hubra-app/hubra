@@ -1,5 +1,6 @@
 import { withStepUp } from '@/api/stepUp'
 import { apiFetch } from '@hubra/api-client'
+import type { ChangelogEntry, RoadmapItem, RoadmapStatus } from '@hubra/ui'
 
 const P = '/manager/platform'
 
@@ -147,14 +148,14 @@ export async function getPlatformHealth() {
   return apiFetch<HealthDetail>(`${P}/health`)
 }
 
-export interface ChangelogEntry {
-  version: string
-  date: string | null
-  sections: Record<string, string[]>
+export async function getChangelog(lang?: string) {
+  return apiFetch<{ version: string; entries: ChangelogEntry[] }>(
+    `/version/changelog${lang ? `?lang=${encodeURIComponent(lang)}` : ''}`,
+  )
 }
 
-export async function getChangelog() {
-  return apiFetch<{ entries: ChangelogEntry[] }>('/version/changelog')
+export async function getRoadmap() {
+  return apiFetch<{ statuses: RoadmapStatus[]; items: RoadmapItem[] }>('/version/roadmap')
 }
 
 export interface PermissionEntry {
@@ -282,7 +283,8 @@ export interface PlatformEvent {
 
 export async function getPlatformEvents(params: {
   category?: EventCategory | ''
-  level?: EventLevel | ''
+  level?: EventLevel | 'problems' | ''
+  tenant_id?: number
   q?: string
   page: number
   per_page: number

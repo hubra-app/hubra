@@ -50,3 +50,10 @@ test('pages of the portal itself are fine (join page, start a club)', () => {
   assert.equal(validateRedirect(`${self}/clubs/ruder-zug`, urls, { self }), `${self}/clubs/ruder-zug`)
   assert.equal(validateRedirect('https://evil.example/clubs/x', urls, { self }), null)
 })
+
+test('only web addresses, even on this portal', () => {
+  const self = 'https://login.hubra.club'
+  assert.equal(validateRedirect('javascript:alert(1)', urls, { self }), null)
+  assert.equal(validateRedirect('data:text/html,hi', urls, { self }), null)
+  assert.equal(validateRedirect('https://login.hubra.club/clubs', urls, { self }), 'https://login.hubra.club/clubs')
+})

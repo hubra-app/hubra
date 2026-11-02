@@ -94,7 +94,9 @@ def community_keys() -> dict:
     out = {}
     try:
         keys = list(
-            db.session.scalars(select(TrustedKey).where(TrustedKey.purpose == "plugins"))
+            db.session.scalars(
+                select(TrustedKey).where(TrustedKey.purpose == "plugins")
+            )
         )
         repos = list(
             db.session.scalars(
@@ -156,9 +158,7 @@ def plugin_key_ids() -> set[str]:
 def _unhashed(name: str) -> bool:
     """Paths the signature leaves out: bytecode, caches, VCS and node_modules."""
     parts = [p for p in name.replace("\\", "/").split("/") if p]
-    return any(
-        p in SKIP_DIRS or p.endswith((".pyc", ".pyo")) for p in parts
-    )
+    return any(p in SKIP_DIRS or p.endswith((".pyc", ".pyo")) for p in parts)
 
 
 def safe_extract(blob: bytes, dest: Path) -> Path:
@@ -175,6 +175,7 @@ def safe_extract(blob: bytes, dest: Path) -> Path:
     if sum(i.file_size for i in infos) > MAX_UNPACKED:
         raise InstallError("archive unpacks to too much data")
     dest.mkdir(parents=True, exist_ok=True)
+    base = os.path.realpath(dest)
     written = 0
     for i in infos:
         name = i.filename
@@ -186,9 +187,11 @@ def safe_extract(blob: bytes, dest: Path) -> Path:
             # The signature doesn't cover these (trust.file_hashes skips them),
             # and Python would run a .pyc instead of the signed .py next to it.
             raise InstallError(f"compiled or tooling files aren't allowed: {name}")
-        target = (dest / name).resolve()
-        if not target.is_relative_to(dest.resolve()):
+        # realpath + a prefix check: the target must stay inside dest.
+        target_s = os.path.realpath(os.path.join(base, name))
+        if not target_s.startswith(base + os.sep):
             raise InstallError(f"unsafe path in archive: {name}")
+        target = Path(target_s)
         if i.is_dir():
             target.mkdir(parents=True, exist_ok=True)
             continue
@@ -451,7 +454,8 @@ def confirm(
             migrate.upgrade_everywhere(spec)
         except Exception as exc:
             db.session.rollback()
-            raise InstallError(f"its migrations failed: {exc}") from exc
+            _log.exception("plugin %s: migrations failed", pid)
+            raise InstallError("its migrations failed; see the server log") from exc
         # Keep the unpacked copy so this process needs no second unpack.
         dest = root / pid
         with loader._folder_lock(root):
@@ -523,7 +527,8 @@ def install_bundled(pid: str) -> dict:
         migrate.upgrade_everywhere(spec)
     except Exception as exc:
         db.session.rollback()
-        raise InstallError(f"its migrations failed: {exc}") from exc
+        _log.exception("plugin %s: migrations failed", pid)
+        raise InstallError("its migrations failed; see the server log") from exc
     if row is None:
         row = InstalledPlugin(id=pid, installed_at=_now())
         db.session.add(row)
@@ -675,7 +680,7 @@ def _check_url(url: str) -> None:
     try:
         infos = socket.getaddrinfo(parsed.hostname, parsed.port or 443)
     except OSError as exc:
-        raise InstallError(f"{url}: {exc}") from exc
+        raise InstallError(f"{url}: the host name could not be resolved") from exc
     for info in infos:
         ip = ipaddress.ip_address(info[4][0])
         if not ip.is_global:
@@ -695,8 +700,11 @@ def http_get(url: str, timeout: int = 30, limit: int = MAX_ZIP) -> bytes:
     try:
         with opener.open(req, timeout=timeout) as resp:
             data = resp.read(limit + 1)
+    except urllib.error.HTTPError as exc:
+        raise InstallError(f"{url}: the server answered HTTP {int(exc.code)}") from exc
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        raise InstallError(f"{url}: {exc}") from exc
+        _log.warning("plugin download %s failed: %s", url, exc)
+        raise InstallError(f"{url}: could not connect") from exc
     if len(data) > limit:
         raise InstallError(f"{url}: larger than {limit // 1024 // 1024} MB")
     return data
@@ -991,11 +999,13 @@ def install_from_repository(repo, pid: str, version: str | None = None) -> dict:
     if hashlib.sha256(blob).hexdigest() != entry["sha256"]:
         raise InstallError("download doesn't match the checksum in the index")
     info = stage(blob, source=f"{repo.name}: {zurl}", repository_id=repo.id)
-    if info["trust"].get("key_id") not in repository_plugin_keys(repo) or info[
-        "trust"
-    ]["status"] not in ("official", "community"):
+    if info["trust"].get("key_id") not in repository_plugin_keys(repo) or info["trust"][
+        "status"
+    ] not in ("official", "community"):
         discard_stage(info["token"])
-        raise InstallError(f"'{pid}' isn't signed with one of {repo.name}'s plugin keys")
+        raise InstallError(
+            f"'{pid}' isn't signed with one of {repo.name}'s plugin keys"
+        )
     return info
 
 

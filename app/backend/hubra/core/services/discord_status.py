@@ -60,7 +60,8 @@ def _error_text(exc: Exception) -> str:
             404: "Not found (404)",
             429: "Rate limited by Discord (429); try again in a minute",
         }.get(exc.code, f"Discord answered {exc.code}")
-    return f"Discord unreachable: {exc}"
+    _log.warning("Discord check failed: %s", exc)
+    return "Discord unreachable; see the server log for details"
 
 
 def _api_base() -> str:
