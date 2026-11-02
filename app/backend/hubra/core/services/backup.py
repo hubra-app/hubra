@@ -260,6 +260,7 @@ class BackupService:
         tenant_id: int | None = None,
         *,
         cleanup: bool = True,
+        alert: bool = True,
     ) -> BackupRecord:
         """Back up one schema: pg_dump → encrypt → S3 upload.
 
@@ -270,6 +271,8 @@ class BackupService:
             tenant_id: The club to back up; ``None`` backs up the global
                        ``public`` schema.
             cleanup: Run retention afterwards (scheduled types only).
+            alert: Alert platform staff when it fails.  The scheduled run
+                   alerts once for all its backups instead.
 
         Returns:
             The updated BackupRecord.
@@ -393,6 +396,10 @@ class BackupService:
             record.status = "failed"
             record.error_message = str(exc)
             db.session.commit()
+            if alert:
+                from hubra.core.services import platform_monitor
+
+                platform_monitor.backup_failed("backup", record, str(exc))
 
         return record
 
@@ -405,7 +412,9 @@ class BackupService:
         A club that fails does not stop the others; its record says why.
         """
         records = [
-            BackupService.create_backup(backup_type, triggered_by, cleanup=False)
+            BackupService.create_backup(
+                backup_type, triggered_by, cleanup=False, alert=False
+            )
         ]
         tenant_ids = db.session.scalars(
             select(Tenant.id)
@@ -416,7 +425,7 @@ class BackupService:
         for tenant_id in tenant_ids:
             records.append(
                 BackupService.create_backup(
-                    backup_type, triggered_by, tenant_id, cleanup=False
+                    backup_type, triggered_by, tenant_id, cleanup=False, alert=False
                 )
             )
         if backup_type in _RETENTION:
@@ -493,6 +502,9 @@ class BackupService:
             record.verified_ok = False
             record.verify_error = str(exc)
             db.session.commit()
+            from hubra.core.services import platform_monitor
+
+            platform_monitor.backup_failed("verify", record, str(exc))
 
         return record
 
@@ -567,6 +579,9 @@ class BackupService:
             record = db.session.get(BackupRecord, record_id)
             record.restore_error = str(exc)
             db.session.commit()
+            from hubra.core.services import platform_monitor
+
+            platform_monitor.backup_failed("restore", record, str(exc))
             raise RestoreError(str(exc)) from exc
 
         record.restored_at = datetime.now(timezone.utc)
@@ -594,12 +609,26 @@ class BackupService:
         return db.session.get(BackupRecord, record_id)
 
     @staticmethod
-    def delete_backup(record_id: int) -> None:
-        """Delete a backup: remove S3 object, then delete the DB record."""
+    def delete_backup(record_id: int, deleted_by: str | None = None) -> None:
+        """Delete a backup: remove S3 object, then delete the DB record.
+
+        Logs the deletion and alerts platform staff (``backup_deleted``),
+        saying who did it and whether the file is still in storage.
+        """
         record = db.session.get(BackupRecord, record_id)
         if record is None:
             raise ValueError(f"Backup record {record_id} not found")
 
+        info = {
+            "id": record.id,
+            "scope": record.tenant_slug or "global",
+            "tenant_id": record.tenant_id,
+            "type": record.type,
+            "status": record.status,
+            "created_at": record.created_at.isoformat() if record.created_at else None,
+            "size_bytes": record.size_bytes,
+        }
+        storage_error = None
         if record.s3_key:
             try:
                 s3_client = _get_s3_client()
@@ -610,6 +639,7 @@ class BackupService:
                         "Deleted S3 object %s for backup %s", record.s3_key, record_id
                     )
             except Exception as exc:
+                storage_error = str(exc)
                 logger.warning(
                     "Failed to delete S3 object %s for backup %s: %s — removing DB record anyway",
                     record.s3_key,
@@ -619,6 +649,12 @@ class BackupService:
 
         db.session.delete(record)
         db.session.commit()
+
+        from hubra.core.services import platform_monitor
+
+        platform_monitor.backup_deleted(
+            info, by=deleted_by, storage_error=storage_error
+        )
 
     @staticmethod
     def run_retention_cleanup() -> dict:
@@ -667,5 +703,8 @@ class BackupService:
         if deleted:
             db.session.commit()
             logger.info("Retention cleanup deleted: %s", deleted)
+            from hubra.core.services import platform_monitor
+
+            platform_monitor.backups_pruned(deleted)
 
         return deleted

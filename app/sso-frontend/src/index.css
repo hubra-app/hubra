@@ -93,3 +93,57 @@
   top: 0;
   z-index: 10;
 }
+
+/* "Mein Konto" from tablet width on: the sections as a list beside the
+   content instead of one long row of tabs that has to scroll. */
+.sso-side-tabs {
+  gap: 32px;
+  align-items: flex-start;
+}
+
+.sso-side-tabs .mantine-Tabs-list {
+  flex: 0 0 220px;
+  gap: 2px;
+  position: sticky;
+  top: 84px;
+}
+
+.sso-side-tabs .mantine-Tabs-tab {
+  justify-content: flex-start;
+  padding: 9px 12px;
+  border-radius: var(--mantine-radius-md);
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+  color: var(--hb-text-2, #5e5873);
+}
+
+.sso-side-tabs .mantine-Tabs-tabLabel {
+  flex: 1;
+  text-align: left;
+}
+
+.sso-side-tabs .mantine-Tabs-tab:hover {
+  background: var(--hb-surface-2, rgba(0, 0, 0, 0.04));
+  color: var(--hb-text, #1a1625);
+}
+
+.sso-side-tabs .mantine-Tabs-tab[data-active],
+.sso-side-tabs .mantine-Tabs-tab[data-active]:hover {
+  background: var(--mantine-color-acc-light);
+  color: var(--mantine-color-acc-light-color);
+}
+
+.sso-side-tabs .mantine-Tabs-panel {
+  flex: 1;
+  min-width: 0;
+  max-width: 760px;
+}
+
+@media (max-width: 61.99em) {
+  .sso-side-tabs {
+    gap: 24px;
+  }
+  .sso-side-tabs .mantine-Tabs-list {
+    flex-basis: 190px;
+  }
+}

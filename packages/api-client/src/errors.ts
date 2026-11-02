@@ -276,6 +276,8 @@ const DE_PATTERNS: [RegExp, (...m: string[]) => string][] = [
   [/^No Hubra account for (.+); they need to sign up first$/, (e) =>
     `Für ${e} gibt es noch kein Hubra-Konto. Die Person muss sich zuerst registrieren.`],
   [/^No user found with email (.+)$/, (e) => `Für ${e} gibt es kein Konto.`],
+  [/^This club has reached its limit of (\d+) members$/, (n) =>
+    `Der Verein hat seine Höchstzahl von ${n} Mitgliedern erreicht. Die Plattform kann sie erhöhen.`],
   [/^A member with email (.+) already exists$/, (e) => `Ein Mitglied mit ${e} gibt es schon.`],
   [/^\S+ name '(.+)' (?:is already taken|already in use)$/, (n) => `«${n}» ist schon vergeben.`],
   [/^\S+ '(.+)' already exists$/, (n) => `«${n}» gibt es schon.`],

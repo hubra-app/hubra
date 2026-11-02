@@ -1,5 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
-import { Alert, Button, Divider, Group, Loader, Modal, PasswordInput, Stack, Text, TextInput } from '@mantine/core'
+import {
+  Alert,
+  Button,
+  Divider,
+  getDefaultZIndex,
+  Group,
+  Loader,
+  Modal,
+  PasswordInput,
+  Stack,
+  Text,
+  TextInput,
+} from '@mantine/core'
 import { IconFingerprint, IconShieldLock } from '@tabler/icons-react'
 import { SSO_URL } from '@hubra/api-client'
 import {
@@ -152,6 +164,10 @@ export function StepUpDialog() {
       }
       size="sm"
       centered
+      // It opens on top of the dialog that asked for it (delete or restore a
+      // backup, …); every Modal shares one z-index, so without this it can
+      // end up underneath, out of reach.
+      zIndex={getDefaultZIndex('max')}
     >
       <Stack gap="sm">
         <Text size="sm" c="dimmed">

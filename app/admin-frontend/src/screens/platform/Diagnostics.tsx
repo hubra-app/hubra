@@ -27,6 +27,7 @@ import {
 } from '@/api/platform'
 import { OutboundMailPanel } from './MailMonitor'
 import { DiscordPanel } from './DiscordStatus'
+import { JobsPanel } from './Jobs'
 import { Row } from './StatusRow'
 import { BuildsPanel } from './Builds'
 
@@ -472,7 +473,7 @@ function PermissionsPanel() {
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-const TABS = ['health', 'outbound-mail', 'discord', 'mail-server', 'permissions'] as const
+const TABS = ['health', 'jobs', 'outbound-mail', 'discord', 'mail-server', 'permissions'] as const
 type Tab = (typeof TABS)[number]
 
 /** Diagnostics of the whole instance, for platform staff (platform.diagnostics). */
@@ -495,6 +496,7 @@ export function Diagnostics() {
       <Tabs
         tabs={[
           { id: 'health', label: tr('Systemzustand', 'System health') },
+          { id: 'jobs', label: tr('Hintergrundjobs', 'Background jobs') },
           { id: 'outbound-mail', label: tr('Mail-Versand', 'Outbound mail') },
           { id: 'discord', label: 'Discord' },
           { id: 'mail-server', label: tr('Mailserver', 'Mail server') },
@@ -504,6 +506,7 @@ export function Diagnostics() {
         onTabChange={(id) => navigate(`/app/platform/diagnostics/${id}`)}
       />
       {tab === 'health' && <HealthPanel />}
+      {tab === 'jobs' && <JobsPanel />}
       {tab === 'outbound-mail' && (
         <OutboundMailPanel
           onShowLog={(lvl) =>

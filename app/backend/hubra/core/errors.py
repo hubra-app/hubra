@@ -22,6 +22,23 @@ from sqlalchemy.exc import DataError
 from werkzeug.exceptions import HTTPException
 
 
+# ── Exception text for the user ──────────────────────────────────────────────
+
+
+def error_message(exc: BaseException) -> str:
+    """The text an exception was raised with, for an API answer.
+
+    Only for exception classes whose message is written for the user
+    (validation errors, InstallError, AppError, ...). It takes the first
+    argument the exception was constructed with rather than ``str(exc)``,
+    so a traceback or a wrapped cause never ends up in the response.
+    """
+    first = exc.args[0] if exc.args else None
+    if isinstance(first, str) and first:
+        return first
+    return exc.__class__.__name__
+
+
 # ── Response builder ─────────────────────────────────────────────────────────
 
 

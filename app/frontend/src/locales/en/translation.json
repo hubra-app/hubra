@@ -2358,6 +2358,11 @@
         "castVote": "Please cast your vote before the poll closes.",
         "votedFor": "{{name}} voted for \"{{option}}\"",
         "askedProxy": "{{name}} asked you to vote for them.",
+        "quotaNear": "Club limit almost reached",
+        "quotaOver": "Club limit reached",
+        "quotaMembers": "Members: {{used}} of {{limit}}.",
+        "quotaMail": "Mails this month: {{used}} of {{limit}}.",
+        "quotaStorage": "Storage: {{used}} MB of {{limit}} MB.",
         "aMember": "A member",
         "eventReminder": "Event reminder"
       }

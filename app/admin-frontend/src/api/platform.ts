@@ -38,8 +38,11 @@ export async function sendPlatformTestMail(to: string, via: 'relay' | 'fallback'
   })
 }
 
-export async function sendPlatformTestDiscord() {
-  return apiFetch<{ ok: boolean }>(`${P}/discord/test`, { method: 'POST' })
+export async function sendPlatformTestDiscord(channel: 'log' | 'audit' = 'log') {
+  return apiFetch<{ ok: boolean }>(`${P}/discord/test`, {
+    method: 'POST',
+    body: JSON.stringify({ channel }),
+  })
 }
 
 // ── Diagnostics (platform.diagnostics; changes need platform.settings) ──────
@@ -308,6 +311,7 @@ export type AlertType =
   | 'delivery_failed'
   | 'service_down'
   | 'backup_failed'
+  | 'backup_deleted'
   | 'plugin_updates'
   | 'upgrades'
   | 'system'
@@ -528,5 +532,72 @@ export async function createMaintenanceWindow(body: {
 export async function cancelMaintenanceWindow(id: number) {
   return apiFetch<{ window: MaintenanceWindow }>(`${P}/maintenance/windows/${id}/cancel`, {
     method: 'POST',
+// ── Background jobs (Diagnose › Hintergrundjobs) ─────────────────────────────
+
+export interface JobCounts {
+  sent: number
+  done: number
+  failed: number
+  retried: number
+}
+
+export interface JobTaskRow extends JobCounts {
+  task: string
+  avg_ms: number | null
+}
+
+export interface FailedJob {
+  id: string
+  task_id: string
+  task: string
+  time: string
+  tenant_id: number | null
+  club: string | null
+  error: string
+  traceback: string
+  retries: number
+  can_retry: boolean
+  args: unknown[] | null
+  kwargs: Record<string, unknown> | null
+  retried_at: string | null
+  retried_by: string | null
+  retry_task_id: string | null
+}
+
+export interface RunningJob {
+  id: string
+  task: string
+  tenant_id: number | null
+  club: string | null
+  started: string
+  seconds: number
+}
+
+export interface JobsOverview {
+  hours: number
+  totals: JobCounts
+  tasks: JobTaskRow[]
+  series: JobCounts[]
+  /** null when the broker cannot be read. */
+  queued: number | null
+  reserved: number | null
+  running: RunningJob[]
+  failed: FailedJob[]
+  failed_keep_days: number
+}
+
+export async function getJobs(hours: number) {
+  return apiFetch<JobsOverview>(`${P}/jobs?hours=${hours}`)
+}
+
+export async function retryJob(id: string) {
+  return apiFetch<{ job: FailedJob }>(`${P}/jobs/failed/${encodeURIComponent(id)}/retry`, {
+    method: 'POST',
+  })
+}
+
+export async function dismissJob(id: string) {
+  return apiFetch<{ removed: string }>(`${P}/jobs/failed/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
   })
 }

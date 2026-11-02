@@ -15,6 +15,7 @@ from hubra.api.mail.services import MailboxService
 from hubra.api.permissions import check_grant, held_roles, invalidate_member_permissions
 from hubra.api.settings.services import SettingService
 from hubra.api.utils import csv_safe, escape_like, log_audit
+from hubra.core.services import quotas
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 from hubra.core.models.group import Group
@@ -1134,9 +1135,10 @@ class MembersService:
         default_role = _default_role()
 
         former = db.session.scalar(select(Member).where(Member.user_id == user.id))
+        if former is not None and former.archived_at is None:
+            raise_error(409, "CONFLICT", "You are already a member of this club")
+        quotas.ensure_room_for_member()
         if former is not None:
-            if former.archived_at is None:
-                raise_error(409, "CONFLICT", "You are already a member of this club")
             return _welcome_back(former, user.id, data.get("tier_id"))
 
         tier_id = data.get("tier_id")
@@ -1603,6 +1605,7 @@ class MembersService:
         )
         if existing_user is None:
             raise_error(409, "NO_ACCOUNT", "The applicant has no account yet")
+        quotas.ensure_room_for_member()
         if existing_user:
             # Someone who left comes back as the member they were.
             former = db.session.scalar(

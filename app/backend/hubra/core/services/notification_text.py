@@ -71,6 +71,16 @@ TITLES: dict[str, tuple[str, str, str]] = {
         "Anmeldung von einem neuen Gerät",
         "New device login",
     ),
+    "Club limit almost reached": (
+        "shell.notif.text.quotaNear",
+        "Vereinslimit fast erreicht",
+        "Club limit almost reached",
+    ),
+    "Club limit reached": (
+        "shell.notif.text.quotaOver",
+        "Vereinslimit erreicht",
+        "Club limit reached",
+    ),
 }
 
 # English prefix -> (key, German, English); {{subject}} is the rest.
@@ -124,6 +134,24 @@ MESSAGES: tuple[tuple[re.Pattern, str, str, str], ...] = (
         "shell.notif.text.askedProxy",
         "{{name}} hat dir die Stimme übertragen.",
         "{{name}} asked you to vote for them.",
+    ),
+    (
+        re.compile(r"^Members: (?P<used>\d+) of (?P<limit>\d+)\.$"),
+        "shell.notif.text.quotaMembers",
+        "Mitglieder: {{used}} von {{limit}}.",
+        "Members: {{used}} of {{limit}}.",
+    ),
+    (
+        re.compile(r"^Mails this month: (?P<used>\d+) of (?P<limit>\d+)\.$"),
+        "shell.notif.text.quotaMail",
+        "Mails diesen Monat: {{used}} von {{limit}}.",
+        "Mails this month: {{used}} of {{limit}}.",
+    ),
+    (
+        re.compile(r"^Storage: (?P<used>\d+) MB of (?P<limit>\d+) MB\.$"),
+        "shell.notif.text.quotaStorage",
+        "Speicher: {{used}} MB von {{limit}} MB.",
+        "Storage: {{used}} MB of {{limit}} MB.",
     ),
 )
 
