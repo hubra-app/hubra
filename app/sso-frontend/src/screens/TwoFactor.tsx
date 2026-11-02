@@ -17,6 +17,7 @@ import {
   Title,
 } from '@mantine/core'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { redirectTo } from '@hubra/api-client'
 import { useSso } from '@/context/SsoContext'
 import { LoadFailed } from '@/components/LoadFailed'
 import { tr } from '@/lang'
@@ -565,7 +566,7 @@ export function TwoFactorTab() {
             <Text size="sm">
               {tr('Zwei-Faktor ist eingerichtet.', 'Two-factor is set up.')}
             </Text>
-            <Button size="xs" onClick={() => window.location.assign(back)}>
+            <Button size="xs" onClick={() => redirectTo(back, 'two-factor-done')}>
               {tr('Weiter zum Verein', 'Continue to the club')}
             </Button>
           </Group>

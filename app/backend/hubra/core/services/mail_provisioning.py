@@ -350,6 +350,29 @@ def _mark_ok(mma: ManagedMailAddress) -> None:
     mma.sync_error = None
 
 
+_WD_STATUS_TEXT = {
+    400: "The mail server rejected the request (400)",
+    401: "The mail server refused the API token (401)",
+    403: "The mail server refused the request (403)",
+    404: "Not found on the mail server (404)",
+    409: "Already exists on the mail server (409)",
+}
+
+
+def _wd_error_text(exc: WildDuckError) -> str:
+    """A short, fixed text for an error from WildDuck.
+
+    sync_error is shown to club admins, so it never carries the raw server
+    answer; the full error goes to the log next to each call.
+    """
+    status = int(exc.status) if isinstance(exc.status, int) else 0
+    if status in _WD_STATUS_TEXT:
+        return _WD_STATUS_TEXT[status]
+    if status >= 500:
+        return f"The mail server had an error ({status})"
+    return "The mail server could not be reached"
+
+
 def _mark_error(mma: ManagedMailAddress, error: str) -> None:
     mma.sync_state = "error"
     mma.sync_error = error[:500]
@@ -438,7 +461,7 @@ def ensure_mailbox(
 
         sync_from_whitelist_for_mma(mma)
     except WildDuckError as exc:
-        _mark_error(mma, str(exc))
+        _mark_error(mma, _wd_error_text(exc))
         _log.warning("ensure_mailbox: error for %s: %s", mma.address, exc)
         raise
 
@@ -489,7 +512,7 @@ def ensure_alias(mma: ManagedMailAddress) -> None:
             _ensure_forwarding_alias(wd, mma, targets)
         _mark_ok(mma)
     except WildDuckError as exc:
-        _mark_error(mma, str(exc))
+        _mark_error(mma, _wd_error_text(exc))
         _log.warning("ensure_alias: error for %s: %s", mma.address, exc)
         raise
 
@@ -570,7 +593,7 @@ def ensure_forwarding(mma: ManagedMailAddress, targets: list[str]) -> None:
         )
         _mark_ok(mma)
     except WildDuckError as exc:
-        _mark_error(mma, str(exc))
+        _mark_error(mma, _wd_error_text(exc))
         _log.warning("ensure_forwarding: error for %s: %s", mma.address, exc)
         raise
 
@@ -653,7 +676,7 @@ def ensure_catchall(mma: ManagedMailAddress) -> None:
             hub_address,
         )
     except WildDuckError as exc:
-        _mark_error(mma, str(exc))
+        _mark_error(mma, _wd_error_text(exc))
         _log.warning("ensure_catchall: error for %s: %s", mma.address, exc)
         raise
 
@@ -694,7 +717,7 @@ def set_system_mailbox_password(mma: ManagedMailAddress, password: str) -> None:
                 "set_system_mailbox_password: password updated for %s", mma.address
             )
         except WildDuckError as exc:
-            _mark_error(mma, str(exc))
+            _mark_error(mma, _wd_error_text(exc))
             _log.warning(
                 "set_system_mailbox_password: error for %s: %s", mma.address, exc
             )

@@ -36,7 +36,8 @@ def set_search_path(tenant_id: int) -> None:
 
     No-op on SQLite (no schema support).
     """
-    _apply_search_path(f"tenant_{tenant_id}, public")
+    # int() keeps anything but a number out of the SQL below.
+    _apply_search_path(f"tenant_{int(tenant_id)}, public")
 
 
 def reset_search_path() -> None:

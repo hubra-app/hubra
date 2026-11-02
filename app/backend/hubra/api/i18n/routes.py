@@ -14,7 +14,7 @@ import logging
 
 from flask import Blueprint, Response, jsonify, request
 
-from marshmallow import Schema, fields, validate
+from marshmallow import Schema, ValidationError, fields, validate
 
 from hubra.api.permissions import permission_required, require_global_permission
 from hubra.core.errors import api_error
@@ -53,7 +53,13 @@ def canonical_locale(code: str) -> str:
     parts = code.replace("_", "-").split("-")
     out = [parts[0].lower()]
     for part in parts[1:]:
-        out.append(part.upper() if len(part) == 2 else part.title() if len(part) == 4 else part.lower())
+        out.append(
+            part.upper()
+            if len(part) == 2
+            else part.title()
+            if len(part) == 4
+            else part.lower()
+        )
     return "-".join(out)
 
 
@@ -143,17 +149,17 @@ def patch_i18n(locale: str):
     for item in body:
         try:
             validated = _write_schema.load(item)
-        except Exception as exc:
-            return api_error("VALIDATION_ERROR", str(exc), 400)
+        except ValidationError as exc:
+            return api_error("VALIDATION_ERROR", str(exc.messages), 400)
         entries.append(validated)
 
     try:
         updated = bulk_upsert(locale, entries, updated_by_id=None)
         db.session.commit()
-    except Exception as exc:
+    except Exception:
         db.session.rollback()
         logger.exception("Failed to bulk-upsert translations")
-        return api_error("SERVER_ERROR", str(exc), 500)
+        return api_error("SERVER_ERROR", "Could not save the translations", 500)
 
     return jsonify(
         {
@@ -172,8 +178,8 @@ def post_translation(locale: str):
     body = request.get_json(silent=True) or {}
     try:
         data = _write_schema.load(body)
-    except Exception as exc:
-        return api_error("VALIDATION_ERROR", str(exc), 400)
+    except ValidationError as exc:
+        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
 
     try:
         obj = upsert_translation(
@@ -184,10 +190,10 @@ def post_translation(locale: str):
             alias_for=data.get("alias_for"),
         )
         db.session.commit()
-    except Exception as exc:
+    except Exception:
         db.session.rollback()
         logger.exception("Failed to upsert translation")
-        return api_error("SERVER_ERROR", str(exc), 500)
+        return api_error("SERVER_ERROR", "Could not save the translations", 500)
 
     return jsonify(
         {
@@ -208,10 +214,10 @@ def delete_i18n(locale: str, key: str):
     try:
         deleted = delete_translation(locale, key)
         db.session.commit()
-    except Exception as exc:
+    except Exception:
         db.session.rollback()
         logger.exception("Failed to delete translation")
-        return api_error("SERVER_ERROR", str(exc), 500)
+        return api_error("SERVER_ERROR", "Could not save the translations", 500)
 
     if deleted == 0:
         return api_error("NOT_FOUND", "Translation not found", 404)
@@ -236,8 +242,8 @@ def duplicate_i18n(locale: str):
     body = request.get_json(silent=True) or {}
     try:
         data = _dup_schema.load(body)
-    except Exception as exc:
-        return api_error("VALIDATION_ERROR", str(exc), 400)
+    except ValidationError as exc:
+        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
 
     source = canonical_locale(data["source"])
     copy_values = data.get("copy_values", False)
@@ -261,10 +267,10 @@ def duplicate_i18n(locale: str):
             updated_by_id=None,
         )
         db.session.commit()
-    except Exception as exc:
+    except Exception:
         db.session.rollback()
         logger.exception("Failed to duplicate locale")
-        return api_error("SERVER_ERROR", str(exc), 500)
+        return api_error("SERVER_ERROR", "Could not save the translations", 500)
 
     return jsonify(
         {
@@ -285,10 +291,10 @@ def copy_defaults_i18n(locale: str):
     try:
         filled = copy_defaults(locale)
         db.session.commit()
-    except Exception as exc:
+    except Exception:
         db.session.rollback()
         logger.exception("Failed to copy defaults for locale %s", locale)
-        return api_error("SERVER_ERROR", str(exc), 500)
+        return api_error("SERVER_ERROR", "Could not save the translations", 500)
 
     return jsonify({"locale": locale, "filled": filled}), 200
 
@@ -310,8 +316,8 @@ _export_query_schema = ExportQuerySchema()
 def export_i18n(locale: str):
     try:
         query = _export_query_schema.load(request.args)
-    except Exception as exc:
-        return api_error("VALIDATION_ERROR", str(exc), 400)
+    except ValidationError as exc:
+        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
 
     fmt = query.get("format", "json")
     rows = get_translations(locale)
@@ -348,8 +354,8 @@ def export_i18n(locale: str):
 def import_i18n(locale: str):
     try:
         query = _export_query_schema.load(request.args)
-    except Exception as exc:
-        return api_error("VALIDATION_ERROR", str(exc), 400)
+    except ValidationError as exc:
+        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
 
     fmt = query.get("format", "json")
 
@@ -378,8 +384,8 @@ def import_i18n(locale: str):
                 f"File too large (max {max_bytes // 1024} KiB)",
                 413,
             )
-    except Exception as exc:
-        return api_error("VALIDATION_ERROR", f"Could not read file: {exc}", 400)
+    except Exception:
+        return api_error("VALIDATION_ERROR", "Could not read the file", 400)
 
     entries: list[dict[str, str]] = []
 
@@ -424,10 +430,10 @@ def import_i18n(locale: str):
             updated_by_id=None,
         )
         db.session.commit()
-    except Exception as exc:
+    except Exception:
         db.session.rollback()
         logger.exception("Failed to import translations")
-        return api_error("SERVER_ERROR", str(exc), 500)
+        return api_error("SERVER_ERROR", "Could not save the translations", 500)
 
     return jsonify(
         {
@@ -458,8 +464,8 @@ def report_keys(locale: str):
     body = request.get_json(silent=True) or {}
     try:
         data = _report_schema.load(body)
-    except Exception as exc:
-        return api_error("VALIDATION_ERROR", str(exc), 400)
+    except ValidationError as exc:
+        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
 
     keys = data["keys"]
     if not keys:
@@ -471,10 +477,10 @@ def report_keys(locale: str):
         try:
             flagged = report_missing_keys(locale, keys)
             db.session.commit()
-        except Exception as exc:
+        except Exception:
             db.session.rollback()
             logger.exception("Failed to report missing keys")
-            return api_error("SERVER_ERROR", str(exc), 500)
+            return api_error("SERVER_ERROR", "Could not save the translations", 500)
         return jsonify({"flagged": flagged}), 200
 
     from hubra.core.tasks.i18n_tasks import report_missing_keys_task
@@ -517,7 +523,9 @@ class SuggestionSchema(Schema):
     locale = fields.String(required=True, validate=validate.Length(min=2, max=10))
     key = fields.String(required=True, validate=validate.Length(min=1, max=255))
     value = fields.String(required=True, validate=validate.Length(min=1, max=5000))
-    note = fields.String(load_default=None, allow_none=True, validate=validate.Length(max=2000))
+    note = fields.String(
+        load_default=None, allow_none=True, validate=validate.Length(max=2000)
+    )
 
 
 _suggestion_schema = SuggestionSchema()
@@ -555,8 +563,8 @@ def create_club_request():
         return api_error("NO_TENANT", "No club selected", 400)
     try:
         data = _suggestion_schema.load(request.get_json(silent=True) or {})
-    except Exception as exc:
-        return api_error("VALIDATION_ERROR", str(exc), 400)
+    except ValidationError as exc:
+        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
     user_id = get_jwt().get("user_id")
     try:
         req = suggestions.submit(

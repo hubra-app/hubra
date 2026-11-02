@@ -24,7 +24,6 @@ from hubra.core.models.user_tenant import UserTenant
 from hubra.core.models.device_session import Device, Session
 from hubra.core.tenant.context import current_tenant
 
-_EMAIL_RE = re.compile(r"[^@]+@[^@]+\.[^@]+")
 _log = logging.getLogger(__name__)
 
 _MIN_PASSWORD_LEN = 12

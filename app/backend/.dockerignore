@@ -13,3 +13,4 @@ env/
 .git
 *.md
 !CHANGELOG.md
+!CHANGELOG.de.md

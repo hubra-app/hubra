@@ -30,7 +30,7 @@ def create_tenant_schema(tenant_id: int) -> None:
     Does NOT copy foreign key constraints pointing to other tables — those
     must be re-created in the tenant schema context after all tables exist.
     """
-    schema_name = f"tenant_{tenant_id}"
+    schema_name = f"tenant_{int(tenant_id)}"
 
     _log.info("Creating tenant schema: %s", schema_name)
     db.session.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema_name}"))
@@ -58,7 +58,7 @@ def create_tenant_schema(tenant_id: int) -> None:
 
 def drop_tenant_schema(tenant_id: int) -> None:
     """Drop the tenant schema and all its contents (CASCADE)."""
-    schema_name = f"tenant_{tenant_id}"
+    schema_name = f"tenant_{int(tenant_id)}"
     _log.warning("Dropping tenant schema: %s", schema_name)
     db.session.execute(text(f"DROP SCHEMA IF EXISTS {schema_name} CASCADE"))
     db.session.commit()

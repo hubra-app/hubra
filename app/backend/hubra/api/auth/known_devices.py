@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import re
 import secrets
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -27,6 +28,7 @@ from hubra.core.models.user import User
 _log = logging.getLogger(__name__)
 
 DEVICE_COOKIE = "hubra_device"
+_TOKEN_RE = re.compile(r"[A-Za-z0-9_-]{32,128}")
 # Chrome caps cookie lifetimes at 400 days.
 _COOKIE_MAX_AGE = 400 * 24 * 3600
 
@@ -43,7 +45,8 @@ def remember(
     Returns ``(token, alert)``: the token to keep in the cookie, and whether
     the account should hear about a sign-in from a new device.
     """
-    if not token or len(token) > 128:
+    if not token or not _TOKEN_RE.fullmatch(token):
+        # Only a token we could have made goes back into the cookie.
         token = secrets.token_urlsafe(32)
     token_hash = _hash(token)
     now = datetime.now(timezone.utc)

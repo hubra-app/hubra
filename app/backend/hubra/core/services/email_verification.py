@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import hashlib
 import logging
-import re
 import secrets
 from datetime import datetime, timedelta, timezone
 
@@ -36,7 +35,20 @@ _log = logging.getLogger(__name__)
 
 TOKEN_TTL = timedelta(hours=24)
 
-_EMAIL_RE = re.compile(r"[^@]+@[^@]+\.[^@]+")
+
+def looks_like_email(value: str) -> bool:
+    """A loose shape check: one @, no whitespace, a dotted domain.
+
+    Plain string operations rather than a regular expression, so the check is
+    linear in the length of the input.
+    """
+    if not value or len(value) > 254 or value.count("@") != 1:
+        return False
+    local, domain = value.split("@")
+    if not local or any(c.isspace() for c in value):
+        return False
+    labels = domain.split(".")
+    return len(labels) >= 2 and all(labels)
 
 
 def _hash(raw: str) -> str:
@@ -181,7 +193,7 @@ def change_email(user: User, new_email: str, current_password: str) -> None:
     reset links go.  The new address starts unverified.
     """
     new_email = (new_email or "").strip().lower()
-    if not _EMAIL_RE.fullmatch(new_email):
+    if not looks_like_email(new_email):
         raise_error(400, "VALIDATION_ERROR", "Invalid email address")
     if not current_password or not user.check_password(current_password):
         raise_error(401, "UNAUTHORIZED", "Current password is incorrect")

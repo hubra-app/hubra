@@ -34,6 +34,8 @@ export function validateRedirect(
   } catch {
     return null
   }
+  // Web addresses only: never javascript:, data: or the like.
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') return null
   // A page of this portal itself (/clubs/<slug>, /start).
   if (self && url.origin === self) return raw
   const cosOrigin = new URL(urls.cos).origin
