@@ -8,6 +8,7 @@ import {
   describeChain,
   isLoop,
   parseHops,
+  safeTarget,
   serializeHops,
   stripUrl,
   type Hop,
@@ -69,4 +70,18 @@ test('the chain reads from the first page through every target', () => {
     describeChain([hop(1, 'no-club'), { ...hop(2, 'signed-in'), from: 'sso.hubra.club/login', to: 'app.hubra.club/demo/app/dashboard' }]),
     'app.hubra.club/demo/app/dashboard → sso.hubra.club/login (no-club) → app.hubra.club/demo/app/dashboard (signed-in)',
   )
+})
+
+test('redirects go only to places of this install', () => {
+  const here = 'https://app.hubra.club/demo/app/dashboard'
+  assert.equal(safeTarget('https://sso.hubra.club/login?redirect=x', here), 'https://sso.hubra.club/login?redirect=x')
+  assert.equal(safeTarget('/demo/app/members', here), 'https://app.hubra.club/demo/app/members')
+  assert.equal(safeTarget('https://hubra.club/', here), 'https://hubra.club/')
+  assert.equal(safeTarget('javascript:alert(1)', here), null)
+  assert.equal(safeTarget('data:text/html,hi', here), null)
+  assert.equal(safeTarget('https://evil.example/', here), null)
+  assert.equal(safeTarget('https://hubra.club.evil.example/', here), null)
+  assert.equal(safeTarget('https://user:pw@sso.hubra.club/', here), null)
+  assert.equal(safeTarget('https://login.other.ch/', here, ['https://login.other.ch']), 'https://login.other.ch/')
+  assert.equal(safeTarget('http://localhost:5175/login', 'http://localhost:5173/x'), 'http://localhost:5175/login')
 })

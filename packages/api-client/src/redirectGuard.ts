@@ -17,6 +17,7 @@ import {
   describeChain,
   isLoop,
   parseHops,
+  safeTarget,
   serializeHops,
   stripUrl,
   type Hop,
@@ -68,11 +69,18 @@ export function recentRedirects(): Hop[] {
  */
 export function redirectTo(url: string, why: string): boolean {
   if (stopped) return false;
+  // Only places of this install: a caller passing on a ?redirect= it did not
+  // check must not be able to send people elsewhere (or run javascript:).
+  const target = safeTarget(url, window.location.href, [SSO_URL]);
+  if (target === null) {
+    console.warn("redirect refused: not a Hubra address");
+    return false;
+  }
   const now = Date.now();
   const hop: Hop = {
     t: now,
     from: stripUrl(window.location.href),
-    to: stripUrl(url, window.location.href),
+    to: stripUrl(target),
     why: why.slice(0, 40),
   };
   let hops = parseHops(getCookie(COOKIE));
@@ -88,7 +96,7 @@ export function redirectTo(url: string, why: string): boolean {
     return false;
   }
   writeHops(hops);
-  window.location.assign(url);
+  window.location.assign(target);
   return true;
 }
 

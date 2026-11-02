@@ -87,3 +87,38 @@ export function describeChain(hops: Hop[]): string {
   for (const h of hops) parts.push(`${h.to} (${h.why})`)
   return parts.join(' → ')
 }
+
+/**
+ * `url` resolved against `current` when it is a place the portals may send
+ * people to, else null: http(s) only (never javascript: or data:), on the
+ * same host, a host under the same parent domain (sso. / app. / manage. of
+ * .hubra.club), one of `extraOrigins`, or localhost while developing.
+ */
+export function safeTarget(url: string, current: string, extraOrigins: string[] = []): string | null {
+  let target: URL
+  let here: URL
+  try {
+    here = new URL(current)
+    target = new URL(url, here)
+  } catch {
+    return null
+  }
+  if (target.protocol !== 'https:' && target.protocol !== 'http:') return null
+  if (target.username || target.password) return null
+  const local = (h: string) => h === 'localhost' || h === '127.0.0.1'
+  const labels = here.hostname.split('.')
+  const parent = labels.length > 2 ? labels.slice(1).join('.') : here.hostname
+  const ok =
+    target.host === here.host ||
+    (local(target.hostname) && local(here.hostname)) ||
+    target.hostname === parent ||
+    target.hostname.endsWith(`.${parent}`) ||
+    extraOrigins.some((o) => {
+      try {
+        return new URL(o).origin === target.origin
+      } catch {
+        return false
+      }
+    })
+  return ok ? target.href : null
+}
