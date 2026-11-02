@@ -108,6 +108,9 @@ def _set_remembered_email_cookie(response, email: str) -> None:
     )
 
 
+_THEME_VALUES = {"light": "light", "dark": "dark", "auto": "auto"}
+
+
 def _set_theme_cookie(response, theme: str | None) -> None:
     """Hand the account's appearance to every portal (light, dark, auto).
 
@@ -117,7 +120,7 @@ def _set_theme_cookie(response, theme: str | None) -> None:
     """
     response.set_cookie(
         "hubra_theme",
-        value=theme if theme in ("light", "dark") else "auto",
+        value=_THEME_VALUES.get(theme or "", "auto"),
         max_age=365 * 24 * 3600,
         httponly=False,
         samesite="Lax",
