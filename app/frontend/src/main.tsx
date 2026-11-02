@@ -8,6 +8,7 @@ import '@mantine/notifications/styles.css'
 import '@mantine/tiptap/styles.css'
 // Before the app's own styles, so those win.
 import '@hubra/ui/ui.css'
+import { BuildBadge } from '@hubra/ui'
 import './index.css'
 import './locales/i18n'
 import App from '@/App.tsx'
@@ -19,6 +20,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrandedMantineProvider>
       <Notifications position="bottom-right" />
+      <BuildBadge />
       <BrowserRouter basename={ROUTER_BASENAME}>
         <QueryClientProvider client={queryClient}>
           <App />

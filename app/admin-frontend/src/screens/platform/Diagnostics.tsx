@@ -28,6 +28,7 @@ import {
 import { OutboundMailPanel } from './MailMonitor'
 import { DiscordPanel } from './DiscordStatus'
 import { JobsPanel } from './Jobs'
+import { ErrorsPanel } from './Errors'
 import { Row } from './StatusRow'
 import { BuildsPanel } from './Builds'
 
@@ -473,7 +474,7 @@ function PermissionsPanel() {
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-const TABS = ['health', 'jobs', 'outbound-mail', 'discord', 'mail-server', 'permissions'] as const
+const TABS = ['health', 'errors', 'jobs', 'outbound-mail', 'discord', 'mail-server', 'permissions'] as const
 type Tab = (typeof TABS)[number]
 
 /** Diagnostics of the whole instance, for platform staff (platform.diagnostics). */
@@ -489,13 +490,14 @@ export function Diagnostics() {
       <PageHead
         title={tr('Diagnose', 'Diagnostics')}
         desc={tr(
-          'Zustand der Plattform für alle Vereine: Dienste, Mail-Versand, der gemeinsame Mailserver und die Berechtigungen der Vereins-API.',
-          'The state of the platform for every club: services, outbound mail, the shared mail server and the permissions of the club API.',
+          'Zustand der Plattform für alle Vereine: Dienste, Fehler, Hintergrundjobs, Mail-Versand, der gemeinsame Mailserver und die Berechtigungen der Vereins-API.',
+          'The state of the platform for every club: services, errors, background jobs, outbound mail, the shared mail server and the permissions of the club API.',
         )}
       />
       <Tabs
         tabs={[
           { id: 'health', label: tr('Systemzustand', 'System health') },
+          { id: 'errors', label: tr('Fehler', 'Errors') },
           { id: 'jobs', label: tr('Hintergrundjobs', 'Background jobs') },
           { id: 'outbound-mail', label: tr('Mail-Versand', 'Outbound mail') },
           { id: 'discord', label: 'Discord' },
@@ -506,6 +508,7 @@ export function Diagnostics() {
         onTabChange={(id) => navigate(`/app/platform/diagnostics/${id}`)}
       />
       {tab === 'health' && <HealthPanel />}
+      {tab === 'errors' && <ErrorsPanel />}
       {tab === 'jobs' && <JobsPanel />}
       {tab === 'outbound-mail' && (
         <OutboundMailPanel

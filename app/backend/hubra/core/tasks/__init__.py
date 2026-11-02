@@ -127,6 +127,7 @@ def make_celery(app: Flask) -> Celery:
             "hubra.core.tasks.infra_checks",
             "hubra.core.tasks.plugin_tasks",
             "hubra.core.tasks.platform_discord_tasks",
+            "hubra.core.tasks.platform_bot_tasks",
             "hubra.core.tasks.push_tasks",
             "hubra.core.tasks.mail_monitor_tasks",
             "hubra.core.tasks.connected_app_tasks",
@@ -247,6 +248,11 @@ def make_celery(app: Flask) -> Celery:
             # A new build rolling out, and when every process runs it.
             "check-upgrades-every-minute": {
                 "task": "hubra.core.tasks.upgrade_tasks.check_upgrades",
+                "schedule": 60.0,
+            },
+            # Planned maintenance, resolved alerts, releases, 08:00 digest.
+            "platform-bot-every-minute": {
+                "task": "hubra.core.tasks.platform_bot_tasks.tick",
                 "schedule": 60.0,
             },
             "plugin-updates": {

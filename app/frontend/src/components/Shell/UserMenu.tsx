@@ -5,6 +5,8 @@ import {
   IconUserCircle,
   IconSparkles,
   IconPalette,
+  IconBug,
+  IconBulb,
 } from '@tabler/icons-react'
 import { ThemeSwitch } from '@hubra/ui'
 import { useT } from '@/locales/i18n'
@@ -13,6 +15,7 @@ import { useInstance } from '@/context/InstanceContext'
 import { useMyTenants } from '@/data/lists'
 import { initials, contrastColor } from './nav'
 import { setWhatsNewOpen } from './whatsNewStore'
+import { openReport } from '@/screens/private/support/reportStore'
 import { useWhatsNewUnseen } from './whatsNewData'
 
 const rowStyle = {
@@ -165,6 +168,31 @@ export function UserMenu({
                 style={{ borderRadius: 99, background: 'var(--mantine-primary-color-filled)', flexShrink: 0 }}
               />
             )}
+          </UnstyledButton>
+        </Stack>
+        <Divider my={6} />
+        <Stack gap={0}>
+          <UnstyledButton
+            data-testid="menu-report-bug"
+            onClick={() => {
+              openReport('bug')
+              close()
+            }}
+            style={rowStyle}
+          >
+            <IconBug size={16} />
+            {t('support.menu.bug', 'Problem melden')}
+          </UnstyledButton>
+          <UnstyledButton
+            data-testid="menu-report-feature"
+            onClick={() => {
+              openReport('feature')
+              close()
+            }}
+            style={rowStyle}
+          >
+            <IconBulb size={16} />
+            {t('support.menu.feature', 'Idee vorschlagen')}
           </UnstyledButton>
         </Stack>
         <Group justify="space-between" px={10} py={6} wrap="nowrap">

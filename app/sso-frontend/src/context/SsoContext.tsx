@@ -42,6 +42,9 @@ const URLS: AppUrls = {
 }
 
 /** Pages a signed-in visitor stays on instead of being sent on. */
+/** Open to anyone; a signed-in visitor stays on them too. */
+const PUBLIC_PAGES = ['/roadmap']
+
 const SIGNED_IN_PAGES = ['/clubs', '/start', '/account', '/verify', '/verify-email', '/invite', '/confirm']
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -120,6 +123,11 @@ export function SsoProvider({ children }: { children: ReactNode }) {
         setPermissions(permData)
 
         const path = window.location.pathname
+        // Pages for everyone: being signed in changes nothing there.
+        if (PUBLIC_PAGES.includes(path)) {
+          setAuthStatus('authed')
+          return
+        }
         if (SIGNED_IN_PAGES.some((p) => path === p || path.startsWith(`${p}/`))) {
           // Signed-in pages still wait for the email step (the link page
           // itself and the step are where it gets done).

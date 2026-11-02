@@ -3606,5 +3606,123 @@
       "changed": "Geändert",
       "test": "Test"
     }
+  },
+  "support": {
+    "form": {
+      "titleRequired": "Bitte gib einen kurzen Titel ein.",
+      "whatHappenedRequired": "Bitte beschreibe, was passiert ist.",
+      "ideaRequired": "Bitte beschreibe deine Idee.",
+      "sentBug": "Problem gemeldet",
+      "sentIdea": "Idee gesendet",
+      "sentMsg": "Danke! Du findest sie unter Meldungen als #{{id}}.",
+      "sendFailed": "Senden fehlgeschlagen",
+      "bugTitle": "Problem melden",
+      "ideaTitle": "Idee vorschlagen",
+      "bugSub": "Etwas funktioniert nicht wie erwartet? Das Hubra-Team schaut es sich an.",
+      "ideaSub": "Was würde dir oder deinem Verein die Arbeit erleichtern?",
+      "myReports": "Meine Meldungen",
+      "send": "Senden",
+      "title": "Titel",
+      "titlePhBug": "z. B. Rechnung lässt sich nicht speichern",
+      "titlePhIdea": "z. B. Anlässe als Kalender abonnieren",
+      "whatHappened": "Was ist passiert?",
+      "idea": "Was wünschst du dir?",
+      "whatHappenedPh": "Beschreibe den Fehler und eine Fehlermeldung, falls eine kam.",
+      "ideaPh": "Beschreibe, was Hubra können sollte.",
+      "steps": "Wie kommt man dahin?",
+      "stepsHint": "Die Schritte nacheinander, damit wir es nachstellen können.",
+      "stepsPh": "1. Finanzen öffnen\n2. Neue Rechnung\n3. Speichern",
+      "expected": "Was hättest du erwartet?",
+      "useCase": "Wofür brauchst du das?",
+      "useCaseHint": "Das Problem dahinter hilft uns, die beste Lösung zu finden.",
+      "area": "Bereich",
+      "areaPh": "Optional",
+      "severity": "Wie schlimm ist es?"
+    },
+    "kind": {
+      "bug": "Problem",
+      "feature": "Idee"
+    },
+    "severity": {
+      "minor": "Kleinigkeit",
+      "annoying": "Stört bei der Arbeit",
+      "blocking": "Ich komme nicht weiter"
+    },
+    "device": {
+      "sent": "Wird mitgeschickt: Browser, Gerät und Bildschirmgrösse",
+      "only": "Nur das. Keine Adresse, keine weiteren Merkmale des Geräts.",
+      "browser": "Browser",
+      "os": "Betriebssystem",
+      "type": "Gerät",
+      "screen": "Bildschirm",
+      "window": "Fenster",
+      "language": "Sprache",
+      "theme": "Darstellung",
+      "page": "Seite",
+      "phone": "Handy",
+      "tablet": "Tablet",
+      "desktop": "Computer",
+      "theme_light": "Hell",
+      "theme_dark": "Dunkel"
+    },
+    "page": {
+      "title": "Meldungen und Ideen",
+      "desc": "Melde Probleme und schlage Ideen vor. Das Hubra-Team antwortet hier und per Mail.",
+      "tabMine": "Meine Meldungen",
+      "tabRoadmap": "Roadmap",
+      "noneTitle": "Noch keine Meldungen",
+      "noneDesc": "Wenn etwas nicht klappt oder dir etwas fehlt: Das Hubra-Team liest jede Meldung.",
+      "answers": "Antworten: {{count}}",
+      "mergedShort": "zusammengeführt mit #{{id}}"
+    },
+    "menu": {
+      "bug": "Problem melden",
+      "feature": "Idee vorschlagen"
+    },
+    "detail": {
+      "replyPh": "Antwort an das Hubra-Team …",
+      "reply": "Antworten",
+      "status": "Status",
+      "onRoadmap": "Auf der Roadmap",
+      "merged": "Zusammengeführt mit #{{id}} «{{title}}»: dort geht es weiter ({{status}}).",
+      "device": "Mitgeschickt",
+      "conversation": "Verlauf",
+      "noAnswers": "Noch keine Antwort. Du bekommst eine Mail, sobald sich etwas tut.",
+      "team": "Hubra-Team",
+      "you": "Du"
+    },
+    "roadmap": {
+      "emptyTitle": "Die Roadmap ist noch leer",
+      "emptyDesc": "Hier erscheinen Ideen, die das Hubra-Team öffentlich gemacht hat. Stimme für die Ideen, die dir am meisten helfen.",
+      "intro": "Ideen, an denen das Hubra-Team arbeitet oder die es prüft. Deine Stimme hilft beim Entscheiden, was zuerst kommt.",
+      "none": "Nichts hier.",
+      "voteFailed": "Abstimmen fehlgeschlagen",
+      "unvote": "Stimme zurücknehmen",
+      "vote": "Dafür stimmen",
+      "inProgress": "In Arbeit",
+      "planned": "Geplant",
+      "open": "Vorgeschlagen",
+      "done": "Erledigt"
+    },
+    "status": {
+      "open": "Offen",
+      "planned": "Geplant",
+      "in_progress": "In Arbeit",
+      "done": "Erledigt",
+      "closed": "Geschlossen"
+    },
+    "area": {
+      "members": "Mitglieder",
+      "finance": "Finanzen",
+      "events": "Anlässe",
+      "posts": "Beiträge",
+      "polls": "Umfragen",
+      "groups": "Gruppen",
+      "inventory": "Inventar",
+      "mail": "Mail",
+      "settings": "Einstellungen",
+      "account": "Konto und Anmeldung",
+      "other": "Anderes"
+    }
   }
 }

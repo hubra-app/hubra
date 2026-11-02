@@ -1,0 +1,13 @@
+{{ t('mail.email.support_case.intro', kind=case_kind, case_id=case_id) }}
+
+  {{ t('mail.email.support_case.table_title') }}: {{ case_title }}
+  {{ t('mail.email.support_case.table_status') }}: {{ status_label }}
+{% if merged_into %}
+{{ t('mail.email.support_case.merged', target=merged_into) }}
+{% endif %}{% if comment %}
+{{ t('mail.email.support_case.answer') }}
+
+{{ comment }}
+{% endif %}{% if cases_url %}
+{{ t('mail.email.support_case.button') }}: {{ cases_url }}
+{% endif %}

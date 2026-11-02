@@ -34,7 +34,10 @@ export function AdminPortal() {
       <>
         <PageHead
           title={tr('Audit-Log', 'Audit log')}
-          desc={tr('Alle Änderungen auf der Plattform, neueste zuerst.', 'Every change on the platform, newest first.')}
+          desc={tr(
+            'Alle Änderungen auf der Plattform und in allen Vereinen, neueste zuerst. Suchen, filtern und als CSV exportieren.',
+            'Every change on the platform and in every club, newest first. Search, filter and export as CSV.',
+          )}
         />
         <GlobalAuditTab />
       </>
