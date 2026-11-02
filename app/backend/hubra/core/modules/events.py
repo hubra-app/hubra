@@ -28,6 +28,9 @@ INVOICE_PAID = "invoice.paid"
 EVENT_PUBLISHED = "event.published"
 POST_PUBLISHED = "post.published"
 POLL_PUBLISHED = "poll.published"
+# An event was changed or deleted (event_id; deleted=True when it is gone).
+# A series change sends one per date.
+EVENT_CHANGED = "event.changed"
 # Sent once when the reminder before an event / before a poll closes is due.
 EVENT_REMINDER = "event.reminder"
 POLL_CLOSING = "poll.closing"

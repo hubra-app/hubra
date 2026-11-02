@@ -252,7 +252,9 @@
         "my_events": "My sign-ups",
         "my_polls": "Votes in my polls, proxies",
         "tasks": "Tasks for me (applications, sign-ups to approve)"
-      }
+      },
+      "discordHint": "Discord sends you a direct message from the club's bot. Direct messages from server members must be allowed (Discord › the server's privacy settings).",
+      "discord": "Discord"
     },
     "push": {
       "title": "Notifications on this device",

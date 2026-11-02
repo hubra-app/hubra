@@ -175,6 +175,9 @@ class Module:
     ``tasks`` lists Python modules with Celery tasks for the worker to load.
     ``schedule`` lists periodic tasks for the beat scheduler.
     ``apps`` lists outside services a club can connect through this module.
+    ``processes`` maps a name to a dotted ``module.path:function`` that runs
+    as its own long-lived process (``flask modules run <name>``), such as a
+    connection to a chat service's gateway; one per platform, not per club.
     ``plugin`` is the id of the plugin that brought the module (set by the
     plugin loader; ``None`` for modules built into Hubra).
     """
@@ -194,6 +197,7 @@ class Module:
     tasks: tuple[str, ...] = ()
     schedule: tuple[Schedule, ...] = ()
     apps: tuple[AppProvider, ...] = ()
+    processes: dict[str, str] = field(default_factory=dict)
     plugin: str | None = None
 
     def setting(self, key: str) -> SettingField | None:

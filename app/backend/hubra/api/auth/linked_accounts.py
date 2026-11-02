@@ -58,6 +58,8 @@ def _serialize(acc: ExternalAccount) -> dict:
         "provider": acc.provider,
         "externalId": acc.external_id,
         "username": acc.username,
+        # Discord Linked Roles allowed (a token is kept for it).
+        "linkedRoles": bool(acc.token_encrypted),
         "linkedAt": acc.created_at.isoformat() if acc.created_at else None,
     }
 
@@ -191,7 +193,20 @@ def link_callback(code: str):
         )
     acc.external_id = who.external_id
     acc.username = who.username
+    old_token = None
+    if code == "discord":
+        from hubra.core.services import discord_roles
+
+        old_token = discord_roles.read_token(acc) if previous is not None else None
+        discord_roles.store_token(acc, who.token)
     db.session.commit()
+    if old_token:
+        discord_roles.clear(old_token)  # the old Discord account's connection
+    if code == "discord" and who.token:
+        from hubra.core.tasks.after_commit import delay_after_commit
+        from hubra.core.tasks.connected_app_tasks import push_role_connection
+
+        delay_after_commit(push_role_connection, acc.id)
     if previous is not None:
         _announce(user.id, "account.unlinked", previous)
     _announce(user.id, "account.linked", acc)
@@ -215,8 +230,15 @@ def unlink(code: str):
     if acc is None:
         raise_error(404, "NOT_FOUND", "Not linked")
     gone = ExternalAccount(user_id=user.id, provider=code, external_id=acc.external_id)
+    token = None
+    if code == "discord":
+        from hubra.core.services import discord_roles
+
+        token = discord_roles.read_token(acc)
     db.session.delete(acc)
     db.session.commit()
+    if token:
+        discord_roles.clear(token)
     _announce(user.id, "account.unlinked", gone)
     db.session.commit()
     return jsonify({"ok": True}), 200

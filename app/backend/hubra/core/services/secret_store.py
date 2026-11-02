@@ -31,6 +31,7 @@ COLUMNS: tuple[tuple[str, str, str, str], ...] = (
     ("users", "id", "totp_secret", ""),
     ("users", "id", "totp_pending_secret", ""),
     ("connected_apps", "id", "secret_encrypted", ""),
+    ("external_accounts", "id", "token_encrypted", ""),
 )
 _DATA_KEYS = ("data_keys", "id", "wrapped_key", "")
 

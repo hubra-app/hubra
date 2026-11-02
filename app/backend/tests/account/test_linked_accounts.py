@@ -35,7 +35,7 @@ def _start(client):
     url = urlparse(resp.get_json()["url"])
     query = parse_qs(url.query)
     assert url.netloc == "discord.com"
-    assert query["scope"] == ["identify"]
+    assert query["scope"] == ["identify role_connections.write"]
     return query["state"][0]
 
 
