@@ -9,7 +9,9 @@ test('what is new shows the latest release, older versions on demand and the roa
   await sidebar.getByTestId('user-menu').getByRole('button', { name: 'Neuigkeiten' }).click()
 
   const dialog = page.getByRole('dialog', { name: 'Neuigkeiten' })
-  await expect(dialog.getByText('Frühere Versionen')).toBeVisible()
+  await expect(dialog.getByText('Frühere Versionen', { exact: true })).toBeVisible()
+  // The notes follow the page language (German here, from CHANGELOG.de.md).
+  await expect(dialog.getByText('Wartungsmodus', { exact: true })).toBeVisible()
   // Older versions are folded: a heading per version, its changes hidden until opened.
   const older = dialog.locator('.mantine-Accordion-item')
   expect(await older.count()).toBeGreaterThan(0)
@@ -32,7 +34,7 @@ test('what is new shows the latest release, older versions on demand and the roa
 test('manage has the changelog and the roadmap', async ({ page }) => {
   await page.goto(`${MANAGE_URL}/app/whats-new`)
   await expect(page.getByRole('heading', { name: 'Neuigkeiten' })).toBeVisible()
-  await expect(page.getByText('Frühere Versionen')).toBeVisible()
+  await expect(page.getByText('Frühere Versionen', { exact: true })).toBeVisible()
   await page.getByRole('tab', { name: 'Roadmap' }).click()
   await expect(page).toHaveURL(/\/app\/whats-new\/roadmap$/)
   await expect(page.getByText('Als Nächstes', { exact: true })).toBeVisible()

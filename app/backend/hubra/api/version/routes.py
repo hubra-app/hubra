@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from flask import Blueprint, current_app, jsonify
+from flask import Blueprint, current_app, jsonify, request
 
 from hubra.api.version.services import ROADMAP_STATUSES, VersionService
 
@@ -17,12 +17,12 @@ def get_version():
 
 @version_bp.get("/version/changelog")
 def get_changelog():
-    """Return the current backend version plus structured changelog entries."""
+    """The backend version and the changelog entries; ``?lang=de`` for German."""
     return (
         jsonify(
             {
                 "version": VersionService.get_version(),
-                "entries": VersionService.get_changelog(),
+                "entries": VersionService.get_changelog(request.args.get("lang")),
             }
         ),
         200,

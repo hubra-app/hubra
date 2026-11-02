@@ -29,16 +29,17 @@ def test_changelog_parses_sample_file(tmp_path, monkeypatch):
         encoding="utf-8",
     )
     monkeypatch.setattr("hubra.api.version.services._CHANGELOG_PATH", sample)
-    monkeypatch.setattr("hubra.api.version.services._changelog_cache", None)
+    monkeypatch.setattr("hubra.api.version.services._changelog_cache", {})
 
     entries = VersionService.get_changelog()
 
     assert entries == [
-        {"version": "Unreleased", "date": None, "sections": {}},
+        {"version": "Unreleased", "date": None, "sections": {}, "lang": "en"},
         {
             "version": "0.2.0",
             "date": "2026-07-03",
             "sections": {"Added": ["New thing"]},
+            "lang": "en",
         },
         {
             "version": "0.1.0",
@@ -47,12 +48,13 @@ def test_changelog_parses_sample_file(tmp_path, monkeypatch):
                 "Added": ["Initial versioned release baseline."],
                 "Fixed": ["Something fixed"],
             },
+            "lang": "en",
         },
     ]
 
 
 def test_changelog_reads_real_file_when_uncached(monkeypatch):
-    monkeypatch.setattr("hubra.api.version.services._changelog_cache", None)
+    monkeypatch.setattr("hubra.api.version.services._changelog_cache", {})
     entries = VersionService.get_changelog()
     assert any(e["version"] == "0.1.0" for e in entries)
 
@@ -77,7 +79,7 @@ def test_changelog_endpoint_structure(client):
     assert isinstance(data["entries"], list)
     assert data["entries"], "expected at least one changelog entry"
     first = data["entries"][0]
-    assert set(first.keys()) == {"version", "date", "sections"}
+    assert set(first.keys()) == {"version", "date", "sections", "lang"}
 
 
 def test_changelog_endpoint_no_auth_required(client):
@@ -96,7 +98,7 @@ def test_changelog_joins_wrapped_item_lines(tmp_path, monkeypatch):
         encoding="utf-8",
     )
     monkeypatch.setattr("hubra.api.version.services._CHANGELOG_PATH", sample)
-    monkeypatch.setattr("hubra.api.version.services._changelog_cache", None)
+    monkeypatch.setattr("hubra.api.version.services._changelog_cache", {})
 
     entries = VersionService.get_changelog()
 
@@ -176,3 +178,59 @@ def test_roadmap_endpoint(client):
     body = resp.get_json()
     assert body["statuses"] == ["now", "next", "later", "done"]
     assert isinstance(body["items"], list)
+
+
+def test_changelog_in_german_falls_back_per_version(tmp_path, monkeypatch):
+    en = tmp_path / "CHANGELOG.md"
+    en.write_text(
+        "## [Unreleased]\n### Added\n- One\n- Two\n"
+        "## [0.2.0] - 2026-07-03\n### Fixed\n- Bug\n"
+        "## [0.1.0] - 2026-07-02\n### Added\n- Start\n",
+        encoding="utf-8",
+    )
+    de = tmp_path / "CHANGELOG.de.md"
+    # Unreleased lags behind (one item), 0.2.0 matches, 0.1.0 is missing.
+    de.write_text(
+        "## [Unreleased]\n### Added\n- Eins\n## [0.2.0] - 2026-07-03\n### Fixed\n- Fehler\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr("hubra.api.version.services._CHANGELOG_PATH", en)
+    monkeypatch.setattr("hubra.api.version.services._CHANGELOG_DE_PATH", de)
+    monkeypatch.setattr("hubra.api.version.services._changelog_cache", {})
+
+    entries = VersionService.get_changelog("de-CH")
+
+    assert [(e["version"], e["lang"]) for e in entries] == [
+        ("Unreleased", "en"),
+        ("0.2.0", "de"),
+        ("0.1.0", "en"),
+    ]
+    assert entries[0]["sections"] == {"Added": ["One", "Two"]}
+    assert entries[1]["sections"] == {"Fixed": ["Fehler"]}
+    assert [e["lang"] for e in VersionService.get_changelog("en")] == ["en"] * 3
+
+
+def test_shipped_german_changelog_only_has_known_versions(monkeypatch):
+    from hubra.api.version import services
+
+    monkeypatch.setattr("hubra.api.version.services._changelog_cache", {})
+    english = {
+        e["version"] for e in services._parse_changelog(services._CHANGELOG_PATH)
+    }
+    german = services._parse_changelog(services._CHANGELOG_DE_PATH)
+    assert german, "CHANGELOG.de.md is missing or empty"
+    assert {e["version"] for e in german} <= english
+    # Released versions are translated in full; only Unreleased may lag.
+    shown = VersionService.get_changelog("de")
+    lagging = [
+        e["version"]
+        for e in shown
+        if e["lang"] == "en" and e["version"] != "Unreleased"
+    ]
+    assert lagging == []
+
+
+def test_changelog_endpoint_takes_a_language(client):
+    resp = client.get("/api/v1/version/changelog?lang=de")
+    assert resp.status_code == 200
+    assert any(e["lang"] == "de" for e in resp.get_json()["entries"])

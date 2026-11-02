@@ -19,12 +19,15 @@ import type { Lang } from './lang'
 // Release notes ("Neuigkeiten", from CHANGELOG.md) and the roadmap (from
 // ROADMAP.yaml), shared by the club app and manage. Both come from the
 // public /api/v1/version endpoints. Texts are German or English: the
-// changelog itself is written in English, only its headings are translated.
+// changelog comes in the page's language (?lang=), English where a version
+// has no German text yet.
 
 export interface ChangelogEntry {
   version: string
   date: string | null
   sections: Record<string, string[]>
+  /** The language the sections are in; a translation that lags stays English. */
+  lang?: 'de' | 'en'
 }
 
 export type RoadmapStatus = 'now' | 'next' | 'later' | 'done'
@@ -61,6 +64,7 @@ const TEXT = {
     doneHint: 'Schon in Hubra.',
     roadmapEmpty: 'Die Roadmap ist noch leer.',
     shippedIn: (v: string) => `in v${v}`,
+    englishOnly: 'Noch nicht übersetzt',
   },
   en: {
     unreleased: (prev?: string) => (prev ? `New since v${prev}` : 'Latest changes'),
@@ -83,6 +87,7 @@ const TEXT = {
     doneHint: 'Already in Hubra.',
     roadmapEmpty: 'The roadmap is still empty.',
     shippedIn: (v: string) => `in v${v}`,
+    englishOnly: 'Not translated yet',
   },
 } as const
 
@@ -219,6 +224,16 @@ function ReleaseSections({ entry, lang, limit }: { entry: ChangelogEntry; lang: 
   )
 }
 
+/** Shown on a version whose text is English in a German page. */
+function EnglishOnly({ entry, lang }: { entry: ChangelogEntry; lang: Lang }) {
+  if (lang === 'en' || entry.lang !== 'en') return null
+  return (
+    <Badge variant="outline" color="gray" size="xs">
+      {TEXT[lang].englishOnly}
+    </Badge>
+  )
+}
+
 function releaseTitle(entry: ChangelogEntry, entries: ChangelogEntry[], lang: Lang) {
   if (!isUnreleased(entry)) return `v${entry.version}`
   const prev = entries.find((e) => !isUnreleased(e))
@@ -269,6 +284,7 @@ export function ReleaseNotes({
               {formatDate(latest.date, lang)}
             </Text>
           )}
+          <EnglishOnly entry={latest} lang={lang} />
         </Group>
         <ReleaseSections entry={latest} lang={lang} limit={latestLimit} />
       </Paper>
@@ -294,6 +310,7 @@ export function ReleaseNotes({
                     <Text fz="xs" c="dimmed">
                       · {t.changes(itemCount(entry))}
                     </Text>
+                    <EnglishOnly entry={entry} lang={lang} />
                   </Group>
                 </Accordion.Control>
                 <Accordion.Panel>

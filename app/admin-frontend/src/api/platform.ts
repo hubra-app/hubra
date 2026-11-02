@@ -134,8 +134,10 @@ export async function getPlatformHealth() {
   return apiFetch<HealthDetail>(`${P}/health`)
 }
 
-export async function getChangelog() {
-  return apiFetch<{ version: string; entries: ChangelogEntry[] }>('/version/changelog')
+export async function getChangelog(lang?: string) {
+  return apiFetch<{ version: string; entries: ChangelogEntry[] }>(
+    `/version/changelog${lang ? `?lang=${encodeURIComponent(lang)}` : ''}`,
+  )
 }
 
 export async function getRoadmap() {

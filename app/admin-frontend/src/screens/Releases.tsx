@@ -17,7 +17,11 @@ export function Releases() {
   const last = location.pathname.split('/').pop() as Tab
   const tab: Tab = TABS.includes(last) ? last : 'changelog'
 
-  const changelog = useQuery({ queryKey: ['changelog'], queryFn: getChangelog, enabled: tab === 'changelog' })
+  const changelog = useQuery({
+    queryKey: ['changelog', lang],
+    queryFn: () => getChangelog(lang),
+    enabled: tab === 'changelog',
+  })
   const roadmap = useQuery({ queryKey: ['roadmap'], queryFn: getRoadmap, enabled: tab === 'roadmap' })
   const query = tab === 'changelog' ? changelog : roadmap
 

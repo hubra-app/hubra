@@ -24,8 +24,9 @@ export interface ChangelogResponse {
   entries: ChangelogEntry[];
 }
 
-export async function getChangelog(): Promise<ChangelogResponse> {
-  return apiFetch<ChangelogResponse>("/version/changelog");
+export async function getChangelog(lang?: string): Promise<ChangelogResponse> {
+  const q = lang ? `?lang=${encodeURIComponent(lang)}` : "";
+  return apiFetch<ChangelogResponse>(`/version/changelog${q}`);
 }
 
 export interface RoadmapResponse {

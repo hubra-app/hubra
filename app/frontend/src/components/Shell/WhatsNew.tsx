@@ -2,12 +2,12 @@ import { useEffect, useState, useSyncExternalStore } from 'react'
 import { Center, Loader, Modal, SegmentedControl, Stack, Text } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import { useQuery } from '@tanstack/react-query'
-import { ReleaseNotes, Roadmap, latestReleaseKey, type Lang } from '@hubra/ui'
+import { ReleaseNotes, Roadmap, latestReleaseKey } from '@hubra/ui'
 import { useT } from '@/locales/i18n'
 import { getRoadmap } from '@/api/system'
 import { qk } from '@/data/keys'
 import { markWhatsNewSeen, setWhatsNewOpen, subscribeWhatsNew, whatsNewOpen } from './whatsNewStore'
-import { useChangelog } from './whatsNewData'
+import { useChangelog, useReleaseLang } from './whatsNewData'
 
 type View = 'news' | 'roadmap'
 
@@ -16,8 +16,8 @@ type View = 'news' | 'roadmap'
  * time below it, and the roadmap on a second tab. Full screen on phones.
  */
 export function WhatsNewModal() {
-  const { t, i18n } = useT()
-  const lang: Lang = i18n.language?.startsWith('en') ? 'en' : 'de'
+  const { t } = useT()
+  const lang = useReleaseLang()
   const phone = useMediaQuery('(max-width: 47.99em)')
   const opened = useSyncExternalStore(subscribeWhatsNew, whatsNewOpen)
   const [view, setView] = useState<View>('news')
