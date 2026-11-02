@@ -376,6 +376,52 @@ def set_tenant_early_access(tenant_id: int):
     return jsonify(after), 200
 
 
+@tenant_admin_bp.route("/tenants/<int:tenant_id>/billing", methods=["GET"])
+@require_global_permission("tenants.read")
+def get_tenant_billing(tenant_id: int):
+    """Plan status, price, discount, sponsor and add-ons (stored only)."""
+    from hubra.core.services import club_billing
+
+    tenant = TenantService.get_by_id(tenant_id)
+    if tenant is None:
+        raise_error(404, "NOT_FOUND", "Tenant not found")
+    return jsonify(club_billing.summary(tenant)), 200
+
+
+@tenant_admin_bp.route("/tenants/<int:tenant_id>/billing", methods=["PATCH"])
+@require_global_permission("tenants.update")
+def update_tenant_billing(tenant_id: int):
+    """Change some of the club's terms (see services/club_billing.py)."""
+    from hubra.core.services import club_billing
+
+    tenant = TenantService.get_by_id(tenant_id)
+    if tenant is None:
+        raise_error(404, "NOT_FOUND", "Tenant not found")
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict) or not body:
+        raise_error(400, "VALIDATION_ERROR", "Send at least one field")
+    before = club_billing.stored(tenant)
+    club_billing.update(tenant, body)
+    after = club_billing.stored(tenant)
+    db.session.add(
+        GlobalAuditEntry(
+            tenant_id=tenant.id,
+            actor_id=g.system_user.id,
+            action="tenant.billing",
+            target_type="Tenant",
+            target_id=str(tenant.id),
+            details={
+                k: {"before": before.get(k), "after": after.get(k)}
+                for k in body
+                if before.get(k) != after.get(k)
+            },
+            ip_address=request.remote_addr,
+        )
+    )
+    db.session.commit()
+    return jsonify(club_billing.summary(tenant)), 200
+
+
 @tenant_admin_bp.route("/tenants/<int:tenant_id>/limits", methods=["GET"])
 @require_global_permission("tenants.read")
 def get_tenant_limits(tenant_id: int):

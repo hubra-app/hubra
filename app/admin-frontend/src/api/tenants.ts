@@ -586,3 +586,63 @@ export async function setTenantEarlyAccess(
     body: JSON.stringify(body),
   })
 }
+
+// ── Billing terms (stored and shown only, nothing is charged yet) ────────────
+
+/** Stripe's subscription statuses, plus "none" for a club that is not billed. */
+export type BillingStatus =
+  | 'none'
+  | 'trialing'
+  | 'active'
+  | 'past_due'
+  | 'unpaid'
+  | 'canceled'
+  | 'incomplete'
+  | 'paused'
+
+export interface BillingAddon {
+  code: string
+  label: string
+  price_chf: string
+}
+
+export interface BillingTerms {
+  status: BillingStatus
+  trial_ends: string | null
+  period_end: string | null
+  /** The club's own price per month; null: the plan's list price. */
+  price_chf: string | null
+  discount_percent: number
+  sponsored: boolean
+  sponsor_name: string
+  sponsored_until: string | null
+  sponsor_note: string
+  addons: BillingAddon[]
+  note: string
+}
+
+export interface TenantBilling extends BillingTerms {
+  plan: string
+  plan_price_chf: string | null
+  base_chf: string
+  discount_chf: string
+  addons_chf: string
+  total_chf: string
+  due_chf: string
+  sponsorship_running: boolean
+  sponsorship_days_left: number | null
+  sponsorship_ending_soon: boolean
+  sponsorship_ended: boolean
+  trial_days_left: number | null
+}
+
+export async function getTenantBilling(tenantId: number) {
+  return apiFetch<TenantBilling>(`/system/tenants/${tenantId}/billing`)
+}
+
+export async function setTenantBilling(tenantId: number, values: Partial<BillingTerms>) {
+  return apiFetch<TenantBilling>(`/system/tenants/${tenantId}/billing`, {
+    method: 'PATCH',
+    body: JSON.stringify(values),
+  })
+}
