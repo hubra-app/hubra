@@ -66,6 +66,12 @@ _DEFAULT_PERMISSIONS = [
         "Read problem reports and feature requests, answer, close and merge them, "
         "and put ideas on the public roadmap",
     ),
+    (
+        "privacy.requests",
+        "Handle data protection requests",
+        "Record requests for a copy or deletion of someone's data in a club, "
+        "download the copy and delete the member's club data",
+    ),
 ]
 
 # (role_name, description, [permission_keys])
@@ -89,6 +95,7 @@ _DEFAULT_ROLES = [
             "platform.settings",
             "platform.diagnostics",
             "support.cases",
+            "privacy.requests",
         ],
     ),
     (
@@ -146,9 +153,13 @@ def seed_global_rbac() -> None:
 
     # The role first shipped as "Superadmin", which it never was (the flag is).
     old = db.session.scalar(select(GlobalRole).where(GlobalRole.name == "Superadmin"))
-    if old is not None and db.session.scalar(
-        select(GlobalRole.id).where(GlobalRole.name == "Platform admin")
-    ) is None:
+    if (
+        old is not None
+        and db.session.scalar(
+            select(GlobalRole.id).where(GlobalRole.name == "Platform admin")
+        )
+        is None
+    ):
         old.name = "Platform admin"
         old.description = _DEFAULT_ROLES[0][1]
         db.session.flush()
@@ -159,7 +170,9 @@ def seed_global_rbac() -> None:
     db.session.execute(
         delete(GlobalRolePermission).where(
             GlobalRolePermission.permission_id.in_(
-                select(GlobalPermission.id).where(GlobalPermission.key.in_(SUPERADMIN_ONLY))
+                select(GlobalPermission.id).where(
+                    GlobalPermission.key.in_(SUPERADMIN_ONLY)
+                )
             )
         )
     )

@@ -37,6 +37,7 @@ import {
   IconSettings,
   IconShieldCheck,
   IconHeadset,
+  IconLock,
   IconSparkles,
   IconUserCircle,
   IconWorld,
@@ -341,6 +342,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
       : []),
     ...(hasGlobalPermission('roles.manage')
       ? [{ path: '/app/roles', label: tr('Rollen', 'Roles'), icon: <IconKey size={24} /> }]
+      : []),
+    ...(hasGlobalPermission('privacy.requests')
+      ? [{ path: '/app/privacy', label: tr('Datenschutz', 'Data protection'), icon: <IconLock size={24} /> }]
       : []),
     ...(hasGlobalPermission('audit.read')
       ? [

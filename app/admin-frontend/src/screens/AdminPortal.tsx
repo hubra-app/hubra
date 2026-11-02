@@ -5,6 +5,7 @@ import { TenantRequestsTab } from '@/screens/TenantRequestsTab'
 import { GlobalAuditTab } from '@/screens/GlobalAuditTab'
 import { SupportSessionsTab } from '@/screens/SupportSessionsTab'
 import { RolesTab } from '@/screens/RolesTab'
+import { DataRequestsPanel } from '@/screens/DataRequests'
 import { MarketplaceTab } from '@/screens/MarketplaceTab'
 import { useAdmin } from '@/context/AdminContext'
 import { useLang } from '@/lang'
@@ -53,6 +54,19 @@ export function AdminPortal() {
           )}
         />
         <SupportSessionsTab />
+      </>
+    )
+  if (path === '/app/privacy' && hasGlobalPermission('privacy.requests'))
+    return (
+      <>
+        <PageHead
+          title={tr('Datenschutz-Anfragen', 'Data protection requests')}
+          desc={tr(
+            'Wenn jemand eine Kopie seiner Daten in einem Verein will oder sie gelöscht haben möchte. Frist 30 Tage; hier steht, wer jede Anfrage wann erledigt hat.',
+            'When someone wants a copy of their data in a club, or wants it deleted. 30-day deadline; this records who handled each request and when.',
+          )}
+        />
+        <DataRequestsPanel />
       </>
     )
   if (path === '/app/roles' && hasGlobalPermission('roles.manage'))

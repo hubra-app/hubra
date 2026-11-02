@@ -17,6 +17,7 @@ from hubra.core.models.user_tenant import UserTenant
 from hubra.core.models.tenant_request import TenantRequest
 from hubra.core.models.platform_setting import PlatformSetting
 from hubra.core.models.platform_event import PlatformEvent
+from hubra.core.models.data_request import DataRequest
 from hubra.core.models.error_group import ErrorGroup
 from hubra.core.models.maintenance_window import MaintenanceWindow
 from hubra.core.models.role import MemberRoleScope, Permission, Role, RolePermission
@@ -101,6 +102,7 @@ __all__ = [
     "PlatformEvent",
     "ErrorGroup",
     "MaintenanceWindow",
+    "DataRequest",
     "AccountSession",
     "KnownDevice",
     "Passkey",

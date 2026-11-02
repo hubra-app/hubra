@@ -2545,3 +2545,148 @@ def _member_to_dict(member) -> dict:
 
 
 # ── Helpers (existing) ──────────────────────────────────────────────────────
+
+
+# ── Data protection requests (copy or deletion of someone's data) ────────────
+#
+# services/data_requests.py has the rules.  Each step goes to the platform
+# log; export and deletion ask for the password again (step-up).
+
+_PRIVACY = "privacy.requests"
+
+
+def _data_request(request_id: int):
+    from hubra.core.models.data_request import DataRequest
+
+    req = db.session.get(DataRequest, request_id)
+    if req is None:
+        raise_error(404, "NOT_FOUND", "Request not found")
+    return req
+
+
+def _privacy_audit(req, action: str, details: dict | None = None) -> None:
+    db.session.add(
+        GlobalAuditEntry(
+            tenant_id=req.tenant_id,
+            actor_id=g.system_user.id,
+            action=action,
+            target_type="DataRequest",
+            target_id=str(req.id),
+            details={"kind": req.kind, "member_id": req.member_id, **(details or {})},
+            ip_address=request.remote_addr,
+        )
+    )
+
+
+@tenant_admin_bp.route("/data-requests", methods=["GET"])
+@require_global_permission(_PRIVACY)
+def list_data_requests():
+    from hubra.core.services import data_requests
+
+    status = request.args.get("status", "open")
+    if status not in (*data_requests.STATUSES, "all"):
+        raise_error(400, "VALIDATION_ERROR", "status is open, done, rejected or all")
+    tenant_id = request.args.get("tenant_id", type=int)
+    return jsonify(data_requests.listing(status, tenant_id)), 200
+
+
+@tenant_admin_bp.route("/tenants/<int:tenant_id>/data-requests", methods=["POST"])
+@require_global_permission(_PRIVACY)
+def create_data_request(tenant_id: int):
+    from hubra.core.services import data_requests
+
+    tenant = TenantService.get_by_id(tenant_id)
+    if tenant is None:
+        raise_error(404, "NOT_FOUND", "Tenant not found")
+    req = data_requests.create(
+        tenant, request.get_json(silent=True) or {}, g.system_user.id
+    )
+    _privacy_audit(req, "privacy.request.created")
+    db.session.commit()
+    return jsonify(data_requests.to_dict(req)), 201
+
+
+@tenant_admin_bp.route("/data-requests/<int:request_id>", methods=["PATCH"])
+@require_global_permission(_PRIVACY)
+def update_data_request(request_id: int):
+    from hubra.core.services import data_requests
+
+    req = _data_request(request_id)
+    data_requests.update(req, request.get_json(silent=True) or {})
+    db.session.commit()
+    return jsonify(data_requests.to_dict(req)), 200
+
+
+@tenant_admin_bp.route("/data-requests/<int:request_id>/export", methods=["POST"])
+@require_global_permission(_PRIVACY)
+@require_step_up
+def export_data_request(request_id: int):
+    """The member's data as JSON; the download is noted on the request."""
+    from hubra.core.services import data_requests
+
+    req = _data_request(request_id)
+    if req.kind != "export":
+        raise_error(409, "WRONG_KIND", "Only an export request has a download")
+    if req.member_id is None:
+        raise_error(400, "VALIDATION_ERROR", "Choose the member first")
+    tenant = TenantService.get_by_id(req.tenant_id)
+    if tenant is None:
+        raise_error(409, "NO_CLUB", "The club no longer exists")
+    data = data_requests.export_member(tenant, req.member_id)
+    data_requests.record_export(req, data, g.system_user.id)
+    _privacy_audit(req, "privacy.export", {"rows": req.result["rows"]})
+    db.session.commit()
+    resp = jsonify(data)
+    resp.headers["Content-Disposition"] = (
+        f'attachment; filename="daten-{tenant.slug}-{req.member_id}.json"'
+    )
+    resp.headers["Cache-Control"] = "no-store"
+    return resp, 200
+
+
+@tenant_admin_bp.route(
+    "/data-requests/<int:request_id>/delete-member", methods=["POST"]
+)
+@require_global_permission(_PRIVACY)
+@require_step_up
+def delete_data_request_member(request_id: int):
+    """Delete the member's data in the club.  The body repeats the club's
+    slug, so it is not done by a stray click."""
+    from hubra.core.services import data_requests
+
+    req = _data_request(request_id)
+    body = request.get_json(silent=True) or {}
+    tenant = TenantService.get_by_id(req.tenant_id)
+    if tenant is None:
+        raise_error(409, "NO_CLUB", "The club no longer exists")
+    if body.get("confirm") != tenant.slug:
+        raise_error(400, "CONFIRM", "Type the club's short name to confirm")
+    affected = data_requests.delete_member(req, g.system_user.id)
+    _privacy_audit(req, "privacy.deletion", {"kept": req.result["kept_without_name"]})
+    db.session.commit()
+    if affected:
+        from hubra.api.groups.services import _trigger_group_mail_sync
+        from hubra.core.tenant.context import in_club
+
+        with in_club(tenant):
+            for gid in affected:
+                _trigger_group_mail_sync(gid)
+    return jsonify(data_requests.to_dict(req)), 200
+
+
+@tenant_admin_bp.route(
+    "/data-requests/<int:request_id>/<any(done, rejected):status>", methods=["POST"]
+)
+@require_global_permission(_PRIVACY)
+def close_data_request(request_id: int, status: str):
+    from hubra.core.services import data_requests
+
+    req = _data_request(request_id)
+    body = request.get_json(silent=True) or {}
+    outcome = body.get("outcome") or ""
+    if not isinstance(outcome, str) or len(outcome) > 2000:
+        raise_error(400, "VALIDATION_ERROR", "outcome is text up to 2000 characters")
+    data_requests.close(req, status, outcome.strip(), g.system_user.id)
+    _privacy_audit(req, f"privacy.request.{status}")
+    db.session.commit()
+    return jsonify(data_requests.to_dict(req)), 200

@@ -210,6 +210,16 @@ function AppRoutes() {
           }
         />
         <Route
+          path="/app/privacy"
+          element={
+            <RequireGlobalPermission perm="privacy.requests">
+              <Shell>
+                <AdminPortal />
+              </Shell>
+            </RequireGlobalPermission>
+          }
+        />
+        <Route
           path="/app/roles"
           element={
             <RequireGlobalPermission perm="roles.manage">
