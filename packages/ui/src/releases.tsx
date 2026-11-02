@@ -32,7 +32,7 @@ export type RoadmapStatus = 'now' | 'next' | 'later' | 'done'
 export interface RoadmapItem {
   id: string
   status: RoadmapStatus
-  area: string | null
+  area: Record<string, string>
   title: Record<string, string>
   summary: Record<string, string>
   version: string | null
@@ -49,6 +49,7 @@ const TEXT = {
     changes: (n: number) => (n === 1 ? '1 Änderung' : `${n} Änderungen`),
     more: 'Mehr',
     less: 'Weniger',
+    showAll: (n: number) => `Alle ${n} Änderungen zeigen`,
     empty: 'Noch keine Einträge.',
     now: 'Jetzt in Arbeit',
     next: 'Als Nächstes',
@@ -70,6 +71,7 @@ const TEXT = {
     changes: (n: number) => (n === 1 ? '1 change' : `${n} changes`),
     more: 'More',
     less: 'Less',
+    showAll: (n: number) => `Show all ${n} changes`,
     empty: 'No entries yet.',
     now: 'In progress',
     next: 'Up next',
@@ -148,13 +150,14 @@ function ReleaseItem({ text, lang }: { text: string; lang: Lang }) {
   const [open, setOpen] = useState(false)
   const m = /^\*\*([^*]+)\*\*[:.]?\s*(.*)$/s.exec(text)
   const title = m ? m[1] : null
-  const body = m ? m[2] : text
+  // "**Title**: details" often goes on in lower case; it stands alone here.
+  const body = m ? m[2].replace(/^[a-zäöü]/, (c) => c.toUpperCase()) : text
   const long = body.length > 220
   return (
     <Box py={6} style={{ borderTop: '1px solid var(--hb-border)' }}>
       {title && (
         <Text fz="sm" fw={650} style={{ overflowWrap: 'anywhere' }}>
-          {title}
+          <InlineMarkdown text={title} />
         </Text>
       )}
       {body && (
@@ -182,24 +185,36 @@ function ReleaseItem({ text, lang }: { text: string; lang: Lang }) {
   )
 }
 
-function ReleaseSections({ entry, lang }: { entry: ChangelogEntry; lang: Lang }) {
+function ReleaseSections({ entry, lang, limit }: { entry: ChangelogEntry; lang: Lang; limit?: number }) {
+  const [all, setAll] = useState(false)
+  const total = itemCount(entry)
+  const cap = limit && !all && total > limit + 2 ? limit : Infinity
+  let left = cap
   return (
     <Stack gap={14}>
       {Object.entries(entry.sections)
         .filter(([, items]) => items.length > 0)
         .map(([section, items]) => {
+          const shown = items.slice(0, Math.max(0, left))
+          left -= shown.length
+          if (shown.length === 0) return null
           const s = SECTION[section.toLowerCase()]
           return (
             <div key={section}>
               <Badge variant="light" color={s?.color ?? 'gray'} size="sm" mb={4}>
                 {s ? s[lang] : section}
               </Badge>
-              {items.map((item, i) => (
+              {shown.map((item, i) => (
                 <ReleaseItem key={section + i} text={item} lang={lang} />
               ))}
             </div>
           )
         })}
+      {cap < total && (
+        <Button variant="light" size="compact-sm" style={{ alignSelf: 'flex-start' }} onClick={() => setAll(true)}>
+          {TEXT[lang].showAll(total)}
+        </Button>
+      )}
     </Stack>
   )
 }
@@ -218,10 +233,14 @@ export function ReleaseNotes({
   entries,
   lang,
   pageSize = 5,
+  latestLimit = 6,
 }: {
   entries: ChangelogEntry[]
   lang: Lang
+  /** Older versions listed at first, and added per "load older". */
   pageSize?: number
+  /** Changes of the newest release shown before "show all". */
+  latestLimit?: number
 }) {
   const t = TEXT[lang]
   const releases = visibleReleases(entries)
@@ -251,7 +270,7 @@ export function ReleaseNotes({
             </Text>
           )}
         </Group>
-        <ReleaseSections entry={latest} lang={lang} />
+        <ReleaseSections entry={latest} lang={lang} limit={latestLimit} />
       </Paper>
 
       {older.length > 0 && (
@@ -294,8 +313,8 @@ export function ReleaseNotes({
   )
 }
 
-const pick = (texts: Record<string, string>, lang: Lang) =>
-  texts[lang] ?? texts.en ?? texts.de ?? Object.values(texts)[0] ?? ''
+const pick = (texts: Record<string, string> | null | undefined, lang: Lang) =>
+  !texts ? '' : texts[lang] ?? texts.en ?? texts.de ?? Object.values(texts)[0] ?? ''
 
 const STATUS_COLOR: Record<RoadmapStatus, string> = {
   now: 'violet',
@@ -309,9 +328,9 @@ function RoadmapCard({ item, lang }: { item: RoadmapItem; lang: Lang }) {
   return (
     <Paper withBorder radius="md" p="sm" h="100%">
       <Stack gap={6}>
-        {item.area && (
+        {pick(item.area, lang) && (
           <Badge variant="light" color={STATUS_COLOR[item.status]} size="xs" style={{ alignSelf: 'flex-start' }}>
-            {item.area}
+            {pick(item.area, lang)}
           </Badge>
         )}
         <Text fz="sm" fw={650} style={{ overflowWrap: 'anywhere' }}>

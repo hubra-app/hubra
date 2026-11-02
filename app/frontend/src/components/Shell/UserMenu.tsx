@@ -1,4 +1,4 @@
-import { Group, Text, Avatar, Divider, Box, UnstyledButton, Stack, ScrollArea, Badge } from '@mantine/core'
+import { Group, Text, Avatar, Divider, Box, UnstyledButton, Stack, ScrollArea } from '@mantine/core'
 import {
   IconLogout,
   IconBuilding,
@@ -153,9 +153,17 @@ export function UserMenu({
             <IconSparkles size={16} />
             {t('shell.whatsNew.title')}
             {whatsNewUnseen && (
-              <Badge size="xs" variant="filled" data-testid="whats-new-unseen">
-                {t('shell.whatsNew.new', 'Neu')}
-              </Badge>
+              // A dot, not a word: the entry keeps its name for screen readers and tests.
+              <Box
+                component="span"
+                data-testid="whats-new-unseen"
+                title={t('shell.whatsNew.new', 'Neu')}
+                aria-hidden
+                w={8}
+                h={8}
+                ml="auto"
+                style={{ borderRadius: 99, background: 'var(--mantine-primary-color-filled)', flexShrink: 0 }}
+              />
             )}
           </UnstyledButton>
         </Stack>

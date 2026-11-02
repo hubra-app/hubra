@@ -27,10 +27,7 @@ export function Releases() {
         title={tr('Neuigkeiten', "What's new")}
         desc={
           tab === 'changelog'
-            ? tr(
-                'Was sich in Hubra geändert hat, neueste Version zuerst. ',
-                'What changed in Hubra, newest version first. ',
-              ) + (changelog.data?.version ? tr(`Hier läuft v${changelog.data.version}.`, `This server runs v${changelog.data.version}.`) : '')
+            ? tr('Was sich in Hubra geändert hat, neueste Version zuerst.', 'What changed in Hubra, newest version first.')
             : tr(
                 'Woran wir arbeiten und was als Nächstes kommt.',
                 'What we are working on and what comes next.',

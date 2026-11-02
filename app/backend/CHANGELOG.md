@@ -15,6 +15,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **What's new and roadmap**: the club app's Neuigkeiten opens the newest release (first six changes, "show all" for the rest) with earlier versions folded below, five at a time, and a Roadmap tab; the menu marks Neuigkeiten with a dot until the newest notes are read. Manage has a page for both under Hubra › Neuigkeiten & Roadmap (the changelog left Diagnostics). The roadmap comes from `app/backend/ROADMAP.yaml` (now / next / later / done, German and English) via the public `GET /api/v1/version/roadmap`.
+
 - **Maintenance mode**: manage › Alerts › Overview or `flask maintenance on|off|status [--minutes N] [--message TEXT]`. The club apps show a maintenance page (club API answers 503 `MAINTENANCE`), manage, sign-in and account keep working, alerts pause, and it ends on its own at the set time. `GET /api/v1/maintenance` is public.
 - **Alert rules** (manage › Alerts › Rules): master switch for all alert mails and Discord posts (`alerts.enabled`), and per alert type mail and Discord on or off (`alerts.mail_off`, `alerts.discord_off`). `GET/PUT /manager/platform/alerts/switches`, `GET/PUT /manager/platform/maintenance`.
 

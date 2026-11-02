@@ -7,7 +7,7 @@
 # Each item:
 #   id:       stable slug, never reused (feature requests can point at it)
 #   status:   now | next | later | done
-#   area:     optional, a short label such as Finance, Members, Platform
+#   area:     optional short label, {de: ..., en: ...} like the title
 #   title:    {de: ..., en: ...}   (a plain string counts as English)
 #   summary:  {de: ..., en: ...}   optional, one or two sentences
 #   version:  optional, the release a "done" item shipped in (matches CHANGELOG.md)
@@ -19,7 +19,7 @@ items:
   # ── Next ──────────────────────────────────────────────────────────────
   - id: twint-payments
     status: next
-    area: Finance
+    area: {de: Finanzen, en: Finance}
     title:
       de: Rechnungen und Spenden mit TWINT bezahlen
       en: Pay invoices and donations with TWINT
@@ -29,7 +29,7 @@ items:
 
   - id: annual-accounts
     status: next
-    area: Finance
+    area: {de: Finanzen, en: Finance}
     title:
       de: Einfache Jahresrechnung
       en: Simple annual accounts
@@ -39,7 +39,7 @@ items:
 
   - id: document-library
     status: next
-    area: Club
+    area: {de: Verein, en: Club}
     title:
       de: Dokumentenablage
       en: Document library
@@ -50,7 +50,7 @@ items:
   # ── Later ─────────────────────────────────────────────────────────────
   - id: group-content-roles
     status: later
-    area: Roles
+    area: {de: Rollen, en: Roles}
     title:
       de: Anlässe, Beiträge und Umfragen einer Gruppe zuordnen
       en: Give events, posts and polls a group
@@ -60,7 +60,7 @@ items:
 
   - id: custom-domain-web
     status: later
-    area: Platform
+    area: {de: Plattform, en: Platform}
     title:
       de: Vereins-App unter der eigenen Domain
       en: The club app on your own domain
@@ -71,7 +71,7 @@ items:
   # ── Done ──────────────────────────────────────────────────────────────
   - id: recurring-trainings
     status: done
-    area: Events
+    area: {de: Anlässe, en: Events}
     title:
       de: Wiederkehrende Trainings und Anwesenheit
       en: Recurring trainings and attendance
@@ -81,7 +81,7 @@ items:
 
   - id: sign-in-security
     status: done
-    area: Account
+    area: {de: Konto, en: Account}
     title:
       de: Passkeys und Zwei-Faktor-Anmeldung
       en: Passkeys and two-factor sign-in
@@ -91,7 +91,7 @@ items:
 
   - id: recurring-finances
     status: done
-    area: Finance
+    area: {de: Finanzen, en: Finance}
     title:
       de: Wiederkehrende Beiträge und Monatsauszug
       en: Recurring fees and monthly statement
@@ -101,7 +101,7 @@ items:
 
   - id: discord-bot
     status: done
-    area: Plugins
+    area: {de: Plugins, en: Plugins}
     title:
       de: Discord-Bot für Vereine
       en: Discord bot for clubs

@@ -101,7 +101,7 @@ class VersionService:
         """Parse ROADMAP.yaml into roadmap items, cached until the file changes.
 
         Each item is ``{id, status, area, title, summary, version, link}``;
-        ``title`` and ``summary`` are ``{lang: text}`` maps (a plain string in
+        ``area``, ``title`` and ``summary`` are ``{lang: text}`` maps (a plain string in
         the file counts as English). Items with an unknown status are skipped.
         """
         global _roadmap_cache
@@ -127,7 +127,7 @@ class VersionService:
                 {
                     "id": str(raw["id"]),
                     "status": status,
-                    "area": str(raw["area"]) if raw.get("area") else None,
+                    "area": _texts(raw.get("area")),
                     "title": title,
                     "summary": _texts(raw.get("summary")),
                     # The release it shipped in, for "done" items.

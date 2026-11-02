@@ -137,7 +137,7 @@ def test_roadmap_parses_items_and_skips_bad_ones(tmp_path, monkeypatch):
         {
             "id": "a",
             "status": "next",
-            "area": "Finance",
+            "area": {"en": "Finance"},
             "title": {"de": "Titel", "en": "Title"},
             "summary": {"en": "Plain English summary"},
             "version": None,
@@ -146,7 +146,7 @@ def test_roadmap_parses_items_and_skips_bad_ones(tmp_path, monkeypatch):
         {
             "id": "b",
             "status": "done",
-            "area": None,
+            "area": {},
             "title": {"en": "Shipped"},
             "summary": {},
             "version": "0.6.0",
