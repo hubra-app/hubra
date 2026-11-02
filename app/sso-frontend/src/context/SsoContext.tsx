@@ -42,7 +42,7 @@ const URLS: AppUrls = {
 }
 
 /** Pages a signed-in visitor stays on instead of being sent on. */
-const SIGNED_IN_PAGES = ['/clubs', '/start', '/account', '/verify', '/verify-email', '/invite']
+const SIGNED_IN_PAGES = ['/clubs', '/start', '/account', '/verify', '/verify-email', '/invite', '/confirm']
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function isManager(perms: PermissionsResponse | null): boolean {

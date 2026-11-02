@@ -31,3 +31,34 @@ export async function stepUp(password: string, code?: string): Promise<void> {
     body: JSON.stringify(code ? { password, code } : { password }),
   })
 }
+
+export interface StepUpStatus {
+  /** Until when this sign-in counts as confirmed, or null. */
+  sudoUntil: string | null
+  /** The account has a passkey: it can confirm on the SSO portal. */
+  passkey: boolean
+  /** The account has the authenticator app on. */
+  code: boolean
+}
+
+export async function getStepUpStatus(): Promise<StepUpStatus> {
+  return apiFetch<StepUpStatus>('/account/step-up')
+}
+
+/** Passkeys belong to the SSO portal's address, so manage cannot ask for
+ * one itself: the passkey confirmation runs there, in a small window. It
+ * counts for the same sign-in, which manage then sees in getStepUpStatus. */
+export function openPasskeyConfirm(ssoUrl: string): Window | null {
+  const w = 480
+  const h = 640
+  const left = Math.max(0, window.screenX + (window.outerWidth - w) / 2)
+  const top = Math.max(0, window.screenY + (window.outerHeight - h) / 3)
+  return window.open(
+    `${ssoUrl}/confirm`,
+    'hubra-confirm',
+    `popup,width=${w},height=${h},left=${Math.round(left)},top=${Math.round(top)}`,
+  )
+}
+
+/** Sent by the SSO page to its opener when it confirmed. */
+export const STEP_UP_MESSAGE = 'hubra:step-up'

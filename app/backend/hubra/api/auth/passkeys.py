@@ -86,19 +86,27 @@ def _serializer() -> URLSafeTimedSerializer:
     )
 
 
-def _state(challenge: bytes, purpose: str, user_id: int | None) -> str:
-    return _serializer().dumps(
-        {"c": bytes_to_base64url(challenge), "p": purpose, "u": user_id}
-    )
+def _state(
+    challenge: bytes, purpose: str, user_id: int | None, sid: int | None = None
+) -> str:
+    data = {"c": bytes_to_base64url(challenge), "p": purpose, "u": user_id}
+    if sid is not None:
+        data["s"] = sid
+    return _serializer().dumps(data)
 
 
-def _read_state(token: str, purpose: str) -> tuple[bytes, int | None]:
+def _read_state(
+    token: str, purpose: str, sid: int | None = None
+) -> tuple[bytes, int | None]:
     try:
         data = _serializer().loads(token or "", max_age=_STATE_MAX_AGE)
     except BadSignature as exc:
         raise PasskeyError("expired") from exc
     if data.get("p") != purpose:
         raise PasskeyError("wrong purpose")
+    if data.get("s") != sid:
+        # A step-up challenge belongs to the sign-in that asked for it.
+        raise PasskeyError("wrong session")
     challenge = data["c"]
     client = get_redis_client()
     if client is not None:
@@ -228,6 +236,10 @@ def authentication_options(user: User | None = None) -> dict:
 def authenticate(state: str, credential: dict) -> Passkey:
     """The passkey that signed the challenge.  No commit."""
     challenge, user_id = _read_state(state, "login")
+    return _verify(challenge, user_id, credential)
+
+
+def _verify(challenge: bytes, user_id: int | None, credential: dict) -> Passkey:
     passkey = db.session.scalar(
         select(Passkey).where(Passkey.credential_id == str(credential.get("id") or ""))
     )
@@ -244,8 +256,39 @@ def authenticate(state: str, credential: dict) -> Passkey:
             require_user_verification=True,
         )
     except InvalidAuthenticationResponse as exc:
-        _log.info("passkey_login_refused passkey_id=%s: %s", passkey.id, exc)
+        _log.info("passkey_refused passkey_id=%s: %s", passkey.id, exc)
         raise PasskeyError(str(exc)) from exc
     passkey.sign_count = verified.new_sign_count
     passkey.last_used_at = datetime.now(timezone.utc)
     return passkey
+
+
+# ── Confirming a platform action (step-up) ───────────────────────────────────
+#
+# The same ceremony as a sign-in, with its own purpose: the challenge names
+# the account *and* the account session (sign-in) that asked for it, so a
+# sign-in challenge cannot confirm an action, a step-up challenge cannot sign
+# anyone in, and one sign-in cannot confirm for another.
+
+
+def step_up_options(user: User, account_sid: int) -> dict:
+    """Options to confirm with one of *user*'s own passkeys."""
+    options = generate_authentication_options(
+        rp_id=_rp_id(),
+        allow_credentials=[_descriptor(p) for p in _of(user)],
+        user_verification=UserVerificationRequirement.REQUIRED,
+    )
+    return {
+        "options": _options(options),
+        "state": _state(options.challenge, "step-up", user.id, account_sid),
+    }
+
+
+def verify_step_up(
+    user: User, account_sid: int, state: str, credential: dict
+) -> Passkey:
+    """The passkey of *user* that signed this sign-in's step-up challenge."""
+    challenge, user_id = _read_state(state, "step-up", account_sid)
+    if user_id != user.id:
+        raise PasskeyError("wrong account")
+    return _verify(challenge, user.id, credential)

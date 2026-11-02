@@ -399,7 +399,11 @@ that suddenly asks for it. The destructive actions — installing or removing
 plugins, restoring or deleting backups, rotating encryption keys, opening a
 club as a member — additionally ask for the password (and the code, with
 two-factor on) again and hold that for ten minutes (`STEP_UP_REQUIRED`;
-`STEP_UP_ENFORCED=false` switches the rule off).
+`STEP_UP_ENFORCED=false` switches the rule off). Accounts with a passkey can
+confirm with it instead: passkeys belong to the SSO address, so manage opens
+SSO `/confirm` in a small window and carries on once that sign-in is
+confirmed. Allow pop-ups for the manage address; the password stays as the
+fallback.
 
 ## Day to day
 
