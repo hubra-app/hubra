@@ -17,6 +17,10 @@ _GLOBAL_ONLY_TABLES = frozenset(
         # The texts are the platform's; clubs only suggest changes.
         "translation",
         "translation_requests",
+        # Problem reports and ideas: a person's, handled by platform staff.
+        "support_cases",
+        "support_case_comments",
+        "support_case_votes",
         "global_audit_logs",
         "alembic_version",
         "global_permissions",
@@ -32,6 +36,8 @@ _GLOBAL_ONLY_TABLES = frozenset(
         "platform_settings",
         # The platform's monitoring log (mail sends, relays, alerts).
         "platform_events",
+        # Unexpected API errors, grouped (manage › Diagnose › Fehler).
+        "error_groups",
         # Planned maintenance for every club or some clubs.
         "maintenance_windows",
         "data_keys",

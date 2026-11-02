@@ -6,7 +6,7 @@ import { MantineProvider } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
 import '@mantine/core/styles.css'
 import '@mantine/notifications/styles.css'
-import { colorSchemeManager, cssVariablesResolver, theme } from '@hubra/ui'
+import { BuildBadge, colorSchemeManager, cssVariablesResolver, theme } from '@hubra/ui'
 // Before the app's own styles, so those win.
 import '@hubra/ui/ui.css'
 import './index.css'
@@ -35,6 +35,7 @@ createRoot(document.getElementById('root')!).render(
       defaultColorScheme="auto"
     >
       <Notifications position="bottom-right" />
+      <BuildBadge />
       <BrowserRouter>
         <QueryClientProvider client={queryClient}>
           <App />
