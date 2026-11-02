@@ -79,7 +79,7 @@ bare `window.location.assign`:
 - Eight hops within that window count as a loop (`redirectLoop.ts`). The page
   then stops, shows "This page keeps redirecting" with *Sign out and sign in
   again* and *Try again*, and reports the chain to `POST /auth/redirect-loop`.
-- The API writes the report to the platform event log (manage › Diagnostics ›
+- The API writes the report to the platform event log (manage › Alerts ›
   Event log, category `system`, kind `redirect_loop`) and the app log, with
   the sign-in session (`user_id`, `account_sid`, `sid`, club) it happened in.
 

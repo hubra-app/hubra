@@ -19,7 +19,7 @@ function readDismissed(): string | null {
 
 /**
  * Planned maintenance, from the platform's notice period until it starts
- * (manage › Warnungen › Geplante Wartungen). Hidden per window once closed.
+ * (manage › Wartung). Hidden per window once closed.
  */
 export function MaintenanceNotice() {
   const { t, i18n } = useT()

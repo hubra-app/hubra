@@ -202,8 +202,8 @@ export function AlertRulesPanel() {
         {data && !data.discordReady && (
           <Alert color="gray" variant="light" mb={12}>
             {tr(
-              'Discord ist für Warnungen nicht eingerichtet (Plattform-Einstellungen › Discord › Plattform-Log, Kategorie «alerts»).',
-              'Discord is not set up for alerts (Platform settings › Discord › Platform log, category "alerts").',
+              'Discord ist für Warnungen nicht eingerichtet (Discord › Kanäle › Plattform-Log, Kategorie «alerts»).',
+              'Discord is not set up for alerts (Discord › Channels › Platform log, category "alerts").',
             )}
           </Alert>
         )}

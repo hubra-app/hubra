@@ -7,7 +7,7 @@
 * Every SQL statement is timed (an engine listener).  One that takes longer
   than ``perf.slow_query_ms`` is counted under its fingerprint and written
   to the log.
-* ``summary`` reads it back for manage › Platform › Alerts › Performance;
+* ``summary`` reads it back for manage › Diagnostics › Performance;
   ``problems`` adds an open problem when the API's p95 over the last hour is
   above ``perf.p95_warning_ms`` or many requests failed with a server error.
 
@@ -590,7 +590,7 @@ def problems() -> list[dict]:
                 f"{n} requests, {last['slow']} slower than "
                 f"{_thresholds['slow_request_ms']} ms.",
                 "since": None,
-                "link": "/app/platform/alerts/performance",
+                "link": "/app/platform/diagnostics/performance",
             }
         )
     errors = last["status"].get("5xx", 0)
@@ -604,7 +604,7 @@ def problems() -> list[dict]:
                 "detail": f"{round(errors * 100 / n)} % of {n} requests "
                 "answered with 5xx.",
                 "since": None,
-                "link": "/app/platform/alerts/performance",
+                "link": "/app/platform/diagnostics/performance",
             }
         )
     return out
