@@ -208,7 +208,7 @@ export function OverviewPanel() {
               color="orange"
               onClick={() => navigate('/app/platform/alerts/rules')}
             >
-              {tr('Regeln', 'Rules')}
+              {tr('Benachrichtigungen', 'Notifications')}
             </Button>
           </Group>
         </Alert>

@@ -136,6 +136,17 @@ export function navSections(): NavSection[] {
               render: () => <SettingsSection section="limits" />,
             },
             {
+              id: 'prices',
+              path: '/app/tenants/prices',
+              label: tr('Preise pro Tarif', 'Plan prices'),
+              perm: 'platform.settings',
+              desc: tr(
+                'Listenpreis pro Monat für jeden Tarif. Eigenen Preis, Rabatt und Sponsor für einen Verein setzt du auf seiner Seite.',
+                'List price per month for each plan. A club’s own price, discount and sponsor are set on its page.',
+              ),
+              render: () => <SettingsSection section="prices" />,
+            },
+            {
               id: 'early-access',
               path: '/app/tenants/early-access',
               label: tr('Früher Zugang', 'Early access'),
@@ -207,7 +218,7 @@ export function navSections(): NavSection[] {
             {
               id: 'rules',
               path: '/app/platform/alerts/rules',
-              label: tr('Regeln', 'Rules'),
+              label: tr('Benachrichtigungen', 'Notifications'),
               perm: 'platform.diagnostics',
               render: () => <RulesPanel />,
             },
