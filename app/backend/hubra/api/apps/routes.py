@@ -16,7 +16,7 @@ from hubra.api.auth.helpers import get_current_member
 from hubra.api.permissions import permission_required, refuse_during_impersonation
 from hubra.api.utils import log_audit
 from hubra.core import apps
-from hubra.core.errors import api_error, raise_error
+from hubra.core.errors import api_error, error_message, raise_error
 from hubra.core.extensions import db
 from hubra.core.modules import is_enabled
 from hubra.core.tenant.context import current_tenant
@@ -189,7 +189,7 @@ def connection_options(connection_id: int):
     try:
         return jsonify(fn(conn)), 200
     except apps.AppError as exc:
-        return api_error("APP_FAILED", str(exc), 502)
+        return api_error("APP_FAILED", error_message(exc), 502)
 
 
 @apps_bp.post("/connections/<int:connection_id>/confirm")
@@ -204,7 +204,7 @@ def confirm_connection(connection_id: int):
         apps.confirm(conn)
     except apps.AppError as exc:
         db.session.rollback()
-        return api_error("CONNECT_FAILED", str(exc), 409)
+        return api_error("CONNECT_FAILED", error_message(exc), 409)
     _audit("connect_app", conn, conn.provider)
     db.session.commit()
     return jsonify(apps.serialize(conn, with_events=True)), 200
@@ -243,7 +243,7 @@ def update_connection(connection_id: int):
         try:
             config = fn(conn, body["config"])
         except apps.AppError as exc:
-            return api_error("VALIDATION_ERROR", str(exc), 400)
+            return api_error("VALIDATION_ERROR", error_message(exc), 400)
         before = conn.config or {}
         keys = sorted(
             k for k in set(before) | set(config) if before.get(k) != config.get(k)
@@ -272,9 +272,9 @@ def test_connection(connection_id: int):
     try:
         message = fn(conn)
     except apps.AppError as exc:
-        apps.record(conn, "test", False, str(exc))
+        apps.record(conn, "test", False, error_message(exc))
         db.session.commit()
-        return api_error("TEST_FAILED", str(exc), 502)
+        return api_error("TEST_FAILED", error_message(exc), 502)
     apps.record(conn, "test", True, message or "")
     db.session.commit()
     return jsonify({"ok": True, "message": message or ""}), 200
