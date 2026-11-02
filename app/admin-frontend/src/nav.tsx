@@ -39,6 +39,7 @@ import { PerformancePanel } from '@/screens/platform/Performance'
 import { MyAlertsCard, OutboundMailTab } from '@/screens/platform/MailMonitor'
 import { DiscordPanel } from '@/screens/platform/DiscordStatus'
 import { SettingsSection } from '@/screens/platform/SettingsSection'
+import { EarlyAccess } from '@/screens/platform/EarlyAccess'
 import { PlatformTranslations } from '@/screens/platform/Translations'
 import { PlatformEncryption } from '@/screens/platform/Encryption'
 import { SupportCases } from '@/screens/platform/Support'
@@ -142,6 +143,17 @@ export function navSections(): NavSection[] {
                 'List price per month for each plan. A club’s own price, discount and sponsor are set on its page.',
               ),
               render: () => <SettingsSection section="prices" />,
+            },
+            {
+              id: 'early-access',
+              path: '/app/tenants/early-access',
+              label: tr('Früher Zugang', 'Early access'),
+              perm: 'platform.settings',
+              desc: tr(
+                'Neue Funktionen zuerst für ausgewählte Vereine einschalten.',
+                'Switch new features on for chosen clubs first.',
+              ),
+              render: () => <EarlyAccess />,
             },
           ],
         },

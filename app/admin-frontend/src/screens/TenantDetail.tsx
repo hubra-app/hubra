@@ -43,6 +43,7 @@ import { ClubAdminsPanel } from '@/screens/ClubAdmins'
 import { TenantTrends } from '@/screens/TenantTrends'
 import { TenantLimits } from '@/screens/TenantLimits'
 import { TenantBilling } from '@/screens/TenantBilling'
+import { TenantEarlyAccess } from '@/screens/TenantEarlyAccess'
 
 const STATUS_COLORS: Record<string, string> = {
   active: 'green',
@@ -278,6 +279,8 @@ export function TenantDetail() {
       <TenantBilling tenantId={tenant.id} />
 
       <TenantLimits tenantId={tenant.id} />
+
+      <TenantEarlyAccess tenantId={tenant.id} />
 
       <TenantTrends tenantId={tenant.id} />
 

@@ -22,6 +22,20 @@ spec:
     - host: api.hubra.club
       http:
         paths:
+          # The platform API goes to the platform backend (docs/platform-backend.md;
+          # keep in step with hubra.core.roles.PLATFORM_PREFIXES).
+          - path: /api/v1/manager
+            pathType: Prefix
+            backend:
+              service: { name: platform-backend, port: { name: http } }
+          - path: /api/v1/admin
+            pathType: Prefix
+            backend:
+              service: { name: platform-backend, port: { name: http } }
+          - path: /api/v1/system
+            pathType: Prefix
+            backend:
+              service: { name: platform-backend, port: { name: http } }
           - path: /
             pathType: Prefix
             backend:
