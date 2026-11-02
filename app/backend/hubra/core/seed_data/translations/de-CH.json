@@ -3253,5 +3253,9 @@
   "clubSettings.mfaAll": "Für alle Mitglieder",
   "clubSettings.mfaHint": "Wer es braucht, öffnet den Verein erst, wenn ein Passkey oder eine Authenticator-App eingerichtet ist. Das geht im Konto unter Zwei-Faktor. Admins sind Inhaber und Admins, auch über eine Funktion.",
   "clubSettings.mfaMissing": "{{n}} von ihnen haben noch keine Zwei-Faktor-Anmeldung und kommen erst wieder in den Verein, wenn sie es eingerichtet haben. Sag ihnen vorher Bescheid.",
-  "clubSettings.mfaMissingNone": "Alle, die es betrifft, haben Zwei-Faktor eingerichtet."
+  "clubSettings.mfaMissingNone": "Alle, die es betrifft, haben Zwei-Faktor eingerichtet.",
+  "app.maintenance.title": "Wartungsarbeiten",
+  "app.maintenance.text": "Hubra wird gerade aktualisiert. In wenigen Minuten geht es weiter.",
+  "app.maintenance.until": "Voraussichtlich zurück um {{time}} Uhr.",
+  "app.maintenance.reload": "Diese Seite lädt sich von selbst neu."
 }

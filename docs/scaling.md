@@ -64,7 +64,7 @@ says what a second run used to cause; it doesn't happen any more.
 | `check-mailbox-quota-hourly` | :05 | Duplicate quota warnings |
 | `health-check-20s` | 20 s | Duplicate "service down/up" alerts |
 | `infra-checks-hourly` | :00 | Duplicate alerts |
-| `api-error-rate-hourly` | :15 | Duplicate alerts |
+| `api-error-rate-10min` | every 10 min | Duplicate alerts |
 | `check-domains-every-minute` | 60 s | Duplicate DNS lookups and domain status mails |
 | `check-mail-relays-5min` | 5 min | Duplicate relay alerts (cooldown races) |
 | `prune-platform-events-daily` | 02:30 | Harmless |

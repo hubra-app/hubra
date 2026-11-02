@@ -35,6 +35,8 @@ def send_alert(
     """
     if staff:
         _to_platform_staff(title, description, fields, color)
+        if not _discord_on():
+            return False
 
     embed: dict[str, Any] = {
         "title": title,
@@ -64,6 +66,20 @@ def _to_platform_staff(title, description, fields, color) -> None:
         platform_monitor.system_alert(title, description, fields, color)
     except Exception:
         _log.warning("Failed to log platform alert: %s", title, exc_info=True)
+
+
+def _discord_on() -> bool:
+    """Whether system alerts go to Discord now (alert switches, maintenance)."""
+    try:
+        from flask import has_app_context
+
+        if not has_app_context():
+            return True
+        from hubra.core.services import platform_monitor
+
+        return platform_monitor.channels("system")["discord"]
+    except Exception:  # noqa: BLE001
+        return True
 
 
 def alert_error(

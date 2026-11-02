@@ -88,7 +88,11 @@ def _reset_redis_breaker():
     reset_redis_down()
     # Request timing of earlier tests must not count in this one.
     perf_monitor.reset_local()
+    # Past the start-up grace, so a 5xx counts as a server error.
+    started = perf_monitor._process_started
+    perf_monitor._process_started = started - perf_monitor.WARMUP_SECONDS - 1
     yield
+    perf_monitor._process_started = started
     reset_redis_down()
 
 

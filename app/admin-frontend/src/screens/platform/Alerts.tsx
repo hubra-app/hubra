@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Badge, Button, Group, Paper, Stack, Text, Title } from '@mantine/core'
+import { Alert, Badge, Button, Group, Paper, Stack, Text, Title } from '@mantine/core'
 import {
   IconAlertTriangle,
   IconChevronRight,
@@ -12,13 +12,15 @@ import { formatDateTime } from '@/format'
 import { tr, useLang } from '@/lang'
 import { getAlertsOverview, type EventCategory, type OpenProblem } from '@/api/platform'
 import { EventLogPanel, MyAlertsCard } from './MailMonitor'
+import { AlertRulesPanel, MaintenanceCard } from './AlertControls'
 import { PerformancePanel } from './Performance'
 import { LEVEL_COLOR, categoryLabel, eventText, levelLabel } from './eventLabels'
 
 // The server names problems in English; the known ones are told here.
 function problemTitle(p: OpenProblem): string {
   const [kind, which] = p.id.split(':')
-  const service = which === 'db' ? tr('Datenbank', 'Database') : which === 'redis' ? 'Redis' : 'IMAP'
+  const service =
+    which === 'db' ? tr('Datenbank', 'Database') : which === 'redis' ? 'Redis' : 'IMAP'
   switch (kind) {
     case 'jobs':
       return tr('Hintergrundaufgaben laufen nicht', p.title)
@@ -26,17 +28,44 @@ function problemTitle(p: OpenProblem): string {
       return tr(`${service} antwortet nicht`, p.title)
     case 'relay':
       if (which === 'skipped') return tr('Mails gehen über das Fallback-Relay', p.title)
-      return tr(which === 'fallback' ? 'Fallback-Relay ausgefallen' : 'Haupt-Relay ausgefallen', p.title)
+      return tr(
+        which === 'fallback' ? 'Fallback-Relay ausgefallen' : 'Haupt-Relay ausgefallen',
+        p.title,
+      )
     case 'mail':
-      return tr(p.title.replace(/^(\d+) mails not delivered in 24 hours$/, '$1 Mails in 24 Stunden nicht zugestellt'), p.title)
+      return tr(
+        p.title.replace(
+          /^(\d+) mails not delivered in 24 hours$/,
+          '$1 Mails in 24 Stunden nicht zugestellt',
+        ),
+        p.title,
+      )
     case 'perf':
       return which === 'slow'
-        ? tr(p.title.replace(/^API is slow: p95 (\d+) ms in the last hour$/, 'API ist langsam: p95 $1 ms in der letzten Stunde'), p.title)
-        : tr(p.title.replace(/^(\d+) server errors in the last hour$/, '$1 Serverfehler in der letzten Stunde'), p.title)
+        ? tr(
+            p.title.replace(
+              /^API is slow: p95 (\d+) ms in the last hour$/,
+              'API ist langsam: p95 $1 ms in der letzten Stunde',
+            ),
+            p.title,
+          )
+        : tr(
+            p.title.replace(
+              /^(\d+) server errors in the last hour$/,
+              '$1 Serverfehler in der letzten Stunde',
+            ),
+            p.title,
+          )
     case 'backup':
       return which === 'none'
         ? tr('Seit 2 Tagen kein erfolgreiches geplantes Backup', p.title)
-        : tr(p.title.replace('Last scheduled backup failed for', 'Letztes geplantes Backup fehlgeschlagen:'), p.title)
+        : tr(
+            p.title.replace(
+              'Last scheduled backup failed for',
+              'Letztes geplantes Backup fehlgeschlagen:',
+            ),
+            p.title,
+          )
     case 'discord':
       return which === 'bot'
         ? tr('Der Discord-Bot kann sich nicht anmelden', p.title)
@@ -55,7 +84,10 @@ function problemDetail(p: OpenProblem): string {
       `${p.detail} Hubra cannot mail this itself; an outside monitor (e.g. on /health) sees it.`,
     )
   if (p.id === 'mail:failed')
-    return tr('Abgelehnte Adressen zählen mit; das Ereignisprotokoll zeigt jede einzelne.', p.detail)
+    return tr(
+      'Abgelehnte Adressen zählen mit; das Ereignisprotokoll zeigt jede einzelne.',
+      p.detail,
+    )
   if (p.id === 'backup:none') return tr('Backups laufen täglich um 03:00 UTC.', p.detail)
   if (p.id === 'perf:slow' || p.id === 'perf:errors')
     return tr('Der Tab «Leistung» zeigt, welche Routen langsam sind oder Fehler liefern.', p.detail)
@@ -83,7 +115,9 @@ function ProblemRow({ p }: { p: OpenProblem }) {
             </Badge>
             <Text size="xs" c="dimmed">
               {categoryLabel(p.area)}
-              {p.since ? ` · ${tr('seit', 'since')} ${formatDateTime(new Date(p.since * 1000).toISOString())}` : ''}
+              {p.since
+                ? ` · ${tr('seit', 'since')} ${formatDateTime(new Date(p.since * 1000).toISOString())}`
+                : ''}
             </Text>
           </Group>
           <Text fw={600} size="sm">
@@ -131,7 +165,32 @@ function OverviewPanel() {
           {tr('Aktualisieren', 'Refresh')}
         </Button>
       </Group>
-      {query.isError && <Text c="red">{query.error instanceof Error ? query.error.message : ''}</Text>}
+      {query.isError && (
+        <Text c="red">{query.error instanceof Error ? query.error.message : ''}</Text>
+      )}
+
+      <MaintenanceCard state={data?.maintenance} />
+
+      {data && !data.switches.enabled && !data.maintenance.active && (
+        <Alert color="orange" variant="light">
+          <Group justify="space-between" wrap="wrap">
+            <Text size="sm">
+              {tr(
+                'Warnungen sind ausgeschaltet: Es geht nichts per Mail oder auf Discord raus.',
+                'Alerts are switched off: nothing goes out by mail or to Discord.',
+              )}
+            </Text>
+            <Button
+              size="compact-sm"
+              variant="light"
+              color="orange"
+              onClick={() => navigate('/app/platform/alerts/rules')}
+            >
+              {tr('Regeln', 'Rules')}
+            </Button>
+          </Group>
+        </Alert>
+      )}
 
       <Paper withBorder shadow="sm" radius="lg" p="lg">
         <Group gap={10} mb={12}>
@@ -172,7 +231,10 @@ function OverviewPanel() {
                 key={area}
                 label={`${categoryLabel(area)} (24 h)`}
                 value={c.error + c.warning}
-                sub={tr(`${c.error} Fehler, ${c.warning} Warnungen`, `${c.error} errors, ${c.warning} warnings`)}
+                sub={tr(
+                  `${c.error} Fehler, ${c.warning} Warnungen`,
+                  `${c.error} errors, ${c.warning} warnings`,
+                )}
                 accent={c.error ? '#c0392b' : c.warning ? '#c2870f' : undefined}
                 onClick={() => navigate(`/app/platform/alerts/events?category=${area}`)}
               />
@@ -206,7 +268,12 @@ function OverviewPanel() {
               py={8}
               style={{ borderBottom: '1px solid var(--hb-border)' }}
             >
-              <Badge variant="light" color={LEVEL_COLOR[e.level]} size="sm" style={{ flexShrink: 0 }}>
+              <Badge
+                variant="light"
+                color={LEVEL_COLOR[e.level]}
+                size="sm"
+                style={{ flexShrink: 0 }}
+              >
                 {levelLabel(e.level)}
               </Badge>
               <Text size="sm" style={{ flex: 1, minWidth: 0, wordBreak: 'break-word' }}>
@@ -223,7 +290,7 @@ function OverviewPanel() {
   )
 }
 
-const TABS = ['overview', 'performance', 'events', 'settings'] as const
+const TABS = ['overview', 'performance', 'events', 'rules', 'settings'] as const
 type Tab = (typeof TABS)[number]
 const CATEGORIES = ['mail', 'relay', 'service', 'backup', 'plugin', 'system', 'alert']
 
@@ -253,6 +320,7 @@ export function Alerts() {
           { id: 'overview', label: tr('Übersicht', 'Overview') },
           { id: 'performance', label: tr('Leistung', 'Performance') },
           { id: 'events', label: tr('Ereignisse', 'Event log') },
+          { id: 'rules', label: tr('Regeln', 'Rules') },
           { id: 'settings', label: tr('Meine Warnungen', 'My alerts') },
         ]}
         activeTab={tab}
@@ -269,6 +337,7 @@ export function Alerts() {
           }
         />
       )}
+      {tab === 'rules' && <AlertRulesPanel />}
       {tab === 'settings' && <MyAlertsCard />}
     </div>
   )

@@ -7,11 +7,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **No more "High API Error Rate" alert on every release**: the check counted 4xx and 5xx over the whole month, so the 401s from expired sign-ins after a restart set it off. It now counts server errors (5xx) in the last hour (every 10 minutes, at least 50 requests, threshold `API_ERROR_RATE_THRESHOLD`, 5 %), ignores errors in a backend's first two minutes, sends one alert per incident and a "back to normal" when it recovers.
+
 - **System alerts go to the platform Discord log** instead of a webhook: `DISCORD_WEBHOOK_URL` is gone. Set the log channel in manage › Platform settings › Discord.
 
 - **`FERNET_KEY` is required in production** (`.env` change): the backend no longer starts without it. Values stored before were encrypted with a key derived from `SECRET_KEY` and stay readable, so set a fresh key and run `flask crypto rotate`.
 
 ### Added
+
+- **Maintenance mode**: manage › Alerts › Overview or `flask maintenance on|off|status [--minutes N] [--message TEXT]`. The club apps show a maintenance page (club API answers 503 `MAINTENANCE`), manage, sign-in and account keep working, alerts pause, and it ends on its own at the set time. `GET /api/v1/maintenance` is public.
+- **Alert rules** (manage › Alerts › Rules): master switch for all alert mails and Discord posts (`alerts.enabled`), and per alert type mail and Discord on or off (`alerts.mail_off`, `alerts.discord_off`). `GET/PUT /manager/platform/alerts/switches`, `GET/PUT /manager/platform/maintenance`.
 
 - **Discord bot status** (manage › Diagnostics › Discord): settings, the bot's sign-in (live, cached 5 minutes, "Check now"), servers it is on, the Interactions Endpoint URL against the expected one, the platform log channel with last post and failure, the plugin, linked accounts, every club server with its last error, and the redirect URIs and interactions URL to enter in the Developer Portal. A bad token, an unreachable log channel or failing log posts show on manage › Alerts. docs/discord.md has a step-by-step setup with permissions and redirects.
 

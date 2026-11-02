@@ -34,7 +34,7 @@ import {
   type RelayCheck,
   type RelaySummary,
 } from '@/api/platform'
-import { LEVEL_COLOR, categoryLabel, eventText, levelLabel } from './eventLabels'
+import { ALERT_TYPES, LEVEL_COLOR, categoryLabel, eventText, levelLabel } from './eventLabels'
 
 const MONO = "'JetBrains Mono', monospace"
 
@@ -162,83 +162,6 @@ function RelayCard({
   )
 }
 
-const ALERT_TYPES: {
-  id: AlertType
-  group: 'mail' | 'platform'
-  label: () => string
-  desc: () => string
-}[] = [
-  {
-    id: 'relay_down',
-    group: 'mail',
-    label: () => tr('Relay ausgefallen / wieder da', 'Relay down / back'),
-    desc: () =>
-      tr(
-        'Wenn die automatische Prüfung ein Relay zweimal hintereinander nicht erreicht, und wenn es wieder geht.',
-        'When the automatic check fails to reach a relay twice in a row, and when it works again.',
-      ),
-  },
-  {
-    id: 'fallback_used',
-    group: 'mail',
-    label: () => tr('Fallback benutzt', 'Fallback used'),
-    desc: () =>
-      tr(
-        'Das Haupt-Relay hat eine Mail abgelehnt (z. B. Kontingent erreicht) und das Fallback hat sie zugestellt.',
-        'The main relay refused a mail (e.g. its quota is reached) and the fallback delivered it.',
-      ),
-  },
-  {
-    id: 'delivery_failed',
-    group: 'mail',
-    label: () => tr('Mail nicht zugestellt', 'Mail not delivered'),
-    desc: () =>
-      tr(
-        'Keines der Relays hat eine Mail angenommen. Abgelehnte Empfängeradressen lösen keine Warnung aus.',
-        'No relay accepted a mail. Refused recipient addresses raise no alert.',
-      ),
-  },
-  {
-    id: 'service_down',
-    group: 'platform',
-    label: () => tr('Dienst ausgefallen / wieder da', 'Service down / back'),
-    desc: () =>
-      tr(
-        'Datenbank, Redis oder IMAP antworten eine Minute lang nicht, und wenn sie wieder gehen. Einen Datenbank-Ausfall meldet die Mail erst danach, mit seiner Dauer.',
-        'The database, Redis or IMAP do not answer for a minute, and when they work again. A database outage is mailed once it is over, with how long it lasted.',
-      ),
-  },
-  {
-    id: 'backup_failed',
-    group: 'platform',
-    label: () => tr('Backup fehlgeschlagen', 'Backup failed'),
-    desc: () =>
-      tr(
-        'Ein geplantes Backup (global oder eines Vereins) ist fehlgeschlagen.',
-        'A scheduled backup (global or a club’s) failed.',
-      ),
-  },
-  {
-    id: 'plugin_updates',
-    group: 'platform',
-    label: () => tr('Plugin-Neuigkeiten', 'Plugin news'),
-    desc: () =>
-      tr(
-        'Neue Plugin-Versionen, automatische Updates und zurückgezogene Plugins. Standardmässig aus.',
-        'New plugin versions, automatic updates and withdrawn plugins. Off by default.',
-      ),
-  },
-  {
-    id: 'system',
-    group: 'platform',
-    label: () => tr('Systemwarnungen', 'System alerts'),
-    desc: () =>
-      tr(
-        'Speicherplatz, fehlgeschlagene Hintergrundaufgaben und hohe API-Fehlerraten.',
-        'Disk space, failed background tasks and high API error rates.',
-      ),
-  },
-]
 
 function cooldownText(email: string, minutes: number): string {
   const sentTo = tr(`Gehen an ${email}.`, `Sent to ${email}.`)
