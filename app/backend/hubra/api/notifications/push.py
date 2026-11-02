@@ -74,6 +74,19 @@ def is_subscribed(user_id: int, endpoint: str) -> bool:
 
 
 @event.listens_for(Notification, "after_insert")
+def _queue_app_channels(mapper, connection, target: Notification) -> None:
+    """Queue a Discord direct message (or another app's) if the member
+    turned it on for this topic."""
+    from hubra.api.notifications import channels
+
+    try:
+        channels.queue(connection, target)
+    except Exception:
+        # A notification must never fail because of an app channel.
+        _log.exception("queueing app notification %s failed", target.id)
+
+
+@event.listens_for(Notification, "after_insert")
 def _queue_push(mapper, connection, target: Notification) -> None:
     """Queue the push for a new notification if its person has a device."""
     # One query: the person's account, only if it has a device.

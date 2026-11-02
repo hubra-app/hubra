@@ -238,3 +238,85 @@ def test_api_needs_diagnostics_permission(client, seeded_db):
         401,
         403,
     )
+
+
+# ── Picking the platform log server and channel ───────────────────────────────
+
+ME = "4242"
+ROLE = "777"
+PICKER = {
+    "/users/@me/guilds?limit=200": [
+        {"id": GUILD, "name": "Hubra Team", "icon": "abc"},
+        {"id": "888", "name": "another", "icon": None},
+    ],
+    f"/channels/{CHANNEL}": {"id": CHANNEL, "guild_id": GUILD, "name": "platform-log"},
+    f"/guilds/{GUILD}/roles": [
+        {"id": GUILD, "permissions": str(1 << 10 | 1 << 11 | 1 << 14)},
+        {"id": ROLE, "permissions": "0"},
+    ],
+    f"/guilds/{GUILD}/members/{ME}": {"roles": [ROLE]},
+    f"/guilds/{GUILD}/channels": [
+        {"id": "10", "type": 4, "name": "Hubra", "position": 0},
+        {
+            "id": CHANNEL,
+            "type": 0,
+            "name": "platform-log",
+            "parent_id": "10",
+            "position": 1,
+        },
+        {
+            "id": "12",
+            "type": 0,
+            "name": "secret",
+            "position": 2,
+            # @everyone may not see it and the bot has no overwrite: left out
+            "permission_overwrites": [
+                {"id": GUILD, "type": 0, "deny": str(1 << 10), "allow": "0"}
+            ],
+        },
+        {
+            "id": "13",
+            "type": 0,
+            "name": "staff",
+            "position": 3,
+            "permission_overwrites": [
+                {"id": GUILD, "type": 0, "deny": str(1 << 10), "allow": "0"},
+                {"id": ROLE, "type": 0, "deny": "0", "allow": str(1 << 10)},
+            ],
+        },
+        {"id": "14", "type": 2, "name": "voice", "position": 4},
+    ],
+}
+
+
+def test_servers_with_the_current_one(db, bot):
+    with _discord(PICKER):
+        data = discord_status.servers()
+    assert [s["name"] for s in data["servers"]] == ["another", "Hubra Team"]
+    assert data["servers"][1]["icon"].endswith(f"/icons/{GUILD}/abc.png?size=64")
+    assert data["currentServerId"] == GUILD
+
+
+def test_channels_the_bot_can_post_in(db, bot):
+    with _discord(PICKER):
+        found = discord_status.channels(GUILD)
+    # Like Discord: channels without a category first.
+    assert [(c["id"], c["category"]) for c in found] == [
+        ("13", None),
+        (CHANNEL, "Hubra"),
+    ]
+
+
+def test_picker_needs_a_token(db):
+    with pytest.raises(discord_status.PickerError):
+        discord_status.servers()
+    with pytest.raises(discord_status.PickerError):
+        discord_status.channels("not-a-number")
+
+
+def test_picker_api(client, superadmin, bot):
+    with _discord(PICKER):
+        assert client.get("/api/v1/manager/platform/discord/servers").status_code == 200
+        resp = client.get(f"/api/v1/manager/platform/discord/servers/{GUILD}/channels")
+        assert resp.status_code == 200
+        assert len(resp.get_json()["channels"]) == 2

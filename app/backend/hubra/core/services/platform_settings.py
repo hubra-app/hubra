@@ -253,6 +253,48 @@ SPECS: tuple[Spec, ...] = (
         "retention_days",
     ),
     Spec(
+        "alerts.enabled",
+        "Alerts on",
+        "off: no alert goes out by mail or Discord; the event log still keeps them",
+        lambda cfg: "on",
+        "on_off",
+    ),
+    Spec(
+        "alerts.mail_off",
+        "Alert types not mailed",
+        "Comma-separated alert types nobody gets by mail",
+        lambda cfg: "",
+        "alert_types",
+    ),
+    Spec(
+        "alerts.discord_off",
+        "Alert types not posted to Discord",
+        "Comma-separated alert types the bot does not post",
+        lambda cfg: "",
+        "alert_types",
+    ),
+    Spec(
+        "maintenance.enabled",
+        "Maintenance mode",
+        "on: club apps show a maintenance notice and their API answers 503; "
+        "manage keeps working and alerts are paused",
+        lambda cfg: "",
+        "on_off",
+    ),
+    Spec(
+        "maintenance.message",
+        "Maintenance message",
+        "Shown to members while the platform is in maintenance",
+        lambda cfg: "",
+    ),
+    Spec(
+        "maintenance.until",
+        "Maintenance until",
+        "When maintenance ends by itself (ISO time, UTC). Empty: until turned off",
+        lambda cfg: "",
+        "iso_datetime",
+    ),
+    Spec(
         "alerts.manage_url",
         "Manage address",
         "Address of the manage portal, for the button in alert mails "

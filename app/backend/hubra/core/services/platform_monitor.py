@@ -562,6 +562,37 @@ def _admin_ids():
     )
 
 
+def channels(alert_type: str) -> dict:
+    """Where *alert_type* goes out now: ``{"mail", "discord", "reason"}``.
+
+    Platform settings ``alerts.enabled`` (all on or off), ``alerts.mail_off``
+    and ``alerts.discord_off`` (types switched off per channel); nothing goes
+    out while the platform is in maintenance.  Each admin's own choice
+    (``users.platform_alerts``) still decides who of them gets a mail.
+    """
+    from hubra.core.services import maintenance, platform_settings
+
+    try:
+        if maintenance.is_active():
+            return {"mail": False, "discord": False, "reason": "maintenance"}
+        if platform_settings.get("alerts.enabled") == "off":
+            return {"mail": False, "discord": False, "reason": "alerts_off"}
+        mail_off = {
+            t.strip() for t in platform_settings.get("alerts.mail_off").split(",")
+        }
+        discord_off = {
+            t.strip() for t in platform_settings.get("alerts.discord_off").split(",")
+        }
+    except Exception:  # noqa: BLE001
+        # Settings unreadable (database trouble): rather alert than not.
+        return {"mail": True, "discord": True, "reason": None}
+    return {
+        "mail": alert_type not in mail_off,
+        "discord": alert_type not in discord_off,
+        "reason": None,
+    }
+
+
 def alert(
     alert_type: str,
     subject: str,
@@ -581,13 +612,13 @@ def alert(
         wait = cooldown() if throttle else timedelta(0)
         if wait and _recent(alert_type, now - wait):
             return False
-        record(
-            "alert",
-            alert_type,
-            subject,
-            level=level,
-            details={"lines": lines},
-        )
+        route = channels(alert_type)
+        details: dict = {"lines": lines}
+        if not (route["mail"] or route["discord"]):
+            details["paused"] = route["reason"] or "channels_off"
+        record("alert", alert_type, subject, level=level, details=details)
+        if "paused" in details:
+            return False
         from hubra.core.tasks.mail_monitor_tasks import send_platform_alert
 
         try:
@@ -693,8 +724,12 @@ def deliver_alert(alert_type: str, subject: str, lines: list[str], level: str) -
     )
 
     color = {"info": COLOR_GREEN, "warning": COLOR_ORANGE}.get(level, COLOR_RED)
-    if alert_type != "system":  # system alerts came from send_alert already
+    route = channels(alert_type)
+    # System alerts came from send_alert, which posted them already.
+    if alert_type != "system" and route["discord"]:
         send_alert(f"Hubra: {subject}", "\n".join(lines), color=color, staff=False)
+    if not route["mail"]:
+        return 0
 
     relay = platform_settings.relay()
     if not relay.sender_email:

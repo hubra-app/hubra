@@ -147,6 +147,11 @@ def create_app(config_name: str | None = None) -> Flask:
     perf_monitor.install(app)
     perf_monitor.install_sql_listener()
 
+    # ── Maintenance mode (club API answers 503; manage keeps working) ───────
+    from hubra.core.services import maintenance
+
+    maintenance.install(app)
+
     app.before_request(_reject_scalar_json)
     app.before_request(resolve_tenant)
 
@@ -351,6 +356,36 @@ def _register_cli(app: Flask) -> None:
         db.session.commit()
         click.echo(f"Module catalog synced ({created} new).")
 
+    @modules_cli.command("run")
+    @click.argument("name")
+    @click.option(
+        "--wait",
+        type=int,
+        default=0,
+        help="When no module has the process (plugin not installed yet), "
+        "wait this many seconds and exit 0 instead of failing, so the "
+        "container restarts and looks again.",
+    )
+    def modules_run(name: str, wait: int):
+        """Run a module's long-lived process (``processes=`` in its manifest),
+        such as ``discord-gateway``. Runs until stopped."""
+        import time
+        from importlib import import_module
+
+        from hubra.core.modules import registry
+
+        registry.load()
+        target = registry.processes().get(name)
+        if target is None:
+            known = ", ".join(sorted(registry.processes())) or "none"
+            if wait > 0:
+                click.echo(f"No process '{name}' yet (known: {known}); waiting.")
+                time.sleep(wait)
+                return
+            raise click.ClickException(f"No process '{name}' (known: {known})")
+        path, _, attr = target.partition(":")
+        getattr(import_module(path), attr)()
+
     @modules_cli.command("seal-secrets")
     def modules_seal_secrets():
         """Encrypt secret module settings still stored in the clear."""
@@ -471,6 +506,32 @@ def _register_cli(app: Flask) -> None:
         except TenantProvisioningError as exc:
             click.echo(f"ERROR: {exc}", err=True)
             raise SystemExit(1) from exc
+
+    @app.cli.command("maintenance")
+    @click.argument("action", type=click.Choice(["on", "off", "status"]))
+    @click.option(
+        "--minutes",
+        type=int,
+        default=None,
+        help="End by itself after this many minutes",
+    )
+    @click.option("--message", default="", help="Shown to members")
+    def maintenance_cmd(action, minutes, message):
+        """Maintenance mode: club apps show a notice, alerts pause.
+        Use around a release: ``flask maintenance on --minutes 15``."""
+        from hubra.core.services import maintenance
+
+        if action == "on":
+            result = maintenance.turn_on(message, minutes)
+        elif action == "off":
+            result = maintenance.turn_off()
+        else:
+            result = maintenance.state(fresh=True)
+        click.echo(
+            "Maintenance "
+            + ("on" if result["active"] else "off")
+            + (f" until {result['until']}" if result.get("until") else "")
+        )
 
     @app.cli.command("list-tenants")
     def list_tenants():

@@ -3254,6 +3254,7 @@
   "clubSettings.mfaHint": "Those it applies to can open the club only once a passkey or an authenticator app is set up, in their account under Two-factor. Admins means owners and admins, also through a function.",
   "clubSettings.mfaMissing": "{{n}} of them have no two-factor sign-in yet and can't open the club until they set it up. Let them know first.",
   "clubSettings.mfaMissingNone": "Everyone it applies to has two-factor set up.",
+<<<<<<< HEAD
   "mail.email.platform_alert.type.support_cases": "Reports and ideas",
   "mail.email.subject.support_case_update": "[Hubra] Your report #{{case_id}}: {{title}}",
   "mail.email.support_case.intro": "There is news about your {{kind}} #{{case_id}}.",
@@ -3365,4 +3366,12 @@
   "support.device.desktop": "Computer",
   "support.device.theme_light": "Light",
   "support.device.theme_dark": "Dark"
+=======
+  "app.maintenance.title": "Maintenance",
+  "app.maintenance.text": "Hubra is being updated. It will be back in a few minutes.",
+  "app.maintenance.until": "Expected back at {{time}}.",
+  "app.maintenance.reload": "This page reloads by itself.",
+  "account.notify.discord": "Discord",
+  "account.notify.discordHint": "Discord sends you a direct message from the club's bot. Direct messages from server members must be allowed (Discord › the server's privacy settings)."
+>>>>>>> origin/main
 }

@@ -55,7 +55,7 @@ If one is missing, Discord shows "Invalid OAuth2 redirect_uri" at that step.
 | Public Bot | **on** | otherwise only you could add it, and no club could |
 | Requires OAuth2 Code Grant | **off** | Hubra adds the bot with its own OAuth flow |
 | Presence Intent | **off** | not needed |
-| Server Members Intent | **off** | the bot never reads member lists |
+| Server Members Intent | **on** | the gateway process hears when someone joins a club's server (welcome message, roles on joining); without it the rest still works |
 | Message Content Intent | **off** | the bot never reads messages |
 
 On the **Installation** page set *Install Link* to **None** and leave
@@ -69,8 +69,10 @@ your club: new events, posts and polls in your channels, reminders, sign-ups
 with /events, and Discord roles that follow your groups. Connect it in Hubra
 under Einstellungen › Verbundene Apps."
 
-The bot uses no gateway connection. It answers over HTTP (step 5) and calls
-the REST API, so it never shows as "online" in Discord, and that is normal.
+The bot answers over HTTP (step 5) and calls the REST API for everything
+except "someone joined the server". Only that needs a gateway connection,
+kept by one small process for the whole platform (step 8). Without that
+process the bot shows as "offline" in Discord, and that is normal.
 
 ### 5. Interactions Endpoint URL
 
@@ -80,6 +82,24 @@ General Information › **Interactions Endpoint URL**:
 Discord sends a signed test request when you save, so the backend must be
 up, the Discord plugin installed, and the public key from step 2 saved in
 Hubra first. Slash commands and buttons arrive here.
+
+### 5b. Linked Roles Verification URL
+
+General Information › **Linked Roles Verification URL**:
+`https://<SSO address>/account/verknuepfungen?link=discord` (manage ›
+Diagnostics › Discord shows the exact address).
+
+Discord sends someone there when they pick a Hubra linked role in a server's
+settings. The page starts the account link, which also asks for
+`role_connections.write`. Hubra then tells Discord three values for that
+person: *Member of a club on Hubra*, *Clubs* (how many) and *Member for
+(days)*. A server owner uses them under Server Settings › Roles › Links.
+
+Linked Roles are per person and per application, not per server. They can
+say "is an active member of a club on Hubra", not "is a member of this
+club". For "member of this club", the club maps a role under
+Verbundene Apps (role sync). Hubra registers the three values with Discord
+on the first push and refreshes everyone's values nightly at 04:10.
 
 ### 6. Permissions
 
@@ -92,8 +112,10 @@ It never asks for Administrator.
 | A club's server | `bot`, `applications.commands` | Change Nickname | always (the bot takes the club's name) |
 | | | View Channels, Send Messages, Embed Links | the club allows "announce" or "commands" |
 | | | Manage Roles | the club allows "roles" |
+| | | Create Events | the club allows "events" (Discord events) |
+| | | Manage Channels, Manage Roles, View Channels, Send Messages, Embed Links, Read Message History | the club allows "channels" (group channels) |
 | The platform's own server (platform log) | `bot` | View Channels, Send Messages, Embed Links (`19456`) | always |
-| Member account link | `identify` | none | a member links their account |
+| Member account link | `identify`, `role_connections.write` | none | a member links their account (the second scope is for Linked Roles; a member may decline it) |
 
 On a club's server the bot shows the club's name, logo and a short bio
 (plugin 2.1+, per server, so other servers still see Hubra). The app's own
@@ -104,6 +126,11 @@ sign-ups and roles that follow your groups."
 
 Manage Roles only works on roles **below the bot's own role** in the server's
 role list. Drag the Hubra role above the roles the club maps.
+
+When a club turns on a scope later (for example group channels), the bot's
+role on that server lacks the new permission. The club's Discord settings
+then say which permissions are missing and link to **Bot erneut
+hinzufügen**: adding the bot again to the same server updates its role.
 
 ### 7. Check it
 
@@ -122,6 +149,21 @@ A failing check also shows on manage › Alerts.
 Without the application ID and bot token, the Discord app shows as "not set
 up on this platform" to clubs, and nothing else changes.
 
+### 8. Gateway process (welcome message)
+
+The welcome message for new people on a club's server, and roles for a
+linked member the moment they join, need the gateway. It is one process for
+the whole platform, from the backend image:
+
+- Docker Compose: `docker compose --profile discord up -d discord-gateway`
+- k3s: the Deployment `discord-gateway` in `deploy/app` (1 replica; keep it
+  at one, Discord would otherwise send each join twice)
+
+It runs `flask modules run discord-gateway`. While the plugin isn't
+installed or the bot token isn't saved, it waits and checks again every ten
+minutes. If Discord refuses the Server Members intent (step 4) it logs that
+and waits too. Everything else works without this process.
+
 ### Troubleshooting
 
 | You see | Fix |
@@ -131,6 +173,9 @@ up on this platform" to clubs, and nothing else changes.
 | Interactions URL can't be saved in the portal | the backend is unreachable, the plugin is not installed, or the public key in Hubra is wrong |
 | "Bot not on server" for a club | someone removed the bot; the club connects it again under Verbundene Apps |
 | Roles don't change | move the Hubra role above the mapped roles; check the club allowed "roles" |
+| Welcome message never arrives | run the gateway (step 8), turn on Server Members Intent, and check the club turned on the welcome and the "notify" scope; the person may not allow direct messages from server members |
+| A Hubra linked role can't be picked | set the Linked Roles Verification URL (step 5b); the member links again and allows "role connections" |
+| Club settings say permissions are missing | the club uses **Bot erneut hinzufügen** there |
 | Platform log: the bot cannot see the channel | add the bot to the platform server (link in Platform settings › Discord) and allow it to view the channel |
 
 ## Platform log (the platform's own server)
@@ -141,10 +186,17 @@ Platform log:
 
 1. Click **Add the bot to the platform server** (it asks only for View
    Channels, Send Messages and Embed Links) and pick your server.
-2. In Discord, turn on Developer Mode (User Settings › Advanced), right-click
-   the log channel › **Copy Channel ID**, and paste it into **Platform log
-   channel**. Save.
+2. Back in Hubra, click the reload button next to **Server**, pick your
+   server, then pick the **channel**. The list only has text channels the bot
+   may view, send and embed links in. Save.
+
+   Fallback (Discord unreachable, or a channel the bot doesn't see yet):
+   **Enter the channel ID yourself**. Turn on Developer Mode in Discord (User
+   Settings › Advanced), right-click the channel › **Copy Channel ID** and
+   paste it.
 3. Pick what is posted and click **Send test message**.
+
+![Platform settings › Discord › Platform log](screenshots/discord/platform-log-picker.png)
 
 Categories:
 
@@ -167,6 +219,28 @@ secret, code) are shown as `***`. Alerts replace the old
 
 ## What the bot may do on a club's server
 
-It asks for View Channels, Send Messages, Embed Links and Manage Roles, plus
-slash commands. It never asks for Administrator. Manage Roles only works on
-roles below the bot's own role, and Hubra only changes roles the club mapped.
+The club picks scopes when it adds the bot; each asks only for the
+permissions it needs (table in step 6), never Administrator.
+
+| Scope | What it does |
+| --- | --- |
+| announce | new events, posts, polls and reminders in the club's channels |
+| roles | Discord roles that follow groups, functions, tiers or "all members" |
+| commands | sign-up and vote buttons, `/events`, `/rechnungen`, `/trainings` (with check-in), `/profil` |
+| events | the club's events in the server's Events list (next 60 days, kept in step) |
+| channels | a private channel and role per group the club picks; the group's events and polls go there |
+| notify | direct messages: notifications members ask for, and a welcome for new people |
+
+Manage Roles only works on roles below the bot's own role, and Hubra only
+changes roles the club mapped or made for group channels.
+
+## Notifications by Discord
+
+With the "notify" scope on a club's server, members who linked their Discord
+account see a **Discord** column in Mein Konto › Benachrichtigungen and turn
+it on per topic (off by default). The bot sends those notifications as
+direct messages, in the member's language, with the club's name and colour.
+Discord only delivers them if the person shares a server with the bot and
+allows direct messages from that server's members.
+
+![Mein Konto › Benachrichtigungen with the Discord column](screenshots/discord/notification-discord.png)

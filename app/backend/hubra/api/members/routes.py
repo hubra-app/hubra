@@ -171,11 +171,21 @@ def set_my_reminders():
 @members_bp.get("/me/notifications")
 @jwt_required()
 def get_my_notifications():
-    """Per topic, whether the member gets it in the bell, by browser push
-    and (reminders only) by mail."""
-    from hubra.api.notifications import prefs
+    """Per topic, whether the member gets it in the bell, by browser push,
+    (reminders only) by mail, and through a connected app (Discord)."""
+    member = get_current_member()
+    return jsonify(_notify_choices(member)), 200
 
-    return jsonify({"topics": prefs.prefs_for(get_current_member())}), 200
+
+def _notify_choices(member) -> dict:
+    from hubra.api.notifications import channels, prefs
+
+    apps = channels.available(member)
+    names = channels.providers()
+    return {
+        "topics": prefs.prefs_for(member, apps),
+        "apps": [{"key": code, "name": names.get(code, code)} for code in apps],
+    }
 
 
 @members_bp.put("/me/notifications")
@@ -184,13 +194,15 @@ def set_my_notifications():
     """Body ``{topic: {channel: bool}}``; what is left out keeps its value."""
     from hubra.api.notifications import prefs
 
+    from hubra.api.notifications import channels
+
     body = request.get_json(silent=True)
-    if err := prefs.validate(body):
-        raise_error(422, "VALIDATION_ERROR", err)
     member = get_current_member()
+    if err := prefs.validate(body, channels.available(member)):
+        raise_error(422, "VALIDATION_ERROR", err)
     prefs.apply(member, body)
     db.session.commit()
-    return jsonify({"topics": prefs.prefs_for(member)}), 200
+    return jsonify(_notify_choices(member)), 200
 
 
 # ── GET /members/count ───────────────────────────────────────────────────────

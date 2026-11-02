@@ -367,11 +367,16 @@ export type NotifyTopic =
   | "my_events"
   | "my_polls"
   | "tasks";
-export type NotifyChannel = "bell" | "push" | "mail";
+/** bell, push, mail, or a connected app's code ("discord") */
+export type NotifyChannel = "bell" | "push" | "mail" | (string & {});
 
 export interface NotificationChoices {
   /** Per topic and channel; "mail" only where Hubra mails the topic */
   topics: Record<NotifyTopic, Partial<Record<NotifyChannel, boolean>>>;
+  /** Connected apps the member can get notifications through (Discord
+   * direct messages): the club connected one and the member linked an
+   * account there. Off until turned on. */
+  apps?: { key: string; name: string }[];
 }
 
 export function getMyNotifications(): Promise<NotificationChoices> {

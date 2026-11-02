@@ -34,7 +34,7 @@ import {
   type RelayCheck,
   type RelaySummary,
 } from '@/api/platform'
-import { LEVEL_COLOR, categoryLabel, eventText, levelLabel } from './eventLabels'
+import { ALERT_TYPES, LEVEL_COLOR, categoryLabel, eventText, levelLabel } from './eventLabels'
 
 const MONO = "'JetBrains Mono', monospace"
 
@@ -162,6 +162,7 @@ function RelayCard({
   )
 }
 
+<<<<<<< HEAD
 const ALERT_TYPES: {
   id: AlertType
   group: 'mail' | 'platform'
@@ -249,6 +250,8 @@ const ALERT_TYPES: {
       ),
   },
 ]
+=======
+>>>>>>> origin/main
 
 function cooldownText(email: string, minutes: number): string {
   const sentTo = tr(`Gehen an ${email}.`, `Sent to ${email}.`)

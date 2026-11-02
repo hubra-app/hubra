@@ -13,6 +13,7 @@ import { NotFoundScreen } from '@/screens/public/NotFound'
 import { Toasts } from '@/components/ui'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ForcedPasswordChangeModal } from '@/components/ForcedPasswordChangeModal'
+import { MaintenanceScreen } from '@/components/MaintenanceScreen'
 import { IconAlertTriangle, IconRefresh } from '@tabler/icons-react'
 import { Loader, Center, Overlay, Paper, Text, Button, Stack } from '@mantine/core'
 import { MoreScreen } from './components/Shell/MoreScreen'
@@ -661,6 +662,7 @@ export default function App() {
       <InstanceProvider>
         <AppProvider>
           <BackendBanner />
+          <MaintenanceScreen />
           <PasswordChangeGate />
           <AppInner />
           <Toasts />

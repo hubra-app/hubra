@@ -88,6 +88,7 @@ export interface DiscordStatus {
   }
   interactions: { expected: string; actual?: string | null }
   redirectUris: string[]
+  linkedRolesUrl?: string
   platformLog: {
     channelId: string
     categories: string[]
@@ -102,6 +103,26 @@ export interface DiscordStatus {
 
 export async function getDiscordStatus() {
   return apiFetch<DiscordStatus>(`${P}/discord/status`)
+}
+
+export interface DiscordGuild {
+  id: string
+  name: string
+  icon: string | null
+}
+
+/** The servers the bot is on, and the one the platform log channel is on. */
+export async function getDiscordServers() {
+  return apiFetch<{ servers: DiscordGuild[]; currentServerId: string | null }>(
+    `${P}/discord/servers`,
+  )
+}
+
+/** Text channels on a server that the bot can post in. */
+export async function getDiscordServerChannels(serverId: string) {
+  return apiFetch<{ channels: { id: string; name: string; category: string | null }[] }>(
+    `${P}/discord/servers/${encodeURIComponent(serverId)}/channels`,
+  )
 }
 
 export async function checkDiscordNow() {
@@ -287,12 +308,54 @@ export interface OpenProblem {
   link: string
 }
 
+export interface Maintenance {
+  active: boolean
+  message: string
+  /** ISO time it ends by itself, or null (until turned off). */
+  until: string | null
+}
+
+export interface AlertSwitches {
+  /** false: no alert goes out by mail or Discord (still logged). */
+  enabled: boolean
+  /** The platform Discord log is set up with the alerts category. */
+  discordReady: boolean
+  types: Record<AlertType, { mail: boolean; discord: boolean }>
+}
+
 export async function getAlertsOverview() {
   return apiFetch<{
     problems: OpenProblem[]
     recent: PlatformEvent[]
     counts: Partial<Record<EventCategory, { warning: number; error: number }>>
+    maintenance: Maintenance
+    switches: AlertSwitches
   }>(`${P}/alerts/overview`)
+}
+
+export async function getAlertSwitches() {
+  return apiFetch<AlertSwitches>(`${P}/alerts/switches`)
+}
+
+export async function updateAlertSwitches(change: {
+  enabled?: boolean
+  types?: Partial<Record<AlertType, Partial<{ mail: boolean; discord: boolean }>>>
+}) {
+  return apiFetch<AlertSwitches>(`${P}/alerts/switches`, {
+    method: 'PUT',
+    body: JSON.stringify(change),
+  })
+}
+
+export async function setMaintenance(body: {
+  on: boolean
+  message?: string
+  minutes?: number | null
+}) {
+  return apiFetch<Maintenance>(`${P}/maintenance`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  })
 }
 
 export interface PerfRoute {

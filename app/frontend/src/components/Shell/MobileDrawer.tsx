@@ -30,10 +30,10 @@ export function MobileDrawer() {
       // However it closed (a nav entry, a tap beside it), it opens again
       // with the account menu folded.
       onExitTransitionEnd={() => setAccountOpen(false)}
-      // A side panel over a dimmed page, not a full-screen sheet: the page
-      // stays in view and a tap beside the panel closes it.
+      // The whole screen width on phones: more room for the nav and the
+      // account menu; the cross at the top closes it.
       position="left"
-      size="min(300px, 85vw)"
+      size="100%"
       padding={0}
       withCloseButton={false}
       // Header, scrolling nav, then the user card pinned at the foot: the

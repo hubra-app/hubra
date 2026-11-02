@@ -3254,6 +3254,7 @@
   "clubSettings.mfaHint": "Wer es braucht, öffnet den Verein erst, wenn ein Passkey oder eine Authenticator-App eingerichtet ist. Das geht im Konto unter Zwei-Faktor. Admins sind Inhaber und Admins, auch über eine Funktion.",
   "clubSettings.mfaMissing": "{{n}} von ihnen haben noch keine Zwei-Faktor-Anmeldung und kommen erst wieder in den Verein, wenn sie es eingerichtet haben. Sag ihnen vorher Bescheid.",
   "clubSettings.mfaMissingNone": "Alle, die es betrifft, haben Zwei-Faktor eingerichtet.",
+<<<<<<< HEAD
   "mail.email.platform_alert.type.support_cases": "Meldungen und Ideen",
   "mail.email.subject.support_case_update": "[Hubra] Deine Meldung #{{case_id}}: {{title}}",
   "mail.email.support_case.intro": "Es gibt Neuigkeiten zu deiner {{kind}} #{{case_id}}.",
@@ -3365,4 +3366,12 @@
   "support.device.desktop": "Computer",
   "support.device.theme_light": "Hell",
   "support.device.theme_dark": "Dunkel"
+=======
+  "app.maintenance.title": "Wartungsarbeiten",
+  "app.maintenance.text": "Hubra wird gerade aktualisiert. In wenigen Minuten geht es weiter.",
+  "app.maintenance.until": "Voraussichtlich zurück um {{time}} Uhr.",
+  "app.maintenance.reload": "Diese Seite lädt sich von selbst neu.",
+  "account.notify.discord": "Discord",
+  "account.notify.discordHint": "Discord schickt dir eine Direktnachricht vom Bot des Vereins. Dafür müssen Direktnachrichten von Mitgliedern des Servers erlaubt sein (Discord › Privatsphäre-Einstellungen des Servers)."
+>>>>>>> origin/main
 }

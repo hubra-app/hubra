@@ -252,7 +252,9 @@
         "my_events": "Meine Anmeldungen",
         "my_polls": "Stimmen in meinen Umfragen, Vollmachten",
         "tasks": "Aufgaben für mich (Gesuche, Anmeldungen zum Bestätigen)"
-      }
+      },
+      "discordHint": "Discord schickt dir eine Direktnachricht vom Bot des Vereins. Dafür müssen Direktnachrichten von Mitgliedern des Servers erlaubt sein (Discord › Privatsphäre-Einstellungen des Servers).",
+      "discord": "Discord"
     },
     "push": {
       "title": "Mitteilungen auf diesem Gerät",
@@ -263,6 +265,12 @@
     }
   },
   "app": {
+    "maintenance": {
+      "title": "Wartungsarbeiten",
+      "text": "Hubra wird gerade aktualisiert. In wenigen Minuten geht es weiter.",
+      "until": "Voraussichtlich zurück um {{time}} Uhr.",
+      "reload": "Diese Seite lädt sich von selbst neu."
+    },
     "backend": {
       "unreachable": "Server nicht erreichbar",
       "unreachableMsg": "Der Server antwortet nicht. Prüfe, ob er läuft, und versuche es nochmals."
