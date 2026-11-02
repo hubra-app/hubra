@@ -182,7 +182,7 @@ jobs:
             /tmp/app.yaml /tmp/vollbuild-ch.yaml /tmp/contabo.yaml /tmp/k8s.yaml
       - name: Shell scripts
         if: ${{ !cancelled() && needs.changes.outputs.lint_deploy != 'false' }}
-        run: shellcheck deploy/create-secrets.sh scripts/init-env.sh scripts/smoke-test.sh app/deploy/nginx/40-hubra-runtime.sh
+        run: shellcheck deploy/create-secrets.sh scripts/init-env.sh scripts/smoke-test.sh scripts/image-reuse.sh app/deploy/nginx/40-hubra-runtime.sh
 
   # Backend unit tests on in-memory SQLite (TestingConfig); no services needed.
   backend-tests:

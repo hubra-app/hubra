@@ -45,8 +45,9 @@ configMapGenerator:
       # k3s pod network: trust X-Forwarded-For from Traefik.
       - REAL_IP_FROM=10.42.0.0/16
 
-# Images built by .github/workflows/images.yml. `latest` is the newest release; pin
-# newTag to a release (1.2.3) or a build tag to stay on one version.
+# Images built by .github/workflows/images.yml. `latest` is the newest build
+# (release or manual run on main); pin newTag to a release (1.2.3), or add the
+# digest from the Images run summary, to stay on one version.
 images:
   - name: hubra/backend
     newName: ghcr.io/hubra-app/hubra/backend
