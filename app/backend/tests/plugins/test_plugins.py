@@ -107,6 +107,11 @@ def trust_key(db, pub: str, name: str = "tester"):
     db.session.commit()
 
 
+def _served(out: Path, url: str) -> Path:
+    """The file a fake web server at plugins.example answers *url* with."""
+    return out / url.split("?", 1)[0].rsplit("/", 1)[-1]
+
+
 # ── Manifests ────────────────────────────────────────────────────────────────
 
 
@@ -343,7 +348,7 @@ def test_an_older_index_than_seen_is_refused(tmp_path, key, db, monkeypatch):
     monkeypatch.setattr(
         installer,
         "http_get",
-        lambda url, timeout=30, limit=0: (out / url.rsplit("/", 1)[-1]).read_bytes(),
+        lambda url, timeout=30, limit=0: _served(out, url).read_bytes(),
     )
     url = "https://plugins.example/index.json"
     repo = installer.add_repository(url, installer.preview_repository(url)["keyId"])
@@ -888,3 +893,140 @@ def test_keys_api_shows_purposes_and_refuses_index_keys(
         json={"name": "X", "publicKey": index_pub, "purpose": "index"},
     )
     assert resp.status_code == 400
+
+
+# ── Installs and updates that used to fail now and then ──────────────────────
+
+
+def _publish(src: Path, out: Path, pem: bytes, version: str) -> dict:
+    import yaml
+
+    d = src / "hello"
+    if not d.exists():
+        make_plugin(src, version=version)
+    m = yaml.safe_load((d / "plugin.yaml").read_text())
+    m["version"] = version
+    (d / "plugin.yaml").write_text(yaml.safe_dump(m))
+    (d / "CHANGELOG.md").write_text(f"# Hello\n\n## {version}\n\nNew.\n")
+    return publish.build_repository(src, out, pem, "Test plugins")
+
+
+def test_an_index_a_cdn_still_caches_is_asked_again_past_the_cache(
+    tmp_path, key, db, monkeypatch
+):
+    """GitHub Pages edges serve the previous index for minutes after the
+    hourly publish.  That older answer used to fail every install and update
+    with "refusing a rollback" until the cache expired."""
+    import shutil
+
+    pem, _pub = key
+    src, out, stale = tmp_path / "src", tmp_path / "public", tmp_path / "stale"
+    src.mkdir()
+    _publish(src, out, pem, "1.0.0")
+    shutil.copytree(out, stale)  # what a slow edge keeps serving
+    asked = []
+
+    def cdn(url, timeout=30, limit=0):
+        asked.append(url)
+        # A plain URL hits the stale edge; a new query string reaches origin.
+        return _served(stale if "?" not in url else out, url).read_bytes()
+
+    monkeypatch.setattr(installer, "http_get", cdn)
+    url = "https://plugins.example/index.json"
+    repo = installer.add_repository(url, installer.preview_repository(url)["keyId"])
+    import time
+
+    time.sleep(1.1)  # "generated" has whole seconds
+    newer = _publish(src, out, pem, "1.1.0")
+    repo.index_generated = newer["generated"]  # a worker saw the new one
+    db.session.commit()
+
+    doc = installer.fetch_repository(repo, force=True)
+    assert doc["generated"] == newer["generated"]
+    assert asked[-1].startswith(url + "?_hubra=")
+    assert repo.error == ""
+
+
+def test_update_installs_the_new_version_even_with_an_old_cached_index(
+    tmp_path, key, db, seeded_db, plugin_dir, monkeypatch
+):
+    """Each worker kept its own copy of the index for ten minutes.  The
+    manager saw "Update 1.1.0" from one worker; the click went to another
+    whose copy predated the release, and it reinstalled 1.0.0."""
+    pem, _pub = key
+    src, out = tmp_path / "src", tmp_path / "public"
+    src.mkdir()
+    _publish(src, out, pem, "1.0.0")
+    monkeypatch.setattr(
+        installer,
+        "http_get",
+        lambda url, timeout=30, limit=0: _served(out, url).read_bytes(),
+    )
+    url = "https://plugins.example/index.json"
+    repo = installer.add_repository(url, installer.preview_repository(url)["keyId"])
+    info = installer.install_from_repository(repo, "hello")
+    installer.confirm(info["token"], accept_unsigned=False, repository_id=repo.id)
+    installer._index_cache.clear()
+    installer.fetch_repository(repo)  # this worker caches the 1.0.0 index
+
+    _publish(src, out, pem, "1.1.0")
+    info = installer.install_from_repository(repo, "hello")
+    assert info["version"] == "1.1.0" and info["installedVersion"] == "1.0.0"
+    installer.confirm(info["token"], accept_unsigned=False, repository_id=repo.id)
+    assert db.session.get(InstalledPlugin, "hello").version == "1.1.0"
+
+
+def test_a_change_this_process_has_not_loaded_is_pending_not_an_error(
+    tmp_path, key, db, seeded_db, plugin_dir, monkeypatch
+):
+    """Right after an install the marketplace said "Not loaded: not loaded
+    here" in red until the reload, which read as a failed install."""
+    pem, _pub = key
+    src, out = tmp_path / "src", tmp_path / "public"
+    src.mkdir()
+    _publish(src, out, pem, "1.0.0")
+    monkeypatch.setattr(
+        installer,
+        "http_get",
+        lambda url, timeout=30, limit=0: _served(out, url).read_bytes(),
+    )
+    url = "https://plugins.example/index.json"
+    repo = installer.add_repository(url, installer.preview_repository(url)["keyId"])
+    info = installer.install_from_repository(repo, "hello")
+    installer.confirm(info["token"], accept_unsigned=False, repository_id=repo.id)
+
+    entry = next(p for p in installer.marketplace()["plugins"] if p["id"] == "hello")
+    assert entry["installed"] and entry["pendingReload"] is True
+    assert entry["error"] == ""
+
+
+def test_generation_is_read_with_nothing_installed(app, db):
+    """After uninstalling the last plugin the manager waited forever for
+    "Plugins reloaded": a process with no plugins reported generation 0."""
+    from hubra.core.models.plugin import PluginState
+
+    db.session.merge(PluginState(key="generation", value="7"))
+    db.session.commit()
+    assert loader.discover(app).generation == 7
+
+
+def test_frontend_tag_follows_the_content_and_old_builds_are_not_cached(
+    client, monkeypatch, tmp_path
+):
+    """Every server unpacks its own copy; a tag from the file time differed
+    per server, and a server that had not reloaded yet served the old build
+    under the new tag for an hour."""
+    import os
+
+    spec = loader.current().get("notes")
+    dist = tmp_path / "plugin.js"
+    dist.write_text("/* notes 1 */")
+    monkeypatch.setattr(type(spec), "frontend_file", property(lambda self: dist))
+    tag = spec.frontend_tag
+    os.utime(dist, (1, 1))
+    assert spec.frontend_tag == tag  # same content, other file time
+
+    ok = client.get(f"/api/v1/plugins/notes/frontend.js?v={tag}")
+    assert ok.headers["Cache-Control"] == "public, max-age=3600"
+    old = client.get("/api/v1/plugins/notes/frontend.js?v=2.0.0-newbuild")
+    assert old.status_code == 200 and old.headers["Cache-Control"] == "no-store"
