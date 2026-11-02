@@ -271,6 +271,11 @@ def make_celery(app: Flask) -> Celery:
         beat_scheduler="hubra.core.tasks.scheduling:HubraScheduler",
     )
     conf["beat_schedule"].update(_module_schedules())
+    # Platform tasks on their own queue when a platform worker runs them
+    # (HUBRA_PLATFORM_QUEUE; hubra.core.roles).
+    from hubra.core.roles import task_routes
+
+    conf["task_routes"] = task_routes()
     if testing:
         conf["task_always_eager"] = True
         conf["task_eager_propagates"] = True
@@ -344,7 +349,9 @@ def _report_build(component: str):
     def handler(**_kwargs) -> None:
         from hubra.core.build_info import start_heartbeat
 
-        start_heartbeat(component, celery_app.flask_app)
+        from hubra.core.roles import build_component
+
+        start_heartbeat(build_component(component), celery_app.flask_app)
 
     return handler
 
