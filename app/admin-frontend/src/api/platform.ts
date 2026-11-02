@@ -307,12 +307,54 @@ export interface OpenProblem {
   link: string
 }
 
+export interface Maintenance {
+  active: boolean
+  message: string
+  /** ISO time it ends by itself, or null (until turned off). */
+  until: string | null
+}
+
+export interface AlertSwitches {
+  /** false: no alert goes out by mail or Discord (still logged). */
+  enabled: boolean
+  /** The platform Discord log is set up with the alerts category. */
+  discordReady: boolean
+  types: Record<AlertType, { mail: boolean; discord: boolean }>
+}
+
 export async function getAlertsOverview() {
   return apiFetch<{
     problems: OpenProblem[]
     recent: PlatformEvent[]
     counts: Partial<Record<EventCategory, { warning: number; error: number }>>
+    maintenance: Maintenance
+    switches: AlertSwitches
   }>(`${P}/alerts/overview`)
+}
+
+export async function getAlertSwitches() {
+  return apiFetch<AlertSwitches>(`${P}/alerts/switches`)
+}
+
+export async function updateAlertSwitches(change: {
+  enabled?: boolean
+  types?: Partial<Record<AlertType, Partial<{ mail: boolean; discord: boolean }>>>
+}) {
+  return apiFetch<AlertSwitches>(`${P}/alerts/switches`, {
+    method: 'PUT',
+    body: JSON.stringify(change),
+  })
+}
+
+export async function setMaintenance(body: {
+  on: boolean
+  message?: string
+  minutes?: number | null
+}) {
+  return apiFetch<Maintenance>(`${P}/maintenance`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  })
 }
 
 export interface PerfRoute {

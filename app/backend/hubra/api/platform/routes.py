@@ -437,12 +437,122 @@ def alerts_overview():
         .order_by(PlatformEvent.created_at.desc(), PlatformEvent.id.desc())
         .limit(10)
     ).all()
+    from hubra.core.services import maintenance
+
     return jsonify(
         {
             "problems": platform_monitor.open_problems(),
             "recent": [r.to_dict() for r in recent],
             "counts": counts,
+            "maintenance": maintenance.state(fresh=True),
+            "switches": _alert_switches(),
         }
+    ), 200
+
+
+def _alert_switches() -> dict:
+    """The platform-wide alert switches: all on/off, and per type mail and
+    Discord.  ``discordReady``: the platform Discord log is set up."""
+    from hubra.core.services import platform_discord, platform_settings
+
+    def _off(key: str) -> set[str]:
+        return {t.strip() for t in platform_settings.get(key).split(",") if t.strip()}
+
+    mail_off, discord_off = _off("alerts.mail_off"), _off("alerts.discord_off")
+    try:
+        channel_id, token = platform_discord._settings()
+        discord_ready = bool(channel_id and token) and (
+            "alerts" in platform_discord.enabled_categories()
+        )
+    except Exception:  # noqa: BLE001
+        discord_ready = False
+    return {
+        "enabled": platform_settings.get("alerts.enabled") != "off",
+        "discordReady": discord_ready,
+        "types": {
+            t: {"mail": t not in mail_off, "discord": t not in discord_off}
+            for t in platform_monitor.ALERT_TYPES
+        },
+    }
+
+
+@platform_bp.get("/alerts/switches")
+@require_global_permission(_DIAGNOSTICS)
+def get_alert_switches():
+    return jsonify(_alert_switches()), 200
+
+
+@platform_bp.put("/alerts/switches")
+@require_global_permission(_PERM)
+def update_alert_switches():
+    """Body ``{"enabled": bool, "types": {"<type>": {"mail": bool,
+    "discord": bool}}}``; what is left out keeps its value."""
+    from hubra.core.services import platform_settings
+
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict) or not body:
+        return api_error("VALIDATION_ERROR", "Expected an object", 400)
+    current = _alert_switches()
+    values: dict = {}
+    if "enabled" in body:
+        if not isinstance(body["enabled"], bool):
+            return api_error("VALIDATION_ERROR", "enabled is true or false", 400)
+        values["alerts.enabled"] = None if body["enabled"] else "off"
+    types = body.get("types", {})
+    if not isinstance(types, dict):
+        return api_error("VALIDATION_ERROR", "types is an object", 400)
+    merged = {t: dict(v) for t, v in current["types"].items()}
+    for t, chans in types.items():
+        if t not in merged or not isinstance(chans, dict):
+            return api_error("VALIDATION_ERROR", f"Unknown alert type: {t}", 400)
+        for ch, on in chans.items():
+            if ch not in ("mail", "discord") or not isinstance(on, bool):
+                return api_error(
+                    "VALIDATION_ERROR", f"{t}: mail and discord are true or false", 400
+                )
+            merged[t][ch] = on
+    if types:
+        for ch in ("mail", "discord"):
+            off = [t for t, v in merged.items() if not v[ch]]
+            values[f"alerts.{ch}_off"] = ",".join(off) or None
+    platform_settings.set_many(values, actor_id=g.system_user.id)
+    db.session.commit()
+    return jsonify(_alert_switches()), 200
+
+
+@platform_bp.get("/maintenance")
+@require_global_permission(_DIAGNOSTICS)
+def get_maintenance():
+    from hubra.core.services import maintenance
+
+    return jsonify(maintenance.state(fresh=True)), 200
+
+
+@platform_bp.put("/maintenance")
+@require_global_permission(_PERM)
+def set_maintenance():
+    """Body ``{"on": bool, "message": str, "minutes": int | null}``."""
+    from hubra.core.services import maintenance
+
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body.get("on"), bool):
+        return api_error("VALIDATION_ERROR", "on is true or false", 400)
+    if not body["on"]:
+        return jsonify(maintenance.turn_off(actor_id=g.system_user.id)), 200
+    minutes = body.get("minutes")
+    if minutes is not None and (
+        not isinstance(minutes, int)
+        or isinstance(minutes, bool)
+        or not 1 <= minutes <= 7 * 24 * 60
+    ):
+        return api_error("VALIDATION_ERROR", "minutes is 1 to 10080, or null", 400)
+    message = body.get("message") or ""
+    if not isinstance(message, str) or len(message) > 500:
+        return api_error(
+            "VALIDATION_ERROR", "message is text up to 500 characters", 400
+        )
+    return jsonify(
+        maintenance.turn_on(message.strip(), minutes, actor_id=g.system_user.id)
     ), 200
 
 

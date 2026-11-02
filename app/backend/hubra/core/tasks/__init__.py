@@ -221,9 +221,10 @@ def make_celery(app: Flask) -> Celery:
                 "task": "hubra.core.tasks.infra_checks.run_all_checks_task",
                 "schedule": crontab(minute=0),
             },
-            "api-error-rate-hourly": {
+            # Every 10 minutes over the last hour; one alert per incident.
+            "api-error-rate-10min": {
                 "task": "hubra.core.tasks.monitoring.check_api_error_rate_task",
-                "schedule": crontab(minute=15),
+                "schedule": 600.0,
             },
             "check-domains-every-minute": {
                 "task": "hubra.core.tasks.domain_tasks.check_domains",

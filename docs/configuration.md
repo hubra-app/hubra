@@ -87,6 +87,22 @@ the event log (and Discord). A database outage is mailed once it is over,
 with how long it lasted. Stopped background jobs cannot report themselves:
 watch the public `/health` endpoint from outside for that.
 
+The **Rules** tab switches alerts for the whole platform: a master switch
+(`alerts.enabled`; off sends nothing by mail or to Discord, the event log
+and the overview keep everything) and, per type, mail and Discord
+(`alerts.mail_off`, `alerts.discord_off`). The API error-rate alert counts
+only server errors (5xx) in the last hour, needs at least 50 requests,
+leaves out errors in the first two minutes after a backend starts and is
+sent once per incident, with a "back to normal" when the rate drops. An
+expired sign-in after a release (401) is not an error.
+
+**Maintenance mode** (manage › Alerts › Overview, or
+`flask maintenance on --minutes 15 --message "…"` / `flask maintenance off`):
+the club apps show a maintenance page and the club API answers 503;
+manage, sign-in and account pages keep working. All alerts are paused and
+requests are not counted for the error rate. It ends on its own at the set
+time (`maintenance.enabled`, `maintenance.message`, `maintenance.until`).
+
 **Backups** are platform-only too: manage › Platform › Backups (global
 permission `backups.manage`; superadmins have it). There is no backup of the
 whole database: the global backup holds the public schema (accounts, clubs,
