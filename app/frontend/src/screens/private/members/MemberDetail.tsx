@@ -372,7 +372,7 @@ export function MemberDetailScreen({
                     color: 'var(--mantine-color-red-text)',
                   }}
                 >
-                  <IconLock size={13} /> {t('members.detail.mustChange')}
+                  <IconLock size={14} /> {t('members.detail.mustChange')}
                 </span>
               </DetailRow>
             )}

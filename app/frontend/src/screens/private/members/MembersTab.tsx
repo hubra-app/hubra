@@ -503,7 +503,7 @@ export function MembersTab() {
                             verticalAlign: 'middle',
                           }}
                         >
-                          <IconShieldCheckFilled size={13} />
+                          <IconShieldCheckFilled size={14} />
                         </span>
                       )}
                     </div>

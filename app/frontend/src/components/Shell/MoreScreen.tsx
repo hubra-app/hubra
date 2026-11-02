@@ -15,7 +15,7 @@ export function MoreScreen() {
     <div>
       <PageHead title={t('shell.nav.more')} />
       <EmptyState
-        icon={<IconDots size={26} stroke={1.6} />}
+        icon={<IconDots size={24} />}
         title={t('shell.more.emptyTitle')}
         description={t('shell.more.emptyDesc')}
       />

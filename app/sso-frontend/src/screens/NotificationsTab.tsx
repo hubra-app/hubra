@@ -199,7 +199,7 @@ export function NotificationsTab() {
 
       {visible.length === 0 ? (
         <Paper withBorder py={40} ta="center" c="dimmed">
-          <IconBellOff size={28} stroke={1.5} />
+          <IconBellOff size={24} />
           <Text size="sm" mt="xs">
             {filter === 'unread'
               ? tr('Keine ungelesenen Benachrichtigungen.', 'No unread notifications.')

@@ -112,7 +112,7 @@ function MyCases() {
   if (data.length === 0)
     return (
       <EmptyState
-        icon={<IconMessage size={26} stroke={1.6} />}
+        icon={<IconMessage size={24} />}
         title={t('support.page.noneTitle', 'Noch keine Meldungen')}
         description={t(
           'support.page.noneDesc',
@@ -321,7 +321,7 @@ function Roadmap() {
   if (data.length === 0)
     return (
       <EmptyState
-        icon={<IconBulb size={26} stroke={1.6} />}
+        icon={<IconBulb size={24} />}
         title={t('support.roadmap.emptyTitle', 'Die Roadmap ist noch leer')}
         description={t(
           'support.roadmap.emptyDesc',

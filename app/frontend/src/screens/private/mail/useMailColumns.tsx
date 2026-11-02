@@ -44,7 +44,7 @@ function SyncBadge({
         radius="xl"
         style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
       >
-        <IconCircleCheck size={11} />
+        <IconCircleCheck size={12} />
         {t('mail.admin.syncOk', 'OK')}
       </Badge>
     )

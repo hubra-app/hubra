@@ -200,7 +200,7 @@ export function KVSettingsTab() {
         renderKeySuffix={(entry) => (
           <>
             {entry.sensitive && (
-              <IconLock size={11} style={{ color: 'var(--hb-text-3)', flexShrink: 0 }} />
+              <IconLock size={12} style={{ color: 'var(--hb-text-3)', flexShrink: 0 }} />
             )}
             {entry.restricted && (
               <Badge

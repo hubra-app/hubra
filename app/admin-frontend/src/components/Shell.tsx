@@ -195,7 +195,7 @@ function LanguageMenu() {
           color="gray"
           size="sm"
           px={10}
-          leftSection={<IconWorld size={17} />}
+          leftSection={<IconWorld size={16} />}
           aria-label={labels[lang]}
         >
           {lang.toUpperCase()}

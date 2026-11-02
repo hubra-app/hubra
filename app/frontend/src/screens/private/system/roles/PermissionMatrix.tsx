@@ -94,7 +94,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                       ADMIN
                     </span>
                   )}
-                  {role.isSystem && <IconLock size={11} style={{ color: 'var(--mantine-color-acc-9)' }} />}
+                  {role.isSystem && <IconLock size={12} style={{ color: 'var(--mantine-color-acc-9)' }} />}
                   {mayEdit(role) && (
                     <button
                       onClick={() => openEdit(role)}
@@ -108,7 +108,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
                       }}
                       title={`Edit ${role.name}`}
                     >
-                      <IconPencil size={11} />
+                      <IconPencil size={12} />
                     </button>
                   )}
                   {mayDelete(role) && (

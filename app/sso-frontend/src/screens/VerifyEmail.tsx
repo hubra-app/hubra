@@ -53,7 +53,7 @@ export function VerifyEmail() {
             {state === 'success' && (
               <>
                 <ThemeIcon size={56} radius="xl" color="green" variant="light">
-                  <IconCheck size={28} />
+                  <IconCheck size={24} />
                 </ThemeIcon>
                 <Title order={2}>{tr('E-Mail bestätigt', 'Email confirmed')}</Title>
                 <Text size="sm" c="dimmed" mb="md">
@@ -64,7 +64,7 @@ export function VerifyEmail() {
             {state === 'error' && (
               <>
                 <ThemeIcon size={56} radius="xl" color="red" variant="light">
-                  <IconCircleX size={28} />
+                  <IconCircleX size={24} />
                 </ThemeIcon>
                 <Title order={2}>{tr('Bestätigung fehlgeschlagen', 'Confirmation failed')}</Title>
                 <Text size="sm" c="dimmed" mb="md">

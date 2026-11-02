@@ -721,7 +721,7 @@ export function TiersTab() {
             }}
             onClick={openAdd}
           >
-            <IconPlus size={22} style={{ color: 'var(--hb-text-3)', marginBottom: 8 }} />
+            <IconPlus size={24} style={{ color: 'var(--hb-text-3)', marginBottom: 8 }} />
             <span
               style={{
                 fontSize: 'var(--mantine-font-size-sm)',

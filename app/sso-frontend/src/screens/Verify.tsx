@@ -132,7 +132,7 @@ export function VerifyScreen() {
       <Paper withBorder p="xl">
         <Stack gap="md">
           <ThemeIcon size={48} radius="xl" variant="light">
-            <IconMailCheck size={26} />
+            <IconMailCheck size={24} />
           </ThemeIcon>
           <div>
             <Title order={2} mb={6}>

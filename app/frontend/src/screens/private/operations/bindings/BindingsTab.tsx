@@ -175,7 +175,7 @@ export function BindingsTab() {
         )}
         renderKeySuffix={(entry) =>
           entry.is_protected ? (
-            <IconLock size={11} style={{ color: 'var(--mantine-color-orange-text)', flexShrink: 0 }} />
+            <IconLock size={12} style={{ color: 'var(--mantine-color-orange-text)', flexShrink: 0 }} />
           ) : null
         }
         renderKeyBelow={(entry) => (

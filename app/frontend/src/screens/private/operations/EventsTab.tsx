@@ -621,7 +621,7 @@ export function EventsTab() {
                   gap: 4,
                 }}
               >
-                <IconUserCheck size={13} style={{ color: 'var(--hb-text-2)' }} />
+                <IconUserCheck size={14} style={{ color: 'var(--hb-text-2)' }} />
                 <span
                   className="num"
                   style={{

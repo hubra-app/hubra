@@ -543,7 +543,7 @@ export function Backups() {
                       <span style={{ fontWeight: 600 }}>{b.tenant_slug ?? `#${b.tenant_id}`}</span>
                     ) : (
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--hb-text-2)' }}>
-                        <IconWorld size={13} /> {tr('Global', 'Global')}
+                        <IconWorld size={14} /> {tr('Global', 'Global')}
                       </span>
                     )}
                     {b.scope === 'club' && b.tenant_id === null && (
@@ -600,7 +600,7 @@ export function Backups() {
                       }}
                     >
                       {b.status === 'pending' || b.status === 'running' ? (
-                        <IconClock size={13} />
+                        <IconClock size={14} />
                       ) : null}
                       {label(STATUS_LABELS, b.status)}
                     </span>

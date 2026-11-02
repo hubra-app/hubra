@@ -203,7 +203,7 @@ export function NotificationPanel() {
 
         {visible.length === 0 ? (
           <Box ta="center" py={56} px="md" style={{ color: 'var(--hb-text-3)' }}>
-            <IconBellOff size={28} stroke={1.5} />
+            <IconBellOff size={24} />
             <Text fz="sm" mt="xs">
               {filter === 'unread'
                 ? t('shell.notif.noUnread', 'Keine ungelesenen Benachrichtigungen.')

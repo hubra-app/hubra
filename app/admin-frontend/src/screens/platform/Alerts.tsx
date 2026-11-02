@@ -216,9 +216,9 @@ export function OverviewPanel() {
       <Paper withBorder p="lg">
         <Group gap={10} mb={12}>
           {data && problems.length === 0 ? (
-            <IconCircleCheck size={22} color="var(--mantine-color-green-7)" />
+            <IconCircleCheck size={24} color="var(--mantine-color-green-7)" />
           ) : (
-            <IconAlertTriangle size={22} color="var(--mantine-color-orange-7)" />
+            <IconAlertTriangle size={24} color="var(--mantine-color-orange-7)" />
           )}
           <Title order={4}>
             {!data

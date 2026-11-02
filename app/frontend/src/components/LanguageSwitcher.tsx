@@ -41,7 +41,7 @@ export function LanguageSwitcher() {
           color="gray"
           size="sm"
           px={10}
-          leftSection={<IconWorld size={17} />}
+          leftSection={<IconWorld size={16} />}
           aria-label={LANGUAGE_LABELS[current] || current}
         >
           {LANGUAGE_SHORT[current] || current}

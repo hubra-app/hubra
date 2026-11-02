@@ -115,7 +115,7 @@ export function ConfirmScreen() {
       <Paper withBorder p="xl">
         <Stack gap="md">
           <ThemeIcon size={48} radius="xl" variant="light" color={done ? 'green' : undefined}>
-            {done ? <IconCircleCheck size={26} /> : <IconFingerprint size={26} />}
+            {done ? <IconCircleCheck size={24} /> : <IconFingerprint size={24} />}
           </ThemeIcon>
           {done ? (
             <div>

@@ -85,7 +85,7 @@ export function ForcedPasswordChangeModal() {
     >
       <Group gap="sm" mb="md" align="center">
         <ThemeIcon size={44} radius="md" color="orange" variant="light">
-          <IconAlertTriangle size={22} />
+          <IconAlertTriangle size={24} />
         </ThemeIcon>
         <Stack gap={2}>
           <Text fz={17} fw={700}>
