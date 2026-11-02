@@ -36,6 +36,10 @@ export function NotificationsCard() {
   const [busy, setBusy] = useState(false)
   const { data } = useQuery({ queryKey: qk.account.notifications, queryFn: getMyNotifications })
   if (!data) return null
+  const channels: [NotifyChannel, string][] = [
+    ...CHANNELS,
+    ...(data.apps ?? []).map((a): [NotifyChannel, string] => [a.key, a.name]),
+  ]
 
   const toggle = async (topic: NotifyTopic, channel: NotifyChannel, on: boolean) => {
     setBusy(true)
@@ -70,7 +74,7 @@ export function NotificationsCard() {
           <Table.Thead>
             <Table.Tr>
               <Table.Th>{t('account.notify.topic', 'Thema')}</Table.Th>
-              {CHANNELS.map(([channel, label]) => (
+              {channels.map(([channel, label]) => (
                 <Table.Th key={channel} w={64} ta="center" fz="xs">
                   {t(`account.notify.${channel}`, label)}
                 </Table.Th>
@@ -83,7 +87,7 @@ export function NotificationsCard() {
                 <Table.Td fz="sm" style={{ wordBreak: 'break-word' }}>
                   {t(`account.notify.topics.${topic}`, label)}
                 </Table.Td>
-                {CHANNELS.map(([channel, channelLabel]) => {
+                {channels.map(([channel, channelLabel]) => {
                   const value = data.topics[topic]?.[channel]
                   return (
                     <Table.Td key={channel} ta="center">
@@ -116,6 +120,14 @@ export function NotificationsCard() {
             'Push kommt nur auf Geräte, auf denen du Push unten eingeschaltet hast.',
           )}
         </Text>
+        {(data.apps ?? []).some((a) => a.key === 'discord') && (
+          <Text fz="xs" c="dimmed">
+            {t(
+              'account.notify.discordHint',
+              'Discord schickt dir eine Direktnachricht vom Bot des Vereins. Dafür müssen Direktnachrichten von Mitgliedern des Servers erlaubt sein (Discord › Privatsphäre-Einstellungen des Servers).',
+            )}
+          </Text>
+        )}
       </Stack>
     </Paper>
   )

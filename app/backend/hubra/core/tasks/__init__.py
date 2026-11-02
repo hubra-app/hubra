@@ -129,6 +129,7 @@ def make_celery(app: Flask) -> Celery:
             "hubra.core.tasks.platform_discord_tasks",
             "hubra.core.tasks.push_tasks",
             "hubra.core.tasks.mail_monitor_tasks",
+            "hubra.core.tasks.connected_app_tasks",
             *_module_task_imports(),
         ],
     )
@@ -236,6 +237,10 @@ def make_celery(app: Flask) -> Celery:
             "prune-platform-events-daily": {
                 "task": "hubra.core.tasks.mail_monitor_tasks.prune_platform_events",
                 "schedule": crontab(hour=2, minute=30),
+            },
+            "discord-role-connections-nightly": {
+                "task": "hubra.core.tasks.connected_app_tasks.push_all_role_connections",
+                "schedule": crontab(hour=4, minute=10),
             },
             "plugin-updates": {
                 "task": "hubra.core.tasks.plugin_tasks.check_plugin_updates",

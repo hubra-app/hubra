@@ -8,6 +8,10 @@ device, a notice to the club's owners) always comes.
 
 Bell and push are stored in ``members.notify_prefs``; the reminder mails keep
 their own columns (``event_reminder_mail``, ``poll_reminder_mail``).
+
+A connected app that delivers notifications (a Discord direct message, see
+``channels``) is one more channel, named after its code. It is off until the
+member turns it on, and never carries a notification without a topic.
 """
 
 from __future__ import annotations
@@ -30,33 +34,42 @@ MAIL_COLUMNS = {
 }
 
 
+def default(channel: str) -> bool:
+    """Bell and push are on until turned off; app channels are off."""
+    return channel in CHANNELS
+
+
 def wants(stored: dict | None, topic: str | None, channel: str) -> bool:
     """Whether a member with ``notify_prefs`` *stored* gets *topic* on
-    *channel*.  No topic: always."""
+    *channel*.  No topic: always on the bell and push, never on an app."""
     if not topic:
-        return True
-    value = ((stored or {}).get(topic) or {}).get(channel, True)
-    return value is not False
+        return default(channel)
+    value = ((stored or {}).get(topic) or {}).get(channel, default(channel))
+    return value is True
 
 
-def prefs_for(member) -> dict[str, dict[str, bool]]:
+def prefs_for(member, apps: list[str] | tuple[str, ...] = ()) -> dict[str, dict[str, bool]]:
+    """Per topic and channel. *apps*: the app channels the member has
+    (``channels.available``)."""
     out: dict[str, dict[str, bool]] = {}
     for topic in TOPICS:
-        row = {c: wants(member.notify_prefs, topic, c) for c in CHANNELS}
+        row = {c: wants(member.notify_prefs, topic, c) for c in (*CHANNELS, *apps)}
         if topic in MAIL_COLUMNS:
             row["mail"] = bool(getattr(member, MAIL_COLUMNS[topic]))
         out[topic] = row
     return out
 
 
-def validate(body) -> str | None:
+def validate(body, apps: list[str] | tuple[str, ...] = ()) -> str | None:
     """Error text for a body of ``{topic: {channel: bool}}``, or None."""
     if not isinstance(body, dict) or not body:
         return "Expected an object of topics"
     for topic, channels in body.items():
         if topic not in TOPICS:
             return f"Unknown topic: {topic}"
-        allowed = CHANNELS + (("mail",) if topic in MAIL_COLUMNS else ())
+        allowed = (
+            CHANNELS + tuple(apps) + (("mail",) if topic in MAIL_COLUMNS else ())
+        )
         if not isinstance(channels, dict) or not channels:
             return f"{topic}: expected an object of channels"
         for channel, on in channels.items():
@@ -76,9 +89,9 @@ def apply(member, body: dict) -> None:
                 setattr(member, MAIL_COLUMNS[topic], on)
             else:
                 stored.setdefault(topic, {})[channel] = on
-    # Keep only what is off: on is the default.
-    member.notify_prefs = {
-        t: {c: v for c, v in chans.items() if v is False}
+    # Keep only what differs from the default (bell and push off, an app on).
+    kept = {
+        t: {c: v for c, v in chans.items() if v is not default(c)}
         for t, chans in stored.items()
-        if any(v is False for v in chans.values())
-    } or None
+    }
+    member.notify_prefs = {t: chans for t, chans in kept.items() if chans} or None

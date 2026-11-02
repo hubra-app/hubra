@@ -88,6 +88,7 @@ export interface DiscordStatus {
   }
   interactions: { expected: string; actual?: string | null }
   redirectUris: string[]
+  linkedRolesUrl?: string
   platformLog: {
     channelId: string
     categories: string[]
