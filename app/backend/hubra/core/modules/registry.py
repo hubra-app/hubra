@@ -139,6 +139,13 @@ class ModuleRegistry:
     def app_provider(self, code: str) -> tuple[Module, AppProvider] | None:
         return next(((m, a) for m, a in self.app_providers() if a.code == code), None)
 
+    def processes(self) -> dict[str, str]:
+        """Long-lived processes of all modules: ``{name: "module.path:fn"}``."""
+        out: dict[str, str] = {}
+        for module in self.all():
+            out.update(module.processes)
+        return out
+
     def task_modules(self) -> list[str]:
         return [t for m in self.all() for t in m.tasks]
 

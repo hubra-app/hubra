@@ -351,6 +351,36 @@ def _register_cli(app: Flask) -> None:
         db.session.commit()
         click.echo(f"Module catalog synced ({created} new).")
 
+    @modules_cli.command("run")
+    @click.argument("name")
+    @click.option(
+        "--wait",
+        type=int,
+        default=0,
+        help="When no module has the process (plugin not installed yet), "
+        "wait this many seconds and exit 0 instead of failing, so the "
+        "container restarts and looks again.",
+    )
+    def modules_run(name: str, wait: int):
+        """Run a module's long-lived process (``processes=`` in its manifest),
+        such as ``discord-gateway``. Runs until stopped."""
+        import time
+        from importlib import import_module
+
+        from hubra.core.modules import registry
+
+        registry.load()
+        target = registry.processes().get(name)
+        if target is None:
+            known = ", ".join(sorted(registry.processes())) or "none"
+            if wait > 0:
+                click.echo(f"No process '{name}' yet (known: {known}); waiting.")
+                time.sleep(wait)
+                return
+            raise click.ClickException(f"No process '{name}' (known: {known})")
+        path, _, attr = target.partition(":")
+        getattr(import_module(path), attr)()
+
     @modules_cli.command("seal-secrets")
     def modules_seal_secrets():
         """Encrypt secret module settings still stored in the clear."""

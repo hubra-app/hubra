@@ -499,6 +499,8 @@ export interface LinkedAccount {
   externalId: string
   username: string
   linkedAt: string | null
+  /** Discord: Linked Roles allowed */
+  linkedRoles?: boolean
 }
 
 export interface LinkedAccounts {

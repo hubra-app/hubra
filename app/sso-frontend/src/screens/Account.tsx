@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Alert,
   Badge,
@@ -585,6 +585,10 @@ function LinkedAccountsTab() {
   const linked = useQuery({ queryKey: ['linked-accounts'], queryFn: authApi.getLinkedAccounts })
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['linked-accounts'] })
 
+  // Discord's Linked Roles button opens ?link=discord: start right away.
+  const autoStarted = useRef(false)
+  const autoLink = params.get('link')
+
   useEffect(() => {
     const error = params.get('error')
     if (params.get('linked')) {
@@ -602,6 +606,17 @@ function LinkedAccountsTab() {
     onSuccess: ({ url }) => window.location.assign(url),
     onError: (err) => notify('error', tr('Nicht verknüpft', 'Not linked'), errorText(err, '')),
   })
+  useEffect(() => {
+    if (!autoLink || autoStarted.current || !linked.data) return
+    const p = linked.data.providers.find((x) => x.code === autoLink)
+    const acc = linked.data.accounts.find((a) => a.provider === autoLink)
+    if (!p?.available || (acc && acc.linkedRoles !== false)) {
+      setParams({}, { replace: true })
+      return
+    }
+    autoStarted.current = true
+    start.mutate(autoLink)
+  }, [autoLink, linked.data, start, setParams])
   const unlink = useMutation({
     mutationFn: authApi.unlinkAccount,
     onSuccess: () => {
@@ -618,8 +633,8 @@ function LinkedAccountsTab() {
     <Stack gap="sm">
       <Text size="sm" c="dimmed">
         {tr(
-          'Verknüpfe Konten bei anderen Diensten, damit deine Vereine dich dort erkennen, zum Beispiel für deine Rollen auf ihrem Discord-Server. Gespeichert werden nur der Name und die Nummer des Kontos.',
-          'Link accounts on other services so your clubs recognise you there, for example for your roles on their Discord server. Only the account name and number are kept.',
+          'Verknüpfe Konten bei anderen Diensten, damit deine Vereine dich dort erkennen, zum Beispiel für deine Rollen auf ihrem Discord-Server. Gespeichert werden der Name und die Nummer des Kontos. Bei Discord zusätzlich, verschlüsselt, die Erlaubnis für «Linked Roles»: Damit sehen Discord-Server nur, ob du Mitglied eines Vereins auf Hubra bist, in wie vielen und seit wann.',
+          'Link accounts on other services so your clubs recognise you there, for example for your roles on their Discord server. The account name and number are kept. For Discord also, encrypted, the permission for Linked Roles: Discord servers then only see whether you are a member of a club on Hubra, of how many, and since when.',
         )}
       </Text>
       {linked.data.providers.map((p) => {
@@ -631,23 +646,39 @@ function LinkedAccountsTab() {
                 <Text fw={600}>{p.name}</Text>
                 <Text size="xs" c="dimmed" truncate>
                   {acc
-                    ? tr(`Verknüpft als ${acc.username}`, `Linked as ${acc.username}`)
+                    ? acc.linkedRoles === false && p.code === 'discord'
+                      ? tr(
+                          `Verknüpft als ${acc.username}, ohne Linked Roles`,
+                          `Linked as ${acc.username}, without Linked Roles`,
+                        )
+                      : tr(`Verknüpft als ${acc.username}`, `Linked as ${acc.username}`)
                     : p.available
                       ? tr('Nicht verknüpft', 'Not linked')
                       : tr('Auf dieser Plattform nicht eingerichtet', 'Not set up on this platform')}
                 </Text>
               </div>
               {acc ? (
-                <Button
-                  variant="subtle"
-                  color="red"
-                  size="xs"
-                  style={{ flexShrink: 0 }}
-                  loading={unlink.isPending}
-                  onClick={() => unlink.mutate(p.code)}
-                >
-                  {tr('Entfernen', 'Remove')}
-                </Button>
+                <Group gap={4} wrap="nowrap" style={{ flexShrink: 0 }}>
+                  {acc.linkedRoles === false && p.code === 'discord' && p.available && (
+                    <Button
+                      variant="light"
+                      size="xs"
+                      loading={start.isPending}
+                      onClick={() => start.mutate(p.code)}
+                    >
+                      {tr('Linked Roles erlauben', 'Allow Linked Roles')}
+                    </Button>
+                  )}
+                  <Button
+                    variant="subtle"
+                    color="red"
+                    size="xs"
+                    loading={unlink.isPending}
+                    onClick={() => unlink.mutate(p.code)}
+                  >
+                    {tr('Entfernen', 'Remove')}
+                  </Button>
+                </Group>
               ) : (
                 <Button
                   size="xs"

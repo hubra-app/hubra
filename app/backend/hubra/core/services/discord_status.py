@@ -89,6 +89,15 @@ def redirect_uris() -> list[str]:
     ]
 
 
+def linked_roles_url() -> str:
+    """General Information › Linked Roles Verification URL: where Discord
+    sends someone who picks a Hubra linked role."""
+    from hubra.core.services.email import _get_sso_base_url
+
+    base = _get_sso_base_url()
+    return f"{base}/account/verknuepfungen?link=discord" if base else ""
+
+
 def _redis():
     from hubra.core.redis_client import get_redis_client
 
@@ -259,6 +268,7 @@ def status(refresh: bool = False) -> dict:
             "actual": live.get("interactionsUrl"),
         },
         "redirectUris": redirect_uris(),
+        "linkedRolesUrl": linked_roles_url(),
         "platformLog": {
             "channelId": channel_id,
             "categories": sorted(platform_discord.enabled_categories()),

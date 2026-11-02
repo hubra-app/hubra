@@ -3253,5 +3253,7 @@
   "clubSettings.mfaAll": "Für alle Mitglieder",
   "clubSettings.mfaHint": "Wer es braucht, öffnet den Verein erst, wenn ein Passkey oder eine Authenticator-App eingerichtet ist. Das geht im Konto unter Zwei-Faktor. Admins sind Inhaber und Admins, auch über eine Funktion.",
   "clubSettings.mfaMissing": "{{n}} von ihnen haben noch keine Zwei-Faktor-Anmeldung und kommen erst wieder in den Verein, wenn sie es eingerichtet haben. Sag ihnen vorher Bescheid.",
-  "clubSettings.mfaMissingNone": "Alle, die es betrifft, haben Zwei-Faktor eingerichtet."
+  "clubSettings.mfaMissingNone": "Alle, die es betrifft, haben Zwei-Faktor eingerichtet.",
+  "account.notify.discord": "Discord",
+  "account.notify.discordHint": "Discord schickt dir eine Direktnachricht vom Bot des Vereins. Dafür müssen Direktnachrichten von Mitgliedern des Servers erlaubt sein (Discord › Privatsphäre-Einstellungen des Servers)."
 }
