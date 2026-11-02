@@ -3230,6 +3230,7 @@
   "mail.email.platform_alert.type.service_down": "Dienst",
   "mail.email.platform_alert.type.backup_failed": "Backup",
   "mail.email.platform_alert.type.plugin_updates": "Plugins",
+  "mail.email.platform_alert.type.upgrades": "Update",
   "mail.email.platform_alert.type.system": "System",
   "account.notify.title": "Benachrichtigungen",
   "account.notify.hint": "Wähle pro Thema, wo du es bekommst: in der Glocke in Hubra, als Push im Browser oder per E-Mail. Hinweise zur Sicherheit deines Kontos kommen immer.",
