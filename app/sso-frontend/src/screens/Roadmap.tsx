@@ -15,7 +15,6 @@ import {
   Title,
   UnstyledButton,
 } from '@mantine/core'
-import { notifications } from '@mantine/notifications'
 import { IconArrowBigUp, IconArrowBigUpFilled } from '@tabler/icons-react'
 import { ThemeToggle } from '@hubra/ui'
 import { useSso } from '@/context/SsoContext'
@@ -140,6 +139,7 @@ export function RoadmapScreen() {
 
 function Card({ item, signedIn }: { item: RoadmapItem; signedIn: boolean }) {
   const { tr } = useLang()
+  const { notify } = useSso()
   const queryClient = useQueryClient()
   const [busy, setBusy] = useState(false)
   const done = item.status === 'done'
@@ -156,11 +156,7 @@ function Card({ item, signedIn }: { item: RoadmapItem; signedIn: boolean }) {
         old?.map((i) => (i.id === item.id ? { ...i, votes: res.votes, voted: res.voted } : i)),
       )
     } catch (err) {
-      notifications.show({
-        color: 'red',
-        title: tr('Abstimmen fehlgeschlagen', 'Voting failed'),
-        message: (err as Error).message,
-      })
+      notify('error', tr('Abstimmen fehlgeschlagen', 'Voting failed'), (err as Error).message)
     } finally {
       setBusy(false)
     }
