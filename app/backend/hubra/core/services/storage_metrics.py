@@ -7,7 +7,6 @@ and backup sizes. Used by the admin dashboard and API usage stats.
 import logging
 from typing import Any
 
-from sqlalchemy import text
 
 from hubra.core.extensions import db
 
@@ -27,18 +26,14 @@ def get_storage_bytes(tenant_id: int) -> int:
 
 
 def _get_pg_schema_size(tenant_id: int) -> int:
-    """Return the PostgreSQL schema size in bytes for the tenant."""
+    """Return the size in bytes of the tenant's own schema (tables, indexes
+    and TOAST), not of the whole database."""
     try:
-        schema_name = f"tenant_{tenant_id}"
-        result = db.session.scalar(
-            text(
-                "SELECT pg_database_size(current_database()) "
-                "WHERE EXISTS (SELECT 1 FROM information_schema.schemata "
-                "WHERE schema_name = :schema)"
-            ),
-            {"schema": schema_name},
-        )
-        return int(result or 0)
+        if db.session.get_bind().dialect.name != "postgresql":
+            return 0
+        from hubra.core.services.tenant_health import _schema_sizes
+
+        return _schema_sizes([tenant_id]).get(tenant_id, 0)
     except Exception:
         _log.debug("Could not get PG schema size for tenant %d", tenant_id)
         return 0

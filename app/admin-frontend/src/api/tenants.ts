@@ -317,3 +317,49 @@ export async function removeClubAdmin(tenantId: number, userId: number, reason?:
     body: JSON.stringify({ reason }),
   })
 }
+
+// ── Club health (manage › Alle Vereine) ──────────────────────────────────────
+
+export type HealthLevel = 'ok' | 'idle' | 'warning' | 'error'
+
+export interface TenantHealth {
+  members: number
+  active_members: number
+  last_activity: string | null
+  storage_bytes: number
+  mail: { sent: number; failed: number }
+  plugins: number
+  alerts: { warning: number; error: number }
+  level: HealthLevel
+}
+
+export interface TenantWithHealth extends Tenant {
+  health: TenantHealth
+}
+
+export interface TenantHealthParams {
+  search?: string
+  plan?: string
+  status?: string
+  health?: HealthLevel | 'problems'
+  sort_by?: string
+  sort_dir?: 'asc' | 'desc'
+  page?: number
+  per_page?: number
+}
+
+export async function listTenantsHealth(params: TenantHealthParams = {}): Promise<{
+  tenants: TenantWithHealth[]
+  total: number
+  page: number
+  per_page: number
+  counts: Record<HealthLevel, number>
+  windows: { idle_days: number; mail_days: number; alert_hours: number }
+}> {
+  const qs = new URLSearchParams()
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== '') qs.set(k, String(v))
+  }
+  const s = qs.toString()
+  return apiFetch(`/system/tenants/health${s ? `?${s}` : ''}`)
+}
