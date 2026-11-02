@@ -14,10 +14,14 @@ async function signOut() {
   window.location.assign('/login')
 }
 
+/** Width of the top bar row; the same on every signed-in page. */
+const TOPBAR_WIDTH = 1120
+
 /**
  * The frame of the signed-in pages: a white top bar (logo, "Meine Vereine",
  * "Mein Konto", sign-out) over a centred column. `actions` sits above the
- * content, e.g. a back link.
+ * content, e.g. a back link. `width` caps the content column; the top bar
+ * always spans the wider row so it does not jump between pages.
  */
 export function SignedInFrame({
   width = 560,
@@ -50,7 +54,7 @@ export function SignedInFrame({
         <Group
           justify="space-between"
           wrap="nowrap"
-          style={{ maxWidth: Math.max(width, 720), margin: '0 auto', height: '100%', padding: '0 16px' }}
+          style={{ maxWidth: Math.max(width, TOPBAR_WIDTH), margin: '0 auto', height: '100%', padding: '0 16px' }}
         >
           <Group
             gap={10}

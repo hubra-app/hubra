@@ -12,6 +12,7 @@ import logging
 
 from sqlalchemy import select
 
+from hubra.core.errors import error_message
 from hubra.core.extensions import db
 from hubra.core.models.tenant import GlobalAuditEntry, Tenant
 from hubra.core.models.tenant_request import TenantRequest
@@ -102,7 +103,9 @@ def approve(
         )
     except TenantProvisioningError as exc:
         db.session.rollback()
-        raise RequestDecisionError(422, "PROVISION_FAILED", str(exc)) from None
+        raise RequestDecisionError(
+            422, "PROVISION_FAILED", error_message(exc)
+        ) from None
 
     req.status = "approved"
     req.reviewed_by = int(reviewer_id) if reviewer_id else None

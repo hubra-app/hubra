@@ -75,8 +75,8 @@ export interface MaintenanceState {
   active: boolean;
   message: string;
   until: string | null;
-  /** Announced maintenance that has not started yet (a banner shows). */
-  planned?: { start: string; minutes: number | null; message: string } | null;
+  /** The next planned window for this club, once its notice period started. */
+  upcoming?: { id: number; starts_at: string; ends_at: string; message: string } | null;
 }
 
 let onMaintenance: ((state: MaintenanceState) => void) | null = null;
@@ -91,7 +91,12 @@ export function setMaintenanceHandler(
 
 /** GET /maintenance (public): whether the platform is in maintenance. */
 export async function getMaintenance(signal?: AbortSignal): Promise<MaintenanceState> {
-  const res = await fetch(`${BASE}/maintenance`, { credentials: "include", signal });
+  const res = await fetch(`${BASE}/maintenance`, {
+    credentials: "include",
+    signal,
+    // The club's own windows count too.
+    headers: _tenantSlug ? { "X-Tenant-Slug": _tenantSlug } : undefined,
+  });
   if (!res.ok) return { active: false, message: "", until: null };
   return res.json() as Promise<MaintenanceState>;
 }

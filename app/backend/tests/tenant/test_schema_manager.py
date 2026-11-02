@@ -32,6 +32,8 @@ _GLOBAL_ONLY_TABLES = frozenset(
         "platform_settings",
         # The platform's monitoring log (mail sends, relays, alerts).
         "platform_events",
+        # Planned maintenance for every club or some clubs.
+        "maintenance_windows",
         "data_keys",
         "plugin_trusted_keys",
         "email_verifications",

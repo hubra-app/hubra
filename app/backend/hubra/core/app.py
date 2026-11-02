@@ -154,6 +154,7 @@ def create_app(config_name: str | None = None) -> Flask:
 
     app.before_request(_reject_scalar_json)
     app.before_request(resolve_tenant)
+    maintenance.install_club_gate(app)
 
     limiter.init_app(app)
 

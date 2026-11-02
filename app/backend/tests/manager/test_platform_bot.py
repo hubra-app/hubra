@@ -10,6 +10,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from hubra.core.models.connected_app import ExternalAccount
+from hubra.core.models.maintenance_window import MaintenanceWindow
 from hubra.core.models.platform_event import PlatformEvent
 from hubra.core.models.platform_setting import PlatformSetting
 from hubra.core.models.tenant import GlobalAuditEntry, Tenant
@@ -74,6 +75,7 @@ def _clean(db):
         ExternalAccount,
         TenantRequest,
         PlatformEvent,
+        MaintenanceWindow,
     ):
         db.session.query(model).delete()
     db.session.commit()
@@ -413,7 +415,7 @@ def test_parse_start():
     assert platform_bot._parse_start("bald") is None
 
 
-def test_plan_start_and_end_maintenance(bot, admin, db):
+def test_plan_and_cancel_a_window_for_every_club(bot, admin, db):
     with patch.object(platform_bot, "notify_clubs") as notify:
         answer = platform_bot.handle(
             _command(
@@ -421,43 +423,57 @@ def test_plan_start_and_end_maintenance(bot, admin, db):
             )
         )
         assert "geplant" in answer["data"]["content"]
-        state = maintenance.state(fresh=True)
-        assert state["active"] is False
-        assert state["planned"]["minutes"] == 30
-        assert state["planned"]["message"] == "Update"
-        notify.assert_called_with(
-            "maintenance_planned", maintenance.notice_payload(state)
-        )
+        window = db.session.query(MaintenanceWindow).one()
+        assert window.tenant_ids is None
+        assert window.message == "Update"
+        assert window.created_by == admin.id
+        kind, payload = notify.call_args.args
+        assert kind == "maintenance_planned"
+        assert payload["minutes"] == 30 and payload["tenant_ids"] is None
+        assert payload["start"].startswith("2030-11-05T21:00")
 
-        # Not yet due; then due.
-        assert maintenance.start_due() is None
-        due = datetime(2030, 11, 5, 21, 10, tzinfo=timezone.utc)
-        started = maintenance.start_due(due)
-        assert started["active"] is True
-        assert started["message"] == "Update"
-        assert started["planned"] is None
+        answer = platform_bot.handle(_command("wartung", "abbrechen"))
+        assert "abgesagt" in answer["data"]["content"]
+        notify.assert_called_with("maintenance_cancelled", {"tenant_ids": None})
+        db.session.refresh(window)
+        assert window.cancelled_at is not None
+        answer = platform_bot.handle(_command("wartung", "abbrechen"))
+        assert "keine Wartung" in answer["data"]["content"]
 
+
+def test_now_and_end(bot, admin):
+    with patch.object(platform_bot, "notify_clubs") as notify:
+        answer = platform_bot.handle(_command("wartung", "jetzt", minuten=10))
+        assert "Wartung ist an" in answer["data"]["content"]
+        assert notify.call_args.args[0] == "maintenance_started"
         answer = platform_bot.handle(_command("wartung", "ende"))
         assert answer["data"]["content"] == "Wartung beendet."
         notify.assert_called_with("maintenance_ended", {})
     assert maintenance.state(fresh=True)["active"] is False
 
 
-def test_missed_window_is_dropped(db):
-    maintenance.plan(datetime(2020, 1, 1, tzinfo=timezone.utc), 30)
-    assert maintenance.start_due() is None
-    assert maintenance.state(fresh=True)["planned"] is None
-
-
-def test_cancel_planned_maintenance(bot, admin):
+def test_window_start_and_end_reach_the_clubs(bot, db):
+    now = datetime.now(timezone.utc)
     with patch.object(platform_bot, "notify_clubs") as notify:
-        platform_bot.handle(
-            _command("wartung", "planen", start="2030-11-05 22:00", minuten=30)
+        window = maintenance.schedule(
+            now - timedelta(minutes=1), now + timedelta(minutes=30), "Update"
         )
-        answer = platform_bot.handle(_command("wartung", "abbrechen"))
-    assert answer["data"]["content"] == "Geplante Wartung abgesagt."
-    notify.assert_called_with("maintenance_cancelled", {})
-    assert maintenance.state(fresh=True)["planned"] is None
+        notify.reset_mock()
+        assert platform_bot.window_notices() == 1
+        assert notify.call_args.args[0] == "maintenance_started"
+        assert platform_bot.window_notices() == 0  # once
+        maintenance.cancel(window.id)  # running: ends now
+        notify.reset_mock()
+        assert platform_bot.window_notices() == 1
+        notify.assert_called_with("maintenance_ended", {})
+
+
+def test_maintenance_needs_platform_settings(bot, admin, db):
+    admin.is_superadmin = False
+    db.session.commit()
+    answer = platform_bot.handle(_command("wartung", "jetzt"))
+    assert "platform.settings" in answer["data"]["content"]
+    assert maintenance.state(fresh=True)["active"] is False
 
 
 def test_discord_interactions_pass_the_maintenance_gate(client, db):
@@ -604,3 +620,19 @@ def test_release_embed_lists_sections():
         }
     ]
     assert embed["description"] == "Veröffentlicht am 2026-11-02"
+
+
+def test_unknown_alert_types_are_refused(bot, admin, redis):
+    answer = platform_bot.handle(_click("p:al:mute:anything", message=_alert_message()))
+    assert answer["data"]["content"] == "Unbekannte Aktion."
+    assert not [k for k in redis.data if "anything" in k]
+
+
+def test_typed_text_in_pings_is_inert():
+    text = platform_bot.plain("[x](http://e.ch) **b** <@1> @everyone `c`\nnext" * 9)
+    assert "\n" not in text
+    assert len(text) <= 200
+    for raw in ("[x]", "](", "**", "<@", "`c`"):
+        assert raw not in text
+    assert platform_bot.plain("") == "–"
+    assert platform_bot.plain("2001:db8::1") == "2001:db8::1"

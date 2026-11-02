@@ -60,6 +60,7 @@ ALERT_TYPES = (
     "delivery_failed",
     "service_down",
     "backup_failed",
+    "backup_deleted",
     "plugin_updates",
     "upgrades",
     "system",
@@ -910,6 +911,96 @@ def backups_failed(backup_type: str, records) -> None:
         "backup_failed",
         f"{len(failed)} of {len(list(records))} scheduled backups failed",
         lines + ["See manage › Platform › Backups."],
+    )
+
+
+def _backup_scope(backup) -> str:
+    return backup.tenant_slug or "global"
+
+
+_BACKUP_ACTIONS = {
+    "backup": ("backup.manual_failed", "Backup failed"),
+    "verify": ("backup.verify_failed", "Backup check failed"),
+    "restore": ("backup.restore_failed", "Club restore failed"),
+}
+
+
+def backup_failed(action: str, backup, error: str | None) -> None:
+    """One backup, check or restore a person started went wrong: log it and
+    alert (not throttled; scheduled runs go through ``backups_failed``)."""
+    kind, title = _BACKUP_ACTIONS[action]
+    scope = _backup_scope(backup)
+    error = (error or "failed")[:300]
+    record_line = f"Backup #{backup.id} ({scope}, {backup.type})"
+    record(
+        "backup",
+        kind,
+        f"{title}: {record_line}: {error}",
+        level="error",
+        details={
+            "id": backup.id,
+            "scope": scope,
+            "type": backup.type,
+            "action": action,
+            "error": error,
+        },
+        tenant_id=backup.tenant_id,
+    )
+    alert(
+        "backup_failed",
+        f"{title}: {scope}",
+        [record_line, f"Error: {error}", "See manage › Platform › Backups."],
+        throttle=False,
+    )
+
+
+def backup_deleted(
+    info: dict, *, by: str | None, storage_error: str | None = None
+) -> None:
+    """Someone deleted a backup by hand: log it and alert.
+
+    *info* is what the record said before it went (``deleted_backup_info``).
+    Backups that retention removes are only logged (``backups_pruned``).
+    """
+    scope = info.get("scope") or "global"
+    who = by or "unknown"
+    lines = [
+        f"Backup #{info.get('id')} ({scope}, {info.get('type')}) "
+        f"from {info.get('created_at') or '?'} was deleted by {who}.",
+    ]
+    if storage_error:
+        lines.append(
+            f"The file could not be removed from storage and is still there: "
+            f"{storage_error[:300]}"
+        )
+    lines.append("See manage › Platform › Backups.")
+    record(
+        "backup",
+        "backup.deleted",
+        f"Backup #{info.get('id')} ({scope}) deleted by {who}",
+        level="warning",
+        details={**info, "by": who, "storage_error": storage_error},
+        tenant_id=info.get("tenant_id"),
+    )
+    alert(
+        "backup_deleted",
+        f"Backup deleted: {scope}",
+        lines,
+        level="warning",
+        throttle=False,
+    )
+
+
+def backups_pruned(deleted: dict[str, int]) -> None:
+    """Retention removed old scheduled backups: log only, it is routine."""
+    total = sum(deleted.values())
+    if not total:
+        return
+    record(
+        "backup",
+        "backup.pruned",
+        f"Retention removed {total} old backups",
+        details={"deleted": deleted},
     )
 
 

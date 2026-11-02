@@ -10,6 +10,7 @@ import {
   Paper,
   PasswordInput,
   Stack,
+  Table,
   Text,
   TextInput,
   Title,
@@ -17,6 +18,7 @@ import {
 import { PageHead, Tabs } from '@/components/ui'
 import { useAdmin } from '@/context/AdminContext'
 import { useLang, tr } from '@/lang'
+import { planLabel } from '@/labels'
 import { PlatformTranslations } from '@/screens/platform/Translations'
 import { PlatformEncryption } from '@/screens/platform/Encryption'
 import { DiscordLogPicker } from '@/screens/platform/DiscordLogPicker'
@@ -53,9 +55,16 @@ const DISCORD = [
 ]
 
 const DISCORD_LOG = ['discord.log_channel_id', 'discord.log_events']
+const DISCORD_AUDIT = ['discord.audit_channel_id']
 // Defaults built into Hubra, not read from the environment.
 const PERF = ['perf.slow_request_ms', 'perf.slow_query_ms', 'perf.p95_warning_ms']
-const BUILT_IN = ['alerts.cooldown_minutes', 'alerts.retention_days', ...PERF]
+const PLANS = ['starter', 'growth', 'enterprise'] as const
+const LIMIT_KINDS = ['members', 'mail_month', 'storage_mb'] as const
+const LIMITS = [
+  'limits.warn_percent',
+  ...PLANS.flatMap((p) => LIMIT_KINDS.map((k) => `limits.${p}.${k}`)),
+]
+const BUILT_IN = ['alerts.cooldown_minutes', 'alerts.retention_days', ...PERF, ...LIMITS]
 const ALERTS = ['alerts.cooldown_minutes', 'alerts.retention_days', 'alerts.manage_url']
 
 // Categories of platform events the bot posts (services/platform_discord.py).
@@ -126,6 +135,7 @@ const TABS = [
   'backups',
   'discord',
   'alerts',
+  'limits',
   'encryption',
   'translations',
 ] as const
@@ -230,9 +240,17 @@ const FIELD_DE: Record<string, [string, string]> = {
     'Warnung bei langsamer API (ms)',
     'Offenes Problem unter Warnungen, wenn 95 % der Anfragen der letzten Stunde nicht schneller sind. 0: aus',
   ],
+  'limits.warn_percent': [
+    'Warnen ab (%)',
+    'Inhaber und Plattform bekommen eine Meldung, wenn ein Verein diesen Anteil eines Limits erreicht. Die zweite kommt bei 100 %',
+  ],
   'discord.log_channel_id': [
     'Kanal für das Plattform-Log',
     'Kanal-ID auf dem Discord-Server der Plattform (Rechtsklick auf den Kanal › Kanal-ID kopieren, Entwicklermodus nötig). Leer: keine Meldungen',
+  ],
+  'discord.audit_channel_id': [
+    'Audit-Kanal',
+    'Kanal-ID für jeden Eintrag im Audit-Log, mit Links in manage. Warnungen bleiben im Plattform-Log. Leer: aus',
   ],
 }
 
@@ -253,7 +271,7 @@ export function PlatformSettings() {
   const [saving, setSaving] = useState(false)
   const [testTo, setTestTo] = useState('')
   const [testing, setTesting] = useState<'relay' | 'fallback' | null>(null)
-  const [testingDiscord, setTestingDiscord] = useState(false)
+  const [testingDiscord, setTestingDiscord] = useState<'log' | 'audit' | null>(null)
 
   const byKey = Object.fromEntries(settings.map((s) => [s.key, s]))
   // A secret field left empty keeps the stored value.
@@ -302,10 +320,10 @@ export function PlatformSettings() {
     }
   }
 
-  const sendDiscordTest = async () => {
-    setTestingDiscord(true)
+  const sendDiscordTest = async (channel: 'log' | 'audit' = 'log') => {
+    setTestingDiscord(channel)
     try {
-      await sendPlatformTestDiscord()
+      await sendPlatformTestDiscord(channel)
       notify('success', tr('Testnachricht gesendet', 'Test message sent'))
     } catch (err) {
       notify(
@@ -314,7 +332,7 @@ export function PlatformSettings() {
         err instanceof Error ? err.message : undefined,
       )
     } finally {
-      setTestingDiscord(false)
+      setTestingDiscord(null)
     }
   }
 
@@ -324,6 +342,29 @@ export function PlatformSettings() {
     .filter(Boolean)
   const clientId = byKey['discord.client_id']?.value ?? ''
   const logChanged = changed.some((s) => DISCORD_LOG.includes(s.key))
+  const auditChanged = changed.some((s) => DISCORD_AUDIT.includes(s.key))
+  const manageUrl = byKey['alerts.manage_url']?.value ?? ''
+
+  const botAddLink =
+    clientId ? (
+      <Anchor
+        href={`https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&scope=bot&permissions=${LOG_BOT_PERMISSIONS}`}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {tr(
+          'Bot zum Plattform-Server hinzufügen',
+          'Add the bot to the platform server',
+        )}
+      </Anchor>
+    ) : (
+      <Text span size="sm" c="dimmed">
+        {tr(
+          'Zuerst die Discord-Anwendungs-ID oben eintragen.',
+          'Set the Discord application ID above first.',
+        )}
+      </Text>
+    )
 
   const field = (key: string) => {
     const s = byKey[key]
@@ -391,6 +432,7 @@ export function PlatformSettings() {
           { id: 'backups', label: tr('Backup-Speicher', 'Backup storage') },
           { id: 'discord', label: 'Discord' },
           { id: 'alerts', label: tr('Warnungen', 'Alerts') },
+          { id: 'limits', label: tr('Limits', 'Limits') },
           { id: 'encryption', label: tr('Verschlüsselung', 'Encryption') },
           { id: 'translations', label: tr('Übersetzungen', 'Translations') },
         ]}
@@ -482,6 +524,60 @@ export function PlatformSettings() {
             </Paper>
           )}
 
+          {tab === 'limits' && (
+            <Paper withBorder shadow="sm" radius="lg" p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Limits pro Tarif', 'Limits per plan')}</Title>
+                {resetButton(LIMITS)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Leer heisst kein Limit. Ist das Mitgliederlimit erreicht, kommt niemand Neues dazu (Einladungen, Anträge); Plattform-Staff kann in manage trotzdem hinzufügen. Mails pro Monat und Speicher werden nur gemeldet, nichts wird gesperrt. Einzelne Vereine bekommen eigene Limits auf ihrer Seite unter Alle Vereine.',
+                  'Empty means no limit. At the member limit nobody new can join (invites, applications); platform staff can still add people in manage. Mails per month and storage are only reported, nothing is blocked. A club gets its own limits on its page under All clubs.',
+                )}
+              </Text>
+              <Stack gap="md">
+                {field('limits.warn_percent')}
+                <Table.ScrollContainer minWidth={520}>
+                  <Table verticalSpacing={6}>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>{tr('Tarif', 'Plan')}</Table.Th>
+                        <Table.Th>{tr('Mitglieder', 'Members')}</Table.Th>
+                        <Table.Th>{tr('Mails pro Monat', 'Mails per month')}</Table.Th>
+                        <Table.Th>{tr('Speicher (MB)', 'Storage (MB)')}</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {PLANS.map((p) => (
+                        <Table.Tr key={p}>
+                          <Table.Td fw={600}>{planLabel(p, tr)}</Table.Td>
+                          {LIMIT_KINDS.map((k) => {
+                            const key = `limits.${p}.${k}`
+                            return (
+                              <Table.Td key={k}>
+                                <TextInput
+                                  aria-label={`${planLabel(p, tr)}: ${k}`}
+                                  inputMode="numeric"
+                                  placeholder={tr('kein Limit', 'no limit')}
+                                  value={draft[key] ?? byKey[key]?.value ?? ''}
+                                  onChange={(e) => {
+                                    const value = e.currentTarget.value
+                                    setDraft((d) => ({ ...d, [key]: value }))
+                                  }}
+                                />
+                              </Table.Td>
+                            )
+                          })}
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                </Table.ScrollContainer>
+              </Stack>
+            </Paper>
+          )}
+
           {tab === 'backups' && (
             <Paper withBorder shadow="sm" radius="lg" p="lg">
               <Group justify="space-between" mb={4}>
@@ -533,27 +629,7 @@ export function PlatformSettings() {
                   }
                   onChange={(id) => setDraft((d) => ({ ...d, 'discord.log_channel_id': id }))}
                   botTokenSet={!!byKey['discord.bot_token']?.isSet}
-                  addLink={
-                    clientId ? (
-                      <Anchor
-                        href={`https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&scope=bot&permissions=${LOG_BOT_PERMISSIONS}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {tr(
-                          'Bot zum Plattform-Server hinzufügen',
-                          'Add the bot to the platform server',
-                        )}
-                      </Anchor>
-                    ) : (
-                      <Text span size="sm" c="dimmed">
-                        {tr(
-                          'Zuerst die Discord-Anwendungs-ID oben eintragen.',
-                          'Set the Discord application ID above first.',
-                        )}
-                      </Text>
-                    )
-                  }
+                  addLink={botAddLink}
                   fallback={field('discord.log_channel_id')}
                 />
                 <Checkbox.Group
@@ -584,13 +660,73 @@ export function PlatformSettings() {
                 <Group>
                   <Button
                     variant="light"
-                    loading={testingDiscord}
+                    loading={testingDiscord === 'log'}
                     disabled={logChanged || !byKey['discord.log_channel_id']?.value}
-                    onClick={sendDiscordTest}
+                    onClick={() => sendDiscordTest('log')}
                   >
                     {tr('Testnachricht senden', 'Send test message')}
                   </Button>
                   {logChanged && (
+                    <Text size="xs" c="dimmed">
+                      {tr('Zuerst speichern.', 'Save first.')}
+                    </Text>
+                  )}
+                </Group>
+              </Stack>
+            </Paper>
+          )}
+
+          {tab === 'discord' && (
+            <Paper withBorder shadow="sm" radius="lg" p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Audit-Kanal', 'Audit channel')}</Title>
+                {resetButton(DISCORD_AUDIT)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Optional: Ein zweiter Kanal bekommt jeden Eintrag im Audit-Log, egal was oben angehakt ist, mit Links zum Eintrag, zum Verein und zur passenden Seite in manage. Systemwarnungen bleiben im Plattform-Log. Ohne Kanal ist er aus.',
+                  'Optional: a second channel gets every entry of the audit log, whatever is ticked above, with links to the entry, the club and the matching page in manage. System alerts stay in the platform log. Off until you pick a channel.',
+                )}
+              </Text>
+              <Stack gap="sm">
+                <DiscordLogPicker
+                  channelLabel={tr('Kanal für das Audit-Log', 'Channel for the audit log')}
+                  channelId={
+                    draft['discord.audit_channel_id'] ??
+                    byKey['discord.audit_channel_id']?.value ??
+                    ''
+                  }
+                  onChange={(id) => setDraft((d) => ({ ...d, 'discord.audit_channel_id': id }))}
+                  botTokenSet={!!byKey['discord.bot_token']?.isSet}
+                  addLink={botAddLink}
+                  fallback={field('discord.audit_channel_id')}
+                />
+                {!manageUrl && (
+                  <Text size="xs" c="orange">
+                    {tr(
+                      'Ohne Manage-Adresse kommen die Meldungen ohne Links. ',
+                      'Without the manage address, posts come without links. ',
+                    )}
+                    <Anchor
+                      component="button"
+                      type="button"
+                      size="xs"
+                      onClick={() => navigate('/app/platform/settings/alerts')}
+                    >
+                      {tr('Unter Warnungen eintragen', 'Set it under Alerts')}
+                    </Anchor>
+                  </Text>
+                )}
+                <Group>
+                  <Button
+                    variant="light"
+                    loading={testingDiscord === 'audit'}
+                    disabled={auditChanged || !byKey['discord.audit_channel_id']?.value}
+                    onClick={() => sendDiscordTest('audit')}
+                  >
+                    {tr('Testnachricht senden', 'Send test message')}
+                  </Button>
+                  {auditChanged && (
                     <Text size="xs" c="dimmed">
                       {tr('Zuerst speichern.', 'Save first.')}
                     </Text>

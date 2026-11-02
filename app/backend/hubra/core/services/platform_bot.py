@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import logging
 import time
 import urllib.error
@@ -144,7 +145,10 @@ def _zone() -> ZoneInfo:
 
 
 def _local_time(at: datetime | None = None) -> str:
-    at = (at or datetime.now(timezone.utc)).astimezone(_zone())
+    at = at or datetime.now(timezone.utc)
+    if at.tzinfo is None:  # stored as UTC without a zone (SQLite)
+        at = at.replace(tzinfo=timezone.utc)
+    at = at.astimezone(_zone())
     return f"{at:%d.%m.%Y %H:%M}"
 
 
@@ -413,7 +417,7 @@ def _alert_click(interaction: dict, action: str, alert_type: str) -> dict:
             "type": R_UPDATE,
             "data": {
                 "embeds": _with_field(
-                    message, "Bestätigt", f"{user.name}, {_local_time()}"
+                    message, "Bestätigt", f"{plain(user.name)}, {_local_time()}"
                 ),
                 "components": _without(message, "p:al:ack"),
             },
@@ -432,7 +436,7 @@ def _alert_click(interaction: dict, action: str, alert_type: str) -> dict:
             "type": R_UPDATE,
             "data": {
                 "embeds": _with_field(
-                    message, "Stumm", f"{alert_type} bis {ends} ({user.name})"
+                    message, "Stumm", f"{alert_type} bis {ends} ({plain(user.name)})"
                 ),
                 "components": _without(message, "p:al:mute"),
             },
@@ -627,7 +631,7 @@ def _reject_submit(interaction: dict, raw_id: str) -> dict:
     except club_requests.RequestDecisionError as exc:
         return reply(f"Nicht abgelehnt: {exc}")
     mail = "Die Person hat eine Mail bekommen." if notified else "Keine Mail versandt."
-    return reply(f"Anfrage «{req.name}» abgelehnt. {mail}")
+    return reply(f"Anfrage «{plain(req.name)}» abgelehnt. {mail}")
 
 
 def approve_now(req_id: int, user_id: int) -> str:
@@ -639,7 +643,7 @@ def approve_now(req_id: int, user_id: int) -> str:
     except club_requests.RequestDecisionError as exc:
         return f"Nicht angenommen: {exc}"
     mail = "Die Person hat eine Mail bekommen." if notified else "Keine Mail versandt."
-    return f"Verein «{tenant.name}» ({tenant.slug}) ist eingerichtet. {mail}"
+    return f"Verein «{plain(tenant.name)}» ({tenant.slug}) ist eingerichtet. {mail}"
 
 
 def follow_up(interaction_token: str, text: str) -> None:
@@ -908,10 +912,9 @@ def _status(interaction: dict) -> dict:
             if state.get("until")
             else ""
         )
-    elif state.get("planned"):
-        wartung = f"Geplant ab {_local_time(datetime.fromisoformat(state['planned']['start']))}"
     else:
-        wartung = "Aus"
+        upcoming = _next_window()
+        wartung = f"Geplant ab {_local_time(upcoming.starts_at)}" if upcoming else "Aus"
     icons = {"error": "🔴", "warning": "🟠", "info": "🔵"}
     lines = [f"{icons.get(p['level'], '•')} {p['title']}" for p in problems[:15]]
     muted = [
@@ -985,7 +988,7 @@ def _club(interaction: dict, values: dict) -> dict:
     ]
     level = h.get("level")
     embed: dict[str, Any] = {
-        "title": f"{club.name} ({club.slug})",
+        "title": f"{club.name} ({club.slug})"[:256],
         "color": {"error": COLOR_BAD, "warning": COLOR_WARN}.get(level, COLOR_GOOD),
         "fields": fields,
     }
@@ -1007,7 +1010,7 @@ def _backup(interaction: dict, values: dict) -> dict:
         club = _find_club(str(values["verein"]))
         if club is None:
             return reply("Kein Verein gefunden.")
-        tenant_id, label = club.id, f"{club.name} ({club.slug})"
+        tenant_id, label = club.id, f"{plain(club.name)} ({club.slug})"
     task = create_backup_task.delay(
         backup_type="manual", triggered_by=user.email, tenant_id=tenant_id
     )
@@ -1051,6 +1054,22 @@ def _parse_start(text: str) -> datetime | None:
     return at + timedelta(days=1) if at <= now else at
 
 
+def _next_window():
+    """The next planned window for every club that has not started."""
+    from hubra.core.services import maintenance
+
+    now = datetime.now(timezone.utc)
+    for w in maintenance._open_windows():
+        starts = (
+            w.starts_at
+            if w.starts_at.tzinfo
+            else w.starts_at.replace(tzinfo=timezone.utc)
+        )
+        if w.tenant_ids is None and starts > now:
+            return w
+    return None
+
+
 def _maintenance(interaction: dict, sub: str, values: dict) -> dict:
     from hubra.core.services import maintenance
 
@@ -1074,26 +1093,34 @@ def _maintenance(interaction: dict, sub: str, values: dict) -> dict:
             )
         if start <= datetime.now(timezone.utc):
             return reply("Der Beginn liegt in der Vergangenheit.")
-        state = maintenance.plan(
-            start,
-            int(values.get("minuten") or 15),
-            str(values.get("text") or ""),
-            user.id,
-        )
+        minutes = int(values.get("minuten") or 15)
+        start = start.astimezone(timezone.utc)  # stored without its zone in SQLite
+        try:
+            maintenance.schedule(
+                start,
+                start + timedelta(minutes=minutes),
+                str(values.get("text") or ""),
+                None,
+                notice_hours=24,
+                actor_id=user.id,
+            )
+        except maintenance.WindowError as exc:
+            return reply(f"Nicht geplant: {exc.args[0] if exc.args else exc}")
         return reply(
-            f"Wartung geplant ab {_local_time(start)} für {values.get('minuten')} Minuten. "
-            "Die Vereins-Apps zeigen ein Banner; sie beginnt von selbst."
+            f"Wartung für alle Vereine geplant ab {_local_time(start)}, "
+            f"{minutes} Minuten. Die Vereins-Apps zeigen ab 24 Stunden vorher "
+            "einen Hinweis; sie beginnt von selbst."
         )
     if sub == "ende":
         was = maintenance.state(fresh=True)
         maintenance.turn_off(user.id)
         return reply("Wartung beendet." if was["active"] else "Es lief keine Wartung.")
     if sub == "abbrechen":
-        planned = maintenance.state(fresh=True).get("planned")
-        maintenance.cancel_plan(user.id)
-        if planned:
-            return reply("Geplante Wartung abgesagt.")
-        return reply("Es war keine Wartung geplant.")
+        window = _next_window()
+        if window is None:
+            return reply("Es ist keine Wartung für alle Vereine geplant.")
+        maintenance.cancel(window.id, user.id)
+        return reply(f"Geplante Wartung ab {_local_time(window.starts_at)} abgesagt.")
     return reply("Unbekannter Befehl.")
 
 
@@ -1121,6 +1148,11 @@ def handle(interaction: dict) -> dict:
         if kind == COMPONENT and len(parts) == 4 and parts[1] == "req":
             return _request_click(interaction, parts[2], parts[3])
         if kind == COMPONENT and len(parts) == 4 and parts[1] == "al":
+            from hubra.core.services.platform_monitor import ALERT_TYPES
+
+            # Only known types: the type names a Redis key (mute).
+            if parts[3] not in ALERT_TYPES:
+                return reply("Unbekannte Aktion.")
             return _alert_click(interaction, parts[2], parts[3])
         return reply("Unbekannte Aktion.")
     except Refused as exc:
@@ -1149,6 +1181,36 @@ def notify_clubs(kind: str, payload: dict) -> None:
         _log.warning("platform bot: club notice %s not queued", kind, exc_info=True)
 
 
+_RUNNING_KEY = "platform_bot:windows:running"
+
+
+def window_notices(now: datetime | None = None) -> int:
+    """Tell club servers when a planned window starts and when it is over.
+    Returns how many notices were queued."""
+    from hubra.core.services import maintenance
+
+    now = now or datetime.now(timezone.utc)
+    try:
+        known = set(json.loads(_get(_RUNNING_KEY) or "[]"))
+    except ValueError:
+        known = set()
+    running: dict[str, dict] = {}
+    for w in maintenance._open_windows():
+        notice = maintenance.window_notice(w)
+        if datetime.fromisoformat(notice["start"]) <= now:
+            running[str(w.id)] = notice
+    sent = 0
+    for wid, notice in running.items():
+        if wid not in known:
+            notify_clubs("maintenance_started", notice)
+            sent += 1
+    for wid in known - set(running):
+        notify_clubs("maintenance_ended", {})
+        sent += 1
+    _set(_RUNNING_KEY, json.dumps(sorted(running)), ex=8 * 24 * 3600)
+    return sent
+
+
 def send_club_notices(kind: str, payload: dict) -> int:
     """Hand *kind* to every connected club server's ``platform_notice`` hook.
     Returns how many servers got it."""
@@ -1173,7 +1235,10 @@ def send_club_notices(kind: str, payload: dict) -> int:
             ConnectedApp.provider == "discord", ConnectedApp.status == "active"
         )
     ).all()
+    only = payload.get("tenant_ids")  # a window for some clubs only
     for conn in conns:
+        if only is not None and conn.tenant_id not in only:
+            continue
         tenant = db.session.get(Tenant, conn.tenant_id)
         if tenant is None or tenant.status != "active":
             continue
@@ -1219,7 +1284,7 @@ def digest_embed(now: datetime | None = None) -> dict:
     plugin_updates = _plugin_updates()
 
     def names(rows):
-        text = ", ".join(f"{t.name} ({t.slug})" for t in rows[:10])
+        text = ", ".join(f"{plain(t.name)} ({t.slug})" for t in rows[:10])
         return text + (f" und {len(rows) - 10} weitere" if len(rows) > 10 else "")
 
     fields = [
@@ -1375,6 +1440,16 @@ FAILED_LOGIN_WINDOW = 600
 KEY_MAX_AGE_DAYS = 365
 
 
+_MARKDOWN = re.compile(r"([\\`*_~|>\[\]()#<@])")
+
+
+def plain(value, limit: int = 100) -> str:
+    """Text a user typed (a name, the email tried at sign-in, a browser
+    string) as one inert line: no Discord markdown, links or mentions."""
+    text = " ".join(str(value or "").split())[:limit]
+    return _MARKDOWN.sub(r"\\\1", text) or "–"
+
+
 def security(title: str, lines: list[str], level: str = "warning") -> None:
     """Queue a security ping (after the commit)."""
     try:
@@ -1419,9 +1494,10 @@ def staff_new_device(user, ip: str, browser: str, platform: str) -> None:
     security(
         "Plattform-Admin auf neuem Gerät",
         [
-            f"**{user.name}** ({user.email}) hat sich auf einem neuen Gerät angemeldet.",
-            f"Browser: {browser or '–'} · System: {platform or '–'}",
-            f"IP: {ip or '–'} · {_local_time()}",
+            f"**{plain(user.name)}** ({plain(user.email)}) "
+            "hat sich auf einem neuen Gerät angemeldet.",
+            f"Browser: {plain(browser)} · System: {plain(platform)}",
+            f"IP: {plain(ip, 64)} · {_local_time()}",
         ],
     )
 
@@ -1438,7 +1514,8 @@ def staff_mfa_off(user) -> None:
     security(
         "Zwei-Faktor bei Plattform-Admin ausgeschaltet",
         [
-            f"**{user.name}** ({user.email}) hat keine Zwei-Faktor-Anmeldung mehr.",
+            f"**{plain(user.name)}** ({plain(user.email)}) "
+            "hat keine Zwei-Faktor-Anmeldung mehr.",
             "Seine Plattform-Rechte ruhen, bis sie wieder an ist "
             "(wenn MFA_REQUIRED_FOR_STAFF gilt).",
         ],
@@ -1467,9 +1544,9 @@ def failed_login(ip: str | None, email: str = "") -> None:
             post_security.delay(
                 "Viele fehlgeschlagene Anmeldungen",
                 [
-                    f"{count} fehlgeschlagene Anmeldungen von **{ip}** "
+                    f"{count} fehlgeschlagene Anmeldungen von **{plain(ip, 64)}** "
                     f"in {FAILED_LOGIN_WINDOW // 60} Minuten.",
-                    f"Zuletzt für: {email or '–'}",
+                    f"Zuletzt für: {plain(email)}",
                 ],
                 "warning",
             )

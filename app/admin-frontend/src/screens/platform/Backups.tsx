@@ -121,6 +121,7 @@ export function Backups() {
   const [privateKey, setPrivateKey] = useState('')
   const [verifyTarget, setVerifyTarget] = useState<BackupRecord | null>(null)
   const [restoring, setRestoring] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [watch, setWatch] = useState<RestoreWatch | null>(null)
 
   const clubsQuery = useQuery({
@@ -204,6 +205,7 @@ export function Backups() {
   }
 
   const handleDelete = async (record: BackupRecord) => {
+    setDeleting(true)
     try {
       await deleteBackup(record.id)
       queryClient.invalidateQueries({ queryKey: ['backups'] })
@@ -211,6 +213,8 @@ export function Backups() {
       notify('success', tr('Gelöscht', 'Deleted'), tr(`Backup #${record.id} wurde gelöscht.`, `Backup #${record.id} removed.`))
     } catch (err: unknown) {
       notify('error', tr('Löschen fehlgeschlagen', 'Delete failed'), err instanceof Error ? err.message : tr('Unbekannter Fehler', 'Unknown error'))
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -813,6 +817,7 @@ export function Backups() {
           </Button>
           <Button
             color="red"
+            loading={deleting}
             onClick={() => {
               if (deleteTarget) handleDelete(deleteTarget)
             }}

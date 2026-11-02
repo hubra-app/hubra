@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Table, Paper, Text, Badge } from '@mantine/core'
+import { Table, Paper, Text, Badge, Group, Anchor, Code } from '@mantine/core'
 import { listGlobalAudit, type GlobalAuditEntry } from '@/api/tenants'
 import { Pagination } from '@/components/ui'
 import { formatDateTime } from '@/format'
@@ -9,10 +10,15 @@ import { tr } from '@/lang'
 export function GlobalAuditTab() {
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(25)
+  // ?entry=<id>: one entry with its details, e.g. from a Discord audit post.
+  const [params, setParams] = useSearchParams()
+  const raw = params.get('entry') ?? ''
+  const entryId = /^\d+$/.test(raw) ? Number(raw) : undefined
 
   const { data, isLoading } = useQuery({
-    queryKey: ['global-audit', page, perPage],
-    queryFn: () => listGlobalAudit({ page, per_page: perPage }),
+    queryKey: ['global-audit', page, perPage, entryId],
+    queryFn: () =>
+      listGlobalAudit(entryId ? { id: entryId } : { page, per_page: perPage }),
   })
 
   const entries = data?.entries ?? []
@@ -48,6 +54,24 @@ export function GlobalAuditTab() {
 
   return (
     <Paper withBorder style={{ overflow: 'hidden' }}>
+      {entryId && (
+        <Group justify="space-between" px="md" py="sm" style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
+          <Text size="sm">
+            {tr(`Eintrag #${entryId}`, `Entry #${entryId}`)}
+          </Text>
+          <Anchor
+            component="button"
+            type="button"
+            size="sm"
+            onClick={() => {
+              params.delete('entry')
+              setParams(params)
+            }}
+          >
+            {tr('Alle Einträge anzeigen', 'Show all entries')}
+          </Anchor>
+        </Group>
+      )}
 
       {isLoading && (
         <Text p={40} ta="center" c="dimmed">
@@ -75,7 +99,8 @@ export function GlobalAuditTab() {
           </Table.Thead>
           <Table.Tbody>
             {entries.map((entry: GlobalAuditEntry) => (
-              <Table.Tr key={entry.id}>
+              <Fragment key={entry.id}>
+              <Table.Tr>
                 <Table.Td fz="sm" c="dimmed">
                   {formatDateTime(entry.time)}
                 </Table.Td>
@@ -94,12 +119,25 @@ export function GlobalAuditTab() {
                   {entry.target_type ? `${entry.target_type}:${entry.target_id ?? ''}` : '–'}
                 </Table.Td>
               </Table.Tr>
+              {entryId && (
+                <Table.Tr>
+                  <Table.Td colSpan={5}>
+                    <Text size="xs" c="dimmed" mb={4}>
+                      {tr('Details', 'Details')}
+                      {entry.ip_address ? ` · IP ${entry.ip_address}` : ''}
+                    </Text>
+                    <Code block>{JSON.stringify(entry.details ?? {}, null, 2)}</Code>
+                  </Table.Td>
+                </Table.Tr>
+              )}
+              </Fragment>
             ))}
           </Table.Tbody>
         </Table>
         </Table.ScrollContainer>
       )}
 
+      {!entryId && (
       <Pagination
         page={page}
         perPage={perPage}
@@ -111,6 +149,7 @@ export function GlobalAuditTab() {
           setPage(1)
         }}
       />
+      )}
     </Paper>
   )
 }

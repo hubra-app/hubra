@@ -20,7 +20,7 @@ from hubra.core.extensions import db, limiter
 from hubra.api.permissions import created_by, permission_required
 from hubra.api.settings.services import SettingService
 from hubra.api.utils import log_audit
-from hubra.core.errors import api_error, raise_error
+from hubra.core.errors import api_error, error_message, raise_error
 from hubra.core.models.group import Group
 from hubra.core.models.managed_mail import ManagedMailAddress
 from hubra.core.services import managed_mail as mma_service
@@ -778,7 +778,7 @@ def change_group_mail_prefix(group_id: int):
     try:
         mma_service.change_mail_prefix(addr, prefix, club_domain)
     except ValueError as exc:
-        return api_error("VALIDATION_ERROR", str(exc), 400)
+        return api_error("VALIDATION_ERROR", error_message(exc), 400)
 
     db.session.commit()
 
@@ -865,7 +865,7 @@ def create_group_alias(group_id: int):
             group_id, prefix, club_domain, actor_id=get_current_member().id
         )
     except ValueError as exc:
-        return api_error("VALIDATION_ERROR", str(exc), 400)
+        return api_error("VALIDATION_ERROR", error_message(exc), 400)
 
     from hubra.core.services.mail_provisioning import ensure_alias
 
@@ -1043,7 +1043,7 @@ def change_function_mail_prefix(function_id: int):
     try:
         mma_service.change_mail_prefix(addr, prefix, club_domain)
     except ValueError as exc:
-        return api_error("VALIDATION_ERROR", str(exc), 400)
+        return api_error("VALIDATION_ERROR", error_message(exc), 400)
 
     db.session.commit()
 
@@ -1112,7 +1112,7 @@ def create_function_alias(function_id: int):
             function_id, prefix, club_domain, actor_id=get_current_member().id
         )
     except ValueError as exc:
-        return api_error("VALIDATION_ERROR", str(exc), 400)
+        return api_error("VALIDATION_ERROR", error_message(exc), 400)
 
     from hubra.core.services.mail_provisioning import ensure_alias
 
@@ -1342,7 +1342,7 @@ def change_address_prefix_route(address_id: int):
     try:
         result = mma_service.change_address_prefix(address_id, prefix, club_domain)
     except ValueError as exc:
-        return api_error("VALIDATION_ERROR", str(exc), 400)
+        return api_error("VALIDATION_ERROR", error_message(exc), 400)
     if result is None:
         raise_error(404, "NOT_FOUND", f"Address {address_id} not found")
     db.session.commit()
@@ -1380,7 +1380,7 @@ def create_alias_route(address_id: int):
             address_id, prefix, club_domain, actor_id=get_current_member().id
         )
     except ValueError as exc:
-        return api_error("VALIDATION_ERROR", str(exc), 400)
+        return api_error("VALIDATION_ERROR", error_message(exc), 400)
 
     from hubra.core.services.binding_engine import sync_for_source
 
@@ -1564,7 +1564,7 @@ def create_system_address():
             domain=club_domain,
         )
     except ValueError as exc:
-        return api_error("VALIDATION_ERROR", str(exc), 400)
+        return api_error("VALIDATION_ERROR", error_message(exc), 400)
 
     db.session.commit()
 
@@ -1602,7 +1602,7 @@ def delete_system_address(address_id: int):
     try:
         mma_service.delete_system_address(addr)
     except PermissionError as exc:
-        return api_error("FORBIDDEN", str(exc), 403)
+        return api_error("FORBIDDEN", error_message(exc), 403)
 
     db.session.commit()
 
@@ -1688,7 +1688,7 @@ def create_system_alias(address_id: int):
             address_id, prefix, club_domain, actor_id=get_current_member().id
         )
     except ValueError as exc:
-        return api_error("VALIDATION_ERROR", str(exc), 400)
+        return api_error("VALIDATION_ERROR", error_message(exc), 400)
 
     db.session.commit()
 

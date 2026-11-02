@@ -13,6 +13,7 @@ import { tr, useLang } from '@/lang'
 import { getAlertsOverview, type EventCategory, type OpenProblem } from '@/api/platform'
 import { EventLogPanel, MyAlertsCard } from './MailMonitor'
 import { AlertRulesPanel, MaintenanceCard } from './AlertControls'
+import { MaintenanceWindowsCard } from './MaintenanceWindows'
 import { PerformancePanel } from './Performance'
 import { LEVEL_COLOR, categoryLabel, eventText, levelLabel } from './eventLabels'
 
@@ -170,6 +171,8 @@ function OverviewPanel() {
       )}
 
       <MaintenanceCard state={data?.maintenance} />
+
+      <MaintenanceWindowsCard />
 
       {data && !data.switches.enabled && !data.maintenance.active && (
         <Alert color="orange" variant="light">

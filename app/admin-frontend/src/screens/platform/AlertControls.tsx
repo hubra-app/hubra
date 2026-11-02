@@ -38,16 +38,24 @@ export function MaintenanceCard({ state }: { state: Maintenance | undefined }) {
   const canChange = hasGlobalPermission('platform.settings')
   const [message, setMessage] = useState('')
   const [minutes, setMinutes] = useState<string>('30')
-  const [start, setStart] = useState('')
   const [busy, setBusy] = useState(false)
 
-  const run = async (body: Parameters<typeof setMaintenance>[0], done: string) => {
+  const change = async (on: boolean) => {
     setBusy(true)
     try {
-      await setMaintenance(body)
+      await setMaintenance(
+        on
+          ? { on, message: message.trim(), minutes: minutes === '0' ? null : Number(minutes) }
+          : { on },
+      )
       await queryClient.invalidateQueries({ queryKey: ['alerts-overview'] })
       await queryClient.invalidateQueries({ queryKey: ['maintenance'] })
-      notify('success', done)
+      notify(
+        'success',
+        on
+          ? tr('Wartungsmodus an', 'Maintenance mode on')
+          : tr('Wartungsmodus aus', 'Maintenance mode off'),
+      )
     } catch (err) {
       notify('error', tr('Nicht geändert', 'Not changed'), failure(err))
     } finally {
@@ -55,28 +63,7 @@ export function MaintenanceCard({ state }: { state: Maintenance | undefined }) {
     }
   }
 
-  const change = (on: boolean) => {
-    if (!on) return run({ on }, tr('Wartungsmodus aus', 'Maintenance mode off'))
-    const length = minutes === '0' ? null : Number(minutes)
-    if (start) {
-      return run(
-        {
-          on,
-          message: message.trim(),
-          minutes: length ?? 30,
-          start: new Date(start).toISOString(),
-        },
-        tr('Wartung geplant', 'Maintenance planned'),
-      )
-    }
-    return run(
-      { on, message: message.trim(), minutes: length },
-      tr('Wartungsmodus an', 'Maintenance mode on'),
-    )
-  }
-
   const active = !!state?.active
-  const planned = state?.planned
   return (
     <Paper
       withBorder
@@ -121,35 +108,6 @@ export function MaintenanceCard({ state }: { state: Maintenance | undefined }) {
           «{state.message}»
         </Text>
       )}
-      {!active && planned && (
-        <Alert color="orange" variant="light" mb={12} icon={<IconTool size={18} />}>
-          <Group justify="space-between" wrap="wrap" gap="xs">
-            <Text size="sm">
-              {tr(
-                `Geplant ab ${formatDateTime(planned.start)}${planned.minutes ? ` für ${planned.minutes} Minuten` : ''}. Die Vereins-Apps zeigen ein Banner; sie beginnt von selbst.`,
-                `Planned from ${formatDateTime(planned.start)}${planned.minutes ? ` for ${planned.minutes} minutes` : ''}. Club apps show a banner; it starts by itself.`,
-              )}
-              {planned.message ? ` «${planned.message}»` : ''}
-            </Text>
-            {canChange && (
-              <Button
-                size="xs"
-                variant="light"
-                color="orange"
-                loading={busy}
-                onClick={() =>
-                  run(
-                    { cancelPlan: true },
-                    tr('Geplante Wartung abgesagt', 'Planned maintenance cancelled'),
-                  )
-                }
-              >
-                {tr('Absagen', 'Cancel')}
-              </Button>
-            )}
-          </Group>
-        </Alert>
-      )}
       {!active && canChange && (
         <Group align="flex-end" wrap="wrap">
           <TextInput
@@ -174,17 +132,8 @@ export function MaintenanceCard({ state }: { state: Maintenance | undefined }) {
               { value: '0', label: tr('Bis ich sie beende', 'Until I end it') },
             ]}
           />
-          <TextInput
-            type="datetime-local"
-            label={tr('Beginn (leer: jetzt)', 'Start (empty: now)')}
-            value={start}
-            onChange={(e) => setStart(e.currentTarget.value)}
-            w={210}
-          />
           <Button color="orange" loading={busy} onClick={() => change(true)}>
-            {start
-              ? tr('Wartung planen', 'Plan maintenance')
-              : tr('Wartung starten', 'Start maintenance')}
+            {tr('Wartung starten', 'Start maintenance')}
           </Button>
         </Group>
       )}

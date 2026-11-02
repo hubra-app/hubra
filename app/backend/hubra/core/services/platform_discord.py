@@ -14,6 +14,16 @@ Discord application (``discord.bot_token``), the bot added to the platform
 server, and the channel ID (``discord.log_channel_id``).  No channel, no
 posts.
 
+Audit channel (``discord.audit_channel_id``, optional): a second channel
+that gets every audit entry, whatever the log's categories say, so it is a
+complete record of the platform audit log.  Alerts never go there.  Empty:
+off.  Both channels can be set; the log then is the chosen overview and the
+audit channel the full trail.
+
+Every audit embed links back to manage when its address is known
+(``alerts.manage_url``): the title opens the entry in the audit log, and a
+Links field points at the club and the page the change was made on.
+
 Audit entries are posted by a Celery task queued after the commit, so a
 rolled back change is never posted and a slow Discord never slows a
 request.  The task gets the entry id only and reads the token itself.
@@ -38,6 +48,7 @@ _log = logging.getLogger(__name__)
 
 API = "https://discord.com/api/v10"
 CHANNEL_KEY = "discord.log_channel_id"
+AUDIT_CHANNEL_KEY = "discord.audit_channel_id"
 EVENTS_KEY = "discord.log_events"
 
 # Category → label (manage shows these).  ``members`` is off by default:
@@ -118,6 +129,13 @@ def _settings() -> tuple[str, str]:
     return platform_settings.get(CHANNEL_KEY), platform_settings.discord().bot_token
 
 
+def audit_channel() -> str:
+    """The audit channel id, or "" when there is none."""
+    from hubra.core.services import platform_settings
+
+    return platform_settings.get(AUDIT_CHANNEL_KEY)
+
+
 # ── Posting ───────────────────────────────────────────────────────────────────
 
 
@@ -157,7 +175,9 @@ def _post(
     components: list | None = None,
 ) -> dict:
     if not channel_id or not token:
-        channel_id, token = _settings()
+        default_channel, default_token = _settings()
+        channel_id = channel_id or default_channel
+        token = token or default_token
     if not channel_id or not token:
         raise DiscordPostError("Set the bot token and the log channel first")
     payload: dict[str, Any] = {"embeds": [embed], "allowed_mentions": {"parse": []}}
@@ -291,12 +311,62 @@ def _field_value(value: Any) -> str:
     return (text or "–")[:1000]
 
 
+def _manage_url() -> str:
+    """The manage portal's address, or "" (then embeds carry no links)."""
+    from hubra.core.services import platform_settings
+
+    try:
+        url = platform_settings.get("alerts.manage_url").strip().rstrip("/")
+    except Exception:  # noqa: BLE001
+        return ""
+    return url if url.startswith(("https://", "http://")) else ""
+
+
+def _area(entry: GlobalAuditEntry) -> tuple[str, str] | None:
+    """(label, manage path) of the page the change belongs to, if any."""
+    a = entry.action or ""
+    if a.startswith("tenant_request."):
+        return "Club requests", "/app/requests"
+    if a.startswith("impersonation."):
+        return "Support access", "/app/support"
+    if a.startswith("global_role."):
+        return "Platform roles", "/app/roles"
+    if a.startswith(("tenant.add_", "tenant.remove_")) and entry.tenant_id:
+        if a not in ("tenant.add_member",):
+            return "Club admins", f"/app/clubs/{entry.tenant_id}/admins"
+    if a.startswith("backup."):
+        return "Backups", "/app/platform/backups"
+    if "plugin" in a:
+        return "Plugins", "/app/plugins"
+    if a.startswith("platform.") or category(a) == "platform":
+        return "Platform settings", "/app/platform/settings"
+    return None
+
+
+def audit_links(
+    entry: GlobalAuditEntry, base: str | None = None
+) -> list[tuple[str, str]]:
+    """Links into manage for one entry: the entry in the audit log, its
+    club, the page it belongs to.  Empty without a manage address."""
+    base = _manage_url() if base is None else base.rstrip("/")
+    if not base:
+        return []
+    links = [("Audit log", f"{base}/app/audit?entry={entry.id}")]
+    if entry.tenant_id:
+        links.append(("Club", f"{base}/app/tenants/{entry.tenant_id}"))
+    area = _area(entry)
+    if area:
+        links.append((area[0], base + area[1]))
+    return links
+
+
 def audit_embed(entry: GlobalAuditEntry) -> dict:
     """The embed for one audit entry."""
     from hubra.core.extensions import db
     from hubra.core.models.tenant import Tenant
     from hubra.core.models.user import User
 
+    links = audit_links(entry)
     fields: list[dict] = []
     if entry.tenant_id:
         tenant = db.session.get(Tenant, entry.tenant_id)
@@ -318,56 +388,88 @@ def audit_embed(entry: GlobalAuditEntry) -> dict:
         fields.append(
             {"name": str(key)[:250], "value": _field_value(value), "inline": True}
         )
+    if links:
+        fields.append(
+            {
+                "name": "Links",
+                "value": " · ".join(f"[{label}]({url})" for label, url in links)[:1000],
+                "inline": False,
+            }
+        )
 
     embed: dict[str, Any] = {
         "title": entry.action[:250],
         "color": _color(entry.action),
         "fields": fields[:25],
-        "footer": {"text": f"Hubra platform · {category(entry.action)}"},
+        "footer": {"text": f"Hubra platform · {category(entry.action)} · #{entry.id}"},
     }
+    if links:
+        embed["url"] = links[0][1]
     if entry.time:
         embed["timestamp"] = entry.time.isoformat()
     return embed
 
 
 def post_audit_entry(entry_id: int) -> bool:
-    """Post one audit entry if its category is on.  Used by the task."""
+    """Post one audit entry: to the log if its category is on, and to the
+    audit channel if there is one.  Used by the task.
+
+    True when it went to at least one channel.  A failure on one channel
+    does not stop the other; the first failure is raised after both tries.
+    """
     from hubra.core.extensions import db
 
     entry = db.session.get(GlobalAuditEntry, entry_id)
     if entry is None:
         return False
-    channel_id, token = _settings()
-    if not channel_id or not token:
+    log_channel, token = _settings()
+    if not token:
         return False
     from hubra.core.services import platform_bot
 
     # A decision on a club request also updates the request's own message.
     platform_bot.request_decided(entry)
-    if category(entry.action) not in enabled_categories():
+    targets = []
+    if log_channel and category(entry.action) in enabled_categories():
+        targets.append(log_channel)
+    audit = audit_channel()
+    if audit and audit not in targets:
+        targets.append(audit)
+    if not targets:
         return False
-    components = platform_bot.request_buttons(entry)
-    message = post(
-        audit_embed(entry),
-        channel_id=channel_id,
-        token=token,
-        components=components,
-    )
-    if components:
-        platform_bot.track_request(entry, message)
-    return True
+    embed = audit_embed(entry)
+    # Approve / Reject only on the log's message: one message per request.
+    buttons = platform_bot.request_buttons(entry) if log_channel in targets else None
+    sent, error = False, None
+    for channel_id in targets:
+        components = buttons if channel_id == log_channel else None
+        try:
+            message = post(
+                embed, channel_id=channel_id, token=token, components=components
+            )
+            sent = True
+            if components:
+                platform_bot.track_request(entry, message)
+        except DiscordPostError as exc:
+            error = error or exc
+    if error is not None:
+        raise error
+    return sent
 
 
 @event.listens_for(GlobalAuditEntry, "after_insert")
 def _queue_audit_entry(mapper, connection, target) -> None:
     """Queue the post after the commit, but only when a channel is set.
 
-    Reads the channel row on the flush's own connection, so an instance
-    without a log channel queues nothing.
+    Reads the channel rows on the flush's own connection, so an instance
+    without a log or audit channel queues nothing.
     """
     try:
         channel = connection.execute(
-            select(PlatformSetting.value).where(PlatformSetting.key == CHANNEL_KEY)
+            select(PlatformSetting.value)
+            .where(PlatformSetting.key.in_((CHANNEL_KEY, AUDIT_CHANNEL_KEY)))
+            .where(PlatformSetting.value != "")
+            .limit(1)
         ).scalar()
     except Exception:
         _log.debug("platform log: could not read the channel setting", exc_info=True)

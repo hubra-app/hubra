@@ -1,6 +1,7 @@
 """Background jobs of the platform bot (``services.platform_bot``).
 
-* ``tick`` (every minute): starts planned maintenance, marks alerts resolved,
+* ``tick`` (every minute): tells club servers when planned maintenance starts
+  or ends, marks alerts resolved,
   installs /plattform and /wartung on the platform server, announces a new
   release, and once a day at 08:00 (platform time zone) posts the digest
   and the key-rotation reminder.
@@ -39,10 +40,10 @@ def _step(name: str, fn, *args) -> None:
 
 
 def _maintenance() -> None:
-    from hubra.core.services import maintenance
+    from hubra.core.services import platform_bot
 
-    # Club servers hear about it from maintenance.turn_on.
-    maintenance.start_due()
+    # Windows start and end by themselves; club servers hear about it here.
+    platform_bot.window_notices()
 
 
 def _daily(now: datetime) -> None:

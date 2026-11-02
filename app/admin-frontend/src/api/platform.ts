@@ -38,8 +38,11 @@ export async function sendPlatformTestMail(to: string, via: 'relay' | 'fallback'
   })
 }
 
-export async function sendPlatformTestDiscord() {
-  return apiFetch<{ ok: boolean }>(`${P}/discord/test`, { method: 'POST' })
+export async function sendPlatformTestDiscord(channel: 'log' | 'audit' = 'log') {
+  return apiFetch<{ ok: boolean }>(`${P}/discord/test`, {
+    method: 'POST',
+    body: JSON.stringify({ channel }),
+  })
 }
 
 // ── Diagnostics (platform.diagnostics; changes need platform.settings) ──────
@@ -308,6 +311,7 @@ export type AlertType =
   | 'delivery_failed'
   | 'service_down'
   | 'backup_failed'
+  | 'backup_deleted'
   | 'plugin_updates'
   | 'upgrades'
   | 'system'
@@ -329,8 +333,6 @@ export interface Maintenance {
   message: string
   /** ISO time it ends by itself, or null (until turned off). */
   until: string | null
-  /** Announced maintenance that has not started yet. */
-  planned?: { start: string; minutes: number | null; message: string } | null
 }
 
 export interface AlertSwitches {
@@ -365,17 +367,11 @@ export async function updateAlertSwitches(change: {
   })
 }
 
-export async function setMaintenance(
-  body:
-    | {
-        on: boolean
-        message?: string
-        minutes?: number | null
-        /** ISO time: plan it instead of starting now. */
-        start?: string
-      }
-    | { cancelPlan: true },
-) {
+export async function setMaintenance(body: {
+  on: boolean
+  message?: string
+  minutes?: number | null
+}) {
   return apiFetch<Maintenance>(`${P}/maintenance`, {
     method: 'PUT',
     body: JSON.stringify(body),
@@ -493,6 +489,50 @@ export async function setClubBackupKey(tenantId: number, publicKey: string | nul
       { method: 'PUT', body: JSON.stringify({ public_key: publicKey }) },
     ),
   )
+}
+
+// ── Planned maintenance windows ─────────────────────────────────────────────
+
+export interface MaintenanceWindow {
+  id: number
+  starts_at: string
+  ends_at: string
+  message: string
+  /** null: every club. */
+  tenant_ids: number[] | null
+  clubs: { id: number; name: string | null }[] | null
+  notice_hours: number
+  status: 'planned' | 'announced' | 'running' | 'done' | 'cancelled'
+  created_by: number | null
+  created_at: string | null
+  cancelled_at: string | null
+}
+
+export async function getMaintenanceWindows() {
+  return apiFetch<{
+    current: MaintenanceWindow[]
+    past: MaintenanceWindow[]
+    notice_hours: number[]
+  }>(`${P}/maintenance/windows`)
+}
+
+export async function createMaintenanceWindow(body: {
+  starts_at: string
+  ends_at: string
+  message: string
+  tenant_ids: number[] | null
+  notice_hours: number
+}) {
+  return apiFetch<{ window: MaintenanceWindow }>(`${P}/maintenance/windows`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function cancelMaintenanceWindow(id: number) {
+  return apiFetch<{ window: MaintenanceWindow }>(`${P}/maintenance/windows/${id}/cancel`, {
+    method: 'POST',
+  })
 }
 
 // ── Background jobs (Diagnose › Hintergrundjobs) ─────────────────────────────

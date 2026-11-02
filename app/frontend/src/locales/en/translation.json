@@ -269,10 +269,7 @@
       "title": "Maintenance",
       "text": "Hubra is being updated. It will be back in a few minutes.",
       "until": "Expected back at {{time}}.",
-      "reload": "This page reloads by itself.",
-      "planned": "Maintenance on {{date}} from {{time}}",
-      "plannedFor": "about {{minutes}} minutes",
-      "plannedText": "Hubra will be briefly unavailable."
+      "reload": "This page reloads by itself."
     },
     "backend": {
       "unreachable": "Server unreachable",
@@ -2361,6 +2358,11 @@
         "castVote": "Please cast your vote before the poll closes.",
         "votedFor": "{{name}} voted for \"{{option}}\"",
         "askedProxy": "{{name}} asked you to vote for them.",
+        "quotaNear": "Club limit almost reached",
+        "quotaOver": "Club limit reached",
+        "quotaMembers": "Members: {{used}} of {{limit}}.",
+        "quotaMail": "Mails this month: {{used}} of {{limit}}.",
+        "quotaStorage": "Storage: {{used}} MB of {{limit}} MB.",
         "aMember": "A member",
         "eventReminder": "Event reminder"
       }
@@ -2435,6 +2437,13 @@
     },
     "clubBanner": {
       "dismiss": "Hide banner"
+    },
+    "maintenanceNotice": {
+      "title": "Planned maintenance",
+      "sameDay": "{{day}}, {{from}} to {{to}}",
+      "days": "{{fromDay}}, {{from}} to {{toDay}}, {{to}}",
+      "default": "The app is not available during this time.",
+      "dismiss": "Hide notice"
     },
     "more": {
       "emptyTitle": "Nothing here yet",

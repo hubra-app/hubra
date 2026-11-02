@@ -198,6 +198,23 @@ Platform log:
 
 ![Platform settings › Discord › Platform log](screenshots/discord/platform-log-picker.png)
 
+### Audit channel (optional)
+
+A second channel, set in the **Audit channel** card below the platform log,
+gets every entry of the platform audit log (manage › Audit-Log), whatever
+categories the platform log has ticked. System alerts never go there. It is
+off until a channel is picked (`discord.audit_channel_id`).
+
+Each post links back to manage when the manage address is set (Platform
+settings › Alerts): the title opens the entry in the audit log
+(`/app/audit?entry=<id>`, with its details), and a **Links** field points at
+the club and the page the change belongs to (club admins, club requests,
+roles, support access, plugins, backups or platform settings). These links
+also appear in platform log posts.
+
+![Audit channel settings](screenshots/discord-audit/audit-channel-desktop.png)
+![An audit post](screenshots/discord-audit/audit-embed-example.png)
+
 Categories:
 
 | Category | What |
@@ -240,14 +257,13 @@ manage. Anyone else gets a private "not allowed" answer.
 | `/plattform verein <name>` | One club's health: members, last activity, storage, mail, plugins, warnings (name or slug, with suggestions) | `tenants.read` |
 | `/plattform backup [verein]` | Start a backup of the platform or one club | superadmin (`backups.manage`) |
 | `/wartung jetzt [minuten] [text]` | Maintenance mode on now | `platform.settings` |
-| `/wartung planen <start> <minuten> [text]` | Announce maintenance (`22:00`, `2026-11-05 22:00` or `05.11.2026 22:00`, platform time zone). The club apps show a banner until it starts; it starts by itself. | `platform.settings` |
+| `/wartung planen <start> <minuten> [text]` | Announce maintenance (`22:00`, `2026-11-05 22:00` or `05.11.2026 22:00`, platform time zone) as a planned window for every club (manage › Alerts › Geplante Wartungen). The club apps show the notice from 24 hours before; it starts and ends by itself. `abbrechen` cancels the next one. | `platform.settings` |
 | `/wartung ende`, `/wartung abbrechen` | End maintenance; cancel a planned one | `platform.settings` |
 
 The commands are installed on the platform server only (the server of the
 log channel), within a minute of setting the channel, and are shown to
 members with "Manage Server" by default (Server Settings › Integrations ›
-Hubra can narrow that further). Planned maintenance can also be set in
-manage › Alerts › Overview (start field). Discord interactions keep working
+Hubra can narrow that further). Discord interactions keep working
 during maintenance so `/wartung ende` does; club commands answer that Hubra
 is being updated.
 
