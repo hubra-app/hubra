@@ -265,7 +265,7 @@ def test_check_repository_downloads_and_verifies_every_archive(
     assert publish.check_repository(url, doc["key_id"]) == (doc, [])
     _, problems = publish.check_repository(url)
     assert problems == [
-        f"the index is signed with key {doc['key_id']}, not b84edc01a8b17490"
+        f"the index is signed with key {doc['key_id']}, not {next(iter(trust.official_keys('index')))}"
     ]
 
     # An archive changed after signing: re-zipped with a new checksum in a re-signed index.
