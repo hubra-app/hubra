@@ -459,7 +459,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         opened={menuOpen}
         onClose={closeMenu}
         position="left"
-        size="min(300px, 85vw)"
+        size="100%"
         padding="md"
         hiddenFrom="sm"
         title={
