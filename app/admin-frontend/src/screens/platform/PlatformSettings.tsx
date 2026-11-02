@@ -54,8 +54,7 @@ const DISCORD = [
   'discord.bot_token',
 ]
 
-const DISCORD_LOG = ['discord.log_channel_id', 'discord.log_events']
-const DISCORD_AUDIT = ['discord.audit_channel_id']
+const DISCORD_LOG = ['discord.log_channel_id', 'discord.audit_channel_id', 'discord.log_events']
 // Defaults built into Hubra, not read from the environment.
 const PERF = ['perf.slow_request_ms', 'perf.slow_query_ms', 'perf.p95_warning_ms']
 const PLANS = ['starter', 'growth', 'enterprise'] as const
@@ -327,7 +326,10 @@ export function PlatformSettings() {
     .filter(Boolean)
   const clientId = byKey['discord.client_id']?.value ?? ''
   const logChanged = changed.some((s) => DISCORD_LOG.includes(s.key))
-  const auditChanged = changed.some((s) => DISCORD_AUDIT.includes(s.key))
+  const logChannel =
+    draft['discord.log_channel_id'] ?? byKey['discord.log_channel_id']?.value ?? ''
+  const auditChannel =
+    draft['discord.audit_channel_id'] ?? byKey['discord.audit_channel_id']?.value ?? ''
   const manageUrl = byKey['alerts.manage_url']?.value ?? ''
 
   const botAddLink =
@@ -603,19 +605,36 @@ export function PlatformSettings() {
               </Group>
               <Text size="xs" c="dimmed" mb={12}>
                 {tr(
-                  'Der Hubra-Bot meldet Plattform-Ereignisse in einen Kanal auf dem Discord-Server der Plattform: neue Vereine und Anfragen, Rollen, Plugins, Backups, Einstellungen und Systemwarnungen. Braucht den Bot-Token oben.',
-                  "The Hubra bot posts platform events to a channel on the platform's own Discord server: new clubs and requests, roles, plugins, backups, settings and system alerts. Needs the bot token above.",
+                  'Der Hubra-Bot meldet Plattform-Ereignisse auf dem Discord-Server der Plattform: neue Vereine und Anfragen, Rollen, Plugins, Backups, Einstellungen und Systemwarnungen. Mit einem Audit-Kanal gehen die Audit-Einträge dorthin und das Plattform-Log behält die Warnungen; jede Meldung kommt nur einmal. Braucht den Bot-Token oben.',
+                  "The Hubra bot posts platform events on the platform's own Discord server: new clubs and requests, roles, plugins, backups, settings and system alerts. With an audit channel, audit entries go there and the platform log keeps the alerts; each post goes out once. Needs the bot token above.",
                 )}
               </Text>
               <Stack gap="sm">
                 <DiscordLogPicker
-                  channelId={
-                    draft['discord.log_channel_id'] ?? byKey['discord.log_channel_id']?.value ?? ''
-                  }
-                  onChange={(id) => setDraft((d) => ({ ...d, 'discord.log_channel_id': id }))}
                   botTokenSet={!!byKey['discord.bot_token']?.isSet}
                   addLink={botAddLink}
-                  fallback={field('discord.log_channel_id')}
+                  slots={[
+                    {
+                      label: tr('Kanal für das Plattform-Log', 'Channel for the platform log'),
+                      description: tr(
+                        'Systemwarnungen, und alles Angehakte, solange es keinen Audit-Kanal gibt.',
+                        'System alerts, and everything ticked while there is no audit channel.',
+                      ),
+                      channelId: logChannel,
+                      onChange: (id) => setDraft((d) => ({ ...d, 'discord.log_channel_id': id })),
+                      fallback: field('discord.log_channel_id'),
+                    },
+                    {
+                      label: tr('Audit-Kanal (optional)', 'Audit channel (optional)'),
+                      description: tr(
+                        'Gewählt: Die Einträge aus dem Audit-Log gehen nur hierhin, mit Links in manage. Leer: aus.',
+                        'Picked: audit log entries go here only, with links into manage. Empty: off.',
+                      ),
+                      channelId: auditChannel,
+                      onChange: (id) => setDraft((d) => ({ ...d, 'discord.audit_channel_id': id })),
+                      fallback: field('discord.audit_channel_id'),
+                    },
+                  ]}
                 />
                 <Checkbox.Group
                   label={
@@ -642,50 +661,6 @@ export function PlatformSettings() {
                     ))}
                   </Stack>
                 </Checkbox.Group>
-                <Group>
-                  <Button
-                    variant="light"
-                    loading={testingDiscord === 'log'}
-                    disabled={logChanged || !byKey['discord.log_channel_id']?.value}
-                    onClick={() => sendDiscordTest('log')}
-                  >
-                    {tr('Testnachricht senden', 'Send test message')}
-                  </Button>
-                  {logChanged && (
-                    <Text size="xs" c="dimmed">
-                      {tr('Zuerst speichern.', 'Save first.')}
-                    </Text>
-                  )}
-                </Group>
-              </Stack>
-            </Paper>
-          )}
-
-          {tab === 'discord' && (
-            <Paper withBorder shadow="sm" radius="lg" p="lg">
-              <Group justify="space-between" mb={4}>
-                <Title order={3}>{tr('Audit-Kanal', 'Audit channel')}</Title>
-                {resetButton(DISCORD_AUDIT)}
-              </Group>
-              <Text size="xs" c="dimmed" mb={12}>
-                {tr(
-                  'Optional: Ein zweiter Kanal bekommt jeden Eintrag im Audit-Log, egal was oben angehakt ist, mit Links zum Eintrag, zum Verein und zur passenden Seite in manage. Systemwarnungen bleiben im Plattform-Log. Ohne Kanal ist er aus.',
-                  'Optional: a second channel gets every entry of the audit log, whatever is ticked above, with links to the entry, the club and the matching page in manage. System alerts stay in the platform log. Off until you pick a channel.',
-                )}
-              </Text>
-              <Stack gap="sm">
-                <DiscordLogPicker
-                  channelLabel={tr('Kanal für das Audit-Log', 'Channel for the audit log')}
-                  channelId={
-                    draft['discord.audit_channel_id'] ??
-                    byKey['discord.audit_channel_id']?.value ??
-                    ''
-                  }
-                  onChange={(id) => setDraft((d) => ({ ...d, 'discord.audit_channel_id': id }))}
-                  botTokenSet={!!byKey['discord.bot_token']?.isSet}
-                  addLink={botAddLink}
-                  fallback={field('discord.audit_channel_id')}
-                />
                 {!manageUrl && (
                   <Text size="xs" c="orange">
                     {tr(
@@ -705,13 +680,23 @@ export function PlatformSettings() {
                 <Group>
                   <Button
                     variant="light"
-                    loading={testingDiscord === 'audit'}
-                    disabled={auditChanged || !byKey['discord.audit_channel_id']?.value}
-                    onClick={() => sendDiscordTest('audit')}
+                    loading={testingDiscord === 'log'}
+                    disabled={logChanged || !byKey['discord.log_channel_id']?.value}
+                    onClick={() => sendDiscordTest('log')}
                   >
-                    {tr('Testnachricht senden', 'Send test message')}
+                    {tr('Test ins Plattform-Log', 'Test the platform log')}
                   </Button>
-                  {auditChanged && (
+                  {byKey['discord.audit_channel_id']?.value && (
+                    <Button
+                      variant="light"
+                      loading={testingDiscord === 'audit'}
+                      disabled={logChanged}
+                      onClick={() => sendDiscordTest('audit')}
+                    >
+                      {tr('Test in den Audit-Kanal', 'Test the audit channel')}
+                    </Button>
+                  )}
+                  {logChanged && (
                     <Text size="xs" c="dimmed">
                       {tr('Zuerst speichern.', 'Save first.')}
                     </Text>
