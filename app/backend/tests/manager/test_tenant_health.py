@@ -62,7 +62,7 @@ def _by_slug(body):
     return {t["slug"]: t for t in body["tenants"]}
 
 
-def test_health_columns(client, staff_headers, clubs):
+def test_health_columns(sqlite_only, client, staff_headers, clubs):
     resp = client.get(URL)
     assert resp.status_code == 200, resp.get_json()
     body = resp.get_json()

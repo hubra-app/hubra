@@ -335,3 +335,11 @@ def tenant_pair(db, seeded_db):
         "role_a": role_a,
         "role_b": role_b,
     }
+
+
+@pytest.fixture
+def sqlite_only(db):
+    """Skip on Postgres: the test keeps a club's data in the public schema,
+    which only matches what the code reads on SQLite (no club schemas)."""
+    if db.engine.dialect.name == "postgresql":
+        pytest.skip("club data in the public schema; needs SQLite")

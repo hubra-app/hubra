@@ -39,7 +39,10 @@ def rate_limit_client():
     with app.app_context():
         _db.create_all()
         yield app.test_client()
-        _db.drop_all()
+        # Not on Postgres: this app shares the database with the session app,
+        # whose open transaction DROP would wait on (see conftest.app).
+        if _db.engine.dialect.name != "postgresql":
+            _db.drop_all()
 
     # Restore the shared limiter singleton to a disabled state so route-level
     # @limiter.limit decorators do not fire on the session-scoped app.

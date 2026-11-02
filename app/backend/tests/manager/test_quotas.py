@@ -96,7 +96,7 @@ def test_status_levels(db, club):
     assert rows["storage_mb"]["level"] == "over"
 
 
-def test_limits_api(client, staff_headers, db, club):
+def test_limits_api(sqlite_only, client, staff_headers, db, club):
     _plan(db, members=10)
     url = f"/api/v1/system/tenants/{club.id}/limits"
     body = client.get(url).get_json()
@@ -129,7 +129,7 @@ def test_limits_api_needs_platform_rights(client, auth_headers, club):
     assert client.put(url, json={"members": 5}).status_code in (401, 403)
 
 
-def test_a_full_club_takes_no_new_members(app, client, db, seeded_db, club):
+def test_a_full_club_takes_no_new_members(sqlite_only, app, client, db, seeded_db, club):
     club.settings = {"limits": {"members": 1}}  # the owner is the one member
     db.session.commit()
     client.post(
