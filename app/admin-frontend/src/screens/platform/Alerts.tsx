@@ -238,6 +238,8 @@ export function Alerts() {
   const search = new URLSearchParams(location.search)
   const level = search.get('level')
   const category = search.get('category')
+  const clubId = Number(search.get('club'))
+  const club = clubId ? { id: clubId, name: search.get('name') ?? `#${clubId}` } : undefined
 
   return (
     <div>
@@ -263,7 +265,11 @@ export function Alerts() {
       {tab === 'events' && (
         <EventLogPanel
           key={location.search}
-          initialLevel={level === 'warning' || level === 'error' ? level : undefined}
+          initialLevel={
+            level === 'warning' || level === 'error' || level === 'problems' ? level : undefined
+          }
+          club={club}
+          onClearClub={() => navigate('/app/platform/alerts/events')}
           initialCategory={
             category && CATEGORIES.includes(category) ? (category as EventCategory) : undefined
           }

@@ -4,6 +4,7 @@ import {
   Alert,
   Badge,
   Button,
+  CloseButton,
   Code,
   Group,
   Paper,
@@ -449,23 +450,35 @@ function EventDetails({ event }: { event: PlatformEvent }) {
 export function EventLogPanel({
   initialCategory,
   initialLevel,
+  club,
+  onClearClub,
 }: {
   initialCategory?: EventCategory
-  initialLevel?: EventLevel
+  initialLevel?: EventLevel | 'problems'
+  /** Only this club's events (from manage › Alle Vereine). */
+  club?: { id: number; name: string }
+  onClearClub?: () => void
 }) {
   const [category, setCategory] = useState<EventCategory | ''>(
-    initialCategory ?? (initialLevel ? 'mail' : ''),
+    initialCategory ?? (initialLevel && !club ? 'mail' : ''),
   )
-  const [level, setLevel] = useState<EventLevel | ''>(initialLevel ?? '')
+  const [level, setLevel] = useState<EventLevel | 'problems' | ''>(initialLevel ?? '')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(25)
   const [open, setOpen] = useState<number | null>(null)
 
   const query = useQuery({
-    queryKey: ['platform-events', category, level, search, page, perPage],
+    queryKey: ['platform-events', category, level, club?.id, search, page, perPage],
     queryFn: () =>
-      getPlatformEvents({ category, level, q: search.trim(), page, per_page: perPage }),
+      getPlatformEvents({
+        category,
+        level,
+        tenant_id: club?.id,
+        q: search.trim(),
+        page,
+        per_page: perPage,
+      }),
   })
   const entries = query.data?.entries ?? []
   const total = query.data?.total ?? 0
@@ -490,6 +503,23 @@ export function EventLogPanel({
         )}
       </Text>
       <Group gap="xs" wrap="wrap">
+        {club && (
+          <Badge
+            size="lg"
+            variant="light"
+            rightSection={
+              onClearClub ? (
+                <CloseButton
+                  size="xs"
+                  aria-label={tr('Vereinsfilter entfernen', 'Remove club filter')}
+                  onClick={onClearClub}
+                />
+              ) : undefined
+            }
+          >
+            {tr('Verein', 'Club')}: {club.name}
+          </Badge>
+        )}
         <TextInput
           leftSection={<IconSearch size={16} />}
           placeholder={tr('Adresse oder Betreff', 'Address or subject')}
@@ -514,18 +544,22 @@ export function EventLogPanel({
           </Button>
         ))}
         <span style={{ width: 8 }} />
-        {(['', 'warning', 'error'] as const).map((l) => (
+        {(['', 'problems', 'warning', 'error'] as const).map((l) => (
           <Button
             key={l || 'any'}
             size="xs"
             variant={level === l ? 'filled' : 'default'}
-            color={l ? LEVEL_COLOR[l] : undefined}
+            color={l && l !== 'problems' ? LEVEL_COLOR[l] : undefined}
             onClick={() => {
               setLevel(l)
               setPage(1)
             }}
           >
-            {l ? levelLabel(l) : tr('Jede Stufe', 'Any level')}
+            {l === 'problems'
+              ? tr('Warnungen und Fehler', 'Warnings and errors')
+              : l
+                ? levelLabel(l)
+                : tr('Jede Stufe', 'Any level')}
           </Button>
         ))}
         <Button

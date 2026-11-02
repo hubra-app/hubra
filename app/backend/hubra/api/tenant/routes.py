@@ -40,7 +40,7 @@ from hubra.core.models.member import Member
 from hubra.core.models.tenant import GlobalAuditEntry, Tenant
 from hubra.core.models.tenant_request import TenantRequest
 from hubra.core.models.user import User
-from hubra.core.services import email_verification
+from hubra.core.services import email_verification, tenant_health
 from hubra.core.tenant.service import TenantService, TenantProvisioningError
 from hubra.core.tenant.club_settings import (
     accepts_join_requests,
@@ -115,6 +115,85 @@ def list_tenants():
             "total": result["total"],
             "page": result["page"],
             "per_page": result["per_page"],
+        }
+    )
+
+
+_HEALTH_SORTS = {
+    "name": lambda t, h: t.name.lower(),
+    "created_at": lambda t, h: t.created_at,
+    "members": lambda t, h: h["members"],
+    "last_activity": lambda t, h: h["last_activity"] or datetime.min.replace(tzinfo=timezone.utc),
+    "storage": lambda t, h: h["storage_bytes"],
+    "mail": lambda t, h: h["mail"]["sent"] + h["mail"]["failed"],
+    "plugins": lambda t, h: h["plugins"],
+    "alerts": lambda t, h: (h["alerts"]["error"], h["alerts"]["warning"]),
+    "level": lambda t, h: tenant_health.LEVELS.index(h["level"]),
+}
+
+
+@tenant_admin_bp.route("/tenants/health", methods=["GET"])
+@require_global_permission("tenants.read")
+def list_tenants_health():
+    """Every club with its health, for manage › Alle Vereine.
+
+    Query: ``search``, ``plan``, ``status``, ``health`` (ok, idle, warning,
+    error, or ``problems`` for warning and error), ``sort_by`` (name,
+    created_at, members, last_activity, storage, mail, plugins, alerts,
+    level), ``sort_dir``, ``page``, ``per_page`` (max 100).  ``counts`` has
+    the number of clubs per health level before the health filter.
+    """
+    args = request.args
+    query = select(Tenant).where(Tenant.deleted_at.is_(None))
+    if search := (args.get("search") or "").strip():
+        pattern = f"%{search[:100]}%"
+        query = query.where(Tenant.name.ilike(pattern) | Tenant.slug.ilike(pattern))
+    if plan := args.get("plan"):
+        query = query.where(Tenant.plan == plan)
+    if status := args.get("status"):
+        query = query.where(Tenant.status == status)
+    tenants = list(db.session.scalars(query).all())
+    health = tenant_health.for_tenants(tenants)
+
+    counts = {level: 0 for level in tenant_health.LEVELS}
+    for h in health.values():
+        counts[h["level"]] += 1
+
+    wanted = args.get("health") or None
+    if wanted == "problems":
+        tenants = [t for t in tenants if health[t.id]["level"] in ("warning", "error")]
+    elif wanted in tenant_health.LEVELS:
+        tenants = [t for t in tenants if health[t.id]["level"] == wanted]
+    elif wanted:
+        raise_error(400, "VALIDATION_ERROR", "Unknown health filter")
+
+    sort_by = args.get("sort_by", "name")
+    key = _HEALTH_SORTS.get(sort_by)
+    if key is None:
+        raise_error(400, "VALIDATION_ERROR", "Unknown sort field")
+    tenants.sort(key=lambda t: key(t, health[t.id]), reverse=args.get("sort_dir") == "desc")
+
+    try:
+        page = max(1, int(args.get("page", 1)))
+        per_page = min(100, max(1, int(args.get("per_page", 25))))
+    except ValueError:
+        raise_error(400, "VALIDATION_ERROR", "page and per_page must be numbers")
+    rows = tenants[(page - 1) * per_page : page * per_page]
+    return jsonify(
+        {
+            "tenants": [
+                {**_tenant_to_dict(t), "health": tenant_health.to_json(health[t.id])}
+                for t in rows
+            ],
+            "total": len(tenants),
+            "page": page,
+            "per_page": per_page,
+            "counts": counts,
+            "windows": {
+                "idle_days": tenant_health.IDLE_AFTER_DAYS,
+                "mail_days": tenant_health.MAIL_WINDOW_DAYS,
+                "alert_hours": tenant_health.ALERT_WINDOW_HOURS,
+            },
         }
     )
 

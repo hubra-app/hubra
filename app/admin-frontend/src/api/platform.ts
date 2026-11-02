@@ -267,7 +267,8 @@ export interface PlatformEvent {
 
 export async function getPlatformEvents(params: {
   category?: EventCategory | ''
-  level?: EventLevel | ''
+  level?: EventLevel | 'problems' | ''
+  tenant_id?: number
   q?: string
   page: number
   per_page: number
