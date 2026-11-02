@@ -28,6 +28,9 @@ test.describe('phone menu account card', () => {
   test('stays in view while the nav scrolls', async ({ page }) => {
     await openMenu(page)
     await expectOnScreen(page, card(page))
+    // The menu takes the whole screen width.
+    const box = await drawer(page).boundingBox()
+    expect(box!.width).toBeCloseTo(page.viewportSize()!.width, 0)
 
     // Weitere open makes the list longer still.
     await drawer(page).getByTestId('nav-more').click()
