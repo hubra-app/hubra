@@ -269,7 +269,8 @@
       "title": "Maintenance",
       "text": "Hubra is being updated. It will be back in a few minutes.",
       "until": "Expected back at {{time}}.",
-      "reload": "This page reloads by itself."
+      "reload": "This page reloads by itself.",
+      "status": "System status"
     },
     "backend": {
       "unreachable": "Server unreachable",

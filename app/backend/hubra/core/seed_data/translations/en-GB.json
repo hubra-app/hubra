@@ -3273,6 +3273,7 @@
   "app.maintenance.text": "Hubra is being updated. It will be back in a few minutes.",
   "app.maintenance.until": "Expected back at {{time}}.",
   "app.maintenance.reload": "This page reloads by itself.",
+  "app.maintenance.status": "System status",
   "account.notify.discord": "Discord",
   "account.notify.discordHint": "Discord sends you a direct message from the club's bot. Direct messages from server members must be allowed (Discord › the server's privacy settings)."
 }
