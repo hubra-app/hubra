@@ -491,6 +491,50 @@ export async function setClubBackupKey(tenantId: number, publicKey: string | nul
   )
 }
 
+// ── Planned maintenance windows ─────────────────────────────────────────────
+
+export interface MaintenanceWindow {
+  id: number
+  starts_at: string
+  ends_at: string
+  message: string
+  /** null: every club. */
+  tenant_ids: number[] | null
+  clubs: { id: number; name: string | null }[] | null
+  notice_hours: number
+  status: 'planned' | 'announced' | 'running' | 'done' | 'cancelled'
+  created_by: number | null
+  created_at: string | null
+  cancelled_at: string | null
+}
+
+export async function getMaintenanceWindows() {
+  return apiFetch<{
+    current: MaintenanceWindow[]
+    past: MaintenanceWindow[]
+    notice_hours: number[]
+  }>(`${P}/maintenance/windows`)
+}
+
+export async function createMaintenanceWindow(body: {
+  starts_at: string
+  ends_at: string
+  message: string
+  tenant_ids: number[] | null
+  notice_hours: number
+}) {
+  return apiFetch<{ window: MaintenanceWindow }>(`${P}/maintenance/windows`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function cancelMaintenanceWindow(id: number) {
+  return apiFetch<{ window: MaintenanceWindow }>(`${P}/maintenance/windows/${id}/cancel`, {
+    method: 'POST',
+  })
+}
+
 // ── Background jobs (Diagnose › Hintergrundjobs) ─────────────────────────────
 
 export interface JobCounts {
