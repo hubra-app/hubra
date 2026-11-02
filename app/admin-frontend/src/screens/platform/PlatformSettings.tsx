@@ -10,6 +10,7 @@ import {
   Paper,
   PasswordInput,
   Stack,
+  Table,
   Text,
   TextInput,
   Title,
@@ -17,6 +18,7 @@ import {
 import { PageHead, Tabs } from '@/components/ui'
 import { useAdmin } from '@/context/AdminContext'
 import { useLang, tr } from '@/lang'
+import { planLabel } from '@/labels'
 import { PlatformTranslations } from '@/screens/platform/Translations'
 import { PlatformEncryption } from '@/screens/platform/Encryption'
 import { DiscordLogPicker } from '@/screens/platform/DiscordLogPicker'
@@ -55,7 +57,13 @@ const DISCORD = [
 const DISCORD_LOG = ['discord.log_channel_id', 'discord.log_events']
 // Defaults built into Hubra, not read from the environment.
 const PERF = ['perf.slow_request_ms', 'perf.slow_query_ms', 'perf.p95_warning_ms']
-const BUILT_IN = ['alerts.cooldown_minutes', 'alerts.retention_days', ...PERF]
+const PLANS = ['starter', 'growth', 'enterprise'] as const
+const LIMIT_KINDS = ['members', 'mail_month', 'storage_mb'] as const
+const LIMITS = [
+  'limits.warn_percent',
+  ...PLANS.flatMap((p) => LIMIT_KINDS.map((k) => `limits.${p}.${k}`)),
+]
+const BUILT_IN = ['alerts.cooldown_minutes', 'alerts.retention_days', ...PERF, ...LIMITS]
 const ALERTS = ['alerts.cooldown_minutes', 'alerts.retention_days', 'alerts.manage_url']
 
 // Categories of platform events the bot posts (services/platform_discord.py).
@@ -105,7 +113,16 @@ const LOG_CATEGORIES: [string, string, string][] = [
 // View Channel + Send Messages + Embed Links
 const LOG_BOT_PERMISSIONS = (1 << 10) | (1 << 11) | (1 << 14)
 
-const TABS = ['mail', 'sender', 'backups', 'discord', 'alerts', 'encryption', 'translations'] as const
+const TABS = [
+  'mail',
+  'sender',
+  'backups',
+  'discord',
+  'alerts',
+  'limits',
+  'encryption',
+  'translations',
+] as const
 type Tab = (typeof TABS)[number]
 
 function SourceBadge({ s }: { s: PlatformSetting }) {
@@ -206,6 +223,10 @@ const FIELD_DE: Record<string, [string, string]> = {
   'perf.p95_warning_ms': [
     'Warnung bei langsamer API (ms)',
     'Offenes Problem unter Warnungen, wenn 95 % der Anfragen der letzten Stunde nicht schneller sind. 0: aus',
+  ],
+  'limits.warn_percent': [
+    'Warnen ab (%)',
+    'Inhaber und Plattform bekommen eine Meldung, wenn ein Verein diesen Anteil eines Limits erreicht. Die zweite kommt bei 100 %',
   ],
   'discord.log_channel_id': [
     'Kanal für das Plattform-Log',
@@ -368,6 +389,7 @@ export function PlatformSettings() {
           { id: 'backups', label: tr('Backup-Speicher', 'Backup storage') },
           { id: 'discord', label: 'Discord' },
           { id: 'alerts', label: tr('Warnungen', 'Alerts') },
+          { id: 'limits', label: tr('Limits', 'Limits') },
           { id: 'encryption', label: tr('Verschlüsselung', 'Encryption') },
           { id: 'translations', label: tr('Übersetzungen', 'Translations') },
         ]}
@@ -456,6 +478,60 @@ export function PlatformSettings() {
                 )}
               </Text>
               <Stack gap="sm">{PERF.map(field)}</Stack>
+            </Paper>
+          )}
+
+          {tab === 'limits' && (
+            <Paper withBorder shadow="sm" radius="lg" p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Limits pro Tarif', 'Limits per plan')}</Title>
+                {resetButton(LIMITS)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Leer heisst kein Limit. Ist das Mitgliederlimit erreicht, kommt niemand Neues dazu (Einladungen, Anträge); Plattform-Staff kann in manage trotzdem hinzufügen. Mails pro Monat und Speicher werden nur gemeldet, nichts wird gesperrt. Einzelne Vereine bekommen eigene Limits auf ihrer Seite unter Alle Vereine.',
+                  'Empty means no limit. At the member limit nobody new can join (invites, applications); platform staff can still add people in manage. Mails per month and storage are only reported, nothing is blocked. A club gets its own limits on its page under All clubs.',
+                )}
+              </Text>
+              <Stack gap="md">
+                {field('limits.warn_percent')}
+                <Table.ScrollContainer minWidth={520}>
+                  <Table verticalSpacing={6}>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>{tr('Tarif', 'Plan')}</Table.Th>
+                        <Table.Th>{tr('Mitglieder', 'Members')}</Table.Th>
+                        <Table.Th>{tr('Mails pro Monat', 'Mails per month')}</Table.Th>
+                        <Table.Th>{tr('Speicher (MB)', 'Storage (MB)')}</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {PLANS.map((p) => (
+                        <Table.Tr key={p}>
+                          <Table.Td fw={600}>{planLabel(p, tr)}</Table.Td>
+                          {LIMIT_KINDS.map((k) => {
+                            const key = `limits.${p}.${k}`
+                            return (
+                              <Table.Td key={k}>
+                                <TextInput
+                                  aria-label={`${planLabel(p, tr)}: ${k}`}
+                                  inputMode="numeric"
+                                  placeholder={tr('kein Limit', 'no limit')}
+                                  value={draft[key] ?? byKey[key]?.value ?? ''}
+                                  onChange={(e) => {
+                                    const value = e.currentTarget.value
+                                    setDraft((d) => ({ ...d, [key]: value }))
+                                  }}
+                                />
+                              </Table.Td>
+                            )
+                          })}
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                </Table.ScrollContainer>
+              </Stack>
             </Paper>
           )}
 
