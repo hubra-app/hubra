@@ -133,7 +133,7 @@ export function PerformancePanel() {
         </StatGrid>
       )}
 
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
+      <Paper withBorder p="lg">
         <Group justify="space-between" mb={12} wrap="wrap">
           <Title order={4}>{tr('Routen', 'Routes')}</Title>
           <SegmentedControl
@@ -212,7 +212,7 @@ export function PerformancePanel() {
         )}
       </Paper>
 
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
+      <Paper withBorder p="lg">
         <Group justify="space-between" mb={4} wrap="wrap">
           <Title order={4}>{tr('Langsame Datenbankabfragen', 'Slow database queries')}</Title>
         </Group>
@@ -230,7 +230,7 @@ export function PerformancePanel() {
         )}
         <Stack gap={10}>
           {(data?.queries ?? []).map((q) => (
-            <Paper key={q.id} withBorder radius="md" p="sm">
+            <Paper key={q.id} withBorder p="sm">
               <Group gap={12} mb={6} wrap="wrap">
                 <Text size="sm" fw={600}>
                   {tr(`${q.count}×`, `${q.count}×`)}

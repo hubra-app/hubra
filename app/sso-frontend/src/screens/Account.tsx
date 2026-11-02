@@ -175,7 +175,7 @@ function ProfileTab({ profile }: { profile: authApi.Profile }) {
   const save = useSaveProfile(tr('Profil gespeichert', 'Profile saved'))
 
   return (
-    <Paper withBorder radius="md" p="lg">
+    <Paper withBorder p="lg">
       <form
         onSubmit={(e) => {
           e.preventDefault()
@@ -273,7 +273,7 @@ function EmailTab() {
 
   return (
     <Stack gap="md">
-      <Paper withBorder radius="md" p="lg">
+      <Paper withBorder p="lg">
         <Group justify="space-between" wrap="nowrap" align="flex-start">
           <div style={{ minWidth: 0 }}>
             <Text size="sm" c="dimmed">
@@ -308,7 +308,7 @@ function EmailTab() {
         )}
       </Paper>
 
-      <Paper withBorder radius="md" p="lg">
+      <Paper withBorder p="lg">
         <form
           onSubmit={(e) => {
             e.preventDefault()
@@ -377,7 +377,7 @@ function PasswordTab() {
   })
 
   return (
-    <Paper withBorder radius="md" p="lg">
+    <Paper withBorder p="lg">
       <form
         onSubmit={(e) => {
           e.preventDefault()
@@ -437,7 +437,7 @@ const LANGUAGES = [
 function SettingsTab({ profile }: { profile: authApi.Profile }) {
   const save = useSaveProfile(tr('Einstellungen gespeichert', 'Settings saved'))
   return (
-    <Paper withBorder radius="md" p="lg">
+    <Paper withBorder p="lg">
       <Stack gap="xs">
         <Text fw={600}>{tr('Sprache', 'Language')}</Text>
         <Text size="sm" c="dimmed">
@@ -537,7 +537,7 @@ function SessionsTab() {
         </Text>
       )}
       {sessions.data.map((s) => (
-        <Paper key={`${s.club?.slug ?? 'account'}-${s.id}`} withBorder radius="md" p="md">
+        <Paper key={`${s.club?.slug ?? 'account'}-${s.id}`} withBorder p="md">
           <Group justify="space-between" wrap="nowrap">
             <div style={{ minWidth: 0 }}>
               <Group gap="xs" wrap="nowrap">
@@ -660,7 +660,7 @@ function LinkedAccountsTab() {
       {linked.data.providers.map((p) => {
         const acc = linked.data.accounts.find((a) => a.provider === p.code)
         return (
-          <Paper key={p.code} withBorder radius="md" p="md">
+          <Paper key={p.code} withBorder p="md">
             <Group justify="space-between" wrap="nowrap">
               <div style={{ minWidth: 0 }}>
                 <Text fw={600}>{p.name}</Text>

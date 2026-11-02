@@ -199,7 +199,7 @@ export function RecurringTab() {
           </Button>
         )}
       </Group>
-      <Paper withBorder shadow="sm" radius="lg">
+      <Paper withBorder>
         <div style={{ overflowX: 'auto' }}>
           <Table highlightOnHover className="responsive-table">
             <Table.Thead>

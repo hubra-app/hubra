@@ -129,7 +129,6 @@ function MyCases() {
           <Paper
             key={c.id}
             withBorder
-            radius="lg"
             p="md"
             component="button"
             type="button"
@@ -272,7 +271,6 @@ function CaseDetail({ id, onClose }: { id: number; onClose: () => void }) {
                 {(c.comments ?? []).map((m) => (
                   <Paper
                     key={m.id}
-                    radius="md"
                     p="sm"
                     bg={m.fromStaff ? 'var(--mantine-color-acc-light)' : 'var(--hb-surface-2, var(--mantine-color-gray-0))'}
                     ml={m.fromStaff ? 0 : 24}
@@ -391,7 +389,7 @@ function RoadmapCard({ item }: { item: RoadmapItem }) {
   }
 
   return (
-    <Paper withBorder radius="lg" p="sm">
+    <Paper withBorder p="sm">
       <Group gap="sm" wrap="nowrap" align="flex-start">
         <UnstyledButton
           onClick={() => void toggle()}

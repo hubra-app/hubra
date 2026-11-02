@@ -182,7 +182,7 @@ function PasskeysCard({ s, showCodes }: { s: authApi.MfaStatus; showCodes: ShowC
   })
 
   return (
-    <Paper withBorder radius="md" p="lg">
+    <Paper withBorder p="lg">
       <Stack gap="md">
         <div>
           <Title order={3} fz="lg">
@@ -356,7 +356,7 @@ function AppCard({ s, showCodes }: { s: authApi.MfaStatus; showCodes: ShowCodes 
   })
 
   return (
-    <Paper withBorder radius="md" p="lg">
+    <Paper withBorder p="lg">
       <Stack gap="md">
         <Group justify="space-between" wrap="nowrap" align="flex-start">
           <div>
@@ -483,7 +483,7 @@ function RecoveryCard({ s, showCodes }: { s: authApi.MfaStatus; showCodes: ShowC
     onError: (err) => setError(errorText(err, tr('Fehlgeschlagen', 'Failed'))),
   })
   return (
-    <Paper withBorder radius="md" p="lg">
+    <Paper withBorder p="lg">
       <Stack gap="md">
         <div>
           <Title order={3} fz="lg">
@@ -537,7 +537,7 @@ export function TwoFactorTab() {
 
   if (codes.length)
     return (
-      <Paper withBorder radius="md" p="lg">
+      <Paper withBorder p="lg">
         <RecoveryCodes codes={codes} onDone={() => setCodes([])} />
       </Paper>
     )

@@ -25,7 +25,7 @@ export function AccountSettingsMembershipTab() {
 
   return (
     <>
-      <Paper withBorder shadow="sm" radius="lg">
+      <Paper withBorder>
         <Group
           p="md"
           gap="sm"
@@ -124,7 +124,7 @@ export function AccountSettingsMembershipTab() {
         </div>
       </Paper>
 
-      <Paper withBorder shadow="sm" radius="lg">
+      <Paper withBorder>
         <Group
           p="md"
           gap="sm"

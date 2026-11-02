@@ -259,7 +259,7 @@ export function PollsTab() {
           onShowAll={linked.clear}
         />
       )}
-      <Paper withBorder shadow="sm" radius="lg" style={{ marginBottom: 0 }}>
+      <Paper withBorder style={{ marginBottom: 0 }}>
         <Pagination {...pg} top />
         {pg.paged.length === 0 && (
           <div
@@ -291,8 +291,6 @@ export function PollsTab() {
               <Paper
                 key={poll.id}
                 withBorder
-                shadow="sm"
-                radius="lg"
                 style={{ padding: 20 }}
               >
                 <div

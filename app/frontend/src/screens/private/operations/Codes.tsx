@@ -148,7 +148,6 @@ export function CodesScreen() {
     return (
       <Paper
         withBorder
-        radius="lg"
         p="md"
         h="100%"
         style={{ display: 'flex', flexDirection: 'column', gap: 12 }}

@@ -77,7 +77,7 @@ export function PlatformEncryption() {
   const v = data.values
   return (
     <Stack gap={20} maw={960}>
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
+      <Paper withBorder p="lg">
         <Title order={3} mb={4}>
           {tr('Hauptschlüssel', 'Master key')}
         </Title>
@@ -139,7 +139,7 @@ export function PlatformEncryption() {
         </Group>
       </Paper>
 
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
+      <Paper withBorder p="lg">
         <Title order={3} mb={4}>
           {tr('Vereine', 'Clubs')}
         </Title>

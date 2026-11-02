@@ -223,7 +223,7 @@ export function JobsPanel() {
         />
       </StatGrid>
 
-      <Paper withBorder radius="lg" p="md">
+      <Paper withBorder p="md">
         <Group justify="space-between" mb="sm">
           <Title order={4}>
             {tr('Fehlgeschlagene Jobs', 'Failed jobs')}
@@ -258,7 +258,7 @@ export function JobsPanel() {
       </Paper>
 
       {data && data.running.length > 0 && (
-        <Paper withBorder radius="lg" p="md">
+        <Paper withBorder p="md">
           <Title order={4} mb="sm">
             {tr('Laufen gerade', 'Running now')}
           </Title>
@@ -280,7 +280,7 @@ export function JobsPanel() {
         </Paper>
       )}
 
-      <Paper withBorder radius="lg" p="md">
+      <Paper withBorder p="md">
         <Title order={4} mb="sm">
           {tr('Jobs nach Art', 'Jobs by type')}
         </Title>

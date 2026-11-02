@@ -198,7 +198,7 @@ export function NotificationsTab() {
       />
 
       {visible.length === 0 ? (
-        <Paper withBorder radius="md" py={40} ta="center" c="dimmed">
+        <Paper withBorder py={40} ta="center" c="dimmed">
           <IconBellOff size={28} stroke={1.5} />
           <Text size="sm" mt="xs">
             {filter === 'unread'
@@ -207,7 +207,7 @@ export function NotificationsTab() {
           </Text>
         </Paper>
       ) : (
-        <Paper withBorder radius="md" style={{ overflow: 'hidden' }}>
+        <Paper withBorder style={{ overflow: 'hidden' }}>
           {visible.map((n, i) => {
             const kind = KIND[n.kind] ?? KIND.info
             const link = safeNotificationLink(n.link) && n.club.slug

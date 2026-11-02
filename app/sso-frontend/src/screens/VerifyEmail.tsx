@@ -42,7 +42,7 @@ export function VerifyEmail() {
   return (
     <div className="graph-bg" style={{ minHeight: '100vh', display: 'flex' }}>
       <Center flex={1} p={24}>
-        <Paper withBorder radius="md" p="xl" maw={420} w="100%">
+        <Paper withBorder p="xl" maw={420} w="100%">
           <Stack align="center" ta="center" gap="xs">
             {state === 'verifying' && (
               <>

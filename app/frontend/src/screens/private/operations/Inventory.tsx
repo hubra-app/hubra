@@ -345,7 +345,7 @@ export function InventoryScreen() {
           getRowKey={(item) => item.id}
         />
       ) : (
-        <Paper withBorder shadow="sm" radius="lg">
+        <Paper withBorder>
           <div
             style={{
               padding: '14px 16px',

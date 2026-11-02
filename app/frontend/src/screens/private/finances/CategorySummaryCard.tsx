@@ -20,7 +20,7 @@ export function CategorySummaryCard() {
   const years = Array.from({ length: 6 }, (_, i) => String(thisYear - i))
 
   return (
-    <Paper withBorder shadow="sm" radius="lg" mt="md">
+    <Paper withBorder mt="md">
       <Group p="md" gap="sm" style={{ borderBottom: '1px solid var(--hb-border)' }}>
         <Text fw={700} fz="md">
           {t('finance.summary.title', 'Nach Kategorie')}

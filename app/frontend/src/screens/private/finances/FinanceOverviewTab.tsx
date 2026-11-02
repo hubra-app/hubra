@@ -81,7 +81,7 @@ export function FinanceOverviewTab() {
 
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
         {/* Bar chart */}
-        <Paper withBorder shadow="sm" radius="lg">
+        <Paper withBorder>
           <Group
             p="md"
             gap="sm"
@@ -205,7 +205,7 @@ export function FinanceOverviewTab() {
         </Paper>
 
         {/* Recent transactions */}
-        <Paper withBorder shadow="sm" radius="lg">
+        <Paper withBorder>
           <Group
             p="md"
             gap="sm"

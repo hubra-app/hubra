@@ -286,7 +286,7 @@ export function Backups() {
       )}
 
       {config && (
-        <Paper withBorder shadow="sm" radius="lg" style={{ padding: '1rem 1.25rem' }}>
+        <Paper withBorder style={{ padding: '1rem 1.25rem' }}>
           <div
             style={{
               display: 'flex',
@@ -497,7 +497,7 @@ export function Backups() {
           onChange={(v) => setFilter(v ?? ALL)}
         />
       </Group>
-      <Paper withBorder shadow="sm" radius="lg">
+      <Paper withBorder>
         {/* Nine columns do not fit a phone: the table scrolls inside its card. */}
         <Table.ScrollContainer minWidth={860}>
           <Table highlightOnHover>

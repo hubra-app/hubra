@@ -439,7 +439,7 @@ export function GroupsScreen() {
           )
         }
       />
-      <Paper withBorder shadow="sm" radius="lg" style={{ marginBottom: 0 }}>
+      <Paper withBorder style={{ marginBottom: 0 }}>
         <div
           style={{
             padding: '14px 16px',
@@ -483,8 +483,6 @@ export function GroupsScreen() {
             <Paper
               key={g.id}
               withBorder
-              shadow="sm"
-              radius="lg"
               style={{ overflow: 'hidden' }}
             >
               <div style={{ height: 4, background: g.color }} />
@@ -601,8 +599,6 @@ export function GroupsScreen() {
             component="button"
             type="button"
             withBorder
-            shadow="sm"
-            radius="lg"
             style={{
               font: 'inherit',
               display: 'flex',

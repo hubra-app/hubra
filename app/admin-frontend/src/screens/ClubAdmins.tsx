@@ -78,7 +78,7 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
   const [confirm, confirmDialog] = useConfirm()
 
   return (
-    <Paper withBorder shadow="sm" radius="lg" p="lg" mb={20}>
+    <Paper withBorder p="lg" mb={20}>
       {confirmDialog}
       <Stack gap={4} mb={12}>
         <Title order={3}>{tr('Admins', 'Admins')}</Title>

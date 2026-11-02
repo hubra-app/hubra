@@ -101,7 +101,6 @@ function ProblemRow({ p }: { p: OpenProblem }) {
   return (
     <Paper
       withBorder
-      radius="md"
       p="md"
       style={{
         borderLeft: `4px solid var(--mantine-color-${p.level === 'error' ? 'red' : 'orange'}-6)`,
@@ -214,7 +213,7 @@ export function OverviewPanel() {
         </Alert>
       )}
 
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
+      <Paper withBorder p="lg">
         <Group gap={10} mb={12}>
           {data && problems.length === 0 ? (
             <IconCircleCheck size={22} color="var(--mantine-color-green-7)" />
@@ -265,7 +264,7 @@ export function OverviewPanel() {
         </StatGrid>
       )}
 
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
+      <Paper withBorder p="lg">
         <Group justify="space-between" mb={12}>
           <Title order={4}>{tr('Letzte Warnungen', 'Latest alerts')}</Title>
           <Button

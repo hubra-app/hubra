@@ -331,7 +331,7 @@ export function PostsTab() {
           </Button>
         </Group>
       )}
-      <Paper withBorder shadow="sm" radius="lg">
+      <Paper withBorder>
         <Pagination {...pg} top />
         {pg.paged.length === 0 ? (
           <div

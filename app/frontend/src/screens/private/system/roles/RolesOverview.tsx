@@ -111,7 +111,7 @@ export function RolesOverview({
   )
 
   const detail = selected && (
-    <Paper withBorder radius="lg" p="md">
+    <Paper withBorder p="md">
       <Group justify="space-between" align="flex-start" wrap="nowrap" mb={8}>
         <Group gap={8} wrap="nowrap" align="flex-start" style={{ minWidth: 0 }}>
           {isMobile && (

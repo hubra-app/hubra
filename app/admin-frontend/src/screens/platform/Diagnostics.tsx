@@ -52,7 +52,7 @@ export function HealthPanel() {
 
   return (
     <Stack gap={16}>
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
+      <Paper withBorder p="lg">
         <Group justify="space-between" mb={8}>
           <Title order={3}>{tr('Systemzustand', 'System health')}</Title>
           <Button
@@ -222,7 +222,7 @@ export function MailServerPanel() {
 
       {query.isError && <Text c="red">{failureText(query.error)}</Text>}
 
-      <Paper withBorder shadow="sm" radius="lg">
+      <Paper withBorder>
         <div style={{ overflowX: 'auto' }}>
           <Table highlightOnHover>
             <Table.Thead>
@@ -425,7 +425,7 @@ export function PermissionsPanel() {
         </Text>
       </Group>
       {query.isError && <Text c="red">{failureText(query.error)}</Text>}
-      <Paper withBorder shadow="sm" radius="lg">
+      <Paper withBorder>
         <Pagination {...pager} />
         <div style={{ overflowX: 'auto' }}>
           <Table highlightOnHover>

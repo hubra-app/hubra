@@ -82,7 +82,7 @@ export function RoleAccess({
           'Ansehen: sehen und mitmachen (anmelden, abstimmen, kommentieren). Bearbeiten: auch erstellen und ändern. Alles: auch löschen und exportieren.',
         )}
       </Text>
-      <Paper withBorder radius="lg" p={0} style={{ overflow: 'hidden' }}>
+      <Paper withBorder p={0} style={{ overflow: 'hidden' }}>
         {byBlueprint.map(([bp, list], bpIndex) => (
           <Fragment key={bp}>
             {/* An area with several parts (Finanzen) gets a heading over them. */}

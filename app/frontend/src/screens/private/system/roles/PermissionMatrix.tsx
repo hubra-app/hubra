@@ -56,8 +56,6 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
   return (
     <Paper
       withBorder
-      shadow="sm"
-      radius="lg"
       className="table-matrix-wrap"
       style={{ overflowX: 'auto' }}
     >

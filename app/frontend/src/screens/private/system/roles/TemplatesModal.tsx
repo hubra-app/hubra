@@ -35,7 +35,7 @@ export function TemplatesModal({
           )}
         </Alert>
         {ROLE_TEMPLATES.map(localizeTemplate).map((template) => (
-          <Paper key={template.id} withBorder p="md" radius="md">
+          <Paper key={template.id} withBorder p="md">
             <Group justify="space-between" align="flex-start">
               <Stack gap={4} style={{ flex: 1 }}>
                 <Text fw={700}>{template.name}</Text>

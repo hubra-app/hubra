@@ -210,7 +210,7 @@ function CaseList() {
               onClick={() => navigate(`/app/reports/${c.id}`)}
               style={{ display: 'block', width: '100%' }}
             >
-              <Paper withBorder radius="lg" p="md" className="manage-nav-row">
+              <Paper withBorder p="md" className="manage-nav-row">
                 <Group gap="sm" wrap="nowrap" align="flex-start">
                   <KindIcon kind={c.kind} />
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -296,7 +296,7 @@ function CaseList() {
 
 function Section({ title, children, right }: { title: string; children: React.ReactNode; right?: React.ReactNode }) {
   return (
-    <Paper withBorder radius="lg" p="lg">
+    <Paper withBorder p="lg">
       <Group justify="space-between" mb={10} wrap="nowrap">
         <Text fw={700}>{title}</Text>
         {right}
@@ -406,7 +406,7 @@ function CaseDetail({ id }: { id: number }) {
       </Group>
 
       {c.mergedInto && (
-        <Paper withBorder radius="md" p="sm" my={12} bg="var(--mantine-color-gray-light)">
+        <Paper withBorder p="sm" my={12} bg="var(--mantine-color-gray-light)">
           <Text size="sm">
             {tr('Zusammengeführt mit', 'Merged into')}{' '}
             <Anchor onClick={() => navigate(`/app/reports/${c.mergedInto!.id}`)}>
@@ -608,7 +608,6 @@ function Conversation({ c, onSent }: { c: StaffCase; onSent: () => Promise<void>
         {comments.map((m) => (
           <Paper
             key={m.id}
-            radius="md"
             p="sm"
             withBorder={m.internal}
             style={m.internal ? { borderStyle: 'dashed' } : undefined}
@@ -750,7 +749,6 @@ function MergeModal({
             <UnstyledButton key={o.id} onClick={() => setTarget(o)}>
               <Paper
                 withBorder
-                radius="md"
                 p="sm"
                 style={target?.id === o.id ? { borderColor: 'var(--mantine-color-acc-6)', borderWidth: 2 } : undefined}
               >

@@ -118,7 +118,7 @@ export function InvoiceDetailScreen() {
 
       <div className="detail-grid-end">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Paper withBorder shadow="sm" radius="lg">
+          <Paper withBorder>
             <Group
               p="md"
               gap="sm"
@@ -188,7 +188,7 @@ export function InvoiceDetailScreen() {
             </div>
           </Paper>
 
-          <Paper withBorder shadow="sm" radius="lg">
+          <Paper withBorder>
             <Group
               p="md"
               gap="sm"
@@ -276,8 +276,6 @@ export function InvoiceDetailScreen() {
 
         <Paper
           withBorder
-          shadow="sm"
-          radius="lg"
           style={{ padding: '20px 24px' }}
         >
           <div style={{ marginBottom: 20 }}>

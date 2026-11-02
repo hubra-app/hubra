@@ -116,7 +116,7 @@ export function ApplicationsTab() {
 
   return (
     <div>
-      <Paper withBorder shadow="sm" radius="lg">
+      <Paper withBorder>
         {apps.length === 0 ? (
           <div style={{ padding: 48, textAlign: 'center', color: 'var(--hb-text-3)' }}>
             <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>

@@ -49,7 +49,7 @@ export function TranslationsScreen() {
       />
       <Stack gap={20} maw={860}>
         <SuggestForm />
-        <Paper withBorder radius="lg" p="lg">
+        <Paper withBorder p="lg">
           <Text fw={700} mb={10}>
             {t('suggest.mine', 'Vorschläge des Vereins')}
           </Text>
@@ -119,7 +119,7 @@ function SuggestForm() {
   }
 
   return (
-    <Paper withBorder radius="lg" p="lg">
+    <Paper withBorder p="lg">
       <Stack gap={12}>
         <Group justify="space-between" wrap="wrap" gap={8}>
           <Text fw={700}>{t('suggest.new', 'Neuer Vorschlag')}</Text>
@@ -146,7 +146,6 @@ function SuggestForm() {
                   <Paper
                     key={k}
                     withBorder
-                    radius="md"
                     p={8}
                     style={{ cursor: 'pointer' }}
                     onClick={() => pick(k)}
@@ -208,7 +207,7 @@ function SuggestionRow({ s }: { s: TranslationSuggestion }) {
         ? t('suggest.status.rejected', 'Abgelehnt')
         : t('suggest.status.pending', 'Offen')
   return (
-    <Paper withBorder radius="md" p="sm">
+    <Paper withBorder p="sm">
       <Group justify="space-between" gap={6} mb={4} wrap="wrap">
         <Text size="xs" c="dimmed" ff="monospace">
           {s.key} · {s.locale}

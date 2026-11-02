@@ -166,7 +166,7 @@ export function MemberDetailScreen({
       </Button>
 
       {/* ── Who this is, at a glance ── */}
-      <Paper withBorder shadow="sm" radius="lg" p={{ base: 16, sm: 20 }} mb={16}>
+      <Paper withBorder p={{ base: 16, sm: 20 }} mb={16}>
         <div
           style={{
             display: 'flex',
@@ -406,7 +406,7 @@ export function MemberDetailScreen({
         </div>
 
         {/* ── What the member does in the club ── */}
-        <Paper withBorder shadow="sm" radius="lg" p={{ base: 16, sm: 20 }} pt={8}>
+        <Paper withBorder p={{ base: 16, sm: 20 }} pt={8}>
           {tabs.length > 1 && <Tabs tabs={tabs} activeTab={tab} onTabChange={setTab} />}
 
           {tab === 'overview' && (
@@ -708,7 +708,7 @@ function Section({
   children: ReactNode
 }) {
   return (
-    <Paper withBorder shadow="sm" radius="lg" style={{ padding: 0, overflow: 'hidden' }}>
+    <Paper withBorder style={{ padding: 0, overflow: 'hidden' }}>
       <div
         style={{
           display: 'flex',

@@ -56,7 +56,7 @@ function BotCard({
       : interactions.actual === interactions.expected
 
   return (
-    <Paper withBorder shadow="sm" radius="lg" p="lg">
+    <Paper withBorder p="lg">
       <Group justify="space-between" mb={8} wrap="wrap">
         <Title order={3}>{tr('Discord-Bot', 'Discord bot')}</Title>
         <Group gap={8}>
@@ -190,7 +190,7 @@ function PlatformLogCard({ s }: { s: DiscordStatus }) {
   const log = s.platformLog
   const failing = !!log.lastErrorAt && log.lastErrorAt > (log.lastOkAt ?? '')
   return (
-    <Paper withBorder shadow="sm" radius="lg" p="lg">
+    <Paper withBorder p="lg">
       <Group justify="space-between" mb={8} wrap="wrap">
         <Title order={3}>{tr('Plattform-Log', 'Platform log')}</Title>
         <Anchor size="sm" onClick={() => navigate('/app/platform/discord/channels')}>
@@ -246,7 +246,7 @@ function PlatformLogCard({ s }: { s: DiscordStatus }) {
 
 function ServersCard({ s }: { s: DiscordStatus }) {
   return (
-    <Paper withBorder shadow="sm" radius="lg" p="lg">
+    <Paper withBorder p="lg">
       <Title order={3} mb={4}>
         {tr('Vereinsserver', 'Club servers')}
       </Title>
@@ -326,7 +326,7 @@ function SetupCard({ s }: { s: DiscordStatus }) {
     </Code>
   )
   return (
-    <Paper withBorder shadow="sm" radius="lg" p="lg">
+    <Paper withBorder p="lg">
       <Title order={3} mb={4}>
         {tr('Werte für das Developer Portal', 'Values for the Developer Portal')}
       </Title>
@@ -426,7 +426,7 @@ export function DiscordPanel() {
   return (
     <Stack gap={16}>
       {!s.configured && (
-        <Paper withBorder radius="lg" p="md">
+        <Paper withBorder p="md">
           <Text size="sm">
             {tr(
               'Discord ist auf dieser Plattform nicht eingerichtet. Die Schritte stehen in ',

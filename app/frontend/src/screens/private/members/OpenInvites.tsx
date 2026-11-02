@@ -47,7 +47,7 @@ export function OpenInvites() {
   }
 
   return (
-    <Paper withBorder radius="lg" mb={16}>
+    <Paper withBorder mb={16}>
       <UnstyledButton
         onClick={() => setOpen(!open)}
         style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '12px 16px' }}

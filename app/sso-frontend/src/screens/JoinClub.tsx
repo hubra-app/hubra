@@ -116,7 +116,7 @@ export function JoinClubScreen() {
 
   return (
     <SignedInFrame actions={back}>
-      <Paper withBorder radius="md" p="xl">
+      <Paper withBorder p="xl">
         <Stack gap="md">
           <div>
             <Text size="sm" c="dimmed">

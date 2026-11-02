@@ -82,7 +82,7 @@ function RelayCard({
   const state: boolean | null = !relay.configured ? null : check ? (check.down ? false : check.ok) : null
 
   return (
-    <Paper withBorder shadow="sm" radius="lg" p="lg">
+    <Paper withBorder p="lg">
       <Group justify="space-between" mb={8} wrap="nowrap">
         <Group gap={10} wrap="nowrap">
           <Dot ok={state} />
@@ -199,7 +199,7 @@ export function MyAlertsCard() {
   }
 
   return (
-    <Paper withBorder shadow="sm" radius="lg" p="lg">
+    <Paper withBorder p="lg">
       <Title order={4} mb={4}>
         {tr('Meine Warnungen per Mail', 'My alert mails')}
       </Title>
@@ -512,7 +512,7 @@ export function EventLogPanel({
 
       {query.isError && <Text c="red">{failureText(query.error)}</Text>}
 
-      <Paper withBorder shadow="sm" radius="lg">
+      <Paper withBorder>
         <Pagination {...pager} />
         <Table.ScrollContainer minWidth={640}>
           <Table highlightOnHover>

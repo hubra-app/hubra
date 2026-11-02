@@ -167,7 +167,7 @@ function Card({ item, signedIn }: { item: RoadmapItem; signedIn: boolean }) {
   }
 
   return (
-    <Paper withBorder radius="lg" p="md">
+    <Paper withBorder p="md">
       <Group gap="sm" wrap="nowrap" align="flex-start">
         <UnstyledButton
           onClick={() => void toggle()}

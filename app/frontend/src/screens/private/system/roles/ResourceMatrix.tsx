@@ -48,7 +48,7 @@ export function ResourceMatrix(props: ResourceMatrixProps) {
       .sort((a, b) => `${a.blueprint}.${a.resource}`.localeCompare(`${b.blueprint}.${b.resource}`))
   }, [allPerms])
   return (
-    <Paper withBorder shadow="sm" radius="lg" style={{ overflowX: 'auto' }}>
+    <Paper withBorder style={{ overflowX: 'auto' }}>
       <Table highlightOnHover style={{ minWidth: 520 }}>
         <Table.Thead>
           <Table.Tr>

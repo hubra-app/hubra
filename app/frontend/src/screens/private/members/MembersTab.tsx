@@ -337,7 +337,6 @@ export function MembersTab() {
   const renderMemberCard = (m: Member) => (
     <Paper
       withBorder
-      radius="lg"
       p="md"
       h="100%"
       style={{

@@ -112,7 +112,7 @@ export function ConfirmScreen() {
   const noPasskey = status.isError || !status.data?.passkey
   return (
     <SignedInFrame width={460}>
-      <Paper withBorder radius="md" p="xl">
+      <Paper withBorder p="xl">
         <Stack gap="md">
           <ThemeIcon size={48} radius="xl" variant="light" color={done ? 'green' : undefined}>
             {done ? <IconCircleCheck size={26} /> : <IconFingerprint size={26} />}

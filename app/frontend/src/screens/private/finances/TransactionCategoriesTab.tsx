@@ -201,7 +201,7 @@ export function TransactionCategoriesTab() {
         </Group>
       )}
       {!loading && cats.length === 0 && canCreate ? (
-        <Paper withBorder shadow="sm" radius="lg">
+        <Paper withBorder>
           <EmptyState
             title={t('finance.noCategories', 'Noch keine Kategorien.')}
             description={t(
@@ -216,7 +216,7 @@ export function TransactionCategoriesTab() {
           </Group>
         </Paper>
       ) : (
-        <Paper withBorder shadow="sm" radius="lg">
+        <Paper withBorder>
           <div style={{ overflowX: 'auto' }}>
             <Table highlightOnHover className="responsive-table">
               <Table.Thead>

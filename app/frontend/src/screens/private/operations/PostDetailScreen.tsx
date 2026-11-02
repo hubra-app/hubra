@@ -155,7 +155,7 @@ export function PostDetailScreen() {
           </Button>
         }
       />
-      <Paper withBorder shadow="sm" radius="lg" style={{ padding: '24px' }}>
+      <Paper withBorder style={{ padding: '24px' }}>
         <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
           <Avatar name={post.author} color={post.avatarColor} size={38} />
           <div>
@@ -220,8 +220,6 @@ export function PostDetailScreen() {
 
       <Paper
         withBorder
-        shadow="sm"
-        radius="lg"
         style={{ marginTop: 16, padding: '24px' }}
       >
         <div

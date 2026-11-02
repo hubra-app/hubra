@@ -128,7 +128,7 @@ export function StatusScreen() {
 
       {data && (
         <Stack gap="lg">
-          <Paper withBorder radius="md" p="md">
+          <Paper withBorder p="md">
             <Group gap="sm" wrap="nowrap" align="flex-start">
               <ThemeIcon size={44} radius="xl" variant="light" color={COLOR[data.overall]}>
                 <LevelIcon level={data.overall} size={26} />
@@ -163,7 +163,7 @@ export function StatusScreen() {
             </Alert>
           )}
 
-          <Paper withBorder radius="md">
+          <Paper withBorder>
             {data.components.map((c, i) => (
               <Group
                 key={c.id}

@@ -112,7 +112,7 @@ export function InviteScreen() {
   const data = invite.data
   return (
     <SignedInFrame>
-      <Paper withBorder radius="md" p="xl">
+      <Paper withBorder p="xl">
         <Stack gap="md">
           <div>
             <Text size="sm" c="dimmed">
