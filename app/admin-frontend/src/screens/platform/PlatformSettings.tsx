@@ -19,6 +19,7 @@ import { useAdmin } from '@/context/AdminContext'
 import { useLang, tr } from '@/lang'
 import { PlatformTranslations } from '@/screens/platform/Translations'
 import { PlatformEncryption } from '@/screens/platform/Encryption'
+import { DiscordLogPicker } from '@/screens/platform/DiscordLogPicker'
 import {
   getPlatformSettings,
   sendPlatformTestDiscord,
@@ -503,28 +504,35 @@ export function PlatformSettings() {
                 )}
               </Text>
               <Stack gap="sm">
-                {clientId ? (
-                  <Text size="sm">
-                    <Anchor
-                      href={`https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&scope=bot&permissions=${LOG_BOT_PERMISSIONS}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {tr(
-                        'Bot zum Plattform-Server hinzufügen',
-                        'Add the bot to the platform server',
-                      )}
-                    </Anchor>
-                  </Text>
-                ) : (
-                  <Text size="sm" c="dimmed">
-                    {tr(
-                      'Zuerst die Discord-Anwendungs-ID oben eintragen.',
-                      'Set the Discord application ID above first.',
-                    )}
-                  </Text>
-                )}
-                {field('discord.log_channel_id')}
+                <DiscordLogPicker
+                  channelId={
+                    draft['discord.log_channel_id'] ?? byKey['discord.log_channel_id']?.value ?? ''
+                  }
+                  onChange={(id) => setDraft((d) => ({ ...d, 'discord.log_channel_id': id }))}
+                  botTokenSet={!!byKey['discord.bot_token']?.isSet}
+                  addLink={
+                    clientId ? (
+                      <Anchor
+                        href={`https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&scope=bot&permissions=${LOG_BOT_PERMISSIONS}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {tr(
+                          'Bot zum Plattform-Server hinzufügen',
+                          'Add the bot to the platform server',
+                        )}
+                      </Anchor>
+                    ) : (
+                      <Text span size="sm" c="dimmed">
+                        {tr(
+                          'Zuerst die Discord-Anwendungs-ID oben eintragen.',
+                          'Set the Discord application ID above first.',
+                        )}
+                      </Text>
+                    )
+                  }
+                  fallback={field('discord.log_channel_id')}
+                />
                 <Checkbox.Group
                   label={
                     <Group gap={6} component="span">
