@@ -170,8 +170,8 @@ export function TenantBilling({ tenantId }: { tenantId: number }) {
           {data.price_chf == null && data.plan_price_chf == null && (
             <Text size="xs" c="dimmed">
               {tr(
-                'Kein Preis für diesen Tarif: Einstellungen › Tarife & Preise.',
-                'No price for this plan: Settings › Plans & prices.',
+                'Kein Preis für diesen Tarif: Alle Vereine › Tarife & Preise.',
+                'No price for this plan: All clubs › Plans & prices.',
               )}
             </Text>
           )}

@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { PlatformPlans } from '@/screens/platform/Plans'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Anchor,
@@ -16,11 +15,8 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
-import { PageHead, Tabs } from '@/components/ui'
 import { useAdmin } from '@/context/AdminContext'
 import { useLang, tr } from '@/lang'
-import { PlatformTranslations } from '@/screens/platform/Translations'
-import { PlatformEncryption } from '@/screens/platform/Encryption'
 import { DiscordLogPicker } from '@/screens/platform/DiscordLogPicker'
 import {
   getPlatformSettings,
@@ -126,18 +122,27 @@ const LOG_BOT_PERMISSIONS = (1 << 10) | (1 << 11) | (1 << 14)
 // Manage Roles, only asked for when the bot keeps the platform server's roles.
 const MANAGE_ROLES = 1 << 28
 
-const TABS = [
-  'mail',
-  'sender',
-  'backups',
-  'discord',
-  'alerts',
-  'limits',
-  'plans',
-  'encryption',
-  'translations',
-] as const
-type Tab = (typeof TABS)[number]
+/** One group of platform settings; each is shown on the page it configures. */
+export type SettingsSectionId =
+  | 'relay'
+  | 'sender'
+  | 'backups'
+  | 'discord-app'
+  | 'discord-channels'
+  | 'alerts'
+  | 'performance'
+  | 'limits'
+/** The keys each section saves. */
+const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
+  relay: [...RELAY, ...FALLBACK],
+  sender: SENDER,
+  backups: BACKUP,
+  'discord-app': DISCORD,
+  'discord-channels': [...DISCORD_LOG, ...DISCORD_ROLES],
+  alerts: ALERTS,
+  performance: PERF,
+  limits: LIMITS,
+}
 
 function SourceBadge({ s }: { s: PlatformSetting }) {
   return s.source === 'platform' ? (
@@ -252,14 +257,16 @@ const FIELD_DE: Record<string, [string, string]> = {
   ],
 }
 
-export function PlatformSettings() {
+/**
+ * One group of platform settings (not of one club), shown on the page it
+ * belongs to: the mail relay under Mail, the backup storage under Backups,
+ * plan limits under All clubs, and so on. Each section saves on its own.
+ */
+export function SettingsSection({ section }: { section: SettingsSectionId }) {
   const { notify } = useAdmin()
   const { tr } = useLang()
   const queryClient = useQueryClient()
-  const location = useLocation()
   const navigate = useNavigate()
-  const last = location.pathname.split('/').pop() as Tab
-  const tab: Tab = TABS.includes(last) ? last : 'mail'
   const { data: settings = [], isLoading } = useQuery({
     queryKey: ['platform-settings'],
     queryFn: getPlatformSettings,
@@ -272,9 +279,12 @@ export function PlatformSettings() {
   const [testingDiscord, setTestingDiscord] = useState<'log' | 'audit' | null>(null)
 
   const byKey = Object.fromEntries(settings.map((s) => [s.key, s]))
-  // A secret field left empty keeps the stored value.
-  const changed = settings.filter((s) =>
-    s.secret ? !!draft[s.key] : s.key in draft && draft[s.key] !== s.value,
+  // A secret field left empty keeps the stored value. Only this section's
+  // fields count, so a half-edited field elsewhere is never saved here.
+  const changed = settings.filter(
+    (s) =>
+      SECTION_KEYS[section].includes(s.key) &&
+      (s.secret ? !!draft[s.key] : s.key in draft && draft[s.key] !== s.value),
   )
 
   const save = async (values: Record<string, string | null>) => {
@@ -359,8 +369,8 @@ export function PlatformSettings() {
   ) : (
     <Text span size="sm" c="dimmed">
       {tr(
-        'Zuerst die Discord-Anwendungs-ID oben eintragen.',
-        'Set the Discord application ID above first.',
+        'Zuerst die Discord-Anwendungs-ID unter Einrichtung eintragen.',
+        'Set the Discord application ID under Setup first.',
       )}
     </Text>
   )
@@ -417,42 +427,13 @@ export function PlatformSettings() {
 
   return (
     <div>
-      <PageHead
-        title={tr('Plattform-Einstellungen', 'Platform settings')}
-        desc={tr(
-          'Gilt für die ganze Plattform, für alle Vereine.',
-          'These apply to the whole platform, for every club.',
-        )}
-      />
-      <Tabs
-        tabs={[
-          { id: 'mail', label: tr('Mail-Relay', 'Mail relay') },
-          { id: 'sender', label: tr('Systemabsender', 'System sender') },
-          { id: 'backups', label: tr('Backup-Speicher', 'Backup storage') },
-          { id: 'discord', label: 'Discord' },
-          { id: 'alerts', label: tr('Warnungen', 'Alerts') },
-          { id: 'limits', label: tr('Limits', 'Limits') },
-          { id: 'plans', label: tr('Tarife & Preise', 'Plans & prices') },
-          { id: 'encryption', label: tr('Verschlüsselung', 'Encryption') },
-          { id: 'translations', label: tr('Übersetzungen', 'Translations') },
-        ]}
-        activeTab={tab}
-        onTabChange={(id) => navigate(`/app/platform/settings${id === 'mail' ? '' : '/' + id}`)}
-      />
-
-      {tab === 'translations' ? (
-        <PlatformTranslations />
-      ) : tab === 'plans' ? (
-        <PlatformPlans />
-      ) : tab === 'encryption' ? (
-        <PlatformEncryption />
-      ) : isLoading ? (
+      {isLoading ? (
         <Text size="sm" c="dimmed">
           {tr('Wird geladen …', 'Loading…')}
         </Text>
       ) : (
         <Stack gap={20} maw={720}>
-          {tab === 'mail' && (
+          {section === 'relay' && (
             <Paper withBorder shadow="sm" radius="lg" p="lg">
               <Group justify="space-between" mb={4}>
                 <Title order={3}>{tr('Mail-Relay', 'Relay')}</Title>
@@ -468,7 +449,7 @@ export function PlatformSettings() {
             </Paper>
           )}
 
-          {tab === 'mail' && (
+          {section === 'relay' && (
             <Paper withBorder shadow="sm" radius="lg" p="lg">
               <Group justify="space-between" mb={4}>
                 <Title order={3}>{tr('Fallback-Relay', 'Fallback relay')}</Title>
@@ -484,7 +465,7 @@ export function PlatformSettings() {
             </Paper>
           )}
 
-          {tab === 'sender' && (
+          {section === 'sender' && (
             <Paper withBorder shadow="sm" radius="lg" p="lg">
               <Group justify="space-between" mb={12}>
                 <Title order={3}>{tr('Systemabsender', 'System sender')}</Title>
@@ -494,39 +475,39 @@ export function PlatformSettings() {
             </Paper>
           )}
 
-          {tab === 'alerts' && (
+          {section === 'alerts' && (
             <Paper withBorder shadow="sm" radius="lg" p="lg">
               <Group justify="space-between" mb={4}>
-                <Title order={3}>{tr('Warnungen', 'Alerts')}</Title>
+                <Title order={3}>{tr('Versand der Warnungen', 'Alert delivery')}</Title>
                 {resetButton(ALERTS)}
               </Group>
               <Text size="xs" c="dimmed" mb={12}>
                 {tr(
-                  'Warnmails gehen an Plattform-Admins (Superadmins und Rollen mit Plattform-Einstellungen), nicht an Support. Jede Person wählt unter Plattform › Warnungen › Meine Warnungen, welche sie bekommt.',
-                  'Alert mails go to platform admins (superadmins and roles with platform settings), not to Support. Each person picks which ones they get under Platform › Alerts › My alerts.',
+                  'Warnmails gehen an Plattform-Admins (Superadmins und Rollen mit Plattform-Einstellungen), nicht an Support. Jede Person wählt unter Warnungen › Meine Warnungen, welche sie bekommt.',
+                  'Alert mails go to platform admins (superadmins and roles with platform settings), not to Support. Each person picks which ones they get under Alerts › My alerts.',
                 )}
               </Text>
               <Stack gap="sm">{ALERTS.map(field)}</Stack>
             </Paper>
           )}
 
-          {tab === 'alerts' && (
+          {section === 'performance' && (
             <Paper withBorder shadow="sm" radius="lg" p="lg">
               <Group justify="space-between" mb={4}>
-                <Title order={3}>{tr('Leistung', 'Performance')}</Title>
+                <Title order={3}>{tr('Grenzwerte', 'Thresholds')}</Title>
                 {resetButton(PERF)}
               </Group>
               <Text size="xs" c="dimmed" mb={12}>
                 {tr(
-                  'Grenzwerte für Plattform › Warnungen › Leistung. Gemessen werden nur Routenmuster und die Form der Abfragen, keine Pfade, Werte oder Personen.',
-                  'Thresholds for Platform › Alerts › Performance. Only route patterns and query shapes are measured, no paths, values or people.',
+                  'Grenzwerte für diese Seite und die Warnung bei langsamer API. Gemessen werden nur Routenmuster und die Form der Abfragen, keine Pfade, Werte oder Personen.',
+                  'Thresholds for this page and the slow-API alert. Only route patterns and query shapes are measured, no paths, values or people.',
                 )}
               </Text>
               <Stack gap="sm">{PERF.map(field)}</Stack>
             </Paper>
           )}
 
-          {tab === 'limits' && (
+          {section === 'limits' && (
             <Paper withBorder shadow="sm" radius="lg" p="lg">
               <Group justify="space-between" mb={4}>
                 <Title order={3}>{tr('Limit-Warnungen', 'Limit warnings')}</Title>
@@ -534,15 +515,15 @@ export function PlatformSettings() {
               </Group>
               <Text size="xs" c="dimmed" mb={12}>
                 {tr(
-                  'Die Limits stehen bei jedem Tarif (Tab Tarife & Preise). Ist das Mitgliederlimit erreicht, kommt niemand Neues dazu (Einladungen, Anträge); Plattform-Staff kann in manage trotzdem hinzufügen. Mails pro Monat und Speicher werden nur gemeldet, nichts wird gesperrt. Einzelne Vereine bekommen eigene Limits auf ihrer Seite unter Alle Vereine.',
-                  'The limits are on each plan (Plans & prices tab). At the member limit nobody new can join (invites, applications); platform staff can still add people in manage. Mails per month and storage are only reported, nothing is blocked. A club gets its own limits on its page under All clubs.',
+                  'Die Limits stehen bei jedem Tarif (oben). Ist das Mitgliederlimit erreicht, kommt niemand Neues dazu (Einladungen, Anträge); Plattform-Staff kann in manage trotzdem hinzufügen. Mails pro Monat und Speicher werden nur gemeldet, nichts wird gesperrt. Einzelne Vereine bekommen eigene Limits auf ihrer Seite.',
+                  'The limits are on each plan (above). At the member limit nobody new can join (invites, applications); platform staff can still add people in manage. Mails per month and storage are only reported, nothing is blocked. A club gets its own limits on its page.',
                 )}
               </Text>
               <Stack gap="md">{field('limits.warn_percent')}</Stack>
             </Paper>
           )}
 
-          {tab === 'backups' && (
+          {section === 'backups' && (
             <Paper withBorder shadow="sm" radius="lg" p="lg">
               <Group justify="space-between" mb={4}>
                 <Title order={3}>{tr('Backup-Speicher', 'Backup storage')}</Title>
@@ -558,10 +539,10 @@ export function PlatformSettings() {
             </Paper>
           )}
 
-          {tab === 'discord' && (
+          {section === 'discord-app' && (
             <Paper withBorder shadow="sm" radius="lg" p="lg">
               <Group justify="space-between" mb={4}>
-                <Title order={3}>Discord</Title>
+                <Title order={3}>{tr('Discord-App', 'Discord app')}</Title>
                 {resetButton(DISCORD)}
               </Group>
               <Text size="xs" c="dimmed" mb={12}>
@@ -574,7 +555,7 @@ export function PlatformSettings() {
             </Paper>
           )}
 
-          {tab === 'discord' && (
+          {section === 'discord-channels' && (
             <Paper withBorder shadow="sm" radius="lg" p="lg">
               <Group justify="space-between" mb={4}>
                 <Title order={3}>{tr('Plattform-Log', 'Platform log')}</Title>
@@ -582,8 +563,8 @@ export function PlatformSettings() {
               </Group>
               <Text size="xs" c="dimmed" mb={12}>
                 {tr(
-                  'Der Hubra-Bot meldet Plattform-Ereignisse auf dem Discord-Server der Plattform: neue Vereine und Anfragen, Rollen, Plugins, Backups, Einstellungen und Systemwarnungen. Mit einem Audit-Kanal gehen die Audit-Einträge dorthin und das Plattform-Log behält die Warnungen; jede Meldung kommt nur einmal. Braucht den Bot-Token oben.',
-                  "The Hubra bot posts platform events on the platform's own Discord server: new clubs and requests, roles, plugins, backups, settings and system alerts. With an audit channel, audit entries go there and the platform log keeps the alerts; each post goes out once. Needs the bot token above.",
+                  'Der Hubra-Bot meldet Plattform-Ereignisse auf dem Discord-Server der Plattform: neue Vereine und Anfragen, Rollen, Plugins, Backups, Einstellungen und Systemwarnungen. Mit einem Audit-Kanal gehen die Audit-Einträge dorthin und das Plattform-Log behält die Warnungen; jede Meldung kommt nur einmal. Braucht den Bot-Token unter Einrichtung.',
+                  "The Hubra bot posts platform events on the platform's own Discord server: new clubs and requests, roles, plugins, backups, settings and system alerts. With an audit channel, audit entries go there and the platform log keeps the alerts; each post goes out once. Needs the bot token under Setup.",
                 )}
               </Text>
               <Stack gap="sm">
@@ -648,7 +629,7 @@ export function PlatformSettings() {
                       component="button"
                       type="button"
                       size="xs"
-                      onClick={() => navigate('/app/platform/settings/alerts')}
+                      onClick={() => navigate('/app/platform/alerts/rules')}
                     >
                       {tr('Unter Warnungen eintragen', 'Set it under Alerts')}
                     </Anchor>
@@ -683,7 +664,7 @@ export function PlatformSettings() {
             </Paper>
           )}
 
-          {tab === 'discord' && byKey['discord.platform_roles'] && (
+          {section === 'discord-channels' && byKey['discord.platform_roles'] && (
             <Paper withBorder shadow="sm" radius="lg" p="lg">
               <Group justify="space-between" mb={4}>
                 <Title order={3}>
@@ -724,7 +705,7 @@ export function PlatformSettings() {
             </Button>
           </Group>
 
-          {tab === 'mail' && (
+          {section === 'relay' && (
             <Paper withBorder shadow="sm" radius="lg" p="lg">
               <Title order={3} mb={12}>
                 {tr('Testmail', 'Test mail')}

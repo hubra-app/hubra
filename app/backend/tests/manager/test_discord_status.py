@@ -203,7 +203,7 @@ def test_problems_show_in_the_alerts_overview(db, bot):
         discord_status.run_check()
     ids = {p["id"]: p for p in platform_monitor.open_problems()}
     assert ids["discord:bot"]["area"] == "discord"
-    assert ids["discord:bot"]["link"] == "/app/platform/diagnostics/discord"
+    assert ids["discord:bot"]["link"] == "/app/platform/discord"
 
 
 # ── API ───────────────────────────────────────────────────────────────────────

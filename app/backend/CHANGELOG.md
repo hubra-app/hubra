@@ -9,6 +9,8 @@ section and position, or the apps show that version in English.
 
 ### Changed
 
+- **Manage navigation reorganised by task**: the sidebar has the sections Clubs, Operations, Services, Access & security and Hubra, and every page's tabs belong to one job. The catch-all Platform settings page is gone: each setting sits on the page it configures (mail relay and system sender under Mail, backup storage under Backups › Storage, Discord credentials and channels under Discord, plan limits under All clubs, alert delivery under Alerts › Rules, performance thresholds under Diagnostics › Performance). Club requests are a tab of All clubs, outbound mail and the mail server moved from Diagnostics to Mail, the Discord status to Discord, API permissions to Roles, performance from Alerts to Diagnostics, maintenance got its own page, and support access is a tab of the audit log. Old addresses redirect, so bookmarks and links in alert mails and Discord posts still open the right page.
+
 - **No more "High API Error Rate" alert on every release**: the check counted 4xx and 5xx over the whole month, so the 401s from expired sign-ins after a restart set it off. It now counts server errors (5xx) in the last hour (every 10 minutes, at least 50 requests, threshold `API_ERROR_RATE_THRESHOLD`, 5 %), ignores errors in a backend's first two minutes, sends one alert per incident and a "back to normal" when it recovers.
 
 - **System alerts go to the platform Discord log** instead of a webhook: `DISCORD_WEBHOOK_URL` is gone. Set the log channel in manage › Platform settings › Discord.
