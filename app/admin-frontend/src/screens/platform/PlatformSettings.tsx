@@ -21,6 +21,7 @@ import { useLang, tr } from '@/lang'
 import { planLabel } from '@/labels'
 import { PlatformTranslations } from '@/screens/platform/Translations'
 import { PlatformEncryption } from '@/screens/platform/Encryption'
+import { EarlyAccess } from '@/screens/platform/EarlyAccess'
 import { DiscordLogPicker } from '@/screens/platform/DiscordLogPicker'
 import {
   getPlatformSettings,
@@ -121,6 +122,7 @@ const TABS = [
   'discord',
   'alerts',
   'limits',
+  'features',
   'encryption',
   'translations',
 ] as const
@@ -418,6 +420,7 @@ export function PlatformSettings() {
           { id: 'discord', label: 'Discord' },
           { id: 'alerts', label: tr('Warnungen', 'Alerts') },
           { id: 'limits', label: tr('Limits', 'Limits') },
+          { id: 'features', label: tr('Früher Zugang', 'Early access') },
           { id: 'encryption', label: tr('Verschlüsselung', 'Encryption') },
           { id: 'translations', label: tr('Übersetzungen', 'Translations') },
         ]}
@@ -427,6 +430,8 @@ export function PlatformSettings() {
 
       {tab === 'translations' ? (
         <PlatformTranslations />
+      ) : tab === 'features' ? (
+        <EarlyAccess />
       ) : tab === 'encryption' ? (
         <PlatformEncryption />
       ) : isLoading ? (

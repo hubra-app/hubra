@@ -152,6 +152,11 @@ def create_app(config_name: str | None = None) -> Flask:
 
     maintenance.install(app)
 
+    # ── Early-access flags per club (GET /api/v1/features) ──────────────────
+    from hubra.core.services import feature_flags
+
+    feature_flags.install(app)
+
     app.before_request(_reject_scalar_json)
     app.before_request(resolve_tenant)
     maintenance.install_club_gate(app)

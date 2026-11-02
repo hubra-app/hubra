@@ -10,6 +10,7 @@
  */
 export const qk = {
   modules: ['modules'] as const,
+  features: ['features'] as const,
   myTenants: ['my-tenants'] as const,
   dashboard: ['dashboard-summary'] as const,
   lookups: ['lookups'] as const,

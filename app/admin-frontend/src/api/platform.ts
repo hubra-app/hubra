@@ -605,3 +605,37 @@ export async function dismissJob(id: string) {
     method: 'DELETE',
   })
 }
+
+// ── Early access (Einstellungen › Früher Zugang) ─────────────────────────────
+
+export type FeatureStage = 'off' | 'early' | 'all'
+
+export interface FeatureFlag {
+  key: string
+  title_de: string
+  title_en: string
+  description_de: string
+  description_en: string
+  stage: FeatureStage
+  clubs_on: number
+  /** Clubs that have it forced on / off for themselves. */
+  forced_on: number[]
+  forced_off: number[]
+}
+
+export interface FeaturesOverview {
+  flags: FeatureFlag[]
+  early_access: { id: number; name: string; slug: string }[]
+  clubs_total: number
+}
+
+export async function getFeatures() {
+  return apiFetch<FeaturesOverview>(`${P}/features`)
+}
+
+export async function setFeatureStage(key: string, stage: FeatureStage) {
+  return apiFetch<FeaturesOverview>(`${P}/features/${encodeURIComponent(key)}`, {
+    method: 'PUT',
+    body: JSON.stringify({ stage }),
+  })
+}
