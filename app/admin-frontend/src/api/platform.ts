@@ -560,3 +560,70 @@ export async function dismissJob(id: string) {
     method: 'DELETE',
   })
 }
+
+// ── Errors grouped by route and build (Diagnose › Fehler) ────────────────────
+
+export type ErrorStatus = 'open' | 'resolved'
+
+export interface ErrorGroupRow {
+  id: number
+  exc_type: string
+  route: string
+  location: string
+  message: string
+  count: number
+  first_seen: string
+  last_seen: string
+  /** "1.4.0 (abc1234)": the build it first happened on. */
+  first_build: string
+  first_commit: string | null
+  last_build: string
+  /** Occurrences per build label. */
+  builds: Record<string, number>
+  status: ErrorStatus
+  resolved_at: string | null
+  reopened_at: string | null
+  last_tenant_id: number | null
+  /** First seen on the build running now. */
+  new_in_current: boolean
+}
+
+export interface ErrorGroupDetail extends ErrorGroupRow {
+  traceback: string
+  /** The upgrade that brought the first build, if the event log has it. */
+  release: { kind: string; at: string; message: string } | null
+  last_club: { id: number; name: string } | null
+}
+
+export interface ErrorList {
+  errors: ErrorGroupRow[]
+  total: number
+  page: number
+  per_page: number
+  counts: Record<ErrorStatus, number>
+  current_build: string
+  builds: Record<string, number>
+}
+
+export async function getErrors(params: {
+  status: ErrorStatus | 'all'
+  q?: string
+  sort?: 'last_seen' | 'count' | 'first_seen'
+  build?: string
+  page?: number
+  per_page?: number
+}) {
+  const qs = new URLSearchParams()
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== '') qs.set(k, String(v))
+  }
+  return apiFetch<ErrorList>(`${P}/errors?${qs}`)
+}
+
+export async function getError(id: number) {
+  return apiFetch<{ error: ErrorGroupDetail }>(`${P}/errors/${id}`)
+}
+
+export async function setErrorStatus(id: number, action: 'resolve' | 'reopen') {
+  return apiFetch<{ error: ErrorGroupRow }>(`${P}/errors/${id}/${action}`, { method: 'POST' })
+}

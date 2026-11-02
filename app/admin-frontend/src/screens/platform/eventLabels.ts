@@ -61,6 +61,10 @@ export function eventText(e: PlatformEvent): string {
       const n = Object.values((e.details.deleted as Record<string, number> | undefined) ?? {}).reduce((a, b) => a + b, 0)
       return tr(`Aufbewahrung hat ${n} alte Backups entfernt`, e.message)
     }
+    case 'error.new':
+      return tr(`Neuer Fehler: ${d.type} in ${d.route} (${d.build})`, e.message)
+    case 'error.regressed':
+      return tr(`Behobener Fehler wieder da: ${d.type} in ${d.route} (${d.build})`, e.message)
     case 'upgrade.baseline':
       return tr(`Läuft: ${buildLabel(e.details.to)}`, e.message)
     case 'upgrade.started':

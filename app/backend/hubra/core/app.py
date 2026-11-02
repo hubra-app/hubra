@@ -147,6 +147,11 @@ def create_app(config_name: str | None = None) -> Flask:
     perf_monitor.install(app)
     perf_monitor.install_sql_listener()
 
+    # ── Unexpected API errors, grouped (manage › Diagnose › Fehler) ─────────
+    from hubra.core.services import error_tracker
+
+    error_tracker.install(app)
+
     # ── Maintenance mode (club API answers 503; manage keeps working) ───────
     from hubra.core.services import maintenance
 

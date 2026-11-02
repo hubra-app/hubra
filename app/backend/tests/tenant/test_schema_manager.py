@@ -32,6 +32,8 @@ _GLOBAL_ONLY_TABLES = frozenset(
         "platform_settings",
         # The platform's monitoring log (mail sends, relays, alerts).
         "platform_events",
+        # Unexpected API errors, grouped (manage › Diagnose › Fehler).
+        "error_groups",
         "data_keys",
         "plugin_trusted_keys",
         "email_verifications",
