@@ -130,6 +130,10 @@ class ExternalAccount(db.Model):
     provider: Mapped[str] = mapped_column(db.String(50), nullable=False)
     external_id: Mapped[str] = mapped_column(db.String(100), nullable=False)
     username: Mapped[str] = mapped_column(db.String(200), nullable=False, default="")
+    # The person's OAuth token (JSON: access, refresh, expires_at), encrypted
+    # with the platform key; only kept where the service needs it later
+    # (Discord Linked Roles). See hubra.core.identity.
+    token_encrypted: Mapped[str | None] = mapped_column(db.Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, nullable=False
     )

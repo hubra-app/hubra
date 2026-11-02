@@ -1,8 +1,10 @@
 """Outside accounts a person links to their Hubra account (SSO account page).
 
-Only the outside account's id and name are kept, to recognise the person
-when the service talks to Hubra (a click on a Discord button). The access
-token is used once to read who signed in and then revoked.
+The outside account's id and name are kept, to recognise the person when
+the service talks to Hubra (a click on a Discord button). For Discord, the
+token is also kept (encrypted) when the person allowed Linked Roles, so
+Hubra can keep their role connection up to date (see
+``hubra.core.services.discord_roles``); otherwise it is revoked right away.
 """
 
 from __future__ import annotations
@@ -26,6 +28,9 @@ class IdentityError(Exception):
 class Identity:
     external_id: str
     username: str
+    # Kept only when the service needs it later: {"access", "refresh",
+    # "expires_at" (Unix seconds), "scope"}.
+    token: dict | None = None
 
 
 class DiscordIdentity:
@@ -49,8 +54,9 @@ class DiscordIdentity:
                 "client_id": client_id,
                 "response_type": "code",
                 "redirect_uri": redirect_uri,
-                # Who you are, nothing else: no email, no servers.
-                "scope": "identify",
+                # Who you are and your Linked Roles connection, nothing
+                # else: no email, no servers.
+                "scope": "identify role_connections.write",
                 "state": state,
                 "prompt": "consent",
             }
@@ -95,23 +101,63 @@ class DiscordIdentity:
                 me = json.loads(resp.read())
         except (urllib.error.URLError, TimeoutError, ValueError) as exc:
             raise IdentityError(f"Discord sign-in failed: {exc}") from exc
+        if not me.get("id"):
+            raise IdentityError("Discord sent no user")
+        name = me.get("global_name") or me.get("username") or ""
+        kept = None
+        if "role_connections.write" in str(token.get("scope", "")).split():
+            import time
+
+            kept = {
+                "access": access,
+                "refresh": token.get("refresh_token") or "",
+                "expires_at": int(time.time()) + int(token.get("expires_in") or 0),
+                "scope": token.get("scope", ""),
+            }
+        else:
+            self.revoke(access)
+        return Identity(external_id=str(me["id"]), username=str(name)[:200], token=kept)
+
+    def revoke(self, token: str) -> None:
+        """Make a token invalid at Discord (best effort)."""
+        client_id, client_secret = self._client()
         try:
-            # Not needed any more; don't leave it valid.
             self._post_form(
                 "/oauth2/token/revoke",
                 {
                     "client_id": client_id,
                     "client_secret": client_secret,
-                    "token": access,
-                    "token_type_hint": "access_token",
+                    "token": token,
                 },
             )
         except Exception as exc:  # the link works without it
-            _log.info("discord: could not revoke the sign-in token: %s", exc)
-        if not me.get("id"):
-            raise IdentityError("Discord sent no user")
-        name = me.get("global_name") or me.get("username") or ""
-        return Identity(external_id=str(me["id"]), username=str(name)[:200])
+            _log.info("discord: could not revoke a token: %s", exc)
+
+    def refresh(self, refresh_token: str) -> dict:
+        """A new access token for a kept refresh token."""
+        import time
+
+        client_id, client_secret = self._client()
+        try:
+            token = self._post_form(
+                "/oauth2/token",
+                {
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "grant_type": "refresh_token",
+                    "refresh_token": refresh_token,
+                },
+            )
+        except (urllib.error.URLError, TimeoutError, ValueError) as exc:
+            raise IdentityError(f"Discord token refresh failed: {exc}") from exc
+        if not token.get("access_token"):
+            raise IdentityError("Discord sent no token")
+        return {
+            "access": token["access_token"],
+            "refresh": token.get("refresh_token") or refresh_token,
+            "expires_at": int(time.time()) + int(token.get("expires_in") or 0),
+            "scope": token.get("scope", ""),
+        }
 
 
 PROVIDERS = {p.code: p for p in (DiscordIdentity(),)}
