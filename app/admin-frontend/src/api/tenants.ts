@@ -104,7 +104,7 @@ export async function archiveTenant(id: number): Promise<{ tenant: Tenant }> {
 
 export async function impersonateTenant(
   id: number,
-  body: { reason: string; user_id?: number; allow_changes?: boolean },
+  body: { reason: string; user_id?: number; allow_changes?: boolean; minutes?: number },
 ): Promise<{
   impersonating: boolean
   tenant_slug: string
@@ -316,6 +316,57 @@ export async function removeClubAdmin(tenantId: number, userId: number, reason?:
     method: 'DELETE',
     body: JSON.stringify({ reason }),
   })
+}
+
+// ── Support sessions (manage › Support-Zugriffe) ─────────────────────────────
+
+export interface SupportPerson {
+  id: number
+  name: string
+  email: string
+}
+
+export interface SupportSession {
+  id: number
+  session: string | null
+  tenant_id: number | null
+  club: string | null
+  staff: SupportPerson | null
+  member: SupportPerson | null
+  member_id: string | null
+  reason: string | null
+  mode: 'read' | 'act'
+  status: 'active' | 'ended' | 'revoked' | 'expired'
+  started_at: string
+  expires_at: string
+  ended_at: string | null
+  minutes: number
+  seconds: number
+  ended_by: SupportPerson | null
+}
+
+export async function listSupportSessions(params: {
+  status?: 'active'
+  tenant_id?: number
+  page?: number
+  per_page?: number
+}) {
+  const qs = new URLSearchParams()
+  for (const [k, v] of Object.entries(params)) if (v !== undefined) qs.set(k, String(v))
+  return apiFetch<{
+    sessions: SupportSession[]
+    total: number
+    page: number
+    per_page: number
+    active: number
+  }>(`/system/support-sessions?${qs}`)
+}
+
+export async function endSupportSession(session: string) {
+  return apiFetch<{ ended: string }>(
+    `/system/support-sessions/${encodeURIComponent(session)}/end`,
+    { method: 'POST' },
+  )
 }
 
 // ── Club health (manage › Alle Vereine) ──────────────────────────────────────

@@ -383,6 +383,9 @@ def _register_cli(app: Flask) -> None:
                 time.sleep(wait)
                 return
             raise click.ClickException(f"No process '{name}' (known: {known})")
+        from hubra.core.build_info import start_heartbeat
+
+        start_heartbeat(name)  # manage shows which commit it runs
         path, _, attr = target.partition(":")
         getattr(import_module(path), attr)()
 

@@ -38,6 +38,12 @@ RUN mkdir -p /celerybeat && chown appuser:appuser /celerybeat
 
 COPY app/backend/ .
 
+# The commit this image was built from (images.yml passes it). Manage shows it
+# under Diagnose; empty means a local build, shown as "dev". Last, so a new
+# commit does not invalidate the cached layers above.
+ARG GIT_SHA=""
+ENV HUBRA_GIT_SHA=${GIT_SHA}
+
 USER appuser
 
 EXPOSE 5000

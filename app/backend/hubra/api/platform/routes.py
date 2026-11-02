@@ -176,9 +176,16 @@ def health_detailed():
     from hubra.api.health.cache import HealthCache
     from hubra.api.health.services import HealthService
     from hubra.api.version.services import VersionService
+    from hubra.core import build_info
+    from hubra.core.services import upgrades
 
     payload = HealthService.run_all_checks()
     payload["version"] = VersionService.get_version()
+    # The commit each backend process runs: this API process, plus what the
+    # worker, beat and Discord gateway reported (hubra.core.build_info).
+    payload["commit"] = build_info.commit()
+    payload["processes"] = build_info.reported()
+    payload["last_upgrade"] = upgrades.last_upgrade()
 
     cached = HealthCache.get()
     if cached is not None and "checked_at" in cached:

@@ -28,6 +28,10 @@ ENV VITE_API_BASE=${VITE_API_BASE} \
     VITE_ADMIN_PORTAL_URL=${VITE_ADMIN_PORTAL_URL} \
     VITE_TENANT_APP_URL=${VITE_TENANT_APP_URL}
 RUN npm run build
+# The commit this image was built from (images.yml passes it), served as
+# /version.json for manage's Diagnose page. Empty means a local build ("dev").
+ARG GIT_SHA=""
+RUN printf '{"commit":"%s"}\n' "${GIT_SHA}" > dist/version.json
 
 FROM nginx:alpine@sha256:54f2a904c251d5a34adf545a72d32515a15e08418dae0266e23be2e18c66fefa AS production
 COPY --from=builder /app/dist /opt/spa

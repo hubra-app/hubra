@@ -3,6 +3,7 @@ import { PageHead } from '@/components/ui'
 import { TenantsTab } from '@/screens/TenantsTab'
 import { TenantRequestsTab } from '@/screens/TenantRequestsTab'
 import { GlobalAuditTab } from '@/screens/GlobalAuditTab'
+import { SupportSessionsTab } from '@/screens/SupportSessionsTab'
 import { RolesTab } from '@/screens/RolesTab'
 import { MarketplaceTab } from '@/screens/MarketplaceTab'
 import { useAdmin } from '@/context/AdminContext'
@@ -36,6 +37,19 @@ export function AdminPortal() {
           desc={tr('Alle Änderungen auf der Plattform, neueste zuerst.', 'Every change on the platform, newest first.')}
         />
         <GlobalAuditTab />
+      </>
+    )
+  if (path === '/app/support' && hasGlobalPermission('audit.read'))
+    return (
+      <>
+        <PageHead
+          title={tr('Support-Zugriffe', 'Support access')}
+          desc={tr(
+            'Wann Plattform-Admins einen Verein als eines seiner Mitglieder geöffnet haben: wer, warum, wie lange. Laufende Sitzungen lassen sich hier beenden.',
+            'When platform admins opened a club as one of its members: who, why and for how long. Running sessions can be ended here.',
+          )}
+        />
+        <SupportSessionsTab />
       </>
     )
   if (path === '/app/roles' && hasGlobalPermission('roles.manage'))
