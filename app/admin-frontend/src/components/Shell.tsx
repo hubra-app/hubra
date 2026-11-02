@@ -35,6 +35,7 @@ import {
   IconPuzzle,
   IconSettings,
   IconShieldCheck,
+  IconSparkles,
   IconUserCircle,
   IconWorld,
 } from '@tabler/icons-react'
@@ -353,6 +354,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
     ...(platformItems.length > 0
       ? [{ label: tr('Plattform', 'Platform'), items: platformItems }]
       : []),
+    {
+      label: 'Hubra',
+      items: [
+        { path: '/app/whats-new', label: tr('Neuigkeiten & Roadmap', 'Changelog & roadmap'), icon: <IconSparkles size={24} /> },
+      ],
+    },
   ]
 
   // Breadcrumb: "Verwaltung › <page>", like the club app's top bar.
