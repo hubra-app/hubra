@@ -68,10 +68,9 @@ def test_retry_sends_the_job_again(client, staff_headers, db, tenant_pair):
 
     from hubra.core.tasks import celery_app
 
-    with (
-        patch.object(celery_app, "send_task") as send,
-        patch.dict(celery_app.tasks, {f["task"]: object()}),
-    ):
+    # Not patch.dict on celery_app.tasks: retry() imports every task module,
+    # and restoring the registry afterwards would drop them for later tests.
+    with patch.object(celery_app, "send_task") as send:
         send.return_value.id = "new-id"
         resp = client.post(f"{BASE}/failed/{f['id']}/retry")
     assert resp.status_code == 200, resp.get_json()
@@ -123,7 +122,10 @@ def test_failed_task_is_recorded_by_the_signal(app):
     def boom(x, flag=False):
         raise ValueError("bad input")
 
-    boom.apply(args=(5,), kwargs={"flag": True}, throw=False)
+    try:
+        boom.apply(args=(5,), kwargs={"flag": True}, throw=False)
+    finally:
+        celery_app.tasks.pop("tests.job_monitor.boom", None)
     (entry,) = job_monitor.failures()
     assert entry["task"] == "tests.job_monitor.boom"
     assert entry["payload"] == {"args": [5], "kwargs": {"flag": True}}
