@@ -16,6 +16,9 @@
 # Publishing a release on GitHub also creates its v* tag, which the GitLab
 # mirror turns into a GitLab Release (docs/gitlab.md).
 #
+# backend is also published as platform-backend (same digest), for the
+# platform Deployment of a split install (docs/platform-backend.md).
+#
 # The frontend images carry no host names; they are set at container start
 # (app/deploy/nginx/40-hubra-runtime.sh), so one image fits every install.
 name: Images
@@ -114,6 +117,21 @@ jobs:
             GIT_SHA=${{ github.sha }}
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+      # The platform backend (docs/platform-backend.md) runs the same image
+      # under its own name, so a cluster can pin and roll it on its own. A
+      # copy of the manifest, no second build.
+      - name: Publish the backend as platform-backend too
+        if: matrix.image == 'backend'
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+          SOURCE: ${{ steps.name.outputs.image }}@${{ steps.build.outputs.digest }}
+        run: |
+          args=()
+          while IFS= read -r tag; do
+            [ -n "$tag" ] && args+=(--tag "${tag/\/backend:/\/platform-backend:}")
+          done <<< "$TAGS"
+          docker buildx imagetools create "${args[@]}" "$SOURCE"
 
       # Fixable HIGH/CRITICAL CVEs go to the job summary. Report only for now;
       # set TRIVY_EXIT_CODE=1 once the images are clean to fail the build.

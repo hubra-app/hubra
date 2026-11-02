@@ -9,6 +9,8 @@ section and position, or the apps show that version in English.
 
 ### Changed
 
+- **Separate platform backend** (k3s, optional on Compose): the platform API (`/api/v1/manager`, `/api/v1/admin`, `/api/v1/system`), the platform jobs (backups, checks, upgrades, plugins, alerts), migrations and the scheduler run in their own `platform-backend` and `platform-worker`, from the same build published as `ghcr.io/hubra-app/hubra/platform-backend`. A platform-only update no longer restarts the club backend. Keep the platform version the same as the club version or newer. See docs/platform-backend.md.
+
 - **No more "High API Error Rate" alert on every release**: the check counted 4xx and 5xx over the whole month, so the 401s from expired sign-ins after a restart set it off. It now counts server errors (5xx) in the last hour (every 10 minutes, at least 50 requests, threshold `API_ERROR_RATE_THRESHOLD`, 5 %), ignores errors in a backend's first two minutes, sends one alert per incident and a "back to normal" when it recovers.
 
 - **System alerts go to the platform Discord log** instead of a webhook: `DISCORD_WEBHOOK_URL` is gone. Set the log channel in manage › Platform settings › Discord.

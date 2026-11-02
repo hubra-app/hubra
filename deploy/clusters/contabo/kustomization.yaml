@@ -28,7 +28,7 @@ patches:
       - op: add
         path: /spec/template/spec/containers/0/env/-
         value: { name: PROXY_FIX_X_FOR, value: "2" }
-    target: { kind: Deployment, name: backend }
+    target: { kind: Deployment, name: "backend|platform-backend" }
   # Postgres is the CloudNativePG cluster in postgres.yaml instead.
   - patch: |
       $patch: delete
@@ -83,6 +83,12 @@ configMapGenerator:
 # The names are what ../../app already renamed the images to.
 images:
   - name: ghcr.io/hubra-app/hubra/backend
+    newTag: sha-66d4e53
+  # Platform API, platform worker, beat and the init step (migrations). Same
+  # build as backend; keep it at the backend's version or newer. A platform-
+  # only fix: bump just this line, and the club pods don't restart.
+  # (docs/platform-backend.md)
+  - name: ghcr.io/hubra-app/hubra/platform-backend
     newTag: sha-66d4e53
   - name: ghcr.io/hubra-app/hubra/frontend
     newTag: sha-66d4e53

@@ -1,8 +1,13 @@
-# Everything that runs the backend image: API, Celery worker, Celery beat.
-# The Compose `flask-init` service is the API's initContainer, so migrations run
-# before a new API pod takes traffic. It runs under a Postgres advisory lock, so
-# several API replicas are fine. Worker replicas are fine too. Beat is safe with
-# more than one replica, but needs no more than one: see docs/scaling.md.
+# The club backend: API, Celery worker and the Discord gateway, run with
+# HUBRA_ROLE=club, so it serves everything but the platform API. The platform
+# API, the platform worker and the init step live in platform-backend.yaml
+# (docs/platform-backend.md), so a platform release doesn't roll these pods.
+#
+# The API's initContainer doesn't migrate: it waits until the platform backend
+# has brought the schema up to this release (python -m hubra.core.schema_wait),
+# and the old pod keeps serving meanwhile. API and worker replicas are fine.
+# Beat runs the platform image (below) and needs no more than one replica:
+# see docs/scaling.md.
 apiVersion: v1
 kind: Service
 metadata:
@@ -20,6 +25,11 @@ metadata:
   name: backend
 spec:
   replicas: 1
+  # Start the new pod and let it pass its readiness probe before the old one
+  # stops: no gap even with one replica.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxSurge: 1, maxUnavailable: 0 }
   selector:
     matchLabels:
       app.kubernetes.io/name: backend
@@ -35,17 +45,18 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
+      # Time for Traefik to drop the old pod before gunicorn stops (preStop).
+      terminationGracePeriodSeconds: 60
       initContainers:
-        - name: flask-init
+        # The platform backend migrates; this waits until it has (up to
+        # SCHEMA_WAIT_TIMEOUT, default 15 min, then the pod restarts).
+        - name: schema-wait
           image: hubra/backend
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
-          # startup_lock: two pods starting together take turns.
-          command: ["python", "-m", "hubra.core.startup_lock", "sh", "-c", "flask db upgrade && flask sync-permissions && flask seed --skip-migrate && flask ensure-superadmins && flask plugins sync && flask modules seal-secrets"]
+          command: ["python", "-m", "hubra.core.schema_wait"]
           envFrom: [{ secretRef: { name: hubra-env } }]
-          env: [{ name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }]
-          volumeMounts: [{ name: settings, mountPath: /etc/hubra }]
       containers:
         - name: backend
           image: hubra/backend
@@ -54,10 +65,16 @@ spec:
             capabilities: { drop: [ALL] }
           ports: [{ name: http, containerPort: 5000 }]
           envFrom: [{ secretRef: { name: hubra-env } }]
-          env: [{ name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }]
+          env:
+            - { name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }
+            - { name: HUBRA_ROLE, value: club }
+            - { name: HUBRA_PLATFORM_QUEUE, value: platform }
           volumeMounts: [{ name: settings, mountPath: /etc/hubra }]
           readinessProbe:
             httpGet: { path: /health, port: http }
+          lifecycle:
+            preStop:
+              exec: { command: ["sleep", "10"] }
           resources:
             limits: { cpu: "1", memory: 512Mi }
       volumes:
@@ -91,9 +108,13 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
+          # The default queue only; platform tasks go to platform-worker.
           command: ["celery", "-A", "hubra.core.tasks.celery_app", "worker", "--loglevel=info"]
           envFrom: [{ secretRef: { name: hubra-env } }]
-          env: [{ name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }]
+          env:
+            - { name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }
+            - { name: HUBRA_ROLE, value: club }
+            - { name: HUBRA_PLATFORM_QUEUE, value: platform }
           volumeMounts: [{ name: settings, mountPath: /etc/hubra }]
           resources:
             limits: { cpu: "1", memory: 512Mi }
@@ -137,13 +158,17 @@ spec:
         fsGroup: 1000 # so beat can write its schedule to the volume
       containers:
         - name: celery-beat
-          image: hubra/backend
+          # The platform image: beat holds every schedule (club and platform),
+          # and the platform release is never older than the club one.
+          image: hubra/platform-backend
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
           command: ["celery", "-A", "hubra.core.tasks.celery_app", "beat", "--loglevel=info", "--schedule", "/celerybeat/celerybeat-schedule"]
           envFrom: [{ secretRef: { name: hubra-env } }]
-          env: [{ name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }]
+          env:
+            - { name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }
+            - { name: HUBRA_PLATFORM_QUEUE, value: platform }
           volumeMounts:
             - { name: settings, mountPath: /etc/hubra }
             - { name: schedule, mountPath: /celerybeat }
@@ -187,7 +212,10 @@ spec:
             capabilities: { drop: [ALL] }
           command: ["flask", "modules", "run", "discord-gateway", "--wait", "600"]
           envFrom: [{ secretRef: { name: hubra-env } }]
-          env: [{ name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }]
+          env:
+            - { name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }
+            - { name: HUBRA_ROLE, value: club }
+            - { name: HUBRA_PLATFORM_QUEUE, value: platform }
           volumeMounts: [{ name: settings, mountPath: /etc/hubra }]
           resources:
             limits: { cpu: 250m, memory: 256Mi }

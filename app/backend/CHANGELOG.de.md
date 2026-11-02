@@ -11,6 +11,8 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ### Changed
 
+- **Eigenes Plattform-Backend** (k3s, mit Compose optional): die Plattform-API (`/api/v1/manager`, `/api/v1/admin`, `/api/v1/system`), die Plattform-Jobs (Backups, Prüfungen, Upgrades, Plugins, Alarme), die Migrationen und der Zeitplaner laufen in eigenen Diensten `platform-backend` und `platform-worker`, aus demselben Build, veröffentlicht als `ghcr.io/hubra-app/hubra/platform-backend`. Ein reines Plattform-Update startet das Vereins-Backend nicht mehr neu. Die Plattform-Version muss gleich oder neuer sein als die Vereins-Version. Siehe docs/platform-backend.md.
+
 - **Keine Warnung «High API Error Rate» mehr nach jedem Update**: Die Prüfung zählte 4xx und 5xx über den ganzen Monat, also lösten die 401 abgelaufener Anmeldungen nach einem Neustart sie aus. Jetzt zählt sie Serverfehler (5xx) der letzten Stunde (alle 10 Minuten, ab 50 Anfragen, Schwelle `API_ERROR_RATE_THRESHOLD`, 5 %), übergeht Fehler in den ersten zwei Minuten eines Backends, schickt eine Warnung pro Vorfall und eine Entwarnung, wenn es wieder läuft.
 - **Systemwarnungen gehen ins Discord-Protokoll der Plattform** statt an einen Webhook: `DISCORD_WEBHOOK_URL` fällt weg. Den Protokollkanal stellst du in manage › Plattform-Einstellungen › Discord ein.
 - **`FERNET_KEY` ist im Betrieb Pflicht** (Änderung in `.env`): Ohne ihn startet das Backend nicht mehr. Bisher gespeicherte Werte waren mit einem aus `SECRET_KEY` abgeleiteten Schlüssel verschlüsselt und bleiben lesbar. Setze also einen neuen Schlüssel und führe `flask crypto rotate` aus.
