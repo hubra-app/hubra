@@ -70,6 +70,25 @@ def _validate_log_events(value: str) -> str | None:
     return None
 
 
+def _validate_alert_types(value: str) -> str | None:
+    from hubra.core.services.platform_monitor import ALERT_TYPES
+
+    unknown = [t.strip() for t in value.split(",") if t.strip() not in ALERT_TYPES]
+    if unknown:
+        return "Unknown alert types: " + ", ".join(unknown)
+    return None
+
+
+def _validate_iso_datetime(value: str) -> str | None:
+    from datetime import datetime
+
+    try:
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return "Not a date and time (2026-11-02T22:00)"
+    return None
+
+
 VALIDATORS: dict[str, Callable[[str], str | None]] = {
     "email": (
         lambda v: (
@@ -95,6 +114,9 @@ VALIDATORS: dict[str, Callable[[str], str | None]] = {
     "milliseconds": lambda v: (
         None if v.isdigit() and int(v) <= 600000 else "Whole milliseconds, 0 to 600000"
     ),
+    "on_off": lambda v: None if v in ("on", "off") else "on or off",
+    "alert_types": lambda v: _validate_alert_types(v),
+    "iso_datetime": lambda v: _validate_iso_datetime(v),
     "retention_days": lambda v: (
         None if v.isdigit() and 1 <= int(v) <= 365 else "Whole days, 1 to 365"
     ),

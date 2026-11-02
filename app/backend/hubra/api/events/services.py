@@ -15,7 +15,7 @@ from hubra.core.extensions import db
 from hubra.core.models.event import ClubEvent, EventRegistration, event_attendees
 from hubra.core.models.member import Member
 from hubra.core.modules import emit
-from hubra.core.modules.events import EVENT_PUBLISHED
+from hubra.core.modules.events import EVENT_CHANGED, EVENT_PUBLISHED
 
 
 # Registration states that take one of the event's places (the member's
@@ -150,6 +150,7 @@ class EventService:
             db.session.flush()
             EventService._promote_waitlist(event)
 
+        emit(EVENT_CHANGED, event_id=event.id)
         if not audit:
             return event
         log_audit(
@@ -169,6 +170,8 @@ class EventService:
 
         event = EventService.get(event_id)
         if scope == "following":
+            for occ in series.following(event):
+                emit(EVENT_CHANGED, event_id=occ.id, deleted=True)
             series.delete_following(event, actor_id)
             return
         series.delete_one(event)
@@ -182,6 +185,7 @@ class EventService:
         )
         # Those who signed up hear that it is off rather than turn up.
         _tell_registered(event, "Event cancelled", skip_member_id=actor_id)
+        emit(EVENT_CHANGED, event_id=event.id, deleted=True)
         db.session.delete(event)
 
     @staticmethod

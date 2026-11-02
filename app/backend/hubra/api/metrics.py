@@ -67,8 +67,8 @@ def configure_api_counting(app: Flask) -> None:
 
     @app.after_request
     def _counting_after(response):
-        # Skip if the before hook was skipped
-        if not hasattr(g, "_api_count_start"):
+        # Skip if the before hook was skipped, and planned maintenance 503s
+        if not hasattr(g, "_api_count_start") or getattr(g, "maintenance", False):
             return response
 
         # Skip if no tenant resolved

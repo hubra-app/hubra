@@ -355,14 +355,25 @@ function SetupCard({ s }: { s: DiscordStatus }) {
           </Text>
           {value(s.interactions.expected)}
         </div>
+        {s.linkedRolesUrl && (
+          <div>
+            <Text size="sm" fw={600}>
+              {tr(
+                'General Information › Linked Roles Verification URL',
+                'General Information › Linked Roles Verification URL',
+              )}
+            </Text>
+            {value(s.linkedRolesUrl)}
+          </div>
+        )}
         <div>
           <Text size="sm" fw={600}>
             {tr('Bot › Privileged Gateway Intents', 'Bot › Privileged Gateway Intents')}
           </Text>
           <Text size="sm">
             {tr(
-              'Alle drei aus. Public Bot an, Requires OAuth2 Code Grant aus.',
-              'All three off. Public Bot on, Requires OAuth2 Code Grant off.',
+              'Server Members Intent an (für den Willkommensgruss), Presence und Message Content aus. Public Bot an, Requires OAuth2 Code Grant aus.',
+              'Server Members Intent on (for the welcome message), Presence and Message Content off. Public Bot on, Requires OAuth2 Code Grant off.',
             )}
           </Text>
         </div>
@@ -372,8 +383,8 @@ function SetupCard({ s }: { s: DiscordStatus }) {
           </Text>
           <Text size="sm">
             {tr(
-              'Hubra fragt sie beim Hinzufügen selbst an, nie Administrator: Nickname ändern, Kanäle ansehen, Nachrichten senden, Links einbetten, dazu Rollen verwalten nur wenn der Verein Rollen freigibt.',
-              'Hubra asks for them itself when the bot is added, never Administrator: Change Nickname, View Channels, Send Messages, Embed Links, plus Manage Roles only when a club allows roles.',
+              'Hubra fragt sie beim Hinzufügen selbst an, nie Administrator: Nickname ändern, Kanäle ansehen, Nachrichten senden, Links einbetten, dazu Rollen verwalten, Kanäle verwalten (mit Nachrichtenverlauf lesen) und Events erstellen nur wenn der Verein das freigibt.',
+              'Hubra asks for them itself when the bot is added, never Administrator: Change Nickname, View Channels, Send Messages, Embed Links, plus Manage Roles, Manage Channels (with Read Message History) and Create Events only when a club allows them.',
             )}
           </Text>
         </div>

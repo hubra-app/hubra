@@ -46,4 +46,4 @@ spec:
             matchExpressions:
               - key: app.kubernetes.io/name
                 operator: In
-                values: [backend, celery-worker, celery-beat]
+                values: [backend, celery-worker, celery-beat, discord-gateway]

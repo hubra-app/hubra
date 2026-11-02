@@ -12,7 +12,9 @@ export {
   setTenantSlug,
   apiFetch,
   apiFetchRaw,
+  setMaintenanceHandler,
+  getMaintenance,
 } from "./client";
-export type { InstanceInfo } from "./client";
+export type { InstanceInfo, MaintenanceState } from "./client";
 export { redirectTo, recentRedirects } from "./redirectGuard";
 export type { Hop as RedirectHop } from "./redirectLoop";

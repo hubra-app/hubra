@@ -50,6 +50,11 @@ MIN_REQUESTS = 50
 # Share of 5xx answers in the last hour that is an open problem.
 SERVER_ERROR_SHARE = 0.05
 MIN_REQUESTS_FOR_ERRORS = 20
+# Server errors in a process's first seconds (a release starting up, its
+# database pool and caches warming) are counted apart, as "w5", so a rollout
+# does not look like an outage.  A release that keeps failing counts after.
+WARMUP_SECONDS = 120
+_process_started = time.monotonic()
 
 _KEEP_HOURS = 26
 _SETTINGS_TTL = 60.0  # seconds a process trusts its copy of the thresholds
@@ -241,11 +246,13 @@ def record_request(route: str, status: int, ms: float, db_ms: float = 0.0,
                    queries: int = 0, at: datetime | None = None) -> None:  # fmt: skip
     """Count one request.  *route* is a label from ``route_label``."""
     p = route + _SEP
+    status_class = min(5, max(1, status // 100))
+    warming = status_class == 5 and time.monotonic() - _process_started < WARMUP_SECONDS
     fields = {
         p + "n": 1,
         p + "ms": int(ms),
         p + f"b{_bucket(ms)}": 1,
-        p + f"s{min(5, max(1, status // 100))}": 1,
+        p + ("w5" if warming else f"s{status_class}"): 1,
     }
     if db_ms:
         fields[p + "db"] = int(db_ms)
@@ -279,7 +286,8 @@ def install(app: Flask) -> None:
     @app.after_request
     def _perf_end(response):
         start = g.pop("_perf_start", None)
-        if start is None:
+        if start is None or g.get("maintenance"):
+            # Maintenance answers are planned 503s, not server errors.
             return response
         try:
             ms = (time.monotonic() - start) * 1000
