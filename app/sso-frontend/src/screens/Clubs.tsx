@@ -9,6 +9,7 @@ import {
   Group,
   Loader,
   Paper,
+  SimpleGrid,
   Stack,
   Text,
   TextInput,
@@ -184,7 +185,7 @@ export function ClubsScreen() {
   const canJoinDirectly = found.data?.canJoinDirectly ?? false
 
   return (
-    <SignedInFrame width={640}>
+    <SignedInFrame width={960}>
       <Group justify="space-between" align="flex-end" mb="lg" gap="sm">
         <div>
           <Title order={1} fz={30} mb={6}>
@@ -208,7 +209,7 @@ export function ClubsScreen() {
           <Title order={2} fz={20} mb="sm">
             {tr('Einladungen', 'Invites')}
           </Title>
-          <Stack gap="sm" mb="xl">
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm" mb="xl">
             {invites.map((inv) => (
               <Paper key={inv.id} withBorder p="md" style={{ borderColor: 'var(--mantine-color-acc-3)' }}>
                 <Group justify="space-between" wrap="nowrap">
@@ -236,7 +237,7 @@ export function ClubsScreen() {
                 </Group>
               </Paper>
             ))}
-          </Stack>
+          </SimpleGrid>
         </>
       )}
 
@@ -258,7 +259,7 @@ export function ClubsScreen() {
           </Stack>
         </Paper>
       ) : myClubs.length === 0 ? null : (
-        <Stack gap="sm" mb="xl">
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm" mb="xl">
           {myClubs.map((t) => (
             <Paper key={t.tenant_slug} withBorder p="md">
               <Group justify="space-between" wrap="nowrap">
@@ -289,7 +290,7 @@ export function ClubsScreen() {
               </Group>
             </Paper>
           ))}
-        </Stack>
+        </SimpleGrid>
       )}
 
       {/* Running a club comes after the clubs themselves. */}
@@ -325,7 +326,7 @@ export function ClubsScreen() {
           <Title order={2} fz={20} mb="sm">
             {tr('Wartet auf Freigabe', 'Waiting for approval')}
           </Title>
-          <Stack gap="sm" mb="xl">
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm" mb="xl">
             {pending.map((c) => (
               <Paper key={c.slug} withBorder p="md">
                 <Group justify="space-between" wrap="nowrap">
@@ -346,7 +347,7 @@ export function ClubsScreen() {
                 </Group>
               </Paper>
             ))}
-          </Stack>
+          </SimpleGrid>
         </>
       )}
 
@@ -374,7 +375,7 @@ export function ClubsScreen() {
           {tr(`Kein Verein passt zu «${debounced}».`, `No club matches “${debounced}”.`)}
         </Text>
       )}
-      <Stack gap="sm">
+      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
         {results.map((c) => (
           <Paper key={c.slug} withBorder p="md">
             <Group justify="space-between" wrap="nowrap">
@@ -406,7 +407,7 @@ export function ClubsScreen() {
             </Group>
           </Paper>
         ))}
-      </Stack>
+      </SimpleGrid>
     </SignedInFrame>
   )
 }

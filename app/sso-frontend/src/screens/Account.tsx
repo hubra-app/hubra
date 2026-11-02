@@ -17,7 +17,18 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
+import { useMediaQuery } from '@mantine/hooks'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  IconBell,
+  IconDevices,
+  IconLink,
+  IconLock,
+  IconMail,
+  IconSettings,
+  IconShieldLock,
+  IconUser,
+} from '@tabler/icons-react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import { SignedInFrame } from '@/components/SignedInFrame'
@@ -29,14 +40,14 @@ import { TwoFactorTab } from './TwoFactor'
 import { NotificationsTab } from './NotificationsTab'
 
 const TABS = [
-  { value: 'profil', label: () => tr('Profil', 'Profile') },
-  { value: 'email', label: () => tr('E-Mail', 'Email') },
-  { value: 'passwort', label: () => tr('Passwort', 'Password') },
-  { value: 'zwei-faktor', label: () => tr('Zwei-Faktor', 'Two-factor') },
-  { value: 'einstellungen', label: () => tr('Einstellungen', 'Settings') },
-  { value: 'sitzungen', label: () => tr('Sitzungen', 'Sessions') },
-  { value: 'benachrichtigungen', label: () => tr('Benachrichtigungen', 'Notifications') },
-  { value: 'verknuepfungen', label: () => tr('Verknüpfungen', 'Linked accounts') },
+  { value: 'profil', label: () => tr('Profil', 'Profile'), Icon: IconUser },
+  { value: 'email', label: () => tr('E-Mail', 'Email'), Icon: IconMail },
+  { value: 'passwort', label: () => tr('Passwort', 'Password'), Icon: IconLock },
+  { value: 'zwei-faktor', label: () => tr('Zwei-Faktor', 'Two-factor'), Icon: IconShieldLock },
+  { value: 'einstellungen', label: () => tr('Einstellungen', 'Settings'), Icon: IconSettings },
+  { value: 'sitzungen', label: () => tr('Sitzungen', 'Sessions'), Icon: IconDevices },
+  { value: 'benachrichtigungen', label: () => tr('Benachrichtigungen', 'Notifications'), Icon: IconBell },
+  { value: 'verknuepfungen', label: () => tr('Verknüpfungen', 'Linked accounts'), Icon: IconLink },
 ] as const
 
 type Tab = (typeof TABS)[number]['value']
@@ -56,6 +67,9 @@ export function AccountScreen() {
   useLang()
   const navigate = useNavigate()
   const { tab: rawTab } = useParams()
+  // From tablet width on, the sections are a list beside the content; on a
+  // phone they wrap into rows of pills above it (hubra-tabs).
+  const sideNav = useMediaQuery('(min-width: 48em)', true, { getInitialValueInEffect: false })
   const tab: Tab = TABS.some((t) => t.value === rawTab) ? (rawTab as Tab) : 'profil'
 
   useEffect(() => {
@@ -82,7 +96,7 @@ export function AccountScreen() {
     )
 
   return (
-    <SignedInFrame width={640}>
+    <SignedInFrame width={1040}>
       <Title order={1} fz={30} mb={6}>
         {tr('Mein Konto', 'My account')}
       </Title>
@@ -96,11 +110,17 @@ export function AccountScreen() {
         value={tab}
         onChange={(v) => v && navigate(`/account/${v}`)}
         keepMounted={false}
-        className="hubra-tabs"
+        orientation={sideNav ? 'vertical' : 'horizontal'}
+        variant={sideNav ? 'pills' : 'default'}
+        className={sideNav ? 'sso-side-tabs' : 'hubra-tabs'}
       >
-        <Tabs.List mb="lg">
+        <Tabs.List mb={sideNav ? undefined : 'lg'}>
           {TABS.map((t) => (
-            <Tabs.Tab key={t.value} value={t.value}>
+            <Tabs.Tab
+              key={t.value}
+              value={t.value}
+              leftSection={sideNav ? <t.Icon size={18} stroke={1.75} /> : undefined}
+            >
               {t.label()}
             </Tabs.Tab>
           ))}
