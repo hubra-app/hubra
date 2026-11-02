@@ -15,7 +15,7 @@ export default defineConfig({
     },
   },
   server: {
-    // The shared fonts in packages/ui/fonts are served from outside the app.
+    // packages/ui (shared CSS and fonts) lives outside the app root.
     fs: { allow: [searchForWorkspaceRoot(process.cwd()), resolve(__dirname, '../../packages')] },
     host: '0.0.0.0',
     port: 5175,

@@ -38,7 +38,7 @@ import {
 
 const STATUS: Record<BillingStatus, { de: string; en: string; color: string }> = {
   none: { de: 'Nicht verrechnet', en: 'Not billed', color: 'gray' },
-  trialing: { de: 'Testphase', en: 'Trial', color: 'blue' },
+  trialing: { de: 'Testphase', en: 'Trial', color: 'acc' },
   active: { de: 'Aktiv', en: 'Active', color: 'green' },
   past_due: { de: 'Zahlung überfällig', en: 'Past due', color: 'orange' },
   unpaid: { de: 'Unbezahlt', en: 'Unpaid', color: 'red' },
@@ -381,7 +381,7 @@ function BillingModal({
           />
         </SimpleGrid>
 
-        <Paper withBorder p="md" radius="md">
+        <Paper withBorder p="md">
           <Switch
             label={tr('Gesponsert', 'Sponsored')}
             description={tr(

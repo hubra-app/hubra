@@ -139,7 +139,7 @@ export function ModulesTab() {
           )}
         </Text>
         {plugins.length === 0 ? (
-          <Paper withBorder radius="md" p="lg">
+          <Paper withBorder p="lg">
             <Group gap="md" wrap="nowrap">
               <ThemeIcon size={44} radius="md" variant="light" color="gray">
                 <IconPuzzle size={24} />
@@ -235,7 +235,6 @@ function ModuleCard({
   return (
     <Paper
       withBorder
-      radius="md"
       p="lg"
       data-module={m.code}
       style={{

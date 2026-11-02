@@ -64,7 +64,7 @@ function DeadlineBadge({ r }: { r: DataRequest }) {
     )
   const days = r.days_left ?? 0
   return (
-    <Badge variant="light" color={r.overdue ? 'red' : r.due_soon ? 'orange' : 'blue'}>
+    <Badge variant="light" color={r.overdue ? 'red' : r.due_soon ? 'orange' : 'acc'}>
       {r.overdue
         ? tr(`${-days} Tage überfällig`, `${-days} days overdue`)
         : days === 0
@@ -200,11 +200,11 @@ function RequestCard({
   }
 
   return (
-    <Paper withBorder p="md" radius="md">
+    <Paper withBorder p="md">
       <Group justify="space-between" align="flex-start" gap={8} mb={6}>
         <Stack gap={2}>
           <Group gap={8}>
-            <Badge variant="outline" color={r.kind === 'deletion' ? 'red' : 'violet'}>
+            <Badge variant="outline" color={r.kind === 'deletion' ? 'red' : 'acc'}>
               {KIND[r.kind]()}
             </Badge>
             <DeadlineBadge r={r} />

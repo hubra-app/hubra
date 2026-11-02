@@ -17,7 +17,7 @@ Where things live:
 | CSS tokens (`--hb-*`), page base, brand marks, chips, tabs | `packages/ui/src/ui.css` |
 | Shared page blocks: `PageHead`, `StatTile`, `StatGrid`, `Tabs`, `Pagination` | `packages/ui/src/layout.tsx` |
 | Dialogs, side panels, cards, empty / error / loading states | `packages/ui/src/feedback.tsx` (each app wraps them with its texts) |
-| Fonts (self-hosted woff2, SIL OFL) | `packages/ui/fonts/` |
+| Fonts (self-hosted woff2, SIL OFL) | `packages/ui/src/fonts/` |
 | Text colour on any fill (WCAG) | `packages/ui/src/contrast.ts` (`textOn`, `readableOn`) |
 | Light / dark / auto | `packages/ui/src/colorScheme.ts`, `ThemeSwitch.tsx`, `theme.js` |
 | Logo files and brand rules | `brand/README.md` |
@@ -394,7 +394,7 @@ this page:
 - Body 17 px / 1.6 (marketing size), headings Bricolage 800 with tight
   tracking; buttons radius 10 px, cards 16 px.
 - Fonts are self-hosted (no Google request), like the apps
-  (`packages/ui/fonts`).
+  (`packages/ui/src/fonts`).
 
 ---
 
@@ -435,7 +435,7 @@ with its fix.
 | 13 | Shared components only in the club app | `DataTable`, `EmptyState`, `ErrorBanner`, `Avatar`, `Card`, `Field` exist only in the club app. Manage builds tables with raw `Table` (23 files) and has no empty state. | Move them into `packages/ui` and use them in manage. Biggest item; do it screen by screen. | Done for EmptyState, ErrorBanner, Card, dialogs; manage tables still use `Table` (DataTable needs the club app's i18n and paging hooks first) |
 | 14 | Toasts | Club app, manage and most of sign-in use `notify()`; sign-in also calls `notifications.show` directly (3 places). | Use `notify()`; put one `notify` in `packages/ui`. | Done |
 | 15 | Reduced motion | Only the club app turns motion off for `prefers-reduced-motion`. | Move the rule into `ui.css`. | Done |
-| 16 | Fonts | The apps load Bricolage, Hanken and JetBrains Mono from Google Fonts; the website self-hosts Bricolage and Hanken (no JetBrains Mono file, so code falls back). Loading from Google sends visitors' IPs to Google, which is a privacy issue under GDPR / Swiss FADP. | Self-host the three fonts in `packages/ui` (same woff2 files as the website) and add JetBrains Mono to the website. | Done |
+| 16 | Fonts | The apps load Bricolage, Hanken and JetBrains Mono from Google Fonts; the website self-hosts Bricolage and Hanken (no JetBrains Mono file, so code falls back). Loading from Google sends visitors' IPs to Google, which is a privacy issue under GDPR / Swiss FADP. | Self-host the three fonts in `packages/ui` (same woff2 files as the website) and add JetBrains Mono to the website. | Done in #163 (self-hosted in `packages/ui/src/fonts`); JetBrains Mono added to the website in hubra.club |
 | 17 | Icon sizes | 12, 14, 16, 18, 20, 24, 26, 28 are all in use; a few icons set `stroke` 1.5 / 1.6 / 1.75. | Sizes from §2 (16/18/20/24), default stroke. | Done |
 | 18 | Website tokens | Website line colour is `#ebe8f2` (apps `#e6e3ef`). | Use `#e6e3ef`. | Done in hubra.club |
 | 19 | Spelling | Two "ß" in manage `CreateTenantModal.tsx` and sign-in `StartClub.tsx`. | Replace with "ss". | Not a bug: both are the slug transliteration (`.replace(/ß/g, 'ss')`), not UI text |
