@@ -46,7 +46,10 @@ ALLOWED_PREFIXES = (
     "/api/v1/system",
     "/api/v1/auth",
     "/api/v1/account",
-    "/api/v1/apps",  # outside callbacks (Discord interactions, OAuth)
+    "/api/v1/apps",  # outside callbacks (OAuth)
+    # Signed Discord interactions: /wartung ende must work during maintenance;
+    # club commands answer with the maintenance notice themselves.
+    "/api/v1/discord/interactions",
     "/api/v1/i18n",
     "/api/v1/instance",  # public instance info the apps need to start
 )
@@ -226,13 +229,18 @@ def turn_on(message: str = "", minutes: int | None = None, actor_id=None) -> dic
     db.session.commit()
     clear_cache()
     _log_event(f"Maintenance mode on{' until ' + until if until else ''}")
-    return state(fresh=True)
+    current = state(fresh=True)
+    _notify_clubs("maintenance_started", notice_payload(current))
+    return current
 
 
 def turn_off(actor_id=None) -> dict:
     """End maintenance mode, and any running window for every club."""
     from hubra.core.extensions import db
     from hubra.core.services import platform_settings
+
+    # Windows that end here are announced by the platform bot's tick.
+    was_on = _load(True)["enabled"]
 
     platform_settings.set_many(
         {"maintenance.enabled": None, "maintenance.until": None}, actor_id=actor_id
@@ -249,6 +257,8 @@ def turn_off(actor_id=None) -> dict:
     db.session.commit()
     clear_cache()
     _log_event("Maintenance mode off")
+    if was_on:
+        _notify_clubs("maintenance_ended", {})
     return state(fresh=True)
 
 
@@ -352,6 +362,7 @@ def schedule(
         f"Maintenance planned for {who}: "
         f"{starts_at.isoformat(timespec='minutes')} to {ends_at.isoformat(timespec='minutes')}"
     )
+    _notify_clubs("maintenance_planned", window_notice(window))
     return window
 
 
@@ -373,9 +384,44 @@ def cancel(window_id: int, actor_id=None):
         window.cancelled_at = now
         window.cancelled_by = actor_id
         _log_event(f"Maintenance window {window.id} cancelled")
+        _notify_clubs(
+            "maintenance_cancelled", {"tenant_ids": window_notice(window)["tenant_ids"]}
+        )
     db.session.commit()
     clear_cache()
     return window
+
+
+# ── Notices on the clubs' Discord servers ─────────────────────────────────────
+
+
+def notice_payload(current: dict) -> dict:
+    """What the clubs' Discord servers are told when maintenance starts."""
+    return {"message": current.get("message") or "", "until": current.get("until")}
+
+
+def window_notice(window) -> dict:
+    """A planned window, for the clubs' Discord servers (``tenant_ids`` None:
+    every club)."""
+    starts, ends = _aware(window.starts_at), _aware(window.ends_at)
+    return {
+        "message": window.message or "",
+        "start": starts.isoformat(),
+        "until": ends.isoformat(),
+        "minutes": int((ends - starts).total_seconds() // 60),
+        "tenant_ids": list(window.tenant_ids) if window.tenant_ids is not None else None,
+    }
+
+
+def _notify_clubs(kind: str, payload: dict) -> None:
+    """Club Discord servers that opted in hear about maintenance (after the
+    commit, in the background).  Never raises."""
+    try:
+        from hubra.core.services import platform_bot
+
+        platform_bot.notify_clubs(kind, payload)
+    except Exception:  # noqa: BLE001
+        logger.debug("maintenance club notice skipped", exc_info=True)
 
 
 def _log_event(message: str) -> None:
