@@ -5,6 +5,7 @@ import { ErrorBoundary as RouteErrorBoundary } from 'react-error-boundary'
 import { useT } from '@/locales/i18n'
 import { AppProvider, useApp } from '@/context/AppContext'
 import { URL_CLUB } from '@/clubBase'
+import { redirectTo } from '@hubra/api-client'
 import { InstanceProvider, useInstance } from '@/context/InstanceContext'
 import { RequireModule } from '@/modules/RequireModule'
 import { PluginBoundary, usePluginLoader, usePluginRoutes } from '@/plugins'
@@ -115,7 +116,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   const { loginUrl } = useInstance()
   const { pathname } = useLocation()
   useEffect(() => {
-    if (authStatus === 'anon') window.location.assign(loginUrl(pathname))
+    if (authStatus === 'anon') redirectTo(loginUrl(pathname), 'anon')
   }, [authStatus, loginUrl, pathname])
   if (authStatus === 'loading' || authStatus === 'anon')
     return (
@@ -151,7 +152,7 @@ function SsoRedirect({ path }: { path: string }) {
   const { ssoUrl } = useInstance()
   useEffect(() => {
     // Keep ?redirect= and the #token= of mail links.
-    window.location.assign(`${ssoUrl}/${path}${window.location.search}${window.location.hash}`)
+    redirectTo(`${ssoUrl}/${path}${window.location.search}${window.location.hash}`, `sso-${path.split('/')[0]}`)
   }, [ssoUrl, path])
   return <FullPageLoader />
 }
@@ -462,6 +463,14 @@ function PrivateRoutes() {
                     }
                   />
                 ))}
+                <Route
+                  path="settings/apps"
+                  element={
+                    <RequirePermission permKey="apps.apps.manage">
+                      <SettingsScreen />
+                    </RequirePermission>
+                  }
+                />
                 <Route
                   path="settings/domains"
                   element={

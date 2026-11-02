@@ -1,7 +1,8 @@
 # Everything that runs the backend image: API, Celery worker, Celery beat.
 # The Compose `flask-init` service is the API's initContainer, so migrations run
-# before a new API pod takes traffic. Keep the API at 1 replica so two pods never
-# run `flask db upgrade` at once.
+# before a new API pod takes traffic. It runs under a Postgres advisory lock, so
+# several API replicas are fine. Worker replicas are fine too. Beat is safe with
+# more than one replica, but needs no more than one: see docs/scaling.md.
 apiVersion: v1
 kind: Service
 metadata:
@@ -40,7 +41,8 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
-          command: ["sh", "-c", "flask db upgrade && flask sync-permissions && flask seed --skip-migrate && flask ensure-superadmins && flask plugins sync && flask modules seal-secrets"]
+          # startup_lock: two pods starting together take turns.
+          command: ["python", "-m", "hubra.core.startup_lock", "sh", "-c", "flask db upgrade && flask sync-permissions && flask seed --skip-migrate && flask ensure-superadmins && flask plugins sync && flask modules seal-secrets"]
           envFrom: [{ secretRef: { name: hubra-env } }]
           env: [{ name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }]
           volumeMounts: [{ name: settings, mountPath: /etc/hubra }]

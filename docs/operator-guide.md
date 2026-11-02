@@ -415,9 +415,10 @@ docker compose exec backend flask plugins list
 docker compose logs -f backend celery-worker celery-beat
 ```
 
-- **Celery beat** must run exactly once: it starts the scheduled backups,
-  invoice generation and reminders, health checks, plugin update checks and
-  mail housekeeping.
+- **Celery beat** starts the scheduled backups, invoice generation and
+  reminders, health checks, plugin update checks and mail housekeeping. Run
+  one. A second beat no longer sends jobs twice, and API and worker replicas
+  are safe too: see [Running more than one replica](scaling.md).
 - **Rate limits** use Redis. Behind a proxy, set `REAL_IP_FROM` (Compose) so
   limits see real client addresses.
 - **Logs** are JSON lines on stdout; lines of one API request share a

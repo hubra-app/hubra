@@ -117,3 +117,17 @@ test('saving the membership tab keeps what the Verein tab holds', async ({ page 
     })
   }
 })
+
+test('every settings tab has its own address', async ({ page }) => {
+  // settings/apps had no route and fell through to the dashboard.
+  for (const [path, tab] of [
+    ['settings/membership', 'Mitgliedschaft'],
+    ['settings/modules', 'Module & Plugins'],
+    ['settings/apps', 'Verbundene Apps'],
+    ['settings/domains', 'Domains'],
+  ] as const) {
+    await page.goto(appUrl(path))
+    await expect(page).toHaveURL(new RegExp(`/app/${path}$`))
+    await expect(page.getByRole('tab', { name: tab })).toHaveAttribute('aria-selected', 'true')
+  }
+})

@@ -28,6 +28,8 @@ Browser push (``push.*``): the VAPID key pair every push is signed with.
 Hubra makes one the first time a member turns push on; replacing it signs
 every device out of push (they have to turn it on again).
 
+Performance (``perf.*``): the thresholds of ``services.perf_monitor``.
+
 Discord (``discord.*``): the one Hubra application every club's server and
 every linked account goes through (see docs/discord.md). Set here only, with
 no env fallback.  ``discord.log_*`` is the platform log: the bot posts
@@ -41,6 +43,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 from flask import current_app
+from sqlalchemy import text
 
 from hubra.core.crypto import PLATFORM, decrypt_code, encrypt_code
 from hubra.core.extensions import db
@@ -257,6 +260,30 @@ SPECS: tuple[Spec, ...] = (
         lambda cfg: cfg.get("MANAGE_BASE_URL") or "",
         "url",
     ),
+    Spec(
+        "perf.slow_request_ms",
+        "Slow request",
+        "API requests at least this long (ms) are counted as slow and written "
+        "to the log, with the route only. 0: off",
+        lambda cfg: "1000",
+        "milliseconds",
+    ),
+    Spec(
+        "perf.slow_query_ms",
+        "Slow database query",
+        "Queries at least this long (ms) are counted and written to the log, "
+        "without their values. 0: off",
+        lambda cfg: "250",
+        "milliseconds",
+    ),
+    Spec(
+        "perf.p95_warning_ms",
+        "Slow API warning",
+        "An open problem on the alerts page when 95 % of the last hour's "
+        "requests are not faster than this (ms). 0: off",
+        lambda cfg: "1500",
+        "milliseconds",
+    ),
 )
 
 _BY_KEY = {s.key: s for s in SPECS}
@@ -427,6 +454,9 @@ def discord() -> DiscordApp:
     )
 
 
+_VAPID_LOCK_KEY = 0x6875627261766170  # "hubravap"
+
+
 @dataclass(frozen=True)
 class PushKeys:
     public_key: str  # base64url, uncompressed P-256 point (applicationServerKey)
@@ -441,6 +471,18 @@ def web_push(create: bool = False) -> PushKeys | None:
     if not (public and private):
         if not create:
             return None
+        # Two API processes asking at once must not each store a key pair:
+        # browsers that subscribed with the losing key would get no pushes.
+        # Wait for the other, then look again (held until the commit).
+        if db.session.get_bind().dialect.name == "postgresql":
+            db.session.execute(
+                text("SELECT pg_advisory_xact_lock(:k)"), {"k": _VAPID_LOCK_KEY}
+            )
+            public, private = (
+                get("push.vapid_public_key"),
+                get("push.vapid_private_key"),
+            )
+    if not (public and private):
         from hubra.core.services.web_push import generate_vapid_keys
 
         public, private = generate_vapid_keys()

@@ -57,6 +57,57 @@ export interface HealthDetail {
   checked_at?: number
 }
 
+export interface DiscordServer {
+  id: number
+  club: string
+  clubSlug: string
+  server: string
+  serverId: string
+  status: 'pending' | 'active'
+  botOnServer: boolean | null
+  lastUsedAt: string | null
+  lastError: string | null
+  lastErrorAt: string | null
+}
+
+export interface DiscordStatus {
+  settings: { clientId: boolean; publicKey: boolean; clientSecret: boolean; botToken: boolean }
+  configured: boolean
+  check: {
+    checkedAt?: string
+    botOk: boolean | null
+    botError?: string
+    botUser?: { id: string; username: string }
+    guildCount?: number | null
+    guildError?: string
+    interactionsError?: string
+    appIdMismatch?: string
+    channelOk?: boolean
+    channelName?: string
+    channelError?: string
+  }
+  interactions: { expected: string; actual?: string | null }
+  redirectUris: string[]
+  platformLog: {
+    channelId: string
+    categories: string[]
+    lastOkAt?: string
+    lastErrorAt?: string
+    lastError?: string
+  }
+  plugin: { installed: boolean; version: string | null; error: string }
+  servers: DiscordServer[]
+  linkedAccounts: number
+}
+
+export async function getDiscordStatus() {
+  return apiFetch<DiscordStatus>(`${P}/discord/status`)
+}
+
+export async function checkDiscordNow() {
+  return apiFetch<DiscordStatus>(`${P}/discord/check`, { method: 'POST' })
+}
+
 export async function getPlatformHealth() {
   return apiFetch<HealthDetail>(`${P}/health`)
 }
@@ -171,7 +222,15 @@ export async function resumeMainRelay() {
   })
 }
 
-export type EventCategory = 'mail' | 'relay' | 'service' | 'backup' | 'plugin' | 'system' | 'alert'
+export type EventCategory =
+  | 'mail'
+  | 'relay'
+  | 'service'
+  | 'backup'
+  | 'plugin'
+  | 'system'
+  | 'alert'
+  | 'discord'
 export type EventLevel = 'info' | 'warning' | 'error'
 
 export interface PlatformEvent {
@@ -218,7 +277,7 @@ export type AlertType =
 export interface OpenProblem {
   id: string
   level: EventLevel
-  area: EventCategory
+  area: EventCategory | 'performance'
   title: string
   detail: string
   /** Unix seconds. */
@@ -233,6 +292,47 @@ export async function getAlertsOverview() {
     recent: PlatformEvent[]
     counts: Partial<Record<EventCategory, { warning: number; error: number }>>
   }>(`${P}/alerts/overview`)
+}
+
+export interface PerfRoute {
+  route: string
+  method: string
+  requests: number
+  /** Milliseconds, estimated from duration buckets. */
+  p50: number | null
+  p95: number | null
+  mean: number | null
+  dbMean: number | null
+  queriesMean: number | null
+  slow: number
+  status: Partial<Record<'1xx' | '2xx' | '3xx' | '4xx' | '5xx', number>>
+  totalMs: number
+}
+
+export interface PerfQuery {
+  id: string
+  /** Normalized: every value is "?". */
+  sql: string
+  where: string
+  count: number
+  meanMs: number | null
+  maxMs: number
+  totalMs: number
+}
+
+export interface PerfSummary {
+  hours: number
+  source: 'redis' | 'memory'
+  thresholds: { slow_request_ms: number; slow_query_ms: number; p95_warning_ms: number }
+  total: Omit<PerfRoute, 'route' | 'method'>
+  lastHour: Pick<PerfRoute, 'requests' | 'p50' | 'p95' | 'slow' | 'status'>
+  routes: PerfRoute[]
+  routeCount: number
+  queries: PerfQuery[]
+}
+
+export async function getPerformance(hours: number) {
+  return apiFetch<PerfSummary>(`${P}/alerts/performance?hours=${hours}`)
 }
 
 export async function getMyAlerts() {

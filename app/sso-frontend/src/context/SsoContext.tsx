@@ -9,7 +9,7 @@ import {
 } from 'react'
 import { Button, Center, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { hasTokens, setAuthFailureHandler } from '@hubra/api-client'
+import { hasTokens, redirectTo, setAuthFailureHandler } from '@hubra/api-client'
 import { useNavigate } from 'react-router-dom'
 import { getMyPermissions, getVerificationStatus, type PermissionsResponse } from '@/api/auth'
 import { signedInTarget, validateRedirect, type AppUrls } from '@/redirect'
@@ -84,7 +84,7 @@ export function SsoProvider({ children }: { children: ReactNode }) {
         // visitors to /login?redirect=… without reloading.
         const target = signedInTarget(currentRedirect())
         if (target) {
-          window.location.assign(target)
+          redirectTo(target, 'signed-in')
           return
         }
         // signedIn: the picker may open the only club straight away.

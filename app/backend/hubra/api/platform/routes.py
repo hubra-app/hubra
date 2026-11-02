@@ -189,6 +189,25 @@ def health_detailed():
     return jsonify(payload), 200
 
 
+@platform_bp.get("/discord/status")
+@require_global_permission(_DIAGNOSTICS)
+def discord_status():
+    """The Discord bot: settings, sign-in, platform log, club servers."""
+    from hubra.core.services import discord_status as svc
+
+    return jsonify(svc.status()), 200
+
+
+@platform_bp.post("/discord/check")
+@require_global_permission(_DIAGNOSTICS)
+@limiter.limit("30 per hour")
+def discord_check():
+    """Ask Discord again now instead of using the last check."""
+    from hubra.core.services import discord_status as svc
+
+    return jsonify(svc.status(refresh=True)), 200
+
+
 @platform_bp.get("/permissions")
 @require_global_permission(_DIAGNOSTICS)
 def list_permissions():
@@ -401,6 +420,20 @@ def alerts_overview():
             "counts": counts,
         }
     ), 200
+
+
+@platform_bp.get("/alerts/performance")
+@require_global_permission(_DIAGNOSTICS)
+def alerts_performance():
+    """API timing per route and slow queries, for manage › Platform › Alerts
+    › Performance.  ``hours``: 1 to 24 clock hours, the current one included."""
+    from hubra.core.services import perf_monitor
+
+    try:
+        hours = int(request.args.get("hours", 24))
+    except ValueError:
+        return api_error("VALIDATION_ERROR", "hours must be a number", 400)
+    return jsonify(perf_monitor.summary(hours)), 200
 
 
 @platform_bp.get("/alerts/me")

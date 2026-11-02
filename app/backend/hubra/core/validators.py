@@ -92,6 +92,9 @@ VALIDATORS: dict[str, Callable[[str], str | None]] = {
     "minutes": lambda v: (
         None if v.isdigit() and int(v) <= 1440 else "Whole minutes, 0 to 1440"
     ),
+    "milliseconds": lambda v: (
+        None if v.isdigit() and int(v) <= 600000 else "Whole milliseconds, 0 to 600000"
+    ),
     "retention_days": lambda v: (
         None if v.isdigit() and 1 <= int(v) <= 365 else "Whole days, 1 to 365"
     ),

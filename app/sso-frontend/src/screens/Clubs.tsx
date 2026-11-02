@@ -18,7 +18,7 @@ import { useDebouncedValue } from '@mantine/hooks'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { IconArrowRight, IconBuildingCommunity, IconPlus, IconSearch } from '@tabler/icons-react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { clubLogoUrl } from '@hubra/api-client'
+import { clubLogoUrl, redirectTo } from '@hubra/api-client'
 import { useSso } from '@/context/SsoContext'
 import { clubAppUrl } from '@/redirect'
 import * as authApi from '@/api/auth'
@@ -103,7 +103,7 @@ export function ClubsScreen() {
     if (!onlyClub || autoOpenFailed) return
     authApi
       .switchTenant(onlyClub.tenant_slug)
-      .then(() => window.location.assign(clubAppUrl(urls, onlyClub.tenant_slug)))
+      .then(() => redirectTo(clubAppUrl(urls, onlyClub.tenant_slug), 'only-club'))
       .catch((err: { code?: string }) => {
         if (err?.code === 'MFA_REQUIRED_BY_CLUB') {
           navigate('/account/zwei-faktor', { state: { club: onlyClub.tenant_slug } })
