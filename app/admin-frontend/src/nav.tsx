@@ -205,7 +205,7 @@ export function navSections(): NavSection[] {
             {
               id: 'rules',
               path: '/app/platform/alerts/rules',
-              label: tr('Regeln', 'Rules'),
+              label: tr('Benachrichtigungen', 'Notifications'),
               perm: 'platform.diagnostics',
               render: () => <RulesPanel />,
             },

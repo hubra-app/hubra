@@ -68,6 +68,11 @@ CATEGORIES: dict[str, str] = {
     "many failed sign-ins from one address, old encryption keys",
 }
 
+# Posted by the platform bot itself (daily digest, release notes, security
+# pings), not from audit entries, so these go to Discord only: the
+# notification matrix shows no mail switch for them.
+DISCORD_ONLY: frozenset[str] = frozenset({"digest", "releases", "security"})
+
 # Bot permissions the platform server needs: view channel, send messages,
 # embed links.
 BOT_PERMISSIONS = (1 << 10) | (1 << 11) | (1 << 14)
@@ -113,6 +118,21 @@ def _color(action: str) -> int:
     if any(w in a for w in ("provision", "approve", "active", "accepted", "install")):
         return COLOR_GOOD
     return COLOR_INFO
+
+
+MAIL_EVENTS_KEY = "notify.mail_events"
+
+
+def mail_categories() -> set[str]:
+    """Audit categories mailed to platform admins (never ``alerts``: alert
+    mails have their own switches)."""
+    from hubra.core.services import platform_settings
+
+    raw = platform_settings.get(MAIL_EVENTS_KEY)
+    return {c.strip() for c in raw.split(",") if c.strip() in CATEGORIES} - {
+        "alerts",
+        *DISCORD_ONLY,
+    }
 
 
 def enabled_categories() -> set[str]:
@@ -452,12 +472,16 @@ def _queue_audit_entry(mapper, connection, target) -> None:
     """Queue the post after the commit, but only when a channel is set.
 
     Reads the channel rows on the flush's own connection, so an instance
-    without a log or audit channel queues nothing.
+    without a log or audit channel and without event mails queues nothing.
     """
     try:
         channel = connection.execute(
             select(PlatformSetting.value)
-            .where(PlatformSetting.key.in_((CHANNEL_KEY, AUDIT_CHANNEL_KEY)))
+            .where(
+                PlatformSetting.key.in_(
+                    (CHANNEL_KEY, AUDIT_CHANNEL_KEY, MAIL_EVENTS_KEY)
+                )
+            )
             .where(PlatformSetting.value != "")
             .limit(1)
         ).scalar()

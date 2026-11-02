@@ -5,7 +5,6 @@ import {
   Anchor,
   Badge,
   Button,
-  Checkbox,
   Group,
   Paper,
   PasswordInput,
@@ -52,7 +51,7 @@ const DISCORD = [
   'discord.bot_token',
 ]
 
-const DISCORD_LOG = ['discord.log_channel_id', 'discord.audit_channel_id', 'discord.log_events']
+const DISCORD_LOG = ['discord.log_channel_id', 'discord.audit_channel_id']
 const DISCORD_ROLES = ['discord.platform_roles']
 // Defaults built into Hubra, not read from the environment.
 const PERF = ['perf.slow_request_ms', 'perf.slow_query_ms', 'perf.p95_warning_ms']
@@ -65,64 +64,6 @@ const LIMITS = [
 const BUILT_IN = ['alerts.cooldown_minutes', 'alerts.retention_days', ...PERF, ...LIMITS]
 const ALERTS = ['alerts.cooldown_minutes', 'alerts.retention_days', 'alerts.manage_url']
 
-// Categories of platform events the bot posts (services/platform_discord.py).
-const LOG_CATEGORIES: [string, string, string][] = [
-  [
-    'clubs',
-    'Vereine erstellt, geändert, gesperrt, gelöscht; Module; Domains',
-    'Clubs created, changed, suspended, deleted; modules; domains',
-  ],
-  [
-    'requests',
-    'Vereinsanfragen eingereicht, angenommen, abgelehnt (mit Knöpfen Annehmen / Ablehnen)',
-    'Club requests submitted, approved, rejected (with Approve / Reject buttons)',
-  ],
-  [
-    'access',
-    'Plattformrollen, Vereinsinhaber/-admins, Impersonation',
-    'Platform roles, club owners/admins, impersonation',
-  ],
-  [
-    'members',
-    'Mitglieder kommen zu einem Verein (viele Meldungen)',
-    'Members joining a club (many posts)',
-  ],
-  [
-    'plugins',
-    'Plugins installiert, aktualisiert, entfernt; Quellen',
-    'Plugins installed, updated, removed; repositories',
-  ],
-  [
-    'backups',
-    'Backups erstellt, geprüft, wiederhergestellt, gelöscht',
-    'Backups created, verified, restored, deleted',
-  ],
-  [
-    'platform',
-    'Plattform-Einstellungen, Schlüssel, Mailserver, Übersetzungen',
-    'Platform settings, keys, mail server, translations',
-  ],
-  [
-    'alerts',
-    'Systemwarnungen: fehlgeschlagene Tasks, Fehlerrate, Infrastruktur',
-    'System alerts: failed tasks, error rate, infrastructure',
-  ],
-  [
-    'digest',
-    'Tagesübersicht um 08:00: neue Vereine, Konten, Mails, offene Probleme',
-    'Daily overview at 08:00: new clubs, sign-ups, mail, open problems',
-  ],
-  [
-    'releases',
-    'Neue Hubra-Version läuft, mit den Neuerungen',
-    'A new Hubra version is running, with its release notes',
-  ],
-  [
-    'security',
-    'Sicherheit: Admins auf neuem Gerät oder ohne Zwei-Faktor, viele Fehlanmeldungen, alte Schlüssel',
-    'Security: admins on new devices or without two-factor, many failed sign-ins, old keys',
-  ],
-]
 
 // View Channel + Send Messages + Embed Links
 const LOG_BOT_PERMISSIONS = (1 << 10) | (1 << 11) | (1 << 14)
@@ -351,10 +292,6 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
     }
   }
 
-  const logEvents = (draft['discord.log_events'] ?? byKey['discord.log_events']?.value ?? '')
-    .split(',')
-    .map((c) => c.trim())
-    .filter(Boolean)
   const clientId = byKey['discord.client_id']?.value ?? ''
   const logChanged = changed.some((s) => DISCORD_LOG.includes(s.key))
   const logChannel =
@@ -620,8 +557,8 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
                     {
                       label: tr('Kanal für das Plattform-Log', 'Channel for the platform log'),
                       description: tr(
-                        'Systemwarnungen, und alles Angehakte, solange es keinen Audit-Kanal gibt.',
-                        'System alerts, and everything ticked while there is no audit channel.',
+                        'Systemwarnungen, und die Plattform-Ereignisse, solange es keinen Audit-Kanal gibt.',
+                        'System alerts, and the platform events while there is no audit channel.',
                       ),
                       channelId: logChannel,
                       onChange: (id) => setDraft((d) => ({ ...d, 'discord.log_channel_id': id })),
@@ -639,31 +576,18 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
                     },
                   ]}
                 />
-                <Checkbox.Group
-                  label={
-                    <Group gap={6} component="span">
-                      {tr('Was gemeldet wird', 'What is posted')}
-                      {byKey['discord.log_events'] && (
-                        <SourceBadge s={byKey['discord.log_events']} />
-                      )}
-                    </Group>
-                  }
-                  value={logEvents}
-                  onChange={(v) =>
-                    setDraft((d) => ({
-                      ...d,
-                      'discord.log_events': LOG_CATEGORIES.map(([c]) => c)
-                        .filter((c) => v.includes(c))
-                        .join(','),
-                    }))
-                  }
-                >
-                  <Stack gap={6} mt={6}>
-                    {LOG_CATEGORIES.map(([id, de, en]) => (
-                      <Checkbox key={id} value={id} label={tr(de, en)} />
-                    ))}
-                  </Stack>
-                </Checkbox.Group>
+                <Text size="sm">
+                  {tr('Was wohin gemeldet wird, steht in der ', 'What is posted where is set in the ')}
+                  <Anchor
+                    component="button"
+                    type="button"
+                    size="sm"
+                    onClick={() => navigate('/app/platform/alerts/rules')}
+                  >
+                    {tr('Benachrichtigungs-Matrix unter Warnungen', 'notification matrix under Alerts')}
+                  </Anchor>
+                  .
+                </Text>
                 {!manageUrl && (
                   <Text size="xs" c="orange">
                     {tr(

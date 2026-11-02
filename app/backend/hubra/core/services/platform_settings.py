@@ -284,6 +284,15 @@ SPECS: tuple[Spec, ...] = (
         "on_off",
     ),
     Spec(
+        "notify.mail_events",
+        "Platform events by mail",
+        "Comma-separated platform event categories mailed to platform admins "
+        "(clubs, requests, access, members, plugins, backups, platform). "
+        "Empty: none",
+        lambda cfg: "",
+        "discord_log_events",
+    ),
+    Spec(
         "alerts.mail_off",
         "Alert types not mailed",
         "Comma-separated alert types nobody gets by mail",

@@ -28,7 +28,7 @@
   (t('mail.email.platform_alert.instance'), instance, True),
 ]) }}
 {% if alerts_url %}
-{{ ui.button(alerts_url, t('mail.email.platform_alert.button')) }}
+{{ ui.button(alerts_url, t(button_key or 'mail.email.platform_alert.button')) }}
 {% endif %}
 {% call ui.muted() %}{{ t('mail.email.platform_alert.why') }}{% endcall %}
 {% endblock %}
