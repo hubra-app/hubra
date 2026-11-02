@@ -724,6 +724,34 @@ def cancel_maintenance_window(window_id: int):
     ), 200
 
 
+@platform_bp.get("/features")
+@require_global_permission(_PERM)
+def list_features():
+    """Early-access flags: stage, how many clubs have each, the group."""
+    from hubra.core.services import feature_flags
+
+    return jsonify(feature_flags.overview()), 200
+
+
+@platform_bp.put("/features/<key>")
+@require_global_permission(_PERM)
+def set_feature_stage(key: str):
+    """``{"stage": "off" | "early" | "all"}``."""
+    from hubra.core.services import feature_flags
+
+    body = request.get_json(silent=True) or {}
+    before = feature_flags.stages().get(key)
+    feature_flags.set_stage(key, body.get("stage"), actor_id=g.system_user.id)
+    _audit(
+        "platform.feature.stage",
+        "feature",
+        key,
+        {"before": before, "after": body.get("stage")},
+    )
+    db.session.commit()
+    return jsonify(feature_flags.overview()), 200
+
+
 @platform_bp.get("/errors")
 @require_global_permission(_DIAGNOSTICS)
 def list_errors():
