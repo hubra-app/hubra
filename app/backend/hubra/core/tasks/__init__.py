@@ -312,3 +312,6 @@ def _fresh_db_connections(**_kwargs) -> None:
 signals.worker_process_init.connect(_fresh_db_connections, weak=False)
 signals.worker_ready.connect(_watch_plugins, weak=False)
 signals.beat_init.connect(_watch_plugins, weak=False)
+
+# The background job dashboard (manage › Diagnose › Hintergrundjobs).
+from hubra.core.tasks import job_signals  # noqa: E402,F401

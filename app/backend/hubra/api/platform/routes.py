@@ -460,6 +460,97 @@ def alerts_performance():
     return jsonify(perf_monitor.summary(hours)), 200
 
 
+# ── Background jobs ─────────────────────────────────────────────────────────
+
+
+@platform_bp.get("/jobs")
+@require_global_permission(_DIAGNOSTICS)
+def jobs_overview():
+    """Background jobs for manage › Diagnose › Hintergrundjobs: queued and
+    running jobs, per-task counts for ``hours`` (1 to 48) and the failed
+    jobs that can be run again."""
+    from sqlalchemy import select
+
+    from hubra.core.models.tenant import Tenant
+    from hubra.core.services import job_monitor
+
+    try:
+        hours = int(request.args.get("hours", 24))
+    except ValueError:
+        return api_error("VALIDATION_ERROR", "hours must be a number", 400)
+    failed = job_monitor.failures()
+    running = job_monitor.running()
+    ids = {f["tenant_id"] for f in failed + running if f.get("tenant_id")}
+    names = (
+        dict(
+            db.session.execute(
+                select(Tenant.id, Tenant.name).where(Tenant.id.in_(ids))
+            ).all()
+        )
+        if ids
+        else {}
+    )
+    for r in running:
+        r["club"] = names.get(r.get("tenant_id"))
+    return jsonify(
+        {
+            **job_monitor.summary(hours),
+            **job_monitor.queue_depth(),
+            "running": running,
+            "failed": [job_monitor.failure_to_json(f, names) for f in failed],
+            "failed_keep_days": job_monitor.FAILED_KEEP_SECONDS // 86400,
+        }
+    ), 200
+
+
+@platform_bp.post("/jobs/failed/<failure_id>/retry")
+@require_global_permission(_PERM)
+def retry_job(failure_id: str):
+    """Run a failed job again with the same arguments (and club)."""
+    from hubra.core.services import job_monitor
+
+    user = g.system_user
+    try:
+        entry = job_monitor.retry(failure_id, by=user.email)
+    except job_monitor.RetryError as exc:
+        reason = str(exc)
+        if reason == "not_found":
+            return api_error("NOT_FOUND", "No such failed job", 404)
+        return api_error(
+            "NOT_RETRYABLE",
+            "This job cannot be run again"
+            + (
+                " (its arguments were too large to keep)"
+                if reason == "not_replayable"
+                else ""
+            ),
+            409,
+        )
+    _audit(
+        "platform.job.retry",
+        "job",
+        entry["task"],
+        {
+            "failure": failure_id,
+            "task_id": entry["retry_task_id"],
+            "tenant_id": entry["tenant_id"],
+        },
+    )
+    db.session.commit()
+    return jsonify({"job": job_monitor.failure_to_json(entry)}), 200
+
+
+@platform_bp.delete("/jobs/failed/<failure_id>")
+@require_global_permission(_PERM)
+def dismiss_job(failure_id: str):
+    """Remove a failed job from the list (it is not run again)."""
+    from hubra.core.services import job_monitor
+
+    if not job_monitor.remove_failure(failure_id):
+        return api_error("NOT_FOUND", "No such failed job", 404)
+    return jsonify({"removed": failure_id}), 200
+
+
 @platform_bp.get("/alerts/me")
 @require_global_permission(_DIAGNOSTICS)
 def my_alerts():
