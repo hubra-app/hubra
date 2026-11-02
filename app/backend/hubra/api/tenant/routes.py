@@ -2313,6 +2313,13 @@ def list_global_audit():
             raise_error(400, "VALIDATION_ERROR", "tenant_id must be a number")
         query = query.where(GlobalAuditEntry.tenant_id == int(tenant_id))
 
+    # One entry, e.g. from a link in the Discord audit channel.
+    entry_id = request.args.get("id")
+    if entry_id:
+        if not entry_id.isdigit():
+            raise_error(400, "VALIDATION_ERROR", "id must be a number")
+        query = query.where(GlobalAuditEntry.id == int(entry_id))
+
     action = request.args.get("action")
     if action:
         from hubra.api.utils import escape_like

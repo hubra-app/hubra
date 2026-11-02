@@ -38,8 +38,11 @@ export async function sendPlatformTestMail(to: string, via: 'relay' | 'fallback'
   })
 }
 
-export async function sendPlatformTestDiscord() {
-  return apiFetch<{ ok: boolean }>(`${P}/discord/test`, { method: 'POST' })
+export async function sendPlatformTestDiscord(channel: 'log' | 'audit' = 'log') {
+  return apiFetch<{ ok: boolean }>(`${P}/discord/test`, {
+    method: 'POST',
+    body: JSON.stringify({ channel }),
+  })
 }
 
 // ── Diagnostics (platform.diagnostics; changes need platform.settings) ──────

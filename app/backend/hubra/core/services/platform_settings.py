@@ -37,7 +37,8 @@ Discord (``discord.*``): the one Hubra application every club's server and
 every linked account goes through (see docs/discord.md). Set here only, with
 no env fallback.  ``discord.log_*`` is the platform log: the bot posts
 platform events to a channel on the platform's own server
-(``services.platform_discord``).
+(``services.platform_discord``); ``discord.audit_channel_id`` is an optional
+second channel with every audit entry.
 """
 
 from __future__ import annotations
@@ -228,6 +229,14 @@ SPECS: tuple[Spec, ...] = (
         "Platform log channel",
         "Channel ID on the platform's Discord server where the bot posts "
         "platform events. Empty: no posts",
+        lambda cfg: "",
+        "number",
+    ),
+    Spec(
+        "discord.audit_channel_id",
+        "Audit channel",
+        "Channel ID where the bot posts every platform audit entry, with links "
+        "to manage. Alerts stay in the platform log. Empty: off",
         lambda cfg: "",
         "number",
     ),

@@ -142,20 +142,33 @@ def send_test_mail():
 @require_global_permission(_PERM)
 @limiter.limit("10 per hour")
 def send_test_discord():
-    """Post a test message to the platform log channel with the bot."""
+    """Post a test message with the bot to the platform log channel, or with
+    ``{"channel": "audit"}`` to the audit channel."""
     from hubra.core.services import platform_discord
 
     actor = getattr(g, "system_user", None)
+    body = request.get_json(silent=True) or {}
+    to_audit = body.get("channel") == "audit"
+    kwargs = {}
+    if to_audit:
+        channel_id = platform_discord.audit_channel()
+        if not channel_id:
+            return api_error("DISCORD_ERROR", "Set the audit channel first", 400)
+        kwargs = {
+            "channel_id": channel_id,
+            "token": platform_settings.discord().bot_token,
+        }
     try:
         platform_discord.post(
             {
-                "title": "Hubra platform log",
+                "title": "Hubra audit channel" if to_audit else "Hubra platform log",
                 "description": "Test message: the bot can post here.",
                 "color": platform_discord.COLOR_INFO,
                 "footer": {
                     "text": f"Sent by {getattr(actor, 'email', 'a platform admin')}"
                 },
-            }
+            },
+            **kwargs,
         )
     except platform_discord.DiscordPostError as exc:
         return api_error("DISCORD_ERROR", error_message(exc), 502)

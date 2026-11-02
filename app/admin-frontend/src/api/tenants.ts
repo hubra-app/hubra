@@ -133,9 +133,10 @@ export interface GlobalAuditEntry {
 }
 
 export async function listGlobalAudit(
-  params: { page?: number; per_page?: number } = {},
+  params: { page?: number; per_page?: number; id?: number } = {},
 ): Promise<{ entries: GlobalAuditEntry[]; total: number }> {
   const qs = new URLSearchParams()
+  if (params.id) qs.set('id', String(params.id))
   if (params.page) qs.set('page', String(params.page))
   if (params.per_page) qs.set('per_page', String(params.per_page))
   const s = qs.toString()
