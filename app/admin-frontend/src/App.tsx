@@ -14,6 +14,7 @@ import { Backups } from '@/screens/platform/Backups'
 import { Diagnostics } from '@/screens/platform/Diagnostics'
 import { Alerts } from '@/screens/platform/Alerts'
 import { ClubAdmins } from '@/screens/ClubAdmins'
+import { SupportCases } from '@/screens/platform/Support'
 import { SSO_URL, redirectTo } from '@hubra/api-client'
 import { useLang } from '@/lang'
 
@@ -279,6 +280,19 @@ function AppRoutes() {
               <RequireGlobalPermission perm="platform.diagnostics">
                 <Shell>
                   <Alerts />
+                </Shell>
+              </RequireGlobalPermission>
+            }
+          />
+        ))}
+        {['/app/support', '/app/support/:id'].map((path) => (
+          <Route
+            key={path}
+            path={path}
+            element={
+              <RequireGlobalPermission perm="support.cases">
+                <Shell>
+                  <SupportCases />
                 </Shell>
               </RequireGlobalPermission>
             }

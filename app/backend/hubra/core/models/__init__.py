@@ -55,6 +55,11 @@ from hubra.core.models.setting import Setting
 from hubra.core.models.feature import Feature, TenantFeature
 from hubra.core.models.translation import Translation
 from hubra.core.models.translation_request import TranslationRequest
+from hubra.core.models.support_case import (
+    SupportCase,
+    SupportCaseComment,
+    SupportCaseVote,
+)
 from hubra.core.models.notification import Notification
 from hubra.core.models.audit import AuditEntry
 from hubra.core.models.token import TokenBlocklist
@@ -153,6 +158,9 @@ __all__ = [
     "TenantFeature",
     "Translation",
     "TranslationRequest",
+    "SupportCase",
+    "SupportCaseComment",
+    "SupportCaseVote",
     "Notification",
     "AuditEntry",
     "TokenBlocklist",

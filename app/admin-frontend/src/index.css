@@ -25,3 +25,17 @@
   background: var(--hb-surface-2) !important;
   color: var(--hb-text) !important;
 }
+
+/* manage › Support: a case and its side column; one column on phones. */
+.support-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
+  gap: 16px;
+  align-items: start;
+  margin-top: 16px;
+}
+@media (max-width: 62em) {
+  .support-detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

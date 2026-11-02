@@ -44,7 +44,7 @@ EVENTS_KEY = "discord.log_events"
 # every member who joins a club would be a post.
 CATEGORIES: dict[str, str] = {
     "clubs": "Clubs created, changed, suspended or deleted; modules; domains",
-    "requests": "Club requests submitted or rejected",
+    "requests": "Club requests submitted or rejected; support cases changed or merged",
     "access": "Platform roles, club owners/admins added or removed, impersonation",
     "members": "Members added to a club or accepting an invite",
     "plugins": "Plugins installed, updated, removed; plugin repositories",
@@ -68,7 +68,7 @@ _SECRET_WORDS = ("password", "secret", "token", "key", "otp", "code")
 def category(action: str) -> str:
     """The category an audit action belongs to."""
     a = action or ""
-    if a.startswith("tenant_request."):
+    if a.startswith(("tenant_request.", "support_case.")):
         return "requests"
     if a.startswith(("impersonation.", "global_role.")) or (
         a.startswith(("tenant.add_", "tenant.remove_")) and a != "tenant.add_member"

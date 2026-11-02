@@ -273,6 +273,7 @@ export type AlertType =
   | 'backup_failed'
   | 'plugin_updates'
   | 'system'
+  | 'support_cases'
 
 export interface OpenProblem {
   id: string

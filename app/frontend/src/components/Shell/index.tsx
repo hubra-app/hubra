@@ -12,6 +12,7 @@ import { ClubBanner } from './ClubBanner'
 import { ClubBranding } from './ClubBranding'
 import { MoreTabs } from './MoreScreen'
 import { CustomizeSidebarModal } from './CustomizeSidebar'
+import { ReportDialog } from '@/screens/private/support/ReportDialog'
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const { currentUser } = useAuth()
@@ -68,6 +69,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <ClubBranding />
       <NotificationPanel />
       <CustomizeSidebarModal />
+      <ReportDialog />
       {currentUser?.mustChangePassword && <ForcedPasswordChangeModal />}
     </AppShell>
   )

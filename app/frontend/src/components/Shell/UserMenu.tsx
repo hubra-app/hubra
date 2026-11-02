@@ -11,6 +11,8 @@ import {
 import {
   IconLogout,
   IconBuilding,
+  IconBug,
+  IconBulb,
 } from '@tabler/icons-react'
 import { ThemeSwitch } from '@hubra/ui'
 import { useT } from '@/locales/i18n'
@@ -20,6 +22,7 @@ import { useMyTenants } from '@/data/lists'
 import { initials, contrastColor } from './nav'
 import { setWhatsNewOpen } from './whatsNewStore'
 import { setCustomizeSidebarOpen } from './customizeSidebarStore'
+import { openReport } from '@/screens/private/support/reportStore'
 
 /**
  * The account menu, a pop-over above the user card (sidebar and phone menu)
@@ -173,6 +176,47 @@ export function UserMenu({ onClose }: { onClose?: () => void } = {}) {
             }}
           >
             {t('shell.whatsNew.title')}
+          </UnstyledButton>
+        </Stack>
+        <Divider my={6} />
+        <Stack gap={0}>
+          <UnstyledButton
+            data-testid="menu-report-bug"
+            onClick={() => {
+              openReport('bug')
+              close()
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              height: 36,
+              padding: '0 10px',
+              fontSize: 'var(--mantine-font-size-sm)',
+              borderRadius: 8,
+            }}
+          >
+            <IconBug size={16} />
+            {t('support.menu.bug', 'Problem melden')}
+          </UnstyledButton>
+          <UnstyledButton
+            data-testid="menu-report-feature"
+            onClick={() => {
+              openReport('feature')
+              close()
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              height: 36,
+              padding: '0 10px',
+              fontSize: 'var(--mantine-font-size-sm)',
+              borderRadius: 8,
+            }}
+          >
+            <IconBulb size={16} />
+            {t('support.menu.feature', 'Idee vorschlagen')}
           </UnstyledButton>
         </Stack>
         <Group justify="space-between" px={10} py={6} wrap="nowrap">
