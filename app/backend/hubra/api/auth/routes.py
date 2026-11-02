@@ -35,8 +35,8 @@ from hubra.api.auth.services import (
     _enforce_password_strength,
     _extract_browser_family,
     _extract_platform,
-    _EMAIL_RE,
 )
+from hubra.core.services.email_verification import looks_like_email
 from hubra.api.auth import account_token, known_devices, mfa, passkeys, session_service
 from hubra.core.models.passkey import Passkey
 from hubra.api.permissions import (
@@ -95,6 +95,8 @@ def _set_remembered_email_cookie(response, email: str) -> None:
     (b) be HttpOnly=False so JS can read it. SameSite=Lax is safe (same-site
     subdomain navigation) and Secure mirrors the JWT cookies (HTTPS upstream).
     """
+    if not looks_like_email(email):
+        return
     response.set_cookie(
         "remembered_email",
         value=email,
@@ -115,7 +117,7 @@ def _set_theme_cookie(response, theme: str | None) -> None:
     """
     response.set_cookie(
         "hubra_theme",
-        value=theme or "auto",
+        value=theme if theme in ("light", "dark") else "auto",
         max_age=365 * 24 * 3600,
         httponly=False,
         samesite="Lax",
@@ -644,7 +646,7 @@ def signup():
 
     _enforce_password_strength(password)
 
-    if not _EMAIL_RE.match(email):
+    if not looks_like_email(email):
         raise_error(400, "VALIDATION_ERROR", "Invalid email address")
 
     existing = db.session.scalar(select(User).where(User.email == email))

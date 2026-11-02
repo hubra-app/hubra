@@ -209,12 +209,12 @@ def verify(
         doc = json.loads(sigfile.read_text())
         kid = str(doc["key_id"])
         files = file_hashes(root)
-    except (ValueError, KeyError, TypeError) as exc:
+    except (ValueError, KeyError, TypeError):
         return {
             "status": "invalid",
             "signer": "",
             "key_id": "",
-            "detail": f"unreadable signature: {exc}",
+            "detail": "unreadable signature",
         }
     keys = {k: ("official", n, pub) for k, (n, pub) in official_keys("plugins").items()}
     keys.update(

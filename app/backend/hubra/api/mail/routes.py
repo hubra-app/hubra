@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import re as _re
 
 from flask import Blueprint, current_app, jsonify, request
@@ -23,8 +24,10 @@ from hubra.core.errors import api_error, raise_error
 from hubra.core.models.group import Group
 from hubra.core.models.managed_mail import ManagedMailAddress
 from hubra.core.services import managed_mail as mma_service
+from hubra.core.services.email_verification import looks_like_email
 
 mail_bp = Blueprint("mail_bp", __name__)
+logger = logging.getLogger(__name__)
 
 _OBJECTID_RE = _re.compile(r"^[0-9a-fA-F]{24}$")
 
@@ -1796,9 +1799,10 @@ def update_system_forwarding(address_id: int):
 
     try:
         ensure_forwarding(addr, targets)
-    except Exception as exc:
+    except Exception:
         db.session.rollback()
-        return api_error("VALIDATION_ERROR", f"Failed to update forwarding: {exc}", 500)
+        logger.exception("update forwarding failed for %s", addr.address)
+        return api_error("MAIL_ERROR", "Failed to update forwarding", 500)
 
     db.session.commit()
 
@@ -1861,12 +1865,9 @@ def reset_system_address_password(address_id: int):
 
     try:
         set_system_mailbox_password(addr, user_password)
-    except Exception as exc:
-        return api_error(
-            "VALIDATION_ERROR",
-            f"Failed to set password: {exc}",
-            500,
-        )
+    except Exception:
+        logger.exception("set mailbox password failed for %s", addr.address)
+        return api_error("MAIL_ERROR", "Failed to set the password", 500)
 
     db.session.commit()
 
@@ -1954,7 +1955,6 @@ def update_from_whitelist(address_id: int):
     if not isinstance(raw, list):
         return api_error("VALIDATION_ERROR", "'whitelist' must be a list", 400)
 
-    email_re = _re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
     cleaned: list[str] = []
     for entry in raw:
         entry = str(entry).strip() if entry else ""
@@ -1964,7 +1964,7 @@ def update_from_whitelist(address_id: int):
             return api_error(
                 "VALIDATION_ERROR", f"Wildcards are not allowed: {entry}", 400
             )
-        if not email_re.match(entry):
+        if not looks_like_email(entry):
             return api_error("VALIDATION_ERROR", f"Invalid email address: {entry}", 400)
         if not mma_service.owns_mail_address(entry):
             return api_error(
@@ -2022,7 +2022,7 @@ def send_test_email():
         return api_error(
             "VALIDATION_ERROR", "Fields 'to' and 'subject' are required", 400
         )
-    if not _re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", to_addr):
+    if not looks_like_email(to_addr):
         return api_error("VALIDATION_ERROR", "Invalid 'to' email address", 400)
 
     result = MailService.send_test(to_addr=to_addr, subject=subject[:200])
