@@ -414,3 +414,28 @@ export async function listTenantsHealth(params: TenantHealthParams = {}): Promis
   const s = qs.toString()
   return apiFetch(`/system/tenants/health${s ? `?${s}` : ''}`)
 }
+
+// ── Usage over time (manage › club › Nutzung) ───────────────────────────────
+
+export type TrendRange = '12w' | '26w' | '12m'
+export type TrendMetric =
+  | 'logins'
+  | 'active_members'
+  | 'members'
+  | 'new_members'
+  | 'events'
+  | 'invoices'
+  | 'invoice_total'
+  | 'mails'
+
+export interface TenantTrends {
+  range: TrendRange
+  unit: 'week' | 'month'
+  /** Start day of each bucket, oldest first; the last one is still running. */
+  buckets: string[]
+  series: Record<TrendMetric, number[]>
+}
+
+export async function getTenantTrends(tenantId: number, range: TrendRange) {
+  return apiFetch<TenantTrends>(`/system/tenants/${tenantId}/trends?range=${range}`)
+}

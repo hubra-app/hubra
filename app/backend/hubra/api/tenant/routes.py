@@ -306,6 +306,22 @@ def update_tenant(tenant_id: int):
     return jsonify({"tenant": _tenant_to_dict(tenant)})
 
 
+@tenant_admin_bp.route("/tenants/<int:tenant_id>/trends", methods=["GET"])
+@require_global_permission("tenants.read")
+def get_tenant_trends(tenant_id: int):
+    """Logins, active members, members, events, invoices and mails per week
+    or month (``range``: 12w, 26w or 12m)."""
+    from hubra.core.services import usage_trends
+
+    tenant = TenantService.get_by_id(tenant_id)
+    if tenant is None:
+        raise_error(404, "NOT_FOUND", "Tenant not found")
+    range_key = request.args.get("range", "12w")
+    if range_key not in usage_trends.RANGES:
+        raise_error(400, "VALIDATION_ERROR", "range is 12w, 26w or 12m")
+    return jsonify(usage_trends.for_tenant(tenant, range_key))
+
+
 @tenant_admin_bp.route("/tenants/<int:tenant_id>", methods=["DELETE"])
 @require_global_permission("tenants.delete")
 def delete_tenant(tenant_id: int):
