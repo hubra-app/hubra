@@ -238,3 +238,41 @@ body {
     color: var(--mantine-color-acc-light-color);
   }
 }
+
+/* Build commit in the lower right corner (BuildBadge): there to look up,
+   not to be noticed. Under notifications and dialogs, gone on phones. */
+.hubra-build {
+  position: fixed;
+  right: 6px;
+  bottom: 4px;
+  z-index: 50;
+  padding: 1px 4px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10px;
+  line-height: 14px;
+  color: var(--mantine-color-dimmed);
+  opacity: 0.55;
+  text-decoration: none;
+  border-radius: 4px;
+  /* Readable on coloured panels too (the sign-in page's purple side). */
+  background: color-mix(in srgb, var(--mantine-color-body) 70%, transparent);
+  transition: opacity 120ms ease;
+}
+
+.hubra-build:hover,
+.hubra-build:focus-visible {
+  opacity: 1;
+  background: var(--mantine-color-body);
+}
+
+@media (max-width: 48em) {
+  .hubra-build {
+    display: none;
+  }
+}
+
+@media print {
+  .hubra-build {
+    display: none;
+  }
+}
