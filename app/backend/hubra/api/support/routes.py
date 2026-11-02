@@ -16,7 +16,7 @@ from hubra.api.auth.helpers import get_current_user_id
 from hubra.api.permissions import require_global_permission
 from hubra.api.support import services
 from hubra.api.support.services import SupportError
-from hubra.core.errors import api_error
+from hubra.core.errors import api_error, error_message
 from hubra.core.extensions import db, limiter
 from hubra.core.models.support_case import SupportCase
 from hubra.core.models.tenant import GlobalAuditEntry
@@ -66,7 +66,7 @@ def create_case():
         case = services.submit(user.id, _club_id(), body)
     except SupportError as exc:
         db.session.rollback()
-        return api_error("VALIDATION_ERROR", str(exc), 400)
+        return api_error("VALIDATION_ERROR", error_message(exc), 400)
     db.session.commit()
     services.alert_staff(case)
     return jsonify(
@@ -111,7 +111,7 @@ def comment_my_case(case_id: int):
         comment = services.add_comment(case, user.id, body.get("body"), staff=False)
     except SupportError as exc:
         db.session.rollback()
-        return api_error("VALIDATION_ERROR", str(exc), 400)
+        return api_error("VALIDATION_ERROR", error_message(exc), 400)
     db.session.commit()
     return jsonify(services.comment_dict(comment, user, staff_view=False)), 201
 
@@ -242,7 +242,7 @@ def staff_update(case_id: int):
             changed.append("status")
     except SupportError as exc:
         db.session.rollback()
-        return api_error("VALIDATION_ERROR", str(exc), 400)
+        return api_error("VALIDATION_ERROR", error_message(exc), 400)
     if not changed:
         return jsonify(services.staff_detail(case)), 200
     details: dict = {"changed": changed}
@@ -276,7 +276,7 @@ def staff_comment(case_id: int):
         )
     except SupportError as exc:
         db.session.rollback()
-        return api_error("VALIDATION_ERROR", str(exc), 400)
+        return api_error("VALIDATION_ERROR", error_message(exc), 400)
     db.session.commit()
     if not internal and case.user_id:
         reporter = db.session.get(User, case.user_id)
@@ -305,7 +305,7 @@ def staff_merge(case_id: int):
         services.merge(case, target, _actor_id())
     except SupportError as exc:
         db.session.rollback()
-        return api_error("VALIDATION_ERROR", str(exc), 400)
+        return api_error("VALIDATION_ERROR", error_message(exc), 400)
     _audit("support_case.merge", case, {"into": target.id, "into_title": target.title})
     db.session.commit()
     if case.user_id:
