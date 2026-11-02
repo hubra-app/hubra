@@ -309,7 +309,7 @@ function AppRoutes() {
             }
           />
         ))}
-        {['/app/support', '/app/support/:id'].map((path) => (
+        {['/app/reports', '/app/reports/:id'].map((path) => (
           <Route
             key={path}
             path={path}

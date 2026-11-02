@@ -151,7 +151,7 @@ function CaseList() {
   return (
     <div>
       <PageHead
-        title={tr('Support', 'Support')}
+        title={tr('Meldungen & Ideen', 'Reports & ideas')}
         desc={tr(
           'Problemmeldungen und Ideen aus der App. Antworten gehen per Mail an die meldende Person; interne Notizen sieht nur das Team.',
           'Problem reports and ideas from the app. Answers are mailed to the reporter; internal notes stay with the team.',
@@ -209,7 +209,7 @@ function CaseList() {
           {items.map((c) => (
             <UnstyledButton
               key={c.id}
-              onClick={() => navigate(`/app/support/${c.id}`)}
+              onClick={() => navigate(`/app/reports/${c.id}`)}
               style={{ display: 'block', width: '100%' }}
             >
               <Paper withBorder radius="lg" p="md" className="manage-nav-row">
@@ -373,7 +373,7 @@ function CaseDetail({ id }: { id: number }) {
       <Button
         variant="subtle"
         leftSection={<IconArrowLeft size={16} />}
-        onClick={() => navigate('/app/support')}
+        onClick={() => navigate('/app/reports')}
         mb={8}
         px={6}
       >
@@ -411,7 +411,7 @@ function CaseDetail({ id }: { id: number }) {
         <Paper withBorder radius="md" p="sm" my={12} bg="var(--mantine-color-gray-light)">
           <Text size="sm">
             {tr('Zusammengeführt mit', 'Merged into')}{' '}
-            <Anchor onClick={() => navigate(`/app/support/${c.mergedInto!.id}`)}>
+            <Anchor onClick={() => navigate(`/app/reports/${c.mergedInto!.id}`)}>
               #{c.mergedInto.id} {c.mergedInto.title}
             </Anchor>
           </Text>
@@ -539,7 +539,7 @@ function CaseDetail({ id }: { id: number }) {
             <Section title={tr('Zusammengeführt', 'Merged here')}>
               <Stack gap={4}>
                 {c.merged!.map((m) => (
-                  <Anchor key={m.id} size="sm" onClick={() => navigate(`/app/support/${m.id}`)}>
+                  <Anchor key={m.id} size="sm" onClick={() => navigate(`/app/reports/${m.id}`)}>
                     #{m.id} {m.title}
                   </Anchor>
                 ))}
@@ -566,7 +566,7 @@ function CaseDetail({ id }: { id: number }) {
           onMerged={async (target) => {
             setMerging(false)
             await refresh(target)
-            navigate(`/app/support/${target.id}`)
+            navigate(`/app/reports/${target.id}`)
           }}
         />
       )}

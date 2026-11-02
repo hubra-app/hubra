@@ -26,7 +26,7 @@ test('report a problem, answer it in manage, see the answer', async ({ page }) =
   await expect(dialog).toHaveCount(0)
 
   // Staff answer and change the status.
-  await page.goto(`${MANAGE_URL}/app/support`)
+  await page.goto(`${MANAGE_URL}/app/reports`)
   await page.getByText(title).click()
   await expect(page.getByText('Beim Speichern kommt ein Fehler.')).toBeVisible()
   await expect(page.getByText('Browser', { exact: true })).toBeVisible()
@@ -54,7 +54,7 @@ test('an idea on the roadmap gets votes, also on the public page', async ({ page
   await dialog.getByRole('button', { name: 'Senden' }).click()
   await expect(dialog).toHaveCount(0)
 
-  await page.goto(`${MANAGE_URL}/app/support`)
+  await page.goto(`${MANAGE_URL}/app/reports`)
   await page.getByRole('tab', { name: /Ideen/ }).click()
   await page.getByText(title).click()
   await page.locator('.mantine-Switch-track').click()

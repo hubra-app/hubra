@@ -322,7 +322,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       ? [{ path: '/app/requests', label: tr('Vereinsanfragen', 'Club requests'), icon: <IconClipboardList size={24} /> }]
       : []),
     ...(hasGlobalPermission('support.cases')
-      ? [{ path: '/app/support', label: tr('Support', 'Support'), icon: <IconLifebuoy size={24} /> }]
+      ? [{ path: '/app/reports', label: tr('Meldungen & Ideen', 'Reports & ideas'), icon: <IconLifebuoy size={24} /> }]
       : []),
     ...(hasGlobalPermission('platform.settings')
       ? [{ path: '/app/platform/settings', label: tr('Einstellungen', 'Settings'), icon: <IconSettings size={24} /> }]
