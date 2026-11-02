@@ -1,6 +1,6 @@
 """Background jobs at a glance: queued, running, failed and retried Celery tasks.
 
-Shown in manage › Diagnose › Hintergrundjobs.  Celery's signals feed it
+Shown in manage › Diagnostics › Background jobs.  Celery's signals feed it
 (``hubra.core.tasks.job_signals``):
 
 * ``before_task_publish`` counts a job as **sent**,

@@ -125,7 +125,7 @@ def _start(old: dict, new: dict, procs: list[dict], *, notify: bool = True) -> N
         lines = [f"From {label(old)} to {label(new)}."]
         if behind:
             lines.append(f"Still on another build: {_who(behind)}.")
-        lines.append("See manage › Diagnose › Builds.")
+        lines.append("See manage › Diagnostics › System health.")
         platform_monitor.alert(ALERT_TYPE, message, lines, level="info", throttle=False)
 
 
@@ -204,7 +204,7 @@ def check() -> dict:
         platform_monitor.alert(
             ALERT_TYPE,
             message,
-            [f"Still on {label(old)}: {_who(others)}.", "See manage › Diagnose › Builds."],
+            [f"Still on {label(old)}: {_who(others)}.", "See manage › Diagnostics › System health."],
             level="warning",
             throttle=False,
         )

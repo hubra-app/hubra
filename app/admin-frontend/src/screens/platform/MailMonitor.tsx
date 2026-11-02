@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Alert,
@@ -104,8 +105,8 @@ function RelayCard({
         <Text size="sm" c="dimmed">
           {relay.which === 'fallback'
             ? tr(
-                'Kein Fallback eingerichtet. Unter Plattform-Einstellungen › Mail-Relay lässt sich eins hinterlegen.',
-                'No fallback set up. Add one under Platform settings › Mail relay.',
+                'Kein Fallback eingerichtet. Unter Mail › Relay lässt sich eins hinterlegen.',
+                'No fallback set up. Add one under Mail › Relay.',
               )
             : tr(
                 'Kein Relay eingerichtet: Hubra kann keine Mails senden.',
@@ -235,6 +236,18 @@ export function MyAlertsCard() {
   )
 }
 
+/** Outbound mail; "show in the log" opens the event log, filtered. */
+export function OutboundMailTab() {
+  const navigate = useNavigate()
+  return (
+    <OutboundMailPanel
+      onShowLog={(lvl) =>
+        navigate(`/app/platform/alerts/events${lvl ? `?level=${lvl}` : '?category=mail'}`)
+      }
+    />
+  )
+}
+
 export function OutboundMailPanel({ onShowLog }: { onShowLog: (level?: EventLevel) => void }) {
   const { notify, hasGlobalPermission } = useAdmin()
   const queryClient = useQueryClient()
@@ -346,8 +359,8 @@ export function OutboundMailPanel({ onShowLog }: { onShowLog: (level?: EventLeve
 
       <Text size="sm" c="dimmed">
         {tr(
-          'Welche Warnungen du per Mail bekommst, stellst du unter Plattform › Warnungen ein.',
-          'Choose which alerts you get by mail under Platform › Alerts.',
+          'Welche Warnungen du per Mail bekommst, stellst du unter Warnungen › Meine Warnungen ein.',
+          'Choose which alerts you get by mail under Alerts › My alerts.',
         )}
       </Text>
     </Stack>

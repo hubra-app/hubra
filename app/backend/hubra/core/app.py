@@ -162,6 +162,11 @@ def create_app(config_name: str | None = None) -> Flask:
 
     feature_flags.install(app)
 
+    # ── Public status page (sso › /status) ──────────────────────────────────
+    from hubra.core.services import status_page
+
+    status_page.install(app)
+
     app.before_request(_reject_scalar_json)
     app.before_request(resolve_tenant)
     maintenance.install_club_gate(app)

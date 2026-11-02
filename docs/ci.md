@@ -56,6 +56,11 @@ workflow does not run at all, and its required checks would stay pending.
    the full checks again on that commit and builds the images only if they
    pass.
 
+Images builds only the images whose files changed since their last build
+and gives the others the new tags on the same digest; run it by hand with
+"Build every image" to rebuild all. Versions and tags:
+[release-guidelines.md](release-guidelines.md).
+
 Manual image builds (Actions > Images > Run workflow) also run the full
 checks first.
 

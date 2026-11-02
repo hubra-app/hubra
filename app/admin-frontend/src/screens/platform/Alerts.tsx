@@ -7,14 +7,15 @@ import {
   IconCircleCheck,
   IconRefresh,
 } from '@tabler/icons-react'
-import { PageHead, StatGrid, StatTile, Tabs } from '@/components/ui'
+import { StatGrid, StatTile } from '@/components/ui'
+import { useAdmin } from '@/context/AdminContext'
 import { formatDateTime } from '@/format'
-import { tr, useLang } from '@/lang'
+import { tr } from '@/lang'
 import { getAlertsOverview, type EventCategory, type OpenProblem } from '@/api/platform'
-import { EventLogPanel, MyAlertsCard } from './MailMonitor'
+import { EventLogPanel } from './MailMonitor'
 import { AlertRulesPanel, MaintenanceCard } from './AlertControls'
 import { MaintenanceWindowsCard } from './MaintenanceWindows'
-import { PerformancePanel } from './Performance'
+import { SettingsSection } from './SettingsSection'
 import { LEVEL_COLOR, categoryLabel, eventText, levelLabel } from './eventLabels'
 
 // The server names problems in English; the known ones are told here.
@@ -138,7 +139,8 @@ function ProblemRow({ p }: { p: OpenProblem }) {
 
 const AREAS: EventCategory[] = ['mail', 'service', 'backup', 'system']
 
-function OverviewPanel() {
+/** Open problems, the latest alerts and the last 24 hours per area. */
+export function OverviewPanel() {
   const navigate = useNavigate()
   const query = useQuery({
     queryKey: ['alerts-overview'],
@@ -170,9 +172,26 @@ function OverviewPanel() {
         <Text c="red">{query.error instanceof Error ? query.error.message : ''}</Text>
       )}
 
-      <MaintenanceCard state={data?.maintenance} />
-
-      <MaintenanceWindowsCard />
+      {data?.maintenance.active && (
+        <Alert color="orange" variant="light">
+          <Group justify="space-between" wrap="wrap">
+            <Text size="sm">
+              {tr(
+                'Der Wartungsmodus ist an: Vereine sehen den Wartungshinweis, Warnungen sind pausiert.',
+                'Maintenance mode is on: clubs see the maintenance notice, alerts are paused.',
+              )}
+            </Text>
+            <Button
+              size="compact-sm"
+              variant="light"
+              color="orange"
+              onClick={() => navigate('/app/platform/maintenance')}
+            >
+              {tr('Wartung', 'Maintenance')}
+            </Button>
+          </Group>
+        </Alert>
+      )}
 
       {data && !data.switches.enabled && !data.maintenance.active && (
         <Alert color="orange" variant="light">
@@ -293,61 +312,54 @@ function OverviewPanel() {
   )
 }
 
-const TABS = ['overview', 'performance', 'events', 'rules', 'settings'] as const
-type Tab = (typeof TABS)[number]
 const CATEGORIES = ['mail', 'relay', 'service', 'backup', 'plugin', 'system', 'alert']
 
-/** Platform alerts for platform staff (platform.diagnostics): open problems,
- * the event log and which alert mails each admin gets. */
-export function Alerts() {
-  const { tr } = useLang()
+/** The event log, filtered by ?level=, ?category= and ?club= from links. */
+export function EventsPanel() {
   const location = useLocation()
   const navigate = useNavigate()
-  const last = location.pathname.split('/').pop() as Tab
-  const tab: Tab = TABS.includes(last) ? last : 'overview'
   const search = new URLSearchParams(location.search)
   const level = search.get('level')
   const category = search.get('category')
   const clubId = Number(search.get('club'))
   const club = clubId ? { id: clubId, name: search.get('name') ?? `#${clubId}` } : undefined
-
   return (
-    <div>
-      <PageHead
-        title={tr('Warnungen', 'Alerts')}
-        desc={tr(
-          'Probleme der Plattform, wie schnell die API antwortet, das Ereignisprotokoll und welche Warnungen du per Mail bekommst.',
-          'Problems on the platform, how fast the API answers, the event log and which alerts you get by mail.',
-        )}
-      />
-      <Tabs
-        tabs={[
-          { id: 'overview', label: tr('Übersicht', 'Overview') },
-          { id: 'performance', label: tr('Leistung', 'Performance') },
-          { id: 'events', label: tr('Ereignisse', 'Event log') },
-          { id: 'rules', label: tr('Regeln', 'Rules') },
-          { id: 'settings', label: tr('Meine Warnungen', 'My alerts') },
-        ]}
-        activeTab={tab}
-        onTabChange={(id) => navigate(`/app/platform/alerts/${id}`)}
-      />
-      {tab === 'overview' && <OverviewPanel />}
-      {tab === 'performance' && <PerformancePanel />}
-      {tab === 'events' && (
-        <EventLogPanel
-          key={location.search}
-          initialLevel={
-            level === 'warning' || level === 'error' || level === 'problems' ? level : undefined
-          }
-          club={club}
-          onClearClub={() => navigate('/app/platform/alerts/events')}
-          initialCategory={
-            category && CATEGORIES.includes(category) ? (category as EventCategory) : undefined
-          }
-        />
-      )}
-      {tab === 'rules' && <AlertRulesPanel />}
-      {tab === 'settings' && <MyAlertsCard />}
-    </div>
+    <EventLogPanel
+      key={location.search}
+      initialLevel={
+        level === 'warning' || level === 'error' || level === 'problems' ? level : undefined
+      }
+      club={club}
+      onClearClub={() => navigate('/app/platform/alerts/events')}
+      initialCategory={
+        category && CATEGORIES.includes(category) ? (category as EventCategory) : undefined
+      }
+    />
+  )
+}
+
+/** Which alerts go out where, and how often (cooldown, retention, link). */
+export function RulesPanel() {
+  const { hasGlobalPermission } = useAdmin()
+  return (
+    <Stack gap={20}>
+      <AlertRulesPanel />
+      {hasGlobalPermission('platform.settings') && <SettingsSection section="alerts" />}
+    </Stack>
+  )
+}
+
+/** Maintenance mode now and planned maintenance windows. */
+export function MaintenancePanel() {
+  const query = useQuery({
+    queryKey: ['alerts-overview'],
+    queryFn: getAlertsOverview,
+    refetchInterval: 60_000,
+  })
+  return (
+    <Stack gap={16}>
+      <MaintenanceCard state={query.data?.maintenance} />
+      <MaintenanceWindowsCard />
+    </Stack>
   )
 }

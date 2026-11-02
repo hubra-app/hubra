@@ -12,7 +12,7 @@ const STAGE = {
 } as const
 
 /** Whether the club is in the early-access group, and its own choice per
- * feature (Plattform-Einstellungen › Früher Zugang). */
+ * feature (Alle Vereine › Früher Zugang). */
 export function TenantEarlyAccess({ tenantId }: { tenantId: number }) {
   const { notify } = useAdmin()
   const queryClient = useQueryClient()
