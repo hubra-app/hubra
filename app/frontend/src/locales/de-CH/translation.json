@@ -2191,7 +2191,13 @@
       "switchedOn": "{{name}} eingeschaltet",
       "uses": "Nutzt {{names}}",
       "pluginsTitle": "Plugins",
-      "pluginsIntro": "Zusatzfunktionen aus dem Hubra-Katalog. Schalte ein, was dein Verein nutzen möchte."
+      "pluginsIntro": "Zusatzfunktionen aus dem Hubra-Katalog. Schalte ein, was dein Verein nutzen möchte.",
+      "builtInTitle": "Funktionen",
+      "noPlugins": "Auf dieser Plattform ist noch kein Plugin installiert. Plugins installieren die Plattform-Admins aus dem Hubra-Katalog.",
+      "morePlugins": "Fehlt etwas? Weitere Plugins installieren die Plattform-Admins aus dem Hubra-Katalog.",
+      "onCount": "{{count}} von {{total}} eingeschaltet",
+      "pluginBy": "Plugin {{name}} {{version}}",
+      "official": "Offiziell"
     },
     "noFeatures": "Keine Funktionsschalter eingerichtet",
     "profile": "Profil",

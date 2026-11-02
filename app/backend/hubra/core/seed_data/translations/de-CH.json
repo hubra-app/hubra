@@ -3274,5 +3274,11 @@
   "app.maintenance.until": "Voraussichtlich zurück um {{time}} Uhr.",
   "app.maintenance.reload": "Diese Seite lädt sich von selbst neu.",
   "account.notify.discord": "Discord",
-  "account.notify.discordHint": "Discord schickt dir eine Direktnachricht vom Bot des Vereins. Dafür müssen Direktnachrichten von Mitgliedern des Servers erlaubt sein (Discord › Privatsphäre-Einstellungen des Servers)."
+  "account.notify.discordHint": "Discord schickt dir eine Direktnachricht vom Bot des Vereins. Dafür müssen Direktnachrichten von Mitgliedern des Servers erlaubt sein (Discord › Privatsphäre-Einstellungen des Servers).",
+  "settings.modules.builtInTitle": "Funktionen",
+  "settings.modules.noPlugins": "Auf dieser Plattform ist noch kein Plugin installiert. Plugins installieren die Plattform-Admins aus dem Hubra-Katalog.",
+  "settings.modules.morePlugins": "Fehlt etwas? Weitere Plugins installieren die Plattform-Admins aus dem Hubra-Katalog.",
+  "settings.modules.onCount": "{{count}} von {{total}} eingeschaltet",
+  "settings.modules.pluginBy": "Plugin {{name}} {{version}}",
+  "settings.modules.official": "Offiziell"
 }

@@ -3274,5 +3274,11 @@
   "app.maintenance.until": "Expected back at {{time}}.",
   "app.maintenance.reload": "This page reloads by itself.",
   "account.notify.discord": "Discord",
-  "account.notify.discordHint": "Discord sends you a direct message from the club's bot. Direct messages from server members must be allowed (Discord › the server's privacy settings)."
+  "account.notify.discordHint": "Discord sends you a direct message from the club's bot. Direct messages from server members must be allowed (Discord › the server's privacy settings).",
+  "settings.modules.builtInTitle": "Features",
+  "settings.modules.noPlugins": "No plugins are installed on this platform yet. Platform admins install plugins from the Hubra catalogue.",
+  "settings.modules.morePlugins": "Missing something? Platform admins install more plugins from the Hubra catalogue.",
+  "settings.modules.onCount": "{{count}} of {{total}} on",
+  "settings.modules.pluginBy": "Plugin {{name}} {{version}}",
+  "settings.modules.official": "Official"
 }
