@@ -445,7 +445,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar style={{ background: 'var(--hb-surface)' }}>
+      <AppShell.Navbar style={{ background: 'var(--hb-sidebar)' }}>
         <ScrollArea flex={1} type="auto" offsetScrollbars>
           <Box p={collapsed ? 10 : 'sm'} pt="md">
             <NavSections sections={sections} collapsed={collapsed} />
