@@ -478,6 +478,14 @@ function PrivateRoutes() {
                   }
                 />
                 <Route
+                  path="settings/encryption"
+                  element={
+                    <RequirePermission permKey="settings.settings.read">
+                      <SettingsScreen />
+                    </RequirePermission>
+                  }
+                />
+                <Route
                   path="settings/domains"
                   element={
                     <RequirePermission permKey="settings.settings.read">

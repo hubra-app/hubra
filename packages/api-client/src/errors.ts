@@ -258,6 +258,11 @@ const DE: Record<string, string> = {
   "This system address has no provisioned WildDuck mailbox":
     "Zu dieser Systemadresse gibt es noch kein Postfach auf dem Mailserver.",
 
+  // Club backup key
+  "Not an age public key (age1...)": "Das ist kein öffentlicher age-Schlüssel (age1…).",
+  "That is the private key. Keep it to yourself and send only the public key (age1...).":
+    "Das ist der private Schlüssel. Behalte ihn für dich; hier gehört nur der öffentliche Schlüssel (age1…) hin.",
+  "A public key is required": "Bitte gib den öffentlichen Schlüssel an.",
   // Integrations (keys and bindings)
   "Binding already exists": "Diese Verknüpfung gibt es schon.",
   "Cannot delete a protected key": "Ein geschützter Schlüssel kann nicht gelöscht werden.",

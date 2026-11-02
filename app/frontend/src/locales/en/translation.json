@@ -2209,7 +2209,8 @@
       "settings": "Advanced",
       "membership": "Membership",
       "bank": "Bank & QR invoice",
-      "apps": "Connected apps"
+      "apps": "Connected apps",
+      "encryption": "Encryption"
     },
     "title": "Settings",
     "yourAccount": "Your Account",
@@ -3724,5 +3725,97 @@
       "account": "Account and sign-in",
       "other": "Other"
     }
+  },
+  "backupKey": {
+    "copied": "Copied",
+    "copy": "Copy",
+    "check": {
+      "label": "Private key or the contents of the key file",
+      "upload": "Choose key file",
+      "local": "The check runs only in this browser; nothing of it is sent.",
+      "ok": "It fits: this is the private key for this public key.",
+      "wrong": "It doesn't fit. This is not the private key for this public key, or the file is incomplete.",
+      "intro": "Checks that the key you keep fits this club. Best once a year, or when someone on the board changes."
+    },
+    "intro": {
+      "p1": "Hubra backs up your club's data every night. The backups are encrypted, and so far only the operator of Hubra can open them.",
+      "p2": "With a key of your own, every new backup is also encrypted for you. Then you can open your backups yourself, for example if you ever leave Hubra or want to keep a copy of your data outside Hubra.",
+      "pair": "The key has two parts: Hubra gets the public key (age1…) so it can lock backups for you. Only you keep the private key (AGE-SECRET-KEY-1…); only it opens the backups.",
+      "browser": "The key is made here in your browser. The private part is never sent to Hubra, and Hubra cannot recover it.",
+      "loss": "If the private key gets lost, you lose no data: Hubra can still restore your backups with its own key. You just can't open them yourselves any more."
+    },
+    "activated": "Backup key activated",
+    "activateFailed": "The key could not be saved",
+    "wizard": {
+      "replaceTitle": "Set up a new backup key",
+      "title": "Set up your own backup key",
+      "replaceHint": "Backups made so far still open only with the old key. Keep it until those backups have expired."
+    },
+    "step": {
+      "about": "What it's for",
+      "generate": "Generate",
+      "store": "Store",
+      "confirm": "Confirm"
+    },
+    "own": {
+      "label": "Public key (age1…)",
+      "hint": "For example from «age-keygen» or a password manager that makes age keys. Paste only the public part.",
+      "private": "That is the private key. It doesn't belong here; paste only the public key (age1…).",
+      "invalid": "That is not an age public key (age1…).",
+      "save": "Use this key",
+      "open": "I already have an age key"
+    },
+    "generate": "Generate key",
+    "generated": "Your key pair is ready. Right now it exists only in this browser window.",
+    "publicLabel": "Public key (Hubra gets this)",
+    "privateLabel": "Private key (only for you)",
+    "next": {
+      "store": "Next: store it",
+      "confirm": "Next: confirm"
+    },
+    "store": {
+      "intro": "Save the key file somewhere safe now. Once you leave this page, the private key is gone from here.",
+      "download": "Download key file",
+      "copy": "Copy for the password manager",
+      "howTitle": "How to keep it safe",
+      "manager": "Best in the club's password manager (e.g. Bitwarden, 1Password or KeePass) as a secure note or attachment.",
+      "second": "A second copy with another board member, or printed in a safe place, so the key doesn't depend on one person.",
+      "never": "Don't send it by email or chat, don't put it in Hubra, and don't keep it openly in a shared folder.",
+      "delete": "Once you have downloaded the file and put it in the password manager, delete it from your downloads folder.",
+      "ack": "I have stored the private key safely.",
+      "ackLoss": "I understand that Hubra doesn't know the private key and cannot recover it."
+    },
+    "confirm": {
+      "intro": "Show that the stored key is right: open it where you saved it and paste it here, or choose the file. Only then is the key activated."
+    },
+    "activate": "Activate key",
+    "done": {
+      "title": "Done",
+      "text": "From the next backup on, every backup of your club is also encrypted with your key.",
+      "close": "Back to overview"
+    },
+    "removed": "Backup key removed",
+    "removeFailed": "The key could not be removed",
+    "status": {
+      "title": "Your own backup key",
+      "active": "Active",
+      "setBy": "Set up on {{date}} by {{name}}",
+      "setAt": "Set up on {{date}}",
+      "notYet": "This server doesn't encrypt backups with public keys yet. Your key is saved and applies as soon as the operator switches over.",
+      "lastBackup": "Last backup with your key: {{date}}",
+      "nextBackup": "The next backup will be encrypted with your key.",
+      "check": "Check stored key",
+      "replace": "Generate a new key",
+      "remove": "Remove key"
+    },
+    "publicKey": "Public key",
+    "open": {
+      "title": "How to open a backup",
+      "file": "You get a backup file (ending in .dump.age) from the operator of your Hubra install. You open it with the free tool age (age-encryption.org):",
+      "restore": "The decrypted file is a PostgreSQL dump; pg_restore loads it into a database of your own."
+    },
+    "removeConfirm": "New backups will then only be encrypted with the operator's key. Backups made so far still open with your private key, so keep it.",
+    "loadFailed": "The backup key could not be loaded.",
+    "stepOf": "Step {{n}} of 4: {{label}}"
   }
 }

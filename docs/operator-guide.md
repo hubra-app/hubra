@@ -227,7 +227,11 @@ Backups are a platform task: manage › Backups, global permission
   server only has the public key, so a break-in on the server cannot read
   the backups. The private key stays in your password manager; restore
   asks for it. Make the pair with `flask backups keygen`.
-- A club can get its own key: Access & security › Encryption, or
+- A club can get its own key. Club admins set it up themselves in the club
+  app under Settings › Encryption: a guide explains the key, makes the pair
+  in the browser (the private key is never sent), has them store it and
+  proves they did before the public key is saved. You can also set it in
+  Access & security › Encryption, or with
   `flask backups club-key <club> age1…`. Its
   backups are then encrypted to both keys, so the club can open its own
   backups with its private key, and you still can with yours.

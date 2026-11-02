@@ -6,6 +6,7 @@ import { KVSettingsTab } from '@/screens/private/settings/KVSettingsTab'
 import { ModulesTab } from '@/screens/private/settings/ModulesTab'
 import { ClubSettingsTab, MembershipSettingsTab } from '@/screens/private/settings/ClubSettingsTab'
 import { BankSettingsCard } from '@/screens/private/settings/BankSettingsCard'
+import { BackupKeyTab } from '@/screens/private/settings/BackupKeyTab'
 import { DomainsTab } from '@/screens/private/settings/DomainsTab'
 import { AppsTab } from '@/screens/private/settings/AppsTab'
 import { AuditLogScreen } from '@/screens/private/system/AuditLog'
@@ -43,6 +44,12 @@ const TABS = [
     labelKey: 'settings.tabs.apps',
     label: 'Verbundene Apps',
     Component: AppsTab,
+  },
+  {
+    id: 'encryption',
+    labelKey: 'settings.tabs.encryption',
+    label: 'Verschlüsselung',
+    Component: BackupKeyTab,
   },
   { id: 'domains', labelKey: 'settings.tabs.domains', label: 'Domains', Component: DomainsTab },
   { id: 'roles', labelKey: 'shell.nav.permissions', label: 'Rollen', Component: RolesTab },

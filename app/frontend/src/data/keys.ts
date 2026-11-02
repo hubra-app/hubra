@@ -115,6 +115,7 @@ export const qk = {
     bank: ['bank-settings'] as const,
     clubProfile: ['club-profile'] as const,
     domains: ['domains'] as const,
+    backupKey: ['backup-key'] as const,
     apps: ['connected-apps'] as const,
     appConnection: (id: number) => ['connected-apps', id] as const,
     rolesPermissions: ['roles-permissions'] as const,
