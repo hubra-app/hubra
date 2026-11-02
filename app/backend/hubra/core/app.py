@@ -141,6 +141,12 @@ def create_app(config_name: str | None = None) -> Flask:
 
     app.wsgi_app = TenantPathMiddleware(app.wsgi_app)
 
+    # ── Backend role (HUBRA_ROLE): a club or platform backend refuses the
+    #    other side's paths before any other hook runs. ─────────────────────
+    from hubra.core.roles import install_role_gate
+
+    install_role_gate(app)
+
     # ── Request timing and slow queries (first, so it times the rest) ─────────
     from hubra.core.services import perf_monitor
 
@@ -156,6 +162,11 @@ def create_app(config_name: str | None = None) -> Flask:
     from hubra.core.services import maintenance
 
     maintenance.install(app)
+
+    # ── Early-access flags per club (GET /api/v1/features) ──────────────────
+    from hubra.core.services import feature_flags
+
+    feature_flags.install(app)
 
     # ── Public status page (sso › /status) ──────────────────────────────────
     from hubra.core.services import status_page

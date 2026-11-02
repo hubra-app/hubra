@@ -41,6 +41,7 @@ import { PerformancePanel } from '@/screens/platform/Performance'
 import { MyAlertsCard, OutboundMailTab } from '@/screens/platform/MailMonitor'
 import { DiscordPanel } from '@/screens/platform/DiscordStatus'
 import { SettingsSection } from '@/screens/platform/SettingsSection'
+import { EarlyAccess } from '@/screens/platform/EarlyAccess'
 import { PlatformTranslations } from '@/screens/platform/Translations'
 import { PlatformEncryption } from '@/screens/platform/Encryption'
 import { SupportCases } from '@/screens/platform/Support'
@@ -133,6 +134,17 @@ export function navSections(): NavSection[] {
                 'How many members, mails and storage each plan has. Limits for one club are set on its page.',
               ),
               render: () => <SettingsSection section="limits" />,
+            },
+            {
+              id: 'early-access',
+              path: '/app/tenants/early-access',
+              label: tr('Früher Zugang', 'Early access'),
+              perm: 'platform.settings',
+              desc: tr(
+                'Neue Funktionen zuerst für ausgewählte Vereine einschalten.',
+                'Switch new features on for chosen clubs first.',
+              ),
+              render: () => <EarlyAccess />,
             },
           ],
         },

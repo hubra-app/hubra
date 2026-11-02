@@ -29,6 +29,9 @@
 # Publishing a release on GitHub also creates its v* tag, which the GitLab
 # mirror turns into a GitLab Release (docs/gitlab.md).
 #
+# backend is also published as platform-backend (same digest), for the
+# platform Deployment of a split install (docs/platform-backend.md).
+#
 # The frontend images carry no host names; they are set at container start
 # (app/deploy/nginx/40-hubra-runtime.sh), so one image fits every install.
 name: Images
@@ -187,6 +190,21 @@ jobs:
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
           echo "**$IMAGE**: $what ($REASON), \`$digest\`" >> "$GITHUB_STEP_SUMMARY"
 
+      # The platform backend (docs/platform-backend.md) runs the same image
+      # under its own name, so a cluster can pin and roll it on its own. A
+      # copy of the manifest, no second build; a reused backend is copied too.
+      - name: Publish the backend as platform-backend too
+        if: matrix.image == 'backend'
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+          SOURCE: ${{ steps.name.outputs.image }}@${{ steps.result.outputs.digest }}
+        run: |
+          args=()
+          while IFS= read -r tag; do
+            if [ -n "$tag" ]; then args+=(--tag "${tag/\/backend:/\/platform-backend:}"); fi
+          done <<< "$TAGS"
+          docker buildx imagetools create "${args[@]}" "$SOURCE"
+
       # Fixable HIGH/CRITICAL CVEs go to the job summary, for reused images too
       # (new CVEs turn up in old images). Report only for now;
       # set TRIVY_EXIT_CODE=1 once the images are clean to fail the build.
@@ -238,7 +256,7 @@ jobs:
             echo
             echo '```yaml'
             echo "images:"
-            for image in backend frontend admin-frontend sso-frontend haraka zonemta cert-watcher; do
+            for image in backend platform-backend frontend admin-frontend sso-frontend haraka zonemta cert-watcher; do
               digest="$(docker buildx imagetools inspect "$repo/$image:$tag" --format '{{json .Manifest}}' | jq -r .digest)"
               echo "  - name: $repo/$image"
               echo "    newTag: \"$tag\""

@@ -23,6 +23,7 @@ resources:
   - postgres.yaml
   - redis.yaml
   - backend.yaml
+  - platform-backend.yaml
   - frontends.yaml
   - ingress.yaml
 
@@ -51,6 +52,11 @@ configMapGenerator:
 images:
   - name: hubra/backend
     newName: ghcr.io/hubra-app/hubra/backend
+    newTag: latest
+  # The same build as backend under its own name (docs/platform-backend.md):
+  # pin it separately to roll the platform without the club pods.
+  - name: hubra/platform-backend
+    newName: ghcr.io/hubra-app/hubra/platform-backend
     newTag: latest
   - name: hubra/frontend
     newName: ghcr.io/hubra-app/hubra/frontend

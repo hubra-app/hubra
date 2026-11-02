@@ -1,0 +1,120 @@
+# Separate platform backend (docs/platform-backend.md), on top of
+# docker-compose.yml:
+#
+#   COMPOSE_FILE=docker-compose.yml:docker-compose.platform.yml   (in .env)
+#
+# The club backend (backend, celery-worker, discord-gateway) serves everything
+# but the platform API. platform-backend serves only the platform API
+# (/api/v1/manager, /api/v1/admin, /api/v1/system), and platform-worker runs
+# the platform Celery queue (backups, checks, plugins, alerts). The frontends
+# send the platform paths to platform-backend.
+#
+# The init step (flask-init: migrations, seeds) and beat run the platform
+# image, so HUBRA_PLATFORM_VERSION must be the same as HUBRA_VERSION or newer.
+# A platform-only update then leaves the club containers running:
+#
+#   HUBRA_PLATFORM_VERSION=1.4.1 docker compose up -d flask-init platform-backend platform-worker celery-beat
+#
+# With docker-compose.traefik.yml, the API host needs a second router for the
+# platform paths; see docs/platform-backend.md.
+
+x-platform-app: &platform-app
+  image: ${HUBRA_IMAGE_PREFIX:-ghcr.io/hubra-app/hubra}/platform-backend:${HUBRA_PLATFORM_VERSION:-${HUBRA_VERSION:-latest}}
+  build:
+    context: .
+    dockerfile: app/backend/Dockerfile
+  env_file: .env
+  security_opt:
+    - no-new-privileges:true
+  networks:
+    - internal
+
+x-platform-env: &platform-env
+  DATABASE_URL: postgresql://${POSTGRES_APP_USER:-${POSTGRES_USER}}:${POSTGRES_APP_PASSWORD:-${POSTGRES_PASSWORD}}@postgres:${POSTGRES_PORT}/${POSTGRES_DB}
+  HUBRA_ROLE: platform
+  HUBRA_PLATFORM_QUEUE: platform
+
+services:
+  frontend:
+    environment:
+      PLATFORM_API_UPSTREAM: http://platform-backend:5000
+
+  admin-frontend:
+    environment:
+      PLATFORM_API_UPSTREAM: http://platform-backend:5000
+    depends_on:
+      - platform-backend
+
+  sso-frontend:
+    environment:
+      PLATFORM_API_UPSTREAM: http://platform-backend:5000
+
+  backend:
+    environment:
+      HUBRA_ROLE: club
+      HUBRA_PLATFORM_QUEUE: platform
+
+  celery-worker:
+    environment:
+      HUBRA_ROLE: club
+      HUBRA_PLATFORM_QUEUE: platform
+
+  discord-gateway:
+    environment:
+      HUBRA_ROLE: club
+      HUBRA_PLATFORM_QUEUE: platform
+
+  # The one place migrations run, from the platform release.
+  flask-init:
+    image: ${HUBRA_IMAGE_PREFIX:-ghcr.io/hubra-app/hubra}/platform-backend:${HUBRA_PLATFORM_VERSION:-${HUBRA_VERSION:-latest}}
+
+  celery-beat:
+    image: ${HUBRA_IMAGE_PREFIX:-ghcr.io/hubra-app/hubra}/platform-backend:${HUBRA_PLATFORM_VERSION:-${HUBRA_VERSION:-latest}}
+    environment:
+      HUBRA_PLATFORM_QUEUE: platform
+
+  platform-backend:
+    <<: *platform-app
+    restart: unless-stopped
+    environment: *platform-env
+    expose:
+      - "5000"
+    depends_on:
+      flask-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+
+  platform-worker:
+    <<: *platform-app
+    restart: unless-stopped
+    environment: *platform-env
+    command: celery -A hubra.core.tasks.celery_app worker -Q platform --loglevel=info
+    depends_on:
+      flask-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+    healthcheck:
+      test:
+        ["CMD", "python", "-c", "import sys; sys.exit(b'worker' not in open('/proc/1/cmdline', 'rb').read())"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
