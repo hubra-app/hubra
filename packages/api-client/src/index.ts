@@ -14,3 +14,5 @@ export {
   apiFetchRaw,
 } from "./client";
 export type { InstanceInfo } from "./client";
+export { redirectTo, recentRedirects } from "./redirectGuard";
+export type { Hop as RedirectHop } from "./redirectLoop";

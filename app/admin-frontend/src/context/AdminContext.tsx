@@ -12,7 +12,7 @@ import { Button, Center, Stack, Text } from '@mantine/core'
 import { notifications as mantineNotifications } from '@mantine/notifications'
 import { getMyPermissions, logout as apiLogout, type PermissionsResponse } from '@/api/auth'
 import { getMyTenants } from '@/api/tenants'
-import { apiFetch, hasTokens, setAuthFailureHandler, SSO_URL } from '@hubra/api-client'
+import { apiFetch, clearTokens, hasTokens, redirectTo, setAuthFailureHandler, SSO_URL } from '@hubra/api-client'
 import { tr } from '@/lang'
 
 export type AuthStatus = 'loading' | 'authed' | 'anon'
@@ -47,9 +47,9 @@ async function mayUseManage(perms: PermissionsResponse): Promise<boolean> {
   }
 }
 
-function redirectToSso() {
+function redirectToSso(why = 'anon') {
   const currentUrl = window.location.href
-  window.location.assign(`${SSO_URL}/login?redirect=${encodeURIComponent(currentUrl)}`)
+  redirectTo(`${SSO_URL}/login?redirect=${encodeURIComponent(currentUrl)}`, why)
 }
 
 export function AdminProvider({ children }: { children: ReactNode }) {
@@ -74,7 +74,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         const allowed = data.impersonation?.is_impersonating || (await mayUseManage(data))
         if (cancelled) return
         if (!allowed) {
-          window.location.assign(`${SSO_URL}/clubs`)
+          redirectTo(`${SSO_URL}/clubs`, 'not-manager')
           return
         }
         setPermData(data)
@@ -104,7 +104,12 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       setAuthStatus('anon')
       setPermData(null)
       queryClient.clear()
-      redirectToSso()
+      // Sign out here first. The API refused this session for manage (no
+      // account token, e.g. 30 days after sign-in while a club session kept
+      // refreshing), but SSO still accepts it: without signing out, SSO
+      // sent the person straight back here, and manage back to SSO.
+      clearTokens()
+      redirectToSso('session-refused')
     })
     return () => setAuthFailureHandler(null)
   }, [queryClient])
