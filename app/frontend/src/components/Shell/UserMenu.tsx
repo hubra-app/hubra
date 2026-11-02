@@ -7,6 +7,7 @@ import {
   UnstyledButton,
   Stack,
   ScrollArea,
+  Badge,
 } from '@mantine/core'
 import {
   IconLogout,
@@ -19,6 +20,7 @@ import { useInstance } from '@/context/InstanceContext'
 import { useMyTenants } from '@/data/lists'
 import { initials, contrastColor } from './nav'
 import { setWhatsNewOpen } from './whatsNewStore'
+import { useWhatsNewUnseen } from './whatsNewData'
 import { setCustomizeSidebarOpen } from './customizeSidebarStore'
 
 /**
@@ -37,6 +39,7 @@ export function UserMenu({ onClose }: { onClose?: () => void } = {}) {
   const email = currentUser?.publicEmail || currentUser?.email || ''
   const bg = currentUser?.avatarColor ?? '#ebe8f2'
   const close = onClose ?? (() => setUserMenuOpen(false))
+  const whatsNewUnseen = useWhatsNewUnseen()
 
   return (
     <Box
@@ -170,9 +173,17 @@ export function UserMenu({ onClose }: { onClose?: () => void } = {}) {
               padding: '0 10px',
               fontSize: 'var(--mantine-font-size-sm)',
               borderRadius: 8,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
             }}
           >
             {t('shell.whatsNew.title')}
+            {whatsNewUnseen && (
+              <Badge size="xs" variant="filled" data-testid="whats-new-unseen">
+                {t('shell.whatsNew.new', 'Neu')}
+              </Badge>
+            )}
           </UnstyledButton>
         </Stack>
         <Group justify="space-between" px={10} py={6} wrap="nowrap">

@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Badge,
   Button,
-  Code,
   Group,
   Modal,
   Paper,
@@ -21,7 +20,6 @@ import { useLang, tr } from '@/lang'
 import {
   deleteMailServerOrphan,
   getApiPermissions,
-  getChangelog,
   getMailServer,
   getPlatformHealth,
   reconcileMailServer,
@@ -42,17 +40,6 @@ const serviceLabel = (key: string): string =>
     imap: 'IMAP',
   })[key] ?? key
 
-// The changelog is written in English; only its Keep-a-Changelog headings are translated.
-const sectionLabel = (section: string): string =>
-  ({
-    added: tr('Neu', 'Added'),
-    changed: tr('Geändert', 'Changed'),
-    fixed: tr('Behoben', 'Fixed'),
-    removed: tr('Entfernt', 'Removed'),
-    deprecated: tr('Veraltet', 'Deprecated'),
-    security: tr('Sicherheit', 'Security'),
-  })[section.toLowerCase()] ?? section
-
 function failureText(err: unknown) {
   return err instanceof Error ? err.message : tr('Unbekannter Fehler', 'Unknown error')
 }
@@ -61,8 +48,7 @@ function failureText(err: unknown) {
 
 function HealthPanel() {
   const healthQuery = useQuery({ queryKey: ['platform-health'], queryFn: getPlatformHealth })
-  const changelogQuery = useQuery({ queryKey: ['changelog'], queryFn: getChangelog })
-  const [showAllVersions, setShowAllVersions] = useState(false)
+  const navigate = useNavigate()
   const health = healthQuery.data
 
   return (
@@ -102,9 +88,14 @@ function HealthPanel() {
               </Text>
             </Row>
             <Row ok={null} label={tr('Backend-Version', 'Backend version')}>
-              <Text size="sm" ff={MONO}>
-                {health.version ?? '—'}
-              </Text>
+              <Group gap={10} wrap="wrap">
+                <Text size="sm" ff={MONO}>
+                  {health.version ?? '—'}
+                </Text>
+                <Button variant="subtle" size="compact-xs" onClick={() => navigate('/app/whats-new')}>
+                  {tr('Änderungen ansehen', 'See the changelog')}
+                </Button>
+              </Group>
             </Row>
             {Object.entries(health.services).map(([key, svc]) => (
               <Row key={key} ok={svc.ok} label={serviceLabel(key)}>
@@ -127,83 +118,7 @@ function HealthPanel() {
         )}
       </Paper>
 
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
-        <Title order={3} mb={12}>
-          {tr('Änderungen', 'Changelog')}
-        </Title>
-        {(changelogQuery.data?.entries ?? []).length === 0 && (
-          <Text c="dimmed" size="sm">
-            {tr('Keine Einträge.', 'No entries.')}
-          </Text>
-        )}
-        <Stack gap={16}>
-          {(changelogQuery.data?.entries ?? [])
-            .slice(0, showAllVersions ? undefined : 3)
-            .map((entry) => (
-            <div key={entry.version}>
-              <Group gap={8} mb={6}>
-                <Text fw={700} size="sm">
-                  {entry.version.toLowerCase() === 'unreleased'
-                    ? tr('Noch nicht veröffentlicht', 'Unreleased')
-                    : `v${entry.version}`}
-                </Text>
-                {entry.date && (
-                  <Text size="xs" c="dimmed">
-                    {entry.date}
-                  </Text>
-                )}
-              </Group>
-              {Object.entries(entry.sections).map(([section, items]) => (
-                <div key={section} style={{ marginLeft: 12, marginBottom: 6 }}>
-                  <Text size="xs" fw={600} c="dimmed" tt="uppercase">
-                    {sectionLabel(section)}
-                  </Text>
-                  <ul style={{ margin: 0, paddingLeft: 18 }}>
-                    {items.map((item, i) => (
-                      <li key={item + i}>
-                        <Text size="sm" style={{ overflowWrap: 'anywhere' }}>
-                          <InlineMarkdown text={item} />
-                        </Text>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          ))}
-          {(changelogQuery.data?.entries ?? []).length > 3 && (
-            <Button
-              variant="subtle"
-              size="compact-sm"
-              style={{ alignSelf: 'flex-start' }}
-              onClick={() => setShowAllVersions((v) => !v)}
-            >
-              {showAllVersions
-                ? tr('Nur die neusten Versionen', 'Only the latest versions')
-                : tr('Alle Versionen zeigen', 'Show all versions')}
-            </Button>
-          )}
-        </Stack>
-      </Paper>
     </Stack>
-  )
-}
-
-/** **bold** and `code` from changelog lines, as text (never as HTML). */
-function InlineMarkdown({ text }: { text: string }) {
-  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).filter(Boolean)
-  return (
-    <>
-      {parts.map((part, i) =>
-        part.startsWith('**') && part.endsWith('**') ? (
-          <strong key={i}>{part.slice(2, -2)}</strong>
-        ) : part.startsWith('`') && part.endsWith('`') ? (
-          <Code key={i}>{part.slice(1, -1)}</Code>
-        ) : (
-          part
-        ),
-      )}
-    </>
   )
 }
 

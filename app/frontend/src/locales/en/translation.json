@@ -2409,7 +2409,10 @@
     },
     "whatsNew": {
       "changelogSoon": "Changelog coming soon.",
-      "title": "What's new"
+      "title": "What's new",
+      "tabNews": "What's new",
+      "tabRoadmap": "Roadmap",
+      "new": "New"
     },
     "impersonation": {
       "badge": "Impersonating",

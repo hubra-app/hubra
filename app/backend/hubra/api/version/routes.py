@@ -1,10 +1,10 @@
-"""Version blueprint — app version, changelog and instance info (public, no auth)."""
+"""Version blueprint: app version, changelog, roadmap and instance info (public, no auth)."""
 
 from __future__ import annotations
 
 from flask import Blueprint, current_app, jsonify
 
-from hubra.api.version.services import VersionService
+from hubra.api.version.services import ROADMAP_STATUSES, VersionService
 
 version_bp = Blueprint("version_bp", __name__)
 
@@ -24,6 +24,17 @@ def get_changelog():
                 "version": VersionService.get_version(),
                 "entries": VersionService.get_changelog(),
             }
+        ),
+        200,
+    )
+
+
+@version_bp.get("/version/roadmap")
+def get_roadmap():
+    """Return the roadmap: what is being built now, next, later, and what shipped."""
+    return (
+        jsonify(
+            {"statuses": list(ROADMAP_STATUSES), "items": VersionService.get_roadmap()}
         ),
         200,
     )

@@ -83,3 +83,96 @@ def test_changelog_endpoint_structure(client):
 def test_changelog_endpoint_no_auth_required(client):
     resp = client.get("/api/v1/version/changelog")
     assert resp.status_code not in (401, 403)
+
+
+def test_changelog_joins_wrapped_item_lines(tmp_path, monkeypatch):
+    sample = tmp_path / "CHANGELOG.md"
+    sample.write_text(
+        "## [0.3.0] - 2026-08-01\n"
+        "### Added\n"
+        "- **Long item** that goes on\n"
+        "  onto the next line.\n"
+        "- Second item\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr("hubra.api.version.services._CHANGELOG_PATH", sample)
+    monkeypatch.setattr("hubra.api.version.services._changelog_cache", None)
+
+    entries = VersionService.get_changelog()
+
+    assert entries[0]["sections"]["Added"] == [
+        "**Long item** that goes on onto the next line.",
+        "Second item",
+    ]
+
+
+def test_roadmap_parses_items_and_skips_bad_ones(tmp_path, monkeypatch):
+    sample = tmp_path / "ROADMAP.yaml"
+    sample.write_text(
+        "items:\n"
+        "  - id: a\n"
+        "    status: next\n"
+        "    area: Finance\n"
+        "    title: {de: Titel, en: Title}\n"
+        "    summary: Plain English summary\n"
+        "    link: javascript:alert(1)\n"
+        "  - id: b\n"
+        "    status: Done\n"
+        "    title: Shipped\n"
+        "    version: 0.6.0\n"
+        "    link: https://example.org/b\n"
+        "  - id: c\n"
+        "    status: someday\n"
+        "    title: Unknown status\n"
+        "  - status: now\n"
+        "    title: No id\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr("hubra.api.version.services._ROADMAP_PATH", sample)
+    monkeypatch.setattr("hubra.api.version.services._roadmap_cache", None)
+
+    items = VersionService.get_roadmap()
+
+    assert items == [
+        {
+            "id": "a",
+            "status": "next",
+            "area": "Finance",
+            "title": {"de": "Titel", "en": "Title"},
+            "summary": {"en": "Plain English summary"},
+            "version": None,
+            "link": None,
+        },
+        {
+            "id": "b",
+            "status": "done",
+            "area": None,
+            "title": {"en": "Shipped"},
+            "summary": {},
+            "version": "0.6.0",
+            "link": "https://example.org/b",
+        },
+    ]
+
+
+def test_roadmap_shipped_file_is_valid(monkeypatch):
+    import yaml
+
+    from hubra.api.version import services
+
+    monkeypatch.setattr("hubra.api.version.services._roadmap_cache", None)
+    raw = yaml.safe_load(services._ROADMAP_PATH.read_text(encoding="utf-8"))["items"]
+    items = VersionService.get_roadmap()
+    # Every item in the shipped file is shown, ids are unique, both languages.
+    assert len(items) == len(raw)
+    assert len({i["id"] for i in items}) == len(items)
+    for item in items:
+        assert item["title"].get("de") and item["title"].get("en"), item["id"]
+
+
+def test_roadmap_endpoint(client):
+    resp = client.get("/api/v1/version/roadmap")
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["statuses"] == ["now", "next", "later", "done"]
+    assert isinstance(body["items"], list)

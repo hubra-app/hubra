@@ -18,6 +18,7 @@ export const qk = {
   translationSuggestions: ['translation-suggestions'] as const,
   notifications: ['notifications'] as const,
   changelog: ['changelog'] as const,
+  roadmap: ['roadmap'] as const,
 
   account: {
     all: ['account'] as const,
