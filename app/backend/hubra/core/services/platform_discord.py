@@ -14,11 +14,11 @@ Discord application (``discord.bot_token``), the bot added to the platform
 server, and the channel ID (``discord.log_channel_id``).  No channel, no
 posts.
 
-Audit channel (``discord.audit_channel_id``, optional): a second channel
-that gets every audit entry, whatever the log's categories say, so it is a
-complete record of the platform audit log.  Alerts never go there.  Empty:
-off.  Both channels can be set; the log then is the chosen overview and the
-audit channel the full trail.
+Audit channel (``discord.audit_channel_id``, optional, on the same server):
+when set, audit entries go there instead of the platform log, which then
+keeps the system alerts.  An entry is never posted twice.  The categories
+(``discord.log_events``) decide what is posted in both cases.  Empty: off,
+everything goes to the platform log.
 
 Every audit embed links back to manage when its address is known
 (``alerts.manage_url``): the title opens the entry in the audit log, and a
@@ -373,40 +373,31 @@ def audit_embed(entry: GlobalAuditEntry) -> dict:
     return embed
 
 
-def post_audit_entry(entry_id: int) -> bool:
-    """Post one audit entry: to the log if its category is on, and to the
-    audit channel if there is one.  Used by the task.
+def audit_target() -> str:
+    """Where audit entries go: the audit channel when one is set, else the
+    platform log.  Never both, so an entry is posted once."""
+    return audit_channel() or _settings()[0]
 
-    True when it went to at least one channel.  A failure on one channel
-    does not stop the other; the first failure is raised after both tries.
+
+def post_audit_entry(entry_id: int) -> bool:
+    """Post one audit entry if its category is on.  Used by the task.
+
+    With an audit channel the entry goes there only; the platform log then
+    keeps the system alerts.  Without one it goes to the platform log.
     """
     from hubra.core.extensions import db
 
     entry = db.session.get(GlobalAuditEntry, entry_id)
     if entry is None:
         return False
-    log_channel, token = _settings()
-    if not token:
+    token = _settings()[1]
+    channel_id = audit_target()
+    if not channel_id or not token:
         return False
-    targets = []
-    if log_channel and category(entry.action) in enabled_categories():
-        targets.append(log_channel)
-    audit = audit_channel()
-    if audit and audit not in targets:
-        targets.append(audit)
-    if not targets:
+    if category(entry.action) not in enabled_categories():
         return False
-    embed = audit_embed(entry)
-    sent, error = False, None
-    for channel_id in targets:
-        try:
-            post(embed, channel_id=channel_id, token=token)
-            sent = True
-        except DiscordPostError as exc:
-            error = error or exc
-    if error is not None:
-        raise error
-    return sent
+    post(audit_embed(entry), channel_id=channel_id, token=token)
+    return True
 
 
 @event.listens_for(GlobalAuditEntry, "after_insert")

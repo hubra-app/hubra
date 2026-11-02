@@ -41,7 +41,7 @@ every linked account goes through (see docs/discord.md). Set here only, with
 no env fallback.  ``discord.log_*`` is the platform log: the bot posts
 platform events to a channel on the platform's own server
 (``services.platform_discord``); ``discord.audit_channel_id`` is an optional
-second channel with every audit entry.
+channel that takes the audit entries off the log.
 """
 
 from __future__ import annotations
@@ -238,8 +238,8 @@ SPECS: tuple[Spec, ...] = (
     Spec(
         "discord.audit_channel_id",
         "Audit channel",
-        "Channel ID where the bot posts every platform audit entry, with links "
-        "to manage. Alerts stay in the platform log. Empty: off",
+        "Channel ID on the same server for the audit entries. Set: they go "
+        "there instead of the platform log, which keeps the alerts. Empty: off",
         lambda cfg: "",
         "number",
     ),
