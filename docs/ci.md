@@ -8,6 +8,7 @@ full set only when a release is being prepared.
 | `ci.yml` (CI) | pull requests into `main`, pushes to `main` | `lint` (ruff, eslint and `tsc` in the three frontends, Compose files, Kustomize + kubeconform, shellcheck), backend unit tests, frontend unit tests, and on pull requests that change a frontend the Compose stack with the browser tests |
 | `release-checks.yml` (Release checks) | `release/*` branches (create and push), pull requests into `release/*`, before every image build, by hand | all of `ci.yml` without the path filter, plus dependency audits (pip-audit, npm audit), the image builds and the Compose stack with the browser tests |
 | `images.yml` (Images) | GitHub release published, by hand | `release-checks.yml` first, then builds and pushes the images |
+| `release-branch.yml` (Release branch) | GitHub release published (not pre-releases) | creates `release/X.Y` at the release's commit if it does not exist yet |
 
 On pull requests and pushes to `main`, lint and the test jobs run only for
 the parts of the code the change touches (the `changes` job decides):
@@ -53,18 +54,18 @@ workflow does not run at all, and its required checks would stay pending.
    full checks before publishing.
 2. Publish a GitHub release `v1.2.0` with target `main`. Images runs the
    full checks on that commit and builds the images only if they pass.
+3. `release-branch.yml` creates `release/1.2` at that commit by itself (one
+   branch per minor version; pre-releases create none, and an existing
+   branch is never moved).
 
-**With a release branch**, one per minor version (`release/1.2`, never one
-per patch). Cut it only when you need it: to keep merging features into
-`main` while a release is being fixed, or to patch `1.2` after `main` has
-moved on. It can be cut later from the `v1.2.0` tag.
+**Patches:** fixes go in as pull requests into `release/1.2`, each with the
+full checks, and are merged back into `main` too. Publish `v1.2.1` with
+target `release/1.2`.
 
-1. Create `release/1.2` from `main` (or from the tag `v1.2.0`). The full
-   checks run on it.
-2. Fixes go in as pull requests into `release/1.2`, each with the full
-   checks. Merge them back into `main` too.
-3. Publish `v1.2.1` (or `v1.2.0`) with target `release/1.2`. Later patches
-   of 1.2 come from the same branch.
+**Stabilizing before `v1.2.0`** (to keep merging features into `main`
+meanwhile): create `release/1.2` from `main` by hand, fix it there, then
+publish `v1.2.0` with target `release/1.2`. The workflow leaves the
+existing branch as it is.
 
 Images builds only the images whose files changed since their last build
 and gives the others the new tags on the same digest; run it by hand with
