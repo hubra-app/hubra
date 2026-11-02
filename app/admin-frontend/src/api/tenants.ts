@@ -558,6 +558,35 @@ export async function setTenantLimits(
   })
 }
 
+// ── Early access per club ────────────────────────────────────────────────────
+
+export interface TenantEarlyAccess {
+  early_access: boolean
+  features: {
+    key: string
+    title_de: string
+    title_en: string
+    stage: 'off' | 'early' | 'all'
+    /** The club's own choice; null follows the stage. */
+    override: boolean | null
+    on: boolean
+  }[]
+}
+
+export async function getTenantEarlyAccess(tenantId: number) {
+  return apiFetch<TenantEarlyAccess>(`/system/tenants/${tenantId}/early-access`)
+}
+
+export async function setTenantEarlyAccess(
+  tenantId: number,
+  body: { early_access?: boolean; features?: Record<string, boolean | null> },
+) {
+  return apiFetch<TenantEarlyAccess>(`/system/tenants/${tenantId}/early-access`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  })
+}
+
 // ── Billing terms (stored and shown only, nothing is charged yet) ────────────
 
 /** Stripe's subscription statuses, plus "none" for a club that is not billed. */

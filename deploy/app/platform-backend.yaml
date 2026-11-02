@@ -1,0 +1,125 @@
+# The platform backend (docs/platform-backend.md): the same code as the club
+# backend, run as image hubra/platform-backend with HUBRA_ROLE=platform, so it
+# can be pinned and rolled on its own. It serves only the platform API
+# (/api/v1/manager, /api/v1/admin, /api/v1/system; ingress.yaml routes them
+# here) and its worker runs only the platform Celery queue.
+#
+# It is the one place the init step runs (migrations, permission sync, seeds,
+# plugin sync), in its initContainer. The club backend waits for the schema
+# instead (backend.yaml), so the platform release must always be the same as
+# or newer than the club release. Celery beat runs this image too
+# (backend.yaml), for the same reason.
+apiVersion: v1
+kind: Service
+metadata:
+  name: platform-backend
+spec:
+  selector:
+    app.kubernetes.io/name: platform-backend
+  ports:
+    - name: http
+      port: 5000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: platform-backend
+spec:
+  replicas: 1
+  # Start the new pod and let it pass its readiness probe before the old one
+  # stops: no gap even with one replica.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxSurge: 1, maxUnavailable: 0 }
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: platform-backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: platform-backend
+    spec:
+      securityContext:
+        seccompProfile: { type: RuntimeDefault }
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      # Time for Traefik to drop the old pod before gunicorn stops (preStop).
+      terminationGracePeriodSeconds: 60
+      initContainers:
+        - name: flask-init
+          image: hubra/platform-backend
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          # startup_lock: two pods starting together take turns. No HUBRA_ROLE
+          # here: the init step sees every route (sync-permissions reads them).
+          command: ["python", "-m", "hubra.core.startup_lock", "sh", "-c", "flask db upgrade && flask sync-permissions && flask seed --skip-migrate && flask ensure-superadmins && flask plugins sync && flask modules seal-secrets"]
+          envFrom: [{ secretRef: { name: hubra-env } }]
+          env: [{ name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }]
+          volumeMounts: [{ name: settings, mountPath: /etc/hubra }]
+      containers:
+        - name: backend
+          image: hubra/platform-backend
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          ports: [{ name: http, containerPort: 5000 }]
+          envFrom: [{ secretRef: { name: hubra-env } }]
+          env:
+            - { name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }
+            - { name: HUBRA_ROLE, value: platform }
+            - { name: HUBRA_PLATFORM_QUEUE, value: platform }
+          volumeMounts: [{ name: settings, mountPath: /etc/hubra }]
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+          lifecycle:
+            preStop:
+              exec: { command: ["sleep", "10"] }
+          resources:
+            limits: { cpu: "1", memory: 512Mi }
+      volumes:
+        - name: settings
+          configMap: { name: hubra-settings }
+---
+# Backups, restores, health and infrastructure checks, upgrades, plugins,
+# quotas and platform alerts (hubra.core.roles.PLATFORM_TASK_MODULES).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: platform-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: platform-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: platform-worker
+    spec:
+      securityContext:
+        seccompProfile: { type: RuntimeDefault }
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      # A running backup or restore gets time to finish.
+      terminationGracePeriodSeconds: 300
+      containers:
+        - name: platform-worker
+          image: hubra/platform-backend
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          command: ["celery", "-A", "hubra.core.tasks.celery_app", "worker", "-Q", "platform", "--loglevel=info"]
+          envFrom: [{ secretRef: { name: hubra-env } }]
+          env:
+            - { name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }
+            - { name: HUBRA_ROLE, value: platform }
+            - { name: HUBRA_PLATFORM_QUEUE, value: platform }
+          volumeMounts: [{ name: settings, mountPath: /etc/hubra }]
+          resources:
+            limits: { cpu: "1", memory: 512Mi }
+      volumes:
+        - name: settings
+          configMap: { name: hubra-settings }

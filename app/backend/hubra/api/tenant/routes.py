@@ -339,6 +339,54 @@ def get_tenant_trends(tenant_id: int):
     return jsonify(usage_trends.for_tenant(tenant, range_key))
 
 
+@tenant_admin_bp.route("/tenants/<int:tenant_id>/early-access", methods=["GET"])
+@require_global_permission("tenants.read")
+def get_tenant_early_access(tenant_id: int):
+    """Whether the club is in the early-access group, and each flag for it."""
+    from hubra.core.services import feature_flags
+
+    tenant = TenantService.get_by_id(tenant_id)
+    if tenant is None:
+        raise_error(404, "NOT_FOUND", "Tenant not found")
+    return jsonify(feature_flags.club_json(tenant)), 200
+
+
+@tenant_admin_bp.route("/tenants/<int:tenant_id>/early-access", methods=["PUT"])
+@require_global_permission("tenants.update")
+def set_tenant_early_access(tenant_id: int):
+    """``{"early_access": bool, "features": {key: true | false | null}}``;
+    both optional (null: back to the feature's stage)."""
+    from hubra.core.services import feature_flags
+
+    tenant = TenantService.get_by_id(tenant_id)
+    if tenant is None:
+        raise_error(404, "NOT_FOUND", "Tenant not found")
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict) or not body:
+        raise_error(400, "VALIDATION_ERROR", "Send early_access or features")
+    before = feature_flags.club_json(tenant)
+    feature_flags.set_club(
+        tenant, early_access=body.get("early_access"), features=body.get("features")
+    )
+    after = feature_flags.club_json(tenant)
+    db.session.add(
+        GlobalAuditEntry(
+            tenant_id=tenant.id,
+            actor_id=g.system_user.id,
+            action="tenant.early_access",
+            target_type="Tenant",
+            target_id=str(tenant.id),
+            details={
+                "early_access": [before["early_access"], after["early_access"]],
+                "features": {k: v for k, v in (body.get("features") or {}).items()},
+            },
+            ip_address=request.remote_addr,
+        )
+    )
+    db.session.commit()
+    return jsonify(after), 200
+
+
 @tenant_admin_bp.route("/tenants/<int:tenant_id>/billing", methods=["GET"])
 @require_global_permission("tenants.read")
 def get_tenant_billing(tenant_id: int):

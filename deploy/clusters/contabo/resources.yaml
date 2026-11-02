@@ -28,6 +28,32 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: platform-backend
+spec:
+  template:
+    spec:
+      containers:
+        - name: backend
+          resources:
+            requests: { cpu: 100m, memory: 320Mi }
+            limits: { memory: 768Mi }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: platform-worker
+spec:
+  template:
+    spec:
+      containers:
+        - name: platform-worker
+          resources:
+            requests: { cpu: 50m, memory: 256Mi }
+            limits: { memory: 768Mi }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
   name: celery-worker
 spec:
   template:

@@ -16,4 +16,6 @@ def when_ready(server):
 def post_worker_init(worker):
     from hubra.core.build_info import start_heartbeat
 
-    start_heartbeat("api", worker.wsgi)
+    from hubra.core.roles import build_component
+
+    start_heartbeat(build_component("api"), worker.wsgi)
