@@ -1,4 +1,7 @@
 import { apiFetch } from '@hubra/api-client';
+import type { ChangelogEntry, RoadmapItem, RoadmapStatus } from '@hubra/ui';
+
+export type { ChangelogEntry, RoadmapItem } from '@hubra/ui';
 
 export interface PermissionEntry {
   method: string;
@@ -16,19 +19,23 @@ export async function getSystemPermissions(): Promise<PermissionEntry[]> {
 
 // ── Version & Changelog ─────────────────────────────────────────────
 
-export interface ChangelogEntry {
-  version: string;
-  date: string | null;
-  sections: Record<string, string[]>;
-}
-
 export interface ChangelogResponse {
   version: string;
   entries: ChangelogEntry[];
 }
 
-export async function getChangelog(): Promise<ChangelogResponse> {
-  return apiFetch<ChangelogResponse>("/version/changelog");
+export async function getChangelog(lang?: string): Promise<ChangelogResponse> {
+  const q = lang ? `?lang=${encodeURIComponent(lang)}` : "";
+  return apiFetch<ChangelogResponse>(`/version/changelog${q}`);
+}
+
+export interface RoadmapResponse {
+  statuses: RoadmapStatus[];
+  items: RoadmapItem[];
+}
+
+export async function getRoadmap(): Promise<RoadmapResponse> {
+  return apiFetch<RoadmapResponse>("/version/roadmap");
 }
 
 // ── Health ──────────────────────────────────────────────────────────

@@ -1,56 +1,72 @@
-import { useSyncExternalStore } from 'react'
-import { Modal, Stack, Text } from '@mantine/core'
+import { useEffect, useState, useSyncExternalStore } from 'react'
+import { Center, Loader, Modal, SegmentedControl, Stack, Text } from '@mantine/core'
+import { useMediaQuery } from '@mantine/hooks'
 import { useQuery } from '@tanstack/react-query'
+import { ReleaseNotes, Roadmap, latestReleaseKey } from '@hubra/ui'
 import { useT } from '@/locales/i18n'
-import { getChangelog } from '@/api/system'
+import { getRoadmap } from '@/api/system'
 import { qk } from '@/data/keys'
-import { setWhatsNewOpen, subscribeWhatsNew, whatsNewOpen } from './whatsNewStore'
+import { markWhatsNewSeen, setWhatsNewOpen, subscribeWhatsNew, whatsNewOpen } from './whatsNewStore'
+import { useChangelog, useReleaseLang } from './whatsNewData'
 
-/** "Neuigkeiten": the latest changelog entries. */
+type View = 'news' | 'roadmap'
+
+/**
+ * "Neuigkeiten": the newest release open at the top, older versions one at a
+ * time below it, and the roadmap on a second tab. Full screen on phones.
+ */
 export function WhatsNewModal() {
   const { t } = useT()
+  const lang = useReleaseLang()
+  const phone = useMediaQuery('(max-width: 47.99em)')
   const opened = useSyncExternalStore(subscribeWhatsNew, whatsNewOpen)
-  const { data: changelog } = useQuery({
-    queryKey: qk.changelog,
-    queryFn: getChangelog,
-    enabled: opened,
+  const [view, setView] = useState<View>('news')
+  const changelog = useChangelog(opened)
+  const roadmap = useQuery({
+    queryKey: qk.roadmap,
+    queryFn: getRoadmap,
+    enabled: opened && view === 'roadmap',
+    staleTime: 30 * 60 * 1000,
   })
-  const entries = changelog?.entries?.slice(0, 3) ?? []
+
+  useEffect(() => {
+    if (opened && changelog.data) markWhatsNewSeen(latestReleaseKey(changelog.data.entries))
+  }, [opened, changelog.data])
+
+  const loading = view === 'news' ? changelog.isLoading : roadmap.isLoading
+  const failed = view === 'news' ? changelog.isError : roadmap.isError
 
   return (
-    <Modal opened={opened} onClose={() => setWhatsNewOpen(false)} title={t('shell.whatsNew.title')}>
+    <Modal
+      opened={opened}
+      onClose={() => setWhatsNewOpen(false)}
+      title={t('shell.whatsNew.title')}
+      size="lg"
+      fullScreen={phone}
+      radius={phone ? 0 : undefined}
+    >
       <Stack gap="md">
-        {entries.length > 0 ? (
-          entries.map((entry) => (
-            <div key={entry.version}>
-              <Text fz="sm" fw={700}>
-                v{entry.version}
-                {entry.date && (
-                  <Text component="span" fz="xs" c="dimmed" ml={6}>
-                    {entry.date}
-                  </Text>
-                )}
-              </Text>
-              {Object.entries(entry.sections).map(([section, items]) =>
-                items.length > 0 ? (
-                  <div key={section}>
-                    <Text fz="xs" fw={600} c="var(--hb-text-2)" mt={6}>
-                      {section}
-                    </Text>
-                    {items.map((item, i) => (
-                      <Text key={section + '-' + i} fz="sm" c="var(--hb-text-2)" ml={8}>
-                        {item}
-                      </Text>
-                    ))}
-                  </div>
-                ) : null,
-              )}
-            </div>
-          ))
-        ) : (
+        <SegmentedControl
+          fullWidth
+          value={view}
+          onChange={(v) => setView(v as View)}
+          data={[
+            { value: 'news', label: t('shell.whatsNew.tabNews', 'Was ist neu') },
+            { value: 'roadmap', label: t('shell.whatsNew.tabRoadmap', 'Roadmap') },
+          ]}
+        />
+        {loading ? (
+          <Center py="xl">
+            <Loader size="sm" />
+          </Center>
+        ) : failed ? (
           <Text fz="sm" c="dimmed">
             {t('shell.whatsNew.changelogSoon')}
           </Text>
+        ) : view === 'news' ? (
+          <ReleaseNotes entries={changelog.data?.entries ?? []} lang={lang} />
+        ) : (
+          <Roadmap items={roadmap.data?.items ?? []} lang={lang} />
         )}
       </Stack>
     </Modal>

@@ -80,6 +80,18 @@ def _fast_argon2():
 
 
 @pytest.fixture(autouse=True)
+def _maintenance_cache():
+    """Read the maintenance state once per test: a 5 s cache running out
+    between two requests of one test changes its query counts."""
+    from hubra.core.services import maintenance
+
+    maintenance.clear_cache()
+    with patch.object(maintenance, "_CACHE_SECONDS", 3600.0):
+        yield
+    maintenance.clear_cache()
+
+
+@pytest.fixture(autouse=True)
 def _reset_redis_breaker():
     """Keep one test's simulated Redis outage from leaking into the next."""
     from hubra.core.redis_client import reset_redis_down
@@ -88,7 +100,11 @@ def _reset_redis_breaker():
     reset_redis_down()
     # Request timing of earlier tests must not count in this one.
     perf_monitor.reset_local()
+    # Past the start-up grace, so a 5xx counts as a server error.
+    started = perf_monitor._process_started
+    perf_monitor._process_started = started - perf_monitor.WARMUP_SECONDS - 1
     yield
+    perf_monitor._process_started = started
     reset_redis_down()
 
 

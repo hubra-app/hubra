@@ -5,9 +5,8 @@ const sidebar = (page: Page) => page.locator('.mantine-AppShell-navbar')
 const entry = (page: Page, path: string) => sidebar(page).locator(`a.nav-item[href$="${path}"]`)
 
 async function openCustomize(page: Page) {
-  // The user card at the foot of the sidebar opens the user menu.
-  await sidebar(page).locator('button').last().click()
-  await page.getByText('Seitenleiste anpassen').click()
+  // The pencil next to the first heading of the sidebar.
+  await sidebar(page).getByTestId('nav-edit').click()
   return page.getByRole('dialog', { name: 'Seitenleiste anpassen' })
 }
 

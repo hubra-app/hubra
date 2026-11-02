@@ -305,12 +305,11 @@ def _generate_invoices(today: date | None = None) -> dict:
         _link_pending_transaction(invoice, member.id)
 
         logger.info(
-            "invoice_generated member_id=%s tier=%s price_type=%s amount=%s billing_cycle=%s invoice_id=%s",
+            "invoice_generated member_id=%s tier=%s price_type=%s amount=%s invoice_id=%s",
             member.id,
             tier.name,
             tier.price_type,
             amount,
-            cycle,
             invoice.id,
         )
         created += 1

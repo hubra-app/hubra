@@ -186,6 +186,24 @@ services:
           memory: 512M
           cpus: "1.0"
 
+  # The Discord gateway: only for the bot's welcome message and roles on
+  # join (docs/discord.md). Off unless started with --profile discord.
+  discord-gateway:
+    <<: *backend-app
+    profiles: [discord]
+    restart: unless-stopped
+    command: flask modules run discord-gateway --wait 600
+    depends_on:
+      flask-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.25"
+
   celery-beat:
     <<: *backend-app
     restart: unless-stopped

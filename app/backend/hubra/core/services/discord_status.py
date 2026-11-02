@@ -60,7 +60,8 @@ def _error_text(exc: Exception) -> str:
             404: "Not found (404)",
             429: "Rate limited by Discord (429); try again in a minute",
         }.get(exc.code, f"Discord answered {exc.code}")
-    return f"Discord unreachable: {exc}"
+    _log.warning("Discord check failed: %s", exc)
+    return "Discord unreachable; see the server log for details"
 
 
 def _api_base() -> str:
@@ -87,6 +88,15 @@ def redirect_uris() -> list[str]:
         f"{base}/api/v1/apps/callback/discord",
         f"{base}/api/v1/account/linked-accounts/discord/callback",
     ]
+
+
+def linked_roles_url() -> str:
+    """General Information › Linked Roles Verification URL: where Discord
+    sends someone who picks a Hubra linked role."""
+    from hubra.core.services.email import _get_sso_base_url
+
+    base = _get_sso_base_url()
+    return f"{base}/account/verknuepfungen?link=discord" if base else ""
 
 
 def _redis():
@@ -259,6 +269,7 @@ def status(refresh: bool = False) -> dict:
             "actual": live.get("interactionsUrl"),
         },
         "redirectUris": redirect_uris(),
+        "linkedRolesUrl": linked_roles_url(),
         "platformLog": {
             "channelId": channel_id,
             "categories": sorted(platform_discord.enabled_categories()),

@@ -8,6 +8,7 @@ Covers:
   - Graceful handling when Redis unavailable
 """
 
+import time
 from unittest.mock import patch, MagicMock
 
 
@@ -94,46 +95,84 @@ class TestTaskFailureAlert:
 
 
 class TestCheckApiErrorRate:
-    """Tests for API error rate checking."""
+    """The error-rate alert: server errors in the last hour, once per incident."""
 
-    @patch("hubra.api.metrics._get_redis_client")
-    def test_returns_ok_when_rate_low(self, mock_get_redis):
-        """Returns ok when error rate is below threshold."""
-        mock_redis = MagicMock()
-        mock_redis.get.side_effect = lambda k: b"100" if "total" in k else b"5"
-        mock_get_redis.return_value = mock_redis
+    def setup_method(self):
+        from hubra.core.services import maintenance, perf_monitor
+        from hubra.core.tasks import monitoring
 
-        result = check_api_error_rate()
-        assert result["status"] == "ok"
-        assert result["rate"] == 0.05
+        perf_monitor.reset_local()
+        maintenance.clear_cache()
+        monitoring._alerting_local["on"] = False
+
+    def _traffic(self, ok=0, client_errors=0, server_errors=0, warming=False):
+        from hubra.core.services import perf_monitor
+
+        started = perf_monitor._process_started
+        if warming:
+            perf_monitor._process_started = time.monotonic()
+        try:
+            for status, n in ((200, ok), (401, client_errors), (500, server_errors)):
+                for _ in range(n):
+                    perf_monitor.record_request("GET /api/v1/x", status, 10)
+        finally:
+            perf_monitor._process_started = started
+
+    def _check(self, app):
+        with (
+            app.app_context(),
+            patch("hubra.core.services.perf_monitor._redis", return_value=None),
+        ):
+            return check_api_error_rate()
 
     @patch("hubra.core.tasks.monitoring.alert_error")
-    @patch("hubra.api.metrics._get_redis_client")
-    def test_alerts_when_rate_high(self, mock_get_redis, mock_alert):
-        """Alerts when error rate exceeds threshold."""
-        mock_redis = MagicMock()
-        mock_redis.get.side_effect = lambda k: b"100" if "total" in k else b"50"
-        mock_get_redis.return_value = mock_redis
+    def test_expired_sign_ins_after_a_release_are_not_errors(self, mock_alert, app):
+        # A release: every open tab's access token is refused once.
+        with patch("hubra.core.services.perf_monitor._redis", return_value=None):
+            self._traffic(ok=40, client_errors=60)
+        result = self._check(app)
+        assert result["status"] == "ok"
+        assert result["errors"] == 0
+        mock_alert.assert_not_called()
 
-        result = check_api_error_rate()
-        assert result["status"] == "alert"
-        assert result["rate"] == 0.5
+    @patch("hubra.core.tasks.monitoring.alert_error")
+    def test_errors_while_a_release_starts_do_not_count(self, mock_alert, app):
+        with patch("hubra.core.services.perf_monitor._redis", return_value=None):
+            self._traffic(ok=60, server_errors=30, warming=True)
+        assert self._check(app)["status"] == "ok"
+        mock_alert.assert_not_called()
+
+    @patch("hubra.core.tasks.monitoring.alert_resolved")
+    @patch("hubra.core.tasks.monitoring.alert_error")
+    def test_a_real_outage_alerts_once_and_resolves(
+        self, mock_alert, mock_resolved, app
+    ):
+        with patch("hubra.core.services.perf_monitor._redis", return_value=None):
+            self._traffic(ok=60, server_errors=20)
+        assert self._check(app)["status"] == "alert"
+        assert self._check(app)["status"] == "still_high"
         mock_alert.assert_called_once()
 
-    @patch("hubra.api.metrics._get_redis_client")
-    def test_returns_skipped_when_redis_unavailable(self, mock_get_redis):
-        """Returns skipped when Redis is unavailable."""
-        mock_get_redis.return_value = None
-        result = check_api_error_rate()
-        assert result["status"] == "skipped"
+        from hubra.core.services import perf_monitor
 
-    @patch("hubra.api.metrics._get_redis_client")
-    def test_returns_ok_when_no_traffic(self, mock_get_redis):
-        """Returns ok when there's no traffic."""
-        mock_redis = MagicMock()
-        mock_redis.get.return_value = None
-        mock_get_redis.return_value = mock_redis
+        perf_monitor.reset_local()
+        with patch("hubra.core.services.perf_monitor._redis", return_value=None):
+            self._traffic(ok=100)
+        assert self._check(app)["status"] == "resolved"
+        mock_resolved.assert_called_once()
 
-        result = check_api_error_rate()
-        assert result["status"] == "ok"
-        assert result["total"] == 0
+    @patch("hubra.core.tasks.monitoring.alert_error")
+    def test_too_few_requests_never_alert(self, mock_alert, app):
+        with patch("hubra.core.services.perf_monitor._redis", return_value=None):
+            self._traffic(ok=5, server_errors=5)
+        result = self._check(app)
+        assert result["reason"] == "too_few_requests"
+        mock_alert.assert_not_called()
+
+    @patch("hubra.core.tasks.monitoring.alert_error")
+    def test_paused_in_maintenance(self, mock_alert, app):
+        with patch("hubra.core.services.perf_monitor._redis", return_value=None):
+            self._traffic(ok=60, server_errors=40)
+        with patch("hubra.core.services.maintenance.is_active", return_value=True):
+            assert self._check(app)["status"] == "maintenance"
+        mock_alert.assert_not_called()

@@ -14,3 +14,13 @@ export {
   safeNotificationLink,
   type NotificationText,
 } from './notificationText'
+export {
+  InlineMarkdown,
+  ReleaseNotes,
+  Roadmap,
+  latestReleaseKey,
+  visibleReleases,
+  type ChangelogEntry,
+  type RoadmapItem,
+  type RoadmapStatus,
+} from './releases'

@@ -8,11 +8,10 @@ Provides:
 
 import logging
 import time
-from datetime import datetime, timezone
 
 from celery import signals
 
-from hubra.core.services.alerts import alert_error
+from hubra.core.services.alerts import alert_error, alert_resolved
 from hubra.core.tasks import celery_app
 
 _log = logging.getLogger(__name__)
@@ -63,49 +62,98 @@ def task_failure_alert(
     _alert_cooldowns[task_name] = now
 
 
-def check_api_error_rate() -> dict:
-    """Check API error rate from Redis counters and alert if threshold exceeded.
+# The error-rate alert: server errors (5xx) in the last hour, from the
+# request timing in ``perf_monitor``.  4xx answers are not errors here: an
+# expired sign-in (401) after a release, a 404 or a refused form are normal.
+MIN_REQUESTS_FOR_ALERT = 50
+_ALERT_STATE_KEY = "monitor:api_errors:alerting"
+_alerting_local = {"on": False}
 
-    Returns a status dict with the check result.
+
+def _alert_state(client) -> bool:
+    if client is None:
+        return _alerting_local["on"]
+    try:
+        return bool(client.get(_ALERT_STATE_KEY))
+    except Exception:  # noqa: BLE001
+        return _alerting_local["on"]
+
+
+def _set_alert_state(client, on: bool) -> None:
+    _alerting_local["on"] = on
+    if client is None:
+        return
+    try:
+        if on:
+            client.set(_ALERT_STATE_KEY, "1", ex=7 * 24 * 3600)
+        else:
+            client.delete(_ALERT_STATE_KEY)
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def check_api_error_rate() -> dict:
+    """Alert when too many API requests failed with a server error.
+
+    Looks at the last hour (``perf_monitor.last_hour``): at least
+    ``MIN_REQUESTS_FOR_ALERT`` requests and a 5xx share above
+    ``API_ERROR_RATE_THRESHOLD`` (5 % by default).  Errors while a release
+    starts up are counted apart (``perf_monitor.WARMUP_SECONDS``) and
+    maintenance answers not at all.  One alert per incident: it goes out when
+    the rate gets too high and again, as resolved, when it is back down.
+    Paused while the platform is in maintenance.
     """
+    from hubra.core.services import maintenance, perf_monitor
+
     try:
         from flask import current_app
 
-        threshold = current_app.config.get("API_ERROR_RATE_THRESHOLD", 0.1)
+        threshold = float(
+            current_app.config.get(
+                "API_ERROR_RATE_THRESHOLD", perf_monitor.SERVER_ERROR_SHARE
+            )
+        )
     except RuntimeError:
-        threshold = 0.1
+        threshold = perf_monitor.SERVER_ERROR_SHARE
 
     try:
-        from hubra.api.metrics import _get_redis_client
+        if maintenance.is_active():
+            return {"status": "maintenance"}
+        last = perf_monitor.last_hour()
+        total = int(last["requests"] or 0)
+        errors = int(last["status"].get("5xx", 0))
+        rate = errors / total if total else 0.0
+        client = perf_monitor._redis()
+        alerting = _alert_state(client)
+        result = {"total": total, "errors": errors, "rate": rate}
 
-        client = _get_redis_client()
-        if client is None:
-            return {"status": "skipped", "reason": "redis_unavailable"}
-
-        now = datetime.now(timezone.utc)
-        key_total = f"api:errors:total:{now.strftime('%Y-%m')}"
-        key_errors = f"api:errors:count:{now.strftime('%Y-%m')}"
-
-        total = int(client.get(key_total) or 0)
-        errors = int(client.get(key_errors) or 0)
-
-        if total == 0:
-            return {"status": "ok", "total": 0, "errors": 0, "rate": 0}
-
-        rate = errors / total
+        if total < MIN_REQUESTS_FOR_ALERT:
+            return {"status": "ok", "reason": "too_few_requests", **result}
         if rate > threshold:
+            if alerting:
+                return {"status": "still_high", **result}
             alert_error(
                 title="High API Error Rate",
-                description=f"Error rate {rate:.1%} exceeds threshold {threshold:.1%}",
+                description=(
+                    f"{rate:.1%} of API requests in the last hour failed with a "
+                    f"server error (threshold {threshold:.1%})"
+                ),
                 fields=[
-                    {"name": "Total Requests", "value": str(total), "inline": True},
-                    {"name": "Errors", "value": str(errors), "inline": True},
+                    {"name": "Requests", "value": str(total), "inline": True},
+                    {"name": "Server errors", "value": str(errors), "inline": True},
                     {"name": "Rate", "value": f"{rate:.1%}", "inline": True},
                 ],
             )
-            return {"status": "alert", "total": total, "errors": errors, "rate": rate}
-
-        return {"status": "ok", "total": total, "errors": errors, "rate": rate}
+            _set_alert_state(client, True)
+            return {"status": "alert", **result}
+        if alerting:
+            alert_resolved(
+                title="API Error Rate Back to Normal",
+                description=f"{rate:.1%} server errors in the last hour",
+            )
+            _set_alert_state(client, False)
+            return {"status": "resolved", **result}
+        return {"status": "ok", **result}
     except Exception:
         _log.debug("Failed to check API error rate", exc_info=True)
         return {"status": "error", "reason": "check_failed"}

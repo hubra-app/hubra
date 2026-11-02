@@ -118,7 +118,7 @@ def read_manifest(path: Path) -> dict:
     try:
         data = yaml.safe_load((path / MANIFEST).read_text()) or {}
     except (OSError, yaml.YAMLError) as exc:
-        raise ValueError(f"{MANIFEST}: {exc}") from exc
+        raise ValueError(f"{MANIFEST}: missing or not valid YAML") from exc
     if not isinstance(data, dict):
         raise ValueError(f"{MANIFEST} must be a mapping")
     return data

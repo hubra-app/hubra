@@ -70,6 +70,30 @@ export function clearTokens(): void {
   }).catch(() => {});
 }
 
+/** The platform is in maintenance (503 MAINTENANCE from the API). */
+export interface MaintenanceState {
+  active: boolean;
+  message: string;
+  until: string | null;
+}
+
+let onMaintenance: ((state: MaintenanceState) => void) | null = null;
+
+/** Called when an API answer says the platform is in maintenance, so the
+ * app can show its maintenance page. */
+export function setMaintenanceHandler(
+  handler: ((state: MaintenanceState) => void) | null,
+): void {
+  onMaintenance = handler;
+}
+
+/** GET /maintenance (public): whether the platform is in maintenance. */
+export async function getMaintenance(signal?: AbortSignal): Promise<MaintenanceState> {
+  const res = await fetch(`${BASE}/maintenance`, { credentials: "include", signal });
+  if (!res.ok) return { active: false, message: "", until: null };
+  return res.json() as Promise<MaintenanceState>;
+}
+
 let onAuthFailure: (() => void) | null = null;
 
 export function setAuthFailureHandler(handler: (() => void) | null): void {
@@ -177,6 +201,9 @@ export async function apiFetch<T = unknown>(
       const body = await res.json();
       message = body.message ?? body.error ?? message;
       code = body.error;
+      if (res.status === 503 && code === "MAINTENANCE" && onMaintenance) {
+        onMaintenance({ active: true, message: body.message ?? "", until: body.until ?? null });
+      }
       // Per-field problems, e.g. { smtp_port: "must be a number" }.
       if (body.details && typeof body.details === "object") details = body.details;
     } catch {

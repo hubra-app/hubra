@@ -29,6 +29,7 @@ from __future__ import annotations
 import json
 import logging
 import smtplib
+import socket
 import ssl
 import time
 from contextlib import contextmanager
@@ -293,6 +294,28 @@ def _relay_config(which: str):
     return r if r.host else None
 
 
+def _step_error(exc: Exception) -> str:
+    """A short, fixed text for a failed relay check.
+
+    The relay's own answer can carry internal host names or account
+    details, so it stays in the log; the result shows the kind of error
+    and, for an SMTP answer, its code.
+    """
+    code = getattr(exc, "smtp_code", None)
+    code_text = f" ({int(code)})" if isinstance(code, int) else ""
+    if isinstance(exc, smtplib.SMTPAuthenticationError):
+        return f"Authentication failed: the relay refused the login{code_text}"
+    if isinstance(exc, socket.gaierror):
+        return "The relay's host name could not be resolved"
+    if isinstance(exc, ConnectionRefusedError):
+        return "The relay refused the connection"
+    if isinstance(exc, (TimeoutError, socket.timeout)):
+        return "The relay did not answer in time"
+    if isinstance(exc, ssl.SSLError):
+        return f"TLS failed ({exc.__class__.__name__})"
+    return f"{exc.__class__.__name__}{code_text}"
+
+
 def check_relay(which: str) -> dict:
     """Log in to the main relay or the fallback without sending a mail.
 
@@ -323,7 +346,7 @@ def check_relay(which: str) -> dict:
                     "step": name,
                     "ok": False,
                     "ms": int((time.monotonic() - t) * 1000),
-                    "error": str(exc)[:300] or exc.__class__.__name__,
+                    "error": _step_error(exc),
                 }
             )
             raise
@@ -363,7 +386,8 @@ def check_relay(which: str) -> dict:
         if cfg.user and cfg.password:
             step("login", lambda: server.login(cfg.user, cfg.password))
     except Exception as exc:
-        error = str(exc)[:300] or exc.__class__.__name__
+        logger.warning("relay check (%s) failed: %r", which, exc)
+        error = _step_error(exc)
     finally:
         if server is not None:
             try:
@@ -561,6 +585,37 @@ def _admin_ids():
     )
 
 
+def channels(alert_type: str) -> dict:
+    """Where *alert_type* goes out now: ``{"mail", "discord", "reason"}``.
+
+    Platform settings ``alerts.enabled`` (all on or off), ``alerts.mail_off``
+    and ``alerts.discord_off`` (types switched off per channel); nothing goes
+    out while the platform is in maintenance.  Each admin's own choice
+    (``users.platform_alerts``) still decides who of them gets a mail.
+    """
+    from hubra.core.services import maintenance, platform_settings
+
+    try:
+        if maintenance.is_active():
+            return {"mail": False, "discord": False, "reason": "maintenance"}
+        if platform_settings.get("alerts.enabled") == "off":
+            return {"mail": False, "discord": False, "reason": "alerts_off"}
+        mail_off = {
+            t.strip() for t in platform_settings.get("alerts.mail_off").split(",")
+        }
+        discord_off = {
+            t.strip() for t in platform_settings.get("alerts.discord_off").split(",")
+        }
+    except Exception:  # noqa: BLE001
+        # Settings unreadable (database trouble): rather alert than not.
+        return {"mail": True, "discord": True, "reason": None}
+    return {
+        "mail": alert_type not in mail_off,
+        "discord": alert_type not in discord_off,
+        "reason": None,
+    }
+
+
 def alert(
     alert_type: str,
     subject: str,
@@ -580,13 +635,13 @@ def alert(
         wait = cooldown() if throttle else timedelta(0)
         if wait and _recent(alert_type, now - wait):
             return False
-        record(
-            "alert",
-            alert_type,
-            subject,
-            level=level,
-            details={"lines": lines},
-        )
+        route = channels(alert_type)
+        details: dict = {"lines": lines}
+        if not (route["mail"] or route["discord"]):
+            details["paused"] = route["reason"] or "channels_off"
+        record("alert", alert_type, subject, level=level, details=details)
+        if "paused" in details:
+            return False
         from hubra.core.tasks.mail_monitor_tasks import send_platform_alert
 
         try:
@@ -692,8 +747,12 @@ def deliver_alert(alert_type: str, subject: str, lines: list[str], level: str) -
     )
 
     color = {"info": COLOR_GREEN, "warning": COLOR_ORANGE}.get(level, COLOR_RED)
-    if alert_type != "system":  # system alerts came from send_alert already
+    route = channels(alert_type)
+    # System alerts came from send_alert, which posted them already.
+    if alert_type != "system" and route["discord"]:
         send_alert(f"Hubra: {subject}", "\n".join(lines), color=color, staff=False)
+    if not route["mail"]:
+        return 0
 
     relay = platform_settings.relay()
     if not relay.sender_email:
