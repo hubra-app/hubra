@@ -21,6 +21,7 @@ from hubra.core.errors import api_error, error_message
 from hubra.core.extensions import db, limiter
 from hubra.core.models.tenant import GlobalAuditEntry
 from hubra.core.services import email, mail_server, platform_monitor, platform_settings
+from hubra.core.services.backup_crypto import club_only as backup_club_only
 from hubra.core.services.platform_settings import PlatformSettingError
 
 platform_bp = Blueprint("platform_bp", __name__)
@@ -1186,6 +1187,7 @@ def encryption_status():
                 "key_version": version,
                 "key_created_at": at.isoformat() if at else None,
                 "backup_public_key": t.backup_public_key,
+                "backup_club_only": backup_club_only(t),
             }
         )
     return jsonify(

@@ -203,6 +203,20 @@ export function PlatformEncryption() {
                           </Button>
                         )}
                       </Group>
+                      {c.backup_club_only && (
+                        <Badge
+                          mt={4}
+                          size="xs"
+                          color="red"
+                          variant="light"
+                          title={tr(
+                            'Der Verein hat «Nur unser Schlüssel» gewählt: Neue Backups öffnen nur mit seinem privaten Schlüssel, nicht mit dem Plattform-Schlüssel.',
+                            'The club chose "only our key": new backups open only with its private key, not with the platform key.',
+                          )}
+                        >
+                          {tr('Nur Vereinsschlüssel', 'Club key only')}
+                        </Badge>
+                      )}
                     </Table.Td>
                     <Table.Td>
                       <Button
