@@ -56,6 +56,8 @@ workflow does not run at all, and its required checks would stay pending.
    the full checks again on that commit and builds the images only if they
    pass.
 
+Versions and which images a release rebuilds: [release-guidelines.md](release-guidelines.md).
+
 Manual image builds (Actions > Images > Run workflow) also run the full
 checks first.
 
