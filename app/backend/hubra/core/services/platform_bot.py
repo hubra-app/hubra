@@ -166,7 +166,9 @@ def _token() -> str:
 
 
 class BotError(RuntimeError):
-    pass
+    def __init__(self, message: str, status: int | None = None):
+        super().__init__(message)
+        self.status = status
 
 
 def _bot(method: str, path: str, body: Any = None) -> Any:
@@ -189,7 +191,9 @@ def _bot(method: str, path: str, body: Any = None) -> Any:
         with urllib.request.urlopen(req, timeout=10) as resp:  # noqa: S310
             raw = resp.read()
     except urllib.error.HTTPError as exc:
-        raise BotError(f"Discord answered {exc.code} for {method} {path}") from None
+        raise BotError(
+            f"Discord answered {exc.code} for {method} {path}", exc.code
+        ) from None
     except Exception as exc:  # noqa: BLE001
         raise BotError(f"Discord unreachable: {exc}") from None
     return json.loads(raw) if raw else None

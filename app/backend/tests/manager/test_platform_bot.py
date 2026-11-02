@@ -636,3 +636,137 @@ def test_typed_text_in_pings_is_inert():
         assert raw not in text
     assert platform_bot.plain("") == "–"
     assert platform_bot.plain("2001:db8::1") == "2001:db8::1"
+
+
+# ── Roles on the platform server ──────────────────────────────────────────────
+
+
+@pytest.fixture
+def roles_server(bot):
+    """The platform server's roles and members, as Discord would keep them."""
+    from hubra.core.services import platform_roles
+
+    server = {"roles": {"1": {"id": "1", "name": "Mods", "permissions": "8"}}}
+    server["members"] = {ADMIN_DISCORD: {"roles": ["1"]}}
+    calls = bot
+    original = platform_bot._bot.side_effect
+
+    def fake(method, path, body=None):
+        parts = path.strip("/").split("/")
+        if parts[-1] == "roles" and method == "GET":
+            return list(server["roles"].values())
+        if parts[-1] == "roles" and method == "POST":
+            rid = str(100 + len(server["roles"]))
+            server["roles"][rid] = {"id": rid, **body}
+            calls.append((method, path, body))
+            return server["roles"][rid]
+        if len(parts) == 4 and parts[2] == "roles" and method == "DELETE":
+            server["roles"].pop(parts[3], None)
+            calls.append((method, path, None))
+            return None
+        if len(parts) == 4 and parts[2] == "members":
+            if parts[3] not in server["members"]:
+                raise platform_bot.BotError("Discord answered 404", 404)
+            return server["members"][parts[3]]
+        if len(parts) == 6 and parts[4] == "roles":
+            have = server["members"][parts[3]]["roles"]
+            if method == "PUT" and parts[5] not in have:
+                have.append(parts[5])
+            if method == "DELETE" and parts[5] in have:
+                have.remove(parts[5])
+            calls.append((method, path, None))
+            return None
+        return original(method, path, body)
+
+    platform_bot._bot.side_effect = fake
+    platform_settings.set_many({platform_roles.SETTING: "on"})
+    with patch("hubra.core.services.account.memberships", return_value=[]):
+        yield server
+
+
+def _names(server, discord_id):
+    return sorted(
+        server["roles"][r]["name"]
+        for r in server["members"][discord_id]["roles"]
+        if r in server["roles"]
+    )
+
+
+def test_platform_roles_follow_hubra(roles_server, admin, seeded_db):
+    from hubra.core.services import platform_roles
+
+    tenant = Tenant(name="FC Test", slug="fc-test")
+    clubs = patch(
+        "hubra.core.services.account.memberships",
+        return_value=[(tenant, seeded_db["admin"])],
+    )
+    with clubs:
+        assert platform_roles.sync() == 1
+        names = _names(roles_server, ADMIN_DISCORD)
+        assert names == ["Mods", "Plattform-Admin", "Vereinsinhaber", "Vereinsmitglied"]
+        made = [r for r in roles_server["roles"].values() if r["id"] != "1"]
+        assert len(made) == 4
+        assert all(r["permissions"] == "0" and not r["mentionable"] for r in made)
+
+        # Nothing changed: no call to Discord for this person.
+        assert platform_roles.sync() == 0
+
+        # Two-factor off: the admin role goes, the human-made role stays.
+        with patch("hubra.api.auth.mfa.enabled", return_value=False):
+            platform_roles.sync(force=True)
+        assert "Plattform-Admin" not in _names(roles_server, ADMIN_DISCORD)
+        assert "Mods" in _names(roles_server, ADMIN_DISCORD)
+
+    # Left the club: only the human-made role is left.
+    with patch("hubra.api.auth.mfa.enabled", return_value=False):
+        platform_roles.sync()
+    assert _names(roles_server, ADMIN_DISCORD) == ["Mods"]
+
+
+def test_platform_roles_leave_with_the_link(roles_server, admin, db):
+    from hubra.core.services import platform_roles
+
+    platform_roles.sync()
+    assert "Plattform-Admin" in _names(roles_server, ADMIN_DISCORD)
+    db.session.query(ExternalAccount).delete()
+    db.session.commit()
+    platform_roles.sync()
+    assert _names(roles_server, ADMIN_DISCORD) == ["Mods"]
+
+
+def test_platform_roles_off_deletes_them(roles_server, admin, db):
+    from hubra.core.services import platform_roles
+
+    platform_roles.sync()
+    assert len(roles_server["roles"]) == 5
+    platform_settings.set_many({platform_roles.SETTING: "off"})
+    db.session.commit()
+    platform_roles.sync()
+    assert list(roles_server["roles"]) == ["1"]
+
+
+def test_platform_roles_reuse_only_harmless_roles(roles_server, admin):
+    from hubra.core.services import platform_roles
+
+    # A human-made "Plattform-Admin" with permissions is not taken over.
+    roles_server["roles"]["2"] = {
+        "id": "2",
+        "name": "Plattform-Admin",
+        "permissions": "8",
+    }
+    roles_server["roles"]["3"] = {"id": "3", "name": "Vereinsmitglied"}
+    ids = platform_roles.ensure_roles(GUILD)
+    assert ids["platform_admin"] not in ("2",)
+    assert ids["club_member"] == "3"
+
+
+def test_platform_roles_retry_people_not_on_the_server(roles_server, admin, redis):
+    from hubra.core.services import platform_roles
+
+    roles_server["members"].clear()
+    assert platform_roles.sync() == 1
+    assert platform_roles.sync() == 1  # not remembered
+    roles_server["members"][ADMIN_DISCORD] = {"roles": []}
+    assert platform_roles.joined(GUILD, ADMIN_DISCORD) is True
+    assert "Plattform-Admin" in _names(roles_server, ADMIN_DISCORD)
+    assert platform_roles.joined(CLUB_GUILD, ADMIN_DISCORD) is False

@@ -3,11 +3,14 @@
 * ``tick`` (every minute): tells club servers when planned maintenance starts
   or ends, marks alerts resolved,
   installs /plattform and /wartung on the platform server, announces a new
-  release, and once a day at 08:00 (platform time zone) posts the digest
+  release, keeps the platform server's roles up to date, and once a day at 08:00 (platform time zone) posts the digest
   and the key-rotation reminder.
 * ``approve_request``: Approve on a club request in Discord (setting the
   club up can take longer than Discord waits for an answer).
 * ``post_security``: one security ping.
+* ``sync_roles``: platform server roles of one person who just linked
+  Discord (``services.platform_roles``; the tick syncs everyone every ten
+  minutes, and in full once a day).
 * ``club_notice``: release and maintenance notices to the clubs' servers.
 
 None of them raise: a Discord problem is logged and must not turn into a
@@ -62,6 +65,14 @@ def _daily(now: datetime) -> None:
         return
     _step("digest", platform_bot.send_digest, now)
     _step("keys", platform_bot.key_reminder, now)
+    _step("roles (full)", _roles, True)
+
+
+def _roles(force: bool = False) -> None:
+    from hubra.core.services import platform_roles
+
+    if force or platform_roles.due():
+        platform_roles.sync(force=force)
 
 
 @celery_app.task(name="hubra.core.tasks.platform_bot_tasks.tick", ignore_result=True)
@@ -76,6 +87,7 @@ def tick() -> None:
     _step("resolve alerts", platform_bot.resolve_alerts)
     _step("commands", platform_bot.register_commands)
     _step("release", platform_bot.announce_release)
+    _step("roles", _roles)
     _step("daily", _daily, now)
 
 
@@ -119,3 +131,15 @@ def club_notice(kind: str, payload: dict) -> None:
         _log.info("platform notice %s went to %s club servers", kind, sent)
     except Exception:  # noqa: BLE001
         _log.warning("platform bot: club notice %s failed", kind, exc_info=True)
+
+
+@celery_app.task(
+    name="hubra.core.tasks.platform_bot_tasks.sync_roles", ignore_result=True
+)
+def sync_roles(user_id: int) -> None:
+    from hubra.core.services import platform_roles
+
+    try:
+        platform_roles.sync([int(user_id)], force=True)
+    except Exception as exc:  # noqa: BLE001
+        _log.warning("platform bot: roles of user %s not synced: %s", user_id, exc)

@@ -272,6 +272,34 @@ Apps › Discord: **Neue Hubra-Versionen ankündigen**, **Wartungen
 ankündigen**, both off by default): new versions with their main changes,
 and planned, started, ended or cancelled maintenance, in the main channel.
 
+### Roles on the platform server
+
+manage › Platform settings › Discord › **Rollen auf dem Plattform-Server**
+(`discord.platform_roles`, off by default). When on, the bot gives everyone
+who linked their Discord account these roles on the platform log's server:
+
+| Role | Who |
+| --- | --- |
+| Plattform-Admin | Platform staff (superadmin or a global role) with two-factor, the same people the buttons above accept |
+| Vereinsinhaber | Owner of at least one active club |
+| Vereinsadmin | Admin, not owner, of at least one active club |
+| Vereinsmitglied | Active member of at least one club |
+
+- The bot makes the roles itself with **no permissions**, not mentionable.
+  What they may see is up to you (channel permissions on Discord). An
+  existing role with the same name is only taken over when it has no
+  permissions either.
+- It only gives or takes these four roles, never one a person made, and
+  only for people who linked Discord. Disabled accounts, people who turn off
+  two-factor (Plattform-Admin) or leave their clubs, and people who unlink
+  lose them.
+- Updated every ten minutes (only people whose roles should change cost a
+  Discord call), right after someone links Discord, when someone joins the
+  server (with the gateway process running), and in full once a day.
+- Turning it off deletes the four roles.
+- The bot needs **Manage Roles** on the platform server, and its own role
+  must be above these roles (it is, for roles it made itself).
+
 ## What the bot may do on a club's server
 
 The club picks scopes when it adds the bot; each asks only for the

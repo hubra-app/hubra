@@ -252,6 +252,15 @@ SPECS: tuple[Spec, ...] = (
         "discord_log_events",
     ),
     Spec(
+        "discord.platform_roles",
+        "Roles on the platform server",
+        "on: the bot gives everyone who linked Discord the roles Plattform-Admin, "
+        "Vereinsinhaber, Vereinsadmin and Vereinsmitglied on the platform server. "
+        "off deletes these roles again",
+        lambda cfg: "off",
+        "on_off",
+    ),
+    Spec(
         "alerts.cooldown_minutes",
         "Alert cooldown",
         "Minutes before the same kind of alert is mailed again. 0: every time. "
