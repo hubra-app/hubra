@@ -3470,7 +3470,7 @@
   "backupKey.clubOnly.risk3": "Backups, die schon gemacht wurden, bleiben, wie sie sind. Ihr könnt die Einstellung jederzeit wieder ausschalten; das gilt dann ab dem nächsten Backup.",
   "backupKey.clubOnly.ack": "Ich habe unseren privaten Schlüssel an mindestens zwei sicheren Orten und verstehe, dass Hubra nicht helfen kann, wenn er fehlt.",
   "backupKey.clubOnly.slug": "Zur Bestätigung den Kurznamen des Vereins eingeben: {{slug}}",
-  "backupKey.clubOnly.turnOn": "Nur unseren Schlüssel verwenden"
+  "backupKey.clubOnly.turnOn": "Nur unseren Schlüssel verwenden",
   "settings.modules.builtInTitle": "Funktionen",
   "settings.modules.noPlugins": "Auf dieser Plattform ist noch kein Plugin installiert. Plugins installieren die Plattform-Admins aus dem Hubra-Katalog.",
   "settings.modules.morePlugins": "Fehlt etwas? Weitere Plugins installieren die Plattform-Admins aus dem Hubra-Katalog.",
