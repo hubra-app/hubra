@@ -371,7 +371,10 @@ def servers() -> dict:
     token = _token()
     guilds = _call("/users/@me/guilds?limit=200", token) or []
     current = None
-    channel_id = platform_settings.get("discord.log_channel_id")
+    # Log and audit channel share one server: preselect it from either.
+    channel_id = platform_settings.get(
+        "discord.log_channel_id"
+    ) or platform_settings.get("discord.audit_channel_id")
     if channel_id:
         try:
             current = (_api(f"/channels/{channel_id}", token) or {}).get("guild_id")

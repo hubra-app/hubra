@@ -34,6 +34,7 @@ import {
 } from '@/screens/platform/Alerts'
 import { HealthPanel, MailServerPanel, PermissionsPanel } from '@/screens/platform/Diagnostics'
 import { JobsPanel } from '@/screens/platform/Jobs'
+import { ErrorsPanel } from '@/screens/platform/Errors'
 import { PerformancePanel } from '@/screens/platform/Performance'
 import { MyAlertsCard, OutboundMailTab } from '@/screens/platform/MailMonitor'
 import { DiscordPanel } from '@/screens/platform/DiscordStatus'
@@ -210,8 +211,8 @@ export function navSections(): NavSection[] {
           label: tr('Diagnose', 'Diagnostics'),
           icon: icon(IconHeartbeat),
           desc: tr(
-            'Wie es den Diensten geht, wie schnell die API antwortet und was im Hintergrund läuft.',
-            'How the services are doing, how fast the API answers and what runs in the background.',
+            'Wie es den Diensten geht, welche Fehler auftreten, wie schnell die API antwortet und was im Hintergrund läuft.',
+            'How the services are doing, which errors happen, how fast the API answers and what runs in the background.',
           ),
           tabs: [
             {
@@ -220,6 +221,13 @@ export function navSections(): NavSection[] {
               label: tr('Systemzustand', 'System health'),
               perm: 'platform.diagnostics',
               render: () => <HealthPanel />,
+            },
+            {
+              id: 'errors',
+              path: '/app/platform/diagnostics/errors',
+              label: tr('Fehler', 'Errors'),
+              perm: 'platform.diagnostics',
+              render: () => <ErrorsPanel />,
             },
             {
               id: 'performance',
@@ -426,7 +434,10 @@ export function navSections(): NavSection[] {
               path: '/app/audit',
               label: tr('Änderungen', 'Changes'),
               perm: 'audit.read',
-              desc: tr('Alle Änderungen auf der Plattform, neueste zuerst.', 'Every change on the platform, newest first.'),
+              desc: tr(
+                'Alle Änderungen auf der Plattform und in allen Vereinen, neueste zuerst. Suchen, filtern und als CSV exportieren.',
+                'Every change on the platform and in every club, newest first. Search, filter and export as CSV.',
+              ),
               render: () => <GlobalAuditTab />,
             },
             {
