@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { usePlanChoices } from '@/plans'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -152,6 +153,7 @@ function AlertsCell({ tenant, h }: { tenant: TenantWithHealth; h: TenantHealth }
 export function TenantsTab() {
   const navigate = useNavigate()
   const { isSuperadmin } = useAdmin()
+  const { data: planChoices } = usePlanChoices()
   const { tr } = useLang()
   const [search, setSearch] = useState('')
   const [planFilter, setPlanFilter] = useState<string>('all')
@@ -228,10 +230,12 @@ export function TenantsTab() {
             allowDeselect={false}
             data={[
               { value: 'all', label: tr('Alle Pläne', 'All plans') },
-              ...['starter', 'growth', 'enterprise'].map((p) => ({
-                value: p,
-                label: planLabel(p, tr),
-              })),
+              ...(planChoices?.plans.map((p) => p.key) ?? ['starter', 'growth', 'enterprise']).map(
+                (p) => ({
+                  value: p,
+                  label: planLabel(p, tr),
+                }),
+              ),
             ]}
             w={160}
           />

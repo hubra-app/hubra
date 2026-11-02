@@ -10,14 +10,12 @@ import {
   PasswordInput,
   Stack,
   Switch,
-  Table,
   Text,
   TextInput,
   Title,
 } from '@mantine/core'
 import { useAdmin } from '@/context/AdminContext'
 import { useLang, tr } from '@/lang'
-import { planLabel } from '@/labels'
 import { DiscordLogPicker } from '@/screens/platform/DiscordLogPicker'
 import {
   getPlatformSettings,
@@ -55,13 +53,7 @@ const DISCORD_LOG = ['discord.log_channel_id', 'discord.audit_channel_id']
 const DISCORD_ROLES = ['discord.platform_roles']
 // Defaults built into Hubra, not read from the environment.
 const PERF = ['perf.slow_request_ms', 'perf.slow_query_ms', 'perf.p95_warning_ms']
-const PLANS = ['starter', 'growth', 'enterprise'] as const
-const LIMIT_KINDS = ['members', 'mail_month', 'storage_mb'] as const
-const LIMITS = [
-  'limits.warn_percent',
-  ...PLANS.flatMap((p) => LIMIT_KINDS.map((k) => `limits.${p}.${k}`)),
-]
-const PRICES = PLANS.map((p) => `billing.price.${p}`)
+const LIMITS = ['limits.warn_percent']
 const BUILT_IN = ['alerts.cooldown_minutes', 'alerts.retention_days', ...PERF, ...LIMITS]
 const ALERTS = ['alerts.cooldown_minutes', 'alerts.retention_days', 'alerts.manage_url']
 
@@ -81,7 +73,6 @@ export type SettingsSectionId =
   | 'alerts'
   | 'performance'
   | 'limits'
-  | 'prices'
 /** The keys each section saves. */
 const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
   relay: [...RELAY, ...FALLBACK],
@@ -92,7 +83,6 @@ const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
   alerts: ALERTS,
   performance: PERF,
   limits: LIMITS,
-  prices: PRICES,
 }
 
 function SourceBadge({ s }: { s: PlatformSetting }) {
@@ -457,101 +447,16 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
           {section === 'limits' && (
             <Paper withBorder shadow="sm" radius="lg" p="lg">
               <Group justify="space-between" mb={4}>
-                <Title order={3}>{tr('Limits pro Tarif', 'Limits per plan')}</Title>
+                <Title order={3}>{tr('Limit-Warnungen', 'Limit warnings')}</Title>
                 {resetButton(LIMITS)}
               </Group>
               <Text size="xs" c="dimmed" mb={12}>
                 {tr(
-                  'Leer heisst kein Limit. Ist das Mitgliederlimit erreicht, kommt niemand Neues dazu (Einladungen, Anträge); Plattform-Staff kann in manage trotzdem hinzufügen. Mails pro Monat und Speicher werden nur gemeldet, nichts wird gesperrt. Einzelne Vereine bekommen eigene Limits auf ihrer Seite unter Alle Vereine.',
-                  'Empty means no limit. At the member limit nobody new can join (invites, applications); platform staff can still add people in manage. Mails per month and storage are only reported, nothing is blocked. A club gets its own limits on its page under All clubs.',
+                  'Die Limits stehen bei jedem Tarif (oben). Ist das Mitgliederlimit erreicht, kommt niemand Neues dazu (Einladungen, Anträge); Plattform-Staff kann in manage trotzdem hinzufügen. Mails pro Monat und Speicher werden nur gemeldet, nichts wird gesperrt. Einzelne Vereine bekommen eigene Limits auf ihrer Seite.',
+                  'The limits are on each plan (above). At the member limit nobody new can join (invites, applications); platform staff can still add people in manage. Mails per month and storage are only reported, nothing is blocked. A club gets its own limits on its page.',
                 )}
               </Text>
-              <Stack gap="md">
-                {field('limits.warn_percent')}
-                <Table.ScrollContainer minWidth={520}>
-                  <Table verticalSpacing={6}>
-                    <Table.Thead>
-                      <Table.Tr>
-                        <Table.Th>{tr('Tarif', 'Plan')}</Table.Th>
-                        <Table.Th>{tr('Mitglieder', 'Members')}</Table.Th>
-                        <Table.Th>{tr('Mails pro Monat', 'Mails per month')}</Table.Th>
-                        <Table.Th>{tr('Speicher (MB)', 'Storage (MB)')}</Table.Th>
-                      </Table.Tr>
-                    </Table.Thead>
-                    <Table.Tbody>
-                      {PLANS.map((p) => (
-                        <Table.Tr key={p}>
-                          <Table.Td fw={600}>{planLabel(p, tr)}</Table.Td>
-                          {LIMIT_KINDS.map((k) => {
-                            const key = `limits.${p}.${k}`
-                            return (
-                              <Table.Td key={k}>
-                                <TextInput
-                                  aria-label={`${planLabel(p, tr)}: ${k}`}
-                                  inputMode="numeric"
-                                  placeholder={tr('kein Limit', 'no limit')}
-                                  value={draft[key] ?? byKey[key]?.value ?? ''}
-                                  onChange={(e) => {
-                                    const value = e.currentTarget.value
-                                    setDraft((d) => ({ ...d, [key]: value }))
-                                  }}
-                                />
-                              </Table.Td>
-                            )
-                          })}
-                        </Table.Tr>
-                      ))}
-                    </Table.Tbody>
-                  </Table>
-                </Table.ScrollContainer>
-              </Stack>
-            </Paper>
-          )}
-
-          {section === 'prices' && (
-            <Paper withBorder shadow="sm" radius="lg" p="lg">
-              <Group justify="space-between" mb={4}>
-                <Title order={3}>{tr('Preise pro Tarif', 'Prices per plan')}</Title>
-                {resetButton(PRICES)}
-              </Group>
-              <Text size="xs" c="dimmed" mb={12}>
-                {tr(
-                  'Listenpreis pro Monat in CHF. Er wird nur in manage gezeigt, es wird noch nichts verrechnet. Ein Verein kann auf seiner Seite unter Alle Vereine einen eigenen Preis, Rabatt, Sponsor und bezahlte Zusatzmodule haben.',
-                  'List price per month in CHF. It is only shown in manage; nothing is charged yet. A club can have its own price, discount, sponsor and paid add-ons on its page under All clubs.',
-                )}
-              </Text>
-              <Table verticalSpacing={6}>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>{tr('Tarif', 'Plan')}</Table.Th>
-                    <Table.Th>{tr('Preis pro Monat (CHF)', 'Price per month (CHF)')}</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {PLANS.map((p) => {
-                    const key = `billing.price.${p}`
-                    return (
-                      <Table.Tr key={p}>
-                        <Table.Td fw={600}>{planLabel(p, tr)}</Table.Td>
-                        <Table.Td>
-                          <TextInput
-                            aria-label={`${planLabel(p, tr)}: CHF`}
-                            inputMode="decimal"
-                            placeholder={tr('kein Preis', 'no price')}
-                            leftSection={<Text size="xs">CHF</Text>}
-                            leftSectionWidth={44}
-                            value={draft[key] ?? byKey[key]?.value ?? ''}
-                            onChange={(e) => {
-                              const value = e.currentTarget.value
-                              setDraft((d) => ({ ...d, [key]: value }))
-                            }}
-                          />
-                        </Table.Td>
-                      </Table.Tr>
-                    )
-                  })}
-                </Table.Tbody>
-              </Table>
+              <Stack gap="md">{field('limits.warn_percent')}</Stack>
             </Paper>
           )}
 

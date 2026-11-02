@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { usePlanChoices } from '@/plans'
 import {
   Modal,
   TextInput,
@@ -61,6 +62,7 @@ export function CreateTenantModal({
   onClose: () => void
 }) {
   const { notify } = useAdmin()
+  const { data: planChoices } = usePlanChoices()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [slugEdited, setSlugEdited] = useState(false)
@@ -143,11 +145,13 @@ export function CreateTenantModal({
             label={tr('Plan', 'Plan')}
             {...form.getInputProps('plan')}
             onChange={(v) => v && form.setFieldValue('plan', v)}
-            data={[
-              { value: 'starter', label: 'Starter' },
-              { value: 'growth', label: 'Growth' },
-              { value: 'enterprise', label: 'Enterprise' },
-            ]}
+            data={(
+              planChoices?.plans ?? [
+                { key: 'starter', name_de: 'Starter', name_en: 'Starter', hidden: false },
+              ]
+            )
+              .filter((p) => !p.hidden)
+              .map((p) => ({ value: p.key, label: tr(p.name_de, p.name_en) }))}
           />
           <TextInput
             label={tr('E-Mail der Admin-Person', 'Admin email')}

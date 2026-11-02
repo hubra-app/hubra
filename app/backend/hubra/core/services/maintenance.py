@@ -53,6 +53,7 @@ ALLOWED_PREFIXES = (
     "/api/v1/discord/interactions",
     "/api/v1/i18n",
     "/api/v1/instance",  # public instance info the apps need to start
+    "/api/v1/public",  # pricing and plugin list for the website
 )
 
 

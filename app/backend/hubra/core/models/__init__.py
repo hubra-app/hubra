@@ -19,6 +19,7 @@ from hubra.core.models.platform_setting import PlatformSetting
 from hubra.core.models.platform_event import PlatformEvent
 from hubra.core.models.data_request import DataRequest
 from hubra.core.models.error_group import ErrorGroup
+from hubra.core.models.platform_plan import PlatformAddon, PlatformPlan
 from hubra.core.models.maintenance_window import MaintenanceWindow
 from hubra.core.models.role import MemberRoleScope, Permission, Role, RolePermission
 from hubra.core.models.global_role import (
@@ -102,6 +103,8 @@ __all__ = [
     "PlatformEvent",
     "ErrorGroup",
     "MaintenanceWindow",
+    "PlatformAddon",
+    "PlatformPlan",
     "DataRequest",
     "AccountSession",
     "KnownDevice",

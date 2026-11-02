@@ -28,7 +28,7 @@ test('a page tab is its own URL', async ({ page }) => {
 test('old manage URLs redirect to where the page lives now', async ({ page }) => {
   const cases: [string, RegExp][] = [
     ['/app/platform/settings', /\/app\/platform\/mail\/relay$/],
-    ['/app/platform/settings/limits', /\/app\/tenants\/limits$/],
+    ['/app/platform/settings/limits', /\/app\/tenants\/plans$/],
     ['/app/platform/settings/backups', /\/app\/platform\/backups\/storage$/],
     ['/app/platform/diagnostics/outbound-mail?level=error', /\/app\/platform\/mail\?level=error$/],
     ['/app/platform/diagnostics/permissions', /\/app\/roles\/api$/],

@@ -10,7 +10,7 @@ Until then manage keeps the terms per club here, in
   ``past_due``, ``unpaid``, ``canceled``, ``incomplete``, ``paused``), plus
   ``none`` for a club that is not billed;
 * ``price_chf`` is the club's own monthly price (``None``: the plan's list
-  price, platform setting ``billing.price.<plan>``), ``discount_percent``
+  price, ``services.plans``), ``discount_percent``
   comes off it;
 * a **sponsored** club (``sponsor_name``, ``sponsored_until``; no end date:
   open-ended) pays nothing while the sponsorship runs;
@@ -162,19 +162,10 @@ def _addons(value) -> list[dict]:
 
 
 def plan_price(plan: str) -> str | None:
-    """The plan's list price per month (platform setting), or None."""
-    from hubra.core.services import platform_settings
+    """The plan's list price per month (manage › Einstellungen › Tarife)."""
+    from hubra.core.services import plans
 
-    try:
-        raw = platform_settings.get(f"billing.price.{plan}")
-    except ValueError:
-        return None
-    if not raw:
-        return None
-    try:
-        return _money(raw, "plan price")
-    except ApiError:
-        return None
+    return plans.month_price(plan)
 
 
 def summary(tenant: Tenant, today: date | None = None) -> dict:

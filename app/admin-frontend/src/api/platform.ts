@@ -713,3 +713,90 @@ export async function getError(id: number) {
 export async function setErrorStatus(id: number, action: 'resolve' | 'reopen') {
   return apiFetch<{ error: ErrorGroupRow }>(`${P}/errors/${id}/${action}`, { method: 'POST' })
 }
+
+// ── Plans and add-ons with list prices (Einstellungen › Tarife) ──────────────
+
+export interface PlanFeature {
+  de: string
+  en: string
+}
+
+export interface Plan {
+  key: string
+  name_de: string
+  name_en: string
+  description_de: string
+  description_en: string
+  price_month_chf: string | null
+  price_year_chf: string | null
+  features: PlanFeature[]
+  limits: { members: number | null; mail_month: number | null; storage_mb: number | null }
+  highlighted: boolean
+  sort: number
+  public: boolean
+  hidden: boolean
+  clubs: number
+}
+
+export interface Addon {
+  code: string
+  name: string
+  description: string
+  plugin: string | null
+  price_month_chf: string | null
+  public: boolean
+  label_de: string
+  label_en: string
+  note_de: string
+  note_en: string
+}
+
+/** What a plan form sends (limits flattened, like the API takes them). */
+export interface PlanInput {
+  key?: string
+  name_de?: string
+  name_en?: string
+  description_de?: string
+  description_en?: string
+  price_month_chf?: string | null
+  price_year_chf?: string | null
+  features?: PlanFeature[]
+  limit_members?: number | null
+  limit_mail_month?: number | null
+  limit_storage_mb?: number | null
+  public?: boolean
+  highlighted?: boolean
+  sort?: number
+  hidden?: boolean
+}
+
+export async function getPlans() {
+  return apiFetch<{ plans: Plan[]; addons: Addon[] }>(`${P}/plans`)
+}
+
+export async function createPlan(body: PlanInput) {
+  return apiFetch<Plan>(`${P}/plans`, { method: 'POST', body: JSON.stringify(body) })
+}
+
+export async function updatePlan(key: string, body: PlanInput) {
+  return apiFetch<Plan>(`${P}/plans/${encodeURIComponent(key)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function deletePlan(key: string) {
+  return apiFetch<void>(`${P}/plans/${encodeURIComponent(key)}`, { method: 'DELETE' })
+}
+
+export async function setAddon(
+  code: string,
+  body: Partial<
+    Pick<Addon, 'price_month_chf' | 'public' | 'label_de' | 'label_en' | 'note_de' | 'note_en'>
+  >,
+) {
+  return apiFetch<Addon>(`${P}/addons/${encodeURIComponent(code)}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  })
+}

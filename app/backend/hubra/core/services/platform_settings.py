@@ -30,11 +30,9 @@ every device out of push (they have to turn it on again).
 
 Performance (``perf.*``): the thresholds of ``services.perf_monitor``.
 
-Limits (``limits.*``): what each plan allows a club (``services.quotas``);
-a club can have its own limits on top, set in manage on the club.
-
-Billing (``billing.price.<plan>``): each plan's list price per month in
-CHF (``services.club_billing``), shown in manage only until Hubra charges.
+Limits (``limits.warn_percent``): when clubs are warned about their
+limits (``services.quotas``).  The limits and prices of each plan are on the
+plan (``services.plans``); a club can have its own on top, set in manage.
 
 Discord (``discord.*``): the one Hubra application every club's server and
 every linked account goes through (see docs/discord.md). Set here only, with
@@ -369,32 +367,6 @@ SPECS: tuple[Spec, ...] = (
         "share of a limit (%). The second warning comes at 100 %",
         lambda cfg: "80",
         "percent",
-    ),
-    *(
-        Spec(
-            f"limits.{plan}.{kind}",
-            f"{plan.title()}: {label}",
-            f"{desc} on the {plan.title()} plan. Empty: no limit",
-            lambda cfg: "",
-            "count",
-        )
-        for plan in ("starter", "growth", "enterprise")
-        for kind, label, desc in (
-            ("members", "members", "Most members a club can have"),
-            ("mail_month", "mails per month", "Mails a club sends per month"),
-            ("storage_mb", "storage (MB)", "Storage a club uses, in MB,"),
-        )
-    ),
-    *(
-        Spec(
-            f"billing.price.{plan}",
-            f"{plan.title()}: price per month (CHF)",
-            f"List price per month of the {plan.title()} plan, in CHF. Shown "
-            "in manage only; nothing is charged yet. Empty: no price",
-            lambda cfg: "",
-            "chf",
-        )
-        for plan in ("starter", "growth", "enterprise")
     ),
 )
 

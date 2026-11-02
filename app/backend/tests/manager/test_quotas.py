@@ -34,9 +34,9 @@ def club(db, seeded_db):
 
 
 def _plan(db, **values):
-    platform_settings.set_many(
-        {f"limits.starter.{k}": str(v) for k, v in values.items()}
-    )
+    from hubra.core.services import plans
+
+    plans.update(plans.get("starter"), {f"limit_{k}": v for k, v in values.items()})
     db.session.commit()
 
 
@@ -67,8 +67,11 @@ def test_bad_values_are_refused(db, club):
         with pytest.raises(Exception) as err:
             quotas.set_overrides(club, bad)
         assert getattr(err.value, "status", None) == 400
-    with pytest.raises(platform_settings.PlatformSettingError):
-        platform_settings.set_many({"limits.growth.members": "lots"})
+    from hubra.core.services import plans
+
+    with pytest.raises(Exception) as err:
+        plans.update(plans.get("growth"), {"limit_members": "lots"})
+    assert getattr(err.value, "status", None) == 400
     with pytest.raises(platform_settings.PlatformSettingError):
         platform_settings.set_many({"limits.warn_percent": "0"})
     # Settings written some other way that are not numbers are ignored.
