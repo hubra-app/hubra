@@ -1184,3 +1184,87 @@ def set_club_backup_key(tenant_id: int):
     return jsonify(
         {"tenant_id": tenant_id, "backup_public_key": tenant.backup_public_key}
     ), 200
+
+
+# ── Plans and add-ons with their list prices (Einstellungen › Tarife) ────────
+
+
+@platform_bp.get("/plans")
+@require_global_permission(_PERM)
+def list_plans():
+    from hubra.core.services import plans
+
+    rows = plans.all_plans()
+    db.session.commit()  # the default plans, on a new database
+    return jsonify(
+        {
+            "plans": [plans.plan_json(p, with_usage=True) for p in rows],
+            "addons": plans.addon_rows(),
+        }
+    ), 200
+
+
+@platform_bp.post("/plans")
+@require_global_permission(_PERM)
+def create_plan():
+    from hubra.core.services import plans
+
+    plan = plans.create(request.get_json(silent=True))
+    _audit("platform.plan.created", "Plan", plan.key, plans.plan_json(plan))
+    db.session.commit()
+    return jsonify(plans.plan_json(plan, with_usage=True)), 201
+
+
+@platform_bp.patch("/plans/<key>")
+@require_global_permission(_PERM)
+def update_plan(key: str):
+    from hubra.core.services import plans
+
+    plan = plans.get(key)
+    if plan is None:
+        return api_error("NOT_FOUND", "No such plan", 404)
+    before = plans.plan_json(plan, with_usage=True)
+    plans.update(plan, request.get_json(silent=True))
+    db.session.flush()
+    after = plans.plan_json(plan, with_usage=True)
+    _audit(
+        "platform.plan.updated",
+        "Plan",
+        key,
+        {
+            k: {"before": before[k], "after": after[k]}
+            for k in after
+            if before.get(k) != after[k]
+        },
+    )
+    db.session.commit()
+    return jsonify(after), 200
+
+
+@platform_bp.delete("/plans/<key>")
+@require_global_permission(_PERM)
+def delete_plan(key: str):
+    from hubra.core.services import plans
+
+    plan = plans.get(key)
+    if plan is None:
+        return api_error("NOT_FOUND", "No such plan", 404)
+    plans.delete(plan)
+    _audit("platform.plan.deleted", "Plan", key)
+    db.session.commit()
+    return "", 204
+
+
+@platform_bp.put("/addons/<code>")
+@require_global_permission(_PERM)
+def set_addon(code: str):
+    from hubra.core.services import plans
+
+    body = request.get_json(silent=True)
+    plans.set_addon(code, body)
+    _audit(
+        "platform.addon.updated", "Addon", code, body if isinstance(body, dict) else {}
+    )
+    db.session.commit()
+    row = next((a for a in plans.addon_rows() if a["code"] == code), None)
+    return jsonify(row), 200

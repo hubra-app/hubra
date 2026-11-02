@@ -24,10 +24,12 @@ import { useAdmin } from '@/context/AdminContext'
 import { formatDate } from '@/format'
 import { tr } from '@/lang'
 import { planLabel } from '@/labels'
+import { usePlanChoices } from '@/plans'
 import {
   getTenantBilling,
   getTenantModules,
   setTenantBilling,
+  setTenantPlan,
   type BillingAddon,
   type BillingStatus,
   type BillingTerms,
@@ -168,8 +170,8 @@ export function TenantBilling({ tenantId }: { tenantId: number }) {
           {data.price_chf == null && data.plan_price_chf == null && (
             <Text size="xs" c="dimmed">
               {tr(
-                'Kein Preis für diesen Tarif: Plattform-Einstellungen › Preise.',
-                'No price for this plan: Platform settings › Prices.',
+                'Kein Preis für diesen Tarif: Einstellungen › Tarife & Preise.',
+                'No price for this plan: Settings › Plans & prices.',
               )}
             </Text>
           )}
@@ -215,8 +217,14 @@ export function TenantBilling({ tenantId }: { tenantId: number }) {
           tenantId={tenantId}
           data={data}
           onClose={() => setEditing(false)}
-          onSave={async (values) => {
+          onSave={async (values, plan) => {
             try {
+              if (plan !== data.plan) {
+                await setTenantPlan(tenantId, plan)
+                for (const key of ['tenant', 'tenant-limits', 'tenants-health']) {
+                  void queryClient.invalidateQueries({ queryKey: [key] })
+                }
+              }
               const fresh = await setTenantBilling(tenantId, values)
               queryClient.setQueryData(['tenant-billing', tenantId], fresh)
               notify('success', tr('Abrechnung gespeichert', 'Billing saved'))
@@ -244,8 +252,14 @@ function BillingModal({
   tenantId: number
   data: Billing
   onClose: () => void
-  onSave: (values: BillingTerms) => Promise<void>
+  onSave: (values: BillingTerms, plan: string) => Promise<void>
 }) {
+  const { data: planChoices } = usePlanChoices()
+  const [plan, setPlan] = useState(data.plan)
+  const planPrice = (key: string) =>
+    planChoices?.plans.find((p) => p.key === key)?.price_month_chf ?? null
+  const listedAddon = (code: string) =>
+    planChoices?.addons.find((a) => a.code === code)?.price_month_chf ?? null
   const [t, setT] = useState<BillingTerms>(() => ({
     status: data.status,
     trial_ends: data.trial_ends,
@@ -287,6 +301,28 @@ function BillingModal({
       <Stack gap="md">
         <SimpleGrid cols={{ base: 1, sm: 2 }}>
           <Select
+            label={tr('Tarif', 'Plan')}
+            description={tr(
+              'Tarife und Listenpreise: Einstellungen › Tarife & Preise',
+              'Plans and list prices: Settings › Plans & prices',
+            )}
+            allowDeselect={false}
+            value={plan}
+            onChange={(v) => v && setPlan(v)}
+            data={(planChoices?.plans ?? [{ key: data.plan, hidden: false }])
+              .filter((p) => !p.hidden || p.key === data.plan)
+              .map((p) => {
+                const price = 'price_month_chf' in p ? p.price_month_chf : null
+                return {
+                  value: p.key,
+                  label:
+                    price != null
+                      ? `${planLabel(p.key, tr)} · ${chf(price)}`
+                      : planLabel(p.key, tr),
+                }
+              })}
+          />
+          <Select
             label={tr('Status', 'Status')}
             allowDeselect={false}
             value={t.status}
@@ -314,10 +350,10 @@ function BillingModal({
           <NumberInput
             label={tr('Eigener Preis pro Monat (CHF)', 'Own price per month (CHF)')}
             description={
-              data.plan_price_chf != null
+              planPrice(plan) != null
                 ? tr(
-                    `Leer: Tarifpreis ${chf(data.plan_price_chf)}`,
-                    `Empty: plan price ${chf(data.plan_price_chf)}`,
+                    `Leer: Tarifpreis ${chf(planPrice(plan))}`,
+                    `Empty: plan price ${chf(planPrice(plan))}`,
                   )
                 : tr('Leer: Tarifpreis (keiner gesetzt)', 'Empty: plan price (none set)')
             }
@@ -461,7 +497,10 @@ function BillingModal({
               onClick={() => {
                 const m = modules?.find((x) => x.code === pick)
                 if (!m) return
-                set('addons', [...t.addons, { code: m.code, label: m.name, price_chf: '0.00' }])
+                set('addons', [
+                  ...t.addons,
+                  { code: m.code, label: m.name, price_chf: listedAddon(m.code) ?? '0.00' },
+                ])
                 setPick(null)
               }}
             >
@@ -489,7 +528,7 @@ function BillingModal({
             onClick={async () => {
               setSaving(true)
               try {
-                await onSave(t)
+                await onSave(t, plan)
               } finally {
                 setSaving(false)
               }

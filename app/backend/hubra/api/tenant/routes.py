@@ -89,7 +89,18 @@ def _body_keys(body: dict, key: str) -> list[str] | None:
 _VALID_STATUSES = {"active", "suspended", "archived"}
 # A tuple: "in" then compares, so a list or object sent as plan is a 400,
 # not a TypeError from hashing it.
-_VALID_PLANS = ("starter", "growth", "enterprise")
+
+
+def _valid_plan(plan) -> bool:
+    from hubra.core.services import plans
+
+    return plans.assignable(plan)
+
+
+def _plan_keys() -> list[str]:
+    from hubra.core.services import plans
+
+    return plans.keys()
 
 
 # ── Routes ──────────────────────────────────────────────────────────────────
@@ -231,11 +242,11 @@ def provision_tenant():
             }
         ), 422
 
-    if plan not in _VALID_PLANS:
+    if not _valid_plan(plan):
         return jsonify(
             {
                 "error": "VALIDATION_ERROR",
-                "message": f"plan must be one of {sorted(_VALID_PLANS)}",
+                "message": f"plan must be one of {_plan_keys()}",
             }
         ), 422
 
@@ -288,11 +299,11 @@ def update_tenant(tenant_id: int):
     if settings is not None and not isinstance(settings, dict):
         raise_error(400, "VALIDATION_ERROR", "settings must be an object")
 
-    if plan is not None and plan not in _VALID_PLANS:
+    if plan is not None and not _valid_plan(plan):
         return jsonify(
             {
                 "error": "VALIDATION_ERROR",
-                "message": f"plan must be one of {sorted(_VALID_PLANS)}",
+                "message": f"plan must be one of {_plan_keys()}",
             }
         ), 422
 
@@ -1038,10 +1049,8 @@ def submit_tenant_request():
     if len(name) > 255:
         raise_error(400, "VALIDATION_ERROR", "name is longer than 255 characters")
 
-    if plan not in _VALID_PLANS:
-        raise_error(
-            400, "VALIDATION_ERROR", f"plan must be one of {sorted(_VALID_PLANS)}"
-        )
+    if not _valid_plan(plan):
+        raise_error(400, "VALIDATION_ERROR", f"plan must be one of {_plan_keys()}")
 
     existing_tenant = db.session.scalar(select(Tenant).where(Tenant.slug == slug))
     if existing_tenant is not None:
@@ -2591,3 +2600,36 @@ def _member_to_dict(member) -> dict:
 
 
 # ── Helpers (existing) ──────────────────────────────────────────────────────
+
+
+@tenant_admin_bp.route("/plans", methods=["GET"])
+@require_global_permission("tenants.read")
+def list_plan_choices():
+    """The plans a club can be put on (not hidden), for the plan pickers."""
+    from hubra.core.services import plans
+
+    rows = plans.all_plans()
+    db.session.commit()
+    return jsonify(
+        {
+            "plans": [
+                {
+                    "key": p.key,
+                    "name_de": p.name_de,
+                    "name_en": p.name_en or p.name_de,
+                    "public": p.public,
+                    "hidden": p.archived_at is not None,
+                    "price_month_chf": plans.month_price(p.key),
+                }
+                for p in rows
+            ],
+            "addons": [
+                {
+                    "code": a["code"],
+                    "name": a["label_de"] or a["name"],
+                    "price_month_chf": a["price_month_chf"],
+                }
+                for a in plans.addon_rows()
+            ],
+        }
+    ), 200

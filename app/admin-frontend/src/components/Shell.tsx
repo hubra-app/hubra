@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { usePlanChoices } from '@/plans'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   ActionIcon,
@@ -294,6 +295,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const { tr } = useLang()
   const location = useLocation()
   const { data: profile } = useProfile()
+  // Plan names for planLabel everywhere (Einstellungen › Tarife).
+  usePlanChoices(hasGlobalPermission('tenants.read'))
   // Phones: the sidebar is hidden behind a menu button and opens as a side
   // drawer over a dimmed page (a tap beside it, Esc or a link closes it).
   const [menuOpen, { open: openMenu, close: closeMenu }] = useDisclosure(false)

@@ -617,3 +617,30 @@ export async function setTenantBilling(tenantId: number, values: Partial<Billing
     body: JSON.stringify(values),
   })
 }
+
+// ── Plans a club can be on (manage › Einstellungen › Tarife) ─────────────────
+
+export interface PlanChoice {
+  key: string
+  name_de: string
+  name_en: string
+  public: boolean
+  hidden: boolean
+  price_month_chf: string | null
+}
+
+export interface PlanChoices {
+  plans: PlanChoice[]
+  addons: { code: string; name: string; price_month_chf: string | null }[]
+}
+
+export async function listPlanChoices() {
+  return apiFetch<PlanChoices>('/system/plans')
+}
+
+export async function setTenantPlan(id: number, plan: string) {
+  return apiFetch<{ tenant: Tenant }>(`/system/tenants/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ plan }),
+  })
+}

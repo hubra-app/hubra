@@ -157,6 +157,11 @@ def create_app(config_name: str | None = None) -> Flask:
 
     maintenance.install(app)
 
+    # ── Public pricing and plugin list (the website reads them) ─────────────
+    from hubra.core.services import plans
+
+    plans.install(app)
+
     app.before_request(_reject_scalar_json)
     app.before_request(resolve_tenant)
     maintenance.install_club_gate(app)
@@ -245,7 +250,16 @@ def create_app(config_name: str | None = None) -> Flask:
 
     cors.init_app(
         app,
-        resources={r"/api/*": {"origins": app.config["CORS_ORIGINS"]}},
+        resources={
+            # The public pricing and plugin list (services/plans.py): any
+            # site may read them, without cookies.
+            r"/api/v1/public/*": {
+                "origins": "*",
+                "send_wildcard": True,
+                "supports_credentials": False,
+            },
+            r"/api/*": {"origins": app.config["CORS_ORIGINS"]},
+        },
         supports_credentials=True,
         allow_headers=[
             "Content-Type",

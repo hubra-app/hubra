@@ -10,7 +10,7 @@ from sqlalchemy import select
 
 from hubra.core.errors import ApiError
 from hubra.core.models.tenant import GlobalAuditEntry, Tenant
-from hubra.core.services import club_billing, platform_settings
+from hubra.core.services import club_billing, plans
 
 TODAY = date(2026, 11, 2)
 
@@ -24,7 +24,7 @@ def club(db):
 
 
 def _price(db, plan="starter", value="40"):
-    platform_settings.set_many({f"billing.price.{plan}": value})
+    plans.update(plans.get(plan), {"price_month_chf": value})
     db.session.commit()
 
 
@@ -163,10 +163,10 @@ def test_billing_api_needs_platform_rights(client, auth_headers, club):
     assert client.patch(url, json={"status": "active"}).status_code in (401, 403)
 
 
-@pytest.mark.parametrize("bad", ["cheap", "-5", "nan", "1e3", "12.345", "200000"])
-def test_plan_price_setting_is_validated(db, bad):
-    with pytest.raises(platform_settings.PlatformSettingError):
-        platform_settings.set_many({"billing.price.starter": bad})
+@pytest.mark.parametrize("bad", ["cheap", "-5", "nan", True, "200000"])
+def test_plan_price_is_validated(db, bad):
+    with pytest.raises(ApiError):
+        plans.update(plans.get("starter"), {"price_month_chf": bad})
 
 
 def test_plan_price_takes_francs_and_rappen(db, club):

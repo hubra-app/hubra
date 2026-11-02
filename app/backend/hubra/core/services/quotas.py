@@ -1,7 +1,7 @@
 """Per-club limits: members, mails per month and storage.
 
-Each plan has default limits (platform settings ``limits.<plan>.<kind>``,
-empty = no limit); a club can have its own (``Tenant.settings["limits"]``,
+Each plan has default limits (manage › Einstellungen › Tarife, on the plan
+row, ``services.plans``; empty = no limit); a club can have its own (``Tenant.settings["limits"]``,
 set in manage only: a number, or ``null`` for no limit, and a missing key
 for the plan's default).
 
@@ -35,7 +35,6 @@ from hubra.core.models.tenant import Tenant
 _log = logging.getLogger(__name__)
 
 KINDS = ("members", "mail_month", "storage_mb")
-PLANS = ("starter", "growth", "enterprise")
 WARN_PERCENT = 80
 
 _MAIL_KINDS = ("mail.sent", "mail.fallback")
@@ -62,16 +61,12 @@ def warn_percent() -> int:
 
 
 def plan_limits(plan: str) -> dict[str, int | None]:
-    from hubra.core.services import platform_settings
+    from hubra.core.services import plans
 
-    out: dict[str, int | None] = {}
-    for kind in KINDS:
-        try:
-            raw = str(platform_settings.get(f"limits.{plan}.{kind}") or "").strip()
-        except Exception:  # noqa: BLE001  (unknown plan, database hiccup)
-            raw = ""
-        out[kind] = int(raw) if raw.isdigit() else None
-    return out
+    try:
+        return plans.limits(plan)
+    except Exception:  # noqa: BLE001  (database hiccup: no limits)
+        return {kind: None for kind in KINDS}
 
 
 def overrides(tenant: Tenant) -> dict[str, int | None]:
