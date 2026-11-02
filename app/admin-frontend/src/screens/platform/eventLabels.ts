@@ -1,7 +1,7 @@
 import { tr } from '@/lang'
 import type { EventCategory, EventLevel, PlatformEvent } from '@/api/platform'
 
-export const categoryLabel = (c: EventCategory): string =>
+export const categoryLabel = (c: EventCategory | 'performance'): string =>
   ({
     mail: tr('Mail', 'Mail'),
     relay: 'Relay',
@@ -10,6 +10,7 @@ export const categoryLabel = (c: EventCategory): string =>
     plugin: 'Plugin',
     system: 'System',
     alert: tr('Alarm', 'Alert'),
+    performance: tr('Leistung', 'Performance'),
   })[c] ?? c
 
 const serviceName = (key?: string) =>

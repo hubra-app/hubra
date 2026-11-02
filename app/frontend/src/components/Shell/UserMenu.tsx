@@ -22,10 +22,11 @@ import { setWhatsNewOpen } from './whatsNewStore'
 import { setCustomizeSidebarOpen } from './customizeSidebarStore'
 
 /**
- * The account menu. It opens as a pop-over above the sidebar's user card; in
- * the phone menu it sits `inline` at the bottom, always open.
+ * The account menu, a pop-over above the user card (sidebar and phone menu)
+ * or below the top bar's avatar. `onClose` closes it; by default that is the
+ * shared user-menu state.
  */
-export function UserMenu({ inline = false }: { inline?: boolean } = {}) {
+export function UserMenu({ onClose }: { onClose?: () => void } = {}) {
   const { t } = useT()
   const { setPhase, currentUser } = useAuth()
   const { go, setUserMenuOpen } = useNav()
@@ -35,34 +36,25 @@ export function UserMenu({ inline = false }: { inline?: boolean } = {}) {
   const name = currentUser?.name ?? ''
   const email = currentUser?.publicEmail || currentUser?.email || ''
   const bg = currentUser?.avatarColor ?? '#ebe8f2'
-  // Light, dark or the device's setting; Mantine keeps it in this browser.
+  const close = onClose ?? (() => setUserMenuOpen(false))
 
   return (
     <Box
       data-testid="user-menu"
-      style={
-        inline
-          ? {
-              background: 'var(--hb-surface)',
-              border: '1px solid var(--hb-border)',
-              borderRadius: 13,
-              overflow: 'hidden',
-            }
-          : {
-              position: 'absolute',
-              bottom: '100%',
-              left: 0,
-              right: 0,
-              marginBottom: 8,
-              background: 'var(--hb-surface)',
-              border: '1px solid var(--mantine-color-gray-5)',
-              borderRadius: 13,
-              boxShadow:
-                '0 26px 64px -22px rgba(26,22,37,.28), 0 4px 14px -6px rgba(26,22,37,.15)',
-              zIndex: 60,
-              overflow: 'hidden',
-            }
-      }
+      style={{
+        position: 'absolute',
+        bottom: '100%',
+        left: 0,
+        right: 0,
+        marginBottom: 8,
+        background: 'var(--hb-surface)',
+        border: '1px solid var(--mantine-color-gray-5)',
+        borderRadius: 13,
+        boxShadow:
+          '0 26px 64px -22px rgba(26,22,37,.28), 0 4px 14px -6px rgba(26,22,37,.15)',
+        zIndex: 60,
+        overflow: 'hidden',
+      }}
     >
       <Group gap="sm" p="md" style={{ borderBottom: '1px solid var(--hb-border)' }}>
         <Avatar
@@ -102,7 +94,7 @@ export function UserMenu({ inline = false }: { inline?: boolean } = {}) {
                   onClick={() => {
                     if (tenant.tenant_slug) {
                       switchTenant(tenant.tenant_slug)
-                      setUserMenuOpen(false)
+                      close()
                     }
                   }}
                   style={{
@@ -143,7 +135,7 @@ export function UserMenu({ inline = false }: { inline?: boolean } = {}) {
           <UnstyledButton
             onClick={() => {
               go('/app/account/settings')
-              setUserMenuOpen(false)
+              close()
             }}
             style={{
               height: 36,
@@ -157,7 +149,7 @@ export function UserMenu({ inline = false }: { inline?: boolean } = {}) {
           <UnstyledButton
             onClick={() => {
               setCustomizeSidebarOpen(true)
-              setUserMenuOpen(false)
+              close()
             }}
             style={{
               height: 36,
@@ -171,7 +163,7 @@ export function UserMenu({ inline = false }: { inline?: boolean } = {}) {
           <UnstyledButton
             onClick={() => {
               setWhatsNewOpen(true)
-              setUserMenuOpen(false)
+              close()
             }}
             style={{
               height: 36,
@@ -197,7 +189,7 @@ export function UserMenu({ inline = false }: { inline?: boolean } = {}) {
         <UnstyledButton
           onClick={() => {
             setPhase('login')
-            setUserMenuOpen(false)
+            close()
           }}
           style={{
             display: 'flex',

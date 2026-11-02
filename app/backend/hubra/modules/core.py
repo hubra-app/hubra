@@ -14,6 +14,11 @@ module = Module(
             "/api/v1/auth",
         ),
         Blueprint(
+            "hubra.api.auth.redirect_loop",
+            "redirect_loop_bp",
+            "/api/v1/auth",
+        ),
+        Blueprint(
             "hubra.api.auth.routes",
             "account_bp",
             "/api/v1/account",

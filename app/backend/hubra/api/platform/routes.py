@@ -403,6 +403,20 @@ def alerts_overview():
     ), 200
 
 
+@platform_bp.get("/alerts/performance")
+@require_global_permission(_DIAGNOSTICS)
+def alerts_performance():
+    """API timing per route and slow queries, for manage › Platform › Alerts
+    › Performance.  ``hours``: 1 to 24 clock hours, the current one included."""
+    from hubra.core.services import perf_monitor
+
+    try:
+        hours = int(request.args.get("hours", 24))
+    except ValueError:
+        return api_error("VALIDATION_ERROR", "hours must be a number", 400)
+    return jsonify(perf_monitor.summary(hours)), 200
+
+
 @platform_bp.get("/alerts/me")
 @require_global_permission(_DIAGNOSTICS)
 def my_alerts():

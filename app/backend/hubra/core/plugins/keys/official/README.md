@@ -18,7 +18,8 @@ Keys:
 - `Hubra.pub`: the project's plugin key, id `b84edc01a8b17490` (added
   2026-10-28). Its private key is the `HUBRA_SIGNING_KEY` secret of the
   "plugin-signing" environment in each hubra-plugin-* repository.
-- `index/`: the index key. Its private key is the `HUBRA_INDEX_KEY` secret of
+- `index/Hubra index.pub`: the project's index key, id `9584589bdaf1dde9`
+  (added 2026-11-02). Its private key is the `HUBRA_INDEX_KEY` secret of
   the "plugin-signing" environment in hubra-app/hubra-plugins, which then
   holds no plugin key.
 

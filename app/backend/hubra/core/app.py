@@ -140,6 +140,13 @@ def create_app(config_name: str | None = None) -> Flask:
     install_search_path_guard()
 
     app.wsgi_app = TenantPathMiddleware(app.wsgi_app)
+
+    # ── Request timing and slow queries (first, so it times the rest) ─────────
+    from hubra.core.services import perf_monitor
+
+    perf_monitor.install(app)
+    perf_monitor.install_sql_listener()
+
     app.before_request(_reject_scalar_json)
     app.before_request(resolve_tenant)
 

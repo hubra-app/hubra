@@ -83,8 +83,11 @@ def _fast_argon2():
 def _reset_redis_breaker():
     """Keep one test's simulated Redis outage from leaking into the next."""
     from hubra.core.redis_client import reset_redis_down
+    from hubra.core.services import perf_monitor
 
     reset_redis_down()
+    # Request timing of earlier tests must not count in this one.
+    perf_monitor.reset_local()
     yield
     reset_redis_down()
 

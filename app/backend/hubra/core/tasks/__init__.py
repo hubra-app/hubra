@@ -62,6 +62,10 @@ def make_celery(app: Flask) -> Celery:
 
         def __call__(self, *args: object, **kwargs: object) -> object:
             with app.app_context():
+                # The slow-query threshold (read at most once a minute).
+                from hubra.core.services.perf_monitor import refresh_thresholds
+
+                refresh_thresholds()
                 job = self._header(scheduling.HEADER)
                 if job:
                     # Sent by beat: one run of this schedule entry at a time,

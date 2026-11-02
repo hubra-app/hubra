@@ -20,6 +20,7 @@ import {
   resetAuthFailure,
   setTenantSlug,
   apiFetch,
+  redirectTo,
 } from '@hubra/api-client'
 import {
   getAccountSession,
@@ -137,7 +138,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const redirectToLogin = useCallback(() => {
     if (!PRIVATE_PATH.test(window.location.pathname)) return
-    window.location.assign(loginUrl(window.location.pathname))
+    redirectTo(loginUrl(window.location.pathname), 'signed-out')
   }, [loginUrl])
 
   useEffect(() => {
@@ -205,25 +206,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
       } catch (err: unknown) {
         if (cancelled) return
         if ((err as { noTenant?: boolean })?.noTenant) {
+          // Signed in, but not into this club: to the club picker. The status
+          // stays 'loading' on purpose: 'anon' made RequireAuth send the
+          // person to /login?redirect=<this club> as well, and SSO, seeing a
+          // valid session, sent them straight back here — round and round.
           clearLookups()
-          if (!cancelled) {
-            setAuthStatus('anon')
-            resetAuthFailure()
-          }
-          window.location.assign(loginUrl())
+          resetAuthFailure()
+          redirectTo(loginUrl(), 'no-club')
           return
         }
         const { status, code } = err as { status?: number; code?: string }
         if (code === 'EMAIL_NOT_VERIFIED') {
           // The email step after sign-in is still open: do it on SSO first.
           const back = encodeURIComponent(window.location.href)
-          window.location.assign(`${ssoUrl}/verify?redirect=${back}`)
+          redirectTo(`${ssoUrl}/verify?redirect=${back}`, 'email-unverified')
           return
         }
         if (code === 'MFA_REQUIRED_BY_CLUB') {
           // The club asks for two-factor sign-in: set it up on SSO first.
           const back = encodeURIComponent(window.location.href)
-          window.location.assign(`${ssoUrl}/account/zwei-faktor?redirect=${back}`)
+          redirectTo(`${ssoUrl}/account/zwei-faktor?redirect=${back}`, 'club-needs-2fa')
           return
         }
         if (status === 403 && code === 'MUST_CHANGE_PASSWORD') {

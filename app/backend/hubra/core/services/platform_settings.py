@@ -28,6 +28,8 @@ Browser push (``push.*``): the VAPID key pair every push is signed with.
 Hubra makes one the first time a member turns push on; replacing it signs
 every device out of push (they have to turn it on again).
 
+Performance (``perf.*``): the thresholds of ``services.perf_monitor``.
+
 Discord (``discord.*``): the one Hubra application every club's server and
 every linked account goes through (see docs/discord.md). Set here only, with
 no env fallback.  ``discord.log_*`` is the platform log: the bot posts
@@ -257,6 +259,30 @@ SPECS: tuple[Spec, ...] = (
         "(https://manage.hubra.club). Empty: no button",
         lambda cfg: cfg.get("MANAGE_BASE_URL") or "",
         "url",
+    ),
+    Spec(
+        "perf.slow_request_ms",
+        "Slow request",
+        "API requests at least this long (ms) are counted as slow and written "
+        "to the log, with the route only. 0: off",
+        lambda cfg: "1000",
+        "milliseconds",
+    ),
+    Spec(
+        "perf.slow_query_ms",
+        "Slow database query",
+        "Queries at least this long (ms) are counted and written to the log, "
+        "without their values. 0: off",
+        lambda cfg: "250",
+        "milliseconds",
+    ),
+    Spec(
+        "perf.p95_warning_ms",
+        "Slow API warning",
+        "An open problem on the alerts page when 95 % of the last hour's "
+        "requests are not faster than this (ms). 0: off",
+        lambda cfg: "1500",
+        "milliseconds",
     ),
 )
 

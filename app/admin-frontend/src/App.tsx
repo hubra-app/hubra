@@ -14,7 +14,7 @@ import { Backups } from '@/screens/platform/Backups'
 import { Diagnostics } from '@/screens/platform/Diagnostics'
 import { Alerts } from '@/screens/platform/Alerts'
 import { ClubAdmins } from '@/screens/ClubAdmins'
-import { SSO_URL } from '@hubra/api-client'
+import { SSO_URL, redirectTo } from '@hubra/api-client'
 import { useLang } from '@/lang'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -22,9 +22,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (authStatus === 'anon') {
-      window.location.assign(
-        `${SSO_URL}/login?redirect=${encodeURIComponent(window.location.href)}`,
-      )
+      redirectTo(`${SSO_URL}/login?redirect=${encodeURIComponent(window.location.href)}`, 'anon')
     }
   }, [authStatus])
 
@@ -44,9 +42,7 @@ function RequireGlobalPermission({ perm, children }: { perm: string; children: R
 
   useEffect(() => {
     if (authStatus === 'anon') {
-      window.location.assign(
-        `${SSO_URL}/login?redirect=${encodeURIComponent(window.location.href)}`,
-      )
+      redirectTo(`${SSO_URL}/login?redirect=${encodeURIComponent(window.location.href)}`, 'anon')
     }
   }, [authStatus])
 
@@ -86,7 +82,7 @@ function ClubRequestsRoute() {
   const { hasGlobalPermission } = useAdmin()
   const staff = hasGlobalPermission('requests.read.all')
   useEffect(() => {
-    if (!staff) window.location.assign(`${SSO_URL}/start`)
+    if (!staff) redirectTo(`${SSO_URL}/start`, 'not-staff')
   }, [staff])
   if (!staff)
     return (
@@ -103,7 +99,7 @@ function ClubRequestsRoute() {
 
 function SsoLoginRedirect() {
   useEffect(() => {
-    window.location.assign(`${SSO_URL}/login`)
+    redirectTo(`${SSO_URL}/login`, 'sso-login')
   }, [])
   return (
     <Center h="100vh">

@@ -872,6 +872,8 @@ _READ_ONLY_IMPERSONATION_ALLOWED = {
     "tenant_admin.stop_impersonation",
     "auth_bp.logout",
     "auth_bp.refresh",
+    # Only writes to the platform event log.
+    "redirect_loop_bp.report_redirect_loop",
 }
 
 
