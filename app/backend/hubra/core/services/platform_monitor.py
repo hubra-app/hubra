@@ -29,6 +29,7 @@ from __future__ import annotations
 import json
 import logging
 import smtplib
+import socket
 import ssl
 import time
 from contextlib import contextmanager
@@ -60,6 +61,7 @@ ALERT_TYPES = (
     "service_down",
     "backup_failed",
     "plugin_updates",
+    "upgrades",
     "system",
     "support_cases",
 )
@@ -294,6 +296,28 @@ def _relay_config(which: str):
     return r if r.host else None
 
 
+def _step_error(exc: Exception) -> str:
+    """A short, fixed text for a failed relay check.
+
+    The relay's own answer can carry internal host names or account
+    details, so it stays in the log; the result shows the kind of error
+    and, for an SMTP answer, its code.
+    """
+    code = getattr(exc, "smtp_code", None)
+    code_text = f" ({int(code)})" if isinstance(code, int) else ""
+    if isinstance(exc, smtplib.SMTPAuthenticationError):
+        return f"Authentication failed: the relay refused the login{code_text}"
+    if isinstance(exc, socket.gaierror):
+        return "The relay's host name could not be resolved"
+    if isinstance(exc, ConnectionRefusedError):
+        return "The relay refused the connection"
+    if isinstance(exc, (TimeoutError, socket.timeout)):
+        return "The relay did not answer in time"
+    if isinstance(exc, ssl.SSLError):
+        return f"TLS failed ({exc.__class__.__name__})"
+    return f"{exc.__class__.__name__}{code_text}"
+
+
 def check_relay(which: str) -> dict:
     """Log in to the main relay or the fallback without sending a mail.
 
@@ -324,7 +348,7 @@ def check_relay(which: str) -> dict:
                     "step": name,
                     "ok": False,
                     "ms": int((time.monotonic() - t) * 1000),
-                    "error": str(exc)[:300] or exc.__class__.__name__,
+                    "error": _step_error(exc),
                 }
             )
             raise
@@ -364,7 +388,8 @@ def check_relay(which: str) -> dict:
         if cfg.user and cfg.password:
             step("login", lambda: server.login(cfg.user, cfg.password))
     except Exception as exc:
-        error = str(exc)[:300] or exc.__class__.__name__
+        logger.warning("relay check (%s) failed: %r", which, exc)
+        error = _step_error(exc)
     finally:
         if server is not None:
             try:

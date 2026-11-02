@@ -36,6 +36,8 @@ import {
   IconPuzzle,
   IconSettings,
   IconShieldCheck,
+  IconHeadset,
+  IconSparkles,
   IconUserCircle,
   IconWorld,
 } from '@tabler/icons-react'
@@ -341,7 +343,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
       ? [{ path: '/app/roles', label: tr('Rollen', 'Roles'), icon: <IconKey size={24} /> }]
       : []),
     ...(hasGlobalPermission('audit.read')
-      ? [{ path: '/app/audit', label: tr('Audit-Log', 'Audit log'), icon: <IconShieldCheck size={24} /> }]
+      ? [
+          { path: '/app/support', label: tr('Support-Zugriffe', 'Support access'), icon: <IconHeadset size={24} /> },
+          { path: '/app/audit', label: tr('Audit-Log', 'Audit log'), icon: <IconShieldCheck size={24} /> },
+        ]
       : []),
   ]
 
@@ -357,6 +362,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
     ...(platformItems.length > 0
       ? [{ label: tr('Plattform', 'Platform'), items: platformItems }]
       : []),
+    {
+      label: 'Hubra',
+      items: [
+        { path: '/app/whats-new', label: tr('Neuigkeiten & Roadmap', 'Changelog & roadmap'), icon: <IconSparkles size={24} /> },
+      ],
+    },
   ]
 
   // Breadcrumb: "Verwaltung › <page>", like the club app's top bar.

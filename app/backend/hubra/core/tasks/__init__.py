@@ -130,6 +130,7 @@ def make_celery(app: Flask) -> Celery:
             "hubra.core.tasks.push_tasks",
             "hubra.core.tasks.mail_monitor_tasks",
             "hubra.core.tasks.connected_app_tasks",
+            "hubra.core.tasks.upgrade_tasks",
             *_module_task_imports(),
         ],
     )
@@ -242,6 +243,11 @@ def make_celery(app: Flask) -> Celery:
                 "task": "hubra.core.tasks.connected_app_tasks.push_all_role_connections",
                 "schedule": crontab(hour=4, minute=10),
             },
+            # A new build rolling out, and when every process runs it.
+            "check-upgrades-every-minute": {
+                "task": "hubra.core.tasks.upgrade_tasks.check_upgrades",
+                "schedule": 60.0,
+            },
             "plugin-updates": {
                 "task": "hubra.core.tasks.plugin_tasks.check_plugin_updates",
                 "schedule": crontab(hour="*/6", minute=40),
@@ -318,3 +324,18 @@ def _fresh_db_connections(**_kwargs) -> None:
 signals.worker_process_init.connect(_fresh_db_connections, weak=False)
 signals.worker_ready.connect(_watch_plugins, weak=False)
 signals.beat_init.connect(_watch_plugins, weak=False)
+
+
+def _report_build(component: str):
+    """Keep the commit this worker/beat runs in Redis, for manage's Diagnose page."""
+
+    def handler(**_kwargs) -> None:
+        from hubra.core.build_info import start_heartbeat
+
+        start_heartbeat(component, celery_app.flask_app)
+
+    return handler
+
+
+signals.worker_ready.connect(_report_build("worker"), weak=False)
+signals.beat_init.connect(_report_build("beat"), weak=False)

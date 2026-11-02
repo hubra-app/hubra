@@ -1,0 +1,110 @@
+# Hubra roadmap
+#
+# Shown in the club app (Neuigkeiten › Roadmap) and in manage (Neuigkeiten ›
+# Roadmap), served by GET /api/v1/version/roadmap. Edit this file and deploy;
+# no migration needed.
+#
+# Each item:
+#   id:       stable slug, never reused (feature requests can point at it)
+#   status:   now | next | later | done
+#   area:     optional short label, {de: ..., en: ...} like the title
+#   title:    {de: ..., en: ...}   (a plain string counts as English)
+#   summary:  {de: ..., en: ...}   optional, one or two sentences
+#   version:  optional, the release a "done" item shipped in (matches CHANGELOG.md)
+#   link:     optional https:// link (docs, discussion)
+#
+# Keep it short and user-facing: what a club gets, not how it is built.
+
+items:
+  # ── Next ──────────────────────────────────────────────────────────────
+  - id: twint-payments
+    status: next
+    area: {de: Finanzen, en: Finance}
+    title:
+      de: Rechnungen und Spenden mit TWINT bezahlen
+      en: Pay invoices and donations with TWINT
+    summary:
+      de: Mitglieder zahlen ihre Rechnung direkt mit TWINT, die Zahlung wird automatisch verbucht. Dazu eine Spendenseite pro Verein mit Spendenbestätigung.
+      en: Members pay their invoice with TWINT and the payment is booked automatically. Plus a donation page per club with a donation receipt.
+
+  - id: annual-accounts
+    status: next
+    area: {de: Finanzen, en: Finance}
+    title:
+      de: Einfache Jahresrechnung
+      en: Simple annual accounts
+    summary:
+      de: Kontenplan für Vereine, Eröffnungssaldi, Jahresabschluss sowie Erfolgsrechnung und Bilanz als PDF für die GV und die Revisoren.
+      en: A chart of accounts for clubs, opening balances, year close, and an income statement and balance sheet as a PDF for the AGM and the auditors.
+
+  - id: document-library
+    status: next
+    area: {de: Verein, en: Club}
+    title:
+      de: Dokumentenablage
+      en: Document library
+    summary:
+      de: Ordner und Dateien wie Statuten, Protokolle und Formulare, sichtbar je nach Rolle oder Gruppe.
+      en: Folders and files such as statutes, minutes and forms, visible by role or group.
+
+  # ── Later ─────────────────────────────────────────────────────────────
+  - id: group-content-roles
+    status: later
+    area: {de: Rollen, en: Roles}
+    title:
+      de: Anlässe, Beiträge und Umfragen einer Gruppe zuordnen
+      en: Give events, posts and polls a group
+    summary:
+      de: Damit eine Rolle nur für eine Gruppe gilt, zum Beispiel «Anlässe der Juniorinnen verwalten».
+      en: So a role can apply to one group only, for example "manage the youth team's events".
+
+  - id: custom-domain-web
+    status: later
+    area: {de: Plattform, en: Platform}
+    title:
+      de: Vereins-App unter der eigenen Domain
+      en: The club app on your own domain
+    summary:
+      de: Eine bestätigte Domain wie mitglieder.meinverein.ch führt direkt in die Vereins-App, mit eigenem Zertifikat.
+      en: A verified domain such as members.myclub.ch leads straight to the club app, with its own certificate.
+
+  # ── Done ──────────────────────────────────────────────────────────────
+  - id: recurring-trainings
+    status: done
+    area: {de: Anlässe, en: Events}
+    title:
+      de: Wiederkehrende Trainings und Anwesenheit
+      en: Recurring trainings and attendance
+    summary:
+      de: Serien mit «nur dieses / alle folgenden», Anwesenheit pro Termin und eine Übersicht pro Gruppe und Mitglied mit CSV-Export.
+      en: Series with "this one / all following", attendance per date and an overview per group and member with CSV export.
+
+  - id: sign-in-security
+    status: done
+    area: {de: Konto, en: Account}
+    title:
+      de: Passkeys und Zwei-Faktor-Anmeldung
+      en: Passkeys and two-factor sign-in
+    summary:
+      de: Anmelden mit Passkey, Codes aus einer Authenticator-App und eine Mail bei Anmeldung auf einem neuen Gerät.
+      en: Sign in with a passkey, codes from an authenticator app, and a mail when you sign in on a new device.
+
+  - id: recurring-finances
+    status: done
+    area: {de: Finanzen, en: Finance}
+    title:
+      de: Wiederkehrende Beiträge und Monatsauszug
+      en: Recurring fees and monthly statement
+    summary:
+      de: Beitragspläne nach Eintritts- oder Stichtag mit anteiligem erstem Beitrag und eine monatliche Übersicht per Mail.
+      en: Fee schedules by join date or a fixed date with a prorated first fee, and a monthly statement by mail.
+
+  - id: discord-bot
+    status: done
+    area: {de: Plugins, en: Plugins}
+    title:
+      de: Discord-Bot für Vereine
+      en: Discord bot for clubs
+    summary:
+      de: Konten verknüpfen, Rollen abgleichen und Anlässe, Beiträge und Umfragen im Vereinsserver ankündigen.
+      en: Link accounts, sync roles and announce events, posts and polls on the club's server.

@@ -35,8 +35,8 @@ from hubra.api.auth.services import (
     _enforce_password_strength,
     _extract_browser_family,
     _extract_platform,
-    _EMAIL_RE,
 )
+from hubra.core.services.email_verification import looks_like_email
 from hubra.api.auth import account_token, known_devices, mfa, passkeys, session_service
 from hubra.core.models.passkey import Passkey
 from hubra.api.permissions import (
@@ -95,6 +95,8 @@ def _set_remembered_email_cookie(response, email: str) -> None:
     (b) be HttpOnly=False so JS can read it. SameSite=Lax is safe (same-site
     subdomain navigation) and Secure mirrors the JWT cookies (HTTPS upstream).
     """
+    if not looks_like_email(email):
+        return
     response.set_cookie(
         "remembered_email",
         value=email,
@@ -106,6 +108,9 @@ def _set_remembered_email_cookie(response, email: str) -> None:
     )
 
 
+_THEME_VALUES = {"light": "light", "dark": "dark", "auto": "auto"}
+
+
 def _set_theme_cookie(response, theme: str | None) -> None:
     """Hand the account's appearance to every portal (light, dark, auto).
 
@@ -115,7 +120,7 @@ def _set_theme_cookie(response, theme: str | None) -> None:
     """
     response.set_cookie(
         "hubra_theme",
-        value=theme or "auto",
+        value=_THEME_VALUES.get(theme or "", "auto"),
         max_age=365 * 24 * 3600,
         httponly=False,
         samesite="Lax",
@@ -150,6 +155,15 @@ def register_jwt_callbacks(jwt_manager) -> None:
             if deadline.tzinfo is None:
                 deadline = deadline.replace(tzinfo=timezone.utc)
             if datetime.now(timezone.utc) >= deadline:
+                return True
+            # Platform staff can end a support session early (manage ›
+            # Support-Zugriffe).
+            support = jwt_payload.get("impersonation_session")
+            if support and db.session.scalar(
+                select(TokenBlocklist.id).where(
+                    TokenBlocklist.jti == f"support:{support}"
+                )
+            ):
                 return True
         # A refresh token that was rotated or revoked is refused even while
         # its session is alive. Rotated ones get a minute of grace so that
@@ -644,7 +658,7 @@ def signup():
 
     _enforce_password_strength(password)
 
-    if not _EMAIL_RE.match(email):
+    if not looks_like_email(email):
         raise_error(400, "VALIDATION_ERROR", "Invalid email address")
 
     existing = db.session.scalar(select(User).where(User.email == email))
@@ -716,6 +730,7 @@ _SESSION_CLAIMS = (
     "impersonation_reason",
     "impersonation_expires_at",
     "impersonation_mode",
+    "impersonation_session",
     # Whether "keep me signed in" was ticked: rotated refresh cookies keep
     # the lifetime the sign-in chose.
     "keep",

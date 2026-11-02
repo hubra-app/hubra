@@ -15,6 +15,7 @@ import { Diagnostics } from '@/screens/platform/Diagnostics'
 import { Alerts } from '@/screens/platform/Alerts'
 import { ClubAdmins } from '@/screens/ClubAdmins'
 import { SupportCases } from '@/screens/platform/Support'
+import { Releases } from '@/screens/Releases'
 import { SSO_URL, redirectTo } from '@hubra/api-client'
 import { useLang } from '@/lang'
 
@@ -189,6 +190,16 @@ function AppRoutes() {
           }
         />
         <Route
+          path="/app/support"
+          element={
+            <RequireGlobalPermission perm="audit.read">
+              <Shell>
+                <AdminPortal />
+              </Shell>
+            </RequireGlobalPermission>
+          }
+        />
+        <Route
           path="/app/audit"
           element={
             <RequireGlobalPermission perm="audit.read">
@@ -218,6 +229,19 @@ function AppRoutes() {
             </RequireGlobalPermission>
           }
         />
+        {['/app/whats-new', '/app/whats-new/:tab'].map((path) => (
+          <Route
+            key={path}
+            path={path}
+            element={
+              <RequireAuth>
+                <Shell>
+                  <Releases />
+                </Shell>
+              </RequireAuth>
+            }
+          />
+        ))}
         <Route
           path="/app/clubs/:id/admins"
           element={

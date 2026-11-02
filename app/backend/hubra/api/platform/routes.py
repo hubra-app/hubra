@@ -176,9 +176,16 @@ def health_detailed():
     from hubra.api.health.cache import HealthCache
     from hubra.api.health.services import HealthService
     from hubra.api.version.services import VersionService
+    from hubra.core import build_info
+    from hubra.core.services import upgrades
 
     payload = HealthService.run_all_checks()
     payload["version"] = VersionService.get_version()
+    # The commit each backend process runs: this API process, plus what the
+    # worker, beat and Discord gateway reported (hubra.core.build_info).
+    payload["commit"] = build_info.commit()
+    payload["processes"] = build_info.reported()
+    payload["last_upgrade"] = upgrades.last_upgrade()
 
     cached = HealthCache.get()
     if cached is not None and "checked_at" in cached:
@@ -345,8 +352,9 @@ def list_platform_events():
 
     Query: ``category`` (mail, relay, service, backup, plugin, system,
     alert), ``level`` (info,
-    warning, error), ``kind``, ``q`` (text in the message), ``page``,
-    ``per_page`` (max 100).
+    warning, error, or ``problems`` for both), ``kind``, ``tenant_id`` (one
+    club's events), ``q`` (text in the message), ``page``, ``per_page``
+    (max 100).
     """
     from sqlalchemy import func, select
 
@@ -358,7 +366,10 @@ def list_platform_events():
     level = args.get("level") or None
     if category and category not in CATEGORIES:
         return api_error("VALIDATION_ERROR", "Unknown category", 400)
-    if level and level not in LEVELS:
+    if level == "problems":
+        query = query.where(PlatformEvent.level.in_(("warning", "error")))
+        level = None
+    elif level and level not in LEVELS:
         return api_error("VALIDATION_ERROR", "Unknown level", 400)
     if category:
         query = query.where(PlatformEvent.category == category)
@@ -366,6 +377,10 @@ def list_platform_events():
         query = query.where(PlatformEvent.level == level)
     if kind := args.get("kind"):
         query = query.where(PlatformEvent.kind == kind)
+    if tenant_id := args.get("tenant_id"):
+        if not tenant_id.isdigit():
+            return api_error("VALIDATION_ERROR", "tenant_id must be a number", 400)
+        query = query.where(PlatformEvent.tenant_id == int(tenant_id))
     if q := (args.get("q") or "").strip():
         query = query.where(PlatformEvent.message.ilike(f"%{q[:100]}%"))
     try:

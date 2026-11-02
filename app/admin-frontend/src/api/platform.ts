@@ -1,5 +1,6 @@
 import { withStepUp } from '@/api/stepUp'
 import { apiFetch } from '@hubra/api-client'
+import type { ChangelogEntry, RoadmapItem, RoadmapStatus } from '@hubra/ui'
 
 const P = '/manager/platform'
 
@@ -49,10 +50,24 @@ export interface ServiceStatus {
   error?: string
 }
 
+export interface BuildReport {
+  component: string
+  host: string
+  commit: string | null
+  version: string | null
+  seen?: number
+}
+
 export interface HealthDetail {
   status: 'ok' | 'degraded' | 'error'
   services: Record<string, ServiceStatus>
   version?: string
+  /** Commit the API process was built from; null for a build without one. */
+  commit?: string | null
+  /** What each backend process reported (API, worker, beat, Discord gateway), per host. */
+  processes?: BuildReport[]
+  /** The newest upgrade event (started, completed or stuck). */
+  last_upgrade?: PlatformEvent | null
   stale?: boolean
   checked_at?: number
 }
@@ -133,14 +148,14 @@ export async function getPlatformHealth() {
   return apiFetch<HealthDetail>(`${P}/health`)
 }
 
-export interface ChangelogEntry {
-  version: string
-  date: string | null
-  sections: Record<string, string[]>
+export async function getChangelog(lang?: string) {
+  return apiFetch<{ version: string; entries: ChangelogEntry[] }>(
+    `/version/changelog${lang ? `?lang=${encodeURIComponent(lang)}` : ''}`,
+  )
 }
 
-export async function getChangelog() {
-  return apiFetch<{ entries: ChangelogEntry[] }>('/version/changelog')
+export async function getRoadmap() {
+  return apiFetch<{ statuses: RoadmapStatus[]; items: RoadmapItem[] }>('/version/roadmap')
 }
 
 export interface PermissionEntry {
@@ -268,7 +283,8 @@ export interface PlatformEvent {
 
 export async function getPlatformEvents(params: {
   category?: EventCategory | ''
-  level?: EventLevel | ''
+  level?: EventLevel | 'problems' | ''
+  tenant_id?: number
   q?: string
   page: number
   per_page: number
@@ -293,6 +309,7 @@ export type AlertType =
   | 'service_down'
   | 'backup_failed'
   | 'plugin_updates'
+  | 'upgrades'
   | 'system'
   | 'support_cases'
 

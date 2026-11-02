@@ -44,18 +44,36 @@ class TestGetStorageBytes:
 class TestPgSchemaSize:
     """Tests for PostgreSQL schema size query."""
 
-    @patch("hubra.core.services.storage_metrics.db")
-    def test_returns_schema_size(self, mock_db):
-        """Returns the schema size in bytes."""
-        mock_db.session.scalar.return_value = 2048
-        result = _get_pg_schema_size(tenant_id=1)
+    def test_returns_schema_size(self):
+        """Returns the size of the club's own schema, on Postgres."""
+        with (
+            patch("hubra.core.services.storage_metrics.db") as mock_db,
+            patch(
+                "hubra.core.services.tenant_health._schema_sizes",
+                return_value={1: 2048},
+            ) as sizes,
+        ):
+            mock_db.session.get_bind.return_value.dialect.name = "postgresql"
+            result = _get_pg_schema_size(tenant_id=1)
         assert result == 2048
+        sizes.assert_called_once_with([1])
 
-    @patch("hubra.core.services.storage_metrics.db")
-    def test_returns_zero_on_error(self, mock_db):
+    def test_zero_without_postgres(self):
+        with patch("hubra.core.services.storage_metrics.db") as mock_db:
+            mock_db.session.get_bind.return_value.dialect.name = "sqlite"
+            assert _get_pg_schema_size(tenant_id=1) == 0
+
+    def test_returns_zero_on_error(self):
         """Returns 0 on database errors."""
-        mock_db.session.scalar.side_effect = Exception("DB error")
-        result = _get_pg_schema_size(tenant_id=1)
+        with (
+            patch("hubra.core.services.storage_metrics.db") as mock_db,
+            patch(
+                "hubra.core.services.tenant_health._schema_sizes",
+                side_effect=Exception("DB error"),
+            ),
+        ):
+            mock_db.session.get_bind.return_value.dialect.name = "postgresql"
+            result = _get_pg_schema_size(tenant_id=1)
         assert result == 0
 
 

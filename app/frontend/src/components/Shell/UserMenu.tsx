@@ -16,6 +16,7 @@ import { useMyTenants } from '@/data/lists'
 import { initials, contrastColor } from './nav'
 import { setWhatsNewOpen } from './whatsNewStore'
 import { openReport } from '@/screens/private/support/reportStore'
+import { useWhatsNewUnseen } from './whatsNewData'
 
 const rowStyle = {
   display: 'flex',
@@ -52,6 +53,7 @@ export function UserMenu({
   const email = currentUser?.publicEmail || currentUser?.email || ''
   const bg = currentUser?.avatarColor ?? '#ebe8f2'
   const close = onClose ?? (() => setUserMenuOpen(false))
+  const whatsNewUnseen = useWhatsNewUnseen()
 
   return (
     <Box
@@ -153,6 +155,19 @@ export function UserMenu({
           >
             <IconSparkles size={16} />
             {t('shell.whatsNew.title')}
+            {whatsNewUnseen && (
+              // A dot, not a word: the entry keeps its name for screen readers and tests.
+              <Box
+                component="span"
+                data-testid="whats-new-unseen"
+                title={t('shell.whatsNew.new', 'Neu')}
+                aria-hidden
+                w={8}
+                h={8}
+                ml="auto"
+                style={{ borderRadius: 99, background: 'var(--mantine-primary-color-filled)', flexShrink: 0 }}
+              />
+            )}
           </UnstyledButton>
         </Stack>
         <Divider my={6} />
