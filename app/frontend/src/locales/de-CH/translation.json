@@ -2433,6 +2433,13 @@
     "clubBanner": {
       "dismiss": "Banner ausblenden"
     },
+    "maintenanceNotice": {
+      "title": "Geplante Wartung",
+      "sameDay": "{{day}}, {{from}} bis {{to}} Uhr",
+      "days": "{{fromDay}}, {{from}} bis {{toDay}}, {{to}} Uhr",
+      "default": "In dieser Zeit ist die App nicht erreichbar.",
+      "dismiss": "Hinweis ausblenden"
+    },
     "more": {
       "emptyTitle": "Hier ist noch nichts",
       "emptyDesc": "Seiten, die du in der Seitenleiste ausblendest, und Seiten von Plugins erscheinen hier."
