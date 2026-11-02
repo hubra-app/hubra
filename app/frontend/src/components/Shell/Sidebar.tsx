@@ -1,20 +1,13 @@
-import { ScrollArea, Text, Box, UnstyledButton, Stack } from '@mantine/core'
-import { IconDotsVertical } from '@tabler/icons-react'
-import { useNav, useAuth } from '@/context/AppContext'
+import { ScrollArea, Box, Stack } from '@mantine/core'
+import { useNav } from '@/context/AppContext'
 import { NavItemRow, NavMoreRow, NavSectionLabel } from './NavItemRow'
 import { setCustomizeSidebarOpen } from './customizeSidebarStore'
-import { UserMenu } from './UserMenu'
-import { initials, contrastColor } from './nav'
+import { UserCard } from './UserCard'
 import { useSidebarNav } from './useSidebarNav'
-import { roleLabels } from '@/roles'
 
 export function Sidebar() {
   const { go, sidebarCollapsed, userMenuOpen, setUserMenuOpen } = useNav()
-  const { currentUser } = useAuth()
   const { nav, activePath, currentMore } = useSidebarNav()
-  const userName = currentUser?.name ?? ''
-  const userRole = roleLabels(currentUser?.roles)
-  const userBg = currentUser?.avatarColor ?? '#ebe8f2'
 
   return (
     <Box
@@ -78,66 +71,8 @@ export function Sidebar() {
       </ScrollArea>
 
       {!sidebarCollapsed && (
-        <Box
-          p="xs"
-          style={{
-            borderTop: '1px solid var(--hb-border)',
-            position: 'relative',
-          }}
-        >
-          {userMenuOpen && <UserMenu />}
-          <UnstyledButton
-            onClick={() => setUserMenuOpen(!userMenuOpen)}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-              gap: 10,
-              height: 52,
-              padding: '0 10px',
-              borderRadius: 12,
-              border: '1px solid var(--hb-border)',
-              background: 'var(--hb-surface)',
-            }}
-          >
-            <Box
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: '50%',
-                background: userBg,
-                fontSize: 'var(--mantine-font-size-xs)',
-                fontWeight: 700,
-                color: contrastColor(userBg),
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              {initials(userName)}
-            </Box>
-            {!sidebarCollapsed && (
-              <>
-                <Box style={{ flex: 1, textAlign: 'left', minWidth: 0 }}>
-                  <Text fz="sm" fw={600} lh={1.2} truncate>
-                    {userName}
-                  </Text>
-                  <Text fz="xs" c="dimmed" truncate>
-                    {userRole}
-                  </Text>
-                </Box>
-                <IconDotsVertical
-                  size={16}
-                  style={{
-                    color: 'var(--mantine-color-dimmed)',
-                    flexShrink: 0,
-                  }}
-                />
-              </>
-            )}
-          </UnstyledButton>
+        <Box p="xs" style={{ borderTop: '1px solid var(--hb-border)' }}>
+          <UserCard opened={userMenuOpen} onChange={setUserMenuOpen} />
         </Box>
       )}
     </Box>
