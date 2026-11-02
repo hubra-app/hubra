@@ -208,6 +208,30 @@ def discord_check():
     return jsonify(svc.status(refresh=True)), 200
 
 
+@platform_bp.get("/discord/servers")
+@require_global_permission(_PERM)
+def discord_servers():
+    """The servers the bot is on, for picking the platform log server."""
+    from hubra.core.services import discord_status as svc
+
+    try:
+        return jsonify(svc.servers()), 200
+    except svc.PickerError as exc:
+        return api_error("DISCORD_UNAVAILABLE", str(exc), 409)
+
+
+@platform_bp.get("/discord/servers/<string:guild_id>/channels")
+@require_global_permission(_PERM)
+def discord_server_channels(guild_id: str):
+    """Text channels on one of the bot's servers that the bot can post in."""
+    from hubra.core.services import discord_status as svc
+
+    try:
+        return jsonify({"channels": svc.channels(guild_id)}), 200
+    except svc.PickerError as exc:
+        return api_error("DISCORD_UNAVAILABLE", str(exc), 409)
+
+
 @platform_bp.get("/permissions")
 @require_global_permission(_DIAGNOSTICS)
 def list_permissions():

@@ -104,6 +104,26 @@ export async function getDiscordStatus() {
   return apiFetch<DiscordStatus>(`${P}/discord/status`)
 }
 
+export interface DiscordGuild {
+  id: string
+  name: string
+  icon: string | null
+}
+
+/** The servers the bot is on, and the one the platform log channel is on. */
+export async function getDiscordServers() {
+  return apiFetch<{ servers: DiscordGuild[]; currentServerId: string | null }>(
+    `${P}/discord/servers`,
+  )
+}
+
+/** Text channels on a server that the bot can post in. */
+export async function getDiscordServerChannels(serverId: string) {
+  return apiFetch<{ channels: { id: string; name: string; category: string | null }[] }>(
+    `${P}/discord/servers/${encodeURIComponent(serverId)}/channels`,
+  )
+}
+
 export async function checkDiscordNow() {
   return apiFetch<DiscordStatus>(`${P}/discord/check`, { method: 'POST' })
 }

@@ -141,10 +141,17 @@ Platform log:
 
 1. Click **Add the bot to the platform server** (it asks only for View
    Channels, Send Messages and Embed Links) and pick your server.
-2. In Discord, turn on Developer Mode (User Settings › Advanced), right-click
-   the log channel › **Copy Channel ID**, and paste it into **Platform log
-   channel**. Save.
+2. Back in Hubra, click the reload button next to **Server**, pick your
+   server, then pick the **channel**. The list only has text channels the bot
+   may view, send and embed links in. Save.
+
+   Fallback (Discord unreachable, or a channel the bot doesn't see yet):
+   **Enter the channel ID yourself**. Turn on Developer Mode in Discord (User
+   Settings › Advanced), right-click the channel › **Copy Channel ID** and
+   paste it.
 3. Pick what is posted and click **Send test message**.
+
+![Platform settings › Discord › Platform log](screenshots/discord/platform-log-picker.png)
 
 Categories:
 

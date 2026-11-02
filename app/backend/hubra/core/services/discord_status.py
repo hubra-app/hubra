@@ -324,3 +324,138 @@ def problems() -> list[dict]:
             }
         )
     return out
+
+
+# ── Picking the platform log server and channel ─────────────────────────────
+
+_VIEW, _SEND, _EMBED, _ADMIN = 1 << 10, 1 << 11, 1 << 14, 1 << 3
+_POST = _VIEW | _SEND | _EMBED
+_TEXT_CHANNELS = (0, 5)
+
+
+class PickerError(Exception):
+    pass
+
+
+def _token() -> str:
+    from hubra.core.services.platform_settings import discord
+
+    token = discord().bot_token
+    if not token:
+        raise PickerError("Set the bot token first")
+    return token
+
+
+def _call(path: str, token: str):
+    try:
+        return _api(path, token)
+    except (urllib.error.URLError, TimeoutError, ValueError) as exc:
+        raise PickerError(_error_text(exc)) from exc
+
+
+def servers() -> dict:
+    """The servers the bot is on, and the one the log channel is on."""
+    from hubra.core.services import platform_settings
+
+    token = _token()
+    guilds = _call("/users/@me/guilds?limit=200", token) or []
+    current = None
+    channel_id = platform_settings.get("discord.log_channel_id")
+    if channel_id:
+        try:
+            current = (_api(f"/channels/{channel_id}", token) or {}).get("guild_id")
+        except Exception:
+            current = None  # gone or not visible: nothing preselected
+    return {
+        "servers": sorted(
+            (
+                {
+                    "id": str(g["id"]),
+                    "name": g.get("name", ""),
+                    "icon": (
+                        f"https://cdn.discordapp.com/icons/{g['id']}/{g['icon']}.png?size=64"
+                        if g.get("icon")
+                        else None
+                    ),
+                }
+                for g in guilds
+            ),
+            key=lambda g: g["name"].lower(),
+        ),
+        "currentServerId": str(current) if current else None,
+    }
+
+
+def _overwrite(bits: int, ow: dict | None) -> int:
+    if not ow:
+        return bits
+    return (bits & ~int(ow.get("deny") or 0)) | int(ow.get("allow") or 0)
+
+
+def can_post(
+    channel: dict, guild_id: str, base: int, role_ids: set[str], me: str
+) -> bool:
+    """Whether the bot may view, send and embed in *channel* (Discord's
+    permission order: @everyone, roles, the member)."""
+    if base & _ADMIN:
+        return True
+    bits = base
+    overwrites = {str(o["id"]): o for o in channel.get("permission_overwrites") or []}
+    bits = _overwrite(bits, overwrites.get(str(guild_id)))
+    deny = allow = 0
+    for rid in role_ids:
+        o = overwrites.get(rid)
+        if o and o.get("type") in (0, "0"):
+            deny |= int(o.get("deny") or 0)
+            allow |= int(o.get("allow") or 0)
+    bits = (bits & ~deny) | allow
+    member = overwrites.get(str(me))
+    if member and member.get("type") in (1, "1"):
+        bits = _overwrite(bits, member)
+    return bits & _POST == _POST
+
+
+def channels(guild_id: str) -> list[dict]:
+    """The server's text channels the bot can post in, in Discord's order."""
+    from hubra.core.services.platform_settings import discord
+
+    if not str(guild_id).isdigit():
+        raise PickerError("Unknown server")
+    token = _token()
+    me = discord().client_id or (_call("/users/@me", token) or {}).get("id", "")
+    roles = {
+        str(r["id"]): int(r.get("permissions") or 0)
+        for r in _call(f"/guilds/{guild_id}/roles", token) or []
+    }
+    member = _call(f"/guilds/{guild_id}/members/{me}", token) or {}
+    role_ids = {str(r) for r in member.get("roles", [])}
+    base = roles.get(str(guild_id), 0)
+    for rid in role_ids:
+        base |= roles.get(rid, 0)
+    all_channels = _call(f"/guilds/{guild_id}/channels", token) or []
+    categories = {
+        str(c["id"]): c.get("name", "") for c in all_channels if c.get("type") == 4
+    }
+    out = [
+        {
+            "id": str(c["id"]),
+            "name": c.get("name", ""),
+            "category": categories.get(str(c.get("parent_id") or "")),
+            "_pos": (
+                next(
+                    (
+                        p.get("position", 0)
+                        for p in all_channels
+                        if str(p["id"]) == str(c.get("parent_id") or "")
+                    ),
+                    -1,
+                ),
+                c.get("position", 0),
+            ),
+        }
+        for c in all_channels
+        if c.get("type") in _TEXT_CHANNELS
+        and can_post(c, str(guild_id), base, role_ids, str(me))
+    ]
+    out.sort(key=lambda c: c.pop("_pos"))
+    return out
