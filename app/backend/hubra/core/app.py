@@ -232,12 +232,12 @@ def create_app(config_name: str | None = None) -> Flask:
         allow_headers=[
             "Content-Type",
             "X-CSRF-Token",
+            # Writes on an account sign-in (manage, SSO) carry this double-submit
+            # header (hubra.api.auth.account_token); without it in the list the
+            # browser's preflight fails and manage shows "server unreachable".
+            "X-Account-CSRF",
             # The SPA sends the active club on every request (api-client).
             "X-Tenant-Slug",
-            # Double-submit header of the account token (account_token.py),
-            # sent on every request once signed in. Without it here, every
-            # preflight from a portal on another host than the API failed.
-            "X-Account-CSRF",
         ],
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         expose_headers=[

@@ -110,6 +110,20 @@ def register(app) -> None:
             "(age1...) goes in BACKUP_PUBLIC_KEY or `flask backups club-key`."
         )
 
+    @backups_cli.command("check-client")
+    def backups_check_client():
+        """Check that a pg_dump fits the database server's version."""
+        from hubra.core.services import pg_tools
+
+        st = pg_tools.status()
+        installed = ", ".join(map(str, st.client_majors)) or "(only the one on PATH)"
+        click.echo(f"Server: PostgreSQL {st.server_major or 'unknown'}")
+        click.echo(f"Installed clients: {installed}")
+        if not st.ok:
+            raise click.ClickException(st.error or "No fitting pg_dump")
+        used = st.client_major or "pg_dump on PATH"
+        click.echo(f"Backups use: {used}")
+
     @backups_cli.command("club-key")
     @click.argument("slug")
     @click.argument("public_key", required=False)

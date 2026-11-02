@@ -51,7 +51,7 @@ from sqlalchemy import select, text
 
 from hubra.core.extensions import db
 from hubra.core.models.backup import BackupRecord
-from hubra.core.services import backup_crypto
+from hubra.core.services import backup_crypto, pg_tools
 from hubra.core.models.tenant import Tenant
 
 logger = logging.getLogger(__name__)
@@ -202,6 +202,17 @@ def _download_and_decrypt(
     return dump_path
 
 
+def _pg_client_status() -> dict:
+    st = pg_tools.status()
+    return {
+        "pg_server_major": st.server_major,
+        "pg_client_major": st.client_major,
+        "pg_client_majors": st.client_majors,
+        "pg_client_ok": st.ok,
+        "pg_client_error": st.error,
+    }
+
+
 class RestoreError(RuntimeError):
     """A club restore failed; the club's data was put back as it was."""
 
@@ -236,6 +247,7 @@ class BackupService:
             "encryption_configured": encryption_mode is not None,
             "encryption_mode": encryption_mode,
             "private_key_on_server": bool(backup_crypto.server_private_key()),
+            **_pg_client_status(),
             "endpoint": cfg["endpoint"],
             "bucket": cfg["bucket"],
             "region": cfg["region"],
@@ -309,8 +321,10 @@ class BackupService:
                 dump_path = os.path.join(tmpdir, "backup.dump")
 
                 # ── 1. pg_dump of one schema (custom format) ───────────────
+                # The client must not be older than the server (pg_dump
+                # refuses), so take the one that matches its major version.
                 pg_cmd = [
-                    "pg_dump",
+                    pg_tools.tool("pg_dump", pg_tools.server_major()),
                     *_pg_conn_args(db_params),
                     "--format",
                     "custom",
@@ -447,7 +461,7 @@ class BackupService:
 
                 # pg_restore --list to confirm a valid archive
                 restore_result = subprocess.run(
-                    ["pg_restore", "--list", dump_path],
+                    [pg_tools.newest("pg_restore"), "--list", dump_path],
                     capture_output=True,
                     timeout=120,
                 )
@@ -520,7 +534,7 @@ class BackupService:
 
                 db_params = _parse_database_url()
                 pg_cmd = [
-                    "pg_restore",
+                    pg_tools.tool("pg_restore", pg_tools.server_major()),
                     *_pg_conn_args(db_params),
                     "--dbname",
                     db_params["db"],

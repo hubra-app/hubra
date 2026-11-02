@@ -450,6 +450,18 @@ export function Backups() {
             </div>
           )}
 
+          {config.pg_client_error && (
+            <div
+              style={{
+                marginTop: 8,
+                fontSize: 'var(--mantine-font-size-xs)',
+                color: 'var(--mantine-color-red-light-color)',
+              }}
+            >
+              {config.pg_client_error}
+            </div>
+          )}
+
           {!configReady && (
             <div
               style={{

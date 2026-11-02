@@ -19,14 +19,16 @@
    These come from `BACKUP_S3_*` in `.env` on the production server, unless a
    superadmin overrode them in manage under Platform › Platform Settings.
 
-3. **`pg_restore`** — PostgreSQL 16+ client tools must be installed on the
-   recovery machine. Install with:
+3. **`pg_restore`** — PostgreSQL client tools at least as new as the server
+   the backup came from (and the one you restore into) must be installed on
+   the recovery machine; the newest one reads every older backup. Install
+   with:
 
    ```sh
    # Debian/Ubuntu
    sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
    curl -o /etc/apt/trusted.gpg.d/pgdg.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
-   apt update && apt install -y postgresql-client-16
+   apt update && apt install -y postgresql-client-18
 
    # macOS
    brew install libpq && export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
