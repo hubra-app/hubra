@@ -102,6 +102,12 @@ const NAV_ICONS: Record<string, ReactNode> = {
   news: <IconNews size={24} />,
 }
 
+/** The sidebar icon of a module's nav entry (built in, from its plugin, or a box). */
+export function moduleNavIcon(name: string | undefined): ReactNode {
+  if (!name) return <IconBox size={24} />
+  return NAV_ICONS[name] ?? navIcon(name)
+}
+
 /** An icon a plugin brought along, or a box. */
 function navIcon(name: string): ReactNode {
   const Icon = pluginIcon(name)

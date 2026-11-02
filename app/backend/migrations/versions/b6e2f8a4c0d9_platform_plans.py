@@ -7,7 +7,7 @@ the limits and prices set so far (platform settings ``limits.<plan>.*`` and
 revision is safe to run again per club (flask migrate-tenants).
 
 Revision ID: b6e2f8a4c0d9
-Revises: e5c1a7d3b9f4
+Revises: f4a8c2e6d0b3
 Create Date: 2026-11-02 16:00:00.000000
 
 """
@@ -21,7 +21,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "b6e2f8a4c0d9"
-down_revision = "e5c1a7d3b9f4"
+down_revision = "f4a8c2e6d0b3"
 branch_labels = None
 depends_on = None
 

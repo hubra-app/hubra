@@ -38,7 +38,7 @@
 :80 {
   header {
     # Security headers for frontend HTML (moved from Flask API responses)
-    Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' fonts.googleapis.com 'unsafe-inline'; img-src 'self' data:; font-src 'self' data: fonts.gstatic.com; connect-src 'self' https://api.hubra.club; frame-ancestors 'none'"
+    Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://api.hubra.club; frame-ancestors 'none'"
     Permissions-Policy "camera=(), microphone=(), geolocation=()"
     Accept-CH "Sec-CH-UA-Arch, Sec-CH-UA-Bitness, Sec-CH-UA-Platform-Version, Sec-CH-UA-Model, Device-Memory"
     X-Frame-Options "DENY"

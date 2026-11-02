@@ -43,6 +43,8 @@ _GLOBAL_ONLY_TABLES = frozenset(
         # Plans and add-ons with their list prices.
         "platform_plans",
         "platform_addons",
+        # Data protection requests per club and when they were handled.
+        "data_requests",
         "data_keys",
         "plugin_trusted_keys",
         "email_verifications",

@@ -25,8 +25,14 @@ import {
   updateAlertSwitches,
   type AlertType,
   type Maintenance,
+  type NotifyChannel,
 } from '@/api/platform'
-import { ALERT_TYPES } from './eventLabels'
+import { ALERT_TYPES, PLATFORM_EVENTS } from './eventLabels'
+
+const CHANNEL_LABEL: Record<NotifyChannel, () => string> = {
+  mail: () => tr('Mail', 'Mail'),
+  discord: () => 'Discord',
+}
 
 const failure = (err: unknown) => (err instanceof Error ? err.message : undefined)
 
@@ -141,8 +147,9 @@ export function MaintenanceCard({ state }: { state: Maintenance | undefined }) {
   )
 }
 
-/** Platform-wide: whether alerts go out at all, and per type by mail and to
- * the platform Discord log. Each admin still picks their own mails. */
+/** The platform notification matrix: what (platform events, alerts) goes
+ * where (mail to platform admins, Discord; more channels are more columns).
+ * Each admin still picks their own alert mails. */
 export function AlertRulesPanel() {
   const { notify, hasGlobalPermission } = useAdmin()
   const queryClient = useQueryClient()
@@ -162,8 +169,26 @@ export function AlertRulesPanel() {
       setBusy(false)
     }
   }
-  const setType = (id: AlertType, channel: 'mail' | 'discord', on: boolean) =>
+  const setType = (id: AlertType, channel: NotifyChannel, on: boolean) =>
     save({ types: { [id]: { [channel]: on } } })
+  const setEvent = (id: string, channel: NotifyChannel, on: boolean) =>
+    save({ events: { [id]: { [channel]: on } } })
+  const channels: NotifyChannel[] = data?.channels ?? ['mail', 'discord']
+  const cellDisabled = (ch: NotifyChannel) =>
+    !data || !canChange || busy || (ch === 'discord' && !data.discordReady)
+
+  const head = (first: string) => (
+    <Table.Thead>
+      <Table.Tr>
+        <Table.Th>{first}</Table.Th>
+        {channels.map((ch) => (
+          <Table.Th key={ch} w={72} ta="center">
+            {CHANNEL_LABEL[ch]()}
+          </Table.Th>
+        ))}
+      </Table.Tr>
+    </Table.Thead>
+  )
 
   return (
     <Stack gap={16}>
@@ -191,34 +216,64 @@ export function AlertRulesPanel() {
 
       <Paper withBorder shadow="sm" radius="lg" p="lg">
         <Title order={4} mb={4}>
-          {tr('Wohin welche Warnung geht', 'Where each alert goes')}
+          {tr('Was wohin gemeldet wird', 'What goes where')}
         </Title>
         <Text size="sm" c="dimmed" mb={12}>
           {tr(
-            'Für die ganze Plattform. Ob eine Person eine Mail bekommt, wählt sie zusätzlich unter «Meine Warnungen».',
-            'For the whole platform. Whether a person gets a mail, they also choose under "My alerts".',
+            'Für die ganze Plattform. Mail geht an die Plattform-Admins; bei Warnungen wählt jede Person zusätzlich unter «Meine Warnungen». Discord ist das Plattform-Log, Plattform-Ereignisse gehen in den Audit-Kanal, wenn einer gewählt ist.',
+            'For the whole platform. Mail goes to the platform admins; for alerts each person also chooses under "My alerts". Discord is the platform log; platform events go to the audit channel when one is picked.',
           )}
         </Text>
         {data && !data.discordReady && (
           <Alert color="gray" variant="light" mb={12}>
             {tr(
-              'Discord ist für Warnungen nicht eingerichtet (Discord › Kanäle › Plattform-Log, Kategorie «alerts»).',
-              'Discord is not set up for alerts (Discord › Channels › Platform log, category "alerts").',
+              'Discord ist nicht eingerichtet (Discord › Kanäle: Bot-Token und Kanal für das Plattform-Log).',
+              'Discord is not set up (Discord › Channels: bot token and platform log channel).',
             )}
           </Alert>
         )}
+        <Table verticalSpacing="sm" horizontalSpacing="xs" layout="fixed" mb="md">
+          {head(tr('Plattform-Ereignis', 'Platform event'))}
+          <Table.Tbody>
+            {(data
+              ? Object.keys(data.events).map(
+                  (id) =>
+                    PLATFORM_EVENTS.find((e) => e.id === id) ?? { id, label: () => id },
+                )
+              : PLATFORM_EVENTS
+            ).map((ev) => {
+              const row = data?.events?.[ev.id]
+              return (
+                <Table.Tr key={ev.id}>
+                  <Table.Td>
+                    <Text size="sm" style={{ wordBreak: 'break-word' }}>
+                      {ev.label()}
+                    </Text>
+                  </Table.Td>
+                  {channels.map((ch) => (
+                    <Table.Td key={ch} ta="center">
+                      {row && !(ch in row) ? (
+                        <Text span size="sm" c="dimmed" aria-label={tr('nicht verfügbar', 'not available')}>
+                          –
+                        </Text>
+                      ) : (
+                      <Checkbox
+                        checked={row?.[ch] ?? false}
+                        disabled={cellDisabled(ch)}
+                        aria-label={`${ev.label()}: ${CHANNEL_LABEL[ch]()}`}
+                        onChange={(e) => setEvent(ev.id, ch, e.currentTarget.checked)}
+                        style={{ display: 'inline-block' }}
+                      />
+                      )}
+                    </Table.Td>
+                  ))}
+                </Table.Tr>
+              )
+            })}
+          </Table.Tbody>
+        </Table>
         <Table verticalSpacing="sm" horizontalSpacing="xs" layout="fixed">
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>{tr('Warnung', 'Alert')}</Table.Th>
-              <Table.Th w={72} ta="center">
-                {tr('Mail', 'Mail')}
-              </Table.Th>
-              <Table.Th w={72} ta="center">
-                Discord
-              </Table.Th>
-            </Table.Tr>
-          </Table.Thead>
+          {head(tr('Warnung', 'Alert'))}
           <Table.Tbody>
             {ALERT_TYPES.map((t) => {
               const row = data?.types[t.id]
@@ -233,14 +288,12 @@ export function AlertRulesPanel() {
                       {t.desc()}
                     </Text>
                   </Table.Td>
-                  {(['mail', 'discord'] as const).map((ch) => (
+                  {channels.map((ch) => (
                     <Table.Td key={ch} ta="center">
                       <Checkbox
                         checked={row?.[ch] ?? true}
-                        disabled={
-                          !data || !canChange || busy || (ch === 'discord' && !data.discordReady)
-                        }
-                        aria-label={`${t.label()}: ${ch === 'mail' ? 'Mail' : 'Discord'}`}
+                        disabled={cellDisabled(ch)}
+                        aria-label={`${t.label()}: ${CHANNEL_LABEL[ch]()}`}
                         onChange={(e) => setType(t.id, ch, e.currentTarget.checked)}
                         style={{ display: 'inline-block' }}
                       />

@@ -688,7 +688,14 @@ def _instance_name() -> str:
 
 
 def _alert_body(
-    user, alert_type: str, subject: str, lines: list[str], level: str
+    user,
+    alert_type: str,
+    subject: str,
+    lines: list[str],
+    level: str,
+    *,
+    button_url: str | None = None,
+    button_key: str = "",
 ) -> tuple[str, str, str]:
     """The alert in the Hubra mail layout, in the admin's language.  The
     subject and lines stay as written (English, like the SMTP errors and
@@ -726,7 +733,10 @@ def _alert_body(
         type_label=t(f"mail.email.platform_alert.type.{alert_type}"),
         when=datetime.now(zone).strftime("%d.%m.%Y, %H:%M"),
         instance=_instance_name(),
-        alerts_url=f"{manage}/app/platform/alerts" if manage else "",
+        alerts_url=button_url
+        if button_url is not None
+        else (f"{manage}/app/platform/alerts" if manage else ""),
+        button_key=button_key,
     )
 
 
@@ -779,6 +789,87 @@ def deliver_alert(alert_type: str, subject: str, lines: list[str], level: str) -
             )
         except Exception:
             logger.warning("platform_alert_template_failed", exc_info=True)
+            html, text, mail_subject = _plain_alert(subject, lines)
+        try:
+            email._send_via_smtp(
+                user.email,
+                user.name or user.email,
+                relay.sender_email,
+                relay.sender_name,
+                mail_subject,
+                html,
+                text,
+                notify=False,
+            )
+            sent += 1
+        except email.EmailDeliveryError:
+            pass  # logged as mail.failed
+    return sent
+
+
+def admins() -> list:
+    """Active platform admins (superadmins and ``platform.settings``)."""
+    from hubra.core.models.user import User
+
+    return list(
+        db.session.scalars(
+            select(User)
+            .where(User.is_disabled.is_(False))
+            .where((User.is_superadmin.is_(True)) | (User.id.in_(_admin_ids())))
+            .order_by(User.id)
+        ).all()
+    )
+
+
+def deliver_audit_mail(entry) -> int:
+    """Mail one platform audit entry to the platform admins, when its
+    category is ticked under Mail in the notification matrix
+    (``notify.mail_events``).  Not during maintenance.  Returns the number
+    of mails sent."""
+    from hubra.core.services import (
+        email,
+        maintenance,
+        platform_discord,
+        platform_settings,
+    )
+
+    if (
+        platform_discord.category(entry.action)
+        not in platform_discord.mail_categories()
+    ):
+        return 0
+    try:
+        if maintenance.is_active():
+            return 0
+    except Exception:  # noqa: BLE001
+        pass
+    relay = platform_settings.relay()
+    if not relay.sender_email:
+        logger.warning("platform_audit_mail_no_sender action=%s", entry.action)
+        return 0
+    embed = platform_discord.audit_embed(entry)
+    lines = [
+        f"{f['name']}: {f['value']}"
+        for f in embed.get("fields", [])
+        if f["name"] != "Links"
+    ]
+    links = platform_discord.audit_links(entry)
+    button = links[0][1] if links else ""
+    subject = f"{entry.action}"
+    sent = 0
+    for user in admins():
+        try:
+            html, text, mail_subject = _alert_body(
+                user,
+                "audit",
+                subject,
+                lines,
+                "info",
+                button_url=button,
+                button_key="mail.email.platform_alert.button_entry",
+            )
+        except Exception:
+            logger.warning("platform_audit_template_failed", exc_info=True)
             html, text, mail_subject = _plain_alert(subject, lines)
         try:
             email._send_via_smtp(

@@ -445,5 +445,12 @@ def frontend(plugin_id: str):
     if spec is None or not spec.loaded or spec.frontend_file is None:
         return api_error("NOT_FOUND", "no frontend for this plugin", 404)
     resp = send_file(spec.frontend_file, mimetype="text/javascript", max_age=3600)
-    resp.headers["Cache-Control"] = "public, max-age=3600"
+    # The app asks for ?v=<tag of the build it expects>.  A server that hasn't
+    # reloaded after an update yet still has the old build: never let a cache
+    # keep that under the new tag.
+    wanted = request.args.get("v")
+    if wanted and wanted != spec.frontend_tag:
+        resp.headers["Cache-Control"] = "no-store"
+    else:
+        resp.headers["Cache-Control"] = "public, max-age=3600"
     return resp

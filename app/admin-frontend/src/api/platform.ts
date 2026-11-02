@@ -341,8 +341,14 @@ export interface AlertSwitches {
   enabled: boolean
   /** The platform Discord log is set up with the alerts category. */
   discordReady: boolean
-  types: Record<AlertType, { mail: boolean; discord: boolean }>
+  /** The matrix columns, in order. */
+  channels: NotifyChannel[]
+  types: Record<AlertType, Record<NotifyChannel, boolean>>
+  /** Platform events (audit log categories) per channel; a channel left out is not offered (Discord-only categories have no mail). */
+  events: Record<string, Partial<Record<NotifyChannel, boolean>>>
 }
+
+export type NotifyChannel = 'mail' | 'discord'
 
 export async function getAlertsOverview() {
   return apiFetch<{
@@ -360,7 +366,8 @@ export async function getAlertSwitches() {
 
 export async function updateAlertSwitches(change: {
   enabled?: boolean
-  types?: Partial<Record<AlertType, Partial<{ mail: boolean; discord: boolean }>>>
+  types?: Partial<Record<AlertType, Partial<Record<NotifyChannel, boolean>>>>
+  events?: Record<string, Partial<Record<NotifyChannel, boolean>>>
 }) {
   return apiFetch<AlertSwitches>(`${P}/alerts/switches`, {
     method: 'PUT',

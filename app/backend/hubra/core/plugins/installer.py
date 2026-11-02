@@ -831,19 +831,50 @@ def _index_time(value) -> datetime:
     return when if when.tzinfo else when.replace(tzinfo=timezone.utc)
 
 
-def fetch_repository(repo, force: bool = False) -> dict:
-    """The repository's index, verified with the key pinned when it was added."""
+def _cache_busted(url: str) -> str:
+    """*url* with a query that no CDN has cached yet."""
+    sep = "&" if "?" in url else "?"
+    return f"{url}{sep}_hubra={time.time_ns()}"
+
+
+def _verified_index(repo, url: str) -> dict:
     from .trust import verify_index
 
+    doc = _get_index(url)
+    verify_index(doc, load_public(repo.public_key))
+    _check_plugin_keys(repo, doc)
+    _index_time(doc.get("generated"))  # must parse
+    return doc
+
+
+def _older_than_seen(repo, doc: dict) -> bool:
+    return bool(repo.index_generated) and _index_time(
+        doc.get("generated")
+    ) < _index_time(repo.index_generated)
+
+
+def fetch_repository(repo, force: bool = False) -> dict:
+    """The repository's index, verified with the key pinned when it was added.
+
+    An index older than one seen before is a rollback, refused.  But CDNs
+    (GitHub Pages, Cloudflare) keep serving the previous index from some
+    edges for minutes after a publish, and the official index is published
+    every hour, so an older answer is first asked again past the cache.
+    """
     hit = _index_cache.get(repo.url)
     if hit and not force and time.time() - hit[0] < 600 and hit[2] == repo.key_id:
         return hit[1]
     try:
-        doc = _get_index(repo.url)
-        verify_index(doc, load_public(repo.public_key))
-        _check_plugin_keys(repo, doc)
-        generated = _index_time(doc.get("generated"))
-        if repo.index_generated and generated < _index_time(repo.index_generated):
+        doc = _verified_index(repo, repo.url)
+        if _older_than_seen(repo, doc):
+            _log.info(
+                "plugin index %s: got %s, seen %s; asking past the cache",
+                repo.url,
+                doc.get("generated"),
+                repo.index_generated,
+            )
+            doc = _verified_index(repo, _cache_busted(repo.url))
+        if _older_than_seen(repo, doc):
             raise InstallError(
                 f"the index is older ({doc.get('generated')}) than one seen "
                 f"before ({repo.index_generated}); refusing a rollback"
@@ -986,7 +1017,10 @@ def install_from_repository(repo, pid: str, version: str | None = None) -> dict:
     """Download, check and stage *pid* from *repo* (confirm installs it)."""
     from urllib.parse import urljoin
 
-    idx = fetch_repository(repo)
+    # Always the current index: a cached one (each worker keeps its own for
+    # ten minutes) can predate the release the manager saw, and the update
+    # would then quietly reinstall the old version.
+    idx = fetch_repository(repo, force=True)
     top = next(
         (p for p in idx["plugins"] if isinstance(p, dict) and str(p.get("id")) == pid),
         None,
@@ -1088,7 +1122,9 @@ def marketplace(fetch: bool = True) -> dict:
                     "detail": "",
                 },
                 "loaded": False,
-                "error": (spec.error if spec else "") or row.error or "not loaded here",
+                # Installed after this process started: it loads on the reload.
+                "error": (spec.error if spec else "") or row.error,
+                "pendingReload": spec is None and not row.error,
                 "installed": True,
                 "installedVersion": row.version,
                 "compatible": True,
@@ -1208,6 +1244,15 @@ def marketplace(fetch: bool = True) -> dict:
             out[pid] = entry
     for e in out.values():
         row = rows.get(e["id"])
+        spec = plugins.get(e["id"])
+        if row is not None and "pendingReload" not in e:
+            # Updated or rolled back after this process loaded the old one.
+            e["pendingReload"] = bool(
+                spec is not None
+                and spec.loaded
+                and spec.version != row.version
+            )
+        e.setdefault("pendingReload", False)
         e["held"] = row.held_version if row and row.held_version else ""
         e["previous"] = (
             _archive(row.previous_sha256).version

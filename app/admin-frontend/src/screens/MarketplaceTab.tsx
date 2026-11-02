@@ -1,27 +1,47 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  ActionIcon,
   Alert,
   Anchor,
   Badge,
   Button,
+  Card,
   Checkbox,
   Code,
   FileButton,
   Group,
+  Loader,
   Menu,
   Modal,
   Paper,
   SegmentedControl,
   Select,
+  SimpleGrid,
   Stack,
   Switch,
   Table,
   Text,
   Textarea,
   TextInput,
+  ThemeIcon,
 } from '@mantine/core'
-import { IconDots, IconRefresh, IconUpload } from '@tabler/icons-react'
+import {
+  IconAlertTriangle,
+  IconArrowUp,
+  IconBox,
+  IconBrandDiscord,
+  IconCircleCheck,
+  IconDots,
+  IconDownload,
+  IconMail,
+  IconMessages,
+  IconPuzzle,
+  IconRefresh,
+  IconSearch,
+  IconUpload,
+  IconWallet,
+} from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
 import {
   addRepository,
@@ -102,6 +122,34 @@ export function MarketplaceTab() {
 
 // ── Plugins ─────────────────────────────────────────────────────────────────
 
+/** An icon per kind of plugin, from its tags. */
+function PluginIcon({ p }: { p: MarketplacePlugin }) {
+  const tags = new Set(p.tags)
+  const Icon = p.id.includes('discord')
+    ? IconBrandDiscord
+    : tags.has('mail')
+      ? IconMail
+      : tags.has('finance')
+        ? IconWallet
+        : tags.has('inventory')
+          ? IconBox
+          : tags.has('communication')
+            ? IconMessages
+            : IconPuzzle
+  return (
+    <ThemeIcon size={52} radius="md" variant="light" color={p.installed ? 'violet' : 'gray'} aria-hidden>
+      <Icon size={28} stroke={1.6} />
+    </ThemeIcon>
+  )
+}
+
+/** Installed with an update first, then installed, then the rest; by name. */
+function rank(p: MarketplacePlugin) {
+  if (p.installed && (p.update || p.withdrawn || p.error)) return 0
+  if (p.installed) return 1
+  return 2
+}
+
 function PluginsView() {
   const { notify } = useAdmin()
   const queryClient = useQueryClient()
@@ -154,9 +202,14 @@ function PluginsView() {
 
   const install = (p: MarketplacePlugin, version?: string) =>
     run(p.id, async () => {
+      // An update names the version shown on the card, so the server
+      // installs exactly that one (or says it can't) instead of whatever its
+      // copy of the index calls newest.
+      const target = version ?? (p.update ? p.repoVersion : undefined)
+      const fromRepo = Boolean(target) || !p.bundled
       const out = await installPlugin(p.id, {
-        version,
-        repositoryId: version || !p.bundled ? p.repositoryId : undefined,
+        version: target,
+        repositoryId: fromRepo ? p.repositoryId : undefined,
       })
       if (out.installed) changed(out.installed, tr('Installiert', 'Installed'))
       if (out.staged) setStaged(out.staged)
@@ -168,127 +221,166 @@ function PluginsView() {
       setStaged(await uploadPlugin(file))
     })
 
-  const plugins = (data?.plugins ?? [])
-    .map((p) => {
-      const de = PLUGIN_DE[p.id]
-      return de ? { ...p, name: tr(de[0], p.name), description: tr(de[1], p.description) } : p
-    })
+  const all = (data?.plugins ?? []).map((p) => {
+    const de = PLUGIN_DE[p.id]
+    return de ? { ...p, name: tr(de[0], p.name), description: tr(de[1], p.description) } : p
+  })
+  const plugins = all
     .filter((p) => {
       if (filter === 'installed' && !p.installed) return false
+      if (filter === 'available' && p.installed) return false
       if (filter === 'updates' && !p.update && !p.withdrawn) return false
       const q = search.trim().toLowerCase()
       return !q || `${p.name} ${p.id} ${p.description} ${p.tags.join(' ')}`.toLowerCase().includes(q)
     })
+    .sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name))
+  const installedCount = all.filter((p) => p.installed).length
+  const updateCount = all.filter((p) => p.update).length
+  const installed = plugins.filter((p) => p.installed)
+  const available = plugins.filter((p) => !p.installed)
+
+  const card = (p: MarketplacePlugin) => (
+    <PluginCard
+      key={p.id}
+      p={p}
+      busy={busy === p.id}
+      reloading={waitFor !== null}
+      onDetails={() => setDetails(p)}
+      onInstall={() => install(p)}
+      onRollback={() => run(p.id, async () => changed(await rollbackPlugin(p.id), tr('Zurückgesetzt', 'Rolled back')))}
+      onHold={(version) =>
+        run(p.id, async () => {
+          await holdPlugin(p.id, version)
+          await queryClient.invalidateQueries({ queryKey: ['marketplace'] })
+        })
+      }
+      onRemove={() => setRemoving(p)}
+    />
+  )
+  const grid = (list: MarketplacePlugin[]) => (
+    <SimpleGrid cols={{ base: 1, sm: 2, xl: 3 }} spacing="md" verticalSpacing="md">
+      {list.map(card)}
+    </SimpleGrid>
+  )
 
   return (
-    <Stack gap="md">
+    <Stack gap="lg">
       {waitFor !== null && (
-        <Alert color="blue" variant="light">
+        <Alert color="blue" variant="light" icon={<Loader size={16} />}>
           {tr('Die Server laden die Änderung. Das dauert bis zu einer Minute.', 'Servers are loading the change. This takes up to a minute.')}
         </Alert>
       )}
       {data?.errors.map((e) => (
-        <Alert key={e} color="orange" variant="light">
+        <Alert key={e} color="orange" variant="light" icon={<IconAlertTriangle size={16} />}>
           {e}
         </Alert>
       ))}
-      <Group justify="space-between" wrap="wrap">
-        <Group gap="sm">
-          <TextInput
-            placeholder={tr('Suchen …', 'Search…')}
-            value={search}
-            onChange={(e) => setSearch(e.currentTarget.value)}
-          />
-          <SegmentedControl
-            value={filter}
-            onChange={setFilter}
-            data={[
-              { value: 'all', label: tr('Alle', 'All') },
-              { value: 'installed', label: tr('Installiert', 'Installed') },
-              { value: 'updates', label: tr('Updates', 'Updates') },
-            ]}
-          />
-        </Group>
-        <Group gap="sm">
-          <Select
-            w={210}
-            aria-label={tr('Updates', 'Updates')}
-            value={data?.updateMode ?? 'notify'}
-            onChange={(v) =>
-              v &&
-              run('mode', async () => {
-                await setUpdateMode(v as UpdateMode)
-                await queryClient.invalidateQueries({ queryKey: ['marketplace'] })
-              })
-            }
-            data={[
-              { value: 'notify', label: tr('Updates: nur melden', 'Updates: tell me') },
-              { value: 'official', label: tr('Updates: offizielle installieren', 'Updates: install official') },
-              { value: 'off', label: tr('Updates: nicht prüfen', 'Updates: don’t check') },
-            ]}
-          />
-          <Button
-            variant="default"
-            leftSection={<IconRefresh size={16} />}
-            loading={busy === 'check'}
-            onClick={() =>
-              run('check', async () => {
-                await checkUpdates()
-                await queryClient.invalidateQueries({ queryKey: ['marketplace'] })
-              })
-            }
-          >
-            {tr('Nach Updates suchen', 'Check for updates')}
-          </Button>
-          <FileButton onChange={upload} accept=".zip,application/zip">
-            {(props) => (
-              <Button {...props} leftSection={<IconUpload size={16} />} loading={busy === 'upload'}>
-                {tr('Plugin hochladen', 'Upload plugin')}
-              </Button>
-            )}
-          </FileButton>
-        </Group>
-      </Group>
 
-      <Paper withBorder style={{ overflow: 'hidden' }}>
-        {isLoading ? (
-          <Text p="lg" size="sm" c="dimmed">
-            {tr('Wird geladen …', 'Loading…')}
+      <Paper withBorder radius="md" p="md">
+        <Stack gap="sm">
+          <Group justify="space-between" wrap="wrap" gap="sm">
+            <Group gap="lg">
+              <Stat label={tr('Installiert', 'Installed')} value={installedCount} />
+              <Stat label={tr('Updates', 'Updates')} value={updateCount} highlight={updateCount > 0} />
+              <Stat label={tr('Im Katalog', 'In the catalogue')} value={all.length} />
+            </Group>
+            <Group gap="sm" wrap="wrap">
+              <Select
+                w={220}
+                aria-label={tr('Updates', 'Updates')}
+                value={data?.updateMode ?? 'notify'}
+                onChange={(v) =>
+                  v &&
+                  run('mode', async () => {
+                    await setUpdateMode(v as UpdateMode)
+                    await queryClient.invalidateQueries({ queryKey: ['marketplace'] })
+                  })
+                }
+                data={[
+                  { value: 'notify', label: tr('Updates: nur melden', 'Updates: tell me') },
+                  { value: 'official', label: tr('Updates: offizielle installieren', 'Updates: install official') },
+                  { value: 'off', label: tr('Updates: nicht prüfen', 'Updates: don’t check') },
+                ]}
+              />
+              <Button
+                variant="default"
+                leftSection={<IconRefresh size={16} />}
+                loading={busy === 'check'}
+                onClick={() =>
+                  run('check', async () => {
+                    await checkUpdates()
+                    await queryClient.invalidateQueries({ queryKey: ['marketplace'] })
+                  })
+                }
+              >
+                {tr('Nach Updates suchen', 'Check for updates')}
+              </Button>
+              <FileButton onChange={upload} accept=".zip,application/zip">
+                {(props) => (
+                  <Button {...props} variant="default" leftSection={<IconUpload size={16} />} loading={busy === 'upload'}>
+                    {tr('Plugin hochladen', 'Upload plugin')}
+                  </Button>
+                )}
+              </FileButton>
+            </Group>
+          </Group>
+          <Group gap="sm" wrap="wrap">
+            <TextInput
+              style={{ flex: '1 1 220px' }}
+              leftSection={<IconSearch size={16} />}
+              placeholder={tr('Plugins suchen …', 'Search plugins…')}
+              value={search}
+              onChange={(e) => setSearch(e.currentTarget.value)}
+            />
+            <SegmentedControl
+              value={filter}
+              onChange={setFilter}
+              data={[
+                { value: 'all', label: tr('Alle', 'All') },
+                { value: 'installed', label: tr('Installiert', 'Installed') },
+                { value: 'available', label: tr('Verfügbar', 'Available') },
+                { value: 'updates', label: updateCount ? `${tr('Updates', 'Updates')} (${updateCount})` : tr('Updates', 'Updates') },
+              ]}
+            />
+          </Group>
+        </Stack>
+      </Paper>
+
+      {isLoading ? (
+        <Group gap="sm" p="lg">
+          <Loader size="sm" />
+          <Text size="sm" c="dimmed">
+            {tr('Katalog wird geladen …', 'Loading the catalogue…')}
           </Text>
-        ) : error ? (
-          <Text p="lg" size="sm" c="red">
-            {errorText(error)}
-          </Text>
-        ) : plugins.length === 0 ? (
-          <Text p="lg" size="sm" c="dimmed">
+        </Group>
+      ) : error ? (
+        <Alert color="red" variant="light">
+          {errorText(error)}
+        </Alert>
+      ) : plugins.length === 0 ? (
+        <Paper withBorder radius="md" p="xl">
+          <Text size="sm" c="dimmed" ta="center">
             {tr('Keine passenden Plugins.', 'No plugins match.')}
           </Text>
-        ) : (
-          <Table verticalSpacing="sm" horizontalSpacing="md">
-            <Table.Tbody>
-              {plugins.map((p) => (
-                <PluginRow
-                  key={p.id}
-                  p={p}
-                  busy={busy === p.id}
-                  onDetails={() => setDetails(p)}
-                  onInstall={() => install(p)}
-                  onRollback={() =>
-                    run(p.id, async () => changed(await rollbackPlugin(p.id), tr('Zurückgesetzt', 'Rolled back')))
-                  }
-                  onHold={(version) =>
-                    run(p.id, async () => {
-                      await holdPlugin(p.id, version)
-                      await queryClient.invalidateQueries({ queryKey: ['marketplace'] })
-                    })
-                  }
-                  onRemove={() => setRemoving(p)}
-                />
-              ))}
-            </Table.Tbody>
-          </Table>
-        )}
-      </Paper>
+        </Paper>
+      ) : filter === 'all' ? (
+        <>
+          {installed.length > 0 && (
+            <Stack gap="sm">
+              <SectionTitle title={tr('Installiert', 'Installed')} count={installed.length} />
+              {grid(installed)}
+            </Stack>
+          )}
+          {available.length > 0 && (
+            <Stack gap="sm">
+              <SectionTitle title={tr('Verfügbar', 'Available')} count={available.length} />
+              {grid(available)}
+            </Stack>
+          )}
+        </>
+      ) : (
+        grid(plugins)
+      )}
 
       {details && (
         <DetailsModal
@@ -324,9 +416,36 @@ function PluginsView() {
   )
 }
 
-function PluginRow({
+function Stat({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) {
+  return (
+    <Stack gap={0}>
+      <Text size="xl" fw={700} lh={1.1} c={highlight ? 'gold.8' : undefined}>
+        {value}
+      </Text>
+      <Text size="xs" c="dimmed">
+        {label}
+      </Text>
+    </Stack>
+  )
+}
+
+function SectionTitle({ title, count }: { title: string; count: number }) {
+  return (
+    <Group gap={8}>
+      <Text fw={700} size="sm" tt="uppercase" c="dimmed" style={{ letterSpacing: 0.4 }}>
+        {title}
+      </Text>
+      <Badge size="sm" variant="light" color="gray" circle>
+        {count}
+      </Badge>
+    </Group>
+  )
+}
+
+function PluginCard({
   p,
   busy,
+  reloading,
   onDetails,
   onInstall,
   onRollback,
@@ -335,6 +454,7 @@ function PluginRow({
 }: {
   p: MarketplacePlugin
   busy: boolean
+  reloading: boolean
   onDetails: () => void
   onInstall: () => void
   onRollback: () => void
@@ -342,49 +462,74 @@ function PluginRow({
   onRemove: () => void
 }) {
   const offered = p.repoVersion ?? p.version
+  const pending = p.pendingReload
   return (
-    <Table.Tr>
-      <Table.Td>
-        <Group gap={8} mb={2}>
-          <Anchor component="button" fw={600} size="sm" c="dark" onClick={onDetails}>
+    <Card withBorder radius="md" padding="lg" style={{ display: 'flex', flexDirection: 'column' }} data-plugin={p.id}>
+      <Group align="flex-start" wrap="nowrap" gap="md">
+        <PluginIcon p={p} />
+        <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
+          <Anchor component="button" ta="left" fw={700} size="lg" c="var(--mantine-color-text)" onClick={onDetails} lineClamp={1}>
             {p.name}
           </Anchor>
-          <Text size="xs" c="dimmed">
+          <Text size="xs" c="dimmed" lineClamp={1}>
             {p.installed ? p.installedVersion : offered}
+            {p.author ? ` · ${p.author}` : ''}
           </Text>
-          <TrustBadge status={p.trust?.status || (p.officialSigned ? 'official' : '')} />
-          {p.installed && !p.error && (
-            <Badge size="xs" variant="light" color="gray">
-              {tr('Installiert', 'Installed')}
-            </Badge>
-          )}
-          {p.update && (
-            <Badge size="xs" color="gold" c="#1a1625">
-              {tr('Update', 'Update')} {p.repoVersion}
-            </Badge>
-          )}
-          {p.held && (
-            <Badge size="xs" variant="outline" color="gray">
-              {tr('Gehalten bei', 'Held at')} {p.held}
-            </Badge>
-          )}
-          {p.withdrawn && (
-            <Badge size="xs" color="red">
-              {tr('Zurückgezogen', 'Withdrawn')}
-            </Badge>
-          )}
-        </Group>
-        <Text size="xs" c="dimmed">
-          {p.description}
-          {p.author ? ` · ${p.author}` : ''}
-        </Text>
+          <Group gap={6} mt={4}>
+            <TrustBadge status={p.trust?.status || (p.officialSigned ? 'official' : '')} />
+            {p.tags.slice(0, 3).map((t) => (
+              <Badge key={t} size="xs" variant="outline" color="gray">
+                {t}
+              </Badge>
+            ))}
+          </Group>
+        </Stack>
+        {p.installed && (
+          <Menu position="bottom-end" withinPortal>
+            <Menu.Target>
+              <ActionIcon variant="subtle" color="gray" aria-label={tr(`Mehr zu ${p.name}`, `More for ${p.name}`)}>
+                <IconDots size={18} />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item onClick={onDetails}>{tr('Details und Versionen', 'Details and versions')}</Menu.Item>
+              {p.previous && <Menu.Item onClick={onRollback}>{tr('Zurück auf', 'Roll back to')} {p.previous}</Menu.Item>}
+              {p.repositoryId !== null &&
+                (p.held ? (
+                  <Menu.Item onClick={() => onHold(null)}>{tr('Updates wieder erlauben', 'Allow updates again')}</Menu.Item>
+                ) : (
+                  <Menu.Item onClick={() => onHold(p.installedVersion)}>
+                    {tr(`Bei ${p.installedVersion} halten`, `Hold at ${p.installedVersion}`)}
+                  </Menu.Item>
+                ))}
+              <Menu.Divider />
+              <Menu.Item color="red" onClick={onRemove} disabled={p.autoinstalled}>
+                {p.autoinstalled ? tr('Von den Server-Einstellungen installiert', 'Installed by the server’s settings') : tr('Deinstallieren', 'Uninstall')}
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+        )}
+      </Group>
+
+      <Text size="sm" mt="md" c="dimmed" lineClamp={3} style={{ flex: 1 }}>
+        {p.description}
+      </Text>
+
+      <Stack gap={6} mt="sm">
+        {pending && (
+          <Text size="xs" c="blue">
+            {reloading
+              ? tr('Wird auf den Servern geladen …', 'Loading on the servers…')
+              : tr('Aktiv nach dem Neuladen der Server (bis zu einer Minute)', 'Live once the servers reload (up to a minute)')}
+          </Text>
+        )}
         {p.withdrawn && (
           <Text size="xs" c="red">
             {tr('Der Herausgeber hat diese Version zurückgezogen', 'The publisher withdrew this version')}: {p.withdrawn}
           </Text>
         )}
-        {p.error && p.installed && (
-          <Text size="xs" c="red">
+        {p.error && p.installed && !pending && (
+          <Text size="xs" c="red" lineClamp={3}>
             {tr('Nicht geladen', 'Not loaded')}: {p.error}
           </Text>
         )}
@@ -393,49 +538,67 @@ function PluginRow({
             {p.incompatibleReason || tr('Braucht eine andere Hubra-Version', 'Needs another Hubra version')}
           </Text>
         )}
-      </Table.Td>
-      <Table.Td w={1}>
-        <Group gap={6} wrap="nowrap" justify="flex-end">
-          {!p.installed && (
-            <Button size="xs" loading={busy} disabled={!p.compatible} onClick={onInstall}>
-              {tr('Installieren', 'Install')}
+      </Stack>
+
+      <Card.Section withBorder inheritPadding py="sm" mt="md">
+        <Group justify="space-between" wrap="nowrap" gap="sm">
+          <PluginState p={p} />
+          <Group gap={6} wrap="nowrap">
+            <Button size="xs" variant="subtle" color="gray" onClick={onDetails}>
+              {tr('Details', 'Details')}
             </Button>
-          )}
-          {p.update && (
-            <Button size="xs" loading={busy} onClick={onInstall}>
-              {tr('Aktualisieren', 'Update')}
-            </Button>
-          )}
-          {p.installed && (
-            <Menu position="bottom-end" withinPortal>
-              <Menu.Target>
-                <Button size="xs" variant="subtle" px={6} aria-label={tr(`Mehr zu ${p.name}`, `More for ${p.name}`)}>
-                  <IconDots size={16} />
-                </Button>
-              </Menu.Target>
-              <Menu.Dropdown>
-                <Menu.Item onClick={onDetails}>{tr('Details und Versionen', 'Details and versions')}</Menu.Item>
-                {p.previous && (
-                  <Menu.Item onClick={onRollback}>{tr('Zurück auf', 'Roll back to')} {p.previous}</Menu.Item>
-                )}
-                {p.repositoryId !== null &&
-                  (p.held ? (
-                    <Menu.Item onClick={() => onHold(null)}>{tr('Updates wieder erlauben', 'Allow updates again')}</Menu.Item>
-                  ) : (
-                    <Menu.Item onClick={() => onHold(p.installedVersion)}>
-                      {tr(`Bei ${p.installedVersion} halten`, `Hold at ${p.installedVersion}`)}
-                    </Menu.Item>
-                  ))}
-                <Menu.Divider />
-                <Menu.Item color="red" onClick={onRemove} disabled={p.autoinstalled}>
-                  {p.autoinstalled ? tr('Von den Server-Einstellungen installiert', 'Installed by the server’s settings') : tr('Deinstallieren', 'Uninstall')}
-                </Menu.Item>
-              </Menu.Dropdown>
-            </Menu>
-          )}
+            {!p.installed && (
+              <Button size="xs" loading={busy} disabled={!p.compatible} onClick={onInstall} leftSection={<IconDownload size={14} />}>
+                {tr('Installieren', 'Install')}
+              </Button>
+            )}
+            {p.update && (
+              <Button size="xs" color="gold" c="#1a1625" loading={busy} onClick={onInstall} leftSection={<IconArrowUp size={14} />}>
+                {tr(`Auf ${p.repoVersion}`, `To ${p.repoVersion}`)}
+              </Button>
+            )}
+          </Group>
         </Group>
-      </Table.Td>
-    </Table.Tr>
+      </Card.Section>
+    </Card>
+  )
+}
+
+function PluginState({ p }: { p: MarketplacePlugin }) {
+  if (!p.installed) {
+    return (
+      <Text size="xs" c="dimmed">
+        {p.repository || p.source || tr('Nicht installiert', 'Not installed')}
+      </Text>
+    )
+  }
+  if (p.pendingReload) {
+    return (
+      <Group gap={6} wrap="nowrap">
+        <Loader size={12} />
+        <Text size="xs" c="blue">
+          {tr('Wird geladen', 'Loading')}
+        </Text>
+      </Group>
+    )
+  }
+  if (p.error) {
+    return (
+      <Group gap={6} wrap="nowrap">
+        <IconAlertTriangle size={14} color="var(--mantine-color-red-6)" />
+        <Text size="xs" c="red">
+          {tr('Fehler', 'Error')}
+        </Text>
+      </Group>
+    )
+  }
+  return (
+    <Group gap={6} wrap="nowrap">
+      <IconCircleCheck size={14} color="var(--mantine-color-green-6)" />
+      <Text size="xs" c="dimmed">
+        {p.held ? tr(`Gehalten bei ${p.held}`, `Held at ${p.held}`) : p.update ? tr('Update verfügbar', 'Update available') : tr('Installiert', 'Installed')}
+      </Text>
+    </Group>
   )
 }
 

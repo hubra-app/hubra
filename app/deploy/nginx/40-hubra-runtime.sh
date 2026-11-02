@@ -56,7 +56,7 @@ origin_of() {
 api_origin="$(origin_of "${VITE_API_BASE-/api}")"
 # Manage reads /version.json from the club app and SSO (Diagnose > Builds).
 app_origins="$(origin_of "${VITE_COS_URL-https://app.hubra.club}") $(origin_of "${VITE_SSO_URL-https://sso.hubra.club}")"
-default_csp="default-src 'self'; script-src 'self' ${api_origin}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' ${api_origin} ${app_origins}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+default_csp="default-src 'self'; script-src 'self' ${api_origin}; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' ${api_origin} ${app_origins}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
 csp="${CSP:-$default_csp}"
 {
   echo 'add_header X-Content-Type-Options "nosniff" always;'
