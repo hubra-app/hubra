@@ -49,10 +49,24 @@ export interface ServiceStatus {
   error?: string
 }
 
+export interface BuildReport {
+  component: string
+  host: string
+  commit: string | null
+  version: string | null
+  seen?: number
+}
+
 export interface HealthDetail {
   status: 'ok' | 'degraded' | 'error'
   services: Record<string, ServiceStatus>
   version?: string
+  /** Commit the API process was built from; null for a build without one. */
+  commit?: string | null
+  /** What each backend process reported (API, worker, beat, Discord gateway), per host. */
+  processes?: BuildReport[]
+  /** The newest upgrade event (started, completed or stuck). */
+  last_upgrade?: PlatformEvent | null
   stale?: boolean
   checked_at?: number
 }
@@ -293,6 +307,7 @@ export type AlertType =
   | 'service_down'
   | 'backup_failed'
   | 'plugin_updates'
+  | 'upgrades'
   | 'system'
 
 export interface OpenProblem {

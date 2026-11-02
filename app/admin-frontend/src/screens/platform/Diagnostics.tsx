@@ -30,6 +30,7 @@ import {
 import { OutboundMailPanel } from './MailMonitor'
 import { DiscordPanel } from './DiscordStatus'
 import { Row } from './StatusRow'
+import { BuildsPanel } from './Builds'
 
 const MONO = "'JetBrains Mono', monospace"
 
@@ -126,6 +127,8 @@ function HealthPanel() {
           </>
         )}
       </Paper>
+
+      {health && <BuildsPanel health={health} />}
 
       <Paper withBorder shadow="sm" radius="lg" p="lg">
         <Title order={3} mb={12}>

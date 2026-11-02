@@ -61,7 +61,8 @@ def test_version_endpoint_returns_version_string(client):
     resp = client.get("/api/v1/version")
     assert resp.status_code == 200
     data = resp.get_json()
-    assert data == {"version": VersionService.get_version()}
+    assert data["version"] == VersionService.get_version()
+    assert "commit" in data
 
 
 def test_version_endpoint_no_auth_required(client):

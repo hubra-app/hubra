@@ -60,6 +60,7 @@ ALERT_TYPES = (
     "service_down",
     "backup_failed",
     "plugin_updates",
+    "upgrades",
     "system",
 )
 # Off unless the admin turns them on: news, not trouble.

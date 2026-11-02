@@ -11,8 +11,10 @@ version_bp = Blueprint("version_bp", __name__)
 
 @version_bp.get("/version")
 def get_version():
-    """Return the current backend version."""
-    return jsonify({"version": VersionService.get_version()}), 200
+    """Return the current backend version and the commit it was built from."""
+    from hubra.core.build_info import commit
+
+    return jsonify({"version": VersionService.get_version(), "commit": commit()}), 200
 
 
 @version_bp.get("/version/changelog")
