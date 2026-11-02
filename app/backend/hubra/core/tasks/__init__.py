@@ -55,6 +55,10 @@ def make_celery(app: Flask) -> Celery:
 
         def __call__(self, *args: object, **kwargs: object) -> object:
             with app.app_context():
+                # The slow-query threshold (read at most once a minute).
+                from hubra.core.services.perf_monitor import refresh_thresholds
+
+                refresh_thresholds()
                 tenant_id = getattr(self.request, "tenant_id", None) or (
                     getattr(self.request, "headers", None) or {}
                 ).get("tenant_id")

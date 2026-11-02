@@ -968,6 +968,10 @@ def open_problems() -> list[dict]:
 
     problems.extend(_backup_problems())
 
+    from hubra.core.services import perf_monitor
+
+    problems.extend(perf_monitor.problems())
+
     order = {"error": 0, "warning": 1, "info": 2}
     problems.sort(key=lambda p: order.get(p["level"], 3))
     return problems
