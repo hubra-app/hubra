@@ -24,7 +24,10 @@ A change to `ci.yml` itself runs everything, and so does a push whose base
 is unknown (new branch, force push). The browser tests run on pull requests
 so a screen change that breaks them fails its own pull request instead of
 the next image build. Anything else (docs, the other workflows, `brand/`,
-`tools/`) runs nothing: `lint` and `tests` report as skipped. Draft pull
+`tools/`) runs nothing: `lint` and `tests` report as skipped. Text files
+run nothing wherever they are: Markdown files (so also `CHANGELOG.md` and
+`CHANGELOG.de.md`), `README` files and `.gitignore` files. The changelog
+checks in the backend tests still run in release-checks before a release. Draft pull
 requests run nothing until they are marked ready for review.
 
 ## Required checks
@@ -47,14 +50,24 @@ workflow does not run at all, and its required checks would stay pending.
 
 ## Release flow
 
+**Usual case, from `main`:**
+
 1. Optional: Actions > Release checks > Run workflow on `main`, to see the
-   full checks before cutting the branch.
-2. Create `release/1.2` from `main`. The full checks run on it.
-3. Fixes for the release go in as pull requests into `release/1.2`, each
-   with the full checks. Merge them back into `main` too.
-4. Publish a GitHub release `v1.2.0` with target `release/1.2`. Images runs
-   the full checks again on that commit and builds the images only if they
-   pass.
+   full checks before publishing.
+2. Publish a GitHub release `v1.2.0` with target `main`. Images runs the
+   full checks on that commit and builds the images only if they pass.
+
+**With a release branch**, one per minor version (`release/1.2`, never one
+per patch). Cut it only when you need it: to keep merging features into
+`main` while a release is being fixed, or to patch `1.2` after `main` has
+moved on. It can be cut later from the `v1.2.0` tag.
+
+1. Create `release/1.2` from `main` (or from the tag `v1.2.0`). The full
+   checks run on it.
+2. Fixes go in as pull requests into `release/1.2`, each with the full
+   checks. Merge them back into `main` too.
+3. Publish `v1.2.1` (or `v1.2.0`) with target `release/1.2`. Later patches
+   of 1.2 come from the same branch.
 
 Images builds only the images whose files changed since their last build
 and gives the others the new tags on the same digest; run it by hand with

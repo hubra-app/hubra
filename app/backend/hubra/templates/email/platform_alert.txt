@@ -8,6 +8,6 @@
 {{ t('mail.email.platform_alert.when') }}: {{ when }}
 {{ t('mail.email.platform_alert.instance') }}: {{ instance }}
 {% if alerts_url %}
-{{ t('mail.email.platform_alert.button') }}: {{ alerts_url }}
+{{ t(button_key or 'mail.email.platform_alert.button') }}: {{ alerts_url }}
 {% endif %}
 {{ t('mail.email.platform_alert.why') }}

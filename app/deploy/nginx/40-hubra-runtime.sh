@@ -8,7 +8,10 @@
 #      container's VITE_* environment variables (or the defaults below).
 #   2. Writes the nginx server block. With API_UPSTREAM set (for example
 #      http://backend:5000), /api/ is proxied to the backend so the SPA and the
-#      API share one origin. REAL_IP_FROM (a CIDR, comma-separated list
+#      API share one origin. PLATFORM_API_UPSTREAM (for example
+#      http://platform-backend:5000) sends the platform API (/api/v1/manager,
+#      /api/v1/admin, /api/v1/system) to a separate platform backend
+#      (docs/platform-backend.md). REAL_IP_FROM (a CIDR, comma-separated list
 #      allowed) trusts X-Forwarded-For from a proxy in front of this nginx.
 #
 # An image built with real VITE_* build args has no placeholders left, so
@@ -53,7 +56,7 @@ origin_of() {
 api_origin="$(origin_of "${VITE_API_BASE-/api}")"
 # Manage reads /version.json from the club app and SSO (Diagnose > Builds).
 app_origins="$(origin_of "${VITE_COS_URL-https://app.hubra.club}") $(origin_of "${VITE_SSO_URL-https://sso.hubra.club}")"
-default_csp="default-src 'self'; script-src 'self' ${api_origin}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' ${api_origin} ${app_origins}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+default_csp="default-src 'self'; script-src 'self' ${api_origin}; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' ${api_origin} ${app_origins}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
 csp="${CSP:-$default_csp}"
 {
   echo 'add_header X-Content-Type-Options "nosniff" always;'
@@ -76,16 +79,26 @@ if [ -n "${REAL_IP_FROM:-}" ]; then
 "
 fi
 
-api=""
-if [ -n "${API_UPSTREAM:-}" ]; then
-  api="    location /api/ {
-        proxy_pass ${API_UPSTREAM};
+proxy_block() {
+  printf '%s\n' "    location $1 {
+        proxy_pass $2;
         proxy_set_header Host \$host;
         proxy_set_header X-Forwarded-For \$remote_addr;
         proxy_set_header X-Forwarded-Proto \$hubra_forwarded_proto;
         proxy_set_header X-Forwarded-Host \$host;
         proxy_read_timeout 120s;
-    }
+    }"
+}
+
+api=""
+if [ -n "${API_UPSTREAM:-}" ]; then
+  api="$(proxy_block /api/ "$API_UPSTREAM")
+"
+fi
+# Same prefixes as hubra.core.roles.PLATFORM_PREFIXES; a regex location wins
+# over the /api/ prefix location.
+if [ -n "${PLATFORM_API_UPSTREAM:-}" ]; then
+  api="${api}$(proxy_block '~ ^/api/v1/(manager|admin|system)(/|$)' "$PLATFORM_API_UPSTREAM")
 "
 fi
 

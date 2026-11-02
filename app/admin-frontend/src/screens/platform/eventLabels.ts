@@ -192,3 +192,17 @@ export const ALERT_TYPES: {
       ),
   },
 ]
+
+/** Platform events: the audit log categories (services/platform_discord.py). */
+export const PLATFORM_EVENTS: { id: string; label: () => string }[] = [
+  { id: 'clubs', label: () => tr('Vereine erstellt, geändert, gesperrt, gelöscht; Module; Domains', 'Clubs created, changed, suspended, deleted; modules; domains') },
+  { id: 'requests', label: () => tr('Vereinsanfragen eingereicht, angenommen, abgelehnt (in Discord mit Knöpfen Annehmen / Ablehnen)', 'Club requests submitted, approved, rejected (in Discord with Approve / Reject buttons)') },
+  { id: 'access', label: () => tr('Plattformrollen, Vereinsinhaber/-admins, Impersonation', 'Platform roles, club owners/admins, impersonation') },
+  { id: 'members', label: () => tr('Mitglieder kommen zu einem Verein (viele Meldungen)', 'Members joining a club (many posts)') },
+  { id: 'plugins', label: () => tr('Plugins installiert, aktualisiert, entfernt; Quellen', 'Plugins installed, updated, removed; repositories') },
+  { id: 'backups', label: () => tr('Backups erstellt, geprüft, wiederhergestellt, gelöscht', 'Backups created, verified, restored, deleted') },
+  { id: 'platform', label: () => tr('Plattform-Einstellungen, Schlüssel, Mailserver, Übersetzungen', 'Platform settings, keys, mail server, translations') },
+  { id: 'digest', label: () => tr('Tagesübersicht um 08:00: neue Vereine, Konten, Mails, offene Probleme (nur Discord)', 'Daily overview at 08:00: new clubs, sign-ups, mail, open problems (Discord only)') },
+  { id: 'releases', label: () => tr('Neue Hubra-Version läuft, mit den Neuerungen (nur Discord)', 'A new Hubra version is running, with its release notes (Discord only)') },
+  { id: 'security', label: () => tr('Sicherheit: Admins auf neuem Gerät oder ohne Zwei-Faktor, viele Fehlanmeldungen, alte Schlüssel (nur Discord)', 'Security: admins on new devices or without two-factor, many failed sign-ins, old keys (Discord only)') },
+]

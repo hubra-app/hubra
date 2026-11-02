@@ -2192,7 +2192,13 @@
       "switchedOn": "{{name}} switched on",
       "uses": "Uses {{names}}",
       "pluginsTitle": "Plugins",
-      "pluginsIntro": "Extra features from the Hubra catalogue. Switch on what your club wants to use."
+      "pluginsIntro": "Extra features from the Hubra catalogue. Switch on what your club wants to use.",
+      "builtInTitle": "Features",
+      "noPlugins": "No plugins are installed on this platform yet. Platform admins install plugins from the Hubra catalogue.",
+      "morePlugins": "Missing something? Platform admins install more plugins from the Hubra catalogue.",
+      "onCount": "{{count}} of {{total}} on",
+      "pluginBy": "Plugin {{name}} {{version}}",
+      "official": "Official"
     },
     "noFeatures": "No feature flags configured",
     "profile": "Profile",

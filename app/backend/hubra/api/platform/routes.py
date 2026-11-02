@@ -482,27 +482,51 @@ def alerts_overview():
 
 
 def _alert_switches() -> dict:
-    """The platform-wide alert switches: all on/off, and per type mail and
-    Discord.  ``discordReady``: the platform Discord log is set up."""
+    """The notification matrix: what goes where.
+
+    ``types``: alert types × mail / Discord.  ``events``: platform audit
+    categories × mail / Discord.  ``channels``: the columns, so a new
+    channel is one more entry.  ``enabled``: alerts on at all.
+    ``discordReady``: the bot token and a platform log channel are set.
+
+    Stored as ``alerts.mail_off`` / ``alerts.discord_off`` (alert types
+    off), ``notify.mail_events`` and ``discord.log_events`` (categories on;
+    ``alerts`` in there lets alerts reach Discord at all).
+    """
     from hubra.core.services import platform_discord, platform_settings
 
     def _off(key: str) -> set[str]:
         return {t.strip() for t in platform_settings.get(key).split(",") if t.strip()}
 
     mail_off, discord_off = _off("alerts.mail_off"), _off("alerts.discord_off")
+    discord_on = platform_discord.enabled_categories()
+    mail_on = platform_discord.mail_categories()
     try:
         channel_id, token = platform_discord._settings()
-        discord_ready = bool(channel_id and token) and (
-            "alerts" in platform_discord.enabled_categories()
-        )
+        discord_ready = bool(token and channel_id)
     except Exception:  # noqa: BLE001
         discord_ready = False
+    alerts_to_discord = "alerts" in discord_on
     return {
         "enabled": platform_settings.get("alerts.enabled") != "off",
         "discordReady": discord_ready,
+        "channels": ["mail", "discord"],
         "types": {
-            t: {"mail": t not in mail_off, "discord": t not in discord_off}
+            t: {
+                "mail": t not in mail_off,
+                "discord": alerts_to_discord and t not in discord_off,
+            }
             for t in platform_monitor.ALERT_TYPES
+        },
+        # Discord-only categories (the bot's own posts) have no mail key.
+        "events": {
+            c: (
+                {"discord": c in discord_on}
+                if c in platform_discord.DISCORD_ONLY
+                else {"mail": c in mail_on, "discord": c in discord_on}
+            )
+            for c in platform_discord.CATEGORIES
+            if c != "alerts"
         },
     }
 
@@ -517,7 +541,8 @@ def get_alert_switches():
 @require_global_permission(_PERM)
 def update_alert_switches():
     """Body ``{"enabled": bool, "types": {"<type>": {"mail": bool,
-    "discord": bool}}}``; what is left out keeps its value."""
+    "discord": bool}}, "events": {"<category>": {"mail": bool, "discord":
+    bool}}}``; what is left out keeps its value."""
     from hubra.core.services import platform_settings
 
     body = request.get_json(silent=True)
@@ -542,10 +567,38 @@ def update_alert_switches():
                     "VALIDATION_ERROR", f"{t}: mail and discord are true or false", 400
                 )
             merged[t][ch] = on
+    events = body.get("events", {})
+    if not isinstance(events, dict):
+        return api_error("VALIDATION_ERROR", "events is an object", 400)
+    merged_events = {c: dict(v) for c, v in current["events"].items()}
+    for c, chans in events.items():
+        if c not in merged_events or not isinstance(chans, dict):
+            return api_error("VALIDATION_ERROR", f"Unknown event category: {c}", 400)
+        for ch, on in chans.items():
+            if ch not in merged_events[c] or not isinstance(on, bool):
+                return api_error(
+                    "VALIDATION_ERROR",
+                    f"{c}: {' and '.join(merged_events[c])} are true or false",
+                    400,
+                )
+            merged_events[c][ch] = on
     if types:
         for ch in ("mail", "discord"):
             off = [t for t, v in merged.items() if not v[ch]]
             values[f"alerts.{ch}_off"] = ",".join(off) or None
+    if types or events:
+        from hubra.core.services import platform_discord
+
+        cats = [c for c in platform_discord.CATEGORIES if c != "alerts"]
+        discord = [c for c in cats if merged_events[c]["discord"]]
+        # Alerts reach Discord only with "alerts" in the list; the per-type
+        # switches above say which ones.
+        if any(v["discord"] for v in merged.values()):
+            discord.append("alerts")
+        values["discord.log_events"] = ",".join(discord)
+        values["notify.mail_events"] = (
+            ",".join(c for c in cats if merged_events[c].get("mail")) or None
+        )
     platform_settings.set_many(values, actor_id=g.system_user.id)
     db.session.commit()
     return jsonify(_alert_switches()), 200
@@ -723,6 +776,34 @@ def cancel_maintenance_window(window_id: int):
     return jsonify(
         {"window": maintenance.window_json(window, _club_names([window]))}
     ), 200
+
+
+@platform_bp.get("/features")
+@require_global_permission(_PERM)
+def list_features():
+    """Early-access flags: stage, how many clubs have each, the group."""
+    from hubra.core.services import feature_flags
+
+    return jsonify(feature_flags.overview()), 200
+
+
+@platform_bp.put("/features/<key>")
+@require_global_permission(_PERM)
+def set_feature_stage(key: str):
+    """``{"stage": "off" | "early" | "all"}``."""
+    from hubra.core.services import feature_flags
+
+    body = request.get_json(silent=True) or {}
+    before = feature_flags.stages().get(key)
+    feature_flags.set_stage(key, body.get("stage"), actor_id=g.system_user.id)
+    _audit(
+        "platform.feature.stage",
+        "feature",
+        key,
+        {"before": before, "after": body.get("stage")},
+    )
+    db.session.commit()
+    return jsonify(feature_flags.overview()), 200
 
 
 @platform_bp.get("/errors")

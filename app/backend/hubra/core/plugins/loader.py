@@ -251,7 +251,9 @@ def discover(app=None) -> PluginSet:
         ok, why = compatibility(spec.manifest)
         if not ok:
             spec.error = why
-    found.generation = read_generation() if rows else 0
+    # Also with nothing installed: after the last uninstall the manager waits
+    # for this process to reach the new generation.
+    found.generation = read_generation()
     found.specs = dict(sorted(found.specs.items()))
     return found
 

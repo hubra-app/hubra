@@ -341,8 +341,14 @@ export interface AlertSwitches {
   enabled: boolean
   /** The platform Discord log is set up with the alerts category. */
   discordReady: boolean
-  types: Record<AlertType, { mail: boolean; discord: boolean }>
+  /** The matrix columns, in order. */
+  channels: NotifyChannel[]
+  types: Record<AlertType, Record<NotifyChannel, boolean>>
+  /** Platform events (audit log categories) per channel; a channel left out is not offered (Discord-only categories have no mail). */
+  events: Record<string, Partial<Record<NotifyChannel, boolean>>>
 }
+
+export type NotifyChannel = 'mail' | 'discord'
 
 export async function getAlertsOverview() {
   return apiFetch<{
@@ -360,7 +366,8 @@ export async function getAlertSwitches() {
 
 export async function updateAlertSwitches(change: {
   enabled?: boolean
-  types?: Partial<Record<AlertType, Partial<{ mail: boolean; discord: boolean }>>>
+  types?: Partial<Record<AlertType, Partial<Record<NotifyChannel, boolean>>>>
+  events?: Record<string, Partial<Record<NotifyChannel, boolean>>>
 }) {
   return apiFetch<AlertSwitches>(`${P}/alerts/switches`, {
     method: 'PUT',
@@ -605,6 +612,40 @@ export async function retryJob(id: string) {
 export async function dismissJob(id: string) {
   return apiFetch<{ removed: string }>(`${P}/jobs/failed/${encodeURIComponent(id)}`, {
     method: 'DELETE',
+  })
+}
+
+// ── Early access (Einstellungen › Früher Zugang) ─────────────────────────────
+
+export type FeatureStage = 'off' | 'early' | 'all'
+
+export interface FeatureFlag {
+  key: string
+  title_de: string
+  title_en: string
+  description_de: string
+  description_en: string
+  stage: FeatureStage
+  clubs_on: number
+  /** Clubs that have it forced on / off for themselves. */
+  forced_on: number[]
+  forced_off: number[]
+}
+
+export interface FeaturesOverview {
+  flags: FeatureFlag[]
+  early_access: { id: number; name: string; slug: string }[]
+  clubs_total: number
+}
+
+export async function getFeatures() {
+  return apiFetch<FeaturesOverview>(`${P}/features`)
+}
+
+export async function setFeatureStage(key: string, stage: FeatureStage) {
+  return apiFetch<FeaturesOverview>(`${P}/features/${encodeURIComponent(key)}`, {
+    method: 'PUT',
+    body: JSON.stringify({ stage }),
   })
 }
 

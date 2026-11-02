@@ -42,6 +42,9 @@ import { TenantModules } from '@/screens/TenantModules'
 import { ClubAdminsPanel } from '@/screens/ClubAdmins'
 import { TenantTrends } from '@/screens/TenantTrends'
 import { TenantLimits } from '@/screens/TenantLimits'
+import { DataRequestsPanel } from '@/screens/DataRequests'
+import { TenantBilling } from '@/screens/TenantBilling'
+import { TenantEarlyAccess } from '@/screens/TenantEarlyAccess'
 
 const STATUS_COLORS: Record<string, string> = {
   active: 'green',
@@ -59,7 +62,7 @@ export function TenantDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { notify } = useAdmin()
+  const { notify, hasGlobalPermission } = useAdmin()
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [pendingAction, setPendingAction] = useState<string | null>(null)
   const [impersonateOpen, setImpersonateOpen] = useState(false)
@@ -274,13 +277,21 @@ export function TenantDetail() {
         </Stack>
       </Paper>
 
+      <TenantBilling tenantId={tenant.id} />
+
       <TenantLimits tenantId={tenant.id} />
+
+      <TenantEarlyAccess tenantId={tenant.id} />
 
       <TenantTrends tenantId={tenant.id} />
 
       <ClubAdminsPanel tenantId={tenant.id} />
 
       <TenantModules tenantId={tenant.id} />
+
+      {hasGlobalPermission('privacy.requests') && (
+        <DataRequestsPanel tenantId={tenant.id} tenantSlug={tenant.slug} />
+      )}
 
       <Paper withBorder p="lg" mb={20}>
         <Group justify="space-between" mb={12}>

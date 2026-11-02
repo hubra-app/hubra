@@ -4,16 +4,21 @@ import {
   Badge,
   Button,
   Group,
+  Loader,
   Modal,
   NumberInput,
   Paper,
   PasswordInput,
   Select,
+  SimpleGrid,
   Stack,
   Switch,
   Text,
   TextInput,
+  ThemeIcon,
 } from '@mantine/core'
+import { IconPuzzle, IconSettings } from '@tabler/icons-react'
+import { moduleNavIcon } from '@/components/Shell/nav'
 import { useT } from '@/locales/i18n'
 import { useAuth, useToast } from '@/context/AppContext'
 import { PluginSlot } from '@/plugins'
@@ -22,6 +27,7 @@ import {
   saveModuleSettings,
   setModuleEnabled,
   type ModuleInfo,
+  type ModulePlugin,
   type ModuleSettingField,
 } from '@/api/modules'
 import { localizeModule } from '@/modules/labels'
@@ -38,16 +44,25 @@ export function ModulesTab() {
   const [editing, setEditing] = useState<ModuleInfo | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
 
-  const { data: modules = [] } = useQuery({
+  const { data: modules = [], isLoading } = useQuery({
     queryKey: qk.modules,
     queryFn: getModules,
     select: (list) => list.map(localizeModule),
   })
   const byCode = Object.fromEntries(modules.map((m) => [m.code, m]))
   const optional = modules.filter((m) => !m.required)
-  const coreOptional = optional.filter((m) => !m.plugin)
-  const pluginModules = optional.filter((m) => m.plugin)
+  const builtIn = optional.filter((m) => !m.plugin)
   const required = modules.filter((m) => m.required)
+  // One card per plugin, with every module it brings.
+  const plugins = Object.values(
+    optional
+      .filter((m) => m.plugin)
+      .reduce<Record<string, { plugin: ModulePlugin; modules: ModuleInfo[] }>>((acc, m) => {
+        const p = m.plugin!
+        ;(acc[p.id] ??= { plugin: p, modules: [] }).modules.push(m)
+        return acc
+      }, {}),
+  ).sort((a, b) => a.plugin.name.localeCompare(b.plugin.name))
 
   const toggle = async (m: ModuleInfo, enabled: boolean) => {
     setBusy(m.code)
@@ -70,108 +85,95 @@ export function ModulesTab() {
     }
   }
 
-  const describeBlocker = (m: ModuleInfo): string | null => {
-    if (!m.allowed) return t('settings.modules.blocked', 'Für diesen Verein nicht verfügbar')
-    if (m.switchedOn && m.missingDependencies.length > 0)
-      return t('settings.modules.needs', 'Braucht {{names}}', {
-        names: m.missingDependencies.map((c) => byCode[c]?.name ?? c).join(', '),
-      })
-    return null
-  }
+  const card = (m: ModuleInfo, plugin?: ModulePlugin) => (
+    <ModuleCard
+      key={m.code}
+      m={m}
+      plugin={plugin}
+      byCode={byCode}
+      canWrite={canWrite}
+      busy={busy === m.code}
+      onToggle={(on) => toggle(m, on)}
+      onConfigure={() => setEditing(m)}
+    />
+  )
 
-  const renderRow = (m: ModuleInfo) => {
-    const blocker = describeBlocker(m)
+  if (isLoading) {
     return (
-      <Group
-        key={m.code}
-        justify="space-between"
-        align="flex-start"
-        wrap="nowrap"
-        style={{
-          padding: '14px 0',
-          borderBottom: '1px solid var(--hb-border)',
-        }}
-      >
-        <Stack gap={4}>
-          <Group gap={8}>
-            <Text fw={600} fz="sm">
-              {m.name}
-            </Text>
-            {blocker && (
-              <Badge size="sm" color="orange" variant="light">
-                {blocker}
-              </Badge>
-            )}
-            {m.enabled && m.settings.length > 0 && !m.configured && (
-              <Badge size="sm" color="red" variant="light">
-                {t('settings.modules.needsSetup', 'Muss noch eingerichtet werden')}
-              </Badge>
-            )}
-          </Group>
-          <Text fz="xs" c="dimmed">
-            {m.description}
-          </Text>
-          {m.dependsOn.some((d) => !byCode[d]?.required) && (
-            <Text fz="xs" c="dimmed">
-              {t('settings.modules.uses', 'Nutzt {{names}}', {
-                names: m.dependsOn
-                  .filter((d) => !byCode[d]?.required)
-                  .map((d) => byCode[d]?.name ?? d)
-                  .join(', '),
-              })}
-            </Text>
-          )}
-        </Stack>
-        <Group gap="sm" wrap="nowrap">
-          {m.settings.length > 0 && m.enabled && canWrite && (
-            <Button size="xs" variant="default" onClick={() => setEditing(m)}>
-              {t('settings.modules.configure', 'Einstellungen')}
-            </Button>
-          )}
-          <Switch
-            checked={m.switchedOn && m.allowed}
-            disabled={!canWrite || !m.allowed || busy === m.code}
-            onChange={(e) => toggle(m, e.currentTarget.checked)}
-            size="md"
-            aria-label={m.name}
-          />
-        </Group>
+      <Group gap="sm" p="lg">
+        <Loader size="sm" />
       </Group>
     )
   }
 
   return (
-    <Paper withBorder p="lg">
-      <Stack gap={0}>
-        <Text fz="sm" c="dimmed" mb="sm">
+    <Stack gap="xl">
+      <Text fz="sm" c="dimmed" maw={760}>
+        {t(
+          'settings.modules.intro',
+          'Schalte aus, was dein Verein nicht braucht. Ein ausgeschaltetes Modul ist für alle ausgeblendet. Die Daten bleiben erhalten und sind wieder da, sobald du es einschaltest.',
+        )}
+      </Text>
+
+      <Stack gap="sm">
+        <SectionHead
+          title={t('settings.modules.builtInTitle', 'Funktionen')}
+          count={builtIn.filter((m) => m.enabled).length}
+          total={builtIn.length}
+        />
+        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+          {builtIn.map((m) => card(m))}
+        </SimpleGrid>
+      </Stack>
+
+      <Stack gap="sm">
+        <SectionHead
+          title={t('settings.modules.pluginsTitle', 'Plugins')}
+          count={plugins.reduce((n, p) => n + p.modules.filter((m) => m.enabled).length, 0)}
+          total={plugins.reduce((n, p) => n + p.modules.length, 0)}
+        />
+        <Text fz="sm" c="dimmed" maw={760}>
           {t(
-            'settings.modules.intro',
-            'Schalte aus, was dein Verein nicht braucht. Ein ausgeschaltetes Modul ist für alle ausgeblendet. Die Daten bleiben erhalten und sind wieder da, sobald du es einschaltest.',
+            'settings.modules.pluginsIntro',
+            'Zusatzfunktionen aus dem Hubra-Katalog. Schalte ein, was dein Verein nutzen möchte.',
           )}
         </Text>
-        {coreOptional.map(renderRow)}
-        {pluginModules.length > 0 && (
-          <>
-            <Text fw={700} fz="md" ff="heading" mt="xl" mb={4}>
-              {t('settings.modules.pluginsTitle', 'Plugins')}
-            </Text>
-            <Text fz="sm" c="dimmed" mb="sm">
-              {t(
-                'settings.modules.pluginsIntro',
-                'Zusatzfunktionen aus dem Hubra-Katalog. Schalte ein, was dein Verein nutzen möchte.',
-              )}
-            </Text>
-            {pluginModules.map(renderRow)}
-          </>
+        {plugins.length === 0 ? (
+          <Paper withBorder radius="md" p="lg">
+            <Group gap="md" wrap="nowrap">
+              <ThemeIcon size={44} radius="md" variant="light" color="gray">
+                <IconPuzzle size={24} />
+              </ThemeIcon>
+              <Text fz="sm" c="dimmed">
+                {t(
+                  'settings.modules.noPlugins',
+                  'Auf dieser Plattform ist noch kein Plugin installiert. Plugins installieren die Plattform-Admins aus dem Hubra-Katalog.',
+                )}
+              </Text>
+            </Group>
+          </Paper>
+        ) : (
+          <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+            {plugins.flatMap((p) => p.modules.map((m) => card(m, p.plugin)))}
+          </SimpleGrid>
         )}
-        {required.length > 0 && (
-          <Text fz="xs" c="dimmed" mt="md">
-            {t('settings.modules.alwaysOn', 'Immer eingeschaltet: {{names}}', {
-              names: required.map((m) => m.name).join(', '),
-            })}
+        {plugins.length > 0 && (
+          <Text fz="xs" c="dimmed">
+            {t(
+              'settings.modules.morePlugins',
+              'Fehlt etwas? Weitere Plugins installieren die Plattform-Admins aus dem Hubra-Katalog.',
+            )}
           </Text>
         )}
       </Stack>
+
+      {required.length > 0 && (
+        <Text fz="xs" c="dimmed">
+          {t('settings.modules.alwaysOn', 'Immer eingeschaltet: {{names}}', {
+            names: required.map((m) => m.name).join(', '),
+          })}
+        </Text>
+      )}
       {editing && (
         <ModuleSettingsModal
           module={editing}
@@ -181,6 +183,130 @@ export function ModulesTab() {
             setEditing(null)
           }}
         />
+      )}
+    </Stack>
+  )
+}
+
+function SectionHead({ title, count, total }: { title: string; count: number; total: number }) {
+  const { t } = useT()
+  return (
+    <Group gap={10} align="baseline">
+      <Text fw={700} fz="lg" ff="heading">
+        {title}
+      </Text>
+      {total > 0 && (
+        <Text fz="xs" c="dimmed">
+          {t('settings.modules.onCount', '{{count}} von {{total}} eingeschaltet', { count, total })}
+        </Text>
+      )}
+    </Group>
+  )
+}
+
+function ModuleCard({
+  m,
+  plugin,
+  byCode,
+  canWrite,
+  busy,
+  onToggle,
+  onConfigure,
+}: {
+  m: ModuleInfo
+  plugin?: ModulePlugin
+  byCode: Record<string, ModuleInfo>
+  canWrite: boolean
+  busy: boolean
+  onToggle: (on: boolean) => void
+  onConfigure: () => void
+}) {
+  const { t } = useT()
+  const on = m.switchedOn && m.allowed
+  const blocker = !m.allowed
+    ? t('settings.modules.blocked', 'Für diesen Verein nicht verfügbar')
+    : m.switchedOn && m.missingDependencies.length > 0
+      ? t('settings.modules.needs', 'Braucht {{names}}', {
+          names: m.missingDependencies.map((c) => byCode[c]?.name ?? c).join(', '),
+        })
+      : null
+  const uses = m.dependsOn.filter((d) => !byCode[d]?.required)
+  const needsSetup = m.enabled && m.settings.length > 0 && !m.configured
+  return (
+    <Paper
+      withBorder
+      radius="md"
+      p="lg"
+      data-module={m.code}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 12,
+        opacity: m.allowed ? 1 : 0.7,
+        borderColor: on ? 'var(--hb-primary, var(--mantine-primary-color-filled))' : undefined,
+      }}
+    >
+      <Group align="flex-start" wrap="nowrap" gap="md">
+        <ThemeIcon size={44} radius="md" variant="light" color={on ? undefined : 'gray'} aria-hidden>
+          {plugin ? moduleNavIcon(m.nav[0]?.icon ?? 'puzzle') : moduleNavIcon(m.nav[0]?.icon)}
+        </ThemeIcon>
+        <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
+          <Text fw={700} fz="md">
+            {m.name}
+          </Text>
+          {plugin && (
+            <Text fz="xs" c="dimmed" lineClamp={1}>
+              {t('settings.modules.pluginBy', 'Plugin {{name}} {{version}}', {
+                name: plugin.name,
+                version: plugin.version,
+              })}
+              {plugin.author ? ` · ${plugin.author}` : ''}
+            </Text>
+          )}
+        </Stack>
+        <Switch
+          checked={on}
+          disabled={!canWrite || !m.allowed || busy}
+          onChange={(e) => onToggle(e.currentTarget.checked)}
+          size="md"
+          aria-label={m.name}
+        />
+      </Group>
+      <Text fz="sm" c="dimmed" style={{ flex: 1 }}>
+        {m.description}
+      </Text>
+      {(blocker || needsSetup || plugin?.trust === 'official' || uses.length > 0 || (m.settings.length > 0 && m.enabled && canWrite)) && (
+        <Group justify="space-between" gap="xs" wrap="wrap">
+          <Group gap={6}>
+            {plugin?.trust === 'official' && (
+              <Badge size="sm" variant="light" color="green">
+                {t('settings.modules.official', 'Offiziell')}
+              </Badge>
+            )}
+            {blocker && (
+              <Badge size="sm" color="orange" variant="light">
+                {blocker}
+              </Badge>
+            )}
+            {needsSetup && (
+              <Badge size="sm" color="red" variant="light">
+                {t('settings.modules.needsSetup', 'Muss noch eingerichtet werden')}
+              </Badge>
+            )}
+            {uses.length > 0 && (
+              <Text fz="xs" c="dimmed">
+                {t('settings.modules.uses', 'Nutzt {{names}}', {
+                  names: uses.map((d) => byCode[d]?.name ?? d).join(', '),
+                })}
+              </Text>
+            )}
+          </Group>
+          {m.settings.length > 0 && m.enabled && canWrite && (
+            <Button size="xs" variant="default" leftSection={<IconSettings size={14} />} onClick={onConfigure}>
+              {t('settings.modules.configure', 'Einstellungen')}
+            </Button>
+          )}
+        </Group>
       )}
     </Paper>
   )

@@ -557,3 +557,205 @@ export async function setTenantLimits(
     body: JSON.stringify(values),
   })
 }
+
+// ── Early access per club ────────────────────────────────────────────────────
+
+export interface TenantEarlyAccess {
+  early_access: boolean
+  features: {
+    key: string
+    title_de: string
+    title_en: string
+    stage: 'off' | 'early' | 'all'
+    /** The club's own choice; null follows the stage. */
+    override: boolean | null
+    on: boolean
+  }[]
+}
+
+export async function getTenantEarlyAccess(tenantId: number) {
+  return apiFetch<TenantEarlyAccess>(`/system/tenants/${tenantId}/early-access`)
+}
+
+export async function setTenantEarlyAccess(
+  tenantId: number,
+  body: { early_access?: boolean; features?: Record<string, boolean | null> },
+) {
+  return apiFetch<TenantEarlyAccess>(`/system/tenants/${tenantId}/early-access`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  })
+}
+
+// ── Billing terms (stored and shown only, nothing is charged yet) ────────────
+
+/** Stripe's subscription statuses, plus "none" for a club that is not billed. */
+export type BillingStatus =
+  | 'none'
+  | 'trialing'
+  | 'active'
+  | 'past_due'
+  | 'unpaid'
+  | 'canceled'
+  | 'incomplete'
+  | 'paused'
+
+export interface BillingAddon {
+  code: string
+  label: string
+  price_chf: string
+}
+
+export interface BillingTerms {
+  status: BillingStatus
+  trial_ends: string | null
+  period_end: string | null
+  /** The club's own price per month; null: the plan's list price. */
+  price_chf: string | null
+  discount_percent: number
+  sponsored: boolean
+  sponsor_name: string
+  sponsored_until: string | null
+  sponsor_note: string
+  addons: BillingAddon[]
+  note: string
+}
+
+export interface TenantBilling extends BillingTerms {
+  plan: string
+  plan_price_chf: string | null
+  base_chf: string
+  discount_chf: string
+  addons_chf: string
+  total_chf: string
+  due_chf: string
+  sponsorship_running: boolean
+  sponsorship_days_left: number | null
+  sponsorship_ending_soon: boolean
+  sponsorship_ended: boolean
+  trial_days_left: number | null
+}
+
+export async function getTenantBilling(tenantId: number) {
+  return apiFetch<TenantBilling>(`/system/tenants/${tenantId}/billing`)
+}
+
+export async function setTenantBilling(tenantId: number, values: Partial<BillingTerms>) {
+  return apiFetch<TenantBilling>(`/system/tenants/${tenantId}/billing`, {
+    method: 'PATCH',
+    body: JSON.stringify(values),
+  })
+}
+
+// ── Data protection requests (copy or deletion of someone's data) ────────────
+
+export type DataRequestKind = 'export' | 'deletion'
+export type DataRequestStatus = 'open' | 'done' | 'rejected'
+
+export interface DataRequest {
+  id: number
+  tenant_id: number
+  tenant_name: string
+  kind: DataRequestKind
+  status: DataRequestStatus
+  subject_name: string
+  subject_email: string
+  member_id: number | null
+  received_on: string
+  received_via: string
+  due_on: string
+  days_left: number | null
+  overdue: boolean
+  due_soon: boolean
+  note: string
+  created_at: string | null
+  created_by: number | null
+  created_by_name: string | null
+  handled_at: string | null
+  handled_by: number | null
+  handled_by_name: string | null
+  outcome: string
+  result: {
+    rows?: Record<string, number>
+    exported_at?: string
+    deleted?: boolean
+    deleted_at?: string
+    kept_without_name?: { invoices: number; transactions: number }
+  } | null
+  exports: { at: string; by: number }[]
+}
+
+export interface DataRequestList {
+  requests: DataRequest[]
+  counts: { open: number; overdue: number }
+}
+
+export async function listDataRequests(params: {
+  status?: DataRequestStatus | 'all'
+  tenant_id?: number
+}) {
+  const q = new URLSearchParams()
+  if (params.status) q.set('status', params.status)
+  if (params.tenant_id) q.set('tenant_id', String(params.tenant_id))
+  return apiFetch<DataRequestList>(`/system/data-requests?${q}`)
+}
+
+export async function createDataRequest(
+  tenantId: number,
+  body: {
+    kind: DataRequestKind
+    subject_name?: string
+    subject_email?: string
+    member_id?: number | null
+    received_on?: string
+    received_via?: string
+    note?: string
+  },
+) {
+  return apiFetch<DataRequest>(`/system/tenants/${tenantId}/data-requests`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function updateDataRequest(
+  id: number,
+  body: Partial<Pick<DataRequest, 'subject_name' | 'subject_email' | 'member_id' | 'note'>>,
+) {
+  return apiFetch<DataRequest>(`/system/data-requests/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
+/** Downloads the member's data as a JSON file (asks for the password again). */
+export async function downloadDataExport(req: DataRequest) {
+  const data = await withStepUp(() =>
+    apiFetch<unknown>(`/system/data-requests/${req.id}/export`, { method: 'POST' }),
+  )
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `daten-${req.tenant_id}-${req.member_id}.json`
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
+
+export async function deleteDataRequestMember(id: number, confirm: string) {
+  return withStepUp(() =>
+    apiFetch<DataRequest>(`/system/data-requests/${id}/delete-member`, {
+      method: 'POST',
+      body: JSON.stringify({ confirm }),
+    }),
+  )
+}
+
+export async function closeDataRequest(id: number, status: 'done' | 'rejected', outcome: string) {
+  return apiFetch<DataRequest>(`/system/data-requests/${id}/${status}`, {
+    method: 'POST',
+    body: JSON.stringify({ outcome }),
+  })
+}

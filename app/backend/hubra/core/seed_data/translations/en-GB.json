@@ -3242,6 +3242,8 @@
   "mail.email.platform_alert.type.backup_deleted": "Backup deleted",
   "mail.email.platform_alert.type.plugin_updates": "Plugins",
   "mail.email.platform_alert.type.upgrades": "Upgrade",
+  "mail.email.platform_alert.type.audit": "Platform event",
+  "mail.email.platform_alert.button_entry": "View entry",
   "mail.email.platform_alert.type.system": "System",
   "account.notify.title": "Notifications",
   "account.notify.hint": "Choose per topic where you get it: in the bell in Hubra, as a browser push or by e-mail. Notices about your account's security always come.",
@@ -3469,4 +3471,10 @@
   "backupKey.clubOnly.ack": "We keep our private key in at least two safe places, and I understand Hubra can't help if it is missing.",
   "backupKey.clubOnly.slug": "To confirm, type the club's short name: {{slug}}",
   "backupKey.clubOnly.turnOn": "Use only our key"
+  "settings.modules.builtInTitle": "Features",
+  "settings.modules.noPlugins": "No plugins are installed on this platform yet. Platform admins install plugins from the Hubra catalogue.",
+  "settings.modules.morePlugins": "Missing something? Platform admins install more plugins from the Hubra catalogue.",
+  "settings.modules.onCount": "{{count}} of {{total}} on",
+  "settings.modules.pluginBy": "Plugin {{name}} {{version}}",
+  "settings.modules.official": "Official"
 }

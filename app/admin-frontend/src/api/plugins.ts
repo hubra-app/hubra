@@ -59,6 +59,8 @@ export interface MarketplacePlugin {
   previous: string | null
   /** Installed through HUBRA_PLUGINS_AUTOINSTALL, not from here. */
   autoinstalled: boolean
+  /** Installed or changed after this server started: live after the reload. */
+  pendingReload: boolean
 }
 
 export type UpdateMode = 'notify' | 'official' | 'off'

@@ -29,6 +29,9 @@ PACKAGE_RE = re.compile(r"^hubra_[a-z0-9_]{1,40}$")
 MODULE_RE = re.compile(r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$")
 MANIFEST = "plugin.yaml"
 
+# (path, size, mtime) -> content hash of a built frontend.
+_FRONTEND_TAGS: dict[tuple, str] = {}
+
 
 def hubra_version() -> str:
     from importlib.metadata import PackageNotFoundError, version
@@ -187,8 +190,17 @@ class Spec:
         f = self.frontend_file
         if f is None:
             return None
+        # From the content, not the file time: every server unpacks its own
+        # copy, and all of them must hand out the same tag for the same build.
         st = f.stat()
-        return f"{self.version}-{st.st_size:x}{int(st.st_mtime):x}"
+        key = (str(f), st.st_size, st.st_mtime_ns)
+        tag = _FRONTEND_TAGS.get(key)
+        if tag is None:
+            import hashlib
+
+            tag = hashlib.sha256(f.read_bytes()).hexdigest()[:12]
+            _FRONTEND_TAGS[key] = tag
+        return f"{self.version}-{tag}"
 
     @property
     def version_table(self) -> str:

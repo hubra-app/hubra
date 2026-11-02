@@ -13,6 +13,7 @@ import {
   IconMail,
   IconPuzzle,
   IconShieldCheck,
+  IconShieldLock,
   IconSparkles,
   IconTool,
 } from '@tabler/icons-react'
@@ -22,6 +23,7 @@ import { TenantsTab } from '@/screens/TenantsTab'
 import { TenantRequestsTab } from '@/screens/TenantRequestsTab'
 import { GlobalAuditTab } from '@/screens/GlobalAuditTab'
 import { SupportSessionsTab } from '@/screens/SupportSessionsTab'
+import { DataRequestsPanel } from '@/screens/DataRequests'
 import { RolesTab } from '@/screens/RolesTab'
 import { MarketplaceTab } from '@/screens/MarketplaceTab'
 import { ChangelogPanel, RoadmapPanel } from '@/screens/Releases'
@@ -39,6 +41,7 @@ import { PerformancePanel } from '@/screens/platform/Performance'
 import { MyAlertsCard, OutboundMailTab } from '@/screens/platform/MailMonitor'
 import { DiscordPanel } from '@/screens/platform/DiscordStatus'
 import { SettingsSection } from '@/screens/platform/SettingsSection'
+import { EarlyAccess } from '@/screens/platform/EarlyAccess'
 import { PlatformTranslations } from '@/screens/platform/Translations'
 import { PlatformEncryption } from '@/screens/platform/Encryption'
 import { SupportCases } from '@/screens/platform/Support'
@@ -132,6 +135,28 @@ export function navSections(): NavSection[] {
               ),
               render: () => <SettingsSection section="limits" />,
             },
+            {
+              id: 'prices',
+              path: '/app/tenants/prices',
+              label: tr('Preise pro Tarif', 'Plan prices'),
+              perm: 'platform.settings',
+              desc: tr(
+                'Listenpreis pro Monat für jeden Tarif. Eigenen Preis, Rabatt und Sponsor für einen Verein setzt du auf seiner Seite.',
+                'List price per month for each plan. A club’s own price, discount and sponsor are set on its page.',
+              ),
+              render: () => <SettingsSection section="prices" />,
+            },
+            {
+              id: 'early-access',
+              path: '/app/tenants/early-access',
+              label: tr('Früher Zugang', 'Early access'),
+              perm: 'platform.settings',
+              desc: tr(
+                'Neue Funktionen zuerst für ausgewählte Vereine einschalten.',
+                'Switch new features on for chosen clubs first.',
+              ),
+              render: () => <EarlyAccess />,
+            },
           ],
         },
         {
@@ -193,7 +218,7 @@ export function navSections(): NavSection[] {
             {
               id: 'rules',
               path: '/app/platform/alerts/rules',
-              label: tr('Regeln', 'Rules'),
+              label: tr('Benachrichtigungen', 'Notifications'),
               perm: 'platform.diagnostics',
               render: () => <RulesPanel />,
             },
@@ -450,6 +475,24 @@ export function navSections(): NavSection[] {
                 'When platform admins opened a club as one of its members: who, why and for how long. Running sessions can be ended here.',
               ),
               render: () => <SupportSessionsTab />,
+            },
+          ],
+        },
+        {
+          id: 'privacy',
+          label: tr('Datenschutz', 'Data protection'),
+          icon: icon(IconShieldLock),
+          desc: tr(
+            'Wenn jemand eine Kopie seiner Daten in einem Verein will oder sie gelöscht haben möchte. Frist 30 Tage; hier steht, wer jede Anfrage wann erledigt hat.',
+            'When someone wants a copy of their data in a club, or wants it deleted. 30-day deadline; this records who handled each request and when.',
+          ),
+          tabs: [
+            {
+              id: 'requests',
+              path: '/app/privacy',
+              label: '',
+              perm: 'privacy.requests',
+              render: () => <DataRequestsPanel />,
             },
           ],
         },

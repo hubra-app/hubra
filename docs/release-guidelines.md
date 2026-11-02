@@ -28,7 +28,9 @@ commit, with every image built from source. Then, per image,
 `scripts/image-reuse.sh` reads the image's `last-build` tag on GHCR and the
 commit it was built from (the `org.opencontainers.image.revision` label):
 
-- **Files changed since then:** build, push and scan, as before.
+- **Files changed since then:** build, push and scan, as before. Text files
+  (Markdown, `README`, `.gitignore`) do not count, except `CHANGELOG.md` and
+  `CHANGELOG.de.md`, which the backend image serves as "What's new".
 - **Unchanged:** no build. The last build gets this run's tags with
   `docker buildx imagetools create`, which copies tags in the registry and
   keeps the digest. Trivy still scans it.
@@ -78,10 +80,14 @@ always names a full set that passed the release checks together.
 - **Cadence:** cut a release when a batch of features is done, roughly
   weekly, rather than deploying manual `main` builds. Manual builds stay
   for trying a fix before it goes into a release.
-- **Flow:** `release/1.4` from `main`, fixes via pull requests into it (and
-  back into `main`), then publish GitHub release `v1.4.0` on the branch
-  ([ci.md](ci.md)). Patch releases come from the same branch.
-- **Changelog:** in the release pull request, move `[Unreleased]` in
+- **Flow:** publish GitHub release `v1.4.0` straight from `main` by
+  default; Images runs the full checks on that commit before building.
+  A release branch is one per minor version (`release/1.4`, never one per
+  patch), cut only when needed: to keep merging features into `main` while
+  a release is being fixed, or to patch 1.4 after `main` has moved on (cut
+  it from the `v1.4.0` tag). Its patch releases (`1.4.1`, `1.4.2`) all come
+  from that branch, and each fix is merged back into `main` ([ci.md](ci.md)).
+- **Changelog:** in a pull request just before publishing, move `[Unreleased]` in
   `CHANGELOG.md` and `CHANGELOG.de.md` to the new version, so what's new
   matches the deployed version.
 

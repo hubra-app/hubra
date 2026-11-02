@@ -18,10 +18,21 @@ _log = logging.getLogger(__name__)
     ignore_result=True,
 )
 def post_platform_audit_entry(entry_id: int) -> bool:
-    from hubra.core.services import platform_discord
+    """Discord first, then the admin mails (``notify.mail_events``); a
+    failure in one does not stop the other."""
+    from hubra.core.extensions import db
+    from hubra.core.models.tenant import GlobalAuditEntry
+    from hubra.core.services import platform_discord, platform_monitor
 
+    posted = False
     try:
-        return platform_discord.post_audit_entry(int(entry_id))
+        posted = platform_discord.post_audit_entry(int(entry_id))
     except Exception as exc:
         _log.warning("platform Discord log: entry %s not posted: %s", entry_id, exc)
-        return False
+    try:
+        entry = db.session.get(GlobalAuditEntry, int(entry_id))
+        if entry is not None:
+            platform_monitor.deliver_audit_mail(entry)
+    except Exception as exc:
+        _log.warning("platform audit mail: entry %s not sent: %s", entry_id, exc)
+    return posted
