@@ -189,7 +189,7 @@ function OverviewPanel() {
               color="orange"
               onClick={() => navigate('/app/platform/alerts/rules')}
             >
-              {tr('Regeln', 'Rules')}
+              {tr('Benachrichtigungen', 'Notifications')}
             </Button>
           </Group>
         </Alert>
@@ -325,7 +325,7 @@ export function Alerts() {
           { id: 'overview', label: tr('Übersicht', 'Overview') },
           { id: 'performance', label: tr('Leistung', 'Performance') },
           { id: 'events', label: tr('Ereignisse', 'Event log') },
-          { id: 'rules', label: tr('Regeln', 'Rules') },
+          { id: 'rules', label: tr('Benachrichtigungen', 'Notifications') },
           { id: 'settings', label: tr('Meine Warnungen', 'My alerts') },
         ]}
         activeTab={tab}

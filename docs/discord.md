@@ -194,7 +194,12 @@ Platform log:
    **Enter the channel ID yourself**. Turn on Developer Mode in Discord (User
    Settings › Advanced), right-click the channel › **Copy Channel ID** and
    paste it.
-3. Pick what is posted and click **Send test message**.
+3. Click **Test the platform log**. What is posted where is chosen in
+   manage › Alerts › **Notifications**: one matrix with the platform events
+   (the categories below) and the alert types as rows and Mail / Discord as
+   columns. Mail goes to the platform admins (superadmins and
+   `platform.settings` holders); a ticked platform event mails each of them
+   with a link to the entry (`notify.mail_events`, off by default).
 
 ![Platform settings › Discord › Platform log](screenshots/discord/platform-log-picker.png)
 
