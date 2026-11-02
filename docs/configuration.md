@@ -33,7 +33,7 @@ not using mail, leave the mail variables blank.
 Some settings belong to the whole platform, others to one club.
 
 **Platform settings** live in the public `platform_settings` table and are
-edited in manage under **Platform › Platform Settings** (global permission
+edited in manage under the page each setting belongs to (**Mail**, **Backups › Storage**, **Discord**, **All clubs › Plan limits**, …) (global permission
 `platform.settings`, superadmins have it). Each one starts from its env
 variable; a value saved there overrides env until you press "Reset to env".
 
@@ -62,12 +62,12 @@ fallback. For Brevo: host `smtp-relay.brevo.com`, port 587, your Brevo
 SMTP login and SMTP key, and verify the sender domain in Brevo (SPF/DKIM),
 or receivers will reject the mail.
 
-**Monitoring the relays.** manage › Platform › Diagnostics › Outbound mail
+**Monitoring the relays.** manage › Mail › Outbound
 shows both relays: every 5 minutes Hubra connects and logs in to each
 (EHLO, STARTTLS, AUTH) without sending anything, and "Check now" does the
 same by hand. A relay counts as down after two failed checks in a row.
 
-**Platform alerts.** manage › Platform › Alerts shows the open problems
+**Platform alerts.** manage › Alerts shows the open problems
 (background jobs not running, the database, Redis or IMAP unreachable, a
 relay down, mail going through the fallback, undelivered mail, a failed or
 missing scheduled backup), the latest alerts and 24 hours of warnings and
@@ -96,14 +96,14 @@ leaves out errors in the first two minutes after a backend starts and is
 sent once per incident, with a "back to normal" when the rate drops. An
 expired sign-in after a release (401) is not an error.
 
-**Maintenance mode** (manage › Alerts › Overview, or
+**Maintenance mode** (manage › Maintenance, or
 `flask maintenance on --minutes 15 --message "…"` / `flask maintenance off`):
 the club apps show a maintenance page and the club API answers 503;
 manage, sign-in and account pages keep working. All alerts are paused and
 requests are not counted for the error rate. It ends on its own at the set
 time (`maintenance.enabled`, `maintenance.message`, `maintenance.until`).
 
-**Backups** are platform-only too: manage › Platform › Backups (global
+**Backups** are platform-only too: manage › Backups (global
 permission `backups.manage`; superadmins have it). There is no backup of the
 whole database: the global backup holds the public schema (accounts, clubs,
 platform settings), and each club has its own backups, so one club can be

@@ -15,6 +15,7 @@ import { VerifyScreen } from '@/screens/Verify'
 import { AccountScreen } from '@/screens/Account'
 import { InviteScreen } from '@/screens/Invite'
 import { ConfirmScreen } from '@/screens/Confirm'
+import { StatusScreen } from '@/screens/Status'
 import { RoadmapScreen } from '@/screens/Roadmap'
 import { tr } from '@/lang'
 
@@ -87,6 +88,7 @@ function AppRoutes() {
         <Route path="/" element={<Navigate to="/clubs" replace />} />
         <Route path="/verify" element={<VerifyScreen />} />
         <Route path="/confirm" element={<ConfirmScreen />} />
+        <Route path="/status" element={<StatusScreen />} />
         <Route path="/roadmap" element={<RoadmapScreen />} />
         <Route path="/account" element={<AccountScreen />} />
         <Route path="/account/:tab" element={<AccountScreen />} />

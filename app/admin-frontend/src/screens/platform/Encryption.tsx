@@ -12,7 +12,7 @@ import {
 } from '@/api/platform'
 
 /**
- * Platform settings › Encryption: every club has its own key for the
+ * Access & security › Encryption: every club has its own key for the
  * secrets it stores (door codes, mailbox passwords, binding values), locked
  * by the master key FERNET_KEY from env. Club keys can be renewed here; the
  * master key changes in env, then "Re-encrypt" moves everything onto it.

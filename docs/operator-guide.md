@@ -47,20 +47,20 @@ Both use the same images from `ghcr.io/hubra-app/hubra/*` and the same
    the SSO host with that address; the account becomes superadmin on the
    next start (or right away with `flask ensure-superadmins`). One-off
    alternative: `flask make-admin --email you@example.com`.
-4. **Mail relay.** In manage › Platform › Settings, fill in the relay and the
+4. **Mail relay.** In manage › Mail › Relay and › System sender, fill in the relay and the
    system sender, then press **Send test**. Until mail works, sign-up
    e-mails, invites and password resets don't arrive, and nobody is asked
    to confirm their address.
 5. **Backup storage.** In the same page, fill in the S3 bucket. Then press
-   **Create backup now** under Platform › Backups once and check that it
+   **Create backup now** under Backups once and check that it
    shows up. See [Backups](#backups-and-restore).
-6. **Health.** Platform › Diagnostics shows the backend version, the health
+6. **Health.** Diagnostics shows the backend version, the health
    checks (database, Redis, mail relay, IMAP, and a Celery check that runs
    every 20 seconds) and every API route with the permission it needs.
-7. **First club.** Either create it yourself under Platform › All clubs
+7. **First club.** Either create it yourself under All clubs
    (**Create club**, optionally with an admin e-mail and password), or let
    people request one on `join.<domain>/start` and approve it under
-   Platform › Club requests. Whoever requested the club becomes its owner.
+   All clubs › Requests. Whoever requested the club becomes its owner.
 
 ## Upgrade
 
@@ -84,7 +84,7 @@ go out. `flask maintenance off` afterwards; it also ends on its own.
 
 1. **Read the release notes** on the GitHub release (and
    `app/backend/CHANGELOG.md`). Look for lines that ask you to change `.env`.
-2. **Back up.** Platform › Backups › **Create backup now**, for Global and
+2. **Back up.** Backups › **Create backup now**, for Global and
    for each club. A migration is not undone by going back to the old images;
    the backup is the way back.
 3. **Switch the version.**
@@ -102,7 +102,7 @@ go out. `flask maintenance off` afterwards; it also ends on its own.
    If a migration fails, the backend doesn't start and the old pods (k3s)
    keep serving. Fix the cause, or go back to the previous version and
    restore the backup from step 2.
-5. **Check.** Platform › Diagnostics shows the new backend version and green
+5. **Check.** Diagnostics shows the new backend version and green
    health checks. `scripts/smoke-test.sh` does the same from the command
    line for Compose.
 
@@ -145,7 +145,7 @@ without it. Installs from before it was required used a key derived from
 `SECRET_KEY`; those values stay readable, so setting a fresh `FERNET_KEY`
 loses nothing.
 
-Manage › Platform settings › **Encryption** shows the state (master key set,
+Manage › Access & security › **Encryption** shows the state (master key set,
 old keys, values not on the current keys), and has the buttons for the
 steps below. The same works on the command line with `flask crypto check`
 and `flask crypto rotate`.
@@ -194,7 +194,7 @@ a violet button, and "Sent with hubra" at the bottom. The logo is the one a
 club sets in Settings › Verein (PNG, JPEG, GIF or WebP up to 256 KB; an SVG or
 bigger logo shows the Hubra mark instead). It is sent inside the mail, so it
 shows without "load images". The texts are the platform's translations
-(Manage › Platform settings › Übersetzungen; clubs can suggest changes); the
+(Manage › Services › Translations; clubs can suggest changes); the
 layout is in `app/backend/hubra/templates/email/`.
 
 The round picture next to the sender in an inbox is not part of the mail. The
@@ -212,7 +212,7 @@ registered trademark (VMC) or a logo in public use for a year (CMC).
 
 ## Backups and restore
 
-Backups are a platform task: manage › Platform › Backups, global permission
+Backups are a platform task: manage › Backups, global permission
 `backups.manage` (superadmins have it). Clubs have no backup screen.
 
 - Each backup holds one schema: **Global** (`public`: accounts, clubs,
@@ -223,11 +223,11 @@ Backups are a platform task: manage › Platform › Backups, global permission
   until you delete them.
 - Files are encrypted to `BACKUP_PUBLIC_KEY` ([age](https://age-encryption.org))
   (platform setting, default from env) and stored in the S3 bucket from
-  Platform › Settings › Backup storage. The
+  Backups › Storage. The
   server only has the public key, so a break-in on the server cannot read
   the backups. The private key stays in your password manager; restore
   asks for it. Make the pair with `flask backups keygen`.
-- A club can get its own key: Platform settings › Encryption, or
+- A club can get its own key: Access & security › Encryption, or
   `flask backups club-key <club> age1…`. Its
   backups are then encrypted to both keys, so the club can open its own
   backups with its private key, and you still can with yours.
@@ -241,7 +241,7 @@ Backups are a platform task: manage › Platform › Backups, global permission
   it until they have expired.
 
 **Restore one club** (the usual case: someone deleted the wrong thing):
-Platform › Backups, filter by the club, pick a backup from before the
+Backups, filter by the club, pick a backup from before the
 mistake, click the restore icon, paste the backup private key and type the club's
 address to confirm. The key is used for this restore only and not stored
 (on its way to the background worker it is encrypted with `FERNET_KEY` and
@@ -278,7 +278,7 @@ club; Bindings, Codes, Inventory and Mail are off.
 - **Club admins** switch modules on and off in the club app under
   Settings › Modules & plugins. Switching off hides the module and keeps its
   data.
-- **You** can block a module for one club: Platform › All clubs › the club ›
+- **You** can block a module for one club: All clubs › the club ›
   Modules. A blocked module stays off and the club can't switch it on.
 - **Command line**, for scripts:
 
@@ -298,7 +298,7 @@ How modules are built: [app/backend/hubra/modules/README.md](../app/backend/hubr
 
 Plugins add modules that are not part of Hubra (keys, budgets, bank import,
 Discord and more). You install a plugin once for the whole platform in manage
-› Platform › Plugin catalogue; each club then switches its modules on in
+› Plugin catalogue; each club then switches its modules on in
 Settings › Modules & plugins like a built-in module.
 
 - Only the global permission `plugins.manage` (superadmins) can install.
@@ -323,7 +323,7 @@ There are four levels, each changed in a different place.
 | ----- | ----- | -------- |
 | Installation | `.env` (k3s: Secret `hubra-env`), restart needed | Secrets, database, Redis, host names, CORS, cookie domain, `SUPERADMIN_EMAILS`, plugin directories |
 | Limits | `settings.yaml`, or env with `__` (`LIMITS__MAX_MEMBERS=50`) | Members per club, events per month |
-| Platform | manage › Platform › Settings, no restart | Mail relay, system sender, backup storage |
+| Platform | manage (Mail, Backups › Storage, Discord, …), no restart | Mail relay, system sender, backup storage |
 | Club | club app › Settings (club admins) | Name, colours, language, privacy, leaving rules, banner, modules, domains |
 
 A platform setting starts from its env variable. A value saved in manage
@@ -334,19 +334,19 @@ The full list is in [configuration.md](configuration.md) and `.env.example`.
 
 - **Superadmin** (`SUPERADMIN_EMAILS` or `flask make-admin`): everything in
   manage › Platform.
-- **Global roles** (manage › Platform › Roles) give staff single platform
+- **Global roles** (manage › Roles) give staff single platform
   permissions, such as `backups.manage`, `platform.settings`,
   `platform.diagnostics` or `plugins.manage`, without making them
   superadmin.
 - **Club owners and admins** see manage too, but only Personal › My clubs
   and the clubs they run. There they choose who else is a club admin
   (My clubs › the club › Admins). Platform staff find the same list, and the
-  club's modules, under Platform › All clubs › the club.
+  club's modules, under All clubs › the club.
 - Accounts belong to their people. Clubs never create accounts, set
   passwords or change e-mail addresses; members join through an invite link
   or a request on the join page.
 
-Everything staff do in manage is written to Platform › Audit log.
+Everything staff do in manage is written to Audit log.
 
 ### Sign-in alerts
 

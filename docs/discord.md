@@ -6,15 +6,15 @@ its own Discord server under **Einstellungen › Verbundene Apps** (the
 Discord account on the SSO account page (**Mein Konto › Verknüpfungen**), so
 the bot can recognise them.
 
-The credentials are platform settings (manage › Platform settings ›
-Discord), stored encrypted with the platform's data key. Clubs never see or
+The credentials are platform settings (manage › Discord ›
+Setup), stored encrypted with the platform's data key. Clubs never see or
 paste a token; what Hubra stores per club is only the link (Discord server id,
 channel, role mapping).
 
 ## Set up the Discord application (once per platform)
 
 One Discord application serves every club. Below, `https://api.hubra.club`
-stands for your API address (`API_PUBLIC_URL`). manage › Diagnostics ›
+stands for your API address (`API_PUBLIC_URL`). manage › Alerts ›
 Discord shows the exact addresses for your instance under **Values for the
 Developer Portal**.
 
@@ -25,7 +25,7 @@ Application**, name it **Hubra** and give it the Hubra logo.
 
 ### 2. Copy four values into Hubra
 
-| Developer Portal | Hubra field (manage › Platform settings › Discord) |
+| Developer Portal | Hubra field (manage › Discord › Setup) |
 | --- | --- |
 | General Information › **Application ID** | Discord application ID |
 | General Information › **Public Key** | Discord public key |
@@ -87,7 +87,7 @@ Hubra first. Slash commands and buttons arrive here.
 
 General Information › **Linked Roles Verification URL**:
 `https://<SSO address>/account/verknuepfungen?link=discord` (manage ›
-Diagnostics › Discord shows the exact address).
+Discord › Status shows the exact address).
 
 Discord sends someone there when they pick a Hubra linked role in a server's
 settings. The page starts the account link, which also asks for
@@ -134,7 +134,7 @@ hinzufügen**: adding the bot again to the same server updates its role.
 
 ### 7. Check it
 
-Open manage › **Diagnostics › Discord** and click **Check now**. It shows:
+Open manage › **Discord › Status** and click **Check now**. It shows:
 
 - whether the bot token signs in, and as which bot;
 - how many servers the bot is on;
@@ -144,7 +144,7 @@ Open manage › **Diagnostics › Discord** and click **Check now**. It shows:
 
 A failing check also shows on manage › Alerts.
 
-![manage › Diagnostics › Discord](screenshots/discord/diagnostics-discord-desktop.png)
+![manage › Discord › Status](screenshots/discord/diagnostics-discord-desktop.png)
 
 Without the application ID and bot token, the Discord app shows as "not set
 up on this platform" to clubs, and nothing else changes.
@@ -176,12 +176,12 @@ and waits too. Everything else works without this process.
 | Welcome message never arrives | run the gateway (step 8), turn on Server Members Intent, and check the club turned on the welcome and the "notify" scope; the person may not allow direct messages from server members |
 | A Hubra linked role can't be picked | set the Linked Roles Verification URL (step 5b); the member links again and allows "role connections" |
 | Club settings say permissions are missing | the club uses **Bot erneut hinzufügen** there |
-| Platform log: the bot cannot see the channel | add the bot to the platform server (link in Platform settings › Discord) and allow it to view the channel |
+| Platform log: the bot cannot see the channel | add the bot to the platform server (link in Discord › Setup) and allow it to view the channel |
 
 ## Platform log (the platform's own server)
 
 The same bot can post platform events to a channel on the platform's own
-Discord server. Set it up in manage › Platform settings › Discord ›
+Discord server. Set it up in manage › Discord › Setup ›
 Platform log:
 
 1. Click **Add the bot to the platform server** (it asks only for View
@@ -201,7 +201,7 @@ Platform log:
    `platform.settings` holders); a ticked platform event mails each of them
    with a link to the entry (`notify.mail_events`, off by default).
 
-![Platform settings › Discord › Platform log](screenshots/discord/platform-log-picker.png)
+![Discord › Setup › Platform log](screenshots/discord/platform-log-picker.png)
 
 ### Audit channel (optional)
 

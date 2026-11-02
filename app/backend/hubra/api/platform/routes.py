@@ -443,7 +443,7 @@ def list_platform_events():
 @require_global_permission(_DIAGNOSTICS)
 def alerts_overview():
     """What is wrong right now, the latest alerts, and 24 h of warnings and
-    errors per area, for manage › Platform › Alerts."""
+    errors per area, for manage › Alerts."""
     from datetime import datetime, timedelta, timezone
 
     from sqlalchemy import func, select
@@ -910,7 +910,7 @@ def change_error(group_id: int, action: str):
 @platform_bp.get("/alerts/performance")
 @require_global_permission(_DIAGNOSTICS)
 def alerts_performance():
-    """API timing per route and slow queries, for manage › Platform › Alerts
+    """API timing per route and slow queries, for manage › Alerts
     › Performance.  ``hours``: 1 to 24 clock hours, the current one included."""
     from hubra.core.services import perf_monitor
 
@@ -927,7 +927,7 @@ def alerts_performance():
 @platform_bp.get("/jobs")
 @require_global_permission(_DIAGNOSTICS)
 def jobs_overview():
-    """Background jobs for manage › Diagnose › Hintergrundjobs: queued and
+    """Background jobs for manage › Diagnostics › Background jobs: queued and
     running jobs, per-task counts for ``hours`` (1 to 48) and the failed
     jobs that can be run again."""
     from sqlalchemy import select
