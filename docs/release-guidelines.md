@@ -1,14 +1,15 @@
 # Release guidelines and image versions
 
-Status: proposal. Nothing in the workflows changes until an option below is
-picked. The release flow itself (release branches, checks) is in
-[ci.md](ci.md).
+Hubra has one version for the whole product (`v1.4.0`), and every image
+carries it. An image is only rebuilt when its own files changed. The release
+flow itself (release branches, checks) is in [ci.md](ci.md).
 
-## How images are versioned today
+## Images and what goes into them
 
-`images.yml` builds all seven images in one matrix, every time it runs:
+`images.yml` handles seven images. Each has a list of paths: a change in one
+of them (or in `.dockerignore` or `images.yml`) means a new build.
 
-| Image | Built from | Deployed by |
+| Image | Paths | Deployed by |
 | --- | --- | --- |
 | `backend` | `app/backend/` | Compose, k3s, Contabo |
 | `frontend` (club app) | `app/frontend/`, `packages/`, `app/deploy/nginx/` | Compose, k3s, Contabo |
@@ -16,121 +17,93 @@ picked. The release flow itself (release branches, checks) is in
 | `sso-frontend` | `app/sso-frontend/`, `packages/`, `app/deploy/nginx/` | Compose, k3s, Contabo |
 | `haraka`, `zonemta`, `cert-watcher` | `modules/mail/<name>/` | mail module only (suspended by default) |
 
-- It runs when a GitHub release is published, or by hand. Pushes to `main`
-  build nothing (to save minutes, PR #31).
-- Every build gets `sha-<commit>`. Releases add `1.2.3`, `1.2` and `latest`;
-  manual runs on `main` add `main-<timestamp>-<commit>`.
-- Every image carries the same tag and the same `GIT_SHA`, even when its
-  code did not change. The SSO image built for a backend-only fix is a new
-  image with a new digest and the same content.
-- Deploys pin one tag for all four app images: `HUBRA_VERSION` in Compose,
-  `newTag: latest` in `deploy/app`, `newTag: sha-<commit>` in
-  `deploy/clusters/contabo`. So every deploy restarts every pod.
-- No GitHub release has been published yet. `CHANGELOG.md` has only
-  `[Unreleased]`, so Contabo runs manual `sha-` builds.
+When a Dockerfile starts copying something new, add that path to the
+image's `paths` in `images.yml`, or that image can go stale.
 
-## The problem
+## How a run decides
 
-1. **Unchanged images are rebuilt and restarted.** Since 2026-10-28, 83 pull
-   requests were merged into `main`. The SSO image's inputs changed in 30 of
-   them, manage in 43, the club app in 46, the backend in 63, the mail
-   images in 1. Each manual build still rebuilt and redeployed all seven.
-2. **The tag does not say what changed.** `sha-abc123` on the SSO image
-   does not tell you whether SSO changed since the last deploy.
-3. **No versions yet.** Without releases there is no version to name in a
-   support message, a changelog entry, or a rollback.
+Images runs when a GitHub release is published, or by hand (Actions >
+Images > Run workflow). The full release checks run first, on the whole
+commit, with every image built from source. Then, per image,
+`scripts/image-reuse.sh` reads the image's `last-build` tag on GHCR and the
+commit it was built from (the `org.opencontainers.image.revision` label):
 
-Actions minutes are a smaller issue than before: the repository is public,
-so standard runners are free. A full Images run is about 12 runner minutes
-(seven parallel jobs plus Trivy), and the release checks before it cost
-more than the builds.
+- **Files changed since then:** build, push and scan, as before.
+- **Unchanged:** no build. The last build gets this run's tags with
+  `docker buildx imagetools create`, which copies tags in the registry and
+  keeps the digest. Trivy still scans it.
+- **When in doubt, build:** no earlier build, no label, a commit missing
+  from the history, or "Build every image" ticked on a manual run.
 
-## Options
+Each job's summary says built or reused and why. The run ends with a
+`digests` job that writes an `images:` block with every image pinned by
+digest.
 
-### A. One version, build only what changed (recommended)
+A reused image keeps its build commit: manage › Diagnose › Builds and the
+build badge show the commit the image was built from, which can be older
+than the release.
 
-Hubra keeps one version number for the whole product (`v1.4.0`). When
-Images runs, each image compares its input paths (table above, plus its
-Dockerfile and `images.yml`) with the commit of its last published build:
+## Tags
 
-- **Changed:** build, scan and push, as today.
-- **Unchanged:** no build. The previous image gets the new tags
-  (`1.4.0`, `1.4`, `latest`, `sha-<commit>`) with
-  `docker buildx imagetools create`, which copies the tag in the registry
-  and keeps the digest.
+| Tag | On |
+| --- | --- |
+| `1.2.3` | release `v1.2.3` (pre-releases too) |
+| `1.2` | release `v1.2.3`, not pre-releases |
+| `latest` | the newest build: releases (not pre-releases) and manual runs on `main` |
+| `sha-<commit>` | every run |
+| `main-<timestamp>-<commit>` | manual runs on `main`, for Flux image automation |
+| `last-build` | every run; how the next run finds this image's last build (not for deploys) |
 
-The last build's commit comes from the image label
-`org.opencontainers.image.revision`, which `metadata-action` already sets.
-If it is missing or unreadable, the image is built: when in doubt, build.
+All seven images get every tag of a run, built or reused, so one version
+always names a full set that passed the release checks together.
 
-Deploys keep naming one version, but **pin by digest**. Kubernetes restarts a
-pod when its image string changes, even if the digest is the same, so an
-overlay with `newTag: 1.4.0` would still restart SSO. The GitLab Release
-already lists the digests; Contabo would use `digest:` instead of
-`newTag:`, and unchanged images keep their digest and their pods.
+## Deploying
 
-- Deploy risk: low. One version still means "these four images were tested
-  together" (release checks run on the release commit with all four). A
-  wrong path list is the only new risk: a missed path means a stale image.
-  `packages/` and `app/deploy/nginx/` count for all three frontends, and a
-  manual run can force a full build (`build_all: true`).
-- Minutes: a backend-only patch release builds one image instead of seven.
-  Over a normal release most app images change anyway, so the saving is
-  mostly the mail images and patch releases.
-- The build badge and manage › Diagnose › Builds show the commit each image
-  was built from, so an unchanged SSO shows an older commit. That is
-  correct, and Builds should show the release version next to it.
-- Work: one `changes` step in `images.yml` (like the one in `ci.yml`), a
-  retag step, a `build_all` input, and digest pins in the Contabo overlay
-  and the docs. About half a day.
+- **k3s / Contabo:** paste the "Images pinned by digest" block from the
+  Images run summary (or the GitLab Release notes) over the overlay's
+  `images:`. Kubernetes restarts a pod when its image string changes, so
+  with a bare `newTag: 1.4.0` every pod restarts. With the digest, the
+  unchanged images keep their digest and their pods keep running.
+- **Compose:** set `HUBRA_VERSION` and run `docker compose pull && docker
+  compose up -d`. Compose only recreates containers whose image changed, so
+  reused images are left alone.
+- Production names a release (or, between releases, a `sha-` build), never
+  `latest`. Roll back by pinning the previous block.
 
-### B. A version per image
-
-Each image gets its own version and tag (`sso-frontend 1.3.2`,
-`backend 2.1.0`), released when it changes, with its own changelog section.
-
-- Deploy risk: medium. A frontend can now meet a backend it was never
-  tested with. That needs an API compatibility rule (the backend keeps
-  older endpoints for N versions) and a matrix of which versions work
-  together, which the release checks would also have to test.
-- Minutes: the same as A.
-- Cost to people: what's new, support and the GitLab Releases would have to
-  speak in four versions. For one maintainer and one platform, this adds
-  bookkeeping and no safety. Worth it only when outside installs upgrade
-  parts separately.
-
-### C. Split into separate modules or repositories
-
-The SSO portal, manage and the club app move to their own repositories (or
-a monorepo with independent packages) with their own CI and releases.
-
-- Deploy risk: highest. The shared `packages/api-client` and `packages/ui`
-  would need to be published and versioned, and a change that touches the
-  backend and a frontend becomes two coordinated releases.
-- Minutes: lowest per change, but more CI to maintain.
-- Fits a team per app. Hubra is one codebase where most features touch the
-  backend and at least one frontend (63 of 83 merges touched the backend).
-
-## Recommendation
-
-**Option A**, plus the release habit below. It answers "why rebuild SSO when
-nothing changed" without giving up the single version that makes deploys,
-rollbacks and the changelog simple. Options B and C solve problems Hubra
-does not have yet; A does not block moving to B later.
-
-## Release guidelines (all options)
+## Release guidelines
 
 - **Version numbers:** semver for the product. Minor (`1.4.0`) for features
   and migrations, patch (`1.4.1`) for fixes without migrations. A release
   with a migration that needs a manual step says so at the top of its notes.
 - **Cadence:** cut a release when a batch of features is done, roughly
   weekly, rather than deploying manual `main` builds. Manual builds stay
-  for testing a fix before it goes into a release.
+  for trying a fix before it goes into a release.
 - **Flow:** `release/1.4` from `main`, fixes via pull requests into it (and
   back into `main`), then publish GitHub release `v1.4.0` on the branch
   ([ci.md](ci.md)). Patch releases come from the same branch.
-- **Changelog:** move `[Unreleased]` in `CHANGELOG.md` and
-  `CHANGELOG.de.md` to the new version in the release pull request, so
-  what's new matches the deployed version.
-- **Deploy:** production names a release, never `latest` or a `main-`
-  build. Roll back by pinning the previous release.
+- **Changelog:** in the release pull request, move `[Unreleased]` in
+  `CHANGELOG.md` and `CHANGELOG.de.md` to the new version, so what's new
+  matches the deployed version.
+
+## Options considered (2026-11-02)
+
+Before this, every run rebuilt all seven images with the same tag, and every
+deploy restarted every pod. Since 2026-10-28 the SSO image's files changed
+in 30 of 83 merged pull requests, the mail images in 1.
+
+- **A. One version, build only what changed** (chosen). Keeps one version
+  for deploys, rollbacks and the changelog. The new risk is a wrong path
+  list leaving an image stale, hence "when in doubt, build" and the
+  "Build every image" switch.
+- **B. A version per image** (`sso-frontend 1.3.2`, `backend 2.1.0`). A
+  frontend could meet a backend it was never tested with, so it needs an API
+  compatibility rule and a test matrix, and what's new and support would
+  speak in four versions. Worth it only once outside installs upgrade parts
+  separately.
+- **C. Separate repositories per app.** `packages/api-client` and
+  `packages/ui` would need publishing, and most features (63 of 83 merges
+  touched the backend) would become two coordinated releases.
+
+Actions minutes were a minor factor: the repository is public, so standard
+runners are free. A full Images run is about 12 runner minutes; a
+backend-only patch release now builds one image instead of seven.
