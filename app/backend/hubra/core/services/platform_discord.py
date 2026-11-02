@@ -122,7 +122,19 @@ class DiscordPostError(RuntimeError):
 
 
 def post(embed: dict, *, channel_id: str = "", token: str = "") -> None:
-    """Post one embed to the platform log channel.  Raises DiscordPostError."""
+    """Post one embed to the platform log channel.  Raises DiscordPostError.
+
+    The outcome is remembered for manage › Diagnostics › Discord.
+    """
+    try:
+        _post(embed, channel_id=channel_id, token=token)
+    except DiscordPostError as exc:
+        _remember_post(False, str(exc))
+        raise
+    _remember_post(True, "")
+
+
+def _post(embed: dict, *, channel_id: str = "", token: str = "") -> None:
     if not channel_id or not token:
         channel_id, token = _settings()
     if not channel_id or not token:
@@ -156,6 +168,47 @@ def post(embed: dict, *, channel_id: str = "", token: str = "") -> None:
         raise
     except Exception as exc:
         raise DiscordPostError(f"Discord unreachable: {exc}") from None
+
+
+_LAST_POST_KEY = "discord:platform_log:last"
+_local_last: dict[str, dict] = {}
+
+
+def _remember_post(ok: bool, error: str) -> None:
+    """Keep the last success and the last failure (Redis, else this process)."""
+    from datetime import datetime, timezone
+
+    from hubra.core.redis_client import get_redis_client
+
+    now = datetime.now(timezone.utc).isoformat()
+    state = dict(last_post_state())
+    if ok:
+        state["lastOkAt"] = now
+    else:
+        state["lastErrorAt"] = now
+        state["lastError"] = error[:500]
+    _local_last["state"] = state
+    try:
+        client = get_redis_client()
+        if client is not None:
+            client.set(_LAST_POST_KEY, json.dumps(state), ex=30 * 24 * 3600)
+    except Exception:
+        pass
+
+
+def last_post_state() -> dict:
+    """``{"lastOkAt"?, "lastErrorAt"?, "lastError"?}`` of the platform log."""
+    from hubra.core.redis_client import get_redis_client
+
+    try:
+        client = get_redis_client()
+        if client is not None:
+            raw = client.get(_LAST_POST_KEY)
+            if raw:
+                return json.loads(raw)
+    except Exception:
+        pass
+    return dict(_local_last.get("state") or {})
 
 
 def post_alert(embed: dict) -> bool:

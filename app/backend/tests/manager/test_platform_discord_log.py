@@ -22,6 +22,7 @@ def _clean(db):
     db.session.query(PlatformSetting).delete()
     db.session.query(GlobalAuditEntry).delete()
     db.session.commit()
+    platform_discord._local_last.clear()  # the remembered last post
 
 
 @pytest.fixture

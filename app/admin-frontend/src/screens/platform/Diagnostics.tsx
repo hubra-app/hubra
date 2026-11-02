@@ -28,6 +28,8 @@ import {
   type MailServerEntry,
 } from '@/api/platform'
 import { OutboundMailPanel } from './MailMonitor'
+import { DiscordPanel } from './DiscordStatus'
+import { Row } from './StatusRow'
 
 const MONO = "'JetBrains Mono', monospace"
 
@@ -50,27 +52,6 @@ const sectionLabel = (section: string): string =>
     deprecated: tr('Veraltet', 'Deprecated'),
     security: tr('Sicherheit', 'Security'),
   })[section.toLowerCase()] ?? section
-
-function Dot({ ok }: { ok: boolean | null }) {
-  const color = ok === null ? '#c2870f' : ok ? '#1f9d57' : '#c0392b'
-  return (
-    <span
-      style={{ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0 }}
-    />
-  )
-}
-
-function Row({ ok, label, children }: { ok: boolean | null; label: string; children: React.ReactNode }) {
-  return (
-    <Group gap={12} wrap="nowrap" py={8} style={{ borderBottom: '1px solid var(--hb-border)' }}>
-      <Dot ok={ok} />
-      <Text size="sm" c="dimmed" miw={160}>
-        {label}
-      </Text>
-      <div style={{ minWidth: 0, flex: 1 }}>{children}</div>
-    </Group>
-  )
-}
 
 function failureText(err: unknown) {
   return err instanceof Error ? err.message : tr('Unbekannter Fehler', 'Unknown error')
@@ -574,7 +555,7 @@ function PermissionsPanel() {
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-const TABS = ['health', 'outbound-mail', 'mail-server', 'permissions'] as const
+const TABS = ['health', 'outbound-mail', 'discord', 'mail-server', 'permissions'] as const
 type Tab = (typeof TABS)[number]
 
 /** Diagnostics of the whole instance, for platform staff (platform.diagnostics). */
@@ -598,6 +579,7 @@ export function Diagnostics() {
         tabs={[
           { id: 'health', label: tr('Systemzustand', 'System health') },
           { id: 'outbound-mail', label: tr('Mail-Versand', 'Outbound mail') },
+          { id: 'discord', label: 'Discord' },
           { id: 'mail-server', label: tr('Mailserver', 'Mail server') },
           { id: 'permissions', label: tr('API-Berechtigungen', 'API permissions') },
         ]}
@@ -612,6 +594,7 @@ export function Diagnostics() {
           }
         />
       )}
+      {tab === 'discord' && <DiscordPanel />}
       {tab === 'mail-server' && <MailServerPanel />}
       {tab === 'permissions' && <PermissionsPanel />}
     </div>

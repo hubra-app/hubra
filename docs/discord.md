@@ -13,29 +13,104 @@ channel, role mapping).
 
 ## Set up the Discord application (once per platform)
 
-1. Open <https://discord.com/developers/applications> and create an
-   application named **Hubra**. Give it the Hubra logo.
-2. **General Information**: copy the *Application ID* and the *Public Key*.
-3. **OAuth2**: reset and copy the *Client Secret*.
-   Under *Redirects*, add both:
-   - `https://api.hubra.club/api/v1/apps/callback/discord` (a club connects its server)
-   - `https://api.hubra.club/api/v1/account/linked-accounts/discord/callback` (a member links their account)
-4. **Bot**: reset and copy the *Token*.
-   - Leave **Public Bot** on, or clubs can't add it to their servers.
-   - Leave **Requires OAuth2 Code Grant** off.
-   - Leave all three **Privileged Gateway Intents** off. The bot doesn't
-     read messages or member lists.
-5. In manage, open **Platform settings › Discord**, paste the four values
-   and save. They take effect at once, no restart. (Platform managers only;
-   the secret and the token are never shown again.)
+One Discord application serves every club. Below, `https://api.hubra.club`
+stands for your API address (`API_PUBLIC_URL`). manage › Diagnostics ›
+Discord shows the exact addresses for your instance under **Values for the
+Developer Portal**.
 
-6. Then set **General Information ›
-   Interactions Endpoint URL** to
-   `https://api.hubra.club/api/v1/discord/interactions`. Discord checks the
-   URL when you save, so the backend must already be up.
+### 1. Create the application
 
-Without them the Discord app shows as "not set up on this platform"
-and nothing else changes.
+Open <https://discord.com/developers/applications>, click **New
+Application**, name it **Hubra** and give it the Hubra logo.
+
+### 2. Copy four values into Hubra
+
+| Developer Portal | Hubra field (manage › Platform settings › Discord) |
+| --- | --- |
+| General Information › **Application ID** | Discord application ID |
+| General Information › **Public Key** | Discord public key |
+| OAuth2 › **Client Secret** (click *Reset Secret*) | Discord client secret |
+| Bot › **Token** (click *Reset Token*) | Discord bot token |
+
+Save in manage. The values take effect at once, with no restart. The secret
+and the token are stored encrypted and never shown again; only platform
+managers can change them.
+
+### 3. Redirect URIs (OAuth2 › Redirects)
+
+Add **both**. They must match character for character, including
+`https` and with no trailing slash:
+
+| Redirect | Used when |
+| --- | --- |
+| `https://api.hubra.club/api/v1/apps/callback/discord` | a club admin adds the bot to the club's server (Einstellungen › Verbundene Apps) |
+| `https://api.hubra.club/api/v1/account/linked-accounts/discord/callback` | a member links their Discord account (Mein Konto › Verknüpfungen) |
+
+If one is missing, Discord shows "Invalid OAuth2 redirect_uri" at that step.
+
+### 4. Bot settings (Bot page)
+
+| Setting | Value | Why |
+| --- | --- | --- |
+| Public Bot | **on** | otherwise only you could add it, and no club could |
+| Requires OAuth2 Code Grant | **off** | Hubra adds the bot with its own OAuth flow |
+| Presence Intent | **off** | not needed |
+| Server Members Intent | **off** | the bot never reads member lists |
+| Message Content Intent | **off** | the bot never reads messages |
+
+The bot uses no gateway connection. It answers over HTTP (step 5) and calls
+the REST API, so it never shows as "online" in Discord, and that is normal.
+
+### 5. Interactions Endpoint URL
+
+General Information › **Interactions Endpoint URL**:
+`https://api.hubra.club/api/v1/discord/interactions`
+
+Discord sends a signed test request when you save, so the backend must be
+up, the Discord plugin installed, and the public key from step 2 saved in
+Hubra first. Slash commands and buttons arrive here.
+
+### 6. Permissions
+
+You don't tick permissions in the portal. Hubra asks for them in the link
+it builds when a server adds the bot, and only for what the club allowed.
+It never asks for Administrator.
+
+| Server | OAuth2 scopes | Permissions | When |
+| --- | --- | --- | --- |
+| A club's server | `bot`, `applications.commands` | View Channels, Send Messages, Embed Links | the club allows "announce" or "commands" |
+| | | Manage Roles | the club allows "roles" |
+| The platform's own server (platform log) | `bot` | View Channels, Send Messages, Embed Links (`19456`) | always |
+| Member account link | `identify` | none | a member links their account |
+
+Manage Roles only works on roles **below the bot's own role** in the server's
+role list. Drag the Hubra role above the roles the club maps.
+
+### 7. Check it
+
+Open manage › **Diagnostics › Discord** and click **Check now**. It shows:
+
+- whether the bot token signs in, and as which bot;
+- how many servers the bot is on;
+- whether the Interactions Endpoint URL matches;
+- the platform log channel and its last post;
+- every club server and its last error.
+
+A failing check also shows on manage › Alerts.
+
+Without the application ID and bot token, the Discord app shows as "not set
+up on this platform" to clubs, and nothing else changes.
+
+### Troubleshooting
+
+| You see | Fix |
+| --- | --- |
+| "Invalid OAuth2 redirect_uri" | add the exact redirect from step 3 |
+| Bot sign-in: Discord refused the bot token (401) | reset the token in the portal and save the new one in Hubra |
+| Interactions URL can't be saved in the portal | the backend is unreachable, the plugin is not installed, or the public key in Hubra is wrong |
+| "Bot not on server" for a club | someone removed the bot; the club connects it again under Verbundene Apps |
+| Roles don't change | move the Hubra role above the mapped roles; check the club allowed "roles" |
+| Platform log: the bot cannot see the channel | add the bot to the platform server (link in Platform settings › Discord) and allow it to view the channel |
 
 ## Platform log (the platform's own server)
 

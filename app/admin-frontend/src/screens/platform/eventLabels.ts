@@ -10,6 +10,7 @@ export const categoryLabel = (c: EventCategory): string =>
     plugin: 'Plugin',
     system: 'System',
     alert: tr('Alarm', 'Alert'),
+    discord: 'Discord',
   })[c] ?? c
 
 const serviceName = (key?: string) =>

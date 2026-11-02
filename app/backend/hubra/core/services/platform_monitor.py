@@ -968,6 +968,22 @@ def open_problems() -> list[dict]:
 
     problems.extend(_backup_problems())
 
+    try:
+        from hubra.core.services import discord_status
+
+        for p in discord_status.problems():
+            add(
+                p["id"],
+                p["level"],
+                "discord",
+                p["title"],
+                p["detail"],
+                since=p.get("since"),
+                link="/app/platform/diagnostics/discord",
+            )
+    except Exception:
+        logger.warning("discord_problems_failed", exc_info=True)
+
     order = {"error": 0, "warning": 1, "info": 2}
     problems.sort(key=lambda p: order.get(p["level"], 3))
     return problems
