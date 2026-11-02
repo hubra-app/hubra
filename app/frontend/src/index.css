@@ -107,8 +107,8 @@
   overflow: auto hidden;
 }
 
-/* ── Tier 1: Small tables (3-4 cols) @ 37.5em ── */
-@media (max-width: 37.5em) {
+/* ── Tier 1: Small tables (3-4 cols) below sm (48em) ── */
+@media (max-width: 47.99em) {
   .responsive-scroll-wrap:not([data-breakpoint]) .responsive-table,
   .responsive-scroll-wrap[data-breakpoint~="small"] .responsive-table {
     display: block;
@@ -231,7 +231,7 @@
 }
 
 /* Standalone .responsive-table (not inside .responsive-scroll-wrap) — same as base tier */
-@media (max-width: 37.5em) {
+@media (max-width: 47.99em) {
   .responsive-table:not(.responsive-scroll-wrap .responsive-table) {
     display: block;
     width: 100% !important;
@@ -311,8 +311,8 @@
   }
 }
 
-/* ── Tier 2: Wide tables (5-7 cols) @ 56.25em ── */
-@media (max-width: 56.25em) {
+/* ── Tier 2: Wide tables (5-7 cols) below tab (54.375em) ── */
+@media (max-width: 54.37em) {
   .responsive-scroll-wrap[data-breakpoint~="wide"] .responsive-table {
     display: block;
     width: 100% !important;
@@ -629,7 +629,7 @@ table[style*="min-width"] td::before {
 
 /* Personal dashboard tiles: on phones three compact tiles side by side
    instead of a screen full of large ones. */
-@media (max-width: 575px) {
+@media (max-width: 35.99em) {
   .stat-tiles {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     gap: 8px !important;
