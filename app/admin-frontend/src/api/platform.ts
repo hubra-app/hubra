@@ -315,6 +315,7 @@ export type AlertType =
   | 'plugin_updates'
   | 'upgrades'
   | 'system'
+  | 'support_cases'
 
 export interface OpenProblem {
   id: string

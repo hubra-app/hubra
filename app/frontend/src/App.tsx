@@ -86,6 +86,11 @@ const TranslationsScreen = lazy(() =>
     default: m.TranslationsScreen,
   })),
 )
+const FeedbackScreen = lazy(() =>
+  import('./screens/private/support/FeedbackScreen').then((m) => ({
+    default: m.FeedbackScreen,
+  })),
+)
 const AccessDeniedScreen = lazy(() =>
   import('./screens/private/AccessDenied').then((m) => ({
     default: m.AccessDeniedScreen,
@@ -525,6 +530,8 @@ function PrivateRoutes() {
                     </RequirePermission>
                   }
                 />
+                <Route path="feedback" element={<FeedbackScreen />} />
+                <Route path="feedback/roadmap" element={<FeedbackScreen />} />
                 {/* The personal overview is the dashboard's first tab. */}
                 <Route path="account" element={<Navigate to="/app/dashboard" replace />} />
                 <Route path="account/settings" element={<AccountSettingsScreen />} />
