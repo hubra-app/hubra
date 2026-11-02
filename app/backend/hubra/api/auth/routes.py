@@ -335,13 +335,24 @@ def _note_device(user: User) -> tuple[str | None, bool]:
 
 
 def _alert_new_device(user: User) -> None:
+    browser = _extract_browser_family(request.headers)
+    platform = _extract_platform(request.headers)
     known_devices.send_alert(
         user,
         request.remote_addr or "",
-        _extract_browser_family(request.headers),
-        _extract_platform(request.headers),
+        browser,
+        platform,
         request.headers.get("User-Agent", "")[:512],
     )
+    # Platform staff on a new device: also a ping in the platform log.
+    try:
+        from hubra.core.services import platform_bot
+
+        platform_bot.staff_new_device(
+            user, request.remote_addr or "", browser, platform
+        )
+    except Exception:  # noqa: BLE001
+        _log.debug("staff new-device ping skipped", exc_info=True)
 
 
 # ── POST /auth/login ──────────────────────────────────────────────────────────
