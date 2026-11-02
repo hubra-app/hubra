@@ -344,8 +344,8 @@ export interface AlertSwitches {
   /** The matrix columns, in order. */
   channels: NotifyChannel[]
   types: Record<AlertType, Record<NotifyChannel, boolean>>
-  /** Platform events (audit log categories) per channel. */
-  events: Record<string, Record<NotifyChannel, boolean>>
+  /** Platform events (audit log categories) per channel; a channel left out is not offered (Discord-only categories have no mail). */
+  events: Record<string, Partial<Record<NotifyChannel, boolean>>>
 }
 
 export type NotifyChannel = 'mail' | 'discord'

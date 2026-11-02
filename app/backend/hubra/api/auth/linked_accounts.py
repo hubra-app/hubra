@@ -69,6 +69,10 @@ def _announce(user_id: int, event: str, acc: ExternalAccount) -> None:
     from hubra.core.modules import emit
     from hubra.core.services import account as account_svc
 
+    if acc.provider == "discord" and event == "account.linked":
+        from hubra.core.services import platform_roles
+
+        platform_roles.later(user_id)  # the platform server's roles
     for _tenant, member in account_svc.memberships(user_id):
         emit(
             event,

@@ -517,8 +517,13 @@ def _alert_switches() -> dict:
             }
             for t in platform_monitor.ALERT_TYPES
         },
+        # Discord-only categories (the bot's own posts) have no mail key.
         "events": {
-            c: {"mail": c in mail_on, "discord": c in discord_on}
+            c: (
+                {"discord": c in discord_on}
+                if c in platform_discord.DISCORD_ONLY
+                else {"mail": c in mail_on, "discord": c in discord_on}
+            )
             for c in platform_discord.CATEGORIES
             if c != "alerts"
         },
@@ -569,9 +574,11 @@ def update_alert_switches():
         if c not in merged_events or not isinstance(chans, dict):
             return api_error("VALIDATION_ERROR", f"Unknown event category: {c}", 400)
         for ch, on in chans.items():
-            if ch not in ("mail", "discord") or not isinstance(on, bool):
+            if ch not in merged_events[c] or not isinstance(on, bool):
                 return api_error(
-                    "VALIDATION_ERROR", f"{c}: mail and discord are true or false", 400
+                    "VALIDATION_ERROR",
+                    f"{c}: {' and '.join(merged_events[c])} are true or false",
+                    400,
                 )
             merged_events[c][ch] = on
     if types:
@@ -589,7 +596,7 @@ def update_alert_switches():
             discord.append("alerts")
         values["discord.log_events"] = ",".join(discord)
         values["notify.mail_events"] = (
-            ",".join(c for c in cats if merged_events[c]["mail"]) or None
+            ",".join(c for c in cats if merged_events[c].get("mail")) or None
         )
     platform_settings.set_many(values, actor_id=g.system_user.id)
     db.session.commit()
