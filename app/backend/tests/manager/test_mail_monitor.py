@@ -77,7 +77,13 @@ def _send(to="member@example.com", subject="Hi", **kw):
 
 
 def _events(db, **filters):
-    return db.session.query(PlatformEvent).filter_by(**filters).all()
+    # By id: without ORDER BY, Postgres may return them in any order.
+    return (
+        db.session.query(PlatformEvent)
+        .filter_by(**filters)
+        .order_by(PlatformEvent.id)
+        .all()
+    )
 
 
 def _alert_mails(deliver):

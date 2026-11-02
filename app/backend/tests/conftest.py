@@ -64,6 +64,28 @@ def _mock_health_checks():
 
 
 @pytest.fixture(autouse=True)
+def _end_open_transaction(request):
+    """Requests in tests run in the session-wide app context, so their
+    session is never removed. A test without the db fixture (which rolls
+    back) left its transaction open, e.g. the default plans GET /public/pricing
+    adds; on Postgres the next test inserting them waited on it forever."""
+    yield
+    remove = getattr(_db.session, "remove", None)  # some tests fake the session
+    if "app" in request.fixturenames and remove is not None:
+        remove()
+
+
+@pytest.fixture(autouse=True)
+def _clear_health_cache():
+    """A cached "error" status from one test turned /health into a 503 for
+    whichever test came next in the same worker."""
+    from hubra.api.health.cache import HealthCache
+
+    yield
+    HealthCache.clear()
+
+
+@pytest.fixture(autouse=True)
 def _platform_alerts_inline():
     """Alert mails to platform staff are a Celery task, which in tests would
     run against the worker's own app and database: send them here instead."""
