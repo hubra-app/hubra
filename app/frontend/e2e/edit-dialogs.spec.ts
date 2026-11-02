@@ -49,27 +49,6 @@ for (const d of DIALOGS) {
   })
 }
 
-test('editing an active code shows it as active', async ({ page }) => {
-  await page.goto(appUrl('dashboard'))
-  await enableModule(page, 'codes')
-  const name = unique('E2E Code')
-  const code = await api<{ id: number }>(page, 'POST', '/codes/', { name, code: '4711' })
-  try {
-    await page.goto(appUrl('operations/codes'))
-    await page
-      .getByRole('main')
-      .locator('tr, .mantine-Paper-root', { hasText: name })
-      .last()
-      .getByRole('button', { name: 'Bearbeiten' })
-      .click()
-    const dialog = page.getByRole('dialog')
-    await expect(dialog.getByText(name)).toBeVisible()
-    await expect(dialog.getByRole('checkbox', { name: 'Aktiv' })).toBeChecked()
-  } finally {
-    await api(page, 'DELETE', `/codes/${code.id}`)
-  }
-})
-
 test('a system role keeps its name out of the edit form', async ({ page }) => {
   await page.goto(appUrl('system/roles'))
   // The built-in member role: a system role that may be edited.

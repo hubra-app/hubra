@@ -96,11 +96,6 @@ const AccessDeniedScreen = lazy(() =>
     default: m.AccessDeniedScreen,
   })),
 )
-const CodesScreen = lazy(() =>
-  import('./screens/private/operations/Codes').then((m) => ({
-    default: m.CodesScreen,
-  })),
-)
 const BindingsScreen = lazy(() =>
   import('./screens/private/operations/Bindings').then((m) => ({
     default: m.BindingsScreen,
@@ -389,14 +384,6 @@ function PrivateRoutes() {
                 <Route
                   path="mail/wildduck"
                   element={<Navigate to="/app/mail" replace />}
-                />
-                <Route
-                  path="operations/codes"
-                  element={
-                    <RequireModule code="codes">
-                      <CodesScreen />
-                    </RequireModule>
-                  }
                 />
                 <Route
                   path="operations/bindings"

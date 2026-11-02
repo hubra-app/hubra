@@ -194,6 +194,9 @@ class Module:
     events: dict[str, str] = field(default_factory=dict)
     public_endpoints: tuple[str, ...] = ()
     tables: tuple[str, ...] = ()
+    # Encrypted columns this module stores, (table, primary key, column,
+    # extra WHERE), so key checks and FERNET_KEY rotation re-encrypt them.
+    encrypted_columns: tuple[tuple[str, str, str, str], ...] = ()
     tasks: tuple[str, ...] = ()
     schedule: tuple[Schedule, ...] = ()
     apps: tuple[AppProvider, ...] = ()

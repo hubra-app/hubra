@@ -648,7 +648,6 @@ class MemberService:
         from sqlalchemy import update as sql_update
 
         from hubra.core.models.audit import AuditEntry
-        from hubra.core.models.code import Code
         from hubra.core.models.finance import Invoice, Transaction
         from hubra.core.models.mail import MailboxFolder
         from hubra.core.models.notification import Notification
@@ -690,8 +689,6 @@ class MemberService:
         )
         # Authorship and leadership references: the row stays, unattributed.
         for column in (
-            Code.created_by_id,
-            Code.updated_by_id,
             Group.lead_id,
             Poll.created_by_id,
             Translation.updated_by_id,

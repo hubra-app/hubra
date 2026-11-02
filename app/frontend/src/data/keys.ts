@@ -73,7 +73,6 @@ export const qk = {
     costs: (tiers: unknown) => ['tier-costs', tiers] as const,
     paymentPlans: (tierId: unknown) => ['payment-plans', tierId] as const,
   },
-  codes: ['codes'] as const,
 
   invoices: {
     all: ['invoices'] as const,

@@ -12,6 +12,7 @@ them from the official Marketplace, <https://plugins.hubra.club/index.json>.
 
 | Plugin        | Module(s)          | What it does                                                                |
 | ------------- | ------------------ | --------------------------------------------------------------------------- |
+| `codes`       | `codes`            | Encrypted door codes and passcodes                                          |
 | `keys`        | `inventory.keys`   | Keys and access cards, handovers and deposits                               |
 | `guides`      | `inventory.guides` | Usage guides on inventory items                                             |
 | `budgets`     | `finance.budgets`  | Yearly budgets per transaction category                                     |

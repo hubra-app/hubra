@@ -314,18 +314,6 @@ export interface InventoryLink {
   url: string;
 }
 
-export interface Code {
-  id: string;
-  name: string;
-  code: string;
-  description: string | null;
-  isActive: boolean;
-  createdBy: string | null;
-  updatedBy: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface InventoryItem {
   id: string;
   name: string;

@@ -46,11 +46,6 @@ from hubra.core.schemas.finance import (
 )
 
 from hubra.core.schemas.settings import SettingSchema, SettingWriteSchema
-from hubra.core.schemas.code import (
-    CodeSchema,
-    CodeCreateSchema,
-    CodeUpdateSchema,
-)
 from hubra.core.schemas.notification import NotificationSchema
 from hubra.core.schemas.audit import AuditEntrySchema
 
@@ -103,8 +98,4 @@ __all__ = [
     "NotificationSchema",
     # Audit
     "AuditEntrySchema",
-    # Code
-    "CodeSchema",
-    "CodeCreateSchema",
-    "CodeUpdateSchema",
 ]
