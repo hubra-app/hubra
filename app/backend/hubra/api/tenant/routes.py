@@ -306,6 +306,48 @@ def update_tenant(tenant_id: int):
     return jsonify({"tenant": _tenant_to_dict(tenant)})
 
 
+@tenant_admin_bp.route("/tenants/<int:tenant_id>/limits", methods=["GET"])
+@require_global_permission("tenants.read")
+def get_tenant_limits(tenant_id: int):
+    """Members, mails this month and storage against the club's limits."""
+    from hubra.core.services import quotas
+
+    tenant = TenantService.get_by_id(tenant_id)
+    if tenant is None:
+        raise_error(404, "NOT_FOUND", "Tenant not found")
+    return jsonify({"plan": tenant.plan, **quotas.status(tenant)})
+
+
+@tenant_admin_bp.route("/tenants/<int:tenant_id>/limits", methods=["PUT"])
+@require_global_permission("tenants.update")
+def set_tenant_limits(tenant_id: int):
+    """The club's own limits: ``{kind: number | null | "plan"}`` (null: no
+    limit; "plan": back to the plan's)."""
+    from hubra.core.services import quotas
+
+    tenant = TenantService.get_by_id(tenant_id)
+    if tenant is None:
+        raise_error(404, "NOT_FOUND", "Tenant not found")
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict) or not body:
+        raise_error(400, "VALIDATION_ERROR", "Send at least one limit")
+    before = quotas.overrides(tenant)
+    quotas.set_overrides(tenant, body)
+    db.session.add(
+        GlobalAuditEntry(
+            tenant_id=tenant.id,
+            actor_id=g.system_user.id,
+            action="tenant.limits",
+            target_type="Tenant",
+            target_id=str(tenant.id),
+            details={"before": before, "after": quotas.overrides(tenant)},
+            ip_address=request.remote_addr,
+        )
+    )
+    db.session.commit()
+    return jsonify({"plan": tenant.plan, **quotas.status(tenant)})
+
+
 @tenant_admin_bp.route("/tenants/<int:tenant_id>", methods=["DELETE"])
 @require_global_permission("tenants.delete")
 def delete_tenant(tenant_id: int):

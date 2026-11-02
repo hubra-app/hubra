@@ -130,6 +130,7 @@ def make_celery(app: Flask) -> Celery:
             "hubra.core.tasks.push_tasks",
             "hubra.core.tasks.mail_monitor_tasks",
             "hubra.core.tasks.connected_app_tasks",
+            "hubra.core.tasks.quota_tasks",
             "hubra.core.tasks.upgrade_tasks",
             *_module_task_imports(),
         ],
@@ -251,6 +252,11 @@ def make_celery(app: Flask) -> Celery:
             "plugin-updates": {
                 "task": "hubra.core.tasks.plugin_tasks.check_plugin_updates",
                 "schedule": crontab(hour="*/6", minute=40),
+            },
+            # Club limits: warn owners at limits.warn_percent and at 100 %.
+            "check-club-limits-hourly": {
+                "task": "hubra.core.tasks.quota_tasks.check_quotas",
+                "schedule": crontab(minute=25),
             },
         },
         broker_connection_retry_on_startup=False,

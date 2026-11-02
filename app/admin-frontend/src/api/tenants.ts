@@ -414,3 +414,39 @@ export async function listTenantsHealth(params: TenantHealthParams = {}): Promis
   const s = qs.toString()
   return apiFetch(`/system/tenants/health${s ? `?${s}` : ''}`)
 }
+
+// ── Limits (members, mails per month, storage) ───────────────────────────────
+
+export type LimitKind = 'members' | 'mail_month' | 'storage_mb'
+
+export interface LimitRow {
+  used: number
+  /** null: no limit. */
+  limit: number | null
+  plan_limit: number | null
+  /** The club has its own limit (or its own "no limit"). */
+  custom: boolean
+  percent: number | null
+  level: 'ok' | 'warning' | 'over'
+}
+
+export interface TenantLimits {
+  plan: string
+  warn_percent: number
+  limits: Record<LimitKind, LimitRow>
+}
+
+export async function getTenantLimits(tenantId: number) {
+  return apiFetch<TenantLimits>(`/system/tenants/${tenantId}/limits`)
+}
+
+/** A number, null for no limit, or "plan" to follow the plan again. */
+export async function setTenantLimits(
+  tenantId: number,
+  values: Partial<Record<LimitKind, number | null | 'plan'>>,
+) {
+  return apiFetch<TenantLimits>(`/system/tenants/${tenantId}/limits`, {
+    method: 'PUT',
+    body: JSON.stringify(values),
+  })
+}

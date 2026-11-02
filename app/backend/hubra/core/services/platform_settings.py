@@ -30,6 +30,9 @@ every device out of push (they have to turn it on again).
 
 Performance (``perf.*``): the thresholds of ``services.perf_monitor``.
 
+Limits (``limits.*``): what each plan allows a club (``services.quotas``);
+a club can have its own limits on top, set in manage on the club.
+
 Discord (``discord.*``): the one Hubra application every club's server and
 every linked account goes through (see docs/discord.md). Set here only, with
 no env fallback.  ``discord.log_*`` is the platform log: the bot posts
@@ -325,6 +328,29 @@ SPECS: tuple[Spec, ...] = (
         "requests are not faster than this (ms). 0: off",
         lambda cfg: "1500",
         "milliseconds",
+    ),
+    Spec(
+        "limits.warn_percent",
+        "Limit warning",
+        "Club owners and the platform are warned when a club reaches this "
+        "share of a limit (%). The second warning comes at 100 %",
+        lambda cfg: "80",
+        "percent",
+    ),
+    *(
+        Spec(
+            f"limits.{plan}.{kind}",
+            f"{plan.title()}: {label}",
+            f"{desc} on the {plan.title()} plan. Empty: no limit",
+            lambda cfg: "",
+            "count",
+        )
+        for plan in ("starter", "growth", "enterprise")
+        for kind, label, desc in (
+            ("members", "members", "Most members a club can have"),
+            ("mail_month", "mails per month", "Mails a club sends per month"),
+            ("storage_mb", "storage (MB)", "Storage a club uses, in MB,"),
+        )
     ),
 )
 
