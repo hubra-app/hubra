@@ -421,8 +421,8 @@ export function EventLogPanel({
     <Stack gap={16}>
       <Text c="dimmed" size="sm" maw={720}>
         {tr(
-          `Was der Plattform passiert ist: jede gesendete und fehlgeschlagene Mail, Ausfälle von Relays und Diensten, fehlgeschlagene Backups, Plugin-Neuigkeiten, Systemwarnungen und die Warnungen an Plattform-Admins. Einträge bleiben ${query.data?.retention_days ?? 30} Tage. Was Personen geändert haben, steht im Audit-Log.`,
-          `What happened to the platform: every sent and failed mail, relay and service outages, failed backups, plugin news, system alerts and the alerts to platform admins. Entries are kept for ${query.data?.retention_days ?? 30} days. What people changed is in the audit log.`,
+          `Was der Plattform passiert ist: jede gesendete und fehlgeschlagene Mail, Ausfälle von Relays und Diensten, fehlgeschlagene und gelöschte Backups, Plugin-Neuigkeiten, Systemwarnungen und die Warnungen an Plattform-Admins. Einträge bleiben ${query.data?.retention_days ?? 30} Tage. Was Personen geändert haben, steht im Audit-Log.`,
+          `What happened to the platform: every sent and failed mail, relay and service outages, failed and deleted backups, plugin news, system alerts and the alerts to platform admins. Entries are kept for ${query.data?.retention_days ?? 30} days. What people changed is in the audit log.`,
         )}
       </Text>
       <Group gap="xs" wrap="wrap">

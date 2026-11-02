@@ -241,8 +241,9 @@ def delete_backup(record_id: int):
     if record is None:
         return api_error("NOT_FOUND", "Backup record not found", 404)
 
+    actor = _actor()
     try:
-        BackupServiceAPI.delete(record_id)
+        BackupServiceAPI.delete(record_id, getattr(actor, "email", None) or "platform")
     except ValueError as exc:
         return api_error("NOT_FOUND", error_message(exc), 404)
 

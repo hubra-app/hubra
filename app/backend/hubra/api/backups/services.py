@@ -25,5 +25,5 @@ class BackupServiceAPI:
         return BackupService.get_backup(record_id)
 
     @staticmethod
-    def delete(record_id: int) -> None:
-        BackupService.delete_backup(record_id)
+    def delete(record_id: int, deleted_by: str | None = None) -> None:
+        BackupService.delete_backup(record_id, deleted_by)
