@@ -19,18 +19,23 @@ export function ImpersonationBanner() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setRemainingMin(compute())
 
-    const interval = setInterval(() => setRemainingMin(compute()), 60000)
+    const interval = setInterval(() => setRemainingMin(compute()), 15000)
     return () => clearInterval(interval)
 
   }, [impersonation?.expires_at, impersonation?.is_impersonating])
 
   if (!impersonation?.is_impersonating) return null
+  // The last five minutes of a support session: turn red, so nobody is cut
+  // off mid-task without warning.
+  const ending = remainingMin !== null && remainingMin < 5
 
   return (
     <div
+      role="status"
       style={{
-        background: '#fef3c7',
-        borderBottom: '1px solid #f59e0b',
+        background: ending ? '#fee2e2' : '#fef3c7',
+        borderBottom: `1px solid ${ending ? '#ef4444' : '#f59e0b'}`,
+        color: '#1a1625',
         padding: '8px 16px',
         display: 'flex',
         alignItems: 'center',
@@ -39,8 +44,8 @@ export function ImpersonationBanner() {
         zIndex: 100,
       }}
     >
-      <IconAlertTriangle size={20} color="#d97706" />
-      <Badge color="orange" variant="filled" size="sm">
+      <IconAlertTriangle size={20} color={ending ? '#dc2626' : '#d97706'} />
+      <Badge color={ending ? 'red' : 'orange'} variant="filled" size="sm">
         {t('shell.impersonation.badge', 'Fremdzugriff')}
       </Badge>
       <Text fz="sm" fw={600}>
@@ -58,7 +63,7 @@ export function ImpersonationBanner() {
         </Text>
       )}
       {remainingMin !== null && (
-        <Text fz="xs" c="dimmed">
+        <Text fz="xs" fw={ending ? 700 : undefined} c={ending ? '#b91c1c' : 'dimmed'}>
           {t('shell.impersonation.remaining', 'noch {{min}} Min.', { min: remainingMin })}
         </Text>
       )}
@@ -66,7 +71,7 @@ export function ImpersonationBanner() {
         <Button
           size="xs"
           variant="filled"
-          color="orange"
+          color={ending ? 'red' : 'orange'}
           leftSection={<IconX size={14} />}
           onClick={stopImpersonation}
         >

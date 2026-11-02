@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Modal, TextInput, Button, Stack, Group, Text, Alert, Checkbox } from '@mantine/core'
+import { Modal, TextInput, Button, Stack, Group, Text, Alert, Checkbox, SegmentedControl } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
@@ -13,6 +13,7 @@ const TENANT_APP_URL = import.meta.env.VITE_TENANT_APP_URL ?? 'https://app.hubra
 const schema = z.object({
   reason: z.string().min(1, tr('Bitte gib einen Grund an', 'Reason is required')),
   allowChanges: z.boolean(),
+  minutes: z.enum(['15', '30', '60', '120']),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -33,7 +34,7 @@ export function ImpersonateModal({
 
   const form = useForm<FormValues>({
     validate: zod4Resolver(schema),
-    initialValues: { reason: '', allowChanges: false },
+    initialValues: { reason: '', allowChanges: false, minutes: '30' },
   })
 
   const handleSubmit = async (values: FormValues) => {
@@ -42,6 +43,7 @@ export function ImpersonateModal({
       const res = await impersonateTenant(tenantId, {
         reason: values.reason.trim(),
         allow_changes: values.allowChanges,
+        minutes: Number(values.minutes),
       })
       notify('success', tr('Stellvertretung gestartet', 'Impersonation started'), tr('Du wirst zum Verein weitergeleitet …', 'Redirecting to the club…'))
       // The club app's routes start with the club's slug.
@@ -84,12 +86,26 @@ export function ImpersonateModal({
             )}
             {...form.getInputProps('allowChanges', { type: 'checkbox' })}
           />
-          <Text size="xs" c="dimmed">
-            {tr(
-              'Die Sitzung endet nach 30 Minuten. Verein löschen und Plan ändern sind währenddessen gesperrt.',
-              'The session ends after 30 minutes. Deleting the club and changing the plan are blocked meanwhile.',
-            )}
-          </Text>
+          <Stack gap={4}>
+            <Text size="sm" fw={500}>
+              {tr('Dauer', 'Length')}
+            </Text>
+            <SegmentedControl
+              {...form.getInputProps('minutes')}
+              data={[
+                { value: '15', label: tr('15 Min.', '15 min') },
+                { value: '30', label: tr('30 Min.', '30 min') },
+                { value: '60', label: tr('1 Std.', '1 h') },
+                { value: '120', label: tr('2 Std.', '2 h') },
+              ]}
+            />
+            <Text size="xs" c="dimmed">
+              {tr(
+                `Die Support-Sitzung endet nach ${Number(form.values.minutes) >= 60 ? `${Number(form.values.minutes) / 60} Std.` : `${form.values.minutes} Minuten`}; im Verein steht die ganze Zeit ein Hinweis-Banner. Unter «Support-Zugriffe» lässt sie sich vorher beenden. Verein löschen und Plan ändern sind währenddessen gesperrt.`,
+                `The support session ends after ${Number(form.values.minutes) >= 60 ? `${Number(form.values.minutes) / 60} h` : `${form.values.minutes} minutes`}; a banner shows in the club the whole time. It can be ended earlier under "Support access". Deleting the club and changing the plan are blocked meanwhile.`,
+              )}
+            </Text>
+          </Stack>
           <Group justify="flex-end">
             <Button variant="default" onClick={onClose}>
               {tr('Abbrechen', 'Cancel')}

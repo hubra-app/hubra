@@ -17,6 +17,13 @@ export const categoryLabel = (c: EventCategory | 'performance'): string =>
 const serviceName = (key?: string) =>
   key === 'db' ? tr('Datenbank', 'Database') : key === 'redis' ? 'Redis' : (key ?? '').toUpperCase()
 
+/** "0.3.0 (abc1234)" from an upgrade event's build, like the backend writes it. */
+export function buildLabel(b: unknown): string {
+  const build = (b ?? {}) as { commit?: string | null; version?: string | null }
+  const version = build.version ?? '?'
+  return build.commit ? `${version} (${build.commit.slice(0, 7)})` : version
+}
+
 /** The log's messages are stored in English; known kinds are told in the
  * chosen language from their details. */
 export function eventText(e: PlatformEvent): string {
@@ -42,6 +49,14 @@ export function eventText(e: PlatformEvent): string {
       const failed = (e.details.failed as string[] | undefined) ?? []
       return tr(`Geplantes Backup fehlgeschlagen: ${failed.join(', ')}`, e.message)
     }
+    case 'upgrade.baseline':
+      return tr(`Läuft: ${buildLabel(e.details.to)}`, e.message)
+    case 'upgrade.started':
+      return tr(`Update gestartet: ${buildLabel(e.details.from)} → ${buildLabel(e.details.to)}`, e.message)
+    case 'upgrade.done':
+      return tr(`Update abgeschlossen: ${buildLabel(e.details.from)} → ${buildLabel(e.details.to)}`, e.message)
+    case 'upgrade.stuck':
+      return tr(`Update auf ${buildLabel(e.details.to)} nach 30 Min. nicht fertig`, e.message)
     default:
       return e.message
   }
@@ -118,6 +133,16 @@ export const ALERT_TYPES: {
       tr(
         'Neue Plugin-Versionen, automatische Updates und zurückgezogene Plugins. Standardmässig aus.',
         'New plugin versions, automatic updates and withdrawn plugins. Off by default.',
+      ),
+  },
+  {
+    id: 'upgrades',
+    group: 'platform',
+    label: () => tr('Updates von Hubra', 'Hubra upgrades'),
+    desc: () =>
+      tr(
+        'Ein neuer Build wird ausgerollt, ist überall angekommen, oder hängt nach 30 Minuten noch.',
+        'A new build starts rolling out, has reached every process, or is still not done after 30 minutes.',
       ),
   },
   {
