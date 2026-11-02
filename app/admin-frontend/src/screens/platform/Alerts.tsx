@@ -37,6 +37,12 @@ function problemTitle(p: OpenProblem): string {
       return which === 'none'
         ? tr('Seit 2 Tagen kein erfolgreiches geplantes Backup', p.title)
         : tr(p.title.replace('Last scheduled backup failed for', 'Letztes geplantes Backup fehlgeschlagen:'), p.title)
+    case 'discord':
+      return which === 'bot'
+        ? tr('Der Discord-Bot kann sich nicht anmelden', p.title)
+        : which === 'channel'
+          ? tr('Der Bot sieht den Kanal des Plattform-Logs nicht', p.title)
+          : tr('Meldungen ins Plattform-Log auf Discord schlagen fehl', p.title)
     default:
       return p.title
   }

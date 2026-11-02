@@ -10,6 +10,7 @@ export const categoryLabel = (c: EventCategory | 'performance'): string =>
     plugin: 'Plugin',
     system: 'System',
     alert: tr('Alarm', 'Alert'),
+    discord: 'Discord',
     performance: tr('Leistung', 'Performance'),
   })[c] ?? c
 
