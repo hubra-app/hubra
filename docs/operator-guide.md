@@ -77,6 +77,11 @@ flask plugins sync      # installed plugins: unpack and migrate
 
 So an upgrade is: take a backup, switch to the new images, restart.
 
+For a release with longer migrations, put the platform in maintenance
+first (`flask maintenance on --minutes 15`, or the card on manage ›
+Alerts): members see a maintenance page instead of errors and no alerts
+go out. `flask maintenance off` afterwards; it also ends on its own.
+
 1. **Read the release notes** on the GitHub release (and
    `app/backend/CHANGELOG.md`). Look for lines that ask you to change `.env`.
 2. **Back up.** Platform › Backups › **Create backup now**, for Global and

@@ -224,7 +224,7 @@ export function TopBar() {
                   zIndex: 200,
                 }}
               >
-                <UserMenu />
+                <UserMenu withHeader />
               </Box>
             )}
           </Box>

@@ -263,6 +263,12 @@
     }
   },
   "app": {
+    "maintenance": {
+      "title": "Maintenance",
+      "text": "Hubra is being updated. It will be back in a few minutes.",
+      "until": "Expected back at {{time}}.",
+      "reload": "This page reloads by itself."
+    },
     "backend": {
       "unreachable": "Server unreachable",
       "unreachableMsg": "The server is not responding. Check that it is running and try again."
