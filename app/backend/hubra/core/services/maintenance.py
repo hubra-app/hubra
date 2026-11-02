@@ -42,6 +42,7 @@ ALLOWED_PREFIXES = (
     "/health",
     "/api/v1/health",
     "/api/v1/maintenance",
+    "/api/v1/status",
     "/api/v1/manager",
     "/api/v1/system",
     "/api/v1/auth",
