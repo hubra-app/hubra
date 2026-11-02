@@ -174,7 +174,7 @@ def test_provision_tenant_duplicate_slug(mock_seed, mock_create, db):
 @patch("hubra.core.tenant.service._seed_tenant", side_effect=RuntimeError("seed fail"))
 def test_provision_tenant_seed_failure_cleans_up(mock_seed, mock_drop, mock_create, db):
     """When seeding fails, schema is dropped and error is raised."""
-    with pytest.raises(TenantProvisioningError, match="Failed to seed"):
+    with pytest.raises(TenantProvisioningError, match="Failed to set up"):
         TenantService.provision_tenant(name="Fail", slug="fail-club")
 
     mock_drop.assert_called_once()
@@ -187,7 +187,7 @@ def test_provision_tenant_seed_failure_cleans_up(mock_seed, mock_drop, mock_crea
 )
 def test_provision_tenant_schema_failure(mock_create, db):
     """When schema creation fails, error is raised without seeding."""
-    with pytest.raises(TenantProvisioningError, match="Failed to create schema"):
+    with pytest.raises(TenantProvisioningError, match="Failed to create the database schema"):
         TenantService.provision_tenant(name="Fail", slug="fail-schema")
 
 

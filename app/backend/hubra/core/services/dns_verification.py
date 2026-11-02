@@ -77,9 +77,13 @@ def _txt_records(name: str) -> tuple[list[str], str | None]:
         return [], "Domain does not exist (NXDOMAIN)"
     except dns.resolver.NoAnswer:
         return [], "No TXT records found for this domain"
+    except dns.resolver.LifetimeTimeout:
+        return [], "DNS lookup timed out"
+    except dns.resolver.NoNameservers:
+        return [], "No name server answered for this domain"
     except Exception as exc:
         _log.warning("DNS lookup failed for %s: %s", name, exc)
-        return [], f"DNS lookup failed: {exc}"
+        return [], "DNS lookup failed"
     records: list[str] = []
     for rdata in answers:
         # A long value comes in 255-byte chunks that make up one string.

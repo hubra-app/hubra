@@ -70,9 +70,10 @@ class TenantService:
         try:
             create_tenant_schema(tenant.id)
         except Exception as exc:
+            _log.exception("Schema creation failed for tenant %s", slug)
             db.session.rollback()
             raise TenantProvisioningError(
-                f"Failed to create schema for tenant '{slug}': {exc}"
+                f"Failed to create the database schema for '{slug}'; see the server log"
             ) from exc
 
         try:
@@ -82,7 +83,7 @@ class TenantService:
             drop_tenant_schema(tenant.id)
             db.session.rollback()
             raise TenantProvisioningError(
-                f"Failed to seed tenant '{slug}': {exc}"
+                f"Failed to set up the club '{slug}'; see the server log"
             ) from exc
 
         db.session.add(
