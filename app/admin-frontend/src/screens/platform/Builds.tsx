@@ -143,7 +143,7 @@ export function BuildsPanel({ health }: { health: HealthDetail }) {
                 </Text>
               )}
               {differs && (
-                <Badge variant="light" color="yellow" size="sm">
+                <Badge variant="light" color="orange" size="sm">
                   {tr('Weicht ab', 'Differs')}
                 </Badge>
               )}

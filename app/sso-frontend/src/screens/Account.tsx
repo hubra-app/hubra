@@ -291,7 +291,7 @@ function EmailTab() {
               {tr('Bestätigt', 'Confirmed')}
             </Badge>
           ) : (
-            <Badge color="yellow" variant="light">
+            <Badge color="orange" variant="light">
               {tr('Nicht bestätigt', 'Not confirmed')}
             </Badge>
           )}

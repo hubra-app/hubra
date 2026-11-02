@@ -6,6 +6,7 @@
    join). Screens use these instead of hex values so they work in light and
    dark mode; packages/ui/theme.js picks the scheme before the first paint. */
 :root {
+  color-scheme: light;
   --hb-page: #f7f6fb;
   --hb-surface: #ffffff;
   --hb-surface-2: #f4f2f9;

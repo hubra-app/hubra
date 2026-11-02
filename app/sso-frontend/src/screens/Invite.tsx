@@ -142,7 +142,7 @@ export function InviteScreen() {
             </>
           ) : (
             <>
-              <Alert color="yellow" title={tr('Anderes Konto', 'Different account')}>
+              <Alert color="orange" title={tr('Anderes Konto', 'Different account')}>
                 {tr(
                   `Die Einladung ging an ${data.email}. Melde dich mit diesem Konto an, oder erstelle eines mit dieser Adresse.`,
                   `The invite was sent to ${data.email}. Sign in with that account, or create one with this address.`,

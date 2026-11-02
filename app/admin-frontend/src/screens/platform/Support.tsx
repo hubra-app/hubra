@@ -107,7 +107,7 @@ function StatusBadge({ status }: { status: CaseStatus }) {
 
 function KindIcon({ kind, size = 34 }: { kind: CaseKind; size?: number }) {
   return (
-    <ThemeIcon variant="light" radius="xl" size={size} color={kind === 'bug' ? 'red' : 'yellow'}>
+    <ThemeIcon variant="light" radius="xl" size={size} color={kind === 'bug' ? 'red' : 'orange'}>
       {kind === 'bug' ? <IconBug size={size / 2} /> : <IconBulb size={size / 2} />}
     </ThemeIcon>
   )
@@ -390,7 +390,7 @@ function CaseDetail({ id }: { id: number }) {
           </Title>
           <Group gap={6} mt={6} wrap="wrap">
             <StatusBadge status={c.status} />
-            <Badge variant="light" color={c.kind === 'bug' ? 'red' : 'yellow'} size="sm">
+            <Badge variant="light" color={c.kind === 'bug' ? 'red' : 'orange'} size="sm">
               {c.kind === 'bug' ? tr('Problem', 'Problem') : tr('Idee', 'Idea')}
             </Badge>
             {c.severity && (

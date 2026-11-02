@@ -143,14 +143,14 @@ export function ConfirmScreen() {
                 </Text>
               </div>
               {noPasskey ? (
-                <Alert color="yellow">
+                <Alert color="orange">
                   {tr(
                     'Dein Konto hat keinen Passkey. Bestätige in der Verwaltung mit deinem Passwort.',
                     'Your account has no passkey. Confirm with your password in manage.',
                   )}
                 </Alert>
               ) : !passkeysSupported() ? (
-                <Alert color="yellow">
+                <Alert color="orange">
                   {tr(
                     'Dieser Browser kann keine Passkeys verwenden. Bestätige in der Verwaltung mit deinem Passwort.',
                     'This browser cannot use passkeys. Confirm with your password in manage.',

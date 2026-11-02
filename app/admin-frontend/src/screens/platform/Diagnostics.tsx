@@ -350,8 +350,8 @@ export function MailServerPanel() {
 const METHOD_COLORS: Record<string, string> = {
   GET: 'green',
   POST: 'blue',
-  PATCH: 'yellow',
-  PUT: 'yellow',
+  PATCH: 'orange',
+  PUT: 'orange',
   DELETE: 'red',
 }
 

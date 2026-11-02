@@ -60,7 +60,7 @@ function BankForm({ initial }: { initial: BankSettings }) {
       </Text>
       <Stack gap={14}>
         {!saved.complete ? (
-          <Alert color="yellow" variant="light">
+          <Alert color="orange" variant="light">
             {t(
               'clubSettings.bank.incomplete',
               'Ohne IBAN, PLZ und Ort können Rechnungen keinen QR-Einzahlungsschein enthalten.',

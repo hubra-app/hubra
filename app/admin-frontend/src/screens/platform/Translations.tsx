@@ -234,7 +234,7 @@ function Suggestions() {
         <Title order={3}>
           {tr('Vorschläge der Vereine', 'Suggestions from clubs')}
           {pending.length > 0 && (
-            <Badge ml={8} color="yellow" variant="light">
+            <Badge ml={8} color="orange" variant="light">
               {pending.length}
             </Badge>
           )}

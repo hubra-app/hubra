@@ -288,7 +288,7 @@ export function TransactionsTab() {
             render: (tx) => (
               <Badge
                 variant="light"
-                color={tx.status === 'Pending' ? 'yellow' : 'green'}
+                color={tx.status === 'Pending' ? 'orange' : 'green'}
                 radius="xl"
                 style={{ fontSize: 'var(--mantine-font-size-xs)', textTransform: 'none', overflow: 'visible' }}
               >

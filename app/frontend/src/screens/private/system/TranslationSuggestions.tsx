@@ -200,7 +200,7 @@ function SuggestForm() {
 
 function SuggestionRow({ s }: { s: TranslationSuggestion }) {
   const { t } = useT()
-  const color = s.status === 'accepted' ? 'green' : s.status === 'rejected' ? 'red' : 'yellow'
+  const color = s.status === 'accepted' ? 'green' : s.status === 'rejected' ? 'red' : 'orange'
   const label =
     s.status === 'accepted'
       ? t('suggest.status.accepted', 'Angenommen')

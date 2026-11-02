@@ -136,7 +136,7 @@ export function JoinClubScreen() {
 
           {data.membership === 'pending' && (
             <Alert
-              color="yellow"
+              color="orange"
               title={tr('Deine Anfrage ist unterwegs', 'Your request is on its way')}
             >
               {tr(

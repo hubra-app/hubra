@@ -88,7 +88,7 @@ export function FeedbackScreen() {
 
 function KindIcon({ kind }: { kind: SupportCase['kind'] }) {
   return (
-    <ThemeIcon variant="light" radius="xl" size={34} color={kind === 'bug' ? 'red' : 'yellow'}>
+    <ThemeIcon variant="light" radius="xl" size={34} color={kind === 'bug' ? 'red' : 'orange'}>
       {kind === 'bug' ? <IconBug size={18} /> : <IconBulb size={18} />}
     </ThemeIcon>
   )

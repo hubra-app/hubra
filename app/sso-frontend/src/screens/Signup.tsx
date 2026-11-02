@@ -27,7 +27,7 @@ function passwordStrength(password: string, tr: (de: string, en: string) => stri
   if (/\d/.test(password)) score += 25
   if (/[^a-zA-Z0-9]/.test(password)) score += 25
   if (score < 50) return { value: score, label: tr('Schwach', 'Weak'), color: 'red' }
-  if (score < 75) return { value: score, label: tr('Mittel', 'Fair'), color: 'yellow' }
+  if (score < 75) return { value: score, label: tr('Mittel', 'Fair'), color: 'orange' }
   return { value: score, label: tr('Stark', 'Strong'), color: 'green' }
 }
 

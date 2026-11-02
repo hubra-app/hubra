@@ -42,7 +42,7 @@ function RecoveryCodes({ codes, onDone }: { codes: string[]; onDone: () => void 
   }
   return (
     <Stack gap="md">
-      <Alert color="yellow" variant="light" title={tr('Codes jetzt sichern', 'Save these codes now')}>
+      <Alert color="orange" variant="light" title={tr('Codes jetzt sichern', 'Save these codes now')}>
         {tr(
           'Mit jedem Code kannst du dich einmal ohne App anmelden, zum Beispiel wenn du dein Handy verlierst. Sie werden nur jetzt angezeigt.',
           'Each code signs you in once without the app, for example if you lose your phone. They are shown only now.',

@@ -28,9 +28,9 @@ function statusDotColor(lastSeen: string): string {
   if (!lastSeen) return ''
   const diff = Date.now() - new Date(lastSeen).getTime()
   const min = Math.floor(diff / 60000)
-  if (min < 15) return '#22c55e'
-  if (min < 60) return '#f59e0b'
-  return '#ef4444'
+  if (min < 15) return 'var(--mantine-color-green-6)'
+  if (min < 60) return 'var(--mantine-color-orange-6)'
+  return 'var(--mantine-color-red-6)'
 }
 
 export function Avatar({
@@ -124,14 +124,17 @@ export function TierTag({ tier }: { tier: string }) {
   return <Tag color={c}>{tier}</Tag>
 }
 
+// Status colours from the theme (docs/design-spec.md).
 const STATUS_COLORS: Record<string, string> = {
-  active: '#1f9d57',
-  trial: '#c2870f',
-  inactive: '#857f99',
-  suspended: '#ff4d3d',
+  active: 'green',
+  trial: 'orange',
+  inactive: 'gray',
+  suspended: 'red',
 }
 export function StatusBadge({ status }: { status: string }) {
-  const c = STATUS_COLORS[status] || '#857f99'
+  const name = STATUS_COLORS[status] || 'gray'
+  const dot = `var(--mantine-color-${name}-6)`
+  const c = name === 'gray' ? 'var(--hb-text-2)' : `var(--mantine-color-${name}-text)`
   return (
     <Group gap={7} wrap="nowrap">
       <Box
@@ -139,7 +142,7 @@ export function StatusBadge({ status }: { status: string }) {
           width: 7,
           height: 7,
           borderRadius: '50%',
-          backgroundColor: c,
+          backgroundColor: dot,
           flexShrink: 0,
         }}
       />
@@ -152,7 +155,7 @@ export function StatusBadge({ status }: { status: string }) {
 
 export function InvoicePill({ status }: { status: string }) {
   const color =
-    status === 'Paid' ? 'green' : status === 'Overdue' ? 'red' : 'yellow'
+    status === 'Paid' ? 'green' : status === 'Overdue' ? 'red' : 'orange'
   return (
     <Badge variant="light" color={color} radius="xl" size="md">
       {i18n.t(`status.${status}`, status)}

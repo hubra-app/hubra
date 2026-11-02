@@ -147,7 +147,7 @@ export function CustomizeSidebarModal() {
                       <Tooltip label={pinLabel} disabled={phone}>
                         <ActionIcon
                           variant="subtle"
-                          color={pinned ? 'yellow' : 'gray'}
+                          color={pinned ? 'orange' : 'gray'}
                           size={iconSize}
                           aria-label={`${pinLabel}: ${item.label}`}
                           aria-pressed={pinned}
