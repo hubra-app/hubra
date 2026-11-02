@@ -40,6 +40,7 @@ import { StatTile, StatGrid } from '@/components/ui'
 import { ImpersonateModal } from '@/screens/ImpersonateModal'
 import { TenantModules } from '@/screens/TenantModules'
 import { ClubAdminsPanel } from '@/screens/ClubAdmins'
+import { TenantTrends } from '@/screens/TenantTrends'
 import { TenantLimits } from '@/screens/TenantLimits'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -274,6 +275,8 @@ export function TenantDetail() {
       </Paper>
 
       <TenantLimits tenantId={tenant.id} />
+
+      <TenantTrends tenantId={tenant.id} />
 
       <ClubAdminsPanel tenantId={tenant.id} />
 
