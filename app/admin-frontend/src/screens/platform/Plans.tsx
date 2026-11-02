@@ -10,6 +10,7 @@ import {
   Modal,
   NumberInput,
   Paper,
+  Select,
   SimpleGrid,
   Stack,
   Switch,
@@ -29,6 +30,7 @@ import {
 } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
 import { tr } from '@/lang'
+import { priceUnitOptions, priceUnitSuffix } from '@/labels'
 import {
   createPlan,
   deletePlan,
@@ -39,6 +41,8 @@ import {
   type Plan,
   type PlanFeature,
   type PlanInput,
+  type PlanModuleInput,
+  type PriceUnit,
 } from '@/api/platform'
 import { BASE } from '@hubra/api-client'
 
@@ -85,6 +89,10 @@ export function PlatformPlans() {
     )
 
   const plans = data.plans
+  const planName = (key: string) => {
+    const p = plans.find((x) => x.key === key)
+    return p ? tr(p.name_de, p.name_en) : key
+  }
   const move = (i: number, dir: -1 | 1) => {
     const a = plans[i]
     const b = plans[i + dir]
@@ -210,6 +218,23 @@ export function PlatformPlans() {
                   ))}
                 </Stack>
               )}
+              {p.modules.length > 0 && (
+                <Stack gap={2} mt={8}>
+                  <Text size="xs" fw={600}>
+                    {tr('Enthaltene Module', 'Included modules')}
+                  </Text>
+                  {p.modules.map((m) => (
+                    <Group key={m.code} gap={6} wrap="nowrap" justify="space-between">
+                      <Text size="xs">{tr(m.name_de, m.name_en)}</Text>
+                      <Text size="xs" c="dimmed" ta="right">
+                        {m.price_chf == null
+                          ? tr('inklusive', 'included')
+                          : `${chf(m.price_chf)}${priceUnitSuffix(m.unit, tr)}`}
+                      </Text>
+                    </Group>
+                  ))}
+                </Stack>
+              )}
               <Text size="xs" c="dimmed" mt={8}>
                 {p.clubs === 1
                   ? tr('1 Verein', '1 club')
@@ -226,8 +251,8 @@ export function PlatformPlans() {
         </Title>
         <Text size="xs" c="dimmed" mb={12}>
           {tr(
-            'Listenpreis pro Monat für Module und Plugins zusätzlich zum Tarif. Beim Verein lässt sich jeder Preis anpassen. Öffentliche Zusatzmodule erscheinen in der öffentlichen Preisliste.',
-            'List price per month for modules and plugins on top of the plan. Each price can be changed on a club. Public add-ons appear in the public price list.',
+            'Listenpreis pro Monat für Module und Plugins zusätzlich zum Tarif: pauschal, pro Mitglied oder pro Lizenz. Beim Verein lässt sich jeder Preis anpassen. Welche Module ein Tarif enthält, steht beim Tarif. Öffentliche Zusatzmodule erscheinen in der öffentlichen Preisliste.',
+            'List price per month for modules and plugins on top of the plan: flat, per member or per licence. Each price can be changed on a club. Which modules a plan includes is set on the plan. Public add-ons appear in the public price list.',
           )}
         </Text>
         <Table.ScrollContainer minWidth={560}>
@@ -236,6 +261,7 @@ export function PlatformPlans() {
               <Table.Tr>
                 <Table.Th>{tr('Modul', 'Module')}</Table.Th>
                 <Table.Th>{tr('Preis pro Monat', 'Price per month')}</Table.Th>
+                <Table.Th>{tr('In Tarifen', 'In plans')}</Table.Th>
                 <Table.Th>{tr('Öffentlich', 'Public')}</Table.Th>
                 <Table.Th />
               </Table.Tr>
@@ -256,8 +282,25 @@ export function PlatformPlans() {
                   </Table.Td>
                   <Table.Td>
                     <Text size="sm">
-                      {a.price_month_chf == null ? '–' : chf(a.price_month_chf)}
+                      {a.price_month_chf == null
+                        ? '–'
+                        : `${chf(a.price_month_chf)}${priceUnitSuffix(a.price_unit, tr)}`}
                     </Text>
+                  </Table.Td>
+                  <Table.Td>
+                    {a.included_in.length === 0 ? (
+                      <Text size="sm" c="dimmed">
+                        –
+                      </Text>
+                    ) : (
+                      <Group gap={4}>
+                        {a.included_in.map((k) => (
+                          <Badge key={k} size="sm" variant="light" color="violet">
+                            {planName(k)}
+                          </Badge>
+                        ))}
+                      </Group>
+                    )}
                   </Table.Td>
                   <Table.Td>
                     <Switch
@@ -313,6 +356,7 @@ export function PlatformPlans() {
       {editing && (
         <PlanModal
           plan={editing === 'new' ? null : editing}
+          addons={data.addons}
           onClose={() => setEditing(null)}
           onSave={async (body) => {
             try {
@@ -370,11 +414,13 @@ const count = (v: string | number) => (v === '' ? null : Number(v))
 
 function PlanModal({
   plan,
+  addons,
   onClose,
   onSave,
   onDelete,
 }: {
   plan: Plan | null
+  addons: Addon[]
   onClose: () => void
   onSave: (body: PlanInput) => Promise<void>
   onDelete?: () => Promise<void>
@@ -395,6 +441,18 @@ function PlanModal({
     hidden: plan?.hidden ?? false,
   }))
   const [features, setFeatures] = useState<PlanFeature[]>(plan?.features ?? [])
+  const [modules, setModules] = useState<PlanModuleInput[]>(
+    () => plan?.modules.map(({ code, price_chf, unit }) => ({ code, price_chf, unit })) ?? [],
+  )
+  const [pick, setPick] = useState<string | null>(null)
+  const addonName = (code: string) => {
+    const a = addons.find((x) => x.code === code)
+    const own = plan?.modules.find((m) => m.code === code)
+    if (a) return tr(a.label_de || a.name, a.label_en || a.name)
+    return own ? tr(own.name_de, own.name_en) : code
+  }
+  const setModule = (i: number, patch: Partial<PlanModuleInput>) =>
+    setModules((ms) => ms.map((m, j) => (j === i ? { ...m, ...patch } : m)))
   const [saving, setSaving] = useState(false)
   const set = <K extends keyof typeof v>(k: K, value: (typeof v)[K]) =>
     setV((cur) => ({ ...cur, [k]: value }))
@@ -558,6 +616,86 @@ function PlanModal({
             </Button>
           </Group>
         </Stack>
+        <Stack gap={6}>
+          <Text size="sm" fw={600}>
+            {tr('Enthaltene Module', 'Included modules')}
+          </Text>
+          <Text size="xs" c="dimmed">
+            {tr(
+              'Module und Plugins, die zum Tarif gehören. Ohne Preis sind sie inklusive; mit Preis kosten sie im Tarif so viel, pauschal, pro Mitglied oder pro Lizenz (pro Monat).',
+              'Modules and plugins that come with the plan. Without a price they are included; with a price they cost that much in this plan, flat, per member or per licence (per month).',
+            )}
+          </Text>
+          {modules.map((m, i) => (
+            <Group key={m.code} gap={8} wrap="nowrap" align="flex-end">
+              <Group gap={8} wrap="wrap" align="flex-end" style={{ flex: 1 }}>
+                <Text size="sm" fw={600} style={{ flex: '1 1 160px' }}>
+                  {addonName(m.code)}
+                </Text>
+                <NumberInput
+                  w={{ base: 120, sm: 150 }}
+                  aria-label={tr('Preis (CHF)', 'Price (CHF)')}
+                  placeholder={tr('inklusive', 'included')}
+                  min={0}
+                  decimalScale={2}
+                  allowNegative={false}
+                  prefix="CHF "
+                  value={m.price_chf ?? ''}
+                  onChange={(x) => setModule(i, { price_chf: x === '' ? null : String(x) })}
+                />
+                <Select
+                  w={{ base: 130, sm: 150 }}
+                  aria-label={tr('Preis gilt', 'Price applies')}
+                  allowDeselect={false}
+                  disabled={m.price_chf == null}
+                  data={priceUnitOptions(tr)}
+                  value={m.unit}
+                  onChange={(x) => x && setModule(i, { unit: x as PriceUnit })}
+                />
+              </Group>
+              <ActionIcon
+                variant="subtle"
+                color="red"
+                mb={6}
+                aria-label={tr('Entfernen', 'Remove')}
+                onClick={() => setModules((ms) => ms.filter((_, j) => j !== i))}
+              >
+                <IconTrash size={16} />
+              </ActionIcon>
+            </Group>
+          ))}
+          <Group gap={8} align="flex-end">
+            <Select
+              style={{ flex: 1 }}
+              aria-label={tr('Modul oder Plugin', 'Module or plugin')}
+              placeholder={tr('Modul oder Plugin wählen', 'Choose a module or plugin')}
+              searchable
+              data={addons
+                .filter((a) => !modules.some((m) => m.code === a.code))
+                .map((a) => ({
+                  value: a.code,
+                  label: a.plugin
+                    ? `${tr(a.label_de || a.name, a.label_en || a.name)} (Plugin)`
+                    : tr(a.label_de || a.name, a.label_en || a.name),
+                }))}
+              value={pick}
+              onChange={setPick}
+            />
+            <Button
+              size="sm"
+              variant="light"
+              leftSection={<IconPlus size={14} />}
+              disabled={!pick}
+              onClick={() => {
+                if (!pick) return
+                setModules((ms) => [...ms, { code: pick, price_chf: null, unit: 'flat' }])
+                setPick(null)
+              }}
+            >
+              {tr('Modul hinzufügen', 'Add a module')}
+            </Button>
+          </Group>
+        </Stack>
         <SimpleGrid cols={{ base: 1, sm: 3 }}>
           <Switch
             label={tr('Öffentlich', 'Public')}
@@ -622,6 +760,9 @@ function PlanModal({
                     limit_mail_month: count(v.limit_mail_month),
                     limit_storage_mb: count(v.limit_storage_mb),
                     features: features.filter((f) => f.de.trim() || f.en.trim()),
+                    modules: modules.map((m) =>
+                      m.price_chf == null ? { ...m, unit: 'flat' as const } : m,
+                    ),
                     public: v.public,
                     highlighted: v.highlighted,
                     hidden: v.hidden,
@@ -650,6 +791,7 @@ function AddonModal({
   onSave: (body: Partial<Addon>) => Promise<void>
 }) {
   const [price, setPrice] = useState<string | number>(addon.price_month_chf ?? '')
+  const [unit, setUnit] = useState<PriceUnit>(addon.price_unit ?? 'flat')
   const [v, setV] = useState({
     label_de: addon.label_de,
     label_en: addon.label_en,
@@ -662,15 +804,28 @@ function AddonModal({
   return (
     <Modal opened onClose={onClose} size="lg" title={addon.name}>
       <Stack gap="md">
-        <NumberInput
-          label={tr('Listenpreis pro Monat (CHF)', 'List price per month (CHF)')}
-          description={tr('Leer: kein Preis', 'Empty: no price')}
-          min={0}
-          decimalScale={2}
-          allowNegative={false}
-          value={price}
-          onChange={setPrice}
-        />
+        <SimpleGrid cols={{ base: 1, sm: 2 }}>
+          <NumberInput
+            label={tr('Listenpreis pro Monat (CHF)', 'List price per month (CHF)')}
+            description={tr('Leer: kein Preis', 'Empty: no price')}
+            min={0}
+            decimalScale={2}
+            allowNegative={false}
+            value={price}
+            onChange={setPrice}
+          />
+          <Select
+            label={tr('Preis gilt', 'Price applies')}
+            description={tr(
+              'Pro Mitglied: Mitglieder, die nicht archiviert sind',
+              'Per member: members that are not archived',
+            )}
+            allowDeselect={false}
+            data={priceUnitOptions(tr)}
+            value={unit}
+            onChange={(x) => x && setUnit(x as PriceUnit)}
+          />
+        </SimpleGrid>
         <SimpleGrid cols={{ base: 1, sm: 2 }}>
           <TextInput
             label={tr('Name auf der Website (Deutsch)', 'Name on the website (German)')}
@@ -716,7 +871,11 @@ function AddonModal({
           </Button>
           <Button
             onClick={() =>
-              void onSave({ ...v, price_month_chf: price === '' ? null : String(price) })
+              void onSave({
+                ...v,
+                price_month_chf: price === '' ? null : String(price),
+                price_unit: unit,
+              })
             }
           >
             {tr('Speichern', 'Save')}

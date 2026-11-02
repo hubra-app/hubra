@@ -16,6 +16,13 @@ Until then manage keeps the terms per club here, in
   open-ended) pays nothing while the sponsorship runs;
 * ``addons`` are paid plugins or features (module codes) with their own
   monthly price each, on top of the plan (the discount does not apply).
+  Each price has a ``unit``: ``flat`` (once), ``member`` (times the
+  members that are not archived) or ``license`` (times the club's licences
+  for that module, ``licenses[code]``, 1 if not set);
+* the **modules of the plan** (``services.plans``) count too: those that
+  come with the plan cost nothing, those with a price in the plan are added
+  like add-ons.  An add-on on the club for a module of the plan replaces
+  the plan's price for it (a club's own deal).
 
 No Stripe code, no payment and no automatic switching here.
 """
@@ -41,6 +48,7 @@ STATUSES = (
     "paused",
 )
 MAX_ADDONS = 30
+MAX_LICENSES = 1_000_000
 MAX_PRICE = Decimal("100000")
 ENDING_SOON_DAYS = 30
 _TEXT = {"sponsor_name": 200, "sponsor_note": 500, "note": 1000}
@@ -57,6 +65,7 @@ DEFAULTS = {
     "sponsored_until": None,
     "sponsor_note": "",
     "addons": [],
+    "licenses": {},
     "note": "",
 }
 
@@ -91,7 +100,11 @@ def _date(value, field: str) -> str | None:
 
 
 def stored(tenant: Tenant) -> dict:
-    return {**DEFAULTS, **((tenant.settings or {}).get("billing") or {})}
+    terms = {**DEFAULTS, **((tenant.settings or {}).get("billing") or {})}
+    # Add-ons saved before units existed are flat.
+    terms["addons"] = [{"unit": "flat", **a} for a in terms["addons"] or []]
+    terms["licenses"] = dict(terms["licenses"] or {})
+    return terms
 
 
 def update(tenant: Tenant, body: dict) -> None:
@@ -131,6 +144,8 @@ def update(tenant: Tenant, body: dict) -> None:
             terms[key] = value.strip()
         elif key == "addons":
             terms[key] = _addons(value)
+        elif key == "licenses":
+            terms[key] = _licenses(value)
     if terms["sponsored"] and not terms["sponsor_name"]:
         _bad("A sponsored club needs the sponsor's name")
     settings = dict(tenant.settings or {})
@@ -157,8 +172,82 @@ def _addons(value) -> list[dict]:
         if not isinstance(label, str) or len(label) > 120:
             _bad("An add-on label is text up to 120 characters")
         price = _money(item.get("price_chf"), f"price of {code}")
-        out.append({"code": code, "label": label.strip(), "price_chf": price or "0.00"})
+        unit = item.get("unit") or "flat"
+        if unit not in ("flat", "member", "license"):
+            _bad(f"unit of {code} is flat, member or license")
+        out.append(
+            {
+                "code": code,
+                "label": label.strip(),
+                "price_chf": price or "0.00",
+                "unit": unit,
+            }
+        )
     return out
+
+
+def _licenses(value) -> dict[str, int]:
+    """{module code: number of licences}."""
+    if value is None:
+        return {}
+    if not isinstance(value, dict) or len(value) > MAX_ADDONS * 2:
+        _bad("licenses is {module code: number}")
+    out = {}
+    for code, n in value.items():
+        if not isinstance(code, str) or not code.strip() or len(code) > 64:
+            _bad("licenses is {module code: number}")
+        if not isinstance(n, int) or isinstance(n, bool) or not 0 <= n <= MAX_LICENSES:
+            _bad(f"licenses for {code} is a whole number from 0")
+        out[code.strip()] = n
+    return out
+
+
+def _lines(tenant: Tenant, terms: dict) -> tuple[list[dict], int | None]:
+    """What the modules cost per month: the plan's modules and the add-ons,
+    each with its quantity.  Also the member count, if a price needed it."""
+    from hubra.core.services import plans
+
+    plan = plans.get(tenant.plan)
+    own = {a["code"]: a for a in terms["addons"]}
+    members: list[int] = []
+
+    def quantity(unit: str, code: str) -> int:
+        if unit == "member":
+            if not members:
+                from hubra.core.services import quotas
+
+                members.append(quotas.member_count(tenant))
+            return members[0]
+        if unit == "license":
+            return int(terms["licenses"].get(code, 1))
+        return 1
+
+    def line(code, label, price, unit, source) -> dict:
+        qty = quantity(unit, code)
+        each = Decimal(price or "0")
+        return {
+            "code": code,
+            "label": label,
+            "source": source,
+            "unit": unit,
+            "unit_price_chf": str(each.quantize(Decimal("0.01"))),
+            "quantity": qty,
+            "included": price is None,
+            "total_chf": str((each * qty).quantize(Decimal("0.01"), ROUND_HALF_UP)),
+        }
+
+    out = []
+    for m in plans.plan_modules(plan) if plan else []:
+        if m["code"] in own:
+            continue
+        out.append(line(m["code"], m["name_de"], m["price_chf"], m["unit"], "plan"))
+    for a in terms["addons"]:
+        out.append(
+            line(
+                a["code"], a["label"], a["price_chf"], a.get("unit") or "flat", "addon"
+            )
+        )
+    return out, (members[0] if members else None)
 
 
 def plan_price(plan: str) -> str | None:
@@ -177,7 +266,8 @@ def summary(tenant: Tenant, today: date | None = None) -> dict:
     discount = (base * Decimal(str(terms["discount_percent"])) / 100).quantize(
         Decimal("0.01"), ROUND_HALF_UP
     )
-    addons = sum((Decimal(a["price_chf"]) for a in terms["addons"]), Decimal("0"))
+    lines, members = _lines(tenant, terms)
+    addons = sum((Decimal(x["total_chf"]) for x in lines), Decimal("0"))
     total = base - discount + addons
     until = (
         date.fromisoformat(terms["sponsored_until"])
@@ -195,6 +285,8 @@ def summary(tenant: Tenant, today: date | None = None) -> dict:
         "base_chf": money(base),
         "discount_chf": money(discount),
         "addons_chf": money(addons),
+        "module_lines": lines,
+        "members": members,
         "total_chf": money(total),
         "sponsorship_running": sponsor_running,
         "sponsorship_days_left": days_left,

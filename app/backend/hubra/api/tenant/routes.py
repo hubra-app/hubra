@@ -2668,6 +2668,7 @@ def list_plan_choices():
                     "public": p.public,
                     "hidden": p.archived_at is not None,
                     "price_month_chf": plans.month_price(p.key),
+                    "modules": p.modules or [],
                 }
                 for p in rows
             ],
@@ -2676,6 +2677,7 @@ def list_plan_choices():
                     "code": a["code"],
                     "name": a["label_de"] or a["name"],
                     "price_month_chf": a["price_month_chf"],
+                    "price_unit": a["price_unit"],
                 }
                 for a in plans.addon_rows()
             ],

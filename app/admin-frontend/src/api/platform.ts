@@ -723,6 +723,23 @@ export interface PlanFeature {
   en: string
 }
 
+/** flat: once per club; member: each member not archived; license: each licence. */
+export type PriceUnit = 'flat' | 'member' | 'license'
+
+/** A module a plan includes; price_chf null: at no extra cost. */
+export interface PlanModuleInput {
+  code: string
+  price_chf: string | null
+  unit: PriceUnit
+}
+
+export interface PlanModule extends PlanModuleInput {
+  name_de: string
+  name_en: string
+  plugin: string | null
+  included: boolean
+}
+
 export interface Plan {
   key: string
   name_de: string
@@ -732,6 +749,7 @@ export interface Plan {
   price_month_chf: string | null
   price_year_chf: string | null
   features: PlanFeature[]
+  modules: PlanModule[]
   limits: { members: number | null; mail_month: number | null; storage_mb: number | null }
   highlighted: boolean
   sort: number
@@ -746,11 +764,14 @@ export interface Addon {
   description: string
   plugin: string | null
   price_month_chf: string | null
+  price_unit: PriceUnit
   public: boolean
   label_de: string
   label_en: string
   note_de: string
   note_en: string
+  /** Keys of the plans that include this module. */
+  included_in: string[]
 }
 
 /** What a plan form sends (limits flattened, like the API takes them). */
@@ -763,6 +784,7 @@ export interface PlanInput {
   price_month_chf?: string | null
   price_year_chf?: string | null
   features?: PlanFeature[]
+  modules?: PlanModuleInput[]
   limit_members?: number | null
   limit_mail_month?: number | null
   limit_storage_mb?: number | null
@@ -794,7 +816,10 @@ export async function deletePlan(key: string) {
 export async function setAddon(
   code: string,
   body: Partial<
-    Pick<Addon, 'price_month_chf' | 'public' | 'label_de' | 'label_en' | 'note_de' | 'note_en'>
+    Pick<
+      Addon,
+      'price_month_chf' | 'price_unit' | 'public' | 'label_de' | 'label_en' | 'note_de' | 'note_en'
+    >
   >,
 ) {
   return apiFetch<Addon>(`${P}/addons/${encodeURIComponent(code)}`, {

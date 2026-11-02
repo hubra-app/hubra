@@ -44,6 +44,13 @@ class PlatformPlan(db.Model):
     features: Mapped[list | None] = mapped_column(
         JSONB().with_variant(db.JSON, "sqlite"), nullable=True
     )
+    # Modules that come with the plan:
+    # [{"code": "discord", "price_chf": null | "2.00", "unit": "flat"}].
+    # price_chf null: included at no extra cost; otherwise the price per
+    # month for each unit (flat, per member or per licence).
+    modules: Mapped[list | None] = mapped_column(
+        JSONB().with_variant(db.JSON, "sqlite"), nullable=True
+    )
     # Null: no limit (see services.quotas).
     limit_members: Mapped[int | None] = mapped_column(Integer, nullable=True)
     limit_mail_month: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -67,6 +74,11 @@ class PlatformAddon(db.Model):
     code: Mapped[str] = mapped_column(String(64), primary_key=True)
     price_month_chf: Mapped[Decimal | None] = mapped_column(
         Numeric(10, 2), nullable=True
+    )
+    # What price_month_chf is for: "flat" (the club), "member" (each member
+    # that is not archived) or "license" (each licence the club takes).
+    price_unit: Mapped[str] = mapped_column(
+        String(10), nullable=False, default="flat", server_default="flat"
     )
     public: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     # Shown instead of the module's own name and description, if set.
