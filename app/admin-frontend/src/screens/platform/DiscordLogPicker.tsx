@@ -16,7 +16,9 @@ export function DiscordLogPicker({
   botTokenSet,
   addLink,
   fallback,
+  channelLabel,
 }: {
+  channelLabel?: string
   channelId: string
   onChange: (id: string) => void
   botTokenSet: boolean
@@ -101,7 +103,7 @@ export function DiscordLogPicker({
       </Group>
       <Text size="sm">{addLink}</Text>
       <Select
-        label={tr('Kanal für das Plattform-Log', 'Channel for the platform log')}
+        label={channelLabel ?? tr('Kanal für das Plattform-Log', 'Channel for the platform log')}
         description={tr(
           'Nur Textkanäle, in denen der Bot lesen, schreiben und Links einbetten darf.',
           'Only text channels where the bot may view, send and embed links.',

@@ -198,6 +198,23 @@ Platform log:
 
 ![Platform settings › Discord › Platform log](screenshots/discord/platform-log-picker.png)
 
+### Audit channel (optional)
+
+A second channel, set in the **Audit channel** card below the platform log,
+gets every entry of the platform audit log (manage › Audit-Log), whatever
+categories the platform log has ticked. System alerts never go there. It is
+off until a channel is picked (`discord.audit_channel_id`).
+
+Each post links back to manage when the manage address is set (Platform
+settings › Alerts): the title opens the entry in the audit log
+(`/app/audit?entry=<id>`, with its details), and a **Links** field points at
+the club and the page the change belongs to (club admins, club requests,
+roles, support access, plugins, backups or platform settings). These links
+also appear in platform log posts.
+
+![Audit channel settings](screenshots/discord-audit/audit-channel-desktop.png)
+![An audit post](screenshots/discord-audit/audit-embed-example.png)
+
 Categories:
 
 | Category | What |
