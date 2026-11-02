@@ -65,6 +65,26 @@ export function listMembers(
 to `https://api.hubra.club/api/v1/...` in production or
 `http://localhost:5000/api/v1/...` in local dev.
 
+## Redirects between the portals
+
+The club app, SSO and manage send each other back and forth when a session
+is missing or not good enough. Every such automatic redirect goes through
+`redirectTo(url, why)` from `@hubra/api-client` (`redirectGuard.ts`), never a
+bare `window.location.assign`:
+
+- Each hop (host + path only, never query or hash, and a short reason code
+  such as `anon`, `no-club`, `signed-in`) is kept for 20 seconds in the
+  `hubra_redirects` cookie on the shared parent domain, so all three portals
+  see the same chain for this browser.
+- Eight hops within that window count as a loop (`redirectLoop.ts`). The page
+  then stops, shows "This page keeps redirecting" with *Sign out and sign in
+  again* and *Try again*, and reports the chain to `POST /auth/redirect-loop`.
+- The API writes the report to the platform event log (manage › Diagnostics ›
+  Event log, category `system`, kind `redirect_loop`) and the app log, with
+  the sign-in session (`user_id`, `account_sid`, `sid`, club) it happened in.
+
+User clicks (open a club, sign out) may still navigate directly.
+
 ## Data layer
 
 Server data lives in the TanStack Query cache, not in React context.

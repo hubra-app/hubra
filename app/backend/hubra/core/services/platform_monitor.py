@@ -984,6 +984,10 @@ def open_problems() -> list[dict]:
     except Exception:
         logger.warning("discord_problems_failed", exc_info=True)
 
+    from hubra.core.services import perf_monitor
+
+    problems.extend(perf_monitor.problems())
+
     order = {"error": 0, "warning": 1, "info": 2}
     problems.sort(key=lambda p: order.get(p["level"], 3))
     return problems
