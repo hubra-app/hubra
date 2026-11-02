@@ -3229,6 +3229,7 @@
   "mail.email.platform_alert.type.delivery_failed": "Mail delivery",
   "mail.email.platform_alert.type.service_down": "Service",
   "mail.email.platform_alert.type.backup_failed": "Backup",
+  "mail.email.platform_alert.type.backup_deleted": "Backup deleted",
   "mail.email.platform_alert.type.plugin_updates": "Plugins",
   "mail.email.platform_alert.type.upgrades": "Upgrade",
   "mail.email.platform_alert.type.system": "System",

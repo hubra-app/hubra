@@ -308,6 +308,7 @@ export type AlertType =
   | 'delivery_failed'
   | 'service_down'
   | 'backup_failed'
+  | 'backup_deleted'
   | 'plugin_updates'
   | 'upgrades'
   | 'system'
