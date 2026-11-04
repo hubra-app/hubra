@@ -344,14 +344,27 @@ EXTRA_PERMISSIONS = (
         "action": "moderate",
         "blueprint": "posts_bp",
     },
-    {
-        "key": "inventory.items.create_own",
-        "display_name": "Add own inventory items",
-        "resource": "items",
-        "action": "create_own",
-        "blueprint": "inventory_bp",
-    },
 )
+
+
+def extra_permissions() -> list[dict]:
+    """EXTRA_PERMISSIONS plus the ``permissions`` of every loaded module."""
+    from hubra.core.modules import registry
+
+    out = [dict(m) for m in EXTRA_PERMISSIONS]
+    for module in registry.all():
+        for key, display_name in module.permissions:
+            bp, resource, action = key.split(".", 2)
+            out.append(
+                {
+                    "key": key,
+                    "display_name": display_name,
+                    "resource": resource,
+                    "action": action,
+                    "blueprint": f"{bp}_bp",
+                }
+            )
+    return out
 
 
 def member_has_permission(member, key: str) -> bool:

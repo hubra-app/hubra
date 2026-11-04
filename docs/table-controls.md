@@ -49,8 +49,7 @@ records (a name and one or two facts) use `SimpleList` from
 `components/data.tsx`: one row per record with a title, a subtitle, facts on
 the right and the actions at the end. Used for transaction categories,
 external parties, custom domains and the recent transactions on the finance
-overview. Codes show as cards only (`cardsOnly` on `DataTable`), without the
-list switch.
+overview. `cardsOnly` on `DataTable` shows cards without the list switch.
 
 Tables stay where columns are compared: members (list view), invoices,
 transactions, events, audit logs, mail addresses, recurring bookings (amounts,
@@ -78,6 +77,10 @@ filterGroups={[
 ]}
 ```
 
+Plugins built against the older SDK may still pass `filters` / `filterSlots`;
+`DataTable` turns them into panel groups (`components/legacyFilters.ts`), so
+they get the same toolbar. New code should use `filterGroups`.
+
 `kind: 'select'` forces a select, `kind: 'date'` a date field, `hidden`
 drops a group for now (e.g. tiers while the archive is shown), and `sort:
 true` lists it last as the sort order.
@@ -95,8 +98,8 @@ what each page is for.
 | Club › Finanzen › Rechnungen | search, 6 chips (4 status + 2 purpose, mixed in one row) | search, Filter (Status, Zweck) |
 | Club › Finanzen › Einnahmen und Ausgaben | search, Alle/Ein/Aus chips, status select | search, Filter (Richtung, Status) |
 | Club › Anlässe | search, Zeitraum chips + Typ chips in two labelled slots | search, Filter (Zeitraum, Typ) |
-| Club › Inventar | search, category chips, status select, own view switch, a second copy of the toolbar for the card view | one DataTable with cards, search, Filter (Kategorie, Status) |
-| Club › Codes | search, 3 status chips, view switch | search, Filter (Status), view switch |
+| Club › Inventar (now the inventory plugin) | search, category chips, status select, own view switch, a second copy of the toolbar for the card view | one DataTable with cards, search, Filter (Kategorie, Status) |
+| Club › Codes (now the codes plugin) | search, 3 status chips, view switch | search, Filter (Status), view switch |
 | Club › Audit-Log | search, action select | search, Filter (Aktion) |
 | Club › Mail › Adressen | search, type select, state select, 5 sync chips, refresh | search, Filter (Typ, Zustand, Abgleich), refresh |
 | Club › Mail › System | search, sync select | search, Filter (Abgleich) |

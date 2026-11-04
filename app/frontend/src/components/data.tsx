@@ -31,6 +31,8 @@ import {
 import type { ReactNode } from 'react'
 import { FilterBar, type FilterGroup } from '@hubra/ui'
 import { filterLabels } from './filterLabels'
+import { legacyFilterGroups, type DataTableFilter, type DataTableFilterSlot } from './legacyFilters'
+export type { DataTableFilter, DataTableFilterSlot } from './legacyFilters'
 import { LoadingSpinner, EmptyState } from './feedback'
 import { Pagination } from './layout'
 import { clickableProps } from './hooks'
@@ -374,6 +376,7 @@ export interface DataColumn<T> {
 export type { FilterGroup } from '@hubra/ui'
 
 
+
 type TableView = 'cards' | 'table'
 
 /** The cards / list choice, kept per screen in this browser. */
@@ -410,6 +413,8 @@ export function DataTable<T>({
   searchValue,
   onSearchChange,
   filterGroups,
+  filters,
+  filterSlots,
   sortValue,
   onSortChange,
   groupBy,
@@ -440,6 +445,10 @@ export function DataTable<T>({
   onSearchChange?: (v: string) => void
   /** All filters and the sort order, behind one "Filter" button (docs/table-controls.md). */
   filterGroups?: FilterGroup[]
+  /** @deprecated Use filterGroups. Kept for plugins; shown in the Filter panel. */
+  filters?: DataTableFilter[]
+  /** @deprecated Use filterGroups. Kept for plugins; shown in the Filter panel. */
+  filterSlots?: DataTableFilterSlot[]
   /** The sort value for columns with `sort`; clicking their header sets it. */
   sortValue?: string
   onSortChange?: (v: string) => void
@@ -546,7 +555,7 @@ export function DataTable<T>({
     <MantineTable.Tbody>{items.map(renderTableRow)}</MantineTable.Tbody>
   )
 
-  const groups = (filterGroups ?? []).filter(Boolean)
+  const groups = [...(filterGroups ?? []), ...legacyFilterGroups(filters, filterSlots)]
   const actions =
     toolbar || viewSwitch ? (
       <>

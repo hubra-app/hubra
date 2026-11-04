@@ -91,7 +91,7 @@ def test_list_feature_catalog(client, seeded_db, superadmin_headers):
     data = resp.get_json()
     assert isinstance(data, list)
     codes = [f["code"] for f in data]
-    assert {"core", "members", "finance", "inventory"} <= set(codes)
+    assert {"core", "members", "finance", "bindings"} <= set(codes)
 
 
 def test_list_tenant_features(client, seeded_db, superadmin_headers):
@@ -120,14 +120,14 @@ def test_set_tenant_feature(client, seeded_db, superadmin_headers):
     db.session.commit()
 
     resp = client.put(
-        f"/api/v1/features/tenants/{tenant.id}/inventory",
+        f"/api/v1/features/tenants/{tenant.id}/bindings",
         json={"enabled": True},
         headers=superadmin_headers,
     )
     assert resp.status_code == 200
     data = resp.get_json()
     assert data["enabled"] is True
-    assert data["code"] == "inventory"
+    assert data["code"] == "bindings"
 
 
 # ── Platform metrics ─────────────────────────────────────────────────────────

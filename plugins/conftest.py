@@ -18,4 +18,8 @@ for _plugin in sorted(Path(__file__).resolve().parent.iterdir()):
     if (_plugin / "plugin.yaml").is_file() and str(_plugin) not in sys.path:
         sys.path.insert(0, str(_plugin))
 
-from tests.conftest import *  # noqa: E402,F403
+import tests.conftest as _core  # noqa: E402
+
+# Every fixture, also the autouse ones whose names start with "_" (such as
+# the one that clears cached keys between tests), which "import *" skips.
+globals().update({k: v for k, v in vars(_core).items() if not k.startswith("__")})

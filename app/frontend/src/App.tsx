@@ -71,16 +71,6 @@ const AccountSettingsScreen = lazy(() =>
     default: m.AccountSettingsScreen,
   })),
 )
-const InventoryScreen = lazy(() =>
-  import('./screens/private/operations/Inventory').then((m) => ({
-    default: m.InventoryScreen,
-  })),
-)
-const InventoryItemDetailScreen = lazy(() =>
-  import('./screens/private/operations/InventoryItemDetail').then((m) => ({
-    default: m.InventoryItemDetailScreen,
-  })),
-)
 const TranslationsScreen = lazy(() =>
   import('./screens/private/system/TranslationSuggestions').then((m) => ({
     default: m.TranslationsScreen,
@@ -94,11 +84,6 @@ const FeedbackScreen = lazy(() =>
 const AccessDeniedScreen = lazy(() =>
   import('./screens/private/AccessDenied').then((m) => ({
     default: m.AccessDeniedScreen,
-  })),
-)
-const CodesScreen = lazy(() =>
-  import('./screens/private/operations/Codes').then((m) => ({
-    default: m.CodesScreen,
   })),
 )
 const BindingsScreen = lazy(() =>
@@ -391,14 +376,6 @@ function PrivateRoutes() {
                   element={<Navigate to="/app/mail" replace />}
                 />
                 <Route
-                  path="operations/codes"
-                  element={
-                    <RequireModule code="codes">
-                      <CodesScreen />
-                    </RequireModule>
-                  }
-                />
-                <Route
                   path="operations/bindings"
                   element={
                     <RequireModule code="bindings">
@@ -415,22 +392,6 @@ function PrivateRoutes() {
                       <RequirePermission permKey="bindings.bindings.read">
                         <BindingsScreen />
                       </RequirePermission>
-                    </RequireModule>
-                  }
-                />
-                <Route
-                  path="inventory"
-                  element={
-                    <RequireModule code="inventory">
-                      <InventoryScreen />
-                    </RequireModule>
-                  }
-                />
-                <Route
-                  path="inventory/:id"
-                  element={
-                    <RequireModule code="inventory">
-                      <InventoryItemDetailScreen />
                     </RequireModule>
                   }
                 />
