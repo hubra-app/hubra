@@ -1,4 +1,5 @@
 import { apiFetch } from '@hubra/api-client'
+import type { RoadmapItem, RoadmapStatus } from '@hubra/ui'
 import type { DeviceInfo } from '@/screens/private/support/deviceInfo'
 
 export type CaseKind = 'bug' | 'feature'
@@ -16,6 +17,7 @@ export const AREAS = [
   'mail',
   'settings',
   'account',
+  'modules',
   'other',
 ] as const
 export type Area = (typeof AREAS)[number]
@@ -43,6 +45,7 @@ export interface SupportCase {
   page: string | null
   fingerprint: DeviceInfo & { appVersion?: string }
   isPublic: boolean
+  roadmapItem: string | null
   mergedInto: { id: number; title: string; status: CaseStatus } | null
   votes: number
   commentCount: number
@@ -65,18 +68,6 @@ export interface NewCase {
   fingerprint: DeviceInfo
 }
 
-export interface RoadmapItem {
-  id: number
-  title: string
-  description: string
-  status: CaseStatus
-  area: Area | null
-  votes: number
-  voted?: boolean
-  createdAt: string
-  updatedAt: string
-}
-
 export function sendCase(body: NewCase) {
   return apiFetch<SupportCase>('/global/support/cases', { method: 'POST', body: JSON.stringify(body) })
 }
@@ -96,12 +87,18 @@ export function replyToCase(id: number, body: string) {
   })
 }
 
+/** The one roadmap (planned items and ideas) with your own votes. */
 export function roadmap() {
-  return apiFetch<RoadmapItem[]>('/global/support/roadmap')
+  return apiFetch<{ statuses: RoadmapStatus[]; items: RoadmapItem[] }>('/global/support/roadmap')
 }
 
-export function setVote(id: number, on: boolean) {
-  return apiFetch<{ id: number; votes: number; voted: boolean }>(`/global/support/roadmap/${id}/vote`, {
+/** Vote for an item: an idea by its case id, a planned item by its id. */
+export function setVote(item: RoadmapItem, on: boolean) {
+  const path =
+    item.source === 'idea' && item.caseId != null
+      ? `/global/support/roadmap/${item.caseId}/vote`
+      : `/global/support/roadmap/items/${encodeURIComponent(item.id)}/vote`
+  return apiFetch<{ id: number | string; votes: number; voted: boolean }>(path, {
     method: on ? 'POST' : 'DELETE',
   })
 }

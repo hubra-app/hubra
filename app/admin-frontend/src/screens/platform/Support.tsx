@@ -36,7 +36,8 @@ import {
 import { EmptyState, PageHead, Pagination, Tabs } from '@/components/ui'
 import { useAdmin } from '@/context/AdminContext'
 import { formatDate, formatDateTime } from '@/format'
-import { tr } from '@/lang'
+import { getLang, tr } from '@/lang'
+import { getRoadmap } from '@/api/platform'
 import {
   commentOnCase,
   getCase,
@@ -78,6 +79,23 @@ function severityLabel(s: StaffCase['severity']) {
   }[s]
 }
 
+const pickTitle = (t: Record<string, string>) => t[getLang()] ?? t.en ?? t.de ?? Object.values(t)[0] ?? ''
+
+const AREAS = [
+  'modules',
+  'members',
+  'finance',
+  'events',
+  'posts',
+  'polls',
+  'groups',
+  'inventory',
+  'mail',
+  'settings',
+  'account',
+  'other',
+] as const
+
 function areaLabel(a: string | null) {
   if (!a) return null
   const labels: Record<string, [string, string]> = {
@@ -91,6 +109,7 @@ function areaLabel(a: string | null) {
     mail: ['Mail', 'Mail'],
     settings: ['Einstellungen', 'Settings'],
     account: ['Konto und Anmeldung', 'Account and sign-in'],
+    modules: ['Modul', 'Module'],
     other: ['Anderes', 'Other'],
   }
   const l = labels[a]
@@ -133,15 +152,16 @@ function CaseList() {
   const navigate = useNavigate()
   const [kind, setKind] = useState<KindTab>('bug')
   const [status, setStatus] = useState<CaseStatus | 'active' | ''>('active')
+  const [area, setArea] = useState('')
   const [search, setSearch] = useState('')
   const [q] = useDebouncedValue(search.trim(), 250)
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(25)
 
   const query = useQuery({
-    queryKey: ['support-cases', kind, status, q, page, perPage],
+    queryKey: ['support-cases', kind, status, area, q, page, perPage],
     queryFn: () =>
-      listCases({ kind: kind === 'all' ? '' : kind, status, q, page, perPage }),
+      listCases({ kind: kind === 'all' ? '' : kind, status, area, q, page, perPage }),
     placeholderData: (prev) => prev,
   })
   const data = query.data
@@ -192,6 +212,20 @@ function CaseList() {
             { value: 'active', label: tr('Offen und in Arbeit', 'Open and in progress') },
             ...STATUSES.map((s) => ({ value: s, label: statusLabel(s) })),
             { value: '', label: tr('Alle Status', 'Any status') },
+          ]}
+        />
+        <Select
+          value={area}
+          onChange={(v) => {
+            setArea(v ?? '')
+            setPage(1)
+          }}
+          allowDeselect={false}
+          w={200}
+          aria-label={tr('Bereich', 'Area')}
+          data={[
+            { value: '', label: tr('Alle Bereiche', 'Any area') },
+            ...AREAS.map((a) => ({ value: a, label: areaLabel(a) ?? a })),
           ]}
         />
       </Group>
@@ -336,6 +370,8 @@ function CaseDetail({ id }: { id: number }) {
   const [merging, setMerging] = useState(false)
   const query = useQuery({ queryKey: ['support-case', id], queryFn: () => getCase(id) })
   const c = query.data
+  const plan = useQuery({ queryKey: ['roadmap'], queryFn: getRoadmap, enabled: c?.kind === 'feature' })
+  const planned = (plan.data?.items ?? []).filter((i) => i.source !== 'idea')
 
   const refresh = async (fresh?: StaffCase) => {
     if (fresh) queryClient.setQueryData(['support-case', fresh.id], fresh)
@@ -477,6 +513,25 @@ function CaseDetail({ id }: { id: number }) {
                   checked={c.isPublic}
                   disabled={merged || saving}
                   onChange={(e) => void patch({ isPublic: e.currentTarget.checked })}
+                />
+              )}
+              {c.kind === 'feature' && (
+                <Select
+                  label={tr('Teil eines geplanten Eintrags', 'Part of a planned item')}
+                  description={tr(
+                    'Auf der Roadmap erscheint dann der geplante Eintrag; die Stimmen dieser Idee zählen für ihn.',
+                    'The roadmap then shows the planned item; this idea’s votes count for it.',
+                  )}
+                  placeholder={tr('Keiner', 'None')}
+                  clearable
+                  searchable
+                  value={c.roadmapItem}
+                  disabled={merged || saving}
+                  data={planned.map((p) => ({ value: p.id, label: `${pickTitle(p.title)} (${p.status})` }))}
+                  onChange={(v) =>
+                    (v ?? null) !== c.roadmapItem &&
+                    void patch({ roadmapItem: v ?? null }, tr('Roadmap-Eintrag gespeichert', 'Roadmap item saved'))
+                  }
                 />
               )}
               <Button

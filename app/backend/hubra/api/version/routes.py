@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from flask import Blueprint, current_app, jsonify, request
 
-from hubra.api.version.services import ROADMAP_STATUSES, VersionService
+from hubra.api.version.services import VersionService
 
 version_bp = Blueprint("version_bp", __name__)
 
@@ -33,13 +33,12 @@ def get_changelog():
 
 @version_bp.get("/version/roadmap")
 def get_roadmap():
-    """Return the roadmap: what is being built now, next, later, and what shipped."""
-    return (
-        jsonify(
-            {"statuses": list(ROADMAP_STATUSES), "items": VersionService.get_roadmap()}
-        ),
-        200,
-    )
+    """The one public roadmap: what is being built now, next, later, what
+    shipped, and the ideas people vote on (ROADMAP.yaml plus the ideas staff
+    put on it; same as ``/roadmap``)."""
+    from hubra.api.support import services as support
+
+    return jsonify(support.roadmap()), 200
 
 
 @version_bp.get("/instance")

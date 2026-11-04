@@ -1,36 +1,14 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  Badge,
-  Box,
-  Button,
-  Center,
-  Group,
-  Loader,
-  Paper,
-  SegmentedControl,
-  SimpleGrid,
-  Stack,
-  Text,
-  Title,
-  UnstyledButton,
-} from '@mantine/core'
-import { IconArrowBigUp, IconArrowBigUpFilled } from '@tabler/icons-react'
-import { ThemeToggle } from '@hubra/ui'
+import { Box, Button, Center, Group, Loader, SegmentedControl, Text, Title } from '@mantine/core'
+import { Roadmap, ThemeToggle, type RoadmapItem } from '@hubra/ui'
 import { useSso } from '@/context/SsoContext'
 import { themeLabels, useLang, type Lang } from '@/lang'
-import { myRoadmap, publicRoadmap, setVote, type RoadmapItem, type RoadmapStatus } from '@/api/roadmap'
-
-const COLUMNS: { status: RoadmapStatus; color: string; de: string; en: string }[] = [
-  { status: 'in_progress', color: 'orange', de: 'In Arbeit', en: 'In progress' },
-  { status: 'planned', color: 'acc', de: 'Geplant', en: 'Planned' },
-  { status: 'open', color: 'gray', de: 'Vorgeschlagen', en: 'Suggested' },
-  { status: 'done', color: 'green', de: 'Erledigt', en: 'Done' },
-]
+import { myRoadmap, publicRoadmap, setVote, type RoadmapResponse } from '@/api/roadmap'
 
 /**
- * /roadmap: the ideas the Hubra team made public, for anyone. Signed in,
- * people vote; otherwise the vote button leads to sign-in.
+ * /roadmap: the one Hubra roadmap for anyone: what is being built, what comes
+ * next, the ideas from the clubs and what shipped. Signed in, people vote.
  */
 export function RoadmapScreen() {
   const { tr, lang, setLang } = useLang()
@@ -41,7 +19,26 @@ export function RoadmapScreen() {
     queryFn: signedIn ? myRoadmap : publicRoadmap,
     enabled: authStatus !== 'loading',
   })
-  const items = query.data ?? []
+  const items = query.data?.items ?? []
+  const queryClient = useQueryClient()
+  const { notify } = useSso()
+  const [pending, setPending] = useState<string | null>(null)
+
+  const onVote = async (item: RoadmapItem) => {
+    setPending(item.id)
+    try {
+      const res = await setVote(item, !item.voted)
+      queryClient.setQueryData<RoadmapResponse>(['roadmap', true], (old) =>
+        old
+          ? { ...old, items: old.items.map((i) => (i.id === item.id ? { ...i, votes: res.votes, voted: res.voted } : i)) }
+          : old,
+      )
+    } catch (err) {
+      notify('error', tr('Abstimmen fehlgeschlagen', 'Voting failed'), (err as Error).message)
+    } finally {
+      setPending(null)
+    }
+  }
 
   return (
     <div className="graph-bg" style={{ minHeight: '100vh' }}>
@@ -107,96 +104,16 @@ export function RoadmapScreen() {
             {tr('Noch nichts auf der Roadmap.', 'Nothing on the roadmap yet.')}
           </Text>
         ) : (
-          <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="lg" mt={28}>
-            {COLUMNS.map((col) => {
-              const list = items.filter((i) => i.status === col.status)
-              return (
-                <Stack key={col.status} gap={10}>
-                  <Group gap={6}>
-                    <Badge variant="light" color={col.color}>
-                      {tr(col.de, col.en)}
-                    </Badge>
-                    <Text size="xs" c="dimmed">
-                      {list.length}
-                    </Text>
-                  </Group>
-                  {list.length === 0 ? (
-                    <Text size="xs" c="dimmed">
-                      {tr('Nichts hier.', 'Nothing here.')}
-                    </Text>
-                  ) : (
-                    list.map((item) => <Card key={item.id} item={item} signedIn={signedIn} />)
-                  )}
-                </Stack>
-              )
-            })}
-          </SimpleGrid>
+          <Box mt={28}>
+            <Roadmap
+              items={items}
+              lang={lang}
+              wide
+              voting={signedIn ? { onVote: (item) => void onVote(item), pending } : undefined}
+            />
+          </Box>
         )}
       </Box>
     </div>
-  )
-}
-
-function Card({ item, signedIn }: { item: RoadmapItem; signedIn: boolean }) {
-  const { tr } = useLang()
-  const { notify } = useSso()
-  const queryClient = useQueryClient()
-  const [busy, setBusy] = useState(false)
-  const done = item.status === 'done'
-
-  const toggle = async () => {
-    if (!signedIn) {
-      window.location.assign(`/login?redirect=${encodeURIComponent(window.location.href)}`)
-      return
-    }
-    setBusy(true)
-    try {
-      const res = await setVote(item.id, !item.voted)
-      queryClient.setQueryData<RoadmapItem[]>(['roadmap', true], (old) =>
-        old?.map((i) => (i.id === item.id ? { ...i, votes: res.votes, voted: res.voted } : i)),
-      )
-    } catch (err) {
-      notify('error', tr('Abstimmen fehlgeschlagen', 'Voting failed'), (err as Error).message)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <Paper withBorder p="md">
-      <Group gap="sm" wrap="nowrap" align="flex-start">
-        <UnstyledButton
-          onClick={() => void toggle()}
-          disabled={busy || done}
-          aria-pressed={!!item.voted}
-          aria-label={item.voted ? tr('Stimme zurücknehmen', 'Take back your vote') : tr('Dafür stimmen', 'Vote for it')}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            minWidth: 46,
-            padding: '6px 4px',
-            borderRadius: 10,
-            border: '1px solid var(--hb-border)',
-            color: item.voted ? 'var(--mantine-color-acc-6)' : 'var(--hb-text-2)',
-            background: item.voted ? 'var(--mantine-color-acc-light)' : 'transparent',
-            cursor: done ? 'default' : 'pointer',
-          }}
-        >
-          {item.voted ? <IconArrowBigUpFilled size={18} /> : <IconArrowBigUp size={18} />}
-          <Text size="sm" fw={700}>
-            {item.votes}
-          </Text>
-        </UnstyledButton>
-        <div style={{ minWidth: 0 }}>
-          <Text fw={600} size="sm" style={{ wordBreak: 'break-word' }}>
-            {item.title}
-          </Text>
-          <Text size="xs" c="dimmed" lineClamp={5} style={{ whiteSpace: 'pre-wrap' }}>
-            {item.description}
-          </Text>
-        </div>
-      </Group>
-    </Paper>
   )
 }

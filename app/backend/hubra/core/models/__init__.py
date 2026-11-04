@@ -63,6 +63,7 @@ from hubra.core.models.support_case import (
     SupportCase,
     SupportCaseComment,
     SupportCaseVote,
+    RoadmapVote,
 )
 from hubra.core.models.notification import Notification
 from hubra.core.models.audit import AuditEntry
@@ -172,6 +173,7 @@ __all__ = [
     "SupportCase",
     "SupportCaseComment",
     "SupportCaseVote",
+    "RoadmapVote",
     "Notification",
     "AuditEntry",
     "TokenBlocklist",

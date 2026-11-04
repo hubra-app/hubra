@@ -1,5 +1,5 @@
 import { apiFetch } from '@hubra/api-client';
-import type { ChangelogEntry, RoadmapItem, RoadmapStatus } from '@hubra/ui';
+import type { ChangelogEntry } from '@hubra/ui';
 
 export type { ChangelogEntry, RoadmapItem } from '@hubra/ui';
 
@@ -27,15 +27,6 @@ export interface ChangelogResponse {
 export async function getChangelog(lang?: string): Promise<ChangelogResponse> {
   const q = lang ? `?lang=${encodeURIComponent(lang)}` : "";
   return apiFetch<ChangelogResponse>(`/global/version/changelog${q}`);
-}
-
-export interface RoadmapResponse {
-  statuses: RoadmapStatus[];
-  items: RoadmapItem[];
-}
-
-export async function getRoadmap(): Promise<RoadmapResponse> {
-  return apiFetch<RoadmapResponse>("/global/version/roadmap");
 }
 
 // ── Health ──────────────────────────────────────────────────────────

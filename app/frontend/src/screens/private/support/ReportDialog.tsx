@@ -22,16 +22,18 @@ import { useT } from '@/locales/i18n'
 import { qk } from '@/data/keys'
 import { AREAS, sendCase, type Area, type CaseKind, type Severity } from '@/api/support'
 import { currentDeviceInfo, type DeviceInfo } from './deviceInfo'
-import { openReport, reportKind, subscribeReport } from './reportStore'
+import { openReport, reportRequest, subscribeReport } from './reportStore'
 import { deviceLines } from './labels'
 
 /** "Problem melden" / "Idee vorschlagen": one dialog, opened from the account menu. */
 export function ReportDialog() {
-  const kind = useSyncExternalStore(subscribeReport, reportKind)
-  return kind ? <ReportForm key={kind} initialKind={kind} /> : null
+  const request = useSyncExternalStore(subscribeReport, reportRequest)
+  return request ? (
+    <ReportForm key={`${request.kind}:${request.area ?? ''}`} initialKind={request.kind} initialArea={request.area} />
+  ) : null
 }
 
-function ReportForm({ initialKind }: { initialKind: CaseKind }) {
+function ReportForm({ initialKind, initialArea }: { initialKind: CaseKind; initialArea?: Area }) {
   const { t } = useT()
   const { notify } = useToast()
   const navigate = useNavigate()
@@ -43,7 +45,7 @@ function ReportForm({ initialKind }: { initialKind: CaseKind }) {
   const [steps, setSteps] = useState('')
   const [expected, setExpected] = useState('')
   const [useCase, setUseCase] = useState('')
-  const [area, setArea] = useState<Area | null>(null)
+  const [area, setArea] = useState<Area | null>(initialArea ?? null)
   const [severity, setSeverity] = useState<Severity>('annoying')
   const [showDevice, setShowDevice] = useState(false)
   const [errors, setErrors] = useState<{ title?: string; description?: string }>({})
