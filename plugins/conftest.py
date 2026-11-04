@@ -19,3 +19,15 @@ for _plugin in sorted(Path(__file__).resolve().parent.iterdir()):
         sys.path.insert(0, str(_plugin))
 
 from tests.conftest import *  # noqa: E402,F403
+import tests.conftest as _hubra_conftest  # noqa: E402
+
+# ``import *`` leaves out names starting with "_", and some of Hubra's
+# autouse fixtures do (e.g. the one that forgets the last test's platform
+# key). Take those too, or plugin tests fail depending on their order.
+globals().update(
+    {
+        name: value
+        for name, value in vars(_hubra_conftest).items()
+        if name.startswith("_") and not name.startswith("__") and callable(value)
+    }
+)
