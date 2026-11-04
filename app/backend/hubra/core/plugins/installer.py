@@ -41,7 +41,14 @@ from sqlalchemy import select
 from hubra.core.errors import error_message
 from hubra.core.extensions import db
 
-from .spec import MANIFEST, Spec, compatibility, read_manifest, validate
+from .spec import (
+    MANIFEST,
+    Spec,
+    compatibility,
+    read_manifest,
+    validate,
+    version_matches,
+)
 from .trust import SKIP_DIRS, load_public, verify
 
 _log = logging.getLogger(__name__)
@@ -311,6 +318,8 @@ def stage(
         "tags": manifest.get("tags") or [],
         "modules": manifest.get("modules") or [],
         "requires": manifest.get("requires") or [],
+        "depends": _depends(manifest),
+        "uses": manifest.get("uses"),
         "trust": trust,
         "source": source,
         "repositoryId": repository_id,
@@ -419,6 +428,92 @@ def _check_requires(manifest: dict) -> None:
         )
 
 
+def _installed_versions(excluding: str | None = None) -> dict[str, str]:
+    """Plugin id -> version, for everything installed or auto-installed here."""
+    plugins = _loaded()
+    out = {row.id: row.version for row in installed_rows() if row.id != excluding}
+    for pid in plugins.autoinstalled:
+        spec = plugins.get(pid)
+        if pid != excluding and spec is not None:
+            out.setdefault(pid, spec.version)
+    return out
+
+
+def _depends(manifest: dict) -> dict[str, str]:
+    val = manifest.get("depends")
+    return {str(k): str(v or "") for k, v in val.items()} if isinstance(val, dict) else {}
+
+
+def _check_depends(manifest: dict) -> None:
+    """Refuse when a plugin named under ``depends:`` is missing or the wrong
+    version."""
+    have = _installed_versions(excluding=str(manifest.get("id")))
+    name = manifest.get("name", manifest.get("id"))
+    for dep, rng in _depends(manifest).items():
+        if dep not in have:
+            raise InstallError(
+                f"{name} needs the plugin {dep}{' ' + rng if rng else ''}: install it first"
+            )
+        if not version_matches(have[dep], rng):
+            raise InstallError(f"{name} needs {dep} {rng}; {have[dep]} is installed")
+
+
+def _check_dependants(pid: str, version: str) -> None:
+    """Refuse an update of *pid* to *version* that an installed plugin's
+    ``depends:`` range excludes."""
+    plugins = _loaded()
+    for row in installed_rows():
+        other = plugins.get(row.id)
+        if row.id == pid or other is None:
+            continue
+        rng = other.depends.get(pid)
+        if rng is not None and not version_matches(version, rng):
+            raise InstallError(
+                f"{other.name} needs {pid} {rng}; update {other.name} first"
+            )
+
+
+def _install_dependencies(manifest: dict, repository_id: int, depth: int = 0) -> list:
+    """Install the missing ``depends:`` of *manifest* from the same repository,
+    each before the plugin that needs it. Returns what was installed."""
+    from hubra.core.models.plugin import PluginRepository
+
+    missing = {
+        d: r
+        for d, r in _depends(manifest).items()
+        if d not in _installed_versions(excluding=str(manifest.get("id")))
+    }
+    if not missing:
+        return []
+    if depth > 5:
+        raise InstallError("plugin dependencies go too deep (a cycle?)")
+    repo = db.session.get(PluginRepository, repository_id)
+    if repo is None:
+        return []
+    idx = fetch_repository(repo, force=True)
+    done = []
+    for dep, rng in missing.items():
+        top = next(
+            (p for p in idx["plugins"] if isinstance(p, dict) and str(p.get("id")) == dep),
+            None,
+        )
+        fits = [
+            v
+            for v in (versions_of(top) if top else [])
+            if version_matches(v["version"], rng) and _compatible(v)[0]
+        ]
+        if not fits:
+            raise InstallError(
+                f"{manifest.get('name', manifest.get('id'))} needs the plugin "
+                f"{dep}{' ' + rng if rng else ''}, which {repo.name} doesn't offer"
+            )
+        best = max(fits, key=lambda v: _vkey(v["version"]))
+        info = install_from_repository(repo, dep, best["version"])
+        result = confirm(info["token"], False, repository_id, _depth=depth + 1)
+        done.append(result)
+    return done
+
+
 def _actor() -> str:
     from flask import g
 
@@ -427,7 +522,10 @@ def _actor() -> str:
 
 
 def confirm(
-    token: str, accept_unsigned: bool, repository_id: int | None = None
+    token: str,
+    accept_unsigned: bool,
+    repository_id: int | None = None,
+    _depth: int = 0,
 ) -> dict:
     """Install the staged archive *token* for the whole platform."""
     from hubra.core.models.plugin import InstalledPlugin
@@ -449,6 +547,14 @@ def confirm(
         pid = str(manifest["id"])
         if pid in _loaded().autoinstalled:
             raise InstallError(f"'{pid}' is loaded from a development checkout here")
+        # Plugins it depends on come first, from the same repository.
+        deps_installed = (
+            _install_dependencies(manifest, repository_id, _depth)
+            if repository_id is not None
+            else []
+        )
+        _check_depends(manifest)
+        _check_dependants(pid, str(manifest.get("version", "")))
         _check_requires(manifest)
         spec = Spec(id=pid, path=pdir, manifest=manifest, trust=trust)
         # Migrations first: if they fail nothing is recorded as installed.
@@ -501,6 +607,7 @@ def confirm(
         "version": row.version,
         "previous": before,
         "generation": generation,
+        "dependencies": deps_installed,
     }
 
 
@@ -524,6 +631,7 @@ def install_bundled(pid: str) -> dict:
     row = db.session.get(InstalledPlugin, pid)
     if row is not None and row.source == "bundled":
         raise InstallError(f"{spec.name} is installed already")
+    _check_depends(spec.manifest)
     _check_requires(spec.manifest)
     try:
         migrate.upgrade_everywhere(spec)
@@ -565,6 +673,7 @@ def rollback(pid: str) -> dict:
         _pdir, manifest, trust = _inspect(prev.data, Path(tmp))
     if trust["status"] == "invalid":
         raise InstallError(f"the earlier version is refused: {trust['detail']}")
+    _check_dependants(pid, str(manifest.get("version", "")))
     before = row.version
     row.archive_sha256, row.previous_sha256 = row.previous_sha256, row.archive_sha256
     row.version = str(manifest.get("version", ""))
@@ -594,7 +703,9 @@ def dependents(pid: str) -> list[str]:
     out = []
     for row in installed_rows():
         other = plugins.get(row.id)
-        if row.id != pid and other is not None and codes & set(other.requires):
+        if row.id != pid and other is not None and (
+            codes & set(other.requires) or pid in other.depends
+        ):
             out.append(other.name)
     return out
 
@@ -1114,6 +1225,8 @@ def marketplace(fetch: bool = True) -> dict:
                 "tags": [],
                 "modules": [],
                 "requires": [],
+                "depends": {},
+                "uses": None,
                 "bundled": row.source == "bundled",
                 "trust": {
                     "status": row.trust,
@@ -1166,6 +1279,8 @@ def marketplace(fetch: bool = True) -> dict:
                 "tags": p.get("tags") or [],
                 "modules": p.get("modules") or [],
                 "requires": p.get("requires") or [],
+                "depends": p.get("depends") or {},
+                "uses": p.get("uses"),
                 "bundled": False,
                 "trust": {"status": "", "signer": "", "key_id": "", "detail": ""},
                 "loaded": False,

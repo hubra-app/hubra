@@ -42,7 +42,7 @@ REPO = Path(__file__).resolve().parents[3]
         # New paths, plugin paths and look-alikes stay as they are.
         ("/api/v1/app/members", "/api/v1/app/members"),
         ("/api/v1/platform/system", "/api/v1/platform/system"),
-        ("/api/v1/keys/3", "/api/v1/keys/3"),
+        ("/api/v1/zz-unknown/3", "/api/v1/zz-unknown/3"),
         ("/api/v1/membersx", "/api/v1/membersx"),
         ("/health", "/health"),
     ],

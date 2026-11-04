@@ -29,6 +29,25 @@ PACKAGE_RE = re.compile(r"^hubra_[a-z0-9_]{1,40}$")
 MODULE_RE = re.compile(r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$")
 MANIFEST = "plugin.yaml"
 
+# What a plugin may extend (docs/plugins.md, "Extension areas"). A plugin
+# lists the ones it uses under ``uses:``; the loader refuses a plugin that
+# touches an area it didn't list. ``mail`` and ``discord`` are reserved for
+# the plugin mail templates and the Discord command registry.
+AREAS = (
+    "routes",  # backend routes under /api/v1/app/<prefix>
+    "public",  # routes reachable without signing in (public_endpoints)
+    "events",  # handlers for domain events
+    "jobs",  # Celery tasks and periodic jobs
+    "processes",  # long-lived processes (official plugins only)
+    "tables",  # own tables and migrations
+    "settings",  # per-club settings
+    "apps",  # connected apps (outside services a club links)
+    "nav",  # sidebar entries
+    "frontend",  # club app pages, tabs and slots
+    "mail",
+    "discord",
+)
+
 # (path, size, mtime) -> content hash of a built frontend.
 _FRONTEND_TAGS: dict[tuple, str] = {}
 
@@ -105,6 +124,26 @@ def validate(m: dict, path: Path | None = None) -> str:
     tags = m.get("tags") or []
     if not isinstance(tags, list):
         return "tags: a list"
+    uses = m.get("uses")
+    if uses is not None:
+        if not isinstance(uses, list) or not all(isinstance(a, str) for a in uses):
+            return "uses: a list of areas like routes, events, tables"
+        unknown = sorted(set(uses) - set(AREAS))
+        if unknown:
+            return f"uses: unknown area(s) {', '.join(unknown)}; one of {', '.join(AREAS)}"
+    deps = m.get("depends")
+    if deps is not None:
+        if not isinstance(deps, dict):
+            return "depends: plugin ids with a version range, like finance: '>=2.0'"
+        from packaging.specifiers import InvalidSpecifier, SpecifierSet
+
+        for dep, rng in deps.items():
+            if not ID_RE.match(str(dep)) or str(dep) == str(m.get("id")):
+                return f"depends: '{dep}' isn't another plugin's id"
+            try:
+                SpecifierSet(str(rng or ""))
+            except InvalidSpecifier:
+                return f"depends: {dep}: '{rng}' isn't a version range like '>=2.0'"
     if path is not None:
         if pkg and not (path / str(pkg) / "__init__.py").is_file():
             return f"package {pkg}: {pkg}/__init__.py not found"
@@ -115,6 +154,19 @@ def validate(m: dict, path: Path | None = None) -> str:
         if fe and (".." in Path(str(fe)).parts or not str(fe).startswith("frontend/")):
             return "frontend: a file under frontend/, e.g. frontend/dist/plugin.js"
     return ""
+
+
+def version_matches(version: str, rng: str) -> bool:
+    """Whether *version* lies in the PEP 440 range *rng* ('' matches all)."""
+    from packaging.specifiers import InvalidSpecifier, SpecifierSet
+    from packaging.version import InvalidVersion, Version
+
+    if not rng:
+        return True
+    try:
+        return SpecifierSet(rng).contains(Version(version), prereleases=True)
+    except (InvalidSpecifier, InvalidVersion):
+        return False
 
 
 def read_manifest(path: Path) -> dict:
@@ -167,6 +219,20 @@ class Spec:
     @property
     def requires(self) -> list[str]:
         return [str(c) for c in self.manifest.get("requires") or []]
+
+    @property
+    def uses(self) -> list[str] | None:
+        """The areas ``uses:`` lists; ``None`` for a plugin that lists none."""
+        val = self.manifest.get("uses")
+        return [str(a) for a in val] if isinstance(val, list) else None
+
+    @property
+    def depends(self) -> dict[str, str]:
+        """Other plugins this one needs: id -> version range ('' = any)."""
+        val = self.manifest.get("depends")
+        if not isinstance(val, dict):
+            return {}
+        return {str(k): str(v or "") for k, v in val.items()}
 
     @property
     def migrations_dir(self) -> Path | None:
@@ -224,6 +290,8 @@ class Spec:
             "hubra": str(m.get("hubra") or ""),
             "modules": self.module_codes,
             "requires": self.requires,
+            "depends": self.depends,
+            "uses": self.uses,
             "bundled": self.bundled,
             "trust": dict(self.trust),
             "loaded": self.loaded,

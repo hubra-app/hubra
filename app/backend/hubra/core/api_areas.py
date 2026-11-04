@@ -10,8 +10,10 @@
                           to neither. Served by the club backend, so a
                           platform rollout never touches sign-in.
 
-Plugin routes keep the prefix their manifest gives them and are served by
-the club backend.
+Plugin routes are club routes: the loader serves them under
+``/api/v1/app/...``. A plugin built before the areas names ``/api/v1/bank``;
+it is served as ``/api/v1/app/bank`` and the old path is rewritten like the
+ones below (:func:`add_plugin_prefix`).
 
 The paths before this split (``/api/v1/members``, ``/api/v1/manager/...``)
 still work: :class:`LegacyApiPaths` rewrites them to the new ones before
@@ -94,11 +96,24 @@ def _under(path: str, prefix: str) -> bool:
     return path == prefix or path.startswith(prefix + "/")
 
 
+# Old plugin prefixes -> their club-area prefix, filled by the plugin loader.
+_PLUGIN_PREFIXES: dict[str, str] = {}
+
+
+def add_plugin_prefix(old: str, new: str) -> None:
+    """Rewrite *old* (``/api/v1/bank``) to *new* (``/api/v1/app/bank``)."""
+    if old != new:
+        _PLUGIN_PREFIXES[old] = new
+
+
 def canonical_path(path: str) -> str:
     """The current path for *path*; unchanged when it isn't an old one."""
     if not path.startswith(V1 + "/"):
         return path
     for old, new in _LEGACY_FULL:
+        if _under(path, old):
+            return new + path[len(old) :]
+    for old, new in _PLUGIN_PREFIXES.items():
         if _under(path, old):
             return new + path[len(old) :]
     return path
