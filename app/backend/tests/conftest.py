@@ -92,8 +92,8 @@ def _platform_alerts_inline():
     from hubra.core.services import platform_monitor
     from hubra.core.tasks.mail_monitor_tasks import send_platform_alert
 
-    def inline(args=(), retry=False, **_kw):
-        platform_monitor.deliver_alert(*args)
+    def inline(args=(), kwargs=None, retry=False, **_kw):
+        platform_monitor.deliver_alert(*args, **(kwargs or {}))
 
     with patch.object(send_platform_alert, "apply_async", side_effect=inline):
         yield

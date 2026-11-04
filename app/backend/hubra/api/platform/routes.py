@@ -1003,6 +1003,54 @@ def alerts_performance():
     return jsonify(perf_monitor.summary(hours)), 200
 
 
+@platform_bp.get("/alerts/api-errors")
+@require_global_permission(_DIAGNOSTICS)
+def alerts_api_errors():
+    """Where API errors happen: per route and exact status code, per ten
+    minutes, and what the error-rate alert sees now; with the grouped
+    exceptions (Diagnostics › Errors) of the routes that answered 500.
+    ``hours``: 1 to 24 clock hours, the current one included; ``at``: one
+    ten-minute slot of the timeline (ISO time) for the routes and codes."""
+    from datetime import datetime, timezone
+
+    from sqlalchemy import select
+
+    from hubra.core.models.error_group import ErrorGroup
+    from hubra.core.services import error_tracker, perf_monitor
+
+    try:
+        hours = int(request.args.get("hours", 24))
+    except ValueError:
+        return api_error("VALIDATION_ERROR", "hours must be a number", 400)
+    at = None
+    if raw := request.args.get("at"):
+        try:
+            at = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        except ValueError:
+            return api_error("VALIDATION_ERROR", "at must be an ISO time", 400)
+        if at.tzinfo is None:
+            at = at.replace(tzinfo=timezone.utc)
+    out = perf_monitor.error_details(hours, at=at)
+    labels = {r["label"] for r in out["routes"] if r["serverErrors"]}
+    # A group keeps only its last time: for one past slot, every group of
+    # those routes seen since that slot (it may well have happened there).
+    since = datetime.fromisoformat(out["at"] or out["from"])
+    groups = []
+    if labels:
+        rows = db.session.scalars(
+            select(ErrorGroup)
+            .where(ErrorGroup.route.in_(labels))
+            .where(ErrorGroup.last_seen >= since)
+            .order_by(ErrorGroup.last_seen.desc())
+            .limit(50)
+        ).all()
+        groups = [error_tracker.group_json(g) for g in rows]
+    for r in out["routes"]:
+        r["errorGroups"] = [g["id"] for g in groups if g["route"] == r["label"]]
+    out["errorGroups"] = groups
+    return jsonify(out), 200
+
+
 # ── Background jobs ─────────────────────────────────────────────────────────
 
 

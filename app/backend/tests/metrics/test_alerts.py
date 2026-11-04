@@ -65,14 +65,16 @@ class TestAlertHelpers:
     def test_alert_error_uses_red(self, mock_send):
         mock_send.return_value = True
         alert_error("Err", "desc")
-        mock_send.assert_called_once_with("Err", "desc", color=COLOR_RED, fields=None)
+        mock_send.assert_called_once_with(
+            "Err", "desc", color=COLOR_RED, fields=None, link=None
+        )
 
     @patch("hubra.core.services.alerts.send_alert")
     def test_alert_warning_uses_orange(self, mock_send):
         mock_send.return_value = True
         alert_warning("Warn", "desc")
         mock_send.assert_called_once_with(
-            "Warn", "desc", color=COLOR_ORANGE, fields=None
+            "Warn", "desc", color=COLOR_ORANGE, fields=None, link=None
         )
 
     @patch("hubra.core.services.alerts.send_alert")
@@ -80,7 +82,7 @@ class TestAlertHelpers:
         mock_send.return_value = True
         alert_resolved("Fixed", "desc")
         mock_send.assert_called_once_with(
-            "Fixed", "desc", color=COLOR_GREEN, fields=None
+            "Fixed", "desc", color=COLOR_GREEN, fields=None, link=None
         )
 
 

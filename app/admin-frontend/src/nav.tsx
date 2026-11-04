@@ -40,6 +40,7 @@ import { HealthPanel, MailServerPanel, PermissionsPanel } from '@/screens/platfo
 import { JobsPanel } from '@/screens/platform/Jobs'
 import { ErrorsPanel } from '@/screens/platform/Errors'
 import { PerformancePanel } from '@/screens/platform/Performance'
+import { ApiErrorsPanel } from '@/screens/platform/ApiErrors'
 import { MyAlertsCard, OutboundMailTab } from '@/screens/platform/MailMonitor'
 import { DiscordPanel } from '@/screens/platform/DiscordStatus'
 import { DiscordClubsPanel } from '@/screens/platform/DiscordClubs'
@@ -252,6 +253,13 @@ export function navSections(): NavSection[] {
               label: tr('Fehler', 'Errors'),
               perm: 'platform.diagnostics',
               render: () => <ErrorsPanel />,
+            },
+            {
+              id: 'api-errors',
+              path: '/app/platform/diagnostics/api-errors',
+              label: tr('API-Fehler', 'API errors'),
+              perm: 'platform.diagnostics',
+              render: () => <ApiErrorsPanel />,
             },
             {
               id: 'performance',

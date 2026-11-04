@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import {
   Badge,
   Button,
@@ -47,6 +48,7 @@ function StatusBadges({ status }: { status: PerfRoute['status'] }) {
  * Only route patterns and query shapes are kept, never paths, values or who
  * asked (services/perf_monitor.py). */
 export function PerformancePanel() {
+  const navigate = useNavigate()
   const [hours, setHours] = useState('24')
   const [sort, setSort] = useState<Sort>('total')
   const query = useQuery({
@@ -129,6 +131,7 @@ export function PerformancePanel() {
               `${t.status['4xx'] ?? 0} client errors (4xx)`,
             )}
             accent={errors5 ? 'var(--mantine-color-red-text)' : undefined}
+            onClick={() => navigate('/app/platform/diagnostics/api-errors')}
           />
         </StatGrid>
       )}

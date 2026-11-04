@@ -25,6 +25,7 @@ def send_alert(
     staff: bool = True,
     alert_type: str = "system",
     level: str | None = None,
+    link: str | None = None,
 ) -> bool:
     """Post an alert embed to the platform Discord log.
 
@@ -34,9 +35,12 @@ def send_alert(
     The alert also goes to the platform event log and, by mail, to platform
     staff who want system alerts (``platform_monitor.system_alert``);
     ``staff=False`` when platform_monitor itself posts here.
+
+    *link* is a manage path with the details (``/app/platform/...``): the
+    mail button, the Discord link button and the event log point there.
     """
     if staff:
-        _to_platform_staff(title, description, fields, color)
+        _to_platform_staff(title, description, fields, color, link)
         if not _discord_on():
             return False
 
@@ -54,10 +58,10 @@ def send_alert(
 
     from hubra.core.services import platform_discord
 
-    return platform_discord.post_alert(embed, alert_type, level)
+    return platform_discord.post_alert(embed, alert_type, level, link=link)
 
 
-def _to_platform_staff(title, description, fields, color) -> None:
+def _to_platform_staff(title, description, fields, color, link=None) -> None:
     try:
         from flask import has_app_context
 
@@ -65,7 +69,7 @@ def _to_platform_staff(title, description, fields, color) -> None:
             return
         from hubra.core.services import platform_monitor
 
-        platform_monitor.system_alert(title, description, fields, color)
+        platform_monitor.system_alert(title, description, fields, color, link=link)
     except Exception:
         _log.warning("Failed to log platform alert: %s", title, exc_info=True)
 
@@ -88,24 +92,27 @@ def alert_error(
     title: str,
     description: str,
     fields: list[dict[str, Any]] | None = None,
+    link: str | None = None,
 ) -> bool:
     """Send a red (error) alert."""
-    return send_alert(title, description, color=COLOR_RED, fields=fields)
+    return send_alert(title, description, color=COLOR_RED, fields=fields, link=link)
 
 
 def alert_warning(
     title: str,
     description: str,
     fields: list[dict[str, Any]] | None = None,
+    link: str | None = None,
 ) -> bool:
     """Send an orange (warning) alert."""
-    return send_alert(title, description, color=COLOR_ORANGE, fields=fields)
+    return send_alert(title, description, color=COLOR_ORANGE, fields=fields, link=link)
 
 
 def alert_resolved(
     title: str,
     description: str,
     fields: list[dict[str, Any]] | None = None,
+    link: str | None = None,
 ) -> bool:
     """Send a green (resolved) alert."""
-    return send_alert(title, description, color=COLOR_GREEN, fields=fields)
+    return send_alert(title, description, color=COLOR_GREEN, fields=fields, link=link)

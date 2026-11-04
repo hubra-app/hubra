@@ -502,6 +502,74 @@ export async function getPerformance(hours: number) {
   return apiFetch<PerfSummary>(`${P}/alerts/performance?hours=${hours}`)
 }
 
+// ── Where API errors happen (Diagnose › API-Fehler) ─────────────────────────
+
+export interface ApiErrorSlot {
+  /** Start of the ten-minute slot (ISO). */
+  at: string
+  requests: number
+  clientErrors: number
+  serverErrors: number
+  /** 5xx while a process was still starting (the alert skips these). */
+  warmup: number
+}
+
+export interface ApiErrorRoute {
+  method: string
+  route: string
+  /** "GET /api/v1/…": matches ErrorGroupRow.route. */
+  label: string
+  /** Null for a single ten-minute slot (counted per hour only). */
+  requests: number | null
+  serverErrors: number
+  clientErrors: number
+  warmup: number
+  /** Share of this route's requests answered with 5xx (0..1). */
+  serverShare: number | null
+  /** Exact codes; "w503" = a 503 while starting. */
+  codes: Record<string, number>
+  firstAt: string | null
+  lastAt: string | null
+  /** Ids of grouped exceptions (Diagnose › Fehler) on this route. */
+  errorGroups: number[]
+}
+
+export interface ApiErrorTopRoute {
+  method: string
+  route: string
+  errors: number
+  codes: Record<string, number>
+}
+
+export interface ApiErrorDetails {
+  hours: number
+  source: 'redis' | 'memory'
+  from: string
+  /** The slot the routes and codes cover, or null for the whole period. */
+  at: string | null
+  timeline: ApiErrorSlot[]
+  codes: Record<string, number>
+  routes: ApiErrorRoute[]
+  routeCount: number
+  alert: {
+    requests: number
+    serverErrors: number
+    rate: number
+    threshold: number
+    minRequests: number
+    active: boolean
+    topRoutes: ApiErrorTopRoute[]
+  }
+  errorGroups: ErrorGroupRow[]
+}
+
+/** *at*: one ten-minute slot of the timeline, for its routes and codes. */
+export async function getApiErrors(hours: number, at?: string) {
+  const qs = new URLSearchParams({ hours: String(hours) })
+  if (at) qs.set('at', at)
+  return apiFetch<ApiErrorDetails>(`${P}/alerts/api-errors?${qs}`)
+}
+
 export async function getMyAlerts() {
   return apiFetch<{
     alerts: Record<AlertType, boolean>
