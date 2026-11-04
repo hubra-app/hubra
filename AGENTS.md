@@ -261,6 +261,13 @@ Minor (X.Y+1.0) — new features, security fixes, or other
 significant changes.
 Patch (X.Y.Z+1) — bug fixes only.
 
+9. Plugin releases
+
+After every release of an official plugin (hubra-app/hubra-plugin-<id>), or
+when a new plugin repository is added, update the plugin version in this
+README, the hubra-plugins README and, for a new plugin or changed purpose,
+the hubra.club Modules page. The checklist is docs/plugin-releases.md.
+
 
 Code Style & Standards
 
