@@ -212,6 +212,37 @@ export function PerformancePanel() {
         )}
       </Paper>
 
+      {data && data.unmatched.length > 0 && (
+        <Paper withBorder p="lg">
+          <Title order={4} mb={4}>
+            {tr('Anfragen ohne Route', 'Requests without a route')}
+          </Title>
+          <Text size="xs" c="dimmed" mb={12}>
+            {tr(
+              'Pfade, zu denen es keine API-Route gibt (meist Scanner oder alte Links). Ids und Tokens sind «*».',
+              'Paths no API route matches (mostly scanners or old links). Ids and tokens are "*".',
+            )}
+          </Text>
+          <Table.ScrollContainer minWidth={360}>
+            <Table verticalSpacing={4} fz="sm">
+              <Table.Tbody>
+                {data.unmatched.map((u) => (
+                  <Table.Tr key={`${u.method} ${u.path}`}>
+                    <Table.Td style={{ wordBreak: 'break-all' }}>
+                      <Text span size="xs" fw={700} c="dimmed" mr={6}>
+                        {u.method}
+                      </Text>
+                      <Code>{u.path}</Code>
+                    </Table.Td>
+                    <Table.Td ta="right">{u.count.toLocaleString('de-CH')}</Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
+        </Paper>
+      )}
+
       <Paper withBorder p="lg">
         <Group justify="space-between" mb={4} wrap="wrap">
           <Title order={4}>{tr('Langsame Datenbankabfragen', 'Slow database queries')}</Title>
@@ -228,6 +259,14 @@ export function PerformancePanel() {
             {tr('Keine langsamen Abfragen in diesem Zeitraum.', 'No slow queries in this period.')}
           </Text>
         )}
+        {(data?.queries ?? []).some((q) => q.cpuThrottled || q.memoryLimit) && (
+          <Text size="xs" c="dimmed" mb={12}>
+            {tr(
+              'CPU gedrosselt / Speichergrenze: der Container hat während der Anfrage oder Aufgabe sein CPU-Limit aufgebraucht oder seine Speichergrenze erreicht. Dann hat die Abfrage auf die CPU gewartet, nicht auf die Datenbank.',
+              'CPU throttled / memory limit: the container used up its CPU limit or reached its memory limit while the request or task ran. The query then waited for the CPU, not for the database.',
+            )}
+          </Text>
+        )}
         <Stack gap={10}>
           {(data?.queries ?? []).map((q) => (
             <Paper key={q.id} withBorder p="sm">
@@ -242,6 +281,16 @@ export function PerformancePanel() {
                   <Text size="xs" c="dimmed" style={{ wordBreak: 'break-all' }}>
                     {tr('zuletzt in', 'last in')} {q.where}
                   </Text>
+                )}
+                {q.cpuThrottled > 0 && (
+                  <Badge size="xs" variant="light" color="orange">
+                    {tr(`${q.cpuThrottled}× CPU gedrosselt`, `${q.cpuThrottled}× CPU throttled`)}
+                  </Badge>
+                )}
+                {q.memoryLimit > 0 && (
+                  <Badge size="xs" variant="light" color="red">
+                    {tr(`${q.memoryLimit}× Speichergrenze`, `${q.memoryLimit}× memory limit`)}
+                  </Badge>
                 )}
               </Group>
               <Code block style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>

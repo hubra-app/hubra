@@ -237,11 +237,6 @@ class Member(db.Model):
     events: Mapped[list["ClubEvent"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "ClubEvent", secondary="event_attendees", back_populates="attendees"
     )
-    instructed_items: Mapped[list] = relationship(
-        "InventoryItem",
-        secondary="item_instructions",
-        back_populates="instructed_members",
-    )
     mailbox_folders: Mapped[list["MailboxFolder"]] = relationship(  # noqa: F821 # type: ignore
         "MailboxFolder",
         back_populates="member",

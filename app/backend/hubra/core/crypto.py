@@ -30,6 +30,7 @@ import base64
 import hashlib
 import os
 import re
+import time
 
 from cryptography.exceptions import InvalidTag
 from cryptography.fernet import Fernet, InvalidToken, MultiFernet
@@ -60,6 +61,13 @@ _SCHEMA = re.compile(r"^tenant_(\d+)")
 
 # wrapped key -> raw key; a wrapped key never changes meaning.
 _unwrapped: dict[str, bytes] = {}
+# version -> raw key of the platform scope.  A version never changes its key
+# (rotation adds a version, a new master key only re-wraps it), so reading a
+# platform secret (the relay password, the bot token) needs no query for the
+# key.  Club keys are not kept: deleting a club deletes its keys.  Kept five
+# minutes, so a database restored from another install is picked up.
+_platform_keys: dict[int, tuple[bytes, float]] = {}
+_PLATFORM_KEY_TTL = 300.0
 
 
 # ── Master key (FERNET_KEY) ──────────────────────────────────────────────────
@@ -172,10 +180,23 @@ def _current_key(scope: str) -> tuple[int, bytes]:
 
 
 def _key(scope: str, version: int) -> bytes:
+    if scope == PLATFORM:
+        cached = _platform_keys.get(version)
+        if cached is not None and time.monotonic() - cached[1] < _PLATFORM_KEY_TTL:
+            return cached[0]
     for row in _rows(scope):
         if row.version == version:
-            return _unwrap(row.wrapped_key)
+            key = _unwrap(row.wrapped_key)
+            if scope == PLATFORM:
+                _platform_keys[version] = (key, time.monotonic())
+            return key
     raise InvalidToken
+
+
+def forget_keys() -> None:
+    """Drop the keys this process keeps (tests; after a restore)."""
+    _unwrapped.clear()
+    _platform_keys.clear()
 
 
 def _aad(scope: str, version: int, purpose: str) -> bytes:

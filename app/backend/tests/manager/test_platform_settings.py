@@ -385,3 +385,88 @@ def test_api_test_mail_via_fallback(client, superadmin, db, fallback):
     assert [c.args[0].host for c in deliver.call_args_list] == [
         "smtp-relay.brevo.example"
     ]
+
+
+# ── Query cost ───────────────────────────────────────────────────────────────
+
+
+class _Queries:
+    """Count the SQL statements sent while the block runs."""
+
+    def __init__(self, db):
+        self.engine = db.engine
+        self.statements: list[str] = []
+
+    def _on(self, conn, cursor, statement, *args):
+        self.statements.append(statement)
+
+    def __enter__(self):
+        from sqlalchemy import event
+
+        event.listen(self.engine, "before_cursor_execute", self._on)
+        return self
+
+    def __exit__(self, *exc):
+        from sqlalchemy import event
+
+        event.remove(self.engine, "before_cursor_execute", self._on)
+
+    @property
+    def settings(self) -> int:
+        return sum("platform_settings" in s for s in self.statements)
+
+
+def test_relay_reads_the_settings_once_per_transaction(app, db):
+    """Missing keys (deployment defaults) used to cost one query each."""
+    platform_settings.set_many({"mail.relay.host": "relay.example.net"})
+    db.session.commit()
+    with _Queries(db) as q:
+        relay = platform_settings.relay()
+        platform_settings.relay()
+        platform_settings.get("mail.fallback.host")
+    assert relay.host == "relay.example.net"
+    assert q.settings == 1, [" ".join(s.split())[-60:] for s in q.statements]
+
+
+def test_a_commit_reads_the_settings_again(app, db):
+    platform_settings.get("mail.relay.host")
+    db.session.commit()
+    with _Queries(db) as q:
+        platform_settings.get("mail.relay.host")
+    assert q.settings == 1
+
+
+def test_a_change_in_the_same_transaction_is_seen(app, db):
+    assert platform_settings.get("mail.relay.host") != "new.example.net"
+    platform_settings.set_many({"mail.relay.host": "new.example.net"})
+    assert platform_settings.get("mail.relay.host") == "new.example.net"
+    platform_settings.set_many({"mail.relay.host": None})
+    assert platform_settings.get("mail.relay.host") != "new.example.net"
+
+
+def test_a_row_another_process_stored_is_seen_after_the_commit(app, db):
+    from sqlalchemy import insert
+
+    assert platform_settings.get("mail.system.sender_name") == (
+        platform_settings.get("mail.system.sender_name")
+    )
+    db.session.commit()
+    # Written past this session's cache, as another process would.
+    with db.engine.begin() as conn:
+        conn.execute(
+            insert(PlatformSetting).values(
+                key="mail.system.sender_name", value="Elsewhere", secret=False
+            )
+        )
+    db.session.rollback()  # the next transaction
+    assert platform_settings.get("mail.system.sender_name") == "Elsewhere"
+
+
+def test_a_secret_needs_no_key_query_once_read(app, db):
+    platform_settings.set_many({"mail.relay.password": "s3cret"})
+    db.session.commit()
+    assert platform_settings.get("mail.relay.password") == "s3cret"
+    db.session.commit()
+    with _Queries(db) as q:
+        assert platform_settings.get("mail.relay.password") == "s3cret"
+    assert not any("data_keys" in s for s in q.statements)

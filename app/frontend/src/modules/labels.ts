@@ -6,7 +6,6 @@ import type { ModuleInfo } from '@/api/modules'
 // language under modules.<code>.*; other plugins keep their manifest's texts.
 const DE: Record<string, { name: string; description: string; settings?: Record<string, [string, string]> }> = {
   bindings: { name: 'Verknüpfungen', description: 'Vereinsdaten mit externen Schnittstellen abgleichen' },
-  codes: { name: 'Codes', description: 'Verschlüsselte Türcodes und Zugangscodes' },
   core: { name: 'Basis', description: 'Anmeldung, Konten, Einstellungen, Dashboard, Protokoll und Mitteilungen' },
   events: {
     name: 'Anlässe',

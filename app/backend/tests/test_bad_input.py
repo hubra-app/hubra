@@ -44,17 +44,6 @@ def test_event_registration_with_bad_fields(client, auth_headers, db, seeded_db)
         assert resp.status_code == 400, url
 
 
-def test_inventory_checkout_without_member(client, auth_headers, db):
-    from hubra.core.models.inventory import InventoryItem
-
-    item = InventoryItem(name="Bohrer", category="tools")
-    db.session.add(item)
-    db.session.commit()
-
-    resp = client.post(f"/api/v1/inventory/{item.id}/checkout", json={}, headers=auth_headers)
-    assert resp.status_code == 400
-
-
 def test_revert_unknown_setting_is_404(client, auth_headers):
     resp = client.post("/api/v1/settings/no.such.key/revert", headers=auth_headers)
     assert resp.status_code == 404

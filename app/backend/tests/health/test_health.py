@@ -169,3 +169,35 @@ def test_imap_check_speaks_tls_on_port_993():
         services._imap_client("localhost", 143)
     tls.assert_called_once_with("imap.example.ch", 993, timeout=1)
     plain.assert_called_once_with("localhost", 143, timeout=1)
+
+
+def test_a_hanging_check_does_not_hold_the_answer(app):
+    """The timeout is the whole answer's: a check still running at the
+    deadline is reported as a timeout, not waited for (the thread pool's
+    ``with`` block used to wait for it)."""
+    import threading
+    import time
+
+    from hubra.api.health.services import HealthService
+
+    release = threading.Event()
+
+    def _hang():
+        release.wait(5)
+        return {"ok": True, "latency_ms": 5000}
+
+    ok = {"ok": True, "latency_ms": 1}
+    with (
+        patch(f"{_SVC}.check_db", return_value=ok),
+        patch(f"{_SVC}.check_redis", return_value=ok),
+        patch(f"{_SVC}.check_smtp", side_effect=_hang),
+        patch(f"{_SVC}.check_imap", return_value=ok),
+        app.app_context(),
+    ):
+        start = time.monotonic()
+        payload = HealthService.run_all_checks(timeout=0.3)
+        took = time.monotonic() - start
+    release.set()
+    assert took < 1.0
+    assert payload["services"]["smtp"]["error"] == "timeout"
+    assert payload["services"]["db"]["ok"] is True

@@ -112,8 +112,8 @@ Settings › Modules lists everything the club can use. Missing one? "Suggest a 
 | Groups | Teams, committees, interest groups | Yes |
 | Polls | Member polls and voting | Yes |
 | Posts | Announcements and community posts | Yes |
-| Codes | Encrypted door codes and passcodes | No |
-| Inventory | Tools, machines, materials, checkouts | No |
+| Codes | Encrypted door codes and passcodes (plugin, installed by the platform) | No |
+| Inventory | Tools, machines, materials, checkouts (plugin, installed by the platform) | No |
 | Bindings | Sync club data with external services | No |
 | Mail | Club mailboxes and addresses | No, and needs the platform's mail server |
 

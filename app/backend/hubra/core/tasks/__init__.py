@@ -63,9 +63,14 @@ def make_celery(app: Flask) -> Celery:
         def __call__(self, *args: object, **kwargs: object) -> object:
             with app.app_context():
                 # The slow-query threshold (read at most once a minute).
-                from hubra.core.services.perf_monitor import refresh_thresholds
+                from hubra.core.services.perf_monitor import (
+                    mark_start,
+                    refresh_thresholds,
+                )
 
                 refresh_thresholds()
+                # Slow queries of this task say if the pod was held back.
+                mark_start()
                 job = self._header(scheduling.HEADER)
                 if job:
                     # Sent by beat: one run of this schedule entry at a time,
@@ -131,6 +136,7 @@ def make_celery(app: Flask) -> Celery:
             "hubra.core.tasks.push_tasks",
             "hubra.core.tasks.mail_monitor_tasks",
             "hubra.core.tasks.connected_app_tasks",
+            "hubra.core.tasks.plugin_event_tasks",
             "hubra.core.tasks.quota_tasks",
             "hubra.core.tasks.upgrade_tasks",
             *_module_task_imports(),
@@ -276,6 +282,13 @@ def make_celery(app: Flask) -> Celery:
     from hubra.core.roles import task_routes
 
     conf["task_routes"] = task_routes()
+    # Children per worker from the pod's CPU limit, not the node's CPUs
+    # (CELERY_WORKER_CONCURRENCY or --concurrency still win; see cgroup.py).
+    from hubra.core.cgroup import worker_concurrency
+
+    children = worker_concurrency()
+    if children is not None:
+        conf["worker_concurrency"] = children
     if testing:
         conf["task_always_eager"] = True
         conf["task_eager_propagates"] = True

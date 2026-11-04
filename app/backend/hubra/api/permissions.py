@@ -30,6 +30,7 @@ from flask import g, jsonify, request
 from flask_jwt_extended import current_user, verify_jwt_in_request
 from sqlalchemy import select
 
+from hubra.api.auth import api_tokens
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 from hubra.core.redis_client import get_redis_client as _get_redis_client
@@ -343,14 +344,27 @@ EXTRA_PERMISSIONS = (
         "action": "moderate",
         "blueprint": "posts_bp",
     },
-    {
-        "key": "inventory.items.create_own",
-        "display_name": "Add own inventory items",
-        "resource": "items",
-        "action": "create_own",
-        "blueprint": "inventory_bp",
-    },
 )
+
+
+def extra_permissions() -> list[dict]:
+    """EXTRA_PERMISSIONS plus the ``permissions`` of every loaded module."""
+    from hubra.core.modules import registry
+
+    out = [dict(m) for m in EXTRA_PERMISSIONS]
+    for module in registry.all():
+        for key, display_name in module.permissions:
+            bp, resource, action = key.split(".", 2)
+            out.append(
+                {
+                    "key": key,
+                    "display_name": display_name,
+                    "resource": resource,
+                    "action": action,
+                    "blueprint": f"{bp}_bp",
+                }
+            )
+    return out
 
 
 def member_has_permission(member, key: str) -> bool:
@@ -506,11 +520,16 @@ def permission_required(
                     {"error": "UNAUTHORIZED", "message": "Token invalid or expired"}
                 ), 401
 
+            perm_key = _derive_perm_key(request.blueprint, resource, action)
+            # An API token narrows the person's rights to its scopes.
+            refusal = api_tokens.club_scope_refusal(member, perm_key)
+            if refusal is not None:
+                return refusal
+
             if member_is_admin(member):
                 g.permission_scope = "tenant"
                 return fn(*args, **kwargs)
 
-            perm_key = _derive_perm_key(request.blueprint, resource, action)
             if held_roles(member) and perm_key in _get_member_permission_keys(member):
                 g.permission_scope = "tenant"
                 return fn(*args, **kwargs)
@@ -581,15 +600,39 @@ def can_update(
                     {"error": "UNAUTHORIZED", "message": "Token invalid or expired"}
                 ), 401
 
-            if member_is_admin(member):
+            coarse_key = _derive_perm_key(request.blueprint, resource, "update")
+            token = api_tokens.current()
+            if token is not None:
+                # The coarse key or a field key of it must be in scope.
+                in_scope = {
+                    k
+                    for k in token["scopes"]
+                    if k == coarse_key or k.startswith(f"{coarse_key}.")
+                }
+                refusal = api_tokens.club_scope_refusal(member, in_scope or {coarse_key})
+                if refusal is not None or not in_scope:
+                    return refusal or api_tokens._scope_error()
+
+            if member_is_admin(member) and (
+                token is None or coarse_key in token["scopes"]
+            ):
                 g.updatable_fields = None  # None = all fields allowed
                 return fn(*args, **kwargs)
 
-            perms = set(_get_member_permission_keys(member)) if held_roles(member) else set()
+            if member_is_admin(member):
+                # A token with field keys only: those fields, nothing more.
+                perms = set(token["scopes"])
+            else:
+                perms = (
+                    set(_get_member_permission_keys(member))
+                    if held_roles(member)
+                    else set()
+                )
             group_id = _scope_id(kwargs, scope)
             if group_id is not None:
                 perms |= scoped_permission_keys(member).get(group_id, set())
-            coarse_key = _derive_perm_key(request.blueprint, resource, "update")
+            if token is not None:
+                perms &= token["scopes"]
 
             if coarse_key in perms:
                 g.updatable_fields = None
@@ -605,7 +648,16 @@ def can_update(
                 if reason:
                     g.permission_scope = "object"
                     g.object_access = reason
-                    field_perms |= set(allow_fields)
+                    granted = set(allow_fields)
+                    if token is not None and coarse_key not in token["scopes"]:
+                        # A token passes on object access only for the
+                        # fields its own scopes name.
+                        granted &= {
+                            k[len(field_prefix) :]
+                            for k in token["scopes"]
+                            if k.startswith(field_prefix)
+                        }
+                    field_perms |= granted
             if field_perms:
                 g.updatable_fields = field_perms
                 return fn(*args, **kwargs)
@@ -772,6 +824,10 @@ def require_global_permission(permission_key: str):
                     }
                 ), 403
 
+            refusal = api_tokens.platform_scope_refusal(permission_key)
+            if refusal is not None:
+                return refusal
+
             if user.is_superadmin:
                 g.system_user = user
                 g.permission_scope = "global"
@@ -790,6 +846,7 @@ def require_global_permission(permission_key: str):
             g.permission_scope = "global"
             return fn(*args, **kwargs)
 
+        wrapper._global_perm = permission_key
         return wrapper
 
     return decorator

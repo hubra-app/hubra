@@ -138,6 +138,9 @@ def create_app(config_name: str | None = None) -> Flask:
     from hubra.core.tenant.middleware import TenantPathMiddleware, resolve_tenant
 
     install_search_path_guard()
+    from hubra.core.modules.events import install_after_commit_delivery
+
+    install_after_commit_delivery()
 
     # Old API paths (/api/v1/members, /api/v1/manager/...) to the new areas
     # /api/v1/app, /platform and /global; inside the slug wrapper, so the
@@ -152,6 +155,12 @@ def create_app(config_name: str | None = None) -> Flask:
     from hubra.core.roles import install_role_gate
 
     install_role_gate(app)
+
+    # ── API tokens (Authorization: Bearer hbr_…): before the tenant resolver,
+    #    so the token names the club. ─────────────────────────────────────
+    from hubra.api.auth import api_tokens
+
+    api_tokens.install(app)
 
     # ── Request timing and slow queries (first, so it times the rest) ─────────
     from hubra.core.services import perf_monitor
