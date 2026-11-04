@@ -3502,5 +3502,20 @@
   "backupKey.clubOnly.slug": "To confirm, type the club's short name: {{slug}}",
   "backupKey.clubOnly.turnOn": "Use only our key",
   "settings.modules.onCount": "{{count}} of {{total}} on",
-  "settings.modules.title": "Modules"
+  "settings.modules.title": "Modules",
+  "data": {
+    "filter": "Filter",
+    "filterReset": "Reset",
+    "filterDone": "Done",
+    "filterRemove": "Remove {{chip}}"
+  },
+  "members": {
+    "filter": {
+      "show": "Show",
+      "current": "Current members"
+    }
+  },
+  "finance": {
+    "direction": "Direction"
+  }
 }

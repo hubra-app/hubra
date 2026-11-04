@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, Group, Badge, Select, ActionIcon, Text } from '@mantine/core'
+import { Button, Group, Badge, ActionIcon, Text } from '@mantine/core'
 import { useT } from '@/locales/i18n'
 import { IconExternalLink, IconPlus } from '@tabler/icons-react'
 import { useToast, useNav, useAuth } from '@/context/AppContext'
@@ -349,17 +349,32 @@ export function TransactionsTab() {
           'finance.searchTransactions',
           'Buchungen suchen …',
         )}
-        filters={['All', 'In', 'Out'].map((f) => ({
-          label:
-            f === 'All'
-              ? t('common.all', 'Alle')
-              : f === 'In'
-                ? t('finance.in', 'Ein')
-                : t('finance.out', 'Aus'),
-          value: f.toLowerCase(),
-          active: typeFilter === f,
-          onClick: () => setTypeFilter(f),
-        }))}
+        filterGroups={[
+          {
+            key: 'type',
+            label: t('finance.direction', 'Richtung'),
+            value: typeFilter,
+            defaultValue: 'All',
+            options: [
+              { value: 'All', label: t('common.all', 'Alle') },
+              { value: 'In', label: t('finance.in', 'Ein') },
+              { value: 'Out', label: t('finance.out', 'Aus') },
+            ],
+            onChange: setTypeFilter,
+          },
+          {
+            key: 'status',
+            label: t('common.status', 'Status'),
+            value: statusFilter,
+            defaultValue: 'All',
+            options: [
+              { value: 'All', label: t('common.all', 'Alle') },
+              { value: 'Pending', label: t('finance.pending', 'Offen') },
+              { value: 'Completed', label: t('finance.completed', 'Abgeschlossen') },
+            ],
+            onChange: setStatusFilter,
+          },
+        ]}
         page={pg.page}
         perPage={pg.perPage}
         total={pg.total}
@@ -367,24 +382,6 @@ export function TransactionsTab() {
         onPageChange={pg.goPage}
         onPerPageChange={pg.setPerPage}
         getRowKey={(tx) => tx.id}
-        toolbar={
-          <Select
-            size="sm"
-            aria-label={t('common.status', 'Status')}
-            data={[
-              { value: 'All', label: t('finance.allStatuses', 'Alle Status') },
-              { value: 'Pending', label: t('finance.pending', 'Offen') },
-              {
-                value: 'Completed',
-                label: t('finance.completed', 'Abgeschlossen'),
-              },
-            ]}
-            value={statusFilter}
-            onChange={(v) => setStatusFilter(v ?? 'All')}
-            allowDeselect={false}
-            style={{ width: 160 }}
-          />
-        }
       />
 
       <ConfirmModal

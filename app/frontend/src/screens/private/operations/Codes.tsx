@@ -345,24 +345,18 @@ export function CodesScreen() {
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder={t('codes.searchPlaceholder', 'Suchen …')}
-        filters={[
+        filterGroups={[
           {
-            label: t('common.all', 'Alle'),
-            value: 'all',
-            active: statusFilter === 'All',
-            onClick: () => setStatusFilter('All'),
-          },
-          {
-            label: t('codes.active'),
-            value: 'active',
-            active: statusFilter === 'Active',
-            onClick: () => setStatusFilter('Active'),
-          },
-          {
-            label: t('codes.inactive'),
-            value: 'inactive',
-            active: statusFilter === 'Inactive',
-            onClick: () => setStatusFilter('Inactive'),
+            key: 'status',
+            label: t('common.status', 'Status'),
+            value: statusFilter,
+            defaultValue: 'All',
+            options: [
+              { value: 'All', label: t('common.all', 'Alle') },
+              { value: 'Active', label: t('codes.active') },
+              { value: 'Inactive', label: t('codes.inactive') },
+            ],
+            onChange: setStatusFilter,
           },
         ]}
         getRowKey={(c) => c.id}

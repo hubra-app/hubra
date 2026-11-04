@@ -4,7 +4,6 @@ import {
   Table as MantineTable,
   ScrollArea,
   TextInput,
-  Select,
   Badge,
   Accordion,
   ActionIcon,
@@ -14,6 +13,7 @@ import {
   SegmentedControl,
   SimpleGrid,
   Text,
+  UnstyledButton,
 } from '@mantine/core'
 import {
   IconSearch,
@@ -24,8 +24,13 @@ import {
   IconInbox,
   IconLayoutGrid,
   IconList,
+  IconChevronUp,
+  IconChevronDown,
+  IconSelector,
 } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
+import { FilterBar, type FilterGroup } from '@hubra/ui'
+import { filterLabels } from './filterLabels'
 import { LoadingSpinner, EmptyState } from './feedback'
 import { Pagination } from './layout'
 import { clickableProps } from './hooks'
@@ -322,29 +327,52 @@ export function ActionButtons({
 
 /* ── DataTable<T> ────────────────────────────── */
 
+function SortHeader({
+  sort,
+  value,
+  onChange,
+  children,
+}: {
+  sort: { asc: string; desc?: string }
+  value: string
+  onChange: (v: string) => void
+  children: ReactNode
+}) {
+  const dir = value === sort.asc ? 'asc' : sort.desc !== undefined && value === sort.desc ? 'desc' : null
+  const Icon = dir === 'asc' ? IconChevronUp : dir === 'desc' ? IconChevronDown : IconSelector
+  const next = dir === 'asc' && sort.desc !== undefined ? sort.desc : sort.asc
+  return (
+    <UnstyledButton
+      onClick={() => onChange(next)}
+      aria-sort={dir === 'asc' ? 'ascending' : dir === 'desc' ? 'descending' : undefined}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        font: 'inherit',
+        color: 'inherit',
+        textTransform: 'inherit',
+        letterSpacing: 'inherit',
+      }}
+    >
+      {children}
+      <Icon size={14} style={{ opacity: dir ? 1 : 0.4 }} />
+    </UnstyledButton>
+  )
+}
+
 export interface DataColumn<T> {
   key: string
   header: ReactNode
   render: (item: T) => ReactNode
   width?: string | number
   thStyle?: React.CSSProperties
+  /** Sortable by its header: the sort values for A→Z and Z→A (desc optional). */
+  sort?: { asc: string; desc?: string }
 }
 
-export interface DataTableFilter {
-  label: ReactNode
-  value: string
-  active: boolean
-  onClick: () => void
-}
+export type { FilterGroup } from '@hubra/ui'
 
-export interface DataTableFilterSlot {
-  label: string
-  type: 'select' | 'chips'
-  selectValue?: string
-  selectOptions?: { value: string; label: string }[]
-  onSelectChange?: (value: string) => void
-  filters?: DataTableFilter[]
-}
 
 type TableView = 'cards' | 'table'
 
@@ -381,8 +409,9 @@ export function DataTable<T>({
   searchPlaceholder,
   searchValue,
   onSearchChange,
-  filters,
-  filterSlots,
+  filterGroups,
+  sortValue,
+  onSortChange,
   groupBy,
   page,
   perPage,
@@ -408,8 +437,11 @@ export function DataTable<T>({
   searchPlaceholder?: string
   searchValue?: string
   onSearchChange?: (v: string) => void
-  filters?: DataTableFilter[]
-  filterSlots?: DataTableFilterSlot[]
+  /** All filters and the sort order, behind one "Filter" button (docs/table-controls.md). */
+  filterGroups?: FilterGroup[]
+  /** The sort value for columns with `sort`; clicking their header sets it. */
+  sortValue?: string
+  onSortChange?: (v: string) => void
   groupBy?: {
     getGroup: (item: T) => string
     label?: (group: string) => string
@@ -448,9 +480,6 @@ export function DataTable<T>({
     />
   ) : null
 
-  const hasSearch = !!onSearchChange
-  const hasFlatFilters = filters && filters.length > 0
-  const hasFilterSlots = filterSlots && filterSlots.length > 0
   const hasPagination = page !== undefined && onPageChange !== undefined
 
   const grouped = useMemo(() => {
@@ -476,7 +505,17 @@ export function DataTable<T>({
               ...col.thStyle,
             }}
           >
-            {col.header}
+            {col.sort && onSortChange ? (
+              <SortHeader
+                sort={col.sort}
+                value={sortValue ?? ''}
+                onChange={onSortChange}
+              >
+                {col.header}
+              </SortHeader>
+            ) : (
+              col.header
+            )}
           </MantineTable.Th>
         ))}
       </MantineTable.Tr>
@@ -504,113 +543,34 @@ export function DataTable<T>({
     <MantineTable.Tbody>{items.map(renderTableRow)}</MantineTable.Tbody>
   )
 
+  const groups = (filterGroups ?? []).filter(Boolean)
+  const actions =
+    toolbar || viewSwitch ? (
+      <>
+        {toolbar}
+        {viewSwitch}
+      </>
+    ) : null
+
   return (
     <Paper withBorder>
-      {(hasSearch || hasFlatFilters || hasFilterSlots || toolbar || viewSwitch) && (
-        <div
-          style={{
-            padding: '14px 16px',
-            borderBottom: '1px solid var(--hb-border)',
-            display: 'flex',
-            gap: 10,
-            flexWrap: 'wrap',
-            alignItems: 'center',
-          }}
-        >
-          {hasSearch && (
-            <TextInput
-              size="sm"
-              style={{ flex: '1 1 220px' }}
-              leftSection={<IconSearch size={16} />}
-              placeholder={searchPlaceholder ?? i18n.t('common.searchPlaceholder', 'Suchen …')}
-              value={searchValue ?? ''}
-              onChange={(e) => onSearchChange!(e.target.value)}
-            />
-          )}
-          {hasFlatFilters && (
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {filters!.map((f) => (
-                <button
-                  key={f.value}
-                  className={`chip${f.active ? ' on' : ''}`}
-                  onClick={f.onClick}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          )}
-          {hasFilterSlots && (
-            <div
-              style={{
-                display: 'flex',
-                gap: 0,
-                flexWrap: 'wrap',
-                alignItems: 'center',
-              }}
-            >
-              {filterSlots!.map((slot, si) => (
-                <div
-                  key={si}
-                  style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: 6,
-                    alignItems: 'center',
-                    paddingLeft: si > 0 ? 12 : 0,
-                    marginLeft: si > 0 ? 12 : 0,
-                    borderLeft: si > 0 ? '1px solid var(--hb-border)' : 'none',
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: 'var(--mantine-font-size-xs)',
-                      fontWeight: 600,
-                      color: 'var(--mantine-color-ink-3)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.04em',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {slot.label}
-                  </span>
-                  {slot.type === 'select' && (
-                    <Select
-                      size="xs"
-                      data={slot.selectOptions ?? []}
-                      value={slot.selectValue}
-                      onChange={(v) => slot.onSelectChange?.(v ?? '')}
-                      style={{ width: 'auto' }}
-                    />
-                  )}
-                  {slot.type === 'chips' &&
-                    slot.filters?.map((f) => (
-                      <button
-                        key={f.value}
-                        className={`chip${f.active ? ' on' : ''}`}
-                        onClick={f.onClick}
-                      >
-                        {f.label}
-                      </button>
-                    ))}
-                </div>
-              ))}
-            </div>
-          )}
-          {(toolbar || viewSwitch) && (
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
-              {toolbar}
-              {viewSwitch}
-            </div>
-          )}
-        </div>
-      )}
+      <FilterBar
+        padded
+        search={searchValue}
+        onSearchChange={onSearchChange}
+        searchPlaceholder={searchPlaceholder ?? i18n.t('common.searchPlaceholder', 'Suchen …')}
+        groups={groups}
+        actions={actions}
+        labels={filterLabels()}
+      />
 
+      {/* Above the list only when there is more than one page to move through. */}
       {hasPagination &&
         total !== undefined &&
         total > 0 &&
         perPage !== undefined &&
         totalPages !== undefined &&
+        totalPages > 1 &&
         onPerPageChange && (
           <Pagination
             page={page!}

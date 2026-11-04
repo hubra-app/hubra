@@ -161,6 +161,14 @@ body {
   font-weight: 600;
 }
 
+/* An active filter under a list's toolbar: the chip itself is not a button,
+   its × is. */
+.chip.filter-chip {
+  cursor: default;
+  padding: 3px 8px 3px 10px;
+  font-size: var(--mantine-font-size-xs);
+}
+
 /* Log and command output (diagnostics, mail checks). */
 .terminal-block {
   /* Dark in both schemes, like a terminal. */

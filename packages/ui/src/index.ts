@@ -18,6 +18,15 @@ export { colorSchemeManager, readColorScheme } from './colorScheme'
 export { ThemeSwitch, ThemeToggle } from './ThemeSwitch'
 export { BuildBadge } from './BuildBadge'
 export {
+  ActiveFilterChips,
+  FilterBar,
+  FilterButton,
+  activeFilters,
+  type FilterGroup,
+  type FilterLabels,
+  type FilterOption,
+} from './filters'
+export {
   fillNotificationText,
   notificationMessageText,
   notificationTitleText,

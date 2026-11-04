@@ -3,22 +3,19 @@ import { useQuery } from '@tanstack/react-query'
 import {
   Badge,
   Button,
-  Checkbox,
   Code,
   Group,
   Paper,
-  SegmentedControl,
-  Select,
   Stack,
   Table,
   Text,
-  TextInput,
 } from '@mantine/core'
-import { IconDownload, IconSearch } from '@tabler/icons-react'
+import { IconDownload } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
 import { Pagination } from '@/components/ui'
 import { formatDateTime } from '@/format'
 import { tr, useLang } from '@/lang'
+import { FilterBar } from '@/components/FilterBar'
 import {
   exportAudit,
   listTenants,
@@ -170,80 +167,78 @@ export function AuditSearch() {
 
   return (
     <Stack gap={16}>
-      <Paper withBorder p="md">
-        <Stack gap="sm">
-          <Group gap="sm" wrap="wrap" align="flex-end">
-            <TextInput
-              size="xs"
-              leftSection={<IconSearch size={14} />}
-              placeholder={t('Aktion, Person, Ziel, Details, IP', 'Action, person, target, details, IP')}
-              aria-label={t('Suchen', 'Search')}
-              value={search}
-              onChange={(e) => setSearch(e.currentTarget.value)}
-              style={{ flex: '1 1 260px' }}
-            />
-            <Select
-              size="xs"
-              aria-label={t('Verein', 'Club')}
-              placeholder={t('Alle Vereine', 'All clubs')}
-              searchable
-              clearable
-              value={club}
-              onChange={reset(setClub)}
-              data={(clubs.data?.tenants ?? []).map((c) => ({ value: String(c.id), label: c.name }))}
-              w={220}
-            />
-            <TextInput
-              size="xs"
-              type="date"
-              label={t('Von', 'From')}
-              value={from}
-              max={to || undefined}
-              onChange={(e) => reset(setFrom)(e.currentTarget.value)}
-              w={150}
-            />
-            <TextInput
-              size="xs"
-              type="date"
-              label={t('Bis', 'To')}
-              value={to}
-              min={from || undefined}
-              onChange={(e) => reset(setTo)(e.currentTarget.value)}
-              w={150}
-            />
-          </Group>
-          <Group justify="space-between" gap="sm" wrap="wrap">
-            <Group gap="md" wrap="wrap">
-              <SegmentedControl
-                size="xs"
-                value={source}
-                onChange={(v) => reset(setSource)(v as AuditSource)}
-                data={[
-                  { value: 'all', label: t('Alle Protokolle', 'All logs') },
-                  { value: 'platform', label: t('Plattform', 'Platform') },
-                  { value: 'club', label: t('Vereine', 'Clubs') },
-                ]}
-              />
-              <Checkbox
-                size="xs"
-                label={t('Anmeldungen ausblenden', 'Hide sign-ins')}
-                checked={hideLogins}
-                onChange={(e) => reset(setHideLogins)(e.currentTarget.checked)}
-              />
-            </Group>
-            <Button
-              size="xs"
-              variant="light"
-              leftSection={<IconDownload size={14} />}
-              loading={exporting}
-              disabled={total === 0}
-              onClick={runExport}
-            >
-              {t('Als CSV exportieren', 'Export as CSV')}
-            </Button>
-          </Group>
-        </Stack>
-      </Paper>
+      <FilterBar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={t('Aktion, Person, Ziel, Details, IP', 'Action, person, target, details, IP')}
+        groups={[
+          {
+            key: 'source',
+            label: t('Protokoll', 'Log'),
+            value: source,
+            defaultValue: 'all',
+            options: [
+              { value: 'all', label: t('Alle Protokolle', 'All logs') },
+              { value: 'platform', label: t('Plattform', 'Platform') },
+              { value: 'club', label: t('Vereine', 'Clubs') },
+            ],
+            onChange: (v) => reset(setSource)(v as AuditSource),
+          },
+          {
+            key: 'club',
+            label: t('Verein', 'Club'),
+            value: club ?? '',
+            defaultValue: '',
+            kind: 'select',
+            options: [
+              { value: '', label: t('Alle Vereine', 'All clubs') },
+              ...(clubs.data?.tenants ?? []).map((c) => ({ value: String(c.id), label: c.name })),
+            ],
+            onChange: (v) => reset(setClub)(v || null),
+          },
+          {
+            key: 'from',
+            label: t('Von', 'From'),
+            value: from,
+            defaultValue: '',
+            kind: 'date',
+            max: to || undefined,
+            onChange: reset(setFrom),
+          },
+          {
+            key: 'to',
+            label: t('Bis', 'To'),
+            value: to,
+            defaultValue: '',
+            kind: 'date',
+            min: from || undefined,
+            onChange: reset(setTo),
+          },
+          {
+            key: 'logins',
+            label: t('Anmeldungen', 'Sign-ins'),
+            value: hideLogins ? 'hide' : 'show',
+            defaultValue: 'hide',
+            options: [
+              { value: 'hide', label: t('Ausblenden', 'Hide') },
+              { value: 'show', label: t('Anzeigen', 'Show') },
+            ],
+            onChange: (v) => reset(setHideLogins)(v === 'hide'),
+          },
+        ]}
+        actions={
+          <Button
+            size="sm"
+            variant="light"
+            leftSection={<IconDownload size={14} />}
+            loading={exporting}
+            disabled={total === 0}
+            onClick={runExport}
+          >
+            {t('Als CSV exportieren', 'Export as CSV')}
+          </Button>
+        }
+      />
 
       <Paper withBorder style={{ overflow: 'hidden' }}>
         {query.isError && (

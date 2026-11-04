@@ -3502,5 +3502,20 @@
   "backupKey.clubOnly.slug": "Zur Bestätigung den Kurznamen des Vereins eingeben: {{slug}}",
   "backupKey.clubOnly.turnOn": "Nur unseren Schlüssel verwenden",
   "settings.modules.onCount": "{{count}} von {{total}} eingeschaltet",
-  "settings.modules.title": "Module"
+  "settings.modules.title": "Module",
+  "data": {
+    "filter": "Filter",
+    "filterReset": "Zurücksetzen",
+    "filterDone": "Fertig",
+    "filterRemove": "{{chip}} entfernen"
+  },
+  "members": {
+    "filter": {
+      "show": "Anzeigen",
+      "current": "Aktuelle Mitglieder"
+    }
+  },
+  "finance": {
+    "direction": "Richtung"
+  }
 }

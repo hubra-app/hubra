@@ -1,9 +1,9 @@
 import { colorText } from '@hubra/ui'
 import { useState } from 'react'
-import { Button, TextInput, Select, Badge, Paper, Text } from '@mantine/core'
+import { Button, Badge, Text } from '@mantine/core'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT } from '@/locales/i18n'
-import { IconPlus, IconSearch } from '@tabler/icons-react'
+import { IconPlus } from '@tabler/icons-react'
 import { useToast, useAuth } from '@/context/AppContext'
 import {
   PageHead,
@@ -12,12 +12,7 @@ import {
   ErrorBanner,
   DataTable,
   ActionButtons,
-  Seg,
-  CardGrid,
   CardItem,
-  LoadingSpinner,
-  EmptyState,
-  Pagination,
 } from '@/components/ui'
 import type { InventoryItem, InventoryCategory, InventoryStatus } from '@/types'
 import {
@@ -58,11 +53,8 @@ export function InventoryScreen() {
     queryFn: () => listInventory(),
   })
   const [catFilter, setCatFilter] = useState<InventoryCategory | 'All'>('All')
-  const [statusFilter, setStatusFilter] = useState<InventoryStatus | 'All'>(
-    'All',
-  )
+  const [statusFilter, setStatusFilter] = useState<InventoryStatus | 'All'>('All')
   const [search, setSearch] = useState('')
-  const [view, setView] = useState<'table' | 'cards'>('cards')
 
   const [deleteTarget, setDeleteTarget] = useState<InventoryItem | null>(null)
   const [detailItem, setDetailItem] = useState<InventoryItem | null>(null)
@@ -74,8 +66,7 @@ export function InventoryScreen() {
   const filtered = items.filter((item) => {
     if (catFilter !== 'All' && item.category !== catFilter) return false
     if (statusFilter !== 'All' && item.status !== statusFilter) return false
-    if (search && !item.name.toLowerCase().includes(search.toLowerCase()))
-      return false
+    if (search && !item.name.toLowerCase().includes(search.toLowerCase())) return false
     return true
   })
 
@@ -93,15 +84,21 @@ export function InventoryScreen() {
       setFormTarget(null)
       notify(
         'success',
-        target ? t('inventory.item.updated', 'Gegenstand gespeichert') : t('inventory.item.added', 'Gegenstand hinzugefügt'),
+        target
+          ? t('inventory.item.updated', 'Gegenstand gespeichert')
+          : t('inventory.item.added', 'Gegenstand hinzugefügt'),
         target
           ? t('inventory.item.updatedMsg', '{{name}} wurde gespeichert.', { name: input.name })
-          : t('inventory.item.addedMsg', '{{name}} wurde zum Inventar hinzugefügt.', { name: input.name }),
+          : t('inventory.item.addedMsg', '{{name}} wurde zum Inventar hinzugefügt.', {
+              name: input.name,
+            }),
       )
     } catch (err: unknown) {
       notify(
         'error',
-        target ? t('common.updateFailed', 'Speichern fehlgeschlagen') : t('common.createFailed', 'Erstellen fehlgeschlagen'),
+        target
+          ? t('common.updateFailed', 'Speichern fehlgeschlagen')
+          : t('common.createFailed', 'Erstellen fehlgeschlagen'),
         err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     }
@@ -124,9 +121,7 @@ export function InventoryScreen() {
       notify(
         'error',
         t('common.deleteFailed', 'Löschen fehlgeschlagen'),
-        err instanceof Error
-          ? err.message
-          : t('common.unknownError', 'Unbekannter Fehler'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
       )
     } finally {
       setDeleteTarget(null)
@@ -140,6 +135,78 @@ export function InventoryScreen() {
 
   const currentUserId = currentUser ? Number(currentUser.id) : null
   const currentUserName = currentUser?.name ?? ''
+
+  // The card view (the default): what it is, who owns it, its state.
+  const renderCard = (item: InventoryItem) => {
+    const sc = STATUS_CONFIG[item.status]
+    const cc = CATEGORY_COLORS[item.category]
+    return (
+      <CardItem
+        colorBar={cc}
+        icon={
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 8,
+              background: `color-mix(in srgb, ${cc} 13%, transparent)`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: colorText(cc),
+            }}
+          >
+            {CATEGORY_ICONS[item.category]}
+          </div>
+        }
+        title={item.name}
+        subtitle={item.ownerName ?? t('inventory.noOwner', 'Keine Eigentümer:in')}
+        onClick={() => setDetailItem(item)}
+        footer={
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <Badge
+              variant="light"
+              size="sm"
+              style={{
+                borderColor: `color-mix(in srgb, ${sc.color} 27%, transparent)`,
+                color: sc.color,
+                background: `color-mix(in srgb, ${sc.color} 7%, transparent)`,
+              }}
+            >
+              {t(`inventory.status_${item.status}`, sc.label)}
+            </Badge>
+            <div onClick={(e) => e.stopPropagation()}>
+              <ActionButtons
+                onEdit={accessTo(item).canEdit ? () => setFormTarget(item) : undefined}
+                onDelete={accessTo(item).canDelete ? () => setDeleteTarget(item) : undefined}
+              />
+            </div>
+          </div>
+        }
+      >
+        {item.description && (
+          <Text
+            size="sm"
+            c="dimmed"
+            style={{
+              marginBottom: 8,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {item.description}
+          </Text>
+        )}
+      </CardItem>
+    )
+  }
 
   return (
     <div>
@@ -161,14 +228,11 @@ export function InventoryScreen() {
           message={
             fetchError instanceof Error
               ? fetchError.message
-              : t(
-                  'inventory.failedToLoadInventory',
-                  'Inventar konnte nicht geladen werden',
-                )
+              : t('inventory.failedToLoadInventory', 'Inventar konnte nicht geladen werden')
           }
           onRetry={() => refetch()}
         />
-      ) : view === 'table' ? (
+      ) : (
         <DataTable
           breakpoint="wide"
           columns={[
@@ -183,16 +247,11 @@ export function InventoryScreen() {
                     gap: 8,
                   }}
                 >
-                  <span
-                    className="dot"
-                    style={{ background: CATEGORY_COLORS[item.category] }}
-                  />
+                  <span className="dot" style={{ background: CATEGORY_COLORS[item.category] }} />
                   <span style={{ color: colorText(CATEGORY_COLORS[item.category]) }}>
                     {CATEGORY_ICONS[item.category]}
                   </span>
-                  <span style={{ fontWeight: 600, color: 'var(--hb-text)' }}>
-                    {item.name}
-                  </span>
+                  <span style={{ fontWeight: 600, color: 'var(--hb-text)' }}>{item.name}</span>
                 </div>
               ),
             },
@@ -264,9 +323,7 @@ export function InventoryScreen() {
                 <div onClick={(e) => e.stopPropagation()}>
                   <ActionButtons
                     onEdit={accessTo(item).canEdit ? () => setFormTarget(item) : undefined}
-                    onDelete={
-                      accessTo(item).canDelete ? () => setDeleteTarget(item) : undefined
-                    }
+                    onDelete={accessTo(item).canDelete ? () => setDeleteTarget(item) : undefined}
                   />
                 </div>
               ),
@@ -279,63 +336,52 @@ export function InventoryScreen() {
           searchValue={search}
           onSearchChange={setSearch}
           searchPlaceholder={t('inventory.searchItems', 'Gegenstände suchen …')}
-          filters={[
+          filterGroups={[
             {
-              label: t('inventory.allCategories', 'Alle Kategorien'),
-              value: 'cat-all',
-              active: catFilter === 'All',
-              onClick: () => setCatFilter('All'),
+              key: 'category',
+              label: t('inventory.category', 'Kategorie'),
+              value: catFilter,
+              defaultValue: 'All',
+              options: [
+                { value: 'All', label: t('inventory.allCategories', 'Alle Kategorien') },
+                ...CATEGORIES.map((c) => {
+                  const text =
+                    c === 'Tool'
+                      ? t('inventory.tool', 'Werkzeug')
+                      : c === 'Item'
+                        ? t('inventory.itemLabel', 'Gegenstand')
+                        : t('inventory.material', 'Material')
+                  return {
+                    value: c,
+                    text,
+                    label: (
+                      <>
+                        <span className="dot" style={{ background: CATEGORY_COLORS[c] }} />
+                        {text}
+                      </>
+                    ),
+                  }
+                }),
+              ],
+              onChange: (v) => setCatFilter(v as InventoryCategory | 'All'),
             },
-            ...CATEGORIES.map((c) => ({
-              label: (
-                <>
-                  <span
-                    className="dot"
-                    style={{ background: CATEGORY_COLORS[c] }}
-                  />
-                  {c === 'Tool'
-                    ? t('inventory.tool', 'Werkzeug')
-                    : c === 'Item'
-                      ? t('inventory.itemLabel', 'Gegenstand')
-                      : t('inventory.material', 'Material')}
-                </>
-              ),
-              value: `cat-${c}`,
-              active: catFilter === c,
-              onClick: () => setCatFilter(c),
-            })),
+            {
+              key: 'status',
+              label: t('common.status', 'Status'),
+              value: statusFilter,
+              defaultValue: 'All',
+              options: [
+                { value: 'All', label: t('inventory.allStatuses', 'Alle Status') },
+                ...STATUSES.map((st) => ({
+                  value: st,
+                  label: t(`inventory.status_${st}`, STATUS_CONFIG[st].label),
+                })),
+              ],
+              onChange: (v) => setStatusFilter(v as InventoryStatus | 'All'),
+            },
           ]}
-          toolbar={
-            <>
-              <Select
-                size="sm"
-                aria-label={t('common.status', 'Status')}
-                data={[
-                  {
-                    value: 'All',
-                    label: t('inventory.allStatuses', 'Alle Status'),
-                  },
-                  ...STATUSES.map((s) => ({
-                    value: s,
-                    label: t(`inventory.status_${s}`, STATUS_CONFIG[s].label),
-                  })),
-                ]}
-                value={statusFilter}
-                onChange={(v) =>
-                  setStatusFilter((v ?? 'All') as InventoryStatus | 'All')
-                }
-                style={{ width: 140 }}
-              />
-              <Seg
-                options={[
-                  { value: 'table', label: '\u2261 ' + t('members.tableView') },
-                  { value: 'cards', label: '\u229e ' + t('members.cardsView') },
-                ]}
-                value={view}
-                onChange={(v) => setView(v as 'table' | 'cards')}
-              />
-            </>
-          }
+          renderCard={renderCard}
+          viewKey="inventory"
           page={pg.page}
           perPage={pg.perPage}
           total={pg.total}
@@ -344,186 +390,6 @@ export function InventoryScreen() {
           onPerPageChange={pg.setPerPage}
           getRowKey={(item) => item.id}
         />
-      ) : (
-        <Paper withBorder>
-          <div
-            style={{
-              padding: '14px 16px',
-              borderBottom: '1px solid var(--hb-border)',
-              display: 'flex',
-              gap: 10,
-              flexWrap: 'wrap',
-              alignItems: 'center',
-            }}
-          >
-            <TextInput
-              style={{ flex: '1 1 220px' }}
-              leftSection={<IconSearch size={16} />}
-              size="sm"
-              placeholder={t('inventory.searchItems', 'Gegenstände suchen …')}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              <button
-                className={`chip${catFilter === 'All' ? ' on' : ''}`}
-                onClick={() => setCatFilter('All')}
-              >
-                {t('inventory.allCategories', 'Alle Kategorien')}
-              </button>
-              {CATEGORIES.map((c) => (
-                <button
-                  key={c}
-                  className={`chip${catFilter === c ? ' on' : ''}`}
-                  onClick={() => setCatFilter(c)}
-                >
-                  <span
-                    className="dot"
-                    style={{ background: CATEGORY_COLORS[c] }}
-                  />
-                  {c === 'Tool'
-                    ? t('inventory.tool', 'Werkzeug')
-                    : c === 'Item'
-                      ? t('inventory.itemLabel', 'Gegenstand')
-                      : t('inventory.material', 'Material')}
-                </button>
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <Select
-                size="sm"
-                aria-label={t('common.status', 'Status')}
-                data={[
-                  {
-                    value: 'All',
-                    label: t('inventory.allStatuses', 'Alle Status'),
-                  },
-                  ...STATUSES.map((s) => ({
-                    value: s,
-                    label: t(`inventory.status_${s}`, STATUS_CONFIG[s].label),
-                  })),
-                ]}
-                value={statusFilter}
-                onChange={(v) =>
-                  setStatusFilter((v ?? 'All') as InventoryStatus | 'All')
-                }
-                style={{ width: 140 }}
-              />
-              <Seg
-                options={[
-                  { value: 'table', label: '\u2261 ' + t('members.tableView') },
-                  { value: 'cards', label: '\u229e ' + t('members.cardsView') },
-                ]}
-                value={view}
-                onChange={(v) => setView(v as 'table' | 'cards')}
-              />
-            </div>
-          </div>
-          {loading ? (
-            <LoadingSpinner compact message={t('common.loading', 'Wird geladen …')} />
-          ) : pg.paged.length === 0 ? (
-            <EmptyState
-              title={t('inventory.noItemsFound', 'Keine Gegenstände gefunden')}
-            />
-          ) : (
-            <>
-              <div style={{ padding: 16 }}>
-                <CardGrid>
-                  {pg.paged.map((item) => {
-                    const sc = STATUS_CONFIG[item.status]
-                    const cc = CATEGORY_COLORS[item.category]
-                    return (
-                      <CardItem
-                        key={item.id}
-                        colorBar={cc}
-                        icon={
-                          <div
-                            style={{
-                              width: 36,
-                              height: 36,
-                              borderRadius: 8,
-                              background: `color-mix(in srgb, ${cc} 13%, transparent)`,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: colorText(cc),
-                            }}
-                          >
-                            {CATEGORY_ICONS[item.category]}
-                          </div>
-                        }
-                        title={item.name}
-                        subtitle={
-                          item.ownerName ??
-                          t('inventory.noOwner', 'Keine Eigentümer:in')
-                        }
-                        onClick={() => setDetailItem(item)}
-                        footer={
-                          <div
-                            style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                            }}
-                          >
-                            <Badge
-                              variant="light"
-                              size="sm"
-                              style={{
-                                borderColor: `color-mix(in srgb, ${sc.color} 27%, transparent)`,
-                                color: sc.color,
-                                background: `color-mix(in srgb, ${sc.color} 7%, transparent)`,
-                              }}
-                            >
-                              {t(`inventory.status_${item.status}`, sc.label)}
-                            </Badge>
-                            <div onClick={(e) => e.stopPropagation()}>
-                              <ActionButtons
-                                onEdit={
-                                  accessTo(item).canEdit
-                                    ? () => setFormTarget(item)
-                                    : undefined
-                                }
-                                onDelete={
-                                  accessTo(item).canDelete
-                                    ? () => setDeleteTarget(item)
-                                    : undefined
-                                }
-                              />
-                            </div>
-                          </div>
-                        }
-                      >
-                        {item.description && (
-                          <Text
-                            size="sm"
-                            c="dimmed"
-                            style={{
-                              marginBottom: 8,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {item.description}
-                          </Text>
-                        )}
-                      </CardItem>
-                    )
-                  })}
-                </CardGrid>
-              </div>
-              <Pagination
-                page={pg.page}
-                perPage={pg.perPage}
-                total={pg.total}
-                totalPages={pg.totalPages}
-                goPage={pg.goPage}
-                setPerPage={pg.setPerPage}
-              />
-            </>
-          )}
-        </Paper>
       )}
 
       {detailItem && (

@@ -133,30 +133,22 @@ export function SystemMailTab() {
         onPerPageChange={pg.setPerPage}
         onRowClick={(entry) => setEditEntry(entry)}
         getRowKey={(entry) => entry.id}
-        toolbar={
-          <Select
-            size="sm"
-            style={{ width: 'auto', minWidth: 140 }}
-            data={[
-              {
-                value: 'all',
-                label: t('mail.admin.syncAll', 'Alle Zustände'),
-              },
+        filterGroups={[
+          {
+            key: 'sync',
+            label: t('mail.syncLabel', 'Abgleich'),
+            value: syncFilter,
+            defaultValue: 'all',
+            options: [
+              { value: 'all', label: t('mail.admin.syncAll', 'Alle Zustände') },
               { value: 'ok', label: t('mail.admin.syncOk', 'OK') },
-              {
-                value: 'pending',
-                label: t('mail.admin.syncPending', 'Ausstehend'),
-              },
-              {
-                value: 'drift',
-                label: t('mail.admin.syncDrift', 'Abweichung'),
-              },
+              { value: 'pending', label: t('mail.admin.syncPending', 'Ausstehend') },
+              { value: 'drift', label: t('mail.admin.syncDrift', 'Abweichung') },
               { value: 'error', label: t('mail.admin.syncError', 'Fehler') },
-            ]}
-            value={syncFilter}
-            onChange={(v) => setSyncFilter((v ?? 'all') as SyncFilter)}
-          />
-        }
+            ],
+            onChange: (v) => setSyncFilter(v as SyncFilter),
+          },
+        ]}
       />
 
       <MailSettingsModal
