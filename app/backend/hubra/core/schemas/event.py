@@ -210,7 +210,7 @@ def _my_statuses() -> dict[int, str]:
     cached = request.environ.get("hubra.my_event_statuses")
     if cached is not None:
         return cached
-    from hubra.api.permissions import _current_member
+    from hubra.core.permissions import _current_member
 
     try:
         member = _current_member()

@@ -19,7 +19,7 @@ from unittest.mock import patch
 def test_weak_password_rejected_on_reset(client, seeded_db):
     """reset-password rejects a weak password (zxcvbn score < 3 or < 12 chars)."""
     # First create a valid reset token
-    from hubra.api.auth.services import AuthService
+    from hubra.core.auth.services import AuthService
     from hubra.core.extensions import db
 
     raw_token, member = AuthService.create_password_reset("admin@test.ch")

@@ -286,8 +286,8 @@ def check_tenant(tenant: Tenant, used: dict[str, int]) -> list[tuple[str, str]]:
 
 
 def _tell_owners(tenant: Tenant, title: str, msg: str) -> None:
-    from hubra.api.notifications.services import notify_member
-    from hubra.api.permissions import held_roles
+    from hubra.core.notifications.services import notify_member
+    from hubra.core.permissions import held_roles
     from hubra.core.models.member import Member
     from hubra.core.tenant.context import in_club
 

@@ -8,8 +8,8 @@ from datetime import date, datetime, time, timedelta, timezone
 from sqlalchemy import delete, func, insert, select
 from sqlalchemy.orm import selectinload
 
-from hubra.api.notifications.services import notify_on_publish
-from hubra.api.utils import log_audit
+from hubra.core.notifications.services import notify_on_publish
+from hubra.core.utils import log_audit
 from hubra.core.errors import ApiError, raise_error
 from hubra.core.extensions import db
 from hubra.core.models.event import ClubEvent, EventRegistration, event_attendees
@@ -50,7 +50,7 @@ def _check_dates(start, end) -> None:
 
 def _tell_registered(event, title: str, skip_member_id: int | None = None) -> None:
     """Notify those signed up for (or waiting on) an upcoming event."""
-    from hubra.api.notifications.services import notify_member
+    from hubra.core.notifications.services import notify_member
 
     if (event.end_date or event.date) < date.today():
         return
@@ -309,7 +309,7 @@ class EventService:
         if status in _HOLDS_A_PLACE:
             EventService._ensure_attendee(event_id, member)
         if status == "pending":
-            from hubra.api.notifications.staff import notify_permitted
+            from hubra.core.notifications.staff import notify_permitted
 
             notify_permitted(
                 "events.events.add_attendee",
@@ -341,7 +341,7 @@ class EventService:
     @staticmethod
     def decide(event_id: int, member_id: int, approve: bool, actor_id: int):
         """An organiser approves or declines a pending sign-up."""
-        from hubra.api.notifications.services import notify_member
+        from hubra.core.notifications.services import notify_member
 
         event = EventService.get(event_id)
         EventService._lock(event_id)
@@ -566,7 +566,7 @@ class EventService:
             if member is not None:
                 EventService._ensure_attendee(event.id, member)
             # They may have given up on it; tell them they are in now.
-            from hubra.api.notifications.services import notify_member
+            from hubra.core.notifications.services import notify_member
 
             notify_member(
                 nxt.member_id,

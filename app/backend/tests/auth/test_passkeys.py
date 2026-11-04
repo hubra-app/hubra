@@ -18,7 +18,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec
 from webauthn.helpers import base64url_to_bytes, bytes_to_base64url
 
-from hubra.api.auth import mfa
+from hubra.core.auth import mfa
 
 PASSWORD = "password123"
 ORIGIN = "https://sso.example.ch"

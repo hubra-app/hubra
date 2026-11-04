@@ -335,7 +335,7 @@ def _projected_mma_values(name: str) -> dict[str, str | None]:
     Used as a fallback when a group/function has no MMA yet, so binding
     previews show the projected address instead of empty.
     """
-    from hubra.api.settings.services import SettingService
+    from hubra.core.services.settings import SettingService
     from hubra.core.services.managed_mail import normalize_prefix_from_name
 
     club_domain = SettingService.get("mail.domain") or ""
@@ -399,7 +399,7 @@ def _resolve_function(source_id: str, attribute: str) -> str | None:
 
 
 def _resolve_setting(source_id: str, attribute: str) -> str | None:
-    from hubra.api.settings.services import SettingService
+    from hubra.core.services.settings import SettingService
 
     if attribute == "value":
         return SettingService.get(source_id)

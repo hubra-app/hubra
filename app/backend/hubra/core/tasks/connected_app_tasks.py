@@ -55,6 +55,6 @@ def push_all_role_connections() -> int:
 def deliver_app_notification(provider: str, member_id: int, payload: dict) -> int:
     """Hand one bell notification to a connected app's ``deliver_notification``
     hook (inside the club; the tenant comes with the task)."""
-    from hubra.api.notifications.channels import deliver
+    from hubra.core.notifications.channels import deliver
 
     return deliver(provider, member_id, payload)

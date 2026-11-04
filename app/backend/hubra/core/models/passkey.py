@@ -1,7 +1,7 @@
 """Passkeys (WebAuthn credentials) an account signs in with.
 
 Public schema only: the table is in no module manifest.  See
-hubra/api/auth/passkeys.py.
+hubra/core/auth/passkeys.py.
 """
 
 from __future__ import annotations

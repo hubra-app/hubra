@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 
 from flask import Blueprint, jsonify, request
-from hubra.api.auth.helpers import get_current_member
+from hubra.core.auth.helpers import get_current_member
 from marshmallow import ValidationError
 from sqlalchemy import select
 
@@ -27,8 +27,8 @@ from hubra.api.bindings.services import (
     serialize_binding,
     serialize_key,
 )
-from hubra.api.permissions import permission_required
-from hubra.api.utils import log_audit
+from hubra.core.permissions import permission_required
+from hubra.core.utils import log_audit
 from hubra.core.errors import api_error, raise_error
 from hubra.core.extensions import db
 from hubra.core.models.internal_key import InternalKey

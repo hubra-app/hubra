@@ -12,9 +12,9 @@ from __future__ import annotations
 from flask import Blueprint, current_app, jsonify, make_response, redirect, request
 from urllib.parse import urlencode
 
-from hubra.api.auth.helpers import get_current_member
-from hubra.api.permissions import permission_required, refuse_during_impersonation
-from hubra.api.utils import log_audit
+from hubra.core.auth.helpers import get_current_member
+from hubra.core.permissions import permission_required, refuse_during_impersonation
+from hubra.core.utils import log_audit
 from hubra.core import apps
 from hubra.core.errors import api_error, error_message, raise_error
 from hubra.core.extensions import db

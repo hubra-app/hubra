@@ -12,7 +12,7 @@ from datetime import date, timedelta
 
 from sqlalchemy import select
 
-from hubra.api.utils import log_audit
+from hubra.core.utils import log_audit
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 from hubra.core.models.event import (
@@ -201,7 +201,7 @@ def _tell_once(events: list[ClubEvent], title: str, skip_member_id: int) -> None
     """One notification per member for a change to several upcoming dates
     (not one for each training they signed up for)."""
     from hubra.api.events.services import _OPEN
-    from hubra.api.notifications.services import notify_member
+    from hubra.core.notifications.services import notify_member
 
     today = date.today()
     told: set[int] = set()

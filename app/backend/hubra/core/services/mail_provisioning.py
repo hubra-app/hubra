@@ -51,7 +51,7 @@ def _effective_quota(mma: ManagedMailAddress) -> int:
         return mma.quota_bytes
     # Check system-level default quota setting (admin-configurable).
     try:
-        from hubra.api.settings.services import SettingService
+        from hubra.core.services.settings import SettingService
 
         raw = SettingService.get("mail.quota_default_bytes")
         if raw is not None:
@@ -136,13 +136,13 @@ def _normalize_local_part(s: str) -> str:
 
 
 def _get_club_domain() -> str:
-    from hubra.api.settings.services import SettingService
+    from hubra.core.services.settings import SettingService
 
     return SettingService.get("mail.domain", default="") or ""
 
 
 def _get_hub_address() -> str:
-    from hubra.api.settings.services import SettingService
+    from hubra.core.services.settings import SettingService
 
     hub_prefix = (
         SettingService.get("Club.Mail.SystemHubPrefix", default="postmaster")

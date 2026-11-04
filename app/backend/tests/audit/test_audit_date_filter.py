@@ -1,6 +1,6 @@
 """The club audit log's date filter."""
 
-from hubra.api.utils import log_audit
+from hubra.core.utils import log_audit
 
 from tests.audit.test_audit_log import _get_audit, _make_member
 

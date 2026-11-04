@@ -2,7 +2,7 @@
 
 from unittest.mock import patch
 
-from hubra.api.i18n import services
+from hubra.core.services import i18n as services
 
 
 class _Redis:

@@ -177,7 +177,7 @@ def test_slow_api_and_server_errors_are_open_problems(db):
     perf_monitor._thresholds_at = float("inf")
     for i in range(60):
         perf_monitor.record_request("GET /api/v1/x", 500 if i < 6 else 200, 2000)
-    with patch("hubra.api.health.cache.HealthCache.get", return_value=_fresh_health()):
+    with patch("hubra.core.services.health_cache.HealthCache.get", return_value=_fresh_health()):
         ids = {p["id"] for p in platform_monitor.open_problems()}
     assert {"perf:slow", "perf:errors"} <= ids
 

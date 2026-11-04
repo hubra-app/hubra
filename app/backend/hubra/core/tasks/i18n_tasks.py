@@ -16,7 +16,7 @@ def report_missing_keys_task(locale: str, keys: list[dict]) -> int:
 
     Delegates to ``report_missing_keys()`` and commits the transaction.
     """
-    from hubra.api.i18n.services import report_missing_keys
+    from hubra.core.services.i18n import report_missing_keys
 
     try:
         flagged = report_missing_keys(locale, keys)

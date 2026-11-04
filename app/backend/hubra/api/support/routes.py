@@ -12,10 +12,10 @@ from __future__ import annotations
 from flask import Blueprint, g, jsonify, request
 from flask_jwt_extended import jwt_required
 
-from hubra.api.auth.helpers import get_current_user_id
-from hubra.api.permissions import require_global_permission
-from hubra.api.support import services
-from hubra.api.support.services import SupportError
+from hubra.core.auth.helpers import get_current_user_id
+from hubra.core.permissions import require_global_permission
+from hubra.core.services import support as services
+from hubra.core.services.support import SupportError
 from hubra.core.errors import api_error, error_message
 from hubra.core.extensions import db, limiter
 from hubra.core.models.support_case import SupportCase

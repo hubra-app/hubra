@@ -96,9 +96,9 @@ def read_claims() -> dict | None:
 
 
 def _token_still_valid(user: User | None, claims: dict) -> bool:
-    from hubra.api.auth.routes import _token_still_valid as check
+    from hubra.core.auth.tokens import token_still_valid
 
-    return check(user, claims)
+    return token_still_valid(user, claims)
 
 
 def verify_account_token() -> tuple[User, dict]:
@@ -120,7 +120,7 @@ def verify_account_token() -> tuple[User, dict]:
             raise_error(401, "CSRF_ERROR", "Missing or wrong X-Account-CSRF header")
         account_sid = claims.get("account_sid")
         if account_sid is not None:
-            from hubra.api.auth import session_service
+            from hubra.core.auth import session_service
 
             if session_service.is_account_session_revoked(int(account_sid)):
                 raise_error(401, "UNAUTHORIZED", "This sign-in was ended")
@@ -138,7 +138,7 @@ def verify_account_token() -> tuple[User, dict]:
     except Exception:
         raise_error(401, "UNAUTHORIZED", "Token invalid or expired")
     identity = get_jwt_identity()
-    from hubra.api.auth.helpers import is_user_identity
+    from hubra.core.auth.helpers import is_user_identity
 
     if not is_user_identity(identity):
         # A club token. The person may well be signed in — manage just needs
@@ -223,6 +223,6 @@ def require_step_up(fn):
             ), 403
         return fn(*args, **kwargs)
 
-    # API tokens never pass a step-up route (hubra.api.auth.api_tokens).
+    # API tokens never pass a step-up route (hubra.core.auth.api_tokens).
     wrapper._step_up = True
     return wrapper

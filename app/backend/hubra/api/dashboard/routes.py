@@ -5,8 +5,8 @@ from __future__ import annotations
 from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required
 
-from hubra.api.auth.helpers import get_current_member
-from hubra.api.permissions import _get_member_permission_keys, member_is_admin
+from hubra.core.auth.helpers import get_current_member
+from hubra.core.permissions import _get_member_permission_keys, member_is_admin
 
 from hubra.core.schemas.event import ClubEventSchema
 from hubra.core.schemas.post import PostSchema

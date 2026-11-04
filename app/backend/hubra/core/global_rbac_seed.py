@@ -165,7 +165,7 @@ def seed_global_rbac() -> None:
         db.session.flush()
 
     # Rights only the superadmin flag carries never stay on a role.
-    from hubra.api.permissions import SUPERADMIN_ONLY
+    from hubra.core.permissions import SUPERADMIN_ONLY
 
     db.session.execute(
         delete(GlobalRolePermission).where(

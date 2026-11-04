@@ -13,8 +13,8 @@ from __future__ import annotations
 from flask import Blueprint, jsonify, request, send_file
 from sqlalchemy import select
 
-from hubra.api.auth.account_token import require_step_up
-from hubra.api.permissions import require_global_permission
+from hubra.core.auth.account_token import require_step_up
+from hubra.core.permissions import require_global_permission
 from hubra.core.errors import api_error, error_message
 from hubra.core.extensions import db, limiter
 from hubra.core.plugins import current

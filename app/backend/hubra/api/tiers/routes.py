@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
-from hubra.api.auth.helpers import get_current_member
+from hubra.core.auth.helpers import get_current_member
 
-from hubra.api.permissions import permission_required, require_member
-from hubra.api.utils import id_from_body, log_audit
+from hubra.core.permissions import permission_required, require_member
+from hubra.core.utils import id_from_body, log_audit
 from marshmallow import ValidationError
 from hubra.core.errors import api_error
 from hubra.core.extensions import db

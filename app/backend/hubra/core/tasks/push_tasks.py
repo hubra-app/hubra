@@ -21,6 +21,6 @@ def send_push_task(
     msg: str,
     link: str | None = None,
 ) -> dict:
-    from hubra.api.notifications.push import deliver
+    from hubra.core.notifications.push import deliver
 
     return deliver(user_id, tenant_id, notification_id, kind, title, msg, link)

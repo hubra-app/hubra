@@ -7,7 +7,7 @@ import logging
 from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.orm import selectinload
 
-from hubra.api.utils import escape_like, log_audit
+from hubra.core.utils import escape_like, log_audit
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 from hubra.core.models.group import Group, GroupMembership
@@ -39,7 +39,7 @@ class GroupVisibility:
 
     @staticmethod
     def _manages_all(member) -> bool:
-        from hubra.api.permissions import member_has_permission
+        from hubra.core.permissions import member_has_permission
 
         return member_has_permission(member, "groups.groups.update")
 
@@ -50,7 +50,7 @@ class GroupVisibility:
             return set()
         if GroupVisibility._manages_all(member):
             return set()
-        from hubra.api.permissions import scoped_permission_keys
+        from hubra.core.permissions import scoped_permission_keys
 
         private = db.session.execute(
             select(Group.id, Group.lead_id).where(Group.visibility == "private")

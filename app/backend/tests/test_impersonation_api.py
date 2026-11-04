@@ -159,7 +159,7 @@ def test_delete_tenant_blocked_during_impersonation(
     client, superadmin_headers, target_tenant, db
 ):
     """DELETE tenant is blocked when impersonating."""
-    from hubra.api.permissions import check_impersonation_restriction
+    from hubra.core.permissions import check_impersonation_restriction
 
     with patch("flask_jwt_extended.get_jwt") as mock_jwt:
         mock_jwt.return_value = {"impersonator_id": 1}
@@ -170,7 +170,7 @@ def test_delete_tenant_blocked_during_impersonation(
 
 def test_change_plan_blocked_during_impersonation():
     """Changing plan is blocked during impersonation."""
-    from hubra.api.permissions import check_impersonation_restriction
+    from hubra.core.permissions import check_impersonation_restriction
 
     with patch("flask_jwt_extended.get_jwt") as mock_jwt:
         mock_jwt.return_value = {"impersonator_id": 1}
@@ -181,7 +181,7 @@ def test_change_plan_blocked_during_impersonation():
 
 def test_normal_actions_not_blocked_during_impersonation():
     """Non-restricted actions are allowed during impersonation."""
-    from hubra.api.permissions import check_impersonation_restriction
+    from hubra.core.permissions import check_impersonation_restriction
 
     with patch("flask_jwt_extended.get_jwt") as mock_jwt:
         mock_jwt.return_value = {"impersonator_id": 1}
@@ -191,7 +191,7 @@ def test_normal_actions_not_blocked_during_impersonation():
 
 def test_actions_not_blocked_when_not_impersonating():
     """Actions are allowed when not impersonating."""
-    from hubra.api.permissions import check_impersonation_restriction
+    from hubra.core.permissions import check_impersonation_restriction
 
     with patch("flask_jwt_extended.get_jwt") as mock_jwt:
         mock_jwt.return_value = {}

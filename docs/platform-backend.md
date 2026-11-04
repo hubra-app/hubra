@@ -211,7 +211,32 @@ restore before it is stopped.
 Tasks already queued on the default queue when the switch happens still run
 on the club worker (it has the same code); only new ones go to `platform`.
 
+## Shared code and area code
+
+The three images are still one build of the same code; each role answers
+only its own paths (`hubra/core/roles.py`). To make an image per area
+possible later, the code keeps one direction:
+
+- `hubra/core` is shared by every backend: models, migrations, sign-in and
+  tokens (`core/auth`), permissions, settings, notifications, version and
+  health. A change here concerns all three.
+- `hubra/api/<area package>` is route code. It imports core; core never
+  imports it.
+
+`tests/test_import_boundaries.py` checks this on every import, also lazy
+ones inside functions. Its `CORE_TO_API_LEFT` lists the core modules that
+still use club code (club schemas, a new club's starter data, club tasks);
+the list may only shrink. Old module names that plugins import
+(`hubra.api.permissions`, `hubra.api.utils`, `hubra.api.auth.helpers`,
+`hubra.api.notifications.services`) stay as aliases of the moved modules;
+Hubra's own code uses the new names.
+
 ## Not split (yet)
+
+- **Images.** All three names are the same image (see above). A dedicated
+  image per area needs the rest of `CORE_TO_API_LEFT` moved to the app area,
+  route modules that serve two areas split, and each role loading only its
+  own routes.
 
 - **Database rights.** All backends use the same Postgres role. A separate,
   narrower role per side needs an audit of which platform tables club code

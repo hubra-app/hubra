@@ -11,7 +11,7 @@ from contextlib import contextmanager
 
 from sqlalchemy import func, select
 
-from hubra.api.notifications.services import (
+from hubra.core.notifications.services import (
     LIST_LIMIT,
     NotificationService,
     NotificationsService,
@@ -23,7 +23,7 @@ from hubra.core.models.tenant import Tenant
 
 
 def _clubs(user_id: int) -> list[dict]:
-    from hubra.api.auth.services import AuthService
+    from hubra.core.auth.services import AuthService
 
     return [c for c in AuthService.find_user_tenants(user_id) if c.get("member_id")]
 

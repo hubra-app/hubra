@@ -20,7 +20,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 
 from hubra_mcp import __version__
 
-# Same shape as the backend's tokens (hubra/api/auth/api_tokens.py).
+# Same shape as the backend's tokens (hubra/core/auth/api_tokens.py).
 TOKEN_RE = re.compile(r"^hbr_(pat|club|plat)_[A-Za-z0-9]{12}_[A-Za-z0-9]{43}$")
 KIND_BY_PREFIX = {"pat": "member", "club": "club", "plat": "platform"}
 

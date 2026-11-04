@@ -64,7 +64,7 @@ def check_redis_health() -> dict:
     Returns a status dict with the check result.
     """
     try:
-        from hubra.api.metrics import _get_redis_client
+        from hubra.core.metrics import _get_redis_client
 
         client = _get_redis_client()
         if client is None:

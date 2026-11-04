@@ -16,7 +16,7 @@ from __future__ import annotations
 from hubra.core.models.member import Member
 from hubra.core.models.role import Role, Permission, RolePermission
 from hubra.core.models.user import User
-from hubra.api.permissions import filter_updatable_fields
+from hubra.core.permissions import filter_updatable_fields
 
 
 # ── filter_updatable_fields unit tests ────────────────────────────────────────

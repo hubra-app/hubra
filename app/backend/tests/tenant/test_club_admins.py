@@ -174,7 +174,7 @@ def test_platform_managers_manage_any_club(client, seeded_db, db):
 def test_managing_members_does_not_name_club_owners(client, seeded_db, db):
     """tenants.members.write (the Manager role) no longer opens every club's
     admin list: that takes tenants.admins.write."""
-    from hubra.api.global_rbac_seed import seed_global_rbac
+    from hubra.core.global_rbac_seed import seed_global_rbac
     from hubra.core.models.global_role import GlobalRole, UserGlobalRole
 
     seed_global_rbac()

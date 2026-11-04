@@ -25,8 +25,8 @@ from flask_jwt_extended import (
 )
 from sqlalchemy import func, select
 
-from hubra.api.auth.account_token import require_step_up
-from hubra.api.permissions import (
+from hubra.core.auth.account_token import require_step_up
+from hubra.core.permissions import (
     SUPERADMIN_ONLY,
     check_global_grant,
     check_impersonation_restriction,
@@ -1406,7 +1406,7 @@ def club_directory():
     Vereine" already. Everyone else has to search (2+ characters), so the full list of clubs
     isn't handed to anyone who signs up. Platform managers see every club.
     """
-    from hubra.api.utils import escape_like
+    from hubra.core.utils import escape_like
     from hubra.core.models.user_tenant import UserTenant
 
     user = _calling_user()
@@ -1779,7 +1779,7 @@ def _platform_reason(access: str, body: dict) -> str | None:
 
 def _tell_owners(title: str, msg: str) -> None:
     """In-app notice to the club's owners (search path already set)."""
-    from hubra.api.notifications.services import notify_member
+    from hubra.core.notifications.services import notify_member
 
     for m in db.session.scalars(
         select(Member).where(Member.archived_at.is_(None))
@@ -2387,7 +2387,7 @@ def list_global_audit():
 
     action = request.args.get("action")
     if action:
-        from hubra.api.utils import escape_like
+        from hubra.core.utils import escape_like
 
         query = query.where(
             GlobalAuditEntry.action.ilike(f"%{escape_like(action)}%", escape="\\")
@@ -2498,7 +2498,7 @@ def export_audit():
 @require_global_permission("audit.read")
 def platform_metrics():
     """Aggregate platform metrics from Redis counters."""
-    from hubra.api.metrics import get_metrics_summary
+    from hubra.core.metrics import get_metrics_summary
 
     summary = get_metrics_summary()
     return jsonify(summary), 200
@@ -2516,7 +2516,7 @@ def list_users():
 
     query = select(User).order_by(User.id.desc())
     if search:
-        from hubra.api.utils import escape_like
+        from hubra.core.utils import escape_like
 
         query = query.where(User.email.ilike(f"%{escape_like(search)}%", escape="\\"))
 

@@ -20,8 +20,8 @@ def sync_permission_catalog(app: Flask, *, commit: bool = True) -> tuple[int, in
     Returns ``(created, updated, orphaned)``. Commits unless ``commit`` is
     false (then the rows are flushed into the caller's transaction).
     """
-    from hubra.api.fields import iter_field_perms
-    from hubra.api.permissions import _derive_perm_key, extra_permissions
+    from hubra.core.fields import iter_field_perms
+    from hubra.core.permissions import _derive_perm_key, extra_permissions
     from hubra.core.models.role import Permission
 
     discovered: dict[str, dict] = {}

@@ -142,7 +142,7 @@ def device(db, seeded_db, browser):
 def queued():
     """Queued push tasks, run by ``run()`` after the commit as the worker
     would (an eager task inside the commit hook could not use the session)."""
-    from hubra.api.notifications.push import deliver
+    from hubra.core.notifications.push import deliver
 
     with patch("hubra.core.tasks.push_tasks.send_push_task.delay") as delay:
 
@@ -156,7 +156,7 @@ def queued():
 
 
 def test_a_notification_is_pushed_in_the_members_language(db, seeded_db, device, queued):
-    from hubra.api.notifications.services import notify_member
+    from hubra.core.notifications.services import notify_member
 
     with patch.object(
         web_push, "send", return_value=web_push.PushResult(ok=True, status=201)
@@ -184,7 +184,7 @@ def test_a_notification_is_pushed_in_the_members_language(db, seeded_db, device,
 
 
 def test_english_reader_and_a_foreign_link(db, seeded_db, device, queued):
-    from hubra.api.notifications.services import notify_member
+    from hubra.core.notifications.services import notify_member
 
     seeded_db["user"].language = "en-GB"
     db.session.commit()
@@ -198,7 +198,7 @@ def test_english_reader_and_a_foreign_link(db, seeded_db, device, queued):
 
 
 def test_a_rolled_back_notification_is_not_pushed(db, seeded_db, device, queued):
-    from hubra.api.notifications.services import notify_member
+    from hubra.core.notifications.services import notify_member
 
     with patch.object(web_push, "send") as send:
         notify_member(seeded_db["admin"].id, "info", "New post", "x")
@@ -211,7 +211,7 @@ def test_a_rolled_back_notification_is_not_pushed(db, seeded_db, device, queued)
 
 
 def test_a_device_that_is_gone_is_removed(db, seeded_db, device, queued):
-    from hubra.api.notifications.services import notify_member
+    from hubra.core.notifications.services import notify_member
 
     with patch.object(web_push, "send", return_value=web_push.PushResult(ok=False, gone=True, status=410)):
         notify_member(seeded_db["admin"].id, "info", "New post", "x")
@@ -221,7 +221,7 @@ def test_a_device_that_is_gone_is_removed(db, seeded_db, device, queued):
 
 
 def test_nobody_with_a_device_means_no_task(db, seeded_db):
-    from hubra.api.notifications.services import notify_member
+    from hubra.core.notifications.services import notify_member
 
     with patch("hubra.core.tasks.push_tasks.send_push_task.delay") as delay:
         notify_member(seeded_db["admin"].id, "info", "New post", "x")

@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
-from hubra.api.auth.helpers import get_current_member
+from hubra.core.auth.helpers import get_current_member
 from hubra.core.extensions import db
 from hubra.core.schemas.notification import NotificationSchema
-from hubra.api.notifications.services import (
+from hubra.core.notifications.services import (
     NotificationService,
     NotificationsService,
 )

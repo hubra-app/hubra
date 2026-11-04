@@ -2,7 +2,7 @@
 
 from unittest.mock import patch
 
-from hubra.api.i18n import services as i18n_services
+from hubra.core.services import i18n as i18n_services
 from hubra.core.extensions import db
 from hubra.core.models.translation import Translation
 
@@ -40,7 +40,7 @@ def test_duplicate_locale_invalidates_locales_cache(app, db):
     locales1 = i18n_services.get_available_locales()
     assert "fr-FR" not in locales1
 
-    from hubra.api.i18n.services import duplicate_locale
+    from hubra.core.services.i18n import duplicate_locale
 
     duplicate_locale("de-CH", "fr-FR", copy_values=True)
     db.session.commit()
@@ -79,7 +79,7 @@ def test_get_translations_dict_invalidated_on_write(app, db):
     # Without Redis, the in-memory cache uses _no_etag key both times.
     # The cache should still serve stale data (acceptable — Redis is down).
     # With Redis up, _bump_etag increments version → new cache key → DB query.
-    from hubra.api.i18n.services import upsert_translation
+    from hubra.core.services.i18n import upsert_translation
 
     upsert_translation("de-CH", "test.key1", "Wert 2")
     db.session.commit()

@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 import pytest
 
-from hubra.api.auth import mfa
+from hubra.core.auth import mfa
 from hubra.core.models.member import Member
 from hubra.core.models.tenant import Tenant
 

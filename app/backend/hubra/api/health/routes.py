@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify
 
-from hubra.api.health.cache import HealthCache
+from hubra.core.services.health_cache import HealthCache
 from hubra.core.extensions import limiter
 
 health_bp = Blueprint("health", __name__)

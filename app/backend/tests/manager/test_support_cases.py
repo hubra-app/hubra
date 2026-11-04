@@ -438,7 +438,7 @@ def test_a_status_change_reaches_the_reporters_of_merged_cases(
 
 
 def test_support_role_holders_handle_cases(client, club, db):
-    from hubra.api.global_rbac_seed import seed_global_rbac
+    from hubra.core.global_rbac_seed import seed_global_rbac
     from hubra.core.models.global_role import GlobalRole, UserGlobalRole
 
     case_id = _report(client).get_json()["id"]
@@ -446,7 +446,7 @@ def test_support_role_holders_handle_cases(client, club, db):
     role = db.session.query(GlobalRole).filter_by(name="Support").one()
     db.session.add(UserGlobalRole(user_id=club["user"].id, role_id=role.id))
     db.session.commit()
-    with patch("hubra.api.permissions.staff_mfa_missing", return_value=False):
+    with patch("hubra.core.permissions.staff_mfa_missing", return_value=False):
         assert client.get(f"{STAFF}/{case_id}").status_code == 200
         assert (
             client.patch(f"{STAFF}/{case_id}", json={"status": "closed"}).status_code
@@ -478,7 +478,7 @@ PLAN = [
 
 @pytest.fixture
 def plan(monkeypatch):
-    from hubra.api.support import services
+    from hubra.core.services import support as services
 
     monkeypatch.setattr(services, "_plan", lambda: [dict(p) for p in PLAN])
     return PLAN

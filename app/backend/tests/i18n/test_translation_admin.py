@@ -1,7 +1,7 @@
 """The translation editor's write routes: duplicate, copy defaults, delete,
 missing-key reports and the flagged list."""
 
-from hubra.api.i18n.services import get_translations
+from hubra.core.services.i18n import get_translations
 
 URL = "/api/v1/i18n"
 

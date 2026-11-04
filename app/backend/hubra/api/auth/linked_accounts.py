@@ -16,7 +16,7 @@ from itsdangerous import BadSignature, URLSafeTimedSerializer
 from sqlalchemy import select
 from urllib.parse import urlencode
 
-from hubra.api.permissions import refuse_during_impersonation
+from hubra.core.permissions import refuse_during_impersonation
 from hubra.core import identity
 from hubra.core.errors import api_error, raise_error
 from hubra.core.extensions import db

@@ -6,19 +6,19 @@ import logging
 
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
-from hubra.api.auth.helpers import get_current_member
+from hubra.core.auth.helpers import get_current_member
 from marshmallow import ValidationError
 
-from hubra.api.permissions import (
+from hubra.core.permissions import (
     _current_member,
     _get_member_permission_keys,
     member_is_admin,
 )
-from hubra.api.utils import log_audit
+from hubra.core.utils import log_audit
 from hubra.core.errors import api_error
 from hubra.core.extensions import db
 from hubra.core.schemas.settings import SettingSchema, SettingWriteSchema
-from hubra.api.settings.services import SettingService, SettingsService
+from hubra.core.services.settings import SettingService, SettingsService
 
 logger = logging.getLogger(__name__)
 

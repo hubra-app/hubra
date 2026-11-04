@@ -77,7 +77,7 @@ def is_subscribed(user_id: int, endpoint: str) -> bool:
 def _queue_app_channels(mapper, connection, target: Notification) -> None:
     """Queue a Discord direct message (or another app's) if the member
     turned it on for this topic."""
-    from hubra.api.notifications import channels
+    from hubra.core.notifications import channels
 
     try:
         channels.queue(connection, target)
@@ -98,7 +98,7 @@ def _queue_push(mapper, connection, target: Notification) -> None:
     ).first()
     if row is None or row.user_id is None:
         return
-    from hubra.api.notifications.prefs import wants
+    from hubra.core.notifications.prefs import wants
 
     if not wants(row.notify_prefs, getattr(target, "topic", None), "push"):
         return

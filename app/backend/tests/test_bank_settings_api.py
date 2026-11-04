@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from hubra.api.settings.services import SettingService
+from hubra.core.services.settings import SettingService
 from hubra.core.models.tenant import Tenant
 
 QR_IBAN = "CH4431999123000889012"  # SIX example QR-IBAN (IID 31999)

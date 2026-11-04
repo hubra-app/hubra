@@ -29,9 +29,9 @@ from flask import Blueprint, current_app, g, jsonify, request
 from flask_jwt_extended import get_jwt
 from sqlalchemy import func, select
 
-from hubra.api.auth import api_tokens, mfa
-from hubra.api.auth.account_token import read_claims, sudo_active
-from hubra.api.permissions import (
+from hubra.core.auth import api_tokens, mfa
+from hubra.core.auth.account_token import read_claims, sudo_active
+from hubra.core.permissions import (
     _current_member,
     _get_member_permission_keys,
     held_roles,
@@ -237,7 +237,7 @@ def _active_count(**where) -> int:
 
 
 def _audit_club(action: str, row: ApiToken, member) -> None:
-    from hubra.api.utils import log_audit
+    from hubra.core.utils import log_audit
 
     log_audit(member.id, action, "api_token", row.id, row.name)
 
@@ -496,7 +496,7 @@ def club_token_settings():
     before = dict(settings.get("api_tokens") or {})
     settings["api_tokens"] = {**before, **changes}
     tenant.settings = settings
-    from hubra.api.utils import log_audit
+    from hubra.core.utils import log_audit
 
     names = {"members": "api_token.members", "ai": "api_token.ai"}
     for key, value in changes.items():
@@ -555,8 +555,8 @@ def platform_token_self():
 
 def _platform_user():
     """The signed-in platform admin (account sign-in), or an error."""
-    from hubra.api.auth.account_token import verify_account_token
-    from hubra.api.permissions import get_user_global_permissions, staff_mfa_missing
+    from hubra.core.auth.account_token import verify_account_token
+    from hubra.core.permissions import get_user_global_permissions, staff_mfa_missing
     from hubra.core.errors import ApiError
 
     try:
@@ -570,7 +570,7 @@ def _platform_user():
 
 
 def _platform_grantable(user) -> set[str]:
-    from hubra.api.permissions import get_user_global_permissions
+    from hubra.core.permissions import get_user_global_permissions
     from hubra.core.models.global_role import GlobalPermission
 
     perms = get_user_global_permissions(user.id)

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from sqlalchemy import select
 
-from hubra.api.permissions import check_grant, invalidate_role_permissions
-from hubra.api.utils import log_audit
+from hubra.core.permissions import check_grant, invalidate_role_permissions
+from hubra.core.utils import log_audit
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 from hubra.core.models.role import Role, RolePermission, Permission
@@ -182,7 +182,7 @@ class RolesService:
 
         from sqlalchemy import func, union
 
-        from hubra.api.permissions import _active_term
+        from hubra.core.permissions import _active_term
         from hubra.core.models.function import Function, FunctionHolder
         from hubra.core.models.member import Member, member_roles
 
@@ -264,7 +264,7 @@ class RoleScopeService:
 
     @staticmethod
     def add(role: Role, member_id, group_id, actor_id: int | None):
-        from hubra.api.permissions import check_grant, invalidate_member_permissions
+        from hubra.core.permissions import check_grant, invalidate_member_permissions
         from hubra.core.models.group import Group
         from hubra.core.models.member import Member
         from hubra.core.models.role import MemberRoleScope
@@ -304,7 +304,7 @@ class RoleScopeService:
 
     @staticmethod
     def remove(role: Role, scope_id: int, actor_id: int | None) -> None:
-        from hubra.api.permissions import check_grant, invalidate_member_permissions
+        from hubra.core.permissions import check_grant, invalidate_member_permissions
         from hubra.core.models.member import Member
         from hubra.core.models.role import MemberRoleScope
 

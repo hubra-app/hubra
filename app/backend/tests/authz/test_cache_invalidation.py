@@ -16,7 +16,7 @@ from __future__ import annotations
 from unittest.mock import patch, MagicMock
 
 
-from hubra.api.permissions import (
+from hubra.core.permissions import (
     _get_role_permission_keys,
     _get_member_permission_keys,
     invalidate_role_permissions,
@@ -67,7 +67,7 @@ class TestDBFallback:
         )
 
         # Force Redis to be unavailable
-        with patch("hubra.api.permissions._get_redis_client", return_value=None):
+        with patch("hubra.core.permissions._get_redis_client", return_value=None):
             keys = _get_role_permission_keys(role.id)
         assert keys == {"members.members.read", "groups.groups.read"}
 
@@ -96,7 +96,7 @@ class TestDBFallback:
         db.session.add(member)
         db.session.commit()
 
-        with patch("hubra.api.permissions._get_redis_client", return_value=None):
+        with patch("hubra.core.permissions._get_redis_client", return_value=None):
             keys = _get_member_permission_keys(member)
         assert keys == {"members.members.read", "events.events.create"}
 
@@ -106,7 +106,7 @@ class TestDBFallback:
         db.session.add(role)
         db.session.commit()
 
-        with patch("hubra.api.permissions._get_redis_client", return_value=None):
+        with patch("hubra.core.permissions._get_redis_client", return_value=None):
             keys = _get_role_permission_keys(role.id)
         assert keys == set()
 
@@ -127,7 +127,7 @@ class TestCacheHit:
             b"groups.groups.read",
         }
 
-        with patch("hubra.api.permissions._get_redis_client", return_value=mock_client):
+        with patch("hubra.core.permissions._get_redis_client", return_value=mock_client):
             keys = _get_role_permission_keys(role.id)
 
         assert keys == {"members.members.read", "groups.groups.read"}
@@ -157,7 +157,7 @@ class TestCacheHit:
         mock_client = MagicMock()
         mock_client.smembers.return_value = {b"members.members.read"}
 
-        with patch("hubra.api.permissions._get_redis_client", return_value=mock_client):
+        with patch("hubra.core.permissions._get_redis_client", return_value=mock_client):
             keys = _get_member_permission_keys(member)
 
         assert keys == {"members.members.read"}
@@ -174,7 +174,7 @@ class TestCacheInvalidation:
         role = _create_role_with_perms(db, ["members.members.read"])
 
         mock_client = MagicMock()
-        with patch("hubra.api.permissions._get_redis_client", return_value=mock_client):
+        with patch("hubra.core.permissions._get_redis_client", return_value=mock_client):
             invalidate_role_permissions(role.id)
 
         mock_client.delete.assert_any_call(f"perms:public:{role.id}")
@@ -182,7 +182,7 @@ class TestCacheInvalidation:
     def test_invalidate_member_permissions_deletes_key(self, db, seeded_db):
         """invalidate_member_permissions deletes the member cache key."""
         mock_client = MagicMock()
-        with patch("hubra.api.permissions._get_redis_client", return_value=mock_client):
+        with patch("hubra.core.permissions._get_redis_client", return_value=mock_client):
             invalidate_member_permissions(42)
 
         mock_client.delete.assert_called_once_with("perms:public:member:42")
@@ -210,7 +210,7 @@ class TestCacheInvalidation:
         db.session.commit()
 
         mock_client = MagicMock()
-        with patch("hubra.api.permissions._get_redis_client", return_value=mock_client):
+        with patch("hubra.core.permissions._get_redis_client", return_value=mock_client):
             invalidate_role_permissions(role.id)
 
         # Verify both role and member caches were deleted
@@ -224,7 +224,7 @@ class TestCacheInvalidation:
 
     def test_invalidate_with_no_redis_is_silent(self, db, seeded_db):
         """Cache invalidation doesn't raise when Redis is unavailable."""
-        with patch("hubra.api.permissions._get_redis_client", return_value=None):
+        with patch("hubra.core.permissions._get_redis_client", return_value=None):
             # Should not raise
             invalidate_role_permissions(999)
             invalidate_member_permissions(999)
@@ -259,7 +259,7 @@ def test_cache_keys_are_per_club(app):
     must not read club B's cached permissions for member 5."""
     from flask import g
 
-    from hubra.api.permissions import _member_cache_key, _role_cache_key
+    from hubra.core.permissions import _member_cache_key, _role_cache_key
 
     keys = set()
     try:
@@ -279,7 +279,7 @@ def test_cache_keys_follow_the_resolved_club_without_postgres(app):
 
     from flask import g
 
-    from hubra.api.permissions import _member_cache_key
+    from hubra.core.permissions import _member_cache_key
 
     g.tenant = SimpleNamespace(id=7, slug="seven")
     try:

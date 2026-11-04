@@ -10,8 +10,8 @@ from __future__ import annotations
 import logging
 import time
 
-from hubra.api.health.cache import HealthCache
-from hubra.api.health.services import HealthService
+from hubra.core.services.health_cache import HealthCache
+from hubra.core.services.health import HealthService
 from hubra.core.tasks import celery_app
 
 _logger = logging.getLogger(__name__)

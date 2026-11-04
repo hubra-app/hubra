@@ -2,7 +2,7 @@
 
 import pytest
 
-from hubra.api.utils import csv_safe
+from hubra.core.utils import csv_safe
 
 
 @pytest.mark.parametrize(

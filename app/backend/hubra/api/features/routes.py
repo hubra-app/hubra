@@ -12,9 +12,9 @@ from __future__ import annotations
 from flask import Blueprint, g, jsonify, request
 from flask_jwt_extended import jwt_required
 
-from hubra.api.auth.helpers import get_current_member
-from hubra.api.permissions import permission_required, require_global_permission
-from hubra.api.utils import log_audit
+from hubra.core.auth.helpers import get_current_member
+from hubra.core.permissions import permission_required, require_global_permission
+from hubra.core.utils import log_audit
 from hubra.core import modules
 from hubra.core.errors import api_error
 from hubra.core.extensions import db
@@ -42,13 +42,13 @@ def list_modules():
     Every signed-in member needs this to build the navigation; settings
     values are only included for members who may change them.
     """
-    from hubra.api.permissions import (
+    from hubra.core.permissions import (
         _derive_perm_key,
         _get_member_permission_keys,
         member_is_admin,
     )
 
-    from hubra.api.auth.helpers import get_current_member
+    from hubra.core.auth.helpers import get_current_member
 
     member = get_current_member()  # members of this club only
     can_write = member is not None and (

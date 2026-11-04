@@ -4,20 +4,20 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
-from hubra.api.auth.helpers import get_current_member
+from hubra.core.auth.helpers import get_current_member
 from marshmallow import ValidationError
-from hubra.api.permissions import (
+from hubra.core.permissions import (
     _current_member,
     filter_updatable_fields,
     member_is_admin,
     permission_required,
     can_update,
 )
-from hubra.api.utils import log_audit
+from hubra.core.utils import log_audit
 from hubra.core.errors import api_error, raise_error
 from hubra.core.extensions import db
 from hubra.core.schemas.role import RoleCreateSchema, RoleSchema
-from hubra.api.roles.services import RoleScopeService, RoleService, RolesService
+from hubra.core.services.roles import RoleScopeService, RoleService, RolesService
 
 roles_bp = Blueprint("roles_bp", __name__)
 
@@ -186,7 +186,7 @@ def set_role_permissions(role_id: int):
 
 def _may_give_roles() -> None:
     """Giving a role changes the member: the right the members API asks for."""
-    from hubra.api.permissions import _get_member_permission_keys
+    from hubra.core.permissions import _get_member_permission_keys
 
     member = get_current_member()
     if member_is_admin(member):

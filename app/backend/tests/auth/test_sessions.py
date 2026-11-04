@@ -66,7 +66,7 @@ def test_list_sessions_requires_auth(client, seeded_db):
 
 def test_list_sessions_excludes_revoked_by_default(client, seeded_db, db):
     """Revoked sessions are hidden by default but shown with include_revoked=1."""
-    from hubra.api.auth.services import AuthService
+    from hubra.core.auth.services import AuthService
 
     member = seeded_db["admin"]
     _, sid = AuthService.record_login(member, "192.168.1.1", "Mozilla/Chrome")
@@ -203,7 +203,7 @@ def test_logout_revokes_session(client, seeded_db):
 
 
 def test_new_device_detection_first_login(client, seeded_db):
-    from hubra.api.auth.services import AuthService
+    from hubra.core.auth.services import AuthService
 
     member = seeded_db["admin"]
     new_device, sid = AuthService.record_login(member, "192.168.1.1", "Mozilla/Chrome")
@@ -212,7 +212,7 @@ def test_new_device_detection_first_login(client, seeded_db):
 
 
 def test_same_fingerprint_not_new_device(client, seeded_db):
-    from hubra.api.auth.services import AuthService
+    from hubra.core.auth.services import AuthService
 
     member = seeded_db["admin"]
     AuthService.record_login(member, "192.168.1.1", "Mozilla/Chrome")
@@ -223,7 +223,7 @@ def test_same_fingerprint_not_new_device(client, seeded_db):
 
 
 def test_different_fingerprint_is_new_device(client, seeded_db):
-    from hubra.api.auth.services import AuthService, compute_fingerprint
+    from hubra.core.auth.services import AuthService, compute_fingerprint
 
     member = seeded_db["admin"]
     fp1 = compute_fingerprint({"User-Agent": "Mozilla/5.0 Chrome/149.0.0.0"})
@@ -241,7 +241,7 @@ def test_different_fingerprint_is_new_device(client, seeded_db):
 
 
 def test_record_login_reuses_active_session(client, seeded_db, db):
-    from hubra.api.auth.services import AuthService
+    from hubra.core.auth.services import AuthService
 
     member = seeded_db["admin"]
     _, sid1 = AuthService.record_login(member, "192.168.1.1", "Mozilla/Chrome")
@@ -261,7 +261,7 @@ def test_record_login_reuses_active_session(client, seeded_db, db):
 
 
 def test_record_login_creates_new_after_revoke(client, seeded_db, db):
-    from hubra.api.auth.services import AuthService
+    from hubra.core.auth.services import AuthService
 
     member = seeded_db["admin"]
     _, sid1 = AuthService.record_login(member, "192.168.1.1", "Mozilla/Chrome")
@@ -288,7 +288,7 @@ def test_record_login_creates_new_after_revoke(client, seeded_db, db):
 
 
 def test_compute_fingerprint_stable_across_version_changes():
-    from hubra.api.auth.services import compute_fingerprint
+    from hubra.core.auth.services import compute_fingerprint
 
     base = {
         "User-Agent": "Mozilla/5.0 Chrome/149.0.0.0 Safari/537.36",
@@ -305,7 +305,7 @@ def test_compute_fingerprint_stable_across_version_changes():
 
 
 def test_compute_fingerprint_stable_without_high_entropy():
-    from hubra.api.auth.services import compute_fingerprint
+    from hubra.core.auth.services import compute_fingerprint
 
     firefox = {
         "User-Agent": "Mozilla/5.0 Firefox/139.0",
@@ -317,7 +317,7 @@ def test_compute_fingerprint_stable_without_high_entropy():
 
 
 def test_compute_fingerprint_differs_on_browser():
-    from hubra.api.auth.services import compute_fingerprint
+    from hubra.core.auth.services import compute_fingerprint
 
     chrome = {"User-Agent": "Mozilla/5.0 Chrome/149.0.0.0", "Sec-CH-UA": '"Chromium"'}
     firefox = {"User-Agent": "Mozilla/5.0 Firefox/139.0"}
@@ -325,7 +325,7 @@ def test_compute_fingerprint_differs_on_browser():
 
 
 def test_compute_fingerprint_differs_on_platform():
-    from hubra.api.auth.services import compute_fingerprint
+    from hubra.core.auth.services import compute_fingerprint
 
     windows = {
         "User-Agent": "Mozilla/5.0 Chrome/149.0.0.0",
@@ -340,7 +340,7 @@ def test_compute_fingerprint_differs_on_platform():
 
 def test_accept_ch_not_on_api_responses(client):
     """Accept-CH is set by Caddy on frontend HTML, not on API JSON responses."""
-    from hubra.api.health.cache import HealthCache
+    from hubra.core.services.health_cache import HealthCache
 
     HealthCache.set({"status": "ok", "services": {}, "checked_at": 0})
     resp = client.get("/api/v1/health")
@@ -348,7 +348,7 @@ def test_accept_ch_not_on_api_responses(client):
 
 
 def test_new_device_notification_fires_on_new_fingerprint(client, seeded_db, db):
-    from hubra.api.auth.services import AuthService, compute_fingerprint
+    from hubra.core.auth.services import AuthService, compute_fingerprint
 
     member = seeded_db["admin"]
     fp1 = compute_fingerprint({"User-Agent": "Mozilla/5.0 Chrome/149.0.0.0"})
@@ -441,7 +441,7 @@ def test_cleanup_revoked_sessions(client, seeded_db, db):
 def test_is_session_revoked_skips_redis_when_down(app, db, seeded_db):
     from unittest.mock import patch, MagicMock
 
-    from hubra.api.auth import session_service
+    from hubra.core.auth import session_service
 
     member = seeded_db["admin"]
     device = Device(
@@ -660,7 +660,7 @@ def test_refresh_token_blocked_after_logout(client, seeded_db):
 
 
 def test_iphone_is_ios_not_macos():
-    from hubra.api.auth.services import _extract_platform
+    from hubra.core.auth.services import _extract_platform
 
     ua = (
         "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15"

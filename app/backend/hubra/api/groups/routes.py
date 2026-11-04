@@ -4,12 +4,12 @@ from __future__ import annotations
 
 
 from flask import Blueprint, jsonify, request
-from hubra.api.auth.helpers import get_current_member
+from hubra.core.auth.helpers import get_current_member
 
 from marshmallow import ValidationError
 from sqlalchemy import select
 
-from hubra.api.permissions import (
+from hubra.core.permissions import (
     created_by,
     permission_required,
     require_member,
@@ -34,7 +34,7 @@ from hubra.api.groups.services import (
     GroupVisibility,
     SelfJoinService,
 )
-from hubra.api.utils import log_audit
+from hubra.core.utils import log_audit
 
 
 groups_bp = Blueprint("groups_bp", __name__)

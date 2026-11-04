@@ -121,7 +121,7 @@ def test_delete_function(client, seeded_db, auth_headers):
 
 def test_delete_function_with_protected_mma(client, seeded_db, auth_headers):
     """Function with a protected MMA can be deleted — MMA is cleaned up automatically."""
-    from hubra.api.settings.services import SettingService
+    from hubra.core.services.settings import SettingService
 
     fn = Function(name="ProtectedFn")
     db.session.add(fn)
@@ -243,7 +243,7 @@ def test_assign_holder_triggers_mail_sync(client, seeded_db, auth_headers):
     db.session.add(fn)
     db.session.flush()
 
-    from hubra.api.settings.services import SettingService
+    from hubra.core.services.settings import SettingService
 
     domain = SettingService.get("mail.domain") or "test.ch"
     addr = ManagedMailAddress(
@@ -307,7 +307,7 @@ def test_create_function_mail(client, seeded_db, auth_headers):
 
 
 def test_list_function_mail(client, seeded_db, auth_headers):
-    from hubra.api.settings.services import SettingService
+    from hubra.core.services.settings import SettingService
 
     fn = Function(name="ListFn")
     db.session.add(fn)
@@ -334,7 +334,7 @@ def test_list_function_mail(client, seeded_db, auth_headers):
 
 def test_delete_function_mail_blocked(client, seeded_db, auth_headers):
     """DELETE /mail/functions/<id> returns 409 while the function exists."""
-    from hubra.api.settings.services import SettingService
+    from hubra.core.services.settings import SettingService
 
     fn = Function(name="DelFn")
     db.session.add(fn)
@@ -378,7 +378,7 @@ def test_delete_group_with_protected_mma(client, seeded_db, auth_headers):
     db.session.add(group)
     db.session.flush()
 
-    from hubra.api.settings.services import SettingService
+    from hubra.core.services.settings import SettingService
 
     domain = SettingService.get("mail.domain") or "test.ch"
     addr = ManagedMailAddress(
@@ -421,7 +421,7 @@ def test_seed_creates_managed_mail_addresses(db):
 
     run_seeds(db)
 
-    from hubra.api.settings.services import SettingService
+    from hubra.core.services.settings import SettingService
 
     domain = SettingService.get("mail.domain") or "hubra.club"
 
@@ -476,7 +476,7 @@ def test_resolve_alias_targets_group_members(db, seeded_db):
         {"mid": member.id, "gid": group.id},
     )
 
-    from hubra.api.settings.services import SettingService
+    from hubra.core.services.settings import SettingService
 
     domain = SettingService.get("mail.domain") or "test.ch"
     addr = ManagedMailAddress(

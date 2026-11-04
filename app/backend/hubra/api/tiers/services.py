@@ -8,7 +8,7 @@ from decimal import Decimal, InvalidOperation
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
-from hubra.api.utils import escape_like, log_audit
+from hubra.core.utils import escape_like, log_audit
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 from hubra.core.models.member import Member, MembershipTier

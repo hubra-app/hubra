@@ -34,7 +34,7 @@ def _make_redis_mock():
 class TestApiCallCounting:
     """Tests for the API call counting middleware."""
 
-    @patch("hubra.api.metrics._get_redis_client")
+    @patch("hubra.core.metrics._get_redis_client")
     def test_request_increments_counter(self, mock_get_redis, client, db):
         """A successful API request increments the Redis counter."""
         mock_redis = _make_redis_mock()
@@ -47,7 +47,7 @@ class TestApiCallCounting:
         # In test mode there's no tenant, so counter shouldn't be incremented
         # (no tenant resolved = no counting). This is expected behavior.
 
-    @patch("hubra.api.metrics._get_redis_client")
+    @patch("hubra.core.metrics._get_redis_client")
     def test_options_not_counted(self, mock_get_redis, client, db):
         """OPTIONS requests are not counted."""
         mock_redis = _make_redis_mock()
@@ -60,7 +60,7 @@ class TestApiCallCounting:
         # Redis should not have been called at all
         mock_redis.pipeline.assert_not_called()
 
-    @patch("hubra.api.metrics._get_redis_client")
+    @patch("hubra.core.metrics._get_redis_client")
     def test_health_endpoint_not_counted(self, mock_get_redis, client, db):
         """Health endpoints are excluded from counting."""
         mock_redis = _make_redis_mock()
@@ -72,7 +72,7 @@ class TestApiCallCounting:
         # Health endpoints should not be counted
         mock_redis.pipeline.assert_not_called()
 
-    @patch("hubra.api.metrics._get_redis_client")
+    @patch("hubra.core.metrics._get_redis_client")
     def test_root_health_not_counted(self, mock_get_redis, client, db):
         """Root /health endpoint is excluded from counting."""
         mock_redis = _make_redis_mock()
@@ -83,7 +83,7 @@ class TestApiCallCounting:
 
         mock_redis.pipeline.assert_not_called()
 
-    @patch("hubra.api.metrics._get_redis_client")
+    @patch("hubra.core.metrics._get_redis_client")
     def test_error_response_not_counted_for_tenant(self, mock_get_redis, client, db):
         """Error responses are not counted in tenant-specific call counters.
 
@@ -101,7 +101,7 @@ class TestApiCallCounting:
             tenant_keys = [c for c in calls if "api:calls:" in c]
             assert len(tenant_keys) == 0
 
-    @patch("hubra.api.metrics._get_redis_client")
+    @patch("hubra.core.metrics._get_redis_client")
     def test_redis_unavailable_doesnt_break_request(self, mock_get_redis, client, db):
         """When Redis is unavailable, requests still succeed."""
         mock_get_redis.return_value = None
@@ -109,7 +109,7 @@ class TestApiCallCounting:
         resp = client.get("/api/v1/health")
         assert resp.status_code in (200, 503)
 
-    @patch("hubra.api.metrics._get_redis_client")
+    @patch("hubra.core.metrics._get_redis_client")
     def test_redis_exception_doesnt_break_request(self, mock_get_redis, client, db):
         """When Redis raises an exception, requests still succeed."""
         mock_redis = _make_redis_mock()
@@ -119,7 +119,7 @@ class TestApiCallCounting:
         resp = client.get("/api/v1/health")
         assert resp.status_code in (200, 503)
 
-    @patch("hubra.api.metrics._get_redis_client")
+    @patch("hubra.core.metrics._get_redis_client")
     def test_counting_keeps_the_shared_client_open(self, mock_get_redis, client, db):
         """The counter uses the process-wide Redis client and must not close it.
 
@@ -144,21 +144,21 @@ class TestApiCallCounting:
 class TestGetApiCalls30d:
     """Tests for the get_api_calls_30d helper function."""
 
-    @patch("hubra.api.metrics._get_redis_client")
+    @patch("hubra.core.metrics._get_redis_client")
     def test_returns_zero_when_redis_unavailable(self, mock_get_redis):
         """Returns 0 when Redis is unavailable."""
-        from hubra.api.metrics import get_api_calls_30d
+        from hubra.core.metrics import get_api_calls_30d
 
         mock_get_redis.return_value = None
         result = get_api_calls_30d(tenant_id=1)
         assert result == 0
 
-    @patch("hubra.api.metrics._get_redis_client")
+    @patch("hubra.core.metrics._get_redis_client")
     def test_sums_the_last_30_days(self, mock_get_redis):
         """Sums the daily counters of the last 30 days, not whole months."""
         from datetime import timedelta
 
-        from hubra.api.metrics import get_api_calls_30d
+        from hubra.core.metrics import get_api_calls_30d
 
         mock_redis = MagicMock()
         mock_get_redis.return_value = mock_redis
@@ -173,9 +173,9 @@ class TestGetApiCalls30d:
 
         assert get_api_calls_30d(tenant_id=1) == sum(range(1, 31))
 
-    @patch("hubra.api.metrics._get_redis_client")
+    @patch("hubra.core.metrics._get_redis_client")
     def test_does_not_close_the_shared_client(self, mock_get_redis):
-        from hubra.api.metrics import get_api_calls_30d
+        from hubra.core.metrics import get_api_calls_30d
 
         mock_redis = MagicMock()
         mock_redis.mget.return_value = [b"1"] * 30
@@ -184,10 +184,10 @@ class TestGetApiCalls30d:
         assert get_api_calls_30d(1) == 30
         mock_redis.close.assert_not_called()
 
-    @patch("hubra.api.metrics._get_redis_client")
+    @patch("hubra.core.metrics._get_redis_client")
     def test_handles_redis_exception(self, mock_get_redis):
         """Returns 0 when Redis raises an exception."""
-        from hubra.api.metrics import get_api_calls_30d
+        from hubra.core.metrics import get_api_calls_30d
 
         mock_redis = MagicMock()
         mock_redis.mget.side_effect = Exception("Redis error")
@@ -205,7 +205,7 @@ class TestRedisKeyFormat:
 
     def test_redis_key_format(self):
         """Redis key follows api:calls:{tenant_id}:{YYYY-MM} format."""
-        from hubra.api.metrics import _redis_key
+        from hubra.core.metrics import _redis_key
 
         dt = datetime(2026, 7, 15, tzinfo=timezone.utc)
         key = _redis_key(tenant_id=42, dt=dt)
@@ -213,7 +213,7 @@ class TestRedisKeyFormat:
 
     def test_redis_key_tenant_isolation(self):
         """Different tenant IDs produce different keys."""
-        from hubra.api.metrics import _redis_key
+        from hubra.core.metrics import _redis_key
 
         dt = datetime(2026, 7, 15, tzinfo=timezone.utc)
         key1 = _redis_key(tenant_id=1, dt=dt)

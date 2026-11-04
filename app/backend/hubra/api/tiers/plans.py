@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from decimal import Decimal, InvalidOperation
 
-from hubra.api.utils import id_from_body, log_audit
+from hubra.core.utils import id_from_body, log_audit
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 from hubra.core.models.member import Member, MembershipTier

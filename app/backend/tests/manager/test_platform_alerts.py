@@ -98,7 +98,7 @@ def test_health_task_carries_the_watch_over(db, staff):
     from hubra.core.tasks.health_tasks import run_health_checks
 
     with patch(
-        "hubra.api.health.services.HealthService.run_all_checks",
+        "hubra.core.services.health.HealthService.run_all_checks",
         return_value={"status": "error", **_health(db_ok=False)},
     ):
         for _ in range(platform_monitor.SERVICE_DOWN_AFTER):
@@ -157,7 +157,7 @@ def _fresh_health(**extra):
 
 
 def test_stale_background_jobs_are_a_problem(db):
-    with patch("hubra.api.health.cache.HealthCache.get", return_value=None):
+    with patch("hubra.core.services.health_cache.HealthCache.get", return_value=None):
         ids = [p["id"] for p in platform_monitor.open_problems()]
     assert ids == ["jobs"]
 
@@ -184,7 +184,7 @@ def test_problems_from_services_relays_mail_and_backups(db, staff):
         services={"db": {"ok": False, "error": "timeout"}},
     )
     try:
-        with patch("hubra.api.health.cache.HealthCache.get", return_value=health):
+        with patch("hubra.core.services.health_cache.HealthCache.get", return_value=health):
             problems = platform_monitor.open_problems()
     finally:
         platform_monitor._local_checks.clear()
@@ -203,7 +203,7 @@ def test_problems_from_services_relays_mail_and_backups(db, staff):
 
 
 def test_all_quiet_means_no_problems(db):
-    with patch("hubra.api.health.cache.HealthCache.get", return_value=_fresh_health()):
+    with patch("hubra.core.services.health_cache.HealthCache.get", return_value=_fresh_health()):
         assert platform_monitor.open_problems() == []
 
 
@@ -214,7 +214,7 @@ def test_overview_endpoint(client, staff_headers, db):
     platform_monitor.record("backup", "backup.failed", "x", level="error")
     platform_monitor.record("mail", "mail.fallback", "y", level="warning")
     db.session.commit()
-    with patch("hubra.api.health.cache.HealthCache.get", return_value=_fresh_health()):
+    with patch("hubra.core.services.health_cache.HealthCache.get", return_value=_fresh_health()):
         data = client.get(f"{BASE}/alerts/overview").get_json()
     assert data["problems"] == []
     assert [r["message"] for r in data["recent"]] == ["1 of 2 backups failed"]

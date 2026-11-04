@@ -34,7 +34,7 @@ def retention_cleanup(self) -> dict:
 def _retention_cleanup() -> dict:
     from sqlalchemy import select
 
-    from hubra.api.settings.services import SettingService
+    from hubra.core.services.settings import SettingService
     from hubra.core.extensions import db
     from hubra.core.models.managed_mail import ManagedMailAddress
     from hubra.core.models.member import Member
@@ -212,7 +212,7 @@ def verify_protected_mail_addresses(self) -> dict:
 def _verify_protected_mail_addresses() -> dict:
     from sqlalchemy import select
 
-    from hubra.api.utils import log_audit
+    from hubra.core.utils import log_audit
     from hubra.core.extensions import db
     from hubra.core.models.managed_mail import ManagedMailAddress
     from hubra.core.services.wildduck import WildDuckError, try_get_client
@@ -581,7 +581,7 @@ def _check_mailbox_quota() -> dict:
 
     from sqlalchemy import select
 
-    from hubra.api.utils import log_audit
+    from hubra.core.utils import log_audit
     from hubra.core.extensions import db
     from hubra.core.models.managed_mail import ManagedMailAddress
     from hubra.core.models.member import Member

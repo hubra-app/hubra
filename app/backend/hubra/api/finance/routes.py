@@ -4,9 +4,9 @@ from __future__ import annotations
 
 
 from flask import Blueprint, jsonify, request, send_file
-from hubra.api.auth.helpers import get_current_member
+from hubra.core.auth.helpers import get_current_member
 
-from hubra.api.permissions import member_is_admin, permission_required, require_member
+from hubra.core.permissions import member_is_admin, permission_required, require_member
 from marshmallow import ValidationError
 from hubra.core.errors import api_error
 from hubra.core.extensions import db
@@ -406,7 +406,7 @@ def list_my_invoices():
 
 def _reads_invoices(member) -> bool:
     """A role with invoices:read (a treasurer) sees every member's invoice."""
-    from hubra.api.permissions import _get_member_permission_keys
+    from hubra.core.permissions import _get_member_permission_keys
 
     return "finance.invoices.read" in _get_member_permission_keys(member)
 

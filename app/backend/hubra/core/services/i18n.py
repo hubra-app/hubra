@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import select
 
-from hubra.api.settings.services import SettingService
+from hubra.core.services.settings import SettingService
 from hubra.core.extensions import db
 from hubra.core.models.translation import Translation
 from hubra.core.redis_client import get_redis_client
@@ -218,9 +218,7 @@ def get_available_locales() -> list[str]:
     stmt = select(Translation.locale).distinct().order_by(Translation.locale)  # type: ignore[call-overload]
     locales = list(db.session.scalars(stmt).all())
     # Older databases may hold "de-ch" next to "de-CH"; the API reads both
-    # under the canonical code (see routes.canonical_locale).
-    from hubra.api.i18n.routes import canonical_locale
-
+    # under the canonical code (see canonical_locale).
     locales = sorted({canonical_locale(loc) for loc in locales})
 
     # Cache in Redis
@@ -487,3 +485,23 @@ def copy_defaults(locale: str) -> int:
     if filled:
         _bump_etag(locale)
     return filled
+
+
+def canonical_locale(code: str) -> str:
+    """BCP 47 casing: "de-ch" and "DE-CH" are the shipped "de-CH".
+
+    Rows are stored under the exact code, and the club app reads them under
+    the canonical one, so a second spelling would be a language of its own
+    that the app never shows.
+    """
+    parts = code.replace("_", "-").split("-")
+    out = [parts[0].lower()]
+    for part in parts[1:]:
+        out.append(
+            part.upper()
+            if len(part) == 2
+            else part.title()
+            if len(part) == 4
+            else part.lower()
+        )
+    return "-".join(out)

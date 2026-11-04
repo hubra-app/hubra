@@ -1,6 +1,6 @@
 """Tests for audit log denormalization and action filter (M003/S05)."""
 
-from hubra.api.utils import log_audit
+from hubra.core.utils import log_audit
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
