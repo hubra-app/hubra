@@ -2,8 +2,10 @@
 
 [![CI](https://github.com/hubra-app/hubra/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/hubra-app/hubra/actions/workflows/ci.yml?query=branch%3Amain) [![Images](https://github.com/hubra-app/hubra/actions/workflows/images.yml/badge.svg)](https://github.com/hubra-app/hubra/actions/workflows/images.yml) [![License: all rights reserved](https://img.shields.io/badge/license-all%20rights%20reserved-lightgrey)](LICENSE)
 
-A self-hosted club management platform with member management, finance, group
-communication, events, polls, and an integrated self-hosted mail stack.
+A self-hosted club management platform with member management, finance,
+groups, events and trainings, polls, a member portal with sign-in through one
+shared account, plugins from a signed Marketplace, a Discord bot, and an
+optional self-hosted mail stack.
 
 Hubra was previously called VollBuild COS (Club Operations Suite). VollBuild
 is now only the name of the first club running it, which is why a fresh
@@ -13,31 +15,44 @@ hosts through `.env` (Compose) or the `deploy/vollbuild-ch` overlay (k3s).
 
 ## Architecture
 
-The app is split across four subdomains of `hubra.club`:
+Every part runs on its own host under `hubra.club`:
 
-| Subdomain           | Served by     | Purpose                          |
-| ------------------- | ------------- | -------------------------------- |
-| `api.hubra.club`    | Flask backend | REST API (JSON)                  |
-| `app.hubra.club`    | Caddy + React | Tenant frontend SPA (members)    |
-| `manage.hubra.club` | Nginx + React | Admin portal SPA (superadmins)   |
-| `sso.hubra.club`    | Nginx + React | Centralized SSO login portal     |
+| Host                 | Served by                   | Purpose                                                        |
+| -------------------- | --------------------------- | -------------------------------------------------------------- |
+| `api.hubra.club`     | Flask backend               | REST API (JSON)                                                |
+| `app.hubra.club`     | Nginx + React               | Club app (members and club admins)                             |
+| `manage.hubra.club`  | Nginx + React               | Manage, the platform admin portal                              |
+| `sso.hubra.club`     | Nginx + React               | Sign-in, sign-up and the person's account                      |
+| `join.hubra.club`    | the SSO frontend again      | Start a club, find one and ask to join                         |
+| `support.hubra.club` | Nginx + React               | Help, roadmap with voting, status, reports and ideas ([docs](docs/support-site.md)) |
+| `mcp.hubra.club`     | MCP server                  | Claude connector, read-only, with an API token ([docs](docs/mcp.md)) |
+| `plugins.hubra.club` | GitHub Pages                | The plugin Marketplace ([hubra-plugins](https://github.com/hubra-app/hubra-plugins)) |
 
-An external Traefik terminates TLS and routes by Host header. JWT auth cookies
-use `Domain=.hubra.club` so they flow cross-subdomain. See
-[docs/SUBDOMAIN_MIGRATION.md](docs/SUBDOMAIN_MIGRATION.md) for the full
+The API has three areas, `/api/v1/app` (the club app), `/api/v1/global`
+(sign-in, account, public data) and `/api/v1/platform` (manage). They can run
+as one backend (the Compose default) or as three deployments with their own
+images, so a platform change does not restart sign-in or the club app; see
+[docs/platform-backend.md](docs/platform-backend.md). Celery runs the
+background jobs, and with the `discord` profile a gateway process runs the
+Discord bot ([docs/discord.md](docs/discord.md)).
+
+An external Traefik (or the k3s ingress) terminates TLS and routes by Host
+header. JWT auth cookies use `Domain=.hubra.club` so they flow
+cross-subdomain. See [docs/architecture.md](docs/architecture.md) and
+[docs/SUBDOMAIN_MIGRATION.md](docs/SUBDOMAIN_MIGRATION.md) for the
 cross-origin auth setup (CORS, CSRF, cookie attributes, ProxyFix).
 
 ## Tech Stack
 
-| Layer          | Technology                                                          |
-| -------------- | ------------------------------------------------------------------- |
-| **Frontend**   | React 19, TypeScript 6, Vite 8, Mantine 9, TanStack Query 5         |
-| **Backend**    | Flask 3, Python 3.13, SQLAlchemy, Marshmallow                       |
-| **Database**   | PostgreSQL 16, MongoDB 7 (mail), Redis 7                            |
-| **Background** | Celery 5 + Redis                                                    |
-| **Mail**       | WildDuck (IMAP), Haraka (inbound SMTP), ZoneMTA (outbound SMTP)     |
-| **Edge**       | External Traefik (TLS, routing, CrowdSec) + Caddy 2 (frontend only) |
-| **Deployment** | Docker Compose, or Kubernetes/k3s manifests (see docs/k3s.md)       |
+| Layer          | Technology                                                                 |
+| -------------- | -------------------------------------------------------------------------- |
+| **Frontend**   | React 19, TypeScript 6, Vite 8, Mantine 9, TanStack Query 5; shared `@hubra/ui` and `@hubra/api-client` in `packages/` |
+| **Backend**    | Flask 3, Python 3.13, SQLAlchemy, Marshmallow                              |
+| **Database**   | PostgreSQL (16 in Compose, 18 in the release checks; backups handle 16 to 18), Redis 7, MongoDB 7 (mail only) |
+| **Background** | Celery 5 + Redis (worker, beat, platform worker when split)                |
+| **Mail**       | WildDuck (IMAP), Haraka (inbound SMTP), ZoneMTA (outbound SMTP), opt-in   |
+| **Edge**       | External Traefik (TLS, routing, CrowdSec) + Nginx in each frontend image  |
+| **Deployment** | Docker Compose, or Kubernetes/k3s with Kustomize (see docs/k3s.md)         |
 
 ## Quick Start
 
@@ -51,15 +66,39 @@ docker compose up -d
 
 Then open http://localhost:8082, sign up, and make yourself the platform admin
 with `docker compose exec backend flask make-admin --email you@example.com`.
-The full walkthrough, production host names and mail are in
+Manage is on port 8081, the club app on 8080 and the support site on 8083.
+The full walkthrough, production host names (`docker-compose.traefik.yml`),
+the split platform backend (`docker-compose.platform.yml`) and mail are in
 [docs/run-with-docker.md](docs/run-with-docker.md).
 
-To run on Kubernetes (k3s) instead, see [docs/k3s.md](docs/k3s.md). The images
-are built by GitHub Actions (`.github/workflows/images.yml`) and pushed to
-`ghcr.io/hubra-app/hubra/*`.
+To run on Kubernetes (k3s) instead, see [docs/k3s.md](docs/k3s.md): the base
+manifests are in `deploy/app`, and `deploy/clusters/contabo` is the overlay
+for the production cluster, meant for a GitOps tool such as Flux.
 
 **Development mode:** See [docs/frontend.md](docs/frontend.md) and
 [app/backend/API.md](app/backend/API.md).
+
+## Images, CI and releases
+
+The images are built by GitHub Actions (`.github/workflows/images.yml`) and
+pushed to `ghcr.io/hubra-app/hubra/*`: `backend` (also published as
+`global-backend` and `platform-backend`), `frontend`, `admin-frontend`,
+`sso-frontend`, `support-frontend`, `mcp`, and for mail `haraka`, `zonemta`
+and `cert-watcher`. To save Actions minutes they are built only when a GitHub
+release is published, or by hand, and only images whose files changed are
+rebuilt; the others get the new tags on the same digest.
+
+Pull requests run lint and tests only for the parts they touch, and the
+browser tests when a change reaches what the browser sees; the full checks
+(Postgres, audits, image builds) run on `release/*` and before every image
+build. `main` and the `v*` tags are mirrored to GitLab, which runs the checks
+again and creates the GitLab Releases.
+
+| Topic                                     | File                                                 |
+| ----------------------------------------- | ---------------------------------------------------- |
+| Workflows and branch protection           | [docs/ci.md](docs/ci.md)                             |
+| Versions, tags and which images to build  | [docs/release-guidelines.md](docs/release-guidelines.md) |
+| GitLab mirror and releases                | [docs/gitlab.md](docs/gitlab.md)                     |
 
 ## Testing
 
@@ -70,15 +109,18 @@ python -m pytest -n auto        # SQLite, as on every pull request
 # On Postgres, as the release checks do (one database per worker is created):
 TEST_DATABASE_URL=postgresql://hubra:hubra@localhost/hubra_test python -m pytest -n auto
 
-# Frontend
+# Frontend (the same in admin-frontend, sso-frontend and support-frontend)
 cd app/frontend
+npm test               # Vitest unit tests
 npm run build          # tsc + vite build
 npm run lint           # ESLint
 
-# E2E (requires running app)
+# Browser tests (Playwright, against a running Compose stack)
 cd app/frontend
 npx playwright test
 ```
+
+How CI starts the stack for the browser tests is in [docs/ci.md](docs/ci.md).
 
 ## Plugins
 
@@ -106,55 +148,73 @@ Marketplace README and the hubra.club Modules page stay current.
 
 | Topic                                  | File                                                     |
 | -------------------------------------- | -------------------------------------------------------- |
-| Operators: install, upgrade, backups   | [docs/operator-guide.md](docs/operator-guide.md)         |
+| Operators: install, upgrade, keys, backups | [docs/operator-guide.md](docs/operator-guide.md)     |
 | Club owners and admins                 | [docs/club-admin-guide.md](docs/club-admin-guide.md)     |
+| Run with Docker Compose                | [docs/run-with-docker.md](docs/run-with-docker.md)       |
+| Run on Kubernetes (k3s)                | [docs/k3s.md](docs/k3s.md)                               |
+| Split backends (app, global, platform) | [docs/platform-backend.md](docs/platform-backend.md)     |
+| More than one replica                  | [docs/scaling.md](docs/scaling.md)                       |
+| Disaster recovery runbook              | [docs/disaster-recovery.md](docs/disaster-recovery.md)   |
+| Environment & settings config          | [docs/configuration.md](docs/configuration.md)           |
+| Early access per club (feature flags)  | [docs/feature-flags.md](docs/feature-flags.md)           |
 | Architecture & request flow            | [docs/architecture.md](docs/architecture.md)             |
+| Subdomain setup (CORS, cookies)        | [docs/SUBDOMAIN_MIGRATION.md](docs/SUBDOMAIN_MIGRATION.md) |
 | API endpoints, auth, permissions       | [docs/api-overview.md](docs/api-overview.md)             |
 | Full API reference                     | [app/backend/API.md](app/backend/API.md)                 |
+| API tokens                             | [docs/api-tokens.md](docs/api-tokens.md)                 |
+| Public API (pricing, plugins)          | [docs/public-api.md](docs/public-api.md)                 |
+| Claude connector (MCP server)          | [docs/mcp.md](docs/mcp.md)                               |
+| Discord bot                            | [docs/discord.md](docs/discord.md)                       |
+| Support site                           | [docs/support-site.md](docs/support-site.md)             |
 | Mail stack (WildDuck, Haraka, ZoneMTA) | [modules/mail/README.md](modules/mail/README.md)         |
-| Running on Kubernetes (k3s)            | [docs/k3s.md](docs/k3s.md)                               |
-| Frontend stack & structure             | [docs/frontend.md](docs/frontend.md)                     |
-| Environment & settings config          | [docs/configuration.md](docs/configuration.md)           |
-| Subdomain migration (CORS, cookies)    | [docs/SUBDOMAIN_MIGRATION.md](docs/SUBDOMAIN_MIGRATION.md) |
-| Disaster recovery runbook              | [docs/disaster-recovery.md](docs/disaster-recovery.md)   |
-| Frontend review issues (snapshot)      | [docs/frontend_issues.md](docs/frontend_issues.md)       |
-| Project management & milestones        | [docs/project-management.md](docs/project-management.md) |
-| Backend changelog                      | [app/backend/CHANGELOG.md](app/backend/CHANGELOG.md)     |
-| Plugin extension areas                 | [docs/plugins.md](docs/plugins.md)                       |
+| Plugins and extension areas            | [docs/plugins.md](docs/plugins.md), [plugins/README.md](plugins/README.md) |
 | Plugin release checklist               | [docs/plugin-releases.md](docs/plugin-releases.md)       |
+| Frontend stack & structure             | [docs/frontend.md](docs/frontend.md)                     |
+| Design spec (all frontends)            | [docs/design-spec.md](docs/design-spec.md)               |
+| List search, filter and sort           | [docs/table-controls.md](docs/table-controls.md)         |
+| Brand assets                           | [brand/README.md](brand/README.md)                       |
+| CI, releases, GitLab                   | [docs/ci.md](docs/ci.md), [docs/release-guidelines.md](docs/release-guidelines.md), [docs/gitlab.md](docs/gitlab.md) |
+| Changelog (English, German)            | [app/backend/CHANGELOG.md](app/backend/CHANGELOG.md), [app/backend/CHANGELOG.de.md](app/backend/CHANGELOG.de.md) |
+| Roadmap data (What's new)              | [app/backend/ROADMAP.yaml](app/backend/ROADMAP.yaml)     |
 | Accessibility statement                | [docs/accessibility.md](docs/accessibility.md)           |
-| Contributing                           | [CONTRIBUTING.md](CONTRIBUTING.md)                       |
-| Code of conduct                        | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)                 |
-| Security policy                        | [SECURITY.md](SECURITY.md)                               |
+
+Older snapshots and proposals, kept for reference:
+[docs/frontend_issues.md](docs/frontend_issues.md),
+[docs/FRONTEND-REVIEW.md](docs/FRONTEND-REVIEW.md),
+[docs/platform-split-frontends.md](docs/platform-split-frontends.md),
+[docs/platform-split-club-isolation-twint.md](docs/platform-split-club-isolation-twint.md),
+[docs/project-management.md](docs/project-management.md).
 
 ## Project structure
 
 ```
-├── docker-compose.yml             # App stack (default)
-├── docker-compose.override.yaml   # Production routing + env overrides
+├── docker-compose.yml             # App stack (default, localhost)
+├── docker-compose.traefik.yml     # Production routing behind Traefik (opt-in)
+├── docker-compose.platform.yml    # Separate platform backend (opt-in)
 ├── settings.yaml                  # Deployment-time feature flags & limits
-├── deploy/                        # Kubernetes manifests (docs/k3s.md)
 ├── .env.example                   # Environment variable template
 ├── AGENTS.md                      # AI agent instructions
 ├── app/
 │   ├── backend/                   # Flask + Celery
-│   │   ├── hubra/             # Application code
-│   │   ├── tests/                 # 756 tests (blueprint-organized)
+│   │   ├── hubra/                 # Application code (core/, api/)
+│   │   ├── tests/                 # pytest (about 2500 tests)
 │   │   ├── migrations/            # Alembic migrations (flask db migrate)
 │   │   ├── API.md                 # Full API reference
-│   │   ├── CHANGELOG.md           # Keep a Changelog
-│   │   ├── BUILD.md               # Build instructions
+│   │   ├── CHANGELOG.md           # Keep a Changelog (+ CHANGELOG.de.md)
+│   │   ├── ROADMAP.yaml           # Planned items shown in What's new
 │   │   └── wsgi.py                # Gunicorn entry point (ProxyFix)
-│   ├── frontend/                  # React SPA
-│   │   ├── src/
-│   │   │   ├── api/               # API client modules
-│   │   │   ├── components/        # Shared UI (Mantine-based)
-│   │   │   ├── screens/           # Route-level pages
-│   │   │   ├── locales/           # i18n
-│   │   │   └── types/             # TypeScript interfaces
-│   │   └── e2e/                   # Playwright E2E tests
+│   ├── frontend/                  # Club app (React), e2e/ has the Playwright tests
+│   ├── admin-frontend/            # Manage
+│   ├── sso-frontend/              # Sign-in and account, also join.hubra.club
+│   ├── support-frontend/          # support.hubra.club
+│   ├── mcp/                       # Claude connector (MCP server)
 │   └── deploy/
-│       └── Caddyfile              # Frontend proxy + security headers
+│       └── nginx/                 # Frontend start script (host names set at runtime)
+├── packages/
+│   ├── ui/                        # @hubra/ui, shared components and theme
+│   └── api-client/                # @hubra/api-client
+├── plugins/                       # Plugin docs and test helpers (plugins live in their own repos)
+├── deploy/                        # Kubernetes: app/ base, clusters/contabo, vollbuild-ch, components/
 ├── modules/
 │   └── mail/                      # Opt-in self-hosted mail stack, self-contained
 │       ├── docker-compose.mail.yml  # Compose add-on (opt-in via -f)
@@ -164,9 +224,20 @@ Marketplace README and the hubra.club Modules page stay current.
 │       ├── certbot/               # TLS certificates
 │       ├── cert-watcher/          # Hot-reload on renewal (Compose only)
 │       └── scripts/               # validate-mail-config.py
+├── brand/                         # Logo, icons, BIMI mark
+├── tools/plugin_repo/             # Creates a new plugin repository from the template
 ├── docs/                          # All documentation
-└── scripts/                       # Utility scripts (sync)
+├── scripts/                       # init-env, smoke test, image reuse, sync
+└── .github/                       # Workflows, rulesets, issue and PR templates
 ```
+
+## Contributing
+
+Bug reports, ideas and translation fixes are welcome; read
+[CONTRIBUTING.md](CONTRIBUTING.md) before you write code. Code contributions
+need the [contributor licence agreement](CLA.md). Everyone taking part follows
+the [code of conduct](CODE_OF_CONDUCT.md). Report security problems as
+described in [SECURITY.md](SECURITY.md), not in a public issue.
 
 ## License
 
