@@ -58,7 +58,7 @@ _process_started = time.monotonic()
 
 _KEEP_HOURS = 26
 _SETTINGS_TTL = 60.0  # seconds a process trusts its copy of the thresholds
-_SKIP_PREFIXES = ("/health", "/api/v1/health", "/static")
+_SKIP_PREFIXES = ("/health", "/api/v1/global/health", "/static")
 _SKIP_METHODS = {"OPTIONS", "HEAD"}
 _SEP = "\t"
 _SQL_TEXT_MAX = 400

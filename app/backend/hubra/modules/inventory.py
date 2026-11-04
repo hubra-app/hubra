@@ -12,7 +12,7 @@ module = Module(
         Blueprint(
             "hubra.api.inventory.routes",
             "inventory_bp",
-            "/api/v1/inventory",
+            "/api/v1/app/inventory",
         ),
     ),
     settings=(

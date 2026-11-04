@@ -33,24 +33,24 @@ export async function listNotifications(): Promise<NotificationList> {
   const { data, meta } = await apiFetch<{
     data: BackendNotification[];
     meta?: { unread?: number };
-  }>("/notifications/");
+  }>("/app/notifications/");
   const items = data.map(adapt);
   return { items, unread: meta?.unread ?? items.filter((n) => !n.read).length };
 }
 
 export async function markNotificationRead(id: string): Promise<void> {
-  await apiFetch(`/notifications/${encodeURIComponent(id)}/read`, { method: "PATCH" });
+  await apiFetch(`/app/notifications/${encodeURIComponent(id)}/read`, { method: "PATCH" });
 }
 
 export async function markAllNotificationsRead(): Promise<void> {
-  await apiFetch("/notifications/read-all", { method: "POST" });
+  await apiFetch("/app/notifications/read-all", { method: "POST" });
 }
 
 export async function deleteNotification(id: string): Promise<void> {
-  await apiFetch(`/notifications/${encodeURIComponent(id)}`, { method: "DELETE" });
+  await apiFetch(`/app/notifications/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
 /** Delete the member's own notifications; ``readOnly`` keeps the unread ones. */
 export async function clearNotifications(readOnly = false): Promise<void> {
-  await apiFetch(`/notifications/${readOnly ? "?read=1" : ""}`, { method: "DELETE" });
+  await apiFetch(`/app/notifications/${readOnly ? "?read=1" : ""}`, { method: "DELETE" });
 }

@@ -33,7 +33,7 @@ interface StatusPage {
 /** Public: no session, no refresh, works while the club API is in maintenance. */
 async function getStatus(club: string | null): Promise<StatusPage> {
   const qs = club ? `?club=${encodeURIComponent(club)}` : ''
-  const res = await fetch(`${BASE}/status${qs}`, { credentials: 'omit' })
+  const res = await fetch(`${BASE}/global/status${qs}`, { credentials: 'omit' })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   return (await res.json()) as StatusPage
 }

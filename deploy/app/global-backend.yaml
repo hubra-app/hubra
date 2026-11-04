@@ -1,0 +1,77 @@
+# The global backend (docs/platform-backend.md): the same code as the club app
+# backend, run as image hubra/global-backend with HUBRA_ROLE=global. It serves
+# /api/v1/global (sign-in, the account, translations, the club directory,
+# invites, public data and plugin frontends) and the old paths that lead
+# there; ingress.yaml routes them here. Sign-in gets its own pods, so a busy
+# club app doesn't slow it down, and each scales on its own (replicas below).
+#
+# Like the club app backend it doesn't migrate: its initContainer waits until
+# the platform backend has brought the schema up to this release.
+apiVersion: v1
+kind: Service
+metadata:
+  name: global-backend
+spec:
+  selector:
+    app.kubernetes.io/name: global-backend
+  ports:
+    - name: http
+      port: 5000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: global-backend
+spec:
+  replicas: 1
+  # Start the new pod and let it pass its readiness probe before the old one
+  # stops: no gap even with one replica.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxSurge: 1, maxUnavailable: 0 }
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: global-backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: global-backend
+    spec:
+      securityContext:
+        seccompProfile: { type: RuntimeDefault }
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      # Time for Traefik to drop the old pod before gunicorn stops (preStop).
+      terminationGracePeriodSeconds: 60
+      initContainers:
+        - name: schema-wait
+          image: hubra/global-backend
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          command: ["python", "-m", "hubra.core.schema_wait"]
+          envFrom: [{ secretRef: { name: hubra-env } }]
+      containers:
+        - name: backend
+          image: hubra/global-backend
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          ports: [{ name: http, containerPort: 5000 }]
+          envFrom: [{ secretRef: { name: hubra-env } }]
+          env:
+            - { name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }
+            - { name: HUBRA_ROLE, value: global }
+            - { name: HUBRA_PLATFORM_QUEUE, value: platform }
+          volumeMounts: [{ name: settings, mountPath: /etc/hubra }]
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+          lifecycle:
+            preStop:
+              exec: { command: ["sleep", "10"] }
+          resources:
+            limits: { cpu: "1", memory: 512Mi }
+      volumes:
+        - name: settings
+          configMap: { name: hubra-settings }

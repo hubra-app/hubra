@@ -869,7 +869,7 @@ def require_password_changed(fn):
 # Requests a read-only impersonation may still make: ending it, and keeping
 # the session alive.
 _READ_ONLY_IMPERSONATION_ALLOWED = {
-    "tenant_admin.stop_impersonation",
+    "club_access.stop_impersonation",
     "auth_bp.logout",
     "auth_bp.refresh",
     # Only writes to the platform event log.

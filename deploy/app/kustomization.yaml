@@ -23,6 +23,7 @@ resources:
   - postgres.yaml
   - redis.yaml
   - backend.yaml
+  - global-backend.yaml
   - platform-backend.yaml
   - frontends.yaml
   - ingress.yaml
@@ -53,8 +54,11 @@ images:
   - name: hubra/backend
     newName: ghcr.io/hubra-app/hubra/backend
     newTag: latest
-  # The same build as backend under its own name (docs/platform-backend.md):
-  # pin it separately to roll the platform without the club pods.
+  # The same build as backend under their own names (docs/platform-backend.md):
+  # pin each separately to roll it without the others.
+  - name: hubra/global-backend
+    newName: ghcr.io/hubra-app/hubra/global-backend
+    newTag: latest
   - name: hubra/platform-backend
     newName: ghcr.io/hubra-app/hubra/platform-backend
     newTag: latest

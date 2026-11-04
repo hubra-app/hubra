@@ -14,7 +14,7 @@ export interface PermissionEntry {
 }
 
 export async function getSystemPermissions(): Promise<PermissionEntry[]> {
-  return apiFetch<PermissionEntry[]>("/system/permissions");
+  return apiFetch<PermissionEntry[]>("/app/permissions");
 }
 
 // ── Version & Changelog ─────────────────────────────────────────────
@@ -26,7 +26,7 @@ export interface ChangelogResponse {
 
 export async function getChangelog(lang?: string): Promise<ChangelogResponse> {
   const q = lang ? `?lang=${encodeURIComponent(lang)}` : "";
-  return apiFetch<ChangelogResponse>(`/version/changelog${q}`);
+  return apiFetch<ChangelogResponse>(`/global/version/changelog${q}`);
 }
 
 export interface RoadmapResponse {
@@ -35,11 +35,11 @@ export interface RoadmapResponse {
 }
 
 export async function getRoadmap(): Promise<RoadmapResponse> {
-  return apiFetch<RoadmapResponse>("/version/roadmap");
+  return apiFetch<RoadmapResponse>("/global/version/roadmap");
 }
 
 // ── Health ──────────────────────────────────────────────────────────
 
 export async function ping(init?: RequestInit): Promise<{ status: string }> {
-  return apiFetch<{ status: string }>("/health", init);
+  return apiFetch<{ status: string }>("/global/health", init);
 }

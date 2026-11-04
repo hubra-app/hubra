@@ -1,7 +1,8 @@
-# The club backend: API, Celery worker and the Discord gateway, run with
-# HUBRA_ROLE=club, so it serves everything but the platform API. The platform
-# API, the platform worker and the init step live in platform-backend.yaml
-# (docs/platform-backend.md), so a platform release doesn't roll these pods.
+# The club app backend: API, Celery worker and the Discord gateway, run with
+# HUBRA_ROLE=app, so the API serves /api/v1/app and plugin routes. Sign-in,
+# account and public data live in global-backend.yaml; the platform API, the
+# platform worker and the init step in platform-backend.yaml
+# (docs/platform-backend.md). A release of either doesn't roll these pods.
 #
 # The API's initContainer doesn't migrate: it waits until the platform backend
 # has brought the schema up to this release (python -m hubra.core.schema_wait),
@@ -67,7 +68,7 @@ spec:
           envFrom: [{ secretRef: { name: hubra-env } }]
           env:
             - { name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }
-            - { name: HUBRA_ROLE, value: club }
+            - { name: HUBRA_ROLE, value: app }
             - { name: HUBRA_PLATFORM_QUEUE, value: platform }
           volumeMounts: [{ name: settings, mountPath: /etc/hubra }]
           readinessProbe:
@@ -113,7 +114,7 @@ spec:
           envFrom: [{ secretRef: { name: hubra-env } }]
           env:
             - { name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }
-            - { name: HUBRA_ROLE, value: club }
+            - { name: HUBRA_ROLE, value: app }
             - { name: HUBRA_PLATFORM_QUEUE, value: platform }
           volumeMounts: [{ name: settings, mountPath: /etc/hubra }]
           resources:
@@ -214,7 +215,7 @@ spec:
           envFrom: [{ secretRef: { name: hubra-env } }]
           env:
             - { name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }
-            - { name: HUBRA_ROLE, value: club }
+            - { name: HUBRA_ROLE, value: app }
             - { name: HUBRA_PLATFORM_QUEUE, value: platform }
           volumeMounts: [{ name: settings, mountPath: /etc/hubra }]
           resources:

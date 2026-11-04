@@ -36,5 +36,5 @@ export interface DashboardSummary {
 }
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {
-  return apiFetch<DashboardSummary>("/dashboard/summary");
+  return apiFetch<DashboardSummary>("/app/dashboard/summary");
 }

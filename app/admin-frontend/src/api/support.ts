@@ -1,6 +1,6 @@
 import { apiFetch } from '@hubra/api-client'
 
-const S = '/manager/support/cases'
+const S = '/platform/support/cases'
 
 export type CaseKind = 'bug' | 'feature'
 export type CaseStatus = 'open' | 'planned' | 'in_progress' | 'done' | 'closed'

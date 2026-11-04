@@ -3,11 +3,11 @@ import { apiFetch } from '@hubra/api-client';
 export async function fetchTranslations(
   locale: string,
 ): Promise<Record<string, string>> {
-  return apiFetch(`/i18n/${locale}`);
+  return apiFetch(`/global/i18n/${locale}`);
 }
 
 export async function fetchLanguages(): Promise<string[]> {
-  const locales: string[] = await apiFetch(`/i18n/languages`);
+  const locales: string[] = await apiFetch(`/global/i18n/languages`);
   // Older databases may also hold "de-ch" next to "de-CH": one language.
   return [...new Set(locales.map(canonicalLocale))];
 }
@@ -25,7 +25,7 @@ export async function reportMissingKeys(
   locale: string,
   keys: { key: string; default_value: string | null }[],
 ): Promise<{ flagged: number }> {
-  return apiFetch(`/i18n/${locale}/report`, {
+  return apiFetch(`/global/i18n/${locale}/report`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ keys }),
@@ -47,7 +47,7 @@ export interface TranslationSuggestion {
 }
 
 export async function fetchSuggestions(): Promise<TranslationSuggestion[]> {
-  return apiFetch(`/i18n/requests`);
+  return apiFetch(`/global/i18n/requests`);
 }
 
 export async function suggestTranslation(body: {
@@ -56,7 +56,7 @@ export async function suggestTranslation(body: {
   value: string;
   note?: string;
 }): Promise<TranslationSuggestion> {
-  return apiFetch(`/i18n/requests`, {
+  return apiFetch(`/global/i18n/requests`, {
     method: "POST",
     body: JSON.stringify(body),
   });

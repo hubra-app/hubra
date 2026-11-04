@@ -26,7 +26,7 @@ export async function withStepUp<T>(fn: () => Promise<T>): Promise<T> {
 
 /** Confirm the password (and the 2FA code, when set up) for a few minutes. */
 export async function stepUp(password: string, code?: string): Promise<void> {
-  await apiFetch('/account/step-up', {
+  await apiFetch('/global/account/step-up', {
     method: 'POST',
     body: JSON.stringify(code ? { password, code } : { password }),
   })
@@ -42,7 +42,7 @@ export interface StepUpStatus {
 }
 
 export async function getStepUpStatus(): Promise<StepUpStatus> {
-  return apiFetch<StepUpStatus>('/account/step-up')
+  return apiFetch<StepUpStatus>('/global/account/step-up')
 }
 
 /** Passkeys belong to the SSO portal's address, so manage cannot ask for

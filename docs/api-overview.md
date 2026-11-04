@@ -6,6 +6,17 @@ Flask backend (`backend:5000`). Caddy is not in the API path.
 
 For the complete endpoint reference, see [`app/backend/API.md`](../app/backend/API.md).
 
+The API has three areas (`app/backend/hubra/core/api_areas.py`):
+
+- `/api/v1/platform/...`: manage (platform settings, plugins, backups, all
+  clubs, club admin, the support desk). Served by the platform backend.
+- `/api/v1/app/...`: the club app. Served by the app backend.
+- `/api/v1/global/...`: sign-in, account, translations, version, public data,
+  the club directory, invites and requests. Served by the global backend.
+
+The paths before this split (`/api/v1/members`, `/api/v1/manager/...`) still
+work; the backend rewrites them. See [platform-backend.md](platform-backend.md).
+
 ## Auth scheme — JWT-in-cookies
 
 Authentication uses **JWT access and refresh tokens stored in HttpOnly cookies**,
@@ -25,19 +36,19 @@ cookie/CORS rationale.
 ### Auth flow
 
 ```
-POST /api/v1/auth/login     { "email": "...", "password": "..." }
+POST /api/v1/global/auth/login     { "email": "...", "password": "..." }
   → 200  { "mustChangePassword": false, "member": { ... } }
   → Set-Cookie: access_token_cookie=...; HttpOnly; Secure; Domain=.hubra.club; SameSite=Lax
   → Set-Cookie: refresh_token_cookie=...; HttpOnly; Secure; Domain=.hubra.club; SameSite=Lax
   → Set-Cookie: csrf_access_token=...; Secure; Domain=.hubra.club; SameSite=Lax
   → Set-Cookie: csrf_refresh_token=...; Secure; Domain=.hubra.club; SameSite=Lax
 
-POST /api/v1/auth/refresh   (refresh cookie sent automatically)
+POST /api/v1/global/auth/refresh   (refresh cookie sent automatically)
   + X-CSRF-TOKEN: <csrf_refresh_token cookie value>
   → 200  { "ok": true }
   → Set-Cookie: access_token_cookie=... (rotated)
 
-POST /api/v1/auth/logout    (access cookie sent automatically)
+POST /api/v1/global/auth/logout    (access cookie sent automatically)
   + X-CSRF-TOKEN: <csrf_access_token cookie value>
   → 204  (cookies cleared)
 ```
@@ -68,31 +79,31 @@ responses include `Vary: Origin` so shared caches don't cross-serve headers.
 
 | Blueprint         | Base path                | Key endpoints                                                                                                                                                    |
 | ----------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Auth**          | `/api/v1/auth/`          | `login`, `refresh`, `logout`, `forgot-password`, `reset-password`, `bootstrap`, `bootstrap-status` (public)                                                     |
-| **Account**       | `/api/v1/account/`       | `GET /` (profile), `PATCH /` (update), `change-password`, `permissions`, `sessions`, `devices`, `invoices`, `groups`, `mail-settings`, `verify-email`           |
-| **Members**       | `/api/v1/members/`       | `GET /`, `POST /`, `GET /<id>`, `PATCH /<id>`, `DELETE /<id>`, `archive`, `unarchive`, `disable`, `enable`, `provision`, `set-password`, `export`, `count`      |
-| **Groups**        | `/api/v1/groups/`        | `GET /`, `POST /`, `GET /<id>`, `PATCH /<id>`, `DELETE /<id>`, `GET /<id>/members`, `POST /<id>/members/<mid>`, `DELETE /<id>/members/<mid>`, `count`            |
-| **Finance**       | `/api/v1/finance/`       | Transactions CRUD, transaction-categories CRUD, invoices CRUD, `bulk`, `remind`, `overview`, external-parties CRUD, `qr-bill.pdf`                               |
-| **Mail**          | `/api/v1/mail/`          | Mailboxes, addresses, aliases, system-addresses, member-mail provisioning, group/function mail, `test`, `reconcile`                                             |
-| **Applications**  | `/api/v1/applications/`  | `GET /`, `GET /<id>`, `approve`, `decline`, `DELETE /<id>` (people ask to join on SSO)                                                                              |
-| **Events**        | `/api/v1/events/`        | CRUD, `POST /<id>/attendees/<mid>`, `DELETE /<id>/attendees/<mid>`                                                                                               |
-| **Polls**         | `/api/v1/polls/`         | CRUD, `vote`, `close`, `remind`                                                                                                                                  |
-| **Posts**         | `/api/v1/posts/`         | CRUD, `comments`, `like`                                                                                                                                         |
-| **Functions**     | `/api/v1/functions/`     | CRUD, `holders` (assign/remove)                                                                                                                                  |
-| **Tiers**         | `/api/v1/tiers/`         | CRUD, `members`, `calculate-cost`                                                                                                                                |
-| **Roles**         | `/api/v1/roles/`         | CRUD, `GET /<id>/permissions`, `PUT /<id>/permissions`                                                                                                           |
-| **Settings**      | `/api/v1/settings/`      | Key-value settings CRUD, `revert`                                                                                                                                |
-| **Features**      | `/api/v1/features/`      | `GET /`, `PUT /<key>`, per-feature settings                                                                                                                      |
-| **Bindings**      | `/api/v1/bindings/`      | CRUD, `keys`, `toggle`, `preview`, `registry`, `sources`, `validators`                                                                                          |
-| **Notifications** | `/api/v1/notifications/` | `GET /`, `DELETE /<id>`, `PATCH /<id>/read`, `read-all`, `POST /` (create)                                                                                       |
-| **Audit**         | `/api/v1/audit/`         | `GET /`, `GET /<id>`                                                                                                                                             |
-| **Inventory**     | `/api/v1/inventory/`     | Items CRUD, `instructions`                                                                                                                                      |
-| **i18n**          | `/api/v1/i18n/`          | `languages`, per-locale CRUD, `import`, `export`, `copy-defaults`, `duplicate`, `flagged`, `report`                                                             |
-| **Codes**         | `/api/v1/codes/`         | CRUD (Fernet-encrypted access codes)                                                                                                                             |
-| **Backups**       | `/api/v1/manager/platform/backups/` (global permission `backups.manage`) | `GET /` (`?tenant_id=`), `POST /` (`{tenant_id}` for a club), `GET /<id>`, `DELETE /<id>`, `verify`, `restore` (`{confirm: slug}`), `config`                                                                                               |
-| **Platform**      | `/api/v1/manager/platform/` (global permissions `platform.diagnostics`, `platform.settings`) | `settings`, `mail/test`, `health`, `permissions`, `mail-server` (live list of the shared WildDuck, `DELETE /<type>/<id>` orphans, `reconcile`) |
-| **Dashboard**     | `/api/v1/dashboard/`     | `summary` (aggregated counts)                                                                                                                                    |
-| **System**        | `/api/v1/system/`        | `permissions` (catalog)                                                                                                                                          |
+| **Auth**          | `/api/v1/global/auth/`          | `login`, `refresh`, `logout`, `forgot-password`, `reset-password`, `bootstrap`, `bootstrap-status` (public)                                                     |
+| **Account**       | `/api/v1/global/account/`       | `GET /` (profile), `PATCH /` (update), `change-password`, `permissions`, `sessions`, `devices`, `invoices`, `groups`, `mail-settings`, `verify-email`           |
+| **Members**       | `/api/v1/app/members/`       | `GET /`, `POST /`, `GET /<id>`, `PATCH /<id>`, `DELETE /<id>`, `archive`, `unarchive`, `disable`, `enable`, `provision`, `set-password`, `export`, `count`      |
+| **Groups**        | `/api/v1/app/groups/`        | `GET /`, `POST /`, `GET /<id>`, `PATCH /<id>`, `DELETE /<id>`, `GET /<id>/members`, `POST /<id>/members/<mid>`, `DELETE /<id>/members/<mid>`, `count`            |
+| **Finance**       | `/api/v1/app/finance/`       | Transactions CRUD, transaction-categories CRUD, invoices CRUD, `bulk`, `remind`, `overview`, external-parties CRUD, `qr-bill.pdf`                               |
+| **Mail**          | `/api/v1/app/mail/`          | Mailboxes, addresses, aliases, system-addresses, member-mail provisioning, group/function mail, `test`, `reconcile`                                             |
+| **Applications**  | `/api/v1/app/applications/`  | `GET /`, `GET /<id>`, `approve`, `decline`, `DELETE /<id>` (people ask to join on SSO)                                                                              |
+| **Events**        | `/api/v1/app/events/`        | CRUD, `POST /<id>/attendees/<mid>`, `DELETE /<id>/attendees/<mid>`                                                                                               |
+| **Polls**         | `/api/v1/app/polls/`         | CRUD, `vote`, `close`, `remind`                                                                                                                                  |
+| **Posts**         | `/api/v1/app/posts/`         | CRUD, `comments`, `like`                                                                                                                                         |
+| **Functions**     | `/api/v1/app/functions/`     | CRUD, `holders` (assign/remove)                                                                                                                                  |
+| **Tiers**         | `/api/v1/app/tiers/`         | CRUD, `members`, `calculate-cost`                                                                                                                                |
+| **Roles**         | `/api/v1/app/roles/`         | CRUD, `GET /<id>/permissions`, `PUT /<id>/permissions`                                                                                                           |
+| **Settings**      | `/api/v1/app/settings/`      | Key-value settings CRUD, `revert`                                                                                                                                |
+| **Features**      | `/api/v1/app/features/`      | `GET /`, `PUT /<key>`, per-feature settings                                                                                                                      |
+| **Bindings**      | `/api/v1/app/bindings/`      | CRUD, `keys`, `toggle`, `preview`, `registry`, `sources`, `validators`                                                                                          |
+| **Notifications** | `/api/v1/app/notifications/` | `GET /`, `DELETE /<id>`, `PATCH /<id>/read`, `read-all`, `POST /` (create)                                                                                       |
+| **Audit**         | `/api/v1/app/audit/`         | `GET /`, `GET /<id>`                                                                                                                                             |
+| **Inventory**     | `/api/v1/app/inventory/`     | Items CRUD, `instructions`                                                                                                                                      |
+| **i18n**          | `/api/v1/global/i18n/`          | `languages`, per-locale CRUD, `import`, `export`, `copy-defaults`, `duplicate`, `flagged`, `report`                                                             |
+| **Codes**         | `/api/v1/app/codes/`         | CRUD (Fernet-encrypted access codes)                                                                                                                             |
+| **Backups**       | `/api/v1/platform/backups/` (global permission `backups.manage`) | `GET /` (`?tenant_id=`), `POST /` (`{tenant_id}` for a club), `GET /<id>`, `DELETE /<id>`, `verify`, `restore` (`{confirm: slug}`), `config`                                                                                               |
+| **Platform**      | `/api/v1/platform/` (global permissions `platform.diagnostics`, `platform.settings`) | `settings`, `mail/test`, `health`, `permissions`, `mail-server` (live list of the shared WildDuck, `DELETE /<type>/<id>` orphans, `reconcile`) |
+| **Dashboard**     | `/api/v1/app/dashboard/`     | `summary` (aggregated counts)                                                                                                                                    |
+| **System**        | `/api/v1/platform/system/`        | `permissions` (catalog)                                                                                                                                          |
 | **Health**        | `/api/v1/`               | `GET /health` (public, cached; details under Platform above)                                                                                                    |
 | **Version**       | `/api/v1/`               | `GET /version`, `GET /version/changelog`                                                                                                                        |
 | **Setup**         | `/api/v1/setup/`         | `status`, `complete`                                                                                                                                             |

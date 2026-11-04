@@ -1,11 +1,18 @@
 """Which part of the API a backend process serves: ``HUBRA_ROLE``.
 
-One image, three roles (docs/platform-backend.md):
+One build, one role per process (docs/platform-backend.md):
 
 - ``all`` (default): every route, as before. Compose installs and tests.
-- ``club``: everything except the platform API.
-- ``platform``: only the platform API (manage's platform and club admin
-  views, club requests, support sessions), plus health and version.
+- ``app``: the club app (``/api/v1/app``) and plugin routes.
+- ``global``: sign-in, account and public data (``/api/v1/global``).
+- ``club``: ``app`` and ``global`` together (Compose).
+
+A path with the club in it (``/api/<slug>/v1/...``) can't be told apart by
+an ingress path prefix, so it always reaches the app backend; the app role
+therefore also answers global paths that came in that way.
+- ``platform``: only the platform API (``/api/v1/platform``: manage's
+  platform and club admin views, club requests, the support desk), plus
+  health and version.
 
 Every role registers every blueprint, so the URL map, ``url_for``,
 ``flask sync-permissions`` and the permission listing stay complete. A
@@ -25,23 +32,22 @@ import os
 
 from flask import Flask, jsonify, request
 
-ROLES = ("all", "club", "platform")
+# app, global and platform each serve one API area (hubra.core.api_areas);
+# club is app + global together, for a Compose install with one club
+# backend next to the platform backend.
+ROLES = ("all", "club", "app", "global", "platform")
 
-# Paths of the platform API. Keep in step with the ingress rules
-# (deploy/app/ingress.yaml, deploy/clusters/*/ingress.yaml) and the frontend
-# nginx (app/deploy/nginx/40-hubra-runtime.sh).
-PLATFORM_PREFIXES = (
-    "/api/v1/manager",
-    "/api/v1/admin",
-    "/api/v1/system",
-)
+# The platform API (hubra.core.api_areas). The role gate sees the new path,
+# after old ones were rewritten; the ingress and the frontend nginx also
+# route the old platform paths (api_areas.legacy_prefixes) here.
+PLATFORM_PREFIXES = ("/api/v1/platform",)
 
 # Served by every role: probes and the build/version info.
 SHARED_PATHS = (
     "/health",
-    "/api/v1/health",
-    "/api/v1/version",
-    "/api/v1/instance",
+    "/api/v1/global/health",
+    "/api/v1/global/version",
+    "/api/v1/global/instance",
 )
 
 # Celery task modules that belong to the platform: backups, health and
@@ -66,9 +72,7 @@ def current_role() -> str:
     """The role from ``HUBRA_ROLE``; ``all`` when unset."""
     role = (os.environ.get("HUBRA_ROLE") or "all").strip().lower()
     if role not in ROLES:
-        raise RuntimeError(
-            f"HUBRA_ROLE={role!r} is not one of {', '.join(ROLES)}"
-        )
+        raise RuntimeError(f"HUBRA_ROLE={role!r} is not one of {', '.join(ROLES)}")
     return role
 
 
@@ -80,13 +84,30 @@ def is_platform_path(path: str) -> bool:
     return _matches(path, PLATFORM_PREFIXES)
 
 
+def area_of(path: str) -> str:
+    """``platform``, ``global`` or ``app`` for a request path. Old paths count
+    as the new one they are rewritten to; plugin routes and anything else
+    belong to the app."""
+    from hubra.core.api_areas import GLOBAL, canonical_path
+
+    path = canonical_path(path)
+    if is_platform_path(path):
+        return "platform"
+    if _matches(path, (GLOBAL,)):
+        return "global"
+    return "app"
+
+
 def serves(path: str, role: str) -> bool:
     """Whether a backend in *role* answers *path* (slug already stripped)."""
-    if role == "all" or _matches(path, SHARED_PATHS):
+    from hubra.core.api_areas import canonical_path
+
+    if role == "all" or _matches(canonical_path(path), SHARED_PATHS):
         return True
-    if role == "platform":
-        return is_platform_path(path)
-    return not is_platform_path(path)
+    area = area_of(path)
+    if role == "club":
+        return area in ("app", "global")
+    return area == role
 
 
 def install_role_gate(app: Flask) -> None:
@@ -101,9 +122,17 @@ def install_role_gate(app: Flask) -> None:
     if role == "all":
         return
 
+    from hubra.core.tenant.middleware import _PATH_SLUG_KEY
+
     @app.before_request
     def _role_gate():
         if serves(request.path, role):
+            return None
+        if (
+            role == "app"
+            and request.environ.get(_PATH_SLUG_KEY)
+            and area_of(request.path) == "global"
+        ):
             return None
         return jsonify(
             {
@@ -127,5 +156,8 @@ def task_routes() -> dict:
 
 
 def build_component(kind: str) -> str:
-    """Name for the build heartbeat (manage › Diagnose › Builds)."""
-    return f"platform-{kind}" if current_role() == "platform" else kind
+    """Name for the build heartbeat (manage › Diagnose › Builds): ``api`` and
+    ``worker`` for the app (or a single) backend, ``global-api``,
+    ``platform-api``, ``platform-worker`` for the others."""
+    role = current_role()
+    return f"{role}-{kind}" if role in ("platform", "global") else kind

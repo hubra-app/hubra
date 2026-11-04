@@ -12,17 +12,17 @@ module = Module(
         Blueprint(
             "hubra.api.members.routes",
             "members_bp",
-            "/api/v1/members",
+            "/api/v1/app/members",
         ),
         Blueprint(
             "hubra.api.applications.routes",
             "applications_bp",
-            "/api/v1/applications",
+            "/api/v1/app/applications",
         ),
         Blueprint(
             "hubra.api.tiers.routes",
             "tiers_bp",
-            "/api/v1/tiers",
+            "/api/v1/app/tiers",
         ),
     ),
     nav=(

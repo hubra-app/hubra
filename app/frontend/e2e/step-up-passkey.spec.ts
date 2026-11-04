@@ -68,7 +68,7 @@ test('a platform action can be confirmed with a passkey instead of the password'
   // The e2e stack does not enforce the step-up, so the first change of
   // the update mode is answered as if it did.
   let refused = false
-  await page.route('**/api/v1/manager/plugins/updates', async (route) => {
+  await page.route('**/api/v1/platform/plugins/updates', async (route) => {
     if (route.request().method() === 'PUT' && !refused) {
       refused = true
       await route.fulfill({
@@ -82,7 +82,7 @@ test('a platform action can be confirmed with a passkey instead of the password'
 
   // The mode as the server has it (the select shows a default before that).
   const catalogue = page.waitForResponse(
-    (r) => r.url().endsWith('/api/v1/manager/plugins/') && r.request().method() === 'GET',
+    (r) => r.url().endsWith('/api/v1/platform/plugins/') && r.request().method() === 'GET',
   )
   await page.goto(`${MANAGE_URL}/app/plugins`)
   const { updateMode } = (await (await catalogue).json()) as { updateMode: string }
@@ -95,7 +95,7 @@ test('a platform action can be confirmed with a passkey instead of the password'
   // A confirmation from an earlier run holds ten minutes; manage would then
   // (rightly) close the dialog at once.
   const open = await page.evaluate(async () => {
-    const res = await fetch('/api/v1/account/step-up', { credentials: 'include' })
+    const res = await fetch('/api/v1/global/account/step-up', { credentials: 'include' })
     return (await res.json()).sudoUntil as string | null
   })
   test.skip(!!open, 'this sign-in is still confirmed from an earlier run')
@@ -126,7 +126,7 @@ test('a platform action can be confirmed with a passkey instead of the password'
   await expect(dialog).toBeHidden({ timeout: 15_000 })
   await expect(mode).toHaveValue(next)
   const status = await page.evaluate(async () => {
-    const res = await fetch('/api/v1/account/step-up', { credentials: 'include' })
+    const res = await fetch('/api/v1/global/account/step-up', { credentials: 'include' })
     return res.json()
   })
   expect(status.passkey).toBe(true)
