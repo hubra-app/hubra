@@ -13,12 +13,14 @@ import {
   Text,
   UnstyledButton,
 } from '@mantine/core'
-import { IconCircleCheck, IconExternalLink } from '@tabler/icons-react'
+import { IconArrowBigUp, IconArrowBigUpFilled, IconCircleCheck, IconExternalLink } from '@tabler/icons-react'
 import type { Lang } from './lang'
 
-// Release notes ("Neuigkeiten", from CHANGELOG.md) and the roadmap (from
-// ROADMAP.yaml), shared by the club app and manage. Both come from the
-// public /api/v1/global/version endpoints. Texts are German or English: the
+// Release notes ("Neuigkeiten", from CHANGELOG.md) and the one roadmap
+// (planned items from ROADMAP.yaml plus the ideas staff put on it, with
+// votes), shared by the club app, SSO and manage. Both come from the public
+// /api/v1/global/version endpoints (the roadmap with your own votes from
+// /global/support/roadmap). Texts are German or English: the
 // changelog comes in the page's language (?lang=), English where a version
 // has no German text yet.
 
@@ -30,16 +32,25 @@ export interface ChangelogEntry {
   lang?: 'de' | 'en'
 }
 
-export type RoadmapStatus = 'now' | 'next' | 'later' | 'done'
+export type RoadmapStatus = 'now' | 'next' | 'later' | 'done' | 'idea'
 
 export interface RoadmapItem {
+  /** ROADMAP.yaml id, or `idea-<case id>` for an idea. */
   id: string
+  /** `plan`: from ROADMAP.yaml; `idea`: a feature request staff put on it. */
+  source?: 'plan' | 'idea'
+  caseId?: number
   status: RoadmapStatus
   area: Record<string, string>
   title: Record<string, string>
   summary: Record<string, string>
   version: string | null
   link: string | null
+  votes?: number
+  /** Still open for votes (not in progress or shipped). */
+  voteable?: boolean
+  /** Only when signed in: whether you voted. */
+  voted?: boolean
 }
 
 const TEXT = {
@@ -65,6 +76,12 @@ const TEXT = {
     roadmapEmpty: 'Die Roadmap ist noch leer.',
     shippedIn: (v: string) => `in v${v}`,
     englishOnly: 'Noch nicht übersetzt',
+    idea: 'Vorschläge',
+    ideaHint: 'Ideen aus den Vereinen. Stimme für das ab, was dir fehlt.',
+    votes: (n: number) => (n === 1 ? '1 Stimme' : `${n} Stimmen`),
+    vote: 'Dafür stimmen',
+    voted: 'Abgestimmt',
+    voteAria: (title: string, on: boolean) => (on ? `Stimme für «${title}» zurücknehmen` : `Für «${title}» stimmen`),
   },
   en: {
     unreleased: (prev?: string) => (prev ? `New since v${prev}` : 'Latest changes'),
@@ -88,6 +105,12 @@ const TEXT = {
     roadmapEmpty: 'The roadmap is still empty.',
     shippedIn: (v: string) => `in v${v}`,
     englishOnly: 'Not translated yet',
+    idea: 'Ideas',
+    ideaHint: 'Ideas from clubs. Vote for what you are missing.',
+    votes: (n: number) => (n === 1 ? '1 vote' : `${n} votes`),
+    vote: 'Vote',
+    voted: 'Voted',
+    voteAria: (title: string, on: boolean) => (on ? `Take back your vote for “${title}”` : `Vote for “${title}”`),
   },
 } as const
 
@@ -338,9 +361,60 @@ const STATUS_COLOR: Record<RoadmapStatus, string> = {
   next: 'blue',
   later: 'gray',
   done: 'green',
+  idea: 'yellow',
 }
 
-function RoadmapCard({ item, lang }: { item: RoadmapItem; lang: Lang }) {
+/** Voting on the roadmap: `onVote` when signed in, else `signIn` (a link). */
+export interface RoadmapVoting {
+  onVote?: (item: RoadmapItem) => void
+  /** The item whose vote is being saved. */
+  pending?: string | null
+  /** Shown instead of the vote button when you cannot vote here (signed out). */
+  signIn?: { href: string; label: string }
+}
+
+function VoteButton({ item, lang, voting }: { item: RoadmapItem; lang: Lang; voting?: RoadmapVoting }) {
+  const t = TEXT[lang]
+  const votes = item.votes ?? 0
+  if (!item.voteable || !voting || (!voting.onVote && !voting.signIn)) {
+    return votes > 0 ? (
+      <Text fz="xs" c="dimmed">
+        {t.votes(votes)}
+      </Text>
+    ) : null
+  }
+  if (!voting.onVote && voting.signIn) {
+    return (
+      <Group gap={8} wrap="wrap">
+        {votes > 0 && (
+          <Text fz="xs" c="dimmed">
+            {t.votes(votes)}
+          </Text>
+        )}
+        <Anchor href={voting.signIn.href} fz="xs">
+          {voting.signIn.label}
+        </Anchor>
+      </Group>
+    )
+  }
+  const on = !!item.voted
+  return (
+    <Button
+      size="compact-sm"
+      variant={on ? 'filled' : 'light'}
+      leftSection={on ? <IconArrowBigUpFilled size={14} /> : <IconArrowBigUp size={14} />}
+      loading={voting.pending === item.id}
+      onClick={() => voting.onVote?.(item)}
+      aria-pressed={on}
+      aria-label={t.voteAria(pick(item.title, lang), on)}
+      style={{ alignSelf: 'flex-start' }}
+    >
+      {votes > 0 ? `${on ? t.voted : t.vote} · ${votes}` : t.vote}
+    </Button>
+  )
+}
+
+function RoadmapCard({ item, lang, voting }: { item: RoadmapItem; lang: Lang; voting?: RoadmapVoting }) {
   const summary = pick(item.summary, lang)
   return (
     <Paper withBorder radius="md" p="sm" h="100%">
@@ -354,10 +428,16 @@ function RoadmapCard({ item, lang }: { item: RoadmapItem; lang: Lang }) {
           {pick(item.title, lang)}
         </Text>
         {summary && (
-          <Text fz="sm" c="var(--hb-text-2)" style={{ overflowWrap: 'anywhere' }}>
+          <Text
+            fz="sm"
+            c="var(--hb-text-2)"
+            lineClamp={item.source === 'idea' ? 4 : undefined}
+            style={{ overflowWrap: 'anywhere', whiteSpace: item.source === 'idea' ? 'pre-line' : undefined }}
+          >
             {summary}
           </Text>
         )}
+        <VoteButton item={item} lang={lang} voting={voting} />
         {item.link && (
           <Anchor href={item.link} target="_blank" rel="noopener noreferrer" fz="xs">
             <Group gap={4} wrap="nowrap">
@@ -404,10 +484,21 @@ function RoadmapGroup({
 }
 
 /**
- * The roadmap: in progress, up next, later (as cards) and done (a short
- * list with the version each shipped in). `wide` puts two cards per row.
+ * The one roadmap: in progress, up next, later, ideas (as cards, with votes)
+ * and done (a short list with the version each shipped in). `wide` puts
+ * several cards per row. Pass `voting` to let people vote.
  */
-export function Roadmap({ items, lang, wide = false }: { items: RoadmapItem[]; lang: Lang; wide?: boolean }) {
+export function Roadmap({
+  items,
+  lang,
+  wide = false,
+  voting,
+}: {
+  items: RoadmapItem[]
+  lang: Lang
+  wide?: boolean
+  voting?: RoadmapVoting
+}) {
   const t = TEXT[lang]
   if (items.length === 0)
     return (
@@ -416,7 +507,7 @@ export function Roadmap({ items, lang, wide = false }: { items: RoadmapItem[]; l
       </Text>
     )
   const of = (s: RoadmapStatus) => items.filter((i) => i.status === s)
-  const open = (['now', 'next', 'later'] as const).filter((s) => of(s).length > 0)
+  const open = (['now', 'next', 'later', 'idea'] as const).filter((s) => of(s).length > 0)
   const done = of('done')
 
   return (
@@ -425,7 +516,7 @@ export function Roadmap({ items, lang, wide = false }: { items: RoadmapItem[]; l
         <RoadmapGroup key={s} title={t[s]} hint={t[`${s}Hint`]} color={STATUS_COLOR[s]} count={of(s).length}>
           <SimpleGrid cols={wide ? { base: 1, sm: 2, lg: 3 } : 1} spacing="sm">
             {of(s).map((item) => (
-              <RoadmapCard key={item.id} item={item} lang={lang} />
+              <RoadmapCard key={item.id} item={item} lang={lang} voting={voting} />
             ))}
           </SimpleGrid>
         </RoadmapGroup>

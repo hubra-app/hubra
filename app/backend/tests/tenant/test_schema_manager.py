@@ -21,6 +21,7 @@ _GLOBAL_ONLY_TABLES = frozenset(
         "support_cases",
         "support_case_comments",
         "support_case_votes",
+        "roadmap_votes",
         "global_audit_logs",
         "alembic_version",
         "global_permissions",

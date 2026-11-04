@@ -17,7 +17,8 @@ import {
   TextInput,
   ThemeIcon,
 } from '@mantine/core'
-import { IconSettings } from '@tabler/icons-react'
+import { IconBulb, IconSettings } from '@tabler/icons-react'
+import { Link } from 'react-router-dom'
 import { moduleNavIcon } from '@/components/Shell/nav'
 import { useT } from '@/locales/i18n'
 import { useAuth, useToast } from '@/context/AppContext'
@@ -31,8 +32,42 @@ import {
 } from '@/api/modules'
 import { localizeModule } from '@/modules/labels'
 import { qk } from '@/data/keys'
+import { openReport } from '@/screens/private/support/reportStore'
 
 type FormValue = string | number | boolean | null
+
+/** "Fehlt ein Modul?": opens the idea form with the area "Modul" set. */
+function MissingModule() {
+  const { t } = useT()
+  return (
+    <Paper withBorder radius="md" p="md" data-testid="missing-module">
+      <Group gap="md" wrap="wrap" justify="space-between" align="center">
+        <Group gap="sm" wrap="nowrap" align="flex-start" style={{ flex: '1 1 320px', minWidth: 0 }}>
+          <ThemeIcon variant="light" radius="xl" size={36} color="orange">
+            <IconBulb size={20} />
+          </ThemeIcon>
+          <div style={{ minWidth: 0 }}>
+            <Text fw={650}>{t('settings.modules.missingTitle', 'Fehlt ein Modul?')}</Text>
+            <Text fz="sm" c="dimmed">
+              {t(
+                'settings.modules.missingDesc',
+                'Schlag es vor. Nimmt das Hubra-Team die Idee auf die Roadmap, können alle Vereine dafür stimmen.',
+              )}
+            </Text>
+          </div>
+        </Group>
+        <Group gap="xs" wrap="wrap">
+          <Button component={Link} to="/app/feedback/roadmap" variant="default">
+            {t('settings.modules.roadmap', 'Roadmap ansehen')}
+          </Button>
+          <Button leftSection={<IconBulb size={16} />} onClick={() => openReport('feature', { area: 'modules' })}>
+            {t('settings.modules.suggest', 'Modul vorschlagen')}
+          </Button>
+        </Group>
+      </Group>
+    </Paper>
+  )
+}
 
 export function ModulesTab() {
   const { t } = useT()
@@ -128,6 +163,8 @@ export function ModulesTab() {
           {listed.map((m) => card(m))}
         </SimpleGrid>
       </Stack>
+
+      <MissingModule />
 
       {required.length > 0 && (
         <Text fz="xs" c="dimmed">

@@ -22,6 +22,7 @@ from sqlalchemy import func, or_, select
 
 from hubra.core.extensions import db
 from hubra.core.models.support_case import (
+    RoadmapVote,
     SupportCase,
     SupportCaseComment,
     SupportCaseVote,
@@ -47,10 +48,36 @@ AREAS = (
     "mail",
     "settings",
     "account",
+    # A module the club would like (Settings › Module › "Fehlt ein Modul?").
+    "modules",
     "other",
 )
+AREA_LABELS = {
+    "members": {"de": "Mitglieder", "en": "Members"},
+    "finance": {"de": "Finanzen", "en": "Finance"},
+    "events": {"de": "Anlässe", "en": "Events"},
+    "posts": {"de": "Beiträge", "en": "Posts"},
+    "polls": {"de": "Umfragen", "en": "Polls"},
+    "groups": {"de": "Gruppen", "en": "Groups"},
+    "inventory": {"de": "Inventar", "en": "Inventory"},
+    "mail": {"de": "Mail", "en": "Mail"},
+    "settings": {"de": "Einstellungen", "en": "Settings"},
+    "account": {"de": "Konto", "en": "Account"},
+    "modules": {"de": "Modul", "en": "Module"},
+    "other": {"de": "Anderes", "en": "Other"},
+}
 # Statuses the public roadmap shows (a closed idea drops off).
 ROADMAP_STATUSES = ("open", "planned", "in_progress", "done")
+# Where an idea shows on the one roadmap (the planned roadmap's statuses,
+# plus "idea": proposed, not planned yet).
+IDEA_TO_ROADMAP = {
+    "open": "idea",
+    "planned": "later",
+    "in_progress": "now",
+    "done": "done",
+}
+# What people can still vote for: not what is being built or shipped.
+VOTEABLE = frozenset({"idea", "later", "next"})
 
 TITLE_MAX = 200
 TEXT_MAX = 5000
@@ -228,6 +255,7 @@ def as_dict(case: SupportCase, *, votes: int = 0, comments: int = 0) -> dict:
         "page": case.page,
         "fingerprint": case.fingerprint or {},
         "isPublic": case.is_public,
+        "roadmapItem": case.roadmap_item,
         "mergedInto": _merged_into(case),
         "votes": votes,
         "commentCount": comments,
@@ -292,42 +320,101 @@ def own_case(user_id: int, case_id: int) -> SupportCase | None:
     return case
 
 
-def roadmap(user_id: int | None = None) -> list[dict]:
-    """Public feature requests, most votes first within each status."""
+def _plan() -> list[dict]:
+    from hubra.api.version.services import VersionService
+
+    return VersionService.get_roadmap()
+
+
+def roadmap(user_id: int | None = None) -> dict:
+    """The one public roadmap: the planned items (ROADMAP.yaml) and the ideas
+    staff put on it, with votes.
+
+    An idea linked to a planned item (``roadmap_item``) shows as that item,
+    and its voters count for it.  Each item is ``{id, source, status, area,
+    title, summary, version, link, votes, voteable}`` plus ``voted`` when
+    *user_id* is given; ``source`` is ``plan`` or ``idea`` (then ``caseId``).
+    ``status`` is now | next | later | done | idea.
+    """
+    plan = _plan()
+    plan_ids = {p["id"] for p in plan}
+
     cases = db.session.scalars(
         select(SupportCase)
         .where(SupportCase.kind == "feature")
-        .where(SupportCase.is_public.is_(True))
         .where(SupportCase.merged_into_id.is_(None))
-        .where(SupportCase.status.in_(ROADMAP_STATUSES))
-    ).all()
-    ids = [c.id for c in cases]
-    votes = _votes(ids)
-    voted: set[int] = set()
-    if user_id is not None and ids:
-        voted = set(
-            db.session.scalars(
-                select(SupportCaseVote.case_id)
-                .where(SupportCaseVote.user_id == user_id)
-                .where(SupportCaseVote.case_id.in_(ids))
-            ).all()
+        .where(
+            or_(
+                SupportCase.roadmap_item.in_(plan_ids or {""}),
+                (SupportCase.is_public.is_(True))
+                & SupportCase.status.in_(ROADMAP_STATUSES),
+            )
         )
-    items = [
-        {
-            "id": c.id,
-            "title": c.title,
-            "description": c.description,
-            "status": c.status,
-            "area": c.area,
-            "votes": votes.get(c.id, 0),
-            "createdAt": _iso(c.created_at),
-            "updatedAt": _iso(c.updated_at),
-            **({"voted": c.id in voted} if user_id is not None else {}),
-        }
-        for c in cases
-    ]
-    items.sort(key=lambda i: (-i["votes"], i["id"]))
-    return items
+    ).all()
+    linked: dict[str, list[int]] = {}
+    ideas: list[SupportCase] = []
+    for c in cases:
+        if c.roadmap_item in plan_ids:
+            linked.setdefault(c.roadmap_item, []).append(c.id)
+        elif c.is_public:
+            ideas.append(c)
+
+    case_ids = [c.id for c in cases]
+    case_voters: dict[int, set[int]] = {}
+    if case_ids:
+        for cid, uid in db.session.execute(
+            select(SupportCaseVote.case_id, SupportCaseVote.user_id).where(
+                SupportCaseVote.case_id.in_(case_ids)
+            )
+        ).all():
+            case_voters.setdefault(cid, set()).add(uid)
+    item_voters: dict[str, set[int]] = {}
+    if plan_ids:
+        for item, uid in db.session.execute(
+            select(RoadmapVote.item, RoadmapVote.user_id).where(
+                RoadmapVote.item.in_(plan_ids)
+            )
+        ).all():
+            item_voters.setdefault(item, set()).add(uid)
+
+    def finish(entry: dict, voters: set[int]) -> dict:
+        entry["votes"] = len(voters)
+        entry["voteable"] = entry["status"] in VOTEABLE
+        if user_id is not None:
+            entry["voted"] = user_id in voters
+        return entry
+
+    items: list[dict] = []
+    for p in plan:
+        voters = set(item_voters.get(p["id"], set()))
+        for cid in linked.get(p["id"], []):
+            voters |= case_voters.get(cid, set())
+        items.append(
+            finish({**p, "source": "plan", "ideas": len(linked.get(p["id"], []))}, voters)
+        )
+    idea_items = []
+    for c in ideas:
+        idea_items.append(
+            finish(
+                {
+                    "id": f"idea-{c.id}",
+                    "caseId": c.id,
+                    "source": "idea",
+                    "status": IDEA_TO_ROADMAP[c.status],
+                    "area": AREA_LABELS.get(c.area or "", {}),
+                    # Ideas are written in one language; the apps show it as is.
+                    "title": {"de": c.title, "en": c.title},
+                    "summary": {"de": c.description, "en": c.description},
+                    "version": None,
+                    "link": None,
+                    "createdAt": _iso(c.created_at),
+                },
+                case_voters.get(c.id, set()),
+            )
+        )
+    idea_items.sort(key=lambda i: (-i["votes"], i["caseId"]))
+    items.extend(idea_items)
+    return {"statuses": ["now", "next", "later", "done", "idea"], "items": items}
 
 
 def vote(user_id: int, case_id: int, on: bool) -> int:
@@ -340,6 +427,11 @@ def vote(user_id: int, case_id: int, on: bool) -> int:
         or case.status not in ROADMAP_STATUSES
     ):
         raise LookupError("Not on the roadmap")
+    if case.roadmap_item and case.roadmap_item in {p["id"] for p in _plan()}:
+        # It shows as the planned item now: the vote goes there.
+        return vote_item(user_id, case.roadmap_item, on)
+    if IDEA_TO_ROADMAP[case.status] not in VOTEABLE:
+        raise SupportError("Voting is closed for this idea")
     existing = db.session.scalar(
         select(SupportCaseVote)
         .where(SupportCaseVote.case_id == case_id)
@@ -353,6 +445,64 @@ def vote(user_id: int, case_id: int, on: bool) -> int:
     return _votes([case_id]).get(case_id, 0)
 
 
+def vote_item(user_id: int, item_id: str, on: bool) -> int:
+    """Vote for a planned item; returns its vote count (distinct people)."""
+    item = next((p for p in _plan() if p["id"] == item_id), None)
+    if item is None:
+        raise LookupError("Not on the roadmap")
+    if item["status"] not in VOTEABLE:
+        raise SupportError("Voting is closed for this item")
+    linked = list(
+        db.session.scalars(
+            select(SupportCase.id)
+            .where(SupportCase.roadmap_item == item_id)
+            .where(SupportCase.merged_into_id.is_(None))
+        ).all()
+    )
+    own = db.session.scalar(
+        select(RoadmapVote)
+        .where(RoadmapVote.item == item_id)
+        .where(RoadmapVote.user_id == user_id)
+    )
+    if on:
+        already = own is not None or (
+            linked
+            and db.session.scalar(
+                select(func.count())
+                .select_from(SupportCaseVote)
+                .where(SupportCaseVote.case_id.in_(linked))
+                .where(SupportCaseVote.user_id == user_id)
+            )
+        )
+        if not already:
+            db.session.add(RoadmapVote(item=item_id, user_id=user_id))
+    else:
+        if own is not None:
+            db.session.delete(own)
+        if linked:
+            for v in db.session.scalars(
+                select(SupportCaseVote)
+                .where(SupportCaseVote.case_id.in_(linked))
+                .where(SupportCaseVote.user_id == user_id)
+            ).all():
+                db.session.delete(v)
+    db.session.flush()
+    voters = set(
+        db.session.scalars(
+            select(RoadmapVote.user_id).where(RoadmapVote.item == item_id)
+        ).all()
+    )
+    if linked:
+        voters |= set(
+            db.session.scalars(
+                select(SupportCaseVote.user_id).where(
+                    SupportCaseVote.case_id.in_(linked)
+                )
+            ).all()
+        )
+    return len(voters)
+
+
 # ── Staff ─────────────────────────────────────────────────────────────────────
 
 
@@ -360,6 +510,7 @@ def staff_listing(
     *,
     kind: str | None = None,
     status: str | None = None,
+    area: str | None = None,
     query: str | None = None,
     page: int = 1,
     per_page: int = 25,
@@ -368,6 +519,8 @@ def staff_listing(
     stmt = select(SupportCase)
     if kind:
         stmt = stmt.where(SupportCase.kind == kind)
+    if area:
+        stmt = stmt.where(SupportCase.area == area)
     if status == "active":
         stmt = stmt.where(SupportCase.status.not_in(FINISHED))
     elif status:
@@ -510,7 +663,8 @@ def set_status(case: SupportCase, status: str) -> bool:
 
 
 def edit(case: SupportCase, body: dict) -> list[str]:
-    """Title, description, area, is_public.  Returns the changed fields."""
+    """Title, description, area, is_public, roadmap_item.  Returns the
+    changed fields."""
     changed: list[str] = []
     if "title" in body:
         title = _text(body["title"], "title", TITLE_MAX, required=True)
@@ -540,6 +694,16 @@ def edit(case: SupportCase, body: dict) -> list[str]:
         if public != case.is_public:
             case.is_public = public
             changed.append("isPublic")
+    if "roadmapItem" in body:
+        item = body["roadmapItem"] or None
+        if item is not None:
+            if case.kind != "feature":
+                raise SupportError("Only feature requests go on the roadmap")
+            if not isinstance(item, str) or item not in {p["id"] for p in _plan()}:
+                raise SupportError("Unknown roadmap item")
+        if item != case.roadmap_item:
+            case.roadmap_item = item
+            changed.append("roadmapItem")
     return changed
 
 
@@ -579,8 +743,11 @@ def merge(source: SupportCase, target: SupportCase, actor_id: int | None) -> Non
     ).all():
         earlier.merged_into_id = target.id
 
+    if source.roadmap_item and not target.roadmap_item:
+        target.roadmap_item = source.roadmap_item
     source.merged_into_id = target.id
     source.is_public = False
+    source.roadmap_item = None
     set_status(source, "closed")
     now = datetime.now(timezone.utc)
     source.updated_at = now
