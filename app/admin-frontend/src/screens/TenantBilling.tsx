@@ -23,7 +23,7 @@ import { IconInfoCircle, IconPencil, IconPlus, IconTrash } from '@tabler/icons-r
 import { useAdmin } from '@/context/AdminContext'
 import { formatDate } from '@/format'
 import { tr } from '@/lang'
-import { planLabel } from '@/labels'
+import { planLabel, priceUnitOptions, priceUnitSuffix } from '@/labels'
 import { usePlanChoices } from '@/plans'
 import {
   getTenantBilling,
@@ -35,6 +35,7 @@ import {
   type BillingTerms,
   type TenantBilling as Billing,
 } from '@/api/tenants'
+import type { PriceUnit } from '@/api/platform'
 
 const STATUS: Record<BillingStatus, { de: string; en: string; color: string }> = {
   none: { de: 'Nicht verrechnet', en: 'Not billed', color: 'gray' },
@@ -158,9 +159,37 @@ export function TenantBilling({ tenantId }: { tenantId: number }) {
               value={`− ${chf(data.discount_chf)}`}
             />
           )}
-          {data.addons.map((a) => (
-            <Row key={a.code} label={`+ ${a.label || a.code}`} value={chf(a.price_chf)} />
-          ))}
+          {data.module_lines.some((l) => l.included) && (
+            <Text size="xs" c="dimmed">
+              {tr('Im Tarif inklusive: ', 'Included in the plan: ')}
+              {data.module_lines
+                .filter((l) => l.included)
+                .map((l) => l.label || l.code)
+                .join(', ')}
+            </Text>
+          )}
+          {data.module_lines
+            .filter((l) => !l.included)
+            .map((l) => (
+              <Stack key={`${l.source}-${l.code}`} gap={0}>
+                <Row
+                  label={`+ ${l.label || l.code}`}
+                  value={l.included ? tr('inklusive', 'included') : chf(l.total_chf)}
+                />
+                {(l.source === 'plan' || l.unit !== 'flat') && (
+                  <Text size="xs" c="dimmed">
+                    {[
+                      l.source === 'plan' ? tr('Im Tarif', 'In the plan') : null,
+                      !l.included && l.unit !== 'flat'
+                        ? `${l.quantity.toLocaleString('de-CH')} × ${chf(l.unit_price_chf)}${priceUnitSuffix(l.unit, tr)}`
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </Text>
+                )}
+              </Stack>
+            ))}
           <Row
             label={tr('Total pro Monat', 'Total per month')}
             value={chf(data.total_chf)}
@@ -258,8 +287,7 @@ function BillingModal({
   const [plan, setPlan] = useState(data.plan)
   const planPrice = (key: string) =>
     planChoices?.plans.find((p) => p.key === key)?.price_month_chf ?? null
-  const listedAddon = (code: string) =>
-    planChoices?.addons.find((a) => a.code === code)?.price_month_chf ?? null
+  const listedAddon = (code: string) => planChoices?.addons.find((a) => a.code === code)
   const [t, setT] = useState<BillingTerms>(() => ({
     status: data.status,
     trial_ends: data.trial_ends,
@@ -271,6 +299,7 @@ function BillingModal({
     sponsored_until: data.sponsored_until,
     sponsor_note: data.sponsor_note,
     addons: data.addons,
+    licenses: data.licenses ?? {},
     note: data.note,
   }))
   const [saving, setSaving] = useState(false)
@@ -295,6 +324,17 @@ function BillingModal({
     )
 
   const invalid = t.sponsored && !t.sponsor_name.trim()
+  const licences = (code: string) => t.licenses[code] ?? 1
+  const setLicences = (code: string, n: number) => set('licenses', { ...t.licenses, [code]: n })
+  const moduleName = (code: string) =>
+    modules?.find((m) => m.code === code)?.name ?? listedAddon(code)?.name ?? code
+  // Modules of the chosen plan priced per licence (and not replaced by an add-on).
+  const planLicences = (planChoices?.plans.find((p) => p.key === plan)?.modules ?? []).filter(
+    (m) => m.price_chf != null && m.unit === 'license' && !taken.has(m.code),
+  )
+  const planIncluded = (planChoices?.plans.find((p) => p.key === plan)?.modules ?? []).map(
+    (m) => m.code,
+  )
 
   return (
     <Modal opened onClose={onClose} title={tr('Abrechnung bearbeiten', 'Edit billing')} size="xl">
@@ -429,12 +469,12 @@ function BillingModal({
           </Text>
           <Text size="xs" c="dimmed">
             {tr(
-              'Bezahlte Plugins oder Funktionen zusätzlich zum Tarif, je mit eigenem Preis.',
-              'Paid plugins or features on top of the plan, each with its own price.',
+              'Bezahlte Plugins oder Funktionen zusätzlich zum Tarif, je mit eigenem Preis: pauschal, pro Mitglied oder pro Lizenz. Ein Modul, das der Tarif enthält, bekommt hier einen eigenen Preis für diesen Verein.',
+              'Paid plugins or features on top of the plan, each with its own price: flat, per member or per licence. A module the plan includes gets its own price for this club here.',
             )}
           </Text>
           {t.addons.length > 0 && (
-            <Table.ScrollContainer minWidth={420}>
+            <Table.ScrollContainer minWidth={700}>
               <Table verticalSpacing={4}>
                 <Table.Tbody>
                   {t.addons.map((a, i) => (
@@ -448,7 +488,7 @@ function BillingModal({
                           onChange={(e) => setAddon(i, { label: e.currentTarget.value })}
                         />
                       </Table.Td>
-                      <Table.Td w={160}>
+                      <Table.Td w={150}>
                         <NumberInput
                           aria-label={tr('Preis (CHF)', 'Price (CHF)')}
                           min={0}
@@ -458,6 +498,28 @@ function BillingModal({
                           value={a.price_chf}
                           onChange={(v) => setAddon(i, { price_chf: String(v === '' ? 0 : v) })}
                         />
+                      </Table.Td>
+                      <Table.Td w={170}>
+                        <Select
+                          aria-label={tr('Preis gilt', 'Price applies')}
+                          allowDeselect={false}
+                          data={priceUnitOptions(tr)}
+                          value={a.unit ?? 'flat'}
+                          onChange={(v) => v && setAddon(i, { unit: v as PriceUnit })}
+                        />
+                      </Table.Td>
+                      <Table.Td w={110}>
+                        {a.unit === 'license' && (
+                          <NumberInput
+                            aria-label={tr('Lizenzen', 'Licences')}
+                            min={0}
+                            allowDecimal={false}
+                            allowNegative={false}
+                            suffix={tr(' Liz.', ' lic.')}
+                            value={licences(a.code)}
+                            onChange={(v) => setLicences(a.code, typeof v === 'number' ? v : 0)}
+                          />
+                        )}
                       </Table.Td>
                       <Table.Td w={40}>
                         <ActionIcon
@@ -497,9 +559,15 @@ function BillingModal({
               onClick={() => {
                 const m = modules?.find((x) => x.code === pick)
                 if (!m) return
+                const listed = listedAddon(m.code)
                 set('addons', [
                   ...t.addons,
-                  { code: m.code, label: m.name, price_chf: listedAddon(m.code) ?? '0.00' },
+                  {
+                    code: m.code,
+                    label: m.name,
+                    price_chf: listed?.price_month_chf ?? '0.00',
+                    unit: listed?.price_unit ?? 'flat',
+                  },
                 ])
                 setPick(null)
               }}
@@ -508,6 +576,36 @@ function BillingModal({
             </Button>
           </Group>
         </Stack>
+
+        {planIncluded.length > 0 && (
+          <Text size="xs" c="dimmed">
+            {tr(
+              `Im Tarif ${planLabel(plan, tr)} enthalten: ${planIncluded.map(moduleName).join(', ')}`,
+              `Included in the ${planLabel(plan, tr)} plan: ${planIncluded.map(moduleName).join(', ')}`,
+            )}
+          </Text>
+        )}
+        {planLicences.length > 0 && (
+          <Stack gap={6}>
+            <Text size="sm" fw={600}>
+              {tr('Lizenzen für Module im Tarif', 'Licences for modules in the plan')}
+            </Text>
+            <SimpleGrid cols={{ base: 1, sm: 2 }}>
+              {planLicences.map((m) => (
+                <NumberInput
+                  key={m.code}
+                  label={moduleName(m.code)}
+                  description={`${chf(m.price_chf)}${priceUnitSuffix('license', tr)}`}
+                  min={0}
+                  allowDecimal={false}
+                  allowNegative={false}
+                  value={licences(m.code)}
+                  onChange={(v) => setLicences(m.code, typeof v === 'number' ? v : 0)}
+                />
+              ))}
+            </SimpleGrid>
+          </Stack>
+        )}
 
         <Textarea
           label={tr('Interne Notiz', 'Internal note')}

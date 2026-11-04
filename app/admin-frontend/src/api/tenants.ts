@@ -1,5 +1,6 @@
 import { withStepUp } from '@/api/stepUp'
 import { apiFetch, apiFetchRaw } from '@hubra/api-client'
+import type { PriceUnit } from '@/api/platform'
 
 export interface Tenant {
   id: number
@@ -603,7 +604,22 @@ export type BillingStatus =
 export interface BillingAddon {
   code: string
   label: string
+  /** Per unit: once, per member or per licence. */
   price_chf: string
+  unit: PriceUnit
+}
+
+/** One module the club pays for (or gets with its plan), with its quantity. */
+export interface BillingModuleLine {
+  code: string
+  label: string
+  source: 'plan' | 'addon'
+  unit: PriceUnit
+  unit_price_chf: string
+  quantity: number
+  /** Comes with the plan at no extra cost. */
+  included: boolean
+  total_chf: string
 }
 
 export interface BillingTerms {
@@ -618,6 +634,8 @@ export interface BillingTerms {
   sponsored_until: string | null
   sponsor_note: string
   addons: BillingAddon[]
+  /** Licences per module code (for prices per licence; 1 if not set). */
+  licenses: Record<string, number>
   note: string
 }
 
@@ -627,6 +645,9 @@ export interface TenantBilling extends BillingTerms {
   base_chf: string
   discount_chf: string
   addons_chf: string
+  module_lines: BillingModuleLine[]
+  /** Members counted, when a price is per member. */
+  members: number | null
   total_chf: string
   due_chf: string
   sponsorship_running: boolean
@@ -656,11 +677,17 @@ export interface PlanChoice {
   public: boolean
   hidden: boolean
   price_month_chf: string | null
+  modules: { code: string; price_chf: string | null; unit: PriceUnit }[]
 }
 
 export interface PlanChoices {
   plans: PlanChoice[]
-  addons: { code: string; name: string; price_month_chf: string | null }[]
+  addons: {
+    code: string
+    name: string
+    price_month_chf: string | null
+    price_unit: PriceUnit
+  }[]
 }
 
 export async function listPlanChoices() {

@@ -30,3 +30,34 @@ export function statusLabel(status: string, tr: (de: string, en: string) => stri
   const l = labels[status]
   return l ? tr(l[0], l[1]) : status
 }
+
+const PRICE_UNITS: Record<string, { de: string; en: string; short_de: string; short_en: string }> =
+  {
+    flat: { de: 'Pauschal', en: 'Flat', short_de: '', short_en: '' },
+    member: {
+      de: 'Pro Mitglied',
+      en: 'Per member',
+      short_de: ' pro Mitglied',
+      short_en: ' per member',
+    },
+    license: {
+      de: 'Pro Lizenz',
+      en: 'Per licence',
+      short_de: ' pro Lizenz',
+      short_en: ' per licence',
+    },
+  }
+
+/** Choices for a module price unit (flat, per member, per licence). */
+export function priceUnitOptions(tr: (de: string, en: string) => string) {
+  return (['flat', 'member', 'license'] as const).map((u) => ({
+    value: u,
+    label: tr(PRICE_UNITS[u].de, PRICE_UNITS[u].en),
+  }))
+}
+
+/** " per member" / " pro Mitglied" after a price; empty for a flat price. */
+export function priceUnitSuffix(unit: string, tr: (de: string, en: string) => string) {
+  const u = PRICE_UNITS[unit] ?? PRICE_UNITS.flat
+  return tr(u.short_de, u.short_en)
+}

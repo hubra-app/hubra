@@ -8,9 +8,14 @@ Tarife), and the public pricing the website reads.
   are not hidden appear in ``GET /api/v1/public/pricing``; any plan that
   is not hidden can be given to a club, so a plan for one club's deal stays
   private.  A plan clubs are on cannot be deleted, only hidden.
+* A plan can **include modules**: each one either comes at no extra cost,
+  or with its own price in that plan.
 * An **add-on** (``PlatformAddon``) is a module, built in or from a plugin,
   with a default monthly price on top of the plan.  On a club, manage can
   set its own price for each add-on (``services.club_billing``).
+* Every module price has a **unit**: ``flat`` (once per club), ``member``
+  (each member that is not archived) or ``license`` (each licence the club
+  takes, counted on the club).
 
 The club's own price, discount and sponsor stay on the club.  Nothing here
 charges anyone; Stripe comes later.
@@ -35,6 +40,8 @@ MAX_FEATURES = 30
 MAX_PLANS = 30
 DEFAULTS = (("starter", "Starter"), ("growth", "Growth"), ("enterprise", "Enterprise"))
 LIMIT_KINDS = ("members", "mail_month", "storage_mb")
+UNITS = ("flat", "member", "license")
+MAX_PLAN_MODULES = 50
 
 
 def _bad(msg: str, status: int = 400, code: str = "VALIDATION_ERROR"):
@@ -73,6 +80,15 @@ def _count(value, field: str) -> int | None:
 
 def _chf(d: Decimal | None) -> str | None:
     return None if d is None else str(Decimal(d).quantize(Decimal("0.01")))
+
+
+def unit(value, field: str = "unit") -> str:
+    """flat, member or license (empty: flat)."""
+    if value is None or value == "":
+        return "flat"
+    if value not in UNITS:
+        _bad(f"{field} is one of {', '.join(UNITS)}")
+    return value
 
 
 # ── Plans ────────────────────────────────────────────────────────────────────
@@ -154,6 +170,42 @@ def _features(value) -> list[dict]:
     return out
 
 
+def _plan_modules(value, current: list | None) -> list[dict]:
+    """[{code, price_chf, unit}]; a code must be a module that can be an
+    add-on (one already on the plan may stay after its plugin is gone)."""
+    if value is None:
+        return []
+    if not isinstance(value, list) or len(value) > MAX_PLAN_MODULES:
+        _bad(f"modules is a list of up to {MAX_PLAN_MODULES}")
+    known = {m.code for m in _modules()} | {
+        m.get("code") for m in current or [] if isinstance(m, dict)
+    }
+    out, seen = [], set()
+    for item in value:
+        if isinstance(item, str):
+            item = {"code": item}
+        if not isinstance(item, dict):
+            _bad("Each module is {code, price_chf, unit}")
+        code = item.get("code")
+        if not isinstance(code, str) or code not in known:
+            _bad(f"No such module: {code}")
+        if code in seen:
+            _bad(f"Module {code} is there twice")
+        seen.add(code)
+        unknown = set(item) - {"code", "price_chf", "unit"}
+        if unknown:
+            _bad(f"Unknown field: {', '.join(sorted(unknown))}")
+        price = _money(item.get("price_chf"), f"price of {code}")
+        out.append(
+            {
+                "code": code,
+                "price_chf": _chf(price),
+                "unit": unit(item.get("unit"), f"unit of {code}"),
+            }
+        )
+    return out
+
+
 _PLAN_FIELDS = {
     "name_de",
     "name_en",
@@ -162,6 +214,7 @@ _PLAN_FIELDS = {
     "price_month_chf",
     "price_year_chf",
     "features",
+    "modules",
     "limit_members",
     "limit_mail_month",
     "limit_storage_mb",
@@ -185,6 +238,8 @@ def _apply(plan: PlatformPlan, body: dict) -> None:
             setattr(plan, key, _money(value, key))
         elif key == "features":
             plan.features = _features(value)
+        elif key == "modules":
+            plan.modules = _plan_modules(value, plan.modules)
         elif key.startswith("limit_"):
             setattr(plan, key, _count(value, key))
         elif key in ("public", "highlighted"):
@@ -240,7 +295,47 @@ def delete(plan: PlatformPlan) -> None:
     db.session.delete(plan)
 
 
-def plan_json(plan: PlatformPlan, with_usage: bool = False) -> dict:
+def _module_names() -> dict[str, dict]:
+    """code -> {name_de, name_en, plugin}: the add-on label if set, else the
+    module's own name."""
+    rows = {a.code: a for a in db.session.scalars(select(PlatformAddon)).all()}
+    out = {}
+    for m in _modules():
+        a = rows.get(m.code)
+        out[m.code] = {
+            "name_de": (a.label_de if a else "") or m.name,
+            "name_en": (a.label_en if a else "") or m.name,
+            "plugin": m.plugin,
+        }
+    return out
+
+
+def plan_modules(plan: PlatformPlan, names: dict | None = None) -> list[dict]:
+    """The modules a plan includes, with names; ``included`` when they come
+    at no extra cost."""
+    names = _module_names() if names is None else names
+    out = []
+    for m in plan.modules or []:
+        n = names.get(m["code"]) or {
+            "name_de": m["code"],
+            "name_en": m["code"],
+            "plugin": None,
+        }
+        out.append(
+            {
+                "code": m["code"],
+                **n,
+                "price_chf": m.get("price_chf"),
+                "unit": m.get("unit") or "flat",
+                "included": m.get("price_chf") is None,
+            }
+        )
+    return out
+
+
+def plan_json(
+    plan: PlatformPlan, with_usage: bool = False, names: dict | None = None
+) -> dict:
     out = {
         "key": plan.key,
         "name_de": plan.name_de,
@@ -250,6 +345,7 @@ def plan_json(plan: PlatformPlan, with_usage: bool = False) -> dict:
         "price_month_chf": _chf(plan.price_month_chf),
         "price_year_chf": _chf(plan.price_year_chf),
         "features": plan.features or [],
+        "modules": plan_modules(plan, names),
         "limits": {k: getattr(plan, f"limit_{k}") for k in LIMIT_KINDS},
         "highlighted": plan.highlighted,
         "sort": plan.sort,
@@ -273,9 +369,22 @@ def _modules() -> list:
     return [m for m in registry.all() if not m.required]
 
 
+def _included_in(public_only: bool = False) -> dict[str, list[str]]:
+    """code -> keys of the (not hidden) plans that include the module."""
+    out: dict[str, list[str]] = {}
+    for p in all_plans(include_hidden=False):
+        if public_only and not p.public:
+            continue
+        for m in p.modules or []:
+            out.setdefault(m["code"], []).append(p.key)
+    return out
+
+
 def addon_rows() -> list[dict]:
-    """Every module that can be an add-on, with its list price (if set)."""
+    """Every module that can be an add-on, with its list price (if set) and
+    the plans that include it."""
     rows = {a.code: a for a in db.session.scalars(select(PlatformAddon)).all()}
+    included = _included_in()
     out = []
     for m in _modules():
         a = rows.get(m.code)
@@ -286,11 +395,13 @@ def addon_rows() -> list[dict]:
                 "description": m.description,
                 "plugin": m.plugin,
                 "price_month_chf": _chf(a.price_month_chf) if a else None,
+                "price_unit": (a.price_unit if a else None) or "flat",
                 "public": bool(a and a.public),
                 "label_de": a.label_de if a else "",
                 "label_en": a.label_en if a else "",
                 "note_de": a.note_de if a else "",
                 "note_en": a.note_en if a else "",
+                "included_in": included.get(m.code, []),
             }
         )
     return sorted(out, key=lambda r: (r["plugin"] is not None, r["name"].lower()))
@@ -303,6 +414,7 @@ def set_addon(code: str, body: dict) -> None:
         _bad("Send an object")
     unknown = set(body) - {
         "price_month_chf",
+        "price_unit",
         "public",
         "label_de",
         "label_en",
@@ -315,6 +427,8 @@ def set_addon(code: str, body: dict) -> None:
     for key, value in body.items():
         if key == "price_month_chf":
             row.price_month_chf = _money(value, key)
+        elif key == "price_unit":
+            row.price_unit = unit(value, key)
         elif key == "public":
             if not isinstance(value, bool):
                 _bad("public is true or false")
@@ -325,6 +439,8 @@ def set_addon(code: str, body: dict) -> None:
             setattr(row, key, _text(value, key, 1000))
     if row.public is None:
         row.public = False
+    if not row.price_unit:
+        row.price_unit = "flat"
     db.session.add(row)
     db.session.flush()
 
@@ -334,12 +450,22 @@ def addon_price(code: str) -> str | None:
     return _chf(row.price_month_chf) if row else None
 
 
+def addon_unit(code: str) -> str:
+    row = db.session.get(PlatformAddon, code)
+    return (row.price_unit if row else None) or "flat"
+
+
 # ── Public ───────────────────────────────────────────────────────────────────
 
 
 def public_pricing() -> dict:
-    """What the website shows: public plans and public add-ons."""
-    plans = [plan_json(p) for p in all_plans(include_hidden=False) if p.public]
+    """What the website shows: public plans (with the modules they include)
+    and public add-ons (with the public plans that include them)."""
+    names = _module_names()
+    plans = [
+        plan_json(p, names=names) for p in all_plans(include_hidden=False) if p.public
+    ]
+    included = _included_in(public_only=True)
     addons = [
         {
             "code": a["code"],
@@ -349,6 +475,8 @@ def public_pricing() -> dict:
             "note_en": a["note_en"] or a["description"],
             "plugin": a["plugin"],
             "price_month_chf": a["price_month_chf"],
+            "price_unit": a["price_unit"],
+            "included_in": included.get(a["code"], []),
         }
         for a in addon_rows()
         if a["public"]
@@ -361,20 +489,24 @@ def public_plugins() -> list[dict]:
     price of each of their modules."""
     from hubra.core.plugins import installer
 
-    prices = {a["code"]: a["price_month_chf"] for a in addon_rows() if a["public"]}
+    public = {a["code"]: a for a in addon_rows() if a["public"]}
+    included = _included_in(public_only=True)
+
+    def module(m) -> dict:
+        code = m.get("code") if isinstance(m, dict) else m
+        a = public.get(code)
+        return {
+            "code": code,
+            "price_month_chf": a["price_month_chf"] if a else None,
+            "price_unit": a["price_unit"] if a else None,
+            "included_in": included.get(code, []),
+        }
+
     out = []
     for p in installer.marketplace(fetch=False)["plugins"]:
         if not p.get("installed") or not p.get("loaded", True):
             continue
-        modules = [
-            {
-                "code": m.get("code") if isinstance(m, dict) else m,
-                "price_month_chf": prices.get(
-                    m.get("code") if isinstance(m, dict) else m
-                ),
-            }
-            for m in p.get("modules") or []
-        ]
+        modules = [module(m) for m in p.get("modules") or []]
         out.append(
             {
                 "id": p["id"],
@@ -400,10 +532,16 @@ def install(app) -> None:
         resp.headers["Vary"] = "Accept-Language"
         return resp
 
+    # Both may add the default plans on a new database (ensure_defaults):
+    # commit, or the request leaves its transaction open with the rows.
     @app.get("/api/v1/public/pricing")
     def public_pricing_view():
-        return _public(jsonify(public_pricing()))
+        body = public_pricing()
+        db.session.commit()
+        return _public(jsonify(body))
 
     @app.get("/api/v1/public/plugins")
     def public_plugins_view():
-        return _public(jsonify({"plugins": public_plugins()}))
+        body = {"plugins": public_plugins()}
+        db.session.commit()
+        return _public(jsonify(body))

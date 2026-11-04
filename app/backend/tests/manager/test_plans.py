@@ -121,6 +121,8 @@ def test_addon_prices_and_public_list(client, staff_headers, db):
             "note_en": rows[0]["description"],
             "plugin": rows[0]["plugin"],
             "price_month_chf": "5.00",
+            "price_unit": "flat",
+            "included_in": [],
         }
     ]
     assert client.put(f"{P}/addons/nope", json={}).status_code == 404
@@ -145,3 +147,77 @@ def test_public_pricing_answers_any_origin_without_cookies(client):
 def test_manage_routes_need_platform_rights(client, auth_headers):
     assert client.get(f"{P}/plans").status_code in (401, 403)
     assert client.post(f"{P}/plans", json={}).status_code in (401, 403)
+
+
+def _two_modules(client):
+    rows = client.get(f"{P}/plans").get_json()["addons"]
+    return rows[0]["code"], rows[1]["code"]
+
+
+def test_plan_includes_modules_with_or_without_a_price(client, staff_headers, db):
+    free, paid = _two_modules(client)
+    resp = client.patch(
+        f"{P}/plans/starter",
+        json={
+            "public": True,
+            "modules": [
+                {"code": free},
+                {"code": paid, "price_chf": "0.5", "unit": "member"},
+            ],
+        },
+    )
+    assert resp.status_code == 200, resp.get_json()
+    mods = resp.get_json()["modules"]
+    assert [(m["code"], m["included"], m["price_chf"], m["unit"]) for m in mods] == [
+        (free, True, None, "flat"),
+        (paid, False, "0.50", "member"),
+    ]
+    assert mods[0]["name_de"] and mods[0]["name_en"]
+
+    # The add-on list says which plans include a module.
+    rows = {a["code"]: a for a in client.get(f"{P}/plans").get_json()["addons"]}
+    assert rows[free]["included_in"] == ["starter"]
+
+    client.put(
+        f"{P}/addons/{free}",
+        json={"price_month_chf": "3", "price_unit": "license", "public": True},
+    )
+    pub = client.get("/api/v1/public/pricing").get_json()
+    assert [m["code"] for m in pub["plans"][0]["modules"]] == [free, paid]
+    addon = next(a for a in pub["addons"] if a["code"] == free)
+    assert addon["price_unit"] == "license" and addon["included_in"] == ["starter"]
+
+    # A plan that is not public does not show up in included_in publicly.
+    client.patch(f"{P}/plans/starter", json={"public": False})
+    pub = client.get("/api/v1/public/pricing").get_json()
+    assert next(a for a in pub["addons"] if a["code"] == free)["included_in"] == []
+
+
+@pytest.mark.parametrize(
+    "modules",
+    [
+        "all",
+        [{"code": "nope"}],
+        [{"code": "@0"}, {"code": "@0"}],
+        [{"code": "@0", "unit": "seat"}],
+        [{"code": "@0", "price_chf": -2}],
+        [{"code": "@0", "colour": "red"}],
+    ],
+)
+def test_bad_plan_modules_are_refused(client, staff_headers, modules):
+    code, _ = _two_modules(client)
+    if isinstance(modules, list):
+        modules = [
+            {k: (code if v == "@0" else v) for k, v in m.items()} for m in modules
+        ]
+    resp = client.patch(f"{P}/plans/starter", json={"modules": modules})
+    assert resp.status_code == 400
+
+
+def test_addon_unit_is_validated(client, staff_headers):
+    code, _ = _two_modules(client)
+    assert (
+        client.put(f"{P}/addons/{code}", json={"price_unit": "seat"}).status_code == 400
+    )
+    resp = client.put(f"{P}/addons/{code}", json={"price_unit": "member"})
+    assert resp.get_json()["price_unit"] == "member"
