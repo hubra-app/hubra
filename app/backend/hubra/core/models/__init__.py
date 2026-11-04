@@ -79,11 +79,9 @@ from hubra.core.models.connected_app import (
     ConnectedAppEvent,
     ExternalAccount,
 )
-from hubra.core.models.inventory import InventoryItem, item_instructions
 from hubra.core.models.password_reset import PasswordResetToken
 from hubra.core.models.email_verification import EmailVerificationToken
 from hubra.core.models.invoice_reminder import InvoiceReminderHistory
-from hubra.core.models.code import Code
 from hubra.core.models.internal_key import InternalKey
 from hubra.core.models.binding import Binding
 from hubra.core.models.backup import BackupRecord
@@ -179,12 +177,9 @@ __all__ = [
     "TokenBlocklist",
     "Device",
     "Session",
-    "InventoryItem",
-    "item_instructions",
     "PasswordResetToken",
     "EmailVerificationToken",
     "InvoiceReminderHistory",
-    "Code",
     "InternalKey",
     "Binding",
     "BackupRecord",

@@ -18,16 +18,8 @@ for _plugin in sorted(Path(__file__).resolve().parent.iterdir()):
     if (_plugin / "plugin.yaml").is_file() and str(_plugin) not in sys.path:
         sys.path.insert(0, str(_plugin))
 
-from tests.conftest import *  # noqa: E402,F403
-import tests.conftest as _hubra_conftest  # noqa: E402
+import tests.conftest as _core  # noqa: E402
 
-# ``import *`` leaves out names starting with "_", and some of Hubra's
-# autouse fixtures do (e.g. the one that forgets the last test's platform
-# key). Take those too, or plugin tests fail depending on their order.
-globals().update(
-    {
-        name: value
-        for name, value in vars(_hubra_conftest).items()
-        if name.startswith("_") and not name.startswith("__") and callable(value)
-    }
-)
+# Every fixture, also the autouse ones whose names start with "_" (such as
+# the one that clears cached keys between tests), which "import *" skips.
+globals().update({k: v for k, v in vars(_core).items() if not k.startswith("__")})

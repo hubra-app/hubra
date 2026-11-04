@@ -190,44 +190,6 @@ class TestSettingsNamespaceIsolation:
         assert resp.status_code == 200
 
 
-# ── Inventory permissions ─────────────────────────────────────────────────────
-
-
-class TestInventoryPermissions:
-    def test_inventory_read_with_permission(
-        self, client, seeded_db, permissioned_member_factory
-    ):
-        headers = permissioned_member_factory(["inventory.items.read"])
-        resp = client.get("/api/v1/inventory/", headers=headers)
-        assert resp.status_code == 200
-
-    def test_inventory_read_without_permission(self, client, plain_member_token):
-        resp = client.get("/api/v1/inventory/", headers=plain_member_token)
-        assert resp.status_code == 403
-
-    def test_inventory_create_with_permission(
-        self, client, seeded_db, permissioned_member_factory
-    ):
-        headers = permissioned_member_factory(["inventory.items.create"])
-        resp = client.post(
-            "/api/v1/inventory/",
-            json={"name": "Hammer", "category": "Tool"},
-            headers=headers,
-        )
-        assert resp.status_code == 201
-
-    def test_inventory_create_without_permission(
-        self, client, seeded_db, permissioned_member_factory
-    ):
-        headers = permissioned_member_factory(["inventory.items.read"])
-        resp = client.post(
-            "/api/v1/inventory/",
-            json={"name": "HackItem"},
-            headers=headers,
-        )
-        assert resp.status_code == 403
-
-
 # ── Roles permission enforcement ──────────────────────────────────────────────
 
 

@@ -53,7 +53,7 @@ def _grant(db, tenant, code, enabled=True, allowed=True, config=None):
 def test_registry_has_every_section():
     modules.registry.load()
     codes = set(modules.registry.codes())
-    assert {"core", "members", "roles", "finance", "inventory", "mail"} <= codes
+    assert {"core", "members", "roles", "finance", "bindings", "mail"} <= codes
 
 
 def test_registry_orders_dependencies_first():
@@ -115,17 +115,17 @@ def test_required_modules_are_always_on(db, tenant):
 
 
 def test_without_tenant_catalog_row_is_the_switch(db, seeded_db):
-    set_modules(False, "inventory")
-    assert not modules.is_enabled("inventory", None)
-    set_modules(True, "inventory")
-    assert modules.is_enabled("inventory", None)
+    set_modules(False, "bindings")
+    assert not modules.is_enabled("bindings", None)
+    set_modules(True, "bindings")
+    assert modules.is_enabled("bindings", None)
 
 
 def test_tenant_grant_overrides_catalog(db, tenant):
-    set_modules(True, "inventory")
-    _grant(db, tenant, "inventory", enabled=False)
-    assert not modules.is_enabled("inventory", tenant.id)
-    assert modules.is_enabled("inventory", None)
+    set_modules(True, "bindings")
+    _grant(db, tenant, "bindings", enabled=False)
+    assert not modules.is_enabled("bindings", tenant.id)
+    assert modules.is_enabled("bindings", None)
 
 
 def test_module_is_off_when_a_dependency_is_off(db, tenant):
@@ -137,8 +137,8 @@ def test_module_is_off_when_a_dependency_is_off(db, tenant):
 
 
 def test_blocked_module_is_off(db, tenant):
-    _grant(db, tenant, "inventory", enabled=True, allowed=False)
-    assert not modules.is_enabled("inventory", tenant.id)
+    _grant(db, tenant, "bindings", enabled=True, allowed=False)
+    assert not modules.is_enabled("bindings", tenant.id)
 
 
 def test_set_enabled_refuses_when_dependency_off(db, tenant):
@@ -162,9 +162,9 @@ def test_set_enabled_refuses_required(db, tenant):
 
 
 def test_set_enabled_refuses_blocked(db, tenant):
-    modules.set_allowed("inventory", False, tenant.id)
+    modules.set_allowed("bindings", False, tenant.id)
     with pytest.raises(ApiError) as exc:
-        modules.set_enabled("inventory", True, tenant.id)
+        modules.set_enabled("bindings", True, tenant.id)
     assert exc.value.code == "MODULE_NOT_ALLOWED"
 
 
@@ -176,10 +176,10 @@ def test_set_enabled_creates_grant(db, tenant):
 
 
 def test_set_config_validates_and_keeps_secrets(db, tenant):
-    state = modules.set_config("inventory", {"checkout_max_days": "21"}, tenant.id)
-    assert state.config["checkout_max_days"] == 21
+    state = modules.set_config("polls", {"reminder_hours": "21"}, tenant.id)
+    assert state.config["reminder_hours"] == 21
     with pytest.raises(ApiError):
-        modules.set_config("inventory", {"nope": 1}, tenant.id)
+        modules.set_config("polls", {"nope": 1}, tenant.id)
 
 
 def test_sync_catalog_keeps_existing_default(db):
@@ -195,22 +195,22 @@ def test_run_for_tenants_only_runs_where_enabled(db, tenant):
     other = Tenant(name="Club B", slug="club-b", status="active")
     db.session.add(other)
     db.session.commit()
-    _grant(db, tenant, "inventory", enabled=True)
-    _grant(db, other, "inventory", enabled=False)
+    _grant(db, tenant, "bindings", enabled=True)
+    _grant(db, other, "bindings", enabled=False)
     seen = []
-    result = modules.run_for_tenants("inventory", lambda tid: seen.append(tid) or 1)
+    result = modules.run_for_tenants("bindings", lambda tid: seen.append(tid) or 1)
     assert seen == [tenant.id]
     assert result == {tenant.id: 1}
 
 
 def test_per_tenant_job_without_tenants_returns_body_result(db, seeded_db):
-    @modules.per_tenant_job("inventory")
+    @modules.per_tenant_job("bindings")
     def job():
         return {"ok": True}
 
     assert job() == {"ok": True}
-    set_modules(False, "inventory")
-    assert job() == {"skipped": "inventory disabled"}
+    set_modules(False, "bindings")
+    assert job() == {"skipped": "bindings disabled"}
 
 
 def test_provisioning_writes_a_switch_per_optional_module(db):
@@ -240,12 +240,12 @@ def test_provisioning_writes_a_switch_per_optional_module(db):
 
 
 def test_gate_blocks_disabled_module_for_tenant(client, db, auth_headers, tenant):
-    _grant(db, tenant, "inventory", enabled=False)
-    resp = client.get("/api/v1/inventory/", headers={"X-Tenant-Slug": "club-a"})
+    _grant(db, tenant, "bindings", enabled=False)
+    resp = client.get("/api/v1/bindings/", headers={"X-Tenant-Slug": "club-a"})
     assert resp.status_code == 403
     assert resp.get_json()["error"] == "MODULE_DISABLED"
     # The same route without the club context still works.
-    assert client.get("/api/v1/inventory/").status_code == 200
+    assert client.get("/api/v1/bindings/").status_code == 200
 
 
 def test_gate_leaves_required_modules_alone(client, db, auth_headers, tenant):
@@ -276,7 +276,7 @@ def test_list_modules(client, db, club_auth, tenant):
     data = {m["code"]: m for m in resp.get_json()}
     assert data["members"]["required"] is True
     assert data["finance"]["nav"][0]["path"] == "/app/finance"
-    assert "checkout_max_days" in data["inventory"]["config"]
+    assert "reminder_hours" in data["polls"]["config"]
 
 
 def test_list_modules_requires_auth(client, db):
@@ -306,7 +306,7 @@ def test_switch_module_reports_dependency(client, db, club_auth, tenant):
 
 
 def test_switch_module_validates_body(client, db, auth_headers):
-    resp = client.put("/api/v1/modules/inventory", json={"enabled": "yes"})
+    resp = client.put("/api/v1/modules/bindings", json={"enabled": "yes"})
     assert resp.status_code == 400
 
 
@@ -317,40 +317,21 @@ def test_switch_unknown_module(client, db, auth_headers):
 
 def test_update_module_settings(client, db, club_auth, tenant):
     resp = client.put(
-        "/api/v1/modules/inventory/settings",
-        json={"config": {"checkout_max_days": 30}},
+        "/api/v1/modules/polls/settings",
+        json={"config": {"reminder_hours": 30}},
         headers={"X-Tenant-Slug": "club-a"},
     )
     assert resp.status_code == 200
-    assert resp.get_json()["config"]["checkout_max_days"] == 30
+    assert resp.get_json()["config"]["reminder_hours"] == 30
 
 
 def test_update_module_settings_rejects_bad_values(client, db, club_auth, tenant):
     resp = client.put(
-        "/api/v1/modules/inventory/settings",
-        json={"config": {"checkout_max_days": "lots"}},
+        "/api/v1/modules/polls/settings",
+        json={"config": {"reminder_hours": "lots"}},
         headers={"X-Tenant-Slug": "club-a"},
     )
     assert resp.status_code == 400
-
-
-def test_checkout_uses_module_setting_for_due_date(db, seeded_db):
-    from datetime import datetime, timezone
-
-    from hubra.api.inventory.services import InventoryService
-    from hubra.core.models.inventory import InventoryItem
-
-    item = InventoryItem(name="Drill", category="Tool", status="available")
-    db.session.add(item)
-    db.session.commit()
-    checkout = InventoryService.checkout(item.id, seeded_db["admin"].id)
-    due = checkout.expected_return_at
-    if due.tzinfo is None:
-        due = due.replace(tzinfo=timezone.utc)
-    assert 13 <= (due - datetime.now(timezone.utc)).days <= 14
-
-
-# ── Events ───────────────────────────────────────────────────────────────────
 
 
 def test_emit_calls_only_enabled_subscribers(db, tenant, monkeypatch):
@@ -408,7 +389,7 @@ def superadmin(client, seeded_db, db):
 
 def test_manager_blocks_module_for_club(client, db, superadmin, tenant):
     resp = client.put(
-        f"/api/v1/features/tenants/{tenant.id}/inventory",
+        f"/api/v1/features/tenants/{tenant.id}/bindings",
         json={"allowed": False},
     )
     assert resp.status_code == 200
@@ -420,7 +401,7 @@ def test_manager_blocks_module_for_club(client, db, superadmin, tenant):
         headers={"X-Tenant-Slug": "club-a"},
     )
     resp = client.put(
-        "/api/v1/modules/inventory",
+        "/api/v1/modules/bindings",
         json={"enabled": True},
         headers={"X-Tenant-Slug": "club-a"},
     )
@@ -437,7 +418,7 @@ def test_manager_unknown_module(client, db, superadmin, tenant):
 
 def test_manager_module_flags_must_be_booleans(client, db, superadmin, tenant):
     """bool("false") is True: a string used to switch the module on."""
-    url = f"/api/v1/features/tenants/{tenant.id}/inventory"
+    url = f"/api/v1/features/tenants/{tenant.id}/bindings"
     for body in ({"allowed": "false"}, {"enabled": "no"}, {"enabled": 0}):
         assert client.put(url, json=body).status_code == 400
 

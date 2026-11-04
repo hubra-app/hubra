@@ -1,7 +1,7 @@
 """The permission catalog (``public.permissions``).
 
 Every ``@permission_required`` route, every field permission and the
-``EXTRA_PERMISSIONS`` list make one Permission row. ``flask sync-permissions``
+extra permissions (``EXTRA_PERMISSIONS`` and those of loaded modules) make one Permission row. ``flask sync-permissions``
 runs this on every deploy; provisioning a club on an empty catalog runs it
 too, because a club's roles can only grant permissions that exist.
 """
@@ -21,7 +21,7 @@ def sync_permission_catalog(app: Flask, *, commit: bool = True) -> tuple[int, in
     false (then the rows are flushed into the caller's transaction).
     """
     from hubra.api.fields import iter_field_perms
-    from hubra.api.permissions import EXTRA_PERMISSIONS, _derive_perm_key
+    from hubra.api.permissions import _derive_perm_key, extra_permissions
     from hubra.core.models.role import Permission
 
     discovered: dict[str, dict] = {}
@@ -50,8 +50,8 @@ def sync_permission_catalog(app: Flask, *, commit: bool = True) -> tuple[int, in
     # never marked as orphaned.
     for meta in iter_field_perms():
         discovered[meta["key"]] = meta
-    for meta in EXTRA_PERMISSIONS:
-        discovered[meta["key"]] = dict(meta)
+    for meta in extra_permissions():
+        discovered[meta["key"]] = meta
 
     created = 0
     updated = 0

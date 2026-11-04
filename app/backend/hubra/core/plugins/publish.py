@@ -282,6 +282,8 @@ def _listing(m: dict) -> dict:
         "tags": m.get("tags") or [],
         "modules": m.get("modules") or [],
         "requires": m.get("requires") or [],
+        "depends": m.get("depends") or {},
+        "uses": m.get("uses"),
     }
 
 
