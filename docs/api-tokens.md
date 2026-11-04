@@ -77,7 +77,7 @@ a club, and a club token never opens the platform API.
 
 ## Endpoints
 
-Club (`/api/v1/api-tokens`, club session):
+Club (`/api/v1/app/api-tokens`, club session):
 
 | Method | Path | Who | What |
 | --- | --- | --- | --- |
@@ -94,7 +94,7 @@ Club (`/api/v1/api-tokens`, club session):
 | POST | `/<id>/roll` | admin | roll a club token (not a member's own) |
 | PUT | `/settings` | admin | `{membersAllowed: bool}` (off by default) |
 
-Platform (`/api/v1/manager/api-tokens`, account sign-in):
+Platform (`/api/v1/platform/api-tokens`, account sign-in):
 
 | Method | Path | Who | What |
 | --- | --- | --- | --- |

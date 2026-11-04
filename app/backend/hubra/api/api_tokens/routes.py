@@ -1,6 +1,6 @@
 """Managing API tokens (docs/api-tokens.md).
 
-Club side, ``/api/v1/api-tokens`` (club session only; no API token ever
+Club side, ``/api/v1/app/api-tokens`` (club session only; no API token ever
 reaches these routes):
 
 * ``GET  /scopes``      what the signed-in member may put on a token
@@ -16,7 +16,7 @@ reaches these routes):
 * ``POST /<id>/roll``   admins: roll a club token (never a member's own)
 * ``PUT  /settings``    admins: let members make personal tokens
 
-Platform side, ``/api/v1/manager/api-tokens`` (account sign-in only):
+Platform side, ``/api/v1/platform/api-tokens`` (account sign-in only):
 
 * ``GET /mine``, ``POST /mine``, ``DELETE /mine/<id>``: a platform admin's
   own read-only tokens

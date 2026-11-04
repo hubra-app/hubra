@@ -117,12 +117,12 @@ module = Module(
         Blueprint(
             "hubra.api.api_tokens.routes",
             "api_tokens_bp",
-            "/api/v1/api-tokens",
+            "/api/v1/app/api-tokens",
         ),
         Blueprint(
             "hubra.api.api_tokens.routes",
             "platform_api_tokens_bp",
-            "/api/v1/manager/api-tokens",
+            "/api/v1/platform/api-tokens",
         ),
         Blueprint(
             "hubra.api.backups.routes",

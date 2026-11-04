@@ -80,7 +80,7 @@ def _bearer(token: str, **extra) -> dict:
     return {"Authorization": f"Bearer {token}", **extra}
 
 
-def _make(client, path="/api/v1/api-tokens/mine", **body):
+def _make(client, path="/api/v1/app/api-tokens/mine", **body):
     payload = {"name": "Script", "scopes": [READ], "days": 30, **body}
     return client.post(path, json=payload)
 
@@ -109,7 +109,7 @@ def test_secret_is_shown_once_and_stored_as_hash(app, db, made, client):
     # Listing never shows the secret again.
     other = app.test_client()
     _sign_in(other)
-    listed = other.get("/api/v1/api-tokens/mine").get_json()["items"]
+    listed = other.get("/api/v1/app/api-tokens/mine").get_json()["items"]
     assert [i["id"] for i in listed] == [made["id"]]
     assert "token" not in listed[0]
     assert token not in str(listed)
@@ -168,7 +168,7 @@ def test_read_preset_takes_only_read_keys(client, db, tenant_pair, catalog):
     _sign_in(client)
     _two_factor(db, tenant_pair["user"])
     resp = client.post(
-        "/api/v1/api-tokens/mine", json={"name": "R", "preset": "read", "days": 7}
+        "/api/v1/app/api-tokens/mine", json={"name": "R", "preset": "read", "days": 7}
     )
     assert resp.status_code == 201, resp.get_json()
     assert resp.get_json()["scopes"] == [READ]
@@ -306,7 +306,7 @@ def test_revoked_and_expired_tokens_stop(app, db, made):
 def test_revoke_from_the_club_app(app, db, made):
     owner = app.test_client()
     _sign_in(owner)
-    assert owner.delete(f"/api/v1/api-tokens/mine/{made['id']}").status_code == 200
+    assert owner.delete(f"/api/v1/app/api-tokens/mine/{made['id']}").status_code == 200
     c = app.test_client()
     assert c.get("/api/v1/events/", headers=_bearer(made["token"])).status_code == 401
 
@@ -370,8 +370,8 @@ def test_cookies_are_ignored_and_never_set(app, made):
 @pytest.mark.parametrize(
     "method,path",
     [
-        ("get", "/api/v1/api-tokens/mine"),
-        ("post", "/api/v1/api-tokens/mine"),
+        ("get", "/api/v1/app/api-tokens/mine"),
+        ("post", "/api/v1/app/api-tokens/mine"),
         ("get", "/api/v1/account/"),
         ("post", "/api/v1/auth/switch-tenant"),
         ("post", "/api/v1/auth/refresh"),
@@ -409,10 +409,10 @@ def test_rate_limit(app, made):
 def test_admin_makes_club_token_and_sees_all(app, db, made):
     admin = app.test_client()
     _sign_in(admin)
-    resp = _make(admin, path="/api/v1/api-tokens/club", name="Website feed")
+    resp = _make(admin, path="/api/v1/app/api-tokens/club", name="Website feed")
     assert resp.status_code == 201, resp.get_json()
     assert resp.get_json()["token"].startswith("hbr_club_")
-    items = admin.get("/api/v1/api-tokens/").get_json()["items"]
+    items = admin.get("/api/v1/app/api-tokens/").get_json()["items"]
     assert {i["kind"] for i in items} == {"member", "club"}
     c = app.test_client()
     assert c.get("/api/v1/events/", headers=_bearer(resp.get_json()["token"])).status_code == 200
@@ -421,8 +421,8 @@ def test_admin_makes_club_token_and_sees_all(app, db, made):
 def test_other_clubs_tokens_are_invisible(app, db, made):
     admin_b = app.test_client()
     _sign_in(admin_b, slug="tenant-b")
-    assert admin_b.get("/api/v1/api-tokens/").get_json()["items"] == []
-    assert admin_b.delete(f"/api/v1/api-tokens/{made['id']}").status_code == 404
+    assert admin_b.get("/api/v1/app/api-tokens/").get_json()["items"] == []
+    assert admin_b.delete(f"/api/v1/app/api-tokens/{made['id']}").status_code == 404
 
 
 # ── Platform tokens ─────────────────────────────────────────────────────────
@@ -438,7 +438,7 @@ def platform_token(app, db, tenant_pair):
     assert resp.status_code == 200
     _two_factor(db, user)
     resp = c.post(
-        "/api/v1/manager/api-tokens/mine",
+        "/api/v1/platform/api-tokens/mine",
         json={"name": "Claude diagnostics", "days": 30},
     )
     assert resp.status_code == 201, resp.get_json()
@@ -464,7 +464,7 @@ def test_platform_token_scope_is_enforced(app, platform_token):
     resp = c.get("/api/v1/manager/platform/settings", headers=_bearer(platform_token))
     assert resp.status_code == 403
     assert resp.get_json()["error"] == "API_TOKEN_SCOPE"
-    resp = c.get("/api/v1/manager/api-tokens/", headers=_bearer(platform_token))
+    resp = c.get("/api/v1/platform/api-tokens/", headers=_bearer(platform_token))
     assert resp.status_code == 403
 
 
@@ -483,7 +483,7 @@ def test_platform_lifetime_max(app, db, tenant_pair):
     c = app.test_client()
     c.post("/api/v1/auth/login", json={"email": "user@test.ch", "password": PASSWORD})
     _two_factor(db, user)
-    resp = c.post("/api/v1/manager/api-tokens/mine", json={"name": "x", "days": 90})
+    resp = c.post("/api/v1/platform/api-tokens/mine", json={"name": "x", "days": 90})
     assert resp.status_code == 400
 
 
@@ -548,7 +548,7 @@ def test_step_up_routes_are_marked(app):
 def test_roll_keeps_the_old_secret_for_the_grace_period(app, db, made):
     owner = app.test_client()
     _sign_in(owner)
-    resp = owner.post(f"/api/v1/api-tokens/mine/{made['id']}/roll", json={"graceHours": 1})
+    resp = owner.post(f"/api/v1/app/api-tokens/mine/{made['id']}/roll", json={"graceHours": 1})
     assert resp.status_code == 201, resp.get_json()
     body = resp.get_json()
     new = body["token"]
@@ -569,7 +569,7 @@ def test_roll_keeps_the_old_secret_for_the_grace_period(app, db, made):
 def test_roll_without_grace_ends_the_old_one_now(app, made):
     owner = app.test_client()
     _sign_in(owner)
-    resp = owner.post(f"/api/v1/api-tokens/mine/{made['id']}/roll", json={"graceHours": 0})
+    resp = owner.post(f"/api/v1/app/api-tokens/mine/{made['id']}/roll", json={"graceHours": 0})
     assert resp.status_code == 201
     c = app.test_client()
     assert c.get("/api/v1/events/", headers=_bearer(made["token"])).status_code == 401
@@ -579,21 +579,21 @@ def test_roll_needs_a_fresh_step_up(app, made):
     owner = app.test_client()
     _sign_in(owner)
     with patch.dict(app.config, {"STEP_UP_ENFORCED": True}):
-        resp = owner.post(f"/api/v1/api-tokens/mine/{made['id']}/roll", json={})
+        resp = owner.post(f"/api/v1/app/api-tokens/mine/{made['id']}/roll", json={})
     assert resp.get_json()["error"] == "STEP_UP_REQUIRED"
 
 
 def test_admin_cannot_roll_or_edit_a_members_token(app, made):
     admin = app.test_client()
     _sign_in(admin)
-    assert admin.post(f"/api/v1/api-tokens/{made['id']}/roll", json={}).status_code == 404
-    assert admin.patch(f"/api/v1/api-tokens/{made['id']}", json={"scopes": []}).status_code == 404
+    assert admin.post(f"/api/v1/app/api-tokens/{made['id']}/roll", json={}).status_code == 404
+    assert admin.patch(f"/api/v1/app/api-tokens/{made['id']}", json={"scopes": []}).status_code == 404
 
 
 def test_edit_narrows_without_step_up_and_widens_with_it(app, db, made):
     owner = app.test_client()
     _sign_in(owner)
-    path = f"/api/v1/api-tokens/mine/{made['id']}"
+    path = f"/api/v1/app/api-tokens/mine/{made['id']}"
     with patch.dict(app.config, {"STEP_UP_ENFORCED": True}):
         widen = owner.patch(path, json={"scopes": [READ, CREATE]})
         assert widen.get_json()["error"] == "STEP_UP_REQUIRED"
