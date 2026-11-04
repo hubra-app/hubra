@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Navigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, Group, Badge, ActionIcon, Text } from '@mantine/core'
 import { useT } from '@/locales/i18n'
@@ -23,6 +23,7 @@ import {
 } from '@/api/finance'
 import { formatCHF, formatDate } from '@/format'
 import { TransactionFormModal, type TransactionFormValues } from './TransactionFormModal'
+import { transactionUpdate } from './transactionSave'
 import { methodLabel, statusLabel } from './transactionLabels'
 import { qk } from '@/data/keys'
 
@@ -59,29 +60,10 @@ export function TransactionsTab() {
   const [formTarget, setFormTarget] = useState<Transaction | 'new' | null>(null)
   const [saving, setSaving] = useState(false)
 
-  // ?tx=<id> (e.g. from the finance overview) opens that transaction, or
-  // finds it in the list for people who can't edit.
-  const [params, setParams] = useSearchParams()
+  // Old ?tx=<id> links (bookmarks, notifications) open the transaction's page.
+  const [params] = useSearchParams()
   const linkedId = params.get('tx')
-  const [handledLink, setHandledLink] = useState<string | null>(null)
-  if (linkedId && linkedId !== handledLink && !loading) {
-    setHandledLink(linkedId)
-    const tx = transactions.find((x) => x.id === linkedId)
-    if (tx && canUpdate) setFormTarget(tx)
-    else if (tx) setSearch(tx.description)
-  }
-  const closeForm = () => {
-    setFormTarget(null)
-    if (linkedId) {
-      setParams(
-        (p) => {
-          p.delete('tx')
-          return p
-        },
-        { replace: true },
-      )
-    }
-  }
+  const closeForm = () => setFormTarget(null)
 
   const filtered = transactions.filter((t) => {
     const q = search.toLowerCase()
@@ -119,21 +101,7 @@ export function TransactionsTab() {
           payeeName: values.payeeName.trim() || undefined,
         })
       } else {
-        const before = formTarget
-        await updateTransaction(before.id, {
-          date: values.date,
-          description: values.description,
-          categoryId: values.categoryId,
-          amount: values.amount,
-          method: values.method,
-          type: values.type,
-          status: values.status,
-          // Only send the name when it changed: an empty one would unlink nothing
-          // but blank out a name the bank import set.
-          ...(values.payeeName.trim() !== (before.payeeName ?? '')
-            ? { payeeName: values.payeeName.trim() }
-            : {}),
-        })
+        await updateTransaction(formTarget.id, transactionUpdate(formTarget, values))
       }
       queryClient.invalidateQueries({ queryKey: qk.transactions.all })
       notify(
@@ -188,6 +156,8 @@ export function TransactionsTab() {
   }
 
   const isFiltered = !!search || typeFilter !== 'All' || statusFilter !== 'All'
+
+  if (linkedId) return <Navigate to={`/app/finance/transactions/${linkedId}`} replace />
 
   return (
     <div>
@@ -301,6 +271,8 @@ export function TransactionsTab() {
             header: '',
             width: 100,
             render: (tx) => (
+              // The row opens the transaction; its buttons do only their own thing.
+              <div onClick={(e) => e.stopPropagation()}>
               <ActionButtons
                 extra={
                   tx.invoiceId ? (
@@ -320,6 +292,7 @@ export function TransactionsTab() {
                 onEdit={canUpdate ? () => openEdit(tx) : undefined}
                 onDelete={canDelete ? () => setDeleteTarget(tx) : undefined}
               />
+              </div>
             ),
           },
         ]}
@@ -382,6 +355,7 @@ export function TransactionsTab() {
         onPageChange={pg.goPage}
         onPerPageChange={pg.setPerPage}
         getRowKey={(tx) => tx.id}
+        onRowClick={(tx) => go(`/app/finance/transactions/${tx.id}`)}
       />
 
       <ConfirmModal

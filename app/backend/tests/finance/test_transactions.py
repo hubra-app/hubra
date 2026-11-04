@@ -265,3 +265,21 @@ def test_patch_expense_amount_stays_an_expense(client, db, auth_headers, categor
         headers=auth_headers,
     )
     assert resp.get_json()["amount"] == 95.0
+
+
+# ── One transaction (its detail page) ─────────────────────────────────────────
+
+
+def test_get_one_transaction(client, auth_headers, transaction):
+    resp = client.get(
+        f"/api/v1/finance/transactions/{transaction['id']}", headers=auth_headers
+    )
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["id"] == transaction["id"]
+    assert body["description"] == "Test transaction"
+
+
+def test_get_missing_transaction_is_404(client, auth_headers, seeded_db):
+    resp = client.get("/api/v1/finance/transactions/999999", headers=auth_headers)
+    assert resp.status_code == 404

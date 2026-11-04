@@ -212,6 +212,12 @@ def list_transactions():
     return jsonify(TransactionsService.list(request.args, _transactions_schema)), 200
 
 
+@finance_bp.get("/transactions/<int:id>")
+@permission_required("transactions", "read", "View transactions")
+def get_transaction(id: int):
+    return jsonify(_transaction_schema.dump(TransactionService.get(id))), 200
+
+
 @finance_bp.post("/transactions")
 @permission_required("transactions", "create", "Create transactions")
 def create_transaction():

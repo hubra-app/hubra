@@ -83,6 +83,7 @@ export const qk = {
     all: ['transactions'] as const,
     recent: ['transactions', { pageSize: 5 }] as const,
     categories: ['transaction-categories'] as const,
+    one: (id: string | undefined) => ['transactions', 'one', id] as const,
   },
   financeOverview: ['finance-overview'] as const,
   financeSummary: (year: number) => ['finance-summary', year] as const,
@@ -123,6 +124,7 @@ export const qk = {
     log: (page: number, action: unknown, pageSize: number) => ['audit-log', page, action, pageSize] as const,
     entry: (id: unknown) => ['audit-entry', id] as const,
     member: (id: string | undefined) => ['audit-log', 'member', id] as const,
+    target: (type: string, id: string | undefined) => ['audit-log', 'target', type, id] as const,
   },
 
   /** What the header search looks through, loaded once someone uses it. */

@@ -243,6 +243,7 @@ export interface Transaction {
   createdAt: string;
   categoryId?: string | null;
   memberName?: string | null;
+  memberId?: string | null;
   payeeName?: string | null;
 }
 

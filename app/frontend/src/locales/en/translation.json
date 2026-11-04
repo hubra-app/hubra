@@ -1008,7 +1008,11 @@
       "saved": "Transaction saved.",
       "updatedMsg": "Status changed to \"{{status}}\".",
       "saveFailed": "Transaction not saved",
-      "updatedMsg2": "“{{description}}” was saved."
+      "updatedMsg2": "“{{description}}” was saved.",
+      "details": "Transaction",
+      "recorded": "Recorded",
+      "from": "From",
+      "to": "To"
     },
     "transactionDeleted": "Transaction deleted.",
     "transactionDeletedMsg": "The transaction has been deleted.",
@@ -1191,6 +1195,10 @@
       "now": "Before",
       "new": "New"
     },
+    "backToTransactions": "Back to transactions",
+    "transactionNotFound": "This transaction does not exist (any more).",
+    "transactionNo": "Transaction {{id}}",
+    "markCompleted": "Mark as completed",
     "direction": "Direction"
   },
   "functions": {
@@ -1213,7 +1221,12 @@
     "grantsRole": "Gives the role",
     "grantsRoleHint": "Whoever holds the function has this role until the function ends.",
     "noRole": "No role",
-    "givesRole": "Gives the role {{role}}"
+    "givesRole": "Gives the role {{role}}",
+    "backToFunctions": "Back to functions",
+    "notFound": "This function does not exist (any more).",
+    "detail": {
+      "about": "Function"
+    }
   },
   "groups": {
     "addGroup": "Add Group",
@@ -1293,6 +1306,13 @@
       "openHint": "Every member sees the group and joins or leaves it on their own, on their dashboard under Personal.",
       "visibleHint": "Every member sees the group and who is in it. The lead or an admin adds members.",
       "privateHint": "Only the group's members, its lead and those who manage groups see it."
+    },
+    "backToGroups": "Back to groups",
+    "notFound": "This group does not exist (any more) or you can't see it.",
+    "detail": {
+      "about": "Group",
+      "parent": "Part of",
+      "mail": "Mail address"
     }
   },
   "mail": {
@@ -2523,7 +2543,12 @@
     "create": "Create tier",
     "deleteTitle": "Delete the \"{{name}}\" tier?",
     "deleteBody": "Members assigned to this tier will need to be reassigned. This cannot be undone.",
-    "noPrice": "No fee"
+    "noPrice": "No fee",
+    "backToTiers": "Back to tiers",
+    "notFound": "This tier does not exist (any more).",
+    "detail": {
+      "pricing": "Fee"
+    }
   },
   "toast": {
     "error": "Error",
@@ -2938,7 +2963,9 @@
       "delete_application": "Application deleted",
       "create_member": "Member created"
     },
-    "systemActor": "System (automatic)"
+    "systemActor": "System (automatic)",
+    "backToLog": "Back to the log",
+    "sameRecord": "More entries about this target"
   },
   "kv": {
     "required": "Required",

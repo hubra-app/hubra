@@ -198,7 +198,7 @@ function adaptAudit(b: BackendAuditEntry): AuditEntry {
   };
 }
 
-interface AuditLogPage {
+export interface AuditLogPage {
   entries: AuditEntry[];
   total: number;
   totalPages: number;
@@ -210,9 +210,15 @@ export async function listAuditLog(params?: {
   action?: string;
   /** What this member did and what was done to their membership. */
   memberId?: string;
+  /** Everything logged about one record, e.g. `{ type: "Group", id: "3" }`. */
+  target?: { type: string; id: string };
 }): Promise<AuditLogPage> {
   const qs = new URLSearchParams();
   if (params?.memberId) qs.set("memberId", params.memberId);
+  if (params?.target) {
+    qs.set("targetType", params.target.type);
+    qs.set("targetId", params.target.id);
+  }
   if (params?.page !== undefined) qs.set("page", String(params.page));
   if (params?.pageSize !== undefined)
     qs.set("pageSize", String(params.pageSize));

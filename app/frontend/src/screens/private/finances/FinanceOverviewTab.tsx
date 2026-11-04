@@ -246,7 +246,7 @@ export function FinanceOverviewTab() {
                   {tx.type === 'income' ? '+' : '−'}CHF {formatCHF(Math.abs(tx.amount))}
                 </span>
               ),
-              onClick: () => go(`/app/finance/transactions?tx=${tx.id}`),
+              onClick: () => go(`/app/finance/transactions/${tx.id}`),
             })}
           />
         </Paper>
