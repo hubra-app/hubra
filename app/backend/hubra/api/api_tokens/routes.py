@@ -7,9 +7,13 @@ reaches these routes):
 * ``GET  /mine``        my personal tokens in this club
 * ``POST /mine``        make one (two-factor + fresh step-up)
 * ``DELETE /mine/<id>`` revoke one
+* ``PATCH /mine/<id>``   rename, change scopes (adding a key: same checks as making)
+* ``POST /mine/<id>/roll`` new secret, the old one ends after a grace period
 * ``GET  /``            admins: every token of this club
 * ``POST /club``        admins: a club integration token
 * ``DELETE /<id>``      admins: revoke any token of this club
+* ``PATCH /<id>``       admins: change a club token (never a member's own)
+* ``POST /<id>/roll``   admins: roll a club token (never a member's own)
 * ``PUT  /settings``    admins: let members make personal tokens
 
 Platform side, ``/api/v1/manager/api-tokens`` (account sign-in only):
@@ -122,6 +126,71 @@ def _ips(data: dict):
         return None, _error(
             400, "VALIDATION_ERROR", "allowedIps: a list of up to 20 IP addresses or ranges"
         )
+
+
+def _roll_params(data: dict, row: ApiToken, grantable: set[str], maximum: int):
+    """(scopes, days, grace_hours) for a roll, or an error response."""
+    grace = data.get("graceHours", api_tokens.DEFAULT_ROLL_GRACE_HOURS)
+    if (
+        not isinstance(grace, int)
+        or isinstance(grace, bool)
+        or grace not in api_tokens.ROLL_GRACE_HOURS
+    ):
+        return None, _error(400, "VALIDATION_ERROR", "graceHours: one of 0, 1, 24, 168")
+    if "days" in data:
+        days = _days(data, maximum)
+        if days is None:
+            return None, _error(400, "VALIDATION_ERROR", "days: not an allowed lifetime")
+    else:
+        created = api_tokens._aware(row.created_at)
+        expires = api_tokens._aware(row.expires_at)
+        span = max(1, round((expires - created).total_seconds() / 86400))
+        allowed = [d for d in api_tokens.LIFETIMES if d <= maximum]
+        days = min(allowed, key=lambda d: abs(d - span))
+    # Rights may have shrunk since the token was made: never roll them on.
+    scopes = sorted(set(row.scopes or ()) & grantable)
+    if not scopes:
+        return None, _error(
+            409, "API_TOKEN_SCOPE", "You no longer hold any of this token's scopes"
+        )
+    return (scopes, days, grace), None
+
+
+def _edit(row: ApiToken, grantable: set[str], user, claims: dict):
+    """Change a token's name and/or scopes. Narrowing is always fine;
+    adding a key needs the same checks as making a token, and only keys
+    the person holds now. Returns an error response or None."""
+    if not api_tokens.is_active(row):
+        return _error(409, "API_TOKEN_INACTIVE", "Only an active token can be changed")
+    data = _body()
+    if "name" in data:
+        name = _name(data)
+        if name is None:
+            return _error(400, "VALIDATION_ERROR", "name: 1 to 100 characters")
+        row.name = name
+    if "scopes" in data or "preset" in data:
+        scopes = _scopes(data, grantable)
+        if scopes is None:
+            return _error(
+                400,
+                "VALIDATION_ERROR",
+                "scopes: permission keys you hold yourself, or preset 'read'",
+            )
+        if row.kind == "platform" and not scopes:
+            return _error(400, "VALIDATION_ERROR", "scopes: at least one key")
+        if not set(scopes) <= set(row.scopes or ()):
+            refusal = _maker_checks(user, claims)
+            if refusal is not None:
+                return refusal
+        row.scopes = scopes
+    return None
+
+
+def _rolled(row: ApiToken, new: ApiToken, plaintext: str):
+    body = api_tokens.to_json(new)
+    body["token"] = plaintext  # shown once
+    body["previous"] = api_tokens.to_json(row)
+    return jsonify(body), 201
 
 
 # ── Club side ───────────────────────────────────────────────────────────────
@@ -284,6 +353,58 @@ def revoke_my_club_token(token_id: int):
     return jsonify(api_tokens.to_json(row)), 200
 
 
+def _roll_club(row: ApiToken, member):
+    refusal = _maker_checks(getattr(member, "user", None), get_jwt())
+    if refusal is not None:
+        return refusal
+    if not api_tokens.is_active(row):
+        return _error(409, "API_TOKEN_INACTIVE", "Only an active token can be rolled")
+    params, error = _roll_params(
+        _body(), row, _grantable(member), max(api_tokens.LIFETIMES)
+    )
+    if error is not None:
+        return error
+    scopes, days, grace = params
+    new, plaintext = api_tokens.roll(
+        row, scopes=scopes, days=days, grace_hours=grace, by_name=_member_name(member)
+    )
+    _audit_club("api_token.roll", new, member)
+    db.session.commit()
+    return _rolled(row, new, plaintext)
+
+
+@api_tokens_bp.post("/mine/<int:token_id>/roll")
+@require_member
+def roll_my_club_token(token_id: int):
+    member = _current_member()
+    row = _club_row(token_id)
+    if row is None or row.kind != "member" or row.member_id != member.id:
+        return _error(404, "NOT_FOUND", "Token not found")
+    tenant = current_tenant()
+    if not member_is_admin(member) and not api_tokens.members_allowed(tenant):
+        return _error(
+            403,
+            "API_TOKEN_DISABLED_BY_CLUB",
+            "This club doesn't allow personal API tokens",
+        )
+    return _roll_club(row, member)
+
+
+@api_tokens_bp.patch("/mine/<int:token_id>")
+@require_member
+def edit_my_club_token(token_id: int):
+    member = _current_member()
+    row = _club_row(token_id)
+    if row is None or row.kind != "member" or row.member_id != member.id:
+        return _error(404, "NOT_FOUND", "Token not found")
+    error = _edit(row, _grantable(member), getattr(member, "user", None), get_jwt())
+    if error is not None:
+        return error
+    _audit_club("api_token.update", row, member)
+    db.session.commit()
+    return jsonify(api_tokens.to_json(row)), 200
+
+
 @api_tokens_bp.get("/")
 @require_admin
 def club_tokens():
@@ -320,6 +441,34 @@ def revoke_club_token(token_id: int):
     _audit_club("api_token.revoke", row, member)
     db.session.commit()
     return jsonify(api_tokens.to_json(row)), 200
+
+
+@api_tokens_bp.patch("/<int:token_id>")
+@require_admin
+def edit_club_token(token_id: int):
+    """Admins change club tokens; a member's own token they can only revoke."""
+    member = _current_member()
+    row = _club_row(token_id)
+    if row is None or row.kind != "club":
+        return _error(404, "NOT_FOUND", "Token not found")
+    error = _edit(row, _grantable(member), getattr(member, "user", None), get_jwt())
+    if error is not None:
+        return error
+    _audit_club("api_token.update", row, member)
+    db.session.commit()
+    return jsonify(api_tokens.to_json(row)), 200
+
+
+@api_tokens_bp.post("/<int:token_id>/roll")
+@require_admin
+def roll_club_token(token_id: int):
+    """Admins roll club tokens only: a member's personal token is theirs,
+    and rolling it would hand its new secret to someone else."""
+    member = _current_member()
+    row = _club_row(token_id)
+    if row is None or row.kind != "club":
+        return _error(404, "NOT_FOUND", "Token not found")
+    return _roll_club(row, member)
 
 
 @api_tokens_bp.put("/settings")
@@ -470,6 +619,51 @@ def revoke_my_platform_token(token_id: int):
     _audit_platform("api_token.revoke", row, user)
     db.session.commit()
     return jsonify(api_tokens.to_json(row)), 200
+
+
+@platform_api_tokens_bp.patch("/mine/<int:token_id>")
+@api_tokens.no_api_tokens
+def edit_my_platform_token(token_id: int):
+    user, claims, error = _platform_user()
+    if error is not None:
+        return error
+    row = db.session.get(ApiToken, token_id)
+    if row is None or row.kind != "platform" or row.user_id != user.id:
+        return _error(404, "NOT_FOUND", "Token not found")
+    error = _edit(row, _platform_grantable(user), user, claims or {})
+    if error is not None:
+        return error
+    _audit_platform("api_token.update", row, user)
+    db.session.commit()
+    return jsonify(api_tokens.to_json(row)), 200
+
+
+@platform_api_tokens_bp.post("/mine/<int:token_id>/roll")
+@api_tokens.no_api_tokens
+def roll_my_platform_token(token_id: int):
+    user, claims, error = _platform_user()
+    if error is not None:
+        return error
+    refusal = _maker_checks(user, claims or {})
+    if refusal is not None:
+        return refusal
+    row = db.session.get(ApiToken, token_id)
+    if row is None or row.kind != "platform" or row.user_id != user.id:
+        return _error(404, "NOT_FOUND", "Token not found")
+    if not api_tokens.is_active(row):
+        return _error(409, "API_TOKEN_INACTIVE", "Only an active token can be rolled")
+    params, error = _roll_params(
+        _body(), row, _platform_grantable(user), api_tokens.PLATFORM_MAX_DAYS
+    )
+    if error is not None:
+        return error
+    scopes, days, grace = params
+    new, plaintext = api_tokens.roll(
+        row, scopes=scopes, days=days, grace_hours=grace, by_name=row.created_by_name
+    )
+    _audit_platform("api_token.roll", new, user)
+    db.session.commit()
+    return _rolled(row, new, plaintext)
 
 
 @platform_api_tokens_bp.get("/")

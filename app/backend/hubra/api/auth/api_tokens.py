@@ -571,6 +571,46 @@ def make(
     return row, f"{PREFIXES[kind]}_{public_id}_{secret}"
 
 
+# Hours the old secret keeps working after a roll.
+ROLL_GRACE_HOURS = (0, 1, 24, 168)
+DEFAULT_ROLL_GRACE_HOURS = 24
+
+
+def roll(
+    row: ApiToken, *, scopes: list[str], days: int, grace_hours: int, by_name: str
+) -> tuple[ApiToken, str]:
+    """A new secret for *row*: a new token with the same name, kind, person,
+    club and IP list, and the old one ends after *grace_hours* (at once
+    for 0), so scripts can switch without downtime."""
+    from hubra.core.models.user import User
+
+    user = db.session.get(User, row.user_id)
+    tenant = None
+    if row.tenant_id is not None:
+        from hubra.core.models.tenant import Tenant
+
+        tenant = db.session.get(Tenant, row.tenant_id)
+    new, plaintext = make(
+        kind=row.kind,
+        user=user,
+        name=row.name,
+        scopes=scopes,
+        days=days,
+        tenant=tenant,
+        member_id=row.member_id,
+        created_by_name=by_name,
+        allowed_ips=list(row.allowed_ips or []) or None,
+    )
+    now = datetime.now(timezone.utc)
+    if grace_hours <= 0:
+        revoke(row, by_name, reason="rolled")
+    else:
+        row.expires_at = min(_aware(row.expires_at), now + timedelta(hours=grace_hours))
+        row.revoked_reason = "rolled"
+        row.revoked_by_name = by_name[:255]
+    return new, plaintext
+
+
 def revoke(row: ApiToken, by_name: str, reason: str = "revoked") -> None:
     if row.revoked_at is None:
         row.revoked_at = datetime.now(timezone.utc)

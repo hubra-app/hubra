@@ -540,3 +540,75 @@ def test_step_up_routes_are_marked(app):
         if getattr(app.view_functions[r.endpoint], "_step_up", False)
     ]
     assert any("restore" in p for p in step_up), step_up
+
+
+# ── Rolling and editing ─────────────────────────────────────────────────────
+
+
+def test_roll_keeps_the_old_secret_for_the_grace_period(app, db, made):
+    owner = app.test_client()
+    _sign_in(owner)
+    resp = owner.post(f"/api/v1/api-tokens/mine/{made['id']}/roll", json={"graceHours": 1})
+    assert resp.status_code == 201, resp.get_json()
+    body = resp.get_json()
+    new = body["token"]
+    assert new != made["token"] and body["name"] == "Script"
+    assert body["scopes"] == [READ]
+    assert body["previous"]["revokedReason"] == "rolled"
+    c = app.test_client()
+    assert c.get("/api/v1/events/", headers=_bearer(new)).status_code == 200
+    assert c.get("/api/v1/events/", headers=_bearer(made["token"])).status_code == 200
+    # After the grace period only the new one works.
+    old = db.session.get(ApiToken, made["id"])
+    old.expires_at = datetime.now(timezone.utc) - timedelta(seconds=1)
+    db.session.commit()
+    assert c.get("/api/v1/events/", headers=_bearer(made["token"])).status_code == 401
+    assert c.get("/api/v1/events/", headers=_bearer(new)).status_code == 200
+
+
+def test_roll_without_grace_ends_the_old_one_now(app, made):
+    owner = app.test_client()
+    _sign_in(owner)
+    resp = owner.post(f"/api/v1/api-tokens/mine/{made['id']}/roll", json={"graceHours": 0})
+    assert resp.status_code == 201
+    c = app.test_client()
+    assert c.get("/api/v1/events/", headers=_bearer(made["token"])).status_code == 401
+
+
+def test_roll_needs_a_fresh_step_up(app, made):
+    owner = app.test_client()
+    _sign_in(owner)
+    with patch.dict(app.config, {"STEP_UP_ENFORCED": True}):
+        resp = owner.post(f"/api/v1/api-tokens/mine/{made['id']}/roll", json={})
+    assert resp.get_json()["error"] == "STEP_UP_REQUIRED"
+
+
+def test_admin_cannot_roll_or_edit_a_members_token(app, made):
+    admin = app.test_client()
+    _sign_in(admin)
+    assert admin.post(f"/api/v1/api-tokens/{made['id']}/roll", json={}).status_code == 404
+    assert admin.patch(f"/api/v1/api-tokens/{made['id']}", json={"scopes": []}).status_code == 404
+
+
+def test_edit_narrows_without_step_up_and_widens_with_it(app, db, made):
+    owner = app.test_client()
+    _sign_in(owner)
+    path = f"/api/v1/api-tokens/mine/{made['id']}"
+    with patch.dict(app.config, {"STEP_UP_ENFORCED": True}):
+        widen = owner.patch(path, json={"scopes": [READ, CREATE]})
+        assert widen.get_json()["error"] == "STEP_UP_REQUIRED"
+        rename = owner.patch(path, json={"name": "Renamed"})
+        assert rename.status_code == 200 and rename.get_json()["name"] == "Renamed"
+    widen = owner.patch(path, json={"scopes": [READ, CREATE]})
+    assert widen.status_code == 200 and widen.get_json()["scopes"] == [CREATE, READ]
+    c = app.test_client()
+    resp = c.post(
+        "/api/v1/events/",
+        json={"title": "Now allowed", "date": "2030-06-06", "type": "Social"},
+        headers=_bearer(made["token"]),
+    )
+    assert resp.status_code in (200, 201), resp.get_json()
+    assert owner.patch(path, json={"scopes": ["not.a.key"]}).status_code == 400
+    with patch.dict(app.config, {"STEP_UP_ENFORCED": True}):
+        narrow = owner.patch(path, json={"scopes": [READ]})
+    assert narrow.status_code == 200 and narrow.get_json()["scopes"] == [READ]
