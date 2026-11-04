@@ -24,6 +24,13 @@
   "mail.provisioning",
   "mail.system.address.created",
   "mail.type",
+  "settings.modules.builtInTitle",
+  "settings.modules.morePlugins",
+  "settings.modules.noPlugins",
+  "settings.modules.official",
+  "settings.modules.pluginBy",
+  "settings.modules.pluginsIntro",
+  "settings.modules.pluginsTitle",
   "system.health",
   "translations.addKey",
   "translations.addLanguage",
@@ -4975,6 +4982,21 @@
    ],
    "shell.customize.show": [
     "Wieder anzeigen"
+   ],
+   "settings.tabs.modules": [
+    "Module & Plugins"
+   ],
+   "apps.noProviders": [
+    "Schalte unter «Module & Plugins» ein Modul mit einer App ein, zum Beispiel Discord."
+   ],
+   "shell.more.emptyDesc": [
+    "Seiten, die du in der Seitenleiste ausblendest, und Seiten von Plugins erscheinen hier."
+   ],
+   "finance.feeBasis.source.budgetHint": [
+    "Die Ausgaben im genehmigten Budget des laufenden Jahres (Plugin Budgets)."
+   ],
+   "finance.feeBasis.source.needsBudgets": [
+    "Braucht das Plugin Budgets."
    ]
   },
   "en-GB": {
@@ -6437,6 +6459,21 @@
    ],
    "shell.customize.show": [
     "Show again"
+   ],
+   "settings.tabs.modules": [
+    "Modules & plugins"
+   ],
+   "apps.noProviders": [
+    "Switch on a module with an app under “Modules & plugins”, for example Discord."
+   ],
+   "shell.more.emptyDesc": [
+    "Pages you hide in the sidebar and pages from plugins appear here."
+   ],
+   "finance.feeBasis.source.budgetHint": [
+    "The expenses in this year's approved budget (Budgets plugin)."
+   ],
+   "finance.feeBasis.source.needsBudgets": [
+    "Needs the Budgets plugin."
    ]
   }
  }

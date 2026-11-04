@@ -286,7 +286,7 @@ on. Events, Finance, Functions, Groups, Polls and Posts are on for a new
 club; Bindings, Codes, Inventory and Mail are off.
 
 - **Club admins** switch modules on and off in the club app under
-  Settings › Modules & plugins. Switching off hides the module and keeps its
+  Settings › Modules. Switching off hides the module and keeps its
   data.
 - **You** can block a module for one club: All clubs › the club ›
   Modules. A blocked module stays off and the club can't switch it on.
@@ -309,7 +309,7 @@ How modules are built: [app/backend/hubra/modules/README.md](../app/backend/hubr
 Plugins add modules that are not part of Hubra (keys, budgets, bank import,
 Discord and more). You install a plugin once for the whole platform in manage
 › Plugin catalogue; each club then switches its modules on in
-Settings › Modules & plugins like a built-in module.
+Settings › Modules like a built-in module.
 
 - Only the global permission `plugins.manage` (superadmins) can install.
 - A plugin runs with access to every club's data. Install only official

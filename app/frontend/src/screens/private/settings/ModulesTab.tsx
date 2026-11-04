@@ -17,7 +17,7 @@ import {
   TextInput,
   ThemeIcon,
 } from '@mantine/core'
-import { IconPuzzle, IconSettings } from '@tabler/icons-react'
+import { IconSettings } from '@tabler/icons-react'
 import { moduleNavIcon } from '@/components/Shell/nav'
 import { useT } from '@/locales/i18n'
 import { useAuth, useToast } from '@/context/AppContext'
@@ -27,7 +27,6 @@ import {
   saveModuleSettings,
   setModuleEnabled,
   type ModuleInfo,
-  type ModulePlugin,
   type ModuleSettingField,
 } from '@/api/modules'
 import { localizeModule } from '@/modules/labels'
@@ -51,18 +50,23 @@ export function ModulesTab() {
   })
   const byCode = Object.fromEntries(modules.map((m) => [m.code, m]))
   const optional = modules.filter((m) => !m.required)
-  const builtIn = optional.filter((m) => !m.plugin)
   const required = modules.filter((m) => m.required)
-  // One card per plugin, with every module it brings.
-  const plugins = Object.values(
-    optional
-      .filter((m) => m.plugin)
-      .reduce<Record<string, { plugin: ModulePlugin; modules: ModuleInfo[] }>>((acc, m) => {
-        const p = m.plugin!
-        ;(acc[p.id] ??= { plugin: p, modules: [] }).modules.push(m)
-        return acc
-      }, {}),
-  ).sort((a, b) => a.plugin.name.localeCompare(b.plugin.name))
+  // One list for the club: whether a module ships with Hubra or as a plugin
+  // is the platform's business (plugins let it ship modules without a new
+  // release of the whole app). A plugin's module goes right after the area
+  // it extends (finance.budgets after finance), the rest keep their order.
+  const listed = optional.filter((m) => !m.plugin)
+  optional
+    .filter((m) => m.plugin)
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .forEach((m) => {
+      const area = m.code.split('.')[0]
+      let at = -1
+      listed.forEach((x, i) => {
+        if (x.code === area || x.code.startsWith(area + '.')) at = i
+      })
+      listed.splice(at < 0 ? listed.length : at + 1, 0, m)
+    })
 
   const toggle = async (m: ModuleInfo, enabled: boolean) => {
     setBusy(m.code)
@@ -85,11 +89,10 @@ export function ModulesTab() {
     }
   }
 
-  const card = (m: ModuleInfo, plugin?: ModulePlugin) => (
+  const card = (m: ModuleInfo) => (
     <ModuleCard
       key={m.code}
       m={m}
-      plugin={plugin}
       byCode={byCode}
       canWrite={canWrite}
       busy={busy === m.code}
@@ -117,54 +120,13 @@ export function ModulesTab() {
 
       <Stack gap="sm">
         <SectionHead
-          title={t('settings.modules.builtInTitle', 'Funktionen')}
-          count={builtIn.filter((m) => m.enabled).length}
-          total={builtIn.length}
+          title={t('settings.modules.title', 'Module')}
+          count={listed.filter((m) => m.enabled).length}
+          total={listed.length}
         />
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-          {builtIn.map((m) => card(m))}
+          {listed.map((m) => card(m))}
         </SimpleGrid>
-      </Stack>
-
-      <Stack gap="sm">
-        <SectionHead
-          title={t('settings.modules.pluginsTitle', 'Plugins')}
-          count={plugins.reduce((n, p) => n + p.modules.filter((m) => m.enabled).length, 0)}
-          total={plugins.reduce((n, p) => n + p.modules.length, 0)}
-        />
-        <Text fz="sm" c="dimmed" maw={760}>
-          {t(
-            'settings.modules.pluginsIntro',
-            'Zusatzfunktionen aus dem Hubra-Katalog. Schalte ein, was dein Verein nutzen möchte.',
-          )}
-        </Text>
-        {plugins.length === 0 ? (
-          <Paper withBorder p="lg">
-            <Group gap="md" wrap="nowrap">
-              <ThemeIcon size={44} radius="md" variant="light" color="gray">
-                <IconPuzzle size={24} />
-              </ThemeIcon>
-              <Text fz="sm" c="dimmed">
-                {t(
-                  'settings.modules.noPlugins',
-                  'Auf dieser Plattform ist noch kein Plugin installiert. Plugins installieren die Plattform-Admins aus dem Hubra-Katalog.',
-                )}
-              </Text>
-            </Group>
-          </Paper>
-        ) : (
-          <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-            {plugins.flatMap((p) => p.modules.map((m) => card(m, p.plugin)))}
-          </SimpleGrid>
-        )}
-        {plugins.length > 0 && (
-          <Text fz="xs" c="dimmed">
-            {t(
-              'settings.modules.morePlugins',
-              'Fehlt etwas? Weitere Plugins installieren die Plattform-Admins aus dem Hubra-Katalog.',
-            )}
-          </Text>
-        )}
       </Stack>
 
       {required.length > 0 && (
@@ -206,7 +168,6 @@ function SectionHead({ title, count, total }: { title: string; count: number; to
 
 function ModuleCard({
   m,
-  plugin,
   byCode,
   canWrite,
   busy,
@@ -214,7 +175,6 @@ function ModuleCard({
   onConfigure,
 }: {
   m: ModuleInfo
-  plugin?: ModulePlugin
   byCode: Record<string, ModuleInfo>
   canWrite: boolean
   busy: boolean
@@ -246,22 +206,19 @@ function ModuleCard({
       }}
     >
       <Group align="flex-start" wrap="nowrap" gap="md">
-        <ThemeIcon size={44} radius="md" variant="light" color={on ? undefined : 'gray'} aria-hidden>
-          {plugin ? moduleNavIcon(m.nav[0]?.icon ?? 'puzzle') : moduleNavIcon(m.nav[0]?.icon)}
+        <ThemeIcon
+          size={44}
+          radius="md"
+          variant="light"
+          color={on ? undefined : 'gray'}
+          aria-hidden
+        >
+          {m.plugin ? moduleNavIcon(m.nav[0]?.icon ?? 'puzzle') : moduleNavIcon(m.nav[0]?.icon)}
         </ThemeIcon>
         <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
           <Text fw={700} fz="md">
             {m.name}
           </Text>
-          {plugin && (
-            <Text fz="xs" c="dimmed" lineClamp={1}>
-              {t('settings.modules.pluginBy', 'Plugin {{name}} {{version}}', {
-                name: plugin.name,
-                version: plugin.version,
-              })}
-              {plugin.author ? ` · ${plugin.author}` : ''}
-            </Text>
-          )}
         </Stack>
         <Switch
           checked={on}
@@ -274,14 +231,12 @@ function ModuleCard({
       <Text fz="sm" c="dimmed" style={{ flex: 1 }}>
         {m.description}
       </Text>
-      {(blocker || needsSetup || plugin?.trust === 'official' || uses.length > 0 || (m.settings.length > 0 && m.enabled && canWrite)) && (
+      {(blocker ||
+        needsSetup ||
+        uses.length > 0 ||
+        (m.settings.length > 0 && m.enabled && canWrite)) && (
         <Group justify="space-between" gap="xs" wrap="wrap">
           <Group gap={6}>
-            {plugin?.trust === 'official' && (
-              <Badge size="sm" variant="light" color="green">
-                {t('settings.modules.official', 'Offiziell')}
-              </Badge>
-            )}
             {blocker && (
               <Badge size="sm" color="orange" variant="light">
                 {blocker}
@@ -301,7 +256,12 @@ function ModuleCard({
             )}
           </Group>
           {m.settings.length > 0 && m.enabled && canWrite && (
-            <Button size="xs" variant="default" leftSection={<IconSettings size={14} />} onClick={onConfigure}>
+            <Button
+              size="xs"
+              variant="default"
+              leftSection={<IconSettings size={14} />}
+              onClick={onConfigure}
+            >
               {t('settings.modules.configure', 'Einstellungen')}
             </Button>
           )}
@@ -415,7 +375,10 @@ export function SettingInput({
       return (
         <PasswordInput
           {...common}
-          placeholder={t('settings.modules.secretKept', 'Leer lassen, um den gespeicherten Wert zu behalten')}
+          placeholder={t(
+            'settings.modules.secretKept',
+            'Leer lassen, um den gespeicherten Wert zu behalten',
+          )}
           value={typeof value === 'string' ? value : ''}
           onChange={(e) => onChange(e.currentTarget.value)}
         />

@@ -1,6 +1,6 @@
 # Notify members about new posts, events and polls
 
-**Where:** Settings › Module & Plugins › Posts / Events / Polls ›
+**Where:** Settings › Module › Posts / Events / Polls ›
 Einstellungen.
 
 Each of the `posts`, `events` and `polls` modules has one setting:

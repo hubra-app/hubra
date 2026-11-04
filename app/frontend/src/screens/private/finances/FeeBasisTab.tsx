@@ -104,7 +104,7 @@ function FeeBasisForm({ module, canWrite }: { module: ModuleInfo; canWrite: bool
       t('finance.feeBasis.source.budget', 'Budget'),
       t(
         'finance.feeBasis.source.budgetHint',
-        'Die Ausgaben im genehmigten Budget des laufenden Jahres (Plugin Budgets).',
+        'Die Ausgaben im genehmigten Budget des laufenden Jahres (Modul Budgets).',
       ),
     ],
     manual: [
@@ -143,7 +143,7 @@ function FeeBasisForm({ module, canWrite }: { module: ModuleInfo; canWrite: bool
                       ? sourceText[code][1]
                       : t(
                           'finance.feeBasis.source.needsBudgets',
-                          'Braucht das Plugin Budgets.',
+                          'Braucht das Modul Budgets.',
                         )
                   }
                   disabled={!canWrite || !available}

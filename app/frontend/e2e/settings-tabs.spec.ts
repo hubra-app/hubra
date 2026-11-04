@@ -122,7 +122,7 @@ test('every settings tab has its own address', async ({ page }) => {
   // settings/apps had no route and fell through to the dashboard.
   for (const [path, tab] of [
     ['settings/membership', 'Mitgliedschaft'],
-    ['settings/modules', 'Module & Plugins'],
+    ['settings/modules', 'Module'],
     ['settings/apps', 'Verbundene Apps'],
     ['settings/domains', 'Domains'],
   ] as const) {

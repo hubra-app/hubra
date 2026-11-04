@@ -36,7 +36,7 @@ const TABS = [
   {
     id: 'modules',
     labelKey: 'settings.tabs.modules',
-    label: 'Module & Plugins',
+    label: 'Module',
     Component: ModulesTab,
   },
   {
