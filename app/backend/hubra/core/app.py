@@ -138,6 +138,9 @@ def create_app(config_name: str | None = None) -> Flask:
     from hubra.core.tenant.middleware import TenantPathMiddleware, resolve_tenant
 
     install_search_path_guard()
+    from hubra.core.modules.events import install_after_commit_delivery
+
+    install_after_commit_delivery()
 
     # Old API paths (/api/v1/members, /api/v1/manager/...) to the new areas
     # /api/v1/app, /platform and /global; inside the slug wrapper, so the

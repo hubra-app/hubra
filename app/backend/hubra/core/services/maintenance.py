@@ -47,6 +47,9 @@ ALLOWED_PREFIXES = (
     "/api/v1/global",
     # Signed Discord interactions: /wartung ende must work during maintenance;
     # club commands answer with the maintenance notice themselves.
+    # The Discord plugin's routes live under /api/v1/app (the loader moves
+    # them there); the old path stays for a process without the plugin.
+    "/api/v1/app/discord/interactions",
     "/api/v1/discord/interactions",
 )
 
