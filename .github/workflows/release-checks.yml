@@ -104,48 +104,52 @@ jobs:
 
   # Builds the images and runs the Compose stack end to end, with the
   # browser tests of the three apps against it. The image builds also cover
-  # the production builds of the frontends.
+  # the production builds of the frontends, so they build without a cache.
+  # The browser tests run like in ci.yml (browser-tests): three workers, each
+  # with its own club and account.
   compose-smoke:
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
+    env:
+      COMPOSE_FILE: docker-compose.yml:.github/e2e/docker-compose.e2e.yml
+      E2E_WORKERS: "3"
+      E2E_APP_URL: http://localhost:8080
+      E2E_MANAGE_URL: http://localhost:8081
+      E2E_SSO_URL: http://localhost:8082
+      E2E_CLUB: e2e
+      E2E_EMAIL: e2e@hubra.test
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Configure
-        # The e2e account is a platform admin that signs in with a password
+        # The e2e accounts are platform admins that sign in with a password
         # only, so the two-factor rule for staff is off for this stack.
         run: |
           scripts/init-env.sh
           echo "MFA_REQUIRED_FOR_STAFF=false" >> .env
           echo "STEP_UP_ENFORCED=false" >> .env
-      - run: docker compose build
-      - run: docker compose up -d
-      - run: scripts/smoke-test.sh
-      # Browser tests of the three apps against the same stack (app/frontend/e2e).
-      - name: Club and account for the browser tests
-        run: |
           password="E2e-Test-$(date +%s)!"
           echo "::add-mask::$password"
           echo "E2E_PASSWORD=$password" >> "$GITHUB_ENV"
-          docker compose exec -T backend flask provision-tenant \
-            --name "E2E Club" --slug e2e --admin-email e2e@hubra.test --admin-password "$password"
-          docker compose exec -T -e SUPERADMIN_EMAILS=e2e@hubra.test backend flask ensure-superadmins
+      - run: docker compose build
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: app/frontend/package-lock.json
+      - name: Start the stack, install the test tools meanwhile
+        run: |
+          docker compose up -d --no-build > /tmp/compose-up.log 2>&1 &
+          up=$!
+          (cd app/frontend && npm ci && npx playwright install --with-deps --only-shell chromium)
+          wait "$up" || { cat /tmp/compose-up.log; exit 1; }
+          cat /tmp/compose-up.log
+          scripts/smoke-test.sh
+      # Browser tests of the three apps against the same stack (app/frontend/e2e).
+      - name: Clubs and accounts for the browser tests
+        run: scripts/e2e-accounts.sh
       - name: Browser tests
         working-directory: app/frontend
-        env:
-          E2E_APP_URL: http://localhost:8080
-          E2E_MANAGE_URL: http://localhost:8081
-          E2E_SSO_URL: http://localhost:8082
-          E2E_CLUB: e2e
-          E2E_EMAIL: e2e@hubra.test
-        run: |
-          npm ci
-          npx playwright install --with-deps chromium
-          npm run test:e2e
+        run: npm run test:e2e
       - if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

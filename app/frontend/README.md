@@ -52,4 +52,5 @@ npm run test:e2e           # Browser tests (Playwright, e2e/) against a running 
 The browser tests sign in on the SSO portal and run against the dev servers
 by default; `E2E_APP_URL`, `E2E_SSO_URL`, `E2E_MANAGE_URL`, `E2E_CLUB`,
 `E2E_EMAIL` and `E2E_PASSWORD` point them elsewhere (see `e2e/env.ts`). CI runs
-them against the Compose stack.
+them against the Compose stack in three parallel workers (`E2E_WORKERS=3`),
+each with its own club and account from `scripts/e2e-accounts.sh`.
