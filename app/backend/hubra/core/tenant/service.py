@@ -559,13 +559,21 @@ def _seed_tenant(
         from hubra.core.models.role import Permission
 
         # The catalog is filled by `flask sync-permissions` (run on every
-        # deploy); without it the new club's roles would grant nothing and
-        # members would get "Kein Zugriff" everywhere.
+        # deploy). On an empty catalog (a fresh database, a dev setup) the
+        # new club's roles would grant nothing and members would get "Kein
+        # Zugriff" everywhere, so fill it here first.
         if db.session.scalar(select(func.count(Permission.id))) == 0:
-            _log.warning(
-                "Provisioning %s with an empty permission catalog: run "
-                "'flask sync-permissions' first, its roles grant nothing",
+            from flask import current_app
+
+            from hubra.core.services.permission_sync import sync_permission_catalog
+
+            created, _updated, _orphaned = sync_permission_catalog(
+                current_app, commit=False
+            )
+            _log.info(
+                "Provisioning %s on an empty permission catalog: synced %d permissions",
                 tenant_id,
+                created,
             )
 
         for role_name, perm_keys in DEFAULT_ROLE_PERMISSIONS.items():

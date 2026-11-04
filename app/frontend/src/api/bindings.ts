@@ -39,7 +39,7 @@ export interface RegistryEntry {
 }
 
 export async function listKeys(): Promise<InternalKey[]> {
-  return apiFetch<InternalKey[]>("/bindings/keys");
+  return apiFetch<InternalKey[]>("/app/bindings/keys");
 }
 
 export async function createKey(data: {
@@ -48,7 +48,7 @@ export async function createKey(data: {
   is_protected?: boolean;
   label?: string | null;
 }): Promise<InternalKey> {
-  return apiFetch<InternalKey>("/bindings/keys", {
+  return apiFetch<InternalKey>("/app/bindings/keys", {
     method: "POST",
     body: JSON.stringify(data),
   });
@@ -62,14 +62,14 @@ export async function updateKey(
     is_protected?: boolean;
   },
 ): Promise<InternalKey> {
-  return apiFetch<InternalKey>(`/bindings/keys/${id}`, {
+  return apiFetch<InternalKey>(`/app/bindings/keys/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
   });
 }
 
 export async function deleteKey(id: number): Promise<void> {
-  await apiFetch(`/bindings/keys/${id}`, { method: "DELETE" });
+  await apiFetch(`/app/bindings/keys/${id}`, { method: "DELETE" });
 }
 
 export async function listBindings(params?: {
@@ -80,7 +80,7 @@ export async function listBindings(params?: {
   if (params?.key_id !== undefined) qs.set("key_id", String(params.key_id));
   if (params?.type) qs.set("type", params.type);
   const query = qs.toString() ? `?${qs.toString()}` : "";
-  return apiFetch<Binding[]>(`/bindings/${query}`);
+  return apiFetch<Binding[]>(`/app/bindings/${query}`);
 }
 
 export async function createBinding(data: {
@@ -92,7 +92,7 @@ export async function createBinding(data: {
   enabled?: boolean;
   is_protected?: boolean;
 }): Promise<Binding> {
-  return apiFetch<Binding>("/bindings/", {
+  return apiFetch<Binding>("/app/bindings/", {
     method: "POST",
     body: JSON.stringify(data),
   });
@@ -110,32 +110,32 @@ export async function updateBinding(
     is_protected?: boolean;
   },
 ): Promise<Binding> {
-  return apiFetch<Binding>(`/bindings/${id}`, {
+  return apiFetch<Binding>(`/app/bindings/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
   });
 }
 
 export async function deleteBinding(id: number): Promise<void> {
-  await apiFetch(`/bindings/${id}`, { method: "DELETE" });
+  await apiFetch(`/app/bindings/${id}`, { method: "DELETE" });
 }
 
 export async function toggleBinding(
   id: number,
   enabled: boolean,
 ): Promise<Binding> {
-  return apiFetch<Binding>(`/bindings/${id}/toggle`, {
+  return apiFetch<Binding>(`/app/bindings/${id}/toggle`, {
     method: "POST",
     body: JSON.stringify({ enabled }),
   });
 }
 
 export async function getRegistry(): Promise<RegistryEntry[]> {
-  return apiFetch<RegistryEntry[]>("/bindings/registry");
+  return apiFetch<RegistryEntry[]>("/app/bindings/registry");
 }
 
 export async function getValidators(): Promise<string[]> {
-  return apiFetch<string[]>("/bindings/validators");
+  return apiFetch<string[]>("/app/bindings/validators");
 }
 
 export interface BindingSource {
@@ -147,7 +147,7 @@ export interface BindingSource {
 
 export async function getSources(type: string): Promise<BindingSource[]> {
   return apiFetch<BindingSource[]>(
-    `/bindings/sources?type=${encodeURIComponent(type)}`,
+    `/app/bindings/sources?type=${encodeURIComponent(type)}`,
   );
 }
 
@@ -167,5 +167,5 @@ export async function previewBindingValue(
     source_id: sourceId,
     source_attribute: sourceAttribute,
   });
-  return apiFetch<BindingPreview>(`/bindings/preview?${qs.toString()}`);
+  return apiFetch<BindingPreview>(`/app/bindings/preview?${qs.toString()}`);
 }

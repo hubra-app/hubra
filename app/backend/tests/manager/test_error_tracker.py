@@ -89,10 +89,10 @@ def test_capture_never_raises(db):
 
 
 def test_request_exception_is_captured_with_its_route(app, db, build):
-    with app.test_request_context("/api/v1/members", method="POST"):
+    with app.test_request_context("/api/v1/app/members", method="POST"):
         got_request_exception.send(app, exception=_boom())
     (g,) = _groups(db)
-    assert g.route == "POST /api/v1/members/"  # the rule, not the path
+    assert g.route == "POST /api/v1/app/members/"  # the rule, not the path
 
 
 def test_list_detail_resolve_and_regression(client, db, staff_headers, build):

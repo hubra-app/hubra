@@ -75,12 +75,12 @@ function adaptComment(b: BackendComment): PostComment {
 }
 
 export async function listPosts(): Promise<Post[]> {
-  const data = await apiFetch<BackendPost[]>("/posts");
+  const data = await apiFetch<BackendPost[]>("/app/posts");
   return data.map(adaptPost);
 }
 
 export async function getPost(id: string): Promise<Post> {
-  const data = await apiFetch<BackendPost>(`/posts/${id}`);
+  const data = await apiFetch<BackendPost>(`/app/posts/${id}`);
   return adaptPost(data);
 }
 
@@ -91,7 +91,7 @@ export interface PostCreate {
 }
 
 export async function createPost(input: PostCreate): Promise<Post> {
-  const data = await apiFetch<BackendPost>("/posts/", {
+  const data = await apiFetch<BackendPost>("/app/posts/", {
     method: "POST",
     body: JSON.stringify({
       title: input.title,
@@ -112,7 +112,7 @@ export async function updatePost(
   id: string,
   input: PostUpdate,
 ): Promise<Post> {
-  const data = await apiFetch<BackendPost>(`/posts/${id}`, {
+  const data = await apiFetch<BackendPost>(`/app/posts/${id}`, {
     method: "PATCH",
     body: JSON.stringify(input),
   });
@@ -120,25 +120,25 @@ export async function updatePost(
 }
 
 export async function deletePost(id: string): Promise<void> {
-  await apiFetch(`/posts/${id}`, { method: "DELETE" });
+  await apiFetch(`/app/posts/${id}`, { method: "DELETE" });
 }
 
 export async function likePost(id: string): Promise<Post> {
-  const data = await apiFetch<BackendPost>(`/posts/${id}/like`, {
+  const data = await apiFetch<BackendPost>(`/app/posts/${id}/like`, {
     method: "POST",
   });
   return adaptPost(data);
 }
 
 export async function unlikePost(id: string): Promise<Post> {
-  const data = await apiFetch<BackendPost>(`/posts/${id}/like`, {
+  const data = await apiFetch<BackendPost>(`/app/posts/${id}/like`, {
     method: "DELETE",
   });
   return adaptPost(data);
 }
 
 export async function listComments(postId: string): Promise<PostComment[]> {
-  const data = await apiFetch<BackendComment[]>(`/posts/${postId}/comments`);
+  const data = await apiFetch<BackendComment[]>(`/app/posts/${postId}/comments`);
   return data.map(adaptComment);
 }
 
@@ -146,7 +146,7 @@ export async function addComment(
   postId: string,
   body: string,
 ): Promise<PostComment> {
-  const data = await apiFetch<BackendComment>(`/posts/${postId}/comments`, {
+  const data = await apiFetch<BackendComment>(`/app/posts/${postId}/comments`, {
     method: "POST",
     body: JSON.stringify({ body }),
   });
@@ -157,7 +157,7 @@ export async function deleteComment(
   postId: string,
   commentId: string,
 ): Promise<void> {
-  await apiFetch(`/posts/${postId}/comments/${commentId}`, {
+  await apiFetch(`/app/posts/${postId}/comments/${commentId}`, {
     method: "DELETE",
   });
 }

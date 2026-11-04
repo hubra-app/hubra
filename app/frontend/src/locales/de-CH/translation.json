@@ -678,6 +678,7 @@
   "events": {
     "addEvent": "Anlass hinzufügen",
     "addOption": "Option hinzufügen",
+    "attended": "Teilgenommen",
     "attendees": "Teilnehmende",
     "author": "Verfasst von",
     "comingSoonDesc": "Planung und Anmeldungen für Anlässe sind in Arbeit.",
@@ -705,6 +706,12 @@
     "eventTitle": "Titel",
     "eventTitlePlaceholder": "z. B. Einführung Holzwerkstatt",
     "eventUpdatedMsg": "{{title}} wurde gespeichert.",
+    "filter": {
+      "past": "Vergangene",
+      "type": "Typ",
+      "upcoming": "Kommende",
+      "when": "Zeitraum"
+    },
     "join": "Teilnehmen",
     "joined": "Angemeldet",
     "leave": "Abmelden",
@@ -713,6 +720,7 @@
     "locationPlaceholder": "z. B. Holzwerkstatt",
     "noEvents": "Keine Anlässe gefunden.",
     "noLocation": "Kein Ort",
+    "over": "Vorbei",
     "poll": {
       "deleted": "Umfrage gelöscht.",
       "options": "Optionen",
@@ -817,7 +825,11 @@
       "deleteThis": "Nur diesen Termin",
       "following": "Diesen und alle folgenden",
       "thisOne": "Nur diesen Termin"
-    }
+    },
+    "description": "Beschreibung",
+    "descriptionPlaceholder": "Was erwartet die Teilnehmenden? Was mitbringen?",
+    "isPublic": "Öffentlicher Anlass",
+    "isPublicHint": "Darf auch ausserhalb des Vereins erscheinen, z. B. auf einem offenen Discord-Server. Sonst sehen ihn nur Mitglieder."
   },
   "finance": {
     "addCategory": "Kategorie hinzufügen",
@@ -923,6 +935,8 @@
       "issued": "Ausgestellt",
       "notFound": "Rechnung nicht gefunden",
       "number": "Rechnungsnummer",
+      "numberShort": "Nr.",
+      "pageTitle": "Rechnung Nr. {{n}}",
       "paid": "Rechnung bezahlt.",
       "period": "Zeitraum"
     },
@@ -3618,7 +3632,8 @@
       "attendance": "Anwesenheit",
       "command": "Befehl",
       "log": "Protokoll-Kanal",
-      "notified": "Benachrichtigung"
+      "notified": "Benachrichtigung",
+      "updated": "Aktualisiert"
     },
     "logAll": "Alles",
     "logErrors": "Fehler",

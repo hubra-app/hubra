@@ -31,27 +31,27 @@ export interface PlanOptions {
 }
 
 export const listPlans = (tierId: string | number) =>
-  apiFetch<PaymentPlan[]>(`/tiers/${tierId}/plans`)
+  apiFetch<PaymentPlan[]>(`/app/tiers/${tierId}/plans`)
 
 export const createPlan = (tierId: string | number, input: PlanInput) =>
-  apiFetch<PaymentPlan>(`/tiers/${tierId}/plans`, {
+  apiFetch<PaymentPlan>(`/app/tiers/${tierId}/plans`, {
     method: 'POST',
     body: JSON.stringify(input),
   })
 
 export const updatePlan = (planId: number, input: PlanInput) =>
-  apiFetch<PaymentPlan>(`/tiers/plans/${planId}`, {
+  apiFetch<PaymentPlan>(`/app/tiers/plans/${planId}`, {
     method: 'PATCH',
     body: JSON.stringify(input),
   })
 
 export const deletePlan = (planId: number) =>
-  apiFetch<void>(`/tiers/plans/${planId}`, { method: 'DELETE' })
+  apiFetch<void>(`/app/tiers/plans/${planId}`, { method: 'DELETE' })
 
-export const getMyPlanOptions = () => apiFetch<PlanOptions>('/tiers/my-plan')
+export const getMyPlanOptions = () => apiFetch<PlanOptions>('/app/tiers/my-plan')
 
 export const chooseMyPlan = (planId: number | null) =>
-  apiFetch<PlanOptions>('/tiers/my-plan', {
+  apiFetch<PlanOptions>('/app/tiers/my-plan', {
     method: 'PUT',
     body: JSON.stringify({ plan_id: planId }),
   })

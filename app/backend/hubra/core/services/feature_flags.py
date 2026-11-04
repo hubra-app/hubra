@@ -247,4 +247,4 @@ def install(app) -> None:
         tenant = current_tenant()
         return jsonify({"features": for_club(tenant) if tenant else {}}), 200
 
-    app.add_url_rule("/api/v1/features", "feature_flags", _features, methods=["GET"])
+    app.add_url_rule("/api/v1/app/features", "feature_flags", _features, methods=["GET"])

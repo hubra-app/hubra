@@ -119,6 +119,24 @@ class TestApiCallCounting:
         resp = client.get("/api/v1/health")
         assert resp.status_code in (200, 503)
 
+    @patch("hubra.api.metrics._get_redis_client")
+    def test_counting_keeps_the_shared_client_open(self, mock_get_redis, client, db):
+        """The counter uses the process-wide Redis client and must not close it.
+
+        ``Redis.close()`` on a client made by ``from_url`` disconnects the
+        whole connection pool, which cuts the connections other request
+        threads are using mid-command; those then trip the Redis circuit
+        breaker, and health, session and permission caches go dark for a
+        few seconds after every request.
+        """
+        mock_redis = _make_redis_mock()
+        mock_get_redis.return_value = mock_redis
+
+        client.get("/api/v1/members")
+
+        assert mock_redis.pipeline.called
+        mock_redis.close.assert_not_called()
+
 
 # ── get_api_calls_30d ───────────────────────────────────────────────────────
 
@@ -146,12 +164,25 @@ class TestGetApiCalls30d:
         mock_get_redis.return_value = mock_redis
         now = datetime.now(timezone.utc)
         stored = {
-            f"api:calls:1:d:{(now - timedelta(days=d)).strftime('%Y-%m-%d')}": str(d + 1)
+            f"api:calls:1:d:{(now - timedelta(days=d)).strftime('%Y-%m-%d')}": str(
+                d + 1
+            )
             for d in range(40)
         }
         mock_redis.mget.side_effect = lambda keys: [stored.get(k) for k in keys]
 
         assert get_api_calls_30d(tenant_id=1) == sum(range(1, 31))
+
+    @patch("hubra.api.metrics._get_redis_client")
+    def test_does_not_close_the_shared_client(self, mock_get_redis):
+        from hubra.api.metrics import get_api_calls_30d
+
+        mock_redis = MagicMock()
+        mock_redis.mget.return_value = [b"1"] * 30
+        mock_get_redis.return_value = mock_redis
+
+        assert get_api_calls_30d(1) == 30
+        mock_redis.close.assert_not_called()
 
     @patch("hubra.api.metrics._get_redis_client")
     def test_handles_redis_exception(self, mock_get_redis):

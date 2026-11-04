@@ -12,7 +12,7 @@ module = Module(
         Blueprint(
             "hubra.api.mail.routes",
             "mail_bp",
-            "/api/v1/mail",
+            "/api/v1/app/mail",
         ),
     ),
     public_endpoints=("mail_bp.mail_health",),

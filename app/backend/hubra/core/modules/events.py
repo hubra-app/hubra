@@ -31,9 +31,15 @@ POLL_PUBLISHED = "poll.published"
 # An event was changed or deleted (event_id; deleted=True when it is gone).
 # A series change sends one per date.
 EVENT_CHANGED = "event.changed"
+# Someone signed up for an event, cancelled, or was approved or declined
+# (event_id).  Places taken changed; nothing else about the event did.
+EVENT_SIGNUPS_CHANGED = "event.signups_changed"
 # Sent once when the reminder before an event / before a poll closes is due.
 EVENT_REMINDER = "event.reminder"
 POLL_CLOSING = "poll.closing"
+# An organiser closed a poll early (poll_id).  A poll that closes on its
+# own at closes_at sends nothing: whoever cares checks closes_at.
+POLL_CLOSED = "poll.closed"
 GROUP_MEMBERSHIP_CHANGED = "group.membership_changed"
 # A person linked or unlinked an outside account (provider, external_id),
 # emitted in each club they are a member of (member_id).

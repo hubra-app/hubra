@@ -12,7 +12,7 @@ module = Module(
         Blueprint(
             "hubra.api.roles.routes",
             "roles_bp",
-            "/api/v1/roles",
+            "/api/v1/app/roles",
         ),
     ),
     nav=(

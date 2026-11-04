@@ -40,7 +40,7 @@ function adapt(b: BackendGroup): Group {
 }
 
 export async function listGroups(): Promise<Group[]> {
-  const data = await apiFetch<BackendGroup[]>("/groups");
+  const data = await apiFetch<BackendGroup[]>("/app/groups");
   return data.map(adapt);
 }
 
@@ -66,7 +66,7 @@ export async function createGroup(input: GroupCreate): Promise<Group> {
   if (input.emailAlias !== undefined) body.email_alias = input.emailAlias;
   if (input.visibility !== undefined) body.visibility = input.visibility;
   if (input.parentGroupId !== undefined) body.parent_group_id = input.parentGroupId;
-  const b = await apiFetch<BackendGroup>("/groups/", {
+  const b = await apiFetch<BackendGroup>("/app/groups/", {
     method: "POST",
     body: JSON.stringify(body),
   });
@@ -100,7 +100,7 @@ export async function updateGroup(
   if (input.emailAlias !== undefined) body.email_alias = input.emailAlias;
   if (input.visibility !== undefined) body.visibility = input.visibility;
   if (input.parentGroupId !== undefined) body.parent_group_id = input.parentGroupId;
-  const b = await apiFetch<BackendGroup>(`/groups/${id}`, {
+  const b = await apiFetch<BackendGroup>(`/app/groups/${id}`, {
     method: "PATCH",
     body: JSON.stringify(body),
   });
@@ -109,7 +109,7 @@ export async function updateGroup(
 }
 
 export async function deleteGroup(id: string): Promise<void> {
-  await apiFetch(`/groups/${id}`, { method: "DELETE" });
+  await apiFetch(`/app/groups/${id}`, { method: "DELETE" });
   clearLookups();
 }
 
@@ -117,14 +117,14 @@ export async function addGroupMember(
   groupId: string,
   memberId: string,
 ): Promise<void> {
-  await apiFetch(`/groups/${groupId}/members/${memberId}`, { method: "POST" });
+  await apiFetch(`/app/groups/${groupId}/members/${memberId}`, { method: "POST" });
 }
 
 export async function removeGroupMember(
   groupId: string,
   memberId: string,
 ): Promise<void> {
-  await apiFetch(`/groups/${groupId}/members/${memberId}`, {
+  await apiFetch(`/app/groups/${groupId}/members/${memberId}`, {
     method: "DELETE",
   });
 }
@@ -141,13 +141,13 @@ export interface JoinableGroup {
 }
 
 export async function listJoinableGroups(): Promise<JoinableGroup[]> {
-  return apiFetch<JoinableGroup[]>("/groups/joinable");
+  return apiFetch<JoinableGroup[]>("/app/groups/joinable");
 }
 
 export async function joinGroup(id: number): Promise<void> {
-  await apiFetch(`/groups/${id}/join`, { method: "POST" });
+  await apiFetch(`/app/groups/${id}/join`, { method: "POST" });
 }
 
 export async function leaveGroup(id: number): Promise<void> {
-  await apiFetch(`/groups/${id}/leave`, { method: "POST" });
+  await apiFetch(`/app/groups/${id}/leave`, { method: "POST" });
 }

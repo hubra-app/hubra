@@ -252,4 +252,4 @@ def install(app) -> None:
         resp.headers["Cache-Control"] = "public, max-age=30"
         return resp, 200
 
-    app.add_url_rule("/api/v1/status", "status_page", _status, methods=["GET"])
+    app.add_url_rule("/api/v1/global/status", "status_page", _status, methods=["GET"])

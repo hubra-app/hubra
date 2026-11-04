@@ -534,13 +534,13 @@ def install(app) -> None:
 
     # Both may add the default plans on a new database (ensure_defaults):
     # commit, or the request leaves its transaction open with the rows.
-    @app.get("/api/v1/public/pricing")
+    @app.get("/api/v1/global/public/pricing")
     def public_pricing_view():
         body = public_pricing()
         db.session.commit()
         return _public(jsonify(body))
 
-    @app.get("/api/v1/public/plugins")
+    @app.get("/api/v1/global/public/plugins")
     def public_plugins_view():
         body = {"plugins": public_plugins()}
         db.session.commit()

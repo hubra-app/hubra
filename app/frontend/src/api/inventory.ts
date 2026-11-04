@@ -81,7 +81,7 @@ export async function listInventory(
   if (params.status) qs.set("status", params.status);
   if (params.visibility) qs.set("visibility", params.visibility);
   const suffix = qs.toString() ? `?${qs}` : "";
-  const data = await apiFetch<BackendInventoryItem[]>(`/inventory/${suffix}`);
+  const data = await apiFetch<BackendInventoryItem[]>(`/app/inventory/${suffix}`);
   return data.map(adapt);
 }
 
@@ -116,7 +116,7 @@ export async function createInventoryItem(
   if (input.instructionRequired !== undefined)
     body.instruction_required = input.instructionRequired;
 
-  const b = await apiFetch<BackendInventoryItem>("/inventory/", {
+  const b = await apiFetch<BackendInventoryItem>("/app/inventory/", {
     method: "POST",
     body: JSON.stringify(body),
   });
@@ -142,7 +142,7 @@ export async function updateInventoryItem(
   if (input.instructionRequired !== undefined)
     body.instruction_required = input.instructionRequired;
 
-  const b = await apiFetch<BackendInventoryItem>(`/inventory/${id}`, {
+  const b = await apiFetch<BackendInventoryItem>(`/app/inventory/${id}`, {
     method: "PATCH",
     body: JSON.stringify(body),
   });
@@ -150,14 +150,14 @@ export async function updateInventoryItem(
 }
 
 export async function deleteInventoryItem(id: string): Promise<void> {
-  await apiFetch(`/inventory/${id}`, { method: "DELETE" });
+  await apiFetch(`/app/inventory/${id}`, { method: "DELETE" });
 }
 
 export async function addInstruction(
   itemId: string,
   memberId: number,
 ): Promise<void> {
-  await apiFetch(`/inventory/${itemId}/instructions/${memberId}`, {
+  await apiFetch(`/app/inventory/${itemId}/instructions/${memberId}`, {
     method: "POST",
   });
 }
@@ -166,13 +166,13 @@ export async function removeInstruction(
   itemId: string,
   memberId: number,
 ): Promise<void> {
-  await apiFetch(`/inventory/${itemId}/instructions/${memberId}`, {
+  await apiFetch(`/app/inventory/${itemId}/instructions/${memberId}`, {
     method: "DELETE",
   });
 }
 
 export async function addSelfInstruction(itemId: string): Promise<void> {
-  await apiFetch(`/inventory/${itemId}/instructions/self`, { method: "POST" });
+  await apiFetch(`/app/inventory/${itemId}/instructions/self`, { method: "POST" });
 }
 
 export interface InventoryCheckout {

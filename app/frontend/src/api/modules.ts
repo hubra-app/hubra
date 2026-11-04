@@ -57,11 +57,11 @@ export interface ModulePlugin {
 }
 
 export async function getModules(): Promise<ModuleInfo[]> {
-  return apiFetch<ModuleInfo[]>('/modules/')
+  return apiFetch<ModuleInfo[]>('/app/modules/')
 }
 
 export async function setModuleEnabled(code: string, enabled: boolean): Promise<ModuleInfo> {
-  return apiFetch<ModuleInfo>(`/modules/${code}`, {
+  return apiFetch<ModuleInfo>(`/app/modules/${code}`, {
     method: 'PUT',
     body: JSON.stringify({ enabled }),
   })
@@ -71,7 +71,7 @@ export async function saveModuleSettings(
   code: string,
   config: Record<string, unknown>,
 ): Promise<ModuleInfo> {
-  return apiFetch<ModuleInfo>(`/modules/${code}/settings`, {
+  return apiFetch<ModuleInfo>(`/app/modules/${code}/settings`, {
     method: 'PUT',
     body: JSON.stringify({ config }),
   })
