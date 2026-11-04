@@ -108,6 +108,16 @@ module = Module(
             "/api/v1/manager/support",
         ),
         Blueprint(
+            "hubra.api.api_tokens.routes",
+            "api_tokens_bp",
+            "/api/v1/api-tokens",
+        ),
+        Blueprint(
+            "hubra.api.api_tokens.routes",
+            "platform_api_tokens_bp",
+            "/api/v1/manager/api-tokens",
+        ),
+        Blueprint(
             "hubra.api.backups.routes",
             "platform_backups_bp",
             "/api/v1/manager/platform/backups",
