@@ -678,6 +678,7 @@
   "events": {
     "addEvent": "Add Event",
     "addOption": "Add Option",
+    "attended": "Attended",
     "attendees": "Attendees",
     "author": "Author",
     "comingSoonDesc": "Event planning and RSVPs are in progress.",
@@ -705,6 +706,12 @@
     "eventTitle": "Title",
     "eventTitlePlaceholder": "e.g. Woodshop basics",
     "eventUpdatedMsg": "{{title}} has been updated.",
+    "filter": {
+      "past": "Past",
+      "type": "Type",
+      "upcoming": "Upcoming",
+      "when": "When"
+    },
     "join": "Join",
     "joined": "Joined event",
     "leave": "Leave",
@@ -713,6 +720,7 @@
     "locationPlaceholder": "e.g. Woodshop",
     "noEvents": "No events found.",
     "noLocation": "No location",
+    "over": "Over",
     "poll": {
       "deleted": "Poll deleted.",
       "options": "Options",
@@ -923,6 +931,8 @@
       "issued": "Issued",
       "notFound": "Invoice not found",
       "number": "Invoice number",
+      "numberShort": "No.",
+      "pageTitle": "Invoice no. {{n}}",
       "paid": "Invoice paid.",
       "period": "Period"
     },

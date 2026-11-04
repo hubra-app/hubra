@@ -678,6 +678,7 @@
   "events": {
     "addEvent": "Anlass hinzufügen",
     "addOption": "Option hinzufügen",
+    "attended": "Teilgenommen",
     "attendees": "Teilnehmende",
     "author": "Verfasst von",
     "comingSoonDesc": "Planung und Anmeldungen für Anlässe sind in Arbeit.",
@@ -705,6 +706,12 @@
     "eventTitle": "Titel",
     "eventTitlePlaceholder": "z. B. Einführung Holzwerkstatt",
     "eventUpdatedMsg": "{{title}} wurde gespeichert.",
+    "filter": {
+      "past": "Vergangene",
+      "type": "Typ",
+      "upcoming": "Kommende",
+      "when": "Zeitraum"
+    },
     "join": "Teilnehmen",
     "joined": "Angemeldet",
     "leave": "Abmelden",
@@ -713,6 +720,7 @@
     "locationPlaceholder": "z. B. Holzwerkstatt",
     "noEvents": "Keine Anlässe gefunden.",
     "noLocation": "Kein Ort",
+    "over": "Vorbei",
     "poll": {
       "deleted": "Umfrage gelöscht.",
       "options": "Optionen",
@@ -923,6 +931,8 @@
       "issued": "Ausgestellt",
       "notFound": "Rechnung nicht gefunden",
       "number": "Rechnungsnummer",
+      "numberShort": "Nr.",
+      "pageTitle": "Rechnung Nr. {{n}}",
       "paid": "Rechnung bezahlt.",
       "period": "Zeitraum"
     },
