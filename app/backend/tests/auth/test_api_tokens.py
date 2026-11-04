@@ -509,6 +509,10 @@ def test_route_walk_never_routes_refuse_every_token_kind(app):
         if rule.endpoint == "static":
             continue
         view = app.view_functions[rule.endpoint]
+        if getattr(view, "_token_self", False):
+            # "Which token is this?": GET only, checked in test_token_self_*.
+            assert (rule.methods or set()) <= {"GET", "HEAD", "OPTIONS"}, rule.rule
+            continue
         blueprint = rule.endpoint.rsplit(".", 1)[0] if "." in rule.endpoint else ""
         never = (
             blueprint in _NEVER_BLUEPRINTS
@@ -612,3 +616,76 @@ def test_edit_narrows_without_step_up_and_widens_with_it(app, db, made):
     with patch.dict(app.config, {"STEP_UP_ENFORCED": True}):
         narrow = owner.patch(path, json={"scopes": [READ]})
     assert narrow.status_code == 200 and narrow.get_json()["scopes"] == [READ]
+
+
+# ── "Which token is this?" and the club's AI switch ─────────────────────────
+
+
+def test_token_self_answers_for_a_club_token(app, made):
+    c = app.test_client()
+    resp = c.get("/api/v1/app/api-tokens/self", headers=_bearer(made["token"]))
+    assert resp.status_code == 200, resp.get_json()
+    body = resp.get_json()
+    assert body["kind"] == "member"
+    assert body["scopes"] == [READ]
+    assert body["club"]["slug"] == "tenant-a"
+    assert body["aiAllowed"] is False
+    assert "lastUsedIp" not in body and "token" not in body
+    # The other side's self route refuses it.
+    resp = c.get("/api/v1/platform/api-tokens/self", headers=_bearer(made["token"]))
+    assert resp.status_code == 403
+
+
+def test_token_self_answers_for_a_platform_token(app, platform_token):
+    c = app.test_client()
+    resp = c.get("/api/v1/platform/api-tokens/self", headers=_bearer(platform_token))
+    assert resp.status_code == 200, resp.get_json()
+    assert resp.get_json()["kind"] == "platform"
+    assert resp.get_json()["club"] is None
+    resp = c.get("/api/v1/app/api-tokens/self", headers=_bearer(platform_token))
+    assert resp.status_code == 403
+
+
+def test_token_self_needs_a_token(app, made):
+    c = app.test_client()
+    _sign_in(c)
+    resp = c.get("/api/v1/app/api-tokens/self")
+    assert resp.status_code == 401
+
+
+def test_ai_client_needs_the_club_switch(app, db, made):
+    c = app.test_client()
+    mcp = _bearer(made["token"], **{"X-Hubra-Client": "mcp"})
+    resp = c.get("/api/v1/events/", headers=mcp)
+    assert resp.status_code == 403
+    assert resp.get_json()["error"] == "API_TOKEN_AI_OFF"
+    # "Which token is this?" still answers, so the connector can say why.
+    resp = c.get("/api/v1/app/api-tokens/self", headers=mcp)
+    assert resp.status_code == 200
+    assert resp.get_json()["aiAllowed"] is False
+    # The same token without the connector header still works.
+    assert c.get("/api/v1/events/", headers=_bearer(made["token"])).status_code == 200
+
+    admin = app.test_client()
+    _sign_in(admin)
+    resp = admin.put("/api/v1/app/api-tokens/settings", json={"aiAllowed": True})
+    assert resp.status_code == 200, resp.get_json()
+    assert resp.get_json() == {"membersAllowed": False, "aiAllowed": True}
+    assert admin.get("/api/v1/app/api-tokens/scopes").get_json()["aiAllowed"] is True
+    actions = [e.action for e in db.session.query(AuditEntry).all()]
+    assert "api_token.ai_on" in actions
+    assert c.get("/api/v1/events/", headers=mcp).status_code == 200
+
+
+def test_ai_switch_does_not_touch_platform_tokens(app, platform_token):
+    c = app.test_client()
+    headers = _bearer(platform_token, **{"X-Hubra-Client": "mcp"})
+    assert c.get("/api/v1/platform/health", headers=headers).status_code == 200
+
+
+def test_settings_validates_switches(app, made):
+    admin = app.test_client()
+    _sign_in(admin)
+    assert admin.put("/api/v1/app/api-tokens/settings", json={}).status_code == 400
+    resp = admin.put("/api/v1/app/api-tokens/settings", json={"aiAllowed": "yes"})
+    assert resp.status_code == 400

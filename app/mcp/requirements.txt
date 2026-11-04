@@ -1,0 +1,5 @@
+# The Claude connector (docs/mcp.md). requirements.lock pins these with
+# hashes: uv pip compile requirements.txt --generate-hashes --python-version 3.13 -o requirements.lock
+mcp==2.3.0
+httpx>=0.28,<1
+uvicorn>=0.34,<1

@@ -26,6 +26,7 @@ resources:
   - global-backend.yaml
   - platform-backend.yaml
   - frontends.yaml
+  - mcp.yaml
   - ingress.yaml
 
 # settings.yaml from the repo root; a change rolls the backend pods.
@@ -70,4 +71,7 @@ images:
     newTag: latest
   - name: hubra/sso-frontend
     newName: ghcr.io/hubra-app/hubra/sso-frontend
+    newTag: latest
+  - name: hubra/mcp
+    newName: ghcr.io/hubra-app/hubra/mcp
     newTag: latest
