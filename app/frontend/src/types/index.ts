@@ -171,6 +171,8 @@ export interface Poll {
   createdById?: string;
   isRequired?: boolean;
   allowProxy?: boolean;
+  /** Closes once everyone it is for has voted (Umlaufbeschluss). */
+  autoClose?: boolean;
   requiredGroupIds?: number[];
   requiredFunctionIds?: number[];
   /** Option index the signed-in member chose; absent until they vote. */

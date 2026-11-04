@@ -3502,5 +3502,13 @@
   "backupKey.clubOnly.slug": "Zur Bestätigung den Kurznamen des Vereins eingeben: {{slug}}",
   "backupKey.clubOnly.turnOn": "Nur unseren Schlüssel verwenden",
   "settings.modules.onCount": "{{count}} von {{total}} eingeschaltet",
-  "settings.modules.title": "Module"
+  "settings.modules.title": "Module",
+  "polls.resolutionBadge": "Umlaufbeschluss",
+  "polls.resolutionHint": "Ein Beschluss des Vorstands auf dem Zirkularweg? Die Vorlage setzt Ja, Nein und Enthaltung, macht die Umfrage zur Pflicht und schliesst sie, sobald alle abgestimmt haben.",
+  "polls.resolutionYes": "Ja",
+  "polls.resolutionNo": "Nein",
+  "polls.resolutionAbstain": "Enthaltung",
+  "polls.resolutionTemplate": "Als Umlaufbeschluss",
+  "polls.autoClose": "Schliessen, sobald alle abgestimmt haben",
+  "polls.autoCloseHint": "Für die gewählten Gruppen und Funktionen. Das Ergebnis steht dann gleich fest, auch vor dem Enddatum."
 }

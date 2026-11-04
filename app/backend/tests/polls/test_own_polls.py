@@ -62,3 +62,34 @@ def test_an_open_poll_takes_every_vote(client, people):
     _login(client, "olaf@test.ch")
     assert client.get("/api/v1/polls/").get_json()[0]["may_vote"] is True
     assert client.post(f"/api/v1/polls/{poll}/vote", json={"option_index": 1}).status_code == 200
+
+
+def test_a_circular_resolution_closes_once_everyone_voted(client, people, db):
+    """Umlaufbeschluss: required for the board, closes with the last vote."""
+    from hubra.core.models.group import Group
+    from hubra.core.models.member import Member
+
+    board = db.session.get(Group, people["board"])
+    board.members.append(db.session.get(Member, people["asker"].id))
+    db.session.commit()
+    _login(client, "anna@test.ch")
+    poll = _ask(
+        client,
+        is_required=True,
+        auto_close=True,
+        required_group_ids=[people["board"]],
+    )
+    assert client.get(f"/api/v1/polls/{poll}").get_json()["auto_close"] is True
+    assert client.post(f"/api/v1/polls/{poll}/vote", json={"option_index": 0}).status_code == 200
+    assert client.get(f"/api/v1/polls/{poll}").get_json()["status"] == "open"
+    _login(client, "ines@test.ch")
+    assert client.post(f"/api/v1/polls/{poll}/vote", json={"option_index": 1}).status_code == 200
+    assert client.get(f"/api/v1/polls/{poll}").get_json()["status"] == "closed"
+
+
+def test_auto_close_needs_named_voters(client, people):
+    """A poll for everyone stays open: who 'everyone' is keeps changing."""
+    _login(client, "anna@test.ch")
+    poll = _ask(client, auto_close=True)
+    assert client.post(f"/api/v1/polls/{poll}/vote", json={"option_index": 0}).status_code == 200
+    assert client.get(f"/api/v1/polls/{poll}").get_json()["status"] == "open"

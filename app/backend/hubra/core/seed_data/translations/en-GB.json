@@ -3502,5 +3502,13 @@
   "backupKey.clubOnly.slug": "To confirm, type the club's short name: {{slug}}",
   "backupKey.clubOnly.turnOn": "Use only our key",
   "settings.modules.onCount": "{{count}} of {{total}} on",
-  "settings.modules.title": "Modules"
+  "settings.modules.title": "Modules",
+  "polls.resolutionBadge": "Circular resolution",
+  "polls.resolutionHint": "A board decision by circulation? The template sets Yes, No and Abstain, makes the poll required and closes it once everyone has voted.",
+  "polls.resolutionYes": "Yes",
+  "polls.resolutionNo": "No",
+  "polls.resolutionAbstain": "Abstain",
+  "polls.resolutionTemplate": "As a circular resolution",
+  "polls.autoClose": "Close once everyone has voted",
+  "polls.autoCloseHint": "For the groups and functions picked. The result is then final right away, even before the end date."
 }

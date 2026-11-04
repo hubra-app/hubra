@@ -2126,7 +2126,15 @@
     "statusOpen": "Open",
     "statusClosed": "Closed",
     "linkedOne": "You are looking at the poll from your notification.",
-    "linkedGone": "This poll no longer exists."
+    "linkedGone": "This poll no longer exists.",
+    "resolutionBadge": "Circular resolution",
+    "resolutionHint": "A board decision by circulation? The template sets Yes, No and Abstain, makes the poll required and closes it once everyone has voted.",
+    "resolutionYes": "Yes",
+    "resolutionNo": "No",
+    "resolutionAbstain": "Abstain",
+    "resolutionTemplate": "As a circular resolution",
+    "autoClose": "Close once everyone has voted",
+    "autoCloseHint": "For the groups and functions picked. The result is then final right away, even before the end date."
   },
   "posts": {
     "backToPosts": "Back to posts",

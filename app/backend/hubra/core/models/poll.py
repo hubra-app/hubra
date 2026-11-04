@@ -35,6 +35,11 @@ class Poll(db.Model):
     max_proxies_per_member: Mapped[int] = mapped_column(
         db.Integer, default=1, server_default="1", nullable=False
     )
+    # Circular resolution (Umlaufbeschluss): the poll closes by itself once
+    # everyone it is for (its groups and functions) has voted.
+    auto_close: Mapped[bool] = mapped_column(
+        db.Boolean, default=False, server_default=sa.false(), nullable=False
+    )
     # When the reminder before closing went out; cleared when closes_at
     # changes.
     reminder_sent_at: Mapped[datetime | None] = mapped_column(
