@@ -499,46 +499,31 @@ export function InvoicesTab() {
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder={t('finance.searchInvoices', 'Rechnungen suchen …')}
-        filters={[
+        filterGroups={[
           {
-            label: t('common.all', 'Alle'),
-            value: 'all',
-            active: statusFilter === 'All',
-            onClick: () => setStatusFilter('All'),
+            key: 'status',
+            label: t('common.status', 'Status'),
+            value: statusFilter,
+            defaultValue: 'All',
+            options: [
+              { value: 'All', label: t('common.all', 'Alle') },
+              { value: 'Open', label: t('finance.invoiceFilter.open', 'Offen') },
+              { value: 'Paid', label: t('finance.invoiceFilter.paid', 'Bezahlt') },
+              { value: 'Overdue', label: t('finance.invoiceFilter.overdue', 'Überfällig') },
+            ],
+            onChange: setStatusFilter,
           },
           {
-            label: t('finance.invoiceFilter.open', 'Offen'),
-            value: 'open',
-            active: statusFilter === 'Open',
-            onClick: () => setStatusFilter('Open'),
-          },
-          {
-            label: t('finance.invoiceFilter.paid', 'Bezahlt'),
-            value: 'paid',
-            active: statusFilter === 'Paid',
-            onClick: () => setStatusFilter('Paid'),
-          },
-          {
-            label: t('finance.invoiceFilter.overdue', 'Überfällig'),
-            value: 'overdue',
-            active: statusFilter === 'Overdue',
-            onClick: () => setStatusFilter('Overdue'),
-          },
-          {
-            label: t('finance.purpose.membership', 'Mitgliedschaft'),
-            value: 'purpose-membership',
-            active: purposeFilter === 'membership',
-            onClick: () =>
-              setPurposeFilter(
-                purposeFilter === 'membership' ? 'All' : 'membership',
-              ),
-          },
-          {
-            label: t('finance.purpose.other', 'Anderes'),
-            value: 'purpose-other',
-            active: purposeFilter === 'other',
-            onClick: () =>
-              setPurposeFilter(purposeFilter === 'other' ? 'All' : 'other'),
+            key: 'purpose',
+            label: t('finance.purposeLabel', 'Zweck'),
+            value: purposeFilter,
+            defaultValue: 'All',
+            options: [
+              { value: 'All', label: t('common.all', 'Alle') },
+              { value: 'membership', label: t('finance.purpose.membership', 'Mitgliedschaft') },
+              { value: 'other', label: t('finance.purpose.other', 'Anderes') },
+            ],
+            onChange: setPurposeFilter,
           },
         ]}
         page={pg.page}

@@ -1,11 +1,11 @@
 import { categoryColors } from '@hubra/ui'
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Table, Button, Group, Paper, TextInput, Badge } from '@mantine/core'
+import { Button, Group, Paper, TextInput, Badge } from '@mantine/core'
 import { useT } from '@/locales/i18n'
 import { IconPlus, IconTrash, IconPencil, IconLock } from '@tabler/icons-react'
 import { useToast, useAuth } from '@/context/AppContext'
-import { Modal, Field, ConfirmModal, EmptyState } from '@/components/ui'
+import { Modal, Field, ConfirmModal, EmptyState, SimpleList } from '@/components/ui'
 import type { TransactionCategory } from '@/types'
 import {
   listTxCategories,
@@ -216,148 +216,74 @@ export function TransactionCategoriesTab() {
           </Group>
         </Paper>
       ) : (
-        <Paper withBorder>
-          <div style={{ overflowX: 'auto' }}>
-            <Table highlightOnHover className="responsive-table">
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>{t('finance.categoryLabel', 'Kategorie')}</Table.Th>
-                  <Table.Th>{t('common.type', 'Typ')}</Table.Th>
-                  <Table.Th style={{ width: 80 }}></Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {loading ? (
-                  <Table.Tr>
-                    <Table.Td
-                      colSpan={3}
-                      style={{
-                        textAlign: 'center',
-                        color: 'var(--hb-text-3)',
-                        padding: '24px',
-                        fontSize: 'var(--mantine-font-size-sm)',
-                      }}
+        <SimpleList
+          items={cats}
+          loading={loading}
+          emptyMessage={t('finance.noCategories', 'Noch keine Kategorien.')}
+          getKey={(c) => c.id}
+          row={(c) => ({
+            leading: (
+              <span
+                style={{ width: 12, height: 12, borderRadius: 3, background: c.color }}
+                aria-hidden
+              />
+            ),
+            title: c.name,
+            meta: c.isDefault ? (
+              <Badge variant="light" color="acc" radius="xl" style={{ fontSize: 'var(--mantine-font-size-xs)' }}>
+                {t('finance.category.default', 'Standard')}
+              </Badge>
+            ) : (
+              <span style={{ fontSize: 'var(--mantine-font-size-xs)', color: 'var(--hb-text-3)' }}>
+                {t('finance.category.custom', 'Eigene')}
+              </span>
+            ),
+            actions:
+              canUpdate || canDelete ? (
+                <>
+                  {canUpdate && (
+                    <Button
+                      size="sm"
+                      variant="subtle"
+                      onClick={() => openEdit(c)}
+                      disabled={c.isDefault}
+                      aria-label={t('common.edit', 'Bearbeiten')}
+                      title={
+                        c.isDefault
+                          ? t('finance.defaultCannotEdit', 'Standardkategorien können nicht bearbeitet werden')
+                          : t('common.edit', 'Bearbeiten')
+                      }
                     >
-                      {t('finance.loading', 'Wird geladen …')}
-                    </Table.Td>
-                  </Table.Tr>
-                ) : cats.length === 0 ? (
-                  <Table.Tr>
-                    <Table.Td
-                      colSpan={3}
-                      style={{
-                        textAlign: 'center',
-                        color: 'var(--hb-text-3)',
-                        padding: '24px',
-                        fontSize: 'var(--mantine-font-size-sm)',
+                      {c.isDefault ? (
+                        <IconLock size={16} style={{ color: 'var(--hb-text-3)' }} />
+                      ) : (
+                        <IconPencil size={16} />
+                      )}
+                    </Button>
+                  )}
+                  {canDelete && (
+                    <Button
+                      size="sm"
+                      variant="subtle"
+                      style={{ color: c.isDefault ? 'var(--hb-text-3)' : 'var(--mantine-color-red-text)' }}
+                      onClick={() => {
+                        if (!c.isDefault) setDeleteTarget(c)
                       }}
+                      disabled={c.isDefault}
+                      aria-label={t('common.delete', 'Löschen')}
+                      title={
+                        c.isDefault
+                          ? t('finance.defaultCannotDelete', 'Standardkategorien können nicht gelöscht werden')
+                          : t('common.delete', 'Löschen')
+                      }
                     >
-                      {t('finance.noCategories', 'Noch keine Kategorien.')}
-                    </Table.Td>
-                  </Table.Tr>
-                ) : (
-                  cats.map((c) => (
-                    <Table.Tr key={c.id}>
-                      <Table.Td data-label={t('finance.categoryLabel', 'Kategorie')}>
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 10,
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: 12,
-                              height: 12,
-                              borderRadius: 3,
-                              background: c.color,
-                              flexShrink: 0,
-                            }}
-                          />
-                          <span style={{ fontWeight: 500 }}>{c.name}</span>
-                        </div>
-                      </Table.Td>
-                      <Table.Td data-label={t('common.type', 'Typ')}>
-                        {c.isDefault ? (
-                          <Badge
-                            variant="light"
-                            color="acc"
-                            radius="xl"
-                            style={{ fontSize: 'var(--mantine-font-size-xs)' }}
-                          >
-                            {t('finance.category.default', 'Standard')}
-                          </Badge>
-                        ) : (
-                          <span
-                            style={{
-                              fontSize: 'var(--mantine-font-size-xs)',
-                              color: 'var(--hb-text-3)',
-                            }}
-                          >
-                            {t('finance.category.custom', 'Eigene')}
-                          </span>
-                        )}
-                      </Table.Td>
-                      <Table.Td data-label="">
-                        <div style={{ display: 'flex', gap: 4 }}>
-                          {canUpdate && (
-                            <Button
-                              size="sm"
-                              variant="subtle"
-                              onClick={() => openEdit(c)}
-                              disabled={c.isDefault}
-                              title={
-                                c.isDefault
-                                  ? t(
-                                      'finance.defaultCannotEdit',
-                                      'Standardkategorien können nicht bearbeitet werden',
-                                    )
-                                  : undefined
-                              }
-                            >
-                              {c.isDefault ? (
-                                <IconLock
-                                  size={16}
-                                  style={{ color: 'var(--hb-text-3)' }}
-                                />
-                              ) : (
-                                <IconPencil size={16} />
-                              )}
-                            </Button>
-                          )}
-                          {canDelete && (
-                            <Button
-                              size="sm"
-                              variant="subtle"
-                              style={{
-                                color: c.isDefault ? 'var(--hb-text-3)' : 'var(--mantine-color-red-text)',
-                              }}
-                              onClick={() => {
-                                if (!c.isDefault) setDeleteTarget(c)
-                              }}
-                              disabled={c.isDefault}
-                              title={
-                                c.isDefault
-                                  ? t(
-                                      'finance.defaultCannotDelete',
-                                      'Standardkategorien können nicht gelöscht werden',
-                                    )
-                                  : undefined
-                              }
-                            >
-                              <IconTrash size={16} />
-                            </Button>
-                          )}
-                        </div>
-                      </Table.Td>
-                    </Table.Tr>
-                  ))
-                )}
-              </Table.Tbody>
-            </Table>
-          </div>
-        </Paper>
+                      <IconTrash size={16} />
+                    </Button>
+                  )}
+                </>
+              ) : undefined,
+          })}
+        />
       )}
 
       <Modal

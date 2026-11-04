@@ -4,18 +4,15 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   Table,
-  TextInput,
   Paper,
   Badge,
   Button,
   Group,
   Text,
-  Select,
   Tooltip,
   UnstyledButton,
 } from '@mantine/core'
 import {
-  IconSearch,
   IconPlus,
   IconChevronDown,
   IconChevronUp,
@@ -32,6 +29,7 @@ import { EmptyState, Pagination } from '@/components/ui'
 import { CreateTenantModal } from '@/screens/CreateTenantModal'
 import { useAdmin } from '@/context/AdminContext'
 import { useLang } from '@/lang'
+import { FilterBar } from '@/components/FilterBar'
 import { planLabel, statusLabel } from '@/labels'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -209,54 +207,51 @@ export function TenantsTab() {
   return (
     <div>
       <Group justify="space-between" mb="md" gap="sm" wrap="wrap">
-        <Group gap="sm" wrap="wrap" style={{ flex: 1 }}>
-          <TextInput
-            leftSection={<IconSearch size={16} />}
-            placeholder={tr('Vereine suchen …', 'Search clubs…')}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value)
+        <div style={{ flex: '1 1 320px', minWidth: 0 }}>
+          <FilterBar
+            search={search}
+            onSearchChange={(v) => {
+              setSearch(v)
               setPage(1)
             }}
-            style={{ flex: '1 1 220px', maxWidth: 320 }}
-          />
-          <Select
-            aria-label={tr('Plan', 'Plan')}
-            value={planFilter}
-            onChange={(v) => {
-              setPlanFilter(v ?? 'all')
-              setPage(1)
-            }}
-            allowDeselect={false}
-            data={[
-              { value: 'all', label: tr('Alle Pläne', 'All plans') },
-              ...(planChoices?.plans.map((p) => p.key) ?? ['starter', 'growth', 'enterprise']).map(
-                (p) => ({
-                  value: p,
-                  label: planLabel(p, tr),
-                }),
-              ),
+            searchPlaceholder={tr('Vereine suchen …', 'Search clubs…')}
+            groups={[
+              {
+                key: 'plan',
+                label: tr('Plan', 'Plan'),
+                value: planFilter,
+                defaultValue: 'all',
+                options: [
+                  { value: 'all', label: tr('Alle Pläne', 'All plans') },
+                  ...(
+                    planChoices?.plans.map((p) => p.key) ?? ['starter', 'growth', 'enterprise']
+                  ).map((p) => ({ value: p, label: planLabel(p, tr) })),
+                ],
+                onChange: (v) => {
+                  setPlanFilter(v)
+                  setPage(1)
+                },
+              },
+              {
+                key: 'status',
+                label: tr('Status', 'Status'),
+                value: statusFilter,
+                defaultValue: 'all',
+                options: [
+                  { value: 'all', label: tr('Alle Status', 'All statuses') },
+                  ...['active', 'suspended', 'archived'].map((st) => ({
+                    value: st,
+                    label: statusLabel(st, tr),
+                  })),
+                ],
+                onChange: (v) => {
+                  setStatusFilter(v)
+                  setPage(1)
+                },
+              },
             ]}
-            w={160}
           />
-          <Select
-            aria-label={tr('Status', 'Status')}
-            value={statusFilter}
-            onChange={(v) => {
-              setStatusFilter(v ?? 'all')
-              setPage(1)
-            }}
-            allowDeselect={false}
-            data={[
-              { value: 'all', label: tr('Alle Status', 'All statuses') },
-              ...['active', 'suspended', 'archived'].map((st) => ({
-                value: st,
-                label: statusLabel(st, tr),
-              })),
-            ]}
-            w={160}
-          />
-        </Group>
+        </div>
         {isSuperadmin ? (
           <Button leftSection={<IconPlus size={16} />} onClick={() => setCreateOpen(true)}>
             {tr('Verein erstellen', 'Create club')}
