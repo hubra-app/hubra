@@ -57,7 +57,7 @@ def test_seed_global_rbac_creates_permissions_and_roles(db):
     assert perm_count == 18, f"Expected 18 permissions, got {perm_count}"
 
     role_count = db.session.query(GlobalRole).count()
-    assert role_count == 4, f"Expected 4 roles, got {role_count}"
+    assert role_count == 5, f"Expected 5 roles, got {role_count}"
 
     superadmin = db.session.scalar(
         select(GlobalRole).where(GlobalRole.name == "Platform admin")
@@ -87,7 +87,7 @@ def test_seed_global_rbac_is_idempotent(db):
     seed_global_rbac()
 
     assert db.session.query(GlobalPermission).count() == 18
-    assert db.session.query(GlobalRole).count() == 4
+    assert db.session.query(GlobalRole).count() == 5
 
 
 # ── Permission decorator tests ────────────────────────────────────────────────
