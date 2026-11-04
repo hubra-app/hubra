@@ -51,7 +51,7 @@ ALL = PLATFORM | CLUB
 class HubraMCP(MCPServer):
     """Lists only the tools that fit the connection's token."""
 
-    async def _handle_list_tools(self, ctx, params):  # noqa: ANN001
+    async def _handle_list_tools(self, ctx, params):
         kind = token_kind(bearer(getattr(ctx.request, "headers", None)))
         tools = await self.list_tools()
         return ListToolsResult(tools=[t for t in tools if kind in _KINDS.get(t.name, ALL)])
@@ -258,7 +258,7 @@ async def club_members(
     group: Annotated[str, Field(description="Group name")] = "",
     tier: Annotated[str, Field(description="Membership tier name")] = "",
     page: Page = 1,
-    pageSize: PageSize = 25,  # noqa: N803 (the API's name)
+    pageSize: PageSize = 25,
 ) -> str:
     """Members of the club (paged)."""
     return await _read(
@@ -279,7 +279,7 @@ async def club_events(
     from_date: IsoDate = "",
     to_date: IsoDate = "",
     category: str = "",
-    type: Annotated[str, Field(description="Event type, e.g. Training, Social")] = "",  # noqa: A002
+    type: Annotated[str, Field(description="Event type, e.g. Training, Social")] = "",
 ) -> str:
     """Club events and trainings in a date range."""
     return await _read(
@@ -320,7 +320,7 @@ async def club_invoices(
     status: Annotated[str, Field(description="e.g. open, paid, overdue, cancelled")] = "",
     member: Annotated[str, Field(description="Recipient name")] = "",
     page: Page = 1,
-    pageSize: PageSize = 25,  # noqa: N803
+    pageSize: PageSize = 25,
 ) -> str:
     """Invoices (paged), e.g. the open ones."""
     return await _read(
@@ -339,12 +339,12 @@ async def club_finance_summary(ctx: Context, from_date: IsoDate = "", to_date: I
 async def club_transactions(
     ctx: Context,
     search: str = "",
-    type: Annotated[str, Field(description="income or expense")] = "",  # noqa: A002
+    type: Annotated[str, Field(description="income or expense")] = "",
     category: str = "",
     from_date: IsoDate = "",
     to_date: IsoDate = "",
     page: Page = 1,
-    pageSize: PageSize = 25,  # noqa: N803
+    pageSize: PageSize = 25,
 ) -> str:
     """Booked transactions (paged)."""
     return await _read(
@@ -374,7 +374,7 @@ async def club_audit(
     from_date: IsoDate = "",
     to_date: IsoDate = "",
     page: Page = 1,
-    pageSize: Annotated[int, Field(ge=1, le=200)] = 50,  # noqa: N803
+    pageSize: Annotated[int, Field(ge=1, le=200)] = 50,
 ) -> str:
     """Who changed what in the club (paged)."""
     return await _read(
@@ -420,7 +420,7 @@ def _hosts() -> list[str]:
 
 
 @mcp.custom_route("/healthz", methods=["GET"], include_in_schema=False)
-async def healthz(request):  # noqa: ANN001, ARG001
+async def healthz(request):
     return JSONResponse({"status": "ok", "version": __version__})
 
 
@@ -441,7 +441,7 @@ def create_app() -> ASGIApp:
     inner_lifespan = app.router.lifespan_context
 
     @contextlib.asynccontextmanager
-    async def lifespan(a):  # noqa: ANN001
+    async def lifespan(a):
         async with inner_lifespan(a) as state:
             try:
                 yield state
@@ -458,7 +458,7 @@ def main() -> None:
 
     uvicorn.run(
         create_app(),
-        host=os.environ.get("MCP_HOST", "0.0.0.0"),  # noqa: S104 (in a container)
+        host=os.environ.get("MCP_HOST", "0.0.0.0"),
         port=int(os.environ.get("MCP_PORT", "8000")),
         # The peer address stays the real one; see _forwarded_for.
         proxy_headers=False,

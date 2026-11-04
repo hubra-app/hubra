@@ -234,7 +234,7 @@ jobs:
           cache: pip
           cache-dependency-path: app/mcp/requirements.lock
       - run: pip install --no-deps --require-hashes -r requirements.lock
-      - run: pip install pytest ruff
+      - run: pip install pytest ruff==0.15.17
       - run: ruff check . --line-length 100
       - run: pytest -q
 
