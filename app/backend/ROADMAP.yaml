@@ -1,11 +1,16 @@
 # Hubra roadmap
 #
-# Shown in the club app (Neuigkeiten › Roadmap) and in manage (Neuigkeiten ›
-# Roadmap), served by GET /api/v1/version/roadmap. Edit this file and deploy;
-# no migration needed.
+# The planned half of the one public roadmap. The other half are the ideas
+# from the clubs that staff put on it in manage › Meldungen & Ideen. Shown in
+# the club app (Neuigkeiten › Roadmap, Meldungen und Ideen › Roadmap), on SSO
+# /roadmap, on hubra.club/roadmap/ and in manage, served by
+# GET /api/v1/global/version/roadmap (same list: /global/roadmap). People vote
+# for "next" and "later" items; an idea linked to an item (manage › idea ›
+# "Teil eines geplanten Eintrags") counts its votes for it. Edit this file and
+# deploy; no migration needed.
 #
 # Each item:
-#   id:       stable slug, never reused (feature requests can point at it)
+#   id:       stable slug, never reused (votes and linked ideas point at it)
 #   status:   now | next | later | done
 #   area:     optional short label, {de: ..., en: ...} like the title
 #   title:    {de: ..., en: ...}   (a plain string counts as English)

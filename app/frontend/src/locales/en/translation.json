@@ -2202,7 +2202,11 @@
       "switchedOn": "{{name}} switched on",
       "uses": "Uses {{names}}",
       "onCount": "{{count}} of {{total}} on",
-      "title": "Modules"
+      "title": "Modules",
+      "missingTitle": "Missing a module?",
+      "missingDesc": "Suggest it. Once the Hubra team puts the idea on the roadmap, every club can vote for it.",
+      "suggest": "Suggest a module",
+      "roadmap": "See the roadmap"
     },
     "noFeatures": "No feature flags configured",
     "profile": "Profile",
@@ -3720,14 +3724,7 @@
       "emptyDesc": "Ideas the Hubra team made public show here. Vote for the ones that help you most.",
       "emptyTitle": "The roadmap is still empty",
       "intro": "Ideas the Hubra team is working on or looking at. Your vote helps decide what comes first.",
-      "none": "Nothing here.",
-      "unvote": "Take back your vote",
-      "vote": "Vote for it",
-      "voteFailed": "Voting failed",
-      "inProgress": "In progress",
-      "planned": "Planned",
-      "open": "Suggested",
-      "done": "Done"
+      "voteFailed": "Voting failed"
     },
     "severity": {
       "annoying": "Gets in the way",
@@ -3752,7 +3749,8 @@
       "mail": "Mail",
       "settings": "Settings",
       "account": "Account and sign-in",
-      "other": "Other"
+      "other": "Other",
+      "modules": "Module"
     }
   },
   "backupKey": {
