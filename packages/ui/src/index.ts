@@ -42,6 +42,7 @@ export {
   type ChangelogEntry,
   type RoadmapItem,
   type RoadmapStatus,
+  type RoadmapVoting,
 } from './releases'
 export {
   Card,

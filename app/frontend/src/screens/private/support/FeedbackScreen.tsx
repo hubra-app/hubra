@@ -6,16 +6,13 @@ import {
   Button,
   Group,
   Paper,
-  SimpleGrid,
   Stack,
   Text,
   Textarea,
   ThemeIcon,
-  UnstyledButton,
 } from '@mantine/core'
+import { Roadmap as SharedRoadmap } from '@hubra/ui'
 import {
-  IconArrowBigUp,
-  IconArrowBigUpFilled,
   IconBug,
   IconBulb,
   IconMessage,
@@ -36,13 +33,12 @@ import {
   myCase,
   myCases,
   replyToCase,
-  roadmap,
-  setVote,
   type CaseStatus,
-  type RoadmapItem,
   type SupportCase,
 } from '@/api/support'
 import { openReport } from './reportStore'
+import { useRoadmap } from './roadmapData'
+import { useReleaseLang } from '@/components/Shell/whatsNewData'
 import { STATUS_COLOR, deviceLines, statusLabel } from './labels'
 
 type Tab = 'mine' | 'roadmap'
@@ -306,19 +302,13 @@ function CaseDetail({ id, onClose }: { id: number; onClose: () => void }) {
   )
 }
 
-const COLUMNS: { status: CaseStatus; key: string; fallback: string }[] = [
-  { status: 'in_progress', key: 'support.roadmap.inProgress', fallback: 'In Arbeit' },
-  { status: 'planned', key: 'support.roadmap.planned', fallback: 'Geplant' },
-  { status: 'open', key: 'support.roadmap.open', fallback: 'Vorgeschlagen' },
-  { status: 'done', key: 'support.roadmap.done', fallback: 'Erledigt' },
-]
-
 function Roadmap() {
   const { t } = useT()
-  const { data = [], isLoading } = useQuery({ queryKey: qk.support.roadmap, queryFn: roadmap })
+  const lang = useReleaseLang()
+  const { items, isLoading, voting } = useRoadmap()
 
   if (isLoading) return <LoadingSpinner />
-  if (data.length === 0)
+  if (items.length === 0)
     return (
       <EmptyState
         icon={<IconBulb size={24} />}
@@ -332,97 +322,14 @@ function Roadmap() {
     )
 
   return (
-    <Stack gap={12}>
+    <Stack gap={16}>
       <Text size="sm" c="dimmed" maw={720}>
         {t(
           'support.roadmap.intro',
           'Ideen, an denen das Hubra-Team arbeitet oder die es prüft. Deine Stimme hilft beim Entscheiden, was zuerst kommt.',
         )}
       </Text>
-      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
-        {COLUMNS.map((col) => {
-          const items = data.filter((i) => i.status === col.status)
-          return (
-            <Stack key={col.status} gap={8}>
-              <Group gap={6}>
-                <Badge variant="light" color={STATUS_COLOR[col.status]}>
-                  {t(col.key, col.fallback)}
-                </Badge>
-                <Text size="xs" c="dimmed">
-                  {items.length}
-                </Text>
-              </Group>
-              {items.length === 0 ? (
-                <Text size="xs" c="dimmed">
-                  {t('support.roadmap.none', 'Nichts hier.')}
-                </Text>
-              ) : (
-                items.map((item) => <RoadmapCard key={item.id} item={item} />)
-              )}
-            </Stack>
-          )
-        })}
-      </SimpleGrid>
+      <SharedRoadmap items={items} lang={lang} wide voting={voting} />
     </Stack>
-  )
-}
-
-function RoadmapCard({ item }: { item: RoadmapItem }) {
-  const { t } = useT()
-  const { notify } = useToast()
-  const queryClient = useQueryClient()
-  const [busy, setBusy] = useState(false)
-  const done = item.status === 'done'
-
-  const toggle = async () => {
-    setBusy(true)
-    try {
-      const res = await setVote(item.id, !item.voted)
-      queryClient.setQueryData<RoadmapItem[]>(qk.support.roadmap, (old) =>
-        old?.map((i) => (i.id === item.id ? { ...i, votes: res.votes, voted: res.voted } : i)),
-      )
-    } catch (err) {
-      notify('error', t('support.roadmap.voteFailed', 'Abstimmen fehlgeschlagen'), (err as Error).message)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <Paper withBorder p="sm">
-      <Group gap="sm" wrap="nowrap" align="flex-start">
-        <UnstyledButton
-          onClick={() => void toggle()}
-          disabled={busy || done}
-          aria-pressed={!!item.voted}
-          aria-label={item.voted ? t('support.roadmap.unvote', 'Stimme zurücknehmen') : t('support.roadmap.vote', 'Dafür stimmen')}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            minWidth: 44,
-            padding: '6px 4px',
-            borderRadius: 10,
-            border: '1px solid var(--hb-border)',
-            color: item.voted ? 'var(--mantine-color-acc-6)' : 'var(--hb-text-2)',
-            background: item.voted ? 'var(--mantine-color-acc-light)' : 'transparent',
-            cursor: done ? 'default' : 'pointer',
-          }}
-        >
-          {item.voted ? <IconArrowBigUpFilled size={18} /> : <IconArrowBigUp size={18} />}
-          <Text size="sm" fw={700}>
-            {item.votes}
-          </Text>
-        </UnstyledButton>
-        <div style={{ minWidth: 0 }}>
-          <Text fw={600} size="sm" style={{ wordBreak: 'break-word' }}>
-            {item.title}
-          </Text>
-          <Text size="xs" c="dimmed" lineClamp={4} style={{ whiteSpace: 'pre-wrap' }}>
-            {item.description}
-          </Text>
-        </div>
-      </Group>
-    </Paper>
   )
 }

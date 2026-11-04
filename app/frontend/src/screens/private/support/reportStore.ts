@@ -1,12 +1,18 @@
-import type { CaseKind } from '@/api/support'
+import type { Area, CaseKind } from '@/api/support'
 
 // The account menu opens the report dialog and closes itself right away; the
 // dialog lives in the shell and listens here.
-let kind: CaseKind | null = null
+export interface ReportRequest {
+  kind: CaseKind
+  /** Preselects the area, e.g. "modules" from Settings › Module. */
+  area?: Area
+}
+
+let request: ReportRequest | null = null
 const listeners = new Set<() => void>()
 
-export function openReport(value: CaseKind | null) {
-  kind = value
+export function openReport(kind: CaseKind | null, options: { area?: Area } = {}) {
+  request = kind ? { kind, ...options } : null
   listeners.forEach((l) => l())
 }
 
@@ -17,6 +23,6 @@ export function subscribeReport(l: () => void) {
   }
 }
 
-export function reportKind() {
-  return kind
+export function reportRequest() {
+  return request
 }

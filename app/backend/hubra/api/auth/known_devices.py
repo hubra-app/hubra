@@ -111,26 +111,51 @@ def sign_in_time(now: datetime | None = None) -> str:
 def send_alert(
     user: User, ip: str, browser_family: str, platform: str, user_agent: str
 ) -> None:
-    """Mail the account about a sign-in from a new device.
+    """Mail the account about a sign-in from a new device, once the sign-in
+    is committed (queued: the SMTP hand-off must not slow the sign-in).
 
     Only to a confirmed address: an unconfirmed one may not be theirs.
     """
     if not user.private_email_verified:
         _log.info("skip_new_device_login user_id=%s — email not verified", user.id)
         return
-    from hubra.core.services import email as email_svc
+    queue_mail(
+        user.email,
+        user.name,
+        ip=ip,
+        browser_family=browser_family,
+        platform=platform,
+        user_agent=user_agent,
+        lang=user.language or "de-CH",
+    )
+
+
+def queue_mail(
+    address: str,
+    name: str,
+    *,
+    ip: str,
+    browser_family: str,
+    platform: str,
+    user_agent: str,
+    lang: str,
+) -> None:
+    """Queue the new-device mail to *address*, sent after the commit."""
+    from hubra.core.tasks.after_commit import delay_after_commit
+    from hubra.core.tasks.email_tasks import send_new_device_login_task
 
     try:
-        email_svc.send_new_device_login(
-            user.email,
-            user.name,
-            ip=ip,
-            browser_family=browser_family,
-            platform=platform,
-            user_agent=user_agent,
-            timestamp=sign_in_time(),
-            lang=user.language or "de-CH",
+        delay_after_commit(
+            send_new_device_login_task,
+            address,
+            name,
+            ip,
+            browser_family,
+            platform,
+            user_agent,
+            sign_in_time(),
+            lang,
         )
     except Exception:
         # A mail problem never stops the sign-in.
-        _log.exception("new_device_login mail failed user_id=%s", user.id)
+        _log.exception("new_device_login mail not queued")

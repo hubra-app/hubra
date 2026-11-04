@@ -48,7 +48,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 from flask import current_app
-from sqlalchemy import text
+from sqlalchemy import event, select, text
 
 from hubra.core.crypto import PLATFORM, decrypt_code, encrypt_code
 from hubra.core.extensions import db
@@ -385,8 +385,33 @@ def spec(key: str) -> Spec:
         raise PlatformSettingError(f"Unknown platform setting: {key}") from None
 
 
+_ROWS = "hubra_platform_settings_rows"
+
+
+def _forget(session, *_args) -> None:
+    session.info.pop(_ROWS, None)
+
+
 def _row(key: str) -> PlatformSetting | None:
-    return db.session.get(PlatformSetting, key)
+    """The stored row for *key*, or None.
+
+    Most keys have no row (they use the deployment default), and
+    ``session.get`` asks the database again for every missing key, so a
+    single ``relay()`` used to cost six queries.  The first lookup in a
+    transaction loads every row at once and keeps them (the session's
+    identity map alone would let them go); the next commit or rollback
+    forgets them, so another process's change is seen in the next
+    transaction.
+    """
+    session = db.session()
+    rows = session.info.get(_ROWS)
+    if rows is None:
+        rows = {r.key: r for r in session.scalars(select(PlatformSetting)).all()}
+        session.info[_ROWS] = rows
+        if not event.contains(session, "after_commit", _forget):
+            event.listen(session, "after_commit", _forget)
+            event.listen(session, "after_soft_rollback", _forget)
+    return rows.get(key)
 
 
 def get(key: str) -> str:
@@ -419,9 +444,10 @@ def set_many(values: dict, actor_id: int | None = None) -> None:
     if errors:
         raise PlatformSettingError(errors)
 
+    _forget(db.session())
     for key, value in values.items():
         s = _BY_KEY[key]
-        row = _row(key)
+        row = db.session.get(PlatformSetting, key)
         if value is None:
             if row is not None:
                 db.session.delete(row)
@@ -436,6 +462,7 @@ def set_many(values: dict, actor_id: int | None = None) -> None:
         row.value = stored
         row.updated_by = actor_id
     db.session.flush()
+    _forget(db.session())
 
 
 def as_list() -> list[dict]:
@@ -562,6 +589,7 @@ def web_push(create: bool = False) -> PushKeys | None:
             db.session.execute(
                 text("SELECT pg_advisory_xact_lock(:k)"), {"k": _VAPID_LOCK_KEY}
             )
+            _forget(db.session())  # the other process may have stored them
             public, private = (
                 get("push.vapid_public_key"),
                 get("push.vapid_private_key"),

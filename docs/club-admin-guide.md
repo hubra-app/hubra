@@ -101,7 +101,7 @@ everything any of them grants.
 
 ## Modules
 
-Settings › Modules lists everything the club can use.
+Settings › Modules lists everything the club can use. Missing one? "Suggest a module" at the end of the list sends the idea to the Hubra team (area "Module"); once it is on the roadmap, every club can vote for it.
 
 | Module | What it is | On for a new club |
 | ------ | ---------- | ----------------- |
