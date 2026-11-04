@@ -47,6 +47,7 @@ jobs:
   #   deploy lint        docker-compose*.yml, .env.example, settings.yaml,
   #                      deploy/, modules/, scripts/, app/deploy/
   #   backend tests      app/backend/, plugins/, settings.yaml
+  #   connector tests    app/mcp/ (ruff + pytest, docs/mcp.md)
   #   frontend tests     app/*frontend/, packages/, plugins/
   #   browser tests      the same paths, on pull requests only
   # Text files are left out wherever they are: Markdown (*.md, so also
@@ -61,6 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       backend: ${{ steps.diff.outputs.backend }}
+      mcp: ${{ steps.diff.outputs.mcp }}
       frontends: ${{ steps.diff.outputs.frontends }}
       lint: ${{ steps.diff.outputs.lint }}
       lint_backend: ${{ steps.diff.outputs.lint_backend }}
@@ -80,7 +82,7 @@ jobs:
         run: |
           if [ "$FULL" = true ] || ! files=$(git diff --name-only "$BASE...$HEAD" 2>/dev/null); then
             # Full run, or unknown base (new branch, force push): run everything.
-            for o in backend frontends lint lint_backend lint_frontend lint_admin lint_sso lint_deploy; do
+            for o in backend mcp frontends lint lint_backend lint_frontend lint_admin lint_sso lint_deploy; do
               echo "$o=true" >> "$GITHUB_OUTPUT"
             done
             exit 0
@@ -100,6 +102,7 @@ jobs:
             fi
           }
           out backend       'app/backend/|plugins/|settings\.yaml$'
+          out mcp           'app/mcp/'
           out frontends     'app/(frontend|admin-frontend|sso-frontend)/|packages/|plugins/'
           out lint_backend  'app/backend/|plugins/'
           out lint_frontend 'app/frontend/|packages/|plugins/'
@@ -214,6 +217,27 @@ jobs:
       - run: sudo apt-get install -y --no-install-recommends age
       - run: pytest -q -n auto
 
+  # The Claude connector (app/mcp): lint and its own tests, against a fake
+  # Hubra API. The backend side of it is in tests/auth/test_api_tokens.py.
+  mcp-tests:
+    needs: changes
+    if: needs.changes.outputs.mcp == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app/mcp
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: app/mcp/requirements.lock
+      - run: pip install --no-deps --require-hashes -r requirements.lock
+      - run: pip install pytest ruff
+      - run: ruff check . --line-length 100
+      - run: pytest -q
+
   # Frontend unit tests (vitest in the club app, node --test in SSO).
   frontend-tests:
     needs: changes
@@ -299,7 +323,7 @@ jobs:
   # job passed or was skipped, and fails when any of them failed or was
   # cancelled. New test jobs go into its needs list.
   tests:
-    needs: [changes, backend-tests, frontend-tests, browser-tests]
+    needs: [changes, backend-tests, mcp-tests, frontend-tests, browser-tests]
     if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
     runs-on: ubuntu-latest
     steps:

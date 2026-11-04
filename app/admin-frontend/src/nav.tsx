@@ -12,6 +12,7 @@ import {
   IconLock,
   IconMail,
   IconPuzzle,
+  IconPlugConnected,
   IconShieldCheck,
   IconShieldLock,
   IconSparkles,
@@ -46,6 +47,7 @@ import { PlatformPlans } from '@/screens/platform/Plans'
 import { EarlyAccess } from '@/screens/platform/EarlyAccess'
 import { PlatformTranslations } from '@/screens/platform/Translations'
 import { PlatformEncryption } from '@/screens/platform/Encryption'
+import { AllApiTokens, PlatformTokensPage } from '@/screens/platform/ApiTokens'
 import { SupportCases } from '@/screens/platform/Support'
 
 // The whole manage navigation in one place: sidebar sections, the pages in
@@ -441,6 +443,30 @@ export function navSections(): NavSection[] {
                 'Which permission each route of the club API needs.',
               ),
               render: () => <PermissionsPanel />,
+            },
+          ],
+        },
+        {
+          id: 'api-tokens',
+          label: tr('API-Tokens', 'API tokens'),
+          icon: icon(IconPlugConnected),
+          desc: tr(
+            'Lesende Tokens für Skripte und den Claude-Connector.',
+            'Read-only tokens for scripts and the Claude connector.',
+          ),
+          tabs: [
+            {
+              id: 'mine',
+              path: '/app/api-tokens',
+              label: tr('Meine Tokens', 'My tokens'),
+              render: () => <PlatformTokensPage />,
+            },
+            {
+              id: 'all',
+              path: '/app/api-tokens/all',
+              label: tr('Alle Tokens', 'All tokens'),
+              perm: 'platform.settings',
+              render: () => <AllApiTokens />,
             },
           ],
         },

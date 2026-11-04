@@ -204,6 +204,36 @@ services:
           memory: 256M
           cpus: "0.25"
 
+  # The Claude connector (docs/mcp.md): an MCP server over the API, with no
+  # database and no credentials of its own. Off unless started with
+  # --profile mcp. Claude Code then connects to http://localhost:8090/mcp with
+  # a platform or club API token.
+  mcp:
+    image: ${HUBRA_IMAGE_PREFIX:-ghcr.io/hubra-app/hubra}/mcp:${HUBRA_VERSION:-latest}
+    build:
+      context: .
+      dockerfile: app/mcp/Dockerfile
+    profiles: [mcp]
+    restart: unless-stopped
+    environment:
+      HUBRA_API_URL: http://backend:5000
+      HUBRA_PLATFORM_API_URL: ${MCP_PLATFORM_API_URL:-http://backend:5000}
+      MCP_ALLOWED_HOSTS: ${MCP_HOST:-mcp.hubra.club},localhost,localhost:*,127.0.0.1,127.0.0.1:*
+    ports:
+      - "${HUBRA_BIND:-127.0.0.1}:${MCP_PORT:-8090}:8000"
+    depends_on:
+      - backend
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+
   celery-beat:
     <<: *backend-app
     restart: unless-stopped

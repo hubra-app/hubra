@@ -103,3 +103,7 @@ images:
     newTag: sha-66d4e53
   - name: ghcr.io/hubra-app/hubra/sso-frontend
     newTag: sha-66d4e53
+  # The Claude connector (docs/mcp.md); pin it to the first release that has
+  # it. Until then `latest` from the base, or leave mcp.hubra.club out of DNS.
+  # - name: ghcr.io/hubra-app/hubra/mcp
+  #   newTag: sha-…

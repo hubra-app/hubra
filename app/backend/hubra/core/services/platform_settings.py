@@ -337,6 +337,14 @@ SPECS: tuple[Spec, ...] = (
         "url",
     ),
     Spec(
+        "mcp.url",
+        "Claude connector address",
+        "Address of the MCP server (app/mcp), shown with the setup command "
+        "on the API tokens page (https://mcp.hubra.club). Empty: not set up",
+        lambda cfg: cfg.get("MCP_PUBLIC_URL") or "",
+        "url",
+    ),
+    Spec(
         "perf.slow_request_ms",
         "Slow request",
         "API requests at least this long (ms) are counted as slow and written "

@@ -76,6 +76,11 @@ INVALID_PER_IP_PER_MINUTE = 30
 
 _READ_METHODS = ("GET", "HEAD")
 
+# The Claude connector (app/mcp) names itself with this header, so a club
+# that hasn't allowed AI assistants refuses its requests.
+CLIENT_HEADER = "X-Hubra-Client"
+AI_CLIENTS = frozenset({"mcp"})
+
 # Blueprints that never take a token, whatever their decorators say.
 _NEVER_BLUEPRINTS = frozenset(
     {
@@ -247,6 +252,13 @@ def no_api_tokens(fn):
     return fn
 
 
+def token_self(fn):
+    """Mark a route that answers only "which token is this?" for the token
+    itself (GET, its own side only)."""
+    fn._token_self = True
+    return fn
+
+
 def _route_refusal(kind: str) -> tuple[str, str] | None:
     """Why this route doesn't take a token of *kind*, or None if it does."""
     from hubra.core.roles import is_platform_path
@@ -254,6 +266,12 @@ def _route_refusal(kind: str) -> tuple[str, str] | None:
     view = current_app.view_functions.get(request.endpoint or "")
     if view is None:
         return None  # 404 / 405 answer as usual
+    if getattr(view, "_token_self", False):
+        if request.method not in _READ_METHODS:
+            return "API_TOKEN_READ_ONLY", "This route only reads"
+        if (kind == "platform") != is_platform_path(request.path):
+            return "API_TOKEN_NOT_ALLOWED", "This route is for the other kind of token"
+        return None
     if (
         getattr(view, "_api_tokens_never", False)
         or getattr(view, "_step_up", False)
@@ -395,6 +413,12 @@ def authenticate():
         slug = _path_slug()
         if slug and slug != tenant.slug:
             return _refuse(403, "API_TOKEN_WRONG_CLUB", "This token is for another club")
+        if is_ai_client() and not ai_allowed(tenant) and not _is_self_route():
+            return _refuse(
+                403,
+                "API_TOKEN_AI_OFF",
+                "This club hasn't allowed AI assistants (Einstellungen › API-Tokens)",
+            )
 
     refusal = _route_refusal(kind)
     if refusal is not None:
@@ -530,6 +554,24 @@ def members_allowed(tenant) -> bool:
     (club setting, off by default)."""
     settings = (getattr(tenant, "settings", None) or {}).get("api_tokens") or {}
     return bool(settings.get("members"))
+
+
+def ai_allowed(tenant) -> bool:
+    """Whether the club lets AI assistants such as the Claude connector read
+    its data with a token (club setting, off by default)."""
+    settings = (getattr(tenant, "settings", None) or {}).get("api_tokens") or {}
+    return bool(settings.get("ai"))
+
+
+def _is_self_route() -> bool:
+    """"Which token is this?" answers even while AI assistants are off, so
+    the connector can say why nothing else works."""
+    view = current_app.view_functions.get(request.endpoint or "")
+    return bool(getattr(view, "_token_self", False))
+
+
+def is_ai_client() -> bool:
+    return request.headers.get(CLIENT_HEADER, "").strip().lower() in AI_CLIENTS
 
 
 # ── Making and ending tokens ────────────────────────────────────────────────

@@ -1,10 +1,12 @@
 # API tokens
 
-Bearer tokens for scripts, integrations and (later) the Claude connector.
+Bearer tokens for scripts, integrations and the Claude connector
+(docs/mcp.md).
 The design and the open decisions are in the concept doc
 (https://claude.ai/artifact/UJBF3LBZfBPrs9ZHfjKrse); this page describes what
 the backend does today. There is no UI yet: tokens are made through the API
-below, from a signed-in browser session.
+below, from a signed-in browser session, except platform tokens: manage ›
+Zugriff & Sicherheit › API-Tokens.
 
 ```
 curl -H "Authorization: Bearer hbr_pat_…" https://api.hubra.club/api/v1/events/
@@ -68,6 +70,13 @@ a club, and a club token never opens the platform API.
   account is disabled or its sessions are reset (password reset, sign out
   everywhere), when the club is no longer active, or for personal tokens of
   non-admins when the club switches member tokens off.
+- **AI assistants.** A club or personal token sent by the Claude connector
+  (`X-Hubra-Client: mcp`) only works when the club switched on AI
+  assistants (`aiAllowed`, off by default); otherwise `403 API_TOKEN_AI_OFF`.
+- **Which token is this?** `GET /api/v1/app/api-tokens/self` (club and
+  personal tokens) and `GET /api/v1/platform/api-tokens/self` (platform
+  tokens) answer the token itself: kind, name, club, scopes, expiry. They
+  take nothing but a token of their own side.
 - **Rate limits.** 120 reads and 30 writes per minute per token, 600 per
   minute per club, 30 invalid tokens per minute per IP (`429 RATE_LIMITED`).
 - **Audit.** Writes through a token appear in the club audit log as
@@ -92,7 +101,8 @@ Club (`/api/v1/app/api-tokens`, club session):
 | DELETE | `/<id>` | admin | revoke any token of the club |
 | PATCH | `/<id>` | admin | change a club token (not a member's own) |
 | POST | `/<id>/roll` | admin | roll a club token (not a member's own) |
-| PUT | `/settings` | admin | `{membersAllowed: bool}` (off by default) |
+| PUT | `/settings` | admin | `{membersAllowed?: bool, aiAllowed?: bool}` (both off by default) |
+| GET | `/self` | the token itself | which token this is |
 
 Platform (`/api/v1/platform/api-tokens`, account sign-in):
 
@@ -103,6 +113,7 @@ Platform (`/api/v1/platform/api-tokens`, account sign-in):
 | DELETE | `/mine/<id>` | platform admin | revoke mine |
 | PATCH | `/mine/<id>` | platform admin | rename, change scopes |
 | POST | `/mine/<id>/roll` | platform admin | roll mine |
+| GET | `/self` | the token itself | which token this is |
 | GET | `/` | `platform.settings` | every token |
 | DELETE | `/<id>` | `platform.settings` | revoke any token |
 
@@ -112,11 +123,13 @@ Platform (`/api/v1/platform/api-tokens`, account sign-in):
 (401), `API_TOKEN_NOT_ALLOWED` (403, route takes no tokens),
 `API_TOKEN_READ_ONLY` (403), `API_TOKEN_SCOPE` (403), `API_TOKEN_WRONG_CLUB`
 (403), `API_TOKEN_DISABLED_BY_CLUB` (403), `API_TOKEN_BROWSER` (403),
-`API_TOKEN_IP` (403), `API_TOKEN_LIMIT` (409, too many active tokens),
+`API_TOKEN_IP` (403), `API_TOKEN_AI_OFF` (403, the club hasn't allowed AI
+assistants), `API_TOKEN_LIMIT` (409, too many active tokens),
 `RATE_LIMITED` (429).
 
 ## Not built yet
 
-UI (SSO/club app/manage pages), mails for new and ended tokens, pausing a
-club token and mailing the club's admins when its admin leaves (today it
-just stops working), opt-in for plugin routes, the MCP server.
+UI for club and personal tokens (SSO, club app; manage has the platform
+tokens), mails for new and ended tokens, pausing a club token and mailing
+the club's admins when its admin leaves (today it just stops working),
+opt-in for plugin routes, OAuth for claude.ai.
