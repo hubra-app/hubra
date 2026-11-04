@@ -91,7 +91,12 @@ def test_preflight_allows_every_header_the_api_client_sends(client):
         h.strip().lower()
         for h in resp.headers.get("Access-Control-Allow-Headers", "").split(",")
     }
-    assert {"content-type", "x-csrf-token", "x-account-csrf", "x-tenant-slug"} <= allowed
+    assert {
+        "content-type",
+        "x-csrf-token",
+        "x-account-csrf",
+        "x-tenant-slug",
+    } <= allowed
 
 
 def test_preflight_options_not_blocked_by_rate_limiter(app, client, seeded_db):
@@ -275,3 +280,21 @@ def test_password_reset_link_uses_frontend_base_url(
     assert resp.status_code == 200
     assert captured["url"].startswith("https://app.hubra.club/reset-password#token=")
     assert "api.hubra.club" not in captured["url"]
+
+
+def test_preflight_passes_the_club_member_guard(client):
+    """The account routes that need a club member (groups, mail settings,
+    sessions) answer the browser's preflight too. A preflight has no
+    cookies, and the guard answered it with 403, so the club app could not
+    load "Mein Vereinsprofil" from another origin."""
+    for path in ("/api/v1/account/groups", "/api/v1/account/mail-settings"):
+        resp = client.options(
+            path,
+            headers={
+                "Origin": _ALLOWED_ORIGIN,
+                "Access-Control-Request-Method": "GET",
+                "Access-Control-Request-Headers": "x-csrf-token, x-tenant-slug",
+            },
+        )
+        assert resp.status_code in (200, 204), path
+        assert resp.headers.get("Access-Control-Allow-Origin") == _ALLOWED_ORIGIN

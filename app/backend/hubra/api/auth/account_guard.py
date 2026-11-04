@@ -36,6 +36,10 @@ def club_member_only():
     """``before_request`` for account_bp: refuse a User on club-member routes."""
     from hubra.core.models.member import Member
 
+    # A CORS preflight carries no cookies; the browser never shows its
+    # answer to the page, and a 403 here would block the real request.
+    if request.method == "OPTIONS":
+        return None
     view = (request.endpoint or "").rsplit(".", 1)[-1]
     if view not in CLUB_MEMBER_VIEWS:
         return None
