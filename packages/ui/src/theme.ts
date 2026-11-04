@@ -1,4 +1,5 @@
 import {
+  Badge,
   createTheme,
   defaultVariantColorsResolver,
   DEFAULT_THEME,
@@ -8,7 +9,15 @@ import {
   type CSSVariablesResolver,
   type VariantColorsResolver,
 } from '@mantine/core'
-import { accColors, goldColors, grayColors, greenColors, orangeColors, pinkColors, redColors } from './colors'
+import {
+  accColors,
+  goldColors,
+  grayColors,
+  greenColors,
+  orangeColors,
+  pinkColors,
+  redColors,
+} from './colors'
 import { readableOn, textOn, WHITE } from './contrast'
 
 // Filled buttons, badges and checkboxes: Mantine picks their text from the
@@ -19,14 +28,26 @@ import { readableOn, textOn, WHITE } from './contrast'
 const variantColorResolver: VariantColorsResolver = (input) => {
   const result = defaultVariantColorsResolver(input)
   if (input.variant !== 'filled' || input.autoContrast === false) return result
-  const parsed = parseThemeColor({ color: input.color || input.theme.primaryColor, theme: input.theme })
+  const parsed = parseThemeColor({
+    color: input.color || input.theme.primaryColor,
+    theme: input.theme,
+  })
   if (!parsed.isThemeColor) return { ...result, color: textOn(parsed.value) }
-  if (parsed.shade === undefined) return { ...result, color: `var(--mantine-color-${parsed.color}-contrast)` }
+  if (parsed.shade === undefined)
+    return { ...result, color: `var(--mantine-color-${parsed.color}-contrast)` }
   return { ...result, color: textOn(parsed.value) }
 }
 
 // Hubra brand theme (brand/README.md). The same file is used by the club app,
 // the manager portal and the sign-in portal so the three look like one product.
+const BADGE_FZ: Record<string, string> = {
+  xs: rem(12),
+  sm: rem(13),
+  md: rem(13),
+  lg: rem(14),
+  xl: rem(16),
+}
+
 export const theme = createTheme({
   primaryColor: 'acc',
   primaryShade: { light: 6, dark: 4 },
@@ -115,11 +136,15 @@ export const theme = createTheme({
   fontFamilyMonospace: '"JetBrains Mono", ui-monospace, monospace',
 
   fontSizes: {
-    xs: rem(12),
-    sm: rem(14),
-    md: rem(15),
-    lg: rem(17),
-    xl: rem(20),
+    // One step above Mantine's defaults: the apps are mostly forms, tables and
+    // log lines set in sm/xs, and those read too small at 14/13 px (settings
+    // pages, Discord logs). Body text is 16 px, forms and tables 15 px,
+    // captions and log lines 14 px.
+    xs: rem(14),
+    sm: rem(15),
+    md: rem(16),
+    lg: rem(18),
+    xl: rem(21),
   },
 
   headings: {
@@ -128,8 +153,8 @@ export const theme = createTheme({
     sizes: {
       h1: { fontSize: rem(30), lineHeight: '1.15' },
       h2: { fontSize: rem(22), lineHeight: '1.25' },
-      h3: { fontSize: rem(18), lineHeight: '1.3' },
-      h4: { fontSize: rem(16), lineHeight: '1.35' },
+      h3: { fontSize: rem(20), lineHeight: '1.3' },
+      h4: { fontSize: rem(17), lineHeight: '1.35' },
     },
   },
 
@@ -187,7 +212,7 @@ export const theme = createTheme({
         title: {
           fontFamily: `"Bricolage Grotesque", "Hanken Grotesk", sans-serif`,
           fontWeight: 700,
-          fontSize: rem(19),
+          fontSize: rem(20),
         },
       },
     },
@@ -196,7 +221,7 @@ export const theme = createTheme({
         title: {
           fontFamily: `"Bricolage Grotesque", "Hanken Grotesk", sans-serif`,
           fontWeight: 700,
-          fontSize: rem(19),
+          fontSize: rem(20),
         },
       },
     },
@@ -206,10 +231,15 @@ export const theme = createTheme({
     Card: {
       defaultProps: { radius: 'lg', shadow: 'xs', withBorder: true },
     },
-    Badge: {
+    Badge: Badge.extend({
       defaultProps: { radius: 'sm', size: 'md', variant: 'light' },
       styles: { root: { fontWeight: 600, textTransform: 'none' } },
-    },
+      // Mantine's badge text is 9/10/11 px for xs/sm/md, made for uppercase
+      // labels. Ours are words in sentence case, so one step larger each.
+      vars: (_theme, props) => ({
+        root: { '--badge-fz': BADGE_FZ[String(props.size ?? 'md')] ?? BADGE_FZ.md },
+      }),
+    }),
     Tabs: {
       defaultProps: { color: 'acc' },
       styles: { tab: { fontWeight: 600 } },
@@ -227,7 +257,7 @@ export const theme = createTheme({
       },
       styles: {
         th: {
-          fontSize: rem(12),
+          fontSize: rem(14),
           fontWeight: 600,
           color: 'var(--mantine-color-gray-7)',
           textTransform: 'uppercase',
@@ -275,8 +305,10 @@ export const cssVariablesResolver: CSSVariablesResolver = (t) => {
     result.light[`--mantine-color-${name}-contrast`] = textOn(scale[shade.light])
     result.dark[`--mantine-color-${name}-contrast`] = textOn(scale[shade.dark])
   }
-  result.light['--mantine-primary-color-contrast'] = `var(--mantine-color-${t.primaryColor}-contrast)`
-  result.dark['--mantine-primary-color-contrast'] = `var(--mantine-color-${t.primaryColor}-contrast)`
+  result.light['--mantine-primary-color-contrast'] =
+    `var(--mantine-color-${t.primaryColor}-contrast)`
+  result.dark['--mantine-primary-color-contrast'] =
+    `var(--mantine-color-${t.primaryColor}-contrast)`
   // Text in these colours (light buttons, badges, alerts, links) must read
   // on white and on the colour's own light tint; the warning orange and
   // gold would not, so they get a deeper shade for text.

@@ -297,7 +297,7 @@ export function AccountDashboardScreen() {
                     </div>
                     <div
                       style={{
-                        fontSize: 9,
+                        fontSize: 11,
                         fontWeight: 600,
                         color: "var(--mantine-color-ink-3)",
                         letterSpacing: "0.06em",

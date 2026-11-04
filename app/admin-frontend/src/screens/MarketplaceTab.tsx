@@ -1176,7 +1176,7 @@ function KeysView() {
             placeholder="-----BEGIN PUBLIC KEY-----"
             autosize
             minRows={3}
-            styles={{ input: { fontFamily: 'monospace', fontSize: 12 } }}
+            styles={{ input: { fontFamily: 'monospace', fontSize: 13 } }}
             value={pem}
             onChange={(e) => setPem(e.currentTarget.value)}
           />

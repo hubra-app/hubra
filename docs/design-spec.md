@@ -138,21 +138,24 @@ Scale (theme `fontSizes` and `headings`):
 
 | Token | Size | Use |
 | --- | --- | --- |
-| `xs` | 12 px | Table headers (uppercase, +0.04em), meta lines, badges |
-| `sm` | 14 px | Default for tables, form labels, buttons, secondary text |
-| `md` | 15 px | Body text |
-| `lg` | 17 px | Lead paragraphs |
-| `xl` | 20 px | Small headings inside content |
+| `xs` | 14 px | Table headers (uppercase, +0.04em), meta lines, log lines, descriptions under fields |
+| `sm` | 15 px | Default for tables, inputs, form labels, buttons, secondary text |
+| `md` | 16 px | Body text |
+| `lg` | 18 px | Lead paragraphs |
+| `xl` | 21 px | Small headings inside content |
 | `h1` | 30 px / 1.15 | Page title (one per page, from `PageHead`) |
 | `h2` | 22 px / 1.25 | Section title |
-| `h3` | 18 px / 1.3 | Card title in a large card |
-| `h4` | 16 px / 1.35 | Card header (`Card.Header`) |
-| dialog title | 19 px | `Modal` / `Drawer` title (theme) |
+| `h3` | 20 px / 1.3 | Card title in a large card |
+| `h4` | 17 px / 1.35 | Card header (`Card.Header`) |
+| dialog title | 20 px | `Modal` / `Drawer` title (theme) |
 
 - Sentence case everywhere: titles, buttons, tabs, menu items.
 - Weights: 400 body, 500 nav rows and switch labels, 600 labels, buttons,
   tabs and table headers, 700 headings.
-- Eyebrows (the small line above a page title) are `.eyebrow`: 12 px, 700,
+- Badges: 12/13/13/14 px text for `xs`/`sm`/`md`/`lg` (theme; two steps above
+  Mantine's, which are made for uppercase labels). Nothing that is read as
+  text goes under 12 px; 11 px is for count dots and the build badge only.
+- Eyebrows (the small line above a page title) are `.eyebrow`: 14 px, 700,
   uppercase, +0.08em, `acc-7`.
 
 ### Voice
@@ -263,7 +266,7 @@ Use Mantine props (`hiddenFrom="sm"`, `cols={{ base, sm, md }}`) or the
 | Part | Spec |
 | --- | --- |
 | Top bar | 64 px, `--hb-surface`, bottom border. Left: logo (club logo in the club app), breadcrumb. Right: search (Ctrl+K), notifications, account menu. |
-| Sidebar | 244 px, collapses to 64 px (icons only). Background `--hb-sidebar`. Rows: 18 px icon, 14 px label at 500, `md` radius; the active row is `acc` light. Grouped by task, with a small uppercase group label. |
+| Sidebar | 244 px, collapses to 64 px (icons only). Background `--hb-sidebar`. Rows: 18 px icon, 15 px label at 500, `md` radius; the active row is `acc` light. Grouped by task, with a small uppercase group label. |
 | Content | `.page-container`: max 1440 px, centred, 32 px padding (16 px on phones). |
 | Phone (< 768 px) | Sidebar is replaced by a **full-width** menu drawer from the left, with the account card pinned at the foot. |
 | Banners | Support / impersonation / maintenance banners sit above the top bar and push it down (`--hb-header-h`). |
@@ -314,7 +317,7 @@ the content.
 
 ### Dialog
 
-- `Modal` (radius `lg`, centred, blurred overlay, 19 px title) for a short
+- `Modal` (radius `lg`, centred, blurred overlay, 20 px title) for a short
   task: create, edit, confirm. Body is a `Stack gap="sm"`; the footer is a
   right-aligned `Group gap="xs"` under a divider: **Cancel** (`default`)
   then the action (filled, or `red` for deleting).
