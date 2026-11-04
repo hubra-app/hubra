@@ -28,16 +28,13 @@ the copyright holder's written permission. In practice:
 1. **Open an issue first** and say what you would like to change. Wait for
    a maintainer to agree before you spend time on it. Pull requests that
    were not agreed in an issue may be closed.
-2. **Contributions need a licence grant.** We can only merge your work if
-   you give us the right to use it.
-   <!-- TODO(Mike): decide how contributors grant rights (for example a CLA
-   signed through a bot, or the sentence below as a DCO-style sign-off) and
-   have it checked for Swiss law. Until then, this paragraph is a draft. -->
-   By opening a pull request you confirm that you wrote the change yourself
-   (or have the right to submit it), and you grant Mike Keller a perpetual,
-   worldwide, royalty-free, irrevocable licence to use, modify, sublicense
-   and distribute it as part of Hubra under any terms.
-3. The agreement in the issue counts as the written permission to fork and
+2. **Sign the contributor licence agreement.** We can only merge your work
+   if you give us the right to use it. On your first pull request, the
+   CLA Assistant bot posts a link to the [contributor licence agreement](CLA.md);
+   sign it once with your GitHub account and it covers all your later pull
+   requests. You keep the copyright in your work: the agreement is a licence,
+   not a transfer.
+3. A maintainer's go-ahead in the issue counts as the written permission to fork and
    change the code for that pull request. It does not cover running Hubra
    for anything other than developing and testing your change.
 

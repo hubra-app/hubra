@@ -8,8 +8,6 @@ This statement covers the Hubra apps: the club app (`app.hubra.club`), sign-in
 and account (`sso.hubra.club`), manage (`manage.hubra.club`) and the support
 site (`support.hubra.club`). The same code runs on self-hosted installs.
 
-<!-- TODO(Mike): set the date of the last review once someone has checked
-the apps against WCAG 2.1 AA (manually or with an audit). -->
 _Last reviewed: **not yet audited** (statement written 2026-11-04)._
 
 ## Our target
@@ -69,7 +67,6 @@ It is a bug, and we treat it as one.
 
 - Open an [accessibility issue](https://github.com/hubra-app/hubra/issues/new?template=accessibility.yml), or
 - write to **[hi@hubra.club](mailto:hi@hubra.club)** with "Accessibility" in the subject.
-  <!-- TODO(Mike): confirm this contact, or set a dedicated address. -->
 
 Tell us which page, what you tried to do, and which browser and assistive
 technology you use. We answer within **10 working days**.

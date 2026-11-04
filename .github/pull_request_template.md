@@ -11,7 +11,7 @@ Delete this section otherwise. -->
 
 ## Checklist
 
-- [ ] Agreed in an issue first (outside contributors, see CONTRIBUTING.md)
+- [ ] Agreed in an issue first and CLA signed (outside contributors, see CONTRIBUTING.md)
 - [ ] Tests added or updated, and the tests for what I touched pass locally
 - [ ] Migration added in `app/backend/migrations/` (if the database changes), with one head
 - [ ] `CHANGELOG.md` **and** `CHANGELOG.de.md` updated (if users or operators will notice)

@@ -60,8 +60,6 @@ its own rules for that.
 
 If someone breaks this code, or you are not sure whether they did, please
 tell us: write to **[hi@hubra.club](mailto:hi@hubra.club)** with "Code of conduct" in the subject.
-<!-- TODO(Mike): confirm hi@hubra.club as the conduct contact, or replace it
-with a dedicated address (for example conduct@hubra.club). -->
 
 Include what happened, where (links help), when, and who was involved. You
 can report something that happened to someone else.
