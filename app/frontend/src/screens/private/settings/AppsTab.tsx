@@ -126,7 +126,7 @@ export function AppsTab() {
         <Title order={4}>{t('apps.available', 'Verfügbar')}</Title>
         {data.providers.length === 0 && (
           <Text size="sm" c="dimmed">
-            {t('apps.noProviders', 'Schalte unter «Module & Plugins» ein Modul mit einer App ein, zum Beispiel Discord.')}
+            {t('apps.noProviders', 'Schalte unter «Module» ein Modul mit einer App ein, zum Beispiel Discord.')}
           </Text>
         )}
         {data.providers.map((p) => (

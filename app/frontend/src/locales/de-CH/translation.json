@@ -1164,10 +1164,10 @@
         "lastYear": "Ausgaben des Vorjahres",
         "lastYearHint": "Die bestätigten Ausgaben des letzten vollen Beitragsjahres.",
         "budget": "Budget",
-        "budgetHint": "Die Ausgaben im genehmigten Budget des laufenden Jahres (Plugin Budgets).",
+        "budgetHint": "Die Ausgaben im genehmigten Budget des laufenden Jahres (Modul Budgets).",
         "manual": "Fester Betrag",
         "manualHint": "Ein Betrag, den du selbst festlegst.",
-        "needsBudgets": "Braucht das Plugin Budgets."
+        "needsBudgets": "Braucht das Modul Budgets."
       },
       "manual": "Jährliche Ausgaben (CHF)",
       "extra": "Zusätzliche Kosten pro Jahr (CHF)",
@@ -2191,14 +2191,8 @@
       "switchedOff": "{{name}} ausgeschaltet",
       "switchedOn": "{{name}} eingeschaltet",
       "uses": "Nutzt {{names}}",
-      "pluginsTitle": "Plugins",
-      "pluginsIntro": "Zusatzfunktionen aus dem Hubra-Katalog. Schalte ein, was dein Verein nutzen möchte.",
-      "builtInTitle": "Funktionen",
-      "noPlugins": "Auf dieser Plattform ist noch kein Plugin installiert. Plugins installieren die Plattform-Admins aus dem Hubra-Katalog.",
-      "morePlugins": "Fehlt etwas? Weitere Plugins installieren die Plattform-Admins aus dem Hubra-Katalog.",
       "onCount": "{{count}} von {{total}} eingeschaltet",
-      "pluginBy": "Plugin {{name}} {{version}}",
-      "official": "Offiziell"
+      "title": "Module"
     },
     "noFeatures": "Keine Funktionsschalter eingerichtet",
     "profile": "Profil",
@@ -2211,7 +2205,7 @@
     "tabs": {
       "club": "Verein",
       "domains": "Domains",
-      "modules": "Module & Plugins",
+      "modules": "Module",
       "settings": "Erweitert",
       "membership": "Mitgliedschaft",
       "bank": "Bank & QR-Rechnung",
@@ -2455,7 +2449,7 @@
     },
     "more": {
       "emptyTitle": "Hier ist noch nichts",
-      "emptyDesc": "Seiten, die du in der Seitenleiste ausblendest, und Seiten von Plugins erscheinen hier."
+      "emptyDesc": "Seiten, die du in der Seitenleiste ausblendest, und Seiten weiterer Module erscheinen hier."
     },
     "customize": {
       "title": "Seitenleiste anpassen",
@@ -3576,7 +3570,7 @@
     "connected": "Verbunden",
     "none": "Noch keine App verbunden.",
     "available": "Verfügbar",
-    "noProviders": "Schalte unter «Module & Plugins» ein Modul mit einer App ein, zum Beispiel Discord.",
+    "noProviders": "Schalte unter «Module» ein Modul mit einer App ein, zum Beispiel Discord.",
     "connect": "Verbinden",
     "disconnectTitle": "Verbindung trennen?",
     "disconnectBody": "Die App kann danach nichts mehr für den Verein tun. Wo möglich wird sie auch beim Dienst entfernt.",

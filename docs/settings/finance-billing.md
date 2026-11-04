@@ -1,6 +1,6 @@
 # Finance: payment term and reminders
 
-**Where:** Settings › Module & Plugins › Finance › Einstellungen
+**Where:** Settings › Module › Finance › Einstellungen
 (module settings of `finance`).
 
 | Key | Type | Default | Effect |
