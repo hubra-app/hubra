@@ -1,14 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Anchor, Badge, Button, Code, Group, Paper, Stack, Table, Text, Title } from '@mantine/core'
+import { Anchor, Badge, Button, Code, Group, Paper, Stack, Text, Title } from '@mantine/core'
 import { IconRefresh } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
 import { formatDateTime } from '@/format'
 import { tr } from '@/lang'
 import { checkDiscordNow, getDiscordStatus, type DiscordStatus } from '@/api/platform'
 import { Row } from './StatusRow'
-import { EmptyState } from '@/components/ui'
 
 const MONO = "'JetBrains Mono', monospace"
 
