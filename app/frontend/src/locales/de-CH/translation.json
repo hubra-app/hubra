@@ -1176,7 +1176,8 @@
       "members": "Mitglieder",
       "now": "Bisher",
       "new": "Neu"
-    }
+    },
+    "direction": "Richtung"
   },
   "functions": {
     "assignHolder": "Person zuweisen",
@@ -1915,7 +1916,11 @@
     "roleFilter": "Nach Rolle filtern",
     "allRoles": "Alle Rollen",
     "functionRolesHint": "Über Funktionen: {{roles}}. Diese ändern sich mit der Funktion.",
-    "roleForGroup": "{{role}} (nur {{group}})"
+    "roleForGroup": "{{role}} (nur {{group}})",
+    "filter": {
+      "show": "Anzeigen",
+      "current": "Aktuelle Mitglieder"
+    }
   },
   "notifications": {
     "invoicePaid": "Rechnung bezahlt",
@@ -2731,7 +2736,11 @@
     "value": "Wert",
     "noData": "Keine Daten",
     "viewCards": "Karten",
-    "viewList": "Liste"
+    "viewList": "Liste",
+    "filter": "Filter",
+    "filterReset": "Zurücksetzen",
+    "filterDone": "Fertig",
+    "filterRemove": "{{chip}} entfernen"
   },
   "validation": {
     "displayNameRequired": "Anzeigename ist erforderlich",

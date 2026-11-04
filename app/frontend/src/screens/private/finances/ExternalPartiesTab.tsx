@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Table, Button, Group, Paper, SimpleGrid, TextInput } from '@mantine/core'
+import { Button, Group, SimpleGrid, TextInput } from '@mantine/core'
 import { useT } from '@/locales/i18n'
 import { IconPlus, IconTrash, IconPencil } from '@tabler/icons-react'
 import { useToast, useAuth } from '@/context/AppContext'
-import { Modal, Field, ConfirmModal, useSubmitOnce } from '@/components/ui'
+import { Modal, Field, ConfirmModal, SimpleList, useSubmitOnce } from '@/components/ui'
 import type { ExternalParty } from '@/types'
 import {
   listExternalParties,
@@ -257,105 +257,44 @@ export function ExternalPartiesTab() {
           </Button>
         </Group>
       )}
-      <Paper withBorder>
-        <div style={{ overflowX: 'auto' }}>
-          <Table highlightOnHover className="responsive-table">
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>{t('common.name', 'Name')}</Table.Th>
-                <Table.Th>{t('common.email', 'E-Mail')}</Table.Th>
-                <Table.Th>{t('common.city', 'Ort')}</Table.Th>
-                <Table.Th style={{ width: 80 }}></Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {loading ? (
-                <Table.Tr>
-                  <Table.Td
-                    colSpan={4}
-                    style={{
-                      textAlign: 'center',
-                      color: 'var(--hb-text-3)',
-                      padding: '24px',
-                      fontSize: 'var(--mantine-font-size-sm)',
-                    }}
+      <SimpleList
+        items={parties}
+        loading={loading}
+        emptyMessage={t('finance.externalParty.none', 'Noch keine externen Parteien.')}
+        getKey={(p) => p.id}
+        row={(p) => ({
+          title: p.name,
+          subtitle: [p.email, p.addressCity].filter(Boolean).join(' · ') || undefined,
+          actions:
+            canUpdate || canDelete ? (
+              <>
+                {canUpdate && (
+                  <Button
+                    size="sm"
+                    variant="subtle"
+                    onClick={() => openEdit(p)}
+                    aria-label={t('common.edit', 'Bearbeiten')}
+                    title={t('common.edit', 'Bearbeiten')}
                   >
-                    {t('finance.loading', 'Wird geladen …')}
-                  </Table.Td>
-                </Table.Tr>
-              ) : parties.length === 0 ? (
-                <Table.Tr>
-                  <Table.Td
-                    colSpan={4}
-                    style={{
-                      textAlign: 'center',
-                      color: 'var(--hb-text-3)',
-                      padding: '24px',
-                      fontSize: 'var(--mantine-font-size-sm)',
-                    }}
+                    <IconPencil size={16} />
+                  </Button>
+                )}
+                {canDelete && (
+                  <Button
+                    size="sm"
+                    variant="subtle"
+                    style={{ color: 'var(--mantine-color-red-text)' }}
+                    onClick={() => setDeleteTarget(p)}
+                    aria-label={t('common.delete', 'Löschen')}
+                    title={t('common.delete', 'Löschen')}
                   >
-                    {t(
-                      'finance.externalParty.none',
-                      'Noch keine externen Parteien.',
-                    )}
-                  </Table.Td>
-                </Table.Tr>
-              ) : (
-                parties.map((p) => (
-                  <Table.Tr key={p.id}>
-                    <Table.Td data-label={t('common.name', 'Name')}>
-                      <span style={{ fontWeight: 500 }}>{p.name}</span>
-                    </Table.Td>
-                    <Table.Td data-label={t('common.email', 'E-Mail')}>
-                      <span
-                        style={{
-                          fontSize: 'var(--mantine-font-size-sm)',
-                          color: 'var(--hb-text-2)',
-                        }}
-                      >
-                        {p.email ?? '—'}
-                      </span>
-                    </Table.Td>
-                    <Table.Td data-label={t('common.city', 'Ort')}>
-                      <span
-                        style={{
-                          fontSize: 'var(--mantine-font-size-sm)',
-                          color: 'var(--hb-text-2)',
-                        }}
-                      >
-                        {p.addressCity ?? '—'}
-                      </span>
-                    </Table.Td>
-                    <Table.Td data-label="">
-                      <div style={{ display: 'flex', gap: 4 }}>
-                        {canUpdate && (
-                          <Button
-                            size="sm"
-                            variant="subtle"
-                            onClick={() => openEdit(p)}
-                          >
-                            <IconPencil size={16} />
-                          </Button>
-                        )}
-                        {canDelete && (
-                          <Button
-                            size="sm"
-                            variant="subtle"
-                            style={{ color: 'var(--mantine-color-red-text)' }}
-                            onClick={() => setDeleteTarget(p)}
-                          >
-                            <IconTrash size={16} />
-                          </Button>
-                        )}
-                      </div>
-                    </Table.Td>
-                  </Table.Tr>
-                ))
-              )}
-            </Table.Tbody>
-          </Table>
-        </div>
-      </Paper>
+                    <IconTrash size={16} />
+                  </Button>
+                )}
+              </>
+            ) : undefined,
+        })}
+      />
 
       <Modal
         onSubmit={(e) => {

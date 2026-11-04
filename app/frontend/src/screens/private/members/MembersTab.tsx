@@ -469,6 +469,7 @@ export function MembersTab() {
             {
               key: 'member',
               header: t('common.member'),
+              sort: { asc: '', desc: '-name' },
               render: (m) => (
                 <div
                   style={{
@@ -574,6 +575,7 @@ export function MembersTab() {
             {
               key: 'joined',
               header: t('members.joined'),
+              sort: { asc: '-joined', desc: 'joined' },
               render: (m) => (
                 <span
                   className="num"
@@ -589,6 +591,7 @@ export function MembersTab() {
             {
               key: 'status',
               header: t('common.status'),
+              sort: { asc: 'status' },
               render: (m) => <StatusBadge status={m.status} />,
             },
             {
@@ -634,42 +637,60 @@ export function MembersTab() {
           searchValue={search}
           onSearchChange={setSearch}
           searchPlaceholder={t('members.search')}
-          filters={
-            showArchived
+          filterGroups={[
+            // Only those who may restore or delete see the archive.
+            ...(canUnarchive || canDelete
               ? [
                   {
-                    label: t('common.archived'),
-                    value: 'archived',
-                    active: true,
-                    onClick: () => {
-                      setShowArchived(false)
+                    key: 'archived',
+                    label: t('members.filter.show', 'Anzeigen'),
+                    value: showArchived ? 'archived' : 'active',
+                    defaultValue: 'active',
+                    options: [
+                      { value: 'active', label: t('members.filter.current', 'Aktuelle Mitglieder') },
+                      { value: 'archived', label: t('common.archived') },
+                    ],
+                    onChange: (v: string) => {
+                      setShowArchived(v === 'archived')
                       setTierFilter('All')
                     },
                   },
                 ]
-              : [
-                  ...tiers.map((tier) => ({
-                    label: tier === 'All' ? t('common.all', 'Alle') : tier,
-                    value: tier.toLowerCase(),
-                    active: tierFilter === tier,
-                    onClick: () => setTierFilter(tier),
-                  })),
-                  // Only those who may restore or delete see the archive.
-                  ...(canUnarchive || canDelete
-                    ? [
-                        {
-                          label: t('common.archived'),
-                          value: 'archived',
-                          active: false,
-                          onClick: () => {
-                            setShowArchived(true)
-                            setTierFilter('All')
-                          },
-                        },
-                      ]
-                    : []),
-                ]
-          }
+              : []),
+            {
+              key: 'tier',
+              label: t('members.tier'),
+              value: tierFilter,
+              defaultValue: 'All',
+              hidden: showArchived || allTiers.length === 0,
+              options: tiers.map((tier) => ({
+                value: tier,
+                label: tier === 'All' ? t('common.all', 'Alle') : tier,
+              })),
+              onChange: setTierFilter,
+            },
+            {
+              key: 'role',
+              label: t('common.roles', 'Rollen'),
+              value: roleFilter,
+              defaultValue: '',
+              hidden: roleOptions.length === 0,
+              kind: 'select',
+              options: [{ value: '', label: t('members.allRoles', 'Alle Rollen') }, ...roleOptions],
+              onChange: setRoleFilter,
+            },
+            {
+              key: 'sort',
+              label: t('members.sort.label', 'Sortieren'),
+              value: sort,
+              defaultValue: '',
+              sort: true,
+              options: sortOptions,
+              onChange: setSort,
+            },
+          ]}
+          sortValue={sort}
+          onSortChange={setSort}
           page={pg.page}
           perPage={pg.perPage}
           total={pg.total}
@@ -682,29 +703,6 @@ export function MembersTab() {
           getRowKey={(m) => m.id}
           renderCard={renderMemberCard}
           viewKey="members"
-          toolbar={
-            <Group gap={8} wrap="nowrap">
-              <Select
-                size="xs"
-                aria-label={t('members.roleFilter', 'Nach Rolle filtern')}
-                placeholder={t('members.allRoles', 'Alle Rollen')}
-                data={roleOptions}
-                value={roleFilter || null}
-                onChange={(v) => setRoleFilter(v ?? '')}
-                clearable
-                w={160}
-              />
-              <Select
-                size="xs"
-                aria-label={t('members.sort.label', 'Sortieren')}
-                data={sortOptions}
-                value={sort}
-                onChange={(v) => setSort(v ?? '')}
-                allowDeselect={false}
-                w={170}
-              />
-            </Group>
-          }
         />
 
       <Modal

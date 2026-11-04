@@ -7,19 +7,18 @@ import {
   Group,
   Paper,
   SegmentedControl,
-  Select,
   SimpleGrid,
   Stack,
   Table,
   Text,
-  TextInput,
   Title,
 } from '@mantine/core'
-import { IconCheck, IconRefresh, IconRotate, IconSearch } from '@tabler/icons-react'
+import { IconCheck, IconRefresh, IconRotate } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
 import { Pagination } from '@/components/ui'
 import { formatDateTime } from '@/format'
 import { tr, useLang } from '@/lang'
+import { FilterBar } from '@/components/FilterBar'
 import {
   getError,
   getErrors,
@@ -275,9 +274,9 @@ export function ErrorsPanel() {
         </Button>
       </Group>
 
-      <Group gap="sm" wrap="wrap" align="flex-end">
+      <Group gap="sm" wrap="wrap" align="flex-start">
         <SegmentedControl
-          size="xs"
+          size="sm"
           value={status}
           onChange={(v) => {
             setStatus(v as ErrorStatus | 'all')
@@ -292,44 +291,43 @@ export function ErrorsPanel() {
             { value: 'all', label: t('Alle', 'All') },
           ]}
         />
-        <TextInput
-          size="xs"
-          leftSection={<IconSearch size={14} />}
-          placeholder={t('Typ, Meldung, Route, Datei', 'Type, message, route, file')}
-          aria-label={t('Suchen', 'Search')}
-          value={search}
-          onChange={(e) => setSearch(e.currentTarget.value)}
-          style={{ flex: '1 1 220px' }}
-        />
-        <Select
-          size="xs"
-          aria-label={t('Sortierung', 'Sort')}
-          value={sort}
-          onChange={(v) => {
-            setSort((v as Sort) ?? 'last_seen')
-            setPage(1)
-          }}
-          allowDeselect={false}
-          data={[
-            { value: 'last_seen', label: t('Zuletzt aufgetreten', 'Last seen') },
-            { value: 'count', label: t('Am häufigsten', 'Most often') },
-            { value: 'first_seen', label: t('Neueste zuerst', 'Newest first') },
-          ]}
-          w={180}
-        />
-        <Select
-          size="xs"
-          aria-label={t('Version', 'Build')}
-          placeholder={t('Alle Versionen', 'All builds')}
-          value={build}
-          onChange={(v) => {
-            setBuild(v)
-            setPage(1)
-          }}
-          clearable
-          data={buildOptions}
-          w={240}
-        />
+        <div style={{ flex: '1 1 320px', minWidth: 0 }}>
+          <FilterBar
+            search={search}
+            onSearchChange={setSearch}
+            searchPlaceholder={t('Typ, Meldung, Route, Datei', 'Type, message, route, file')}
+            groups={[
+              {
+                key: 'build',
+                label: t('Version', 'Build'),
+                value: build ?? '',
+                defaultValue: '',
+                kind: 'select',
+                options: [{ value: '', label: t('Alle Versionen', 'All builds') }, ...buildOptions],
+                onChange: (v) => {
+                  setBuild(v || null)
+                  setPage(1)
+                },
+              },
+              {
+                key: 'sort',
+                label: t('Sortierung', 'Sort'),
+                value: sort,
+                defaultValue: 'last_seen',
+                sort: true,
+                options: [
+                  { value: 'last_seen', label: t('Zuletzt aufgetreten', 'Last seen') },
+                  { value: 'count', label: t('Am häufigsten', 'Most often') },
+                  { value: 'first_seen', label: t('Neueste zuerst', 'Newest first') },
+                ],
+                onChange: (v) => {
+                  setSort(v as Sort)
+                  setPage(1)
+                },
+              },
+            ]}
+          />
+        </div>
       </Group>
 
       {query.isError && <Text c="red">{failureText(query.error)}</Text>}

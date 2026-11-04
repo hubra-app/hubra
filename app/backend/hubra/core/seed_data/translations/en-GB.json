@@ -3380,5 +3380,20 @@
   "settings.modules.missingTitle": "Missing a module?",
   "settings.modules.missingDesc": "Suggest it. Once the Hubra team puts the idea on the roadmap, every club can vote for it.",
   "settings.modules.suggest": "Suggest a module",
-  "settings.modules.roadmap": "See the roadmap"
+  "settings.modules.roadmap": "See the roadmap",
+  "data": {
+    "filter": "Filter",
+    "filterReset": "Reset",
+    "filterDone": "Done",
+    "filterRemove": "Remove {{chip}}"
+  },
+  "members": {
+    "filter": {
+      "show": "Show",
+      "current": "Current members"
+    }
+  },
+  "finance": {
+    "direction": "Direction"
+  }
 }

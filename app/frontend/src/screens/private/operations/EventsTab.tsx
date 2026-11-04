@@ -806,31 +806,30 @@ export function EventsTab() {
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder={t('events.search', 'Suchen …')}
-        filterSlots={[
+        filterGroups={[
           {
+            key: 'when',
             label: t('events.filter.when', 'Zeitraum'),
-            type: 'chips',
-            filters: (['upcoming', 'past', 'all'] as const).map((w) => ({
-              label:
-                w === 'upcoming'
-                  ? t('events.filter.upcoming', 'Kommende')
-                  : w === 'past'
-                    ? t('events.filter.past', 'Vergangene')
-                    : t('common.all', 'Alle'),
-              value: `when-${w}`,
-              active: when === w,
-              onClick: () => setWhen(w),
-            })),
+            value: when,
+            defaultValue: 'upcoming',
+            options: [
+              { value: 'upcoming', label: t('events.filter.upcoming', 'Kommende') },
+              { value: 'past', label: t('events.filter.past', 'Vergangene') },
+              { value: 'all', label: t('common.all', 'Alle') },
+            ],
+            onChange: (v) => setWhen(v as 'upcoming' | 'past' | 'all'),
           },
           {
+            key: 'type',
             label: t('events.filter.type', 'Typ'),
-            type: 'chips',
-            filters: types.map((typeItem) => ({
+            value: typeFilter,
+            defaultValue: 'All',
+            hidden: eventTypes.length === 0,
+            options: types.map((typeItem) => ({
+              value: typeItem,
               label: typeItem === 'All' ? t('common.all', 'Alle') : eventTypeLabel(typeItem),
-              value: typeItem.toLowerCase(),
-              active: typeFilter === typeItem,
-              onClick: () => setTypeFilter(typeItem),
             })),
+            onChange: setTypeFilter,
           },
         ]}
         page={pg.page}

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Select, Badge } from '@mantine/core'
+import { Badge } from '@mantine/core'
 import { PageHead, Avatar, Tag, DataTable } from '@/components/ui'
 import { SlideOver } from '@/components/feedback'
 import { listAuditLog, getAuditEntry } from '@/api/settings'
@@ -452,19 +452,20 @@ export function AuditLogScreen({ embedded = false }: { embedded?: boolean }) {
           setPage(1)
         }}
         getRowKey={(entry) => entry.id}
-        toolbar={
-          <Select
-            size="sm"
-            aria-label={t('audit.action', 'Aktion')}
-            data={AUDIT_ACTIONS.map(([value, label]) => ({
+        filterGroups={[
+          {
+            key: 'action',
+            label: t('audit.action', 'Aktion'),
+            value: action,
+            defaultValue: '',
+            kind: 'select',
+            options: AUDIT_ACTIONS.map(([value, label]) => ({
               value,
               label: t(`audit.actions.${value || 'all'}`, label),
-            }))}
-            value={action}
-            onChange={(v) => handleActionChange(v ?? '')}
-            style={{ width: 200 }}
-          />
-        }
+            })),
+            onChange: handleActionChange,
+          },
+        ]}
       />
       {selectedEntryId && (
         <AuditEntryDetailPanel

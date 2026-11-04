@@ -1176,7 +1176,8 @@
       "members": "Members",
       "now": "Before",
       "new": "New"
-    }
+    },
+    "direction": "Direction"
   },
   "functions": {
     "assignHolder": "Assign person",
@@ -1915,7 +1916,11 @@
     "roleFilter": "Filter by role",
     "allRoles": "All roles",
     "functionRolesHint": "Through functions: {{roles}}. These change with the function.",
-    "roleForGroup": "{{role}} (only {{group}})"
+    "roleForGroup": "{{role}} (only {{group}})",
+    "filter": {
+      "show": "Show",
+      "current": "Current members"
+    }
   },
   "notifications": {
     "invoicePaid": "Invoice paid",
@@ -2731,7 +2736,11 @@
     "value": "Value",
     "noData": "No data",
     "viewCards": "Cards",
-    "viewList": "List"
+    "viewList": "List",
+    "filter": "Filter",
+    "filterReset": "Reset",
+    "filterDone": "Done",
+    "filterRemove": "Remove {{chip}}"
   },
   "validation": {
     "displayNameRequired": "Display name is required",

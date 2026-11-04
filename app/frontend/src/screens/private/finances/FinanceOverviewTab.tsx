@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
-import { Table, Paper, Group, Text, Button, SimpleGrid } from '@mantine/core'
+import { Paper, Group, Text, Button, SimpleGrid } from '@mantine/core'
 import { useT } from '@/locales/i18n'
 import { useNav } from '@/context/AppContext'
 import { useInvoices } from '@/data/lists'
-import { StatTile } from '@/components/ui'
+import { SimpleList, StatTile } from '@/components/ui'
 import { getFinanceOverview, listTransactions } from '@/api/finance'
 import { formatCHF, formatCHFWhole, formatDate } from '@/format'
 import { qk } from '@/data/keys'
@@ -223,88 +223,32 @@ export function FinanceOverviewTab() {
               {t('finance.viewAll', 'Alle ansehen')}
             </Button>
           </Group>
-          <div style={{ overflowX: 'auto' }}>
-            <Table highlightOnHover className="responsive-table">
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>{t('common.description', 'Beschreibung')}</Table.Th>
-                  <Table.Th>{t('finance.amount', 'Betrag')}</Table.Th>
-                  <Table.Th>{t('common.date', 'Datum')}</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {recentTx.length === 0 ? (
-                  <Table.Tr>
-                    <Table.Td
-                      colSpan={3}
-                      style={{
-                        textAlign: 'center',
-                        color: 'var(--hb-text-3)',
-                        padding: '24px',
-                        fontSize: 'var(--mantine-font-size-sm)',
-                      }}
-                    >
-                      {t('finance.noTransactions', 'Keine Buchungen gefunden.')}
-                    </Table.Td>
-                  </Table.Tr>
-                ) : (
-                  recentTx.map((tx) => (
-                    <Table.Tr
-                      key={tx.id}
-                      onClick={() => go(`/app/finance/transactions?tx=${tx.id}`)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <Table.Td
-                        data-label={t('finance.description', 'Beschreibung')}
-                        style={{ maxWidth: 200 }}
-                      >
-                        <div
-                          style={{
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {tx.description}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: 'var(--mantine-font-size-xs)',
-                            color: 'var(--hb-text-3)',
-                          }}
-                        >
-                          {tx.category}
-                        </div>
-                      </Table.Td>
-                      <Table.Td data-label={t('finance.amount', 'Betrag')}>
-                        <span
-                          className="num"
-                          style={{
-                            fontWeight: 700,
-                            color: tx.type === 'income' ? 'var(--mantine-color-green-text)' : 'var(--mantine-color-red-text)',
-                          }}
-                        >
-                          {tx.type === 'income' ? '+' : ''}CHF{' '}
-                          {formatCHF(Math.abs(tx.amount))}
-                        </span>
-                      </Table.Td>
-                      <Table.Td data-label={t('finance.date', 'Datum')}>
-                        <span
-                          className="num"
-                          style={{
-                            color: 'var(--hb-text-2)',
-                            fontSize: 'var(--mantine-font-size-xs)',
-                          }}
-                        >
-                          {formatDate(tx.date)}
-                        </span>
-                      </Table.Td>
-                    </Table.Tr>
-                  ))
-                )}
-              </Table.Tbody>
-            </Table>
-          </div>
+          <SimpleList
+            bare
+            items={recentTx}
+            emptyMessage={t('finance.noTransactions', 'Keine Buchungen gefunden.')}
+            getKey={(tx) => tx.id}
+            row={(tx) => ({
+              title: tx.description,
+              subtitle: [tx.category, formatDate(tx.date)].filter(Boolean).join(' · '),
+              meta: (
+                <span
+                  className="num"
+                  style={{
+                    fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                    color:
+                      tx.type === 'income'
+                        ? 'var(--mantine-color-green-text)'
+                        : 'var(--mantine-color-red-text)',
+                  }}
+                >
+                  {tx.type === 'income' ? '+' : '−'}CHF {formatCHF(Math.abs(tx.amount))}
+                </span>
+              ),
+              onClick: () => go(`/app/finance/transactions?tx=${tx.id}`),
+            })}
+          />
         </Paper>
       </SimpleGrid>
 
