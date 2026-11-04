@@ -21,7 +21,7 @@ def keys(app):
 
     def use(current: str, old: str = "") -> None:
         app.config["FERNET_KEY"], app.config["FERNET_OLD_KEYS"] = current, old
-        crypto._unwrapped.clear()  # a fresh process after the restart
+        crypto.forget_keys()  # a fresh process after the restart
 
     yield use
     app.config["FERNET_KEY"], app.config["FERNET_OLD_KEYS"] = saved
@@ -239,7 +239,7 @@ def test_deleting_a_club_destroys_its_keys(app, db, keys):
     with patch_drop():
         TenantService.delete_tenant(tenant.id, force=True)
     assert not db.session.scalars(select(DataKey).where(DataKey.scope == scope)).all()
-    crypto._unwrapped.clear()
+    crypto.forget_keys()
     with pytest.raises(crypto.InvalidToken):
         crypto.decrypt_code(value, "codes.code", scope)
 

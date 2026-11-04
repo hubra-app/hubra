@@ -100,6 +100,38 @@ Other background work is per process and meant to be:
 - **Mail stack.** WildDuck, Haraka and ZoneMTA in `modules/mail` are
   separate services with their own scaling rules; nothing here changes them.
 
+## Processes per worker
+
+A Celery worker runs its tasks in prefork child processes. Celery's own
+default is one per CPU **of the machine**, which in a container is the
+node's CPU count, not the pod's limit. A worker with `limits: cpu: "1",
+memory: 512Mi` on a 6-CPU node would start six children: each holds a copy
+of the app (about 60-70 MB of its own on top of the parent's ~150 MB), so
+together they do not fit in 512 MiB, and they take turns on one CPU. Every
+statement a task runs then includes the time the process waited for the
+CPU, which shows up as trivial queries (`SELECT 1`, `SET search_path`,
+`pg_advisory_unlock`) taking hundreds of milliseconds.
+
+So Hubra sets the worker's concurrency itself
+(`app/backend/hubra/core/cgroup.py`):
+
+- `CELERY_WORKER_CONCURRENCY`, when set, is the number of children.
+- Otherwise, under a CPU limit, two per CPU of the limit, at least two and
+  never more than the machine's CPUs (a 1-CPU worker runs two).
+- Without a CPU limit (Compose by default), Celery's default.
+- `--concurrency` on the command line still wins over all of these.
+
+Measured on a 4-CPU machine with the worker in a 1 CPU / 512 MiB cgroup: the
+parent and four idle children used 381 MiB, five used 458 MiB, and with six
+the cgroup hit its limit at start-up and the kernel killed the worker. Most
+of Hubra's jobs wait on the network (mail relays, WildDuck, Discord), so two
+children per CPU keep the CPU busy without making them queue for it. Give the
+worker more CPU (and about 80 MiB per extra child) before raising the number.
+
+manage › Diagnostics › Performance marks slow queries and requests that ran
+while their pod was CPU-throttled or at its memory limit, read from the
+pod's cgroup counters (`cpu.stat`, `memory.events`).
+
 ## What the database needs
 
 - PostgreSQL with session-level advisory locks (any supported version;

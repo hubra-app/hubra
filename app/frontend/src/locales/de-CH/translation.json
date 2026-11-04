@@ -2228,7 +2228,11 @@
       "switchedOn": "{{name}} eingeschaltet",
       "uses": "Nutzt {{names}}",
       "onCount": "{{count}} von {{total}} eingeschaltet",
-      "title": "Module"
+      "title": "Module",
+      "missingTitle": "Fehlt ein Modul?",
+      "missingDesc": "Schlag es vor. Nimmt das Hubra-Team die Idee auf die Roadmap, können alle Vereine dafür stimmen.",
+      "suggest": "Modul vorschlagen",
+      "roadmap": "Roadmap ansehen"
     },
     "noFeatures": "Keine Funktionsschalter eingerichtet",
     "profile": "Profil",
@@ -3752,14 +3756,7 @@
       "emptyTitle": "Die Roadmap ist noch leer",
       "emptyDesc": "Hier erscheinen Ideen, die das Hubra-Team öffentlich gemacht hat. Stimme für die Ideen, die dir am meisten helfen.",
       "intro": "Ideen, an denen das Hubra-Team arbeitet oder die es prüft. Deine Stimme hilft beim Entscheiden, was zuerst kommt.",
-      "none": "Nichts hier.",
-      "voteFailed": "Abstimmen fehlgeschlagen",
-      "unvote": "Stimme zurücknehmen",
-      "vote": "Dafür stimmen",
-      "inProgress": "In Arbeit",
-      "planned": "Geplant",
-      "open": "Vorgeschlagen",
-      "done": "Erledigt"
+      "voteFailed": "Abstimmen fehlgeschlagen"
     },
     "status": {
       "open": "Offen",
@@ -3779,7 +3776,8 @@
       "mail": "Mail",
       "settings": "Einstellungen",
       "account": "Konto und Anmeldung",
-      "other": "Anderes"
+      "other": "Anderes",
+      "modules": "Modul"
     }
   },
   "backupKey": {

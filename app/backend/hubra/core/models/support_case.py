@@ -15,6 +15,10 @@ handle it in manage › Support.
 * Duplicates are merged: the case points at the one it went into
   (``merged_into_id``), its votes move there, and it is closed.
 * Comments are visible to the reporter unless ``internal`` (staff notes).
+* Staff can link an idea to an item of the planned roadmap (``roadmap_item``,
+  an ``id`` from ROADMAP.yaml): the idea then shows as that item on the one
+  public roadmap, and its votes count for it.  People can also vote for a
+  planned item directly (``roadmap_votes``).
 """
 
 from __future__ import annotations
@@ -71,6 +75,10 @@ class SupportCase(db.Model):
     )
     tenant_id: Mapped[int | None] = mapped_column(
         db.Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True
+    )
+    # ROADMAP.yaml item this idea is part of (see the module docstring).
+    roadmap_item: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
     )
     is_public: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default=false()
@@ -132,6 +140,22 @@ class SupportCaseVote(db.Model):
         nullable=False,
         index=True,
     )
+    user_id: Mapped[int] = mapped_column(
+        db.Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False
+    )
+
+
+class RoadmapVote(db.Model):
+    """A vote for a planned roadmap item (ROADMAP.yaml ``id``)."""
+
+    __tablename__ = "roadmap_votes"
+    __table_args__ = (UniqueConstraint("item", "user_id", name="uq_roadmap_vote"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    item: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     user_id: Mapped[int] = mapped_column(
         db.Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )

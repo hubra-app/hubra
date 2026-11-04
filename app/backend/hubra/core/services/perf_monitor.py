@@ -7,6 +7,13 @@
 * Every SQL statement is timed (an engine listener).  One that takes longer
   than ``perf.slow_query_ms`` is counted under its fingerprint and written
   to the log.
+* A slow query or request is tagged when the container was held back while
+  its request or task ran: CPU throttled (the pod used up its CPU limit) or
+  memory at its limit (``hubra.core.cgroup``).  A trivial statement that
+  is slow with these tags waited for the CPU, not for the database.
+* A request no route matches (a 404 from a scanner or an old link) is
+  counted under the shape of its path: word-like segments are kept, any
+  other (an id, a token) becomes ``*``.
 * ``summary`` reads it back for manage › Diagnostics › Performance;
   ``problems`` adds an open problem when the API's p95 over the last hour is
   above ``perf.p95_warning_ms`` or many requests failed with a server error.
@@ -236,6 +243,68 @@ def _bucket(ms: float) -> int:
     return len(BUCKETS)
 
 
+def mark_start() -> None:
+    """Note the container's pressure counters as a request or task starts."""
+    try:
+        from hubra.core import cgroup
+
+        g._perf_pressure = cgroup.pressure()
+    except Exception:  # noqa: BLE001
+        g._perf_pressure = None
+
+
+def _held_back() -> tuple[bool, bool]:
+    """(CPU throttled, memory at its limit) since ``mark_start``."""
+    if not has_app_context():
+        return False, False
+    before = g.get("_perf_pressure")
+    if before is None:
+        return False, False
+    from hubra.core import cgroup
+
+    return cgroup.held_back(before, cgroup.pressure())
+
+
+_RE_WORD = re.compile(r"[A-Za-z][A-Za-z_.-]{0,39}|v\d{1,2}")
+_UNMATCHED_MAX = 200  # distinct path shapes kept per hour
+
+
+def path_shape(path: str) -> str:
+    """``/wp-admin/setup-config.php`` stays, ``/invite/3f9a…`` becomes
+    ``/invite/*``: only word-like segments without digits are kept, at most
+    four, so no id or token is stored."""
+    parts = [p for p in path.split("/") if p][:5]
+    shaped = [p if _RE_WORD.fullmatch(p) else "*" for p in parts[:4]]
+    if len(parts) > 4:
+        shaped.append("…")
+    return ("/" + "/".join(shaped))[:120]
+
+
+def record_unmatched(method: str, path: str, at: datetime | None = None) -> None:
+    """Count one request that no route matched, by its path shape."""
+    field = f"{method} {path_shape(path)}"
+    key = _key("nr", at or datetime.now(timezone.utc))
+    client = _redis()
+    if client is not None:
+        try:
+            # A scanner trying thousands of paths must not grow the hash
+            # without end: past the limit only known shapes still count.
+            if client.hlen(key) >= _UNMATCHED_MAX and not client.hexists(key, field):
+                field = f"{method} (other)"
+            pipe = client.pipeline(transaction=False)
+            pipe.hincrby(key, field, 1)
+            pipe.expire(key, _KEEP_HOURS * 3600)
+            pipe.execute()
+            return
+        except Exception:  # noqa: BLE001
+            _redis_failed()
+    with _local_lock:
+        h = _local.setdefault(key, {})
+        if len(h) >= _UNMATCHED_MAX and field not in h:
+            field = f"{method} (other)"
+        h[field] = float(h.get(field, 0)) + 1
+
+
 def route_label() -> str:
     """``"GET /api/v1/members/<int:member_id>"``: the rule, never the path."""
     rule = request.url_rule
@@ -243,7 +312,8 @@ def route_label() -> str:
 
 
 def record_request(route: str, status: int, ms: float, db_ms: float = 0.0,
-                   queries: int = 0, at: datetime | None = None) -> None:  # fmt: skip
+                   queries: int = 0, at: datetime | None = None,
+                   held_back: tuple[bool, bool] = (False, False)) -> None:  # fmt: skip
     """Count one request.  *route* is a label from ``route_label``."""
     p = route + _SEP
     status_class = min(5, max(1, status // 100))
@@ -261,6 +331,10 @@ def record_request(route: str, status: int, ms: float, db_ms: float = 0.0,
     slow = _thresholds["slow_request_ms"]
     if slow and ms >= slow:
         fields[p + "slow"] = 1
+        if held_back[0]:
+            fields[p + "slowcpu"] = 1
+        if held_back[1]:
+            fields[p + "slowmem"] = 1
     at = at or datetime.now(timezone.utc)
     total = {
         k.rpartition(_SEP)[2]: v
@@ -279,6 +353,7 @@ def install(app: Flask) -> None:
         if request.method in _SKIP_METHODS or request.path.startswith(_SKIP_PREFIXES):
             return
         refresh_thresholds()
+        mark_start()
         g._perf_start = time.monotonic()
         g._perf_db_ms = 0.0
         g._perf_queries = 0
@@ -292,14 +367,18 @@ def install(app: Flask) -> None:
         try:
             ms = (time.monotonic() - start) * 1000
             route = route_label()
+            slow = _thresholds["slow_request_ms"]
+            held = _held_back() if slow and ms >= slow else (False, False)
             record_request(
                 route,
                 response.status_code,
                 ms,
                 g.get("_perf_db_ms", 0.0),
                 g.get("_perf_queries", 0),
+                held_back=held,
             )
-            slow = _thresholds["slow_request_ms"]
+            if request.url_rule is None:
+                record_unmatched(request.method, request.path)
             if slow and ms >= slow:
                 logger.warning(
                     "slow request",
@@ -310,6 +389,8 @@ def install(app: Flask) -> None:
                         "duration_ms": int(ms),
                         "db_ms": int(g.get("_perf_db_ms", 0.0)),
                         "queries": g.get("_perf_queries", 0),
+                        "cpu_throttled": held[0],
+                        "memory_limit": held[1],
                     },
                 )
         except Exception:  # noqa: BLE001
@@ -356,18 +437,19 @@ def _where() -> str:
     return "other"
 
 
-def record_query(statement: str, ms: float, at: datetime | None = None) -> str:
+def record_query(statement: str, ms: float, at: datetime | None = None,
+                 held_back: tuple[bool, bool] = (False, False)) -> str:  # fmt: skip
     """Count one slow query; returns its fingerprint."""
     text = normalize_sql(statement)
     fp = _fingerprint(text)
     p = fp + _SEP
+    counts = {p + "n": 1, p + "ms": int(ms)}
+    if held_back[0]:
+        counts[p + "cpu"] = 1
+    if held_back[1]:
+        counts[p + "mem"] = 1
     _incr(
-        {
-            _key("sql", at or datetime.now(timezone.utc)): {
-                p + "n": 1,
-                p + "ms": int(ms),
-            }
-        },
+        {_key("sql", at or datetime.now(timezone.utc)): counts},
         maxes={p + "max": int(ms)},
         texts={p + "sql": text, p + "where": _where()},
     )
@@ -390,7 +472,8 @@ def _after_cursor(conn, cursor, statement, parameters, context, executemany):
         slow = _thresholds["slow_query_ms"]
         if not slow or ms < slow or _refreshing:
             return
-        fp = record_query(statement, ms)
+        held = _held_back()
+        fp = record_query(statement, ms, held_back=held)
         logger.warning(
             "slow query",
             extra={
@@ -399,6 +482,8 @@ def _after_cursor(conn, cursor, statement, parameters, context, executemany):
                 "duration_ms": int(ms),
                 "where": _where(),
                 "sql": normalize_sql(statement),
+                "cpu_throttled": held[0],
+                "memory_limit": held[1],
             },
         )
     except Exception:  # noqa: BLE001
@@ -481,6 +566,8 @@ def _route_row(label: str, r: dict) -> dict:
         "dbMean": round(r.get("db", 0) / n) if n else None,
         "queriesMean": round(r.get("q", 0) / n, 1) if n else None,
         "slow": r.get("slow", 0),
+        "slowCpu": r.get("slowcpu", 0),
+        "slowMemory": r.get("slowmem", 0),
         "status": {f"{c}xx": r["s"][c] for c in range(1, 6) if r["s"][c]},
         "totalMs": r.get("ms", 0),
     }
@@ -495,6 +582,11 @@ def summary(hours: int = 24, now: datetime | None = None) -> dict:
     slots = _hours(hours, now)
     req, source = _read([_key("req", t) for t in slots])
     sql, _ = _read([_key("sql", t) for t in slots])
+    nr, _ = _read([_key("nr", t) for t in slots])
+    unmatched: dict[str, int] = {}
+    for h in nr:
+        for field, value in h.items():
+            unmatched[field] = unmatched.get(field, 0) + int(float(value))
 
     routes = _routes(req)
     total = {"b": [0] * (len(BUCKETS) + 1), "s": [0] * 6}
@@ -514,12 +606,12 @@ def summary(hours: int = 24, now: datetime | None = None) -> dict:
     for h in sql:
         for field, value in h.items():
             fp, _, name = field.rpartition(_SEP)
-            q = queries.setdefault(fp, {"n": 0, "ms": 0, "max": 0})
+            q = queries.setdefault(fp, {"n": 0, "ms": 0, "max": 0, "cpu": 0, "mem": 0})
             if name in ("sql", "where"):
                 q[name] = value
             elif name == "max":
                 q["max"] = max(q["max"], int(float(value)))
-            elif name in ("n", "ms"):
+            elif name in ("n", "ms", "cpu", "mem"):
                 q[name] += int(float(value))
     slow_queries = sorted(
         (
@@ -531,6 +623,8 @@ def summary(hours: int = 24, now: datetime | None = None) -> dict:
                 "meanMs": round(q["ms"] / q["n"]) if q["n"] else None,
                 "maxMs": q["max"],
                 "totalMs": q["ms"],
+                "cpuThrottled": q["cpu"],
+                "memoryLimit": q["mem"],
             }
             for fp, q in queries.items()
             if q["n"]
@@ -548,6 +642,10 @@ def summary(hours: int = 24, now: datetime | None = None) -> dict:
         "routes": rows[:100],
         "routeCount": len(rows),
         "queries": slow_queries[:50],
+        "unmatched": [
+            {"method": f.partition(" ")[0], "path": f.partition(" ")[2], "count": n}
+            for f, n in sorted(unmatched.items(), key=lambda x: -x[1])[:25]
+        ],
     }
 
 

@@ -223,4 +223,6 @@ def require_step_up(fn):
             ), 403
         return fn(*args, **kwargs)
 
+    # API tokens never pass a step-up route (hubra.api.auth.api_tokens).
+    wrapper._step_up = True
     return wrapper

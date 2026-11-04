@@ -9,6 +9,10 @@ section and position, or the apps show that version in English.
 
 ### Changed
 
+- **Background jobs fit their pod**: a Celery worker now starts two processes per CPU of its CPU limit (at least two) instead of one per CPU of the node. On a 6-CPU node a 1-CPU, 512 MiB worker used to start six processes, which do not fit in 512 MiB (they were killed for memory in a test) and took turns on one CPU. Set `CELERY_WORKER_CONCURRENCY` (or `--concurrency`) to choose another number. See docs/scaling.md.
+- **Fewer database queries for platform settings**: the first platform setting read in a transaction loads them all in one query. A setting without a stored value used to cost a query on every read (`relay()` alone made six), and every secret setting also read its encryption key from the database.
+- **Sign-ins no longer wait for the "new device" mail**: the mail is queued and sent by the worker.
+- **The diagnostics health check answers within its time limit**: a check still running after one second is reported as a timeout. Before, the answer waited until every check ended, so an unreachable mail server held it for several seconds.
 - **The API is split into three areas**: `/api/v1/platform` (manage, served by the platform backend), `/api/v1/app` (the club app) and `/api/v1/global` (sign-in, account, translations, version, public data, club directory and invites). The apps call the new paths. The old ones (`/api/v1/members`, `/api/v1/manager/...`, `/api/v1/system/...`) still work and are rewritten to the new ones, so open browser tabs, plugins and links in sent mail keep working. See docs/platform-backend.md.
 - **Each API area has its own backend image** (`backend`, `global-backend`, `platform-backend`, one build under three names): on k3s, sign-in and account (`/api/v1/global`) run in their own `global-backend` Deployment, so the club app, sign-in and the platform can each be pinned, rolled and scaled on their own. See docs/platform-backend.md.
 
@@ -22,6 +26,8 @@ section and position, or the apps show that version in English.
 - **`FERNET_KEY` is required in production** (`.env` change): the backend no longer starts without it. Values stored before were encrypted with a key derived from `SECRET_KEY` and stay readable, so set a fresh key and run `flask crypto rotate`.
 
 ### Added
+
+- **API tokens** (`Authorization: Bearer hbr_…`), backend only for now: personal tokens for one member in one club, club tokens made by club admins, and read-only platform tokens for platform admins. A token acts as its person, can only narrow their current rights to the scopes picked (read-only by default), is shown once and stored as a hash, expires after at most a year (platform tokens 30 days), and never opens account, sign-in, token, step-up or plugin routes. Making one needs two-factor sign-in and a fresh password confirmation. Members only get personal tokens when the club allows it. See docs/api-tokens.md.
 
 - **Modules in plans, and module prices per member or per licence**: in manage › All clubs › Plans & prices a plan lists the modules and plugins it includes, each either at no extra cost or with its own price in that plan. Every module price (in a plan, as an add-on list price, or on a club) is flat, per member (members that are not archived) or per licence. A club's billing counts the plan's modules and its add-ons with their quantities (licences are set per club), and an add-on on the club replaces the plan's price for that module. The public pricing API lists each plan's modules, the unit of each add-on price and which public plans include it (docs/public-api.md).
 
@@ -49,6 +55,13 @@ section and position, or the apps show that version in English.
 - **Public-key backups**: with `BACKUP_PUBLIC_KEY` (an age key from `flask backups keygen`) backups are encrypted so the server can write but not read them; restore and full verify ask for the private key, which is used once and never stored. A club can have its own key (`flask backups club-key`) and open its own backups. Verify without a key checks the file's checksum. `.dump.gpg` backups still open with `BACKUP_ENCRYPTION_KEY`. Migration `d1a7c3e9b5f2` adds `tenants.backup_public_key`; the backend image now ships `age`.
 - **Per-club encryption keys**: every club (and the platform) has its own random data key (`data_keys`, migration `e3b9d5f1a7c4`), wrapped by `FERNET_KEY`. Values are AES-256-GCM and bound to their club and column, so a value never opens in another club. Changing the master key only rewraps one row per club. New club keys from manage › Platform settings › Encryption or `flask crypto rotate --new-keys [--club <slug>]`; deleting a club for good deletes its keys. **After upgrading, press Re-encrypt there (or run `flask crypto rotate`) once.**
 - **Backup public key as a platform setting** (`backup.public_key`, default `BACKUP_PUBLIC_KEY`), and each club's backup key in the Encryption tab.
+- **One public roadmap**: the planned items and the ideas from clubs are one list everywhere (Neuigkeiten › Roadmap, Feedback › Roadmap, sso /roadmap, manage and hubra.club/roadmap/), with a new "Ideas" column. People vote for planned items that are next or later, too, and staff can link an idea to a planned item (manage › Reports & ideas › idea › "Part of a planned item") so its votes count there. Settings › Modules has "Missing a module?", which opens the idea form with the new area "Module"; manage filters reports by area.
+- **Performance › slow queries say when the pod was held back**: a slow query (and a slow request) is marked when its container used up its CPU limit or reached its memory limit while the request or task ran. A trivial statement that is slow with this mark waited for the CPU, not for the database.
+- **Performance › requests without a route**: requests no API route matches (scanners, old links) are listed by path shape; ids and tokens are shown as `*`.
+
+### Fixed
+
+- **Discord security ping for platform admins on a new device** was never sent after an account sign-in (SSO, manage): it waited for a commit that came before it. It is now queued before that commit.
 
 ## [0.6.0] - 2026-07-13
 
