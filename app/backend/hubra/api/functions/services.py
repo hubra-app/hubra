@@ -45,7 +45,7 @@ def _granted_role(role_id):
 
 
 def _refresh_holders(fn: Function) -> None:
-    from hubra.api.permissions import invalidate_member_permissions
+    from hubra.core.permissions import invalidate_member_permissions
 
     for holder in fn.holders:
         invalidate_member_permissions(holder.member_id)
@@ -96,7 +96,7 @@ class FunctionService:
 
         role = _granted_role(grants_role_id)
         if role is not None:
-            from hubra.api.permissions import check_grant
+            from hubra.core.permissions import check_grant
 
             check_grant(_actor(actor_id), given=[role])
         fn = Function(
@@ -126,7 +126,7 @@ class FunctionService:
             role = _granted_role(fields["grants_role_id"])
             new_id = role.id if role is not None else None
             if new_id != fn.grants_tenant_role_id:
-                from hubra.api.permissions import check_grant
+                from hubra.core.permissions import check_grant
                 from hubra.core.models.role import Role
 
                 old = (
@@ -178,7 +178,7 @@ class FunctionService:
 
     @staticmethod
     def delete(function_id: int, actor_id: int | None = None) -> None:
-        from hubra.api.permissions import invalidate_member_permissions
+        from hubra.core.permissions import invalidate_member_permissions
         from hubra.core.services.managed_mail import remove_for_function
 
         fn = FunctionService.get_by_id(function_id)
@@ -240,7 +240,7 @@ class FunctionService:
         holder = FunctionHolder(function_id=function_id, member_id=member_id)
         db.session.add(holder)
         db.session.flush()
-        from hubra.api.permissions import invalidate_member_permissions
+        from hubra.core.permissions import invalidate_member_permissions
 
         invalidate_member_permissions(member_id)
 
@@ -261,7 +261,7 @@ class FunctionService:
 
         _check_role_change(holder.function, actor_id, give=False)
         db.session.delete(holder)
-        from hubra.api.permissions import invalidate_member_permissions
+        from hubra.core.permissions import invalidate_member_permissions
 
         invalidate_member_permissions(member_id)
         _trigger_mail_sync(function_id)
@@ -296,7 +296,7 @@ def _check_role_change(fn: Function, actor_id: int | None, *, give: bool) -> Non
     the actor needs the right to give or take it, as on the member."""
     if fn.grants_tenant_role_id is None:
         return
-    from hubra.api.permissions import check_grant
+    from hubra.core.permissions import check_grant
     from hubra.core.models.role import Role
 
     role = db.session.get(Role, fn.grants_tenant_role_id)

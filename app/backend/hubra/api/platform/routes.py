@@ -15,8 +15,8 @@ import time
 
 from flask import Blueprint, g, jsonify, request
 
-from hubra.api.auth.account_token import require_step_up
-from hubra.api.permissions import require_global_permission
+from hubra.core.auth.account_token import require_step_up
+from hubra.core.permissions import require_global_permission
 from hubra.core.errors import api_error, error_message
 from hubra.core.extensions import db, limiter
 from hubra.core.models.tenant import GlobalAuditEntry
@@ -189,9 +189,9 @@ def health_detailed():
     status has not run for a while.  Always 200: this is for people, and the
     overall state is in ``status`` (load balancers use the public ``/health``).
     """
-    from hubra.api.health.cache import HealthCache
-    from hubra.api.health.services import HealthService
-    from hubra.api.version.services import VersionService
+    from hubra.core.services.health_cache import HealthCache
+    from hubra.core.services.health import HealthService
+    from hubra.core.services.version import VersionService
     from hubra.core import build_info
     from hubra.core.services import upgrades
 

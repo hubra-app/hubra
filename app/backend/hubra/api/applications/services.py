@@ -7,7 +7,7 @@ from flask import current_app
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
-from hubra.api.utils import log_audit
+from hubra.core.utils import log_audit
 from hubra.core.avatar import random_avatar_color
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
@@ -165,7 +165,7 @@ class ApplicationsService:
         )
         db.session.add(app)
 
-        from hubra.api.notifications.staff import notify_permitted
+        from hubra.core.notifications.staff import notify_permitted
 
         notify_permitted(
             "applications.applications.approve",

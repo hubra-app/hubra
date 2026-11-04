@@ -11,9 +11,9 @@ Covers:
 
 from unittest.mock import patch
 
-from hubra.api.health.cache import HealthCache
+from hubra.core.services.health_cache import HealthCache
 
-_SVC = "hubra.api.health.services.HealthService"
+_SVC = "hubra.core.services.health.HealthService"
 
 
 def _all_ok_patches():
@@ -129,7 +129,7 @@ def test_health_detailed_latency_ms_present(client, staff_headers):
 
 def test_health_detailed_includes_version(client, staff_headers):
     """Detailed health payload includes the backend version."""
-    from hubra.api.version.services import VersionService
+    from hubra.core.services.version import VersionService
 
     resp = client.get("/api/v1/manager/platform/health", headers=staff_headers)
     data = resp.get_json()
@@ -159,7 +159,7 @@ def test_imap_check_speaks_tls_on_port_993():
     there, so mail always showed as degraded."""
     from unittest.mock import patch
 
-    from hubra.api.health import services
+    from hubra.core.services import health as services
 
     with (
         patch.object(services.imaplib, "IMAP4_SSL") as tls,
@@ -178,7 +178,7 @@ def test_a_hanging_check_does_not_hold_the_answer(app):
     import threading
     import time
 
-    from hubra.api.health.services import HealthService
+    from hubra.core.services.health import HealthService
 
     release = threading.Event()
 

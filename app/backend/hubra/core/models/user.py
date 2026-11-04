@@ -76,7 +76,7 @@ class User(db.Model):
         JSONB().with_variant(JSON, "sqlite"), nullable=True
     )
 
-    # Two-factor sign-in (hubra/api/auth/mfa.py).  Secrets are Fernet
+    # Two-factor sign-in (hubra/core/auth/mfa.py).  Secrets are Fernet
     # encrypted; recovery codes are kept as SHA-256 hashes, used ones removed.
     totp_secret: Mapped[str | None] = mapped_column(Text, nullable=True)
     totp_pending_secret: Mapped[str | None] = mapped_column(Text, nullable=True)

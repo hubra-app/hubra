@@ -6,7 +6,7 @@ import time
 
 import pytest
 
-from hubra.api.auth import mfa
+from hubra.core.auth import mfa
 
 PASSWORD = "password123"
 

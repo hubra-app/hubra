@@ -11,7 +11,7 @@ class SystemService:
     @staticmethod
     def list_permissions() -> list[dict]:
         """Return all permission-gated endpoints sorted by path and method."""
-        from hubra.api.permissions import _derive_perm_key
+        from hubra.core.permissions import _derive_perm_key
 
         entries = []
         for rule in current_app.url_map.iter_rules():

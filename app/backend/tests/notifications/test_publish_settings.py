@@ -7,7 +7,7 @@ import pytest
 
 @pytest.mark.parametrize("setting, expected", [({}, 1), ({"notify_members": False}, 0)])
 def test_notify_on_publish_follows_the_module_setting(app, setting, expected):
-    from hubra.api.notifications import services
+    from hubra.core.notifications import services
 
     with (
         app.app_context(),

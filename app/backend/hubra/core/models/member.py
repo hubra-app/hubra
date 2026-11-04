@@ -184,7 +184,7 @@ class Member(db.Model):
         JSONB().with_variant(JSON, "sqlite"), nullable=True
     )
     # Notifications the member turned off, per topic and channel:
-    # {"posts": {"push": false}}.  See hubra.api.notifications.prefs.
+    # {"posts": {"push": false}}.  See hubra.core.notifications.prefs.
     notify_prefs: Mapped[dict | None] = mapped_column(
         JSONB().with_variant(JSON, "sqlite"), nullable=True
     )

@@ -2,7 +2,7 @@
 Tests for VersionService and GET /api/v1/version, /api/v1/version/changelog
 """
 
-from hubra.api.version.services import VersionService
+from hubra.core.services.version import VersionService
 
 
 def test_get_version_reads_pyproject_toml():
@@ -28,8 +28,8 @@ def test_changelog_parses_sample_file(tmp_path, monkeypatch):
         "- Something fixed\n",
         encoding="utf-8",
     )
-    monkeypatch.setattr("hubra.api.version.services._CHANGELOG_PATH", sample)
-    monkeypatch.setattr("hubra.api.version.services._changelog_cache", {})
+    monkeypatch.setattr("hubra.core.services.version._CHANGELOG_PATH", sample)
+    monkeypatch.setattr("hubra.core.services.version._changelog_cache", {})
 
     entries = VersionService.get_changelog()
 
@@ -54,7 +54,7 @@ def test_changelog_parses_sample_file(tmp_path, monkeypatch):
 
 
 def test_changelog_reads_real_file_when_uncached(monkeypatch):
-    monkeypatch.setattr("hubra.api.version.services._changelog_cache", {})
+    monkeypatch.setattr("hubra.core.services.version._changelog_cache", {})
     entries = VersionService.get_changelog()
     assert any(e["version"] == "0.1.0" for e in entries)
 
@@ -98,8 +98,8 @@ def test_changelog_joins_wrapped_item_lines(tmp_path, monkeypatch):
         "- Second item\n",
         encoding="utf-8",
     )
-    monkeypatch.setattr("hubra.api.version.services._CHANGELOG_PATH", sample)
-    monkeypatch.setattr("hubra.api.version.services._changelog_cache", {})
+    monkeypatch.setattr("hubra.core.services.version._CHANGELOG_PATH", sample)
+    monkeypatch.setattr("hubra.core.services.version._changelog_cache", {})
 
     entries = VersionService.get_changelog()
 
@@ -131,8 +131,8 @@ def test_roadmap_parses_items_and_skips_bad_ones(tmp_path, monkeypatch):
         "    title: No id\n",
         encoding="utf-8",
     )
-    monkeypatch.setattr("hubra.api.version.services._ROADMAP_PATH", sample)
-    monkeypatch.setattr("hubra.api.version.services._roadmap_cache", None)
+    monkeypatch.setattr("hubra.core.services.version._ROADMAP_PATH", sample)
+    monkeypatch.setattr("hubra.core.services.version._roadmap_cache", None)
 
     items = VersionService.get_roadmap()
 
@@ -161,9 +161,9 @@ def test_roadmap_parses_items_and_skips_bad_ones(tmp_path, monkeypatch):
 def test_roadmap_shipped_file_is_valid(monkeypatch):
     import yaml
 
-    from hubra.api.version import services
+    from hubra.core.services import version as services
 
-    monkeypatch.setattr("hubra.api.version.services._roadmap_cache", None)
+    monkeypatch.setattr("hubra.core.services.version._roadmap_cache", None)
     raw = yaml.safe_load(services._ROADMAP_PATH.read_text(encoding="utf-8"))["items"]
     items = VersionService.get_roadmap()
     # Every item in the shipped file is shown, ids are unique, both languages.
@@ -196,9 +196,9 @@ def test_changelog_in_german_falls_back_per_version(tmp_path, monkeypatch):
         "## [Unreleased]\n### Added\n- Eins\n## [0.2.0] - 2026-07-03\n### Fixed\n- Fehler\n",
         encoding="utf-8",
     )
-    monkeypatch.setattr("hubra.api.version.services._CHANGELOG_PATH", en)
-    monkeypatch.setattr("hubra.api.version.services._CHANGELOG_DE_PATH", de)
-    monkeypatch.setattr("hubra.api.version.services._changelog_cache", {})
+    monkeypatch.setattr("hubra.core.services.version._CHANGELOG_PATH", en)
+    monkeypatch.setattr("hubra.core.services.version._CHANGELOG_DE_PATH", de)
+    monkeypatch.setattr("hubra.core.services.version._changelog_cache", {})
 
     entries = VersionService.get_changelog("de-CH")
 
@@ -213,9 +213,9 @@ def test_changelog_in_german_falls_back_per_version(tmp_path, monkeypatch):
 
 
 def test_shipped_german_changelog_only_has_known_versions(monkeypatch):
-    from hubra.api.version import services
+    from hubra.core.services import version as services
 
-    monkeypatch.setattr("hubra.api.version.services._changelog_cache", {})
+    monkeypatch.setattr("hubra.core.services.version._changelog_cache", {})
     english = {
         e["version"] for e in services._parse_changelog(services._CHANGELOG_PATH)
     }

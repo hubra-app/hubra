@@ -168,7 +168,7 @@ def update_profile(user: User, updates: dict) -> None:
 
 def change_password(user: User, current_password: str, new_password: str) -> None:
     """Check the current password and set the new one.  Does NOT commit."""
-    from hubra.api.auth.services import _enforce_password_strength
+    from hubra.core.auth.services import _enforce_password_strength
 
     if not current_password or not new_password:
         raise_error(

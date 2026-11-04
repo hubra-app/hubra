@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify
 
-from hubra.api.permissions import require_admin
+from hubra.core.permissions import require_admin
 from hubra.api.system.services import SystemService
 
 system_bp = Blueprint("system_bp", __name__)

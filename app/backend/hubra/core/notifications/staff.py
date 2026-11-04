@@ -6,7 +6,7 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from hubra.api.notifications.services import notify_member
+from hubra.core.notifications.services import notify_member
 from hubra.core.extensions import db
 from hubra.core.models.member import Member
 
@@ -21,7 +21,7 @@ def notify_permitted(
 ) -> None:
     """Notify every active member who is an admin or holds ``perm_key``
     (e.g. ``"applications.applications.approve"``)."""
-    from hubra.api.permissions import _get_member_permission_keys, member_is_admin
+    from hubra.core.permissions import _get_member_permission_keys, member_is_admin
 
     members = db.session.scalars(
         select(Member)

@@ -14,8 +14,8 @@ import logging
 from flask import Blueprint, current_app, g, jsonify, request
 
 from hubra.api.backups.services import BackupsService, BackupServiceAPI
-from hubra.api.auth.account_token import require_step_up
-from hubra.api.permissions import require_global_permission
+from hubra.core.auth.account_token import require_step_up
+from hubra.core.permissions import require_global_permission
 from hubra.core.errors import api_error, error_message
 from hubra.core.extensions import db
 from hubra.core.models.tenant import GlobalAuditEntry, Tenant

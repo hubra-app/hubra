@@ -12,9 +12,9 @@ from sqlalchemy import delete, func, insert, select
 from sqlalchemy.orm import selectinload
 
 from hubra.api.mail.services import MailboxService
-from hubra.api.permissions import check_grant, held_roles, invalidate_member_permissions
-from hubra.api.settings.services import SettingService
-from hubra.api.utils import csv_safe, escape_like, log_audit
+from hubra.core.permissions import check_grant, held_roles, invalidate_member_permissions
+from hubra.core.services.settings import SettingService
+from hubra.core.utils import csv_safe, escape_like, log_audit
 from hubra.core.services import quotas
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
@@ -230,7 +230,7 @@ def _apply_member_filters(query, args: dict[str, str]):
     role_id = args.get("role_id", "").strip()
     if role_id:
         # Holding the role, yourself or through a function whose term runs.
-        from hubra.api.permissions import _active_term
+        from hubra.core.permissions import _active_term
         from hubra.core.models.function import Function, FunctionHolder
         from hubra.core.models.member import member_roles
 

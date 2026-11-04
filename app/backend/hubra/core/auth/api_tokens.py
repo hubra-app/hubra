@@ -499,7 +499,7 @@ def club_scope_refusal(member, perm_keys) -> tuple | None:
     if token["kind"] not in ("member", "club"):
         return _scope_error()
     if token["kind"] == "member" and not members_allowed(g.get("tenant")):
-        from hubra.api.permissions import member_is_admin
+        from hubra.core.permissions import member_is_admin
 
         if not member_is_admin(member):
             return (

@@ -17,7 +17,7 @@ def run_seeds(db):
 
     # ── 1. Settings KV ─────────────────────────────────────────────────────────
 
-    from hubra.api.settings.services import SettingService
+    from hubra.core.services.settings import SettingService
 
     _kv_defaults = [
         (
@@ -469,7 +469,7 @@ def run_seeds(db):
 
     # ── 6. Translations ────────────────────────────────────────────────────────
 
-    from hubra.api.i18n import services as i18n_services
+    from hubra.core.services import i18n as i18n_services
 
     _seeds_dir = _pathlib.Path(__file__).resolve().parent / "seed_data" / "translations"
     for locale in ("en-GB", "de-CH"):

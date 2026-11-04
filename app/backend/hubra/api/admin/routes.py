@@ -13,7 +13,7 @@ from flask import Blueprint, jsonify, request
 from marshmallow import ValidationError
 from sqlalchemy import select
 
-from hubra.api.permissions import require_admin
+from hubra.core.permissions import require_admin
 from hubra.core.errors import ApiError
 from hubra.core.extensions import db
 from hubra.core.models.domain import Domain
@@ -36,8 +36,8 @@ admin_bp = Blueprint("admin_bp", __name__)
 
 
 def _audit_domain(action: str, domain: Domain) -> None:
-    from hubra.api.auth.helpers import get_current_member
-    from hubra.api.utils import log_audit
+    from hubra.core.auth.helpers import get_current_member
+    from hubra.core.utils import log_audit
 
     try:
         actor_id = get_current_member().id
@@ -237,8 +237,8 @@ _club_settings_schema = ClubSettingsSchema()
 def _check_mfa_rule(tenant, validated: dict) -> None:
     """Whoever turns "two-factor required" on has it, so they don't lock
     themselves out of the club they are setting up."""
-    from hubra.api.auth import mfa
-    from hubra.api.auth.helpers import get_current_user_id
+    from hubra.core.auth import mfa
+    from hubra.core.auth.helpers import get_current_user_id
     from hubra.core.errors import raise_error
     from hubra.core.models.user import User
 
@@ -256,8 +256,8 @@ def _check_mfa_rule(tenant, validated: dict) -> None:
 
 def _mfa_overview(tenant) -> dict:
     """How many members still sign in without two-factor, for each scope."""
-    from hubra.api.auth import mfa
-    from hubra.api.permissions import held_roles
+    from hubra.core.auth import mfa
+    from hubra.core.permissions import held_roles
     from hubra.core.models.member import Member
     from hubra.core.models.passkey import Passkey
 
@@ -356,7 +356,7 @@ _BANK_FIELDS = (
 
 
 def _bank_settings() -> dict:
-    from hubra.api.settings.services import SettingService
+    from hubra.core.services.settings import SettingService
 
     data = {f: SettingService.get(key, "") or "" for f, key, _ in _BANK_FIELDS}
     data["country"] = data["country"] or "CH"
@@ -392,7 +392,7 @@ def get_bank_settings():
 @require_admin
 def update_bank_settings():
     """Save the club's IBAN and creditor address (Settings > Verein)."""
-    from hubra.api.settings.services import SettingService
+    from hubra.core.services.settings import SettingService
 
     body = request.get_json(silent=True) or {}
     values = {}
@@ -527,8 +527,8 @@ def set_backup_key():
     Only the public key comes here; anything that looks like a private key
     is refused so it is never stored or logged by mistake.
     """
-    from hubra.api.auth.helpers import get_current_member
-    from hubra.api.utils import log_audit
+    from hubra.core.auth.helpers import get_current_member
+    from hubra.core.utils import log_audit
     from hubra.core.services.backup_crypto import split_keys, valid_public_key
 
     tenant = current_tenant()
@@ -581,8 +581,8 @@ def set_backup_key():
 def remove_backup_key():
     """Stop encrypting new backups to the club's key.  Backups made before
     still open with it, so the club should keep the private key."""
-    from hubra.api.auth.helpers import get_current_member
-    from hubra.api.utils import log_audit
+    from hubra.core.auth.helpers import get_current_member
+    from hubra.core.utils import log_audit
 
     tenant = current_tenant()
     if tenant is None:
@@ -607,8 +607,8 @@ def update_backup_key_options():
     """Body ``{"club_only": bool}``: whether only the club's own key opens
     its new backups.  Turning it on needs ``"confirm": "<club slug>"``,
     because Hubra can then no longer restore those backups."""
-    from hubra.api.auth.helpers import get_current_member
-    from hubra.api.utils import log_audit
+    from hubra.core.auth.helpers import get_current_member
+    from hubra.core.utils import log_audit
     from hubra.core.services import backup_crypto
 
     tenant = current_tenant()

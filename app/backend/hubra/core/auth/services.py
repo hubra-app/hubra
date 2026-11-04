@@ -543,7 +543,7 @@ class AuthService:
                     # the club picker shouldn't offer it.
                     reset_search_path()
                     continue
-                from hubra.api.permissions import held_roles
+                from hubra.core.permissions import held_roles
 
                 roles = held_roles(member) if member is not None else []
                 admin_level = (
@@ -554,7 +554,7 @@ class AuthService:
                     else None
                 )
                 member_id = member.id if member is not None else None
-                from hubra.api.auth import mfa
+                from hubra.core.auth import mfa
 
                 mfa_required = member is not None and mfa.club_requires(tenant, member)
                 reset_search_path()

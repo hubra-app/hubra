@@ -255,7 +255,7 @@ def provision_member_mail(self, member_id: int) -> None:
     """
     from sqlalchemy import select
 
-    from hubra.api.utils import log_audit
+    from hubra.core.utils import log_audit
     from hubra.core.extensions import db
     from hubra.core.models.managed_mail import ManagedMailAddress
     from hubra.core.models.member import Member
@@ -396,7 +396,7 @@ def sync_managed_address(self, address_id: int) -> None:
 
 
 def _get_club_domain_safe() -> str:
-    from hubra.api.settings.services import SettingService
+    from hubra.core.services.settings import SettingService
 
     return SettingService.get("mail.domain", default="") or ""
 

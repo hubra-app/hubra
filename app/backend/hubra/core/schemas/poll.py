@@ -137,7 +137,7 @@ def _current_member_id() -> int | None:
     """The signed-in member's id, looked up once per request."""
     from flask_jwt_extended import get_jwt_identity
 
-    from hubra.api.auth.helpers import get_current_member
+    from hubra.core.auth.helpers import get_current_member
 
     try:
         identity = get_jwt_identity()

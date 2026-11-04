@@ -38,7 +38,7 @@ _DEFAULT_LANG = "de-CH"
 def _get_setting(key: str, default: str = "") -> str:
     """Read a single value from the Setting KV store."""
     try:
-        from hubra.api.settings.services import SettingService
+        from hubra.core.services.settings import SettingService
 
         return SettingService.get(key, default=default) or default
     except Exception as exc:

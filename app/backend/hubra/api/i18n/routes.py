@@ -16,11 +16,12 @@ from flask import Blueprint, Response, jsonify, request
 
 from marshmallow import Schema, ValidationError, fields, validate
 
-from hubra.api.permissions import permission_required, require_global_permission
+from hubra.core.permissions import permission_required, require_global_permission
 from hubra.core.errors import api_error, error_message
 from hubra.core.extensions import db
-from hubra.api.i18n.services import (
+from hubra.core.services.i18n import (
     bulk_upsert,
+    canonical_locale,
     compute_is_stale,
     copy_defaults,
     delete_translation,
@@ -41,26 +42,6 @@ logger = logging.getLogger(__name__)
 i18n_bp = Blueprint("i18n_bp", __name__)
 
 _platform_admin = require_global_permission("platform.settings")
-
-
-def canonical_locale(code: str) -> str:
-    """BCP 47 casing: "de-ch" and "DE-CH" are the shipped "de-CH".
-
-    Rows are stored under the exact code, and the club app reads them under
-    the canonical one, so a second spelling would be a language of its own
-    that the app never shows.
-    """
-    parts = code.replace("_", "-").split("-")
-    out = [parts[0].lower()]
-    for part in parts[1:]:
-        out.append(
-            part.upper()
-            if len(part) == 2
-            else part.title()
-            if len(part) == 4
-            else part.lower()
-        )
-    return "-".join(out)
 
 
 @i18n_bp.url_value_preprocessor

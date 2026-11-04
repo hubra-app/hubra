@@ -158,7 +158,7 @@ def create_app(config_name: str | None = None) -> Flask:
 
     # ── API tokens (Authorization: Bearer hbr_…): before the tenant resolver,
     #    so the token names the club. ─────────────────────────────────────
-    from hubra.api.auth import api_tokens
+    from hubra.core.auth import api_tokens
 
     api_tokens.install(app)
 
@@ -205,7 +205,7 @@ def create_app(config_name: str | None = None) -> Flask:
     configure_logging(app)
 
     # ── Per-tenant API call counting ──────────────────────────────────────────
-    from hubra.api.metrics import configure_api_counting
+    from hubra.core.metrics import configure_api_counting
 
     configure_api_counting(app)
 
@@ -216,14 +216,9 @@ def create_app(config_name: str | None = None) -> Flask:
     import hubra.core.services.platform_discord  # noqa: F401
 
     # ── Register JWT callbacks (blocklist + user lookup) ──────────────────────
-    try:
-        from hubra.api.auth.routes import register_jwt_callbacks
+    from hubra.core.auth.tokens import club_requires_mfa, register_jwt_callbacks
 
-        register_jwt_callbacks(jwt)
-    except ModuleNotFoundError as exc:
-        if exc.name and not exc.name.startswith("hubra"):
-            raise
-        app.logger.debug("Auth module not yet available, JWT callbacks not registered")
+    register_jwt_callbacks(jwt)
 
     # ── Register error handlers ───────────────────────────────────────────────
     register_error_handlers(app)
@@ -237,7 +232,7 @@ def create_app(config_name: str | None = None) -> Flask:
             try:
                 identity = get_jwt_identity()
                 if identity is not None:
-                    from hubra.api.auth.helpers import (
+                    from hubra.core.auth.helpers import (
                         parse_identity,
                         is_user_identity,
                     )
@@ -296,7 +291,7 @@ def create_app(config_name: str | None = None) -> Flask:
             "Content-Type",
             "X-CSRF-Token",
             # Writes on an account sign-in (manage, SSO) carry this double-submit
-            # header (hubra.api.auth.account_token); without it in the list the
+            # header (hubra.core.auth.account_token); without it in the list the
             # browser's preflight fails and manage shows "server unreachable".
             "X-Account-CSRF",
             # The SPA sends the active club on every request (api-client).
@@ -321,10 +316,15 @@ def create_app(config_name: str | None = None) -> Flask:
         from hubra.core.plugins import loader as plugin_loader
 
         app.extensions["hubra.plugins"] = plugin_loader.current()
+
+    # Before the blueprints, as when it lived on the sign-in blueprint: it
+    # swaps the response, so it must run before the hooks that decorate one
+    # (security headers, CORS), which run in reverse order of registration.
+    app.after_request(club_requires_mfa)
     registry.register_blueprints(app)
     # Registered after resolve_tenant, so g.tenant is known here.
     app.before_request(module_gate)
-    from hubra.api.permissions import read_only_impersonation
+    from hubra.core.permissions import read_only_impersonation
 
     app.before_request(read_only_impersonation)
 
@@ -332,7 +332,7 @@ def create_app(config_name: str | None = None) -> Flask:
     @app.get("/health")
     @limiter.exempt
     def _root_health():
-        from hubra.api.health.cache import HealthCache
+        from hubra.core.services.health_cache import HealthCache
 
         cached = HealthCache.get()
         if cached is None:
@@ -497,7 +497,7 @@ def _register_cli(app: Flask) -> None:
     @app.cli.command("seed-global-rbac")
     def seed_global_rbac_cmd():
         """Seed default global roles and permissions for the manager portal."""
-        from hubra.api.global_rbac_seed import seed_global_rbac
+        from hubra.core.global_rbac_seed import seed_global_rbac
 
         seed_global_rbac()
         click.echo("Global RBAC seed complete.")
@@ -695,7 +695,7 @@ def _register_cli(app: Flask) -> None:
     def reset_mfa(email: str):
         """Turn two-factor sign-in off (app and passkeys) for an account that lost
         them and its recovery codes.  Check who is asking before running it."""
-        from hubra.api.auth import mfa
+        from hubra.core.auth import mfa
         from hubra.core.models.user import User
 
         user = db.session.scalar(select(User).where(User.email == email.lower()))
@@ -742,7 +742,7 @@ def _register_cli(app: Flask) -> None:
         )
 
         # Platform permissions and default platform roles (manage › Rollen).
-        from hubra.api.global_rbac_seed import seed_global_rbac
+        from hubra.core.global_rbac_seed import seed_global_rbac
 
         seed_global_rbac()
         click.echo("Platform permissions and default platform roles synced.")
@@ -750,7 +750,7 @@ def _register_cli(app: Flask) -> None:
     @app.cli.command("migrate-role-permissions")
     def migrate_role_permissions():
         """Migrate old free-text RolePermission strings to new Permission key references."""
-        from hubra.api.permissions import invalidate_role_permissions
+        from hubra.core.permissions import invalidate_role_permissions
         from hubra.core.models.role import RolePermission, Permission
 
         old_to_new = {

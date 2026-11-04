@@ -400,7 +400,7 @@ def _get_api_calls_30d(tenant_id: int) -> int:
     Returns 0 silently on any error (monitoring must never block usage stats).
     """
     try:
-        from hubra.api.metrics import get_api_calls_30d
+        from hubra.core.metrics import get_api_calls_30d
 
         return get_api_calls_30d(tenant_id)
     except Exception:
@@ -555,7 +555,7 @@ def _seed_tenant(
             db.session.flush()
             roles[rd["name"]] = role
 
-        from hubra.api.roles.services import RoleService
+        from hubra.core.services.roles import RoleService
         from hubra.core.models.role import Permission
 
         # The catalog is filled by `flask sync-permissions` (run on every

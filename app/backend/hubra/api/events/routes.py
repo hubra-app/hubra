@@ -6,9 +6,9 @@ from datetime import date, timedelta
 
 from flask import Blueprint, Response, current_app, g, jsonify, request, url_for
 from itsdangerous import BadSignature, URLSafeSerializer
-from hubra.api.auth.helpers import get_current_member
+from hubra.core.auth.helpers import get_current_member
 from marshmallow import ValidationError
-from hubra.api.permissions import created_by, permission_required, require_member
+from hubra.core.permissions import created_by, permission_required, require_member
 from hubra.core.errors import api_error, raise_error
 from hubra.core.extensions import db
 from hubra.core.models.event import ClubEvent
@@ -391,7 +391,7 @@ def _int_arg(name: str) -> int | None:
 
 
 def _overview_response(group_id: int | None):
-    from hubra.api.permissions import member_has_permission
+    from hubra.core.permissions import member_has_permission
 
     since, until = _period()
     data = attendance.overview(

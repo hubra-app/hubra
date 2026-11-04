@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 import pytest
 
-from hubra.api.auth import api_tokens, mfa
+from hubra.core.auth import api_tokens, mfa
 from hubra.core.models.api_token import ApiToken
 from hubra.core.models.audit import AuditEntry
 from hubra.core.models.role import Permission, Role, RolePermission
@@ -237,7 +237,7 @@ def test_live_rights_cap_the_token(app, db, tenant_pair, catalog):
 
     member.roles = []
     db.session.commit()
-    from hubra.api.permissions import invalidate_member_permissions
+    from hubra.core.permissions import invalidate_member_permissions
 
     invalidate_member_permissions(member.id)
     resp = c.get("/api/v1/events/", headers=_bearer(token))
@@ -502,7 +502,7 @@ def test_route_walk_never_routes_refuse_every_token_kind(app):
     """Walks every registered route: a route on the deny list (account,
     sign-in, token management, club switch, step-up, plugins) or without an
     RBAC decorator refuses every kind of token, for every method."""
-    from hubra.api.auth.api_tokens import _NEVER_BLUEPRINTS, _route_refusal
+    from hubra.core.auth.api_tokens import _NEVER_BLUEPRINTS, _route_refusal
 
     refused = allowed = 0
     for rule in app.url_map.iter_rules():

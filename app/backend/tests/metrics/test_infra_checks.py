@@ -54,7 +54,7 @@ class TestCheckDiskSpace:
 class TestCheckRedisHealth:
     """Tests for Redis health checking."""
 
-    @patch("hubra.api.metrics._get_redis_client")
+    @patch("hubra.core.metrics._get_redis_client")
     def test_returns_ok_when_ping_succeeds(self, mock_get_redis):
         """Returns ok when Redis ping succeeds."""
         _alert_states.clear()
@@ -65,7 +65,7 @@ class TestCheckRedisHealth:
         assert result["status"] == "ok"
         assert "latency_ms" in result
 
-    @patch("hubra.api.metrics._get_redis_client")
+    @patch("hubra.core.metrics._get_redis_client")
     def test_returns_error_when_ping_fails(self, mock_get_redis):
         """Returns error when Redis ping fails."""
         _alert_states.clear()
@@ -77,7 +77,7 @@ class TestCheckRedisHealth:
             result = check_redis_health()
         assert result["status"] == "error"
 
-    @patch("hubra.api.metrics._get_redis_client")
+    @patch("hubra.core.metrics._get_redis_client")
     def test_returns_error_when_client_unavailable(self, mock_get_redis):
         """Returns error when Redis client can't be created."""
         _alert_states.clear()

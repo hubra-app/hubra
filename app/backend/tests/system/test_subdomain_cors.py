@@ -14,7 +14,7 @@ Covers the acceptance criteria from the subdomain migration:
 
 from unittest.mock import patch
 
-from hubra.api.health.cache import HealthCache
+from hubra.core.services.health_cache import HealthCache
 
 _ALLOWED_ORIGIN = "http://localhost:5173"  # present in TestingConfig CORS_ORIGINS
 

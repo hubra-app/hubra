@@ -14,7 +14,7 @@ Off: no in-app notification. Everything else stays: the event bus
 direct notifications such as "you were given a proxy vote" are not affected.
 
 **Code.** `notify_on_publish(module_code, ...)` in
-`hubra/api/notifications/services.py` wraps `notify_all_active` and checks
+`hubra/core/notifications/services.py` wraps `notify_all_active` and checks
 the module setting.
 
 **Not included.** Per-member preferences ("don't tell me about polls") and

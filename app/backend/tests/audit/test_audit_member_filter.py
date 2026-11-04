@@ -1,6 +1,6 @@
 """The audit log for one member, as the member page shows it."""
 
-from hubra.api.utils import log_audit
+from hubra.core.utils import log_audit
 
 from tests.audit.test_audit_log import _get_audit, _make_member
 

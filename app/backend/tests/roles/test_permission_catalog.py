@@ -11,8 +11,8 @@ from pathlib import Path
 
 import pytest
 
-from hubra.api.fields import iter_field_perms
-from hubra.api.permissions import _derive_perm_key, extra_permissions
+from hubra.core.fields import iter_field_perms
+from hubra.core.permissions import _derive_perm_key, extra_permissions
 
 REPO = Path(__file__).resolve().parents[4]
 FRONTEND = REPO / "app/frontend/src"

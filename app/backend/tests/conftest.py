@@ -53,7 +53,7 @@ def _mock_health_checks():
     check_db is left real — SQLite in-memory is instant.  Tests that need
     specific mock values provide their own patches which override these.
     """
-    from hubra.api.health.services import HealthService
+    from hubra.core.services.health import HealthService
 
     with (
         patch.object(HealthService, "check_redis", return_value=_NOT_CONFIGURED),
@@ -79,7 +79,7 @@ def _end_open_transaction(request):
 def _clear_health_cache():
     """A cached "error" status from one test turned /health into a 503 for
     whichever test came next in the same worker."""
-    from hubra.api.health.cache import HealthCache
+    from hubra.core.services.health_cache import HealthCache
 
     yield
     HealthCache.clear()

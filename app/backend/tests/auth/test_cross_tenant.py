@@ -11,7 +11,7 @@ Covers issue #131 — Security Tests for Authentication, cross-tenant section:
 from __future__ import annotations
 
 from hubra.core.models.tenant import Tenant
-from hubra.api.auth.services import AuthService
+from hubra.core.auth.services import AuthService
 
 
 # ── switch-tenant ─────────────────────────────────────────────────────────────

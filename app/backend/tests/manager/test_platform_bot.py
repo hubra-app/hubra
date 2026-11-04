@@ -130,7 +130,7 @@ def admin(db, seeded_db):
         ExternalAccount(user_id=user.id, provider="discord", external_id=ADMIN_DISCORD)
     )
     db.session.commit()
-    with patch("hubra.api.auth.mfa.enabled", return_value=True):
+    with patch("hubra.core.auth.mfa.enabled", return_value=True):
         yield user
 
 
@@ -198,7 +198,7 @@ def test_unlinked_discord_account_is_refused(bot, admin):
 
 
 def test_two_factor_is_required(bot, admin):
-    with patch("hubra.api.auth.mfa.enabled", return_value=False):
+    with patch("hubra.core.auth.mfa.enabled", return_value=False):
         answer = platform_bot.handle(_click("p:al:ack:relay_down"))
     assert "Zwei-Faktor" in answer["data"]["content"]
 
@@ -517,7 +517,7 @@ def test_release_is_announced_once(bot, db):
         patch.object(platform_discord, "post") as post,
         patch.object(platform_bot, "notify_clubs") as notify,
         patch(
-            "hubra.api.version.services.VersionService.get_version",
+            "hubra.core.services.version.VersionService.get_version",
             return_value="9.9.9",
         ),
     ):
@@ -712,13 +712,13 @@ def test_platform_roles_follow_hubra(roles_server, admin, seeded_db):
         assert platform_roles.sync() == 0
 
         # Two-factor off: the admin role goes, the human-made role stays.
-        with patch("hubra.api.auth.mfa.enabled", return_value=False):
+        with patch("hubra.core.auth.mfa.enabled", return_value=False):
             platform_roles.sync(force=True)
         assert "Plattform-Admin" not in _names(roles_server, ADMIN_DISCORD)
         assert "Mods" in _names(roles_server, ADMIN_DISCORD)
 
     # Left the club: only the human-made role is left.
-    with patch("hubra.api.auth.mfa.enabled", return_value=False):
+    with patch("hubra.core.auth.mfa.enabled", return_value=False):
         platform_roles.sync()
     assert _names(roles_server, ADMIN_DISCORD) == ["Mods"]
 

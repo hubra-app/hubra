@@ -309,7 +309,7 @@ def test_approve_tenant_request_links_requester(client, db):
     assert link is not None, "Requesting user should be linked to the new tenant"
 
     # 6. Verify find_user_tenants returns the new tenant
-    from hubra.api.auth.services import AuthService
+    from hubra.core.auth.services import AuthService
 
     tenants = AuthService.find_user_tenants(requester.id)
     assert any(t["tenant_slug"] == "link-me" for t in tenants)
@@ -577,7 +577,7 @@ def test_platform_routes_refuse_wrong_types(client, db, seeded_db, staff_headers
 def test_club_picker_leaves_out_clubs_where_archived(db, seeded_db):
     from datetime import datetime, timezone
 
-    from hubra.api.auth.services import AuthService
+    from hubra.core.auth.services import AuthService
     from hubra.core.models.tenant import Tenant
     from hubra.core.models.user_tenant import UserTenant
 
@@ -595,7 +595,7 @@ def test_club_picker_leaves_out_clubs_where_archived(db, seeded_db):
 
 
 def test_suspended_club_is_not_offered_or_opened(client, db, seeded_db):
-    from hubra.api.auth.services import AuthService
+    from hubra.core.auth.services import AuthService
     from hubra.core.models.tenant import Tenant
     from hubra.core.models.user_tenant import UserTenant
 

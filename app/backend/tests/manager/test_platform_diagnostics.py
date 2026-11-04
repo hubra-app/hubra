@@ -105,7 +105,7 @@ def test_old_club_endpoints_are_gone(client, staff_headers):
 
 
 def test_support_role_gets_diagnostics(db):
-    from hubra.api.global_rbac_seed import _DEFAULT_ROLES
+    from hubra.core.global_rbac_seed import _DEFAULT_ROLES
 
     roles = {name: perms for name, _desc, perms in _DEFAULT_ROLES}
     assert "platform.diagnostics" in roles["Platform admin"]

@@ -197,7 +197,7 @@ def test_values_for_a_member(monkeypatch):
 
 
 def test_app_channels_are_off_until_turned_on():
-    from hubra.api.notifications import prefs
+    from hubra.core.notifications import prefs
 
     assert prefs.wants(None, "posts", "bell") is True
     assert prefs.wants(None, "posts", "discord") is False
@@ -211,7 +211,7 @@ def test_app_channels_are_off_until_turned_on():
 def test_app_channel_choice_is_stored_only_when_on():
     from types import SimpleNamespace
 
-    from hubra.api.notifications import prefs
+    from hubra.core.notifications import prefs
 
     member = SimpleNamespace(notify_prefs=None)
     prefs.apply(member, {"posts": {"discord": True, "push": False}})

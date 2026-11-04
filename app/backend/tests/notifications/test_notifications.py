@@ -2,7 +2,7 @@
 
 import pytest
 
-from hubra.api.notifications.services import notify_all_active, notify_member
+from hubra.core.notifications.services import notify_all_active, notify_member
 from hubra.core.models.member import Member
 from hubra.core.models.notification import Notification
 from hubra.core.models.user import User

@@ -239,12 +239,12 @@ class MemberSchema(ma.SQLAlchemyAutoSchema):
         return [g.id for g in (obj.groups or [])]
 
     def get_function_roles(self, obj):
-        from hubra.api.permissions import function_role_grants
+        from hubra.core.permissions import function_role_grants
 
         return function_role_grants().get(obj.id, [])
 
     def get_scoped_roles(self, obj):
-        from hubra.api.permissions import scoped_role_grants
+        from hubra.core.permissions import scoped_role_grants
 
         return scoped_role_grants().get(obj.id, [])
 

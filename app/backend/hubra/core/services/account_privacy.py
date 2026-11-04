@@ -92,7 +92,7 @@ def _models():
 
 def export(user: User) -> dict:
     """Everything the account holds, as one JSON document."""
-    from hubra.api.support import services as support
+    from hubra.core.services import support
     from hubra.core.models.tenant import Tenant
     from hubra.core.models.tenant_request import TenantRequest
     from hubra.core.models.user_tenant import UserTenant

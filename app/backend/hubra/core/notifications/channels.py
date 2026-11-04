@@ -94,7 +94,7 @@ def available(member) -> list[str]:
 def queue(connection, target) -> None:
     """From the Notification ``after_insert`` listener: queue the app
     deliveries the member asked for."""
-    from hubra.api.notifications.prefs import wants
+    from hubra.core.notifications.prefs import wants
     from hubra.core.models.connected_app import ExternalAccount
     from hubra.core.models.member import Member
     from hubra.core.tenant.context import current_tenant

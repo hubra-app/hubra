@@ -381,7 +381,7 @@ def test_my_alert_choices(client, staff_headers, db, seeded_db):
 
 
 def test_support_sees_alerts_but_gets_no_mail(db, seeded_db, staff):
-    from hubra.api.global_rbac_seed import seed_global_rbac
+    from hubra.core.global_rbac_seed import seed_global_rbac
     from hubra.core.models.global_role import GlobalRole, UserGlobalRole
     from hubra.core.models.user import User
 

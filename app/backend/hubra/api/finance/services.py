@@ -9,7 +9,7 @@ from math import ceil
 from sqlalchemy import case, delete, func, select
 from sqlalchemy.orm import selectinload
 
-from hubra.api.utils import escape_like, id_from_body, log_audit
+from hubra.core.utils import escape_like, id_from_body, log_audit
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 from hubra.core.models.external_party import ExternalParty

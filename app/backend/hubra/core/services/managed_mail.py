@@ -163,7 +163,7 @@ def resolve_postmaster_targets() -> list[str]:
 
 
 def _get_club_domain() -> str:
-    from hubra.api.settings.services import SettingService
+    from hubra.core.services.settings import SettingService
 
     return SettingService.get("mail.domain", default="") or ""
 
@@ -1257,7 +1257,7 @@ def auto_create_mma_for_group(group_id: int) -> ManagedMailAddress | None:
     if group is None:
         return None
 
-    from hubra.api.settings.services import SettingService
+    from hubra.core.services.settings import SettingService
 
     club_domain = SettingService.get("mail.domain") or ""
     if not club_domain:
@@ -1346,7 +1346,7 @@ def auto_create_mma_for_function(function_id: int) -> ManagedMailAddress | None:
     if fn is None:
         return None
 
-    from hubra.api.settings.services import SettingService
+    from hubra.core.services.settings import SettingService
 
     club_domain = SettingService.get("mail.domain") or ""
     if not club_domain:
@@ -1435,7 +1435,7 @@ def auto_create_mma_for_member(member_id: int) -> ManagedMailAddress | None:
     if member is None:
         return None
 
-    from hubra.api.settings.services import SettingService
+    from hubra.core.services.settings import SettingService
 
     club_domain = SettingService.get("mail.domain") or ""
     if not club_domain:

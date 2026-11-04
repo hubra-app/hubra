@@ -7,11 +7,11 @@ from datetime import datetime, timezone
 from sqlalchemy import delete, select
 from sqlalchemy.orm import selectinload
 
-from hubra.api.notifications.services import (
+from hubra.core.notifications.services import (
     notify_member,
     notify_on_publish,
 )
-from hubra.api.utils import log_audit
+from hubra.core.utils import log_audit
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 from hubra.core.models.function import Function, FunctionHolder

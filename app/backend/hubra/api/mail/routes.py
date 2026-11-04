@@ -6,7 +6,7 @@ import logging
 import re as _re
 
 from flask import Blueprint, current_app, jsonify, request
-from hubra.api.auth.helpers import get_current_member
+from hubra.core.auth.helpers import get_current_member
 
 from hubra.api.mail.services import (
     AliasService,
@@ -17,9 +17,9 @@ from hubra.api.mail.services import (
     MailboxesService,
 )
 from hubra.core.extensions import db, limiter
-from hubra.api.permissions import created_by, permission_required
-from hubra.api.settings.services import SettingService
-from hubra.api.utils import log_audit
+from hubra.core.permissions import created_by, permission_required
+from hubra.core.services.settings import SettingService
+from hubra.core.utils import log_audit
 from hubra.core.errors import api_error, error_message, raise_error
 from hubra.core.models.group import Group
 from hubra.core.models.managed_mail import ManagedMailAddress
@@ -696,7 +696,7 @@ def _holds_function(member, function_id=None, **_):
 
     from sqlalchemy import select
 
-    from hubra.api.permissions import _active_term
+    from hubra.core.permissions import _active_term
     from hubra.core.models.function import FunctionHolder
 
     if function_id is None:

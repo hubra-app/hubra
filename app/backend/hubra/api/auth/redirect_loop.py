@@ -20,7 +20,7 @@ import re
 
 from flask import Blueprint, jsonify, request
 
-from hubra.api.auth.services import _extract_browser_family
+from hubra.core.auth.services import _extract_browser_family
 from hubra.core.extensions import limiter
 from hubra.core.services import platform_monitor
 
@@ -78,7 +78,7 @@ def _session_claims() -> dict:
         claims = {}
     if not claims:
         try:
-            from hubra.api.auth import account_token
+            from hubra.core.auth import account_token
 
             claims = account_token.read_claims() or {}
         except Exception:

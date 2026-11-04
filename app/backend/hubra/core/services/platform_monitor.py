@@ -1174,7 +1174,7 @@ def open_problems() -> list[dict]:
 
     Each: ``{"id", "level", "area", "title", "detail", "since"?, "link"}``.
     """
-    from hubra.api.health.cache import HealthCache
+    from hubra.core.services.health_cache import HealthCache
 
     problems: list[dict] = []
 

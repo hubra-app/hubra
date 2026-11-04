@@ -218,10 +218,10 @@ def test_admin_no_perms_can_create_roles(client, seeded_db, admin_no_perms_heade
 
 def test_invalidate_role_permissions_calls_redis_delete(app, db):
     """invalidate_role_permissions() deletes the cache key when Redis is available."""
-    from hubra.api.permissions import invalidate_role_permissions
+    from hubra.core.permissions import invalidate_role_permissions
 
     mock_redis = MagicMock()
-    with patch("hubra.api.permissions._get_redis_client", return_value=mock_redis):
+    with patch("hubra.core.permissions._get_redis_client", return_value=mock_redis):
         invalidate_role_permissions(42)
 
     mock_redis.delete.assert_called_once_with("perms:public:42")
@@ -229,8 +229,8 @@ def test_invalidate_role_permissions_calls_redis_delete(app, db):
 
 def test_invalidate_role_permissions_noop_without_redis(app, db):
     """invalidate_role_permissions() is a no-op when Redis is unavailable (no exception)."""
-    from hubra.api.permissions import invalidate_role_permissions
+    from hubra.core.permissions import invalidate_role_permissions
 
-    with patch("hubra.api.permissions._get_redis_client", return_value=None):
+    with patch("hubra.core.permissions._get_redis_client", return_value=None):
         # Should not raise
         invalidate_role_permissions(99)

@@ -38,7 +38,7 @@ def commit() -> str | None:
 def version() -> str | None:
     """The app version (pyproject.toml), or None when it can't be read."""
     try:
-        from hubra.api.version.services import VersionService
+        from hubra.core.services.version import VersionService
 
         return VersionService.get_version()
     except Exception:

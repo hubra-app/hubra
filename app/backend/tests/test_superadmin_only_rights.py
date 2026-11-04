@@ -6,7 +6,7 @@ from sqlalchemy import select
 
 
 def test_a_role_cannot_carry_plugins_or_backups(client, seeded_db, db):
-    from hubra.api.global_rbac_seed import seed_global_rbac
+    from hubra.core.global_rbac_seed import seed_global_rbac
     from hubra.core.models.global_role import (
         GlobalPermission,
         GlobalRole,
@@ -49,7 +49,7 @@ def test_a_role_cannot_carry_plugins_or_backups(client, seeded_db, db):
 
 
 def test_the_old_superadmin_role_is_renamed(db, seeded_db):
-    from hubra.api.global_rbac_seed import seed_global_rbac
+    from hubra.core.global_rbac_seed import seed_global_rbac
     from hubra.core.models.global_role import GlobalRole
 
     db.session.add(GlobalRole(name="Superadmin", description="old", is_system=True))

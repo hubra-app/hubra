@@ -383,7 +383,7 @@ def delete_member(req: DataRequest, actor_id: int) -> set[int]:
     Returns the groups to resync once committed.  Does NOT commit.
     """
     from hubra.api.members.services import MemberService
-    from hubra.api.utils import log_audit
+    from hubra.core.utils import log_audit
     from hubra.core.models.finance import Invoice, Transaction
     from hubra.core.models.member import Member
     from hubra.core.tenant.context import in_club

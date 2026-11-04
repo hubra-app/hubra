@@ -296,8 +296,8 @@ def admin_for(interaction: dict, permission: str):
     """
     from sqlalchemy import select
 
-    from hubra.api.auth import mfa
-    from hubra.api.permissions import get_user_global_permissions
+    from hubra.core.auth import mfa
+    from hubra.core.permissions import get_user_global_permissions
     from hubra.core.extensions import db
     from hubra.core.models.connected_app import ExternalAccount
     from hubra.core.models.user import User
@@ -1028,7 +1028,7 @@ def _autocomplete(interaction: dict) -> dict:
 def _status(interaction: dict) -> dict:
     from sqlalchemy import func, select
 
-    from hubra.api.version.services import VersionService
+    from hubra.core.services.version import VersionService
     from hubra.core.extensions import db
     from hubra.core.models.tenant import Tenant
     from hubra.core.services import maintenance, platform_monitor
@@ -1509,7 +1509,7 @@ def _announced(version: str) -> bool:
 
 
 def release_notes(version: str) -> dict | None:
-    from hubra.api.version.services import VersionService
+    from hubra.core.services.version import VersionService
 
     for entry in VersionService.get_changelog("de"):
         if str(entry.get("version")) == version:
@@ -1539,7 +1539,7 @@ def release_embed(version: str, entry: dict | None) -> dict:
 
 def announce_release() -> bool:
     """Post the running version's release notes once per version."""
-    from hubra.api.version.services import VersionService
+    from hubra.core.services.version import VersionService
     from hubra.core.services import platform_discord, platform_monitor
 
     version = VersionService.get_version()
@@ -1617,7 +1617,7 @@ def post_security_now(title: str, lines: list[str], level: str = "warning") -> b
 
 
 def staff_new_device(user, ip: str, browser: str, platform: str) -> None:
-    from hubra.api.auth import mfa
+    from hubra.core.auth import mfa
 
     try:
         if not mfa.is_staff(user):
@@ -1637,7 +1637,7 @@ def staff_new_device(user, ip: str, browser: str, platform: str) -> None:
 
 def staff_mfa_off(user) -> None:
     """Called when an account loses its last second step."""
-    from hubra.api.auth import mfa
+    from hubra.core.auth import mfa
 
     try:
         if mfa.enabled(user) or not mfa.is_staff(user):

@@ -3,8 +3,8 @@
 
 from unittest.mock import patch
 
-from hubra.api.notifications import prefs
-from hubra.api.notifications.services import notify_all_active, notify_member
+from hubra.core.notifications import prefs
+from hubra.core.notifications.services import notify_all_active, notify_member
 from hubra.core.models.notification import Notification
 from hubra.core.models.push_subscription import PushSubscription
 
@@ -97,7 +97,7 @@ def test_push_off_keeps_the_bell(db, seeded_db):
 
 
 def test_new_posts_events_polls_use_their_module_as_topic(app):
-    from hubra.api.notifications import services
+    from hubra.core.notifications import services
 
     with (
         app.app_context(),

@@ -3,7 +3,7 @@
 from datetime import date
 from unittest.mock import patch
 
-from hubra.api.settings.services import SettingService
+from hubra.core.services.settings import SettingService
 
 
 def patch_mail_domain(domain: str):
@@ -13,7 +13,7 @@ def patch_mail_domain(domain: str):
     def fake_get(key, default=None):
         return domain if key == "mail.domain" else real_get(key, default)
 
-    return patch("hubra.api.settings.services.SettingService.get", side_effect=fake_get)
+    return patch("hubra.core.services.settings.SettingService.get", side_effect=fake_get)
 
 
 def set_modules(enabled: bool = True, *codes: str) -> None:

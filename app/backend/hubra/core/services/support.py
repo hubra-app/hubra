@@ -126,7 +126,7 @@ def clean_fingerprint(raw) -> dict:
 def _with_version(fp: dict) -> dict:
     """The server's own version, not what the browser claims."""
     try:
-        from hubra.api.version.services import VersionService
+        from hubra.core.services.version import VersionService
 
         fp["appVersion"] = str(VersionService.get_version())[:40]
     except Exception:  # noqa: BLE001
@@ -322,7 +322,7 @@ def own_case(user_id: int, case_id: int) -> SupportCase | None:
 
 
 def _plan() -> list[dict]:
-    from hubra.api.version.services import VersionService
+    from hubra.core.services.version import VersionService
 
     return VersionService.get_roadmap()
 

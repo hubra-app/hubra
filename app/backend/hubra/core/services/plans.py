@@ -550,6 +550,6 @@ def install(app) -> None:
     # /global/roadmap, readable from any site. Votes happen on SSO /roadmap.
     @app.get("/api/v1/global/public/roadmap")
     def public_roadmap_view():
-        from hubra.api.support import services as support
+        from hubra.core.services import support
 
         return _public(jsonify(support.roadmap()))

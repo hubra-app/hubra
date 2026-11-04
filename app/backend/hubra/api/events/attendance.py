@@ -16,7 +16,7 @@ from datetime import date, datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from hubra.api.utils import csv_safe
+from hubra.core.utils import csv_safe
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 from hubra.core.models.event import ClubEvent, EventAttendance, EventRegistration

@@ -2,7 +2,7 @@
 
 import io
 
-from hubra.api.i18n.services import get_translations
+from hubra.core.services.i18n import get_translations
 
 
 def test_export_then_import_adds_no_header_row(client, staff_headers, seeded_db):

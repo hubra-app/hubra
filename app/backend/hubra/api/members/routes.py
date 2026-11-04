@@ -8,20 +8,20 @@ import io
 
 from flask import Blueprint, Response, jsonify, request
 from flask_jwt_extended import jwt_required
-from hubra.api.auth.helpers import get_current_member
+from hubra.core.auth.helpers import get_current_member
 from marshmallow import ValidationError
 
 from hubra.api.members.services import (
     MemberService,
     MembersService,
 )
-from hubra.api.permissions import (
+from hubra.core.permissions import (
     permission_required,
     can_update,
     filter_updatable_fields,
     refuse_during_impersonation,
 )
-from hubra.api.utils import log_audit
+from hubra.core.utils import log_audit
 from hubra.core.errors import api_error, raise_error
 from hubra.core.extensions import db
 from hubra.core.schemas.member import (
@@ -44,7 +44,7 @@ _ADMIN_ONLY_FIELDS = ("notes", "emergency_contact")
 
 
 def _viewer_sees_admin_fields() -> bool:
-    from hubra.api.permissions import _get_member_permission_keys, member_is_admin
+    from hubra.core.permissions import _get_member_permission_keys, member_is_admin
 
     viewer = get_current_member()
     return member_is_admin(viewer) or (
@@ -178,7 +178,7 @@ def get_my_notifications():
 
 
 def _notify_choices(member) -> dict:
-    from hubra.api.notifications import channels, prefs
+    from hubra.core.notifications import channels, prefs
 
     apps = channels.available(member)
     names = channels.providers()
@@ -192,9 +192,9 @@ def _notify_choices(member) -> dict:
 @jwt_required()
 def set_my_notifications():
     """Body ``{topic: {channel: bool}}``; what is left out keeps its value."""
-    from hubra.api.notifications import prefs
+    from hubra.core.notifications import prefs
 
-    from hubra.api.notifications import channels
+    from hubra.core.notifications import channels
 
     body = request.get_json(silent=True)
     member = get_current_member()
@@ -689,7 +689,7 @@ def leave_club():
             target_id=member.id,
             target_label=member.name,
         )
-        from hubra.api.notifications.staff import notify_permitted
+        from hubra.core.notifications.staff import notify_permitted
 
         notify_permitted(
             "members.members.archive",
@@ -897,7 +897,7 @@ def enable_member(member_id: int):
 @permission_required("members", "update", "Update members")
 def revoke_member_sessions(member_id: int):
     """Admin endpoint: revoke all sessions for a member (force logout)."""
-    from hubra.api.auth import session_service
+    from hubra.core.auth import session_service
     from hubra.api.members.services import _check_may_remove
     from hubra.core.models.member import Member
 

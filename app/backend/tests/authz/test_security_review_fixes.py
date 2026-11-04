@@ -129,7 +129,7 @@ class TestClubCannotTakeOverAccounts:
 
 class TestImpersonationIsBounded:
     def _setup(self, client, db, seeded_db):
-        from hubra.api.global_rbac_seed import seed_global_rbac
+        from hubra.core.global_rbac_seed import seed_global_rbac
         from hubra.core.models.global_role import GlobalRole, UserGlobalRole
 
         seed_global_rbac()
@@ -313,7 +313,7 @@ class TestSessionsEnd:
 def test_translation_cache_is_per_club(app, db):
     from unittest.mock import patch
 
-    from hubra.api.i18n import services as i18n_services
+    from hubra.core.services import i18n as i18n_services
     from hubra.core.models.translation import Translation
 
     i18n_services._mem_translations.clear()

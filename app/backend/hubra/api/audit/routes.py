@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
-from hubra.api.permissions import permission_required
+from hubra.core.permissions import permission_required
 
 from hubra.core.errors import api_error, error_message
 from hubra.core.schemas.audit import AuditEntrySchema

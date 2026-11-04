@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import select
 
-from hubra.api.i18n.services import upsert_translation
+from hubra.core.services.i18n import upsert_translation
 from hubra.core.extensions import db
 from hubra.core.models.tenant import Tenant
 from hubra.core.models.translation import Translation

@@ -1,5 +1,5 @@
 """Two-factor sign-in: a code from an authenticator app (TOTP, RFC 6238)
-or a passkey (hubra/api/auth/passkeys.py).  Either one turns it on; the
+or a passkey (hubra/core/auth/passkeys.py).  Either one turns it on; the
 recovery codes belong to the account as long as one of them is set up.
 
 Setting it up: ``start_setup`` keeps a new secret as pending and returns it
@@ -164,7 +164,7 @@ def club_requires(tenant, member) -> bool:
     if scope == "all":
         return True
     if scope == "admins" and member is not None:
-        from hubra.api.permissions import held_roles
+        from hubra.core.permissions import held_roles
 
         return any(r.is_admin or r.is_owner for r in held_roles(member))
     return False
@@ -188,8 +188,8 @@ def club_refusal():
 
 
 def status(user: User) -> dict:
-    from hubra.api.auth import passkeys
-    from hubra.api.auth.services import AuthService
+    from hubra.core.auth import passkeys
+    from hubra.core.auth.services import AuthService
 
     on = enabled(user)
     clubs = [

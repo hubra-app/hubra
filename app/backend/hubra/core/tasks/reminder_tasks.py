@@ -174,7 +174,7 @@ def send_event_reminders_task(self) -> dict:
 @per_tenant_job("events")
 def _send_event_reminders(now: datetime | None = None) -> dict:
     from hubra.api.events.services import event_link
-    from hubra.api.notifications.services import notify_member
+    from hubra.core.notifications.services import notify_member
     from hubra.core.models.event import ClubEvent
 
     summary = {"events": 0, "notified": 0, "mailed": 0}
@@ -279,7 +279,7 @@ def send_poll_reminders_task(self) -> dict:
 
 @per_tenant_job("polls")
 def _send_poll_reminders(now: datetime | None = None) -> dict:
-    from hubra.api.notifications.services import notify_member
+    from hubra.core.notifications.services import notify_member
     from hubra.api.polls.services import poll_link
     from hubra.core.models.poll import Poll
 

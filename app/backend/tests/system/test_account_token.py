@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 from flask_jwt_extended import create_access_token
 
-from hubra.api.auth.account_token import ACCOUNT_COOKIE, ACCOUNT_CSRF_COOKIE
+from hubra.core.auth.account_token import ACCOUNT_COOKIE, ACCOUNT_CSRF_COOKIE
 from hubra.core.extensions import db
 
 
@@ -94,7 +94,7 @@ class TestClubTokenRefused:
             json={"email": "admin@test.ch", "password": "password123"},
         )
         from hubra.core.models.account_session import AccountSession
-        from hubra.api.auth import session_service
+        from hubra.core.auth import session_service
 
         session = db.session.query(AccountSession).first()
         session_service.revoke_account_session(

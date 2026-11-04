@@ -71,8 +71,8 @@ def _active_member(member) -> bool:
 
 def wanted(user) -> set[str]:
     """The role keys *user* should have (see ``ROLES``)."""
-    from hubra.api.auth import mfa
-    from hubra.api.permissions import held_roles
+    from hubra.core.auth import mfa
+    from hubra.core.permissions import held_roles
     from hubra.core.services import account
 
     if user is None or user.is_disabled:

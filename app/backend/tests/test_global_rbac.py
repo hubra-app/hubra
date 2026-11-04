@@ -9,7 +9,7 @@ from hubra.core.models.global_role import (
     UserGlobalRole,
 )
 from hubra.core.models.user import User
-from hubra.api.global_rbac_seed import seed_global_rbac
+from hubra.core.global_rbac_seed import seed_global_rbac
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────

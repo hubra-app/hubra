@@ -8,8 +8,8 @@ from typing import Any
 
 from sqlalchemy import select
 
-from hubra.api.settings.services import SettingService
-from hubra.api.utils import log_audit
+from hubra.core.services.settings import SettingService
+from hubra.core.utils import log_audit
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 from hubra.core.models.group import Group
