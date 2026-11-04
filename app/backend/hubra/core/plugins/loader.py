@@ -302,17 +302,52 @@ def _import(spec: Spec) -> list:
     return [dataclasses.replace(m, plugin=spec.id) for m in modules]
 
 
+def _taken(registry) -> tuple[dict[str, str], set[str]]:
+    """Club-area route prefixes and tenant tables of Hubra's own modules."""
+    from hubra.core.api_areas import canonical_path
+
+    taken: dict[str, str] = {}
+    tables: set[str] = set()
+    for m in registry.all() if hasattr(registry, "all") else []:
+        if m.plugin:
+            continue
+        for bp in m.blueprints:
+            taken[canonical_path("/" + bp.url_prefix.strip("/"))] = m.code
+        tables.update(m.tables)
+    return taken, tables
+
+
+def _bad_dependency(spec: Spec, found: PluginSet, matches) -> str:
+    """Why *spec*'s ``depends:`` can't be met here ('' when it can, or may
+    still be once the dependency loads)."""
+    for dep, rng in spec.depends.items():
+        other = found.get(dep)
+        if other is None or dep not in found.wanted:
+            return f"needs the plugin {dep}{' ' + rng if rng else ''}, which isn't installed"
+        if other.error:
+            return f"needs the plugin {dep}, which didn't load"
+        if not matches(other.version, rng):
+            return f"needs {dep} {rng}, this is {other.version}"
+    return ""
+
+
 def load(registry, app=None) -> PluginSet:
     """Discover plugins and add the installed ones to *registry*."""
     global _current
     app = app or (current_app if has_app_context() else None)
     if app is None:
         return _current
+    from hubra.core.api_areas import add_plugin_prefix
+
+    from .limits import LimitError, check
+    from .spec import version_matches
+
     found = discover(app)
     want = found.wanted
     known = set(registry.codes()) if hasattr(registry, "codes") else set()
-    # Load in dependency order: a plugin whose required modules come from
-    # another plugin waits for it.
+    taken, core_tables = _taken(registry)
+    # Load in dependency order: a plugin whose required modules or plugins
+    # come from another plugin waits for it.
     pending = [found.specs[p] for p in sorted(want) if p in found.specs]
     progress = True
     while pending and progress:
@@ -321,24 +356,47 @@ def load(registry, app=None) -> PluginSet:
             if spec.error:
                 pending.remove(spec)
                 continue
-            if any(code not in known for code in spec.requires):
+            bad = _bad_dependency(spec, found, version_matches)
+            if bad:
+                pending.remove(spec)
+                progress = True
+                spec.error = bad
+                continue
+            if any(code not in known for code in spec.requires) or any(
+                not (found.get(d) and found.get(d).loaded) for d in spec.depends
+            ):
                 continue
             pending.remove(spec)
             progress = True
             try:
-                modules = _import(spec)
+                declared = _import(spec)
+                trial = dict(taken)
+                modules = [check(m, spec, trial, core_tables) for m in declared]
                 for m in modules:
                     registry.add(m)
+            except LimitError as exc:
+                _log.error("Plugin %s refused: %s", spec.id, exc)
+                spec.error = f"not allowed: {exc}"
+                continue
             except Exception as exc:
                 _log.exception("Plugin %s failed to load", spec.id)
                 spec.error = f"{type(exc).__name__}: {exc}"
                 continue
+            taken = trial
+            for before, m in zip(declared, modules):
+                for orig, bp in zip(before.blueprints, m.blueprints):
+                    add_plugin_prefix("/" + orig.url_prefix.strip("/"), bp.url_prefix)
             spec.modules = modules
             spec.loaded = True
             known.update(m.code for m in modules)
+            if spec.uses is None:
+                _log.warning(
+                    "Plugin %s lists no uses: in plugin.yaml; loaded for now", spec.id
+                )
     for spec in pending:
         missing = [c for c in spec.requires if c not in known]
-        spec.error = spec.error or f"needs the module(s) {', '.join(missing)}"
+        missing += [d for d in spec.depends if not (found.get(d) and found.get(d).loaded)]
+        spec.error = spec.error or f"needs {', '.join(missing)}"
     for spec in found.specs.values():
         if spec.error and spec.id in want:
             _log.error("Plugin %s not loaded: %s", spec.id, spec.error)
