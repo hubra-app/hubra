@@ -54,10 +54,11 @@ export type SearchResult = {
     | 'event'
     | 'invoice'
     | 'transaction'
-    | 'inventory'
     | 'poll'
     | 'audit'
     | 'page'
+    /** A plugin's search: `<plugin>:<search id>`. */
+    | `${string}:${string}`
   id: string
   label: string
   sub?: string
@@ -391,9 +392,7 @@ export function getParentPath(pathname: string, navPaths: string[] = []): string
     ['/app/finance/invoices', '/app/finance'],
     ['/app/finance/categories', '/app/finance'],
     ['/app/mail', '/app/mail'],
-    ['/app/operations/codes', '/app/operations/codes'],
     ['/app/operations/bindings', '/app/operations/bindings'],
-    ['/app/inventory', '/app/inventory'],
     ['/app/settings', '/app/settings'],
     ['/app/audit-log', '/app/settings'],
     ['/app/system', '/app/settings'],
@@ -445,12 +444,10 @@ export function getBreadcrumb(
     '/app/finance/external-parties': t('shell.breadcrumbs.externalParties'),
     '/app/finance/settings': t('shell.breadcrumbs.financeSettings'),
     '/app/mail': t('shell.breadcrumbs.mail'),
-    '/app/operations/codes': t('shell.breadcrumbs.codes'),
     '/app/operations/bindings': t('shell.breadcrumbs.bindings'),
     '/app/settings': t('shell.breadcrumbs.settings'),
     '/app/account': t('shell.breadcrumbs.account'),
     '/app/account/settings': t('shell.breadcrumbs.accountSettings'),
-    '/app/inventory': t('shell.breadcrumbs.inventory'),
     '/app/audit-log': t('shell.breadcrumbs.auditLog'),
     '/app/system': t('shell.breadcrumbs.system'),
     '/app/system/roles': t('shell.breadcrumbs.roles'),
@@ -461,8 +458,6 @@ export function getBreadcrumb(
     return t('shell.breadcrumbs.memberDetail')
   if (/^\/app\/finance\/invoices\/[^/]+$/.test(pathname))
     return t('shell.breadcrumbs.invoiceDetail')
-  if (/^\/app\/inventory\/[^/]+$/.test(pathname))
-    return t('shell.breadcrumbs.inventoryItemDetail')
   // Sub-pages without their own entry (settings tabs, system tabs, …) show
   // the closest parent instead of nothing.
   const parent = Object.keys(map)

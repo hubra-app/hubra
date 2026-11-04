@@ -22,9 +22,9 @@ from sqlalchemy import inspect, text
 from hubra.core import crypto
 from hubra.core.extensions import db
 
-# (table, primary key, encrypted column, extra WHERE)
+# (table, primary key, encrypted column, extra WHERE).  Modules and plugins
+# add theirs with ``Module(encrypted_columns=...)``; see columns().
 COLUMNS: tuple[tuple[str, str, str, str], ...] = (
-    ("codes", "id", "code", ""),
     ("internal_keys", "id", "value", ""),
     ("managed_mail_addresses", "id", "mailbox_password_encrypted", ""),
     ("platform_settings", "key", "value", " AND secret"),
@@ -32,6 +32,13 @@ COLUMNS: tuple[tuple[str, str, str, str], ...] = (
     ("users", "id", "totp_pending_secret", ""),
     ("connected_apps", "id", "secret_encrypted", ""),
     ("external_accounts", "id", "token_encrypted", ""),
+)
+# Columns of features that moved into plugins. Their tables stay in a club's
+# schema until the plugin is installed (or for good, if it never is), so key
+# rotation keeps re-encrypting them; otherwise dropping an old FERNET_KEY
+# would lock that data away.
+MOVED_TO_PLUGINS: tuple[tuple[str, str, str, str], ...] = (
+    ("codes", "id", "code", ""),  # plugin "codes"
 )
 _DATA_KEYS = ("data_keys", "id", "wrapped_key", "")
 
@@ -68,8 +75,21 @@ def _q(name: str) -> str:
     return '"' + name.replace('"', '""') + '"'
 
 
-def _places(spec=COLUMNS) -> Iterator[Place]:
+def columns() -> tuple[tuple[str, str, str, str], ...]:
+    """Hubra's encrypted columns and those of every loaded module or plugin."""
+    from hubra.core.modules import registry
+
+    registry.load()
+    out = list(COLUMNS + MOVED_TO_PLUGINS)
+    for m in registry.all():
+        out.extend(c for c in m.encrypted_columns if c not in out)
+    return tuple(out)
+
+
+def _places(spec=None) -> Iterator[Place]:
     """Every place that exists, for the (table, pk, column, where) in *spec*."""
+    if spec is None:
+        spec = columns()
     bind = db.session.get_bind()
     if bind.dialect.name != "postgresql":
         tables = set(inspect(bind).get_table_names())

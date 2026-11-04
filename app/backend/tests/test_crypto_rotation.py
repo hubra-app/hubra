@@ -7,7 +7,7 @@ from cryptography.fernet import Fernet
 
 from hubra.core import crypto
 from hubra.core.config import ProductionConfig
-from hubra.core.models.code import Code
+from hubra.core.models.internal_key import InternalKey
 from hubra.core.models.platform_setting import PlatformSetting
 from hubra.core.services import secret_store
 
@@ -27,20 +27,27 @@ def keys(app):
     app.config["FERNET_KEY"], app.config["FERNET_OLD_KEYS"] = saved
 
 
-def _store(db, plaintext: str) -> Code:
-    code = Code(name=plaintext, code=crypto.encrypt_code(plaintext, "codes.code"))
-    db.session.add(code)
+PURPOSE = "internal_keys.value"
+
+
+def _store(db, plaintext: str) -> InternalKey:
+    row = InternalKey(key=plaintext, value=crypto.encrypt_code(plaintext, PURPOSE))
+    db.session.add(row)
     db.session.commit()
-    return code
+    return row
+
+
+def _plain(row: InternalKey) -> str:
+    return crypto.decrypt_code(row.value, PURPOSE)
 
 
 def test_old_key_still_decrypts_after_the_switch(db, keys):
     keys(OLD)
     code = _store(db, "1234")
     keys(NEW, OLD)
-    assert code.plain_code == "1234"
+    assert _plain(code) == "1234"
     # The value itself did not change: only the data key is wrapped by OLD.
-    assert crypto.is_current(code.code, crypto.PLATFORM)
+    assert crypto.is_current(code.value, crypto.PLATFORM)
     assert not secret_store.check().clean
 
 
@@ -48,22 +55,22 @@ def test_values_from_before_fernet_key_still_decrypt(db, keys):
     keys("")
     code = _store(db, "legacy")
     keys(NEW)
-    assert code.plain_code == "legacy"
+    assert _plain(code) == "legacy"
 
 
 def test_values_from_before_data_keys_still_decrypt_and_move_over(db, keys):
     from cryptography.fernet import Fernet as F
 
     keys(OLD)
-    code = Code(name="x", code=F(OLD.encode()).encrypt(b"plain-fernet").decode())
+    code = InternalKey(key="x", value=F(OLD.encode()).encrypt(b"plain-fernet").decode())
     db.session.add(code)
     db.session.commit()
-    assert code.plain_code == "plain-fernet"
+    assert _plain(code) == "plain-fernet"
     assert secret_store.rotate().rotated == 1
     db.session.expire_all()
-    stored = db.session.get(Code, code.id)
-    assert stored.code.startswith("hk1.p.1.")
-    assert stored.plain_code == "plain-fernet"
+    stored = db.session.get(InternalKey, code.id)
+    assert stored.value.startswith("hk1.p.1.")
+    assert _plain(stored) == "plain-fernet"
 
 
 def test_rotate_moves_everything_to_the_new_key(app, db, keys):
@@ -89,7 +96,7 @@ def test_rotate_moves_everything_to_the_new_key(app, db, keys):
     assert secret_store.check().clean
 
     keys(NEW)  # old key removed
-    assert db.session.get(Code, code.id).plain_code == "4321"
+    assert _plain(db.session.get(InternalKey, code.id)) == "4321"
     from hubra.core.services import platform_settings
 
     assert platform_settings.get("mail.relay.password") == "pw"
@@ -106,7 +113,7 @@ def test_rotate_leaves_values_no_key_opens(db, keys):
     assert [t.split(".")[-1] for t in report.unreadable] == ['"data_keys"']
     db.session.expire_all()
     keys(NEW, OLD)  # put back: nothing was overwritten
-    assert db.session.get(Code, code.id).plain_code == "lost"
+    assert _plain(db.session.get(InternalKey, code.id)) == "lost"
 
 
 def test_cli_check_fails_until_rotated(app, db, keys):
@@ -155,24 +162,24 @@ def test_rotate_covers_every_club_schema(db, keys):
     if db.engine.dialect.name != "postgresql":
         pytest.skip("club schemas need Postgres")
     keys(OLD)
-    value = crypto.encrypt_code("club-code", "codes.code", "c9901")
+    value = crypto.encrypt_code("club-code", PURPOSE, "c9901")
     db.session.execute(text("DROP SCHEMA IF EXISTS tenant_9901 CASCADE"))
     db.session.execute(text("CREATE SCHEMA tenant_9901"))
     db.session.execute(
-        text("CREATE TABLE tenant_9901.codes (id int PRIMARY KEY, code text)")
+        text("CREATE TABLE tenant_9901.internal_keys (id int PRIMARY KEY, value text)")
     )
     db.session.execute(
-        text("INSERT INTO tenant_9901.codes VALUES (1, :v)"), {"v": value}
+        text("INSERT INTO tenant_9901.internal_keys VALUES (1, :v)"), {"v": value}
     )
     db.session.commit()
     try:
         keys(NEW, OLD)
         assert secret_store.new_keys({"c9901"}).rotated == 1
-        stored = db.session.scalar(text("SELECT code FROM tenant_9901.codes"))
+        stored = db.session.scalar(text("SELECT value FROM tenant_9901.internal_keys"))
         assert stored.startswith("hk1.c9901.2.")
         assert secret_store.rotate().rotated >= 1  # the data keys
         keys(NEW)
-        assert crypto.decrypt_code(stored, "codes.code", "c9901") == "club-code"
+        assert crypto.decrypt_code(stored, PURPOSE, "c9901") == "club-code"
     finally:
         db.session.execute(text("DROP SCHEMA tenant_9901 CASCADE"))
         db.session.commit()
@@ -312,3 +319,37 @@ class TestEncryptionApi:
         assert ok.get_json()["backup_public_key"] == key
         cleared = client.put(url, json={"public_key": None}, headers=auth_headers)
         assert cleared.get_json()["backup_public_key"] is None
+
+
+def test_codes_are_rotated_without_the_codes_plugin(db, keys):
+    """Codes moved into a plugin. Until it is installed its table stays, and
+    rotation must still move those values to the new key."""
+    from sqlalchemy import inspect, text
+
+    assert ("codes", "id", "code", "") in secret_store.MOVED_TO_PLUGINS
+    keys(OLD)
+    value = crypto.encrypt_code("4711", "codes.code")
+    # The plugin's model may be loaded in this test run; its table is the same.
+    made = "codes" not in inspect(db.engine).get_table_names()
+    if made:
+        db.session.execute(text("CREATE TABLE codes (id int PRIMARY KEY, code text)"))
+    db.session.execute(
+        text(
+            "INSERT INTO codes (id, name, code, is_active, created_at, updated_at) "
+            "VALUES (1, 'Door', :v, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+        )
+        if not made
+        else text("INSERT INTO codes VALUES (1, :v)"),
+        {"v": value},
+    )
+    db.session.commit()
+    try:
+        keys(NEW, OLD)
+        assert secret_store.rotate().rotated >= 1
+        db.session.expire_all()
+        keys(NEW)
+        stored = db.session.scalar(text("SELECT code FROM codes"))
+        assert crypto.decrypt_code(stored, "codes.code") == "4711"
+    finally:
+        db.session.execute(text("DROP TABLE codes" if made else "DELETE FROM codes"))
+        db.session.commit()

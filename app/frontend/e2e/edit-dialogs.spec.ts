@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
-import { api, enableModule, unique } from './api'
+import { enableModule } from './api'
 import { appUrl } from './env'
 
 // Edit dialogs follow the member form: a wide dialog with paired fields
@@ -9,7 +9,6 @@ const DIALOGS = [
   { path: 'members/functions', button: 'Hinzufügen', pair: ['Name', 'Max. Anzahl Personen'] },
   { path: 'members/tiers', button: 'Neue Stufe', pair: ['Abrechnung', 'Preis (CHF)'] },
   { path: 'operations/events', module: 'events', button: 'Anlass hinzufügen', pair: ['Datum', 'Zeit (optional)'] },
-  { path: 'inventory', module: 'inventory', button: 'Gegenstand hinzufügen', pair: ['Kategorie', 'Status'] },
   { path: 'finance/external-parties', button: 'Neue Partei', pair: ['Name', 'E-Mail'] },
   { path: 'finance/invoices', button: 'Rechnung ausstellen', pair: ['Empfängertyp', 'Mitglied'] },
 ]
@@ -48,27 +47,6 @@ for (const d of DIALOGS) {
     expect(overflow).toBeLessThanOrEqual(0)
   })
 }
-
-test('editing an active code shows it as active', async ({ page }) => {
-  await page.goto(appUrl('dashboard'))
-  await enableModule(page, 'codes')
-  const name = unique('E2E Code')
-  const code = await api<{ id: number }>(page, 'POST', '/codes/', { name, code: '4711' })
-  try {
-    await page.goto(appUrl('operations/codes'))
-    await page
-      .getByRole('main')
-      .locator('tr, .mantine-Paper-root', { hasText: name })
-      .last()
-      .getByRole('button', { name: 'Bearbeiten' })
-      .click()
-    const dialog = page.getByRole('dialog')
-    await expect(dialog.getByText(name)).toBeVisible()
-    await expect(dialog.getByRole('checkbox', { name: 'Aktiv' })).toBeChecked()
-  } finally {
-    await api(page, 'DELETE', `/codes/${code.id}`)
-  }
-})
 
 test('a system role keeps its name out of the edit form', async ({ page }) => {
   await page.goto(appUrl('system/roles'))
