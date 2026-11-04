@@ -8,7 +8,7 @@ Safe to run again per club (flask migrate-tenants): the table goes to
 public, once.
 
 Revision ID: b4e8f2a6c1d9
-Revises: c3d7a1e5f9b2
+Revises: d8a3f1c6b2e7
 Create Date: 2026-11-04 11:00:00.000000
 
 """
@@ -19,7 +19,7 @@ from sqlalchemy.dialects import postgresql
 
 
 revision = "b4e8f2a6c1d9"
-down_revision = "c3d7a1e5f9b2"
+down_revision = "d8a3f1c6b2e7"
 branch_labels = None
 depends_on = None
 
