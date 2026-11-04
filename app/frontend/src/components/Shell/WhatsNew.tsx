@@ -1,11 +1,9 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import { Center, Loader, Modal, SegmentedControl, Stack, Text } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
-import { useQuery } from '@tanstack/react-query'
 import { ReleaseNotes, Roadmap, latestReleaseKey } from '@hubra/ui'
 import { useT } from '@/locales/i18n'
-import { getRoadmap } from '@/api/system'
-import { qk } from '@/data/keys'
+import { useRoadmap } from '@/screens/private/support/roadmapData'
 import { markWhatsNewSeen, setWhatsNewOpen, subscribeWhatsNew, whatsNewOpen } from './whatsNewStore'
 import { useChangelog, useReleaseLang } from './whatsNewData'
 
@@ -22,12 +20,7 @@ export function WhatsNewModal() {
   const opened = useSyncExternalStore(subscribeWhatsNew, whatsNewOpen)
   const [view, setView] = useState<View>('news')
   const changelog = useChangelog(opened)
-  const roadmap = useQuery({
-    queryKey: qk.roadmap,
-    queryFn: getRoadmap,
-    enabled: opened && view === 'roadmap',
-    staleTime: 30 * 60 * 1000,
-  })
+  const roadmap = useRoadmap(opened && view === 'roadmap')
 
   useEffect(() => {
     if (opened && changelog.data) markWhatsNewSeen(latestReleaseKey(changelog.data.entries))
@@ -66,7 +59,7 @@ export function WhatsNewModal() {
         ) : view === 'news' ? (
           <ReleaseNotes entries={changelog.data?.entries ?? []} lang={lang} />
         ) : (
-          <Roadmap items={roadmap.data?.items ?? []} lang={lang} />
+          <Roadmap items={roadmap.items} lang={lang} voting={roadmap.voting} />
         )}
       </Stack>
     </Modal>

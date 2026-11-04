@@ -128,6 +128,10 @@ def _reset_redis_breaker():
     from hubra.core.services import perf_monitor
 
     reset_redis_down()
+    # Each test makes its own platform key; keep none from an earlier one.
+    from hubra.core import crypto
+
+    crypto.forget_keys()
     # Request timing of earlier tests must not count in this one.
     perf_monitor.reset_local()
     # Past the start-up grace, so a 5xx counts as a server error.

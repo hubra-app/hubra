@@ -7,6 +7,7 @@ import {
   Button,
   Group,
   TextInput,
+  Textarea,
   Select,
   Badge,
   Checkbox,
@@ -28,6 +29,7 @@ import {
   IconLogin,
   IconLogout as Leave,
   IconRepeat,
+  IconWorld,
   IconClipboardCheck,
   IconChartBar,
 } from '@tabler/icons-react'
@@ -78,6 +80,10 @@ const eventSchema = z.object({
   requiresApproval: z.boolean(),
   // Empty: for everyone.
   groupId: z.string(),
+  description: z.string(),
+  // Public: may be shown outside the club (a Discord server that is not
+  // members-only, the club's public pages).
+  isPublic: z.boolean(),
 })
 type EventForm = z.infer<typeof eventSchema>
 
@@ -168,6 +174,8 @@ export function EventsTab() {
       maxAttendees: '',
       requiresApproval: false,
       groupId: '',
+      description: '',
+      isPublic: false,
     },
   })
 
@@ -215,6 +223,8 @@ export function EventsTab() {
       maxAttendees: '',
       requiresApproval: false,
       groupId: '',
+      description: '',
+      isPublic: false,
     })
     setRepeat(defaultRepeat(new Date().toISOString().slice(0, 10)))
     setAddOpen(true)
@@ -252,6 +262,8 @@ export function EventsTab() {
       maxAttendees: ev.maxAttendees ? String(ev.maxAttendees) : '',
       requiresApproval: ev.requiresApproval ?? false,
       groupId: ev.groupId ?? '',
+      description: ev.description ?? '',
+      isPublic: ev.isPublic ?? false,
     })
     setEditScope('this')
     // The rule as it stands from this date on.
@@ -276,6 +288,8 @@ export function EventsTab() {
         maxAttendees: limitOf(data.maxAttendees),
         requiresApproval: data.requiresApproval,
         groupId: data.groupId || null,
+        description: data.description,
+        isPublic: data.isPublic,
         recurrence: repeat.on
           ? {
               until: repeat.until,
@@ -320,6 +334,8 @@ export function EventsTab() {
       maxAttendees: limitOf(data.maxAttendees),
       requiresApproval: data.requiresApproval,
       groupId: data.groupId || null,
+      description: data.description,
+      isPublic: data.isPublic,
     }
     const following = editScope === 'following' && !!editTarget.seriesId
     let input = all
@@ -334,6 +350,8 @@ export function EventsTab() {
         maxAttendees: editTarget.maxAttendees ?? null,
         requiresApproval: editTarget.requiresApproval ?? false,
         groupId: editTarget.groupId ?? null,
+        description: editTarget.description ?? '',
+        isPublic: editTarget.isPublic ?? false,
       }
       input = Object.fromEntries(
         (Object.keys(was) as (keyof EventUpdate)[])
@@ -427,6 +445,18 @@ export function EventsTab() {
           )}
         />
       </Field>
+      <Field label={t('events.description', 'Beschreibung') + ' (optional)'}>
+        <Textarea
+          autosize
+          minRows={2}
+          maxRows={8}
+          {...form.getInputProps('description')}
+          placeholder={t(
+            'events.descriptionPlaceholder',
+            'Was erwartet die Teilnehmenden? Was mitbringen?',
+          )}
+        />
+      </Field>
       <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
         <Field label={t('common.date', 'Datum')}>
           <TextInput
@@ -490,6 +520,14 @@ export function EventsTab() {
           'Anmeldungen bestätigen (Organisatoren entscheiden über jede Anmeldung)',
         )}
         {...form.getInputProps('requiresApproval', { type: 'checkbox' })}
+      />
+      <Checkbox
+        label={t('events.isPublic', 'Öffentlicher Anlass')}
+        description={t(
+          'events.isPublicHint',
+          'Darf auch ausserhalb des Vereins erscheinen, z. B. auf einem offenen Discord-Server. Sonst sehen ihn nur Mitglieder.',
+        )}
+        {...form.getInputProps('isPublic', { type: 'checkbox' })}
       />
       {(!editTarget || followingScope) && (
         <>
@@ -593,6 +631,15 @@ export function EventsTab() {
                 }}
               >
                 {ev.title}
+                {ev.isPublic && (
+                  <Tooltip label={t('events.isPublic', 'Öffentlicher Anlass')}>
+                    <IconWorld
+                      size={14}
+                      aria-label={t('events.isPublic', 'Öffentlicher Anlass')}
+                      style={{ color: 'var(--hb-text-3)' }}
+                    />
+                  </Tooltip>
+                )}
                 {ev.seriesId && (
                   <Tooltip label={t('events.series.badge', 'Wiederkehrender Termin')}>
                     <IconRepeat

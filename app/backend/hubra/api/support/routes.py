@@ -125,31 +125,53 @@ def my_roadmap():
     return jsonify(services.roadmap(user.id)), 200
 
 
-def _vote(case_id: int, on: bool):
+def _vote(on: bool, *, case_id: int | None = None, item_id: str | None = None):
     user = _me()
     if user is None:
         return api_error("UNAUTHORIZED", "Sign in first", 401)
     try:
-        votes = services.vote(user.id, case_id, on)
+        if case_id is not None:
+            votes = services.vote(user.id, case_id, on)
+        else:
+            votes = services.vote_item(user.id, str(item_id)[:64], on)
     except LookupError:
         db.session.rollback()
         return api_error("NOT_FOUND", "Not on the roadmap", 404)
+    except SupportError as exc:
+        db.session.rollback()
+        return api_error("CONFLICT", error_message(exc), 409)
     db.session.commit()
-    return jsonify({"id": case_id, "votes": votes, "voted": on}), 200
+    key = case_id if case_id is not None else item_id
+    return jsonify({"id": key, "votes": votes, "voted": on}), 200
 
 
 @support_bp.post("/roadmap/<int:case_id>/vote")
 @jwt_required()
 @limiter.limit("120 per hour")
 def vote_for(case_id: int):
-    return _vote(case_id, True)
+    return _vote(True, case_id=case_id)
 
 
 @support_bp.delete("/roadmap/<int:case_id>/vote")
 @jwt_required()
 @limiter.limit("120 per hour")
 def unvote(case_id: int):
-    return _vote(case_id, False)
+    return _vote(False, case_id=case_id)
+
+
+@support_bp.post("/roadmap/items/<item_id>/vote")
+@jwt_required()
+@limiter.limit("120 per hour")
+def vote_for_item(item_id: str):
+    """Vote for a planned item (ROADMAP.yaml ``id``)."""
+    return _vote(True, item_id=item_id)
+
+
+@support_bp.delete("/roadmap/items/<item_id>/vote")
+@jwt_required()
+@limiter.limit("120 per hour")
+def unvote_item(item_id: str):
+    return _vote(False, item_id=item_id)
 
 
 # ── Anyone: /roadmap ──────────────────────────────────────────────────────────
@@ -194,7 +216,7 @@ def _case_or_404(case_id: int):
 @support_admin_bp.get("/cases")
 @require_global_permission(_PERM)
 def staff_list():
-    """``?kind=bug|feature&status=active|<status>&q=&page=&per_page=``."""
+    """``?kind=bug|feature&status=active|<status>&area=&q=&page=&per_page=``."""
     kind = request.args.get("kind") or None
     if kind and kind not in services.KINDS:
         return api_error("VALIDATION_ERROR", "Unknown kind", 400)
@@ -206,10 +228,18 @@ def staff_list():
         per_page = min(100, max(1, int(request.args.get("per_page", 25))))
     except ValueError:
         return api_error("VALIDATION_ERROR", "page and per_page must be numbers", 400)
+    area = request.args.get("area") or None
+    if area and area not in services.AREAS:
+        return api_error("VALIDATION_ERROR", "Unknown area", 400)
     query = (request.args.get("q") or "").strip()[:100] or None
     return jsonify(
         services.staff_listing(
-            kind=kind, status=status, query=query, page=page, per_page=per_page
+            kind=kind,
+            status=status,
+            area=area,
+            query=query,
+            page=page,
+            per_page=per_page,
         )
     ), 200
 
@@ -226,8 +256,8 @@ def staff_get(case_id: int):
 @support_admin_bp.patch("/cases/<int:case_id>")
 @require_global_permission(_PERM)
 def staff_update(case_id: int):
-    """Body: any of ``status``, ``isPublic``, ``title``, ``description``,
-    ``area``, and ``notify`` (default true: mail the reporter about a new
+    """Body: any of ``status``, ``isPublic``, ``roadmapItem`` (a ROADMAP.yaml
+    id or null), ``title``, ``description``, ``area``, and ``notify`` (default true: mail the reporter about a new
     status)."""
     case, err = _case_or_404(case_id)
     if err:
@@ -250,6 +280,8 @@ def staff_update(case_id: int):
         details["status"] = {"from": old_status, "to": case.status}
     if "isPublic" in changed:
         details["public"] = case.is_public
+    if "roadmapItem" in changed:
+        details["roadmapItem"] = case.roadmap_item
     _audit("support_case.update", case, details)
     db.session.commit()
     if "status" in changed and body.get("notify", True) is not False:
