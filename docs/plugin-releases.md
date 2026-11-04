@@ -16,16 +16,20 @@ bumped on main, since an unpublished version is not installable):
       description, version), keeping the table in alphabetical order.
 - [ ] **Marketplace README** (`hubra-app/hubra-plugins`, `README.md`): same
       version in the plugin table; for a new plugin add the row.
-- [ ] **About page** (`hubra-app/hubra.club`, `src/pages/module.html` and
+- [ ] **Modules page** (`hubra-app/hubra.club`, `src/pages/module.html` and
       `src/pages/en/modules.html`): for a new plugin add a card in both
       languages with `data-plugin="<id>"` and a short description; when a
       release changes what a plugin does, update its description. Run
       `python3 tools/build.py` and commit `src/` and `public/` together.
-- [ ] **GitHub org profile** (`hubra-app/.github`, `profile/README.md`): for
-      a new plugin add its row. This file is edited in the GitHub web UI.
+- [ ] **GitHub org profile** (`hubra-app/.github`, `profile/README.md`, the
+      page at github.com/hubra-app): set the version in the plugin's row; for
+      a new plugin add its row (alphabetical, with description and version).
+      Sessions cannot push to `.github`, so this file is edited in the GitHub
+      web UI.
 
-Versions are only listed in the two READMEs; the about page shows what each
-plugin does, and prices come from the public API at runtime.
+Versions are listed in the two READMEs and the org profile; the hubra.club
+Modules page shows what each plugin does, and prices come from the public API
+at runtime.
 
 ## Finding the current versions
 
