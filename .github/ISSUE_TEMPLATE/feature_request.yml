@@ -1,0 +1,47 @@
+name: Feature request
+description: Suggest something new for Hubra, or a change to how something works.
+title: "[Idea]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please look at the [roadmap](https://support.hubra.club/roadmap)
+        first. If your idea is already there, vote for it instead of opening
+        an issue.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does it solve?
+      description: Describe the situation in your club, not the solution yet. "Our treasurer has to…"
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would you like?
+      description: How you imagine it working. Sketches and screenshots of other tools are welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: How do you handle it today?
+      description: Workarounds or other tools you use.
+  - type: dropdown
+    id: who
+    attributes:
+      label: Who would use it?
+      multiple: true
+      options:
+        - Members
+        - Club board and admins
+        - Treasurer
+        - Platform operators
+        - Developers (API, plugins)
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contributing
+      options:
+        - label: I would like to build this myself (please read CONTRIBUTING.md first).

@@ -1,0 +1,34 @@
+name: Accessibility problem
+description: Something is hard or impossible to use with a keyboard, screen reader, zoom or other assistive technology.
+title: "[Accessibility]: "
+labels: ["accessibility"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. Accessibility problems are bugs, and we treat them that
+        way. See our [accessibility statement](https://github.com/hubra-app/hubra/blob/main/docs/accessibility.md).
+  - type: input
+    id: page
+    attributes:
+      label: Page or screen
+      placeholder: e.g. Club app › Mitglieder › member detail
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is the barrier?
+      description: What you tried to do, and what stopped you.
+    validations:
+      required: true
+  - type: input
+    id: tech
+    attributes:
+      label: Assistive technology, browser and device
+      placeholder: e.g. NVDA 2025.1 with Firefox on Windows, VoiceOver on iPhone, 200 % zoom
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Screenshots, the WCAG criterion if you know it, or how it should work.
