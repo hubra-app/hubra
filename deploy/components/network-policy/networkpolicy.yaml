@@ -21,7 +21,7 @@ spec:
       - key: app.kubernetes.io/name
         operator: In
         # plugins: the marketplace some clusters add (clusters/contabo).
-        values: [backend, global-backend, platform-backend, frontend, admin-frontend, sso-frontend, plugins]
+        values: [backend, global-backend, platform-backend, frontend, admin-frontend, sso-frontend, support-frontend, plugins]
   policyTypes: [Ingress]
   ingress:
     - from:

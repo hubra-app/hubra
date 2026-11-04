@@ -92,6 +92,11 @@ jobs:
             dockerfile: app/sso-frontend/Dockerfile
             target: production
             paths: app/sso-frontend packages app/deploy/nginx
+          - image: support-frontend
+            context: .
+            dockerfile: app/support-frontend/Dockerfile
+            target: production
+            paths: app/support-frontend packages app/deploy/nginx
           - image: haraka
             context: modules/mail/haraka
             dockerfile: modules/mail/haraka/Dockerfile
@@ -264,7 +269,7 @@ jobs:
             echo
             echo '```yaml'
             echo "images:"
-            for image in backend global-backend platform-backend mcp frontend admin-frontend sso-frontend haraka zonemta cert-watcher; do
+            for image in backend global-backend platform-backend mcp frontend admin-frontend sso-frontend support-frontend haraka zonemta cert-watcher; do
               digest="$(docker buildx imagetools inspect "$repo/$image:$tag" --format '{{json .Manifest}}' | jq -r .digest)"
               echo "  - name: $repo/$image"
               echo "    newTag: \"$tag\""

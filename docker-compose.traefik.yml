@@ -4,8 +4,8 @@
 # Set the production URLs in .env (see .env.example). The SPAs call the API on
 # its own host, so VITE_API_BASE=https://api.hubra.club/api there.
 #
-# Host names default to app/manage/sso/join/api.hubra.club. Another domain sets
-# HUBRA_APP_HOST, HUBRA_MANAGE_HOST, HUBRA_SSO_HOST, HUBRA_JOIN_HOST and
+# Host names default to app/manage/sso/join/support/api.hubra.club. Another domain sets
+# HUBRA_APP_HOST, HUBRA_MANAGE_HOST, HUBRA_SSO_HOST, HUBRA_JOIN_HOST, HUBRA_SUPPORT_HOST and
 # HUBRA_API_HOST in .env
 # (the vollbuild.ch server: see .env.example).
 #
@@ -58,6 +58,19 @@ services:
       - "traefik.http.routers.join-secure.tls.certresolver=letencrypt"
       - "traefik.http.routers.join-secure.service=sso-secure"
       - "traefik.http.routers.join-secure.middlewares=crowdsec@file,error-pages-middleware"
+
+  support-frontend:
+    networks:
+      - hubra_internal
+      - frontend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=frontend"
+      - "traefik.http.routers.support-secure.rule=Host(`${HUBRA_SUPPORT_HOST:-support.hubra.club}`)"
+      - "traefik.http.routers.support-secure.entrypoints=websecure"
+      - "traefik.http.routers.support-secure.tls.certresolver=letencrypt"
+      - "traefik.http.services.support-secure.loadbalancer.server.port=80"
+      - "traefik.http.routers.support-secure.middlewares=crowdsec@file,error-pages-middleware"
 
   backend:
     networks:

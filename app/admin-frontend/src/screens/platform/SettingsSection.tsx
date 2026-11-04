@@ -55,6 +55,7 @@ const DISCORD_ROLES = ['discord.platform_roles']
 const PERF = ['perf.slow_request_ms', 'perf.slow_query_ms', 'perf.p95_warning_ms']
 const LIMITS = ['limits.warn_percent']
 const MCP = ['mcp.url']
+const SUPPORT = ['support.url']
 const BUILT_IN = ['alerts.cooldown_minutes', 'alerts.retention_days', ...PERF, ...LIMITS]
 const ALERTS = ['alerts.cooldown_minutes', 'alerts.retention_days', 'alerts.manage_url']
 
@@ -75,6 +76,7 @@ export type SettingsSectionId =
   | 'performance'
   | 'limits'
   | 'mcp'
+  | 'support'
 /** The keys each section saves. */
 const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
   relay: [...RELAY, ...FALLBACK],
@@ -86,6 +88,7 @@ const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
   performance: PERF,
   limits: LIMITS,
   mcp: MCP,
+  support: SUPPORT,
 }
 
 function SourceBadge({ s }: { s: PlatformSetting }) {
@@ -174,6 +177,10 @@ const FIELD_DE: Record<string, [string, string]> = {
   'mcp.url': [
     'Adresse des Claude-Connectors',
     'Wo der MCP-Server (app/mcp) erreichbar ist; manage zeigt damit den Befehl zum Verbinden (https://mcp.hubra.club). Leer: nicht eingerichtet',
+  ],
+  'support.url': [
+    'Adresse der Support-Seite',
+    'Hilfe, Roadmap, Status und Meldungen (Image support-frontend), z. B. https://support.hubra.club. Mails an Meldende verlinken dorthin. Leer: auf die Meldungen in der Vereins-App',
   ],
   'alerts.manage_url': [
     'Adresse von manage',
@@ -464,6 +471,22 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
                 )}
               </Text>
               <Stack gap="sm">{MCP.map(field)}</Stack>
+            </Paper>
+          )}
+
+          {section === 'support' && (
+            <Paper withBorder p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Support-Seite', 'Support site')}</Title>
+                {resetButton(SUPPORT)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Wo die Support-Seite läuft. Antworten auf Meldungen und die Mail nach einer Passwortänderung verlinken dorthin.',
+                  'Where the support site runs. Answers to reports and the password-changed mail link there.',
+                )}
+              </Text>
+              <Stack gap="sm">{SUPPORT.map(field)}</Stack>
             </Paper>
           )}
 

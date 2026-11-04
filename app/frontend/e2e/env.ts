@@ -6,6 +6,7 @@
 export const APP_URL = process.env.E2E_APP_URL ?? 'http://localhost:5173'
 export const MANAGE_URL = process.env.E2E_MANAGE_URL ?? 'http://localhost:5174'
 export const SSO_URL = process.env.E2E_SSO_URL ?? 'http://localhost:5175'
+export const SUPPORT_URL = process.env.E2E_SUPPORT_URL ?? 'http://localhost:5176'
 export const CLUB = process.env.E2E_CLUB ?? 'demo'
 export const EMAIL = process.env.E2E_EMAIL ?? 'admin@demo.test'
 export const PASSWORD = process.env.E2E_PASSWORD ?? 'Demo-Passwort-2026!'

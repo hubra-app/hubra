@@ -8,7 +8,7 @@
 #   FRONTEND_BASE_URL=https://app.hubra.club
 #   MANAGE_BASE_URL=https://manage.hubra.club
 #   SSO_BASE_URL=https://sso.hubra.club
-#   CORS_ORIGINS=https://app.hubra.club,https://manage.hubra.club,https://sso.hubra.club,https://join.hubra.club
+#   CORS_ORIGINS=https://app.hubra.club,https://manage.hubra.club,https://sso.hubra.club,https://join.hubra.club,https://support.hubra.club
 #   JWT_COOKIE_DOMAIN=.hubra.club
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -76,6 +76,7 @@ configMapGenerator:
       - VITE_TENANT_APP_URL=https://app.hubra.club
       - VITE_MANAGE_URL=https://manage.hubra.club
       - VITE_ADMIN_PORTAL_URL=https://manage.hubra.club
+      - VITE_SUPPORT_URL=https://support.hubra.club
 
 # Pinned images, never `latest`: Flux only rolls out what this file names.
 # To upgrade, paste the "Images pinned by digest" block from the Images run
@@ -106,4 +107,9 @@ images:
   # The Claude connector (docs/mcp.md); pin it to the first release that has
   # it. Until then `latest` from the base, or leave mcp.hubra.club out of DNS.
   # - name: ghcr.io/hubra-app/hubra/mcp
+  #   newTag: sha-…
+  # The support site (support.hubra.club); pin it to the first release that
+  # has it, like mcp. Until then `latest` from the base, or leave
+  # support.hubra.club out of DNS.
+  # - name: ghcr.io/hubra-app/hubra/support-frontend
   #   newTag: sha-…

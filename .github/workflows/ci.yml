@@ -44,6 +44,7 @@ jobs:
   #   club app lint      app/frontend/, packages/, plugins/
   #   manage lint        app/admin-frontend/, packages/, plugins/
   #   SSO lint           app/sso-frontend/, packages/, plugins/
+  #   support lint       app/support-frontend/, packages/
   #   deploy lint        docker-compose*.yml, .env.example, settings.yaml,
   #                      deploy/, modules/, scripts/, app/deploy/
   #   backend tests      app/backend/, plugins/, settings.yaml
@@ -69,6 +70,7 @@ jobs:
       lint_frontend: ${{ steps.diff.outputs.lint_frontend }}
       lint_admin: ${{ steps.diff.outputs.lint_admin }}
       lint_sso: ${{ steps.diff.outputs.lint_sso }}
+      lint_support: ${{ steps.diff.outputs.lint_support }}
       lint_deploy: ${{ steps.diff.outputs.lint_deploy }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -82,7 +84,7 @@ jobs:
         run: |
           if [ "$FULL" = true ] || ! files=$(git diff --name-only "$BASE...$HEAD" 2>/dev/null); then
             # Full run, or unknown base (new branch, force push): run everything.
-            for o in backend mcp frontends lint lint_backend lint_frontend lint_admin lint_sso lint_deploy; do
+            for o in backend mcp frontends lint lint_backend lint_frontend lint_admin lint_sso lint_support lint_deploy; do
               echo "$o=true" >> "$GITHUB_OUTPUT"
             done
             exit 0
@@ -103,11 +105,12 @@ jobs:
           }
           out backend       'app/backend/|plugins/|settings\.yaml$'
           out mcp           'app/mcp/'
-          out frontends     'app/(frontend|admin-frontend|sso-frontend)/|packages/|plugins/'
+          out frontends     'app/(frontend|admin-frontend|sso-frontend|support-frontend)/|packages/|plugins/'
           out lint_backend  'app/backend/|plugins/'
           out lint_frontend 'app/frontend/|packages/|plugins/'
           out lint_admin    'app/admin-frontend/|packages/|plugins/'
           out lint_sso      'app/sso-frontend/|packages/|plugins/'
+          out lint_support  'app/support-frontend/|packages/'
           out lint_deploy   'docker-compose[^/]*\.yml$|\.env\.example$|settings\.yaml$|deploy/|modules/|scripts/|app/deploy/'
           echo "lint=$lint" >> "$GITHUB_OUTPUT"
           cat "$GITHUB_OUTPUT"
@@ -134,6 +137,7 @@ jobs:
           needs.changes.outputs.lint_frontend != 'false'
           || needs.changes.outputs.lint_admin != 'false'
           || needs.changes.outputs.lint_sso != 'false'
+          || needs.changes.outputs.lint_support != 'false'
         with:
           node-version: "22"
           cache: npm
@@ -141,6 +145,7 @@ jobs:
             app/frontend/package-lock.json
             app/admin-frontend/package-lock.json
             app/sso-frontend/package-lock.json
+            app/support-frontend/package-lock.json
       - name: "backend: ruff"
         if: ${{ !cancelled() && needs.changes.outputs.lint_backend != 'false' }}
         working-directory: app/backend
@@ -163,6 +168,13 @@ jobs:
       - name: "sso-frontend: eslint and tsc"
         if: ${{ !cancelled() && needs.changes.outputs.lint_sso != 'false' }}
         working-directory: app/sso-frontend
+        run: |
+          npm ci
+          npm run lint
+          npx tsc -b
+      - name: "support-frontend: eslint and tsc"
+        if: ${{ !cancelled() && needs.changes.outputs.lint_support != 'false' }}
+        working-directory: app/support-frontend
         run: |
           npm ci
           npm run lint
@@ -238,7 +250,7 @@ jobs:
       - run: ruff check . --line-length 100
       - run: pytest -q
 
-  # Frontend unit tests (vitest in the club app, node --test in SSO).
+  # Frontend unit tests (vitest in the club app, node --test in SSO and support).
   frontend-tests:
     needs: changes
     if: needs.changes.outputs.frontends == 'true'
@@ -252,6 +264,7 @@ jobs:
           cache-dependency-path: |
             app/frontend/package-lock.json
             app/sso-frontend/package-lock.json
+            app/support-frontend/package-lock.json
       - name: "frontend"
         if: ${{ !cancelled() }}
         working-directory: app/frontend
@@ -261,6 +274,12 @@ jobs:
       - name: "sso-frontend"
         if: ${{ !cancelled() }}
         working-directory: app/sso-frontend
+        run: |
+          npm ci
+          npm test
+      - name: "support-frontend"
+        if: ${{ !cancelled() }}
+        working-directory: app/support-frontend
         run: |
           npm ci
           npm test
@@ -304,6 +323,7 @@ jobs:
           E2E_APP_URL: http://localhost:8080
           E2E_MANAGE_URL: http://localhost:8081
           E2E_SSO_URL: http://localhost:8082
+          E2E_SUPPORT_URL: http://localhost:8083
           E2E_CLUB: e2e
           E2E_EMAIL: e2e@hubra.test
         run: |

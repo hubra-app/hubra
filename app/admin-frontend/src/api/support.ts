@@ -2,7 +2,7 @@ import { apiFetch } from '@hubra/api-client'
 
 const S = '/platform/support/cases'
 
-export type CaseKind = 'bug' | 'feature'
+export type CaseKind = 'bug' | 'feature' | 'question'
 export type CaseStatus = 'open' | 'planned' | 'in_progress' | 'done' | 'closed'
 
 export interface CaseComment {

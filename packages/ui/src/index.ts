@@ -56,3 +56,11 @@ export {
   PanelSection,
   SlideOver,
 } from './feedback'
+export {
+  browserOf,
+  collectDeviceInfo,
+  currentDeviceInfo,
+  deviceTypeOf,
+  osOf,
+  type DeviceInfo,
+} from './deviceInfo'

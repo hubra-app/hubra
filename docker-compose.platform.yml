@@ -49,6 +49,10 @@ services:
     environment:
       PLATFORM_API_UPSTREAM: http://platform-backend:5000
 
+  support-frontend:
+    environment:
+      PLATFORM_API_UPSTREAM: http://platform-backend:5000
+
   backend:
     environment:
       HUBRA_ROLE: club

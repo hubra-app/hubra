@@ -182,6 +182,8 @@ class BaseConfig:
     MANAGE_BASE_URL: str = os.environ.get("MANAGE_BASE_URL", "")
     # The Claude connector (app/mcp, docs/mcp.md); platform setting mcp.url.
     MCP_PUBLIC_URL: str = os.environ.get("MCP_PUBLIC_URL", "")
+    # The support site (app/support-frontend); platform setting support.url.
+    SUPPORT_BASE_URL: str = os.environ.get("SUPPORT_BASE_URL", "")
     # Time zone for times shown in mails (new-device sign-in).
     MAIL_TIMEZONE: str = os.environ.get("MAIL_TIMEZONE", "Europe/Zurich")
 

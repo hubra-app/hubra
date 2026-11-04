@@ -101,6 +101,10 @@ jobs:
         if: ${{ !cancelled() }}
         working-directory: app/sso-frontend
         run: npm audit --omit=dev --audit-level=high
+      - name: support-frontend
+        if: ${{ !cancelled() }}
+        working-directory: app/support-frontend
+        run: npm audit --omit=dev --audit-level=high
 
   # Builds the images and runs the Compose stack end to end, with the
   # browser tests of the three apps against it. The image builds also cover
@@ -140,6 +144,7 @@ jobs:
           E2E_APP_URL: http://localhost:8080
           E2E_MANAGE_URL: http://localhost:8081
           E2E_SSO_URL: http://localhost:8082
+          E2E_SUPPORT_URL: http://localhost:8083
           E2E_CLUB: e2e
           E2E_EMAIL: e2e@hubra.test
         run: |

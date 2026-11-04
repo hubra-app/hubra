@@ -32,6 +32,10 @@ spec:
     - secretName: hubra-mcp-tls
       hosts:
         - mcp.hubra.club
+    # The support site, on its own certificate too.
+    - secretName: hubra-support-tls
+      hosts:
+        - support.hubra.club
   rules:
     - host: api.hubra.club
       http:
@@ -187,3 +191,11 @@ spec:
             pathType: Prefix
             backend:
               service: { name: mcp, port: { name: http } }
+    # Help, roadmap, status and reports (frontends.yaml: support-frontend).
+    - host: support.hubra.club
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: support-frontend, port: { name: http } }

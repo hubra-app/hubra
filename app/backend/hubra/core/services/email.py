@@ -516,8 +516,7 @@ def send_password_changed(
 ) -> None:
     """Notify a member that their password was successfully changed."""
     club_name = club_display_name()
-    base = _get_base_url()
-    support_url = f"{base}/contact" if base else ""
+    support_url = support_site_url("/kontakt")
 
     body_html, body_text, subject = render_mail_template(
         "password_changed",
@@ -527,6 +526,14 @@ def send_password_changed(
         support_url=support_url,
     )
     _send(to_address, name, subject, body_html, body_text, system=True)
+
+
+def send_account_closed(to_address: str, name: str, *, lang: str = DEFAULT_LANG) -> bool:
+    """Confirm to the old login address that the account was deleted."""
+    body_html, body_text, subject = render_mail_template(
+        "account_closed", locale=lang, name=name, club_name="Hubra"
+    )
+    return _send(to_address, name, subject, body_html, body_text, system=True)
 
 
 def send_new_device_login(
@@ -642,6 +649,25 @@ def send_club_request_rejected(
     return _send(to_address, name, subject, body_html, body_text, system=True)
 
 
+def support_site_url(path: str = "") -> str:
+    """A page of the support site (platform setting ``support.url``), or ""
+    when it is not set."""
+    from hubra.core.services import platform_settings
+
+    support = (platform_settings.get("support.url") or "").strip().rstrip("/")
+    return f"{support}{path}" if support else ""
+
+
+def support_cases_url(case_id: int | None = None) -> str:
+    """Where a reporter reads their cases: the support site when the
+    platform setting ``support.url`` is set, else the club app."""
+    support = support_site_url("/meine")
+    if support:
+        return f"{support}/{case_id}" if case_id else support
+    base = _get_base_url()
+    return f"{base}/app/feedback" if base else ""
+
+
 def send_support_case_update(
     to_address: str,
     name: str,
@@ -659,7 +685,6 @@ def send_support_case_update(
     from hubra.core.services.mail_i18n import get_mail_translator
 
     t = get_mail_translator(lang)
-    base = _get_base_url()
     body_html, body_text, subject = render_mail_template(
         "support_case_update",
         locale=lang,
@@ -671,6 +696,6 @@ def send_support_case_update(
         status_label=t(f"mail.email.support_case.status_{status}"),
         comment=comment or "",
         merged_into=merged_into or "",
-        cases_url=f"{base}/app/feedback" if base else "",
+        cases_url=support_cases_url(case_id),
     )
     return _send(to_address, name, subject, body_html, body_text, system=True)
