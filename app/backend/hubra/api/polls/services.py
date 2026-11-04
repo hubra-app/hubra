@@ -19,7 +19,7 @@ from hubra.core.models.group import Group
 from hubra.core.models.member import Member, member_groups
 from hubra.core.models.poll import Poll, PollOption, PollProxy, PollVote
 from hubra.core.modules import emit
-from hubra.core.modules.events import POLL_PUBLISHED
+from hubra.core.modules.events import POLL_CLOSED, POLL_PUBLISHED
 
 
 def member_circles(member_id: int) -> tuple[set[int], set[int]]:
@@ -235,6 +235,7 @@ class PollService:
             target_id=poll.id,
             target_label=poll.question,
         )
+        emit(POLL_CLOSED, poll_id=poll.id)
         return poll
 
     @staticmethod
