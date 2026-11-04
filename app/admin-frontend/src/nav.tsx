@@ -41,6 +41,7 @@ import { ErrorsPanel } from '@/screens/platform/Errors'
 import { PerformancePanel } from '@/screens/platform/Performance'
 import { MyAlertsCard, OutboundMailTab } from '@/screens/platform/MailMonitor'
 import { DiscordPanel } from '@/screens/platform/DiscordStatus'
+import { DiscordClubsPanel } from '@/screens/platform/DiscordClubs'
 import { SettingsSection } from '@/screens/platform/SettingsSection'
 import { PlatformPlans } from '@/screens/platform/Plans'
 import { EarlyAccess } from '@/screens/platform/EarlyAccess'
@@ -367,8 +368,8 @@ export function navSections(): NavSection[] {
           label: 'Discord',
           icon: icon(IconBrandDiscord),
           desc: tr(
-            'Die Hubra-App auf Discord: ob der Bot läuft, ihre Zugangsdaten und die Kanäle der Plattform.',
-            'The Hubra app on Discord: whether the bot runs, its credentials and the platform channels.',
+            'Die Hubra-App auf Discord: ob der Bot läuft, alle Vereinsserver, die Zugangsdaten und die Kanäle der Plattform.',
+            'The Hubra app on Discord: whether the bot runs, every club server, its credentials and the platform channels.',
           ),
           tabs: [
             {
@@ -377,6 +378,13 @@ export function navSections(): NavSection[] {
               label: tr('Status', 'Status'),
               perm: 'platform.diagnostics',
               render: () => <DiscordPanel />,
+            },
+            {
+              id: 'clubs',
+              path: '/app/platform/discord/clubs',
+              label: tr('Vereinsserver', 'Club servers'),
+              perm: 'platform.diagnostics',
+              render: () => <DiscordClubsPanel />,
             },
             {
               id: 'setup',

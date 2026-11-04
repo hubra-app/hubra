@@ -143,6 +143,66 @@ export async function getDiscordServerChannels(serverId: string) {
   )
 }
 
+/** Make a text channel on one of the bot's servers (private by default). */
+export async function createDiscordChannel(
+  serverId: string,
+  body: { name: string; private?: boolean; topic?: string },
+) {
+  return apiFetch<{ id: string; name: string }>(
+    `${P}/discord/servers/${encodeURIComponent(serverId)}/channels`,
+    { method: 'POST', body: JSON.stringify(body) },
+  )
+}
+
+export interface DiscordClubServer {
+  id: number
+  club: string
+  clubSlug: string
+  clubId: number
+  clubActive: boolean
+  server: string
+  serverId: string
+  status: 'pending' | 'active'
+  botOnServer: boolean | null
+  scopes: string[]
+  features: string[]
+  mainChannel: boolean
+  logChannel: boolean
+  liveMessages: number
+  week: { ok: number; failed: number }
+  lastPostAt: string | null
+  lastUsedAt: string | null
+  lastError: string | null
+  lastErrorAt: string | null
+  connectedAt: string | null
+  connectedBy: string
+}
+
+export interface DiscordClubOverview {
+  days: number
+  plugin: { installed: boolean; version: string | null }
+  checkedAt?: string | null
+  servers: DiscordClubServer[]
+  totals: { servers: number; active: number; withErrors: number; botMissing: number }
+}
+
+export async function getDiscordClubs() {
+  return apiFetch<DiscordClubOverview>(`${P}/discord/clubs`)
+}
+
+export interface DiscordBotEvent {
+  action: string
+  ok: boolean
+  detail: string
+  at: string | null
+}
+
+export async function getDiscordClubActivity(connectionId: number) {
+  return apiFetch<{ id: number; club: string; server: string; events: DiscordBotEvent[] }>(
+    `${P}/discord/clubs/${connectionId}/activity`,
+  )
+}
+
 export async function checkDiscordNow() {
   return apiFetch<DiscordStatus>(`${P}/discord/check`, { method: 'POST' })
 }
