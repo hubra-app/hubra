@@ -5,7 +5,7 @@ when the last of them has voted (Umlaufbeschluss). Added to the template
 table in public and to every club schema.
 
 Revision ID: b4e8f2a6d9c3
-Revises: c3d7a1e5f9b2
+Revises: b4e8f2a6c1d9
 Create Date: 2026-11-04 11:00:00.000000
 
 """
@@ -16,7 +16,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "b4e8f2a6d9c3"
-down_revision = "c3d7a1e5f9b2"
+down_revision = "b4e8f2a6c1d9"
 branch_labels = None
 depends_on = None
 
