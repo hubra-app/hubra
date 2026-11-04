@@ -63,7 +63,7 @@ test('an idea on the roadmap gets votes, also on the public page', async ({ page
   // In the app: the reporter's own vote counts; take it back.
   await page.goto(appUrl('feedback/roadmap'))
   const card = page.locator('.mantine-Paper-root', { hasText: title })
-  const vote = card.getByRole('button', { name: /Stimme zurücknehmen|Dafür stimmen/ })
+  const vote = card.getByRole('button', { name: /stimmen|zurücknehmen/ })
   await expect(vote).toHaveAttribute('aria-pressed', 'true')
   await vote.click()
   await expect(vote).toHaveAttribute('aria-pressed', 'false')
