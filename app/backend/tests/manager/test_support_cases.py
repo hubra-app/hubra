@@ -296,6 +296,11 @@ def test_closing_mails_the_reporter_and_is_audited(client, club, db, deliver):
     )
 
 
+def _ideas(resp) -> list[dict]:
+    """The ideas on the one roadmap (planned items left out)."""
+    return [i for i in resp.get_json()["items"] if i["source"] == "idea"]
+
+
 def test_only_feature_requests_go_on_the_roadmap(client, club, db):
     bug = _report(client).get_json()["id"]
     idea = _report(client, kind="feature", title="Idee", description="Neu").get_json()[
@@ -304,24 +309,34 @@ def test_only_feature_requests_go_on_the_roadmap(client, club, db):
     _staff(club, db)
     assert client.patch(f"{STAFF}/{bug}", json={"isPublic": True}).status_code == 400
 
-    assert client.get("/api/v1/roadmap").get_json() == []
+    assert _ideas(client.get("/api/v1/roadmap")) == []
     client.patch(
         f"{STAFF}/{idea}",
         json={"isPublic": True, "status": "planned", "title": "Neue Idee"},
     )
-    public = client.get("/api/v1/roadmap").get_json()
+    public = _ideas(client.get("/api/v1/roadmap"))
     assert public == [
         {
-            "id": idea,
-            "title": "Neue Idee",
-            "description": "Neu",
-            "status": "planned",
-            "area": "finance",
+            "id": f"idea-{idea}",
+            "caseId": idea,
+            "source": "idea",
+            # "planned" shows under "later" on the one roadmap.
+            "status": "later",
+            "area": {"de": "Finanzen", "en": "Finance"},
+            "title": {"de": "Neue Idee", "en": "Neue Idee"},
+            "summary": {"de": "Neu", "en": "Neu"},
+            "version": None,
+            "link": None,
             "votes": 1,
+            "voteable": True,
             "createdAt": public[0]["createdAt"],
-            "updatedAt": public[0]["updatedAt"],
         }
     ]
+    # The same list on the What's new endpoint and for the website.
+    assert _ideas(client.get("/api/v1/version/roadmap")) == public
+    site = client.get("/api/v1/public/roadmap", headers={"Origin": "https://hubra.club"})
+    assert _ideas(site) == public
+    assert site.headers["Access-Control-Allow-Origin"] == "*"
 
 
 def test_the_public_roadmap_needs_no_sign_in(client, club, db):
@@ -335,8 +350,9 @@ def test_the_public_roadmap_needs_no_sign_in(client, club, db):
     fresh = client.application.test_client()
     resp = fresh.get("/api/v1/roadmap")
     assert resp.status_code == 200
-    assert [i["id"] for i in resp.get_json()] == [idea]
-    assert "reporter" not in resp.get_json()[0]
+    ideas = _ideas(resp)
+    assert [i["caseId"] for i in ideas] == [idea]
+    assert "reporter" not in ideas[0] and "voted" not in ideas[0]
 
 
 def test_votes_on_the_roadmap(client, club, db):
@@ -349,7 +365,7 @@ def test_votes_on_the_roadmap(client, club, db):
     assert client.post(f"/api/v1/support/roadmap/{idea}/vote").status_code == 404
     client.patch(f"{STAFF}/{idea}", json={"isPublic": True})
 
-    items = client.get("/api/v1/support/roadmap", headers=CLUB).get_json()
+    items = _ideas(client.get("/api/v1/support/roadmap", headers=CLUB))
     assert items[0]["voted"] is True and items[0]["votes"] == 1
     resp = client.delete(f"/api/v1/support/roadmap/{idea}/vote", headers=CLUB)
     assert resp.get_json() == {"id": idea, "votes": 0, "voted": False}
@@ -436,3 +452,104 @@ def test_support_role_holders_handle_cases(client, club, db):
             client.patch(f"{STAFF}/{case_id}", json={"status": "closed"}).status_code
             == 200
         )
+
+
+PLAN = [
+    {
+        "id": "twint",
+        "status": "next",
+        "area": {"de": "Finanzen", "en": "Finance"},
+        "title": {"de": "TWINT", "en": "TWINT"},
+        "summary": {},
+        "version": None,
+        "link": None,
+    },
+    {
+        "id": "shipped",
+        "status": "done",
+        "area": {},
+        "title": {"de": "Fertig", "en": "Shipped"},
+        "summary": {},
+        "version": "0.6.0",
+        "link": None,
+    },
+]
+
+
+@pytest.fixture
+def plan(monkeypatch):
+    from hubra.api.support import services
+
+    monkeypatch.setattr(services, "_plan", lambda: [dict(p) for p in PLAN])
+    return PLAN
+
+
+def _items(resp) -> dict[str, dict]:
+    return {i["id"]: i for i in resp.get_json()["items"]}
+
+
+def test_the_roadmap_shows_planned_items_and_ideas_in_one_list(client, club, db, plan):
+    idea = _report(
+        client, kind="feature", title="Modul Fahrdienst", description="x", area="modules"
+    ).get_json()["id"]
+    _staff(club, db)
+    client.patch(f"{STAFF}/{idea}", json={"isPublic": True})
+
+    items = _items(client.get("/api/v1/version/roadmap"))
+    assert list(items) == ["twint", "shipped", f"idea-{idea}"]
+    assert items["twint"]["source"] == "plan" and items["twint"]["voteable"] is True
+    assert items["shipped"]["voteable"] is False
+    assert items[f"idea-{idea}"]["status"] == "idea"
+    assert items[f"idea-{idea}"]["area"] == {"de": "Modul", "en": "Module"}
+
+
+def test_a_linked_idea_counts_for_the_planned_item(client, club, db, plan):
+    idea = _report(client, kind="feature", title="TWINT bitte", description="x").get_json()[
+        "id"
+    ]
+    _staff(club, db)
+    assert (
+        client.patch(f"{STAFF}/{idea}", json={"roadmapItem": "nope"}).status_code == 400
+    )
+    resp = client.patch(f"{STAFF}/{idea}", json={"roadmapItem": "twint"})
+    assert resp.get_json()["roadmapItem"] == "twint"
+
+    items = _items(client.get("/api/v1/support/roadmap", headers=CLUB))
+    # Shown as the planned item, not on its own; the reporter's vote counts.
+    assert f"idea-{idea}" not in items
+    assert items["twint"]["votes"] == 1 and items["twint"]["voted"] is True
+    assert items["twint"]["ideas"] == 1
+
+    # Voting again for the item is still one person.
+    url = "/api/v1/support/roadmap/items/twint/vote"
+    assert client.post(url, headers=CLUB).get_json()["votes"] == 1
+    other = _user(db, "b@test.ch")
+    db.session.add(SupportCaseVote(case_id=idea, user_id=other.id))
+    db.session.commit()
+    assert _items(client.get("/api/v1/roadmap"))["twint"]["votes"] == 2
+    # Taking the vote back removes it from the linked idea too.
+    assert client.delete(url, headers=CLUB).get_json()["votes"] == 1
+
+
+def test_votes_for_planned_items(client, club, db, plan):
+    url = "/api/v1/support/roadmap/items/{}/vote"
+    resp = client.post(url.format("twint"), headers=CLUB)
+    assert resp.get_json() == {"id": "twint", "votes": 1, "voted": True}
+    assert client.post(url.format("twint"), headers=CLUB).get_json()["votes"] == 1
+    # Already shipped: no more votes.
+    assert client.post(url.format("shipped"), headers=CLUB).status_code == 409
+    assert client.post(url.format("missing"), headers=CLUB).status_code == 404
+    items = _items(client.get("/api/v1/support/roadmap", headers=CLUB))
+    assert items["twint"]["voted"] is True
+    assert client.delete(url.format("twint"), headers=CLUB).get_json()["votes"] == 0
+
+
+def test_staff_filter_by_area(client, club, db):
+    _report(client)
+    mod = _report(
+        client, kind="feature", title="Modul", description="x", area="modules"
+    ).get_json()["id"]
+    _staff(club, db)
+    body = client.get(f"{STAFF}?area=modules").get_json()
+    assert [c["id"] for c in body["items"]] == [mod]
+    assert client.get(f"{STAFF}?area=nope").status_code == 400

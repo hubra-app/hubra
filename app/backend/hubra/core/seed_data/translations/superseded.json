@@ -35,7 +35,14 @@
   "translations.addKey",
   "translations.addLanguage",
   "translations.copyDefaults",
-  "translations.copyValues"
+  "translations.copyValues",
+  "support.roadmap.none",
+  "support.roadmap.unvote",
+  "support.roadmap.vote",
+  "support.roadmap.inProgress",
+  "support.roadmap.planned",
+  "support.roadmap.open",
+  "support.roadmap.done"
  ],
  "values": {
   "de-CH": {
@@ -4997,6 +5004,27 @@
    ],
    "finance.feeBasis.source.needsBudgets": [
     "Braucht das Plugin Budgets."
+   ],
+   "support.roadmap.none": [
+    "Nichts hier."
+   ],
+   "support.roadmap.unvote": [
+    "Stimme zurücknehmen"
+   ],
+   "support.roadmap.vote": [
+    "Dafür stimmen"
+   ],
+   "support.roadmap.inProgress": [
+    "In Arbeit"
+   ],
+   "support.roadmap.planned": [
+    "Geplant"
+   ],
+   "support.roadmap.open": [
+    "Vorgeschlagen"
+   ],
+   "support.roadmap.done": [
+    "Erledigt"
    ]
   },
   "en-GB": {
@@ -6474,6 +6502,27 @@
    ],
    "finance.feeBasis.source.needsBudgets": [
     "Needs the Budgets plugin."
+   ],
+   "support.roadmap.none": [
+    "Nothing here."
+   ],
+   "support.roadmap.unvote": [
+    "Take back your vote"
+   ],
+   "support.roadmap.vote": [
+    "Vote for it"
+   ],
+   "support.roadmap.inProgress": [
+    "In progress"
+   ],
+   "support.roadmap.planned": [
+    "Planned"
+   ],
+   "support.roadmap.open": [
+    "Suggested"
+   ],
+   "support.roadmap.done": [
+    "Done"
    ]
   }
  }

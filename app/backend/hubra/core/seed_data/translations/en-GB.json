@@ -3377,9 +3377,6 @@
   "support.roadmap.emptyDesc": "Ideas the Hubra team made public show here. Vote for the ones that help you most.",
   "support.roadmap.emptyTitle": "The roadmap is still empty",
   "support.roadmap.intro": "Ideas the Hubra team is working on or looking at. Your vote helps decide what comes first.",
-  "support.roadmap.none": "Nothing here.",
-  "support.roadmap.unvote": "Take back your vote",
-  "support.roadmap.vote": "Vote for it",
   "support.roadmap.voteFailed": "Voting failed",
   "support.severity.annoying": "Gets in the way",
   "support.severity.blocking": "I cannot go on",
@@ -3389,10 +3386,6 @@
   "support.status.in_progress": "In progress",
   "support.status.done": "Done",
   "support.status.closed": "Closed",
-  "support.roadmap.inProgress": "In progress",
-  "support.roadmap.planned": "Planned",
-  "support.roadmap.open": "Suggested",
-  "support.roadmap.done": "Done",
   "support.area.members": "Members",
   "support.area.finance": "Finances",
   "support.area.events": "Events",
@@ -3523,5 +3516,10 @@
   "tiers.notFound": "This tier does not exist (any more).",
   "tiers.detail.pricing": "Fee",
   "audit.backToLog": "Back to the log",
-  "audit.sameRecord": "More entries about this target"
+  "audit.sameRecord": "More entries about this target",
+  "support.area.modules": "Module",
+  "settings.modules.missingTitle": "Missing a module?",
+  "settings.modules.missingDesc": "Suggest it. Once the Hubra team puts the idea on the roadmap, every club can vote for it.",
+  "settings.modules.suggest": "Suggest a module",
+  "settings.modules.roadmap": "See the roadmap"
 }

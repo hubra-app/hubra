@@ -40,7 +40,41 @@ def sent(monkeypatch, app, db):
         return True
 
     monkeypatch.setattr(email_svc, "_send", fake_send)
-    return mails
+    # The mail is queued for the worker; the outbox runs the task's body when
+    # the test looks (the eager task would push the worker's own app).
+    from hubra.core.tasks import email_tasks
+
+    task = email_tasks.send_new_device_login_task
+    outbox = _Outbox(mails, task)
+    monkeypatch.setattr(task, "delay", lambda *a, **kw: outbox.pending.append(a))
+    return outbox
+
+
+class _Outbox:
+    """The mails sent, after running the queued new-device tasks."""
+
+    def __init__(self, mails, task):
+        self.mails, self.task, self.pending = mails, task, []
+
+    def _drain(self):
+        while self.pending:
+            self.task.run(*self.pending.pop(0))
+        return self.mails
+
+    def __eq__(self, other):
+        return self._drain() == other
+
+    def __len__(self):
+        return len(self._drain())
+
+    def __getitem__(self, i):
+        return self._drain()[i]
+
+    def __iter__(self):
+        return iter(self._drain())
+
+    def clear(self):
+        self._drain().clear()
 
 
 def _user(db, email="solo@test.ch", verified=True, language="en-GB"):
@@ -206,3 +240,51 @@ def test_club_sign_in_alerts_the_account(app, seeded_db, sent):
     sign_in(CHROME)
     sign_in(CHROME)  # another computer
     assert [m[0] for m in sent] == ["admin@test.ch"]
+
+
+def test_the_mail_is_queued_not_sent_inside_the_sign_in(app, db, monkeypatch):
+    """The SMTP hand-off costs a few hundred ms; the worker does it."""
+    from hubra.core.services import email as email_svc
+    from hubra.core.tasks import email_tasks
+
+    queued = []
+    monkeypatch.setattr(
+        email_tasks.send_new_device_login_task,
+        "delay",
+        lambda *a, **kw: queued.append(a),
+    )
+    monkeypatch.setattr(
+        email_svc, "_send", lambda *a, **kw: pytest.fail("sent inside the request")
+    )
+    _user(db)
+    _sign_in(_browser(app, CHROME))
+    _sign_in(_browser(app, FIREFOX))
+
+    assert len(queued) == 1
+    to, name, ip, browser, platform, _ua, _ts, lang = queued[0]
+    assert (to, ip, browser, platform, lang) == (
+        "solo@test.ch",
+        "127.0.0.1",
+        "Firefox",
+        "Linux",
+        "en-GB",
+    )
+
+
+def test_staff_new_device_ping_is_sent(app, db, sent, monkeypatch):
+    """The platform-log ping waits for a commit; the account sign-in used to
+    queue it after its last commit, so it was dropped."""
+    from hubra.core.tasks import platform_bot_tasks
+
+    pings = []
+    monkeypatch.setattr(
+        platform_bot_tasks.post_security, "delay", lambda *a, **kw: pings.append(a)
+    )
+    user = _user(db)
+    user.is_superadmin = True
+    db.session.commit()
+    _sign_in(_browser(app, CHROME))
+    _sign_in(_browser(app, FIREFOX))
+
+    assert len(pings) == 1
+    assert "neuem Gerät" in pings[0][0]

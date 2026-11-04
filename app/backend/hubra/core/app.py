@@ -153,6 +153,12 @@ def create_app(config_name: str | None = None) -> Flask:
 
     install_role_gate(app)
 
+    # ── API tokens (Authorization: Bearer hbr_…): before the tenant resolver,
+    #    so the token names the club. ─────────────────────────────────────
+    from hubra.api.auth import api_tokens
+
+    api_tokens.install(app)
+
     # ── Request timing and slow queries (first, so it times the rest) ─────────
     from hubra.core.services import perf_monitor
 

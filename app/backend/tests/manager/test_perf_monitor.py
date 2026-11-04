@@ -198,3 +198,79 @@ def test_performance_endpoint_is_staff_only(client, auth_headers):
 def test_performance_endpoint_rejects_bad_hours(client, staff_headers):
     assert client.get(f"{BASE}/alerts/performance?hours=x").status_code == 400
     assert client.get(f"{BASE}/alerts/performance?hours=999").get_json()["hours"] == 24
+
+
+# ── Held back by the container ───────────────────────────────────────────────
+
+
+def test_slow_query_says_when_the_pod_was_throttled(app, db):
+    """A trivial statement that is slow while the pod was throttled waited
+    for the CPU, not for the database; the count says so."""
+    from flask import g
+
+    from hubra.core import cgroup
+
+    perf_monitor._thresholds["slow_query_ms"] = 1
+    now = {"p": cgroup.Pressure(1000, 0)}
+    with patch.object(cgroup, "pressure", side_effect=lambda: now["p"]):
+        perf_monitor.mark_start()
+        now["p"] = cgroup.Pressure(51000, 0)  # 50 ms throttled
+        with patch.object(perf_monitor.time, "monotonic", side_effect=_clock()):
+            db.session.execute(text("SELECT 41 AS throttled_probe"))
+        perf_monitor.mark_start()  # a new task
+        now["p"] = cgroup.Pressure(51000, 1)  # memory reached its limit
+        with patch.object(perf_monitor.time, "monotonic", side_effect=_clock()):
+            db.session.execute(text("SELECT 42 AS throttled_probe"))
+    g.pop("_perf_pressure", None)
+    q = next(
+        q for q in perf_monitor.summary(1)["queries"] if "throttled_probe" in q["sql"]
+    )
+    assert q["count"] == 2
+    assert q["cpuThrottled"] == 1
+    assert q["memoryLimit"] == 1
+
+
+def test_no_cgroup_means_no_tags(app, db):
+    perf_monitor._thresholds["slow_query_ms"] = 1
+    perf_monitor.mark_start()
+    with patch.object(perf_monitor.time, "monotonic", side_effect=_clock()):
+        db.session.execute(text("SELECT 43 AS untagged_probe"))
+    q = next(
+        q for q in perf_monitor.summary(1)["queries"] if "untagged_probe" in q["sql"]
+    )
+    assert (q["cpuThrottled"], q["memoryLimit"]) == (0, 0)
+
+
+# ── Requests without a route ─────────────────────────────────────────────────
+
+
+def test_path_shape_keeps_no_ids_or_tokens():
+    shape = perf_monitor.path_shape
+    assert shape("/wp-admin/setup-config.php") == "/wp-admin/setup-config.php"
+    assert shape("/.env") == "/*"  # starts with a dot: not word-like
+    assert shape("/invite/3f9a2b77c0") == "/invite/*"
+    assert shape("/api/v1/members/42/notes") == "/api/v1/members/*/…"
+    assert shape("/a/b/c/d/e/f") == "/a/b/c/d/…"
+    assert shape("/") == "/"
+
+
+def test_unmatched_paths_are_counted_by_shape(client, staff_headers):
+    client.get("/wp-login.php")
+    client.get("/old/path/123")
+    client.get("/old/path/456")
+    data = client.get(f"{BASE}/alerts/performance?hours=1").get_json()
+    got = {(u["method"], u["path"]): u["count"] for u in data["unmatched"]}
+    assert got[("GET", "/wp-login.php")] == 1
+    assert got[("GET", "/old/path/*")] == 2
+    assert not any("123" in p for _, p in got)
+
+
+def test_unmatched_shapes_are_capped(monkeypatch):
+    monkeypatch.setattr(perf_monitor, "_UNMATCHED_MAX", 3)
+    for word in ("alpha", "beta", "gamma", "delta", "epsilon"):
+        perf_monitor.record_unmatched("GET", f"/{word}")
+    perf_monitor.record_unmatched("GET", "/alpha")
+    got = {u["path"]: u["count"] for u in perf_monitor.summary(1)["unmatched"]}
+    assert got["/alpha"] == 2
+    assert got["(other)"] == 2
+    assert len(got) == 4
