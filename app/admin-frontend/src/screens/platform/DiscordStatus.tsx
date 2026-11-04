@@ -1,14 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Anchor, Badge, Button, Code, Group, Paper, Stack, Table, Text, Title } from '@mantine/core'
+import { Anchor, Badge, Button, Code, Group, Paper, Stack, Text, Title } from '@mantine/core'
 import { IconRefresh } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
 import { formatDateTime } from '@/format'
 import { tr } from '@/lang'
 import { checkDiscordNow, getDiscordStatus, type DiscordStatus } from '@/api/platform'
 import { Row } from './StatusRow'
-import { EmptyState } from '@/components/ui'
 
 const MONO = "'JetBrains Mono', monospace"
 
@@ -245,76 +244,28 @@ function PlatformLogCard({ s }: { s: DiscordStatus }) {
 }
 
 function ServersCard({ s }: { s: DiscordStatus }) {
+  const navigate = useNavigate()
+  const failing = s.servers.filter((srv) => srv.lastError || srv.botOnServer === false).length
   return (
     <Paper withBorder p="lg">
-      <Title order={3} mb={4}>
-        {tr('Vereinsserver', 'Club servers')}
-      </Title>
-      <Text size="xs" c="dimmed" mb={12}>
-        {tr(
-          'Discord-Server, die Vereine unter Einstellungen › Verbundene Apps verbunden haben.',
-          'Discord servers clubs connected under Settings › Connected apps.',
-        )}
-      </Text>
-      {s.servers.length === 0 ? (
-        <EmptyState title={tr('Noch kein Verein hat Discord verbunden.', 'No club has connected Discord yet.')} />
-      ) : (
-        <Table.ScrollContainer minWidth={640}>
-          <Table verticalSpacing="xs" fz="sm">
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>{tr('Verein', 'Club')}</Table.Th>
-                <Table.Th>Server</Table.Th>
-                <Table.Th>{tr('Status', 'Status')}</Table.Th>
-                <Table.Th>{tr('Zuletzt genutzt', 'Last used')}</Table.Th>
-                <Table.Th>{tr('Letzter Fehler', 'Last error')}</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {s.servers.map((srv) => (
-                <Table.Tr key={srv.id}>
-                  <Table.Td>{srv.club}</Table.Td>
-                  <Table.Td>
-                    {srv.server}
-                    <Text size="xs" c="dimmed" ff={MONO}>
-                      {srv.serverId}
-                    </Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Group gap={4}>
-                      <Badge
-                        size="sm"
-                        variant="light"
-                        color={srv.status === 'active' ? 'green' : 'gray'}
-                      >
-                        {srv.status === 'active' ? tr('Aktiv', 'Active') : tr('Wartet', 'Pending')}
-                      </Badge>
-                      {srv.botOnServer === false && (
-                        <Badge size="sm" variant="light" color="red">
-                          {tr('Bot nicht auf dem Server', 'Bot not on server')}
-                        </Badge>
-                      )}
-                    </Group>
-                  </Table.Td>
-                  <Table.Td>{when(srv.lastUsedAt)}</Table.Td>
-                  <Table.Td>
-                    {srv.lastError ? (
-                      <>
-                        <ErrorText>{srv.lastError}</ErrorText>
-                        <Text size="xs" c="dimmed">
-                          {when(srv.lastErrorAt)}
-                        </Text>
-                      </>
-                    ) : (
-                      '—'
-                    )}
-                  </Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        </Table.ScrollContainer>
-      )}
+      <Group justify="space-between" wrap="wrap" gap="sm">
+        <div>
+          <Title order={3} mb={4}>
+            {tr('Vereinsserver', 'Club servers')}
+          </Title>
+          <Text size="sm">
+            {s.servers.length === 0
+              ? tr('Noch kein Verein hat Discord verbunden.', 'No club has connected Discord yet.')
+              : tr(
+                  `${s.servers.length} Server verbunden, ${failing} mit Fehlern.`,
+                  `${s.servers.length} servers connected, ${failing} with errors.`,
+                )}
+          </Text>
+        </div>
+        <Button variant="default" size="sm" onClick={() => navigate('/app/platform/discord/clubs')}>
+          {tr('Zur Übersicht', 'Open overview')}
+        </Button>
+      </Group>
     </Paper>
   )
 }

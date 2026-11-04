@@ -12,6 +12,7 @@ import {
   IconLock,
   IconMail,
   IconPuzzle,
+  IconPlugConnected,
   IconShieldCheck,
   IconShieldLock,
   IconSparkles,
@@ -41,11 +42,13 @@ import { ErrorsPanel } from '@/screens/platform/Errors'
 import { PerformancePanel } from '@/screens/platform/Performance'
 import { MyAlertsCard, OutboundMailTab } from '@/screens/platform/MailMonitor'
 import { DiscordPanel } from '@/screens/platform/DiscordStatus'
+import { DiscordClubsPanel } from '@/screens/platform/DiscordClubs'
 import { SettingsSection } from '@/screens/platform/SettingsSection'
 import { PlatformPlans } from '@/screens/platform/Plans'
 import { EarlyAccess } from '@/screens/platform/EarlyAccess'
 import { PlatformTranslations } from '@/screens/platform/Translations'
 import { PlatformEncryption } from '@/screens/platform/Encryption'
+import { AllApiTokens, PlatformTokensPage } from '@/screens/platform/ApiTokens'
 import { SupportCases } from '@/screens/platform/Support'
 
 // The whole manage navigation in one place: sidebar sections, the pages in
@@ -367,8 +370,8 @@ export function navSections(): NavSection[] {
           label: 'Discord',
           icon: icon(IconBrandDiscord),
           desc: tr(
-            'Die Hubra-App auf Discord: ob der Bot läuft, ihre Zugangsdaten und die Kanäle der Plattform.',
-            'The Hubra app on Discord: whether the bot runs, its credentials and the platform channels.',
+            'Die Hubra-App auf Discord: ob der Bot läuft, alle Vereinsserver, die Zugangsdaten und die Kanäle der Plattform.',
+            'The Hubra app on Discord: whether the bot runs, every club server, its credentials and the platform channels.',
           ),
           tabs: [
             {
@@ -377,6 +380,13 @@ export function navSections(): NavSection[] {
               label: tr('Status', 'Status'),
               perm: 'platform.diagnostics',
               render: () => <DiscordPanel />,
+            },
+            {
+              id: 'clubs',
+              path: '/app/platform/discord/clubs',
+              label: tr('Vereinsserver', 'Club servers'),
+              perm: 'platform.diagnostics',
+              render: () => <DiscordClubsPanel />,
             },
             {
               id: 'setup',
@@ -441,6 +451,30 @@ export function navSections(): NavSection[] {
                 'Which permission each route of the club API needs.',
               ),
               render: () => <PermissionsPanel />,
+            },
+          ],
+        },
+        {
+          id: 'api-tokens',
+          label: tr('API-Tokens', 'API tokens'),
+          icon: icon(IconPlugConnected),
+          desc: tr(
+            'Lesende Tokens für Skripte und den Claude-Connector.',
+            'Read-only tokens for scripts and the Claude connector.',
+          ),
+          tabs: [
+            {
+              id: 'mine',
+              path: '/app/api-tokens',
+              label: tr('Meine Tokens', 'My tokens'),
+              render: () => <PlatformTokensPage />,
+            },
+            {
+              id: 'all',
+              path: '/app/api-tokens/all',
+              label: tr('Alle Tokens', 'All tokens'),
+              perm: 'platform.settings',
+              render: () => <AllApiTokens />,
             },
           ],
         },

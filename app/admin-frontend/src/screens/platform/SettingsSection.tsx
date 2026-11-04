@@ -54,6 +54,7 @@ const DISCORD_ROLES = ['discord.platform_roles']
 // Defaults built into Hubra, not read from the environment.
 const PERF = ['perf.slow_request_ms', 'perf.slow_query_ms', 'perf.p95_warning_ms']
 const LIMITS = ['limits.warn_percent']
+const MCP = ['mcp.url']
 const BUILT_IN = ['alerts.cooldown_minutes', 'alerts.retention_days', ...PERF, ...LIMITS]
 const ALERTS = ['alerts.cooldown_minutes', 'alerts.retention_days', 'alerts.manage_url']
 
@@ -73,6 +74,7 @@ export type SettingsSectionId =
   | 'alerts'
   | 'performance'
   | 'limits'
+  | 'mcp'
 /** The keys each section saves. */
 const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
   relay: [...RELAY, ...FALLBACK],
@@ -83,6 +85,7 @@ const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
   alerts: ALERTS,
   performance: PERF,
   limits: LIMITS,
+  mcp: MCP,
 }
 
 function SourceBadge({ s }: { s: PlatformSetting }) {
@@ -167,6 +170,10 @@ const FIELD_DE: Record<string, [string, string]> = {
   'alerts.retention_days': [
     'Ereignisprotokoll aufbewahren (Tage)',
     'So lange bleiben gesendete und fehlgeschlagene Mails, Ausfälle und Warnungen im Protokoll (1 bis 365)',
+  ],
+  'mcp.url': [
+    'Adresse des Claude-Connectors',
+    'Wo der MCP-Server (app/mcp) erreichbar ist; manage zeigt damit den Befehl zum Verbinden (https://mcp.hubra.club). Leer: nicht eingerichtet',
   ],
   'alerts.manage_url': [
     'Adresse von manage',
@@ -444,6 +451,22 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
             </Paper>
           )}
 
+          {section === 'mcp' && (
+            <Paper withBorder p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Adresse des Connectors', 'Connector address')}</Title>
+                {resetButton(MCP)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Wo der MCP-Server (Image mcp) läuft. Er hat keinen Datenbankzugriff und keine eigenen Zugangsdaten: jede Anfrage nutzt das Token der Person.',
+                  'Where the MCP server (the mcp image) runs. It has no database access and no credentials of its own: every request uses the person\'s token.',
+                )}
+              </Text>
+              <Stack gap="sm">{MCP.map(field)}</Stack>
+            </Paper>
+          )}
+
           {section === 'limits' && (
             <Paper withBorder p="lg">
               <Group justify="space-between" mb={4}>
@@ -518,6 +541,7 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
                       channelId: logChannel,
                       onChange: (id) => setDraft((d) => ({ ...d, 'discord.log_channel_id': id })),
                       fallback: field('discord.log_channel_id'),
+                      suggestedName: 'hubra-log',
                     },
                     {
                       label: tr('Audit-Kanal (optional)', 'Audit channel (optional)'),
@@ -528,6 +552,7 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
                       channelId: auditChannel,
                       onChange: (id) => setDraft((d) => ({ ...d, 'discord.audit_channel_id': id })),
                       fallback: field('discord.audit_channel_id'),
+                      suggestedName: 'hubra-audit',
                     },
                   ]}
                 />

@@ -173,7 +173,9 @@ def add_attendee(event_id: int, member_id: int):
 
 
 @events_bp.delete("/<int:event_id>/attendees/<int:member_id>")
-@permission_required("events", "remove_attendee", "Remove event attendee", allow=_own_event)
+@permission_required(
+    "events", "remove_attendee", "Remove event attendee", allow=_own_event
+)
 def remove_attendee(event_id: int, member_id: int):
     # Also ends their registration, so the place goes to the waitlist.
     EventService.cancel_registration(event_id, member_id)
@@ -221,7 +223,9 @@ def register_for_event(event_id: int):
 
 
 @events_bp.post("/<int:event_id>/register/<int:member_id>")
-@permission_required("events", "add_attendee", "Register member for event", allow=_own_event)
+@permission_required(
+    "events", "add_attendee", "Register member for event", allow=_own_event
+)
 def register_member_for_event(event_id: int, member_id: int):
     body = request.get_json(silent=True) or {}
     try:
@@ -265,19 +269,36 @@ def cancel_registration(event_id: int):
     return jsonify(EventRegistrationSchema().dump(registration)), 200
 
 
+# ── POST /events/<id>/maybe — answer "Vielleicht" ────────────────────────────
+
+
+@events_bp.post("/<int:event_id>/maybe")
+@permission_required("events", "register", "Register for events")
+def maybe_for_event(event_id: int):
+    registration = EventService.maybe(event_id, get_current_member().id, own=True)
+    db.session.commit()
+    return jsonify(EventRegistrationSchema().dump(registration)), 200
+
+
 # ── Registrations, and sign-ups waiting for approval ─────────────────────────
 
 
 @events_bp.get("/<int:event_id>/registrations")
-@permission_required("events", "add_attendee", "See and approve event sign-ups", allow=_own_event)
+@permission_required(
+    "events", "add_attendee", "See and approve event sign-ups", allow=_own_event
+)
 def list_registrations(event_id: int):
     status = request.args.get("status") or None
     registrations = EventService.registrations(event_id, status)
     return jsonify(EventRegistrationSchema(many=True).dump(registrations)), 200
 
 
-@events_bp.post("/<int:event_id>/registrations/<int:member_id>/<any(approve, decline):decision>")
-@permission_required("events", "add_attendee", "See and approve event sign-ups", allow=_own_event)
+@events_bp.post(
+    "/<int:event_id>/registrations/<int:member_id>/<any(approve, decline):decision>"
+)
+@permission_required(
+    "events", "add_attendee", "See and approve event sign-ups", allow=_own_event
+)
 def decide_registration(event_id: int, member_id: int, decision: str):
     registration = EventService.decide(
         event_id, member_id, decision == "approve", get_current_member().id
@@ -290,7 +311,9 @@ def decide_registration(event_id: int, member_id: int, decision: str):
 
 
 @events_bp.post("/<int:event_id>/attend/<int:member_id>")
-@permission_required("events", "add_attendee", "Mark event attendance", allow=_own_event)
+@permission_required(
+    "events", "add_attendee", "Mark event attendance", allow=_own_event
+)
 def mark_attendance(event_id: int, member_id: int):
     registration = EventService.mark_attendance(event_id, member_id)
     attendance.set_status(
@@ -351,7 +374,9 @@ def _period() -> tuple[date, date]:
         since = date.fromisoformat(request.args.get("from") or f"{today.year}-01-01")
         until = date.fromisoformat(request.args.get("to") or today.isoformat())
     except ValueError:
-        raise_error(400, "VALIDATION_ERROR", "Use ISO dates (YYYY-MM-DD) for from and to")
+        raise_error(
+            400, "VALIDATION_ERROR", "Use ISO dates (YYYY-MM-DD) for from and to"
+        )
     return since, until
 
 
@@ -380,7 +405,9 @@ def _overview_response(group_id: int | None):
     if request.args.get("format") != "csv":
         return jsonify(data), 200
     # Birthdays (J+S needs them) only for those who may export members.
-    with_birthday = member_has_permission(get_current_member(), "members.members.export")
+    with_birthday = member_has_permission(
+        get_current_member(), "members.members.export"
+    )
     return Response(
         attendance.overview_csv(data, with_birthday),
         status=200,
@@ -524,3 +551,132 @@ def calendar_feed(token: str):
         mimetype="text/calendar",
         headers={"Cache-Control": "private, max-age=900"},
     )
+
+
+# ── Public events: a club's "Öffentlicher Anlass" events for everyone ─────────
+#
+# No sign-in: the club's website, a calendar app or anyone may read the
+# events a club marked public (``is_public``), and nothing else of them:
+# no sign-ups, no group, no who. Any origin may fetch the JSON (no cookies).
+
+PUBLIC_PAST_DAYS = 30
+
+
+def _public_club(slug: str):
+    from hubra.core.models.tenant import Tenant
+    from hubra.core.modules import is_enabled
+    from hubra.core.tenant.context import set_search_path
+
+    tenant = db.session.scalar(db.select(Tenant).where(Tenant.slug == slug))
+    if tenant is None or tenant.status != "active":
+        return None
+    g.tenant = tenant
+    set_search_path(tenant.id)
+    if not is_enabled("events"):
+        return None
+    return tenant
+
+
+def _public_events(since: date) -> list[ClubEvent]:
+    return list(
+        db.session.scalars(
+            db.select(ClubEvent)
+            .where(
+                ClubEvent.is_public.is_(True),
+                db.or_(
+                    ClubEvent.date >= since,
+                    ClubEvent.end_date >= since,
+                ),
+            )
+            .order_by(ClubEvent.date, ClubEvent.id)
+            .limit(200)
+        )
+    )
+
+
+def _public_headers(resp, max_age: int = 600):
+    resp.headers["Cache-Control"] = f"public, max-age={max_age}"
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    return resp
+
+
+def public_event(event: ClubEvent, base: str | None) -> dict:
+    return {
+        "id": event.id,
+        "title": event.title,
+        "date": event.date.isoformat(),
+        "endDate": event.end_date.isoformat() if event.end_date else None,
+        "time": None if event.all_day else event.time,
+        "allDay": bool(event.all_day),
+        "location": event.location,
+        "description": event.description,
+        "onlineUrl": event.meeting_url,
+        "type": event.type,
+        "category": event.category,
+        "coverImageUrl": event.cover_image_url,
+        "url": f"{base}/app/operations/events?event={event.id}" if base else None,
+    }
+
+
+@events_bp.get("/public/<string:slug>.ics")
+def public_calendar(slug: str):
+    """The club's public events as a calendar to subscribe to."""
+    tenant = _public_club(slug)
+    if tenant is None:
+        return api_error("NOT_FOUND", "Unknown calendar", 404)
+    since = date.today() - timedelta(days=PUBLIC_PAST_DAYS)
+    ical = EventService.generate_ical(_public_events(since), name=tenant.name)
+    return _public_headers(
+        Response(ical, status=200, mimetype="text/calendar"), max_age=900
+    )
+
+
+@events_bp.get("/public/<string:slug>")
+def public_events(slug: str):
+    """The club's upcoming public events, for its website."""
+    from hubra.core.services.email import _get_base_url
+
+    tenant = _public_club(slug)
+    if tenant is None:
+        return api_error("NOT_FOUND", "Unknown club", 404)
+    base = _get_base_url()
+    club_base = f"{base.rstrip('/')}/{tenant.slug}" if base else None
+    events = _public_events(date.today())
+    return _public_headers(
+        jsonify(
+            {
+                "club": {"name": tenant.name, "slug": tenant.slug},
+                "calendar": url_for(
+                    "events_bp.public_calendar", slug=tenant.slug, _external=True
+                ),
+                "events": [public_event(e, club_base) for e in events],
+            }
+        )
+    )
+
+
+@events_bp.get("/public-links")
+@permission_required("events", "read", "View events")
+def public_links():
+    """Where the club's public events can be read (for the events page)."""
+    from hubra.core.tenant.context import current_tenant
+
+    tenant = current_tenant()
+    if tenant is None:
+        return api_error("NOT_FOUND", "No club", 404)
+    count = db.session.scalar(
+        db.select(db.func.count(ClubEvent.id)).where(
+            ClubEvent.is_public.is_(True), ClubEvent.date >= date.today()
+        )
+    )
+    return jsonify(
+        {
+            "json": url_for(
+                "events_bp.public_events", slug=tenant.slug, _external=True
+            ),
+            "calendar": url_for(
+                "events_bp.public_calendar", slug=tenant.slug, _external=True
+            ),
+            "upcoming": int(count or 0),
+        }
+    ), 200

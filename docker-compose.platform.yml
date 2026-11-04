@@ -73,6 +73,10 @@ services:
     environment:
       HUBRA_PLATFORM_QUEUE: platform
 
+  mcp:
+    environment:
+      HUBRA_PLATFORM_API_URL: http://platform-backend:5000
+
   platform-backend:
     <<: *platform-app
     restart: unless-stopped

@@ -47,6 +47,8 @@ from hubra.core.tenant.context import current_tenant
 
 api_tokens_bp = Blueprint("api_tokens_bp", __name__)
 platform_api_tokens_bp = Blueprint("platform_api_tokens_bp", __name__)
+# Answers a token about itself; its routes carry ``token_self``.
+api_token_self_bp = Blueprint("api_token_self_bp", __name__)
 
 
 def _error(status: int, code: str, message: str):
@@ -310,6 +312,7 @@ def club_scopes():
             "read": [k for k in grantable if _is_read(k)],
             "isAdmin": member_is_admin(member),
             "membersAllowed": api_tokens.members_allowed(current_tenant()),
+            "aiAllowed": api_tokens.ai_allowed(current_tenant()),
             "lifetimes": list(api_tokens.LIFETIMES),
         }
     ), 200
@@ -474,26 +477,77 @@ def roll_club_token(token_id: int):
 @api_tokens_bp.put("/settings")
 @require_admin
 def club_token_settings():
+    """``{membersAllowed?, aiAllowed?}``: who may hold personal tokens, and
+    whether AI assistants (the Claude connector) may read with tokens."""
     tenant = current_tenant()
     if tenant is None:
         return _error(400, "NO_CLUB", "Open a club first")
-    allowed = _body().get("membersAllowed")
-    if not isinstance(allowed, bool):
-        return _error(400, "VALIDATION_ERROR", "membersAllowed: true or false")
+    data = _body()
+    switches = {"membersAllowed": "members", "aiAllowed": "ai"}
+    changes = {}
+    for field, key in switches.items():
+        if field in data:
+            if not isinstance(data[field], bool):
+                return _error(400, "VALIDATION_ERROR", f"{field}: true or false")
+            changes[key] = data[field]
+    if not changes:
+        return _error(400, "VALIDATION_ERROR", "membersAllowed or aiAllowed")
     settings = dict(tenant.settings or {})
-    settings["api_tokens"] = {**(settings.get("api_tokens") or {}), "members": allowed}
+    before = dict(settings.get("api_tokens") or {})
+    settings["api_tokens"] = {**before, **changes}
     tenant.settings = settings
     from hubra.api.utils import log_audit
 
-    log_audit(
-        _current_member().id,
-        "api_token.members_on" if allowed else "api_token.members_off",
-        "club",
-        tenant.id,
-        tenant.name,
-    )
+    names = {"members": "api_token.members", "ai": "api_token.ai"}
+    for key, value in changes.items():
+        if bool(before.get(key)) == value:
+            continue
+        log_audit(
+            _current_member().id,
+            f"{names[key]}_{'on' if value else 'off'}",
+            "club",
+            tenant.id,
+            tenant.name,
+        )
     db.session.commit()
-    return jsonify({"membersAllowed": allowed}), 200
+    return jsonify(
+        {
+            "membersAllowed": api_tokens.members_allowed(tenant),
+            "aiAllowed": api_tokens.ai_allowed(tenant),
+        }
+    ), 200
+
+
+# ── "Which token is this?" (for the token itself) ───────────────────────────
+
+
+def _self_body():
+    token = api_tokens.current()
+    if token is None:
+        return _error(401, "API_TOKEN_REQUIRED", "Send an API token")
+    row = db.session.get(ApiToken, token["id"])
+    if row is None:
+        return _error(401, "API_TOKEN_INVALID", "API token invalid")
+    body = api_tokens.to_json(row)
+    body.pop("lastUsedIp", None)
+    tenant = current_tenant() if row.kind != "platform" else None
+    body["club"] = (
+        {"slug": tenant.slug, "name": tenant.name} if tenant is not None else None
+    )
+    body["aiAllowed"] = api_tokens.ai_allowed(tenant) if tenant is not None else None
+    return jsonify(body), 200
+
+
+@api_token_self_bp.get("/app/api-tokens/self")
+@api_tokens.token_self
+def club_token_self():
+    return _self_body()
+
+
+@api_token_self_bp.get("/platform/api-tokens/self")
+@api_tokens.token_self
+def platform_token_self():
+    return _self_body()
 
 
 # ── Platform side ───────────────────────────────────────────────────────────
@@ -528,6 +582,12 @@ def _platform_grantable(user) -> set[str]:
     return set(perms)
 
 
+def _mcp_url() -> str:
+    from hubra.core.services import platform_settings
+
+    return platform_settings.get("mcp.url").strip().rstrip("/")
+
+
 def _audit_platform(action: str, row: ApiToken, user) -> None:
     db.session.add(
         GlobalAuditEntry(
@@ -557,6 +617,7 @@ def my_platform_tokens():
             "items": [api_tokens.to_json(r) for r in rows],
             "grantable": sorted(_platform_grantable(user)),
             "maxDays": api_tokens.PLATFORM_MAX_DAYS,
+            "mcpUrl": _mcp_url(),
         }
     ), 200
 
@@ -673,11 +734,20 @@ def all_tokens():
     rows = db.session.scalars(
         select(ApiToken).order_by(ApiToken.created_at.desc()).limit(500)
     ).all()
+    from hubra.core.models.tenant import Tenant
+
+    tenant_ids = {r.tenant_id for r in rows if r.tenant_id}
+    clubs = {
+        t.id: t
+        for t in db.session.scalars(select(Tenant).where(Tenant.id.in_(tenant_ids)))
+    } if tenant_ids else {}
     items = []
     for r in rows:
         item = api_tokens.to_json(r)
         item["tenantId"] = r.tenant_id
         item["userId"] = r.user_id
+        club = clubs.get(r.tenant_id)
+        item["club"] = {"slug": club.slug, "name": club.name} if club else None
         items.append(item)
     return jsonify({"items": items}), 200
 

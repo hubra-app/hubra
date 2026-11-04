@@ -473,3 +473,226 @@ def channels(guild_id: str) -> list[dict]:
     ]
     out.sort(key=lambda c: c.pop("_pos"))
     return out
+
+
+# ── Manage › Discord › Server: every club's bot ─────────────────────────────
+
+# What a club turned on, as short labels for the overview (config key, scope
+# it needs, label).  Read from the connection's config: the plugin's own
+# defaults apply when a key is missing.
+_FEATURES = (
+    ("announce_events", "announce", True, "Anlässe"),
+    ("announce_posts", "announce", True, "Beiträge"),
+    ("announce_polls", "announce", False, "Umfragen"),
+    ("announce_reminders", "announce", False, "Erinnerungen"),
+    ("discord_events", "events", True, "Discord-Events"),
+    ("poll_buttons", "commands", True, "Abstimmknöpfe"),
+    ("self_checkin", "commands", True, "Einchecken"),
+    ("group_roles", "roles", False, "Gruppenrollen"),
+    ("welcome_dm", "notify", False, "Begrüssung"),
+    ("hubra_news", "announce", False, "Hubra-News"),
+)
+OVERVIEW_DAYS = 7
+
+
+def _features(conn) -> list[str]:
+    config = conn.config or {}
+    scopes = set(conn.scopes or [])
+    out = [
+        label
+        for key, scope, default, label in _FEATURES
+        if scope in scopes and config.get(key, default)
+    ]
+    if "roles" in scopes and config.get("role_map"):
+        out.append(f"{len(config['role_map'])} Rollen-Zuordnungen")
+    if "channels" in scopes and config.get("group_channels"):
+        out.append(f"{len(config['group_channels'])} Gruppenkanäle")
+    return out
+
+
+def server_overview() -> dict:
+    """Every club server the bot is on, for manage › Discord › Server.
+
+    From stored state only (no Discord call per server): the connection,
+    what the club turned on, the channels it picked, what the bot did in
+    the last ``OVERVIEW_DAYS`` days and its last post and failure.
+    """
+    from datetime import timedelta
+
+    from hubra.core.models.connected_app import ConnectedApp, ConnectedAppEvent
+    from hubra.core.models.plugin import InstalledPlugin
+    from hubra.core.models.tenant import Tenant
+
+    since = datetime.now(timezone.utc) - timedelta(days=OVERVIEW_DAYS)
+    rows = db.session.execute(
+        select(ConnectedApp, Tenant)
+        .join(Tenant, Tenant.id == ConnectedApp.tenant_id)
+        .where(ConnectedApp.provider == "discord", ConnectedApp.status != "revoked")
+        .order_by(Tenant.name)
+    ).all()
+    ids = [conn.id for conn, _ in rows]
+    counts: dict[int, dict[str, int]] = {}
+    last_post: dict[int, datetime] = {}
+    if ids:
+        for conn_id, ok, n in db.session.execute(
+            select(
+                ConnectedAppEvent.connection_id,
+                ConnectedAppEvent.ok,
+                func.count(),
+            )
+            .where(
+                ConnectedAppEvent.connection_id.in_(ids),
+                ConnectedAppEvent.created_at >= since,
+            )
+            .group_by(ConnectedAppEvent.connection_id, ConnectedAppEvent.ok)
+        ):
+            counts.setdefault(conn_id, {"ok": 0, "failed": 0})[
+                "ok" if ok else "failed"
+            ] += int(n)
+        for conn_id, at in db.session.execute(
+            select(
+                ConnectedAppEvent.connection_id, func.max(ConnectedAppEvent.created_at)
+            )
+            .where(
+                ConnectedAppEvent.connection_id.in_(ids),
+                ConnectedAppEvent.action == "announced",
+                ConnectedAppEvent.ok.is_(True),
+            )
+            .group_by(ConnectedAppEvent.connection_id)
+        ):
+            last_post[conn_id] = at
+
+    live = last_check() or {}
+    guild_ids = live.get("guildIds")
+    plugin = db.session.get(InstalledPlugin, "discord")
+    servers = []
+    for conn, tenant in rows:
+        config = conn.config or {}
+        servers.append(
+            {
+                "id": conn.id,
+                "club": tenant.name,
+                "clubSlug": tenant.slug,
+                "clubId": tenant.id,
+                "clubActive": tenant.status == "active",
+                "server": config.get("guild_name") or conn.label or conn.external_id,
+                "serverId": conn.external_id,
+                "status": conn.status,
+                "botOnServer": (conn.external_id in guild_ids)
+                if guild_ids is not None
+                else None,
+                "scopes": list(conn.scopes or []),
+                "features": _features(conn),
+                "mainChannel": bool(config.get("channel_id")),
+                "logChannel": bool(config.get("log_channel_id")),
+                "liveMessages": len(config.get("posted") or {}),
+                "week": counts.get(conn.id, {"ok": 0, "failed": 0}),
+                "lastPostAt": _iso(last_post.get(conn.id)),
+                "lastUsedAt": _iso(conn.last_used_at),
+                "lastError": conn.last_error,
+                "lastErrorAt": _iso(conn.last_error_at),
+                "connectedAt": _iso(conn.confirmed_at),
+                "connectedBy": conn.created_by_name,
+            }
+        )
+    return {
+        "days": OVERVIEW_DAYS,
+        "plugin": {
+            "installed": plugin is not None,
+            "version": getattr(plugin, "version", None),
+        },
+        "checkedAt": live.get("checkedAt"),
+        "servers": servers,
+        "totals": {
+            "servers": len(servers),
+            "active": sum(1 for s in servers if s["status"] == "active"),
+            "withErrors": sum(1 for s in servers if s["week"]["failed"]),
+            "botMissing": sum(1 for s in servers if s["botOnServer"] is False),
+        },
+    }
+
+
+def server_activity(connection_id: int, limit: int = 100) -> dict | None:
+    """One club server's bot log (the connection's activity list)."""
+    from hubra.core import apps
+    from hubra.core.models.connected_app import ConnectedApp
+    from hubra.core.models.tenant import Tenant
+
+    conn = db.session.get(ConnectedApp, connection_id)
+    if conn is None or conn.provider != "discord":
+        return None
+    tenant = db.session.get(Tenant, conn.tenant_id)
+    return {
+        "id": conn.id,
+        "club": tenant.name if tenant else "",
+        "server": (conn.config or {}).get("guild_name") or conn.label,
+        "events": [
+            {
+                "action": e.action,
+                "ok": e.ok,
+                "detail": e.detail,
+                "at": _iso(e.created_at),
+            }
+            for e in apps.events(conn, limit=limit)
+        ],
+    }
+
+
+# ── Making a platform channel through the bot ───────────────────────────────
+
+_MANAGE_CHANNELS = 1 << 4
+MAX_CHANNEL_NAME = 100
+
+
+def channel_name(raw: str) -> str:
+    """Discord's text channel form: lowercase, dashes, no spaces."""
+    import re
+
+    name = re.sub(r"[^\w-]+", "-", (raw or "").strip().lower(), flags=re.UNICODE)
+    return re.sub(r"-{2,}", "-", name).strip("-")[:MAX_CHANNEL_NAME]
+
+
+def create_channel(
+    guild_id: str, name: str, *, private: bool = True, topic: str = ""
+) -> dict:
+    """A new text channel on one of the bot's servers (the platform log or
+    audit channel).  Private: only the bot and the Plattform-Admin role
+    (when platform roles are on) see it.  Raises PickerError."""
+    from hubra.core.services import platform_bot, platform_roles
+    from hubra.core.services.platform_settings import discord
+
+    if not str(guild_id).isdigit():
+        raise PickerError("Unknown server")
+    clean = channel_name(name)
+    if not clean:
+        raise PickerError("Give the channel a name")
+    _token()
+    me = discord().client_id or ""
+    body: dict = {"name": clean, "type": 0}
+    if topic:
+        body["topic"] = topic.strip()[:1024]
+    if private:
+        see = _VIEW | _SEND | _EMBED
+        overwrites = [
+            {"id": str(guild_id), "type": 0, "deny": str(_VIEW), "allow": "0"}
+        ]
+        if me:
+            overwrites.append(
+                {"id": str(me), "type": 1, "allow": str(see), "deny": "0"}
+            )
+        admin_role = platform_roles._stored_ids().get("platform_admin")
+        if admin_role:
+            overwrites.append(
+                {"id": admin_role, "type": 0, "allow": str(_VIEW), "deny": "0"}
+            )
+        body["permission_overwrites"] = overwrites
+    try:
+        made = platform_bot._bot("POST", f"/guilds/{guild_id}/channels", body) or {}
+    except platform_bot.BotError as exc:
+        if getattr(exc, "status", None) == 403:
+            raise PickerError(
+                "The bot may not make channels on this server: give the Hubra "
+                "role «Manage Channels» in the server settings"
+            ) from None
+        raise PickerError(str(exc)) from None
+    return {"id": str(made.get("id", "")), "name": made.get("name", clean)}

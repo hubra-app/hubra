@@ -391,6 +391,7 @@ ACTION_LABELS: dict[str, str] = {
     "update_app": "App-Einstellungen geändert",
     "platform.settings.update": "Plattform-Einstellungen geändert",
     "platform.mail_relay.use_main": "Zurück auf das Haupt-Relay",
+    "platform.discord.channel_created": "Discord-Kanal angelegt",
     "platform.maintenance.cancelled": "Wartung abgesagt",
     "platform.plan.created": "Tarif erstellt",
     "platform.plan.deleted": "Tarif gelöscht",

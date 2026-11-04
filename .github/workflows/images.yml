@@ -73,6 +73,10 @@ jobs:
             context: .
             dockerfile: app/backend/Dockerfile
             paths: app/backend
+          - image: mcp
+            context: .
+            dockerfile: app/mcp/Dockerfile
+            paths: app/mcp
           - image: frontend
             context: .
             dockerfile: app/frontend/Dockerfile
@@ -260,7 +264,7 @@ jobs:
             echo
             echo '```yaml'
             echo "images:"
-            for image in backend global-backend platform-backend frontend admin-frontend sso-frontend haraka zonemta cert-watcher; do
+            for image in backend global-backend platform-backend mcp frontend admin-frontend sso-frontend haraka zonemta cert-watcher; do
               digest="$(docker buildx imagetools inspect "$repo/$image:$tag" --format '{{json .Manifest}}' | jq -r .digest)"
               echo "  - name: $repo/$image"
               echo "    newTag: \"$tag\""

@@ -80,6 +80,23 @@ services:
       # through unchanged (200/204, not rewritten to HTML error pages).
       - "traefik.http.routers.hubra-api-secure.middlewares=crowdsec@file,error-pages-middleware"
 
+  # The Claude connector on its own host (docs/mcp.md), with --profile mcp.
+  mcp:
+    networks:
+      - hubra_internal
+      - frontend
+    environment:
+      # Behind Traefik like the API: hand its X-Forwarded-For to the backend.
+      MCP_FORWARDED: pass
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=frontend"
+      - "traefik.http.routers.hubra-mcp-secure.rule=Host(`${MCP_HOST:-mcp.hubra.club}`)"
+      - "traefik.http.routers.hubra-mcp-secure.entrypoints=websecure"
+      - "traefik.http.routers.hubra-mcp-secure.tls.certresolver=letencrypt"
+      - "traefik.http.services.hubra-mcp-secure.loadbalancer.server.port=8000"
+      - "traefik.http.routers.hubra-mcp-secure.middlewares=crowdsec@file"
+
   flask-init:
     networks:
       - hubra_internal

@@ -3,7 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useToast, useAuth } from "@/context/AppContext";
 import { qk } from "@/data/keys";
 import { useListCache, useMyJoinedEvents } from "@/data/lists";
-import { joinEvent, leaveEvent } from "@/api/events";
+import { joinEvent, leaveEvent, maybeEvent } from "@/api/events";
 import type { ClubEvent } from "@/types";
 
 // A sign-up the member still has: the button then withdraws it.
@@ -68,6 +68,41 @@ export function useToggleJoinEvent() {
       const msg =
         err instanceof Error ? err.message : i18n.t('events.attendanceFailed', 'Die Teilnahme konnte nicht gespeichert werden.');
       notify("error", "Error", msg);
+    },
+  });
+}
+
+/** "Vielleicht", or take it back when it is already the answer. */
+export function useMaybeEvent() {
+  const { notify } = useToast();
+  const { currentUser } = useAuth();
+  const events = useListCache<ClubEvent>(qk.events);
+
+  return useMutation({
+    mutationFn: async ({ eventId, eventTitle }: { eventId: string; eventTitle: string }) => {
+      const ev = events.get()?.find((e) => e.id === eventId);
+      const wasMaybe = ev?.myStatus === "maybe";
+      if (wasMaybe) await leaveEvent(eventId, "");
+      else await maybeEvent(eventId);
+      return { eventId, eventTitle, wasMaybe };
+    },
+    onSuccess: ({ eventId, eventTitle, wasMaybe }) => {
+      const me = currentUser?.id ?? "";
+      events.patch(eventId, (ev) => ({
+        ...ev,
+        myStatus: wasMaybe ? null : "maybe",
+        attendees: ev.attendees.filter((id) => id !== me),
+      }));
+      notify(
+        "info",
+        wasMaybe ? i18n.t("events.maybeRemoved", "Antwort zurückgezogen") : i18n.t("events.maybeSet", "Vielleicht"),
+        wasMaybe
+          ? i18n.t("events.maybeRemovedMsg", "Für «{{title}}» hast du keine Antwort mehr.", { title: eventTitle })
+          : i18n.t("events.maybeSetMsg", "Du kommst vielleicht zu «{{title}}». Es ist kein Platz für dich reserviert.", { title: eventTitle }),
+      );
+    },
+    onError: (err) => {
+      notify("error", "Error", err instanceof Error ? err.message : i18n.t("events.attendanceFailed", "Die Teilnahme konnte nicht gespeichert werden."));
     },
   });
 }

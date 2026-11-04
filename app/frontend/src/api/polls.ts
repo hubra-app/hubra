@@ -26,6 +26,7 @@ interface BackendPoll {
   created_by_id: number | null;
   is_required: boolean;
   allow_proxy?: boolean;
+  auto_close?: boolean;
   max_proxies_per_member?: number;
   required_group_ids: number[] | null;
   required_function_ids: number[] | null;
@@ -51,6 +52,7 @@ function adapt(b: BackendPoll): Poll {
     createdById: b.created_by_id ? String(b.created_by_id) : undefined,
     isRequired: b.is_required,
     allowProxy: b.allow_proxy ?? false,
+    autoClose: b.auto_close ?? false,
     requiredGroupIds: b.required_group_ids ?? undefined,
     requiredFunctionIds: b.required_function_ids ?? undefined,
     myVote: b.my_vote ?? undefined,
@@ -69,6 +71,7 @@ export interface PollCreate {
   closesAt?: string;
   isRequired?: boolean;
   allowProxy?: boolean;
+  autoClose?: boolean;
   requiredGroupIds?: number[];
   requiredFunctionIds?: number[];
 }
@@ -90,6 +93,7 @@ export async function createPoll(input: PollCreate): Promise<Poll> {
       closes_at: toInstant(input.closesAt) ?? null,
       is_required: input.isRequired ?? false,
       allow_proxy: input.allowProxy ?? false,
+      auto_close: input.autoClose ?? false,
       required_group_ids: input.requiredGroupIds ?? null,
       required_function_ids: input.requiredFunctionIds ?? null,
     }),
@@ -103,6 +107,7 @@ export interface PollUpdate {
   closesAt?: string | null;
   isRequired?: boolean;
   allowProxy?: boolean;
+  autoClose?: boolean;
   requiredGroupIds?: number[] | null;
   requiredFunctionIds?: number[] | null;
 }
@@ -118,6 +123,7 @@ export async function updatePoll(
   if (input.closesAt !== undefined) body.closes_at = toInstant(input.closesAt);
   if (input.isRequired !== undefined) body.is_required = input.isRequired;
   if (input.allowProxy !== undefined) body.allow_proxy = input.allowProxy;
+  if (input.autoClose !== undefined) body.auto_close = input.autoClose;
   if (input.requiredGroupIds !== undefined)
     body.required_group_ids = input.requiredGroupIds;
   if (input.requiredFunctionIds !== undefined)

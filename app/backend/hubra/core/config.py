@@ -180,6 +180,8 @@ class BaseConfig:
     # The manager portal (manage.hubra.club), for links in mails to platform
     # admins. Already in .env for the frontend build (VITE_MANAGE_URL).
     MANAGE_BASE_URL: str = os.environ.get("MANAGE_BASE_URL", "")
+    # The Claude connector (app/mcp, docs/mcp.md); platform setting mcp.url.
+    MCP_PUBLIC_URL: str = os.environ.get("MCP_PUBLIC_URL", "")
     # Time zone for times shown in mails (new-device sign-in).
     MAIL_TIMEZONE: str = os.environ.get("MAIL_TIMEZONE", "Europe/Zurich")
 

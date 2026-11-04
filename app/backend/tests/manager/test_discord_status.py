@@ -8,7 +8,7 @@ from urllib.error import HTTPError
 
 import pytest
 
-from hubra.core.models.connected_app import ConnectedApp
+from hubra.core.models.connected_app import ConnectedApp, ConnectedAppEvent
 from hubra.core.models.platform_setting import PlatformSetting
 from hubra.core.models.tenant import Tenant
 from hubra.core.services import discord_status, platform_discord, platform_settings
@@ -24,6 +24,7 @@ def _clean(db):
     with patch("hubra.core.redis_client.get_redis_client", return_value=None):
         yield
     db.session.rollback()
+    db.session.query(ConnectedAppEvent).delete()
     db.session.query(ConnectedApp).delete()
     db.session.query(PlatformSetting).delete()
     db.session.query(Tenant).filter_by(slug="dc-club").delete()
@@ -320,3 +321,135 @@ def test_picker_api(client, superadmin, bot):
         resp = client.get(f"/api/v1/manager/platform/discord/servers/{GUILD}/channels")
         assert resp.status_code == 200
         assert len(resp.get_json()["channels"]) == 2
+
+
+# ── Manage › Discord › Vereinsserver ─────────────────────────────────────────
+
+
+def _club_with_server(db):
+    from hubra.core import apps
+
+    club = Tenant(name="DC Club", slug="dc-club", plan="starter", status="active")
+    db.session.add(club)
+    db.session.flush()
+    conn = ConnectedApp(
+        tenant_id=club.id,
+        provider="discord",
+        external_id=GUILD,
+        label="DC",
+        status="active",
+        scopes=["announce", "roles"],
+        config={
+            "guild_name": "DC Server",
+            "channel_id": "1",
+            "announce_polls": True,
+            "role_map": [{"source": "group:1", "role_id": "2"}],
+            "posted": {"e:1": [["1", "2"]]},
+        },
+    )
+    db.session.add(conn)
+    db.session.flush()
+    apps.record(conn, "announced", True, "Event: Grillabend")
+    apps.record(conn, "skipped", True, "Poll: off")
+    apps.record(conn, "announced", False, "Missing Access")
+    db.session.commit()
+    return club, conn
+
+
+def test_club_overview(db, bot):
+    club, conn = _club_with_server(db)
+    data = discord_status.server_overview()
+    [srv] = data["servers"]
+    assert srv["club"] == "DC Club" and srv["clubId"] == club.id
+    assert srv["server"] == "DC Server"
+    # Defaults on (events, posts), polls turned on; reminders off; roles
+    # counted; no commands scope, so no buttons.
+    assert srv["features"] == [
+        "Anlässe",
+        "Beiträge",
+        "Umfragen",
+        "1 Rollen-Zuordnungen",
+    ]
+    assert srv["week"] == {"ok": 2, "failed": 1}
+    assert srv["lastPostAt"] is not None
+    assert srv["liveMessages"] == 1
+    assert srv["mainChannel"] is True and srv["logChannel"] is False
+    assert srv["botOnServer"] is None  # not checked yet
+    assert data["totals"] == {
+        "servers": 1,
+        "active": 1,
+        "withErrors": 1,
+        "botMissing": 0,
+    }
+
+
+def test_club_activity(db, bot):
+    _, conn = _club_with_server(db)
+    found = discord_status.server_activity(conn.id)
+    assert found["club"] == "DC Club"
+    assert [e["action"] for e in found["events"]] == [
+        "announced",
+        "skipped",
+        "announced",
+    ]
+    assert found["events"][0]["ok"] is False  # newest first
+    assert discord_status.server_activity(999999) is None
+
+
+def test_club_overview_api(client, superadmin, bot, db):
+    _, conn = _club_with_server(db)
+    resp = client.get("/api/v1/manager/platform/discord/clubs")
+    assert resp.status_code == 200
+    assert resp.get_json()["servers"][0]["id"] == conn.id
+    resp = client.get(f"/api/v1/manager/platform/discord/clubs/{conn.id}/activity")
+    assert resp.status_code == 200 and len(resp.get_json()["events"]) == 3
+    assert (
+        client.get("/api/v1/manager/platform/discord/clubs/999999/activity").status_code
+        == 404
+    )
+
+
+def test_channel_name():
+    assert discord_status.channel_name("  Hubra Log!! ") == "hubra-log"
+    assert discord_status.channel_name("Änderungen & Audit") == "änderungen-audit"
+    assert discord_status.channel_name("---") == ""
+
+
+def test_create_a_private_channel(db, bot):
+    sent = {}
+
+    def fake(method, path, body=None):
+        sent.update(method=method, path=path, body=body)
+        return {"id": "321", "name": body["name"]}
+
+    with patch("hubra.core.services.platform_bot._bot", side_effect=fake):
+        made = discord_status.create_channel(GUILD, "Hubra Audit")
+    assert made == {"id": "321", "name": "hubra-audit"}
+    assert sent["method"] == "POST" and sent["path"] == f"/guilds/{GUILD}/channels"
+    overwrites = {o["id"]: o for o in sent["body"]["permission_overwrites"]}
+    assert overwrites[GUILD]["deny"] == str(1 << 10)  # @everyone can't see it
+    assert int(overwrites["4242"]["allow"]) & (1 << 11)  # the bot can post
+
+
+def test_create_channel_without_the_right(db, bot):
+    from hubra.core.services.platform_bot import BotError
+
+    with patch(
+        "hubra.core.services.platform_bot._bot",
+        side_effect=BotError("Discord answered 403", 403),
+    ):
+        with pytest.raises(discord_status.PickerError, match="Manage Channels"):
+            discord_status.create_channel(GUILD, "log")
+
+
+def test_create_channel_api(client, superadmin, bot):
+    with patch(
+        "hubra.core.services.platform_bot._bot",
+        return_value={"id": "321", "name": "hubra-log"},
+    ):
+        resp = client.post(
+            f"/api/v1/manager/platform/discord/servers/{GUILD}/channels",
+            json={"name": "hubra-log"},
+        )
+    assert resp.status_code == 201
+    assert resp.get_json()["id"] == "321"
