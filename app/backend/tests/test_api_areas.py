@@ -12,6 +12,7 @@ import yaml
 
 from hubra.core import api_areas
 from hubra.core.api_areas import canonical_path
+from hubra.core.roles import area_of
 
 REPO = Path(__file__).resolve().parents[3]
 
@@ -86,21 +87,26 @@ def _sample_paths() -> list[str]:
     for old, new in api_areas.LEGACY:
         for p in (old, new):
             out += [api_areas.V1 + p, api_areas.V1 + p + "/x/1"]
-    out += ["/api/v1/keys/1", "/api/v1/platform", "/api/v1/systemx"]
+    out += [
+        "/api/v1/keys/1",
+        "/api/v1/platform",
+        "/api/v1/global",
+        "/api/v1/systemx",
+        "/api/v1/globalx",
+    ]
     return out
 
 
-def _is_platform(path: str) -> bool:
-    new = canonical_path(path)
-    return new == api_areas.PLATFORM or new.startswith(api_areas.PLATFORM + "/")
+SERVICE = {"platform": "platform-backend", "global": "global-backend", "app": "backend"}
 
 
-def test_nginx_routes_the_platform_paths():
+@pytest.mark.parametrize("area", ["platform", "global"])
+def test_nginx_routes_the_area_paths(area):
     script = (REPO / "app/deploy/nginx/40-hubra-runtime.sh").read_text()
-    pattern = re.search(r"^platform_paths='([^']+)'", script, re.M).group(1)
+    pattern = re.search(rf"^{area}_paths='([^']+)'", script, re.M).group(1)
     regex = re.compile(pattern)
     for path in _sample_paths():
-        assert bool(regex.search(path)) is _is_platform(path), path
+        assert bool(regex.search(path)) is (area_of(path) == area), path
 
 
 @pytest.mark.parametrize(
@@ -131,5 +137,4 @@ def test_ingress_routes_the_platform_paths(ingress):
         return best[1]
 
     for path in _sample_paths():
-        want = "platform-backend" if _is_platform(path) else "backend"
-        assert service(path) == want, path
+        assert service(path) == SERVICE[area_of(path)], path

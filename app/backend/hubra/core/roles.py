@@ -1,10 +1,15 @@
 """Which part of the API a backend process serves: ``HUBRA_ROLE``.
 
-One image, three roles (docs/platform-backend.md):
+One build, one role per process (docs/platform-backend.md):
 
 - ``all`` (default): every route, as before. Compose installs and tests.
-- ``club``: everything except the platform API: the club app
-  (``/api/v1/app``), sign-in and account (``/api/v1/global``) and plugins.
+- ``app``: the club app (``/api/v1/app``) and plugin routes.
+- ``global``: sign-in, account and public data (``/api/v1/global``).
+- ``club``: ``app`` and ``global`` together (Compose).
+
+A path with the club in it (``/api/<slug>/v1/...``) can't be told apart by
+an ingress path prefix, so it always reaches the app backend; the app role
+therefore also answers global paths that came in that way.
 - ``platform``: only the platform API (``/api/v1/platform``: manage's
   platform and club admin views, club requests, the support desk), plus
   health and version.
@@ -27,7 +32,10 @@ import os
 
 from flask import Flask, jsonify, request
 
-ROLES = ("all", "club", "platform")
+# app, global and platform each serve one API area (hubra.core.api_areas);
+# club is app + global together, for a Compose install with one club
+# backend next to the platform backend.
+ROLES = ("all", "club", "app", "global", "platform")
 
 # The platform API (hubra.core.api_areas). The role gate sees the new path,
 # after old ones were rewritten; the ingress and the frontend nginx also
@@ -76,17 +84,30 @@ def is_platform_path(path: str) -> bool:
     return _matches(path, PLATFORM_PREFIXES)
 
 
-def serves(path: str, role: str) -> bool:
-    """Whether a backend in *role* answers *path* (slug already stripped;
-    an old path counts as the new one it is rewritten to)."""
-    from hubra.core.api_areas import canonical_path
+def area_of(path: str) -> str:
+    """``platform``, ``global`` or ``app`` for a request path. Old paths count
+    as the new one they are rewritten to; plugin routes and anything else
+    belong to the app."""
+    from hubra.core.api_areas import GLOBAL, canonical_path
 
     path = canonical_path(path)
-    if role == "all" or _matches(path, SHARED_PATHS):
+    if is_platform_path(path):
+        return "platform"
+    if _matches(path, (GLOBAL,)):
+        return "global"
+    return "app"
+
+
+def serves(path: str, role: str) -> bool:
+    """Whether a backend in *role* answers *path* (slug already stripped)."""
+    from hubra.core.api_areas import canonical_path
+
+    if role == "all" or _matches(canonical_path(path), SHARED_PATHS):
         return True
-    if role == "platform":
-        return is_platform_path(path)
-    return not is_platform_path(path)
+    area = area_of(path)
+    if role == "club":
+        return area in ("app", "global")
+    return area == role
 
 
 def install_role_gate(app: Flask) -> None:
@@ -101,9 +122,17 @@ def install_role_gate(app: Flask) -> None:
     if role == "all":
         return
 
+    from hubra.core.tenant.middleware import _PATH_SLUG_KEY
+
     @app.before_request
     def _role_gate():
         if serves(request.path, role):
+            return None
+        if (
+            role == "app"
+            and request.environ.get(_PATH_SLUG_KEY)
+            and area_of(request.path) == "global"
+        ):
             return None
         return jsonify(
             {
@@ -127,5 +156,8 @@ def task_routes() -> dict:
 
 
 def build_component(kind: str) -> str:
-    """Name for the build heartbeat (manage › Diagnose › Builds)."""
-    return f"platform-{kind}" if current_role() == "platform" else kind
+    """Name for the build heartbeat (manage › Diagnose › Builds): ``api`` and
+    ``worker`` for the app (or a single) backend, ``global-api``,
+    ``platform-api``, ``platform-worker`` for the others."""
+    role = current_role()
+    return f"{role}-{kind}" if role in ("platform", "global") else kind

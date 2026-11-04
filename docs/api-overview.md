@@ -10,9 +10,9 @@ The API has three areas (`app/backend/hubra/core/api_areas.py`):
 
 - `/api/v1/platform/...`: manage (platform settings, plugins, backups, all
   clubs, club admin, the support desk). Served by the platform backend.
-- `/api/v1/app/...`: the club app.
+- `/api/v1/app/...`: the club app. Served by the app backend.
 - `/api/v1/global/...`: sign-in, account, translations, version, public data,
-  the club directory, invites and requests.
+  the club directory, invites and requests. Served by the global backend.
 
 The paths before this split (`/api/v1/members`, `/api/v1/manager/...`) still
 work; the backend rewrites them. See [platform-backend.md](platform-backend.md).

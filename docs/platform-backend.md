@@ -1,37 +1,48 @@
-# Platform backend
+# Split backends: app, global and platform
 
-The backend can run as two separate deployments from the same code:
+The backend runs as three deployments from the same code, one per API area:
 
-- the **club backend** (`backend`, `celery-worker`, `discord-gateway`): the club
-  app, sign-in and accounts, everything members use;
+- the **app backend** (`backend`, `celery-worker`, `discord-gateway`): the
+  club app (`/api/v1/app`) and plugin routes, and the club background jobs;
+- the **global backend** (`global-backend`): sign-in, the account,
+  translations, the club directory, invites and public data
+  (`/api/v1/global`);
 - the **platform backend** (`platform-backend`, `platform-worker`): the
-  platform API that manage uses, platform background jobs, migrations and the
-  scheduler.
+  platform API that manage uses (`/api/v1/platform`), platform background
+  jobs, migrations and the scheduler.
 
-A platform change (an alert rule, a backup fix, a new manage page) then rolls
-only the platform pods. Members never notice it.
+Each has its own image name, so each can be pinned, rolled and scaled on its
+own: a platform change (an alert rule, a backup fix, a new manage page) rolls
+only the platform pods, a club app release doesn't restart sign-in, and a busy
+club evening can get more app pods without more of the others.
 
 Compose installs keep one backend by default (`HUBRA_ROLE` unset means
-`all`). `deploy/app` and the Contabo overlay run split.
+`all`); `docker-compose.platform.yml` splits off the platform there, with
+sign-in staying on the club backend (`HUBRA_ROLE=club` = app + global).
+`deploy/app` and the Contabo overlay run all three.
 
 ## What runs where
 
-| | Club backend | Platform backend |
-| --- | --- | --- |
-| Image | `ghcr.io/hubra-app/hubra/backend` | `ghcr.io/hubra-app/hubra/platform-backend` (the same build, published under a second name) |
-| `HUBRA_ROLE` | `club` | `platform` |
-| API paths | `/api/v1/app` (club app), `/api/v1/global` (sign-in, account, public), plugin routes | `/api/v1/platform` |
-| Shared paths | `/health`, `/api/v1/global/health`, `/api/v1/global/version`, `/api/v1/global/instance` | same |
-| Celery | `celery-worker`: the default queue (invoices, reminders, mail, push, Discord bot, plugin jobs) | `platform-worker`: queue `platform` (backups and restores, health and infra checks, upgrades, plugin updates, quotas, platform alerts, platform Discord log) |
-| Start-up | waits until the schema is migrated (`python -m hubra.core.schema_wait`) | runs the init step: `flask db upgrade`, `sync-permissions`, `seed`, `ensure-superadmins`, `plugins sync`, `modules seal-secrets` |
-| Celery beat | | runs the platform image |
+| | App backend | Global backend | Platform backend |
+| --- | --- | --- | --- |
+| Image | `ghcr.io/hubra-app/hubra/backend` | `ghcr.io/hubra-app/hubra/global-backend` | `ghcr.io/hubra-app/hubra/platform-backend` |
+| `HUBRA_ROLE` | `app` | `global` | `platform` |
+| API paths | `/api/v1/app`, plugin routes | `/api/v1/global` | `/api/v1/platform` |
+| Shared paths | `/health`, `/api/v1/global/health`, `/api/v1/global/version`, `/api/v1/global/instance` | same | same |
+| Celery | `celery-worker`: the default queue (invoices, reminders, mail, push, Discord bot, plugin jobs) | none (its tasks go to the default queue) | `platform-worker`: queue `platform` (backups and restores, health and infra checks, upgrades, plugin updates, quotas, platform alerts, platform Discord log) |
+| Start-up | waits until the schema is migrated (`python -m hubra.core.schema_wait`) | waits, the same | runs the init step: `flask db upgrade`, `sync-permissions`, `seed`, `ensure-superadmins`, `plugins sync`, `modules seal-secrets` |
+| Celery beat | | | runs the platform image |
+
+The three images are one build published under three names (`images.yml`
+copies the manifest, no extra build), so they cost no CI time or registry
+space.
 
 The API areas and the old paths that lead to them are in
 `app/backend/hubra/core/api_areas.py` (see [API areas](#api-areas) below); the
 task list is in `app/backend/hubra/core/roles.py` (`PLATFORM_TASK_MODULES`).
 
 Every role still registers every route; a backend answers 404 ("Not served by
-the club backend") for the other side's paths before any other code runs. So
+the app backend") for another area's paths before any other code runs. So
 the permission sync and the permission list see every route, whichever pod
 runs them.
 
@@ -40,33 +51,42 @@ runs them.
 The browser keeps calling one API host. The split is by path:
 
 - **k3s:** the `api.` rule in the Ingress sends `/api/v1/platform` and the old
-  platform paths (`/api/v1/manager`, most of `/api/v1/system`) to the
-  `platform-backend` Service, everything else to `backend`
+  platform paths (`/api/v1/manager/...`, most of `/api/v1/system`) to the
+  `platform-backend` Service, `/api/v1/global` and its old paths
+  (`/api/v1/auth`, `/api/v1/account`, `/api/v1/i18n`, ...) to
+  `global-backend`, everything else to `backend`
   (`deploy/app/ingress.yaml`, the overlays' `ingress.yaml`).
-- **Compose:** the frontend nginx sends them to `PLATFORM_API_UPSTREAM`
-  (`app/deploy/nginx/40-hubra-runtime.sh`), set by
-  `docker-compose.platform.yml`.
+- **Compose:** the frontend nginx sends them to `PLATFORM_API_UPSTREAM` and
+  `GLOBAL_API_UPSTREAM` when set (`app/deploy/nginx/40-hubra-runtime.sh`);
+  `docker-compose.platform.yml` sets the platform one.
 
-`tests/test_api_areas.py` checks that the Ingress files and the nginx pattern
+`tests/test_api_areas.py` checks that the Ingress files and the nginx patterns
 route every old and new path to the backend that serves it.
+
+A path with the club in it (`/api/<slug>/v1/...`, from before the club moved
+to a header) can't be split by an Ingress prefix, so it always reaches the app
+backend, which also answers the global paths that come in that way. The
+frontends send the club as a header and never use these paths.
 
 ### API areas
 
 | Area | Who calls it | Backend |
 | --- | --- | --- |
 | `/api/v1/platform/...` | manage: platform settings, plugins (`/platform/plugins`), backups (`/platform/backups`), the support desk (`/platform/support`), all clubs and club admin (`/platform/system/...`) | platform |
-| `/api/v1/app/...` | the club app: members, events, finance, mail, ..., club admin settings (`/app/admin`), the permission catalogue (`/app/permissions`) | club |
-| `/api/v1/global/...` | everyone: sign-in (`/global/auth`), the account (`/global/account`), translations, version, status, public pricing, plugin frontends, the club directory, invites, join and club requests, ending a support session | club |
+| `/api/v1/app/...` | the club app: members, events, finance, mail, ..., club admin settings (`/app/admin`), the permission catalogue (`/app/permissions`) | app |
+| `/api/v1/global/...` | everyone: sign-in (`/global/auth`), the account (`/global/account`), translations, version, status, public pricing, plugin frontends, the club directory, invites, join and club requests, ending a support session | global |
 
-Sign-in is in `/global`, on the club backend, on purpose: every signed-in
-person refreshes a token every 15 minutes, so a platform rollout must not
-touch it.
+Sign-in has its own backend on purpose: every signed-in person refreshes a
+token every 15 minutes and every page load asks for the account, so neither a
+platform nor a club app rollout should touch it, and its load (many small
+requests) scales differently from the club app's.
 
 **Old paths still work.** `/api/v1/members`, `/api/v1/manager/platform/...`,
 `/api/v1/system/...` and the others are rewritten to the new path before the
 URL is matched (`LegacyApiPaths`), so older app versions in open browser tabs,
 plugins and links in sent mail keep working. Plugins keep their own prefix
-(`/api/v1/keys`, `/api/v1/bank`, ...) and run on the club backend.
+(`/api/v1/keys`, `/api/v1/bank`, ...) and run on the app backend; their
+frontend files (`/api/v1/global/plugins/...`) come from the global backend.
 
 **URLs registered outside Hubra keep the old form for now:** the Discord
 OAuth callbacks (`/api/v1/apps/callback/discord`,
@@ -86,16 +106,22 @@ it, all tasks stay on the default queue, which is right for a single worker.
 
 Migrations run in one place: the platform backend's init step. So:
 
-**The platform release must be the same as the club release or newer.**
+**The platform release must be the same as the app and global releases or
+newer.**
 
-- **Normal release:** bump both tags to the same version. The platform pod
-  migrates; the new club pod waits for that, then starts. The old club pod
-  keeps serving until the new one is ready.
-- **Platform-only fix:** bump only the platform tag. Club pods don't restart.
-- **Club tag ahead of the platform tag:** if that release has new
-  migrations, the new club pod waits (`schema-wait` init container, 15 minutes,
-  then it restarts and waits again) and the old club pod keeps serving. Nothing
+- **Normal release:** bump all three tags to the same version. The platform
+  pod migrates; the new app and global pods wait for that, then start. The old
+  pods keep serving until the new ones are ready.
+- **Platform-only fix:** bump only the platform tag. Nothing else restarts.
+- **App- or global-only fix:** bump only that tag (the platform tag must
+  already be at that version or newer if the fix has migrations).
+- **App or global tag ahead of the platform tag:** if that release has new
+  migrations, the new pod waits (`schema-wait` init container, 15 minutes,
+  then it restarts and waits again) and the old pod keeps serving. Nothing
   breaks; the rollout just doesn't finish until the platform catches up.
+- **App and global on different releases** is fine for a fix in one of them,
+  but keep them close: a new club app may call a global route that only the
+  newer global release has.
 - **Rolling the platform back** below a release whose migrations already ran
   fails in `flask db upgrade` (the database knows a revision the old image
   doesn't). That was true before the split too: roll forward instead.
@@ -113,12 +139,22 @@ club ones included, so it must be at least as new as the club code.
 images:
   - name: ghcr.io/hubra-app/hubra/backend
     newTag: 1.5.0
+  - name: ghcr.io/hubra-app/hubra/global-backend
+    newTag: 1.5.0
   - name: ghcr.io/hubra-app/hubra/platform-backend
     newTag: 1.5.1   # platform-only fix on top of 1.5.0
 ```
 
-A release publishes both names with the same tags (`images.yml` copies the
-backend manifest to `platform-backend`, no second build).
+A release publishes all three names with the same tags (`images.yml` copies
+the backend manifest to `global-backend` and `platform-backend`, no second
+build).
+
+### Scaling
+
+Set `replicas` per Deployment in the overlay: `backend` and `global-backend`
+take any number, `platform-backend` too (the init step takes turns,
+`hubra.core.startup_lock`). `celery-worker` and `platform-worker` scale the
+same way. Beat and the Discord gateway stay at one (docs/scaling.md).
 
 ### Compose
 
@@ -150,7 +186,7 @@ platform paths, with a higher priority than the API router:
 
 ## Rollouts without a gap
 
-Both API Deployments use `maxSurge: 1, maxUnavailable: 0`: the new pod must
+All three API Deployments use `maxSurge: 1, maxUnavailable: 0`: the new pod must
 pass its readiness probe before the old one stops, even with one replica. A
 `preStop` sleep of 10 seconds keeps the old pod answering while Traefik takes
 it out of rotation; without it, requests already routed to a stopping pod fail
@@ -160,23 +196,24 @@ restore before it is stopped.
 ## Moving an existing cluster to the split
 
 1. Publish a release (or run Images by hand) from a commit that has this
-   change, so `platform-backend` exists in GHCR with the same tags as `backend`.
-   The workflow creates the new package. Check in the org's Packages that
-   `platform-backend` has the same visibility as `backend`, so the
-   `ghcr-pull` token can pull it.
-2. Set both tags in the overlay to that build in the same commit.
+   change, so `global-backend` and `platform-backend` exist in GHCR with the
+   same tags as `backend`. The workflow creates the new packages. Check in
+   the org's Packages that both have the same visibility as `backend`, so the
+   `ghcr-pull` token can pull them.
+2. Set all three tags in the overlay to that build in the same commit.
 3. Flux applies it: `platform-backend` runs the migrations, the new `backend`
-   pod waits for them, the Ingress starts sending the platform paths to
-   `platform-backend`, and `platform-worker` starts taking the platform queue.
-4. Check manage › Diagnose › Builds: it lists `Platform backend (API)` and
-   `Platform worker` next to the club processes.
+   and `global-backend` pods wait for them, the Ingress starts sending each
+   area to its backend, and `platform-worker` starts taking the platform
+   queue.
+4. Check manage › Diagnose › Builds: it lists `Sign-in & account (API)`,
+   `Platform backend (API)` and `Platform worker` next to the club processes.
 
 Tasks already queued on the default queue when the switch happens still run
 on the club worker (it has the same code); only new ones go to `platform`.
 
 ## Not split (yet)
 
-- **Database rights.** Both backends use the same Postgres role. A separate,
+- **Database rights.** All backends use the same Postgres role. A separate,
   narrower role per side needs an audit of which platform tables club code
   writes (see the recommendation in PR #146).
 - **Network access.** The platform paths are on the public API host. An IP
