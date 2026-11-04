@@ -131,6 +131,7 @@ def make_celery(app: Flask) -> Celery:
             "hubra.core.tasks.push_tasks",
             "hubra.core.tasks.mail_monitor_tasks",
             "hubra.core.tasks.connected_app_tasks",
+            "hubra.core.tasks.plugin_event_tasks",
             "hubra.core.tasks.quota_tasks",
             "hubra.core.tasks.upgrade_tasks",
             *_module_task_imports(),

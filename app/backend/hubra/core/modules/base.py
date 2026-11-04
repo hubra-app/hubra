@@ -180,6 +180,10 @@ class Module:
     connection to a chat service's gateway; one per platform, not per club.
     ``plugin`` is the id of the plugin that brought the module (set by the
     plugin loader; ``None`` for modules built into Hubra).
+    ``events_in_transaction`` lists events whose handlers run inside the
+    caller's transaction, as Hubra's own modules' always do. A plugin's
+    other handlers run after the commit, in the worker. Honoured for
+    official plugins only (``hubra.core.plugins.limits``).
     """
 
     code: str
@@ -198,6 +202,7 @@ class Module:
     schedule: tuple[Schedule, ...] = ()
     apps: tuple[AppProvider, ...] = ()
     processes: dict[str, str] = field(default_factory=dict)
+    events_in_transaction: tuple[str, ...] = ()
     plugin: str | None = None
 
     def setting(self, key: str) -> SettingField | None:
