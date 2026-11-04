@@ -837,7 +837,13 @@
     "maybeSetMsg": "Du kommst vielleicht zu «{{title}}». Es ist kein Platz für dich reserviert.",
     "maybeRemoved": "Antwort zurückgezogen",
     "maybeRemovedMsg": "Für «{{title}}» hast du keine Antwort mehr.",
-    "maybeCount": "+{{count}} vielleicht"
+    "maybeCount": "+{{count}} vielleicht",
+    "public": {
+      "title": "Öffentliche Anlässe",
+      "hint": "Anlässe mit «Öffentlicher Anlass» kann jeder ohne Anmeldung sehen: als Kalender zum Abonnieren und als Liste für eure Website. Teilnehmende, Gruppen und Notizen bleiben im Verein. Gerade {{count}} kommende.",
+      "calendar": "Öffentlicher Kalender",
+      "json": "Für die Website (JSON)"
+    }
   },
   "finance": {
     "addCategory": "Kategorie hinzufügen",

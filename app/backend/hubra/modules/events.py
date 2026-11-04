@@ -52,7 +52,11 @@ module = Module(
         ),
     ),
     # The calendar feed authenticates with its own signed token.
-    public_endpoints=("events_bp.calendar_feed",),
+    public_endpoints=(
+        "events_bp.calendar_feed",
+        "events_bp.public_calendar",
+        "events_bp.public_events",
+    ),
     tables=(
         "event_series",
         "club_events",

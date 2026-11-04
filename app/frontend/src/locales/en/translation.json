@@ -837,7 +837,13 @@
     "maybeSetMsg": "You might come to “{{title}}”. No place is held for you.",
     "maybeRemoved": "Answer taken back",
     "maybeRemovedMsg": "You no longer have an answer for “{{title}}”.",
-    "maybeCount": "+{{count}} maybe"
+    "maybeCount": "+{{count}} maybe",
+    "public": {
+      "title": "Public events",
+      "hint": "Events marked “Public event” can be seen by anyone without signing in: as a calendar to subscribe to and as a list for your website. Attendees, groups and notes stay in the club. {{count}} upcoming right now.",
+      "calendar": "Public calendar",
+      "json": "For your website (JSON)"
+    }
   },
   "finance": {
     "addCategory": "Add Category",

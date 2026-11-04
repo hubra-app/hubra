@@ -3518,5 +3518,9 @@
   "events.maybeSetMsg": "Du kommst vielleicht zu «{{title}}». Es ist kein Platz für dich reserviert.",
   "events.maybeRemoved": "Antwort zurückgezogen",
   "events.maybeRemovedMsg": "Für «{{title}}» hast du keine Antwort mehr.",
-  "events.maybeCount": "+{{count}} vielleicht"
+  "events.maybeCount": "+{{count}} vielleicht",
+  "events.public.title": "Öffentliche Anlässe",
+  "events.public.hint": "Anlässe mit «Öffentlicher Anlass» kann jeder ohne Anmeldung sehen: als Kalender zum Abonnieren und als Liste für eure Website. Teilnehmende, Gruppen und Notizen bleiben im Verein. Gerade {{count}} kommende.",
+  "events.public.calendar": "Öffentlicher Kalender",
+  "events.public.json": "Für die Website (JSON)"
 }

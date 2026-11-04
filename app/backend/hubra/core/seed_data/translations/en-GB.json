@@ -3518,5 +3518,9 @@
   "events.maybeSetMsg": "You might come to “{{title}}”. No place is held for you.",
   "events.maybeRemoved": "Answer taken back",
   "events.maybeRemovedMsg": "You no longer have an answer for “{{title}}”.",
-  "events.maybeCount": "+{{count}} maybe"
+  "events.maybeCount": "+{{count}} maybe",
+  "events.public.title": "Public events",
+  "events.public.hint": "Events marked “Public event” can be seen by anyone without signing in: as a calendar to subscribe to and as a list for your website. Attendees, groups and notes stay in the club. {{count}} upcoming right now.",
+  "events.public.calendar": "Public calendar",
+  "events.public.json": "For your website (JSON)"
 }

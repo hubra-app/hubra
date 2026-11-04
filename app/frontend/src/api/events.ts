@@ -461,3 +461,13 @@ export async function downloadAttendanceCSV(f: AttendanceFilter): Promise<void> 
   a.click();
   URL.revokeObjectURL(url);
 }
+
+/** Where anyone can read the club's public events: a calendar to
+ *  subscribe to and JSON for the club's website. */
+export async function getPublicEventLinks(): Promise<{
+  json: string;
+  calendar: string;
+  upcoming: number;
+}> {
+  return apiFetch("/app/events/public-links");
+}

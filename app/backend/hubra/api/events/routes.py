@@ -551,3 +551,132 @@ def calendar_feed(token: str):
         mimetype="text/calendar",
         headers={"Cache-Control": "private, max-age=900"},
     )
+
+
+# ── Public events: a club's "Öffentlicher Anlass" events for everyone ─────────
+#
+# No sign-in: the club's website, a calendar app or anyone may read the
+# events a club marked public (``is_public``), and nothing else of them:
+# no sign-ups, no group, no who. Any origin may fetch the JSON (no cookies).
+
+PUBLIC_PAST_DAYS = 30
+
+
+def _public_club(slug: str):
+    from hubra.core.models.tenant import Tenant
+    from hubra.core.modules import is_enabled
+    from hubra.core.tenant.context import set_search_path
+
+    tenant = db.session.scalar(db.select(Tenant).where(Tenant.slug == slug))
+    if tenant is None or tenant.status != "active":
+        return None
+    g.tenant = tenant
+    set_search_path(tenant.id)
+    if not is_enabled("events"):
+        return None
+    return tenant
+
+
+def _public_events(since: date) -> list[ClubEvent]:
+    return list(
+        db.session.scalars(
+            db.select(ClubEvent)
+            .where(
+                ClubEvent.is_public.is_(True),
+                db.or_(
+                    ClubEvent.date >= since,
+                    ClubEvent.end_date >= since,
+                ),
+            )
+            .order_by(ClubEvent.date, ClubEvent.id)
+            .limit(200)
+        )
+    )
+
+
+def _public_headers(resp, max_age: int = 600):
+    resp.headers["Cache-Control"] = f"public, max-age={max_age}"
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    return resp
+
+
+def public_event(event: ClubEvent, base: str | None) -> dict:
+    return {
+        "id": event.id,
+        "title": event.title,
+        "date": event.date.isoformat(),
+        "endDate": event.end_date.isoformat() if event.end_date else None,
+        "time": None if event.all_day else event.time,
+        "allDay": bool(event.all_day),
+        "location": event.location,
+        "description": event.description,
+        "onlineUrl": event.meeting_url,
+        "type": event.type,
+        "category": event.category,
+        "coverImageUrl": event.cover_image_url,
+        "url": f"{base}/app/operations/events?event={event.id}" if base else None,
+    }
+
+
+@events_bp.get("/public/<string:slug>.ics")
+def public_calendar(slug: str):
+    """The club's public events as a calendar to subscribe to."""
+    tenant = _public_club(slug)
+    if tenant is None:
+        return api_error("NOT_FOUND", "Unknown calendar", 404)
+    since = date.today() - timedelta(days=PUBLIC_PAST_DAYS)
+    ical = EventService.generate_ical(_public_events(since), name=tenant.name)
+    return _public_headers(
+        Response(ical, status=200, mimetype="text/calendar"), max_age=900
+    )
+
+
+@events_bp.get("/public/<string:slug>")
+def public_events(slug: str):
+    """The club's upcoming public events, for its website."""
+    from hubra.core.services.email import _get_base_url
+
+    tenant = _public_club(slug)
+    if tenant is None:
+        return api_error("NOT_FOUND", "Unknown club", 404)
+    base = _get_base_url()
+    club_base = f"{base.rstrip('/')}/{tenant.slug}" if base else None
+    events = _public_events(date.today())
+    return _public_headers(
+        jsonify(
+            {
+                "club": {"name": tenant.name, "slug": tenant.slug},
+                "calendar": url_for(
+                    "events_bp.public_calendar", slug=tenant.slug, _external=True
+                ),
+                "events": [public_event(e, club_base) for e in events],
+            }
+        )
+    )
+
+
+@events_bp.get("/public-links")
+@permission_required("events", "read", "View events")
+def public_links():
+    """Where the club's public events can be read (for the events page)."""
+    from hubra.core.tenant.context import current_tenant
+
+    tenant = current_tenant()
+    if tenant is None:
+        return api_error("NOT_FOUND", "No club", 404)
+    count = db.session.scalar(
+        db.select(db.func.count(ClubEvent.id)).where(
+            ClubEvent.is_public.is_(True), ClubEvent.date >= date.today()
+        )
+    )
+    return jsonify(
+        {
+            "json": url_for(
+                "events_bp.public_events", slug=tenant.slug, _external=True
+            ),
+            "calendar": url_for(
+                "events_bp.public_calendar", slug=tenant.slug, _external=True
+            ),
+            "upcoming": int(count or 0),
+        }
+    ), 200
