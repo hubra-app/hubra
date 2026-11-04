@@ -189,7 +189,7 @@ export function NavSectionLabel({ label, onEdit }: { label: string; onEdit?: () 
   const { t } = useT()
   return (
     <Group justify="space-between" wrap="nowrap" pl={12} pr={4} mb={6} h={20}>
-      <Text fz={11} fw={700} c="gray.6" tt="uppercase" style={{ letterSpacing: '0.08em' }}>
+      <Text fz={12} fw={700} c="gray.6" tt="uppercase" style={{ letterSpacing: '0.08em' }}>
         {label}
       </Text>
       {onEdit && (

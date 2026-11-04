@@ -1,4 +1,5 @@
 import {
+  Badge,
   createTheme,
   defaultVariantColorsResolver,
   DEFAULT_THEME,
@@ -8,7 +9,15 @@ import {
   type CSSVariablesResolver,
   type VariantColorsResolver,
 } from '@mantine/core'
-import { accColors, goldColors, grayColors, greenColors, orangeColors, pinkColors, redColors } from './colors'
+import {
+  accColors,
+  goldColors,
+  grayColors,
+  greenColors,
+  orangeColors,
+  pinkColors,
+  redColors,
+} from './colors'
 import { readableOn, textOn, WHITE } from './contrast'
 
 // Filled buttons, badges and checkboxes: Mantine picks their text from the
@@ -19,14 +28,26 @@ import { readableOn, textOn, WHITE } from './contrast'
 const variantColorResolver: VariantColorsResolver = (input) => {
   const result = defaultVariantColorsResolver(input)
   if (input.variant !== 'filled' || input.autoContrast === false) return result
-  const parsed = parseThemeColor({ color: input.color || input.theme.primaryColor, theme: input.theme })
+  const parsed = parseThemeColor({
+    color: input.color || input.theme.primaryColor,
+    theme: input.theme,
+  })
   if (!parsed.isThemeColor) return { ...result, color: textOn(parsed.value) }
-  if (parsed.shade === undefined) return { ...result, color: `var(--mantine-color-${parsed.color}-contrast)` }
+  if (parsed.shade === undefined)
+    return { ...result, color: `var(--mantine-color-${parsed.color}-contrast)` }
   return { ...result, color: textOn(parsed.value) }
 }
 
 // Hubra brand theme (brand/README.md). The same file is used by the club app,
 // the manager portal and the sign-in portal so the three look like one product.
+const BADGE_FZ: Record<string, string> = {
+  xs: rem(11),
+  sm: rem(12),
+  md: rem(12),
+  lg: rem(13),
+  xl: rem(16),
+}
+
 export const theme = createTheme({
   primaryColor: 'acc',
   primaryShade: { light: 6, dark: 4 },
@@ -115,7 +136,9 @@ export const theme = createTheme({
   fontFamilyMonospace: '"JetBrains Mono", ui-monospace, monospace',
 
   fontSizes: {
-    xs: rem(12),
+    // 13, not 12: 12 px read as too small across the apps (meta lines, table
+    // headers, descriptions), and the apps show a lot of it.
+    xs: rem(13),
     sm: rem(14),
     md: rem(15),
     lg: rem(17),
@@ -206,10 +229,15 @@ export const theme = createTheme({
     Card: {
       defaultProps: { radius: 'lg', shadow: 'xs', withBorder: true },
     },
-    Badge: {
+    Badge: Badge.extend({
       defaultProps: { radius: 'sm', size: 'md', variant: 'light' },
       styles: { root: { fontWeight: 600, textTransform: 'none' } },
-    },
+      // Mantine's badge text is 9/10/11 px for xs/sm/md, made for uppercase
+      // labels. Ours are words in sentence case, so one step larger each.
+      vars: (_theme, props) => ({
+        root: { '--badge-fz': BADGE_FZ[String(props.size ?? 'md')] ?? BADGE_FZ.md },
+      }),
+    }),
     Tabs: {
       defaultProps: { color: 'acc' },
       styles: { tab: { fontWeight: 600 } },
@@ -227,7 +255,7 @@ export const theme = createTheme({
       },
       styles: {
         th: {
-          fontSize: rem(12),
+          fontSize: rem(13),
           fontWeight: 600,
           color: 'var(--mantine-color-gray-7)',
           textTransform: 'uppercase',
@@ -275,8 +303,10 @@ export const cssVariablesResolver: CSSVariablesResolver = (t) => {
     result.light[`--mantine-color-${name}-contrast`] = textOn(scale[shade.light])
     result.dark[`--mantine-color-${name}-contrast`] = textOn(scale[shade.dark])
   }
-  result.light['--mantine-primary-color-contrast'] = `var(--mantine-color-${t.primaryColor}-contrast)`
-  result.dark['--mantine-primary-color-contrast'] = `var(--mantine-color-${t.primaryColor}-contrast)`
+  result.light['--mantine-primary-color-contrast'] =
+    `var(--mantine-color-${t.primaryColor}-contrast)`
+  result.dark['--mantine-primary-color-contrast'] =
+    `var(--mantine-color-${t.primaryColor}-contrast)`
   // Text in these colours (light buttons, badges, alerts, links) must read
   // on white and on the colour's own light tint; the warning orange and
   // gold would not, so they get a deeper shade for text.

@@ -138,7 +138,7 @@ Scale (theme `fontSizes` and `headings`):
 
 | Token | Size | Use |
 | --- | --- | --- |
-| `xs` | 12 px | Table headers (uppercase, +0.04em), meta lines, badges |
+| `xs` | 13 px | Table headers (uppercase, +0.04em), meta lines, descriptions under fields |
 | `sm` | 14 px | Default for tables, form labels, buttons, secondary text |
 | `md` | 15 px | Body text |
 | `lg` | 17 px | Lead paragraphs |
@@ -152,7 +152,10 @@ Scale (theme `fontSizes` and `headings`):
 - Sentence case everywhere: titles, buttons, tabs, menu items.
 - Weights: 400 body, 500 nav rows and switch labels, 600 labels, buttons,
   tabs and table headers, 700 headings.
-- Eyebrows (the small line above a page title) are `.eyebrow`: 12 px, 700,
+- Badges: 11/12/12/13 px text for `xs`/`sm`/`md`/`lg` (theme; one step above
+  Mantine's, which are made for uppercase labels). Nothing that is read as
+  text goes under 12 px; 10 px is for count dots and the build badge only.
+- Eyebrows (the small line above a page title) are `.eyebrow`: 13 px, 700,
   uppercase, +0.08em, `acc-7`.
 
 ### Voice

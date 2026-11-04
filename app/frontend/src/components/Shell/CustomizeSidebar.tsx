@@ -70,7 +70,7 @@ export function CustomizeSidebarModal() {
         {groups.map((group, g) => (
           <Box key={group.section} data-testid="customize-group">
             <Text
-              fz={11}
+              fz={12}
               fw={700}
               c="gray.6"
               tt="uppercase"

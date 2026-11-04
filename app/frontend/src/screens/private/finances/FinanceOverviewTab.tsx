@@ -147,7 +147,7 @@ export function FinanceOverviewTab() {
                     </div>
                     <div
                       style={{
-                        fontSize: 10,
+                        fontSize: 11,
                         color: 'var(--hb-text-3)',
                         marginTop: 4,
                       }}
