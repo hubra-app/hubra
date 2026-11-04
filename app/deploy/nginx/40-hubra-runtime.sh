@@ -1,6 +1,6 @@
 #!/bin/sh
 # Runtime configuration for the SPA images (frontend, admin-frontend,
-# sso-frontend). Runs from the nginx image's /docker-entrypoint.d/ on every
+# sso-frontend, support-frontend). Runs from the nginx image's /docker-entrypoint.d/ on every
 # container start, so one image works for every host name:
 #
 #   1. Copies the pristine build from /opt/spa into the web root and replaces
@@ -44,6 +44,7 @@ add VITE_COS_URL https://app.hubra.club
 add VITE_MANAGE_URL https://manage.hubra.club
 add VITE_ADMIN_PORTAL_URL https://manage.hubra.club
 add VITE_TENANT_APP_URL https://app.hubra.club
+add VITE_SUPPORT_URL https://support.hubra.club
 
 find "$html" -type f \( -name '*.js' -o -name '*.html' \) -exec sed -i "$script" {} +
 

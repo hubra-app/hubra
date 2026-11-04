@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { Alert, Anchor, Box, Group, Loader, Paper, Stack, Text, ThemeIcon, Title } from '@mantine/core'
 import {
   IconAlertTriangle,
@@ -6,37 +7,9 @@ import {
   IconCircleX,
   IconTool,
 } from '@tabler/icons-react'
-import { useNavigate } from 'react-router-dom'
-import { BASE } from '@hubra/api-client'
-import { AuthFrame } from '@/components/AuthFrame'
+import { Page } from '@/components/Layout'
 import { getLang, useLang } from '@/lang'
-
-type Level = 'operational' | 'degraded' | 'down'
-type Component = 'app' | 'mail' | 'notifications'
-
-interface StatusPage {
-  overall: Level | 'maintenance'
-  components: { id: Component; level: Level }[]
-  maintenance: {
-    active: boolean
-    message: string
-    until: string | null
-    upcoming: { starts_at: string; ends_at: string; message: string } | null
-  }
-  incidents: { component: Component; level: Level; started_at: string; ended_at: string | null }[]
-  past_maintenance: { starts_at: string; ends_at: string; message: string }[]
-  history_days: number
-  checked_at: string
-  club: { slug: string; name: string } | null
-}
-
-/** Public: no session, no refresh, works while the club API is in maintenance. */
-async function getStatus(club: string | null): Promise<StatusPage> {
-  const qs = club ? `?club=${encodeURIComponent(club)}` : ''
-  const res = await fetch(`${BASE}/global/status${qs}`, { credentials: 'omit' })
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
-  return (await res.json()) as StatusPage
-}
+import { getStatus, STATUS_COLOR, type Component, type Level, type StatusPage } from '@/api/status'
 
 function when(iso: string) {
   return new Date(iso).toLocaleString(getLang() === 'en' ? 'en-GB' : 'de-CH', {
@@ -47,12 +20,7 @@ function when(iso: string) {
   })
 }
 
-const COLOR: Record<Level | 'maintenance', string> = {
-  operational: 'green',
-  degraded: 'orange',
-  down: 'red',
-  maintenance: 'acc',
-}
+const COLOR = STATUS_COLOR
 
 function LevelIcon({ level, size = 22 }: { level: Level | 'maintenance'; size?: number }) {
   const Icon =
@@ -66,10 +34,9 @@ function LevelIcon({ level, size = 22 }: { level: Level | 'maintenance'; size?: 
   return <Icon size={size} color={`var(--mantine-color-${COLOR[level]}-text)`} aria-hidden />
 }
 
-/** sso › /status (?club=<slug>): is Hubra working, in plain words. */
+/** /status (?club=<slug>): is Hubra working, in plain words. */
 export function StatusScreen() {
   const { tr } = useLang()
-  const navigate = useNavigate()
   const club = new URLSearchParams(window.location.search).get('club')
   const query = useQuery({
     queryKey: ['status', club],
@@ -102,15 +69,15 @@ export function StatusScreen() {
       : tr('Mails verzögert', 'Mail delayed')
 
   return (
-    <AuthFrame wide>
-      <Title order={1} fz={30} mb={6}>
-        {tr('Systemstatus', 'System status')}
-      </Title>
-      <Text c="dimmed" mb={24}>
-        {data?.club
+    <Page
+      narrow
+      title={tr('Systemstatus', 'System status')}
+      intro={
+        data?.club
           ? tr(`Hubra für ${data.club.name}`, `Hubra for ${data.club.name}`)
-          : tr('Funktioniert Hubra gerade?', 'Is Hubra working right now?')}
-      </Text>
+          : tr('Funktioniert Hubra gerade?', 'Is Hubra working right now?')
+      }
+    >
 
       {query.isLoading && (
         <Group justify="center" py="xl">
@@ -230,11 +197,14 @@ export function StatusScreen() {
             )}
           </Box>
 
-          <Anchor size="sm" onClick={() => navigate('/login')}>
-            {tr('Zur Anmeldung', 'To sign in')}
-          </Anchor>
+          <Text size="sm" c="dimmed">
+            {tr('Merkst du eine Störung, die hier nicht steht?', 'Noticing a disruption that is not listed here?')}{' '}
+            <Anchor component={Link} to="/melden" size="sm">
+              {tr('Problem melden', 'Report a problem')}
+            </Anchor>
+          </Text>
         </Stack>
       )}
-    </AuthFrame>
+    </Page>
   )
 }

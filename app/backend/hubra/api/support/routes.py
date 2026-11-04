@@ -53,7 +53,7 @@ def _club_id() -> int | None:
 @jwt_required()
 @limiter.limit("20 per hour")
 def create_case():
-    """Body: ``kind`` (bug | feature), ``title``, ``description``; bug:
+    """Body: ``kind`` (bug | feature | question), ``title``, ``description``; bug:
     ``steps``, ``expected``, ``severity``; feature: ``useCase``; both:
     ``area``, ``page``, ``fingerprint`` (browser, OS, device, screen)."""
     user = _me()
@@ -216,7 +216,7 @@ def _case_or_404(case_id: int):
 @support_admin_bp.get("/cases")
 @require_global_permission(_PERM)
 def staff_list():
-    """``?kind=bug|feature&status=active|<status>&area=&q=&page=&per_page=``."""
+    """``?kind=bug|feature|question&status=active|<status>&area=&q=&page=&per_page=``."""
     kind = request.args.get("kind") or None
     if kind and kind not in services.KINDS:
         return api_error("VALIDATION_ERROR", "Unknown kind", 400)

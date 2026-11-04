@@ -3644,7 +3644,8 @@
     },
     "menu": {
       "bug": "Problem melden",
-      "feature": "Idee vorschlagen"
+      "feature": "Idee vorschlagen",
+      "help": "Hilfe und Support"
     },
     "detail": {
       "replyPh": "Antwort an das Hubra-Team …",

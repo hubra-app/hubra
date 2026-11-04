@@ -32,7 +32,8 @@ from hubra.core.models.user import User
 
 logger = logging.getLogger(__name__)
 
-KINDS = ("bug", "feature")
+# question: the contact form on the support site (support.hubra.club).
+KINDS = ("bug", "feature", "question")
 STATUSES = ("open", "planned", "in_progress", "done", "closed")
 # Done or closed: nothing more happens.
 FINISHED = frozenset({"done", "closed"})
@@ -156,11 +157,11 @@ def _page(value) -> str | None:
 def submit(user_id: int, tenant_id: int | None, body: dict) -> SupportCase:
     kind = body.get("kind")
     if kind not in KINDS:
-        raise SupportError("kind must be bug or feature")
+        raise SupportError("kind must be bug, feature or question")
     title = _text(body.get("title"), "title", TITLE_MAX, required=True)
     description = _text(body.get("description"), "description", TEXT_MAX, required=True)
     details: dict = {}
-    keys = ("steps", "expected") if kind == "bug" else ("useCase",)
+    keys = {"bug": ("steps", "expected"), "feature": ("useCase",)}.get(kind, ())
     for key in keys:
         value = _text(body.get(key), key, TEXT_MAX)
         if value:

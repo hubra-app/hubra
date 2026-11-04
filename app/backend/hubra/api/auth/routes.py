@@ -1662,6 +1662,70 @@ def change_account_password():
     return response
 
 
+# ── Privacy requests (support site › Datenschutz) ──────────────────────────────
+
+
+@account_bp.get("/export")
+@jwt_required()
+@limiter.limit("10 per hour")
+def export_account():
+    """Everything the account holds, as a JSON download (GDPR / revDSG)."""
+    import json
+
+    from hubra.core.services import account_privacy
+
+    _not_while_impersonating()
+    user = _signed_in_user()
+    data = account_privacy.export(user)
+    response = make_response(json.dumps(data, ensure_ascii=False, indent=2), 200)
+    response.headers["Content-Type"] = "application/json; charset=utf-8"
+    response.headers["Content-Disposition"] = (
+        f'attachment; filename="hubra-konto-{user.id}.json"'
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@account_bp.get("/deletion")
+@jwt_required()
+def account_deletion_check():
+    """Whether the account can be deleted now, and what stands in the way."""
+    from hubra.core.services import account_privacy
+
+    blockers = account_privacy.blockers(_signed_in_user())
+    return jsonify({"canDelete": not blockers, "blockers": blockers}), 200
+
+
+@account_bp.post("/deletion")
+@jwt_required()
+@limiter.limit("5 per minute")
+def delete_own_account():
+    """Delete (anonymise) the account. Body: ``currentPassword``."""
+    from hubra.core.services import account_privacy
+
+    _not_while_impersonating()
+    body = request.get_json(silent=True) or {}
+    user = _signed_in_user()
+    address, name, lang = user.email, user.name, user.language or "de-CH"
+    verified = user.private_email_verified
+    try:
+        account_privacy.delete_account(user, str(body.get("currentPassword") or ""))
+    except account_privacy.PrivacyError as err:
+        db.session.rollback()
+        raise_error(err.status, err.code, str(err))
+    db.session.commit()
+    if verified:
+        try:
+            email_svc.send_account_closed(address, name, lang=lang)
+        except Exception:
+            _log.warning("account_closed mail failed user_id=%s", user.id, exc_info=True)
+    response = make_response("", 204)
+    unset_jwt_cookies(response)
+    account_token.clear(response)
+    _clear_remembered_email_cookie(response)
+    return response
+
+
 # ── Two-factor sign-in (SSO › Konto › Zwei-Faktor) ────────────────────────────
 
 

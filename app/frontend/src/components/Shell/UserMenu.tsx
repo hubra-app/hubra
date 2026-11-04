@@ -7,6 +7,7 @@ import {
   IconPalette,
   IconBug,
   IconBulb,
+  IconLifebuoy,
 } from '@tabler/icons-react'
 import { ThemeSwitch } from '@hubra/ui'
 import { useT } from '@/locales/i18n'
@@ -17,6 +18,9 @@ import { initials, contrastColor } from './nav'
 import { setWhatsNewOpen } from './whatsNewStore'
 import { openReport } from '@/screens/private/support/reportStore'
 import { useWhatsNewUnseen } from './whatsNewData'
+
+/** Help, roadmap, status and reports (app/support-frontend). */
+const SUPPORT_URL = import.meta.env.VITE_SUPPORT_URL ?? 'https://support.hubra.club'
 
 const rowStyle = {
   display: 'flex',
@@ -193,6 +197,17 @@ export function UserMenu({
           >
             <IconBulb size={16} />
             {t('support.menu.feature', 'Idee vorschlagen')}
+          </UnstyledButton>
+          <UnstyledButton
+            component="a"
+            href={SUPPORT_URL}
+            target="_blank"
+            rel="noopener"
+            onClick={close}
+            style={rowStyle}
+          >
+            <IconLifebuoy size={16} />
+            {t('support.menu.help', 'Hilfe und Support')}
           </UnstyledButton>
         </Stack>
         <Group justify="space-between" px={10} py={6} wrap="nowrap">

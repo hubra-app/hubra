@@ -3641,7 +3641,8 @@
     },
     "menu": {
       "bug": "Report a problem",
-      "feature": "Suggest an idea"
+      "feature": "Suggest an idea",
+      "help": "Help and support"
     },
     "page": {
       "answers": "Answers: {{count}}",

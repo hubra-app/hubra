@@ -39,11 +39,12 @@ const SsoContext = createContext<SsoState | null>(null)
 const URLS: AppUrls = {
   cos: import.meta.env.VITE_COS_URL ?? 'https://app.hubra.club',
   manage: import.meta.env.VITE_MANAGE_URL ?? 'https://manage.hubra.club',
+  support: import.meta.env.VITE_SUPPORT_URL ?? 'https://support.hubra.club',
 }
 
-/** Pages a signed-in visitor stays on instead of being sent on. */
-/** Open to anyone; a signed-in visitor stays on them too. */
-const PUBLIC_PAGES = ['/roadmap']
+/** Open to anyone; a signed-in visitor stays on them too. The old /roadmap
+ * and /status only forward to the support site. */
+const PUBLIC_PAGES = ['/roadmap', '/status']
 
 const SIGNED_IN_PAGES = ['/clubs', '/start', '/account', '/verify', '/verify-email', '/invite', '/confirm']
 

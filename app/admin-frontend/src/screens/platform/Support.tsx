@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Anchor,
+  Box,
   Badge,
   Button,
   Checkbox,
@@ -30,6 +31,7 @@ import {
   IconGitMerge,
   IconLock,
   IconMessageCircle,
+  IconMessageQuestion,
   IconPencil,
   IconSearch,
 } from '@tabler/icons-react'
@@ -38,6 +40,7 @@ import { useAdmin } from '@/context/AdminContext'
 import { formatDate, formatDateTime } from '@/format'
 import { getLang, tr } from '@/lang'
 import { getRoadmap } from '@/api/platform'
+import { SettingsSection } from './SettingsSection'
 import {
   commentOnCase,
   getCase,
@@ -124,10 +127,17 @@ function StatusBadge({ status }: { status: CaseStatus }) {
   )
 }
 
+const KIND_COLOR: Record<CaseKind, string> = { bug: 'red', feature: 'orange', question: 'blue' }
+
+function kindLabel(kind: CaseKind): string {
+  return kind === 'bug' ? tr('Problem', 'Problem') : kind === 'feature' ? tr('Idee', 'Idea') : tr('Frage', 'Question')
+}
+
 function KindIcon({ kind, size = 34 }: { kind: CaseKind; size?: number }) {
+  const Icon = kind === 'bug' ? IconBug : kind === 'feature' ? IconBulb : IconMessageQuestion
   return (
-    <ThemeIcon variant="light" radius="xl" size={size} color={kind === 'bug' ? 'red' : 'orange'}>
-      {kind === 'bug' ? <IconBug size={size / 2} /> : <IconBulb size={size / 2} />}
+    <ThemeIcon variant="light" radius="xl" size={size} color={KIND_COLOR[kind]}>
+      <Icon size={size / 2} />
     </ThemeIcon>
   )
 }
@@ -140,9 +150,10 @@ function deviceText(fp: Fingerprint): string {
   return parts.join(' · ')
 }
 
-type KindTab = 'bug' | 'feature' | 'all'
+type KindTab = 'bug' | 'feature' | 'question' | 'all'
 
-/** manage › Support: problem reports and feature requests from the app. */
+/** manage › Support: problem reports, feature requests and questions from
+ * the app and the support site (support.hubra.club). */
 export function SupportCases() {
   const { id } = useParams()
   return id ? <CaseDetail id={Number(id)} /> : <CaseList />
@@ -150,6 +161,7 @@ export function SupportCases() {
 
 function CaseList() {
   const navigate = useNavigate()
+  const { hasGlobalPermission } = useAdmin()
   const [kind, setKind] = useState<KindTab>('bug')
   const [status, setStatus] = useState<CaseStatus | 'active' | ''>('active')
   const [area, setArea] = useState('')
@@ -165,7 +177,7 @@ function CaseList() {
     placeholderData: (prev) => prev,
   })
   const data = query.data
-  const counts = data?.openCounts ?? { bug: 0, feature: 0 }
+  const counts = data?.openCounts ?? { bug: 0, feature: 0, question: 0 }
   const items = data?.items ?? []
 
   return (
@@ -173,14 +185,19 @@ function CaseList() {
       <PageHead
         title={tr('Meldungen & Ideen', 'Reports & ideas')}
         desc={tr(
-          'Problemmeldungen und Ideen aus der App. Antworten gehen per Mail an die meldende Person; interne Notizen sieht nur das Team.',
-          'Problem reports and ideas from the app. Answers are mailed to the reporter; internal notes stay with the team.',
+          'Problemmeldungen, Ideen und Fragen aus der App und von der Support-Seite. Antworten gehen per Mail an die meldende Person; interne Notizen sieht nur das Team.',
+          'Problem reports, ideas and questions from the app and the support site. Answers are mailed to the reporter; internal notes stay with the team.',
         )}
       />
       <Tabs
         tabs={[
           { id: 'bug', label: `${tr('Probleme', 'Problems')} (${counts.bug})`, icon: <IconBug size={16} /> },
           { id: 'feature', label: `${tr('Ideen', 'Ideas')} (${counts.feature})`, icon: <IconBulb size={16} /> },
+          {
+            id: 'question',
+            label: `${tr('Fragen', 'Questions')} (${counts.question ?? 0})`,
+            icon: <IconMessageQuestion size={16} />,
+          },
           { id: 'all', label: tr('Alle', 'All') },
         ]}
         activeTab={kind}
@@ -324,6 +341,11 @@ function CaseList() {
           }}
         />
       )}
+      {hasGlobalPermission('platform.settings') && (
+        <Box mt="xl">
+          <SettingsSection section="support" />
+        </Box>
+      )}
     </div>
   )
 }
@@ -424,8 +446,8 @@ function CaseDetail({ id }: { id: number }) {
           </Title>
           <Group gap={6} mt={6} wrap="wrap">
             <StatusBadge status={c.status} />
-            <Badge variant="light" color={c.kind === 'bug' ? 'red' : 'orange'} size="sm">
-              {c.kind === 'bug' ? tr('Problem', 'Problem') : tr('Idee', 'Idea')}
+            <Badge variant="light" color={KIND_COLOR[c.kind]} size="sm">
+              {kindLabel(c.kind)}
             </Badge>
             {c.severity && (
               <Badge variant="light" color={c.severity === 'blocking' ? 'red' : 'gray'} size="sm">
@@ -455,7 +477,13 @@ function CaseDetail({ id }: { id: number }) {
       <div className="support-detail-grid">
         <Stack gap={16} style={{ minWidth: 0 }}>
           <Section
-            title={c.kind === 'bug' ? tr('Was ist passiert?', 'What happened?') : tr('Die Idee', 'The idea')}
+            title={
+              c.kind === 'bug'
+                ? tr('Was ist passiert?', 'What happened?')
+                : c.kind === 'feature'
+                  ? tr('Die Idee', 'The idea')
+                  : tr('Die Frage', 'The question')
+            }
             right={
               <Button size="xs" variant="subtle" leftSection={<IconPencil size={14} />} onClick={() => setEditing(true)}>
                 {tr('Bearbeiten', 'Edit')}

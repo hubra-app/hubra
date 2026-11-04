@@ -3241,6 +3241,7 @@
   "support.page.desc": "Melde Probleme und schlage Ideen vor. Das Hubra-Team antwortet hier und per Mail.",
   "support.menu.bug": "Problem melden",
   "support.menu.feature": "Idee vorschlagen",
+  "support.menu.help": "Hilfe und Support",
   "support.page.tabMine": "Meine Meldungen",
   "support.page.tabRoadmap": "Roadmap",
   "support.page.noneTitle": "Noch keine Meldungen",
@@ -3436,5 +3437,10 @@
   },
   "finance": {
     "direction": "Richtung"
-  }
+  },
+  "mail.email.account_closed.body": "Dein Hubra-Konto wurde wie gewünscht <strong>gelöscht</strong>. Du kannst dich damit nicht mehr anmelden.",
+  "mail.email.account_closed.clubs": "Was ein Verein über seine Mitglieder aufbewahrt (zum Beispiel Rechnungen), gehört dem Verein. Wende dich dafür direkt an den Verein.",
+  "mail.email.account_closed.not_you": "Falls du das nicht warst, antworte bitte sofort auf diese Mail.",
+  "mail.email.subject.account_closed": "Dein Hubra-Konto wurde gelöscht",
+  "mail.email.support_case.kind_question": "Frage"
 }

@@ -4,10 +4,11 @@
 #   docker compose pull     # prebuilt images from GHCR, or: docker compose build
 #   docker compose up -d
 #
-# Out of the box this publishes three ports on 127.0.0.1:
+# Out of the box this publishes four ports on 127.0.0.1:
 #   8080  club app       (frontend)
 #   8081  manager portal (admin-frontend)
 #   8082  login / SSO    (sso-frontend)
+#   8083  support site   (support-frontend: help, roadmap, status, reports)
 # Each frontend proxies /api/ to the backend, so every app talks to the API on
 # its own origin. Behind a reverse proxy with real host names, add
 # docker-compose.traefik.yml (see that file) or point your own proxy at the
@@ -30,7 +31,7 @@ x-backend-app: &backend-app
   networks:
     - internal
 
-# Runtime settings for the three SPA images (app/deploy/nginx/40-hubra-runtime.sh).
+# Runtime settings for the SPA images (app/deploy/nginx/40-hubra-runtime.sh).
 # Defaults fit the local ports above; set the URLs in .env for real host names.
 x-frontend-env: &frontend-env
   API_UPSTREAM: http://backend:5000
@@ -40,6 +41,7 @@ x-frontend-env: &frontend-env
   VITE_TENANT_APP_URL: ${FRONTEND_BASE_URL:-http://localhost:8080}
   VITE_MANAGE_URL: ${MANAGE_BASE_URL:-http://localhost:8081}
   VITE_ADMIN_PORTAL_URL: ${MANAGE_BASE_URL:-http://localhost:8081}
+  VITE_SUPPORT_URL: ${SUPPORT_BASE_URL:-http://localhost:8083}
   REAL_IP_FROM: ${REAL_IP_FROM:-}
   CSP: ${CSP:-}
 
@@ -124,6 +126,34 @@ services:
         limits:
           memory: 256M
           cpus: "0.5"
+
+  # Its own image and container, so it stays up while the others upgrade.
+  support-frontend:
+    image: ${HUBRA_IMAGE_PREFIX:-ghcr.io/hubra-app/hubra}/support-frontend:${HUBRA_VERSION:-latest}
+    build:
+      context: .
+      dockerfile: app/support-frontend/Dockerfile
+      target: production
+    restart: unless-stopped
+    environment: *frontend-env
+    ports:
+      - "${HUBRA_BIND:-127.0.0.1}:${SUPPORT_FRONTEND_PORT:-8083}:80"
+    depends_on:
+      - backend
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
 
   backend:
     <<: *backend-app

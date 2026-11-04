@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { MANAGE_URL, SSO_URL, appUrl } from './env'
+import { MANAGE_URL, SUPPORT_URL, appUrl } from './env'
 
 // Problem reports and ideas: sent from the account menu, answered in
 // manage › Support, ideas on the public roadmap.
@@ -71,8 +71,9 @@ test('an idea on the roadmap gets votes, also on the public page', async ({ page
   // Signed out: the public roadmap shows it, without names.
   const anon = await browser.newContext({ storageState: { cookies: [], origins: [] } })
   const pub = await anon.newPage()
-  await pub.goto(`${SSO_URL}/roadmap`)
+  // The roadmap lives on the support site; the old SSO address forwards there.
+  await pub.goto(`${SUPPORT_URL}/roadmap`)
   await expect(pub.getByText(title)).toBeVisible()
-  await expect(pub.getByRole('button', { name: 'Anmelden zum Abstimmen' })).toBeVisible()
+  await expect(pub.getByRole('link', { name: 'Anmelden zum Abstimmen' })).toBeVisible()
   await anon.close()
 })
