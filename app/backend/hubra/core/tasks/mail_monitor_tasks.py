@@ -23,13 +23,17 @@ def check_mail_relays() -> dict:
 
 
 @celery_app.task(name="hubra.core.tasks.mail_monitor_tasks.send_platform_alert")
-def send_platform_alert(alert_type: str, subject: str, lines: list, level: str) -> int:
+def send_platform_alert(
+    alert_type: str, subject: str, lines: list, level: str, link: str | None = None
+) -> int:
     """Mail one alert to platform staff.  Never retried: a failed alert mail
     is in the event log, and retrying through a broken relay helps nobody."""
     from hubra.core.services import platform_monitor
 
     try:
-        return platform_monitor.deliver_alert(alert_type, subject, list(lines), level)
+        return platform_monitor.deliver_alert(
+            alert_type, subject, list(lines), level, link=link
+        )
     except Exception:
         logger.warning("platform_alert_delivery_failed", exc_info=True)
         return 0

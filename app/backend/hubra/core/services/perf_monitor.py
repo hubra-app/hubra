@@ -147,9 +147,10 @@ def _key(kind: str, dt: datetime) -> str:
     return f"perf:{kind}:{_hour(dt)}"
 
 
-def _slot(dt: datetime) -> str:
-    """Ten-minute slot, for the last-hour totals."""
-    return f"perf:tot:{_hour(dt)}{dt.minute // 10}"
+def _slot(dt: datetime, kind: str = "tot") -> str:
+    """Ten-minute slot, for the last-hour totals (``tot``) and the error
+    answers per route and exact status code (``err``)."""
+    return f"perf:{kind}:{_hour(dt)}{dt.minute // 10}"
 
 
 def _incr(writes: dict[str, dict[str, int]], maxes: dict[str, int] | None = None,
@@ -339,9 +340,16 @@ def record_request(route: str, status: int, ms: float, db_ms: float = 0.0,
     total = {
         k.rpartition(_SEP)[2]: v
         for k, v in fields.items()
-        if k.rpartition(_SEP)[2][0] in "bsn"
+        if k.rpartition(_SEP)[2][0] in "bsnw"
     }
-    _incr({_key("req", at): fields, _slot(at): total})
+    writes = {_key("req", at): fields, _slot(at): total}
+    if status >= 400:
+        # Which route answered which exact code, per ten minutes: what the
+        # error-rate alert and its details page show.  "w503" is a 5xx while
+        # the process was still starting (not counted by the alert).
+        code = f"w{status}" if warming else str(status)
+        writes[_slot(at, "err")] = {route + _SEP + code: 1}
+    _incr(writes)
 
 
 def install(app: Flask) -> None:
@@ -665,6 +673,200 @@ def last_hour(now: datetime | None = None) -> dict:
     return {k: row[k] for k in ("requests", "p50", "p95", "slow", "status")}
 
 
+# ── Error answers (details behind the error-rate alert) ───────────────────────
+
+
+def _slots_since(start: datetime, now: datetime) -> list[datetime]:
+    """Every ten-minute slot from *start* to *now*, oldest first."""
+    t = start.replace(minute=start.minute - start.minute % 10, second=0, microsecond=0)
+    out = []
+    while t <= now:
+        out.append(t)
+        t += timedelta(minutes=10)
+    return out
+
+
+def _error_fields(hashes: list[dict[str, str]]) -> dict[str, dict[str, int]]:
+    """``{route label: {code: n}}`` summed over error-slot hashes."""
+    out: dict[str, dict[str, int]] = {}
+    for h in hashes:
+        for field, value in h.items():
+            route, _, code = field.rpartition(_SEP)
+            if not route:
+                continue
+            codes = out.setdefault(route, {})
+            codes[code] = codes.get(code, 0) + int(float(value))
+    return out
+
+
+def _is_server(code: str) -> bool:
+    return code.startswith("5")
+
+
+def top_error_routes(minutes: int = 60, limit: int = 3,
+                     now: datetime | None = None) -> list[dict]:  # fmt: skip
+    """The routes with the most server errors in the last *minutes* (the
+    alert's window: six ten-minute slots for 60), most first.  Each:
+    ``{"method", "route", "errors", "codes": {"500": n, ...}}``."""
+    now = now or datetime.now(timezone.utc)
+    hashes, _ = _read(
+        [
+            _slot(now - timedelta(minutes=10 * i), "err")
+            for i in range(max(1, minutes // 10))
+        ]
+    )
+    rows = []
+    for label, codes in _error_fields(hashes).items():
+        server = {c: n for c, n in codes.items() if _is_server(c)}
+        if not server:
+            continue
+        method, _, rule = label.partition(" ")
+        rows.append(
+            {
+                "method": method,
+                "route": rule,
+                "errors": sum(server.values()),
+                "codes": dict(sorted(server.items(), key=lambda x: -x[1])),
+            }
+        )
+    rows.sort(key=lambda r: -r["errors"])
+    return rows[:limit]
+
+
+def error_details(hours: int = 24, now: datetime | None = None,
+                  at: datetime | None = None) -> dict:  # fmt: skip
+    """Error answers of the last *hours* clock hours (1 to 24, the current one
+    included), for manage › Diagnostics › API errors:
+
+    * ``timeline``: per ten minutes, requests, client errors (4xx), server
+      errors (5xx) and server errors while a process was starting;
+    * ``codes``: every exact status code and how often;
+    * ``routes``: per route, its requests and error answers by code, with the
+      ten-minute slot of its last error;
+    * ``alert``: what the error-rate alert sees right now (last hour).
+
+    With *at* (a slot start from the timeline) ``routes`` and ``codes``
+    cover only that ten-minute slot; per-route request counts are kept per
+    hour only, so they are left out (``None``) then.
+    """
+    hours = max(1, min(24, int(hours)))
+    now = now or datetime.now(timezone.utc)
+    start = (now - timedelta(hours=hours - 1)).replace(
+        minute=0, second=0, microsecond=0
+    )
+    slots = _slots_since(start, now)
+    totals, source = _read([_slot(t) for t in slots])
+    errs, _ = _read([_slot(t, "err") for t in slots])
+    req, _ = _read([_key("req", t) for t in _hours(hours, now)])
+    requests_by_route = {label: r.get("n", 0) for label, r in _routes(req).items()}
+
+    timeline = []
+    for t, h in zip(slots, totals):
+
+        def n(name: str, h=h) -> int:
+            return int(float(h.get(name, 0)))
+
+        timeline.append(
+            {
+                "at": t.isoformat(),
+                "requests": n("n"),
+                "clientErrors": n("s4"),
+                "serverErrors": n("s5"),
+                "warmup": n("w5"),
+            }
+        )
+
+    if at is not None:
+        at = at.astimezone(timezone.utc)
+        at = at.replace(minute=at.minute - at.minute % 10, second=0, microsecond=0)
+    codes: dict[str, int] = {}
+    routes: dict[str, dict] = {}
+    for t, h in zip(slots, errs):
+        if at is not None and t != at:
+            continue
+        for label, by_code in _error_fields([h]).items():
+            r = routes.setdefault(label, {"codes": {}, "last": None, "first": None})
+            for code, n in by_code.items():
+                r["codes"][code] = r["codes"].get(code, 0) + n
+                codes[code] = codes.get(code, 0) + n
+            r["last"] = t.isoformat()
+            r["first"] = r["first"] or t.isoformat()
+
+    rows = []
+    for label, r in routes.items():
+        method, _, rule = label.partition(" ")
+        server = sum(n for c, n in r["codes"].items() if _is_server(c))
+        client = sum(n for c, n in r["codes"].items() if c.startswith("4"))
+        warmup = sum(n for c, n in r["codes"].items() if c.startswith("w"))
+        total = requests_by_route.get(label, 0) if at is None else None
+        rows.append(
+            {
+                "method": method,
+                "route": rule,
+                "label": label,
+                "requests": total,
+                "serverErrors": server,
+                "clientErrors": client,
+                "warmup": warmup,
+                "serverShare": round(server / total, 4) if total else None,
+                "codes": dict(sorted(r["codes"].items(), key=lambda x: -x[1])),
+                "firstAt": r["first"],
+                "lastAt": r["last"],
+            }
+        )
+    rows.sort(key=lambda r: (-r["serverErrors"], -r["clientErrors"], -r["warmup"]))
+
+    last = last_hour(now)
+    requests = int(last["requests"] or 0)
+    server_last = int(last["status"].get("5xx", 0))
+    try:
+        from flask import current_app
+
+        threshold = float(
+            current_app.config.get("API_ERROR_RATE_THRESHOLD", SERVER_ERROR_SHARE)
+        )
+    except RuntimeError:
+        threshold = SERVER_ERROR_SHARE
+    from hubra.core.tasks.monitoring import MIN_REQUESTS_FOR_ALERT, alert_active
+
+    return {
+        "hours": hours,
+        "source": source,
+        "from": start.isoformat(),
+        "at": at.isoformat() if at is not None else None,
+        "timeline": timeline,
+        "codes": dict(sorted(codes.items(), key=lambda x: -x[1])),
+        "routes": rows[:100],
+        "routeCount": len(rows),
+        "alert": {
+            "requests": requests,
+            "serverErrors": server_last,
+            "rate": round(server_last / requests, 4) if requests else 0.0,
+            "threshold": threshold,
+            "minRequests": MIN_REQUESTS_FOR_ALERT,
+            "active": alert_active(),
+            "topRoutes": top_error_routes(60, 5, now),
+        },
+    }
+
+
+API_ERRORS_PAGE = "/app/platform/diagnostics/api-errors"
+
+
+def describe_route(r: dict) -> str:
+    """``POST /api/v1/x: 12× 500, 3× 502``."""
+    codes = ", ".join(f"{n}× {c}" for c, n in r["codes"].items())
+    return f"{r['method']} {r['route']}: {codes}"
+
+
+def _top_detail() -> str:
+    try:
+        top = top_error_routes(60, 2)
+    except Exception:  # noqa: BLE001
+        return ""
+    return (" Most: " + "; ".join(describe_route(r) for r in top) + ".") if top else ""
+
+
 def problems() -> list[dict]:
     """Open problems for the alerts overview: a slow API or many 5xx answers
     in the last hour."""
@@ -700,9 +902,9 @@ def problems() -> list[dict]:
                 "area": "performance",
                 "title": f"{errors} server errors in the last hour",
                 "detail": f"{round(errors * 100 / n)} % of {n} requests "
-                "answered with 5xx.",
+                "answered with 5xx." + _top_detail(),
                 "since": None,
-                "link": "/app/platform/diagnostics/performance",
+                "link": API_ERRORS_PAGE,
             }
         )
     return out

@@ -3153,6 +3153,7 @@
   "mail.email.platform_alert.type.plugin_updates": "Plugins",
   "mail.email.platform_alert.type.upgrades": "Upgrade",
   "mail.email.platform_alert.type.audit": "Platform event",
+  "mail.email.platform_alert.button_details": "View details",
   "mail.email.platform_alert.button_entry": "View entry",
   "mail.email.platform_alert.type.system": "System",
   "account.notify.title": "Notifications",

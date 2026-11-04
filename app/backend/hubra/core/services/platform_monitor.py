@@ -630,8 +630,11 @@ def alert(
     *,
     level: str = "error",
     throttle: bool = True,
+    link: str | None = None,
 ) -> bool:
     """Log an alert and have it mailed to platform staff.  Never raises.
+
+    *link*: the manage path with its details; the mail button goes there.
 
     With *throttle*, an alert type that went out within the cooldown
     is not sent again (the event that caused it is in the log anyway).
@@ -644,6 +647,8 @@ def alert(
             return False
         route = channels(alert_type)
         details: dict = {"lines": lines}
+        if link:
+            details["link"] = link
         if not (route["mail"] or route["discord"]):
             details["paused"] = route["reason"] or "channels_off"
         record("alert", alert_type, subject, level=level, details=details)
@@ -653,12 +658,14 @@ def alert(
 
         try:
             send_platform_alert.apply_async(
-                args=(alert_type, subject, lines, level), retry=False
+                args=(alert_type, subject, lines, level),
+                kwargs={"link": link} if link else None,
+                retry=False,
             )
         except Exception:
             # No broker: send it here rather than not at all.
             logger.warning("platform_alert_queue_failed", exc_info=True)
-            deliver_alert(alert_type, subject, lines, level)
+            deliver_alert(alert_type, subject, lines, level, link=link)
         return True
     except Exception:
         logger.warning("platform_alert_failed type=%s", alert_type, exc_info=True)
@@ -752,7 +759,13 @@ def _plain_alert(subject: str, lines: list[str]) -> tuple[str, str, str]:
     return html, text, f"[Hubra] {subject}"
 
 
-def deliver_alert(alert_type: str, subject: str, lines: list[str], level: str) -> int:
+def deliver_alert(
+    alert_type: str,
+    subject: str,
+    lines: list[str],
+    level: str,
+    link: str | None = None,
+) -> int:
     """Mail the alert to every recipient (and post it to the platform Discord
     log when it is set up).  Returns how many mails went out."""
     from hubra.core.services import email, platform_settings
@@ -774,6 +787,7 @@ def deliver_alert(alert_type: str, subject: str, lines: list[str], level: str) -
             staff=False,
             alert_type=alert_type,
             level=level,
+            link=link,
         )
     if not route["mail"]:
         return 0
@@ -783,10 +797,17 @@ def deliver_alert(alert_type: str, subject: str, lines: list[str], level: str) -
         logger.warning("platform_alert_no_sender type=%s", alert_type)
         return 0
     sent = 0
+    manage = _manage_url() if link else ""
     for user in recipients(alert_type):
         try:
             html, text, mail_subject = _alert_body(
-                user, alert_type, subject, lines, level
+                user,
+                alert_type,
+                subject,
+                lines,
+                level,
+                button_url=f"{manage}{link}" if manage else None,
+                button_key="mail.email.platform_alert.button_details" if manage else "",
             )
         except Exception:
             logger.warning("platform_alert_template_failed", exc_info=True)
@@ -889,7 +910,13 @@ def deliver_audit_mail(entry) -> int:
     return sent
 
 
-def system_alert(title: str, description: str, fields: list | None, color: int) -> None:
+def system_alert(
+    title: str,
+    description: str,
+    fields: list | None,
+    color: int,
+    link: str | None = None,
+) -> None:
     """From ``services/alerts.py``: Redis, database, disk, failing tasks."""
     from hubra.core.services.alerts import COLOR_GREEN, COLOR_ORANGE
 
@@ -903,11 +930,14 @@ def system_alert(title: str, description: str, fields: list | None, color: int) 
     lines = [description] + [
         f"{f.get('name')}: {f.get('value')}" for f in (fields or [])
     ]
-    record("system", "system.alert", title, level=level, details={"lines": lines})
+    details: dict = {"lines": lines}
+    if link:
+        details["link"] = link
+    record("system", "system.alert", title, level=level, details=details)
     # Their own code already keeps them from repeating (state changes,
     # an hour per task), so no cooldown here: a recovery must not be eaten
     # by the alert before it.
-    alert("system", title, lines, level=level, throttle=False)
+    alert("system", title, lines, level=level, throttle=False, link=link)
 
 
 # ── Other platform events ─────────────────────────────────────────────────────

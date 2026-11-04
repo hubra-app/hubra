@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useLocation } from 'react-router-dom'
 import {
   Badge,
   Button,
@@ -215,9 +216,11 @@ export function ErrorsPanel() {
   const { hasGlobalPermission } = useAdmin()
   const canChange = hasGlobalPermission('platform.settings')
   const queryClient = useQueryClient()
-  const [status, setStatus] = useState<ErrorStatus | 'all'>('open')
-  const [search, setSearch] = useState('')
-  const [q, setQ] = useState('')
+  // ?q= from links (API errors page): search it, open and resolved alike.
+  const linkedQ = new URLSearchParams(useLocation().search).get('q')?.trim() ?? ''
+  const [status, setStatus] = useState<ErrorStatus | 'all'>(linkedQ ? 'all' : 'open')
+  const [search, setSearch] = useState(linkedQ)
+  const [q, setQ] = useState(linkedQ)
   const [sort, setSort] = useState<Sort>('last_seen')
   const [build, setBuild] = useState<string | null>(null)
   const [page, setPage] = useState(1)

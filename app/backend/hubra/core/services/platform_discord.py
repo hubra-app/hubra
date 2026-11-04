@@ -284,7 +284,10 @@ def _level_of(color: Any) -> str:
 
 
 def post_alert(
-    embed: dict, alert_type: str = "system", level: str | None = None
+    embed: dict,
+    alert_type: str = "system",
+    level: str | None = None,
+    link: str | None = None,
 ) -> bool:
     """Post a system alert if the log is set up and ``alerts`` is on.
 
@@ -312,7 +315,7 @@ def post_alert(
             platform_bot.alert_embed(embed, alert_type, level, kind),
             channel_id=channel_id,
             token=token,
-            components=platform_bot.alert_buttons(alert_type, kind) or None,
+            components=platform_bot.alert_buttons(alert_type, kind, link=link) or None,
         )
         if kind == platform_bot.PROBLEM:
             platform_bot.track_alert(message, alert_type)
