@@ -36,12 +36,20 @@ def test_the_asker_runs_their_own_poll(client, people):
     theirs = _ask(client)
     _login(client, "anna@test.ch")
     mine = _ask(client)
-    assert client.patch(f"/api/v1/polls/{mine}", json={"question": "BBQ?"}).status_code == 200
-    assert client.patch(f"/api/v1/polls/{theirs}", json={"question": "x"}).status_code == 403
+    assert (
+        client.patch(f"/api/v1/polls/{mine}", json={"question": "BBQ?"}).status_code
+        == 200
+    )
+    assert (
+        client.patch(f"/api/v1/polls/{theirs}", json={"question": "x"}).status_code
+        == 403
+    )
     assert client.patch(f"/api/v1/polls/{theirs}/close").status_code == 403
     assert client.patch(f"/api/v1/polls/{mine}/close").status_code == 200
     _login(client, "olaf@test.ch")
-    assert client.patch(f"/api/v1/polls/{mine}", json={"question": "x"}).status_code == 403
+    assert (
+        client.patch(f"/api/v1/polls/{mine}", json={"question": "x"}).status_code == 403
+    )
 
 
 def test_a_board_poll_is_for_the_board(client, people):
@@ -53,7 +61,10 @@ def test_a_board_poll_is_for_the_board(client, people):
     assert r.status_code == 403 and r.get_json()["error"] == "NOT_ELIGIBLE"
     _login(client, "ines@test.ch")
     assert client.get(f"/api/v1/polls/{poll}").get_json()["may_vote"] is True
-    assert client.post(f"/api/v1/polls/{poll}/vote", json={"option_index": 0}).status_code == 200
+    assert (
+        client.post(f"/api/v1/polls/{poll}/vote", json={"option_index": 0}).status_code
+        == 200
+    )
 
 
 def test_an_open_poll_takes_every_vote(client, people):
@@ -61,7 +72,10 @@ def test_an_open_poll_takes_every_vote(client, people):
     poll = _ask(client)
     _login(client, "olaf@test.ch")
     assert client.get("/api/v1/polls/").get_json()[0]["may_vote"] is True
-    assert client.post(f"/api/v1/polls/{poll}/vote", json={"option_index": 1}).status_code == 200
+    assert (
+        client.post(f"/api/v1/polls/{poll}/vote", json={"option_index": 1}).status_code
+        == 200
+    )
 
 
 def test_a_circular_resolution_closes_once_everyone_voted(client, people, db):
@@ -80,10 +94,16 @@ def test_a_circular_resolution_closes_once_everyone_voted(client, people, db):
         required_group_ids=[people["board"]],
     )
     assert client.get(f"/api/v1/polls/{poll}").get_json()["auto_close"] is True
-    assert client.post(f"/api/v1/polls/{poll}/vote", json={"option_index": 0}).status_code == 200
+    assert (
+        client.post(f"/api/v1/polls/{poll}/vote", json={"option_index": 0}).status_code
+        == 200
+    )
     assert client.get(f"/api/v1/polls/{poll}").get_json()["status"] == "open"
     _login(client, "ines@test.ch")
-    assert client.post(f"/api/v1/polls/{poll}/vote", json={"option_index": 1}).status_code == 200
+    assert (
+        client.post(f"/api/v1/polls/{poll}/vote", json={"option_index": 1}).status_code
+        == 200
+    )
     assert client.get(f"/api/v1/polls/{poll}").get_json()["status"] == "closed"
 
 
@@ -91,5 +111,8 @@ def test_auto_close_needs_named_voters(client, people):
     """A poll for everyone stays open: who 'everyone' is keeps changing."""
     _login(client, "anna@test.ch")
     poll = _ask(client, auto_close=True)
-    assert client.post(f"/api/v1/polls/{poll}/vote", json={"option_index": 0}).status_code == 200
+    assert (
+        client.post(f"/api/v1/polls/{poll}/vote", json={"option_index": 0}).status_code
+        == 200
+    )
     assert client.get(f"/api/v1/polls/{poll}").get_json()["status"] == "open"

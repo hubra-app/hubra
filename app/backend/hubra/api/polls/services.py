@@ -270,9 +270,7 @@ class PollService:
             return False
         if PollService.missing_voters(poll):
             return False
-        PollService.close(
-            poll, None, f"{poll.question} (alle haben abgestimmt)"[:255]
-        )
+        PollService.close(poll, None, f"{poll.question} (alle haben abgestimmt)"[:255])
         return True
 
     @staticmethod

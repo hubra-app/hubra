@@ -3510,5 +3510,13 @@
   "polls.resolutionAbstain": "Abstain",
   "polls.resolutionTemplate": "As a circular resolution",
   "polls.autoClose": "Close once everyone has voted",
-  "polls.autoCloseHint": "For the groups and functions picked. The result is then final right away, even before the end date."
+  "polls.autoCloseHint": "For the groups and functions picked. The result is then final right away, even before the end date.",
+  "events.maybe": "Maybe",
+  "events.maybeHint": "Maybe: no place held, the organisers see it",
+  "events.maybeUndo": "Take back maybe",
+  "events.maybeSet": "Maybe",
+  "events.maybeSetMsg": "You might come to “{{title}}”. No place is held for you.",
+  "events.maybeRemoved": "Answer taken back",
+  "events.maybeRemovedMsg": "You no longer have an answer for “{{title}}”.",
+  "events.maybeCount": "+{{count}} maybe"
 }

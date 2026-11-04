@@ -173,7 +173,9 @@ def add_attendee(event_id: int, member_id: int):
 
 
 @events_bp.delete("/<int:event_id>/attendees/<int:member_id>")
-@permission_required("events", "remove_attendee", "Remove event attendee", allow=_own_event)
+@permission_required(
+    "events", "remove_attendee", "Remove event attendee", allow=_own_event
+)
 def remove_attendee(event_id: int, member_id: int):
     # Also ends their registration, so the place goes to the waitlist.
     EventService.cancel_registration(event_id, member_id)
@@ -221,7 +223,9 @@ def register_for_event(event_id: int):
 
 
 @events_bp.post("/<int:event_id>/register/<int:member_id>")
-@permission_required("events", "add_attendee", "Register member for event", allow=_own_event)
+@permission_required(
+    "events", "add_attendee", "Register member for event", allow=_own_event
+)
 def register_member_for_event(event_id: int, member_id: int):
     body = request.get_json(silent=True) or {}
     try:
@@ -265,19 +269,36 @@ def cancel_registration(event_id: int):
     return jsonify(EventRegistrationSchema().dump(registration)), 200
 
 
+# ── POST /events/<id>/maybe — answer "Vielleicht" ────────────────────────────
+
+
+@events_bp.post("/<int:event_id>/maybe")
+@permission_required("events", "register", "Register for events")
+def maybe_for_event(event_id: int):
+    registration = EventService.maybe(event_id, get_current_member().id, own=True)
+    db.session.commit()
+    return jsonify(EventRegistrationSchema().dump(registration)), 200
+
+
 # ── Registrations, and sign-ups waiting for approval ─────────────────────────
 
 
 @events_bp.get("/<int:event_id>/registrations")
-@permission_required("events", "add_attendee", "See and approve event sign-ups", allow=_own_event)
+@permission_required(
+    "events", "add_attendee", "See and approve event sign-ups", allow=_own_event
+)
 def list_registrations(event_id: int):
     status = request.args.get("status") or None
     registrations = EventService.registrations(event_id, status)
     return jsonify(EventRegistrationSchema(many=True).dump(registrations)), 200
 
 
-@events_bp.post("/<int:event_id>/registrations/<int:member_id>/<any(approve, decline):decision>")
-@permission_required("events", "add_attendee", "See and approve event sign-ups", allow=_own_event)
+@events_bp.post(
+    "/<int:event_id>/registrations/<int:member_id>/<any(approve, decline):decision>"
+)
+@permission_required(
+    "events", "add_attendee", "See and approve event sign-ups", allow=_own_event
+)
 def decide_registration(event_id: int, member_id: int, decision: str):
     registration = EventService.decide(
         event_id, member_id, decision == "approve", get_current_member().id
@@ -290,7 +311,9 @@ def decide_registration(event_id: int, member_id: int, decision: str):
 
 
 @events_bp.post("/<int:event_id>/attend/<int:member_id>")
-@permission_required("events", "add_attendee", "Mark event attendance", allow=_own_event)
+@permission_required(
+    "events", "add_attendee", "Mark event attendance", allow=_own_event
+)
 def mark_attendance(event_id: int, member_id: int):
     registration = EventService.mark_attendance(event_id, member_id)
     attendance.set_status(
@@ -351,7 +374,9 @@ def _period() -> tuple[date, date]:
         since = date.fromisoformat(request.args.get("from") or f"{today.year}-01-01")
         until = date.fromisoformat(request.args.get("to") or today.isoformat())
     except ValueError:
-        raise_error(400, "VALIDATION_ERROR", "Use ISO dates (YYYY-MM-DD) for from and to")
+        raise_error(
+            400, "VALIDATION_ERROR", "Use ISO dates (YYYY-MM-DD) for from and to"
+        )
     return since, until
 
 
@@ -380,7 +405,9 @@ def _overview_response(group_id: int | None):
     if request.args.get("format") != "csv":
         return jsonify(data), 200
     # Birthdays (J+S needs them) only for those who may export members.
-    with_birthday = member_has_permission(get_current_member(), "members.members.export")
+    with_birthday = member_has_permission(
+        get_current_member(), "members.members.export"
+    )
     return Response(
         attendance.overview_csv(data, with_birthday),
         status=200,

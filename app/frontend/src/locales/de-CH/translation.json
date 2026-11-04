@@ -829,7 +829,15 @@
     "description": "Beschreibung",
     "descriptionPlaceholder": "Was erwartet die Teilnehmenden? Was mitbringen?",
     "isPublic": "Öffentlicher Anlass",
-    "isPublicHint": "Darf auch ausserhalb des Vereins erscheinen, z. B. auf einem offenen Discord-Server. Sonst sehen ihn nur Mitglieder."
+    "isPublicHint": "Darf auch ausserhalb des Vereins erscheinen, z. B. auf einem offenen Discord-Server. Sonst sehen ihn nur Mitglieder.",
+    "maybe": "Vielleicht",
+    "maybeHint": "Vielleicht: ohne Platz, die Organisatoren sehen es",
+    "maybeUndo": "Vielleicht zurücknehmen",
+    "maybeSet": "Vielleicht",
+    "maybeSetMsg": "Du kommst vielleicht zu «{{title}}». Es ist kein Platz für dich reserviert.",
+    "maybeRemoved": "Antwort zurückgezogen",
+    "maybeRemovedMsg": "Für «{{title}}» hast du keine Antwort mehr.",
+    "maybeCount": "+{{count}} vielleicht"
   },
   "finance": {
     "addCategory": "Kategorie hinzufügen",

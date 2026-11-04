@@ -131,6 +131,8 @@ export interface ClubEvent {
   placesTaken?: number;
   /** Sign-ups waiting for an organiser's approval. */
   pendingCount?: number;
+  /** Members who answered "Vielleicht" (no place). */
+  maybeCount?: number;
   /** Who put the event up; they run it without the club-wide rights. */
   createdById?: number | null;
   /** The viewer's own sign-up, if any. */
@@ -141,6 +143,7 @@ export interface ClubEvent {
     | "pending"
     | "attended"
     | "declined"
+    | "maybe"
     | null;
   /** The group the event is for. */
   groupId?: string | null;

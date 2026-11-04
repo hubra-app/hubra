@@ -3510,5 +3510,13 @@
   "polls.resolutionAbstain": "Enthaltung",
   "polls.resolutionTemplate": "Als Umlaufbeschluss",
   "polls.autoClose": "Schliessen, sobald alle abgestimmt haben",
-  "polls.autoCloseHint": "Für die gewählten Gruppen und Funktionen. Das Ergebnis steht dann gleich fest, auch vor dem Enddatum."
+  "polls.autoCloseHint": "Für die gewählten Gruppen und Funktionen. Das Ergebnis steht dann gleich fest, auch vor dem Enddatum.",
+  "events.maybe": "Vielleicht",
+  "events.maybeHint": "Vielleicht: ohne Platz, die Organisatoren sehen es",
+  "events.maybeUndo": "Vielleicht zurücknehmen",
+  "events.maybeSet": "Vielleicht",
+  "events.maybeSetMsg": "Du kommst vielleicht zu «{{title}}». Es ist kein Platz für dich reserviert.",
+  "events.maybeRemoved": "Antwort zurückgezogen",
+  "events.maybeRemovedMsg": "Für «{{title}}» hast du keine Antwort mehr.",
+  "events.maybeCount": "+{{count}} vielleicht"
 }

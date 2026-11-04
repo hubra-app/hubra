@@ -28,6 +28,9 @@ from hubra.core.modules.events import (
 _HOLDS_A_PLACE = ("registered", "approved", "attended")
 # A registration a member still has, so they cannot sign up again.
 _OPEN = ("registered", "approved", "waitlisted", "pending")
+# "Vielleicht": the member may come. It takes no place, gets no reminders
+# as a sign-up, and becomes a real sign-up (or goes) with one more click.
+MAYBE = "maybe"
 
 
 def _passed(deadline: datetime | None) -> bool:
@@ -458,7 +461,7 @@ class EventService:
             select(EventRegistration).where(
                 EventRegistration.event_id == event_id,
                 EventRegistration.member_id == member_id,
-                EventRegistration.status.in_(_OPEN),
+                EventRegistration.status.in_((*_OPEN, MAYBE)),
             )
         )
         if registration is None:
@@ -495,6 +498,51 @@ class EventService:
 
         emit(EVENT_SIGNUPS_CHANGED, event_id=event_id)
         return registration
+
+    @staticmethod
+    def maybe(event_id: int, member_id: int, own: bool = False) -> EventRegistration:
+        """The member answers "Vielleicht".  A place they held is given up
+        (the waitlist moves up), within the same deadlines as cancelling."""
+        event = EventService.get(event_id)
+        if own:
+            last_day = event.end_date or event.date
+            if _passed(event.registration_deadline) or last_day < date.today():
+                raise_error(
+                    409, "REGISTRATION_CLOSED", "Registration for this event is closed"
+                )
+        member = db.session.get(Member, member_id)
+        if member is None or member.archived_at is not None:
+            raise_error(404, "NOT_FOUND", f"Member {member_id} not found")
+        registration = db.session.scalar(
+            select(EventRegistration).where(
+                EventRegistration.event_id == event_id,
+                EventRegistration.member_id == member_id,
+            )
+        )
+        if registration is not None and registration.status in _OPEN:
+            EventService.cancel_registration(event_id, member_id, own=own)
+        elif registration is None:
+            registration = EventRegistration(event_id=event_id, member_id=member_id)
+            db.session.add(registration)
+        registration.status = MAYBE
+        registration.guests = 0
+        registration.registered_at = datetime.now(timezone.utc)
+        registration.cancelled_at = None
+        db.session.flush()
+        emit(EVENT_SIGNUPS_CHANGED, event_id=event_id)
+        return registration
+
+    @staticmethod
+    def maybe_count(event_id: int) -> int:
+        return (
+            db.session.scalar(
+                select(func.count(EventRegistration.id)).where(
+                    EventRegistration.event_id == event_id,
+                    EventRegistration.status == MAYBE,
+                )
+            )
+            or 0
+        )
 
     @staticmethod
     def _promote_waitlist(event: ClubEvent) -> None:

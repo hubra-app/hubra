@@ -25,11 +25,14 @@ def _valid_type(value: str) -> None:
         from marshmallow import ValidationError
 
         raise ValidationError("Unknown event type")
+
+
 _EVENT_CATEGORIES = ["general", "training", "social", "meeting", "competition"]
 # Registrations that hold a place.
 _ACTIVE_REGISTRATION = ["registered", "approved", "attended"]
 _REGISTRATION_COUNT = "_registration_count"
 _PENDING_COUNT = "_pending_count"
+_MAYBE_COUNT = "_maybe_count"
 _PLACES_TAKEN = "_places_taken"
 
 
@@ -70,6 +73,8 @@ class ClubEventSchema(ma.SQLAlchemyAutoSchema):
     places_taken = fields.Method("get_places_taken", dump_only=True)
     # Sign-ups waiting for an organiser (events that need approval).
     pending_count = fields.Method("get_pending_count", dump_only=True)
+    # Members who answered "Vielleicht" (no place).
+    maybe_count = fields.Method("get_maybe_count", dump_only=True)
     # The viewer's own registration: registered, approved, pending,
     # waitlisted, attended, declined, or None.
     my_status = fields.Method("get_my_status", dump_only=True)
@@ -90,11 +95,19 @@ class ClubEventSchema(ma.SQLAlchemyAutoSchema):
             EventRegistration.event_id,
             EventRegistration.status == "pending",
         )
+        prime_counts(
+            events,
+            _MAYBE_COUNT,
+            EventRegistration.event_id,
+            EventRegistration.status == "maybe",
+        )
         _prime_places(events)
         try:
             return super().dump(events, many=many)
         finally:
-            clear_counts(events, _REGISTRATION_COUNT, _PENDING_COUNT, _PLACES_TAKEN)
+            clear_counts(
+                events, _REGISTRATION_COUNT, _PENDING_COUNT, _MAYBE_COUNT, _PLACES_TAKEN
+            )
 
     def get_attendee_ids(self, obj):
         return [m.id for m in (obj.attendees or [])]
@@ -114,7 +127,6 @@ class ClubEventSchema(ma.SQLAlchemyAutoSchema):
                 )
             ),
         )
-
 
     def get_places_taken(self, obj):
         from hubra.api.events.services import EventService
@@ -138,6 +150,11 @@ class ClubEventSchema(ma.SQLAlchemyAutoSchema):
                 )
             ),
         )
+
+    def get_maybe_count(self, obj):
+        from hubra.api.events.services import EventService
+
+        return cached_count(obj, _MAYBE_COUNT, lambda: EventService.maybe_count(obj.id))
 
     def get_my_status(self, obj):
         return _my_statuses().get(obj.id)

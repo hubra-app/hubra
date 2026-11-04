@@ -829,7 +829,15 @@
     "description": "Description",
     "descriptionPlaceholder": "What can people expect? What should they bring?",
     "isPublic": "Public event",
-    "isPublicHint": "May also be shown outside the club, e.g. on an open Discord server. Otherwise only members see it."
+    "isPublicHint": "May also be shown outside the club, e.g. on an open Discord server. Otherwise only members see it.",
+    "maybe": "Maybe",
+    "maybeHint": "Maybe: no place held, the organisers see it",
+    "maybeUndo": "Take back maybe",
+    "maybeSet": "Maybe",
+    "maybeSetMsg": "You might come to “{{title}}”. No place is held for you.",
+    "maybeRemoved": "Answer taken back",
+    "maybeRemovedMsg": "You no longer have an answer for “{{title}}”.",
+    "maybeCount": "+{{count}} maybe"
   },
   "finance": {
     "addCategory": "Add Category",
