@@ -1,0 +1,84 @@
+name: Bug report
+description: Something in Hubra does not work as it should.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting this. **Security problems go to the
+        [private advisory form](https://github.com/hubra-app/hubra/security/advisories/new),
+        not here.** Please leave out real member data, passwords and tokens,
+        and blur personal details in screenshots.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where does it happen?
+      options:
+        - Club app (app.hubra.club)
+        - Sign-in and account (sso.hubra.club)
+        - Manage (manage.hubra.club)
+        - Support site (support.hubra.club)
+        - API or Claude connector
+        - Mail
+        - Install, upgrade or deployment (Compose, k3s)
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you saw, including any error message.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open Finanzen › Rechnungen
+        2. Click …
+        3. See …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Shown in the account menu under "What's new", or the image tag you run.
+      placeholder: e.g. 1.4.0 or main@0850a39
+  - type: dropdown
+    id: install
+    attributes:
+      label: Install
+      options:
+        - hubra.club (hosted)
+        - Self-hosted with Docker Compose
+        - Self-hosted on k3s / Kubernetes
+        - Local development
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and device
+      placeholder: e.g. Firefox 140 on Windows, Safari on iPhone
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots, logs or anything else
+      description: Drag images in here. For logs, paste only the relevant lines.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched the existing issues and this is not a duplicate.
+          required: true
+        - label: I removed personal data, passwords and tokens from this report.
+          required: true

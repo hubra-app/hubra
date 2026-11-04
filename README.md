@@ -122,6 +122,10 @@ Marketplace README and the hubra.club Modules page stay current.
 | Backend changelog                      | [app/backend/CHANGELOG.md](app/backend/CHANGELOG.md)     |
 | Plugin extension areas                 | [docs/plugins.md](docs/plugins.md)                       |
 | Plugin release checklist               | [docs/plugin-releases.md](docs/plugin-releases.md)       |
+| Accessibility statement                | [docs/accessibility.md](docs/accessibility.md)           |
+| Contributing                           | [CONTRIBUTING.md](CONTRIBUTING.md)                       |
+| Code of conduct                        | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)                 |
+| Security policy                        | [SECURITY.md](SECURITY.md)                               |
 
 ## Project structure
 

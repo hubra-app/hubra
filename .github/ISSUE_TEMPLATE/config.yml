@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security problem
+    url: https://github.com/hubra-app/hubra/security/advisories/new
+    about: Report vulnerabilities privately here, never in a public issue. See SECURITY.md.
+  - name: Help and questions
+    url: https://support.hubra.club/kontakt
+    about: Ask how something works, or get help with your club. Help articles are at support.hubra.club/hilfe.
+  - name: Ideas and roadmap
+    url: https://support.hubra.club/roadmap
+    about: See what is planned and vote for it, or post a new idea at support.hubra.club/idee.
+  - name: A plugin
+    url: https://github.com/hubra-app/hubra-plugins#readme
+    about: Problems with a single plugin (Bank import, Budgets, Codes, Discord, Guides, Inventory, Keys, IMAP inbox) go to that plugin's repository.
