@@ -1226,10 +1226,13 @@ def list_tenant_members(tenant_id: int):
         members = db.session.scalars(
             select(Member).where(Member.archived_at.is_(None)).order_by(Member.id)
         ).all()
+        # Serialize while the club's schema is on the search path: the
+        # roles live there and load lazily.
+        rows = [_member_to_dict(m) for m in members]
     finally:
         reset_search_path()
 
-    return jsonify({"members": [_member_to_dict(m) for m in members]})
+    return jsonify({"members": rows})
 
 
 @tenant_admin_bp.route("/tenants/<int:tenant_id>/members", methods=["POST"])

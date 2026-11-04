@@ -88,7 +88,6 @@ def configure_api_counting(app: Flask) -> None:
                     pipe.incr(_error_redis_key(now))
                     pipe.expire(_error_redis_key(now), _KEY_TTL_SECONDS)
                 pipe.execute()
-                client.close()
         except Exception:
             _mark_redis_down()
             _log.debug("API error rate counter failed", exc_info=True)
@@ -110,7 +109,6 @@ def configure_api_counting(app: Flask) -> None:
                 pipe.incr(day_key)
                 pipe.expire(day_key, _DAY_KEY_TTL_SECONDS)
                 pipe.execute()
-                client.close()
         except Exception:
             _mark_redis_down()
             _log.debug("API call count increment failed", exc_info=True)
@@ -130,10 +128,7 @@ def get_api_calls_30d(tenant_id: int) -> int:
 
         now = datetime.now(timezone.utc)
         keys = [_day_redis_key(tenant_id, now - timedelta(days=d)) for d in range(30)]
-        total = sum(int(val) for val in client.mget(keys) if val is not None)
-
-        client.close()
-        return total
+        return sum(int(val) for val in client.mget(keys) if val is not None)
     except Exception:
         _log.debug("Failed to read API call counts", exc_info=True)
         return 0
@@ -190,8 +185,6 @@ def get_metrics_summary() -> dict:
                     "calls": calls,
                 }
             )
-
-        client.close()
 
         return {
             "total_calls": total_calls,

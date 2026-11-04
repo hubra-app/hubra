@@ -8,6 +8,7 @@ from hubra.api.auth.helpers import get_current_member
 from hubra.api.functions.services import FunctionService
 from hubra.api.permissions import permission_required
 from hubra.api.utils import id_from_body, log_audit
+from hubra.core.errors import api_error
 from hubra.core.extensions import db
 
 functions_bp = Blueprint("functions_bp", __name__)
@@ -106,7 +107,7 @@ def assign_holder(function_id: int):
     body = request.get_json(silent=True) or {}
     member_id = body.get("memberId")
     if not member_id:
-        return jsonify({"error": "memberId is required"}), 400
+        return api_error("VALIDATION_ERROR", "memberId is required", 400)
 
     FunctionService.assign_holder(
         function_id, id_from_body(member_id, "memberId"), get_current_member().id

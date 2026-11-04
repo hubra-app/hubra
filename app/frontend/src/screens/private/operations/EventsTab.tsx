@@ -20,6 +20,7 @@ import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useT, zmsg } from '@/locales/i18n'
+import { isPastEvent } from './eventDates'
 import i18n from 'i18next'
 import {
   IconPlus,
@@ -151,6 +152,7 @@ export function EventsTab() {
   const [editScope, setEditScope] = useState<SeriesScope>('this')
   const [pendingFor, setPendingFor] = useState<ClubEvent | null>(null)
   const [typeFilter, setTypeFilter] = useState('All')
+  const [when, setWhen] = useState<'upcoming' | 'past' | 'all'>('upcoming')
   const [search, setSearch] = useState('')
   const [addOpen, setAddOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<ClubEvent | null>(null)
@@ -183,15 +185,24 @@ export function EventsTab() {
   }
   const filtered = linked.id
     ? events.filter((e) => e.id === linked.id)
-    : events.filter((e) => {
-    const matchType = typeFilter === 'All' || e.type === typeFilter
-    const q = search.toLowerCase()
-    const matchSearch =
-      !q ||
-      e.title.toLowerCase().includes(q) ||
-      (e.location || '').toLowerCase().includes(q)
-    return matchType && matchSearch
-  })
+    : events
+        .filter((e) => {
+          const matchType = typeFilter === 'All' || e.type === typeFilter
+          const q = search.trim().toLowerCase()
+          // A search looks through every date: whoever types a title wants
+          // that event, whether it is coming up or over.
+          const matchWhen =
+            !!q || when === 'all' || (when === 'past' ? isPastEvent(e) : !isPastEvent(e))
+          const matchSearch =
+            !q ||
+            e.title.toLowerCase().includes(q) ||
+            (e.location || '').toLowerCase().includes(q)
+          return matchType && matchWhen && matchSearch
+        })
+        // Past events read newest first; what is coming reads soonest first.
+        .sort((a, b) =>
+          when === 'past' ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date),
+        )
   const pg = usePagination(filtered, 10)
 
   const openAdd = () => {
@@ -670,6 +681,7 @@ export function EventsTab() {
             width: 200,
             render: (ev) => {
               const joined = hasOpenSignUp(ev, myJoinedEvents.has(ev.id))
+              const over = isPastEvent(ev)
               return (
                 <div
                   style={{
@@ -678,6 +690,19 @@ export function EventsTab() {
                     alignItems: 'center',
                   }}
                 >
+                  {over ? (
+                    <span
+                      style={{
+                        fontSize: 'var(--mantine-font-size-sm)',
+                        color: 'var(--hb-text-3)',
+                        minWidth: 120,
+                      }}
+                    >
+                      {joined
+                        ? t('events.attended', 'Teilgenommen')
+                        : t('events.over', 'Vorbei')}
+                    </span>
+                  ) : (
                   <Button
                     size="sm"
                     variant={joined ? 'default' : 'filled'}
@@ -706,6 +731,7 @@ export function EventsTab() {
                       </>
                     )}
                   </Button>
+                  )}
                   {canTakeRoll(ev) && (
                     <Tooltip label={t('events.attendance.take', 'Anwesenheit erfassen')}>
                       <ActionIcon
@@ -733,12 +759,33 @@ export function EventsTab() {
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder={t('events.search', 'Suchen …')}
-        filters={types.map((typeItem) => ({
-          label: typeItem === 'All' ? t('common.all', 'Alle') : eventTypeLabel(typeItem),
-          value: typeItem.toLowerCase(),
-          active: typeFilter === typeItem,
-          onClick: () => setTypeFilter(typeItem),
-        }))}
+        filterSlots={[
+          {
+            label: t('events.filter.when', 'Zeitraum'),
+            type: 'chips',
+            filters: (['upcoming', 'past', 'all'] as const).map((w) => ({
+              label:
+                w === 'upcoming'
+                  ? t('events.filter.upcoming', 'Kommende')
+                  : w === 'past'
+                    ? t('events.filter.past', 'Vergangene')
+                    : t('common.all', 'Alle'),
+              value: `when-${w}`,
+              active: when === w,
+              onClick: () => setWhen(w),
+            })),
+          },
+          {
+            label: t('events.filter.type', 'Typ'),
+            type: 'chips',
+            filters: types.map((typeItem) => ({
+              label: typeItem === 'All' ? t('common.all', 'Alle') : eventTypeLabel(typeItem),
+              value: typeItem.toLowerCase(),
+              active: typeFilter === typeItem,
+              onClick: () => setTypeFilter(typeItem),
+            })),
+          },
+        ]}
         page={pg.page}
         perPage={pg.perPage}
         total={pg.total}
