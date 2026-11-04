@@ -7,7 +7,7 @@ Rollen showed no roles and an empty permission list.
 
 from sqlalchemy import select
 
-from hubra.api.global_rbac_seed import seed_global_rbac
+from hubra.core.global_rbac_seed import seed_global_rbac
 from hubra.core.models.global_role import (
     GlobalPermission,
     GlobalRole,

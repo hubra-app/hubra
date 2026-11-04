@@ -742,7 +742,7 @@ def _register_cli(app: Flask) -> None:
         )
 
         # Platform permissions and default platform roles (manage › Rollen).
-        from hubra.api.global_rbac_seed import seed_global_rbac
+        from hubra.core.global_rbac_seed import seed_global_rbac
 
         seed_global_rbac()
         click.echo("Platform permissions and default platform roles synced.")
