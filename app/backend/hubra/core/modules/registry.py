@@ -165,10 +165,16 @@ class ModuleRegistry:
         return getattr(importlib.import_module(bp.import_path), bp.attr)
 
     def register_blueprints(self, app: Flask) -> None:
+        from hubra.core.api_areas import canonical_path
+
         for m in self.all():
             for bp in m.blueprints:
                 blueprint = self._blueprint(bp)
-                app.register_blueprint(blueprint, url_prefix=bp.url_prefix)
+                # A plugin built before the API areas (hubra.core.api_areas)
+                # may still name an old prefix: mount it at the new one.
+                app.register_blueprint(
+                    blueprint, url_prefix=canonical_path(bp.url_prefix)
+                )
                 _log.debug("Module %s: registered %s", m.code, bp.attr)
 
 

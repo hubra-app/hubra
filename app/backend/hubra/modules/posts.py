@@ -12,7 +12,7 @@ module = Module(
         Blueprint(
             "hubra.api.posts.routes",
             "posts_bp",
-            "/api/v1/posts",
+            "/api/v1/app/posts",
         ),
     ),
     settings=(

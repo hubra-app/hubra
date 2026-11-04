@@ -41,7 +41,7 @@ export async function updateMailMember(
   if (input.retentionDays !== undefined)
     body.retention_days = input.retentionDays;
   if (input.quotaMb !== undefined) body.quota_mb = input.quotaMb;
-  const b = await apiFetch<BackendMailMember>(`/mail/members/${id}`, {
+  const b = await apiFetch<BackendMailMember>(`/app/mail/members/${id}`, {
     method: "PATCH",
     body: JSON.stringify(body),
   });
@@ -118,13 +118,13 @@ async function fetchAddresses(
 export async function listAddresses(
   params?: AddressFilters,
 ): Promise<ManagedMailAddressInfo[]> {
-  return fetchAddresses("/mail/addresses", params);
+  return fetchAddresses("/app/mail/addresses", params);
 }
 
 export async function listAllAddresses(
   params?: AddressFilters,
 ): Promise<ManagedMailAddressInfo[]> {
-  return fetchAddresses("/mail/addresses/all", params);
+  return fetchAddresses("/app/mail/addresses/all", params);
 }
 
 export interface MailAliasInfo {
@@ -137,15 +137,15 @@ export interface MailAliasInfo {
 }
 
 export async function deleteGroupMail(groupId: number): Promise<void> {
-  await apiFetch(`/mail/groups/${groupId}`, { method: "DELETE" });
+  await apiFetch(`/app/mail/groups/${groupId}`, { method: "DELETE" });
 }
 
 export async function deleteFunctionMail(functionId: number): Promise<void> {
-  await apiFetch(`/mail/functions/${functionId}`, { method: "DELETE" });
+  await apiFetch(`/app/mail/functions/${functionId}`, { method: "DELETE" });
 }
 
 export async function deleteMemberMail(memberId: number): Promise<void> {
-  await apiFetch(`/mail/members-mail/${memberId}`, { method: "DELETE" });
+  await apiFetch(`/app/mail/members-mail/${memberId}`, { method: "DELETE" });
 }
 
 export async function toggleMemberMail(
@@ -153,7 +153,7 @@ export async function toggleMemberMail(
   enabled: boolean,
 ): Promise<ManagedMailAddressInfo> {
   return apiFetch<ManagedMailAddressInfo>(
-    `/mail/members-mail/${memberId}/toggle`,
+    `/app/mail/members-mail/${memberId}/toggle`,
     {
       method: "PATCH",
       body: JSON.stringify({ enabled }),
@@ -167,7 +167,7 @@ export async function toggleGroupMail(
   groupId: number,
   enabled: boolean,
 ): Promise<ManagedMailAddressInfo> {
-  return apiFetch<ManagedMailAddressInfo>(`/mail/groups/${groupId}/toggle`, {
+  return apiFetch<ManagedMailAddressInfo>(`/app/mail/groups/${groupId}/toggle`, {
     method: "PATCH",
     body: JSON.stringify({ enabled }),
   });
@@ -177,7 +177,7 @@ export async function changeGroupMailPrefix(
   groupId: number,
   prefix: string,
 ): Promise<ManagedMailAddressInfo> {
-  return apiFetch<ManagedMailAddressInfo>(`/mail/groups/${groupId}/prefix`, {
+  return apiFetch<ManagedMailAddressInfo>(`/app/mail/groups/${groupId}/prefix`, {
     method: "PATCH",
     body: JSON.stringify({ prefix }),
   });
@@ -187,7 +187,7 @@ export async function listGroupAliases(
   groupId: number,
 ): Promise<ManagedMailAddressInfo[]> {
   const resp = await apiFetch<{ data: ManagedMailAddressInfo[] }>(
-    `/mail/groups/${groupId}/aliases`,
+    `/app/mail/groups/${groupId}/aliases`,
   );
   return resp.data;
 }
@@ -196,7 +196,7 @@ export async function createGroupAlias(
   groupId: number,
   prefix: string,
 ): Promise<ManagedMailAddressInfo> {
-  return apiFetch<ManagedMailAddressInfo>(`/mail/groups/${groupId}/aliases`, {
+  return apiFetch<ManagedMailAddressInfo>(`/app/mail/groups/${groupId}/aliases`, {
     method: "POST",
     body: JSON.stringify({ prefix }),
   });
@@ -206,7 +206,7 @@ export async function deleteGroupAlias(
   groupId: number,
   aliasId: number,
 ): Promise<void> {
-  await apiFetch(`/mail/groups/${groupId}/aliases/${aliasId}`, {
+  await apiFetch(`/app/mail/groups/${groupId}/aliases/${aliasId}`, {
     method: "DELETE",
   });
 }
@@ -217,7 +217,7 @@ export async function toggleGroupAlias(
   enabled: boolean,
 ): Promise<ManagedMailAddressInfo> {
   return apiFetch<ManagedMailAddressInfo>(
-    `/mail/groups/${groupId}/aliases/${aliasId}/toggle`,
+    `/app/mail/groups/${groupId}/aliases/${aliasId}/toggle`,
     {
       method: "PATCH",
       body: JSON.stringify({ enabled }),
@@ -232,7 +232,7 @@ export async function toggleFunctionMail(
   enabled: boolean,
 ): Promise<ManagedMailAddressInfo> {
   return apiFetch<ManagedMailAddressInfo>(
-    `/mail/functions/${functionId}/toggle`,
+    `/app/mail/functions/${functionId}/toggle`,
     {
       method: "PATCH",
       body: JSON.stringify({ enabled }),
@@ -245,7 +245,7 @@ export async function changeFunctionMailPrefix(
   prefix: string,
 ): Promise<ManagedMailAddressInfo> {
   return apiFetch<ManagedMailAddressInfo>(
-    `/mail/functions/${functionId}/prefix`,
+    `/app/mail/functions/${functionId}/prefix`,
     {
       method: "PATCH",
       body: JSON.stringify({ prefix }),
@@ -257,7 +257,7 @@ export async function listFunctionAliases(
   functionId: number,
 ): Promise<ManagedMailAddressInfo[]> {
   const resp = await apiFetch<{ data: ManagedMailAddressInfo[] }>(
-    `/mail/functions/${functionId}/aliases`,
+    `/app/mail/functions/${functionId}/aliases`,
   );
   return resp.data;
 }
@@ -267,7 +267,7 @@ export async function createFunctionAlias(
   prefix: string,
 ): Promise<ManagedMailAddressInfo> {
   return apiFetch<ManagedMailAddressInfo>(
-    `/mail/functions/${functionId}/aliases`,
+    `/app/mail/functions/${functionId}/aliases`,
     {
       method: "POST",
       body: JSON.stringify({ prefix }),
@@ -279,7 +279,7 @@ export async function deleteFunctionAlias(
   functionId: number,
   aliasId: number,
 ): Promise<void> {
-  await apiFetch(`/mail/functions/${functionId}/aliases/${aliasId}`, {
+  await apiFetch(`/app/mail/functions/${functionId}/aliases/${aliasId}`, {
     method: "DELETE",
   });
 }
@@ -290,7 +290,7 @@ export async function toggleFunctionAlias(
   enabled: boolean,
 ): Promise<ManagedMailAddressInfo> {
   return apiFetch<ManagedMailAddressInfo>(
-    `/mail/functions/${functionId}/aliases/${aliasId}/toggle`,
+    `/app/mail/functions/${functionId}/aliases/${aliasId}/toggle`,
     {
       method: "PATCH",
       body: JSON.stringify({ enabled }),
@@ -302,7 +302,7 @@ export async function toggleFunctionAlias(
 
 export async function listSystemAddresses(): Promise<ManagedMailAddressInfo[]> {
   const resp = await apiFetch<{ data: ManagedMailAddressInfo[] }>(
-    "/mail/system-addresses",
+    "/app/mail/system-addresses",
   );
   return resp.data;
 }
@@ -314,14 +314,14 @@ export async function createSystemAddress(input: {
   forwardTargets?: string[];
   isProtected?: boolean;
 }): Promise<ManagedMailAddressInfo> {
-  return apiFetch<ManagedMailAddressInfo>("/mail/system-addresses", {
+  return apiFetch<ManagedMailAddressInfo>("/app/mail/system-addresses", {
     method: "POST",
     body: JSON.stringify(input),
   });
 }
 
 export async function deleteSystemAddress(id: number): Promise<void> {
-  await apiFetch(`/mail/system-addresses/${id}`, { method: "DELETE" });
+  await apiFetch(`/app/mail/system-addresses/${id}`, { method: "DELETE" });
 }
 
 export async function toggleSystemAddress(
@@ -329,7 +329,7 @@ export async function toggleSystemAddress(
   enabled: boolean,
 ): Promise<ManagedMailAddressInfo> {
   return apiFetch<ManagedMailAddressInfo>(
-    `/mail/system-addresses/${id}/toggle`,
+    `/app/mail/system-addresses/${id}/toggle`,
     {
       method: "PATCH",
       body: JSON.stringify({ enabled }),
@@ -342,7 +342,7 @@ export async function resetSystemAddressPassword(
   password?: string,
 ): Promise<string> {
   const resp = await apiFetch<{ password: string }>(
-    `/mail/system-addresses/${id}/reset-password`,
+    `/app/mail/system-addresses/${id}/reset-password`,
     {
       method: "POST",
       body: JSON.stringify(password ? { password } : {}),
@@ -356,7 +356,7 @@ export async function updateSystemForwarding(
   targets: string[],
 ): Promise<string[]> {
   const resp = await apiFetch<{ targets: string[] }>(
-    `/mail/system-addresses/${addressId}/forwarding`,
+    `/app/mail/system-addresses/${addressId}/forwarding`,
     { method: "PUT", body: JSON.stringify({ targets }) },
   );
   return resp.targets;
@@ -371,7 +371,7 @@ export async function getFromWhitelist(
     curated: string[];
     effective: string[];
     live: string[] | null;
-  }>(`/mail/addresses/${addressId}/from-whitelist`);
+  }>(`/app/mail/addresses/${addressId}/from-whitelist`);
 }
 
 export async function updateFromWhitelist(
@@ -379,7 +379,7 @@ export async function updateFromWhitelist(
   whitelist: string[],
 ): Promise<string[]> {
   const resp = await apiFetch<{ whitelist: string[] }>(
-    `/mail/addresses/${addressId}/from-whitelist`,
+    `/app/mail/addresses/${addressId}/from-whitelist`,
     { method: "PUT", body: JSON.stringify({ whitelist }) },
   );
   return resp.whitelist;
@@ -389,7 +389,7 @@ export async function updateFromWhitelist(
 
 export async function resolveLocalPart(prefix: string): Promise<string> {
   const resp = await apiFetch<{ localPart: string }>(
-    `/mail/resolve-local-part?prefix=${encodeURIComponent(prefix)}`,
+    `/app/mail/resolve-local-part?prefix=${encodeURIComponent(prefix)}`,
   );
   return resp.localPart;
 }

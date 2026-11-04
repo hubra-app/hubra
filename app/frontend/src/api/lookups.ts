@@ -52,9 +52,9 @@ export function getLookups(): Promise<Lookups> {
 
 async function fetchLookups(): Promise<Lookups> {
   const results = await Promise.allSettled([
-    apiFetch<BackendTier[]>("/tiers"),
-    apiFetch<BackendRole[]>("/roles"),
-    apiFetch<BackendGroup[]>("/groups"),
+    apiFetch<BackendTier[]>("/app/tiers"),
+    apiFetch<BackendRole[]>("/app/roles"),
+    apiFetch<BackendGroup[]>("/app/groups"),
   ]);
   const tiers = results[0].status === "fulfilled" ? results[0].value : [];
   const roles = results[1].status === "fulfilled" ? results[1].value : [];

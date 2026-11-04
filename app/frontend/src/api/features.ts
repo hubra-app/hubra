@@ -4,7 +4,7 @@ import { qk } from '@/data/keys'
 
 /** The early-access flags for this club (manage › Einstellungen › Früher Zugang). */
 export async function getFeatures(): Promise<Record<string, boolean>> {
-  const res = await apiFetch<{ features: Record<string, boolean> }>('/features')
+  const res = await apiFetch<{ features: Record<string, boolean> }>('/app/features')
   return res.features
 }
 

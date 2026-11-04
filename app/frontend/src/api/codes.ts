@@ -28,7 +28,7 @@ function adapt(b: BackendCode): Code {
 }
 
 export async function listCodes(): Promise<Code[]> {
-  const data = await apiFetch<BackendCode[]>("/codes/");
+  const data = await apiFetch<BackendCode[]>("/app/codes/");
   return data.map(adapt);
 }
 
@@ -41,7 +41,7 @@ export interface CodeCreate {
 export async function createCode(input: CodeCreate): Promise<Code> {
   const body: Record<string, unknown> = { name: input.name, code: input.code };
   if (input.description !== undefined) body.description = input.description;
-  const b = await apiFetch<BackendCode>("/codes/", {
+  const b = await apiFetch<BackendCode>("/app/codes/", {
     method: "POST",
     body: JSON.stringify(body),
   });
@@ -61,7 +61,7 @@ export async function updateCode(id: string, input: CodeUpdate): Promise<Code> {
   if (input.code !== undefined) body.code = input.code;
   if (input.description !== undefined) body.description = input.description;
   if (input.isActive !== undefined) body.is_active = input.isActive;
-  const b = await apiFetch<BackendCode>(`/codes/${id}`, {
+  const b = await apiFetch<BackendCode>(`/app/codes/${id}`, {
     method: "PATCH",
     body: JSON.stringify(body),
   });
@@ -69,5 +69,5 @@ export async function updateCode(id: string, input: CodeUpdate): Promise<Code> {
 }
 
 export async function deleteCode(id: string): Promise<void> {
-  await apiFetch(`/codes/${id}`, { method: "DELETE" });
+  await apiFetch(`/app/codes/${id}`, { method: "DELETE" });
 }

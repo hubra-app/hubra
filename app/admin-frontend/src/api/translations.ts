@@ -29,11 +29,11 @@ export interface TranslationRequest {
 }
 
 export function listTranslations(locale: string) {
-  return apiFetch<TranslationRow[]>(`/i18n/${locale}?list=1`)
+  return apiFetch<TranslationRow[]>(`/global/i18n/${locale}?list=1`)
 }
 
 export function saveTranslation(locale: string, key: string, value: string) {
-  return apiFetch(`/i18n/${locale}`, {
+  return apiFetch(`/global/i18n/${locale}`, {
     method: 'POST',
     body: JSON.stringify({ key, value }),
   })
@@ -41,7 +41,7 @@ export function saveTranslation(locale: string, key: string, value: string) {
 
 export function listTranslationRequests(status?: 'pending' | 'accepted' | 'rejected') {
   return apiFetch<TranslationRequest[]>(
-    `/manager/platform/translation-requests${status ? `?status=${status}` : ''}`,
+    `/platform/translation-requests${status ? `?status=${status}` : ''}`,
   )
 }
 
@@ -50,7 +50,7 @@ export function decideTranslationRequest(
   accept: boolean,
   opts: { value?: string; note?: string } = {},
 ) {
-  return apiFetch<TranslationRequest>(`/manager/platform/translation-requests/${id}`, {
+  return apiFetch<TranslationRequest>(`/platform/translation-requests/${id}`, {
     method: 'POST',
     body: JSON.stringify({ accept, ...opts }),
   })

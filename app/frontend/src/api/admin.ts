@@ -26,7 +26,7 @@ export interface ClubSettings {
 }
 
 export async function getClubSettings(): Promise<ClubSettings> {
-  const data = await apiFetch<{ settings: ClubSettings }>('/admin/club-settings')
+  const data = await apiFetch<{ settings: ClubSettings }>('/app/admin/club-settings')
   return data.settings
 }
 
@@ -37,14 +37,14 @@ export interface ClubMfaOverview {
 }
 
 export async function getClubMfaOverview(): Promise<ClubMfaOverview> {
-  const data = await apiFetch<{ mfa: ClubMfaOverview }>('/admin/club-settings')
+  const data = await apiFetch<{ mfa: ClubMfaOverview }>('/app/admin/club-settings')
   return data.mfa
 }
 
 export async function updateClubSettings(
   patch: Partial<ClubSettings>,
 ): Promise<ClubSettings> {
-  const data = await apiFetch<{ settings: ClubSettings }>('/admin/club-settings', {
+  const data = await apiFetch<{ settings: ClubSettings }>('/app/admin/club-settings', {
     method: 'PATCH',
     body: JSON.stringify(patch),
   })
@@ -72,14 +72,14 @@ export interface TxtRecord {
 }
 
 export async function listDomains(): Promise<Domain[]> {
-  const data = await apiFetch<{ domains: Domain[] }>('/admin/domains')
+  const data = await apiFetch<{ domains: Domain[] }>('/app/admin/domains')
   return data.domains
 }
 
 export async function addDomain(
   domain: string,
 ): Promise<{ domain: Domain; txt_record: TxtRecord }> {
-  return apiFetch('/admin/domains', {
+  return apiFetch('/app/admin/domains', {
     method: 'POST',
     body: JSON.stringify({ domain }),
   })
@@ -88,15 +88,15 @@ export async function addDomain(
 export async function verifyDomain(
   id: number,
 ): Promise<{ domain: Domain; verified: boolean; error: string | null }> {
-  return apiFetch(`/admin/domains/${id}/verify`, { method: 'POST' })
+  return apiFetch(`/app/admin/domains/${id}/verify`, { method: 'POST' })
 }
 
 export async function removeDomain(id: number): Promise<void> {
-  await apiFetch(`/admin/domains/${id}`, { method: 'DELETE' })
+  await apiFetch(`/app/admin/domains/${id}`, { method: 'DELETE' })
 }
 
 export async function setPrimaryDomain(id: number): Promise<{ domain: Domain }> {
-  return apiFetch(`/admin/domains/${id}/primary`, { method: 'PATCH' })
+  return apiFetch(`/app/admin/domains/${id}/primary`, { method: 'PATCH' })
 }
 
 /** The account and address the club's QR invoices are paid to. */
@@ -116,11 +116,11 @@ export interface BankSettings {
 export type BankSettingsInput = Omit<BankSettings, 'isQrIban' | 'complete'>
 
 export function getBankSettings(): Promise<BankSettings> {
-  return apiFetch<BankSettings>('/admin/bank-settings')
+  return apiFetch<BankSettings>('/app/admin/bank-settings')
 }
 
 export function updateBankSettings(input: BankSettingsInput): Promise<BankSettings> {
-  return apiFetch<BankSettings>('/admin/bank-settings', {
+  return apiFetch<BankSettings>('/app/admin/bank-settings', {
     method: 'PUT',
     body: JSON.stringify(input),
   })
@@ -142,23 +142,23 @@ export interface BackupKeyState {
 }
 
 export function getBackupKey(): Promise<BackupKeyState> {
-  return apiFetch<BackupKeyState>('/admin/backup-key')
+  return apiFetch<BackupKeyState>('/app/admin/backup-key')
 }
 
 export function setBackupKey(publicKey: string): Promise<BackupKeyState> {
-  return apiFetch<BackupKeyState>('/admin/backup-key', {
+  return apiFetch<BackupKeyState>('/app/admin/backup-key', {
     method: 'PUT',
     body: JSON.stringify({ public_key: publicKey }),
   })
 }
 
 export function removeBackupKey(): Promise<BackupKeyState> {
-  return apiFetch<BackupKeyState>('/admin/backup-key', { method: 'DELETE' })
+  return apiFetch<BackupKeyState>('/app/admin/backup-key', { method: 'DELETE' })
 }
 
 /** Turning "only our key" on needs the club's slug as confirmation. */
 export function setBackupKeyClubOnly(clubOnly: boolean, confirm?: string): Promise<BackupKeyState> {
-  return apiFetch<BackupKeyState>('/admin/backup-key', {
+  return apiFetch<BackupKeyState>('/app/admin/backup-key', {
     method: 'PATCH',
     body: JSON.stringify({ club_only: clubOnly, confirm }),
   })

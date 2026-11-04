@@ -12,7 +12,7 @@ module = Module(
         Blueprint(
             "hubra.api.bindings.routes",
             "bindings_bp",
-            "/api/v1/bindings",
+            "/api/v1/app/bindings",
         ),
     ),
     nav=(

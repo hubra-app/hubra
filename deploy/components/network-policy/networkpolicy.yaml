@@ -21,7 +21,7 @@ spec:
       - key: app.kubernetes.io/name
         operator: In
         # plugins: the marketplace some clusters add (clusters/contabo).
-        values: [backend, platform-backend, frontend, admin-frontend, sso-frontend, plugins]
+        values: [backend, global-backend, platform-backend, frontend, admin-frontend, sso-frontend, plugins]
   policyTypes: [Ingress]
   ingress:
     - from:
@@ -46,4 +46,4 @@ spec:
             matchExpressions:
               - key: app.kubernetes.io/name
                 operator: In
-                values: [backend, platform-backend, celery-worker, platform-worker, celery-beat, discord-gateway]
+                values: [backend, global-backend, platform-backend, celery-worker, platform-worker, celery-beat, discord-gateway]

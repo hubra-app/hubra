@@ -38,22 +38,16 @@ _CACHE_SECONDS = 5.0
 _cache: dict = {"at": 0.0, "state": None}
 
 # Requests that keep working during maintenance.
+# Paths are the new ones (hubra.core.api_areas rewrites old paths first).
 ALLOWED_PREFIXES = (
     "/health",
-    "/api/v1/health",
-    "/api/v1/maintenance",
-    "/api/v1/status",
-    "/api/v1/manager",
-    "/api/v1/system",
-    "/api/v1/auth",
-    "/api/v1/account",
-    "/api/v1/apps",  # outside callbacks (OAuth)
+    "/api/v1/platform",  # manage keeps working
+    # Sign-in, account, translations, version, status, public data and the
+    # club directory: nothing in /global is a club's own data.
+    "/api/v1/global",
     # Signed Discord interactions: /wartung ende must work during maintenance;
     # club commands answer with the maintenance notice themselves.
     "/api/v1/discord/interactions",
-    "/api/v1/i18n",
-    "/api/v1/instance",  # public instance info the apps need to start
-    "/api/v1/public",  # pricing and plugin list for the website
 )
 
 
@@ -446,7 +440,7 @@ def install(app: Flask) -> None:
         return jsonify(club_state(tenant.id if tenant else None)), 200
 
     app.add_url_rule(
-        "/api/v1/maintenance", "maintenance_state", _public_state, methods=["GET"]
+        "/api/v1/global/maintenance", "maintenance_state", _public_state, methods=["GET"]
     )
 
     @app.before_request

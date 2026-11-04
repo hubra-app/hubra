@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import urllib.error
 import urllib.request
 from typing import Any
@@ -278,10 +279,20 @@ def last_post_state() -> dict:
     return dict(_local_last.get("state") or {})
 
 
-def post_alert(embed: dict, alert_type: str = "system") -> bool:
-    """Post a system alert if the log is set up and ``alerts`` is on, with
-    buttons to acknowledge it, silence its type for an hour and open manage
-    (``platform_bot``).  Never raises: alerts run from failure handlers.
+def _level_of(color: Any) -> str:
+    return {COLOR_GOOD: "info", COLOR_WARN: "warning"}.get(color, "error")
+
+
+def post_alert(
+    embed: dict, alert_type: str = "system", level: str | None = None
+) -> bool:
+    """Post a system alert if the log is set up and ``alerts`` is on.
+
+    What it is decides its buttons (``platform_bot.message_kind``): a
+    problem gets Acknowledge, Silence 1 h and a link to its page; a notice
+    (an update ran, a new report) or a recovery only the link.  Only
+    problems are tracked to be turned green later.  Never raises: alerts run
+    from failure handlers.
     """
     try:
         from flask import has_app_context
@@ -293,13 +304,18 @@ def post_alert(embed: dict, alert_type: str = "system") -> bool:
             return False
         from hubra.core.services import platform_bot
 
+        level = level or _level_of(embed.get("color"))
+        kind = platform_bot.message_kind(alert_type, level)
+        if kind == platform_bot.NOTICE:
+            embed = {**embed, "color": COLOR_INFO}
         message = post(
-            embed,
+            platform_bot.alert_embed(embed, alert_type, level, kind),
             channel_id=channel_id,
             token=token,
-            components=platform_bot.alert_buttons(alert_type),
+            components=platform_bot.alert_buttons(alert_type, kind) or None,
         )
-        platform_bot.track_alert(message, alert_type)
+        if kind == platform_bot.PROBLEM:
+            platform_bot.track_alert(message, alert_type)
         return True
     except Exception:
         _log.warning("Platform Discord alert failed", exc_info=True)
@@ -326,9 +342,116 @@ def _clean(value: Any, depth: int = 0) -> Any:
     return value
 
 
+# Audit actions as people read them.  Anything not listed is spelled out
+# from its key ("tenant.early_access" → "Tenant: early access").
+ACTION_LABELS: dict[str, str] = {
+    "tenant.provision": "Verein erstellt",
+    "tenant.update": "Verein geändert",
+    "tenant.active": "Verein aktiviert",
+    "tenant.suspended": "Verein gesperrt",
+    "tenant.soft_delete": "Verein in den Papierkorb gelegt",
+    "tenant.delete": "Verein gelöscht",
+    "tenant.limits": "Limits geändert",
+    "tenant.billing": "Tarif geändert",
+    "tenant.early_access": "Early Access geändert",
+    "tenant.add_owner": "Inhaber:in hinzugefügt",
+    "tenant.remove_owner": "Inhaber:in entfernt",
+    "tenant.add_admin": "Vereinsadmin hinzugefügt",
+    "tenant.remove_admin": "Vereinsadmin entfernt",
+    "tenant.add_member": "Mitglied hinzugefügt",
+    "tenant.invite_accepted": "Einladung angenommen",
+    "tenant_request.submit": "Neue Vereinsanfrage",
+    "tenant_request.approve": "Vereinsanfrage angenommen",
+    "tenant_request.reject": "Vereinsanfrage abgelehnt",
+    "support_case.update": "Meldung geändert",
+    "support_case.merge": "Meldungen zusammengeführt",
+    "impersonation.start": "Support-Zugriff gestartet",
+    "impersonation.end": "Support-Zugriff beendet",
+    "impersonation.revoked": "Support-Zugriff entzogen",
+    "global_role.assign": "Plattform-Rolle vergeben",
+    "global_role.revoke": "Plattform-Rolle entzogen",
+    "set_tenant_module": "Modul ein- oder ausgeschaltet",
+    "club_settings.update": "Vereinseinstellungen geändert",
+    "bank_settings.update": "Bankeinstellungen geändert",
+    "domain.expired": "Domain-Prüfung abgelaufen",
+    "domain.unverified": "Domain nicht mehr bestätigt",
+    "backup.create": "Backup erstellt",
+    "backup.verify": "Backup geprüft",
+    "backup.restore": "Backup wiederhergestellt",
+    "backup.delete": "Backup gelöscht",
+    "install_plugin": "Plugin installiert",
+    "uninstall_plugin": "Plugin entfernt",
+    "rollback_plugin": "Plugin zurückgesetzt",
+    "plugin_update_available": "Plugin-Update verfügbar",
+    "trust_plugin_key": "Plugin-Schlüssel vertraut",
+    "untrust_plugin_key": "Plugin-Schlüssel nicht mehr vertraut",
+    "remove_plugin_repository": "Plugin-Quelle entfernt",
+    "connect_app": "App verbunden",
+    "disconnect_app": "App getrennt",
+    "update_app": "App-Einstellungen geändert",
+    "platform.settings.update": "Plattform-Einstellungen geändert",
+    "platform.mail_relay.use_main": "Zurück auf das Haupt-Relay",
+    "platform.maintenance.cancelled": "Wartung abgesagt",
+    "platform.plan.created": "Tarif erstellt",
+    "platform.plan.deleted": "Tarif gelöscht",
+    "audit.export": "Audit-Log exportiert",
+}
+CATEGORY_LABELS: dict[str, str] = {
+    "clubs": "Vereine",
+    "requests": "Anfragen",
+    "access": "Zugriff",
+    "members": "Mitglieder",
+    "plugins": "Plugins",
+    "backups": "Backups",
+    "platform": "Plattform",
+}
+CATEGORY_ICONS: dict[str, str] = {
+    "clubs": "🏠",
+    "requests": "📥",
+    "access": "🔑",
+    "members": "👥",
+    "plugins": "🧩",
+    "backups": "💾",
+    "platform": "⚙️",
+}
+
+
+def action_label(action: str) -> str:
+    """A readable name for an audit action."""
+    a = action or ""
+    if a in ACTION_LABELS:
+        return ACTION_LABELS[a]
+    head, _, rest = a.partition(".")
+    words = lambda t: t.replace("_", " ").replace(".", " ").strip()  # noqa: E731
+    if not rest:
+        return words(head).capitalize() or "Plattform-Ereignis"
+    return f"{words(head).capitalize()}: {words(rest)}"
+
+
+def _key_label(key: Any) -> str:
+    text = str(key)
+    # camelCase and snake_case alike: "oldStatus" / "old_status" → "Old status"
+    text = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", text).replace("_", " ")
+    return text[:1].upper() + text[1:].lower() if text else "–"
+
+
 def _field_value(value: Any) -> str:
-    text = value if isinstance(value, str) else json.dumps(value, default=str)
-    return (text or "–")[:1000]
+    """A detail as text: yes/no, lists as a list, small objects as lines,
+    never raw JSON."""
+    if value is None or value == "":
+        text = "–"
+    elif isinstance(value, bool):
+        text = "Ja" if value else "Nein"
+    elif isinstance(value, (list, tuple)):
+        text = ", ".join(_field_value(v) for v in value) or "–"
+    elif isinstance(value, dict):
+        text = (
+            "\n".join(f"{_key_label(k)}: {_field_value(v)}" for k, v in value.items())
+            or "–"
+        )
+    else:
+        text = str(value)
+    return text[:1000]
 
 
 def _manage_url() -> str:
@@ -346,20 +469,28 @@ def _area(entry: GlobalAuditEntry) -> tuple[str, str] | None:
     """(label, manage path) of the page the change belongs to, if any."""
     a = entry.action or ""
     if a.startswith("tenant_request."):
-        return "Club requests", "/app/tenants/requests"
+        return "Vereinsanfragen", "/app/tenants/requests"
     if a.startswith("impersonation."):
-        return "Support access", "/app/support"
+        return "Support-Zugriff", "/app/support"
     if a.startswith("global_role."):
-        return "Platform roles", "/app/roles"
+        return "Plattform-Rollen", "/app/roles"
     if a.startswith(("tenant.add_", "tenant.remove_")) and entry.tenant_id:
         if a not in ("tenant.add_member",):
-            return "Club admins", f"/app/clubs/{entry.tenant_id}/admins"
+            return "Vereinsadmins", f"/app/clubs/{entry.tenant_id}/admins"
     if a.startswith("backup."):
         return "Backups", "/app/platform/backups"
     if "plugin" in a:
         return "Plugins", "/app/plugins"
-    if a.startswith("platform.") or category(a) == "platform":
-        return "Platform settings", "/app/platform/settings"
+    if a.startswith("support_case."):
+        return "Meldungen", "/app/reports"
+    if a.startswith("platform.maintenance"):
+        return "Wartung", "/app/platform/maintenance"
+    if a.startswith("platform.plan"):
+        return "Tarife", "/app/tenants/plans"
+    if a.startswith("platform.mail_relay"):
+        return "Mail-Relay", "/app/platform/mail/relay"
+    # Other platform settings have no single page: the audit entry says
+    # what changed.
     return None
 
 
@@ -371,9 +502,9 @@ def audit_links(
     base = _manage_url() if base is None else base.rstrip("/")
     if not base:
         return []
-    links = [("Audit log", f"{base}/app/audit?entry={entry.id}")]
+    links = [("Audit-Log", f"{base}/app/audit?entry={entry.id}")]
     if entry.tenant_id:
-        links.append(("Club", f"{base}/app/tenants/{entry.tenant_id}"))
+        links.append(("Verein", f"{base}/app/tenants/{entry.tenant_id}"))
     area = _area(entry)
     if area:
         links.append((area[0], base + area[1]))
@@ -381,7 +512,9 @@ def audit_links(
 
 
 def audit_embed(entry: GlobalAuditEntry) -> dict:
-    """The embed for one audit entry."""
+    """The embed for one audit entry: a readable title, who did it to which
+    club, the details as short fields, links into manage.  The raw action
+    stays in the footer, to find it in the audit log."""
     from hubra.core.extensions import db
     from hubra.core.models.tenant import Tenant
     from hubra.core.models.user import User
@@ -391,22 +524,31 @@ def audit_embed(entry: GlobalAuditEntry) -> dict:
     if entry.tenant_id:
         tenant = db.session.get(Tenant, entry.tenant_id)
         club = f"{tenant.name} ({tenant.slug})" if tenant else f"#{entry.tenant_id}"
-        fields.append({"name": "Club", "value": club[:1000], "inline": True})
+        fields.append({"name": "Verein", "value": club[:1000], "inline": True})
     if entry.actor_id:
         user = db.session.get(User, entry.actor_id)
+        if user is None:
+            who = f"Konto #{entry.actor_id}"
+        elif user.name and user.name != user.email:
+            who = f"{user.name} ({user.email})"
+        else:
+            who = user.email
+        fields.append({"name": "Von", "value": who[:1000], "inline": True})
+    if entry.target_type or entry.target_id:
+        target = " ".join(str(x) for x in (entry.target_type, entry.target_id) if x)
+        fields.append({"name": "Betrifft", "value": target[:1000], "inline": True})
+    details = [
+        (k, v)
+        for k, v in (_clean(entry.details or {}) or {}).items()
+        if v not in (None, "", [], {})
+    ]
+    for key, value in details[:10]:
         fields.append(
             {
-                "name": "By",
-                "value": (user.email if user else f"user #{entry.actor_id}")[:1000],
-                "inline": True,
+                "name": _key_label(key)[:250],
+                "value": _field_value(value),
+                "inline": not isinstance(value, (dict, list)) and len(str(value)) < 60,
             }
-        )
-    if entry.target_type or entry.target_id:
-        target = " ".join(x for x in (entry.target_type, entry.target_id) if x)
-        fields.append({"name": "Target", "value": target[:1000], "inline": True})
-    for key, value in list((_clean(entry.details or {}) or {}).items())[:10]:
-        fields.append(
-            {"name": str(key)[:250], "value": _field_value(value), "inline": True}
         )
     if links:
         fields.append(
@@ -417,11 +559,17 @@ def audit_embed(entry: GlobalAuditEntry) -> dict:
             }
         )
 
+    cat = category(entry.action)
+    icon = CATEGORY_ICONS.get(cat, "•")
     embed: dict[str, Any] = {
-        "title": entry.action[:250],
+        "title": f"{icon} {action_label(entry.action)}"[:250],
         "color": _color(entry.action),
         "fields": fields[:25],
-        "footer": {"text": f"Hubra platform · {category(entry.action)} · #{entry.id}"},
+        "footer": {
+            "text": f"Hubra · {CATEGORY_LABELS.get(cat, cat)} · {entry.action} · #{entry.id}"[
+                :2048
+            ]
+        },
     }
     if links:
         embed["url"] = links[0][1]

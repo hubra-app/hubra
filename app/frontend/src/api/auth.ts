@@ -47,7 +47,7 @@ function adaptMember(raw: RawMember): Member {
 }
 
 export async function logout(): Promise<void> {
-  await apiFetch("/auth/logout", { method: "POST" }).catch(() => {});
+  await apiFetch("/global/auth/logout", { method: "POST" }).catch(() => {});
 }
 
 /** The signed-in member, and the club the session's token is for. */
@@ -56,7 +56,7 @@ export async function getAccountSession(
 ): Promise<{ member: Member | null; tenantSlug: string | null }> {
   const raw = await apiFetch<
     (RawMember & { tenantSlug?: string | null }) | { noTenant: true }
-  >("/account/", { signal });
+  >("/global/account/", { signal });
   if (raw && typeof raw === "object" && "noTenant" in raw) {
     return { member: null, tenantSlug: null };
   }
@@ -104,7 +104,7 @@ export async function getMyPermissions(
       read_only?: boolean;
       restricted_actions: string[];
     } | null;
-  }>("/account/permissions", { signal });
+  }>("/global/account/permissions", { signal });
 }
 
 export interface MyTenant {
@@ -117,13 +117,13 @@ export interface MyTenant {
 export async function getMyTenants(
   signal?: AbortSignal,
 ): Promise<{ tenants: MyTenant[] }> {
-  return apiFetch<{ tenants: MyTenant[] }>("/account/my-tenants", { signal });
+  return apiFetch<{ tenants: MyTenant[] }>("/global/account/my-tenants", { signal });
 }
 
 export async function switchTenant(
   tenantSlug: string,
 ): Promise<unknown> {
-  return apiFetch("/auth/switch-tenant", {
+  return apiFetch("/global/auth/switch-tenant", {
     method: "POST",
     body: JSON.stringify({ tenantSlug }),
   });
@@ -133,7 +133,7 @@ export async function changePassword(
   currentPassword: string,
   newPassword: string,
 ): Promise<void> {
-  await apiFetch("/account/change-password", {
+  await apiFetch("/global/account/change-password", {
     method: "POST",
     body: JSON.stringify({ currentPassword, newPassword }),
   });
@@ -146,13 +146,13 @@ export async function getMailSettings(): Promise<{
   return apiFetch<{
     forwarding_enabled: boolean;
     private_email_verified: boolean;
-  }>("/account/mail-settings");
+  }>("/global/account/mail-settings");
 }
 
 export async function updateMailSettings(
   forwardingEnabled: boolean,
 ): Promise<void> {
-  await apiFetch("/account/mail-settings", {
+  await apiFetch("/global/account/mail-settings", {
     method: "PATCH",
     body: JSON.stringify({ forwarding_enabled: forwardingEnabled }),
   });
@@ -160,7 +160,7 @@ export async function updateMailSettings(
 
 export async function getMyGroups(): Promise<{ id: string; name: string }[]> {
   const data =
-    await apiFetch<{ id: string; name: string }[]>("/account/groups");
+    await apiFetch<{ id: string; name: string }[]>("/global/account/groups");
   return data;
 }
 
@@ -174,12 +174,12 @@ export interface NavPrefs {
 }
 
 export async function getNavPrefs(): Promise<NavPrefs> {
-  const body = await apiFetch<{ navPrefs?: NavPrefs }>("/account/profile");
+  const body = await apiFetch<{ navPrefs?: NavPrefs }>("/global/account/profile");
   return body.navPrefs ?? { pinned: [], hidden: [], order: [], sections: {} };
 }
 
 export async function saveNavPrefs(navPrefs: NavPrefs): Promise<NavPrefs> {
-  const body = await apiFetch<{ navPrefs: NavPrefs }>("/account/profile", {
+  const body = await apiFetch<{ navPrefs: NavPrefs }>("/global/account/profile", {
     method: "PATCH",
     body: JSON.stringify({ navPrefs }),
   });

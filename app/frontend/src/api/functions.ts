@@ -26,7 +26,7 @@ function adapt(b: BackendFunction): ClubFunction {
 }
 
 export async function listFunctions(): Promise<ClubFunction[]> {
-  const data = await apiFetch<BackendFunction[]>("/functions/");
+  const data = await apiFetch<BackendFunction[]>("/app/functions/");
   return data.map(adapt);
 }
 
@@ -45,7 +45,7 @@ export async function createFunction(
   if (input.description !== undefined) body.description = input.description;
   if (input.maxHolders !== undefined) body.maxHolders = input.maxHolders;
   if (input.grantsRoleId !== undefined) body.grantsRoleId = input.grantsRoleId;
-  const b = await apiFetch<BackendFunction>("/functions/", {
+  const b = await apiFetch<BackendFunction>("/app/functions/", {
     method: "POST",
     body: JSON.stringify(body),
   });
@@ -68,7 +68,7 @@ export async function updateFunction(
   if (input.description !== undefined) body.description = input.description;
   if (input.maxHolders !== undefined) body.maxHolders = input.maxHolders;
   if (input.grantsRoleId !== undefined) body.grantsRoleId = input.grantsRoleId;
-  const b = await apiFetch<BackendFunction>(`/functions/${id}`, {
+  const b = await apiFetch<BackendFunction>(`/app/functions/${id}`, {
     method: "PATCH",
     body: JSON.stringify(body),
   });
@@ -76,14 +76,14 @@ export async function updateFunction(
 }
 
 export async function deleteFunction(id: number): Promise<void> {
-  await apiFetch(`/functions/${id}`, { method: "DELETE" });
+  await apiFetch(`/app/functions/${id}`, { method: "DELETE" });
 }
 
 export async function assignHolder(
   functionId: number,
   memberId: number,
 ): Promise<void> {
-  await apiFetch(`/functions/${functionId}/holders`, {
+  await apiFetch(`/app/functions/${functionId}/holders`, {
     method: "POST",
     body: JSON.stringify({ memberId }),
   });
@@ -93,7 +93,7 @@ export async function removeHolder(
   functionId: number,
   memberId: number,
 ): Promise<void> {
-  await apiFetch(`/functions/${functionId}/holders/${memberId}`, {
+  await apiFetch(`/app/functions/${functionId}/holders/${memberId}`, {
     method: "DELETE",
   });
 }

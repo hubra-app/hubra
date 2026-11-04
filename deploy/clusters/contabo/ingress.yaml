@@ -22,13 +22,25 @@ spec:
     - host: api.hubra.club
       http:
         paths:
-          # The platform API goes to the platform backend (docs/platform-backend.md;
-          # keep in step with hubra.core.roles.PLATFORM_PREFIXES).
-          - path: /api/v1/manager
+          # One backend per API area (docs/platform-backend.md, hubra.core.api_areas):
+          # /api/v1/platform -> platform-backend, /api/v1/global -> global-backend,
+          # everything else (/api/v1/app, plugin routes) -> backend. The old paths
+          # (before the split) go where the backend rewrites them to. The longest
+          # matching path wins. tests/test_api_areas.py checks this list.
+          # Platform
+          - path: /api/v1/platform
             pathType: Prefix
             backend:
               service: { name: platform-backend, port: { name: http } }
-          - path: /api/v1/admin
+          - path: /api/v1/manager/platform
+            pathType: Prefix
+            backend:
+              service: { name: platform-backend, port: { name: http } }
+          - path: /api/v1/manager/plugins
+            pathType: Prefix
+            backend:
+              service: { name: platform-backend, port: { name: http } }
+          - path: /api/v1/manager/support
             pathType: Prefix
             backend:
               service: { name: platform-backend, port: { name: http } }
@@ -36,6 +48,89 @@ spec:
             pathType: Prefix
             backend:
               service: { name: platform-backend, port: { name: http } }
+          # Global: sign-in, account, public data
+          - path: /api/v1/global
+            pathType: Prefix
+            backend:
+              service: { name: global-backend, port: { name: http } }
+          - path: /api/v1/system/clubs
+            pathType: Prefix
+            backend:
+              service: { name: global-backend, port: { name: http } }
+          - path: /api/v1/system/invites
+            pathType: Prefix
+            backend:
+              service: { name: global-backend, port: { name: http } }
+          - path: /api/v1/system/join-requests
+            pathType: Prefix
+            backend:
+              service: { name: global-backend, port: { name: http } }
+          - path: /api/v1/system/tenant-requests/mine
+            pathType: Prefix
+            backend:
+              service: { name: global-backend, port: { name: http } }
+          - path: /api/v1/system/impersonation
+            pathType: Prefix
+            backend:
+              service: { name: global-backend, port: { name: http } }
+          - path: /api/v1/auth
+            pathType: Prefix
+            backend:
+              service: { name: global-backend, port: { name: http } }
+          - path: /api/v1/account
+            pathType: Prefix
+            backend:
+              service: { name: global-backend, port: { name: http } }
+          - path: /api/v1/i18n
+            pathType: Prefix
+            backend:
+              service: { name: global-backend, port: { name: http } }
+          - path: /api/v1/health
+            pathType: Prefix
+            backend:
+              service: { name: global-backend, port: { name: http } }
+          - path: /api/v1/version
+            pathType: Prefix
+            backend:
+              service: { name: global-backend, port: { name: http } }
+          - path: /api/v1/instance
+            pathType: Prefix
+            backend:
+              service: { name: global-backend, port: { name: http } }
+          - path: /api/v1/maintenance
+            pathType: Prefix
+            backend:
+              service: { name: global-backend, port: { name: http } }
+          - path: /api/v1/status
+            pathType: Prefix
+            backend:
+              service: { name: global-backend, port: { name: http } }
+          - path: /api/v1/public
+            pathType: Prefix
+            backend:
+              service: { name: global-backend, port: { name: http } }
+          - path: /api/v1/roadmap
+            pathType: Prefix
+            backend:
+              service: { name: global-backend, port: { name: http } }
+          - path: /api/v1/support
+            pathType: Prefix
+            backend:
+              service: { name: global-backend, port: { name: http } }
+          - path: /api/v1/apps
+            pathType: Prefix
+            backend:
+              service: { name: global-backend, port: { name: http } }
+          - path: /api/v1/plugins
+            pathType: Prefix
+            backend:
+              service: { name: global-backend, port: { name: http } }
+          # Club app: its permission catalogue, under the old /system
+          - path: /api/v1/system/permissions
+            pathType: Prefix
+            backend:
+              service: { name: backend, port: { name: http } }
+          # The club app
           - path: /
             pathType: Prefix
             backend:

@@ -27,7 +27,7 @@ function adaptTxCat(b: BackendTxCategory): TransactionCategory {
 
 export async function listTxCategories(): Promise<TransactionCategory[]> {
   const data = await apiFetch<BackendTxCategory[]>(
-    "/finance/transaction-categories",
+    "/app/finance/transaction-categories",
   );
   return data.map(adaptTxCat);
 }
@@ -37,7 +37,7 @@ export async function createTxCategory(input: {
   color?: string;
 }): Promise<TransactionCategory> {
   const b = await apiFetch<BackendTxCategory>(
-    "/finance/transaction-categories",
+    "/app/finance/transaction-categories",
     { method: "POST", body: JSON.stringify(input) },
   );
   return adaptTxCat(b);
@@ -48,14 +48,14 @@ export async function updateTxCategory(
   input: { name?: string; color?: string },
 ): Promise<TransactionCategory> {
   const b = await apiFetch<BackendTxCategory>(
-    `/finance/transaction-categories/${id}`,
+    `/app/finance/transaction-categories/${id}`,
     { method: "PATCH", body: JSON.stringify(input) },
   );
   return adaptTxCat(b);
 }
 
 export async function deleteTxCategory(id: string): Promise<void> {
-  await apiFetch(`/finance/transaction-categories/${id}`, { method: "DELETE" });
+  await apiFetch(`/app/finance/transaction-categories/${id}`, { method: "DELETE" });
 }
 
 // ── External Parties ───────────────────────────────────────────────────────
@@ -91,7 +91,7 @@ export async function listExternalParties(
 ): Promise<ExternalParty[]> {
   const qs = search ? `?search=${encodeURIComponent(search)}` : "";
   const data = await apiFetch<BackendExternalParty[]>(
-    `/finance/external-parties${qs}`,
+    `/app/finance/external-parties${qs}`,
   );
   return data.map(adaptExtParty);
 }
@@ -117,7 +117,7 @@ export async function createExternalParty(input: {
   if (input.addressCity !== undefined) body.address_city = input.addressCity;
   if (input.notes !== undefined) body.notes = input.notes;
   const b = await apiFetch<BackendExternalParty>(
-    "/finance/external-parties",
+    "/app/finance/external-parties",
     { method: "POST", body: JSON.stringify(body) },
   );
   return adaptExtParty(b);
@@ -146,14 +146,14 @@ export async function updateExternalParty(
   if (input.addressCountry !== undefined) body.address_country = input.addressCountry;
   if (input.notes !== undefined) body.notes = input.notes;
   const b = await apiFetch<BackendExternalParty>(
-    `/finance/external-parties/${id}`,
+    `/app/finance/external-parties/${id}`,
     { method: "PATCH", body: JSON.stringify(body) },
   );
   return adaptExtParty(b);
 }
 
 export async function deleteExternalParty(id: string): Promise<void> {
-  await apiFetch(`/finance/external-parties/${id}`, { method: "DELETE" });
+  await apiFetch(`/app/finance/external-parties/${id}`, { method: "DELETE" });
 }
 
 // ── Transactions ───────────────────────────────────────────────────────────
@@ -201,7 +201,7 @@ export async function listTransactions(params?: {
   pageSize?: number;
 }): Promise<Transaction[]> {
   const response = await fetchPages<BackendTransaction>(
-    "/finance/transactions",
+    "/app/finance/transactions",
     new URLSearchParams(),
     params?.pageSize ?? 1000,
   );
@@ -232,7 +232,7 @@ export async function createTransaction(
   if (input.categoryId) body.category_id = Number(input.categoryId);
   if (input.memberId) body.member_id = Number(input.memberId);
   if (input.payeeName) body.payee_name = input.payeeName;
-  const b = await apiFetch<BackendTransaction>("/finance/transactions", {
+  const b = await apiFetch<BackendTransaction>("/app/finance/transactions", {
     method: "POST",
     body: JSON.stringify(body),
   });
@@ -254,7 +254,7 @@ export async function updateTransaction(
     body.category_id = input.categoryId ? Number(input.categoryId) : null;
   if (input.memberId !== undefined) body.member_id = Number(input.memberId);
   if (input.payeeName !== undefined) body.payee_name = input.payeeName;
-  const b = await apiFetch<BackendTransaction>(`/finance/transactions/${id}`, {
+  const b = await apiFetch<BackendTransaction>(`/app/finance/transactions/${id}`, {
     method: "PATCH",
     body: JSON.stringify(body),
   });
@@ -262,7 +262,7 @@ export async function updateTransaction(
 }
 
 export async function deleteTransaction(id: string): Promise<void> {
-  await apiFetch(`/finance/transactions/${id}`, { method: "DELETE" });
+  await apiFetch(`/app/finance/transactions/${id}`, { method: "DELETE" });
 }
 
 // ── Invoices ───────────────────────────────────────────────────────────────
@@ -315,7 +315,7 @@ function adaptInvoice(b: BackendInvoice): Invoice {
 
 export async function listInvoices(): Promise<Invoice[]> {
   const response = await fetchPages<BackendInvoice>(
-    "/finance/invoices",
+    "/app/finance/invoices",
     new URLSearchParams(),
     1000,
   );
@@ -325,7 +325,7 @@ export async function listInvoices(): Promise<Invoice[]> {
 /** One member's invoices, for their page in the member list. */
 export async function listMemberInvoices(memberId: string): Promise<Invoice[]> {
   const response = await fetchPages<BackendInvoice>(
-    "/finance/invoices",
+    "/app/finance/invoices",
     new URLSearchParams({ member_id: memberId }),
     1000,
   );
@@ -334,7 +334,7 @@ export async function listMemberInvoices(memberId: string): Promise<Invoice[]> {
 
 export async function listMyInvoices(): Promise<Invoice[]> {
   const response = await fetchPages<BackendInvoice>(
-    "/finance/invoices/mine",
+    "/app/finance/invoices/mine",
     new URLSearchParams(),
     1000,
   );
@@ -364,7 +364,7 @@ export async function createInvoice(input: InvoiceCreate): Promise<Invoice> {
     body.external_party_id = Number(input.externalPartyId);
   if (input.categoryId) body.category_id = Number(input.categoryId);
   if (input.description) body.description = input.description;
-  const b = await apiFetch<BackendInvoice>("/finance/invoices", {
+  const b = await apiFetch<BackendInvoice>("/app/finance/invoices", {
     method: "POST",
     body: JSON.stringify(body),
   });
@@ -380,7 +380,7 @@ export async function createBulkInvoices(input: {
   if (input.tierId) body.tier_id = Number(input.tierId);
   if (input.description) body.description = input.description;
   const r = await apiFetch<{ created: number; invoices: BackendInvoice[] }>(
-    "/finance/invoices/bulk",
+    "/app/finance/invoices/bulk",
     { method: "POST", body: JSON.stringify(body) },
   );
   return { created: r.created, invoices: r.invoices.map(adaptInvoice) };
@@ -390,7 +390,7 @@ export async function updateInvoice(
   id: string,
   input: { status?: string },
 ): Promise<Invoice> {
-  const b = await apiFetch<BackendInvoice>(`/finance/invoices/${id}`, {
+  const b = await apiFetch<BackendInvoice>(`/app/finance/invoices/${id}`, {
     method: "PATCH",
     body: JSON.stringify(input),
   });
@@ -398,22 +398,22 @@ export async function updateInvoice(
 }
 
 export async function getInvoice(id: string): Promise<Invoice> {
-  const b = await apiFetch<BackendInvoice>(`/finance/invoices/${id}`);
+  const b = await apiFetch<BackendInvoice>(`/app/finance/invoices/${id}`);
   return adaptInvoice(b);
 }
 
 export async function deleteInvoice(id: string): Promise<void> {
-  await apiFetch(`/finance/invoices/${id}`, { method: "DELETE" });
+  await apiFetch(`/app/finance/invoices/${id}`, { method: "DELETE" });
 }
 
 export async function sendInvoiceReminder(
   id: string,
 ): Promise<{ ok: boolean; remindedAt?: string }> {
-  return apiFetch(`/finance/invoices/${id}/remind`, { method: "POST" });
+  return apiFetch(`/app/finance/invoices/${id}/remind`, { method: "POST" });
 }
 
 export async function downloadInvoicePdf(id: string): Promise<void> {
-  const res = await apiFetchRaw(`/finance/invoices/${id}/qr-bill.pdf`);
+  const res = await apiFetchRaw(`/app/finance/invoices/${id}/qr-bill.pdf`);
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -435,7 +435,7 @@ export interface FinanceOverview {
 }
 
 export async function getFinanceOverview(): Promise<FinanceOverview> {
-  return apiFetch<FinanceOverview>("/finance/overview");
+  return apiFetch<FinanceOverview>("/app/finance/overview");
 }
 
 export interface CategorySum {
@@ -464,7 +464,7 @@ export async function getFinanceSummary(
   to: string,
 ): Promise<FinanceSummary> {
   const qs = new URLSearchParams({ from, to });
-  return apiFetch<FinanceSummary>(`/finance/summary?${qs}`);
+  return apiFetch<FinanceSummary>(`/app/finance/summary?${qs}`);
 }
 
 // ── Recurring transactions ─────────────────────────────────────────────────
@@ -569,14 +569,14 @@ function recurringBody(input: Partial<RecurringTransactionInput>) {
 }
 
 export async function listRecurring(): Promise<RecurringTransaction[]> {
-  const data = await apiFetch<BackendRecurring[]>('/finance/recurring')
+  const data = await apiFetch<BackendRecurring[]>('/app/finance/recurring')
   return data.map(adaptRecurring)
 }
 
 export async function createRecurring(
   input: RecurringTransactionInput,
 ): Promise<RecurringTransaction> {
-  const b = await apiFetch<BackendRecurring>('/finance/recurring', {
+  const b = await apiFetch<BackendRecurring>('/app/finance/recurring', {
     method: 'POST',
     body: recurringBody(input),
   })
@@ -587,7 +587,7 @@ export async function updateRecurring(
   id: number,
   input: Partial<RecurringTransactionInput>,
 ): Promise<RecurringTransaction> {
-  const b = await apiFetch<BackendRecurring>(`/finance/recurring/${id}`, {
+  const b = await apiFetch<BackendRecurring>(`/app/finance/recurring/${id}`, {
     method: 'PATCH',
     body: recurringBody(input),
   })
@@ -595,14 +595,14 @@ export async function updateRecurring(
 }
 
 export async function deleteRecurring(id: number): Promise<void> {
-  await apiFetch(`/finance/recurring/${id}`, { method: 'DELETE' })
+  await apiFetch(`/app/finance/recurring/${id}`, { method: 'DELETE' })
 }
 
 // ── Monthly account statement ──────────────────────────────────────────────
 
 /** Downloads the account statement of a month (YYYY-MM) as a PDF. */
 export async function downloadStatement(month: string): Promise<void> {
-  const res = await apiFetchRaw(`/finance/statement.pdf?month=${month}`)
+  const res = await apiFetchRaw(`/app/finance/statement.pdf?month=${month}`)
   const blob = await res.blob()
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -614,7 +614,7 @@ export async function downloadStatement(month: string): Promise<void> {
 
 /** Mails the account statement of a month to the club's statement address. */
 export async function sendStatement(month: string): Promise<{ month: string; to: string }> {
-  return apiFetch('/finance/statement/send', {
+  return apiFetch('/app/finance/statement/send', {
     method: 'POST',
     body: JSON.stringify({ month }),
   })
@@ -690,7 +690,7 @@ export async function getFeeBasis(preview: FeeBasisPreview = {}): Promise<FeeBas
       yearly_now: number
       yearly: number
     }[]
-  }>(`/finance/fee-basis${qs.size ? `?${qs}` : ''}`)
+  }>(`/app/finance/fee-basis${qs.size ? `?${qs}` : ''}`)
   return {
     source: b.source,
     sources: b.sources,
