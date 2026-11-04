@@ -67,6 +67,27 @@ class AuditsService:
                 )
             )
 
+        # Everything logged about one record (a group, a transaction ...), as
+        # its detail page shows it. The type is matched without case, since
+        # some services log "tier" and others "Group".
+        target_type_raw = (args.get("targetType") or "").strip()
+        target_id_raw = args.get("targetId")
+        if target_type_raw or target_id_raw:
+            if not target_type_raw or not target_id_raw:
+                raise_error(
+                    400,
+                    "VALIDATION_ERROR",
+                    "targetType and targetId must be given together",
+                )
+            try:
+                target_id = int(target_id_raw)
+            except (TypeError, ValueError):
+                raise_error(400, "VALIDATION_ERROR", "targetId must be an integer")
+            query = query.where(
+                func.lower(AuditEntry.target_type) == target_type_raw.lower(),
+                AuditEntry.target_id == target_id,
+            )
+
         from_raw = args.get("from")
         if from_raw:
             try:

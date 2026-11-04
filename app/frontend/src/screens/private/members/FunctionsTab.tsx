@@ -1,52 +1,16 @@
-import { useState, useMemo } from 'react'
-import { Button, Group, Select, SimpleGrid, Textarea, TextInput } from '@mantine/core'
-import { useForm } from '@mantine/form'
-import { zod4Resolver } from 'mantine-form-zod-resolver'
-import { z } from 'zod'
+import { useState } from 'react'
+import { Button, Group } from '@mantine/core'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useT, zmsg } from '@/locales/i18n'
-import {
-  IconPlus,
-  IconPencil,
-  IconTrash,
-  IconUserCog,
-  IconMail as MailIcon,
-} from '@tabler/icons-react'
-import { useToast, useAuth, useData } from '@/context/AppContext'
-import {
-  Modal,
-  Field,
-  ConfirmModal,
-  LoadingSpinner,
-  EmptyState,
-  CardGrid,
-  CardItem,
-  MemberSlideOver,
-  type SlideOverMember,
-  useSubmitOnce,
-} from '@/components/ui'
+import { useT } from '@/locales/i18n'
+import { IconPlus, IconPencil, IconTrash, IconUserCog } from '@tabler/icons-react'
+import { useToast, useAuth, useNav } from '@/context/AppContext'
+import { ConfirmModal, LoadingSpinner, EmptyState, CardGrid, CardItem } from '@/components/ui'
 import type { ClubFunction } from '@/types'
-import {
-  listFunctions,
-  createFunction,
-  updateFunction,
-  deleteFunction,
-  assignHolder,
-  removeHolder,
-} from '@/api/functions'
-import { withBase } from '@/clubBase'
-import { useMemberSearch } from '@/data/members'
+import { listFunctions, deleteFunction } from '@/api/functions'
 import { qk } from '@/data/keys'
 import { lookupsQuery } from '@/api/lookups'
 import { roleLabel } from '@/roles'
-
-const functionSchema = z.object({
-  name: z.string().min(1, zmsg('common.nameRequired', 'Name ist erforderlich')),
-  description: z.string(),
-  maxHolders: z.number().min(1),
-  grantsRoleId: z.string(),
-})
-type FunctionForm = z.infer<typeof functionSchema>
+import { FunctionFormModal } from './FunctionFormModal'
 
 export function FunctionsTab() {
   const { notify } = useToast()
@@ -60,103 +24,16 @@ export function FunctionsTab() {
     queryKey: qk.functions,
     queryFn: () => listFunctions(),
   })
-  const [addOpen, setAddOpen] = useState(false)
-  const [editTarget, setEditTarget] = useState<ClubFunction | null>(null)
+  const { go } = useNav()
+  // The form: closed (null), a new function ('new') or one to change.
+  const [formTarget, setFormTarget] = useState<ClubFunction | 'new' | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ClubFunction | null>(null)
-  const [manageHolders, setManageHolders] = useState<ClubFunction | null>(null)
-
-  const form = useForm<FunctionForm>({
-    validate: zod4Resolver(functionSchema),
-    initialValues: {
-      name: '',
-      description: '',
-      maxHolders: 1,
-      grantsRoleId: '',
-    },
-  })
   const { data: lookups } = useQuery(lookupsQuery)
-  // Owners are named one by one, never through a function.
-  const roleOptions = useMemo(
-    () =>
-      lookups
-        ? [...lookups.roles.entries()]
-            .filter(([, name]) => name !== 'Owner')
-            .map(([id, name]) => ({ value: String(id), label: roleLabel(name) }))
-        : [],
-    [lookups],
-  )
   const roleName = (id: number | null) =>
     id != null && lookups?.roles.get(id) ? roleLabel(lookups.roles.get(id)!) : null
 
-  const openAdd = () => {
-    form.setValues({
-      name: '',
-      description: '',
-      maxHolders: 1,
-      grantsRoleId: '',
-    })
-    setAddOpen(true)
-  }
-
-  const openEdit = (fn: ClubFunction) => {
-    setEditTarget(fn)
-    form.setValues({
-      name: fn.name,
-      description: fn.description ?? '',
-      maxHolders: fn.maxHolders,
-      grantsRoleId: fn.grantsRoleId != null ? String(fn.grantsRoleId) : '',
-    })
-  }
-
-  const saveAdd = async (data: FunctionForm) => {
-    try {
-      await createFunction({
-        name: data.name,
-        description: data.description || undefined,
-        maxHolders: data.maxHolders,
-        grantsRoleId: data.grantsRoleId ? Number(data.grantsRoleId) : null,
-      })
-      queryClient.invalidateQueries({ queryKey: qk.functions })
-      setAddOpen(false)
-      notify(
-        'success',
-        t('common.saved', 'Gespeichert'),
-        t('common.created', 'Erstellt'),
-      )
-    } catch (err: unknown) {
-      notify(
-        'error',
-        t('common.error'),
-        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
-      )
-    }
-  }
-  const [submitAdd, adding] = useSubmitOnce(saveAdd)
-
-  const saveEdit = async (data: FunctionForm) => {
-    if (!editTarget) return
-    try {
-      await updateFunction(editTarget.id, {
-        name: data.name,
-        description: data.description || undefined,
-        maxHolders: data.maxHolders,
-        grantsRoleId: data.grantsRoleId ? Number(data.grantsRoleId) : null,
-      })
-      queryClient.invalidateQueries({ queryKey: qk.functions })
-      setEditTarget(null)
-      notify(
-        'success',
-        t('common.saved', 'Gespeichert'),
-        t('common.updated', 'Gespeichert'),
-      )
-    } catch (err: unknown) {
-      notify(
-        'error',
-        t('common.error'),
-        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
-      )
-    }
-  }
+  const openAdd = () => setFormTarget('new')
+  const openEdit = (fn: ClubFunction) => setFormTarget(fn)
 
   const confirmDelete = async () => {
     if (!deleteTarget) return
@@ -176,48 +53,6 @@ export function FunctionsTab() {
       )
     }
   }
-
-  const functionForm = (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
-        <Field label={t('common.name', 'Name')}>
-          <TextInput
-            {...form.getInputProps('name')}
-            placeholder={t('common.namePlaceholder', 'Name')}
-          />
-        </Field>
-        <Field label={t('functions.maxHolders', 'Max. Anzahl Personen')}>
-          <TextInput
-            type="number"
-            min={1}
-            {...form.getInputProps('maxHolders', { valueAsNumber: true })}
-          />
-        </Field>
-      </SimpleGrid>
-      <Field label={t('common.description', 'Beschreibung')}>
-        <Textarea
-          rows={2}
-          {...form.getInputProps('description')}
-          placeholder={t('functions.descPlaceholder', 'Kurze Beschreibung …')}
-        />
-      </Field>
-      <Field
-        label={t('functions.grantsRole', 'Gibt die Rolle')}
-        hint={t(
-          'functions.grantsRoleHint',
-          'Wer die Funktion innehat, hat diese Rolle, bis die Funktion endet.',
-        )}
-      >
-        <Select
-          data={roleOptions}
-          value={form.values.grantsRoleId || null}
-          onChange={(v) => form.setFieldValue('grantsRoleId', v ?? '')}
-          placeholder={t('functions.noRole', 'Keine Rolle')}
-          clearable
-        />
-      </Field>
-    </div>
-  )
 
   return (
     <div>
@@ -260,6 +95,7 @@ export function FunctionsTab() {
                 </div>
               }
               title={fn.name}
+              onClick={() => go(`/app/members/functions/${fn.id}`)}
               subtitle={
                 [
                   fn.description,
@@ -273,12 +109,13 @@ export function FunctionsTab() {
                   .join(' · ') || undefined
               }
               footer={
-                <div style={{ display: 'flex', gap: 8 }}>
+                // The card opens the function; its buttons do only their own thing.
+                <div style={{ display: 'flex', gap: 8 }} onClick={(e) => e.stopPropagation()}>
                   <Button
                     size="sm"
                     variant="subtle"
                     style={{ flex: 1 }}
-                    onClick={() => setManageHolders(fn)}
+                    onClick={() => go(`/app/members/functions/${fn.id}`)}
                   >
                     <IconUserCog size={16} />
                     {t('functions.holders', 'Besetzt durch')} ({fn.holders.length}/
@@ -348,45 +185,13 @@ export function FunctionsTab() {
         </CardGrid>
       )}
 
-      <Modal
-        onSubmit={form.onSubmit(submitAdd)}
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        wide
-        title={t('common.add', 'Hinzufügen')}
-        footer={
-          <>
-            <Button variant="default" onClick={() => setAddOpen(false)}>
-              {t('common.cancel', 'Abbrechen')}
-            </Button>
-            <Button variant="filled" type="submit" loading={adding}>
-              {t('common.create', 'Erstellen')}
-            </Button>
-          </>
-        }
-      >
-        {functionForm}
-      </Modal>
-      <Modal
-        onSubmit={form.onSubmit(saveEdit)}
-        open={!!editTarget}
-        onClose={() => setEditTarget(null)}
-        wide
-        title={t('common.edit', 'Bearbeiten')}
-        subtitle={editTarget?.name}
-        footer={
-          <>
-            <Button variant="default" onClick={() => setEditTarget(null)}>
-              {t('common.cancel', 'Abbrechen')}
-            </Button>
-            <Button variant="filled" type="submit">
-              {t('common.save', 'Speichern')}
-            </Button>
-          </>
-        }
-      >
-        {functionForm}
-      </Modal>
+      {formTarget && (
+        <FunctionFormModal
+          key={formTarget === 'new' ? 'new' : formTarget.id}
+          target={formTarget}
+          onClose={() => setFormTarget(null)}
+        />
+      )}
       <ConfirmModal
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
@@ -397,184 +202,6 @@ export function FunctionsTab() {
         )}
         onConfirm={confirmDelete}
       />
-      {manageHolders && (
-        <HolderPanel
-          fn={manageHolders}
-          onClose={() => {
-            setManageHolders(null)
-            queryClient.invalidateQueries({ queryKey: qk.functions })
-          }}
-        />
-      )}
     </div>
-  )
-}
-
-interface HolderEntry {
-  memberId: number
-  memberName: string
-  memberColor: string
-  assignedAt: string | null
-}
-
-function HolderPanel({
-  fn,
-  onClose,
-}: {
-  fn: ClubFunction
-  onClose: () => void
-}) {
-  const { notify } = useToast()
-  const { modules } = useData()
-  const { t } = useT()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [holders, setHolders] = useState<HolderEntry[]>(() =>
-    fn.holders.map((h) => ({ ...h, memberColor: 'var(--hb-text-2)' })),
-  )
-
-  const { data: searchData } = useMemberSearch(searchQuery, { enabled: searchQuery.length >= 2 })
-
-  const slideMembers: SlideOverMember[] = useMemo(
-    () =>
-      holders.map((h) => ({
-        id: String(h.memberId),
-        name: h.memberName,
-        email: '',
-        avatarColor: h.memberColor,
-      })),
-    [holders],
-  )
-
-  const searchResults = useMemo(() => {
-    if (!searchData || searchQuery.length < 2) return undefined
-    const holderIds = new Set(holders.map((h) => h.memberId))
-    return searchData.members
-      .filter((m) => !holderIds.has(Number(m.id)))
-      .map((m) => ({
-        id: m.id,
-        name: m.name,
-        email: m.email,
-        avatarColor: m.avatarColor,
-      }))
-  }, [searchData, holders, searchQuery])
-
-  const handleAdd = (m: SlideOverMember) => {
-    assignHolder(fn.id, Number(m.id))
-      .then(() => {
-        setHolders((prev) => [
-          ...prev,
-          {
-            memberId: Number(m.id),
-            memberName: m.name,
-            memberColor: m.avatarColor,
-            assignedAt: new Date().toISOString(),
-          },
-        ])
-        notify(
-          'success',
-          t('common.saved', 'Gespeichert'),
-          `${m.name} → ${fn.name}`,
-        )
-      })
-      .catch((err: unknown) =>
-        notify(
-          'error',
-          t('common.error'),
-          err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
-        ),
-      )
-  }
-
-  const handleRemove = (m: SlideOverMember) => {
-    removeHolder(fn.id, Number(m.id))
-      .then(() => {
-        setHolders((prev) => prev.filter((h) => h.memberId !== Number(m.id)))
-        notify(
-          'info',
-          t('common.removed', 'Entfernt'),
-          `${m.name} ← ${fn.name}`,
-        )
-      })
-      .catch((err: unknown) =>
-        notify(
-          'error',
-          t('common.error'),
-          err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
-        ),
-      )
-  }
-
-  const canAdd = holders.length < fn.maxHolders
-
-  return (
-    <MemberSlideOver
-      title={fn.name}
-      subtitle={`${t('functions.manageHolders', 'Personen verwalten')} · ${
-        holders.length
-      }/${fn.maxHolders}`}
-      icon={
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 8,
-            background: 'var(--hb-surface-2)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <IconUserCog size={16} color="var(--hb-text-2)" />
-        </div>
-      }
-      members={slideMembers}
-      addLabel={
-        canAdd ? t('functions.assignHolder', 'Person zuweisen') : undefined
-      }
-      addPlaceholder={t('functions.searchMembers', 'Mitglieder suchen …')}
-      searchResults={canAdd ? searchResults : undefined}
-      onAdd={canAdd ? handleAdd : undefined}
-      onAddSearch={setSearchQuery}
-      onRemove={handleRemove}
-      showRemove
-      onClose={onClose}
-      footer={
-        modules.mail ? (
-          <div
-            style={{
-              padding: '12px 0',
-              borderTop: '1px solid var(--hb-border)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                fontSize: 'var(--mantine-font-size-xs)',
-                fontWeight: 600,
-                color: 'var(--hb-text-2)',
-              }}
-            >
-              <MailIcon size={13} />
-              {t('mail.mail', 'Mail')}
-            </div>
-            <a
-              href={withBase('/app/mail?tab=functions')}
-              style={{
-                fontSize: 'var(--mantine-font-size-xs)',
-                color: 'var(--mantine-color-acc-text)',
-                textDecoration: 'none',
-              }}
-            >
-              {t('mail.admin.openInMailAdmin', 'In der Mail-Verwaltung öffnen')} →
-            </a>
-          </div>
-        ) : null
-      }
-    />
   )
 }

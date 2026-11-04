@@ -1,321 +1,12 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Select, Badge } from '@mantine/core'
-import { PageHead, Avatar, Tag, DataTable } from '@/components/ui'
-import { SlideOver } from '@/components/feedback'
-import { listAuditLog, getAuditEntry } from '@/api/settings'
+import { PageHead, DataTable } from '@/components/ui'
+import { listAuditLog } from '@/api/settings'
+import { useNav } from '@/context/AppContext'
 import { useT } from '@/locales/i18n'
 import { formatDateTime } from '@/format'
 import { qk } from '@/data/keys'
-
-/* -- Audit entry detail panel ------------------ */
-function AuditEntryDetailPanel({
-  entryId,
-  onClose,
-}: {
-  entryId: string
-  onClose: () => void
-}) {
-  const { t, i18n } = useT()
-  const {
-    data: detail,
-    isLoading: loading,
-    error: queryError,
-  } = useQuery({
-    queryKey: qk.audit.entry(entryId),
-    queryFn: () => getAuditEntry(entryId),
-  })
-  const error =
-    queryError instanceof Error
-      ? queryError.message
-      : queryError
-        ? t('audit.loadFailed', 'Eintrag konnte nicht geladen werden')
-        : null
-
-  const formatTime = (iso: string) => {
-    try {
-      return new Date(iso).toLocaleString(i18n.language, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        timeZoneName: 'short',
-      })
-    } catch {
-      return iso
-    }
-  }
-
-  return (
-    <SlideOver
-      title={t('audit.entryTitle', 'Eintrag #{{id}}', { id: entryId })}
-      subtitle={t('audit.fullDetails', 'Alle Details zum Ereignis')}
-      onClose={onClose}
-    >
-          {loading && (
-            <div
-              style={{
-                color: 'var(--hb-text-3)',
-                fontSize: 'var(--mantine-font-size-sm)',
-              }}
-            >
-              {t('common.loading', 'Wird geladen …')}
-            </div>
-          )}
-          {error && (
-            <div
-              style={{
-                color: 'var(--mantine-color-red-text)',
-                fontSize: 'var(--mantine-font-size-sm)',
-              }}
-            >
-              {error}
-            </div>
-          )}
-          {detail && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {/* Action */}
-              <div>
-                <div
-                  style={{
-                    fontSize: 'var(--mantine-font-size-xs)',
-                    fontWeight: 600,
-                    color: 'var(--hb-text-3)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    marginBottom: 6,
-                  }}
-                >
-                  {t('audit.action', 'Aktion')}
-                </div>
-                <Badge
-                  variant="light"
-                  color="green"
-                  radius="xl"
-                  style={{
-                    fontSize: 'var(--mantine-font-size-sm)',
-                    padding: '4px 10px',
-                  }}
-                >
-                  {detail.action.replace(/_/g, ' ')}
-                </Badge>
-              </div>
-
-              {/* Timestamp */}
-              <div>
-                <div
-                  style={{
-                    fontSize: 'var(--mantine-font-size-xs)',
-                    fontWeight: 600,
-                    color: 'var(--hb-text-3)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    marginBottom: 6,
-                  }}
-                >
-                  {t('audit.timestamp', 'Zeitpunkt')}
-                </div>
-                <div
-                  className="num"
-                  style={{
-                    fontSize: 'var(--mantine-font-size-sm)',
-                    color: 'var(--hb-text)',
-                  }}
-                >
-                  {formatTime(detail.time)}
-                </div>
-              </div>
-
-              {/* Actor */}
-              <div>
-                <div
-                  style={{
-                    fontSize: 'var(--mantine-font-size-xs)',
-                    fontWeight: 600,
-                    color: 'var(--hb-text-3)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    marginBottom: 8,
-                  }}
-                >
-                  {t('audit.actor', 'Person')}
-                </div>
-                {detail.actorName ? (
-                  <div
-                    style={{ display: 'flex', alignItems: 'center', gap: 10 }}
-                  >
-                    <Avatar
-                      name={detail.actorName}
-                      color={detail.actorAvatarColor}
-                      size={32}
-                    />
-                    <div>
-                      <div
-                        style={{
-                          fontSize: 'var(--mantine-font-size-sm)',
-                          fontWeight: 600,
-                          color: 'var(--hb-text)',
-                        }}
-                      >
-                        {detail.actorName}
-                      </div>
-                      {detail.actorId != null && (
-                        <div
-                          style={{
-                            fontSize: 'var(--mantine-font-size-xs)',
-                            color: 'var(--hb-text-3)',
-                          }}
-                        >
-                          {t('audit.memberId', 'Mitglied #{{id}}', { id: detail.actorId })}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div
-                    style={{
-                      fontSize: 'var(--mantine-font-size-sm)',
-                      color: 'var(--hb-text-2)',
-                      fontStyle: 'italic',
-                    }}
-                  >
-                    {t('audit.systemActor', 'System (automatisch)')}
-                  </div>
-                )}
-              </div>
-
-              {/* Target */}
-              {(detail.targetType || detail.targetLabel) && (
-                <div>
-                  <div
-                    style={{
-                      fontSize: 'var(--mantine-font-size-xs)',
-                      fontWeight: 600,
-                      color: 'var(--hb-text-3)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.06em',
-                      marginBottom: 8,
-                    }}
-                  >
-                    {t('audit.target', 'Ziel')}
-                  </div>
-                  <div
-                    style={{
-                      background: 'var(--hb-surface-2)',
-                      borderRadius: 9,
-                      padding: '12px 14px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 6,
-                    }}
-                  >
-                    {detail.targetType && (
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: 'var(--mantine-font-size-xs)',
-                            color: 'var(--hb-text-3)',
-                          }}
-                        >
-                          {t('common.type', 'Typ')}
-                        </span>
-                        <Tag>{detail.targetType}</Tag>
-                      </div>
-                    )}
-                    {detail.targetLabel && (
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: 'var(--mantine-font-size-xs)',
-                            color: 'var(--hb-text-3)',
-                          }}
-                        >
-                          {t('audit.label', 'Bezeichnung')}
-                        </span>
-                        <span
-                          style={{
-                            fontSize: 'var(--mantine-font-size-sm)',
-                            fontWeight: 600,
-                            color: 'var(--hb-text)',
-                          }}
-                        >
-                          {detail.targetLabel}
-                        </span>
-                      </div>
-                    )}
-                    {detail.targetId != null && (
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: 'var(--mantine-font-size-xs)',
-                            color: 'var(--hb-text-3)',
-                          }}
-                        >
-                          {t('audit.id', 'ID')}
-                        </span>
-                        <span
-                          className="num"
-                          style={{
-                            fontSize: 'var(--mantine-font-size-xs)',
-                            color: 'var(--hb-text-2)',
-                          }}
-                        >
-                          {detail.targetId}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Entry ID */}
-              <div style={{ borderTop: '1px solid var(--hb-border)', paddingTop: 16 }}>
-                <div
-                  style={{
-                    fontSize: 'var(--mantine-font-size-xs)',
-                    fontWeight: 600,
-                    color: 'var(--hb-text-3)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    marginBottom: 4,
-                  }}
-                >
-                  {t('audit.entryId', 'Eintrags-ID')}
-                </div>
-                <span
-                  className="num"
-                  style={{
-                    fontSize: 'var(--mantine-font-size-xs)',
-                    color: 'var(--hb-text-3)',
-                  }}
-                >
-                  #{detail.id}
-                </span>
-              </div>
-            </div>
-          )}
-    </SlideOver>
-  )
-}
 
 /* -- Audit log --------------------------------- */
 const AUDIT_ACTIONS: [string, string][] = [
@@ -338,7 +29,7 @@ export function AuditLogScreen({ embedded = false }: { embedded?: boolean }) {
   const [pageSize, setPageSize] = useState(PAGE_SIZE)
   const [action, setAction] = useState('')
   const [search, setSearch] = useState('')
-  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null)
+  const { go } = useNav()
 
   const { data, isLoading: loading } = useQuery({
     queryKey: qk.audit.log(page, action, pageSize),
@@ -438,7 +129,7 @@ export function AuditLogScreen({ embedded = false }: { embedded?: boolean }) {
         data={filteredEntries}
         loading={loading}
         emptyMessage={t('audit.empty', 'Keine Einträge.')}
-        onRowClick={(entry) => setSelectedEntryId(entry.id)}
+        onRowClick={(entry) => go(`/app/audit-log/${entry.id}`)}
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder={t('audit.search', 'Audit-Log durchsuchen …')}
@@ -466,12 +157,6 @@ export function AuditLogScreen({ embedded = false }: { embedded?: boolean }) {
           />
         }
       />
-      {selectedEntryId && (
-        <AuditEntryDetailPanel
-          entryId={selectedEntryId}
-          onClose={() => setSelectedEntryId(null)}
-        />
-      )}
     </div>
   )
 }

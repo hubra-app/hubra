@@ -1,19 +1,7 @@
-import { useState, useMemo } from 'react'
-import {
-  Badge,
-  Button,
-  SegmentedControl,
-  Text,
-  Paper,
-  SimpleGrid,
-  Textarea,
-  TextInput,
-} from '@mantine/core'
-import { useForm } from '@mantine/form'
-import { zod4Resolver } from 'mantine-form-zod-resolver'
-import { z } from 'zod'
+import { useState } from 'react'
+import { Badge, Button, SegmentedControl, Text, Paper, TextInput, UnstyledButton } from '@mantine/core'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useT, zmsg } from '@/locales/i18n'
+import { useT } from '@/locales/i18n'
 import {
   IconPlus,
   IconClock,
@@ -21,189 +9,16 @@ import {
   IconPencil,
   IconTrash,
   IconSearch,
-  IconWorld,
-  IconEye,
-  IconLock,
 } from '@tabler/icons-react'
-import { useToast, useAuth } from '@/context/AppContext'
-import {
-  PageHead,
-  Modal,
-  Field,
-  MemberSlideOver,
-  type SlideOverMember,
-  ConfirmModal,
-  usePagination,
-  Pagination,
-  useSubmitOnce,
-} from '@/components/ui'
+import { useToast, useAuth, useNav } from '@/context/AppContext'
+import { PageHead, ConfirmModal, usePagination, Pagination } from '@/components/ui'
 import type { Group, GroupVisibility } from '@/types'
-import {
-  listGroups,
-  createGroup,
-  updateGroup,
-  deleteGroup,
-  addGroupMember,
-  removeGroupMember,
-} from '@/api/groups'
-import { listGroupMembers } from '@/api/members'
-import { MemberPicker } from '@/components/MemberPicker'
-import { useMemberSearch } from '@/data/members'
+import { listGroups, deleteGroup } from '@/api/groups'
 import { qk } from '@/data/keys'
-
-const VISIBILITIES: GroupVisibility[] = ['open', 'visible', 'private']
-const VISIBILITY_ICON = { open: IconWorld, visible: IconEye, private: IconLock }
-const VISIBILITY_COLOR = { open: 'green', visible: 'gray', private: 'grape' }
-
-function VisibilityBadge({ visibility }: { visibility: GroupVisibility }) {
-  const { t } = useT()
-  const Icon = VISIBILITY_ICON[visibility]
-  return (
-    <Badge
-      variant="light"
-      color={VISIBILITY_COLOR[visibility]}
-      leftSection={<Icon size={12} />}
-      title={t(`groups.visibility.${visibility}Hint`)}
-    >
-      {t(`groups.visibility.${visibility}`)}
-    </Badge>
-  )
-}
-
-/* ── Group Detail Panel ──────────────────────── */
-function GroupDetailPanel({
-  group,
-  onClose,
-}: {
-  group: Group
-  onClose: () => void
-}) {
-  const { notify } = useToast()
-  const { currentUser, hasPermission } = useAuth()
-  const { t } = useT()
-  const queryClient = useQueryClient()
-  // A role held for this group only counts here too, and so does leading it.
-  const leads = currentUser != null && group.leadId === Number(currentUser.id)
-  const canAdd = leads || hasPermission('groups.groups.add_member', group.id)
-  const canRemove = leads || hasPermission('groups.groups.remove_member', group.id)
-  const { data: members = [], isLoading: loading } = useQuery({
-    queryKey: qk.groups.members(group.id),
-    queryFn: () => listGroupMembers(group.id),
-  })
-  const [searchQuery, setSearchQuery] = useState('')
-  const { data: searchData } = useMemberSearch(searchQuery, { enabled: searchQuery.length >= 2 })
-
-  const slideMembers: SlideOverMember[] = useMemo(
-    () =>
-      members.map((m) => ({
-        id: m.id,
-        name: m.name,
-        email: m.email,
-        avatarColor: m.avatarColor,
-        tier: m.tier,
-      })),
-    [members],
-  )
-
-  const searchResults = useMemo(() => {
-    if (!searchData || searchQuery.length < 2) return undefined
-    const inGroup = new Set(members.map((m) => m.id))
-    return searchData.members
-      .filter((m) => !inGroup.has(m.id))
-      .map((m) => ({
-        id: m.id,
-        name: m.name,
-        email: m.email,
-        avatarColor: m.avatarColor,
-        tier: m.tier,
-      }))
-  }, [searchData, members, searchQuery])
-
-  const handleAdd = (m: SlideOverMember) => {
-    addGroupMember(group.id, m.id)
-      .then(() => {
-        queryClient.invalidateQueries({
-          queryKey: qk.groups.members(group.id),
-        })
-        notify(
-          'success',
-          t('groups.member.added'),
-          t('groups.member.addedMsg', { member: m.name, group: group.name }),
-        )
-      })
-      .catch((err: unknown) =>
-        notify(
-          'error',
-          t('common.error'),
-          err instanceof Error
-            ? err.message
-            : t('common.unknownError', 'Unbekannter Fehler'),
-        ),
-      )
-  }
-
-  const handleRemove = (m: SlideOverMember) => {
-    removeGroupMember(group.id, m.id)
-      .then(() => {
-        queryClient.invalidateQueries({
-          queryKey: qk.groups.members(group.id),
-        })
-        notify(
-          'info',
-          t('groups.member.removed'),
-          t('groups.member.removedMsg', { member: m.name, group: group.name }),
-        )
-      })
-      .catch((err: unknown) =>
-        notify(
-          'error',
-          t('common.error'),
-          err instanceof Error
-            ? err.message
-            : t('common.unknownError', 'Unbekannter Fehler'),
-        ),
-      )
-  }
-
-  return (
-    <MemberSlideOver
-      title={group.name}
-      subtitle={group.description}
-      icon={
-        <div
-          style={{
-            width: 12,
-            height: 12,
-            borderRadius: 3,
-            background: group.color,
-          }}
-        />
-      }
-      members={slideMembers}
-      loading={loading}
-      addLabel={t('groups.addMember', 'Mitglied hinzufügen')}
-      addPlaceholder={t('groups.searchMembersToAdd', 'Mitglieder suchen …')}
-      searchResults={canAdd ? searchResults : undefined}
-      onAdd={canAdd ? handleAdd : undefined}
-      onAddSearch={canAdd ? setSearchQuery : undefined}
-      onRemove={canRemove ? handleRemove : undefined}
-      showRemove={canRemove}
-      onClose={onClose}
-    />
-  )
-}
+import { GroupFormModal, VisibilityBadge } from './GroupFormModal'
+import { VISIBILITIES } from './groupVisibility'
 
 /* ── Groups ─────────────────────────────────── */
-const groupSchema = z.object({
-  name: z.string().min(1, zmsg('common.nameRequired', 'Name ist erforderlich')),
-  description: z.string(),
-  color: z.string(),
-  sessions: z.string(),
-  leadId: z.string(),
-  visibility: z.enum(['open', 'visible', 'private']),
-})
-type GroupForm = z.infer<typeof groupSchema>
-
 export function GroupsScreen() {
   const { notify } = useToast()
   const { currentUser, hasPermission } = useAuth()
@@ -218,29 +33,10 @@ export function GroupsScreen() {
     queryKey: qk.groups.all,
     queryFn: () => listGroups(),
   })
-  const [addOpen, setAddOpen] = useState(false)
-  const [editTarget, setEditTarget] = useState<Group | null>(null)
+  const { go } = useNav()
+  // The form: closed (null), a new group ('new') or one to change.
+  const [formTarget, setFormTarget] = useState<Group | 'new' | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Group | null>(null)
-  const [detailGroup, setDetailGroup] = useState<Group | null>(null)
-  // A leader edits how the group presents itself; the API keeps its name and
-  // leader with the club.
-  const leaderOnly =
-    editTarget != null &&
-    !canUpdate &&
-    !hasPermission('groups.groups.update', editTarget.id) &&
-    leads(editTarget)
-
-  const form = useForm<GroupForm>({
-    validate: zod4Resolver(groupSchema),
-    initialValues: {
-      name: '',
-      description: '',
-      color: '#2596be',
-      sessions: '',
-      leadId: '',
-      visibility: 'visible',
-    },
-  })
 
   const [search, setSearch] = useState('')
   const [shown, setShown] = useState<'all' | GroupVisibility>('all')
@@ -255,88 +51,8 @@ export function GroupsScreen() {
   })
   const pg = usePagination(filtered, 10)
 
-  const openAdd = () => {
-    form.setValues({
-      name: '',
-      description: '',
-      color: '#2596be',
-      sessions: '',
-      leadId: '',
-      visibility: 'visible',
-    })
-    setAddOpen(true)
-  }
-  const openEdit = (g: Group) => {
-    setEditTarget(g)
-    form.setValues({
-      name: g.name,
-      description: g.description,
-      color: g.color,
-      sessions: g.sessions,
-      leadId: '',
-      visibility: g.visibility ?? 'visible',
-    })
-  }
-
-  const saveAdd = async (data: GroupForm) => {
-    try {
-      await createGroup({
-        name: data.name,
-        description: data.description,
-        color: data.color,
-        sessions: data.sessions,
-        leadId: data.leadId ? Number(data.leadId) : undefined,
-        visibility: data.visibility,
-      })
-      queryClient.invalidateQueries({ queryKey: qk.groups.all })
-      queryClient.invalidateQueries({ queryKey: qk.lookups })
-      setAddOpen(false)
-      notify(
-        'success',
-        t('groups.group.saved'),
-        t('groups.group.createdMsg', { name: data.name }),
-      )
-    } catch (err: unknown) {
-      notify(
-        'error',
-        t('common.error'),
-        err instanceof Error
-          ? err.message
-          : t('common.unknownError', 'Unbekannter Fehler'),
-      )
-    }
-  }
-  const [submitAdd, adding] = useSubmitOnce(saveAdd)
-
-  const saveEdit = async (data: GroupForm) => {
-    if (!editTarget) return
-    try {
-      await updateGroup(editTarget.id, {
-        name: data.name,
-        description: data.description,
-        color: data.color,
-        sessions: data.sessions,
-        ...(data.leadId ? { leadId: Number(data.leadId) } : {}),
-        visibility: data.visibility,
-      })
-      queryClient.invalidateQueries({ queryKey: qk.groups.all })
-      queryClient.invalidateQueries({ queryKey: qk.lookups })
-      setEditTarget(null)
-      notify(
-        'success',
-        t('groups.group.saved'),
-        t('groups.group.updatedMsg', { name: data.name }),
-      )
-    } catch (err: unknown) {
-      notify(
-        'error',
-        t('common.error'),
-        err instanceof Error
-          ? err.message
-          : t('common.unknownError', 'Unbekannter Fehler'),
-      )
-    }
-  }
+  const openAdd = () => setFormTarget('new')
+  const openEdit = (g: Group) => setFormTarget(g)
 
   const confirmDelete = async () => {
     if (!deleteTarget) return
@@ -359,71 +75,6 @@ export function GroupsScreen() {
       )
     }
   }
-
-  const groupForm = (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 72px', gap: 12 }}>
-          <Field label={t('groups.group.name', 'Name der Gruppe')}>
-            <TextInput
-              {...form.getInputProps('name')}
-              disabled={leaderOnly}
-              placeholder={t('groups.group.namePlaceholder', 'z. B. Keramik')}
-            />
-          </Field>
-          <Field label={t('common.color', 'Farbe')}>
-            <TextInput
-              type="color"
-              {...form.getInputProps('color')}
-              style={{ height: 38, padding: '2px 6px', cursor: 'pointer' }}
-            />
-          </Field>
-        </div>
-        <Field label={t('groups.lead', 'Gruppenleitung')}>
-          <MemberPicker
-            noneLabel={t('groups.noLead', 'Keine Leitung')}
-            {...form.getInputProps('leadId')}
-            disabled={leaderOnly}
-            onChange={(id) => form.setFieldValue('leadId', id ?? '')}
-          />
-        </Field>
-      </SimpleGrid>
-      <Field label={t('common.description', 'Beschreibung')}>
-        <Textarea
-          rows={3}
-          {...form.getInputProps('description')}
-          placeholder={t(
-            'common.descriptionPlaceholder',
-            'Kurze Beschreibung …',
-          )}
-        />
-      </Field>
-      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
-        <Field
-          label={t('groups.sessions', 'Treffen')}
-          hint={t('groups.sessionsHint', 'z. B. 2× pro Woche')}
-        >
-          <TextInput
-            {...form.getInputProps('sessions')}
-            placeholder={t('groups.sessionsPlaceholder', '3× pro Woche')}
-          />
-        </Field>
-      </SimpleGrid>
-      <Field
-        label={t('groups.visibility.label', 'Sichtbarkeit')}
-        hint={t(`groups.visibility.${form.values.visibility}Hint`)}
-      >
-        <SegmentedControl
-          fullWidth
-          data={VISIBILITIES.map((v) => ({
-            value: v,
-            label: t(`groups.visibility.${v}`),
-          }))}
-          {...form.getInputProps('visibility')}
-        />
-      </Field>
-    </div>
-  )
 
   return (
     <div>
@@ -509,8 +160,9 @@ export function GroupsScreen() {
                   >
                     <IconBolt size={20} color="white" />
                   </div>
-                  <div>
-                    <div
+                  <div style={{ minWidth: 0 }}>
+                    <UnstyledButton
+                      onClick={() => go(`/app/groups/${g.id}`)}
                       style={{
                         fontSize: 'var(--mantine-font-size-md)',
                         fontWeight: 700,
@@ -518,7 +170,7 @@ export function GroupsScreen() {
                       }}
                     >
                       {g.name}
-                    </div>
+                    </UnstyledButton>
                     {g.lead && (
                       <div
                         style={{
@@ -579,7 +231,7 @@ export function GroupsScreen() {
                     size="sm"
                     variant="subtle"
                     style={{ color: 'var(--mantine-color-acc-7)', marginLeft: 'auto' }}
-                    onClick={() => setDetailGroup(g)}
+                    onClick={() => go(`/app/groups/${g.id}`)}
                   >
                     {t('groups.memberCount', '{{count}} Mitglieder', { count: g.members })} →
                   </Button>
@@ -626,52 +278,13 @@ export function GroupsScreen() {
         </div>
         <Pagination {...pg} />
       </Paper>
-      {detailGroup && (
-        <GroupDetailPanel
-          group={detailGroup}
-          onClose={() => setDetailGroup(null)}
+      {formTarget && (
+        <GroupFormModal
+          key={formTarget === 'new' ? 'new' : formTarget.id}
+          target={formTarget}
+          onClose={() => setFormTarget(null)}
         />
       )}
-
-      <Modal
-        onSubmit={form.onSubmit(submitAdd)}
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        wide
-        title={t('groups.addGroup')}
-        footer={
-          <>
-            <Button variant="default" onClick={() => setAddOpen(false)}>
-              {t('common.cancel')}
-            </Button>
-            <Button variant="filled" type="submit" loading={adding}>
-              {t('groups.createGroup', 'Gruppe erstellen')}
-            </Button>
-          </>
-        }
-      >
-        {groupForm}
-      </Modal>
-      <Modal
-        onSubmit={form.onSubmit(saveEdit)}
-        open={!!editTarget}
-        onClose={() => setEditTarget(null)}
-        wide
-        title={t('groups.editGroup')}
-        subtitle={editTarget?.name}
-        footer={
-          <>
-            <Button variant="default" onClick={() => setEditTarget(null)}>
-              {t('common.cancel')}
-            </Button>
-            <Button variant="filled" type="submit">
-              {t('common.save')}
-            </Button>
-          </>
-        }
-      >
-        {groupForm}
-      </Modal>
       <ConfirmModal
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}

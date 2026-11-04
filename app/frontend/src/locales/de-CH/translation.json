@@ -1021,7 +1021,11 @@
       "saved": "Buchung gespeichert.",
       "updatedMsg": "Status auf «{{status}}» geändert.",
       "saveFailed": "Buchung nicht gespeichert",
-      "updatedMsg2": "«{{description}}» wurde gespeichert."
+      "updatedMsg2": "«{{description}}» wurde gespeichert.",
+      "details": "Buchung",
+      "recorded": "Erfasst",
+      "from": "Von",
+      "to": "An"
     },
     "transactionDeleted": "Buchung gelöscht.",
     "transactionDeletedMsg": "Die Buchung wurde gelöscht.",
@@ -1203,7 +1207,11 @@
       "members": "Mitglieder",
       "now": "Bisher",
       "new": "Neu"
-    }
+    },
+    "backToTransactions": "Zurück zu den Buchungen",
+    "transactionNotFound": "Diese Buchung gibt es nicht (mehr).",
+    "transactionNo": "Buchung {{id}}",
+    "markCompleted": "Als abgeschlossen markieren"
   },
   "functions": {
     "assignHolder": "Person zuweisen",
@@ -1225,7 +1233,12 @@
     "grantsRole": "Gibt die Rolle",
     "grantsRoleHint": "Wer die Funktion innehat, hat diese Rolle, bis die Funktion endet.",
     "noRole": "Keine Rolle",
-    "givesRole": "Gibt die Rolle {{role}}"
+    "givesRole": "Gibt die Rolle {{role}}",
+    "backToFunctions": "Zurück zu den Funktionen",
+    "notFound": "Diese Funktion gibt es nicht (mehr).",
+    "detail": {
+      "about": "Funktion"
+    }
   },
   "groups": {
     "addGroup": "Gruppe hinzufügen",
@@ -1305,6 +1318,13 @@
       "openHint": "Alle Mitglieder sehen die Gruppe und treten selbst bei oder aus, auf ihrem Dashboard unter «Persönlich».",
       "visibleHint": "Alle Mitglieder sehen die Gruppe und wer dabei ist. Mitglieder fügen die Leitung oder die Administration hinzu.",
       "privateHint": "Nur die Mitglieder der Gruppe, die Leitung und wer Gruppen verwaltet, sehen sie."
+    },
+    "backToGroups": "Zurück zu den Gruppen",
+    "notFound": "Diese Gruppe gibt es nicht (mehr) oder du siehst sie nicht.",
+    "detail": {
+      "about": "Gruppe",
+      "parent": "Gehört zu",
+      "mail": "Mailadresse"
     }
   },
   "inventory": {
@@ -2621,7 +2641,12 @@
     "create": "Stufe erstellen",
     "deleteTitle": "Stufe «{{name}}» löschen?",
     "deleteBody": "Mitglieder in dieser Stufe müssen einer anderen Stufe zugewiesen werden. Das kann nicht rückgängig gemacht werden.",
-    "noPrice": "Kein Beitrag"
+    "noPrice": "Kein Beitrag",
+    "backToTiers": "Zurück zu den Stufen",
+    "notFound": "Diese Stufe gibt es nicht (mehr).",
+    "detail": {
+      "pricing": "Beitrag"
+    }
   },
   "toast": {
     "error": "Fehler",
@@ -3033,7 +3058,9 @@
       "delete_application": "Antrag gelöscht",
       "create_member": "Mitglied erstellt"
     },
-    "systemActor": "System (automatisch)"
+    "systemActor": "System (automatisch)",
+    "backToLog": "Zurück zum Protokoll",
+    "sameRecord": "Weitere Einträge zu diesem Ziel"
   },
   "kv": {
     "required": "Pflichtfeld",

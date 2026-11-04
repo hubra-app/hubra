@@ -36,6 +36,31 @@ const GroupsScreen = lazy(() =>
     default: m.GroupsScreen,
   })),
 )
+const GroupDetailScreen = lazy(() =>
+  import('./screens/private/members/GroupDetail').then((m) => ({
+    default: m.GroupDetailScreen,
+  })),
+)
+const FunctionDetailScreen = lazy(() =>
+  import('./screens/private/members/FunctionDetail').then((m) => ({
+    default: m.FunctionDetailScreen,
+  })),
+)
+const TierDetailScreen = lazy(() =>
+  import('./screens/private/members/TierDetail').then((m) => ({
+    default: m.TierDetailScreen,
+  })),
+)
+const TransactionDetailScreen = lazy(() =>
+  import('./screens/private/finances/TransactionDetail').then((m) => ({
+    default: m.TransactionDetailScreen,
+  })),
+)
+const AuditEntryDetailScreen = lazy(() =>
+  import('./screens/private/system/AuditEntryDetail').then((m) => ({
+    default: m.AuditEntryDetailScreen,
+  })),
+)
 const InvoiceDetailScreen = lazy(() =>
   import('./screens/private/finances/InvoiceDetail').then((m) => ({
     default: m.InvoiceDetailScreen,
@@ -248,6 +273,14 @@ function PrivateRoutes() {
                   }
                 />
                 <Route
+                  path="members/tiers/:id"
+                  element={
+                    <RequirePermission permKey="tiers.tiers.read">
+                      <TierDetailScreen />
+                    </RequirePermission>
+                  }
+                />
+                <Route
                   path="members/functions"
                   element={
                     <RequireModule code="functions">
@@ -258,10 +291,28 @@ function PrivateRoutes() {
                   }
                 />
                 <Route
+                  path="members/functions/:id"
+                  element={
+                    <RequireModule code="functions">
+                      <RequirePermission permKey="functions.functions.read">
+                        <FunctionDetailScreen />
+                      </RequirePermission>
+                    </RequireModule>
+                  }
+                />
+                <Route
                   path="groups"
                   element={
                     <RequireModule code="groups">
                       <GroupsScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="groups/:id"
+                  element={
+                    <RequireModule code="groups">
+                      <GroupDetailScreen />
                     </RequireModule>
                   }
                 />
@@ -318,6 +369,16 @@ function PrivateRoutes() {
                   element={
                     <RequireModule code="finance">
                       <FinanceTabScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="finance/transactions/:id"
+                  element={
+                    <RequireModule code="finance">
+                      <RequirePermission permKey="finance.transactions.read">
+                        <TransactionDetailScreen />
+                      </RequirePermission>
                     </RequireModule>
                   }
                 />
@@ -526,6 +587,14 @@ function PrivateRoutes() {
                   element={
                     <RequirePermission permKey="audit.audit.read">
                       <SettingsScreen />
+                    </RequirePermission>
+                  }
+                />
+                <Route
+                  path="audit-log/:id"
+                  element={
+                    <RequirePermission permKey="audit.audit.read">
+                      <AuditEntryDetailScreen />
                     </RequirePermission>
                   }
                 />

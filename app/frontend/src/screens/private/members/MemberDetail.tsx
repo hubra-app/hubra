@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Anchor, Button, Paper, Table, Text, Title } from '@mantine/core'
-import { formatCHF, formatDate, formatDateTime } from '@/format'
+import { formatCHF, formatDate } from '@/format'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT } from '@/locales/i18n'
 import { useParams } from 'react-router-dom'
@@ -31,6 +31,14 @@ import { listMemberInvoices } from '@/api/finance'
 import { listFunctions } from '@/api/functions'
 import { listAuditLog } from '@/api/settings'
 import { MemberEditModal } from '@/components/MemberEditModal'
+import {
+  ActivityList,
+  DetailEmpty as Empty,
+  DetailFact as Fact,
+  DetailMuted as Muted,
+  DetailRow,
+  DetailSection as Section,
+} from '@/components/detail'
 import { roleLabel, roleLabels } from '@/roles'
 import { qk } from '@/data/keys'
 
@@ -438,7 +446,9 @@ export function MemberDetailScreen({
                             fontSize: 'var(--mantine-font-size-sm)',
                           }}
                         >
-                          <span style={{ fontWeight: 600 }}>{f.name}</span>
+                          <Anchor size="sm" fw={600} onClick={() => go(`/app/members/functions/${f.id}`)}>
+                            {f.name}
+                          </Anchor>
                           {f.since && (
                             <Text span size="xs" c="dimmed">
                               {t('members.detail.since', 'seit {{date}}', { date: formatDate(f.since) })}
@@ -558,37 +568,7 @@ export function MemberDetailScreen({
               ) : !activityQ.data?.entries.length ? (
                 <Muted>{t('members.detail.noActivity', 'Noch keine Einträge')}</Muted>
               ) : (
-                <div data-testid="member-activity">
-                  {activityQ.data.entries.map((e, i, all) => (
-                    <div
-                      key={e.id}
-                      style={{
-                        display: 'flex',
-                        gap: 12,
-                        alignItems: 'center',
-                        padding: '10px 0',
-                        borderBottom:
-                          i === all.length - 1 ? 'none' : '1px solid var(--hb-border)',
-                      }}
-                    >
-                      <Avatar name={e.actor} color={e.avatarColor} size={28} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 'var(--mantine-font-size-sm)' }}>
-                          <strong>{e.actor}</strong>{' '}
-                          {t(`audit.actions.${e.action.replace(/ /g, '_')}`, e.action)}
-                        </div>
-                        {e.targetLabel && (
-                          <Text size="xs" c="dimmed" truncate>
-                            {e.targetLabel}
-                          </Text>
-                        )}
-                      </div>
-                      <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
-                        {formatDateTime(e.time)}
-                      </Text>
-                    </div>
-                  ))}
-                </div>
+                <ActivityList page={activityQ.data} testId="member-activity" />
               )}
             </div>
           )}
@@ -624,22 +604,6 @@ function membershipLength(joined: string, t: ReturnType<typeof useT>['t']): stri
 }
 
 /* ── Detail helpers ───────────────────────────── */
-function Empty() {
-  return (
-    <span style={{ fontSize: 'var(--mantine-font-size-sm)', color: 'var(--hb-text-3)' }}>
-      —
-    </span>
-  )
-}
-
-function Muted({ children }: { children: ReactNode }) {
-  return (
-    <Text size="sm" c="dimmed">
-      {children}
-    </Text>
-  )
-}
-
 function Note({ children }: { children: ReactNode }) {
   return (
     <div
@@ -654,26 +618,6 @@ function Note({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-    </div>
-  )
-}
-
-/** One key figure in the header strip. */
-function Fact({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div>
-      <div
-        style={{
-          fontSize: 'var(--mantine-font-size-xs)',
-          color: 'var(--hb-text-2)',
-          marginBottom: 2,
-        }}
-      >
-        {label}
-      </div>
-      <div style={{ fontSize: 'var(--mantine-font-size-md)', fontWeight: 600, color: 'var(--hb-text)' }}>
-        {children}
-      </div>
     </div>
   )
 }
@@ -694,81 +638,5 @@ function Block({ title, children }: { title: string; children: ReactNode }) {
       </div>
       {children}
     </section>
-  )
-}
-
-/** A card of label/value rows in the left column. */
-function Section({
-  icon,
-  title,
-  children,
-}: {
-  icon: ReactNode
-  title: string
-  children: ReactNode
-}) {
-  return (
-    <Paper withBorder style={{ padding: 0, overflow: 'hidden' }}>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          padding: '12px 16px',
-          borderBottom: '1px solid var(--hb-border)',
-          fontSize: 'var(--mantine-font-size-sm)',
-          fontWeight: 700,
-          color: 'var(--hb-text)',
-        }}
-      >
-        <span style={{ color: 'var(--mantine-color-acc-7)', display: 'flex' }}>{icon}</span>
-        {title}
-      </div>
-      <div className="member-rows">{children}</div>
-    </Paper>
-  )
-}
-
-function DetailRow({
-  label,
-  mono,
-  borderless,
-  children,
-}: {
-  label: string
-  mono?: boolean
-  borderless?: boolean
-  children: React.ReactNode
-}) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: 12,
-        padding: '10px 16px',
-        borderBottom: borderless ? 'none' : '1px solid var(--hb-border)',
-      }}
-    >
-      <span
-        style={{ fontSize: 'var(--mantine-font-size-xs)', color: 'var(--hb-text-2)', flexShrink: 0 }}
-      >
-        {label}
-      </span>
-      <span
-        className={mono ? 'num' : ''}
-        style={{
-          fontSize: 'var(--mantine-font-size-sm)',
-          color: 'var(--hb-text)',
-          fontWeight: 500,
-          minWidth: 0,
-          overflowWrap: 'anywhere',
-          textAlign: 'right',
-        }}
-      >
-        {children}
-      </span>
-    </div>
   )
 }

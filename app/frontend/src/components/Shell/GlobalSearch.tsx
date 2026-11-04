@@ -146,7 +146,7 @@ export function GlobalSearch({
         id: g.id,
         label: g.name,
         sub: g.description || undefined,
-        path: '/app/groups',
+        path: `/app/groups/${g.id}`,
       }))
     const txResults: SearchResult[] = txList
       .filter(
@@ -161,7 +161,7 @@ export function GlobalSearch({
         id: tx.id,
         label: tx.description,
         sub: `${tx.type} · CHF ${tx.amount}`,
-        path: `/app/finance/transactions?tx=${tx.id}`,
+        path: `/app/finance/transactions/${tx.id}`,
       }))
     const inventoryResults: SearchResult[] = inventoryList
       .filter(
@@ -195,7 +195,7 @@ export function GlobalSearch({
         id: e.id,
         label: e.action,
         sub: `${e.actor} · ${e.target}`,
-        path: '/app/audit-log',
+        path: `/app/audit-log/${e.id}`,
       }))
 
     setResults([

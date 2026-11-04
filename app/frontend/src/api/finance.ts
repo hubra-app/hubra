@@ -193,8 +193,16 @@ function adaptTx(b: BackendTransaction): Transaction {
     createdAt: b.created_at ?? "",
     categoryId: b.category_id != null ? String(b.category_id) : null,
     memberName: b.member_name,
+    memberId: b.member_id != null ? String(b.member_id) : null,
     payeeName: b.payee_name,
   };
+}
+
+/** One transaction, for its detail page. */
+export async function getTransaction(id: string): Promise<Transaction> {
+  return adaptTx(
+    await apiFetch<BackendTransaction>(`/app/finance/transactions/${id}`),
+  );
 }
 
 export async function listTransactions(params?: {

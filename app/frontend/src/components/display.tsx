@@ -16,7 +16,7 @@ import { IconSearch, IconPlus, IconX } from '@tabler/icons-react'
 import { categoryColors, colorText, textOn } from '@hubra/ui'
 import { useT } from '@/locales/i18n'
 import type { ReactNode } from 'react'
-import { SlideOver, PanelSection, LoadingSpinner } from './feedback'
+import { PanelSection, LoadingSpinner } from './feedback'
 import { Pagination } from './layout'
 import { usePagination } from './hooks'
 
@@ -215,22 +215,17 @@ export function PanelMemberRow({
   detail,
   avatarColor,
   right,
+  onClick,
 }: {
   name: string
   detail?: ReactNode
   avatarColor?: string
   right?: ReactNode
+  /** Makes the avatar and name a link (e.g. to the member's page). */
+  onClick?: () => void
 }) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        padding: '10px 0',
-        borderBottom: '1px solid var(--hb-border)',
-      }}
-    >
+  const who = (
+    <>
       <Avatar name={name} color={avatarColor ?? '#857f99'} size={32} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <Text fz="sm" fw={600} truncate style={{ color: 'var(--hb-text)' }}>
@@ -242,6 +237,29 @@ export function PanelMemberRow({
           </Text>
         )}
       </div>
+    </>
+  )
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        padding: '10px 0',
+        borderBottom: '1px solid var(--hb-border)',
+      }}
+    >
+      {onClick ? (
+        <UnstyledButton
+          onClick={onClick}
+          className="hb-hover"
+          style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, borderRadius: 8 }}
+        >
+          {who}
+        </UnstyledButton>
+      ) : (
+        who
+      )}
       {right}
     </div>
   )
@@ -319,10 +337,10 @@ export function MemberAddSearch({
   )
 }
 
-export function MemberSlideOver({
+/** The people in a group, tier or function, on that record's own page:
+ * a filter, an "add" search and one row per member that opens their page. */
+export function MemberRoster({
   title,
-  subtitle,
-  icon,
   members,
   loading,
   addLabel,
@@ -331,13 +349,12 @@ export function MemberSlideOver({
   onAdd,
   onAddSearch,
   onRemove,
-  showRemove = false,
-  onClose,
+  onOpen,
+  emptyText,
   footer,
+  testId = 'member-roster',
 }: {
-  title: string
-  subtitle?: string
-  icon?: ReactNode
+  title?: string
   members: SlideOverMember[]
   loading?: boolean
   addLabel?: string
@@ -346,9 +363,11 @@ export function MemberSlideOver({
   onAdd?: (member: SlideOverMember) => void
   onAddSearch?: (query: string) => void
   onRemove?: (member: SlideOverMember) => void
-  showRemove?: boolean
-  onClose: () => void
+  /** Opens the member's page; leave out where the viewer may not see it. */
+  onOpen?: (member: SlideOverMember) => void
+  emptyText?: string
   footer?: ReactNode
+  testId?: string
 }) {
   const { t } = useT()
   const [search, setSearch] = useState('')
@@ -359,7 +378,7 @@ export function MemberSlideOver({
         (m) => m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q),
       )
     : members
-  const pg = usePagination(shown, 10)
+  const pg = usePagination(shown, 25)
 
   useEffect(() => {
     const timer = setTimeout(() => onAddSearch?.(addSearch), 250)
@@ -367,30 +386,7 @@ export function MemberSlideOver({
   }, [addSearch, onAddSearch])
 
   return (
-    <SlideOver
-      title={title}
-      subtitle={subtitle}
-      icon={icon}
-      onClose={onClose}
-      padded={false}
-      footer={
-        pg.totalPages > 1 || footer ? (
-          <>
-            {pg.totalPages > 1 && (
-              <Pagination
-                page={pg.page}
-                perPage={pg.perPage}
-                total={pg.total}
-                totalPages={pg.totalPages}
-                goPage={pg.goPage}
-                setPerPage={pg.setPerPage}
-              />
-            )}
-            {footer}
-          </>
-        ) : undefined
-      }
-    >
+    <div data-testid={testId}>
       {onAdd && (
         <PanelSection label={addLabel}>
           <MemberAddSearch
@@ -409,7 +405,7 @@ export function MemberSlideOver({
 
       <PanelSection
         border={false}
-        label={t('common.members', 'Mitglieder')}
+        label={title ?? t('common.members', 'Mitglieder')}
         right={
           <Text fz="xs" className="num" style={{ color: 'var(--hb-text-3)' }}>
             {q ? `${shown.length} / ${members.length}` : members.length}
@@ -432,7 +428,7 @@ export function MemberSlideOver({
           <Text fz="sm" ta="center" py="xl" style={{ color: 'var(--hb-text-3)' }}>
             {q
               ? t('common.noResults', 'Keine Ergebnisse.')
-              : t('common.noMembersYet', 'Noch keine Mitglieder.')}
+              : (emptyText ?? t('common.noMembersYet', 'Noch keine Mitglieder.'))}
           </Text>
         ) : (
           pg.paged.map((m) => (
@@ -441,15 +437,17 @@ export function MemberSlideOver({
               name={m.name}
               detail={m.email}
               avatarColor={m.avatarColor}
+              onClick={onOpen ? () => onOpen(m) : undefined}
               right={
                 <>
                   {m.tier && <TierTag tier={m.tier} />}
-                  {showRemove && onRemove && (
+                  {onRemove && (
                     <ActionIcon
                       variant="subtle"
                       color="red"
                       onClick={() => onRemove(m)}
                       aria-label={t('common.remove', 'Entfernen')}
+                      title={t('common.remove', 'Entfernen')}
                     >
                       <IconX size={16} />
                     </ActionIcon>
@@ -460,6 +458,17 @@ export function MemberSlideOver({
           ))
         )}
       </PanelSection>
-    </SlideOver>
+      {pg.totalPages > 1 && (
+        <Pagination
+          page={pg.page}
+          perPage={pg.perPage}
+          total={pg.total}
+          totalPages={pg.totalPages}
+          goPage={pg.goPage}
+          setPerPage={pg.setPerPage}
+        />
+      )}
+      {footer}
+    </div>
   )
 }
