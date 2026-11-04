@@ -380,14 +380,17 @@ def message_kind(alert_type: str, level: str | None) -> str:
     return PROBLEM
 
 
-def alert_page(alert_type: str) -> str:
-    """The manage address an alert of this type is about, or ""."""
-    path = ALERT_PAGES.get(alert_type, ("", "/app/platform/alerts"))[1]
+def alert_page(alert_type: str, link: str | None = None) -> str:
+    """The manage address an alert of this type is about, or "".  *link*
+    (a manage path) is this alert's own details page."""
+    path = link or ALERT_PAGES.get(alert_type, ("", "/app/platform/alerts"))[1]
     url = _manage_url(path)
     return url if url.startswith("https://") else ""
 
 
-def alert_buttons(alert_type: str, kind: str = PROBLEM) -> list:
+def alert_buttons(
+    alert_type: str, kind: str = PROBLEM, link: str | None = None
+) -> list:
     """Buttons under a platform message.
 
     A problem: Acknowledge, Silence 1 h, and a link to its page.  A notice or
@@ -399,11 +402,13 @@ def alert_buttons(alert_type: str, kind: str = PROBLEM) -> list:
             _button("Bestätigen", f"p:al:ack:{alert_type}", 1),
             _button("1 h stumm", f"p:al:mute:{alert_type}", 2),
         ]
-    url = alert_page(alert_type)
+    url = alert_page(alert_type, link)
     if url:
         label = (
             _LINK_LABELS.get(alert_type, "Ansehen")
             if kind == NOTICE
+            else "Details ansehen"
+            if link
             else "In manage öffnen"
         )
         row.append(_link(label, url))

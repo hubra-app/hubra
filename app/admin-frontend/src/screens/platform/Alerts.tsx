@@ -298,6 +298,16 @@ export function OverviewPanel() {
               <Text size="sm" style={{ flex: 1, minWidth: 0, wordBreak: 'break-word' }}>
                 {eventText(e)}
               </Text>
+              {typeof e.details?.link === 'string' && e.details.link.startsWith('/app/') && (
+                <Button
+                  size="compact-xs"
+                  variant="subtle"
+                  style={{ flexShrink: 0 }}
+                  onClick={() => navigate(e.details.link as string)}
+                >
+                  {tr('Details', 'Details')}
+                </Button>
+              )}
               <Text size="xs" c="dimmed" style={{ flexShrink: 0 }}>
                 {formatDateTime(e.time)}
               </Text>

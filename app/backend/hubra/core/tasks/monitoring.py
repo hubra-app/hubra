@@ -92,6 +92,13 @@ def _set_alert_state(client, on: bool) -> None:
         pass
 
 
+def alert_active() -> bool:
+    """Whether the error-rate alert is on (went out, not yet resolved)."""
+    from hubra.core.services import perf_monitor
+
+    return _alert_state(perf_monitor._redis())
+
+
 def check_api_error_rate() -> dict:
     """Alert when too many API requests failed with a server error.
 
@@ -132,17 +139,30 @@ def check_api_error_rate() -> dict:
         if rate > threshold:
             if alerting:
                 return {"status": "still_high", **result}
+            fields = [
+                {"name": "Requests", "value": str(total), "inline": True},
+                {"name": "Server errors", "value": str(errors), "inline": True},
+                {"name": "Rate", "value": f"{rate:.1%}", "inline": True},
+            ]
+            # Where they happen: the routes with the most 5xx answers, with
+            # their exact codes ("POST /api/v1/x: 12× 500, 3× 502").
+            top = perf_monitor.top_error_routes(60, 3)
+            if top:
+                fields.append(
+                    {
+                        "name": "Most errors",
+                        "value": "; ".join(perf_monitor.describe_route(r) for r in top),
+                        "inline": False,
+                    }
+                )
             alert_error(
                 title="High API Error Rate",
                 description=(
                     f"{rate:.1%} of API requests in the last hour failed with a "
                     f"server error (threshold {threshold:.1%})"
                 ),
-                fields=[
-                    {"name": "Requests", "value": str(total), "inline": True},
-                    {"name": "Server errors", "value": str(errors), "inline": True},
-                    {"name": "Rate", "value": f"{rate:.1%}", "inline": True},
-                ],
+                fields=fields,
+                link=perf_monitor.API_ERRORS_PAGE,
             )
             _set_alert_state(client, True)
             return {"status": "alert", **result}
@@ -150,6 +170,7 @@ def check_api_error_rate() -> dict:
             alert_resolved(
                 title="API Error Rate Back to Normal",
                 description=f"{rate:.1%} server errors in the last hour",
+                link=perf_monitor.API_ERRORS_PAGE,
             )
             _set_alert_state(client, False)
             return {"status": "resolved", **result}

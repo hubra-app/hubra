@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Alert,
+  Anchor,
   Badge,
   Button,
   CloseButton,
@@ -370,10 +371,16 @@ export function OutboundMailPanel({ onShowLog }: { onShowLog: (level?: EventLeve
 // ── Event log ────────────────────────────────────────────────────────────────
 
 function EventDetails({ event }: { event: PlatformEvent }) {
-  const entries = Object.entries(event.details).filter(([k]) => k !== 'steps')
-  if (entries.length === 0) return null
+  const entries = Object.entries(event.details).filter(([k]) => k !== 'steps' && k !== 'link')
+  const link = typeof event.details.link === 'string' ? event.details.link : ''
+  if (entries.length === 0 && !link) return null
   return (
     <Stack gap={2} mt={4}>
+      {link.startsWith('/app/') && (
+        <Anchor component={Link} to={link} size="xs" fw={600}>
+          {tr('Details ansehen', 'View details')}
+        </Anchor>
+      )}
       {entries.map(([k, v]) => (
         <Text key={k} size="xs" c="dimmed" style={{ wordBreak: 'break-word' }}>
           <Code>{k}</Code> {Array.isArray(v) ? v.join(' · ') : String(v)}
