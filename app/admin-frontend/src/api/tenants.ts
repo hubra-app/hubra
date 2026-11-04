@@ -62,11 +62,11 @@ function buildQuery(params: TenantListParams): string {
 export async function listTenants(
   params: TenantListParams = {},
 ): Promise<TenantListResponse> {
-  return apiFetch<TenantListResponse>(`/system/tenants${buildQuery(params)}`)
+  return apiFetch<TenantListResponse>(`/platform/system/tenants${buildQuery(params)}`)
 }
 
 export async function getTenant(id: number): Promise<{ tenant: Tenant }> {
-  return apiFetch<{ tenant: Tenant }>(`/system/tenants/${id}`)
+  return apiFetch<{ tenant: Tenant }>(`/platform/system/tenants/${id}`)
 }
 
 export async function createTenant(data: {
@@ -76,7 +76,7 @@ export async function createTenant(data: {
   admin_email?: string
   admin_password?: string
 }): Promise<{ tenant: Tenant; provisioning_status_url: string }> {
-  return apiFetch('/system/tenants', {
+  return apiFetch('/platform/system/tenants', {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -86,21 +86,21 @@ export async function deleteTenant(
   id: number,
   force = false,
 ): Promise<{ message: string }> {
-  return apiFetch(`/system/tenants/${id}?force=${force ? '1' : '0'}`, {
+  return apiFetch(`/platform/system/tenants/${id}?force=${force ? '1' : '0'}`, {
     method: 'DELETE',
   })
 }
 
 export async function disableTenant(id: number): Promise<{ tenant: Tenant }> {
-  return apiFetch(`/system/tenants/${id}/disable`, { method: 'POST' })
+  return apiFetch(`/platform/system/tenants/${id}/disable`, { method: 'POST' })
 }
 
 export async function enableTenant(id: number): Promise<{ tenant: Tenant }> {
-  return apiFetch(`/system/tenants/${id}/enable`, { method: 'POST' })
+  return apiFetch(`/platform/system/tenants/${id}/enable`, { method: 'POST' })
 }
 
 export async function archiveTenant(id: number): Promise<{ tenant: Tenant }> {
-  return apiFetch(`/system/tenants/${id}/archive`, { method: 'POST' })
+  return apiFetch(`/platform/system/tenants/${id}/archive`, { method: 'POST' })
 }
 
 export async function impersonateTenant(
@@ -114,7 +114,7 @@ export async function impersonateTenant(
   read_only: boolean
 }> {
   return withStepUp(() =>
-    apiFetch(`/system/tenants/${id}/impersonate`, {
+    apiFetch(`/platform/system/tenants/${id}/impersonate`, {
       method: 'POST',
       body: JSON.stringify(body),
     }),
@@ -141,7 +141,7 @@ export async function listGlobalAudit(
   if (params.page) qs.set('page', String(params.page))
   if (params.per_page) qs.set('per_page', String(params.per_page))
   const s = qs.toString()
-  return apiFetch(`/system/audit${s ? `?${s}` : ''}`)
+  return apiFetch(`/platform/system/audit${s ? `?${s}` : ''}`)
 }
 
 // ── Audit search across the platform and every club ─────────────────────────
@@ -192,13 +192,13 @@ function auditQuery(params: AuditSearchParams) {
 
 export async function searchAudit(params: AuditSearchParams) {
   return apiFetch<{ entries: AuditSearchEntry[]; total: number; page: number; per_page: number }>(
-    `/system/audit/search${auditQuery(params)}`,
+    `/platform/system/audit/search${auditQuery(params)}`,
   )
 }
 
 /** Downloads the search as CSV; returns the rows and whether it was cut. */
 export async function exportAudit(params: Omit<AuditSearchParams, 'page' | 'per_page'>) {
-  const res = await apiFetchRaw(`/system/audit/export${auditQuery(params)}`)
+  const res = await apiFetchRaw(`/platform/system/audit/export${auditQuery(params)}`)
   if (!res.ok) {
     let message = `HTTP ${res.status}`
     try {
@@ -244,11 +244,11 @@ export async function listTenantRequests(
   const qs = new URLSearchParams()
   if (status) qs.set('status', status)
   const s = qs.toString()
-  return apiFetch(`/system/tenant-requests${s ? `?${s}` : ''}`)
+  return apiFetch(`/platform/system/tenant-requests${s ? `?${s}` : ''}`)
 }
 
 export async function listMyTenantRequests(): Promise<{ requests: TenantRequest[] }> {
-  return apiFetch('/system/tenant-requests/mine')
+  return apiFetch('/global/tenant-requests/mine')
 }
 
 export async function createTenantRequest(data: {
@@ -256,7 +256,7 @@ export async function createTenantRequest(data: {
   slug: string
   plan?: string
 }): Promise<{ request: TenantRequest }> {
-  return apiFetch('/system/tenant-requests', {
+  return apiFetch('/platform/system/tenant-requests', {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -270,14 +270,14 @@ export async function approveTenantRequest(
   /** Whether the requester was sent an email about the decision. */
   notified: boolean
 }> {
-  return apiFetch(`/system/tenant-requests/${id}/approve`, { method: 'POST' })
+  return apiFetch(`/platform/system/tenant-requests/${id}/approve`, { method: 'POST' })
 }
 
 export async function rejectTenantRequest(
   id: number,
   note?: string,
 ): Promise<{ request: TenantRequest; notified: boolean }> {
-  return apiFetch(`/system/tenant-requests/${id}/reject`, {
+  return apiFetch(`/platform/system/tenant-requests/${id}/reject`, {
     method: 'POST',
     body: JSON.stringify({ note }),
   })
@@ -296,7 +296,7 @@ export async function listTenantMembers(
   tenantId: number,
 ): Promise<{ members: TenantMember[] }> {
   return apiFetch<{ members: TenantMember[] }>(
-    `/system/tenants/${tenantId}/members`,
+    `/platform/system/tenants/${tenantId}/members`,
   )
 }
 
@@ -305,7 +305,7 @@ export async function addTenantMember(
   data: { email?: string; user_id?: number },
 ): Promise<{ member: TenantMember }> {
   return apiFetch<{ member: TenantMember }>(
-    `/system/tenants/${tenantId}/members`,
+    `/platform/system/tenants/${tenantId}/members`,
     {
       method: 'POST',
       body: JSON.stringify(data),
@@ -325,7 +325,7 @@ export interface MyTenant {
 }
 
 export async function getMyTenants(): Promise<{ tenants: MyTenant[] }> {
-  return apiFetch<{ tenants: MyTenant[] }>('/account/my-tenants')
+  return apiFetch<{ tenants: MyTenant[] }>('/global/account/my-tenants')
 }
 
 export interface TenantModule {
@@ -345,7 +345,7 @@ export interface TenantModule {
 export async function getTenantModules(
   tenantId: number,
 ): Promise<TenantModule[]> {
-  return apiFetch<TenantModule[]>(`/features/tenants/${tenantId}`)
+  return apiFetch<TenantModule[]>(`/app/features/tenants/${tenantId}`)
 }
 
 export async function setTenantModule(
@@ -353,7 +353,7 @@ export async function setTenantModule(
   code: string,
   body: { allowed?: boolean; enabled?: boolean },
 ): Promise<TenantModule> {
-  return apiFetch<TenantModule>(`/features/tenants/${tenantId}/${code}`, {
+  return apiFetch<TenantModule>(`/app/features/tenants/${tenantId}/${code}`, {
     method: 'PUT',
     body: JSON.stringify(body),
   })
@@ -378,7 +378,7 @@ export interface ClubAdminsResponse {
 }
 
 export async function getClubAdmins(tenantId: number) {
-  return apiFetch<ClubAdminsResponse>(`/system/tenants/${tenantId}/admins`)
+  return apiFetch<ClubAdminsResponse>(`/platform/system/tenants/${tenantId}/admins`)
 }
 
 /** `reason` is required when platform staff change a club's admins. */
@@ -388,14 +388,14 @@ export async function addClubAdmin(
   level: 'owner' | 'admin',
   reason?: string,
 ) {
-  return apiFetch<{ admin: ClubAdmin }>(`/system/tenants/${tenantId}/admins`, {
+  return apiFetch<{ admin: ClubAdmin }>(`/platform/system/tenants/${tenantId}/admins`, {
     method: 'POST',
     body: JSON.stringify({ email, level, reason }),
   })
 }
 
 export async function removeClubAdmin(tenantId: number, userId: number, reason?: string) {
-  return apiFetch(`/system/tenants/${tenantId}/admins/${userId}`, {
+  return apiFetch(`/platform/system/tenants/${tenantId}/admins/${userId}`, {
     method: 'DELETE',
     body: JSON.stringify({ reason }),
   })
@@ -442,12 +442,12 @@ export async function listSupportSessions(params: {
     page: number
     per_page: number
     active: number
-  }>(`/system/support-sessions?${qs}`)
+  }>(`/platform/system/support-sessions?${qs}`)
 }
 
 export async function endSupportSession(session: string) {
   return apiFetch<{ ended: string }>(
-    `/system/support-sessions/${encodeURIComponent(session)}/end`,
+    `/platform/system/support-sessions/${encodeURIComponent(session)}/end`,
     { method: 'POST' },
   )
 }
@@ -495,7 +495,7 @@ export async function listTenantsHealth(params: TenantHealthParams = {}): Promis
     if (v !== undefined && v !== '') qs.set(k, String(v))
   }
   const s = qs.toString()
-  return apiFetch(`/system/tenants/health${s ? `?${s}` : ''}`)
+  return apiFetch(`/platform/system/tenants/health${s ? `?${s}` : ''}`)
 }
 
 // ── Usage over time (manage › club › Nutzung) ───────────────────────────────
@@ -520,7 +520,7 @@ export interface TenantTrends {
 }
 
 export async function getTenantTrends(tenantId: number, range: TrendRange) {
-  return apiFetch<TenantTrends>(`/system/tenants/${tenantId}/trends?range=${range}`)
+  return apiFetch<TenantTrends>(`/platform/system/tenants/${tenantId}/trends?range=${range}`)
 }
 
 // ── Limits (members, mails per month, storage) ───────────────────────────────
@@ -545,7 +545,7 @@ export interface TenantLimits {
 }
 
 export async function getTenantLimits(tenantId: number) {
-  return apiFetch<TenantLimits>(`/system/tenants/${tenantId}/limits`)
+  return apiFetch<TenantLimits>(`/platform/system/tenants/${tenantId}/limits`)
 }
 
 /** A number, null for no limit, or "plan" to follow the plan again. */
@@ -553,7 +553,7 @@ export async function setTenantLimits(
   tenantId: number,
   values: Partial<Record<LimitKind, number | null | 'plan'>>,
 ) {
-  return apiFetch<TenantLimits>(`/system/tenants/${tenantId}/limits`, {
+  return apiFetch<TenantLimits>(`/platform/system/tenants/${tenantId}/limits`, {
     method: 'PUT',
     body: JSON.stringify(values),
   })
@@ -575,14 +575,14 @@ export interface TenantEarlyAccess {
 }
 
 export async function getTenantEarlyAccess(tenantId: number) {
-  return apiFetch<TenantEarlyAccess>(`/system/tenants/${tenantId}/early-access`)
+  return apiFetch<TenantEarlyAccess>(`/platform/system/tenants/${tenantId}/early-access`)
 }
 
 export async function setTenantEarlyAccess(
   tenantId: number,
   body: { early_access?: boolean; features?: Record<string, boolean | null> },
 ) {
-  return apiFetch<TenantEarlyAccess>(`/system/tenants/${tenantId}/early-access`, {
+  return apiFetch<TenantEarlyAccess>(`/platform/system/tenants/${tenantId}/early-access`, {
     method: 'PUT',
     body: JSON.stringify(body),
   })
@@ -658,11 +658,11 @@ export interface TenantBilling extends BillingTerms {
 }
 
 export async function getTenantBilling(tenantId: number) {
-  return apiFetch<TenantBilling>(`/system/tenants/${tenantId}/billing`)
+  return apiFetch<TenantBilling>(`/platform/system/tenants/${tenantId}/billing`)
 }
 
 export async function setTenantBilling(tenantId: number, values: Partial<BillingTerms>) {
-  return apiFetch<TenantBilling>(`/system/tenants/${tenantId}/billing`, {
+  return apiFetch<TenantBilling>(`/platform/system/tenants/${tenantId}/billing`, {
     method: 'PATCH',
     body: JSON.stringify(values),
   })
@@ -691,11 +691,11 @@ export interface PlanChoices {
 }
 
 export async function listPlanChoices() {
-  return apiFetch<PlanChoices>('/system/plans')
+  return apiFetch<PlanChoices>('/platform/system/plans')
 }
 
 export async function setTenantPlan(id: number, plan: string) {
-  return apiFetch<{ tenant: Tenant }>(`/system/tenants/${id}`, {
+  return apiFetch<{ tenant: Tenant }>(`/platform/system/tenants/${id}`, {
     method: 'PATCH',
     body: JSON.stringify({ plan }),
   })
@@ -751,7 +751,7 @@ export async function listDataRequests(params: {
   const q = new URLSearchParams()
   if (params.status) q.set('status', params.status)
   if (params.tenant_id) q.set('tenant_id', String(params.tenant_id))
-  return apiFetch<DataRequestList>(`/system/data-requests?${q}`)
+  return apiFetch<DataRequestList>(`/platform/system/data-requests?${q}`)
 }
 
 export async function createDataRequest(
@@ -766,7 +766,7 @@ export async function createDataRequest(
     note?: string
   },
 ) {
-  return apiFetch<DataRequest>(`/system/tenants/${tenantId}/data-requests`, {
+  return apiFetch<DataRequest>(`/platform/system/tenants/${tenantId}/data-requests`, {
     method: 'POST',
     body: JSON.stringify(body),
   })
@@ -776,7 +776,7 @@ export async function updateDataRequest(
   id: number,
   body: Partial<Pick<DataRequest, 'subject_name' | 'subject_email' | 'member_id' | 'note'>>,
 ) {
-  return apiFetch<DataRequest>(`/system/data-requests/${id}`, {
+  return apiFetch<DataRequest>(`/platform/system/data-requests/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(body),
   })
@@ -785,7 +785,7 @@ export async function updateDataRequest(
 /** Downloads the member's data as a JSON file (asks for the password again). */
 export async function downloadDataExport(req: DataRequest) {
   const data = await withStepUp(() =>
-    apiFetch<unknown>(`/system/data-requests/${req.id}/export`, { method: 'POST' }),
+    apiFetch<unknown>(`/platform/system/data-requests/${req.id}/export`, { method: 'POST' }),
   )
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
@@ -800,7 +800,7 @@ export async function downloadDataExport(req: DataRequest) {
 
 export async function deleteDataRequestMember(id: number, confirm: string) {
   return withStepUp(() =>
-    apiFetch<DataRequest>(`/system/data-requests/${id}/delete-member`, {
+    apiFetch<DataRequest>(`/platform/system/data-requests/${id}/delete-member`, {
       method: 'POST',
       body: JSON.stringify({ confirm }),
     }),
@@ -808,7 +808,7 @@ export async function deleteDataRequestMember(id: number, confirm: string) {
 }
 
 export async function closeDataRequest(id: number, status: 'done' | 'rejected', outcome: string) {
-  return apiFetch<DataRequest>(`/system/data-requests/${id}/${status}`, {
+  return apiFetch<DataRequest>(`/platform/system/data-requests/${id}/${status}`, {
     method: 'POST',
     body: JSON.stringify({ outcome }),
   })

@@ -48,7 +48,7 @@ export async function login(
   password: string,
   keepSignedIn = true,
 ): Promise<RawAuthResponse> {
-  return apiFetch<RawAuthResponse>('/auth/login', {
+  return apiFetch<RawAuthResponse>('/global/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password, keepSignedIn }),
   })
@@ -56,7 +56,7 @@ export async function login(
 
 /** Second step of a sign-in with two-factor: an app or recovery code. */
 export async function loginMfa(mfaToken: string, code: string): Promise<RawAuthResponse> {
-  return apiFetch<RawAuthResponse>('/auth/login/mfa', {
+  return apiFetch<RawAuthResponse>('/global/auth/login/mfa', {
     method: 'POST',
     body: JSON.stringify({ mfaToken, code }),
   })
@@ -91,25 +91,25 @@ export interface TotpSetup {
 }
 
 export async function getMfa(): Promise<MfaStatus> {
-  return apiFetch<MfaStatus>('/account/mfa')
+  return apiFetch<MfaStatus>('/global/account/mfa')
 }
 
 export async function startTotpSetup(currentPassword: string): Promise<TotpSetup> {
-  return apiFetch<TotpSetup>('/account/mfa/totp/setup', {
+  return apiFetch<TotpSetup>('/global/account/mfa/totp/setup', {
     method: 'POST',
     body: JSON.stringify({ currentPassword }),
   })
 }
 
 export async function enableTotp(code: string): Promise<MfaStatus & { recoveryCodes: string[] }> {
-  return apiFetch('/account/mfa/totp/enable', {
+  return apiFetch('/global/account/mfa/totp/enable', {
     method: 'POST',
     body: JSON.stringify({ code }),
   })
 }
 
 export async function disableTotp(currentPassword: string): Promise<MfaStatus> {
-  return apiFetch<MfaStatus>('/account/mfa/totp/disable', {
+  return apiFetch<MfaStatus>('/global/account/mfa/totp/disable', {
     method: 'POST',
     body: JSON.stringify({ currentPassword }),
   })
@@ -121,7 +121,7 @@ interface PasskeyCeremony {
 }
 
 export async function passkeyRegisterOptions(currentPassword: string): Promise<PasskeyCeremony> {
-  return apiFetch<PasskeyCeremony>('/account/passkeys/options', {
+  return apiFetch<PasskeyCeremony>('/global/account/passkeys/options', {
     method: 'POST',
     body: JSON.stringify({ currentPassword }),
   })
@@ -132,14 +132,14 @@ export async function addPasskey(
   credential: Record<string, unknown>,
   name: string,
 ): Promise<MfaStatus & { recoveryCodes: string[] }> {
-  return apiFetch('/account/passkeys', {
+  return apiFetch('/global/account/passkeys', {
     method: 'POST',
     body: JSON.stringify({ state, credential, name }),
   })
 }
 
 export async function removePasskey(id: number, currentPassword: string): Promise<MfaStatus> {
-  return apiFetch<MfaStatus>(`/account/passkeys/${id}/delete`, {
+  return apiFetch<MfaStatus>(`/global/account/passkeys/${id}/delete`, {
     method: 'POST',
     body: JSON.stringify({ currentPassword }),
   })
@@ -147,7 +147,7 @@ export async function removePasskey(id: number, currentPassword: string): Promis
 
 /** Options for a passkey sign-in; with *mfaToken* only that account's passkeys. */
 export async function passkeyLoginOptions(mfaToken?: string): Promise<PasskeyCeremony> {
-  return apiFetch<PasskeyCeremony>('/auth/passkey/options', {
+  return apiFetch<PasskeyCeremony>('/global/auth/passkey/options', {
     method: 'POST',
     body: JSON.stringify(mfaToken ? { mfaToken } : {}),
   })
@@ -158,7 +158,7 @@ export async function passkeyLogin(
   credential: Record<string, unknown>,
   opts: { mfaToken?: string; keepSignedIn?: boolean } = {},
 ): Promise<RawAuthResponse> {
-  return apiFetch<RawAuthResponse>('/auth/passkey/login', {
+  return apiFetch<RawAuthResponse>('/global/auth/passkey/login', {
     method: 'POST',
     body: JSON.stringify({ state, credential, ...opts }),
   })
@@ -167,7 +167,7 @@ export async function passkeyLogin(
 export async function renewRecoveryCodes(
   currentPassword: string,
 ): Promise<MfaStatus & { recoveryCodes: string[] }> {
-  return apiFetch('/account/mfa/recovery-codes', {
+  return apiFetch('/global/account/mfa/recovery-codes', {
     method: 'POST',
     body: JSON.stringify({ currentPassword }),
   })
@@ -179,7 +179,7 @@ export async function signup(
   password: string,
   keepSignedIn = true,
 ): Promise<RawAuthResponse> {
-  return apiFetch<RawAuthResponse>('/auth/signup', {
+  return apiFetch<RawAuthResponse>('/global/auth/signup', {
     method: 'POST',
     body: JSON.stringify({ name, email, password, keepSignedIn }),
   })
@@ -188,7 +188,7 @@ export async function signup(
 export async function switchTenant(
   tenantSlug: string,
 ): Promise<RawAuthResponse> {
-  return apiFetch<RawAuthResponse>('/auth/switch-tenant', {
+  return apiFetch<RawAuthResponse>('/global/auth/switch-tenant', {
     method: 'POST',
     body: JSON.stringify({ tenantSlug }),
   })
@@ -197,11 +197,11 @@ export async function switchTenant(
 export async function getMyPermissions(
   signal?: AbortSignal,
 ): Promise<PermissionsResponse> {
-  return apiFetch<PermissionsResponse>('/account/permissions', { signal })
+  return apiFetch<PermissionsResponse>('/global/account/permissions', { signal })
 }
 
 export async function forgotPassword(email: string): Promise<void> {
-  await apiFetch('/auth/forgot-password', {
+  await apiFetch('/global/auth/forgot-password', {
     method: 'POST',
     body: JSON.stringify({ email }),
   })
@@ -211,26 +211,26 @@ export async function resetPassword(
   token: string,
   password: string,
 ): Promise<void> {
-  await apiFetch('/auth/reset-password', {
+  await apiFetch('/global/auth/reset-password', {
     method: 'POST',
     body: JSON.stringify({ token, password }),
   })
 }
 
 export async function verifyEmail(token: string): Promise<{ ok: boolean; verified: boolean }> {
-  return apiFetch(`/account/verify-email`, {
+  return apiFetch(`/global/account/verify-email`, {
     method: 'POST',
     body: JSON.stringify({ token }),
   })
 }
 
 export async function logout(): Promise<void> {
-  await apiFetch('/auth/logout', { method: 'POST' }).catch(() => {})
+  await apiFetch('/global/auth/logout', { method: 'POST' }).catch(() => {})
 }
 
 /** The clubs the signed-in user belongs to. */
 export async function getMyTenants(): Promise<{ tenants: TenantChoice[] }> {
-  return apiFetch<{ tenants: TenantChoice[] }>('/account/my-tenants')
+  return apiFetch<{ tenants: TenantChoice[] }>('/global/account/my-tenants')
 }
 
 export interface ClubListing {
@@ -252,12 +252,12 @@ export async function findClubs(
   search: string,
 ): Promise<{ clubs: ClubListing[]; canJoinDirectly: boolean }> {
   const qs = search ? `?search=${encodeURIComponent(search)}` : ''
-  return apiFetch(`/system/clubs${qs}`)
+  return apiFetch(`/platform/system/clubs${qs}`)
 }
 
 /** Clubs the signed-in user asked to join that have not answered yet. */
 export async function getMyJoinRequests(): Promise<{ requests: { slug: string; name: string }[] }> {
-  return apiFetch('/system/join-requests/mine')
+  return apiFetch('/global/join-requests/mine')
 }
 
 export interface ClubPage extends ClubListing {
@@ -268,7 +268,7 @@ export interface ClubPage extends ClubListing {
 
 /** One club for its join page (the club app's /apply sends people here). */
 export async function getClub(slug: string): Promise<ClubPage> {
-  return apiFetch(`/system/clubs/${encodeURIComponent(slug)}`)
+  return apiFetch(`/global/clubs/${encodeURIComponent(slug)}`)
 }
 
 /** Join a club (platform managers) or ask to join it (everyone else). */
@@ -276,7 +276,7 @@ export async function joinClub(
   slug: string,
   wantsTierId?: number,
 ): Promise<{ status: 'joined' | 'requested'; club: { slug: string; name: string } }> {
-  return apiFetch(`/system/clubs/${encodeURIComponent(slug)}/join`, {
+  return apiFetch(`/global/clubs/${encodeURIComponent(slug)}/join`, {
     method: 'POST',
     body: JSON.stringify(wantsTierId ? { wantsTierId } : {}),
   })
@@ -295,7 +295,7 @@ export interface ClubRequest {
 
 /** The new clubs the signed-in user asked for, newest first. */
 export async function getMyClubRequests(): Promise<{ requests: ClubRequest[] }> {
-  return apiFetch('/system/tenant-requests/mine')
+  return apiFetch('/global/tenant-requests/mine')
 }
 
 /** Ask the platform for a new club; staff review it. */
@@ -303,7 +303,7 @@ export async function requestClub(data: {
   name: string
   slug: string
 }): Promise<{ request: ClubRequest }> {
-  return apiFetch('/system/tenant-requests', {
+  return apiFetch('/platform/system/tenant-requests', {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -322,11 +322,11 @@ export interface VerificationStatus {
 }
 
 export async function getVerificationStatus(signal?: AbortSignal): Promise<VerificationStatus> {
-  return apiFetch<VerificationStatus>('/account/email-verification', { signal })
+  return apiFetch<VerificationStatus>('/global/account/email-verification', { signal })
 }
 
 export async function sendVerificationEmail(): Promise<void> {
-  await apiFetch('/account/request-email-verification', { method: 'POST' })
+  await apiFetch('/global/account/request-email-verification', { method: 'POST' })
 }
 
 /** New login and private address; a new link goes out. */
@@ -334,7 +334,7 @@ export async function changeEmail(
   email: string,
   currentPassword: string,
 ): Promise<VerificationStatus> {
-  return apiFetch<VerificationStatus>('/account/email', {
+  return apiFetch<VerificationStatus>('/global/account/email', {
     method: 'PATCH',
     body: JSON.stringify({ email, currentPassword }),
   })
@@ -363,18 +363,18 @@ export type ProfileUpdate = Partial<
 >
 
 export async function getProfile(): Promise<Profile> {
-  return apiFetch<Profile>('/account/profile')
+  return apiFetch<Profile>('/global/account/profile')
 }
 
 export async function updateProfile(updates: ProfileUpdate): Promise<Profile> {
-  return apiFetch<Profile>('/account/profile', {
+  return apiFetch<Profile>('/global/account/profile', {
     method: 'PATCH',
     body: JSON.stringify(updates),
   })
 }
 
 export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
-  await apiFetch('/account/password', {
+  await apiFetch('/global/account/password', {
     method: 'POST',
     body: JSON.stringify({ currentPassword, newPassword }),
   })
@@ -394,18 +394,18 @@ export interface AccountSession {
 }
 
 export async function getSessions(): Promise<AccountSession[]> {
-  return apiFetch<AccountSession[]>('/account/all-sessions')
+  return apiFetch<AccountSession[]>('/global/account/all-sessions')
 }
 
 export async function revokeSession(s: AccountSession): Promise<void> {
   const path = s.club
-    ? `/account/all-sessions/${encodeURIComponent(s.club.slug)}/${s.id}`
-    : `/account/account-sessions/${s.id}`
+    ? `/global/account/all-sessions/${encodeURIComponent(s.club.slug)}/${s.id}`
+    : `/global/account/account-sessions/${s.id}`
   await apiFetch(path, { method: 'DELETE' })
 }
 
 export async function revokeOtherSessions(): Promise<{ revoked: number }> {
-  return apiFetch('/account/all-sessions/revoke-all', { method: 'POST' })
+  return apiFetch('/global/account/all-sessions/revoke-all', { method: 'POST' })
 }
 
 /** A club's invite, as the signed-in person sees it before accepting. */
@@ -419,7 +419,7 @@ export interface ClubInvite {
 }
 
 export async function lookupInvite(token: string): Promise<ClubInvite> {
-  return apiFetch('/system/invites/lookup', {
+  return apiFetch('/global/invites/lookup', {
     method: 'POST',
     body: JSON.stringify({ token }),
   })
@@ -428,7 +428,7 @@ export async function lookupInvite(token: string): Promise<ClubInvite> {
 export async function acceptInvite(
   token: string,
 ): Promise<{ status: 'joined'; club: { slug: string; name: string } }> {
-  return apiFetch('/system/invites/accept', {
+  return apiFetch('/global/invites/accept', {
     method: 'POST',
     body: JSON.stringify({ token }),
   })
@@ -444,13 +444,13 @@ export interface MyInvite {
 
 /** Open invites to this account, for when the link got lost on the way. */
 export async function getMyInvites(): Promise<{ invites: MyInvite[] }> {
-  return apiFetch('/system/invites/mine')
+  return apiFetch('/global/invites/mine')
 }
 
 export async function acceptMyInvite(
   id: number,
 ): Promise<{ status: 'joined'; club: { slug: string; name: string } }> {
-  return apiFetch(`/system/invites/${id}/accept`, { method: 'POST' })
+  return apiFetch(`/global/invites/${id}/accept`, { method: 'POST' })
 }
 
 /** One of the person's notifications, from one of their clubs. */
@@ -470,11 +470,11 @@ export async function getNotifications(): Promise<{
   data: AccountNotification[]
   meta: { unread: number }
 }> {
-  return apiFetch('/account/notifications')
+  return apiFetch('/global/account/notifications')
 }
 
 const notificationPath = (n: AccountNotification) =>
-  `/account/notifications/${encodeURIComponent(n.club.slug ?? '-')}/${n.id}`
+  `/global/account/notifications/${encodeURIComponent(n.club.slug ?? '-')}/${n.id}`
 
 export async function markNotificationRead(n: AccountNotification): Promise<void> {
   await apiFetch(`${notificationPath(n)}/read`, { method: 'PATCH' })
@@ -485,12 +485,12 @@ export async function deleteNotification(n: AccountNotification): Promise<void> 
 }
 
 export async function markAllNotificationsRead(): Promise<void> {
-  await apiFetch('/account/notifications/read-all', { method: 'POST' })
+  await apiFetch('/global/account/notifications/read-all', { method: 'POST' })
 }
 
 /** Deletes the person's notifications in all clubs; ``readOnly`` keeps unread ones. */
 export async function clearNotifications(readOnly = false): Promise<void> {
-  await apiFetch(`/account/notifications${readOnly ? '?read=1' : ''}`, { method: 'DELETE' })
+  await apiFetch(`/global/account/notifications${readOnly ? '?read=1' : ''}`, { method: 'DELETE' })
 }
 
 /** An outside account (Discord) linked to this account. */
@@ -509,16 +509,16 @@ export interface LinkedAccounts {
 }
 
 export async function getLinkedAccounts(): Promise<LinkedAccounts> {
-  return apiFetch('/account/linked-accounts/')
+  return apiFetch('/global/account/linked-accounts/')
 }
 
 /** Where to send the browser to sign in on the outside service. */
 export async function startLinkAccount(provider: string): Promise<{ url: string }> {
-  return apiFetch(`/account/linked-accounts/${provider}/start`, { method: 'POST' })
+  return apiFetch(`/global/account/linked-accounts/${provider}/start`, { method: 'POST' })
 }
 
 export async function unlinkAccount(provider: string): Promise<void> {
-  await apiFetch(`/account/linked-accounts/${provider}`, { method: 'DELETE' })
+  await apiFetch(`/global/account/linked-accounts/${provider}`, { method: 'DELETE' })
 }
 
 // ── Confirming a platform action (manage's step-up) ─────────────────────────
@@ -533,12 +533,12 @@ export interface StepUpStatus {
 }
 
 export async function getStepUpStatus(signal?: AbortSignal): Promise<StepUpStatus> {
-  return apiFetch<StepUpStatus>('/account/step-up', { signal })
+  return apiFetch<StepUpStatus>('/global/account/step-up', { signal })
 }
 
 /** A challenge tied to this account and this sign-in. */
 export async function stepUpPasskeyOptions(): Promise<PasskeyCeremony> {
-  return apiFetch<PasskeyCeremony>('/account/step-up/passkey/options', {
+  return apiFetch<PasskeyCeremony>('/global/account/step-up/passkey/options', {
     method: 'POST',
     body: JSON.stringify({}),
   })
@@ -548,7 +548,7 @@ export async function stepUpWithPasskey(
   state: string,
   credential: Record<string, unknown>,
 ): Promise<{ sudoUntil: string }> {
-  return apiFetch('/account/step-up/passkey', {
+  return apiFetch('/global/account/step-up/passkey', {
     method: 'POST',
     body: JSON.stringify({ state, credential }),
   })

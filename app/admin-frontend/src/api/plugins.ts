@@ -1,7 +1,7 @@
 import { withStepUp } from '@/api/stepUp'
 import { apiFetch, apiFetchRaw } from '@hubra/api-client'
 
-const P = '/manager/plugins'
+const P = '/platform/plugins'
 
 export interface PluginTrust {
   /** official, community, unsigned, invalid or bundled */

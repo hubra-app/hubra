@@ -18,7 +18,7 @@ import type { Lang } from './lang'
 
 // Release notes ("Neuigkeiten", from CHANGELOG.md) and the roadmap (from
 // ROADMAP.yaml), shared by the club app and manage. Both come from the
-// public /api/v1/version endpoints. Texts are German or English: the
+// public /api/v1/global/version endpoints. Texts are German or English: the
 // changelog comes in the page's language (?lang=), English where a version
 // has no German text yet.
 

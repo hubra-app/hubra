@@ -50,6 +50,12 @@ from hubra.core.tenant.club_settings import (
 from hubra.core.tenant.service import TenantProvisioningError, TenantService
 
 tenant_admin_bp = Blueprint("tenant_admin", __name__)
+# The person's own side: club directory, invites, join and club requests,
+# ending a support session. Mounted at /api/v1/global (hubra.core.api_areas);
+# the old /api/v1/system/... paths are rewritten there. Submitting a club
+# request also stays on tenant_admin_bp for one release, because its old
+# path /api/v1/system/tenant-requests is shared with the staff list.
+club_access_bp = Blueprint("club_access", __name__)
 
 _log = logging.getLogger(__name__)
 
@@ -262,7 +268,7 @@ def provision_tenant():
             jsonify(
                 {
                     "tenant": _tenant_to_dict(tenant),
-                    "provisioning_status_url": f"/api/v1/system/tenants/{tenant.id}/provisioning-status",
+                    "provisioning_status_url": f"/api/v1/platform/system/tenants/{tenant.id}/provisioning-status",
                 }
             ),
             201,
@@ -763,7 +769,7 @@ def impersonate_tenant_user(tenant_id: int):
     return response
 
 
-@tenant_admin_bp.route("/impersonation/stop", methods=["POST"])
+@club_access_bp.route("/impersonation/stop", methods=["POST"])
 @jwt_required()
 def stop_impersonation():
     """Stop impersonating and give the platform user back their own session.
@@ -1076,6 +1082,7 @@ def _audit_tenant_request(action: str, req: TenantRequest, actor_id, **details):
     club_requests.audit(action, req, actor_id, request.remote_addr, **details)
 
 
+@club_access_bp.route("/tenant-requests", methods=["POST"])
 @tenant_admin_bp.route("/tenant-requests", methods=["POST"])
 @jwt_required()
 def submit_tenant_request():
@@ -1146,7 +1153,7 @@ def list_tenant_requests():
     return jsonify({"requests": [_tenant_request_to_dict(r) for r in requests]})
 
 
-@tenant_admin_bp.route("/tenant-requests/mine", methods=["GET"])
+@club_access_bp.route("/tenant-requests/mine", methods=["GET"])
 @jwt_required()
 def list_my_tenant_requests():
     """List the current user's tenant requests."""
@@ -1390,7 +1397,7 @@ def _membership_in(tenant_id: int, user: User) -> str | None:
         reset_search_path()
 
 
-@tenant_admin_bp.route("/clubs", methods=["GET"])
+@club_access_bp.route("/clubs", methods=["GET"])
 @jwt_required()
 def club_directory():
     """Active clubs the signed-in user can ask to join, with their status.
@@ -1438,7 +1445,7 @@ def club_directory():
     return jsonify({"clubs": clubs, "canJoinDirectly": can_join})
 
 
-@tenant_admin_bp.route("/join-requests/mine", methods=["GET"])
+@club_access_bp.route("/join-requests/mine", methods=["GET"])
 @jwt_required()
 def my_join_requests():
     """The clubs the signed-in user asked to join that have not answered yet.
@@ -1482,7 +1489,7 @@ def _club_tiers(tenant_id: int) -> list[dict]:
         reset_search_path()
 
 
-@tenant_admin_bp.route("/clubs/<slug>", methods=["GET"])
+@club_access_bp.route("/clubs/<slug>", methods=["GET"])
 @jwt_required()
 def club_page(slug: str):
     """One club for its join page on SSO: name, your status, the tiers."""
@@ -1501,7 +1508,7 @@ def club_page(slug: str):
     )
 
 
-@tenant_admin_bp.route("/clubs/<slug>/logo", methods=["GET"])
+@club_access_bp.route("/clubs/<slug>/logo", methods=["GET"])
 def club_logo_image(slug: str):
     """The club's logo as an image, for <img> tags on every portal.
 
@@ -1525,7 +1532,7 @@ def club_logo_image(slug: str):
     return response
 
 
-@tenant_admin_bp.route("/clubs/<slug>/join", methods=["POST"])
+@club_access_bp.route("/clubs/<slug>/join", methods=["POST"])
 @jwt_required()
 def join_club(slug: str):
     """Join a club, or ask to join it.
@@ -1610,7 +1617,7 @@ def _invite_from_body():
     return invite, tenant
 
 
-@tenant_admin_bp.route("/invites/lookup", methods=["POST"])
+@club_access_bp.route("/invites/lookup", methods=["POST"])
 @jwt_required()
 def lookup_invite():
     """The club and address behind an invite link, for the SSO accept page."""
@@ -1657,7 +1664,7 @@ def _accept(invite, tenant: Tenant, user: User):
     return jsonify({"status": "joined", "club": club}), 200
 
 
-@tenant_admin_bp.route("/invites/accept", methods=["POST"])
+@club_access_bp.route("/invites/accept", methods=["POST"])
 @jwt_required()
 def accept_invite():
     """Accept an invite: the signed-in account with the invited address joins."""
@@ -1673,7 +1680,7 @@ def _live_club(tenant_id: int) -> Tenant | None:
     return tenant
 
 
-@tenant_admin_bp.route("/invites/mine", methods=["GET"])
+@club_access_bp.route("/invites/mine", methods=["GET"])
 @jwt_required()
 def my_invites():
     """Open invites to the signed-in account's confirmed address.
@@ -1701,7 +1708,7 @@ def my_invites():
     return jsonify({"invites": invites})
 
 
-@tenant_admin_bp.route("/invites/<int:invite_id>/accept", methods=["POST"])
+@club_access_bp.route("/invites/<int:invite_id>/accept", methods=["POST"])
 @jwt_required()
 def accept_my_invite(invite_id: int):
     """Accept one of :func:`my_invites` (no link needed: the address is confirmed)."""

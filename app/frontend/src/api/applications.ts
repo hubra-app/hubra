@@ -23,7 +23,7 @@ function adapt(b: BackendApplication): Application {
 }
 
 export async function listApplications(): Promise<Application[]> {
-  const data = await apiFetch<BackendApplication[]>("/applications");
+  const data = await apiFetch<BackendApplication[]>("/app/applications");
   return data.map(adapt);
 }
 
@@ -34,7 +34,7 @@ export async function approveApplication(
 ): Promise<{ invited: boolean }> {
   // 202 { invited: true }: the applicant had no account and got an invite.
   const res = await apiFetch<{ invited?: boolean }>(
-    `/applications/${id}/approve`,
+    `/app/applications/${id}/approve`,
     {
       method: "POST",
       body: JSON.stringify({ tierId, role }),
@@ -44,5 +44,5 @@ export async function approveApplication(
 }
 
 export async function declineApplication(id: string): Promise<void> {
-  await apiFetch(`/applications/${id}/decline`, { method: "POST" });
+  await apiFetch(`/app/applications/${id}/decline`, { method: "POST" });
 }

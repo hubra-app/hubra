@@ -78,30 +78,30 @@ export interface RoadmapItem {
 }
 
 export function sendCase(body: NewCase) {
-  return apiFetch<SupportCase>('/support/cases', { method: 'POST', body: JSON.stringify(body) })
+  return apiFetch<SupportCase>('/global/support/cases', { method: 'POST', body: JSON.stringify(body) })
 }
 
 export function myCases() {
-  return apiFetch<SupportCase[]>('/support/cases')
+  return apiFetch<SupportCase[]>('/global/support/cases')
 }
 
 export function myCase(id: number) {
-  return apiFetch<SupportCase>(`/support/cases/${id}`)
+  return apiFetch<SupportCase>(`/global/support/cases/${id}`)
 }
 
 export function replyToCase(id: number, body: string) {
-  return apiFetch<CaseComment>(`/support/cases/${id}/comments`, {
+  return apiFetch<CaseComment>(`/global/support/cases/${id}/comments`, {
     method: 'POST',
     body: JSON.stringify({ body }),
   })
 }
 
 export function roadmap() {
-  return apiFetch<RoadmapItem[]>('/support/roadmap')
+  return apiFetch<RoadmapItem[]>('/global/support/roadmap')
 }
 
 export function setVote(id: number, on: boolean) {
-  return apiFetch<{ id: number; votes: number; voted: boolean }>(`/support/roadmap/${id}/vote`, {
+  return apiFetch<{ id: number; votes: number; voted: boolean }>(`/global/support/roadmap/${id}/vote`, {
     method: on ? 'POST' : 'DELETE',
   })
 }

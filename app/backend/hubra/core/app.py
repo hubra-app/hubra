@@ -139,6 +139,12 @@ def create_app(config_name: str | None = None) -> Flask:
 
     install_search_path_guard()
 
+    # Old API paths (/api/v1/members, /api/v1/manager/...) to the new areas
+    # /api/v1/app, /platform and /global; inside the slug wrapper, so the
+    # slug is gone first (hubra.core.api_areas).
+    from hubra.core.api_areas import LegacyApiPaths
+
+    app.wsgi_app = LegacyApiPaths(app.wsgi_app)
     app.wsgi_app = TenantPathMiddleware(app.wsgi_app)
 
     # ── Backend role (HUBRA_ROLE): a club or platform backend refuses the
@@ -269,7 +275,7 @@ def create_app(config_name: str | None = None) -> Flask:
         resources={
             # The public pricing and plugin list (services/plans.py): any
             # site may read them, without cookies.
-            r"/api/v1/public/*": {
+            r"/api/v1/global/public/*": {
                 "origins": "*",
                 "send_wildcard": True,
                 "supports_credentials": False,

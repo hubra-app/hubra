@@ -99,7 +99,7 @@ export async function listEvents(
   if (params?.type) qs.set("type", params.type);
   if (params?.category) qs.set("category", params.category);
   const suffix = qs.toString() ? `?${qs}` : "";
-  const data = await apiFetch<BackendEvent[]>(`/events${suffix}`);
+  const data = await apiFetch<BackendEvent[]>(`/app/events${suffix}`);
   return data.map(adapt);
 }
 
@@ -150,7 +150,7 @@ export async function createEvent(input: EventCreate): Promise<ClubEvent> {
     body.group_id = input.groupId ? Number(input.groupId) : null;
   if (input.recurrence) body.recurrence = recurrenceBody(input.recurrence);
 
-  const b = await apiFetch<BackendEvent>("/events/", {
+  const b = await apiFetch<BackendEvent>("/app/events/", {
     method: "POST",
     body: JSON.stringify(body),
   });
@@ -185,7 +185,7 @@ export async function updateEvent(
   if (input.recurrence) body.recurrence = recurrenceBody(input.recurrence);
 
   const suffix = scope === "following" ? "?scope=following" : "";
-  const b = await apiFetch<BackendEvent>(`/events/${id}${suffix}`, {
+  const b = await apiFetch<BackendEvent>(`/app/events/${id}${suffix}`, {
     method: "PATCH",
     body: JSON.stringify(body),
   });
@@ -197,7 +197,7 @@ export async function deleteEvent(
   scope: SeriesScope = "this",
 ): Promise<void> {
   const suffix = scope === "following" ? "?scope=following" : "";
-  await apiFetch(`/events/${id}${suffix}`, { method: "DELETE" });
+  await apiFetch(`/app/events/${id}${suffix}`, { method: "DELETE" });
 }
 
 // The signed-in member signs up or gives up their place. This goes through
@@ -211,7 +211,7 @@ export async function joinEvent(
 ): Promise<string> {
   void memberId;
   // "registered", "approved", "waitlisted", or "pending" (needs approval).
-  const reg = await apiFetch<{ status: string }>(`/events/${eventId}/register`, {
+  const reg = await apiFetch<{ status: string }>(`/app/events/${eventId}/register`, {
     method: "POST",
     body: JSON.stringify({}),
   });
@@ -223,7 +223,7 @@ export async function leaveEvent(
   memberId: string,
 ): Promise<void> {
   void memberId;
-  await apiFetch(`/events/${eventId}/cancel-registration`, {
+  await apiFetch(`/app/events/${eventId}/cancel-registration`, {
     method: "POST",
   });
 }
@@ -276,7 +276,7 @@ export async function listRegistrations(
 ): Promise<EventRegistration[]> {
   const suffix = status ? `?status=${encodeURIComponent(status)}` : "";
   const data = await apiFetch<BackendRegistration[]>(
-    `/events/${eventId}/registrations${suffix}`,
+    `/app/events/${eventId}/registrations${suffix}`,
   );
   return data.map(adaptRegistration);
 }
@@ -288,20 +288,20 @@ export async function decideRegistration(
   decision: "approve" | "decline",
 ): Promise<EventRegistration> {
   const r = await apiFetch<BackendRegistration>(
-    `/events/${eventId}/registrations/${memberId}/${decision}`,
+    `/app/events/${eventId}/registrations/${memberId}/${decision}`,
     { method: "POST" },
   );
   return adaptRegistration(r);
 }
 
 export async function getCalendarFeedUrl(): Promise<string> {
-  const data = await apiFetch<{ url: string }>("/events/calendar/feed");
+  const data = await apiFetch<{ url: string }>("/app/events/calendar/feed");
   return data.url;
 }
 
 /** Replaces the feed link; the old one stops working. */
 export async function renewCalendarFeedUrl(): Promise<string> {
-  const data = await apiFetch<{ url: string }>("/events/calendar/feed/renew", {
+  const data = await apiFetch<{ url: string }>("/app/events/calendar/feed/renew", {
     method: "POST",
   });
   return data.url;
@@ -338,7 +338,7 @@ const adaptRoll = (rows: BackendRollEntry[]): RollEntry[] =>
 /** The roll of one event: the group's members and whoever signed up. */
 export async function getRoll(eventId: string): Promise<RollEntry[]> {
   return adaptRoll(
-    await apiFetch<BackendRollEntry[]>(`/events/${eventId}/attendance`),
+    await apiFetch<BackendRollEntry[]>(`/app/events/${eventId}/attendance`),
   );
 }
 
@@ -347,7 +347,7 @@ export async function saveRoll(
   entries: { memberId: number; status: AttendanceStatus | null }[],
 ): Promise<RollEntry[]> {
   return adaptRoll(
-    await apiFetch<BackendRollEntry[]>(`/events/${eventId}/attendance`, {
+    await apiFetch<BackendRollEntry[]>(`/app/events/${eventId}/attendance`, {
       method: "PUT",
       body: JSON.stringify({
         entries: entries.map((e) => ({ member_id: e.memberId, status: e.status })),
@@ -400,8 +400,8 @@ function overviewPath(f: AttendanceFilter, csv = false) {
   if (f.category) qs.set("category", f.category);
   if (csv) qs.set("format", "csv");
   return f.groupId
-    ? `/events/attendance/groups/${f.groupId}?${qs}`
-    : `/events/attendance?${qs}`;
+    ? `/app/events/attendance/groups/${f.groupId}?${qs}`
+    : `/app/events/attendance?${qs}`;
 }
 
 /** Attendance per member over the events of a period. */

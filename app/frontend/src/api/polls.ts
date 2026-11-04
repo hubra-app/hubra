@@ -59,7 +59,7 @@ function adapt(b: BackendPoll): Poll {
 }
 
 export async function listPolls(): Promise<Poll[]> {
-  const data = await apiFetch<BackendPoll[]>("/polls");
+  const data = await apiFetch<BackendPoll[]>("/app/polls");
   return data.map(adapt);
 }
 
@@ -82,7 +82,7 @@ function toInstant(value: string | null | undefined): string | null | undefined 
 }
 
 export async function createPoll(input: PollCreate): Promise<Poll> {
-  const b = await apiFetch<BackendPoll>("/polls/", {
+  const b = await apiFetch<BackendPoll>("/app/polls/", {
     method: "POST",
     body: JSON.stringify({
       question: input.question,
@@ -123,7 +123,7 @@ export async function updatePoll(
   if (input.requiredFunctionIds !== undefined)
     body.required_function_ids = input.requiredFunctionIds;
 
-  const b = await apiFetch<BackendPoll>(`/polls/${id}`, {
+  const b = await apiFetch<BackendPoll>(`/app/polls/${id}`, {
     method: "PATCH",
     body: JSON.stringify(body),
   });
@@ -135,7 +135,7 @@ export async function castVote(
   optionIndex: number,
   onBehalfOf?: number,
 ): Promise<Poll> {
-  const b = await apiFetch<BackendPoll>(`/polls/${pollId}/vote`, {
+  const b = await apiFetch<BackendPoll>(`/app/polls/${pollId}/vote`, {
     method: "POST",
     body: JSON.stringify({
       option_index: optionIndex,
@@ -146,11 +146,11 @@ export async function castVote(
 }
 
 export async function deletePoll(id: string): Promise<void> {
-  await apiFetch(`/polls/${id}`, { method: "DELETE" });
+  await apiFetch(`/app/polls/${id}`, { method: "DELETE" });
 }
 
 export async function remindPoll(id: string): Promise<{ sent: number }> {
-  return apiFetch<{ sent: number }>(`/polls/${id}/remind`, {
+  return apiFetch<{ sent: number }>(`/app/polls/${id}/remind`, {
     method: "POST",
   });
 }
@@ -163,19 +163,19 @@ export interface ProxyState {
 }
 
 export async function getProxy(pollId: string): Promise<ProxyState> {
-  return apiFetch<ProxyState>(`/polls/${pollId}/proxy`);
+  return apiFetch<ProxyState>(`/app/polls/${pollId}/proxy`);
 }
 
 export async function grantProxy(
   pollId: string,
   holderId: number,
 ): Promise<ProxyState> {
-  return apiFetch<ProxyState>(`/polls/${pollId}/proxy`, {
+  return apiFetch<ProxyState>(`/app/polls/${pollId}/proxy`, {
     method: "POST",
     body: JSON.stringify({ holder_id: holderId }),
   });
 }
 
 export async function revokeProxy(pollId: string): Promise<ProxyState> {
-  return apiFetch<ProxyState>(`/polls/${pollId}/proxy`, { method: "DELETE" });
+  return apiFetch<ProxyState>(`/app/polls/${pollId}/proxy`, { method: "DELETE" });
 }

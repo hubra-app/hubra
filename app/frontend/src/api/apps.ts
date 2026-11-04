@@ -44,38 +44,38 @@ export interface Connection {
 }
 
 export async function listApps(): Promise<{ providers: AppProviderInfo[]; connections: Connection[] }> {
-  return apiFetch('/apps/')
+  return apiFetch('/global/apps/')
 }
 
 /** Where to send the browser to sign in on the outside service. */
 export async function startConnect(provider: string, scopes: string[]): Promise<{ url: string }> {
-  return apiFetch(`/apps/${provider}/connect`, { method: 'POST', body: JSON.stringify({ scopes }) })
+  return apiFetch(`/global/apps/${provider}/connect`, { method: 'POST', body: JSON.stringify({ scopes }) })
 }
 
 export async function getConnection(id: number): Promise<Connection> {
-  return apiFetch(`/apps/connections/${id}`)
+  return apiFetch(`/global/apps/connections/${id}`)
 }
 
 export async function confirmConnection(id: number): Promise<Connection> {
-  return apiFetch(`/apps/connections/${id}/confirm`, { method: 'POST' })
+  return apiFetch(`/global/apps/connections/${id}/confirm`, { method: 'POST' })
 }
 
 export async function updateConnection(
   id: number,
   changes: { label?: string; scopes?: string[]; config?: Record<string, unknown> },
 ): Promise<Connection> {
-  return apiFetch(`/apps/connections/${id}`, { method: 'PATCH', body: JSON.stringify(changes) })
+  return apiFetch(`/global/apps/connections/${id}`, { method: 'PATCH', body: JSON.stringify(changes) })
 }
 
 export async function testConnection(id: number): Promise<{ ok: boolean; message: string }> {
-  return apiFetch(`/apps/connections/${id}/test`, { method: 'POST' })
+  return apiFetch(`/global/apps/connections/${id}/test`, { method: 'POST' })
 }
 
 export async function disconnect(id: number): Promise<void> {
-  await apiFetch(`/apps/connections/${id}`, { method: 'DELETE' })
+  await apiFetch(`/global/apps/connections/${id}`, { method: 'DELETE' })
 }
 
 /** What a connection's settings can choose from; the shape is the provider's. */
 export async function getConnectionOptions<T = Record<string, unknown>>(id: number): Promise<T> {
-  return apiFetch(`/apps/connections/${id}/options`)
+  return apiFetch(`/global/apps/connections/${id}/options`)
 }

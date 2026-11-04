@@ -31,7 +31,7 @@ function adapt(b: BackendTier): MembershipTier {
 }
 
 export async function listTiers(): Promise<MembershipTier[]> {
-  const data = await apiFetch<BackendTier[]>("/tiers");
+  const data = await apiFetch<BackendTier[]>("/app/tiers");
   return data.map(adapt);
 }
 
@@ -46,7 +46,7 @@ export async function createTier(input: {
   roundTo: number | null;
   deductTierIds: number[];
 }): Promise<MembershipTier> {
-  const b = await apiFetch<BackendTier>("/tiers/", {
+  const b = await apiFetch<BackendTier>("/app/tiers/", {
     method: "POST",
     body: JSON.stringify({
       name: input.name,
@@ -90,7 +90,7 @@ export async function updateTier(
   if (input.roundTo !== undefined) body.round_to = input.roundTo;
   if (input.deductTierIds !== undefined)
     body.deduct_tier_ids = input.deductTierIds;
-  const b = await apiFetch<BackendTier>(`/tiers/${id}`, {
+  const b = await apiFetch<BackendTier>(`/app/tiers/${id}`, {
     method: "PATCH",
     body: JSON.stringify(body),
   });
@@ -116,7 +116,7 @@ export async function calculateTierCost(config: {
   deductTierIds?: number[];
   tierId?: number;
 }): Promise<TierCostPreview> {
-  return apiFetch<TierCostPreview>("/tiers/calculate-cost", {
+  return apiFetch<TierCostPreview>("/app/tiers/calculate-cost", {
     method: "POST",
     body: JSON.stringify({
       price_type: config.priceType,
@@ -132,6 +132,6 @@ export async function calculateTierCost(config: {
 }
 
 export async function deleteTier(id: string): Promise<void> {
-  await apiFetch(`/tiers/${id}`, { method: "DELETE" });
+  await apiFetch(`/app/tiers/${id}`, { method: "DELETE" });
   clearLookups();
 }
