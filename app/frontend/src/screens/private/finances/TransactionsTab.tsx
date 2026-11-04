@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useState } from 'react'
+import { Navigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, Group, Badge, Select, ActionIcon, Text } from '@mantine/core'
 import { useT } from '@/locales/i18n'
@@ -62,11 +62,7 @@ export function TransactionsTab() {
 
   // Old ?tx=<id> links (bookmarks, notifications) open the transaction's page.
   const [params] = useSearchParams()
-  const navigate = useNavigate()
   const linkedId = params.get('tx')
-  useEffect(() => {
-    if (linkedId) navigate(`/app/finance/transactions/${linkedId}`, { replace: true })
-  }, [linkedId, navigate])
   const closeForm = () => setFormTarget(null)
 
   const filtered = transactions.filter((t) => {
@@ -160,6 +156,8 @@ export function TransactionsTab() {
   }
 
   const isFiltered = !!search || typeFilter !== 'All' || statusFilter !== 'All'
+
+  if (linkedId) return <Navigate to={`/app/finance/transactions/${linkedId}`} replace />
 
   return (
     <div>

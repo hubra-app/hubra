@@ -243,7 +243,7 @@ export function TransactionDetailScreen() {
               {methodLabel(t, tx.method)}
             </DetailRow>
             <DetailRow label={t('common.status', 'Status')}>{statusLabel(t, tx.status)}</DetailRow>
-            <DetailRow label={t('finance.invoice', 'Rechnung')}>
+            <DetailRow label={t('finance.invoiceLabel', 'Rechnung')}>
               {tx.invoiceId ? (
                 <Anchor size="sm" onClick={() => go(`/app/finance/invoices/${tx.invoiceId}`)}>
                   {t('members.detail.invoiceNo', 'Rechnung {{id}}', { id: tx.invoiceId })}
