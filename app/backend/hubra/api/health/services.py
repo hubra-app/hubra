@@ -59,27 +59,37 @@ class HealthService:
                 return fn()
 
         services: dict[str, dict] = {}
-        with ThreadPoolExecutor(max_workers=len(checks)) as pool:
+        # Not ``with``: leaving that block waits for every thread, so one
+        # black-hole host held the answer for its full socket timeouts (an
+        # SMTP check with STARTTLS makes four round trips of up to 1 s each).
+        # A check still running at the deadline is reported and left to end
+        # on its own socket timeout.
+        pool = ThreadPoolExecutor(max_workers=len(checks))
+        started = time.monotonic()
+        deadline = started + timeout
+        try:
             futures = {
                 name: pool.submit(_run_with_context, fn) for name, fn in checks.items()
             }
             for name, fut in futures.items():
-                start = time.monotonic()
                 try:
-                    services[name] = fut.result(timeout=timeout)
+                    services[name] = fut.result(
+                        timeout=max(0.0, deadline - time.monotonic())
+                    )
                 except FuturesTimeout:
                     services[name] = {
                         "ok": False,
-                        "latency_ms": int((time.monotonic() - start) * 1000),
+                        "latency_ms": int((time.monotonic() - started) * 1000),
                         "error": "timeout",
                     }
-                    fut.cancel()
                 except Exception as exc:  # pragma: no cover — defensive
                     services[name] = {
                         "ok": False,
-                        "latency_ms": int((time.monotonic() - start) * 1000),
+                        "latency_ms": int((time.monotonic() - started) * 1000),
                         "error": str(exc),
                     }
+        finally:
+            pool.shutdown(wait=False, cancel_futures=True)
 
         critical_ok = services["db"]["ok"] and services["redis"]["ok"]
 
