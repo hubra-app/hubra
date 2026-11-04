@@ -118,8 +118,10 @@ def _is_read(key: str) -> bool:
 def _ips(data: dict):
     try:
         return api_tokens.parse_allowed_ips(data.get("allowedIps")), None
-    except ValueError as exc:
-        return None, _error(400, "VALIDATION_ERROR", str(exc))
+    except ValueError:
+        return None, _error(
+            400, "VALIDATION_ERROR", "allowedIps: a list of up to 20 IP addresses or ranges"
+        )
 
 
 # ── Club side ───────────────────────────────────────────────────────────────
