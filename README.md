@@ -80,6 +80,28 @@ cd app/frontend
 npx playwright test
 ```
 
+## Plugins
+
+The official plugins live in their own repositories and are published, signed,
+on the [Marketplace](https://plugins.hubra.club). Each club switches on the
+ones it needs under **Settings › Modules**. The versions below are the latest
+GitHub release of each plugin.
+
+| Plugin | What it does | Version |
+| --- | --- | --- |
+| [Bank file import](https://github.com/hubra-app/hubra-plugin-bank-import) | Import camt.053, camt.054, MT940 and CSV statements and match payments to invoices | [1.2.0](https://github.com/hubra-app/hubra-plugin-bank-import/releases/tag/v1.2.0) |
+| [Budgets](https://github.com/hubra-app/hubra-plugin-budgets) | A yearly budget per category, compared with what was booked | [1.1.0](https://github.com/hubra-app/hubra-plugin-budgets/releases/tag/v1.1.0) |
+| [Codes](https://github.com/hubra-app/hubra-plugin-codes) | Door codes, lock combinations and passcodes, encrypted with the club's key | [2.0.0](https://github.com/hubra-app/hubra-plugin-codes/releases/tag/v2.0.0) |
+| [Discord](https://github.com/hubra-app/hubra-plugin-discord) | The Hubra bot: announcements, roles, group channels, events, polls and reminders | [2.5.0](https://github.com/hubra-app/hubra-plugin-discord/releases/tag/v2.5.0) |
+| [Guides](https://github.com/hubra-app/hubra-plugin-guides) | A usage guide per machine or tool, shown on the inventory item | [1.1.0](https://github.com/hubra-app/hubra-plugin-guides/releases/tag/v1.1.0) |
+| [Inventory](https://github.com/hubra-app/hubra-plugin-inventory) | Tools, machines and materials, with owners, checkouts and inductions | [2.1.0](https://github.com/hubra-app/hubra-plugin-inventory/releases/tag/v2.1.0) |
+| [Keys](https://github.com/hubra-app/hubra-plugin-keys) | Who holds which key, card or fob, with a handover log | [1.1.0](https://github.com/hubra-app/hubra-plugin-keys/releases/tag/v1.1.0) |
+| [Shared inbox (IMAP)](https://github.com/hubra-app/hubra-plugin-imap-inbox) | Read club mailboxes hosted anywhere inside Hubra | [1.1.0](https://github.com/hubra-app/hubra-plugin-imap-inbox/releases/tag/v1.1.0) |
+
+When a plugin is released or a new one added, follow
+[docs/plugin-releases.md](docs/plugin-releases.md) so this table, the
+Marketplace README and the hubra.club Modules page stay current.
+
 ## Documentation
 
 | Topic                                  | File                                                     |
@@ -98,6 +120,8 @@ npx playwright test
 | Frontend review issues (snapshot)      | [docs/frontend_issues.md](docs/frontend_issues.md)       |
 | Project management & milestones        | [docs/project-management.md](docs/project-management.md) |
 | Backend changelog                      | [app/backend/CHANGELOG.md](app/backend/CHANGELOG.md)     |
+| Plugin extension areas                 | [docs/plugins.md](docs/plugins.md)                       |
+| Plugin release checklist               | [docs/plugin-releases.md](docs/plugin-releases.md)       |
 
 ## Project structure
 
