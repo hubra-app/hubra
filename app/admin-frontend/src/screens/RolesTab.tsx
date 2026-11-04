@@ -263,6 +263,14 @@ export function RolesTab() {
             {tr('Berechtigungen', 'Permissions')}
           </Text>
           <Stack gap={6}>
+            {permissions.length === 0 && (
+              <Text size="sm" c="dimmed">
+                {tr(
+                  'Keine Berechtigungen gefunden. Sie werden beim Start des Servers angelegt (flask sync-permissions).',
+                  'No permissions found. They are created when the server starts (flask sync-permissions).',
+                )}
+              </Text>
+            )}
             {permissions.map((p) => (
               <Checkbox
                 key={p.key}
@@ -303,6 +311,14 @@ export function RolesTab() {
             {tr('Berechtigungen', 'Permissions')}
           </Text>
           <Stack gap={6}>
+            {permissions.length === 0 && (
+              <Text size="sm" c="dimmed">
+                {tr(
+                  'Keine Berechtigungen gefunden. Sie werden beim Start des Servers angelegt (flask sync-permissions).',
+                  'No permissions found. They are created when the server starts (flask sync-permissions).',
+                )}
+              </Text>
+            )}
             {permissions.map((p) => (
               <Checkbox
                 key={p.key}
