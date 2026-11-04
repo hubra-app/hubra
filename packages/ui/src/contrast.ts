@@ -71,3 +71,26 @@ export function readableOn(hex: string, backgrounds: string[], min = 4.5): strin
   }
   return target
 }
+
+// The dark-mode surface (ui.css --hb-surface) that category text sits on.
+const DARK_SURFACE = '#19191c'
+
+/**
+ * Text in a picked colour (a tag, a tier, an event type) that reads on the
+ * page in light and dark mode. Hex colours are darkened or lightened as
+ * needed; CSS variables (the status `--mantine-color-*-text` ones) pass
+ * through, since they already switch with the scheme.
+ */
+export function colorText(color: string): string {
+  if (!HEX.test(color)) return color
+  return `light-dark(${readableOn(color, [WHITE])}, ${readableOn(color, [DARK_SURFACE])})`
+}
+
+/** Fill, border and text for a tag or pill in `color` (hex or CSS variable). */
+export function tagStyle(color: string): { backgroundColor: string; borderColor: string; color: string } {
+  return {
+    backgroundColor: `color-mix(in srgb, ${color} 12%, transparent)`,
+    borderColor: `color-mix(in srgb, ${color} 40%, transparent)`,
+    color: colorText(color),
+  }
+}

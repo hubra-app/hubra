@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from sqlalchemy import select, text
+from sqlalchemy import select
 
 from hubra.core.extensions import db
 from hubra.core.models.tenant import Tenant
@@ -55,19 +55,3 @@ def apply_migrations_to_all_tenants() -> int:
 
     return count
 
-
-def ensure_tenant_has_alembic(tenant_id: int) -> None:
-    """Ensure the tenant schema has an alembic_version table.
-
-    Called during provisioning to guarantee migration tracking is in place.
-    """
-    schema = f"tenant_{tenant_id}"
-    db.session.execute(
-        text(
-            f"CREATE TABLE IF NOT EXISTS {schema}.alembic_version ("
-            "version_num VARCHAR(32) NOT NULL, "
-            "PRIMARY KEY (version_num)"
-            ")"
-        )
-    )
-    db.session.commit()

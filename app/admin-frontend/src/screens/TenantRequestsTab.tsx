@@ -26,7 +26,7 @@ import { formatDate } from '@/format'
 import { planLabel } from '@/labels'
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: 'yellow',
+  pending: 'orange',
   approved: 'green',
   rejected: 'red',
 }

@@ -112,10 +112,10 @@ export function ConfirmScreen() {
   const noPasskey = status.isError || !status.data?.passkey
   return (
     <SignedInFrame width={460}>
-      <Paper withBorder radius="md" p="xl">
+      <Paper withBorder p="xl">
         <Stack gap="md">
           <ThemeIcon size={48} radius="xl" variant="light" color={done ? 'green' : undefined}>
-            {done ? <IconCircleCheck size={26} /> : <IconFingerprint size={26} />}
+            {done ? <IconCircleCheck size={24} /> : <IconFingerprint size={24} />}
           </ThemeIcon>
           {done ? (
             <div>
@@ -143,14 +143,14 @@ export function ConfirmScreen() {
                 </Text>
               </div>
               {noPasskey ? (
-                <Alert color="yellow">
+                <Alert color="orange">
                   {tr(
                     'Dein Konto hat keinen Passkey. Bestätige in der Verwaltung mit deinem Passwort.',
                     'Your account has no passkey. Confirm with your password in manage.',
                   )}
                 </Alert>
               ) : !passkeysSupported() ? (
-                <Alert color="yellow">
+                <Alert color="orange">
                   {tr(
                     'Dieser Browser kann keine Passkeys verwenden. Bestätige in der Verwaltung mit deinem Passwort.',
                     'This browser cannot use passkeys. Confirm with your password in manage.',

@@ -118,7 +118,7 @@ export function InvoiceDetailScreen() {
 
       <div className="detail-grid-end">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Paper withBorder shadow="sm" radius="lg">
+          <Paper withBorder>
             <Group
               p="md"
               gap="sm"
@@ -188,7 +188,7 @@ export function InvoiceDetailScreen() {
             </div>
           </Paper>
 
-          <Paper withBorder shadow="sm" radius="lg">
+          <Paper withBorder>
             <Group
               p="md"
               gap="sm"
@@ -229,13 +229,13 @@ export function InvoiceDetailScreen() {
                       display: 'flex',
                       gap: 12,
                       padding: '12px 20px',
-                      borderBottom: '1px solid #f1eff7',
+                      borderBottom: '1px solid var(--hb-border)',
                       alignItems: 'center',
                     }}
                   >
                     <IconBell
                       size={16}
-                      style={{ color: '#2596be', flexShrink: 0 }}
+                      style={{ color: 'var(--mantine-color-acc-text)', flexShrink: 0 }}
                     />
                     <div style={{ flex: 1 }}>
                       <div
@@ -276,8 +276,6 @@ export function InvoiceDetailScreen() {
 
         <Paper
           withBorder
-          shadow="sm"
-          radius="lg"
           style={{ padding: '20px 24px' }}
         >
           <div style={{ marginBottom: 20 }}>
@@ -334,7 +332,7 @@ export function InvoiceDetailScreen() {
                 display: 'flex',
                 justifyContent: 'space-between',
                 padding: '10px 0',
-                borderBottom: '1px solid #f1eff7',
+                borderBottom: '1px solid var(--hb-border)',
               }}
             >
               <span

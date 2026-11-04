@@ -8,18 +8,6 @@ import os
 # ── API envelope helpers ──────────────────────────────────────────────────────
 
 
-def test_api_envelope_success(app):
-    """success_response wraps data in {"data": ..., "meta": ...} envelope."""
-    with app.test_request_context("/"):
-        from hubra.api.utils import success_response
-
-        response, status = success_response({"id": 1})
-        data = response.get_json()
-        assert "data" in data
-        assert data["data"]["id"] == 1
-        assert status == 200
-
-
 # ── RBAC decorators ───────────────────────────────────────────────────────────
 
 

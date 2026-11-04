@@ -5,7 +5,6 @@ and backup sizes. Used by the admin dashboard and API usage stats.
 """
 
 import logging
-from typing import Any
 
 
 from hubra.core.extensions import db
@@ -68,12 +67,3 @@ def _get_mail_quota_total(tenant_id: int) -> int:
         _log.debug("Could not get mail quota for tenant %d", tenant_id)
         return 0
 
-
-def get_storage_breakdown(tenant_id: int) -> dict[str, Any]:
-    """Return detailed storage breakdown for a tenant."""
-    return {
-        "tenant_id": tenant_id,
-        "pg_schema_bytes": _get_pg_schema_size(tenant_id),
-        "mail_quota_bytes": _get_mail_quota_total(tenant_id),
-        "total_bytes": get_storage_bytes(tenant_id),
-    }

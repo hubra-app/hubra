@@ -33,9 +33,9 @@ export function ImpersonationBanner() {
     <div
       role="status"
       style={{
-        background: ending ? '#fee2e2' : '#fef3c7',
-        borderBottom: `1px solid ${ending ? '#ef4444' : '#f59e0b'}`,
-        color: '#1a1625',
+        background: `color-mix(in srgb, var(--mantine-color-${ending ? 'red' : 'orange'}-6) 16%, var(--hb-surface))`,
+        borderBottom: `1px solid var(--mantine-color-${ending ? 'red' : 'orange'}-6)`,
+        color: 'var(--hb-text)',
         padding: '8px 16px',
         display: 'flex',
         alignItems: 'center',
@@ -44,7 +44,7 @@ export function ImpersonationBanner() {
         zIndex: 100,
       }}
     >
-      <IconAlertTriangle size={20} color={ending ? '#dc2626' : '#d97706'} />
+      <IconAlertTriangle size={20} color={`var(--mantine-color-${ending ? 'red' : 'orange'}-text)`} />
       <Badge color={ending ? 'red' : 'orange'} variant="filled" size="sm">
         {t('shell.impersonation.badge', 'Fremdzugriff')}
       </Badge>
@@ -63,7 +63,7 @@ export function ImpersonationBanner() {
         </Text>
       )}
       {remainingMin !== null && (
-        <Text fz="xs" fw={ending ? 700 : undefined} c={ending ? '#b91c1c' : 'dimmed'}>
+        <Text fz="xs" fw={ending ? 700 : undefined} c={ending ? 'var(--mantine-color-red-text)' : 'dimmed'}>
           {t('shell.impersonation.remaining', 'noch {{min}} Min.', { min: remainingMin })}
         </Text>
       )}

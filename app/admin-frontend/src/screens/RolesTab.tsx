@@ -29,6 +29,7 @@ import {
 } from '@/api/globalRbac'
 import { useAdmin } from '@/context/AdminContext'
 import { tr } from '@/lang'
+import { useConfirm } from '@/components/useConfirm'
 
 export function RolesTab() {
   const { notify } = useAdmin()
@@ -139,8 +140,10 @@ export function RolesTab() {
     )
   }
 
+  const [confirm, confirmDialog] = useConfirm()
   return (
     <div>
+      {confirmDialog}
       <Group justify="flex-end" mb="md">
         <Group gap={8}>
           <Button
@@ -402,7 +405,11 @@ export function RolesTab() {
                       variant="subtle"
                       color="red"
                       onClick={() =>
-                        removeMutation.mutate({ userId: selectedUser.id, roleId: r.id })
+                        confirm({
+                          title: tr(`Rolle «${r.name}» entfernen?`, `Remove the role "${r.name}"?`),
+                          confirmLabel: tr('Entfernen', 'Remove'),
+                          run: () => removeMutation.mutate({ userId: selectedUser.id, roleId: r.id }),
+                        })
                       }
                     >
                       {tr('Entfernen', 'Remove')}

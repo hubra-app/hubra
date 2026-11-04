@@ -59,7 +59,7 @@ export function AccountDashboardScreen() {
         />
       )}
       {invoicesLoading && (
-        <Paper withBorder shadow="sm" radius="lg" p="md" mb="md">
+        <Paper withBorder p="md" mb="md">
           <Text size="sm" c="dimmed">
             {t("common.loading", 'Wird geladen …')}
           </Text>
@@ -68,8 +68,6 @@ export function AccountDashboardScreen() {
       {myInvoices.length > 0 && (
         <Paper
           withBorder
-          shadow="sm"
-          radius="lg"
           style={{
             marginBottom: 16,
             border: "1.5px solid rgba(255, 77, 61, 0.25)",
@@ -226,7 +224,7 @@ export function AccountDashboardScreen() {
 
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {/* My events */}
-        <Paper withBorder shadow="sm" radius="lg">
+        <Paper withBorder>
           <Group
             p="md"
             gap="sm"
@@ -355,7 +353,7 @@ export function AccountDashboardScreen() {
         </Paper>
 
         {/* My votes */}
-        <Paper withBorder shadow="sm" radius="lg">
+        <Paper withBorder>
           <Group
             p="md"
             gap="sm"

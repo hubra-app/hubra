@@ -42,7 +42,7 @@ export function PaymentPlanCard() {
     t(`tiers.plans.per.${interval ?? 'yearly'}`, interval ?? 'yearly')
 
   return (
-    <Paper withBorder shadow="sm" radius="lg" mt="md">
+    <Paper withBorder mt="md">
       <Group p="md" gap="sm" style={{ borderBottom: '1px solid var(--hb-border)' }}>
         <IconCalendarRepeat size={16} style={{ color: 'var(--mantine-color-ink-4)' }} />
         <Text fw={700} fz="md">

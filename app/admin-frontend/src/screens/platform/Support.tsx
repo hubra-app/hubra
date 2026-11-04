@@ -33,7 +33,7 @@ import {
   IconPencil,
   IconSearch,
 } from '@tabler/icons-react'
-import { PageHead, Pagination, Tabs } from '@/components/ui'
+import { EmptyState, PageHead, Pagination, Tabs } from '@/components/ui'
 import { useAdmin } from '@/context/AdminContext'
 import { formatDate, formatDateTime } from '@/format'
 import { tr } from '@/lang'
@@ -52,8 +52,8 @@ import {
 const STATUSES: CaseStatus[] = ['open', 'planned', 'in_progress', 'done', 'closed']
 
 const STATUS_COLOR: Record<CaseStatus, string> = {
-  open: 'blue',
-  planned: 'violet',
+  open: 'gray',
+  planned: 'acc',
   in_progress: 'orange',
   done: 'green',
   closed: 'gray',
@@ -107,7 +107,7 @@ function StatusBadge({ status }: { status: CaseStatus }) {
 
 function KindIcon({ kind, size = 34 }: { kind: CaseKind; size?: number }) {
   return (
-    <ThemeIcon variant="light" radius="xl" size={size} color={kind === 'bug' ? 'red' : 'yellow'}>
+    <ThemeIcon variant="light" radius="xl" size={size} color={kind === 'bug' ? 'red' : 'orange'}>
       {kind === 'bug' ? <IconBug size={size / 2} /> : <IconBulb size={size / 2} />}
     </ThemeIcon>
   )
@@ -199,10 +199,8 @@ function CaseList() {
       {query.isLoading ? (
         <Loader size="sm" />
       ) : items.length === 0 ? (
-        <Paper withBorder radius="lg" p="xl">
-          <Text size="sm" c="dimmed" ta="center">
-            {tr('Keine Fälle für diese Auswahl.', 'No cases for this selection.')}
-          </Text>
+        <Paper withBorder>
+          <EmptyState title={tr('Keine Fälle für diese Auswahl.', 'No cases for this selection.')} />
         </Paper>
       ) : (
         <Stack gap={8}>
@@ -212,7 +210,7 @@ function CaseList() {
               onClick={() => navigate(`/app/reports/${c.id}`)}
               style={{ display: 'block', width: '100%' }}
             >
-              <Paper withBorder radius="lg" p="md" className="manage-nav-row">
+              <Paper withBorder p="md" className="manage-nav-row">
                 <Group gap="sm" wrap="nowrap" align="flex-start">
                   <KindIcon kind={c.kind} />
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -298,7 +296,7 @@ function CaseList() {
 
 function Section({ title, children, right }: { title: string; children: React.ReactNode; right?: React.ReactNode }) {
   return (
-    <Paper withBorder radius="lg" p="lg">
+    <Paper withBorder p="lg">
       <Group justify="space-between" mb={10} wrap="nowrap">
         <Text fw={700}>{title}</Text>
         {right}
@@ -390,7 +388,7 @@ function CaseDetail({ id }: { id: number }) {
           </Title>
           <Group gap={6} mt={6} wrap="wrap">
             <StatusBadge status={c.status} />
-            <Badge variant="light" color={c.kind === 'bug' ? 'red' : 'yellow'} size="sm">
+            <Badge variant="light" color={c.kind === 'bug' ? 'red' : 'orange'} size="sm">
               {c.kind === 'bug' ? tr('Problem', 'Problem') : tr('Idee', 'Idea')}
             </Badge>
             {c.severity && (
@@ -408,7 +406,7 @@ function CaseDetail({ id }: { id: number }) {
       </Group>
 
       {c.mergedInto && (
-        <Paper withBorder radius="md" p="sm" my={12} bg="var(--mantine-color-gray-light)">
+        <Paper withBorder p="sm" my={12} bg="var(--mantine-color-gray-light)">
           <Text size="sm">
             {tr('Zusammengeführt mit', 'Merged into')}{' '}
             <Anchor onClick={() => navigate(`/app/reports/${c.mergedInto!.id}`)}>
@@ -610,7 +608,6 @@ function Conversation({ c, onSent }: { c: StaffCase; onSent: () => Promise<void>
         {comments.map((m) => (
           <Paper
             key={m.id}
-            radius="md"
             p="sm"
             withBorder={m.internal}
             style={m.internal ? { borderStyle: 'dashed' } : undefined}
@@ -752,7 +749,6 @@ function MergeModal({
             <UnstyledButton key={o.id} onClick={() => setTarget(o)}>
               <Paper
                 withBorder
-                radius="md"
                 p="sm"
                 style={target?.id === o.id ? { borderColor: 'var(--mantine-color-acc-6)', borderWidth: 2 } : undefined}
               >

@@ -1,5 +1,6 @@
 import { withStepUp } from '@/api/stepUp'
 import { apiFetch, apiFetchRaw } from '@hubra/api-client'
+import type { PriceUnit } from '@/api/platform'
 
 export interface Tenant {
   id: number
@@ -603,7 +604,22 @@ export type BillingStatus =
 export interface BillingAddon {
   code: string
   label: string
+  /** Per unit: once, per member or per licence. */
   price_chf: string
+  unit: PriceUnit
+}
+
+/** One module the club pays for (or gets with its plan), with its quantity. */
+export interface BillingModuleLine {
+  code: string
+  label: string
+  source: 'plan' | 'addon'
+  unit: PriceUnit
+  unit_price_chf: string
+  quantity: number
+  /** Comes with the plan at no extra cost. */
+  included: boolean
+  total_chf: string
 }
 
 export interface BillingTerms {
@@ -618,6 +634,8 @@ export interface BillingTerms {
   sponsored_until: string | null
   sponsor_note: string
   addons: BillingAddon[]
+  /** Licences per module code (for prices per licence; 1 if not set). */
+  licenses: Record<string, number>
   note: string
 }
 
@@ -627,6 +645,9 @@ export interface TenantBilling extends BillingTerms {
   base_chf: string
   discount_chf: string
   addons_chf: string
+  module_lines: BillingModuleLine[]
+  /** Members counted, when a price is per member. */
+  members: number | null
   total_chf: string
   due_chf: string
   sponsorship_running: boolean
@@ -644,5 +665,151 @@ export async function setTenantBilling(tenantId: number, values: Partial<Billing
   return apiFetch<TenantBilling>(`/system/tenants/${tenantId}/billing`, {
     method: 'PATCH',
     body: JSON.stringify(values),
+  })
+}
+
+// ── Plans a club can be on (manage › Einstellungen › Tarife) ─────────────────
+
+export interface PlanChoice {
+  key: string
+  name_de: string
+  name_en: string
+  public: boolean
+  hidden: boolean
+  price_month_chf: string | null
+  modules: { code: string; price_chf: string | null; unit: PriceUnit }[]
+}
+
+export interface PlanChoices {
+  plans: PlanChoice[]
+  addons: {
+    code: string
+    name: string
+    price_month_chf: string | null
+    price_unit: PriceUnit
+  }[]
+}
+
+export async function listPlanChoices() {
+  return apiFetch<PlanChoices>('/system/plans')
+}
+
+export async function setTenantPlan(id: number, plan: string) {
+  return apiFetch<{ tenant: Tenant }>(`/system/tenants/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ plan }),
+  })
+}
+
+// ── Data protection requests (copy or deletion of someone's data) ────────────
+
+export type DataRequestKind = 'export' | 'deletion'
+export type DataRequestStatus = 'open' | 'done' | 'rejected'
+
+export interface DataRequest {
+  id: number
+  tenant_id: number
+  tenant_name: string
+  kind: DataRequestKind
+  status: DataRequestStatus
+  subject_name: string
+  subject_email: string
+  member_id: number | null
+  received_on: string
+  received_via: string
+  due_on: string
+  days_left: number | null
+  overdue: boolean
+  due_soon: boolean
+  note: string
+  created_at: string | null
+  created_by: number | null
+  created_by_name: string | null
+  handled_at: string | null
+  handled_by: number | null
+  handled_by_name: string | null
+  outcome: string
+  result: {
+    rows?: Record<string, number>
+    exported_at?: string
+    deleted?: boolean
+    deleted_at?: string
+    kept_without_name?: { invoices: number; transactions: number }
+  } | null
+  exports: { at: string; by: number }[]
+}
+
+export interface DataRequestList {
+  requests: DataRequest[]
+  counts: { open: number; overdue: number }
+}
+
+export async function listDataRequests(params: {
+  status?: DataRequestStatus | 'all'
+  tenant_id?: number
+}) {
+  const q = new URLSearchParams()
+  if (params.status) q.set('status', params.status)
+  if (params.tenant_id) q.set('tenant_id', String(params.tenant_id))
+  return apiFetch<DataRequestList>(`/system/data-requests?${q}`)
+}
+
+export async function createDataRequest(
+  tenantId: number,
+  body: {
+    kind: DataRequestKind
+    subject_name?: string
+    subject_email?: string
+    member_id?: number | null
+    received_on?: string
+    received_via?: string
+    note?: string
+  },
+) {
+  return apiFetch<DataRequest>(`/system/tenants/${tenantId}/data-requests`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function updateDataRequest(
+  id: number,
+  body: Partial<Pick<DataRequest, 'subject_name' | 'subject_email' | 'member_id' | 'note'>>,
+) {
+  return apiFetch<DataRequest>(`/system/data-requests/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
+/** Downloads the member's data as a JSON file (asks for the password again). */
+export async function downloadDataExport(req: DataRequest) {
+  const data = await withStepUp(() =>
+    apiFetch<unknown>(`/system/data-requests/${req.id}/export`, { method: 'POST' }),
+  )
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `daten-${req.tenant_id}-${req.member_id}.json`
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
+
+export async function deleteDataRequestMember(id: number, confirm: string) {
+  return withStepUp(() =>
+    apiFetch<DataRequest>(`/system/data-requests/${id}/delete-member`, {
+      method: 'POST',
+      body: JSON.stringify({ confirm }),
+    }),
+  )
+}
+
+export async function closeDataRequest(id: number, status: 'done' | 'rejected', outcome: string) {
+  return apiFetch<DataRequest>(`/system/data-requests/${id}/${status}`, {
+    method: 'POST',
+    body: JSON.stringify({ outcome }),
   })
 }

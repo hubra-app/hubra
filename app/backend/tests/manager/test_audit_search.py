@@ -78,7 +78,7 @@ def test_platform_entries_with_people_and_clubs(
     assert limits["details"] == {"after": {"members": 50}}
 
 
-def test_one_club_merges_both_logs(client, db, staff_headers, tenant_pair, seeded_db):
+def test_one_club_merges_both_logs(sqlite_only, client, db, staff_headers, tenant_pair, seeded_db):
     a = _seed(db, tenant_pair, seeded_db)
     # Up to October: the staff sign-in (today) is in the club log too.
     body = client.get(f"{BASE}/search?tenant_id={a.id}&to=2026-10-31").get_json()
@@ -97,7 +97,7 @@ def test_one_club_merges_both_logs(client, db, staff_headers, tenant_pair, seede
     assert {e["source"] for e in only_club["entries"]} == {"club"}
 
 
-def test_filters(client, db, staff_headers, tenant_pair, seeded_db):
+def test_filters(sqlite_only, client, db, staff_headers, tenant_pair, seeded_db):
     a = _seed(db, tenant_pair, seeded_db)
 
     def actions(qs):
@@ -132,7 +132,7 @@ def test_bad_filters(client, staff_headers):
         assert client.get(f"{BASE}/search?{qs}").status_code == 400, qs
 
 
-def test_export_is_csv_and_is_logged(client, db, staff_headers, tenant_pair, seeded_db):
+def test_export_is_csv_and_is_logged(sqlite_only, client, db, staff_headers, tenant_pair, seeded_db):
     a = _seed(db, tenant_pair, seeded_db)
     resp = client.get(f"{BASE}/export?tenant_id={a.id}&to=2026-10-31")
     assert resp.status_code == 200

@@ -200,7 +200,7 @@ export function KVSettingsTab() {
         renderKeySuffix={(entry) => (
           <>
             {entry.sensitive && (
-              <IconLock size={11} style={{ color: 'var(--hb-text-3)', flexShrink: 0 }} />
+              <IconLock size={12} style={{ color: 'var(--hb-text-3)', flexShrink: 0 }} />
             )}
             {entry.restricted && (
               <Badge
@@ -210,8 +210,8 @@ export function KVSettingsTab() {
                   root: {
                     fontSize: 'var(--mantine-font-size-xs)',
                     padding: '1px 5px',
-                    background: '#fff3e0',
-                    color: '#e65100',
+                    background: 'var(--mantine-color-orange-light)',
+                    color: 'var(--mantine-color-orange-text)',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 3,
@@ -229,8 +229,8 @@ export function KVSettingsTab() {
                   root: {
                     fontSize: 'var(--mantine-font-size-xs)',
                     padding: '1px 5px',
-                    background: '#f0f4ff',
-                    color: '#4a5dcc',
+                    background: 'var(--mantine-color-acc-light)',
+                    color: 'var(--mantine-color-acc-light-color)',
                   },
                 }}
               >
@@ -245,8 +245,8 @@ export function KVSettingsTab() {
                   root: {
                     fontSize: 'var(--mantine-font-size-xs)',
                     padding: '1px 5px',
-                    background: '#f4f0ff',
-                    color: '#7c4dcc',
+                    background: 'var(--mantine-color-acc-light)',
+                    color: 'var(--mantine-color-acc-light-color)',
                   },
                 }}
               >
@@ -273,17 +273,17 @@ export function KVSettingsTab() {
             style={{
               fontFamily: 'monospace',
               fontSize: 'var(--mantine-font-size-sm)',
-              color: entry.value === null ? '#bbb' : undefined,
+              color: entry.value === null ? 'var(--hb-text-3)' : undefined,
             }}
           >
             {entry.sensitive ? (
               entry.value ? (
                 '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'
               ) : (
-                <em style={{ color: '#b7b0c9' }}>{t('kv.notSet', 'nicht gesetzt')}</em>
+                <em style={{ color: 'var(--hb-text-3)' }}>{t('kv.notSet', 'nicht gesetzt')}</em>
               )
             ) : (
-              entry.value ?? <em style={{ color: '#b7b0c9' }}>{t('kv.notSet', 'nicht gesetzt')}</em>
+              entry.value ?? <em style={{ color: 'var(--hb-text-3)' }}>{t('kv.notSet', 'nicht gesetzt')}</em>
             )}
           </span>
         )}
@@ -323,7 +323,7 @@ export function KVSettingsTab() {
               <Button
                 variant="subtle"
                 onClick={() => setDeleteTarget(entry)}
-                style={{ padding: '4px 7px', color: '#c0392b' }}
+                style={{ padding: '4px 7px', color: 'var(--mantine-color-red-text)' }}
                 title={t('common.delete', 'Löschen')}
               >
                 <IconTrash size={16} />

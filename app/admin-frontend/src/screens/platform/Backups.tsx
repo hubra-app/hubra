@@ -1,3 +1,4 @@
+import { categoryColors, tagStyle } from '@hubra/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
@@ -59,16 +60,16 @@ function label(map: Record<string, [string, string]>, key: string): string {
 
 const TYPE_COLORS: Record<string, string> = {
   manual: 'var(--hb-text-2)',
-  scheduled_daily: '#2596be',
-  scheduled_weekly: '#27ae60',
-  scheduled_monthly: '#9b59b6',
+  scheduled_daily: categoryColors.blue,
+  scheduled_weekly: categoryColors.green,
+  scheduled_monthly: categoryColors.purple,
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: '#c2870f',
-  running: '#2596be',
-  completed: '#1f9d57',
-  failed: '#c0392b',
+  pending: 'var(--mantine-color-orange-text)',
+  running: 'var(--mantine-color-acc-text)',
+  completed: 'var(--mantine-color-green-text)',
+  failed: 'var(--mantine-color-red-text)',
 }
 
 function formatSize(bytes: number | null): string {
@@ -285,7 +286,7 @@ export function Backups() {
       )}
 
       {config && (
-        <Paper withBorder shadow="sm" radius="lg" style={{ padding: '1rem 1.25rem' }}>
+        <Paper withBorder style={{ padding: '1rem 1.25rem' }}>
           <div
             style={{
               display: 'flex',
@@ -496,7 +497,7 @@ export function Backups() {
           onChange={(v) => setFilter(v ?? ALL)}
         />
       </Group>
-      <Paper withBorder shadow="sm" radius="lg">
+      <Paper withBorder>
         {/* Nine columns do not fit a phone: the table scrolls inside its card. */}
         <Table.ScrollContainer minWidth={860}>
           <Table highlightOnHover>
@@ -542,7 +543,7 @@ export function Backups() {
                       <span style={{ fontWeight: 600 }}>{b.tenant_slug ?? `#${b.tenant_id}`}</span>
                     ) : (
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--hb-text-2)' }}>
-                        <IconWorld size={13} /> {tr('Global', 'Global')}
+                        <IconWorld size={14} /> {tr('Global', 'Global')}
                       </span>
                     )}
                     {b.scope === 'club' && b.tenant_id === null && (
@@ -575,8 +576,8 @@ export function Backups() {
                   <Table.Td data-label={tr('Art', 'Type')}>
                     <span
                       style={{
-                        background: TYPE_COLORS[b.type] ?? 'var(--hb-text-2)',
-                        color: '#fff',
+                        ...tagStyle(TYPE_COLORS[b.type] ?? categoryColors.slate),
+                        border: '1px solid',
                         fontSize: 'var(--mantine-font-size-xs)',
                         fontWeight: 600,
                         padding: '2px 8px',
@@ -599,7 +600,7 @@ export function Backups() {
                       }}
                     >
                       {b.status === 'pending' || b.status === 'running' ? (
-                        <IconClock size={13} />
+                        <IconClock size={14} />
                       ) : null}
                       {label(STATUS_LABELS, b.status)}
                     </span>

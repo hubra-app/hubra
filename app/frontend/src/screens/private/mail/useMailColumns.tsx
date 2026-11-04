@@ -15,10 +15,10 @@ import type { ManagedMailAddressInfo } from '@/api/mail'
 import type { DataColumn } from '@/components/ui'
 
 const SYNC_COLORS: Record<string, string> = {
-  ok: '#1f9d57',
-  pending: '#c2870f',
-  drift: '#e65100',
-  error: '#ff4d3d',
+  ok: 'var(--mantine-color-green-text)',
+  pending: 'var(--mantine-color-orange-text)',
+  drift: 'var(--mantine-color-orange-text)',
+  error: 'var(--mantine-color-red-text)',
 }
 
 const SYNC_ICONS: Record<string, typeof IconCircleCheck> = {
@@ -44,13 +44,13 @@ function SyncBadge({
         radius="xl"
         style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
       >
-        <IconCircleCheck size={11} />
+        <IconCircleCheck size={12} />
         {t('mail.admin.syncOk', 'OK')}
       </Badge>
     )
   }
   const Icon = SYNC_ICONS[state] || IconAlertTriangle
-  const color = SYNC_COLORS[state] || '#5e5873'
+  const color = SYNC_COLORS[state] || 'var(--hb-text-2)'
   const labels: Record<string, string> = {
     pending: t('mail.admin.syncPending', 'Ausstehend'),
     drift: t('mail.admin.syncDrift', 'Abweichung'),
@@ -66,7 +66,7 @@ function SyncBadge({
           display: 'inline-flex',
           alignItems: 'center',
           gap: 4,
-          background: `${color}15`,
+          background: `color-mix(in srgb, ${color} 8%, transparent)`,
           color,
         },
       }}
@@ -87,7 +87,7 @@ function QuotaBar({
   if (used == null || total == null || total === 0)
     return <span style={{ color: 'var(--hb-text-3)' }}>—</span>
   const pct = Math.min(100, (used / total) * 100)
-  const color = pct > 90 ? '#ff4d3d' : pct > 70 ? '#c2870f' : '#1f9d57'
+  const color = pct > 90 ? 'var(--mantine-color-red-text)' : pct > 70 ? 'var(--mantine-color-orange-text)' : 'var(--mantine-color-green-text)'
   const usedMB = (used / 1048576).toFixed(0)
   const totalMB = (total / 1048576).toFixed(0)
   return (
@@ -143,7 +143,7 @@ export function useMailColumns(
         <span
           style={{
             fontSize: 'var(--mantine-font-size-sm)',
-            color: '#2596be',
+            color: 'var(--mantine-color-acc-text)',
           }}
         >
           {entry.address}
@@ -164,8 +164,8 @@ export function useMailColumns(
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 3,
-                background: isMailbox ? '#e8f5e9' : '#e3f2fd',
-                color: isMailbox ? '#1f9d57' : '#2596be',
+                background: isMailbox ? 'var(--mantine-color-green-light)' : 'var(--mantine-color-acc-light)',
+                color: isMailbox ? 'var(--mantine-color-green-text)' : 'var(--mantine-color-acc-text)',
               },
             }}
           >

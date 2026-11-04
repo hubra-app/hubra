@@ -292,44 +292,6 @@ def _sync_child_aliases(addr: ManagedMailAddress, targets: list[str]) -> None:
             )
 
 
-def deprovision_alias(addr: ManagedMailAddress) -> None:
-    """Delete the WildDuck alias for *addr* and all child alias MMAs."""
-    from hubra.core.services.wildduck import WildDuckError, try_get_client
-
-    wd = try_get_client()
-
-    child_aliases = list(
-        db.session.scalars(
-            select(ManagedMailAddress).where(
-                ManagedMailAddress.owner_type == "mail_address",
-                ManagedMailAddress.owner_id == addr.id,
-            )
-        ).all()
-    )
-    if wd is not None:
-        for child in child_aliases:
-            if child.wildduck_id:
-                try:
-                    wd.delete_forwarding_alias(child.wildduck_id)
-                except WildDuckError as exc:
-                    _log.warning(
-                        "deprovision_alias: child alias %s: %s", child.address, exc
-                    )
-
-    if addr.wildduck_id is not None:
-        if wd is not None:
-            try:
-                wd.delete_forwarding_alias(addr.wildduck_id)
-                _log.info("deprovision_alias: deleted alias %s", addr.address)
-            except WildDuckError as exc:
-                _log.warning(
-                    "deprovision_alias: WildDuck error for %s: %s", addr.address, exc
-                )
-
-    addr.wildduck_id = None
-    addr.provisioning_status = "pending"
-
-
 def sync_mailbox_forward(addr: ManagedMailAddress, forward_to: str | None) -> None:
     """Create/update/delete the forward filter on a mailbox-type address.
 
@@ -1076,35 +1038,10 @@ def get_or_create_for_member(
     return addr
 
 
-def deprovision_mailbox(addr: ManagedMailAddress) -> None:
-    """Delete the WildDuck user (mailbox) for *addr*."""
-    from hubra.core.services.wildduck import WildDuckError, try_get_client
-
-    if addr.wildduck_user_id is None:
-        return
-
-    wd = try_get_client()
-    if wd is None:
-        return
-
-    try:
-        wd.delete_user(addr.wildduck_user_id)
-        _log.info("deprovision_mailbox: deleted user for %s", addr.address)
-    except WildDuckError as exc:
-        _log.warning(
-            "deprovision_mailbox: WildDuck error for %s: %s", addr.address, exc
-        )
-
-    addr.wildduck_user_id = None
-    addr.wildduck_filter_id = None
-    addr.provisioning_status = "pending"
-
-
 def remove_for_member(member_id: int) -> None:
     """Deprovision and remove ManagedMailAddress rows linked to a member.
 
-    Uses ``ensure_absent`` (new-generation primitive) instead of the old
-    ``deprovision_mailbox``. This is for permanent deletion — for archive,
+    Uses ``ensure_absent``. This is for permanent deletion — for archive,
     use ``disable_member_mail`` instead.
     """
     from hubra.core.services.binding_engine import (

@@ -201,14 +201,14 @@ export function BindingFormModal({
               {t('bindings.currentValue', 'Aktueller Wert:')}{' '}
             </span>
             {preview?.masked ? (
-              <span style={{ color: '#bbb', fontStyle: 'italic' }}>
+              <span style={{ color: 'var(--hb-text-3)', fontStyle: 'italic' }}>
                 {'••••• '}
                 {t('bindings.hidden', '(verborgen)')}
               </span>
             ) : preview?.value ? (
               <span style={{ color: 'var(--hb-text)' }}>{preview.value}</span>
             ) : (
-              <em style={{ color: '#bbb' }}>
+              <em style={{ color: 'var(--hb-text-3)' }}>
                 {'— '}
                 {t('bindings.empty', '(leer)')}
               </em>

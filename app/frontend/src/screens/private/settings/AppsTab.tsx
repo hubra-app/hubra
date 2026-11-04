@@ -1,7 +1,20 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Alert, Badge, Button, Checkbox, Group, Modal, Paper, Stack, Text, Title } from '@mantine/core'
+import {
+  Alert,
+  Anchor,
+  Badge,
+  Button,
+  Checkbox,
+  Group,
+  Modal,
+  Paper,
+  SegmentedControl,
+  Stack,
+  Text,
+  Title,
+} from '@mantine/core'
 import { IconAlertTriangle, IconPlugConnected } from '@tabler/icons-react'
 import {
   confirmConnection,
@@ -10,6 +23,7 @@ import {
   listApps,
   startConnect,
   testConnection,
+  type AppEvent,
   type AppProviderInfo,
   type Connection,
 } from '@/api/apps'
@@ -116,7 +130,7 @@ export function AppsTab() {
           </Text>
         )}
         {data.providers.map((p) => (
-          <Paper key={p.code} withBorder radius="md" p="md">
+          <Paper key={p.code} withBorder p="md">
             <Group justify="space-between" wrap="nowrap" align="flex-start">
               <div style={{ minWidth: 0 }}>
                 <Text fw={600}>{p.name}</Text>
@@ -215,7 +229,7 @@ function ConnectionCard({
   }
 
   return (
-    <Paper withBorder radius="md" p="md">
+    <Paper withBorder p="md">
       <Group justify="space-between" wrap="wrap" gap="sm">
         <div style={{ minWidth: 0 }}>
           <Group gap="xs">
@@ -254,28 +268,105 @@ function ConnectionCard({
       {open && details.data && (
         <Stack gap="sm" mt="md">
           <PluginSlot name="apps.connection" props={{ connection: details.data, onChange: refresh }} />
-          <Text fw={600} size="sm">
-            {t('apps.activity', 'Letzte Aktivität')}
-          </Text>
-          {(details.data.events ?? []).length === 0 && (
-            <Text size="sm" c="dimmed">
-              {t('apps.noActivity', 'Noch keine Aktivität.')}
-            </Text>
-          )}
-          {(details.data.events ?? []).map((e, i) => (
-            <Group key={i} gap="xs" wrap="nowrap" align="flex-start">
-              <Badge size="xs" color={e.ok ? 'green' : 'red'} variant="light" style={{ flexShrink: 0 }}>
-                {e.ok ? 'OK' : t('apps.error', 'Fehler')}
-              </Badge>
-              <Text size="xs" style={{ minWidth: 0 }}>
-                {e.at ? formatDateTime(e.at) : ''} · {t(`apps.actions.${e.action}`, e.action)}
-                {e.detail ? ` · ${e.detail}` : ''}
-              </Text>
-            </Group>
-          ))}
+          <ActivityLog events={details.data.events ?? []} />
         </Stack>
       )}
     </Paper>
+  )
+}
+
+type LogFilter = 'all' | 'errors' | 'skipped'
+
+const URL_RE = /(https:\/\/[^\s]+)/
+
+/** Text with its https links clickable (an app links to what it posted). */
+function Linked({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(URL_RE).map((part, i) =>
+        URL_RE.test(part) ? (
+          <Anchor key={i} href={part} target="_blank" rel="noreferrer" size="xs">
+            {part.replace(/^https:\/\//, '').slice(0, 40)}…
+          </Anchor>
+        ) : (
+          part
+        ),
+      )}
+    </>
+  )
+}
+
+/**
+ * The connection's own log: what the app did, what failed and why, and what
+ * it left out on purpose (``skipped``), newest first.
+ */
+function ActivityLog({ events }: { events: AppEvent[] }) {
+  const { t } = useT()
+  const [filter, setFilter] = useState<LogFilter>('all')
+  const shown = events.filter((e) =>
+    filter === 'errors' ? !e.ok : filter === 'skipped' ? e.action === 'skipped' : true,
+  )
+  const errors = events.filter((e) => !e.ok).length
+  return (
+    <>
+      <Group justify="space-between" wrap="wrap" gap="xs">
+        <Text fw={600} size="sm">
+          {t('apps.activity', 'Letzte Aktivität')}
+        </Text>
+        {events.length > 0 && (
+          <SegmentedControl
+            size="xs"
+            value={filter}
+            onChange={(v) => setFilter(v as LogFilter)}
+            data={[
+              { value: 'all', label: t('apps.logAll', 'Alles') },
+              {
+                value: 'errors',
+                label: errors
+                  ? t('apps.logErrorsCount', 'Fehler ({{n}})', { n: errors })
+                  : t('apps.logErrors', 'Fehler'),
+              },
+              { value: 'skipped', label: t('apps.logSkipped', 'Ausgelassen') },
+            ]}
+          />
+        )}
+      </Group>
+      {shown.length === 0 && (
+        <Text size="sm" c="dimmed">
+          {events.length === 0
+            ? t('apps.noActivity', 'Noch keine Aktivität.')
+            : t('apps.noneInFilter', 'Nichts in dieser Auswahl.')}
+        </Text>
+      )}
+      {shown.map((e, i) => {
+        const skipped = e.ok && e.action === 'skipped'
+        return (
+          <Group key={i} gap="xs" wrap="nowrap" align="flex-start">
+            <Badge
+              size="xs"
+              color={!e.ok ? 'red' : skipped ? 'gray' : 'green'}
+              variant="light"
+              style={{ flexShrink: 0 }}
+            >
+              {!e.ok
+                ? t('apps.error', 'Fehler')
+                : skipped
+                  ? t('apps.skipped', 'Ausgelassen')
+                  : 'OK'}
+            </Badge>
+            <Text size="xs" style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
+              {e.at ? formatDateTime(e.at) : ''} · {t(`apps.actions.${e.action}`, e.action)}
+              {e.detail ? (
+                <>
+                  {' · '}
+                  <Linked text={e.detail} />
+                </>
+              ) : null}
+            </Text>
+          </Group>
+        )
+      })}
+    </>
   )
 }
 

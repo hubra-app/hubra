@@ -74,7 +74,7 @@ function BrandPanel() {
 
 /** Round icon above a heading, e.g. the envelope on "Passwort vergessen". */
 export function AuthIcon({ children, tone = 'violet' }: { children: ReactNode; tone?: 'violet' | 'green' | 'red' }) {
-  const bg = { violet: 'var(--mantine-color-acc-light)', green: 'rgba(31,157,87,.12)', red: 'rgba(220,38,38,.10)' }[tone]
+  const bg = { violet: 'var(--mantine-color-acc-light)', green: 'var(--mantine-color-green-light)', red: 'var(--mantine-color-red-light)' }[tone]
   return (
     <div
       style={{

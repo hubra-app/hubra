@@ -58,6 +58,17 @@ function currentRedirect(): string | null {
   return validateRedirect(raw, URLS, { dev: import.meta.env.DEV, self: window.location.origin })
 }
 
+type NoticeKind = 'success' | 'error' | 'info'
+
+/** Every toast on sign-in goes through here: one colour per kind. */
+function showNotice(kind: NoticeKind, title: string, msg?: string) {
+  notifications.show({
+    title,
+    message: msg,
+    color: kind === 'error' ? 'red' : kind === 'success' ? 'green' : 'acc',
+  })
+}
+
 export function SsoProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading')
@@ -99,11 +110,7 @@ export function SsoProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (errorParam === 'insufficient_permissions') {
-      notifications.show({
-        title: tr('Kein Zugriff', 'Access denied'),
-        message: tr('Du hast keinen Zugriff auf die Verwaltung.', 'You do not have access to the admin portal.'),
-        color: 'red',
-      })
+      showNotice('error', tr('Kein Zugriff', 'Access denied'), tr('Du hast keinen Zugriff auf die Verwaltung.', 'You do not have access to the admin portal.'))
     }
   }, [errorParam])
 
@@ -176,13 +183,6 @@ export function SsoProvider({ children }: { children: ReactNode }) {
     return () => setAuthFailureHandler(null)
   }, [])
 
-  const notify = useCallback((kind: 'success' | 'error' | 'info', title: string, msg?: string) => {
-    notifications.show({
-      title,
-      message: msg,
-      color: kind === 'error' ? 'red' : kind === 'success' ? 'green' : 'blue',
-    })
-  }, [])
 
   const value = useMemo<SsoState>(
     () => ({
@@ -193,9 +193,9 @@ export function SsoProvider({ children }: { children: ReactNode }) {
       redirectTarget,
       urls: URLS,
       continueSignedIn,
-      notify,
+      notify: showNotice,
     }),
-    [authStatus, isSuperadmin, permissions, redirectTarget, continueSignedIn, notify],
+    [authStatus, isSuperadmin, permissions, redirectTarget, continueSignedIn],
   )
 
   if (offline)

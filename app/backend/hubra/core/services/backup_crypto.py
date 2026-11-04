@@ -87,13 +87,37 @@ def needs_private_key(s3_key: str | None) -> bool:
     return bool(s3_key and s3_key.endswith(AGE_SUFFIX)) and not server_private_key()
 
 
-def encrypt(src: str, dst_base: str, extra_public_keys: list[str]) -> str:
-    """Encrypt *src* to ``dst_base`` + suffix; returns the path written."""
+def club_only(tenant) -> bool:
+    """True when the club chose that only its own key opens its backups.
+
+    Needs a club key: without one the setting has no effect, so a backup
+    is never encrypted to nobody.
+    """
+    if tenant is None or not split_keys(tenant.backup_public_key):
+        return False
+    return bool((tenant.settings or {}).get("backup_club_only"))
+
+
+def encrypt(
+    src: str,
+    dst_base: str,
+    extra_public_keys: list[str],
+    install_keys: bool = True,
+) -> str:
+    """Encrypt *src* to ``dst_base`` + suffix; returns the path written.
+
+    With ``install_keys=False`` (a club that chose "only our key") an age
+    backup is encrypted to *extra_public_keys* alone.
+    """
     m = mode()
     if m == "age":
         dst = dst_base + AGE_SUFFIX
         cmd = ["age", "--encrypt", "--output", dst]
-        for key in [*install_public_keys(), *extra_public_keys]:
+        recipients = [*install_public_keys()] if install_keys else []
+        recipients += extra_public_keys
+        if not recipients:
+            raise RuntimeError("No public key to encrypt the backup to")
+        for key in recipients:
             cmd += ["--recipient", key]
         result = subprocess.run([*cmd, src], capture_output=True, timeout=300)
         if result.returncode != 0:

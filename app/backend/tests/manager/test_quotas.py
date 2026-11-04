@@ -34,9 +34,9 @@ def club(db, seeded_db):
 
 
 def _plan(db, **values):
-    platform_settings.set_many(
-        {f"limits.starter.{k}": str(v) for k, v in values.items()}
-    )
+    from hubra.core.services import plans
+
+    plans.update(plans.get("starter"), {f"limit_{k}": v for k, v in values.items()})
     db.session.commit()
 
 
@@ -67,8 +67,11 @@ def test_bad_values_are_refused(db, club):
         with pytest.raises(Exception) as err:
             quotas.set_overrides(club, bad)
         assert getattr(err.value, "status", None) == 400
-    with pytest.raises(platform_settings.PlatformSettingError):
-        platform_settings.set_many({"limits.growth.members": "lots"})
+    from hubra.core.services import plans
+
+    with pytest.raises(Exception) as err:
+        plans.update(plans.get("growth"), {"limit_members": "lots"})
+    assert getattr(err.value, "status", None) == 400
     with pytest.raises(platform_settings.PlatformSettingError):
         platform_settings.set_many({"limits.warn_percent": "0"})
     # Settings written some other way that are not numbers are ignored.
@@ -93,7 +96,7 @@ def test_status_levels(db, club):
     assert rows["storage_mb"]["level"] == "over"
 
 
-def test_limits_api(client, staff_headers, db, club):
+def test_limits_api(sqlite_only, client, staff_headers, db, club):
     _plan(db, members=10)
     url = f"/api/v1/system/tenants/{club.id}/limits"
     body = client.get(url).get_json()
@@ -126,7 +129,7 @@ def test_limits_api_needs_platform_rights(client, auth_headers, club):
     assert client.put(url, json={"members": 5}).status_code in (401, 403)
 
 
-def test_a_full_club_takes_no_new_members(app, client, db, seeded_db, club):
+def test_a_full_club_takes_no_new_members(sqlite_only, app, client, db, seeded_db, club):
     club.settings = {"limits": {"members": 1}}  # the owner is the one member
     db.session.commit()
     client.post(

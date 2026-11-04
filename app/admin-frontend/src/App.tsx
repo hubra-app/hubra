@@ -55,7 +55,7 @@ function RequireGlobalPermission({ perm, children }: { perm: string; children: R
       <Center h="100vh">
         <Paper shadow="lg" p="xl" maw={400}>
           <Stack gap="sm" align="center" ta="center">
-            <IconAlertTriangle size={40} color="#dc2626" />
+            <IconAlertTriangle size={40} color="var(--mantine-color-red-text)" />
             <Text fw={700} c="red">
               {tr('Kein Zugriff', 'Access denied')}
             </Text>
@@ -134,7 +134,7 @@ function AppRoutes() {
         <Center h="100vh" p="lg">
           <Paper shadow="lg" p="xl" maw={460}>
             <Stack gap="sm" align="center">
-              <IconAlertTriangle size={40} color="#dc2626" />
+              <IconAlertTriangle size={40} color="var(--mantine-color-red-text)" />
               <Text fz={18} fw={700} c="red">
                 {tr('Etwas ist schiefgelaufen', 'Something went wrong')}
               </Text>

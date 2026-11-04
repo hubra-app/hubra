@@ -31,7 +31,7 @@ const failure = (err: unknown) => (err instanceof Error ? err.message : undefine
 
 const STATUS: Record<MaintenanceWindow['status'], [string, () => string]> = {
   planned: ['gray', () => tr('Geplant', 'Planned')],
-  announced: ['blue', () => tr('Angekündigt', 'Announced')],
+  announced: ['acc', () => tr('Angekündigt', 'Announced')],
   running: ['orange', () => tr('Läuft', 'Running')],
   done: ['green', () => tr('Vorbei', 'Over')],
   cancelled: ['gray', () => tr('Abgesagt', 'Cancelled')],
@@ -86,7 +86,7 @@ export function MaintenanceWindowsCard() {
   const rows = showPast ? (query.data?.past ?? []) : (query.data?.current ?? [])
 
   return (
-    <Paper withBorder shadow="sm" radius="lg" p="lg">
+    <Paper withBorder p="lg">
       <Group justify="space-between" mb={6} wrap="wrap">
         <Group gap={10}>
           <IconCalendarTime size={20} />

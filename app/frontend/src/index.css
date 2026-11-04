@@ -17,29 +17,6 @@
   background-color: var(--hb-surface-2);
 }
 
-.terminal-block {
-  background: #221c33;
-  border-radius: 8px;
-  padding: 14px 16px;
-  font-family: "JetBrains Mono", monospace;
-  font-size: var(--mantine-font-size-xs);
-  color: #d6d2e3;
-  line-height: 1.7;
-  overflow-x: auto;
-}
-
-.terminal-block .ok-line {
-  color: #5fca85;
-}
-
-.terminal-block .err-line {
-  color: #ff7a6b;
-}
-
-.terminal-block .warn-line {
-  color: #fece2b;
-}
-
 .hi {
   color: var(--mantine-color-acc-text);
   font-weight: 600;
@@ -130,8 +107,8 @@
   overflow: auto hidden;
 }
 
-/* ── Tier 1: Small tables (3-4 cols) @ 37.5em ── */
-@media (max-width: 37.5em) {
+/* ── Tier 1: Small tables (3-4 cols) below sm (48em) ── */
+@media (max-width: 47.99em) {
   .responsive-scroll-wrap:not([data-breakpoint]) .responsive-table,
   .responsive-scroll-wrap[data-breakpoint~="small"] .responsive-table {
     display: block;
@@ -254,7 +231,7 @@
 }
 
 /* Standalone .responsive-table (not inside .responsive-scroll-wrap) — same as base tier */
-@media (max-width: 37.5em) {
+@media (max-width: 47.99em) {
   .responsive-table:not(.responsive-scroll-wrap .responsive-table) {
     display: block;
     width: 100% !important;
@@ -334,8 +311,8 @@
   }
 }
 
-/* ── Tier 2: Wide tables (5-7 cols) @ 56.25em ── */
-@media (max-width: 56.25em) {
+/* ── Tier 2: Wide tables (5-7 cols) below tab (54.375em) ── */
+@media (max-width: 54.37em) {
   .responsive-scroll-wrap[data-breakpoint~="wide"] .responsive-table {
     display: block;
     width: 100% !important;
@@ -594,29 +571,15 @@ table[style*="min-width"] td::before {
   }
 }
 
-/* Page content: one width and one gutter on every screen. */
-.page-container {
-  width: 100%;
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 32px 32px 64px;
-}
-
-@media (max-width: 48em) {
-  .page-container {
-    padding: 20px 16px 48px;
-  }
-}
-
 .verify-banner {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
   padding: 12px 16px;
-  border: 1px solid #fce588;
-  background: #fffbeb;
-  border-radius: 12px;
+  border: 1px solid var(--hb-notice-border);
+  background: var(--hb-notice-bg);
+  border-radius: var(--mantine-radius-md);
   margin-bottom: 24px;
   color: var(--hb-text);
 }
@@ -634,80 +597,6 @@ table[style*="min-width"] td::before {
   overflow: hidden;
 }
 
-/* ── Reduced motion ── */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-/* ── Signed-out pages (sign-in, reset, apply) ── */
-.auth-layout {
-  min-height: 100vh;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  background: var(--hb-surface);
-}
-
-.auth-main {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 32px;
-}
-
-.auth-brand {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(155deg, var(--mantine-color-acc-6) 0%, var(--mantine-color-acc-7) 45%, var(--mantine-color-acc-9) 100%);
-  display: flex;
-  align-items: center;
-  padding: 64px;
-}
-
-.auth-brand::after {
-  /* the doorway of the mark, very large and faint */
-  content: "";
-  position: absolute;
-  right: -120px;
-  bottom: -140px;
-  width: 520px;
-  height: 520px;
-  background: url("/hubra-mark-white.svg") center / contain no-repeat;
-  opacity: 0.07;
-  pointer-events: none;
-}
-
-.auth-brand-inner {
-  position: relative;
-  z-index: 1;
-}
-
-.auth-brand-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #fece2b;
-  flex-shrink: 0;
-}
-
-@media (max-width: 62em) {
-  .auth-layout {
-    grid-template-columns: 1fr;
-  }
-  .auth-brand {
-    display: none;
-  }
-  .auth-main {
-    align-items: flex-start;
-    padding: 40px 20px;
-  }
-}
 
 /* Page action buttons: on phones they share the row instead of stacking
    one per line against the right edge. */
@@ -740,7 +629,7 @@ table[style*="min-width"] td::before {
 
 /* Personal dashboard tiles: on phones three compact tiles side by side
    instead of a screen full of large ones. */
-@media (max-width: 575px) {
+@media (max-width: 35.99em) {
   .stat-tiles {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     gap: 8px !important;

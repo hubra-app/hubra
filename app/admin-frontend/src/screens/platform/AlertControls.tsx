@@ -73,8 +73,6 @@ export function MaintenanceCard({ state }: { state: Maintenance | undefined }) {
   return (
     <Paper
       withBorder
-      shadow="sm"
-      radius="lg"
       p="lg"
       style={active ? { borderColor: 'var(--mantine-color-orange-5)' } : undefined}
     >
@@ -192,7 +190,7 @@ export function AlertRulesPanel() {
 
   return (
     <Stack gap={16}>
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
+      <Paper withBorder p="lg">
         <Switch
           size="md"
           checked={data?.enabled ?? true}
@@ -214,7 +212,7 @@ export function AlertRulesPanel() {
         )}
       </Paper>
 
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
+      <Paper withBorder p="lg">
         <Title order={4} mb={4}>
           {tr('Was wohin gemeldet wird', 'What goes where')}
         </Title>

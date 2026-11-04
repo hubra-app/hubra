@@ -25,7 +25,7 @@ function FlagRow({ flag, total, onSaved }: { flag: FeatureFlag; total: number; o
   }
 
   return (
-    <Paper withBorder radius="lg" p="md">
+    <Paper withBorder p="md">
       <Group justify="space-between" align="flex-start" gap="md" wrap="wrap">
         <Stack gap={2} style={{ flex: '1 1 280px' }}>
           <Group gap={8}>
@@ -84,7 +84,7 @@ export function EarlyAccess() {
         )}
       </Text>
 
-      <Paper withBorder radius="lg" p="md">
+      <Paper withBorder p="md">
         <Group justify="space-between" mb={8}>
           <Title order={4}>{tr('Testgruppe', 'Early group')}</Title>
           <Badge variant="light">{data?.early_access.length ?? 0}</Badge>

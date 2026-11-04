@@ -74,7 +74,7 @@ export function MyTenantsTab() {
         <Paper withBorder p="xl">
           <Stack align="center" gap="sm" py="lg" ta="center">
             <ThemeIcon size={52} radius="xl" variant="light">
-              <IconBuildingCommunity size={26} />
+              <IconBuildingCommunity size={24} />
             </ThemeIcon>
             <Title order={3}>{tr('Du leitest noch keinen Verein', 'You do not run a club yet')}</Title>
             <Text c="dimmed" maw={420}>

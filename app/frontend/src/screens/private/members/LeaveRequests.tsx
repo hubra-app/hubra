@@ -43,7 +43,7 @@ export function LeaveRequests() {
   }
 
   return (
-    <Paper withBorder shadow="sm" radius="lg" mt="lg">
+    <Paper withBorder mt="lg">
       <Text fw={700} fz="md" px={20} pt={16} pb={8}>
         {t('members.leave.requestsTitle', 'Austrittsgesuche')}
       </Text>

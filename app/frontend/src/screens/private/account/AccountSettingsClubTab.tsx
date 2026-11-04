@@ -59,7 +59,7 @@ export function AccountSettingsClubTab() {
 
   return (
     <>
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
+      <Paper withBorder p="lg">
         <Group justify="space-between" wrap="nowrap" gap="md">
           <Group gap="md" wrap="nowrap" style={{ minWidth: 0 }}>
             <Avatar
@@ -97,7 +97,7 @@ export function AccountSettingsClubTab() {
 
       {/* Club mail only exists while the club uses the mail module. */}
       {modules.mail === true && (
-      <Paper withBorder shadow="sm" radius="lg">
+      <Paper withBorder>
         <Group p="md" gap="sm" style={{ borderBottom: '1px solid var(--hb-border)' }}>
           <IconMail size={16} style={{ color: 'var(--mantine-color-ink-4)' }} />
           <Text fw={700} fz="md">

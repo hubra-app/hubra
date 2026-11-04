@@ -64,7 +64,7 @@ export function LeaveClubCard() {
   }
 
   return (
-    <Paper withBorder shadow="sm" radius="lg">
+    <Paper withBorder>
       <Group p="md" gap="sm" style={{ borderBottom: '1px solid var(--hb-border)' }}>
         <IconDoorExit size={16} style={{ color: 'var(--mantine-color-ink-4)' }} />
         <Text fw={700} fz="md">

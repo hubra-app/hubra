@@ -398,33 +398,6 @@ class WildDuckClient:
 
     # ── Send-as ACL stubs ─────────────────────────────────────────────────────
 
-    def add_allowed_from(self, user_id: str, group_address: str) -> None:
-        """Grant send-as permission for a group address to a WildDuck user.
-
-        WildDuck does not expose a dedicated send-as ACL endpoint in its standard
-        REST API. This stub logs a WARNING and takes no action — it can be upgraded
-        to a real API call when a confirmed endpoint is available.
-        """
-        logger.warning(
-            "WildDuck send-as ACL not supported natively: skipping grant of %s for user %s",
-            group_address,
-            user_id,
-        )
-
-    def remove_allowed_from(self, user_id: str, group_address: str) -> None:
-        """Revoke send-as permission for a group address from a WildDuck user.
-
-        WildDuck does not expose a dedicated send-as ACL endpoint in its standard
-        REST API. This stub logs a WARNING and takes no action — it can be upgraded
-        to a real API call when a confirmed endpoint is available.
-        """
-        logger.warning(
-            "WildDuck send-as ACL not supported natively: skipping revoke of %s for user %s",
-            group_address,
-            user_id,
-        )
-
-
 # ── Module-level helpers ──────────────────────────────────────────────────────
 
 

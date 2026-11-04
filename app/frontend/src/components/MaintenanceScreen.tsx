@@ -51,9 +51,9 @@ export function MaintenanceScreen() {
     : null
 
   return (
-    <Overlay fixed color="var(--hb-bg, #f7f6fb)" backgroundOpacity={1} zIndex={10000}>
+    <Overlay fixed color="var(--hb-page)" backgroundOpacity={1} zIndex={10000}>
       <Center h="100vh" p="md">
-        <Paper withBorder radius="lg" shadow="md" p="xl" maw={440} ta="center">
+        <Paper withBorder shadow="md" p="xl" maw={440} ta="center">
           <Stack align="center" gap="md">
             <IconTool size={40} color="var(--mantine-primary-color-filled)" />
             <Text fz={20} fw={700}>

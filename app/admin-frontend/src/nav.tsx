@@ -13,15 +13,18 @@ import {
   IconMail,
   IconPuzzle,
   IconShieldCheck,
+  IconShieldLock,
   IconSparkles,
   IconTool,
 } from '@tabler/icons-react'
+import { Stack } from '@mantine/core'
 import { tr } from '@/lang'
 import { MyTenantsTab } from '@/screens/MyTenantsTab'
 import { TenantsTab } from '@/screens/TenantsTab'
 import { TenantRequestsTab } from '@/screens/TenantRequestsTab'
 import { GlobalAuditTab } from '@/screens/GlobalAuditTab'
 import { SupportSessionsTab } from '@/screens/SupportSessionsTab'
+import { DataRequestsPanel } from '@/screens/DataRequests'
 import { RolesTab } from '@/screens/RolesTab'
 import { MarketplaceTab } from '@/screens/MarketplaceTab'
 import { ChangelogPanel, RoadmapPanel } from '@/screens/Releases'
@@ -39,6 +42,7 @@ import { PerformancePanel } from '@/screens/platform/Performance'
 import { MyAlertsCard, OutboundMailTab } from '@/screens/platform/MailMonitor'
 import { DiscordPanel } from '@/screens/platform/DiscordStatus'
 import { SettingsSection } from '@/screens/platform/SettingsSection'
+import { PlatformPlans } from '@/screens/platform/Plans'
 import { EarlyAccess } from '@/screens/platform/EarlyAccess'
 import { PlatformTranslations } from '@/screens/platform/Translations'
 import { PlatformEncryption } from '@/screens/platform/Encryption'
@@ -123,26 +127,20 @@ export function navSections(): NavSection[] {
               render: () => <TenantRequestsTab />,
             },
             {
-              id: 'limits',
-              path: '/app/tenants/limits',
-              label: tr('Limits pro Tarif', 'Plan limits'),
+              id: 'plans',
+              path: '/app/tenants/plans',
+              label: tr('Tarife & Preise', 'Plans & prices'),
               perm: 'platform.settings',
               desc: tr(
-                'Wie viele Mitglieder, Mails und Speicher jeder Tarif hat. Eigene Limits für einen Verein setzt du auf seiner Seite.',
-                'How many members, mails and storage each plan has. Limits for one club are set on its page.',
+                'Tarife mit Preisen, Limits und Leistungen, und Listenpreise für Zusatzmodule. Was öffentlich ist, zeigt die Website. Eigenen Preis, Rabatt und Sponsor für einen Verein setzt du auf seiner Seite.',
+                'Plans with prices, limits and features, and list prices for add-ons. What is public shows on the website. A club’s own price, discount and sponsor are set on its page.',
               ),
-              render: () => <SettingsSection section="limits" />,
-            },
-            {
-              id: 'prices',
-              path: '/app/tenants/prices',
-              label: tr('Preise pro Tarif', 'Plan prices'),
-              perm: 'platform.settings',
-              desc: tr(
-                'Listenpreis pro Monat für jeden Tarif. Eigenen Preis, Rabatt und Sponsor für einen Verein setzt du auf seiner Seite.',
-                'List price per month for each plan. A club’s own price, discount and sponsor are set on its page.',
+              render: () => (
+                <Stack gap="lg">
+                  <PlatformPlans />
+                  <SettingsSection section="limits" />
+                </Stack>
               ),
-              render: () => <SettingsSection section="prices" />,
             },
             {
               id: 'early-access',
@@ -477,6 +475,24 @@ export function navSections(): NavSection[] {
           ],
         },
         {
+          id: 'privacy',
+          label: tr('Datenschutz', 'Data protection'),
+          icon: icon(IconShieldLock),
+          desc: tr(
+            'Wenn jemand eine Kopie seiner Daten in einem Verein will oder sie gelöscht haben möchte. Frist 30 Tage; hier steht, wer jede Anfrage wann erledigt hat.',
+            'When someone wants a copy of their data in a club, or wants it deleted. 30-day deadline; this records who handled each request and when.',
+          ),
+          tabs: [
+            {
+              id: 'requests',
+              path: '/app/privacy',
+              label: '',
+              perm: 'privacy.requests',
+              render: () => <DataRequestsPanel />,
+            },
+          ],
+        },
+        {
           id: 'encryption',
           label: tr('Verschlüsselung', 'Encryption'),
           icon: icon(IconLock),
@@ -538,7 +554,9 @@ export const LEGACY_REDIRECTS: Record<string, string> = {
   '/app/platform/settings/backups': '/app/platform/backups/storage',
   '/app/platform/settings/discord': '/app/platform/discord/setup',
   '/app/platform/settings/alerts': '/app/platform/alerts/rules',
-  '/app/platform/settings/limits': '/app/tenants/limits',
+  '/app/platform/settings/limits': '/app/tenants/plans',
+  '/app/tenants/limits': '/app/tenants/plans',
+  '/app/tenants/prices': '/app/tenants/plans',
   '/app/platform/settings/encryption': '/app/platform/encryption',
   '/app/platform/settings/translations': '/app/platform/translations',
   // Diagnostics kept health, performance and jobs.

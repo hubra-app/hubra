@@ -1,3 +1,4 @@
+import { colorText } from '@hubra/ui'
 import { EVENT_TYPE_COLORS } from '@/constants'
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -620,7 +621,7 @@ export function EventsTab() {
                   gap: 4,
                 }}
               >
-                <IconUserCheck size={13} style={{ color: 'var(--hb-text-2)' }} />
+                <IconUserCheck size={14} style={{ color: 'var(--hb-text-2)' }} />
                 <span
                   className="num"
                   style={{
@@ -654,9 +655,9 @@ export function EventsTab() {
               <Badge
                 variant="light"
                 style={{
-                  borderColor: EVENT_TYPE_COLORS[ev.type] + '66',
-                  color: EVENT_TYPE_COLORS[ev.type],
-                  background: EVENT_TYPE_COLORS[ev.type] + '1a',
+                  borderColor: `color-mix(in srgb, ${EVENT_TYPE_COLORS[ev.type]} 40%, transparent)`,
+                  color: colorText(EVENT_TYPE_COLORS[ev.type]),
+                  background: `color-mix(in srgb, ${EVENT_TYPE_COLORS[ev.type]} 10%, transparent)`,
                 }}
               >
                 {eventTypeLabel(ev.type)}

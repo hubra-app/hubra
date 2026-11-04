@@ -44,9 +44,9 @@ import type { AccountNotification } from '@/api/auth'
 type List = Awaited<ReturnType<typeof authApi.getNotifications>>
 
 const KIND = {
-  info: { color: 'blue', icon: <IconInfoCircle size={16} /> },
+  info: { color: 'acc', icon: <IconInfoCircle size={16} /> },
   success: { color: 'green', icon: <IconCircleCheck size={16} /> },
-  warning: { color: 'yellow', icon: <IconAlertTriangle size={16} /> },
+  warning: { color: 'orange', icon: <IconAlertTriangle size={16} /> },
   member: { color: 'pink', icon: <IconUsers size={16} /> },
 } as const
 
@@ -198,8 +198,8 @@ export function NotificationsTab() {
       />
 
       {visible.length === 0 ? (
-        <Paper withBorder radius="md" py={40} ta="center" c="dimmed">
-          <IconBellOff size={28} stroke={1.5} />
+        <Paper withBorder py={40} ta="center" c="dimmed">
+          <IconBellOff size={24} />
           <Text size="sm" mt="xs">
             {filter === 'unread'
               ? tr('Keine ungelesenen Benachrichtigungen.', 'No unread notifications.')
@@ -207,7 +207,7 @@ export function NotificationsTab() {
           </Text>
         </Paper>
       ) : (
-        <Paper withBorder radius="md" style={{ overflow: 'hidden' }}>
+        <Paper withBorder style={{ overflow: 'hidden' }}>
           {visible.map((n, i) => {
             const kind = KIND[n.kind] ?? KIND.info
             const link = safeNotificationLink(n.link) && n.club.slug

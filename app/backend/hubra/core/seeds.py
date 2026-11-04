@@ -478,20 +478,28 @@ def run_seeds(db):
             continue
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
+        # One query for the keys already there, not two per shipped key
+        # (about 3,400 per locale): new keys are added as upsert_translation
+        # would add them, and the ETag bumps once.
+        known = set(
+            session.scalars(select(Translation.key).where(Translation.locale == locale))
+        )
         inserted = 0
         for key, value in data.items():
-            if not isinstance(value, str):
+            if not isinstance(value, str) or key in known:
                 continue
-            existing = session.scalar(
-                select(Translation).where(
-                    Translation.locale == locale,
-                    Translation.key == key,
+            session.add(
+                Translation(
+                    locale=locale,
+                    key=key,
+                    value=value,
+                    needs_attention=not value.strip(),
+                    is_missing=False,
                 )
             )
-            if existing is None:
-                i18n_services.upsert_translation(locale, key, value)
-                inserted += 1
+            inserted += 1
         if inserted:
+            i18n_services._bump_etag(locale)
             click.echo(f"  Seeded {inserted} new translations for locale '{locale}'.")
     session.flush()
 

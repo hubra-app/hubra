@@ -43,9 +43,9 @@ import { notificationMessage, notificationTitle, safeLink } from './notification
 const EMPTY: NotificationList = { items: [], unread: 0 }
 
 const KIND: Record<Notification['kind'], { color: string; icon: React.ReactNode }> = {
-  info: { color: 'blue', icon: <IconInfoCircle size={16} /> },
+  info: { color: 'acc', icon: <IconInfoCircle size={16} /> },
   success: { color: 'green', icon: <IconCircleCheck size={16} /> },
-  warning: { color: 'yellow', icon: <IconAlertTriangle size={16} /> },
+  warning: { color: 'orange', icon: <IconAlertTriangle size={16} /> },
   member: { color: 'pink', icon: <IconUsers size={16} /> },
 }
 
@@ -203,7 +203,7 @@ export function NotificationPanel() {
 
         {visible.length === 0 ? (
           <Box ta="center" py={56} px="md" style={{ color: 'var(--hb-text-3)' }}>
-            <IconBellOff size={28} stroke={1.5} />
+            <IconBellOff size={24} />
             <Text fz="sm" mt="xs">
               {filter === 'unread'
                 ? t('shell.notif.noUnread', 'Keine ungelesenen Benachrichtigungen.')

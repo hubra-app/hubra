@@ -354,7 +354,10 @@ class BackupService:
                     tenant.backup_public_key if tenant else None
                 )
                 enc_path = backup_crypto.encrypt(
-                    dump_path, os.path.join(tmpdir, "backup"), club_keys
+                    dump_path,
+                    os.path.join(tmpdir, "backup"),
+                    club_keys,
+                    install_keys=not backup_crypto.club_only(tenant),
                 )
                 suffix = enc_path[len(os.path.join(tmpdir, "backup")) :]
                 s3_key = f"{_s3_prefix(tenant)}/{timestamp}_{backup_type}{suffix}"

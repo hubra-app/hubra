@@ -1,0 +1,47 @@
+# Creates the release branch for a published release: release v1.4.0 creates
+# release/1.4 at the release's commit, so a patch (v1.4.1) can always be made
+# there, even after main has moved on (docs/ci.md, docs/release-guidelines.md).
+#
+# One branch per minor version. If release/1.4 already exists (an earlier
+# 1.4.x release, or cut by hand) it is left as it is, never moved.
+# Pre-releases (v1.4.0-rc.1) create no branch.
+#
+# The branch is created with the GITHUB_TOKEN, which starts no workflows, so
+# Release checks do not run again on it; Images already ran them on that
+# commit for the release.
+name: Release branch
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  branch:
+    if: ${{ !github.event.release.prerelease }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create release/X.Y
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if [[ ! "$TAG" =~ ^v([0-9]+)\.([0-9]+)\.[0-9]+$ ]]; then
+            echo "::notice::$TAG is not vX.Y.Z, no release branch"
+            exit 0
+          fi
+          branch="release/${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+
+          if gh api "repos/$GITHUB_REPOSITORY/branches/$branch" --silent 2>/dev/null; then
+            echo "::notice::$branch already exists, left as it is"
+            echo "$branch already exists, left as it is." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # The commit the tag points at (annotated tags point at a tag object).
+          sha="$(gh api "repos/$GITHUB_REPOSITORY/commits/$TAG" --jq .sha)"
+          gh api "repos/$GITHUB_REPOSITORY/git/refs" --method POST \
+            -f ref="refs/heads/$branch" -f sha="$sha" --silent
+          echo "Created \`$branch\` at ${sha::7} ($TAG)." >> "$GITHUB_STEP_SUMMARY"

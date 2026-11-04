@@ -88,7 +88,7 @@ export function FeedbackScreen() {
 
 function KindIcon({ kind }: { kind: SupportCase['kind'] }) {
   return (
-    <ThemeIcon variant="light" radius="xl" size={34} color={kind === 'bug' ? 'red' : 'yellow'}>
+    <ThemeIcon variant="light" radius="xl" size={34} color={kind === 'bug' ? 'red' : 'orange'}>
       {kind === 'bug' ? <IconBug size={18} /> : <IconBulb size={18} />}
     </ThemeIcon>
   )
@@ -112,7 +112,7 @@ function MyCases() {
   if (data.length === 0)
     return (
       <EmptyState
-        icon={<IconMessage size={26} stroke={1.6} />}
+        icon={<IconMessage size={24} />}
         title={t('support.page.noneTitle', 'Noch keine Meldungen')}
         description={t(
           'support.page.noneDesc',
@@ -129,7 +129,6 @@ function MyCases() {
           <Paper
             key={c.id}
             withBorder
-            radius="lg"
             p="md"
             component="button"
             type="button"
@@ -272,7 +271,6 @@ function CaseDetail({ id, onClose }: { id: number; onClose: () => void }) {
                 {(c.comments ?? []).map((m) => (
                   <Paper
                     key={m.id}
-                    radius="md"
                     p="sm"
                     bg={m.fromStaff ? 'var(--mantine-color-acc-light)' : 'var(--hb-surface-2, var(--mantine-color-gray-0))'}
                     ml={m.fromStaff ? 0 : 24}
@@ -323,7 +321,7 @@ function Roadmap() {
   if (data.length === 0)
     return (
       <EmptyState
-        icon={<IconBulb size={26} stroke={1.6} />}
+        icon={<IconBulb size={24} />}
         title={t('support.roadmap.emptyTitle', 'Die Roadmap ist noch leer')}
         description={t(
           'support.roadmap.emptyDesc',
@@ -391,7 +389,7 @@ function RoadmapCard({ item }: { item: RoadmapItem }) {
   }
 
   return (
-    <Paper withBorder radius="lg" p="sm">
+    <Paper withBorder p="sm">
       <Group gap="sm" wrap="nowrap" align="flex-start">
         <UnstyledButton
           onClick={() => void toggle()}

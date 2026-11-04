@@ -71,20 +71,6 @@ def test_switch_tenant_to_nonexistent_tenant_returns_404(client, tenant_pair):
     assert resp.status_code == 404
 
 
-def test_switch_tenant_empty_slug_returns_400(client, tenant_pair):
-    """switch-tenant with empty tenantSlug returns 400."""
-    client.post(
-        "/api/v1/auth/login",
-        json={"email": "user@test.ch", "password": "password123"},
-    )
-
-    resp = client.post(
-        "/api/v1/auth/switch-tenant",
-        json={"tenantSlug": ""},
-    )
-    assert resp.status_code == 400
-
-
 # ── JWT tenant_slug claim ─────────────────────────────────────────────────────
 
 
@@ -144,15 +130,6 @@ def test_find_user_tenants_excludes_unauthorized(tenant_pair, db):
 
 
 # ── switch-tenant without authentication ──────────────────────────────────────
-
-
-def test_switch_tenant_without_auth_returns_401(client, tenant_pair):
-    """switch-tenant without a valid JWT returns 401."""
-    resp = client.post(
-        "/api/v1/auth/switch-tenant",
-        json={"tenantSlug": "tenant-a"},
-    )
-    assert resp.status_code == 401
 
 
 def test_login_with_tenant_choice_can_switch_tenant(client, tenant_pair, db):

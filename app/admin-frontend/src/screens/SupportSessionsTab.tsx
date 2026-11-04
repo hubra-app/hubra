@@ -167,7 +167,7 @@ export function SupportSessionsTab() {
                       {s.reason || '–'}
                     </Table.Td>
                     <Table.Td>
-                      <Badge size="sm" variant="light" color={s.mode === 'act' ? 'red' : 'blue'}>
+                      <Badge size="sm" variant="light" color={s.mode === 'act' ? 'red' : 'acc'}>
                         {s.mode === 'act' ? tr('Ändern', 'Changes') : tr('Nur ansehen', 'Look only')}
                       </Badge>
                     </Table.Td>

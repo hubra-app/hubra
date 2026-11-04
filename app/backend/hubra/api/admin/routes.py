@@ -7,7 +7,7 @@ admin role).
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from flask import Blueprint, jsonify, request
 from marshmallow import ValidationError
@@ -91,8 +91,8 @@ def add_domain():
         # club may claim it, so no club can sit on someone else's domain.
         created = existing.created_at
         if created.tzinfo is None:
-            created = created.replace(tzinfo=timezone.utc)
-        stale = datetime.now(timezone.utc) - created > PENDING_CLAIM_HOLD
+            created = created.replace(tzinfo=UTC)
+        stale = datetime.now(UTC) - created > PENDING_CLAIM_HOLD
         if existing.verified or existing.tenant_id == tenant.id or not stale:
             return jsonify(
                 {"error": "CONFLICT", "message": "Domain already registered"}
@@ -459,3 +459,205 @@ def _domain_to_dict(domain: Domain) -> dict:
         "created_at": domain.created_at.isoformat() if domain.created_at else None,
         "updated_at": domain.updated_at.isoformat() if domain.updated_at else None,
     }
+
+
+# ── Club backup key ─────────────────────────────────────────────────────────
+#
+# A club may hold its own age key pair: the public key lives on the tenant
+# (``tenants.backup_public_key``) and every new backup of the club is
+# encrypted to it as well as to the platform key, so the club can open its
+# own backups.  The private key is made in the browser and never sent here.
+# Platform admins can still set the key in manage › Encryption.
+
+
+def _backup_key_state(tenant) -> dict:
+    from hubra.core.models.backup import BackupRecord
+    from hubra.core.services import backup_crypto
+
+    meta = dict((tenant.settings or {}).get("backup_key") or {})
+    keys = backup_crypto.split_keys(tenant.backup_public_key)
+    # A key set from manage or the CLI has no note here; don't show a stale one.
+    if meta.get("key") != tenant.backup_public_key:
+        meta = {}
+    latest = None
+    if keys:
+        query = select(BackupRecord).where(
+            BackupRecord.tenant_id == tenant.id,
+            BackupRecord.scope == "club",
+            BackupRecord.status == "completed",
+            BackupRecord.s3_key.like(f"%{backup_crypto.AGE_SUFFIX}"),
+        )
+        set_at = meta.get("set_at")
+        if set_at:
+            query = query.where(
+                BackupRecord.created_at >= datetime.fromisoformat(set_at)
+            )
+        record = db.session.scalar(
+            query.order_by(BackupRecord.created_at.desc()).limit(1)
+        )
+        latest = record.created_at.isoformat() if record else None
+    return {
+        "public_key": tenant.backup_public_key,
+        "set_at": meta.get("set_at"),
+        "set_by": meta.get("set_by"),
+        # Only age (public-key) backups use club keys; a server still on the
+        # older passphrase backups stores the key for later.
+        "backups_use_key": backup_crypto.mode() == "age",
+        # Only the club's key opens its backups: Hubra cannot restore them.
+        "club_only": backup_crypto.club_only(tenant),
+        "last_backup_with_key": latest,
+    }
+
+
+@admin_bp.get("/backup-key")
+@require_admin
+def get_backup_key():
+    """The club's own backup public key and whether backups use it."""
+    tenant = current_tenant()
+    if tenant is None:
+        return jsonify({"error": "NO_TENANT", "message": "No tenant context"}), 400
+    return jsonify(_backup_key_state(tenant)), 200
+
+
+@admin_bp.put("/backup-key")
+@require_admin
+def set_backup_key():
+    """Body ``{"public_key": "age1..."}``: the club's own backup key.
+
+    Only the public key comes here; anything that looks like a private key
+    is refused so it is never stored or logged by mistake.
+    """
+    from hubra.api.auth.helpers import get_current_member
+    from hubra.api.utils import log_audit
+    from hubra.core.services.backup_crypto import split_keys, valid_public_key
+
+    tenant = current_tenant()
+    if tenant is None:
+        return jsonify({"error": "NO_TENANT", "message": "No tenant context"}), 400
+    raw = (request.get_json(silent=True) or {}).get("public_key")
+    if not isinstance(raw, str) or not raw.strip():
+        return jsonify(
+            {"error": "VALIDATION_ERROR", "message": "A public key is required"}
+        ), 422
+    if "AGE-SECRET-KEY" in raw.upper():
+        return jsonify(
+            {
+                "error": "PRIVATE_KEY_SENT",
+                "message": "That is the private key. Keep it to yourself and "
+                "send only the public key (age1...).",
+            }
+        ), 422
+    keys = split_keys(raw)
+    if len(keys) != 1 or not valid_public_key(keys[0]):
+        return jsonify(
+            {"error": "VALIDATION_ERROR", "message": "Not an age public key (age1...)"}
+        ), 422
+
+    try:
+        actor = get_current_member()
+    except ApiError:  # a platform admin without a seat in the club
+        actor = None
+    settings = dict(tenant.settings or {})
+    settings["backup_key"] = {
+        "key": keys[0],
+        "set_at": datetime.now(UTC).isoformat(),
+        "set_by": f"{actor.first_name} {actor.last_name}".strip() if actor else None,
+    }
+    tenant.settings = settings
+    tenant.backup_public_key = keys[0]
+    log_audit(
+        actor.id if actor else None,
+        "set_backup_key",
+        "Tenant",
+        tenant.id,
+        keys[0][:16] + "…",
+    )
+    db.session.commit()
+    return jsonify(_backup_key_state(tenant)), 200
+
+
+@admin_bp.delete("/backup-key")
+@require_admin
+def remove_backup_key():
+    """Stop encrypting new backups to the club's key.  Backups made before
+    still open with it, so the club should keep the private key."""
+    from hubra.api.auth.helpers import get_current_member
+    from hubra.api.utils import log_audit
+
+    tenant = current_tenant()
+    if tenant is None:
+        return jsonify({"error": "NO_TENANT", "message": "No tenant context"}), 400
+    try:
+        actor_id = get_current_member().id
+    except ApiError:
+        actor_id = None
+    tenant.backup_public_key = None
+    settings = dict(tenant.settings or {})
+    settings.pop("backup_key", None)
+    settings.pop("backup_club_only", None)
+    tenant.settings = settings
+    log_audit(actor_id, "remove_backup_key", "Tenant", tenant.id, None)
+    db.session.commit()
+    return jsonify(_backup_key_state(tenant)), 200
+
+
+@admin_bp.patch("/backup-key")
+@require_admin
+def update_backup_key_options():
+    """Body ``{"club_only": bool}``: whether only the club's own key opens
+    its new backups.  Turning it on needs ``"confirm": "<club slug>"``,
+    because Hubra can then no longer restore those backups."""
+    from hubra.api.auth.helpers import get_current_member
+    from hubra.api.utils import log_audit
+    from hubra.core.services import backup_crypto
+
+    tenant = current_tenant()
+    if tenant is None:
+        return jsonify({"error": "NO_TENANT", "message": "No tenant context"}), 400
+    data = request.get_json(silent=True) or {}
+    club_only = data.get("club_only")
+    if not isinstance(club_only, bool):
+        return jsonify(
+            {"error": "VALIDATION_ERROR", "message": "club_only must be true or false"}
+        ), 422
+    if club_only:
+        if not backup_crypto.split_keys(tenant.backup_public_key):
+            return jsonify(
+                {
+                    "error": "NO_BACKUP_KEY",
+                    "message": "Set up the club's backup key first",
+                }
+            ), 422
+        if backup_crypto.mode() != "age":
+            return jsonify(
+                {
+                    "error": "BACKUP_KEYS_UNSUPPORTED",
+                    "message": "Backups on this server do not use public keys yet",
+                }
+            ), 422
+        if data.get("confirm") != tenant.slug:
+            return jsonify(
+                {
+                    "error": "CONFIRMATION_REQUIRED",
+                    "message": "Type the club's short name to confirm",
+                }
+            ), 422
+    try:
+        actor_id = get_current_member().id
+    except ApiError:
+        actor_id = None
+    settings = dict(tenant.settings or {})
+    if club_only:
+        settings["backup_club_only"] = True
+    else:
+        settings.pop("backup_club_only", None)
+    tenant.settings = settings
+    log_audit(
+        actor_id,
+        "backup_key_club_only_on" if club_only else "backup_key_club_only_off",
+        "Tenant",
+        tenant.id,
+        None,
+    )
+    db.session.commit()
+    return jsonify(_backup_key_state(tenant)), 200

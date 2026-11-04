@@ -10,7 +10,7 @@ from sqlalchemy import select
 
 from hubra.core.errors import ApiError
 from hubra.core.models.tenant import GlobalAuditEntry, Tenant
-from hubra.core.services import club_billing, platform_settings
+from hubra.core.services import club_billing, plans
 
 TODAY = date(2026, 11, 2)
 
@@ -24,7 +24,7 @@ def club(db):
 
 
 def _price(db, plan="starter", value="40"):
-    platform_settings.set_many({f"billing.price.{plan}": value})
+    plans.update(plans.get(plan), {"price_month_chf": value})
     db.session.commit()
 
 
@@ -59,6 +59,7 @@ def test_list_price_discount_and_addons(db, club):
         "code": "bank-import",
         "label": "",
         "price_chf": "7.50",
+        "unit": "flat",
     }
 
 
@@ -163,13 +164,101 @@ def test_billing_api_needs_platform_rights(client, auth_headers, club):
     assert client.patch(url, json={"status": "active"}).status_code in (401, 403)
 
 
-@pytest.mark.parametrize("bad", ["cheap", "-5", "nan", "1e3", "12.345", "200000"])
-def test_plan_price_setting_is_validated(db, bad):
-    with pytest.raises(platform_settings.PlatformSettingError):
-        platform_settings.set_many({"billing.price.starter": bad})
+@pytest.mark.parametrize("bad", ["cheap", "-5", "nan", True, "200000"])
+def test_plan_price_is_validated(db, bad):
+    with pytest.raises(ApiError):
+        plans.update(plans.get("starter"), {"price_month_chf": bad})
 
 
 def test_plan_price_takes_francs_and_rappen(db, club):
     _price(db, value="29.5")
     assert club_billing.plan_price("starter") == "29.50"
     assert club_billing.plan_price("growth") is None
+
+
+def test_addons_per_member_and_per_licence(db, club, monkeypatch):
+    from hubra.core.services import quotas
+
+    monkeypatch.setattr(quotas, "member_count", lambda tenant: 40)
+    club_billing.update(
+        club,
+        {
+            "status": "active",
+            "addons": [
+                {"code": "discord", "price_chf": "0.25", "unit": "member"},
+                {"code": "keys", "price_chf": "2", "unit": "license"},
+                {"code": "mail", "price_chf": "5"},
+            ],
+            "licenses": {"keys": 3},
+        },
+    )
+    s = club_billing.summary(club, TODAY)
+    lines = {x["code"]: x for x in s["module_lines"]}
+    assert (lines["discord"]["quantity"], lines["discord"]["total_chf"]) == (
+        40,
+        "10.00",
+    )
+    assert (lines["keys"]["quantity"], lines["keys"]["total_chf"]) == (3, "6.00")
+    assert (lines["mail"]["quantity"], lines["mail"]["total_chf"]) == (1, "5.00")
+    assert s["members"] == 40
+    assert s["addons_chf"] == "21.00" and s["total_chf"] == "21.00"
+
+
+def test_plan_modules_count_and_club_addon_replaces_them(db, club, monkeypatch):
+    from hubra.core.services import quotas
+
+    monkeypatch.setattr(quotas, "member_count", lambda tenant: 10)
+    codes = [m.code for m in plans._modules()][:3]
+    _price(db, value="40")
+    plans.update(
+        plans.get("starter"),
+        {
+            "modules": [
+                {"code": codes[0]},
+                {"code": codes[1], "price_chf": "1", "unit": "member"},
+                {"code": codes[2], "price_chf": "4", "unit": "license"},
+            ]
+        },
+    )
+    db.session.commit()
+    club.plan = "starter"
+    club_billing.update(club, {"licenses": {codes[2]: 2}})
+    s = club_billing.summary(club, TODAY)
+    lines = {x["code"]: x for x in s["module_lines"]}
+    assert lines[codes[0]]["included"] and lines[codes[0]]["total_chf"] == "0.00"
+    assert lines[codes[1]]["total_chf"] == "10.00"
+    assert lines[codes[2]]["total_chf"] == "8.00"
+    assert {x["source"] for x in s["module_lines"]} == {"plan"}
+    assert s["total_chf"] == "58.00"
+
+    # The club's own deal for a plan module replaces the plan's price.
+    club_billing.update(
+        club, {"addons": [{"code": codes[1], "price_chf": "3", "unit": "flat"}]}
+    )
+    s = club_billing.summary(club, TODAY)
+    lines = {x["code"]: x for x in s["module_lines"]}
+    assert lines[codes[1]]["source"] == "addon"
+    assert lines[codes[1]]["total_chf"] == "3.00"
+    assert s["total_chf"] == "51.00"
+
+
+def test_old_addons_without_unit_are_flat(db, club):
+    club.settings = {
+        "billing": {"addons": [{"code": "x", "label": "", "price_chf": "4.00"}]}
+    }
+    s = club_billing.summary(club, TODAY)
+    assert s["addons"][0]["unit"] == "flat" and s["total_chf"] == "4.00"
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"addons": [{"code": "x", "price_chf": 1, "unit": "seat"}]},
+        {"licenses": {"x": -1}},
+        {"licenses": {"x": "2"}},
+        {"licenses": ["x"]},
+    ],
+)
+def test_bad_units_and_licences_are_refused(db, club, body):
+    with pytest.raises(ApiError):
+        club_billing.update(club, body)

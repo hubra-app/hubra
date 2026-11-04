@@ -13,7 +13,6 @@ from unittest.mock import patch, MagicMock
 
 from hubra.core.services.storage_metrics import (
     get_storage_bytes,
-    get_storage_breakdown,
     _get_pg_schema_size,
     _get_mail_quota_total,
 )
@@ -104,21 +103,3 @@ class TestMailQuota:
         result = _get_mail_quota_total(tenant_id=1)
         assert result == 0
 
-
-class TestStorageBreakdown:
-    """Tests for detailed storage breakdown."""
-
-    @patch("hubra.core.services.storage_metrics.get_storage_bytes")
-    @patch("hubra.core.services.storage_metrics._get_mail_quota_total")
-    @patch("hubra.core.services.storage_metrics._get_pg_schema_size")
-    def test_breakdown_structure(self, mock_pg, mock_mail, mock_total):
-        """Returns correct breakdown structure."""
-        mock_pg.return_value = 1000
-        mock_mail.return_value = 500
-        mock_total.return_value = 1500
-
-        result = get_storage_breakdown(tenant_id=42)
-        assert result["tenant_id"] == 42
-        assert result["pg_schema_bytes"] == 1000
-        assert result["mail_quota_bytes"] == 500
-        assert result["total_bytes"] == 1500

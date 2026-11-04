@@ -36,7 +36,7 @@ export function MyGroupsCard() {
   }
 
   return (
-    <Paper withBorder shadow="sm" radius="lg">
+    <Paper withBorder>
       <Group p="md" gap="sm" style={{ borderBottom: '1px solid var(--hb-border)' }}>
         <IconUsersGroup size={16} style={{ color: 'var(--hb-text-2)' }} />
         <Text fw={700} fz="md">

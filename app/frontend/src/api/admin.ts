@@ -125,3 +125,41 @@ export function updateBankSettings(input: BankSettingsInput): Promise<BankSettin
     body: JSON.stringify(input),
   })
 }
+
+// ── Club backup key ─────────────────────────────────────────────────────────
+// Only the public key (age1…) is ever sent; the private key stays with the club.
+
+export interface BackupKeyState {
+  public_key: string | null
+  set_at: string | null
+  set_by: string | null
+  /** False while the server still makes the older passphrase backups. */
+  backups_use_key: boolean
+  /** The newest club backup encrypted to this key, if any. */
+  last_backup_with_key: string | null
+  /** Only the club's key opens new backups; Hubra cannot restore them. */
+  club_only: boolean
+}
+
+export function getBackupKey(): Promise<BackupKeyState> {
+  return apiFetch<BackupKeyState>('/admin/backup-key')
+}
+
+export function setBackupKey(publicKey: string): Promise<BackupKeyState> {
+  return apiFetch<BackupKeyState>('/admin/backup-key', {
+    method: 'PUT',
+    body: JSON.stringify({ public_key: publicKey }),
+  })
+}
+
+export function removeBackupKey(): Promise<BackupKeyState> {
+  return apiFetch<BackupKeyState>('/admin/backup-key', { method: 'DELETE' })
+}
+
+/** Turning "only our key" on needs the club's slug as confirmation. */
+export function setBackupKeyClubOnly(clubOnly: boolean, confirm?: string): Promise<BackupKeyState> {
+  return apiFetch<BackupKeyState>('/admin/backup-key', {
+    method: 'PATCH',
+    body: JSON.stringify({ club_only: clubOnly, confirm }),
+  })
+}

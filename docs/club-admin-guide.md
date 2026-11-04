@@ -189,3 +189,14 @@ app uses but nobody has translated yet are marked, so you can fill them in.
   club. Clubs have no backup screen. If data was lost, ask the platform team
   to restore your club from a backup from before the mistake; other clubs are
   not affected, but everything in your club since that backup is replaced.
+- **Your own backup key (Settings › Verschlüsselung):** a guide makes a key
+  pair in your browser, has you store the private key (password manager,
+  second copy with another board member) and checks that you did. Every new
+  backup is then also encrypted to your key, so you can open your backups
+  yourself with the free tool [age](https://age-encryption.org). The platform
+  can still restore them. Losing the key costs you that access, not data.
+- **Only our key:** optional, on the same page. New backups are then
+  encrypted to your key alone, so nobody else can open them, the platform
+  team included. The platform can then no longer restore your club unless
+  you hand over the private key, and if you lose it those backups are gone.
+  Turn it on only if the key is stored safely in at least two places.

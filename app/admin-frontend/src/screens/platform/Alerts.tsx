@@ -7,7 +7,7 @@ import {
   IconCircleCheck,
   IconRefresh,
 } from '@tabler/icons-react'
-import { StatGrid, StatTile } from '@/components/ui'
+import { EmptyState, StatGrid, StatTile } from '@/components/ui'
 import { useAdmin } from '@/context/AdminContext'
 import { formatDateTime } from '@/format'
 import { tr } from '@/lang'
@@ -101,7 +101,6 @@ function ProblemRow({ p }: { p: OpenProblem }) {
   return (
     <Paper
       withBorder
-      radius="md"
       p="md"
       style={{
         borderLeft: `4px solid var(--mantine-color-${p.level === 'error' ? 'red' : 'orange'}-6)`,
@@ -214,12 +213,12 @@ export function OverviewPanel() {
         </Alert>
       )}
 
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
+      <Paper withBorder p="lg">
         <Group gap={10} mb={12}>
           {data && problems.length === 0 ? (
-            <IconCircleCheck size={22} color="var(--mantine-color-green-7)" />
+            <IconCircleCheck size={24} color="var(--mantine-color-green-7)" />
           ) : (
-            <IconAlertTriangle size={22} color="var(--mantine-color-orange-7)" />
+            <IconAlertTriangle size={24} color="var(--mantine-color-orange-7)" />
           )}
           <Title order={4}>
             {!data
@@ -257,7 +256,7 @@ export function OverviewPanel() {
                   `${c.error} Fehler, ${c.warning} Warnungen`,
                   `${c.error} errors, ${c.warning} warnings`,
                 )}
-                accent={c.error ? '#c0392b' : c.warning ? '#c2870f' : undefined}
+                accent={c.error ? 'var(--mantine-color-red-text)' : c.warning ? 'var(--mantine-color-orange-text)' : undefined}
                 onClick={() => navigate(`/app/platform/alerts/events?category=${area}`)}
               />
             )
@@ -265,7 +264,7 @@ export function OverviewPanel() {
         </StatGrid>
       )}
 
-      <Paper withBorder shadow="sm" radius="lg" p="lg">
+      <Paper withBorder p="lg">
         <Group justify="space-between" mb={12}>
           <Title order={4}>{tr('Letzte Warnungen', 'Latest alerts')}</Title>
           <Button
@@ -277,9 +276,7 @@ export function OverviewPanel() {
           </Button>
         </Group>
         {data && data.recent.length === 0 && (
-          <Text size="sm" c="dimmed">
-            {tr('Noch keine Warnungen.', 'No alerts yet.')}
-          </Text>
+          <EmptyState title={tr('Noch keine Warnungen.', 'No alerts yet.')} />
         )}
         <Stack gap={0}>
           {(data?.recent ?? []).map((e) => (

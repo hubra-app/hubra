@@ -337,7 +337,6 @@ export function MembersTab() {
   const renderMemberCard = (m: Member) => (
     <Paper
       withBorder
-      radius="lg"
       p="md"
       h="100%"
       style={{
@@ -499,12 +498,12 @@ export function MembersTab() {
                         <span
                           title={t('members.privateEmailUnverified', 'Private E-Mail nicht bestätigt')}
                           style={{
-                            color: '#f59e0b',
+                            color: 'var(--mantine-color-orange-text)',
                             marginLeft: 4,
                             verticalAlign: 'middle',
                           }}
                         >
-                          <IconShieldCheckFilled size={13} />
+                          <IconShieldCheckFilled size={14} />
                         </span>
                       )}
                     </div>

@@ -256,7 +256,7 @@ export function FunctionsTab() {
                     justifyContent: 'center',
                   }}
                 >
-                  <IconUserCog size={18} color="#5e5873" />
+                  <IconUserCog size={18} color="var(--hb-text-2)" />
                 </div>
               }
               title={fn.name}
@@ -297,7 +297,7 @@ export function FunctionsTab() {
                     <Button
                       size="sm"
                       variant="subtle"
-                      style={{ color: '#ff4d3d' }}
+                      style={{ color: 'var(--mantine-color-red-text)' }}
                       onClick={() => setDeleteTarget(fn)}
                     >
                       <IconTrash size={16} />
@@ -429,7 +429,7 @@ function HolderPanel({
   const { t } = useT()
   const [searchQuery, setSearchQuery] = useState('')
   const [holders, setHolders] = useState<HolderEntry[]>(() =>
-    fn.holders.map((h) => ({ ...h, memberColor: '#5e5873' })),
+    fn.holders.map((h) => ({ ...h, memberColor: 'var(--hb-text-2)' })),
   )
 
   const { data: searchData } = useMemberSearch(searchQuery, { enabled: searchQuery.length >= 2 })
@@ -524,7 +524,7 @@ function HolderPanel({
             justifyContent: 'center',
           }}
         >
-          <IconUserCog size={16} color="#5e5873" />
+          <IconUserCog size={16} color="var(--hb-text-2)" />
         </div>
       }
       members={slideMembers}
@@ -566,7 +566,7 @@ function HolderPanel({
               href={withBase('/app/mail?tab=functions')}
               style={{
                 fontSize: 'var(--mantine-font-size-xs)',
-                color: '#2596be',
+                color: 'var(--mantine-color-acc-text)',
                 textDecoration: 'none',
               }}
             >

@@ -64,9 +64,11 @@ are built by GitHub Actions (`.github/workflows/images.yml`) and pushed to
 ## Testing
 
 ```bash
-# Backend
+# Backend (pip install pytest pytest-flask pytest-xdist)
 cd app/backend
-python -m pytest tests/
+python -m pytest -n auto        # SQLite, as on every pull request
+# On Postgres, as the release checks do (one database per worker is created):
+TEST_DATABASE_URL=postgresql://hubra:hubra@localhost/hubra_test python -m pytest -n auto
 
 # Frontend
 cd app/frontend

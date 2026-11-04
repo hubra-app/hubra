@@ -249,7 +249,7 @@ function Breakdown({ data }: { data: FeeBasis }) {
         : t('finance.feeBasis.noLines', 'Keine Ausgaben gefunden.')
 
   return (
-    <Paper withBorder shadow="sm" radius="lg">
+    <Paper withBorder>
       <Group p="md" gap="sm" style={{ borderBottom: '1px solid var(--hb-border)' }}>
         <Text fw={700} fz="md">
           {heading}
@@ -359,7 +359,7 @@ function Breakdown({ data }: { data: FeeBasis }) {
 function TierEffects({ data, changed }: { data: FeeBasis; changed: boolean }) {
   const { t } = useT()
   return (
-    <Paper withBorder shadow="sm" radius="lg">
+    <Paper withBorder>
       <div style={{ padding: 'var(--mantine-spacing-md)', borderBottom: '1px solid var(--hb-border)' }}>
         <Text fw={700} fz="md">
           {t('finance.feeBasis.tiersTitle', 'Was das für die Stufen heisst')}

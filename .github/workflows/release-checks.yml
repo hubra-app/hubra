@@ -1,6 +1,7 @@
 # The full checks: everything in ci.yml (lint and every unit test, whatever
-# the change touched), plus the dependency audits, the production builds of
-# the three frontends, and the Compose stack with the browser tests.
+# the change touched), plus the backend tests on Postgres, the dependency
+# audits, the production builds of the three frontends, and the Compose stack
+# with the browser tests.
 #
 # Runs when a release/* branch is created or pushed to, on pull requests into
 # a release/* branch, and from images.yml before a release's images are
@@ -33,6 +34,49 @@ jobs:
     uses: ./.github/workflows/ci.yml
     with:
       full: true
+
+  # The backend tests again on Postgres, the database production runs. This
+  # also runs the tests SQLite skips (club schemas, row and advisory locks,
+  # the real pg_dump). One database per xdist worker (tests/xdist_postgres.py).
+  backend-postgres:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: hubra
+          POSTGRES_PASSWORD: hubra
+          POSTGRES_DB: hubra_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U hubra"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: app/backend
+    env:
+      TEST_DATABASE_URL: postgresql://hubra:hubra@localhost:5432/hubra_test
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: app/backend/requirements.lock
+      - run: pip install --no-deps --require-hashes -r requirements.lock
+      - run: pip install pytest pytest-flask pytest-xdist
+      # age for the backup tests; the PostgreSQL 18 client for the pg_dump test.
+      - name: age and pg_dump 18
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends age postgresql-client-18
+      - run: pytest -q -n auto -rs
 
   # Known vulnerabilities in the locked dependencies. Every step runs even
   # when an earlier one failed, so one run shows all findings.
@@ -114,7 +158,7 @@ jobs:
   # The one check branch protection on release/* requires, and the one
   # images.yml waits for. Passes only when every job above passed.
   release-checks:
-    needs: [ci, audit, compose-smoke]
+    needs: [ci, backend-postgres, audit, compose-smoke]
     if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
     runs-on: ubuntu-latest
     steps:

@@ -118,7 +118,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     mantineNotifications.show({
       title,
       message: msg,
-      color: kind === 'error' ? 'red' : kind === 'success' ? 'green' : 'blue',
+      color: kind === 'error' ? 'red' : kind === 'success' ? 'green' : 'acc',
     })
   }, [])
 

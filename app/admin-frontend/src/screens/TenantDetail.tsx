@@ -36,12 +36,13 @@ import {
   addTenantMember,
 } from '@/api/tenants'
 import { useAdmin } from '@/context/AdminContext'
-import { StatTile, StatGrid } from '@/components/ui'
+import { EmptyState, StatGrid, StatTile } from '@/components/ui'
 import { ImpersonateModal } from '@/screens/ImpersonateModal'
 import { TenantModules } from '@/screens/TenantModules'
 import { ClubAdminsPanel } from '@/screens/ClubAdmins'
 import { TenantTrends } from '@/screens/TenantTrends'
 import { TenantLimits } from '@/screens/TenantLimits'
+import { DataRequestsPanel } from '@/screens/DataRequests'
 import { TenantBilling } from '@/screens/TenantBilling'
 import { TenantEarlyAccess } from '@/screens/TenantEarlyAccess'
 
@@ -61,7 +62,7 @@ export function TenantDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { notify } = useAdmin()
+  const { notify, hasGlobalPermission } = useAdmin()
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [pendingAction, setPendingAction] = useState<string | null>(null)
   const [impersonateOpen, setImpersonateOpen] = useState(false)
@@ -288,6 +289,10 @@ export function TenantDetail() {
 
       <TenantModules tenantId={tenant.id} />
 
+      {hasGlobalPermission('privacy.requests') && (
+        <DataRequestsPanel tenantId={tenant.id} tenantSlug={tenant.slug} />
+      )}
+
       <Paper withBorder p="lg" mb={20}>
         <Group justify="space-between" mb={12}>
           <Title order={3}>{tr('Mitglieder', 'Members')}</Title>
@@ -301,9 +306,7 @@ export function TenantDetail() {
           </Button>
         </Group>
         {members.length === 0 ? (
-          <Text p={20} ta="center" c="dimmed">
-            {tr('Noch keine Mitglieder.', 'No members yet.')}
-          </Text>
+          <EmptyState title={tr('Noch keine Mitglieder.', 'No members yet.')} />
         ) : (
           <Table.ScrollContainer minWidth={560}>
           <Table highlightOnHover>
