@@ -11,6 +11,10 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ### Changed
 
+- **Hintergrund-Jobs passen in ihren Pod**: Ein Celery-Worker startet jetzt zwei Prozesse pro CPU seines CPU-Limits (mindestens zwei) statt einen pro CPU des Knotens. Auf einem Knoten mit 6 CPUs startete ein Worker mit 1 CPU und 512 MiB sechs Prozesse, die nicht in 512 MiB passen (im Test wurden sie wegen Speichermangel beendet) und sich eine CPU teilten. Mit `CELERY_WORKER_CONCURRENCY` (oder `--concurrency`) lässt sich eine andere Zahl wählen. Siehe docs/scaling.md.
+- **Weniger Datenbankabfragen für Plattform-Einstellungen**: Die erste gelesene Plattform-Einstellung einer Transaktion lädt alle mit einer Abfrage. Eine Einstellung ohne gespeicherten Wert kostete bisher bei jedem Lesen eine Abfrage (`relay()` allein sechs), und jede geheime Einstellung las dazu ihren Schlüssel aus der Datenbank.
+- **Anmeldungen warten nicht mehr auf die Mail «Neues Gerät»**: Die Mail wird in die Warteschlange gestellt und vom Worker verschickt.
+- **Die Gesundheitsprüfung in Diagnose antwortet innerhalb ihrer Frist**: Eine Prüfung, die nach einer Sekunde noch läuft, wird als Zeitüberschreitung gemeldet. Bisher wartete die Antwort, bis jede Prüfung fertig war, ein nicht erreichbarer Mailserver hielt sie so mehrere Sekunden auf.
 - **Die API ist in drei Bereiche geteilt**: `/api/v1/platform` (manage, vom Plattform-Backend bedient), `/api/v1/app` (die Vereins-App) und `/api/v1/global` (Anmeldung, Konto, Übersetzungen, Version, öffentliche Daten, Vereinsverzeichnis und Einladungen). Die Apps rufen die neuen Pfade auf. Die alten (`/api/v1/members`, `/api/v1/manager/...`, `/api/v1/system/...`) funktionieren weiter und werden auf die neuen umgeleitet, damit offene Browser-Tabs, Plugins und Links in verschickten Mails weiter gehen. Siehe docs/platform-backend.md.
 - **Jeder API-Bereich hat ein eigenes Backend-Image** (`backend`, `global-backend`, `platform-backend`, ein Build unter drei Namen): Auf k3s laufen Anmeldung und Konto (`/api/v1/global`) in einem eigenen `global-backend`-Deployment, so lassen sich Vereins-App, Anmeldung und Plattform je für sich festlegen, ausrollen und skalieren. Siehe docs/platform-backend.md.
 
@@ -46,6 +50,12 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 - **Eigene Schlüssel pro Verein**: Jeder Verein (und die Plattform) hat einen eigenen zufälligen Datenschlüssel (`data_keys`, Migration `e3b9d5f1a7c4`), geschützt durch `FERNET_KEY`. Werte sind AES-256-GCM und an ihren Verein und ihre Spalte gebunden, ein Wert öffnet sich also nie in einem anderen Verein. Ein Wechsel des Hauptschlüssels verschlüsselt nur eine Zeile pro Verein neu. Neue Vereinsschlüssel über manage › Plattform-Einstellungen › Verschlüsselung oder `flask crypto rotate --new-keys [--club <slug>]`; wer einen Verein endgültig löscht, löscht auch seine Schlüssel. **Nach dem Update dort einmal «Neu verschlüsseln» drücken (oder `flask crypto rotate` ausführen).**
 - **Öffentlicher Backup-Schlüssel als Plattform-Einstellung** (`backup.public_key`, Standard `BACKUP_PUBLIC_KEY`) und der Backup-Schlüssel jedes Vereins im Tab Verschlüsselung.
 - **Eine öffentliche Roadmap**: Die geplanten Einträge und die Ideen aus den Vereinen sind überall eine Liste (Neuigkeiten › Roadmap, Meldungen und Ideen › Roadmap, sso /roadmap, manage und hubra.club/roadmap/), mit der neuen Spalte «Vorschläge». Für geplante Einträge, die als Nächstes oder später kommen, lässt sich jetzt auch abstimmen, und das Team kann eine Idee einem geplanten Eintrag zuordnen (manage › Meldungen & Ideen › Idee › «Teil eines geplanten Eintrags»), damit ihre Stimmen dort zählen. Einstellungen › Module hat «Fehlt ein Modul?»: Das öffnet das Ideenformular mit dem neuen Bereich «Modul»; manage filtert Meldungen nach Bereich.
+- **Leistung › langsame Abfragen zeigen, wann der Pod gebremst war**: Eine langsame Abfrage (und eine langsame Anfrage) wird markiert, wenn ihr Container während der Anfrage oder Aufgabe sein CPU-Limit aufgebraucht oder seine Speichergrenze erreicht hat. Eine einfache Abfrage, die mit dieser Markierung langsam ist, hat auf die CPU gewartet, nicht auf die Datenbank.
+- **Leistung › Anfragen ohne Route**: Anfragen, zu denen es keine API-Route gibt (Scanner, alte Links), werden nach Pfadform aufgelistet; Ids und Tokens erscheinen als `*`.
+
+### Fixed
+
+- **Discord-Sicherheitsmeldung für Plattform-Admins auf einem neuen Gerät** wurde nach einer Konto-Anmeldung (SSO, manage) nie verschickt: Sie wartete auf ein Commit, das schon vorher kam. Sie wird jetzt vor diesem Commit eingereiht.
 
 ## [0.6.0] - 2026-07-13
 

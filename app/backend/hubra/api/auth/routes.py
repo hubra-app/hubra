@@ -508,9 +508,10 @@ def _complete_login(
             "keep": keep_signed_in,
         }
         device_token, new_device = _note_device(user)
-        db.session.commit()
         if new_device:
+            # Queued: sent once this commit is done (no commit follows it).
             _alert_new_device(user)
+        db.session.commit()
         access_token = create_access_token(
             identity=f"user:{user.id}",
             additional_claims=additional_claims,
@@ -572,6 +573,24 @@ def _complete_login(
         # A club sign-in is an account sign-in too: the account token below
         # needs a session the person (or an admin) can end.
         account_sid = _record_account_login(user)
+    if new_device:
+        # Queued, sent by the worker once the commit below is done.
+        if user is not None:
+            _alert_new_device(user)
+        elif member.private_email_verified:
+            known_devices.queue_mail(
+                member.email,
+                member.name,
+                ip=request.remote_addr or "",
+                browser_family=_extract_browser_family(request.headers),
+                platform=_extract_platform(request.headers),
+                user_agent=request.headers.get("User-Agent", "")[:512],
+                lang=getattr(member, "language", "de-CH") or "de-CH",
+            )
+        else:
+            _log.info(
+                "skip_new_device_login member_id=%s — email not verified", member.id
+            )
 
     try:
         db.session.commit()
@@ -581,23 +600,6 @@ def _complete_login(
 
     if new_device:
         ts = known_devices.sign_in_time()
-        if user is not None:
-            _alert_new_device(user)
-        elif member.private_email_verified:
-            email_svc.send_new_device_login(
-                member.email,
-                member.name,
-                ip=request.remote_addr or "",
-                browser_family=_extract_browser_family(request.headers),
-                platform=_extract_platform(request.headers),
-                user_agent=request.headers.get("User-Agent", "")[:512],
-                timestamp=ts,
-                lang=getattr(member, "language", "de-CH") or "de-CH",
-            )
-        else:
-            _log.info(
-                "skip_new_device_login member_id=%s — email not verified", member.id
-            )
         create_notification(
             member_id=member.id,
             kind="warning",
