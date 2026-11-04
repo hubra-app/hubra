@@ -155,6 +155,10 @@ class PollService:
             )
         )
 
+        if poll.auto_close:
+            db.session.flush()
+            PollService.close_if_complete(poll)
+
         if poll.created_by_id is not None and poll.created_by_id != member_id:
             member = db.session.get(Member, member_id)
             voter_name = member.name if member else f"Member {member_id}"
@@ -178,6 +182,7 @@ class PollService:
             "closes_at",
             "is_required",
             "allow_proxy",
+            "auto_close",
             "max_proxies_per_member",
         ):
             if field in data:
@@ -224,7 +229,7 @@ class PollService:
         return poll
 
     @staticmethod
-    def close(poll: Poll, actor_id: int) -> Poll:
+    def close(poll: Poll, actor_id: int | None, label: str | None = None) -> Poll:
         """Close a poll."""
         poll.status = "closed"
 
@@ -233,10 +238,40 @@ class PollService:
             action="close_poll",
             target_type="Poll",
             target_id=poll.id,
-            target_label=poll.question,
+            target_label=label or poll.question,
         )
         emit(POLL_CLOSED, poll_id=poll.id)
         return poll
+
+    @staticmethod
+    def missing_voters(poll: Poll) -> list[int]:
+        """Who the poll is for and has not voted yet (a proxy's vote counts
+        for the member who gave it)."""
+        required = PollService.get_required_members(poll)
+        if not required:
+            return []
+        voted = set(
+            db.session.scalars(
+                select(PollVote.member_id).where(PollVote.poll_id == poll.id)
+            )
+        )
+        return [m for m in required if m not in voted]
+
+    @staticmethod
+    def close_if_complete(poll: Poll) -> bool:
+        """A circular resolution closes once everyone it is for has voted.
+        Only for polls that name groups or functions: a poll for all members
+        stays open until its time or someone closes it."""
+        if not poll.auto_close or is_closed(poll):
+            return False
+        if not (poll.required_group_ids or poll.required_function_ids):
+            return False
+        if not PollService.get_required_members(poll):
+            return False
+        if PollService.missing_voters(poll):
+            return False
+        PollService.close(poll, None, f"{poll.question} (alle haben abgestimmt)"[:255])
+        return True
 
     @staticmethod
     def delete(poll_id: int, actor_id: int) -> None:
@@ -334,6 +369,7 @@ class PollsService:
             status="open",
             is_required=data.get("is_required", False),
             allow_proxy=data.get("allow_proxy", False),
+            auto_close=data.get("auto_close", False),
             max_proxies_per_member=data.get("max_proxies_per_member", 1),
             required_group_ids=data.get("required_group_ids"),
             required_function_ids=data.get("required_function_ids"),

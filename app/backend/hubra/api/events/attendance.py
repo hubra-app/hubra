@@ -89,9 +89,7 @@ def _members(ids) -> dict[int, Member]:
     return {
         m.id: m
         for m in db.session.scalars(
-            select(Member)
-            .where(Member.id.in_(ids))
-            .options(selectinload(Member.user))
+            select(Member).where(Member.id.in_(ids)).options(selectinload(Member.user))
         ).all()
     }
 
@@ -242,7 +240,9 @@ def overview(since: date, until: date, **filters) -> dict:
                 **_summary(present, excused, len(statuses)),
             }
         )
-    rows.sort(key=lambda r: ((r["last_name"] or "").lower(), (r["first_name"] or "").lower()))
+    rows.sort(
+        key=lambda r: ((r["last_name"] or "").lower(), (r["first_name"] or "").lower())
+    )
     return {
         "from": since.isoformat(),
         "to": until.isoformat(),

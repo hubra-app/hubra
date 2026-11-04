@@ -255,6 +255,59 @@ def discord_server_channels(guild_id: str):
         return api_error("DISCORD_UNAVAILABLE", error_message(exc), 409)
 
 
+@platform_bp.post("/discord/servers/<string:guild_id>/channels")
+@require_global_permission(_PERM)
+@limiter.limit("20 per hour")
+def discord_create_channel(guild_id: str):
+    """Make a text channel on one of the bot's servers (private by default),
+    for the platform log or audit channel."""
+    from hubra.core.services import discord_status as svc
+
+    body = request.get_json(silent=True) or {}
+    try:
+        made = svc.create_channel(
+            guild_id,
+            str(body.get("name") or ""),
+            private=bool(body.get("private", True)),
+            topic=str(body.get("topic") or ""),
+        )
+    except svc.PickerError as exc:
+        return api_error("DISCORD_UNAVAILABLE", error_message(exc), 409)
+    _audit(
+        "platform.discord.channel_created",
+        "discord_channel",
+        made["id"],
+        {
+            "name": made["name"],
+            "server": guild_id,
+            "private": bool(body.get("private", True)),
+        },
+    )
+    db.session.commit()
+    return jsonify(made), 201
+
+
+@platform_bp.get("/discord/clubs")
+@require_global_permission(_DIAGNOSTICS)
+def discord_club_servers():
+    """Every club server the bot is on, with what it does there."""
+    from hubra.core.services import discord_status as svc
+
+    return jsonify(svc.server_overview()), 200
+
+
+@platform_bp.get("/discord/clubs/<int:connection_id>/activity")
+@require_global_permission(_DIAGNOSTICS)
+def discord_club_activity(connection_id: int):
+    """One club server's bot log."""
+    from hubra.core.services import discord_status as svc
+
+    found = svc.server_activity(connection_id)
+    if found is None:
+        return api_error("NOT_FOUND", "No such Discord server", 404)
+    return jsonify(found), 200
+
+
 @platform_bp.get("/permissions")
 @require_global_permission(_DIAGNOSTICS)
 def list_permissions():

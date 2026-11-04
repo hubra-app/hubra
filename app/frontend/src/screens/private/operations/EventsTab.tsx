@@ -59,6 +59,7 @@ import { listGroups } from '@/api/groups'
 import {
   hasOpenSignUp,
   useToggleJoinEvent,
+  useMaybeEvent,
 } from '@/screens/private/operations/useEventActions'
 import { CalendarSubscribeButton } from './CalendarSubscribeButton'
 import { PendingSignUpsModal } from './PendingSignUpsModal'
@@ -128,6 +129,7 @@ export function EventsTab() {
   const { currentUser, hasPermission } = useAuth()
   const { t, i18n } = useT()
   const joinEventMutation = useToggleJoinEvent()
+  const maybeMutation = useMaybeEvent()
   const canCreate = hasPermission('events.events.create')
   const { moduleList } = useData()
   const eventTypes = clubEventTypes(
@@ -690,6 +692,11 @@ export function EventsTab() {
                   {ev.placesTaken ?? ev.attendees.length}
                   {ev.maxAttendees ? ` / ${ev.maxAttendees}` : ''}
                 </span>
+                {(ev.maybeCount ?? 0) > 0 && (
+                  <span style={{ fontSize: 'var(--mantine-font-size-xs)', color: 'var(--hb-text-3)' }}>
+                    {t('events.maybeCount', '+{{count}} vielleicht', { count: ev.maybeCount })}
+                  </span>
+                )}
                 {canApprove(ev) && (ev.pendingCount ?? 0) > 0 && (
                   <Badge
                     variant="light"
@@ -725,7 +732,7 @@ export function EventsTab() {
           {
             key: 'actions',
             header: '',
-            width: 200,
+            width: 300,
             render: (ev) => {
               const joined = hasOpenSignUp(ev, myJoinedEvents.has(ev.id))
               const over = isPastEvent(ev)
@@ -778,6 +785,25 @@ export function EventsTab() {
                       </>
                     )}
                   </Button>
+                  )}
+                  {!over && !joined && (
+                    <Tooltip
+                      label={
+                        ev.myStatus === 'maybe'
+                          ? t('events.maybeUndo', 'Vielleicht zurücknehmen')
+                          : t('events.maybeHint', 'Vielleicht: ohne Platz, die Organisatoren sehen es')
+                      }
+                    >
+                      <Button
+                        size="sm"
+                        variant={ev.myStatus === 'maybe' ? 'light' : 'subtle'}
+                        color={ev.myStatus === 'maybe' ? undefined : 'gray'}
+                        disabled={maybeMutation.isPending}
+                        onClick={() => maybeMutation.mutate({ eventId: ev.id, eventTitle: ev.title })}
+                      >
+                        {t('events.maybe', 'Vielleicht')}
+                      </Button>
+                    </Tooltip>
                   )}
                   {canTakeRoll(ev) && (
                     <Tooltip label={t('events.attendance.take', 'Anwesenheit erfassen')}>

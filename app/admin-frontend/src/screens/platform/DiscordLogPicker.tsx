@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Alert, Anchor, Avatar, Button, Group, Select, Stack, Text } from '@mantine/core'
-import { useQuery } from '@tanstack/react-query'
-import { IconRefresh } from '@tabler/icons-react'
+import { Alert, Anchor, Avatar, Button, Checkbox, Group, Select, Stack, Text, TextInput } from '@mantine/core'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { IconPlus, IconRefresh } from '@tabler/icons-react'
 import { tr } from '@/lang'
-import { getDiscordServerChannels, getDiscordServers } from '@/api/platform'
+import { useAdmin } from '@/context/AdminContext'
+import { createDiscordChannel, getDiscordServerChannels, getDiscordServers } from '@/api/platform'
 
 /** One channel to pick on the shared server. */
 export interface DiscordChannelSlot {
@@ -13,6 +14,80 @@ export interface DiscordChannelSlot {
   onChange: (id: string) => void
   /** The channel ID field, e.g. while Discord can't be reached. */
   fallback: React.ReactNode
+  /** The name offered when the bot makes a new channel for this slot. */
+  suggestedName?: string
+}
+
+/** Make a new channel on the server through the bot, then pick it. */
+function NewChannel({
+  serverId,
+  suggestedName,
+  onMade,
+}: {
+  serverId: string
+  suggestedName: string
+  onMade: (id: string) => void
+}) {
+  const { notify } = useAdmin()
+  const queryClient = useQueryClient()
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState(suggestedName)
+  const [hidden, setHidden] = useState(true)
+  const [busy, setBusy] = useState(false)
+  if (!open)
+    return (
+      <Anchor
+        component="button"
+        type="button"
+        size="xs"
+        style={{ alignSelf: 'flex-start' }}
+        onClick={() => setOpen(true)}
+      >
+        <Group gap={4} component="span">
+          <IconPlus size={12} />
+          {tr('Neuen Kanal anlegen lassen', 'Have the bot make a new channel')}
+        </Group>
+      </Anchor>
+    )
+  const make = async () => {
+    setBusy(true)
+    try {
+      const made = await createDiscordChannel(serverId, { name, private: hidden })
+      await queryClient.invalidateQueries({ queryKey: ['discord-server-channels', serverId] })
+      onMade(made.id)
+      notify('success', tr(`#${made.name} angelegt`, `#${made.name} made`), tr('Noch speichern.', 'Save to use it.'))
+      setOpen(false)
+    } catch (err) {
+      notify('error', tr('Kanal nicht angelegt', 'Channel not made'), (err as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <Group gap="xs" align="flex-end" wrap="wrap">
+      <TextInput
+        size="xs"
+        style={{ flex: '1 1 180px' }}
+        label={tr('Name des neuen Kanals', 'New channel name')}
+        value={name}
+        onChange={(e) => setName(e.currentTarget.value)}
+        maxLength={100}
+      />
+      <Checkbox
+        size="xs"
+        mb={6}
+        label={tr('Nur für Plattform-Admins sichtbar', 'Only platform admins see it')}
+        checked={hidden}
+        onChange={(e) => setHidden(e.currentTarget.checked)}
+      />
+      <Button size="xs" loading={busy} disabled={!name.trim()} onClick={make}>
+        {tr('Anlegen', 'Make')}
+      </Button>
+      <Button size="xs" variant="subtle" onClick={() => setOpen(false)}>
+        {tr('Abbrechen', 'Cancel')}
+      </Button>
+    </Group>
+  )
 }
 
 /** Pick the platform server once and one channel per slot (platform log,
@@ -137,6 +212,13 @@ export function DiscordLogPicker({
               'No channel the bot may post in',
             )}
           />
+          {serverId && (
+            <NewChannel
+              serverId={serverId}
+              suggestedName={slot.suggestedName ?? 'hubra'}
+              onMade={slot.onChange}
+            />
+          )}
           {slot.channelId && channels.data && !known(slot.channelId) && (
             <Text size="xs" c="orange">
               {tr(

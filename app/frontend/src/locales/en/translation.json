@@ -802,7 +802,21 @@
     "description": "Description",
     "descriptionPlaceholder": "What can people expect? What should they bring?",
     "isPublic": "Public event",
-    "isPublicHint": "May also be shown outside the club, e.g. on an open Discord server. Otherwise only members see it."
+    "isPublicHint": "May also be shown outside the club, e.g. on an open Discord server. Otherwise only members see it.",
+    "maybe": "Maybe",
+    "maybeHint": "Maybe: no place held, the organisers see it",
+    "maybeUndo": "Take back maybe",
+    "maybeSet": "Maybe",
+    "maybeSetMsg": "You might come to “{{title}}”. No place is held for you.",
+    "maybeRemoved": "Answer taken back",
+    "maybeRemovedMsg": "You no longer have an answer for “{{title}}”.",
+    "maybeCount": "+{{count}} maybe",
+    "public": {
+      "title": "Public events",
+      "hint": "Events marked “Public event” can be seen by anyone without signing in: as a calendar to subscribe to and as a list for your website. Attendees, groups and notes stay in the club. {{count}} upcoming right now.",
+      "calendar": "Public calendar",
+      "json": "For your website (JSON)"
+    }
   },
   "finance": {
     "addCategory": "Add Category",
@@ -2008,7 +2022,15 @@
     "statusOpen": "Open",
     "statusClosed": "Closed",
     "linkedOne": "You are looking at the poll from your notification.",
-    "linkedGone": "This poll no longer exists."
+    "linkedGone": "This poll no longer exists.",
+    "resolutionBadge": "Circular resolution",
+    "resolutionHint": "A board decision by circulation? The template sets Yes, No and Abstain, makes the poll required and closes it once everyone has voted.",
+    "resolutionYes": "Yes",
+    "resolutionNo": "No",
+    "resolutionAbstain": "Abstain",
+    "resolutionTemplate": "As a circular resolution",
+    "autoClose": "Close once everyone has voted",
+    "autoCloseHint": "For the groups and functions picked. The result is then final right away, even before the end date."
   },
   "posts": {
     "backToPosts": "Back to posts",

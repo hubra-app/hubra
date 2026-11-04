@@ -22,6 +22,7 @@ interface BackendEvent {
   registration_count: number;
   places_taken?: number;
   pending_count?: number;
+  maybe_count?: number;
   my_status?: string | null;
   group_id?: number | null;
   series_id?: number | null;
@@ -81,6 +82,7 @@ function adapt(b: BackendEvent): ClubEvent {
     registrationCount: b.registration_count ?? 0,
     placesTaken: b.places_taken ?? b.registration_count ?? 0,
     pendingCount: b.pending_count ?? 0,
+    maybeCount: b.maybe_count ?? 0,
     myStatus: (b.my_status ?? null) as ClubEvent["myStatus"],
     groupId: b.group_id != null ? String(b.group_id) : null,
     seriesId: b.series_id != null ? String(b.series_id) : null,
@@ -214,6 +216,14 @@ export async function joinEvent(
   const reg = await apiFetch<{ status: string }>(`/app/events/${eventId}/register`, {
     method: "POST",
     body: JSON.stringify({}),
+  });
+  return reg.status;
+}
+
+/** "Vielleicht": no place, a place held before is given up. */
+export async function maybeEvent(eventId: string): Promise<string> {
+  const reg = await apiFetch<{ status: string }>(`/app/events/${eventId}/maybe`, {
+    method: "POST",
   });
   return reg.status;
 }
@@ -450,4 +460,14 @@ export async function downloadAttendanceCSV(f: AttendanceFilter): Promise<void> 
   a.download = `anwesenheit-${f.from}-${f.to}.csv`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+/** Where anyone can read the club's public events: a calendar to
+ *  subscribe to and JSON for the club's website. */
+export async function getPublicEventLinks(): Promise<{
+  json: string;
+  calendar: string;
+  upcoming: number;
+}> {
+  return apiFetch("/app/events/public-links");
 }

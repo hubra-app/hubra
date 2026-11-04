@@ -10,6 +10,8 @@ import {
   ActionIcon,
   Group,
   SimpleGrid,
+  Alert,
+  Text,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -84,6 +86,7 @@ export function PollsTab() {
   const [options, setOptions] = useState<string[]>(["", ""]);
   const [isRequired, setIsRequired] = useState(false);
   const [allowProxy, setAllowProxy] = useState(false);
+  const [autoClose, setAutoClose] = useState(false);
   const [requiredGroupIds, setRequiredGroupIds] = useState<number[]>([]);
   const [requiredFunctionIds, setRequiredFunctionIds] = useState<number[]>([]);
   const [remindingPollId, setRemindingPollId] = useState<string | null>(null);
@@ -164,6 +167,7 @@ export function PollsTab() {
     setOptions(["", ""]);
     setIsRequired(false);
     setAllowProxy(false);
+    setAutoClose(false);
     setRequiredGroupIds([]);
     setRequiredFunctionIds([]);
   };
@@ -179,6 +183,7 @@ export function PollsTab() {
     setOptions(poll.options.map((o) => o.label));
     setIsRequired(poll.isRequired ?? false);
     setAllowProxy(poll.allowProxy ?? false);
+    setAutoClose(poll.autoClose ?? false);
     setRequiredGroupIds(poll.requiredGroupIds ?? []);
     setRequiredFunctionIds(poll.requiredFunctionIds ?? []);
     setEditTarget(poll);
@@ -207,6 +212,7 @@ export function PollsTab() {
             : undefined,
         isRequired,
         allowProxy,
+        autoClose: isRequired && autoClose,
         requiredGroupIds: isRequired ? requiredGroupIds : [],
         requiredFunctionIds: isRequired ? requiredFunctionIds : [],
       };
@@ -321,6 +327,11 @@ export function PollsTab() {
                         radius="xl"
                       >
                         {t("polls.requiredBadge", "Pflicht")}
+                      </Badge>
+                    )}
+                    {poll.autoClose && (
+                      <Badge variant="light" color="violet" size="xs" radius="xl">
+                        {t("polls.resolutionBadge", "Umlaufbeschluss")}
                       </Badge>
                     )}
                   </div>
@@ -539,6 +550,34 @@ export function PollsTab() {
         }
       >
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {!editTarget && (
+            <Alert variant="light" color="violet" p="sm">
+              <div style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+                <Text size="sm">
+                  {t(
+                    "polls.resolutionHint",
+                    "Ein Beschluss des Vorstands auf dem Zirkularweg? Die Vorlage setzt Ja, Nein und Enthaltung, macht die Umfrage zur Pflicht und schliesst sie, sobald alle abgestimmt haben.",
+                  )}
+                </Text>
+                <Button
+                  size="xs"
+                  variant="light"
+                  color="violet"
+                  onClick={() => {
+                    setOptions([
+                      t("polls.resolutionYes", "Ja"),
+                      t("polls.resolutionNo", "Nein"),
+                      t("polls.resolutionAbstain", "Enthaltung"),
+                    ]);
+                    setIsRequired(true);
+                    setAutoClose(true);
+                  }}
+                >
+                  {t("polls.resolutionTemplate", "Als Umlaufbeschluss")}
+                </Button>
+              </div>
+            </Alert>
+          )}
           <Field label={t("polls.poll.question", 'Frage')}>
             <TextInput
               {...form.getInputProps("question")}
@@ -645,6 +684,18 @@ export function PollsTab() {
                 />
               </Field>
             </SimpleGrid>
+          )}
+          {isRequired && (
+            <Switch
+              checked={autoClose}
+              onChange={(e) => setAutoClose(e.currentTarget.checked)}
+              disabled={!requiredGroupIds.length && !requiredFunctionIds.length}
+              label={t("polls.autoClose", "Schliessen, sobald alle abgestimmt haben")}
+              description={t(
+                "polls.autoCloseHint",
+                "Für die gewählten Gruppen und Funktionen. Das Ergebnis steht dann gleich fest, auch vor dem Enddatum.",
+              )}
+            />
           )}
         </div>
       </Modal>

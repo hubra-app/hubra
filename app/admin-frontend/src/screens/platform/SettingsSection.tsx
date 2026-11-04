@@ -541,6 +541,7 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
                       channelId: logChannel,
                       onChange: (id) => setDraft((d) => ({ ...d, 'discord.log_channel_id': id })),
                       fallback: field('discord.log_channel_id'),
+                      suggestedName: 'hubra-log',
                     },
                     {
                       label: tr('Audit-Kanal (optional)', 'Audit channel (optional)'),
@@ -551,6 +552,7 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
                       channelId: auditChannel,
                       onChange: (id) => setDraft((d) => ({ ...d, 'discord.audit_channel_id': id })),
                       fallback: field('discord.audit_channel_id'),
+                      suggestedName: 'hubra-audit',
                     },
                   ]}
                 />
