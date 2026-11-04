@@ -5,7 +5,7 @@ full set only when a release is being prepared.
 
 | Workflow | Runs on | What it runs |
 | --- | --- | --- |
-| `ci.yml` (CI) | pull requests into `main`, pushes to `main` | `lint` (ruff, eslint and `tsc` in the three frontends, Compose files, Kustomize + kubeconform, shellcheck), backend unit tests (SQLite, in parallel with `pytest -n auto`), frontend unit tests, and on pull requests that change a frontend the Compose stack with the browser tests |
+| `ci.yml` (CI) | pull requests into `main`, pushes to `main` | `lint` (ruff, eslint and `tsc` in the three frontends, Compose files, Kustomize + kubeconform, shellcheck), backend unit tests (SQLite, in parallel with `pytest -n auto`), frontend unit tests, and when a change reaches what the browser sees the Compose stack with the browser tests |
 | `release-checks.yml` (Release checks) | `release/*` branches (create and push), pull requests into `release/*`, before every image build, by hand | all of `ci.yml` without the path filter, plus the backend tests on Postgres 18 (`backend-postgres`, which also runs the tests SQLite skips), dependency audits (pip-audit, npm audit), the image builds and the Compose stack with the browser tests |
 | `images.yml` (Images) | GitHub release published, by hand | `release-checks.yml` first, then builds and pushes the images |
 | `release-branch.yml` (Release branch) | GitHub release published (not pre-releases) | creates `release/X.Y` at the release's commit if it does not exist yet |
@@ -19,17 +19,53 @@ the parts of the code the change touches (the `changes` job decides):
 | eslint + `tsc`, per frontend | that frontend's `app/*frontend/` folder, `packages/`, `plugins/` |
 | Compose, Kustomize + kubeconform, shellcheck | `docker-compose*.yml`, `.env.example`, `settings.yaml`, `deploy/`, `modules/`, `scripts/`, `app/deploy/` |
 | backend tests | `app/backend/`, `plugins/`, `settings.yaml` |
-| frontend tests, browser tests (`browser-tests`, about five minutes, pull requests only) | `app/*frontend/`, `packages/`, `plugins/` |
+| frontend tests | `app/*frontend/`, `packages/`, `plugins/` |
+| browser tests (`browser-tests`, see below) | `app/*frontend/`, `packages/`, `plugins/`; the backend code that serves the API (`app/backend/` without `tests/`, `hubra/core/tasks/` and `hubra/templates/`), `migrations/`, `CHANGELOG.md`, `CHANGELOG.de.md` and `ROADMAP.yaml` (What's new shows them); `docker-compose.yml`, `app/deploy/`, `settings.yaml`; the e2e setup (`.github/e2e/`, `scripts/init-env.sh`, `smoke-test.sh`, `e2e-accounts.sh`) |
 
 A change to `ci.yml` itself runs everything, and so does a push whose base
 is unknown (new branch, force push). The browser tests run on pull requests
 so a screen change that breaks them fails its own pull request instead of
-the next image build. Anything else (docs, the other workflows, `brand/`,
+the next image build, and on pushes to `main` so two merges that only break
+them together show up right away. A backend change the browser cannot see
+(unit tests, Celery tasks, mail templates) and a docs change skip them.
+Anything else (docs, the other workflows, `brand/`,
 `tools/`) runs nothing: `lint` and `tests` report as skipped. Text files
 run nothing wherever they are: Markdown files (so also `CHANGELOG.md` and
 `CHANGELOG.de.md`), `README` files and `.gitignore` files. The changelog
 checks in the backend tests still run in release-checks before a release. Draft pull
 requests run nothing until they are marked ready for review.
+
+## Browser tests
+
+`browser-tests` builds the four app images, starts the Compose stack and runs
+the Playwright tests in `app/frontend/e2e` against it. What keeps it short:
+
+- The images build with Buildx and a layer cache in the GitHub Actions cache
+  (scope `e2e-<image>`). Pushes to `main` fill it; a pull request reads it
+  plus its own cache from earlier pushes, so an image the change did not
+  touch is not rebuilt.
+- `npm ci` and the Playwright browser install run while the stack starts,
+  and only the headless shell is downloaded.
+- The tests run in three parallel workers (`E2E_WORKERS=3`). Each worker has
+  its own club and platform-admin account (`scripts/e2e-accounts.sh`, names
+  in `app/frontend/e2e/env.ts`), so the tests of one worker never see another
+  worker's changes. A spec file runs in one worker, top to bottom.
+  `.github/e2e/docker-compose.e2e.yml` gives the backend two CPUs and four
+  gunicorn workers for that; the production limits in `docker-compose.yml`
+  stay as they are.
+
+Release checks (`compose-smoke`) run the same tests the same way, but build
+the images without a cache.
+
+Timings (November 2026, 71 tests): the job took 5m40 before (build 1m28,
+stack 1m07, installs 36s, tests 2m18 in one worker). Now it takes about 2m50
+with a warm cache (build 20s, stack and installs together 41s, accounts 10s,
+tests 1m15); with a cold cache the build takes about 1m45 instead of 20s.
+
+A test that changes something all workers share (a platform setting, the
+plugin catalogue) must not depend on it staying that way and has to put it
+back at the end, as `step-up-passkey.spec.ts` does with the plugin update
+mode. Club and account changes are safe: each worker has its own.
 
 ## Required checks
 

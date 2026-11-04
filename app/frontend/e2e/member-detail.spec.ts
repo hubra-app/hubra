@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { api, unique } from './api'
-import { EMAIL, appUrl } from './env'
+import { EMAIL, STATE, appUrl } from './env'
 
 type BackendMember = { id: number; email: string | null }
 
@@ -69,7 +69,7 @@ test('the member page shows contact, membership, functions, invoices and activit
 
 test('the member page fits a phone', async ({ browser }) => {
   const context = await browser.newContext({
-    storageState: 'e2e/.auth/state.json',
+    storageState: STATE,
     viewport: { width: 360, height: 740 },
   })
   const page = await context.newPage()

@@ -1,7 +1,12 @@
 """Seed default global roles and permissions for the manager portal.
 
-Called at app startup or via ``flask seed-global-rbac`` CLI command.
-Idempotent — safe to run multiple times.
+Runs on every start as part of ``flask sync-permissions`` (and on its own via
+``flask seed-global-rbac``). Idempotent — safe to run multiple times.
+
+The permission catalogue is always brought up to date. Default roles are only
+created when missing; their permissions are set once, on creation, so changes
+an admin makes to a default role survive restarts. "Platform admin" is the
+exception: its permissions are locked in manage and always follow the list.
 """
 
 from __future__ import annotations
@@ -122,8 +127,22 @@ _DEFAULT_ROLES = [
             "support.cases",
         ],
     ),
+    (
+        "Read-only",
+        "Look at clubs, requests, the audit log and diagnostics without changing anything",
+        [
+            "tenants.read",
+            "tenants.members.read",
+            "requests.read.all",
+            "audit.read",
+            "platform.diagnostics",
+        ],
+    ),
     ("Requester", "Any authenticated user — can submit tenant requests", []),
 ]
+
+# The role whose permissions manage locks; it always follows _DEFAULT_ROLES.
+_LOCKED_ROLE = "Platform admin"
 
 
 def seed_global_rbac() -> None:
@@ -149,6 +168,8 @@ def seed_global_rbac() -> None:
             perm_map[key] = perm
             _log.debug("Seeded global permission: %s", key)
         else:
+            existing.display_name = display_name
+            existing.description = desc
             perm_map[key] = existing
 
     # The role first shipped as "Superadmin", which it never was (the flag is).
@@ -185,6 +206,9 @@ def seed_global_rbac() -> None:
             db.session.add(role)
             db.session.flush()
             _log.debug("Seeded global role: %s", role_name)
+        elif role_name != _LOCKED_ROLE:
+            # An existing role keeps whatever permissions it has now.
+            continue
 
         for pk in perm_keys:
             perm = perm_map.get(pk)

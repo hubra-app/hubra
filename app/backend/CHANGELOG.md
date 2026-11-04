@@ -64,6 +64,7 @@ section and position, or the apps show that version in English.
 
 ### Fixed
 
+- **Platform roles were empty**: manage › Rollen showed no platform roles and an empty permission list, so no permission could be given to a role. The platform permissions and default roles were only written by `flask seed-global-rbac`, which no deployment ran. `flask sync-permissions` (run on every start) now writes them too. Default roles: Platform admin, Manager, Support, the new Read-only, and Requester. A default role that already exists keeps the permissions it has; only Platform admin, whose permissions are locked, is completed on each start.
 - **Discord security ping for platform admins on a new device** was never sent after an account sign-in (SSO, manage): it waited for a commit that came before it. It is now queued before that commit.
 
 ## [0.6.0] - 2026-07-13

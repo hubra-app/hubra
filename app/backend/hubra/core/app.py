@@ -741,6 +741,12 @@ def _register_cli(app: Flask) -> None:
             f"Synced permissions: {created} created, {updated} updated, {orphaned} orphaned (deactivated)."
         )
 
+        # Platform permissions and default platform roles (manage › Rollen).
+        from hubra.api.global_rbac_seed import seed_global_rbac
+
+        seed_global_rbac()
+        click.echo("Platform permissions and default platform roles synced.")
+
     @app.cli.command("migrate-role-permissions")
     def migrate_role_permissions():
         """Migrate old free-text RolePermission strings to new Permission key references."""
