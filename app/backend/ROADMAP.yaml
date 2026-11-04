@@ -4,7 +4,8 @@
 # from the clubs that staff put on it in manage › Meldungen & Ideen. Shown in
 # the club app (Neuigkeiten › Roadmap, Meldungen und Ideen › Roadmap), on SSO
 # /roadmap, on hubra.club/roadmap/ and in manage, served by
-# GET /api/v1/global/version/roadmap (same list: /global/roadmap). People vote
+# GET /api/v1/global/version/roadmap (same list: /global/roadmap, and for the
+# website /global/public/roadmap). People vote
 # for "next" and "later" items; an idea linked to an item (manage › idea ›
 # "Teil eines geplanten Eintrags") counts its votes for it. Edit this file and
 # deploy; no migration needed.

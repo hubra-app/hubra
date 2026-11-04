@@ -332,8 +332,11 @@ def test_only_feature_requests_go_on_the_roadmap(client, club, db):
             "createdAt": public[0]["createdAt"],
         }
     ]
-    # The same list on the What's new endpoint.
+    # The same list on the What's new endpoint and for the website.
     assert _ideas(client.get("/api/v1/version/roadmap")) == public
+    site = client.get("/api/v1/public/roadmap", headers={"Origin": "https://hubra.club"})
+    assert _ideas(site) == public
+    assert site.headers["Access-Control-Allow-Origin"] == "*"
 
 
 def test_the_public_roadmap_needs_no_sign_in(client, club, db):
