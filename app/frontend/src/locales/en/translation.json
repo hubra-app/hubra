@@ -825,7 +825,11 @@
       "deleteThis": "Only this date",
       "following": "This and all following",
       "thisOne": "Only this date"
-    }
+    },
+    "description": "Description",
+    "descriptionPlaceholder": "What can people expect? What should they bring?",
+    "isPublic": "Public event",
+    "isPublicHint": "May also be shown outside the club, e.g. on an open Discord server. Otherwise only members see it."
   },
   "finance": {
     "addCategory": "Add Category",
@@ -3628,7 +3632,8 @@
       "attendance": "Attendance",
       "command": "Command",
       "log": "Log channel",
-      "notified": "Notification"
+      "notified": "Notification",
+      "updated": "Updated"
     },
     "logAll": "All",
     "logErrors": "Errors",

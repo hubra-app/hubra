@@ -773,6 +773,7 @@ def deliver_alert(alert_type: str, subject: str, lines: list[str], level: str) -
             color=color,
             staff=False,
             alert_type=alert_type,
+            level=level,
         )
     if not route["mail"]:
         return 0
@@ -952,7 +953,7 @@ def watch_services(previous: dict | None, payload: dict) -> dict:
                     "service_down",
                     f"{name} is reachable again",
                     [f"{name} was unreachable for about {minutes} minutes."],
-                    level="warning",
+                    level="info",
                     throttle=False,
                 )
             state = {"fails": 0, "down_since": None}

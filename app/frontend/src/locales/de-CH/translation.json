@@ -825,7 +825,11 @@
       "deleteThis": "Nur diesen Termin",
       "following": "Diesen und alle folgenden",
       "thisOne": "Nur diesen Termin"
-    }
+    },
+    "description": "Beschreibung",
+    "descriptionPlaceholder": "Was erwartet die Teilnehmenden? Was mitbringen?",
+    "isPublic": "Öffentlicher Anlass",
+    "isPublicHint": "Darf auch ausserhalb des Vereins erscheinen, z. B. auf einem offenen Discord-Server. Sonst sehen ihn nur Mitglieder."
   },
   "finance": {
     "addCategory": "Kategorie hinzufügen",
@@ -3628,7 +3632,8 @@
       "attendance": "Anwesenheit",
       "command": "Befehl",
       "log": "Protokoll-Kanal",
-      "notified": "Benachrichtigung"
+      "notified": "Benachrichtigung",
+      "updated": "Aktualisiert"
     },
     "logAll": "Alles",
     "logErrors": "Fehler",

@@ -333,16 +333,140 @@ def admin_for(interaction: dict, permission: str):
 # ── Alerts ────────────────────────────────────────────────────────────────────
 
 
-def alert_buttons(alert_type: str) -> list:
-    """Buttons under an alert: Acknowledge, Silence 1 h, Open in manage."""
-    row = [
-        _button("Bestätigen", f"p:al:ack:{alert_type}", 1),
-        _button("1 h stumm", f"p:al:mute:{alert_type}", 2),
-    ]
-    url = _manage_url("/app/platform/alerts/overview")
-    if url.startswith("https://"):
-        row.append(_link("In manage öffnen", url))
-    return [{"type": 1, "components": row}]
+# What a platform message is decides its buttons.  Only a problem someone
+# has to look at gets Acknowledge and Silence; news and recoveries get a link
+# to the page they are about, and nothing to click away.
+PROBLEM = "problem"
+NOTICE = "notice"
+RESOLVED = "resolved"
+
+# Types that report something that happened, not something broken.  An
+# update that is stuck (level warning) is a problem all the same.
+NOTICE_TYPES = frozenset(
+    {"plugin_updates", "upgrades", "support_cases", "backup_deleted"}
+)
+
+# Alert type → (German label, manage page).  The page is where the link
+# button goes; the label is in the footer.
+ALERT_PAGES: dict[str, tuple[str, str]] = {
+    "relay_down": ("Mail-Relay", "/app/platform/mail/relay"),
+    "fallback_used": ("Fallback-Relay", "/app/platform/mail/relay"),
+    "delivery_failed": ("Mail-Zustellung", "/app/platform/mail"),
+    "service_down": ("Dienst", "/app/platform/diagnostics"),
+    "backup_failed": ("Backup", "/app/platform/backups"),
+    "backup_deleted": ("Backup gelöscht", "/app/platform/backups"),
+    "plugin_updates": ("Plugins", "/app/plugins"),
+    "upgrades": ("Update", "/app/platform/diagnostics"),
+    "system": ("System", "/app/platform/alerts"),
+    "support_cases": ("Meldungen und Ideen", "/app/reports"),
+}
+_LINK_LABELS = {
+    "support_cases": "Meldung öffnen",
+    "plugin_updates": "Zum Katalog",
+    "backup_failed": "Zu den Backups",
+    "backup_deleted": "Zu den Backups",
+}
+
+
+def message_kind(alert_type: str, level: str | None) -> str:
+    """``problem``, ``notice`` or ``resolved`` for an alert of this type
+    and level (error | warning | info)."""
+    if alert_type in NOTICE_TYPES and not (
+        alert_type == "upgrades" and level != "info"
+    ):
+        return NOTICE
+    if level == "info":
+        return RESOLVED
+    return PROBLEM
+
+
+def alert_page(alert_type: str) -> str:
+    """The manage address an alert of this type is about, or ""."""
+    path = ALERT_PAGES.get(alert_type, ("", "/app/platform/alerts"))[1]
+    url = _manage_url(path)
+    return url if url.startswith("https://") else ""
+
+
+def alert_buttons(alert_type: str, kind: str = PROBLEM) -> list:
+    """Buttons under a platform message.
+
+    A problem: Acknowledge, Silence 1 h, and a link to its page.  A notice or
+    a recovery: only the link (nothing to acknowledge or silence).
+    """
+    row: list[dict] = []
+    if kind == PROBLEM:
+        row += [
+            _button("Bestätigen", f"p:al:ack:{alert_type}", 1),
+            _button("1 h stumm", f"p:al:mute:{alert_type}", 2),
+        ]
+    url = alert_page(alert_type)
+    if url:
+        label = (
+            _LINK_LABELS.get(alert_type, "Ansehen")
+            if kind == NOTICE
+            else "In manage öffnen"
+        )
+        row.append(_link(label, url))
+    return [{"type": 1, "components": row}] if row else []
+
+
+_LEVEL_ICONS = {"error": "🔴", "warning": "🟠"}
+_NOTICE_ICONS = {
+    "support_cases": "📨",
+    "plugin_updates": "🧩",
+    "upgrades": "🚀",
+    "backup_deleted": "🗑️",
+}
+# Lines that point at a page in manage: the link button does that here.
+_SEE_LINE = re.compile(r"^(see|check .* in) manage\b", re.IGNORECASE)
+_KIND_LABELS = {PROBLEM: "Warnung", NOTICE: "Mitteilung", RESOLVED: "Behoben"}
+
+
+def alert_embed(embed: dict, alert_type: str, level: str, kind: str) -> dict:
+    """The alert as Discord shows it: an icon for what it is, the facts as
+    lines, errors in a code block, its kind and type in the footer."""
+    out = dict(embed)
+    title = str(out.get("title") or "").strip()
+    if title.lower().startswith("hubra: "):
+        title = title[7:]
+    if kind == NOTICE:
+        icon = _NOTICE_ICONS.get(alert_type, "ℹ️")
+    elif kind == RESOLVED:
+        icon = "✅"
+    else:
+        icon = _LEVEL_ICONS.get(level, "🔴")
+    if title and not title.startswith(icon):
+        title = f"{icon} {title}"
+    out["title"] = title[:256]
+
+    lines: list[str] = []
+    errors: list[str] = []
+    for line in str(out.get("description") or "").splitlines():
+        text = line.strip()
+        if text.lower().startswith("error: "):
+            errors.append(text[7:])
+        elif _SEE_LINE.match(text) and alert_page(alert_type):
+            continue
+        else:
+            lines.append(line.rstrip())
+    while lines and not lines[-1]:
+        lines.pop()
+    if lines:
+        out["description"] = "\n".join(lines)[:4000]
+    else:
+        out.pop("description", None)
+    fields = list(out.get("fields") or [])
+    if errors:
+        text = "\n".join(errors).replace("`", "ˋ")[:990]
+        fields.insert(
+            0, {"name": "Fehler", "value": f"```\n{text}\n```", "inline": False}
+        )
+    if fields:
+        out["fields"] = fields[:25]
+    label = ALERT_PAGES.get(alert_type, (alert_type, ""))[0]
+    out["footer"] = {"text": f"Hubra · {_KIND_LABELS[kind]} · {label}"}
+    out.setdefault("timestamp", datetime.now(timezone.utc).isoformat())
+    return out
 
 
 def track_alert(message: dict, alert_type: str) -> None:

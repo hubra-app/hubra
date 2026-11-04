@@ -15,7 +15,11 @@ from hubra.core.extensions import db
 from hubra.core.models.event import ClubEvent, EventRegistration, event_attendees
 from hubra.core.models.member import Member
 from hubra.core.modules import emit
-from hubra.core.modules.events import EVENT_CHANGED, EVENT_PUBLISHED
+from hubra.core.modules.events import (
+    EVENT_CHANGED,
+    EVENT_PUBLISHED,
+    EVENT_SIGNUPS_CHANGED,
+)
 
 
 # Registration states that take one of the event's places (the member's
@@ -209,6 +213,7 @@ class EventService:
         db.session.execute(
             insert(event_attendees).values(event_id=event_id, member_id=member.id)
         )
+        emit(EVENT_SIGNUPS_CHANGED, event_id=event_id)
 
     @staticmethod
     def remove_attendee(event_id: int, member_id: int) -> None:
@@ -234,6 +239,7 @@ class EventService:
                 event_attendees.c.member_id == member_id,
             )
         )
+        emit(EVENT_SIGNUPS_CHANGED, event_id=event_id)
 
     # ── Registration workflow ─────────────────────────────────────────────────
 
@@ -311,6 +317,7 @@ class EventService:
                 link=event_link(event_id, pending=True),
             )
 
+        emit(EVENT_SIGNUPS_CHANGED, event_id=event_id)
         return registration
 
     @staticmethod
@@ -368,6 +375,7 @@ class EventService:
             target_id=event.id,
             target_label=event.title,
         )
+        emit(EVENT_SIGNUPS_CHANGED, event_id=event.id)
         return registration
 
     @staticmethod
@@ -485,6 +493,7 @@ class EventService:
             db.session.flush()
             EventService._promote_waitlist(EventService.get(event_id))
 
+        emit(EVENT_SIGNUPS_CHANGED, event_id=event_id)
         return registration
 
     @staticmethod
