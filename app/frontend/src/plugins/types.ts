@@ -30,12 +30,34 @@ export interface PluginSlotEntry extends Gated {
   component: ComponentType<any>
 }
 
+/** One thing a plugin's search found; matched on `label`, `sub` and `keywords`. */
+export interface SearchHit {
+  id: string | number
+  label: string
+  sub?: string
+  /** Club-app path, such as `/app/inventory/12`. */
+  path: string
+  /** More text to match, not shown. */
+  keywords?: string
+}
+
+/** A list the global search (Ctrl+K) looks through. */
+export interface PluginSearch extends Gated {
+  id: string
+  /** A translation key: the label shown on each hit, such as "Inventar". */
+  label: string
+  color?: { bg: string; color: string }
+  /** Loaded once the search is first used, then kept for a minute. */
+  load: () => Promise<SearchHit[]>
+}
+
 export interface PluginDefinition {
   /** The plugin's id, as in its plugin.yaml. */
   id: string
   routes?: PluginRoute[]
   tabs?: PluginTab[]
   slots?: PluginSlotEntry[]
+  search?: PluginSearch[]
   /** Icons the plugin's sidebar entries name, by the name in its module manifest. */
   icons?: Record<string, ComponentType<{ size?: number }>>
   /** Translations by language (`en-GB`, `de-CH`), nested like translation.json. */

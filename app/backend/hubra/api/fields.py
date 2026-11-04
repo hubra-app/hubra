@@ -80,15 +80,6 @@ FIELD_REGISTRY: dict[tuple[str, str], dict[str, str]] = {
         "name": "Category name",
         "color": "Color",
     },
-    # ── Inventory ─────────────────────────────────────────────────────────
-    ("inventory", "items"): {
-        "name": "Item name",
-        "description": "Description",
-        "location": "Location",
-        "status": "Status",
-        "owner_id": "Owner",
-        "responsible_id": "Responsible person",
-    },
     # ── Events ────────────────────────────────────────────────────────────
     ("events", "events"): {
         "title": "Title",
@@ -119,9 +110,20 @@ def field_perm_key(blueprint: str, resource: str, field: str) -> str:
     return f"{prefix}.{resource}.update.{field}"
 
 
+def field_registry() -> dict[tuple[str, str], dict[str, str]]:
+    """FIELD_REGISTRY plus the ``field_permissions`` of every loaded module."""
+    from hubra.core.modules import registry
+
+    out = {k: dict(v) for k, v in FIELD_REGISTRY.items()}
+    for module in registry.all():
+        for bp, resource, field, display_name in module.field_permissions:
+            out.setdefault((bp, resource), {})[field] = display_name
+    return out
+
+
 def iter_field_perms():
     """Yield (key, display_name, resource, action, blueprint) for every field perm."""
-    for (bp, resource), fields in FIELD_REGISTRY.items():
+    for (bp, resource), fields in field_registry().items():
         for field, display_name in fields.items():
             key = field_perm_key(bp, resource, field)
             yield {

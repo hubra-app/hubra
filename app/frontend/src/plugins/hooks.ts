@@ -1,7 +1,7 @@
 import { useAuth } from '@/context/AppContext'
 import { useModules } from '@/modules/useModules'
 import { usePlugins } from './store'
-import type { PluginRoute, PluginTab } from './types'
+import type { PluginRoute, PluginSearch, PluginTab } from './types'
 
 type Gated = { module: string; perm?: string; order?: number }
 
@@ -27,6 +27,11 @@ export function usePluginRoutes(): FromPlugin<PluginRoute>[] {
   return plugins
     .flatMap((p) => (p.routes ?? []).map((r) => ({ ...r, plugin: p.id })))
     .filter((r) => modules.has(r.module))
+}
+
+/** Lists plugins add to the global search, for this club and user. */
+export function usePluginSearches(): FromPlugin<PluginSearch>[] {
+  return useVisible((p) => p.search)
 }
 
 /** Tabs plugins add to `screen`, already filtered for this club and user. */

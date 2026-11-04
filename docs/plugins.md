@@ -1,0 +1,85 @@
+# What plugins can extend
+
+Plugins are club features. They run in the club backend, on the club's
+queue and in the club app. Manage, the platform API (`/api/v1/platform`) and
+the global API (`/api/v1/global`: sign-in, account, public data) can't be
+touched by a plugin. The design and its reasons are in the
+[plugin extension areas doc](https://claude.ai/artifact/WokKbL3xuPmA6qrtAAEncC).
+
+## Trust
+
+| Signed by | Backend code | Processes, in-transaction events |
+| --- | --- | --- |
+| Hubra (official key) or shipped with Hubra | yes | yes |
+| A key the platform admin trusts | yes, club level only | no |
+| Nobody | refused unless an admin accepts it unsigned | no |
+
+## Areas and `uses:`
+
+A plugin lists the areas it uses in `plugin.yaml`. The loader refuses a
+plugin that touches an area it didn't list. A plugin without `uses:` still
+loads (plugins released before the list existed) and logs a warning;
+the template's release check requires it.
+
+```yaml
+uses: [routes, events, jobs, tables, settings, nav, frontend]
+depends:
+  finance: ">=2.0,<3"
+```
+
+| Area | Manifest field | Limit |
+| --- | --- | --- |
+| `routes` | `Module.blueprints` | under `/api/v1/app/<name>`, a prefix nobody else has |
+| `public` | `Module.public_endpoints` | listed by endpoint name |
+| `events` | `Module.events` | delivered after the commit (below) |
+| `jobs` | `Module.tasks`, `Module.schedule` | the default (club) queue |
+| `processes` | `Module.processes` | official plugins only |
+| `tables` | `Module.tables`, `migrations/` | own tables, never Hubra's |
+| `settings` | `Module.settings` | per club |
+| `apps` | `Module.apps` | connected apps |
+| `nav` | `Module.nav` | club app sidebar |
+| `frontend` | `frontend/dist/plugin.js` | club app pages, tabs and slots |
+| `mail`, `discord` | (reserved) | plugin mail templates, Discord command registry |
+
+Everything a manifest points at (blueprints, handlers, task modules,
+scheduled tasks, processes, app handlers) must be in the plugin's own
+package. The checks live in `app/backend/hubra/core/plugins/limits.py`.
+
+## Route paths
+
+Write new plugins with `/api/v1/app/<name>`. A plugin that names the old
+form, `/api/v1/<name>`, is served under `/api/v1/app/<name>` and the old
+path is rewritten to it, so its frontend and outside links keep working.
+One prefix for core and plugin features means a feature that moves into a
+plugin keeps its URLs.
+
+## Events
+
+Hubra's own modules get events inside the caller's transaction. A plugin's
+handlers run after that transaction commits, in the worker
+(`hubra.core.tasks.plugin_event_tasks`), so a slow or failing plugin can't
+hold up or roll back the caller's work, and a rolled-back change never
+reaches a plugin. An official plugin can keep in-transaction delivery for
+named events:
+
+```python
+module = Module(
+    code="demo",
+    events={"invoice.paid": "hubra_demo.hooks:on_paid"},
+    events_in_transaction=("invoice.paid",),
+)
+```
+
+In a plugin test that calls `emit()` directly, commit afterwards
+(`db.session.commit()`): that is when the handler runs.
+
+## Dependencies
+
+- `requires:` lists module codes (Hubra's or another plugin's).
+- `depends:` lists other plugins by id with a version range.
+
+Installing a plugin from a repository installs the plugins it depends on
+first, from the same repository, in the newest version that fits the
+range. An upload with a missing dependency is refused with what to install.
+An update or rollback that an installed plugin's range excludes is refused,
+and so is uninstalling a plugin that another one depends on.

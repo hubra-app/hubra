@@ -189,7 +189,6 @@ def test_permanent_delete_of_a_poll_author_group_lead_and_voter(
 ):
     """Every other row that points at the member is cleared or removed, so
     the delete does not trip a foreign key on Postgres."""
-    from hubra.core.models.code import Code
     from hubra.core.models.group import Group
     from hubra.core.models.member import Member
     from hubra.core.models.poll import Poll, PollOption, PollVote
@@ -202,19 +201,16 @@ def test_permanent_delete_of_a_poll_author_group_lead_and_voter(
     poll = Poll(question="Picnic?", created_by_id=member_id)
     poll.options = [PollOption(label="Yes")]
     group = Group(name="Gardeners", lead_id=member_id)
-    code = Code(
-        name="Door", code="1234", created_by_id=member_id, updated_by_id=member_id
-    )
     translation = Translation(
         locale="de-CH", key="t.k", value="v", updated_by_id=member_id
     )
-    db.session.add_all([poll, group, code, translation])
+    db.session.add_all([poll, group, translation])
     db.session.flush()
     db.session.add(
         PollVote(poll_id=poll.id, option_id=poll.options[0].id, member_id=member_id)
     )
     db.session.commit()
-    ids = (poll.id, group.id, code.id, translation.id)
+    ids = (poll.id, group.id, translation.id)
 
     client.post(f"/api/v1/members/{member_id}/archive", headers=auth_headers)
     resp = client.delete(f"/api/v1/members/{member_id}", headers=auth_headers)
@@ -224,9 +220,7 @@ def test_permanent_delete_of_a_poll_author_group_lead_and_voter(
     assert db.session.get(Member, member_id) is None
     assert db.session.get(Poll, ids[0]).created_by_id is None
     assert db.session.get(Group, ids[1]).lead_id is None
-    code = db.session.get(Code, ids[2])
-    assert (code.created_by_id, code.updated_by_id) == (None, None)
-    assert db.session.get(Translation, ids[3]).updated_by_id is None
+    assert db.session.get(Translation, ids[2]).updated_by_id is None
     # The vote stays, anonymous, so the poll's result does not change.
     assert db.session.query(PollVote).filter_by(member_id=member_id).count() == 0
     [vote] = db.session.query(PollVote).filter_by(poll_id=ids[0]).all()
@@ -272,7 +266,6 @@ def test_permanent_delete_does_what_the_foreign_keys_declare(
     from hubra.api.members.services import MemberService
     from hubra.core.models.event import ClubEvent, EventRegistration
     from hubra.core.models.group import Group
-    from hubra.core.models.inventory import InventoryCheckout, InventoryItem
     from hubra.core.models.member import member_groups
     from hubra.core.models.post import Post, PostComment, PostLike
 
@@ -281,21 +274,19 @@ def test_permanent_delete_does_what_the_foreign_keys_declare(
 
     post = Post(author_id=member_id, title="Hallo", body="Text")
     event = ClubEvent(title="Fest", date=date(2030, 1, 1), type="Social", created_by=member_id)
-    item = InventoryItem(name="Bohrer", category="tools", responsible_id=member_id)
     group = Group(name="Werkstatt")
-    db.session.add_all([post, event, item, group])
+    db.session.add_all([post, event, group])
     db.session.flush()
     db.session.add_all(
         [
             PostComment(post_id=post.id, author_id=admin_id, body="Antwort"),
             PostLike(post_id=post.id, member_id=admin_id),
             EventRegistration(event_id=event.id, member_id=member_id, status="registered"),
-            InventoryCheckout(item_id=item.id, member_id=member_id),
         ]
     )
     db.session.execute(insert(member_groups).values(member_id=member_id, group_id=group.id))
     db.session.commit()
-    post_id, event_id, item_id = post.id, event.id, item.id
+    post_id, event_id = post.id, event.id
     assert client.post(f"/api/v1/members/{member_id}/archive", headers=auth_headers).status_code == 204
 
     MemberService.delete_permanent(member_id, admin_id)
@@ -305,12 +296,10 @@ def test_permanent_delete_does_what_the_foreign_keys_declare(
     assert db.session.query(PostComment).filter_by(post_id=post_id).count() == 0
     assert db.session.query(PostLike).filter_by(post_id=post_id).count() == 0
     assert db.session.query(EventRegistration).filter_by(member_id=member_id).count() == 0
-    assert db.session.query(InventoryCheckout).filter_by(member_id=member_id).count() == 0
     assert not db.session.execute(
         select(member_groups).where(member_groups.c.member_id == member_id)
     ).all()
-    # SET NULL: the event and the item stay, unattributed.
+    # SET NULL: the event stays, unattributed.
     db.session.expire_all()
     assert db.session.get(ClubEvent, event_id).created_by is None
-    assert db.session.get(InventoryItem, item_id).responsible_id is None
     db.session.rollback()

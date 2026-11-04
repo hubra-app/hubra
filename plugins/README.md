@@ -12,6 +12,8 @@ them from the official Marketplace, <https://plugins.hubra.club/index.json>.
 
 | Plugin        | Module(s)          | What it does                                                                |
 | ------------- | ------------------ | --------------------------------------------------------------------------- |
+| `codes`       | `codes`            | Encrypted door codes and passcodes                                          |
+| `inventory`   | `inventory`        | Tools, machines and materials, checkouts and inductions                     |
 | `keys`        | `inventory.keys`   | Keys and access cards, handovers and deposits                               |
 | `guides`      | `inventory.guides` | Usage guides on inventory items                                             |
 | `budgets`     | `finance.budgets`  | Yearly budgets per transaction category                                     |
@@ -147,6 +149,17 @@ nav entries, permissions, event hooks, tables. Module codes must not clash
 with Hubra's. [hubra-plugin-keys](https://github.com/hubra-app/hubra-plugin-keys)
 is a complete example.
 
+**Permissions.** Each route's `permission_required(resource, action)`
+gives the key `<blueprint minus _bp>.<resource>.<action>`. Rights a route
+checks itself go in `Module(permissions=(("myplugin.things.create_own",
+"Add own things"),))`, and per-field update rights in
+`Module(field_permissions=(("myplugin", "things", "name", "Name"),))`;
+`flask sync-permissions` and the roles screen pick both up.
+
+**Encrypted columns.** Values encrypted with `hubra.core.crypto` go in
+`Module(encrypted_columns=(("things", "id", "secret", ""),))`, so key checks
+and `flask crypto rotate` re-encrypt them.
+
 **Tables.** Write migrations with `flask plugins revision my-plugin -m "..."
 --autogenerate` (with `HUBRA_PLUGINS_AUTOINSTALL=my-plugin`). They run in
 `public` and in every club's schema, each plugin with its own version table
@@ -179,6 +192,17 @@ registerPlugin({
     },
   ],
   slots: [{ slot: 'account.cards', module: 'inventory.myplugin', component: MyThingsCard }],
+  // Lists the global search (Ctrl+K) looks through; label is a translation key.
+  search: [
+    {
+      id: 'things',
+      module: 'inventory.myplugin',
+      perm: 'things.read',
+      label: 'shell.searchKind.things',
+      load: async () =>
+        (await listThings()).map((x) => ({ id: x.id, label: x.name, path: `/app/inventory/things/${x.id}` })),
+    },
+  ],
   translations, // { "en-GB": {...}, "de-CH": {...} }
 })
 ```

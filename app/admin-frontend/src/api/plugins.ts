@@ -32,6 +32,10 @@ export interface MarketplacePlugin {
   tags: string[]
   modules: string[]
   requires: string[]
+  /** Other plugins it needs: id -> version range ('' = any). */
+  depends?: Record<string, string>
+  /** The areas it extends (docs/plugins.md); null when it lists none. */
+  uses?: string[] | null
   bundled: boolean
   trust: PluginTrust
   loaded: boolean
@@ -84,6 +88,8 @@ export interface StagedPlugin {
   source: string
   repositoryId: number | null
   installedVersion: string | null
+  depends?: Record<string, string>
+  uses?: string[] | null
   migrations: boolean
   frontend: boolean
   installable: boolean

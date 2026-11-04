@@ -84,6 +84,34 @@ const TRUST: Record<string, { color: string; label: () => string }> = {
   invalid: { color: 'red', label: () => tr('Ungültige Signatur', 'Invalid signature') },
 }
 
+// Extension areas a plugin lists under uses: (docs/plugins.md).
+const AREAS: Record<string, [string, string]> = {
+  routes: ['Schnittstellen', 'API routes'],
+  public: ['öffentliche Seiten', 'public routes'],
+  events: ['Ereignisse', 'events'],
+  jobs: ['Hintergrundjobs', 'background jobs'],
+  processes: ['eigene Prozesse', 'own processes'],
+  tables: ['eigene Tabellen', 'own tables'],
+  settings: ['Einstellungen', 'settings'],
+  apps: ['verbundene Apps', 'connected apps'],
+  nav: ['Navigation', 'navigation'],
+  frontend: ['Seiten in der Vereins-App', 'club app pages'],
+  mail: ['Mails', 'mail'],
+  discord: ['Discord', 'Discord'],
+}
+
+function usesText(uses: string[] | null | undefined) {
+  if (uses == null) return tr('nicht angegeben', 'not declared')
+  if (uses.length === 0) return tr('nichts', 'nothing')
+  return uses.map((a) => (AREAS[a] ? tr(...AREAS[a]) : a)).join(', ')
+}
+
+function dependsText(depends: Record<string, string>) {
+  return Object.entries(depends)
+    .map(([id, range]) => (range ? `${id} ${range}` : id))
+    .join(', ')
+}
+
 function TrustBadge({ status }: { status: string }) {
   const t = TRUST[status]
   if (!t) return null
@@ -645,6 +673,10 @@ function DetailsModal({
             )}
             {p.modules.length > 0 && <Row label={tr('Module', 'Modules')} value={p.modules.join(', ')} />}
             {p.requires.length > 0 && <Row label={tr('Braucht', 'Needs')} value={p.requires.join(', ')} />}
+            {p.depends && Object.keys(p.depends).length > 0 && (
+              <Row label={tr('Braucht Plugins', 'Needs plugins')} value={dependsText(p.depends)} />
+            )}
+            <Row label={tr('Erweitert', 'Extends')} value={usesText(p.uses)} />
           </Table.Tbody>
         </Table>
         {p.changes && (
@@ -758,6 +790,17 @@ function StagedModal({
         <Text size="xs" c="dimmed">
           {s.trust.detail || s.source}
         </Text>
+        <Text size="sm">
+          {tr('Erweitert', 'Extends')}: {usesText(s.uses)}
+        </Text>
+        {s.depends && Object.keys(s.depends).length > 0 && (
+          <Text size="sm">
+            {tr(
+              `Braucht ${dependsText(s.depends)}; fehlende Plugins aus derselben Quelle werden zuerst installiert.`,
+              `Needs ${dependsText(s.depends)}; missing ones from the same source are installed first.`,
+            )}
+          </Text>
+        )}
         {s.migrations && (
           <Text size="sm">
             {tr(
@@ -1133,7 +1176,7 @@ function KeysView() {
             placeholder="-----BEGIN PUBLIC KEY-----"
             autosize
             minRows={3}
-            styles={{ input: { fontFamily: 'monospace', fontSize: 12 } }}
+            styles={{ input: { fontFamily: 'monospace', fontSize: 13 } }}
             value={pem}
             onChange={(e) => setPem(e.currentTarget.value)}
           />

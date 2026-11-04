@@ -10,10 +10,11 @@ test('what is new shows the latest release, older versions on demand and the roa
 
   const dialog = page.getByRole('dialog', { name: 'Neuigkeiten' })
   await expect(dialog.getByText('Frühere Versionen', { exact: true })).toBeVisible()
+  // The newest release shows its first changes; the rest come with one click,
+  // so the check does not depend on which entry is listed first.
+  const showAll = dialog.getByRole('button', { name: /^Alle \d+ Änderungen zeigen$/ })
+  if (await showAll.count()) await showAll.click()
   // The notes follow the page language (German here, from CHANGELOG.de.md).
-  // The newest release shows its first changes only, so open them all: which
-  // entry comes first changes with every release.
-  await dialog.getByRole('button', { name: /^Alle \d+ Änderungen zeigen$/ }).click()
   await expect(dialog.getByText('Wartungsmodus', { exact: true })).toBeVisible()
   // Older versions are folded: a heading per version, its changes hidden until opened.
   const older = dialog.locator('.mantine-Accordion-item')

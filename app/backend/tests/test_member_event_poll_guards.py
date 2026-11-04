@@ -1,4 +1,4 @@
-"""Guards on removed members, event attendees, inventory check-in and poll proxies."""
+"""Guards on removed members, event attendees, and poll proxies."""
 
 from datetime import datetime, timezone
 
@@ -79,28 +79,6 @@ def test_archived_member_not_added_as_attendee(client, seeded_db, auth_headers):
     _admin(client)
     r = client.post(f"/api/v1/events/{eid}/attendees/{m.id}")
     assert r.status_code == 404, r.status_code
-
-
-def _item(client):
-    return client.post(
-        "/api/v1/inventory/", json={"name": "Drill", "category": "Tool"}
-    ).get_json()["id"]
-
-
-def test_checkin_notes_must_be_text(client, seeded_db, auth_headers):
-    iid = _item(client)
-    m1 = _mk(seeded_db, "i3@test.ch")
-    _admin(client)
-    client.post(f"/api/v1/inventory/{iid}/checkout", json={"member_id": m1.id})
-    try:
-        r = client.post(
-            f"/api/v1/inventory/{iid}/checkin", json={"condition_notes": {"x": 1}}
-        )
-        status = r.status_code
-    except Exception as exc:  # test client re-raises what would be a 500
-        _db.session.rollback()
-        status = f"500 ({type(exc).__name__})"
-    assert status == 400, status
 
 
 def test_proxy_lapses_when_poll_stops_allowing_proxies(client, seeded_db, auth_headers):
