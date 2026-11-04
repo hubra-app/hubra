@@ -41,8 +41,8 @@ Who runs the club:
 
 1. **Settings › Club (Einstellungen › Verein).** Name, description, colours,
    time zone, language and date format.
-2. **Settings › Modules & plugins (Module & Plugins).** Switch off what the
-   club doesn't use; see [Modules and plugins](#modules-and-plugins).
+2. **Settings › Modules (Module).** Switch off what the
+   club doesn't use; see [Modules](#modules).
 3. **Members › Tiers (Mitglieder › Stufen).** The membership tiers and what
    they cost, with payment plans if a tier can be paid in parts.
 4. **Permissions (Berechtigungen).** Check the roles before you invite
@@ -99,9 +99,9 @@ everything any of them grants.
   Members › Functions. They record who holds an office; rights still come
   from roles.
 
-## Modules and plugins
+## Modules
 
-Settings › Modules & plugins lists everything the club can use.
+Settings › Modules lists everything the club can use. Missing one? "Suggest a module" at the end of the list sends the idea to the Hubra team (area "Module"); once it is on the roadmap, every club can vote for it.
 
 | Module | What it is | On for a new club |
 | ------ | ---------- | ----------------- |
@@ -127,10 +127,11 @@ Settings › Modules & plugins lists everything the club can use.
   keep the stored value.
 - **Blocked:** the platform team can block a module for your club. It then
   stays off.
-- **Plugins** (for example keys, budgets, bank import, Discord) appear in the
-  same list once the platform team has installed them for the installation.
-  You switch them on like any other module. Ask the platform team if one you
-  need is missing.
+- **More modules** (for example keys, budgets, bank import, Discord) appear in
+  the same list once the platform offers them. You switch them on like any
+  other module. Clubs don't install anything: behind the scenes some modules
+  are plugins, which let the platform ship and update a module without a
+  release of the whole app. Ask the platform team if one you need is missing.
 
 ## Settings
 

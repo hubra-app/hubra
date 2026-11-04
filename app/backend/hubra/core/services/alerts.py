@@ -24,6 +24,7 @@ def send_alert(
     *,
     staff: bool = True,
     alert_type: str = "system",
+    level: str | None = None,
 ) -> bool:
     """Post an alert embed to the platform Discord log.
 
@@ -53,7 +54,7 @@ def send_alert(
 
     from hubra.core.services import platform_discord
 
-    return platform_discord.post_alert(embed, alert_type)
+    return platform_discord.post_alert(embed, alert_type, level)
 
 
 def _to_platform_staff(title, description, fields, color) -> None:

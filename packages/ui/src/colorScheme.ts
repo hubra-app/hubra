@@ -40,7 +40,7 @@ function writeCookie(value: MantineColorScheme) {
 /** Saves the choice on the account too, so other devices follow. */
 function saveOnAccount(value: MantineColorScheme) {
   if (!hasTokens()) return
-  fetch(`${BASE}/account/profile`, {
+  fetch(`${BASE}/global/account/profile`, {
     method: 'PATCH',
     credentials: 'include',
     headers: {

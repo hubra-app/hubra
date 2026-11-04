@@ -17,13 +17,13 @@ fail() {
 
 echo "Waiting for the API behind $app ..."
 tries=0
-until curl -fsS "$app/api/v1/instance" >/dev/null 2>&1; do
+until curl -fsS "$app/api/v1/global/instance" >/dev/null 2>&1; do
   tries=$((tries + 1))
   [ "$tries" -lt 90 ] || fail "the API did not answer within 3 minutes"
   sleep 2
 done
 
-echo "instance: $(curl -fsS "$app/api/v1/instance")"
+echo "instance: $(curl -fsS "$app/api/v1/global/instance")"
 
 headers="$(curl -fsSI "$app/")"
 for h in content-security-policy x-frame-options x-content-type-options; do
@@ -40,7 +40,7 @@ docker compose exec -T backend flask provision-tenant \
 
 body="$(printf '{"email":"%s","password":"%s"}' "$email" "$password")"
 status="$(curl -sS -o /dev/null -w '%{http_code}' -c "$jar" -H X-Tenant-Slug:smoke \
-  -H 'Content-Type: application/json' -d "$body" "$app/api/v1/auth/login")"
+  -H 'Content-Type: application/json' -d "$body" "$app/api/v1/global/auth/login")"
 [ "$status" = 200 ] || fail "sign-in answered $status"
 for path in account/ modules/; do
   status="$(curl -sS -o /dev/null -w '%{http_code}' -b "$jar" "$app/api/v1/$path")"

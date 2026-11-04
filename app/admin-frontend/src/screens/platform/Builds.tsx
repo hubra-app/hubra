@@ -72,6 +72,7 @@ export function BuildsPanel({ health }: { health: HealthDetail }) {
   const reports = health.processes ?? []
   const labels: Record<string, string> = {
     api: tr('Backend (API)', 'Backend (API)'),
+    'global-api': tr('Anmeldung & Konto (API)', 'Sign-in & account (API)'),
     worker: tr('Hintergrund-Worker', 'Background worker'),
     beat: tr('Zeitplaner (Beat)', 'Scheduler (beat)'),
     'discord-gateway': 'Discord-Gateway',

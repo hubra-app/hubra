@@ -651,6 +651,7 @@
   "events": {
     "addEvent": "Add Event",
     "addOption": "Add Option",
+    "attended": "Attended",
     "attendees": "Attendees",
     "author": "Author",
     "comingSoonDesc": "Event planning and RSVPs are in progress.",
@@ -678,6 +679,12 @@
     "eventTitle": "Title",
     "eventTitlePlaceholder": "e.g. Woodshop basics",
     "eventUpdatedMsg": "{{title}} has been updated.",
+    "filter": {
+      "past": "Past",
+      "type": "Type",
+      "upcoming": "Upcoming",
+      "when": "When"
+    },
     "join": "Join",
     "joined": "Joined event",
     "leave": "Leave",
@@ -686,6 +693,7 @@
     "locationPlaceholder": "e.g. Woodshop",
     "noEvents": "No events found.",
     "noLocation": "No location",
+    "over": "Over",
     "poll": {
       "deleted": "Poll deleted.",
       "options": "Options",
@@ -790,7 +798,11 @@
       "deleteThis": "Only this date",
       "following": "This and all following",
       "thisOne": "Only this date"
-    }
+    },
+    "description": "Description",
+    "descriptionPlaceholder": "What can people expect? What should they bring?",
+    "isPublic": "Public event",
+    "isPublicHint": "May also be shown outside the club, e.g. on an open Discord server. Otherwise only members see it."
   },
   "finance": {
     "addCategory": "Add Category",
@@ -896,6 +908,8 @@
       "issued": "Issued",
       "notFound": "Invoice not found",
       "number": "Invoice number",
+      "numberShort": "No.",
+      "pageTitle": "Invoice no. {{n}}",
       "paid": "Invoice paid.",
       "period": "Period"
     },
@@ -1137,10 +1151,10 @@
         "lastYear": "Last year's expenses",
         "lastYearHint": "The confirmed expenses of the last full billing year.",
         "budget": "Budget",
-        "budgetHint": "The expenses in this year's approved budget (Budgets plugin).",
+        "budgetHint": "The expenses in this year's approved budget (Budgets module).",
         "manual": "Fixed amount",
         "manualHint": "An amount you set yourself.",
-        "needsBudgets": "Needs the Budgets plugin."
+        "needsBudgets": "Needs the Budgets module."
       },
       "manual": "Yearly expenses (CHF)",
       "extra": "Extra costs per year (CHF)",
@@ -2068,14 +2082,12 @@
       "switchedOff": "{{name}} switched off",
       "switchedOn": "{{name}} switched on",
       "uses": "Uses {{names}}",
-      "pluginsTitle": "Plugins",
-      "pluginsIntro": "Extra features from the Hubra catalogue. Switch on what your club wants to use.",
-      "builtInTitle": "Features",
-      "noPlugins": "No plugins are installed on this platform yet. Platform admins install plugins from the Hubra catalogue.",
-      "morePlugins": "Missing something? Platform admins install more plugins from the Hubra catalogue.",
       "onCount": "{{count}} of {{total}} on",
-      "pluginBy": "Plugin {{name}} {{version}}",
-      "official": "Official"
+      "title": "Modules",
+      "missingTitle": "Missing a module?",
+      "missingDesc": "Suggest it. Once the Hubra team puts the idea on the roadmap, every club can vote for it.",
+      "suggest": "Suggest a module",
+      "roadmap": "See the roadmap"
     },
     "noFeatures": "No feature flags configured",
     "profile": "Profile",
@@ -2088,7 +2100,7 @@
     "tabs": {
       "club": "Club",
       "domains": "Domains",
-      "modules": "Modules & plugins",
+      "modules": "Modules",
       "settings": "Advanced",
       "membership": "Membership",
       "bank": "Bank & QR invoice",
@@ -2326,7 +2338,7 @@
     },
     "more": {
       "emptyTitle": "Nothing here yet",
-      "emptyDesc": "Pages you hide in the sidebar and pages from plugins appear here."
+      "emptyDesc": "Pages you hide in the sidebar and pages of further modules appear here."
     },
     "customize": {
       "title": "Customise sidebar",
@@ -3471,7 +3483,7 @@
     "lastUsed": "last active",
     "mayDo": "What the app may do",
     "noActivity": "No activity yet.",
-    "noProviders": "Switch on a module with an app under “Modules & plugins”, for example Discord.",
+    "noProviders": "Switch on a module with an app under “Modules”, for example Discord.",
     "none": "No app connected yet.",
     "test": "Test",
     "testFailed": "Test failed",
@@ -3494,7 +3506,8 @@
       "attendance": "Attendance",
       "command": "Command",
       "log": "Log channel",
-      "notified": "Notification"
+      "notified": "Notification",
+      "updated": "Updated"
     },
     "logAll": "All",
     "logErrors": "Errors",
@@ -3586,14 +3599,7 @@
       "emptyDesc": "Ideas the Hubra team made public show here. Vote for the ones that help you most.",
       "emptyTitle": "The roadmap is still empty",
       "intro": "Ideas the Hubra team is working on or looking at. Your vote helps decide what comes first.",
-      "none": "Nothing here.",
-      "unvote": "Take back your vote",
-      "vote": "Vote for it",
-      "voteFailed": "Voting failed",
-      "inProgress": "In progress",
-      "planned": "Planned",
-      "open": "Suggested",
-      "done": "Done"
+      "voteFailed": "Voting failed"
     },
     "severity": {
       "annoying": "Gets in the way",
@@ -3618,7 +3624,8 @@
       "mail": "Mail",
       "settings": "Settings",
       "account": "Account and sign-in",
-      "other": "Other"
+      "other": "Other",
+      "modules": "Module"
     }
   },
   "backupKey": {

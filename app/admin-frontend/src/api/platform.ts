@@ -2,7 +2,7 @@ import { withStepUp } from '@/api/stepUp'
 import { apiFetch } from '@hubra/api-client'
 import type { ChangelogEntry, RoadmapItem, RoadmapStatus } from '@hubra/ui'
 
-const P = '/manager/platform'
+const P = '/platform'
 
 export interface PlatformSetting {
   key: string
@@ -153,12 +153,12 @@ export async function getPlatformHealth() {
 
 export async function getChangelog(lang?: string) {
   return apiFetch<{ version: string; entries: ChangelogEntry[] }>(
-    `/version/changelog${lang ? `?lang=${encodeURIComponent(lang)}` : ''}`,
+    `/global/version/changelog${lang ? `?lang=${encodeURIComponent(lang)}` : ''}`,
   )
 }
 
 export async function getRoadmap() {
-  return apiFetch<{ statuses: RoadmapStatus[]; items: RoadmapItem[] }>('/version/roadmap')
+  return apiFetch<{ statuses: RoadmapStatus[]; items: RoadmapItem[] }>('/global/version/roadmap')
 }
 
 export interface PermissionEntry {
@@ -397,6 +397,9 @@ export interface PerfRoute {
   dbMean: number | null
   queriesMean: number | null
   slow: number
+  /** Of the slow ones: while the pod was CPU-throttled / at its memory limit. */
+  slowCpu?: number
+  slowMemory?: number
   status: Partial<Record<'1xx' | '2xx' | '3xx' | '4xx' | '5xx', number>>
   totalMs: number
 }
@@ -410,6 +413,17 @@ export interface PerfQuery {
   meanMs: number | null
   maxMs: number
   totalMs: number
+  /** How many of them ran while the pod was CPU-throttled. */
+  cpuThrottled: number
+  /** How many of them ran while the pod reached its memory limit. */
+  memoryLimit: number
+}
+
+export interface PerfUnmatched {
+  method: string
+  /** Path shape: ids and tokens are "*". */
+  path: string
+  count: number
 }
 
 export interface PerfSummary {
@@ -421,6 +435,7 @@ export interface PerfSummary {
   routes: PerfRoute[]
   routeCount: number
   queries: PerfQuery[]
+  unmatched: PerfUnmatched[]
 }
 
 export async function getPerformance(hours: number) {

@@ -498,7 +498,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const stopImpersonation = useCallback(() => {
     const adminUrl = import.meta.env.VITE_ADMIN_PORTAL_URL ?? 'https://manage.hubra.club'
-    apiFetch('/system/impersonation/stop', { method: 'POST' }).finally(() => {
+    apiFetch('/global/impersonation/stop', { method: 'POST' }).finally(() => {
       window.location.href = `${adminUrl}/tenants`
     })
   }, [])

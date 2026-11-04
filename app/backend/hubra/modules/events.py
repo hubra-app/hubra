@@ -12,7 +12,7 @@ module = Module(
         Blueprint(
             "hubra.api.events.routes",
             "events_bp",
-            "/api/v1/events",
+            "/api/v1/app/events",
         ),
     ),
     settings=(

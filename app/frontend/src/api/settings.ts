@@ -19,7 +19,7 @@ export interface SettingEntry {
 }
 
 export async function listSettings(): Promise<SettingEntry[]> {
-  return apiFetch<SettingEntry[]>("/settings");
+  return apiFetch<SettingEntry[]>("/app/settings");
 }
 
 export interface SettingMetadata {
@@ -37,14 +37,14 @@ export async function upsertSetting(
   value: string,
   extra?: SettingMetadata,
 ): Promise<SettingEntry> {
-  return apiFetch<SettingEntry>(`/settings/${key}`, {
+  return apiFetch<SettingEntry>(`/app/settings/${key}`, {
     method: "PUT",
     body: JSON.stringify({ value, ...extra }),
   });
 }
 
 export async function deleteSetting(key: string): Promise<void> {
-  await apiFetch(`/settings/${key}`, { method: "DELETE" });
+  await apiFetch(`/app/settings/${key}`, { method: "DELETE" });
 }
 
 // ── Roles ──────────────────────────────────────────────────────────────────
@@ -87,7 +87,7 @@ function adaptRole(b: BackendRole): Role {
 }
 
 export async function listRoles(): Promise<Role[]> {
-  const data = await apiFetch<BackendRole[]>("/roles");
+  const data = await apiFetch<BackendRole[]>("/app/roles");
   return data.map(adaptRole);
 }
 
@@ -95,7 +95,7 @@ export async function createRole(
   name: string,
   description?: string | null,
 ): Promise<Role> {
-  const b = await apiFetch<BackendRole>("/roles/", {
+  const b = await apiFetch<BackendRole>("/app/roles/", {
     method: "POST",
     body: JSON.stringify({ name, description: description ?? null }),
   });
@@ -107,7 +107,7 @@ export async function updateRole(
   id: string,
   patch: { name: string; description?: string | null; is_admin?: boolean },
 ): Promise<Role> {
-  const b = await apiFetch<BackendRole>(`/roles/${id}`, {
+  const b = await apiFetch<BackendRole>(`/app/roles/${id}`, {
     method: "PATCH",
     body: JSON.stringify(patch),
   });
@@ -116,13 +116,13 @@ export async function updateRole(
 }
 
 export async function deleteRole(id: string): Promise<void> {
-  await apiFetch(`/roles/${id}`, { method: "DELETE" });
+  await apiFetch(`/app/roles/${id}`, { method: "DELETE" });
   clearLookups();
 }
 
 export async function getRolePermissions(id: string): Promise<string[]> {
   const data = await apiFetch<{ role_id: number; permissions: string[] }>(
-    `/roles/${id}/permissions`,
+    `/app/roles/${id}/permissions`,
   );
   return data.permissions;
 }
@@ -132,7 +132,7 @@ export async function setRolePermissions(
   permissions: string[],
 ): Promise<string[]> {
   const data = await apiFetch<{ role_id: number; permissions: string[] }>(
-    `/roles/${id}/permissions`,
+    `/app/roles/${id}/permissions`,
     {
       method: "PUT",
       body: JSON.stringify({ permissions }),
@@ -182,7 +182,7 @@ function adaptAuditDetail(b: BackendAuditEntry): AuditEntryDetail {
 }
 
 export async function getAuditEntry(id: string): Promise<AuditEntryDetail> {
-  const b = await apiFetch<BackendAuditEntry>(`/audit/${id}`);
+  const b = await apiFetch<BackendAuditEntry>(`/app/audit/${id}`);
   return adaptAuditDetail(b);
 }
 
@@ -224,7 +224,7 @@ export async function listAuditLog(params?: {
     page: number;
     pageSize: number;
     totalPages: number;
-  }>(`/audit${query}`);
+  }>(`/app/audit${query}`);
   return {
     entries: data.data.map(adaptAudit),
     total: data.total,
@@ -251,7 +251,7 @@ export interface ClubProfile {
 }
 
 export async function getClubProfile(): Promise<ClubProfile> {
-  return apiFetch<ClubProfile>("/settings/club-profile");
+  return apiFetch<ClubProfile>("/app/settings/club-profile");
 }
 
 // ── Roles held for one group ────────────────────────────────────────────────
@@ -267,7 +267,7 @@ export interface RoleScope {
 export async function listRoleScopes(roleId: string): Promise<RoleScope[]> {
   const data = await apiFetch<
     { id: number; member_id: number; member_name: string; group_id: number; group_name: string }[]
-  >(`/roles/${roleId}/scopes`);
+  >(`/app/roles/${roleId}/scopes`);
   return data.map((s) => ({
     id: s.id,
     memberId: String(s.member_id),
@@ -278,12 +278,12 @@ export async function listRoleScopes(roleId: string): Promise<RoleScope[]> {
 }
 
 export async function addRoleScope(roleId: string, memberId: string, groupId: number): Promise<void> {
-  await apiFetch(`/roles/${roleId}/scopes`, {
+  await apiFetch(`/app/roles/${roleId}/scopes`, {
     method: "POST",
     body: JSON.stringify({ member_id: Number(memberId), group_id: groupId }),
   });
 }
 
 export async function removeRoleScope(roleId: string, scopeId: number): Promise<void> {
-  await apiFetch(`/roles/${roleId}/scopes/${scopeId}`, { method: "DELETE" });
+  await apiFetch(`/app/roles/${roleId}/scopes/${scopeId}`, { method: "DELETE" });
 }

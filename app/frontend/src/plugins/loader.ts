@@ -38,7 +38,7 @@ export function usePluginLoader(): boolean {
     ...new Set(
       moduleList
         .filter((m) => m.enabled && m.plugin?.frontend)
-        .map((m) => `${BASE}/plugins/${m.plugin!.id}/frontend.js?v=${m.plugin!.frontend}`),
+        .map((m) => `${BASE}/global/plugins/${m.plugin!.id}/frontend.js?v=${m.plugin!.frontend}`),
     ),
   ]
   const key = urls.join(' ')

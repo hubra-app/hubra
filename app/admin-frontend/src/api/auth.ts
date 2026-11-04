@@ -21,11 +21,11 @@ export interface PermissionsResponse {
 export async function getMyPermissions(
   signal?: AbortSignal,
 ): Promise<PermissionsResponse> {
-  return apiFetch<PermissionsResponse>('/account/permissions', { signal })
+  return apiFetch<PermissionsResponse>('/global/account/permissions', { signal })
 }
 
 export async function logout(): Promise<void> {
-  await apiFetch('/auth/logout', { method: 'POST' }).catch(() => {})
+  await apiFetch('/global/auth/logout', { method: 'POST' }).catch(() => {})
 }
 
 /** The signed-in person, for the user card in the shell. */
@@ -39,5 +39,5 @@ export interface Profile {
 }
 
 export async function getProfile(signal?: AbortSignal): Promise<Profile> {
-  return apiFetch<Profile>('/account/profile', { signal })
+  return apiFetch<Profile>('/global/account/profile', { signal })
 }

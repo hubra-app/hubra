@@ -24,11 +24,25 @@
   "mail.provisioning",
   "mail.system.address.created",
   "mail.type",
+  "settings.modules.builtInTitle",
+  "settings.modules.morePlugins",
+  "settings.modules.noPlugins",
+  "settings.modules.official",
+  "settings.modules.pluginBy",
+  "settings.modules.pluginsIntro",
+  "settings.modules.pluginsTitle",
   "system.health",
   "translations.addKey",
   "translations.addLanguage",
   "translations.copyDefaults",
-  "translations.copyValues"
+  "translations.copyValues",
+  "support.roadmap.none",
+  "support.roadmap.unvote",
+  "support.roadmap.vote",
+  "support.roadmap.inProgress",
+  "support.roadmap.planned",
+  "support.roadmap.open",
+  "support.roadmap.done"
  ],
  "values": {
   "de-CH": {
@@ -4975,6 +4989,42 @@
    ],
    "shell.customize.show": [
     "Wieder anzeigen"
+   ],
+   "settings.tabs.modules": [
+    "Module & Plugins"
+   ],
+   "apps.noProviders": [
+    "Schalte unter «Module & Plugins» ein Modul mit einer App ein, zum Beispiel Discord."
+   ],
+   "shell.more.emptyDesc": [
+    "Seiten, die du in der Seitenleiste ausblendest, und Seiten von Plugins erscheinen hier."
+   ],
+   "finance.feeBasis.source.budgetHint": [
+    "Die Ausgaben im genehmigten Budget des laufenden Jahres (Plugin Budgets)."
+   ],
+   "finance.feeBasis.source.needsBudgets": [
+    "Braucht das Plugin Budgets."
+   ],
+   "support.roadmap.none": [
+    "Nichts hier."
+   ],
+   "support.roadmap.unvote": [
+    "Stimme zurücknehmen"
+   ],
+   "support.roadmap.vote": [
+    "Dafür stimmen"
+   ],
+   "support.roadmap.inProgress": [
+    "In Arbeit"
+   ],
+   "support.roadmap.planned": [
+    "Geplant"
+   ],
+   "support.roadmap.open": [
+    "Vorgeschlagen"
+   ],
+   "support.roadmap.done": [
+    "Erledigt"
    ]
   },
   "en-GB": {
@@ -6437,6 +6487,42 @@
    ],
    "shell.customize.show": [
     "Show again"
+   ],
+   "settings.tabs.modules": [
+    "Modules & plugins"
+   ],
+   "apps.noProviders": [
+    "Switch on a module with an app under “Modules & plugins”, for example Discord."
+   ],
+   "shell.more.emptyDesc": [
+    "Pages you hide in the sidebar and pages from plugins appear here."
+   ],
+   "finance.feeBasis.source.budgetHint": [
+    "The expenses in this year's approved budget (Budgets plugin)."
+   ],
+   "finance.feeBasis.source.needsBudgets": [
+    "Needs the Budgets plugin."
+   ],
+   "support.roadmap.none": [
+    "Nothing here."
+   ],
+   "support.roadmap.unvote": [
+    "Take back your vote"
+   ],
+   "support.roadmap.vote": [
+    "Vote for it"
+   ],
+   "support.roadmap.inProgress": [
+    "In progress"
+   ],
+   "support.roadmap.planned": [
+    "Planned"
+   ],
+   "support.roadmap.open": [
+    "Suggested"
+   ],
+   "support.roadmap.done": [
+    "Done"
    ]
   }
  }

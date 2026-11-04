@@ -4,7 +4,7 @@
 
 See `.env.example` for the full list with descriptions.
 
-The mail stack is **opt-in**. Switch on the `mail` module (`flask modules enable mail`, or Settings › Modules & plugins)
+The mail stack is **opt-in**. Switch on the `mail` module (`flask modules enable mail`, or Settings › Modules)
 and configure the Infomaniak IMAP/SMTP variables to enable mail. If you are
 not using mail, leave the mail variables blank.
 
@@ -23,7 +23,7 @@ not using mail, leave the mail variables blank.
 | Manage      | `MANAGE_BASE_URL`                                                          | Optional fallback for the platform setting `alerts.manage_url` (the "Open alerts" button in alert mails) |
 | Superadmins | `SUPERADMIN_EMAILS` (comma-separated; promoted on every start, never demoted) | Optional; or `flask make-admin --email <email>` |
 | Domain      | `MAIL_HOST`, `MAIL_FROM`, `MAIL_DOMAIN`                                    | Always (mail vars only when mail enabled)                |
-| Modules     | Per club in Settings › Modules & plugins, or `flask modules enable <code>` | Always                                                   |
+| Modules     | Per club in Settings › Modules, or `flask modules enable <code>` | Always                                                   |
 | SMTP/IMAP   | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `IMAP_HOST`, `IMAP_PORT` | Mail feature enabled (Infomaniak SMTP/IMAP)        |
 | Backups     | `BACKUP_S3_*`, `BACKUP_PUBLIC_KEY` (`BACKUP_PRIVATE_KEY` optional, `BACKUP_ENCRYPTION_KEY` for older backups) | Backups enabled |
 | Plugins     | `HUBRA_PLUGIN_DIR`, `HUBRA_PLUGINS_RELOAD_POLL`, `HUBRA_OFFICIAL_INDEX`, `HUBRA_PLUGINS_ALLOW_PRIVATE` (1 = allow a repository on a private address) | Optional, see [plugins/README.md](../plugins/README.md)  |
@@ -161,7 +161,7 @@ via environment variables using double-underscore as a nested delimiter:
 `LIMITS__MAX_MEMBERS=50`.
 
 Which modules (events, finance, mail, ...) a club uses is not set here: club
-admins switch them under Settings › Modules & plugins, and platform managers can block
+admins switch them under Settings › Modules, and platform managers can block
 a module per club. See `app/backend/hubra/modules/README.md`.
 
 ```yaml

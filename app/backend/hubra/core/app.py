@@ -139,6 +139,12 @@ def create_app(config_name: str | None = None) -> Flask:
 
     install_search_path_guard()
 
+    # Old API paths (/api/v1/members, /api/v1/manager/...) to the new areas
+    # /api/v1/app, /platform and /global; inside the slug wrapper, so the
+    # slug is gone first (hubra.core.api_areas).
+    from hubra.core.api_areas import LegacyApiPaths
+
+    app.wsgi_app = LegacyApiPaths(app.wsgi_app)
     app.wsgi_app = TenantPathMiddleware(app.wsgi_app)
 
     # ── Backend role (HUBRA_ROLE): a club or platform backend refuses the
@@ -146,6 +152,12 @@ def create_app(config_name: str | None = None) -> Flask:
     from hubra.core.roles import install_role_gate
 
     install_role_gate(app)
+
+    # ── API tokens (Authorization: Bearer hbr_…): before the tenant resolver,
+    #    so the token names the club. ─────────────────────────────────────
+    from hubra.api.auth import api_tokens
+
+    api_tokens.install(app)
 
     # ── Request timing and slow queries (first, so it times the rest) ─────────
     from hubra.core.services import perf_monitor
@@ -269,7 +281,7 @@ def create_app(config_name: str | None = None) -> Flask:
         resources={
             # The public pricing and plugin list (services/plans.py): any
             # site may read them, without cookies.
-            r"/api/v1/public/*": {
+            r"/api/v1/global/public/*": {
                 "origins": "*",
                 "send_wildcard": True,
                 "supports_credentials": False,
@@ -719,82 +731,9 @@ def _register_cli(app: Flask) -> None:
     @app.cli.command("sync-permissions")
     def sync_permissions():
         """Sync the Permission table with all @permission_required-decorated routes."""
-        from hubra.api.permissions import _derive_perm_key, extra_permissions
-        from hubra.api.fields import iter_field_perms
-        from hubra.core.models.role import Permission
+        from hubra.core.services.permission_sync import sync_permission_catalog
 
-        discovered: dict[str, dict] = {}
-        for rule in app.url_map.iter_rules():
-            fn = app.view_functions.get(rule.endpoint)
-            if fn is None:
-                continue
-            resource = getattr(fn, "_perm_resource", None)
-            action = getattr(fn, "_perm_action", None)
-            if resource is None or action is None:
-                continue
-            bp_name = rule.endpoint.rsplit(".", 1)[0] if "." in rule.endpoint else None
-            key = _derive_perm_key(bp_name, resource, action)
-            display_name = getattr(fn, "_perm_display_name", f"{action} {resource}")
-            discovered[key] = {
-                "key": key,
-                "display_name": display_name,
-                "resource": resource,
-                "action": action,
-                "blueprint": bp_name or "",
-            }
-
-        existing = {p.key: p for p in db.session.scalars(select(Permission)).all()}
-
-        # Add field-level perms to discovered so they aren't marked as orphaned
-        for meta in iter_field_perms():
-            discovered[meta["key"]] = meta
-        for meta in extra_permissions():
-            discovered[meta["key"]] = meta
-
-        created = 0
-        updated = 0
-        orphaned = 0
-
-        for key, meta in discovered.items():
-            perm = existing.get(key)
-            if perm is None:
-                db.session.add(
-                    Permission(
-                        key=meta["key"],
-                        display_name=meta["display_name"],
-                        resource=meta["resource"],
-                        action=meta["action"],
-                        blueprint=meta["blueprint"],
-                        is_active=True,
-                    )
-                )
-                created += 1
-            else:
-                changed = False
-                if perm.display_name != meta["display_name"]:
-                    perm.display_name = meta["display_name"]
-                    changed = True
-                if perm.resource != meta["resource"]:
-                    perm.resource = meta["resource"]
-                    changed = True
-                if perm.action != meta["action"]:
-                    perm.action = meta["action"]
-                    changed = True
-                if perm.blueprint != meta["blueprint"]:
-                    perm.blueprint = meta["blueprint"]
-                    changed = True
-                if not perm.is_active:
-                    perm.is_active = True
-                    changed = True
-                if changed:
-                    updated += 1
-
-        for key, perm in existing.items():
-            if key not in discovered and perm.is_active:
-                perm.is_active = False
-                orphaned += 1
-
-        db.session.commit()
+        created, updated, orphaned = sync_permission_catalog(app)
         click.echo(
             f"Synced permissions: {created} created, {updated} updated, {orphaned} orphaned (deactivated)."
         )

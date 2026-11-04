@@ -67,7 +67,7 @@ domain setup is needed locally.
    password are optional), or request one on http://localhost:8082/start and
    approve it under **All clubs › Requests**.
 4. Codes, Inventory, Bindings and Mail are off for a new club. Club admins
-   switch modules on in the club app under **Settings › Modules & plugins**,
+   switch modules on in the club app under **Settings › Modules**,
    or:
    ```sh
    docker compose exec backend flask modules list --tenant <club-slug>

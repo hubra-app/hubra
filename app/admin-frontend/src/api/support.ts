@@ -1,6 +1,6 @@
 import { apiFetch } from '@hubra/api-client'
 
-const S = '/manager/support/cases'
+const S = '/platform/support/cases'
 
 export type CaseKind = 'bug' | 'feature'
 export type CaseStatus = 'open' | 'planned' | 'in_progress' | 'done' | 'closed'
@@ -43,6 +43,8 @@ export interface StaffCase {
   page: string | null
   fingerprint: Fingerprint
   isPublic: boolean
+  /** ROADMAP.yaml item the idea is linked to. */
+  roadmapItem: string | null
   mergedInto: { id: number; title: string; status: CaseStatus } | null
   votes: number
   commentCount: number
@@ -67,6 +69,7 @@ export interface CaseList {
 export function listCases(params: {
   kind?: CaseKind | ''
   status?: CaseStatus | 'active' | ''
+  area?: string
   q?: string
   page?: number
   perPage?: number
@@ -74,6 +77,7 @@ export function listCases(params: {
   const qs = new URLSearchParams()
   if (params.kind) qs.set('kind', params.kind)
   if (params.status) qs.set('status', params.status)
+  if (params.area) qs.set('area', params.area)
   if (params.q) qs.set('q', params.q)
   if (params.page) qs.set('page', String(params.page))
   if (params.perPage) qs.set('per_page', String(params.perPage))
@@ -89,6 +93,7 @@ export function updateCase(
   body: Partial<{
     status: CaseStatus
     isPublic: boolean
+    roadmapItem: string | null
     title: string
     description: string
     area: string | null

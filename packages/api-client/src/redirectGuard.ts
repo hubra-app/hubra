@@ -103,7 +103,7 @@ export function redirectTo(url: string, why: string): boolean {
 function reportLoop(hops: Hop[]): void {
   const start = hops[0]?.t ?? Date.now();
   try {
-    fetch(`${BASE}/auth/redirect-loop`, {
+    fetch(`${BASE}/global/auth/redirect-loop`, {
       method: "POST",
       credentials: "include",
       keepalive: true,

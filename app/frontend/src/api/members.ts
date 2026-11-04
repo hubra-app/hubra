@@ -137,8 +137,8 @@ export async function listMembers(
   }
   const [resp, lookups] = await Promise.all([
     many
-      ? fetchPages<BackendMember>("/members", params, filters.pageSize!)
-      : apiFetch<PagedResponse>(`/members?${params}`),
+      ? fetchPages<BackendMember>("/app/members", params, filters.pageSize!)
+      : apiFetch<PagedResponse>(`/app/members?${params}`),
     getLookups(),
   ]);
   return {
@@ -149,7 +149,7 @@ export async function listMembers(
 
 export async function getMember(id: string): Promise<Member> {
   const [b, lookups] = await Promise.all([
-    apiFetch<BackendMember>(`/members/${id}`),
+    apiFetch<BackendMember>(`/app/members/${id}`),
     getLookups(),
   ]);
   return adapt(b, lookups.groups);
@@ -182,17 +182,17 @@ export interface OpenInvite {
 
 /** Invites the club sent that nobody accepted yet. */
 export async function listInvites(): Promise<OpenInvite[]> {
-  const res = await apiFetch<{ invites: OpenInvite[] }>("/members/invites");
+  const res = await apiFetch<{ invites: OpenInvite[] }>("/app/members/invites");
   return res.invites;
 }
 
 /** Sends the invite again with a fresh link. */
 export function resendInvite(id: number): Promise<OpenInvite> {
-  return apiFetch<OpenInvite>(`/members/invites/${id}/resend`, { method: "POST" });
+  return apiFetch<OpenInvite>(`/app/members/invites/${id}/resend`, { method: "POST" });
 }
 
 export async function cancelInvite(id: number): Promise<void> {
-  await apiFetch(`/members/invites/${id}`, { method: "DELETE" });
+  await apiFetch(`/app/members/invites/${id}`, { method: "DELETE" });
 }
 
 export async function inviteMember(
@@ -212,7 +212,7 @@ export async function inviteMember(
       .filter(Boolean);
   if (input.membershipType) body.membership_type = input.membershipType;
   if (input.notes) body.notes = input.notes;
-  return apiFetch<{ invited: true; email: string }>("/members/", {
+  return apiFetch<{ invited: true; email: string }>("/app/members/", {
     method: "POST",
     body: JSON.stringify(body),
   });
@@ -256,7 +256,7 @@ export async function updateMember(
     body.membership_until = input.membershipUntil;
   if (input.customFields !== undefined) body.custom_fields = input.customFields;
 
-  const b = await apiFetch<BackendMember>(`/members/${id}`, {
+  const b = await apiFetch<BackendMember>(`/app/members/${id}`, {
     method: "PATCH",
     body: JSON.stringify(body),
   });
@@ -264,24 +264,24 @@ export async function updateMember(
 }
 
 export async function archiveMember(id: string): Promise<void> {
-  await apiFetch(`/members/${id}/archive`, { method: "POST" });
+  await apiFetch(`/app/members/${id}/archive`, { method: "POST" });
 }
 
 export async function unarchiveMember(id: string): Promise<Member> {
   const [b, lookups] = await Promise.all([
-    apiFetch<BackendMember>(`/members/${id}/unarchive`, { method: "POST" }),
+    apiFetch<BackendMember>(`/app/members/${id}/unarchive`, { method: "POST" }),
     getLookups(),
   ]);
   return adapt(b, lookups.groups);
 }
 
 export async function hardDeleteMember(id: string): Promise<void> {
-  await apiFetch(`/members/${id}`, { method: "DELETE" });
+  await apiFetch(`/app/members/${id}`, { method: "DELETE" });
 }
 
 export async function disableMember(id: string): Promise<Member> {
   const [b, lookups] = await Promise.all([
-    apiFetch<BackendMember>(`/members/${id}/disable`, { method: "POST" }),
+    apiFetch<BackendMember>(`/app/members/${id}/disable`, { method: "POST" }),
     getLookups(),
   ]);
   return adapt(b, lookups.groups);
@@ -289,7 +289,7 @@ export async function disableMember(id: string): Promise<Member> {
 
 export async function enableMember(id: string): Promise<Member> {
   const [b, lookups] = await Promise.all([
-    apiFetch<BackendMember>(`/members/${id}/enable`, { method: "POST" }),
+    apiFetch<BackendMember>(`/app/members/${id}/enable`, { method: "POST" }),
     getLookups(),
   ]);
   return adapt(b, lookups.groups);
@@ -302,7 +302,7 @@ export async function listTierMembers(
   const params = new URLSearchParams();
   if (search) params.set("search", search);
   const [resp, lookups] = await Promise.all([
-    apiFetch<{ data: BackendMember[] }>(`/tiers/${tierId}/members?${params}`),
+    apiFetch<{ data: BackendMember[] }>(`/app/tiers/${tierId}/members?${params}`),
     getLookups(),
   ]);
   return resp.data.map((b) => adapt(b, lookups.groups));
@@ -315,7 +315,7 @@ export async function listGroupMembers(
   const params = new URLSearchParams();
   if (search) params.set("search", search);
   const [resp, lookups] = await Promise.all([
-    apiFetch<{ data: BackendMember[] }>(`/groups/${groupId}/members?${params}`),
+    apiFetch<{ data: BackendMember[] }>(`/app/groups/${groupId}/members?${params}`),
     getLookups(),
   ]);
   return resp.data.map((b) => adapt(b, lookups.groups));
@@ -325,7 +325,7 @@ export async function exportMembersCSV(fields?: string[]): Promise<void> {
   const params = new URLSearchParams();
   if (fields?.length) params.set("fields", fields.join(","));
   const query = params.toString() ? `?${params}` : "";
-  const res = await apiFetchRaw(`/members/export${query}`);
+  const res = await apiFetchRaw(`/app/members/export${query}`);
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -346,11 +346,11 @@ export interface DirectoryState {
 }
 
 export function getMyDirectory(): Promise<DirectoryState> {
-  return apiFetch<DirectoryState>("/members/me/directory");
+  return apiFetch<DirectoryState>("/app/members/me/directory");
 }
 
 export function setMyDirectory(shared: DirectoryChoice[]): Promise<DirectoryState> {
-  return apiFetch<DirectoryState>("/members/me/directory", {
+  return apiFetch<DirectoryState>("/app/members/me/directory", {
     method: "PUT",
     body: JSON.stringify({ shared }),
   });
@@ -380,13 +380,13 @@ export interface NotificationChoices {
 }
 
 export function getMyNotifications(): Promise<NotificationChoices> {
-  return apiFetch<NotificationChoices>("/members/me/notifications");
+  return apiFetch<NotificationChoices>("/app/members/me/notifications");
 }
 
 export function setMyNotifications(
   change: Partial<Record<NotifyTopic, Partial<Record<NotifyChannel, boolean>>>>,
 ): Promise<NotificationChoices> {
-  return apiFetch<NotificationChoices>("/members/me/notifications", {
+  return apiFetch<NotificationChoices>("/app/members/me/notifications", {
     method: "PUT",
     body: JSON.stringify(change),
   });
@@ -410,28 +410,28 @@ export interface LeaveRequest {
 }
 
 export function getMyLeave(): Promise<LeaveState> {
-  return apiFetch<LeaveState>("/members/me/leave");
+  return apiFetch<LeaveState>("/app/members/me/leave");
 }
 
 export function leaveClub(): Promise<{ status: "left" | "requested" } & Partial<LeaveState>> {
-  return apiFetch("/members/me/leave", { method: "POST" });
+  return apiFetch("/app/members/me/leave", { method: "POST" });
 }
 
 export function withdrawLeaveRequest(): Promise<LeaveState> {
-  return apiFetch<LeaveState>("/members/me/leave", { method: "DELETE" });
+  return apiFetch<LeaveState>("/app/members/me/leave", { method: "DELETE" });
 }
 
 export async function listLeaveRequests(): Promise<LeaveRequest[]> {
   const rows = await apiFetch<(Omit<LeaveRequest, "id"> & { id: number })[]>(
-    "/members/leave-requests",
+    "/app/members/leave-requests",
   );
   return rows.map((r) => ({ ...r, id: String(r.id) }));
 }
 
 export async function approveLeave(id: string): Promise<void> {
-  await apiFetch(`/members/${id}/leave/approve`, { method: "POST" });
+  await apiFetch(`/app/members/${id}/leave/approve`, { method: "POST" });
 }
 
 export async function declineLeave(id: string): Promise<void> {
-  await apiFetch(`/members/${id}/leave/decline`, { method: "POST" });
+  await apiFetch(`/app/members/${id}/leave/decline`, { method: "POST" });
 }

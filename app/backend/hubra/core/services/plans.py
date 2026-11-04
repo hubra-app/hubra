@@ -523,8 +523,8 @@ def public_plugins() -> list[dict]:
 
 
 def install(app) -> None:
-    """GET /api/v1/public/pricing and /public/plugins: no sign-in, any
-    origin may read them (no cookies), cached for five minutes."""
+    """GET /api/v1/public/pricing, /public/plugins and /public/roadmap: no
+    sign-in, any origin may read them (no cookies), cached for five minutes."""
     from flask import jsonify
 
     def _public(resp):
@@ -534,14 +534,22 @@ def install(app) -> None:
 
     # Both may add the default plans on a new database (ensure_defaults):
     # commit, or the request leaves its transaction open with the rows.
-    @app.get("/api/v1/public/pricing")
+    @app.get("/api/v1/global/public/pricing")
     def public_pricing_view():
         body = public_pricing()
         db.session.commit()
         return _public(jsonify(body))
 
-    @app.get("/api/v1/public/plugins")
+    @app.get("/api/v1/global/public/plugins")
     def public_plugins_view():
         body = {"plugins": public_plugins()}
         db.session.commit()
         return _public(jsonify(body))
+
+    # The one roadmap for the website (hubra.club/roadmap/): the same list as
+    # /global/roadmap, readable from any site. Votes happen on SSO /roadmap.
+    @app.get("/api/v1/global/public/roadmap")
+    def public_roadmap_view():
+        from hubra.api.support import services as support
+
+        return _public(jsonify(support.roadmap()))

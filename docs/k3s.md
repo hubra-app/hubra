@@ -32,7 +32,7 @@ modules/mail/k8s/             # the opt-in mail stack, see modules/mail/README.m
 | `postgres`, `redis` + volumes                 | StatefulSets on the default storage class                        |
 | `flask-init`                                  | initContainer on `platform-backend` (migrate, sync-permissions, seed); `backend` waits for the schema |
 | `backend`, `celery-worker`, `celery-beat`     | Deployments (`backend.yaml`); beat runs the platform image       |
-| `platform-backend`, `platform-worker` (`docker-compose.platform.yml`) | Deployments (`platform-backend.yaml`), see [platform-backend.md](platform-backend.md) |
+| `platform-backend`, `platform-worker` (`docker-compose.platform.yml`), `global-backend` | Deployments (`platform-backend.yaml`, `global-backend.yaml`), see [platform-backend.md](platform-backend.md) |
 | `frontend`, `admin-frontend`, `sso-frontend`  | nginx Deployments, host names from ConfigMap `hubra-frontend`    |
 | Traefik labels in the override file           | one `Ingress`, cert from cert-manager                            |
 | `env_file: .env`                              | Secret `hubra-env` (`create-secrets.sh`)                          |

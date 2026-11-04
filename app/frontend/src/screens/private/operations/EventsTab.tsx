@@ -7,6 +7,7 @@ import {
   Button,
   Group,
   TextInput,
+  Textarea,
   Select,
   Badge,
   Checkbox,
@@ -20,6 +21,7 @@ import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useT, zmsg } from '@/locales/i18n'
+import { isPastEvent } from './eventDates'
 import i18n from 'i18next'
 import {
   IconPlus,
@@ -27,6 +29,7 @@ import {
   IconLogin,
   IconLogout as Leave,
   IconRepeat,
+  IconWorld,
   IconClipboardCheck,
   IconChartBar,
 } from '@tabler/icons-react'
@@ -77,6 +80,10 @@ const eventSchema = z.object({
   requiresApproval: z.boolean(),
   // Empty: for everyone.
   groupId: z.string(),
+  description: z.string(),
+  // Public: may be shown outside the club (a Discord server that is not
+  // members-only, the club's public pages).
+  isPublic: z.boolean(),
 })
 type EventForm = z.infer<typeof eventSchema>
 
@@ -151,6 +158,7 @@ export function EventsTab() {
   const [editScope, setEditScope] = useState<SeriesScope>('this')
   const [pendingFor, setPendingFor] = useState<ClubEvent | null>(null)
   const [typeFilter, setTypeFilter] = useState('All')
+  const [when, setWhen] = useState<'upcoming' | 'past' | 'all'>('upcoming')
   const [search, setSearch] = useState('')
   const [addOpen, setAddOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<ClubEvent | null>(null)
@@ -166,6 +174,8 @@ export function EventsTab() {
       maxAttendees: '',
       requiresApproval: false,
       groupId: '',
+      description: '',
+      isPublic: false,
     },
   })
 
@@ -183,15 +193,24 @@ export function EventsTab() {
   }
   const filtered = linked.id
     ? events.filter((e) => e.id === linked.id)
-    : events.filter((e) => {
-    const matchType = typeFilter === 'All' || e.type === typeFilter
-    const q = search.toLowerCase()
-    const matchSearch =
-      !q ||
-      e.title.toLowerCase().includes(q) ||
-      (e.location || '').toLowerCase().includes(q)
-    return matchType && matchSearch
-  })
+    : events
+        .filter((e) => {
+          const matchType = typeFilter === 'All' || e.type === typeFilter
+          const q = search.trim().toLowerCase()
+          // A search looks through every date: whoever types a title wants
+          // that event, whether it is coming up or over.
+          const matchWhen =
+            !!q || when === 'all' || (when === 'past' ? isPastEvent(e) : !isPastEvent(e))
+          const matchSearch =
+            !q ||
+            e.title.toLowerCase().includes(q) ||
+            (e.location || '').toLowerCase().includes(q)
+          return matchType && matchWhen && matchSearch
+        })
+        // Past events read newest first; what is coming reads soonest first.
+        .sort((a, b) =>
+          when === 'past' ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date),
+        )
   const pg = usePagination(filtered, 10)
 
   const openAdd = () => {
@@ -204,6 +223,8 @@ export function EventsTab() {
       maxAttendees: '',
       requiresApproval: false,
       groupId: '',
+      description: '',
+      isPublic: false,
     })
     setRepeat(defaultRepeat(new Date().toISOString().slice(0, 10)))
     setAddOpen(true)
@@ -241,6 +262,8 @@ export function EventsTab() {
       maxAttendees: ev.maxAttendees ? String(ev.maxAttendees) : '',
       requiresApproval: ev.requiresApproval ?? false,
       groupId: ev.groupId ?? '',
+      description: ev.description ?? '',
+      isPublic: ev.isPublic ?? false,
     })
     setEditScope('this')
     // The rule as it stands from this date on.
@@ -265,6 +288,8 @@ export function EventsTab() {
         maxAttendees: limitOf(data.maxAttendees),
         requiresApproval: data.requiresApproval,
         groupId: data.groupId || null,
+        description: data.description,
+        isPublic: data.isPublic,
         recurrence: repeat.on
           ? {
               until: repeat.until,
@@ -309,6 +334,8 @@ export function EventsTab() {
       maxAttendees: limitOf(data.maxAttendees),
       requiresApproval: data.requiresApproval,
       groupId: data.groupId || null,
+      description: data.description,
+      isPublic: data.isPublic,
     }
     const following = editScope === 'following' && !!editTarget.seriesId
     let input = all
@@ -323,6 +350,8 @@ export function EventsTab() {
         maxAttendees: editTarget.maxAttendees ?? null,
         requiresApproval: editTarget.requiresApproval ?? false,
         groupId: editTarget.groupId ?? null,
+        description: editTarget.description ?? '',
+        isPublic: editTarget.isPublic ?? false,
       }
       input = Object.fromEntries(
         (Object.keys(was) as (keyof EventUpdate)[])
@@ -416,6 +445,18 @@ export function EventsTab() {
           )}
         />
       </Field>
+      <Field label={t('events.description', 'Beschreibung') + ' (optional)'}>
+        <Textarea
+          autosize
+          minRows={2}
+          maxRows={8}
+          {...form.getInputProps('description')}
+          placeholder={t(
+            'events.descriptionPlaceholder',
+            'Was erwartet die Teilnehmenden? Was mitbringen?',
+          )}
+        />
+      </Field>
       <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
         <Field label={t('common.date', 'Datum')}>
           <TextInput
@@ -479,6 +520,14 @@ export function EventsTab() {
           'Anmeldungen bestätigen (Organisatoren entscheiden über jede Anmeldung)',
         )}
         {...form.getInputProps('requiresApproval', { type: 'checkbox' })}
+      />
+      <Checkbox
+        label={t('events.isPublic', 'Öffentlicher Anlass')}
+        description={t(
+          'events.isPublicHint',
+          'Darf auch ausserhalb des Vereins erscheinen, z. B. auf einem offenen Discord-Server. Sonst sehen ihn nur Mitglieder.',
+        )}
+        {...form.getInputProps('isPublic', { type: 'checkbox' })}
       />
       {(!editTarget || followingScope) && (
         <>
@@ -582,6 +631,15 @@ export function EventsTab() {
                 }}
               >
                 {ev.title}
+                {ev.isPublic && (
+                  <Tooltip label={t('events.isPublic', 'Öffentlicher Anlass')}>
+                    <IconWorld
+                      size={14}
+                      aria-label={t('events.isPublic', 'Öffentlicher Anlass')}
+                      style={{ color: 'var(--hb-text-3)' }}
+                    />
+                  </Tooltip>
+                )}
                 {ev.seriesId && (
                   <Tooltip label={t('events.series.badge', 'Wiederkehrender Termin')}>
                     <IconRepeat
@@ -670,6 +728,7 @@ export function EventsTab() {
             width: 200,
             render: (ev) => {
               const joined = hasOpenSignUp(ev, myJoinedEvents.has(ev.id))
+              const over = isPastEvent(ev)
               return (
                 <div
                   style={{
@@ -678,6 +737,19 @@ export function EventsTab() {
                     alignItems: 'center',
                   }}
                 >
+                  {over ? (
+                    <span
+                      style={{
+                        fontSize: 'var(--mantine-font-size-sm)',
+                        color: 'var(--hb-text-3)',
+                        minWidth: 120,
+                      }}
+                    >
+                      {joined
+                        ? t('events.attended', 'Teilgenommen')
+                        : t('events.over', 'Vorbei')}
+                    </span>
+                  ) : (
                   <Button
                     size="sm"
                     variant={joined ? 'default' : 'filled'}
@@ -706,6 +778,7 @@ export function EventsTab() {
                       </>
                     )}
                   </Button>
+                  )}
                   {canTakeRoll(ev) && (
                     <Tooltip label={t('events.attendance.take', 'Anwesenheit erfassen')}>
                       <ActionIcon
@@ -733,12 +806,33 @@ export function EventsTab() {
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder={t('events.search', 'Suchen …')}
-        filters={types.map((typeItem) => ({
-          label: typeItem === 'All' ? t('common.all', 'Alle') : eventTypeLabel(typeItem),
-          value: typeItem.toLowerCase(),
-          active: typeFilter === typeItem,
-          onClick: () => setTypeFilter(typeItem),
-        }))}
+        filterSlots={[
+          {
+            label: t('events.filter.when', 'Zeitraum'),
+            type: 'chips',
+            filters: (['upcoming', 'past', 'all'] as const).map((w) => ({
+              label:
+                w === 'upcoming'
+                  ? t('events.filter.upcoming', 'Kommende')
+                  : w === 'past'
+                    ? t('events.filter.past', 'Vergangene')
+                    : t('common.all', 'Alle'),
+              value: `when-${w}`,
+              active: when === w,
+              onClick: () => setWhen(w),
+            })),
+          },
+          {
+            label: t('events.filter.type', 'Typ'),
+            type: 'chips',
+            filters: types.map((typeItem) => ({
+              label: typeItem === 'All' ? t('common.all', 'Alle') : eventTypeLabel(typeItem),
+              value: typeItem.toLowerCase(),
+              active: typeFilter === typeItem,
+              onClick: () => setTypeFilter(typeItem),
+            })),
+          },
+        ]}
         page={pg.page}
         perPage={pg.perPage}
         total={pg.total}

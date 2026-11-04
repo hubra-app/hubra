@@ -13,7 +13,7 @@ export function clubLogoUrl(
   version: string | null | undefined,
 ): string | undefined {
   if (!slug || !version) return undefined;
-  return `${BASE}/system/clubs/${encodeURIComponent(slug)}/logo?v=${version}`;
+  return `${BASE}/global/clubs/${encodeURIComponent(slug)}/logo?v=${version}`;
 }
 
 /** Where the SSO portal is, from GET /instance (public, no auth). */
@@ -22,7 +22,7 @@ export interface InstanceInfo {
 }
 
 export async function getInstance(signal?: AbortSignal): Promise<InstanceInfo> {
-  const res = await fetch(`${BASE}/instance`, { credentials: "include", signal });
+  const res = await fetch(`${BASE}/global/instance`, { credentials: "include", signal });
   if (!res.ok) throw Object.assign(new Error(`HTTP ${res.status}`), { status: res.status });
   return res.json() as Promise<InstanceInfo>;
 }
@@ -63,7 +63,7 @@ export function clearTokens(): void {
     document.cookie = `${name}=; Max-Age=0; path=/`;
     if (parentDomain) document.cookie = `${name}=; Max-Age=0; path=/; domain=.${parentDomain}`;
   }
-  fetch(`${BASE}/auth/logout`, {
+  fetch(`${BASE}/global/auth/logout`, {
     method: "POST",
     credentials: "include",
     headers: { "X-CSRF-TOKEN": getCookie("csrf_access_token") },
@@ -91,7 +91,7 @@ export function setMaintenanceHandler(
 
 /** GET /maintenance (public): whether the platform is in maintenance. */
 export async function getMaintenance(signal?: AbortSignal): Promise<MaintenanceState> {
-  const res = await fetch(`${BASE}/maintenance`, {
+  const res = await fetch(`${BASE}/global/maintenance`, {
     credentials: "include",
     signal,
     // The club's own windows count too.
@@ -128,7 +128,7 @@ async function refreshAccess(): Promise<boolean> {
   if (refreshPromise) return refreshPromise;
   refreshPromise = (async () => {
     try {
-      const res = await fetch(`${BASE}/auth/refresh`, {
+      const res = await fetch(`${BASE}/global/auth/refresh`, {
         method: "POST",
         credentials: "include",
         headers: { "X-CSRF-TOKEN": getCookie("csrf_refresh_token") },

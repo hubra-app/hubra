@@ -4,9 +4,9 @@ import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, Group, Select, SimpleGrid, TextInput } from '@mantine/core'
+import { ActionIcon, Button, Group, Menu, Select, SimpleGrid, TextInput } from '@mantine/core'
 import { useT, zmsg } from '@/locales/i18n'
-import { IconPlus } from '@tabler/icons-react'
+import { IconBell, IconDots, IconFileDownload, IconPlus, IconTrash } from '@tabler/icons-react'
 import { useToast, useNav, useAuth } from '@/context/AppContext'
 import { qk } from '@/data/keys'
 import { useInvoices, useListCache } from '@/data/lists'
@@ -18,7 +18,6 @@ import {
   usePagination,
   ConfirmModal,
   DataTable,
-  ActionButtons,
 } from '@/components/ui'
 import {
   createInvoice,
@@ -339,7 +338,8 @@ export function InvoicesTab() {
         columns={[
           {
             key: 'id',
-            header: t('finance.invoice.number', 'Rechnungsnummer'),
+            header: t('finance.invoice.numberShort', 'Nr.'),
+            width: 1,
             render: (inv) => (
               <span
                 className="num"
@@ -421,8 +421,9 @@ export function InvoicesTab() {
           {
             key: 'amount',
             header: t('finance.amount', 'Betrag'),
+            width: 110,
             render: (inv) => (
-              <span className="num" style={{ fontWeight: 700 }}>
+              <span className="num" style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
                 CHF {formatCHF(inv.amount)}
               </span>
             ),
@@ -430,55 +431,66 @@ export function InvoicesTab() {
           {
             key: 'status',
             header: t('common.status', 'Status'),
+            // Reserve room: a Mantine badge clips instead of wrapping when squeezed.
+            width: 110,
             render: (inv) => <InvoicePill status={inv.status} />,
           },
           {
             key: 'actions',
             header: '',
-            width: 280,
+            width: 1,
             render: (inv) => (
-              <ActionButtons
-                extra={
-                  <>
-                    <Button
-                      size="sm"
+              <Group gap={4} wrap="nowrap" justify="flex-end">
+                <Button size="sm" variant="subtle" onClick={() => goInvoice(inv)}>
+                  {t('common.details', 'Details')}
+                </Button>
+                {inv.status !== 'Paid' && canUpdate && (
+                  <Button
+                    size="sm"
+                    variant="filled"
+                    onClick={() => markPaidMutation.mutate(inv.id)}
+                    loading={markPaidMutation.isPending}
+                  >
+                    {t('finance.markPaid', 'Als bezahlt markieren')}
+                  </Button>
+                )}
+                <Menu position="bottom-end" withinPortal>
+                  <Menu.Target>
+                    <ActionIcon
                       variant="subtle"
-                      onClick={() => goInvoice(inv)}
+                      aria-label={t('common.moreActions', 'Weitere Aktionen')}
+                      title={t('common.moreActions', 'Weitere Aktionen')}
                     >
-                      {t('common.details', 'Details')}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="subtle"
+                      <IconDots size={18} />
+                    </ActionIcon>
+                  </Menu.Target>
+                  <Menu.Dropdown>
+                    <Menu.Item
+                      leftSection={<IconFileDownload size={16} />}
                       onClick={() => downloadInvoicePdf(inv.id)}
                     >
                       {t('finance.downloadQrBill', 'QR-Rechnung herunterladen')}
-                    </Button>
-                    {canRemind && (
-                      <Button
-                        size="sm"
-                        variant="subtle"
+                    </Menu.Item>
+                    {canRemind && inv.status !== 'Paid' && (
+                      <Menu.Item
+                        leftSection={<IconBell size={16} />}
                         onClick={() => sendReminderMutation.mutate(inv.id)}
                       >
                         {t('finance.sendReminder', 'Erinnerung senden')}
-                      </Button>
+                      </Menu.Item>
                     )}
-                    {inv.status !== 'Paid' && canUpdate && (
-                      <Button
-                        size="sm"
-                        variant="filled"
-                        onClick={() => markPaidMutation.mutate(inv.id)}
-                        loading={markPaidMutation.isPending}
+                    {canDelete && (
+                      <Menu.Item
+                        color="red"
+                        leftSection={<IconTrash size={16} />}
+                        onClick={() => setDeleteTargetId(inv.id)}
                       >
-                        {t('finance.markPaid', 'Als bezahlt markieren')}
-                      </Button>
+                        {t('common.delete', 'Löschen')}
+                      </Menu.Item>
                     )}
-                  </>
-                }
-                onDelete={
-                  canDelete ? () => setDeleteTargetId(inv.id) : undefined
-                }
-              />
+                  </Menu.Dropdown>
+                </Menu>
+              </Group>
             ),
           },
         ]}

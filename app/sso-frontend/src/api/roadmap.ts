@@ -1,32 +1,30 @@
 import { apiFetch } from '@hubra/api-client'
+import type { RoadmapItem, RoadmapStatus } from '@hubra/ui'
 
-export type RoadmapStatus = 'open' | 'planned' | 'in_progress' | 'done'
+export type { RoadmapItem } from '@hubra/ui'
 
-export interface RoadmapItem {
-  id: number
-  title: string
-  description: string
-  status: RoadmapStatus
-  area: string | null
-  votes: number
-  /** Only when signed in. */
-  voted?: boolean
-  createdAt: string
-  updatedAt: string
+export interface RoadmapResponse {
+  statuses: RoadmapStatus[]
+  items: RoadmapItem[]
 }
 
-/** Anyone: the public list. */
+/** Anyone: the one roadmap (planned items and ideas), with vote counts. */
 export function publicRoadmap() {
-  return apiFetch<RoadmapItem[]>('/roadmap')
+  return apiFetch<RoadmapResponse>('/global/roadmap')
 }
 
 /** Signed in: the same list with the person's own votes. */
 export function myRoadmap() {
-  return apiFetch<RoadmapItem[]>('/support/roadmap')
+  return apiFetch<RoadmapResponse>('/global/support/roadmap')
 }
 
-export function setVote(id: number, on: boolean) {
-  return apiFetch<{ id: number; votes: number; voted: boolean }>(`/support/roadmap/${id}/vote`, {
+/** An idea votes by its case id, a planned item by its id. */
+export function setVote(item: RoadmapItem, on: boolean) {
+  const path =
+    item.source === 'idea' && item.caseId != null
+      ? `/global/support/roadmap/${item.caseId}/vote`
+      : `/global/support/roadmap/items/${encodeURIComponent(item.id)}/vote`
+  return apiFetch<{ id: number | string; votes: number; voted: boolean }>(path, {
     method: on ? 'POST' : 'DELETE',
   })
 }

@@ -177,8 +177,9 @@ def test_roadmap_endpoint(client):
     resp = client.get("/api/v1/version/roadmap")
     assert resp.status_code == 200
     body = resp.get_json()
-    assert body["statuses"] == ["now", "next", "later", "done"]
+    assert body["statuses"] == ["now", "next", "later", "done", "idea"]
     assert isinstance(body["items"], list)
+    assert all(i["source"] in ("plan", "idea") for i in body["items"])
 
 
 def test_changelog_in_german_falls_back_per_version(tmp_path, monkeypatch):

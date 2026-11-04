@@ -651,6 +651,7 @@
   "events": {
     "addEvent": "Anlass hinzufügen",
     "addOption": "Option hinzufügen",
+    "attended": "Teilgenommen",
     "attendees": "Teilnehmende",
     "author": "Verfasst von",
     "comingSoonDesc": "Planung und Anmeldungen für Anlässe sind in Arbeit.",
@@ -678,6 +679,12 @@
     "eventTitle": "Titel",
     "eventTitlePlaceholder": "z. B. Einführung Holzwerkstatt",
     "eventUpdatedMsg": "{{title}} wurde gespeichert.",
+    "filter": {
+      "past": "Vergangene",
+      "type": "Typ",
+      "upcoming": "Kommende",
+      "when": "Zeitraum"
+    },
     "join": "Teilnehmen",
     "joined": "Angemeldet",
     "leave": "Abmelden",
@@ -686,6 +693,7 @@
     "locationPlaceholder": "z. B. Holzwerkstatt",
     "noEvents": "Keine Anlässe gefunden.",
     "noLocation": "Kein Ort",
+    "over": "Vorbei",
     "poll": {
       "deleted": "Umfrage gelöscht.",
       "options": "Optionen",
@@ -790,7 +798,11 @@
       "deleteThis": "Nur diesen Termin",
       "following": "Diesen und alle folgenden",
       "thisOne": "Nur diesen Termin"
-    }
+    },
+    "description": "Beschreibung",
+    "descriptionPlaceholder": "Was erwartet die Teilnehmenden? Was mitbringen?",
+    "isPublic": "Öffentlicher Anlass",
+    "isPublicHint": "Darf auch ausserhalb des Vereins erscheinen, z. B. auf einem offenen Discord-Server. Sonst sehen ihn nur Mitglieder."
   },
   "finance": {
     "addCategory": "Kategorie hinzufügen",
@@ -896,6 +908,8 @@
       "issued": "Ausgestellt",
       "notFound": "Rechnung nicht gefunden",
       "number": "Rechnungsnummer",
+      "numberShort": "Nr.",
+      "pageTitle": "Rechnung Nr. {{n}}",
       "paid": "Rechnung bezahlt.",
       "period": "Zeitraum"
     },
@@ -1137,10 +1151,10 @@
         "lastYear": "Ausgaben des Vorjahres",
         "lastYearHint": "Die bestätigten Ausgaben des letzten vollen Beitragsjahres.",
         "budget": "Budget",
-        "budgetHint": "Die Ausgaben im genehmigten Budget des laufenden Jahres (Plugin Budgets).",
+        "budgetHint": "Die Ausgaben im genehmigten Budget des laufenden Jahres (Modul Budgets).",
         "manual": "Fester Betrag",
         "manualHint": "Ein Betrag, den du selbst festlegst.",
-        "needsBudgets": "Braucht das Plugin Budgets."
+        "needsBudgets": "Braucht das Modul Budgets."
       },
       "manual": "Jährliche Ausgaben (CHF)",
       "extra": "Zusätzliche Kosten pro Jahr (CHF)",
@@ -2068,14 +2082,12 @@
       "switchedOff": "{{name}} ausgeschaltet",
       "switchedOn": "{{name}} eingeschaltet",
       "uses": "Nutzt {{names}}",
-      "pluginsTitle": "Plugins",
-      "pluginsIntro": "Zusatzfunktionen aus dem Hubra-Katalog. Schalte ein, was dein Verein nutzen möchte.",
-      "builtInTitle": "Funktionen",
-      "noPlugins": "Auf dieser Plattform ist noch kein Plugin installiert. Plugins installieren die Plattform-Admins aus dem Hubra-Katalog.",
-      "morePlugins": "Fehlt etwas? Weitere Plugins installieren die Plattform-Admins aus dem Hubra-Katalog.",
       "onCount": "{{count}} von {{total}} eingeschaltet",
-      "pluginBy": "Plugin {{name}} {{version}}",
-      "official": "Offiziell"
+      "title": "Module",
+      "missingTitle": "Fehlt ein Modul?",
+      "missingDesc": "Schlag es vor. Nimmt das Hubra-Team die Idee auf die Roadmap, können alle Vereine dafür stimmen.",
+      "suggest": "Modul vorschlagen",
+      "roadmap": "Roadmap ansehen"
     },
     "noFeatures": "Keine Funktionsschalter eingerichtet",
     "profile": "Profil",
@@ -2088,7 +2100,7 @@
     "tabs": {
       "club": "Verein",
       "domains": "Domains",
-      "modules": "Module & Plugins",
+      "modules": "Module",
       "settings": "Erweitert",
       "membership": "Mitgliedschaft",
       "bank": "Bank & QR-Rechnung",
@@ -2326,7 +2338,7 @@
     },
     "more": {
       "emptyTitle": "Hier ist noch nichts",
-      "emptyDesc": "Seiten, die du in der Seitenleiste ausblendest, und Seiten von Plugins erscheinen hier."
+      "emptyDesc": "Seiten, die du in der Seitenleiste ausblendest, und Seiten weiterer Module erscheinen hier."
     },
     "customize": {
       "title": "Seitenleiste anpassen",
@@ -3446,7 +3458,7 @@
     "connected": "Verbunden",
     "none": "Noch keine App verbunden.",
     "available": "Verfügbar",
-    "noProviders": "Schalte unter «Module & Plugins» ein Modul mit einer App ein, zum Beispiel Discord.",
+    "noProviders": "Schalte unter «Module» ein Modul mit einer App ein, zum Beispiel Discord.",
     "connect": "Verbinden",
     "disconnectTitle": "Verbindung trennen?",
     "disconnectBody": "Die App kann danach nichts mehr für den Verein tun. Wo möglich wird sie auch beim Dienst entfernt.",
@@ -3494,7 +3506,8 @@
       "attendance": "Anwesenheit",
       "command": "Befehl",
       "log": "Protokoll-Kanal",
-      "notified": "Benachrichtigung"
+      "notified": "Benachrichtigung",
+      "updated": "Aktualisiert"
     },
     "logAll": "Alles",
     "logErrors": "Fehler",
@@ -3591,14 +3604,7 @@
       "emptyTitle": "Die Roadmap ist noch leer",
       "emptyDesc": "Hier erscheinen Ideen, die das Hubra-Team öffentlich gemacht hat. Stimme für die Ideen, die dir am meisten helfen.",
       "intro": "Ideen, an denen das Hubra-Team arbeitet oder die es prüft. Deine Stimme hilft beim Entscheiden, was zuerst kommt.",
-      "none": "Nichts hier.",
-      "voteFailed": "Abstimmen fehlgeschlagen",
-      "unvote": "Stimme zurücknehmen",
-      "vote": "Dafür stimmen",
-      "inProgress": "In Arbeit",
-      "planned": "Geplant",
-      "open": "Vorgeschlagen",
-      "done": "Erledigt"
+      "voteFailed": "Abstimmen fehlgeschlagen"
     },
     "status": {
       "open": "Offen",
@@ -3618,7 +3624,8 @@
       "mail": "Mail",
       "settings": "Einstellungen",
       "account": "Konto und Anmeldung",
-      "other": "Anderes"
+      "other": "Anderes",
+      "modules": "Modul"
     }
   },
   "backupKey": {

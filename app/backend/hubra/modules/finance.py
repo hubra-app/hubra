@@ -12,7 +12,7 @@ module = Module(
         Blueprint(
             "hubra.api.finance.routes",
             "finance_bp",
-            "/api/v1/finance",
+            "/api/v1/app/finance",
         ),
     ),
     settings=(

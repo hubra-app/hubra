@@ -79,7 +79,7 @@ export function InvoiceDetailScreen() {
   return (
     <div>
       <PageHead
-        title={inv.id}
+        title={t('finance.invoice.pageTitle', 'Rechnung Nr. {{n}}', { n: inv.id })}
         actions={
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             <Button

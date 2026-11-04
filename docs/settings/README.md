@@ -9,7 +9,7 @@ to this file; bigger ideas are in [ideas.md](ideas.md).
 | Where in the UI | Stored in | Read with | Who |
 | --- | --- | --- | --- |
 | Club app › Settings › Verein | `Tenant.settings["branding"]` (public schema) | `hubra.core.tenant.club_settings.club_setting()` | club admins |
-| Club app › Settings › Module & Plugins › *module* › Einstellungen | `TenantFeature.config` | `hubra.core.modules.get_config("<code>")` | club admins (`modules.modules.write`) |
+| Club app › Settings › Module › *module* › Einstellungen | `TenantFeature.config` | `hubra.core.modules.get_config("<code>")` | club admins (`modules.modules.write`) |
 | Club app › Settings › Erweitert | `setting` table in the club schema (key/value) | `SettingService.get()` | per namespace permission |
 | Manage › Platform Settings | `platform_settings` table | `hubra.core.services.platform_settings` | superadmins |
 
