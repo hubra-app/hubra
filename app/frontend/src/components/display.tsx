@@ -96,17 +96,19 @@ export function Tag({
       variant="light"
       size="md"
       color={color || 'gray'}
-      styles={
-        color
-          ? {
-              root: {
+      styles={{
+        root: {
+          minWidth: 'max-content',
+          ...(color
+            ? {
                 backgroundColor: `color-mix(in srgb, ${color} 10%, transparent)`,
                 color: colorText(color),
                 borderColor: `color-mix(in srgb, ${color} 40%, transparent)`,
-              },
-            }
-          : undefined
-      }
+              }
+            : {}),
+        },
+        label: { overflow: 'visible' },
+      }}
     >
       {children}
     </Badge>
@@ -157,7 +159,14 @@ export function InvoicePill({ status }: { status: string }) {
   const color =
     status === 'Paid' ? 'green' : status === 'Overdue' ? 'red' : 'orange'
   return (
-    <Badge variant="light" color={color} radius="xl" size="md">
+    <Badge
+      variant="light"
+      color={color}
+      radius="xl"
+      size="md"
+      // Never clip the word: in a squeezed table cell the badge would show "Of…".
+      styles={{ root: { minWidth: 'max-content' }, label: { overflow: 'visible' } }}
+    >
       {i18n.t(`status.${status}`, status)}
     </Badge>
   )
