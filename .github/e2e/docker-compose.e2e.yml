@@ -1,0 +1,18 @@
+# Added on top of docker-compose.yml for the browser tests in CI (ci.yml,
+# browser-tests; COMPOSE_FILE=docker-compose.yml:.github/e2e/docker-compose.e2e.yml).
+# The production limits stay in docker-compose.yml. Here the migrations run
+# with two CPUs instead of half of one, and the backend gets two CPUs and more
+# gunicorn workers for the parallel browser workers (E2E_WORKERS).
+services:
+  flask-init:
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+  backend:
+    command: ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--threads", "4", "--timeout", "120", "wsgi:app"]
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1G

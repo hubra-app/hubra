@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { appUrl, EMAIL } from './env'
+import { appUrl, EMAIL, STATE } from './env'
 
 test('a typed invoice amount is kept, also for a member on a free tier', async ({ page }) => {
   await page.goto(appUrl('finance/invoices'))
@@ -20,7 +20,7 @@ test('a typed invoice amount is kept, also for a member on a free tier', async (
 
 test('the poll cards fit a narrow phone', async ({ browser }) => {
   const context = await browser.newContext({
-    storageState: 'e2e/.auth/state.json',
+    storageState: STATE,
     viewport: { width: 320, height: 640 },
   })
   const page = await context.newPage()
