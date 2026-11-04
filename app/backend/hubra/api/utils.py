@@ -43,6 +43,12 @@ def log_audit(actor_id, action, target_type, target_id, target_label, color=None
             actor_name = f"{actor.first_name} {actor.last_name}"
             actor_avatar_color = actor.avatar_color
             safe_actor_id = actor_id
+    from hubra.api.auth.api_tokens import audit_label
+
+    via_token = audit_label()
+    if via_token and actor_name:
+        # Written through an API token: say which one.
+        actor_name = (actor_name + via_token)[:255]
     if target_label is not None and len(target_label) > 255:
         # Labels built from several names or addresses can outgrow the
         # column; the entry must not fail the change it records.
