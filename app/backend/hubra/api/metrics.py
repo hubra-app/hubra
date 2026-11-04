@@ -21,7 +21,7 @@ from hubra.core.redis_client import mark_redis_down as _mark_redis_down
 _log = logging.getLogger(__name__)
 
 # Paths that should never be counted
-_SKIP_PREFIXES = ("/health", "/api/v1/health")
+_SKIP_PREFIXES = ("/health", "/api/v1/global/health")
 _SKIP_METHODS = {"OPTIONS", "HEAD"}
 
 # Redis key prefix and TTL (45 days)

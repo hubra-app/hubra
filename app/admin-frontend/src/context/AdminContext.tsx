@@ -219,7 +219,7 @@ function ImpersonatingScreen({ slug }: { slug: string }) {
   const [stopping, setStopping] = useState(false)
   const stop = () => {
     setStopping(true)
-    apiFetch('/system/impersonation/stop', { method: 'POST' }).finally(() => {
+    apiFetch('/global/impersonation/stop', { method: 'POST' }).finally(() => {
       window.location.assign('/tenants')
     })
   }

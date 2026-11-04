@@ -19,7 +19,16 @@ from hubra.core import roles
         ("/api/v1/instance", True, True),
         ("/api/v1/manager/platform/settings", False, True),
         ("/api/v1/manager/plugins", False, True),
-        ("/api/v1/admin/users", False, True),
+        ("/api/v1/admin/domains", True, False),  # club admin: /app/admin
+        ("/api/v1/system/clubs", True, False),  # the person's own: /global
+        ("/api/v1/system/invites/mine", True, False),
+        ("/api/v1/system/permissions", True, False),  # /app/permissions
+        ("/api/v1/system/tenant-requests", False, True),
+        ("/api/v1/platform/settings", False, True),
+        ("/api/v1/platform/system/tenants", False, True),
+        ("/api/v1/app/members", True, False),
+        ("/api/v1/global/auth/refresh", True, False),
+        ("/api/v1/global/version", True, True),
         ("/api/v1/system", False, True),
         ("/api/v1/system/tenants/3", False, True),
         ("/api/v1/members", True, False),
@@ -29,6 +38,7 @@ from hubra.core import roles
         # A prefix match is per path segment.
         ("/api/v1/systemx", True, False),
         ("/api/v1/administration", True, False),
+        ("/api/v1/platformx", True, False),
     ],
 )
 def test_serves(path, club, platform):
@@ -133,7 +143,13 @@ def test_platform_prefixes_cover_the_platform_blueprints():
         bp.url_prefix
         for bp in module.blueprints
         if bp.attr
-        in ("platform_bp", "platform_backups_bp", "plugins_bp", "admin_bp", "system_bp", "tenant_admin_bp")
+        in (
+            "platform_bp",
+            "platform_backups_bp",
+            "plugins_bp",
+            "support_admin_bp",
+            "tenant_admin_bp",
+        )
     }
     assert platform_mounts
     for prefix in platform_mounts:

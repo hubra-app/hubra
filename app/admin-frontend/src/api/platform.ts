@@ -2,7 +2,7 @@ import { withStepUp } from '@/api/stepUp'
 import { apiFetch } from '@hubra/api-client'
 import type { ChangelogEntry, RoadmapItem, RoadmapStatus } from '@hubra/ui'
 
-const P = '/manager/platform'
+const P = '/platform'
 
 export interface PlatformSetting {
   key: string
@@ -153,12 +153,12 @@ export async function getPlatformHealth() {
 
 export async function getChangelog(lang?: string) {
   return apiFetch<{ version: string; entries: ChangelogEntry[] }>(
-    `/version/changelog${lang ? `?lang=${encodeURIComponent(lang)}` : ''}`,
+    `/global/version/changelog${lang ? `?lang=${encodeURIComponent(lang)}` : ''}`,
   )
 }
 
 export async function getRoadmap() {
-  return apiFetch<{ statuses: RoadmapStatus[]; items: RoadmapItem[] }>('/version/roadmap')
+  return apiFetch<{ statuses: RoadmapStatus[]; items: RoadmapItem[] }>('/global/version/roadmap')
 }
 
 export interface PermissionEntry {

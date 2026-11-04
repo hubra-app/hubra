@@ -59,7 +59,7 @@ const errorText = (err: unknown) => (err instanceof Error ? err.message : undefi
 /**
  * Plans with their prices, features and limits, and the add-on list prices
  * (Einstellungen › Tarife & Preise). Public plans and add-ons are what the
- * website reads from /api/v1/public/pricing.
+ * website reads from /api/v1/global/public/pricing.
  */
 export function PlatformPlans() {
   const { notify } = useAdmin()
@@ -106,7 +106,7 @@ export function PlatformPlans() {
     )
   }
   const apiRoot = new URL(BASE, window.location.origin).href.replace(/\/$/, '')
-  const publicUrl = `${apiRoot}/public/pricing`
+  const publicUrl = `${apiRoot}/global/public/pricing`
 
   return (
     <Stack gap={20} maw={960}>
@@ -344,10 +344,10 @@ export function PlatformPlans() {
         </Text>
         <Stack gap={4}>
           <Anchor href={publicUrl} target="_blank" size="sm">
-            GET /api/v1/public/pricing
+            GET /api/v1/global/public/pricing
           </Anchor>
-          <Anchor href={`${apiRoot}/public/plugins`} target="_blank" size="sm">
-            GET /api/v1/public/plugins
+          <Anchor href={`${apiRoot}/global/public/plugins`} target="_blank" size="sm">
+            GET /api/v1/global/public/plugins
           </Anchor>
         </Stack>
       </Paper>

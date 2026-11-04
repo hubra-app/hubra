@@ -13,7 +13,7 @@ window.HubraPluginHost.sdk.registerPlugin({
 `
 
 test.beforeEach(async ({ page }) => {
-  await page.route('**/api/v1/modules/', async (route) => {
+  await page.route('**/api/v1/app/modules/', async (route) => {
     const res = await route.fetch()
     const modules = await res.json()
     modules.push({

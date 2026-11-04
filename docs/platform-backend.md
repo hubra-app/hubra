@@ -20,14 +20,15 @@ Compose installs keep one backend by default (`HUBRA_ROLE` unset means
 | --- | --- | --- |
 | Image | `ghcr.io/hubra-app/hubra/backend` | `ghcr.io/hubra-app/hubra/platform-backend` (the same build, published under a second name) |
 | `HUBRA_ROLE` | `club` | `platform` |
-| API paths | everything except the three below | `/api/v1/manager`, `/api/v1/admin`, `/api/v1/system` |
-| Shared paths | `/health`, `/api/v1/health`, `/api/v1/version`, `/api/v1/instance` | same |
+| API paths | `/api/v1/app` (club app), `/api/v1/global` (sign-in, account, public), plugin routes | `/api/v1/platform` |
+| Shared paths | `/health`, `/api/v1/global/health`, `/api/v1/global/version`, `/api/v1/global/instance` | same |
 | Celery | `celery-worker`: the default queue (invoices, reminders, mail, push, Discord bot, plugin jobs) | `platform-worker`: queue `platform` (backups and restores, health and infra checks, upgrades, plugin updates, quotas, platform alerts, platform Discord log) |
 | Start-up | waits until the schema is migrated (`python -m hubra.core.schema_wait`) | runs the init step: `flask db upgrade`, `sync-permissions`, `seed`, `ensure-superadmins`, `plugins sync`, `modules seal-secrets` |
 | Celery beat | | runs the platform image |
 
-The lists live in one place, `app/backend/hubra/core/roles.py`
-(`PLATFORM_PREFIXES`, `PLATFORM_TASK_MODULES`).
+The API areas and the old paths that lead to them are in
+`app/backend/hubra/core/api_areas.py` (see [API areas](#api-areas) below); the
+task list is in `app/backend/hubra/core/roles.py` (`PLATFORM_TASK_MODULES`).
 
 Every role still registers every route; a backend answers 404 ("Not served by
 the club backend") for the other side's paths before any other code runs. So
@@ -38,14 +39,41 @@ runs them.
 
 The browser keeps calling one API host. The split is by path:
 
-- **k3s:** the `api.` rule in the Ingress sends the three platform prefixes to
-  the `platform-backend` Service, everything else to `backend`
+- **k3s:** the `api.` rule in the Ingress sends `/api/v1/platform` and the old
+  platform paths (`/api/v1/manager`, most of `/api/v1/system`) to the
+  `platform-backend` Service, everything else to `backend`
   (`deploy/app/ingress.yaml`, the overlays' `ingress.yaml`).
 - **Compose:** the frontend nginx sends them to `PLATFORM_API_UPSTREAM`
   (`app/deploy/nginx/40-hubra-runtime.sh`), set by
   `docker-compose.platform.yml`.
 
-No frontend, cookie or CORS change is needed.
+`tests/test_api_areas.py` checks that the Ingress files and the nginx pattern
+route every old and new path to the backend that serves it.
+
+### API areas
+
+| Area | Who calls it | Backend |
+| --- | --- | --- |
+| `/api/v1/platform/...` | manage: platform settings, plugins (`/platform/plugins`), backups (`/platform/backups`), the support desk (`/platform/support`), all clubs and club admin (`/platform/system/...`) | platform |
+| `/api/v1/app/...` | the club app: members, events, finance, mail, ..., club admin settings (`/app/admin`), the permission catalogue (`/app/permissions`) | club |
+| `/api/v1/global/...` | everyone: sign-in (`/global/auth`), the account (`/global/account`), translations, version, status, public pricing, plugin frontends, the club directory, invites, join and club requests, ending a support session | club |
+
+Sign-in is in `/global`, on the club backend, on purpose: every signed-in
+person refreshes a token every 15 minutes, so a platform rollout must not
+touch it.
+
+**Old paths still work.** `/api/v1/members`, `/api/v1/manager/platform/...`,
+`/api/v1/system/...` and the others are rewritten to the new path before the
+URL is matched (`LegacyApiPaths`), so older app versions in open browser tabs,
+plugins and links in sent mail keep working. Plugins keep their own prefix
+(`/api/v1/keys`, `/api/v1/bank`, ...) and run on the club backend.
+
+**URLs registered outside Hubra keep the old form for now:** the Discord
+OAuth callbacks (`/api/v1/apps/callback/discord`,
+`/api/v1/account/linked-accounts/discord/callback`) and the interactions
+endpoint (`/api/v1/discord/interactions`) are what the Discord Developer
+Portal knows. They keep working through the rewrite; switch them in the
+portal and in the code together when you want.
 
 ### Background jobs
 
@@ -113,7 +141,7 @@ platform paths, with a higher priority than the API router:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=frontend"
-      - "traefik.http.routers.hubra-platform-api.rule=Host(`${HUBRA_API_HOST:-api.hubra.club}`) && (PathPrefix(`/api/v1/manager`) || PathPrefix(`/api/v1/admin`) || PathPrefix(`/api/v1/system`))"
+      - "traefik.http.routers.hubra-platform-api.rule=Host(`${HUBRA_API_HOST:-api.hubra.club}`) && (PathPrefix(`/api/v1/platform`) || PathPrefix(`/api/v1/manager`) || PathRegexp(`^/api/v1/system(/|$)`)) && !PathRegexp(`^/api/v1/system/(clubs|invites|join-requests|tenant-requests/mine|impersonation|permissions)(/|$)`)"
       - "traefik.http.routers.hubra-platform-api.priority=100"
       - "traefik.http.routers.hubra-platform-api.entrypoints=websecure"
       - "traefik.http.routers.hubra-platform-api.tls.certresolver=letencrypt"

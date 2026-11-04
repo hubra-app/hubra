@@ -50,7 +50,7 @@ export async function pushState(): Promise<PushState> {
   const sub = await reg?.pushManager.getSubscription()
   if (!sub) return 'off'
   const setup = await apiFetch<PushSetup>(
-    `/account/push?endpoint=${encodeURIComponent(sub.endpoint)}`,
+    `/global/account/push?endpoint=${encodeURIComponent(sub.endpoint)}`,
   )
   return setup.subscribed ? 'on' : 'off'
 }
@@ -59,7 +59,7 @@ export async function enablePush(): Promise<PushState> {
   if (!supported()) return iosBrowserTab() ? 'needs-install' : 'unsupported'
   const permission = await Notification.requestPermission()
   if (permission !== 'granted') return permission === 'denied' ? 'denied' : 'off'
-  const setup = await apiFetch<PushSetup>('/account/push')
+  const setup = await apiFetch<PushSetup>('/global/account/push')
   const reg = await registration()
   await navigator.serviceWorker.ready
   let sub = await reg.pushManager.getSubscription()
@@ -77,7 +77,7 @@ export async function enablePush(): Promise<PushState> {
     userVisibleOnly: true,
     applicationServerKey: keyBytes(setup.public_key),
   })
-  await apiFetch('/account/push', { method: 'POST', body: JSON.stringify(sub.toJSON()) })
+  await apiFetch('/global/account/push', { method: 'POST', body: JSON.stringify(sub.toJSON()) })
   return 'on'
 }
 
@@ -85,7 +85,7 @@ export async function disablePush(): Promise<PushState> {
   const reg = supported() ? await navigator.serviceWorker.getRegistration(SW_URL) : undefined
   const sub = await reg?.pushManager.getSubscription()
   if (sub) {
-    await apiFetch('/account/push', {
+    await apiFetch('/global/account/push', {
       method: 'DELETE',
       body: JSON.stringify({ endpoint: sub.endpoint }),
     })

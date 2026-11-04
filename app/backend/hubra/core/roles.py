@@ -3,9 +3,11 @@
 One image, three roles (docs/platform-backend.md):
 
 - ``all`` (default): every route, as before. Compose installs and tests.
-- ``club``: everything except the platform API.
-- ``platform``: only the platform API (manage's platform and club admin
-  views, club requests, support sessions), plus health and version.
+- ``club``: everything except the platform API: the club app
+  (``/api/v1/app``), sign-in and account (``/api/v1/global``) and plugins.
+- ``platform``: only the platform API (``/api/v1/platform``: manage's
+  platform and club admin views, club requests, the support desk), plus
+  health and version.
 
 Every role registers every blueprint, so the URL map, ``url_for``,
 ``flask sync-permissions`` and the permission listing stay complete. A
@@ -27,21 +29,17 @@ from flask import Flask, jsonify, request
 
 ROLES = ("all", "club", "platform")
 
-# Paths of the platform API. Keep in step with the ingress rules
-# (deploy/app/ingress.yaml, deploy/clusters/*/ingress.yaml) and the frontend
-# nginx (app/deploy/nginx/40-hubra-runtime.sh).
-PLATFORM_PREFIXES = (
-    "/api/v1/manager",
-    "/api/v1/admin",
-    "/api/v1/system",
-)
+# The platform API (hubra.core.api_areas). The role gate sees the new path,
+# after old ones were rewritten; the ingress and the frontend nginx also
+# route the old platform paths (api_areas.legacy_prefixes) here.
+PLATFORM_PREFIXES = ("/api/v1/platform",)
 
 # Served by every role: probes and the build/version info.
 SHARED_PATHS = (
     "/health",
-    "/api/v1/health",
-    "/api/v1/version",
-    "/api/v1/instance",
+    "/api/v1/global/health",
+    "/api/v1/global/version",
+    "/api/v1/global/instance",
 )
 
 # Celery task modules that belong to the platform: backups, health and
@@ -66,9 +64,7 @@ def current_role() -> str:
     """The role from ``HUBRA_ROLE``; ``all`` when unset."""
     role = (os.environ.get("HUBRA_ROLE") or "all").strip().lower()
     if role not in ROLES:
-        raise RuntimeError(
-            f"HUBRA_ROLE={role!r} is not one of {', '.join(ROLES)}"
-        )
+        raise RuntimeError(f"HUBRA_ROLE={role!r} is not one of {', '.join(ROLES)}")
     return role
 
 
@@ -81,7 +77,11 @@ def is_platform_path(path: str) -> bool:
 
 
 def serves(path: str, role: str) -> bool:
-    """Whether a backend in *role* answers *path* (slug already stripped)."""
+    """Whether a backend in *role* answers *path* (slug already stripped;
+    an old path counts as the new one it is rewritten to)."""
+    from hubra.core.api_areas import canonical_path
+
+    path = canonical_path(path)
     if role == "all" or _matches(path, SHARED_PATHS):
         return True
     if role == "platform":

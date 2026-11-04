@@ -12,7 +12,7 @@ module = Module(
         Blueprint(
             "hubra.api.polls.routes",
             "polls_bp",
-            "/api/v1/polls",
+            "/api/v1/app/polls",
         ),
     ),
     settings=(

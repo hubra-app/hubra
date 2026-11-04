@@ -3,7 +3,7 @@ import { apiFetch } from '@hubra/api-client'
 
 // Backups are the platform's (backups.manage): one global backup of the
 // public schema, and one per club that can be restored on its own.
-const B = '/manager/platform/backups'
+const B = '/platform/backups'
 
 export interface BackupRecord {
   id: string

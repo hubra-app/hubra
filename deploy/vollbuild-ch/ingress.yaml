@@ -16,13 +16,16 @@ spec:
     - host: api.vollbuild.ch
       http:
         paths:
-          # The platform API goes to the platform backend (docs/platform-backend.md;
-          # keep in step with hubra.core.roles.PLATFORM_PREFIXES).
-          - path: /api/v1/manager
+          # The platform API goes to the platform backend (docs/platform-backend.md):
+          # /api/v1/platform, plus the old /manager and /system paths, which the
+          # backend rewrites (hubra.core.api_areas). Parts of the old /system are
+          # the person's own (club directory, invites, requests): club backend.
+          # The longest matching path wins.
+          - path: /api/v1/platform
             pathType: Prefix
             backend:
               service: { name: platform-backend, port: { name: http } }
-          - path: /api/v1/admin
+          - path: /api/v1/manager
             pathType: Prefix
             backend:
               service: { name: platform-backend, port: { name: http } }
@@ -30,6 +33,30 @@ spec:
             pathType: Prefix
             backend:
               service: { name: platform-backend, port: { name: http } }
+          - path: /api/v1/system/clubs
+            pathType: Prefix
+            backend:
+              service: { name: backend, port: { name: http } }
+          - path: /api/v1/system/invites
+            pathType: Prefix
+            backend:
+              service: { name: backend, port: { name: http } }
+          - path: /api/v1/system/join-requests
+            pathType: Prefix
+            backend:
+              service: { name: backend, port: { name: http } }
+          - path: /api/v1/system/tenant-requests/mine
+            pathType: Prefix
+            backend:
+              service: { name: backend, port: { name: http } }
+          - path: /api/v1/system/impersonation
+            pathType: Prefix
+            backend:
+              service: { name: backend, port: { name: http } }
+          - path: /api/v1/system/permissions
+            pathType: Prefix
+            backend:
+              service: { name: backend, port: { name: http } }
           - path: /
             pathType: Prefix
             backend:
