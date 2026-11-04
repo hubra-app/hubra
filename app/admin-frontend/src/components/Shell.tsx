@@ -164,7 +164,7 @@ function NavSections({ sections, collapsed = false }: { sections: NavSection[]; 
         <Stack key={section.label} gap={collapsed ? 8 : 2} align={collapsed ? 'center' : undefined}>
           {!collapsed && (
             <Text
-              fz={12}
+              fz={13}
               fw={700}
               c="gray.6"
               tt="uppercase"

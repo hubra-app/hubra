@@ -41,10 +41,10 @@ const variantColorResolver: VariantColorsResolver = (input) => {
 // Hubra brand theme (brand/README.md). The same file is used by the club app,
 // the manager portal and the sign-in portal so the three look like one product.
 const BADGE_FZ: Record<string, string> = {
-  xs: rem(11),
-  sm: rem(12),
-  md: rem(12),
-  lg: rem(13),
+  xs: rem(12),
+  sm: rem(13),
+  md: rem(13),
+  lg: rem(14),
   xl: rem(16),
 }
 
@@ -136,13 +136,15 @@ export const theme = createTheme({
   fontFamilyMonospace: '"JetBrains Mono", ui-monospace, monospace',
 
   fontSizes: {
-    // 13, not 12: 12 px read as too small across the apps (meta lines, table
-    // headers, descriptions), and the apps show a lot of it.
-    xs: rem(13),
-    sm: rem(14),
-    md: rem(15),
-    lg: rem(17),
-    xl: rem(20),
+    // One step above Mantine's defaults: the apps are mostly forms, tables and
+    // log lines set in sm/xs, and those read too small at 14/13 px (settings
+    // pages, Discord logs). Body text is 16 px, forms and tables 15 px,
+    // captions and log lines 14 px.
+    xs: rem(14),
+    sm: rem(15),
+    md: rem(16),
+    lg: rem(18),
+    xl: rem(21),
   },
 
   headings: {
@@ -151,8 +153,8 @@ export const theme = createTheme({
     sizes: {
       h1: { fontSize: rem(30), lineHeight: '1.15' },
       h2: { fontSize: rem(22), lineHeight: '1.25' },
-      h3: { fontSize: rem(18), lineHeight: '1.3' },
-      h4: { fontSize: rem(16), lineHeight: '1.35' },
+      h3: { fontSize: rem(20), lineHeight: '1.3' },
+      h4: { fontSize: rem(17), lineHeight: '1.35' },
     },
   },
 
@@ -210,7 +212,7 @@ export const theme = createTheme({
         title: {
           fontFamily: `"Bricolage Grotesque", "Hanken Grotesk", sans-serif`,
           fontWeight: 700,
-          fontSize: rem(19),
+          fontSize: rem(20),
         },
       },
     },
@@ -219,7 +221,7 @@ export const theme = createTheme({
         title: {
           fontFamily: `"Bricolage Grotesque", "Hanken Grotesk", sans-serif`,
           fontWeight: 700,
-          fontSize: rem(19),
+          fontSize: rem(20),
         },
       },
     },
@@ -255,7 +257,7 @@ export const theme = createTheme({
       },
       styles: {
         th: {
-          fontSize: rem(13),
+          fontSize: rem(14),
           fontWeight: 600,
           color: 'var(--mantine-color-gray-7)',
           textTransform: 'uppercase',
