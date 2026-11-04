@@ -424,6 +424,7 @@ export function DataTable<T>({
   breakpoint,
   renderCard,
   viewKey,
+  cardsOnly,
 }: {
   columns: DataColumn<T>[]
   data: T[]
@@ -459,10 +460,12 @@ export function DataTable<T>({
   renderCard?: (item: T) => ReactNode
   /** Remembers the chosen view per screen, e.g. "codes". */
   viewKey?: string
+  /** Cards only, no list view and no switch: for records a table adds nothing to. */
+  cardsOnly?: boolean
 }) {
   const [view, setView] = useTableView(viewKey, renderCard ? 'cards' : 'table')
-  const showCards = !!renderCard && view === 'cards'
-  const viewSwitch = renderCard ? (
+  const showCards = !!renderCard && (cardsOnly || view === 'cards')
+  const viewSwitch = renderCard && !cardsOnly ? (
     <SegmentedControl
       size="xs"
       value={view}
@@ -665,4 +668,80 @@ export function DataTable<T>({
         )}
     </Paper>
   )
+}
+
+/* ── SimpleList<T> ───────────────────────────── */
+
+export interface SimpleListRow {
+  /** A dot, icon or avatar before the title. */
+  leading?: ReactNode
+  title: ReactNode
+  subtitle?: ReactNode
+  /** Right-aligned facts: an amount, a date, a badge. */
+  meta?: ReactNode
+  /** Buttons at the end; clicks on them don't open the row. */
+  actions?: ReactNode
+  onClick?: () => void
+}
+
+/**
+ * A plain list for short records (a name and one or two facts), where a
+ * table with headers adds nothing (docs/table-controls.md).
+ */
+export function SimpleList<T>({
+  items,
+  getKey,
+  row,
+  loading,
+  emptyMessage,
+  emptyDescription,
+  emptyAction,
+  bare,
+}: {
+  items: T[]
+  getKey: (item: T) => string | number
+  row: (item: T) => SimpleListRow
+  loading?: boolean
+  emptyMessage?: string
+  emptyDescription?: string
+  emptyAction?: { label: string; onClick: () => void }
+  /** Inside a card that already has a border. */
+  bare?: boolean
+}) {
+  const body = loading ? (
+    <LoadingSpinner compact message={i18n.t('common.loading', 'Wird geladen …')} />
+  ) : items.length === 0 ? (
+    <EmptyState
+      icon={<IconInbox size={36} />}
+      title={emptyMessage ?? i18n.t('data.noData', 'Keine Daten')}
+      description={emptyDescription}
+      action={emptyAction}
+    />
+  ) : (
+    <ul className="simple-list" role="list">
+      {items.map((item) => {
+        const r = row(item)
+        return (
+          <li
+            key={getKey(item)}
+            className={`simple-list-row${r.onClick ? ' clickable' : ''}`}
+            {...clickableProps(r.onClick)}
+          >
+            {r.leading && <div className="simple-list-leading">{r.leading}</div>}
+            <div className="simple-list-main">
+              <div className="simple-list-title">{r.title}</div>
+              {r.subtitle && <div className="simple-list-subtitle">{r.subtitle}</div>}
+            </div>
+            {r.meta && <div className="simple-list-meta">{r.meta}</div>}
+            {r.actions && (
+              <div className="simple-list-actions" onClick={(e) => e.stopPropagation()}>
+                {r.actions}
+              </div>
+            )}
+          </li>
+        )
+      })}
+    </ul>
+  )
+  return bare ? body : <Paper withBorder style={{ overflow: 'hidden' }}>{body}</Paper>
 }

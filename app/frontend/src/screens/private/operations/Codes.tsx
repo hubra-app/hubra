@@ -252,93 +252,7 @@ export function CodesScreen() {
 
       <DataTable
         breakpoint="wide"
-        columns={[
-          {
-            key: 'name',
-            header: t('codes.name'),
-            render: (c) => c.name,
-          },
-          {
-            key: 'code',
-            header: t('codes.code'),
-            render: (c) => {
-              const visible = visibleIds.has(c.id)
-              return (
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 8,
-                  }}
-                >
-                  <code
-                    style={{
-                      fontFamily: '"JetBrains Mono", monospace',
-                      fontSize: 'var(--mantine-font-size-sm)',
-                      background: 'var(--hb-surface-2)',
-                      padding: '2px 8px',
-                      borderRadius: 4,
-                      letterSpacing: visible ? '0.06em' : '0.15em',
-                    }}
-                  >
-                    {visible ? c.code : '\u2022'.repeat(c.code.length)}
-                  </code>
-                  <ActionIcon
-                    variant="subtle"
-                    style={{ width: 28, height: 28, padding: 0 }}
-                    onClick={() => toggleVisible(c.id)}
-                    title={visible ? t('codes.codeHidden') : t('codes.codeVisible')}
-                  >
-                    {visible ? <IconEyeOff size={16} /> : <IconEye size={16} />}
-                  </ActionIcon>
-                </span>
-              )
-            },
-          },
-          {
-            key: 'description',
-            header: t('codes.description'),
-            render: (c) => <span style={{ color: 'var(--hb-text-2)' }}>{c.description ?? '—'}</span>,
-          },
-          {
-            key: 'status',
-            header: t('codes.status'),
-            render: (c) => (
-              <span
-                className={`chip${c.isActive ? ' on' : ''}`}
-                style={{ fontSize: 'var(--mantine-font-size-xs)' }}
-              >
-                {c.isActive ? t('codes.active') : t('codes.inactive')}
-              </span>
-            ),
-          },
-          {
-            key: 'updatedAt',
-            header: t('codes.lastUpdated'),
-            render: (c) => (
-              <span
-                className="num"
-                style={{
-                  color: 'var(--hb-text-2)',
-                  fontSize: 'var(--mantine-font-size-xs)',
-                }}
-              >
-                {formatDate(c.updatedAt)}
-              </span>
-            ),
-          },
-          {
-            key: 'actions',
-            header: t('common.actions'),
-            width: 80,
-            render: (c) => (
-              <ActionButtons
-                onEdit={canUpdate ? () => openEdit(c) : undefined}
-                onDelete={canDelete ? () => setDeleteTarget(c) : undefined}
-              />
-            ),
-          },
-        ]}
+        columns={[]}
         data={filtered}
         loading={loading}
         emptyMessage={t('codes.noCodes')}
@@ -361,7 +275,7 @@ export function CodesScreen() {
         ]}
         getRowKey={(c) => c.id}
         renderCard={renderCard}
-        viewKey="codes"
+        cardsOnly
       />
 
       {/* Add Modal */}

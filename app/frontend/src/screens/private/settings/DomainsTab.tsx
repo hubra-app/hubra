@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  Table,
   TextInput,
   Button,
   Badge,
   Group,
   Stack,
-  Paper,
   Text,
   Modal,
   Alert,
@@ -24,6 +22,7 @@ import {
   type Domain,
 } from '@/api/admin'
 import { useToast } from '@/context/AppContext'
+import { SimpleList } from '@/components/ui'
 import { useT } from '@/locales/i18n'
 import { qk } from '@/data/keys'
 
@@ -111,72 +110,62 @@ export function DomainsTab() {
         </Button>
       </Group>
 
-      <Paper withBorder>
-        {isLoading && <Text p={20} c="dimmed">{t('domains.loading', 'Domains werden geladen …')}</Text>}
-        {!isLoading && domains.length === 0 && (
-          <Text p={40} ta="center" c="dimmed">{t('domains.empty', 'Noch keine eigenen Domains eingerichtet.')}</Text>
-        )}
-        {domains.length > 0 && (
-          <Table highlightOnHover>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>{t('domains.domain', 'Domain')}</Table.Th>
-                <Table.Th>{t('common.status', 'Status')}</Table.Th>
-                <Table.Th>{t('domains.primary', 'Hauptdomain')}</Table.Th>
-                <Table.Th>{t('common.actions', 'Aktionen')}</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {domains.map((d) => (
-                <Table.Tr key={d.id}>
-                  <Table.Td fw={600}>{d.domain}</Table.Td>
-                  <Table.Td>
-                    <Badge variant="light" color={STATUS_COLORS[d.verification_status] ?? 'gray'} size="sm">
-                      {t(`domains.status.${d.verification_status}`, d.verification_status)}
-                    </Badge>
-                  </Table.Td>
-                  <Table.Td>
-                    {d.is_primary ? (
-                      <IconStar size={16} fill="var(--mantine-color-gold-4)" color="var(--mantine-color-gold-4)" />
-                    ) : (
-                      d.verified && (
-                        <IconStar
-                          size={16}
-                          color="var(--hb-text-3)"
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => handleSetPrimary(d)}
-                        />
-                      )
-                    )}
-                  </Table.Td>
-                  <Table.Td>
-                    <Group gap={6}>
-                      {!d.verified && d.txt_record && (
-                        <Button size="xs" variant="default" onClick={() => setRecordFor(d)}>
-                          {t('domains.showRecord', 'DNS-Eintrag')}
-                        </Button>
-                      )}
-                      {!d.verified && (
-                        <Button size="xs" variant="light" onClick={() => handleVerify(d)}>
-                          {t('domains.verify', 'Bestätigen')}
-                        </Button>
-                      )}
-                      <ActionIcon
-                        color="red"
-                        variant="subtle"
-                        onClick={() => setDeleteTarget(d)}
-                        aria-label={t('common.delete')}
-                      >
-                        <IconTrash size={16} />
-                      </ActionIcon>
-                    </Group>
-                  </Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        )}
-      </Paper>
+      <SimpleList
+        items={domains}
+        loading={isLoading}
+        emptyMessage={t('domains.empty', 'Noch keine eigenen Domains eingerichtet.')}
+        getKey={(d) => d.id}
+        row={(d) => ({
+          leading: d.is_primary ? (
+            <IconStar
+              size={16}
+              fill="var(--mantine-color-gold-4)"
+              color="var(--mantine-color-gold-4)"
+              aria-label={t('domains.primary', 'Hauptdomain')}
+            />
+          ) : d.verified ? (
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="sm"
+              onClick={() => handleSetPrimary(d)}
+              aria-label={t('domains.primary', 'Hauptdomain')}
+              title={t('domains.primary', 'Hauptdomain')}
+            >
+              <IconStar size={16} />
+            </ActionIcon>
+          ) : undefined,
+          title: d.domain,
+          subtitle: d.is_primary ? t('domains.primary', 'Hauptdomain') : undefined,
+          meta: (
+            <Badge variant="light" color={STATUS_COLORS[d.verification_status] ?? 'gray'} size="sm">
+              {t(`domains.status.${d.verification_status}`, d.verification_status)}
+            </Badge>
+          ),
+          actions: (
+            <Group gap={6} wrap="nowrap">
+              {!d.verified && d.txt_record && (
+                <Button size="xs" variant="default" onClick={() => setRecordFor(d)}>
+                  {t('domains.showRecord', 'DNS-Eintrag')}
+                </Button>
+              )}
+              {!d.verified && (
+                <Button size="xs" variant="light" onClick={() => handleVerify(d)}>
+                  {t('domains.verify', 'Bestätigen')}
+                </Button>
+              )}
+              <ActionIcon
+                color="red"
+                variant="subtle"
+                onClick={() => setDeleteTarget(d)}
+                aria-label={t('common.delete')}
+              >
+                <IconTrash size={16} />
+              </ActionIcon>
+            </Group>
+          ),
+        })}
+      />
 
       <Modal opened={addOpen} onClose={() => { setAddOpen(false); setNewDomain('') }} title={t('domains.add', 'Domain hinzufügen')}>
         <Stack gap={14}>

@@ -43,3 +43,13 @@ test('manage: the clubs list has the same Filter panel', async ({ page }) => {
   await expect(page.getByRole('radiogroup', { name: 'Plan' })).toBeVisible()
   await expect(page.getByRole('radiogroup', { name: 'Status' })).toBeVisible()
 })
+
+test('club app: short records are a plain list, not a table', async ({ page }) => {
+  await page.goto(appUrl('dashboard'))
+  await enableModule(page, 'finance')
+  for (const path of ['finance/categories', 'finance/external-parties']) {
+    await page.goto(appUrl(path))
+    await expect(page.getByRole('main').locator('h1').first()).toBeVisible()
+    await expect(page.getByRole('main').locator('table')).toHaveCount(0)
+  }
+})

@@ -42,6 +42,21 @@ visible segmented control. It is the page's main triage switch and the counts
 are information in their own right. Use this only when the options carry
 counts; otherwise the status goes into the panel.
 
+### Plain lists instead of tables
+
+A table only earns its headers when people compare several columns. Short
+records (a name and one or two facts) use `SimpleList` from
+`components/data.tsx`: one row per record with a title, a subtitle, facts on
+the right and the actions at the end. Used for transaction categories,
+external parties, custom domains and the recent transactions on the finance
+overview. Codes show as cards only (`cardsOnly` on `DataTable`), without the
+list switch.
+
+Tables stay where columns are compared: members (list view), invoices,
+transactions, events, audit logs, mail addresses, recurring bookings (amounts,
+per year, totals), fee basis, notification settings (a matrix of switches)
+and the manage tables.
+
 ## How to use it
 
 Club app: pass `filterGroups` to `DataTable` (and `sortValue` /
