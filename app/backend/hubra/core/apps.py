@@ -411,6 +411,6 @@ def serialize(conn: ConnectedApp, with_events: bool = False) -> dict:
                 "detail": e.detail,
                 "at": _iso(e.created_at),
             }
-            for e in events(conn)
+            for e in events(conn, limit=KEEP_EVENTS)
         ]
     return data
