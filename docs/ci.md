@@ -57,6 +57,11 @@ the Playwright tests in `app/frontend/e2e` against it. What keeps it short:
 Release checks (`compose-smoke`) run the same tests the same way, but build
 the images without a cache.
 
+Timings (November 2026, 71 tests): the job took 5m40 before (build 1m28,
+stack 1m07, installs 36s, tests 2m18 in one worker). Now it takes about 2m50
+with a warm cache (build 20s, stack and installs together 41s, accounts 10s,
+tests 1m15); with a cold cache the build takes about 1m45 instead of 20s.
+
 A test that changes something all workers share (a platform setting, the
 plugin catalogue) must not depend on it staying that way and has to put it
 back at the end, as `step-up-passkey.spec.ts` does with the plugin update
