@@ -24,6 +24,8 @@ import { AuthFrame } from '@/components/AuthFrame'
 import { tr, useLang } from '@/lang'
 import { getPasskey, passkeyCancelled, passkeysSupported } from '@/webauthn'
 
+const SUPPORT_URL = import.meta.env.VITE_SUPPORT_URL ?? 'https://support.hubra.club'
+
 // Built per render so the messages follow the chosen language.
 const makeSchema = () =>
   z.object({
@@ -248,8 +250,12 @@ export function LoginScreen() {
         </Button>
       </Stack>
       <Text size="xs" c="dimmed" ta="center" mt="lg">
-        <Anchor size="xs" c="dimmed" onClick={() => navigate('/status')}>
+        <Anchor size="xs" c="dimmed" href={`${SUPPORT_URL}/status`}>
           {tr('Systemstatus', 'System status')}
+        </Anchor>
+        {' · '}
+        <Anchor size="xs" c="dimmed" href={`${SUPPORT_URL}/hilfe`}>
+          {tr('Hilfe', 'Help')}
         </Anchor>
       </Text>
     </AuthFrame>

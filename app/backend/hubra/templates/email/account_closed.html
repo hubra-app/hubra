@@ -1,0 +1,8 @@
+{% extends "email/base.html" %}
+{% import "email/_ui.html" as ui with context %}
+{% block preheader %}{{ t('mail.email.account_closed.body') | striptags }}{% endblock %}
+{% block content %}
+{% call ui.p() %}{{ t('mail.email.account_closed.body') }}{% endcall %}
+{% call ui.p() %}{{ t('mail.email.account_closed.clubs') }}{% endcall %}
+{% call ui.p() %}{{ t('mail.email.account_closed.not_you') }}{% endcall %}
+{% endblock %}

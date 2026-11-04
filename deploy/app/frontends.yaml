@@ -135,3 +135,65 @@ spec:
             periodSeconds: 10
           resources:
             limits: { cpu: 500m, memory: 256Mi }
+---
+# The support site (support.hubra.club): help, roadmap, status, reports.
+# Its own image and Deployment, so it stays up while the other images roll;
+# two replicas and no unavailable pod during its own rollout, because the
+# status page is where people look when something else is down.
+apiVersion: v1
+kind: Service
+metadata:
+  name: support-frontend
+spec:
+  selector:
+    app.kubernetes.io/name: support-frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: support-frontend
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: support-frontend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: support-frontend
+    spec:
+      securityContext:
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: nginx
+          image: hubra/support-frontend
+          securityContext:
+            allowPrivilegeEscalation: false
+          envFrom:
+            - configMapRef:
+                name: hubra-frontend
+          ports:
+            - name: http
+              containerPort: 80
+          readinessProbe:
+            httpGet: { path: /, port: http }
+            periodSeconds: 10
+          resources:
+            limits: { cpu: 250m, memory: 128Mi }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: support-frontend
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: support-frontend

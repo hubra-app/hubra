@@ -3246,6 +3246,7 @@
   "support.kind.feature": "Idea",
   "support.menu.bug": "Report a problem",
   "support.menu.feature": "Suggest an idea",
+  "support.menu.help": "Help and support",
   "support.page.answers": "Answers: {{count}}",
   "support.page.desc": "Report problems and suggest ideas. The Hubra team answers here and by mail.",
   "support.page.mergedShort": "merged with #{{id}}",
@@ -3436,5 +3437,10 @@
   },
   "finance": {
     "direction": "Direction"
-  }
+  },
+  "mail.email.account_closed.body": "Your Hubra account was <strong>deleted</strong> as you asked. You can no longer sign in with it.",
+  "mail.email.account_closed.clubs": "What a club keeps about its members (invoices, for example) belongs to the club. Please contact the club directly for that.",
+  "mail.email.account_closed.not_you": "If this was not you, please reply to this mail right away.",
+  "mail.email.subject.account_closed": "Your Hubra account was deleted",
+  "mail.email.support_case.kind_question": "question"
 }

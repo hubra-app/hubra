@@ -8,6 +8,8 @@ export interface AppUrls {
   cos: string
   /** The manager portal (manage.hubra.club). */
   manage: string
+  /** The support site (support.hubra.club): roadmap, reports, privacy. */
+  support?: string
 }
 
 /** Dashboard of one club in the club app (routes are /:tenantSlug/app/*). */
@@ -47,7 +49,9 @@ export function validateRedirect(
   // Only the configured app origins (set at container start). Not every
   // subdomain of the app's domain: one of them serving someone else's page
   // would receive the signed-in visitor.
-  if ([cosOrigin, new URL(urls.manage).origin].includes(url.origin)) return raw
+  const trusted = [cosOrigin, new URL(urls.manage).origin]
+  if (urls.support) trusted.push(new URL(urls.support).origin)
+  if (trusted.includes(url.origin)) return raw
   return null
 }
 
@@ -59,4 +63,12 @@ export function validateRedirect(
  */
 export function signedInTarget(redirect: string | null): string | null {
   return redirect
+}
+
+/**
+ * The support site's page for a path that used to live here (/roadmap,
+ * /status), keeping the query (?club=<slug>).
+ */
+export function movedToSupport(support: string, path: string, search: string): string {
+  return `${support.replace(/\/$/, '')}${path}${search}`
 }

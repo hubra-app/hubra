@@ -119,6 +119,20 @@ repos:
           - yaml
         stages:
           - pre-commit
+      - id: frontend-support-prettier
+        name: frontend support prettier
+        entry: bash -c 'cd app/support-frontend && npm exec prettier -- --write "${@#app/support-frontend/}"' _
+        language: system
+        files: ^app/support-frontend/
+        types_or:
+          - javascript
+          - jsx
+          - tsx
+          - css
+          - json
+          - yaml
+        stages:
+          - pre-commit
 
   # ------------------------------------------------------------
   # Secret scanning
@@ -197,6 +211,21 @@ repos:
           - yaml
         stages:
           - pre-commit
+      - id: frontend-support-lint
+        name: frontend eslint
+        entry: bash -c "cd app/support-frontend && npm run lint"
+        language: system
+        files: ^app/support-frontend/
+        pass_filenames: false
+        types_or:
+          - javascript
+          - jsx
+          - tsx
+          - css
+          - json
+          - yaml
+        stages:
+          - pre-commit
 
       # -------------------------
       # Frontend build
@@ -226,6 +255,14 @@ repos:
         entry: bash -c "cd app/sso-frontend && npm run build"
         language: system
         files: ^app/sso-frontend/
+        pass_filenames: false
+        stages:
+          - pre-push
+      - id: frontend-support-build
+        name: frontend build (tsc + vite)
+        entry: bash -c "cd app/support-frontend && npm run build"
+        language: system
+        files: ^app/support-frontend/
         pass_filenames: false
         stages:
           - pre-push

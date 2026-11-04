@@ -1,0 +1,5 @@
+{{ t('mail.email.account_closed.body') | striptags }}
+
+{{ t('mail.email.account_closed.clubs') }}
+
+{{ t('mail.email.account_closed.not_you') }}

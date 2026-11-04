@@ -165,7 +165,7 @@ def test_platform_admins_get_an_alert_for_a_new_case(client, club, db, deliver):
 def test_the_form_needs_a_title_and_a_description(client, club):
     assert _report(client, title="  ").status_code == 400
     assert _report(client, description="").status_code == 400
-    assert _report(client, kind="question").status_code == 400
+    assert _report(client, kind="praise").status_code == 400
     assert _report(client, severity="urgent").status_code == 400
     assert _report(client, title="x" * 201).status_code == 400
 
@@ -215,7 +215,7 @@ def test_staff_list_filter_and_counts(client, club, db):
     _staff(club, db)
     data = client.get(f"{STAFF}?status=active").get_json()
     assert data["total"] == 2
-    assert data["openCounts"] == {"bug": 1, "feature": 1}
+    assert data["openCounts"] == {"bug": 1, "feature": 1, "question": 0}
     first = data["items"][0]
     assert first["reporter"]["email"] == "admin@test.ch"
     assert first["club"]["name"] == "Club A"

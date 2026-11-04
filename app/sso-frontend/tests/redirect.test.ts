@@ -2,7 +2,7 @@
 // (Node's own test runner; Node strips the types).
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { clubAppUrl, signedInTarget, validateRedirect } from '../src/redirect.ts'
+import { clubAppUrl, movedToSupport, signedInTarget, validateRedirect } from '../src/redirect.ts'
 
 const urls = { cos: 'https://app.hubra.club', manage: 'https://manage.hubra.club' }
 
@@ -56,4 +56,22 @@ test('only web addresses, even on this portal', () => {
   assert.equal(validateRedirect('javascript:alert(1)', urls, { self }), null)
   assert.equal(validateRedirect('data:text/html,hi', urls, { self }), null)
   assert.equal(validateRedirect('https://login.hubra.club/clubs', urls, { self }), 'https://login.hubra.club/clubs')
+})
+
+test('the support site is a trusted target once configured', () => {
+  const withSupport = { ...urls, support: 'https://support.hubra.club' }
+  assert.equal(validateRedirect('https://support.hubra.club/roadmap', urls), null)
+  assert.equal(
+    validateRedirect('https://support.hubra.club/roadmap', withSupport),
+    'https://support.hubra.club/roadmap',
+  )
+  assert.equal(validateRedirect('https://evil.hubra.club/roadmap', withSupport), null)
+})
+
+test('old /roadmap and /status links go to the support site with their query', () => {
+  assert.equal(
+    movedToSupport('https://support.hubra.club/', '/status', '?club=fcx'),
+    'https://support.hubra.club/status?club=fcx',
+  )
+  assert.equal(movedToSupport('https://support.hubra.club', '/roadmap', ''), 'https://support.hubra.club/roadmap')
 })

@@ -345,6 +345,15 @@ SPECS: tuple[Spec, ...] = (
         "url",
     ),
     Spec(
+        "support.url",
+        "Support site address",
+        "Address of the support site (app/support-frontend): help, roadmap, "
+        "status and problem reports (https://support.hubra.club). Links in "
+        "mails to reporters point there. Empty: the club app's feedback page",
+        lambda cfg: cfg.get("SUPPORT_BASE_URL") or "",
+        "url",
+    ),
+    Spec(
         "perf.slow_request_ms",
         "Slow request",
         "API requests at least this long (ms) are counted as slow and written "

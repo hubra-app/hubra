@@ -30,7 +30,7 @@ for h in content-security-policy x-frame-options x-content-type-options; do
   echo "$headers" | grep -qi "^$h:" || fail "the club app does not send $h"
 done
 
-for port in "${ADMIN_FRONTEND_PORT:-8081}" "${SSO_FRONTEND_PORT:-8082}"; do
+for port in "${ADMIN_FRONTEND_PORT:-8081}" "${SSO_FRONTEND_PORT:-8082}" "${SUPPORT_FRONTEND_PORT:-8083}"; do
   curl -fsS -o /dev/null "http://localhost:$port/" || fail "nothing on port $port"
 done
 email=admin@smoke.test

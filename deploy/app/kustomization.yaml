@@ -35,7 +35,7 @@ configMapGenerator:
     files:
       - settings.yaml=../../settings.yaml
 
-# Runtime settings of the three SPA images (app/deploy/nginx/40-hubra-runtime.sh).
+# Runtime settings of the SPA images (app/deploy/nginx/40-hubra-runtime.sh).
 # Keep the host names in step with ingress.yaml.
   - name: hubra-frontend
     literals:
@@ -45,6 +45,7 @@ configMapGenerator:
       - VITE_TENANT_APP_URL=https://app.hubra.club
       - VITE_MANAGE_URL=https://manage.hubra.club
       - VITE_ADMIN_PORTAL_URL=https://manage.hubra.club
+      - VITE_SUPPORT_URL=https://support.hubra.club
       # k3s pod network: trust X-Forwarded-For from Traefik.
       - REAL_IP_FROM=10.42.0.0/16
 
@@ -71,6 +72,9 @@ images:
     newTag: latest
   - name: hubra/sso-frontend
     newName: ghcr.io/hubra-app/hubra/sso-frontend
+    newTag: latest
+  - name: hubra/support-frontend
+    newName: ghcr.io/hubra-app/hubra/support-frontend
     newTag: latest
   - name: hubra/mcp
     newName: ghcr.io/hubra-app/hubra/mcp

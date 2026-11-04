@@ -60,7 +60,7 @@ frontends:
   image: node:22-bookworm-slim
   parallel:
     matrix:
-      - APP: [frontend, admin-frontend, sso-frontend]
+      - APP: [frontend, admin-frontend, sso-frontend, support-frontend]
   cache:
     key: npm-$APP
     paths: [.cache/npm]
@@ -155,7 +155,7 @@ release-notes:
       # Wait for GitHub's images.yml to push this version (it starts when the
       # GitHub release is published), at most GHCR_WAIT_MINUTES.
       deadline=$(( $(date +%s) + ${GHCR_WAIT_MINUTES:-30} * 60 ))
-      for image in backend frontend admin-frontend sso-frontend haraka zonemta cert-watcher; do
+      for image in backend frontend admin-frontend sso-frontend support-frontend haraka zonemta cert-watcher; do
         d="$(digest "$image" || true)"
         while [ -z "$d" ] && [ "$(date +%s)" -lt "$deadline" ]; do
           echo "waiting for $GHCR_REPOSITORY/$image:$version"
