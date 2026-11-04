@@ -62,6 +62,7 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ### Fixed
 
+- **Plattform-Rollen waren leer**: manage › Rollen zeigte keine Plattform-Rollen und eine leere Liste der Berechtigungen, so liess sich keiner Rolle eine Berechtigung geben. Die Plattform-Berechtigungen und Standardrollen wurden nur von `flask seed-global-rbac` angelegt, das keine Installation ausführte. `flask sync-permissions` (läuft bei jedem Start) legt sie jetzt mit an. Standardrollen: Platform admin, Manager, Support, das neue Read-only und Requester. Eine bestehende Standardrolle behält ihre Berechtigungen; nur Platform admin, dessen Berechtigungen gesperrt sind, wird bei jedem Start ergänzt.
 - **Discord-Sicherheitsmeldung für Plattform-Admins auf einem neuen Gerät** wurde nach einer Konto-Anmeldung (SSO, manage) nie verschickt: Sie wartete auf ein Commit, das schon vorher kam. Sie wird jetzt vor diesem Commit eingereiht.
 
 ## [0.6.0] - 2026-07-13

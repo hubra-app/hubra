@@ -1,6 +1,6 @@
 # Fast checks on pull requests into main and on pushes to main: lint and the
-# unit tests, plus the browser tests on pull requests that change a
-# frontend. The slow checks (dependency audits, production builds, the
+# unit tests, plus the browser tests when a change reaches what the browser
+# sees (see "changes" below). The slow checks (dependency audits, production builds, the
 # Compose stack and the browser tests) run in release-checks.yml, on
 # release/* branches and before a release's images are built. docs/ci.md
 # explains the split and the branch protection rules that go with it.
@@ -50,7 +50,14 @@ jobs:
   #   backend tests      app/backend/, plugins/, settings.yaml
   #   connector tests    app/mcp/ (ruff + pytest, docs/mcp.md)
   #   frontend tests     app/*frontend/, packages/, plugins/
-  #   browser tests      the same paths, on pull requests only
+  #   browser tests      what the browser sees: app/*frontend/, packages/,
+  #                      plugins/, the backend code that serves the API
+  #                      (app/backend/ except tests/, Celery tasks and mail
+  #                      templates), migrations, the changelogs and the
+  #                      roadmap (What's new shows them), the Compose stack
+  #                      (docker-compose.yml, app/deploy/, settings.yaml)
+  #                      and the e2e setup (.github/e2e/, scripts/
+  #                      init-env.sh, smoke-test.sh, e2e-accounts.sh)
   # Text files are left out wherever they are: Markdown (*.md, so also
   # CHANGELOG.md and CHANGELOG.de.md), README files and .gitignore files. They
   # do not change what the code does; release-checks.yml (full: true) still
@@ -65,6 +72,7 @@ jobs:
       backend: ${{ steps.diff.outputs.backend }}
       mcp: ${{ steps.diff.outputs.mcp }}
       frontends: ${{ steps.diff.outputs.frontends }}
+      browser: ${{ steps.diff.outputs.browser }}
       lint: ${{ steps.diff.outputs.lint }}
       lint_backend: ${{ steps.diff.outputs.lint_backend }}
       lint_frontend: ${{ steps.diff.outputs.lint_frontend }}
@@ -84,19 +92,24 @@ jobs:
         run: |
           if [ "$FULL" = true ] || ! files=$(git diff --name-only "$BASE...$HEAD" 2>/dev/null); then
             # Full run, or unknown base (new branch, force push): run everything.
-            for o in backend mcp frontends lint lint_backend lint_frontend lint_admin lint_sso lint_support lint_deploy; do
+            for o in backend mcp frontends browser lint lint_backend lint_frontend lint_admin lint_sso lint_support lint_deploy; do
               echo "$o=true" >> "$GITHUB_OUTPUT"
             done
             exit 0
           fi
           echo "$files"
+          # The changelogs are Markdown but What's new shows them, so they
+          # count for the browser tests before the text files are dropped.
+          changelog=false
+          if echo "$files" | grep -qE '^app/backend/CHANGELOG(\.de)?\.md$'; then changelog=true; fi
           # Text files never run anything (see the list above).
           files=$(echo "$files" | grep -vE '(\.md|(^|/)README|(^|/)\.gitignore)$' || true)
-          # out NAME REGEX: NAME=true when a changed file matches REGEX or is
-          # ci.yml itself. lint=true when any lint_* output is true.
+          # out NAME REGEX [FORCE]: NAME=true when a changed file matches
+          # REGEX or is ci.yml itself, or FORCE is true. lint=true when any
+          # lint_* output is true.
           lint=false
           out() {
-            if echo "$files" | grep -qE "^($2|\.github/workflows/ci\.yml$)"; then
+            if [ "${3:-false}" = true ] || echo "$files" | grep -qE "^($2|\.github/workflows/ci\.yml$)"; then
               echo "$1=true" >> "$GITHUB_OUTPUT"
               case "$1" in lint_*) lint=true ;; esac
             else
@@ -106,12 +119,18 @@ jobs:
           out backend       'app/backend/|plugins/|settings\.yaml$'
           out mcp           'app/mcp/'
           out frontends     'app/(frontend|admin-frontend|sso-frontend|support-frontend)/|packages/|plugins/'
+          # Backend changes the browser cannot see (unit tests, Celery tasks,
+          # mail templates) are left out before the browser paths are checked.
+          all=$files
+          files=$(echo "$all" | grep -vE '^app/backend/(tests/|hubra/core/tasks/|hubra/templates/)' || true)
+          out browser       'app/(frontend|admin-frontend|sso-frontend|support-frontend)/|packages/|plugins/|app/backend/(hubra/|migrations/|Dockerfile$|requirements\.lock$|gunicorn\.conf\.py$|wsgi\.py$|ROADMAP\.yaml$)|app/deploy/|docker-compose\.yml$|settings\.yaml$|\.github/e2e/|scripts/(init-env|smoke-test|e2e-accounts)\.sh$' "$changelog"
+          files=$all
           out lint_backend  'app/backend/|plugins/'
           out lint_frontend 'app/frontend/|packages/|plugins/'
           out lint_admin    'app/admin-frontend/|packages/|plugins/'
           out lint_sso      'app/sso-frontend/|packages/|plugins/'
           out lint_support  'app/support-frontend/|packages/'
-          out lint_deploy   'docker-compose[^/]*\.yml$|\.env\.example$|settings\.yaml$|deploy/|modules/|scripts/|app/deploy/'
+          out lint_deploy   'docker-compose[^/]*\.yml$|\.env\.example$|settings\.yaml$|deploy/|modules/|scripts/|app/deploy/|\.github/e2e/'
           echo "lint=$lint" >> "$GITHUB_OUTPUT"
           cat "$GITHUB_OUTPUT"
 
@@ -186,6 +205,7 @@ jobs:
           docker compose config -q
           docker compose -f docker-compose.yml -f docker-compose.traefik.yml config -q
           docker compose -f docker-compose.yml -f modules/mail/docker-compose.mail.yml config -q
+          docker compose -f docker-compose.yml -f .github/e2e/docker-compose.e2e.yml config -q
       - name: Kustomize and kubeconform
         if: ${{ !cancelled() && needs.changes.outputs.lint_deploy != 'false' }}
         run: |
@@ -203,7 +223,7 @@ jobs:
             /tmp/app.yaml /tmp/vollbuild-ch.yaml /tmp/contabo.yaml /tmp/k8s.yaml
       - name: Shell scripts
         if: ${{ !cancelled() && needs.changes.outputs.lint_deploy != 'false' }}
-        run: shellcheck deploy/create-secrets.sh scripts/init-env.sh scripts/smoke-test.sh scripts/image-reuse.sh app/deploy/nginx/40-hubra-runtime.sh
+        run: shellcheck deploy/create-secrets.sh scripts/init-env.sh scripts/smoke-test.sh scripts/image-reuse.sh scripts/e2e-accounts.sh app/deploy/nginx/40-hubra-runtime.sh
 
   # Backend unit tests on in-memory SQLite (TestingConfig); no services needed.
   # pytest -n auto runs them on every CPU of the runner (pytest-xdist); each
@@ -284,52 +304,90 @@ jobs:
           npm ci
           npm test
 
-  # The browser tests (app/frontend/e2e) against the Compose stack, on pull
-  # requests that change a frontend, so a screen change that breaks them
-  # shows up here instead of at the next image build. Release checks run
-  # them on every build (compose-smoke), so a full run skips them here.
+  # The browser tests (app/frontend/e2e) against the Compose stack, when a
+  # change reaches what the browser sees (see "changes"): on pull requests,
+  # so a screen change that breaks them shows up before the merge, and on
+  # pushes to main, so a combination of two merges that breaks them shows up
+  # right after. Release checks run them on every build (compose-smoke), so a
+  # full run skips them here. docs/ci.md has the timings.
+  #
+  # What keeps it short:
+  # - The images build with Buildx and a layer cache in the GitHub Actions
+  #   cache, one scope per image. main fills it; a pull request reads main's
+  #   cache and its own from earlier pushes, so an unchanged image (often the
+  #   backend or two of the three frontends) is not rebuilt.
+  # - npm ci and the Playwright browser install run while the stack starts.
+  # - The tests run in E2E_WORKERS parallel workers, each with its own club
+  #   and account (scripts/e2e-accounts.sh, app/frontend/e2e/env.ts), so they
+  #   cannot see each other's changes. .github/e2e/docker-compose.e2e.yml
+  #   gives the backend the CPUs for that.
   browser-tests:
     needs: changes
-    if: github.event_name == 'pull_request' && !inputs.full && needs.changes.outputs.frontends == 'true'
+    if: >-
+      !inputs.full
+      && (github.event_name == 'pull_request' || github.event_name == 'push')
+      && needs.changes.outputs.browser != 'false'
     runs-on: ubuntu-latest
+    env:
+      COMPOSE_FILE: docker-compose.yml:.github/e2e/docker-compose.e2e.yml
+      E2E_WORKERS: "3"
+      E2E_APP_URL: http://localhost:8080
+      E2E_MANAGE_URL: http://localhost:8081
+      E2E_SSO_URL: http://localhost:8082
+      E2E_SUPPORT_URL: http://localhost:8083
+      E2E_CLUB: e2e
+      E2E_EMAIL: e2e@hubra.test
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Configure
-        # The e2e account is a platform admin that signs in with a password
+        # The e2e accounts are platform admins that sign in with a password
         # only, so the two-factor rule for staff is off for this stack.
         run: |
           scripts/init-env.sh
           echo "MFA_REQUIRED_FOR_STAFF=false" >> .env
           echo "STEP_UP_ENFORCED=false" >> .env
-      - run: docker compose build
-      - run: docker compose up -d
-      - run: scripts/smoke-test.sh
-      - name: Club and account for the browser tests
-        run: |
           password="E2e-Test-$(date +%s)!"
           echo "::add-mask::$password"
           echo "E2E_PASSWORD=$password" >> "$GITHUB_ENV"
-          docker compose exec -T backend flask provision-tenant \
-            --name "E2E Club" --slug e2e --admin-email e2e@hubra.test --admin-password "$password"
-          docker compose exec -T -e SUPERADMIN_EMAILS=e2e@hubra.test backend flask ensure-superadmins
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build the images (cached)
+        uses: docker/bake-action@59cb1203cd42bcefd40a1b6d73b589e48c86040e # v7.5.0
+        with:
+          source: .
+          files: docker-compose.yml
+          targets: backend,frontend,admin-frontend,sso-frontend,support-frontend
+          load: true
+          set: |
+            backend.cache-from=type=gha,scope=e2e-backend
+            backend.cache-to=type=gha,mode=max,scope=e2e-backend,ignore-error=true
+            frontend.cache-from=type=gha,scope=e2e-frontend
+            frontend.cache-to=type=gha,mode=max,scope=e2e-frontend,ignore-error=true
+            admin-frontend.cache-from=type=gha,scope=e2e-admin-frontend
+            admin-frontend.cache-to=type=gha,mode=max,scope=e2e-admin-frontend,ignore-error=true
+            sso-frontend.cache-from=type=gha,scope=e2e-sso-frontend
+            sso-frontend.cache-to=type=gha,mode=max,scope=e2e-sso-frontend,ignore-error=true
+            support-frontend.cache-from=type=gha,scope=e2e-support-frontend
+            support-frontend.cache-to=type=gha,mode=max,scope=e2e-support-frontend,ignore-error=true
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: app/frontend/package-lock.json
+      - name: Start the stack, install the test tools meanwhile
+        # The headless shell is all the tests launch; the full Chrome is not
+        # downloaded.
+        run: |
+          docker compose up -d --no-build > /tmp/compose-up.log 2>&1 &
+          up=$!
+          (cd app/frontend && npm ci && npx playwright install --with-deps --only-shell chromium)
+          wait "$up" || { cat /tmp/compose-up.log; exit 1; }
+          cat /tmp/compose-up.log
+          scripts/smoke-test.sh
+      - name: Clubs and accounts for the browser tests
+        run: scripts/e2e-accounts.sh
       - name: Browser tests
         working-directory: app/frontend
-        env:
-          E2E_APP_URL: http://localhost:8080
-          E2E_MANAGE_URL: http://localhost:8081
-          E2E_SSO_URL: http://localhost:8082
-          E2E_SUPPORT_URL: http://localhost:8083
-          E2E_CLUB: e2e
-          E2E_EMAIL: e2e@hubra.test
-        run: |
-          npm ci
-          npx playwright install --with-deps chromium
-          npm run test:e2e
+        run: npm run test:e2e
       - if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
