@@ -39,6 +39,7 @@ _COPIED = (
     "max_attendees",
     "requires_approval",
     "is_public",
+    "trial_spots",
     "cover_image_url",
     "color",
     "group_id",

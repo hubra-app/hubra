@@ -688,3 +688,8 @@ def public_links():
             "upcoming": int(count or 0),
         }
     ), 200
+
+
+# Trial trainings (public trial page and the trainers' list) add their routes
+# to this blueprint.
+from hubra.api.events import trials  # noqa: E402,F401

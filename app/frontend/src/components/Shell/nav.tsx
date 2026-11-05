@@ -434,6 +434,7 @@ export function getBreadcrumb(
     '/app/groups': t('shell.breadcrumbs.groups'),
     '/app/operations/events': t('shell.breadcrumbs.events'),
     '/app/operations/events/attendance': t('shell.breadcrumbs.attendance'),
+    '/app/operations/events/trials': t('shell.breadcrumbs.trials'),
     '/app/operations/polls': t('shell.breadcrumbs.polls'),
     '/app/operations/posts': t('shell.breadcrumbs.posts'),
     '/app/finance': t('shell.breadcrumbs.finance'),

@@ -56,6 +56,11 @@ module = Module(
         "events_bp.calendar_feed",
         "events_bp.public_calendar",
         "events_bp.public_events",
+        # The trial page: people who aren't members book a trial training.
+        "events_bp.public_trials",
+        "events_bp.public_trial_signup",
+        "events_bp.public_trial_confirm",
+        "events_bp.public_trial_cancel",
     ),
     tables=(
         "event_series",
@@ -63,6 +68,7 @@ module = Module(
         "event_attendees",
         "event_registrations",
         "event_attendance",
+        "trial_signups",
     ),
     tasks=("hubra.core.tasks.reminder_tasks",),
     schedule=(

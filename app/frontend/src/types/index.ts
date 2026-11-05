@@ -124,6 +124,8 @@ export interface ClubEvent {
   maxAttendees?: number | null;
   requiresApproval?: boolean;
   isPublic?: boolean;
+  /** Places for people who aren't members yet (trial training). */
+  trialSpots?: number | null;
   coverImageUrl?: string | null;
   color?: string | null;
   registrationCount?: number;

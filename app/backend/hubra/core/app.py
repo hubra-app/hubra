@@ -862,6 +862,8 @@ def _register_cli(app: Flask) -> None:
                 "events.events.delete",
                 "events.events.add_attendee",
                 "events.events.remove_attendee",
+                "events.trials.read",
+                "events.trials.manage",
             ],
             "Manage polls": [
                 "polls.polls.create",

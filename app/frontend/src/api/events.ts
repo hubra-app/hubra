@@ -17,6 +17,7 @@ interface BackendEvent {
   max_attendees: number | null;
   requires_approval: boolean;
   is_public: boolean;
+  trial_spots?: number | null;
   cover_image_url: string | null;
   color: string | null;
   registration_count: number;
@@ -77,6 +78,7 @@ function adapt(b: BackendEvent): ClubEvent {
     maxAttendees: b.max_attendees ?? null,
     requiresApproval: b.requires_approval ?? false,
     isPublic: b.is_public ?? false,
+    trialSpots: b.trial_spots ?? null,
     coverImageUrl: b.cover_image_url ?? null,
     color: b.color ?? null,
     registrationCount: b.registration_count ?? 0,
@@ -119,6 +121,8 @@ export interface EventCreate {
   maxAttendees?: number | null;
   requiresApproval?: boolean;
   isPublic?: boolean;
+  /** Places for people who aren't members yet (trial training). */
+  trialSpots?: number | null;
   coverImageUrl?: string;
   color?: string;
   /** The group the event is for (its members are expected). */
@@ -146,6 +150,7 @@ export async function createEvent(input: EventCreate): Promise<ClubEvent> {
   if (input.maxAttendees !== undefined) body.max_attendees = input.maxAttendees;
   if (input.requiresApproval !== undefined) body.requires_approval = input.requiresApproval;
   if (input.isPublic !== undefined) body.is_public = input.isPublic;
+  if (input.trialSpots !== undefined) body.trial_spots = input.trialSpots;
   if (input.coverImageUrl !== undefined) body.cover_image_url = input.coverImageUrl;
   if (input.color !== undefined) body.color = input.color;
   if (input.groupId !== undefined)
@@ -180,6 +185,7 @@ export async function updateEvent(
   if (input.maxAttendees !== undefined) body.max_attendees = input.maxAttendees;
   if (input.requiresApproval !== undefined) body.requires_approval = input.requiresApproval;
   if (input.isPublic !== undefined) body.is_public = input.isPublic;
+  if (input.trialSpots !== undefined) body.trial_spots = input.trialSpots;
   if (input.coverImageUrl !== undefined) body.cover_image_url = input.coverImageUrl;
   if (input.color !== undefined) body.color = input.color;
   if (input.groupId !== undefined)
@@ -509,4 +515,52 @@ export async function getPublicEventLinks(): Promise<{
   upcoming: number;
 }> {
   return apiFetch("/app/events/public-links");
+}
+
+// ── Trial trainings ──────────────────────────────────────────────────────────
+
+export type TrialStatus = "confirmed" | "attended" | "no_show" | "cancelled" | "invited";
+
+export interface TrialSignup {
+  id: number;
+  eventId: number;
+  eventTitle: string;
+  eventDate: string;
+  eventTime: string | null;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string | null;
+  birthDate: string | null;
+  message: string | null;
+  status: TrialStatus;
+  createdAt: string;
+  confirmedAt: string | null;
+  invitedAt: string | null;
+}
+
+export interface TrialOverview {
+  trials: TrialSignup[];
+  /** Upcoming trainings that take trials, with their places. */
+  events: { id: number; title: string; date: string; spots: number; taken: number }[];
+}
+
+export async function listTrials(past = false): Promise<TrialOverview> {
+  return apiFetch(`/app/events/trials${past ? "?past=1" : ""}`);
+}
+
+export async function setTrialStatus(id: number, status: TrialStatus): Promise<TrialSignup> {
+  return apiFetch(`/app/events/trials/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}
+
+/** Invite the person to join as a trial member (the club's invite mail). */
+export async function inviteTrial(id: number): Promise<TrialSignup> {
+  return apiFetch(`/app/events/trials/${id}/invite`, { method: "POST" });
+}
+
+export async function deleteTrial(id: number): Promise<void> {
+  await apiFetch(`/app/events/trials/${id}`, { method: "DELETE" });
 }

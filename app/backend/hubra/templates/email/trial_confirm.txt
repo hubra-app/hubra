@@ -1,0 +1,9 @@
+{{ t('mail.email.trial_confirm.greeting', name=name) }}
+
+{{ t('mail.email.trial_confirm.intro', club_name=club_name, event_title=event_title, when=when) }}
+{{ location }}
+
+{{ t('mail.email.trial_confirm.cta_text') }}
+{{ confirm_url }}
+
+{{ t('mail.email.trial_confirm.ignore') }}
