@@ -245,6 +245,14 @@ function PrivateRoutes() {
                   }
                 />
                 <Route
+                  path="members/stats"
+                  element={
+                    <RequirePermission permKey="members.members.read">
+                      <MembersTabScreen />
+                    </RequirePermission>
+                  }
+                />
+                <Route
                   path="members/tiers"
                   element={
                     <RequirePermission permKey="tiers.tiers.read">

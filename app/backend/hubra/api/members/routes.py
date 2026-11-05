@@ -919,3 +919,6 @@ def revoke_member_sessions(member_id: int):
     db.session.commit()
 
     return jsonify({"ok": True, "revoked": count}), 200
+
+
+from hubra.api.members import stats  # noqa: E402,F401  (registers /members/stats)

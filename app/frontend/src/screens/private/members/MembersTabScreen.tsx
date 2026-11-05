@@ -6,6 +6,7 @@ import { MembersTab } from '@/screens/private/members/MembersTab'
 import { FunctionsTab } from '@/screens/private/members/FunctionsTab'
 import { ApplicationsTab } from '@/screens/private/members/ApplicationsTab'
 import { TiersTab } from '@/screens/private/members/TiersTab'
+import { StatsTab } from '@/screens/private/members/StatsTab'
 
 /**
  * Members with functions and tiers as tabs of one screen. Applications are a
@@ -26,13 +27,15 @@ export function MembersTabScreen() {
     { id: 'all', label: t('shell.nav.members', 'Mitglieder') },
     { id: 'functions', label: t('shell.nav.functions', 'Funktionen') },
     { id: 'tiers', label: t('shell.nav.membershipTiers', 'Stufen') },
+    { id: 'stats', label: t('members.stats.tab', 'Statistik') },
   ].filter(
     (tb) =>
       (tb.id === 'all' && hasPermission('members.members.read')) ||
       (tb.id === 'functions' &&
         modules.functions &&
         hasPermission('functions.functions.read')) ||
-      (tb.id === 'tiers' && hasPermission('tiers.tiers.read')),
+      (tb.id === 'tiers' && hasPermission('tiers.tiers.read')) ||
+      (tb.id === 'stats' && hasPermission('members.members.read')),
   )
 
   // Someone who may only see, say, the tiers lands on that tab.
@@ -60,6 +63,7 @@ export function MembersTabScreen() {
       {tab === 'all' && <MembersTab />}
       {tab === 'functions' && <FunctionsTab />}
       {tab === 'tiers' && <TiersTab />}
+      {tab === 'stats' && <StatsTab />}
     </div>
   )
 }

@@ -58,6 +58,7 @@ export const qk = {
     search: (q: string) => ['members', 'search', q] as const,
     list: (...filters: unknown[]) => ['members', 'list', ...filters] as const,
     invites: ['members', 'invites'] as const,
+    stats: (on: string, year: number) => ['members', 'stats', on, year] as const,
   },
   applications: ['applications'] as const,
   leaveRequests: ['leave-requests'] as const,

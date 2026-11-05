@@ -2022,6 +2022,25 @@
     "filter": {
       "show": "Anzeigen",
       "current": "Aktuelle Mitglieder"
+    },
+    "stats": {
+      "tab": "Statistik",
+      "on": "Stichtag",
+      "onHint": "Wer an diesem Tag Mitglied war",
+      "year": "Jahr",
+      "yearHint": "Ein- und Austritte",
+      "csv": "Als Tabelle (CSV)",
+      "total": "Mitglieder am Stichtag",
+      "joins": "Eintritte {{year}}",
+      "leaves": "Austritte {{year}}",
+      "openFees": "Offene Rechnungen",
+      "overdue": "{{count}} überfällig, {{amount}}",
+      "ages": "Alter am Stichtag",
+      "ageUnknown": "Ohne Geburtsdatum: {{count}}",
+      "months": "Ein- und Austritte {{year}}",
+      "byStatus": "Nach Status",
+      "byTier": "Nach Stufe",
+      "todayNote": "Status und Stufe sind die heutigen."
     }
   },
   "notifications": {
@@ -2279,7 +2298,8 @@
       "feeBasis": "Finanzen › Beitragsgrundlage",
       "attendance": "Vereinsleben › Anwesenheit",
       "annualAccounts": "Jahresrechnung",
-      "bankAccount": "Finanzen › Bank & QR-Rechnung"
+      "bankAccount": "Finanzen › Bank & QR-Rechnung",
+      "memberStats": "Mitglieder › Statistik"
     },
     "emailVerify": {
       "banner": "Deine private E-Mail-Adresse ist noch nicht bestätigt. Einige Funktionen sind erst danach verfügbar.",

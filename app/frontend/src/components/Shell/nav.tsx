@@ -430,6 +430,7 @@ export function getBreadcrumb(
     '/app/members/applications': t('shell.breadcrumbs.applications'),
     '/app/members/tiers': t('shell.breadcrumbs.tiers'),
     '/app/members/functions': t('shell.breadcrumbs.functions'),
+    '/app/members/stats': t('shell.breadcrumbs.memberStats'),
     '/app/groups': t('shell.breadcrumbs.groups'),
     '/app/operations/events': t('shell.breadcrumbs.events'),
     '/app/operations/events/attendance': t('shell.breadcrumbs.attendance'),
