@@ -129,9 +129,10 @@ def check(module, spec, taken_prefixes: dict[str, str], core_tables: set[str]):
     for bp in module.blueprints:
         new = club_prefix(bp.url_prefix)
         for other, owner in taken_prefixes.items():
-            # A blueprint on a bare area root (/api/v1/app) holds a few
+            # A blueprint on the root or a bare area root (/api/v1/app),
+            # such as OAuth's /.well-known and /oauth routes, holds a few
             # routes of its own; it doesn't own everything below it.
-            if owner == module.code or other in (V1, APP, GLOBAL, PLATFORM):
+            if owner == module.code or other in ("/", V1, APP, GLOBAL, PLATFORM):
                 continue
             if _under(new, other) or _under(other, new):
                 raise LimitError(
