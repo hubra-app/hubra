@@ -236,18 +236,43 @@ jobs:
           # published complete: created with its files, or a draft filled first.
           files=(out/images.yaml out/images.txt out/SHA256SUMS)
           pre=(); if [ "$PRERELEASE" = true ]; then pre=(--prerelease); fi
-          draft=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft -q .isDraft 2>/dev/null || echo none)
-          case "$draft" in
-            none)
-              gh release create "$TAG" "${files[@]}" "${pre[@]}" --verify-tag --title "Hubra $VERSION" \
-                --notes-file notes.md --repo "$GITHUB_REPOSITORY" ;;
-            true)
-              gh release upload "$TAG" "${files[@]}" --clobber --repo "$GITHUB_REPOSITORY"
-              gh release edit "$TAG" "${pre[@]}" --notes-file notes.md --draft=false --repo "$GITHUB_REPOSITORY" ;;
-            *)
-              echo "::error::release $TAG is already published; bump the version and push a new tag"
-              exit 1 ;;
-          esac
+          # The release's state: none (404), draft, published. Any other answer
+          # (a 500, a timeout) stops here with GitHub's message instead of being
+          # taken for one of them.
+          state() {
+            local out
+            if out=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq 'if .draft then "draft" else "published" end' 2>&1); then
+              echo "$out"
+            elif grep -q "HTTP 404" <<<"$out"; then
+              echo none
+            else
+              echo "::error::could not read release $TAG: $out" >&2
+              return 1
+            fi
+          }
+          # GitHub's API sometimes answers 5xx; try three times, reading the state
+          # again each time, since a failed create can still have made a draft.
+          for attempt in 1 2 3; do
+            st=$(state) || exit 1
+            case "$st" in
+              none)
+                gh release create "$TAG" "${files[@]}" "${pre[@]}" --verify-tag --title "Hubra $VERSION" \
+                  --notes-file notes.md --repo "$GITHUB_REPOSITORY" && exit 0 ;;
+              draft)
+                gh release upload "$TAG" "${files[@]}" --clobber --repo "$GITHUB_REPOSITORY" &&
+                  gh release edit "$TAG" "${pre[@]}" --notes-file notes.md --draft=false --repo "$GITHUB_REPOSITORY" &&
+                  exit 0 ;;
+              published)
+                if [ "$attempt" = 1 ]; then
+                  echo "::error::release $TAG is already published; bump the version and push a new tag"
+                  exit 1
+                fi
+                echo "release $TAG got published by the previous attempt"; exit 0 ;;
+            esac
+            if [ "$attempt" = 3 ]; then echo "::error::publishing release $TAG failed 3 times"; exit 1; fi
+            echo "::warning::publishing release $TAG failed (attempt $attempt), trying again"
+            sleep $((attempt * 20))
+          done
 
   branch:
     needs: [check, release]

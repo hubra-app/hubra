@@ -51,6 +51,15 @@ jobs:
 
           # The commit the tag points at (annotated tags point at a tag object).
           sha="$(gh api "repos/$GITHUB_REPOSITORY/commits/$TAG" --jq .sha)"
-          gh api "repos/$GITHUB_REPOSITORY/git/refs" --method POST \
-            -f ref="refs/heads/$branch" -f sha="$sha" --silent
+          # The GITHUB_TOKEN can never get the `workflows` permission, so GitHub
+          # refuses (403) a new branch whose workflow files differ from main's,
+          # e.g. when main changed a workflow after the tag. The release is out
+          # by then; say how to make the branch by hand instead of failing it.
+          if ! out=$(gh api "repos/$GITHUB_REPOSITORY/git/refs" --method POST \
+                -f ref="refs/heads/$branch" -f sha="$sha" --silent 2>&1); then
+            cmd="gh api repos/$GITHUB_REPOSITORY/git/refs -f ref=refs/heads/$branch -f sha=$sha"
+            echo "::warning::could not create $branch ($out). Create it yourself: $cmd"
+            printf 'Could not create `%s` (%s). Create it yourself:\n\n    %s\n' "$branch" "$out" "$cmd" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           echo "Created \`$branch\` at ${sha::7} ($TAG)." >> "$GITHUB_STEP_SUMMARY"
