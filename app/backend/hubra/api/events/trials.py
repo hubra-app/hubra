@@ -30,12 +30,12 @@ from hubra.core.permissions import member_has_permission, permission_required
 TRIAL_DAYS_AHEAD = 60
 # An unconfirmed booking holds its place this long, then frees it.
 PENDING_HOLD = timedelta(hours=24)
-# A booking the club no longer needs is deleted this long after its training
-# (unless the person was invited to join).
-KEEP_AFTER = timedelta(days=180)
+# Bookings the club no longer needs are deleted by a daily job
+# (hubra.core.tasks.reminder_tasks.purge_trial_signups_task).
 MANAGE_KEY = "events.trials.manage"
 
-_TAKING = ("confirmed", "attended")
+# "invited" too: someone asked to join before the training still comes to it.
+_TAKING = ("confirmed", "attended", "invited")
 _STATUSES = ("confirmed", "attended", "no_show", "cancelled")
 
 
@@ -43,21 +43,24 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def places_taken(event_id: int) -> int:
-    """Confirmed bookings, and unconfirmed ones still holding their place."""
+def places_taken(event_id: int, excluding: int | None = None) -> int:
+    """Confirmed bookings, and unconfirmed ones still holding their place
+    (without the booking *excluding*)."""
     since = _now() - PENDING_HOLD
-    return int(
-        db.session.scalar(
-            select(func.count(TrialSignup.id)).where(
-                TrialSignup.event_id == event_id,
-                (TrialSignup.status.in_(_TAKING))
-                | (
-                    (TrialSignup.status == "pending")
-                    & (TrialSignup.created_at >= since)
-                ),
-            )
-        )
-        or 0
+    query = select(func.count(TrialSignup.id)).where(
+        TrialSignup.event_id == event_id,
+        (TrialSignup.status.in_(_TAKING))
+        | ((TrialSignup.status == "pending") & (TrialSignup.created_at >= since)),
+    )
+    if excluding is not None:
+        query = query.where(TrialSignup.id != excluding)
+    return int(db.session.scalar(query) or 0)
+
+
+def _lock_event(event_id: int) -> None:
+    """One booking at a time per event, so two people don't take the last place."""
+    db.session.execute(
+        select(ClubEvent.id).where(ClubEvent.id == event_id).with_for_update()
     )
 
 
@@ -190,8 +193,18 @@ def public_trials(slug: str):
     return resp
 
 
+def _address_key() -> str:
+    """Rate-limit key for the booking mails: the address they go to."""
+    data = request.get_json(silent=True) or {}
+    email = str(data.get("email") or "").strip().lower()[:255]
+    return f"trial-mail:{email}"
+
+
 @events_bp.post("/public/<string:slug>/trials")
 @limiter.limit("10 per hour")
+# Per address, whatever the IP: booking mails can't be used to flood
+# someone's inbox from many machines.
+@limiter.limit("5 per day", key_func=_address_key)
 def public_trial_signup(slug: str):
     """Book a trial training. It counts once the address is confirmed."""
     tenant = _public_club(slug)
@@ -229,10 +242,7 @@ def public_trial_signup(slug: str):
     if event is None:
         raise_error(404, "NOT_FOUND", "This training takes no trial bookings")
 
-    # One place at a time per event, so two people don't take the last one.
-    db.session.execute(
-        select(ClubEvent.id).where(ClubEvent.id == event.id).with_for_update()
-    )
+    _lock_event(event.id)
     taken = db.session.scalar(
         select(TrialSignup).where(
             TrialSignup.event_id == event.id,
@@ -241,11 +251,12 @@ def public_trial_signup(slug: str):
         )
     )
     if taken is not None:
-        if taken.status == "pending":
-            # Lost the mail: send it again instead of a second booking.
+        # Lost the mail: send the booking's link again instead of a second
+        # booking. The answer is the same as for a new booking, so the form
+        # doesn't tell anyone whether an address booked a training.
+        if taken.status in ("pending", "confirmed"):
             _send_confirm(taken, tenant.slug, data.get("lang"))
-            return jsonify({"status": "pending"}), 201
-        raise_error(409, "ALREADY_BOOKED", "This address already booked the training")
+        return jsonify({"status": "pending"}), 201
     if places_taken(event.id) >= (event.trial_spots or 0):
         raise_error(409, "EVENT_FULL", "No trial places left for this training")
 
@@ -279,6 +290,16 @@ def public_trial_confirm(slug: str):
     if signup is None:
         return api_error("NOT_FOUND", "Unknown or expired link", 404)
     if signup.status == "pending":
+        # A booking confirmed after its hold ran out lost its place in the
+        # meantime: it only counts if one is still free (and the training
+        # still takes trials).
+        _lock_event(signup.event_id)
+        event = signup.event
+        if places_taken(event.id, excluding=signup.id) >= (event.trial_spots or 0):
+            db.session.rollback()
+            return api_error(
+                "EVENT_FULL", "No trial places left for this training", 409
+            )
         signup.status = "confirmed"
         signup.confirmed_at = _now()
         _tell_staff(signup)
@@ -326,32 +347,10 @@ def _dump(signup: TrialSignup) -> dict:
     }
 
 
-def _purge_old() -> None:
-    """Bookings are personal data the club only needs around the training."""
-    cutoff = date.today() - KEEP_AFTER
-    old = select(ClubEvent.id).where(ClubEvent.date < cutoff)
-    for signup in db.session.scalars(
-        select(TrialSignup).where(
-            TrialSignup.event_id.in_(old), TrialSignup.status != "invited"
-        )
-    ):
-        db.session.delete(signup)
-    # Unconfirmed ones nobody will open any more.
-    for signup in db.session.scalars(
-        select(TrialSignup).where(
-            TrialSignup.status == "pending",
-            TrialSignup.created_at < _now() - timedelta(days=7),
-        )
-    ):
-        db.session.delete(signup)
-
-
 @events_bp.get("/trials")
 @permission_required("trials", "read", "View trial trainings")
 def list_trials():
     """Trial bookings: upcoming by default, ``?past=1`` for the last months."""
-    _purge_old()
-    db.session.commit()
     past = request.args.get("past") in ("1", "true")
     today = date.today()
     query = select(TrialSignup).join(ClubEvent).where(TrialSignup.status != "pending")

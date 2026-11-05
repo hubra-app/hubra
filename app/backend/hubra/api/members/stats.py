@@ -167,6 +167,9 @@ def _args():
         on = date.fromisoformat(request.args["on"]) if request.args.get("on") else today
     except ValueError:
         return None, api_error("VALIDATION_ERROR", "on must be YYYY-MM-DD", 400)
+    # date.max would overflow the end-of-day bound (a 500).
+    if not date(1900, 1, 1) <= on <= date(today.year + 1, 12, 31):
+        return None, api_error("VALIDATION_ERROR", "on is out of range", 400)
     year = request.args.get("year", type=int) or today.year
     if not 1900 <= year <= today.year + 1:
         return None, api_error("VALIDATION_ERROR", "year is out of range", 400)

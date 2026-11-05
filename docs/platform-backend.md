@@ -94,10 +94,8 @@ The club permission catalog comes from the club routes and plugins, so only
 a backend that loads them fills it (`roles.loads_club_routes`: roles `all`,
 `club`, `app`). On k3s that is the app backend's `club-permissions` init
 container, after `schema-wait`; with `docker-compose.platform.yml` the
-`club-init` step. The platform init step runs without `HUBRA_ROLE` while the
-platform image still holds every route, so it fills the catalog too; once
-each role has its own image it runs with `HUBRA_ROLE=platform` and seeds only
-the platform roles. A club
+`club-init` step. The platform init step runs from the platform image, which
+sets `HUBRA_ROLE=platform` itself, so it seeds only the platform roles. A club
 permission checked by a route of another area (connected apps and
 translation suggestions, on the global backend) is declared in the `core`
 module's `permissions` too, so the app backend keeps it in the catalog;
@@ -212,7 +210,7 @@ club ones included, so it must be at least as new as the club code.
 
 ```yaml
 images:
-  - name: ghcr.io/hubra-app/hubra/backend
+  - name: ghcr.io/hubra-app/hubra/app-backend
     newTag: 1.5.0
   - name: ghcr.io/hubra-app/hubra/global-backend
     newTag: 1.5.0
@@ -220,9 +218,9 @@ images:
     newTag: 1.5.1   # platform-only fix on top of 1.5.0
 ```
 
-A release publishes all three names with the same tags (`images.yml` copies
-the backend manifest to `global-backend` and `platform-backend`, no second
-build).
+A release tags every image with its version; a role image whose files did
+not change keeps its last build's digest (see [Images](#images)). Paste the
+digest block from the release over the overlay's `images:` to pin by digest.
 
 ### Scaling
 
@@ -271,11 +269,12 @@ restore before it is stopped.
 ## Moving an existing cluster to the split
 
 1. Publish a release (or run Images by hand) from a commit that has this
-   change, so `global-backend` and `platform-backend` exist in GHCR with the
-   same tags as `backend`. The workflow creates the new packages. Check in
-   the org's Packages that both have the same visibility as `backend`, so the
+   change, so `app-backend`, `global-backend` and `platform-backend` exist
+   in GHCR. The workflow creates the new packages. Check in
+   the org's Packages that all three have the same visibility as `backend`, so the
    `ghcr-pull` token can pull them.
-2. Set all three tags in the overlay to that build in the same commit.
+2. Set all three role images in the overlay to that build in the same
+   commit.
 3. Flux applies it: `platform-backend` runs the migrations, the new `backend`
    and `global-backend` pods wait for them, the Ingress starts sending each
    area to its backend, and `platform-worker` starts taking the platform
@@ -288,9 +287,8 @@ on the club worker (it has the same code); only new ones go to `platform`.
 
 ## Shared code and area code
 
-The three images are still one build of the same code; each role answers
-only its own paths (`hubra/core/roles.py`). To make an image per area
-possible later, the code keeps one direction:
+Each role image holds only its role's files and answers only its own paths
+(`hubra/core/roles.py`). That works because the code keeps one direction:
 
 - `hubra/core` is shared by every backend: models, migrations, sign-in and
   tokens (`core/auth`), permissions, settings, notifications, version and
@@ -307,11 +305,6 @@ the list may only shrink. Old module names that plugins import
 Hubra's own code uses the new names.
 
 ## Not split (yet)
-
-- **Images.** All three names are the same image (see above). A dedicated
-  image per area needs the rest of `CORE_TO_API_LEFT` moved to the app area,
-  route modules that serve two areas split, and each role loading only its
-  own routes.
 
 - **Database rights.** All backends use the same Postgres role. A separate,
   narrower role per side needs an audit of which platform tables club code

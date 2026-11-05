@@ -15,6 +15,7 @@ import { qk } from '@/data/keys'
 import { formatDateTime } from '@/format'
 import { useT } from '@/locales/i18n'
 import { SignInAppsSection } from './SignInAppsSection'
+import { WebhooksSection } from './WebhooksSection'
 
 /**
  * Einstellungen › API & Apps: who may reach the club's data from outside
@@ -101,6 +102,8 @@ export function ApiAccessTab() {
       </Paper>
 
       <SignInAppsSection />
+
+      <WebhooksSection />
 
       <Stack gap="sm">
         <Title order={4}>{t('apiAccess.active', 'Aktive Zugänge')}</Title>

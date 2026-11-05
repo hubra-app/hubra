@@ -22,8 +22,9 @@ start a release. Any other tag runs nothing.
 ## Images
 
 Every image is built once, by `.github/workflows/images.yml`, and lives at
-`ghcr.io/hubra-app/hubra/<image>` (`backend`, `frontend`, `admin-frontend`,
-`sso-frontend`, `haraka`, `zonemta`, `cert-watcher`):
+`ghcr.io/hubra-app/hubra/<image>` (`backend`, `app-backend`,
+`global-backend`, `platform-backend`, `mcp`, `frontend`, `admin-frontend`,
+`sso-frontend`, `support-frontend`, `haraka`, `zonemta`, `cert-watcher`):
 
 | Tag | Pushed by |
 | --- | --- |

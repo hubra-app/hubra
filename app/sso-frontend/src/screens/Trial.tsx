@@ -324,6 +324,15 @@ function TrialBookingView({ slug, token }: { slug: string; token: string }) {
     confirmNow()
   }, [confirmNow])
 
+  if (confirm.isError && (confirm.error as { code?: string }).code === 'EVENT_FULL')
+    return (
+      <Alert color="orange" title={tr('Leider ausgebucht', 'Fully booked')}>
+        {tr(
+          'Du hast die Buchung nicht rechtzeitig bestätigt, und inzwischen sind alle Plätze vergeben. Wähle auf der Schnupperseite ein anderes Training.',
+          "You didn't confirm the booking in time, and all places have been taken since. Pick another training on the trial page.",
+        )}
+      </Alert>
+    )
   if (confirm.isError)
     return (
       <Alert color="red" title={tr('Link ungültig', 'Invalid link')}>

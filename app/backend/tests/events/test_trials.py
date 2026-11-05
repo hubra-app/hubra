@@ -149,6 +149,35 @@ def test_validation_full_and_duplicates(anon, training, mails):
     assert _book(anon, training.id, email="max@example.ch").status_code == 201
 
 
+def test_booking_again_tells_nothing_about_the_address(anon, training, mails):
+    """A second booking with a known address answers like a new one: the
+    form can't be used to find out who booked a training."""
+    assert _book(anon, training.id).status_code == 201
+    token = _token(mails[0])
+    anon.post(f"{BASE}/confirm", json={"token": token}, headers={"Authorization": ""})
+
+    again = _book(anon, training.id)
+    assert again.status_code == 201 and again.get_json() == {"status": "pending"}
+    # The person gets their link again (it also cancels), no second booking.
+    assert len(mails) == 2 and _token(mails[1]) == token
+    assert db.session.query(TrialSignup).count() == 1
+
+    db.session.query(TrialSignup).update({"status": "attended"})
+    db.session.commit()
+    again = _book(anon, training.id)
+    assert again.status_code == 201 and again.get_json() == {"status": "pending"}
+    assert len(mails) == 2
+
+
+def test_booking_mails_are_limited_per_address(app):
+    from hubra.api.events.trials import _address_key
+
+    with app.test_request_context(json={"email": " Lea@Example.CH "}):
+        assert _address_key() == "trial-mail:lea@example.ch"
+    with app.test_request_context(data="not json"):
+        assert _address_key() == "trial-mail:"
+
+
 def test_honeypot_stores_nothing(anon, training, mails):
     assert _book(anon, training.id, website="http://spam").status_code == 201
     assert db.session.query(TrialSignup).count() == 0 and mails == []
@@ -261,3 +290,74 @@ def test_trial_spots_on_events(client, auth_headers):
         ).status_code
         == 400
     )
+
+
+def test_late_confirm_does_not_overbook(anon, training, mails):
+    """A booking confirmed after its hold ran out only counts if a place is
+    still free; the places others took in the meantime stay theirs."""
+    _book(anon, training.id)
+    late = _token(mails[-1])
+    db.session.query(TrialSignup).update(
+        {"created_at": datetime.now(timezone.utc) - timedelta(hours=25)}
+    )
+    db.session.commit()
+    _confirmed(anon, training, mails, email="tom@example.ch")
+    _confirmed(anon, training, mails, email="max@example.ch")
+
+    resp = anon.post(
+        f"{BASE}/confirm", json={"token": late}, headers={"Authorization": ""}
+    )
+    assert resp.status_code == 409 and resp.get_json()["error"] == "EVENT_FULL"
+    signup = db.session.query(TrialSignup).filter_by(email="lea@example.ch").one()
+    assert signup.status == "pending"
+
+
+def test_late_confirm_with_a_free_place(anon, training, mails):
+    _book(anon, training.id)
+    db.session.query(TrialSignup).update(
+        {"created_at": datetime.now(timezone.utc) - timedelta(hours=25)}
+    )
+    db.session.commit()
+    resp = anon.post(
+        f"{BASE}/confirm",
+        json={"token": _token(mails[-1])},
+        headers={"Authorization": ""},
+    )
+    assert resp.status_code == 200 and resp.get_json()["status"] == "confirmed"
+
+
+def test_invited_keeps_the_place(anon, training, mails):
+    from hubra.api.events.trials import places_taken
+
+    signup = _confirmed(anon, training, mails)
+    signup.status = "invited"
+    db.session.commit()
+    assert places_taken(training.id) == 1
+
+
+def test_listing_deletes_nothing_the_daily_job_does(
+    client, auth_headers, training, mails
+):
+    from hubra.core.tasks.reminder_tasks import purge_trial_signups
+
+    old = db.session.query(ClubEvent).filter_by(title="Old training").one()
+    old.date = date.today() - timedelta(days=200)
+    db.session.add(
+        TrialSignup(
+            event_id=old.id,
+            first_name="Ada",
+            last_name="Alt",
+            email="ada@example.ch",
+            token="old-token",
+            status="attended",
+        )
+    )
+    db.session.commit()
+    assert (
+        client.get("/api/v1/events/trials?past=1", headers=auth_headers).status_code
+        == 200
+    )
+    assert db.session.query(TrialSignup).filter_by(email="ada@example.ch").count() == 1
+    assert purge_trial_signups() == 1
+    db.session.commit()
+    assert db.session.query(TrialSignup).filter_by(email="ada@example.ch").count() == 0

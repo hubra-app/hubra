@@ -5,12 +5,12 @@ React SPA for club management (members, finance, events, polls, mail, and more).
 ## Stack
 
 - **React 19** + **TypeScript 6** + **Vite 8**
-- **Mantine 7** — UI components, forms, notifications
+- **Mantine 9** — UI components, forms, notifications
 - **TanStack Query 5** — server state, cache, automatic refetch
 - **zod** + `mantine-form-zod-resolver` — form validation
 - **React Router 7** — client-side routing
 - **Playwright** — E2E tests
-- Custom CSS design system (`src/index.css`)
+- The shared theme and components from `@hubra/ui` (`packages/ui`), plus `src/index.css`
 
 ## Development
 
@@ -25,19 +25,21 @@ npm run lint       # ESLint
 
 | Variable         | Dev                          | Production                       |
 | ---------------- | ---------------------------- | -------------------------------- |
-| `VITE_API_BASE`  | `http://localhost:5000/api`  | `https://api.hubra.club/api`   |
+| `VITE_API_BASE`  | `http://localhost:5000/api`  | `/api`, or `https://api.hubra.club/api` behind Traefik |
 
 In dev, `app/frontend/.env` sets `VITE_API_BASE` to point at the Flask backend
-directly. In production, `docker-compose.override.yaml` sets it to the API
-subdomain (Traefik routes `api.hubra.club` → backend).
+directly. The image gets its `VITE_*` values when the container starts
+(`app/deploy/nginx/40-hubra-runtime.sh`); see
+[docs/frontend.md](../../docs/frontend.md#development).
 
 ## API client
 
-All API calls go through `src/api/client.ts` → `apiFetch()`:
+All API calls go through `apiFetch()` from `@hubra/api-client`
+(`packages/api-client/src/client.ts`):
 
 - Sends cookies cross-origin (`credentials: "include"`)
 - Attaches `X-CSRF-TOKEN` header (from `csrf_access_token` cookie)
-- Auto-retries on 401 via `/auth/refresh`
+- Auto-retries on 401 via `/global/auth/refresh`
 - Base URL from `VITE_API_BASE` + `/v1`
 
 See [docs/frontend.md](../../docs/frontend.md) for full architecture details.

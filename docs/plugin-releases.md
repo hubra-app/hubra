@@ -36,7 +36,7 @@ at runtime.
 The latest GitHub release of each repository is the version to show:
 
 ```sh
-for r in bank-import budgets codes discord guides imap-inbox inventory keys; do
+for r in assistant bank-import board booking budgets codes community discord documents forms guides inventory kasse keys letters messengers payments imap-inbox supporters teams; do
   gh release view -R hubra-app/hubra-plugin-$r --json tagName -q .tagName
 done
 ```
