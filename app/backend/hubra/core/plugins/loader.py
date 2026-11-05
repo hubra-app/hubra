@@ -255,8 +255,30 @@ def discover(app=None) -> PluginSet:
 # ── Importing ────────────────────────────────────────────────────────────────
 
 
-def _import(spec: Spec) -> list:
-    """Import the plugin's package and return its Module manifests."""
+# Backends that serve no plugin routes and run no plugin tasks: sign-in and
+# account (global) and manage (platform). They read each plugin's manifest
+# (its package's ``module``) for the catalogue, migrations, tables and the
+# public plugin list, but import none of its routes, models or task
+# modules, so a plugin's code can't stop them from starting. Connected-app
+# hooks and event handlers stay names, imported only when called. The
+# platform-backend init step runs without a role and loads everything, so
+# ``flask sync-permissions`` still sees every plugin route.
+MANIFEST_ONLY_ROLES = ("global", "platform")
+
+
+def loads_plugin_code() -> bool:
+    """Whether this process imports plugins' routes, models and tasks."""
+    from hubra.core.roles import current_role
+
+    return current_role() not in MANIFEST_ONLY_ROLES
+
+
+def _import(spec: Spec, code: bool = True) -> list:
+    """Import the plugin's package and return its Module manifests.
+
+    With *code* false only the package itself (the manifest) is imported:
+    no models, blueprints or task modules (:data:`MANIFEST_ONLY_ROLES`).
+    """
     from hubra.core.modules.base import Module
 
     pkg = spec.package
@@ -294,6 +316,8 @@ def _import(spec: Spec) -> list:
             f"plugin.yaml lists modules {sorted(spec.module_codes)}, "
             f"the package declares {codes}"
         )
+    if not code:
+        return [dataclasses.replace(m, plugin=spec.id) for m in modules]
     try:
         importlib.import_module(f"{pkg}.models")
     except ModuleNotFoundError as exc:
@@ -302,13 +326,13 @@ def _import(spec: Spec) -> list:
     # Its blueprints too, here where a failure only skips this plugin: in
     # register_blueprints an import error (say of a module Hubra no longer
     # has) would stop every worker from booting.
-    # The same for its Celery task modules: the worker imports them on start
-    # (tasks.include), and one that fails stops every worker.
+    # Not its Celery task modules: they import hubra.core.tasks, which
+    # builds an app of its own, so importing them while this app is being
+    # built starts a second one. The worker imports them after start-up,
+    # each on its own (hubra.core.tasks._import_plugin_task_modules).
     for m in modules:
         for bp in m.blueprints:
             getattr(importlib.import_module(bp.import_path), bp.attr)
-        for task_module in m.tasks:
-            importlib.import_module(task_module)
     return [dataclasses.replace(m, plugin=spec.id) for m in modules]
 
 
@@ -358,6 +382,7 @@ def load(registry, app=None) -> PluginSet:
     from .spec import version_matches
 
     found = discover(app)
+    code = loads_plugin_code()
     want = found.wanted
     known = set(registry.codes()) if hasattr(registry, "codes") else set()
     taken, core_tables = _taken(registry)
@@ -384,9 +409,14 @@ def load(registry, app=None) -> PluginSet:
             pending.remove(spec)
             progress = True
             try:
-                declared = _import(spec)
+                declared = _import(spec, code)
                 trial = dict(taken)
                 modules = [check(m, spec, trial, core_tables) for m in declared]
+                if not code:
+                    # Checked as declared, registered without code to load.
+                    modules = [
+                        dataclasses.replace(m, blueprints=(), tasks=()) for m in modules
+                    ]
                 for m in modules:
                     registry.add(m)
             except LimitError as exc:

@@ -42,4 +42,44 @@ class SystemService:
                         }
                     )
 
+        from hubra.core.plugins.loader import loads_plugin_code
+
+        if not loads_plugin_code():
+            entries.extend(SystemService._catalog_only(entries))
         return sorted(entries, key=lambda e: (e["path"], e["method"]))
+
+    @staticmethod
+    def _catalog_only(entries: list[dict]) -> list[dict]:
+        """Route permissions in the catalog whose routes aren't loaded here.
+
+        The global and platform backends don't import plugin routes
+        (``loader.MANIFEST_ONLY_ROLES``), so their permissions come from the
+        catalog that ``flask sync-permissions`` filled, without path and
+        method.
+        """
+        from sqlalchemy import select
+
+        from hubra.core.extensions import db
+        from hubra.core.fields import iter_field_perms
+        from hubra.core.models.role import Permission
+        from hubra.core.permissions import extra_permissions
+
+        known = {e["key"] for e in entries}
+        known.update(m["key"] for m in iter_field_perms())
+        known.update(m["key"] for m in extra_permissions())
+        rows = db.session.scalars(
+            select(Permission).where(Permission.is_active.is_(True))
+        ).all()
+        return [
+            {
+                "method": "",
+                "path": "",
+                "key": p.key,
+                "display_name": p.display_name,
+                "resource": p.resource,
+                "action": p.action,
+                "blueprint": p.blueprint,
+            }
+            for p in rows
+            if p.key not in known
+        ]

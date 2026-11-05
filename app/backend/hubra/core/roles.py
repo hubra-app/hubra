@@ -14,10 +14,13 @@ therefore also answers global paths that came in that way.
   platform and club admin views, club requests, the support desk), plus
   health and version.
 
-Every role registers every blueprint, so the URL map, ``url_for``,
-``flask sync-permissions`` and the permission listing stay complete. A
-request for a path the role doesn't serve gets a 404 before any other
-hook runs. The ingress (or the frontend nginx) sends the same prefixes to
+Every role registers all of Hubra's own blueprints, so the URL map and
+``url_for`` stay complete. Plugins' routes, models and task modules are
+imported only where they are served: ``global`` and ``platform`` read
+plugin manifests only (``hubra.core.plugins.loader.MANIFEST_ONLY_ROLES``);
+``flask sync-permissions`` runs in the platform init step, which has no
+role and loads everything. A request for a path the role doesn't serve gets
+a 404 before any other hook runs. The ingress (or the frontend nginx) sends the same prefixes to
 the platform backend, so in a split install a wrong route is never hit.
 
 Celery: with ``HUBRA_PLATFORM_QUEUE`` set (for example ``platform``), the
