@@ -8,6 +8,31 @@ each). The module is `dashboards`, on by default.
 
 ![A shared board dashboard](screenshots/dashboards/view.png)
 
+## Start pages
+
+**Persönlich** and **Verein** are widget pages too. Until someone changes
+them they show the built-in layout:
+
+* **Verein**: polls waiting for the member's vote, active members, this
+  month's net and the number of upcoming events, numbers from plugins, the
+  next events and the latest posts. **Neuer Anlass** and **Mitglied
+  einladen** stay above it for who may use them.
+* **Persönlich**: open payments, the member's numbers, their events, their
+  votes, their attendance, their groups and cards from plugins.
+
+A widget with nothing to show right now (no open payment, no poll to vote
+in) takes no room.
+
+**Anpassen** works like editing a dashboard. Every member changes their own
+**Persönlich** page; only they see the change. The **Verein** page is the
+same for everyone and needs the permission **Startseite des Vereins
+anpassen** (`dashboards.home.update`); every member still sees only the
+widgets their rights allow. `⋯ › Standard wiederherstellen` goes back to the
+built-in layout. A changed club start page belongs to whoever saved it last:
+if that member is deleted, the club gets the built-in layout back.
+
+![The club start page](screenshots/dashboards/home-club.png)
+
 ## Building one
 
 **Bearbeiten** turns on edit mode:
@@ -36,6 +61,10 @@ menu renames, shares or deletes the dashboard.
 | Offene Abstimmungen für mich | polls the viewer can still vote in (title, count) | module polls |
 | Ein- und Austritte | joins and leaves per month of this year (title) | module members, `members.members.read` |
 | Notiz | a text of the owner's | nothing |
+| Offene Rechnungen | how many of the club's invoices are open | module finance, `finance.invoices.read` |
+| Deine Stimme ist gefragt | open polls the member hasn't voted in; nothing when there are none | module polls |
+| Offene Zahlung, Meine Zahlen, Meine Anlässe, Meine Abstimmungen, Meine Präsenz, Meine Gruppen | the member's own invoices, numbers, events, votes, attendance and groups | events, polls or groups for the last four |
+| Zahlen aus Plugins, Karten aus Plugins | what plugins put into the slots `dashboard.stats` and `account.cards` | nothing |
 | Links | a list of links, one `Label \| https://…` per line (http and https only) | nothing |
 
 Widgets load their data through the usual API routes, with the viewer's own
@@ -69,6 +98,10 @@ shared ones. Changes to a shared dashboard are written to the audit log.
 | `PATCH /<id>` | `{name?, widgets?}` (owner or admin) |
 | `PUT /<id>/sharing` | `{shared: bool}` (owner with the share permission; an admin may unshare any) |
 | `DELETE /<id>` | remove it (owner or admin) |
+| `GET /home` | the start pages: `{club: {widgets, updatedAt, canEdit}, me: {…}}`; `widgets` is `null` while the built-in layout shows |
+| `PUT /home/club` | `{widgets}`, needs `dashboards.home.update` |
+| `DELETE /home/club` | back to the built-in layout (same right) |
+| `PUT /home/me` / `DELETE /home/me` | the member's own start page |
 
 A dashboard is `{id, name, shared, widgets, owner: {id, name}, mine, canEdit,
 updatedAt}`. A widget is `{id, type, size, config}`: `id` is unique on the

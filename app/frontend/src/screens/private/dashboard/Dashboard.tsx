@@ -9,8 +9,7 @@ import { useModules } from '@/modules/useModules'
 import { Modal, PageHead, Tabs } from '@/components/ui'
 import { qk } from '@/data/keys'
 import { createDashboard, listDashboards } from '@/api/dashboards'
-import { AccountDashboardScreen } from '@/screens/private/account/Account'
-import { GlobalOverviewScreen } from '@/screens/private/dashboard/DashboardGlobalTab'
+import { HomeDashboard } from '@/screens/private/dashboard/HomeDashboard'
 import { CustomDashboard } from '@/screens/private/dashboard/CustomDashboard'
 
 export function DashboardScreen() {
@@ -30,9 +29,7 @@ export function DashboardScreen() {
   // People who run the club start on the club overview, everyone else on
   // their own events and polls; both tabs have their own address too.
   const runsClub =
-    isAdmin ||
-    hasPermission('members.members.update') ||
-    hasPermission('finance.invoices.update')
+    isAdmin || hasPermission('members.members.update') || hasPermission('finance.invoices.update')
 
   const activeTab = id
     ? `d${id}`
@@ -66,7 +63,13 @@ export function DashboardScreen() {
           { id: 'overview', label: t('dashboard.tabs.overview') },
           ...dashboards.map((d) => ({ id: `d${d.id}`, label: d.name })),
           ...(own && (data?.items.filter((d) => d.mine).length ?? 0) < (data?.max ?? 0)
-            ? [{ id: 'new', label: t('dashboards.new', 'Neues Dashboard'), icon: <IconPlus size={14} /> }]
+            ? [
+                {
+                  id: 'new',
+                  label: t('dashboards.new', 'Neues Dashboard'),
+                  icon: <IconPlus size={14} />,
+                },
+              ]
             : []),
         ]}
         activeTab={activeTab}
@@ -91,12 +94,14 @@ export function DashboardScreen() {
             startEditing={fresh === current.id}
           />
         ) : data ? (
-          <Text c="dimmed">{t('dashboards.notFound', 'Dieses Dashboard gibt es nicht (mehr).')}</Text>
+          <Text c="dimmed">
+            {t('dashboards.notFound', 'Dieses Dashboard gibt es nicht (mehr).')}
+          </Text>
         ) : null
       ) : activeTab === 'account' ? (
-        <AccountDashboardScreen />
+        <HomeDashboard key="me" kind="me" />
       ) : (
-        <GlobalOverviewScreen />
+        <HomeDashboard key="club" kind="club" />
       )}
 
       <Modal

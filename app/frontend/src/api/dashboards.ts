@@ -56,3 +56,24 @@ export function shareDashboard(id: number, shared: boolean): Promise<Dashboard> 
 export function deleteDashboard(id: number): Promise<void> {
   return apiFetch<void>(`${BASE}/${id}`, { method: 'DELETE' })
 }
+
+/** A start page: its widgets, or `null` while it shows the built-in layout. */
+export interface HomePage {
+  widgets: DashboardWidget[] | null
+  updatedAt: string | null
+  canEdit: boolean
+}
+
+export type HomeKind = 'club' | 'me'
+
+export function getHomePages(): Promise<Record<HomeKind, HomePage>> {
+  return apiFetch<Record<HomeKind, HomePage>>(`${BASE}/home`)
+}
+
+export function saveHomePage(kind: HomeKind, widgets: DashboardWidget[]): Promise<Omit<HomePage, 'canEdit'>> {
+  return apiFetch(`${BASE}/home/${kind}`, { method: 'PUT', body: JSON.stringify({ widgets }) })
+}
+
+export function resetHomePage(kind: HomeKind): Promise<Omit<HomePage, 'canEdit'>> {
+  return apiFetch(`${BASE}/home/${kind}`, { method: 'DELETE' })
+}

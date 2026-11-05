@@ -3432,7 +3432,8 @@
       "finance_accounts_close": "Close and reopen a fiscal year",
       "events_trials_read": "View trial trainings",
       "events_trials_manage": "Manage trial trainings",
-      "dashboards_dashboards_share": "Share dashboards with the club"
+      "dashboards_dashboards_share": "Share dashboards with the club",
+      "dashboards_home_update": "Change the club's start page"
     },
     "areas": {
       "applications": "Applications",
@@ -4075,7 +4076,17 @@
       "membersStat": "Active members and joins in the last 30 days",
       "note": "A text, e.g. dates or notes for the team",
       "polls": "Polls you can still vote in",
-      "posts": "The latest posts"
+      "posts": "The latest posts",
+      "openInvoices": "How many of the club's invoices are open",
+      "voteNeeded": "Points to polls you still have to vote in; empty when there are none",
+      "myPayments": "Your open invoices with QR bill; empty when everything is paid",
+      "mySummary": "Your sign-ups, votes and open invoices",
+      "myEvents": "Events you signed up for, with a button to leave",
+      "myVotes": "Polls you voted in, with your choice",
+      "myAttendance": "How often you were at trainings and events",
+      "myGroups": "The groups you are in",
+      "pluginStats": "What installed plugins add to the club overview",
+      "pluginCards": "What installed plugins add to your personal page"
     },
     "delete": "Delete dashboard",
     "deleteBody": "“{{name}}” and its widgets will be deleted.",
@@ -4132,7 +4143,22 @@
       "openInvoicesCount_other": "{{count}} open invoices",
       "openPolls": "Open votes for me",
       "total_one": "{{count}} member",
-      "total_other": "{{count}} members"
+      "total_other": "{{count}} members",
+      "mySummary": "My numbers",
+      "myAttendance": "My attendance",
+      "myGroups": "My groups",
+      "pluginStats": "Numbers from plugins",
+      "pluginCards": "Cards from plugins"
+    },
+    "nothingNow": "{{name}}: nothing to show right now.",
+    "home": {
+      "clubHint": "Every member sees this start page, each with only the widgets they may see.",
+      "meHint": "Your personal start page. Only you see it like this.",
+      "customize": "Customise",
+      "reset": "Restore default",
+      "resetClub": "The club's start page shows the default widgets again, for every member.",
+      "resetMe": "Your start page shows the default widgets again.",
+      "resetDone": "Default restored"
     }
   }
 }

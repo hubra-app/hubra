@@ -13,6 +13,15 @@ widgets load their data through the usual routes).
 * ``PUT  /<id>/sharing``   ``{"shared": bool}`` (the owner with the right to
                            share; an admin may also stop sharing any)
 * ``DELETE /<id>``         remove it (the owner, or an admin)
+
+The start pages (Dashboard › Verein and › Persönlich) are widget lists too.
+Until someone changes one, the app shows its built-in layout (``null``):
+
+* ``GET  /home``           ``{"club": {...}, "me": {...}}``
+* ``PUT  /home/club``      ``{"widgets": [...]}``, needs ``dashboards.home.update``
+* ``DELETE /home/club``    back to the built-in layout (same right)
+* ``PUT  /home/me``        the member's own start page
+* ``DELETE /home/me``      back to the built-in layout
 """
 
 from __future__ import annotations
@@ -42,6 +51,7 @@ MAX_WIDGETS = 24
 MAX_CONFIG = 4000  # characters of a widget's config as JSON
 SIZES = ("s", "m", "l")
 SHARE_PERM = "dashboards.dashboards.share"
+HOME_PERM = "dashboards.home.update"
 _TYPE = re.compile(r"^[a-z0-9][a-z0-9_.:-]{0,79}$")
 _ID = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
 
@@ -111,7 +121,7 @@ def _widgets(value):
 
 def _get(dashboard_id: int, member):
     d = db.session.get(Dashboard, dashboard_id)
-    if d is None or not _can_see(d, member):
+    if d is None or d.home is not None or not _can_see(d, member):
         return None
     return d
 
@@ -132,6 +142,7 @@ def list_dashboards():
     member = get_current_member()
     rows = db.session.scalars(
         select(Dashboard)
+        .where(Dashboard.home.is_(None))
         .where(or_(Dashboard.owner_id == member.id, Dashboard.shared.is_(True)))
         .order_by(Dashboard.name, Dashboard.id)
     ).all()
@@ -149,7 +160,9 @@ def list_dashboards():
 def create_dashboard():
     member = get_current_member()
     count = db.session.scalar(
-        select(func.count(Dashboard.id)).where(Dashboard.owner_id == member.id)
+        select(func.count(Dashboard.id)).where(
+            Dashboard.owner_id == member.id, Dashboard.home.is_(None)
+        )
     )
     if (count or 0) >= MAX_DASHBOARDS:
         return api_error(
@@ -166,6 +179,96 @@ def create_dashboard():
     db.session.add(d)
     db.session.commit()
     return jsonify(_dump(d, member)), 201
+
+
+# ── Start pages ────────────────────────────────────────────────────────────
+
+
+def _home_row(kind: str, member):
+    query = select(Dashboard).where(Dashboard.home == kind)
+    if kind == "me":
+        query = query.where(Dashboard.owner_id == member.id)
+    return db.session.scalars(query.order_by(Dashboard.id).limit(1)).first()
+
+
+def _home_dump(row) -> dict:
+    return {
+        "widgets": list(row.widgets or []) if row else None,
+        "updatedAt": row.updated_at.isoformat() if row and row.updated_at else None,
+    }
+
+
+def _save_home(kind: str, member):
+    widgets, error = _widgets(_body().get("widgets"))
+    if error:
+        return api_error("VALIDATION_ERROR", error, 400)
+    row = _home_row(kind, member)
+    if row is None:
+        row = Dashboard(
+            name="Verein" if kind == "club" else "Persönlich",
+            owner_id=member.id,
+            shared=kind == "club",
+            home=kind,
+        )
+        db.session.add(row)
+    row.widgets = widgets
+    if kind == "club":
+        # The last one to change it; the row goes if they are deleted, and
+        # the club falls back to the built-in layout.
+        row.owner_id = member.id
+        db.session.flush()
+        _audit("update_club_home", row, member)
+    db.session.commit()
+    return jsonify(_home_dump(row)), 200
+
+
+def _reset_home(kind: str, member):
+    row = _home_row(kind, member)
+    if row is not None:
+        if kind == "club":
+            _audit("reset_club_home", row, member)
+        db.session.delete(row)
+        db.session.commit()
+    return jsonify(_home_dump(None)), 200
+
+
+@dashboards_bp.get("/home")
+@jwt_required()
+def get_home():
+    member = get_current_member()
+    return jsonify(
+        {
+            "club": {
+                **_home_dump(_home_row("club", member)),
+                "canEdit": member_has_permission(member, HOME_PERM),
+            },
+            "me": {**_home_dump(_home_row("me", member)), "canEdit": True},
+        }
+    ), 200
+
+
+@dashboards_bp.put("/home/club")
+@permission_required("home", "update", "Change the club's start page")
+def save_club_home():
+    return _save_home("club", get_current_member())
+
+
+@dashboards_bp.delete("/home/club")
+@permission_required("home", "update", "Change the club's start page")
+def reset_club_home():
+    return _reset_home("club", get_current_member())
+
+
+@dashboards_bp.put("/home/me")
+@jwt_required()
+def save_my_home():
+    return _save_home("me", get_current_member())
+
+
+@dashboards_bp.delete("/home/me")
+@jwt_required()
+def reset_my_home():
+    return _reset_home("me", get_current_member())
 
 
 @dashboards_bp.get("/<int:dashboard_id>")

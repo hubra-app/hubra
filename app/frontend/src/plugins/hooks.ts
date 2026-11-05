@@ -44,3 +44,7 @@ export function usePluginWidgets(): FromPlugin<PluginWidget>[] {
   return useVisible((p) => p.widgets)
 }
 
+/** Whether any plugin put something into slot `name` for this club and user. */
+export function useSlotFilled(name: string): boolean {
+  return useVisible((p) => p.slots).some((s) => s.slot === name)
+}

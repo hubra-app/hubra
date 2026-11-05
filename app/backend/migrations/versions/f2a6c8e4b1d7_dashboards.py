@@ -1,7 +1,7 @@
 """Own dashboards
 
 ``dashboards``: a member's dashboard (name, widgets, shared with the club
-or not). Added to the template tables in public and to every club schema.
+or not), or a changed start page (``home`` = "club" or "me"). Added to the template tables in public and to every club schema.
 
 Revision ID: f2a6c8e4b1d7
 Revises: c3e7a1f5b9d2
@@ -49,6 +49,7 @@ def upgrade():
                 nullable=False,
             ),
             sa.Column("shared", sa.Boolean(), nullable=False),
+            sa.Column("home", sa.String(10), nullable=True),
             sa.Column("widgets", sa.JSON(), nullable=False),
             sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
             sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),

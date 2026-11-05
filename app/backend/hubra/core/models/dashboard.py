@@ -18,7 +18,8 @@ class Dashboard(db.Model):
     """A member's own dashboard: a name and a list of widgets.
 
     Private until shared; a shared one shows in everyone's dashboard tabs,
-    and each viewer sees only the widgets their permissions allow.
+    and each viewer sees only the widgets their permissions allow. A row with
+    ``home`` set holds a changed start page instead.
     """
 
     __tablename__ = "dashboards"
@@ -32,6 +33,10 @@ class Dashboard(db.Model):
         index=True,
     )
     shared: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
+    # A start page instead of a dashboard tab: "club" (Dashboard › Verein,
+    # one per club, owner = whoever changed it last) or "me" (Dashboard ›
+    # Persönlich, one per member). None for an ordinary dashboard.
+    home: Mapped[str | None] = mapped_column(db.String(10), nullable=True)
     # [{"id": "w1", "type": "events.upcoming", "size": "m", "config": {...}}]
     widgets: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(

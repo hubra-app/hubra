@@ -130,3 +130,56 @@ def test_limit_per_member(client, plain_member_token, monkeypatch):  # noqa: F81
     assert _create(client, plain_member_token).status_code == 201
     assert _create(client, plain_member_token).status_code == 201
     assert _create(client, plain_member_token).status_code == 409
+
+
+HOME = f"{URL}home"
+
+
+def test_start_pages_default_to_built_in(client, plain_member_token):  # noqa: F811
+    body = client.get(HOME, headers=plain_member_token).get_json()
+    assert body["club"]["widgets"] is None and body["club"]["canEdit"] is False
+    assert body["me"]["widgets"] is None and body["me"]["canEdit"] is True
+
+
+def test_member_changes_own_start_page(client, plain_member_token):  # noqa: F811
+    resp = client.put(f"{HOME}/me", json={"widgets": WIDGETS}, headers=plain_member_token)
+    assert resp.status_code == 200
+    assert [w["id"] for w in resp.get_json()["widgets"]] == ["a", "b"]
+    assert client.put(f"{HOME}/me", json={"widgets": "x"}).status_code == 400
+    # A start page is not a dashboard tab and doesn't count to the limit.
+    listed = client.get(URL).get_json()["items"]
+    assert listed == []
+    # Others keep the built-in one.
+    _as(client, ADMIN)
+    assert client.get(HOME).get_json()["me"]["widgets"] is None
+    _as(client, PLAIN)
+    assert client.delete(f"{HOME}/me").status_code == 200
+    assert client.get(HOME).get_json()["me"]["widgets"] is None
+
+
+def test_club_start_page_needs_the_right(
+    client,
+    auth_headers,
+    plain_member_token,  # noqa: F811
+):
+    assert client.put(f"{HOME}/club", json={"widgets": WIDGETS}).status_code == 403
+    assert client.delete(f"{HOME}/club").status_code == 403
+
+    _as(client, ADMIN)
+    assert client.get(HOME).get_json()["club"]["canEdit"] is True
+    resp = client.put(f"{HOME}/club", json={"widgets": WIDGETS[:1]})
+    assert resp.status_code == 200
+    row = db.session.scalars(
+        db.select(Dashboard).where(Dashboard.home == "club")
+    ).one()
+    # Its id can't be reached as a dashboard.
+    assert client.get(f"{URL}{row.id}").status_code == 404
+
+    # Every member sees the club's start page.
+    _as(client, PLAIN)
+    club = client.get(HOME).get_json()["club"]
+    assert [w["id"] for w in club["widgets"]] == ["a"]
+
+    _as(client, ADMIN)
+    assert client.delete(f"{HOME}/club").status_code == 200
+    assert client.get(HOME).get_json()["club"]["widgets"] is None

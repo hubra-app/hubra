@@ -706,3 +706,23 @@ table[style*="min-width"] td::before {
     grid-column: span 6;
   }
 }
+
+/* Start pages: a widget with nothing to show right now (no open payment, no
+   poll to vote in) takes no room; in edit mode it says so. */
+.hb-dash-grid:not(.editing) > div:has(> .hb-dash-body:empty) {
+  display: none;
+}
+.hb-dash-grid.editing > div > .hb-dash-body:empty::after {
+  content: attr(data-empty);
+  display: block;
+  padding: var(--mantine-spacing-md);
+  border: 1px dashed var(--mantine-color-line-1, #d6d2e3);
+  border-radius: var(--mantine-radius-md);
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-sm);
+}
+.hb-dash-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  gap: 16px;
+}

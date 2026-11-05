@@ -3432,7 +3432,8 @@
       "finance_accounts_close": "Geschäftsjahr abschliessen und wieder öffnen",
       "events_trials_read": "Schnuppertrainings ansehen",
       "events_trials_manage": "Schnuppertrainings verwalten",
-      "dashboards_dashboards_share": "Dashboards mit dem Verein teilen"
+      "dashboards_dashboards_share": "Dashboards mit dem Verein teilen",
+      "dashboards_home_update": "Startseite des Vereins anpassen"
     },
     "areas": {
       "applications": "Anträge",
@@ -4075,7 +4076,17 @@
       "membersStat": "Aktive Mitglieder und Eintritte der letzten 30 Tage",
       "note": "Ein Text, z. B. Termine oder Hinweise fürs Team",
       "polls": "Umfragen, in denen du noch abstimmen kannst",
-      "posts": "Die neuesten Beiträge"
+      "posts": "Die neuesten Beiträge",
+      "openInvoices": "Wie viele Rechnungen des Vereins offen sind",
+      "voteNeeded": "Hinweis auf Umfragen, in denen du noch abstimmen musst; leer, wenn keine offen ist",
+      "myPayments": "Deine offenen Rechnungen mit QR-Rechnung; leer, wenn alles bezahlt ist",
+      "mySummary": "Deine Anmeldungen, Abstimmungen und offenen Rechnungen",
+      "myEvents": "Anlässe, für die du angemeldet bist, mit Abmelden",
+      "myVotes": "Umfragen, in denen du abgestimmt hast, mit deiner Wahl",
+      "myAttendance": "Wie oft du an Trainings und Anlässen dabei warst",
+      "myGroups": "Die Gruppen, in denen du bist",
+      "pluginStats": "Was installierte Plugins zur Vereinsübersicht beisteuern",
+      "pluginCards": "Was installierte Plugins zu deiner persönlichen Seite beisteuern"
     },
     "delete": "Dashboard löschen",
     "deleteBody": "«{{name}}» und seine Widgets werden gelöscht.",
@@ -4132,7 +4143,22 @@
       "openInvoicesCount_other": "{{count}} offene Rechnungen",
       "openPolls": "Offene Abstimmungen für mich",
       "total_one": "{{count}} Mitglied",
-      "total_other": "{{count}} Mitglieder"
+      "total_other": "{{count}} Mitglieder",
+      "mySummary": "Meine Zahlen",
+      "myAttendance": "Meine Präsenz",
+      "myGroups": "Meine Gruppen",
+      "pluginStats": "Zahlen aus Plugins",
+      "pluginCards": "Karten aus Plugins"
+    },
+    "nothingNow": "{{name}}: gerade nichts anzuzeigen.",
+    "home": {
+      "clubHint": "Diese Startseite sehen alle Mitglieder, jedes nur mit den Widgets, die es sehen darf.",
+      "meHint": "Deine persönliche Startseite. Nur du siehst sie so.",
+      "customize": "Anpassen",
+      "reset": "Standard wiederherstellen",
+      "resetClub": "Die Startseite des Vereins zeigt wieder die Standard-Widgets, für alle Mitglieder.",
+      "resetMe": "Deine Startseite zeigt wieder die Standard-Widgets.",
+      "resetDone": "Standard wiederhergestellt"
     }
   }
 }
