@@ -20,12 +20,20 @@ class Blueprint:
 
     ``v2`` is ignored. The /api/v2 aliases were removed; the field stays so
     plugins built before that still load.
+
+    ``perm_prefix`` replaces the first part of the permission keys the
+    blueprint's routes check, which is otherwise the Flask blueprint's name
+    without ``_bp``. It lets a plugin take over routes of a module it extends
+    and keep their keys (``finance.transactions.read``), so roles don't
+    change. Plugins may only name a module they depend on
+    (``hubra.core.plugins.limits``).
     """
 
     import_path: str
     attr: str
     url_prefix: str
     v2: tuple[tuple[str, str], ...] = ()
+    perm_prefix: str | None = None
 
 
 @dataclass(frozen=True)

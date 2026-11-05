@@ -32,6 +32,12 @@ _log = logging.getLogger(__name__)
 # Event names in use, so emitters and subscribers agree on spelling.
 INVOICE_OVERDUE = "invoice.overdue"
 INVOICE_PAID = "invoice.paid"
+# An invoice was created (invoice_id, category_id = the transaction category
+# the form picked, or None), changed (invoice_id, was_paid, changed = the
+# fields set) or deleted (invoice_id, transaction_id = its linked booking).
+INVOICE_CREATED = "invoice.created"
+INVOICE_UPDATED = "invoice.updated"
+INVOICE_DELETED = "invoice.deleted"
 EVENT_PUBLISHED = "event.published"
 POST_PUBLISHED = "post.published"
 POLL_PUBLISHED = "poll.published"

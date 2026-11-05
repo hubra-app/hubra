@@ -565,33 +565,17 @@ class InvoiceService:
             if field in data:
                 setattr(invoice, field, data[field])
 
-        linked_tx = (
-            db.session.get(Transaction, invoice.transaction_id)
-            if invoice.transaction_id is not None
-            else None
+        from hubra.core.modules import emit
+        from hubra.core.modules.events import INVOICE_UPDATED
+
+        emit(
+            INVOICE_UPDATED,
+            invoice_id=invoice.id,
+            was_paid=was_paid,
+            changed=sorted(data),
         )
-        if linked_tx is not None:
-            # The linked income follows the invoice: paid → completed, and
-            # back to pending when a payment is taken back. Its amount
-            # follows while the money is still expected.
-            if invoice.status == "Paid":
-                linked_tx.status = "Completed"
-            elif was_paid:
-                linked_tx.status = "Pending"
-            if "amount" in data and linked_tx.status == "Pending":
-                linked_tx.amount = abs(Decimal(str(invoice.amount)))
-            # So does who pays: the income is listed under the new recipient.
-            if "member_id" in data or "external_party_id" in data:
-                linked_tx.member_id = invoice.member_id
-                party = (
-                    db.session.get(ExternalParty, invoice.external_party_id)
-                    if invoice.external_party_id is not None
-                    else None
-                )
-                linked_tx.payee_name = party.name if party else None
 
         if invoice.status == "Paid" and not was_paid and invoice.member_id:
-            from hubra.core.modules import emit
             from hubra.core.modules.events import INVOICE_PAID
 
             emit(INVOICE_PAID, member_id=invoice.member_id, invoice_id=invoice.id)
@@ -625,10 +609,10 @@ class InvoiceService:
         db.session.delete(invoice)
         db.session.flush()
 
-        if linked_tx_id is not None:
-            linked_tx = db.session.get(Transaction, linked_tx_id)
-            if linked_tx is not None:
-                db.session.delete(linked_tx)
+        from hubra.core.modules import emit
+        from hubra.core.modules.events import INVOICE_DELETED
+
+        emit(INVOICE_DELETED, invoice_id=invoice_id, transaction_id=linked_tx_id)
 
     @staticmethod
     def remind(invoice: Invoice, actor_id: int) -> None:
@@ -781,52 +765,16 @@ class InvoiceService:
 
 
 def _link_pending_transaction(
-    invoice: Invoice,
-    member_id: int | None,
-    *,
-    external_party: ExternalParty | None = None,
-    category: TransactionCategory | None = None,
-    category_id: int | None = None,
+    invoice: Invoice, member_id: int | None = None, *, category_id: int | None = None
 ) -> None:
-    """Create a Pending income transaction and link it to the invoice.
+    """Announce a new invoice, so its income gets booked (finance/bookings.py).
 
-    Category resolution order:
-      1. *category* (explicit ORM object, used by bulk_create).
-      2. *category_id* (from the create form, e.g. purpose='other').
-      3. "Membership" category (default for purpose='membership').
-      4. First available category (fallback).
-      5. None → skip the linked transaction entirely.
-
-    For external recipients: member_id=None, payee_name=external_party.name.
+    *member_id* is unused; it stays for callers written before the event.
     """
-    if category is None and category_id is not None:
-        category = db.session.get(TransactionCategory, category_id)
-    if category is None:
-        category = db.session.scalar(
-            select(TransactionCategory).where(TransactionCategory.name == "Membership")
-        )
-        if category is None:
-            category = db.session.scalar(select(TransactionCategory))
-    if category is None:
-        return
+    from hubra.core.modules import emit
+    from hubra.core.modules.events import INVOICE_CREATED
 
-    payee_name = external_party.name if external_party else None
-
-    linked_tx = Transaction(
-        date=invoice.issued,
-        description=f"Invoice #{invoice.id}",
-        category_id=category.id,
-        member_id=member_id,
-        payee_name=payee_name,
-        amount=invoice.amount,
-        method="IBAN",
-        type="income",
-        status="Pending",
-    )
-    db.session.add(linked_tx)
-    db.session.flush()
-    invoice.transaction_id = linked_tx.id
-    db.session.flush()
+    emit(INVOICE_CREATED, invoice_id=invoice.id, category_id=category_id)
 
 
 class InvoicesService:
@@ -926,12 +874,7 @@ class InvoicesService:
         db.session.add(invoice)
         db.session.flush()
 
-        _link_pending_transaction(
-            invoice,
-            member_id,
-            external_party=external_party,
-            category_id=category_id,
-        )
+        _link_pending_transaction(invoice, category_id=category_id)
 
         recipient_label = (
             member.name if member else (external_party.name if external_party else "?")
@@ -983,12 +926,6 @@ class InvoicesService:
                 404, "NOT_FOUND", "No active members found for the given filter"
             )
 
-        membership_cat = db.session.scalar(
-            select(TransactionCategory).where(TransactionCategory.name == "Membership")
-        )
-        if membership_cat is None:
-            membership_cat = db.session.scalar(select(TransactionCategory))
-
         # Each formula tier deducts the yearly fees of its own deduct_tier_ids.
         deducted_for = deductions_by_tier(db.session)
 
@@ -1025,7 +962,7 @@ class InvoicesService:
             db.session.add(invoice)
             db.session.flush()
 
-            _link_pending_transaction(invoice, member.id, category=membership_cat)
+            _link_pending_transaction(invoice)
 
             log_audit(
                 actor_id=actor_id,

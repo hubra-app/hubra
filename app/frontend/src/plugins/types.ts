@@ -80,4 +80,6 @@ export interface SlotProps {
   'apps.connection': { connection: Connection; onChange: () => void }
   /** Next to an invoice's buttons: the member's open invoices (Konto) and the invoice page. */
   'invoice.actions': { invoice: Invoice; onChange: () => void }
+  /** More tiles in the club overview's numbers row (Dashboard › Übersicht); render a `StatTile`. */
+  'dashboard.stats': Record<string, never>
 }

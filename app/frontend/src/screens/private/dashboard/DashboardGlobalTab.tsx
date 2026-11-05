@@ -5,6 +5,7 @@ import { useNav, useAuth } from "@/context/AppContext";
 import { useDashboardSummary, useEvents, useMyVotes, usePolls } from "@/data/lists";
 import { StatTile, Card, StatGrid, Avatar } from "@/components/ui";
 import { formatCHFCompact } from "@/format";
+import { PluginSlot } from "@/plugins";
 
 function fmtNet(n: number): string {
   const sign = n >= 0 ? "+" : "\u2212";
@@ -217,6 +218,7 @@ export function GlobalOverviewScreen() {
           accent="var(--mantine-color-acc-text)"
           onClick={() => go("/app/operations/events")}
         />
+        <PluginSlot name="dashboard.stats" />
       </StatGrid>
 
       <div

@@ -32,6 +32,7 @@ export {
   PageHead,
   Pagination,
   Seg,
+  StatTile,
   Tabs,
   Toggle,
   usePagination,
