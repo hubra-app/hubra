@@ -117,13 +117,11 @@ Settings › Modules lists everything the club can use. Missing one? "Suggest a 
 | ------ | ---------- | ----------------- |
 | Core, Members, Roles & permissions | Sign-in, dashboard, members, roles | Always |
 | Events | Events and workshops with registration | Yes |
-| Finance | Transactions, invoices with Swiss QR-bill, reminders | Yes |
+| Finance | Invoices with Swiss QR-bill, reminders, fees | Yes |
 | Functions | Club offices and who holds them | Yes |
 | Groups | Teams, committees, interest groups | Yes |
 | Polls | Member polls and voting | Yes |
 | Posts | Announcements and community posts | Yes |
-| Codes | Encrypted door codes and passcodes (plugin, installed by the platform) | No |
-| Inventory | Tools, machines, materials, checkouts (plugin, installed by the platform) | No |
 | Bindings | Sync club data with external services | No |
 | Mail | Club mailboxes and addresses | No, and needs the platform's mail server |
 
@@ -137,7 +135,8 @@ Settings › Modules lists everything the club can use. Missing one? "Suggest a 
   keep the stored value.
 - **Blocked:** the platform team can block a module for your club. It then
   stays off.
-- **More modules** (for example keys, budgets, bank import, Discord) appear in
+- **More modules** (for example the books, inventory, codes, keys, budgets,
+  bank import, Discord) appear in
   the same list once the platform offers them. You switch them on like any
   other module. Clubs don't install anything: behind the scenes some modules
   are plugins, which let the platform ship and update a module without a

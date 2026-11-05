@@ -12,14 +12,27 @@ them from the official Marketplace, <https://plugins.hubra.club/index.json>.
 
 | Plugin        | Module(s)          | What it does                                                                |
 | ------------- | ------------------ | --------------------------------------------------------------------------- |
-| `codes`       | `codes`            | Encrypted door codes and passcodes                                          |
-| `inventory`   | `inventory`        | Tools, machines and materials, checkouts and inductions                     |
-| `keys`        | `inventory.keys`   | Keys and access cards, handovers and deposits                               |
-| `guides`      | `inventory.guides` | Usage guides on inventory items                                             |
-| `budgets`     | `finance.budgets`  | Yearly budgets per transaction category                                     |
+| `assistant`   | `assistant`        | Writing help for the board with Claude, using the club's own API key        |
 | `bank-import` | `finance.bank`     | Bank statements (camt.053/054, MT940, CSV), invoice matching, booking rules |
+| `board`       | `board`            | Board tasks, year planner, contracts and the general meeting                |
+| `booking`     | `booking`          | Rooms and equipment on a calendar, with approvals and fees                  |
+| `budgets`     | `finance.budgets`  | Yearly budgets per transaction category                                     |
+| `codes`       | `codes`            | Encrypted door codes and passcodes                                          |
+| `community`   | `community`        | Photo albums, skills and lending, idea box, welcome checklist, jubilees     |
+| `discord`     | `discord`          | The Hubra bot: announcements, roles, group channels, reminders              |
+| `documents`   | `documents`        | Document library with folders and access per role or group                  |
+| `finances`    | `finance.books`    | The books: transactions, categories, overview, statements, annual accounts  |
+| `forms`       | `forms`            | Forms and surveys                                                           |
+| `guides`      | `inventory.guides` | Usage guides on inventory items                                             |
 | `imap-inbox`  | `inbox`            | Read club mailboxes over IMAP, read-only, per group                         |
-| `discord`     | `discord`          | Announce events, posts and polls in Discord                                 |
+| `inventory`   | `inventory`        | Tools, machines and materials, checkouts and inductions                     |
+| `kasse`       | `kasse`            | Expense claims, drinks tab, collective orders                               |
+| `keys`        | `inventory.keys`   | Keys and access cards, handovers and deposits                               |
+| `letters`     | `letters`          | Serial letters as PDF or posted through Pingen                              |
+| `messengers`  | `messengers`       | Announcements in Telegram, Signal or Matrix groups                          |
+| `payments`    | `payments`         | Online payment of invoices by card or TWINT (Stripe)                        |
+| `supporters`  | `supporters`       | Sponsors and fundraising                                                    |
+| `teams`       | `teams`            | Match days: fixtures, availability, line-ups, carpooling                    |
 
 This folder holds what a plugin needs to run its tests and type check with
 Hubra's (`conftest.py`, `tsconfig.json`). To work on a plugin, clone its
@@ -30,7 +43,7 @@ The signing, repository and update design comes from
 
 ## For platform managers
 
-**Install.** Manager portal › Plugins. Install a plugin from a repository
+**Install.** Manage › Plugin catalogue. Install a plugin from a repository
 (the official Marketplace is there out of the box), or upload a `.zip`. Installing runs the plugin's migrations in
 every club and records it in the database; every API and Celery process
 picks it up within `HUBRA_PLUGINS_RELOAD_POLL` seconds (15 by default)

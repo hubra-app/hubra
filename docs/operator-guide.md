@@ -304,7 +304,8 @@ store (`hubra.core.files`). Set it in manage › Backups › Storage under
 
 Every section of the club app is a module. Core, Members and Roles are always
 on. Events, Finance, Functions, Groups, Polls and Posts are on for a new
-club; Bindings, Codes, Inventory and Mail are off.
+club; Bindings and Mail are off. Everything else (the books, inventory,
+codes, keys, Discord, …) comes from a plugin, see below.
 
 - **Club admins** switch modules on and off in the club app under
   Settings › Modules. Switching off hides the module and keeps its
@@ -327,8 +328,8 @@ How modules are built: [app/backend/hubra/modules/README.md](../app/backend/hubr
 
 ## Plugins
 
-Plugins add modules that are not part of Hubra (keys, budgets, bank import,
-Discord and more). You install a plugin once for the whole platform in manage
+Plugins add modules that are not part of Hubra (the books, inventory, codes,
+keys, budgets, bank import, Discord and more). You install a plugin once for the whole platform in manage
 › Plugin catalogue; each club then switches its modules on in
 Settings › Modules like a built-in module.
 

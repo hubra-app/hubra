@@ -66,16 +66,15 @@ domain setup is needed locally.
    under **All clubs › Create club** (the admin e-mail and
    password are optional), or request one on http://localhost:8082/start and
    approve it under **All clubs › Requests**.
-4. Codes, Inventory, Bindings and Mail are off for a new club. Club admins
-   switch modules on in the club app under **Settings › Modules**,
-   or:
+4. Bindings and Mail are off for a new club. Club admins switch modules on
+   in the club app under **Settings › Modules**, or:
    ```sh
    docker compose exec backend flask modules list --tenant <club-slug>
-   docker compose exec backend flask modules enable inventory --tenant <club-slug>
+   docker compose exec backend flask modules enable bindings --tenant <club-slug>
    ```
-   Plugins (keys, budgets, bank import, Discord, …) are installed once under
-   **Plugin catalogue** first; see
-   [plugins/README.md](../plugins/README.md).
+   Plugins (Finances, Inventory, Codes, Keys, Discord, …) are installed once
+   under **Plugin catalogue** first; see
+   [docs/plugins.md](plugins.md).
 
 Next: [operator-guide.md](operator-guide.md) for the setup checklist,
 upgrades and backups, and [club-admin-guide.md](club-admin-guide.md) for the
