@@ -1,12 +1,58 @@
-/* Hubra service worker: shows browser notifications (Web Push).
+/* Hubra service worker: the installed app's offline page and browser
+ * notifications (Web Push).
  *
- * The server sends the text already in the member's language:
+ * Only /offline.html is cached. Every page still loads from the network as
+ * usual; when the network is gone, a page load shows the offline page
+ * instead of the browser's error. API calls, assets and other requests are
+ * not touched.
+ *
+ * Push: the server sends the text already in the member's language:
  * { title, body, club, url, tag }. A click opens (or focuses) the club app
- * on that page. Nothing is cached here; the app loads as usual.
+ * on that page.
  */
 
-self.addEventListener('install', () => self.skipWaiting())
-self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()))
+const CACHE = 'hubra-offline-v1'
+const OFFLINE_URL = '/offline.html'
+// The offline page's script and icon, so it works without the network.
+const OFFLINE_FILES = [OFFLINE_URL, '/offline.js', '/icon-192.png']
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches
+      .open(CACHE)
+      .then((cache) => cache.addAll(OFFLINE_FILES.map((u) => new Request(u, { cache: 'reload' }))))
+      .catch(() => undefined)
+      .then(() => self.skipWaiting()),
+  )
+})
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(keys.filter((k) => k.startsWith('hubra-') && k !== CACHE).map((k) => caches.delete(k))),
+      )
+      .then(() => self.clients.claim()),
+  )
+})
+
+self.addEventListener('fetch', (event) => {
+  const req = event.request
+  if (req.method !== 'GET') return
+  const url = new URL(req.url)
+  // The offline page's own files: the network first, the cached copy offline.
+  if (url.origin === self.location.origin && OFFLINE_FILES.includes(url.pathname) && req.mode !== 'navigate') {
+    event.respondWith(fetch(req).catch(() => caches.match(url.pathname).then((res) => res || Response.error())))
+    return
+  }
+  if (req.mode !== 'navigate') return
+  event.respondWith(
+    fetch(req).catch(() =>
+      caches.match(OFFLINE_URL).then((res) => res || Response.error()),
+    ),
+  )
+})
 
 self.addEventListener('push', (event) => {
   let data = {}

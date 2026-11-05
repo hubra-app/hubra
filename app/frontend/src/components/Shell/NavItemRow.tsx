@@ -1,7 +1,7 @@
-import { useState, type MouseEvent } from 'react'
+import type { MouseEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { ActionIcon, Badge, Box, Group, Stack, Text, Tooltip, UnstyledButton } from '@mantine/core'
-import { IconChevronDown, IconPencil } from '@tabler/icons-react'
+import { ActionIcon, Badge, Box, Group, Text, Tooltip, UnstyledButton } from '@mantine/core'
+import { IconPencil } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
 import type { NavItem } from './nav'
 
@@ -99,87 +99,6 @@ export function NavItemRow({
           </Badge>
         )}
       </UnstyledButton>
-    </Box>
-  )
-}
-
-const MORE_OPEN_KEY = 'hubra.nav.moreOpen'
-
-function readMoreOpen() {
-  try {
-    return localStorage.getItem(MORE_OPEN_KEY) === '1'
-  } catch {
-    return false
-  }
-}
-
-/**
- * The "Weitere" entry: opens in place to list the pages behind it, so they
- * are one tap away in the menu. It stays open on one of those pages.
- */
-export function NavMoreRow({
-  item,
-  activePath,
-  currentMore,
-  go,
-}: {
-  item: NavItem
-  activePath: string
-  currentMore: string | null
-  go: (path: string) => void
-}) {
-  const [stored, setStored] = useState(readMoreOpen)
-  const open = stored || !!currentMore
-  const toggle = () => {
-    const next = !open
-    setStored(next)
-    try {
-      localStorage.setItem(MORE_OPEN_KEY, next ? '1' : '0')
-    } catch {
-      // Private mode: it just starts closed next time.
-    }
-  }
-  const active = activePath === item.path
-  return (
-    <Box>
-      <UnstyledButton
-        onClick={toggle}
-        aria-expanded={open}
-        data-testid="nav-more"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          borderRadius: 10,
-          padding: '8px 12px',
-          minHeight: 40,
-          width: '100%',
-          color: active && !open ? 'var(--mantine-color-acc-8)' : 'var(--hb-text-2)',
-          background: active && !open ? 'var(--mantine-color-acc-1)' : undefined,
-          fontSize: 'var(--mantine-font-size-sm)',
-          fontWeight: 500,
-        }}
-      >
-        <span style={{ flexShrink: 0, display: 'flex' }}>{item.icon}</span>
-        <span style={{ flex: 1 }}>{item.label}</span>
-        <IconChevronDown
-          size={16}
-          style={{ transition: 'transform .15s', transform: open ? 'rotate(180deg)' : undefined }}
-        />
-      </UnstyledButton>
-      {open && (
-        <Stack gap={2} mt={2} pl={14} data-testid="nav-more-items">
-          {(item.children ?? []).map((child) => (
-            <NavItemRow
-              key={child.path}
-              item={child}
-              activePath={currentMore ?? ''}
-              go={go}
-              collapsed={false}
-            />
-          ))}
-        </Stack>
-      )}
     </Box>
   )
 }

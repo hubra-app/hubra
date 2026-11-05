@@ -1,11 +1,25 @@
 {
+  "id": "/",
   "name": "Hubra",
   "short_name": "Hubra",
-  "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
-  ],
+  "description": "Your club: events, posts, polls and members.",
+  "lang": "de-CH",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
   "theme_color": "#7441e0",
   "background_color": "#f7f6fb",
-  "display": "standalone"
+  "categories": ["social", "productivity"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Anlässe", "url": "/?source=pwa&to=%2Fapp%2Foperations%2Fevents", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Beiträge", "url": "/?source=pwa&to=%2Fapp%2Foperations%2Fposts", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Umfragen", "url": "/?source=pwa&to=%2Fapp%2Foperations%2Fpolls", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+  ]
 }
