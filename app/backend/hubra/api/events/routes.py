@@ -699,3 +699,4 @@ def public_links():
 # Trial trainings (public trial page and the trainers' list) add their routes
 # to this blueprint.
 from hubra.api.events import trials  # noqa: E402,F401
+from hubra.api.events import federation  # noqa: E402,F401

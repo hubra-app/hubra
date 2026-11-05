@@ -22,6 +22,7 @@ import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useT, zmsg } from '@/locales/i18n'
 import { isPastEvent } from './eventDates'
+import { AssociationEventsCard } from './AssociationEventsCard'
 import i18n from 'i18next'
 import {
   IconPlus,
@@ -88,6 +89,8 @@ const eventSchema = z.object({
   // Public: may be shown outside the club (a Discord server that is not
   // members-only, the club's public pages).
   isPublic: z.boolean(),
+  // An association's event shown to its member clubs (federation module).
+  federationShared: z.boolean(),
   // Places for people who aren't members yet; empty: no trials.
   trialSpots: z
     .string()
@@ -141,7 +144,8 @@ export function EventsTab() {
   const createScope = useContentGroups('events.events.create')
   const updateScope = useContentGroups('events.events.update')
   const canCreate = createScope.canAny
-  const { moduleList } = useData()
+  const { moduleList, modules } = useData()
+  const federationOn = Boolean(modules.federation)
   const eventTypes = clubEventTypes(
     moduleList.find((m) => m.code === 'events')?.config?.event_types,
   )
@@ -188,6 +192,7 @@ export function EventsTab() {
       groupId: '',
       description: '',
       isPublic: false,
+      federationShared: false,
       trialSpots: '',
     },
   })
@@ -238,6 +243,7 @@ export function EventsTab() {
       groupId: createScope.defaultGroup,
       description: '',
       isPublic: false,
+      federationShared: false,
       trialSpots: '',
     })
     setRepeat(defaultRepeat(new Date().toISOString().slice(0, 10)))
@@ -281,6 +287,7 @@ export function EventsTab() {
       groupId: ev.groupId ?? '',
       description: ev.description ?? '',
       isPublic: ev.isPublic ?? false,
+      federationShared: ev.federationShared ?? false,
       trialSpots: ev.trialSpots ? String(ev.trialSpots) : '',
     })
     setEditScope('this')
@@ -308,6 +315,7 @@ export function EventsTab() {
         groupId: data.groupId || null,
         description: data.description,
         isPublic: data.isPublic,
+        federationShared: data.federationShared,
         trialSpots: limitOf(data.trialSpots),
         recurrence: repeat.on
           ? {
@@ -355,6 +363,7 @@ export function EventsTab() {
       groupId: data.groupId || null,
       description: data.description,
       isPublic: data.isPublic,
+      federationShared: data.federationShared,
       trialSpots: limitOf(data.trialSpots),
     }
     const following = editScope === 'following' && !!editTarget.seriesId
@@ -372,6 +381,7 @@ export function EventsTab() {
         groupId: editTarget.groupId ?? null,
         description: editTarget.description ?? '',
         isPublic: editTarget.isPublic ?? false,
+        federationShared: editTarget.federationShared ?? false,
         trialSpots: editTarget.trialSpots ?? null,
       }
       input = Object.fromEntries(
@@ -541,6 +551,16 @@ export function EventsTab() {
         )}
         {...form.getInputProps('isPublic', { type: 'checkbox' })}
       />
+      {federationOn && (
+        <Checkbox
+          label={t('events.federationShared', 'Mit Mitgliedvereinen teilen')}
+          description={t(
+            'events.federationSharedHint',
+            'Eure Mitgliedvereine sehen den Anlass unter Anlässe › Vom Verband.',
+          )}
+          {...form.getInputProps('federationShared', { type: 'checkbox' })}
+        />
+      )}
       <Field
         label={t('events.trialSpots', 'Plätze für Schnuppertraining') + ' (optional)'}
         hint={t(
@@ -601,6 +621,7 @@ export function EventsTab() {
           onShowAll={linked.clear}
         />
       )}
+      {!linked.id && <AssociationEventsCard />}
       <DataTable
         breakpoint="wide"
         columns={[

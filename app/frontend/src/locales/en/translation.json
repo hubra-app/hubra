@@ -894,7 +894,9 @@
         "cancelled": "Cancelled",
         "invited": "Invited"
       }
-    }
+    },
+    "federationShared": "Share with member clubs",
+    "federationSharedHint": "Your member clubs see the event under Events › From your association."
   },
   "finance": {
     "addCategory": "Add Category",
@@ -2426,7 +2428,8 @@
       "more": "More",
       "recurring": "Recurring",
       "feeBasis": "Fee basis",
-      "annualAccounts": "Annual accounts"
+      "annualAccounts": "Annual accounts",
+      "federation": "Association"
     },
     "noPermission": "You don't have permission to view this page.",
     "notif": {
@@ -3507,7 +3510,9 @@
       "events_trials_read": "View trial trainings",
       "events_trials_manage": "Manage trial trainings",
       "dashboards_dashboards_share": "Share dashboards with the club",
-      "dashboards_home_update": "Change the club's start page"
+      "dashboards_home_update": "Change the club's start page",
+      "federation_federation_read": "See the association's member clubs",
+      "federation_federation_manage": "Invite and remove member clubs"
     },
     "areas": {
       "applications": "Applications",
@@ -4249,5 +4254,51 @@
     "nothing": "Nothing to show",
     "more": "{{count}} more",
     "noView": "The plugin has no view for this widget"
+  },
+  "federation": {
+    "invited": "invited",
+    "activeMembers": "active members",
+    "waiting": "Invited on {{date}}. The club accepts the invitation in its settings.",
+    "contacts": "Contacts",
+    "noContacts": "The club hasn't filled any functions yet.",
+    "contactsHidden": "The club doesn't share its contacts.",
+    "withdraw": "Withdraw invitation",
+    "remove": "Remove from the association",
+    "invitedToast": "Invitation sent",
+    "inviteFailed": "Not invited",
+    "intro": "Here you see your member clubs with their number of active members and, when a club shares them, the contacts of its functions. Events you “Share with member clubs” show up in the clubs' events.",
+    "clubCount": "Member clubs",
+    "memberTotal": "Active members in total",
+    "openInvites": "Open invitations",
+    "inviteTitle": "Invite a club",
+    "inviteHint": "The club's address in Hubra, e.g. “rc-uri” from hubra.club/rc-uri. The club sees the invitation under Settings › Club and decides itself.",
+    "slug": "Club address",
+    "invite": "Invite",
+    "none": "No member clubs yet.",
+    "removeBody": "{{name}} is then no longer a member club and no longer sees your shared events.",
+    "removeShort": "Remove",
+    "removeFailed": "Not removed"
+  },
+  "associations": {
+    "failed": "Not saved",
+    "invitation": "Invitation",
+    "inviteText": "Invited you as a member club on {{date}}. The association then sees how many active members you have, and you see its shared events in Events.",
+    "shareContacts": "Share the contacts of our functions",
+    "shareContactsHint": "Name and club address of everyone holding a function (e.g. president, treasurer). Never private e-mail addresses.",
+    "accept": "Join",
+    "decline": "Decline",
+    "title": "Associations",
+    "intro": "Umbrella associations your club is a member of. You decide here what an association sees.",
+    "since": "Member since {{date}}",
+    "leave": "Leave",
+    "seesCount": "The association sees your number of active members and no other member data.",
+    "leaveTitle": "Leave the association",
+    "leaveBody": "{{name}} no longer sees your club, and you no longer see its events."
+  },
+  "associationEvents": {
+    "online": "Join online",
+    "title": "From your association",
+    "less": "Show less",
+    "more": "Show all {{count}}"
   }
 }

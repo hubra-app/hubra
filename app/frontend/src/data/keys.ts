@@ -44,6 +44,8 @@ export const qk = {
   },
 
   events: ['events'] as const,
+  associationEvents: ['events', 'from-associations'] as const,
+  memberClubs: ['federation', 'clubs'] as const,
   eventPending: (id: string) => ['events', id, 'pending'] as const,
   eventRoll: (id: string) => ['events', id, 'roll'] as const,
   attendance: ['attendance'] as const,
@@ -136,6 +138,7 @@ export const qk = {
     apiAccess: ['api-access'] as const,
     apiTokens: ['api-access', 'tokens'] as const,
     webhooks: ['webhooks'] as const,
+    associations: ['associations'] as const,
     webhookDeliveries: (id: number) => ['webhooks', id, 'deliveries'] as const,
     signInApps: ['api-access', 'sign-in-apps'] as const,
     appConnection: (id: number) => ['connected-apps', id] as const,
