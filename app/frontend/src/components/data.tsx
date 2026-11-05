@@ -37,7 +37,7 @@ import { LoadingSpinner, EmptyState } from './feedback'
 import { Pagination } from './layout'
 import { clickableProps } from './hooks'
 
-export { Tabs, type TabDef } from '@hubra/ui'
+export { SubTabs, Tabs, type TabDef } from '@hubra/ui'
 
 /* ── Table<T> ──────────────────────────────── */
 

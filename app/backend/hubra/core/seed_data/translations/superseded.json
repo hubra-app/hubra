@@ -42,7 +42,9 @@
   "support.roadmap.inProgress",
   "support.roadmap.planned",
   "support.roadmap.open",
-  "support.roadmap.done"
+  "support.roadmap.done",
+  "finance.settings.bankHint",
+  "finance.settings.openBank"
  ],
  "values": {
   "de-CH": {
@@ -4453,7 +4455,8 @@
     "Verahstaltigä"
    ],
    "shell.nav.externalParties": [
-    "Externi"
+    "Externi",
+    "Extern"
    ],
    "shell.nav.finance": [
     "Finance",
@@ -6523,6 +6526,9 @@
    ],
    "support.roadmap.done": [
     "Done"
+   ],
+   "shell.nav.externalParties": [
+    "External"
    ]
   }
  }

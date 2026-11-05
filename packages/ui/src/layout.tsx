@@ -131,20 +131,61 @@ export function Tabs({
   tabs,
   activeTab,
   onTabChange,
+  label,
+  mb = 24,
 }: {
   tabs: TabDef[]
   activeTab: string
   onTabChange: (id: string) => void
+  /** Screen-reader name of the tab row; needed when a page has two. */
+  label?: string
+  mb?: number
 }) {
   return (
     <MantineTabs
       value={activeTab}
       onChange={(v) => v && onTabChange(v)}
-      mb={24}
+      mb={mb}
       variant="default"
       className="hubra-tabs"
     >
-      <MantineTabs.List>
+      <MantineTabs.List aria-label={label}>
+        {tabs.map((t) => (
+          <MantineTabs.Tab key={t.id} value={t.id} leftSection={t.icon}>
+            {t.label}
+          </MantineTabs.Tab>
+        ))}
+      </MantineTabs.List>
+    </MantineTabs>
+  )
+}
+
+/**
+ * The second row under a page's tabs: the parts of one tab, as small pills.
+ * Keeps a page to a few tabs when one topic has several lists.
+ */
+export function SubTabs({
+  tabs,
+  activeTab,
+  onTabChange,
+  label,
+}: {
+  tabs: TabDef[]
+  activeTab: string
+  onTabChange: (id: string) => void
+  /** Screen-reader name of the row, such as "Buchungen". */
+  label: string
+}) {
+  return (
+    <MantineTabs
+      value={activeTab}
+      onChange={(v) => v && onTabChange(v)}
+      mb={20}
+      variant="pills"
+      radius="xl"
+      className="hubra-subtabs"
+    >
+      <MantineTabs.List aria-label={label}>
         {tabs.map((t) => (
           <MantineTabs.Tab key={t.id} value={t.id} leftSection={t.icon}>
             {t.label}

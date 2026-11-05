@@ -1824,7 +1824,7 @@
   "shell.nav.categories": "Categories",
   "shell.nav.dashboard": "Dashboard",
   "shell.nav.events": "Events",
-  "shell.nav.externalParties": "External",
+  "shell.nav.externalParties": "External parties",
   "shell.nav.finance": "Finance",
   "shell.nav.functionMail": "Function addresses",
   "shell.nav.functions": "Functions",
@@ -2802,8 +2802,6 @@
   "finance.settings.tab": "Settings",
   "finance.settings.saved": "Settings saved",
   "finance.settings.invoicesTitle": "Invoices and reminders",
-  "finance.settings.bankHint": "The account and address on the QR invoices are set in the club settings.",
-  "finance.settings.openBank": "Open bank details",
   "settings.tabs.membership": "Membership",
   "settings.tabs.bank": "Bank & QR invoice",
   "shell.breadcrumbs.financeSettings": "Finance › Settings",
@@ -3465,5 +3463,9 @@
   "apiAccess.unused": "not used yet",
   "apiAccess.end": "End",
   "apiAccess.endTitle": "End access?",
-  "apiAccess.endBody": "The app or script can't read anything afterwards. Whoever uses it has to connect again."
+  "apiAccess.endBody": "The app or script can't read anything afterwards. Whoever uses it has to connect again.",
+  "finance.groups.bookings": "Bookings",
+  "finance.groups.planning": "Budget & fees",
+  "finance.groups.billing": "Billing",
+  "shell.breadcrumbs.bankAccount": "Finance › Bank & QR invoice"
 }

@@ -5,17 +5,59 @@ import { appUrl } from './env'
 type ClubSettings = { club_name?: string; invite_valid_days?: number }
 type Module = { code: string; config: Record<string, unknown> }
 
-const tabNames = async (page: import('@playwright/test').Page) =>
-  (await page.getByRole('tab').allInnerTexts()).map((s) => s.trim())
+const tabNames = async (page: import('@playwright/test').Page, row?: string) => {
+  const scope = row ? page.getByRole('tablist', { name: row, exact: true }) : page
+  await expect(scope.getByRole('tab').first()).toBeVisible()
+  return (await scope.getByRole('tab').allInnerTexts()).map((s) => s.trim())
+}
 
-test('finance tabs put the daily work first and the settings last', async ({ page }) => {
+test('finance has five page tabs, with sub-tabs where a topic has several lists', async ({
+  page,
+}) => {
   await page.goto(appUrl('finance'))
   await expect(page.getByRole('tab', { name: 'Übersicht' })).toBeVisible()
-  const names = await tabNames(page)
-  expect(names[0]).toBe('Übersicht')
-  expect(names.indexOf('Rechnungen')).toBeLessThan(names.indexOf('Einnahmen und Ausgaben'))
-  expect(names.indexOf('Einnahmen und Ausgaben')).toBeLessThan(names.indexOf('Kategorien'))
+  const names = await tabNames(page, 'Finanzen')
+  expect(names.slice(0, 3)).toEqual(['Übersicht', 'Rechnungen', 'Buchungen'])
+  // "Budget & Beiträge" with the budgets plugin, else just the fee basis.
+  expect(['Budget & Beiträge', 'Beitragsgrundlage']).toContain(names[3])
   expect(names.at(-1)).toBe('Einstellungen')
+  // The overview has no second row.
+  await expect(page.getByRole('tablist')).toHaveCount(1)
+
+  await page.getByRole('tab', { name: 'Buchungen' }).click()
+  await expect(page).toHaveURL(/\/app\/finance\/transactions$/)
+  const bookings = await tabNames(page, 'Buchungen')
+  expect(bookings.slice(0, 2)).toEqual(['Einnahmen und Ausgaben', 'Wiederkehrend'])
+  await page.getByRole('tab', { name: 'Wiederkehrend' }).click()
+  await expect(page).toHaveURL(/\/app\/finance\/recurring$/)
+  await expect(page.getByRole('tab', { name: 'Buchungen' })).toHaveAttribute('aria-selected', 'true')
+
+  await page.getByRole('tab', { name: 'Einstellungen' }).click()
+  await expect(page).toHaveURL(/\/app\/finance\/settings$/)
+  expect(await tabNames(page, 'Einstellungen')).toEqual([
+    'Abrechnung',
+    'Kategorien',
+    'Externe Parteien',
+    'Bank & QR-Rechnung',
+  ])
+})
+
+test('old finance addresses open their page under the new tab', async ({ page }) => {
+  for (const [path, tab, sub] of [
+    ['finance/categories', 'Einstellungen', 'Kategorien'],
+    ['finance/external-parties', 'Einstellungen', 'Externe Parteien'],
+    ['finance/recurring', 'Buchungen', 'Wiederkehrend'],
+  ] as const) {
+    await page.goto(appUrl(path))
+    await expect(page.getByRole('tab', { name: tab, exact: true })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+    await expect(page.getByRole('tab', { name: sub, exact: true })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+  }
 })
 
 test('the payment term is set under Finanzen › Einstellungen', async ({ page }) => {
@@ -38,9 +80,9 @@ test('the payment term is set under Finanzen › Einstellungen', async ({ page }
     await api(page, 'PUT', '/modules/finance/settings', { config: before.config })
   }
 
-  // The bank account stays in the club settings; the finance tab links there.
-  await page.getByRole('button', { name: 'Bankangaben öffnen' }).click()
-  await expect(page).toHaveURL(/\/app\/settings\/bank$/)
+  // The bank account sits next to the billing rules.
+  await page.getByRole('tab', { name: 'Bank & QR-Rechnung' }).click()
+  await expect(page).toHaveURL(/\/app\/finance\/bank-account$/)
   await expect(page.getByLabel('IBAN oder QR-IBAN')).toBeVisible()
 })
 
@@ -75,17 +117,21 @@ test('membership fees are billed on a fixed date or the join date', async ({ pag
   }
 })
 
-test('club settings are split into Verein, Mitgliedschaft and Bank tabs', async ({ page }) => {
+test('club settings are split into Verein and Mitgliedschaft; the bank is under Finanzen', async ({
+  page,
+}) => {
   await page.goto(appUrl('settings'))
   await expect(page.getByRole('heading', { name: 'Vereinsprofil' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Ankündigungsbanner' })).toBeVisible()
   await expect(page.getByLabel('IBAN oder QR-IBAN')).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Privatsphäre' })).toHaveCount(0)
   const names = await tabNames(page)
-  expect(names.slice(0, 3)).toEqual(['Verein', 'Mitgliedschaft', 'Bank & QR-Rechnung'])
+  expect(names.slice(0, 2)).toEqual(['Verein', 'Mitgliedschaft'])
+  expect(names).not.toContain('Bank & QR-Rechnung')
 
-  await page.getByRole('tab', { name: 'Bank & QR-Rechnung' }).click()
-  await expect(page).toHaveURL(/\/app\/settings\/bank$/)
+  // The finance module is on in the test club, so the old address moves on.
+  await page.goto(appUrl('settings/bank'))
+  await expect(page).toHaveURL(/\/app\/finance\/bank-account$/)
   await expect(page.getByLabel('IBAN oder QR-IBAN')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Vereinsprofil' })).toHaveCount(0)
 })

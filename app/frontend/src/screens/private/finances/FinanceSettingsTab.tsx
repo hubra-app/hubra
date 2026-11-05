@@ -14,7 +14,7 @@ import {
   Title,
 } from '@mantine/core'
 import { useT } from '@/locales/i18n'
-import { useAuth, useNav, useToast } from '@/context/AppContext'
+import { useToast } from '@/context/AppContext'
 import { getModules, type ModuleInfo } from '@/api/modules'
 import { downloadStatement, sendStatement } from '@/api/finance'
 import { localizeModule } from '@/modules/labels'
@@ -269,11 +269,8 @@ function InvoiceSettingsForm({ module }: { module: ModuleInfo }) {
   )
 }
 
-/** Finanzen › Einstellungen: billing rules, and where the bank account is set. */
+/** Finanzen › Einstellungen › Abrechnung: when fees are billed, invoices and reminders, the monthly statement. */
 export function FinanceSettingsTab() {
-  const { t } = useT()
-  const { go } = useNav()
-  const { hasPermission } = useAuth()
   const { data: finance } = useQuery({
     queryKey: qk.modules,
     queryFn: getModules,
@@ -285,26 +282,6 @@ export function FinanceSettingsTab() {
       {finance && <FeeScheduleForm key={`fees-${JSON.stringify(finance.config)}`} module={finance} />}
       {finance && <InvoiceSettingsForm key={JSON.stringify(finance.config)} module={finance} />}
       {finance && <StatementForm key={`statement-${JSON.stringify(finance.config)}`} module={finance} />}
-      {hasPermission('settings.settings.read') && (
-        <Paper withBorder p="lg">
-          <Group justify="space-between" align="center" wrap="wrap" gap="md">
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <Title order={3} mb={4}>
-                {t('clubSettings.bank.title', 'Bank & QR-Rechnung')}
-              </Title>
-              <Text size="sm" c="dimmed">
-                {t(
-                  'finance.settings.bankHint',
-                  'Das Konto und die Adresse auf den QR-Rechnungen stellst du in den Einstellungen des Vereins ein.',
-                )}
-              </Text>
-            </div>
-            <Button variant="default" onClick={() => go('/app/settings/bank')}>
-              {t('finance.settings.openBank', 'Bankangaben öffnen')}
-            </Button>
-          </Group>
-        </Paper>
-      )}
     </Stack>
   )
 }

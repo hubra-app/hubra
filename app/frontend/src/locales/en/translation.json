@@ -1095,9 +1095,7 @@
     "settings": {
       "tab": "Settings",
       "saved": "Settings saved",
-      "invoicesTitle": "Invoices and reminders",
-      "bankHint": "The account and address on the QR invoices are set in the club settings.",
-      "openBank": "Open bank details"
+      "invoicesTitle": "Invoices and reminders"
     },
     "summary": {
       "title": "By category",
@@ -1199,7 +1197,12 @@
     "transactionNotFound": "This transaction does not exist (any more).",
     "transactionNo": "Transaction {{id}}",
     "markCompleted": "Mark as completed",
-    "direction": "Direction"
+    "direction": "Direction",
+    "groups": {
+      "bookings": "Bookings",
+      "planning": "Budget & fees",
+      "billing": "Billing"
+    }
   },
   "functions": {
     "assignHolder": "Assign person",
@@ -2209,7 +2212,8 @@
       "financeSettings": "Finance › Settings",
       "recurring": "Finance › Recurring",
       "feeBasis": "Finance › Fee basis",
-      "attendance": "Club life › Attendance"
+      "attendance": "Club life › Attendance",
+      "bankAccount": "Finance › Bank & QR invoice"
     },
     "emailVerify": {
       "banner": "Your private email address isn't verified yet. Some features are only available after that.",
@@ -2228,7 +2232,7 @@
       "categories": "Categories",
       "dashboard": "Dashboard",
       "events": "Events",
-      "externalParties": "External",
+      "externalParties": "External parties",
       "finance": "Finance",
       "functionMail": "Function addresses",
       "functions": "Functions",

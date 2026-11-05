@@ -13,7 +13,7 @@ export {
 export { cssVariablesResolver, theme } from './theme'
 export { colorText, contrastRatio, luminance, mix, readableOn, tagStyle, textOn } from './contrast'
 export { createLang, type Lang } from './lang'
-export { PageHead, Pagination, StatGrid, StatTile, Tabs, type TabDef } from './layout'
+export { PageHead, Pagination, StatGrid, StatTile, SubTabs, Tabs, type TabDef } from './layout'
 export { colorSchemeManager, readColorScheme } from './colorScheme'
 export { ThemeSwitch, ThemeToggle } from './ThemeSwitch'
 export { BuildBadge } from './BuildBadge'
