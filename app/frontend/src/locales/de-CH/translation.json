@@ -262,7 +262,11 @@
       "switch": "Browser-Mitteilungen",
       "needsInstall": "Auf iPhone und iPad zuerst Hubra zum Home-Bildschirm hinzufügen (Teilen › Zum Home-Bildschirm), dann hier einschalten.",
       "denied": "Mitteilungen sind für diese Seite im Browser blockiert. Erlaube sie in den Website-Einstellungen des Browsers."
-    }
+    },
+    "myAttendance": "Meine Anwesenheit",
+    "myAttendanceYear": "Seit {{date}}",
+    "showLess": "Weniger anzeigen",
+    "showAllDates": "Alle {{count}} Termine anzeigen"
   },
   "app": {
     "maintenance": {

@@ -3445,5 +3445,9 @@
   "mail.email.subject.account_closed": "Dein Hubra-Konto wurde gelöscht",
   "mail.email.support_case.kind_question": "Frage",
   "content.group": "Gruppe",
-  "content.groupHint": "Wer eine Rolle für diese Gruppe hat, kann den Eintrag verwalten. Sichtbar bleibt er für alle."
+  "content.groupHint": "Wer eine Rolle für diese Gruppe hat, kann den Eintrag verwalten. Sichtbar bleibt er für alle.",
+  "account.myAttendance": "Meine Anwesenheit",
+  "account.myAttendanceYear": "Seit {{date}}",
+  "account.showLess": "Weniger anzeigen",
+  "account.showAllDates": "Alle {{count}} Termine anzeigen"
 }

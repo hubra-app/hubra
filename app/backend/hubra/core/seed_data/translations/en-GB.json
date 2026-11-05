@@ -3445,5 +3445,9 @@
   "mail.email.subject.account_closed": "Your Hubra account was deleted",
   "mail.email.support_case.kind_question": "question",
   "content.group": "Group",
-  "content.groupHint": "Anyone with a role for this group can manage it. Everyone can still see it."
+  "content.groupHint": "Anyone with a role for this group can manage it. Everyone can still see it.",
+  "account.myAttendance": "My attendance",
+  "account.myAttendanceYear": "Since {{date}}",
+  "account.showLess": "Show less",
+  "account.showAllDates": "Show all {{count}} dates"
 }
