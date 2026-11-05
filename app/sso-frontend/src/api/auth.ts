@@ -553,3 +553,76 @@ export async function stepUpWithPasskey(
     body: JSON.stringify({ state, credential }),
   })
 }
+
+// ── Apps (OAuth, docs/oauth.md) ─────────────────────────────────────────────
+
+export interface OAuthApp {
+  name: string
+  description: string
+  clientUri: string | null
+  /** Registered by Hubra's admins; false for an app that registered itself. */
+  verified: boolean
+  /** Where the app gets the person back to. */
+  redirectHost: string | null
+}
+
+export interface OAuthProblem {
+  error: string
+  message: string
+  /** Set when the error may go back to the app. */
+  redirect?: string
+}
+
+export interface OAuthClubChoice {
+  slug: string
+  name: string
+  isAdmin: boolean
+  available: boolean
+  reason: 'MEMBERS_OFF' | 'AI_OFF' | 'MFA_SETUP_FIRST' | null
+}
+
+export interface OAuthConsent {
+  problem?: OAuthProblem
+  client: OAuthApp
+  /** What the app wants to use: the Hubra API or the Claude connector. */
+  resource: 'api' | 'mcp'
+  scopes: ('read' | 'write')[]
+  user: { name: string; email: string }
+  clubs: OAuthClubChoice[]
+  platform: { available: boolean; reason: string | null } | null
+  days: { club: number[]; platform: number[]; defaultClub: number; defaultPlatform: number }
+}
+
+export async function getOAuthConsent(params: Record<string, string>): Promise<OAuthConsent> {
+  return apiFetch<OAuthConsent>(`/global/oauth/authorize?${new URLSearchParams(params)}`)
+}
+
+export async function answerOAuthConsent(body: {
+  params: Record<string, string>
+  allow: boolean
+  club?: string
+  platform?: boolean
+  days?: number
+}): Promise<{ redirect?: string; problem?: OAuthProblem }> {
+  return apiFetch('/global/oauth/authorize', { method: 'POST', body: JSON.stringify(body) })
+}
+
+export interface OAuthGrant {
+  id: number
+  kind: 'member' | 'platform'
+  app: OAuthApp | null
+  club: { slug: string; name: string } | null
+  resourceKind: 'api' | 'mcp' | null
+  canWrite: boolean
+  createdAt: string | null
+  expiresAt: string | null
+  lastUsedAt: string | null
+}
+
+export async function getOAuthGrants(): Promise<{ items: OAuthGrant[] }> {
+  return apiFetch('/global/oauth/grants')
+}
+
+export async function endOAuthGrant(id: number): Promise<void> {
+  await apiFetch(`/global/oauth/grants/${id}`, { method: 'DELETE' })
+}

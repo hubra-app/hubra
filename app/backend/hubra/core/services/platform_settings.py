@@ -345,6 +345,23 @@ SPECS: tuple[Spec, ...] = (
         "url",
     ),
     Spec(
+        "oauth.dynamic_clients",
+        "Self-registered apps",
+        "on: apps such as Claude may register themselves (OAuth dynamic client "
+        "registration) to use the Claude connector; they can only read, and "
+        "the person sees them as not checked by Hubra. off: only apps "
+        "registered in manage",
+        lambda cfg: "on",
+        "on_off",
+    ),
+    Spec(
+        "oauth.dynamic_redirect_hosts",
+        "Return addresses for self-registered apps",
+        "Hosts a self-registered app may send people back to, comma-separated "
+        "(subdomains count). Empty: any https host",
+        lambda cfg: "claude.ai,claude.com,localhost,127.0.0.1",
+    ),
+    Spec(
         "support.url",
         "Support site address",
         "Address of the support site (app/support-frontend): help, roadmap, "

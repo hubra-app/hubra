@@ -48,6 +48,8 @@ SHARED_PATHS = (
     "/api/v1/global/health",
     "/api/v1/global/version",
     "/api/v1/global/instance",
+    # OAuth server metadata (RFC 8414), at the root of the API host.
+    "/.well-known/oauth-authorization-server",
 )
 
 # Celery task modules that belong to the platform: backups, health and

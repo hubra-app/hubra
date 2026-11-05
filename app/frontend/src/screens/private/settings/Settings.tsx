@@ -9,6 +9,7 @@ import { BankSettingsCard } from '@/screens/private/settings/BankSettingsCard'
 import { BackupKeyTab } from '@/screens/private/settings/BackupKeyTab'
 import { DomainsTab } from '@/screens/private/settings/DomainsTab'
 import { AppsTab } from '@/screens/private/settings/AppsTab'
+import { ApiAccessTab } from '@/screens/private/settings/ApiAccessTab'
 import { AuditLogScreen } from '@/screens/private/system/AuditLog'
 import { RolesTab } from '@/screens/private/system/RolesTab'
 
@@ -45,6 +46,7 @@ const TABS = [
     label: 'Verbundene Apps',
     Component: AppsTab,
   },
+  { id: 'api', labelKey: 'settings.tabs.api', label: 'API & Apps', Component: ApiAccessTab },
   {
     id: 'encryption',
     labelKey: 'settings.tabs.encryption',

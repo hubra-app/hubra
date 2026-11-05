@@ -129,7 +129,11 @@ assistants), `API_TOKEN_LIMIT` (409, too many active tokens),
 
 ## Not built yet
 
-UI for club and personal tokens (SSO, club app; manage has the platform
-tokens), mails for new and ended tokens, pausing a club token and mailing
-the club's admins when its admin leaves (today it just stops working),
-opt-in for plugin routes, OAuth for claude.ai.
+Making club and personal tokens in the club app (Einstellungen › API & Apps
+lists and ends them, with the two switches; manage has the platform tokens),
+mails for new and ended tokens, pausing a club token and mailing the club's
+admins when its admin leaves (today it just stops working), opt-in for
+plugin routes.
+
+Apps that sign in for a person (OAuth, such as claude.ai) get the same kind
+of row, with `oauth_client_id` set: see docs/oauth.md.

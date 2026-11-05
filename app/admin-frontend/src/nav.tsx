@@ -50,6 +50,7 @@ import { EarlyAccess } from '@/screens/platform/EarlyAccess'
 import { PlatformTranslations } from '@/screens/platform/Translations'
 import { PlatformEncryption } from '@/screens/platform/Encryption'
 import { AllApiTokens, PlatformTokensPage } from '@/screens/platform/ApiTokens'
+import { OAuthApps } from '@/screens/platform/OAuthApps'
 import { SupportCases } from '@/screens/platform/Support'
 
 // The whole manage navigation in one place: sidebar sections, the pages in
@@ -467,8 +468,8 @@ export function navSections(): NavSection[] {
           label: tr('API-Tokens', 'API tokens'),
           icon: icon(IconPlugConnected),
           desc: tr(
-            'Lesende Tokens für Skripte und den Claude-Connector.',
-            'Read-only tokens for scripts and the Claude connector.',
+            'Lesende Tokens für Skripte und den Claude-Connector, und Apps mit OAuth-Anmeldung.',
+            'Read-only tokens for scripts and the Claude connector, and apps that sign in with OAuth.',
           ),
           tabs: [
             {
@@ -483,6 +484,13 @@ export function navSections(): NavSection[] {
               label: tr('Alle Tokens', 'All tokens'),
               perm: 'platform.settings',
               render: () => <AllApiTokens />,
+            },
+            {
+              id: 'apps',
+              path: '/app/api-tokens/apps',
+              label: tr('Apps (OAuth)', 'Apps (OAuth)'),
+              perm: 'platform.settings',
+              render: () => <OAuthApps />,
             },
           ],
         },

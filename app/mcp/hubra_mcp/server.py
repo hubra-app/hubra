@@ -10,9 +10,12 @@ club's AI switch, rate limits, audit) decide what comes back.
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import ipaddress
 import os
+import time
 from typing import Annotated, Any
+from urllib.parse import urlsplit
 
 from mcp.server.mcpserver import Context, MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
@@ -22,7 +25,7 @@ from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from hubra_mcp import __version__
-from hubra_mcp.hubra import Hubra, HubraError, Settings, as_text, bearer, token_kind
+from hubra_mcp.hubra import Hubra, HubraError, Settings, as_text, bearer, is_oauth, token_kind
 
 INSTRUCTIONS = """\
 Hubra is club management software. These tools read the Hubra API with the
@@ -386,10 +389,68 @@ async def club_audit(
 # ── HTTP app ────────────────────────────────────────────────────────────────
 
 
+# Hubra's answers about the connector's sign-in, kept a little while so a
+# busy conversation doesn't ask on every call.
+META_TTL = 300.0
+CHECK_TTL = 30.0
+_meta: tuple[float, dict | None] | None = None
+_checked: dict[str, tuple[float, int]] = {}
+
+
+def reset_caches() -> None:
+    """For tests."""
+    global _meta
+    _meta = None
+    _checked.clear()
+
+
+async def resource_metadata() -> dict | None:
+    global _meta
+    now = time.monotonic()
+    if _meta is None or now - _meta[0] > META_TTL:
+        _meta = (now, await api().resource_metadata())
+    return _meta[1]
+
+
+def metadata_url(meta: dict) -> str:
+    """Where the resource metadata for *meta*'s resource lives (RFC 9728 §3)."""
+    parts = urlsplit(meta["resource"])
+    return f"{parts.scheme}://{parts.netloc}/.well-known/oauth-protected-resource{parts.path.rstrip('/')}"
+
+
+async def _token_status(token: str) -> int:
+    """Hubra's answer for an OAuth token, so an expired one gets HTTP 401
+    and Claude renews it, instead of a failing tool call."""
+    key = hashlib.sha256(token.encode()).hexdigest()
+    now = time.monotonic()
+    hit = _checked.get(key)
+    if hit is not None and now - hit[0] <= CHECK_TTL:
+        return hit[1]
+    status = await api().check(token)
+    if status != 503:
+        if len(_checked) > 5000:
+            _checked.clear()
+        _checked[key] = (now, status)
+    return status
+
+
+async def _challenge(error: str | None = None) -> str:
+    parts = ['Bearer realm="hubra"']
+    meta = await resource_metadata()
+    if meta is not None:
+        parts.append(f'resource_metadata="{metadata_url(meta)}"')
+        parts.append('scope="read"')
+    if error:
+        parts.append(f'error="{error}"')
+    return ", ".join(parts)
+
+
 class RequireToken:
     """Every MCP request needs a well-formed hbr_ token and no Origin header
-    (the connector is for Claude, not for web pages). The token itself is
-    checked by Hubra on each call."""
+    (the connector is for Claude, not for web pages). Without one the answer
+    points to the sign-in (OAuth, docs/oauth.md). An OAuth token is checked
+    with Hubra first so an expired one gets 401; Hubra checks every token
+    again on each call."""
 
     def __init__(self, app: ASGIApp, path: str):
         self.app = app
@@ -400,14 +461,28 @@ class RequireToken:
             await self.app(scope, receive, send)
             return
         headers = {k.decode("latin-1").lower(): v.decode("latin-1") for k, v in scope["headers"]}
+        token = bearer(headers)
         if headers.get("origin"):
             resp = JSONResponse({"error": "BROWSER", "message": "Not for browsers"}, status_code=403)
-        elif bearer(headers) is None:
+        elif token is None:
             resp = JSONResponse(
-                {"error": "API_TOKEN_REQUIRED", "message": "Send Authorization: Bearer hbr_…"},
+                {"error": "API_TOKEN_REQUIRED", "message": "Sign in, or send Authorization: Bearer hbr_…"},
                 status_code=401,
-                headers={"WWW-Authenticate": 'Bearer realm="hubra"'},
+                headers={"WWW-Authenticate": await _challenge()},
             )
+        elif is_oauth(token) and (status := await _token_status(token)) != 200:
+            if status == 401:
+                resp = JSONResponse(
+                    {"error": "invalid_token", "message": "Sign in again"},
+                    status_code=401,
+                    headers={"WWW-Authenticate": await _challenge("invalid_token")},
+                )
+            elif status == 503 or status >= 500:
+                resp = JSONResponse({"error": "UNAVAILABLE", "message": "Hubra not reachable"}, status_code=503)
+            else:
+                # 403 and the like (a switched-off club): the tools say why.
+                await self.app(scope, receive, send)
+                return
         else:
             await self.app(scope, receive, send)
             return
@@ -422,6 +497,22 @@ def _hosts() -> list[str]:
 @mcp.custom_route("/healthz", methods=["GET"], include_in_schema=False)
 async def healthz(request):
     return JSONResponse({"status": "ok", "version": __version__})
+
+
+async def _protected_resource(request):
+    meta = await resource_metadata()
+    if meta is None:
+        return JSONResponse({"error": "NOT_SET_UP", "message": "Sign-in isn't set up"}, status_code=404)
+    return JSONResponse(meta, headers={"Cache-Control": "public, max-age=300", "Access-Control-Allow-Origin": "*"})
+
+
+# RFC 9728: under the resource's path, and at the root for older clients.
+mcp.custom_route("/.well-known/oauth-protected-resource", methods=["GET"], include_in_schema=False)(
+    _protected_resource
+)
+mcp.custom_route("/.well-known/oauth-protected-resource/mcp", methods=["GET"], include_in_schema=False)(
+    _protected_resource
+)
 
 
 def create_app() -> ASGIApp:

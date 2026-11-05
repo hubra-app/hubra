@@ -480,7 +480,7 @@ function PrivateRoutes() {
                     </RequirePermission>
                   }
                 />
-                {['settings/membership', 'settings/bank'].map((path) => (
+                {['settings/membership', 'settings/bank', 'settings/api'].map((path) => (
                   <Route
                     key={path}
                     path={path}

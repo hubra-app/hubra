@@ -25,6 +25,7 @@ import {
   IconLink,
   IconLock,
   IconMail,
+  IconPlugConnected,
   IconSettings,
   IconShieldLock,
   IconUser,
@@ -48,6 +49,7 @@ const TABS = [
   { value: 'sitzungen', label: () => tr('Sitzungen', 'Sessions'), Icon: IconDevices },
   { value: 'benachrichtigungen', label: () => tr('Benachrichtigungen', 'Notifications'), Icon: IconBell },
   { value: 'verknuepfungen', label: () => tr('Verknüpfungen', 'Linked accounts'), Icon: IconLink },
+  { value: 'apps', label: () => tr('Apps', 'Apps'), Icon: IconPlugConnected },
 ] as const
 
 type Tab = (typeof TABS)[number]['value']
@@ -148,6 +150,9 @@ export function AccountScreen() {
         </Tabs.Panel>
         <Tabs.Panel value="verknuepfungen">
           <LinkedAccountsTab />
+        </Tabs.Panel>
+        <Tabs.Panel value="apps">
+          <AppsTab />
         </Tabs.Panel>
       </Tabs>
     </SignedInFrame>
@@ -714,6 +719,83 @@ function LinkedAccountsTab() {
           </Paper>
         )
       })}
+    </Stack>
+  )
+}
+
+/**
+ * Apps the person let read Hubra for them (OAuth, docs/oauth.md), such as
+ * Claude: one entry per app and club. Ending one stops it at once.
+ */
+function AppsTab() {
+  const { notify } = useSso()
+  const queryClient = useQueryClient()
+  const grants = useQuery({ queryKey: ['oauth-grants'], queryFn: authApi.getOAuthGrants })
+  const end = useMutation({
+    mutationFn: authApi.endOAuthGrant,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['oauth-grants'] })
+      notify('success', tr('Zugang beendet', 'Access ended'))
+    },
+    onError: (err) => notify('error', tr('Beenden fehlgeschlagen', 'Ending failed'), errorText(err, '')),
+  })
+
+  if (grants.isError) return <LoadFailed onRetry={() => grants.refetch()} />
+  if (!grants.data) return <Loader size="sm" />
+
+  return (
+    <Stack gap="sm">
+      <Text size="sm" c="dimmed">
+        {tr(
+          'Apps, denen du Zugang zu Hubra gegeben hast, zum Beispiel Claude. Eine App sieht nie mehr, als du selbst darfst, und nur im Verein, den du gewählt hast.',
+          'Apps you gave access to Hubra, for example Claude. An app never sees more than you may yourself, and only in the club you chose.',
+        )}
+      </Text>
+      {grants.data.items.length === 0 && (
+        <Text size="sm" c="dimmed">
+          {tr('Keine Apps verbunden.', 'No apps connected.')}
+        </Text>
+      )}
+      {grants.data.items.map((g) => (
+        <Paper key={g.id} withBorder p="md">
+          <Group justify="space-between" wrap="nowrap">
+            <div style={{ minWidth: 0 }}>
+              <Group gap="xs" wrap="nowrap">
+                <Text fw={600} truncate>
+                  {g.app?.name ?? tr('App', 'App')}
+                </Text>
+                {g.app && !g.app.verified && (
+                  <Badge size="sm" variant="light" color="yellow">
+                    {tr('selbst angemeldet', 'self-registered')}
+                  </Badge>
+                )}
+              </Group>
+              <Text size="xs" c="dimmed">
+                {g.club?.name ?? tr('Plattform', 'Platform')} ·{' '}
+                {g.canWrite ? tr('lesen und ändern', 'read and change') : tr('nur lesen', 'read only')}
+                {g.resourceKind === 'mcp' ? tr(' · über den Claude-Connector', ' · through the Claude connector') : ''}
+              </Text>
+              <Text size="xs" c="dimmed">
+                {tr('verbunden', 'connected')} {formatTime(g.createdAt)} ·{' '}
+                {g.lastUsedAt
+                  ? `${tr('zuletzt genutzt', 'last used')} ${formatTime(g.lastUsedAt)}`
+                  : tr('noch nicht genutzt', 'not used yet')}{' '}
+                · {tr('bis', 'until')} {formatTime(g.expiresAt)}
+              </Text>
+            </div>
+            <Button
+              variant="subtle"
+              color="red"
+              size="xs"
+              style={{ flexShrink: 0 }}
+              loading={end.isPending && end.variables === g.id}
+              onClick={() => end.mutate(g.id)}
+            >
+              {tr('Beenden', 'End')}
+            </Button>
+          </Group>
+        </Paper>
+      ))}
     </Stack>
   )
 }
