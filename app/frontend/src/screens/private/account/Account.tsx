@@ -1,68 +1,65 @@
-import { useMemo } from "react";
-import { Badge, Button, Group, Paper, Progress, Text, ThemeIcon } from "@mantine/core";
-import { useQuery } from "@tanstack/react-query";
-import { useT } from "@/locales/i18n";
+import { useMemo } from 'react'
+import { Badge, Button, Group, Paper, Progress, Text, ThemeIcon } from '@mantine/core'
+import { useQuery } from '@tanstack/react-query'
+import { useT } from '@/locales/i18n'
 import {
   IconCalendar,
   IconChartBar,
   IconReceipt,
   IconLogout as Leave,
   IconCreditCard,
-} from "@tabler/icons-react";
-import { useAuth, useNav } from "@/context/AppContext";
-import { useEvents, useMyVotes, usePolls } from "@/data/lists";
-import { ErrorBanner, InvoicePill } from "@/components/ui";
-import { listMyInvoices, downloadInvoicePdf } from "@/api/finance";
-import { formatCHF, formatDate } from "@/format";
-import { useToggleJoinEvent } from "@/screens/private/operations/useEventActions";
-import { useModules } from "@/modules/useModules";
-import { MyGroupsCard } from "./MyGroupsCard";
-import { MyAttendanceCard } from "./MyAttendanceCard";
-import { PluginSlot } from "@/plugins";
-import { qk } from "@/data/keys";
+} from '@tabler/icons-react'
+import { useAuth, useNav } from '@/context/AppContext'
+import { useEvents, useMyVotes, usePolls } from '@/data/lists'
+import { ErrorBanner, InvoicePill } from '@/components/ui'
+import { listMyInvoices, downloadInvoicePdf } from '@/api/finance'
+import { formatCHF, formatDate } from '@/format'
+import { useToggleJoinEvent } from '@/screens/private/operations/useEventActions'
+import { PluginSlot } from '@/plugins'
+import { qk } from '@/data/keys'
 
-/* -- Account Dashboard ------------------------ */
-export function AccountDashboardScreen() {
-  const { t, i18n } = useT();
-  const { currentUser } = useAuth();
-  const { polls } = usePolls();
-  const { events } = useEvents();
-  const myVotes = useMyVotes();
-  const { go, goInvoice } = useNav();
-  const joinEventMutation = useToggleJoinEvent();
-  const modules = useModules();
-  const myId = currentUser?.id ?? "";
+/** The member's unpaid invoices (shared by the payments card and the tiles). */
+function useMyOpenInvoices() {
+  const query = useQuery({
+    queryKey: qk.invoices.mine,
+    queryFn: () => listMyInvoices(),
+  })
+  const myInvoices = useMemo(
+    () => (query.data ?? []).filter((inv) => inv.status !== 'Paid'),
+    [query.data],
+  )
+  return { ...query, myInvoices }
+}
 
+/* -- Widgets of the personal start page (dashboard/widgets.tsx) ---------- */
+
+/** Open payments; shows nothing while everything is paid. */
+export function MyPaymentsCard() {
+  const { t } = useT()
+  const { goInvoice } = useNav()
   const {
-    data: invoicesData,
+    myInvoices,
     isLoading: invoicesLoading,
     isError: invoicesError,
     refetch: refetchInvoices,
-  } = useQuery({
-    queryKey: qk.invoices.mine,
-    queryFn: () => listMyInvoices(),
-  });
-  const myInvoices = useMemo(
-    () => (invoicesData ?? []).filter((inv) => inv.status !== "Paid"),
-    [invoicesData],
-  );
-
-  const myEvents = events.filter((ev) => ev.attendees.includes(myId));
-  const votedPolls = polls.filter((p) => myVotes[p.id] !== undefined);
-
+  } = useMyOpenInvoices()
+  if (!invoicesError && !invoicesLoading && myInvoices.length === 0) return null
   return (
-    <>
+    <div>
       {/* pending payments banner */}
       {invoicesError && (
         <ErrorBanner
-          message={t("account.invoicesLoadFailed", 'Deine Rechnungen konnten nicht geladen werden.')}
+          message={t(
+            'account.invoicesLoadFailed',
+            'Deine Rechnungen konnten nicht geladen werden.',
+          )}
           onRetry={() => refetchInvoices()}
         />
       )}
       {invoicesLoading && (
-        <Paper withBorder p="md" mb="md">
+        <Paper withBorder p="md">
           <Text size="sm" c="dimmed">
-            {t("common.loading", 'Wird geladen …')}
+            {t('common.loading', 'Wird geladen …')}
           </Text>
         </Paper>
       )}
@@ -70,40 +67,31 @@ export function AccountDashboardScreen() {
         <Paper
           withBorder
           style={{
-            marginBottom: 16,
-            border: "1.5px solid rgba(255, 77, 61, 0.25)",
-            background: "rgba(255, 77, 61, 0.04)",
+            border: '1.5px solid rgba(255, 77, 61, 0.25)',
+            background: 'rgba(255, 77, 61, 0.04)',
           }}
         >
           <Group
             p="md"
             gap="sm"
             style={{
-              borderBottom: "1px solid var(--mantine-color-line-0)",
-              background: "transparent",
+              borderBottom: '1px solid var(--mantine-color-line-0)',
+              background: 'transparent',
             }}
           >
-            <IconCreditCard
-              size={16}
-              style={{ color: "var(--mantine-color-red-6)" }}
-            />
-            <Text
-              fw={700}
-              fz="md"
-              style={{ color: "var(--mantine-color-red-7)" }}
-            >
-              {t("account.pendingPayment", 'Offene Zahlung')}
-              {myInvoices.length !== 1 ? "" : ""}
+            <IconCreditCard size={16} style={{ color: 'var(--mantine-color-red-6)' }} />
+            <Text fw={700} fz="md" style={{ color: 'var(--mantine-color-red-7)' }}>
+              {t('account.pendingPayment', 'Offene Zahlung')}
+              {myInvoices.length !== 1 ? '' : ''}
             </Text>
             <span
               style={{
-                marginLeft: "auto",
-                fontSize: "var(--mantine-font-size-xs)",
-                color: "var(--mantine-color-red-7)",
+                marginLeft: 'auto',
+                fontSize: 'var(--mantine-font-size-xs)',
+                color: 'var(--mantine-color-red-7)',
               }}
             >
-              {myInvoices.length} {t("account.invoice", 'Rechnung')}
-              {myInvoices.length !== 1 ? "s" : ""}
+              {t('dashboards.w.openInvoicesCount', { count: myInvoices.length })}
             </span>
           </Group>
           <div>
@@ -111,42 +99,41 @@ export function AccountDashboardScreen() {
               <div
                 key={inv.id}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
                   // On a phone the buttons go under the amount.
-                  flexWrap: "wrap",
-                  padding: "10px 16px",
-                  borderTop: "1px solid rgba(255, 77, 61, 0.12)",
+                  flexWrap: 'wrap',
+                  padding: '10px 16px',
+                  borderTop: '1px solid rgba(255, 77, 61, 0.12)',
                   gap: 12,
                 }}
               >
                 <div>
                   <div
                     style={{
-                      fontSize: "var(--mantine-font-size-sm)",
+                      fontSize: 'var(--mantine-font-size-sm)',
                       fontWeight: 600,
-                      color: "var(--mantine-color-ink-8)",
+                      color: 'var(--mantine-color-ink-8)',
                     }}
                   >
                     {inv.id}
                   </div>
                   <div
                     style={{
-                      fontSize: "var(--mantine-font-size-xs)",
-                      color: "var(--mantine-color-ink-4)",
+                      fontSize: 'var(--mantine-font-size-xs)',
+                      color: 'var(--mantine-color-ink-4)',
                     }}
                   >
-                    {t("account.due", 'Fällig')} {formatDate(inv.due)} · CHF{" "}
-                    {formatCHF(inv.amount)}
+                    {t('account.due', 'Fällig')} {formatDate(inv.due)} · CHF {formatCHF(inv.amount)}
                   </div>
                 </div>
                 <div
                   style={{
-                    display: "flex",
-                    flexWrap: "wrap",
+                    display: 'flex',
+                    flexWrap: 'wrap',
                     gap: 8,
-                    alignItems: "center",
+                    alignItems: 'center',
                   }}
                 >
                   <InvoicePill status={inv.status} />
@@ -154,19 +141,11 @@ export function AccountDashboardScreen() {
                     name="invoice.actions"
                     props={{ invoice: inv, onChange: () => refetchInvoices() }}
                   />
-                  <Button
-                    size="sm"
-                    variant="subtle"
-                    onClick={() => downloadInvoicePdf(inv.id)}
-                  >
-                    {t("finance.downloadQrBill", 'QR-Rechnung herunterladen')}
+                  <Button size="sm" variant="subtle" onClick={() => downloadInvoicePdf(inv.id)}>
+                    {t('finance.downloadQrBill', 'QR-Rechnung herunterladen')}
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="default"
-                    onClick={() => goInvoice(inv)}
-                  >
-                    {t("account.view", 'Ansehen')}
+                  <Button size="sm" variant="default" onClick={() => goInvoice(inv)}>
+                    {t('account.view', 'Ansehen')}
                   </Button>
                 </div>
               </div>
@@ -174,353 +153,347 @@ export function AccountDashboardScreen() {
           </div>
         </Paper>
       )}
+    </div>
+  )
+}
 
-      {/* stats: three small tiles in a row on phones (index.css) */}
-      <div
-        className="stat-tiles"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: 12,
-          marginBottom: 16,
-        }}
-      >
-        {[
-          {
-            label: t("account.eventsJoined", 'Angemeldete Anlässe'),
-            value: myEvents.length,
-            icon: <IconCalendar size={20} />,
-            color: "blue",
-          },
-          {
-            label: t("account.pollsVoted", 'Abstimmungen'),
-            value: Object.keys(myVotes).length,
-            icon: <IconChartBar size={20} />,
-            color: "green",
-          },
-          {
-            label: t("account.openInvoices", 'Offene Rechnungen'),
-            value: myInvoices.length,
-            icon: <IconReceipt size={20} />,
-            color: myInvoices.length > 0 ? "red" : "gray",
-          },
-        ].map((s) => (
-          <Paper
-            key={s.label}
-            withBorder
-            p="md"
-            className="stat-tile"
-            style={{ display: "flex", alignItems: "center", gap: 14 }}
-          >
-            <ThemeIcon size={44} radius="md" variant="light" color={s.color}>
-              {s.icon}
-            </ThemeIcon>
-            <div style={{ minWidth: 0 }}>
-              <Text className="stat-value" fz={26} fw={700} lh={1.1}>
-                {s.value}
-              </Text>
-              <Text fz="sm" c="dimmed" mt={2}>
-                {s.label}
-              </Text>
-            </div>
-          </Paper>
-        ))}
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        {/* My events */}
-        <Paper withBorder>
-          <Group
-            p="md"
-            gap="sm"
-            style={{ borderBottom: "1px solid var(--mantine-color-line-0)" }}
-          >
-            <IconCalendar
-              size={16}
-              style={{ color: "var(--mantine-color-ink-4)" }}
-            />
-            <Text fw={700} fz="md">
-              {t("common.myEvents", 'Meine Anlässe')}
+/** Three tiles: events joined, polls voted, open invoices. */
+export function MySummaryTiles() {
+  const { t } = useT()
+  const { currentUser } = useAuth()
+  const { events } = useEvents()
+  const myVotes = useMyVotes()
+  const { myInvoices } = useMyOpenInvoices()
+  const myId = currentUser?.id ?? ''
+  const myEvents = events.filter((ev) => ev.attendees.includes(myId))
+  return (
+    <div
+      className="stat-tiles"
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+        gap: 12,
+      }}
+    >
+      {[
+        {
+          label: t('account.eventsJoined', 'Angemeldete Anlässe'),
+          value: myEvents.length,
+          icon: <IconCalendar size={20} />,
+          color: 'blue',
+        },
+        {
+          label: t('account.pollsVoted', 'Abstimmungen'),
+          value: Object.keys(myVotes).length,
+          icon: <IconChartBar size={20} />,
+          color: 'green',
+        },
+        {
+          label: t('account.openInvoices', 'Offene Rechnungen'),
+          value: myInvoices.length,
+          icon: <IconReceipt size={20} />,
+          color: myInvoices.length > 0 ? 'red' : 'gray',
+        },
+      ].map((s) => (
+        <Paper
+          key={s.label}
+          withBorder
+          p="md"
+          className="stat-tile"
+          style={{ display: 'flex', alignItems: 'center', gap: 14 }}
+        >
+          <ThemeIcon size={44} radius="md" variant="light" color={s.color}>
+            {s.icon}
+          </ThemeIcon>
+          <div style={{ minWidth: 0 }}>
+            <Text className="stat-value" fz={26} fw={700} lh={1.1}>
+              {s.value}
             </Text>
-            <Button
-              size="sm"
-              variant="subtle"
-              style={{ marginLeft: "auto" }}
-              onClick={() => go("/app/operations/events")}
-            >
-              {t("account.browseEvents", 'Anlässe ansehen')}
-            </Button>
-          </Group>
-          {myEvents.length === 0 ? (
+            <Text fz="sm" c="dimmed" mt={2}>
+              {s.label}
+            </Text>
+          </div>
+        </Paper>
+      ))}
+    </div>
+  )
+}
+
+/** The events the member signed up for, with a button to leave. */
+export function MyEventsCard() {
+  const { t, i18n } = useT()
+  const { currentUser } = useAuth()
+  const { events } = useEvents()
+  const { go } = useNav()
+  const joinEventMutation = useToggleJoinEvent()
+  const myId = currentUser?.id ?? ''
+  const myEvents = events.filter((ev) => ev.attendees.includes(myId))
+  return (
+    <Paper withBorder>
+      <Group p="md" gap="sm" style={{ borderBottom: '1px solid var(--mantine-color-line-0)' }}>
+        <IconCalendar size={16} style={{ color: 'var(--mantine-color-ink-4)' }} />
+        <Text fw={700} fz="md">
+          {t('common.myEvents', 'Meine Anlässe')}
+        </Text>
+        <Button
+          size="sm"
+          variant="subtle"
+          style={{ marginLeft: 'auto' }}
+          onClick={() => go('/app/operations/events')}
+        >
+          {t('account.browseEvents', 'Anlässe ansehen')}
+        </Button>
+      </Group>
+      {myEvents.length === 0 ? (
+        <div
+          style={{
+            padding: '20px',
+            textAlign: 'center',
+            color: 'var(--mantine-color-ink-3)',
+            fontSize: 'var(--mantine-font-size-sm)',
+          }}
+        >
+          {t('account.noEventsJoined', 'Du hast dich noch für keinen Anlass angemeldet.')}
+        </div>
+      ) : (
+        myEvents.map((ev) => {
+          const d = new Date(ev.date)
+          return (
             <div
+              key={ev.id}
               style={{
-                padding: "20px",
-                textAlign: "center",
-                color: "var(--mantine-color-ink-3)",
-                fontSize: "var(--mantine-font-size-sm)",
+                display: 'flex',
+                gap: 12,
+                padding: '10px 16px',
+                borderBottom: '1px solid var(--mantine-color-line-0)',
+                alignItems: 'center',
               }}
             >
-              {t(
-                "account.noEventsJoined",
-                'Du hast dich noch für keinen Anlass angemeldet.',
-              )}
-            </div>
-          ) : (
-            myEvents.map((ev) => {
-              const d = new Date(ev.date);
-              return (
+              <div
+                style={{
+                  textAlign: 'center',
+                  minWidth: 40,
+                  background: 'var(--mantine-color-surface-1)',
+                  borderRadius: 8,
+                  padding: '6px 0',
+                  flexShrink: 0,
+                }}
+              >
                 <div
-                  key={ev.id}
+                  className="num"
                   style={{
-                    display: "flex",
-                    gap: 12,
-                    padding: "10px 16px",
-                    borderBottom: "1px solid var(--mantine-color-line-0)",
-                    alignItems: "center",
+                    fontSize: 'var(--mantine-font-size-lg)',
+                    fontWeight: 700,
+                    color: 'var(--mantine-color-ink-8)',
+                    lineHeight: 1,
                   }}
                 >
-                  <div
-                    style={{
-                      textAlign: "center",
-                      minWidth: 40,
-                      background: "var(--mantine-color-surface-1)",
-                      borderRadius: 8,
-                      padding: "6px 0",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <div
-                      className="num"
-                      style={{
-                        fontSize: "var(--mantine-font-size-lg)",
-                        fontWeight: 700,
-                        color: "var(--mantine-color-ink-8)",
-                        lineHeight: 1,
-                      }}
-                    >
-                      {d.getDate()}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: "var(--mantine-color-ink-3)",
-                        letterSpacing: "0.06em",
-                      }}
-                    >
-                      {d
-                        .toLocaleString(i18n.language, { month: "short" })
-                        .toUpperCase()}
-                    </div>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div
-                      style={{
-                        fontSize: "var(--mantine-font-size-sm)",
-                        fontWeight: 600,
-                        color: "var(--mantine-color-ink-8)",
-                      }}
-                    >
-                      {ev.title}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "var(--mantine-font-size-xs)",
-                        color: "var(--mantine-color-ink-4)",
-                      }}
-                    >
-                      {ev.time}
-                      {ev.location ? ` · ${ev.location}` : ""}
-                    </div>
-                  </div>
-                  <Badge variant="light" color="green" radius="xl" size="sm">
-                    {t("account.attending", 'Teilnehmende')}
-                  </Badge>
-                  <Button
-                    size="sm"
-                    variant="subtle"
-                    disabled={joinEventMutation.isPending}
-                    onClick={() =>
-                      joinEventMutation.mutate({
-                        eventId: ev.id,
-                        eventTitle: ev.title,
-                        memberId: currentUser?.id ?? "",
-                      })
-                    }
-                  >
-                    <Leave size={16} />
-                    {t("account.leave", 'Verlassen')}
-                  </Button>
+                  {d.getDate()}
                 </div>
-              );
-            })
-          )}
-        </Paper>
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: 'var(--mantine-color-ink-3)',
+                    letterSpacing: '0.06em',
+                  }}
+                >
+                  {d.toLocaleString(i18n.language, { month: 'short' }).toUpperCase()}
+                </div>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div
+                  style={{
+                    fontSize: 'var(--mantine-font-size-sm)',
+                    fontWeight: 600,
+                    color: 'var(--mantine-color-ink-8)',
+                  }}
+                >
+                  {ev.title}
+                </div>
+                <div
+                  style={{
+                    fontSize: 'var(--mantine-font-size-xs)',
+                    color: 'var(--mantine-color-ink-4)',
+                  }}
+                >
+                  {ev.time}
+                  {ev.location ? ` · ${ev.location}` : ''}
+                </div>
+              </div>
+              <Badge variant="light" color="green" radius="xl" size="sm">
+                {t('account.attending', 'Teilnehmende')}
+              </Badge>
+              <Button
+                size="sm"
+                variant="subtle"
+                disabled={joinEventMutation.isPending}
+                onClick={() =>
+                  joinEventMutation.mutate({
+                    eventId: ev.id,
+                    eventTitle: ev.title,
+                    memberId: currentUser?.id ?? '',
+                  })
+                }
+              >
+                <Leave size={16} />
+                {t('account.leave', 'Verlassen')}
+              </Button>
+            </div>
+          )
+        })
+      )}
+    </Paper>
+  )
+}
 
-        {/* My votes */}
-        <Paper withBorder>
-          <Group
-            p="md"
-            gap="sm"
-            style={{ borderBottom: "1px solid var(--mantine-color-line-0)" }}
-          >
-            <IconChartBar
-              size={16}
-              style={{ color: "var(--mantine-color-ink-4)" }}
-            />
-            <Text fw={700} fz="md">
-              {t("account.myVotes", 'Meine Abstimmungen')}
-            </Text>
-            <Button
-              size="sm"
-              variant="subtle"
-              style={{ marginLeft: "auto" }}
-              onClick={() => go("/app/operations/polls")}
-            >
-              {t("account.allPolls", 'Alle Umfragen')}
-            </Button>
-          </Group>
-          {votedPolls.length === 0 ? (
+/** The polls the member voted in, with their choice. */
+export function MyVotesCard() {
+  const { t, i18n } = useT()
+  const { polls } = usePolls()
+  const myVotes = useMyVotes()
+  const { go } = useNav()
+  const votedPolls = polls.filter((p) => myVotes[p.id] !== undefined)
+  return (
+    <Paper withBorder>
+      <Group p="md" gap="sm" style={{ borderBottom: '1px solid var(--mantine-color-line-0)' }}>
+        <IconChartBar size={16} style={{ color: 'var(--mantine-color-ink-4)' }} />
+        <Text fw={700} fz="md">
+          {t('account.myVotes', 'Meine Abstimmungen')}
+        </Text>
+        <Button
+          size="sm"
+          variant="subtle"
+          style={{ marginLeft: 'auto' }}
+          onClick={() => go('/app/operations/polls')}
+        >
+          {t('account.allPolls', 'Alle Umfragen')}
+        </Button>
+      </Group>
+      {votedPolls.length === 0 ? (
+        <div
+          style={{
+            padding: '20px',
+            textAlign: 'center',
+            color: 'var(--mantine-color-ink-3)',
+            fontSize: 'var(--mantine-font-size-sm)',
+          }}
+        >
+          {t('account.noPollsVoted', 'Du hast noch an keiner Umfrage teilgenommen.')}
+        </div>
+      ) : (
+        votedPolls.map((poll) => {
+          const votedIdx = myVotes[poll.id]
+          const max = poll.options.length > 0 ? Math.max(...poll.options.map((o) => o.votes)) : 0
+          return (
             <div
+              key={poll.id}
               style={{
-                padding: "20px",
-                textAlign: "center",
-                color: "var(--mantine-color-ink-3)",
-                fontSize: "var(--mantine-font-size-sm)",
+                padding: '10px 16px',
+                borderBottom: '1px solid var(--mantine-color-line-0)',
               }}
             >
-              {t("account.noPollsVoted", 'Du hast noch an keiner Umfrage teilgenommen.')}
-            </div>
-          ) : (
-            votedPolls.map((poll) => {
-              const votedIdx = myVotes[poll.id];
-              const max =
-                poll.options.length > 0
-                  ? Math.max(...poll.options.map((o) => o.votes))
-                  : 0;
-              return (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  marginBottom: 8,
+                  gap: 10,
+                }}
+              >
                 <div
-                  key={poll.id}
                   style={{
-                    padding: "10px 16px",
-                    borderBottom: "1px solid var(--mantine-color-line-0)",
+                    fontSize: 'var(--mantine-font-size-sm)',
+                    fontWeight: 600,
+                    color: 'var(--mantine-color-ink-8)',
                   }}
                 >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
-                      marginBottom: 8,
-                      gap: 10,
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: "var(--mantine-font-size-sm)",
-                        fontWeight: 600,
-                        color: "var(--mantine-color-ink-8)",
-                      }}
-                    >
-                      {poll.question}
-                    </div>
-                    <Badge variant="light" color="green" radius="xl" size="sm">
-                      {t("account.voted", 'Abgestimmt')}
-                    </Badge>
-                  </div>
-                  <div
-                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
-                  >
-                    {poll.options.map((opt, i) => {
-                      const pct =
-                        poll.totalVotes > 0
-                          ? Math.round((opt.votes / poll.totalVotes) * 100)
-                          : 0;
-                      const isMyVote = votedIdx === i;
-                      const isWinner = opt.votes === max && max > 0;
-                      return (
-                        <div key={opt.label}>
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              marginBottom: 3,
-                            }}
-                          >
-                            <span
-                              style={{
-                                fontSize: "var(--mantine-font-size-sm)",
-                                color: isMyVote ? "var(--mantine-color-acc-7)" : "var(--hb-text-2)",
-                                fontWeight: isMyVote ? 600 : 400,
-                              }}
-                            >
-                              {opt.label}
-                              {isMyVote ? " ✓" : ""}
-                            </span>
-                            <span
-                              className="num"
-                              style={{
-                                fontSize: "var(--mantine-font-size-sm)",
-                                color: isWinner ? "var(--mantine-color-acc-7)" : "var(--hb-text-2)",
-                              }}
-                            >
-                              {pct}%
-                            </span>
-                          </div>
-                          <Progress
-                            value={pct}
-                            aria-label={opt.label}
-                            size="sm"
-                            radius="xl"
-                            styles={{
-                              section: {
-                                background: isMyVote
-                                  ? "var(--mantine-color-acc-6)"
-                                  : isWinner
-                                    ? "var(--mantine-color-acc-3)"
-                                    : "#ebe8f2",
-                                transition: "width .4s",
-                              },
-                            }}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "var(--mantine-font-size-xs)",
-                      color: "var(--hb-text-3)",
-                      marginTop: 8,
-                    }}
-                  >
-                    {t("account.votes", { count: poll.totalVotes })}
-                    {" · "}
-                    {poll.closesAt
-                      ? t("account.closesOn", {
-                          date: new Date(poll.closesAt).toLocaleDateString(
-                            i18n.language,
-                            {
-                              day: "numeric",
-                              month: "short",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            },
-                          ),
-                        })
-                      : t("account.closesInDays", { days: poll.closesIn })}
-                  </div>
+                  {poll.question}
                 </div>
-              );
-            })
-          )}
-        </Paper>
-
-        {modules.has("events") && <MyAttendanceCard />}
-        {modules.has("groups") && <MyGroupsCard />}
-        <PluginSlot name="account.cards" />
-
-      </div>
-    </>
-  );
+                <Badge variant="light" color="green" radius="xl" size="sm">
+                  {t('account.voted', 'Abgestimmt')}
+                </Badge>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {poll.options.map((opt, i) => {
+                  const pct =
+                    poll.totalVotes > 0 ? Math.round((opt.votes / poll.totalVotes) * 100) : 0
+                  const isMyVote = votedIdx === i
+                  const isWinner = opt.votes === max && max > 0
+                  return (
+                    <div key={opt.label}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          marginBottom: 3,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: 'var(--mantine-font-size-sm)',
+                            color: isMyVote ? 'var(--mantine-color-acc-7)' : 'var(--hb-text-2)',
+                            fontWeight: isMyVote ? 600 : 400,
+                          }}
+                        >
+                          {opt.label}
+                          {isMyVote ? ' ✓' : ''}
+                        </span>
+                        <span
+                          className="num"
+                          style={{
+                            fontSize: 'var(--mantine-font-size-sm)',
+                            color: isWinner ? 'var(--mantine-color-acc-7)' : 'var(--hb-text-2)',
+                          }}
+                        >
+                          {pct}%
+                        </span>
+                      </div>
+                      <Progress
+                        value={pct}
+                        aria-label={opt.label}
+                        size="sm"
+                        radius="xl"
+                        styles={{
+                          section: {
+                            background: isMyVote
+                              ? 'var(--mantine-color-acc-6)'
+                              : isWinner
+                                ? 'var(--mantine-color-acc-3)'
+                                : '#ebe8f2',
+                            transition: 'width .4s',
+                          },
+                        }}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+              <div
+                style={{
+                  fontSize: 'var(--mantine-font-size-xs)',
+                  color: 'var(--hb-text-3)',
+                  marginTop: 8,
+                }}
+              >
+                {t('account.votes', { count: poll.totalVotes })}
+                {' · '}
+                {poll.closesAt
+                  ? t('account.closesOn', {
+                      date: new Date(poll.closesAt).toLocaleDateString(i18n.language, {
+                        day: 'numeric',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      }),
+                    })
+                  : t('account.closesInDays', { days: poll.closesIn })}
+              </div>
+            </div>
+          )
+        })
+      )}
+    </Paper>
+  )
 }

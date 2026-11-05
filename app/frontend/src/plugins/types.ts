@@ -58,6 +58,30 @@ export interface PluginSearch extends Gated {
   load: () => Promise<SearchHit[]>
 }
 
+/**
+ * A widget members can put on their own dashboards (Dashboard › +). Stored
+ * as type `p:<plugin id>.<id>`; `config` is what the member set in the
+ * widget's fields.
+ */
+export interface PluginWidget extends Gated {
+  id: string
+  /** Translation keys: the widget's name and one line on what it shows. */
+  label: string
+  description?: string
+  /** Default width: s (a third), m (half), l (full). */
+  size?: 's' | 'm' | 'l'
+  /** Settings the member fills in when adding it. */
+  fields?: {
+    key: string
+    /** A translation key. */
+    label: string
+    kind: 'text' | 'number' | 'switch'
+    default?: string | number | boolean
+  }[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  component: ComponentType<{ config: Record<string, any>; size: 's' | 'm' | 'l' }>
+}
+
 export interface PluginDefinition {
   /** The plugin's id, as in its plugin.yaml. */
   id: string
@@ -65,6 +89,8 @@ export interface PluginDefinition {
   tabs?: PluginTab[]
   slots?: PluginSlotEntry[]
   search?: PluginSearch[]
+  /** Widgets for members' own dashboards. */
+  widgets?: PluginWidget[]
   /** Icons the plugin's sidebar entries name, by the name in its module manifest. */
   icons?: Record<string, ComponentType<{ size?: number }>>
   /** Translations by language (`en-GB`, `de-CH`), nested like translation.json. */
