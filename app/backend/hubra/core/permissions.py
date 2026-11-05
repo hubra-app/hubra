@@ -512,14 +512,6 @@ def body_group(_kwargs) -> int | None:
     return value if isinstance(value, int) and not isinstance(value, bool) else None
 
 
-def holds_for_group(member, key: str, group_id: int | None) -> bool:
-    """True when *member* holds *key* club-wide, or for *group_id* through a
-    role held for that group only."""
-    if member_has_permission(member, key):
-        return True
-    return group_id is not None and key in scoped_permission_keys(member).get(group_id, ())
-
-
 def check_group_change(key: str, data: dict) -> None:
     """403 when a member let in through a role for one group moves the
     content out of it: the new ``group_id`` must be a group they hold *key*

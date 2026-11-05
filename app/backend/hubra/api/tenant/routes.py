@@ -181,7 +181,7 @@ def list_tenants_health():
     tenants = list(db.session.scalars(query).all())
     health = tenant_health.for_tenants(tenants)
 
-    counts = {level: 0 for level in tenant_health.LEVELS}
+    counts = dict.fromkeys(tenant_health.LEVELS, 0)
     for h in health.values():
         counts[h["level"]] += 1
 
@@ -390,7 +390,7 @@ def set_tenant_early_access(tenant_id: int):
             target_id=str(tenant.id),
             details={
                 "early_access": [before["early_access"], after["early_access"]],
-                "features": {k: v for k, v in (body.get("features") or {}).items()},
+                "features": dict((body.get("features") or {}).items()),
             },
             ip_address=request.remote_addr,
         )

@@ -55,7 +55,7 @@ def send_email_task(
             self.max_retries + 1,
             exc,
         )
-        raise self.retry(exc=exc)
+        raise self.retry(exc=exc) from exc
 
 
 @celery_app.task(name="hubra.core.tasks.email_tasks.send_new_device_login_task")

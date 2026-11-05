@@ -79,7 +79,7 @@ def _candidates(literal: str) -> set[str]:
         parts = re.split(r"\$\{[^}]*\}", base)
         for fills in product(FILLS, repeat=len(parts) - 1):
             out.add(
-                "/api/v1" + "".join(chain.from_iterable(zip(parts, fills))) + parts[-1]
+                "/api/v1" + "".join(chain.from_iterable(zip(parts, fills, strict=False))) + parts[-1]
             )
     return out
 

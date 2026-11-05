@@ -799,7 +799,7 @@ _EN = ("en-GB", "en-US")
 
 
 def _loc(text: str) -> dict:
-    return {lang: text for lang in _EN}
+    return dict.fromkeys(_EN, text)
 
 
 COMMANDS = [
@@ -1337,7 +1337,7 @@ def window_notices(now: datetime | None = None) -> int:
         if wid not in known:
             notify_clubs("maintenance_started", notice)
             sent += 1
-    for wid in known - set(running):
+    for _wid in known - set(running):
         notify_clubs("maintenance_ended", {})
         sent += 1
     _set(_RUNNING_KEY, json.dumps(sorted(running)), ex=8 * 24 * 3600)

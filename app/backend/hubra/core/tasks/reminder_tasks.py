@@ -26,6 +26,7 @@ from hubra.core.services.email import DEFAULT_LANG
 from hubra.core.services.mail_format import mail_date
 from hubra.core.services.mail_i18n import render_mail_template
 from hubra.core.tasks import celery_app
+from hubra.core.timeutil import as_utc
 
 logger = logging.getLogger(__name__)
 
@@ -70,11 +71,6 @@ def event_start(event, zone: ZoneInfo) -> datetime:
     if start is None:
         start = datetime.combine(event.date, ALL_DAY_START)
     return start.replace(tzinfo=zone)
-
-
-def _aware(value: datetime) -> datetime:
-    # SQLite hands back naive datetimes; they are stored as UTC.
-    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
 
 
 def _club_url(path: str) -> str:
@@ -198,7 +194,7 @@ def _send_event_reminders(now: datetime | None = None) -> dict:
         if not (due <= now < start):
             continue
         event.reminder_sent_at = now
-        if _aware(event.created_at) > due:
+        if as_utc(event.created_at) > due:
             continue
         summary["events"] += 1
         local = start.astimezone(zone)
@@ -300,10 +296,10 @@ def _send_poll_reminders(now: datetime | None = None) -> dict:
         .order_by(Poll.closes_at, Poll.id)
     ).all()
     for poll in candidates:
-        closes = _aware(poll.closes_at)
+        closes = as_utc(poll.closes_at)
         due = closes - window
         poll.reminder_sent_at = now
-        if _aware(poll.created_at) > due:
+        if as_utc(poll.created_at) > due:
             continue
         summary["polls"] += 1
         local = closes.astimezone(zone)

@@ -132,7 +132,7 @@ def _my_votes(polls) -> dict[int, int]:
             PollVote.poll_id.in_([p.id for p in polls]),
         )
     )
-    return {poll_id: option_id for poll_id, option_id in rows}
+    return dict(rows.all())
 
 
 def _current_member_id() -> int | None:

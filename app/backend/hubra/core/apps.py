@@ -48,6 +48,7 @@ from hubra.core.errors import error_message
 from hubra.core.extensions import db
 from hubra.core.models.connected_app import ConnectedApp, ConnectedAppEvent
 from hubra.core.modules import AppProvider, Module, is_enabled, registry
+from hubra.core.timeutil import as_utc
 
 _log = logging.getLogger(__name__)
 
@@ -155,13 +156,6 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _aware(value: datetime | None) -> datetime | None:
-    # SQLite hands back naive datetimes; they are UTC.
-    if value is not None and value.tzinfo is None:
-        return value.replace(tzinfo=timezone.utc)
-    return value
-
-
 def get(connection_id: int, tenant_id: int) -> ConnectedApp | None:
     """One of the club's connections; never another club's."""
     conn = db.session.get(ConnectedApp, connection_id)
@@ -196,7 +190,7 @@ def for_tenant(tenant_id: int, code: str | None = None) -> list[ConnectedApp]:
 
 def pending_is_open(conn: ConnectedApp) -> bool:
     return (
-        conn.status == "pending" and _now() - _aware(conn.created_at) < PENDING_MAX_AGE
+        conn.status == "pending" and _now() - as_utc(conn.created_at) < PENDING_MAX_AGE
     )
 
 
@@ -380,7 +374,7 @@ def events(conn: ConnectedApp, limit: int = 50) -> list[ConnectedAppEvent]:
 
 
 def _iso(value: datetime | None) -> str | None:
-    value = _aware(value)
+    value = as_utc(value)
     return value.isoformat() if value else None
 
 

@@ -101,7 +101,7 @@ def create_wildduck_user(self, member_id: int, temp_password: str = "") -> None:
                 countdown,
                 exc,
             )
-            raise self.retry(exc=exc, countdown=countdown)
+            raise self.retry(exc=exc, countdown=countdown) from exc
         logger.error(
             "create_wildduck_user: exhausted retries for member %s: %s",
             member_id,
@@ -188,7 +188,7 @@ def sync_wildduck_password(self, member_id: int, new_password: str = "") -> None
                 countdown,
                 exc,
             )
-            raise self.retry(exc=exc, countdown=countdown)
+            raise self.retry(exc=exc, countdown=countdown) from exc
         logger.error(
             "sync_wildduck_password: exhausted retries for member %s: %s",
             member_id,
@@ -233,7 +233,7 @@ def remove_wildduck_alias(self, alias_id: str) -> None:
                 countdown,
                 exc,
             )
-            raise self.retry(exc=exc, countdown=countdown)
+            raise self.retry(exc=exc, countdown=countdown) from exc
         logger.error(
             "remove_wildduck_alias: exhausted retries for alias %s: %s", alias_id, exc
         )
@@ -324,7 +324,7 @@ def provision_member_mail(self, member_id: int) -> None:
                 countdown,
                 exc,
             )
-            raise self.retry(exc=exc, countdown=countdown)
+            raise self.retry(exc=exc, countdown=countdown) from exc
         logger.error(
             "provision_member_mail: exhausted retries for member %s: %s", member_id, exc
         )
@@ -389,7 +389,7 @@ def sync_managed_address(self, address_id: int) -> None:
                 countdown,
                 exc,
             )
-            raise self.retry(exc=exc, countdown=countdown)
+            raise self.retry(exc=exc, countdown=countdown) from exc
         logger.error(
             "sync_managed_address: exhausted retries for %s: %s", address_id, exc
         )
@@ -456,5 +456,5 @@ def sync_sender_from_whitelist(self) -> None:
                 countdown,
                 exc,
             )
-            raise self.retry(exc=exc, countdown=countdown)
+            raise self.retry(exc=exc, countdown=countdown) from exc
         logger.error("sync_sender_from_whitelist: exhausted retries: %s", exc)

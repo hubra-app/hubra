@@ -37,6 +37,7 @@ from hubra.core.auth import api_tokens, oidc
 from hubra.core.extensions import db
 from hubra.core.models.api_token import ApiToken
 from hubra.core.models.oauth import OAuthClient, OAuthCode
+from hubra.core.timeutil import as_utc
 
 ACCESS_TTL = timedelta(hours=1)
 CODE_TTL = timedelta(minutes=5)
@@ -76,10 +77,6 @@ class OAuthError(Exception):
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
-
-
-def _aware(value):
-    return api_tokens._aware(value)
 
 
 # ── Addresses ───────────────────────────────────────────────────────────────
@@ -334,7 +331,7 @@ def parse_scope(raw: str | None, client: OAuthClient) -> list[str]:
     none for an app that only signs people in. Unknown values (an MCP
     scope) are ignored; asking for more than the app may have is an error."""
     if not client.resources:
-        if {s for s in (raw or "").split()} & set(SCOPES):
+        if set((raw or "").split()) & set(SCOPES):
             raise OAuthError("invalid_scope", "This app only signs people in")
         return []
     asked = {s for s in (raw or "").split() if s in SCOPES} or {"read"}
@@ -558,11 +555,11 @@ def _issue(row: ApiToken) -> dict:
     row.prev_secret_hash = row.secret_hash if row.refresh_hash else None
     row.secret_hash = _hash(access)
     row.last4 = access[-4:]
-    row.access_expires_at = min(now + ACCESS_TTL, _aware(row.expires_at))
+    row.access_expires_at = min(now + ACCESS_TTL, as_utc(row.expires_at))
     row.prev_refresh_hash = row.refresh_hash
     row.refresh_hash = _hash(refresh)
     row.refreshed_at = now
-    expires_in = int((_aware(row.access_expires_at) - now).total_seconds())
+    expires_in = int((as_utc(row.access_expires_at) - now).total_seconds())
     return {
         "access_token": f"{ACCESS_PREFIX[row.kind]}_{row.public_id}_{access}",
         "token_type": "Bearer",
@@ -587,7 +584,7 @@ def exchange_code(client: OAuthClient, form) -> dict:
                 api_tokens.revoke(token, "Hubra", reason="code_reused")
         db.session.commit()
         raise OAuthError("invalid_grant", "This code was already used")
-    if _aware(row.expires_at) <= now:
+    if as_utc(row.expires_at) <= now:
         raise OAuthError("invalid_grant", "This code has expired")
     if form.get("redirect_uri") and form.get("redirect_uri") != row.redirect_uri:
         raise OAuthError("invalid_grant", "redirect_uri doesn't match")
@@ -677,7 +674,7 @@ def refresh(client: OAuthClient, form) -> dict:
     now = _now()
     if not _matches(row.refresh_hash, secret):
         if _matches(row.prev_refresh_hash, secret):
-            rotated = _aware(row.refreshed_at)
+            rotated = as_utc(row.refreshed_at)
             if rotated is None or now - rotated > REFRESH_RACE:
                 # Replaced long ago and shown again: someone has a copy.
                 api_tokens.revoke(row, "Hubra", reason="refresh_reused")
@@ -686,7 +683,7 @@ def refresh(client: OAuthClient, form) -> dict:
         raise OAuthError("invalid_grant", "Unknown refresh token")
     if row.revoked_at is not None:
         raise OAuthError("invalid_grant", "This sign-in was ended")
-    if _aware(row.expires_at) <= now:
+    if as_utc(row.expires_at) <= now:
         raise OAuthError("invalid_grant", "This sign-in has expired")
     resource = form.get("resource")
     if resource and _canonical(resource) != _canonical(row.resource or ""):
@@ -694,9 +691,9 @@ def refresh(client: OAuthClient, form) -> dict:
     from hubra.core.models.user import User
 
     user = db.session.get(User, row.user_id)
-    cutoff = _aware(user.tokens_valid_after) if user is not None else None
+    cutoff = as_utc(user.tokens_valid_after) if user is not None else None
     if user is None or user.is_disabled or (
-        cutoff is not None and _aware(row.created_at) < cutoff
+        cutoff is not None and as_utc(row.created_at) < cutoff
     ):
         api_tokens.revoke(row, "Hubra", reason="account_reset")
         db.session.commit()

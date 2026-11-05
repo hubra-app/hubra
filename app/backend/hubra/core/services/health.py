@@ -8,7 +8,7 @@ import smtplib
 import ssl
 import time
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
-from typing import Callable
+from collections.abc import Callable
 
 from flask import current_app
 

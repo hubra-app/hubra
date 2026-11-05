@@ -247,21 +247,6 @@ export async function listTenantRequests(
   return apiFetch(`/platform/system/tenant-requests${s ? `?${s}` : ''}`)
 }
 
-export async function listMyTenantRequests(): Promise<{ requests: TenantRequest[] }> {
-  return apiFetch('/global/tenant-requests/mine')
-}
-
-export async function createTenantRequest(data: {
-  name: string
-  slug: string
-  plan?: string
-}): Promise<{ request: TenantRequest }> {
-  return apiFetch('/platform/system/tenant-requests', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
 export async function approveTenantRequest(
   id: number,
 ): Promise<{

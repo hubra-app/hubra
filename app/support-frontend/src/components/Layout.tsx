@@ -19,7 +19,6 @@ import {
 import { useDisclosure } from '@mantine/hooks'
 import {
   IconChevronDown,
-  IconExternalLink,
   IconInbox,
   IconLogout,
   IconShieldLock,
@@ -284,8 +283,4 @@ export function Page({
       {children}
     </Box>
   )
-}
-
-export function ExternalHint() {
-  return <IconExternalLink size={14} style={{ verticalAlign: '-2px', marginLeft: 3 }} aria-hidden />
 }

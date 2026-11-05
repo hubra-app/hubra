@@ -908,7 +908,7 @@ class MembersService:
             .where(Member.deleted_at.is_(None))
             .group_by(Member.status)
         ).all()
-        by_status = {status: count for status, count in rows}
+        by_status = dict(rows)
         total = sum(by_status.values())
         return {
             "total": total,

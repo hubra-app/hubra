@@ -28,6 +28,7 @@ from sqlalchemy import insert, select, update
 
 from hubra.core import build_info
 from hubra.core.models.error_group import ErrorGroup
+from hubra.core.timeutil import as_utc
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +85,9 @@ def describe(exc: BaseException) -> dict:
 
 
 def fingerprint(exc_type: str, route: str, location: str) -> str:
-    return hashlib.sha1(f"{exc_type}|{route}|{location}".encode()).hexdigest()
+    return hashlib.sha1(
+        f"{exc_type}|{route}|{location}".encode(), usedforsecurity=False
+    ).hexdigest()
 
 
 def build_label(version: str | None, commit: str | None) -> str:
@@ -210,12 +213,6 @@ def install(app) -> None:
 # ── Reading (manage) ────────────────────────────────────────────────────────
 
 
-def _aware(dt: datetime | None) -> datetime | None:
-    if dt is None:
-        return None
-    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
-
-
 def release_of(commit: str | None, version: str | None) -> dict | None:
     """The upgrade that brought this build, from the platform event log."""
     from hubra.core.extensions import db
@@ -239,7 +236,7 @@ def release_of(commit: str | None, version: str | None) -> dict | None:
         ):
             return {
                 "kind": e.kind,
-                "at": _aware(e.created_at).isoformat(),
+                "at": as_utc(e.created_at).isoformat(),
                 "message": e.message,
             }
     return None
@@ -256,15 +253,15 @@ def group_json(
         "location": g.location,
         "message": g.message,
         "count": g.count,
-        "first_seen": _aware(g.first_seen).isoformat(),
-        "last_seen": _aware(g.last_seen).isoformat(),
+        "first_seen": as_utc(g.first_seen).isoformat(),
+        "last_seen": as_utc(g.last_seen).isoformat(),
         "first_build": first,
         "first_commit": g.first_commit,
         "last_build": build_label(g.last_version, g.last_commit),
         "builds": g.builds or {},
         "status": g.status,
-        "resolved_at": _aware(g.resolved_at).isoformat() if g.resolved_at else None,
-        "reopened_at": _aware(g.reopened_at).isoformat() if g.reopened_at else None,
+        "resolved_at": as_utc(g.resolved_at).isoformat() if g.resolved_at else None,
+        "reopened_at": as_utc(g.reopened_at).isoformat() if g.reopened_at else None,
         "last_tenant_id": g.last_tenant_id,
         "new_in_current": current is not None and first == current,
     }

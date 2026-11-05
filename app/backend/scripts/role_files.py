@@ -149,7 +149,7 @@ def manifest_blueprints(root: Path) -> list[tuple[str, str, str, bool]]:
             keywords = {
                 k.arg: k.value.value for k in node.keywords if isinstance(k.value, ast.Constant)
             }
-            fields = dict(zip(("import_path", "attr", "url_prefix"), values))
+            fields = dict(zip(("import_path", "attr", "url_prefix"), values, strict=False))
             fields.update({k: v for k, v in keywords.items() if k in fields})
             if len(fields) < 3 or not str(fields["import_path"]).startswith("hubra."):
                 continue

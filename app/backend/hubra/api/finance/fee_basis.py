@@ -101,27 +101,6 @@ def _billing_year(today: date) -> tuple[date, date]:
     )
 
 
-def _lines_by_category(rows) -> list[dict]:
-    """(category, item, amount) rows as one line per category, largest first."""
-    lines: dict[int | None, dict] = {}
-    for category, item, amount in rows:
-        key = category.id if category is not None else None
-        line = lines.setdefault(
-            key,
-            {
-                "category_id": key,
-                "name": category.name if category is not None else None,
-                "color": category.color if category is not None else None,
-                "amount": Decimal(0),
-                "items": [],
-            },
-        )
-        line["amount"] += amount
-        if item is not None:
-            line["items"].append(item)
-    return sorted(lines.values(), key=lambda line: -line["amount"])
-
-
 def available_sources() -> list[str]:
     """``manual``, and the registered sources whose module is on."""
     from hubra.core.modules import is_enabled
