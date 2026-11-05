@@ -53,13 +53,20 @@ class ModuleRegistry:
     def add(self, manifest: Module) -> None:
         if manifest.code in self._modules:
             raise ModuleRegistryError(f"Duplicate module code {manifest.code!r}")
-        self._modules[manifest.code] = manifest
+        # Check everything before adding anything: a module that fails here
+        # (a blueprint that doesn't import, a name already taken) must not
+        # stay half registered, or register_blueprints trips over it later
+        # and the backend doesn't start.
+        names = []
         for bp in manifest.blueprints:
             # request.blueprint reports the Blueprint's own name, which is
             # not always the attribute name (health_bp is "health").
             name = self._blueprint(bp).name
-            if name in self._bp_to_module:
+            if name in self._bp_to_module or name in names:
                 raise ModuleRegistryError(f"Blueprint {name!r} registered twice")
+            names.append(name)
+        self._modules[manifest.code] = manifest
+        for name in names:
             self._bp_to_module[name] = manifest.code
 
     def validate(self) -> None:
@@ -169,16 +176,31 @@ class ModuleRegistry:
         from hubra.core.permissions import register_perm_prefix
 
         for m in self.all():
-            for bp in m.blueprints:
-                blueprint = self._blueprint(bp)
-                if bp.perm_prefix:
-                    register_perm_prefix(blueprint.name, bp.perm_prefix)
-                # A plugin built before the API areas (hubra.core.api_areas)
-                # may still name an old prefix: mount it at the new one.
-                app.register_blueprint(
-                    blueprint, url_prefix=canonical_path(bp.url_prefix)
+            try:
+                for bp in m.blueprints:
+                    blueprint = self._blueprint(bp)
+                    if bp.perm_prefix:
+                        register_perm_prefix(blueprint.name, bp.perm_prefix)
+                    # A plugin built before the API areas (hubra.core.api_areas)
+                    # may still name an old prefix: mount it at the new one.
+                    app.register_blueprint(
+                        blueprint, url_prefix=canonical_path(bp.url_prefix)
+                    )
+                    _log.debug("Module %s: registered %s", m.code, bp.attr)
+            except Exception as exc:
+                # Hubra's own routes must register; a plugin's that can't
+                # (say a blueprint name another plugin already took) only
+                # loses its routes instead of stopping the backend.
+                if not m.plugin:
+                    raise
+                _log.exception(
+                    "Plugin %s: routes of %s not registered", m.plugin, m.code
                 )
-                _log.debug("Module %s: registered %s", m.code, bp.attr)
+                from hubra.core.plugins import loader
+
+                spec = loader.current().get(m.plugin)
+                if spec is not None:
+                    spec.error = spec.error or f"routes: {type(exc).__name__}: {exc}"
 
 
 registry = ModuleRegistry()
