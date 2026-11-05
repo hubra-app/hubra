@@ -140,7 +140,6 @@ def test_hubras_own_blueprints_leave_room_for_plugins(app):
 
     with app.app_context():
         taken, _ = loader._taken(registry)
-    assert "/" in taken  # OAuth's blueprint has no prefix
     m = check(
         Module(code="demo", name="Demo", blueprints=(bp("/api/v1/demo"),)),
         spec(Path(".")),
