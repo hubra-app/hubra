@@ -265,6 +265,12 @@
       "needsInstall": "On iPhone and iPad, first add Hubra to the home screen (Share › Add to Home Screen), then switch this on.",
       "denied": "Notifications are blocked for this site in the browser. Allow them in the browser's site settings."
     },
+    "installApp": {
+      "title": "Hubra as an app",
+      "hint": "Put Hubra on your home screen or dock. The app opens your club straight away, without the browser bar.",
+      "ios": "In Safari, tap Share and then “Add to Home Screen”. Hubra then opens like an app, with your club and without the browser bar.",
+      "button": "Install app"
+    },
     "myAttendance": "My attendance",
     "myAttendanceYear": "Since {{date}}",
     "showLess": "Show less",

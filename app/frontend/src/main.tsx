@@ -15,6 +15,9 @@ import App from '@/App.tsx'
 import { ROUTER_BASENAME } from '@/clubBase'
 import { queryClient } from '@/queryClient'
 import { BrandedMantineProvider } from '@/components/BrandedMantineProvider'
+import { setupPwa } from '@/pwa'
+
+setupPwa()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
