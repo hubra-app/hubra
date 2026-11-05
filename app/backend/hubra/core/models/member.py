@@ -196,6 +196,14 @@ class Member(db.Model):
     poll_reminder_mail: Mapped[bool] = mapped_column(
         db.Boolean, default=True, server_default=sa.true(), nullable=False
     )
+    # A summary of the club's week by mail on Monday morning (off until the
+    # member turns it on), and when the last one went out.
+    weekly_digest_mail: Mapped[bool] = mapped_column(
+        db.Boolean, default=False, server_default=sa.false(), nullable=False
+    )
+    digest_sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     # Part of the signed calendar feed link; raising it ends the old links.
     calendar_feed_version: Mapped[int] = mapped_column(
         db.Integer, nullable=False, default=0, server_default="0"

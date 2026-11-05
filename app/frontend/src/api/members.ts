@@ -377,6 +377,8 @@ export interface NotificationChoices {
    * direct messages): the club connected one and the member linked an
    * account there. Off until turned on. */
   apps?: { key: string; name: string }[];
+  /** The weekly digest mail on Monday morning (off until turned on). */
+  digest?: boolean;
 }
 
 export function getMyNotifications(): Promise<NotificationChoices> {
@@ -384,7 +386,9 @@ export function getMyNotifications(): Promise<NotificationChoices> {
 }
 
 export function setMyNotifications(
-  change: Partial<Record<NotifyTopic, Partial<Record<NotifyChannel, boolean>>>>,
+  change: Partial<Record<NotifyTopic, Partial<Record<NotifyChannel, boolean>>>> & {
+    digest?: boolean;
+  },
 ): Promise<NotificationChoices> {
   return apiFetch<NotificationChoices>("/app/members/me/notifications", {
     method: "PUT",

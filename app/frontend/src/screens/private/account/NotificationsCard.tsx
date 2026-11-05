@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Checkbox, Group, Paper, Stack, Table, Text } from '@mantine/core'
+import { Checkbox, Group, Paper, Stack, Switch, Table, Text } from '@mantine/core'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { IconBellRinging } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
@@ -48,6 +48,17 @@ export function NotificationsCard() {
         qk.account.notifications,
         await setMyNotifications({ [topic]: { [channel]: on } }),
       )
+    } catch (err) {
+      notify('error', t('common.error'), err instanceof Error ? err.message : '')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const setDigest = async (on: boolean) => {
+    setBusy(true)
+    try {
+      queryClient.setQueryData(qk.account.notifications, await setMyNotifications({ digest: on }))
     } catch (err) {
       notify('error', t('common.error'), err instanceof Error ? err.message : '')
     } finally {
@@ -114,6 +125,17 @@ export function NotificationsCard() {
             ))}
           </Table.Tbody>
         </Table>
+        <Switch
+          mt="xs"
+          checked={!!data.digest}
+          disabled={busy}
+          onChange={(e) => setDigest(e.currentTarget.checked)}
+          label={t('account.notify.digest', 'Wochenübersicht per E-Mail')}
+          description={t(
+            'account.notify.digestHint',
+            'Jeden Montagmorgen: die Anlässe der Woche, neue Beiträge und Umfragen, in denen du noch abstimmen kannst.',
+          )}
+        />
         <Text fz="xs" c="dimmed">
           {t(
             'account.notify.pushHint',

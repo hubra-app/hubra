@@ -243,6 +243,8 @@
       "push": "Push",
       "mail": "E-Mail",
       "pushHint": "Push kommt nur auf Geräte, auf denen du Push unten eingeschaltet hast.",
+      "digest": "Wochenübersicht per E-Mail",
+      "digestHint": "Jeden Montagmorgen: die Anlässe der Woche, neue Beiträge und Umfragen, in denen du noch abstimmen kannst.",
       "topics": {
         "posts": "Neue Beiträge",
         "events": "Neue Anlässe",

@@ -185,22 +185,32 @@ def _notify_choices(member) -> dict:
     return {
         "topics": prefs.prefs_for(member, apps),
         "apps": [{"key": code, "name": names.get(code, code)} for code in apps],
+        # The weekly digest mail (hubra.core.tasks.digest_tasks), off by default.
+        "digest": bool(member.weekly_digest_mail),
     }
 
 
 @members_bp.put("/me/notifications")
 @jwt_required()
 def set_my_notifications():
-    """Body ``{topic: {channel: bool}}``; what is left out keeps its value."""
-    from hubra.core.notifications import prefs
-
-    from hubra.core.notifications import channels
+    """Body ``{topic: {channel: bool}}``, and ``digest: bool`` for the
+    weekly digest mail; what is left out keeps its value."""
+    from hubra.core.notifications import channels, prefs
 
     body = request.get_json(silent=True)
     member = get_current_member()
-    if err := prefs.validate(body, channels.available(member)):
-        raise_error(422, "VALIDATION_ERROR", err)
-    prefs.apply(member, body)
+    digest = None
+    if isinstance(body, dict) and "digest" in body:
+        body = dict(body)
+        digest = body.pop("digest")
+        if not isinstance(digest, bool):
+            raise_error(422, "VALIDATION_ERROR", "digest: true or false")
+    if body or digest is None:
+        if err := prefs.validate(body, channels.available(member)):
+            raise_error(422, "VALIDATION_ERROR", err)
+        prefs.apply(member, body)
+    if digest is not None:
+        member.weekly_digest_mail = digest
     db.session.commit()
     return jsonify(_notify_choices(member)), 200
 

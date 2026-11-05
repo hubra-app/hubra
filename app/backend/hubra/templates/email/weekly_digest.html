@@ -1,0 +1,33 @@
+{% extends "email/base.html" %}
+{% import "email/_ui.html" as ui with context %}
+{%- set font_body = "'Hanken Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" -%}
+{%- macro heading(text) -%}
+<h2 style="margin: 24px 0 8px; font-family: {{ font_body }}; font-size: 17px; line-height: 24px; font-weight: 700; color: #1a1625;">{{ text }}</h2>
+{%- endmacro -%}
+{%- macro item(url, title, detail) -%}
+<p style="margin: 0 0 12px; font-family: {{ font_body }}; font-size: 15px; line-height: 22px; color: #1a1625;">
+  {% if url %}<a href="{{ url }}" target="_blank" style="color: #7441e0; font-weight: 600; text-decoration: none;">{{ title }}</a>{% else %}<strong>{{ title }}</strong>{% endif %}
+  {%- if detail %}<br /><span style="font-size: 13px; line-height: 20px; color: #5e5873;">{{ detail }}</span>{% endif %}
+</p>
+{%- endmacro -%}
+{% block preheader %}{{ t('mail.email.weekly_digest.intro', club_name=club_name) | striptags }}{% endblock %}
+{% block content %}
+{% call ui.p() %}{{ t('mail.email.weekly_digest.intro', club_name=club_name) }}{% endcall %}
+{% if events %}
+{{ heading(t('mail.email.weekly_digest.events')) }}
+{% for e in events %}{{ item(e.url, e.title, e.when ~ (' · ' ~ e.location if e.location else '') ~ (' · ' ~ t('mail.email.weekly_digest.signed_up') if e.signed_up else '')) }}{% endfor %}
+{% if more_events %}{% call ui.muted() %}{{ t('mail.email.weekly_digest.more', count=more_events) }}{% endcall %}{% endif %}
+{% endif %}
+{% if posts %}
+{{ heading(t('mail.email.weekly_digest.posts')) }}
+{% for p in posts %}{{ item(p.url, p.title, p.summary) }}{% endfor %}
+{% if more_posts %}{% call ui.muted() %}{{ t('mail.email.weekly_digest.more', count=more_posts) }}{% endcall %}{% endif %}
+{% endif %}
+{% if polls %}
+{{ heading(t('mail.email.weekly_digest.polls')) }}
+{% for p in polls %}{{ item(p.url, p.question, t('mail.email.weekly_digest.closes', when=p.closes) if p.closes else '') }}{% endfor %}
+{% if more_polls %}{% call ui.muted() %}{{ t('mail.email.weekly_digest.more', count=more_polls) }}{% endcall %}{% endif %}
+{% endif %}
+{% if portal_url %}{{ ui.button(portal_url, t('mail.email.weekly_digest.button')) }}{% endif %}
+{% call ui.muted() %}{{ t('mail.email.weekly_digest.settings_note') }}{% endcall %}
+{% endblock %}
