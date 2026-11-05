@@ -296,12 +296,37 @@ def make_celery(app: Flask) -> Celery:
     return instance
 
 
-def _module_task_imports() -> list[str]:
-    """Celery task modules declared by module manifests (``tasks=``)."""
+def _module_task_imports(plugins: bool = False) -> list[str]:
+    """Celery task modules declared by module manifests (``tasks=``): those
+    of Hubra's own modules, or with *plugins* those of plugins."""
     from hubra.core.modules import registry
 
     registry.load()
-    return registry.task_modules()
+    out: list[str] = []
+    for m in registry.all():
+        if bool(m.plugin) == plugins:
+            out.extend(t for t in m.tasks if t not in out)
+    return out
+
+
+def _import_plugin_task_modules(**_kwargs) -> list[str]:
+    """Import plugins' task modules once the worker (or beat) has started,
+    each on its own: one that fails is logged and its tasks are missing,
+    instead of the worker not starting (tasks.include raises). Returns the
+    modules that failed."""
+    import importlib
+    import logging
+
+    failed = []
+    for name in _module_task_imports(plugins=True):
+        try:
+            importlib.import_module(name)
+        except Exception:
+            logging.getLogger(__name__).exception(
+                "Plugin task module %s failed to import; its tasks won't run", name
+            )
+            failed.append(name)
+    return failed
 
 
 def _module_schedules() -> dict:
@@ -348,6 +373,7 @@ def _fresh_db_connections(**_kwargs) -> None:
         db.engine.dispose(close=False)
 
 
+signals.import_modules.connect(_import_plugin_task_modules, weak=False)
 signals.worker_process_init.connect(_fresh_db_connections, weak=False)
 signals.worker_ready.connect(_watch_plugins, weak=False)
 signals.beat_init.connect(_watch_plugins, weak=False)

@@ -702,34 +702,77 @@ def test_a_blueprint_that_fails_to_import_skips_only_its_plugin(tmp_path):
             del sys.modules[name]
 
 
-def test_a_task_module_that_fails_to_import_skips_only_its_plugin(tmp_path):
-    """The Celery worker imports every loaded plugin's task modules on start;
-    one that fails must skip its plugin here, not stop the worker there."""
+def test_a_plugin_whose_tasks_use_the_celery_app_loads(tmp_path):
+    """Task modules start with ``from hubra.core.tasks import celery_app``,
+    which builds an app of its own; the loader must not import them while
+    an app is being built (it loaded a second registry: "Duplicate module
+    code 'bindings'", and finances, discord and imap-inbox didn't load)."""
     import sys
 
     import yaml
 
     src = make_plugin(tmp_path / "src")
-    pkg = src / "hubra_brokentask"
+    pkg = src / "hubra_celerytasks"
     (src / "hubra_hello").rename(pkg)
     (pkg / "__init__.py").write_text(
         "from hubra.core.modules import Module\n"
         'module = Module(code="hello", name="Hello", depends_on=("members",),\n'
-        '    tasks=("hubra_brokentask.tasks",))\n'
+        '    tasks=("hubra_celerytasks.tasks",))\n'
     )
-    (pkg / "tasks.py").write_text("import hubra.api.no_such_area  # noqa\n")
+    (pkg / "tasks.py").write_text(
+        "raise RuntimeError('imported while the app was being built')\n"
+    )
     manifest = yaml.safe_load((src / "plugin.yaml").read_text())
-    manifest["package"] = "hubra_brokentask"
+    manifest["package"] = "hubra_celerytasks"
     (src / "plugin.yaml").write_text(yaml.safe_dump(manifest))
     spec = scan(tmp_path / "src", bundled=False)[0]
     try:
-        with pytest.raises(ModuleNotFoundError, match="hubra.api.no_such_area"):
-            loader._import(spec)
+        (module,) = loader._import(spec)
+        assert module.tasks == ("hubra_celerytasks.tasks",)
+        assert "hubra_celerytasks.tasks" not in sys.modules
     finally:
         if str(spec.path) in sys.path:
             sys.path.remove(str(spec.path))
-        for name in [n for n in sys.modules if n.startswith("hubra_brokentask")]:
+        for name in [n for n in sys.modules if n.startswith("hubra_celerytasks")]:
             del sys.modules[name]
+
+
+def test_the_worker_imports_plugin_task_modules_one_by_one(monkeypatch, caplog):
+    """A plugin task module that fails is logged; the worker still starts
+    and the others load."""
+    import hubra.core.tasks as tasks
+
+    monkeypatch.setattr(
+        tasks,
+        "_module_task_imports",
+        lambda plugins=False: ["hubra.api.no_such_area", "hubra.core.tasks.email_tasks"]
+        if plugins
+        else [],
+    )
+    assert tasks._import_plugin_task_modules() == ["hubra.api.no_such_area"]
+    assert "hubra.api.no_such_area failed to import" in caplog.text
+
+
+def test_plugin_task_modules_are_not_in_the_worker_include(app, monkeypatch):
+    import hubra.core.tasks as tasks
+
+    seen = {}
+
+    class FakeCelery:
+        def __init__(self, *args, include=(), **kwargs):
+            seen["include"] = list(include)
+            raise RuntimeError("stop here")
+
+    monkeypatch.setattr(tasks, "Celery", FakeCelery)
+    monkeypatch.setattr(
+        tasks,
+        "_module_task_imports",
+        lambda plugins=False: ["hubra_x.tasks"] if plugins else ["hubra.core.tasks.reminder_tasks"],
+    )
+    with pytest.raises(RuntimeError, match="stop here"):
+        tasks.make_celery(app)
+    assert "hubra.core.tasks.reminder_tasks" in seen["include"]
+    assert "hubra_x.tasks" not in seen["include"]
 
 
 def _plugin_with_broken_routes(tmp_path, package):
