@@ -179,10 +179,22 @@ async def platform_alerts(ctx: Context) -> str:
 
 
 @_tool(PLATFORM, "Route and query performance")
-async def platform_performance(ctx: Context, hours: Hours = 1) -> str:
+async def platform_performance(
+    ctx: Context,
+    hours: Annotated[
+        int,
+        Field(
+            ge=1,
+            le=24,
+            description="Clock hours, the current one included: 1 is only since the "
+            "full hour, 2 since the start of the previous hour (1-24)",
+        ),
+    ] = 2,
+) -> str:
     """Slow routes (count, p50/p95/max ms, query counts) and slow SQL queries
-    (value-free texts, CPU/memory tags) over the last hours. The place to
-    start a performance investigation."""
+    (value-free texts, CPU/memory tags) over the last clock hours, plus
+    ``lastHour`` (the last 50-60 minutes). The place to start a performance
+    investigation."""
     return await _read(ctx, PLATFORM, "/api/v1/platform/alerts/performance", hours=hours)
 
 
@@ -243,8 +255,11 @@ async def platform_discord(ctx: Context) -> str:
 
 @_tool(PLATFORM, "Maintenance")
 async def platform_maintenance(ctx: Context) -> str:
-    """Whether maintenance mode is on, and the planned windows."""
-    return await _read(ctx, PLATFORM, "/api/v1/platform/maintenance")
+    """Whether maintenance mode is on, and the maintenance windows: planned
+    and running ones (``current``) and the last past ones."""
+    mode = await _read(ctx, PLATFORM, "/api/v1/platform/maintenance")
+    windows = await _read(ctx, PLATFORM, "/api/v1/platform/maintenance/windows")
+    return f'{{"mode":{mode},"windows":{windows}}}'
 
 
 # ── Club (club or personal token, the matching *.read keys) ─────────────────

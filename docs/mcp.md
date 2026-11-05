@@ -38,7 +38,7 @@ deletes or changes anything. The tool list depends on the token:
 | Token | Tools |
 | --- | --- |
 | any | `whoami` (kind, name, club, scopes, expiry), `hubra_get` (any `GET` on the token's side of the API) |
-| platform (`hbr_plat_`) | `platform_health`, `platform_alerts`, `platform_performance` (routes and slow queries), `platform_errors`, `platform_error`, `platform_jobs`, `platform_events`, `platform_mail`, `platform_discord`, `platform_maintenance` |
+| platform (`hbr_plat_`) | `platform_health`, `platform_alerts`, `platform_performance` (routes and slow queries), `platform_errors`, `platform_error`, `platform_jobs`, `platform_events`, `platform_mail`, `platform_discord`, `platform_maintenance` (mode and windows) |
 | club or personal (`hbr_club_`, `hbr_pat_`) | `club_members`, `club_member`, `club_events`, `club_event`, `club_attendance`, `club_groups`, `club_invoices`, `club_finance_summary`, `club_transactions`, `club_polls`, `club_inventory`, `club_audit` |
 
 Platform tools need the platform token's default scope

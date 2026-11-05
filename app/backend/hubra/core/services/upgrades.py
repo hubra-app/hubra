@@ -60,8 +60,12 @@ def _build(entry: dict) -> dict:
     return {"commit": entry.get("commit"), "version": entry.get("version")}
 
 
-def _processes() -> list[dict]:
-    reports = build_info.reported()
+def _processes() -> list[dict] | None:
+    """What every process runs; None when Redis is set up but did not
+    answer (then nothing is known, rather than only this worker)."""
+    reports = build_info.read_reports()
+    if reports is None:
+        return None
     if reports:
         return reports
     # No Redis: this worker is all we know about.
@@ -153,6 +157,8 @@ def check() -> dict:
     from hubra.core.services import platform_monitor
 
     procs = _processes()
+    if procs is None:
+        return {"state": "unknown"}
     last = last_event()
     if last is None:
         now = _most_common(procs)

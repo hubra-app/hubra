@@ -69,6 +69,8 @@ export interface HealthDetail {
   commit?: string | null
   /** What each backend process reported (API, worker, beat, Discord gateway), per host. */
   processes?: BuildReport[]
+  /** Redis did not answer: which builds run is unknown, not "none". */
+  processes_unknown?: boolean
   /** The newest upgrade event (started, completed or stuck). */
   last_upgrade?: PlatformEvent | null
   stale?: boolean

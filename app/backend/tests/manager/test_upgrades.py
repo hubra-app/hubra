@@ -20,7 +20,7 @@ def _proc(component, commit, host="pod-1", version="0.2.0"):
 def reports():
     """What the processes report; tests change the list in place."""
     current: list[dict] = []
-    with patch("hubra.core.build_info.reported", lambda: list(current)):
+    with patch("hubra.core.build_info.read_reports", lambda: list(current)):
         yield current
 
 
@@ -109,3 +109,14 @@ def test_dev_builds_are_told_apart_by_version(db, reports, alerts):
 
 def test_upgrades_is_an_alert_type_on_by_default():
     assert platform_monitor.default_prefs()["upgrades"] is True
+
+
+def test_unreadable_redis_decides_nothing(db, alerts):
+    """Redis did not answer: no baseline and no "done" from this worker's
+    own build alone."""
+    from hubra.core.services import upgrades
+
+    with patch("hubra.core.build_info.read_reports", lambda: None):
+        assert upgrades.check()["state"] == "unknown"
+    assert _kinds(db) == []
+    assert alerts == []
