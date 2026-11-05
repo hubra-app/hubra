@@ -15,7 +15,7 @@ export function DashboardScreen() {
   const runsClub =
     isAdmin ||
     hasPermission('members.members.update') ||
-    hasPermission('finance.transactions.read')
+    hasPermission('finance.invoices.update')
 
   const activeTab =
     location.pathname === '/app/dashboard/global'

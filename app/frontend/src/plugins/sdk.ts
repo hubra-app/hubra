@@ -15,7 +15,7 @@ export type {
   SearchHit,
   SlotProps,
 } from './types'
-export { useT } from '@/locales/i18n'
+export { getCurrentLanguage, useT } from '@/locales/i18n'
 export { useAuth, useNav, useToast } from '@/context/AppContext'
 export { useModules } from '@/modules/useModules'
 export {
@@ -32,18 +32,32 @@ export {
   PageHead,
   Pagination,
   Seg,
+  SimpleList,
   StatTile,
   Tabs,
   Toggle,
   usePagination,
+  useSubmitOnce,
 } from '@/components/ui'
 export { MemberAddSearch, PanelMemberRow } from '@/components/display'
 export { PanelField, PanelSection, SlideOver } from '@/components/feedback'
+export {
+  DetailBack,
+  DetailEmpty,
+  DetailFact,
+  DetailHeader,
+  DetailIcon,
+  DetailNotFound,
+  DetailRow,
+  DetailSection,
+  RecordActivity,
+} from '@/components/detail'
+export { useInvoices } from '@/data/lists'
 export { MemberPicker } from '@/components/MemberPicker'
 export { useMemberSearch } from '@/data/members'
 export { PluginSlot } from './slot'
 export { MarkdownRenderer } from '@/components/MarkdownRenderer'
-export { formatCHF, formatDateTime } from '@/format'
+export { formatCHF, formatCHFWhole, formatDate, formatDateTime } from '@/format'
 export { BASE, apiFetch, apiFetchRaw } from '@hubra/api-client'
 export { listMembers } from '@/api/members'
 export { listInvoices, listTxCategories } from '@/api/finance'

@@ -1,4 +1,10 @@
-"""Finance: transactions, categories, external parties and QR-bill invoices."""
+"""Finance: QR-bill invoices, reminders, fees and external parties.
+
+The books (transactions, categories, the overview, recurring bookings, the
+monthly statement and the annual accounts) are the Finances plugin, module
+``finance.books``. Its tables stay listed here: invoices point at their
+booking, so they live in every club schema either way.
+"""
 
 from hubra.core.modules import Blueprint, Module, NavItem, SettingField
 
@@ -129,12 +135,6 @@ module = Module(
             ),
         ),
     ),
-    # The income booking that follows each invoice (api/finance/bookings.py).
-    events={
-        "invoice.created": "hubra.api.finance.bookings:on_invoice_created",
-        "invoice.updated": "hubra.api.finance.bookings:on_invoice_updated",
-        "invoice.deleted": "hubra.api.finance.bookings:on_invoice_deleted",
-    },
     tables=(
         "transactions",
         "invoices",

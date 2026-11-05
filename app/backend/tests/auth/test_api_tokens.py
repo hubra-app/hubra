@@ -271,7 +271,9 @@ def test_switching_member_tokens_off_stops_them(app, db, tenant_pair, catalog):
 
 def test_bad_tokens_are_401(app, made):
     c = app.test_client()
-    for raw in ("hbr_pat_nonsense", made["token"][:-1] + "x", "hbr_club" + made["token"][7:]):
+    # The last character is changed, never kept (a token may end in "x").
+    wrong = made["token"][:-1] + ("x" if made["token"][-1] != "x" else "y")
+    for raw in ("hbr_pat_nonsense", wrong, "hbr_club" + made["token"][7:]):
         resp = c.get("/api/v1/events/", headers=_bearer(raw))
         assert resp.status_code == 401, raw
         assert resp.get_json()["error"] == "API_TOKEN_INVALID"

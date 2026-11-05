@@ -224,133 +224,14 @@ def test_delete_invoice_that_was_mailed(client, auth_headers, seeded_db, db):
     )
 
 
-def test_delete_transaction_of_a_mailed_invoice(client, auth_headers, seeded_db, db):
-    """Deleting a transaction only unlinks its invoice: the invoice stays,
-    open, with its send history."""
-    from hubra.core.models.finance import Invoice, Transaction, TransactionCategory
-    from hubra.core.models.invoice_reminder import InvoiceReminderHistory
-
-    category = TransactionCategory(name="Beiträge", color="#123456")
-    db.session.add(category)
-    db.session.flush()
-    tx = Transaction(
-        category_id=category.id,
-        date=date.today(),
-        description="Beitrag",
-        method="Bank Transfer",
-        amount=Decimal("45.00"),
-        type="income",
-        status="Pending",
-    )
-    db.session.add(tx)
-    db.session.flush()
-    invoice = Invoice(
-        member_id=seeded_db["admin"].id,
-        issued=date.today(),
-        due=date.today() + timedelta(days=30),
-        amount=Decimal("45.00"),
-        status="Open",
-        transaction_id=tx.id,
-    )
-    db.session.add(invoice)
-    db.session.flush()
-    db.session.add(
-        InvoiceReminderHistory(
-            invoice_id=invoice.id,
-            reminder_type="generation",
-            recipient_email="admin@test.ch",
-            recipient_name="Test Admin",
-        )
-    )
-    db.session.commit()
-    tx_id, invoice_id = tx.id, invoice.id
-
-    resp = client.delete(f"/api/v1/finance/transactions/{tx_id}", headers=auth_headers)
-    assert resp.status_code == 204
-
-    db.session.expunge_all()
-    assert db.session.get(Transaction, tx_id) is None
-    invoice = db.session.get(Invoice, invoice_id)
-    assert invoice is not None
-    assert invoice.transaction_id is None
-    assert invoice.status == "Open"
-    assert (
-        db.session.query(InvoiceReminderHistory).filter_by(invoice_id=invoice_id).count()
-        == 1
-    )
 
 
-def _invoice_with_transaction(client, auth_headers, seeded_db, db):
-    from hubra.core.models.finance import Invoice, TransactionCategory
-
-    db.session.add(TransactionCategory(name="Membership", color="#123456"))
-    db.session.commit()
-    created = client.post(
-        "/api/v1/finance/invoices",
-        json=_invoice_payload(seeded_db["admin"].id),
-        headers=auth_headers,
-    )
-    assert created.status_code == 201
-    invoice = db.session.get(Invoice, created.get_json()["id"])
-    assert invoice.transaction_id is not None
-    return invoice.id, invoice.transaction_id
 
 
-def test_linked_transaction_follows_invoice_status(client, auth_headers, seeded_db, db):
-    """Paid completes the linked income; taking the payment back (Paid →
-    Open) makes it pending again, so the balance drops it."""
-    from hubra.core.models.finance import Transaction
-
-    invoice_id, tx_id = _invoice_with_transaction(client, auth_headers, seeded_db, db)
-    url = f"/api/v1/finance/invoices/{invoice_id}"
-
-    assert client.patch(url, json={"status": "Paid"}, headers=auth_headers).status_code == 200
-    db.session.expire_all()
-    assert db.session.get(Transaction, tx_id).status == "Completed"
-
-    assert client.patch(url, json={"status": "Open"}, headers=auth_headers).status_code == 200
-    db.session.expire_all()
-    assert db.session.get(Transaction, tx_id).status == "Pending"
 
 
-def test_linked_transaction_follows_invoice_amount(client, auth_headers, seeded_db, db):
-    """A corrected amount reaches the pending income; once paid, the booked
-    transaction keeps what was paid."""
-    from hubra.core.models.finance import Transaction
-
-    invoice_id, tx_id = _invoice_with_transaction(client, auth_headers, seeded_db, db)
-    url = f"/api/v1/finance/invoices/{invoice_id}"
-
-    assert client.patch(url, json={"amount": 60.0}, headers=auth_headers).status_code == 200
-    db.session.expire_all()
-    assert float(db.session.get(Transaction, tx_id).amount) == 60.0
-
-    client.patch(url, json={"status": "Paid"}, headers=auth_headers)
-    assert client.patch(url, json={"amount": 70.0}, headers=auth_headers).status_code == 200
-    db.session.expire_all()
-    tx = db.session.get(Transaction, tx_id)
-    assert tx.status == "Completed"
-    assert float(tx.amount) == 60.0
 
 
-def test_overview_open_invoice_amount_is_a_number(client, auth_headers, seeded_db, db):
-    """The overview's open-invoice total is a JSON number like its other
-    figures (a Decimal went out as the string "45.00")."""
-    from hubra.core.models.finance import Invoice
-
-    db.session.add(
-        Invoice(
-            member_id=seeded_db["admin"].id,
-            issued=date.today(),
-            due=date.today() + timedelta(days=30),
-            amount=Decimal("45.00"),
-            status="Open",
-        )
-    )
-    db.session.commit()
-
-    body = client.get("/api/v1/finance/overview", headers=auth_headers).get_json()
-    assert body["openInvoices"] == {"count": 1, "amount": 45.0}
 
 
 def test_an_invoice_cannot_be_due_before_it_is_issued(client, auth_headers, seeded_db):

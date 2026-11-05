@@ -32,37 +32,6 @@ def test_generate_invoices_creates_for_billable_member(app, billable_tier_db):
         assert inv.due == inv.issued + timedelta(days=30)
 
 
-def test_generate_invoices_creates_pending_transaction(app, billable_tier_db):
-    """Task creates a Pending income transaction linked to the invoice."""
-    from hubra.core.tasks.finance_tasks import generate_invoices_task
-    from hubra.core.models.finance import Invoice, Transaction, TransactionCategory
-    from hubra.core.extensions import db
-
-    with app.app_context():
-        cat = TransactionCategory(name="Membership", color="#00aaff")
-        db.session.add(cat)
-        db.session.commit()
-
-        with patch("hubra.core.tasks.email_tasks.send_email_task.delay"):
-            result = generate_invoices_task.run()
-        assert result["created"] >= 1
-
-        invoice = db.session.scalars(
-            select(Invoice).where(
-                Invoice.member_id == billable_tier_db["member_billed"].id
-            )
-        ).one()
-        assert invoice.transaction_id is not None
-
-        tx = db.session.get(Transaction, invoice.transaction_id)
-        assert tx is not None
-        assert tx.status == "Pending"
-        assert tx.type == "income"
-        assert tx.method == "IBAN"
-        assert float(tx.amount) == 99.0
-        assert tx.member_id == billable_tier_db["member_billed"].id
-        assert tx.description == f"Invoice #{invoice.id}"
-        assert tx.category_id == cat.id
 
 
 def test_generate_invoices_skips_member_without_tier(app, billable_tier_db):

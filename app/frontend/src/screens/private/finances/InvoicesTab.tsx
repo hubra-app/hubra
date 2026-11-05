@@ -5,6 +5,7 @@ import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ActionIcon, Button, Group, Menu, Select, SimpleGrid, TextInput } from '@mantine/core'
+import { useModules } from '@/modules/useModules'
 import { useT, zmsg } from '@/locales/i18n'
 import { IconBell, IconDots, IconFileDownload, IconPlus, IconTrash } from '@tabler/icons-react'
 import { useToast, useNav, useAuth } from '@/context/AppContext'
@@ -46,6 +47,9 @@ const singleSchema = z
     due: z.string().min(1, zmsg('validation.dueRequired', 'Fälligkeitsdatum ist erforderlich')),
     description: z.string(),
     categoryId: z.string(),
+    // Whether the Finances plugin keeps the books, so the invoice is booked
+    // under a category.
+    booksOn: z.boolean(),
   })
   .superRefine((data, ctx) => {
     if (data.recipientType === 'member' && !data.memberId) {
@@ -70,6 +74,7 @@ const singleSchema = z
       })
     }
     if (
+      data.booksOn &&
       (data.recipientType === 'external' || data.purpose === 'other') &&
       !data.categoryId
     ) {
@@ -125,6 +130,7 @@ export function InvoicesTab() {
       due: '',
       description: '',
       categoryId: '',
+      booksOn: false,
     },
   })
   const bulkForm = useForm<BulkForm>({
@@ -143,10 +149,12 @@ export function InvoicesTab() {
     queryFn: () => listExternalParties(),
     enabled: addOpen,
   })
+  // The categories belong to the Finances plugin's books.
+  const booksOn = useModules().has('finance.books')
   const { data: txCategories = [] } = useQuery({
     queryKey: qk.transactions.categories,
     queryFn: () => listTxCategories(),
-    enabled: addOpen,
+    enabled: addOpen && booksOn,
   })
   const watchedMemberId = singleForm.values.memberId
   const watchedRecipientType = singleForm.values.recipientType
@@ -212,6 +220,7 @@ export function InvoicesTab() {
       due: '',
       description: '',
       categoryId: '',
+      booksOn,
     })
     setAddOpen(true)
   }
@@ -792,8 +801,8 @@ export function InvoicesTab() {
             </Field>
           </SimpleGrid>
 
-          {(watchedRecipientType === 'external' ||
-            watchedPurpose === 'other') && (
+          {booksOn &&
+            (watchedRecipientType === 'external' || watchedPurpose === 'other') && (
             <Field
               label={t('finance.categoryLabel', 'Kategorie')}
               hint={t(
