@@ -38,6 +38,7 @@ from hubra.core.models.member import (
 )
 from hubra.core.models.application import Application
 from hubra.core.models.group import Group, GroupMembership
+from hubra.core.models.consent import MemberConsent
 from hubra.core.models.function import Function, FunctionHolder
 from hubra.core.models.managed_mail import ManagedMailAddress
 from hubra.core.models.event import (
@@ -153,6 +154,7 @@ __all__ = [
     "UserGlobalRole",
     "UserGlobalRoleTenant",
     "Member",
+    "MemberConsent",
     "MembershipTier",
     "member_groups",
     "member_roles",
