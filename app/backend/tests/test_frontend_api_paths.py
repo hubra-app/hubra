@@ -26,11 +26,19 @@ SOURCES = (
     "packages",
 )
 
-# apiFetch / apiFetchRaw, an optional type argument, then a literal path.
+# apiFetch / apiFetchRaw, an optional type argument, then a literal path,
+# which may start with a constant of the same file (`${P}/x`).
 CALL = re.compile(
     r"\b(?:apiFetch|apiFetchRaw)\s*(?:<(?:[^<>]|<[^<>]*>)*>)?\(\s*"
-    r"([`'\"])(/(?:app|global|platform)/[^`'\"]*)\1"
+    r"([`'\"])((?:\$\{\w+\})?/[^`'\"]*|\$\{\w+\})\1"
 )
+# A full URL built from the API base, e.g. `${BASE}/global/instance`.
+BASE_URL = re.compile(r"`\$\{BASE\}(/(?:app|global|platform)/[^`]*)`")
+# const P = '/platform/plugins'
+CONST = re.compile(
+    r"\bconst\s+(\w+)\s*=\s*([`'\"])(/(?:app|global|platform)/[^`'\"$]*)\2"
+)
+AREA = re.compile(r"/(?:app|global|platform)/")
 # Values tried for ${...} path segments (ints, any(approve, decline), slugs).
 FILLS = ("1", "approve", "x")
 
@@ -42,8 +50,16 @@ def _frontend_calls() -> list[tuple[str, str]]:
             if "node_modules" in path.parts:
                 continue
             text = path.read_text(encoding="utf-8")
+            consts = {m.group(1): m.group(3) for m in CONST.finditer(text)}
+            found = [m.group(1) for m in BASE_URL.finditer(text)]
             for m in CALL.finditer(text):
-                calls.append((str(path.relative_to(REPO)), m.group(2)))
+                literal = m.group(2)
+                head = re.match(r"\$\{(\w+)\}", literal)
+                if head and head.group(1) in consts:
+                    literal = consts[head.group(1)] + literal[head.end() :]
+                found.append(literal)
+            name = str(path.relative_to(REPO))
+            calls += [(name, lit) for lit in found if AREA.match(lit)]
     return calls
 
 
@@ -76,6 +92,10 @@ def test_the_scan_finds_the_frontend_calls():
     calls = _frontend_calls()
     assert len(calls) > 100
     assert any(p.startswith("/global/clubs") for _f, p in calls)
+    # Paths built on a constant (admin-frontend plugins.ts: const P = ...).
+    assert any(p.startswith("/platform/plugins/") for _f, p in calls)
+    # Full URLs on the API base (api-client: `${BASE}/global/instance`).
+    assert ("packages/api-client/src/client.ts", "/global/instance") in calls
 
 
 def test_every_frontend_api_path_has_a_route(app):
