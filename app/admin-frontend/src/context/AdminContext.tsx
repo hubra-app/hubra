@@ -37,6 +37,7 @@ const AdminContext = createContext<AdminAppState | null>(null)
  */
 async function mayUseManage(perms: PermissionsResponse): Promise<boolean> {
   if (perms.is_superadmin || (perms.global_permissions?.length ?? 0) > 0) return true
+  if (Object.keys(perms.club_permissions ?? {}).length > 0) return true
   try {
     const { tenants } = await getMyTenants()
     return tenants.some((t) => t.admin_level)
@@ -135,7 +136,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const hasGlobalPermission = useCallback(
     (key: string) => {
       if (permData?.is_superadmin) return true
-      return globalPermissions.includes(key) || globalPermissions.includes('*')
+      if (globalPermissions.includes(key) || globalPermissions.includes('*')) return true
+      // Held for some clubs only: pages show, and the API narrows them.
+      return (permData?.club_permissions?.[key]?.length ?? 0) > 0
     },
     [permData, globalPermissions],
   )

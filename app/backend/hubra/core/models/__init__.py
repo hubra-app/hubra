@@ -27,6 +27,7 @@ from hubra.core.models.global_role import (
     GlobalPermission,
     GlobalRolePermission,
     UserGlobalRole,
+    UserGlobalRoleTenant,
 )
 from hubra.core.models.member import (
     Member,
@@ -135,6 +136,7 @@ __all__ = [
     "GlobalPermission",
     "GlobalRolePermission",
     "UserGlobalRole",
+    "UserGlobalRoleTenant",
     "Member",
     "MembershipTier",
     "member_groups",

@@ -27,12 +27,15 @@ from sqlalchemy import func, select
 
 from hubra.core.auth.account_token import require_step_up
 from hubra.core.permissions import (
+    CLUB_LIMITED_KEYS,
     SUPERADMIN_ONLY,
     check_global_grant,
     check_impersonation_restriction,
+    get_user_club_permissions,
     get_user_global_permissions,
     held_roles,
     invalidate_member_permissions,
+    platform_club_ids,
     require_global_permission,
 )
 from hubra.core.errors import error_message, raise_error
@@ -113,7 +116,7 @@ def _plan_keys() -> list[str]:
 
 
 @tenant_admin_bp.route("/tenants", methods=["GET"])
-@require_global_permission("tenants.read")
+@require_global_permission("tenants.read", club_list=True)
 def list_tenants():
     """List all tenants with optional search, filtering, sorting, pagination."""
     args = request.args
@@ -126,6 +129,7 @@ def list_tenants():
         page=int(args.get("page", 1)),
         per_page=min(int(args.get("per_page", 20)), 100),
         include_deleted=args.get("include_deleted", "0") == "1",
+        only_ids=platform_club_ids(),
     )
     return jsonify(
         {
@@ -153,7 +157,7 @@ _HEALTH_SORTS = {
 
 
 @tenant_admin_bp.route("/tenants/health", methods=["GET"])
-@require_global_permission("tenants.read")
+@require_global_permission("tenants.read", club_list=True)
 def list_tenants_health():
     """Every club with its health, for manage › Alle Vereine.
 
@@ -165,6 +169,8 @@ def list_tenants_health():
     """
     args = request.args
     query = select(Tenant).where(Tenant.deleted_at.is_(None))
+    if (only := platform_club_ids()) is not None:
+        query = query.where(Tenant.id.in_(only))
     if search := (args.get("search") or "").strip():
         pattern = f"%{search[:100]}%"
         query = query.where(Tenant.name.ilike(pattern) | Tenant.slug.ilike(pattern))
@@ -795,13 +801,18 @@ def stop_impersonation():
         return jsonify(
             {"error": "UNAUTHORIZED", "message": "Original user not found"}
         ), 401
+    tenant = TenantService.get_by_slug(claims.get("tenant_slug", ""))
     perms = get_user_global_permissions(admin_user.id)
-    if not admin_user.is_superadmin and not ({"impersonate", "*"} & perms):
+    for_club = get_user_club_permissions(admin_user.id).get("impersonate", set())
+    if (
+        not admin_user.is_superadmin
+        and not ({"impersonate", "*"} & perms)
+        and not (tenant is not None and tenant.id in for_club)
+    ):
         return jsonify(
             {"error": "FORBIDDEN", "message": "Permission 'impersonate' required"}
         ), 403
 
-    tenant = TenantService.get_by_slug(claims.get("tenant_slug", ""))
     additional_claims = {"user_id": admin_user.id}
     restore_identity = f"user:{admin_user.id}"
 
@@ -2239,37 +2250,69 @@ def list_global_permissions():
 @tenant_admin_bp.route("/users/<int:user_id>/roles", methods=["GET"])
 @require_global_permission("roles.manage")
 def list_user_global_roles(user_id: int):
-    """List a user's global role assignments."""
+    """List a user's global role assignments, each with the clubs it is
+    limited to."""
     from hubra.core.models.global_role import GlobalRole, UserGlobalRole
 
     user = db.session.get(User, user_id)
     if user is None:
         raise_error(404, "NOT_FOUND", "User not found")
 
-    roles = (
-        db.session.execute(
-            select(GlobalRole)
-            .join(UserGlobalRole, UserGlobalRole.role_id == GlobalRole.id)
-            .where(UserGlobalRole.user_id == user_id)
+    links = db.session.execute(
+        select(UserGlobalRole, GlobalRole)
+        .join(GlobalRole, UserGlobalRole.role_id == GlobalRole.id)
+        .where(UserGlobalRole.user_id == user_id)
+    ).all()
+
+    def _clubs(link: UserGlobalRole) -> list[dict]:
+        clubs = [db.session.get(Tenant, c.tenant_id) for c in link.clubs]
+        return sorted(
+            ({"id": t.id, "name": t.name} for t in clubs if t is not None),
+            key=lambda c: c["name"].lower(),
         )
-        .scalars()
-        .all()
-    )
 
     return jsonify(
         {
             "user_id": user_id,
             "email": user.email,
-            "roles": [{"id": r.id, "name": r.name} for r in roles],
+            # clubs: empty when the role holds on the whole platform.
+            "roles": [
+                {"id": r.id, "name": r.name, "clubs": _clubs(link)} for link, r in links
+            ],
         }
     ), 200
+
+
+def _limit_clubs(body: dict) -> list[Tenant]:
+    """``tenant_ids`` from an assignment body: the clubs a role is limited
+    to, or an empty list for the whole platform."""
+    raw = body.get("tenant_ids") or []
+    if not isinstance(raw, list) or not all(
+        isinstance(i, int) and not isinstance(i, bool) for i in raw
+    ):
+        raise_error(400, "VALIDATION_ERROR", "tenant_ids must be a list of club ids")
+    clubs = []
+    for tenant_id in dict.fromkeys(raw):
+        tenant = db.session.get(Tenant, tenant_id)
+        if tenant is None or tenant.deleted_at is not None:
+            raise_error(404, "NOT_FOUND", f"Club {tenant_id} not found")
+        clubs.append(tenant)
+    return clubs
 
 
 @tenant_admin_bp.route("/users/<int:user_id>/roles", methods=["POST"])
 @require_global_permission("roles.manage")
 def assign_user_global_role(user_id: int):
-    """Assign a global role to a user."""
-    from hubra.core.models.global_role import GlobalRole, UserGlobalRole
+    """Assign a global role to a user: ``{"role_id", "tenant_ids"?}``.
+
+    With ``tenant_ids`` the role holds on those clubs only, and only for
+    looking at them and opening them as a member (``CLUB_LIMITED_KEYS``).
+    """
+    from hubra.core.models.global_role import (
+        GlobalRole,
+        UserGlobalRole,
+        UserGlobalRoleTenant,
+    )
 
     user = db.session.get(User, user_id)
     if user is None:
@@ -2284,7 +2327,11 @@ def assign_user_global_role(user_id: int):
     if role is None:
         raise_error(404, "NOT_FOUND", "Role not found")
 
-    check_global_grant(_global_role_keys(role.id))
+    clubs = _limit_clubs(body)
+    # Limited to clubs, the role only carries the club rights (see
+    # CLUB_LIMITED_KEYS), so those are what the assigner must hold.
+    keys = _global_role_keys(role.id)
+    check_global_grant(keys & CLUB_LIMITED_KEYS if clubs else keys)
 
     existing = db.session.scalar(
         select(UserGlobalRole).where(
@@ -2295,13 +2342,21 @@ def assign_user_global_role(user_id: int):
     if existing is not None:
         raise_error(409, "CONFLICT", "User already has this role")
 
-    db.session.add(UserGlobalRole(user_id=user_id, role_id=role.id))
-    _audit_global_role(
-        "assign", "User", user_id, {"email": user.email, "role": role.name}
-    )
+    link = UserGlobalRole(user_id=user_id, role_id=role.id)
+    link.clubs = [UserGlobalRoleTenant(tenant_id=t.id) for t in clubs]
+    db.session.add(link)
+    details = {"email": user.email, "role": role.name}
+    if clubs:
+        details["clubs"] = [t.slug for t in clubs]
+    _audit_global_role("assign", "User", user_id, details)
     db.session.commit()
     return jsonify(
-        {"user_id": user_id, "role_id": role.id, "role_name": role.name}
+        {
+            "user_id": user_id,
+            "role_id": role.id,
+            "role_name": role.name,
+            "clubs": [{"id": t.id, "name": t.name} for t in clubs],
+        }
     ), 201
 
 

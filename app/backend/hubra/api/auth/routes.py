@@ -974,9 +974,17 @@ def get_my_permissions():
     from hubra.core.permissions import get_user_global_permissions
 
     global_perms: list[str] = []
+    # Platform rights held for some clubs only: {key: [tenant_id]}.
+    club_perms: dict[str, list[int]] = {}
     global_roles: list[str] = []
     if user_id:
         global_perms = sorted(get_user_global_permissions(int(user_id)))
+        from hubra.core.permissions import get_user_club_permissions
+
+        club_perms = {
+            key: sorted(ids)
+            for key, ids in get_user_club_permissions(int(user_id)).items()
+        }
         from hubra.core.models.global_role import GlobalRole, UserGlobalRole
 
         global_roles = list(
@@ -1012,6 +1020,7 @@ def get_my_permissions():
                 "permissions": ["*"],
                 "impersonation": impersonation,
                 "global_permissions": global_perms,
+                "club_permissions": club_perms,
                 "global_roles": global_roles,
                 "mfa_setup_required": mfa_setup_required,
                 "tenant_slug": claims.get("tenant_slug"),
@@ -1033,6 +1042,7 @@ def get_my_permissions():
                 "scoped_permissions": scoped,
                 "impersonation": impersonation,
                 "global_permissions": global_perms,
+                "club_permissions": club_perms,
                 "global_roles": global_roles,
                 "mfa_setup_required": mfa_setup_required,
                 "tenant_slug": claims.get("tenant_slug"),
@@ -1047,6 +1057,7 @@ def get_my_permissions():
             "scoped_permissions": scoped,
             "impersonation": impersonation,
             "global_permissions": global_perms,
+            "club_permissions": club_perms,
             "global_roles": global_roles,
             "mfa_setup_required": mfa_setup_required,
             "tenant_slug": claims.get("tenant_slug"),

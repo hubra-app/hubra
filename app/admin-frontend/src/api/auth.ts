@@ -5,6 +5,9 @@ export interface PermissionsResponse {
   is_superadmin: boolean
   permissions: string[]
   global_permissions: string[]
+  /** Platform rights held for some clubs only: key → club ids. The API
+   * narrows lists to those clubs and refuses the others. */
+  club_permissions?: Record<string, number[]>
   global_roles: string[]
   /** Platform staff who must turn on two-factor sign-in first (on SSO). */
   mfa_setup_required?: boolean

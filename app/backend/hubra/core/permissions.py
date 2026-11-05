@@ -815,8 +815,12 @@ def get_user_global_permissions(user_id: int) -> set[str]:
         GlobalPermission,
         GlobalRolePermission,
         UserGlobalRole,
+        UserGlobalRoleTenant,
     )
 
+    limited = select(UserGlobalRoleTenant.id).where(
+        UserGlobalRoleTenant.assignment_id == UserGlobalRole.id
+    )
     rows = (
         db.session.execute(
             select(GlobalPermission.key)
@@ -827,7 +831,7 @@ def get_user_global_permissions(user_id: int) -> set[str]:
             .join(
                 UserGlobalRole, UserGlobalRole.role_id == GlobalRolePermission.role_id
             )
-            .where(UserGlobalRole.user_id == user_id)
+            .where(UserGlobalRole.user_id == user_id, ~limited.exists())
         )
         .scalars()
         .all()
@@ -836,7 +840,59 @@ def get_user_global_permissions(user_id: int) -> set[str]:
     return set(rows) - SUPERADMIN_ONLY
 
 
-def require_global_permission(permission_key: str):
+# What a role assignment limited to some clubs can still grant: looking at
+# those clubs and opening them as a member (support). Anything else (changing
+# a club, its members or billing, platform pages) needs an unlimited role.
+CLUB_LIMITED_KEYS = frozenset({"tenants.read", "tenants.members.read", "impersonate"})
+
+
+def get_user_club_permissions(user_id: int) -> dict[str, set[int]]:
+    """The club rights a user holds only for some clubs: ``{key: {tenant_id}}``.
+
+    Comes from role assignments limited to clubs (``user_global_role_tenants``)
+    and holds only keys in ``CLUB_LIMITED_KEYS``. Staff still waiting to set up
+    two-factor get nothing, as with ``get_user_global_permissions``.
+    """
+    from hubra.core.models.global_role import (
+        GlobalPermission,
+        GlobalRolePermission,
+        UserGlobalRole,
+        UserGlobalRoleTenant,
+    )
+    from hubra.core.models.user import User
+
+    user = db.session.get(User, user_id)
+    if user is None or staff_mfa_missing(user):
+        return {}
+    rows = db.session.execute(
+        select(GlobalPermission.key, UserGlobalRoleTenant.tenant_id)
+        .join(
+            GlobalRolePermission,
+            GlobalRolePermission.permission_id == GlobalPermission.id,
+        )
+        .join(UserGlobalRole, UserGlobalRole.role_id == GlobalRolePermission.role_id)
+        .join(
+            UserGlobalRoleTenant,
+            UserGlobalRoleTenant.assignment_id == UserGlobalRole.id,
+        )
+        .where(
+            UserGlobalRole.user_id == user_id,
+            GlobalPermission.key.in_(CLUB_LIMITED_KEYS),
+        )
+    ).all()
+    out: dict[str, set[int]] = {}
+    for key, tenant_id in rows:
+        out.setdefault(key, set()).add(tenant_id)
+    return out
+
+
+def platform_club_ids() -> set[int] | None:
+    """In a route marked ``club_list=True``: the clubs the caller may see, or
+    None when their right holds on every club."""
+    return getattr(g, "platform_club_ids", None)
+
+
+def require_global_permission(permission_key: str, *, club_list: bool = False):
     """Decorator: verifies the ACCOUNT identity and a global permission.
 
     Only an account token counts (the standard cookie with a ``user:<id>``
@@ -879,17 +935,28 @@ def require_global_permission(permission_key: str):
                 return fn(*args, **kwargs)
 
             perms = get_user_global_permissions(user.id)
-            if permission_key not in perms and "*" not in perms:
-                return jsonify(
-                    {
-                        "error": "FORBIDDEN",
-                        "message": f"Permission '{permission_key}' required",
-                    }
-                ), 403
+            if permission_key in perms or "*" in perms:
+                g.system_user = user
+                g.permission_scope = "global"
+                g.platform_club_ids = None
+                return fn(*args, **kwargs)
 
-            g.system_user = user
-            g.permission_scope = "global"
-            return fn(*args, **kwargs)
+            # A role limited to some clubs: the route must be about one of
+            # them, or a list the route narrows to them (club_list=True).
+            clubs = get_user_club_permissions(user.id).get(permission_key, set())
+            tenant_id = kwargs.get("tenant_id")
+            if clubs and (club_list or tenant_id in clubs):
+                g.system_user = user
+                g.permission_scope = "club"
+                g.platform_club_ids = clubs
+                return fn(*args, **kwargs)
+
+            return jsonify(
+                {
+                    "error": "FORBIDDEN",
+                    "message": f"Permission '{permission_key}' required",
+                }
+            ), 403
 
         wrapper._global_perm = permission_key
         return wrapper

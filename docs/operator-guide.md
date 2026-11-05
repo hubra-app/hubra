@@ -349,6 +349,14 @@ The full list is in [configuration.md](configuration.md) and `.env.example`.
   permissions, such as `backups.manage`, `platform.settings`,
   `platform.diagnostics` or `plugins.manage`, without making them
   superadmin.
+- **A role for some clubs only**: when you assign a role, pick clubs under
+  **Only for these clubs**. The person then sees only those clubs in All
+  clubs and may open them as a member (read-only unless they ask for
+  changes, every session logged under Audit log › Support access), and
+  nothing else: of the role's rights only `tenants.read`,
+  `tenants.members.read` and `impersonate` count there. Use it for a
+  helper who looks after a few clubs. Leave the field empty for the whole
+  platform.
 - **Club owners and admins** see manage too, but only Personal › My clubs
   and the clubs they run. There they choose who else is a club admin
   (My clubs › the club › Admins). Platform staff find the same list, and the
