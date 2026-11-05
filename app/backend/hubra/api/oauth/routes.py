@@ -143,10 +143,10 @@ def register():
     uris = data.get("redirect_uris")
     if not isinstance(uris, list) or not 1 <= len(uris) <= 10:
         return _register_error("redirect_uris: 1 to 10 addresses", "invalid_redirect_uri")
-    try:
-        uris = [oauth.check_redirect_uri(u, dynamic=True) for u in uris]
-    except ValueError as exc:
-        return _register_error(str(exc), "invalid_redirect_uri")
+    for u in uris:
+        problem = oauth.redirect_uri_problem(u, dynamic=True)
+        if problem:
+            return _register_error(problem, "invalid_redirect_uri")
     method = data.get("token_endpoint_auth_method") or "client_secret_basic"
     if method not in oauth.AUTH_METHODS:
         return _register_error("token_endpoint_auth_method: none, client_secret_basic or client_secret_post")
@@ -211,7 +211,10 @@ def _account():
     try:
         user, claims = verify_account_token()
     except ApiError as exc:
-        return None, None, _error(exc.status, exc.code, exc.message)
+        # Fixed texts, never the exception's own (CodeQL).
+        if exc.code == "CSRF_ERROR":
+            return None, None, _error(401, "CSRF_ERROR", "Missing or wrong X-Account-CSRF header")
+        return None, None, _error(401, "UNAUTHORIZED", "Sign in first")
     if claims.get("impersonator_id") is not None:
         return None, None, _error(403, "IMPERSONATION_RESTRICTED", "Not during a support session")
     return user, claims, None
@@ -550,10 +553,12 @@ def _app_fields(data: dict, *, partial: bool):
         uris = data.get("redirectUris")
         if not isinstance(uris, list) or not 1 <= len(uris) <= 10:
             return None, _error(400, "VALIDATION_ERROR", "redirectUris: 1 to 10 addresses")
-        try:
-            out["redirect_uris"] = [oauth.check_redirect_uri(str(u).strip(), dynamic=False) for u in uris]
-        except ValueError as exc:
-            return None, _error(400, "VALIDATION_ERROR", str(exc))
+        uris = [str(u).strip() for u in uris]
+        for u in uris:
+            problem = oauth.redirect_uri_problem(u, dynamic=False)
+            if problem:
+                return None, _error(400, "VALIDATION_ERROR", problem)
+        out["redirect_uris"] = uris
     if not partial or "resources" in data:
         res = data.get("resources") or ["api"]
         if not isinstance(res, list) or not res or not set(res) <= set(RESOURCES):

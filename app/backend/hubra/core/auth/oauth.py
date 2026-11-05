@@ -179,29 +179,25 @@ def _is_loopback(parts) -> bool:
     return parts.scheme == "http" and (parts.hostname or "") in _LOOPBACK
 
 
-def check_redirect_uri(uri: str, *, dynamic: bool) -> str:
-    """A redirect URI an app may register, or ValueError."""
+def redirect_uri_problem(uri, *, dynamic: bool) -> str | None:
+    """Why an app may not register this redirect URI, or None when it may.
+    (A returned message, not an exception, so callers answer with fixed
+    text.)"""
     if not isinstance(uri, str) or not 8 <= len(uri) <= 1000:
-        raise ValueError("redirect_uris: 8 to 1000 characters each")
+        return "redirect_uris: 8 to 1000 characters each"
     parts = urlsplit(uri)
     if parts.fragment or "#" in uri:
-        raise ValueError("redirect_uris: no fragment")
+        return "redirect_uris: no fragment"
     if parts.username or parts.password:
-        raise ValueError("redirect_uris: no user or password")
-    if parts.scheme == "https" and parts.hostname:
-        pass
-    elif _is_loopback(parts):
-        pass
-    else:
-        raise ValueError("redirect_uris: https, or http on localhost")
+        return "redirect_uris: no user or password"
+    if not (parts.scheme == "https" and parts.hostname) and not _is_loopback(parts):
+        return "redirect_uris: https, or http on localhost"
     if dynamic:
         hosts = dynamic_redirect_hosts()
         host = (parts.hostname or "").lower()
         if hosts and not any(host == h or host.endswith("." + h) for h in hosts):
-            raise ValueError(
-                f"redirect_uris: {host} is not allowed for self-registered apps"
-            )
-    return uri
+            return f"redirect_uris: {host} is not allowed for self-registered apps"
+    return None
 
 
 def redirect_matches(client: OAuthClient, uri: str | None) -> bool:
