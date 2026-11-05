@@ -19,6 +19,8 @@ flask-cors>=4.0
 # Environment / config
 python-dotenv>=1.0
 pydantic-settings[yaml]>=2.2
+# Contract schemas (hubra.core.contracts)
+pydantic>=2.6
 
 # Production WSGI server
 gunicorn>=21.0
