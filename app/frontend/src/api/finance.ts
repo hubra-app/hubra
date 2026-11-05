@@ -726,3 +726,120 @@ export async function getFeeBasis(preview: FeeBasisPreview = {}): Promise<FeeBas
     })),
   }
 }
+
+// ── Annual accounts (Jahresrechnung) ───────────────────────────────────────
+
+export type AccountKind = 'asset' | 'liability' | 'equity' | 'income' | 'expense'
+
+export interface Account {
+  id: number
+  number: string
+  name: string
+  kind: AccountKind
+  isMoney: boolean
+}
+
+export interface Chart {
+  accounts: Account[]
+  categories: { id: number; name: string; accountId: number | null }[]
+}
+
+export interface AnnualLine {
+  number: string
+  name: string
+  amount: number
+  previous: number | null
+}
+
+export interface AnnualReport {
+  year: number
+  start: string
+  end: string
+  closed: boolean
+  closedAt: string | null
+  openingSource: 'closing' | 'computed'
+  opening: { number: string; name: string; kind: AccountKind; amount: number }[]
+  hasPrevious: boolean
+  income: AnnualLine[]
+  expense: AnnualLine[]
+  totalIncome: number
+  totalExpense: number
+  result: number
+  previousResult: number | null
+  assets: AnnualLine[]
+  liabilities: AnnualLine[]
+  capital: { number: string; name: string; opening: number; closing: number; previous: number | null }
+  totalAssets: number
+  notes: {
+    openInvoices: { count: number; amount: number }
+    unmappedBookings: number
+    pendingBookings: number
+  }
+}
+
+export interface FiscalYearInfo {
+  year: number
+  start: string
+  end: string
+  closed: boolean
+}
+
+export function getChart(): Promise<Chart> {
+  return apiFetch<Chart>('/app/finance/accounts')
+}
+
+export function createAccount(data: { number: string; name: string; kind: AccountKind }): Promise<Account> {
+  return apiFetch<Account>('/app/finance/accounts', { method: 'POST', body: JSON.stringify(data) })
+}
+
+export function renameAccount(id: number, name: string): Promise<Account> {
+  return apiFetch<Account>(`/app/finance/accounts/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ name }),
+  })
+}
+
+export function deleteAccount(id: number): Promise<void> {
+  return apiFetch<void>(`/app/finance/accounts/${id}`, { method: 'DELETE' })
+}
+
+export function mapCategoryAccount(categoryId: number, accountId: number | null): Promise<unknown> {
+  return apiFetch(`/app/finance/accounts/categories/${categoryId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ accountId }),
+  })
+}
+
+export function listFiscalYears(): Promise<{ years: FiscalYearInfo[]; startMonth: number }> {
+  return apiFetch('/app/finance/annual')
+}
+
+export function getAnnualReport(year: number): Promise<AnnualReport> {
+  return apiFetch<AnnualReport>(`/app/finance/annual/${year}`)
+}
+
+export function setOpeningBalances(year: number, balances: Record<string, number>): Promise<AnnualReport> {
+  return apiFetch<AnnualReport>(`/app/finance/annual/${year}/opening`, {
+    method: 'PUT',
+    body: JSON.stringify({ balances }),
+  })
+}
+
+export function closeFiscalYear(year: number): Promise<AnnualReport> {
+  return apiFetch<AnnualReport>(`/app/finance/annual/${year}/close`, { method: 'POST' })
+}
+
+export function reopenFiscalYear(year: number): Promise<AnnualReport> {
+  return apiFetch<AnnualReport>(`/app/finance/annual/${year}/reopen`, { method: 'POST' })
+}
+
+export async function downloadAnnualAccounts(year: number, lang: string): Promise<void> {
+  const res = await apiFetchRaw(`/app/finance/annual/${year}.pdf?lang=${lang}`)
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `jahresrechnung-${year}.pdf`
+  a.click()
+  URL.revokeObjectURL(url)
+}

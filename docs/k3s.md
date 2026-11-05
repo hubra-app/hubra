@@ -22,6 +22,9 @@ modules/mail/k8s/             # the opt-in mail stack, see modules/mail/README.m
 - cert-manager with a ClusterIssuer named `letsencrypt` (or an overlay that
   names yours).
 - A default storage class. On k3s that's `local-path`.
+- An S3 bucket for club files (manage › Backups › Storage › File storage,
+  see operator-guide "Club files"): the backend runs as several pods, so
+  the `FILES_DIR` fallback on a pod's disk doesn't work there.
 - For `deploy/clusters/contabo`: the CloudNativePG operator, Longhorn, the
   `traefik-public` ingress class and the `letsencrypt-prod` issuer.
 
@@ -113,6 +116,42 @@ every request looks like it came from Traefik, and all users share one
 rate limit. Create the DNS records as DNS-only first, wait for the
 certificate (`kubectl -n hubra get certificate`), then turn the proxy on
 with SSL mode **Full (strict)**.
+
+## Club domains
+
+A club can bring its own domain (club app › Einstellungen › Domains). It
+proves it owns it with a TXT record at `_hubra-verify.<domain>`, and points
+it at the platform with a CNAME. With **manage › Vereinsdomains ›
+Vereinsdomains ausliefern** on, the platform worker (every two minutes,
+`hubra.core.services.domain_serving`) creates for each verified domain:
+
+1. a cert-manager `Certificate` (`club-domain-<hash>`, secret
+   `club-domain-<hash>-tls`, the ClusterIssuer from `domains.cluster_issuer`),
+2. once that certificate is Ready, an `Ingress` for the domain to the
+   Service `domains.service` (default `global-backend`, port `http`), which
+   redirects every request to the club in the club app
+   (`https://verein.ch/events` → `https://app.hubra.club/<club>/app/events`).
+
+Both carry the label `hubra.club/club-domain=true`; only objects with it are
+changed or removed, so Flux and hand-made objects are left alone. A domain
+that is deleted or no longer verified loses both. Turning serving off
+removes every club-domain Ingress at the next run and keeps the
+certificates. A domain without a certificate after a day is shown as "Kein
+Zertifikat" to the club and raises one system alert.
+
+What the cluster needs:
+
+- `domains-rbac.yaml` (in `deploy/app`): the `hubra-domains` service account
+  of the platform worker, allowed to manage Ingresses and Certificates in the
+  namespace and nothing else. It is the only pod with an API token.
+- A DNS name for clubs to CNAME to (`domains.cname_target`, e.g.
+  `clubs.hubra.club`) that points straight at the cluster's ingress, **not
+  through the Cloudflare proxy**: a proxied name can't carry other people's
+  domains, and Let's Encrypt's HTTP-01 check has to reach Traefik on port 80.
+- On the Contabo overlay, set `domains.ingress_class` to `traefik-public` and
+  `domains.cluster_issuer` to `letsencrypt-prod` in manage.
+- Compose and single servers: nothing happens (no Kubernetes API); a domain
+  stays verified for mail only.
 
 ## Day to day
 

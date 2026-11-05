@@ -280,6 +280,26 @@ A plain `pg_dump` of the whole database also works as an extra copy, for
 example before an upgrade on Compose:
 `docker compose exec postgres pg_dump -U hubra -Fc hubra > hubra.dump`.
 
+## Club files
+
+Clubs' files, for example those of the document library, go to Hubra's file
+store (`hubra.core.files`). Set it in manage › Backups › Storage under
+**File storage** (`files.*`, or `FILES_S3_*` in the environment):
+
+- **With an S3 bucket** (`files.s3.bucket`) files go there. Use a bucket of
+  its own, not the backup bucket. Several backend replicas need this.
+- **Without a bucket** files stay in `FILES_DIR` (default
+  `/var/lib/hubra/files`) on the server. Mount a volume there; this only
+  suits a single server.
+- Every file is encrypted with its club's data key before it is stored, so
+  the bucket only ever holds ciphertext, and a file opens only in its own
+  club. A club's files count towards its storage, and deleting a club for
+  good deletes its files.
+- `files.max_mb` (default 25) is the largest file a club can upload.
+- The database backups don't contain the files. Keep the bucket versioned or
+  copy it elsewhere; without the database (the club's data keys) a copy of
+  the bucket can't be opened.
+
 ## Modules
 
 Every section of the club app is a module. Core, Members and Roles are always
@@ -349,6 +369,14 @@ The full list is in [configuration.md](configuration.md) and `.env.example`.
   permissions, such as `backups.manage`, `platform.settings`,
   `platform.diagnostics` or `plugins.manage`, without making them
   superadmin.
+- **A role for some clubs only**: when you assign a role, pick clubs under
+  **Only for these clubs**. The person then sees only those clubs in All
+  clubs and may open them as a member (read-only unless they ask for
+  changes, every session logged under Audit log › Support access), and
+  nothing else: of the role's rights only `tenants.read`,
+  `tenants.members.read` and `impersonate` count there. Use it for a
+  helper who looks after a few clubs. Leave the field empty for the whole
+  platform.
 - **Club owners and admins** see manage too, but only Personal › My clubs
   and the clubs they run. There they choose who else is a club admin
   (My clubs › the club › Admins). Platform staff find the same list, and the

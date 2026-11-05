@@ -233,16 +233,7 @@ def _my_statuses() -> dict[int, str]:
 from hubra.core.extensions import db  # noqa: E402 — needed by get_registration_count
 
 
-def _valid_group(value: int | None) -> None:
-    if value is None:
-        return
-    from marshmallow import ValidationError
-
-    from hubra.core.models.group import Group
-
-    group = db.session.get(Group, value)
-    if group is None or group.deleted_at is not None:
-        raise ValidationError("Unknown group")
+from hubra.core.schemas.group import valid_group_id as _valid_group  # noqa: E402
 
 
 class RecurrenceSchema(ma.Schema):

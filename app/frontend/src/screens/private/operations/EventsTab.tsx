@@ -65,6 +65,8 @@ import { CalendarSubscribeButton } from './CalendarSubscribeButton'
 import { PendingSignUpsModal } from './PendingSignUpsModal'
 import { AttendanceModal } from './AttendanceModal'
 import { RecurrenceFields } from './RecurrenceFields'
+import { GroupField } from './ContentGroupFields'
+import { useContentGroups } from './contentGroups'
 import { defaultRepeat, type RepeatState } from './recurrence'
 
 /* ── Events ─────────────────────────────────── */
@@ -130,7 +132,10 @@ export function EventsTab() {
   const { t, i18n } = useT()
   const joinEventMutation = useToggleJoinEvent()
   const maybeMutation = useMaybeEvent()
-  const canCreate = hasPermission('events.events.create')
+  // Club-wide, or through a role for one group (that group's events).
+  const createScope = useContentGroups('events.events.create')
+  const updateScope = useContentGroups('events.events.update')
+  const canCreate = createScope.canAny
   const { moduleList } = useData()
   const eventTypes = clubEventTypes(
     moduleList.find((m) => m.code === 'events')?.config?.event_types,
@@ -138,10 +143,10 @@ export function EventsTab() {
   // Whoever put an event up runs it (the API checks the same).
   const hosts = (ev: ClubEvent) =>
     currentUser != null && ev.createdById === Number(currentUser.id)
-  const canUpdate = (ev: ClubEvent) => hasPermission('events.events.update') || hosts(ev)
-  const canDelete = (ev: ClubEvent) => hasPermission('events.events.delete') || hosts(ev)
-  const canApprove = (ev: ClubEvent) =>
-    hasPermission('events.events.add_attendee') || hosts(ev)
+  const inScope = (key: string, ev: ClubEvent) => hasPermission(key, ev.groupId ?? undefined)
+  const canUpdate = (ev: ClubEvent) => inScope('events.events.update', ev) || hosts(ev)
+  const canDelete = (ev: ClubEvent) => inScope('events.events.delete', ev) || hosts(ev)
+  const canApprove = (ev: ClubEvent) => inScope('events.events.add_attendee', ev) || hosts(ev)
   const navigate = useNavigate()
   const mayGroups = moduleList.some((m) => m.code === 'groups')
   const { data: groups = [] } = useQuery({
@@ -224,7 +229,7 @@ export function EventsTab() {
       type: eventTypes[0],
       maxAttendees: '',
       requiresApproval: false,
-      groupId: '',
+      groupId: createScope.defaultGroup,
       description: '',
       isPublic: false,
     })
@@ -237,7 +242,10 @@ export function EventsTab() {
   const [handledNew, setHandledNew] = useState(false)
   if (newLink && canCreate && !handledNew) {
     setHandledNew(true)
-    setAddOpen(true) // the form still holds its fresh initial values
+    // The form still holds its fresh initial values; a group lead starts in
+    // their group.
+    if (createScope.defaultGroup) form.setFieldValue('groupId', createScope.defaultGroup)
+    setAddOpen(true)
   }
   // Reset only once the URL has dropped ?new=1 (see MembersTab).
   if (!newLink && handledNew) setHandledNew(false)
@@ -497,25 +505,16 @@ export function EventsTab() {
           />
         </Field>
       </SimpleGrid>
-      {mayGroups && (
-        <Field
-          label={t('events.group', 'Gruppe') + ' (optional)'}
-          hint={t(
-            'events.groupHint',
-            'Ihre Mitglieder werden bei der Anwesenheit erwartet (z. B. das Team eines Trainings).',
-          )}
-        >
-          <Select
-            data={[
-              { value: '', label: t('events.noGroup', 'Für alle') },
-              ...groups.map((g) => ({ value: g.id, label: g.name })),
-            ]}
-            searchable
-            allowDeselect={false}
-            {...form.getInputProps('groupId')}
-          />
-        </Field>
-      )}
+      <GroupField
+        scope={editTarget ? updateScope : createScope}
+        value={form.values.groupId}
+        onChange={(v) => form.setFieldValue('groupId', v)}
+        error={form.errors.groupId}
+        hint={t(
+          'events.groupHint',
+          'Ihre Mitglieder werden bei der Anwesenheit erwartet (z. B. das Team eines Trainings).',
+        )}
+      />
       <Checkbox
         label={t(
           'events.requiresApproval',

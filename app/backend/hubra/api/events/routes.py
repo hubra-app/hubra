@@ -8,7 +8,14 @@ from flask import Blueprint, Response, current_app, g, jsonify, request, url_for
 from itsdangerous import BadSignature, URLSafeSerializer
 from hubra.core.auth.helpers import get_current_member
 from marshmallow import ValidationError
-from hubra.core.permissions import created_by, permission_required, require_member
+from hubra.core.permissions import (
+    body_group,
+    check_group_change,
+    created_by,
+    permission_required,
+    require_member,
+    row_group,
+)
 from hubra.core.errors import api_error, raise_error
 from hubra.core.extensions import db
 from hubra.core.models.event import ClubEvent
@@ -33,6 +40,9 @@ _update_schema = ClubEventUpdateSchema()
 
 # Whoever put an event up runs it: edits, cancels, and handles its sign-ups.
 _own_event = created_by(ClubEvent, arg="event_id")
+# The group an event is for: a role held for that group (the team's trainer,
+# the youth team's event lead) runs the group's events.
+_event_group = row_group(ClubEvent, "event_id")
 
 
 # ── GET /events ───────────────────────────────────────────────────────────────
@@ -72,7 +82,7 @@ def get_event(event_id: int):
 
 
 @events_bp.post("/")
-@permission_required("events", "create", "Create events")
+@permission_required("events", "create", "Create events", scope=body_group)
 def create_event():
     body = request.get_json(silent=True) or {}
     try:
@@ -95,7 +105,9 @@ def create_event():
 
 
 @events_bp.patch("/<int:event_id>")
-@permission_required("events", "update", "Update events", allow=_own_event)
+@permission_required(
+    "events", "update", "Update events", scope=_event_group, allow=_own_event
+)
 def update_event(event_id: int):
     event = EventService.get(event_id)
 
@@ -104,6 +116,7 @@ def update_event(event_id: int):
         data = _update_schema.load(body)
     except ValidationError as exc:
         return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+    check_group_change("events.events.update", data)
 
     # A date of a series: ``?scope=following`` changes it and all later
     # dates (and may give them a new rule); otherwise just this one.
@@ -131,7 +144,9 @@ def update_event(event_id: int):
 
 
 @events_bp.delete("/<int:event_id>")
-@permission_required("events", "delete", "Delete events", allow=_own_event)
+@permission_required(
+    "events", "delete", "Delete events", scope=_event_group, allow=_own_event
+)
 def delete_event(event_id: int):
     scope = "following" if request.args.get("scope") == "following" else "this"
     EventService.delete(event_id, get_current_member().id, scope)
@@ -149,7 +164,9 @@ def delete_event(event_id: int):
 
 
 @events_bp.post("/<int:event_id>/attendees/<int:member_id>")
-@permission_required("events", "add_attendee", "Add event attendee", allow=_own_event)
+@permission_required(
+    "events", "add_attendee", "Add event attendee", scope=_event_group, allow=_own_event
+)
 def add_attendee(event_id: int, member_id: int):
     EventService.get(event_id)  # 404 if not found
 
@@ -174,7 +191,7 @@ def add_attendee(event_id: int, member_id: int):
 
 @events_bp.delete("/<int:event_id>/attendees/<int:member_id>")
 @permission_required(
-    "events", "remove_attendee", "Remove event attendee", allow=_own_event
+    "events", "remove_attendee", "Remove event attendee", scope=_event_group, allow=_own_event
 )
 def remove_attendee(event_id: int, member_id: int):
     # Also ends their registration, so the place goes to the waitlist.
@@ -224,7 +241,7 @@ def register_for_event(event_id: int):
 
 @events_bp.post("/<int:event_id>/register/<int:member_id>")
 @permission_required(
-    "events", "add_attendee", "Register member for event", allow=_own_event
+    "events", "add_attendee", "Register member for event", scope=_event_group, allow=_own_event
 )
 def register_member_for_event(event_id: int, member_id: int):
     body = request.get_json(silent=True) or {}
@@ -285,7 +302,7 @@ def maybe_for_event(event_id: int):
 
 @events_bp.get("/<int:event_id>/registrations")
 @permission_required(
-    "events", "add_attendee", "See and approve event sign-ups", allow=_own_event
+    "events", "add_attendee", "See and approve event sign-ups", scope=_event_group, allow=_own_event
 )
 def list_registrations(event_id: int):
     status = request.args.get("status") or None
@@ -297,7 +314,7 @@ def list_registrations(event_id: int):
     "/<int:event_id>/registrations/<int:member_id>/<any(approve, decline):decision>"
 )
 @permission_required(
-    "events", "add_attendee", "See and approve event sign-ups", allow=_own_event
+    "events", "add_attendee", "See and approve event sign-ups", scope=_event_group, allow=_own_event
 )
 def decide_registration(event_id: int, member_id: int, decision: str):
     registration = EventService.decide(
@@ -312,7 +329,7 @@ def decide_registration(event_id: int, member_id: int, decision: str):
 
 @events_bp.post("/<int:event_id>/attend/<int:member_id>")
 @permission_required(
-    "events", "add_attendee", "Mark event attendance", allow=_own_event
+    "events", "add_attendee", "Mark event attendance", scope=_event_group, allow=_own_event
 )
 def mark_attendance(event_id: int, member_id: int):
     registration = EventService.mark_attendance(event_id, member_id)
@@ -330,15 +347,6 @@ def mark_attendance(event_id: int, member_id: int):
 
 
 # ── Attendance roll of one event ─────────────────────────────────────────────
-
-
-def _event_group(kwargs) -> int | None:
-    """The group an event is for: a role held for that group (the team's
-    trainer) may take its roll."""
-    from hubra.core.models.event import ClubEvent
-
-    event = db.session.get(ClubEvent, kwargs.get("event_id"))
-    return event.group_id if event else None
 
 
 @events_bp.get("/<int:event_id>/attendance")

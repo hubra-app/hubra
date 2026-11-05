@@ -10,6 +10,7 @@ Use config_map to look up a class by name:
 
 import logging as _logging
 import os
+import tempfile
 import secrets as _secrets
 from datetime import timedelta
 from dotenv import load_dotenv
@@ -263,6 +264,22 @@ class BaseConfig:
     )
     RATELIMIT_HEADERS_ENABLED: bool = True
 
+    # ── Club files (hubra.core.files) ────────────────────────────────────────
+    # S3 bucket for club files; also editable in manage (files.s3.*). Without
+    # a bucket, files are kept in FILES_DIR on the server (one server only).
+    FILES_S3_ENDPOINT: str = os.environ.get("FILES_S3_ENDPOINT", "")
+    FILES_S3_BUCKET: str = os.environ.get("FILES_S3_BUCKET", "")
+    FILES_S3_ACCESS_KEY: str = os.environ.get("FILES_S3_ACCESS_KEY", "")
+    FILES_S3_SECRET_KEY: str = os.environ.get("FILES_S3_SECRET_KEY", "")
+    FILES_S3_REGION: str = os.environ.get("FILES_S3_REGION", "default")
+    FILES_MAX_MB: int = int(os.environ.get("FILES_MAX_MB", "25"))
+    # Online payments (payments plugin): the platform's Stripe Connect key.
+    # Better set in manage › Payments.
+    STRIPE_SECRET_KEY: str = os.environ.get("STRIPE_SECRET_KEY", "")
+    # The host clubs point their own domain at (CNAME); manage › Club domains.
+    CUSTOM_DOMAIN_TARGET: str = os.environ.get("CUSTOM_DOMAIN_TARGET", "")
+    FILES_DIR: str = os.environ.get("FILES_DIR", "/var/lib/hubra/files")
+
     # ── Backups (Contabo S3) ─────────────────────────────────────────────────
     # S3 connection — also editable via Settings UI (backup namespace).
     # Env vars serve as fallback when KV settings are not populated.
@@ -380,6 +397,12 @@ class TestingConfig(BaseConfig):
     WILDDUCK_API_URL: str = ""
     WILDDUCK_API_TOKEN: str = ""
     REDIS_URL: str = ""
+    FILES_S3_ENDPOINT: str = ""
+    FILES_S3_BUCKET: str = ""
+    FILES_S3_ACCESS_KEY: str = ""
+    FILES_S3_SECRET_KEY: str = ""
+    # One folder per test process; tests that care set their own.
+    FILES_DIR: str = os.path.join(tempfile.gettempdir(), f"hubra-files-{os.getpid()}")
     BACKUP_S3_ENDPOINT: str = ""
     BACKUP_S3_BUCKET: str = ""
     BACKUP_S3_ACCESS_KEY: str = ""

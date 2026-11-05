@@ -150,3 +150,13 @@ def _check_domains() -> dict:
         checked += 1
     db.session.commit()
     return {"checked": checked, "expired": expired}
+
+
+@celery_app.task(name="hubra.core.tasks.domain_tasks.serve_domains")
+def serve_domains() -> dict:
+    """Ingress and certificate for every verified club domain (k3s)."""
+    from hubra.core.services import domain_serving
+
+    result = domain_serving.reconcile()
+    db.session.commit()
+    return result

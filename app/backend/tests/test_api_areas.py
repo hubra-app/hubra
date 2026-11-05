@@ -12,7 +12,7 @@ import yaml
 
 from hubra.core import api_areas
 from hubra.core.api_areas import canonical_path
-from hubra.core.roles import area_of
+from hubra.core.roles import area_of, serves
 
 REPO = Path(__file__).resolve().parents[3]
 
@@ -100,6 +100,15 @@ def _sample_paths() -> list[str]:
 SERVICE = {"platform": "platform-backend", "global": "global-backend", "app": "backend"}
 
 
+def _route_paths(app) -> set[str]:
+    """One concrete path per API route of the URL map."""
+    return {
+        re.sub(r"<[^>]+>", "1", r.rule)
+        for r in app.url_map.iter_rules()
+        if r.rule.startswith("/api/")
+    }
+
+
 @pytest.mark.parametrize("area", ["platform", "global"])
 def test_nginx_routes_the_area_paths(area):
     script = (REPO / "app/deploy/nginx/40-hubra-runtime.sh").read_text()
@@ -117,7 +126,7 @@ def test_nginx_routes_the_area_paths(area):
         "deploy/vollbuild-ch/ingress.yaml",
     ],
 )
-def test_ingress_routes_the_platform_paths(ingress):
+def test_ingress_routes_the_platform_paths(ingress, app):
     doc = yaml.safe_load((REPO / ingress).read_text())
     rule = next(r for r in doc["spec"]["rules"] if r["host"].startswith("api."))
     paths = [
@@ -138,3 +147,14 @@ def test_ingress_routes_the_platform_paths(ingress):
 
     for path in _sample_paths():
         assert service(path) == SERVICE[area_of(path)], path
+
+    # Every route the backend has reaches a backend that serves it, so no
+    # call is answered by another backend's role gate with a 404 (which the
+    # browser reports as a CORS error, as the club search did).
+    role_of = {svc: role for role, svc in SERVICE.items()}
+    refused = sorted(
+        f"{path} -> {service(path)}"
+        for path in _route_paths(app)
+        if not serves(path, role_of[service(path)])
+    )
+    assert refused == []

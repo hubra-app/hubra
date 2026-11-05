@@ -15,10 +15,18 @@ export interface GlobalPermission {
   description: string | null
 }
 
+/** A role held by a person; `clubs` is empty when it holds on the whole
+ * platform, otherwise it holds on these clubs only. */
+export interface UserRole {
+  id: number
+  name: string
+  clubs: { id: number; name: string }[]
+}
+
 export interface UserWithRoles {
   user_id: number
   email: string
-  roles: { id: number; name: string }[]
+  roles: UserRole[]
 }
 
 export interface UserSearchResult {
@@ -60,13 +68,15 @@ export async function getUserRoles(userId: number): Promise<UserWithRoles> {
   return apiFetch<UserWithRoles>(`/platform/system/users/${userId}/roles`)
 }
 
+/** `tenantIds` limits the role to those clubs; empty for the whole platform. */
 export async function assignUserRole(
   userId: number,
   roleId: number,
+  tenantIds: number[] = [],
 ): Promise<{ user_id: number; role_id: number; role_name: string }> {
   return apiFetch(`/platform/system/users/${userId}/roles`, {
     method: 'POST',
-    body: JSON.stringify({ role_id: roleId }),
+    body: JSON.stringify({ role_id: roleId, tenant_ids: tenantIds }),
   })
 }
 

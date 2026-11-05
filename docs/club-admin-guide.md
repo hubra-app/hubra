@@ -98,6 +98,16 @@ everything any of them grants.
 - **Functions** (Funktionen), such as president or treasurer, are under
   Members › Functions. They record who holds an office; rights still come
   from roles.
+- **A role for one group.** A role can be given to a member for one group
+  only (on the role's Members tab). It then counts for that group's things:
+  the group itself, and the events, posts and polls that belong to the group.
+  An "Event lead" role given for the youth team lets its holder create the
+  youth team's events, edit and delete them, handle their sign-ups and take
+  attendance, and nothing outside the group. The same goes for posts (the
+  holder edits and removes the group's posts like a moderator) and polls.
+  Events, posts and polls get their group in their form ("Gruppe"); a member
+  who manages only some groups can choose only those and can't move an item
+  out of them. Everything stays visible to the whole club, as before.
 
 ## Modules
 
@@ -132,6 +142,32 @@ Settings › Modules lists everything the club can use. Missing one? "Suggest a 
   other module. Clubs don't install anything: behind the scenes some modules
   are plugins, which let the platform ship and update a module without a
   release of the whole app. Ask the platform team if one you need is missing.
+
+## Annual accounts
+
+Finance › Annual accounts (Jahresrechnung) turns the year's bookings into a
+balance sheet and income statement for the general meeting. You need
+`finance.accounts.read` to see it, `finance.accounts.update` to change the
+chart of accounts and opening balances, and `finance.accounts.close` to close
+a year.
+
+- **Chart of accounts:** each club starts with the standard Swiss club chart
+  (1000 Kasse, 1020 Bank, 3000 Mitgliederbeiträge, 6000 Raumaufwand …). New
+  categories get an account from their name; check the mapping under "Chart of
+  accounts" and add accounts of your own there. Unmapped income and expenses
+  land in 3800 / 6900 and are flagged.
+- **Cash basis:** the income statement counts completed payments in the year.
+  Cash payments go to 1000 Kasse, everything else to 1020 Bank. Open invoices
+  are listed in the notes, not booked.
+- **Opening balances:** taken from the closed previous year. For the first
+  year in Hubra, enter them once ("Opening balances").
+- **Fiscal year:** starts in the month set under Finance › Settings (January by
+  default).
+- **Closing:** once the year is over and the previous one is closed (or has no
+  bookings), "Close year" fixes the figures and locks the year's bookings.
+  "Reopen" undoes it; both are in the audit log.
+- **PDF:** the PDF button gives the accounts with the previous year beside them,
+  ready to print for the general meeting.
 
 ## Settings
 

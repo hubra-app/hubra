@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react'
 import type { Connection } from '@/api/apps'
+import type { Invoice } from '@/types'
 
 /** Shown only while `module` is on for the club and the user has `perm`. */
 interface Gated {
@@ -21,6 +22,12 @@ export interface PluginTab extends Gated {
   /** A translation key. */
   label: string
   component: ComponentType
+  /**
+   * The page tab this one sits under as a sub-tab, if the screen groups its
+   * tabs. On `finance`: `bookings`, `planning` or `setup`. Without it the
+   * tab is a page tab of its own.
+   */
+  group?: string
 }
 
 /** A component the app renders at one of its slots (see `PluginSlot`). */
@@ -71,4 +78,6 @@ export interface SlotProps {
   'settings.module.actions': { code: string; configured: boolean; name: string }
   /** In a connected app's details (Einstellungen › Verbundene Apps); check `connection.provider`. */
   'apps.connection': { connection: Connection; onChange: () => void }
+  /** Next to an invoice's buttons: the member's open invoices (Konto) and the invoice page. */
+  'invoice.actions': { invoice: Invoice; onChange: () => void }
 }

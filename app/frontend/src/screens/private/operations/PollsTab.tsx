@@ -40,6 +40,8 @@ import {
   type PollUpdate,
 } from "@/api/polls";
 import { listGroups } from "@/api/groups";
+import { GroupBadge, GroupField } from "./ContentGroupFields";
+import { useContentGroups } from "./contentGroups";
 import { listFunctions } from "@/api/functions";
 import { ProxyPanel } from "./ProxyPanel";
 
@@ -61,11 +63,16 @@ export function PollsTab() {
   const pollCache = useListCache<Poll>(qk.polls);
   const { currentUser, hasPermission } = useAuth();
   const { t, i18n } = useT();
-  const canCreate = hasPermission("polls.polls.create");
-  const canUpdate = hasPermission("polls.polls.update");
-  // Whoever asked the question runs the poll (the API checks the same).
+  // Club-wide, or through a role for one group (that group's polls).
+  const createScope = useContentGroups("polls.polls.create");
+  const updateScope = useContentGroups("polls.polls.update");
+  const canCreate = createScope.canAny;
+  const canUpdate = updateScope.canAny;
+  // Whoever asked the question runs the poll, and a role for its group
+  // (the API checks the same).
   const runs = (poll: Poll) =>
-    canUpdate || (currentUser != null && poll.createdById === String(currentUser.id));
+    hasPermission("polls.polls.update", poll.groupId ?? undefined) ||
+    (currentUser != null && poll.createdById === String(currentUser.id));
   // Only the poll form needs them (and members may not read functions).
   const { data: groups = [] } = useQuery({
     queryKey: qk.groups.all,
@@ -77,7 +84,8 @@ export function PollsTab() {
     queryFn: listFunctions,
     enabled: canCreate || canUpdate,
   });
-  const canDelete = hasPermission("polls.polls.delete");
+  const canDelete = (poll: Poll) =>
+    hasPermission("polls.polls.delete", poll.groupId ?? undefined);
 
   const [addOpen, setAddOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Poll | null>(null);
@@ -89,6 +97,7 @@ export function PollsTab() {
   const [autoClose, setAutoClose] = useState(false);
   const [requiredGroupIds, setRequiredGroupIds] = useState<number[]>([]);
   const [requiredFunctionIds, setRequiredFunctionIds] = useState<number[]>([]);
+  const [groupId, setGroupId] = useState("");
   const [remindingPollId, setRemindingPollId] = useState<string | null>(null);
   const [deletingPollId, setDeletingPollId] = useState<string | null>(null);
 
@@ -170,6 +179,7 @@ export function PollsTab() {
     setAutoClose(false);
     setRequiredGroupIds([]);
     setRequiredFunctionIds([]);
+    setGroupId(createScope.defaultGroup);
   };
 
   const openAdd = () => {
@@ -186,6 +196,7 @@ export function PollsTab() {
     setAutoClose(poll.autoClose ?? false);
     setRequiredGroupIds(poll.requiredGroupIds ?? []);
     setRequiredFunctionIds(poll.requiredFunctionIds ?? []);
+    setGroupId(poll.groupId ?? "");
     setEditTarget(poll);
     setAddOpen(true);
   };
@@ -215,6 +226,7 @@ export function PollsTab() {
         autoClose: isRequired && autoClose,
         requiredGroupIds: isRequired ? requiredGroupIds : [],
         requiredFunctionIds: isRequired ? requiredFunctionIds : [],
+        groupId: groupId || null,
       };
 
       if (editTarget) {
@@ -465,6 +477,7 @@ export function PollsTab() {
                   <div
                     style={{ display: "flex", gap: 6, alignItems: "center" }}
                   >
+                    <GroupBadge name={createScope.groupName(poll.groupId)} />
                     <Badge variant="light" color="acc" radius="xl" style={{ flexShrink: 0 }}>
                       {poll.status === "open"
                         ? t("polls.statusOpen", "Offen")
@@ -491,7 +504,7 @@ export function PollsTab() {
                         <IconEdit size={18} />
                       </ActionIcon>
                     )}
-                    {canDelete && (
+                    {canDelete(poll) && (
                       <ActionIcon
                         size="md"
                         variant="subtle"
@@ -588,6 +601,15 @@ export function PollsTab() {
             />
           </Field>
 
+          <GroupField
+            scope={editTarget ? updateScope : createScope}
+            value={groupId}
+            onChange={setGroupId}
+            hint={t(
+              "content.groupHint",
+              "Wer eine Rolle für diese Gruppe hat, kann den Eintrag verwalten. Sichtbar bleibt er für alle.",
+            )}
+          />
           <Field label={t("polls.options", 'Optionen')}>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {options.map((opt, i) => (

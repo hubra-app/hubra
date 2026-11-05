@@ -32,7 +32,7 @@ class PostService:
     @staticmethod
     def update(post: Post, data: dict, actor_id: int) -> Post:
         """Update allowed fields on a post."""
-        for field in ("title", "summary", "body"):
+        for field in ("title", "summary", "body", "group_id"):
             if field in data:
                 setattr(post, field, data[field])
 
@@ -177,6 +177,7 @@ class PostsService:
             title=data["title"],
             summary=data.get("summary"),
             body=data["body"],
+            group_id=data.get("group_id"),
         )
         db.session.add(post)
         db.session.flush()

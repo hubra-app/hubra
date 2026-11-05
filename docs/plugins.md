@@ -45,6 +45,39 @@ Everything a manifest points at (blueprints, handlers, task modules,
 scheduled tasks, processes, app handlers) must be in the plugin's own
 package. The checks live in `app/backend/hubra/core/plugins/limits.py`.
 
+## Files
+
+A plugin that keeps files (uploads, generated PDFs) stores them through
+Hubra's file store instead of the database or its own folder:
+
+```python
+from hubra.core import files
+
+stored = files.put("documents", data, "application/pdf")  # a StoredFile record
+data = files.read(stored.key)
+files.remove(stored.key)
+```
+
+The platform decides where files go (S3 or a folder on the server), every
+file is encrypted with the club's key, counts towards the club's storage and
+is deleted with the club. Keep `stored.key` in your own table; `read` and
+`remove` only find files of the club the request works in. `put` refuses
+files larger than `files.max_mb` (`files.FileTooLarge`).
+
+## Slots
+
+A plugin's frontend can put a component into these places of the club app
+(`slots` in `registerPlugin`); the props are typed in
+`app/frontend/src/plugins/types.ts`:
+
+| Slot | Where | Props |
+| --- | --- | --- |
+| `account.cards` | the member's own page (Konto) | none |
+| `inventory.item` | an inventory item's page | `itemId` |
+| `settings.module.actions` | a module's row in Einstellungen › Module | `code`, `configured`, `name` |
+| `apps.connection` | a connected app's details | `connection`, `onChange` |
+| `invoice.actions` | next to an invoice's buttons: the member's open invoices and the invoice page | `invoice`, `onChange` |
+
 ## Route paths
 
 Write new plugins with `/api/v1/app/<name>`. A plugin that names the old

@@ -59,6 +59,7 @@ class PluginSet:
     def get(self, pid: str) -> Spec | None:
         return self.specs.get(pid)
 
+
 # One per process, like the module registry it feeds.
 _current = PluginSet()
 
@@ -276,8 +277,7 @@ def _import(spec: Spec) -> list:
     if found is not None and found.origin and not places:
         places = [found.origin]
     if not places or not all(
-        os.path.realpath(p).startswith(os.path.realpath(path) + os.sep)
-        for p in places
+        os.path.realpath(p).startswith(os.path.realpath(path) + os.sep) for p in places
     ):
         raise ValueError(f"package {pkg!r} is not the plugin's own (name taken)")
     mod = importlib.import_module(pkg)
@@ -312,7 +312,12 @@ def _taken(registry) -> tuple[dict[str, str], set[str]]:
         if m.plugin:
             continue
         for bp in m.blueprints:
-            taken[canonical_path("/" + bp.url_prefix.strip("/"))] = m.code
+            prefix = bp.url_prefix.strip("/")
+            # A blueprint at the root holds a few fixed paths of its own
+            # (OAuth metadata under /.well-known); it owns nothing below.
+            if not prefix:
+                continue
+            taken[canonical_path("/" + prefix)] = m.code
         tables.update(m.tables)
     return taken, tables
 
@@ -395,7 +400,9 @@ def load(registry, app=None) -> PluginSet:
                 )
     for spec in pending:
         missing = [c for c in spec.requires if c not in known]
-        missing += [d for d in spec.depends if not (found.get(d) and found.get(d).loaded)]
+        missing += [
+            d for d in spec.depends if not (found.get(d) and found.get(d).loaded)
+        ]
         spec.error = spec.error or f"needs {', '.join(missing)}"
     for spec in found.specs.values():
         if spec.error and spec.id in want:

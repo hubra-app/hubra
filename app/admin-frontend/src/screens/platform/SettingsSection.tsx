@@ -41,7 +41,23 @@ const BACKUP = [
   'backup.s3.access_key',
   'backup.s3.secret_key',
 ]
+const FILES = [
+  'files.s3.endpoint',
+  'files.s3.bucket',
+  'files.s3.region',
+  'files.s3.access_key',
+  'files.s3.secret_key',
+  'files.max_mb',
+]
 
+const DOMAINS = [
+  'domains.serving',
+  'domains.cname_target',
+  'domains.cluster_issuer',
+  'domains.ingress_class',
+  'domains.service',
+]
+const PAYMENTS = ['payments.stripe.secret_key', 'payments.fee_percent']
 const DISCORD = [
   'discord.client_id',
   'discord.public_key',
@@ -57,7 +73,12 @@ const LIMITS = ['limits.warn_percent']
 const MCP = ['mcp.url']
 const OAUTH = ['oauth.dynamic_clients', 'oauth.dynamic_redirect_hosts']
 const SUPPORT = ['support.url']
-const BUILT_IN = ['alerts.cooldown_minutes', 'alerts.retention_days', ...PERF, ...LIMITS, ...OAUTH]
+const BUILT_IN = [
+  'domains.serving',
+  'domains.cluster_issuer',
+  'domains.ingress_class',
+  'domains.service',
+  'alerts.cooldown_minutes', 'alerts.retention_days', ...PERF, ...LIMITS, ...OAUTH]
 const ALERTS = ['alerts.cooldown_minutes', 'alerts.retention_days', 'alerts.manage_url']
 
 
@@ -71,6 +92,9 @@ export type SettingsSectionId =
   | 'relay'
   | 'sender'
   | 'backups'
+  | 'files'
+  | 'payments'
+  | 'domains'
   | 'discord-app'
   | 'discord-channels'
   | 'alerts'
@@ -84,6 +108,9 @@ const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
   relay: [...RELAY, ...FALLBACK],
   sender: SENDER,
   backups: BACKUP,
+  files: FILES,
+  payments: PAYMENTS,
+  domains: DOMAINS,
   'discord-app': DISCORD,
   'discord-channels': [...DISCORD_LOG, ...DISCORD_ROLES],
   alerts: ALERTS,
@@ -156,6 +183,40 @@ const FIELD_DE: Record<string, [string, string]> = {
   'backup.s3.region': ['S3-Region', "Bei Contabo meist 'default'"],
   'backup.s3.access_key': ['S3-Access-Key', 'Wird verschlüsselt gespeichert'],
   'backup.s3.secret_key': ['S3-Secret-Key', 'Wird verschlüsselt gespeichert'],
+  'files.s3.endpoint': [
+    'S3-Endpunkt für Dateien',
+    'S3-kompatible Adresse für Vereinsdateien, z. B. https://eu2.contabostorage.com. Leer: Dateien bleiben auf dem Server',
+  ],
+  'files.s3.bucket': [
+    'S3-Bucket für Dateien',
+    'Bucket für Vereinsdateien (nicht der Backup-Bucket). Jede Datei wird mit dem Schlüssel ihres Vereins verschlüsselt, bevor sie den Server verlässt',
+  ],
+  'files.s3.region': ['S3-Region für Dateien', "Bei Contabo meist 'default'"],
+  'files.s3.access_key': ['S3-Access-Key für Dateien', 'Wird verschlüsselt gespeichert'],
+  'files.s3.secret_key': ['S3-Secret-Key für Dateien', 'Wird verschlüsselt gespeichert'],
+  'files.max_mb': ['Grösste Datei', 'Grösste Datei, die ein Verein hochladen kann, in MB'],
+  'domains.serving': [
+    'Vereinsdomains ausliefern',
+    'on: jede bestätigte Vereinsdomain bekommt ein Zertifikat und ein eigenes Ingress (k3s mit cert-manager), Besucher werden zum Verein weitergeleitet. off: die Ingresses werden entfernt (Notschalter)',
+  ],
+  'domains.cname_target': [
+    'Ziel für Vereinsdomains',
+    'Der Host, auf den Vereine ihre Domain zeigen lassen (CNAME), z. B. clubs.hubra.club; wird den Vereinen angezeigt',
+  ],
+  'domains.cluster_issuer': ['Zertifikats-Aussteller', 'Der ClusterIssuer von cert-manager für Vereinsdomains'],
+  'domains.ingress_class': ['Ingress-Klasse', 'Die Ingress-Klasse der Vereinsdomains'],
+  'domains.service': [
+    'Service für Vereinsdomains',
+    "Der Service (Port 'http'), an den Vereinsdomains gehen; er leitet Besucher zum Verein weiter",
+  ],
+  'payments.stripe.secret_key': [
+    'Stripe-Secret-Key',
+    'Der Schlüssel des Plattform-Kontos (Connect). sk_test_ für den Testmodus. Wird verschlüsselt gespeichert',
+  ],
+  'payments.fee_percent': [
+    'Plattformgebühr',
+    'Anteil jeder Online-Zahlung für die Plattform (%), zusätzlich zu den Stripe-Gebühren, die der Verein trägt. 0: keine',
+  ],
   'discord.client_id': [
     'Discord-Application-ID',
     'Developer Portal › deine App › General Information › Application ID',
@@ -554,6 +615,54 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
                 )}
               </Text>
               <Stack gap="sm">{BACKUP.map(field)}</Stack>
+            </Paper>
+          )}
+
+          {section === 'files' && (
+            <Paper withBorder p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Dateispeicher', 'File storage')}</Title>
+                {resetButton(FILES)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Hierhin gehen die Dateien der Vereine (z. B. die Dokumentenablage), jede verschlüsselt mit dem Schlüssel ihres Vereins. Ohne Bucket liegen sie im Ordner FILES_DIR auf dem Server; das reicht nur für einen einzelnen Server.',
+                  "Clubs' files go here (e.g. the document library), each encrypted with its club's key. Without a bucket they stay in the folder FILES_DIR on the server, which only suits a single server.",
+                )}
+              </Text>
+              <Stack gap="sm">{FILES.map(field)}</Stack>
+            </Paper>
+          )}
+
+          {section === 'domains' && (
+            <Paper withBorder p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Vereinsdomains', 'Club domains')}</Title>
+                {resetButton(DOMAINS)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Vereine bestätigen ihre Domain mit einem TXT-Eintrag und lassen sie per CNAME auf die Plattform zeigen. Ist das Ausliefern eingeschaltet, legt der Plattform-Worker alle zwei Minuten pro bestätigter Domain ein Zertifikat (cert-manager) und, sobald es ausgestellt ist, ein Ingress an; Besucher werden zum Verein in der App weitergeleitet. Nur auf k3s, mit dem Service-Account aus deploy/app/domains-rbac.yaml. Fehlt nach einem Tag das Zertifikat, kommt eine Systemwarnung.',
+                  'Clubs verify their domain with a TXT record and point it at the platform with a CNAME. With serving on, the platform worker creates a certificate (cert-manager) for each verified domain every two minutes and, once it is issued, an Ingress; visitors are sent on to the club in the app. k3s only, with the service account from deploy/app/domains-rbac.yaml. A domain without a certificate after a day raises a system alert.',
+                )}
+              </Text>
+              <Stack gap="sm">{DOMAINS.map(field)}</Stack>
+            </Paper>
+          )}
+
+          {section === 'payments' && (
+            <Paper withBorder p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Online-Zahlungen (Stripe)', 'Online payments (Stripe)')}</Title>
+                {resetButton(PAYMENTS)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Mit dem Plugin «Online-Zahlungen» verbindet jeder Verein sein eigenes Stripe-Konto mit diesem Plattform-Konto (Stripe Connect). Mitglieder zahlen ihre Rechnungen dann mit Karte oder TWINT, das Geld geht direkt an den Verein. Im Stripe-Dashboard muss Connect eingeschaltet sein.',
+                  "With the «Online payments» plugin each club connects its own Stripe account to this platform account (Stripe Connect). Members then pay their invoices by card or TWINT and the money goes straight to the club. Connect must be turned on in the Stripe dashboard.",
+                )}
+              </Text>
+              <Stack gap="sm">{PAYMENTS.map(field)}</Stack>
             </Paper>
           )}
 

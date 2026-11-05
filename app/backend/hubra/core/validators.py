@@ -35,6 +35,13 @@ def _is_numeric(value: str) -> bool:
         return False
 
 
+def _validate_fee_percent(value: str) -> str | None:
+    """0 to 10 percent, at most two decimals (1.5 or 1,5)."""
+    if not re.fullmatch(r"\d{1,2}([.,]\d{1,2})?", value):
+        return "A percentage like 1.5, 0 to 10"
+    return None if float(value.replace(",", ".")) <= 10 else "At most 10 percent"
+
+
 def _validate_qr_iban(value: str) -> str | None:
     v = value.replace(" ", "").upper()
     if not re.match(r"^CH\d{19}$", v):
@@ -124,6 +131,17 @@ VALIDATORS: dict[str, Callable[[str], str | None]] = {
     "iso_datetime": lambda v: _validate_iso_datetime(v),
     "percent": lambda v: (
         None if v.isdigit() and 1 <= int(v) <= 100 else "Whole percent, 1 to 100"
+    ),
+    "fee_percent": lambda v: _validate_fee_percent(v),
+    "k8s_name": lambda v: (
+        None
+        if re.fullmatch(r"[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?", v)
+        else "A Kubernetes name: lower-case letters, digits and -"
+    ),
+    "stripe_secret_key": lambda v: (
+        None
+        if re.fullmatch(r"(sk|rk)_(test|live)_[A-Za-z0-9]{10,}", v)
+        else "A Stripe secret key (sk_test_..., sk_live_... or a restricted rk_...)"
     ),
     "count": lambda v: (
         None if v.isdigit() and int(v) <= 10**9 else "A whole number, or empty"

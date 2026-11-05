@@ -45,3 +45,18 @@ def test_leader_and_holder_reach_their_own_address(client, app, db, seeded_db):
     # The address's name stays with the club.
     r = client.patch(f"/api/v1/mail/groups/{mine}/prefix", json={"prefix": "info"})
     assert r.status_code == 403
+
+
+def test_my_addresses_lists_what_i_answer_for(client, app, db, seeded_db):
+    mine, other, fn = _setup(app, db, seeded_db)
+    _login(client, "lena@test.ch")
+    rows = client.get("/api/v1/mail/mine").get_json()["data"]
+    assert sorted((r["address"], r["ownerName"]) for r in rows) == [
+        ("kassier@club.ch", "Kassier"),
+        ("youth@club.ch", "Youth"),
+    ]
+    assert all(r["isEnabled"] is not None for r in rows)
+
+    # Someone who leads nothing and holds nothing sees nothing.
+    _login(client, "admin@test.ch")
+    assert client.get("/api/v1/mail/mine").get_json()["data"] == []

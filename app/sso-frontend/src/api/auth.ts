@@ -252,7 +252,7 @@ export async function findClubs(
   search: string,
 ): Promise<{ clubs: ClubListing[]; canJoinDirectly: boolean }> {
   const qs = search ? `?search=${encodeURIComponent(search)}` : ''
-  return apiFetch(`/platform/system/clubs${qs}`)
+  return apiFetch(`/global/clubs${qs}`)
 }
 
 /** Clubs the signed-in user asked to join that have not answered yet. */

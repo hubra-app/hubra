@@ -24,6 +24,10 @@ through the fallback, e.g. Brevo's SMTP relay, from the same sender.  See
 Backups (the global one and one per club) are the platform's, so where they
 are stored (``backup.s3.*``) is the platform's to decide, not a club's.
 
+Files (``files.*``): where clubs' files (documents, attachments of plugins)
+are kept, ``hubra.core.files``.  With ``files.s3.bucket`` set they go to
+that S3 bucket, otherwise to the folder ``FILES_DIR`` on the server.
+
 Browser push (``push.*``): the VAPID key pair every push is signed with.
 Hubra makes one the first time a member turns push on; replacing it signs
 every device out of push (they have to turn it on again).
@@ -183,6 +187,105 @@ SPECS: tuple[Spec, ...] = (
         "Stored encrypted",
         lambda cfg: cfg.get("BACKUP_S3_SECRET_KEY") or "",
         secret=True,
+    ),
+    Spec(
+        "files.s3.endpoint",
+        "Files S3 endpoint",
+        "S3-compatible endpoint URL for club files, e.g. "
+        "https://eu2.contabostorage.com. Empty: files stay on the server",
+        lambda cfg: cfg.get("FILES_S3_ENDPOINT") or "",
+        "url",
+    ),
+    Spec(
+        "files.s3.bucket",
+        "Files S3 bucket",
+        "Bucket for club files (not the backup bucket). Each file is "
+        "encrypted with its club's key before it leaves the server",
+        lambda cfg: cfg.get("FILES_S3_BUCKET") or "",
+    ),
+    Spec(
+        "files.s3.region",
+        "Files S3 region",
+        "Usually 'default' for Contabo",
+        lambda cfg: cfg.get("FILES_S3_REGION") or "default",
+    ),
+    Spec(
+        "files.s3.access_key",
+        "Files S3 access key",
+        "Stored encrypted",
+        lambda cfg: cfg.get("FILES_S3_ACCESS_KEY") or "",
+        secret=True,
+    ),
+    Spec(
+        "files.s3.secret_key",
+        "Files S3 secret key",
+        "Stored encrypted",
+        lambda cfg: cfg.get("FILES_S3_SECRET_KEY") or "",
+        secret=True,
+    ),
+    Spec(
+        "files.max_mb",
+        "Largest file",
+        "Largest file a club can upload, in MB",
+        lambda cfg: str(cfg.get("FILES_MAX_MB") or 25),
+        "count",
+    ),
+    Spec(
+        "domains.serving",
+        "Serve club domains",
+        "on: every verified club domain gets a certificate and its own "
+        "Ingress (k3s with cert-manager), and visitors are sent on to the "
+        "club. off: their Ingresses are removed (the kill switch)",
+        lambda cfg: "off",
+        "on_off",
+    ),
+    Spec(
+        "domains.cname_target",
+        "Club domains point to",
+        "The host clubs point their domain to (CNAME), shown in the club's "
+        "domain settings, e.g. clubs.hubra.club",
+        lambda cfg: cfg.get("CUSTOM_DOMAIN_TARGET") or "",
+        "host",
+    ),
+    Spec(
+        "domains.cluster_issuer",
+        "Certificate issuer",
+        "The cert-manager ClusterIssuer for club domains",
+        lambda cfg: "letsencrypt",
+        "k8s_name",
+    ),
+    Spec(
+        "domains.ingress_class",
+        "Ingress class",
+        "The ingress class of club domains",
+        lambda cfg: "traefik",
+        "k8s_name",
+    ),
+    Spec(
+        "domains.service",
+        "Service for club domains",
+        "The Service (port 'http') club domains are routed to; it sends "
+        "visitors on to the club",
+        lambda cfg: "global-backend",
+        "k8s_name",
+    ),
+    Spec(
+        "payments.stripe.secret_key",
+        "Stripe secret key",
+        "The platform's Stripe key (Connect). Clubs connect their own Stripe "
+        "account to it and members pay invoices online. sk_test_ for test "
+        "mode. Stored encrypted",
+        lambda cfg: cfg.get("STRIPE_SECRET_KEY") or "",
+        "stripe_secret_key",
+        secret=True,
+    ),
+    Spec(
+        "payments.fee_percent",
+        "Platform fee",
+        "Share of each online payment that goes to the platform (%), on top "
+        "of Stripe's own fees, which the club pays. 0: none",
+        lambda cfg: "0",
+        "fee_percent",
     ),
     Spec(
         "push.vapid_public_key",
@@ -597,6 +700,28 @@ def discord() -> DiscordApp:
         bot_token=get("discord.bot_token"),
         public_key=get("discord.public_key"),
     )
+
+
+@dataclass(frozen=True)
+class StripePlatform:
+    secret_key: str
+    fee_percent: float
+
+    @property
+    def test_mode(self) -> bool:
+        return "_test_" in self.secret_key
+
+
+def stripe() -> StripePlatform | None:
+    """The platform's Stripe Connect account, or None when no key is set."""
+    key = get("payments.stripe.secret_key")
+    if not key:
+        return None
+    try:
+        fee = float((get("payments.fee_percent") or "0").replace(",", "."))
+    except ValueError:
+        fee = 0.0
+    return StripePlatform(secret_key=key, fee_percent=max(0.0, min(fee, 10.0)))
 
 
 _VAPID_LOCK_KEY = 0x6875627261766170  # "hubravap"
