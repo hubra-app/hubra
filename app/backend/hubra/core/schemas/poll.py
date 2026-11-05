@@ -7,6 +7,7 @@ from sqlalchemy import select, func
 from hubra.core.extensions import ma, db
 from hubra.core.models.poll import Poll, PollOption, PollVote
 from hubra.core.schemas.counts import cached_count, clear_counts, prime_counts
+from hubra.core.schemas.group import valid_group_id
 
 _VOTE_COUNT = "_vote_count"
 
@@ -43,6 +44,7 @@ class PollSchema(ma.SQLAlchemyAutoSchema):
     options = fields.List(fields.Nested(PollOptionSchema), dump_only=True)
     total_votes = fields.Method("get_total_votes", dump_only=True)
     created_by_id = fields.Integer(dump_only=True, allow_none=True)
+    group_id = fields.Integer(dump_only=True, allow_none=True)
     is_required = fields.Boolean(dump_only=True)
     allow_proxy = fields.Boolean(dump_only=True)
     auto_close = fields.Boolean(dump_only=True)
@@ -180,6 +182,7 @@ class PollCreateSchema(ma.Schema):
     )
     allow_proxy = fields.Boolean(load_default=False)
     auto_close = fields.Boolean(load_default=False)
+    group_id = fields.Int(allow_none=True, load_default=None, validate=valid_group_id)
     max_proxies_per_member = fields.Int(
         load_default=1, validate=validate.Range(min=1, max=20)
     )
@@ -201,6 +204,7 @@ class PollUpdateSchema(ma.Schema):
     required_function_ids = fields.List(fields.Integer(), allow_none=True)
     allow_proxy = fields.Boolean()
     auto_close = fields.Boolean()
+    group_id = fields.Int(allow_none=True, validate=valid_group_id)
     max_proxies_per_member = fields.Int(validate=validate.Range(min=1, max=20))
 
 

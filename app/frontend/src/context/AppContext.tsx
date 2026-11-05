@@ -59,6 +59,8 @@ interface AuthState {
   permissions: string[]
   /** With `groupId`, a role held for that group only counts too. */
   hasPermission: (key: string, groupId?: string | number) => boolean
+  /** Only through a role held for that one group (not club-wide). */
+  hasGroupPermission: (key: string, groupId: string | number | null | undefined) => boolean
   setPhase: (p: Phase) => void
   clearMustChangePassword: () => void
   /** Signed in, but the API answers nothing until the password is changed. */
@@ -489,6 +491,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     [isAdmin, permissions, scopedPermissions],
   )
+  const hasGroupPermission = useCallback(
+    (key: string, groupId: string | number | null | undefined) =>
+      groupId != null && (scopedPermissions[String(groupId)] ?? []).includes(key),
+    [scopedPermissions],
+  )
 
   const clearMustChangePassword = useCallback(() => {
     // Nothing was loaded yet, so start the app over now that the API answers.
@@ -518,6 +525,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       isSuperadmin,
       permissions,
       hasPermission,
+      hasGroupPermission,
       setPhase,
       clearMustChangePassword,
       passwordChangeRequired,

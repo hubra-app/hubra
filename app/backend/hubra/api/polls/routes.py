@@ -5,7 +5,13 @@ from __future__ import annotations
 from flask import Blueprint, jsonify, request
 from hubra.core.auth.helpers import get_current_member
 
-from hubra.core.permissions import created_by, permission_required
+from hubra.core.permissions import (
+    body_group,
+    check_group_change,
+    created_by,
+    permission_required,
+    row_group,
+)
 from marshmallow import ValidationError
 from hubra.core.errors import api_error
 from hubra.core.extensions import db
@@ -22,6 +28,8 @@ polls_bp = Blueprint("polls_bp", __name__)
 
 # Whoever asked the question runs the poll: edits, reminds and closes it.
 _own_poll = created_by(Poll, column="created_by_id", arg="poll_id")
+# The group a poll belongs to: a role held for that group manages it.
+_poll_group = row_group(Poll, "poll_id")
 
 _poll_schema = PollSchema()
 _polls_schema = PollSchema(many=True)
@@ -53,7 +61,7 @@ def get_poll(poll_id: int):
 
 
 @polls_bp.post("/")
-@permission_required("polls", "create", "Create polls")
+@permission_required("polls", "create", "Create polls", scope=body_group)
 def create_poll():
     body = request.get_json(silent=True) or {}
     try:
@@ -138,7 +146,9 @@ def revoke_proxy(poll_id: int):
 
 
 @polls_bp.patch("/<int:poll_id>/close")
-@permission_required("polls", "close", "Close polls", allow=_own_poll)
+@permission_required(
+    "polls", "close", "Close polls", scope=_poll_group, allow=_own_poll
+)
 def close_poll(poll_id: int):
     poll = PollService.get(poll_id)
     PollService.close(poll, get_current_member().id)
@@ -157,7 +167,7 @@ def close_poll(poll_id: int):
 
 
 @polls_bp.delete("/<int:poll_id>")
-@permission_required("polls", "delete", "Delete polls")
+@permission_required("polls", "delete", "Delete polls", scope=_poll_group)
 def delete_poll(poll_id: int):
     PollService.delete(poll_id, get_current_member().id)
 
@@ -174,7 +184,9 @@ def delete_poll(poll_id: int):
 
 
 @polls_bp.patch("/<int:poll_id>")
-@permission_required("polls", "update", "Update polls", allow=_own_poll)
+@permission_required(
+    "polls", "update", "Update polls", scope=_poll_group, allow=_own_poll
+)
 def update_poll(poll_id: int):
     poll = PollService.get(poll_id)
 
@@ -183,6 +195,7 @@ def update_poll(poll_id: int):
         data = _update_schema.load(body)
     except ValidationError as exc:
         return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+    check_group_change("polls.polls.update", data)
 
     PollService.update(poll, data, get_current_member().id)
 
@@ -200,7 +213,9 @@ def update_poll(poll_id: int):
 
 
 @polls_bp.post("/<int:poll_id>/remind")
-@permission_required("polls", "update", "Update polls", allow=_own_poll)
+@permission_required(
+    "polls", "update", "Update polls", scope=_poll_group, allow=_own_poll
+)
 def remind_poll(poll_id: int):
     sent = PollService.remind(poll_id, get_current_member().id)
 

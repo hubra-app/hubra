@@ -8,6 +8,7 @@ from sqlalchemy import func, select
 from hubra.core.extensions import db, ma
 from hubra.core.models.post import Post, PostComment
 from hubra.core.schemas.counts import cached_count, clear_counts, prime_counts
+from hubra.core.schemas.group import valid_group_id
 
 _COMMENT_COUNT = "_comment_count"
 
@@ -43,6 +44,7 @@ class PostSchema(ma.SQLAlchemyAutoSchema):
 
     # Auto schemas leave foreign keys out; the club app needs it.
     author_id = fields.Int(dump_only=True, allow_none=True)
+    group_id = fields.Int(dump_only=True, allow_none=True)
     like_count = fields.Method("get_like_count", dump_only=True)
     like_member_ids = fields.Method("get_like_member_ids", dump_only=True)
     comment_count = fields.Method("get_comment_count", dump_only=True)
@@ -100,6 +102,7 @@ class PostCreateSchema(ma.Schema):
         allow_none=True, load_default=None, validate=validate.Length(max=500)
     )
     body = fields.Str(required=True, validate=validate.Length(min=1, max=POST_BODY_MAX))
+    group_id = fields.Int(allow_none=True, load_default=None, validate=valid_group_id)
 
 
 class PostUpdateSchema(ma.Schema):
@@ -111,6 +114,7 @@ class PostUpdateSchema(ma.Schema):
     title = fields.Str(validate=validate.Length(min=1, max=255))
     summary = fields.Str(allow_none=True, validate=validate.Length(max=500))
     body = fields.Str(validate=validate.Length(min=1, max=POST_BODY_MAX))
+    group_id = fields.Int(allow_none=True, validate=valid_group_id)
 
 
 class CommentCreateSchema(ma.Schema):

@@ -27,6 +27,11 @@ class Poll(db.Model):
     is_required: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     required_group_ids: Mapped[list[int] | None] = mapped_column(JSON, nullable=True)
     required_function_ids: Mapped[list[int] | None] = mapped_column(JSON, nullable=True)
+    # The group the poll belongs to: a role held for that group may manage
+    # it. Who may vote is still set by required_group_ids.
+    group_id: Mapped[int | None] = mapped_column(
+        db.Integer, ForeignKey("groups.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     # Proxy voting (general assembly): a member may let another member vote
     # for them, if the statutes allow it.
     allow_proxy: Mapped[bool] = mapped_column(

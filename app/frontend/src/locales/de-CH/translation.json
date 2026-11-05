@@ -3793,5 +3793,9 @@
       "slug": "Zur Bestätigung den Kurznamen des Vereins eingeben: {{slug}}",
       "turnOn": "Nur unseren Schlüssel verwenden"
     }
+  },
+  "content": {
+    "group": "Gruppe",
+    "groupHint": "Wer eine Rolle für diese Gruppe hat, kann den Eintrag verwalten. Sichtbar bleibt er für alle."
   }
 }

@@ -32,6 +32,7 @@ interface BackendPoll {
   required_function_ids: number[] | null;
   my_vote?: number | null;
   may_vote?: boolean;
+  group_id?: number | null;
 }
 
 function daysLeft(closesAt: string | null): number {
@@ -57,6 +58,7 @@ function adapt(b: BackendPoll): Poll {
     requiredFunctionIds: b.required_function_ids ?? undefined,
     myVote: b.my_vote ?? undefined,
     mayVote: b.may_vote ?? true,
+    groupId: b.group_id != null ? String(b.group_id) : null,
   };
 }
 
@@ -74,6 +76,8 @@ export interface PollCreate {
   autoClose?: boolean;
   requiredGroupIds?: number[];
   requiredFunctionIds?: number[];
+  /** The group the poll belongs to; empty: the whole club. */
+  groupId?: string | null;
 }
 
 /** The closing time from a datetime-local field is the club's local time;
@@ -96,6 +100,7 @@ export async function createPoll(input: PollCreate): Promise<Poll> {
       auto_close: input.autoClose ?? false,
       required_group_ids: input.requiredGroupIds ?? null,
       required_function_ids: input.requiredFunctionIds ?? null,
+      group_id: input.groupId ? Number(input.groupId) : null,
     }),
   });
   return adapt(b);
@@ -110,6 +115,7 @@ export interface PollUpdate {
   autoClose?: boolean;
   requiredGroupIds?: number[] | null;
   requiredFunctionIds?: number[] | null;
+  groupId?: string | null;
 }
 
 export async function updatePoll(
@@ -128,6 +134,8 @@ export async function updatePoll(
     body.required_group_ids = input.requiredGroupIds;
   if (input.requiredFunctionIds !== undefined)
     body.required_function_ids = input.requiredFunctionIds;
+  if (input.groupId !== undefined)
+    body.group_id = input.groupId ? Number(input.groupId) : null;
 
   const b = await apiFetch<BackendPoll>(`/app/polls/${id}`, {
     method: "PATCH",

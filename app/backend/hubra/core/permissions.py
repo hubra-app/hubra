@@ -478,6 +478,51 @@ def created_by(model, column: str = "created_by", arg: str = "id", reason: str =
     return allow
 
 
+def row_group(model, arg: str):
+    """``scope`` for ``permission_required``: the group of the row in the
+    route argument *arg* (``model.group_id``), so a role held for that group
+    may act on the group's events, posts and polls."""
+
+    def scope(kwargs) -> int | None:
+        object_id = kwargs.get(arg)
+        if object_id is None:
+            return None
+        return db.session.scalar(select(model.group_id).where(model.id == object_id))
+
+    return scope
+
+
+def body_group(_kwargs) -> int | None:
+    """``scope`` for create routes: the ``group_id`` in the JSON body."""
+    body = request.get_json(silent=True)
+    value = body.get("group_id") if isinstance(body, dict) else None
+    return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+
+def holds_for_group(member, key: str, group_id: int | None) -> bool:
+    """True when *member* holds *key* club-wide, or for *group_id* through a
+    role held for that group only."""
+    if member_has_permission(member, key):
+        return True
+    return group_id is not None and key in scoped_permission_keys(member).get(group_id, ())
+
+
+def check_group_change(key: str, data: dict) -> None:
+    """403 when a member let in through a role for one group moves the
+    content out of it: the new ``group_id`` must be a group they hold *key*
+    for too (an empty group would make it club-wide)."""
+    if g.get("permission_scope") != "group" or "group_id" not in data:
+        return
+    new_group = data["group_id"]
+    member = _current_member()
+    if new_group is None or key not in scoped_permission_keys(member).get(new_group, ()):
+        raise_error(
+            403,
+            "GROUP_SCOPE",
+            "You can only move this to a group you manage",
+        )
+
+
 def permission_required(
     resource: str,
     action: str,

@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, g, jsonify, request
 from hubra.core.auth.helpers import get_current_member
 from marshmallow import ValidationError
 
+from hubra.core.models.post import Post
 from hubra.core.permissions import (
     _current_member,
+    body_group,
     member_has_permission,
     permission_required,
+    row_group,
+    scoped_permission_keys,
 )
 from hubra.api.posts.services import PostService, PostsService
 from hubra.core.errors import api_error
@@ -36,12 +40,43 @@ _comment_create_schema = CommentCreateSchema()
 _MODERATE = "posts.posts.moderate"
 
 
+# The group a post is for: a role held for that group manages its posts.
+_post_group = row_group(Post, "post_id")
+
+
 def _is_author_or_moderator(item, member_id: int) -> bool:
     """The author of a post or comment, an admin, or a member whose role may
     moderate (``posts.posts.moderate``)."""
     if item.author_id == member_id:
         return True
     return member_has_permission(_current_member(), _MODERATE)
+
+
+def _group_keys(group_id: int | None) -> set[str]:
+    """The keys the current member holds for *group_id* only."""
+    if group_id is None:
+        return set()
+    return set(scoped_permission_keys(_current_member()).get(group_id, ()))
+
+
+def _may_manage(post: Post, member_id: int, action: str) -> bool:
+    """The author, a club-wide moderator, or a member whose role for the
+    post's group may update/delete or moderate (the youth team's lead)."""
+    if _is_author_or_moderator(post, member_id):
+        return True
+    keys = _group_keys(post.group_id)
+    return f"posts.posts.{action}" in keys or _MODERATE in keys
+
+
+def _may_move(post: Post, member_id: int, data: dict) -> bool:
+    """A member who manages the post only through a role for its group keeps
+    it in a group they manage."""
+    if "group_id" not in data or data["group_id"] == post.group_id:
+        return True
+    if g.get("permission_scope") != "group" and _is_author_or_moderator(post, member_id):
+        return True
+    keys = _group_keys(data["group_id"])
+    return "posts.posts.update" in keys or _MODERATE in keys
 
 
 # ── GET /posts ────────────────────────────────────────────────────────────────
@@ -67,7 +102,7 @@ def get_post(post_id: int):
 
 
 @posts_bp.post("/")
-@permission_required("posts", "create", "Create posts")
+@permission_required("posts", "create", "Create posts", scope=body_group)
 def create_post():
     body = request.get_json(silent=True) or {}
     try:
@@ -90,12 +125,12 @@ def create_post():
 
 
 @posts_bp.patch("/<int:post_id>")
-@permission_required("posts", "update", "Update posts")
+@permission_required("posts", "update", "Update posts", scope=_post_group)
 def update_post(post_id: int):
     post = PostService.get(post_id)
     member_id = get_current_member().id
 
-    if not _is_author_or_moderator(post, member_id):
+    if not _may_manage(post, member_id, "update"):
         return api_error("FORBIDDEN", "You can only edit your own posts", 403)
 
     body = request.get_json(silent=True) or {}
@@ -103,6 +138,10 @@ def update_post(post_id: int):
         data = _update_schema.load(body)
     except ValidationError as exc:
         return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+    if not _may_move(post, member_id, data):
+        return api_error(
+            "GROUP_SCOPE", "You can only move this to a group you manage", 403
+        )
 
     PostService.update(post, data, member_id)
 
@@ -120,12 +159,12 @@ def update_post(post_id: int):
 
 
 @posts_bp.delete("/<int:post_id>")
-@permission_required("posts", "delete", "Delete posts")
+@permission_required("posts", "delete", "Delete posts", scope=_post_group)
 def delete_post(post_id: int):
     post = PostService.get(post_id)
     member_id = get_current_member().id
 
-    if not _is_author_or_moderator(post, member_id):
+    if not _may_manage(post, member_id, "delete"):
         return api_error("FORBIDDEN", "You can only delete your own posts", 403)
 
     PostService.delete(post_id, member_id)

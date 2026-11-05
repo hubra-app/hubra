@@ -3443,5 +3443,7 @@
   "mail.email.account_closed.clubs": "Was ein Verein über seine Mitglieder aufbewahrt (zum Beispiel Rechnungen), gehört dem Verein. Wende dich dafür direkt an den Verein.",
   "mail.email.account_closed.not_you": "Falls du das nicht warst, antworte bitte sofort auf diese Mail.",
   "mail.email.subject.account_closed": "Dein Hubra-Konto wurde gelöscht",
-  "mail.email.support_case.kind_question": "Frage"
+  "mail.email.support_case.kind_question": "Frage",
+  "content.group": "Gruppe",
+  "content.groupHint": "Wer eine Rolle für diese Gruppe hat, kann den Eintrag verwalten. Sichtbar bleibt er für alle."
 }

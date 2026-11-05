@@ -38,6 +38,8 @@ import {
   addComment,
   deleteComment,
 } from '@/api/posts'
+import { GroupBadge, GroupField } from './ContentGroupFields'
+import { useContentGroups } from './contentGroups'
 
 // The editor is large and only needed while writing a post.
 const RichTextEditor = lazy(() =>
@@ -48,17 +50,21 @@ const postSchema = z.object({
   title: z.string().min(1, zmsg('validation.titleRequired', 'Titel ist erforderlich')),
   summary: z.string(),
   body: z.string().refine((v) => v.trim().length > 0, zmsg('validation.contentRequired', 'Inhalt ist erforderlich')),
+  groupId: z.string(),
 })
 type PostForm = z.infer<typeof postSchema>
 
 /* -- Posts ------------------------------------ */
 export function PostsTab() {
   const { notify } = useToast()
-  const { currentUser, hasPermission, isAdmin } = useAuth()
+  const { currentUser, hasPermission, hasGroupPermission, isAdmin } = useAuth()
   const { posts } = usePosts()
   const postCache = useListCache<Post>(qk.posts.all)
   const { t } = useT()
-  const canCreate = hasPermission('posts.posts.create')
+  // Club-wide, or through a role for one group (that group's posts).
+  const createScope = useContentGroups('posts.posts.create')
+  const updateScope = useContentGroups('posts.posts.update')
+  const canCreate = createScope.canAny
   const canUpdate = hasPermission('posts.posts.update')
   const canDelete = hasPermission('posts.posts.delete')
   const canLike = hasPermission('posts.posts.like')
@@ -83,11 +89,12 @@ export function PostsTab() {
 
   const form = useForm<PostForm>({
     validate: zod4Resolver(postSchema),
-    initialValues: { title: '', summary: '', body: '' },
+    initialValues: { title: '', summary: '', body: '', groupId: '' },
   })
+  const formScope = editTarget ? updateScope : createScope
 
   const openAdd = () => {
-    form.setValues({ title: '', summary: '', body: '' })
+    form.setValues({ title: '', summary: '', body: '', groupId: createScope.defaultGroup })
     setAddOpen(true)
   }
   const openEdit = (post: Post) => {
@@ -96,6 +103,7 @@ export function PostsTab() {
       title: post.title,
       summary: post.summary ?? '',
       body: post.body,
+      groupId: post.groupId ?? '',
     })
   }
 
@@ -105,6 +113,7 @@ export function PostsTab() {
         title: data.title,
         summary: data.summary || undefined,
         body: data.body,
+        groupId: data.groupId || null,
       })
       postCache.prepend(post)
       setAddOpen(false)
@@ -135,6 +144,7 @@ export function PostsTab() {
         title: data.title,
         summary: data.summary || undefined,
         body: data.body,
+        groupId: data.groupId || null,
       })
       postCache.replace(post)
       setEditTarget(null)
@@ -300,6 +310,15 @@ export function PostsTab() {
           )}
         />
       </Field>
+      <GroupField
+        scope={formScope}
+        value={form.values.groupId}
+        onChange={(v) => form.setFieldValue('groupId', v)}
+        hint={t(
+          'content.groupHint',
+          'Wer eine Rolle für diese Gruppe hat, kann den Eintrag verwalten. Sichtbar bleibt er für alle.',
+        )}
+      />
       <Field label={t('posts.content.label', 'Inhalt')}>
         <Suspense fallback={<Loader size="sm" />}>
           <RichTextEditor
@@ -315,11 +334,17 @@ export function PostsTab() {
     </div>
   )
 
-  const canEditPost = (post: Post) =>
-    (canUpdate && (post.authorId === currentUser?.id || canModerate)) || isAdmin
-
-  const canDeletePost = (post: Post) =>
-    (canDelete && (post.authorId === currentUser?.id || canModerate)) || isAdmin
+  // A role for the post's group manages it like a moderator (the API checks
+  // the same).
+  const inGroup = (post: Post, key: string) =>
+    hasGroupPermission(key, post.groupId) ||
+    hasGroupPermission('posts.posts.moderate', post.groupId)
+  const mayManage = (post: Post, key: string, clubWide: boolean) =>
+    isAdmin ||
+    ((clubWide || hasGroupPermission(key, post.groupId)) &&
+      (post.authorId === currentUser?.id || canModerate || inGroup(post, key)))
+  const canEditPost = (post: Post) => mayManage(post, 'posts.posts.update', canUpdate)
+  const canDeletePost = (post: Post) => mayManage(post, 'posts.posts.delete', canDelete)
 
   return (
     <div>
@@ -386,13 +411,17 @@ export function PostsTab() {
                       {post.author}
                     </div>
                     <div
-                      className="num"
                       style={{
                         fontSize: 'var(--mantine-font-size-xs)',
                         color: 'var(--hb-text-3)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        flexWrap: 'wrap',
                       }}
                     >
-                      {post.time}
+                      <span className="num">{post.time}</span>
+                      <GroupBadge name={createScope.groupName(post.groupId)} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 6 }}>

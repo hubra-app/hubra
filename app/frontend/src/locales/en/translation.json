@@ -3793,5 +3793,9 @@
       "slug": "To confirm, type the club's short name: {{slug}}",
       "turnOn": "Use only our key"
     }
+  },
+  "content": {
+    "group": "Group",
+    "groupHint": "Anyone with a role for this group can manage it. Everyone can still see it."
   }
 }

@@ -98,6 +98,16 @@ everything any of them grants.
 - **Functions** (Funktionen), such as president or treasurer, are under
   Members › Functions. They record who holds an office; rights still come
   from roles.
+- **A role for one group.** A role can be given to a member for one group
+  only (on the role's Members tab). It then counts for that group's things:
+  the group itself, and the events, posts and polls that belong to the group.
+  An "Event lead" role given for the youth team lets its holder create the
+  youth team's events, edit and delete them, handle their sign-ups and take
+  attendance, and nothing outside the group. The same goes for posts (the
+  holder edits and removes the group's posts like a moderator) and polls.
+  Events, posts and polls get their group in their form ("Gruppe"); a member
+  who manages only some groups can choose only those and can't move an item
+  out of them. Everything stays visible to the whole club, as before.
 
 ## Modules
 

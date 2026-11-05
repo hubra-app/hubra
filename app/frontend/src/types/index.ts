@@ -182,6 +182,8 @@ export interface Poll {
   myVote?: number;
   /** False when the poll is for groups or functions the member is not in. */
   mayVote?: boolean;
+  /** The group the poll belongs to; null: the whole club. */
+  groupId?: string | null;
 }
 
 export interface PostComment {
@@ -208,6 +210,8 @@ export interface Post {
   likes: number;
   likeMemberIds: string[];
   comments: number;
+  /** The group the post is for; null: the whole club. */
+  groupId: string | null;
 }
 
 export interface TransactionCategory {
