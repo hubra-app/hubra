@@ -16,16 +16,20 @@ export interface DiscordChannelSlot {
   fallback: React.ReactNode
   /** The name offered when the bot makes a new channel for this slot. */
   suggestedName?: string
+  /** The bot also opens private threads there (support channel). */
+  threads?: boolean
 }
 
 /** Make a new channel on the server through the bot, then pick it. */
 function NewChannel({
   serverId,
   suggestedName,
+  threads,
   onMade,
 }: {
   serverId: string
   suggestedName: string
+  threads?: boolean
   onMade: (id: string) => void
 }) {
   const { notify } = useAdmin()
@@ -52,7 +56,7 @@ function NewChannel({
   const make = async () => {
     setBusy(true)
     try {
-      const made = await createDiscordChannel(serverId, { name, private: hidden })
+      const made = await createDiscordChannel(serverId, { name, private: hidden, threads })
       await queryClient.invalidateQueries({ queryKey: ['discord-server-channels', serverId] })
       onMade(made.id)
       notify('success', tr(`#${made.name} angelegt`, `#${made.name} made`), tr('Noch speichern.', 'Save to use it.'))
@@ -216,6 +220,7 @@ export function DiscordLogPicker({
             <NewChannel
               serverId={serverId}
               suggestedName={slot.suggestedName ?? 'hubra'}
+              threads={slot.threads}
               onMade={slot.onChange}
             />
           )}
