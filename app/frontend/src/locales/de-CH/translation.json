@@ -4011,7 +4011,18 @@
   },
   "content": {
     "group": "Gruppe",
-    "groupHint": "Wer eine Rolle für diese Gruppe hat, kann den Eintrag verwalten. Sichtbar bleibt er für alle."
+    "groupHint": "Wer eine Rolle für diese Gruppe hat, kann den Eintrag verwalten. Sichtbar bleibt er für alle.",
+    "languages": {
+      "de": "Deutsch",
+      "fr": "Französisch",
+      "it": "Italienisch",
+      "en": "Englisch"
+    },
+    "language": "Sprache des Beitrags",
+    "languagesHint": "Schreibst du für Mitglieder in mehreren Sprachen? Füge eine Sprache hinzu. Jedes Mitglied sieht den Beitrag in seiner Sprache, sonst im Original.",
+    "translate": "Aus {{lang}} übersetzen",
+    "removeLanguage": "Sprache entfernen",
+    "readIn": "Sprache"
   },
   "apiAccess": {
     "saved": "Gespeichert",

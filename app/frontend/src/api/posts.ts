@@ -1,6 +1,7 @@
 import { apiFetch } from '@hubra/api-client';
 import { formatRelative } from "@/format";
-import type { Post, PostComment } from "@/types";
+import i18n from "@/locales/i18n";
+import type { ContentLanguage, Post, PostComment, PostText } from "@/types";
 
 interface BackendPost {
   id: number;
@@ -16,6 +17,8 @@ interface BackendPost {
   like_member_ids: number[];
   comment_count: number;
   group_id?: number | null;
+  language?: ContentLanguage | null;
+  translations?: Partial<Record<ContentLanguage, PostText>> | null;
 }
 
 interface BackendComment {
@@ -44,24 +47,52 @@ function stripMarkdown(md: string): string {
     .trim()
 }
 
-function adaptPost(b: BackendPost): Post {
-  const snippet = b.summary ?? stripMarkdown(b.body).slice(0, 160);
+/** The member's content language: the app's language (de or en). */
+export function readerLanguage(): ContentLanguage {
+  return (i18n.language || "de").startsWith("en") ? "en" : "de";
+}
+
+/** The post in *lang* when it has that language, else as written. */
+export function postIn(post: Post, lang: ContentLanguage | null): Post {
+  const text = (lang && post.translations[lang]) || null;
+  const shown = text ?? post.original;
   return {
+    ...post,
+    title: shown.title,
+    summary: shown.summary,
+    body: shown.body,
+    snippet: shown.summary ?? stripMarkdown(shown.body).slice(0, 160),
+    shownLanguage: text ? lang : post.language,
+  };
+}
+
+/** Languages the post can be read in, the original first. */
+export function postLanguages(post: Post): ContentLanguage[] {
+  const others = Object.keys(post.translations) as ContentLanguage[];
+  return post.language ? [post.language, ...others] : others.length ? others : [];
+}
+
+function adaptPost(b: BackendPost): Post {
+  const original = { title: b.title, summary: b.summary, body: b.body };
+  const post: Post = {
     id: String(b.id),
     authorId: String(b.author_id),
     author: b.author_name ?? "Unknown",
     avatarColor: b.author_avatar_color ?? "#fece2b",
-    title: b.title,
-    summary: b.summary,
-    body: b.body,
-    snippet,
+    ...original,
+    snippet: "",
     createdAt: b.created_at,
     time: formatRelative(b.created_at),
     likes: b.like_count,
     likeMemberIds: b.like_member_ids.map(String),
     comments: b.comment_count,
     groupId: b.group_id != null ? String(b.group_id) : null,
+    shownLanguage: b.language ?? null,
+    language: b.language ?? null,
+    original,
+    translations: b.translations ?? {},
   };
+  return postIn(post, readerLanguage());
 }
 
 function adaptComment(b: BackendComment): PostComment {
@@ -92,6 +123,8 @@ export interface PostCreate {
   body: string;
   /** The group the post is for; empty: the whole club. */
   groupId?: string | null;
+  language?: ContentLanguage | null;
+  translations?: Partial<Record<ContentLanguage, PostText>> | null;
 }
 
 export async function createPost(input: PostCreate): Promise<Post> {
@@ -101,6 +134,8 @@ export async function createPost(input: PostCreate): Promise<Post> {
       title: input.title,
       summary: input.summary ?? null,
       body: input.body,
+      ...(input.language !== undefined ? { language: input.language } : {}),
+      ...(input.translations !== undefined ? { translations: input.translations } : {}),
       ...(input.groupId !== undefined
         ? { group_id: input.groupId ? Number(input.groupId) : null }
         : {}),
@@ -114,6 +149,25 @@ export interface PostUpdate {
   summary?: string;
   body?: string;
   groupId?: string | null;
+  language?: ContentLanguage | null;
+  translations?: Partial<Record<ContentLanguage, PostText>> | null;
+}
+
+/** Whether the platform set up machine translation. */
+export async function getTranslationAvailable(): Promise<{ available: boolean }> {
+  return apiFetch("/app/posts/translate");
+}
+
+/** Title, summary and text in *target*, to pre-fill the editor. */
+export async function machineTranslate(
+  target: ContentLanguage,
+  source: ContentLanguage | null,
+  text: PostText,
+): Promise<PostText> {
+  return apiFetch("/app/posts/translate", {
+    method: "POST",
+    body: JSON.stringify({ target, source, ...text }),
+  });
 }
 
 export async function updatePost(

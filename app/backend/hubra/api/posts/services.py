@@ -32,7 +32,20 @@ class PostService:
     @staticmethod
     def update(post: Post, data: dict, actor_id: int) -> Post:
         """Update allowed fields on a post."""
-        for field in ("title", "summary", "body", "group_id"):
+        if "language" in data or "translations" in data:
+            from marshmallow import ValidationError
+
+            from hubra.core.schemas.post import POST_BODY_MAX
+            from hubra.core.services.content_languages import clean_translations
+
+            language = data.get("language", post.language)
+            try:
+                data["translations"] = clean_translations(
+                    data.get("translations", post.translations), language, POST_BODY_MAX
+                )
+            except ValidationError as exc:
+                raise_error(400, "VALIDATION_ERROR", str(exc.messages))
+        for field in ("title", "summary", "body", "group_id", "language", "translations"):
             if field in data:
                 setattr(post, field, data[field])
 
@@ -178,6 +191,8 @@ class PostsService:
             summary=data.get("summary"),
             body=data["body"],
             group_id=data.get("group_id"),
+            language=data.get("language"),
+            translations=data.get("translations"),
         )
         db.session.add(post)
         db.session.flush()

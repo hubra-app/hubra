@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from marshmallow import EXCLUDE, RAISE, fields, validate
+from marshmallow import EXCLUDE, RAISE, fields, post_load, validate
 from sqlalchemy import func, select
 
 from hubra.core.extensions import db, ma
 from hubra.core.models.post import Post, PostComment
 from hubra.core.schemas.counts import cached_count, clear_counts, prime_counts
 from hubra.core.schemas.group import valid_group_id
+from hubra.core.services.content_languages import CONTENT_LANGUAGES, clean_translations
 
 _COMMENT_COUNT = "_comment_count"
 
@@ -103,6 +104,17 @@ class PostCreateSchema(ma.Schema):
     )
     body = fields.Str(required=True, validate=validate.Length(min=1, max=POST_BODY_MAX))
     group_id = fields.Int(allow_none=True, load_default=None, validate=valid_group_id)
+    language = fields.Str(
+        allow_none=True, load_default=None, validate=validate.OneOf(CONTENT_LANGUAGES)
+    )
+    translations = fields.Dict(allow_none=True, load_default=None)
+
+    @post_load
+    def _translations(self, data, **_kwargs):
+        data["translations"] = clean_translations(
+            data.get("translations"), data.get("language"), POST_BODY_MAX
+        )
+        return data
 
 
 class PostUpdateSchema(ma.Schema):
@@ -115,6 +127,8 @@ class PostUpdateSchema(ma.Schema):
     summary = fields.Str(allow_none=True, validate=validate.Length(max=500))
     body = fields.Str(validate=validate.Length(min=1, max=POST_BODY_MAX))
     group_id = fields.Int(allow_none=True, validate=valid_group_id)
+    language = fields.Str(allow_none=True, validate=validate.OneOf(CONTENT_LANGUAGES))
+    translations = fields.Dict(allow_none=True)
 
 
 class CommentCreateSchema(ma.Schema):

@@ -38,6 +38,9 @@ Limits (``limits.warn_percent``): when clubs are warned about their
 limits (``services.quotas``).  The limits and prices of each plan are on the
 plan (``services.plans``); a club can have its own on top, set in manage.
 
+Translation (``translate.*``): the DeepL key that pre-fills the other
+languages of a post (``services.machine_translation``); empty: none.
+
 Discord (``discord.*``): the one Hubra application every club's server and
 every linked account goes through (see docs/discord.md). Set here only, with
 no env fallback.  ``discord.log_*`` is the platform log: the bot posts
@@ -540,6 +543,22 @@ SPECS: tuple[Spec, ...] = (
         "share of a limit (%). The second warning comes at 100 %",
         lambda cfg: "80",
         "percent",
+    ),
+    Spec(
+        "translate.deepl_key",
+        "DeepL API key",
+        "Machine translation for posts in several languages "
+        "(services.machine_translation). Empty: no machine translation, "
+        "clubs write each language by hand. Stored encrypted",
+        lambda cfg: "",
+        secret=True,
+    ),
+    Spec(
+        "translate.deepl_url",
+        "DeepL API address",
+        "https://api-free.deepl.com for a free key, https://api.deepl.com "
+        "for a paid one",
+        lambda cfg: "https://api-free.deepl.com",
     ),
 )
 

@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, ForeignKey, Text, UniqueConstraint
+from sqlalchemy import JSON, DateTime, ForeignKey, Text, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from hubra.core.extensions import db
@@ -20,6 +21,14 @@ class Post(db.Model):
     title: Mapped[str] = mapped_column(db.String(255), nullable=False)
     summary: Mapped[str | None] = mapped_column(db.String(500), nullable=True)
     body: Mapped[str] = mapped_column(Text, nullable=False)
+    # The language the post was written in ("de", "fr", "it", "en"); None:
+    # not said (older posts). ``translations`` holds the other languages:
+    # {"fr": {"title": ..., "summary": ..., "body": ...}}. Members see the
+    # one for their language, else the original.
+    language: Mapped[str | None] = mapped_column(db.String(5), nullable=True)
+    translations: Mapped[dict | None] = mapped_column(
+        JSONB().with_variant(JSON, "sqlite"), nullable=True
+    )
     # The group the post is for: a role held for that group may manage it.
     group_id: Mapped[int | None] = mapped_column(
         db.Integer, ForeignKey("groups.id", ondelete="SET NULL"), nullable=True, index=True
