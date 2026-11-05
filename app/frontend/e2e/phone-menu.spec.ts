@@ -32,8 +32,6 @@ test.describe('phone menu account card', () => {
     const box = await drawer(page).boundingBox()
     expect(box!.width).toBeCloseTo(page.viewportSize()!.width, 0)
 
-    // Weitere open makes the list longer still.
-    await drawer(page).getByTestId('nav-more').click()
     const vp = navViewport(page)
     expect(await vp.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true)
     for (const top of [99999, 0]) {

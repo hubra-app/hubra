@@ -2,14 +2,14 @@ import { expect, test } from '@playwright/test'
 import { appUrl } from './env'
 
 test.describe('members tabs', () => {
-  test('functions and tiers are tabs, not sidebar rows', async ({ page }) => {
+  test('functions, tiers and groups are tabs, not sidebar rows', async ({ page }) => {
     await page.goto(appUrl('members'))
     await expect(page.getByRole('tab', { name: /^Mitglieder/ })).toHaveAttribute(
       'aria-selected',
       'true',
     )
-    for (const sub of ['functions', 'tiers']) {
-      await expect(page.locator(`a.nav-item[href$="/app/members/${sub}"]`)).toHaveCount(0)
+    for (const sub of ['/app/members/functions', '/app/members/tiers', '/app/groups']) {
+      await expect(page.locator(`a.nav-item[href$="${sub}"]`)).toHaveCount(0)
     }
   })
 
@@ -19,12 +19,14 @@ test.describe('members tabs', () => {
     await page.goto(appUrl('members'))
 
     const tabs: [RegExp, string][] = [
-      [/^Funktionen/, 'functions'],
-      [/^Stufen/, 'tiers'],
+      [/^Funktionen/, '/app/members/functions'],
+      [/^Stufen/, '/app/members/tiers'],
+      [/^Gruppen/, '/app/groups'],
+      [/^Statistik/, '/app/members/stats'],
     ]
     for (const [name, path] of tabs) {
       await page.getByRole('tab', { name }).click()
-      await expect(page).toHaveURL(new RegExp(`/app/members/${path}$`))
+      await expect(page).toHaveURL(new RegExp(`${path}$`))
       await expect(page.getByRole('tab', { name })).toHaveAttribute('aria-selected', 'true')
       await expect(page.locator('a.nav-item[href$="/app/members"]').first()).toHaveAttribute(
         'data-active',

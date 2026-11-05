@@ -13,6 +13,7 @@ import { MyMailAddressesCard } from './MyMailAddressesCard'
 import { useModules } from '@/modules/useModules'
 import { NotificationsCard } from './NotificationsCard'
 import { PushCard } from './PushCard'
+import { InstallAppCard } from './InstallAppCard'
 import { roleLabels } from '@/roles'
 import { qk } from '@/data/keys'
 
@@ -204,6 +205,8 @@ export function AccountSettingsMembershipTab() {
       {modules.has('mail') && <MyMailAddressesCard />}
 
       <NotificationsCard />
+
+      <InstallAppCard />
 
       <PushCard />
 

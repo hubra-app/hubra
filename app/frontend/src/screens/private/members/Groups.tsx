@@ -19,7 +19,8 @@ import { GroupFormModal, VisibilityBadge } from './GroupFormModal'
 import { VISIBILITIES } from './groupVisibility'
 
 /* ── Groups ─────────────────────────────────── */
-export function GroupsScreen() {
+/** The groups; `embedded` leaves out the heading, for the tab under Mitglieder. */
+export function GroupsScreen({ embedded = false }: { embedded?: boolean }) {
   const { notify } = useToast()
   const { currentUser, hasPermission } = useAuth()
   const { t } = useT()
@@ -78,18 +79,29 @@ export function GroupsScreen() {
 
   return (
     <div>
-      <PageHead
-        title={t('groups.title')}
-        desc={t('groups.count', '{{count}} Gruppen', { count: groups.length })}
-        actions={
-          canCreate && (
+      {embedded ? (
+        canCreate && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
             <Button variant="filled" onClick={openAdd}>
               <IconPlus size={16} />
               {t('groups.addGroup')}
             </Button>
-          )
-        }
-      />
+          </div>
+        )
+      ) : (
+        <PageHead
+          title={t('groups.title')}
+          desc={t('groups.count', '{{count}} Gruppen', { count: groups.length })}
+          actions={
+            canCreate && (
+              <Button variant="filled" onClick={openAdd}>
+                <IconPlus size={16} />
+                {t('groups.addGroup')}
+              </Button>
+            )
+          }
+        />
+      )}
       <Paper withBorder style={{ marginBottom: 0 }}>
         <div
           style={{

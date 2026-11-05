@@ -185,7 +185,7 @@ module = Module(
             "/app/translations",
             "shell.nav.translations",
             "globe",
-            section="more",
+            section="system",
             order=30,
             perms=("i18n.i18n.write",),
         ),

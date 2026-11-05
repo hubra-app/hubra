@@ -34,10 +34,13 @@ export type NavItem = {
   /** What the count means, shown on hover. */
   countTitle?: string
   permKeys?: string[]
-  /** The "Weitere" entry: the pages behind it, shown when it is opened. */
-  children?: NavItem[]
+  /** Code of the module the page belongs to, for its card on "Weitere". */
+  module?: string
+  /** Pages shown as tabs of this one, with what it takes to see each. */
+  tabs?: { label: string; perms: string[] }[]
 }
-export type NavSection = { label: string; items: NavItem[] }
+/** One area of the sidebar; the "Weitere" row sits in one without a heading. */
+export type NavSection = { section: string; label: string; items: NavItem[] }
 
 export interface NavCounts {
   members: number
@@ -115,13 +118,23 @@ function navIcon(name: string): ReactNode {
   return Icon ? <Icon size={24} /> : <IconBox size={24} />
 }
 
-const SECTION_ORDER = ['favourites', 'workspace', 'activities', 'operations', 'system', 'me']
+/** The sidebar's areas, top to bottom; "all" holds the "Weitere" row. */
+export const SECTION_ORDER = [
+  'favourites',
+  'workspace',
+  'activities',
+  'operations',
+  'plugins',
+  'system',
+  'all',
+  'me',
+]
 
-/** Where the "Weitere" entry lists the pages that have no sidebar row. */
+/** "Weitere": a card for every module and plugin, sidebar or not. */
 export const MORE_PATH = '/app/more'
 
 /** Sections a person can move entries between (besides "Weitere"). */
-const MOVABLE_SECTIONS = ['workspace', 'activities', 'operations', 'system']
+const MOVABLE_SECTIONS = ['workspace', 'activities', 'operations', 'plugins', 'system']
 
 /**
  * The person's own sidebar: entries pinned to the top (in this order), entries
@@ -144,6 +157,17 @@ export type NavHomes = Record<string, string>
 
 type NavEntry = { item: NavItem; section: string }
 
+/**
+ * The sidebar area of a page. A plugin's pages get their own area unless the
+ * plugin names one of the club's areas; "more" from a built-in module means
+ * the operations area.
+ */
+function areaOf(section: string, plugin: boolean): string {
+  if (plugin && (section === 'more' || section === 'workspace')) return 'plugins'
+  if (section === 'more') return 'operations'
+  return section
+}
+
 /** Sidebar entries come from the modules that are on for the active club. */
 function navEntries(
   c: NavCounts,
@@ -157,12 +181,12 @@ function navEntries(
   }
   const items = modules
     .filter((m) => m.enabled)
-    .flatMap((m) => m.nav.map((item) => ({ item, plugin: !!m.plugin })))
+    .flatMap((m) => m.nav.map((item) => ({ item, plugin: !!m.plugin, module: m.code })))
     .sort((a, b) => a.item.order - b.item.order)
   const entries: NavEntry[] = []
   const seenGroups = new Set<string>()
-  const tabPerms: { parent: string; perms: string[] }[] = []
-  for (const { item, plugin } of items) {
+  const tabPerms: { parent: string; perms: string[]; label: string }[] = []
+  for (const { item, plugin, module } of items) {
     // Modules shown as tabs of one screen share a single entry.
     if (item.group) {
       if (seenGroups.has(item.group)) continue
@@ -171,7 +195,7 @@ function navEntries(
     // Sub-pages are tabs on their parent's screen, not sidebar rows; the
     // parent stays visible to anyone who may open one of its tabs.
     if (item.parent) {
-      tabPerms.push({ parent: item.parent, perms: item.perms })
+      tabPerms.push({ parent: item.parent, perms: item.perms, label: t(item.labelKey) })
       continue
     }
     entries.push({
@@ -185,23 +209,26 @@ function navEntries(
             ? t('shell.nav.activeMembersCount', { count: counts[item.path] })
             : undefined,
         permKeys: item.perms.length ? item.perms : undefined,
+        module,
       },
-      // A plugin's own pages wait under "Weitere" until someone pins them.
-      section: plugin && item.section === 'workspace' ? 'more' : item.section,
+      section: areaOf(item.section, plugin),
     })
   }
-  for (const { parent, perms } of tabPerms) {
+  for (const { parent, perms, label } of tabPerms) {
     const host = entries.find((e) => e.item.path === parent)?.item
-    if (host?.permKeys && perms.length) host.permKeys = [...host.permKeys, ...perms]
+    if (!host) continue
+    if (host.permKeys && perms.length) host.permKeys = [...host.permKeys, ...perms]
+    host.tabs = [...(host.tabs ?? []), { label, perms }]
   }
   return entries
 }
 
 /**
  * The sidebar a person sees: what they may open, their pinned entries on top
- * as "Favoriten", entries in the sections they put them in, and everything
- * else under "Weitere". `more` lists those pages; the sidebar shows one
- * "Weitere" entry that opens to list them.
+ * as "Favoriten", entries in the area they put them in, and one "Weitere" row
+ * that leads to a card for every page. `more` lists the pages a person took
+ * out of the sidebar, which only "Weitere" shows; `cards` is every page in
+ * sidebar order, grouped by area, for the cards.
  */
 export function buildNav(
   c: NavCounts,
@@ -212,6 +239,7 @@ export function buildNav(
 ): {
   nav: NavSection[]
   more: NavItem[]
+  cards: NavSection[]
   customizable: NavItem[]
   groups: NavGroup[]
   homes: NavHomes
@@ -254,19 +282,15 @@ export function buildNav(
     if (section === 'more') more.push(item)
     else add(section, item)
   }
-  if (more.length > 0) {
-    add('operations', {
-      path: MORE_PATH,
-      label: t('shell.nav.more'),
-      icon: <IconDots size={24} />,
-      children: more,
-    })
+  if (entries.some((e) => e.section !== 'me')) {
+    add('all', { path: MORE_PATH, label: t('shell.nav.more'), icon: <IconDots size={24} /> })
   }
   const rank = (section: string) => SECTION_ORDER.indexOf(section) + 1 || 99
   const nav = [...sections.entries()]
     .sort(([a], [b]) => rank(a) - rank(b))
     .map(([section, list]) => ({
-      label: t(`shell.sections.${section}`),
+      section,
+      label: section === 'all' ? '' : t(`shell.sections.${section}`),
       items: list,
     }))
   // In sidebar order, with the "Weitere" pages last.
@@ -276,6 +300,18 @@ export function buildNav(
     .sort((a, b) => rank(a.e.section) - rank(b.e.section) || a.i - b.i)
     .map(({ e }) => e)
   const customizable = ordered.map((e) => e.item)
+  // The cards follow the areas the pages came with, so a page someone took
+  // out of the sidebar still sits next to its neighbours.
+  const cards: NavSection[] = []
+  const byHome = entries
+    .filter((e) => e.section !== 'me')
+    .map((e, i) => ({ e, i, home: homes[e.item.path] }))
+    .sort((a, b) => rank(a.home) - rank(b.home) || a.i - b.i)
+  for (const { e, home } of byHome) {
+    const last = cards[cards.length - 1]
+    if (last?.section === home) last.items.push(e.item)
+    else cards.push({ section: home, label: t(`shell.sections.${home}`), items: [e.item] })
+  }
   // The customise dialog shows the sidebar as it is: favourites, each
   // section, then "Weitere".
   const groups: NavGroup[] = []
@@ -294,7 +330,7 @@ export function buildNav(
         items: [e.item],
       })
   }
-  return { nav, more, customizable, groups, homes }
+  return { nav, more, cards, customizable, groups, homes }
 }
 
 /** Prefs with `path` placed in `section` ("more" puts it under Weitere). */
@@ -383,7 +419,7 @@ export function getParentPath(pathname: string, navPaths: string[] = []): string
     ['/app/dashboard/me', '/app/dashboard'],
     ['/app/members', '/app/members'],
     ['/app/members/applications', '/app/members/applications'],
-    ['/app/groups', '/app/groups'],
+    ['/app/groups', '/app/members'],
     ['/app/operations/events', '/app/operations/events'],
     ['/app/operations/polls', '/app/operations/polls'],
     ['/app/operations/posts', '/app/operations/posts'],

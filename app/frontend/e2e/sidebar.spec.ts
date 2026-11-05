@@ -37,19 +37,24 @@ test.describe('settings tabs', () => {
 })
 
 test.describe('Weitere', () => {
-  test('opens in the sidebar to list its pages', async ({ page }) => {
+  test('shows a card for every page, each leading to it', async ({ page }) => {
     await page.goto(appUrl('dashboard'))
-    const more = sidebar(page).getByTestId('nav-more')
-    await more.click()
-    await expect(more).toHaveAttribute('aria-expanded', 'true')
-    const first = sidebar(page).getByTestId('nav-more-items').locator('a.nav-item').first()
-    const href = await first.getAttribute('href')
-    await first.click()
-    await expect(page).toHaveURL(new RegExp(`${href}$`))
-    // On one of its pages it stays open with that page highlighted, and the
-    // tabs above the page switch between them.
-    await expect(first).toHaveAttribute('data-active', 'true')
-    await expect(page.getByRole('tab').first()).toHaveAttribute('aria-selected', 'true')
+    await expect(sidebar(page).getByTestId('nav-more')).toHaveCount(0)
+    await entry(page, '/app/more').click()
+    await expect(page.getByRole('heading', { level: 1, name: 'Weitere' })).toBeVisible()
+    await expect(entry(page, '/app/more')).toHaveAttribute('data-active', 'true')
+    // No tabs across unrelated pages any more.
+    await expect(page.getByRole('tab')).toHaveCount(0)
+
+    const cards = page.getByTestId('module-card')
+    expect(await cards.count()).toBeGreaterThan(3)
+    await cards.filter({ hasText: 'Anträge' }).click()
+    await expect(page).toHaveURL(/\/app\/members\/applications$/)
+    await expect(entry(page, '/app/members/applications')).toHaveAttribute('data-active', 'true')
+
+    // Pages that belong together share one card, which names its tabs.
+    await entry(page, '/app/more').click()
+    await expect(cards.filter({ hasText: /^Mitglieder/ })).toContainText('Funktionen')
   })
 })
 
@@ -58,25 +63,29 @@ test.describe('own sidebar', () => {
     await resetSidebar(page)
   })
 
-  test('pinned entries move to Favoriten, hidden ones to Weitere', async ({ page }) => {
+  test('pinned entries move to Favoriten, hidden ones only show on Weitere', async ({ page }) => {
     await page.goto(appUrl('dashboard'))
     const dialog = await openCustomize(page)
-    await dialog.getByRole('button', { name: 'Als Favorit anheften: Gruppen' }).click()
+    await dialog.getByRole('button', { name: 'Als Favorit anheften: Anlässe' }).click()
     await dialog.getByRole('button', { name: 'Unter Weitere verschieben: Finanzen' }).click()
     await dialog.getByRole('button', { name: 'Fertig' }).click()
 
     await expect(sidebar(page).getByText('Favoriten')).toBeVisible()
     await expect(sidebar(page).locator('a.nav-item').first()).toHaveAttribute(
       'href',
-      /\/app\/groups$/,
+      /\/app\/operations\/events$/,
     )
     await expect(entry(page, '/app/finance')).toHaveCount(0)
 
-    // Under Weitere, which lists it, and found by the search.
-    await sidebar(page).getByTestId('nav-more').click()
-    await sidebar(page).getByTestId('nav-more-items').getByText('Finanzen').click()
+    // Weitere has its card, and the Weitere row stands for it in the sidebar.
+    await entry(page, '/app/more').click()
+    const card = page.getByTestId('module-card').filter({ hasText: 'Finanzen' })
+    await expect(card).toContainText('Nicht in der Seitenleiste')
+    await card.click()
     await expect(page).toHaveURL(/\/app\/finance$/)
+    await expect(entry(page, '/app/more')).toHaveAttribute('data-active', 'true')
 
+    // And the search finds it.
     await page.goto(appUrl('dashboard'))
     await page.getByPlaceholder(/suchen/i).fill('Finanz')
     await page.getByText('Seite', { exact: true }).first().click()
@@ -84,7 +93,8 @@ test.describe('own sidebar', () => {
 
     // Saved on the account: a reload keeps it.
     await page.reload()
-    await expect(sidebar(page).getByTestId('nav-more-items').getByText('Finanzen')).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    await expect(entry(page, '/app/finance')).toHaveCount(0)
   })
 
   test('the arrows move an entry into the next section', async ({ page }) => {
@@ -133,15 +143,15 @@ test.describe('on a phone', () => {
     await page.goto(appUrl('dashboard'))
     await menu.click()
     const before = await order()
-    const at = before.indexOf('groups')
+    const at = before.indexOf('finance')
     expect(at).toBeGreaterThan(0)
     let dialog = await customize()
-    await dialog.getByRole('button', { name: 'Nach oben: Gruppen' }).click()
+    await dialog.getByRole('button', { name: 'Nach oben: Finanzen' }).click()
     await dialog.getByRole('button', { name: 'Fertig' }).click()
 
     await menu.click()
     const after = await order()
-    expect(after.indexOf('groups')).toBe(at - 1)
+    expect(after.indexOf('finance')).toBe(at - 1)
     expect(after[at]).toBe(before[at - 1])
 
     // Back to the default order.
