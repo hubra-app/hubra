@@ -42,7 +42,7 @@ on top. A published release is never changed: release a new version.
 | `check` | the tag is `vX.Y.Z` (or `-rc.N`) and matches `pyproject.toml`; the changelog has that section; the commit is on `main` or a `release/*` branch; the release is not published yet |
 | `images` | `images.yml`: all of `release-checks.yml` (every test, Postgres, audits, browser tests), then the images, pushed as `sha-<commit>` and `last-build` only. A new build gets a provenance attestation. |
 | `approve` | environment `release`: waits for a required reviewer |
-| `promote` | the same digests get `1.3.0`, `1.3` and `latest`; each image is signed with cosign |
+| `promote` | each digest must carry a build provenance attestation from `images.yml`, made by a release tag push or a manual run on `main` (anything else, such as an image built from a feature branch, stops the release); then the same digests get `1.3.0`, `1.3` and `latest` and each image is signed with cosign |
 | `release` | the GitHub release, created with its files (immutable releases take no files later) |
 | `branch` | `release-branch.yml`: `release/1.3` at the tag, if it does not exist |
 | `mirror` | `mirror-gitlab.yml`: the tag to GitLab, which creates the GitLab Release |

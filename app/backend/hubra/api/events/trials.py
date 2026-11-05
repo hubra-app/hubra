@@ -190,8 +190,18 @@ def public_trials(slug: str):
     return resp
 
 
+def _address_key() -> str:
+    """Rate-limit key for the booking mails: the address they go to."""
+    data = request.get_json(silent=True) or {}
+    email = str(data.get("email") or "").strip().lower()[:255]
+    return f"trial-mail:{email}"
+
+
 @events_bp.post("/public/<string:slug>/trials")
 @limiter.limit("10 per hour")
+# Per address, whatever the IP: booking mails can't be used to flood
+# someone's inbox from many machines.
+@limiter.limit("5 per day", key_func=_address_key)
 def public_trial_signup(slug: str):
     """Book a trial training. It counts once the address is confirmed."""
     tenant = _public_club(slug)
@@ -241,11 +251,12 @@ def public_trial_signup(slug: str):
         )
     )
     if taken is not None:
-        if taken.status == "pending":
-            # Lost the mail: send it again instead of a second booking.
+        # Lost the mail: send the booking's link again instead of a second
+        # booking. The answer is the same as for a new booking, so the form
+        # doesn't tell anyone whether an address booked a training.
+        if taken.status in ("pending", "confirmed"):
             _send_confirm(taken, tenant.slug, data.get("lang"))
-            return jsonify({"status": "pending"}), 201
-        raise_error(409, "ALREADY_BOOKED", "This address already booked the training")
+        return jsonify({"status": "pending"}), 201
     if places_taken(event.id) >= (event.trial_spots or 0):
         raise_error(409, "EVENT_FULL", "No trial places left for this training")
 

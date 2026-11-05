@@ -149,6 +149,35 @@ def test_validation_full_and_duplicates(anon, training, mails):
     assert _book(anon, training.id, email="max@example.ch").status_code == 201
 
 
+def test_booking_again_tells_nothing_about_the_address(anon, training, mails):
+    """A second booking with a known address answers like a new one: the
+    form can't be used to find out who booked a training."""
+    assert _book(anon, training.id).status_code == 201
+    token = _token(mails[0])
+    anon.post(f"{BASE}/confirm", json={"token": token}, headers={"Authorization": ""})
+
+    again = _book(anon, training.id)
+    assert again.status_code == 201 and again.get_json() == {"status": "pending"}
+    # The person gets their link again (it also cancels), no second booking.
+    assert len(mails) == 2 and _token(mails[1]) == token
+    assert db.session.query(TrialSignup).count() == 1
+
+    db.session.query(TrialSignup).update({"status": "attended"})
+    db.session.commit()
+    again = _book(anon, training.id)
+    assert again.status_code == 201 and again.get_json() == {"status": "pending"}
+    assert len(mails) == 2
+
+
+def test_booking_mails_are_limited_per_address(app):
+    from hubra.api.events.trials import _address_key
+
+    with app.test_request_context(json={"email": " Lea@Example.CH "}):
+        assert _address_key() == "trial-mail:lea@example.ch"
+    with app.test_request_context(data="not json"):
+        assert _address_key() == "trial-mail:"
+
+
 def test_honeypot_stores_nothing(anon, training, mails):
     assert _book(anon, training.id, website="http://spam").status_code == 201
     assert db.session.query(TrialSignup).count() == 0 and mails == []
