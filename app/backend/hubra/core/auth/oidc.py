@@ -29,6 +29,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from sqlalchemy import select, text
 
 from hubra.core.extensions import db
+from hubra.core.timeutil import as_utc
 
 OIDC_SCOPES = ("openid", "profile", "email", "club")
 ID_TOKEN_TTL = timedelta(hours=1)
@@ -257,7 +258,7 @@ def id_token(
         "exp": int((now + ID_TOKEN_TTL).timestamp()),
     }
     if auth_time is not None:
-        payload["auth_time"] = int(oauth._aware(auth_time).timestamp())
+        payload["auth_time"] = int(as_utc(auth_time).timestamp())
     if nonce:
         payload["nonce"] = nonce
     if access_token:
@@ -336,7 +337,7 @@ def userinfo(raw: str | None) -> tuple[dict | None, str]:
         if not oauth._matches(row.prev_secret_hash, secret):
             api_tokens._record_failure(row, now)
         return None, "invalid_token"
-    access_until = oauth._aware(row.access_expires_at)
+    access_until = as_utc(row.access_expires_at)
     if not api_tokens.is_active(row, now) or access_until is None or access_until <= now:
         return None, "invalid_token"
     scopes = (row.oauth_scope or "").split()
@@ -344,13 +345,13 @@ def userinfo(raw: str | None) -> tuple[dict | None, str]:
         return None, "insufficient_scope"
     client = db.session.get(OAuthClient, row.oauth_client_id)
     user = db.session.get(User, row.user_id)
-    cutoff = oauth._aware(user.tokens_valid_after) if user is not None else None
+    cutoff = as_utc(user.tokens_valid_after) if user is not None else None
     if (
         client is None
         or client.disabled_at is not None
         or user is None
         or user.is_disabled
-        or (cutoff is not None and oauth._aware(row.created_at) < cutoff)
+        or (cutoff is not None and as_utc(row.created_at) < cutoff)
     ):
         return None, "invalid_token"
     tenant = oauth._club_of(client)

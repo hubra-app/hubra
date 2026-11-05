@@ -33,6 +33,7 @@ from sqlalchemy import select
 from hubra.core import build_info
 from hubra.core.extensions import db
 from hubra.core.models.platform_event import PlatformEvent
+from hubra.core.timeutil import as_utc
 
 logger = logging.getLogger(__name__)
 
@@ -113,10 +114,6 @@ def _stuck_reported_since(when: datetime) -> bool:
     )
 
 
-def _aware(dt: datetime) -> datetime:
-    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
-
-
 def _start(old: dict, new: dict, procs: list[dict], *, notify: bool = True) -> None:
     from hubra.core.services import platform_monitor
 
@@ -138,7 +135,7 @@ def _finish(old: dict, new: dict, started_at: datetime | None) -> None:
 
     minutes = None
     if started_at is not None:
-        minutes = max(0, round((datetime.now(timezone.utc) - _aware(started_at)).total_seconds() / 60))
+        minutes = max(0, round((datetime.now(timezone.utc) - as_utc(started_at)).total_seconds() / 60))
     message = f"Upgrade completed: {label(old)} → {label(new)}"
     platform_monitor.record(
         "system",
@@ -194,7 +191,7 @@ def check() -> dict:
         new = _most_common(newer)
         _start(target, new, procs)
         return {"state": "started", "build": new}
-    started_at = _aware(last.created_at)
+    started_at = as_utc(last.created_at)
     if datetime.now(timezone.utc) - started_at > STUCK_AFTER and not _stuck_reported_since(
         started_at
     ):

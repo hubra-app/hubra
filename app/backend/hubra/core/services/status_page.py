@@ -28,6 +28,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 
 from hubra.core.extensions import db
+from hubra.core.timeutil import as_utc
 
 logger = logging.getLogger(__name__)
 
@@ -127,12 +128,6 @@ def _component(kind: str, details: dict) -> tuple[str, str] | None:
     return None
 
 
-def _aware(dt: datetime | None) -> datetime | None:
-    if dt is None:
-        return None
-    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
-
-
 def incidents(days: int = HISTORY_DAYS, now: datetime | None = None) -> list[dict]:
     """Outages of the last *days*, newest first: a ``*.down`` event and the
     ``*.up`` event that ended it (none while it lasts)."""
@@ -159,7 +154,7 @@ def incidents(days: int = HISTORY_DAYS, now: datetime | None = None) -> list[dic
             item = {
                 "component": what[0],
                 "level": what[1],
-                "started_at": _aware(e.created_at).isoformat(),
+                "started_at": as_utc(e.created_at).isoformat(),
                 "ended_at": None,
             }
             open_[key] = item
@@ -169,7 +164,7 @@ def incidents(days: int = HISTORY_DAYS, now: datetime | None = None) -> list[dic
             field, _ = _DOWN[down_kind]
             item = open_.pop((down_kind, details.get(field)), None)
             if item is not None:
-                item["ended_at"] = _aware(e.created_at).isoformat()
+                item["ended_at"] = as_utc(e.created_at).isoformat()
     out.sort(key=lambda i: i["started_at"], reverse=True)
     return out
 
@@ -195,8 +190,8 @@ def past_maintenance(tenant_id: int | None, days: int = HISTORY_DAYS) -> list[di
             continue
         out.append(
             {
-                "starts_at": _aware(w.starts_at).isoformat(),
-                "ends_at": _aware(w.ends_at).isoformat(),
+                "starts_at": as_utc(w.starts_at).isoformat(),
+                "ends_at": as_utc(w.ends_at).isoformat(),
                 "message": w.message or "",
             }
         )

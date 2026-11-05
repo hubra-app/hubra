@@ -38,6 +38,7 @@ from hubra.core.models.api_token import ApiToken
 from hubra.core.models.oauth import OAuthClient, RESOURCES
 from hubra.core.models.tenant import GlobalAuditEntry, Tenant
 from hubra.core.permissions import require_admin, require_global_permission
+from hubra.core.timeutil import as_utc
 
 oauth_metadata_bp = Blueprint("oauth_metadata_bp", __name__)
 oauth_bp = Blueprint("oauth_bp", __name__)
@@ -479,7 +480,7 @@ def consent():
     user, claims, error = _account()
     if error is not None:
         return error
-    back = dict(state=req["state"], iss=oauth.issuer())
+    back = {"state": req["state"], "iss": oauth.issuer()}
     if data.get("allow") is not True:
         return jsonify(
             {
@@ -648,7 +649,7 @@ def end_my_grant(token_id: int):
 
 def _app_json(client: OAuthClient, grants: int = 0, clubs: dict | None = None) -> dict:
     def iso(v):
-        v = api_tokens._aware(v)
+        v = as_utc(v)
         return v.isoformat() if v else None
 
     return {

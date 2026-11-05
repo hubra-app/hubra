@@ -40,6 +40,7 @@ from sqlalchemy import select
 
 from hubra.core.extensions import db
 from hubra.core.models.api_token import ApiToken
+from hubra.core.timeutil import as_utc
 
 ENVIRON_KEY = "hubra.api_token_raw"
 
@@ -170,15 +171,9 @@ def parse(raw: str) -> tuple[str, str, str] | None:
     return _KIND_BY_PREFIX[m.group(1)], m.group(2), m.group(3)
 
 
-def _aware(value: datetime | None) -> datetime | None:
-    if value is not None and value.tzinfo is None:
-        return value.replace(tzinfo=timezone.utc)
-    return value
-
-
 def is_active(row: ApiToken, now: datetime | None = None) -> bool:
     now = now or datetime.now(timezone.utc)
-    return row.revoked_at is None and _aware(row.expires_at) > now
+    return row.revoked_at is None and as_utc(row.expires_at) > now
 
 
 # ── WSGI: one credential per request ────────────────────────────────────────
@@ -357,7 +352,7 @@ def _invalid(message: str = "API token invalid"):
 
 
 def _record_failure(row: ApiToken, now: datetime) -> None:
-    started = _aware(row.failed_window_started_at)
+    started = as_utc(row.failed_window_started_at)
     if started is None or now - started > FAILURE_WINDOW:
         row.failed_window_started_at = now
         row.failed_attempts = 0
@@ -419,13 +414,13 @@ def authenticate():
         return _invalid()
     if row.revoked_at is not None:
         return _refuse(401, "API_TOKEN_REVOKED", "This API token was revoked")
-    if _aware(row.expires_at) <= now:
+    if as_utc(row.expires_at) <= now:
         return _refuse(401, "API_TOKEN_EXPIRED", "This API token has expired")
     if oauth:
         refusal = _oauth_refusal(row, now)
         if refusal is not None:
             return refusal
-    last = _aware(row.last_used_at) or _aware(row.created_at)
+    last = as_utc(row.last_used_at) or as_utc(row.created_at)
     if last is not None and now - last > timedelta(days=UNUSED_DAYS):
         _end(row, now, "unused")
         return _refuse(401, "API_TOKEN_REVOKED", "This API token was unused too long")
@@ -435,9 +430,9 @@ def authenticate():
     from hubra.core.models.user import User
 
     user = db.session.get(User, row.user_id)
-    cutoff = _aware(user.tokens_valid_after) if user is not None else None
+    cutoff = as_utc(user.tokens_valid_after) if user is not None else None
     if user is None or user.is_disabled or (
-        cutoff is not None and _aware(row.created_at) < cutoff
+        cutoff is not None and as_utc(row.created_at) < cutoff
     ):
         # Password reset or a disabled account ends tokens like sessions.
         _end(row, now, "account_reset")
@@ -475,7 +470,7 @@ def authenticate():
         return _refuse(429, "RATE_LIMITED", "Too many requests for this API token")
 
     # Last use, at most once a minute per token (one small write).
-    used = _aware(row.last_used_at)
+    used = as_utc(row.last_used_at)
     if used is None or now - used > timedelta(minutes=1):
         row.last_used_at = now
         row.last_used_ip = _client_ip()
@@ -500,7 +495,7 @@ def _oauth_refusal(row: ApiToken, now: datetime):
     from hubra.core.auth import oauth
     from hubra.core.models.oauth import OAuthClient
 
-    access_until = _aware(row.access_expires_at)
+    access_until = as_utc(row.access_expires_at)
     if access_until is None or access_until <= now:
         return _refuse(401, "API_TOKEN_EXPIRED", "This access token has expired")
     client = db.session.get(OAuthClient, row.oauth_client_id)
@@ -710,7 +705,7 @@ def roll(
     if grace_hours <= 0:
         revoke(row, by_name, reason="rolled")
     else:
-        row.expires_at = min(_aware(row.expires_at), now + timedelta(hours=grace_hours))
+        row.expires_at = min(as_utc(row.expires_at), now + timedelta(hours=grace_hours))
         row.revoked_reason = "rolled"
         row.revoked_by_name = by_name[:255]
     return new, plaintext
@@ -725,7 +720,7 @@ def revoke(row: ApiToken, by_name: str, reason: str = "revoked") -> None:
 
 def to_json(row: ApiToken) -> dict:
     def iso(v):
-        v = _aware(v)
+        v = as_utc(v)
         return v.isoformat() if v else None
 
     prefixes = OAUTH_PREFIXES if row.oauth_client_id is not None else PREFIXES

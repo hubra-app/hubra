@@ -53,12 +53,6 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _aware(dt: datetime | None) -> datetime | None:
-    if dt is not None and dt.tzinfo is None:
-        return dt.replace(tzinfo=timezone.utc)
-    return dt
-
-
 def object_name(domain: str) -> str:
     """A stable Kubernetes name for *domain* (names can't hold every host)."""
     return "club-domain-" + hashlib.sha256(domain.encode()).hexdigest()[:16]

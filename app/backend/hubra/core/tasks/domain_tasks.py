@@ -24,6 +24,7 @@ from hubra.core.models.tenant import GlobalAuditEntry
 from hubra.core.services.dns_verification import verify_domain
 
 from hubra.core.tasks import celery_app
+from hubra.core.timeutil import as_utc
 
 _log = logging.getLogger(__name__)
 
@@ -34,12 +35,6 @@ AUTO_CHECKS_FOR = timedelta(hours=72)
 UNVERIFIED_EXPIRE_AFTER = timedelta(days=7)
 RECHECK_VERIFIED_EVERY = timedelta(days=7)
 RECORD_GONE_GRACE = timedelta(days=14)
-
-
-def _aware(value: datetime | None) -> datetime | None:
-    if value is not None and value.tzinfo is None:
-        return value.replace(tzinfo=timezone.utc)
-    return value
 
 
 def _audit(action: str, domain: Domain) -> None:
@@ -90,7 +85,7 @@ def check_domain(domain: Domain, now: datetime | None = None) -> dict:
             db.session.flush()
             _ensure_primary(domain.tenant_id)
     elif domain.verified:
-        seen = _aware(domain.last_seen_at or domain.verified_at) or now
+        seen = as_utc(domain.last_seen_at or domain.verified_at) or now
         if now - seen > RECORD_GONE_GRACE:
             _log.warning(
                 "Domain %s lost its TXT record, no longer verified", domain.domain
@@ -106,12 +101,12 @@ def check_domain(domain: Domain, now: datetime | None = None) -> dict:
 
 def _next_check(domain: Domain, now: datetime) -> datetime | None:
     """When *domain* is next due for a check, or None for no more checks."""
-    checked = _aware(domain.last_checked_at)
+    checked = as_utc(domain.last_checked_at)
     if domain.verified:
         return checked + RECHECK_VERIFIED_EVERY if checked else now
     if domain.verified_at is not None:
         return None  # lost its record: the club verifies it again by hand
-    age = now - _aware(domain.created_at)
+    age = now - as_utc(domain.created_at)
     if age > AUTO_CHECKS_FOR:
         return None
     step = FAST_CHECK_EVERY if age <= FAST_CHECKS_FOR else SLOW_CHECK_EVERY
@@ -128,7 +123,7 @@ def _check_domains() -> dict:
     now = datetime.now(timezone.utc)
     checked = expired = 0
     for domain in list(db.session.scalars(select(Domain)).all()):
-        age = now - _aware(domain.created_at)
+        age = now - as_utc(domain.created_at)
         if domain.verified_at is None and not domain.verified:
             if age > UNVERIFIED_EXPIRE_AFTER:
                 _log.info("Domain %s never verified, removing it", domain.domain)

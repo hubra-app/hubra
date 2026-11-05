@@ -32,6 +32,8 @@ from datetime import datetime, timedelta, timezone
 
 from flask import Flask, jsonify, request
 
+from hubra.core.timeutil import as_utc
+
 logger = logging.getLogger(__name__)
 
 _CACHE_SECONDS = 5.0
@@ -61,18 +63,14 @@ def _parse(value: str) -> datetime | None:
         at = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError:
         return None
-    return at if at.tzinfo else at.replace(tzinfo=timezone.utc)
+    return as_utc(at)
 
 
 def _window_dict(w) -> dict:
     return {
         "id": w.id,
-        "starts_at": w.starts_at
-        if w.starts_at.tzinfo
-        else w.starts_at.replace(tzinfo=timezone.utc),
-        "ends_at": w.ends_at
-        if w.ends_at.tzinfo
-        else w.ends_at.replace(tzinfo=timezone.utc),
+        "starts_at": as_utc(w.starts_at),
+        "ends_at": as_utc(w.ends_at),
         "message": w.message or "",
         "tenant_ids": list(w.tenant_ids) if w.tenant_ids is not None else None,
         "notice_hours": w.notice_hours,
@@ -246,11 +244,7 @@ def turn_off(actor_id=None) -> dict:
     )
     now = datetime.now(timezone.utc)
     for w in _open_windows():
-        starts = (
-            w.starts_at
-            if w.starts_at.tzinfo
-            else w.starts_at.replace(tzinfo=timezone.utc)
-        )
+        starts = as_utc(w.starts_at)
         if w.tenant_ids is None and starts <= now:
             w.ends_at = now
     db.session.commit()
@@ -271,13 +265,9 @@ class WindowError(ValueError):
     pass
 
 
-def _aware(at: datetime) -> datetime:
-    return at if at.tzinfo else at.replace(tzinfo=timezone.utc)
-
-
 def window_json(w, names: dict[int, str] | None = None) -> dict:
     now = datetime.now(timezone.utc)
-    starts, ends = _aware(w.starts_at), _aware(w.ends_at)
+    starts, ends = as_utc(w.starts_at), as_utc(w.ends_at)
     if w.cancelled_at is not None:
         status = "cancelled"
     elif ends <= now:
@@ -301,8 +291,8 @@ def window_json(w, names: dict[int, str] | None = None) -> dict:
         "notice_hours": w.notice_hours,
         "status": status,
         "created_by": w.created_by,
-        "created_at": _aware(w.created_at).isoformat() if w.created_at else None,
-        "cancelled_at": _aware(w.cancelled_at).isoformat() if w.cancelled_at else None,
+        "created_at": as_utc(w.created_at).isoformat() if w.created_at else None,
+        "cancelled_at": as_utc(w.cancelled_at).isoformat() if w.cancelled_at else None,
     }
 
 
@@ -321,7 +311,7 @@ def schedule(
     from hubra.core.models.maintenance_window import MaintenanceWindow
     from hubra.core.models.tenant import Tenant
 
-    starts_at, ends_at = _aware(starts_at), _aware(ends_at)
+    starts_at, ends_at = as_utc(starts_at), as_utc(ends_at)
     if ends_at <= starts_at:
         raise WindowError("The end must be after the start")
     if ends_at <= datetime.now(timezone.utc):
@@ -374,9 +364,9 @@ def cancel(window_id: int, actor_id=None):
     if window is None:
         raise LookupError(window_id)
     now = datetime.now(timezone.utc)
-    if window.cancelled_at is not None or _aware(window.ends_at) <= now:
+    if window.cancelled_at is not None or as_utc(window.ends_at) <= now:
         raise WindowError("This window is already over")
-    if _aware(window.starts_at) <= now:
+    if as_utc(window.starts_at) <= now:
         window.ends_at = now
         _log_event(f"Maintenance window {window.id} ended early")
     else:
@@ -402,7 +392,7 @@ def notice_payload(current: dict) -> dict:
 def window_notice(window) -> dict:
     """A planned window, for the clubs' Discord servers (``tenant_ids`` None:
     every club)."""
-    starts, ends = _aware(window.starts_at), _aware(window.ends_at)
+    starts, ends = as_utc(window.starts_at), as_utc(window.ends_at)
     return {
         "message": window.message or "",
         "start": starts.isoformat(),

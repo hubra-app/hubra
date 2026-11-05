@@ -44,6 +44,7 @@ from hubra.core.extensions import db
 from hubra.core.models.api_token import ApiToken
 from hubra.core.models.tenant import GlobalAuditEntry
 from hubra.core.tenant.context import current_tenant
+from hubra.core.timeutil import as_utc
 
 api_tokens_bp = Blueprint("api_tokens_bp", __name__)
 platform_api_tokens_bp = Blueprint("platform_api_tokens_bp", __name__)
@@ -145,8 +146,8 @@ def _roll_params(data: dict, row: ApiToken, grantable: set[str], maximum: int):
         if days is None:
             return None, _error(400, "VALIDATION_ERROR", "days: not an allowed lifetime")
     else:
-        created = api_tokens._aware(row.created_at)
-        expires = api_tokens._aware(row.expires_at)
+        created = as_utc(row.created_at)
+        expires = as_utc(row.expires_at)
         span = max(1, round((expires - created).total_seconds() / 86400))
         allowed = [d for d in api_tokens.LIFETIMES if d <= maximum]
         days = min(allowed, key=lambda d: abs(d - span))
