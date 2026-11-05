@@ -727,6 +727,18 @@ function LinkedAccountsTab() {
  * Apps the person let read Hubra for them (OAuth, docs/oauth.md), such as
  * Claude: one entry per app and club. Ending one stops it at once.
  */
+/** What a Sign in with Hubra app learns, in a few words. */
+function shareText(claims: string[]): string {
+  const parts = [
+    claims.includes('profile') ? tr('Name', 'name') : null,
+    claims.includes('email') ? tr('E-Mail', 'email') : null,
+    claims.includes('club') ? tr('Mitgliedschaft', 'membership') : null,
+  ].filter(Boolean)
+  return parts.length
+    ? tr(`sieht ${parts.join(', ')}`, `sees ${parts.join(', ')}`)
+    : tr('sieht nur eine Kennung', 'sees only an id')
+}
+
 function AppsTab() {
   const { notify } = useSso()
   const queryClient = useQueryClient()
@@ -747,8 +759,8 @@ function AppsTab() {
     <Stack gap="sm">
       <Text size="sm" c="dimmed">
         {tr(
-          'Apps, denen du Zugang zu Hubra gegeben hast, zum Beispiel Claude. Eine App sieht nie mehr, als du selbst darfst, und nur im Verein, den du gewählt hast.',
-          'Apps you gave access to Hubra, for example Claude. An app never sees more than you may yourself, and only in the club you chose.',
+          'Apps, denen du Zugang zu Hubra gegeben hast (zum Beispiel Claude), und Websites, bei denen du dich mit Hubra anmeldest. Eine App sieht nie mehr, als du selbst darfst, und nur im Verein, den du gewählt hast.',
+          'Apps you gave access to Hubra (for example Claude), and websites you sign in to with Hubra. An app never sees more than you may yourself, and only in the club you chose.',
         )}
       </Text>
       {grants.data.items.length === 0 && (
@@ -764,16 +776,27 @@ function AppsTab() {
                 <Text fw={600} truncate>
                   {g.app?.name ?? tr('App', 'App')}
                 </Text>
-                {g.app && !g.app.verified && (
+                {g.app && !g.app.verified && g.app.kind !== 'club' && (
                   <Badge size="sm" variant="light" color="yellow">
                     {tr('selbst angemeldet', 'self-registered')}
                   </Badge>
                 )}
               </Group>
               <Text size="xs" c="dimmed">
-                {g.club?.name ?? tr('Plattform', 'Platform')} ·{' '}
-                {g.canWrite ? tr('lesen und ändern', 'read and change') : tr('nur lesen', 'read only')}
-                {g.resourceKind === 'mcp' ? tr(' · über den Claude-Connector', ' · through the Claude connector') : ''}
+                {g.signIn ? (
+                  <>
+                    {tr('Anmeldung mit Hubra', 'Sign in with Hubra')}
+                    {g.club ? ` · ${g.club.name}` : ''} · {shareText(g.claims ?? [])}
+                  </>
+                ) : (
+                  <>
+                    {g.club?.name ?? tr('Plattform', 'Platform')} ·{' '}
+                    {g.canWrite ? tr('lesen und ändern', 'read and change') : tr('nur lesen', 'read only')}
+                    {g.resourceKind === 'mcp'
+                      ? tr(' · über den Claude-Connector', ' · through the Claude connector')
+                      : ''}
+                  </>
+                )}
               </Text>
               <Text size="xs" c="dimmed">
                 {tr('verbunden', 'connected')} {formatTime(g.createdAt)} ·{' '}

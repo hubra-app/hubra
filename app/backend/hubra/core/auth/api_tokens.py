@@ -44,8 +44,9 @@ from hubra.core.models.api_token import ApiToken
 ENVIRON_KEY = "hubra.api_token_raw"
 
 PREFIXES = {"member": "hbr_pat", "club": "hbr_club", "platform": "hbr_plat"}
-# OAuth access tokens (hubra/core/auth/oauth.py): a club or the platform.
-OAUTH_PREFIXES = {"member": "hbr_oam", "platform": "hbr_oap"}
+# OAuth access tokens (hubra/core/auth/oauth.py): a club, the platform, or
+# a sign-in only (OpenID Connect; opens nothing but userinfo).
+OAUTH_PREFIXES = {"member": "hbr_oam", "platform": "hbr_oap", "identity": "hbr_oai"}
 _KIND_BY_PREFIX = {
     v[4:]: k for prefixes in (PREFIXES, OAUTH_PREFIXES) for k, v in prefixes.items()
 }
@@ -53,7 +54,7 @@ _ALPHABET = string.ascii_letters + string.digits
 _PUBLIC_LEN = 12
 _SECRET_LEN = 43  # 43 × log2(62) ≈ 256 bits
 _TOKEN_RE = re.compile(
-    r"^hbr_(pat|club|plat|oam|oap)_([A-Za-z0-9]{%d})_([A-Za-z0-9]{%d})$"
+    r"^hbr_(pat|club|plat|oam|oap|oai)_([A-Za-z0-9]{%d})_([A-Za-z0-9]{%d})$"
     % (_PUBLIC_LEN, _SECRET_LEN)
 )
 
@@ -101,8 +102,14 @@ _NEVER_BLUEPRINTS = frozenset(
         "oauth_bp",  # OAuth sign-in, consent and the person's app list
         "oauth_metadata_bp",
         "platform_oauth_bp",
+        "club_oauth_bp",
     }
 )
+
+# Answers its own bearer token (OpenID Connect userinfo): ApiTokenWsgi
+# leaves the header for the route, which checks it itself.
+USERINFO_PATH = "/api/v1/global/oauth/userinfo"
+USERINFO_ENVIRON_KEY = "hubra.oidc_token_raw"
 
 
 # ── Format and hashing ───────────────────────────────────────────────────────
@@ -150,8 +157,8 @@ def _secret_matches(row: ApiToken, secret: str) -> bool:
 
 
 def is_oauth(raw: str) -> bool:
-    """An OAuth access token (``hbr_oam_`` / ``hbr_oap_``)."""
-    return (raw or "").startswith(("hbr_oam_", "hbr_oap_"))
+    """An OAuth access token (``hbr_oam_`` / ``hbr_oap_`` / ``hbr_oai_``)."""
+    return (raw or "").startswith(("hbr_oam_", "hbr_oap_", "hbr_oai_"))
 
 
 def parse(raw: str) -> tuple[str, str, str] | None:
@@ -201,7 +208,11 @@ class ApiTokenWsgi:
         auth = environ.get("HTTP_AUTHORIZATION", "")
         if not auth.startswith("Bearer hbr_"):
             return self.wsgi_app(environ, start_response)
-        environ[ENVIRON_KEY] = auth[len("Bearer ") :].strip()
+        raw = auth[len("Bearer ") :].strip()
+        if environ.get("PATH_INFO", "").rstrip("/") == USERINFO_PATH:
+            environ[USERINFO_ENVIRON_KEY] = raw
+        else:
+            environ[ENVIRON_KEY] = raw
         for key in _STRIPPED:
             environ.pop(key, None)
 
@@ -389,6 +400,9 @@ def authenticate():
     if parsed is None:
         return _invalid()
     kind, public_id, secret = parsed
+    if kind == "identity":
+        # Sign in with Hubra only: such a token opens userinfo, nothing else.
+        return _refuse(401, "API_TOKEN_AUDIENCE", "This token only signs the person in")
     oauth = is_oauth(raw)
     row = db.session.scalar(select(ApiToken).where(ApiToken.public_id == public_id))
     if row is None or row.kind != kind or (row.oauth_client_id is not None) != oauth:

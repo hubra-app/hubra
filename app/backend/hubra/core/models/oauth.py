@@ -1,9 +1,10 @@
 """OAuth apps (docs/oauth.md): outside apps that act for a person with
 their consent, such as the Claude connector.
 
-* ``OAuthClient`` — an app: registered by a platform admin (``registered``)
-  or by itself through dynamic client registration (``dynamic``, only for
-  the Claude connector).
+* ``OAuthClient`` — an app: registered by a platform admin (``registered``),
+  by a club admin for the club's own website or forum (``club``, sign-in
+  only, docs/oidc.md) or by itself through dynamic client registration
+  (``dynamic``, only for the Claude connector).
 * ``OAuthCode``   — a one-time authorization code, valid five minutes.
 
 A sign-in an app holds is an ``api_tokens`` row with ``oauth_client_id``
@@ -23,7 +24,7 @@ from hubra.core.extensions import db
 
 _JSON = JSONB().with_variant(db.JSON, "sqlite")
 
-CLIENT_KINDS = ("registered", "dynamic")
+CLIENT_KINDS = ("registered", "club", "dynamic")
 # What an app may ask for: the Hubra API itself, or the Claude connector.
 RESOURCES = ("api", "mcp")
 
@@ -47,10 +48,15 @@ class OAuthClient(db.Model):
     # Empty for a public client (PKCE only).
     secret_hash: Mapped[str | None] = mapped_column(db.String(64), nullable=True)
     secret_last4: Mapped[str | None] = mapped_column(db.String(4), nullable=True)
-    # Subset of RESOURCES.
+    # Subset of RESOURCES; empty for an app that only signs people in.
     resources: Mapped[list] = mapped_column(_JSON, nullable=False, default=list)
-    # "read", or "read" and "write".
+    # "read", "write" (API access) and "openid" (Sign in with Hubra).
     scopes: Mapped[list] = mapped_column(_JSON, nullable=False, default=list)
+    # A club's own app: only its members sign in, and it may ask for the
+    # "club" claims (membership, groups).
+    tenant_id: Mapped[int | None] = mapped_column(
+        db.Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True, index=True
+    )
     created_by_name: Mapped[str] = mapped_column(
         db.String(255), nullable=False, default=""
     )
@@ -79,7 +85,7 @@ class OAuthCode(db.Model):
     user_id: Mapped[int] = mapped_column(
         db.Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
-    # "member" (a club) or "platform".
+    # "member" (a club), "platform" or "identity" (sign-in only).
     kind: Mapped[str] = mapped_column(db.String(20), nullable=False)
     tenant_id: Mapped[int | None] = mapped_column(
         db.Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True
@@ -89,7 +95,13 @@ class OAuthCode(db.Model):
     oauth_scope: Mapped[str] = mapped_column(db.String(100), nullable=False)
     resource: Mapped[str] = mapped_column(db.String(500), nullable=False)
     redirect_uri: Mapped[str] = mapped_column(db.String(1000), nullable=False)
+    # Empty only for a confidential app's OpenID request with a nonce.
     code_challenge: Mapped[str] = mapped_column(db.String(128), nullable=False)
+    # OpenID Connect: echoed in the ID token; when the person signed in.
+    nonce: Mapped[str | None] = mapped_column(db.String(255), nullable=True)
+    auth_time: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     days: Mapped[int] = mapped_column(db.Integer, nullable=False)
     created_by_name: Mapped[str] = mapped_column(
         db.String(255), nullable=False, default=""
