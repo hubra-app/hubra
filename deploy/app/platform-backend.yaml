@@ -54,7 +54,7 @@ spec:
             capabilities: { drop: [ALL] }
           # startup_lock: two pods starting together take turns. No HUBRA_ROLE
           # here: the init step sees every route (sync-permissions reads them).
-          command: ["python", "-m", "hubra.core.startup_lock", "sh", "-c", "flask db upgrade && flask sync-permissions && flask seed --skip-migrate && flask ensure-superadmins && flask plugins sync && flask modules seal-secrets"]
+          command: ["python", "-m", "hubra.core.startup_lock", "sh", "-c", "flask db upgrade && flask sync-tenant-schemas && flask sync-permissions && flask seed --skip-migrate && flask ensure-superadmins && flask plugins sync && flask modules seal-secrets"]
           envFrom: [{ secretRef: { name: hubra-env } }]
           env: [{ name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }]
           volumeMounts: [{ name: settings, mountPath: /etc/hubra }]

@@ -69,6 +69,7 @@ Every start runs the same steps (Compose service `flask-init`, on k3s the
 
 ```sh
 flask db upgrade        # migrations: public and every club schema
+flask sync-tenant-schemas  # club schemas get any table/column public has and they lack
 flask sync-permissions  # permission catalog from the routes
 flask seed --skip-migrate
 flask ensure-superadmins
