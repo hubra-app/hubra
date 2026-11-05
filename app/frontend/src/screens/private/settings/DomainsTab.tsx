@@ -26,6 +26,13 @@ import { SimpleList } from '@/components/ui'
 import { useT } from '@/locales/i18n'
 import { qk } from '@/data/keys'
 
+const SERVING_COLORS: Record<string, string> = {
+  ready: 'green',
+  pending: 'orange',
+  failed: 'red',
+  off: 'gray',
+}
+
 const STATUS_COLORS: Record<string, string> = {
   verified: 'green',
   pending: 'orange',
@@ -138,13 +145,20 @@ export function DomainsTab() {
           title: d.domain,
           subtitle: d.is_primary ? t('domains.primary', 'Hauptdomain') : undefined,
           meta: (
-            <Badge variant="light" color={STATUS_COLORS[d.verification_status] ?? 'gray'} size="sm">
-              {t(`domains.status.${d.verification_status}`, d.verification_status)}
-            </Badge>
+            <Group gap={6} wrap="wrap">
+              <Badge variant="light" color={STATUS_COLORS[d.verification_status] ?? 'gray'} size="sm">
+                {t(`domains.status.${d.verification_status}`, d.verification_status)}
+              </Badge>
+              {d.verified && d.serving_status && d.serving_status !== 'off' && (
+                <Badge variant="light" color={SERVING_COLORS[d.serving_status] ?? 'gray'} size="sm">
+                  {t(`domains.serving.${d.serving_status}`)}
+                </Badge>
+              )}
+            </Group>
           ),
           actions: (
             <Group gap={6} wrap="nowrap">
-              {!d.verified && d.txt_record && (
+              {(d.cname_target || (!d.verified && d.txt_record)) && (
                 <Button size="xs" variant="default" onClick={() => setRecordFor(d)}>
                   {t('domains.showRecord', 'DNS-Eintrag')}
                 </Button>
@@ -187,7 +201,22 @@ export function DomainsTab() {
         onClose={() => setRecordFor(null)}
         title={t('domains.recordTitle', 'DNS-Eintrag für {{domain}}', { domain: recordFor?.domain ?? '' })}
       >
-        {recordFor?.txt_record && (
+        {recordFor?.cname_target && (
+          <Alert icon={<IconCheck size={16} />} color="acc" variant="light" mb={12}>
+            <Stack gap={10}>
+              <Text fw={600}>
+                {t('domains.cnameHint', 'Damit Besucher auf {{domain}} zu eurem Verein kommen, zeigt die Domain mit diesem Eintrag auf Hubra:', { domain: recordFor.domain })}
+              </Text>
+              <RecordField label={t('domains.recordType', 'Typ')} value="CNAME" />
+              <RecordField label={t('domains.recordName', 'Name')} value={recordFor.domain} />
+              <RecordField label={t('domains.recordValue', 'Wert')} value={recordFor.cname_target} />
+              <Text size="sm" c="dimmed">
+                {t('domains.cnameAfter', 'Für eine Domain ohne Subdomain (verein.ch) erlauben viele Anbieter keinen CNAME; nimm dann eine Subdomain wie mitglieder.verein.ch. Sobald die Domain bestätigt ist und auf Hubra zeigt, holen wir ein Zertifikat; das dauert meist wenige Minuten.')}
+              </Text>
+            </Stack>
+          </Alert>
+        )}
+        {recordFor?.txt_record && !recordFor.verified && (
           <Alert icon={<IconCheck size={16} />} color="acc" variant="light">
             <Stack gap={10}>
               <Text fw={600}>{t('domains.txtHint', 'Füge diesen TXT-Eintrag im DNS deiner Domain hinzu:')}</Text>

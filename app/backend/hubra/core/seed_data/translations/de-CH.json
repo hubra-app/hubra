@@ -3554,5 +3554,10 @@
   "apiAccess.unused": "noch nicht genutzt",
   "apiAccess.end": "Beenden",
   "apiAccess.endTitle": "Zugang beenden?",
-  "apiAccess.endBody": "Die App oder das Skript kann danach nichts mehr lesen. Wer es nutzt, muss neu verbinden."
+  "apiAccess.endBody": "Die App oder das Skript kann danach nichts mehr lesen. Wer es nutzt, muss neu verbinden.",
+  "domains.serving.ready": "Erreichbar",
+  "domains.serving.pending": "Zertifikat ausstehend",
+  "domains.serving.failed": "Kein Zertifikat",
+  "domains.cnameHint": "Damit Besucher auf {{domain}} zu eurem Verein kommen, zeigt die Domain mit diesem Eintrag auf Hubra:",
+  "domains.cnameAfter": "Für eine Domain ohne Subdomain (verein.ch) erlauben viele Anbieter keinen CNAME; nimm dann eine Subdomain wie mitglieder.verein.ch. Sobald die Domain bestätigt ist und auf Hubra zeigt, holen wir ein Zertifikat; das dauert meist wenige Minuten."
 }

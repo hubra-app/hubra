@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from hubra.core.extensions import db
 
+
 class Domain(db.Model):
     __tablename__ = "domains"
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -32,6 +33,21 @@ class Domain(db.Model):
         DateTime(timezone=True), nullable=True
     )
     last_seen_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # Serving visitors (hubra.core.services.domain_serving): None (not
+    # verified / never tried), off (switched off on the platform), pending
+    # (certificate being issued), ready (Ingress in place), failed (no
+    # certificate after a day).
+    serving_status: Mapped[str | None] = mapped_column(db.String(20), nullable=True)
+    serving_error: Mapped[str | None] = mapped_column(db.String(500), nullable=True)
+    serving_checked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    serving_since: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    serving_alerted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(

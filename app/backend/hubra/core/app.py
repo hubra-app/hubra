@@ -154,6 +154,11 @@ def create_app(config_name: str | None = None) -> Flask:
     #    other side's paths before any other hook runs. ─────────────────────
     from hubra.core.roles import install_role_gate
 
+    # Requests on a served club domain are sent on to the club before
+    # anything else looks at them (hubra.core.services.domain_serving).
+    from hubra.core.services import domain_serving
+
+    domain_serving.install(app)
     install_role_gate(app)
 
     # ── API tokens (Authorization: Bearer hbr_…): before the tenant resolver,

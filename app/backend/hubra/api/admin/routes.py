@@ -443,6 +443,15 @@ def _txt_record(domain: Domain) -> dict:
     }
 
 
+def _cname_target() -> str | None:
+    """Where clubs point their domain, while the platform serves them."""
+    from hubra.core.services import domain_serving, platform_settings
+
+    if not domain_serving.serving_on():
+        return None
+    return platform_settings.get("domains.cname_target") or None
+
+
 def _domain_to_dict(domain: Domain) -> dict:
     return {
         "id": domain.id,
@@ -456,6 +465,12 @@ def _domain_to_dict(domain: Domain) -> dict:
         if domain.last_checked_at
         else None,
         "txt_record": _txt_record(domain) if domain.verification_token else None,
+        # Serving visitors on the domain (hubra.core.services.domain_serving).
+        "serving_status": domain.serving_status,
+        "serving_since": domain.serving_since.isoformat()
+        if domain.serving_since
+        else None,
+        "cname_target": _cname_target(),
         "created_at": domain.created_at.isoformat() if domain.created_at else None,
         "updated_at": domain.updated_at.isoformat() if domain.updated_at else None,
     }

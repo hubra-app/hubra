@@ -133,6 +133,11 @@ VALIDATORS: dict[str, Callable[[str], str | None]] = {
         None if v.isdigit() and 1 <= int(v) <= 100 else "Whole percent, 1 to 100"
     ),
     "fee_percent": lambda v: _validate_fee_percent(v),
+    "k8s_name": lambda v: (
+        None
+        if re.fullmatch(r"[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?", v)
+        else "A Kubernetes name: lower-case letters, digits and -"
+    ),
     "stripe_secret_key": lambda v: (
         None
         if re.fullmatch(r"(sk|rk)_(test|live)_[A-Za-z0-9]{10,}", v)

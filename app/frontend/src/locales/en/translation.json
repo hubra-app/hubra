@@ -2824,7 +2824,14 @@
     "recordType": "Type",
     "recordValue": "Value",
     "showRecord": "DNS record",
-    "recordTitle": "DNS record for {{domain}}"
+    "recordTitle": "DNS record for {{domain}}",
+    "serving": {
+      "ready": "Live",
+      "pending": "Certificate pending",
+      "failed": "No certificate"
+    },
+    "cnameHint": "To bring visitors on {{domain}} to your club, point the domain at Hubra with this record:",
+    "cnameAfter": "Many providers don't allow a CNAME on a bare domain (club.ch); use a subdomain like members.club.ch instead. Once the domain is verified and points at Hubra we fetch a certificate, which usually takes a few minutes."
   },
   "status": {
     "active": "Active",

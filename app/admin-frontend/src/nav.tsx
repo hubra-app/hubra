@@ -3,6 +3,7 @@ import {
   IconBell,
   IconBrandDiscord,
   IconCreditCard,
+  IconWorldWww,
   IconBuildingCommunity,
   IconDatabase,
   IconHeartbeat,
@@ -416,6 +417,24 @@ export function navSections(): NavSection[] {
               label: tr('Kanäle', 'Channels'),
               perm: 'platform.settings',
               render: () => <SettingsSection section="discord-channels" />,
+            },
+          ],
+        },
+        {
+          id: 'domains',
+          label: tr('Vereinsdomains', 'Club domains'),
+          icon: icon(IconWorldWww),
+          desc: tr(
+            'Eigene Domains der Vereine: Zertifikat und Ingress pro bestätigter Domain, und der Notschalter.',
+            "Clubs' own domains: certificate and Ingress per verified domain, and the kill switch.",
+          ),
+          tabs: [
+            {
+              id: 'serving',
+              path: '/app/platform/domains',
+              label: '',
+              perm: 'platform.settings',
+              render: () => <SettingsSection section="domains" />,
             },
           ],
         },

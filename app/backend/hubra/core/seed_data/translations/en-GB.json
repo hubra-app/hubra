@@ -3554,5 +3554,10 @@
   "apiAccess.unused": "not used yet",
   "apiAccess.end": "End",
   "apiAccess.endTitle": "End access?",
-  "apiAccess.endBody": "The app or script can't read anything afterwards. Whoever uses it has to connect again."
+  "apiAccess.endBody": "The app or script can't read anything afterwards. Whoever uses it has to connect again.",
+  "domains.serving.ready": "Live",
+  "domains.serving.pending": "Certificate pending",
+  "domains.serving.failed": "No certificate",
+  "domains.cnameHint": "To bring visitors on {{domain}} to your club, point the domain at Hubra with this record:",
+  "domains.cnameAfter": "Many providers don't allow a CNAME on a bare domain (club.ch); use a subdomain like members.club.ch instead. Once the domain is verified and points at Hubra we fetch a certificate, which usually takes a few minutes."
 }

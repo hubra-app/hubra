@@ -2824,7 +2824,14 @@
     "recordType": "Typ",
     "recordValue": "Wert",
     "showRecord": "DNS-Eintrag",
-    "recordTitle": "DNS-Eintrag für {{domain}}"
+    "recordTitle": "DNS-Eintrag für {{domain}}",
+    "serving": {
+      "ready": "Erreichbar",
+      "pending": "Zertifikat ausstehend",
+      "failed": "Kein Zertifikat"
+    },
+    "cnameHint": "Damit Besucher auf {{domain}} zu eurem Verein kommen, zeigt die Domain mit diesem Eintrag auf Hubra:",
+    "cnameAfter": "Für eine Domain ohne Subdomain (verein.ch) erlauben viele Anbieter keinen CNAME; nimm dann eine Subdomain wie mitglieder.verein.ch. Sobald die Domain bestätigt ist und auf Hubra zeigt, holen wir ein Zertifikat; das dauert meist wenige Minuten."
   },
   "status": {
     "active": "Aktiv",

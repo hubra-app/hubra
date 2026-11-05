@@ -231,6 +231,45 @@ SPECS: tuple[Spec, ...] = (
         "count",
     ),
     Spec(
+        "domains.serving",
+        "Serve club domains",
+        "on: every verified club domain gets a certificate and its own "
+        "Ingress (k3s with cert-manager), and visitors are sent on to the "
+        "club. off: their Ingresses are removed (the kill switch)",
+        lambda cfg: "off",
+        "on_off",
+    ),
+    Spec(
+        "domains.cname_target",
+        "Club domains point to",
+        "The host clubs point their domain to (CNAME), shown in the club's "
+        "domain settings, e.g. clubs.hubra.club",
+        lambda cfg: cfg.get("CUSTOM_DOMAIN_TARGET") or "",
+        "host",
+    ),
+    Spec(
+        "domains.cluster_issuer",
+        "Certificate issuer",
+        "The cert-manager ClusterIssuer for club domains",
+        lambda cfg: "letsencrypt",
+        "k8s_name",
+    ),
+    Spec(
+        "domains.ingress_class",
+        "Ingress class",
+        "The ingress class of club domains",
+        lambda cfg: "traefik",
+        "k8s_name",
+    ),
+    Spec(
+        "domains.service",
+        "Service for club domains",
+        "The Service (port 'http') club domains are routed to; it sends "
+        "visitors on to the club",
+        lambda cfg: "global-backend",
+        "k8s_name",
+    ),
+    Spec(
         "payments.stripe.secret_key",
         "Stripe secret key",
         "The platform's Stripe key (Connect). Clubs connect their own Stripe "

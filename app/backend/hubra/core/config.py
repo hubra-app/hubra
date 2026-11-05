@@ -276,6 +276,8 @@ class BaseConfig:
     # Online payments (payments plugin): the platform's Stripe Connect key.
     # Better set in manage › Payments.
     STRIPE_SECRET_KEY: str = os.environ.get("STRIPE_SECRET_KEY", "")
+    # The host clubs point their own domain at (CNAME); manage › Club domains.
+    CUSTOM_DOMAIN_TARGET: str = os.environ.get("CUSTOM_DOMAIN_TARGET", "")
     FILES_DIR: str = os.environ.get("FILES_DIR", "/var/lib/hubra/files")
 
     # ── Backups (Contabo S3) ─────────────────────────────────────────────────
