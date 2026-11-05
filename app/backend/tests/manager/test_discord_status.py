@@ -453,3 +453,26 @@ def test_create_channel_api(client, superadmin, bot):
         )
     assert resp.status_code == 201
     assert resp.get_json()["id"] == "321"
+
+
+def test_token_request_host_is_not_the_public_address(app):
+    """The Claude connector reads the status with an API token from inside
+    the cluster: its host (platform-backend:5000) is no address for the
+    Developer Portal, so without API_PUBLIC_URL the URLs are unknown."""
+    from flask import g
+
+    app.config["API_PUBLIC_URL"] = ""
+    with app.test_request_context(base_url="http://platform-backend:5000"):
+        assert discord_status.expected_interactions_url() == (
+            "http://platform-backend:5000/api/v1/discord/interactions"
+        )
+        g.api_token = {"id": 1, "kind": "platform"}
+        assert discord_status.expected_interactions_url() == ""
+        assert discord_status.redirect_uris() == []
+        app.config["API_PUBLIC_URL"] = "https://api.example.org"
+        try:
+            assert discord_status.expected_interactions_url() == (
+                "https://api.example.org/api/v1/discord/interactions"
+            )
+        finally:
+            app.config["API_PUBLIC_URL"] = ""

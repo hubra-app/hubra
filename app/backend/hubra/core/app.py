@@ -731,6 +731,28 @@ def _register_cli(app: Flask) -> None:
             count = apply_migrations_to_all_tenants()
             click.echo(f"Migrations applied to {count} active tenant(s).")
 
+    @app.cli.command("sync-tenant-schemas")
+    def sync_tenant_schemas():
+        """Add tables and columns that public has and a club schema lacks
+        (a migration that forgot the club schemas).  Never drops anything."""
+        from hubra.core.tenant.schema_manager import tables_to_clone
+        from hubra.core.tenant.schema_sync import catch_up_all
+
+        with db.engine.begin() as conn:
+            results = catch_up_all(conn, tables_to_clone())
+        for r in results:
+            click.echo(
+                f"{r.schema}: tables {', '.join(r.tables) or '-'}; "
+                f"columns {', '.join(r.columns) or '-'}"
+            )
+            for table, rows in r.rows_in_public.items():
+                click.echo(
+                    f"  public.{table} has {rows} row(s) a club may have "
+                    "written while its own table was missing (not moved)"
+                )
+        if not results:
+            click.echo("Club schemas match public.")
+
     @app.cli.command("sync-permissions")
     def sync_permissions():
         """Sync the Permission table with all @permission_required-decorated routes."""

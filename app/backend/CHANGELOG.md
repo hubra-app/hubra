@@ -67,6 +67,9 @@ section and position, or the apps show that version in English.
 
 ### Fixed
 
+- **Finance pages failed for clubs created before the recurring-transaction and invoice-period changes**: those two migrations changed only the template tables, so older clubs had no `transactions.recurring_id`, `invoices.period_start`/`period_end` or `recurring_transactions` table, and Transactions, Invoices and My invoices answered a server error. A migration adds what is missing, and every start now runs `flask sync-tenant-schemas`, which adds any table or column a club schema lacks (it never drops anything).
+- **Diagnostics showed no running processes and a stale health cache after one slow Redis answer**: reading the build reports now waits up to a second and reports "unknown" instead of "not reporting", and a slow read no longer hides the health cache or lets the upgrade check decide from the worker's own build alone.
+- **The Discord status read through an API token** (the Claude connector) gave the backend's in-cluster address as the expected interactions URL. Without `API_PUBLIC_URL` it is now unknown in that case.
 - **Platform roles were empty**: manage › Rollen showed no platform roles and an empty permission list, so no permission could be given to a role. The platform permissions and default roles were only written by `flask seed-global-rbac`, which no deployment ran. `flask sync-permissions` (run on every start) now writes them too. Default roles: Platform admin, Manager, Support, the new Read-only, and Requester. A default role that already exists keeps the permissions it has; only Platform admin, whose permissions are locked, is completed on each start.
 - **Discord security ping for platform admins on a new device** was never sent after an account sign-in (SSO, manage): it waited for a commit that came before it. It is now queued before that commit.
 

@@ -5,7 +5,7 @@ api_tokens that make a row a sign-in an app holds. All in public, once
 (safe to run again per club).
 
 Revision ID: c7f1a9e3b5d2
-Revises: b4e8f2a6d9c3
+Revises: f1c7a3e9b5d2
 Create Date: 2026-11-05 00:30:00.000000
 
 """
@@ -16,7 +16,7 @@ from sqlalchemy.dialects import postgresql
 
 
 revision = "c7f1a9e3b5d2"
-down_revision = "b4e8f2a6d9c3"
+down_revision = "f1c7a3e9b5d2"
 branch_labels = None
 depends_on = None
 

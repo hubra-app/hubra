@@ -362,3 +362,18 @@ def test_forwarded_for_must_be_addresses(fake, monkeypatch):
                   "params": {"name": "platform_health", "arguments": {}}},
         )
     assert "x-forwarded-for" not in fake.calls[0].headers
+
+
+def test_maintenance_includes_the_windows(client, fake):
+    error, text = _call(client, "platform_maintenance")
+    assert not error
+    body = json.loads(text)
+    assert body["mode"]["path"] == "/api/v1/platform/maintenance"
+    assert body["windows"]["path"] == "/api/v1/platform/maintenance/windows"
+
+
+def test_performance_looks_back_past_the_full_hour(client, fake):
+    """hours=1 is only since the full hour: a few seconds just after it."""
+    error, _ = _call(client, "platform_performance")
+    assert not error
+    assert fake.calls[0].url.params["hours"] == "2"
