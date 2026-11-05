@@ -685,6 +685,12 @@ def public_links():
             "calendar": url_for(
                 "events_bp.public_calendar", slug=tenant.slug, _external=True
             ),
+            # One line of HTML that shows the list on any website.
+            "widget": '<script src="{}" async></script>'.format(
+                url_for(
+                    "events_bp.public_events_widget", slug=tenant.slug, _external=True
+                )
+            ),
             "upcoming": int(count or 0),
         }
     ), 200

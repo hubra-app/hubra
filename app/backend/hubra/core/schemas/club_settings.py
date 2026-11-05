@@ -83,6 +83,12 @@ class ClubSettingsSchema(Schema):
     leave_requires_approval = fields.Bool(required=False, allow_none=True)
     # Off: the club takes new members by invite only (no "ask to join").
     join_requests_open = fields.Bool(required=False, allow_none=True)
+    # The club's public page on the join portal (off by default) and the
+    # club's own website, shown there.
+    public_page = fields.Bool(required=False, allow_none=True)
+    website = fields.Url(
+        required=False, allow_none=True, schemes={"http", "https"}, validate=validate.Length(max=500)
+    )
     # Delete former members this many years after they left (revDSG);
     # None: keep them until the board deletes them.
     former_member_retention_years = fields.Int(

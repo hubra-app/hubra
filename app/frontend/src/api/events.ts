@@ -512,6 +512,8 @@ export async function downloadAttendanceCSV(f: AttendanceFilter): Promise<void> 
 export async function getPublicEventLinks(): Promise<{
   json: string;
   calendar: string;
+  /** A <script> tag that shows the public events on any website. */
+  widget: string;
   upcoming: number;
 }> {
   return apiFetch("/app/events/public-links");

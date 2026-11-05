@@ -2893,3 +2893,6 @@ def close_data_request(request_id: int, status: str):
     _privacy_audit(req, f"privacy.request.{status}")
     db.session.commit()
     return jsonify(data_requests.to_dict(req)), 200
+
+
+from hubra.api.tenant import public_page  # noqa: E402,F401  (registers /clubs/<slug>/public)

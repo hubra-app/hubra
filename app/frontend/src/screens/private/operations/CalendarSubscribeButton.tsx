@@ -12,7 +12,7 @@ export function CalendarSubscribeButton() {
   const [url, setUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [renewing, setRenewing] = useState(false)
-  const [publicLinks, setPublicLinks] = useState<{ json: string; calendar: string; upcoming: number } | null>(null)
+  const [publicLinks, setPublicLinks] = useState<{ json: string; calendar: string; widget: string; upcoming: number } | null>(null)
 
   const open = async () => {
     setLoading(true)
@@ -109,6 +109,7 @@ export function CalendarSubscribeButton() {
             </Text>
             {[
               [t('events.public.calendar', 'Öffentlicher Kalender'), publicLinks.calendar],
+              [t('events.public.widget', 'Auf eurer Website einbetten'), publicLinks.widget],
               [t('events.public.json', 'Für die Website (JSON)'), publicLinks.json],
             ].map(([label, value]) => (
               <Group key={label} gap="xs" wrap="nowrap" mb={6} align="flex-end">
