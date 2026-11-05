@@ -79,6 +79,7 @@ section and position, or the apps show that version in English.
 
 ### Fixed
 
+- **Plugins with routes load again**: since the OAuth metadata route (`/.well-known/...`) joined core as a blueprint at the root, the plugin limits counted it as owning every path and refused every plugin with routes ("route prefix ... overlaps / of core"). Root blueprints no longer count.
 - **Finance pages failed for clubs created before the recurring-transaction and invoice-period changes**: those two migrations changed only the template tables, so older clubs had no `transactions.recurring_id`, `invoices.period_start`/`period_end` or `recurring_transactions` table, and Transactions, Invoices and My invoices answered a server error. A migration adds what is missing, and every start now runs `flask sync-tenant-schemas`, which adds any table or column a club schema lacks (it never drops anything).
 - **Diagnostics showed no running processes and a stale health cache after one slow Redis answer**: reading the build reports now waits up to a second and reports "unknown" instead of "not reporting", and a slow read no longer hides the health cache or lets the upgrade check decide from the worker's own build alone.
 - **The Discord status read through an API token** (the Claude connector) gave the backend's in-cluster address as the expected interactions URL. Without `API_PUBLIC_URL` it is now unknown in that case.
