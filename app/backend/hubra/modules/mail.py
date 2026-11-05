@@ -21,7 +21,7 @@ module = Module(
             "/app/mail",
             "shell.nav.mail",
             "mail",
-            section="more",
+            section="operations",
             order=10,
             perms=(
                 "mail.mailboxes.read",

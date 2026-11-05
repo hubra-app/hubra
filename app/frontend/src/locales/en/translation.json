@@ -274,6 +274,12 @@
       "needsInstall": "On iPhone and iPad, first add Hubra to the home screen (Share › Add to Home Screen), then switch this on.",
       "denied": "Notifications are blocked for this site in the browser. Allow them in the browser's site settings."
     },
+    "installApp": {
+      "title": "Hubra as an app",
+      "hint": "Put Hubra on your home screen or dock. The app opens your club straight away, without the browser bar.",
+      "ios": "In Safari, tap Share and then “Add to Home Screen”. Hubra then opens like an app, with your club and without the browser bar.",
+      "button": "Install app"
+    },
     "myAttendance": "My attendance",
     "myAttendanceYear": "Since {{date}}",
     "showLess": "Show less",
@@ -2485,7 +2491,8 @@
       "system": "Administration",
       "workspace": "Club",
       "activities": "Club life",
-      "favourites": "Favourites"
+      "favourites": "Favourites",
+      "plugins": "Add-ons"
     },
     "tooltips": {
       "dismiss": "Dismiss",
@@ -2529,7 +2536,21 @@
     },
     "more": {
       "emptyTitle": "Nothing here yet",
-      "emptyDesc": "Pages you hide in the sidebar and pages of further modules appear here."
+      "emptyDesc": "Modules appear here as soon as your club switches them on.",
+      "desc": "All of your club's modules and plugins. A card takes you straight to its page.",
+      "openApplications": "{{count}} open applications",
+      "noApplications": "No open applications",
+      "groupCount": "{{count}} groups",
+      "needsSetup": "Needs setting up",
+      "partOf": "Part of {{module}}",
+      "plugin": "Plugin",
+      "notInSidebar": "Not in the sidebar",
+      "about": {
+        "dashboard": "Overview and your own widgets",
+        "settings": "Club, modules, apps and domains",
+        "translations": "Suggest translations for the app"
+      },
+      "withTabs": "With {{pages}}"
     },
     "customize": {
       "title": "Customise sidebar",

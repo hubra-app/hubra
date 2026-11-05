@@ -22,6 +22,7 @@ module = Module(
             "box",
             order=20,
             perms=("groups.groups.read",),
+            parent="/app/members",
         ),
     ),
     tables=("groups", "group_memberships"),

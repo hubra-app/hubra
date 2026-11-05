@@ -5000,7 +5000,8 @@
     "Schalte unter «Module & Plugins» ein Modul mit einer App ein, zum Beispiel Discord."
    ],
    "shell.more.emptyDesc": [
-    "Seiten, die du in der Seitenleiste ausblendest, und Seiten von Plugins erscheinen hier."
+    "Seiten, die du in der Seitenleiste ausblendest, und Seiten von Plugins erscheinen hier.",
+    "Seiten, die du in der Seitenleiste ausblendest, und Seiten weiterer Module erscheinen hier."
    ],
    "finance.feeBasis.source.budgetHint": [
     "Die Ausgaben im genehmigten Budget des laufenden Jahres (Plugin Budgets)."
@@ -6507,7 +6508,8 @@
     "Switch on a module with an app under “Modules & plugins”, for example Discord."
    ],
    "shell.more.emptyDesc": [
-    "Pages you hide in the sidebar and pages from plugins appear here."
+    "Pages you hide in the sidebar and pages from plugins appear here.",
+    "Pages you hide in the sidebar and pages of further modules appear here."
    ],
    "finance.feeBasis.source.budgetHint": [
     "The expenses in this year's approved budget (Budgets plugin)."

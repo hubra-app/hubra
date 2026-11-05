@@ -41,6 +41,18 @@
 .hb-notif:hover {
   background: var(--hb-surface-2);
 }
+/* Cards on "Weitere" */
+.module-card {
+  transition: border-color .15s, background .15s;
+}
+.module-card:hover {
+  border-color: var(--mantine-color-acc-4);
+  background: var(--hb-surface-2);
+}
+.module-card:focus-visible {
+  outline: 2px solid var(--mantine-color-acc-6);
+  outline-offset: 2px;
+}
 .hb-notif[data-unread] {
   background: color-mix(in srgb, var(--mantine-color-acc-6) 7%, transparent);
 }

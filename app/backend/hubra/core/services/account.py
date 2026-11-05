@@ -26,7 +26,7 @@ THEMES = ("light", "dark", "auto")
 NAV_PREF_KEYS = ("pinned", "hidden", "order")
 NAV_PREF_MAX = 100
 # Sidebar sections a person may move an entry into ("more" is `hidden`).
-NAV_SECTIONS = ("workspace", "activities", "operations", "system")
+NAV_SECTIONS = ("workspace", "activities", "operations", "plugins", "system")
 
 
 def memberships(user_id: int) -> Iterator[tuple[Tenant, Member]]:

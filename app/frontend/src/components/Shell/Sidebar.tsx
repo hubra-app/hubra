@@ -1,13 +1,13 @@
 import { ScrollArea, Box, Stack } from '@mantine/core'
 import { useNav } from '@/context/AppContext'
-import { NavItemRow, NavMoreRow, NavSectionLabel } from './NavItemRow'
+import { NavItemRow, NavSectionLabel } from './NavItemRow'
 import { setCustomizeSidebarOpen } from './customizeSidebarStore'
 import { UserCard } from './UserCard'
 import { useSidebarNav } from './useSidebarNav'
 
 export function Sidebar() {
   const { go, sidebarCollapsed, userMenuOpen, setUserMenuOpen } = useNav()
-  const { nav, activePath, currentMore } = useSidebarNav()
+  const { nav, activePath } = useSidebarNav()
 
   return (
     <Box
@@ -37,33 +37,23 @@ export function Sidebar() {
           pt={sidebarCollapsed ? 0 : 'md'}
         >
           {nav.map((section, s) => (
-            <Box key={section.label}>
-              {!sidebarCollapsed && (
+            <Box key={section.section}>
+              {!sidebarCollapsed && section.label && (
                 <NavSectionLabel
                   label={section.label}
                   onEdit={s === 0 ? () => setCustomizeSidebarOpen(true) : undefined}
                 />
               )}
               <Stack gap={sidebarCollapsed ? 8 : 2}>
-                {section.items.map((item) =>
-                  item.children && !sidebarCollapsed ? (
-                    <NavMoreRow
-                      key={item.path}
-                      item={item}
-                      activePath={activePath}
-                      currentMore={currentMore}
-                      go={go}
-                    />
-                  ) : (
-                    <NavItemRow
-                      key={item.path}
-                      item={item}
-                      activePath={activePath}
-                      go={go}
-                      collapsed={sidebarCollapsed}
-                    />
-                  ),
-                )}
+                {section.items.map((item) => (
+                  <NavItemRow
+                    key={item.path}
+                    item={item}
+                    activePath={activePath}
+                    go={go}
+                    collapsed={sidebarCollapsed}
+                  />
+                ))}
               </Stack>
             </Box>
           ))}
