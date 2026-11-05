@@ -149,9 +149,20 @@ jobs:
             args=()
             for t in "${tags[@]}"; do args+=(-t "$repo/$image:$t"); done
             docker buildx imagetools create "${args[@]}" "$repo/$image@$digest"
-            cosign sign --yes \
-              -a "version=$VERSION" -a "commit=$GITHUB_SHA" \
-              "$repo/$image@$digest"
+            # Rekor sometimes records an entry but answers too late; cosign then
+            # retries the same entry and gets 409 "an equivalent entry already
+            # exists", without having attached the signature. A new attempt has a
+            # new ephemeral key, so it is a new entry. An extra signature is harmless.
+            for attempt in 1 2 3; do
+              if cosign sign --yes \
+                  -a "version=$VERSION" -a "commit=$GITHUB_SHA" \
+                  "$repo/$image@$digest"; then
+                break
+              fi
+              if [ "$attempt" = 3 ]; then echo "::error::signing $image failed 3 times"; exit 1; fi
+              echo "::warning::signing $image failed (attempt $attempt), trying again"
+              sleep $((attempt * 15))
+            done
             printf '  - name: %s\n    newTag: "%s"\n    digest: %s\n' "$repo/$image" "$VERSION" "$digest" >> out/images.yaml
             echo "$repo/$image@$digest" >> out/images.txt
           done
