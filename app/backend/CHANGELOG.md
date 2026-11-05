@@ -80,6 +80,7 @@ section and position, or the apps show that version in English.
 
 ### Fixed
 
+- **Plugins with routes were refused after the OAuth change** ("route prefix overlaps / of core"): the blueprint for the OAuth `/.well-known` metadata has no prefix, so the plugin check saw core owning the whole site. A core blueprint on the site root is now treated like an area root and blocks no plugin.
 - **Plugins with routes load again**: since the OAuth metadata route (`/.well-known/...`) joined core as a blueprint at the root, the plugin limits counted it as owning every path and refused every plugin with routes ("route prefix ... overlaps / of core"). Root blueprints no longer count.
 - **Club search on the sign-in site works again**: after the API split the search asked a path no backend serves (`/api/v1/platform/system/clubs`), so it failed with a CORS error and found no clubs. It uses `/api/v1/global/clubs` again, and a test now checks that every path the apps call has a route.
 - **Finance pages failed for clubs created before the recurring-transaction and invoice-period changes**: those two migrations changed only the template tables, so older clubs had no `transactions.recurring_id`, `invoices.period_start`/`period_end` or `recurring_transactions` table, and Transactions, Invoices and My invoices answered a server error. A migration adds what is missing, and every start now runs `flask sync-tenant-schemas`, which adds any table or column a club schema lacks (it never drops anything).

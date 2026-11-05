@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Turn a plugin folder into a git repository of its own, the layout of every
 official Hubra plugin (hubra-app/hubra-plugin-<id>): the plugin at the root, a
-README from its manifest, Hubra's LICENSE, and the workflow that tests it and,
-on a GitHub release, signs it and attaches <id>-<version>.zip.
+README from its manifest, Hubra's LICENSE, the workflow that tests it and, on
+a pushed v<version> tag, signs it and publishes the release with
+<id>-<version>.zip attached, and the rulesets to import (.github/rulesets/).
 
     python3 tools/plugin_repo/make_plugin_repo.py ../my-plugin ../hubra-plugin-my-plugin
 
@@ -23,6 +24,15 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 TEMPLATE = HERE / "template"
 SKIP = shutil.ignore_patterns("__pycache__", "*.pyc", "dist", "node_modules")
+SETUP = """
+Once it is pushed to GitHub, in the repository's settings:
+  Rules > Rulesets > New ruleset > Import: .github/rulesets/main.json and
+    .github/rulesets/tags.json (main needs the `test` check; only admins
+    create, move or delete v* tags)
+  Environments > plugin-signing: secret HUBRA_SIGNING_KEY, required reviewer
+    yourself, deployment branches and tags "Selected" with the tag rule v*
+  General > Releases: tick "Enable release immutability"
+"""
 
 
 def readme(m: dict, repo: str) -> str:
@@ -49,11 +59,20 @@ does the same against Hubra's `main` on every push and pull request.
 ## Releasing
 
 Bump `version` in `plugin.yaml`, add a `## <version>` section to
-`CHANGELOG.md`, commit, then publish a GitHub release tagged `v<version>`
-(web UI, or `gh release create v<version> --target main --notes ""`). The
-workflow tests the plugin and builds its frontend; a separate job in the
+`CHANGELOG.md` and merge. Then tag the merged commit on main and push the tag:
+
+```sh
+git switch main && git pull
+git tag v<version> && git push origin v<version>
+```
+
+The workflow tests the plugin and builds its frontend; a separate job in the
 `plugin-signing` environment, the only one with the `HUBRA_SIGNING_KEY`
-secret, signs it; then `{m["id"]}-<version>.zip` is attached to the release. Files listed in `.releaseignore` stay out of the zip.
+secret, signs it after your approval; only then is the GitHub release
+`v<version>` published, with `{m["id"]}-<version>.zip` and its `.sha256`
+attached. Files listed in `.releaseignore` stay out of the zip. Releases are
+immutable, so a published version never changes: fix a bad one with a new
+version.
 
 Source: <https://github.com/hubra-app/{repo}>
 """
@@ -83,6 +102,7 @@ def main(src: str, dest: str) -> None:
             f"# {m.get('name', m['id'])}\n\n## {m.get('version', '1.0.0')}\n\nFirst release.\n"
         )
     print(f"{m['id']} {m.get('version')}: {d}")
+    print(SETUP)
 
 
 if __name__ == "__main__":
