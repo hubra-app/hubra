@@ -2468,7 +2468,8 @@
       "system": "Verwaltung",
       "workspace": "Verein",
       "activities": "Vereinsleben",
-      "favourites": "Favoriten"
+      "favourites": "Favoriten",
+      "plugins": "Erweiterungen"
     },
     "tooltips": {
       "dismiss": "Ausblenden",
@@ -2512,7 +2513,21 @@
     },
     "more": {
       "emptyTitle": "Hier ist noch nichts",
-      "emptyDesc": "Seiten, die du in der Seitenleiste ausblendest, und Seiten weiterer Module erscheinen hier."
+      "emptyDesc": "Sobald dein Verein Module einschaltet, erscheinen sie hier.",
+      "desc": "Alle Module und Plugins deines Vereins. Eine Karte führt direkt zur Seite.",
+      "openApplications": "{{count}} offene Anträge",
+      "noApplications": "Keine offenen Anträge",
+      "groupCount": "{{count}} Gruppen",
+      "needsSetup": "Noch einzurichten",
+      "partOf": "Teil von {{module}}",
+      "plugin": "Plugin",
+      "notInSidebar": "Nicht in der Seitenleiste",
+      "about": {
+        "dashboard": "Übersicht und eigene Widgets",
+        "settings": "Verein, Module, Apps und Domains",
+        "translations": "Übersetzungen der App vorschlagen"
+      },
+      "withTabs": "Mit {{pages}}"
     },
     "customize": {
       "title": "Seitenleiste anpassen",

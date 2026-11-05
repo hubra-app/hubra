@@ -31,11 +31,6 @@ const MemberDetailScreen = lazy(() =>
     default: m.MemberDetailScreen,
   })),
 )
-const GroupsScreen = lazy(() =>
-  import('./screens/private/members/Groups').then((m) => ({
-    default: m.GroupsScreen,
-  })),
-)
 const GroupDetailScreen = lazy(() =>
   import('./screens/private/members/GroupDetail').then((m) => ({
     default: m.GroupDetailScreen,
@@ -303,7 +298,7 @@ function PrivateRoutes() {
                   path="groups"
                   element={
                     <RequireModule code="groups">
-                      <GroupsScreen />
+                      <MembersTabScreen />
                     </RequireModule>
                   }
                 />

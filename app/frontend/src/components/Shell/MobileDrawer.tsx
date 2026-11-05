@@ -3,7 +3,7 @@ import { Drawer, ScrollArea, Group, Box, Stack, ActionIcon } from '@mantine/core
 import { IconX } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
 import { useNav, useAuth } from '@/context/AppContext'
-import { NavItemRow, NavMoreRow, NavSectionLabel } from './NavItemRow'
+import { NavItemRow, NavSectionLabel } from './NavItemRow'
 import { setCustomizeSidebarOpen } from './customizeSidebarStore'
 import { UserCard } from './UserCard'
 import { ClubMark } from './ClubMark'
@@ -14,7 +14,7 @@ export function MobileDrawer() {
   const { t } = useT()
   const { go, mobileDrawerOpen, setMobileDrawerOpen } = useNav()
   const { currentUser } = useAuth()
-  const { nav, activePath, currentMore } = useSidebarNav()
+  const { nav, activePath } = useSidebarNav()
   // The phone menu's own account menu; the desktop sidebar (hidden here but
   // still mounted) keeps the shared one.
   const [accountOpen, setAccountOpen] = useState(false)
@@ -80,38 +80,30 @@ export function MobileDrawer() {
       <ScrollArea flex={1} type="auto">
         <Stack gap={16} p="sm">
           {nav.map((section, s) => (
-            <Box key={section.label}>
-              <NavSectionLabel
-                label={section.label}
-                onEdit={
-                  s === 0 && currentUser
-                    ? () => {
-                        close()
-                        setCustomizeSidebarOpen(true)
-                      }
-                    : undefined
-                }
-              />
+            <Box key={section.section}>
+              {section.label && (
+                <NavSectionLabel
+                  label={section.label}
+                  onEdit={
+                    s === 0 && currentUser
+                      ? () => {
+                          close()
+                          setCustomizeSidebarOpen(true)
+                        }
+                      : undefined
+                  }
+                />
+              )}
               <Stack gap={2}>
-                {section.items.map((item) =>
-                  item.children ? (
-                    <NavMoreRow
-                      key={item.path}
-                      item={item}
-                      activePath={activePath}
-                      currentMore={currentMore}
-                      go={go}
-                    />
-                  ) : (
-                    <NavItemRow
-                      key={item.path}
-                      item={item}
-                      activePath={activePath}
-                      go={go}
-                      collapsed={false}
-                    />
-                  ),
-                )}
+                {section.items.map((item) => (
+                  <NavItemRow
+                    key={item.path}
+                    item={item}
+                    activePath={activePath}
+                    go={go}
+                    collapsed={false}
+                  />
+                ))}
               </Stack>
             </Box>
           ))}
