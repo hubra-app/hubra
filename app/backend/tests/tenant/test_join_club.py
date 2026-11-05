@@ -4,7 +4,6 @@ SQLite has no schemas, so every "club" here shares one members table; each
 test uses its own users and club slugs.
 """
 
-
 from flask import g
 from sqlalchemy import select
 
@@ -70,9 +69,14 @@ def test_join_request_files_an_application(client, db):
     assert application.name == "Ada Asker"
 
     # No membership yet, and a second request is refused.
-    assert db.session.scalar(
-        select(UserTenant).where(UserTenant.user_id == _user(db, "asker@test.ch").id)
-    ) is None
+    assert (
+        db.session.scalar(
+            select(UserTenant).where(
+                UserTenant.user_id == _user(db, "asker@test.ch").id
+            )
+        )
+        is None
+    )
     again = client.post("/api/v1/system/clubs/chess-luzern/join")
     assert again.status_code == 409
     assert again.get_json()["error"] == "REQUEST_PENDING"
@@ -117,11 +121,14 @@ def test_superadmin_joins_directly(client, db):
     resp = client.post("/api/v1/system/clubs/sailing-thun/join")
     assert resp.status_code == 201
     assert resp.get_json()["status"] == "joined"
-    assert db.session.scalar(
-        select(UserTenant).where(
-            UserTenant.user_id == boss.id, UserTenant.tenant_id == tenant.id
+    assert (
+        db.session.scalar(
+            select(UserTenant).where(
+                UserTenant.user_id == boss.id, UserTenant.tenant_id == tenant.id
+            )
         )
-    ) is not None
+        is not None
+    )
 
     again = client.post("/api/v1/system/clubs/sailing-thun/join")
     assert again.status_code == 409
@@ -151,11 +158,14 @@ def test_approving_links_the_existing_account(app, db):
     assert member.user_id == user.id
     # The account keeps its own password.
     assert user.check_password(PASSWORD)
-    assert db.session.scalar(
-        select(UserTenant).where(
-            UserTenant.user_id == user.id, UserTenant.tenant_id == tenant.id
+    assert (
+        db.session.scalar(
+            select(UserTenant).where(
+                UserTenant.user_id == user.id, UserTenant.tenant_id == tenant.id
+            )
         )
-    ) is not None
+        is not None
+    )
 
 
 # ── The club's join page on SSO (replaces the club app's /apply form) ─────────
@@ -207,7 +217,9 @@ def test_join_request_with_a_tier(client, db):
 def test_join_request_with_an_unknown_tier(client, db):
     _club(db, "golf-brig", "Golf Brig")
     _signup(client, "tier2@test.ch")
-    resp = client.post("/api/v1/system/clubs/golf-brig/join", json={"wantsTierId": 99999})
+    resp = client.post(
+        "/api/v1/system/clubs/golf-brig/join", json={"wantsTierId": 99999}
+    )
     assert resp.status_code == 400
 
 
@@ -256,3 +268,45 @@ def test_directory_leaves_out_clubs_you_already_belong_to(client, db):
 
     body = client.get("/api/v1/system/clubs?search=chess").get_json()
     assert [c["slug"] for c in body["clubs"]] == ["chess-biel"]
+
+
+def _global_backend(monkeypatch):
+    """The global backend process, which serves the club directory in production."""
+    from hubra.core.app import create_app
+
+    monkeypatch.setenv("HUBRA_ROLE", "global")
+    return create_app("testing")
+
+
+def test_club_search_answers_cross_origin_on_the_global_backend(monkeypatch):
+    app = _global_backend(monkeypatch)
+    origin = app.config["CORS_ORIGINS"][0]
+    client = app.test_client()
+
+    # The SSO app's search sends a bearer token, so the browser asks first.
+    pre = client.options(
+        "/api/v1/global/clubs?search=rowing",
+        headers={
+            "Origin": origin,
+            "Access-Control-Request-Method": "GET",
+            "Access-Control-Request-Headers": "authorization",
+        },
+    )
+    assert pre.status_code == 200
+    assert pre.headers["Access-Control-Allow-Origin"] == origin
+    assert pre.headers["Access-Control-Allow-Credentials"] == "true"
+
+    # The route is there (401 without sign-in, not 404) and keeps the headers.
+    resp = client.get("/api/v1/global/clubs?search=rowing", headers={"Origin": origin})
+    assert resp.status_code == 401
+    assert resp.headers["Access-Control-Allow-Origin"] == origin
+
+    # The path the search used by mistake is served by no backend.
+    assert client.get("/api/v1/platform/system/clubs").status_code == 404
+
+
+def test_club_search_on_the_new_path(client, db):
+    _club(db, "rowing-uri", "Rowing Uri")
+    _signup(client, "searcher@example.com")
+    body = client.get("/api/v1/global/clubs?search=rowing-uri").get_json()
+    assert [c["slug"] for c in body["clubs"]] == ["rowing-uri"]
