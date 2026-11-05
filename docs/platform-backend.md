@@ -33,9 +33,34 @@ sign-in staying on the club backend (`HUBRA_ROLE=club` = app + global).
 | Start-up | waits until the schema is migrated (`python -m hubra.core.schema_wait`), then fills the club permission catalog (`flask sync-permissions`) | waits, the same | runs the init step: `flask db upgrade`, `sync-permissions`, `seed`, `ensure-superadmins`, `plugins sync`, `modules seal-secrets` |
 | Celery beat | | | runs the platform image |
 
-The three images are one build published under three names (`images.yml`
-copies the manifest, no extra build), so they cost no CI time or registry
+### Images
+
+One Dockerfile (`app/backend/Dockerfile`), four images:
+
+| Image | Target | Holds | `HUBRA_ROLE` |
+| --- | --- | --- | --- |
+| `backend` | `backend` (the default) | every file | unset (`all`): Compose, and the k3s app backend until it moves to `app-backend` |
+| `app-backend` | `role`, `ROLE=app` | the app role's files | `app` |
+| `global-backend` | `role`, `ROLE=global` | the global role's files | `global` |
+| `platform-backend` | `role`, `ROLE=platform` | the platform role's files | `platform` |
+
+A role image holds only the `hubra` modules on its role's list
+(`scripts/role_files.py <role> --prune` in the build, see
+[Code per role](#code-per-role)) and sets `HUBRA_ROLE` itself, so every
+process started from it (API, worker, beat, the init step) is that role and
+never tries to load another area's routes. All four share the base layers
+(Python packages, Postgres clients, Pango), so they cost little registry
 space.
+
+`images.yml` rebuilds a role image only when a file on its list changed
+(or its Dockerfile or `role_files.py`); otherwise the run gives the last
+build its tags and the digest stays, so a deploy pinned by digest doesn't
+restart it. A change to a club page leaves `platform-backend` and
+`global-backend` alone; a change to a manage page leaves `app-backend` and
+`global-backend` alone. A change to Hubra's core, the models, the
+migrations or a club service most roles use rebuilds them all: most of the
+backend's code is on every list. Each release still has one version for
+all of them, and its `images.yaml` pins each image by its own digest.
 
 The API areas and the old paths that lead to them are in
 `app/backend/hubra/core/api_areas.py` (see [API areas](#api-areas) below); the

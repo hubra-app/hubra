@@ -18,11 +18,16 @@
 # With docker-compose.traefik.yml, the API host needs a second router for the
 # platform paths; see docs/platform-backend.md.
 
+# The platform image holds only the platform's code and sets HUBRA_ROLE=platform
+# itself, so flask-init and celery-beat run as the platform too.
 x-platform-app: &platform-app
   image: ${HUBRA_IMAGE_PREFIX:-ghcr.io/hubra-app/hubra}/platform-backend:${HUBRA_PLATFORM_VERSION:-${HUBRA_VERSION:-latest}}
   build:
     context: .
     dockerfile: app/backend/Dockerfile
+    target: role
+    args:
+      ROLE: platform
   env_file: .env
   security_opt:
     - no-new-privileges:true
@@ -74,6 +79,10 @@ services:
   # The one place migrations run, from the platform release.
   flask-init:
     image: ${HUBRA_IMAGE_PREFIX:-ghcr.io/hubra-app/hubra}/platform-backend:${HUBRA_PLATFORM_VERSION:-${HUBRA_VERSION:-latest}}
+    build:
+      target: role
+      args:
+        ROLE: platform
 
   # The club permission catalog, from the club routes and plugins: the club
   # backend's image and role, once flask-init has migrated.
@@ -95,6 +104,10 @@ services:
 
   celery-beat:
     image: ${HUBRA_IMAGE_PREFIX:-ghcr.io/hubra-app/hubra}/platform-backend:${HUBRA_PLATFORM_VERSION:-${HUBRA_VERSION:-latest}}
+    build:
+      target: role
+      args:
+        ROLE: platform
     environment:
       HUBRA_PLATFORM_QUEUE: platform
 

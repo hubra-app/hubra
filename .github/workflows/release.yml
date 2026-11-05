@@ -142,7 +142,7 @@ jobs:
           mkdir -p out
           echo "images:" > out/images.yaml
           : > out/images.txt
-          for image in backend global-backend platform-backend mcp frontend admin-frontend sso-frontend support-frontend haraka zonemta cert-watcher; do
+          for image in backend app-backend global-backend platform-backend mcp frontend admin-frontend sso-frontend support-frontend haraka zonemta cert-watcher; do
             # The digest the checks and the approval were for.
             digest="$(docker buildx imagetools inspect "$repo/$image:$staged" --format '{{json .Manifest}}' | jq -r .digest)"
             if [[ "$digest" != sha256:* ]]; then echo "::error::$repo/$image:$staged not found"; exit 1; fi

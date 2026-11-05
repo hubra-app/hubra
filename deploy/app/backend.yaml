@@ -175,7 +175,9 @@ spec:
       containers:
         - name: celery-beat
           # The platform image: beat holds every schedule (club and platform),
-          # and the platform release is never older than the club one.
+          # and the platform release is never older than the club one. The
+          # image sets HUBRA_ROLE=platform; beat imports no route (schedules
+          # name their tasks).
           image: hubra/platform-backend
           securityContext:
             allowPrivilegeEscalation: false

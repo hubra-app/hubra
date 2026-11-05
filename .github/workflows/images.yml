@@ -22,16 +22,20 @@
 # a build provenance attestation (who built it, from which commit and
 # workflow), kept with the image on GHCR.
 #
-# All seven images always carry every tag of the run, so one version names
+# All the images always carry every tag of the run, so one version names
 # them all. The digest block at the end of the run summary is what an overlay
 # such as deploy/clusters/contabo pins.
 #
 # So to deploy main between releases, run Images by hand on main: Flux picks
 # up the main-<timestamp>-<commit> build and commits it to the GitOps repo.
 #
-# backend is also published as global-backend and platform-backend (same
-# digest), for the global and platform Deployments of a split install
-# (docs/platform-backend.md).
+# The backend comes as four images from one Dockerfile
+# (docs/platform-backend.md, "Images"): backend holds every file (Compose),
+# and app-backend, global-backend and platform-backend hold only the code
+# their role imports (app/backend/scripts/role_files.py), with HUBRA_ROLE set.
+# A role image is rebuilt only when one of the files on its list changed, so
+# a platform-only change leaves the app and global images (and their pods)
+# as they were.
 #
 # The frontend images carry no host names; they are set at container start
 # (app/deploy/nginx/40-hubra-runtime.sh), so one image fits every install.
@@ -75,10 +79,31 @@ jobs:
       matrix:
         include:
           # paths: what goes into the image; a change there means a new build.
+          # role: a backend image with one role's files only; its paths are
+          # that role's file list (scripts/role_files.py), added at run time.
           - image: backend
             context: .
             dockerfile: app/backend/Dockerfile
+            target: backend
             paths: app/backend
+          - image: app-backend
+            context: .
+            dockerfile: app/backend/Dockerfile
+            target: role
+            role: app
+            paths: app/backend/Dockerfile app/backend/scripts/role_files.py
+          - image: global-backend
+            context: .
+            dockerfile: app/backend/Dockerfile
+            target: role
+            role: global
+            paths: app/backend/Dockerfile app/backend/scripts/role_files.py
+          - image: platform-backend
+            context: .
+            dockerfile: app/backend/Dockerfile
+            target: role
+            role: platform
+            paths: app/backend/Dockerfile app/backend/scripts/role_files.py
           - image: mcp
             context: .
             dockerfile: app/mcp/Dockerfile
@@ -156,9 +181,17 @@ jobs:
           BUILD_ALL: ${{ inputs.build_all || false }}
           IMAGE: ${{ steps.name.outputs.image }}
           PATHS: ${{ matrix.paths }}
+          ROLE: ${{ matrix.role }}
         run: |
           # shellcheck disable=SC2086 # PATHS is a space-separated list
-          scripts/image-reuse.sh "$IMAGE" $PATHS | tee -a "$GITHUB_OUTPUT"
+          set -- $PATHS
+          if [ -n "$ROLE" ]; then
+            # The role's own files: a change elsewhere doesn't reach its image.
+            mapfile -t files < <(python3 app/backend/scripts/role_files.py "$ROLE" --prefix app/backend/)
+            set -- "$@" "${files[@]}"
+            echo "$ROLE: ${#files[@]} files" >&2
+          fi
+          scripts/image-reuse.sh "$IMAGE" "$@" | tee -a "$GITHUB_OUTPUT"
 
       # Add linux/arm64 to platforms for Raspberry Pi / Ampere clusters
       # (slower: builds under QEMU).
@@ -176,6 +209,7 @@ jobs:
           # Shown in manage (Diagnose > Builds); the mail images ignore it.
           build-args: |
             GIT_SHA=${{ github.sha }}
+            ROLE=${{ matrix.role }}
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
 
@@ -217,24 +251,6 @@ jobs:
           if [ -n "$BUILT" ]; then digest="$BUILT"; what="built"; else digest="$REUSED"; what="reused"; fi
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
           echo "**$IMAGE**: $what ($REASON), \`$digest\`" >> "$GITHUB_STEP_SUMMARY"
-
-      # The global and platform backends (docs/platform-backend.md) run the
-      # same image under their own names, so a cluster can pin and roll each
-      # on its own. A copy of the manifest, no second build; a reused backend
-      # is copied too.
-      - name: Publish the backend as global-backend and platform-backend too
-        if: matrix.image == 'backend'
-        env:
-          TAGS: ${{ steps.meta.outputs.tags }}
-          SOURCE: ${{ steps.name.outputs.image }}@${{ steps.result.outputs.digest }}
-        run: |
-          for name in global-backend platform-backend; do
-            args=()
-            while IFS= read -r tag; do
-              if [ -n "$tag" ]; then args+=(--tag "${tag/\/backend:/\/$name:}"); fi
-            done <<< "$TAGS"
-            docker buildx imagetools create "${args[@]}" "$SOURCE"
-          done
 
       # Fixable HIGH/CRITICAL CVEs go to the job summary, for reused images too
       # (new CVEs turn up in old images). Report only for now;
@@ -286,7 +302,7 @@ jobs:
             echo
             echo '```yaml'
             echo "images:"
-            for image in backend global-backend platform-backend mcp frontend admin-frontend sso-frontend support-frontend haraka zonemta cert-watcher; do
+            for image in backend app-backend global-backend platform-backend mcp frontend admin-frontend sso-frontend support-frontend haraka zonemta cert-watcher; do
               digest="$(docker buildx imagetools inspect "$repo/$image:$tag" --format '{{json .Manifest}}' | jq -r .digest)"
               echo "  - name: $repo/$image"
               echo "    newTag: \"$tag\""

@@ -6,7 +6,8 @@ flow itself (release branches, checks) is in [ci.md](ci.md).
 
 ## Images and what goes into them
 
-`images.yml` handles seven images. Each has a list of paths: a change in one
+`images.yml` handles every image. Each has a list of paths (a backend role
+image: its role's file list, `app/backend/scripts/role_files.py`): a change in one
 of them (or in `.dockerignore`, or in how `images.yml` builds that image: its
 matrix entry and the build step) means a new build. Other edits to
 `images.yml` (comments, tags, scans, other jobs) rebuild nothing.
@@ -58,7 +59,7 @@ than the release.
 | `main-<timestamp>-<commit>` | manual runs on `main`, for Flux image automation |
 | `last-build` | every run; how the next run finds this image's last build (not for deploys) |
 
-All seven images get every tag of a run, built or reused, so one version
+All the images get every tag of a run, built or reused, so one version
 always names a full set that passed the release checks together.
 
 ## Deploying
