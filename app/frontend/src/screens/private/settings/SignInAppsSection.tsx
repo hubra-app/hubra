@@ -32,7 +32,7 @@ import { qk } from '@/data/keys'
 import { formatDateTime } from '@/format'
 import { useT } from '@/locales/i18n'
 
-function Copyable({ label, value, testId }: { label: string; value: string; testId?: string }) {
+export function Copyable({ label, value, testId }: { label: string; value: string; testId?: string }) {
   const { t } = useT()
   return (
     <Stack gap={2}>

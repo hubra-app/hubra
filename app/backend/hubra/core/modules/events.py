@@ -58,6 +58,10 @@ GROUP_MEMBERSHIP_CHANGED = "group.membership_changed"
 # emitted in each club they are a member of (member_id).
 ACCOUNT_LINKED = "account.linked"
 ACCOUNT_UNLINKED = "account.unlinked"
+# A member joined (accepted an invite or an application) or left (left,
+# archived or deleted).
+MEMBER_JOINED = "member.joined"
+MEMBER_LEFT = "member.left"
 
 
 def _resolve(target: str):
@@ -161,20 +165,65 @@ def emit(event: str, tenant_id=CURRENT, **payload: Any) -> list[str]:
         if not is_enabled(module.code, tenant_id=tid):
             continue
         if _defer(module, event):
-            item = (event, module.code, target, tid, dict(payload))
-            try:
-                session = _session()
-                if session.in_transaction():
-                    session.info.setdefault(_PENDING, []).append(item)
-                else:
-                    _queue(item)
+            if _after_commit_or_now((event, module.code, target, tid, dict(payload))):
                 called.append(module.code)
-            except Exception:
-                _log.exception("Couldn't queue %s for %s", target, event)
             continue
         try:
             _resolve(target)(tenant_id=tid, **payload)
             called.append(module.code)
         except Exception:
             _log.exception("Handler %s for %s failed", target, event)
+    if _webhooks_listening(event, tid):
+        item = (
+            event,
+            "webhooks",
+            _WEBHOOK_TARGET,
+            tid,
+            {"event": event, "data": dict(payload)},
+        )
+        if _after_commit_or_now(item):
+            called.append("webhooks")
     return called
+
+
+def _after_commit_or_now(item: tuple) -> bool:
+    """Queue *item* for after the caller's commit (or now, outside one)."""
+    try:
+        session = _session()
+        if session.in_transaction():
+            session.info.setdefault(_PENDING, []).append(item)
+        else:
+            _queue(item)
+        return True
+    except Exception:
+        _log.exception("Couldn't queue %s for %s", item[2], item[0])
+        return False
+
+
+# The club's outgoing webhooks (hubra.core.webhooks) hear the events they
+# list, after the commit, in the worker, like a plugin's handler.
+_WEBHOOK_TARGET = "hubra.core.webhooks:dispatch"
+
+
+def _webhooks_listening(event: str, tid) -> bool:
+    from hubra.core.webhooks import EVENTS
+
+    if event not in EVENTS:
+        return False
+    try:
+        if not is_enabled("webhooks", tenant_id=tid):
+            return False
+        from sqlalchemy import select
+
+        from hubra.core.models.webhook import Webhook
+
+        session = _session()
+        # A savepoint: a failing look-up must not abort the caller's work.
+        with session.begin_nested():
+            found = session.scalar(
+                select(Webhook.id).where(Webhook.active.is_(True)).limit(1)
+            )
+        return found is not None
+    except Exception:
+        _log.exception("Couldn't check the webhooks for %s", event)
+        return False

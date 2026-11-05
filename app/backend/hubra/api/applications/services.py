@@ -60,6 +60,9 @@ class ApplicationService:
 
         member = MembersService.create_from_application(application)
         db.session.flush()
+        from hubra.core.modules.events import MEMBER_JOINED, emit
+
+        emit(MEMBER_JOINED, member_id=member.id)
 
         log_audit(
             actor_id=actor_id,

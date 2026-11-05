@@ -19,6 +19,7 @@ from hubra.core.services import quotas
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 from hubra.core.models.group import Group
+from hubra.core.modules.events import MEMBER_JOINED, MEMBER_LEFT
 from hubra.core.models.member import (
     Member,
     MembershipTier,
@@ -366,6 +367,13 @@ def _active_member_with_email(email: str) -> bool:
     )
 
 
+def _tell(event: str, member_id: int) -> None:
+    """member.joined / member.left for the club's webhooks and modules."""
+    from hubra.core.modules.events import emit
+
+    emit(event, member_id=member_id)
+
+
 def _free_club_address(local: str, domain: str) -> tuple[str, str | None]:
     """A club username, and address when the club has a mail domain, that no
     other member has: ``anna.muster``, then ``anna.muster2``, ``anna.muster3``…
@@ -543,6 +551,7 @@ class MemberService:
         from hubra.core.services.managed_mail import disable_member_mail
 
         disable_member_mail(member_id)
+        _tell(MEMBER_LEFT, member_id)
         return member, affected_group_ids  # type: ignore[return-value]
 
     @staticmethod
@@ -559,6 +568,7 @@ class MemberService:
         from hubra.core.services.managed_mail import disable_member_mail
 
         disable_member_mail(member.id)
+        _tell(MEMBER_LEFT, member.id)
         if member.user_id is not None:
             from hubra.core.models.user_tenant import UserTenant
             from hubra.core.tenant.context import current_tenant
@@ -1136,7 +1146,9 @@ class MembersService:
             raise_error(409, "CONFLICT", "You are already a member of this club")
         quotas.ensure_room_for_member()
         if former is not None:
-            return _welcome_back(former, user.id, data.get("tier_id"))
+            back = _welcome_back(former, user.id, data.get("tier_id"))
+            _tell(MEMBER_JOINED, back.id)
+            return back
 
         tier_id = data.get("tier_id")
         if tier_id is not None and db.session.get(MembershipTier, tier_id) is None:
@@ -1203,6 +1215,7 @@ class MembersService:
         from hubra.core.services.binding_engine import sync_for_source
 
         sync_for_source("member", str(member.id))
+        _tell(MEMBER_JOINED, member.id)
 
         return member
 
@@ -1508,6 +1521,7 @@ class MembersService:
         # Sign-in and every permission check refuse archived members; a
         # deleted one must be locked out the same way.
         member.archived_at = member.deleted_at  # type: ignore[union-attr]
+        _tell(MEMBER_LEFT, member.id)  # type: ignore[union-attr]
 
         log_audit(
             actor_id=actor_id,
